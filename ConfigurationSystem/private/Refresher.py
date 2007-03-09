@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Refresher.py,v 1.1 2007/03/09 15:20:22 rgracian Exp $
-__RCSID__ = "$Id: Refresher.py,v 1.1 2007/03/09 15:20:22 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Refresher.py,v 1.2 2007/03/09 16:00:23 acasajus Exp $
+__RCSID__ = "$Id: Refresher.py,v 1.2 2007/03/09 16:00:23 acasajus Exp $"
 
 import threading
 import time
@@ -47,6 +47,9 @@ class Refresher( threading.Thread ):
     gLogger.info( "Setting configuration refresh as automatic" )
     if not g_oConfigurationData.getAutoPublish():
       gLogger.info( "Slave server won't auto publish itself" )
+    if not g_oConfigurationData.getName():
+      gLogger.fatal( "Missing configuration name!" )
+      sys.exit(1)
     self.sURL = sURL
     self.bAutomaticUpdate = True
     self.setDaemon(1)

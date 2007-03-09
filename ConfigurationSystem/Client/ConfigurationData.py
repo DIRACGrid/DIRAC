@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/ConfigurationData.py,v 1.1 2007/03/09 14:19:26 rgracian Exp $
-__RCSID__ = "$Id: ConfigurationData.py,v 1.1 2007/03/09 14:19:26 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/ConfigurationData.py,v 1.2 2007/03/09 16:00:24 acasajus Exp $
+__RCSID__ = "$Id: ConfigurationData.py,v 1.2 2007/03/09 16:00:24 acasajus Exp $"
 
 import sys
 import os.path
@@ -138,45 +138,45 @@ class ConfigurationData:
     self.sync()
       
   def generateNewVersion( self ):
-    self.setOptionInCFG( "%s/version" % self.sConfigurationPath,
+    self.setOptionInCFG( "%s/Version" % self.sConfigurationPath,
                                   Time.toString(),
                                   self.oRemoteCFG )
     self.sync()
       
   def getVersion( self ):
-    sValue = self.extractOptionFromCFG( "%s/version" % self.sConfigurationPath,
+    sValue = self.extractOptionFromCFG( "%s/Version" % self.sConfigurationPath,
                                         self.oRemoteCFG )
     if sValue:
       return sValue
     return "0"
     
   def getName( self ):
-    return self.extractOptionFromCFG( "%s/name" % self.sConfigurationPath,
+    return self.extractOptionFromCFG( "%s/Name" % self.sConfigurationPath,
                                         self.oMergedCFG )
     
   def getRefreshTime( self ):
     try:
-      return int( self.extractOptionFromCFG( "%s/refreshTime" % self.sConfigurationPath,
+      return int( self.extractOptionFromCFG( "%s/RefreshTime" % self.sConfigurationPath,
                                         self.oMergedCFG ) )
     except:
       return 300  
     
   def getPropagationTime( self ):
     try:
-      return int( self.extractOptionFromCFG( "%s/propagationTime" % self.sConfigurationPath,
+      return int( self.extractOptionFromCFG( "%s/PropagationTime" % self.sConfigurationPath,
                                         self.oMergedCFG ) )
     except:
       return 300  
     
   def getSlavesGraceTime( self ):
     try:
-      return int( self.extractOptionFromCFG( "%s/slavesGraceTime" % self.sConfigurationPath,
+      return int( self.extractOptionFromCFG( "%s/SlavesGraceTime" % self.sConfigurationPath,
                                         self.oMergedCFG ) ) 
     except:
       return 600  
     
   def getAutoPublish( self ):
-    sValue = self.extractOptionFromCFG( "%s/autoPublish" % self.sConfigurationPath,
+    sValue = self.extractOptionFromCFG( "%s/AutoPublish" % self.sConfigurationPath,
                                         self.oLocalCFG )
     if sValue and sValue.lower() in ( "no", "false", "n" ):
         return False
@@ -187,21 +187,21 @@ class ConfigurationData:
     return list( self.lRemoteServers )
 
   def getConfigurationGateway( self ):
-    return self.extractOptionFromCFG( "%s/gateway" % self.sConfigurationPath,
+    return self.extractOptionFromCFG( "%s/Gateway" % self.sConfigurationPath,
                                         self.oLocalCFG )
 
   def setServers( self, sServers ):
-    self.setOptionInCFG( "%s/servers" % self.sConfigurationPath,
+    self.setOptionInCFG( "%s/Servers" % self.sConfigurationPath,
                                   sServers,
                                   self.oRemoteCFG )
     self.sync()
     
   def getMasterServer( self ):
-    return self.extractOptionFromCFG( "%s/master" % self.sConfigurationPath, 
+    return self.extractOptionFromCFG( "%s/Master" % self.sConfigurationPath, 
                                       self.oRemoteCFG )
     
   def setMasterServer( self, sURL ):
-    self.setOptionInCFG( "%s/master" % self.sConfigurationPath, 
+    self.setOptionInCFG( "%s/Master" % self.sConfigurationPath, 
                          sURL, 
                          self.oRemoteCFG )
     self.sync()
@@ -210,7 +210,7 @@ class ConfigurationData:
     return self.sCompressedConfigurationData
   
   def isMaster( self ):
-    sValue = self.extractOptionFromCFG( "%s/master" % self.sConfigurationPath, 
+    sValue = self.extractOptionFromCFG( "%s/Master" % self.sConfigurationPath, 
                                             self.oLocalCFG )
     if sValue and sValue.lower() in ( "yes", "true", "y" ):
         return True
@@ -218,7 +218,7 @@ class ConfigurationData:
         return False
       
   def getServicesPath( self ):
-    return "/Service"
+    return "/Services"
     
   def setAsService( self ):
     self.bIsService = True
