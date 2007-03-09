@@ -1,5 +1,6 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/test/test_Utilities,v 1.1 2007/03/09 15:33:20 rgracian Exp $
-__RCSID__ = "$Id: test_Utilities,v 1.1 2007/03/09 15:33:20 rgracian Exp $"
+#!/usr/bin/env python
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/test/test_Utilities,v 1.2 2007/03/09 16:07:02 acasajus Exp $
+__RCSID__ = "$Id: test_Utilities,v 1.2 2007/03/09 16:07:02 acasajus Exp $"
 """
 """
 from dirac import DIRAC
@@ -210,7 +211,7 @@ testdict = { 'DIRAC.List'               : testList,
              'DIRAC.Os'                 : testOs,
              'DIRAC.File'               : testFile,
              'DIRAC.Time'               : testTime,
-             'DIRAC.Network'            : testNetwork,
+#             'DIRAC.Network'            : testNetwork,
              'DIRAC.ReturnValues'       : testReturnValues,
              'DIRAC.SubprocessExecuter' : testSubprocess,
             }
