@@ -1,284 +1,310 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Subprocess.py,v 1.1 2007/03/09 15:33:19 rgracian Exp $
-__RCSID__ = "$Id: Subprocess.py,v 1.1 2007/03/09 15:33:19 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Subprocess.py,v 1.2 2007/03/14 06:32:57 rgracian Exp $
+__RCSID__ = "$Id: Subprocess.py,v 1.2 2007/03/14 06:32:57 rgracian Exp $"
 """
    DIRAC Wrapper to execute python and system commands with a wrapper, that might 
    set a timeout.
    3 FUNCTIONS are provided:
-     - shellCall( iTimeOut, sCmd, oCallbackFunction = None, env = None ): 
+     - shellCall( iTimeOut, cmdSeq, callbackFunction = None, env = None ): 
        it uses subprocess.Popen class with "shell = True". 
-       If sCmd is a string, it specifies the command string to execute through 
-       the shell.  If sCmd is a sequence, the first item specifies the command 
+       If cmdSeq is a string, it specifies the command string to execute through 
+       the shell.  If cmdSeq is a sequence, the first item specifies the command 
        string, and any additional items will be treated as additional shell arguments.
        
-     - systemCall( iTimeOut, sCmd, oCallbackFunction = None, env = None ):
+     - systemCall( iTimeOut, cmdSeq, callbackFunction = None, env = None ):
        it uses subprocess.Popen class with "shell = False". 
-       sCmd should be a string, or a sequence of program arguments. 
+       cmdSeq should be a string, or a sequence of program arguments. 
 
-       stderr and stdout are piped. oCallbackFunction( iPipe, sLine ) can be 
-       defined to process the stdout and stderr as they are produced
+       stderr and stdout are piped. callbackFunction( pipeId, line ) can be 
+       defined to process the stdout (pipeId = 0) and stderr (pipeId = 1) as 
+       they are produced
 
        They return a DIRAC.ReturnValue dictionary with a tuple in Value 
        ( returncode, stdout, stderr ) the tuple will also be available upon 
        timeout error or buffer overflow error.
      
-     - pythonCall( )
+     - pythonCall( iTimeOut, function, *stArgs, **stKeyArgs )
+       calls function with given arguments within a timeout Wrapper
+       should be used to wrap third party python functions
 """
 
-from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
+# Very Important:
+#  Here we can not import directly from DIRAC, since this file it is imported
+#  at initialization time therefore the full path is necesary
+# from DIRAC import S_OK, S_ERROR
+from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
+# from DIRAC import gLogger
+from DIRAC.LoggingSystem.Client.Logger import gLogger
 
 import time
 import select
 import os
-import sys
-import popen2
 import subprocess
 
-class SubprocessExecuter:
+gLogger = gLogger.getSubLogger( 'Subprocess' )
 
-    def __init__( self, iTimeout = False ):
-        self.changeTimeout( iTimeout )
-        self.iBufferLimit = 5242880 # 5MB limit for data
+class Subprocess:
 
-    def changeTimeout( self, iTimeout ):
-        self.iTimeout = iTimeout
-        if self.iTimeout == 0:
-            self.iTimeout = False
-        
-    def __readFromPipe( self, oPipe, iBaseLength = 0 ):
-        sData = ""
-        iMaxSliceLength = 8192
-        iLastSliceLength = 8192
-        
-        while iLastSliceLength == iMaxSliceLength:
-            sReadBuffer = os.read( oPipe, iMaxSliceLength )
-            iLastSliceLength = len( sReadBuffer )
-            sData += sReadBuffer
-            if len( sData ) + iBaseLength > self.iBufferLimit:
-                dRetVal = S_ERROR( "Reached maximum allowed length (%d bytes) for called function return value" % self.iBufferLimit )
-                dRetVal[ 'ReadData' ] = sData
-                return dRetVal
-            
-        return S_OK( sData )
-                    
-    def __executePythonFunction( self, oFunc, oWritePipe, *stArgs, **stKeyArgs ):
-        try:
-            os.write( oWritePipe, "%s\n" % str( S_OK( oFunc( *stArgs, **stKeyArgs ) ) ) )
-        except OSError, v:
-          if str(v) == '[Errno 32] Broken pipe':
-            # the parent has died
-            pass
-        except Exception, v:
-            os.write( oWritePipe, "%s\n" % str( S_ERROR( str( v ) ) ) )
-        try:
-            os.close( oWritePipe )
-        finally:
-            os._exit(0)
-    
-    def __selectFD( self, lR, iTimeout = False ):
-        if self.iTimeout and not iTimeout:
-            iTimeout = self.iTimeout
-        if not iTimeout: 
-            return select.select( lR , [], [] )[0]
-        else:
-            return select.select( lR , [], [], iTimeout )[0]
-    
-    def pythonCall( self, oFunction, *stArgs, **stKeyArgs ):
-        oReadPipe, oWritePipe = os.pipe()
-        iPid = os.fork()
-        if iPid == 0:
-            os.close( oReadPipe )
-            self.__executePythonFunction( oFunction, oWritePipe, *stArgs, **stKeyArgs )
-            os.close( oWritePipe )
-        else:
-            os.close( oWritePipe )
-            lReadable = self.__selectFD( [ oReadPipe ] )
-            if len( lReadable ) == 0:
-                try:
-                  os.kill( iPid, 9 )
-                except OSError, v:
-                  if not str(v) == '[Errno 3] No such process':
-                    raise v
+  def __init__( self, timeout = False, bufferLimit =  5242880 ):
+    try:
+      self.changeTimeout( timeout )
+      self.bufferLimit = int( bufferLimit) # 5MB limit for data
+    except Exception, v:
+      gLogger.exception( 'Failed initialisation of Subprocess object' )
+      raise v
+
+  def changeTimeout( self, timeout ):
+    self.timeout = int( timeout )
+    if self.timeout == 0:
+      self.timeout = False
+    gLogger.debug( 'Timeout set to', timeout )
+
+  def __readFromPipe( self, pipe, baseLength = 0 ):
+    dataString = ''
+    maxSliceLength = 8192
+    lastSliceLength = 8192
+
+    while lastSliceLength == maxSliceLength:
+      readBuffer = os.read( pipe, maxSliceLength )
+      lastSliceLength = len( readBuffer )
+      dataString += readBuffer
+      if len( dataString ) + baseLength > self.bufferLimit:
+        gLogger.error( 'Maximum output buffer length reached' )
+        retDict = S_ERROR( 'Reached maximum allowed length (%d bytes) '
+                           'for called function return value' % self.bufferLimit )
+        retDict[ 'Value' ] = dataString
+        return retDict
+
+    return S_OK( dataString )
                 
-                #HACK to avoid python bug
-                # self.oChild.wait()
-                while os.waitpid( iPid, 0 ) == -1:
-                  time.sleep( 0.000001 )
-                # FIXME: stdout and stderr, should be read? 
-                os.close( oReadPipe )
-                return S_ERROR( "%d seconds timeout for '%s' call" % ( self.iTimeout, oFunction.__name__ ) )
-            elif lReadable[0] == oReadPipe:
-                dData = self.__readFromPipe( oReadPipe )
-                os.close( oReadPipe )
-                os.waitpid( iPid, 0 )
-                if dData[ 'OK' ]:
-                    return eval( dData[ 'Value' ] )
-                return dData
-            
-    def __generateSystemCommandError( self, iExitStatus, sMessage ):
-        retVal = S_ERROR( sMessage )
-        retVal[ 'Value' ] = ( iExitStatus, self.lBuffers[0][0], self.lBuffers[1][0] )
-        return retVal
+  def __executePythonFunction( self, function, writePipe, *stArgs, **stKeyArgs ):
+    try:
+      os.write( writePipe, "%s\n" % str( S_OK( function( *stArgs, **stKeyArgs ) ) ) )
+    except OSError, v:
+      if str(v) == '[Errno 32] Broken pipe':
+        # the parent has died
+        pass
+    except Exception, v:
+      gLogger.exception( 'Exception while executing', function.__name__ )
+      os.write( writePipe, "%s\n" % str( S_ERROR( str( v ) ) ) )
+    try:
+      os.close( writePipe )
+    finally:
+      os._exit(0)
+
+  def __selectFD( self, readSeq, timeout = False ):
+    if self.timeout and not timeout:
+      timeout = self.timeout
+    if not timeout: 
+      return select.select( readSeq , [], [] )[0]
+    else:
+      return select.select( readSeq , [], [], timeout )[0]
+
+  def __killPid( self, pid, signal = 9 ):
+    try:
+      os.kill( pid, signal )
+    except Exception, v:
+      if not str(v) == '[Errno 3] No such process':
+        gLogger.exeption( 'Exception while killing timed out process' )
+        raise v
+
+  def __killChild( self ):
+    self.__killPid( self.child.pid )
+
+    #HACK to avoid python bug
+    # self.child.wait()
+    exitStatus = self.child.poll()
+    while exitStatus == None:
+      time.sleep( 0.000001 )
+      exitStatus = self.child.poll()
+    return exitStatus
+
+  def pythonCall( self, function, *stArgs, **stKeyArgs ):
+    readPipe, writePipe = os.pipe()
+    pid = os.fork()
+    if pid == 0:
+      os.close( readPipe )
+      self.__executePythonFunction( function, writePipe, *stArgs, **stKeyArgs )
+      # FIXME the close it is done at __executePythonFunction, do we need it here?
+      os.close( writePipe )
+    else:
+      os.close( writePipe )
+      readSeq = self.__selectFD( [ readPipe ] )
+      if len( readSeq ) == 0:
+        gLogger.debug( 'Timeout limit reached for pythonCall', function.__name__)
+        self.__killPid( pid )
         
-    def __readFromFile( self, oFile, iBaseLength, bAll ):
-        try:
-            if bAll:
-                sData = "".join( oFile.readlines() )
-            else:
-                sData = oFile.readline()
-        except Exception, v:
-            pass 
-        if sData == "":
-            #self.checkAlive()
-            self.bAlive = False
-        if len( sData ) + iBaseLength > self.iBufferLimit:
-            dRetVal = S_ERROR( "Reached maximum allowed length (%d bytes) for called function return value" % self.iBufferLimit )
-            dRetVal[ 'ReadData' ] = sData
-            return dRetVal
-            
-        return S_OK( sData )
+        #HACK to avoid python bug
+        # self.wait()
+        while os.waitpid( pid, 0 ) == -1:
+          time.sleep( 0.000001 )
 
-    def __readFromSystemCommandOutput( self, oFile, iDataIndex, bAll = False ):
-        retVal = self.__readFromFile( oFile, len( self.lBuffers[ iDataIndex ][0] ), bAll )
-        if retVal[ 'OK' ]:
-            self.lBuffers[ iDataIndex ][0] += retVal[ 'Value' ]
-            if not self.oCallback == None:
-                while self.__callLineCallback( iDataIndex ):
-                    pass
-            return S_OK()
-        else:
-            self.lBuffers[ iDataIndex ][0] += retVal[ 'ReadData' ]
-            try:
-              os.kill( self.oChild.pid, 9 )
-            except:
-              if not str(v) == '[Errno 3] No such process':
-                raise v
-            
-            #HACK to avoid python bug
-            # self.oChild.wait()
-            iExitStatus = self.oChild.poll()
-            while iExitStatus == None:
-              time.sleep( 0.000001 )
-              iExitStatus = self.oChild.poll()
-            return self.__generateSystemCommandError( 
-          iExitStatus, 
-          "Exceeded maximum buffer size ( %d bytes ) timeout for '%s' call" % ( self.iBufferLimit, self.sCmd ) )
-
-    def systemCall( self, sCmd, oCallbackFunction = None, shell = False, env = None ):
-        self.sCmd = sCmd
-        self.oCallback = oCallbackFunction
-        try:
-          self.oChild = subprocess.Popen( self.sCmd, 
-                                          shell = shell,
-                                          stdout = subprocess.PIPE,
-                                          stderr = subprocess.PIPE,
-                                          close_fds = True,
-                                          env=env,
-                                        )
-        except OSError, v:
-          retVal = S_ERROR( v )
-          retVal['Value': ( -1, '' , str(v) ) ]
-          return retVal
-        except Exception, v:
-          retVal = S_ERROR( v )
-          retVal['Value'] = ( -1, '' , str(v) )
-          return retVal
-        self.lBuffers = [ [ "", 0 ], [ "", 0 ] ]
-        iInitialTime = time.time()
-        iExitStatus = self.oChild.poll()
-        while iExitStatus == None:
-            retVal = self.__readFromCommand()
-            if not retVal[ 'OK' ]:
-                return retVal
-            if self.iTimeout and time.time() - iInitialTime > self.iTimeout:
-                try:
-                  os.kill( self.oChild.pid, 9 )
-                except OSError, v:
-                  # FIXME
-                  if not str(v) == '[Errno 3] No such process':
-                    raise v
-                
-                #HACK to avoid python bug
-                # self.oChild.wait()
-                iExitStatus = self.oChild.poll()
-                while iExitStatus == None:
-                  time.sleep( 0.000001 )
-                  iExitStatus = self.oChild.poll()
-                self.__readFromCommand( True )
-                self.oChild.stdout.close()
-                self.oChild.stderr.close()
-                return self.__generateSystemCommandError( 
-              iExitStatus,
-              "Timeout (%d seconds) for '%s' call" % ( self.iTimeout, sCmd ) )
-            iExitStatus = self.oChild.poll()
-  
-        self.__readFromCommand(True )
-
-        self.oChild.stdout.close()
-        self.oChild.stderr.close() 
-        if iExitStatus >= 256:
-          iExitStatus /= 256
-        return S_OK( ( iExitStatus, self.lBuffers[0][0], self.lBuffers[1][0] ) )
-
-    def __readFromCommand( self, bLast = False ):
-        if bLast:
-            # retVal = self.__readFromSystemCommandOutput( self.oChild.fromchild, 0, True )
-            retVal = self.__readFromSystemCommandOutput( self.oChild.stdout, 0, True )
-            if not retVal[ 'OK' ]:
-                return retVal
-            # retVal = self.__readFromSystemCommandOutput( self.oChild.childerr, 1, True )
-            retVal = self.__readFromSystemCommandOutput( self.oChild.stderr, 1, True )
-            if not retVal[ 'OK' ]:
-                return retVal
-        else:
-            # lReadable = self.__selectFD( [ self.oChild.fromchild, self.oChild.childerr ], 1 )
-            lReadable = self.__selectFD( [ self.oChild.stdout, self.oChild.stderr ], 1 )
-            if self.oChild.stdout in lReadable:
-                retVal = self.__readFromSystemCommandOutput( self.oChild.stdout, 0 )
-                if not retVal[ 'OK' ]:
-                    return retVal
-            if self.oChild.stderr in lReadable:
-                retVal = self.__readFromSystemCommandOutput( self.oChild.stderr, 1 )
-                if not retVal[ 'OK' ]:
-                    return retVal
-        return S_OK()
-
+        os.close( readPipe )
+        return S_ERROR( '%d seconds timeout for "%s" call' % ( self.timeout, function.__name__ ) )
+      elif readSeq[0] == readPipe:
+        retDict = self.__readFromPipe( readPipe )
+        os.close( readPipe )
+        os.waitpid( pid, 0 )
+        if retDict[ 'OK' ]:
+          return eval( retDict[ 'Value' ] )
+        return retDict
     
-    def __callLineCallback( self, iIndex ):
-        iNextLine = self.lBuffers[ iIndex ][0][ self.lBuffers[ iIndex ][1]: ].find( "\n" )
-        if iNextLine > -1:
-            self.oCallback( iIndex, self.lBuffers[ iIndex ][0][ self.lBuffers[ iIndex ][1]: self.lBuffers[ iIndex ][1] + iNextLine ] )
-            self.lBuffers[ iIndex ][1] += iNextLine + 1 
-            return True
-        return False
+  def __generateSystemCommandError( self, exitStatus, message ):
+    retDict = S_ERROR( message )
+    retDict[ 'Value' ] = ( exitStatus, 
+                           self.bufferList[0][0], 
+                           self.bufferList[1][0] )
+    return retDict
+    
+  def __readFromFile( self, file, baseLength, doAll ):
+    # FIXME: __readFromPipe and __readFromFile both read from pipes, the first 
+    # one reads raw, while the second reads by lines the names should be fixed.
+    try:
+      if doAll:
+        dataString = "".join( file.readlines() )
+      else:
+        dataString = file.readline()
+    except Exception, v:
+      pass
+    # FIXME: If we read line by line, do we need to care about bufferLimit? the limit 
+    # should be in self.bufferList elements (?)
+    if len( dataString ) + baseLength > self.bufferLimit:
+      gLogger.error( 'Maximum output buffer length reached' )
+      retDict = S_ERROR( 'Reached maximum allowed length (%d bytes) for called '
+                         'function return value' % self.bufferLimit )
+      retDict[ 'Value' ] = dataString
+      return retDict
 
+    return S_OK( dataString )
+
+  def __readFromSystemCommandOutput( self, file, bufferIndex, doAll = False ):
+    retDict = self.__readFromFile( file, 
+                                   len( self.bufferList[ bufferIndex ][0] ), 
+                                   doAll )
+    if retDict[ 'OK' ]:
+      self.bufferList[ bufferIndex ][0] += retDict[ 'Value' ]
+      if not self.callback == None:
+        while self.__callLineCallback( bufferIndex ):
+          pass
+      return S_OK()
+    else: # buffer size limit reached killing process (see comment on __readFromFile)
+      self.bufferList[ bufferIndex ][0] += retDict[ 'Value' ]
+      exitStatus = self.__killChild( self.child.pid )
       
-def systemCall( iTimeOut, sCmd, oCallbackFunction = None, env = None ):
+      return self.__generateSystemCommandError( 
+                  exitStatus, 
+                  "Exceeded maximum buffer size ( %d bytes ) for '%s' call" % 
+                  ( self.bufferLimit, self.cmdSeq ) )
+
+  def systemCall( self, cmdSeq, callbackFunction = None, shell = False, env = None ):
+    self.cmdSeq = cmdSeq
+    self.callback = callbackFunction
+    try:
+      self.child = subprocess.Popen( self.cmdSeq, 
+                                      shell = shell,
+                                      stdout = subprocess.PIPE,
+                                      stderr = subprocess.PIPE,
+                                      close_fds = True,
+                                      env=env )
+    except OSError, v:
+      retDict = S_ERROR( v )
+      retDict['Value': ( -1, '' , str(v) ) ]
+      return retDict
+    except Exception, v:
+      retDict = S_ERROR( v )
+      retDict['Value'] = ( -1, '' , str(v) )
+      return retDict
+
+    self.bufferList = [ [ "", 0 ], [ "", 0 ] ]
+    initialTime = time.time()
+    exitStatus = self.child.poll()
+
+    while exitStatus == None:
+      retDict = self.__readFromCommand()
+      if not retDict[ 'OK' ]:
+        return retDict
+
+      if self.timeout and time.time() - initialTime > self.timeout:
+        exitStatus = self.__killChild()
+        self.__readFromCommand( True )
+        return self.__generateSystemCommandError( 
+                    exitStatus,
+                    "Timeout (%d seconds) for '%s' call" % 
+                    ( self.timeout, cmdSeq ) )
+
+      exitStatus = self.child.poll()
+
+    self.__readFromCommand(True )
+
+    if exitStatus >= 256:
+      exitStatus /= 256
+    return S_OK( ( exitStatus, self.bufferList[0][0], self.bufferList[1][0] ) )
+
+  def __readFromCommand( self, isLast = False ):
+    if isLast:
+      retDict = self.__readFromSystemCommandOutput( self.child.stdout, 0, True )
+      if retDict[ 'OK' ]:
+        retDict = self.__readFromSystemCommandOutput( self.child.stderr, 1, True )
+      try:
+        self.child.stdout.close()
+        self.child.stderr.close()
+      except Exception, v:
+        gLogger.debug( 'Exception while closing pipes to child', str(v) ) 
+      return retDict
+    else:
+      readSeq = self.__selectFD( [ self.child.stdout, self.child.stderr ], True )
+      if self.child.stdout in readSeq:
+        retDict = self.__readFromSystemCommandOutput( self.child.stdout, 0 )
+        if not retDict[ 'OK' ]:
+          return retDict
+      if self.child.stderr in readSeq:
+        retDict = self.__readFromSystemCommandOutput( self.child.stderr, 1 )
+        if not retDict[ 'OK' ]:
+          return retDict
+      return S_OK()
+
+  
+  def __callLineCallback( self, bufferIndex ):
+    nextLineIndex = self.bufferList[ bufferIndex ][0][ self.bufferList[ bufferIndex ][1]: ].find( "\n" )
+    if nextLineIndex > -1:
+      try:
+        self.callback( bufferIndex, self.bufferList[ bufferIndex ][0][ 
+                        self.bufferList[ bufferIndex ][1]: 
+                        self.bufferList[ bufferIndex ][1] + nextLineIndex ] )
+      except Exception, v:
+        gLogger.exception( 'Exception while calling callback function', 
+                           '%s: %s' % ( self.callback.__name__, str(v) ) )
+        gLogger.showStack()
+                           
+      self.bufferList[ bufferIndex ][1] += nextLineIndex + 1 
+      return True
+    return False
+      
+def systemCall( timeout, cmdSeq, callbackFunction = None, env = None ):
   """
-     Use SubprocessExecutor class to execute sCmd (it can be a string or a sequence)
+     Use SubprocessExecutor class to execute cmdSeq (it can be a string or a sequence)
      with a timeout wrapper, it is executed directly without calling a shell
   """
-  subprocessObject = SubprocessExecuter( iTimeOut )
-  return subprocessObject.systemCall( sCmd, 
-                               oCallbackFunction = oCallbackFunction,
-                               env = env,
-                               shell = False )
+  spObject = Subprocess( timeout )
+  return spObject.systemCall( cmdSeq, 
+                              callbackFunction = callbackFunction,
+                              env = env,
+                              shell = False )
                                
-def shellCall( iTimeOut, sCmd, oCallbackFunction = None, env = None ):
+def shellCall( timeout, cmdSeq, callbackFunction = None, env = None ):
   """
-     Use SubprocessExecutor class to execute sCmd (it can be a string or a sequence)
-     with a timeout wrapper, sCmd it is invoque by /bin/sh
+     Use SubprocessExecutor class to execute cmdSeq (it can be a string or a sequence)
+     with a timeout wrapper, cmdSeq it is invoque by /bin/sh
   """
-  subprocessObject = SubprocessExecuter( iTimeOut )
-  return subprocessObject.systemCall( sCmd, 
-                               oCallbackFunction = oCallbackFunction,
-                               env = env,
-                               shell = True )
+  spObject = Subprocess( timeout )
+  return spObject.systemCall( cmdSeq, 
+                              callbackFunction = callbackFunction,
+                              env = env,
+                              shell = True )
 
-def pythonCall( iTimeOut, oFunction, *stArgs, **stKeyArgs ):
+def pythonCall( timeout, function, *stArgs, **stKeyArgs ):
   """
-     Use SubprocessExecutor class to execute oFunction with provided arguments,
+     Use SubprocessExecutor class to execute function with provided arguments,
      with a timeout wrapper.
   """
-  subprocessObject = SubprocessExecuter( iTimeOut )
-  return subprocessObject.pythonCall( oFunction, *stArgs, **stKeyArgs )
-  return S_OK()
+  spObject = Subprocess( timeout )
+  return spObject.pythonCall( function, *stArgs, **stKeyArgs )
