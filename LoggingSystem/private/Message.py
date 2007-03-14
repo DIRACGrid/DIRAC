@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Message.py,v 1.1 2007/03/09 15:45:53 rgracian Exp $
-__RCSID__ = "$Id: Message.py,v 1.1 2007/03/09 15:45:53 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Message.py,v 1.2 2007/03/14 06:35:39 rgracian Exp $
+__RCSID__ = "$Id: Message.py,v 1.2 2007/03/14 06:35:39 rgracian Exp $"
 
 class Message:
   
@@ -7,8 +7,8 @@ class Message:
     self.systemName = systemName
     self.level = level
     self.time = time
-    self.msgText = msgText
-    self.variableText = variableText
+    self.msgText = str( msgText )
+    self.variableText = str( variableText )
     self.frameInfo = frameInfo
     self.subSystemName = False
     
