@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/ConfigurationData.py,v 1.2 2007/03/09 16:00:24 acasajus Exp $
-__RCSID__ = "$Id: ConfigurationData.py,v 1.2 2007/03/09 16:00:24 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/ConfigurationData.py,v 1.3 2007/03/14 06:16:32 rgracian Exp $
+__RCSID__ = "$Id: ConfigurationData.py,v 1.3 2007/03/14 06:16:32 rgracian Exp $"
 
 import sys
 import os.path
@@ -32,7 +32,8 @@ class ConfigurationData:
         sys.exit( 1 )
     
   def __getDIRACRoot( self ):
-    self.sDIRACRoot = os.path.realpath( "%s/../../../" % os.path.dirname( __file__ ) )
+    import DIRAC
+    self.sDIRACRoot = DIRAC.rootPath
     gLogger.debug( "", "dirac.cfg should be at %s/etc/dirac.cfg" % self.sDIRACRoot)
     
   def sync( self ):
