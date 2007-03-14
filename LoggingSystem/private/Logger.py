@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.1 2007/03/09 15:45:53 rgracian Exp $
-__RCSID__ = "$Id: Logger.py,v 1.1 2007/03/09 15:45:53 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.2 2007/03/14 06:34:54 rgracian Exp $
+__RCSID__ = "$Id: Logger.py,v 1.2 2007/03/14 06:34:54 rgracian Exp $"
 """
    DIRAC Logger client
 """
@@ -51,7 +51,7 @@ class Logger:
   def getName( self ):
     return self._systemName
 
-  def always( self, sMsg, sVarMsg = False ):
+  def always( self, sMsg, sVarMsg = '' ):
     messageObject = Message( self._systemName, 
                              self._logLevels.always,
                              Time.dateTime(), 
@@ -60,7 +60,7 @@ class Logger:
                              self.__discoverCallingFrame() )
     return self.processMessage( messageObject )
 
-  def info( self, sMsg, sVarMsg = False ):
+  def info( self, sMsg, sVarMsg = '' ):
     messageObject = Message( self._systemName, 
                              self._logLevels.info,
                              Time.dateTime(), 
@@ -69,7 +69,7 @@ class Logger:
                              self.__discoverCallingFrame() )
     return self.processMessage( messageObject )
 
-  def verbose( self, sMsg, sVarMsg = False ):
+  def verbose( self, sMsg, sVarMsg = '' ):
     messageObject = Message( self._systemName, 
                              self._logLevels.verbose,
                              Time.dateTime(), 
@@ -78,7 +78,7 @@ class Logger:
                              self.__discoverCallingFrame() )
     return self.processMessage( messageObject )
 
-  def debug( self, sMsg, sVarMsg = False ):
+  def debug( self, sMsg, sVarMsg = '' ):
     messageObject = Message( self._systemName, 
                              self._logLevels.debug,
                              Time.dateTime(), 
@@ -87,7 +87,7 @@ class Logger:
                              self.__discoverCallingFrame() )
     return self.processMessage( messageObject )
 
-  def warn( self, sMsg, sVarMsg = False ):
+  def warn( self, sMsg, sVarMsg = '' ):
     messageObject = Message( self._systemName, 
                              self._logLevels.warn,
                              Time.dateTime(), 
@@ -96,7 +96,7 @@ class Logger:
                              self.__discoverCallingFrame() )
     return self.processMessage( messageObject )
                 
-  def error( self, sMsg, sVarMsg = False ):
+  def error( self, sMsg, sVarMsg = '' ):
     messageObject = Message( self._systemName, 
                              self._logLevels.error,
                              Time.dateTime(), 
@@ -105,27 +105,27 @@ class Logger:
                              self.__discoverCallingFrame() )
     return self.processMessage( messageObject )
         
-  def exception( self, sMsg = "", sVarMsg = False, lException = False ):
+  def exception( self, sMsg = "", sVarMsg = '', lException = False ):
     if sVarMsg:
       sVarMsg += "\n%s" % self.__getExceptionString( lException )
     else:
-      sVarMsg = self.__getExceptionString( lException )
+      sVarMsg = "\n%s" % self.__getExceptionString( lException )
     messageObject = Message( self._systemName, 
-                             self._logLevels.error,
+                             self._logLevels.exception,
                              Time.dateTime(), 
                              sMsg, 
                              sVarMsg, 
                              self.__discoverCallingFrame() )
-    self.processMessage( messageObject )
+    return self.processMessage( messageObject )
 
-  def fatal( self, sMsg, sVarMsg = False ):
+  def fatal( self, sMsg, sVarMsg = '' ):
     messageObject = Message( self._systemName, 
                              self._logLevels.fatal,
                              Time.dateTime(), 
                              sMsg, 
                              sVarMsg, 
                              self.__discoverCallingFrame() )
-    self.processMessage( messageObject )
+    return self.processMessage( messageObject )
       
   def showStack( self ):
     messageObject = Message( self._systemName, 
@@ -181,7 +181,7 @@ class Logger:
     for lineString in messageObject.getMessage().split( "\n" ):
       print "%s %s %s: %s" % ( timeToShow,
                                messageName,
-                               messageObject.getLevel().rjust( 6 ), 
+                               messageObject.getLevel().rjust( 7 ), 
                                lineString )
     return True
         
@@ -190,7 +190,7 @@ class Logger:
       lExcinfo = lException
     else:
       lExcinfo = sys.exc_info()
-    type, value = lExcinfo[:2]
+    type, value = (lExcinfo[0],lExcinfo[1])
     return "== EXCEPTION ==\n%s:%s\n%s===============" % ( 
                          type, 
                          value, 
@@ -245,6 +245,9 @@ class Logger:
     return sExtendedException
 
   def __getStackString( self ):
+    # FIXME: this function should return the stack as a sring to be printed via 
+    # a debug message, the upper 3 levels should be skipped since they correspond
+    # to gLogger.showStack,  self.__getStackString, traceback.print_stack
     traceback.print_stack()
     
   def getSubLogger( self, subName ):
