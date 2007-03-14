@@ -1,12 +1,14 @@
 #!/usr/bin/env python
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/test/test_Utilities,v 1.2 2007/03/09 16:07:02 acasajus Exp $
-__RCSID__ = "$Id: test_Utilities,v 1.2 2007/03/09 16:07:02 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/test/test_Utilities,v 1.3 2007/03/14 06:33:38 rgracian Exp $
+__RCSID__ = "$Id: test_Utilities,v 1.3 2007/03/14 06:33:38 rgracian Exp $"
 """
 """
 from dirac import DIRAC
 import tempfile
 import os
 import time
+
+DIRAC.gLogger.initialize('test_Utilities','/testSection')
 
 testList = [{ 'method'    : DIRAC.List.uniqueElements,
               'arguments' : ( ( 1, 2, 3, 4, 5, 1 ), ),
@@ -98,7 +100,7 @@ def testTime():
                'DIRAC.Time.timeInterval( In )'     : testInInterval,
                'DIRAC.Time.timeInterval( Out )'    : testOutInterval }
   
-  runTests( testdict )
+  DIRAC.Tests.run( testdict )
   
   return True
 
@@ -120,20 +122,27 @@ def testNetwork():
 
   testdict = { 'DIRAC.Network.getAddressFromInterface' : testAddressFromInterface }
 
-  runTests( testdict )
+  DIRAC.Tests.run( testdict )
   return True
 
 def writeToStdout( iIndex, sLine ):
-  print iIndex, sLine
+  if iIndex == 0: # stdout
+    DIRAC.gLogger.info( 'stdout:', sLine )
+  if iIndex == 1: # stderr
+    DIRAC.gLogger.error( 'stderr:', sLine )
+
+def failingWriteToStdOut( iIndex ):
+  pass
+
 
 def testSubprocess():
   
   testShellCall = [{ 'method'    : DIRAC.shellCall,
-                     'arguments' : ( 5, 'echo 10' ),
+                     'arguments' : ( 5, 'echo 10', writeToStdout ),
                      'output'    : {'OK': True, 'Value': (0, '10\n', '')}
                    },
                    { 'method'    : DIRAC.shellCall,
-                     'arguments' : ( 5, 'echo 10 1>&2' ),
+                     'arguments' : ( 5, 'echo 10 1>&2', writeToStdout ),
                      'output'    : {'OK': True, 'Value': (0, '', '10\n')}
                    },
                    { 'method'    : DIRAC.shellCall,
@@ -142,6 +151,10 @@ def testSubprocess():
                    },
                    { 'method'    : DIRAC.shellCall,
                      'arguments' : ( 5, ['echo 10'] ),
+                     'output'    : {'OK': True, 'Value': (0, '10\n', '')}
+                   },
+                   { 'method'    : DIRAC.shellCall,
+                     'arguments' : ( 5, ['echo 10'], failingWriteToStdOut ),
                      'output'    : {'OK': True, 'Value': (0, '10\n', '')}
                    },
                    { 'method'    : DIRAC.shellCall,
@@ -167,7 +180,7 @@ def testSubprocess():
                     }, ]
   testPythonCall = [{ 'method'    : DIRAC.pythonCall,
                       'arguments' : ( 3, time.sleep, 5 ),
-                      'output'    : {'Message': "3 seconds timeout for 'sleep' call", 'OK': False}
+                      'output'    : {'Message': '3 seconds timeout for "sleep" call', 'OK': False}
                     },
                     { 'method'    : DIRAC.pythonCall,
                       'arguments' : ( 5, time.sleep, 3 ),
@@ -178,7 +191,7 @@ def testSubprocess():
                'DIRAC.shellCall'  : testShellCall,
                'DIRAC.pythonCall' : testPythonCall }
   
-  runTests( testdict )
+  DIRAC.Tests.run( testdict )
 
   return True
 
@@ -217,30 +230,7 @@ testdict = { 'DIRAC.List'               : testList,
             }
 
 
-def runTests( testDict, name=None ):
-
-  if name: print "Running tests for %s ..." % name
-  for module in testDict:
-    testFailed = False
-    # print module, testDict[module]
-    for test in testDict[module]:
-        # print "Running Test %s" % module
-        retVal = apply( test['method'], test['arguments'] )
-        if retVal <> test['output']:
-          print "Test for %s Failed" % module
-          print "Error %s%s should return '%s', " % ( test['method'].__name__, test['arguments'], test['output'])
-          print "It returns '%s'" % retVal, type( retVal )
-          print "Failed"
-          testFailed = True
-          break
-    if testFailed:
-      DIRAC.sys.exit(-1)
-    print "Test for %s OK" % module
-  if name : print "Tests for %s OK" % name
-  return True
-
-
-runTests( testdict, 'DIRAC.Utils' )
+DIRAC.Tests.run( testdict, 'DIRAC.Utils' )
 os.remove( tmpName )
 
-print 'Done'
+DIRAC.exit()
