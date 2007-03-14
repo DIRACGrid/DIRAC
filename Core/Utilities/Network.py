@@ -1,8 +1,10 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Network.py,v 1.1 2007/03/09 15:33:19 rgracian Exp $
-__RCSID__ = "$Id: Network.py,v 1.1 2007/03/09 15:33:19 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Network.py,v 1.2 2007/03/14 06:32:10 rgracian Exp $
+__RCSID__ = "$Id: Network.py,v 1.2 2007/03/14 06:32:10 rgracian Exp $"
 """
    Collection of DIRAC useful network related modules
    by default on Error they return None
+
+   it does not work in MAC
 """
 import socket
 import fcntl
