@@ -3,64 +3,69 @@ __RCSID__ = "$Id$"
 
 import sys
 import getopt
-from DIRAC.LoggingSystem.Client.Logger import gLogger
-from DIRAC.ConfigurationSystem.Client.ConfigurationData import g_oConfigurationData
-from DIRAC.ConfigurationSystem.private.Refresher import g_oRefresher
-from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
+
+from DIRAC import gLogger
+from DIRAC import S_OK, S_ERROR
+
+from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
+from DIRAC.ConfigurationSystem.private.Refresher import gRefresher
 
 class UserConfiguration:
   
-  def __init__( self, sDefaultSection = "" ):
-    self.sCurrentSection = sDefaultSection
-    self.lMandatoryEntries = []
-    self.lOptionalEntries = []
-    self.lCmdOpts = []
+  def __init__( self, defaultSectionPath = "" ):
+    self.currentSectionPath = defaultSectionPath
+    self.mandatoryEntryList = []
+    self.optionalEntryList = []
+    self.commandOptionList = []
     self.__registerBasicOptions()
-    self.bParsed = False
+    self.isParsed = False
     
-  def __getAbsolutePath( self, sOption ):
-    if sOption[0] == "/":
-      return sOption
+  def __getAbsolutePath( self, optionPath ):
+    if optionPath[0] == "/":
+      return optionPath
     else:
-      return "%s/%s" % ( self.sCurrentSection, sOption )
+      return "%s/%s" % ( self.currentSectionPath, optionPath )
     
-  def addMandatoryEntry( self, sOption ):
-    sOptionPath = self.__getAbsolutePath( sOption )
-    self.lMandatoryEntries.append( sOptionPath )
+  def addMandatoryEntry( self, optionPath ):
+    self.mandatoryEntryList.append( self.__getAbsolutePath( optionPath ) )
   
-  def addOptionalEntry( self, sOption, sValue ):
-    sOptionPath = self.__getAbsolutePath( sOption )
-    self.lOptionalEntries.append( ( sOptionPath, sValue ) )
+  def addOptionalEntry( self, optionPath, value ):
+    self.optionalEntryList.append( ( self.__getAbsolutePath( optionPath ), 
+                                     str( value ) ) )
     
-  def setOptionValue( self, sOption, sValue ):
-    g_oConfigurationData.setOptionInCFG( sOption, sValue )
+  def setOptionValue( self, optionPath, value ):
+    gConfigurationData.setOptionInCFG( self.__getAbsolutePath( optionPath ), 
+                                       str( value ) )
     
   def __registerBasicOptions( self ):
-    self.registerCmdOpt( "o", "option", "Option=value to add", self.__setOptionByCmd  )
-    self.registerCmdOpt( "s", "section", "Section to add an option", self.__setSectionByCmd )
-    self.registerCmdOpt( "h", "help", "Shows this help", self.__showUsage )
+    self.registerCmdOpt( "o", "option", "Option=value to add", 
+                         self.__setOptionByCmd  )
+    self.registerCmdOpt( "s", "section", "Section to add an option", 
+                         self.__setSectionByCmd )
+    self.registerCmdOpt( "h", "help", "Shows this help", 
+                         self.__showUsage )
     
-  def registerCmdOpt( self, sShort, sLong, sHelp, oFunction ):
-    self.lCmdOpts.append( ( sShort, sLong, sHelp, oFunction ) )
+  def registerCmdOpt( self, shortOption, longOption, helpString, function ):
+    self.commandOptionList.append( ( shortOption, longOption, helpString, function ) )
     
   def getPositionalArguments( self ):
-    if not self.bParsed:
+    if not self.isParsed:
       self.__parseCommandLine()
-    return self.lPositionalCmdArgs
+    return self.commandArgList
     
   def loadUserData(self):
     try:
-      for stOption in self.lOptionalEntries:
-        g_oConfigurationData.setOptionInCFG( stOption[0], stOption[1] )
+      for optionTuple in self.optionalEntryList:
+        gConfigurationData.setOptionInCFG( optionTuple[0], optionTuple[1] )
       
       self.__addUserDataToConfiguration()
       
-      bMissingMandatory = False
-      for sOption in self.lMandatoryEntries:
-        if not g_oConfigurationData.extractOptionFromCFG( sOption ):
-          gLogger.fatal( "Missing mandatory option in the configuration", sOption )
-          bMissingMandatory = True
-      if bMissingMandatory:
+      isMandatoryMissing = False
+      for optionPath in self.mandatoryEntryList:
+        if not gConfigurationData.extractOptionFromCFG( optionPath ):
+          gLogger.fatal( "Missing mandatory option in the configuration", optionPath )
+          isMandatoryMissing = True
+      if isMandatoryMissing:
         return S_ERROR()
     except Exception, e:
       gLogger.error( "Error while loading user specified configuration data", str( e ) )
@@ -70,76 +75,76 @@ class UserConfiguration:
     
   def __parseCommandLine( self ):
     
-    sShortParams = ""
-    lLongParams = []
-    for stParam in self.lCmdOpts:
-      if sShortParams.find( stParam[0] ) < 0:
-        sShortParams += "%s:" % stParam[0]
+    shortOption = ""
+    longOptionList = []
+    for optionTuple in self.commandOptionList:
+      if shortOption.find( optionTuple[0] ) < 0:
+        shortOption += "%s:" % optionTuple[0]
       else:
-        gLog.warn( "Short option -%s has been already defined" % stParam[0] )
-      if not stParam[1] in lLongParams:
-        lLongParams.append( "%s=" % stParam[1] )
+        gLog.warn( "Short option -%s has been already defined" % optionTuple[0] )
+      if not optionTuple[1] in longOptionList:
+        longOptionList.append( "%s=" % optionTuple[1] )
       else:
-        gLog.warn( "Long option --%s has been already defined" % stParam[1] )
+        gLog.warn( "Long option --%s has been already defined" % optionTuple[1] )
             
     try:
-      opts, args = getopt.gnu_getopt( sys.argv[1:], sShortParams, lLongParams )
+      opts, args = getopt.gnu_getopt( sys.argv[1:], shortOption, longOptionList )
     except getopt.GetoptError, v:
       # print help information and exit:
-      gLog.error( "Error when parsing command line arguments: %s" % str( v ) )
+      gLog.fatal( "Error when parsing command line arguments: %s" % str( v ) )
       self.__showUsage()
       sys.exit(2)
 
-    self.lAdditionalConfigurationFiles = [ sArg for sArg in args if sArg[-4:] == ".cfg" ]
-    self.lPositionalCmdArgs = [ sArg for sArg in args if not sArg[-4:] == ".cfg" ]
-    self.lParsedOptions = opts
-    self.bParsed = True
+    self.AdditionalCfgFileList = [ arg for arg in args if arg[-4:] == ".cfg" ]
+    self.commandArgList = [ arg for arg in args if not arg[-4:] == ".cfg" ]
+    self.parsedOptionList = opts
+    self.isParsed = True
     
   def __addUserDataToConfiguration( self ):
-    if not self.bParsed:
+    if not self.isParsed:
       self.__parseCommandLine()
-    for sFile in self.lAdditionalConfigurationFiles:
-      g_oConfigurationData.loadFile( sFile )
+    for fileName in self.AdditionalCfgFileList:
+      gConfigurationData.loadFile( fileName )
     
-    bDownloadData = True
-    if self.sCurrentSection == "%s/Configuration" % g_oConfigurationData.getServicesPath():
-      if g_oConfigurationData.isMaster():
-        bDownloadData = False
-    if bDownloadData:
-      dRetVal = g_oRefresher.forceRefreshConfiguration()
-      if not dRetVal['OK' ]:
-        return dRetVal
-    
-    lUnknownParams = []
-    for sParam, sValue in self.lParsedOptions:
-      sParam = sParam.replace( "-", "" )
-      for stDefinedOption in self.lCmdOpts:
-        if sParam == stDefinedOption[0] or sParam == stDefinedOption[1]:
-          stDefinedOption[3]( sValue )
+    isDataDownloaded = True
+    if self.currentSectionPath == "%s/Configuration" % gConfigurationData.getServicesPath():
+      if gConfigurationData.isMaster():
+        isDataDownloaded = False
+    if isDataDownloaded:
+      retDict = gRefresher.forceRefreshConfiguration()
+      if not retDict['OK']:
+        # FIXME: the return Value of __addUserDataToConfiguration it is not checked
+        # so if refresh is not possible command line options are not processed !!!
+        return retDict
+    for optionName, optionValue in self.parsedOptionList:
+      optionName = optionName.replace( "-", "" )
+      for definedOptionTuple in self.commandOptionList:
+        if optionName == definedOptionTuple[0] or optionName == definedOptionTuple[1]:
+          definedOptionTuple[3]( optionValue )
     return S_OK()
   
-  def setServerSection( self, sServer ):
-    self.sCurrentSection = "%s/%s" % ( g_oConfigurationData.getServicesPath(), sServer )
-    return self.sCurrentSection
+  def setServerSection( self, name ):
+    self.currentSectionPath = "%s/%s" % ( gConfigurationData.getServicesPath(), name )
+    return self.currentSectionPath
           
-  def __setSectionByCmd( self, sValue ):
-    if sValue[0] != "/":
-      raise Exception( "%s is not a valid section. It should start with '/'" % sValue)
-    self.sCurrentSection = sValue
+  def __setSectionByCmd( self, value ):
+    if value[0] != "/":
+      raise Exception( "%s is not a valid section. It should start with '/'" % value)
+    self.currentSectionPath = value
       
-  def __setOptionByCmd( self, sValue ):
-    lValue = [ sD.strip() for sD in sValue.split("=") if len( sD ) > 0]
-    if len( lValue ) <  2:
+  def __setOptionByCmd( self, value ):
+    valueList = [ sD.strip() for sD in value.split("=") if len( sD ) > 0]
+    if len( valueList ) <  2:
+      # FIXME: in the method above an exceptino is raised, check consitency
       gLogger.error( "\t-o expects a option=value argument.\n\tFor example %s -o Port=1234" % sys.argv[0] )
       sys.exit( 1 )
-    self.setOptionValue( "%s/%s" % ( self.sCurrentSection, lValue[0] ), lValue[1] )
+    self.setOptionValue( valueList[0] , valueList[1] )
               
   def __showUsage( self ):
-    from DIRAC.Utility.Logger import gLog
-    gLog.info( "Usage:" )
-    gLog.info( "  %s (<options>|<cfgFile>)*" % sys.argv[0] )
-    gLog.info( "Options:" )
-    for stOption in self.lCmdOptions:
-      gLog.info( "  -%s  --%s  :  %s" % stOption[:3] )
+    gLogger.info( "Usage:" )
+    gLogger.info( "  %s (<options>|<cfgFile>)*" % sys.argv[0] )
+    gLogger.info( "Options:" )
+    for optionTuple in self.commandOptionList:
+      gLogger.info( "  -%s  --%s  :  %s" % optionTuple[:3] )
 
   

@@ -1,16 +1,57 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/test/test_gCFG.py,v 1.2 2007/03/14 06:31:29 rgracian Exp $
-__RCSID__ = "$Id: test_gCFG.py,v 1.2 2007/03/14 06:31:29 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/test/test_gCFG.py,v 1.3 2007/03/16 11:57:34 rgracian Exp $
+__RCSID__ = "$Id: test_gCFG.py,v 1.3 2007/03/16 11:57:34 rgracian Exp $"
 
 from dirac import DIRAC
+from DIRAC.ConfigurationSystem.private.CFG import CFG
 
-DIRAC.gLogger.initialize('test_gConfig','/testSection')
+DIRAC.gLogger.initialize('test_gConfig','/testSectionDebug')
 
-DIRAC.gConfig.loadFile('./test.cfg')
+testconfig = '%s/DIRAC/ConfigurationSystem/test/test.cfg' % DIRAC.rootPath
+dumpconfig = '%s/DIRAC/ConfigurationSystem/test/dump.cfg' % DIRAC.rootPath
+
+cfg1 = CFG()
+cfg1.loadFromFile( testconfig )
+
+fd = file( testconfig )
+cfg1String = fd.read()
+fd.close()
+
+cfg2 = CFG()
+cfg2.loadFromBuffer( cfg1.serialize() )
+
+cfg3 = cfg1.mergeWith( cfg2 )
+
+testList = [{ 'method'    : DIRAC.gConfig.loadFile,
+              'arguments' : ( testconfig, ),
+              'output'    : {'OK': True, 'Value': ''}
+            },
+            { 'method'    : DIRAC.gConfig.dumpLocalCFGToFile,
+              'arguments' : ( dumpconfig, ),
+              'output'    : {'OK': True, 'Value': ''}
+            },
+            { 'method'    : cfg1.serialize,
+              'arguments' : ( ),
+              'output'    : cfg1String
+            },
+            { 'method'    : cfg3.serialize,
+              'arguments' : ( ),
+              'output'    : cfg1String
+            }] 
+
+testdict = { 'DIRAC.gConfig'               : testList,}
+
+DIRAC.Tests.run( testdict, 'DIRAC.gConfig.files' )
+
+
 
 testList = [{ 'method'    : DIRAC.gConfig.getOption,
               'arguments' : ( '/testSection/test', ),
               'output'    : {'OK': True, 'Value': 'test'}
             },             
+#             { 'method'    : DIRAC.gConfig.getOption,
+#              'arguments' : ( '/testSection/nonexisting','OK', ),
+#              'output'    : {'OK': True, 'Value': 'test'}
+#            },             
              ]
 
 testdict = { 'DIRAC.gConfig'               : testList,}
@@ -20,3 +61,4 @@ DIRAC.Tests.run( testdict, 'DIRAC.gConfig' )
 
 
 DIRAC.exit()
+

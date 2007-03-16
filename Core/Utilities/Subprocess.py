@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Subprocess.py,v 1.2 2007/03/14 06:32:57 rgracian Exp $
-__RCSID__ = "$Id: Subprocess.py,v 1.2 2007/03/14 06:32:57 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Subprocess.py,v 1.3 2007/03/16 11:58:30 rgracian Exp $
+__RCSID__ = "$Id: Subprocess.py,v 1.3 2007/03/16 11:58:30 rgracian Exp $"
 """
    DIRAC Wrapper to execute python and system commands with a wrapper, that might 
    set a timeout.
@@ -44,7 +44,7 @@ gLogger = gLogger.getSubLogger( 'Subprocess' )
 
 class Subprocess:
 
-  def __init__( self, timeout = False, bufferLimit =  5242880 ):
+  def __init__( self, timeout = False, bufferLimit = 5242880 ):
     try:
       self.changeTimeout( timeout )
       self.bufferLimit = int( bufferLimit) # 5MB limit for data
@@ -58,13 +58,13 @@ class Subprocess:
       self.timeout = False
     gLogger.debug( 'Timeout set to', timeout )
 
-  def __readFromPipe( self, pipe, baseLength = 0 ):
+  def __readFromFD( self, fd, baseLength = 0 ):
     dataString = ''
     maxSliceLength = 8192
     lastSliceLength = 8192
 
     while lastSliceLength == maxSliceLength:
-      readBuffer = os.read( pipe, maxSliceLength )
+      readBuffer = os.read( fd, maxSliceLength )
       lastSliceLength = len( readBuffer )
       dataString += readBuffer
       if len( dataString ) + baseLength > self.bufferLimit:
@@ -119,16 +119,16 @@ class Subprocess:
     return exitStatus
 
   def pythonCall( self, function, *stArgs, **stKeyArgs ):
-    readPipe, writePipe = os.pipe()
+    readFD, writeFD = os.pipe()
     pid = os.fork()
     if pid == 0:
-      os.close( readPipe )
-      self.__executePythonFunction( function, writePipe, *stArgs, **stKeyArgs )
-      # FIXME the close it is done at __executePythonFunction, do we need it here?
-      os.close( writePipe )
+      os.close( readFD )
+      self.__executePythonFunction( function, writeFD, *stArgs, **stKeyArgs )
+      # FIXME: the close it is done at __executePythonFunction, do we need it here?
+      os.close( writeFD )
     else:
-      os.close( writePipe )
-      readSeq = self.__selectFD( [ readPipe ] )
+      os.close( writeFD )
+      readSeq = self.__selectFD( [ readFD ] )
       if len( readSeq ) == 0:
         gLogger.debug( 'Timeout limit reached for pythonCall', function.__name__)
         self.__killPid( pid )
@@ -138,11 +138,11 @@ class Subprocess:
         while os.waitpid( pid, 0 ) == -1:
           time.sleep( 0.000001 )
 
-        os.close( readPipe )
+        os.close( readFD )
         return S_ERROR( '%d seconds timeout for "%s" call' % ( self.timeout, function.__name__ ) )
-      elif readSeq[0] == readPipe:
-        retDict = self.__readFromPipe( readPipe )
-        os.close( readPipe )
+      elif readSeq[0] == readFD:
+        retDict = self.__readFromFD( readFD )
+        os.close( readFD )
         os.waitpid( pid, 0 )
         if retDict[ 'OK' ]:
           return eval( retDict[ 'Value' ] )
@@ -156,8 +156,6 @@ class Subprocess:
     return retDict
     
   def __readFromFile( self, file, baseLength, doAll ):
-    # FIXME: __readFromPipe and __readFromFile both read from pipes, the first 
-    # one reads raw, while the second reads by lines the names should be fixed.
     try:
       if doAll:
         dataString = "".join( file.readlines() )
@@ -165,8 +163,6 @@ class Subprocess:
         dataString = file.readline()
     except Exception, v:
       pass
-    # FIXME: If we read line by line, do we need to care about bufferLimit? the limit 
-    # should be in self.bufferList elements (?)
     if len( dataString ) + baseLength > self.bufferLimit:
       gLogger.error( 'Maximum output buffer length reached' )
       retDict = S_ERROR( 'Reached maximum allowed length (%d bytes) for called '

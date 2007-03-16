@@ -1,9 +1,10 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Attic/CFG.py,v 1.1 2007/03/09 15:20:22 rgracian Exp $
-__RCSID__ = "$Id: CFG.py,v 1.1 2007/03/09 15:20:22 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Attic/CFG.py,v 1.2 2007/03/16 11:57:33 rgracian Exp $
+__RCSID__ = "$Id: CFG.py,v 1.2 2007/03/16 11:57:33 rgracian Exp $"
 
-import sys
 import types
 import copy
+
+from DIRAC.Core.Utilities import List
 
 class CFG:
   
@@ -11,61 +12,61 @@ class CFG:
     self.reset()
     
   def reset( self ):
-    self.__lOrder = []
-    self.__dComments = {}
-    self.__dData = {}
+    self.__orderedList = []
+    self.__commentDict = {}
+    self.__dataDict = {}
     
-  def createNewSection( self, sSectionName, sComment = "", oCFG = False ):
-    if sSectionName == "":
+  def createNewSection( self, sectionName, comment = "", oCFG = False ):
+    if sectionName == "":
       raise Exception( "Creating a section with empty name! You shouldn't do that!" )
-    if sSectionName.find( "/" ) > -1:
-      raise Exception( "Sections and options can't contain '/' character. Correct %s" % sSectionName )
-    self.__addEntry( sSectionName, sComment )
-    if sSectionName not in self.__dData:
+    if sectionName.find( "/" ) > -1:
+      raise Exception( "Sections and options can't contain '/' character. Correct %s" % sectionName )
+    self.__addEntry( sectionName, comment )
+    if sectionName not in self.__dataDict:
       if not oCFG:
-        self.__dData[ sSectionName ] = CFG()
+        self.__dataDict[ sectionName ] = CFG()
       else:
-        self.__dData[ sSectionName ] = oCFG
+        self.__dataDict[ sectionName ] = oCFG
     else:
       raise Exception( "%s key is already a section" )
     
-  def __overrideAndCloneSection( self, sSectionName, oCFGToClone ):
-    if sSectionName not in self.listSections():
-      raise Exception( "Section %s does not exist" % sSectionName )
-    self.__dData[ sSectionName ] = oCFGToClone.clone()
+  def __overrideAndCloneSection( self, sectionName, oCFGToClone ):
+    if sectionName not in self.listSections():
+      raise Exception( "Section %s does not exist" % sectionName )
+    self.__dataDict[ sectionName ] = oCFGToClone.clone()
 
-  def setOption( self, sOptionName, sValue, sComment = "" ):
-    if sOptionName == "":
+  def setOption( self, optionName, value, comment = "" ):
+    if optionName == "":
       raise Exception( "Creating an option with empty name! You shouldn't do that!" )
-    if sOptionName.find( "/" ) > -1:
-      raise Exception( "Sections and options can't contain '/' character. Correct %s" % sOptionName )
-    if sOptionName in self.listSections():
+    if optionName.find( "/" ) > -1:
+      raise Exception( "Sections and options can't contain '/' character. Correct %s" % optionName )
+    if optionName in self.listSections():
       raise Exception( "%s key is already defined as section" )
-    self.__addEntry( sOptionName, sComment )
-    self.__dData[ sOptionName ] = sValue
+    self.__addEntry( optionName, comment )
+    self.__dataDict[ optionName ] = str( value )
       
     
-  def __addEntry( self, sEntry, sComment ):
-    if not sEntry in self.__lOrder:
-      self.__lOrder.append( sEntry )
-    self.__dComments[ sEntry ] = sComment
+  def __addEntry( self, entryName, comment ):
+    if not entryName in self.__orderedList:
+      self.__orderedList.append( entryName )
+    self.__commentDict[ entryName ] = comment
     
   def listOptions( self ):
-    return [ sKey for sKey in self.__dData.keys() if type( self.__dData[ sKey ] ) == types.StringType ]
+    return [ sKey for sKey in self.__dataDict.keys() if type( self.__dataDict[ sKey ] ) == types.StringType ]
   
   def listSections( self ):
-    return [ sKey for sKey in self.__dData.keys() if type( self.__dData[ sKey ] ) != types.StringType ]
+    return [ sKey for sKey in self.__dataDict.keys() if type( self.__dataDict[ sKey ] ) != types.StringType ]
 
-  def appendToOption( self, sOptionName, sValue ):
-    if sOptionName not in self.__dData:
-      raise Exception( "Option %s has not been declared" % sOptionName )
-    self.__dData[ sOptionName ] += sValue
+  def appendToOption( self, optionName, value ):
+    if optionName not in self.__dataDict:
+      raise Exception( "Option %s has not been declared" % optionName )
+    self.__dataDict[ optionName ] += str( value )
   
-  def __getitem__( self, sKey ):
-    return self.__getattr__( sKey )
+  def __getitem__( self, key ):
+    return self.__getattr__( key )
   
-  def __getattr__( self, sKey ):
-    return self.__dData[ sKey ]
+  def __getattr__( self, key ):
+    return self.__dataDict[ key ]
   
   def __str__( self ):
     return self.serialize()
@@ -73,128 +74,112 @@ class CFG:
   def __nonzero__( self ):
     return True
   
-  def getComment( self, sEntry ):
+  def getComment( self, entryName ):
     try:
-      return self.__dComments[ sEntry ]
+      return self.__commentDict[ entryName ]
     except:
-      raise Exception( "%s does not have any comment defined" % sEntry )
+      raise Exception( "%s does not have any comment defined" % entryName )
     
-  def listFromChar( self, sInfo, sChar = "," ):
-    return [ sField.strip() for sField in sInfo.split( sChar ) if len( sField.strip() ) > 0 ]
-    
-  def serialize( self, sTabLevel = "" ):
-    sString = ""
-    lSections = self.listSections()
-    lOptions = self.listOptions()
-    for sEntry in self.__lOrder:
-      if sEntry in self.__dComments:
-        for sCommentLine in self.listFromChar( self.__dComments[ sEntry ] ):
-          sString += "%s#%s\n" % ( sTabLevel, sCommentLine )
-      if sEntry in lSections:
-        sString += "%s%s\n%s{\n" % ( sTabLevel, sEntry, sTabLevel )
-        sString += self.__dData[ sEntry ].serialize( "%s\t" % sTabLevel )
-        sString += "%s}\n" % sTabLevel
-      elif sEntry in lOptions:
-        lValue = self.listFromChar( self.__dData[ sEntry ] )
-        sString += "%s%s = %s\n" % ( sTabLevel, sEntry, lValue[0] )
-        for sField in lValue[1:]:
-          sString += "%s%s += %s\n" % ( sTabLevel, sEntry, sField )          
+  def serialize( self, tabLevelString = "" ):
+    CFGSTring = ""
+    for entryName in self.__orderedList:
+      if entryName in self.__commentDict:
+        for commentLine in List.fromChar( self.__commentDict[ entryName ] ):
+          CFGSTring += "%s#%s\n" % ( tabLevelString, commentLine )
+      if entryName in self.listSections():
+        CFGSTring += "%s%s\n%s{\n" % ( tabLevelString, entryName, tabLevelString )
+        # FIXME: I have change the tab by spaces (we may want to put 4)
+        CFGSTring += self.__dataDict[ entryName ].serialize( "%s  " % tabLevelString )
+        CFGSTring += "%s}\n" % tabLevelString
+      elif entryName in self.listOptions():
+        valueList = List.fromChar( self.__dataDict[ entryName ] )
+        CFGSTring += "%s%s = %s\n" % ( tabLevelString, entryName, valueList[0] )
+        for value in valueList[1:]:
+          CFGSTring += "%s%s += %s\n" % ( tabLevelString, entryName, value )          
       else:
         raise Exception( "Oops. There is an entry in the order which is not a section nor an option" )
-    return sString
+    return CFGSTring
     
   def clone( self ):
     return copy.copy( self )
     
-  def mergeWith( self, oCFGToMergeWith ):
-    oMergedCFG = CFG()
-    for sOption in self.listOptions():
-      oMergedCFG.setOption( sOption, 
-                               self[ sOption ],
-                               self.getComment( sOption ) )
-    for sOption in oCFGToMergeWith.listOptions():
-      oMergedCFG.setOption( sOption, 
-                               oCFGToMergeWith[ sOption ],
-                               oCFGToMergeWith.getComment( sOption ) )      
-    for sSection in self.listSections():
-      if sSection in oCFGToMergeWith.listSections():
-        oSectionCFG = self[ sSection ].mergeWith( oCFGToMergeWith[ sSection ] )
-        oMergedCFG.createNewSection( sSection, 
-                                     oCFGToMergeWith.getComment( sSection ),
-                                     oSectionCFG )
+  def mergeWith( self, cfgToMergeWith ):
+    mergedCFG = CFG()
+    for option in self.listOptions():
+      mergedCFG.setOption( option, 
+                           self[ option ],
+                           self.getComment( option ) )
+    for option in cfgToMergeWith.listOptions():
+      mergedCFG.setOption( option, 
+                           cfgToMergeWith[ option ],
+                           cfgToMergeWith.getComment( option ) )      
+    for section in self.listSections():
+      if section in cfgToMergeWith.listSections():
+        oSectionCFG = self[ section ].mergeWith( cfgToMergeWith[ section ] )
+        mergedCFG.createNewSection( section, 
+                                    cfgToMergeWith.getComment( section ),
+                                    oSectionCFG )
       else:
-        oMergedCFG.createNewSection( sSection, 
-                                     self.getComment( sSection ),
-                                     self[ sSection ].clone() )
-    for sSection in oCFGToMergeWith.listSections():
-      if sSection not in self.listSections():
-        oMergedCFG.createNewSection( sSection, 
-                                     oCFGToMergeWith.getComment( sSection ),
-                                     oCFGToMergeWith[ sSection ] )
-    return oMergedCFG
+        mergedCFG.createNewSection( section, 
+                                    self.getComment( section ),
+                                    self[ section ].clone() )
+    for section in cfgToMergeWith.listSections():
+      if section not in self.listSections():
+        mergedCFG.createNewSection( section, 
+                                    cfgToMergeWith.getComment( section ),
+                                    cfgToMergeWith[ section ] )
+    return mergedCFG
 
   #Functions to load a CFG    
-  def loadFromFile( self, sFileName ):
-    oFD = file( sFileName )
-    sFileData = oFD.read()
-    oFD.close()
-    return self.loadFromBuffer( sFileData )
+  def loadFromFile( self, fileName ):
+    fd = file( fileName )
+    fileData = fd.read()
+    fd.close()
+    return self.loadFromBuffer( fileData )
   
-  def loadFromBuffer( self, sData ):
+  def loadFromBuffer( self, data ):
     self.reset()
-    lLevels = []
-    oCurrentLevel = self
-    sCurrentlyParsedString = ""
-    sCurrentComment = ""
-    for sLine in sData.split( "\n" ):
-      sLine = sLine.strip()
-      if len( sLine ) < 1:
+    levelList = []
+    currentLevel = self
+    currentlyParsedString = ""
+    currentComment = ""
+    for line in data.split( "\n" ):
+      line = line.strip()
+      if len( line ) < 1:
         continue
-      if sLine[0] == "#":
-        while sLine[0] == "#":
-          sLine = sLine[1:]
-        sCurrentComment += "%s\n" % sLine
+      if line[0] == "#":
+        while line[0] == "#":
+          line = line[1:]
+        currentComment += "%s\n" % line
         continue
-      for iIndex in range( len( sLine ) ):
-        if sLine[ iIndex ] == "{":
-          sCurrentlyParsedString = sCurrentlyParsedString.strip()
-          oCurrentLevel.createNewSection( sCurrentlyParsedString, sCurrentComment )
-          lLevels.append( oCurrentLevel )
-          oCurrentLevel = oCurrentLevel[ sCurrentlyParsedString ]
-          sCurrentlyParsedString = ""
-          sCurrentComment = ""
-        elif sLine[ iIndex ] == "}":
-          oCurrentLevel = lLevels.pop()
-        elif sLine[ iIndex ] == "=":
-          lFields = sLine.split( "=" )
-          oCurrentLevel.setOption( lFields[0].strip(), 
+      for index in range( len( line ) ):
+        if line[ index ] == "{":
+          currentlyParsedString = currentlyParsedString.strip()
+          currentLevel.createNewSection( currentlyParsedString, currentComment )
+          levelList.append( currentLevel )
+          currentLevel = currentLevel[ currentlyParsedString ]
+          currentlyParsedString = ""
+          currentComment = ""
+        elif line[ index ] == "}":
+          currentLevel = levelList.pop()
+        elif line[ index ] == "=":
+          lFields = line.split( "=" )
+          currentLevel.setOption( lFields[0].strip(), 
            "=".join( lFields[1:] ).strip(),
-           sCurrentComment )
-          sCurrentlyParsedString = ""
-          sCurrentComment = ""
+           currentComment )
+          currentlyParsedString = ""
+          currentComment = ""
           break
-        elif sLine[ iIndex: iIndex + 2 ] == "+=":
-          lFields = sLine.split( "+=" )
-          oCurrentLevel.appendToOption( lFields[0].strip(), ",%s" % "+=".join( lFields[1:] ).strip() )
-          sCurrentlyParsedString = ""
-          sCurrentComment = ""
+        elif line[ index: index + 2 ] == "+=":
+          valueList = line.split( "+=" )
+          currentLevel.appendToOption( valueList[0].strip(), ",%s" % "+=".join( valueList[1:] ).strip() )
+          currentlyParsedString = ""
+          currentComment = ""
           break
         else:
-          sCurrentlyParsedString += sLine[ iIndex ]
+          currentlyParsedString += line[ index ]
 
   
-if __name__=="__main__":
-  oCFG1 = CFG()
-  oCFG1.loadFromFile( "testinfo1.cfg" )
-  oCFG2 = CFG()
-  oCFG2.loadFromBuffer( oCFG1.serialize() )
-  oCFG3 = oCFG1.mergeWith( oCFG2 )
-  print oCFG1
-  print oCFG2
-  print oCFG3
-  oCFG4 = CFG()
-  oCFG4.loadFromFile( "testinfo2.cfg" )
-  oCFGM = oCFG1.mergeWith( oCFG4 )
-  print oCFGM
+
       
      

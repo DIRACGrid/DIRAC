@@ -1,19 +1,19 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/ServiceConfiguration.py,v 1.1 2007/03/09 15:27:46 rgracian Exp $
-__RCSID__ = "$Id: ServiceConfiguration.py,v 1.1 2007/03/09 15:27:46 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/ServiceConfiguration.py,v 1.2 2007/03/16 11:58:30 rgracian Exp $
+__RCSID__ = "$Id: ServiceConfiguration.py,v 1.2 2007/03/16 11:58:30 rgracian Exp $"
 
-from DIRAC.ConfigurationSystem.Client.ConfigurationData import g_oConfigurationData
+from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 
 class ServiceConfiguration:
   
   def __init__( self, sService ):
     self.sServiceName = sService
     self.sServiceURL = False
-    self.sServicePath = "%s/%s" % ( g_oConfigurationData.getServicesPath(), sService )
+    self.sServicePath = "%s/%s" % ( gConfigurationData.getServicesPath(), sService )
     
   def getOption( self, sOption ):
     if sOption[0] != "/":
       sOption = "%s/%s" % ( self.sServicePath, sOption )
-    return g_oConfigurationData.extractOptionFromCFG( sOption )
+    return gConfigurationData.extractOptionFromCFG( sOption )
       
   def getHandlerLocation( self ):
     return self.getOption( "HandlerPath" )

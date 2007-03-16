@@ -1,10 +1,10 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Refresher.py,v 1.2 2007/03/09 16:00:23 acasajus Exp $
-__RCSID__ = "$Id: Refresher.py,v 1.2 2007/03/09 16:00:23 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Refresher.py,v 1.3 2007/03/16 11:57:33 rgracian Exp $
+__RCSID__ = "$Id: Refresher.py,v 1.3 2007/03/16 11:57:33 rgracian Exp $"
 
 import threading
 import time
 import random
-from DIRAC.ConfigurationSystem.Client.ConfigurationData import g_oConfigurationData
+from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.LoggingSystem.Client.Logger import gLogger
 from DIRAC.Core.Utilities import List
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
@@ -25,13 +25,15 @@ class Refresher( threading.Thread ):
     self.bEnabled = False
 
   def refreshConfigurationIfNeeded( self ):
+    # FIXME: this should if necesary lauch a thread and wait few seconds at most 
+    # to return. 
     if not self.bEnabled:
       return
     if self.bAutomaticUpdate:
       return
     if self.bUpdating:
       return
-    if time.time() - self.iLastUpdateTime < g_oConfigurationData.getRefreshTime():
+    if time.time() - self.iLastUpdateTime < gConfigurationData.getRefreshTime():
       return
     self.__lockRefresh()
     bResult = self.__refresh()
@@ -45,9 +47,9 @@ class Refresher( threading.Thread ):
       
   def autoRefreshAndPublish( self, sURL ):
     gLogger.info( "Setting configuration refresh as automatic" )
-    if not g_oConfigurationData.getAutoPublish():
+    if not gConfigurationData.getAutoPublish():
       gLogger.info( "Slave server won't auto publish itself" )
-    if not g_oConfigurationData.getName():
+    if not gConfigurationData.getName():
       gLogger.fatal( "Missing configuration name!" )
       sys.exit(1)
     self.sURL = sURL
@@ -59,7 +61,7 @@ class Refresher( threading.Thread ):
     while self.bAutomaticUpdate:
       if not self.__refreshAndPublish():
         gLogger.error( "Can't refresh configuration from any source" )
-      iWaitTime = g_oConfigurationData.getPropagationTime()
+      iWaitTime = gConfigurationData.getPropagationTime()
       time.sleep( iWaitTime )
       
   def __lockRefresh( self ):
@@ -74,10 +76,10 @@ class Refresher( threading.Thread ):
     self.iLastUpdateTime = time.time()
     gLogger.info( "Refresing from master server" )
     from DIRAC.Core.DISET.Client import Client
-    sMasterServer = g_oConfigurationData.getMasterServer()
+    sMasterServer = gConfigurationData.getMasterServer()
     if sMasterServer:
       oClient = Client( sMasterServer )
-      if g_oConfigurationData.getAutoPublish():
+      if gConfigurationData.getAutoPublish():
         gLogger.debug( "Publishing to master server..." )
         dRetVal = oClient.publishSlaveServer( self.sURL )
         if not dRetVal[ 'OK' ]:
@@ -94,12 +96,12 @@ class Refresher( threading.Thread ):
   def __refresh( self ):
     self.iLastUpdateTime = time.time()
     gLogger.verbose( "Refresing configuration..." )
-    sGateway = g_oConfigurationData.getConfigurationGateway()
+    sGateway = gConfigurationData.getConfigurationGateway()
     if sGateway:
       lInitialListOfServers = [ sGateway ]
       gLogger.debug( "Using configuration gateway", str( lInitialListOfServers[0] ) )
     else:
-      lInitialListOfServers = g_oConfigurationData.getServers()
+      lInitialListOfServers = gConfigurationData.getServers()
       gLogger.debug( "Refresing from list %s" % str( lInitialListOfServers ) )
     lRandomListOfServers = List.randomize( lInitialListOfServers )
     gLogger.debug( "Randomized server list is %s" % ", ".join( lRandomListOfServers ) )
@@ -119,18 +121,18 @@ class Refresher( threading.Thread ):
     dRetVal = oClient.getVersion()
     if not dRetVal[ 'OK' ]:
       return dRetVal
-    sVersion = g_oConfigurationData.getVersion()
+    sVersion = gConfigurationData.getVersion()
     if sVersion < dRetVal[ 'Value' ]:
       gLogger.info( "New version available. Updating.." )
       dRetVal = oClient.getCompressedData()
       if not dRetVal[ 'OK' ]:
         return dRetVal    
-      g_oConfigurationData.loadRemoteCFGFromCompressedMem( dRetVal[ 'Value' ] )
-      gLogger.info( "New configuration version %s" % g_oConfigurationData.getVersion() )
+      gConfigurationData.loadRemoteCFGFromCompressedMem( dRetVal[ 'Value' ] )
+      gLogger.info( "New configuration version %s" % gConfigurationData.getVersion() )
     return S_OK()
       
-g_oRefresher = Refresher()
+gRefresher = Refresher()
 
 if __name__=="__main__":
   time.sleep(0.1)
-  g_oRefresher.daemonize()
+  gRefresher.daemonize()

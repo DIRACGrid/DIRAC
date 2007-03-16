@@ -1,10 +1,10 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.1 2007/03/09 15:27:47 rgracian Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.1 2007/03/09 15:27:47 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.2 2007/03/16 11:58:30 rgracian Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.2 2007/03/16 11:58:30 rgracian Exp $"
 
 from DIRAC.LoggingSystem.Client.Logger import gLogger
 from DIRAC.Core.Utilities import List
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
-from DIRAC.ConfigurationSystem.Client.ConfigurationClient import gConfig
+from DIRAC.ConfigurationSystem.Client.Config import gConfig
       
 class BaseClient:
   
