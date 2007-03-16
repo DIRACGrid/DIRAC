@@ -1,12 +1,12 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/LogLevels.py,v 1.1 2007/03/09 15:45:53 rgracian Exp $
-__RCSID__ = "$Id: LogLevels.py,v 1.1 2007/03/09 15:45:53 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/LogLevels.py,v 1.2 2007/03/16 11:59:46 rgracian Exp $
+__RCSID__ = "$Id: LogLevels.py,v 1.2 2007/03/16 11:59:46 rgracian Exp $"
 
 class LogLevels:
   
   def __init__(self):
     self.always    = 'ALWAYS'
     self.info      = 'INFO'
-    self.verbose   = 'VERBOSE'
+    self.verbose   = 'VERB'
     self.debug     = 'DEBUG'
     self.warn      = 'WARN'
     self.error     = 'ERROR'

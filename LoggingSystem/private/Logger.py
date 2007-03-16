@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.2 2007/03/14 06:34:54 rgracian Exp $
-__RCSID__ = "$Id: Logger.py,v 1.2 2007/03/14 06:34:54 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.3 2007/03/16 11:59:46 rgracian Exp $
+__RCSID__ = "$Id: Logger.py,v 1.3 2007/03/16 11:59:46 rgracian Exp $"
 """
    DIRAC Logger client
 """
@@ -27,7 +27,7 @@ class Logger:
 
   def initialize (self, systemName, cfgPath ):
     if not self._systemName:
-      from DIRAC.ConfigurationSystem.Client.ConfigurationClient import gConfig
+      from DIRAC.ConfigurationSystem.Client.Config import gConfig
       #Configure outputs
       retDict = gConfig.getOption( "%s/LogOutputs" % cfgPath )
       if not retDict[ 'OK' ]:
@@ -181,7 +181,7 @@ class Logger:
     for lineString in messageObject.getMessage().split( "\n" ):
       print "%s %s %s: %s" % ( timeToShow,
                                messageName,
-                               messageObject.getLevel().rjust( 7 ), 
+                               messageObject.getLevel().rjust( 5 ), 
                                lineString )
     return True
         
