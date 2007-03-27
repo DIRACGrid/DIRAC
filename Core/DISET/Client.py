@@ -18,12 +18,8 @@ class _MagicMethod:
 class Client( BaseClient ):
   
   def __serverRPC( self, sFunctionName, stArgs ):
-    dRetVal = self._connect()
-    if not dRetVal[ 'OK' ]:
-      return dRetVal
-    stConnectionInfo = ( ( self.sPath, self.sDIRACInstance ), "RPC" )
-    self.oServerTransport.sendData( stConnectionInfo )
-    dRetVal = self.oServerTransport.receiveData()
+    self._connect()
+    dRetVal = self._proposeAction( "RPC" )
     if not dRetVal[ 'OK' ]:
       return dRetVal
     stFunction = ( sFunctionName, stArgs )

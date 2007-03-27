@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.2 2007/03/16 11:58:30 rgracian Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.2 2007/03/16 11:58:30 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.3 2007/03/27 10:56:47 acasajus Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.3 2007/03/27 10:56:47 acasajus Exp $"
 
 from DIRAC.LoggingSystem.Client.Logger import gLogger
 from DIRAC.Core.Utilities import List
@@ -97,3 +97,8 @@ class BaseClient:
     except Exception, e:
       return S_ERROR( "Can't connect: %s" % str( e ) )
     return S_OK()
+  
+  def _proposeAction( self, sAction ):
+    stConnectionInfo = ( ( self.sPath, self.sDIRACInstance ), sAction )
+    self.oServerTransport.sendData( stConnectionInfo )
+    return self.oServerTransport.receiveData()

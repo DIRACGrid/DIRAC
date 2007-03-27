@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.1 2007/03/09 15:27:49 rgracian Exp $
-__RCSID__ = "$Id: Server.py,v 1.1 2007/03/09 15:27:49 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.2 2007/03/27 10:56:46 acasajus Exp $
+__RCSID__ = "$Id: Server.py,v 1.2 2007/03/27 10:56:46 acasajus Exp $"
 
 import socket
 import sys
@@ -135,7 +135,11 @@ class Server:
       oClientTransport.sendData( S_ERROR( "Cannot process request; %s" % str(e) ) )
       raise
     oClientTransport.sendData( S_OK() )
-    oRH.executeAction( stClientData[1] )
+    try:
+      oRH.executeAction( stClientData[1] )
+    except Exception, e:
+      gLogger.exception( "Exception while executing handler action" )
+      oClientTransport.sendData( S_ERROR( "Exception while executing action: %s" % str( e ) ) )
     oClientTransport.close()
 
   
