@@ -115,7 +115,8 @@ class UserConfiguration:
       if not retDict['OK']:
         # FIXME: the return Value of __addUserDataToConfiguration it is not checked
         # so if refresh is not possible command line options are not processed !!!
-        return retDict
+        gLogger.warn( retDict[ 'Message' ] )
+
     for optionName, optionValue in self.parsedOptionList:
       optionName = optionName.replace( "-", "" )
       for definedOptionTuple in self.commandOptionList:
@@ -147,4 +148,3 @@ class UserConfiguration:
     for optionTuple in self.commandOptionList:
       gLogger.info( "  -%s  --%s  :  %s" % optionTuple[:3] )
 
-  
