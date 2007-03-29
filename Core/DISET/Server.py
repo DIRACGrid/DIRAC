@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.2 2007/03/27 10:56:46 acasajus Exp $
-__RCSID__ = "$Id: Server.py,v 1.2 2007/03/27 10:56:46 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.3 2007/03/29 17:11:25 acasajus Exp $
+__RCSID__ = "$Id: Server.py,v 1.3 2007/03/29 17:11:25 acasajus Exp $"
 
 import socket
 import sys
@@ -9,9 +9,10 @@ from DIRAC.Core.DISET.private.ServiceConfiguration import ServiceConfiguration
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.Utilities import Network
 from DIRAC.LoggingSystem.Client.Logger import gLogger
+from DIRAC.ActivitySystem.Client.ActivityClient import gActivity
 
 class Server:
-    
+
   bAllowReuseAddress = True
   iListenQueueSize = 5
 
@@ -25,18 +26,25 @@ class Server:
     dRetVal = self.oDispatcher.loadHandler()
     if not dRetVal[ 'OK' ]:
       gLogger.fatal( "Error while loading handler", dRetVal[ 'Message' ] )
-      sys.exit(1) 
+      sys.exit(1)
     self.oThreadPool = ThreadPool( 1, self.oServiceConf.getMaxThreads() )
     self.oThreadPool.daemonize()
     self.stServerAddress = self.__getServiceAddress()
     self.__buildURL()
     self.__initializeHandler()
     self.__initializeTransport()
-    
+    self.__initializeActivity()
+
+  def __initializeActivity( self ):
+    gActivity.setComponentType( ACTIVITY_COMPONENT_SERVICE )
+    gActivity.setComponentName( self.sService )
+    gActivity.setComponentLocation( self.sServiceURL )
+    gActivity.registerActivity( "Queries", "framework", "queries/s", ACTIVITY_OP_MEAN, 1 )
+
   def __getProtocol( self ):
     #TODO: Return the appropiate protocol
     return "dit"
-  
+
   def __buildURL( self ):
     self.sServiceURL = self.oServiceConf.getURL()
     if self.sServiceURL:
@@ -55,7 +63,7 @@ class Server:
       sURL = sURL[:-1]
     self.sServiceURL = sURL
     self.oServiceConf.setURL( sURL )
-        
+
   def __initializeTransport( self ):
     sProtocol = self.__getProtocol()
     if "dit" == sProtocol:
@@ -66,7 +74,7 @@ class Server:
     else:
       gLogger.fatal( "No valid protocol specified for the service", "%s is not a valid protocol" % sProtocol )
       sys.exit(1)
-    
+
   def __initializeHandler( self ):
     dHandler = self.oDispatcher.getHandlerInfo()
     oHandlerInitFunction = dHandler[ "handlerInitialization" ]
@@ -82,18 +90,18 @@ class Server:
         sys.exit(1)
     else:
       self.uServiceInitializationData = None
-          
-    
+
+
   def __getServiceAddress( self ):
     iPort = self.oServiceConf.getPort()
     return ( "", iPort )
-    
+
   def serve( self ):
     gLogger.info( "Handler up", "Serving from %s" % self.sServiceURL )
     while True:
       self.__handleRequest()
       #self.oThreadPool.processResults()
-      
+
   def __handleRequest( self ):
     try:
       oClientTransport = self.oTransport.acceptConnection()
@@ -102,20 +110,21 @@ class Server:
     try:
       self.oDispatcher.lock()
       if self.__checkClientAddress( oClientTransport ):
+        gActivity.addMark( "Queries" )
         self.oThreadPool.generateJobAndQueueIt( self.processClient,
                                         args = ( oClientTransport, ),
                                         oExceptionCallback = self.processClientException )
-        
+
     finally:
       self.oDispatcher.unlock()
-    
+
   def __checkClientAddress( self, oClientTransport ):
     #TODO: Check that the IP is not banned
     return True
-      
+
   def processClientException( self, oTJ, lExceptionInfo ):
     gLogger.exception( "Exception in thread", lException = lExceptionInfo )
-    
+
   def processClient( self, oClientTransport ):
     stClientData = oClientTransport.receiveData( 1024 )
     gLogger.debug( "Received action from client", str( stClientData ) )
@@ -125,8 +134,8 @@ class Server:
       oClientTransport.close()
       return
     try:
-      oRH = dHandler[ "handlerClass" ]( stClientData[0], 
-                      self.stServerAddress, 
+      oRH = dHandler[ "handlerClass" ]( stClientData[0],
+                      self.stServerAddress,
                       oClientTransport,
                       dHandler[ "lockManager" ],
                       self.oServiceConf )
@@ -142,7 +151,7 @@ class Server:
       oClientTransport.sendData( S_ERROR( "Exception while executing action: %s" % str( e ) ) )
     oClientTransport.close()
 
-  
+
 if __name__=="__main__":
   oServer = Server( "Configuration")
   oServer.serve()
