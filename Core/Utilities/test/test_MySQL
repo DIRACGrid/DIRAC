@@ -1,0 +1,180 @@
+#!/usr/bin/env python
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/test/test_MySQL,v 1.1 2007/03/30 16:07:32 rgracian Exp $
+__RCSID__ = "$Id: test_MySQL,v 1.1 2007/03/30 16:07:32 rgracian Exp $"
+"""
+"""
+from dirac import DIRAC
+import time
+from DIRAC.Core.Utilities.MySQL              import MySQL
+
+nThread = 3
+nRetrieval = 100000
+
+DIRAC.gLogger.initialize('test_MySQL','/testSectionVerbose')
+
+class MyDB( MySQL ):
+
+  def __init__( self, *stArgs, **stKeyArgs ):
+    self.gLogger = DIRAC.gLogger.getSubLogger('MyDB')
+    MySQL.__init__( self, *stArgs, **stKeyArgs )
+
+  def checktable( self ):
+    retDict = self._update( 'DROP TABLE IF EXISTS `MyDB_testTable`' )
+    if not retDict['OK'] : return retDict
+    retDict = self._update( 'CREATE TABLE `MyDB_testTable` ( '
+                            '`ID` INTEGER NOT NULL AUTO_INCREMENT, '
+                            '`LastUpdate` TIMESTAMP, '
+                            '`Status` varchar(128), '
+                            'PRIMARY KEY (`ID`) )' )
+    if not retDict['OK'] : return retDict
+    return DIRAC.S_OK()
+
+  def filltable( self, entries ):
+    for i in range( 1, entries + 1 ):
+      retDict = self._insert( 'MyDB_testTable',
+                              inFields = [ 'Status' ],
+                              inValues = [ i ] )
+      if not retDict['OK'] : return retDict 
+    return DIRAC.S_OK(i)
+  
+  def listtable( self, entries ):
+    for i in range( 1, entries + 1 ):
+      retDict = self._getFields( 'MyDB_testTable', [], 
+                                 inFields = [ 'Status' ],
+                                 inValues = [ i ] )
+      if not retDict['OK'] : return retDict
+    return DIRAC.S_OK( i )
+ 
+  def insert( self, status ):
+    return self._insert( 'MyDB_testTable', 
+                         inFields = [ 'Status' ], 
+                         inValues = [ status ] )
+
+  def retrieve( self, id ):
+    return self._getFields( 'MyDB_testTable', ['Status'],
+                            inFields = ['ID'], inValues = [id] )
+  
+  def droptable( self ):
+    retDict = self._update( 'DROP TABLE IF EXISTS `MyDB_testTable`' )
+    if not retDict['OK'] : return retDict
+    return DIRAC.S_OK()
+
+DB = MyDB( 'Ricardo', 'lhcb', 'CKM-best', 'lhcb_test', nThread )
+
+import threading
+semaphore = threading.Semaphore(nThread)
+
+Success = 0
+Error   = 0
+    
+def testMultiThreading( tries ):
+  import random
+  DIRAC.gLogger.info( 'Testing MySQL MultiThreading' )
+  DIRAC.gLogger.info( 'First adding 10 K records' )
+  if not DB.checktable()['OK']: 
+  	return DIRAC.S_ERROR()
+  if not DB.filltable( 10000 )['OK']: 
+  	return DIRAC.S_ERROR()
+
+  i = 0
+  # overthread = 0
+  DIRAC.gLogger.info( 'Now querying 100 K in MultiThread mode' )
+  while i < tries:
+    if not i % 1000:
+      DIRAC.gLogger.info( 'Query:', i ) 
+      overthread = 0
+    i += 1
+    id = int(random.uniform( 0, 10000 )) + 1
+    t = threading.Thread( target=testRetrieve, args=( id, ) )
+    semaphore.acquire()
+    t.start()
+  n = threading.activeCount()
+  while n > 1:
+    DIRAC.gLogger.info( 'Waiting for Treads to end:', n )
+    n = threading.activeCount()
+    time.sleep(0.1)
+
+  DIRAC.gLogger.info( 'Total retrieved values', Success )
+  DIRAC.gLogger.info( 'Total Errors', Error )
+  return DIRAC.S_OK( (Success,Error) )
+
+
+def testRetrieve( id ):
+  global Success
+  global Error
+  
+  retDict = DB.retrieve( id )
+  while not retDict['OK']:
+    Error += 1
+    retDict = DB.retrieve( id )
+  if retDict['Value'] == ((str(id),),): 
+    Success += 1
+  else:
+    DIRAC.gLogger.error(id)
+  semaphore.release()
+
+
+
+testlist = [{ 'method'    : DB._connect,
+              'arguments' : ( ),
+              'output'    : {'OK': True, 'Value': ''}
+            },
+            { 'method'    : DB.checktable,
+              'arguments' : ( ),
+              'output'    : {'OK': True, 'Value': ''}
+            },
+            { 'method'    : DB.filltable,
+              'arguments' : ( 10,  ),
+              'output'    : {'OK': True, 'Value': 10 }
+            },
+            { 'method'    : DB.insert,
+              'arguments' : ( '`',  ),
+              'output'    : {'OK': True, 'Value': 1L }
+            },
+            { 'method'    : DB.retrieve,
+              'arguments' : ( 11,  ),
+              'output'    : {'OK': True, 'Value': (('`',),)}
+            },
+            { 'method'    : DB.insert,
+              'arguments' : ( '"',  ),
+              'output'    : {'OK': True, 'Value': 1L }
+            },
+            { 'method'    : DB.retrieve,
+              'arguments' : ( 12,  ),
+              'output'    : {'OK': True, 'Value': (('"',),)}
+            },
+            { 'method'    : DB.insert,
+              'arguments' : ( '\'',  ),
+              'output'    : {'OK': True, 'Value': 1L }
+            },
+            { 'method'    : DB.retrieve,
+              'arguments' : ( 13,  ),
+              'output'    : {'OK': True, 'Value': (("'",),)}
+            },
+            { 'method'    : DB.insert,
+              'arguments' : ( '`',  ),
+              'output'    : {'OK': True, 'Value': 1L }
+            },
+            { 'method'    : DB.retrieve,
+              'arguments' : ( 14,  ),
+              'output'    : {'OK': True, 'Value': (("`",),)}
+            },
+            { 'method'    : DB.listtable,
+              'arguments' : ( 10,  ),
+              'output'    : {'OK': True, 'Value': 10 }
+            },
+            { 'method'    : testMultiThreading,
+              'arguments' : ( nRetrieval, ),
+              'output'    : {'OK': True, 'Value': ( nRetrieval, 0 ) }
+            },
+#            { 'method'    : DB.droptable,
+#              'arguments' : ( ),
+#              'output'    : {'OK': True, 'Value': ''}
+#            },
+					 ]
+
+testdict = { 'DIRAC.MySQL': testlist }
+
+DIRAC.Tests.run( testdict, 'DIRAC.MySQL' )
+
+DIRAC.exit()
