@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Refresher.py,v 1.6 2007/05/03 19:38:02 acasajus Exp $
-__RCSID__ = "$Id: Refresher.py,v 1.6 2007/05/03 19:38:02 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Refresher.py,v 1.7 2007/05/03 19:38:58 acasajus Exp $
+__RCSID__ = "$Id: Refresher.py,v 1.7 2007/05/03 19:38:58 acasajus Exp $"
 
 import threading
 import time
@@ -53,7 +53,7 @@ class Refresher( threading.Thread ):
     updatingThread = threading.Thread( target = self.updateThreaded )
     updatingThread.start()
     secondsCounter = 5
-    while secondsCounter:
+    for second in range( secondsCounter ):
       time.sleep( 1 )
       if not updatingThread.isAlive():
         return
