@@ -1,16 +1,17 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Network.py,v 1.2 2007/03/14 06:32:10 rgracian Exp $
-__RCSID__ = "$Id: Network.py,v 1.2 2007/03/14 06:32:10 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Network.py,v 1.3 2007/05/03 18:59:48 acasajus Exp $
+__RCSID__ = "$Id: Network.py,v 1.3 2007/05/03 18:59:48 acasajus Exp $"
 """
    Collection of DIRAC useful network related modules
    by default on Error they return None
 
-   it does not work in MAC
+   getAllInterfaces and getAddressFromInterface do not work in MAC
 """
 import socket
 import fcntl
 import struct
 import array
 import os
+from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 
 def getAllInterfaces():
   max_possible = 128  # arbitrary. raise if needed.
@@ -18,12 +19,12 @@ def getAllInterfaces():
   s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
   names = array.array('B', '\0' * bytes)
   outbytes = struct.unpack(
-                            'iL', 
+                            'iL',
                             fcntl.ioctl(
                                          s.fileno(),
                                          0x8912,  # SIOCGIFCONF
-                                         struct.pack( 'iL', 
-                                                      bytes, 
+                                         struct.pack( 'iL',
+                                                      bytes,
                                                       names.buffer_info()[0] )
                                        )
                           )[0]
@@ -47,3 +48,26 @@ def getFQDN():
     sFQDN = os.uname()[1]
     socket.getfqdn( sFQDN )
   return sFQDN
+
+def splitURL( URL ):
+  protocolEnd = URL.find( "://" )
+  if protocolEnd == -1:
+    return S_ERROR( "'%s' URL is malformed" % URL )
+  protocol = URL[ : protocolEnd ]
+  URL = URL[ protocolEnd + 3: ]
+  pathStart = URL.find( "/" )
+  if pathStart > -1:
+    host = URL[ :pathStart ]
+    path = URL[ pathStart + 1: ]
+  else:
+    host = URL
+    path = "/"
+  if path[-1] == "/":
+    path = path[:-1]
+  portStart = host.find( ":" )
+  if portStart > -1:
+    port = int( host[ portStart+1: ] )
+    host = host[ :portStart ]
+  else:
+    port = 0
+  return S_OK( ( protocol, host, port, path ) )

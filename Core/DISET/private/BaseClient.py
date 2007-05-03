@@ -1,104 +1,71 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.3 2007/03/27 10:56:47 acasajus Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.3 2007/03/27 10:56:47 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.4 2007/05/03 18:59:48 acasajus Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.4 2007/05/03 18:59:48 acasajus Exp $"
 
+import DIRAC
+from DIRAC.Core.DISET.private.Protocols import gProtocolDict
 from DIRAC.LoggingSystem.Client.Logger import gLogger
-from DIRAC.Core.Utilities import List
+from DIRAC.Core.Utilities import List, Network
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
-      
-class BaseClient:
-  
-  sDefaultRole = "/lhcb"
+from DIRAC.ConfigurationSystem.Client.PathFinder import *
 
-  def __splitURL( self ):
-    self.iPort = 9135
-    iProtocolEnd = self.sURL.find( "://" )
-    if iProtocolEnd == -1:
-      raise Exception( "'%s' URL is malformed" % self.sURL )
-    self.sProtocol = self.sURL[ : iProtocolEnd ]
-    sRemainingURL = self.sURL[ iProtocolEnd + 3: ]
-    iPathStart = sRemainingURL.find( "/" )
-    if iPathStart > -1:
-      self.sHost = sRemainingURL[ :iPathStart ]
-      self.sPath = sRemainingURL[ iPathStart + 1: ]
-    else:
-      self.sHost = sRemainingURL
-      self.sPath = "/"
-    if self.sPath[-1] == "/":
-      self.sPath = self.sPath[:-1]
-    iSplitter = self.sHost.find( ":" )
-    if iSplitter > -1:
-      self.iPort = int( self.sHost[ iSplitter+1: ] )
-      self.sHost = self.sHost[ :iSplitter ]
-  
-  def __init__( self, sServiceName, 
-                sForcedRole = False, 
-                bAllowCertificates = False, 
-                iTimeout = False ):
-    self.sServiceName = sServiceName
-    self.sDIRACInstance = self.__discoverInstance()
-    self.sURL = self.__discoverServiceURL()
+class BaseClient:
+
+  defaultGroup = "/lhcb"
+
+  def __init__( self, serviceName,
+                groupToUse = False,
+                useCertificates = False,
+                timeout = False ):
+    self.serviceName = serviceName
+    #self.setup = gConfig.getOption( "/DIRAC/Setup" )
+    self.timeout = timeout
+    self.serviceURL = self.__discoverServiceURL()
     try:
-      self.__splitURL()
+      retVal = Network.splitURL( self.serviceURL )
+      if retVal[ 'OK' ]:
+        self.URLTuple = retVal[ 'Value' ]
+      else:
+        return retVal
     except:
       gLogger.exception()
       gLogger.error( "URL is malformed", "%s is not valid" % self.sURL)
       return S_ERROR( "URL is malformed" )
-    if self.sProtocol == "diset":
-      try:
-        if not sForcedRole:
-          self.sRole = sForcedRole
-        else:
-          #TODO: Get real role
-          self.sRole = self.sDefaultRole
-      except:
-        gLogger.warn( "No role defined", "Using default role %s" % self.sDefaultRole )
-        self.sRole = self.sDefaultRole
-      
+    if groupToUse:
+      self.groupToUse = groupToUse
+    else:
+      #TODO: Get real role
+      self.groupToUse = self.defaultGroup
+
   def __discoverServiceURL( self ):
-    if self.sServiceName.find( "diset://" ) or self.sServiceName.find( "dit://" ):
-      gLogger.debug( "Already given a valid url", self.sServiceName )
-      return self.sServiceName
-    
-    sServicesPath = "/DIRACInstances"
-    dRetVal = gConfig.getOption( "%s/%s/Gateway" % ( sServicesPath, self.sDIRACInstance ) )
+    for protocol in gProtocolDict.keys():
+      if self.serviceName.find( "%s://" % protocol ) == 0:
+        gLogger.debug( "Already given a valid url", self.serviceName )
+        return self.serviceName
+
+    dRetVal = gConfig.getOption( "/DIRAC/Gateway" )
     if dRetVal[ 'OK' ]:
       gLogger.debug( "Using gateway", "%s" % dRetVal[ 'Value' ] )
-      return "%s/%s" % ( dRetVal[ 'Value' ], self.sServiceName )
-    
-    sConfigurationPath = "%s/%s/%s" % ( sServicesPath, self.sDIRACInstance, self.sServiceName )
-    dRetVal = gConfig.getOption( sConfigurationPath )
+      return "%s/%s" % ( List.randomize( List.fromChar( dRetVal[ 'Value'], "," ) ), self.serviceName )
+
+    dRetVal = getServiceURL( self.serviceName )
     if not dRetVal[ 'OK' ]:
       raise Exception( dRetVal[ 'Error' ] )
     sURL = List.randomize( List.fromChar( dRetVal[ 'Value'], "," ) )
     gLogger.debug( "Discovering URL for service", "%s -> %s" % ( sConfigurationPath, sURL ) )
     return sURL
-      
-  def __discoverInstance( self ):
-    #TODO: Put the proper path of the instance
-    dRetVal = gConfig.getOption( "/Local/DIRACInstance" )
-    if not dRetVal[ 'OK' ]:
-      return "production"
-    return dRetVal[ 'Value' ]
-    
+
   def _connect( self ):
     try:
-      if self.sProtocol == "diset":
-        gLogger.debug( "Using diset protocol" )
-        from DIRAC.Core.DISET.private.Transports.SSLTransport import SSLTransport
-        self.oServerTransport = SSLTransport(  ( self.sHost, self.iPort ) )
-      elif self.sProtocol == "dit":
-        gLogger.debug( "Using dit protocol" )
-        from DIRAC.Core.DISET.private.Transports.PlainTransport import PlainTransport
-        self.oServerTransport = PlainTransport( ( self.sHost, self.iPort ) )
-      else:
-        return S_ERROR( "Unknown protocol (%s)" % self.sProtocol )
-      self.oServerTransport.initAsClient()
+      gLogger.debug( "Using %s protocol" % self.URLTuple[0] )
+      self.transport = gProtocolDict[ self.URLTuple[0] ]( self.URLTuple[1:3] )
+      self.transport.initAsClient()
     except Exception, e:
+      gLogger.exception()
       return S_ERROR( "Can't connect: %s" % str( e ) )
     return S_OK()
-  
+
   def _proposeAction( self, sAction ):
-    stConnectionInfo = ( ( self.sPath, self.sDIRACInstance ), sAction )
-    self.oServerTransport.sendData( stConnectionInfo )
-    return self.oServerTransport.receiveData()
+    stConnectionInfo = ( ( self.URLTuple[3], DIRAC.setup ), sAction )
+    self.transport.sendData( stConnectionInfo )
+    return self.transport.receiveData()

@@ -1,35 +1,37 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.3 2007/03/29 17:11:25 acasajus Exp $
-__RCSID__ = "$Id: Server.py,v 1.3 2007/03/29 17:11:25 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.4 2007/05/03 18:59:47 acasajus Exp $
+__RCSID__ = "$Id: Server.py,v 1.4 2007/05/03 18:59:47 acasajus Exp $"
 
 import socket
 import sys
+from DIRAC.Core.DISET.private.Protocols import gProtocolDict
 from DIRAC.Core.DISET.private.Dispatcher import Dispatcher
-from DIRAC.Core.Utilities.ThreadPool import ThreadPool
 from DIRAC.Core.DISET.private.ServiceConfiguration import ServiceConfiguration
+from DIRAC.Core.Utilities.ThreadPool import ThreadPool
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.Utilities import Network
 from DIRAC.LoggingSystem.Client.Logger import gLogger
 from DIRAC.ActivitySystem.Client.ActivityClient import gActivity
+from DIRAC.ActivitySystem.Client.Constants import *
 
 class Server:
 
   bAllowReuseAddress = True
   iListenQueueSize = 5
 
-  def __init__( self, sService ):
-    gLogger.debug( "Starting service %s" % sService )
-    while sService[0] == "/":
-      sService = sService[1:]
-    self.sService = sService
-    self.oServiceConf = ServiceConfiguration( sService )
-    self.oDispatcher = Dispatcher( self.oServiceConf )
-    dRetVal = self.oDispatcher.loadHandler()
-    if not dRetVal[ 'OK' ]:
-      gLogger.fatal( "Error while loading handler", dRetVal[ 'Message' ] )
+  def __init__( self, serviceName ):
+    gLogger.debug( "Starting service %s" % serviceName )
+    while serviceName[0] == "/":
+      serviceName = serviceName[1:]
+    self.serviceName = serviceName
+    self.serviceCfg = ServiceConfiguration( serviceName )
+    self.handlerManager = Dispatcher( self.serviceCfg )
+    retDict = self.handlerManager.loadHandler()
+    if not retDict[ 'OK' ]:
+      gLogger.fatal( "Error while loading handler", retDict[ 'Message' ] )
       sys.exit(1)
-    self.oThreadPool = ThreadPool( 1, self.oServiceConf.getMaxThreads() )
-    self.oThreadPool.daemonize()
-    self.stServerAddress = self.__getServiceAddress()
+    self.threadPool = ThreadPool( 1, self.serviceCfg.getMaxThreads() )
+    self.threadPool.daemonize()
+    self.serviceAddress = ( "", self.serviceCfg.getPort() )
     self.__buildURL()
     self.__initializeHandler()
     self.__initializeTransport()
@@ -37,119 +39,113 @@ class Server:
 
   def __initializeActivity( self ):
     gActivity.setComponentType( ACTIVITY_COMPONENT_SERVICE )
-    gActivity.setComponentName( self.sService )
-    gActivity.setComponentLocation( self.sServiceURL )
+    gActivity.setComponentName( self.serviceName )
+    gActivity.setComponentLocation( self.serviceURL )
     gActivity.registerActivity( "Queries", "framework", "queries/s", ACTIVITY_OP_MEAN, 1 )
 
-  def __getProtocol( self ):
-    #TODO: Return the appropiate protocol
-    return "dit"
-
   def __buildURL( self ):
-    self.sServiceURL = self.oServiceConf.getURL()
-    if self.sServiceURL:
+    protocol = self.serviceCfg.getProtocol()
+    self.serviceURL = self.serviceCfg.getURL()
+    if self.serviceURL:
+        if self.serviceURL.find( protocol ) != 0:
+          urlFields = self.serviceURL.split( ":" )
+          urlFields[0] = protocol
+          self.serviceURL = ":".join( urlFields )
+          self.serviceCfg.setURL( self.serviceURL )
         return
-    stServiceAddress = self.__getServiceAddress()
-    sHost = stServiceAddress[0]
-    iPort = stServiceAddress[1]
-    if sHost == "":
-      sHost = Network.getFQDN()
-    sServiceName = self.oDispatcher.getServiceName()
-    sURL = "%s://%s:%s/%s" % ( self.__getProtocol(),
-                                  sHost,
-                                  iPort,
-                                  sServiceName )
+    hostName = self.serviceAddress[0]
+    port = self.serviceAddress[1]
+    if hostName == "":
+      hostName = Network.getFQDN()
+    sURL = "%s://%s:%s/%s" % ( protocol,
+                                  hostName,
+                                  port,
+                                  self.serviceCfg.getName() )
     if sURL[-1] == "/":
       sURL = sURL[:-1]
-    self.sServiceURL = sURL
-    self.oServiceConf.setURL( sURL )
+    self.serviceURL = sURL
+    self.serviceCfg.setURL( sURL )
 
   def __initializeTransport( self ):
-    sProtocol = self.__getProtocol()
-    if "dit" == sProtocol:
-      gLogger.debug( "Initializing Plain Transport", str( self.stServerAddress ) )
+    protocol = self.serviceCfg.getProtocol()
+    if protocol in gProtocolDict.keys():
+      gLogger.verbose( "Initializing %s transport" % protocol, str( self.serviceAddress ) )
       from DIRAC.Core.DISET.private.Transports.PlainTransport import PlainTransport
-      self.oTransport = PlainTransport( self.stServerAddress, bServerMode = True )
-      self.oTransport.initAsServer()
+      self.transport = gProtocolDict[ protocol ]( self.serviceAddress, bServerMode = True )
+      self.transport.initAsServer()
     else:
       gLogger.fatal( "No valid protocol specified for the service", "%s is not a valid protocol" % sProtocol )
       sys.exit(1)
 
   def __initializeHandler( self ):
-    dHandler = self.oDispatcher.getHandlerInfo()
-    oHandlerInitFunction = dHandler[ "handlerInitialization" ]
-    if oHandlerInitFunction:
+    handlerDict = self.handlerManager.getHandlerInfo()
+    handlerInitFunc = handlerDict[ "handlerInitialization" ]
+    if handlerInitFunc:
       try:
-        dRetVal = oHandlerInitFunction( self.oServiceConf  )
+        retDict = handlerInitFunc( self.serviceCfg  )
       except Exception, e:
         gLogger.exception()
         gLogger.fatal( "Can't call handler initialization function", str(e) )
         sys.exit( 1 )
-      if not dRetVal[ 'OK' ]:
-        gLogger.fatal( "Error in the initialization function", dRetVal[ 'Message' ] )
+      if not retDict[ 'OK' ]:
+        gLogger.fatal( "Error in the initialization function", retDict[ 'Message' ] )
         sys.exit(1)
-    else:
-      self.uServiceInitializationData = None
-
-
-  def __getServiceAddress( self ):
-    iPort = self.oServiceConf.getPort()
-    return ( "", iPort )
 
   def serve( self ):
-    gLogger.info( "Handler up", "Serving from %s" % self.sServiceURL )
+    gLogger.info( "Handler up", "Serving from %s" % self.serviceURL )
     while True:
       self.__handleRequest()
-      #self.oThreadPool.processResults()
+      #self.threadPool.processResults()
 
   def __handleRequest( self ):
     try:
-      oClientTransport = self.oTransport.acceptConnection()
+      clientTransport = self.transport.acceptConnection()
     except socket.error:
       return
     try:
-      self.oDispatcher.lock()
-      if self.__checkClientAddress( oClientTransport ):
+      self.handlerManager.lock()
+      if self.__checkClientAddress( clientTransport ):
         gActivity.addMark( "Queries" )
-        self.oThreadPool.generateJobAndQueueIt( self.processClient,
-                                        args = ( oClientTransport, ),
+        self.threadPool.generateJobAndQueueIt( self.processClient,
+                                        args = ( clientTransport, ),
                                         oExceptionCallback = self.processClientException )
 
     finally:
-      self.oDispatcher.unlock()
+      self.handlerManager.unlock()
 
-  def __checkClientAddress( self, oClientTransport ):
+  def __checkClientAddress( self, clientTransport ):
     #TODO: Check that the IP is not banned
     return True
 
-  def processClientException( self, oTJ, lExceptionInfo ):
-    gLogger.exception( "Exception in thread", lException = lExceptionInfo )
+  def processClientException( self, threadedJob, exceptionInfo ):
+    gLogger.exception( "Exception in thread", lException = exceptionInfo )
 
-  def processClient( self, oClientTransport ):
-    stClientData = oClientTransport.receiveData( 1024 )
-    gLogger.debug( "Received action from client", str( stClientData ) )
-    dHandler = self.oDispatcher.getHandlerForService( stClientData[0][0] )
-    if not dHandler:
-      oClientTransport.sendData( S_ERROR( "Service '%s' does not exist" % stClientData[0][0] ) )
-      oClientTransport.close()
+  def processClient( self, clientTransport ):
+    clientTransport.handshake()
+    receivedDataTuple = clientTransport.receiveData( 1024 )
+    gLogger.debug( "Received action from client", str( receivedDataTuple ) )
+    handlerDict = self.handlerManager.getHandlerForService( receivedDataTuple[0][0] )
+    if not handlerDict:
+      clientTransport.sendData( S_ERROR( "Service '%s' does not exist" % receivedDataTuple[0][0] ) )
+      clientTransport.close()
       return
     try:
-      oRH = dHandler[ "handlerClass" ]( stClientData[0],
-                      self.stServerAddress,
-                      oClientTransport,
-                      dHandler[ "lockManager" ],
-                      self.oServiceConf )
-      oRH.initialize()
+      handlerInstance = handlerDict[ "handlerClass" ]( receivedDataTuple[0],
+                      self.serviceAddress,
+                      clientTransport,
+                      handlerDict[ "lockManager" ],
+                      self.serviceCfg )
+      handlerInstance.initialize()
     except Exception, e:
-      oClientTransport.sendData( S_ERROR( "Cannot process request; %s" % str(e) ) )
+      clientTransport.sendData( S_ERROR( "Cannot process request; %s" % str(e) ) )
       raise
-    oClientTransport.sendData( S_OK() )
+    clientTransport.sendData( S_OK() )
     try:
-      oRH.executeAction( stClientData[1] )
+      handlerInstance.executeAction( receivedDataTuple[1] )
     except Exception, e:
       gLogger.exception( "Exception while executing handler action" )
-      oClientTransport.sendData( S_ERROR( "Exception while executing action: %s" % str( e ) ) )
-    oClientTransport.close()
+      clientTransport.sendData( S_ERROR( "Exception while executing action: %s" % str( e ) ) )
+    clientTransport.close()
 
 
 if __name__=="__main__":

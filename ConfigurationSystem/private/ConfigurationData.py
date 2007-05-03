@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationData.py,v 1.2 2007/03/29 17:11:24 acasajus Exp $
-__RCSID__ = "$Id: ConfigurationData.py,v 1.2 2007/03/29 17:11:24 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationData.py,v 1.3 2007/05/03 18:59:47 acasajus Exp $
+__RCSID__ = "$Id: ConfigurationData.py,v 1.3 2007/05/03 18:59:47 acasajus Exp $"
 
 import os.path
 import zlib
@@ -20,7 +20,7 @@ class ConfigurationData:
     self.threadingLock = threading.Lock()
     self.runningThreadsNumber = 0
     self.compressedConfigurationData= ""
-    self.configurationPath = "/Configuration"
+    self.configurationPath = "/DIRAC/Configuration"
     self.isService = False
     self.localCFG = CFG()
     self.remoteCFG = CFG()
@@ -34,11 +34,11 @@ class ConfigurationData:
     gLogger.debug( "Updating configuration internals" )
     self.mergedCFG = self.remoteCFG.mergeWith( self.localCFG )
     self.remoteServerList = []
-    localServers = self.extractOptionFromCFG( "%s/servers" % self.configurationPath,
+    localServers = self.extractOptionFromCFG( "%s/Servers" % self.configurationPath,
                                         self.localCFG )
     if localServers:
       self.remoteServerList.extend( List.fromChar( localServers, "," ) )
-    remoteServers = self.extractOptionFromCFG( "%s/servers" % self.configurationPath,
+    remoteServers = self.extractOptionFromCFG( "%s/Servers" % self.configurationPath,
                                         self.remoteCFG )
     if remoteServers:
       self.remoteServerList.extend( List.fromChar( remoteServers, "," ) )
@@ -186,7 +186,7 @@ class ConfigurationData:
     return list( self.remoteServerList )
 
   def getConfigurationGateway( self ):
-    return self.extractOptionFromCFG( "%s/Gateway" % self.configurationPath,
+    return self.extractOptionFromCFG( "/DIRAC/Gateway",
                                         self.localCFG )
 
   def setServers( self, sServers ):

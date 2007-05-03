@@ -1,11 +1,12 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Refresher.py,v 1.4 2007/03/29 17:11:24 acasajus Exp $
-__RCSID__ = "$Id: Refresher.py,v 1.4 2007/03/29 17:11:24 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Refresher.py,v 1.5 2007/05/03 18:59:47 acasajus Exp $
+__RCSID__ = "$Id: Refresher.py,v 1.5 2007/05/03 18:59:47 acasajus Exp $"
 
 import threading
 import time
 import os
 import random
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
+from DIRAC.ConfigurationSystem.Client.PathFinder import getGatewayURL
 from DIRAC.LoggingSystem.Client.Logger import gLogger
 from DIRAC.Core.Utilities import List
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
@@ -44,7 +45,7 @@ class Refresher( threading.Thread ):
   def forceRefreshConfiguration( self ):
     if self.bEnabled:
       return self.__refresh()
-    return True
+    return S_OK()
 
   def autoRefreshAndPublish( self, sURL ):
     gLogger.info( "Setting configuration refresh as automatic" )
@@ -76,10 +77,10 @@ class Refresher( threading.Thread ):
   def __refreshAndPublish( self ):
     self.iLastUpdateTime = time.time()
     gLogger.info( "Refresing from master server" )
-    from DIRAC.Core.DISET.Client import Client
+    from DIRAC.Core.DISET.RPCClient import RPCClient
     sMasterServer = gConfigurationData.getMasterServer()
     if sMasterServer:
-      oClient = Client( sMasterServer )
+      oClient = RPCClient( sMasterServer, timeout = 10 )
       if gConfigurationData.getAutoPublish():
         gLogger.debug( "Publishing to master server..." )
         dRetVal = oClient.publishSlaveServer( self.sURL )
@@ -97,7 +98,7 @@ class Refresher( threading.Thread ):
   def __refresh( self ):
     self.iLastUpdateTime = time.time()
     gLogger.verbose( "Refresing configuration..." )
-    sGateway = gConfigurationData.getConfigurationGateway()
+    sGateway = getGatewayURL()
     if sGateway:
       lInitialListOfServers = [ sGateway ]
       gLogger.debug( "Using configuration gateway", str( lInitialListOfServers[0] ) )
@@ -108,8 +109,8 @@ class Refresher( threading.Thread ):
     gLogger.debug( "Randomized server list is %s" % ", ".join( lRandomListOfServers ) )
 
     for sServer in lRandomListOfServers:
-        from DIRAC.Core.DISET.Client import Client
-        oClient = Client( sServer )
+        from DIRAC.Core.DISET.RPCClient import RPCClient
+        oClient = RPCClient( sServer, timeout = 10 )
         dRetVal = self.__updateFromRemoteLocation( oClient )
         if dRetVal[ 'OK' ]:
           return dRetVal
@@ -118,7 +119,7 @@ class Refresher( threading.Thread ):
     return S_ERROR( "Can't update from any server" )
 
   def __updateFromRemoteLocation( self, oClient ):
-    gLogger.debug( "", "Trying to refresh from %s" % oClient.sURL )
+    gLogger.debug( "", "Trying to refresh from %s" % oClient.serviceURL )
     dRetVal = oClient.getVersion()
     if not dRetVal[ 'OK' ]:
       return dRetVal

@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ServiceInterface.py,v 1.2 2007/03/16 11:57:33 rgracian Exp $
-__RCSID__ = "$Id: ServiceInterface.py,v 1.2 2007/03/16 11:57:33 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ServiceInterface.py,v 1.3 2007/05/03 18:59:47 acasajus Exp $
+__RCSID__ = "$Id: ServiceInterface.py,v 1.3 2007/05/03 18:59:47 acasajus Exp $"
 
 import sys
 import time
@@ -10,7 +10,7 @@ from DIRAC.LoggingSystem.Client.Logger import gLogger
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 
 class ServiceInterface( threading.Thread ):
-  
+
   def __init__( self, sURL ):
     threading.Thread.__init__( self )
     self.sURL = sURL
@@ -25,36 +25,36 @@ class ServiceInterface( threading.Thread ):
       self.__loadConfigurationData()
       self.dAliveSlaveServers = {}
       self.__launchCheckSlaves()
-      
+
   def __launchCheckSlaves(self):
     gLogger.info( "Starting purge slaves thread" )
     self.setDaemon(1)
     self.start()
-      
+
   def __loadConfigurationData( self ):
     gConfigurationData.loadConfigurationData()
     if gConfigurationData.isMaster():
-      bBuiltNewConfiguration = False       
+      bBuiltNewConfiguration = False
       sVersion = gConfigurationData.getVersion()
       if sVersion == "0":
         gLogger.info( "There's no version. Generating a new one" )
         gConfigurationData.generateNewVersion()
         bBuiltNewConfiguration = True
-        
+
       if self.sURL not in gConfigurationData.getServers():
         gConfigurationData.setServers( self.sURL )
         bBuiltNewConfiguration = True
-        
+
         gConfigurationData.setMasterServer( self.sURL )
-        
+
       if bBuiltNewConfiguration:
         gConfigurationData.writeRemoteConfigurationToDisk()
-        
+
   def __generateNewVersion( self ):
     if gConfigurationData.isMaster():
       gConfigurationData.generateNewVersion()
       gConfigurationData.writeRemoteConfigurationToDisk()
-        
+
   def publishSlaveServer( self, sSlaveURL ):
     bNewSlave = False
     if not sSlaveURL in self.dAliveSlaveServers.keys():
@@ -65,7 +65,7 @@ class ServiceInterface( threading.Thread ):
       gConfigurationData.setServers( "%s, %s" % ( self.sURL,
                                                     ", ".join( self.dAliveSlaveServers.keys() ) ) )
       self.__generateNewVersion()
-      
+
   def __checkSlavesStatus( self ):
     gLogger.info( "Checking status of slave servers" )
     iGraceTime = gConfigurationData.getSlavesGraceTime()
@@ -80,14 +80,14 @@ class ServiceInterface( threading.Thread ):
       gConfigurationData.setServers( "%s, %s" % ( self.sURL,
                                                     ", ".join( self.dAliveSlaveServers.keys() ) ) )
       self.__generateNewVersion()
-      
+
   def now( self ):
     from DIRAC.Core.Utils.Time import datetime
     return datetime()
-      
+
   def getCompressedConfiguration( self ):
     sData = gConfigurationData.getCompressedData()
-    
+
   def updateConfiguration( self, sBuffer ):
     if not gConfigurationData.isMaster():
       return S_ERROR( "Configuration modification is not allowed in this server" )
@@ -111,16 +111,16 @@ class ServiceInterface( threading.Thread ):
     gConfigurationData.writeRemoteConfigurationToDisk( sLocalVersion )
     gConfigurationData.unlock()
     return S_OK()
-    
+
   def getCompressedConfigurationData( self ):
     return gConfigurationData.getCompressedData()
-  
+
   def getVersion( self ):
     return gConfigurationData.getVersion()
-  
+
   def run( self ):
     while True:
       iWaitTime = gConfigurationData.getSlavesGraceTime()
       time.sleep( iWaitTime )
       self.__checkSlavesStatus()
-  
+

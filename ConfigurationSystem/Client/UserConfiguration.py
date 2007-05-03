@@ -9,6 +9,7 @@ from DIRAC import S_OK, S_ERROR
 
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.ConfigurationSystem.private.Refresher import gRefresher
+from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection
 
 class UserConfiguration:
 
@@ -19,6 +20,8 @@ class UserConfiguration:
     self.commandOptionList = []
     self.__registerBasicOptions()
     self.isParsed = False
+    self.componentName = "Unknown"
+    self.loggingSection = "/DIRAC"
 
   def __getAbsolutePath( self, optionPath ):
     if optionPath[0] == "/":
@@ -60,7 +63,9 @@ class UserConfiguration:
       for optionTuple in self.optionalEntryList:
         gConfigurationData.setOptionInCFG( optionTuple[0], optionTuple[1] )
 
-      self.__addUserDataToConfiguration()
+      retVal = self.__addUserDataToConfiguration()
+      if not retVal[ 'OK' ]:
+        return retVal
 
       isMandatoryMissing = False
       for optionPath in self.mandatoryEntryList:
@@ -70,13 +75,14 @@ class UserConfiguration:
       if isMandatoryMissing:
         return S_ERROR()
     except Exception, e:
+      gLogger.exception(e)
       gLogger.error( "Error while loading user specified configuration data", str( e ) )
       return S_ERROR()
     return S_OK()
 
 
   def __parseCommandLine( self ):
-
+    gLogger.debug( "Parsing command line" )
     shortOption = ""
     longOptionList = []
     for optionTuple in self.commandOptionList:
@@ -105,29 +111,37 @@ class UserConfiguration:
   def __addUserDataToConfiguration( self ):
     if not self.isParsed:
       self.__parseCommandLine()
+
     for fileName in self.AdditionalCfgFileList:
       gConfigurationData.loadFile( fileName )
-
-    isDataDownloaded = True
-    if self.currentSectionPath == "%s/Configuration" % gConfigurationData.getServicesPath():
-      if gConfigurationData.isMaster():
-        isDataDownloaded = False
-    if isDataDownloaded:
-      retDict = gRefresher.forceRefreshConfiguration()
-      if not retDict['OK']:
-        # FIXME: the return Value of __addUserDataToConfiguration it is not checked
-        # so if refresh is not possible command line options are not processed !!!
-        gLogger.warn( retDict[ 'Message' ] )
 
     for optionName, optionValue in self.parsedOptionList:
       optionName = optionName.replace( "-", "" )
       for definedOptionTuple in self.commandOptionList:
         if optionName == definedOptionTuple[0] or optionName == definedOptionTuple[1]:
           definedOptionTuple[3]( optionValue )
+
+    gLogger.initialize( self.componentName, self.loggingSection )
+
+    needCSData = True
+    if self.currentSectionPath == getServiceSection( "Configuration/CServer" ):
+      if gConfigurationData.isMaster():
+        gLogger.debug( "CServer is Master!" )
+        needCSData = False
+      else:
+        gLogger.debug( "CServer is slave" )
+    if needCSData:
+      retDict = gRefresher.forceRefreshConfiguration()
+      if not retDict['OK']:
+        gLogger.fatal( retDict[ 'Message' ] )
+        return S_ERROR()
+
     return S_OK()
 
-  def setServerSection( self, name ):
-    self.currentSectionPath = "%s/%s" % ( gConfigurationData.getServicesPath(), name )
+  def setServerSection( self, serviceName ):
+    self.componentName = serviceName
+    self.currentSectionPath = getServiceSection( serviceName )
+    self.loggingSection = self.currentSectionPath
     return self.currentSectionPath
 
   def __setSectionByCmd( self, value ):
@@ -138,7 +152,7 @@ class UserConfiguration:
   def __setOptionByCmd( self, value ):
     valueList = [ sD.strip() for sD in value.split("=") if len( sD ) > 0]
     if len( valueList ) <  2:
-      # FIXME: in the method above an exceptino is raised, check consitency
+      # FIXME: in the method above an exception is raised, check consitency
       gLogger.error( "\t-o expects a option=value argument.\n\tFor example %s -o Port=1234" % sys.argv[0] )
       sys.exit( 1 )
     self.setOptionValue( valueList[0] , valueList[1] )

@@ -1,61 +1,68 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/ServiceConfiguration.py,v 1.2 2007/03/16 11:58:30 rgracian Exp $
-__RCSID__ = "$Id: ServiceConfiguration.py,v 1.2 2007/03/16 11:58:30 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/ServiceConfiguration.py,v 1.3 2007/05/03 18:59:48 acasajus Exp $
+__RCSID__ = "$Id: ServiceConfiguration.py,v 1.3 2007/05/03 18:59:48 acasajus Exp $"
 
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
+from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection
 
 class ServiceConfiguration:
-  
-  def __init__( self, sService ):
-    self.sServiceName = sService
-    self.sServiceURL = False
-    self.sServicePath = "%s/%s" % ( gConfigurationData.getServicesPath(), sService )
-    
-  def getOption( self, sOption ):
-    if sOption[0] != "/":
-      sOption = "%s/%s" % ( self.sServicePath, sOption )
-    return gConfigurationData.extractOptionFromCFG( sOption )
-      
+
+  def __init__( self, serviceName ):
+    self.serviceName = serviceName
+    self.serviceURL = False
+    self.serviceSectionPath = getServiceSection( serviceName )
+
+  def getOption( self, optionName ):
+    if optionName[0] != "/":
+      optionName = "%s/%s" % ( self.serviceSectionPath, optionName )
+    return gConfigurationData.extractOptionFromCFG( optionName )
+
   def getHandlerLocation( self ):
     return self.getOption( "HandlerPath" )
-  
+
   def getName( self ):
-    return self.sServiceName
+    return self.serviceName
 
   def setURL( self, sURL ):
-    self.sServiceURL = sURL
-  
-  def getURL( self, sURL = False ):
-    sValue = self.getOption( "URL" )
-    if sValue:
-      return sValue
-    elif sURL:
-        return sURL
+    self.serviceURL = sURL
+
+  def getURL( self, URL = False ):
+    optionValue = self.getOption( "URL" )
+    if optionValue:
+      return optionValue
+    elif URL:
+        return URL
     else:
-        return self.sServiceURL  
-    
+        return self.serviceURL
+
   def getMaxThreads( self ):
     try:
       return int( self.getOption( "MaxThreads" ) )
     except:
       return 1000
-    
+
   def getMaxWaitingPetitions( self ):
     try:
       return int( self.getOption( "MaxWaitingPetitions" ) )
     except:
       return 100
-    
-  def getMaxThreadsPerFunction( self, sFunction ):
+
+  def getMaxThreadsPerFunction( self, funcName ):
     try:
-      return int( self.getOption( "%sMaxThreads" % sFunction ) )
+      return int( self.getOption( "%sMaxThreads" % funcName ) )
     except:
       return 1000
-    
+
   def getPort( self ):
     try:
       return int( self.getOption( "Port" ) )
     except:
       return 9876
-    
-  def getInstance( self ):
-    return self.getOption( "/Local/DIRACInstace" )
+
+  def getProtocol( self ):
+    optionValue = self.getOption( "Protocol" )
+    if optionValue:
+      return optionValue
+    return "diset"
+
+  def getSectionPath( self ):
+    return self.serviceSectionPath
