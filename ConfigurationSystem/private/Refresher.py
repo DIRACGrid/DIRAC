@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Refresher.py,v 1.5 2007/05/03 18:59:47 acasajus Exp $
-__RCSID__ = "$Id: Refresher.py,v 1.5 2007/05/03 18:59:47 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Refresher.py,v 1.6 2007/05/03 19:38:02 acasajus Exp $
+__RCSID__ = "$Id: Refresher.py,v 1.6 2007/05/03 19:38:02 acasajus Exp $"
 
 import threading
 import time
@@ -26,21 +26,37 @@ class Refresher( threading.Thread ):
   def disable( self ):
     self.bEnabled = False
 
+  def __checkAndSetTriggeredUpdating( self ):
+    self.oTriggeredRefreshLock.acquire()
+    try:
+      if self.bUpdating:
+        return True
+      self.bUpdating = True
+    finally:
+      self.oTriggeredRefreshLock.release()
+
+  def updateThreaded(self):
+    try:
+      self.__refresh()
+    finally:
+      bUpdating = False
+
   def refreshConfigurationIfNeeded( self ):
-    # FIXME: this should if necesary lauch a thread and wait few seconds at most
-    # to return.
     if not self.bEnabled:
       return
     if self.bAutomaticUpdate:
       return
-    if self.bUpdating:
-      return
     if time.time() - self.iLastUpdateTime < gConfigurationData.getRefreshTime():
       return
-    self.__lockRefresh()
-    bResult = self.__refresh()
-    self.__unlockRefresh()
-    return bResult
+    if self.__checkAndSetTriggeredUpdating():
+      return
+    updatingThread = threading.Thread( target = self.updateThreaded )
+    updatingThread.start()
+    secondsCounter = 5
+    while secondsCounter:
+      time.sleep( 1 )
+      if not updatingThread.isAlive():
+        return
 
   def forceRefreshConfiguration( self ):
     if self.bEnabled:
@@ -65,14 +81,6 @@ class Refresher( threading.Thread ):
         gLogger.error( "Can't refresh configuration from any source" )
       iWaitTime = gConfigurationData.getPropagationTime()
       time.sleep( iWaitTime )
-
-  def __lockRefresh( self ):
-    self.oTriggeredRefreshLock.acquire()
-    self.bUpdating = True
-
-  def __unlockRefresh( self ):
-    self.bUpdating = False
-    self.oTriggeredRefreshLock.release()
 
   def __refreshAndPublish( self ):
     self.iLastUpdateTime = time.time()
