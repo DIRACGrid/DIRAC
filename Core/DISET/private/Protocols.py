@@ -5,4 +5,4 @@ gProtocolDict = { 'dirac' : PlainTransport.PlainTransport,
                   'diset' : SSLTransport.SSLTransport
                  }
 
-gDefaultProtocol = 'diset'
+gDefaultProtocol = 'dirac'
