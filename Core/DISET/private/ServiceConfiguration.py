@@ -1,8 +1,9 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/ServiceConfiguration.py,v 1.3 2007/05/03 18:59:48 acasajus Exp $
-__RCSID__ = "$Id: ServiceConfiguration.py,v 1.3 2007/05/03 18:59:48 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/ServiceConfiguration.py,v 1.4 2007/05/08 14:44:07 acasajus Exp $
+__RCSID__ = "$Id: ServiceConfiguration.py,v 1.4 2007/05/08 14:44:07 acasajus Exp $"
 
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
-from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection
+from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection, getSystemSection
+from DIRAC.Core.DISET.private.Protocols import gDefaultProtocol
 
 class ServiceConfiguration:
 
@@ -10,6 +11,7 @@ class ServiceConfiguration:
     self.serviceName = serviceName
     self.serviceURL = False
     self.serviceSectionPath = getServiceSection( serviceName )
+    self.systemSectionPath = getSystemSection( serviceName )
 
   def getOption( self, optionName ):
     if optionName[0] != "/":
@@ -62,7 +64,10 @@ class ServiceConfiguration:
     optionValue = self.getOption( "Protocol" )
     if optionValue:
       return optionValue
-    return "diset"
+    return gDefaultProtocol
 
-  def getSectionPath( self ):
+  def getServicePath( self ):
     return self.serviceSectionPath
+
+  def getSystemPath( self ):
+    return self.systemSectionPath

@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Refresher.py,v 1.7 2007/05/03 19:38:58 acasajus Exp $
-__RCSID__ = "$Id: Refresher.py,v 1.7 2007/05/03 19:38:58 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Refresher.py,v 1.8 2007/05/08 14:44:04 acasajus Exp $
+__RCSID__ = "$Id: Refresher.py,v 1.8 2007/05/08 14:44:04 acasajus Exp $"
 
 import threading
 import time
@@ -126,20 +126,18 @@ class Refresher( threading.Thread ):
           gLogger.warn( "Can't update from server", "Error while updating from %s: %s" %( sServer, dRetVal[ 'Message' ] ) )
     return S_ERROR( "Can't update from any server" )
 
-  def __updateFromRemoteLocation( self, oClient ):
-    gLogger.debug( "", "Trying to refresh from %s" % oClient.serviceURL )
-    dRetVal = oClient.getVersion()
-    if not dRetVal[ 'OK' ]:
-      return dRetVal
-    sVersion = gConfigurationData.getVersion()
-    if sVersion < dRetVal[ 'Value' ]:
-      gLogger.info( "New version available. Updating.." )
-      dRetVal = oClient.getCompressedData()
-      if not dRetVal[ 'OK' ]:
-        return dRetVal
-      gConfigurationData.loadRemoteCFGFromCompressedMem( dRetVal[ 'Value' ] )
-      gLogger.info( "New configuration version %s" % gConfigurationData.getVersion() )
-    return S_OK()
+  def __updateFromRemoteLocation( self, serviceClient ):
+    gLogger.debug( "", "Trying to refresh from %s" % serviceClient.serviceURL )
+    localVersion = gConfigurationData.getVersion()
+    retVal = serviceClient.getCompressedDataIfNewer( localVersion )
+    if retVal[ 'OK' ]:
+      dataDict = retVal[ 'Value' ]
+      if localVersion < dataDict[ 'newestVersion' ] :
+        gLogger.info( "New version available", "Updating to version %s..." % dataDict[ 'newestVersion' ] )
+        gConfigurationData.loadRemoteCFGFromCompressedMem( dataDict[ 'data' ] )
+        gLogger.info( "Updated to version %s" % gConfigurationData.getVersion() )
+      return S_OK()
+    return retVal
 
 gRefresher = Refresher()
 

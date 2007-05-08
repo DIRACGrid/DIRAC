@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.4 2007/05/03 18:59:48 acasajus Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.4 2007/05/03 18:59:48 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.5 2007/05/08 14:44:07 acasajus Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.5 2007/05/08 14:44:07 acasajus Exp $"
 
 import DIRAC
 from DIRAC.Core.DISET.private.Protocols import gProtocolDict
@@ -18,7 +18,7 @@ class BaseClient:
                 useCertificates = False,
                 timeout = False ):
     self.serviceName = serviceName
-    #self.setup = gConfig.getOption( "/DIRAC/Setup" )
+    #self.setup = gConfig.get( "/DIRAC/Setup" )
     self.timeout = timeout
     self.serviceURL = self.__discoverServiceURL()
     try:
@@ -43,7 +43,7 @@ class BaseClient:
         gLogger.debug( "Already given a valid url", self.serviceName )
         return self.serviceName
 
-    dRetVal = gConfig.getOption( "/DIRAC/Gateway" )
+    dRetVal = gConfig.get( "/DIRAC/Gateway" )
     if dRetVal[ 'OK' ]:
       gLogger.debug( "Using gateway", "%s" % dRetVal[ 'Value' ] )
       return "%s/%s" % ( List.randomize( List.fromChar( dRetVal[ 'Value'], "," ) ), self.serviceName )

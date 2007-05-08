@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ServiceInterface.py,v 1.3 2007/05/03 18:59:47 acasajus Exp $
-__RCSID__ = "$Id: ServiceInterface.py,v 1.3 2007/05/03 18:59:47 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ServiceInterface.py,v 1.4 2007/05/08 14:44:04 acasajus Exp $
+__RCSID__ = "$Id: ServiceInterface.py,v 1.4 2007/05/08 14:44:04 acasajus Exp $"
 
 import sys
 import time
@@ -66,7 +66,7 @@ class ServiceInterface( threading.Thread ):
                                                     ", ".join( self.dAliveSlaveServers.keys() ) ) )
       self.__generateNewVersion()
 
-  def __checkSlavesStatus( self ):
+  def __checkSlavesStatus( self, forceWriteConfiguration = False ):
     gLogger.info( "Checking status of slave servers" )
     iGraceTime = gConfigurationData.getSlavesGraceTime()
     lSlaveURLs = self.dAliveSlaveServers.keys()
@@ -76,7 +76,7 @@ class ServiceInterface( threading.Thread ):
         gLogger.info( "Found dead slave", sSlaveURL )
         del( self.dAliveSlaveServers[ sSlaveURL ] )
         bModifiedSlaveServers = True
-    if bModifiedSlaveServers:
+    if bModifiedSlaveServers or forceWriteConfiguration:
       gConfigurationData.setServers( "%s, %s" % ( self.sURL,
                                                     ", ".join( self.dAliveSlaveServers.keys() ) ) )
       self.__generateNewVersion()
@@ -108,6 +108,7 @@ class ServiceInterface( threading.Thread ):
     gConfigurationData.lock()
     gConfigurationData.loadRemoteCFGFromCompressedMem( sBuffer )
     gConfigurationData.generateNewVersion()
+    #self.__checkSlavesStatus( forceWriteConfiguration = True )
     gConfigurationData.writeRemoteConfigurationToDisk( sLocalVersion )
     gConfigurationData.unlock()
     return S_OK()

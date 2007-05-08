@@ -15,7 +15,7 @@ securityConfPath = "/DIRAC/Security"
 # Retrieve grid proxy location
 def getGridProxy():
   #UserProxy
-  retVal = gConfig.getOption( '%s/UserProxy' % securityConfPath )
+  retVal = gConfig.get( '%s/UserProxy' % securityConfPath )
   if retVal[ 'OK' ]:
     filePath = os.path.realpath( retVal[ 'Value' ] )
     if os.path.isfile( filePath ):
@@ -23,7 +23,7 @@ def getGridProxy():
       return retVal[ 'Value' ]
   #UserProxyPath
   proxyName = "x509up_u%d" % os.getuid()
-  retVal = gConfig.getOption( '%s/UserProxyPath' % securityConfPath )
+  retVal = gConfig.get( '%s/UserProxyPath' % securityConfPath )
   if retVal[ 'OK' ]:
     for proxyPath in [ "%s/%s" % ( retVal[ 'Value' ], proxyName ), "%s/tmp/%s" % ( retVal[ 'Value' ], proxyName ) ]:
       proxyPath = os.path.realpath( proxyPath )
@@ -47,7 +47,7 @@ def getGridProxy():
 #Retrieve CA's location
 def getCAsLocation():
   #Grid-Security
-  retVal = gConfig.getOption( '%s/Grid-Security' % securityConfPath )
+  retVal = gConfig.get( '%s/Grid-Security' % securityConfPath )
   if retVal[ 'OK' ]:
     casPath = "%s/certificates" % retVal[ 'Value' ]
     gLogger.debug( "Trying %s for CAs" % casPath )
@@ -80,7 +80,7 @@ def getCertificateAndKey():
   fileDict = {}
   for fileType in ( "cert", "key" ):
     #Direct file in config
-    retVal = gConfig.getOption( '%s/%sFile' % ( securityConfPath, fileType.capitalize() ) )
+    retVal = gConfig.get( '%s/%sFile' % ( securityConfPath, fileType.capitalize() ) )
     if retVal[ 'OK' ]:
       gLogger.verbose( 'Using %s/%sFile' % ( securityConfPath, fileType.capitalize() ) )
       fileDict[ fileType ] = retVal[ 'Value' ]
@@ -91,7 +91,7 @@ def getCertificateAndKey():
     for filePrefix in ( "server", "host", "dirac", "service" ):
       #Possible grid-security's
       paths = []
-      retVal = gConfig.getOption( '%s/Grid-Security' % securityConfPath )
+      retVal = gConfig.get( '%s/Grid-Security' % securityConfPath )
       if retVal[ 'OK' ]:
         paths.append( retVal[ 'Value' ] )
       paths.append( "%s/etc/grid-security/" % DIRAC.rootPath )

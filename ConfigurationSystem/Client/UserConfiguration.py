@@ -64,6 +64,11 @@ class UserConfiguration:
         gConfigurationData.setOptionInCFG( optionTuple[0], optionTuple[1] )
 
       retVal = self.__addUserDataToConfiguration()
+      gLogger.initialize( self.componentName, self.loggingSection )
+      if not retVal[ 'OK' ]:
+        return retVal
+
+      retVal = self.__getRemoteConfiguration()
       if not retVal[ 'OK' ]:
         return retVal
 
@@ -75,7 +80,7 @@ class UserConfiguration:
       if isMandatoryMissing:
         return S_ERROR()
     except Exception, e:
-      gLogger.exception(e)
+      gLogger.exception()
       gLogger.error( "Error while loading user specified configuration data", str( e ) )
       return S_ERROR()
     return S_OK()
@@ -112,17 +117,26 @@ class UserConfiguration:
     if not self.isParsed:
       self.__parseCommandLine()
 
+    errorsList = []
+
     for fileName in self.AdditionalCfgFileList:
-      gConfigurationData.loadFile( fileName )
+      retVal = gConfigurationData.loadFile( fileName )
+      if not retVal[ 'OK' ]:
+        errorsList.append( retVal[ 'Message' ] )
 
     for optionName, optionValue in self.parsedOptionList:
       optionName = optionName.replace( "-", "" )
       for definedOptionTuple in self.commandOptionList:
         if optionName == definedOptionTuple[0] or optionName == definedOptionTuple[1]:
-          definedOptionTuple[3]( optionValue )
+          retVal = definedOptionTuple[3]( optionValue )
+          if not retVal[ 'OK' ]:
+            errorsList.append( retVal[ 'Message' ] )
 
-    gLogger.initialize( self.componentName, self.loggingSection )
+    if len( errorsList ) > 0:
+      return S_ERROR( "\n%s" % "\n".join( errorsList ) )
+    return S_OK()
 
+  def __getRemoteConfiguration( self ):
     needCSData = True
     if self.currentSectionPath == getServiceSection( "Configuration/CServer" ):
       if gConfigurationData.isMaster():
@@ -146,16 +160,17 @@ class UserConfiguration:
 
   def __setSectionByCmd( self, value ):
     if value[0] != "/":
-      raise Exception( "%s is not a valid section. It should start with '/'" % value)
+      return S_ERROR( "%s is not a valid section. It should start with '/'" % value )
     self.currentSectionPath = value
+    return S_OK()
 
   def __setOptionByCmd( self, value ):
     valueList = [ sD.strip() for sD in value.split("=") if len( sD ) > 0]
     if len( valueList ) <  2:
       # FIXME: in the method above an exception is raised, check consitency
-      gLogger.error( "\t-o expects a option=value argument.\n\tFor example %s -o Port=1234" % sys.argv[0] )
-      sys.exit( 1 )
+      return S_ERROR( "-o expects a option=value argument.\nFor example %s -o Port=1234" % sys.argv[0] )
     self.setOptionValue( valueList[0] , valueList[1] )
+    return S_OK()
 
   def __showUsage( self ):
     gLogger.info( "Usage:" )
@@ -163,4 +178,5 @@ class UserConfiguration:
     gLogger.info( "Options:" )
     for optionTuple in self.commandOptionList:
       gLogger.info( "  -%s  --%s  :  %s" % optionTuple[:3] )
+    return S_OK()
 

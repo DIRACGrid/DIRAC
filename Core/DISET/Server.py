@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.4 2007/05/03 18:59:47 acasajus Exp $
-__RCSID__ = "$Id: Server.py,v 1.4 2007/05/03 18:59:47 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.5 2007/05/08 14:44:05 acasajus Exp $
+__RCSID__ = "$Id: Server.py,v 1.5 2007/05/08 14:44:05 acasajus Exp $"
 
 import socket
 import sys
@@ -130,11 +130,16 @@ class Server:
       clientTransport.close()
       return
     try:
-      handlerInstance = handlerDict[ "handlerClass" ]( receivedDataTuple[0],
-                      self.serviceAddress,
+      serviceInfoDict = { 'serviceName' : receivedDataTuple[0][0],
+                          'instance' : receivedDataTuple[0][1],
+                          'serviceAddress' : self.serviceAddress,
+                          'URL' : self.serviceURL,
+                          'systemSectionPath' : self.serviceCfg.getSystemPath(),
+                          'serviceSectionPath' : self.serviceCfg.getServicePath()
+                        }
+      handlerInstance = handlerDict[ "handlerClass" ]( serviceInfoDict,
                       clientTransport,
-                      handlerDict[ "lockManager" ],
-                      self.serviceCfg )
+                      handlerDict[ "lockManager" ] )
       handlerInstance.initialize()
     except Exception, e:
       clientTransport.sendData( S_ERROR( "Cannot process request; %s" % str(e) ) )

@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/test/test_gCFG.py,v 1.3 2007/03/16 11:57:34 rgracian Exp $
-__RCSID__ = "$Id: test_gCFG.py,v 1.3 2007/03/16 11:57:34 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/test/test_gCFG.py,v 1.4 2007/05/08 14:44:08 acasajus Exp $
+__RCSID__ = "$Id: test_gCFG.py,v 1.4 2007/05/08 14:44:08 acasajus Exp $"
 
 from dirac import DIRAC
 from DIRAC.ConfigurationSystem.private.CFG import CFG
@@ -36,7 +36,7 @@ testList = [{ 'method'    : DIRAC.gConfig.loadFile,
             { 'method'    : cfg3.serialize,
               'arguments' : ( ),
               'output'    : cfg1String
-            }] 
+            }]
 
 testdict = { 'DIRAC.gConfig'               : testList,}
 
@@ -44,19 +44,19 @@ DIRAC.Tests.run( testdict, 'DIRAC.gConfig.files' )
 
 
 
-testList = [{ 'method'    : DIRAC.gConfig.getOption,
+testList = [{ 'method'    : DIRAC.gConfig.get,
               'arguments' : ( '/testSection/test', ),
               'output'    : {'OK': True, 'Value': 'test'}
-            },             
-#             { 'method'    : DIRAC.gConfig.getOption,
+            },
+#             { 'method'    : DIRAC.gConfig.get,
 #              'arguments' : ( '/testSection/nonexisting','OK', ),
 #              'output'    : {'OK': True, 'Value': 'test'}
-#            },             
+#            },
              ]
 
 testdict = { 'DIRAC.gConfig'               : testList,}
 
-  
+
 DIRAC.Tests.run( testdict, 'DIRAC.gConfig' )
 
 
