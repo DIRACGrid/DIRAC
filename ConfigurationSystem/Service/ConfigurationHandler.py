@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Service/ConfigurationHandler.py,v 1.2 2007/05/08 14:44:06 acasajus Exp $
-__RCSID__ = "$Id: ConfigurationHandler.py,v 1.2 2007/05/08 14:44:06 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Service/ConfigurationHandler.py,v 1.3 2007/05/08 17:09:12 acasajus Exp $
+__RCSID__ = "$Id: ConfigurationHandler.py,v 1.3 2007/05/08 17:09:12 acasajus Exp $"
 import types
 from DIRAC.ConfigurationSystem.private.ServiceInterface import ServiceInterface
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -9,7 +9,7 @@ gServiceInterface = False
 
 def initializeConfigurationHandler( serviceInfo ):
   global gServiceInterface
-  gServiceInterface = ServiceInterface( serviceInfo.getURL() )
+  gServiceInterface = ServiceInterface( serviceInfo[ 'URL' ] )
   return S_OK()
 
 class ConfigurationHandler( RequestHandler ):

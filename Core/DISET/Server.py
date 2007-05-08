@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.6 2007/05/08 16:08:34 acasajus Exp $
-__RCSID__ = "$Id: Server.py,v 1.6 2007/05/08 16:08:34 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.7 2007/05/08 17:09:11 acasajus Exp $
+__RCSID__ = "$Id: Server.py,v 1.7 2007/05/08 17:09:11 acasajus Exp $"
 
 import socket
 import sys
@@ -24,18 +24,18 @@ class Server:
       serviceName = serviceName[1:]
     self.serviceName = serviceName
     self.serviceCfg = ServiceConfiguration( serviceName )
-    self.handlerManager = Dispatcher( self.serviceCfg )
-    retDict = self.handlerManager.loadHandler()
+    self.serviceAddress = ( "", self.serviceCfg.getPort() )
+    self.__buildURL()
+    self.handlerManager = Dispatcher( [ self.serviceCfg ] )
+    retDict = self.handlerManager.loadHandlers()
     if not retDict[ 'OK' ]:
       gLogger.fatal( "Error while loading handler", retDict[ 'Message' ] )
       sys.exit(1)
-    self.threadPool = ThreadPool( 1, self.serviceCfg.getMaxThreads() )
-    self.threadPool.daemonize()
-    self.serviceAddress = ( "", self.serviceCfg.getPort() )
-    self.__buildURL()
-    self.__initializeHandler()
+    self.handlerManager.initializeHandlers()
     self.__initializeTransport()
     self.__initializeActivity()
+    self.threadPool = ThreadPool( 1, self.serviceCfg.getMaxThreads() )
+    self.threadPool.daemonize()
 
   def __initializeActivity( self ):
     gActivity.setComponentType( ACTIVITY_COMPONENT_SERVICE )
@@ -75,20 +75,6 @@ class Server:
       gLogger.fatal( "No valid protocol specified for the service", "%s is not a valid protocol" % sProtocol )
       sys.exit(1)
 
-  def __initializeHandler( self ):
-    handlerDict = self.handlerManager.getHandlerInfo()
-    handlerInitFunc = handlerDict[ "handlerInitialization" ]
-    if handlerInitFunc:
-      try:
-        retDict = handlerInitFunc( self.serviceCfg  )
-      except Exception, e:
-        gLogger.exception()
-        gLogger.fatal( "Can't call handler initialization function", str(e) )
-        sys.exit( 1 )
-      if not retDict[ 'OK' ]:
-        gLogger.fatal( "Error in the initialization function", retDict[ 'Message' ] )
-        sys.exit(1)
-
   def serve( self ):
     gLogger.info( "Handler up", "Serving from %s" % self.serviceURL )
     while True:
@@ -100,16 +86,12 @@ class Server:
       clientTransport = self.transport.acceptConnection()
     except socket.error:
       return
-    try:
-      self.handlerManager.lock()
-      if self.__checkClientAddress( clientTransport ):
-        gActivity.addMark( "Queries" )
-        self.threadPool.generateJobAndQueueIt( self.processClient,
-                                        args = ( clientTransport, ),
-                                        oExceptionCallback = self.processClientException )
+    if self.__checkClientAddress( clientTransport ):
+      gActivity.addMark( "Queries" )
+      self.threadPool.generateJobAndQueueIt( self.processClient,
+                                      args = ( clientTransport, ),
+                                      oExceptionCallback = self.processClientException )
 
-    finally:
-      self.handlerManager.unlock()
 
   def __checkClientAddress( self, clientTransport ):
     #TODO: Check that the IP is not banned
@@ -120,21 +102,25 @@ class Server:
 
   def processClient( self, clientTransport ):
     clientTransport.handshake()
-    receivedDataTuple = clientTransport.receiveData( 1024 )
-    gLogger.debug( "Received action from client", str( receivedDataTuple ) )
-    handlerDict = self.handlerManager.getHandlerForService( receivedDataTuple[0][0] )
+    actionTuple = clientTransport.receiveData( 1024 )
+    gLogger.debug( "Received action from client", str( actionTuple ) )
+    wantedService = actionTuple[0][0]
+    handlerDict = self.handlerManager.getHandlerInfo( wantedService )
     if not handlerDict:
-      clientTransport.sendData( S_ERROR( "No handler registered for %s" % receivedDataTuple[0][0] ) )
+      clientTransport.sendData( S_ERROR( "No handler registered for %s" % wantedService ) )
       clientTransport.close()
       return
     try:
-      serviceInfoDict = { 'serviceName' : receivedDataTuple[0][0],
-                          'instance' : receivedDataTuple[0][1],
-                          'serviceAddress' : self.serviceAddress,
-                          'URL' : self.serviceURL,
-                          'systemSectionPath' : self.serviceCfg.getSystemPath(),
-                          'serviceSectionPath' : self.serviceCfg.getServicePath()
-                        }
+      self.handlerManager.lock( wantedService )
+      self.__executeAction( actionTuple, clientTransport)
+    finally:
+      self.handlerManager.unlock( wantedService )
+
+  def __executeAction( self, actionTuple, clientTransport ):
+    handlerDict = self.handlerManager.getHandlerInfo( actionTuple[0][0] )
+    try:
+      serviceInfoDict = self.handlerManager.getServiceInfo( actionTuple[0][0] )
+      serviceInfoDict[ 'instance' ] = actionTuple[0][1]
       handlerInstance = handlerDict[ "handlerClass" ]( serviceInfoDict,
                       clientTransport,
                       handlerDict[ "lockManager" ] )
@@ -144,7 +130,7 @@ class Server:
       raise
     clientTransport.sendData( S_OK() )
     try:
-      handlerInstance.executeAction( receivedDataTuple[1] )
+      handlerInstance.executeAction( actionTuple[1] )
     except Exception, e:
       gLogger.exception( "Exception while executing handler action" )
       clientTransport.sendData( S_ERROR( "Exception while executing action: %s" % str( e ) ) )

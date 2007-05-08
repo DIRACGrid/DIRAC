@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Dispatcher.py,v 1.2 2007/05/03 18:59:48 acasajus Exp $
-__RCSID__ = "$Id: Dispatcher.py,v 1.2 2007/05/03 18:59:48 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Dispatcher.py,v 1.3 2007/05/08 17:09:12 acasajus Exp $
+__RCSID__ = "$Id: Dispatcher.py,v 1.3 2007/05/08 17:09:12 acasajus Exp $"
 
 from DIRAC.LoggingSystem.Client.Logger import gLogger
 from DIRAC.Core.DISET.private.LockManager import LockManager
@@ -8,33 +8,52 @@ from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 
 class Dispatcher:
 
-  def __init__( self, serviceCfg ):
-    self.serviceCfg = serviceCfg
-    self.serviceName = self.serviceCfg.getName()
+  def __init__( self, serviceCfgList ):
+    self.servicesDict = {}
+    for serviceCfg in serviceCfgList:
+      self.servicesDict[ serviceCfg.getName() ] = { 'cfg' : serviceCfg }
 
-  def loadHandler( self ):
-    retVal = self.__initializeRequestHandlers()
-    if not retVal[ 'OK' ]:
-      return retVal
-    self.__initializeLocks()
+  def loadHandlers( self ):
+    for serviceName in self.servicesDict.keys():
+      serviceCfg = self.servicesDict[ serviceName ][ 'cfg' ]
+      retVal = self.__registerHandler( serviceName )
+      if not retVal[ 'OK' ]:
+        return retVal
+      self.__initializeLocks( serviceName )
+      self.__generateServiceInfo( serviceName )
     return S_OK()
 
-  def __initializeLocks( self ):
-    maxWaitingRequests = self.serviceCfg.getMaxWaitingPetitions()
-    self.lockManager = LockManager( maxWaitingRequests )
-    funcLockManager = self.lockManager.createNewLockManager( self.serviceName )
-    requestHandler = self.handlerDict[ "handlerClass" ]
-    self.handlerDict[ "lockManager" ] = funcLockManager
+  def __generateServiceInfo( self, serviceName ):
+    serviceCfg = self.servicesDict[ serviceName ][ 'cfg' ]
+    serviceInfoDict = { 'serviceName' : serviceName,
+                        'URL' : serviceCfg.getURL(),
+                        'systemSectionPath' : serviceCfg.getSystemPath(),
+                        'serviceSectionPath' : serviceCfg.getServicePath()
+                  }
+    self.servicesDict[ serviceName ][ 'serviceInfo' ] = serviceInfoDict
+
+  def __initializeLocks( self, serviceName ):
+    serviceCfg = self.servicesDict[ serviceName ][ 'cfg' ]
+    handlerDict = self.servicesDict[ serviceName ][ 'handlerInfo' ]
+    requestHandler = handlerDict[ "handlerClass" ]
+
+    maxWaitingRequests = serviceCfg.getMaxWaitingPetitions()
+    lockManager = LockManager( maxWaitingRequests )
+    self.servicesDict[ serviceName ][ 'lockManager' ] = lockManager
+    funcLockManager = lockManager.createNewLockManager( serviceName )
+    handlerDict[ "lockManager" ] = funcLockManager
     for methodName in dir( requestHandler ):
       if methodName.find( "export_" ) == 0:
         exportedMethodName = methodName.replace( "export_", "" )
-        threadLimit = self.serviceCfg.getMaxThreadsPerFunction( exportedMethodName )
+        threadLimit = serviceCfg.getMaxThreadsPerFunction( exportedMethodName )
         funcLockManager.createNewLock( exportedMethodName, threadLimit )
 
-  def __initializeRequestHandlers( self ):
-    handlerLocation = self.serviceCfg.getHandlerLocation()
+  def __registerHandler( self, serviceName ):
+    serviceCfg = self.servicesDict[ serviceName ][ 'cfg' ]
+
+    handlerLocation = serviceCfg.getHandlerLocation()
     if not handlerLocation:
-      return S_ERROR( "handlerLocation is not defined in %s" % self.serviceCfg.getSectionPath() )
+      return S_ERROR( "handlerLocation is not defined in %s" % serviceCfg.getSectionPath() )
     gLogger.debug( "Found a handler", handlerLocation )
     if handlerLocation.find( "Handler.py" ) != len( handlerLocation ) - 10:
       return S_ERROR( "File %s does not have a valid handler name" % handlerLocation )
@@ -55,25 +74,42 @@ class Dispatcher:
     except:
       handlerInitMethod = False
       gLogger.debug( "Not found initialization function for service" )
-    self.handlerDict = {}
-    self.handlerDict[ "handlerName" ] = handlerName
-    self.handlerDict[ "handlerModule" ] = handlerModule
-    self.handlerDict[ "handlerClass" ] = handlerClass
-    self.handlerDict[ "handlerInitialization" ] = handlerInitMethod
+    handlerDict = {}
+    handlerDict[ "handlerName" ] = handlerName
+    handlerDict[ "handlerModule" ] = handlerModule
+    handlerDict[ "handlerClass" ] = handlerClass
+    handlerDict[ "handlerInitialization" ] = handlerInitMethod
+
+    self.servicesDict[ serviceName ][ 'handlerInfo' ] = handlerDict
     return S_OK()
 
-  def getHandlerForService( self, serviceName ):
-    gLogger.debug( "Dispatching action", "%s vs %s" % ( self.serviceName, serviceName  ) )
-    if self.serviceName == serviceName:
-      return self.handlerDict
-    else:
-      return False
+  def getHandlerInfo( self, serviceName ):
+    if serviceName in self.servicesDict.keys():
+      gLogger.debug( "Dispatching action", "Found handler for %s" % serviceName )
+      return self.servicesDict[ serviceName ][ 'handlerInfo' ]
+    return False
 
-  def getHandlerInfo( self ):
-    return self.handlerDict
+  def getServiceInfo( self, serviceName ):
+    return self.servicesDict[ serviceName ]
 
-  def lock( self ):
-    self.lockManager.lockGlobal()
+  def initializeHandlers( self ):
+    for serviceName in self.servicesDict.keys():
+      serviceInfo = self.servicesDict[ serviceName ][ 'serviceInfo' ]
+      handlerDict = self.servicesDict[ serviceName ][ 'handlerInfo' ]
+      handlerInitFunc = handlerDict[ "handlerInitialization" ]
+      if handlerInitFunc:
+        try:
+          retDict = handlerInitFunc( serviceInfo  )
+        except Exception, e:
+          gLogger.exception()
+          gLogger.fatal( "Can't call handler initialization function" "for service %s", ( serviceName, str(e) ) )
+          sys.exit( 1 )
+        if not retDict[ 'OK' ]:
+          gLogger.fatal( "Error in the initialization function", retDict[ 'Message' ] )
+          sys.exit(1)
 
-  def unlock( self ):
-    self.lockManager.unlockGlobal()
+  def lock( self, serviceName ):
+    self.servicesDict[ serviceName ][ 'lockManager' ].lockGlobal()
+
+  def unlock( self, serviceName ):
+    self.servicesDict[ serviceName ][ 'lockManager' ].unlockGlobal()
