@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.5 2007/05/08 14:44:07 acasajus Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.5 2007/05/08 14:44:07 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.6 2007/05/08 16:08:34 acasajus Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.6 2007/05/08 16:08:34 acasajus Exp $"
 
 import DIRAC
 from DIRAC.Core.DISET.private.Protocols import gProtocolDict
@@ -48,11 +48,11 @@ class BaseClient:
       gLogger.debug( "Using gateway", "%s" % dRetVal[ 'Value' ] )
       return "%s/%s" % ( List.randomize( List.fromChar( dRetVal[ 'Value'], "," ) ), self.serviceName )
 
-    dRetVal = getServiceURL( self.serviceName )
-    if not dRetVal[ 'OK' ]:
-      raise Exception( dRetVal[ 'Error' ] )
-    sURL = List.randomize( List.fromChar( dRetVal[ 'Value'], "," ) )
-    gLogger.debug( "Discovering URL for service", "%s -> %s" % ( sConfigurationPath, sURL ) )
+    urls = getServiceURL( self.serviceName )
+    if not urls:
+      raise Exception( "URL for service %s not found" % self.serviceName )
+    sURL = List.randomize( List.fromChar( urls, "," ) )[0]
+    gLogger.debug( "Discovering URL for service", "%s -> %s" % ( self.serviceName, sURL ) )
     return sURL
 
   def _connect( self ):

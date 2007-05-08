@@ -1,6 +1,7 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/ServiceConfiguration.py,v 1.4 2007/05/08 14:44:07 acasajus Exp $
-__RCSID__ = "$Id: ServiceConfiguration.py,v 1.4 2007/05/08 14:44:07 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/ServiceConfiguration.py,v 1.5 2007/05/08 16:08:34 acasajus Exp $
+__RCSID__ = "$Id: ServiceConfiguration.py,v 1.5 2007/05/08 16:08:34 acasajus Exp $"
 
+from DIRAC.Core.Utilities import Network
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection, getSystemSection
 from DIRAC.Core.DISET.private.Protocols import gDefaultProtocol
@@ -71,3 +72,9 @@ class ServiceConfiguration:
 
   def getSystemPath( self ):
     return self.systemSectionPath
+
+  def getHostname( self ):
+    hostname = self.getOption( "/DIRAC/Hostname" )
+    if not hostname:
+      return Network.getFQDN()
+    return hostname

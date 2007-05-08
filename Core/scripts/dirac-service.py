@@ -1,6 +1,6 @@
 #!/usr/bin/env python2.4
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/dirac-service.py,v 1.3 2007/05/08 14:44:09 acasajus Exp $
-__RCSID__ = "$Id: dirac-service.py,v 1.3 2007/05/08 14:44:09 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/dirac-service.py,v 1.4 2007/05/08 16:08:35 acasajus Exp $
+__RCSID__ = "$Id: dirac-service.py,v 1.4 2007/05/08 16:08:35 acasajus Exp $"
 
 import sys
 from dirac import DIRAC
@@ -23,7 +23,7 @@ userConfiguration.addMandatoryEntry( "HandlerPath" )
 userConfiguration.addMandatoryEntry( "/DIRAC/Setup" )
 resultDict = userConfiguration.loadUserData()
 if not resultDict[ 'OK' ]:
-  gLogger.error( "There were errors when loading user configuration", resultDict[ 'Message' ] )
+  gLogger.error( "There were errors when loading configuration", resultDict[ 'Message' ] )
   sys.exit(1)
 
 

@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Refresher.py,v 1.8 2007/05/08 14:44:04 acasajus Exp $
-__RCSID__ = "$Id: Refresher.py,v 1.8 2007/05/08 14:44:04 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Refresher.py,v 1.9 2007/05/08 16:08:34 acasajus Exp $
+__RCSID__ = "$Id: Refresher.py,v 1.9 2007/05/08 16:08:34 acasajus Exp $"
 
 import threading
 import time
@@ -133,7 +133,7 @@ class Refresher( threading.Thread ):
     if retVal[ 'OK' ]:
       dataDict = retVal[ 'Value' ]
       if localVersion < dataDict[ 'newestVersion' ] :
-        gLogger.info( "New version available", "Updating to version %s..." % dataDict[ 'newestVersion' ] )
+        gLogger.verbose( "New version available", "Updating to version %s..." % dataDict[ 'newestVersion' ] )
         gConfigurationData.loadRemoteCFGFromCompressedMem( dataDict[ 'data' ] )
         gLogger.info( "Updated to version %s" % gConfigurationData.getVersion() )
       return S_OK()

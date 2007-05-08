@@ -81,8 +81,7 @@ class UserConfiguration:
         return S_ERROR()
     except Exception, e:
       gLogger.exception()
-      gLogger.error( "Error while loading user specified configuration data", str( e ) )
-      return S_ERROR()
+      return S_ERROR( str( e ) )
     return S_OK()
 
 
@@ -138,7 +137,7 @@ class UserConfiguration:
 
   def __getRemoteConfiguration( self ):
     needCSData = True
-    if self.currentSectionPath == getServiceSection( "Configuration/CServer" ):
+    if self.currentSectionPath == getServiceSection( "Configuration/Server" ):
       if gConfigurationData.isMaster():
         gLogger.debug( "CServer is Master!" )
         needCSData = False

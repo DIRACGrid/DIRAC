@@ -42,7 +42,7 @@ def getServiceURL( serviceName, serviceTuple = False ):
   if not serviceTuple:
     serviceTuple = divideFullName( serviceName )
   systemSection = getSystemSection( serviceName, serviceTuple )
-  return "%s/URLs/%s" % ( systemSection, serviceTuple[1] )
+  return gConfigurationData.extractOptionFromCFG( "%s/URLs/%s" % ( systemSection, serviceTuple[1] ) )
 
 def getGatewayURL():
   gatewayList = gConfigurationData.extractOptionFromCFG( "/DIRAC/Gateway" )

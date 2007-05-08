@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.5 2007/05/08 14:44:05 acasajus Exp $
-__RCSID__ = "$Id: Server.py,v 1.5 2007/05/08 14:44:05 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.6 2007/05/08 16:08:34 acasajus Exp $
+__RCSID__ = "$Id: Server.py,v 1.6 2007/05/08 16:08:34 acasajus Exp $"
 
 import socket
 import sys
@@ -53,10 +53,8 @@ class Server:
           self.serviceURL = ":".join( urlFields )
           self.serviceCfg.setURL( self.serviceURL )
         return
-    hostName = self.serviceAddress[0]
+    hostName = self.serviceCfg.getHostname()
     port = self.serviceAddress[1]
-    if hostName == "":
-      hostName = Network.getFQDN()
     sURL = "%s://%s:%s/%s" % ( protocol,
                                   hostName,
                                   port,
@@ -126,7 +124,7 @@ class Server:
     gLogger.debug( "Received action from client", str( receivedDataTuple ) )
     handlerDict = self.handlerManager.getHandlerForService( receivedDataTuple[0][0] )
     if not handlerDict:
-      clientTransport.sendData( S_ERROR( "Service '%s' does not exist" % receivedDataTuple[0][0] ) )
+      clientTransport.sendData( S_ERROR( "No handler registered for %s" % receivedDataTuple[0][0] ) )
       clientTransport.close()
       return
     try:
