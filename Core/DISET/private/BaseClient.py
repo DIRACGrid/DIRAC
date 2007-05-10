@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.7 2007/05/10 14:46:28 acasajus Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.7 2007/05/10 14:46:28 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.8 2007/05/10 18:44:59 acasajus Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.8 2007/05/10 18:44:59 acasajus Exp $"
 
 import DIRAC
 from DIRAC.Core.DISET.private.Protocols import gProtocolDict
@@ -11,7 +11,7 @@ from DIRAC.ConfigurationSystem.Client.PathFinder import *
 
 class BaseClient:
 
-  defaultGroup = "/lhcb"
+  defaultGroup = "lhcb"
 
   def __init__( self, serviceName,
                 groupToUse = False,
@@ -67,6 +67,6 @@ class BaseClient:
     return S_OK()
 
   def _proposeAction( self, sAction ):
-    stConnectionInfo = ( ( self.URLTuple[3], DIRAC.setup ), sAction )
+    stConnectionInfo = ( ( self.URLTuple[3], DIRAC.setup ), sAction, self.groupToUse )
     self.transport.sendData( stConnectionInfo )
     return self.transport.receiveData()

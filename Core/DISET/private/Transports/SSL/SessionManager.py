@@ -1,3 +1,5 @@
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SessionManager.py,v 1.2 2007/05/10 18:44:58 acasajus Exp $
+__RCSID__ = "$Id: SessionManager.py,v 1.2 2007/05/10 18:44:58 acasajus Exp $"
 
 import OpenSSL
 

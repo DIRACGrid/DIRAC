@@ -1,4 +1,5 @@
-#!/usr/bin/env python2.2
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCert.py,v 1.4 2007/05/10 18:44:58 acasajus Exp $
+__RCSID__ = "$Id: GridCert.py,v 1.4 2007/05/10 18:44:58 acasajus Exp $"
 
 import os
 import os.path

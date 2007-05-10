@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/BaseTransport.py,v 1.3 2007/05/10 14:46:26 acasajus Exp $
-__RCSID__ = "$Id: BaseTransport.py,v 1.3 2007/05/10 14:46:26 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/BaseTransport.py,v 1.4 2007/05/10 18:44:57 acasajus Exp $
+__RCSID__ = "$Id: BaseTransport.py,v 1.4 2007/05/10 18:44:57 acasajus Exp $"
 
 from DIRAC.Core.DISET.private.Transports.DEncode import encode, decode
 from DIRAC.LoggingSystem.Client.Logger import gLogger
@@ -14,6 +14,13 @@ class BaseTransport:
     self.extraArgsDict = kwargs
     self.sReadBuffer = ""
     self.stServerAddress = stServerAddress
+    self.peerCredentials = {}
+
+  def getConnectingCredentials( self ):
+    return self.peerCredentials
+
+  def setDisetGroup( self, group ):
+    self.peerCredentials[ 'disetGroup' ] = group
 
   def serverMode( self ):
     return self.bServerMode

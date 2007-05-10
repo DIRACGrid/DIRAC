@@ -1,9 +1,11 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.3 2007/05/08 14:44:05 acasajus Exp $
-__RCSID__ = "$Id: RequestHandler.py,v 1.3 2007/05/08 14:44:05 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.4 2007/05/10 18:44:58 acasajus Exp $
+__RCSID__ = "$Id: RequestHandler.py,v 1.4 2007/05/10 18:44:58 acasajus Exp $"
 
+import types
 from DIRAC.Core.DISET.private.FileHelper import FileHelper
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.LoggingSystem.Client.Logger import gLogger
+from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.Core.Utilities import Time
 
 class RequestHandler:
@@ -17,6 +19,9 @@ class RequestHandler:
 
   def initialize( self ):
     pass
+
+  def getRemoteCredentials( self ):
+    return self.transport.getConnectingCredentials()
 
   def executeAction( self, action ):
     if action == "RPC":
@@ -69,15 +74,29 @@ class RequestHandler:
 
   def __doRPC( self ):
     stRPCQuery = self.transport.receiveData()
-    if not self.__RPCAuthorizeQuery( stRPCQuery ):
+    if not self.__authQuery( stRPCQuery[0] ):
+      credDict = self.getRemoteCredentials()
+      if 'username' in credDict.keys():
+        username = credDict[ 'username' ]
+      else:
+        username = 'unauthenticated'
+      gLogger.verbose( "Unauthorized query", "%s by %s" % ( stRPCQuery[0], username ) )
       self.transport.sendData( S_ERROR( "Unauthorized query" ) )
     else:
+      self.__logRPCQuery( stRPCQuery )
       uReturnValue = self.__RPCCallFunction( stRPCQuery )
       self.transport.sendData( uReturnValue )
 
-  def __RPCAuthorizeQuery( self, stRPCQuery ):
-    #TODO: Authorize correctly
-    return True
+  def __logRPCQuery( self, stRPCQuery ):
+    peerCreds = self.getRemoteCredentials()
+    if peerCreds.has_key( 'username' ):
+      peerId = "[%s]" % peerCreds[ 'username' ]
+    else:
+      peerId = ""
+    args = [ str( arg )[:20] for arg in stRPCQuery[1] ]
+    kwargs = [ "%s = %s" % ( str( key ), str( stRPCQuery[2][key] )[:20] ) for key in stRPCQuery[2].keys() ]
+    finalArgs = ", ".join( args + kwargs )
+    gLogger.info( "Executing RPC", "%s %s( %s )" % ( peerId, stRPCQuery[0], finalArgs ) )
 
   def __RPCCallFunction( self, stRPCQuery ):
     sRealMethodName = "export_%s" % stRPCQuery[0]
@@ -93,7 +112,7 @@ class RequestHandler:
     self.lockManager.lock( stRPCQuery[0] )
     try:
       try:
-        uReturnValue = oMethod( *stRPCQuery[1] )
+        uReturnValue = oMethod( *stRPCQuery[1], **stRPCQuery[2] )
         return uReturnValue
       finally:
         self.lockManager.unlock( stRPCQuery[0] )
@@ -120,6 +139,56 @@ class RequestHandler:
       gLogger.exception( sError )
       return S_ERROR( sError )
     return S_OK()
+
+####
+#
+#  Auth methods
+#
+####
+
+  def __authQuery( self, method ):
+    credDict = self.getRemoteCredentials()
+    authGroups = self.__authGetGroupsForMethod( method )
+    if "any" in authGroups or "all" in authGroups:
+      return True
+    if not 'DN' in credDict.keys():
+      return False
+    if self.__authIsTrustedHost():
+      self.__authUnpackCredentialsFromGateway()
+      return self.__authQuery( stRPCQuery )
+    if not credDict[ 'disetGroup' ] in authGroups and not "authenticated" in authGroups:
+      return False
+    users = gConfig.getValue( "/Groups/%s/users" % credDict[ 'disetGroup' ], [] )
+    username = self.__authFindDNInUsers( credDict[ 'DN' ], users )
+    if username:
+      credDict[ 'username' ] = username
+      return True
+    return False
+
+  def __authGetGroupsForMethod( self, method ):
+    serviceSection = self.serviceInfoDict[ 'serviceSectionPath' ]
+    authGroups = gConfig.getValue( "%s/Authorization/%s" % ( serviceSection, method ), [] )
+    if not authGroups:
+      authGroups = gConfig.getValue( "%s/Authorization/Default" % serviceSection, [] )
+    return authGroups
+
+  def __authIsTrustedHost( self ):
+    credDict = self.getRemoteCredentials()
+    trustedHostsList = gConfig.getValue( "/DIRAC/Security/TrustedHosts", [] )
+    return credDict[ 'DN' ] in trustedHostsList and \
+            type( credDict[ 'disetGroup' ] ) == types.TupleType
+
+  def __authUnpackCredentialsFromGateway( self ):
+    credDict = self.getRemoteCredentials()
+    credDict[ 'DN' ] = credDict[ 'disetGroup' ][0]
+    credDict[ 'disetGroup' ] = credDict[ 'disetGroup' ][1]
+
+  def __authFindDNInUsers( self, DN, users ):
+    for user in users:
+      if DN == gConfig.getValue( "/Users/%s/DN" % user, "" ):
+        return user
+    return False
+
 
 ####
 #

@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.7 2007/05/08 17:09:11 acasajus Exp $
-__RCSID__ = "$Id: Server.py,v 1.7 2007/05/08 17:09:11 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.8 2007/05/10 18:44:58 acasajus Exp $
+__RCSID__ = "$Id: Server.py,v 1.8 2007/05/10 18:44:58 acasajus Exp $"
 
 import socket
 import sys
@@ -117,11 +117,12 @@ class Server:
       self.handlerManager.unlock( wantedService )
 
   def __executeAction( self, actionTuple, clientTransport ):
+    clientTransport.setDisetGroup( actionTuple[2] )
     handlerDict = self.handlerManager.getHandlerInfo( actionTuple[0][0] )
     try:
       serviceInfoDict = self.handlerManager.getServiceInfo( actionTuple[0][0] )
       serviceInfoDict[ 'instance' ] = actionTuple[0][1]
-      handlerInstance = handlerDict[ "handlerClass" ]( serviceInfoDict,
+      handlerInstance = handlerDict[ "handlerClass" ]( serviceInfoDict[ 'serviceInfo' ],
                       clientTransport,
                       handlerDict[ "lockManager" ] )
       handlerInstance.initialize()

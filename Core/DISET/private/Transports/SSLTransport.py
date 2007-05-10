@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSLTransport.py,v 1.4 2007/05/10 14:46:26 acasajus Exp $
-__RCSID__ = "$Id: SSLTransport.py,v 1.4 2007/05/10 14:46:26 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSLTransport.py,v 1.5 2007/05/10 18:44:58 acasajus Exp $
+__RCSID__ = "$Id: SSLTransport.py,v 1.5 2007/05/10 18:44:58 acasajus Exp $"
 
 import OpenSSL
 from DIRAC.Core.DISET.private.Transports.BaseTransport import BaseTransport
@@ -7,9 +7,6 @@ from DIRAC.LoggingSystem.Client.Logger import gLogger
 from DIRAC.Core.DISET.private.Transports.SSL.SocketInfoFactory import gSocketInfoFactory
 
 class SSLTransport( BaseTransport ):
-
-  def getUserInfo( self ):
-    return self.peerCredentials
 
   def initAsClient( self ):
     self.oSocketInfo = gSocketInfoFactory.getSocket( self.stServerAddress, **self.extraArgsDict )
@@ -29,7 +26,9 @@ class SSLTransport( BaseTransport ):
     self.oSocket.close()
 
   def handshake( self ):
-    self.peerCredentials = self.oSocketInfo.doServerHandshake()
+    creds = self.oSocketInfo.doServerHandshake()
+    for key in creds.keys():
+      self.peerCredentials[ key ] = creds[ key ]
 
   def setClientSocket( self, oSocket ):
     if self.serverMode():

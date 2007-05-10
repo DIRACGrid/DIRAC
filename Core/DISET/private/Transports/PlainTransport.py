@@ -1,14 +1,11 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/PlainTransport.py,v 1.3 2007/05/03 18:59:47 acasajus Exp $
-__RCSID__ = "$Id: PlainTransport.py,v 1.3 2007/05/03 18:59:47 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/PlainTransport.py,v 1.4 2007/05/10 18:44:57 acasajus Exp $
+__RCSID__ = "$Id: PlainTransport.py,v 1.4 2007/05/10 18:44:57 acasajus Exp $"
 
 import socket
 from DIRAC.Core.DISET.private.Transports.BaseTransport import BaseTransport
 from DIRAC.LoggingSystem.Client.Logger import gLogger
 
 class PlainTransport( BaseTransport ):
-
-  def getUserInfo( self ):
-    return {}
 
   def initAsClient( self ):
     self.oSocket = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
