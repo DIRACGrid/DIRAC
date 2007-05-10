@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.4 2007/05/10 18:44:58 acasajus Exp $
-__RCSID__ = "$Id: RequestHandler.py,v 1.4 2007/05/10 18:44:58 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.5 2007/05/10 18:47:52 acasajus Exp $
+__RCSID__ = "$Id: RequestHandler.py,v 1.5 2007/05/10 18:47:52 acasajus Exp $"
 
 import types
 from DIRAC.Core.DISET.private.FileHelper import FileHelper
@@ -44,7 +44,7 @@ class RequestHandler:
 
   def __doFileTransfer( self, sDirection ):
     sFileId = self.transport.receiveData()
-    if not self.__authorizeTransferQuery( sDirection, sFileId ):
+    if not self.__authQuery( "FileTransfer/%s" % sDirection ):
       self.transport.sendData( S_ERROR( "Unauthorized query" ) )
       return
     if "File%sCallback" % sDirection not in dir( self ):
@@ -60,11 +60,6 @@ class RequestHandler:
     if not oFH.finishedTransmission():
       gLogger.error( "You haven't finished receiving the file", sFileId )
     self.transport.sendData( uRetVal )
-
-  def __authorizeTransferQuery( self, sDirection, sFileId ):
-    #TODO
-    return True
-
 
 #####
 #
