@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationClient.py,v 1.2 2007/05/08 14:44:05 acasajus Exp $
-__RCSID__ = "$Id: ConfigurationClient.py,v 1.2 2007/05/08 14:44:05 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationClient.py,v 1.3 2007/05/10 14:46:27 acasajus Exp $
+__RCSID__ = "$Id: ConfigurationClient.py,v 1.3 2007/05/10 14:46:27 acasajus Exp $"
 
 import types
 from DIRAC.Core.Utilities import List
@@ -29,7 +29,7 @@ class ConfigurationClient:
       gLogger.error( "gConfig.getValue for invalid value", retVal[ 'Message' ] )
       return None
 
-  def get( self, optionPath, defaultValue = None ):
+  def getOption( self, optionPath, defaultValue = None ):
     gRefresher.refreshConfigurationIfNeeded()
     optionValue = gConfigurationData.extractOptionFromCFG( optionPath )
     if not optionValue:

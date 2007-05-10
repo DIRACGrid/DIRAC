@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.6 2007/05/08 16:08:34 acasajus Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.6 2007/05/08 16:08:34 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.7 2007/05/10 14:46:28 acasajus Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.7 2007/05/10 14:46:28 acasajus Exp $"
 
 import DIRAC
 from DIRAC.Core.DISET.private.Protocols import gProtocolDict
@@ -18,9 +18,10 @@ class BaseClient:
                 useCertificates = False,
                 timeout = False ):
     self.serviceName = serviceName
-    #self.setup = gConfig.get( "/DIRAC/Setup" )
+    #self.setup = gConfig.getOption( "/DIRAC/Setup" )
     self.timeout = timeout
     self.serviceURL = self.__discoverServiceURL()
+    self.useCertificates = useCertificates
     try:
       retVal = Network.splitURL( self.serviceURL )
       if retVal[ 'OK' ]:
@@ -43,7 +44,7 @@ class BaseClient:
         gLogger.debug( "Already given a valid url", self.serviceName )
         return self.serviceName
 
-    dRetVal = gConfig.get( "/DIRAC/Gateway" )
+    dRetVal = gConfig.getOption( "/DIRAC/Gateway" )
     if dRetVal[ 'OK' ]:
       gLogger.debug( "Using gateway", "%s" % dRetVal[ 'Value' ] )
       return "%s/%s" % ( List.randomize( List.fromChar( dRetVal[ 'Value'], "," ) ), self.serviceName )
@@ -58,7 +59,7 @@ class BaseClient:
   def _connect( self ):
     try:
       gLogger.debug( "Using %s protocol" % self.URLTuple[0] )
-      self.transport = gProtocolDict[ self.URLTuple[0] ]( self.URLTuple[1:3] )
+      self.transport = gProtocolDict[ self.URLTuple[0] ]( self.URLTuple[1:3], useCertificates = self.useCertificates )
       self.transport.initAsClient()
     except Exception, e:
       gLogger.exception()

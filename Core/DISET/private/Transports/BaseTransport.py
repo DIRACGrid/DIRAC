@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/BaseTransport.py,v 1.2 2007/05/03 18:59:47 acasajus Exp $
-__RCSID__ = "$Id: BaseTransport.py,v 1.2 2007/05/03 18:59:47 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/BaseTransport.py,v 1.3 2007/05/10 14:46:26 acasajus Exp $
+__RCSID__ = "$Id: BaseTransport.py,v 1.3 2007/05/10 14:46:26 acasajus Exp $"
 
 from DIRAC.Core.DISET.private.Transports.DEncode import encode, decode
 from DIRAC.LoggingSystem.Client.Logger import gLogger
@@ -9,8 +9,9 @@ class BaseTransport:
   bAllowReuseAddress = True
   iListenQueueSize = 5
 
-  def __init__( self, stServerAddress, bServerMode = False ):
+  def __init__( self, stServerAddress, bServerMode = False, **kwargs ):
     self.bServerMode = bServerMode
+    self.extraArgsDict = kwargs
     self.sReadBuffer = ""
     self.stServerAddress = stServerAddress
 

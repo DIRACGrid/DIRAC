@@ -11,17 +11,21 @@ class SocketInfoFactory:
   def __init__( self ):
     self.sessionManager = SessionManager()
 
-  def generateClientInfo( self, destinationHostname ):
+  def generateClientInfo( self, destinationHostname, kwargs ):
     infoDict = { 'clientMode' : True, 'hostname' : destinationHostname }
+    for key in kwargs.keys():
+      infoDict[ key ] = kwargs[ key ]
     return SocketInfo( infoDict )
 
-  def generateServerInfo( self ):
+  def generateServerInfo( self, kwargs ):
     infoDict = { 'clientMode' : False }
+    for key in kwargs.keys():
+      infoDict[ key ] = kwargs[ key ]
     return SocketInfo( infoDict )
 
-  def getSocket( self, hostAddress ):
+  def getSocket( self, hostAddress, **kwargs ):
     osSocket = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
-    socketInfo = self.generateClientInfo( hostAddress[0] )
+    socketInfo = self.generateClientInfo( hostAddress[0], kwargs )
     sslSocket = SSL.Connection( socketInfo.getSSLContext(), osSocket )
     sslSocket = ThreadSafeSSLObject( sslSocket )
     sslSocket = FakeSocket( sslSocket )
@@ -36,11 +40,11 @@ class SocketInfoFactory:
 
     return socketInfo
 
-  def getListeningSocket( self, hostAddress, listeningQueueSize = 5, reuseAddress = True ):
+  def getListeningSocket( self, hostAddress, listeningQueueSize = 5, reuseAddress = True, **kwargs ):
     osSocket = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
     if reuseAddress:
       osSocket.setsockopt( socket.SOL_SOCKET, socket.SO_REUSEADDR, 1 )
-    socketInfo = self.generateServerInfo()
+    socketInfo = self.generateServerInfo( kwargs )
     sslSocket = SSL.Connection( socketInfo.getSSLContext(), osSocket )
     sslSocket.bind( hostAddress )
     sslSocket.listen( listeningQueueSize )

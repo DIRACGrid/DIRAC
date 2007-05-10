@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.5 2007/05/08 14:44:08 acasajus Exp $
-__RCSID__ = "$Id: Logger.py,v 1.5 2007/05/08 14:44:08 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.6 2007/05/10 14:46:28 acasajus Exp $
+__RCSID__ = "$Id: Logger.py,v 1.6 2007/05/10 14:46:28 acasajus Exp $"
 """
    DIRAC Logger client
 """
@@ -44,10 +44,11 @@ class Logger:
         self._backendsDict[ instance.getName() ] = instance
 
   def initialize (self, systemName, cfgPath ):
+    #TODO: Fallback section is /DIRAC
     if not self._systemName:
       from DIRAC.ConfigurationSystem.Client.Config import gConfig
       #Configure outputs
-      retDict = gConfig.get( "%s/LogOutputs" % cfgPath )
+      retDict = gConfig.getOption( "%s/LogBackends" % cfgPath )
       if not retDict[ 'OK' ]:
         desiredOutputList = [ 'stdout' ]
       else:
@@ -60,14 +61,14 @@ class Logger:
           self.warn( "Unexistant method for showing messages",
                      "Unexistant %s logging method" % outputMetod)
       #Configure verbosity
-      retDict = gConfig.get( "%s/LogLevel" % cfgPath )
+      retDict = gConfig.getOption( "%s/LogLevel" % cfgPath )
       if not retDict[ 'OK' ]:
         self._minLevel = self._logLevels.getLevelValue( "INFO" )
       else:
         if retDict[ 'Value' ].upper() in self._logLevels.getLevels():
           self._minLevel = abs( self._logLevels.getLevelValue( retDict[ 'Value' ].upper() ) )
       #Configure framing
-      retDict = gConfig.get( "%s/LogShowFrames" % cfgPath )
+      retDict = gConfig.getOption( "%s/LogShowLine" % cfgPath )
       if retDict[ 'OK' ] and retDict[ 'Value' ].lower() in ( "y", "yes", "1", "true" ) :
         self._showCallingFrame = True
       self._systemName = str( systemName )

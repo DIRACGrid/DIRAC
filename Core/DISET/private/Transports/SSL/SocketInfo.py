@@ -1,7 +1,7 @@
 
 import time
 import copy
-from OpenSSL import SSL
+from OpenSSL import SSL, crypto
 from DIRAC.Core.Utilities import GridCert
 from DIRAC.LoggingSystem.Client.Logger import gLogger
 
@@ -10,7 +10,10 @@ class SocketInfo:
   def __init__( self, infoDict ):
     self.infoDict = infoDict
     if self.infoDict[ 'clientMode' ]:
-      self.__generateClientContext()
+      if self.infoDict.has_key( 'useCertificates' ) and self.infoDict[ 'useCertificates' ]:
+        self.__generateContextWithCerts()
+      else:
+        self.__generateContextWithProxy()
     else:
       self.__generateServerContext()
 
@@ -28,6 +31,8 @@ class SocketInfo:
     return credDict
 
   def __cleanDN( self, dn ):
+    dn = str( dn )
+    dn = dn[ 18:-2]
     for proxyRubbish in ( "/CN=proxy", "/CN=limitedproxy" ):
       position = dn.find( proxyRubbish )
       while position > -1:
@@ -77,7 +82,7 @@ class SocketInfo:
     self.sslContext.load_verify_locations_path( casPath )
     self.sslContext.set_session_id( "DISETConnection%s" % str( time.time() ) )
 
-  def __generateServerContext( self ):
+  def __generateContextWithCerts( self ):
     self.__createContext()
     certKeyTuple = GridCert.getCertificateAndKey()
     gLogger.verbose("Using certificate %s\nUsing key %s" % certKeyTuple )
@@ -85,13 +90,18 @@ class SocketInfo:
     self.sslContext.use_privatekey_file(  certKeyTuple[1] )
     self.setLocalCredentialsLocation( certKeyTuple )
 
-  def __generateClientContext( self ):
+  def __generateContextWithProxy( self ):
     self.__createContext()
     proxyPath = GridCert.getGridProxy()
     gLogger.verbose( "Using proxy %s" % proxyPath )
     self.sslContext.use_certificate_chain_file( proxyPath )
     self.sslContext.use_privatekey_file( proxyPath )
     self.setLocalCredentialsLocation( ( proxyPath, proxyPath ) )
+
+  def __generateServerContext( self ):
+      self.__generateContextWithCerts()
+      self.sslContext.get_cert_store().set_flags( crypto.X509_CRL_CHECK )
+      self.sslContext.set_GSI_verify()
 
   def doClientHandshake( self ):
     self.sslSocket.set_connect_state()
@@ -109,6 +119,6 @@ class SocketInfo:
       #gLogger.warn( "Error while handshaking", "\n".join( [ stError[2] for stError in v.args[0] ] ) )
       gLogger.warn( "Error while handshaking", v )
       raise
-    self.gatherPeerCredentials()
-    gLogger.info( "", "Authorized peer (%s)" % credetialsDict[ 'DN' ] )
-    return credetialsDict
+    credentialsDict = self.gatherPeerCredentials()
+    gLogger.info( "", "Authorized peer (%s)" % credentialsDict[ 'DN' ] )
+    return credentialsDict

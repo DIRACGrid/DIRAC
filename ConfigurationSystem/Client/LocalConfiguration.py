@@ -1,5 +1,5 @@
-# $Header$
-__RCSID__ = "$Id$"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/LocalConfiguration.py,v 1.1 2007/05/10 14:46:28 acasajus Exp $
+__RCSID__ = "$Id: LocalConfiguration.py,v 1.1 2007/05/10 14:46:28 acasajus Exp $"
 
 import sys
 import getopt
@@ -11,7 +11,7 @@ from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationDat
 from DIRAC.ConfigurationSystem.private.Refresher import gRefresher
 from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection
 
-class UserConfiguration:
+class LocalConfiguration:
 
   def __init__( self, defaultSectionPath = "" ):
     self.currentSectionPath = defaultSectionPath
@@ -151,10 +151,11 @@ class UserConfiguration:
 
     return S_OK()
 
-  def setServerSection( self, serviceName ):
+  def setConfigurationForServer( self, serviceName ):
     self.componentName = serviceName
     self.currentSectionPath = getServiceSection( serviceName )
     self.loggingSection = self.currentSectionPath
+    #gRefresher.useHostCertificates()
     return self.currentSectionPath
 
   def __setSectionByCmd( self, value ):

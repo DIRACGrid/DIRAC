@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSLTransport.py,v 1.3 2007/05/03 18:59:47 acasajus Exp $
-__RCSID__ = "$Id: SSLTransport.py,v 1.3 2007/05/03 18:59:47 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSLTransport.py,v 1.4 2007/05/10 14:46:26 acasajus Exp $
+__RCSID__ = "$Id: SSLTransport.py,v 1.4 2007/05/10 14:46:26 acasajus Exp $"
 
 import OpenSSL
 from DIRAC.Core.DISET.private.Transports.BaseTransport import BaseTransport
@@ -12,7 +12,7 @@ class SSLTransport( BaseTransport ):
     return self.peerCredentials
 
   def initAsClient( self ):
-    self.oSocketInfo = gSocketInfoFactory.getSocket( self.stServerAddress )
+    self.oSocketInfo = gSocketInfoFactory.getSocket( self.stServerAddress, **self.extraArgsDict )
     self.oSocket = self.oSocketInfo.getSSLSocket()
 
   def initAsServer( self ):
@@ -20,7 +20,8 @@ class SSLTransport( BaseTransport ):
       raise RuntimeError( "Must be initialized as server mode" )
     self.oSocketInfo = gSocketInfoFactory.getListeningSocket( self.stServerAddress,
                                                       self.iListenQueueSize,
-                                                      self.bAllowReuseAddress )
+                                                      self.bAllowReuseAddress,
+                                                      **self.extraArgsDict )
     self.oSocket = self.oSocketInfo.getSSLSocket()
 
   def close( self ):

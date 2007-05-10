@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Refresher.py,v 1.9 2007/05/08 16:08:34 acasajus Exp $
-__RCSID__ = "$Id: Refresher.py,v 1.9 2007/05/08 16:08:34 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Refresher.py,v 1.10 2007/05/10 14:46:27 acasajus Exp $
+__RCSID__ = "$Id: Refresher.py,v 1.10 2007/05/10 14:46:27 acasajus Exp $"
 
 import threading
 import time
@@ -20,8 +20,12 @@ class Refresher( threading.Thread ):
     self.bUpdating = False
     self.sURL = False
     self.bEnabled = True
+    self.bUseCertificates = False
     random.seed()
     self.oTriggeredRefreshLock = threading.Lock()
+
+  def useHostCertificates( self, useCerts = True ):
+    self.bUseCertificates = useCerts
 
   def disable( self ):
     self.bEnabled = False
@@ -52,6 +56,8 @@ class Refresher( threading.Thread ):
       return
     updatingThread = threading.Thread( target = self.updateThreaded )
     updatingThread.start()
+    #TODISCUSS
+    #FIXME: Maybe no one waits for update to finish
     secondsCounter = 5
     for second in range( secondsCounter ):
       time.sleep( 1 )
@@ -77,10 +83,11 @@ class Refresher( threading.Thread ):
 
   def run( self ):
     while self.bAutomaticUpdate:
-      if not self.__refreshAndPublish():
-        gLogger.error( "Can't refresh configuration from any source" )
       iWaitTime = gConfigurationData.getPropagationTime()
       time.sleep( iWaitTime )
+      if not self.__refreshAndPublish():
+        gLogger.error( "Can't refresh configuration from any source" )
+
 
   def __refreshAndPublish( self ):
     self.iLastUpdateTime = time.time()
@@ -88,7 +95,7 @@ class Refresher( threading.Thread ):
     from DIRAC.Core.DISET.RPCClient import RPCClient
     sMasterServer = gConfigurationData.getMasterServer()
     if sMasterServer:
-      oClient = RPCClient( sMasterServer, timeout = 10 )
+      oClient = RPCClient( sMasterServer, timeout = 10, useCertificates = self.bUseCertificates )
       if gConfigurationData.getAutoPublish():
         gLogger.debug( "Publishing to master server..." )
         dRetVal = oClient.publishSlaveServer( self.sURL )
@@ -118,7 +125,7 @@ class Refresher( threading.Thread ):
 
     for sServer in lRandomListOfServers:
         from DIRAC.Core.DISET.RPCClient import RPCClient
-        oClient = RPCClient( sServer, timeout = 10 )
+        oClient = RPCClient( sServer, timeout = 10, useCertificates = self.bUseCertificates )
         dRetVal = self.__updateFromRemoteLocation( oClient )
         if dRetVal[ 'OK' ]:
           return dRetVal
