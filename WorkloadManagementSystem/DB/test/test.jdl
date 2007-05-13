@@ -1,0 +1,18 @@
+[
+
+Executable = "/bin/ls";
+Arguments = "> ls.out";
+InputSandbox = "test.jdl";
+OutputSandbox = "ls.out";
+JobType = "processing";
+JobGroup = "TestJobs";
+DIRACSetup = "Test";
+Requirements = Other.Site == "DIRAC.in2p3.fr";
+
+Parameters = [
+   Par1 = "Value1";
+   par2 = 3
+
+  ];
+
+]
