@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/PathFinder.py,v 1.3 2007/05/10 18:44:59 acasajus Exp $
-__RCSID__ = "$Id: PathFinder.py,v 1.3 2007/05/10 18:44:59 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/PathFinder.py,v 1.4 2007/05/13 20:44:57 atsareg Exp $
+__RCSID__ = "$Id: PathFinder.py,v 1.4 2007/05/13 20:44:57 atsareg Exp $"
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import List
@@ -16,7 +16,7 @@ def divideFullName( entityName ):
 
 def getSystemInstance( systemName ):
   setup = gConfigurationData.extractOptionFromCFG( "/DIRAC/Setup" )
-  optionPath = "/Setups/%s/%s" % ( setup, systemName )
+  optionPath = "/DIRAC/Setups/%s/%s" % ( setup, systemName )
   instance = gConfigurationData.extractOptionFromCFG( optionPath )
   if instance:
     return instance
@@ -35,6 +35,18 @@ def getServiceSection( serviceName, serviceTuple = False ):
     serviceTuple = divideFullName( serviceName )
   systemSection = getSystemSection( serviceName, serviceTuple )
   return "%s/Services/%s" % ( systemSection, serviceTuple[1] )
+
+def getAgentSection( agentName, agentTuple = False ):
+  if not agentTuple:
+    agentTuple = divideFullName( agentName )
+  systemSection = getSystemSection( agentName, agentTuple )
+  return "%s/Agents/%s" % ( systemSection, agentTuple[1] )
+  
+def getDatabaseSection(dbName, dbTuple = False):
+  if not dbTuple:
+    dbTuple = divideFullName( dbName )
+  systemSection = getSystemSection( dbName, dbTuple )
+  return "%s/Databases/%s" % ( systemSection, dbTuple[1] )  
 
 def getSystemURLSection( serviceName, serviceTuple = False ):
   systemSection = getSystemSection( serviceName, serviceTuple )
