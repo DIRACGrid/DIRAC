@@ -1,5 +1,5 @@
 ########################################################################
-# $Header $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/Attic/JobReceiverHandler.py,v 1.2 2007/05/13 21:11:35 atsareg Exp $
 ########################################################################
 
 """ JobReceiverHandler is the implementation of the JobReceiver service
@@ -12,7 +12,7 @@
     
 """
 
-__RCSID__ = "$Id $"
+__RCSID__ = "$Id: JobReceiverHandler.py,v 1.2 2007/05/13 21:11:35 atsareg Exp $"
 
 import types
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
