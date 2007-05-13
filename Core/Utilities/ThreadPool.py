@@ -1,5 +1,8 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/ThreadPool.py,v 1.2 2007/03/29 17:27:04 acasajus Exp $
-__RCSID__ = "$Id: ThreadPool.py,v 1.2 2007/03/29 17:27:04 acasajus Exp $"
+#################################################################
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/ThreadPool.py,v 1.3 2007/05/13 20:46:51 atsareg Exp $
+#################################################################
+
+__RCSID__ = "$Id $"
 
 import sys
 import Queue
@@ -162,7 +165,7 @@ class ThreadPool( threading.Thread ):
     return iProcessed
 
   def processAllResults( self ):
-    while not oPendingQueue.empty() and self.__countWorkingThreads():
+    while not self.oPendingQueue.empty() and self.__countWorkingThreads():
       time.sleep( 0.1 )
 
   def daemonize( self ):
