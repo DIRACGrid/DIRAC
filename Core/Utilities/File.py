@@ -1,9 +1,9 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/File.py,v 1.4 2007/05/14 15:35:22 gkuznets Exp $
+
 """
    Collection of DIRAC useful file related modules
    by default on Error they return None
 """
-__RCSID__ = "$Id: File.py,v 1.4 2007/05/14 15:35:22 gkuznets Exp $"
+__RCSID__ = "$Id: File.py,v 1.5 2007/05/14 15:36:13 gkuznets Exp $"
 
 import md5
 import random
