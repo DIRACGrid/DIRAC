@@ -1,6 +1,6 @@
 #!/usr/bin/env python2.4
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/Attic/dirac-service,v 1.1 2007/05/14 15:42:15 acasajus Exp $
-__RCSID__ = "$Id: dirac-service,v 1.1 2007/05/14 15:42:15 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/Attic/dirac-service,v 1.2 2007/05/14 18:27:09 acasajus Exp $
+__RCSID__ = "$Id: dirac-service,v 1.2 2007/05/14 18:27:09 acasajus Exp $"
 
 import sys
 from dirac import DIRAC

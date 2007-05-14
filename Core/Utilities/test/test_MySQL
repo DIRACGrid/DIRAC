@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/test/test_MySQL,v 1.2 2007/05/14 16:31:34 gkuznets Exp $
-__RCSID__ = "$Id: test_MySQL,v 1.2 2007/05/14 16:31:34 gkuznets Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/test/test_MySQL,v 1.3 2007/05/14 18:27:09 acasajus Exp $
+__RCSID__ = "$Id: test_MySQL,v 1.3 2007/05/14 18:27:09 acasajus Exp $"
 """
 """
 from dirac import DIRAC
