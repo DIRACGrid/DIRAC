@@ -1,27 +1,12 @@
-# $Id: Module.py,v 1.6 2007/05/14 15:56:25 gkuznets Exp $
+# $Id: Module.py,v 1.7 2007/05/14 16:33:16 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.6 $"
+__RCSID__ = "$Revision: 1.7 $"
 
-# $Author: gkuznets $
-# $CVSHeader: DIRAC3/DIRAC/Core/Workflow/Module.py,v 1.5 2007/05/14 15:54:17 gkuznets Exp $
-# $Date: 2007/05/14 15:56:25 $
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Workflow/Module.py,v 1.6 2007/05/14 15:56:25 gkuznets Exp $
-# $Id: Module.py,v 1.6 2007/05/14 15:56:25 gkuznets Exp $
-# $Name:  $
-# $Locker:  $
-# $Log: Module.py,v $
-# Revision 1.6  2007/05/14 15:56:25  gkuznets
-# Header test
-#
-# Revision 1.5  2007/05/14 15:54:17  gkuznets
-# Header test
-#
-# $RCSfile: Module.py,v $
-# $Revision: 1.6 $
+# $Revision: 1.7 $
 # $Source: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Workflow/Module.py,v $
-# $State: Exp $
+
 
 
 import copy
