@@ -1,9 +1,25 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Workflow/Module.py,v 1.4 2007/05/14 15:50:57 gkuznets Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Workflow/Module.py,v 1.5 2007/05/14 15:54:17 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Id: Module.py,v 1.4 2007/05/14 15:50:57 gkuznets Exp $"
-# $Vers: $
+__RCSID__ = "$Id: Module.py,v 1.5 2007/05/14 15:54:17 gkuznets Exp $"
+
+# $Author: gkuznets $
+# $CVSHeader$
+# $Date: 2007/05/14 15:54:17 $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Workflow/Module.py,v 1.5 2007/05/14 15:54:17 gkuznets Exp $
+# $Id: Module.py,v 1.5 2007/05/14 15:54:17 gkuznets Exp $
+# $Name:  $
+# $Locker:  $
+# $Log: Module.py,v $
+# Revision 1.5  2007/05/14 15:54:17  gkuznets
+# Header test
+#
+# $RCSfile: Module.py,v $
+# $Revision: 1.5 $
+# $Source: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Workflow/Module.py,v $
+# $State: Exp $
+
 
 import copy
 import new, sys
