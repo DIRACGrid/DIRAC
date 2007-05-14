@@ -1,9 +1,9 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Workflow/Module.py,v 1.3 2007/05/14 15:48:21 gkuznets Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Workflow/Module.py,v 1.4 2007/05/14 15:50:57 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Id: Module.py,v 1.3 2007/05/14 15:48:21 gkuznets Exp $"
-# $Version: $
+__RCSID__ = "$Id: Module.py,v 1.4 2007/05/14 15:50:57 gkuznets Exp $"
+# $Vers: $
 
 import copy
 import new, sys
