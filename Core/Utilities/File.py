@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/File.py,v 1.13 2007/05/14 16:28:59 gkuznets Exp $
-__RCSID__ = "$Id: File.py,v 1.13 2007/05/14 16:28:59 gkuznets Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/File.py,v 1.14 2007/05/14 16:29:35 gkuznets Exp $
+__RCSID__ = "$Id: File.py,v 1.14 2007/05/14 16:29:35 gkuznets Exp $"
 
 """
    Collection of DIRAC useful file related modules
