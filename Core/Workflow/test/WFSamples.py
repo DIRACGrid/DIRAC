@@ -1,7 +1,7 @@
-from Parameter import *
-from Module import *
-from Step import *
-from Workflow import *
+from Core.Workflow.Parameter import *
+from Core.Workflow.Module import *
+from Core.Workflow.Step import *
+from Core.Workflow.Workflow import *
 
 """ Collection of objects for the testing"""
 

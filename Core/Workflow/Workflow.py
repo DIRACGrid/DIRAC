@@ -1,12 +1,12 @@
-# $Id: Workflow.py,v 1.2 2007/05/14 16:52:56 gkuznets Exp $
+# $Id: Workflow.py,v 1.3 2007/05/14 17:15:20 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.2 $"
+__RCSID__ = "$Revision: 1.3 $"
 
-from DIRAC.Core.Workflow.Parameter import *
-from DIRAC.Core.Workflow.Module import *
-from DIRAC.Core.Workflow.Step import *
+from Core.Workflow.Parameter import *
+from Core.Workflow.Module import *
+from Core.Workflow.Step import *
 
 class Workflow(AttributeCollection):
     def __init__(self, type=None, obj=None):
@@ -188,7 +188,7 @@ class Workflow(AttributeCollection):
 # test section
 #============================================================================
 if __name__ == "__main__":
-    from WFSamples import *
+    from Core.Workflow.test.WFSamples import *
     #print w1
     w1.resolveGlobalVars()
     #print "# ================ CODE ========================"
