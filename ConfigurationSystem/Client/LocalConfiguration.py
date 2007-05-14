@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/LocalConfiguration.py,v 1.1 2007/05/10 14:46:28 acasajus Exp $
-__RCSID__ = "$Id: LocalConfiguration.py,v 1.1 2007/05/10 14:46:28 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/LocalConfiguration.py,v 1.2 2007/05/14 18:27:58 acasajus Exp $
+__RCSID__ = "$Id: LocalConfiguration.py,v 1.2 2007/05/14 18:27:58 acasajus Exp $"
 
 import sys
 import getopt
@@ -9,7 +9,7 @@ from DIRAC import S_OK, S_ERROR
 
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.ConfigurationSystem.private.Refresher import gRefresher
-from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection
+from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection, getAgentSection
 
 class LocalConfiguration:
 
@@ -118,6 +118,7 @@ class LocalConfiguration:
 
     errorsList = []
 
+    gConfigurationData.loadFile( os.path.expanduser( "~/.diracrc" ) )
     for fileName in self.AdditionalCfgFileList:
       retVal = gConfigurationData.loadFile( fileName )
       if not retVal[ 'OK' ]:
@@ -156,6 +157,12 @@ class LocalConfiguration:
     self.currentSectionPath = getServiceSection( serviceName )
     self.loggingSection = self.currentSectionPath
     #gRefresher.useHostCertificates()
+    return self.currentSectionPath
+
+  def setConfigurationForAgent( self, agentName ):
+    self.componentName = agentName
+    self.currentSectionPath = getAgentSection( agentName )
+    self.loggingSection = self.currentSectionPath
     return self.currentSectionPath
 
   def __setSectionByCmd( self, value ):
