@@ -1,3 +1,9 @@
+# $Id: Parameter.py,v 1.2 2007/05/14 16:52:56 gkuznets Exp $
+"""
+    This is a comment
+"""
+__RCSID__ = "$Revision: 1.2 $"
+
 # unbinded method, returns indentation string
 def indent(indent=0):
     return indent*2*' '

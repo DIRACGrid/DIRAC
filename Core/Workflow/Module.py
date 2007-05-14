@@ -1,17 +1,17 @@
-# $Id: Module.py,v 1.7 2007/05/14 16:33:16 gkuznets Exp $
+# $Id: Module.py,v 1.8 2007/05/14 16:52:56 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.7 $"
+__RCSID__ = "$Revision: 1.8 $"
 
-# $Revision: 1.7 $
+# $Revision: 1.8 $
 # $Source: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Workflow/Module.py,v $
 
 
 
 import copy
 import new, sys
-from Parameter import *
+from DIRAC.Core.Workflow.Parameter import *
 
 class ModuleDefinition(AttributeCollection):
 

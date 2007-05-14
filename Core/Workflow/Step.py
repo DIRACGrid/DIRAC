@@ -1,5 +1,11 @@
-from Parameter import *
-from Module import *
+# $Id: Step.py,v 1.2 2007/05/14 16:52:57 gkuznets Exp $
+"""
+    This is a comment
+"""
+__RCSID__ = "$Revision: 1.2 $"
+
+from DIRAC.Core.Workflow.Parameter import *
+from DIRAC.Core.Workflow.Module import *
 
 class StepDefinition(AttributeCollection):
 

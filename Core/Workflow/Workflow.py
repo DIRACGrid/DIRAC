@@ -1,6 +1,12 @@
-from Parameter import *
-from Module import *
-from Step import *
+# $Id: Workflow.py,v 1.2 2007/05/14 16:52:56 gkuznets Exp $
+"""
+    This is a comment
+"""
+__RCSID__ = "$Revision: 1.2 $"
+
+from DIRAC.Core.Workflow.Parameter import *
+from DIRAC.Core.Workflow.Module import *
+from DIRAC.Core.Workflow.Step import *
 
 class Workflow(AttributeCollection):
     def __init__(self, type=None, obj=None):
