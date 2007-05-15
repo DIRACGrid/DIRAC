@@ -1,7 +1,7 @@
-from Parameter import *
-from Module import *
-from Step import *
-from Workflow import *
+from DIRAC.Core.Workflow.Parameter import *
+from DIRAC.Core.Workflow.Module import *
+from DIRAC.Core.Workflow.Step import *
+from DIRAC.Core.Workflow.Workflow import *
 
 bodyTestApp = """class TestAppModule:
 

@@ -1,7 +1,13 @@
-from Core.Workflow.Parameter import *
-from Core.Workflow.Module import *
-from Core.Workflow.Step import *
-from Core.Workflow.Workflow import *
+try: # this part to inport as part of the DIRAC framework
+  from DIRAC.Core.Workflow.Parameter import *
+  from DIRAC.Core.Workflow.Module import *
+  from DIRAC.Core.Workflow.Step import *
+  from DIRAC.Core.Workflow.Workflow import *
+except: # this part is to import code without DIRAC
+  from Parameter import *
+  from Module import *
+  from Step import *
+  from Workflow import *
 
 """ Collection of objects for the testing"""
 

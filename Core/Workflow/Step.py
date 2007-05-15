@@ -1,11 +1,15 @@
-# $Id: Step.py,v 1.3 2007/05/14 17:15:20 gkuznets Exp $
+# $Id: Step.py,v 1.4 2007/05/15 13:51:19 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.3 $"
+__RCSID__ = "$Revision: 1.4 $"
 
-from Core.Workflow.Parameter import *
-from Core.Workflow.Module import *
+try: # this part to inport as part of the DIRAC framework
+  from DIRAC.Core.Workflow.Parameter import *
+  from DIRAC.Core.Workflow.Module import *
+except: # this part is to import code without DIRAC
+  from Parameter import *
+  from Module import *
 
 class StepDefinition(AttributeCollection):
 
