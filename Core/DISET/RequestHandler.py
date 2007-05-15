@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.7 2007/05/15 16:12:01 acasajus Exp $
-__RCSID__ = "$Id: RequestHandler.py,v 1.7 2007/05/15 16:12:01 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.8 2007/05/15 16:57:46 acasajus Exp $
+__RCSID__ = "$Id: RequestHandler.py,v 1.8 2007/05/15 16:57:46 acasajus Exp $"
 
 import types
 from DIRAC.Core.DISET.private.FileHelper import FileHelper
@@ -146,9 +146,6 @@ class RequestHandler:
     if self.__authIsForwardingCredentials():
       self.__authUnpackForwardedCredentials()
       return self.__authQuery( stRPCQuery )
-    #Get the username
-    if not self.__authGetUsername():
-      return False
     #Check everyone is authorized
     authGroups = self.__authGetGroupsForMethod( method )
     if "any" in authGroups or "all" in authGroups:
@@ -156,9 +153,15 @@ class RequestHandler:
     #Check user is authenticated
     credDict = self.getRemoteCredentials()
     if not 'DN' in credDict:
+      gLogger.debug( "User has no credentials" )
+      return False
+    #Get the username
+    if not self.__authGetUsername():
+      gLogger.debug( "Query no authorized, user has no valid credentials" )
       return False
     #Check authorized groups
     if not credDict[ 'disetGroup' ] in authGroups and not "authenticated" in authGroups:
+      gLogger.debug( "Group is not authorized" )
       return False
     return True
 
