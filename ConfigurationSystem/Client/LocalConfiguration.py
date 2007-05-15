@@ -1,9 +1,10 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/LocalConfiguration.py,v 1.3 2007/05/15 14:01:13 acasajus Exp $
-__RCSID__ = "$Id: LocalConfiguration.py,v 1.3 2007/05/15 14:01:13 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/LocalConfiguration.py,v 1.4 2007/05/15 17:08:54 acasajus Exp $
+__RCSID__ = "$Id: LocalConfiguration.py,v 1.4 2007/05/15 17:08:54 acasajus Exp $"
 
 import sys
 import os
 import getopt
+import posix
 
 from DIRAC import gLogger
 from DIRAC import S_OK, S_ERROR
@@ -42,12 +43,12 @@ class LocalConfiguration:
                                        str( value ) )
 
   def __registerBasicOptions( self ):
-    self.registerCmdOpt( "o", "option", "Option=value to add",
+    self.registerCmdOpt( "o:", "option=", "Option=value to add",
                          self.__setOptionByCmd  )
-    self.registerCmdOpt( "s", "section", "Section to add an option",
+    self.registerCmdOpt( "s:", "section=", "Section to add an option",
                          self.__setSectionByCmd )
     self.registerCmdOpt( "h", "help", "Shows this help",
-                         self.__showUsage )
+                         self.__showHelp )
 
   def registerCmdOpt( self, shortOption, longOption, helpString, function ):
     self.commandOptionList.append( ( shortOption, longOption, helpString, function ) )
@@ -92,11 +93,11 @@ class LocalConfiguration:
     longOptionList = []
     for optionTuple in self.commandOptionList:
       if shortOption.find( optionTuple[0] ) < 0:
-        shortOption += "%s:" % optionTuple[0]
+        shortOption += "%s" % optionTuple[0]
       else:
         gLog.warn( "Short option -%s has been already defined" % optionTuple[0] )
       if not optionTuple[1] in longOptionList:
-        longOptionList.append( "%s=" % optionTuple[1] )
+        longOptionList.append( "%s" % optionTuple[1] )
       else:
         gLog.warn( "Long option --%s has been already defined" % optionTuple[1] )
 
@@ -104,8 +105,9 @@ class LocalConfiguration:
       opts, args = getopt.gnu_getopt( sys.argv[1:], shortOption, longOptionList )
     except getopt.GetoptError, v:
       # print help information and exit:
-      gLog.fatal( "Error when parsing command line arguments: %s" % str( v ) )
-      self.__showUsage()
+      gLogger.initialize( "UNKNOWN", "/" )
+      gLogger.fatal( "Error when parsing command line arguments: %s" % str( v ) )
+      self.__showHelp()
       sys.exit(2)
 
     self.AdditionalCfgFileList = [ arg for arg in args if arg[-4:] == ".cfg" ]
@@ -128,7 +130,8 @@ class LocalConfiguration:
     for optionName, optionValue in self.parsedOptionList:
       optionName = optionName.replace( "-", "" )
       for definedOptionTuple in self.commandOptionList:
-        if optionName == definedOptionTuple[0] or optionName == definedOptionTuple[1]:
+        if optionName == definedOptionTuple[0].replace( ":", "" ) or \
+          optionName == definedOptionTuple[1].replace( "=", "" ):
           retVal = definedOptionTuple[3]( optionValue )
           if not retVal[ 'OK' ]:
             errorsList.append( retVal[ 'Message' ] )
@@ -186,11 +189,12 @@ class LocalConfiguration:
     self.setOptionValue( valueList[0] , valueList[1] )
     return S_OK()
 
-  def __showUsage( self ):
+  def __showHelp( self, dummy ):
+    gLogger.initialize( "UNKNOWN", "/DIRAC" )
     gLogger.info( "Usage:" )
     gLogger.info( "  %s (<options>|<cfgFile>)*" % sys.argv[0] )
     gLogger.info( "Options:" )
     for optionTuple in self.commandOptionList:
       gLogger.info( "  -%s  --%s  :  %s" % optionTuple[:3] )
-    return S_OK()
+    posix._exit( 0 )
 
