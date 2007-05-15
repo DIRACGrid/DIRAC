@@ -1,9 +1,10 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfo.py,v 1.3 2007/05/10 18:44:58 acasajus Exp $
-__RCSID__ = "$Id: SocketInfo.py,v 1.3 2007/05/10 18:44:58 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfo.py,v 1.4 2007/05/15 14:49:57 acasajus Exp $
+__RCSID__ = "$Id: SocketInfo.py,v 1.4 2007/05/15 14:49:57 acasajus Exp $"
 
 import time
 import copy
 from OpenSSL import SSL, crypto
+import DIRAC
 from DIRAC.Core.Utilities import GridCert
 from DIRAC.LoggingSystem.Client.Logger import gLogger
 
@@ -80,6 +81,8 @@ class SocketInfo:
     self.sslContext = SSL.Context( SSL.SSLv23_METHOD )
     self.sslContext.set_verify( SSL.VERIFY_PEER|SSL.VERIFY_FAIL_IF_NO_PEER_CERT, self.verifyCallback ) # Demand a certificate
     casPath = GridCert.getCAsLocation()
+    if not casPath:
+      DIRAC.abort( 10, "No valid CAs location found" )
     gLogger.verbose( "CAs location is %s" % casPath )
     self.sslContext.load_verify_locations_path( casPath )
     self.sslContext.set_session_id( "DISETConnection%s" % str( time.time() ) )
@@ -87,6 +90,8 @@ class SocketInfo:
   def __generateContextWithCerts( self ):
     self.__createContext()
     certKeyTuple = GridCert.getCertificateAndKey()
+    if not certKeyTuple:
+      DIRAC.abort( 10, "No valid certificate or key found" )
     gLogger.verbose("Using certificate %s\nUsing key %s" % certKeyTuple )
     self.sslContext.use_certificate_chain_file( certKeyTuple[0] )
     self.sslContext.use_privatekey_file(  certKeyTuple[1] )
@@ -95,6 +100,8 @@ class SocketInfo:
   def __generateContextWithProxy( self ):
     self.__createContext()
     proxyPath = GridCert.getGridProxy()
+    if not proxyPath:
+      DIRAC.abort( 10, "No valid proxy found" )
     gLogger.verbose( "Using proxy %s" % proxyPath )
     self.sslContext.use_certificate_chain_file( proxyPath )
     self.sslContext.use_privatekey_file( proxyPath )
