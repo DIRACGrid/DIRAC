@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationData.py,v 1.3 2007/05/03 18:59:47 acasajus Exp $
-__RCSID__ = "$Id: ConfigurationData.py,v 1.3 2007/05/03 18:59:47 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationData.py,v 1.4 2007/05/15 14:45:08 acasajus Exp $
+__RCSID__ = "$Id: ConfigurationData.py,v 1.4 2007/05/15 14:45:08 acasajus Exp $"
 
 import os.path
 import zlib
@@ -86,7 +86,7 @@ class ConfigurationData:
     self.dangerZoneStart()
     try:
       levelList = [ level.strip() for level in path.split( "/" ) if level.strip() != "" ]
-      for section in levelList[:-1]:
+      for section in levelList:
         cfg = cfg[ section ]
       return self.dangerZoneEnd( cfg.listSections() )
     except Exception, e:
@@ -99,7 +99,7 @@ class ConfigurationData:
     self.dangerZoneStart()
     try:
       levelList = [ level.strip() for level in path.split( "/" ) if level.strip() != "" ]
-      for section in levelList[:-1]:
+      for section in levelList:
         cfg = cfg[ section ]
       return self.dangerZoneEnd( cfg.listOptions() )
     except Exception, e:
