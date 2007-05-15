@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.5 2007/05/10 18:47:52 acasajus Exp $
-__RCSID__ = "$Id: RequestHandler.py,v 1.5 2007/05/10 18:47:52 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.6 2007/05/15 08:16:20 acasajus Exp $
+__RCSID__ = "$Id: RequestHandler.py,v 1.6 2007/05/15 08:16:20 acasajus Exp $"
 
 import types
 from DIRAC.Core.DISET.private.FileHelper import FileHelper
@@ -142,23 +142,25 @@ class RequestHandler:
 ####
 
   def __authQuery( self, method ):
-    credDict = self.getRemoteCredentials()
+    #Check if query comes though a gateway/web server
+    if self.__authIsForwardingCredentials():
+      self.__authUnpackForwardedCredentials()
+      return self.__authQuery( stRPCQuery )
+    #Get the username
+    if not self.__authGetUsername():
+      return False
+    #Check everyone is authorized
     authGroups = self.__authGetGroupsForMethod( method )
     if "any" in authGroups or "all" in authGroups:
       return True
-    if not 'DN' in credDict.keys():
+    #Check user is authenticated
+    credDict = self.getRemoteCredentials()
+    if not 'DN' in credDict:
       return False
-    if self.__authIsTrustedHost():
-      self.__authUnpackCredentialsFromGateway()
-      return self.__authQuery( stRPCQuery )
+    #Check authorized groups
     if not credDict[ 'disetGroup' ] in authGroups and not "authenticated" in authGroups:
       return False
-    users = gConfig.getValue( "/Groups/%s/users" % credDict[ 'disetGroup' ], [] )
-    username = self.__authFindDNInUsers( credDict[ 'DN' ], users )
-    if username:
-      credDict[ 'username' ] = username
-      return True
-    return False
+    return True
 
   def __authGetGroupsForMethod( self, method ):
     serviceSection = self.serviceInfoDict[ 'serviceSectionPath' ]
@@ -167,16 +169,29 @@ class RequestHandler:
       authGroups = gConfig.getValue( "%s/Authorization/Default" % serviceSection, [] )
     return authGroups
 
-  def __authIsTrustedHost( self ):
+  def __authIsForwardingCredentials( self ):
     credDict = self.getRemoteCredentials()
     trustedHostsList = gConfig.getValue( "/DIRAC/Security/TrustedHosts", [] )
     return credDict[ 'DN' ] in trustedHostsList and \
             type( credDict[ 'disetGroup' ] ) == types.TupleType
 
-  def __authUnpackCredentialsFromGateway( self ):
+  def __authUnpackForwardedCredentials( self ):
     credDict = self.getRemoteCredentials()
     credDict[ 'DN' ] = credDict[ 'disetGroup' ][0]
     credDict[ 'disetGroup' ] = credDict[ 'disetGroup' ][1]
+
+  def __authGetUsername( self ):
+    credDict = self.getRemoteCredentials()
+    if not "DN" in credDict:
+      return True
+    usersInGroup = gConfig.getValue( "/Groups/%s/users" % credDict[ 'disetGroup' ], [] )
+    if not usersInGroup:
+      return False
+    userName = self.__authFindDNInUsers( credDict[ 'DN' ], usersInGroup )
+    if username:
+      credDict[ 'username' ] = username
+      return True
+    return False
 
   def __authFindDNInUsers( self, DN, users ):
     for user in users:
