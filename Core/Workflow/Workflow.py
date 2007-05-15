@@ -1,8 +1,8 @@
-# $Id: Workflow.py,v 1.4 2007/05/15 13:51:19 gkuznets Exp $
+# $Id: Workflow.py,v 1.5 2007/05/15 14:50:39 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.4 $"
+__RCSID__ = "$Revision: 1.5 $"
 
 try: # this part to inport as part of the DIRAC framework
   from DIRAC.Core.Workflow.Parameter import *
@@ -205,9 +205,9 @@ if __name__ == "__main__":
     #print "# ================ CODE ========================"
     print w1.createCode()
     #print "------------------- result of the evaluation -------------"
-    eval(compile(w1.createCode(),'<string>','exec'))
+    #eval(compile(w1.createCode(),'<string>','exec'))
     #print " ================== Interpretation ======================="
-    #w1.execute()
+    w1.execute()
     #print w1.toXMLString()
     #import pickle
     #output = open('D:\gennady\workspace\Workflow\wf.pkl', 'wb')

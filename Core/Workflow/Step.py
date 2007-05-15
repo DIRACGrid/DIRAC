@@ -1,8 +1,8 @@
-# $Id: Step.py,v 1.4 2007/05/15 13:51:19 gkuznets Exp $
+# $Id: Step.py,v 1.5 2007/05/15 14:50:39 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.4 $"
+__RCSID__ = "$Revision: 1.5 $"
 
 try: # this part to inport as part of the DIRAC framework
   from DIRAC.Core.Workflow.Parameter import *
@@ -166,8 +166,8 @@ class StepInstance(AttributeCollection):
             setattr(step_exec_modules[mod_inst_name], 'STEP' , self)
             setattr(step_exec_modules[mod_inst_name], 'STEP_INSTANCE_NAME' , self.getName())
             setattr(step_exec_modules[mod_inst_name], 'STEP_DEFINITION_NAME' , self.getType())
-            setattr(step_exec_modules[mod_inst_name], 'WF' , self.parent)
-            setattr(step_exec_modules[mod_inst_name], 'WF_NAME' , self.parent.getName())
+            #setattr(step_exec_modules[mod_inst_name], 'WF' , self.parent)
+            #setattr(step_exec_modules[mod_inst_name], 'WF_NAME' , self.parent.getName())
 
             for parameter in mod_inst.parameters:
                 if parameter.preExecute():
