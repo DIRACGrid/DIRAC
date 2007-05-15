@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.2 2007/05/14 15:38:02 gkuznets Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.3 2007/05/15 15:45:07 acsmith Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -51,7 +51,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.2 2007/05/14 15:38:02 gkuznets Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.3 2007/05/15 15:45:07 acsmith Exp $"
 
 import re, os, sys, string
 import time
@@ -62,17 +62,15 @@ from types                                     import *
 from DIRAC                                     import gLogger, gConfig, S_OK, S_ERROR
 from BaseDB import BaseDB
 
-# Here for debugging purpose; should be initialized by the containing component
-gLogger.initialize('WMS','/Databases/JobDB/Test')
 
 #############################################################################
 class JobDB(BaseDB):
 
-  def __init__( self, systemInstance='Default', maxQueueSize=10 ):
+  def __init__( self, maxQueueSize=10 ):
     """ Standard Constructor
     """
 
-    BaseDB.__init__(self,'JobDB',systemInstance,maxQueueSize)
+    BaseDB.__init__(self,'JobDB','WorkloadManagement/JobDB',maxQueueSize)
 
     self.maxRescheduling = 30
     result = gConfig.getOption( self.cs_path+'/MaxRescheduling')

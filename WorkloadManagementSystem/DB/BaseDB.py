@@ -1,25 +1,26 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/Attic/BaseDB.py,v 1.1 2007/05/13 21:15:31 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/Attic/BaseDB.py,v 1.2 2007/05/15 15:45:06 acsmith Exp $
 ########################################################################
 
 """ BaseDB is the base class for multiple DIRAC databases. It uniforms the
     way how the database objects are constructed
 """
 
-__RCSID__ = "$Id: BaseDB.py,v 1.1 2007/05/13 21:15:31 atsareg Exp $"
+__RCSID__ = "$Id: BaseDB.py,v 1.2 2007/05/15 15:45:06 acsmith Exp $"
 
 import sys
 from DIRAC                           import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.MySQL      import MySQL 
+from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 
 ########################################################################
 class BaseDB(MySQL):
 
-  def __init__(self,dbname,systemInstance,maxQueueSize):
+  def __init__(self,dbname,fullname,maxQueueSize):
   
     self.database_name = dbname 
-    self.system = systemInstance
-    self.cs_path = '/Databases/'+self.database_name+'/'+self.system
+    self.fullname = fullname
+    self.cs_path = getDatabaseSection(fullname)
     
     self.gLogger = gLogger.getSubLogger(self.database_name)
     self.gLogger.initialize(self.database_name,self.cs_path)
@@ -53,6 +54,7 @@ class BaseDB(MySQL):
     if result['OK']:
       self.maxQueueSize = int(result['Value'])
 
+    print self.dbHost, self.dbUser, self.dbPass, self.dbName, maxQueueSize
     MySQL.__init__(self, self.dbHost, self.dbUser, self.dbPass, 
                    self.dbName, maxQueueSize=maxQueueSize )
 
@@ -63,7 +65,7 @@ class BaseDB(MySQL):
      
            
     self.gLogger.always("==================================================")
-    self.gLogger.always("SystemInstance: "+self.system)
+    #self.gLogger.always("SystemInstance: "+self.system)
     self.gLogger.always("User:           "+self.dbUser)
     self.gLogger.always("Host:           "+self.dbHost)
     #self.gLogger.always("Password:       "+self.dbPass)
