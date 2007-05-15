@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.8 2007/05/10 18:44:59 acasajus Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.8 2007/05/10 18:44:59 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.9 2007/05/15 15:27:56 acasajus Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.9 2007/05/15 15:27:56 acasajus Exp $"
 
 import DIRAC
 from DIRAC.Core.DISET.private.Protocols import gProtocolDict
@@ -8,6 +8,7 @@ from DIRAC.Core.Utilities import List, Network
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.ConfigurationSystem.Client.PathFinder import *
+from DIRAC.Core.Utilities import GridCert
 
 class BaseClient:
 
@@ -36,7 +37,7 @@ class BaseClient:
       self.groupToUse = groupToUse
     else:
       #TODO: Get real role
-      self.groupToUse = self.defaultGroup
+      self.groupToUse = GridCert.getDIRACGroup( self.defaultGroup )
 
   def __discoverServiceURL( self ):
     for protocol in gProtocolDict.keys():

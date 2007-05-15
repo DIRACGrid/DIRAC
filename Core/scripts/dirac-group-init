@@ -1,0 +1,22 @@
+#!/usr/bin/env python2.4
+
+import dirac
+import DIRAC
+from DIRAC.Core.Base.DiracScript import positionalArgs
+from DIRAC import gConfig, gLogger
+from DIRAC.Core.Utilities.GridCert import setDIRACGroup
+
+if not positionalArgs:
+	DIRAC.abort( 1, "Must specify which is the role you want" )
+userGroup = positionalArgs[0]
+
+retVal = gConfig.getSections( "/Groups" )
+if not retVal[ 'OK' ]:
+	DIRAC.abort( 1, "Problem getting available groups (%s)" % retVal[ 'Message' ] )
+groups = retVal[ 'Value' ]
+
+if userGroup not in groups:
+	DIRAC.abort( 1, "Selected group is not amongst available groups",
+					"\nAvailable groups are %s" % ", ".join( groups ) )
+
+setDIRACGroup( userGroup )
