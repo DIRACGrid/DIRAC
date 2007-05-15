@@ -1,7 +1,8 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/LocalConfiguration.py,v 1.2 2007/05/14 18:27:58 acasajus Exp $
-__RCSID__ = "$Id: LocalConfiguration.py,v 1.2 2007/05/14 18:27:58 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/LocalConfiguration.py,v 1.3 2007/05/15 14:01:13 acasajus Exp $
+__RCSID__ = "$Id: LocalConfiguration.py,v 1.3 2007/05/15 14:01:13 acasajus Exp $"
 
 import sys
+import os
 import getopt
 
 from DIRAC import gLogger
@@ -153,15 +154,21 @@ class LocalConfiguration:
     return S_OK()
 
   def setConfigurationForServer( self, serviceName ):
+    gRefresher.useHostCertificates()
     self.componentName = serviceName
     self.currentSectionPath = getServiceSection( serviceName )
     self.loggingSection = self.currentSectionPath
-    #gRefresher.useHostCertificates()
     return self.currentSectionPath
 
   def setConfigurationForAgent( self, agentName ):
     self.componentName = agentName
     self.currentSectionPath = getAgentSection( agentName )
+    self.loggingSection = self.currentSectionPath
+    return self.currentSectionPath
+
+  def setConfigurationForScript( self, scriptName ):
+    self.componentName = scriptName
+    self.currentSectionPath = "/Scripts/%s" % scriptName
     self.loggingSection = self.currentSectionPath
     return self.currentSectionPath
 
