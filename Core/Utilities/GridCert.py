@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCert.py,v 1.5 2007/05/15 15:27:55 acasajus Exp $
-__RCSID__ = "$Id: GridCert.py,v 1.5 2007/05/15 15:27:55 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCert.py,v 1.6 2007/05/15 16:51:05 acasajus Exp $
+__RCSID__ = "$Id: GridCert.py,v 1.6 2007/05/15 16:51:05 acasajus Exp $"
 
 import os
 import os.path
@@ -43,7 +43,7 @@ def getGridProxy():
     gLogger.verbose( "Using auto-discovered proxy in /tmp/%s" % proxyName )
     return "/tmp/%s" % proxyName
   #No gridproxy found
-  raise False
+  return False
 
 #Retrieve CA's location
 def getCAsLocation():
@@ -73,7 +73,7 @@ def getCAsLocation():
     gLogger.debug( "Using autodiscovered %s location for CA's" % casPath )
     return casPath
   #No CA's location found
-  raise False
+  return False
 
 #TODO: Static depending on files specified on CS
 #Retrieve certificate
