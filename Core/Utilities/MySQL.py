@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: MySQL.py,v 1.1 2007/03/30 16:07:01 rgracian Exp $
+# $Id: MySQL.py,v 1.2 2007/05/15 17:34:24 rgracian Exp $
 ########################################################################
 """ DIRAC Basic MySQL Class 
     It provides access to the basic MySQL methods in a multithread-safe mode
@@ -70,7 +70,7 @@
 
 """    
 
-__RCSID__ = "$Id: MySQL.py,v 1.1 2007/03/30 16:07:01 rgracian Exp $"
+__RCSID__ = "$Id: MySQL.py,v 1.2 2007/05/15 17:34:24 rgracian Exp $"
 
 
 from DIRAC                                  import gLogger
@@ -101,14 +101,14 @@ class MySQL:
     
     try:
       # This allows derived classes from MySQL to define their onw
-      # self.gLogger and will not be overwritten.
-      test = self.gLogger
+      # self.logger and will not be overwritten.
+      test = self.logger
     except:
-      self.gLogger = gLogger.getSubLogger( 'MySQL' )
+      self.logger = gLogger.getSubLogger( 'MySQL' )
     
     # let the derived class decide what to do with if is not 1
     self._threadsafe = MySQLdb.thread_safe()
-    self.gLogger.verbose( 'thread_safe = %s' % self._threadsafe )
+    self.logger.verbose( 'thread_safe = %s' % self._threadsafe )
 
     self.__checkQueueSize( maxQueueSize )
 
@@ -135,7 +135,7 @@ class MySQL:
         connection = self.__connectionQueue.get_nowait()
         connection.close()
       except Queue.Empty,x:
-        self.gLogger.verbose( 'No more connection in Queue' )
+        self.logger.verbose( 'No more connection in Queue' )
         break
 
 
@@ -158,11 +158,11 @@ class MySQL:
     try:
       raise v
     except MySQLdb.Error,e:
-      self.gLogger.error( '%s: %s' % ( methodName, err ), 
+      self.logger.error( '%s: %s' % ( methodName, err ), 
                      '%d: %s' % ( e.args[0], e.args[1] ) )
       return S_ERROR( '%s: ( %d: %s )' % ( err, e.args[0], e.args[1] ) )
     except Exception,x:
-      self.gLogger.error( '%s: %s' % ( methodName, err ), str(x) )
+      self.logger.error( '%s: %s' % ( methodName, err ), str(x) )
       return S_ERROR( '%s: (%s)' % ( err, str(x) ) )
 
 
@@ -182,15 +182,15 @@ class MySQL:
 
     try:
       escape_string = connection.escape_string( str(s) )
-      self.gLogger.debug( '__scape_string: returns', '"%s"' % escape_string )
+      self.logger.debug( '__scape_string: returns', '"%s"' % escape_string )
       return S_OK( '"%s"' % escape_string )
     except Exception,x:
-      self.gLogger.error( '__escape_string: Could not escape string', '"%s"' %s )
+      self.logger.error( '__escape_string: Could not escape string', '"%s"' %s )
       return self._except( '__escape_string',x,'Could not escape string' )
 
 
   def _escapeString( self, s, conn = False ):
-    self.gLogger.verbose( '_scapeString:', '"%s"' %s )
+    self.logger.verbose( '_scapeString:', '"%s"' %s )
 
     retDict = self.__getConnection( conn )
     if not retDict['OK'] : return retDict
@@ -207,7 +207,7 @@ class MySQL:
     """
     Escapes all strings in the list of values provided
     """
-    self.gLogger.verbose( '_escapeValues:', '%s' % inValues )
+    self.logger.verbose( '_escapeValues:', '%s' % inValues )
     
     retDict = self.__getConnection()
     if not retDict['OK'] : return retDict
@@ -234,20 +234,20 @@ class MySQL:
     set connected flag to True and return S_OK 
     return S_ERROR upon failure
     """
-    self.gLogger.verbose( '_connect:', self._connected )
+    self.logger.verbose( '_connect:', self._connected )
     if self._connected:
       return S_OK()
 
-    self.gLogger.debug( '_connect: Attempting to access DB',
+    self.logger.debug( '_connect: Attempting to access DB',
                         '[%s@%s] by user %s/%s.' % 
                         ( self.__dbName, self.__hostName, self.__userName, self.__passwd ) ) 
     try:
       self.__newConnection()
-      self.gLogger.verbose( '_connect: Connected.' )
+      self.logger.verbose( '_connect: Connected.' )
       self._connected = True
       return S_OK()
     except Exception, x:
-      self.gLogger.showStack()
+      self.logger.showStack()
       return self._except( '_connect', x, 'Could not connect to DB.' )
 
 
@@ -258,7 +258,7 @@ class MySQL:
     it returns an empty tuple if no matching rows are found
     return S_ERROR upon error
     """
-    self.gLogger.verbose( '_query:', cmd)
+    self.logger.verbose( '_query:', cmd)
 
     retDict = self.__getConnection( conn = conn )
     if not retDict['OK'] : return retDict
@@ -270,10 +270,10 @@ class MySQL:
         res = cursor.fetchall()
       else:
         res = ()
-      self.gLogger.verbose( '_query:', res )
+      self.logger.verbose( '_query:', res )
       retDict = S_OK( res )
     except Exception ,x:
-      self.gLogger.error( '_query:', cmd )
+      self.logger.error( '_query:', cmd )
       retDict = self._except( '_query', x, 'Excution failed.' )
 
     try:
@@ -291,7 +291,7 @@ class MySQL:
         return S_OK with number of updated registers upon success
         return S_ERROR upon error
     """
-    self.gLogger.verbose( '_update:', cmd )
+    self.logger.verbose( '_update:', cmd )
 
     retDict = self.__getConnection( conn = conn )
     if not retDict['OK'] : return retDict
@@ -301,10 +301,10 @@ class MySQL:
       cursor = connection.cursor()
       res = cursor.execute(cmd)
       connection.commit()
-      self.gLogger.verbose( '_update: %s.' % res )
+      self.logger.verbose( '_update: %s.' % res )
       retDict =  S_OK(res)
     except Exception,x:
-      self.gLogger.error( '_update: "%s".' % cmd )
+      self.logger.error( '_update: "%s".' % cmd )
       retDict = self._except( '_update', x, 'Execution failed.' )
 
     try:
@@ -328,7 +328,7 @@ class MySQL:
       quotedInFields.append( '`%s`' % field )
     inFieldString = string.join( quotedInFields, ', ' )
 
-    self.gLogger.verbose( '_insert:', 'inserting ( %s ) into table `%s`' 
+    self.logger.verbose( '_insert:', 'inserting ( %s ) into table `%s`' 
                           % ( inFieldString, tableName ) )
                           
     retDict = self.__checkFields( inFields, inValues )
@@ -356,7 +356,7 @@ class MySQL:
     if limit is not 0, the given limit is set
     Strings inValues are properly scaped using the _escape_string method.
     """
-    self.gLogger.verbose( '_getFields:', 'selecting fields %s from table `%s`.' %
+    self.logger.verbose( '_getFields:', 'selecting fields %s from table `%s`.' %
                           ( str(outFields), tableName ) )
 
     quotedOutFields = []
@@ -368,7 +368,7 @@ class MySQL:
 
     retDict = self.__checkFields( inFields, inValues )
     if not retDict['OK']:
-      self.gLogger.error( '_getFields: %s' % retDict['Message'] )
+      self.logger.error( '_getFields: %s' % retDict['Message'] )
       return retDict
 
     retDict = self._escapeValues( inValues )
@@ -406,7 +406,7 @@ class MySQL:
     """
     Create a New connection and put it in the Queue
     """
-    self.gLogger.debug( '__newConnection:' )
+    self.logger.debug( '__newConnection:' )
 
     connection = MySQLdb.connect( host=self.__hostName, 
                                   user=self.__userName, 
@@ -419,14 +419,14 @@ class MySQL:
     """
     Put a connection in the Queue, if the queue is full, the connection is closed
     """
-    self.gLogger.debug( '__putConnection:' )
+    self.logger.debug( '__putConnection:' )
 
     # Release the semaphore first, in case something fails
     self.__connectionSemaphore.release()
     try:
       self.__connectionQueue.put_nowait(connection)
     except Queue.Full, x:
-      self.gLogger.debug( '__putConnection: Full Queue' )
+      self.logger.debug( '__putConnection: Full Queue' )
       try:
         connection.close()
       except:
@@ -439,7 +439,7 @@ class MySQL:
     Return a new connection to the DB
     It uses the private method __getConnection
     """
-    self.gLogger.verbose( '_getConnection:' )
+    self.logger.verbose( '_getConnection:' )
 
     retDict = self.__getConnection( trial = 0 )
     self.__connectionSemaphore.release()
@@ -453,14 +453,14 @@ class MySQL:
     it will retry maxConnectRetry to open a new connection and will return 
     an error if it fails.
     """
-    self.gLogger.debug( '__getConnection:' )
+    self.logger.debug( '__getConnection:' )
 
     if conn: return S_OK( conn )
     
     try:
       self.__connectionSemaphore.acquire()
       connection = self.__connectionQueue.get_nowait()
-      self.gLogger.debug( '__getConnection: Got a connection from Queue')
+      self.logger.debug( '__getConnection: Got a connection from Queue')
       if connection:
         try:
           # This will try to reconect if the connection has timeout
@@ -472,7 +472,7 @@ class MySQL:
         return S_OK(connection)
     except Queue.Empty,x:
       self.__connectionSemaphore.release()
-      self.gLogger.debug( '__getConnection: Empty Queue' )
+      self.logger.debug( '__getConnection: Empty Queue' )
       try:
         if trial == min(10,maxConnectRetry):
           return S_ERROR( 'Could not get a connection after %s retries.' % maxConnectRetry )
@@ -480,7 +480,7 @@ class MySQL:
           self.__newConnection()
           return self.__getConnection( )
         except Exception, x:
-          self.gLogger.error( '__getConnection: Fails to get connection from Queue', x )
+          self.logger.error( '__getConnection: Fails to get connection from Queue', x )
           time.sleep( trial * 5.0 )
           newtrial = trial + 1
           return self.__getConnection( trial = newtrial )
