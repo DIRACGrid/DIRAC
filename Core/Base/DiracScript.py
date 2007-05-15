@@ -1,16 +1,16 @@
-#!/usr/bin/env python2.4
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Attic/DiracScript.py,v 1.1 2007/05/15 13:12:34 acasajus Exp $
-__RCSID__ = "$Id: DiracScript.py,v 1.1 2007/05/15 13:12:34 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Attic/DiracScript.py,v 1.2 2007/05/15 14:48:28 acasajus Exp $
+__RCSID__ = "$Id: DiracScript.py,v 1.2 2007/05/15 14:48:28 acasajus Exp $"
 
 import sys
-from dirac import DIRAC
+import os.path
 from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
 from DIRAC.LoggingSystem.Client.Logger import gLogger
 
 localCfg = LocalConfiguration()
 
-scriptName = sys.argv[0]
-serverSection = localCfg.setConfigurationForScript( scriptName )
+positionalArgs = localCfg.getPositionalArguments()
+scriptName = os.path.basename( sys.argv[0] )
+scriptSection = localCfg.setConfigurationForScript( scriptName )
 localCfg.addMandatoryEntry( "/DIRAC/Setup" )
 resultDict = localCfg.loadUserData()
 if not resultDict[ 'OK' ]:
