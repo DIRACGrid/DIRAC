@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.6 2007/05/15 08:16:20 acasajus Exp $
-__RCSID__ = "$Id: RequestHandler.py,v 1.6 2007/05/15 08:16:20 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.7 2007/05/15 16:12:01 acasajus Exp $
+__RCSID__ = "$Id: RequestHandler.py,v 1.7 2007/05/15 16:12:01 acasajus Exp $"
 
 import types
 from DIRAC.Core.DISET.private.FileHelper import FileHelper
@@ -188,8 +188,8 @@ class RequestHandler:
     if not usersInGroup:
       return False
     userName = self.__authFindDNInUsers( credDict[ 'DN' ], usersInGroup )
-    if username:
-      credDict[ 'username' ] = username
+    if userName:
+      credDict[ 'username' ] = userName
       return True
     return False
 
