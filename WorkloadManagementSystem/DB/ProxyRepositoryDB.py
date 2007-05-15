@@ -1,22 +1,22 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/Attic/ProxyRepositoryDB.py,v 1.2 2007/05/15 17:22:08 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/Attic/ProxyRepositoryDB.py,v 1.3 2007/05/15 17:26:17 atsareg Exp $
 ########################################################################
 """ ProxyRepository class is a front-end to the proxy repository Database    
 """    
 
-__RCSID__ = "$Id: ProxyRepositoryDB.py,v 1.2 2007/05/15 17:22:08 atsareg Exp $"
+__RCSID__ = "$Id: ProxyRepositoryDB.py,v 1.3 2007/05/15 17:26:17 atsareg Exp $"
 
 import time
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
-from BaseDB import BaseDB
+from DIRAC.Core.Base.DB import DB
 #from DIRAC.Core.Utilities.LCG import getProxyTimeLeft
 
 #############################################################################
-class ProxyRepositoryDB(BaseDB):
+class ProxyRepositoryDB(DB):
 
   def __init__(self, systemInstance='Default',maxQueueSize=10):
   
-    BaseDB.__init__(self,'ProxyRepositoryDB','WorkloadManagement/ProxyRepositoryDB',maxQueueSize)
+    DB.__init__(self,'ProxyRepositoryDB','WorkloadManagement/ProxyRepositoryDB',maxQueueSize)
      
 #############################################################################
   def storeProxy(self,proxy,dn,group=None):
