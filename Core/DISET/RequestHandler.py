@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.11 2007/05/16 15:58:46 acasajus Exp $
-__RCSID__ = "$Id: RequestHandler.py,v 1.11 2007/05/16 15:58:46 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.12 2007/05/16 17:04:21 acasajus Exp $
+__RCSID__ = "$Id: RequestHandler.py,v 1.12 2007/05/16 17:04:21 acasajus Exp $"
 
 import types
 from DIRAC.Core.DISET.private.FileHelper import FileHelper
@@ -43,7 +43,7 @@ class RequestHandler:
 #####
 
   def __doFileTransfer( self, sDirection ):
-    sFileId = self.transport.receiveData()
+    fileInfo = self.transport.receiveData()
     if not self.__authQuery( "FileTransfer/%s" % sDirection ):
       self.transport.sendData( S_ERROR( "Unauthorized query" ) )
       return
@@ -51,21 +51,21 @@ class RequestHandler:
       self.transport.sendData( S_ERROR( "Service can't transfer files in that direction" ) )
       return
     self.transport.sendData( S_OK() )
-    oFH = FileHelper( self.transport )
+    fileHelper = FileHelper( self.transport )
     if sDirection == "FromClient":
-      uRetVal = self.fileFromClientCallback( sFileId, oFH )
+      uRetVal = self.transfer_fromClient( fileInfo[0], fileInfo[1], fileHelper )
     elif sDirection == "ToClient" :
-      uRetVal = self.fileToClientCallback( sFileId, oFH )
+      uRetVal = self.transfer_toClient( fileInfo[0], fileHelper )
     else:
       S_ERROR( "Direction does not exist!!!" )
-    if not oFH.finishedTransmission():
-      gLogger.error( "You haven't finished receiving the file", sFileId )
+    if not fileHelper.finishedTransmission():
+      gLogger.error( "You haven't finished receiving the file", str( fileInfo ) )
     self.transport.sendData( uRetVal )
 
-  def fileFromClientCallback( self, sFileId, oFH ):
+  def fileFromClientCallback( self, fileId, fileSize, fileHelper ):
     return S_ERROR( "This server does no allow receiving files" )
 
-  def fileToClientCallback( self, sFileId, oFH ):
+  def fileToClientCallback( self, fileId, fileHelper ):
     return S_ERROR( "This server does no allow sending files" )
 
 #####

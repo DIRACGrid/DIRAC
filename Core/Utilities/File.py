@@ -1,11 +1,12 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/File.py,v 1.14 2007/05/14 16:29:35 gkuznets Exp $
-__RCSID__ = "$Id: File.py,v 1.14 2007/05/14 16:29:35 gkuznets Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/File.py,v 1.15 2007/05/16 17:04:22 acasajus Exp $
+__RCSID__ = "$Id: File.py,v 1.15 2007/05/16 17:04:22 acasajus Exp $"
 
 """
    Collection of DIRAC useful file related modules
    by default on Error they return None
 """
 
+import os
 import md5
 import random
 
@@ -37,3 +38,9 @@ def makeGuid( fileName=None ):
                                    md5HexString[20:32] )
 
   return md5String.upper()
+
+def getSize( fileName ):
+  try:
+    return os.lstat( fileName )[6]
+  except Exception, v:
+    return -1

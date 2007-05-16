@@ -1,9 +1,10 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/FileHelper.py,v 1.2 2007/05/16 15:58:47 acasajus Exp $
-__RCSID__ = "$Id: FileHelper.py,v 1.2 2007/05/16 15:58:47 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/FileHelper.py,v 1.3 2007/05/16 17:04:22 acasajus Exp $
+__RCSID__ = "$Id: FileHelper.py,v 1.3 2007/05/16 17:04:22 acasajus Exp $"
 
 import os
 import md5
 import types
+import cStringIO
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.LoggingSystem.Client.Logger import gLogger
 
@@ -48,6 +49,14 @@ class FileHelper:
   def errorInTransmission( self ):
     return self.bErrorInMD5
 
+  def networkToString( self ):
+    stringIO = cStringIO()
+    fd = stringIO.fileno()
+    retVal = self.networkToFD( fd )
+    if retVal[ 'OK' ]:
+      return S_OK( stringIO.getvalue() )
+    return S_ERROR()
+
   def networkToFD( self, iFD ):
     self.oMD5 = md5.new()
     self.bReceivedEOF = False
@@ -64,6 +73,10 @@ class FileHelper:
       return S_ERROR( "Error in the file CRC" )
     return S_OK()
 
+  def stringToNetwork( self, stringVal ):
+    stringIO = cStringIO( stringVal )
+    fd = stringIO.fileno()
+    retVal = self.FDToNetwork( fd )
 
   def FDToNetwork( self, iFD ):
     self.oMD5 = md5.new()

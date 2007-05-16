@@ -1,9 +1,10 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/TransferClient.py,v 1.3 2007/05/16 15:58:46 acasajus Exp $
-__RCSID__ = "$Id: TransferClient.py,v 1.3 2007/05/16 15:58:46 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/TransferClient.py,v 1.4 2007/05/16 17:04:21 acasajus Exp $
+__RCSID__ = "$Id: TransferClient.py,v 1.4 2007/05/16 17:04:21 acasajus Exp $"
 
 from DIRAC.Core.DISET.private.BaseClient import BaseClient
 from DIRAC.Core.DISET.private.FileHelper import FileHelper
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
+from DIRAC.Core.Utilities import File
 
 class TransferClient( BaseClient ):
 
@@ -20,7 +21,7 @@ class TransferClient( BaseClient ):
     retVal = self._proposeAction( "FFC" )
     if not retVal[ 'OK' ]:
       return retVal
-    self.transport.sendData( fileId )
+    self.transport.sendData( ( fileId, File.getSize( filename ) ) )
     retVal = self.transport.receiveData()
     if not retVal[ 'OK' ]:
       return retVal
@@ -39,7 +40,7 @@ class TransferClient( BaseClient ):
     retVal = self._proposeAction( "FTC" )
     if not retVal[ 'OK' ]:
       return retVal
-    self.transport.sendData( fileId )
+    self.transport.sendData( ( fileId, ) )
     retVal = self.transport.receiveData()
     if not retVal[ 'OK' ]:
       return retVal
