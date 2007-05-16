@@ -1,10 +1,10 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/LocalConfiguration.py,v 1.5 2007/05/16 10:07:00 acasajus Exp $
-__RCSID__ = "$Id: LocalConfiguration.py,v 1.5 2007/05/16 10:07:00 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/LocalConfiguration.py,v 1.6 2007/05/16 11:31:35 acasajus Exp $
+__RCSID__ = "$Id: LocalConfiguration.py,v 1.6 2007/05/16 11:31:35 acasajus Exp $"
 
 import sys
 import os
 import getopt
-import posix
+import types
 
 from DIRAC import gLogger
 from DIRAC import S_OK, S_ERROR
@@ -53,6 +53,7 @@ class LocalConfiguration:
                          self.__showHelp )
 
   def registerCmdOpt( self, shortOption, longOption, helpString, function ):
+    #TODO: Can't overwrite switches (FATAL)
     self.commandOptionList.append( ( shortOption, longOption, helpString, function ) )
 
   def getPositionalArguments( self ):
@@ -84,6 +85,7 @@ class LocalConfiguration:
       if isMandatoryMissing:
         return S_ERROR()
     except Exception, e:
+      gLogger.initialize( "UNKNOWN", "/DIRAC" )
       gLogger.exception()
       return S_ERROR( str( e ) )
     return S_OK()
@@ -135,7 +137,9 @@ class LocalConfiguration:
         if optionName == definedOptionTuple[0].replace( ":", "" ) or \
           optionName == definedOptionTuple[1].replace( "=", "" ):
           retVal = definedOptionTuple[3]( optionValue )
-          if not retVal[ 'OK' ]:
+          if type( retVal ) != types.DictType:
+            errorsList.append( "Callback for switch '%s' does not return S_OK or S_ERROR" % optionName )
+          elif not retVal[ 'OK' ]:
             errorsList.append( retVal[ 'Message' ] )
 
     if len( errorsList ) > 0:
