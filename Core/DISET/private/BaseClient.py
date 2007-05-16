@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.9 2007/05/15 15:27:56 acasajus Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.9 2007/05/15 15:27:56 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.10 2007/05/16 10:07:00 acasajus Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.10 2007/05/16 10:07:00 acasajus Exp $"
 
 import DIRAC
 from DIRAC.Core.DISET.private.Protocols import gProtocolDict
@@ -38,6 +38,7 @@ class BaseClient:
     else:
       #TODO: Get real role
       self.groupToUse = GridCert.getDIRACGroup( self.defaultGroup )
+    self.__checkTransportSanity()
 
   def __discoverServiceURL( self ):
     for protocol in gProtocolDict.keys():
@@ -60,7 +61,7 @@ class BaseClient:
   def _connect( self ):
     try:
       gLogger.debug( "Using %s protocol" % self.URLTuple[0] )
-      self.transport = gProtocolDict[ self.URLTuple[0] ]( self.URLTuple[1:3], useCertificates = self.useCertificates )
+      self.transport = gProtocolDict[ self.URLTuple[0] ][0]( self.URLTuple[1:3], useCertificates = self.useCertificates )
       self.transport.initAsClient()
     except Exception, e:
       gLogger.exception()
@@ -71,3 +72,8 @@ class BaseClient:
     stConnectionInfo = ( ( self.URLTuple[3], DIRAC.setup ), sAction, self.groupToUse )
     self.transport.sendData( stConnectionInfo )
     return self.transport.receiveData()
+
+  def __checkTransportSanity( self ):
+      retVal = gProtocolDict[ self.URLTuple[0] ][1]( self.URLTuple[1:3], useCertificates = self.useCertificates )
+      if not retVal:
+        DIRAC.abort( 10, "Unsane environment for protocol" )

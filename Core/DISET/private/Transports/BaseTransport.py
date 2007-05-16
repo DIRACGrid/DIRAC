@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/BaseTransport.py,v 1.4 2007/05/10 18:44:57 acasajus Exp $
-__RCSID__ = "$Id: BaseTransport.py,v 1.4 2007/05/10 18:44:57 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/BaseTransport.py,v 1.5 2007/05/16 10:06:57 acasajus Exp $
+__RCSID__ = "$Id: BaseTransport.py,v 1.5 2007/05/16 10:06:57 acasajus Exp $"
 
 from DIRAC.Core.DISET.private.Transports.DEncode import encode, decode
 from DIRAC.LoggingSystem.Client.Logger import gLogger
@@ -61,8 +61,4 @@ class BaseTransport:
     sData = self.sReadBuffer[ iSeparatorPosition+1 : iSeparatorPosition+1+iDataLength ]
     self.sReadBuffer = self.sReadBuffer[ iSeparatorPosition+1+iDataLength: ]
     return decode( sData )[0]
-
-  def handshake( self ):
-    #Nothing to do if we are not SSL
-    pass
 

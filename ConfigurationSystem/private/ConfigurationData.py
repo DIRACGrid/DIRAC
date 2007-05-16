@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationData.py,v 1.4 2007/05/15 14:45:08 acasajus Exp $
-__RCSID__ = "$Id: ConfigurationData.py,v 1.4 2007/05/15 14:45:08 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationData.py,v 1.5 2007/05/16 10:06:59 acasajus Exp $
+__RCSID__ = "$Id: ConfigurationData.py,v 1.5 2007/05/16 10:06:59 acasajus Exp $"
 
 import os.path
 import zlib
@@ -44,6 +44,7 @@ class ConfigurationData:
       self.remoteServerList.extend( List.fromChar( remoteServers, "," ) )
     self.remoteServerList = List.uniqueElements( self.remoteServerList )
     self.compressedConfigurationData = zlib.compress( str( self.remoteCFG ), 9 )
+    gLogger.debug( "DONE UPDATING CONFIGTURATION INTERNALS" )
 
   def loadFile( self, fileName ):
     self.lock()
@@ -224,6 +225,13 @@ class ConfigurationData:
 
   def isService( self ):
     return self.isService
+
+  def useServerCertificate( self ):
+    value = self.extractOptionFromCFG( "/DIRAC/Security/UseServerCertificate" )
+    if value and value.lower() in ( "y", "yes", "true" ):
+      return True
+    return False
+
 
   def dumpLocalCFGToFile( self, fileName ):
     try:

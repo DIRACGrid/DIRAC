@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfo.py,v 1.5 2007/05/15 16:57:46 acasajus Exp $
-__RCSID__ = "$Id: SocketInfo.py,v 1.5 2007/05/15 16:57:46 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfo.py,v 1.6 2007/05/16 10:06:58 acasajus Exp $
+__RCSID__ = "$Id: SocketInfo.py,v 1.6 2007/05/16 10:06:58 acasajus Exp $"
 
 import time
 import copy
@@ -7,6 +7,7 @@ from OpenSSL import SSL, crypto
 import DIRAC
 from DIRAC.Core.Utilities import GridCert
 from DIRAC.LoggingSystem.Client.Logger import gLogger
+from DIRAC.Core.DISET.private.Transports.SSL.ContextManager import gContextManager
 
 class SocketInfo:
 
@@ -56,6 +57,7 @@ class SocketInfo:
     return SocketInfo( copy.deepcopy( self.infoDict ) )
 
   def verifyCallback( self, *args, **kwargs ):
+    gLogger.debug( "verify Callback %s" % str( args ) )
     if self.infoDict[ 'clientMode' ]:
       return self._clientCallback( *args, **kwargs )
     else:
@@ -88,24 +90,35 @@ class SocketInfo:
     self.sslContext.set_session_id( "DISETConnection%s" % str( time.time() ) )
 
   def __generateContextWithCerts( self ):
-    self.__createContext()
     certKeyTuple = GridCert.getCertificateAndKey()
     if not certKeyTuple:
       DIRAC.abort( 10, "No valid certificate or key found" )
-    gLogger.verbose("Using certificate %s\nUsing key %s" % certKeyTuple )
-    self.sslContext.use_certificate_chain_file( certKeyTuple[0] )
-    self.sslContext.use_privatekey_file(  certKeyTuple[1] )
     self.setLocalCredentialsLocation( certKeyTuple )
+    gLogger.verbose("Using certificate %s\nUsing key %s" % certKeyTuple )
+    contextKey = "-".join( certKeyTuple )
+    if gContextManager.existsContext( contextKey ):
+      self.sslContext = gContextManager.getContext( contextKey )
+      self.sslContext.set_verify( SSL.VERIFY_PEER|SSL.VERIFY_FAIL_IF_NO_PEER_CERT, self.verifyCallback ) # Demand a certificate
+    else:
+      self.__createContext()
+      self.sslContext.use_certificate_chain_file( certKeyTuple[0] )
+      self.sslContext.use_privatekey_file(  certKeyTuple[1] )
+      gContextManager.setContext( contextKey, self.sslContext )
 
   def __generateContextWithProxy( self ):
-    self.__createContext()
     proxyPath = GridCert.getGridProxy()
     if not proxyPath:
       DIRAC.abort( 10, "No valid proxy found" )
-    gLogger.verbose( "Using proxy %s" % proxyPath )
-    self.sslContext.use_certificate_chain_file( proxyPath )
-    self.sslContext.use_privatekey_file( proxyPath )
     self.setLocalCredentialsLocation( ( proxyPath, proxyPath ) )
+    gLogger.verbose( "Using proxy %s" % proxyPath )
+    if gContextManager.existsContext( proxyPath ):
+      self.sslContext = gContextManager.getContext( proxyPath )
+      self.sslContext.set_verify( SSL.VERIFY_PEER|SSL.VERIFY_FAIL_IF_NO_PEER_CERT, self.verifyCallback ) # Demand a certificate
+    else:
+      self.__createContext()
+      self.sslContext.use_certificate_chain_file( proxyPath )
+      self.sslContext.use_privatekey_file( proxyPath )
+      gContextManager.setContext( proxyPath, self.sslContext )
 
   def __generateServerContext( self ):
       self.__generateContextWithCerts()

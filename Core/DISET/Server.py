@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.8 2007/05/10 18:44:58 acasajus Exp $
-__RCSID__ = "$Id: Server.py,v 1.8 2007/05/10 18:44:58 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.9 2007/05/16 10:06:59 acasajus Exp $
+__RCSID__ = "$Id: Server.py,v 1.9 2007/05/16 10:06:59 acasajus Exp $"
 
 import socket
 import sys
@@ -69,7 +69,7 @@ class Server:
     if protocol in gProtocolDict.keys():
       gLogger.verbose( "Initializing %s transport" % protocol, str( self.serviceAddress ) )
       from DIRAC.Core.DISET.private.Transports.PlainTransport import PlainTransport
-      self.transport = gProtocolDict[ protocol ]( self.serviceAddress, bServerMode = True )
+      self.transport = gProtocolDict[ protocol ][0]( self.serviceAddress, bServerMode = True )
       self.transport.initAsServer()
     else:
       gLogger.fatal( "No valid protocol specified for the service", "%s is not a valid protocol" % sProtocol )

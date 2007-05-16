@@ -1,12 +1,13 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SessionManager.py,v 1.2 2007/05/10 18:44:58 acasajus Exp $
-__RCSID__ = "$Id: SessionManager.py,v 1.2 2007/05/10 18:44:58 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/Attic/ContextManager.py,v 1.1 2007/05/16 10:06:58 acasajus Exp $
+__RCSID__ = "$Id: ContextManager.py,v 1.1 2007/05/16 10:06:58 acasajus Exp $"
 
 import OpenSSL
 
-class SessionManager:
+class ContextManager:
 
   def __init__( self ):
     self.sessionsDict = {}
+    self.contextsDict = {}
 
   def __generateSession( self ):
     return SSL.Session()
@@ -25,3 +26,13 @@ class SessionManager:
   def setSession( self, sessionId, sessionObject ):
     self.sessionsDict[ sessionId ] = sessionObject
 
+  def existsContext( self, contextId ):
+    return contextId in self.contextsDict
+
+  def setContext( self, contextId, context ):
+    self.contextsDict[ contextId ] = context
+
+  def getContext( self, contextId ):
+    return self.contextsDict[ contextId ]
+
+gContextManager = ContextManager()

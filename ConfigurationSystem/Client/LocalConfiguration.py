@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/LocalConfiguration.py,v 1.4 2007/05/15 17:08:54 acasajus Exp $
-__RCSID__ = "$Id: LocalConfiguration.py,v 1.4 2007/05/15 17:08:54 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/LocalConfiguration.py,v 1.5 2007/05/16 10:07:00 acasajus Exp $
+__RCSID__ = "$Id: LocalConfiguration.py,v 1.5 2007/05/16 10:07:00 acasajus Exp $"
 
 import sys
 import os
@@ -45,8 +45,10 @@ class LocalConfiguration:
   def __registerBasicOptions( self ):
     self.registerCmdOpt( "o:", "option=", "Option=value to add",
                          self.__setOptionByCmd  )
-    self.registerCmdOpt( "s:", "section=", "Section to add an option",
+    self.registerCmdOpt( "s:", "section=", "Set base section for relative parsed options",
                          self.__setSectionByCmd )
+    self.registerCmdOpt( "c:", "cert=", "Use server certificate to connect to Core Services",
+                         self.__setUseCertByCmd )
     self.registerCmdOpt( "h", "help", "Shows this help",
                          self.__showHelp )
 
@@ -157,7 +159,6 @@ class LocalConfiguration:
     return S_OK()
 
   def setConfigurationForServer( self, serviceName ):
-    gRefresher.useHostCertificates()
     self.componentName = serviceName
     self.currentSectionPath = getServiceSection( serviceName )
     self.loggingSection = self.currentSectionPath
@@ -187,6 +188,13 @@ class LocalConfiguration:
       # FIXME: in the method above an exception is raised, check consitency
       return S_ERROR( "-o expects a option=value argument.\nFor example %s -o Port=1234" % sys.argv[0] )
     self.setOptionValue( valueList[0] , valueList[1] )
+    return S_OK()
+
+  def __setUseCertByCmd( self, value ):
+    useCert = "no"
+    if value.lower() in ( "y", "yes", "true" ):
+      useCert = "yes"
+    self.setOptionValue( "/DIRAC/Security/UseServerCertificate", useCert )
     return S_OK()
 
   def __showHelp( self, dummy ):

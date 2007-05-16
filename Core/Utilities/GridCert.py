@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCert.py,v 1.6 2007/05/15 16:51:05 acasajus Exp $
-__RCSID__ = "$Id: GridCert.py,v 1.6 2007/05/15 16:51:05 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCert.py,v 1.7 2007/05/16 10:06:59 acasajus Exp $
+__RCSID__ = "$Id: GridCert.py,v 1.7 2007/05/16 10:06:59 acasajus Exp $"
 
 import os
 import os.path
@@ -8,8 +8,8 @@ import socket
 import time
 
 import DIRAC
-from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.LoggingSystem.Client.Logger import gLogger
+from DIRAC.ConfigurationSystem.Client.Config import gConfig
 
 securityConfPath = "/DIRAC/Security"
 

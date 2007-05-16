@@ -1,10 +1,11 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSLTransport.py,v 1.5 2007/05/10 18:44:58 acasajus Exp $
-__RCSID__ = "$Id: SSLTransport.py,v 1.5 2007/05/10 18:44:58 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSLTransport.py,v 1.6 2007/05/16 10:06:57 acasajus Exp $
+__RCSID__ = "$Id: SSLTransport.py,v 1.6 2007/05/16 10:06:57 acasajus Exp $"
 
 import OpenSSL
 from DIRAC.Core.DISET.private.Transports.BaseTransport import BaseTransport
 from DIRAC.LoggingSystem.Client.Logger import gLogger
 from DIRAC.Core.DISET.private.Transports.SSL.SocketInfoFactory import gSocketInfoFactory
+from DIRAC.Core.Utilities import GridCert
 
 class SSLTransport( BaseTransport ):
 
@@ -42,4 +43,19 @@ class SSLTransport( BaseTransport ):
     oClientTransport.oSocketInfo = self.oSocketInfo.clone()
     oClientTransport.setClientSocket( oClientSocket )
     return oClientTransport
+
+def checkSanity( *args, **kwargs ):
+    saneEnv = True
+    if not GridCert.getCAsLocation():
+      gLogger.fatal( "No CAs found!" )
+      saneEnv = False
+    if "useCertificates" in kwargs and kwargs[ 'useCertificates' ]:
+      if not GridCert.getCertificateAndKey():
+        gLogger.fatal( "No cert/key found! " )
+        saneEnv = False
+    else:
+      if not GridCert.getGridProxy():
+          gLogger.fatal( "No proxy found!" )
+          saneEnv = False
+    return saneEnv
 

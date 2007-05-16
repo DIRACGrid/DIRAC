@@ -1,17 +1,14 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfoFactory.py,v 1.3 2007/05/10 18:44:58 acasajus Exp $
-__RCSID__ = "$Id: SocketInfoFactory.py,v 1.3 2007/05/10 18:44:58 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfoFactory.py,v 1.4 2007/05/16 10:06:58 acasajus Exp $
+__RCSID__ = "$Id: SocketInfoFactory.py,v 1.4 2007/05/16 10:06:58 acasajus Exp $"
 
 import socket
 from OpenSSL import SSL
 from DIRAC.Core.DISET.private.Transports.SSL.SocketInfo import SocketInfo
-from DIRAC.Core.DISET.private.Transports.SSL.SessionManager import SessionManager
+from DIRAC.Core.DISET.private.Transports.SSL.ContextManager import gContextManager
 from DIRAC.Core.DISET.private.Transports.SSL.FakeSocket import FakeSocket
 from DIRAC.Core.DISET.private.Transports.SSL.ThreadSafeSSLObject import ThreadSafeSSLObject
 
 class SocketInfoFactory:
-
-  def __init__( self ):
-    self.sessionManager = SessionManager()
 
   def generateClientInfo( self, destinationHostname, kwargs ):
     infoDict = { 'clientMode' : True, 'hostname' : destinationHostname }
@@ -33,12 +30,12 @@ class SocketInfoFactory:
     sslSocket = FakeSocket( sslSocket )
     socketInfo.setSSLSocket( sslSocket )
     sessionId = ":".join( socketInfo.getLocalCredentialsLocation() )
-    if self.sessionManager.isValidSession( sessionId ):
+    if gContextManager.isValidSession( sessionId ):
       sslSocket.set_session( self.sessionManager.getSession( sessionId ) )
-      self.sessionManager.freeSession( sessionId )
+      gContextManager.freeSession( sessionId )
+    gContextManager.setSession( sessionId, sslSocket.get_session() )
     sslSocket.connect( hostAddress )
     socketInfo.doClientHandshake()
-    self.sessionManager.setSession( sessionId, sslSocket.get_session() )
 
     return socketInfo
 

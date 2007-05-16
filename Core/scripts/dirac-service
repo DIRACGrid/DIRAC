@@ -1,6 +1,6 @@
 #!/usr/bin/env python2.4
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/Attic/dirac-service,v 1.2 2007/05/14 18:27:09 acasajus Exp $
-__RCSID__ = "$Id: dirac-service,v 1.2 2007/05/14 18:27:09 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/Attic/dirac-service,v 1.3 2007/05/16 10:06:59 acasajus Exp $
+__RCSID__ = "$Id: dirac-service,v 1.3 2007/05/16 10:06:59 acasajus Exp $"
 
 import sys
 from dirac import DIRAC
@@ -21,6 +21,7 @@ serverSection = localCfg.setConfigurationForServer( serverName )
 localCfg.addMandatoryEntry( "Port" )
 localCfg.addMandatoryEntry( "HandlerPath" )
 localCfg.addMandatoryEntry( "/DIRAC/Setup" )
+localCfg.addOptionalEntry( "/DIRAC/Security/UseServerCertificate", "yes" )
 resultDict = localCfg.loadUserData()
 if not resultDict[ 'OK' ]:
   gLogger.error( "There were errors when loading configuration", resultDict[ 'Message' ] )
