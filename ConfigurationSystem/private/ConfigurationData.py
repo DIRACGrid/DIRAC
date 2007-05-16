@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationData.py,v 1.5 2007/05/16 10:06:59 acasajus Exp $
-__RCSID__ = "$Id: ConfigurationData.py,v 1.5 2007/05/16 10:06:59 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationData.py,v 1.6 2007/05/16 13:55:37 acasajus Exp $
+__RCSID__ = "$Id: ConfigurationData.py,v 1.6 2007/05/16 13:55:37 acasajus Exp $"
 
 import os.path
 import zlib
@@ -44,7 +44,6 @@ class ConfigurationData:
       self.remoteServerList.extend( List.fromChar( remoteServers, "," ) )
     self.remoteServerList = List.uniqueElements( self.remoteServerList )
     self.compressedConfigurationData = zlib.compress( str( self.remoteCFG ), 9 )
-    gLogger.debug( "DONE UPDATING CONFIGTURATION INTERNALS" )
 
   def loadFile( self, fileName ):
     self.lock()

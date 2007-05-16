@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.8 2007/05/15 16:57:46 acasajus Exp $
-__RCSID__ = "$Id: RequestHandler.py,v 1.8 2007/05/15 16:57:46 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.9 2007/05/16 13:55:37 acasajus Exp $
+__RCSID__ = "$Id: RequestHandler.py,v 1.9 2007/05/16 13:55:37 acasajus Exp $"
 
 import types
 from DIRAC.Core.DISET.private.FileHelper import FileHelper
@@ -89,7 +89,7 @@ class RequestHandler:
     else:
       peerId = ""
     args = [ str( arg )[:20] for arg in stRPCQuery[1] ]
-    kwargs = [ "%s = %s" % ( str( key ), str( stRPCQuery[2][key] )[:20] ) for key in stRPCQuery[2].keys() ]
+    kwargs = [ "%s = %s" % ( str( key ), str( stRPCQuery[2][key] ) ) for key in stRPCQuery[2].keys() ]
     finalArgs = ", ".join( args + kwargs )
     gLogger.info( "Executing RPC", "%s %s( %s )" % ( peerId, stRPCQuery[0], finalArgs ) )
 

@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.6 2007/05/10 14:46:28 acasajus Exp $
-__RCSID__ = "$Id: Logger.py,v 1.6 2007/05/10 14:46:28 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.7 2007/05/16 13:55:37 acasajus Exp $
+__RCSID__ = "$Id: Logger.py,v 1.7 2007/05/16 13:55:37 acasajus Exp $"
 """
    DIRAC Logger client
 """
@@ -259,6 +259,7 @@ class Logger:
     # a debug message, the upper 3 levels should be skipped since they correspond
     # to gLogger.showStack,  self.__getStackString, traceback.print_stack
     traceback.print_stack()
+    return ""
 
   def getSubLogger( self, subName ):
     from DIRAC.LoggingSystem.private.SubSystemLogger import SubSystemLogger

@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Attic/CFG.py,v 1.2 2007/03/16 11:57:33 rgracian Exp $
-__RCSID__ = "$Id: CFG.py,v 1.2 2007/03/16 11:57:33 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Attic/CFG.py,v 1.3 2007/05/16 13:55:37 acasajus Exp $
+__RCSID__ = "$Id: CFG.py,v 1.3 2007/05/16 13:55:37 acasajus Exp $"
 
 import types
 import copy
@@ -7,15 +7,15 @@ import copy
 from DIRAC.Core.Utilities import List
 
 class CFG:
-  
+
   def __init__( self ):
     self.reset()
-    
+
   def reset( self ):
     self.__orderedList = []
     self.__commentDict = {}
     self.__dataDict = {}
-    
+
   def createNewSection( self, sectionName, comment = "", oCFG = False ):
     if sectionName == "":
       raise Exception( "Creating a section with empty name! You shouldn't do that!" )
@@ -29,7 +29,7 @@ class CFG:
         self.__dataDict[ sectionName ] = oCFG
     else:
       raise Exception( "%s key is already a section" )
-    
+
   def __overrideAndCloneSection( self, sectionName, oCFGToClone ):
     if sectionName not in self.listSections():
       raise Exception( "Section %s does not exist" % sectionName )
@@ -44,16 +44,16 @@ class CFG:
       raise Exception( "%s key is already defined as section" )
     self.__addEntry( optionName, comment )
     self.__dataDict[ optionName ] = str( value )
-      
-    
+
+
   def __addEntry( self, entryName, comment ):
     if not entryName in self.__orderedList:
       self.__orderedList.append( entryName )
     self.__commentDict[ entryName ] = comment
-    
+
   def listOptions( self ):
     return [ sKey for sKey in self.__dataDict.keys() if type( self.__dataDict[ sKey ] ) == types.StringType ]
-  
+
   def listSections( self ):
     return [ sKey for sKey in self.__dataDict.keys() if type( self.__dataDict[ sKey ] ) != types.StringType ]
 
@@ -61,25 +61,25 @@ class CFG:
     if optionName not in self.__dataDict:
       raise Exception( "Option %s has not been declared" % optionName )
     self.__dataDict[ optionName ] += str( value )
-  
+
   def __getitem__( self, key ):
     return self.__getattr__( key )
-  
+
   def __getattr__( self, key ):
     return self.__dataDict[ key ]
-  
+
   def __str__( self ):
     return self.serialize()
-  
+
   def __nonzero__( self ):
     return True
-  
+
   def getComment( self, entryName ):
     try:
       return self.__commentDict[ entryName ]
     except:
       raise Exception( "%s does not have any comment defined" % entryName )
-    
+
   def serialize( self, tabLevelString = "" ):
     CFGSTring = ""
     for entryName in self.__orderedList:
@@ -95,48 +95,52 @@ class CFG:
         valueList = List.fromChar( self.__dataDict[ entryName ] )
         CFGSTring += "%s%s = %s\n" % ( tabLevelString, entryName, valueList[0] )
         for value in valueList[1:]:
-          CFGSTring += "%s%s += %s\n" % ( tabLevelString, entryName, value )          
+          CFGSTring += "%s%s += %s\n" % ( tabLevelString, entryName, value )
       else:
         raise Exception( "Oops. There is an entry in the order which is not a section nor an option" )
     return CFGSTring
-    
+
   def clone( self ):
-    return copy.copy( self )
-    
+    clonedCFG = CFG()
+    clonedCFG.__orderedList = copy.copy( self.__orderedList )
+    clonedCFG.__commentDict = copy.copy( self.__commentDict )
+    clonedCFG.__dataDict = copy.copy( self.__dataDict )
+    return clonedCFG
+
   def mergeWith( self, cfgToMergeWith ):
     mergedCFG = CFG()
     for option in self.listOptions():
-      mergedCFG.setOption( option, 
+      mergedCFG.setOption( option,
                            self[ option ],
                            self.getComment( option ) )
     for option in cfgToMergeWith.listOptions():
-      mergedCFG.setOption( option, 
+      mergedCFG.setOption( option,
                            cfgToMergeWith[ option ],
-                           cfgToMergeWith.getComment( option ) )      
+                           cfgToMergeWith.getComment( option ) )
     for section in self.listSections():
       if section in cfgToMergeWith.listSections():
         oSectionCFG = self[ section ].mergeWith( cfgToMergeWith[ section ] )
-        mergedCFG.createNewSection( section, 
+        mergedCFG.createNewSection( section,
                                     cfgToMergeWith.getComment( section ),
                                     oSectionCFG )
       else:
-        mergedCFG.createNewSection( section, 
+        mergedCFG.createNewSection( section,
                                     self.getComment( section ),
                                     self[ section ].clone() )
     for section in cfgToMergeWith.listSections():
       if section not in self.listSections():
-        mergedCFG.createNewSection( section, 
+        mergedCFG.createNewSection( section,
                                     cfgToMergeWith.getComment( section ),
                                     cfgToMergeWith[ section ] )
     return mergedCFG
 
-  #Functions to load a CFG    
+  #Functions to load a CFG
   def loadFromFile( self, fileName ):
     fd = file( fileName )
     fileData = fd.read()
     fd.close()
     return self.loadFromBuffer( fileData )
-  
+
   def loadFromBuffer( self, data ):
     self.reset()
     levelList = []
@@ -164,7 +168,7 @@ class CFG:
           currentLevel = levelList.pop()
         elif line[ index ] == "=":
           lFields = line.split( "=" )
-          currentLevel.setOption( lFields[0].strip(), 
+          currentLevel.setOption( lFields[0].strip(),
            "=".join( lFields[1:] ).strip(),
            currentComment )
           currentlyParsedString = ""
@@ -179,7 +183,7 @@ class CFG:
         else:
           currentlyParsedString += line[ index ]
 
-  
 
-      
-     
+
+
+
