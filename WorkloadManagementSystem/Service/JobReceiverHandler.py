@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/Attic/JobReceiverHandler.py,v 1.2 2007/05/13 21:11:35 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/Attic/JobReceiverHandler.py,v 1.3 2007/05/16 13:50:10 atsareg Exp $
 ########################################################################
 
 """ JobReceiverHandler is the implementation of the JobReceiver service
@@ -12,9 +12,9 @@
     
 """
 
-__RCSID__ = "$Id: JobReceiverHandler.py,v 1.2 2007/05/13 21:11:35 atsareg Exp $"
+__RCSID__ = "$Id: JobReceiverHandler.py,v 1.3 2007/05/16 13:50:10 atsareg Exp $"
 
-import types
+from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
@@ -25,16 +25,11 @@ from DIRAC.WorkloadManagementSystem.DB.ProxyRepositoryDB import ProxyRepositoryD
 jobDB = False
 proxyRepository = False
 
-gLogger.initialize('JobReceiver','/Services/JobReceiver/Test')  
-
 def initializeJobReceiverHandler( serviceInfo ):
+
   global jobDB
-  result = cfgSvc.getOption('DIRAC/Setup')
-  if not result['OK']:
-    return S_ERROR('Failed to obtain the Configuration information')
-  setup = result['Value']
-  jobDB = JobDB(setup)
-  proxyRepository = ProxyRepositoryDB(setup)
+  jobDB = JobDB()
+  proxyRepository = ProxyRepositoryDB()
   return S_OK()
 
 class JobReceiverHandler( RequestHandler ):
