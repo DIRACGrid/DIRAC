@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/FileHelper.py,v 1.1 2007/03/27 10:56:47 acasajus Exp $
-__RCSID__ = "$Id: FileHelper.py,v 1.1 2007/03/27 10:56:47 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/FileHelper.py,v 1.2 2007/05/16 15:58:47 acasajus Exp $
+__RCSID__ = "$Id: FileHelper.py,v 1.2 2007/05/16 15:58:47 acasajus Exp $"
 
 import os
 import md5
@@ -16,17 +16,17 @@ class FileHelper:
     self.oMD5 = md5.new()
     self.bFinishedTransmission = False
     self.bReceivedEOF = False
-    
+
   def sendData( self, sBuffer ):
     self.oMD5.update( sBuffer )
     self.oTransport.sendData( ( True, sBuffer ) )
     dRetVal = self.oTransport.receiveData()
     return dRetVal
-    
+
   def sendEOF( self ):
     self.oTransport.sendData( ( False, self.oMD5.hexdigest() ) )
     self.bFinishedTransmission = True
-    
+
   def receiveData( self ):
     stBuffer = self.oTransport.receiveData()
     if stBuffer[0]:
@@ -41,10 +41,10 @@ class FileHelper:
 
   def receivedEOF( self ):
     return self.bReceivedEOF
-  
+
   def finishedTransmission( self ):
     return self.bFinishedTransmission
-  
+
   def errorInTransmission( self ):
     return self.bErrorInMD5
 
@@ -61,10 +61,10 @@ class FileHelper:
       gLogger.exception()
       return S_ERROR( "Error while receiving file, %s" % str( e ) )
     if self.errorInTransmission():
-      return S_ERROR( "Error in the file CRC" ) 
+      return S_ERROR( "Error in the file CRC" )
     return S_OK()
-      
-  
+
+
   def FDToNetwork( self, iFD ):
     self.oMD5 = md5.new()
     iPacketSize = 8192
@@ -80,7 +80,7 @@ class FileHelper:
       gLogger.exception()
       return S_ERROR( "Error while sending file: %s" % str( e ) )
     return S_OK()
-  
+
   def getFileDescriptor( self, uFile, sFileMode ):
     if type( uFile ) == types.StringType:
       try:
@@ -94,4 +94,4 @@ class FileHelper:
       iFD = uFile
     else:
       return S_ERROR( "%s is not a valid file." % uFile )
-    return S_OK( iFD ) 
+    return S_OK( iFD )

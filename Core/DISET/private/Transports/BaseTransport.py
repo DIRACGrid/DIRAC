@@ -1,8 +1,9 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/BaseTransport.py,v 1.5 2007/05/16 10:06:57 acasajus Exp $
-__RCSID__ = "$Id: BaseTransport.py,v 1.5 2007/05/16 10:06:57 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/BaseTransport.py,v 1.6 2007/05/16 15:58:46 acasajus Exp $
+__RCSID__ = "$Id: BaseTransport.py,v 1.6 2007/05/16 15:58:46 acasajus Exp $"
 
 from DIRAC.Core.DISET.private.Transports.DEncode import encode, decode
 from DIRAC.LoggingSystem.Client.Logger import gLogger
+import socket
 
 class BaseTransport:
 

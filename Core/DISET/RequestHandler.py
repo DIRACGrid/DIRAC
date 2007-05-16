@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.10 2007/05/16 14:51:19 acasajus Exp $
-__RCSID__ = "$Id: RequestHandler.py,v 1.10 2007/05/16 14:51:19 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.11 2007/05/16 15:58:46 acasajus Exp $
+__RCSID__ = "$Id: RequestHandler.py,v 1.11 2007/05/16 15:58:46 acasajus Exp $"
 
 import types
 from DIRAC.Core.DISET.private.FileHelper import FileHelper
@@ -47,8 +47,9 @@ class RequestHandler:
     if not self.__authQuery( "FileTransfer/%s" % sDirection ):
       self.transport.sendData( S_ERROR( "Unauthorized query" ) )
       return
-    if "File%sCallback" % sDirection not in dir( self ):
+    if "file%sCallback" % sDirection not in dir( self ):
       self.transport.sendData( S_ERROR( "Service can't transfer files in that direction" ) )
+      return
     self.transport.sendData( S_OK() )
     oFH = FileHelper( self.transport )
     if sDirection == "FromClient":
