@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/OptimizerFIFO.py,v 1.1 2007/05/16 11:12:59 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/OptimizerFIFO.py,v 1.2 2007/05/16 14:14:13 atsareg Exp $
 ########################################################################
 
 """  Optimizer FIFO is the simplest job validation optimizer
 
 """
 
-from DIRAC.Core.Agent.AgentBase import AgentBase
+from DIRAC.Core.Base.Agent import Agent
 from DIRAC  import S_OK, S_ERROR, gConfig
 import time
 from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
@@ -16,37 +16,41 @@ from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 
 AGENT_NAME = 'WorkloadManagement/OptimizerFIFO'
 
-class OptimizerFIFO(AgentBase):
+class OptimizerFIFO(Agent):
 
   def __init__(self):
     """ Standard constructor
     """
     
-    AgentBase.__init__(self,AGENT_NAME)
+    Agent.__init__(self,AGENT_NAME)
     
   def initialize(self):
   
-    result = AgentBase.initialize(self) 
+    result = Agent.initialize(self) 
     instance = gConfig.getValue('/DIRAC') 
     jobdb_section = getDatabaseSection('WorkloadManagement/JobDB')
-    self.jobDB = JobDB(jobdb_section,20)
+    self.jobDB = JobDB()
     logdb_section = getDatabaseSection('WorkloadManagement/JobLoggingDB')
-    self.logDB = JobLoggingDB(jobdb_section,20)
+    self.logDB = JobLoggingDB()
     return result
     
   def execute(self):
     """ The main agent execution method
     """
     
-    result = self.jobDB.getJobWithStatus('received')['Value'] 
+    result = self.jobDB.selectJobWithStatus('received')
     if not result['OK']:
       self.log.error('Failed to get a job list from the JobDB')
       return S_ERROR('Failed to get a job list from the JobDB')
+      
+    if not len(result['Value']):
+      return S_OK()
       
     jobList = result['Value']
     for job in jobList:
       result = self.insertJobInQueue(job)
     
+    return result
     
   def insertJobInQueue(self,jobID):
     """ Check individual job and add to the Task Queue eventually
