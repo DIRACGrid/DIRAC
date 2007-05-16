@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.9 2007/05/16 13:55:37 acasajus Exp $
-__RCSID__ = "$Id: RequestHandler.py,v 1.9 2007/05/16 13:55:37 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.10 2007/05/16 14:51:19 acasajus Exp $
+__RCSID__ = "$Id: RequestHandler.py,v 1.10 2007/05/16 14:51:19 acasajus Exp $"
 
 import types
 from DIRAC.Core.DISET.private.FileHelper import FileHelper
@@ -52,14 +52,20 @@ class RequestHandler:
     self.transport.sendData( S_OK() )
     oFH = FileHelper( self.transport )
     if sDirection == "FromClient":
-      uRetVal = self.FileFromClientCallback( sFileId, oFH )
+      uRetVal = self.fileFromClientCallback( sFileId, oFH )
     elif sDirection == "ToClient" :
-      uRetVal = self.FileToClientCallback( sFileId, oFH )
+      uRetVal = self.fileToClientCallback( sFileId, oFH )
     else:
       S_ERROR( "Direction does not exist!!!" )
     if not oFH.finishedTransmission():
       gLogger.error( "You haven't finished receiving the file", sFileId )
     self.transport.sendData( uRetVal )
+
+  def fileFromClientCallback( self, sFileId, oFH ):
+    return S_ERROR( "This server does no allow receiving files" )
+
+  def fileToClientCallback( self, sFileId, oFH ):
+    return S_ERROR( "This server does no allow sending files" )
 
 #####
 #

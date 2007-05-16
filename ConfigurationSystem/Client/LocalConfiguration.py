@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/LocalConfiguration.py,v 1.6 2007/05/16 11:31:35 acasajus Exp $
-__RCSID__ = "$Id: LocalConfiguration.py,v 1.6 2007/05/16 11:31:35 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/LocalConfiguration.py,v 1.7 2007/05/16 14:51:19 acasajus Exp $
+__RCSID__ = "$Id: LocalConfiguration.py,v 1.7 2007/05/16 14:51:19 acasajus Exp $"
 
 import sys
 import os
@@ -20,6 +20,7 @@ class LocalConfiguration:
     self.mandatoryEntryList = []
     self.optionalEntryList = []
     self.commandOptionList = []
+    self.unprocessedSwitches = []
     self.__registerBasicOptions()
     self.isParsed = False
     self.componentName = "Unknown"
@@ -52,7 +53,7 @@ class LocalConfiguration:
     self.registerCmdOpt( "h", "help", "Shows this help",
                          self.__showHelp )
 
-  def registerCmdOpt( self, shortOption, longOption, helpString, function ):
+  def registerCmdOpt( self, shortOption, longOption, helpString, function = False):
     #TODO: Can't overwrite switches (FATAL)
     self.commandOptionList.append( ( shortOption, longOption, helpString, function ) )
 
@@ -60,6 +61,11 @@ class LocalConfiguration:
     if not self.isParsed:
       self.__parseCommandLine()
     return self.commandArgList
+
+  def getUnprocessedSwitches( self ):
+    if not self.isParsed:
+      self.__parseCommandLine()
+    return self.unprocessedSwitches
 
   def loadUserData(self):
     if not self.isParsed:
@@ -131,16 +137,21 @@ class LocalConfiguration:
       if not retVal[ 'OK' ]:
         errorsList.append( retVal[ 'Message' ] )
 
+    self.unprocessedSwitches = []
+
     for optionName, optionValue in self.parsedOptionList:
       optionName = optionName.replace( "-", "" )
       for definedOptionTuple in self.commandOptionList:
         if optionName == definedOptionTuple[0].replace( ":", "" ) or \
           optionName == definedOptionTuple[1].replace( "=", "" ):
-          retVal = definedOptionTuple[3]( optionValue )
-          if type( retVal ) != types.DictType:
-            errorsList.append( "Callback for switch '%s' does not return S_OK or S_ERROR" % optionName )
-          elif not retVal[ 'OK' ]:
-            errorsList.append( retVal[ 'Message' ] )
+          if definedOptionTuple[3]:
+            retVal = definedOptionTuple[3]( optionValue )
+            if type( retVal ) != types.DictType:
+              errorsList.append( "Callback for switch '%s' does not return S_OK or S_ERROR" % optionName )
+            elif not retVal[ 'OK' ]:
+              errorsList.append( retVal[ 'Message' ] )
+          else:
+            self.unprocessedSwitches.append( ( optionName, optionValue ) )
 
     if len( errorsList ) > 0:
       return S_ERROR( "\n%s" % "\n".join( errorsList ) )
