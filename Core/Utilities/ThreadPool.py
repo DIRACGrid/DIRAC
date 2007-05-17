@@ -1,8 +1,8 @@
 #################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/ThreadPool.py,v 1.4 2007/05/17 16:21:12 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/ThreadPool.py,v 1.5 2007/05/17 16:55:48 acasajus Exp $
 #################################################################
 
-__RCSID__ = "$Id: ThreadPool.py,v 1.4 2007/05/17 16:21:12 acasajus Exp $"
+__RCSID__ = "$Id: ThreadPool.py,v 1.5 2007/05/17 16:55:48 acasajus Exp $"
 
 import sys
 import Queue
@@ -34,7 +34,7 @@ class WorkingThread( threading.Thread ):
       self.bWorking = True
       oJob.process()
       self.bWorking = False
-      self.oResultsQueue.put( oJob )
+      self.oResultsQueue.put( oJob, block = True )
 
 
 class ThreadedJob:
@@ -90,7 +90,7 @@ class ThreadPool( threading.Thread ):
     else:
       self.iMaxThreads = iMaxThreads
     self.oPendingQueue = Queue.Queue( iMaxQueuedRequests )
-    self.oResultsQueue = Queue.Queue()
+    self.oResultsQueue = Queue.Queue( iMaxQueuedRequests + iMaxThreads )
     self.lWorkingThreads = []
     self.__spawnNeededWorkingThreads()
 
@@ -131,10 +131,14 @@ class ThreadPool( threading.Thread ):
     while self.__countWaitingThreads() > self.iMinThreads:
       self.__killWorkingThread()
 
-  def queueJob( self, oTJob ):
+  def queueJob( self, oTJob, blocking = True ):
     if not isinstance( oTJob, ThreadedJob ):
       raise TypeError( "Jobs added to the thread pool must be ThreadedJob instances" )
-    self.oPendingQueue.put( oTJob, block = True )
+    try:
+      self.oPendingQueue.put( oTJob, block = blocking )
+    except Queue.Full:
+      return S_ERROR( "Queue is full" )
+    return S_OK()
 
   def generateJobAndQueueIt( self,
                              oCallable,
@@ -142,10 +146,10 @@ class ThreadPool( threading.Thread ):
                              kwargs = None,
                              sTJId = None,
                              oCallback = None,
-                             oExceptionCallback = None ):
+                             oExceptionCallback = None,
+                             blocking = True ):
     oTJ = ThreadedJob( oCallable, args, kwargs, sTJId, oCallback, oExceptionCallback )
-    self.queueJob( oTJ )
-    return oTJ
+    return self.queueJob( oTJ, blocking )
 
   def pendingJobs( self ):
     return self.oPendingQueue.qsize()
@@ -181,10 +185,6 @@ class ThreadPool( threading.Thread ):
     while True:
       self.processResults()
       time.sleep( 1 )
-
-#TODO:
-#Put job blocking
-#Results blocking too :)
 
 if __name__=="__main__":
   import random
