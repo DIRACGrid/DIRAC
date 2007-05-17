@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/LocalConfiguration.py,v 1.8 2007/05/17 16:21:12 acasajus Exp $
-__RCSID__ = "$Id: LocalConfiguration.py,v 1.8 2007/05/17 16:21:12 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/LocalConfiguration.py,v 1.9 2007/05/17 17:29:35 acasajus Exp $
+__RCSID__ = "$Id: LocalConfiguration.py,v 1.9 2007/05/17 17:29:35 acasajus Exp $"
 
 import sys
 import os
@@ -36,7 +36,11 @@ class LocalConfiguration:
     self.mandatoryEntryList.append( optionPath )
 
   def addDefaultEntry( self, optionPath, value ):
-    self.optionalEntryList.append( ( optionPath,
+    if optionPath[0] == "/":
+      if not gConfigurationData.extractOptionFromCFG( optionPath ):
+        self.__setOptionValue( optionPath, value )
+    else:
+      self.optionalEntryList.append( ( optionPath,
                                      str( value ) ) )
 
   def __setOptionValue( self, optionPath, value ):
@@ -68,11 +72,9 @@ class LocalConfiguration:
     return self.unprocessedSwitches
 
   def loadUserData(self):
-    if not self.isParsed:
-      self.__parseCommandLine()
     try:
       retVal = self.__addUserDataToConfiguration()
-      gLogger.initialize( self.componentName, self.loggingSection )
+      gLogger.forceInitialization( self.componentName, self.loggingSection )
       if not retVal[ 'OK' ]:
         return retVal
 
@@ -90,7 +92,6 @@ class LocalConfiguration:
       if isMandatoryMissing:
         return S_ERROR()
     except Exception, e:
-      gLogger.initialize( "UNKNOWN", "/DIRAC" )
       gLogger.exception()
       return S_ERROR( str( e ) )
     return S_OK()
@@ -114,7 +115,6 @@ class LocalConfiguration:
       opts, args = getopt.gnu_getopt( sys.argv[1:], shortOption, longOptionList )
     except getopt.GetoptError, v:
       # print help information and exit:
-      gLogger.initialize( "UNKNOWN", "/" )
       gLogger.fatal( "Error when parsing command line arguments: %s" % str( v ) )
       self.__showHelp()
       sys.exit(2)
@@ -144,8 +144,6 @@ class LocalConfiguration:
     else:
       gLogger.info( "Running without remote configuration" )
 
-
-    print gConfigurationData.getMergedCFGAsString()
     if self.componentType == "service":
       self.__setDefaultSection( getServiceSection( self.componentName ) )
     elif self.componentType == "agent":
@@ -198,14 +196,17 @@ class LocalConfiguration:
   def setConfigurationForServer( self, serviceName ):
     self.componentName = serviceName
     self.componentType = "service"
+    gLogger.initialize( self.componentName, "/DIRAC" )
 
   def setConfigurationForAgent( self, agentName ):
     self.componentName = agentName
     self.componentType = "agent"
+    gLogger.initialize( self.componentName, "/DIRAC" )
 
   def setConfigurationForScript( self, scriptName ):
     self.componentName = scriptName
     self.componentType = "script"
+    gLogger.initialize( self.componentName, "/DIRAC" )
 
   def __setSectionByCmd( self, value ):
     if value[0] != "/":
@@ -229,7 +230,6 @@ class LocalConfiguration:
     return S_OK()
 
   def __showHelp( self, dummy ):
-    gLogger.initialize( "UNKNOWN", "/DIRAC" )
     gLogger.info( "Usage:" )
     gLogger.info( "  %s (<options>|<cfgFile>)*" % sys.argv[0] )
     gLogger.info( "Options:" )

@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.10 2007/05/17 16:19:47 acasajus Exp $
-__RCSID__ = "$Id: Server.py,v 1.10 2007/05/17 16:19:47 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.11 2007/05/17 17:29:53 acasajus Exp $
+__RCSID__ = "$Id: Server.py,v 1.11 2007/05/17 17:29:53 acasajus Exp $"
 
 import socket
 import sys
@@ -86,7 +86,7 @@ class Server:
     except socket.error:
       return
     if self.__checkClientAddress( clientTransport ):
-      gActivity.addMark( "Queries" )
+      gMonitor.addMark( "Queries" )
       self.threadPool.generateJobAndQueueIt( self.processClient,
                                       args = ( clientTransport, ),
                                       oExceptionCallback = self.processClientException )

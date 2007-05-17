@@ -1,9 +1,10 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ServiceInterface.py,v 1.4 2007/05/08 14:44:04 acasajus Exp $
-__RCSID__ = "$Id: ServiceInterface.py,v 1.4 2007/05/08 14:44:04 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ServiceInterface.py,v 1.5 2007/05/17 17:29:38 acasajus Exp $
+__RCSID__ = "$Id: ServiceInterface.py,v 1.5 2007/05/17 17:29:38 acasajus Exp $"
 
 import sys
 import time
 import threading
+import DIRAC
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData, ConfigurationData
 from DIRAC.ConfigurationSystem.private.Refresher import gRefresher
 from DIRAC.LoggingSystem.Client.Logger import gLogger
@@ -35,6 +36,8 @@ class ServiceInterface( threading.Thread ):
     gConfigurationData.loadConfigurationData()
     if gConfigurationData.isMaster():
       bBuiltNewConfiguration = False
+      if not gConfigurationData.getName():
+        DIRAC.abort( 10, "Missing name for the configuration to be exported!" )
       sVersion = gConfigurationData.getVersion()
       if sVersion == "0":
         gLogger.info( "There's no version. Generating a new one" )

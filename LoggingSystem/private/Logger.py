@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.7 2007/05/16 13:55:37 acasajus Exp $
-__RCSID__ = "$Id: Logger.py,v 1.7 2007/05/16 13:55:37 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.8 2007/05/17 17:29:52 acasajus Exp $
+__RCSID__ = "$Id: Logger.py,v 1.8 2007/05/17 17:29:52 acasajus Exp $"
 """
    DIRAC Logger client
 """
@@ -43,36 +43,40 @@ class Logger:
         instance = getattr( module, backendName )()
         self._backendsDict[ instance.getName() ] = instance
 
+
   def initialize (self, systemName, cfgPath ):
     #TODO: Fallback section is /DIRAC
     if not self._systemName:
-      from DIRAC.ConfigurationSystem.Client.Config import gConfig
-      #Configure outputs
-      retDict = gConfig.getOption( "%s/LogBackends" % cfgPath )
-      if not retDict[ 'OK' ]:
-        desiredOutputList = [ 'stdout' ]
+      self.forceInitialization( systemName, cfgPath )
+
+  def forceInitialization( self, systemName, cfgPath ):
+    from DIRAC.ConfigurationSystem.Client.Config import gConfig
+    #Configure outputs
+    retDict = gConfig.getOption( "%s/LogBackends" % cfgPath )
+    if not retDict[ 'OK' ]:
+      desiredOutputList = [ 'stdout' ]
+    else:
+      desiredOutputList = List.fromChar( retDict[ 'Value' ], ","  )
+    self._outputList = []
+    for outputMethod in desiredOutputList:
+      if outputMethod in self._backendsDict.keys():
+        self._outputList.append( outputMethod )
       else:
-        desiredOutputList = List.fromChar( retDict[ 'Value' ], ","  )
-      self._outputList = []
-      for outputMethod in desiredOutputList:
-        if outputMethod in self._backendsDict.keys():
-          self._outputList.append( outputMethod )
-        else:
-          self.warn( "Unexistant method for showing messages",
-                     "Unexistant %s logging method" % outputMetod)
-      #Configure verbosity
-      retDict = gConfig.getOption( "%s/LogLevel" % cfgPath )
-      if not retDict[ 'OK' ]:
-        self._minLevel = self._logLevels.getLevelValue( "INFO" )
-      else:
-        if retDict[ 'Value' ].upper() in self._logLevels.getLevels():
-          self._minLevel = abs( self._logLevels.getLevelValue( retDict[ 'Value' ].upper() ) )
-      #Configure framing
-      retDict = gConfig.getOption( "%s/LogShowLine" % cfgPath )
-      if retDict[ 'OK' ] and retDict[ 'Value' ].lower() in ( "y", "yes", "1", "true" ) :
-        self._showCallingFrame = True
-      self._systemName = str( systemName )
-      self.__processQueue()
+        self.warn( "Unexistant method for showing messages",
+                   "Unexistant %s logging method" % outputMetod)
+    #Configure verbosity
+    retDict = gConfig.getOption( "%s/LogLevel" % cfgPath )
+    if not retDict[ 'OK' ]:
+      self._minLevel = self._logLevels.getLevelValue( "INFO" )
+    else:
+      if retDict[ 'Value' ].upper() in self._logLevels.getLevels():
+        self._minLevel = abs( self._logLevels.getLevelValue( retDict[ 'Value' ].upper() ) )
+    #Configure framing
+    retDict = gConfig.getOption( "%s/LogShowLine" % cfgPath )
+    if retDict[ 'OK' ] and retDict[ 'Value' ].lower() in ( "y", "yes", "1", "true" ) :
+      self._showCallingFrame = True
+    self._systemName = str( systemName )
+    self.__processQueue()
 
   def getName( self ):
     return self._systemName

@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCert.py,v 1.7 2007/05/16 10:06:59 acasajus Exp $
-__RCSID__ = "$Id: GridCert.py,v 1.7 2007/05/16 10:06:59 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCert.py,v 1.8 2007/05/17 17:29:53 acasajus Exp $
+__RCSID__ = "$Id: GridCert.py,v 1.8 2007/05/17 17:29:53 acasajus Exp $"
 
 import os
 import os.path
@@ -125,4 +125,4 @@ def getDIRACGroup( defaultGroup = "none" ):
     fd.close()
     return userGroup.strip()
   except:
-    return "none"
+    return defaultGroup

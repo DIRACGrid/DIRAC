@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.10 2007/05/16 10:07:00 acasajus Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.10 2007/05/16 10:07:00 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.11 2007/05/17 17:29:53 acasajus Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.11 2007/05/17 17:29:53 acasajus Exp $"
 
 import DIRAC
 from DIRAC.Core.DISET.private.Protocols import gProtocolDict
@@ -12,7 +12,8 @@ from DIRAC.Core.Utilities import GridCert
 
 class BaseClient:
 
-  defaultGroup = "lhcb"
+  defaultUserGroup = "lhcb"
+  defaultHostGroup = "hosts"
 
   def __init__( self, serviceName,
                 groupToUse = False,
@@ -36,8 +37,10 @@ class BaseClient:
     if groupToUse:
       self.groupToUse = groupToUse
     else:
-      #TODO: Get real role
-      self.groupToUse = GridCert.getDIRACGroup( self.defaultGroup )
+      if self.useCertificates:
+        self.groupToUse = self.defaultHostGroup
+      else:
+        self.groupToUse = GridCert.getDIRACGroup( self.defaultUserGroup )
     self.__checkTransportSanity()
 
   def __discoverServiceURL( self ):

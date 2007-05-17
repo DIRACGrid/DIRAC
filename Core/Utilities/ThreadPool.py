@@ -1,12 +1,13 @@
 #################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/ThreadPool.py,v 1.5 2007/05/17 16:55:48 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/ThreadPool.py,v 1.6 2007/05/17 17:29:53 acasajus Exp $
 #################################################################
 
-__RCSID__ = "$Id: ThreadPool.py,v 1.5 2007/05/17 16:55:48 acasajus Exp $"
+__RCSID__ = "$Id: ThreadPool.py,v 1.6 2007/05/17 17:29:53 acasajus Exp $"
 
 import sys
 import Queue
 import threading
+from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 
 class WorkingThread( threading.Thread ):
 
@@ -34,7 +35,8 @@ class WorkingThread( threading.Thread ):
       self.bWorking = True
       oJob.process()
       self.bWorking = False
-      self.oResultsQueue.put( oJob, block = True )
+      if oJob.oCallback or oJob.oExceptionCallback:
+        self.oResultsQueue.put( oJob, block = True )
 
 
 class ThreadedJob:
