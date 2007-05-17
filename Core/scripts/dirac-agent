@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 ################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/Attic/dirac-agent,v 1.5 2007/05/17 16:21:12 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/Attic/dirac-agent,v 1.6 2007/05/17 18:02:03 paterson Exp $
 ################################################################
 
 """  This is a script to launch DIRAC agents
 """
 
-__RCSID__ = "$Id: dirac-agent,v 1.5 2007/05/17 16:21:12 acasajus Exp $"
+__RCSID__ = "$Id: dirac-agent,v 1.6 2007/05/17 18:02:03 paterson Exp $"
 
 import sys
 from DIRACEnvironment import DIRAC
@@ -23,6 +23,7 @@ if len( positionalArgs ) == 0:
   sys.exit(1)
 
 agentName = positionalArgs[0]
+localCfg.setConfigurationForAgent( agentName )
 localCfg.addMandatoryEntry( "/DIRAC/Setup" )
 localCfg.addDefaultEntry( "/DIRAC/Security/UseServerCertificate", "yes" )
 resultDict = localCfg.loadUserData()
