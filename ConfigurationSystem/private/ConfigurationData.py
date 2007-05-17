@@ -1,10 +1,11 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationData.py,v 1.6 2007/05/16 13:55:37 acasajus Exp $
-__RCSID__ = "$Id: ConfigurationData.py,v 1.6 2007/05/16 13:55:37 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationData.py,v 1.7 2007/05/17 16:21:13 acasajus Exp $
+__RCSID__ = "$Id: ConfigurationData.py,v 1.7 2007/05/17 16:21:13 acasajus Exp $"
 
 import os.path
 import zlib
 import threading
 import time
+import DIRAC
 from DIRAC.Core.Utilities import List, Time
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.private.CFG import CFG
@@ -12,9 +13,7 @@ from DIRAC.LoggingSystem.Client.Logger import gLogger
 
 class ConfigurationData:
 
-  def __init__( self, loaddefaultcfg = True ):
-    from DIRAC import rootPath
-    self.rootPath = rootPath
+  def __init__( self, loadDefaultCFG = True ):
     self.threadingEvent = threading.Event()
     self.threadingEvent.set()
     self.threadingLock = threading.Lock()
@@ -24,10 +23,12 @@ class ConfigurationData:
     self.isService = False
     self.localCFG = CFG()
     self.remoteCFG = CFG()
-    if loaddefaultcfg:
-      defaultcfg = "%s/etc/dirac.cfg" % self.rootPath
-      gLogger.debug( "dirac.cfg should be at", "%s" % defaultcfg )
-      self.loadFile( defaultcfg )
+    if loadDefaultCFG:
+      defaultCFGFile = "%s/etc/dirac.cfg" % DIRAC.rootPath
+      gLogger.debug( "dirac.cfg should be at", "%s" % defaultCFGFile )
+      retVal = self.loadFile( defaultCFGFile )
+      if not retVal[ 'OK' ]:
+        gLogger.error( "Can't load %s file" % defaultCFGFile )
     self.sync()
 
   def sync( self ):
@@ -74,7 +75,7 @@ class ConfigurationData:
     name = self.getName()
     self.lock()
     try:
-      self.remoteCFG.loadFromFile( "%s/etc/%s.cfg" % ( self.rootPath, name ) )
+      self.remoteCFG.loadFromFile( "%s/etc/%s.cfg" % ( DIRAC.rootPath, name ) )
     except:
       pass
     self.unlock()
@@ -243,6 +244,8 @@ class ConfigurationData:
       return S_ERROR( "Can't dump cfg file '%s'" % fileName )
     return S_OK()
 
+  def getMergedCFGAsString( self ):
+    return str( self.mergedCFG )
 
   def dumpRemoteCFGToFile( self, fileName ):
     fd = open( fileName, "w" )
@@ -253,7 +256,7 @@ class ConfigurationData:
     import zipfile
     if not backupName:
       backupName = self.getVersion()
-    configurationFile = "%s/etc/%s.cfg" % ( self.rootPath, self.getName() )
+    configurationFile = "%s/etc/%s.cfg" % ( DIRAC.rootPath, self.getName() )
     backupFile = configurationFile.replace( ".cfg", ".%s.zip" % backupName )
     if os.path.isfile( configurationFile ):
       try:

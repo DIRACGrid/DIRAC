@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/LocalConfiguration.py,v 1.7 2007/05/16 14:51:19 acasajus Exp $
-__RCSID__ = "$Id: LocalConfiguration.py,v 1.7 2007/05/16 14:51:19 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/LocalConfiguration.py,v 1.8 2007/05/17 16:21:12 acasajus Exp $
+__RCSID__ = "$Id: LocalConfiguration.py,v 1.8 2007/05/17 16:21:12 acasajus Exp $"
 
 import sys
 import os
@@ -33,13 +33,13 @@ class LocalConfiguration:
       return "%s/%s" % ( self.currentSectionPath, optionPath )
 
   def addMandatoryEntry( self, optionPath ):
-    self.mandatoryEntryList.append( self.__getAbsolutePath( optionPath ) )
+    self.mandatoryEntryList.append( optionPath )
 
-  def addOptionalEntry( self, optionPath, value ):
-    self.optionalEntryList.append( ( self.__getAbsolutePath( optionPath ),
+  def addDefaultEntry( self, optionPath, value ):
+    self.optionalEntryList.append( ( optionPath,
                                      str( value ) ) )
 
-  def setOptionValue( self, optionPath, value ):
+  def __setOptionValue( self, optionPath, value ):
     gConfigurationData.setOptionInCFG( self.__getAbsolutePath( optionPath ),
                                        str( value ) )
 
@@ -71,20 +71,19 @@ class LocalConfiguration:
     if not self.isParsed:
       self.__parseCommandLine()
     try:
-      for optionTuple in self.optionalEntryList:
-        gConfigurationData.setOptionInCFG( optionTuple[0], optionTuple[1] )
-
       retVal = self.__addUserDataToConfiguration()
       gLogger.initialize( self.componentName, self.loggingSection )
       if not retVal[ 'OK' ]:
         return retVal
 
-      retVal = self.__getRemoteConfiguration()
-      if not retVal[ 'OK' ]:
-        return retVal
+      for optionTuple in self.optionalEntryList:
+        optionPath = self.__getAbsolutePath( optionTuple[0] )
+        if not gConfigurationData.extractOptionFromCFG( optionPath ):
+          gConfigurationData.setOptionInCFG( optionPath, optionTuple[1] )
 
       isMandatoryMissing = False
       for optionPath in self.mandatoryEntryList:
+        optionPath = self.__getAbsolutePath( optionPath )
         if not gConfigurationData.extractOptionFromCFG( optionPath ):
           gLogger.fatal( "Missing mandatory option in the configuration", optionPath )
           isMandatoryMissing = True
@@ -125,6 +124,7 @@ class LocalConfiguration:
     self.parsedOptionList = opts
     self.isParsed = True
 
+
   def __addUserDataToConfiguration( self ):
     if not self.isParsed:
       self.__parseCommandLine()
@@ -136,6 +136,24 @@ class LocalConfiguration:
       retVal = gConfigurationData.loadFile( fileName )
       if not retVal[ 'OK' ]:
         errorsList.append( retVal[ 'Message' ] )
+
+    if gConfigurationData.getServers():
+      retVal = self.__getRemoteConfiguration()
+      if not retVal[ 'OK' ]:
+        return retVal
+    else:
+      gLogger.info( "Running without remote configuration" )
+
+
+    print gConfigurationData.getMergedCFGAsString()
+    if self.componentType == "service":
+      self.__setDefaultSection( getServiceSection( self.componentName ) )
+    elif self.componentType == "agent":
+      self.__setDefaultSection( getAgentSection( self.componentName ) )
+    elif self.componentType == "script":
+      self.__setDefaultSection( "/Scripts/%s" % self.componentName )
+    else:
+      self.__setDefaultSection( "/" )
 
     self.unprocessedSwitches = []
 
@@ -159,7 +177,7 @@ class LocalConfiguration:
 
   def __getRemoteConfiguration( self ):
     needCSData = True
-    if self.currentSectionPath == getServiceSection( "Configuration/Server" ):
+    if self.componentName == "Configuration/Server" :
       if gConfigurationData.isMaster():
         gLogger.debug( "CServer is Master!" )
         needCSData = False
@@ -173,23 +191,21 @@ class LocalConfiguration:
 
     return S_OK()
 
+  def __setDefaultSection( self, sectionPath ):
+    self.currentSectionPath = sectionPath
+    self.loggingSection = self.currentSectionPath
+
   def setConfigurationForServer( self, serviceName ):
     self.componentName = serviceName
-    self.currentSectionPath = getServiceSection( serviceName )
-    self.loggingSection = self.currentSectionPath
-    return self.currentSectionPath
+    self.componentType = "service"
 
   def setConfigurationForAgent( self, agentName ):
     self.componentName = agentName
-    self.currentSectionPath = getAgentSection( agentName )
-    self.loggingSection = self.currentSectionPath
-    return self.currentSectionPath
+    self.componentType = "agent"
 
   def setConfigurationForScript( self, scriptName ):
     self.componentName = scriptName
-    self.currentSectionPath = "/Scripts/%s" % scriptName
-    self.loggingSection = self.currentSectionPath
-    return self.currentSectionPath
+    self.componentType = "script"
 
   def __setSectionByCmd( self, value ):
     if value[0] != "/":
@@ -202,14 +218,14 @@ class LocalConfiguration:
     if len( valueList ) <  2:
       # FIXME: in the method above an exception is raised, check consitency
       return S_ERROR( "-o expects a option=value argument.\nFor example %s -o Port=1234" % sys.argv[0] )
-    self.setOptionValue( valueList[0] , valueList[1] )
+    self.__setOptionValue( valueList[0] , valueList[1] )
     return S_OK()
 
   def __setUseCertByCmd( self, value ):
     useCert = "no"
     if value.lower() in ( "y", "yes", "true" ):
       useCert = "yes"
-    self.setOptionValue( "/DIRAC/Security/UseServerCertificate", useCert )
+    self.__setOptionValue( "/DIRAC/Security/UseServerCertificate", useCert )
     return S_OK()
 
   def __showHelp( self, dummy ):

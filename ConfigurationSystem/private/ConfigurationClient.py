@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationClient.py,v 1.4 2007/05/10 18:12:51 acasajus Exp $
-__RCSID__ = "$Id: ConfigurationClient.py,v 1.4 2007/05/10 18:12:51 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationClient.py,v 1.5 2007/05/17 16:21:13 acasajus Exp $
+__RCSID__ = "$Id: ConfigurationClient.py,v 1.5 2007/05/17 16:21:13 acasajus Exp $"
 
 import types
 from DIRAC.Core.Utilities import List
@@ -38,7 +38,7 @@ class ConfigurationClient:
     #Return value if existing, defaultValue if not
     if optionValue == defaultValue:
       if defaultValue == None or type( defaultValue ) == types.TypeType:
-        return S_ERROR( "Path %s does not exist or it's not an option" % optionValue )
+        return S_ERROR( "Path %s does not exist or it's not an option" % optionPath )
       return S_OK( optionValue )
 
     #Value has been returned from the configuration

@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Attic/CFG.py,v 1.3 2007/05/16 13:55:37 acasajus Exp $
-__RCSID__ = "$Id: CFG.py,v 1.3 2007/05/16 13:55:37 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Attic/CFG.py,v 1.4 2007/05/17 16:21:13 acasajus Exp $
+__RCSID__ = "$Id: CFG.py,v 1.4 2007/05/17 16:21:13 acasajus Exp $"
 
 import types
 import copy
@@ -93,18 +93,24 @@ class CFG:
         CFGSTring += "%s}\n" % tabLevelString
       elif entryName in self.listOptions():
         valueList = List.fromChar( self.__dataDict[ entryName ] )
-        CFGSTring += "%s%s = %s\n" % ( tabLevelString, entryName, valueList[0] )
-        for value in valueList[1:]:
-          CFGSTring += "%s%s += %s\n" % ( tabLevelString, entryName, value )
+        if len( valueList ) == 0:
+          CFGSTring += "%s%s = \n" % ( tabLevelString, entryName )
+        else:
+          CFGSTring += "%s%s = %s\n" % ( tabLevelString, entryName, valueList[0] )
+          for value in valueList[1:]:
+            CFGSTring += "%s%s += %s\n" % ( tabLevelString, entryName, value )
       else:
         raise Exception( "Oops. There is an entry in the order which is not a section nor an option" )
     return CFGSTring
 
   def clone( self ):
     clonedCFG = CFG()
-    clonedCFG.__orderedList = copy.copy( self.__orderedList )
-    clonedCFG.__commentDict = copy.copy( self.__commentDict )
-    clonedCFG.__dataDict = copy.copy( self.__dataDict )
+    clonedCFG.__orderedList = copy.deepcopy( self.__orderedList )
+    clonedCFG.__commentDict = copy.deepcopy( self.__commentDict )
+    for option in self.listOptions():
+      clonedCFG.__dataDict[ option ] = self[ option ]
+    for section in self.listSections():
+      clonedCFG.__dataDict[ section ] = self[ section ].clone()
     return clonedCFG
 
   def mergeWith( self, cfgToMergeWith ):
@@ -151,11 +157,10 @@ class CFG:
       line = line.strip()
       if len( line ) < 1:
         continue
-      if line[0] == "#":
-        while line[0] == "#":
-          line = line[1:]
-        currentComment += "%s\n" % line
-        continue
+      commentPos = line.find( "#" )
+      if commentPos > -1:
+        currentComment += "%s\n" % line[ commentPos: ].replace( "#", "" )
+        line = line[ :commentPos ]
       for index in range( len( line ) ):
         if line[ index ] == "{":
           currentlyParsedString = currentlyParsedString.strip()

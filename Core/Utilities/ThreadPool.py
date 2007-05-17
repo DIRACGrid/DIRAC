@@ -1,8 +1,8 @@
 #################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/ThreadPool.py,v 1.3 2007/05/13 20:46:51 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/ThreadPool.py,v 1.4 2007/05/17 16:21:12 acasajus Exp $
 #################################################################
 
-__RCSID__ = "$Id $"
+__RCSID__ = "$Id: ThreadPool.py,v 1.4 2007/05/17 16:21:12 acasajus Exp $"
 
 import sys
 import Queue
@@ -86,7 +86,7 @@ class ThreadPool( threading.Thread ):
     else:
       self.iMinThreads = iMinThreads
     if iMaxThreads < self.iMinThreads:
-      self.iMaxThreads = self.iMinThreads * 5
+      self.iMaxThreads = self.iMinThreads
     else:
       self.iMaxThreads = iMaxThreads
     self.oPendingQueue = Queue.Queue( iMaxQueuedRequests )
@@ -150,6 +150,9 @@ class ThreadPool( threading.Thread ):
   def pendingJobs( self ):
     return self.oPendingQueue.qsize()
 
+  def isFull( self ):
+    return self.oPendingQueue.full()
+
   def processResults( self ):
     iProcessed = 0
     while True:
@@ -172,11 +175,16 @@ class ThreadPool( threading.Thread ):
     self.setDaemon(1)
     self.start()
 
+  #This is the ThreadPool threaded function. YOU ARE NOT SUPPOSED TO CALL THIS FUNCTION!!!
   def run( self ):
     import time
     while True:
       self.processResults()
       time.sleep( 1 )
+
+#TODO:
+#Put job blocking
+#Results blocking too :)
 
 if __name__=="__main__":
   import random
