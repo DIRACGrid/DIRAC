@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.9 2007/05/16 10:06:59 acasajus Exp $
-__RCSID__ = "$Id: Server.py,v 1.9 2007/05/16 10:06:59 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.10 2007/05/17 16:19:47 acasajus Exp $
+__RCSID__ = "$Id: Server.py,v 1.10 2007/05/17 16:19:47 acasajus Exp $"
 
 import socket
 import sys
@@ -10,8 +10,7 @@ from DIRAC.Core.Utilities.ThreadPool import ThreadPool
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.Utilities import Network
 from DIRAC.LoggingSystem.Client.Logger import gLogger
-from DIRAC.ActivitySystem.Client.ActivityClient import gActivity
-from DIRAC.ActivitySystem.Client.Constants import *
+from DIRAC.MonitoringSystem.Client.MonitoringClient import gMonitor
 
 class Server:
 
@@ -33,15 +32,15 @@ class Server:
       sys.exit(1)
     self.handlerManager.initializeHandlers()
     self.__initializeTransport()
-    self.__initializeActivity()
+    self.__initializeMonitor()
     self.threadPool = ThreadPool( 1, self.serviceCfg.getMaxThreads() )
     self.threadPool.daemonize()
 
-  def __initializeActivity( self ):
-    gActivity.setComponentType( ACTIVITY_COMPONENT_SERVICE )
-    gActivity.setComponentName( self.serviceName )
-    gActivity.setComponentLocation( self.serviceURL )
-    gActivity.registerActivity( "Queries", "framework", "queries/s", ACTIVITY_OP_MEAN, 1 )
+  def __initializeMonitor( self ):
+    gMonitor.setComponentType( gMonitor.COMPONENT_SERVICE )
+    gMonitor.setComponentName( self.serviceName )
+    gMonitor.setComponentLocation( self.serviceURL )
+    gMonitor.registerActivity( "Queries", "framework", "queries/s", gMonitor.OP_MEAN, 1 )
 
   def __buildURL( self ):
     protocol = self.serviceCfg.getProtocol()
