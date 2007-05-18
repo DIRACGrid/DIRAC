@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.1 2007/05/13 21:15:31 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.2 2007/05/18 10:31:44 rgracian Exp $
 ########################################################################
 """ PilotAgentsDB class is a front-end to the Pilot Agent Database.
     This database keeps track of all the submitted grid pilot jobs.
@@ -12,7 +12,7 @@
     
 """
 
-__RCSID__ = "$Id: PilotAgentsDB.py,v 1.1 2007/05/13 21:15:31 atsareg Exp $"
+__RCSID__ = "$Id: PilotAgentsDB.py,v 1.2 2007/05/18 10:31:44 rgracian Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from BaseDB import BaseDB
@@ -31,7 +31,7 @@ class PilotAgentsDB(BaseDB):
   def addPilotReference(self,pilotRef,ownerDN,jobID,ownerGroup='',pilotType='DIRAC'):
     """ Add a new pilot job reference """
   
-    req = "INSERT INTO PilotAgents( PilotJobReference, InitialJobID, OwnerDN, " + \ 
+    req = "INSERT INTO PilotAgents( PilotJobReference, InitialJobID, OwnerDN, " + \
           "OwnerGroup, WMSType, SubmissionTime, LastUpdateTime, Status ) " + \
           "VALUES ('%s',%d,'%s',%s,'%s',NOW(),NOW(),'Submitted')" % \
           (pilotRef,int(jobID),ownerDN,ownerGroup,ptype)
@@ -42,10 +42,10 @@ class PilotAgentsDB(BaseDB):
     """ Set pilot job LCG status """
         
     if not destination:
-      req = "UPDATE PilotAgents set Status='%s',LastUpdateTime=NOW() " + \ 
+      req = "UPDATE PilotAgents set Status='%s',LastUpdateTime=NOW() " + \
             "WHERE PilotJobReference='%s'" % (status,pilotRef) 
     else:	  
-      req = "UPDATE LCGPilots set Status='%s',LastUpdate=NOW(), DestinationSite='%s' " + \ 
+      req = "UPDATE LCGPilots set Status='%s',LastUpdate=NOW(), DestinationSite='%s' " + \
             "WHERE PilotJobReference='%s'" % (status,destination,pilotRef)   
 	  	  
     return self._update(req)      
