@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.13 2007/05/17 18:54:04 acasajus Exp $
-__RCSID__ = "$Id: RequestHandler.py,v 1.13 2007/05/17 18:54:04 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.14 2007/05/22 17:54:57 acasajus Exp $
+__RCSID__ = "$Id: RequestHandler.py,v 1.14 2007/05/22 17:54:57 acasajus Exp $"
 
 import types
 from DIRAC.Core.DISET.private.FileHelper import FileHelper
@@ -168,7 +168,7 @@ class RequestHandler:
       gLogger.debug( "User has no credentials" )
       return False
     #Check authorized groups
-    if not credDict[ 'disetGroup' ] in authGroups and not "authenticated" in authGroups:
+    if not credDict[ 'group' ] in authGroups and not "authenticated" in authGroups:
       gLogger.debug( "Group is not authorized" )
       return False
     return True
@@ -184,18 +184,18 @@ class RequestHandler:
     credDict = self.getRemoteCredentials()
     trustedHostsList = gConfig.getValue( "/DIRAC/Security/TrustedHosts", [] )
     return credDict[ 'DN' ] in trustedHostsList and \
-            type( credDict[ 'disetGroup' ] ) == types.TupleType
+            type( credDict[ 'group' ] ) == types.TupleType
 
   def __authUnpackForwardedCredentials( self ):
     credDict = self.getRemoteCredentials()
-    credDict[ 'DN' ] = credDict[ 'disetGroup' ][0]
-    credDict[ 'disetGroup' ] = credDict[ 'disetGroup' ][1]
+    credDict[ 'DN' ] = credDict[ 'group' ][0]
+    credDict[ 'group' ] = credDict[ 'group' ][1]
 
   def __authGetUsername( self ):
     credDict = self.getRemoteCredentials()
     if not "DN" in credDict:
       return True
-    usersInGroup = gConfig.getValue( "/Groups/%s/users" % credDict[ 'disetGroup' ], [] )
+    usersInGroup = gConfig.getValue( "/Groups/%s/users" % credDict[ 'group' ], [] )
     if not usersInGroup:
       return False
     userName = self.__authFindDNInUsers( credDict[ 'DN' ], usersInGroup )
@@ -238,3 +238,13 @@ class RequestHandler:
     dInfo[ 'name' ] = str( self.serviceInfoTuple )
 
     return S_OK( dInfo )
+
+####
+#
+#  Default get Credentials method
+#
+####
+
+  types_getCredentials = []
+  def export_getCredentials( self ):
+    return S_OK( self.getRemoteCredentials() )

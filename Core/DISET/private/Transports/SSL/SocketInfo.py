@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfo.py,v 1.6 2007/05/16 10:06:58 acasajus Exp $
-__RCSID__ = "$Id: SocketInfo.py,v 1.6 2007/05/16 10:06:58 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfo.py,v 1.7 2007/05/22 17:54:58 acasajus Exp $
+__RCSID__ = "$Id: SocketInfo.py,v 1.7 2007/05/22 17:54:58 acasajus Exp $"
 
 import time
 import copy
@@ -30,7 +30,7 @@ class SocketInfo:
   def gatherPeerCredentials( self ):
     peerCert = self.sslSocket.get_peer_certificate()
     peerDN = self.__cleanDN( peerCert.get_subject() )
-    credDict = { 'certificate' : peerCert, 'DN' : peerDN }
+    credDict = { 'DN' : peerDN }
     self.infoDict[ 'peerCredentials' ] = credDict
     return credDict
 

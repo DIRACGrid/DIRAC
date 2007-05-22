@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.11 2007/05/17 17:29:53 acasajus Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.11 2007/05/17 17:29:53 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.12 2007/05/22 17:54:58 acasajus Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.12 2007/05/22 17:54:58 acasajus Exp $"
 
 import DIRAC
 from DIRAC.Core.DISET.private.Protocols import gProtocolDict
@@ -80,3 +80,6 @@ class BaseClient:
       retVal = gProtocolDict[ self.URLTuple[0] ][1]( self.URLTuple[1:3], useCertificates = self.useCertificates )
       if not retVal:
         DIRAC.abort( 10, "Unsane environment for protocol" )
+
+  def __nonzero__( self ):
+    return True
