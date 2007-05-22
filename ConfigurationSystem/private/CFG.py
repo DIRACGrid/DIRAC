@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Attic/CFG.py,v 1.4 2007/05/17 16:21:13 acasajus Exp $
-__RCSID__ = "$Id: CFG.py,v 1.4 2007/05/17 16:21:13 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Attic/CFG.py,v 1.5 2007/05/22 18:49:38 acasajus Exp $
+__RCSID__ = "$Id: CFG.py,v 1.5 2007/05/22 18:49:38 acasajus Exp $"
 
 import types
 import copy
@@ -28,7 +28,7 @@ class CFG:
       else:
         self.__dataDict[ sectionName ] = oCFG
     else:
-      raise Exception( "%s key is already a section" )
+      raise Exception( "%s key is already a section"  % sectionName )
 
   def __overrideAndCloneSection( self, sectionName, oCFGToClone ):
     if sectionName not in self.listSections():
@@ -41,7 +41,7 @@ class CFG:
     if optionName.find( "/" ) > -1:
       raise Exception( "Sections and options can't contain '/' character. Correct %s" % optionName )
     if optionName in self.listSections():
-      raise Exception( "%s key is already defined as section" )
+      raise Exception( "%s key is already defined as section" % optionName )
     self.__addEntry( optionName, comment )
     self.__dataDict[ optionName ] = str( value )
 
@@ -50,6 +50,15 @@ class CFG:
     if not entryName in self.__orderedList:
       self.__orderedList.append( entryName )
     self.__commentDict[ entryName ] = comment
+
+  def deleteEntry( self, entryName ):
+    if entryName in self.__orderedList:
+      del( self.__commentDict[ entryName ] )
+      del( self.__dataDict[ entryName ] )
+      pos = self.__orderedList.index( entryName )
+      del( self.__orderedList[ pos ] )
+      return True
+    return False
 
   def listOptions( self ):
     return [ sKey for sKey in self.__dataDict.keys() if type( self.__dataDict[ sKey ] ) == types.StringType ]
@@ -80,11 +89,17 @@ class CFG:
     except:
       raise Exception( "%s does not have any comment defined" % entryName )
 
+  def setComment( self, entryName, comment ):
+    if entryName in self.__orderedList:
+      self.__commentDict[ entryName ] = comment
+      return True
+    return False
+
   def serialize( self, tabLevelString = "" ):
     CFGSTring = ""
     for entryName in self.__orderedList:
       if entryName in self.__commentDict:
-        for commentLine in List.fromChar( self.__commentDict[ entryName ] ):
+        for commentLine in List.fromChar( self.__commentDict[ entryName ], "\n" ):
           CFGSTring += "%s#%s\n" % ( tabLevelString, commentLine )
       if entryName in self.listSections():
         CFGSTring += "%s%s\n%s{\n" % ( tabLevelString, entryName, tabLevelString )

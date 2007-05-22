@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Refresher.py,v 1.11 2007/05/16 10:06:59 acasajus Exp $
-__RCSID__ = "$Id: Refresher.py,v 1.11 2007/05/16 10:06:59 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Refresher.py,v 1.12 2007/05/22 18:49:38 acasajus Exp $
+__RCSID__ = "$Id: Refresher.py,v 1.12 2007/05/22 18:49:38 acasajus Exp $"
 
 import threading
 import time
@@ -110,6 +110,7 @@ class Refresher( threading.Thread ):
     self.iLastUpdateTime = time.time()
     gLogger.verbose( "Refresing configuration..." )
     sGateway = getGatewayURL()
+    updatingErrorsList = []
     if sGateway:
       lInitialListOfServers = [ sGateway ]
       gLogger.debug( "Using configuration gateway", str( lInitialListOfServers[0] ) )
@@ -126,8 +127,9 @@ class Refresher( threading.Thread ):
         if dRetVal[ 'OK' ]:
           return dRetVal
         else:
+          updatingErrorsList.append( dRetVal[ 'Message' ] )
           gLogger.warn( "Can't update from server", "Error while updating from %s: %s" %( sServer, dRetVal[ 'Message' ] ) )
-    return S_ERROR( "Can't update from any server" )
+    return S_ERROR( "Can't update from any server\nReason(s):\n\t%s" % "\n\t".join( List.uniqueElements( updatingErrorsList) ) )
 
   def __updateFromRemoteLocation( self, serviceClient ):
     gLogger.debug( "", "Trying to refresh from %s" % serviceClient.serviceURL )

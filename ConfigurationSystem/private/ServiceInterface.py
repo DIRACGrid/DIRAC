@@ -1,8 +1,10 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ServiceInterface.py,v 1.5 2007/05/17 17:29:38 acasajus Exp $
-__RCSID__ = "$Id: ServiceInterface.py,v 1.5 2007/05/17 17:29:38 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ServiceInterface.py,v 1.6 2007/05/22 18:49:38 acasajus Exp $
+__RCSID__ = "$Id: ServiceInterface.py,v 1.6 2007/05/22 18:49:38 acasajus Exp $"
 
 import sys
+import os
 import time
+import re
 import threading
 import DIRAC
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData, ConfigurationData
@@ -27,6 +29,9 @@ class ServiceInterface( threading.Thread ):
       self.dAliveSlaveServers = {}
       self.__launchCheckSlaves()
 
+  def isMaster( self ):
+    return gConfigurationData.isMaster()
+
   def __launchCheckSlaves(self):
     gLogger.info( "Starting purge slaves thread" )
     self.setDaemon(1)
@@ -38,6 +43,7 @@ class ServiceInterface( threading.Thread ):
       bBuiltNewConfiguration = False
       if not gConfigurationData.getName():
         DIRAC.abort( 10, "Missing name for the configuration to be exported!" )
+      gConfigurationData.exportName()
       sVersion = gConfigurationData.getVersion()
       if sVersion == "0":
         gLogger.info( "There's no version. Generating a new one" )
@@ -48,7 +54,7 @@ class ServiceInterface( threading.Thread ):
         gConfigurationData.setServers( self.sURL )
         bBuiltNewConfiguration = True
 
-        gConfigurationData.setMasterServer( self.sURL )
+      gConfigurationData.setMasterServer( self.sURL )
 
       if bBuiltNewConfiguration:
         gConfigurationData.writeRemoteConfigurationToDisk()
@@ -84,14 +90,10 @@ class ServiceInterface( threading.Thread ):
                                                     ", ".join( self.dAliveSlaveServers.keys() ) ) )
       self.__generateNewVersion()
 
-  def now( self ):
-    from DIRAC.Core.Utils.Time import datetime
-    return datetime()
-
   def getCompressedConfiguration( self ):
     sData = gConfigurationData.getCompressedData()
 
-  def updateConfiguration( self, sBuffer ):
+  def updateConfiguration( self, sBuffer, commiterDN = "" ):
     if not gConfigurationData.isMaster():
       return S_ERROR( "Configuration modification is not allowed in this server" )
     #Load the data in a ConfigurationData object
@@ -100,19 +102,20 @@ class ServiceInterface( threading.Thread ):
     #Test that remote and new versions are the same
     sRemoteVersion = oRemoteConfData.getVersion()
     sLocalVersion = gConfigurationData.getVersion()
+    print sRemoteVersion, sLocalVersion
     if sRemoteVersion != sLocalVersion:
-      return S_ERROR( "Configuration names differ: Server %s is and remote is %s" % ( sLocalName, sRemoteName ) )
+      return S_ERROR( "Versions differ: Server %s is and remote is %s" % ( sLocalVersion, sRemoteVersion ) )
     #Test that configuration names are the same
     sRemoteName = oRemoteConfData.getName()
     sLocalName = gConfigurationData.getName()
     if sRemoteName != sLocalName:
-      return S_ERROR( "Versions differ: Server is %s and remote is %s" % ( sLocalVersion, sRemoteVersion ) )
+      return S_ERROR( "Names differ: Server is %s and remote is %s" % ( sLocalName, sRemoteName ) )
     #Update and generate a new version
     gConfigurationData.lock()
     gConfigurationData.loadRemoteCFGFromCompressedMem( sBuffer )
     gConfigurationData.generateNewVersion()
     #self.__checkSlavesStatus( forceWriteConfiguration = True )
-    gConfigurationData.writeRemoteConfigurationToDisk( sLocalVersion )
+    gConfigurationData.writeRemoteConfigurationToDisk( "%s@%s" % ( commiterDN, sLocalVersion ) )
     gConfigurationData.unlock()
     return S_OK()
 
@@ -121,6 +124,14 @@ class ServiceInterface( threading.Thread ):
 
   def getVersion( self ):
     return gConfigurationData.getVersion()
+
+  def getCommitHistory( self ):
+    files = os.listdir( "%s/etc" % DIRAC.rootPath )
+    files.sort( reverse = True )
+    confName = gConfigurationData.getName()
+    rs = re.compile( "^%s\..+@.+\.zip$" % confName )
+    backups = [ file.split( "." )[1].split( "@" ) for file in files if rs.search( file ) ]
+    return backups
 
   def run( self ):
     while True:

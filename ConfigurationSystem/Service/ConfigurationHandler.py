@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Service/ConfigurationHandler.py,v 1.4 2007/05/16 10:06:59 acasajus Exp $
-__RCSID__ = "$Id: ConfigurationHandler.py,v 1.4 2007/05/16 10:06:59 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Service/ConfigurationHandler.py,v 1.5 2007/05/22 18:49:38 acasajus Exp $
+__RCSID__ = "$Id: ConfigurationHandler.py,v 1.5 2007/05/22 18:49:38 acasajus Exp $"
 import types
 from DIRAC.ConfigurationSystem.private.ServiceInterface import ServiceInterface
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -36,9 +36,23 @@ class ConfigurationHandler( RequestHandler ):
     gServiceInterface.publishSlaveServer( sURL )
     return S_OK()
 
-  types_setNewConfigurationData = [ types.StringType ]
-  def export_setNewConfigurationData( self, sData ):
-    gServiceInterface.updateConfiguration( sData )
-    return S_OK( gServiceInterface.getVersion() )
+  types_commitNewData = [ types.StringType ]
+  def export_commitNewData( self, sData ):
+    credDict = self.getRemoteCredentials()
+    if not 'DN' in credDict or not 'username' in credDict:
+      return S_ERROR( "You must be authenticated!" )
+    return gServiceInterface.updateConfiguration( sData, credDict[ 'username' ] )
 
+  types_writeEnabled = []
+  def export_writeEnabled( self ):
+    return S_OK( gServiceInterface.isMaster() )
+
+  types_getCommitHistory = []
+  def export_getCommitHistory( self, limit = 100 ):
+    if limit > 100:
+      limit = 100
+    history = gServiceInterface.getCommitHistory()
+    if limit:
+      history = history[ :limit ]
+    return S_OK( history )
 

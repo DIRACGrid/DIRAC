@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationData.py,v 1.7 2007/05/17 16:21:13 acasajus Exp $
-__RCSID__ = "$Id: ConfigurationData.py,v 1.7 2007/05/17 16:21:13 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationData.py,v 1.8 2007/05/22 18:49:38 acasajus Exp $
+__RCSID__ = "$Id: ConfigurationData.py,v 1.8 2007/05/22 18:49:38 acasajus Exp $"
 
 import os.path
 import zlib
@@ -81,6 +81,19 @@ class ConfigurationData:
     self.unlock()
     self.sync()
 
+  def getCommentFromCFG( self, path, cfg = False ):
+    if not cfg:
+      cfg = self.mergedCFG
+    self.dangerZoneStart()
+    try:
+      levelList = [ level.strip() for level in path.split( "/" ) if level.strip() != "" ]
+      for section in levelList[:-1]:
+        cfg = cfg[ section ]
+      return self.dangerZoneEnd( cfg.getComment( levelList[-1] ) )
+    except Exception, e:
+      pass
+    return self.dangerZoneEnd( None )
+
   def getSectionsFromCFG( self, path, cfg = False ):
     if not cfg:
       cfg = self.mergedCFG
@@ -138,14 +151,21 @@ class ConfigurationData:
     self.sync()
 
   def generateNewVersion( self ):
-    self.setOptionInCFG( "%s/Version" % self.configurationPath,
-                                  Time.toString(),
-                                  self.remoteCFG )
+    self.setVersion( Time.toString() )
     self.sync()
 
-  def getVersion( self ):
+  def setVersion( self, version, cfg = False ):
+    if not cfg:
+      cfg = self.remoteCFG
+    self.setOptionInCFG( "%s/Version" % self.configurationPath,
+                                  version,
+                                  cfg )
+
+  def getVersion( self, cfg = False ):
+    if not cfg:
+      cfg = self.remoteCFG
     value = self.extractOptionFromCFG( "%s/Version" % self.configurationPath,
-                                        self.remoteCFG )
+                                        cfg )
     if value:
       return value
     return "0"
@@ -153,6 +173,12 @@ class ConfigurationData:
   def getName( self ):
     return self.extractOptionFromCFG( "%s/Name" % self.configurationPath,
                                         self.mergedCFG )
+
+  def exportName( self ):
+    return self.setOptionInCFG( "%s/Name" % self.configurationPath,
+                                self.getName(),
+                                self.remoteCFG )
+    self.sync()
 
   def getRefreshTime( self ):
     try:
@@ -197,11 +223,11 @@ class ConfigurationData:
     self.sync()
 
   def getMasterServer( self ):
-    return self.extractOptionFromCFG( "%s/Master" % self.configurationPath,
+    return self.extractOptionFromCFG( "%s/MasterServer" % self.configurationPath,
                                       self.remoteCFG )
 
   def setMasterServer( self, sURL ):
-    self.setOptionInCFG( "%s/Master" % self.configurationPath,
+    self.setOptionInCFG( "%s/MasterServer" % self.configurationPath,
                          sURL,
                          self.remoteCFG )
     self.sync()
