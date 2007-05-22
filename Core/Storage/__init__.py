@@ -1,0 +1,3 @@
+"""
+   DIRAC.Core.Storage package
+"""
