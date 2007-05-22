@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/LocalConfiguration.py,v 1.9 2007/05/17 17:29:35 acasajus Exp $
-__RCSID__ = "$Id: LocalConfiguration.py,v 1.9 2007/05/17 17:29:35 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/LocalConfiguration.py,v 1.10 2007/05/22 18:03:19 acasajus Exp $
+__RCSID__ = "$Id: LocalConfiguration.py,v 1.10 2007/05/22 18:03:19 acasajus Exp $"
 
 import sys
 import os
@@ -74,14 +74,15 @@ class LocalConfiguration:
   def loadUserData(self):
     try:
       retVal = self.__addUserDataToConfiguration()
-      gLogger.forceInitialization( self.componentName, self.loggingSection )
-      if not retVal[ 'OK' ]:
-        return retVal
 
       for optionTuple in self.optionalEntryList:
         optionPath = self.__getAbsolutePath( optionTuple[0] )
         if not gConfigurationData.extractOptionFromCFG( optionPath ):
           gConfigurationData.setOptionInCFG( optionPath, optionTuple[1] )
+
+      gLogger.forceInitialization( self.componentName, self.loggingSection )
+      if not retVal[ 'OK' ]:
+        return retVal
 
       isMandatoryMissing = False
       for optionPath in self.mandatoryEntryList:
