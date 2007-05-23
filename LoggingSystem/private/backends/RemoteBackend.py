@@ -8,12 +8,10 @@ class RemoteBackend( threading.Thread ):
 
   def __init__( self ):
     threading.Thread.__init__( self )
-    self._backendName = "server"
     self._msgQueue = Queue.Queue()
     self._alive = True
     self.setDaemon(1)
     self.start()
-
 
   def doMessage( self, messageObject ):
     self._msgQueue.push( messageObject )

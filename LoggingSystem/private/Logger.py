@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.8 2007/05/17 17:29:52 acasajus Exp $
-__RCSID__ = "$Id: Logger.py,v 1.8 2007/05/17 17:29:52 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.9 2007/05/23 16:35:00 acasajus Exp $
+__RCSID__ = "$Id: Logger.py,v 1.9 2007/05/23 16:35:00 acasajus Exp $"
 """
    DIRAC Logger client
 """
@@ -14,7 +14,7 @@ import Queue
 from DIRAC.LoggingSystem.private.LogLevels import LogLevels
 from DIRAC.LoggingSystem.private.Message import Message
 from DIRAC.Core.Utilities import Time, List
-
+from DIRAC.LoggingSystem.private.backends.BackendIndex import gBackendIndex
 
 class Logger:
 
@@ -26,23 +26,19 @@ class Logger:
     self._subLoggersDict = {}
     self._messageQueue = Queue.Queue( maxMessagesInQueue )
     self._logLevels = LogLevels()
-    self.__registerBackends()
 
   def initialized( self ):
     return not self._systemName == False
 
-  def __registerBackends( self ):
+  def __registerBackends( self, desiredBackends ):
     self._backendsDict = {}
-    for fileName in os.listdir( "%s/backends" % os.path.dirname( __file__ ) ):
-      if re.search( "Backend.py$", fileName ) and not re.search( "^BaseBackend", fileName ):
-        backendName = fileName.split( "." )[0]
-        module = __import__( "DIRAC.LoggingSystem.private.backends.%s" % backendName,
-                             locals(),
-                             globals(),
-                             backendName )
-        instance = getattr( module, backendName )()
-        self._backendsDict[ instance.getName() ] = instance
-
+    for backend in desiredBackends:
+      backend = backend.lower()
+      if not backend in gBackendIndex:
+        self.warn( "Unexistant method for showing messages",
+                   "Unexistant %s logging method" % backend )
+      else:
+        self._backendsDict[ backend ] = gBackendIndex[ backend ]( self.cfgPath )
 
   def initialize (self, systemName, cfgPath ):
     #TODO: Fallback section is /DIRAC
@@ -50,20 +46,15 @@ class Logger:
       self.forceInitialization( systemName, cfgPath )
 
   def forceInitialization( self, systemName, cfgPath ):
+    self.cfgPath = cfgPath
     from DIRAC.ConfigurationSystem.Client.Config import gConfig
     #Configure outputs
     retDict = gConfig.getOption( "%s/LogBackends" % cfgPath )
     if not retDict[ 'OK' ]:
-      desiredOutputList = [ 'stdout' ]
+      desiredBackendList = [ 'stdout' ]
     else:
-      desiredOutputList = List.fromChar( retDict[ 'Value' ], ","  )
-    self._outputList = []
-    for outputMethod in desiredOutputList:
-      if outputMethod in self._backendsDict.keys():
-        self._outputList.append( outputMethod )
-      else:
-        self.warn( "Unexistant method for showing messages",
-                   "Unexistant %s logging method" % outputMetod)
+      desiredBackendList = List.fromChar( retDict[ 'Value' ], ","  )
+    self.__registerBackends( desiredBackendList )
     #Configure verbosity
     retDict = gConfig.getOption( "%s/LogLevel" % cfgPath )
     if not retDict[ 'OK' ]:
@@ -193,11 +184,8 @@ class Logger:
     return abs( self._logLevels.getLevelValue( sLevel ) ) >= self._minLevel
 
   def __processMessage( self, messageObject ):
-    for outputMethod in self._outputList:
-      if outputMethod in self._backendsDict.keys():
-        self._backendsDict[ outputMethod ].doMessage( messageObject )
-      else:
-        self.fatal( "%s outputmethod does not exist!" )
+    for backend in self._backendsDict:
+      self._backendsDict[ backend ].doMessage( messageObject )
 
   def __getExceptionString( self, lException = False ):
     if lException:

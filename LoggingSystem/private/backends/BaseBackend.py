@@ -2,11 +2,10 @@
 
 class BaseBackend:
 
-    _backendName = "base"
     _showCallingFrame = False
 
-    def getName( self ):
-      return self._backendName
+    def __init__( self, cfgPath ):
+      self.cfgPath = cfgPath
 
     def flush( self ):
       pass

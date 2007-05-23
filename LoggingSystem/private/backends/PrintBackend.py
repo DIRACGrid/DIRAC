@@ -4,9 +4,6 @@ from DIRAC.LoggingSystem.private.backends.BaseBackend import BaseBackend
 
 class PrintBackend( BaseBackend ):
 
-  def __init__( self ):
-    self._backendName = "stdout"
-
   def doMessage( self, messageObject ):
     messageName = "%s" % messageObject.getName()
     if messageObject.getSubSystemName():
