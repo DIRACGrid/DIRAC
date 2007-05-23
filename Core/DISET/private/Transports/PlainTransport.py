@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/PlainTransport.py,v 1.5 2007/05/16 10:06:57 acasajus Exp $
-__RCSID__ = "$Id: PlainTransport.py,v 1.5 2007/05/16 10:06:57 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/PlainTransport.py,v 1.6 2007/05/23 15:28:37 rgracian Exp $
+__RCSID__ = "$Id: PlainTransport.py,v 1.6 2007/05/23 15:28:37 rgracian Exp $"
 
 import socket
 from DIRAC.Core.DISET.private.Transports.BaseTransport import BaseTransport
@@ -38,5 +38,5 @@ class PlainTransport( BaseTransport ):
     oClientTransport.setClientSocket( oClientSocket )
     return oClientTransport
 
-def checkSanity( args, kwargs ):
+def checkSanity( *args, **kwargs ):
   return True
