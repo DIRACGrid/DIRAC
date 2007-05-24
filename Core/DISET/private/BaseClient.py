@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.13 2007/05/23 16:20:30 acasajus Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.13 2007/05/23 16:20:30 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.14 2007/05/24 15:07:53 acasajus Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.14 2007/05/24 15:07:53 acasajus Exp $"
 
 import DIRAC
 from DIRAC.Core.DISET.private.Protocols import gProtocolDict
@@ -24,6 +24,7 @@ class BaseClient:
     self.timeout = timeout
     self.serviceURL = self.__discoverServiceURL()
     self.useCertificates = useCertificates
+    self.setup = gConfig.getValue( "/DIRAC/Setup", "Production" )
     try:
       retVal = Network.splitURL( self.serviceURL )
       if retVal[ 'OK' ]:
@@ -72,7 +73,7 @@ class BaseClient:
     return S_OK()
 
   def _proposeAction( self, sAction ):
-    stConnectionInfo = ( ( self.URLTuple[3], DIRAC.setup ), sAction, self.groupToUse )
+    stConnectionInfo = ( ( self.URLTuple[3], self.setup ), sAction, self.groupToUse )
     self.transport.sendData( stConnectionInfo )
     return self.transport.receiveData()
 
