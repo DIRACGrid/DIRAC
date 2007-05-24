@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Subprocess.py,v 1.3 2007/03/16 11:58:30 rgracian Exp $
-__RCSID__ = "$Id: Subprocess.py,v 1.3 2007/03/16 11:58:30 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Subprocess.py,v 1.4 2007/05/24 08:16:46 rgracian Exp $
+__RCSID__ = "$Id: Subprocess.py,v 1.4 2007/05/24 08:16:46 rgracian Exp $"
 """
    DIRAC Wrapper to execute python and system commands with a wrapper, that might 
    set a timeout.
@@ -203,7 +203,7 @@ class Subprocess:
                                       env=env )
     except OSError, v:
       retDict = S_ERROR( v )
-      retDict['Value': ( -1, '' , str(v) ) ]
+      retDict['Value'] = ( -1, '' , str(v) )
       return retDict
     except Exception, v:
       retDict = S_ERROR( v )
