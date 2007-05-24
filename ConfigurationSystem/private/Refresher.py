@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Refresher.py,v 1.12 2007/05/22 18:49:38 acasajus Exp $
-__RCSID__ = "$Id: Refresher.py,v 1.12 2007/05/22 18:49:38 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Refresher.py,v 1.13 2007/05/24 15:17:20 acasajus Exp $
+__RCSID__ = "$Id: Refresher.py,v 1.13 2007/05/24 15:17:20 acasajus Exp $"
 
 import threading
 import time
@@ -17,7 +17,6 @@ class Refresher( threading.Thread ):
     threading.Thread.__init__( self )
     self.bAutomaticUpdate = False
     self.iLastUpdateTime = 0
-    self.bUpdating = False
     self.sURL = False
     self.bEnabled = True
     random.seed()
@@ -26,41 +25,20 @@ class Refresher( threading.Thread ):
   def disable( self ):
     self.bEnabled = False
 
-  def __checkAndSetTriggeredUpdating( self ):
+  def refreshConfigurationIfNeeded( self ):
+    if not self.bEnabled or self.bAutomaticUpdate:
+      return
     self.oTriggeredRefreshLock.acquire()
     try:
-      if self.bUpdating:
-        return True
-      self.bUpdating = True
+      if time.time() - self.iLastUpdateTime < gConfigurationData.getRefreshTime():
+        return
+      retVal = self.__refresh()
+      if not retVal[ 'OK' ]:
+        gLogger.error( "Error while updating the configuration", retVal[ 'Message' ] )
     finally:
       self.oTriggeredRefreshLock.release()
 
-  def updateThreaded(self):
-    try:
-      self.__refresh()
-    finally:
-      bUpdating = False
-
-  def refreshConfigurationIfNeeded( self ):
-    if not self.bEnabled:
-      return
-    if self.bAutomaticUpdate:
-      return
-    if time.time() - self.iLastUpdateTime < gConfigurationData.getRefreshTime():
-      return
-    if self.__checkAndSetTriggeredUpdating():
-      return
-    updatingThread = threading.Thread( target = self.updateThreaded )
-    updatingThread.start()
-    #TODISCUSS
-    #FIXME: Maybe no one waits for update to finish
-    secondsCounter = 5
-    for second in range( secondsCounter ):
-      time.sleep( 1 )
-      if not updatingThread.isAlive():
-        return
-
-  def forceRefreshConfiguration( self ):
+  def forceRefresh( self ):
     if self.bEnabled:
       return self.__refresh()
     return S_OK()
@@ -70,8 +48,7 @@ class Refresher( threading.Thread ):
     if not gConfigurationData.getAutoPublish():
       gLogger.info( "Slave server won't auto publish itself" )
     if not gConfigurationData.getName():
-      gLogger.fatal( "Missing configuration name!" )
-      os._exit(1)
+      DIRAC.abort( 10, "Missing configuration name!" )
     self.sURL = sURL
     self.bAutomaticUpdate = True
     self.setDaemon(1)
