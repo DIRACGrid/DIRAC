@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.9 2007/05/23 16:35:00 acasajus Exp $
-__RCSID__ = "$Id: Logger.py,v 1.9 2007/05/23 16:35:00 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.10 2007/05/24 15:16:53 acasajus Exp $
+__RCSID__ = "$Id: Logger.py,v 1.10 2007/05/24 15:16:53 acasajus Exp $"
 """
    DIRAC Logger client
 """
@@ -26,6 +26,7 @@ class Logger:
     self._subLoggersDict = {}
     self._messageQueue = Queue.Queue( maxMessagesInQueue )
     self._logLevels = LogLevels()
+    self.__preinitialize()
 
   def initialized( self ):
     return not self._systemName == False
@@ -40,34 +41,36 @@ class Logger:
       else:
         self._backendsDict[ backend ] = gBackendIndex[ backend ]( self.cfgPath )
 
-  def initialize (self, systemName, cfgPath ):
-    #TODO: Fallback section is /DIRAC
-    if not self._systemName:
-      self.forceInitialization( systemName, cfgPath )
+  def __preinitialize ( self ):
+    self._systemName = "Framework"
+    self.cfgPath = "/"
+    self.__registerBackends( [ 'stdout' ] )
+    self._minLevel = self._logLevels.getLevelValue( "INFO" )
 
-  def forceInitialization( self, systemName, cfgPath ):
-    self.cfgPath = cfgPath
-    from DIRAC.ConfigurationSystem.Client.Config import gConfig
-    #Configure outputs
-    retDict = gConfig.getOption( "%s/LogBackends" % cfgPath )
-    if not retDict[ 'OK' ]:
-      desiredBackendList = [ 'stdout' ]
-    else:
-      desiredBackendList = List.fromChar( retDict[ 'Value' ], ","  )
-    self.__registerBackends( desiredBackendList )
-    #Configure verbosity
-    retDict = gConfig.getOption( "%s/LogLevel" % cfgPath )
-    if not retDict[ 'OK' ]:
-      self._minLevel = self._logLevels.getLevelValue( "INFO" )
-    else:
-      if retDict[ 'Value' ].upper() in self._logLevels.getLevels():
-        self._minLevel = abs( self._logLevels.getLevelValue( retDict[ 'Value' ].upper() ) )
-    #Configure framing
-    retDict = gConfig.getOption( "%s/LogShowLine" % cfgPath )
-    if retDict[ 'OK' ] and retDict[ 'Value' ].lower() in ( "y", "yes", "1", "true" ) :
-      self._showCallingFrame = True
-    self._systemName = str( systemName )
-    self.__processQueue()
+  def initialize( self, systemName, cfgPath ):
+    if self._systemName == "Framework":
+      self.cfgPath = cfgPath
+      from DIRAC.ConfigurationSystem.Client.Config import gConfig
+      #Configure outputs
+      retDict = gConfig.getOption( "%s/LogBackends" % cfgPath )
+      if not retDict[ 'OK' ]:
+        desiredBackendList = [ 'stdout' ]
+      else:
+        desiredBackendList = List.fromChar( retDict[ 'Value' ], ","  )
+      self.__registerBackends( desiredBackendList )
+      #Configure verbosity
+      retDict = gConfig.getOption( "%s/LogLevel" % cfgPath )
+      if not retDict[ 'OK' ]:
+        self._minLevel = self._logLevels.getLevelValue( "INFO" )
+      else:
+        if retDict[ 'Value' ].upper() in self._logLevels.getLevels():
+          self._minLevel = abs( self._logLevels.getLevelValue( retDict[ 'Value' ].upper() ) )
+      #Configure framing
+      retDict = gConfig.getOption( "%s/LogShowLine" % cfgPath )
+      if retDict[ 'OK' ] and retDict[ 'Value' ].lower() in ( "y", "yes", "1", "true" ) :
+        self._showCallingFrame = True
+      self._systemName = str( systemName )
+      self.__processQueue()
 
   def getName( self ):
     return self._systemName

@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/LocalConfiguration.py,v 1.10 2007/05/22 18:03:19 acasajus Exp $
-__RCSID__ = "$Id: LocalConfiguration.py,v 1.10 2007/05/22 18:03:19 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/LocalConfiguration.py,v 1.11 2007/05/24 15:16:54 acasajus Exp $
+__RCSID__ = "$Id: LocalConfiguration.py,v 1.11 2007/05/24 15:16:54 acasajus Exp $"
 
 import sys
 import os
@@ -80,7 +80,7 @@ class LocalConfiguration:
         if not gConfigurationData.extractOptionFromCFG( optionPath ):
           gConfigurationData.setOptionInCFG( optionPath, optionTuple[1] )
 
-      gLogger.forceInitialization( self.componentName, self.loggingSection )
+      gLogger.initialize( self.componentName, self.loggingSection )
       if not retVal[ 'OK' ]:
         return retVal
 
@@ -175,19 +175,15 @@ class LocalConfiguration:
     return S_OK()
 
   def __getRemoteConfiguration( self ):
-    needCSData = True
     if self.componentName == "Configuration/Server" :
       if gConfigurationData.isMaster():
-        gLogger.debug( "CServer is Master!" )
-        needCSData = False
-      else:
-        gLogger.debug( "CServer is slave" )
-    if needCSData:
-      retDict = gRefresher.forceRefreshConfiguration()
-      if not retDict['OK']:
-        gLogger.fatal( retDict[ 'Message' ] )
-        return S_ERROR()
-
+        gLogger.info( "Starting Master Configuration Server" )
+        gRefresher.disable()
+        return S_OK()
+    retDict = gRefresher.forceRefresh()
+    if not retDict['OK']:
+      gLogger.fatal( retDict[ 'Message' ] )
+      return S_ERROR()
     return S_OK()
 
   def __setDefaultSection( self, sectionPath ):
@@ -197,17 +193,14 @@ class LocalConfiguration:
   def setConfigurationForServer( self, serviceName ):
     self.componentName = serviceName
     self.componentType = "service"
-    gLogger.initialize( self.componentName, "/DIRAC" )
 
   def setConfigurationForAgent( self, agentName ):
     self.componentName = agentName
     self.componentType = "agent"
-    gLogger.initialize( self.componentName, "/DIRAC" )
 
   def setConfigurationForScript( self, scriptName ):
     self.componentName = scriptName
     self.componentType = "script"
-    gLogger.initialize( self.componentName, "/DIRAC" )
 
   def __setSectionByCmd( self, value ):
     if value[0] != "/":
