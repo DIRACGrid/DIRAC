@@ -2,7 +2,7 @@
 
 from types import *
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.Core.DISET import RPCClient
+from DIRAC.Core.DISET.RPCClient import RPCClient
 
 class StagerClient:
 
