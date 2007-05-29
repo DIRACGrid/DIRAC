@@ -8,16 +8,16 @@ class AuthManager:
 
   def authQuery( self, methodQuery, credDict ):
     #Check if query comes though a gateway/web server
-    if self.authIsForwardingCredentials( credDict ):
-      self.authUnpackForwardedCredentials( credDict )
+    if self.forwardedCredentials( credDict ):
+      self.unpackForwardedCredentials( credDict )
       return self.authQuery( methodQuery, credDict )
     if 'DN' in credDict:
       #Get the username
-      if not self.authGetUsername( credDict ):
+      if not self.getUsername( credDict ):
         gLogger.debug( "Query no authorized, user has no valid credentials" )
         return False
     #Check everyone is authorized
-    authGroups = self.authGetGroupsForMethod( methodQuery )
+    authGroups = self.getValidGroupsForMethod( methodQuery )
     if "any" in authGroups or "all" in authGroups:
       return True
     #Check user is authenticated
@@ -30,34 +30,34 @@ class AuthManager:
       return False
     return True
 
-  def authGetGroupsForMethod( self, method ):
+  def getValidGroupsForMethod( self, method ):
     authGroups = gConfig.getValue( "%s/%s" % ( self.authSection, method ), [] )
     if not authGroups:
       authGroups = gConfig.getValue( "%s/Default" % self.authSection, [] )
     return authGroups
 
-  def authIsForwardingCredentials( self, credDict ):
+  def forwardedCredentials( self, credDict ):
     trustedHostsList = gConfig.getValue( "/DIRAC/Security/TrustedHosts", [] )
     return credDict[ 'DN' ] in trustedHostsList and \
             type( credDict[ 'group' ] ) == types.TupleType
 
-  def authUnpackForwardedCredentials( self, credDict ):
+  def unpackForwardedCredentials( self, credDict ):
     credDict[ 'DN' ] = credDict[ 'group' ][0]
     credDict[ 'group' ] = credDict[ 'group' ][1]
 
-  def authGetUsername( self, credDict ):
+  def getUsername( self, credDict ):
     if not "DN" in credDict:
       return True
     usersInGroup = gConfig.getValue( "/Groups/%s/users" % credDict[ 'group' ], [] )
     if not usersInGroup:
       return False
-    userName = self.authFindDNInUsers( credDict[ 'DN' ], usersInGroup )
+    userName = self.findUsername( credDict[ 'DN' ], usersInGroup )
     if userName:
       credDict[ 'username' ] = userName
       return True
     return False
 
-  def authFindDNInUsers( self, DN, users ):
+  def findUsername( self, DN, users ):
     for user in users:
       if DN == gConfig.getValue( "/Users/%s/DN" % user, "" ):
         return user
