@@ -1,10 +1,11 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Dispatcher.py,v 1.4 2007/05/15 15:11:02 acasajus Exp $
-__RCSID__ = "$Id: Dispatcher.py,v 1.4 2007/05/15 15:11:02 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Dispatcher.py,v 1.5 2007/05/29 16:54:17 acasajus Exp $
+__RCSID__ = "$Id: Dispatcher.py,v 1.5 2007/05/29 16:54:17 acasajus Exp $"
 
 import DIRAC
 from DIRAC.LoggingSystem.Client.Logger import gLogger
 from DIRAC.Core.DISET.private.LockManager import LockManager
 from DIRAC.Core.Utilities import List
+from DIRAC.Core.DISET.AuthManager import AuthManager
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 
 class Dispatcher:
@@ -29,7 +30,8 @@ class Dispatcher:
     serviceInfoDict = { 'serviceName' : serviceName,
                         'URL' : serviceCfg.getURL(),
                         'systemSectionPath' : serviceCfg.getSystemPath(),
-                        'serviceSectionPath' : serviceCfg.getServicePath()
+                        'serviceSectionPath' : serviceCfg.getServicePath(),
+                        'authManager' : AuthManager( "%s/Authorization" % serviceCfg.getServicePath() )
                   }
     self.servicesDict[ serviceName ][ 'serviceInfo' ] = serviceInfoDict
 
