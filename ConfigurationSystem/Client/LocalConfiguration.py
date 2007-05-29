@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/LocalConfiguration.py,v 1.11 2007/05/24 15:16:54 acasajus Exp $
-__RCSID__ = "$Id: LocalConfiguration.py,v 1.11 2007/05/24 15:16:54 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/LocalConfiguration.py,v 1.12 2007/05/29 16:25:10 acasajus Exp $
+__RCSID__ = "$Id: LocalConfiguration.py,v 1.12 2007/05/29 16:25:10 acasajus Exp $"
 
 import sys
 import os
@@ -21,6 +21,7 @@ class LocalConfiguration:
     self.optionalEntryList = []
     self.commandOptionList = []
     self.unprocessedSwitches = []
+    self.additionalCFGFiles = []
     self.__registerBasicOptions()
     self.isParsed = False
     self.componentName = "Unknown"
@@ -42,6 +43,8 @@ class LocalConfiguration:
     else:
       self.optionalEntryList.append( ( optionPath,
                                      str( value ) ) )
+  def addCFGFile( self, filePath ):
+    self.additionalCFGFiles.append( filePath )
 
   def __setOptionValue( self, optionPath, value ):
     gConfigurationData.setOptionInCFG( self.__getAbsolutePath( optionPath ),
@@ -97,7 +100,6 @@ class LocalConfiguration:
       return S_ERROR( str( e ) )
     return S_OK()
 
-
   def __parseCommandLine( self ):
     gLogger.debug( "Parsing command line" )
     shortOption = ""
@@ -120,7 +122,7 @@ class LocalConfiguration:
       self.__showHelp()
       sys.exit(2)
 
-    self.AdditionalCfgFileList = [ arg for arg in args if arg[-4:] == ".cfg" ]
+    self.cliAdditionalCFGFiles = [ arg for arg in args if arg[-4:] == ".cfg" ]
     self.commandArgList = [ arg for arg in args if not arg[-4:] == ".cfg" ]
     self.parsedOptionList = opts
     self.isParsed = True
@@ -133,7 +135,11 @@ class LocalConfiguration:
     errorsList = []
 
     gConfigurationData.loadFile( os.path.expanduser( "~/.diracrc" ) )
-    for fileName in self.AdditionalCfgFileList:
+    for fileName in self.additionalCFGFiles:
+      retVal = gConfigurationData.loadFile( fileName )
+      if not retVal[ 'OK' ]:
+        errorsList.append( retVal[ 'Message' ] )
+    for fileName in self.cliAdditionalCFGFiles:
       retVal = gConfigurationData.loadFile( fileName )
       if not retVal[ 'OK' ]:
         errorsList.append( retVal[ 'Message' ] )
