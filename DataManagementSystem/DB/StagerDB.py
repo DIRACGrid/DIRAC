@@ -7,7 +7,7 @@
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
 
-gLogger.initialize('WMS','/Databases/StagerDB/Test')
+gLogger.initialize('DMS','/Databases/StagerDB/Test')
 
 class StagerDB(DB):
 
