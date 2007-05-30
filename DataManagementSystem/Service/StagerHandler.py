@@ -4,12 +4,12 @@
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.WorkloadManagementSystem.DB.StagerDB import StagerDB
+from DIRAC.DataManagementSystem.DB.StagerDB import StagerDB
 
 # This is a global instance of the StagerDB class
 stagerDB = False
 
-def initializeStagerHandler( serviceInfo ):
+def initializeStagerHandler(serviceInfo):
   global stagerDB
   stagerDB = StagerDB()
   return S_OK()
