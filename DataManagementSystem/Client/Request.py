@@ -16,7 +16,7 @@ class RequestClient:
     self.localUrl = gConfig.getValue('/Systems/DataManagement/Development/Services/RequestDB/localURL')
     self.centralUrl = gConfig.getValue('/Systems/DataManagement/Development/Services/RequestDB/centralURL')
     voBoxUrls = gConfig.getValue('/Systems/DataManagement/Development/Services/RequestDB/voBoxURLs')
-    self.voBoxUrls = randomize(voBoxUrls)
+    self.voBoxUrls = randomize(voBoxUrls).remove(self.localUrl)
 
   def setRequest(self,requestType,requestName,requestString,requestStatus='ToDo',url=''):
     """ Set request. URL can be supplied if not a all VOBOXes will be tried in random order.
@@ -80,9 +80,7 @@ class RequestClient:
       #Create list with two RequestDB URLs to try
       url = self.localUrl
       urls = [url]
-      while url == self.localUrl:
-        url = self.voBoxUrls.pop()
-      urls.append(url)
+      urls.append(self.voBoxUrls.pop())
 
       for url in urls:
         requestRPCClient = RPCClient(url)
