@@ -5,7 +5,7 @@ a data management operation
 
 import xml.dom.minidom, time
 from DIRAC.Core.Utilities.File import makeGuid
-from DIRAC import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC import gLogger, S_OK, S_ERROR
 
 class DataManagementRequest:
 
@@ -27,7 +27,7 @@ class DataManagementRequest:
     self.transfers = []
     self.registers = []
     self.removals = []
-    self.stage = []
+    self.stages = []
 
     self.jobid = None
     self.ownerDN = ''
@@ -82,6 +82,11 @@ class DataManagementRequest:
     """
     self.date = time.strftime('%Y-%m-%d %H:%M:%S')
 
+  def getCurrentDate(self):
+    """ Get the date the request was set
+    """
+    return self.date
+
   def setJobID(self,jobid):
     """ Set the associated Job ID
     """
@@ -135,12 +140,12 @@ class DataManagementRequest:
   def getRemoval(self,ind):
     """ Get the removal operation specified by its index
     """
-    return self.removal[ind]
+    return self.removals[ind]
 
   def getStage(self,ind):
     """ Get the stage operation specified by its index
     """
-    return self.stage[ind]
+    return self.stages[ind]
 
   def getNumberOfTransfers(self):
     """ Get the number of transfer operations
@@ -217,6 +222,8 @@ class DataManagementRequest:
 
     if not reqDic['Status']:
       reqDic['Status'] = 'Waiting'
+    if not reqDic['Retry']:
+      reqDic['Retry'] = 0
     if not reqDic['GUID'] or reqDic['GUID'] == "None":
       reqDic['GUID'] = makeGuid()
     self.transfers.append(reqDic)
@@ -234,8 +241,10 @@ class DataManagementRequest:
 
     if not reqDic['Status']:
       reqDic['Status'] = 'Waiting'
-    if not addic['GUID'] or addic['GUID'] == "None":
-      status,addic['GUID'] = makeGuid()
+    if not reqDic['Retry']:
+      reqDic['Retry'] = 0
+    if not reqDic['GUID'] or reqDic['GUID'] == "None":
+      reqDic['GUID'] = makeGuid()
     if catalog:
       reqDic['Catalog'] = catalog
     self.registers.append(reqDic)
@@ -253,6 +262,8 @@ class DataManagementRequest:
 
     if not reqDic['Status']:
       reqDic['Status'] = 'Waiting'
+    if not reqDic['Retry']:
+      reqDic['Retry'] = 0
     if catalog:
       reqDic['Catalog'] = catalog
     self.removals.append(reqDic)
@@ -270,6 +281,8 @@ class DataManagementRequest:
 
     if not reqDic['Status']:
       reqDic['Status'] = 'Waiting'
+    if not reqDic['Retry']:
+      reqDic['Retry'] = 0
     self.stages.append(reqDic)
 
 ###############################################################
@@ -375,7 +388,7 @@ class DataManagementRequest:
         out = out + '    '+key+'="'+str(value)+'"\n'
       out = out+'  />\n\n'
 
-    out = out + '</TRANSFER_REQUEST>\n'
+    out = out + '</DATA_MANAGEMENT_REQUEST>\n'
     return out
 
 ###############################################################
