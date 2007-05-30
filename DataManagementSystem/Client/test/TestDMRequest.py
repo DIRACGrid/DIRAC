@@ -179,6 +179,31 @@ class AddOperationsTestCase(DMRequestTestCase):
       if reqDic.has_key(key):
         self.assertEqual(reqDic[key],testReqDic[key])
 
+  def test_toFile(self):
+    # Add dummy transfer request
+    transferDic = {'LFN':'/lhcb/production/test/case.lfn','TargetSE':'CERN-tape','Operation':'MoveAndRegister','Size':1231231,'SourceSE':'RAL-tape'}
+    self.DMRequest.addTransfer(transferDic)
+    # Add dummy register request
+    registerDic = {'LFN':'/lhcb/production/test/case.lfn','TargetSE':'CERN-tape','Operation':'RegisterFile','Size':1231231,'PFN':'srm://srm.cern.ch/castor/cern.ch/grid/lhcb/production/test/case.lfn','Addler':'addler32'}
+    self.DMRequest.addRegister(registerDic)
+    # Add dummy removal request
+    removalDic = {'LFN':'/lhcb/production/test/case.lfn','TargetSE':'CERN-tape','Operation':'RemoveReplica','PFN':'srm://srm.cern.ch/castor/cern.ch/grid/lhcb/production/test/case.lfn','Catalog':'LFC'}
+    self.DMRequest.addRemoval(removalDic)
+    # Add dummy stage request
+    stageDic = {'LFN':'/lhcb/production/test/case.lfn','TargetSE':'CERN-tape','Operation':'Stage'}
+    self.DMRequest.addStage(stageDic)
+    # Get the XML string of the DM request
+    string = self.DMRequest.toXML()
+    fname = 'testRequest.xml'
+    # Write the DMRequest to a file
+    self.DMRequest.toFile(fname)
+    # Get the file contents
+    reqfile = open(fname,'r')
+    testString = reqfile.read()
+    reqfile.close()
+    # Check the file contents are what is expected
+    self.assertEqual(string,testString)
+
 if __name__ == '__main__':
 
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(GetSetTestCase)
