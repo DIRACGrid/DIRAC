@@ -57,8 +57,26 @@ class AuthManager:
       return True
     return False
 
-  def findUsername( self, DN, users ):
+  def findUsername( self, DN, users = False ):
+    if not users:
+      retVal = gConfig.getSections( "/Users" )
+      if retVal[ 'OK' ]:
+        users = retVal[ 'Value' ]
+      else:
+        users = []
     for user in users:
       if DN == gConfig.getValue( "/Users/%s/DN" % user, "" ):
         return user
     return False
+
+  def getGroupsForUsername( self, username ):
+    userGroups = []
+    retVal = gConfig.getSections( "/Groups" )
+    if retVal[ 'OK' ]:
+      groups = retVal[ 'Value' ]
+    else:
+      groups = []
+    for group in groups:
+      if username in gConfig.getValue( "/Groups/%s/users" % group, [] ):
+        userGroups.append( group )
+    return userGroups
