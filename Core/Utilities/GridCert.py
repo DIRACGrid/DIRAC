@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCert.py,v 1.9 2007/06/05 14:28:19 acasajus Exp $
-__RCSID__ = "$Id: GridCert.py,v 1.9 2007/06/05 14:28:19 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCert.py,v 1.10 2007/06/05 14:30:38 acasajus Exp $
+__RCSID__ = "$Id: GridCert.py,v 1.10 2007/06/05 14:30:38 acasajus Exp $"
 
 import os
 import os.path
@@ -56,12 +56,12 @@ def getCAsLocation():
       gLogger.verbose( "Using %s/Grid-Security + /certificates as location for CA's" % securityConfPath )
       return casPath
   #CAPath
-  retVal = gConfig.getOption( '%s/CAPath' % securityConfPath )
+  retVal = gConfig.getOption( '%s/CALocation' % securityConfPath )
   if retVal[ 'OK' ]:
     casPath = retVal[ 'Value' ]
     gLogger.debug( "Trying %s for CAs" % casPath )
     if os.path.isdir( casPath ):
-      gLogger.verbose( "Using %s/CAPath as location for CA's" % securityConfPath )
+      gLogger.verbose( "Using %s/CALocation as location for CA's" % securityConfPath )
       return casPath
   # Look up the X509_CERT_DIR environment variable
   if os.environ.has_key( 'X509_CERT_DIR' ):
