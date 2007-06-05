@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Refresher.py,v 1.13 2007/05/24 15:17:20 acasajus Exp $
-__RCSID__ = "$Id: Refresher.py,v 1.13 2007/05/24 15:17:20 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Refresher.py,v 1.14 2007/06/05 09:46:18 acasajus Exp $
+__RCSID__ = "$Id: Refresher.py,v 1.14 2007/06/05 09:46:18 acasajus Exp $"
 
 import threading
 import time
@@ -25,6 +25,11 @@ class Refresher( threading.Thread ):
   def disable( self ):
     self.bEnabled = False
 
+  def __refreshInThread(self):
+    retVal = self.__refresh()
+    if not retVal[ 'OK' ]:
+      gLogger.error( "Error while updating the configuration", retVal[ 'Message' ] )
+
   def refreshConfigurationIfNeeded( self ):
     if not self.bEnabled or self.bAutomaticUpdate:
       return
@@ -32,9 +37,9 @@ class Refresher( threading.Thread ):
     try:
       if time.time() - self.iLastUpdateTime < gConfigurationData.getRefreshTime():
         return
-      retVal = self.__refresh()
-      if not retVal[ 'OK' ]:
-        gLogger.error( "Error while updating the configuration", retVal[ 'Message' ] )
+      self.iLastUpdateTime = time.time()
+      thd = threading.Thread( target = self.__refreshInTread )
+      thd.start()
     finally:
       self.oTriggeredRefreshLock.release()
 
