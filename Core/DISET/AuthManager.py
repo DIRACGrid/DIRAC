@@ -1,5 +1,6 @@
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
+from DIRAC.LoggingSystem.Client.Logger import gLogger
 
 class AuthManager:
 
