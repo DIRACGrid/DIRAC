@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Refresher.py,v 1.14 2007/06/05 09:46:18 acasajus Exp $
-__RCSID__ = "$Id: Refresher.py,v 1.14 2007/06/05 09:46:18 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Refresher.py,v 1.15 2007/06/05 15:18:42 acasajus Exp $
+__RCSID__ = "$Id: Refresher.py,v 1.15 2007/06/05 15:18:42 acasajus Exp $"
 
 import threading
 import time
@@ -38,7 +38,7 @@ class Refresher( threading.Thread ):
       if time.time() - self.iLastUpdateTime < gConfigurationData.getRefreshTime():
         return
       self.iLastUpdateTime = time.time()
-      thd = threading.Thread( target = self.__refreshInTread )
+      thd = threading.Thread( target = self.__refreshInThread )
       thd.start()
     finally:
       self.oTriggeredRefreshLock.release()
