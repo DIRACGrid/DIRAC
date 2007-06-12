@@ -39,8 +39,9 @@ class AuthManager:
 
   def forwardedCredentials( self, credDict ):
     trustedHostsList = gConfig.getValue( "/DIRAC/Security/TrustedHosts", [] )
-    return credDict[ 'DN' ] in trustedHostsList and \
-            type( credDict[ 'group' ] ) == types.TupleType
+    return type( credDict[ 'group' ] ) == types.TupleType and \
+            'DN' in credDict and \
+            credDict[ 'DN' ] in trustedHostsList
 
   def unpackForwardedCredentials( self, credDict ):
     credDict[ 'DN' ] = credDict[ 'group' ][0]
