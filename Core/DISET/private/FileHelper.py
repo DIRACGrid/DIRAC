@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/FileHelper.py,v 1.3 2007/05/16 17:04:22 acasajus Exp $
-__RCSID__ = "$Id: FileHelper.py,v 1.3 2007/05/16 17:04:22 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/FileHelper.py,v 1.4 2007/06/12 17:31:43 atsareg Exp $
+__RCSID__ = "$Id: FileHelper.py,v 1.4 2007/06/12 17:31:43 atsareg Exp $"
 
 import os
 import md5
@@ -50,22 +50,41 @@ class FileHelper:
     return self.bErrorInMD5
 
   def networkToString( self ):
-    stringIO = cStringIO()
-    fd = stringIO.fileno()
-    retVal = self.networkToFD( fd )
-    if retVal[ 'OK' ]:
-      return S_OK( stringIO.getvalue() )
-    return S_ERROR()
+    """ Receive the input from a DISET client and return it as a string
+    """
+  
+    stringIO = cStringIO.StringIO()
+    
+    self.oMD5 = md5.new()
+    self.bReceivedEOF = False
+    self.bErrorInMD5 = False
+    
+    try:
+      strBuffer = self.receiveData()
+      if self.receivedEOF():
+        stringIO.write( strBuffer )
+      else:	
+	while not self.receivedEOF():
+          stringIO.write( strBuffer )
+          strBuffer = self.receiveData()
+    except Exception, e:
+      gLogger.exception()
+      return S_ERROR( "Error while receiving file, %s" % str( e ) )
+    if self.errorInTransmission():
+      return S_ERROR( "Error in the file CRC" )
+    
+    strValue = stringIO.getvalue() 
+    return S_OK( strValue  )
 
   def networkToFD( self, iFD ):
     self.oMD5 = md5.new()
     self.bReceivedEOF = False
     self.bErrorInMD5 = False
     try:
-      sBuffer = self.receiveData()
+      strBuffer = self.receiveData()
       while not self.receivedEOF():
-        os.write( iFD, sBuffer )
-        stBuffer = self.receiveData()
+        os.write( iFD, strBuffer )
+        strBuffer = self.receiveData()
     except Exception, e:
       gLogger.exception()
       return S_ERROR( "Error while receiving file, %s" % str( e ) )
@@ -74,9 +93,29 @@ class FileHelper:
     return S_OK()
 
   def stringToNetwork( self, stringVal ):
-    stringIO = cStringIO( stringVal )
-    fd = stringIO.fileno()
-    retVal = self.FDToNetwork( fd )
+    """ Send a given string to the DISET client over the network
+    """
+    
+    stringIO = cStringIO.StringIO( stringVal )
+    
+    iPacketSize = 8192
+    ioffset = 0
+    strlen = len(stringVal)
+    try:
+      while (ioffset) < strlen:
+        if (ioffset+iPacketSize) < strlen:
+	  result = self.sendData( stringVal[ioffset:ioffset+iPacketSize] )
+	else:
+	  result = self.sendData( stringVal[ioffset:strlen] )	  
+	if not result['OK']:
+          return result
+	ioffset += iPacketSize
+      self.sendEOF() 
+    except Exception, e:
+      gLogger.exception()
+      return S_ERROR( "Error while sending string: %s" % str( e ) )   
+    stringIO.close()  	
+    return S_OK()
 
   def FDToNetwork( self, iFD ):
     self.oMD5 = md5.new()
