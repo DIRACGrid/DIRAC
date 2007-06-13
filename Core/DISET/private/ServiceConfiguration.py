@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/ServiceConfiguration.py,v 1.5 2007/05/08 16:08:34 acasajus Exp $
-__RCSID__ = "$Id: ServiceConfiguration.py,v 1.5 2007/05/08 16:08:34 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/ServiceConfiguration.py,v 1.6 2007/06/13 19:29:39 acasajus Exp $
+__RCSID__ = "$Id: ServiceConfiguration.py,v 1.6 2007/06/13 19:29:39 acasajus Exp $"
 
 from DIRAC.Core.Utilities import Network
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
@@ -18,6 +18,9 @@ class ServiceConfiguration:
     if optionName[0] != "/":
       optionName = "%s/%s" % ( self.serviceSectionPath, optionName )
     return gConfigurationData.extractOptionFromCFG( optionName )
+
+  def getAddress( self ):
+    return ( "", self.getPort() )
 
   def getHandlerLocation( self ):
     return self.getOption( "HandlerPath" )

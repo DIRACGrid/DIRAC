@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.15 2007/05/29 16:54:16 acasajus Exp $
-__RCSID__ = "$Id: RequestHandler.py,v 1.15 2007/05/29 16:54:16 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.16 2007/06/13 19:29:38 acasajus Exp $
+__RCSID__ = "$Id: RequestHandler.py,v 1.16 2007/06/13 19:29:38 acasajus Exp $"
 
 import types
 from DIRAC.Core.DISET.private.FileHelper import FileHelper
@@ -23,18 +23,20 @@ class RequestHandler:
   def getRemoteCredentials( self ):
     return self.transport.getConnectingCredentials()
 
-  def executeAction( self, action ):
-    if action == "RPC":
-      gLogger.verbose( "Executing RPC action" )
-      self.__doRPC()
-    elif action == "FFC":
-      gLogger.verbose( "Executing FFC action" )
-      self.__doFileTransfer( "FromClient" )
-    elif action == "FTC":
-      gLogger.verbose( "Executing FTC action" )
-      self.__doFileTransfer( "ToClient" )
+  def executeAction( self, actionTuple ):
+    gLogger.verbose( "Executing %s:%s action" % actionTuple )
+    actionType = actionTuple[0]
+    if actionType == "RPC":
+      retVal = self.__doRPC( actionTuple[1] )
+    elif actionType == "FileTransfer":
+      retVal = self.__doFileTransfer( actionTuple[1] )
     else:
       raise RuntimeException( "Unknown action (%s)" % action )
+    if not retVal:
+      message = "Method %s for action %s does not have a return value!" % ( actionTuple[1], actionTuple[0] )
+      gLogger.error( message )
+      retVal = S_ERROR( message )
+    self.transport.sendData( retVal )
 
 #####
 #
@@ -43,24 +45,27 @@ class RequestHandler:
 #####
 
   def __doFileTransfer( self, sDirection ):
-    fileInfo = self.transport.receiveData()
-    if not self.__authQuery( "FileTransfer/%s" % sDirection ):
-      self.transport.sendData( S_ERROR( "Unauthorized query" ) )
-      return
-    if "file%sCallback" % sDirection not in dir( self ):
-      self.transport.sendData( S_ERROR( "Service can't transfer files in that direction" ) )
+    retVal = self.transport.receiveData()
+    if not retVal[ 'OK' ]:
+      gLogger.error( "Error while receiving file description", retVal[ 'Message' ] )
+      return S_ERROR( "Error while receiving file description: %s" % retVal[ 'Message' ] )
+    fileInfo = retVal[ 'Value' ]
+    sDirection = "%s%s" % ( sDirection[0].lower(), sDirection[1:] )
+    if "transfer_%s" % sDirection not in dir( self ):
+      self.transport.sendData( S_ERROR( "Service can't transfer files %s" % sDirection ) )
       return
     self.transport.sendData( S_OK() )
     fileHelper = FileHelper( self.transport )
-    if sDirection == "FromClient":
+    if sDirection == "fromClient":
       uRetVal = self.transfer_fromClient( fileInfo[0], fileInfo[1], fileHelper )
-    elif sDirection == "ToClient" :
+    elif sDirection == "toClient" :
       uRetVal = self.transfer_toClient( fileInfo[0], fileHelper )
     else:
-      S_ERROR( "Direction does not exist!!!" )
+      return S_ERROR( "Direction %s does not exist!!!" % sDirection )
     if not fileHelper.finishedTransmission():
       gLogger.error( "You haven't finished receiving the file", str( fileInfo ) )
-    self.transport.sendData( uRetVal )
+      return S_ERROR( "Incomplete transfer" )
+    return uRetVal
 
   def fileFromClientCallback( self, fileId, fileSize, fileHelper ):
     return S_ERROR( "This server does no allow receiving files" )
@@ -74,66 +79,57 @@ class RequestHandler:
 #
 #####
 
-  def __doRPC( self ):
-    stRPCQuery = self.transport.receiveData()
-    if not self.__authQuery( stRPCQuery[0] ):
-      credDict = self.getRemoteCredentials()
-      if 'username' in credDict.keys():
-        username = credDict[ 'username' ]
-      else:
-        username = 'unauthenticated'
-      gLogger.verbose( "Unauthorized query", "%s by %s" % ( stRPCQuery[0], username ) )
-      self.transport.sendData( S_ERROR( "Unauthorized query" ) )
-    else:
-      self.__logRPCQuery( stRPCQuery )
-      uReturnValue = self.__RPCCallFunction( stRPCQuery )
-      self.transport.sendData( uReturnValue )
+  def __doRPC( self, method ):
+    retVal = self.transport.receiveData()
+    if not retVal[ 'OK' ]:
+      gLogger.error( "Error while receiving function arguments", retVal[ 'Message' ] )
+      return S_ERROR( "Error while receiving function arguments: %s" % retVal[ 'Message' ] )
+    args = retVal[ 'Value' ]
+    self.__logRPCQuery( method, args )
+    return self.__RPCCallFunction( method, args )
 
-  def __logRPCQuery( self, stRPCQuery ):
+  def __logRPCQuery( self, method, args ):
     peerCreds = self.getRemoteCredentials()
     if peerCreds.has_key( 'username' ):
       peerId = "[%s]" % peerCreds[ 'username' ]
     else:
       peerId = ""
-    args = [ str( arg )[:20] for arg in stRPCQuery[1] ]
-    kwargs = [ "%s = %s" % ( str( key ), str( stRPCQuery[2][key] ) ) for key in stRPCQuery[2].keys() ]
-    finalArgs = ", ".join( args + kwargs )
-    gLogger.info( "Executing RPC", "%s %s( %s )" % ( peerId, stRPCQuery[0], finalArgs ) )
+    argsSring = [ str( arg )[:20] for arg in args ]
+    gLogger.info( "Executing RPC", "%s %s( %s )" % ( peerId, method, argsSring ) )
 
-  def __RPCCallFunction( self, stRPCQuery ):
-    sRealMethodName = "export_%s" % stRPCQuery[0]
-    gLogger.debug( "RPC to %s" % sRealMethodName )
+  def __RPCCallFunction( self, method, args ):
+    realMethod = "export_%s" % method
+    gLogger.debug( "RPC to %s" % realMethod )
     try:
-      sRealMethodName = "export_%s" % stRPCQuery[0]
-      oMethod = getattr( self, sRealMethodName )
+      oMethod = getattr( self, realMethod )
     except:
-      return S_ERROR( "Unknown method %s" % stRPCQuery[0] )
-    dRetVal = self.__RPCCheckExpectedArgumentTypes( stRPCQuery )
+      return S_ERROR( "Unknown method %s" % method )
+    dRetVal = self.__RPCCheckExpectedArgumentTypes( method, args )
     if not dRetVal[ 'OK' ]:
       return dRetVal
-    self.lockManager.lock( stRPCQuery[0] )
+    self.lockManager.lock( method )
     try:
       try:
-        uReturnValue = oMethod( *stRPCQuery[1], **stRPCQuery[2] )
+        uReturnValue = oMethod( *args )
         return uReturnValue
       finally:
-        self.lockManager.unlock( stRPCQuery[0] )
+        self.lockManager.unlock( method )
     except Exception, v:
-      gLogger.exception( "Uncaught exception when serving RPC", "Function %s" % stRPCQuery[0] )
-      return S_ERROR( "Error while serving %s: %s" % ( stRPCQuery[0], str( v ) ) )
+      gLogger.exception( "Uncaught exception when serving RPC", "Function %s" % method )
+      return S_ERROR( "Server error while serving %s: %s" % ( method, str( v ) ) )
 
-  def __RPCCheckExpectedArgumentTypes( self, stRPCQuery ):
-    sListName = "types_%s" % stRPCQuery[0]
+  def __RPCCheckExpectedArgumentTypes( self, method, args ):
+    sListName = "types_%s" % method
     try:
       oTypesList = getattr( self, sListName )
     except:
-      gLogger.error( "There's no types info for method export_%s" % stRPCQuery[0] )
+      gLogger.error( "There's no types info for method export_%s" % method )
       return S_ERROR( "Handler error for server %s while processing method %s" % (
                                                                                   "/".join( self.serviceInfoTuple ),
-                                                                                  stRPCQuery[0] ) )
+                                                                                  method ) )
     try:
-      for iIndex in range( min( len( oTypesList ), len( stRPCQuery[1] ) ) ):
-        if not type( stRPCQuery[1][ iIndex ] ) == oTypesList[ iIndex ]:
+      for iIndex in range( min( len( oTypesList ), len( args ) ) ):
+        if not type( args[ iIndex ] ) == oTypesList[ iIndex ]:
           sError = "Type mismatch in parameter %d" % iIndex
           return S_ERROR( sError )
     except Exception, v:

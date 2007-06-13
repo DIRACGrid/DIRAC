@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Dispatcher.py,v 1.5 2007/05/29 16:54:17 acasajus Exp $
-__RCSID__ = "$Id: Dispatcher.py,v 1.5 2007/05/29 16:54:17 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Dispatcher.py,v 1.6 2007/06/13 19:29:39 acasajus Exp $
+__RCSID__ = "$Id: Dispatcher.py,v 1.6 2007/06/13 19:29:39 acasajus Exp $"
 
 import DIRAC
 from DIRAC.LoggingSystem.Client.Logger import gLogger
@@ -93,7 +93,9 @@ class Dispatcher:
     return False
 
   def getServiceInfo( self, serviceName ):
-    return self.servicesDict[ serviceName ]
+    if serviceName in self.servicesDict:
+      return self.servicesDict[ serviceName ][ 'serviceInfo' ]
+    return False
 
   def initializeHandlers( self ):
     for serviceName in self.servicesDict.keys():

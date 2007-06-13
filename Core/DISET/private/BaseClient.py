@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.14 2007/05/24 15:07:53 acasajus Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.14 2007/05/24 15:07:53 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.15 2007/06/13 19:29:39 acasajus Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.15 2007/06/13 19:29:39 acasajus Exp $"
 
 import DIRAC
 from DIRAC.Core.DISET.private.Protocols import gProtocolDict
@@ -74,7 +74,7 @@ class BaseClient:
 
   def _proposeAction( self, sAction ):
     stConnectionInfo = ( ( self.URLTuple[3], self.setup ), sAction, self.groupToUse )
-    self.transport.sendData( stConnectionInfo )
+    self.transport.sendData( S_OK( stConnectionInfo ) )
     return self.transport.receiveData()
 
   def __checkTransportSanity( self ):
