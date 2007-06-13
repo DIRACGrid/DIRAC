@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/FileHelper.py,v 1.4 2007/06/12 17:31:43 atsareg Exp $
-__RCSID__ = "$Id: FileHelper.py,v 1.4 2007/06/12 17:31:43 atsareg Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/FileHelper.py,v 1.5 2007/06/13 18:16:43 acasajus Exp $
+__RCSID__ = "$Id: FileHelper.py,v 1.5 2007/06/13 18:16:43 acasajus Exp $"
 
 import os
 import md5
@@ -64,7 +64,7 @@ class FileHelper:
       if self.receivedEOF():
         stringIO.write( strBuffer )
       else:	
-	while not self.receivedEOF():
+        while not self.receivedEOF():
           stringIO.write( strBuffer )
           strBuffer = self.receiveData()
     except Exception, e:
@@ -104,12 +104,12 @@ class FileHelper:
     try:
       while (ioffset) < strlen:
         if (ioffset+iPacketSize) < strlen:
-	  result = self.sendData( stringVal[ioffset:ioffset+iPacketSize] )
-	else:
-	  result = self.sendData( stringVal[ioffset:strlen] )	  
-	if not result['OK']:
+          result = self.sendData( stringVal[ioffset:ioffset+iPacketSize] )
+        else:
+          result = self.sendData( stringVal[ioffset:strlen] )	  
+        if not result['OK']:
           return result
-	ioffset += iPacketSize
+        ioffset += iPacketSize
       self.sendEOF() 
     except Exception, e:
       gLogger.exception()
