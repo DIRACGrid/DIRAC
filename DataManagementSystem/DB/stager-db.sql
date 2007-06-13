@@ -30,16 +30,24 @@ CREATE TABLE SiteFiles(
    Status varchar(32) DEFAULT 'New',
    JobID varchar(32) NOT NULL,
    Retry integer DEFAULT 0,
-   PRIMARY KEY (LFN, Site)
-   INDEX (Site,JobID,Status)
+   Setup varchar(32) NOT NULL,
+   PRIMARY KEY (LFN, Site,JobID,Setup)
+   INDEX (Site,JobID,Status,Setup)
 );
 
-DROP TABLE IF EXISTS SiteTiming;
+DROP TABLE IF EXISTS MetaTimeRepository;
 CREATE TABLE SiteTiming(
   Site varchar(32) NOT NULL,
   Command varchar(32) NOT NULL,
   CommTime FLOAT DEFAULT 0.0,
   Files integer NOT NULL,
   Time DATETIME NOT NULL
+);
+
+DROP TABLE IF EXISTS StageTimeRepository;
+CREATE TABLE StageTimeRepository(
+  Site varchar(32) NOT NULL,
+  Time DATETIME NOT NULL,
+  StageTime FLOAT NOT NULL
 );
 
