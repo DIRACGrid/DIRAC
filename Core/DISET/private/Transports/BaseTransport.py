@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/BaseTransport.py,v 1.8 2007/06/12 14:54:29 acasajus Exp $
-__RCSID__ = "$Id: BaseTransport.py,v 1.8 2007/06/12 14:54:29 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/BaseTransport.py,v 1.9 2007/06/13 14:51:36 acasajus Exp $
+__RCSID__ = "$Id: BaseTransport.py,v 1.9 2007/06/13 14:51:36 acasajus Exp $"
 
 from DIRAC.Core.DISET.private.Transports.DEncode import encode, decode
 from DIRAC.LoggingSystem.Client.Logger import gLogger
@@ -13,7 +13,8 @@ class BaseTransport:
   def __init__( self, stServerAddress, bServerMode = False, **kwargs ):
     self.bServerMode = bServerMode
     self.extraArgsDict = kwargs
-    self.sReadBuffer = ""
+    self.byteStream = ""
+    self.packetSize = 8192
     self.stServerAddress = stServerAddress
     self.peerCredentials = {}
 
@@ -43,26 +44,33 @@ class BaseTransport:
 
   def _read( self ):
     try:
-      return self.oSocket.recv( 8192 )
+      return self.oSocket.recv( self.packetSize )
     except socket.error:
       return ""
 
   def sendData( self, uData ):
     sCodedData = encode( uData )
-    self._write( "%s:%s" % ( len( sCodedData ), sCodedData ) )
+    dataToSend = "%s:%s" % ( len( sCodedData ), sCodedData )
+    for index in range( 0, len( dataToSend ), self.packetSize ):
+      self.oSocket.write( dataToSend[ index : index + self.packetSize ] )
 
   def receiveData( self, iMaxLength = 0 ):
-    iSeparatorPosition = self.sReadBuffer.find( ":" )
+    iSeparatorPosition = self.byteStream.find( ":" )
     while iSeparatorPosition == -1:
       sReadData = self._read()
       if sReadData == "":
         break
-      self.sReadBuffer += sReadData
-      iSeparatorPosition = self.sReadBuffer.find( ":" )
-      if iMaxLength and len( self.sReadBuffer ) > iMaxLength and iSeparatorPosition == -1 :
+      self.byteStream += sReadData
+      iSeparatorPosition = self.byteStream.find( ":" )
+      if iMaxLength and len( self.byteStream ) > iMaxLength and iSeparatorPosition == -1 :
         raise RuntimeError( "Read limit exceeded (%s chars)" % iMaxLength )
-    iDataLength = int( self.sReadBuffer[ :iSeparatorPosition ] )
-    sData = self.sReadBuffer[ iSeparatorPosition+1 : iSeparatorPosition+1+iDataLength ]
-    self.sReadBuffer = self.sReadBuffer[ iSeparatorPosition+1+iDataLength: ]
-    return decode( sData )[0]
+    size = int( self.byteStream[ :iSeparatorPosition ] )
+    self.byteStream = self.byteStream[ iSeparatorPosition+1: ]
+    while len( self.byteStream ) < size:
+      self.byteStream += self._read()
+      if iMaxLength and len( self.byteStream ) > iMaxLength:
+        raise RuntimeError( "Read limit exceeded (%s chars)" % iMaxLength )
+    data = self.byteStream[ :size ]
+    self.byteStream = self.byteStream[ size + 1: ]
+    return decode( data )[0]
 
