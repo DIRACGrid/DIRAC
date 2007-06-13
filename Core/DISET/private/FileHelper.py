@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/FileHelper.py,v 1.5 2007/06/13 18:16:43 acasajus Exp $
-__RCSID__ = "$Id: FileHelper.py,v 1.5 2007/06/13 18:16:43 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/FileHelper.py,v 1.6 2007/06/13 18:54:38 acasajus Exp $
+__RCSID__ = "$Id: FileHelper.py,v 1.6 2007/06/13 18:54:38 acasajus Exp $"
 
 import os
 import md5
@@ -17,6 +17,7 @@ class FileHelper:
     self.oMD5 = md5.new()
     self.bFinishedTransmission = False
     self.bReceivedEOF = False
+    self.packetSize = 1048576
 
   def sendData( self, sBuffer ):
     self.oMD5.update( sBuffer )
@@ -52,18 +53,18 @@ class FileHelper:
   def networkToString( self ):
     """ Receive the input from a DISET client and return it as a string
     """
-  
+
     stringIO = cStringIO.StringIO()
-    
+
     self.oMD5 = md5.new()
     self.bReceivedEOF = False
     self.bErrorInMD5 = False
-    
+
     try:
       strBuffer = self.receiveData()
       if self.receivedEOF():
         stringIO.write( strBuffer )
-      else:	
+      else:
         while not self.receivedEOF():
           stringIO.write( strBuffer )
           strBuffer = self.receiveData()
@@ -72,8 +73,8 @@ class FileHelper:
       return S_ERROR( "Error while receiving file, %s" % str( e ) )
     if self.errorInTransmission():
       return S_ERROR( "Error in the file CRC" )
-    
-    strValue = stringIO.getvalue() 
+
+    strValue = stringIO.getvalue()
     return S_OK( strValue  )
 
   def networkToFD( self, iFD ):
@@ -95,10 +96,10 @@ class FileHelper:
   def stringToNetwork( self, stringVal ):
     """ Send a given string to the DISET client over the network
     """
-    
+
     stringIO = cStringIO.StringIO( stringVal )
-    
-    iPacketSize = 8192
+
+    iPacketSize = self.packetSize
     ioffset = 0
     strlen = len(stringVal)
     try:
@@ -106,20 +107,20 @@ class FileHelper:
         if (ioffset+iPacketSize) < strlen:
           result = self.sendData( stringVal[ioffset:ioffset+iPacketSize] )
         else:
-          result = self.sendData( stringVal[ioffset:strlen] )	  
+          result = self.sendData( stringVal[ioffset:strlen] )
         if not result['OK']:
           return result
         ioffset += iPacketSize
-      self.sendEOF() 
+      self.sendEOF()
     except Exception, e:
       gLogger.exception()
-      return S_ERROR( "Error while sending string: %s" % str( e ) )   
-    stringIO.close()  	
+      return S_ERROR( "Error while sending string: %s" % str( e ) )
+    stringIO.close()
     return S_OK()
 
   def FDToNetwork( self, iFD ):
     self.oMD5 = md5.new()
-    iPacketSize = 8192
+    iPacketSize = self.packetSize
     try:
       sBuffer = os.read( iFD, iPacketSize )
       while len( sBuffer ) > 0:
@@ -129,7 +130,7 @@ class FileHelper:
         sBuffer = os.read( iFD, iPacketSize )
       self.sendEOF()
     except Exception, e:
-      gLogger.exception()
+      gLogger.exception( "Error while sending file" )
       return S_ERROR( "Error while sending file: %s" % str( e ) )
     return S_OK()
 
