@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.17 2007/06/14 09:16:48 acasajus Exp $
-__RCSID__ = "$Id: RequestHandler.py,v 1.17 2007/06/14 09:16:48 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.18 2007/06/14 14:22:35 acasajus Exp $
+__RCSID__ = "$Id: RequestHandler.py,v 1.18 2007/06/14 14:22:35 acasajus Exp $"
 
 import types
 from DIRAC.Core.DISET.private.FileHelper import FileHelper
@@ -36,6 +36,7 @@ class RequestHandler:
       message = "Method %s for action %s does not have a return value!" % ( actionTuple[1], actionTuple[0] )
       gLogger.error( message )
       retVal = S_ERROR( message )
+    self.__logRemoteQueryResponse(  retVal )
     self.transport.sendData( retVal )
 
 #####
@@ -50,6 +51,7 @@ class RequestHandler:
       gLogger.error( "Error while receiving file description", retVal[ 'Message' ] )
       return S_ERROR( "Error while receiving file description: %s" % retVal[ 'Message' ] )
     fileInfo = retVal[ 'Value' ]
+    self.__logRemoteQuery( "FileTransfer/%s" % sDirection, fileInfo )
     sDirection = "%s%s" % ( sDirection[0].lower(), sDirection[1:] )
     if "transfer_%s" % sDirection not in dir( self ):
       self.transport.sendData( S_ERROR( "Service can't transfer files %s" % sDirection ) )
@@ -85,17 +87,8 @@ class RequestHandler:
       gLogger.error( "Error while receiving function arguments", retVal[ 'Message' ] )
       return S_ERROR( "Error while receiving function arguments: %s" % retVal[ 'Message' ] )
     args = retVal[ 'Value' ]
-    self.__logRPCQuery( method, args )
+    self.__logRemoteQuery( "RPC/%s" % method, args )
     return self.__RPCCallFunction( method, args )
-
-  def __logRPCQuery( self, method, args ):
-    peerCreds = self.getRemoteCredentials()
-    if peerCreds.has_key( 'username' ):
-      peerId = "[%s]" % peerCreds[ 'username' ]
-    else:
-      peerId = ""
-    argsSring = [ str( arg )[:20] for arg in args ]
-    gLogger.info( "Executing RPC", "%s %s( %s )" % ( peerId, method, argsSring ) )
 
   def __RPCCallFunction( self, method, args ):
     realMethod = "export_%s" % method
@@ -146,6 +139,24 @@ class RequestHandler:
 
   def __authQuery( self, method ):
     return self.serviceInfoDict[ 'authManager' ].authQuery( method, self.getRemoteCredentials() )
+
+  def __logRemoteQuery( self, method, args ):
+    peerCreds = self.getRemoteCredentials()
+    if peerCreds.has_key( 'username' ):
+      peerId = "[%s:%s]" % ( peerCreds[ 'group' ], peerCreds[ 'username' ] )
+    else:
+      peerId = ""
+    argsSring = ", ".join( [ str( arg )[:20] for arg in args ] )
+    gLogger.info( "Executing action", "%s %s( %s )" % ( peerId, method, argsSring ) )
+
+  def __logRemoteQueryResponse( self, retVal ):
+    peerCreds = self.getRemoteCredentials()
+    if peerCreds.has_key( 'username' ):
+      peerId = "[%s:%s]" % ( peerCreds[ 'group' ], peerCreds[ 'username' ] )
+    else:
+      peerId = ""
+    argsSring = str( retVal )[:100]
+    gLogger.info( "Returning response", "%s %s" % ( peerId, argsSring ) )
 
 ####
 #
