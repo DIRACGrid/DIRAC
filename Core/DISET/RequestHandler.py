@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.16 2007/06/13 19:29:38 acasajus Exp $
-__RCSID__ = "$Id: RequestHandler.py,v 1.16 2007/06/13 19:29:38 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.17 2007/06/14 09:16:48 acasajus Exp $
+__RCSID__ = "$Id: RequestHandler.py,v 1.17 2007/06/14 09:16:48 acasajus Exp $"
 
 import types
 from DIRAC.Core.DISET.private.FileHelper import FileHelper
@@ -125,7 +125,7 @@ class RequestHandler:
     except:
       gLogger.error( "There's no types info for method export_%s" % method )
       return S_ERROR( "Handler error for server %s while processing method %s" % (
-                                                                                  "/".join( self.serviceInfoTuple ),
+                                                                                  self.serviceInfoDict[ 'serviceName' ],
                                                                                   method ) )
     try:
       for iIndex in range( min( len( oTypesList ), len( args ) ) ):
@@ -171,7 +171,7 @@ class RequestHandler:
     sLine = oFD.readline()
     oFD.close()
     dInfo[ 'load' ] = " ".join( sLine.split()[:3] )
-    dInfo[ 'name' ] = str( self.serviceInfoTuple )
+    dInfo[ 'name' ] = self.serviceInfoDict[ 'serviceName' ]
 
     return S_OK( dInfo )
 
