@@ -11,12 +11,13 @@ class AuthManager:
   def authQuery( self, methodQuery, credDict ):
     #Check if query comes though a gateway/web server
     if self.forwardedCredentials( credDict ):
+      gLogger.verbose( "Query comes from a gateway" )
       self.unpackForwardedCredentials( credDict )
       return self.authQuery( methodQuery, credDict )
     if 'DN' in credDict:
       #Get the username
       if not self.getUsername( credDict ):
-        gLogger.debug( "Query no authorized, user has no valid credentials" )
+        gLogger.verbose( "User is invalid or does not belong to the group it's saying" )
         return False
     #Check everyone is authorized
     authGroups = self.getValidGroupsForMethod( methodQuery )
@@ -24,11 +25,11 @@ class AuthManager:
       return True
     #Check user is authenticated
     if not 'DN' in credDict:
-      gLogger.debug( "User has no credentials" )
+      gLogger.verbose( "User has no DN" )
       return False
     #Check authorized groups
     if not credDict[ 'group' ] in authGroups and not "authenticated" in authGroups:
-      gLogger.debug( "Group is not authorized" )
+      gLogger.verbose( "User group is not authorized" )
       return False
     return True
 
