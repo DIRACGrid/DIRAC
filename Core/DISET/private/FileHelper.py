@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/FileHelper.py,v 1.7 2007/06/13 19:29:39 acasajus Exp $
-__RCSID__ = "$Id: FileHelper.py,v 1.7 2007/06/13 19:29:39 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/FileHelper.py,v 1.8 2007/06/14 16:14:45 acasajus Exp $
+__RCSID__ = "$Id: FileHelper.py,v 1.8 2007/06/14 16:14:45 acasajus Exp $"
 
 import os
 import md5
@@ -27,7 +27,7 @@ class FileHelper:
 
   def sendEOF( self ):
     self.oTransport.sendData( S_OK( ( False, self.oMD5.hexdigest() ) ) )
-    self.bFinishedTransmission = True
+    self.markAsTransferred()
 
   def receiveData( self ):
     retVal = self.oTransport.receiveData()
@@ -41,11 +41,14 @@ class FileHelper:
       self.bReceivedEOF = True
       if not self.oMD5.hexdigest() == stBuffer[1]:
         self.bErrorInMD5 = True
-      self.bFinishedTransmission = True
+      self.markAsTransferred()
     return stBuffer[1]
 
   def receivedEOF( self ):
     return self.bReceivedEOF
+
+  def markAsTransferred( self ):
+    self.bFinishedTransmission = True
 
   def finishedTransmission( self ):
     return self.bFinishedTransmission
