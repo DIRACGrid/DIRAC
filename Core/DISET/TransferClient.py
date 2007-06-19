@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/TransferClient.py,v 1.5 2007/06/13 19:29:38 acasajus Exp $
-__RCSID__ = "$Id: TransferClient.py,v 1.5 2007/06/13 19:29:38 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/TransferClient.py,v 1.6 2007/06/19 13:29:54 acasajus Exp $
+__RCSID__ = "$Id: TransferClient.py,v 1.6 2007/06/19 13:29:54 acasajus Exp $"
 
 from DIRAC.Core.DISET.private.BaseClient import BaseClient
 from DIRAC.Core.DISET.private.FileHelper import FileHelper
@@ -25,7 +25,9 @@ class TransferClient( BaseClient ):
     retVal = self.transport.receiveData()
     if not retVal[ 'OK' ]:
       return retVal
-    return fileHelper.FDToNetwork( fd )
+    response = fileHelper.FDToNetwork( fd )
+    self.transport.close()
+    return response
 
   def receiveFile( self, filename, fileId ):
     retVal = self._connect()
@@ -44,7 +46,9 @@ class TransferClient( BaseClient ):
     retVal = self.transport.receiveData()
     if not retVal[ 'OK' ]:
       return retVal
-    return fileHelper.networkToFD( fd )
+    response = fileHelper.networkToFD( fd )
+    self.transport.close()
+    return response
 
 
 

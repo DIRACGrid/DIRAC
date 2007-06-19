@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/InnerRPCClient.py,v 1.2 2007/06/13 19:29:39 acasajus Exp $
-__RCSID__ = "$Id: InnerRPCClient.py,v 1.2 2007/06/13 19:29:39 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/InnerRPCClient.py,v 1.3 2007/06/19 13:29:53 acasajus Exp $
+__RCSID__ = "$Id: InnerRPCClient.py,v 1.3 2007/06/19 13:29:53 acasajus Exp $"
 
 from DIRAC.Core.Utilities import Subprocess
 from DIRAC.Core.DISET.private.BaseClient import BaseClient
@@ -25,5 +25,7 @@ class InnerRPCClient( BaseClient ):
     if not retVal[ 'OK' ]:
       return retVal
     self.transport.sendData( S_OK( args ) )
-    return self.transport.receiveData()
+    receivedData = self.transport.receiveData()
+    self.transport.close()
+    return receivedData
 
