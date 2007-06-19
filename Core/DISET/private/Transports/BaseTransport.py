@@ -1,6 +1,7 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/BaseTransport.py,v 1.10 2007/06/13 19:28:59 acasajus Exp $
-__RCSID__ = "$Id: BaseTransport.py,v 1.10 2007/06/13 19:28:59 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/BaseTransport.py,v 1.11 2007/06/19 13:29:36 acasajus Exp $
+__RCSID__ = "$Id: BaseTransport.py,v 1.11 2007/06/19 13:29:36 acasajus Exp $"
 
+from DIRAC.Core.Utilities.ReturnValues import S_ERROR
 from DIRAC.Core.DISET.private.Transports.DEncode import encode, decode
 from DIRAC.LoggingSystem.Client.Logger import gLogger
 import socket
@@ -38,6 +39,9 @@ class BaseTransport:
 
   def getLocalAddress( self ):
     return self.oSocket.getsockname()
+
+  def getSocket( self ):
+    return self.oSocket
 
   def _write( self, sBuffer ):
     self.oSocket.send( sBuffer )
