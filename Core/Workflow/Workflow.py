@@ -1,8 +1,8 @@
-# $Id: Workflow.py,v 1.6 2007/06/20 11:07:13 gkuznets Exp $
+# $Id: Workflow.py,v 1.7 2007/06/20 15:23:03 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.6 $"
+__RCSID__ = "$Revision: 1.7 $"
 
 #try: # this part to inport as part of the DIRAC framework
 from DIRAC.Core.Workflow.Parameter import *
@@ -87,6 +87,11 @@ class Workflow(AttributeCollection):
     del step.module_definitions # we need to clean all unwanted definitions
     step.module_definitions=None
     return step
+
+  def addModule(self, module):
+    # KGG We need to add code to update existing modules
+    self.module_definitions.append(module)
+    return module
 
   def createStepInstance(self, type, name):
     """ Creates step instance of type 'type' with the name 'name'

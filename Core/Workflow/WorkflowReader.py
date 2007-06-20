@@ -1,8 +1,8 @@
-# $Id: WorkflowReader.py,v 1.1 2007/06/20 11:06:03 gkuznets Exp $
+# $Id: WorkflowReader.py,v 1.2 2007/06/20 15:23:03 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.1 $"
+__RCSID__ = "$Revision: 1.2 $"
 
 #try: # this part to inport as part of the DIRAC framework
 from DIRAC.Core.Workflow.Parameter import *
@@ -41,16 +41,24 @@ class WorkflowXMLHandler(ContentHandler):
     if name == "Workflow":
       self.root = Workflow()
       #self.current = self.root
-      self.stack.append(self.current)
-    elif name == "StepDefinition":
-      #self.current = StepDefinition()
-      self.root.addStep(self.current)
       self.stack.append(self.root)
+    elif name == "StepDefinition":
+      obj = StepDefinition()
+      self.root.addStep(obj)
+      self.stack.append(obj)
     elif name == "StepInstance":
+      #obj = self.root.createStepInstance()
+      #self.root.addStep(obj)
+      #self.stack.append(obj)
       pass
     elif name == "ModuleDefinition":
+      obj = ModuleDefinition()
+      self.root.addModule(obj)
+      self.stack.append(obj)
       pass
     elif name == "ModuleInstance":
+      #self.root.addStep(obj)
+      #self.stack.append(obj)
       pass
     else:
       print "startElement", name, attrs
@@ -60,21 +68,21 @@ class WorkflowXMLHandler(ContentHandler):
   def endElement(self, name):
     # attributes
     if name=="origin":
-      self.stack[].setOrigin(self.getCharacters())
+      self.stack[len(self.stack)-1].setOrigin(self.getCharacters())
     elif name == "version":
-      self.current.setVersion(self.getCharacters())
+      self.stack[len(self.stack)-1].setVersion(self.getCharacters())
     elif name == "name":
-      self.current.setName(self.getCharacters())
+      self.stack[len(self.stack)-1].setName(self.getCharacters())
     elif name == "type":
-      self.current.setType(self.getCharacters())
+      self.stack[len(self.stack)-1].setType(self.getCharacters())
     elif name == "required":
-      self.current.setRequired(self.getCharacters())
+      self.stack[len(self.stack)-1].setRequired(self.getCharacters())
     elif name == "descr_short":
-      self.current.setDescrShort(self.getCharacters())
+      self.stack[len(self.stack)-1].setDescrShort(self.getCharacters())
     elif name == "name":
-      self.current.setName(self.getCharacters())
+      self.stack[len(self.stack)-1].setName(self.getCharacters())
     elif name == "type":
-      self.current.setType(self.getCharacters())
+      self.stack[len(self.stack)-1].setType(self.getCharacters())
 
     #objects
     elif name=="Workflow":
