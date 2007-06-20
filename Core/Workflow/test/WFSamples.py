@@ -1,13 +1,8 @@
-try: # this part to inport as part of the DIRAC framework
-  from DIRAC.Core.Workflow.Parameter import *
-  from DIRAC.Core.Workflow.Module import *
-  from DIRAC.Core.Workflow.Step import *
-  from DIRAC.Core.Workflow.Workflow import *
-except: # this part is to import code without DIRAC
-  from Parameter import *
-  from Module import *
-  from Step import *
-  from Workflow import *
+from DIRAC.Core.Workflow.Parameter import *
+from DIRAC.Core.Workflow.Module import *
+from DIRAC.Core.Workflow.Step import *
+from DIRAC.Core.Workflow.Workflow import *
+from DIRAC.Core.Workflow.WorkflowReader import *
 
 """ Collection of objects for the testing"""
 
@@ -160,6 +155,9 @@ sd1.findParameter('result').link('mi5','result')
 #sd1.findParameter('message').link('self','inparam4') # taken from the level of step
 
 w1 = Workflow('main')
+w1.setOrigin('/home/user/blablabla')
+w1.setDescription("Pretty long description\n several lines of text")
+w1.setDescrShort("Oooooo short description")
 w1.addStep(sd1)
 
 w1.appendParameter(Parameter("final","0","float","","",False, True, "Final result"))
@@ -174,4 +172,44 @@ si1.findParameter('debug').link('self','debug')
 si2.findParameter('debug').link('self','debug')
 si2.findParameter('input1').link('si1','result') # linking the results
 w1.findParameter('final').link('si2','result')
+
+#============================================================================
+# test section
+#============================================================================
+#print w1
+w1.resolveGlobalVars()
+#print "# ================ CODE ========================"
+#print w1.createCode()
+#print "------------------- result of the evaluation -------------"
+#eval(compile(w1.createCode(),'<string>','exec'))
+#print " ================== Interpretation ======================="
+#w1.execute()
+#print w1.toXMLString()
+s = w1.toXMLString()
+#print s
+w4 = fromXMLString(s)
+#print w4
+#import pickle
+#output = open('D:\gennady\workspace\Workflow\wf.pkl', 'wb')
+#pickle.dump(w1, output, 2)
+#output = open('D:\gennady\workspace\Workflow\wf.xml', 'wb')
+#output.write(w1.toXMLString())
+#output.close()
+
+#wf_file = open('D:\gennady\workspace\Workflow\wf.pkl', 'rb')
+#w2 = pickle.load(wf_file)
+#wf_file = open('D:\gennady\workspace\Workflow\wf.xml', 'rb')
+#s2 = wf_file.read()
+#print s2
+#w2.updateParents()
+#print w2.createCode()
+#eval(compile(w2.createCode(),'<string>','exec'))
+
+#from PyQt4 import QtCore, QtGui
+#from editors.ModuleEditor import *
+#app = QtGui.QApplication(sys.argv)
+#mainWin = ModuleEditor(md1)
+#mainWin.show()
+#sys.exit(app.exec_())
+
 

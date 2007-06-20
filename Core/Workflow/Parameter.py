@@ -1,8 +1,8 @@
-# $Id: Parameter.py,v 1.2 2007/05/14 16:52:56 gkuznets Exp $
+# $Id: Parameter.py,v 1.3 2007/06/20 11:07:13 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.2 $"
+__RCSID__ = "$Revision: 1.3 $"
 
 # unbinded method, returns indentation string
 def indent(indent=0):
@@ -175,10 +175,10 @@ class Parameter(object):
 
     def toXMLString(self):
         return '<Parameter name="'+self.name +'" type="'+str(self.type)\
-        +'<value><![CDATA['+str(self.value)+']]></value>'\
         +'" linked_module="'+str(self.linked_module) + '" linked_parameter="'+str(self.linked_parameter)\
         +'" in="'+ str(self.typein)+ '" out="'+str(self.typeout)\
         +'" description="'+ str(self.description)+'">'\
+        +'<value><![CDATA['+str(self.value)+']]></value>'\
         +'</Parameter>\n'
 
 # we got a problem with the index() function
@@ -308,10 +308,10 @@ class ParameterCollection(list):
             ret=ret+ str(v)+'\n'
         return ret
 
-    def toXMLString(self):
-        ret=''
+    def toXML(self):
+        ret=[]
         for v in self:
-            ret=ret+v.toXMLString()
+            ret.append(v.toXMLString())
         return ret
 
     def createParametersCode(self, indent=0, instance_name=None):
@@ -378,15 +378,15 @@ class AttributeCollection(dict):
             ret=ret+v+' = '+str(self[v])+'\n'
         return ret
 
-    def toXMLString(self):
-        ret = ''
+    def toXML(self):
+        ret = []
         for v in self.keys():
             if v == 'parent':
                 continue # doing nothing
             elif v == 'body' or v == 'description':
-                ret=ret+'<'+v+'><![CDATA['+str(self[v])+']]></'+v+'>\n'
+                ret.append('<'+v+'><![CDATA['+str(self[v])+']]></'+v+'>\n')
             else:
-                ret=ret+'<'+v+'>'+str(self[v])+'</'+v+'>\n'
+                ret.append('<'+v+'>'+str(self[v])+'</'+v+'>\n')
         return ret
 
     def appendParameter(self, opt):
@@ -415,14 +415,6 @@ class AttributeCollection(dict):
 
     def getParent(self):
         return self.parent
-
-    #def updateParents(self, parent):
-    #    self.parent=parent
-
-#    def transferAttributes(self, inst):
-#        """ Copy attributes from self to instance inst in Workflow, used in StepInstance.execute() """
-#        for v in self.keys():
-#            setattr(inst, v, self[v])
 
     # ------------- common functions -----------
     def setName(self, name):

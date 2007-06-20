@@ -1,15 +1,15 @@
-# $Id: Step.py,v 1.5 2007/05/15 14:50:39 gkuznets Exp $
+# $Id: Step.py,v 1.6 2007/06/20 11:07:13 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.5 $"
+__RCSID__ = "$Revision: 1.6 $"
 
-try: # this part to inport as part of the DIRAC framework
-  from DIRAC.Core.Workflow.Parameter import *
-  from DIRAC.Core.Workflow.Module import *
-except: # this part is to import code without DIRAC
-  from Parameter import *
-  from Module import *
+#try: # this part to inport as part of the DIRAC framework
+from DIRAC.Core.Workflow.Parameter import *
+from DIRAC.Core.Workflow.Module import *
+#except: # this part is to import code without DIRAC
+#  from Parameter import *
+#  from Module import *
 
 class StepDefinition(AttributeCollection):
 
@@ -58,14 +58,15 @@ class StepDefinition(AttributeCollection):
         ret = ret + str(self.module_instances)
         return ret
 
-    def toXMPString(self):
-        ret = '<StepDefinition>\n'
-        ret = ret + AttributeCollection.toXMLString(self)+self.parameters.toXMLString()
-        ret =  str(type(self))+':\n'+ AttributeCollection.__str__(self) + self.parameters.__str__()
+    def toXML(self):
+        ret = ['<StepDefinition>\n']
+        ret = ret + AttributeCollection.toXML(self)
+        ret = ret + self.parameters.toXML()
         if self.module_definitions != None:
-            ret = ret + self.module_definitions.toXMLString()
-        ret = ret + self.module_instances.toXMLString()
-        return ret+'</StepDefinition>\n'
+            ret = ret + self.module_definitions.toXML()
+        ret = ret + self.module_instances.toXML()
+        ret.append('</StepDefinition>\n')
+        return ret
 
     def addModule(self, module):
         # KGG We need to add code to update existing modules
@@ -148,6 +149,13 @@ class StepInstance(AttributeCollection):
 
     def __str__(self):
         return str(type(self))+':\n'+ AttributeCollection.__str__(self) + self.parameters.__str__()
+
+    def toXMLString(self):
+        ret = ['<StepInstance>\n']
+        ret = ret + AttributeCollection.toXMLString(self)
+        ret = ret + self.parameters.toXMLString()
+        ret.append('</StepInstance>\n')
+        return ret
 
     def execute(self, step_exec_attr, definitions):
         """step_exec_attr is array to hold parameters belong to this Step, filled above """
