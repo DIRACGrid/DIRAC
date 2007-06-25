@@ -1,3 +1,11 @@
+# $Id: WFSamples.py,v 1.5 2007/06/25 12:51:58 gkuznets Exp $
+"""
+    This is a comment
+"""
+__RCSID__ = "$Revision: 1.5 $"
+
+# $Source: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Workflow/test/WFSamples.py,v $
+
 from DIRAC.Core.Workflow.Parameter import *
 from DIRAC.Core.Workflow.Module import *
 from DIRAC.Core.Workflow.Step import *
