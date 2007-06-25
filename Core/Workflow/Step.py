@@ -1,8 +1,8 @@
-# $Id: Step.py,v 1.6 2007/06/20 11:07:13 gkuznets Exp $
+# $Id: Step.py,v 1.7 2007/06/25 13:27:44 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.6 $"
+__RCSID__ = "$Revision: 1.7 $"
 
 #try: # this part to inport as part of the DIRAC framework
 from DIRAC.Core.Workflow.Parameter import *
@@ -164,8 +164,10 @@ class StepInstance(AttributeCollection):
         step_exec_modules={}
         for mod_inst in step_def.module_instances:
             mod_inst_name = mod_inst.getName()
-            step_exec_modules[mod_inst_name] = step_def.module_definitions[mod_inst.getType()].main_class_obj() # creating instance
-            #print "StepInstance creating module instance ",mod_inst_name," of type", mod_inst.getType()
+            print "StepInstance creating module instance ",mod_inst_name," of type", mod_inst.getType()
+            # since during execution Step is inside Workflow the  step_def.module_definitions == None
+            #step_exec_modules[mod_inst_name] = step_def.module_definitions[mod_inst.getType()].main_class_obj() # creating instance
+            step_exec_modules[mod_inst_name] = step_def.parent.module_definitions[mod_inst.getType()].main_class_obj() # creating instance
 
             # add some mandatory attributes to the instance
             setattr(step_exec_modules[mod_inst_name], 'MODULE' , mod_inst)
