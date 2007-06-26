@@ -1,8 +1,8 @@
-# $Id: WFSamples.py,v 1.8 2007/06/26 17:17:46 gkuznets Exp $
+# $Id: WFSamples.py,v 1.9 2007/06/26 17:19:55 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.8 $"
+__RCSID__ = "$Revision: 1.9 $"
 
 # $Source: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Workflow/test/WFSamples.py,v $
 
@@ -193,7 +193,7 @@ w1.findParameter('final').link('si2','result')
 #print " ================== Interpretation ======================="
 #w1.execute()
 #print w1.toXMLString()
-s = sd1.toXMLString()
+s = w1.toXMLString()
 print s
 w4 = fromXMLString(s)
 #print w4

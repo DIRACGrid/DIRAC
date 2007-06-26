@@ -1,8 +1,8 @@
-# $Id: Module.py,v 1.12 2007/06/26 17:11:27 gkuznets Exp $
+# $Id: Module.py,v 1.13 2007/06/26 17:19:56 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.12 $"
+__RCSID__ = "$Revision: 1.13 $"
 
 # $Source: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Workflow/Module.py,v $
 
@@ -55,6 +55,9 @@ class ModuleDefinition(AttributeCollection):
 
     def __str__(self):
         return str(type(self))+':\n'+ AttributeCollection.__str__(self) + self.parameters.__str__()
+
+    def toXMLString(self):
+        return ''.join(self.toXML())
 
     def toXML(self):
         ret = ['<ModuleDefinition>\n']
