@@ -1,0 +1,18 @@
+#!/usr/bin/env python
+################################################################
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/Attic/dirac-fix-ld-library-path,v 1.1 2007/06/26 17:21:24 paterson Exp $
+################################################################
+
+"""  This is a script to fix oversized LD_LIBRARY_PATH variables.
+"""
+import sys
+from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.Os import fixLDPath
+
+Script.parseCommandLine()
+
+positionalArgs = Script.getPositionalArgs()
+if len( positionalArgs ) != 3:
+	DIRAC.abort( 1, "Must specify which is the role you want" )
+
+fixLDpath(*positionalArgs)
