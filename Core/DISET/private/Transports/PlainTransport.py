@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/PlainTransport.py,v 1.7 2007/06/26 11:33:08 acasajus Exp $
-__RCSID__ = "$Id: PlainTransport.py,v 1.7 2007/06/26 11:33:08 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/PlainTransport.py,v 1.8 2007/06/26 14:35:19 acasajus Exp $
+__RCSID__ = "$Id: PlainTransport.py,v 1.8 2007/06/26 14:35:19 acasajus Exp $"
 
 import socket
 from DIRAC.Core.DISET.private.Transports.BaseTransport import BaseTransport
@@ -24,7 +24,10 @@ class PlainTransport( BaseTransport ):
 
   def close( self ):
     gLogger.debug( "Closing socket" )
-    self.oSocket.shutdown( socket.SHUT_RDWR )
+    try:
+      self.oSocket.shutdown( socket.SHUT_RDWR )
+    except:
+      pass
     self.oSocket.close()
 
   def setClientSocket( self, oSocket ):
