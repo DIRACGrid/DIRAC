@@ -1,8 +1,9 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.12 2007/06/13 19:29:38 acasajus Exp $
-__RCSID__ = "$Id: Server.py,v 1.12 2007/06/13 19:29:38 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.13 2007/06/26 11:33:42 acasajus Exp $
+__RCSID__ = "$Id: Server.py,v 1.13 2007/06/26 11:33:42 acasajus Exp $"
 
 import socket
 import sys
+import select
 from DIRAC.Core.DISET.private.Protocols import gProtocolDict
 from DIRAC.Core.DISET.private.Dispatcher import Dispatcher
 from DIRAC.Core.DISET.private.ServiceConfiguration import ServiceConfiguration
@@ -78,12 +79,19 @@ class Server:
   def serve( self ):
     gLogger.info( "Handler up", "Serving from %s" % self.serviceURL )
     while True:
+      gLogger.verbose( "Active thread jobs %s" % self.threadPool.numWorkingThreads() )
       self.__handleRequest()
       #self.threadPool.processResults()
 
   def __handleRequest( self ):
     try:
-      clientTransport = self.transport.acceptConnection()
+      inList = [ self.transport.getSocket() ]
+      inList, outList, exList = select.select( inList, [], [], 10 )
+      if len( inList ) == 1:
+        clientTransport = self.transport.acceptConnection()
+      else:
+        gLogger.debug( "Restart accepting new connections", "" )
+        return
     except socket.error:
       return
     if self.__checkClientAddress( clientTransport ):
@@ -104,7 +112,6 @@ class Server:
     serviceInfoDict = self.handlerManager.getServiceInfo( service )
     if not serviceInfoDict:
       clientTransport.sendData( S_ERROR( "No handler registered for %s" % service ) )
-      clientTransport.close()
       return False
     if actionTuple[0] == 'RPC':
       action = actionTuple[1]
@@ -119,29 +126,32 @@ class Server:
         username = 'unauthenticated'
       gLogger.verbose( "Unauthorized query", "%s by %s" % ( action, username ) )
       clientTransport.sendData( S_ERROR( "Unauthorized query to %s:%s" % ( service, action ) ) )
-      clientTransport.close()
       return False
     return True
 
   def processClient( self, clientTransport ):
-    gMonitor.addMark( "Queries" )
-    clientTransport.handshake()
-    retVal = clientTransport.receiveData( 1024 )
-    if not retVal[ 'OK' ]:
-      gLogger.error( "Invalid action proposal", retVal[ 'Message' ] )
-      return
-    proposalTuple = retVal[ 'Value' ]
-    gLogger.debug( "Received action from client", str( proposalTuple ) )
-    clientTransport.setDisetGroup( proposalTuple[2] )
-    requestedService = proposalTuple[0][0]
-    if not self.__authorizeProposal( requestedService, proposalTuple[1], clientTransport ):
-      return
-    handlerDict = self.handlerManager.getHandlerInfo( requestedService )
     try:
-      self.handlerManager.lock( requestedService )
-      self.__executeAction( proposalTuple, handlerDict, clientTransport )
+      gMonitor.addMark( "Queries" )
+      clientTransport.handshake()
+      retVal = clientTransport.receiveData( 1024 )
+      if not retVal[ 'OK' ]:
+        gLogger.error( "Invalid action proposal", retVal[ 'Message' ] )
+        return
+      proposalTuple = retVal[ 'Value' ]
+      gLogger.debug( "Received action from client", str( proposalTuple ) )
+      clientTransport.setDisetGroup( proposalTuple[2] )
+      requestedService = proposalTuple[0][0]
+      if not self.__authorizeProposal( requestedService, proposalTuple[1], clientTransport ):
+        return
+      handlerDict = self.handlerManager.getHandlerInfo( requestedService )
+      try:
+        self.handlerManager.lock( requestedService )
+        self.__executeAction( proposalTuple, handlerDict, clientTransport )
+      finally:
+        self.handlerManager.unlock( requestedService )
+        pass
     finally:
-      self.handlerManager.unlock( requestedService )
+      clientTransport.close()
 
 
   def __executeAction( self, proposalTuple, handlerDict, clientTransport ):
@@ -161,7 +171,6 @@ class Server:
     except Exception, e:
       gLogger.exception( "Exception while executing handler action" )
       clientTransport.sendData( S_ERROR( "Server error while executing action: %s" % str( e ) ) )
-    clientTransport.close()
 
 
 if __name__=="__main__":
