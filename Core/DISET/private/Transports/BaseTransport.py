@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/BaseTransport.py,v 1.11 2007/06/19 13:29:36 acasajus Exp $
-__RCSID__ = "$Id: BaseTransport.py,v 1.11 2007/06/19 13:29:36 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/BaseTransport.py,v 1.12 2007/06/26 10:11:28 acasajus Exp $
+__RCSID__ = "$Id: BaseTransport.py,v 1.12 2007/06/26 10:11:28 acasajus Exp $"
 
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR
 from DIRAC.Core.DISET.private.Transports.DEncode import encode, decode
@@ -15,7 +15,7 @@ class BaseTransport:
     self.bServerMode = bServerMode
     self.extraArgsDict = kwargs
     self.byteStream = ""
-    self.packetSize = 8192
+    self.packetSize = 1048576 #1MiB
     self.stServerAddress = stServerAddress
     self.peerCredentials = {}
 
@@ -56,7 +56,14 @@ class BaseTransport:
     sCodedData = encode( uData )
     dataToSend = "%s:%s" % ( len( sCodedData ), sCodedData )
     for index in range( 0, len( dataToSend ), self.packetSize ):
-      self.oSocket.send( dataToSend[ index : index + self.packetSize ] )
+      bytesToSend = len( dataToSend[ index : index + self.packetSize ] )
+      packSentBytes = 0
+      while packSentBytes < bytesToSend:
+        sentBytes = self.oSocket.send( dataToSend[ index + packSentBytes : index + bytesToSend ] )
+        if sentBytes == 0:
+          raise Exception( "ASD" )
+        packSentBytes += sentBytes
+
 
   def receiveData( self, iMaxLength = 0 ):
     try:
