@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Os.py,v 1.2 2007/06/26 16:28:19 paterson Exp $
-__RCSID__ = "$Id: Os.py,v 1.2 2007/06/26 16:28:19 paterson Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Os.py,v 1.3 2007/06/26 17:38:01 paterson Exp $
+__RCSID__ = "$Id: Os.py,v 1.3 2007/06/26 17:38:01 paterson Exp $"
 """
    Collection of DIRAC useful os related modules
    by default on Error they return None
@@ -66,14 +66,14 @@ def fixLDPath( root, ldpath, directory):
         print 'Searching for shared libraries in:'
         print path
         print '-----------------------------------------------'
-        res = shellCall('ls '+path+'/*.so*')
+        res = shellCall(0,'ls '+path+'/*.so*')
         if res:
           print res['Value']
         else:
           print res
         print '-----------------------------------------------'
 
-      output = shellCall('ls '+path+'/*.so*')
+      output = shellCall(0,'ls '+path+'/*.so*')
       #must be tidied for Windows (same below)
 
       if DEBUG:
@@ -87,7 +87,7 @@ def fixLDPath( root, ldpath, directory):
       for lib in ldlibs:
         if os.path.exists(lib):
           filename = os.path.basename(lib)
-          output = shellCall('ln -s '+str(lib)+' '+str(filename))
+          output = shellCall(0,'ln -s '+str(lib)+' '+str(filename))
           #N.B. for Windows this should be a copy...
           if DEBUG:
             if status:
@@ -102,14 +102,14 @@ def fixLDPath( root, ldpath, directory):
         print 'Searching for rootmap file in:'
         print path
         print '-----------------------------------------------'
-        res = shellCall('ls '+path+'/*rootmap*')
+        res = shellCall(0,'ls '+path+'/*rootmap*')
         if res:
           print res['Value']
         else:
           print res
         print '-----------------------------------------------'
 
-      output = shellCall('ls '+path+'/*rootmap*')
+      output = shellCall(0,'ls '+path+'/*rootmap*')
 
       if DEBUG:
         if not output:
@@ -123,7 +123,7 @@ def fixLDPath( root, ldpath, directory):
         if os.path.exists(lib):
           if re.search('RELAX',lib) is not None:
             filename = os.path.basename(lib)
-            output = shellCall('ln -s '+str(lib)+' '+str(filename))
+            output = shellCall(0,'ln -s '+str(lib)+' '+str(filename))
             if DEBUG:
               if not output:
                 print '********************************'
