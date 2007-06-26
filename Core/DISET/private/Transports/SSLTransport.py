@@ -1,7 +1,6 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSLTransport.py,v 1.6 2007/05/16 10:06:57 acasajus Exp $
-__RCSID__ = "$Id: SSLTransport.py,v 1.6 2007/05/16 10:06:57 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSLTransport.py,v 1.7 2007/06/26 11:33:08 acasajus Exp $
+__RCSID__ = "$Id: SSLTransport.py,v 1.7 2007/06/26 11:33:08 acasajus Exp $"
 
-import OpenSSL
 from DIRAC.Core.DISET.private.Transports.BaseTransport import BaseTransport
 from DIRAC.LoggingSystem.Client.Logger import gLogger
 from DIRAC.Core.DISET.private.Transports.SSL.SocketInfoFactory import gSocketInfoFactory
@@ -24,6 +23,7 @@ class SSLTransport( BaseTransport ):
 
   def close( self ):
     gLogger.debug( "Closing socket" )
+    self.oSocket.shutdown()
     self.oSocket.close()
 
   def handshake( self ):
