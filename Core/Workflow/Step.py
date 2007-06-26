@@ -1,8 +1,8 @@
-# $Id: Step.py,v 1.7 2007/06/25 13:27:44 gkuznets Exp $
+# $Id: Step.py,v 1.8 2007/06/26 17:11:27 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.7 $"
+__RCSID__ = "$Revision: 1.8 $"
 
 #try: # this part to inport as part of the DIRAC framework
 from DIRAC.Core.Workflow.Parameter import *
@@ -114,11 +114,13 @@ class StepDefinition(AttributeCollection):
 
 class StepInstance(AttributeCollection):
 
-    def __init__(self, name, obj, parent=None):
+    def __init__(self, name, obj=None, parent=None):
         AttributeCollection.__init__(self)
         self.parent = None
 
-        if isinstance(obj, StepInstance) or isinstance(obj, StepDefinition):
+        if obj == None:
+          self.parameters = ParameterCollection()
+        elif isinstance(obj, StepInstance) or isinstance(obj, StepDefinition):
             if name == None:
                 self.setName(obj.getName())
             else:

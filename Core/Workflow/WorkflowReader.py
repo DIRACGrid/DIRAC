@@ -1,8 +1,8 @@
-# $Id: WorkflowReader.py,v 1.2 2007/06/20 15:23:03 gkuznets Exp $
+# $Id: WorkflowReader.py,v 1.3 2007/06/26 17:11:25 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.2 $"
+__RCSID__ = "$Revision: 1.3 $"
 
 #try: # this part to inport as part of the DIRAC framework
 from DIRAC.Core.Workflow.Parameter import *
@@ -25,9 +25,9 @@ class WorkflowXMLHandler(ContentHandler):
 
   def __init__(self):
     # this is an attribute for the object to be created from the XML document
-    self.root=None
-    self.stack=None
-    self.strings=None
+    self.root=None # the reference on the all document
+    self.stack=None # to keep last object
+    self.strings=None # to accumulate string object (list of strings) used to split long string
 
   def startDocument(self):
     #reset the process
@@ -38,34 +38,47 @@ class WorkflowXMLHandler(ContentHandler):
     pass
 
   def startElement(self, name, attrs):
+    #print name ,"startElement", "attr=", attrs.getLength(), attrs.getNames()
+    self.clearCharacters() # clear to remove empty or nonprintable characters
+
     if name == "Workflow":
       self.root = Workflow()
-      #self.current = self.root
       self.stack.append(self.root)
+
     elif name == "StepDefinition":
       obj = StepDefinition()
       self.root.addStep(obj)
       self.stack.append(obj)
+
     elif name == "StepInstance":
-      #obj = self.root.createStepInstance()
-      #self.root.addStep(obj)
-      #self.stack.append(obj)
-      pass
+      obj = StepDefinition("")
+      stack[len(self.stack)-1].step_instances.append(obj)
+      self.stack.append(obj)
+
     elif name == "ModuleDefinition":
-      obj = ModuleDefinition()
+      obj = ModuleDefinition("TemporaryXMLReadingObject")
       self.root.addModule(obj)
       self.stack.append(obj)
-      pass
+
     elif name == "ModuleInstance":
-      #self.root.addStep(obj)
-      #self.stack.append(obj)
+      obj = ModuleInstance("")
+      self.stack[len(self.stack)-1].module_instances.append(obj)
+      self.stack.append(obj)
+
+    elif name == "Parameter":
+      obj = Parameter(attrs['name'], None, attrs['type'], attrs['linked_module'], attrs['linked_parameter'], attrs['in'], attrs['out'], None)
+      self.stack.append(obj)
+
+    # TEMPORARY CODE
+    elif name=="origin" or name == "version" or name == "name" or name == "type" or name == "value" or\
+    name == "required" or name == "descr_short" or name == "name" or name == "type"  or name == "description"  or name == "body" or name == "Parameter":
       pass
     else:
-      print "startElement", name, attrs
-      print attrs.getLength(), attrs.getNames()
-    #print attrs.getType(attrs.getNames()[0]), attrs.getValue(attrs.getNames()[0])
+      print "UNTREATED! startElement name=", name, "attr=", attrs.getLength(), attrs.getNames()
+      pass
 
   def endElement(self, name):
+    #print name, "endElement"
     # attributes
     if name=="origin":
       self.stack[len(self.stack)-1].setOrigin(self.getCharacters())
@@ -83,20 +96,28 @@ class WorkflowXMLHandler(ContentHandler):
       self.stack[len(self.stack)-1].setName(self.getCharacters())
     elif name == "type":
       self.stack[len(self.stack)-1].setType(self.getCharacters())
+    elif name == "description":
+      self.stack[len(self.stack)-1].setDescription(self.getCharacters())
+    elif name == "body":
+      self.stack[len(self.stack)-1].setBody(self.getCharacters())
+    elif name == "value":
+      self.stack[len(self.stack)-1].setValue(self.getCharacters())
 
     #objects
     elif name=="Workflow":
-      pass
+      self.stack.pop()
     elif name == "StepDefinition":
-      pass
+      self.stack.pop()
     elif name == "StepInstance":
-      pass
+      self.stack.pop()
     elif name == "ModuleDefinition":
-      pass
+      self.stack.pop()
     elif name == "ModuleInstance":
-      pass
+      self.stack.pop()
+    elif name == "Parameter":
+      self.stack.pop()
     else:
-      print "endElement", name
+      print "UNTREATED! endElement", name
 
   def getCharacters(self):
     # combine all strings and clear the list
@@ -109,7 +130,6 @@ class WorkflowXMLHandler(ContentHandler):
     self.strings=[]
 
   def characters(self, content):
-    print "characters", content
     self.strings.append(content)
 
 def fromXMLString(xml_string):
@@ -119,4 +139,5 @@ def fromXMLString(xml_string):
 
   #print xml_string
   #print xml.dom.getDOMImplementation()
+  #handler.root.updateParents()
   return handler.root

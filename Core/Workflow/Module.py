@@ -1,8 +1,8 @@
-# $Id: Module.py,v 1.11 2007/06/20 11:07:13 gkuznets Exp $
+# $Id: Module.py,v 1.12 2007/06/26 17:11:27 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.11 $"
+__RCSID__ = "$Revision: 1.12 $"
 
 # $Source: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Workflow/Module.py,v $
 
@@ -91,12 +91,14 @@ class ModuleDefinition(AttributeCollection):
 
 class ModuleInstance(AttributeCollection):
 
-    def __init__(self, name, obj, parent=None):
+    def __init__(self, name, obj=None, parent=None):
         AttributeCollection.__init__(self)
         self.instance_obj = None # used for the interpretation only
         self.parent=parent
 
-        if isinstance(obj, ModuleInstance) or isinstance(obj, ModuleDefinition):
+        if obj == None:
+          self.parameters = ParameterCollection()
+        elif isinstance(obj, ModuleInstance) or isinstance(obj, ModuleDefinition):
             if name == None:
                 self.setName(obj.getName())
             else:
@@ -110,8 +112,9 @@ class ModuleInstance(AttributeCollection):
             self.setType("")
             self.setDescrShort("")
             self.parameters = ParameterCollection(obj)
-        elif coll != None:
+        elif obj != None:
             raise TypeError('Can not create object type '+ str(type(self)) + ' from the '+ str(type(obj)))
+
 
     def createCode(self, ind=2):
         str=indent(ind)+self.getName()+' = '+self.getType()+ '()\n'

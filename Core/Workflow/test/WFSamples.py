@@ -1,8 +1,8 @@
-# $Id: WFSamples.py,v 1.6 2007/06/25 13:27:45 gkuznets Exp $
+# $Id: WFSamples.py,v 1.7 2007/06/26 17:11:28 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.6 $"
+__RCSID__ = "$Revision: 1.7 $"
 
 # $Source: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Workflow/test/WFSamples.py,v $
 
@@ -185,17 +185,17 @@ w1.findParameter('final').link('si2','result')
 # test section
 #============================================================================
 #print w1
-w1.resolveGlobalVars()
-print "# ================ CODE ========================"
-print w1.createCode()
-print "------------------- result of the evaluation -------------"
-eval(compile(w1.createCode(),'<string>','exec'))
-print " ================== Interpretation ======================="
-w1.execute()
+#w1.resolveGlobalVars()
+#print "# ================ CODE ========================"
+#print w1.createCode()
+#print "------------------- result of the evaluation -------------"
+#eval(compile(w1.createCode(),'<string>','exec'))
+#print " ================== Interpretation ======================="
+#w1.execute()
 #print w1.toXMLString()
-#s = w1.toXMLString()
+s = w1.toXMLString()
 #print s
-#w4 = fromXMLString(s)
+w4 = fromXMLString(s)
 #print w4
 #import pickle
 #output = open('D:\gennady\workspace\Workflow\wf.pkl', 'wb')

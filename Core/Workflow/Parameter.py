@@ -1,8 +1,8 @@
-# $Id: Parameter.py,v 1.3 2007/06/20 11:07:13 gkuznets Exp $
+# $Id: Parameter.py,v 1.4 2007/06/26 17:11:26 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.3 $"
+__RCSID__ = "$Revision: 1.4 $"
 
 # unbinded method, returns indentation string
 def indent(indent=0):
@@ -418,13 +418,25 @@ class AttributeCollection(dict):
 
     # ------------- common functions -----------
     def setName(self, name):
+        # we have to replace _ with the printable character
+        # for that we create temporary string
+        if name:
+            nametmp = name.replace('_', '0')
+            if not nametmp.isalnum( ):
+                raise AttributeError('Can not have NOT alphnumeric name for the object'+ str(type(self))+' requested name='+name)
         self['name'] = name
 
     def getName(self):
         return self['name']
 
-    def setType(self, type):
-        self['type'] = type
+    def setType(self, type_):
+        # we have to replace _ with the printable character
+        # for that we create temporary string
+        if type_:
+            typetmp = type_.replace('_', '0')
+            if not typetmp.isalnum():
+                raise AttributeError('We can have alphnumeric characters only as type for the object'+ str(type(self))+' type='+type_)
+        self['type'] = type_
 
     def getType(self):
         return self['type']
