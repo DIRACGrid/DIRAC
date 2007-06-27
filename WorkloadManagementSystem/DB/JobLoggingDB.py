@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobLoggingDB.py,v 1.2 2007/05/15 15:45:08 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobLoggingDB.py,v 1.3 2007/06/27 15:22:41 atsareg Exp $
 ########################################################################
 """ JobLoggingDB class is a front-end to the Job Logging Database.
     The following methods are provided
@@ -9,13 +9,14 @@
     getWMSTimeStamps()    
 """    
 
-__RCSID__ = "$Id: JobLoggingDB.py,v 1.2 2007/05/15 15:45:08 acsmith Exp $"
+__RCSID__ = "$Id: JobLoggingDB.py,v 1.3 2007/06/27 15:22:41 atsareg Exp $"
 
 import re, os, sys
 import time, datetime
 from types import *
 
-from DIRAC                                     import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC              import gLogger,S_OK, S_ERROR
+from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.Core.Base.DB import DB
   
 # Here for debugging purpose; should be initialized by the containing component
@@ -27,11 +28,12 @@ MAGIC_EPOC_NUMBER = 1270000000
 class JobLoggingDB(DB):
 
 
-  def __init__( self, systemInstance='Default', maxQueueSize=10 ):
+  def __init__( self, maxQueueSize=10 ):
     """ Standard Constructor
     """
 
-    DB.__init__(self,'JobLoggingDB',systemInstance,maxQueueSize)
+    DB.__init__(self,'JobLoggingDB','WorkloadManagement/JobLoggingDB',maxQueueSize)
+    self.gLogger = gLogger
     
 #############################################################################
   def addLoggingRecord(self,

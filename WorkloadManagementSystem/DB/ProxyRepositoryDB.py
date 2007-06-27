@@ -1,13 +1,14 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/Attic/ProxyRepositoryDB.py,v 1.3 2007/05/15 17:26:17 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/Attic/ProxyRepositoryDB.py,v 1.4 2007/06/27 15:22:42 atsareg Exp $
 ########################################################################
 """ ProxyRepository class is a front-end to the proxy repository Database    
 """    
 
-__RCSID__ = "$Id: ProxyRepositoryDB.py,v 1.3 2007/05/15 17:26:17 atsareg Exp $"
+__RCSID__ = "$Id: ProxyRepositoryDB.py,v 1.4 2007/06/27 15:22:42 atsareg Exp $"
 
 import time
-from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC  import gLogger, S_OK, S_ERROR
+from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.Core.Base.DB import DB
 #from DIRAC.Core.Utilities.LCG import getProxyTimeLeft
 
@@ -44,19 +45,19 @@ class ProxyRepositoryDB(DB):
 	cmd = cmd + 'WHERE UserDN=\'%s\' AND UserGroup=\'%s\'' % ( dn, group )
         result = self._update(cmd)
         if result['OK']:
-          self.gLogger.info( 'Proxy Updated for DN=%s and Group=%s' % (dn,group) )
+          self.log.info( 'Proxy Updated for DN=%s and Group=%s' % (dn,group) )
 	else:
-          self.gLogger.error( 'Proxy Update Failed for DN=%s and Group=%s' % (dn,group) )
-          self.gLogger.error(result['Message'])
+          self.log.error( 'Proxy Update Failed for DN=%s and Group=%s' % (dn,group) )
+          self.log.error(result['Message'])
           return S_ERROR('Failed to store ticket')
     else:
       cmd = 'INSERT INTO Proxies ( Proxy, UserDN, UserGroup, ExpirationTime ) VALUES ' \
             '(\'%s\', \'%s\', \'%s\', NOW() + INTERVAL %d second)' % (proxy,dn,group,time_left)
       result = self._update( cmd )      
       if result['OK']:
-        self.gLogger.info( 'Proxy Inserted for DN="%s" and Group="%s"' % (dn,group) )
+        self.log.info( 'Proxy Inserted for DN="%s" and Group="%s"' % (dn,group) )
       else:
-        self.gLogger.error( 'Proxy Insert Failed for DN="%s" and Group="%s"' % (dn,group) )
+        self.log.error( 'Proxy Insert Failed for DN="%s" and Group="%s"' % (dn,group) )
         return S_ERROR('Failed to store ticket')
 
     return S_OK()

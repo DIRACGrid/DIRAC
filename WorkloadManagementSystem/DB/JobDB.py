@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.4 2007/05/15 17:22:08 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.5 2007/06/27 15:22:41 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -51,7 +51,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.4 2007/05/15 17:22:08 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.5 2007/06/27 15:22:41 atsareg Exp $"
 
 import re, os, sys, string
 import time
@@ -59,7 +59,8 @@ import threading
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from types                                     import *
-from DIRAC                                     import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC                                     import gLogger, S_OK, S_ERROR
+from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.Core.Base.DB import DB
 
 
@@ -75,8 +76,8 @@ class JobDB(DB):
     self.maxRescheduling = 30
     result = gConfig.getOption( self.cs_path+'/MaxRescheduling')
     if not result['OK']:
-      self.gLogger.error('Failed to get the MaxRescheduling limit')
-      self.gLogger.error('Using default value '+str(self.maxRescheduling))
+      self.log.error('Failed to get the MaxRescheduling limit')
+      self.log.error('Using default value '+str(self.maxRescheduling))
     else:
       self.maxRescheduling = int(result['Value'])
 
@@ -88,14 +89,14 @@ class JobDB(DB):
 
     if not res['OK']:
       err = 'Can not retrieve job Attributes.'
-      self.gLogger.fatal( 'JobDB: %s' % err )
+      self.log.fatal( 'JobDB: %s' % err )
       sys.exit( err )
       return
 
     self.nJobAttributeNames = len(self.jobAttributeNames)
 
-    self.gLogger.always("MaxReschedule:  "+`self.maxRescheduling`)
-    self.gLogger.always("==================================================")
+    self.log.always("MaxReschedule:  "+`self.maxRescheduling`)
+    self.log.always("==================================================")
 
   def dumpParameters(self):
     """  Dump the JobDB connection parameters to the stdout
@@ -186,7 +187,7 @@ class JobDB(DB):
 
     try:
       jobID = int(res['Value'][0][0])
-      self.gLogger.info( 'JobDB: New JobID served "%s"' % jobID )
+      self.log.info( 'JobDB: New JobID served "%s"' % jobID )
     except Exception, x:
       self.getIdLock.release()
       return S_ERROR( '3 %s\n%s' % (err, str(x) ) )
@@ -248,7 +249,7 @@ class JobDB(DB):
         Returns an empty dictionary if no matching job found.
     """
 
-    self.gLogger.debug( 'JobDB.getParameters: Getting Parameters for job %s' %jobID )
+    self.log.debug( 'JobDB.getParameters: Getting Parameters for job %s' %jobID )
     result = self._getFields( 'JobParameters',
                            ['Name', 'Value'],
                            ['JobID'], [jobID])
@@ -271,7 +272,7 @@ class JobDB(DB):
         return an empty dictionary if matching job found
     """
 
-    self.gLogger.debug( 'JobDB.getAllJobAttributes: Getting Attributes for job = "%s".' %jobID )
+    self.log.debug( 'JobDB.getAllJobAttributes: Getting Attributes for job = "%s".' %jobID )
     cmd = 'SELECT * FROM Job WHERE JobID=\'%s\'' % jobID
     res = self._query( cmd )
     if not res['OK']:
@@ -371,7 +372,7 @@ class JobDB(DB):
   def countJobs(self, condDict, older=None, newer=None):
     """ Get the number of jobs matching conditions specified by condDict and time limits
     """
-    self.gLogger.debug ( 'JobDB.countJobs: counting Jobs' )
+    self.log.debug ( 'JobDB.countJobs: counting Jobs' )
     cond = self.__buildCondition(condDict, older, newer)
     cmd = ' SELECT count(JobID) from Jobs '
     ret = self._query( cmd + cond )
@@ -389,7 +390,7 @@ class JobDB(DB):
         number of jobs if requested.
     """
 
-    self.gLogger.debug( 'JobDB.selectJobs: retrieving jobs.' )
+    self.log.debug( 'JobDB.selectJobs: retrieving jobs.' )
 
     condition = self.__buildCondition(condDict, older, newer)
 
@@ -574,6 +575,7 @@ class JobDB(DB):
     else:
       cmd = "SELECT JDL FROM JobJDLs WHERE JobID=%d" % int(jobID)
 
+    print cmd 
     result = self._query(cmd)
     if result['OK']:
       return S_OK(result['Value'][0][0])
@@ -603,10 +605,12 @@ class JobDB(DB):
       if result['OK']:
         jdl = result['Value']
 
+    print "JobDB:",jdl
+
     classadJob = ClassAd(jdl)
 
     if not classadJob.isOK():
-      self.gLogger.error( "JobDB.addJobToDB: Error in JDL syntax" )
+      self.log.error( "JobDB.addJobToDB: Error in JDL syntax" )
       result = self.setJobStatus(jobID,minor='Verification Failed')
       result = self.setJobParameter(jobID,'VerificationError','Error in JDL syntax')
       return S_ERROR( "JobDB.addJobToDB: Error in JDL syntax" )
@@ -711,7 +715,7 @@ class JobDB(DB):
               result = self.removeJobFromDB(job)
               if not result['OK']:
                 failedSubjobList.append(job)
-                self.gLogger.error("Failed to delete job "+str(job)+" from JobDB")
+                self.log.error("Failed to delete job "+str(job)+" from JobDB")
 
     failedTablesList = []
     for table in ( 'Jobs',
@@ -787,7 +791,7 @@ class JobDB(DB):
 
     # Exit if the limit of the reschedulings is reached
     if rescheduleCounter >= self.maxRescheduling:
-      self.gLogger.error('Maximum number of reschedulings is reached for job %s' % jobID)
+      self.log.error('Maximum number of reschedulings is reached for job %s' % jobID)
       res = self.setJobStatus(jobID, status='failed',update=True)
       res = self.setJobStatus(jobID, application='Maximum of reschedulings reached')
       return S_ERROR('Maximum number of reschedulings is reached: %s' % self.maxRescheduling)
@@ -958,8 +962,8 @@ class JobDB(DB):
         requirements and priority. The requirements are provided as a JDL snippet
     """
 
-    self.gLogger.info( 'JobDB.__addQueue: Adding new Task Queue with requirements' )
-    self.gLogger.info( 'JobDB.__addQueue: %s' % requirements )
+    self.log.info( 'JobDB.__addQueue: Adding new Task Queue with requirements' )
+    self.log.info( 'JobDB.__addQueue: %s' % requirements )
 
     classQueue = ClassAd(requirements)
     if classQueue.isOK():
@@ -1005,7 +1009,7 @@ class JobDB(DB):
         if queueRequirement.upper() == jobRequirement.upper():
           return S_OK( queueId )
 
-    self.gLogger.info( 'JobDB.selectQueue: creating a new Queue' )
+    self.log.info( 'JobDB.selectQueue: creating a new Queue' )
     return self.__addQueue( '[ Requirements = %s ]' % requirements )
 
 #############################################################################
@@ -1014,7 +1018,7 @@ class JobDB(DB):
        <queueId> with the job rank <rank>
     """
 
-    self.gLogger.info('JobDB.addJobToQueue: Adding job %s to queue %s' \
+    self.log.info('JobDB.addJobToQueue: Adding job %s to queue %s' \
                   ' with rank %s' % ( jobID, queueId, rank ) )
 
     cmd = 'INSERT INTO TaskQueue(TaskQueueId, JobID, Rank) ' \
@@ -1022,14 +1026,14 @@ class JobDB(DB):
 
     result = self._update( cmd )
     if not result['OK']:
-      self.gLogger.error("Failed to add job "+str(jobID)+" to the Task Queue")
+      self.log.error("Failed to add job "+str(jobID)+" to the Task Queue")
       return result
 
     # Check the Task Queue priority and adjust if necessary
     cmd = "SELECT Priority FROM TaskQueues WHERE TaskQueueId=%s" % queueId
     result = self._query(cmd)
     if not result['OK']:
-      self.gLogger.error("Failed to get priority of the TaskQueue "+str(queueId))
+      self.log.error("Failed to get priority of the TaskQueue "+str(queueId))
       return result
 
     old_priority = int(result['Value'][0][0])
@@ -1037,7 +1041,7 @@ class JobDB(DB):
       cmd = "UPDATE TaskQueues SET Priority=%s WHERE TaskQueueId=%s" % (rank,queueId)
       result = self._update(cmd)
       if not result['OK']:
-        self.gLogger.error("Failed to update priority of the TaskQueue "+str(queueId))
+        self.log.error("Failed to update priority of the TaskQueue "+str(queueId))
         return result
 
     return S_OK()
@@ -1047,7 +1051,7 @@ class JobDB(DB):
     """Delete the job specified by jobID from the Task Queue
     """
 
-    self.gLogger.info('JobDB: Deleting job %d from the Task Queue' % int(jobID) )
+    self.log.info('JobDB: Deleting job %d from the Task Queue' % int(jobID) )
 
     req = "SELECT TaskQueueID FROM TaskQueue WHERE JobID=%d" % int(jobID)
     result = self._query(req)
@@ -1073,15 +1077,15 @@ class JobDB(DB):
         if result['OK']:
           if len(result['Value']) > 0:
             requirements = result['Value'][0][0]
-            self.gLogger.info('JobDB: Removing Task Queue with requirements:' )
-            self.gLogger.info(requirements)
+            self.log.info('JobDB: Removing Task Queue with requirements:' )
+            self.log.info(requirements)
             req = "DELETE FROM TaskQueues WHERE TaskQueueID=%d" % int(queueID)
             result = self._update(req)
             return result
           else:
-            self.gLogger.error('JobDB: Error while removing empty Task Queue' )
+            self.log.error('JobDB: Error while removing empty Task Queue' )
         else:
-          self.gLogger.error('JobDB: Error while removing empty Task Queue' )
+          self.log.error('JobDB: Error while removing empty Task Queue' )
 
     return S_OK()
 

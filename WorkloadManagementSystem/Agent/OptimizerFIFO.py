@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/OptimizerFIFO.py,v 1.3 2007/05/16 14:32:10 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/OptimizerFIFO.py,v 1.4 2007/06/27 15:22:41 atsareg Exp $
 ########################################################################
 
 """  Optimizer FIFO is the simplest job validation optimizer
@@ -7,7 +7,7 @@
 """
 
 from DIRAC.Core.Base.Agent import Agent
-from DIRAC  import S_OK, S_ERROR, gConfig
+from DIRAC  import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
@@ -58,13 +58,18 @@ class OptimizerFIFO(Agent):
       if  result['Value']:
         return
 
-    retVal = self.jobDB.getJobParameters(jobID,['JDL','Priority'])
+    retVal = self.jobDB.getJobParameters(jobID,['Priority'])
     if retVal['OK']:
-      jdl = retVal['Value']['JDL']
       priority = retVal['Value']['Priority']
     else:
       self.log.error('Failed to get parameters for job %d' % int(jobID))
       return S_ERROR('Failed to get parameters for job %d' % int(jobID))
+      
+    result = self.jobDB.getJobJDL(jobID) 
+    if result['OK']:
+      jdl = result['Value']
+    else:
+      jdl = None   
 
     if not jdl:
       self.log.error("JDL not found for job %d" % int(jobID))
@@ -76,6 +81,8 @@ class OptimizerFIFO(Agent):
                                   source="OptimizerFIFO")
       return S_ERROR('Failed to get jdl for job %d' % int(jobID))
 
+    print "$$$$$$$$$$$$$$",jdl
+    
     classadJob = ClassAd(jdl)
     if not classadJob.isOK():
       self.log.error("Illegal JDL for job %d " % int(jobID))
