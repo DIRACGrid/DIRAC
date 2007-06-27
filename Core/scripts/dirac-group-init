@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from DIRACEnvironment import DIRAC
+from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.GridCert import setDIRACGroup
 
@@ -20,7 +21,7 @@ if len( positionalArgs ) == 0:
 userGroup = positionalArgs[0]
 
 if doCheck:
-	retVal = DIRAC.gConfig.getSections( "/Groups" )
+	retVal = gConfig.getSections( "/Groups" )
 	if not retVal[ 'OK' ]:
 		DIRAC.abort( 1, "Problem getting available groups (%s)" % retVal[ 'Message' ] )
 	groups = retVal[ 'Value' ]
