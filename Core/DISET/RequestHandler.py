@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.18 2007/06/14 14:22:35 acasajus Exp $
-__RCSID__ = "$Id: RequestHandler.py,v 1.18 2007/06/14 14:22:35 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.19 2007/06/27 18:22:09 acasajus Exp $
+__RCSID__ = "$Id: RequestHandler.py,v 1.19 2007/06/27 18:22:09 acasajus Exp $"
 
 import types
 from DIRAC.Core.DISET.private.FileHelper import FileHelper
@@ -62,6 +62,10 @@ class RequestHandler:
       uRetVal = self.transfer_fromClient( fileInfo[0], fileInfo[1], fileHelper )
     elif sDirection == "toClient" :
       uRetVal = self.transfer_toClient( fileInfo[0], fileHelper )
+    elif sDirection == "bulkFromClient" :
+      uRetVal = self.transfer_bulkFromClient( fileInfo[0], fileHelper )
+    elif sDirection == "bulkToClient" :
+      uRetVal = self.transfer_bulkToClient( fileInfo[0], fileHelper )
     else:
       return S_ERROR( "Direction %s does not exist!!!" % sDirection )
     if not fileHelper.finishedTransmission():

@@ -1,10 +1,12 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/FileHelper.py,v 1.8 2007/06/14 16:14:45 acasajus Exp $
-__RCSID__ = "$Id: FileHelper.py,v 1.8 2007/06/14 16:14:45 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/FileHelper.py,v 1.9 2007/06/27 18:22:09 acasajus Exp $
+__RCSID__ = "$Id: FileHelper.py,v 1.9 2007/06/27 18:22:09 acasajus Exp $"
 
 import os
 import md5
 import types
+import threading
 import cStringIO
+import tarfile
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.LoggingSystem.Client.Logger import gLogger
 
@@ -154,3 +156,48 @@ class FileHelper:
     else:
       return S_ERROR( "%s is not a valid file." % uFile )
     return S_OK( iFD )
+
+  def __createTar( self, fileList, wPipe, compress ):
+    filePipe = os.fdopen( wPipe, "w" )
+    tarMode = "w|"
+    if compress:
+      tarMode = "w|bz2"
+    tar = tarfile.open( mode = tarMode, fileobj = filePipe )
+    for entry in fileList:
+      tar.add( os.path.realpath( entry ), os.path.basename( entry ), recursive = True )
+    tar.close()
+    filePipe.close()
+
+  def tarToNetwork( self, fileList, compress = True ):
+    rPipe, wPipe = os.pipe()
+    thrd = threading.Thread( target = self.__createTar, args = ( fileList, wPipe, compress ) )
+    thrd.start()
+    response = self.FDToNetwork( rPipe )
+    os.close( rPipe )
+    return response
+
+  def __extractTar( self, destDir, rPipe, compress ):
+    filePipe = os.fdopen( rPipe, "r" )
+    tarMode = "r|"
+    if compress:
+      tarMode = "r|bz2"
+    tar = tarfile.open( mode = tarMode, fileobj = filePipe )
+    for tarInfo in tar:
+      tar.extract( tarInfo, destDir )
+    tar.close()
+    filePipe.close()
+
+  def __receiveToPipe( self, wPipe, retList ):
+    retList.append( self.networkToFD( wPipe ) )
+    os.close( wPipe )
+
+  def networkToTar( self, destDir, compress = True ):
+    retList = []
+    rPipe, wPipe = os.pipe()
+    thrd = threading.Thread( target = self.__receiveToPipe, args = ( wPipe, retList) )
+    thrd.start()
+    try:
+      self.__extractTar( destDir, rPipe, compress )
+    except Exception, e:
+      return S_ERROR( "Error while extracting bulk: %s" % e)
+    return retList[0]
