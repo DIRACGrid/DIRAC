@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Agent.py,v 1.2 2007/05/16 14:51:04 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Agent.py,v 1.3 2007/06/27 15:25:57 atsareg Exp $
 ########################################################################
 """ Base class for all the Agents.
 
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: Agent.py,v 1.2 2007/05/16 14:51:04 acasajus Exp $"
+__RCSID__ = "$Id: Agent.py,v 1.3 2007/06/27 15:25:57 atsareg Exp $"
 
 import os
 import threading
@@ -22,7 +22,8 @@ import time
 import signal
 
 import DIRAC
-from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC  import gLogger, S_OK, S_ERROR
+from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.ConfigurationSystem.Client.PathFinder import getAgentSection
 from DIRAC.Core.Utilities.Subprocess import pythonCall
 
@@ -35,6 +36,7 @@ class Agent:
     """
     self.fullname = name
     self.system,self.name = name.split('/')
+    self.log = gLogger
 
   def initialize(self):
     """ Default common agent initialization
@@ -234,7 +236,7 @@ def createAgent(agentName):
     print "Invalid agent name",agentName
     return None
 
-  print "Improting",'DIRAC.'+system+'System.Agent'
+  print "Importing",'DIRAC.'+system+'System.Agent'
   module = __import__('DIRAC.'+system+'System.Agent',globals(),locals(),[name])
   agent = eval("module."+name+'.'+name+"()")
   return agent

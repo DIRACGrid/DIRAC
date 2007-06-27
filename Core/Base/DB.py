@@ -1,15 +1,16 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/DB.py,v 1.2 2007/05/16 13:39:54 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/DB.py,v 1.3 2007/06/27 15:25:22 atsareg Exp $
 ########################################################################
 
 """ BaseDB is the base class for multiple DIRAC databases. It uniforms the
     way how the database objects are constructed
 """
 
-__RCSID__ = "$Id: DB.py,v 1.2 2007/05/16 13:39:54 atsareg Exp $"
+__RCSID__ = "$Id: DB.py,v 1.3 2007/06/27 15:25:22 atsareg Exp $"
 
 import sys
-from DIRAC                           import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC                           import gLogger, S_OK, S_ERROR
+from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.Core.Utilities.MySQL      import MySQL
 from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 
