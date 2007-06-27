@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.10 2007/05/24 15:16:53 acasajus Exp $
-__RCSID__ = "$Id: Logger.py,v 1.10 2007/05/24 15:16:53 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.11 2007/06/27 16:05:18 acasajus Exp $
+__RCSID__ = "$Id: Logger.py,v 1.11 2007/06/27 16:05:18 acasajus Exp $"
 """
    DIRAC Logger client
 """
@@ -18,13 +18,12 @@ from DIRAC.LoggingSystem.private.backends.BackendIndex import gBackendIndex
 
 class Logger:
 
-  def __init__( self, maxMessagesInQueue = 500 ):
+  def __init__( self ):
     self._minLevel = 0
     self._showCallingFrame = False
     self._systemName = False
     self._outputList = []
     self._subLoggersDict = {}
-    self._messageQueue = Queue.Queue( maxMessagesInQueue )
     self._logLevels = LogLevels()
     self.__preinitialize()
 
@@ -70,7 +69,6 @@ class Logger:
       if retDict[ 'OK' ] and retDict[ 'Value' ].lower() in ( "y", "yes", "1", "true" ) :
         self._showCallingFrame = True
       self._systemName = str( systemName )
-      self.__processQueue()
 
   def getName( self ):
     return self._systemName
@@ -82,7 +80,7 @@ class Logger:
                              sMsg,
                              sVarMsg,
                              self.__discoverCallingFrame() )
-    return self.queueMessage( messageObject )
+    return self.processMessage( messageObject )
 
   def info( self, sMsg, sVarMsg = '' ):
     messageObject = Message( self._systemName,
@@ -91,7 +89,7 @@ class Logger:
                              sMsg,
                              sVarMsg,
                              self.__discoverCallingFrame() )
-    return self.queueMessage( messageObject )
+    return self.processMessage( messageObject )
 
   def verbose( self, sMsg, sVarMsg = '' ):
     messageObject = Message( self._systemName,
@@ -100,7 +98,7 @@ class Logger:
                              sMsg,
                              sVarMsg,
                              self.__discoverCallingFrame() )
-    return self.queueMessage( messageObject )
+    return self.processMessage( messageObject )
 
   def debug( self, sMsg, sVarMsg = '' ):
     messageObject = Message( self._systemName,
@@ -109,7 +107,7 @@ class Logger:
                              sMsg,
                              sVarMsg,
                              self.__discoverCallingFrame() )
-    return self.queueMessage( messageObject )
+    return self.processMessage( messageObject )
 
   def warn( self, sMsg, sVarMsg = '' ):
     messageObject = Message( self._systemName,
@@ -118,7 +116,7 @@ class Logger:
                              sMsg,
                              sVarMsg,
                              self.__discoverCallingFrame() )
-    return self.queueMessage( messageObject )
+    return self.processMessage( messageObject )
 
   def error( self, sMsg, sVarMsg = '' ):
     messageObject = Message( self._systemName,
@@ -127,7 +125,7 @@ class Logger:
                              sMsg,
                              sVarMsg,
                              self.__discoverCallingFrame() )
-    return self.queueMessage( messageObject )
+    return self.processMessage( messageObject )
 
   def exception( self, sMsg = "", sVarMsg = '', lException = False ):
     if sVarMsg:
@@ -140,7 +138,7 @@ class Logger:
                              sMsg,
                              sVarMsg,
                              self.__discoverCallingFrame() )
-    return self.queueMessage( messageObject )
+    return self.processMessage( messageObject )
 
   def fatal( self, sMsg, sVarMsg = '' ):
     messageObject = Message( self._systemName,
@@ -149,7 +147,7 @@ class Logger:
                              sMsg,
                              sVarMsg,
                              self.__discoverCallingFrame() )
-    return self.queueMessage( messageObject )
+    return self.processMessage( messageObject )
 
   def showStack( self ):
     messageObject = Message( self._systemName,
@@ -158,30 +156,14 @@ class Logger:
                              "",
                              self.__getStackString(),
                              self.__discoverCallingFrame() )
-    self.queueMessage( messageObject )
+    self.processMessage( messageObject )
 
-  def queueMessage( self, messageObject ):
-    self.__queueMessage( messageObject )
-    return self.__processQueue()
-
-  def __queueMessage( self, messageObject ):
-    while True:
-      try:
-        self._messageQueue.put( messageObject )
-        break
-      except Queue.Full:
-        self._messageQueue.get()
-
-  def __processQueue( self ):
-    if not self._systemName:
-      return False
-    while not self._messageQueue.empty():
-      messageObject = self._messageQueue.get()
-      if self.__testLevel( messageObject.getLevel() ):
-        if not messageObject.getName():
-          messageObject.setName( self._systemName )
-        self.__processMessage( messageObject )
-    return True
+  def processMessage( self, messageObject ):
+    if self.__testLevel( messageObject.getLevel() ):
+      if not messageObject.getName():
+        messageObject.setName( self._systemName )
+      self.__processMessage( messageObject )
+    return
 
   def __testLevel( self, sLevel ):
     return abs( self._logLevels.getLevelValue( sLevel ) ) >= self._minLevel
