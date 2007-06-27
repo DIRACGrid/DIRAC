@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: MySQL.py,v 1.3 2007/06/25 12:39:11 rgracian Exp $
+# $Id: MySQL.py,v 1.4 2007/06/27 16:35:03 acsmith Exp $
 ########################################################################
 """ DIRAC Basic MySQL Class 
     It provides access to the basic MySQL methods in a multithread-safe mode
@@ -75,7 +75,7 @@
 
 """    
 
-__RCSID__ = "$Id: MySQL.py,v 1.3 2007/06/25 12:39:11 rgracian Exp $"
+__RCSID__ = "$Id: MySQL.py,v 1.4 2007/06/27 16:35:03 acsmith Exp $"
 
 
 from DIRAC                                  import gLogger
@@ -129,6 +129,7 @@ class MySQL:
     self.__connectionSemaphore = threading.Semaphore( maxQueueSize )
 
     self.__initialized = True
+    self._connect()
     
 
   def __del__( self ):
