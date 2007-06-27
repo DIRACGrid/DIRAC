@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/Attic/JobReceiverHandler.py,v 1.3 2007/05/16 13:50:10 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/Attic/JobReceiverHandler.py,v 1.4 2007/06/27 12:35:06 atsareg Exp $
 ########################################################################
 
 """ JobReceiverHandler is the implementation of the JobReceiver service
@@ -12,11 +12,12 @@
     
 """
 
-__RCSID__ = "$Id: JobReceiverHandler.py,v 1.3 2007/05/16 13:50:10 atsareg Exp $"
+__RCSID__ = "$Id: JobReceiverHandler.py,v 1.4 2007/06/27 12:35:06 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.ProxyRepositoryDB import ProxyRepositoryDB
@@ -28,6 +29,8 @@ proxyRepository = False
 def initializeJobReceiverHandler( serviceInfo ):
 
   global jobDB
+  global proxyRepository
+  
   jobDB = JobDB()
   proxyRepository = ProxyRepositoryDB()
   return S_OK()
@@ -42,8 +45,8 @@ class JobReceiverHandler( RequestHandler ):
 
     # Get the new jobID first
     #gActivityClient.addMark( "getJobId" )
-    result_jobID  = jobDB.getJobId()
-    if not result['OK']:
+    result_jobID  = jobDB.getJobID()
+    if not result_jobID['OK']:
       return S_ERROR('Failed to acquire a new JobID')
       
     jobID = int(result_jobID['Value'])
@@ -56,12 +59,15 @@ class JobReceiverHandler( RequestHandler ):
     classAdJob = ClassAd('['+JDL+']')
     classAdJob.insertAttributeInt('JobID',jobID)
     newJDL = classAdJob.asJDL()
-    result  = jobDB.addJobToDB( newJDL, jobID, self.sDN )
+    result = self.getRemoteCredentials()
+    DN = result['DN']
+    group = result['group']
+    result  = jobDB.addJobToDB( jobID, JDL=newJDL, ownerDN=DN, ownerGroup=group)
     if not result['OK']:
-        return result
+      return result
     gLogger.info('Job %s added to the JobDB' % str(jobID) )
 
-    resProxy = proxyRepository.storeProxy(proxy,self.sDN,self.sGroup)
+    resProxy = proxyRepository.storeProxy(proxy,DN,group)
     if not resProxy['OK']:
       gLogger.error("Failed to store the user proxy for job %s" % jobID)
       return S_ERROR("Failed to store the user proxy for job %s" % jobID)

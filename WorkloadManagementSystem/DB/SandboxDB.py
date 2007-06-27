@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/SandboxDB.py,v 1.1 2007/05/13 21:15:32 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/SandboxDB.py,v 1.2 2007/06/27 12:36:17 atsareg Exp $
 ########################################################################
 """ SandboxDB class is a simple storage using MySQL as a container for
     relatively small sandbox files. The file size is limited to 16MB.
@@ -10,26 +10,24 @@
     getWMSTimeStamps()    
 """    
 
-__RCSID__ = "$Id: SandboxDB.py,v 1.1 2007/05/13 21:15:32 atsareg Exp $"
+__RCSID__ = "$Id: SandboxDB.py,v 1.2 2007/06/27 12:36:17 atsareg Exp $"
 
 import re, os, sys
 import time, datetime
 from types import *
 
-from DIRAC                                     import gLogger, gConfig, S_OK, S_ERROR
-from BaseDB import BaseDB
-  
-# Here for debugging purpose; should be initialized by the containing component
-gLogger.initialize('WMS','/Databases/SandboxDB/Test') 
+from DIRAC  import gLogger, S_OK, S_ERROR
+from DIRAC.ConfigurationSystem.Client.Config import gConfig
+from DIRAC.Core.Base.DB import DB  
 
 #############################################################################
-class SandboxDB(BaseDB):
+class SandboxDB(DB):
 
-  def __init__( self, systemInstance='Default', maxQueueSize=10 ):
+  def __init__( self, maxQueueSize=10 ):
     """ Standard Constructor
     """
 
-    BaseDB.__init__(self,'SandboxDB',systemInstance,maxQueueSize)
+    DB.__init__(self,'ISandboxDB','WorkloadManagement/SandboxDB',maxQueueSize)
 
 #############################################################################
   def storeSandboxFile(self,jobID,filename,body,sandbox='in'):  
