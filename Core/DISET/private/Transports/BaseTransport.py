@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/BaseTransport.py,v 1.12 2007/06/26 10:11:28 acasajus Exp $
-__RCSID__ = "$Id: BaseTransport.py,v 1.12 2007/06/26 10:11:28 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/BaseTransport.py,v 1.13 2007/06/27 18:19:25 acasajus Exp $
+__RCSID__ = "$Id: BaseTransport.py,v 1.13 2007/06/27 18:19:25 acasajus Exp $"
 
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR
 from DIRAC.Core.DISET.private.Transports.DEncode import encode, decode
@@ -46,9 +46,9 @@ class BaseTransport:
   def _write( self, sBuffer ):
     self.oSocket.send( sBuffer )
 
-  def _read( self ):
+  def _read( self, bufSize = 4096 ):
     try:
-      return self.oSocket.recv( self.packetSize )
+      return self.oSocket.recv( bufSize )
     except socket.error:
       return ""
 
@@ -61,7 +61,7 @@ class BaseTransport:
       while packSentBytes < bytesToSend:
         sentBytes = self.oSocket.send( dataToSend[ index + packSentBytes : index + bytesToSend ] )
         if sentBytes == 0:
-          raise Exception( "ASD" )
+          raise Exception( "Connection closed by peer" )
         packSentBytes += sentBytes
 
 
@@ -69,9 +69,9 @@ class BaseTransport:
     try:
       iSeparatorPosition = self.byteStream.find( ":" )
       while iSeparatorPosition == -1:
-        sReadData = self._read()
+        sReadData = self._read( 1024 )
         if sReadData == "":
-          break
+          return S_ERROR( "Connection closed by peer" )
         self.byteStream += sReadData
         iSeparatorPosition = self.byteStream.find( ":" )
         if iMaxLength and len( self.byteStream ) > iMaxLength and iSeparatorPosition == -1 :
@@ -79,7 +79,7 @@ class BaseTransport:
       size = int( self.byteStream[ :iSeparatorPosition ] )
       self.byteStream = self.byteStream[ iSeparatorPosition+1: ]
       while len( self.byteStream ) < size:
-        self.byteStream += self._read()
+        self.byteStream += self._read( size - len( self.byteStream ) )
         if iMaxLength and len( self.byteStream ) > iMaxLength:
           raise RuntimeError( "Read limit exceeded (%s chars)" % iMaxLength )
       data = self.byteStream[ :size ]
