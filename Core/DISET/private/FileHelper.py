@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/FileHelper.py,v 1.10 2007/06/28 09:48:33 acasajus Exp $
-__RCSID__ = "$Id: FileHelper.py,v 1.10 2007/06/28 09:48:33 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/FileHelper.py,v 1.11 2007/06/28 12:47:13 acasajus Exp $
+__RCSID__ = "$Id: FileHelper.py,v 1.11 2007/06/28 12:47:13 acasajus Exp $"
 
 import os
 import md5
@@ -217,11 +217,11 @@ class FileHelper:
         entries.append( tarInfo.name )
       tar.close()
       filePipe.close()
-      self.oTransport.sendData( S_OK( entries ) )
+      return S_OK( entries )
     except tarfile.ReadError, v:
-      self.oTransport.sendData( S_ERROR( "Error reading bulk: %s" % str( v ) ) )
+      return S_ERROR( "Error reading bulk: %s" % str( v ) )
     except tarfile.CompressionError, v:
-      self.oTransport.sendData( S_ERROR( "Error in bulk compression setting: %s" % str( v ) ) )
+      return S_ERROR( "Error in bulk compression setting: %s" % str( v ) )
     except Exception, v:
-      self.oTransport.sendData( S_ERROR( "Error in listing bulk: %s" % str( v )  ) )
+      return S_ERROR( "Error in listing bulk: %s" % str( v )  )
 
