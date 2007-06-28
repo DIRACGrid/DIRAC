@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/test/test_MySQL,v 1.3 2007/05/14 18:27:09 acasajus Exp $
-__RCSID__ = "$Id: test_MySQL,v 1.3 2007/05/14 18:27:09 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/test/test_MySQL,v 1.4 2007/06/28 13:43:06 rgracian Exp $
+__RCSID__ = "$Id: test_MySQL,v 1.4 2007/06/28 13:43:06 rgracian Exp $"
 """
 """
-from dirac import DIRAC
+from DIRACEnvironment import DIRAC
 import time
 from DIRAC.Core.Utilities.MySQL              import MySQL
 
@@ -11,6 +11,7 @@ nThread = 3
 nRetrieval = 100000
 
 DIRAC.gLogger.initialize('test_MySQL','/testSectionVerbose')
+# DIRAC.gLogger.initialize('test_MySQL','/testSection')
 
 class MyDB( MySQL ):
 
@@ -59,10 +60,51 @@ class MyDB( MySQL ):
     if not retDict['OK'] : return retDict
     return DIRAC.S_OK()
 
-DB = MyDB( 'Ricardo', 'lhcb', 'CKM-best', 'lhcb_test', nThread )
+DB = MyDB( 'Ricardo', 'Dirac', 'CKM-best', 'test', nThread )
+
+testMajorStatusTable = {'Table':       'State',
+                        'Description': 'VARCHAR(128)'}
+testMinorStatusTable = {'Table':       'State',
+                        'Description': 'VARCHAR(128)'}
+testTable = { 'Id':         'INT NOT NULL AUTO_INCREMENT',
+              'Name':       'VARCHAR(128)',
+              'MajorState': testMajorStatusTable, 
+              'MinorState': testMajorStatusTable, 
+							'Site':       'VARCHAR(128)',
+              }
+
+testTableIndexDict = { 'Site': ['`Site`']}
+
+testKeys  = [ 'Id' ]
+
+tableDict = {'test': {'Fields': { 'ID':   'INT NOT NULL AUTO_INCREMENT',
+                                  'Name': 'VARCHAR(128)',
+                                },
+                      'ForeignKeys': { 'Name': 'Site',
+                                       'Major': 'Status',
+                                       'Minor': 'Status',
+                                       'Application': 'Status', 
+                                     },
+                      'PrimaryKey': 'ID',
+                      'Indexes': { 'test': ['`Name`','`ID`'] }
+                      }, 
+              'Site': {'Fields': { 'Name': 'VARCHAR(128)',
+                                 },
+                      },
+              'Status': {'Fields': { 'Major': 'VARCHAR(24)',
+                                     'Minor': 'VARCHAR(24)',
+                                     'Application': 'VARCHAR(128)',
+                                   },
+                        }
+            }
+
+# print DB._createTables( tableDict , force = True )
+
+# DIRAC.exit()
 
 import threading
 semaphore = threading.Semaphore(nThread)
+lock = threading.Lock()
 
 Success = 0
 Error   = 0
@@ -105,10 +147,14 @@ def testRetrieve( id ):
   
   retDict = DB.retrieve( id )
   while not retDict['OK']:
+    lock.acquire()
     Error += 1
+    lock.release()
     retDict = DB.retrieve( id )
   if retDict['Value'] == ((str(id),),): 
+    lock.acquire()
     Success += 1
+    lock.release()
   else:
     DIRAC.gLogger.error(id)
   semaphore.release()
