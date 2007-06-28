@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.16 2007/06/28 13:51:13 acasajus Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.16 2007/06/28 13:51:13 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.17 2007/06/28 13:51:36 acasajus Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.17 2007/06/28 13:51:36 acasajus Exp $"
 
 import DIRAC
 from DIRAC.Core.DISET.private.Protocols import gProtocolDict
@@ -32,7 +32,6 @@ class BaseClient:
       else:
         return retVal
     except:
-      gLogger.exception()
       gLogger.error( "URL is malformed", "%s is not valid" % self.sURL)
       return S_ERROR( "URL is malformed" )
     if groupToUse:
