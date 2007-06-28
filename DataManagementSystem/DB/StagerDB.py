@@ -12,7 +12,7 @@ gLogger.initialize('DMS','/Databases/StagerDB/Test')
 class StagerDB(DB):
 
   def __init__(self, systemInstance='Default', maxQueueSize=10 ):
-    DB.__init__(self,'StagerDB',systemInstance,maxQueueSize)
+    DB.__init__(self,'StagerDB','DataManagement/StagerDB',maxQueueSize)
 
   def setTiming(self,site,cmd,time,files):
     """
