@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.13 2007/06/26 11:33:42 acasajus Exp $
-__RCSID__ = "$Id: Server.py,v 1.13 2007/06/26 11:33:42 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.14 2007/06/28 10:40:52 acasajus Exp $
+__RCSID__ = "$Id: Server.py,v 1.14 2007/06/28 10:40:52 acasajus Exp $"
 
 import socket
 import sys
@@ -79,7 +79,7 @@ class Server:
   def serve( self ):
     gLogger.info( "Handler up", "Serving from %s" % self.serviceURL )
     while True:
-      gLogger.verbose( "Active thread jobs %s" % self.threadPool.numWorkingThreads() )
+      gLogger.debug( "Active thread jobs %s" % self.threadPool.numWorkingThreads() )
       self.__handleRequest()
       #self.threadPool.processResults()
 
