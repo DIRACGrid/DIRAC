@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/TransferClient.py,v 1.9 2007/06/28 10:56:39 acasajus Exp $
-__RCSID__ = "$Id: TransferClient.py,v 1.9 2007/06/28 10:56:39 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/TransferClient.py,v 1.10 2007/06/28 12:48:55 acasajus Exp $
+__RCSID__ = "$Id: TransferClient.py,v 1.10 2007/06/28 12:48:55 acasajus Exp $"
 
 import tarfile
 import threading
@@ -35,9 +35,12 @@ class TransferClient( BaseClient ):
     if not retVal[ 'OK' ]:
       return retVal
     fileHelper.setTransport( self.transport )
-    response = fileHelper.FDToNetwork( fd )
+    retVal = fileHelper.FDToNetwork( fd )
+    if not retVal[ 'OK' ]:
+      return retVal
+    retVal = self.transport.receiveData()
     self.transport.close()
-    return response
+    return retVal
 
   def receiveFile( self, filename, fileId, token = ""):
     fileHelper = FileHelper()
@@ -49,9 +52,12 @@ class TransferClient( BaseClient ):
     if not retVal[ 'OK' ]:
       return retVal
     fileHelper.setTransport( self.transport )
-    response = fileHelper.networkToFD( fd )
+    retVal = fileHelper.networkToFD( fd )
+    if not retVal[ 'OK' ]:
+      return retVal
+    retVal = self.transport.receiveData()
     self.transport.close()
-    return response
+    return retVal
 
   def __checkFileList( self, fileList ):
     bogusEntries = []
@@ -72,9 +78,12 @@ class TransferClient( BaseClient ):
     if not retVal[ 'OK' ]:
       return retVal
     fileHelper = FileHelper( self.transport )
-    response = fileHelper.bulkToNetwork( fileList, compress )
+    retVal = fileHelper.bulkToNetwork( fileList, compress )
+    if not retVal[ 'OK' ]:
+      return retVal
+    retVal = self.transport.receiveData()
     self.transport.close()
-    return response
+    return retVal
 
   def receiveBulk( self, destDir, bulkId, token = "", compress = True ):
     if not os.path.isdir( destDir ):
@@ -87,9 +96,12 @@ class TransferClient( BaseClient ):
     if not retVal[ 'OK' ]:
       return retVal
     fileHelper = FileHelper( self.transport )
-    response = fileHelper.networkToBulk( destDir, compress )
+    retVal = fileHelper.networkToBulk( destDir, compress )
+    if not retVal[ 'OK' ]:
+      return retVal
+    retVal = self.transport.receiveData()
     self.transport.close()
-    return response
+    return retVal
 
   def listBulk( self, bulkId, token = "", compress = True ):
     if compress:
