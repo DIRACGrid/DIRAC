@@ -1,8 +1,8 @@
-# $Id: WorkflowReader.py,v 1.4 2007/06/26 17:17:46 gkuznets Exp $
+# $Id: WorkflowReader.py,v 1.5 2007/06/28 13:49:46 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.4 $"
+__RCSID__ = "$Revision: 1.5 $"
 
 #try: # this part to inport as part of the DIRAC framework
 from DIRAC.Core.Workflow.Parameter import *
@@ -139,11 +139,12 @@ class WorkflowXMLHandler(ContentHandler):
     self.strings.append(content)
 
 def fromXMLString(xml_string):
-  #parser = xml.sax.make_parser()
   handler = WorkflowXMLHandler()
   xml.sax.parseString(xml_string, handler)
-
-  #print xml_string
-  #print xml.dom.getDOMImplementation()
-  #handler.root.updateParents()
   return handler.root
+
+def fromXMLFile(xml_file):
+  handler = WorkflowXMLHandler()
+  xml.sax.parse(xml_file, handler)
+  return handler.root
+

@@ -1,8 +1,8 @@
-# $Id: Step.py,v 1.9 2007/06/26 17:17:46 gkuznets Exp $
+# $Id: Step.py,v 1.10 2007/06/28 13:49:46 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.9 $"
+__RCSID__ = "$Revision: 1.10 $"
 
 #try: # this part to inport as part of the DIRAC framework
 from DIRAC.Core.Workflow.Parameter import *
@@ -57,9 +57,6 @@ class StepDefinition(AttributeCollection):
             ret = ret + 'Module definitions shared in Workflow\n'
         ret = ret + str(self.module_instances)
         return ret
-
-    def toXMLString(self):
-        return ''.join(self.toXML())
 
     def toXML(self):
         ret = ['<StepDefinition>\n']

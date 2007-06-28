@@ -1,8 +1,8 @@
-# $Id: Workflow.py,v 1.8 2007/06/26 17:11:27 gkuznets Exp $
+# $Id: Workflow.py,v 1.9 2007/06/28 13:49:46 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.8 $"
+__RCSID__ = "$Revision: 1.9 $"
 
 #try: # this part to inport as part of the DIRAC framework
 from DIRAC.Core.Workflow.Parameter import *
@@ -56,9 +56,6 @@ class Workflow(AttributeCollection):
     ret = ret + str(self.step_instances)
     ret = ret + str(self.module_definitions)
     return ret
-
-  def toXMLString(self):
-    return ''.join(self.toXML())
 
   def toXML(self):
     # THIS is very importatnt that Definitions should be written before instances

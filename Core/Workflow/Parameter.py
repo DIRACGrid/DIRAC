@@ -1,8 +1,8 @@
-# $Id: Parameter.py,v 1.4 2007/06/26 17:11:26 gkuznets Exp $
+# $Id: Parameter.py,v 1.5 2007/06/28 13:49:46 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.4 $"
+__RCSID__ = "$Revision: 1.5 $"
 
 # unbinded method, returns indentation string
 def indent(indent=0):
@@ -377,6 +377,17 @@ class AttributeCollection(dict):
         for v in self.keys():
             ret=ret+v+' = '+str(self[v])+'\n'
         return ret
+
+    def toXMLString(self):
+        return ''.join(self.toXML())
+
+    def toXMLFile(self, filename):
+        f = open(filename,'w+')
+        sarray = self.toXML()
+        for element in sarray:
+            f.write(element)
+        f.close()
+        return
 
     def toXML(self):
         ret = []

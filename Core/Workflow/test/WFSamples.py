@@ -1,8 +1,8 @@
-# $Id: WFSamples.py,v 1.9 2007/06/26 17:19:55 gkuznets Exp $
+# $Id: WFSamples.py,v 1.10 2007/06/28 13:49:46 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.9 $"
+__RCSID__ = "$Revision: 1.10 $"
 
 # $Source: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Workflow/test/WFSamples.py,v $
 
@@ -194,8 +194,9 @@ w1.findParameter('final').link('si2','result')
 #w1.execute()
 #print w1.toXMLString()
 s = w1.toXMLString()
-print s
-w4 = fromXMLString(s)
+w1.toXMLFile("c:/test.xml")
+#print s
+#w4 = fromXMLString(s)
 #print w4
 #import pickle
 #output = open('D:\gennady\workspace\Workflow\wf.pkl', 'wb')
