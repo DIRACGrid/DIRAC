@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: SandboxHandler.py,v 1.1 2007/06/27 15:22:41 atsareg Exp $
+# $Id: SandboxHandler.py,v 1.2 2007/06/28 13:36:59 atsareg Exp $
 ########################################################################
 
 """ SandboxHandler is the implementation of the Sandbox service
@@ -12,16 +12,18 @@
     
 """
 
-__RCSID__ = "$Id: SandboxHandler.py,v 1.1 2007/06/27 15:22:41 atsareg Exp $"
+__RCSID__ = "$Id: SandboxHandler.py,v 1.2 2007/06/28 13:36:59 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.WorkloadManagementSystem.DB.SandboxDB import SandboxDB
+from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 
 # This is a global instance of the JobDB class
 sandboxDB = False
+jobDB = False
 sandbox_type = "Unknown"
 
 def initializeSandboxHandler(serviceInfo):
@@ -38,6 +40,7 @@ def initializeSandboxHandler(serviceInfo):
     return S_ERROR('Uknown sandbox service '+sandbox_type)  
   
   sandboxDB = SandboxDB()
+  jobDB = JobDB()
   return S_OK()
 
 class SandboxHandler(RequestHandler):
@@ -120,3 +123,19 @@ class SandboxHandler(RequestHandler):
       return result
     
     return S_OK()
+    
+  types_setSandboxReady = [ IntType, StringType ]
+  def export_setSandboxReady(self,jobID,stype="Input"):
+    """  Set the sandbox ready for the job with jobID
+    """   
+    
+    return jobDB.setSandboxReady(jobID,stype)
+    
+  types_setSandboxReady = [ IntType, StringType ]
+  def export_removeFile(self,jobID,fname,stype="Input"):  
+    """ Remove sandbox file
+    """
+    
+    
+    
+    
