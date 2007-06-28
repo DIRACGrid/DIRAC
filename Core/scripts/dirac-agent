@@ -1,18 +1,18 @@
 #!/usr/bin/env python
 ################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/Attic/dirac-agent,v 1.6 2007/05/17 18:02:03 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/Attic/dirac-agent,v 1.7 2007/06/28 12:43:38 atsareg Exp $
 ################################################################
 
 """  This is a script to launch DIRAC agents
 """
 
-__RCSID__ = "$Id: dirac-agent,v 1.6 2007/05/17 18:02:03 paterson Exp $"
+__RCSID__ = "$Id: dirac-agent,v 1.7 2007/06/28 12:43:38 atsareg Exp $"
 
 import sys
 from DIRACEnvironment import DIRAC
 from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
 from DIRAC import gLogger, gConfig
-from DIRAC.Core.Agent.AgentBase import Agent
+from DIRAC.Core.Base.Agent import createAgent
 
 localCfg = LocalConfiguration()
 
@@ -31,5 +31,5 @@ if not resultDict[ 'OK' ]:
   gLogger.error( "There were errors when loading configuration", resultDict[ 'Message' ] )
   sys.exit(1)
 
-agent = Agent(agentName)
+agent = createAgent(agentName)
 agent.run()
