@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/FileHelper.py,v 1.9 2007/06/27 18:22:09 acasajus Exp $
-__RCSID__ = "$Id: FileHelper.py,v 1.9 2007/06/27 18:22:09 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/FileHelper.py,v 1.10 2007/06/28 09:48:33 acasajus Exp $
+__RCSID__ = "$Id: FileHelper.py,v 1.10 2007/06/28 09:48:33 acasajus Exp $"
 
 import os
 import md5
@@ -14,12 +14,15 @@ gLogger = gLogger.getSubLogger( "FileTransmissionHelper" )
 
 class FileHelper:
 
-  def __init__( self, oTransport ):
+  def __init__( self, oTransport = None ):
     self.oTransport = oTransport
     self.oMD5 = md5.new()
     self.bFinishedTransmission = False
     self.bReceivedEOF = False
     self.packetSize = 1048576
+
+  def setTransport( self, oTransport ):
+    self.oTransport = oTransport
 
   def sendData( self, sBuffer ):
     self.oMD5.update( sBuffer )
@@ -168,7 +171,7 @@ class FileHelper:
     tar.close()
     filePipe.close()
 
-  def tarToNetwork( self, fileList, compress = True ):
+  def bulkToNetwork( self, fileList, compress = True ):
     rPipe, wPipe = os.pipe()
     thrd = threading.Thread( target = self.__createTar, args = ( fileList, wPipe, compress ) )
     thrd.start()
@@ -191,7 +194,7 @@ class FileHelper:
     retList.append( self.networkToFD( wPipe ) )
     os.close( wPipe )
 
-  def networkToTar( self, destDir, compress = True ):
+  def networkToBulk( self, destDir, compress = True ):
     retList = []
     rPipe, wPipe = os.pipe()
     thrd = threading.Thread( target = self.__receiveToPipe, args = ( wPipe, retList) )
@@ -201,3 +204,24 @@ class FileHelper:
     except Exception, e:
       return S_ERROR( "Error while extracting bulk: %s" % e)
     return retList[0]
+
+  def bulkListToNetwork( self, iFD, compress = True ):
+    filePipe = os.fdopen( iFD, "r" )
+    try:
+      tarMode = "r|"
+      if compress:
+        tarMode = "r|bz2"
+      entries = []
+      tar = tarfile.open( mode = tarMode, fileobj = filePipe )
+      for tarInfo in tar:
+        entries.append( tarInfo.name )
+      tar.close()
+      filePipe.close()
+      self.oTransport.sendData( S_OK( entries ) )
+    except tarfile.ReadError, v:
+      self.oTransport.sendData( S_ERROR( "Error reading bulk: %s" % str( v ) ) )
+    except tarfile.CompressionError, v:
+      self.oTransport.sendData( S_ERROR( "Error in bulk compression setting: %s" % str( v ) ) )
+    except Exception, v:
+      self.oTransport.sendData( S_ERROR( "Error in listing bulk: %s" % str( v )  ) )
+

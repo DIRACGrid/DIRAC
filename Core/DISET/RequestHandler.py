@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.19 2007/06/27 18:22:09 acasajus Exp $
-__RCSID__ = "$Id: RequestHandler.py,v 1.19 2007/06/27 18:22:09 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.20 2007/06/28 09:48:33 acasajus Exp $
+__RCSID__ = "$Id: RequestHandler.py,v 1.20 2007/06/28 09:48:33 acasajus Exp $"
 
 import types
 from DIRAC.Core.DISET.private.FileHelper import FileHelper
@@ -31,7 +31,7 @@ class RequestHandler:
     elif actionType == "FileTransfer":
       retVal = self.__doFileTransfer( actionTuple[1] )
     else:
-      raise RuntimeException( "Unknown action (%s)" % action )
+      raise Exception( "Unknown action (%s)" % action )
     if not retVal:
       message = "Method %s for action %s does not have a return value!" % ( actionTuple[1], actionTuple[0] )
       gLogger.error( message )
@@ -51,12 +51,12 @@ class RequestHandler:
       gLogger.error( "Error while receiving file description", retVal[ 'Message' ] )
       return S_ERROR( "Error while receiving file description: %s" % retVal[ 'Message' ] )
     fileInfo = retVal[ 'Value' ]
-    self.__logRemoteQuery( "FileTransfer/%s" % sDirection, fileInfo )
     sDirection = "%s%s" % ( sDirection[0].lower(), sDirection[1:] )
     if "transfer_%s" % sDirection not in dir( self ):
       self.transport.sendData( S_ERROR( "Service can't transfer files %s" % sDirection ) )
       return
-    self.transport.sendData( S_OK() )
+    self.transport.sendData( S_OK( "Accepted" ) )
+    self.__logRemoteQuery( "FileTransfer/%s" % sDirection, fileInfo )
     fileHelper = FileHelper( self.transport )
     if sDirection == "fromClient":
       uRetVal = self.transfer_fromClient( fileInfo[0], fileInfo[1], fileHelper )
@@ -66,6 +66,8 @@ class RequestHandler:
       uRetVal = self.transfer_bulkFromClient( fileInfo[0], fileHelper )
     elif sDirection == "bulkToClient" :
       uRetVal = self.transfer_bulkToClient( fileInfo[0], fileHelper )
+    elif sDirection == "listBulk" :
+      uRetVal = self.transfer_listBulk( fileInfo[0], fileHelper )
     else:
       return S_ERROR( "Direction %s does not exist!!!" % sDirection )
     if not fileHelper.finishedTransmission():
@@ -173,19 +175,25 @@ class RequestHandler:
     dInfo = {}
     dInfo[ 'time' ] = Time.toString()
     #Uptime
-    oFD = file( "/proc/uptime" )
-    iUptime = long( float( oFD.readline().split()[0].strip() ) )
-    oFD.close()
-    iDays = iUptime / ( 86400 )
-    iHours = iUptime / 3600  - iDays * 24
-    iMinutes = iUptime / 60 - iHours * 60 - iDays * 1440
-    iSeconds = iUptime - iMinutes * 60- iHours * 3600 - iDays * 86400
-    dInfo[ 'uptime' ] = "%dd %02d:%02d:%02d" % ( iDays, iHours, iMinutes, iSeconds)
+    try:
+      oFD = file( "/proc/uptime" )
+      iUptime = long( float( oFD.readline().split()[0].strip() ) )
+      oFD.close()
+      iDays = iUptime / ( 86400 )
+      iHours = iUptime / 3600  - iDays * 24
+      iMinutes = iUptime / 60 - iHours * 60 - iDays * 1440
+      iSeconds = iUptime - iMinutes * 60- iHours * 3600 - iDays * 86400
+      dInfo[ 'uptime' ] = "%dd %02d:%02d:%02d" % ( iDays, iHours, iMinutes, iSeconds)
+    except:
+      pass
     #Load average
-    oFD = file( "/proc/loadavg" )
-    sLine = oFD.readline()
-    oFD.close()
-    dInfo[ 'load' ] = " ".join( sLine.split()[:3] )
+    try:
+      oFD = file( "/proc/loadavg" )
+      sLine = oFD.readline()
+      oFD.close()
+      dInfo[ 'load' ] = " ".join( sLine.split()[:3] )
+    except:
+      pass
     dInfo[ 'name' ] = self.serviceInfoDict[ 'serviceName' ]
 
     return S_OK( dInfo )

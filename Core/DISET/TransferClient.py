@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/TransferClient.py,v 1.7 2007/06/27 18:22:09 acasajus Exp $
-__RCSID__ = "$Id: TransferClient.py,v 1.7 2007/06/27 18:22:09 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/TransferClient.py,v 1.8 2007/06/28 09:48:33 acasajus Exp $
+__RCSID__ = "$Id: TransferClient.py,v 1.8 2007/06/28 09:48:33 acasajus Exp $"
 
 import tarfile
 import threading
@@ -11,44 +11,44 @@ from DIRAC.Core.Utilities import File
 
 class TransferClient( BaseClient ):
 
-  def sendFile( self, filename, fileId ):
+  def __sendTransferHeader( self, actionName, fileInfo ):
     retVal = self._connect()
     if not retVal[ 'OK' ]:
       return retVal
-    fileHelper = FileHelper( self.transport )
+    #FFC -> File from Client
+    retVal = self._proposeAction( ( "FileTransfer", actionName ) )
+    if not retVal[ 'OK' ]:
+      return retVal
+    self.transport.sendData( S_OK( fileInfo ) )
+    retVal = self.transport.receiveData()
+    if not retVal[ 'OK' ]:
+      return retVal
+    return S_OK()
+
+  def sendFile( self, filename, fileId ):
+    fileHelper = FileHelper()
     retVal = fileHelper.getFileDescriptor( filename, "r" )
     if not retVal[ 'OK' ]:
       return retVal
     fd = retVal[ 'Value' ]
-    #FFC -> File from Client
-    retVal = self._proposeAction( ( "FileTransfer", "FromClient" ) )
+    retVal = self.__sendTransferHeader( "FromClient", ( fileId, File.getSize( filename ) ) )
     if not retVal[ 'OK' ]:
       return retVal
-    self.transport.sendData( S_OK( ( fileId, File.getSize( filename ) ) ) )
-    retVal = self.transport.receiveData()
-    if not retVal[ 'OK' ]:
-      return retVal
+    fileHelper.setTransport( self.transport )
     response = fileHelper.FDToNetwork( fd )
     self.transport.close()
     return response
 
   def receiveFile( self, filename, fileId ):
-    retVal = self._connect()
-    if not retVal[ 'OK' ]:
-      return retVal
-    fileHelper = FileHelper( self.transport )
+    fileHelper = FileHelper()
     retVal = fileHelper.getFileDescriptor( filename, "w" )
     if not retVal[ 'OK' ]:
       return retVal
     fd = retVal[ 'Value' ]
-    #FTC -> File To Client
-    retVal = self._proposeAction( ( "FileTransfer", "ToClient" ) )
+    retVal = self.__sendTransferHeader( "ToClient", ( fileId, ) )
     if not retVal[ 'OK' ]:
       return retVal
-    self.transport.sendData( S_OK( ( fileId, ) ) )
-    retVal = self.transport.receiveData()
-    if not retVal[ 'OK' ]:
-      return retVal
+    fileHelper.setTransport( self.transport )
     response = fileHelper.networkToFD( fd )
     self.transport.close()
     return response
@@ -61,48 +61,44 @@ class TransferClient( BaseClient ):
     return bogusEntries
 
   def sendBulk( self, fileList, bulkId, compress = True ):
-    retVal = self._connect()
-    if not retVal[ 'OK' ]:
-      return retVal
     bogusEntries = self.__checkFileList( fileList )
     if bogusEntries:
       return S_ERROR( "Some files or directories don't exist :\n\t%s" % "\n\t".join( bogusEntries ) )
-    #FFC -> File from Client
-    retVal = self._proposeAction( ( "FileTransfer", "BulkFromClient" ) )
-    if not retVal[ 'OK' ]:
-      return retVal
     if compress:
       bulkId = "%s.tar.bz2" % bulkId
     else:
       bulkId = "%s.tar" % bulkId
-    self.transport.sendData( S_OK( ( bulkId, ) ) )
-    retVal = self.transport.receiveData()
+    retVal = self.__sendTransferHeader( "BulkFromClient", ( bulkId, ) )
     if not retVal[ 'OK' ]:
       return retVal
     fileHelper = FileHelper( self.transport )
-    response = fileHelper.tarToNetwork( fileList, compress )
+    response = fileHelper.bulkToNetwork( fileList, compress )
     self.transport.close()
     return response
 
   def receiveBulk( self, destDir, bulkId, compress = True ):
-    retVal = self._connect()
-    if not retVal[ 'OK' ]:
-      return retVal
     if not os.path.isdir( destDir ):
       return S_ERROR( "%s is not a directory for bulk receival" % destDir )
-    #FFC -> File from Client
-    retVal = self._proposeAction( ( "FileTransfer", "BulkToClient" ) )
-    if not retVal[ 'OK' ]:
-      return retVal
     if compress:
       bulkId = "%s.tar.bz2" % bulkId
     else:
       bulkId = "%s.tar" % bulkId
-    self.transport.sendData( S_OK( ( bulkId, ) ) )
-    retVal = self.transport.receiveData()
+    retVal = self.__sendTransferHeader( "BulkToClient", ( bulkId, ) )
     if not retVal[ 'OK' ]:
       return retVal
     fileHelper = FileHelper( self.transport )
-    response = fileHelper.networkToTar( destDir, compress )
+    response = fileHelper.networkToBulk( destDir, compress )
+    self.transport.close()
+    return response
+
+  def listBulk( self, bulkId, compress = True ):
+    if compress:
+      bulkId = "%s.tar.bz2" % bulkId
+    else:
+      bulkId = "%s.tar" % bulkId
+    retVal = self.__sendTransferHeader( "ListBulk", ( bulkId, ) )
+    if not retVal[ 'OK' ]:
+      return retVal
+    response = self.transport.receiveData( 1048576 )
     self.transport.close()
     return response
