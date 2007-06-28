@@ -10,7 +10,6 @@ CREATE DATABASE StagerDB;
 
 -- Create user DIRAC
 use mysql;
-GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON StagerDB.* TO 'Dirac'@'marlhcb9.in2p3.fr' IDENTIFIED BY 'lhcbMySQL';
 GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON StagerDB.* TO 'Dirac'@'localhost' IDENTIFIED BY 'lhcbMySQL';
 GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON StagerDB.* TO 'Dirac'@'%' IDENTIFIED BY 'lhcbMySQL';
 
@@ -31,8 +30,8 @@ CREATE TABLE SiteFiles(
    JobID varchar(32) NOT NULL,
    Retry integer DEFAULT 0,
    Setup varchar(32) NOT NULL,
-   PRIMARY KEY (LFN, Site,JobID,Setup)
-   INDEX (Site,JobID,Status,Setup)
+   PRIMARY KEY (LFN, Site,JobID),
+   INDEX (Status,Setup)
 );
 
 DROP TABLE IF EXISTS MetaTimeRepository;
