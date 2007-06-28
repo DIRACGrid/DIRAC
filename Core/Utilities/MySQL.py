@@ -1,7 +1,7 @@
 ########################################################################
-# $Id: MySQL.py,v 1.4 2007/06/27 16:35:03 acsmith Exp $
+# $Id: MySQL.py,v 1.5 2007/06/28 10:53:57 atsareg Exp $
 ########################################################################
-""" DIRAC Basic MySQL Class 
+""" DIRAC Basic MySQL Class
     It provides access to the basic MySQL methods in a multithread-safe mode
     keeping used connections in a python Queue for further reuse.
 
@@ -12,7 +12,7 @@
     Initializes the Queue and tries to connect to the DB server,
     using the _connect method.
     "maxConnsInQueue" defines the size of the Queue of open connections
-    that are kept for reuse. It also defined the maximum number of open 
+    that are kept for reuse. It also defined the maximum number of open
     connections available from the object.
     maxConnsInQueue = 0 means unlimited and it is not supported.
 
@@ -20,7 +20,7 @@
     _except( methodName, exception, errorMessage )
 
     Helper method for exceptions: the "methodName" and the "errorMessage"
-    are printed with ERROR level, then the "exception" is printed (with 
+    are printed with ERROR level, then the "exception" is printed (with
     full description if it is a MySQL Exception) and S_ERROR is returned
     with the errorMessage and the exception.
 
@@ -32,11 +32,11 @@
 
 
     _query( cmd, [conn] )
-    
+
     Executes SQL command "cmd".
-    Gets a connection from the Queue (or open a new one if none is available), 
+    Gets a connection from the Queue (or open a new one if none is available),
     the used connection is  back into the Queue.
-    If a connection to the the DB is passed as second argument this connection 
+    If a connection to the the DB is passed as second argument this connection
     is used and is not  in the Queue.
     Returns S_OK with fetchall() out in Value or S_ERROR upon failure.
 
@@ -44,14 +44,14 @@
     _update( cmd, [conn] )
 
     Executes SQL command "cmd" and issue a commit
-    Gets a connection from the Queue (or open a new one if none is available), 
+    Gets a connection from the Queue (or open a new one if none is available),
     the used connection is  back into the Queue.
-    If a connection to the the DB is passed as second argument this connection 
+    If a connection to the the DB is passed as second argument this connection
     is used and is not  in the Queue
     Returns S_OK with number of updated registers in Value or S_ERROR upon failure.
 
     _createTables( tableDict )
-    
+
     Create a new Table in the DB
 
 
@@ -67,21 +67,23 @@
     String type values in inValues are properly escaped.
 
     _getConnection()
-    
+
     Gets a connection from the Queue (or open a new one if none is available)
     Returns S_OK with connection in Value or S_ERROR
     the calling method is responsible for closing this connection once it is no
     longer needed.
 
-"""    
+"""
 
-__RCSID__ = "$Id: MySQL.py,v 1.4 2007/06/27 16:35:03 acsmith Exp $"
+__RCSID__ = "$Id: MySQL.py,v 1.5 2007/06/28 10:53:57 atsareg Exp $"
 
 
 from DIRAC                                  import gLogger
 from DIRAC                                  import S_OK, S_ERROR
 
 import MySQLdb
+# This is for proper initialization of embeded server, it should only be called once
+MySQLdb.server_init(['--defaults-file=/opt/dirac/etc/my.cnf','--datadir=/opt/mysql/db'],['mysqld'])
 
 import Queue
 import time
@@ -100,19 +102,17 @@ class MySQL:
     """
     set MySQL connection parameters and try to connect
     """
- 
+
     self.__initialized = False
     self._connected = False
-    
+
     try:
       # This allows derived classes from MySQL to define their onw
       # self.logger and will not be overwritten.
       test = self.logger
     except:
       self.logger = gLogger.getSubLogger( 'MySQL' )
-    
-    MySQLdb.server_init(['--defaults-file=/opt/dirac/etc/my.cnf','--datadir=/opt/mysql/db'],['mysqld'])
-    
+
     # let the derived class decide what to do with if is not 1
     self._threadsafe = MySQLdb.thread_safe()
     self.logger.verbose( 'thread_safe = %s' % self._threadsafe )
@@ -130,7 +130,7 @@ class MySQL:
 
     self.__initialized = True
     self._connect()
-    
+
 
   def __del__( self ):
 
@@ -164,7 +164,7 @@ class MySQL:
     try:
       raise v
     except MySQLdb.Error,e:
-      self.logger.error( '%s: %s' % ( methodName, err ), 
+      self.logger.error( '%s: %s' % ( methodName, err ),
                      '%d: %s' % ( e.args[0], e.args[1] ) )
       return S_ERROR( '%s: ( %d: %s )' % ( err, e.args[0], e.args[1] ) )
     except Exception,x:
@@ -180,7 +180,7 @@ class MySQL:
 
 
   def __escapeString( self, s, connection ):
-    """ 
+    """
     To be used for escaping any MySQL string before passing it to the DB
     this should prevent passing non-MySQL acepted characters to the DB
     It also includes quotation marks " around the given string
@@ -226,13 +226,13 @@ class MySQL:
 
     return retDict
 
- 
+
   def _escapeValues( self, inValues = [] ):
     """
     Escapes all strings in the list of values provided
     """
     self.logger.verbose( '_escapeValues:', '%s' % inValues )
-    
+
     retDict = self.__getConnection()
     if not retDict['OK'] : return retDict
     connection = retDict['Value']
@@ -250,12 +250,12 @@ class MySQL:
         inEscapeValues.append( str( value )  )
     self.__putConnection(connection)
     return S_OK( inEscapeValues )
-  
+
 
   def _connect( self ):
     """
     open connection to MySQL DB and put Connection into Queue
-    set connected flag to True and return S_OK 
+    set connected flag to True and return S_OK
     return S_ERROR upon failure
     """
     self.logger.verbose( '_connect:', self._connected )
@@ -263,8 +263,8 @@ class MySQL:
       return S_OK()
 
     self.logger.debug( '_connect: Attempting to access DB',
-                        '[%s@%s] by user %s/%s.' % 
-                        ( self.__dbName, self.__hostName, self.__userName, self.__passwd ) ) 
+                        '[%s@%s] by user %s/%s.' %
+                        ( self.__dbName, self.__hostName, self.__userName, self.__passwd ) )
     try:
       self.__newConnection()
       self.logger.verbose( '_connect: Connected.' )
@@ -277,7 +277,7 @@ class MySQL:
 
   def _query( self, cmd, conn = False ):
     """
-    execute MySQL query command 
+    execute MySQL query command
     return S_OK structure with fetchall result as tuple
     it returns an empty tuple if no matching rows are found
     return S_ERROR upon error
@@ -311,7 +311,7 @@ class MySQL:
 
 
   def _update(self,cmd, conn=False ):
-    """ execute MySQL update command 
+    """ execute MySQL update command
         return S_OK with number of updated registers upon success
         return S_ERROR upon error
     """
@@ -344,30 +344,30 @@ class MySQL:
   def _createTables( self, tableDict, force=False ):
     """
     tableDict:
-      tableName: { 'Fields' : { 'Field': 'Description' }, 
+      tableName: { 'Fields' : { 'Field': 'Description' },
                    'ForeignKeys': {'Field': 'Table' },
                    'PrimaryKey': 'Id',
                    'Indexes': { 'Index': [] },
                    'Engine': 'InnoDB' }
       only 'Fields' is a mandatory key.
 
-    Creates a new Table for each key in tableDict, "tableName" in the DB with 
+    Creates a new Table for each key in tableDict, "tableName" in the DB with
     the provided description.
     It allows to create:
       - flat tables if no "ForeignKeys" key defined.
-      - tables with foreign keys to auxiliary tables holding the values 
+      - tables with foreign keys to auxiliary tables holding the values
       of some of the fields
     Arguments:
       tableDict: dictionary of dictionary with description of tables to be created.
       Only "Fields" is a mandatory key in the table description.
         "Fields": Dictionary with Field names and description of the fields
-        "ForeignKeys": Dictionary with Field names and name of auxuliary tables. 
+        "ForeignKeys": Dictionary with Field names and name of auxuliary tables.
           The auxiliary tables must be defined in tableDict.
         "PrimaryKey": Name of PRIMARY KEY for the table (if exist).
         "Indexes": Dictionary with definition of indexes, the value for each
           index is the list of fields to be indexed.
         "Engine": use the given DB engine, InnoDB is the default if not present.
-      force: 
+      force:
         if True, requested tables are DROP if they exist.
         if False, returned with S_ERROR if table exist.
 
@@ -375,7 +375,7 @@ class MySQL:
 
     # First check consistency of request
     if type( tableDict ) != DictType:
-      return S_ERROR( 'Argument is not a dictionary: %s( %s )' 
+      return S_ERROR( 'Argument is not a dictionary: %s( %s )'
                       % ( type(tableDict), tableDict ) )
 
     tableList = tableDict.keys()
@@ -410,8 +410,8 @@ class MySQL:
             auxiliaryTableList.append(auxTable)
 
           if not key in tableDict[auxTable]['Fields'].keys():
-            return S_ERROR( 'ForeignKey `%s.%s` not defined in Auxiliary table `%s`.' 
-                            % ( table, key, auxTable ) ) 
+            return S_ERROR( 'ForeignKey `%s.%s` not defined in Auxiliary table `%s`.'
+                            % ( table, key, auxTable ) )
 
         # Check if Table exist
         retDict = self.__checkTable( table, force=force )
@@ -422,9 +422,9 @@ class MySQL:
       if table in primaryTableList:
         return S_ERROR( 'Auxiliary table `%s` can not have ForeignKeys defined.' % table )
 
-    # All tables that are not Primary can be handled as auxiliary (ie have 
+    # All tables that are not Primary can be handled as auxiliary (ie have
     # no dependency with other tables)
-    
+
     for table in tableList:
       if not table in primaryTableList:
         # Check if Table exist
@@ -434,7 +434,7 @@ class MySQL:
 
         thisTable = tableDict[table]
         # Now create the table
-  
+
         cmdList = []
         if table in auxiliaryTableList:
           cmdList.append('`Key` INT NOT NULL AUTO_INCREMENT')
@@ -444,7 +444,7 @@ class MySQL:
 
         for field in thisTable['Fields'].keys():
           cmdList.append('`%s` %s' % ( field, thisTable['Fields'][field]))
-        
+
         if thisTable.has_key( 'Indexes' ):
           indexDict = thisTable['Indexes']
           for index in indexDict:
@@ -516,10 +516,10 @@ class MySQL:
     for field in thisTable:
       thisField = thisTable[field]
         # If the Field is a reference to an auxiliary Table
-    
+
     fieldList = []
     auxTableDict = {}
-    
+
     # Check list of requested fields
     for field in fieldDict:
       fieldDesc = fieldDict[field]
@@ -533,7 +533,7 @@ class MySQL:
         if table not in auxTableDict:
           # add new auxiliary Table if it does not exist
           auxTableDict[table] = { }
-          
+
         # add new field to existing auxiliary Table
         auxTableDict[table][field] = description
       else:
@@ -549,7 +549,7 @@ class MySQL:
         return retDict
       # Add now fields for the foreign keys.
       fieldList.append( '`%sKey` INT NOT NULL' % auxTable )
-    
+
     # Now create the main table
 
     # String with list of fields to create
@@ -561,7 +561,7 @@ class MySQL:
     for auxTable in auxTableDict:
       cmdForeign += ', FOREIGN KEY ( `%sKey` )' % auxTable
       cmdForeign += ' REFERENCES `%s` ( `Key` ) ON DELETE RESTRICT' % auxTable
-    
+
     if len( keyList ) > 0:
       cmdKeys = ', PRIMARY KEY ( `%s` )' % keyList[0]
 
@@ -574,26 +574,26 @@ class MySQL:
       cmd += cmdFields
     else:
       return S_ERROR( 'No fields especified' )
-    
+
     if cmdIndex:
       cmd += '%s' % cmdIndex
-    
+
     if cmdForeign:
       cmd += '%s' % cmdForeign
-    
+
     if cmdKeys:
       cmd += '%s' % cmdKeys
-    
+
     cmd += ' ) ENGINE=%s' % engine
-    
-    
+
+
     return S_OK()
 
 
   def _insert( self, tableName, inFields = [], inValues = [], conn=False ):
     """
-    Insert a new row in "tableName" assigning the values "inValues" to the 
-    fields "inFields". 
+    Insert a new row in "tableName" assigning the values "inValues" to the
+    fields "inFields".
     String type values will be appropiatelly escaped.
     """
     quotedInFields = []
@@ -601,9 +601,9 @@ class MySQL:
       quotedInFields.append( '`%s`' % field )
     inFieldString = string.join( quotedInFields, ', ' )
 
-    self.logger.verbose( '_insert:', 'inserting ( %s ) into table `%s`' 
+    self.logger.verbose( '_insert:', 'inserting ( %s ) into table `%s`'
                           % ( inFieldString, tableName ) )
-                          
+
     retDict = self.__checkFields( inFields, inValues )
     if not retDict['OK']: return retDict
 
@@ -616,8 +616,8 @@ class MySQL:
                          ( tableName, inFieldString, inValueString ), conn )
 
 
-  def _getFields( self, tableName, outFields = [], 
-                  inFields = [], inValues = [], 
+  def _getFields( self, tableName, outFields = [],
+                  inFields = [], inValues = [],
                   limit = 0, conn=False ):
     """
     Select "outFields" from "tableName" with
@@ -646,8 +646,8 @@ class MySQL:
 
     retDict = self._escapeValues( inValues )
     if not retDict['OK']: return retDict
-    escapeInValues = retDict['Value']    
-    
+    escapeInValues = retDict['Value']
+
     condition = ''
 
     for i in range(len(inFields)):
@@ -659,7 +659,7 @@ class MySQL:
 
     if condition:
       condition = 'WHERE %s ' % condition
-      
+
     if limit:
       condition += 'LIMIT %s' % limit
 
@@ -681,9 +681,9 @@ class MySQL:
     """
     self.logger.debug( '__newConnection:' )
 
-    connection = MySQLdb.connect( host=self.__hostName, 
-                                  user=self.__userName, 
-                                  passwd=self.__passwd, 
+    connection = MySQLdb.connect( host=self.__hostName,
+                                  user=self.__userName,
+                                  passwd=self.__passwd,
                                   db=self.__dbName)
     self.__putConnection( connection )
 
@@ -706,7 +706,7 @@ class MySQL:
         pass
     except Exception, x:
       self._except('__putConnection',x,'Failed to put Connection in Queue')
-      
+
   def _getConnection( self ):
     """
     Return a new connection to the DB
@@ -722,14 +722,14 @@ class MySQL:
     """
     Return a new connection to the DB,
     if conn is provided then just return it.
-    then try the Queue, if it is empty add a newConnection to the Queue and retry  
-    it will retry maxConnectRetry to open a new connection and will return 
+    then try the Queue, if it is empty add a newConnection to the Queue and retry
+    it will retry maxConnectRetry to open a new connection and will return
     an error if it fails.
     """
     self.logger.debug( '__getConnection:' )
 
     if conn: return S_OK( conn )
-    
+
     try:
       self.__connectionSemaphore.acquire()
       connection = self.__connectionQueue.get_nowait()
