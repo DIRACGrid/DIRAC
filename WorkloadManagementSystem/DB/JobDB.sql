@@ -1,4 +1,4 @@
--- $Header $
+-- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.sql,v 1.3 2007/06/28 13:36:06 atsareg Exp $
 
 --------------------------------------------------------------------------------
 --
@@ -61,7 +61,8 @@ CREATE TABLE Jobs (
     DeletedFlag  ENUM ('True','False') NOT NULL DEFAULT 'False',
     KilledFlag ENUM ('True','False') NOT NULL DEFAULT 'False',
     FailedFlag ENUM ('True','False') NOT NULL DEFAULT 'False',
-    SandboxReadyFlag ENUM ('True','False') NOT NULL DEFAULT 'False',
+    ISandboxReadyFlag ENUM ('True','False') NOT NULL DEFAULT 'False',
+    OSandboxReadyFlag ENUM ('True','False') NOT NULL DEFAULT 'False',
     RetrievedFlag ENUM ('True','False') NOT NULL DEFAULT 'False',
     AccountedFlag ENUM ('True','False','Failed') NOT NULL DEFAULT 'False',
     PRIMARY KEY (JobID)
