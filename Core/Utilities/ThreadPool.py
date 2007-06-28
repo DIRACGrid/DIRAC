@@ -1,8 +1,8 @@
 #################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/ThreadPool.py,v 1.7 2007/06/26 12:21:28 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/ThreadPool.py,v 1.8 2007/06/28 10:43:49 acasajus Exp $
 #################################################################
 
-__RCSID__ = "$Id: ThreadPool.py,v 1.7 2007/06/26 12:21:28 acasajus Exp $"
+__RCSID__ = "$Id: ThreadPool.py,v 1.8 2007/06/28 10:43:49 acasajus Exp $"
 
 import sys
 import Queue
@@ -97,7 +97,7 @@ class ThreadPool( threading.Thread ):
     self.__spawnNeededWorkingThreads()
 
   def numWorkingThreads( self ):
-    return self.__countWaitingThreads()
+    return self.__countWorkingThreads()
 
   def __spawnWorkingThread( self ):
     self.lWorkingThreads.append( WorkingThread( self.oPendingQueue, self.oResultsQueue ) )
