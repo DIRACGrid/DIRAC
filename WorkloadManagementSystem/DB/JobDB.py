@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.6 2007/06/28 13:31:45 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.7 2007/06/28 14:25:30 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -51,7 +51,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.6 2007/06/28 13:31:45 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.7 2007/06/28 14:25:30 atsareg Exp $"
 
 import re, os, sys, string
 import time
@@ -575,7 +575,7 @@ class JobDB(DB):
     else:
       cmd = "SELECT JDL FROM JobJDLs WHERE JobID=%d" % int(jobID)
 
-    print cmd 
+    print cmd
     result = self._query(cmd)
     if result['OK']:
       return S_OK(result['Value'][0][0])
@@ -1088,24 +1088,24 @@ class JobDB(DB):
           self.log.error('JobDB: Error while removing empty Task Queue' )
 
     return S_OK()
-    
+
 
 #############################################################################
   def setSandboxReady(self,jobID,stype='Input'):
     """ Set the sandbox status ready for the job with jobID
     """
-    
+
     if stype == "Input":
       field = "ISandboxReady"
-    elif stype == "Output"::
-      field = "OSandboxReady"  
+    elif stype == "Output":
+      field = "OSandboxReady"
     else:
-      return S_ERROR('Illegal Sandbox type: '+stype)  
-    
+      return S_ERROR('Illegal Sandbox type: '+stype)
+
     cmd = "UPDATE Jobs SET %s='True' WHERE JobID=%d" % (stype, int(jobID))
     result = self._update(cmd)
     return result
-    
+
 
 ##########################################################################################
 #  def updateRankInTaskQueue(self,jobID,newRank):
