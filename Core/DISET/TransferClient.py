@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/TransferClient.py,v 1.8 2007/06/28 09:48:33 acasajus Exp $
-__RCSID__ = "$Id: TransferClient.py,v 1.8 2007/06/28 09:48:33 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/TransferClient.py,v 1.9 2007/06/28 10:56:39 acasajus Exp $
+__RCSID__ = "$Id: TransferClient.py,v 1.9 2007/06/28 10:56:39 acasajus Exp $"
 
 import tarfile
 import threading
@@ -25,13 +25,13 @@ class TransferClient( BaseClient ):
       return retVal
     return S_OK()
 
-  def sendFile( self, filename, fileId ):
+  def sendFile( self, filename, fileId, token = "" ):
     fileHelper = FileHelper()
     retVal = fileHelper.getFileDescriptor( filename, "r" )
     if not retVal[ 'OK' ]:
       return retVal
     fd = retVal[ 'Value' ]
-    retVal = self.__sendTransferHeader( "FromClient", ( fileId, File.getSize( filename ) ) )
+    retVal = self.__sendTransferHeader( "FromClient", ( fileId, token, File.getSize( filename ) ) )
     if not retVal[ 'OK' ]:
       return retVal
     fileHelper.setTransport( self.transport )
@@ -39,13 +39,13 @@ class TransferClient( BaseClient ):
     self.transport.close()
     return response
 
-  def receiveFile( self, filename, fileId ):
+  def receiveFile( self, filename, fileId, token = ""):
     fileHelper = FileHelper()
     retVal = fileHelper.getFileDescriptor( filename, "w" )
     if not retVal[ 'OK' ]:
       return retVal
     fd = retVal[ 'Value' ]
-    retVal = self.__sendTransferHeader( "ToClient", ( fileId, ) )
+    retVal = self.__sendTransferHeader( "ToClient", ( fileId, token ) )
     if not retVal[ 'OK' ]:
       return retVal
     fileHelper.setTransport( self.transport )
@@ -60,7 +60,7 @@ class TransferClient( BaseClient ):
         bogusEntries.append( entry )
     return bogusEntries
 
-  def sendBulk( self, fileList, bulkId, compress = True ):
+  def sendBulk( self, fileList, bulkId, token = "", compress = True ):
     bogusEntries = self.__checkFileList( fileList )
     if bogusEntries:
       return S_ERROR( "Some files or directories don't exist :\n\t%s" % "\n\t".join( bogusEntries ) )
@@ -68,7 +68,7 @@ class TransferClient( BaseClient ):
       bulkId = "%s.tar.bz2" % bulkId
     else:
       bulkId = "%s.tar" % bulkId
-    retVal = self.__sendTransferHeader( "BulkFromClient", ( bulkId, ) )
+    retVal = self.__sendTransferHeader( "BulkFromClient", ( bulkId, token ) )
     if not retVal[ 'OK' ]:
       return retVal
     fileHelper = FileHelper( self.transport )
@@ -76,14 +76,14 @@ class TransferClient( BaseClient ):
     self.transport.close()
     return response
 
-  def receiveBulk( self, destDir, bulkId, compress = True ):
+  def receiveBulk( self, destDir, bulkId, token = "", compress = True ):
     if not os.path.isdir( destDir ):
       return S_ERROR( "%s is not a directory for bulk receival" % destDir )
     if compress:
       bulkId = "%s.tar.bz2" % bulkId
     else:
       bulkId = "%s.tar" % bulkId
-    retVal = self.__sendTransferHeader( "BulkToClient", ( bulkId, ) )
+    retVal = self.__sendTransferHeader( "BulkToClient", ( bulkId, token ) )
     if not retVal[ 'OK' ]:
       return retVal
     fileHelper = FileHelper( self.transport )
@@ -91,12 +91,12 @@ class TransferClient( BaseClient ):
     self.transport.close()
     return response
 
-  def listBulk( self, bulkId, compress = True ):
+  def listBulk( self, bulkId, token = "", compress = True ):
     if compress:
       bulkId = "%s.tar.bz2" % bulkId
     else:
       bulkId = "%s.tar" % bulkId
-    retVal = self.__sendTransferHeader( "ListBulk", ( bulkId, ) )
+    retVal = self.__sendTransferHeader( "ListBulk", ( bulkId, token ) )
     if not retVal[ 'OK' ]:
       return retVal
     response = self.transport.receiveData( 1048576 )

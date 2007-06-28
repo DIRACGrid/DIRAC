@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.20 2007/06/28 09:48:33 acasajus Exp $
-__RCSID__ = "$Id: RequestHandler.py,v 1.20 2007/06/28 09:48:33 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.21 2007/06/28 10:56:39 acasajus Exp $
+__RCSID__ = "$Id: RequestHandler.py,v 1.21 2007/06/28 10:56:39 acasajus Exp $"
 
 import types
 from DIRAC.Core.DISET.private.FileHelper import FileHelper
@@ -59,15 +59,15 @@ class RequestHandler:
     self.__logRemoteQuery( "FileTransfer/%s" % sDirection, fileInfo )
     fileHelper = FileHelper( self.transport )
     if sDirection == "fromClient":
-      uRetVal = self.transfer_fromClient( fileInfo[0], fileInfo[1], fileHelper )
+      uRetVal = self.transfer_fromClient( fileInfo[0], fileInfo[1], fileInfo[2], fileHelper )
     elif sDirection == "toClient" :
-      uRetVal = self.transfer_toClient( fileInfo[0], fileHelper )
+      uRetVal = self.transfer_toClient( fileInfo[0], fileInfo[1], fileHelper )
     elif sDirection == "bulkFromClient" :
-      uRetVal = self.transfer_bulkFromClient( fileInfo[0], fileHelper )
+      uRetVal = self.transfer_bulkFromClient( fileInfo[0], fileInfo[1], fileHelper )
     elif sDirection == "bulkToClient" :
-      uRetVal = self.transfer_bulkToClient( fileInfo[0], fileHelper )
+      uRetVal = self.transfer_bulkToClient( fileInfo[0], fileInfo[1], fileHelper )
     elif sDirection == "listBulk" :
-      uRetVal = self.transfer_listBulk( fileInfo[0], fileHelper )
+      uRetVal = self.transfer_listBulk( fileInfo[0], fileInfo[1], fileHelper )
     else:
       return S_ERROR( "Direction %s does not exist!!!" % sDirection )
     if not fileHelper.finishedTransmission():
