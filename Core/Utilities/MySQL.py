@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: MySQL.py,v 1.5 2007/06/28 10:53:57 atsareg Exp $
+# $Id: MySQL.py,v 1.6 2007/06/28 11:03:07 rgracian Exp $
 ########################################################################
 """ DIRAC Basic MySQL Class
     It provides access to the basic MySQL methods in a multithread-safe mode
@@ -75,7 +75,7 @@
 
 """
 
-__RCSID__ = "$Id: MySQL.py,v 1.5 2007/06/28 10:53:57 atsareg Exp $"
+__RCSID__ = "$Id: MySQL.py,v 1.6 2007/06/28 11:03:07 rgracian Exp $"
 
 
 from DIRAC                                  import gLogger
@@ -439,6 +439,7 @@ class MySQL:
         if table in auxiliaryTableList:
           cmdList.append('`Key` INT NOT NULL AUTO_INCREMENT')
           cmdList.append( 'PRIMARY KEY ( `Key` )' )
+          cmdList.append( 'CONSTRAINT UNIQUE INDEX `Id` (`%s`)' % string.join(thisTable['Fields'],'`, `') )
         elif thisTable.has_key( 'PrimaryKey' ):
           cmdList.append( 'PRIMARY KEY ( `%s` )' % thisTable['PrimaryKey'])
 
