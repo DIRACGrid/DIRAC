@@ -9,7 +9,7 @@ def registerSignals():
   """
   Registers signal handlers
   """
-  for sigNum in ( signal.SIGINT, signal.SIGQUIT, signal.SIGKILL, signal.SIGTERM ):
+  for sigNum in ( signal.SIGINT, signal.SIGTERM ):
     try:
       signal.signal( sigNum, execute )
     except:
