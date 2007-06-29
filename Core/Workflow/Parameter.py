@@ -1,8 +1,8 @@
-# $Id: Parameter.py,v 1.5 2007/06/28 13:49:46 gkuznets Exp $
+# $Id: Parameter.py,v 1.6 2007/06/29 13:40:46 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.5 $"
+__RCSID__ = "$Revision: 1.6 $"
 
 # unbinded method, returns indentation string
 def indent(indent=0):
@@ -173,7 +173,16 @@ class Parameter(object):
         +" in="+ str(self.typein)+ " out="+str(self.typeout)\
         +" description="+str(self.description)
 
-    def toXMLString(self):
+    def toXML(self):
+        ret =  ['<Parameter name="',self.name ,'" type="',str(self.type)\
+        ,'" linked_module="',str(self.linked_module) , '" linked_parameter="',str(self.linked_parameter)\
+        ,'" in="', str(self.typein), '" out="',str(self.typeout)\
+        ,'" description="', str(self.description),'">'\
+        ,'<value><![CDATA[',str(self.value),']]></value>'\
+        ,'</Parameter>\n']
+        return ret
+
+    def toXMLS(self):
         return '<Parameter name="'+self.name +'" type="'+str(self.type)\
         +'" linked_module="'+str(self.linked_module) + '" linked_parameter="'+str(self.linked_parameter)\
         +'" in="'+ str(self.typein)+ '" out="'+str(self.typeout)\
@@ -311,7 +320,13 @@ class ParameterCollection(list):
     def toXML(self):
         ret=[]
         for v in self:
-            ret.append(v.toXMLString())
+            ret = ret + v.toXML()
+        return ret
+
+    def toXMLS(self):
+        ret=""
+        for v in self:
+            ret=ret+v.toXMLS()
         return ret
 
     def createParametersCode(self, indent=0, instance_name=None):
@@ -388,6 +403,17 @@ class AttributeCollection(dict):
             f.write(element)
         f.close()
         return
+
+    def toXMLS(self):
+        ret = ""
+        for v in self.keys():
+            if v == 'parent':
+                continue # doing nothing
+            elif v == 'body' or v == 'description':
+                ret=ret+'<'+v+'><![CDATA['+str(self[v])+']]></'+v+'>\n'
+            else:
+                ret=ret+'<'+v+'>'+str(self[v])+'</'+v+'>\n'
+        return ret
 
     def toXML(self):
         ret = []

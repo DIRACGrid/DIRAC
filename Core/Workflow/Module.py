@@ -1,8 +1,8 @@
-# $Id: Module.py,v 1.14 2007/06/28 13:49:46 gkuznets Exp $
+# $Id: Module.py,v 1.15 2007/06/29 13:40:46 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.14 $"
+__RCSID__ = "$Revision: 1.15 $"
 
 # $Source: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Workflow/Module.py,v $
 
@@ -61,6 +61,13 @@ class ModuleDefinition(AttributeCollection):
         ret = ret + AttributeCollection.toXML(self)
         ret = ret + self.parameters.toXML()
         ret.append('</ModuleDefinition>\n')
+        return ret
+
+    def toXMLS(self):
+        ret = '<ModuleDefinition>\n'
+        ret = ret + AttributeCollection.toXMLS(self)
+        ret = ret + self.parameters.toXMLS()
+        ret = ret + '</ModuleDefinition>\n'
         return ret
 
     def loadCode(self):
@@ -130,6 +137,13 @@ class ModuleInstance(AttributeCollection):
         ret = ret + AttributeCollection.toXML(self)
         ret = ret + self.parameters.toXML()
         ret.append('</ModuleInstance>\n')
+        return ret
+
+    def toXMLS(self):
+        ret = '<ModuleInstance>\n'
+        ret = ret + AttributeCollection.toXMLS(self)
+        ret = ret + self.parameters.toXMLS()
+        ret = ret + '</ModuleInstance>\n'
         return ret
 
     def execute(self, step_parameters, definitions):
@@ -217,6 +231,12 @@ class DefinitionsPool(dict):
             ret=ret+self[k].toXML()
         return ret
 
+    def toXMLS(self):
+        ret=''
+        for k in self.keys():
+            ret=ret+self[k].toXMLS()
+        return ret
+
     def createCode(self):
         str=''
         for k in self.keys():
@@ -279,6 +299,12 @@ class InstancesPool(list):
         ret=[]
         for v in self:
             ret=ret+v.toXML()
+        return ret
+
+    def toXMLS(self):
+        ret=''
+        for v in self:
+            ret=ret+v.toXMLS()
         return ret
 
     def findIndex(self, name):

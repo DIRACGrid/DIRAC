@@ -1,8 +1,8 @@
-# $Id: Workflow.py,v 1.9 2007/06/28 13:49:46 gkuznets Exp $
+# $Id: Workflow.py,v 1.10 2007/06/29 13:40:46 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.9 $"
+__RCSID__ = "$Revision: 1.10 $"
 
 #try: # this part to inport as part of the DIRAC framework
 from DIRAC.Core.Workflow.Parameter import *
@@ -66,6 +66,17 @@ class Workflow(AttributeCollection):
     ret = ret + self.step_definitions.toXML()
     ret = ret + self.step_instances.toXML()
     ret.append('</Workflow>\n')
+    return ret
+
+  def toXMLS(self):
+    # THIS is very importatnt that Definitions should be written before instances
+    ret = '<Workflow>\n'
+    ret = ret + AttributeCollection.toXMLS(self)
+    ret = ret + self.parameters.toXMLS()
+    ret = ret + self.module_definitions.toXMLS()
+    ret = ret + self.step_definitions.toXMLS()
+    ret = ret + self.step_instances.toXMLS()
+    ret = ret + '</Workflow>\n'
     return ret
 
   def addStep(self, step):
@@ -200,7 +211,3 @@ class Workflow(AttributeCollection):
           wf_exec_attr[wf_parameter.getName()] = wf_parameter.getValue()
           #print "WorkflowInstance  self."+ wf_parameter.getName(),'=',wf_parameter.getValue()
 
-#============================================================================
-# test section moved to test/WFSamples.py
-#============================================================================
-#if __name__ == "__main__":

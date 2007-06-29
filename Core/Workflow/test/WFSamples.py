@@ -1,8 +1,8 @@
-# $Id: WFSamples.py,v 1.10 2007/06/28 13:49:46 gkuznets Exp $
+# $Id: WFSamples.py,v 1.11 2007/06/29 13:40:46 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.10 $"
+__RCSID__ = "$Revision: 1.11 $"
 
 # $Source: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Workflow/test/WFSamples.py,v $
 
@@ -11,6 +11,8 @@ from DIRAC.Core.Workflow.Module import *
 from DIRAC.Core.Workflow.Step import *
 from DIRAC.Core.Workflow.Workflow import *
 from DIRAC.Core.Workflow.WorkflowReader import *
+
+import time
 
 """ Collection of objects for the testing"""
 
@@ -193,8 +195,27 @@ w1.findParameter('final').link('si2','result')
 #print " ================== Interpretation ======================="
 #w1.execute()
 #print w1.toXMLString()
-s = w1.toXMLString()
-w1.toXMLFile("c:/test.xml")
+i=0
+t1 = time.clock()
+l1=[]
+while i<100 :
+  l1.append(w1.toXMLString())
+  i=i+1
+t2 = time.clock()
+print "w1.toXMLString()=",t2-t1
+
+i=0
+t1 = time.clock()
+l2=[]
+while i<100 :
+  l2.append(w1.toXMLS())
+  i=i+1
+t2 = time.clock()
+print "w1.toXMLS()=",t2-t1
+
+print len(l1[1]), len(l2[1])
+
+#w1.toXMLFile("c:/test.xml")
 #print s
 #w4 = fromXMLString(s)
 #print w4
