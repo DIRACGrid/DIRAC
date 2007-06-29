@@ -1,8 +1,8 @@
-# $Id: Parameter.py,v 1.6 2007/06/29 13:40:46 gkuznets Exp $
+# $Id: Parameter.py,v 1.7 2007/06/29 14:30:39 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.6 $"
+__RCSID__ = "$Revision: 1.7 $"
 
 # unbinded method, returns indentation string
 def indent(indent=0):
@@ -173,16 +173,9 @@ class Parameter(object):
         +" in="+ str(self.typein)+ " out="+str(self.typeout)\
         +" description="+str(self.description)
 
-    def toXML(self):
-        ret =  ['<Parameter name="',self.name ,'" type="',str(self.type)\
-        ,'" linked_module="',str(self.linked_module) , '" linked_parameter="',str(self.linked_parameter)\
-        ,'" in="', str(self.typein), '" out="',str(self.typeout)\
-        ,'" description="', str(self.description),'">'\
-        ,'<value><![CDATA[',str(self.value),']]></value>'\
-        ,'</Parameter>\n']
         return ret
 
-    def toXMLS(self):
+    def toXML(self):
         return '<Parameter name="'+self.name +'" type="'+str(self.type)\
         +'" linked_module="'+str(self.linked_module) + '" linked_parameter="'+str(self.linked_parameter)\
         +'" in="'+ str(self.typein)+ '" out="'+str(self.typeout)\
@@ -318,15 +311,9 @@ class ParameterCollection(list):
         return ret
 
     def toXML(self):
-        ret=[]
-        for v in self:
-            ret = ret + v.toXML()
-        return ret
-
-    def toXMLS(self):
         ret=""
         for v in self:
-            ret=ret+v.toXMLS()
+            ret=ret+v.toXML()
         return ret
 
     def createParametersCode(self, indent=0, instance_name=None):
@@ -394,7 +381,7 @@ class AttributeCollection(dict):
         return ret
 
     def toXMLString(self):
-        return ''.join(self.toXML())
+        return self.toXML()
 
     def toXMLFile(self, filename):
         f = open(filename,'w+')
@@ -404,7 +391,7 @@ class AttributeCollection(dict):
         f.close()
         return
 
-    def toXMLS(self):
+    def toXML(self):
         ret = ""
         for v in self.keys():
             if v == 'parent':
@@ -415,16 +402,6 @@ class AttributeCollection(dict):
                 ret=ret+'<'+v+'>'+str(self[v])+'</'+v+'>\n'
         return ret
 
-    def toXML(self):
-        ret = []
-        for v in self.keys():
-            if v == 'parent':
-                continue # doing nothing
-            elif v == 'body' or v == 'description':
-                ret.append('<'+v+'><![CDATA['+str(self[v])+']]></'+v+'>\n')
-            else:
-                ret.append('<'+v+'>'+str(self[v])+'</'+v+'>\n')
-        return ret
 
     def appendParameter(self, opt):
         self.parameters.append(opt)

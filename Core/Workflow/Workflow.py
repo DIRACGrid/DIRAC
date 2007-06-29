@@ -1,8 +1,8 @@
-# $Id: Workflow.py,v 1.10 2007/06/29 13:40:46 gkuznets Exp $
+# $Id: Workflow.py,v 1.11 2007/06/29 14:30:39 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.10 $"
+__RCSID__ = "$Revision: 1.11 $"
 
 #try: # this part to inport as part of the DIRAC framework
 from DIRAC.Core.Workflow.Parameter import *
@@ -59,23 +59,12 @@ class Workflow(AttributeCollection):
 
   def toXML(self):
     # THIS is very importatnt that Definitions should be written before instances
-    ret = ['<Workflow>\n']
+    ret = '<Workflow>\n'
     ret = ret + AttributeCollection.toXML(self)
     ret = ret + self.parameters.toXML()
     ret = ret + self.module_definitions.toXML()
     ret = ret + self.step_definitions.toXML()
     ret = ret + self.step_instances.toXML()
-    ret.append('</Workflow>\n')
-    return ret
-
-  def toXMLS(self):
-    # THIS is very importatnt that Definitions should be written before instances
-    ret = '<Workflow>\n'
-    ret = ret + AttributeCollection.toXMLS(self)
-    ret = ret + self.parameters.toXMLS()
-    ret = ret + self.module_definitions.toXMLS()
-    ret = ret + self.step_definitions.toXMLS()
-    ret = ret + self.step_instances.toXMLS()
     ret = ret + '</Workflow>\n'
     return ret
 

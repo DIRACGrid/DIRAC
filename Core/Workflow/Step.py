@@ -1,8 +1,8 @@
-# $Id: Step.py,v 1.11 2007/06/29 13:40:46 gkuznets Exp $
+# $Id: Step.py,v 1.12 2007/06/29 14:30:39 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.11 $"
+__RCSID__ = "$Revision: 1.12 $"
 
 #try: # this part to inport as part of the DIRAC framework
 from DIRAC.Core.Workflow.Parameter import *
@@ -58,23 +58,14 @@ class StepDefinition(AttributeCollection):
         ret = ret + str(self.module_instances)
         return ret
 
+
     def toXML(self):
-        ret = ['<StepDefinition>\n']
+        ret = '<StepDefinition>\n'
         ret = ret + AttributeCollection.toXML(self)
         ret = ret + self.parameters.toXML()
         if self.module_definitions != None:
             ret = ret + self.module_definitions.toXML()
         ret = ret + self.module_instances.toXML()
-        ret.append('</StepDefinition>\n')
-        return ret
-
-    def toXMLS(self):
-        ret = '<StepDefinition>\n'
-        ret = ret + AttributeCollection.toXMLS(self)
-        ret = ret + self.parameters.toXMLS()
-        if self.module_definitions != None:
-            ret = ret + self.module_definitions.toXMLS()
-        ret = ret + self.module_instances.toXMLS()
         ret = ret + '</StepDefinition>\n'
         return ret
 
@@ -162,18 +153,11 @@ class StepInstance(AttributeCollection):
     def __str__(self):
         return str(type(self))+':\n'+ AttributeCollection.__str__(self) + self.parameters.__str__()
 
-    def toXMLS(self):
-        ret = '<StepInstance>\n'
-        ret = ret + AttributeCollection.toXMLS(self)
-        ret = ret + self.parameters.toXMLS()
-        ret = ret + '</StepInstance>\n'
-        return ret
-
     def toXML(self):
-        ret = ['<StepInstance>\n']
+        ret = '<StepInstance>\n'
         ret = ret + AttributeCollection.toXML(self)
         ret = ret + self.parameters.toXML()
-        ret.append('</StepInstance>\n')
+        ret = ret + '</StepInstance>\n'
         return ret
 
     def execute(self, step_exec_attr, definitions):

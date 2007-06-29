@@ -1,8 +1,8 @@
-# $Id: WFSamples.py,v 1.11 2007/06/29 13:40:46 gkuznets Exp $
+# $Id: WFSamples.py,v 1.12 2007/06/29 14:30:39 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.11 $"
+__RCSID__ = "$Revision: 1.12 $"
 
 # $Source: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Workflow/test/WFSamples.py,v $
 
@@ -195,27 +195,7 @@ w1.findParameter('final').link('si2','result')
 #print " ================== Interpretation ======================="
 #w1.execute()
 #print w1.toXMLString()
-i=0
-t1 = time.clock()
-l1=[]
-while i<100 :
-  l1.append(w1.toXMLString())
-  i=i+1
-t2 = time.clock()
-print "w1.toXMLString()=",t2-t1
-
-i=0
-t1 = time.clock()
-l2=[]
-while i<100 :
-  l2.append(w1.toXMLS())
-  i=i+1
-t2 = time.clock()
-print "w1.toXMLS()=",t2-t1
-
-print len(l1[1]), len(l2[1])
-
-#w1.toXMLFile("c:/test.xml")
+w1.toXMLFile("c:/test.xml")
 #print s
 #w4 = fromXMLString(s)
 #print w4

@@ -1,8 +1,8 @@
-# $Id: Module.py,v 1.15 2007/06/29 13:40:46 gkuznets Exp $
+# $Id: Module.py,v 1.16 2007/06/29 14:30:39 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.15 $"
+__RCSID__ = "$Revision: 1.16 $"
 
 # $Source: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Workflow/Module.py,v $
 
@@ -56,17 +56,12 @@ class ModuleDefinition(AttributeCollection):
     def __str__(self):
         return str(type(self))+':\n'+ AttributeCollection.__str__(self) + self.parameters.__str__()
 
+
+
     def toXML(self):
-        ret = ['<ModuleDefinition>\n']
+        ret = '<ModuleDefinition>\n'
         ret = ret + AttributeCollection.toXML(self)
         ret = ret + self.parameters.toXML()
-        ret.append('</ModuleDefinition>\n')
-        return ret
-
-    def toXMLS(self):
-        ret = '<ModuleDefinition>\n'
-        ret = ret + AttributeCollection.toXMLS(self)
-        ret = ret + self.parameters.toXMLS()
         ret = ret + '</ModuleDefinition>\n'
         return ret
 
@@ -133,16 +128,9 @@ class ModuleInstance(AttributeCollection):
         return str(type(self))+':\n'+ AttributeCollection.__str__(self) + self.parameters.__str__()
 
     def toXML(self):
-        ret = ['<ModuleInstance>\n']
+        ret = '<ModuleInstance>\n'
         ret = ret + AttributeCollection.toXML(self)
         ret = ret + self.parameters.toXML()
-        ret.append('</ModuleInstance>\n')
-        return ret
-
-    def toXMLS(self):
-        ret = '<ModuleInstance>\n'
-        ret = ret + AttributeCollection.toXMLS(self)
-        ret = ret + self.parameters.toXMLS()
         ret = ret + '</ModuleInstance>\n'
         return ret
 
@@ -225,16 +213,11 @@ class DefinitionsPool(dict):
         for k in self.keys():
             self[k].updateParents(parent)
 
-    def toXML(self):
-        ret=[]
-        for k in self.keys():
-            ret=ret+self[k].toXML()
-        return ret
 
-    def toXMLS(self):
+    def toXML(self):
         ret=''
         for k in self.keys():
-            ret=ret+self[k].toXMLS()
+            ret=ret+self[k].toXML()
         return ret
 
     def createCode(self):
@@ -296,15 +279,9 @@ class InstancesPool(list):
         obj.setParent(self.parent)
 
     def toXML(self):
-        ret=[]
-        for v in self:
-            ret=ret+v.toXML()
-        return ret
-
-    def toXMLS(self):
         ret=''
         for v in self:
-            ret=ret+v.toXMLS()
+            ret=ret+v.toXML()
         return ret
 
     def findIndex(self, name):
