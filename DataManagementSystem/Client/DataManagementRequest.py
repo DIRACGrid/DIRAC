@@ -11,17 +11,12 @@ class DataManagementRequest:
 
   def __init__(self,request=None):
 
-    # A common set of keys are defined for all operations.
-    self.request_keys = ['RequestID','LFN','TargetSE','Status',
-                         'Operation','Retry']
-    # These keys are used in addition for transfers...
-    self.transfer_keys = ['Size','LocalPFN','SourceSE','GUID']
-    # ...registrations...
-    self.register_keys = ['Size','PFN','Catalog','GUID','Md5','Addler']
-    # ...removals...
-    self.removal_keys = ['PFN','Catalog']
-    # ...stages.
-    self.stage_keys = []
+    # A common set of attributes that define requests.
+    self.requestAttributes = ['RequestID','TargetSE','Status','Operation','SourceSE','Catalogue']
+    # Possible keys to define the files in the request.
+    self.fileAttributes = ['LFN','Size','PFN','GUID','Md5','Addler','Status','Attempt']
+    # Possible keys to define the dataset in the request.
+    self.datasetAttributes = ['Handle']
 
     # These contain lists of all the type of sub requests in the current request.
     self.transfers = []
@@ -45,35 +40,27 @@ class DataManagementRequest:
 
       if dom.getElementsByTagName('TRANSFER_REQUEST'):
         for subRequest in dom.getElementsByTagName('TRANSFER_REQUEST'):
-          reqDic = {}
-          keys = self.request_keys+self.transfer_keys
-          for key in keys:
-            recDic[key] = subRequest.getAttribute(key)
-          self.addTransfer(reqDic)
+          result = self.__parseSubRequest(subRequest)
+          if result['OK']:
+            self.addTransfer(result['Value'])
 
       if dom.getElementsByTagName('REGISTER_REQUEST'):
         for subRequest in dom.getElementsByTagName('REGISTER_REQUEST'):
-          reqDic = {}
-          keys = self.request_keys+self.register_keys
-          for key in keys:
-            reqDic[key] = subRequest.getAttribute(key)
-          self.addRegister(reqDic)
+          result = self.__parseSubRequest(subRequest)
+          if result['OK']:
+            self.addRegister(result['Value'])
 
       if dom.getElementsByTagName('REMOVAL_REQUEST'):
         for subRequest in dom.getElementsByTagName('REMOVAL_REQUEST'):
-          reqDic = {}
-          keys = self.request_keys+self.removal_keys
-          for key in keys:
-            reqDic[key] = subRequest.getAttribute(key)
-          self.addRemoval(reqDic)
+          result = self.__parseSubRequest(subRequest)
+          if result['OK']:
+            self.addRemoval(result['Value'])
 
       if dom.getElementsByTagName('STAGE_REQUEST'):
         for subRequest in dom.getElementsByTagName('STAGE_REQUEST'):
-          reqDic = {}
-          keys = self.request_keys+self.stage_keys
-          for key in keys:
-            reqDic[key] = subRequest.getAttribute(key)
-          self.addStage(reqDic)
+          result = self.__parseSubRequest(subRequest)
+          if result['OK']:
+            self.addStage(result['Value'])
 
 ###############################################################
 
@@ -127,197 +114,171 @@ class DataManagementRequest:
     """
     return self.dirac_instance
 
-  def getTransfer(self,ind):
-    """ Get the transfer operation specified by its index
-    """
-    return self.transfers[ind]
+###############################################################
 
-  def getRegister(self,ind):
-    """ Get the register operation specified by its index
+  def getSubRequest(self,ind,type):
+    """ Get the sub-request as specified by its index
     """
-    return self.registers[ind]
+    if type == 'transfer':
+      return self.transfers[ind]
+    elif type == 'register':
+      return self.registers[ind]
+    elif type == 'removal':
+      return self.removals[ind]
+    elif type == 'stage':
+      return self.stages[ind]
+    else:
+      return 0
 
-  def getRemoval(self,ind):
-    """ Get the removal operation specified by its index
-    """
-    return self.removals[ind]
+###############################################################
 
-  def getStage(self,ind):
-    """ Get the stage operation specified by its index
+  def getNumSubRequests(self,type):
+    """ Get the number of sub-requests for a given request type
     """
-    return self.stages[ind]
+    if type == 'transfer':
+      return len(self.transfers)
+    elif type == 'register':
+      return len(self.registers)
+    elif type == 'removal':
+      return len(self.removals)
+    elif type == 'stage':
+      return len(self.stages)
+    else:
+      return 0
 
-  def getNumberOfTransfers(self):
-    """ Get the number of transfer operations
-    """
-    return len(self.transfers)
+###############################################################
 
-  def getNumberOfRegisters(self):
-    """  Get the number of registration operations
+  def setSubRequestStatus(self,ind,type,status):
+    """ Set the operation to Done status
     """
-    return len(self.registers)
+    if type == 'transfer':
+      self.transfers[ind]['Status'] = status
+    if type == 'register':
+      self.registers[ind]['Status'] = status
+    if type == 'removal':
+      self.removals[ind]['Status'] = status
+    if type == 'stage':
+      self.stages[ind]['Status'] = status
 
-  def getNumberOfRemovals(self):
-    """  Get the number of removal operations
-    """
-    return len(self.removals)
+###############################################################
 
-  def getNumberOfStages(self):
-    """  Get the number of stage operations
+  def setSubRequestFileStatus(self,ind,type,lfn,status):
+    """ Set the operation to Done status
     """
-    return len(self.stages)
-
-  def setTransferDone(self,ind):
-    """ Set the transfer operation to Done status
-    """
-    self.transfers[ind]['Status'] = 'Done'
-
-  def setRegisterDone(self,ind):
-    """ Set the registration operation to Done status
-    """
-    self.registers[ind]['Status'] = 'Done'
-
-  def setRemovalDone(self,ind):
-    """ Set the removal operation to Done status
-    """
-    self.removals[ind]['Status'] = 'Done'
-
-  def setStageDone(self,ind):
-    """ Set the stage operation to Done status
-    """
-    self.stages[ind]['Status'] = 'Done'
+    if type == 'transfer':
+      self.transfers[ind]['Files'][lfn]['Status'] = status
+    if type == 'register':
+      self.registers[ind]['Files'][lfn]['Status'] = status
+    if type == 'removal':
+      self.removals[ind]['Files'][lfn]['Status'] = status
+    if type == 'stage':
+      self.stages[ind]['Files'][lfn]['Status'] = status
 
 ###############################################################
 
   def isEmpty(self):
     """ Check if the request contains more operations to be performed
     """
-    result = 1
     for tdic in self.transfers:
-      if tdic['Status'] == "Waiting":
-        return 0
+      for lfn in tdic['Files'].keys():
+        if tdic['Files'][lfn]['Status'] != "Done":
+          return 0
     for tdic in self.registers:
-      if tdic['Status'] == "Waiting":
-        return 0
+      for lfn in tdic['Files'].keys():
+        if tdic['Files'][lfn]['Status'] != "Done":
+          return 0
     for tdic in self.removals:
-      if tdic['Status'] == "Waiting":
-        return 0
+      for lfn in tdic['Files'].keys():
+        if tdic['Files'][lfn]['Status'] != "Done":
+          return 0
     for tdic in self.stages:
-      if tdic['Status'] == "Waiting":
-        return 0
-    return result
+      for lfn in tdic['Files'].keys():
+        if tdic['Files'][lfn]['Status'] != "Done":
+          return 0
+    return 1
 
 ###############################################################
 
-  def addTransfer(self,rdic):
-    """ Add a new transfer operation
+  def addSubRequest(self,requestDict,type,catalogue=None):
+    """  Add a new sub-requests of specified type
     """
-    reqDic = {}
-    keys = self.request_keys+self.transfer_keys
-    for key in keys:
-      if rdic.has_key(key):
-        reqDic[key] = rdic[key]
+    reqDict = {'Files':{}}
+    self.datasetAttributes
+    for key in self.requestAttributes:
+      if requestDict.has_key(key):
+        reqDict[key] = requestDict[key]
       else:
-        reqDic[key] = ''
+        reqDict[key] = ''
 
-    if not reqDic['Status']:
-      reqDic['Status'] = 'Waiting'
-    if not reqDic['Retry']:
-      reqDic['Retry'] = 0
-    if not reqDic['GUID'] or reqDic['GUID'] == "None":
-      reqDic['GUID'] = makeGuid()
-    self.transfers.append(reqDic)
+    lfns = requestDict['Files'].keys()
+    for lfn in lfns:
+      reqDict['Files'][lfn] = {}
+      for key in self.fileAttributes:
+        if key != 'LFN':
+          if requestDict['Files'][lfn].has_key(key):
+            reqDict['Files'][lfn][key] = requestDict['Files'][lfn][key]
+          else:
+            reqDict['Files'][lfn][key] = ''
 
-  def addRegister(self,rdic,catalog=None):
-    """ Add a new registration operation
-    """
-    reqDic = {}
-    keys = self.request_keys+self.register_keys
-    for key in keys:
-      if rdic.has_key(key):
-        reqDic[key] = rdic[key]
-      else:
-        reqDic[key] = ''
+    if requestDict.has_key('Datasets'):
+      reqDict['Datasets'] = requestDict['Datasets']
 
-    if not reqDic['Status']:
-      reqDic['Status'] = 'Waiting'
-    if not reqDic['Retry']:
-      reqDic['Retry'] = 0
-    if not reqDic['GUID'] or reqDic['GUID'] == "None":
-      reqDic['GUID'] = makeGuid()
-    if catalog:
-      reqDic['Catalog'] = catalog
-    self.registers.append(reqDic)
+    if not reqDict['Status']:
+      reqDict['Status'] = 'Waiting'
+    if not reqDict['RequestID']:
+      reqDict['RequestID'] = makeGuid()
+    if catalogue:
+      reqDict['Catalogue'] = catalogue
 
-  def addRemoval(self,rdic,catalog=None):
-    """ Add a new removal operation
-    """
-    reqDic = {}
-    keys = self.request_keys+self.removal_keys
-    for key in keys:
-      if rdic.has_key(key):
-        reqDic[key] = rdic[key]
-      else:
-        reqDic[key] = ''
+    for lfn in reqDict['Files'].keys():
+      if not reqDict['Files'][lfn]['Status']:
+        reqDict['Files'][lfn]['Status'] = 'Waiting'
+      if not reqDict['Files'][lfn]['GUID']:
+        reqDict['Files'][lfn]['GUID'] = makeGuid()
+      if not reqDict['Files'][lfn]['Attempt']:
+        reqDict['Files'][lfn]['Attempt'] = 1
 
-    if not reqDic['Status']:
-      reqDic['Status'] = 'Waiting'
-    if not reqDic['Retry']:
-      reqDic['Retry'] = 0
-    if catalog:
-      reqDic['Catalog'] = catalog
-    self.removals.append(reqDic)
-
-  def addStage(self,rdic):
-    """ Add a new stage operation
-    """
-    reqDic = {}
-    keys = self.request_keys+self.removal_keys
-    for key in keys:
-      if rdic.has_key(key):
-        reqDic[key] = rdic[key]
-      else:
-        reqDic[key] = ''
-
-    if not reqDic['Status']:
-      reqDic['Status'] = 'Waiting'
-    if not reqDic['Retry']:
-      reqDic['Retry'] = 0
-    self.stages.append(reqDic)
+    if type == 'transfer':
+      self.transfers.append(reqDict)
+    if type == 'register':
+      self.registers.append(reqDict)
+    if type == 'removal':
+      self.removals.append(reqDict)
+    if type == 'stage':
+      self.stages.append(reqDict)
 
 ###############################################################
 
   def dump(self):
     """ Sent to the logger all the sub-requests in this DM request.
     """
-    ind = 1
-    for rdic in self.transfers:
-      gLogger.info( '\n====== Transfer =======',ind,'====================' )
-      for key in rdic.keys():
-        gLogger.info( (key+':').ljust(15),rdic[key] )
-      ind = ind+1
-    gLogger.info( '===============================================\n' )
-    ind = 1
-    for rdic in self.registers:
-      gLogger.info( '\n====== Register =======',ind,'====================' )
-      for key in rdic.keys():
-        gLogger.info( (key+':').ljust(15),rdic[key] )
-      ind = ind+1
-    gLogger.info( '===============================================\n' )
-    ind = 1
-    for rdic in self.removals:
-      gLogger.info( '\n====== Removal =======',ind,'====================' )
-      for key in rdic.keys():
-        gLogger.info( (key+':').ljust(15),rdic[key] )
-      ind = ind+1
-    gLogger.info( '===============================================\n' )
-    ind = 1
-    for rdic in self.stages:
-      gLogger.info( '\n====== Stage =======',ind,'====================' )
-      for key in rdic.keys():
-        gLogger.info( (key+':').ljust(15),rdic[key] )
-      ind = ind+1
-    gLogger.info( '===============================================\n' )
+    for type in ['Transfer','Register','Removal','Stage']:
+      if type == 'Transfer':
+        reqs = self.transfers
+      if type == 'Register':
+        reqs = self.registers
+      if type == 'Removal':
+        reqs = self.removals
+      if type == 'Stage':
+        reqs = self.stages
+
+      ind = 1
+      for rdic in reqs:
+        gLogger.info( '\n======',type,'=======',ind,'====================' )
+        for key in rdic.keys():
+          if key == 'Files':
+            gLogger.info('Files:'.ljust(15))
+            lfns = rdic['Files'].keys()
+            for lfn in lfns:
+              gLogger.info(lfn.ljust(15))
+          elif key == 'Datasets':
+            gLogger.info('Datasets:'.ljust(15))
+            datasets = rdic['Datasets']
+            for dataset in datasets:
+              gLogger.info(dataset.ljust(15))
+          else:
+            gLogger.info( (key+':').ljust(15),rdic[key] )
+        ind = ind+1
 
 ###############################################################
 
@@ -326,17 +287,53 @@ class DataManagementRequest:
     """
     out = ''
     for rdic in self.transfers:
-      if rdic['Status'] == "Waiting":
-        out = out + 'Transfer: '+rdic['LFN']+' '+rdic['Operation']+' to '+rdic['TargetSE']+'\n'
+      out = out + '\nTransfer: %s %s LFNs, % Datasets from %s to %s:\n' % (rdic['Operation'],len(rdic['Files'].keys()),len(rdic['Datasets']),rdic['SourceSE'],rdic['TargetSE'])
+      lfns = rdic['Files'].keys()
+      statusDict = {}
+      for lfn in lfns:
+        status = rdic['Files'][lfn]['Status']
+        if not statusDict.has_key(status):
+          statusDict[status]= 0
+        statusDict[status] += 1
+      for status in statusDict.keys():
+        out = out + status +':'+str(statusDict[status])+'\t'
+
     for rdic in self.registers:
-      if rdic['Status'] == "Waiting":
-        out = out + 'Register: '+rdic['LFN']+' '+rdic['Operation']+' to '+rdic['TargetSE']+'\n'
+      out = out + '\nRegister: %s %s LFNs, % Datasets:\n' % (rdic['Operation'],len(rdic['Files'].keys()),len(rdic['Datasets']))
+      lfns = rdic['Files'].keys()
+      statusDict = {}
+      for lfn in lfns:
+        status = rdic['Files'][lfn]['Status']
+        if not statusDict.has_key(status):
+          statusDict[status]= 0
+        statusDict[status] += 1
+      for status in statusDict.keys():
+        out = out + status +':'+str(statusDict[status])+'\t'
+
     for rdic in self.removals:
-      if rdic['Status'] == "Waiting":
-        out = out + 'Removal: '+rdic['LFN']+' '+rdic['Operation']+' to '+rdic['TargetSE']+'\n'
+      out = out + '\nRemoval: %s %s LFNs, % Datasets from %s:\n' % (rdic['Operation'],len(rdic['Files'].keys()),len(rdic['Datasets']),rdic['TargetSE'])
+      lfns = rdic['Files'].keys()
+      statusDict = {}
+      for lfn in lfns:
+        status = rdic['Files'][lfn]['Status']
+        if not statusDict.has_key(status):
+          statusDict[status]= 0
+        statusDict[status] += 1
+      for status in statusDict.keys():
+        out = out + status +':'+str(statusDict[status])+'\t'
+
     for rdic in self.stages:
-      if rdic['Status'] == "Waiting":
-        out = out + 'Stage: '+rdic['LFN']+' '+rdic['Operation']+' at '+tdic['TargetSE']+'\n'
+      out = out + '\nStage: %s %s LFNs, % Datasets at %s:\n' % (rdic['Operation'],len(rdic['Files'].keys()),len(rdic['Datasets']),rdic['TargetSE'])
+      lfns = rdic['Files'].keys()
+      statusDict = {}
+      for lfn in lfns:
+        status = rdic['Files'][lfn]['Status']
+        if not statusDict.has_key(status):
+          statusDict[status]= 0
+        statusDict[status] += 1
+      for status in statusDict.keys():
+        out = out + status +':'+str(statusDict[status])+'\t'
+
     return out
 
 ###############################################################
@@ -364,29 +361,17 @@ class DataManagementRequest:
 
     out = out + '<Header '+attributes+' />\n\n'
 
-    for rdic in self.transfers:
-      out = out+'  <TRANSFER_REQUEST\n'
-      for key,value in rdic.items():
-        out = out + '    '+key+'="'+str(value)+'"\n'
-      out = out+'  />\n\n'
+    for subRequest in self.transfers:
+      out = out+'  <TRANSFER_REQUEST>\n'+self.__createSubRequestXML(subRequest)+'  </TRANSFER_REQUEST>\n\n'
 
-    for rdic in self.registers:
-      out = out+'  <REGISTER_REQUEST\n'
-      for key,value in rdic.items():
-        out = out + '    '+key+'="'+str(value)+'"\n'
-      out = out+'  />\n\n'
+    for subRequest in self.registers:
+      out = out+'  <REGISTER_REQUEST>\n'+self.__createSubRequestXML(subRequest)+'  </REGISTER_REQUEST>\n\n'
 
-    for rdic in self.removals:
-      out = out+'  <REMOVAL_REQUEST\n'
-      for key,value in rdic.items():
-        out = out + '    '+key+'="'+str(value)+'"\n'
-      out = out+'  />\n\n'
+    for subRequest in self.removals:
+      out = out+'  <REMOVAL_REQUEST>\n'+self.__createSubRequestXML(subRequest)+'  </REMOVAL_REQUEST>\n\n'
 
-    for rdic in self.stages:
-      out = out+'  <STAGE_REQUEST\n'
-      for key,value in rdic.items():
-        out = out + '    '+key+'="'+str(value)+'"\n'
-      out = out+'  />\n\n'
+    for subRequest in self.stages:
+      out = out+'  <STAGE_REQUEST>\n'+self.__createSubRequestXML(subRequest)+'  </STAGE_REQUEST>\n\n'
 
     out = out + '</DATA_MANAGEMENT_REQUEST>\n'
     return out
@@ -398,3 +383,67 @@ class DataManagementRequest:
     xmlstr = self.toXML()
     reqfile.write(xmlstr)
     reqfile.close()
+
+###############################################################
+
+  def __parseSubRequest(self,subRequest):
+    try:
+      requestDict = {}
+      """ Get all the attributes assigned to the sub-request.
+          These define the operations that will be performed.
+      """
+      for attribute in subRequest.attributes.keys():
+        requestDict[attribute] = subRequest.getAttribute(attribute)
+
+      """ Obtain all the files which are detailed in the sub-request. """
+      files = subRequest.getElementsByTagName('File')
+      requestDict['Files'] = {}
+      for file in files:
+        """ Each file tag contains attributes specific to each file. """
+        fileAttributes = file.attributes.keys()
+        """ LFN is primary to all DM requests and must be supplied. """
+        if 'LFN' in fileAttributes:
+          lfn = file.getAttribute('LFN')
+          requestDict['Files'][lfn] = {}
+          fileAttributes.remove('LFN')
+          for fileAttribute in fileAttributes:
+            requestDict['Files'][lfn][fileAttribute] = file.getAttribute(fileAttribute)
+        else:
+          return S_ERROR('No LFN supplied with sub-request')
+
+      """ Obtain all the datasets that are detailed in the sub-request """
+      datasets = subRequest.getElementsByTagName('Dataset')
+      requestDict['Datasets'] = []
+      for dataset in datasets:
+        """ Each dataset tag must contain a handle tag. """
+        datasetAttributes = dataset.attributes.keys()
+        if datasetAttributes.contains('Handle'):
+          requestDict['Datasets'].append(dataset.getAttribute('Handle'))
+        else:
+          return S_ERROR('No Handle supplied for dataset in sub-request')
+
+      result = S_OK()
+      result['Value'] = requestDict
+      return result
+    except Exception, x:
+      errorStr = 'Failed while parsing sub-request: %s' % x
+      result = S_ERROR(errorStr)
+      return result
+
+  def __createSubRequestXML(self,subRequest):
+    out = ''
+    for key,value in subRequest.items():
+      if key == 'Files':
+        lfns = value.keys()
+        for lfn in lfns:
+          out = out+'    <File\n      LFN="%s"\n' % lfn
+          attributes = value[lfn]
+          for attribute,attValue in attributes.items():
+            out = out + '      '+attribute+'="'+str(attValue)+'"\n'
+          out = out+'    />\n'
+      elif key == 'Datasets':
+        for dataset in value:
+          out = out+'    <Dataset\n      Handle="'+dataset+'"\n    />\n'
+      else:
+        out = out + '    '+key+'="'+str(value)+'"\n'
+    return out
