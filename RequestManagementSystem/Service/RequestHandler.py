@@ -4,14 +4,14 @@
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.DataManagementSystem.DB.RequestDB import RequestDB
+from DIRAC.RequestManagementSystem.DB.RequestDB import RequestDB
 
 #This is a global instance of the RequestDB class
 requestDB = False
 
-def initializeRequestDBHandler(serviceInfo):
+def initializeRequestHandler(serviceInfo):
   global requestDB
-  backend = gConfig.getValue('/Systems/DataManagement/Development/Services/RequestDB/Backend')
+  backend = gConfig.getValue('/Systems/RequestManagement/Development/Services/RequestHandler/Backend')
   requestDB = RequestDB(backend)
   return S_OK()
 
@@ -81,19 +81,19 @@ class RequestDBHandler(RequestHandler):
       return S_ERROR('Getting request failed: '+str(x))
 
   types_getRequestSummary = []
-  def export_getRequestSummary(self):
+  def export_getDBSummary(self):
     """ Get the summary of requests in the Request DB
     """
     gLogger.verbose("Getting request summary")
     try:
-      result = requestDB.getRequestSummary()
+      result = requestDB.getDBSummary()
       if not result['OK']:
-        errKey = "Setting request summary failed"
+        errKey = "Getting RequestDB summary failed"
         errExpl = " : because %s" % result['Message']
         gLogger.error(errKey,errKey)
       return result
     except Exception,x:
-      errKey = "Setting request summary failed"
+      errKey = "SGetting RequestDB summary failed"
       errExpl = " because %s" % str(x)
       gLogger.exception(errKey,errExpl)
-      return S_ERROR('Setting request summary failed: '+str(x))
+      return S_ERROR('Getting RequestDB summary failed: '+str(x))
