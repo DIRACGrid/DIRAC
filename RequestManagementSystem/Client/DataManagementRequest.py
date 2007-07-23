@@ -12,7 +12,7 @@ class DataManagementRequest:
   def __init__(self,request=None):
 
     # A common set of attributes that define requests.
-    self.requestAttributes = ['RequestID','TargetSE','Status','Operation','SourceSE','Catalogue']
+    self.requestAttributes = ['RequestID','Destination','Status','Operation','Source','Catalogue']
     # Possible keys to define the files in the request.
     self.fileAttributes = ['LFN','Size','PFN','GUID','Md5','Addler','Status','Attempt']
     # Possible keys to define the dataset in the request.
