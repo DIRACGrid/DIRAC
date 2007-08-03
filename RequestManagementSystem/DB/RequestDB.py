@@ -193,7 +193,10 @@ class RequestDBMySQL(DB):
       return res
     requestID = res['Value']
     for requestType in requestTypes:
-      numRequests = request.getNumSubRequests(requestType)
+      res = request.getNumSubRequests(requestType)
+      if not res['OK']:
+        return res
+      numRequests = res['Value']
       for ind in range(numRequests):
         res = self._getSubRequestID(requestID)
         if res['OK']:
@@ -209,6 +212,7 @@ class RequestDBMySQL(DB):
           failed = True
     if failed:
       res = self._removeRequest(requestID)
+      return S_ERROR('Failed to set request')
     else:
       return S_OK(requestID)
 
@@ -220,7 +224,7 @@ class RequestDBMySQL(DB):
     return res
 
   def __setSubRequestFiles(self,ind,requestType,subRequestID,request):
-    res = request.getRequestFiles(ind,requestType)
+    res = request.getSubRequestFiles(ind,requestType)
     if not res['OK']:
       return S_ERROR('Failed to get request files')
     lfns = res['Value']
@@ -229,19 +233,19 @@ class RequestDBMySQL(DB):
       if not res['OK']:
         return S_ERROR('Failed to get FileID for LFN')
       fileID = res['Value']
-      res = request.getRequestFileAttributes(self,ind,requestType,lfn)
+      res = request.getSubRequestFileAttributes(ind,requestType,lfn)
       if not res['OK']:
         return S_ERROR('Failed to get file attributes')
       fileAttributes = res['Value']
       for fileAttribute in fileAttributes:
-        res = request.getRequestFileAttributeValue(ind,requestType,lfn,fileAttribute)
+        res = request.getSubRequestFileAttributeValue(ind,requestType,lfn,fileAttribute)
         if not res['OK']:
           return S_ERROR('Failed to get file attribute values')
         attributeValue = res['Value']
         res = self._setFileAttribute(subRequestID,fileID,fileAttribute,attributeValue)
         if not res['OK']:
           return S_ERROR('Failed to set file attribute in DB')
-    return result
+    return res
 
   def __setSubRequestAttributes(self,ind,requestType,subRequestID,request):
     res = request.getSubRequestAttributes(ind,requestType)
@@ -250,14 +254,14 @@ class RequestDBMySQL(DB):
     requestAttributes = res['Value']
     for requestAttribute in requestAttributes:
       if not requestAttribute == 'RequestID':
-        res = request.getRequestAttributeValue(ind,requestType,requestAttribute)
+        res = request.getSubRequestAttributeValue(ind,requestType,requestAttribute)
         if not res['OK']:
           return S_ERROR('Failed to get sub request attribute value')
         attributeValue = res['Value']
         res = self._setRequestAttribute(subRequestID,requestAttribute,attributeValue)
         if not res['OK']:
           return S_ERROR('Failed to set sub request in DB')
-    return result
+    return res
 
   def _setRequestAttribute(self,subRequestID, attrName, attrValue):
     req = "UPDATE SubRequests SET %s='%s' WHERE SubRequestID='%s';" % (attrName,attrValue,subRequestID)
@@ -276,7 +280,7 @@ class RequestDBMySQL(DB):
       return S_ERROR( 'RequestDB.setFileAttribute: failed to set attribute' )
 
   def _getFileID(self,lfn,subRequestID):
-    req = "SELECT FileID FROM Files WHERE LFN='%s';" % lfn
+    req = "SELECT FileID FROM Files WHERE LFN='%s' AND SubRequestID=%s;" % (lfn,subRequestID)
     err = 'RequestDB._getFileID: Failed to retrieve FileID'
     res = self._query(req)
     if not res['OK']:
@@ -288,23 +292,22 @@ class RequestDBMySQL(DB):
       if not res['OK']:
         self.getIdLock.release()
         return S_ERROR( '%s\n%s' % (err, res['Message'] ) )
-      req = 'SELECT MAX(FileID) FROM Files'
+      req = 'SELECT MAX(FileID) FROM Files WHERE SubRequestID=%s' % subRequestID
       res = self._query(req)
       if not res['OK']:
         self.getIdLock.release()
         return S_ERROR( '%s\n%s' % (err, res['Message'] ) )
+      self.getIdLock.release()
     try:
       fileID = int(res['Value'][0][0])
       self.log.info( 'RequestDB: New FileID served "%s"' % fileID )
     except Exception, x:
-      self.getIdLock.release()
       return S_ERROR( '%s\n%s' % (err, str(x) ) )
-    self.getIdLock.release()
     return S_OK(fileID)
 
   def _getRequestID(self):
     self.getIdLock.acquire()
-    req = 'INSERT INTO Requests (SubmissionTime) VALUES (CURDATE())'
+    req = 'INSERT INTO Requests (SubmissionTime) VALUES (NOW())'
     err = 'RequestDB._getRequestID: Failed to retrieve RequestID'
     res = self._update(req)
     if not res['OK']:
@@ -326,13 +329,13 @@ class RequestDBMySQL(DB):
 
   def _getSubRequestID(self,requestID):
     self.getIdLock.acquire()
-    req = 'INSERT INTO SubRequests (RequestID,SubmissionTime) VALUES (%s,CURDATE())' % requestID
+    req = 'INSERT INTO SubRequests (RequestID,SubmissionTime) VALUES (%s,NOW())' % requestID
     err = 'RequestDB._getSubRequestID: Failed to retrieve SubRequestID'
     res = self._update(req)
     if not res['OK']:
       self.getIdLock.release()
       return S_ERROR( '%s\n%s' % (err, res['Message'] ) )
-    req = 'SELECT MAX(SubRequestID) FROM SubRequests'
+    req = 'SELECT MAX(SubRequestID) FROM SubRequests WHERE RequestID=%s' % requestID
     res = self._query(req)
     if not res['OK']:
       self.getIdLock.release()
