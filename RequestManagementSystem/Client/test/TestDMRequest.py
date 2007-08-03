@@ -41,13 +41,13 @@ class GetSetTestCase(DMRequestTestCase):
 
   def test_getNumberOfOperations(self):
     transfers = self.DMRequest.getNumSubRequests('transfer')
-    self.assertEqual(0,transfers)
+    self.assertEqual(0,transfers['Value'])
     registers = self.DMRequest.getNumSubRequests('register')
-    self.assertEqual(0,registers)
+    self.assertEqual(0,registers['Value'])
     removals = self.DMRequest.getNumSubRequests('removal')
-    self.assertEqual(0,removals)
+    self.assertEqual(0,removals['Value'])
     stages = self.DMRequest.getNumSubRequests('stage')
-    self.assertEqual(0,stages)
+    self.assertEqual(0,stages['Value'])
 
   def test_isEmpty(self):
     result = self.DMRequest.isEmpty()
@@ -63,17 +63,18 @@ class AddOperationsTestCase(DMRequestTestCase):
     self.DMRequest.addSubRequest(reqDic,'transfer')
     # Only added one transfer so this should be 1
     transfers = self.DMRequest.getNumSubRequests('transfer')
-    self.assertEqual(1,transfers)
+    self.assertEqual(1,transfers['Value'])
     ind = 0
     # Get the only transfer operation in the request
-    testReqDic = self.DMRequest.getSubRequest(ind,'transfer')
+    result = self.DMRequest.getSubRequest(ind,'transfer')
+    testReqDic = result['Value']
     # Make sure it is a dictionary
     self.assertEqual(type(testReqDic),types.DictType)
     # Make sure that the status is waiting
     self.assertEqual(testReqDic['Status'],'Waiting')
     # Check that the request is not empty
     result = self.DMRequest.isEmpty()
-    self.assertFalse(result)
+    self.assertFalse(result['Value'])
     # Check that all the keys/value pairs we put in are the ones we get back
     for key in testReqDic:
       if reqDic.has_key(key):
@@ -81,16 +82,17 @@ class AddOperationsTestCase(DMRequestTestCase):
 
     # Set the status = 'Done'
     self.DMRequest.setSubRequestStatus(ind,'transfer','Done')
-    testReqDic = self.DMRequest.getSubRequest(ind,'transfer')
+    result = self.DMRequest.getSubRequest(ind,'transfer')
+    testReqDic = result['Value']
     # Check that it was set to done.
     self.assertEqual(testReqDic['Status'],'Done')
     # Check again that it is empty (which it now should be)
     result = self.DMRequest.isEmpty()
-    self.assertFalse(result)
+    self.assertFalse(result['Value'])
     #Now set the file status to done
     self.DMRequest.setSubRequestFileStatus(ind,'transfer',lfn,'Done')
     result = self.DMRequest.isEmpty()
-    self.assertTrue(result)
+    self.assertTrue(result['Value'])
 
   def test_addRegister(self):
     # Set up dummy request
@@ -100,17 +102,18 @@ class AddOperationsTestCase(DMRequestTestCase):
     self.DMRequest.addSubRequest(reqDic,'register')
     # Only added one transfer so this should be 1
     transfers = self.DMRequest.getNumSubRequests('register')
-    self.assertEqual(1,transfers)
+    self.assertEqual(1,transfers['Value'])
     ind = 0
     # Get the only transfer operation in the request
-    testReqDic = self.DMRequest.getSubRequest(ind,'register')
+    result = self.DMRequest.getSubRequest(ind,'register')
+    testReqDic =  result['Value']
     # Make sure it is a dictionary
     self.assertEqual(type(testReqDic),types.DictType)
     # Make sure that the status is waiting
     self.assertEqual(testReqDic['Status'],'Waiting')
     # Check that the request is not empty
     result = self.DMRequest.isEmpty()
-    self.assertFalse(result)
+    self.assertFalse(result['Value'])
     # Check that all the keys/value pairs we put in are the ones we get back
     for key in testReqDic:
       if reqDic.has_key(key):
@@ -118,16 +121,17 @@ class AddOperationsTestCase(DMRequestTestCase):
 
     # Set the status = 'Done'
     self.DMRequest.setSubRequestStatus(ind,'register','Done')
-    testReqDic = self.DMRequest.getSubRequest(ind,'register')
+    result = self.DMRequest.getSubRequest(ind,'register')
+    testReqDic = result['Value']
     # Check that it was set to done.
     self.assertEqual(testReqDic['Status'],'Done')
     # Check again that it is empty (which it now should be)
     result = self.DMRequest.isEmpty()
-    self.assertFalse(result)
+    self.assertFalse(result['Value'])
     #Now set the file status to done
     self.DMRequest.setSubRequestFileStatus(ind,'register',lfn,'Done')
     result = self.DMRequest.isEmpty()
-    self.assertTrue(result)
+    self.assertTrue(result['Value'])
 
   def test_addRemoval(self):
     # Set up dummy request
@@ -136,18 +140,19 @@ class AddOperationsTestCase(DMRequestTestCase):
     # Add this to transfer type list
     self.DMRequest.addSubRequest(reqDic,'removal')
     # Only added one transfer so this should be 1
-    transfers = self.DMRequest.getNumSubRequests('removal')
-    self.assertEqual(1,transfers)
+    result = self.DMRequest.getNumSubRequests('removal')
+    self.assertEqual(1,result['Value'])
     ind = 0
     # Get the only transfer operation in the request
-    testReqDic = self.DMRequest.getSubRequest(ind,'removal')
+    result = self.DMRequest.getSubRequest(ind,'removal')
+    testReqDic = result['Value']
     # Make sure it is a dictionary
     self.assertEqual(type(testReqDic),types.DictType)
     # Make sure that the status is waiting
     self.assertEqual(testReqDic['Status'],'Waiting')
     # Check that the request is not empty
     result = self.DMRequest.isEmpty()
-    self.assertFalse(result)
+    self.assertFalse(result['Value'])
     # Check that all the keys/value pairs we put in are the ones we get back
     for key in testReqDic:
       if reqDic.has_key(key):
@@ -155,16 +160,17 @@ class AddOperationsTestCase(DMRequestTestCase):
 
     # Set the status = 'Done'
     self.DMRequest.setSubRequestStatus(ind,'removal','Done')
-    testReqDic = self.DMRequest.getSubRequest(ind,'removal')
+    result = self.DMRequest.getSubRequest(ind,'removal')
+    testReqDic = result['Value']
     # Check that it was set to done.
     self.assertEqual(testReqDic['Status'],'Done')
     # Check again that it is empty (which it now should be)
     result = self.DMRequest.isEmpty()
-    self.assertFalse(result)
+    self.assertFalse(result['Value'])
     #Now set the file status to done
     self.DMRequest.setSubRequestFileStatus(ind,'removal',lfn,'Done')
     result = self.DMRequest.isEmpty()
-    self.assertTrue(result)
+    self.assertTrue(result['Value'])
 
   def test_addStage(self):
     # Set up dummy request
@@ -173,18 +179,19 @@ class AddOperationsTestCase(DMRequestTestCase):
     # Add this to transfer type list
     self.DMRequest.addSubRequest(reqDic,'stage')
     # Only added one transfer so this should be 1
-    transfers = self.DMRequest.getNumSubRequests('stage')
-    self.assertEqual(1,transfers)
+    result = self.DMRequest.getNumSubRequests('stage')
+    self.assertEqual(1,result['Value'])
     ind = 0
     # Get the only transfer operation in the request
-    testReqDic = self.DMRequest.getSubRequest(ind,'stage')
+    result = self.DMRequest.getSubRequest(ind,'stage')
+    testReqDic = result['Value']
     # Make sure it is a dictionary
     self.assertEqual(type(testReqDic),types.DictType)
     # Make sure that the status is waiting
     self.assertEqual(testReqDic['Status'],'Waiting')
     # Check that the request is not empty
     result = self.DMRequest.isEmpty()
-    self.assertFalse(result)
+    self.assertFalse(result['Value'])
     # Check that all the keys/value pairs we put in are the ones we get back
     for key in testReqDic:
       if reqDic.has_key(key):
@@ -192,16 +199,17 @@ class AddOperationsTestCase(DMRequestTestCase):
 
     # Set the status = 'Done'
     self.DMRequest.setSubRequestStatus(ind,'stage','Done')
-    testReqDic = self.DMRequest.getSubRequest(ind,'stage')
+    result = self.DMRequest.getSubRequest(ind,'stage')
+    testReqDic = result['Value']
     # Check that it was set to done.
     self.assertEqual(testReqDic['Status'],'Done')
     # Check again that it is empty (which it now should be)
     result = self.DMRequest.isEmpty()
-    self.assertFalse(result)
+    self.assertFalse(result['Value'])
     #Now set the file status to done
     self.DMRequest.setSubRequestFileStatus(ind,'stage',lfn,'Done')
     result = self.DMRequest.isEmpty()
-    self.assertTrue(result)
+    self.assertTrue(result['Value'])
 
   def test_toFile(self):
     lfn = '/lhcb/production/test/case.lfn'
@@ -218,7 +226,8 @@ class AddOperationsTestCase(DMRequestTestCase):
     stageDic = {'Status': 'Waiting','RequestID': '7F7C1D94-E452-CD50-204C-EE2E2F1816A9','Catalogue':'','Files':{lfn:{'Status': 'Waiting', 'Attempt': 1, 'PFN': 'srm://srm.cern.ch/castor/cern.ch/grid/lhcb/production/test/case.lfn', 'Size': 1231231, 'GUID': '7E9CED5A-295B-ED88-CE9A-CF41A62D2175', 'Addler': 'addler32', 'Md5': 'md5'}},'Datasets':['DC06Stripping'],'TargetSE':'CERN-tape','Operation':'StageAndPin'}
     self.DMRequest.addSubRequest(stageDic,'stage')
     # Get the XML string of the DM request
-    string = self.DMRequest.toXML()
+    result = self.DMRequest.toXML()
+    string = result['Value']
     fname = 'testRequest.xml'
     # Write the DMRequest to a file
     self.DMRequest.toFile(fname)
@@ -231,7 +240,8 @@ class AddOperationsTestCase(DMRequestTestCase):
 
     testReq = DataManagementRequest(string)
     # Test that what is obtained when parsing the request is the same as what is given.
-    transferReqDouble = self.DMRequest.getSubRequest(0,'transfer')
+    result = self.DMRequest.getSubRequest(0,'transfer')
+    transferReqDouble = result['Value']
     for key in transferReqDouble.keys():
       if key == 'Files':
         for att in transferReqDouble['Files'].keys():
@@ -239,7 +249,8 @@ class AddOperationsTestCase(DMRequestTestCase):
       else:
         self.assertEqual(transferDic[key],transferReqDouble[key])
 
-    registerReqDouble = self.DMRequest.getSubRequest(0,'register')
+    result = self.DMRequest.getSubRequest(0,'register')
+    registerReqDouble = result['Value']
     for key in registerDic.keys():
       if key == 'Files':
         for att in registerDic['Files'].keys():
@@ -247,7 +258,8 @@ class AddOperationsTestCase(DMRequestTestCase):
       else:
         self.assertEqual(registerDic[key],registerReqDouble[key])
 
-    removalReqDouble = self.DMRequest.getSubRequest(0,'removal')
+    result = self.DMRequest.getSubRequest(0,'removal')
+    removalReqDouble = result['Value']
     for key in removalDic.keys():
       if key == 'Files':
         for att in removalDic['Files'].keys():
@@ -255,7 +267,8 @@ class AddOperationsTestCase(DMRequestTestCase):
       else:
         self.assertEqual(removalDic[key],removalReqDouble[key])
 
-    stageReqDouble = self.DMRequest.getSubRequest(0,'stage')
+    result = self.DMRequest.getSubRequest(0,'stage')
+    stageReqDouble =  result['Value']
     for key in stageDic.keys():
       if key == 'Files':
         for att in stageDic['Files'].keys():
