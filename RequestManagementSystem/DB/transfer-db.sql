@@ -22,14 +22,14 @@ CREATE TABLE Requests (
 );
 
 DROP TABLE IF EXISTS SubRequests;
-CREATE TABLE Requests (
+CREATE TABLE SubRequests (
    RequestID INTEGER NOT NULL,
    SubRequestID INTEGER NOT NULL AUTO_INCREMENT,
    Status varchar(32) DEFAULT 'New',
    Operation varchar(32),
-   Source varchar(32),
-   Destination varchar(32),
-   Catalogues varchar(32),
+   SourceSE varchar(32),
+   TargetSE varchar(32),
+   Catalogue varchar(32),
    SubmissionTime DATETIME,
    PRIMARY KEY (RequestID,SubRequestID)
 );
@@ -41,7 +41,7 @@ CREATE TABLE Files (
   LFN VARCHAR(255),
   Size INTEGER,
   PFN VARCHAR(255),
-  GUID VARCHAR(32),
+  GUID VARCHAR(64),
   Md5 VARCHAR(32),
   Addler VARCHAR(32),
   Attempt VARCHAR(32),
