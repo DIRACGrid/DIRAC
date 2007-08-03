@@ -12,7 +12,7 @@ class DataManagementRequest:
   def __init__(self,request=None):
 
     # A common set of attributes that define requests.
-    self.requestAttributes = ['RequestID','Destination','Status','Operation','Source','Catalogue']
+    self.requestAttributes = ['RequestID','TargetSE','Status','Operation','SourceSE','Catalogue']
     # Possible keys to define the files in the request.
     self.fileAttributes = ['LFN','Size','PFN','GUID','Md5','Addler','Status','Attempt']
     # Possible keys to define the dataset in the request.
@@ -42,25 +42,25 @@ class DataManagementRequest:
         for subRequest in dom.getElementsByTagName('TRANSFER_REQUEST'):
           result = self.__parseSubRequest(subRequest)
           if result['OK']:
-            self.addTransfer(result['Value'])
+            self.addSubRequest(result['Value'],'transfer')
 
       if dom.getElementsByTagName('REGISTER_REQUEST'):
         for subRequest in dom.getElementsByTagName('REGISTER_REQUEST'):
           result = self.__parseSubRequest(subRequest)
           if result['OK']:
-            self.addRegister(result['Value'])
+            self.addSubRequest(result['Value'],'register')
 
       if dom.getElementsByTagName('REMOVAL_REQUEST'):
         for subRequest in dom.getElementsByTagName('REMOVAL_REQUEST'):
           result = self.__parseSubRequest(subRequest)
           if result['OK']:
-            self.addRemoval(result['Value'])
+            self.addSubRequest(result['Value'],'removal')
 
       if dom.getElementsByTagName('STAGE_REQUEST'):
         for subRequest in dom.getElementsByTagName('STAGE_REQUEST'):
           result = self.__parseSubRequest(subRequest)
           if result['OK']:
-            self.addStage(result['Value'])
+            self.addSubRequest(result['Value'],'stage')
 
 ###############################################################
 
@@ -120,15 +120,15 @@ class DataManagementRequest:
     """ Get the sub-request as specified by its index
     """
     if type == 'transfer':
-      return self.transfers[ind]
+      return S_OK(self.transfers[ind])
     elif type == 'register':
-      return self.registers[ind]
+      return S_OK(self.registers[ind])
     elif type == 'removal':
-      return self.removals[ind]
+      return S_OK(self.removals[ind])
     elif type == 'stage':
-      return self.stages[ind]
+      return S_OK(self.stages[ind])
     else:
-      return 0
+      return S_ERROR()
 
 ###############################################################
 
@@ -136,15 +136,15 @@ class DataManagementRequest:
     """ Get the number of sub-requests for a given request type
     """
     if type == 'transfer':
-      return len(self.transfers)
+      return S_OK(len(self.transfers))
     elif type == 'register':
-      return len(self.registers)
+      return S_OK(len(self.registers))
     elif type == 'removal':
-      return len(self.removals)
+      return S_OK(len(self.removals))
     elif type == 'stage':
-      return len(self.stages)
+      return S_OK(len(self.stages))
     else:
-      return 0
+      return S_ERROR()
 
 ###############################################################
 
@@ -176,26 +176,124 @@ class DataManagementRequest:
 
 ###############################################################
 
+  def getSubRequestAttributes(self,ind,type):
+    """ Get the sub-request attributes
+    """
+    if type == 'transfer':
+      keys = self.transfers[ind].keys()
+    if type == 'register':
+      keys = self.registers[ind].keys()
+    if type == 'removal':
+      keys = self.removals[ind].keys()
+    if type == 'stage':
+      keys = self.stages[ind].keys()
+    subRequestAttributes = []
+    for attribute in keys:
+      if attribute in self.requestAttributes:
+        subRequestAttributes.append(attribute)
+    return S_OK(subRequestAttributes)
+
+###############################################################
+
+  def getSubRequestAttributeValue(self,ind,type,attribute):
+    """ Get the file attributes associated to a LFN and sub-request
+    """
+    if type == 'transfer':
+      value = self.transfers[ind][attribute]
+    if type == 'register':
+      value = self.registers[ind][attribute]
+    if type == 'removal':
+      value = self.removals[ind][attribute]
+    if type == 'stage':
+      value = self.stages[ind][attribute]
+    return S_OK(value)
+
+###############################################################
+
+  def getSubRequestFiles(self,ind,type):
+    """ Get the file attributes associated to a LFN and sub-request
+    """
+    if type == 'transfer':
+      lfns = self.transfers[ind]['Files'].keys()
+    if type == 'register':
+      lfns = self.registers[ind]['Files'].keys()
+    if type == 'removal':
+      lfns = self.removals[ind]['Files'].keys()
+    if type == 'stage':
+      lfns = self.stages[ind]['Files'].keys()
+    return S_OK(lfns)
+
+  ###############################################################
+
+  def getSubRequestFileAttributes(self,ind,type,lfn):
+    """ Get the file attributes associated to a LFN and sub-request
+    """
+    if type == 'transfer':
+      keys = self.transfers[ind]['Files'][lfn].keys()
+    if type == 'register':
+      keys = self.registers[ind]['Files'][lfn].keys()
+    if type == 'removal':
+      keys = self.removals[ind]['Files'][lfn].keys()
+    if type == 'stage':
+      keys = self.stages[ind]['Files'][lfn].keys()
+    subRequestFileAttributes = []
+    for attribute in keys:
+      if attribute in self.fileAttributes:
+        subRequestFileAttributes.append(attribute)
+    return S_OK(subRequestFileAttributes)
+
+###############################################################
+
+  def getSubRequestFileAttributeValue(self,ind,type,lfn,attribute):
+    """ Get the file attributes associated to a LFN and sub-request
+    """
+    if type == 'transfer':
+      value = self.transfers[ind]['Files'][lfn][attribute]
+    if type == 'register':
+      value = self.registers[ind]['Files'][lfn][attribute]
+    if type == 'removal':
+      value = self.removals[ind]['Files'][lfn][attribute]
+    if type == 'stage':
+      value = self.stages[ind]['Files'][lfn][attribute]
+    return S_OK(value)
+
+###############################################################
+
+  def getSubRequestDatasets(self,ind,type):
+    """ Get the file attributes associated to a LFN and sub-request
+    """
+    if type == 'transfer':
+      datasets = self.transfers[ind]['Datasets']
+    if type == 'register':
+      datasets = self.registers[ind]['Datasets']
+    if type == 'removal':
+      datasets = self.removals[ind]['Datasets']
+    if type == 'stage':
+      datasets = self.stages[ind]['Datasets']
+    return S_OK(datasets)
+
+###############################################################
+
   def isEmpty(self):
     """ Check if the request contains more operations to be performed
     """
     for tdic in self.transfers:
       for lfn in tdic['Files'].keys():
         if tdic['Files'][lfn]['Status'] != "Done":
-          return 0
+          return S_OK(0)
     for tdic in self.registers:
       for lfn in tdic['Files'].keys():
         if tdic['Files'][lfn]['Status'] != "Done":
-          return 0
+          return S_OK(0)
     for tdic in self.removals:
       for lfn in tdic['Files'].keys():
         if tdic['Files'][lfn]['Status'] != "Done":
-          return 0
+          return S_OK(0)
     for tdic in self.stages:
       for lfn in tdic['Files'].keys():
         if tdic['Files'][lfn]['Status'] != "Done":
-          return 0
-    return 1
+          return S_OK(0)
+    return S_OK(1)
 
 ###############################################################
 
@@ -203,7 +301,6 @@ class DataManagementRequest:
     """  Add a new sub-requests of specified type
     """
     reqDict = {'Files':{}}
-    self.datasetAttributes
     for key in self.requestAttributes:
       if requestDict.has_key(key):
         reqDict[key] = requestDict[key]
@@ -222,6 +319,9 @@ class DataManagementRequest:
 
     if requestDict.has_key('Datasets'):
       reqDict['Datasets'] = requestDict['Datasets']
+    else:
+      reqDict['Datasets'] = []
+
 
     if not reqDict['Status']:
       reqDict['Status'] = 'Waiting'
@@ -334,7 +434,7 @@ class DataManagementRequest:
       for status in statusDict.keys():
         out = out + status +':'+str(statusDict[status])+'\t'
 
-    return out
+    return S_OK(out)
 
 ###############################################################
 
@@ -361,28 +461,30 @@ class DataManagementRequest:
 
     out = out + '<Header '+attributes+' />\n\n'
 
-    for subRequest in self.transfers:
-      out = out+'  <TRANSFER_REQUEST>\n'+self.__createSubRequestXML(subRequest)+'  </TRANSFER_REQUEST>\n\n'
+    for type in ['transfer','register','removal','stage']:
+      res = self.getNumSubRequests(type)
+      if not res['OK']:
+        return res
+      for ind in range(res['Value']):
+        res = self.__createSubRequestXML(ind,type)
+        if not res['OK']:
+          return res
+        outStr = res['Value']
+        out = '%s%s\n\n' % (out,outStr)
 
-    for subRequest in self.registers:
-      out = out+'  <REGISTER_REQUEST>\n'+self.__createSubRequestXML(subRequest)+'  </REGISTER_REQUEST>\n\n'
-
-    for subRequest in self.removals:
-      out = out+'  <REMOVAL_REQUEST>\n'+self.__createSubRequestXML(subRequest)+'  </REMOVAL_REQUEST>\n\n'
-
-    for subRequest in self.stages:
-      out = out+'  <STAGE_REQUEST>\n'+self.__createSubRequestXML(subRequest)+'  </STAGE_REQUEST>\n\n'
-
-    out = out + '</DATA_MANAGEMENT_REQUEST>\n'
-    return out
+    out = '%s</DATA_MANAGEMENT_REQUEST>\n' % out
+    return S_OK(out)
 
 ###############################################################
 
   def toFile(self,fname):
+    res = self.toXML()
+    if not res['OK']:
+      return res
     reqfile = open(fname,'w')
-    xmlstr = self.toXML()
-    reqfile.write(xmlstr)
+    reqfile.write(res['Value'])
     reqfile.close()
+    return S_OK()
 
 ###############################################################
 
@@ -417,7 +519,7 @@ class DataManagementRequest:
       for dataset in datasets:
         """ Each dataset tag must contain a handle tag. """
         datasetAttributes = dataset.attributes.keys()
-        if datasetAttributes.contains('Handle'):
+        if 'Handle' in datasetAttributes:
           requestDict['Datasets'].append(dataset.getAttribute('Handle'))
         else:
           return S_ERROR('No Handle supplied for dataset in sub-request')
@@ -430,20 +532,45 @@ class DataManagementRequest:
       result = S_ERROR(errorStr)
       return result
 
-  def __createSubRequestXML(self,subRequest):
-    out = ''
-    for key,value in subRequest.items():
-      if key == 'Files':
-        lfns = value.keys()
-        for lfn in lfns:
-          out = out+'    <File\n      LFN="%s"\n' % lfn
-          attributes = value[lfn]
-          for attribute,attValue in attributes.items():
-            out = out + '      '+attribute+'="'+str(attValue)+'"\n'
-          out = out+'    />\n'
-      elif key == 'Datasets':
-        for dataset in value:
-          out = out+'    <Dataset\n      Handle="'+dataset+'"\n    />\n'
-      else:
-        out = out + '    '+key+'="'+str(value)+'"\n'
-    return out
+  def __createSubRequestXML(self,ind,type):
+
+    requestTypeStr = '%s_REQUEST' % type.upper()
+    out = '  <%s\n' % requestTypeStr
+    res = self.getSubRequestAttributes(ind,type)
+    if not res['OK']:
+      return res
+    attributes = res['Value']
+    for attribute in attributes:
+      res = self.getSubRequestAttributeValue(ind,type,attribute)
+      if not res['OK']:
+        return res
+      atttributeValue = res['Value']
+      out = '%s    %s="%s"\n' % (out,attribute,atttributeValue)
+    out = '%s    >\n' % out
+
+    res = self.getSubRequestFiles(ind,type)
+    if not res['OK']:
+      return res
+    lfns = res['Value']
+    for lfn in lfns:
+      out = '%s    <File\n      LFN="%s"\n' % (out,lfn)
+      res = self.getSubRequestFileAttributes(ind,type,lfn)
+      if not res['OK']:
+        return res
+      attributes = res['Value']
+      for attribute in attributes:
+        res = self.getSubRequestFileAttributeValue(ind,type,lfn,attribute)
+        if not res['OK']:
+          return res
+        atttributeValue = res['Value']
+        out = '%s      %s="%s"\n' % (out,attribute,atttributeValue)
+      out = '%s    />\n' % out
+
+    res = self.getSubRequestDatasets(ind,type)
+    if not res['OK']:
+      return res
+    datasets = res['Value']
+    for dataset in datasets:
+      out = '%s    <Dataset\n      Handle="%s"\n    />\n' % (out,dataset)
+    out = '%s  </%s>\n' % (out,requestTypeStr)
+    return S_OK(out)
