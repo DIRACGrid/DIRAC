@@ -1,9 +1,29 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/Attic/DEncode.py,v 1.1 2007/03/09 15:27:45 rgracian Exp $
-__RCSID__ = "$Id: DEncode.py,v 1.1 2007/03/09 15:27:45 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/Attic/DEncode.py,v 1.2 2007/08/16 09:18:13 acasajus Exp $
+__RCSID__ = "$Id: DEncode.py,v 1.2 2007/08/16 09:18:13 acasajus Exp $"
+
+# Encoding and decoding for dirac
+#
+# Ids
+# i -> int
+# I -> long
+# f -> float
+# b -> bool
+# s -> string
+# z -> datetime
+# n -> none
+# l -> list
+# t -> tuple
+# d -> dictionary
+
 
 import types
 import struct
 import datetime
+
+_dateTimeObject = datetime.datetime.utcnow()
+_dateTimeType = type( _dateTimeObject )
+_dateType     = type( _dateTimeObject.date() )
+_timeType     = type( _dateTimeObject.time() )
 
 g_dEncodeFunctions = {}
 g_dDecodeFunctions = {}
@@ -19,14 +39,14 @@ def decodeInt( sStream, iIndex ):
 
 g_dEncodeFunctions[ types.IntType ] = encodeInt
 g_dDecodeFunctions[ "i" ] = decodeInt
-  
+
 #Encoding and decoding longs
 def encodeLong( iValue ):
   return "I%se" % iValue
 
 def decodeLong( sStream, iIndex ):
   iEndPos = sStream[ iIndex: ].find( "e" )
-  sNumberString = sStream[ iIndex + 1: iIndex + iEndPos ] 
+  sNumberString = sStream[ iIndex + 1: iIndex + iEndPos ]
   return ( long( sNumberString ), iIndex + iEndPos + 1 )
 
 g_dEncodeFunctions[ types.LongType ] = encodeLong
@@ -38,7 +58,7 @@ def encodeFloat( fValue ):
 
 def decodeFloat( sStream, iIndex ):
   iEndPos = sStream[ iIndex: ].find( "e" )
-  sNumberString = sStream[ iIndex + 1: iIndex + iEndPos ] 
+  sNumberString = sStream[ iIndex + 1: iIndex + iEndPos ]
   return ( float( sNumberString ), iIndex + iEndPos + 1 )
 
 g_dEncodeFunctions[ types.FloatType ] = encodeFloat
@@ -50,13 +70,13 @@ def encodeBool( bValue ):
     return "b1"
   else:
     return "b0"
-  
+
 def decodeBool( sStream, iIndex ):
   if sStream[ iIndex + 1 ] == "0":
     return ( False, iIndex + 2 )
   else:
     return ( True, iIndex + 2 )
-  
+
 g_dEncodeFunctions[ types.BooleanType ] = encodeBool
 g_dDecodeFunctions[ "b" ] = decodeBool
 
@@ -65,22 +85,68 @@ def encodeString( sValue ):
   return "s%s:%s" % ( len( sValue), sValue )
 
 def decodeString( sStream, iIndex ):
-    iSeparatorPosition = sStream[ iIndex + 1: ].find( ":" )
-    iLength = int( sStream[ iIndex + 1 : iIndex + 1 + iSeparatorPosition ] )
-    iStringStart = iIndex + 2 + iSeparatorPosition
-    iStringEnd = iIndex + 2 + iSeparatorPosition + iLength
-    return ( sStream[ iStringStart: iStringEnd ], iStringEnd )
+  iSeparatorPosition = sStream[ iIndex + 1: ].find( ":" )
+  iLength = int( sStream[ iIndex + 1 : iIndex + 1 + iSeparatorPosition ] )
+  iStringStart = iIndex + 2 + iSeparatorPosition
+  iStringEnd = iIndex + 2 + iSeparatorPosition + iLength
+  return ( sStream[ iStringStart: iStringEnd ], iStringEnd )
 
 g_dEncodeFunctions[ types.StringType ] = encodeString
 g_dDecodeFunctions[ "s" ] = decodeString
 
+#Encoding and decoding datetime
+def encodeDateTime( oValue ):
+  prefix = "z"
+  if type( oValue ) == _dateTimeType:
+    tDateTime = ( oValue.year, oValue.month, oValue.day, \
+                      oValue.hour, oValue.minute, oValue.second, \
+                      oValue.microsecond, oValue.tzinfo )
+    print tDateTime
+    return "%sa%s" % ( prefix, encode( tDateTime ) )
+  elif type( oValue ) == _dateType:
+    tData = ( oValue.year, oValue.month, oValue. day )
+    return "%sd%s" % ( prefix, encode( tData ) )
+  elif type( oValue ) == _timeType:
+    tTime = ( oValue.hour, oValue.minute, oValue.second, oValue.microsecond, oValue.tzinfo )
+    return "%st%s" % ( prefix, encode( tTime ) )
+  else:
+    raise Exception( "Unexpected type %s while encoding a datetime object" % str( type( oValue ) ) )
+
+def decodeDateTime( sStream, iIndex ):
+  tupleObject, endIndex = decode( sStream, iIndex + 2 )
+  print tupleObject
+  if sStream[ iIndex + 1] == 'a':
+    dtObject = datetime.datetime( *tupleObject )
+  elif sStream[ iIndex + 1 ] == 'd':
+    dtObject = datetime.date( *tupleObject )
+  elif sStream[ iIndex + 1 ] == 't':
+    dtObject = datetime.time( *tupleObject )
+  else:
+    raise Exception( "Unexpected type %s while decoding a datetime object" % sStream[ iIndex + 1 ] )
+  return ( dtObject, endIndex )
+
+g_dEncodeFunctions[ _dateTimeType ] = encodeDateTime
+g_dEncodeFunctions[ _dateType ] = encodeDateTime
+g_dEncodeFunctions[ _timeType ] = encodeDateTime
+g_dDecodeFunctions[ 'z' ] = decodeDateTime
+
+#Encoding and decoding None
+def encodeNone( oValue ):
+  return "n"
+
+def decodeNone( sStream, iIndex ):
+  return ( None, iIndex + 1 )
+
+g_dEncodeFunctions[ types.NoneType ] = encodeNone
+g_dDecodeFunctions[ 'n' ] = decodeNone
+
 #Encode and decode a list
 def encodeList( lValue ):
-    sListString = "l"
-    for uObject in lValue:
-      sListString += encode( uObject )
-    return "%se" % sListString
-  
+  sListString = "l"
+  for uObject in lValue:
+    sListString += encode( uObject )
+  return "%se" % sListString
+
 def decodeList( sStream, iIndex ):
   lObjects = []
   iIndex += 1
@@ -100,7 +166,7 @@ def encodeTuple( lValue ):
     for uObject in lValue:
       sTupleString += encode( uObject )
     return "%se" % sTupleString
-  
+
 def decodeTuple( sStream, iIndex ):
   lObjects, iIndex = decodeList( sStream, iIndex )
   return ( tuple( lObjects ), iIndex )
@@ -136,23 +202,27 @@ def encode( uObject ):
     return g_dEncodeFunctions[ type( uObject ) ]( uObject )
   except Exception, e:
     raise
-  
+
 def decode( sStream, iIndex = 0 ):
   try:
     #print "DECODE FUNCTION : %s" % g_dDecodeFunctions[ sStream [ iIndex ] ]
     return g_dDecodeFunctions[ sStream[ iIndex ] ]( sStream, iIndex )
   except Exception, e:
     raise
-  
-  
+
+
 if __name__=="__main__":
   uObject = {
   "algo": [ 10,2,3,4,5,6,7,8,9,0.123456789 ],
   105:2123123123123213,
   223423.324:"asfasf",
-  "bools": [ False, True ]
+  "bools": [ False, True ],
+  'datetime': _dateTimeObject,
+  'date' : _dateTimeObject.date(),
+  'time': _dateTimeObject.time()
    }
-  sData = encode( uObject )  
+  sData = encode( uObject )
   print sData
   print decode( sData )
-  
+
+
