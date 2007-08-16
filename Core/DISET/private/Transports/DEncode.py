@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/Attic/DEncode.py,v 1.2 2007/08/16 09:18:13 acasajus Exp $
-__RCSID__ = "$Id: DEncode.py,v 1.2 2007/08/16 09:18:13 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/Attic/DEncode.py,v 1.3 2007/08/16 09:19:09 acasajus Exp $
+__RCSID__ = "$Id: DEncode.py,v 1.3 2007/08/16 09:19:09 acasajus Exp $"
 
 # Encoding and decoding for dirac
 #
@@ -101,7 +101,6 @@ def encodeDateTime( oValue ):
     tDateTime = ( oValue.year, oValue.month, oValue.day, \
                       oValue.hour, oValue.minute, oValue.second, \
                       oValue.microsecond, oValue.tzinfo )
-    print tDateTime
     return "%sa%s" % ( prefix, encode( tDateTime ) )
   elif type( oValue ) == _dateType:
     tData = ( oValue.year, oValue.month, oValue. day )
@@ -114,7 +113,6 @@ def encodeDateTime( oValue ):
 
 def decodeDateTime( sStream, iIndex ):
   tupleObject, endIndex = decode( sStream, iIndex + 2 )
-  print tupleObject
   if sStream[ iIndex + 1] == 'a':
     dtObject = datetime.datetime( *tupleObject )
   elif sStream[ iIndex + 1 ] == 'd':
