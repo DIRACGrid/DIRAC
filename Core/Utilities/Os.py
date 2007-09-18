@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Os.py,v 1.3 2007/06/26 17:38:01 paterson Exp $
-__RCSID__ = "$Id: Os.py,v 1.3 2007/06/26 17:38:01 paterson Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Os.py,v 1.4 2007/09/18 12:58:18 atsareg Exp $
+__RCSID__ = "$Id: Os.py,v 1.4 2007/09/18 12:58:18 atsareg Exp $"
 """
    Collection of DIRAC useful os related modules
    by default on Error they return None
@@ -11,7 +11,7 @@ from string                         import split,strip,join
 from DIRAC.Core.Utilities.Subprocess import shellCall
 from DIRAC.Core.Utilities import List
 
-import shutil
+import shutil, os
 
 DEBUG = 0
 
@@ -30,6 +30,36 @@ def uniquePath( path = None ):
   except:
     return None
 
+def getDiskSpace(path='.'):
+  """ Get the free disk space in the partition containing the path.
+      The disk space is reported in MBytes. Returned 0 in case of any
+      error, e.g. path does not exist
+  """
+
+  if not os.path.exists(path):
+    return 0
+  comm = 'df -P -m %s | tail -1' % path
+  resultDF = shellCall(0,comm)
+  if resultDF['OK']:
+    output = resultDF['Value'][1]
+    print output
+    if output.find('/afs') >= 0 :    # AFS disk space
+      comm = 'fs lq | tail -1'
+      resultAFS = shellCall(0,comm)
+      if resultAFS['OK']:
+        output = resultAFS['Value'][1]
+        fields = output.split()
+        quota = long(fields[1])
+        used = long(fields[2])
+        space = (quota-used)/1024
+        return int(space)
+      else:
+        return 0
+    else:
+      fields = output.split()
+      return int(fields[3])
+  else:
+    return 0
 
 def fixLDPath( root, ldpath, directory):
   """
