@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/Attic/DEncode.py,v 1.3 2007/08/16 09:19:09 acasajus Exp $
-__RCSID__ = "$Id: DEncode.py,v 1.3 2007/08/16 09:19:09 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/Attic/DEncode.py,v 1.4 2007/09/20 17:50:37 acasajus Exp $
+__RCSID__ = "$Id: DEncode.py,v 1.4 2007/09/20 17:50:37 acasajus Exp $"
 
 # Encoding and decoding for dirac
 #
@@ -187,7 +187,7 @@ def decodeDict( sStream, iIndex ):
     uKey, iIndex = decode( sStream, iIndex )
     uValue, iIndex = decode( sStream, iIndex )
     dObjects[ uKey ] = uValue
-  return ( dObjects, iIndex )
+  return ( dObjects, iIndex + 1 )
 
 g_dEncodeFunctions[ types.DictType ] = encodeDict
 g_dDecodeFunctions[ "d" ] = decodeDict
@@ -211,14 +211,10 @@ def decode( sStream, iIndex = 0 ):
 
 if __name__=="__main__":
   uObject = {
-  "algo": [ 10,2,3,4,5,6,7,8,9,0.123456789 ],
-  105:2123123123123213,
-  223423.324:"asfasf",
-  "bools": [ False, True ],
-  'datetime': _dateTimeObject,
-  'date' : _dateTimeObject.date(),
-  'time': _dateTimeObject.time()
+    1 : { 2 : 3 },
+    4 : { 5 : 6 }
    }
+  print uObject
   sData = encode( uObject )
   print sData
   print decode( sData )
