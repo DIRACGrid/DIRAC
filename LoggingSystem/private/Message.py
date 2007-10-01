@@ -1,12 +1,12 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Message.py,v 1.4 2007/06/14 13:44:40 acasajus Exp $
-__RCSID__ = "$Id: Message.py,v 1.4 2007/06/14 13:44:40 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Message.py,v 1.5 2007/10/01 17:09:08 mseco Exp $
+__RCSID__ = "$Id: Message.py,v 1.5 2007/10/01 17:09:08 mseco Exp $"
 
 import thread
 from DIRAC.Core.Utilities import Time
 
 def tupleToMessage( varTuple ):
   varList = list( varTuple )
-  varList[ 2 ] = time.fromString( varList[ 2 ] )
+  varList[ 2 ] = Time.fromString( varList[ 2 ] )
   return Message( *varList )
 
 class Message:

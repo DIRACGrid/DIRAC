@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.11 2007/06/27 16:05:18 acasajus Exp $
-__RCSID__ = "$Id: Logger.py,v 1.11 2007/06/27 16:05:18 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.12 2007/10/01 17:09:08 mseco Exp $
+__RCSID__ = "$Id: Logger.py,v 1.12 2007/10/01 17:09:08 mseco Exp $"
 """
    DIRAC Logger client
 """
@@ -163,7 +163,8 @@ class Logger:
       if not messageObject.getName():
         messageObject.setName( self._systemName )
       self.__processMessage( messageObject )
-    return
+    return True
+  #S_OK()
 
   def __testLevel( self, sLevel ):
     return abs( self._logLevels.getLevelValue( sLevel ) ) >= self._minLevel

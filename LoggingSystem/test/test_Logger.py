@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/test/test_Logger.py,v 1.2 2007/03/14 06:36:36 rgracian Exp $
-__RCSID__ = "$Id: test_Logger.py,v 1.2 2007/03/14 06:36:36 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/test/test_Logger.py,v 1.3 2007/10/01 17:09:08 mseco Exp $
+__RCSID__ = "$Id: test_Logger.py,v 1.3 2007/10/01 17:09:08 mseco Exp $"
 """
 """
 from dirac import DIRAC
@@ -53,5 +53,8 @@ testdict = { 'DIRAC.gLogger'               : testList,}
 
   
 DIRAC.Tests.run( testdict, 'DIRAC.Information.Logger' )
+
+import time
+time.sleep( 10 )
 
 DIRAC.exit()
