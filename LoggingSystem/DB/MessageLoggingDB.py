@@ -1,4 +1,4 @@
-""" MsgLoggingDB class is a front-end to the Message Logging Database.
+""" MessageLoggingDB class is a front-end to the Message Logging Database.
     The following methods are provided
 
     insertMsgIntoDB()
@@ -19,12 +19,12 @@ from DIRAC.Core.Utilities import Time, dateTime, hour, date, week, day
 from DIRAC.LoggingSystem.private.LogLevels import LogLevels
 
 ###########################################################
-class MsgLoggingDB(DB):
+class MessageLoggingDB(DB):
 
   def __init__(self, maxQueueSize=10):
     """ Standard Constructor
     """
-    DB.__init__(self,'MsgLoggingDB','Logging/MsgLoggingDB',maxQueueSize)
+    DB.__init__(self,'MessageLoggingDB','Logging/MessageLoggingDB',maxQueueSize)
 
   def __buildCondition(self, condDict, older=None, newer=None ):
     """ build SQL condition statement from provided condDict
@@ -116,7 +116,7 @@ class MsgLoggingDB(DB):
 
   def __queryDB( self, showVarList=None, condDict={}, older=None, newer=None ):
     """ This function composes the SQL query from the conditions provided and
-        the desired columns and querys the MsgLoggingDB.
+        the desired columns and querys the MessageLoggingDB.
         If no list is provided the default is to use all the meaninful
         variables of the DB
     """

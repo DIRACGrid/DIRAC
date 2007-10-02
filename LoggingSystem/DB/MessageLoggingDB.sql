@@ -7,9 +7,9 @@
 ---
 --------------------------------------------------------------------------------
 
-DROP DATABASE IF EXISTS MsgLoggingDB;
+DROP DATABASE IF EXISTS MessageLoggingDB;
 
-CREATE DATABASE MsgLoggingDB;
+CREATE DATABASE MessageLoggingDB;
 
 --------------------------------------------------------------------------------
 -- Database owner definition
@@ -21,13 +21,13 @@ DELETE FROM user WHERE user='Dirac';
 -- Must set passwords for database user by replacing "must_be_set".
 --
 
-GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON MsgLoggingDB.* TO Dirac@localhost IDENTIFIED BY 'lhcbMySQL';
-GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON MsgLoggingDB.* TO Dirac@loggerhost IDENTIFIED BY 'lhcbMySQL';
+GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON MessageLoggingDB.* TO Dirac@localhost IDENTIFIED BY 'lhcbMySQL';
+GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON MessageLoggingDB.* TO Dirac@loggerhost IDENTIFIED BY 'lhcbMySQL';
 
 FLUSH PRIVILEGES;
 
 ------------------------------------------------------------------------------- 
-USE MsgLoggingDB;
+USE MessageLoggingDB;
 
 --------------------------------------------------------------------------------
 DROP TABLE IF EXISTS DateStamps;

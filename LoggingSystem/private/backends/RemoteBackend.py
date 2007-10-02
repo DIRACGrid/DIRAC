@@ -1,10 +1,12 @@
+"""This is the Backed to send the Log Messages to the Log Server
+"""
 import threading
 import Queue
 from DIRAC.Core.Utilities import Time
-from DIRAC.LoggingSystem.private.backends.PrintBackend import PrintBackend
+from DIRAC.LoggingSystem.private.backends.BaseBackend import BaseBackend
 from DIRAC.LoggingSystem.private.LogLevels import LogLevels
 
-class RemoteBackend( PrintBackend, threading.Thread ):
+class RemoteBackend( BaseBackend, threading.Thread ):
 
   def __init__( self, cfgPath ):
     threading.Thread.__init__( self )
@@ -39,21 +41,12 @@ class RemoteBackend( PrintBackend, threading.Thread ):
         
       
   def _sendMessageToServer( self, msgBundle ):
-    self.oSock.doSomethingForEveryone( msgBundle )
+    self.oSock.addMessages( msgBundle )
 
   def config(self):
     from DIRAC.Core.DISET.RPCClient import RPCClient
     self.oSock = RPCClient( "Logging/Logging" )
     
-# To implement this part we will have to make use of locks.
-# For the time beeing it is not neccessary so in order to avoid
-# problems it is commented out.
-#
-#  def unset(self):
-#    if self._running:
-#      self._running=False
-#      self.oSock.close()
-
   def _testLevel( self, sLevel ):
     return abs( self._logLevels.getLevelValue( sLevel ) ) >= self._minLevel
 
