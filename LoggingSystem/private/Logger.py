@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.12 2007/10/01 17:09:08 mseco Exp $
-__RCSID__ = "$Id: Logger.py,v 1.12 2007/10/01 17:09:08 mseco Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.13 2007/10/02 11:24:34 mseco Exp $
+__RCSID__ = "$Id: Logger.py,v 1.13 2007/10/02 11:24:34 mseco Exp $"
 """
    DIRAC Logger client
 """
@@ -69,6 +69,12 @@ class Logger:
       if retDict[ 'OK' ] and retDict[ 'Value' ].lower() in ( "y", "yes", "1", "true" ) :
         self._showCallingFrame = True
       self._systemName = str( systemName )
+      retDict = gConfig.getOption( "/DIRAC/Site" )
+      if retDict[ 'OK' ]:
+        self._site = retDict[ 'Value' ]
+      else:
+        self._site = ''
+
 
   def getName( self ):
     return self._systemName
@@ -79,7 +85,8 @@ class Logger:
                              Time.dateTime(),
                              sMsg,
                              sVarMsg,
-                             self.__discoverCallingFrame() )
+                             self.__discoverCallingFrame(),
+                             self._site)
     return self.processMessage( messageObject )
 
   def info( self, sMsg, sVarMsg = '' ):
@@ -88,7 +95,8 @@ class Logger:
                              Time.dateTime(),
                              sMsg,
                              sVarMsg,
-                             self.__discoverCallingFrame() )
+                             self.__discoverCallingFrame(),
+                             self._site )
     return self.processMessage( messageObject )
 
   def verbose( self, sMsg, sVarMsg = '' ):
@@ -97,7 +105,8 @@ class Logger:
                              Time.dateTime(),
                              sMsg,
                              sVarMsg,
-                             self.__discoverCallingFrame() )
+                             self.__discoverCallingFrame(),
+                             self._site )
     return self.processMessage( messageObject )
 
   def debug( self, sMsg, sVarMsg = '' ):
@@ -106,7 +115,8 @@ class Logger:
                              Time.dateTime(),
                              sMsg,
                              sVarMsg,
-                             self.__discoverCallingFrame() )
+                             self.__discoverCallingFrame(),
+                             self._site )
     return self.processMessage( messageObject )
 
   def warn( self, sMsg, sVarMsg = '' ):
@@ -115,7 +125,8 @@ class Logger:
                              Time.dateTime(),
                              sMsg,
                              sVarMsg,
-                             self.__discoverCallingFrame() )
+                             self.__discoverCallingFrame(),
+                             self._site )
     return self.processMessage( messageObject )
 
   def error( self, sMsg, sVarMsg = '' ):
@@ -124,7 +135,8 @@ class Logger:
                              Time.dateTime(),
                              sMsg,
                              sVarMsg,
-                             self.__discoverCallingFrame() )
+                             self.__discoverCallingFrame(),
+                             self._site )
     return self.processMessage( messageObject )
 
   def exception( self, sMsg = "", sVarMsg = '', lException = False ):
