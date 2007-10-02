@@ -69,9 +69,9 @@ class SystemLoggingDB(DB):
   def __UniqVal( self, VarList ):
     IntList=list(set(VarList))
 
-    if IntList.count('VartxtString'):
-      IntList.remove('VartxtString')
-      IntList=list(set(IntList.append('MsgTime')))
+    if IntList.count('VariableText'):
+      IntList.remove('VariableText')
+      IntList=list(set(IntList.append('MessageTime')))
 
     if IntList.count('OwnerGroup'):
       IntList.remove('OwnerGroup')
@@ -84,16 +84,17 @@ class SystemLoggingDB(DB):
     """ build the SQL list of tables needed for the query
         from the list of variables provided
     """
-    TableDict={'MsgTime':'DateStamps', 'FixtxtString':'FixtxtmsgTable',
-                 'SystemName':'System', 'SubSystemName':'SubSystem',
-                 'FrameName':'Frame', 'LogLevelName':'LogLevels',
-                 'OwnerDN':'UserDNs', 'ClientIPNumberString':'ClientIPs'}
+    TableDict={'MessageTime':'MessageRepository', 'FixedText':'FixedTextMessage',
+                 'SystemName':'Systems', 'SubSystemName':'SubSystems',
+                 'FrameName':'Frames', 'LogLevelName':'LogLevels',
+                 'OwnerDN':'UserDNs', 'ClientIPNumberString':'ClientIPs',
+                 'SiteName':'Sites'}
 
     conjunction=' NATURAL JOIN '
 
     TableList=TableDict.values()
-    TableList.remove( 'DateStamps' )
-    TableList.insert( 0, 'DateStamps' )
+    TableList.remove( 'MessageRepository' )
+    TableList.insert( 0, 'MessageRepository' )
     tablestring=conjunction.join(TableList)
 
     if not len(showVarList):
@@ -101,9 +102,9 @@ class SystemLoggingDB(DB):
 
       tablestring=''
 
-      if VarList.count('MsgTime'):
-        VarList.drop('MsgTime')
-        tablestring='DateStamps'
+      if VarList.count('MessageTime'):
+        VarList.drop('MessageTime')
+        tablestring='MessageRepository'
         if not len(VarList):
           tablestring='%s%s' %  ( tablestring, conjunction )
 
@@ -123,10 +124,10 @@ class SystemLoggingDB(DB):
     cond = self.__buildCondition( condDict, older, newer )
 
     if showVarList == None:
-      showVarList = ['MsgTime', 'LogLevelName', 'FixtxtString',
-                     'VartxtString', 'SystemName', 'FrameName',
+      showVarList = ['MessageTime', 'LogLevelName', 'FixedText',
+                     'VariableText', 'SystemName', 'FrameName',
                      'SubSystemName', 'OwnerDN', 'OwnerGroup',
-                     'ClientIPNumberString']
+                     'ClientIPNumberString','SiteName']
             
     cmd = 'SELECT %s FROM %s %s' % (','.join(showVarList),
                                     self.__buildTableList(showVarList), cond)
@@ -134,7 +135,7 @@ class SystemLoggingDB(DB):
     return self._query(cmd)
 
 
-  def insertMsgIntoDB( self, Msg, UserDN, usergroup, RemoteAdd ):
+  def insertMsgIntoDB( self, Msg, UserDN, usergroup, remoteAdd ):
     """ This function inserts the Logging message into the DB
     """
     msgName = Msg.getName()
@@ -146,6 +147,7 @@ class SystemLoggingDB(DB):
       msgVar = "'No variable text'"
     msgLevel = LogLevels().getLevelValue( Msg.getLevel() )
     msgDate = Time.toString( Msg.getTime() )
+    msgSite = Msg.getSite()
 
     msgList = [ "STR_TO_DATE('%s',GET_FORMAT(DATETIME,'ISO'))" % msgDate, msgVar ]
     
@@ -168,11 +170,21 @@ class SystemLoggingDB(DB):
     else:
       msgList.append(result['Value'])
 
+    if not msgSite:
+      msgSite = 'Unknown'
+    qry = 'SELECT SiteID FROM Sites WHERE SiteName="%s"' % msgSite
+    cmd = 'INSERT INTO Sites ( Site ) VALUES ( "%s" )' % msgSite
+    result = self.DBCommit( qry, cmd, errstr % 'Sites' )
+    if not result['OK']:
+      return result
+    else:
+      msgList.append(result['Value'])
+
     msgList.append(msgLevel)
     
-    qry = 'SELECT FixtxtID FROM FixtxtmsgTable WHERE FixtxtString="%s"' % msgFix
-    cmd = 'INSERT INTO FixtxtmsgTable ( FixtxtString ) VALUES ( "%s" )' % msgFix
-    result = self.DBCommit( qry, cmd, errstr % 'FixtxtmsgTable' )
+    qry = 'SELECT FixedTextID FROM FixedTextMessages WHERE FixedTextString="%s"' % msgFix
+    cmd = 'INSERT INTO FixedTextMessages ( FixedTextString ) VALUES ( "%s" )' % msgFix
+    result = self.DBCommit( qry, cmd, errstr % 'FixedTextMessages' )
     if not result['OK']:
       return result
     else:
@@ -180,20 +192,20 @@ class SystemLoggingDB(DB):
 
 
     if not msgName:
-      msgName = 'No system'
-    qry = 'SELECT SystemID FROM System WHERE SystemName="%s"' % msgName
-    cmd = 'INSERT INTO System ( SystemName ) VALUES ( "%s" )' % msgName
-    result = self.DBCommit( qry, cmd, errstr % 'System' )
+      msgName = 'Unknown'
+    qry = 'SELECT SystemID FROM Systems WHERE SystemName="%s"' % msgName
+    cmd = 'INSERT INTO Systems ( SystemName ) VALUES ( "%s" )' % msgName
+    result = self.DBCommit( qry, cmd, errstr % 'Systems' )
     if not result['OK']:
       return result
     else:
       msgList.append(result['Value'])
 
     if not msgSubSysName:
-      msgSubSysName = 'No subsystem'
-    qry = 'SELECT SubSystemID FROM SubSystem WHERE SubSystemName="%s"' % msgSubSysName
-    cmd = 'INSERT INTO SubSystem ( SubSystemName ) VALUES ( "%s" )' % msgSubSysName
-    result = self.DBCommit( qry, cmd, errstr % 'SubSystem' )
+      msgSubSysName = 'Unknown'
+    qry = 'SELECT SubSystemID FROM SubSystems WHERE SubSystemName="%s"' % msgSubSysName
+    cmd = 'INSERT INTO SubSystems ( SubSystemName ) VALUES ( "%s" )' % msgSubSysName
+    result = self.DBCommit( qry, cmd, errstr % 'SubSystems' )
     if not result['OK']:
       return result
     else:
@@ -201,16 +213,16 @@ class SystemLoggingDB(DB):
 
 
     if not msgFrameInfo:
-      msgFrameInfo = 'No frame'
-    qry = 'SELECT FrameID FROM Frame WHERE FrameName="%s"' % msgFrameInfo
-    cmd = 'INSERT INTO Frame ( FrameName ) VALUES ( "%s" )' % msgFrameInfo
-    result = self.DBCommit( qry, cmd, errstr % 'Frame' )
+      msgFrameInfo = 'Unknown'
+    qry = 'SELECT FrameID FROM Frames WHERE FrameName="%s"' % msgFrameInfo
+    cmd = 'INSERT INTO Frames ( FrameName ) VALUES ( "%s" )' % msgFrameInfo
+    result = self.DBCommit( qry, cmd, errstr % 'Frames' )
     if result['OK']:
       msgList.append(result['Value'])
     else:
       return result
 
-    cmd = 'INSERT INTO DateStamps VALUES (%s)' % ', '.join( str(x) for x in msgList )
+    cmd = 'INSERT INTO MessageRepository VALUES (%s)' % ', '.join( str(x) for x in msgList )
     result = self._update(cmd)
     if result['OK']:
       msgList.append(result['Value'])
@@ -264,7 +276,7 @@ class SystemLoggingDB(DB):
     return self.__queryDB( newer = initDate, older = endDate )
 
   def getMsgByMainTxt( self, Msgtxt, firstdate = None, lastdate = None ):
-    return self.__queryDB( condDict = {'FixtxtString': Msgtxt},
+    return self.__queryDB( condDict = {'FixedTextString': Msgtxt},
                           older = lastdate, newer = firstdate )
 
   def getMsgs(self, conds , firstdate = None, lastdate = None ):

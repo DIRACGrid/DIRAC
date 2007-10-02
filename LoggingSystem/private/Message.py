@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Message.py,v 1.5 2007/10/01 17:09:08 mseco Exp $
-__RCSID__ = "$Id: Message.py,v 1.5 2007/10/01 17:09:08 mseco Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Message.py,v 1.6 2007/10/02 11:00:00 mseco Exp $
+__RCSID__ = "$Id: Message.py,v 1.6 2007/10/02 11:00:00 mseco Exp $"
 
 import thread
 from DIRAC.Core.Utilities import Time
@@ -12,6 +12,12 @@ def tupleToMessage( varTuple ):
 class Message:
 
   def __init__( self, systemName, level, time, msgText, variableText, frameInfo, subSystemName = False ):
+    from DIRAC.ConfigurationSystem.Client.Config import gConfig
+    #Configure outputs
+    retDict = gConfig.getOption( "/DIRAC/Site" )
+    if not retDict[ 'OK' ]:
+      self.site = [ 'stdout' ]
+
     self.systemName = systemName
     self.level = level
     self.time = time
@@ -20,7 +26,7 @@ class Message:
     self.frameInfo = frameInfo
     self.subSystemName = subSystemName
     self.threadId = thread.get_ident()
-
+    
   def getName( self ):
     return self.systemName
 
@@ -55,6 +61,9 @@ class Message:
   def getFrameInfo( self ):
     return self.frameInfo
 
+  def getSite( self ):
+    return self.site
+
   def __str__( self ):
     messageString = ""
     for lineString in self.getMessage().split( "\n" ):
@@ -71,4 +80,4 @@ class Message:
              self.msgText,
              self.variableText,
              self.frameInfo,
-             self.subSystemName )
+             self.subSystemName, self.site )
