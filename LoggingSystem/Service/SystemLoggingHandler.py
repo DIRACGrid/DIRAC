@@ -36,7 +36,7 @@ class SystemLoggingHandler( RequestHandler ):
     LogDB.insertMsgIntoDB( messageObject, UserDN, Usergroup, Address )
 
         
-  types_addMessage = []
+  types_addMessages = []
 
   #A normal exported function (begins with export_)
   def export_addMessages( self, msgList ):
