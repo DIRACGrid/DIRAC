@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.13 2007/10/02 11:24:34 mseco Exp $
-__RCSID__ = "$Id: Logger.py,v 1.13 2007/10/02 11:24:34 mseco Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.14 2007/10/02 11:27:42 mseco Exp $
+__RCSID__ = "$Id: Logger.py,v 1.14 2007/10/02 11:27:42 mseco Exp $"
 """
    DIRAC Logger client
 """
@@ -26,6 +26,7 @@ class Logger:
     self._subLoggersDict = {}
     self._logLevels = LogLevels()
     self.__preinitialize()
+    self._site=False
 
   def initialized( self ):
     return not self._systemName == False
@@ -72,8 +73,6 @@ class Logger:
       retDict = gConfig.getOption( "/DIRAC/Site" )
       if retDict[ 'OK' ]:
         self._site = retDict[ 'Value' ]
-      else:
-        self._site = ''
 
 
   def getName( self ):
