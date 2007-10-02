@@ -30,27 +30,29 @@ FLUSH PRIVILEGES;
 USE SystemLoggingDB;
 
 --------------------------------------------------------------------------------
-DROP TABLE IF EXISTS DateStamps;
-CREATE TABLE DateStamps (
---    TimeID INTEGER NOT NULL AUTO_INCREMENT,
-    MsgTime DATETIME NOT NULL,
-    VartxtString VARCHAR(255) NOT NULL,
+DROP TABLE IF EXISTS MessageRepository;
+CREATE TABLE MessageRepository (
+    MessageID INTEGER NOT NULL AUTO_INCREMENT,
+    MessageTime DATETIME NOT NULL,
+    VariableText VARCHAR(255) NOT NULL,
     UserDNID INTEGER NOT NULL,
     ClientIPNumberID INTEGER NOT NULL,
 --    ClientIPNumber INTEGER NOT NULL DEFAULT 'FFFFFFFF',
     LogLevel INTEGER NOT NULL,
-    FixtxtID INTEGER NOT NULL,
+    FixedTextID INTEGER NOT NULL,
     SystemID INTEGER NOT NULL,
     SubSystemID INTEGER NOT NULL,
     FrameID INTEGER NOT NULL,
+    SiteID INTEGER NOT NULL,
     FOREIGN KEY ( UserDNID ) REFERENCES UserDNs( UserDNID ),
     FOREIGN KEY ( ClientIPNumberID ) REFERENCES ClientIPs( ClientIPNumberID ),
     FOREIGN KEY ( LogLevel ) REFERENCES LogLevels( LogLevel ),
-    FOREIGN KEY ( FixtxtID ) REFERENCES FixtxtmsgTable( FixtxtID ),
+    FOREIGN KEY ( FixedTextID ) REFERENCES FixedTextMessages( FixedTextID ),
     FOREIGN KEY ( SystemID ) REFERENCES System( SystemID ),
     FOREIGN KEY ( SubSystemID ) REFERENCES SubSystem( SubSystemID ),
     FOREIGN KEY ( FrameID ) REFERENCES Frame( FrameID ),
-    PRIMARY KEY ( MsgTime, UserDNID, ClientIPNumberID, LogLevel, FixtxtID, SystemID, SubSystemID, FrameID )
+    FOREIGN KEY ( SiteID ) REFERENCES Site( SiteID ),
+    PRIMARY KEY ( MessageID, MessageTime, UserDNID, ClientIPNumberID, LogLevel, FixedTextID, SystemID, SubSystemID, FrameID )
 );
 
 --------------------------------------------------------------------------------
@@ -82,8 +84,8 @@ CREATE TABLE LogLevels (
 );
 
 --------------------------------------------------------------------------------
-DROP TABLE IF EXISTS FixtxtmsgTable;
-CREATE TABLE FixtxtmsgTable (
+DROP TABLE IF EXISTS FixedTextMessages;
+CREATE TABLE FixedTextMessages (
     FixtxtID INTEGER NOT NULL AUTO_INCREMENT,
     FixtxtString VARCHAR(255) NOT NULL DEFAULT 'No text',
     PRIMARY KEY ( FixtxtID )
@@ -93,7 +95,7 @@ CREATE TABLE FixtxtmsgTable (
 DROP TABLE IF EXISTS System;
 CREATE TABLE System (
     SystemID INTEGER NOT NULL AUTO_INCREMENT,
-    SystemName VARCHAR(128) NOT NULL DEFAULT 'No system',
+    SystemName VARCHAR(128) NOT NULL DEFAULT 'Unknown',
     PRIMARY KEY ( SystemID )
 );
 
@@ -101,7 +103,7 @@ CREATE TABLE System (
 DROP TABLE IF EXISTS SubSystem;
 CREATE TABLE SubSystem (
     SubSystemID INTEGER NOT NULL AUTO_INCREMENT,
-    SubSystemName VARCHAR(128) NOT NULL DEFAULT 'No subsystem',
+    SubSystemName VARCHAR(128) NOT NULL DEFAULT 'Unknown',
     PRIMARY KEY ( SubSystemID )
 );
 
@@ -109,8 +111,15 @@ CREATE TABLE SubSystem (
 DROP TABLE IF EXISTS Frame;
 CREATE TABLE Frame (
     FrameID INTEGER NOT NULL AUTO_INCREMENT,
-    FrameName VARCHAR(128) NOT NULL DEFAULT 'No frame',
+    FrameName VARCHAR(128) NOT NULL DEFAULT 'Unknown',
     PRIMARY KEY ( FrameID )
+);
+
+DROP TABLE IF EXISTS Site;
+CREATE TABLE Site (
+    SiteID INTEGER NOT NULL AUTO_INCREMENT,
+    SiteName VARCHAR(64) NOT NULL DEFAULT 'Unknown',
+    PRIMARY KEY ( SiteID )
 );
 
 INSERT INTO LogLevels VALUES (30,'ALWAYS');
