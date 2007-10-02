@@ -35,22 +35,22 @@ class RemoteBackend( BaseBackend, threading.Thread ):
           if self._testLevel( msg.getLevel() ):
             bundle.append( msg.toTuple() )
         else:
-          break     
+          break
       if len( bundle ) > 0:
         self._sendMessageToServer( bundle )
-        
-      
+
+
   def _sendMessageToServer( self, msgBundle ):
     self.oSock.addMessages( msgBundle )
 
   def config(self):
     from DIRAC.Core.DISET.RPCClient import RPCClient
-    self.oSock = RPCClient( "Logging/Logging" )
-    
+    self.oSock = RPCClient( "Logging/SystemLogging", timeout = 10, useCertificates = "auto" )
+
   def _testLevel( self, sLevel ):
     return abs( self._logLevels.getLevelValue( sLevel ) ) >= self._minLevel
 
   def flush(self):
     while not self._msgQueue.empty():
-      import time  
+      import time
       time.sleep( .1 )
