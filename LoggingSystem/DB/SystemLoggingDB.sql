@@ -91,31 +91,31 @@ CREATE TABLE FixedTextMessages (
 );
 
 --------------------------------------------------------------------------------
-DROP TABLE IF EXISTS System;
-CREATE TABLE System (
+DROP TABLE IF EXISTS Systems;
+CREATE TABLE Systems (
     SystemID INTEGER NOT NULL AUTO_INCREMENT,
     SystemName VARCHAR(128) NOT NULL DEFAULT 'Unknown',
     PRIMARY KEY ( SystemID )
 );
 
 --------------------------------------------------------------------------------
-DROP TABLE IF EXISTS SubSystem;
-CREATE TABLE SubSystem (
+DROP TABLE IF EXISTS SubSystems;
+CREATE TABLE SubSystems (
     SubSystemID INTEGER NOT NULL AUTO_INCREMENT,
     SubSystemName VARCHAR(128) NOT NULL DEFAULT 'Unknown',
     PRIMARY KEY ( SubSystemID )
 );
 
 --------------------------------------------------------------------------------
-DROP TABLE IF EXISTS Frame;
-CREATE TABLE Frame (
+DROP TABLE IF EXISTS Frames;
+CREATE TABLE Frames (
     FrameID INTEGER NOT NULL AUTO_INCREMENT,
     FrameName VARCHAR(128) NOT NULL DEFAULT 'Unknown',
     PRIMARY KEY ( FrameID )
 );
 
-DROP TABLE IF EXISTS Site;
-CREATE TABLE Site (
+DROP TABLE IF EXISTS Sites;
+CREATE TABLE Sites (
     SiteID INTEGER NOT NULL AUTO_INCREMENT,
     SiteName VARCHAR(64) NOT NULL DEFAULT 'Unknown',
     PRIMARY KEY ( SiteID )
