@@ -21,8 +21,7 @@ DELETE FROM user WHERE user='Dirac';
 -- Must set passwords for database user by replacing "must_be_set".
 --
 
-GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON SystemLoggingDB.* TO Dirac@localhost IDENTIFIED BY 'lhcbMySQL';
-GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON SystemLoggingDB.* TO Dirac@loggerhost IDENTIFIED BY 'lhcbMySQL';
+GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON SystemLoggingDB.* TO Dirac@localhost IDENTIFIED BY 'must_be_set';
 
 FLUSH PRIVILEGES;
 
@@ -37,13 +36,13 @@ CREATE TABLE MessageRepository (
     VariableText VARCHAR(255) NOT NULL,
     UserDNID INTEGER NOT NULL,
     ClientIPNumberID INTEGER NOT NULL,
+    SiteID INTEGER NOT NULL,
 --    ClientIPNumber INTEGER NOT NULL DEFAULT 'FFFFFFFF',
     LogLevel INTEGER NOT NULL,
     FixedTextID INTEGER NOT NULL,
     SystemID INTEGER NOT NULL,
     SubSystemID INTEGER NOT NULL,
     FrameID INTEGER NOT NULL,
-    SiteID INTEGER NOT NULL,
     FOREIGN KEY ( UserDNID ) REFERENCES UserDNs( UserDNID ),
     FOREIGN KEY ( ClientIPNumberID ) REFERENCES ClientIPs( ClientIPNumberID ),
     FOREIGN KEY ( LogLevel ) REFERENCES LogLevels( LogLevel ),
@@ -86,9 +85,9 @@ CREATE TABLE LogLevels (
 --------------------------------------------------------------------------------
 DROP TABLE IF EXISTS FixedTextMessages;
 CREATE TABLE FixedTextMessages (
-    FixtxtID INTEGER NOT NULL AUTO_INCREMENT,
-    FixtxtString VARCHAR(255) NOT NULL DEFAULT 'No text',
-    PRIMARY KEY ( FixtxtID )
+    FixedTextID INTEGER NOT NULL AUTO_INCREMENT,
+    FixedTextString VARCHAR(255) NOT NULL DEFAULT 'Unknown',
+    PRIMARY KEY ( FixedTextID )
 );
 
 --------------------------------------------------------------------------------
