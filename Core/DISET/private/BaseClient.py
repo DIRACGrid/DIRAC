@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.17 2007/06/28 13:51:36 acasajus Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.17 2007/06/28 13:51:36 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.18 2007/10/02 14:07:14 acasajus Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.18 2007/10/02 14:07:14 acasajus Exp $"
 
 import DIRAC
 from DIRAC.Core.DISET.private.Protocols import gProtocolDict
@@ -37,6 +37,9 @@ class BaseClient:
     if groupToUse:
       self.groupToUse = groupToUse
     else:
+      if self.useCertificates == "auto":
+        self.useCertificates = gConfig._useServerCertificate()
+
       if self.useCertificates:
         self.groupToUse = self.defaultHostGroup
       else:
