@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.14 2007/10/02 11:27:42 mseco Exp $
-__RCSID__ = "$Id: Logger.py,v 1.14 2007/10/02 11:27:42 mseco Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.15 2007/10/02 14:08:18 acasajus Exp $
+__RCSID__ = "$Id: Logger.py,v 1.15 2007/10/02 14:08:18 acasajus Exp $"
 """
    DIRAC Logger client
 """
@@ -148,7 +148,8 @@ class Logger:
                              Time.dateTime(),
                              sMsg,
                              sVarMsg,
-                             self.__discoverCallingFrame() )
+                             self.__discoverCallingFrame(),
+                             self._site )
     return self.processMessage( messageObject )
 
   def fatal( self, sMsg, sVarMsg = '' ):
@@ -157,7 +158,8 @@ class Logger:
                              Time.dateTime(),
                              sMsg,
                              sVarMsg,
-                             self.__discoverCallingFrame() )
+                             self.__discoverCallingFrame(),
+                             self._site )
     return self.processMessage( messageObject )
 
   def showStack( self ):
@@ -166,7 +168,8 @@ class Logger:
                              Time.dateTime(),
                              "",
                              self.__getStackString(),
-                             self.__discoverCallingFrame() )
+                             self.__discoverCallingFrame(),
+                             self._site )
     self.processMessage( messageObject )
 
   def processMessage( self, messageObject ):
