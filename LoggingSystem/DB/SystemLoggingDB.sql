@@ -2,14 +2,14 @@
 
 --------------------------------------------------------------------------------
 --
---  Schema definition for the LoggingDB database - containing log messages
+--  Schema definition for the SystemLoggingDB database - containing log messages
 --  from DIRAC services and processes
 ---
 --------------------------------------------------------------------------------
 
-DROP DATABASE IF EXISTS MessageLoggingDB;
+DROP DATABASE IF EXISTS SystemLoggingDB;
 
-CREATE DATABASE MessageLoggingDB;
+CREATE DATABASE SystemLoggingDB;
 
 --------------------------------------------------------------------------------
 -- Database owner definition
@@ -21,13 +21,13 @@ DELETE FROM user WHERE user='Dirac';
 -- Must set passwords for database user by replacing "must_be_set".
 --
 
-GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON MessageLoggingDB.* TO Dirac@localhost IDENTIFIED BY 'lhcbMySQL';
-GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON MessageLoggingDB.* TO Dirac@loggerhost IDENTIFIED BY 'lhcbMySQL';
+GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON SystemLoggingDB.* TO Dirac@localhost IDENTIFIED BY 'lhcbMySQL';
+GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON SystemLoggingDB.* TO Dirac@loggerhost IDENTIFIED BY 'lhcbMySQL';
 
 FLUSH PRIVILEGES;
 
 ------------------------------------------------------------------------------- 
-USE MessageLoggingDB;
+USE SystemLoggingDB;
 
 --------------------------------------------------------------------------------
 DROP TABLE IF EXISTS DateStamps;

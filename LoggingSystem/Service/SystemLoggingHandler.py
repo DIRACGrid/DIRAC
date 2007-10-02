@@ -1,5 +1,5 @@
 """
-LoggingHandler is the implementation of the Logging service
+SystemLoggingHandler is the implementation of the Logging service
     in the DISET framework
 
     The following methods are available in the Service interface
@@ -11,16 +11,16 @@ from DIRAC import S_OK, S_ERROR, gConfig, gLogger
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.LoggingSystem.private.Message import tupleToMessage
-from DIRAC.LoggingSystem.DB.MessageLoggingDB import MessageLoggingDB
+from DIRAC.LoggingSystem.DB.SystemLoggingDB import SystemLoggingDB
 
-def initializeLoggingHandler( serviceInfo ):
+def initializeSystemLoggingHandler( serviceInfo ):
 
   global LogDB
-  LogDB = MessageLoggingDB()
+  LogDB = SystemLoggingDB()
   return S_OK()
 
 
-class LoggingHandler( RequestHandler ):
+class SystemLoggingHandler( RequestHandler ):
 
   def __addMessage( self, messageObject ):
     """  This is the function that actually adds the Message to 
