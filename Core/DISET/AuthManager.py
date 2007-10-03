@@ -41,7 +41,7 @@ class AuthManager:
 
   def forwardedCredentials( self, credDict ):
     trustedHostsList = gConfig.getValue( "/DIRAC/Security/TrustedHosts", [] )
-    return type( credDict[ 'group' ] ) == types.TupleType and \
+    return 'group' in credDict and type( credDict[ 'group' ] ) == types.TupleType and \
             'DN' in credDict and \
             credDict[ 'DN' ] in trustedHostsList
 
@@ -52,6 +52,8 @@ class AuthManager:
   def getUsername( self, credDict ):
     if not "DN" in credDict:
       return True
+    if not 'group' in credDict:
+      return False
     usersInGroup = gConfig.getValue( "/Groups/%s/users" % credDict[ 'group' ], [] )
     if not usersInGroup:
       return False
