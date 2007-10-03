@@ -15,7 +15,7 @@ class RemoteBackend( BaseBackend, threading.Thread ):
 #    self._running= False
     self._logLevels = LogLevels()
     self._maxBundledMsgs = 20
-    self._minLevel = self._logLevels.getLevelValue( 'ERROR' )
+    self._minLevel = abs( self._logLevels.getLevelValue( 'ERROR' ) )
     self.config()
     self.setDaemon(1)
     self.start()

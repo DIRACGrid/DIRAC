@@ -142,8 +142,8 @@ class SystemLoggingDB(DB):
     msgName = Msg.getName()
     msgSubSysName = Msg.getSubSystemName()
     msgFrameInfo = Msg.getFrameInfo()
-    msgFix = Msg.getFixedMessage()
-    msgVar = Msg.getVariableMessage()
+    msgFix = self._escapeString( Msg.getFixedMessage() )
+    msgVar = self._escapeString( Msg.getVariableMessage() )
     if msgVar=='':
       msgVar = "'No variable text'"
     msgLevel = LogLevels().getLevelValue( Msg.getLevel() )
@@ -151,6 +151,20 @@ class SystemLoggingDB(DB):
     msgDate = msgDate[:msgDate.find('.')]
     msgSite = Msg.getSite()
 
+    result = self._escapeString( Msg.getFixedMessage() )
+    if result['OK']:
+      msgFix = result['Value']
+    else:
+      return result
+    
+    result = self._escapeString( Msg.getVariableMessage() )
+    if result['OK']:
+      msgVar = result['Value']
+      if msgVar=='':
+        msgVar = "'No variable text'"
+    else:
+      return result
+   
     msgList = [ "STR_TO_DATE('%s',GET_FORMAT(DATETIME,'ISO'))" % msgDate, msgVar ]
     
     errstr = 'Could not insert the data into %s table'
@@ -184,8 +198,8 @@ class SystemLoggingDB(DB):
 
     msgList.append(msgLevel)
     
-    qry = 'SELECT FixedTextID FROM FixedTextMessages WHERE FixedTextString="%s"' % msgFix
-    cmd = 'INSERT INTO FixedTextMessages ( FixedTextString ) VALUES ( "%s" )' % msgFix
+    qry = 'SELECT FixedTextID FROM FixedTextMessages WHERE FixedTextString=%s' % msgFix
+    cmd = 'INSERT INTO FixedTextMessages ( FixedTextString ) VALUES ( %s )' % msgFix
     result = self.DBCommit( qry, cmd, errstr % 'FixedTextMessages' )
     if not result['OK']:
       return result
