@@ -148,6 +148,7 @@ class SystemLoggingDB(DB):
       msgVar = "'No variable text'"
     msgLevel = LogLevels().getLevelValue( Msg.getLevel() )
     msgDate = Time.toString( Msg.getTime() )
+    msgDate = msgDate[:msgDate.find('.')]
     msgSite = Msg.getSite()
 
     msgList = [ "STR_TO_DATE('%s',GET_FORMAT(DATETIME,'ISO'))" % msgDate, msgVar ]
@@ -223,7 +224,7 @@ class SystemLoggingDB(DB):
     else:
       return result
 
-    cmd = 'INSERT INTO MessageRepository VALUES (%s)' % ', '.join( str(x) for x in msgList )
+    cmd = 'INSERT INTO MessageRepository (MessageTime,VariableText,UserDNID,ClientIPNumberID,SiteID,LogLevel,FixedTextID,SystemID,SubSystemID,FrameID) VALUES (%s)' % ', '.join( str(x) for x in msgList )
     result = self._update(cmd)
     if result['OK']:
       msgList.append(result['Value'])
