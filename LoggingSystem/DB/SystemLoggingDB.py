@@ -14,7 +14,7 @@ import threading
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from types                                     import *
 from DIRAC                                     import gLogger, S_OK, S_ERROR
-from DIRAC..ConfigurationSystem.Client.Config  import gConfig
+from DIRAC.ConfigurationSystem.Client.Config   import gConfig
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities import Time, dateTime, hour, date, week, day
 from DIRAC.LoggingSystem.private.LogLevels import LogLevels
@@ -174,7 +174,7 @@ class SystemLoggingDB(DB):
     if not msgSite:
       msgSite = 'Unknown'
     qry = 'SELECT SiteID FROM Sites WHERE SiteName="%s"' % msgSite
-    cmd = 'INSERT INTO Sites ( Site ) VALUES ( "%s" )' % msgSite
+    cmd = 'INSERT INTO Sites ( SiteName ) VALUES ( "%s" )' % msgSite
     result = self.DBCommit( qry, cmd, errstr % 'Sites' )
     if not result['OK']:
       return result
