@@ -13,7 +13,8 @@ import threading
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from types                                     import *
-from DIRAC                                     import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC                                     import gLogger, S_OK, S_ERROR
+from DIRAC..ConfigurationSystem.Client.Config  import gConfig
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities import Time, dateTime, hour, date, week, day
 from DIRAC.LoggingSystem.private.LogLevels import LogLevels
@@ -162,8 +163,8 @@ class SystemLoggingDB(DB):
     else:
       msgList.append(result['Value'])
 
-    qry = 'SELECT ClientIPNumberID FROM ClientIPs WHERE ClientIPNumberString="%s"' % RemoteAdd
-    cmd = 'INSERT INTO ClientIPs ( ClientIPNumberString ) VALUES ( "%s" )' % RemoteAdd
+    qry = 'SELECT ClientIPNumberID FROM ClientIPs WHERE ClientIPNumberString="%s"' % remoteAdd
+    cmd = 'INSERT INTO ClientIPs ( ClientIPNumberString ) VALUES ( "%s" )' % remoteAdd
     result = self.DBCommit( qry, cmd, errstr % 'ClientIPs' )
     if not result['OK']:
       return result
