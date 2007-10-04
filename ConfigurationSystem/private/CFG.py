@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Attic/CFG.py,v 1.5 2007/05/22 18:49:38 acasajus Exp $
-__RCSID__ = "$Id: CFG.py,v 1.5 2007/05/22 18:49:38 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Attic/CFG.py,v 1.6 2007/10/04 12:54:25 acasajus Exp $
+__RCSID__ = "$Id: CFG.py,v 1.6 2007/10/04 12:54:25 acasajus Exp $"
 
 import types
 import copy
@@ -60,11 +60,17 @@ class CFG:
       return True
     return False
 
-  def listOptions( self ):
-    return [ sKey for sKey in self.__dataDict.keys() if type( self.__dataDict[ sKey ] ) == types.StringType ]
+  def listOptions( self, ordered = False ):
+    if ordered:
+      return [ sKey for sKey in self.__orderedList if type( self.__dataDict[ sKey ] ) == types.StringType ]
+    else:
+      return [ sKey for sKey in self.__dataDict.keys() if type( self.__dataDict[ sKey ] ) == types.StringType ]
 
-  def listSections( self ):
-    return [ sKey for sKey in self.__dataDict.keys() if type( self.__dataDict[ sKey ] ) != types.StringType ]
+  def listSections( self, ordered = False ):
+    if ordered:
+      return [ sKey for sKey in self.__orderedList if type( self.__dataDict[ sKey ] ) != types.StringType ]
+    else:
+      return [ sKey for sKey in self.__dataDict.keys() if type( self.__dataDict[ sKey ] ) != types.StringType ]
 
   def appendToOption( self, optionName, value ):
     if optionName not in self.__dataDict:

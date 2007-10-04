@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationClient.py,v 1.8 2007/10/02 14:15:52 acasajus Exp $
-__RCSID__ = "$Id: ConfigurationClient.py,v 1.8 2007/10/02 14:15:52 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationClient.py,v 1.9 2007/10/04 12:54:25 acasajus Exp $
+__RCSID__ = "$Id: ConfigurationClient.py,v 1.9 2007/10/04 12:54:25 acasajus Exp $"
 
 import types
 from DIRAC.Core.Utilities import List
@@ -68,17 +68,17 @@ class ConfigurationClient:
         return S_ERROR( "Type mismatch between default (%s) and configured value (%s) " % ( str( defaultValue ), optionValue ) )
 
 
-  def getSections( self, sectionPath ):
+  def getSections( self, sectionPath, listOrdered = False ):
     gRefresher.refreshConfigurationIfNeeded()
-    sectionList = gConfigurationData.getSectionsFromCFG( sectionPath )
+    sectionList = gConfigurationData.getSectionsFromCFG( sectionPath, ordered = listOrdered )
     if sectionList:
       return S_OK( sectionList )
     else:
       return S_ERROR( "Path %s does not exist or it's not a section" % sectionPath )
 
-  def getOptions( self, sectionPath ):
+  def getOptions( self, sectionPath, listOrdered = False ):
     gRefresher.refreshConfigurationIfNeeded()
-    optionList = gConfigurationData.getOptionsFromCFG( sectionPath )
+    optionList = gConfigurationData.getOptionsFromCFG( sectionPath, ordered = listOrdered )
     if optionList:
       return S_OK( optionList )
     else:

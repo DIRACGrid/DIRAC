@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationData.py,v 1.8 2007/05/22 18:49:38 acasajus Exp $
-__RCSID__ = "$Id: ConfigurationData.py,v 1.8 2007/05/22 18:49:38 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationData.py,v 1.9 2007/10/04 12:54:25 acasajus Exp $
+__RCSID__ = "$Id: ConfigurationData.py,v 1.9 2007/10/04 12:54:25 acasajus Exp $"
 
 import os.path
 import zlib
@@ -94,7 +94,7 @@ class ConfigurationData:
       pass
     return self.dangerZoneEnd( None )
 
-  def getSectionsFromCFG( self, path, cfg = False ):
+  def getSectionsFromCFG( self, path, cfg = False, ordered = False ):
     if not cfg:
       cfg = self.mergedCFG
     self.dangerZoneStart()
@@ -102,12 +102,12 @@ class ConfigurationData:
       levelList = [ level.strip() for level in path.split( "/" ) if level.strip() != "" ]
       for section in levelList:
         cfg = cfg[ section ]
-      return self.dangerZoneEnd( cfg.listSections() )
+      return self.dangerZoneEnd( cfg.listSections( ordered ) )
     except Exception, e:
       pass
     return self.dangerZoneEnd( None )
 
-  def getOptionsFromCFG( self, path, cfg = False ):
+  def getOptionsFromCFG( self, path, cfg = False, ordered = False ):
     if not cfg:
       cfg = self.mergedCFG
     self.dangerZoneStart()
@@ -115,7 +115,7 @@ class ConfigurationData:
       levelList = [ level.strip() for level in path.split( "/" ) if level.strip() != "" ]
       for section in levelList:
         cfg = cfg[ section ]
-      return self.dangerZoneEnd( cfg.listOptions() )
+      return self.dangerZoneEnd( cfg.listOptions( ordered ) )
     except Exception, e:
       pass
     return self.dangerZoneEnd( None )
