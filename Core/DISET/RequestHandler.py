@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.21 2007/06/28 10:56:39 acasajus Exp $
-__RCSID__ = "$Id: RequestHandler.py,v 1.21 2007/06/28 10:56:39 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.22 2007/10/05 07:40:22 acasajus Exp $
+__RCSID__ = "$Id: RequestHandler.py,v 1.22 2007/10/05 07:40:22 acasajus Exp $"
 
 import types
 from DIRAC.Core.DISET.private.FileHelper import FileHelper
@@ -63,7 +63,7 @@ class RequestHandler:
     elif sDirection == "toClient" :
       uRetVal = self.transfer_toClient( fileInfo[0], fileInfo[1], fileHelper )
     elif sDirection == "bulkFromClient" :
-      uRetVal = self.transfer_bulkFromClient( fileInfo[0], fileInfo[1], fileHelper )
+      uRetVal = self.transfer_bulkFromClient( fileInfo[0], fileInfo[1], fileInfo[2], fileHelper )
     elif sDirection == "bulkToClient" :
       uRetVal = self.transfer_bulkToClient( fileInfo[0], fileInfo[1], fileHelper )
     elif sDirection == "listBulk" :
@@ -75,11 +75,20 @@ class RequestHandler:
       return S_ERROR( "Incomplete transfer" )
     return uRetVal
 
-  def fileFromClientCallback( self, fileId, fileSize, fileHelper ):
+  def transfer_fromClient( self, fileId, token, fileSize, fileHelper ):
     return S_ERROR( "This server does no allow receiving files" )
 
-  def fileToClientCallback( self, fileId, fileHelper ):
+  def transfer_toClient( self, fileId, token, fileHelper ):
     return S_ERROR( "This server does no allow sending files" )
+
+  def transfer_bulkFromClient( self, bulkId, token, bulkSize, fileHelper ):
+    return S_ERROR( "This server does no allow bulk receiving" )
+
+  def transfer_bulkToClient( self, bulkId, token, fileHelper ):
+    return S_ERROR( "This server does no allow bulk sending" )
+
+  def transfer_listBulk( self, bulkId, token, fileHelper ):
+    return S_ERROR( "This server does no allow bulk listing" )
 
 #####
 #

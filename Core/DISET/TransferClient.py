@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/TransferClient.py,v 1.10 2007/06/28 12:48:55 acasajus Exp $
-__RCSID__ = "$Id: TransferClient.py,v 1.10 2007/06/28 12:48:55 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/TransferClient.py,v 1.11 2007/10/05 07:40:22 acasajus Exp $
+__RCSID__ = "$Id: TransferClient.py,v 1.11 2007/10/05 07:40:22 acasajus Exp $"
 
 import tarfile
 import threading
@@ -66,7 +66,7 @@ class TransferClient( BaseClient ):
         bogusEntries.append( entry )
     return bogusEntries
 
-  def sendBulk( self, fileList, bulkId, token = "", compress = True ):
+  def sendBulk( self, fileList, bulkId, token = "", compress = True, bulkSize = -1 ):
     bogusEntries = self.__checkFileList( fileList )
     if bogusEntries:
       return S_ERROR( "Some files or directories don't exist :\n\t%s" % "\n\t".join( bogusEntries ) )
@@ -74,7 +74,7 @@ class TransferClient( BaseClient ):
       bulkId = "%s.tar.bz2" % bulkId
     else:
       bulkId = "%s.tar" % bulkId
-    retVal = self.__sendTransferHeader( "BulkFromClient", ( bulkId, token ) )
+    retVal = self.__sendTransferHeader( "BulkFromClient", ( bulkId, token, bulkSize ) )
     if not retVal[ 'OK' ]:
       return retVal
     fileHelper = FileHelper( self.transport )
