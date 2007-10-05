@@ -27,7 +27,7 @@ class RequestDBHandler(RequestHandler):
       if not result['OK']:
         errKey = "Setting request failed"
         errExpl = " : for %s because %s" % (requestName,result['Message'])
-        gLogger.error(errKey,errKey)
+        gLogger.error(errKey,errExpl)
       return result
     except Exception,x:
       errKey = "Setting request failed"
