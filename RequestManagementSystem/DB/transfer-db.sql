@@ -16,22 +16,24 @@ use TransferDB;
 DROP TABLE IF EXISTS Requests;
 CREATE TABLE Requests (
    RequestID INTEGER NOT NULL AUTO_INCREMENT,
+   RequestName varchar(32) UNIQUE NOT NULL,
    Status varchar(32) DEFAULT 'New',
    SubmissionTime DATETIME,
-   PRIMARY KEY (RequestID)
+   PRIMARY KEY (RequestID,RequestName)
 );
 
 DROP TABLE IF EXISTS SubRequests;
 CREATE TABLE SubRequests (
    RequestID INTEGER NOT NULL,
    SubRequestID INTEGER NOT NULL AUTO_INCREMENT,
+   RequestType varchar(32) NOT NULL,
    Status varchar(32) DEFAULT 'New',
    Operation varchar(32),
    SourceSE varchar(32),
    TargetSE varchar(32),
    Catalogue varchar(32),
    SubmissionTime DATETIME,
-   PRIMARY KEY (RequestID,SubRequestID)
+   PRIMARY KEY (SubRequestID)
 );
 
 DROP TABLE IF EXISTS Files;
@@ -47,7 +49,7 @@ CREATE TABLE Files (
   Attempt VARCHAR(32),
   Dataset VARCHAR(255),
   Status VARCHAR(32) DEFAULT 'New',
-  PRIMARY KEY (SubRequestID, FileID)
+  PRIMARY KEY (FileID)
 );
 
 DROP TABLE IF EXISTS FileToCat;
