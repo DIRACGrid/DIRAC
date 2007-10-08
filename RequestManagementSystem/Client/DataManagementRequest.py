@@ -12,7 +12,7 @@ class DataManagementRequest:
   def __init__(self,request=None):
 
     # A common set of attributes that define requests.
-    self.requestAttributes = ['RequestID','TargetSE','Status','Operation','SourceSE','Catalogue']
+    self.requestAttributes = ['SubRequestID','TargetSE','Status','Operation','SourceSE','Catalogue']
     # Possible keys to define the files in the request.
     self.fileAttributes = ['LFN','Size','PFN','GUID','Md5','Addler','Status','Attempt']
     # Possible keys to define the dataset in the request.
@@ -29,6 +29,8 @@ class DataManagementRequest:
     self.date = time.strftime('%Y-%m-%d %H:%M:%S')
     self.mode = ''
     self.dirac_instance = ''
+    self.requestid = None
+    self.requestname = None
 
     if request:
       dom = xml.dom.minidom.parseString(request)
@@ -37,6 +39,8 @@ class DataManagementRequest:
       self.ownerDN = header.getAttribute('OwnerDN')
       self.date = header.getAttribute('Date')
       self.mode = header.getAttribute('Mode')
+      self.requestid = header.getAttribute('RequestID')
+      self.requestname = header.getAttribute('RequestName')
 
       if dom.getElementsByTagName('TRANSFER_REQUEST'):
         for subRequest in dom.getElementsByTagName('TRANSFER_REQUEST'):
@@ -73,6 +77,26 @@ class DataManagementRequest:
     """ Get the date the request was set
     """
     return self.date
+
+  def setRequestName(self,requestName):
+    """ Set the request name
+    """
+    self.requestname = requestName
+
+  def getRequestName(self):
+    """ Get the request name
+    """
+    return self.requestname
+
+  def setRequestID(self,requestID):
+    """ Set the request ID
+    """
+    self.requestid = requestID
+
+  def getRequestID(self):
+    """ Get the request ID
+    """
+    return self.requestid
 
   def setJobID(self,jobid):
     """ Set the associated Job ID
@@ -325,8 +349,8 @@ class DataManagementRequest:
 
     if not reqDict['Status']:
       reqDict['Status'] = 'Waiting'
-    if not reqDict['RequestID']:
-      reqDict['RequestID'] = makeGuid()
+    if not reqDict['SubRequestID']:
+      reqDict['SubRequestID'] = makeGuid()
     if catalogue:
       reqDict['Catalogue'] = catalogue
 
@@ -450,6 +474,10 @@ class DataManagementRequest:
       attributes = attributes + ' JobID="'+self.jobid+'" '
     else:
       attributes = attributes + ' JobID="0" '
+    if self.requestid:
+      attributes = attributes + ' RequestID="'+str(self.requestid)+'" '
+    if self.requestname:
+      attributes = attributes + ' RequestName="'+self.requestname+'" '
     if self.ownerDN:
       attributes = attributes + ' OwnerDN="'+self.ownerDN+'" '
     if self.date:
