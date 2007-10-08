@@ -25,9 +25,23 @@ class RequestSubmissionCase(RequestDBTestCase):
     requestType = 'transfer'
     requestName = 'test'
     requestStatus = 'waiting'
-    result = self.requestDB.setRequest(requestType,requestName,requestStatus,requestString)
+    #result = self.requestDB.setRequest(requestType,requestName,requestStatus,requestString)
+    #print result
 
-    """
+    result = self.requestDB.getRequest('transfer')
+    print result
+
+  """
+  def test_setRequestStatus(self):
+
+    requestType = 'transfer'
+    requestName = 'test'
+    requestStatus = 'done'
+    result = self.requestDB.setRequestStatus(requestType,requestName,requestStatus)
+  """
+
+
+  """
     self.assert_( result['OK'])
     self.assertEqual(type(result['Value']),types.IntType)
     id1 = result['Value']
@@ -171,16 +185,9 @@ class CountJobsCase(JobDBTestCase):
     result = self.jobDB.getCounters(['Status','MinorStatus'],{},'2007-04-22 00:00:00')
     self.assert_( result['OK'],'Status after getCounters')
 
-    """
+  """
 if __name__ == '__main__':
 
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(RequestSubmissionCase)
-  """
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobRemovalCase))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobRescheduleCase))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobParametersCase))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SiteMaskCase))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TaskQueueCase))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(CountJobsCase))
-  """
+  #suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(RequestStateSetCase))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)
