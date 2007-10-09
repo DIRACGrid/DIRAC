@@ -58,7 +58,7 @@ class AddOperationsTestCase(DMRequestTestCase):
   def test_addTransfer(self):
     # Set up dummy request
     lfn = '/lhcb/production/test/case.lfn'
-    reqDic = {'Files':{lfn:{'Status': 'Waiting', 'Attempt': 1, 'PFN': '', 'Size': 1231231, 'GUID': '7E9CED5A-295B-ED88-CE9A-CF41A62D2175', 'Addler': '', 'Md5': ''}},'Datasets':['DC06Stripping'],'TargetSE':'CERN-tape','Operation':'MoveAndRegister','SourceSE':'RAL-tape'}
+    reqDic = {'Files':[{'LFN':lfn,'Status': 'Waiting', 'Attempt': 1, 'PFN': '', 'Size': 1231231, 'GUID': '7E9CED5A-295B-ED88-CE9A-CF41A62D2175', 'Addler': '', 'Md5': ''}],'Datasets':['DC06Stripping'],'Attributes':{'TargetSE':'CERN-tape','Operation':'MoveAndRegister','SourceSE':'RAL-tape'}}
     # Add this to transfer type list
     self.DMRequest.addSubRequest(reqDic,'transfer')
     # Only added one transfer so this should be 1
@@ -71,33 +71,33 @@ class AddOperationsTestCase(DMRequestTestCase):
     # Make sure it is a dictionary
     self.assertEqual(type(testReqDic),types.DictType)
     # Make sure that the status is waiting
-    self.assertEqual(testReqDic['Status'],'Waiting')
+    self.assertEqual(testReqDic['Attributes']['Status'],'Waiting')
     # Check that the request is not empty
     result = self.DMRequest.isEmpty()
     self.assertFalse(result['Value'])
     # Check that all the keys/value pairs we put in are the ones we get back
-    for key in testReqDic:
-      if reqDic.has_key(key):
-        self.assertEqual(reqDic[key],testReqDic[key])
+    #for key in testReqDic:
+      #if reqDic.has_key(key):
+        #self.assertEqual(reqDic[key],testReqDic[key])
 
     # Set the status = 'Done'
     self.DMRequest.setSubRequestStatus(ind,'transfer','Done')
     result = self.DMRequest.getSubRequest(ind,'transfer')
     testReqDic = result['Value']
     # Check that it was set to done.
-    self.assertEqual(testReqDic['Status'],'Done')
+    self.assertEqual(testReqDic['Attributes']['Status'],'Done')
     # Check again that it is empty (which it now should be)
     result = self.DMRequest.isEmpty()
     self.assertFalse(result['Value'])
     #Now set the file status to done
-    self.DMRequest.setSubRequestFileStatus(ind,'transfer',lfn,'Done')
+    self.DMRequest.setSubRequestFileAttributeValue(ind,'transfer',lfn,'Status','Done')
     result = self.DMRequest.isEmpty()
     self.assertTrue(result['Value'])
 
   def test_addRegister(self):
     # Set up dummy request
     lfn = '/lhcb/production/test/case.lfn'
-    reqDic = {'Files':{lfn:{'Status': 'Waiting', 'Attempt': 1, 'PFN': 'srm://srm.cern.ch/castor/cern.ch/grid/lhcb/production/test/case.lfn', 'Size': 1231231, 'GUID': '7E9CED5A-295B-ED88-CE9A-CF41A62D2175', 'Addler': 'addler32', 'Md5': 'md5'}},'Datasets':['DC06Stripping'],'TargetSE':'CERN-tape','Operation':'RegisterFile'}
+    reqDic = {'Files':[{'LFN':lfn,'Status': 'Waiting', 'Attempt': 1, 'PFN': 'srm://srm.cern.ch/castor/cern.ch/grid/lhcb/production/test/case.lfn', 'Size': 1231231, 'GUID': '7E9CED5A-295B-ED88-CE9A-CF41A62D2175', 'Addler': 'addler32', 'Md5': 'md5'}],'Datasets':['DC06Stripping'],'Attributes':{'TargetSE':'CERN-tape','Operation':'RegisterFile'}}
     # Add this to transfer type list
     self.DMRequest.addSubRequest(reqDic,'register')
     # Only added one transfer so this should be 1
@@ -110,33 +110,33 @@ class AddOperationsTestCase(DMRequestTestCase):
     # Make sure it is a dictionary
     self.assertEqual(type(testReqDic),types.DictType)
     # Make sure that the status is waiting
-    self.assertEqual(testReqDic['Status'],'Waiting')
+    self.assertEqual(testReqDic['Attributes']['Status'],'Waiting')
     # Check that the request is not empty
     result = self.DMRequest.isEmpty()
     self.assertFalse(result['Value'])
     # Check that all the keys/value pairs we put in are the ones we get back
-    for key in testReqDic:
-      if reqDic.has_key(key):
-        self.assertEqual(reqDic[key],testReqDic[key])
+    #for key in testReqDic:
+    #  if reqDic.has_key(key):
+    #    self.assertEqual(reqDic[key],testReqDic[key])
 
     # Set the status = 'Done'
     self.DMRequest.setSubRequestStatus(ind,'register','Done')
     result = self.DMRequest.getSubRequest(ind,'register')
     testReqDic = result['Value']
     # Check that it was set to done.
-    self.assertEqual(testReqDic['Status'],'Done')
+    self.assertEqual(testReqDic['Attributes']['Status'],'Done')
     # Check again that it is empty (which it now should be)
     result = self.DMRequest.isEmpty()
     self.assertFalse(result['Value'])
     #Now set the file status to done
-    self.DMRequest.setSubRequestFileStatus(ind,'register',lfn,'Done')
+    self.DMRequest.setSubRequestFileAttributeValue(ind,'register',lfn,'Status','Done')
     result = self.DMRequest.isEmpty()
     self.assertTrue(result['Value'])
 
   def test_addRemoval(self):
     # Set up dummy request
     lfn = '/lhcb/production/test/case.lfn'
-    reqDic = {'Files':{lfn:{'Status': 'Waiting', 'Attempt': 1, 'PFN': 'srm://srm.cern.ch/castor/cern.ch/grid/lhcb/production/test/case.lfn', 'Size': 1231231, 'GUID': '7E9CED5A-295B-ED88-CE9A-CF41A62D2175', 'Addler': 'addler32', 'Md5': 'md5'}},'Datasets':['DC06Stripping'],'TargetSE':'CERN-tape','Operation':'RemoveReplica','Catalogue':'LFC'}
+    reqDic = {'Files':[{'LFN':lfn,'Status': 'Waiting', 'Attempt': 1, 'PFN': 'srm://srm.cern.ch/castor/cern.ch/grid/lhcb/production/test/case.lfn', 'Size': 1231231, 'GUID': '7E9CED5A-295B-ED88-CE9A-CF41A62D2175', 'Addler': 'addler32', 'Md5': 'md5'}],'Datasets':['DC06Stripping'],'Attributes':{'TargetSE':'CERN-tape','Operation':'RemoveReplica','Catalogue':'LFC'}}
     # Add this to transfer type list
     self.DMRequest.addSubRequest(reqDic,'removal')
     # Only added one transfer so this should be 1
@@ -149,33 +149,33 @@ class AddOperationsTestCase(DMRequestTestCase):
     # Make sure it is a dictionary
     self.assertEqual(type(testReqDic),types.DictType)
     # Make sure that the status is waiting
-    self.assertEqual(testReqDic['Status'],'Waiting')
+    self.assertEqual(testReqDic['Attributes']['Status'],'Waiting')
     # Check that the request is not empty
     result = self.DMRequest.isEmpty()
     self.assertFalse(result['Value'])
     # Check that all the keys/value pairs we put in are the ones we get back
-    for key in testReqDic:
-      if reqDic.has_key(key):
-        self.assertEqual(reqDic[key],testReqDic[key])
+    #for key in testReqDic:
+    #  if reqDic.has_key(key):
+    #    self.assertEqual(reqDic[key],testReqDic[key])
 
     # Set the status = 'Done'
     self.DMRequest.setSubRequestStatus(ind,'removal','Done')
     result = self.DMRequest.getSubRequest(ind,'removal')
     testReqDic = result['Value']
     # Check that it was set to done.
-    self.assertEqual(testReqDic['Status'],'Done')
+    self.assertEqual(testReqDic['Attributes']['Status'],'Done')
     # Check again that it is empty (which it now should be)
     result = self.DMRequest.isEmpty()
     self.assertFalse(result['Value'])
     #Now set the file status to done
-    self.DMRequest.setSubRequestFileStatus(ind,'removal',lfn,'Done')
+    self.DMRequest.setSubRequestFileAttributeValue(ind,'removal',lfn,'Status','Done')
     result = self.DMRequest.isEmpty()
     self.assertTrue(result['Value'])
 
   def test_addStage(self):
     # Set up dummy request
     lfn = '/lhcb/production/test/case.lfn'
-    reqDic = {'Files':{lfn:{'Status': 'Waiting', 'Attempt': 1, 'PFN': 'srm://srm.cern.ch/castor/cern.ch/grid/lhcb/production/test/case.lfn', 'Size': 1231231, 'GUID': '7E9CED5A-295B-ED88-CE9A-CF41A62D2175', 'Addler': 'addler32', 'Md5': 'md5'}},'Datasets':['DC06Stripping'],'TargetSE':'CERN-tape','Operation':'StageAndPin'}
+    reqDic = {'Files':[{'LFN':lfn,'Status': 'Waiting', 'Attempt': 1, 'PFN': 'srm://srm.cern.ch/castor/cern.ch/grid/lhcb/production/test/case.lfn', 'Size': 1231231, 'GUID': '7E9CED5A-295B-ED88-CE9A-CF41A62D2175', 'Addler': 'addler32', 'Md5': 'md5'}],'Datasets':['DC06Stripping'],'Attributes':{'TargetSE':'CERN-tape','Operation':'StageAndPin'}}
     # Add this to transfer type list
     self.DMRequest.addSubRequest(reqDic,'stage')
     # Only added one transfer so this should be 1
@@ -188,42 +188,42 @@ class AddOperationsTestCase(DMRequestTestCase):
     # Make sure it is a dictionary
     self.assertEqual(type(testReqDic),types.DictType)
     # Make sure that the status is waiting
-    self.assertEqual(testReqDic['Status'],'Waiting')
+    self.assertEqual(testReqDic['Attributes']['Status'],'Waiting')
     # Check that the request is not empty
     result = self.DMRequest.isEmpty()
     self.assertFalse(result['Value'])
     # Check that all the keys/value pairs we put in are the ones we get back
-    for key in testReqDic:
-      if reqDic.has_key(key):
-        self.assertEqual(reqDic[key],testReqDic[key])
+    #for key in testReqDic:
+    #  if reqDic.has_key(key):
+    #    self.assertEqual(reqDic[key],testReqDic[key])
 
     # Set the status = 'Done'
     self.DMRequest.setSubRequestStatus(ind,'stage','Done')
     result = self.DMRequest.getSubRequest(ind,'stage')
     testReqDic = result['Value']
     # Check that it was set to done.
-    self.assertEqual(testReqDic['Status'],'Done')
+    self.assertEqual(testReqDic['Attributes']['Status'],'Done')
     # Check again that it is empty (which it now should be)
     result = self.DMRequest.isEmpty()
     self.assertFalse(result['Value'])
     #Now set the file status to done
-    self.DMRequest.setSubRequestFileStatus(ind,'stage',lfn,'Done')
+    self.DMRequest.setSubRequestFileAttributeValue(ind,'stage',lfn,'Status','Done')
     result = self.DMRequest.isEmpty()
     self.assertTrue(result['Value'])
 
   def test_toFile(self):
     lfn = '/lhcb/production/test/case.lfn'
     # Add dummy transfer request
-    transferDic = {'Status': 'Waiting','RequestID': '7F7C1D94-E452-CD50-204C-EE2E2F1816A9','Catalogue':'','Files':{lfn:{'Status': 'Waiting', 'Attempt': 1, 'PFN': '', 'Size': 1231231, 'GUID': '7E9CED5A-295B-ED88-CE9A-CF41A62D2175', 'Addler': '', 'Md5': ''}},'Datasets':['DC06Stripping'],'TargetSE':'CERN-tape','Operation':'MoveAndRegister','SourceSE':'RAL-tape'}
+    transferDic = {'Attributes': {'Status': 'Waiting','SubRequestID': '7F7C1D94-E452-CD50-204C-EE2E2F1816A9','Catalogue':'','TargetSE':'CERN-tape','Operation':'MoveAndRegister','SourceSE':'RAL-tape'},'Files':[{'LFN':lfn,'Status': 'Waiting', 'Attempt': 1, 'PFN': '', 'Size': 1231231, 'GUID': '7E9CED5A-295B-ED88-CE9A-CF41A62D2175', 'Addler': '', 'Md5': ''}],'Datasets':['DC06Stripping']}
     self.DMRequest.addSubRequest(transferDic,'transfer')
     # Add dummy register request
-    registerDic = {'Status': 'Waiting','RequestID': '7F7C1D94-E452-CD50-204C-EE2E2F1816A9','Catalogue':'','Files':{lfn:{'Status': 'Waiting', 'Attempt': 1, 'PFN': 'srm://srm.cern.ch/castor/cern.ch/grid/lhcb/production/test/case.lfn', 'Size': 1231231, 'GUID': '7E9CED5A-295B-ED88-CE9A-CF41A62D2175', 'Addler': 'addler32', 'Md5': 'md5'}},'Datasets':['DC06Stripping'],'TargetSE':'CERN-tape','Operation':'RegisterFile'}
+    registerDic = {'Attributes':{'Status': 'Waiting','SubRequestID': '7F7C1D94-E452-CD50-204C-EE2E2F1816A9','Catalogue':'','TargetSE':'CERN-tape','Operation':'RegisterFile'},'Files':[{'LFN':lfn,'Status': 'Waiting', 'Attempt': 1, 'PFN': 'srm://srm.cern.ch/castor/cern.ch/grid/lhcb/production/test/case.lfn', 'Size': 1231231, 'GUID': '7E9CED5A-295B-ED88-CE9A-CF41A62D2175', 'Addler': 'addler32', 'Md5': 'md5'}],'Datasets':['DC06Stripping']}
     self.DMRequest.addSubRequest(registerDic,'register')
     # Add dummy removal request
-    removalDic = {'Status': 'Waiting','RequestID': '7F7C1D94-E452-CD50-204C-EE2E2F1816A9','Catalogue':'','Files':{lfn:{'Status': 'Waiting', 'Attempt': 1, 'PFN': 'srm://srm.cern.ch/castor/cern.ch/grid/lhcb/production/test/case.lfn', 'Size': 1231231, 'GUID': '7E9CED5A-295B-ED88-CE9A-CF41A62D2175', 'Addler': 'addler32', 'Md5': 'md5'}},'Datasets':['DC06Stripping'],'TargetSE':'CERN-tape','Operation':'RemoveReplica','Catalogue':'LFC'}
+    removalDic = {'Attributes':{'Status': 'Waiting','SubRequestID': '7F7C1D94-E452-CD50-204C-EE2E2F1816A9','Catalogue':'','TargetSE':'CERN-tape','Operation':'RemoveReplica','Catalogue':'LFC'},'Files':[{'LFN':lfn,'Status': 'Waiting', 'Attempt': 1, 'PFN': 'srm://srm.cern.ch/castor/cern.ch/grid/lhcb/production/test/case.lfn', 'Size': 1231231, 'GUID': '7E9CED5A-295B-ED88-CE9A-CF41A62D2175', 'Addler': 'addler32', 'Md5': 'md5'}],'Datasets':['DC06Stripping']}
     self.DMRequest.addSubRequest(removalDic,'removal')
     # Add dummy stage request
-    stageDic = {'Status': 'Waiting','RequestID': '7F7C1D94-E452-CD50-204C-EE2E2F1816A9','Catalogue':'','Files':{lfn:{'Status': 'Waiting', 'Attempt': 1, 'PFN': 'srm://srm.cern.ch/castor/cern.ch/grid/lhcb/production/test/case.lfn', 'Size': 1231231, 'GUID': '7E9CED5A-295B-ED88-CE9A-CF41A62D2175', 'Addler': 'addler32', 'Md5': 'md5'}},'Datasets':['DC06Stripping'],'TargetSE':'CERN-tape','Operation':'StageAndPin'}
+    stageDic = {'Attributes':{'Status': 'Waiting','SubRequestID': '7F7C1D94-E452-CD50-204C-EE2E2F1816A9','Catalogue':'','TargetSE':'CERN-tape','Operation':'StageAndPin'},'Files':[{'LFN':lfn,'Status': 'Waiting', 'Attempt': 1, 'PFN': 'srm://srm.cern.ch/castor/cern.ch/grid/lhcb/production/test/case.lfn', 'Size': 1231231, 'GUID': '7E9CED5A-295B-ED88-CE9A-CF41A62D2175', 'Addler': 'addler32', 'Md5': 'md5'}],'Datasets':['DC06Stripping']}
     self.DMRequest.addSubRequest(stageDic,'stage')
     # Get the XML string of the DM request
     result = self.DMRequest.toXML()
@@ -244,37 +244,45 @@ class AddOperationsTestCase(DMRequestTestCase):
     transferReqDouble = result['Value']
     for key in transferReqDouble.keys():
       if key == 'Files':
-        for att in transferReqDouble['Files'].keys():
-          self.assertEqual(transferDic['Files'][att],transferReqDouble['Files'][att])
-      else:
+        self.assertEqual(transferDic['Files'],transferReqDouble['Files'])
+      elif key == 'Datasets':
         self.assertEqual(transferDic[key],transferReqDouble[key])
+      else:
+        for att in transferDic['Attributes'].keys():
+          self.assertEqual(transferDic['Attributes'][att],transferReqDouble['Attributes'][att])
 
     result = self.DMRequest.getSubRequest(0,'register')
     registerReqDouble = result['Value']
     for key in registerDic.keys():
       if key == 'Files':
-        for att in registerDic['Files'].keys():
-          self.assertEqual(registerDic['Files'][att],registerReqDouble['Files'][att])
-      else:
+        self.assertEqual(registerDic['Files'],registerReqDouble['Files'])
+      elif key == 'Datasets':
         self.assertEqual(registerDic[key],registerReqDouble[key])
+      else:
+        for att in registerDic['Attributes'].keys():
+          self.assertEqual(registerDic['Attributes'][att],registerReqDouble['Attributes'][att])
 
     result = self.DMRequest.getSubRequest(0,'removal')
     removalReqDouble = result['Value']
     for key in removalDic.keys():
       if key == 'Files':
-        for att in removalDic['Files'].keys():
-          self.assertEqual(removalDic['Files'][att],removalReqDouble['Files'][att])
-      else:
+        self.assertEqual(removalDic['Files'],removalReqDouble['Files'])
+      elif key == 'Datasets':
         self.assertEqual(removalDic[key],removalReqDouble[key])
+      else:
+        for att in removalDic['Attributes'].keys():
+          self.assertEqual(removalDic['Attributes'][att],removalReqDouble['Attributes'][att])
 
     result = self.DMRequest.getSubRequest(0,'stage')
     stageReqDouble =  result['Value']
     for key in stageDic.keys():
       if key == 'Files':
-        for att in stageDic['Files'].keys():
-          self.assertEqual(stageDic['Files'][att],stageReqDouble['Files'][att])
+        self.assertEqual(stageDic['Files'],stageReqDouble['Files'])
+      elif key == 'Datasets':
+        self.assertEqual(stageDic[key],stageReqDouble[key])
       else:
-        self.assertEqual(removalDic[key],removalReqDouble[key])
+        for att in stageDic['Attributes'].keys():
+          self.assertEqual(stageDic['Attributes'][att],stageReqDouble['Attributes'][att])
 
 if __name__ == '__main__':
 
