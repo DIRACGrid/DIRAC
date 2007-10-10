@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Modificator.py,v 1.1 2007/05/22 18:49:38 acasajus Exp $
-__RCSID__ = "$Id: Modificator.py,v 1.1 2007/05/22 18:49:38 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Modificator.py,v 1.2 2007/10/10 12:54:28 acasajus Exp $
+__RCSID__ = "$Id: Modificator.py,v 1.2 2007/10/10 12:54:28 acasajus Exp $"
 
 import zlib
 import difflib
@@ -107,6 +107,10 @@ class Modificator:
     cfg = self.__getSubCFG( sectionPath )
     sectionName = List.fromChar( sectionPath, "/" )[-1]
     return cfg.deleteEntry( sectionName )
+
+  def loadFromBuffer( self, data ):
+    self.cfgData = CFG()
+    self.cfgData.loadFromBuffer( data )
 
   def loadFromFile( self, filename ):
     self.cfgData = CFG()
