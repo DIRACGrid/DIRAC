@@ -47,9 +47,16 @@ CREATE TABLE Files (
   Md5 VARCHAR(32),
   Addler VARCHAR(32),
   Attempt VARCHAR(32),
-  Dataset VARCHAR(255),
   Status VARCHAR(32) DEFAULT 'New',
   PRIMARY KEY (FileID)
+);
+
+DROP TABLE IF EXISTS Datasets;
+CREATE TABLE Datasets (
+  SubRequestID INTEGER NOT NULL,
+  Dataset VARCHAR(255),
+  Status VARCHAR(32) DEFAULT 'New',
+  PRIMARY KEY (SubRequestID,Dataset)
 );
 
 DROP TABLE IF EXISTS FileToCat;
