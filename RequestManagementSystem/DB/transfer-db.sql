@@ -17,7 +17,11 @@ DROP TABLE IF EXISTS Requests;
 CREATE TABLE Requests (
    RequestID INTEGER NOT NULL AUTO_INCREMENT,
    RequestName varchar(32) UNIQUE NOT NULL,
+   JobID INTEGER,
+   OwnerDN VARCHAR(255),
+   DIRACInstance varchar(32),
    Status varchar(32) DEFAULT 'New',
+   CreationTime DATETIME,
    SubmissionTime DATETIME,
    PRIMARY KEY (RequestID,RequestName)
 );
