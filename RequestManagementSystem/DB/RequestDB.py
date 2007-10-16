@@ -19,6 +19,7 @@ class RequestDB:
       self.requestDB = RequestDBFile()
 
   def setRequest(self,requestType,requestName,requestStatus,requestString):
+    # Can probably get rid of (requestType,requestStatus) from this request, it is incoded in the request string.
     result = self.requestDB._setRequest(requestType,requestName,requestStatus,requestString)
     return result
 
@@ -34,6 +35,10 @@ class RequestDB:
     result = self.requestDB._deleteRequest(requestName)
     return result
 
+  def updateRequest(self,requestName,requestString):
+    result = self.requestDB._updateRequest(requestName,requestString)
+    return result
+
   def serveRequest(self):
     result = self.requestDB._serveRequest()
     return result
@@ -46,7 +51,7 @@ class RequestDB:
       removalResult = self.requestDB._deleteRequest(requestType,requestDict['requestName'])
       if removalResult['OK']:
         return result
-      else:
+        else:
         return S_ERROR('Failed to remove request')
     return result
   """
@@ -191,6 +196,7 @@ class RequestDBFile:
     return newRequest
 
 class RequestDBMySQL(DB):
+
   def __init__(self, systemInstance ='Default', maxQueueSize=10 ):
     DB.__init__(self,'RequestDB','RequestManagement/RequestDB',maxQueueSize)
     self.getIdLock = threading.Lock()
@@ -203,7 +209,7 @@ class RequestDBMySQL(DB):
     requestID = res['Value']
     attrName = 'Status'
     attrValue = status
-    res = self._setRequestAttribute(requestID, attrName, attrValue)
+    res = self._setRequestAttribute(requestID,attrName,attrValue)
     return res
 
   def _serveRequest(self):
@@ -227,19 +233,23 @@ class RequestDBMySQL(DB):
     print subRequestIDs
     req = "SELECT * from SubRequests WHERE RequestID IN =%s" % requestID
     self.getIdLock.release()
+    #THIS IS WHERE I AM IN THIS METHOD
+    # STILL TO DO: compile the request string
+    # STILL TO DO: remove the request completely from the db
+    # STILL TO DO: return the request string
 
   def _getRequest(self,requestType):
+    dmRequest = DataManagementRequest()
     self.getIdLock.acquire()
     req = "SELECT RequestID,SubRequestID FROM SubRequests WHERE Status = 'Waiting' AND RequestType = '%s' ORDER BY RequestID LIMIT 1;" % requestType
-    print req
     res = self._query(req)
     if not res['OK']:
       err = 'RequestDB._getRequest: Failed to retrieve max RequestID'
       self.getIdLock.release()
       return S_ERROR('%s\n%s' % (err,res['Message']))
-    print res['Value'],'!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
     requestID = res['Value'][0][0]
-    subRequestID = res['Value'][0][1]
+    dmRequest.setRequestID(requestID)
+    subRequestIDs = []
     req = "SELECT SubRequestID,Operation,SourceSE,TargetSE,Catalogue \
     from SubRequests WHERE RequestID=%s AND RequestType='%s' AND Status='%s'" % (requestID,requestType,'Waiting')
     res = self._query(req)
@@ -247,51 +257,87 @@ class RequestDBMySQL(DB):
       err = 'RequestDB._getRequest: Failed to retrieve SubRequests for RequestID %s' % requestID
       self.getIdLock.release()
       return S_ERROR('%s\n%s' % (err,res['Message']))
-    subRequestIDs = []
-    reqDict = {}
     for subRequestID,operation,sourceSE,targetSE,catalogue in res['Value']:
       subRequestIDs.append(subRequestID)
-      reqDict[subRequestID] = {}
-      reqDict[subRequestID]['Operation'] = operation
-      reqDict[subRequestID]['SourceSE'] = sourceSE
-      reqDict[subRequestID]['TargetSE'] = targetSE
-      reqDict[subRequestID]['Catalogue'] = catalogue
-      reqDict[subRequestID]['Status'] = 'Waiting'
-      reqDict[subRequestID]['SubRequestID'] = subRequestID
+      res = dmRequest.initiateSubRequest(requestType)
+      ind = res['Value']
+      subRequestDict = {'Operation':operation,'SourceSE':sourceSE,'TargetSE':targetSE,'Catalogue':catalogue,'Status':'Waiting','SubRequestID':subRequestID}
+      res = dmRequest.setSubRequestAttributes(ind,requestType,subRequestDict)
+      if not res['OK']:
+        err = 'RequestDB._getRequest: Failed to set subRequest attributes for RequestID %s' % requestID
+        self.getIdLock.release()
+        return S_ERROR('%s\n%s' % (err,res['Message']))
 
-    res = self.listToString(subRequestIDs)
-    subRequestIDString = res['Value']
-    req = "SELECT SubRequestID,LFN,Size,PFN,GUID,Md5,Addler,Attempt,Dataset,Status \
-    from Files WHERE SubRequestID IN (%s);" % subRequestIDString
+      req = "SELECT FileID,LFN,Size,PFN,GUID,Md5,Addler,Attempt,Status \
+      from Files WHERE SubRequestID = %s;" % subRequestID
+      res = self._query(req)
+      if not res['OK']:
+        err = 'RequestDB._getRequest: Failed to get File attributes for RequestID %s.%s' % (requestID,subRequestID)
+        self.getIdLock.release()
+        return S_ERROR('%s\n%s' % (err,res['Message']))
+      files = []
+      for fileID,lfn,size,pfn,guid,md5,addler,attempt,status in res['Value']:
+        fileDict = {'FileID':fileID,'LFN':lfn,'Size':size,'PFN':pfn,'GUID':guid,'Md5':md5,'Addler':addler,'Attempt':attempt,'Status':status}
+        files.append(fileDict)
+      res = dmRequest.setSubRequestFiles(ind,requestType,files)
+      if not res['OK']:
+        err = 'RequestDB._getRequest: Failed to set files into Request for RequestID %s.%s' % (requestID,subRequestID)
+        self.getIdLock.release()
+        return S_ERROR('%s\n%s' % (err,res['Message']))
+
+      req = "SELECT Dataset,Status FROM Datasets WHERE SubRequestID = %s;" % subRequestID
+      res = self._query(req)
+      if not res['OK']:
+        err = 'RequestDB._getRequest: Failed to get Datasets for RequestID %s.%s' % (requestID,subRequestID)
+        self.getIdLock.release()
+        return S_ERROR('%s\n%s' % (err,res['Message']))
+      datasets = []
+      for dataset,status in res['Value']:
+        datasets.append(dataset)
+      res = dmRequest.setSubRequestDatasets(ind,requestType,datasets)
+      if not res['OK']:
+        err = 'RequestDB._getRequest: Failed to set datasets into Request for RequestID %s.%s' % (requestID,subRequestID)
+        self.getIdLock.release()
+        return S_ERROR('%s\n%s' % (err,res['Message']))
+
+    req = "SELECT RequestName,JobID,OwnerDN,DIRACInstance,CreationTime from Requests WHERE RequestID = %s;" % requestID
     res = self._query(req)
     if not res['OK']:
-      err = 'RequestDB._getRequest: Failed to get File attributes for RequestID %s' % requestID
+      err = 'RequestDB._getRequest: Failed to retrieve max RequestID'
       self.getIdLock.release()
       return S_ERROR('%s\n%s' % (err,res['Message']))
+    requestName,jobID,ownerDN,diracInstance,creationTime = res['Value'][0]
+    dmRequest.setRequestName(requestName)
+    dmRequest.setJobID(jobID)
+    dmRequest.setOwnerDN(ownerDN)
+    dmRequest.setDiracInstance(diracInstance)
+    dmRequest.setCreationTime(creationTime)
 
-    for subRequestID,lfn,size,pfn,guid,md5,addler,attempt,dataset,status in res['Value']:
-      if dataset:
-        datasets.append(dataset)
-      else:
-        if not reqDict[subRequestID].has_key('Files'):
-          reqDict[subRequestID]['Files'] = {}
-        reqDict[subRequestID]['Files'][lfn] = {}
-        reqDict[subRequestID]['Files'][lfn]['Size'] = size
-        reqDict[subRequestID]['Files'][lfn]['PFN'] = pfn
-        reqDict[subRequestID]['Files'][lfn]['GUID'] = guid
-        reqDict[subRequestID]['Files'][lfn]['Md5'] = md5
-        reqDict[subRequestID]['Files'][lfn]['Addler'] = addler
-        reqDict[subRequestID]['Files'][lfn]['Attempt'] = attempt
-        reqDict[subRequestID]['Files'][lfn]['Status'] = status
-    print reqDict
-    request = DataManagementRequest()
-    request.setRequestID(requestID)
-    for requestID in reqDict.keys():
-      print reqDict[requestID]
-      request.addSubRequest(reqDict[requestID], requestType)
-    res = request.toXML()
-    print res['Value']
+    res = dmRequest.toXML()
+    if not res['OK']:
+      err = 'RequestDB._getRequest: Failed to create XML for RequestID %s' % (requestID)
+      self.getIdLock.release()
+      return S_ERROR('%s\n%s' % (err,res['Message']))
+    requestString = res['Value']
+
+    failed = False
+    for subRequestID in subRequestIDs:
+      res = self._setSubRequestAttribute(subRequestID,'Status','Assigned')
+      if not res['OK']:
+        failed = True
+    if failed:
+      for subRequestID in subRequestIDs:
+        res = self._setSubRequestAttribute(subRequestID,'Status','Waiting')
+      self.getIdLock.release()
+      err = 'RequestDB._getRequest: Failed to set sub request status to assigned'
+      return S_ERROR(err)
     self.getIdLock.release()
+
+    #still have to manage the status of the dataset properly
+    resultDict = {}
+    resultDict['RequestName'] = requestName
+    resultDict['RequestString'] = requestString
+    return S_OK(resultDict)
 
 
   def _setRequest(self,requestType,requestName,requestStatus,requestString):
@@ -302,59 +348,156 @@ class RequestDBMySQL(DB):
     if not res['OK']:
       return res
     requestID = res['Value']
-    for requestType in requestTypes:
-      res = request.getNumSubRequests(requestType)
-      if not res['OK']:
-        return res
-      numRequests = res['Value']
-      for ind in range(numRequests):
-        res = self._getSubRequestID(requestID,requestType)
+    res = self.__setRequestAttributes(requestID,request)
+    if res['OK']:
+      for requestType in requestTypes:
+        res = request.getNumSubRequests(requestType)
         if res['OK']:
-          subRequestID = res['Value']
-          res = self.__setSubRequestAttributes(ind,requestType,subRequestID,request)
-          if res['OK']:
-            res = self.__setSubRequestFiles(ind,requestType,subRequestID,request)
-            if not res['OK']:
+          numRequests = res['Value']
+          for ind in range(numRequests):
+            res = self._getSubRequestID(requestID,requestType)
+            if res['OK']:
+              subRequestID = res['Value']
+              res = self.__setSubRequestAttributes(ind,requestType,subRequestID,request)
+              if res['OK']:
+                res = self.__setSubRequestFiles(ind,requestType,subRequestID,request)
+                if res['OK']:
+                  res = self.__setSubRequestDatasets(ind,requestType,subRequestID,request)
+                  if not res['OK']:
+                    failed = True
+                else:
+                  failed = True
+              else:
+                failed = True
+            else:
               failed = True
-          else:
-            failed = True
         else:
           failed = True
+    else:
+      failed = True
     if failed:
-      res = self._removeRequest(requestID)
+      res = self._deleteRequest(requestName)
       return S_ERROR('Failed to set request')
     else:
       return S_OK(requestID)
 
-  def _removeRequest(self,requestID):
-    req = "DELETE from Requests where RequestID = %s;" % requestID
-    res = self._update(req)
-    req = "DELETE from SubRequests where RequestID = %s;" % requestID
-    res = self._update(req)
+  def _updateRequest(self,requestName,requestString):
+    request = DataManagementRequest(request=requestString)
+    requestTypes = ['transfer','register','removal','stage']
+    failed = False
+    requestID = request.getRequestID()
+    failed = False
+    for requestType in requestTypes:
+      res = request.getNumSubRequests(requestType)
+      if res['OK']:
+        numRequests = res['Value']
+        for ind in range(numRequests):
+          res = request.getSubRequestAttributes(ind,requestType)
+          if res['OK']:
+            if res['Value'].has_key('SubRequestID'):
+              subRequestID = res['Value']['SubRequestID']
+              res = self.__updateSubRequestFiles(ind,requestType,subRequestID,request)
+              if not res['OK']:
+                failed = True
+            else:
+              failed = True
+          else:
+            failed = True
+      else:
+        failed = True
+    if failed:
+      errStr = 'Failed to update request %s status' % requestID
+      return S_ERROR(errStr)
+    return S_OK()
+
+  def _deleteRequest(self,requestName):
+    #This method needs extended to truely remove everything that is being removed i.e.fts job entries etc.
+    failed = False
+    req = "SELECT RequestID from Requests WHERE RequestName='%s';" % requestName
+    res = self._query(req)
+    if res['OK']:
+      if res['Value']:
+        requestID = res['Value'][0]
+        req = "SELECT SubRequestID from SubRequests where RequestID = %s;" % requestID
+        res = self._query(req)
+        if res['OK']:
+          subRequestIDs = []
+          for reqID in res['Value']:
+            subRequestIDs.append(reqID[0])
+          idString = self.intListToString(subRequestIDs)
+          req = "DELETE FROM Files WHERE SubRequestID IN (%s);" % idString['Value']
+          res = self._update(req)
+          if not res['OK']:
+            failed = True
+          req = "DELETE FROM Datasets WHERE SubRequestID IN (%s);" % idString['Value']
+          res = self._update(req)
+          if not res['OK']:
+            failed = True
+          req = "DELETE FROM SubRequests WHERE RequestID = %s;" % requestID
+          res = self._update(req)
+          if not res['OK']:
+            failed = True
+          req = "DELETE from Requests where RequestID = %s;" % requestID
+          res = self._update(req)
+          if not res['OK']:
+            failed = True
+          if failed:
+            errStr = 'RequestDB._deleteRequest: Failed to fully remove Request %s' % requestID
+            return S_ERROR(errStr)
+          else:
+            return S_OK()
+        else:
+          errStr = 'RequestDB._deleteRequest: Unable to retrieve SubRequestIDs for Request %s' % requestID
+          return S_ERROR(errStr)
+      else:
+        errStr = 'RequestDB._deleteRequest: No RequestID found for %s' % requestName
+        return S_ERROR(errStr)
+    else:
+      errStr = "RequestDB._deleteRequest: Failed to retrieve RequestID for %s" % requestName
+      return S_ERROR(errStr)
+
+  def __setSubRequestDatasets(self,ind,requestType,subRequestID,request):
+    res = request.getSubRequestDatasets(ind,requestType)
+    if not res['OK']:
+      return S_ERROR('Failed to get request datasets')
+    datasets = res['Value']
+    for dataset in datasets:
+      res = self._setDataset(subRequestID,dataset)
+      if not res['OK']:
+        return S_ERROR('Failed to set dataset in DB')
+    return res
+
+  def __updateSubRequestFiles(self,ind,requestType,subRequestID,request):
+    res = request.getSubRequestFiles(ind,requestType)
+    if not res['OK']:
+      return S_ERROR('Failed to get request files')
+    files = res['Value']
+    for file in files:
+      if not file.has_key('FileID'):
+        return S_ERROR('No FileID associated to file')
+      fileID = file['FileID']
+      for fileAttribute,attributeValue in file.items():
+        if not fileAttribute == 'FileID':
+          res = self._setFileAttribute(subRequestID,fileID,fileAttribute,attributeValue)
+          if not res['OK']:
+            return S_ERROR('Failed to set file attribute in DB')
     return res
 
   def __setSubRequestFiles(self,ind,requestType,subRequestID,request):
     res = request.getSubRequestFiles(ind,requestType)
     if not res['OK']:
       return S_ERROR('Failed to get request files')
-    lfns = res['Value']
-    for lfn in lfns:
-      res = self._getFileID(lfn,subRequestID)
+    files = res['Value']
+    for file in files:
+      res = self._getFileID(subRequestID)
       if not res['OK']:
-        return S_ERROR('Failed to get FileID for LFN')
+        return S_ERROR('Failed to get FileID')
       fileID = res['Value']
-      res = request.getSubRequestFileAttributes(ind,requestType,lfn)
-      if not res['OK']:
-        return S_ERROR('Failed to get file attributes')
-      fileAttributes = res['Value']
-      for fileAttribute in fileAttributes:
-        res = request.getSubRequestFileAttributeValue(ind,requestType,lfn,fileAttribute)
-        if not res['OK']:
-          return S_ERROR('Failed to get file attribute values')
-        attributeValue = res['Value']
-        res = self._setFileAttribute(subRequestID,fileID,fileAttribute,attributeValue)
-        if not res['OK']:
-          return S_ERROR('Failed to set file attribute in DB')
+      for fileAttribute,attributeValue in file.items():
+        if not fileAttribute == 'FileID':
+          res = self._setFileAttribute(subRequestID,fileID,fileAttribute,attributeValue)
+          if not res['OK']:
+            return S_ERROR('Failed to set file attribute in DB')
     return res
 
   def __setSubRequestAttributes(self,ind,requestType,subRequestID,request):
@@ -362,15 +505,26 @@ class RequestDBMySQL(DB):
     if not res['OK']:
       return S_ERROR('Failed to get sub request attributes')
     requestAttributes = res['Value']
-    for requestAttribute in requestAttributes:
-      if not requestAttribute == 'RequestID':
-        res = request.getSubRequestAttributeValue(ind,requestType,requestAttribute)
-        if not res['OK']:
-          return S_ERROR('Failed to get sub request attribute value')
-        attributeValue = res['Value']
+    for requestAttribute,attributeValue in requestAttributes.items():
+      if not requestAttribute == 'SubRequestID':
         res = self._setSubRequestAttribute(subRequestID,requestAttribute,attributeValue)
         if not res['OK']:
           return S_ERROR('Failed to set sub request in DB')
+    return res
+
+  def __setRequestAttributes(self,requestID,request):
+    """ Insert into the DB the request attributes
+    """
+    res = self._setRequestAttribute(requestID,'CreationTime', request.getCurrentDate())
+    if not res['OK']:
+      return res
+    res = self._setRequestAttribute(requestID,'JobID',request.getJobID())
+    if not res['OK']:
+      return res
+    res = self._setRequestAttribute(requestID,'OwnerDN',request.getOwnerDN())
+    if not res['OK']:
+      return res
+    res = self._setRequestAttribute(requestID,'DIRACInstance',request.getDiracInstance())
     return res
 
   def _setRequestAttribute(self,requestID, attrName, attrValue):
@@ -391,8 +545,12 @@ class RequestDBMySQL(DB):
     res = self._query(req)
     if not res['OK']:
       return res
-    attrValue = res['Value'][0][0]
-    return S_OK(attrValue)
+    if res['Value']:
+      attrValue = res['Value'][0][0]
+      return S_OK(attrValue)
+    else:
+      errStr = 'Failed to retreive %s for Request %s%s' % (attrName,requestID,requestName)
+      return S_ERROR(errStr)
 
   def _setSubRequestAttribute(self,subRequestID, attrName, attrValue):
     req = "UPDATE SubRequests SET %s='%s' WHERE SubRequestID='%s';" % (attrName,attrValue,subRequestID)
@@ -410,25 +568,27 @@ class RequestDBMySQL(DB):
     else:
       return S_ERROR('RequestDB.setFileAttribute: failed to set attribute')
 
-  def _getFileID(self,lfn,subRequestID):
-    req = "SELECT FileID FROM Files WHERE LFN='%s' AND SubRequestID=%s;" % (lfn,subRequestID)
-    err = 'RequestDB._getFileID: Failed to retrieve FileID'
+  def _setDataset(self,subRequestID,dataset):
+    req = "INSERT INTO Datasets (Dataset,SubRequestID) VALUES ('%s',%s);" % (dataset,subRequestID)
+    res = self._update(req)
+    if res['OK']:
+      return res
+    else:
+      return S_ERROR('RequestDB.setFileAttribute: failed to set attribute')
+
+  def _getFileID(self,subRequestID):
+    self.getIdLock.acquire()
+    req = "INSERT INTO Files (Status,SubRequestID) VALUES ('%s','%s');" % ('New',subRequestID)
+    res = self._update(req)
+    if not res['OK']:
+      self.getIdLock.release()
+      return S_ERROR( '%s\n%s' % (err, res['Message'] ) )
+    req = 'SELECT MAX(FileID) FROM Files WHERE SubRequestID=%s' % subRequestID
     res = self._query(req)
     if not res['OK']:
-      return res
-    if len(res['Value']) == 0:
-      self.getIdLock.acquire()
-      req = "INSERT INTO Files (LFN,SubRequestID) VALUES ('%s','%s');" % (lfn,subRequestID)
-      res = self._update(req)
-      if not res['OK']:
-        self.getIdLock.release()
-        return S_ERROR( '%s\n%s' % (err, res['Message'] ) )
-      req = 'SELECT MAX(FileID) FROM Files WHERE SubRequestID=%s' % subRequestID
-      res = self._query(req)
-      if not res['OK']:
-        self.getIdLock.release()
-        return S_ERROR( '%s\n%s' % (err, res['Message'] ) )
       self.getIdLock.release()
+      return S_ERROR( '%s\n%s' % (err, res['Message'] ) )
+    self.getIdLock.release()
     try:
       fileID = int(res['Value'][0][0])
       self.log.info( 'RequestDB: New FileID served "%s"' % fileID )
@@ -488,9 +648,16 @@ class RequestDBMySQL(DB):
     self.getIdLock.release()
     return S_OK(subRequestID)
 
-  def listToString(self,list):
+  def stringListToString(self,list):
     str_list = []
     for item in list:
       str_list.append("'%s'" % item)
+      str = ','.join(str_list)
+    return S_OK(str)
+
+  def intListToString(self,list):
+    str_list = []
+    for item in list:
+      str_list.append("%s" % item)
       str = ','.join(str_list)
     return S_OK(str)
