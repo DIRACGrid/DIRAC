@@ -14,7 +14,7 @@ class DataManagementRequest:
     # A common set of attributes that define requests.
     self.requestAttributes = ['SubRequestID','TargetSE','Status','Operation','SourceSE','Catalogue']
     # Possible keys to define the files in the request.
-    self.fileAttributes = ['LFN','Size','PFN','GUID','Md5','Addler','Status','Attempt']
+    self.fileAttributes = ['LFN','Size','PFN','GUID','Md5','Addler','Status','Attempt','FileID']
     # Possible keys to define the dataset in the request.
     self.datasetAttributes = ['Handle']
 
@@ -39,6 +39,7 @@ class DataManagementRequest:
       self.ownerDN = header.getAttribute('OwnerDN')
       self.date = header.getAttribute('Date')
       self.mode = header.getAttribute('Mode')
+      self.dirac_instance = header.getAttribute('DiracInstance')
       self.requestid = header.getAttribute('RequestID')
       self.requestname = header.getAttribute('RequestName')
 
@@ -137,6 +138,11 @@ class DataManagementRequest:
     """ Get the DIRAC WMS mode ( instance )
     """
     return self.dirac_instance
+
+  def setCreationTime(self,dateTime):
+    """ Set the creation time of the request
+    """
+    self.date = dateTime
 
 ###############################################################
 
@@ -276,25 +282,13 @@ class DataManagementRequest:
     """ Set the files associated to a sub-request
     """
     if type == 'transfer':
-      if not self.transfers[ind].has_key('Files'):
-        self.transfers[ind]['Files'] = files
-      else:
-        self.transfers[ind]['Files'].extend(files)
+      self.transfers[ind]['Files'] = files
     if type == 'register':
-      if not self.registers[ind].has_key('Files'):
-        self.registers[ind]['Files'] = files
-      else:
-        self.registers[ind]['Files'].extend(files)
+      self.registers[ind]['Files'] = files
     if type == 'removal':
-      if not self.removals[ind].has_key('Files'):
-        self.removals[ind]['Files'] = files
-      else:
-        self.removals[ind]['Files'].extend(files)
+      self.removals[ind]['Files'] = files
     if type == 'stage':
-      if not self.stages[ind].has_key('Files'):
-        self.stages[ind]['Files'] = files
-      else:
-        self.stages[ind]['Files'].extend(files)
+      self.stages[ind]['Files'] = files
     return S_OK()
 
   def setSubRequestFileAttributeValue(self,ind,type,lfn,attribute,value):
@@ -611,7 +605,7 @@ class DataManagementRequest:
     if self.ownerDN:
       attributes = attributes + ' OwnerDN="'+self.ownerDN+'" '
     if self.date:
-      attributes = attributes + ' Date="'+self.date+'" '
+      attributes = attributes + ' Date="'+str(self.date)+'" '
     if self.mode:
       attributes = attributes + ' Mode="'+self.mode+'" '
     if self.dirac_instance:
