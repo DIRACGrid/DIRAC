@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/File.py,v 1.15 2007/05/16 17:04:22 acasajus Exp $
-__RCSID__ = "$Id: File.py,v 1.15 2007/05/16 17:04:22 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/File.py,v 1.16 2007/10/18 14:37:35 acsmith Exp $
+__RCSID__ = "$Id: File.py,v 1.16 2007/10/18 14:37:35 acsmith Exp $"
 
 """
    Collection of DIRAC useful file related modules
@@ -38,6 +38,27 @@ def makeGuid( fileName=None ):
                                    md5HexString[20:32] )
 
   return md5String.upper()
+
+def checkGuid(guid):
+    """
+       Checks whether a supplied GUID is of the correct format.
+       The guid is a string of 36 characters long split into 5 parts of length 8-4-4-4-12.
+
+       INPUT:     guid - string to be checked .
+       OPERATION: Split the string on '-', checking each part is correct length.
+       OUTPUT:    Returns 1 if the supplied string is a GUID.
+                  Returns 0 otherwise.
+    """
+    guidSplit = guid.split('-')
+    if len(guid) == 36 \
+      and len(guidSplit[0]) == 8 \
+        and len(guidSplit[1]) == 4 \
+          and len(guidSplit[2]) == 4 \
+            and len(guidSplit[3]) ==4 \
+              and len(guidSplit[4]) == 12:
+      return S_OK(True)
+    else:
+      return S_OK(False)
 
 def getSize( fileName ):
   try:
