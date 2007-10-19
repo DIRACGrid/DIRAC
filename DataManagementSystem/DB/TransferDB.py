@@ -3,6 +3,7 @@
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
+from DIRAC.Core.Utilities.List import randomize
 import threading,types
 
 gLogger.initialize('DMS','/Databases/TransferDB/Test')
@@ -12,6 +13,9 @@ class TransferDB(DB):
   def __init__(self, systemInstance ='Default', maxQueueSize=10 ):
     DB.__init__(self,'TransferDB','RequestManagement/RequestDB',maxQueueSize)
     self.getIdLock = threading.Lock()
+
+  #################################################################################
+  # These are the methods for managing the Channels table
 
   def createChannel(self,sourceSE,destSE):
     self.getIdLock.acquire()
@@ -90,6 +94,9 @@ class TransferDB(DB):
       channels[channelID]['Throughput'] = throughPut
     return S_OK(channels)
 
+  #################################################################################
+  # These are the methods for managing the Channel table
+
   def addFileToChannel(self,channelID,fileID,sourceSURL,targetSURL):
     res = self.checkFileChannelExists(channelID, fileID)
     if not res['OK']:
@@ -124,13 +131,141 @@ class TransferDB(DB):
     return res
 
   def setFileChannelStatus(self,channelID,fileID,status):
-    req = "UPDATE Channel SET Status = '%s' WHERE ChannelID = %s and FileID = %s;" % (status,channelID,fileID)
+    res = self.setFileChannelAttribute(channelID, fileID, 'Status', status)
+    return res
+
+  def getFileChannelAttribute(self,channelID,fileID,attribute):
+    req = "SELECT %s from Channel WHERE ChannelID = %s and FileID = %s;" % (attribute,channelID,fileID)
+    res = self._query(req)
+    if not res['OK']:
+      err = "TransferDB._getFileChannelAttribute: Failed to get %s for File %s on Channel %s." % (attribute,fileID,channelID)
+      return S_ERROR('%s\n%s' % (err,res['Message']))
+    if not res['Value']:
+      err = "TransferDB._getFileChannelAttribute: File %s doesn't exist on Channel %s." % (fileID,channelID)
+      return S_ERROR(err)
+    attrValue = res['Value'][0][0]
+    return S_OK(attrValue)
+
+  def setFileChannelAttribute(self,channelID,fileID,attribute,attrValue):
+    req = "UPDATE Channel SET %s = '%s' WHERE ChannelID = %s and FileID = %s;" % (attribute,attrValue,channelID,fileID)
     res = self._update(req)
     if not res['OK']:
-      err = 'TransferDB._setFileChannelStatus: Failed to set File %s status to %s on Channel %s.' % (fileID,status,channelID)
+      err = 'TransferDB._setFileChannelAttribute: Failed to set %s to %s for File %s on Channel %s.' % (attribute,attrValue,fileID,channelID)
       return S_ERROR('%s\n%s' % (err,res['Message']))
     return res
 
+  #################################################################################
+  # These are the methods for managing the FTSReq table
 
+  def insertFTSReq(self,ftsGUID,ftsServer,channelID):
+    self.getIdLock.acquire()
+    req = "INSERT INTO FTSReq (FTSGUID,FTSServer,ChannelID) VALUES ('%s','%s',%s);" % (ftsGUID,ftsServer,channelID)
+    print req
+    res = self._update(req)
+    if not res['OK']:
+      self.getIdLock.release()
+      err = "TransferDB._insertFTSReq: Failed to insert FTS GUID into FTSReq table."
+      return S_ERROR('%s\n%s' % (err,res['Message']))
+    req = "SELECT MAX(FTSReqID) FROM FTSReq;"
+    print req
+    res = self._query(req)
+    self.getIdLock.release()
+    if not res['OK']:
+      err = "TransferDB._insertFTSReq: Failed to get FTSReqID from FTSReq table."
+      return S_ERROR('%s\n%s' % (err,res['Message']))
+    if not res['Value']:
+      err = "TransferDB._insertFTSReq: Request details don't appear in FTSReq table."
+      return S_ERROR(err)
+    ftsReqID = res['Value'][0][0]
+    return S_OK(ftsReqID)
 
+  def setFTSReqStatus(self,ftsReqID,status):
+    self.getIdLock.acquire()
+    req = "UPDATE FTSReq SET Status = '%s' WHERE FTSReqID = %s;" % (status,ftsReqID)
+    print req
+    res = self._update(req)
+    self.getIdLock.release()
+    if not res['OK']:
+      err = "TransferDB._setFTSReqStatus: Failed to set status to %s for FTSReq %s." % (status,ftsReqID)
+      return S_ERROR('%s\n%s' % (err,res['Message']))
+    return res
+
+  def deleteFTSReq(self,ftsReqID):
+    self.getIdLock.acquire()
+    req = "DELETE FROM FTSReq WHERE FTSReqID = %s;" % (ftsReqID)
+    print req
+    res = self._update(req)
+    self.getIdLock.release()
+    if not res['OK']:
+      err = "TransferDB._deleteFTSReq: Failed to delete FTSReq %s." % (ftsReqID)
+      return S_ERROR('%s\n%s' % (err,res['Message']))
+    return res
+
+  def getFTSReq(self):
+    req = "SELECT FTSReqID,FTSGUID,FTSServer FROM FTSReq WHERE Status = 'Submitted';"
+    print req
+    res = self._query(req)
+    if not res['OK']:
+      err = "TransferDB._getFTSReq: Failed to get entry from FTSReq table."
+      return S_ERROR('%s\n%s' % (err,res['Message']))
+    if not res['Value']:
+      # It is not an error that there are not requests
+      return S_OK()
+    requests = {}
+    for requestDetail in res['Value']:
+      ftsReqID,ftsGUID,ftsServer = requestDetail
+      requests[ftsReqID] = (ftsGUID,ftsServer)
+    ftsReqIDs = randomize(requests.keys())
+    ftsReqID = ftsReqIDs[0]
+    resDict = {}
+    resDict['FTSReqID'] = ftsReqID
+    resDict['FTSGuid'] = requests[ftsReqID][0]
+    resDict['FTSServer'] = requests[ftsReqID][1]
+    return S_OK(resDict)
+
+  #################################################################################
+  # These are the methods for managing the FileToFTS table
+
+  def getFTSReqLFNs(self,ftsReqID):
+    req = "SELECT FileID,LFN FROM Files WHERE FileID IN (SELECT FileID from FileToFTS WHERE FTSReqID = %s);" % ftsReqID
+    res = self._query(req)
+    if not res['OK']:
+      err = "TransferDB._getFTSReqLFNs: Failed to get LFNs for FTSReq %s." % ftsReqID
+      return S_ERROR('%s\n%s' % (err,res['Message']))
+    if not res['Value']:
+      err = "TransferDB._getFTSReqLFNs: No LFNs found for FTSReq %s." % ftsReqID
+      return S_ERROR(err)
+    for fileID,lfn in res['Value']:
+        print fileID,lfn
+
+  def setFTSReqFiles(self,ftsReqID,fileIDs):
+    for fileID in fileIDs:
+      req = "INSERT INTO FileToFTS (FTSReqID,FileID) VALUES (%s,%s);" % (ftsReqID,fileID)
+      res = self._update(req)
+      if not res['OK']:
+        err = "TransferDB._setFTSReqFiles: Failed to set File %s for FTSReq %s." % (fileID,ftsReqID)
+        return S_ERROR('%s\n%s' % (err,res['Message']))
+    return S_OK()
+
+  def getFTSReqFileIDs(self,ftsReqID):
+    req = "SELECT FileID FROM FileToFTS WHERE FTSReqID = %s;" % ftsReqID
+    res = self._query(req)
+    if not res['OK']:
+      err = "TransferDB._getFTSReqFileIDs: Failed to get FileIDs for FTSReq %s." % ftsReqID
+      return S_ERROR('%s\n%s' % (err,res['Message']))
+    if not res['Value']:
+      err = "TransferDB._getFTSReqLFNs: No FileIDs found for FTSReq %s." % ftsReqID
+      return S_ERROR(err)
+    fileIDs = []
+    for fileID in res['Value']:
+      fileIDs.append(fileID[0])
+    return S_OK(fileIDs)
+
+  def removeFilesFromFTSReq(self,ftsReqID):
+    req = "DELETE FROM FileToFTS WHERE FTSReqID = %s;" % ftsReqID
+    res = self._update(req)
+    if not res['OK']:
+      err = "TransferDB._removeFilesFromFTSReq: Failed to remove files for FTSReq %s." % ftsReqID
+      return S_ERROR('%s\n%s' % (err,res['Message']))
+    return res
 
