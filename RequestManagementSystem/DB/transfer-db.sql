@@ -75,7 +75,7 @@ DROP TABLE IF EXISTS FileToFTS;
 CREATE TABLE FileToFTS (
   FileID INTEGER NOT NULL,
   FTSReqID varchar(64) NOT NULL,
-  Status varchar(32) DEFAULT 'Waiting',
+  Status varchar(32) DEFAULT 'Submitted',
   Duration INTEGER DEFAULT 0,
   Reason VARCHAR(255),
   PRIMARY KEY(FileID,FTSReqID)
@@ -85,28 +85,30 @@ DROP TABLE IF EXISTS FTSReq;
 CREATE TABLE FTSReq (
   FTSReqID INTEGER NOT NULL AUTO_INCREMENT,
   FTSGUID varchar(64) NOT NULL,
-  FTSServer varchar(255),
-  Status varchar(32) DEFAULT 'Waiting',
+  FTSServer varchar(255) NOT NULL,
+  ChannelID INTEGER NOT NULL,
+  Status varchar(32) DEFAULT 'Submitted',
   PRIMARY KEY(FTSReqID,FTSGUID)
 );
 
 DROP TABLE IF EXISTS Channels;
 CREATE TABLE Channels (
-  ChannelID INTEGER NOT NULL,
+  ChannelID INTEGER NOT NULL AUTO_INCREMENT,
   SourceSite varchar(32) NOT NULL,
   DestinationSite varchar(32) NOT NULL,
   ActiveJobs INTEGER DEFAULT 0,
   LatestThroughPut FLOAT DEFAULT 0.0,
   Status varchar(32) NOT NULL,
-  PRIMARY KEY(ChannelID)
+  PRIMARY KEY(ChannelID,SourceSite,DestinationSite)
 );
 
 DROP TABLE IF EXISTS Channel;
 CREATE TABLE Channel (
   ChannelID INTEGER NOT NULL,
   FileID INTEGER NOT NULL,
+  SourceSURL varchar(256) NOT NULL,
+  TargetSURL varchar(256) NOT NULL,
   SubmitTime DATETIME NOT NULL,
   Status varchar(32) NOT NULL,
   PRIMARY KEY(ChannelID,FileID)
 );
-
