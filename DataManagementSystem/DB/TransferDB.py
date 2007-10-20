@@ -154,6 +154,19 @@ class TransferDB(DB):
       return S_ERROR('%s\n%s' % (err,res['Message']))
     return res
 
+  def getFilesForChannel(self,channelID,numberOfFiles):
+    req = "SELECT FileID,SourceSURL,TargetSURL FROM Channel WHERE ChannelID = %s AND Status = 'Waiting' ORDER BY SubmitTime LIMIT %s;" % (channelID,numberOfFiles)
+    res = self._query(req)
+    if not res['OK']:
+      err = "TransferDB.getFilesForChannel: Failed to get files for Channel %s." % channelID
+      return S_ERROR('%s\n%s' % (err,res['Message']))
+    if not res['Value']:
+      return S_OK([])
+    files = []
+    for fileID,sourceSURL,targetSURL in res['Value']:
+      files.append({'FileID':fileID,'SourceSURL':sourceSURL,'TargetSURL':targetSURL})
+    return S_OK(files)
+
   #################################################################################
   # These are the methods for managing the FTSReq table
 
@@ -235,8 +248,10 @@ class TransferDB(DB):
     if not res['Value']:
       err = "TransferDB._getFTSReqLFNs: No LFNs found for FTSReq %s." % ftsReqID
       return S_ERROR(err)
+    files = {}
     for fileID,lfn in res['Value']:
-        print fileID,lfn
+      files[fileID] = lfn
+    return S_OK(files)
 
   def setFTSReqFiles(self,ftsReqID,fileIDs):
     for fileID in fileIDs:
@@ -266,6 +281,14 @@ class TransferDB(DB):
     res = self._update(req)
     if not res['OK']:
       err = "TransferDB._removeFilesFromFTSReq: Failed to remove files for FTSReq %s." % ftsReqID
+      return S_ERROR('%s\n%s' % (err,res['Message']))
+    return res
+
+  def setFileToFTSFileAttribute(self,ftsReqID,fileID,attribute,attrValue):
+    req = "UPDATE FileToFTS SET %s = '%s' WHERE FTSReqID = %s AND FileID = %s;" % (attribute,attrValue,ftsReqID,fileID)
+    res = self._update(req)
+    if not res['OK']:
+      err = "TransferDB._setFileToFTSFileAttribute: Failed to set %s to %s for File %s and FTSReq %s;" % (attribute,attrValue,fileID,ftsReqID)
       return S_ERROR('%s\n%s' % (err,res['Message']))
     return res
 
