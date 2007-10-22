@@ -13,7 +13,16 @@ class LcgFileCatalogProxyClient:
     """
     self.name = 'LFCProxy'
     if not url:
-      self.url = gConfig.getValue('Systems/DataManagement/Development/URLs/LcgFileCatalogProxy')
+      result = gConfig.getOption('/DIRAC/Setup')
+      if not result['OK']:
+        gLogger.fatal('Failed to get the /DIRAC/Setup')
+        return
+      setup = result['Value']
+      configPath = '/DIRAC/Setups/%s/DataManagement' % setup
+
+      dmConfig = gConfig.getValue(configPath)
+      configPath = '/Systems/DataManagement/%s/URLs/LcgFileCatalog/LcgFileCatalogProxy' % dmConfig
+      self.url = gConfig.getValue(configPath)
     else:
       self.url = url
     self.server = RPCClient(self.url,useCertificates,timeout = 120)
