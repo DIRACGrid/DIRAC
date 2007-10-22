@@ -40,7 +40,7 @@ class LcgFileCatalogCombinedClient:
     self.lfc = LcgFileCatalogClient(infosys,master_host)
 
     if not mirrors:
-      configPath = '/DataManagement/FileCatalogs/LFC/LFCReadOnlyMirrors' % dmConfig
+      configPath = '/DataManagement/FileCatalogs/LFC/LFCReadOnlyMirrors'
       mirrors = gConfig.getValue(configPath,[])
     # Create the mirror LFC instances
     self.mirrors = []
