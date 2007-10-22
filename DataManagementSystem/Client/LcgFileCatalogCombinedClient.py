@@ -5,7 +5,7 @@
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.DataManagementSystem.Client.LcgFileCatalogClient import LcgFileCatalogClient
 from DIRAC.Core.Utilities.Subprocess import pythonCall
-import random, time
+import random, time,os
 
 class LcgFileCatalogCombinedClient:
 
