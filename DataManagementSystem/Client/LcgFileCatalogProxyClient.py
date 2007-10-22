@@ -21,7 +21,7 @@ class LcgFileCatalogProxyClient:
       configPath = '/DIRAC/Setups/%s/DataManagement' % setup
 
       dmConfig = gConfig.getValue(configPath)
-      configPath = '/Systems/DataManagement/%s/URLs/LcgFileCatalog/LcgFileCatalogProxy' % dmConfig
+      configPath = '/Systems/DataManagement/%s/URLs/LcgFileCatalogProxy' % dmConfig
       self.url = gConfig.getValue(configPath)
     else:
       self.url = url
