@@ -1,8 +1,8 @@
-# $Id: WorkflowReader.py,v 1.5 2007/06/28 13:49:46 gkuznets Exp $
+# $Id: WorkflowReader.py,v 1.6 2007/10/23 15:41:56 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.5 $"
+__RCSID__ = "$Revision: 1.6 $"
 
 #try: # this part to inport as part of the DIRAC framework
 from DIRAC.Core.Workflow.Parameter import *
@@ -55,7 +55,7 @@ class WorkflowXMLHandler(ContentHandler):
 
     elif name == "StepInstance":
       obj = StepDefinition("")
-      stack[len(self.stack)-1].step_instances.append(obj)
+      self.stack[len(self.stack)-1].step_instances.append(obj)
       self.stack.append(obj)
 
     elif name == "ModuleDefinition":
