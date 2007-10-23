@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/List.py,v 1.3 2007/05/14 16:22:39 gkuznets Exp $
-__RCSID__ = "$Id: List.py,v 1.3 2007/05/14 16:22:39 gkuznets Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/List.py,v 1.4 2007/10/23 16:23:02 acsmith Exp $
+__RCSID__ = "$Id: List.py,v 1.4 2007/10/23 16:23:02 acsmith Exp $"
 """
    Collection of DIRAC useful list related modules
    by default on Error they return None
@@ -46,3 +46,13 @@ def randomize( initialList ):
     randomList.append( initialList[ indexList[ randomPos ] ] )
     del( indexList[ randomPos ] )
   return randomList
+
+def sortList(list,invert=False):
+  """
+    Return a sorted list of ints or list of strings
+  """
+  if not invert:
+    list.sort(lambda x, y: cmp(x, y))
+  else:
+    list.sort(lambda x, y: cmp(y, x))
+  return list
