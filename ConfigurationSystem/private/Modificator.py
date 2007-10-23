@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Modificator.py,v 1.2 2007/10/10 12:54:28 acasajus Exp $
-__RCSID__ = "$Id: Modificator.py,v 1.2 2007/10/10 12:54:28 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Modificator.py,v 1.3 2007/10/23 16:54:02 acasajus Exp $
+__RCSID__ = "$Id: Modificator.py,v 1.3 2007/10/23 16:54:02 acasajus Exp $"
 
 import zlib
 import difflib
@@ -99,14 +99,14 @@ class Modificator:
       return False
     cfg = self.__getSubCFG( optionPath )
     optionName = List.fromChar( optionPath, "/" )[-1]
-    return cfg.deleteEntry( optionName )
+    return cfg.deleteKey( optionName )
 
   def removeSection( self, sectionPath ):
     if not self.existsSection( sectionPath ):
       return False
     cfg = self.__getSubCFG( sectionPath )
     sectionName = List.fromChar( sectionPath, "/" )[-1]
-    return cfg.deleteEntry( sectionName )
+    return cfg.deleteKey( sectionName )
 
   def loadFromBuffer( self, data ):
     self.cfgData = CFG()

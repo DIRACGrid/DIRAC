@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Attic/CFG.py,v 1.6 2007/10/04 12:54:25 acasajus Exp $
-__RCSID__ = "$Id: CFG.py,v 1.6 2007/10/04 12:54:25 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Attic/CFG.py,v 1.7 2007/10/23 16:54:03 acasajus Exp $
+__RCSID__ = "$Id: CFG.py,v 1.7 2007/10/23 16:54:03 acasajus Exp $"
 
 import types
 import copy
@@ -28,7 +28,7 @@ class CFG:
       else:
         self.__dataDict[ sectionName ] = oCFG
     else:
-      raise Exception( "%s key is already a section"  % sectionName )
+      raise Exception( "%s key already exists"  % sectionName )
 
   def __overrideAndCloneSection( self, sectionName, oCFGToClone ):
     if sectionName not in self.listSections():
@@ -51,7 +51,7 @@ class CFG:
       self.__orderedList.append( entryName )
     self.__commentDict[ entryName ] = comment
 
-  def deleteEntry( self, entryName ):
+  def deleteKey( self, entryName ):
     if entryName in self.__orderedList:
       del( self.__commentDict[ entryName ] )
       del( self.__dataDict[ entryName ] )
