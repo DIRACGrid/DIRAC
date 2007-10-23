@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Modificator.py,v 1.3 2007/10/23 16:54:02 acasajus Exp $
-__RCSID__ = "$Id: Modificator.py,v 1.3 2007/10/23 16:54:02 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Modificator.py,v 1.4 2007/10/23 17:36:39 acasajus Exp $
+__RCSID__ = "$Id: Modificator.py,v 1.4 2007/10/23 17:36:39 acasajus Exp $"
 
 import zlib
 import difflib
@@ -31,6 +31,7 @@ class Modificator:
     if retVal[ 'OK' ]:
       self.cfgData = CFG()
       self.cfgData.loadFromBuffer( zlib.decompress( retVal[ 'Value' ] ) )
+    return retVal
 
   def getSections( self, sectionPath ):
     return gConfigurationData.getSectionsFromCFG( sectionPath, self.cfgData )

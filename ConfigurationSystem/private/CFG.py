@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Attic/CFG.py,v 1.7 2007/10/23 16:54:03 acasajus Exp $
-__RCSID__ = "$Id: CFG.py,v 1.7 2007/10/23 16:54:03 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Attic/CFG.py,v 1.8 2007/10/23 17:36:39 acasajus Exp $
+__RCSID__ = "$Id: CFG.py,v 1.8 2007/10/23 17:36:39 acasajus Exp $"
 
 import types
 import copy
@@ -72,10 +72,49 @@ class CFG:
     else:
       return [ sKey for sKey in self.__dataDict.keys() if type( self.__dataDict[ sKey ] ) != types.StringType ]
 
+  def isSection( self, sKey ):
+    return type( self.__dataDict[ sKey ] ) != types.StringType 
+
+  def listAll( self ):
+    return self.__orderedList
+
+  def __recurse( self, pathList ):
+    print "Exploring", pathList
+    if pathList[0] in self.__dataDict:
+      if len( pathList ) == 1:
+        return { 'key' : pathList[0], 'value' : self.__dataDict[ pathList[0] ], 'comment' : self.__commentDict[ pathList[0] ] }
+      else:
+        return self.__dataDict[ pathList[0] ].__recurse( pathList[1:] )
+    else:
+      return False
+
+  def getRecursive( self, path, levelsAbove = 0 ):
+    pathList = [ dir.strip() for dir in path.split( "/" ) if not dir.strip() == "" ]
+    levelsAbove = abs( levelsAbove )
+    if len( pathList ) - levelsAbove < 0:
+      return False
+    if len( pathList ) - levelsAbove == 0:
+      return { 'key' : "", 'value' : self, 'comment' : "" }
+    if levelsAbove > 0:
+      pathList = pathList[:-levelsAbove]
+    return self.__recurse( pathList )
+
   def appendToOption( self, optionName, value ):
     if optionName not in self.__dataDict:
       raise Exception( "Option %s has not been declared" % optionName )
     self.__dataDict[ optionName ] += str( value )
+
+  def addKey( self, key, value, comment, beforeKey = False ):
+    if key in self.__dataDict:
+      raise Exception( "%s already exists" % key )
+    self.__dataDict[ key ] = value
+    self.__commentDict[ key ] = comment
+    if not beforeKey:
+      self.__orderedList.append( key )
+    else:
+      refKeyPos = self.__orderedList.index( beforeKey )
+      self.__orderedList.insert( refKeyPos + 1, key )
+      
 
   def __getitem__( self, key ):
     return self.__getattr__( key )
@@ -84,6 +123,9 @@ class CFG:
     return self.__dataDict[ key ]
 
   def __str__( self ):
+    return self.serialize()
+
+  def __repr__( self ):
     return self.serialize()
 
   def __nonzero__( self ):
