@@ -221,6 +221,8 @@ class RequestDBMySQL(DB):
       self.getIdLock.release()
       return S_ERROR('%s\n%s' % (err,res['Message']))
     requestID = res['Value'][0][0]
+    #_getRequest(
+    #_removeRequest(
     req = "SELECT * from SubRequests WHERE RequestID=%s" % requestID
     res = self._query(req)
     if not res['OK']:
@@ -247,6 +249,9 @@ class RequestDBMySQL(DB):
       err = 'RequestDB._getRequest: Failed to retrieve max RequestID'
       self.getIdLock.release()
       return S_ERROR('%s\n%s' % (err,res['Message']))
+    if not res['Value']:
+      self.getIdLock.release()
+      return S_OK()
     requestID = res['Value'][0][0]
     dmRequest.setRequestID(requestID)
     subRequestIDs = []
