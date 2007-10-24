@@ -99,16 +99,28 @@ class StorageElement:
       gLogger.error(errStr)
       return S_ERROR(errStr)
     options = res['Value']
-    protocolDict = {}
+    # We must have certain values internally even if not supplied in CS
+    protocolDict = {'Access':'','Host':'','Path':'','Port':'','Protocol':'','ProtocolName':''}
     for option in options:
       configPath = '%s/%s' % (protocolConfigPath,option)
       optionValue = gConfig.getValue(configPath)
       protocolDict[option] = optionValue
     # Now update the local and remote protocol lists
+    if not protocolDict['Protocol']:
+      errStr = "StorageElement.__getProtocolDetails: The 'Protocol' option for %s:%s is not set." % (self.name,protocol)
+      gLogger.error(errStr)
+      return S_ERROR(errStr)
+    if not protocolDict['ProtocolName']:
+      errStr = "StorageElement.__getProtocolDetails: The 'ProtocolName' option for %s:%s is not set." % (self.name,protocol)
+      gLogger.error(errStr)
+      return S_ERROR(errStr)
     if protocolDict['Access'] == 'remote':
       self.remoteProtocols.append(protocolDict['ProtocolName'])
-    else:
+    elif protocolDict['Access'] == 'local':
       self.localProtocols.append(protocolDict['ProtocolName'])
+    else:
+      errStr = "StorageElement.__getProtocolDetails: The 'Access' option for %s:%s is neither 'local' or 'remote'." % (self.name,protocol)
+      gLogger.warn(errStr)
     return S_OK(protocolDict)
 
   def dump(self):
@@ -175,6 +187,48 @@ class StorageElement:
       return S_OK(True)
     else:
       return S_OK(False)
+
+  def getPfnForLfnForProtocol(self,lfn,protocolName,withPort=False):
+    """ Get the pfn for for a protocol an supplied LFN using the LHCb conventions:
+        protocol://host{:port}/path/lfn
+
+        This should really use the storage plug in as it knows how the PFN for the protocol should be created
+
+    """
+    res = self.getProtocolOptions(protocolName)
+    if not res['OK']:
+      return res
+    protocolDict = res['Value']
+    host = protocolDict['Host']
+    protocol = protocolDict['Protocol']
+    if host:
+      pfn = "%s://%s" % (protocol,host)
+    else:
+      pfn = "%s:" % (protocol)
+
+    path = protocolDict['Path']
+    port = protocolDict['Port']
+    if withPort and port:
+      pfn = "%s:%s%s%s" % (pfn,port,path,lfn)
+    else:
+      pfn = "%s%s%s" % (pfn,path,lfn)
+    return S_OK(pfn)
+
+  def getProtocolOptions(self,protocol):
+    """ Get protocol specific options
+    """
+    res = self.getProtocols()
+    availableProtocols = res['Value']
+    if not protocol in availableProtocols:
+      errStr = "StorageElement.getProtocolOptions: %s protocol is not supported for %s." % (protocol,self.name)
+      gLogger.error(errStr)
+      return S_ERROR(errStr)
+    for storage in self.storages:
+      if storage['ProtocolName'] == protocol:
+        return S_OK(storage)
+    errStr = "StorageElement.getProtocolOptions: %s found in %s protocols list but no deatils found." % (protocol,self.name)
+    gLogger.error(errStr)
+    return S_ERROR(errStr)
 
 #################################################################################################
 # Below this line things aren't implemented
