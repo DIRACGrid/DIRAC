@@ -255,18 +255,18 @@ class RequestDBMySQL(DB):
     requestID = res['Value'][0][0]
     dmRequest.setRequestID(requestID)
     subRequestIDs = []
-    req = "SELECT SubRequestID,Operation,SourceSE,TargetSE,Catalogue \
+    req = "SELECT SubRequestID,Operation,SourceSE,TargetSE,SpaceToken,Catalogue \
     from SubRequests WHERE RequestID=%s AND RequestType='%s' AND Status='%s'" % (requestID,requestType,'Waiting')
     res = self._query(req)
     if not res['OK']:
       err = 'RequestDB._getRequest: Failed to retrieve SubRequests for RequestID %s' % requestID
       self.getIdLock.release()
       return S_ERROR('%s\n%s' % (err,res['Message']))
-    for subRequestID,operation,sourceSE,targetSE,catalogue in res['Value']:
+    for subRequestID,operation,sourceSE,targetSE,spaceToken,catalogue in res['Value']:
       subRequestIDs.append(subRequestID)
       res = dmRequest.initiateSubRequest(requestType)
       ind = res['Value']
-      subRequestDict = {'Operation':operation,'SourceSE':sourceSE,'TargetSE':targetSE,'Catalogue':catalogue,'Status':'Waiting','SubRequestID':subRequestID}
+      subRequestDict = {'Operation':operation,'SourceSE':sourceSE,'TargetSE':targetSE,'Catalogue':catalogue,'SpaceToken':spaceToken,'Status':'Waiting','SubRequestID':subRequestID}
       res = dmRequest.setSubRequestAttributes(ind,requestType,subRequestDict)
       if not res['OK']:
         err = 'RequestDB._getRequest: Failed to set subRequest attributes for RequestID %s' % requestID
