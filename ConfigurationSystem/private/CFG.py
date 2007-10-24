@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Attic/CFG.py,v 1.8 2007/10/23 17:36:39 acasajus Exp $
-__RCSID__ = "$Id: CFG.py,v 1.8 2007/10/23 17:36:39 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Attic/CFG.py,v 1.9 2007/10/24 19:07:28 acasajus Exp $
+__RCSID__ = "$Id: CFG.py,v 1.9 2007/10/24 19:07:28 acasajus Exp $"
 
 import types
 import copy
@@ -59,6 +59,14 @@ class CFG:
       del( self.__orderedList[ pos ] )
       return True
     return False
+  
+  def copyKey( self, oldKey, newKey ):
+    if oldKey in self.__orderedList:
+      self.__dataDict[ newKey ] = copy.copy( self.__dataDict[ oldKey ] )
+      self.__commentDict[ newKey ] = copy.copy( self.__commentDict[ oldKey ] )
+      self.__orderedList.append( newKey )
+      return True
+    return False
 
   def listOptions( self, ordered = False ):
     if ordered:
@@ -115,6 +123,17 @@ class CFG:
       refKeyPos = self.__orderedList.index( beforeKey )
       self.__orderedList.insert( refKeyPos + 1, key )
       
+  def renameKey( self, oldName, newName ):
+    if oldName in self.__dataDict:
+      self.__dataDict[ newName ] = self.__dataDict[ oldName ]
+      self.__commentDict[ newName ] = self.__commentDict[ oldName ]
+      refKeyPos = self.__orderedList.index( oldName )
+      self.__orderedList[ refKeyPos ] = newName
+      del( self.__dataDict[ oldName ] )
+      del( self.__commentDict[ oldName ] )
+      return True
+    else:
+      return False
 
   def __getitem__( self, key ):
     return self.__getattr__( key )

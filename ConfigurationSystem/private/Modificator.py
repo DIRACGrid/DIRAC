@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Modificator.py,v 1.4 2007/10/23 17:36:39 acasajus Exp $
-__RCSID__ = "$Id: Modificator.py,v 1.4 2007/10/23 17:36:39 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Modificator.py,v 1.5 2007/10/24 19:07:28 acasajus Exp $
+__RCSID__ = "$Id: Modificator.py,v 1.5 2007/10/24 19:07:28 acasajus Exp $"
 
 import zlib
 import difflib
@@ -67,6 +67,20 @@ class Modificator:
     gConfigurationData.setOptionInCFG( optionPath, value, self.cfgData )
     self.__setCommiter( optionPath )
 
+  def createSection( self, sectionPath ):
+    levelList = [ level.strip() for level in sectionPath.split( "/" ) if level.strip() != "" ]
+    currentPath = ""
+    cfg = self.cfgData
+    createdSection = False
+    for section in levelList:
+      currentPath += "/%s" % section
+      if section not in cfg.listSections():
+        cfg.createNewSection( section )
+        self.__setCommiter( currentPath )
+        createdSection = True
+      cfg = cfg[ section ]
+    return createdSection
+
   def setComment( self, entryPath, value ):
     cfg = self.__getSubCFG( entryPath )
     entry = List.fromChar( entryPath, "/" )[-1]
@@ -94,6 +108,30 @@ class Modificator:
       return sectionList[-1] in cfg.listOptions()
     except:
       return False
+
+  def renameKey( self, path, newName ):
+    parentCfg = self.cfgData.getRecursive( path, -1 )
+    if not parentCfg:
+      return False
+    pathList = List.fromChar( path, "/" )
+    oldName = pathList[-1]
+    if parentCfg[ 'value' ].renameKey( oldName, newName ):
+      pathList[-1] = newName
+      self.__setCommiter( "/%s" % "/".join( pathList ) )
+      return True
+    else:
+      return False
+    
+  def copyKey( self, originalKeyPath, newKey ):
+    parentCfg = self.cfgData.getRecursive( originalKeyPath, -1 )
+    if not parentCfg:
+      return False
+    pathList = List.fromChar( originalKeyPath, "/" )
+    originalKey = pathList[-1]
+    if parentCfg[ 'value' ].copyKey( originalKey, newKey ):
+      self.__setCommiter( "/%s/%s" % ( "/".join( pathList[:-1] ), newKey ) )
+      return True
+    return False
 
   def removeOption( self, optionPath ):
     if not self.existsOption( optionPath ):
