@@ -97,7 +97,7 @@ class TransferDB(DB):
   #################################################################################
   # These are the methods for managing the Channel table
 
-  def addFileToChannel(self,channelID,fileID,sourceSURL,targetSURL):
+  def addFileToChannel(self,channelID,fileID,sourceSURL,targetSURL,spaceToken):
     res = self.checkFileChannelExists(channelID, fileID)
     if not res['OK']:
       err = 'TransferDB._addFileToChannel: Failed check existance of File %s on Channel %s.' % (fileID,channelID)
@@ -105,7 +105,7 @@ class TransferDB(DB):
     if res['Value']:
       err = 'TransferDB._addFileToChannel: File %s already exists on Channel %s.' % (fileID,channelID)
       return S_ERROR(err)
-    req = "INSERT INTO Channel (ChannelID,FileID,SourceSURL,TargetSURL,SubmitTime,Status) VALUES (%s,%s,'%s','%s',NOW(),'Waiting');" % (channelID,fileID,sourceSURL,targetSURL)
+    req = "INSERT INTO Channel (ChannelID,FileID,SourceSURL,TargetSURL,SpaceToken,SubmitTime,Status) VALUES (%s,%s,'%s','%s','%s',NOW(),'Waiting');" % (channelID,fileID,sourceSURL,targetSURL,spaceToken)
     res = self._update(req)
     if not res['OK']:
       err = 'TransferDB._addFileToChannel: Failed to insert File %s to Channel %s.' % (fileID,channelID)
@@ -121,6 +121,13 @@ class TransferDB(DB):
     if res['Value']:
       return S_OK(True)
     return S_OK(False)
+
+  def removeFilesFromChannel(self,channelID,fileIDs):
+    for fileID in fileIDs:
+      res = self.removeFileFromChannel(channelID,fileID)
+      if not res['OK']:
+        return res
+    return res
 
   def removeFileFromChannel(self,channelID,fileID):
     req = "DELETE FROM Channel WHERE ChannelID = %s and FileID = %s;" % (channelID,fileID)
@@ -155,17 +162,33 @@ class TransferDB(DB):
     return res
 
   def getFilesForChannel(self,channelID,numberOfFiles):
-    req = "SELECT FileID,SourceSURL,TargetSURL FROM Channel WHERE ChannelID = %s AND Status = 'Waiting' ORDER BY SubmitTime LIMIT %s;" % (channelID,numberOfFiles)
+    req = "SELECT SpaceToken FROM Channel WHERE ChannelID = %s AND Status = 'Waiting' ORDER BY SubmitTime LIMIT 1;" % (channelID)
     res = self._query(req)
     if not res['OK']:
       err = "TransferDB.getFilesForChannel: Failed to get files for Channel %s." % channelID
       return S_ERROR('%s\n%s' % (err,res['Message']))
     if not res['Value']:
-      return S_OK([])
+      return S_OK()
+    spaceToken = res['Value'][0][0]
+    req = "SELECT FileID,SourceSURL,TargetSURL FROM Channel WHERE ChannelID = %s AND Status = 'Waiting' AND SpaceToken = '%s' ORDER BY SubmitTime LIMIT %s;" % (channelID,spaceToken,numberOfFiles)
+    res = self._query(req)
+    if not res['OK']:
+      err = "TransferDB.getFilesForChannel: Failed to get files for Channel %s." % channelID
+      return S_ERROR('%s\n%s' % (err,res['Message']))
+    if not res['Value']:
+      return S_OK()
+    resDict = {'SpaceToken':spaceToken}
     files = []
     for fileID,sourceSURL,targetSURL in res['Value']:
-      files.append({'FileID':fileID,'SourceSURL':sourceSURL,'TargetSURL':targetSURL})
-    return S_OK(files)
+      req = "SELECT LFN from Files WHERE FileID = %s;" % fileID
+      res = self._query(req)
+      if not res['OK']:
+        err = "TransferDB.getFilesForChannel: Failed to get LFN for File %s." % fileID
+        return S_ERROR('%s\n%s' % (err,res['Message']))
+      lfn = res['Value'][0][0]
+      files.append({'FileID':fileID,'SourceSURL':sourceSURL,'TargetSURL':targetSURL,'LFN':lfn})
+    resDict['Files'] = files
+    return S_OK(resDict)
 
   #################################################################################
   # These are the methods for managing the FTSReq table
