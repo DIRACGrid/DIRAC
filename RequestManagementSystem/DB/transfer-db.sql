@@ -32,6 +32,7 @@ CREATE TABLE SubRequests (
    SubRequestID INTEGER NOT NULL AUTO_INCREMENT,
    RequestType varchar(32) NOT NULL,
    Status varchar(32) DEFAULT 'New',
+   SpaceToken varchar(32),
    Operation varchar(32),
    SourceSE varchar(32),
    TargetSE varchar(32),
@@ -108,6 +109,7 @@ CREATE TABLE Channel (
   FileID INTEGER NOT NULL,
   SourceSURL varchar(256) NOT NULL,
   TargetSURL varchar(256) NOT NULL,
+  SpaceToken varchar(32) NOT NULL,
   SubmitTime DATETIME NOT NULL,
   Status varchar(32) NOT NULL,
   PRIMARY KEY(ChannelID,FileID)
