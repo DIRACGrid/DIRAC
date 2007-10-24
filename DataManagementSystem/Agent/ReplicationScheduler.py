@@ -24,7 +24,7 @@ class ReplicationScheduler(Agent):
     self.TransferDB = TransferDB()
     try:
       serverUrl = gConfig.getValue('/DataManagement/FileCatalogs/LFC/LFCMaster')
-      infosysUrl = gConfig.getValue('/DataManagement/FileCatalogs/LFC/LcgGfalInfosys')	
+      infosysUrl = gConfig.getValue('/DataManagement/FileCatalogs/LFC/LcgGfalInfosys')
       self.lfc = LcgFileCatalogClient(infosys=infosysUrl,host=serverUrl)
     except Exception,x:
       print "Failed to create LcgFileCatalogClient"
@@ -36,7 +36,7 @@ class ReplicationScheduler(Agent):
     """
 
     ######################################################################################
-    # 	
+    #
     #  The first step is to obtain a transfer request from the RequestDB which should be scheduled.
     #
 
@@ -60,7 +60,7 @@ class ReplicationScheduler(Agent):
     #
     #  The request must then be parsed to obtain the sub-requests, their attributes and files.
     #
-      
+
     logStr = 'ReplicationScheduler._execute: Parsing Request %s.' % (requestName)
     self.log.info(logStr)
     dmRequest = DataManagementRequest(requestString)
@@ -88,10 +88,11 @@ class ReplicationScheduler(Agent):
       sourceSE = attributes['SourceSE']
       targetSE = attributes['TargetSE']
       operation = attributes['Operation']
-      
+      spaceToken = attributes['SpaceToken']
+
       ######################################################################################
       # Then obtain the file attribute of interest are the  LFN and FileID
- 
+
       res = dmRequest.getSubRequestFiles(ind,'transfer')
       if not res['OK']:
         errStr = 'ReplicationScheduler._execute: Failed to obtain sub-request files: %s.' % res['Message']
@@ -109,11 +110,11 @@ class ReplicationScheduler(Agent):
       ######################################################################################
       #
       #  Now obtain replica information for the files associated to the sub-request.
-      # 
+      #
 
       logStr = 'ReplicationScheduler._execute: Obtaining replica information for sub-request files.'
       self.log.info(logStr)
-      lfns = filesDict.keys()	
+      lfns = filesDict.keys()
       res = self.lfc.getPfnsByLfnList(lfns)
       if not res['OK']:
         errStr = 'ReplicationScheduler._execute: Failed to get replica infomation: %s.' % res['Message']
@@ -123,23 +124,23 @@ class ReplicationScheduler(Agent):
 
       ######################################################################################
       # Take the sourceSURL from the catalog entries and contruct the target SURL from the CS
-      
+
       for lfn in filesDict.keys():
         lfnReps = replicas[lfn]
         fileID = filesDict[lfn]
         #res = self.determineReplicationTree(lfnReps, sourceSE, targetSE)
         sourceSURL = lfnReps[sourceSE]
-	targetStorage = StorageElement(targetSE)
+        targetStorage = StorageElement(targetSE)
         res = targetStorage.getPfnForLfnForProtocol(lfn,'SRM2')
-	if not res['OK']:
+        if not res['OK']:
           errStr = 'ReplicationScheduler._execute: Failed to get target SURL: %s.' % res['Message']
           self.log.error(errStr)
           return S_ERROR(errStr)
-        targetSURL = res['Value'] 
+        targetSURL = res['Value']
 
         ######################################################################################
         # Obtain the ChannelID and insert the file into that channel (done at the file level to allow file by file scheduling)
-      
+
         res = self.TransferDB.getChannelID(sourceSE,targetSE)
         if not res['OK']:
           logStr = 'ReplicationScheduler._execute: Creating channel from %s to %s.' % (sourceSE,targetSE)
@@ -150,7 +151,7 @@ class ReplicationScheduler(Agent):
           self.log.info(logStr)
         else:
           channelID = res['Value']
-        res = self.TransferDB.addFileToChannel(channelID, fileID, sourceSURL, targetSURL)
+        res = self.TransferDB.addFileToChannel(channelID, fileID, sourceSURL, targetSURL,spaceToken)
         if not res['OK']:
           errStr = "ReplicationScheduler._execute: Failed to add File %s to Channel %s." % (fileID,channelID)
           gLogger.error(errStr)
