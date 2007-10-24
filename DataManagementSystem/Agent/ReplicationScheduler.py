@@ -6,7 +6,8 @@ from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 from DIRAC.RequestManagementSystem.DB.RequestDB import RequestDB
 from DIRAC.DataManagementSystem.DB.TransferDB import TransferDB
 from DIRAC.RequestManagementSystem.Client.DataManagementRequest import DataManagementRequest
-#from DIRAC.DataManagementSystem.Client.LcgFileCatalogClient import LcgFileCatalogClient
+from DIRAC.DataManagementSystem.Client.LcgFileCatalogClient import LcgFileCatalogClient
+from DIRAC.Core.Storage.StorageElement import StorageElement
 
 AGENT_NAME = 'DataManagement/ReplicationScheduler'
 
@@ -23,7 +24,8 @@ class ReplicationScheduler(Agent):
     self.TransferDB = TransferDB()
     try:
       serverUrl = gConfig.getValue('/DataManagement/FileCatalogs/LFC/LFCMaster')
-      self.lfc = LcgFileCatalogClient(serverUrl)
+      infosysUrl = gConfig.getValue('/DataManagement/FileCatalogs/LFC/LcgGfalInfosys')	
+      self.lfc = LcgFileCatalogClient(infosys=infosysUrl,host=serverUrl)
     except Exception,x:
       print "Failed to create LcgFileCatalogClient"
       print str(x)
@@ -32,6 +34,12 @@ class ReplicationScheduler(Agent):
   def execute(self):
     """ The main agent execution method
     """
+
+    ######################################################################################
+    # 	
+    #  The first step is to obtain a transfer request from the RequestDB which should be scheduled.
+    #
+
     logStr = 'ReplicationScheduler._execute: Contacting RequestDB for suitable requests.'
     self.log.info(logStr)
     res = self.RequestDB.getRequest('transfer')
@@ -48,6 +56,11 @@ class ReplicationScheduler(Agent):
     logStr = 'ReplicationScheduler._execute: Obtained Request %s from RequestDB.' % (requestName)
     self.log.info(logStr)
 
+    ######################################################################################
+    #
+    #  The request must then be parsed to obtain the sub-requests, their attributes and files.
+    #
+      
     logStr = 'ReplicationScheduler._execute: Parsing Request %s.' % (requestName)
     self.log.info(logStr)
     dmRequest = DataManagementRequest(requestString)
@@ -59,6 +72,9 @@ class ReplicationScheduler(Agent):
     numberRequests = res['Value']
     logStr = "ReplicationScheduler._execute: '%s' found with %s sub-requests." % (requestName,numberRequests)
     self.log.info(logStr)
+
+    ######################################################################################
+    #  The important request attributes are the source and target SEs.
 
     for ind in range(numberRequests):
       logStr = "ReplicationScheduler._execute: Treating sub-request %s from '%s'." % (ind,requestName)
@@ -72,6 +88,10 @@ class ReplicationScheduler(Agent):
       sourceSE = attributes['SourceSE']
       targetSE = attributes['TargetSE']
       operation = attributes['Operation']
+      
+      ######################################################################################
+      # Then obtain the file attribute of interest are the  LFN and FileID
+ 
       res = dmRequest.getSubRequestFiles(ind,'transfer')
       if not res['OK']:
         errStr = 'ReplicationScheduler._execute: Failed to obtain sub-request files: %s.' % res['Message']
@@ -86,8 +106,14 @@ class ReplicationScheduler(Agent):
         fileID = file['FileID']
         filesDict[lfn] = fileID
 
+      ######################################################################################
+      #
+      #  Now obtain replica information for the files associated to the sub-request.
+      # 
+
       logStr = 'ReplicationScheduler._execute: Obtaining replica information for sub-request files.'
       self.log.info(logStr)
+      lfns = filesDict.keys()	
       res = self.lfc.getPfnsByLfnList(lfns)
       if not res['OK']:
         errStr = 'ReplicationScheduler._execute: Failed to get replica infomation: %s.' % res['Message']
@@ -95,12 +121,25 @@ class ReplicationScheduler(Agent):
         return S_ERROR(errStr)
       replicas = res['Value']
 
+      ######################################################################################
+      # Take the sourceSURL from the catalog entries and contruct the target SURL from the CS
+      
       for lfn in filesDict.keys():
         lfnReps = replicas[lfn]
         fileID = filesDict[lfn]
         #res = self.determineReplicationTree(lfnReps, sourceSE, targetSE)
         sourceSURL = lfnReps[sourceSE]
-        targetSURL = '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+	targetStorage = StorageElement(targetSE)
+        res = targetStorage.getPfnForLfnForProtocol(lfn,'SRM2')
+	if not res['OK']:
+          errStr = 'ReplicationScheduler._execute: Failed to get target SURL: %s.' % res['Message']
+          self.log.error(errStr)
+          return S_ERROR(errStr)
+        targetSURL = res['Value'] 
+
+        ######################################################################################
+        # Obtain the ChannelID and insert the file into that channel (done at the file level to allow file by file scheduling)
+      
         res = self.TransferDB.getChannelID(sourceSE,targetSE)
         if not res['OK']:
           logStr = 'ReplicationScheduler._execute: Creating channel from %s to %s.' % (sourceSE,targetSE)
@@ -112,6 +151,11 @@ class ReplicationScheduler(Agent):
         else:
           channelID = res['Value']
         res = self.TransferDB.addFileToChannel(channelID, fileID, sourceSURL, targetSURL)
+        if not res['OK']:
+          errStr = "ReplicationScheduler._execute: Failed to add File %s to Channel %s." % (fileID,channelID)
+          gLogger.error(errStr)
+          return S_ERROR(errStr)
+    return res
 
   def determineReplicationTree(self,replicas,sourceSE,targetSE):
     # This is where the intelligence is supposed to go. At the moment we just do source->target.
