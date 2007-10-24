@@ -3,7 +3,7 @@
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
-from DIRAC.Core.Utilities.List import randomize
+from DIRAC.Core.Utilities.List import randomize,stringListToString,intListToString
 import threading,types
 
 gLogger.initialize('DMS','/Databases/TransferDB/Test')
@@ -94,8 +94,57 @@ class TransferDB(DB):
       channels[channelID]['Throughput'] = throughPut
     return S_OK(channels)
 
+  def getChannelsForState(self,status):
+    req = "SELECT ChannelID,SourceSite,DestinationSite FROM Channels WHERE Status = '%s';" % status
+    res = self._query(req)
+    if not res['OK']:
+      err = 'TransferDB._getChannelsInState: Failed to get Channels for Status = %s.' % (status)
+      return S_ERROR('%s\n%s' % (err,res['Message']))
+    if not res['Value']:
+      return S_OK()
+    channels = []
+    channelIDs = []
+    for channelID,sourceSite,destinationSite in res['Value']:
+      channels.append({'ChannelID':channelID,'SourceSite':sourceSite,'DestinationSite':destinationSite})
+      channelIDs.append(channelID)
+    resDict = {'ChannelIDs':channelIDs,'Channels':channels}
+    return S_OK(resDict)
+
   #################################################################################
   # These are the methods for managing the Channel table
+
+  def selectChannelForSubmission(self,maxJobsPerChannel):
+    res = self.getChannelsForState('Active')
+    if not res['OK']:
+      return res
+    if not res['Value']:
+      return S_OK()
+    channelIDs = res['Value']['ChannelIDs']
+    strChannelIDs = intListToString(channelIDs)
+    req = "SELECT ChannelID,COUNT(*) FROM FTSReq WHERE Status = 'Submitted' AND ChannelID IN (%s) GROUP BY ChannelID;" % strChannelIDs
+    res = self._query(req)
+    if not res['OK']:
+      err = 'TransferDB._selectChannelForSubmission: Failed to count FTSJobs on Channels %s.' % strChannelIDs
+      return S_ERROR('%s\n%s' % (err,res['Message']))
+    possibleChannels = []
+    for channelID,numberOfJobs in res['Value']:
+      if numberOfJobs < maxJobsPerChannel:
+        possibleChannels.append(channelID)
+    if not possibleChannels:
+      return S_OK()
+    #Write a more clever way of doing this by including the number of files waiting
+    resDict = {}
+    selectedChannel = randomize(possibleChannels)[0]
+    resDict['ChannelID'] = selectedChannel
+    res = self.getChannelAttribute(selectedChannel,'SourceSite')
+    if not res['OK']:
+      return res
+    resDict['SourceSE'] = res['Value']
+    res = self.getChannelAttribute(selectedChannel,'DestinationSite')
+    if not res['OK']:
+      return res
+    resDict['TargetSE'] = res['Value']
+    return S_OK(resDict)
 
   def addFileToChannel(self,channelID,fileID,sourceSURL,targetSURL,spaceToken):
     res = self.checkFileChannelExists(channelID, fileID)
