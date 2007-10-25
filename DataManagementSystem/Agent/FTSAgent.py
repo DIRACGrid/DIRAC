@@ -4,7 +4,7 @@ from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 from DIRAC.DataManagementSystem.DB.TransferDB import TransferDB
-from DIRAC.Core.FileCatalog.LcgFileCatalogProxyClient import LcgFileCatalogProxyClient
+#from DIRAC.Core.FileCatalog.LcgFileCatalogProxyClient import LcgFileCatalogProxyClient
 from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
 from DIRAC.DataManagementSystem.Client.FTSRequest import FTSRequest
 
@@ -32,8 +32,14 @@ class FTSAgent(Agent):
   def execute(self):
 
     for i in range(self.submissionsPerLoop):
+      infoStr = "\n\n##################################################################################\n\n"
+      infoStr = "%sStarting submission loop %s of %s\n\n" % (infoStr,i+1, self.submissionsPerLoop)
+      gLogger.info(infoStr)
       res = self.submitTransfer()
     for i in range(self.monitorsPerLoop):
+      infoStr = "\n\n##################################################################################\n\n"
+      infoStr = "%sStarting monitoring loop %s of %s\n\n" % (infoStr,i+1, self.monitorsPerLoop)
+      gLogger.info(infoStr)
       res = self.monitorTransfer()
     return S_OK()
 
@@ -69,7 +75,7 @@ class FTSAgent(Agent):
       gLogger.error(errStr)
       return S_ERROR(errStr)
     if not res['Value']:
-      infoStr = "FTSAgent: No files to be submitted on Channel %s." % ChannelID
+      infoStr = "FTSAgent: No files to be submitted on Channel %s." % channelID
       gLogger.info(infoStr)
       return S_OK()
     channelDict = res['Value']
@@ -97,13 +103,13 @@ class FTSAgent(Agent):
       return S_ERROR(errStr)
     ftsGUID = ftsRequest.getFTSGUID()
     ftsServer = ftsRequest.getFTSServer()
-    infoStr = "FTSAgent: Submitted FTS Job:\n\
-              FTS Guid:%s\
-              FTS Server:%s\
-              ChannelID:%s\
-              SourceSE:%s\
-              TargetSE:%s\
-              Files:%s\n" % (ftsGUID.ljust(15),ftsServer.ljust(15),channelID.ljust(15),sourceSE.ljust(15),targetSE.ljust(15),len(files).ljust(15))
+    infoStr = "Submitted FTS Job:\n\n\
+              FTS Guid:%s\n\
+              FTS Server:%s\n\
+              ChannelID:%s\n\
+              SourceSE:%s\n\
+              TargetSE:%s\n\
+              Files:%s\n\n" % (ftsGUID.ljust(15),ftsServer.ljust(15),str(channelID).ljust(15),sourceSE.ljust(15),targetSE.ljust(15),str(len(files)).ljust(15))
     gLogger.info(infoStr)
 
     #########################################################################
@@ -166,18 +172,18 @@ class FTSAgent(Agent):
       errStr = "FTSAgent.%s" % res['Message']
       gLogger.error(errStr)
       return S_ERROR(errStr)
-    infoStr = "FTSAgent: Monitoring FTS Job:\n"
-    infoStr = "%sFTSGUID:%s\n" % (infoStr,ftsGUID.ljust(20))
-    infoStr = "%sFTSServer:%s\n\n" % (infoStr,ftsServer.ljust(20))
-    infoStr = "%sRequest Summary:%s\n\n" % (infoStr,ftsReq.getStatusSummary().ljust(20))
+    infoStr = "Monitoring FTS Job:\n\n"
+    infoStr = "%s%s%s\n" % (infoStr,'FTS GUID:'.ljust(20),ftsGUID)
+    infoStr = "%s%s%s\n\n" % (infoStr,'FTS Server:'.ljust(20),ftsServer)
+    infoStr = "%s%s%s\n\n" % (infoStr,'Request Summary:'.ljust(20),ftsReq.getStatusSummary())
     gLogger.info(infoStr)
     percentComplete = ftsReq.getPercentageComplete()
-    res = setFTSReqAttribute(ftsReqID,'PercentageComplete',percentComplete)
+    res = self.TransferDB.setFTSReqAttribute(ftsReqID,'PercentageComplete',percentComplete)
     if not res['OK']:
       errStr = "FTSAgent.%s" % res['Message']
       gLogger.error(errStr)
       return S_ERROR(errStr)
-    res = setFTSReqLastMonitor(ftsReqID)
+    res = self.TransferDB.setFTSReqLastMonitor(ftsReqID)
     if not res['OK']:
       errStr = "FTSAgent.%s" % res['Message']
       gLogger.error(errStr)
@@ -186,7 +192,7 @@ class FTSAgent(Agent):
     #########################################################################
     # Update the information in the TransferDB if the transfer is terminal.
     if ftsReq.isRequestTerminal():
-      res = test.updateFileStates()
+      res = ftsReq.updateFileStates()
       if not res['OK']:
         errStr = "FTSAgent.%s" % res['Message']
         gLogger.error(errStr)
