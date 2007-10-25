@@ -244,7 +244,7 @@ class TransferDB(DB):
 
   def insertFTSReq(self,ftsGUID,ftsServer,channelID):
     self.getIdLock.acquire()
-    req = "INSERT INTO FTSReq (FTSGUID,FTSServer,ChannelID) VALUES ('%s','%s',%s);" % (ftsGUID,ftsServer,channelID)
+    req = "INSERT INTO FTSReq (FTSGUID,FTSServer,ChannelID,SubmitTime) VALUES ('%s','%s',%s,NOW());" % (ftsGUID,ftsServer,channelID)
     print req
     res = self._update(req)
     if not res['OK']:
@@ -287,8 +287,7 @@ class TransferDB(DB):
     return res
 
   def getFTSReq(self):
-    req = "SELECT FTSReqID,FTSGUID,FTSServer FROM FTSReq WHERE Status = 'Submitted';"
-    print req
+    req = "SELECT FTSReqID,FTSGUID,FTSServer FROM FTSReq WHERE Status = 'Submitted' ORDER BY LastMonitor LIMIT 1;"
     res = self._query(req)
     if not res['OK']:
       err = "TransferDB._getFTSReq: Failed to get entry from FTSReq table."
@@ -296,17 +295,31 @@ class TransferDB(DB):
     if not res['Value']:
       # It is not an error that there are not requests
       return S_OK()
-    requests = {}
-    for requestDetail in res['Value']:
-      ftsReqID,ftsGUID,ftsServer = requestDetail
-      requests[ftsReqID] = (ftsGUID,ftsServer)
-    ftsReqIDs = randomize(requests.keys())
-    ftsReqID = ftsReqIDs[0]
     resDict = {}
+    ftsReqID,ftsGUID,ftsServer = res['Value'][0]
     resDict['FTSReqID'] = ftsReqID
-    resDict['FTSGuid'] = requests[ftsReqID][0]
-    resDict['FTSServer'] = requests[ftsReqID][1]
+    resDict['FTSGuid'] = ftsGUID
+    resDict['FTSServer'] = ftsServer
     return S_OK(resDict)
+
+  def setFTSReqAttribute(self,ftsReqID,attribute,attrValue):
+    self.getIdLock.acquire()
+    req = "UPDATE FTSReq SET %s = '%s' WHERE FTSReqID = %s;" % (attribute,attrValue,ftsReqID)
+    res = self._update(req)
+    self.getIdLock.release()
+    if not res['OK']:
+      err = "TransferDB._setFTSReqAttribute: Failed to set %s to %s for FTSReq %s." % (attribute,attrValue,ftsReqID)
+      return S_ERROR('%s\n%s' % (err,res['Message']))
+    return res
+
+  def setFTSReqLastMonitor(self,ftsReqID):
+    req = "UPDATE FTSReq SET LastMonitor = NOW() WHERE FTSReqID = %s;" % ftsReqID
+    res = self._update(req)
+    if not res['OK']:
+      err = "TransferDB._setFTSReqLastMonitor: Failed to update monitoring time for FTSReq %s." % ftsReqID
+      return S_ERROR('%s\n%s' % (err,res['Message']))
+    return res
+
 
   #################################################################################
   # These are the methods for managing the FileToFTS table
@@ -322,7 +335,7 @@ class TransferDB(DB):
       return S_ERROR(err)
     files = {}
     for fileID,lfn in res['Value']:
-      files[fileID] = lfn
+      files[lfn] = fileID
     return S_OK(files)
 
   def setFTSReqFiles(self,ftsReqID,fileIDs):
