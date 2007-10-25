@@ -3,7 +3,7 @@ from DIRAC.Core.Utilities.Subprocess import shellCall
 from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
 from DIRAC.Core.Utilities.File import checkGuid
 #from DIRAC.DataManagementSystem.Storage.StorageElement import StorageElement
-import re
+import re,os
 
 class FTSRequest:
 
@@ -98,7 +98,7 @@ class FTSRequest:
     """
     try:
       tempfile = os.tmpnam()
-    except RunTimeWarning:
+    except RuntimeWarning:
       pass
     surlFile = open(tempfile,'w')
 
@@ -160,9 +160,9 @@ class FTSRequest:
                   Check that the returned string is a GUID.
     """
     if self.spaceToken:
-      comm = '/opt/glite/bin/glite-transfer-submit -s %s -p %s -f %s -m myproxy-fts.cern.ch -t %s' % (self.ftsServer,self.fts_pwd,self.surlFile,self.spaceToken)
+      comm = 'glite-transfer-submit -s %s -p %s -f %s -m myproxy-fts.cern.ch -t %s' % (self.ftsServer,self.fts_pwd,self.surlFile,self.spaceToken)
     else:
-      comm = '/opt/glite/bin/glite-transfer-submit -s %s -p %s -f %s -m myproxy-fts.cern.ch' % (self.ftsServer,self.fts_pwd,self.surlFile)
+      comm = 'glite-transfer-submit -s %s -p %s -f %s -m myproxy-fts.cern.ch' % (self.ftsServer,self.fts_pwd,self.surlFile)
     print comm
     res = shellCall(120,comm)
     if not res['OK']:
@@ -171,8 +171,7 @@ class FTSRequest:
     if not returnCode == 0:
       return S_ERROR(errStr)
     guid = output.replace('\n','')
-    res = checkGuid(guid)
-    if not res['Value']:
+    if not checkGuid(guid):
       return S_ERROR(error)
     self.ftsGUID = guid
     return res
@@ -232,7 +231,7 @@ class FTSRequest:
     """
     if not self.ftsServer:
       return S_ERROR('FTS Server information not supplied with request')
-    comm = '/opt/glite/bin/glite-transfer-status --verbose -s %s %s' % (self.ftsServer,self.ftsGUID)
+    comm = 'glite-transfer-status --verbose -s %s %s' % (self.ftsServer,self.ftsGUID)
     res = shellCall(180,comm)
     if not res['OK']:
       return res
@@ -274,7 +273,7 @@ class FTSRequest:
       self.isTerminal = True
 
     self.activeFiles = []
-    if result['OK']:
+    if res['OK']:
       for lfn in self.lfns:
         if self.fileDict[lfn]['State'] in self.successfulStates:
           if lfn not in self.completedFiles:
@@ -301,7 +300,7 @@ class FTSRequest:
                   For each LFN the following information is obtained (self.fileDict):
                     'Duration','Reason','Retries'
     """
-    comm = '/opt/glite/bin/glite-transfer-status -s %s -l %s' % (self.ftsServer,self.ftsGUID)
+    comm = 'glite-transfer-status -s %s -l %s' % (self.ftsServer,self.ftsGUID)
     res = shellCall(180,comm)
     if not res['OK']:
       return res
@@ -363,7 +362,7 @@ class FTSRequest:
     if self.ftsServer:
       if self.ftsGUID:
         if self.lfns:
-          result = S_OK()
+          return S_OK()
         else:
           errStr = 'FTSRequest.isDetailedQueryReady: The LFNs must be supplied in the FTSRequest.'
           return S_ERROR(errStr)
