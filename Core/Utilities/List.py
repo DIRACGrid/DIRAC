@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/List.py,v 1.5 2007/10/24 16:28:46 acsmith Exp $
-__RCSID__ = "$Id: List.py,v 1.5 2007/10/24 16:28:46 acsmith Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/List.py,v 1.6 2007/10/25 14:15:12 acsmith Exp $
+__RCSID__ = "$Id: List.py,v 1.6 2007/10/25 14:15:12 acsmith Exp $"
 """
    Collection of DIRAC useful list related modules
    by default on Error they return None
@@ -57,7 +57,7 @@ def sortList(list,invert=False):
     list.sort(lambda x, y: cmp(y, x))
   return list
 
-def stringListToString(self,list):
+def stringListToString(list):
   """
     This method is used for making MySQL queries with a list of string elements.
 
@@ -68,7 +68,7 @@ def stringListToString(self,list):
     str = ','.join(str_list)
   return S_OK(str)
 
-def intListToString(self,list):
+def intListToString(list):
   """
       This method is used for making MySQL queries with a list of int elements.
   """
