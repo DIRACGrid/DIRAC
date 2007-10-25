@@ -121,20 +121,19 @@ class TransferDB(DB):
       return S_OK()
     channelIDs = res['Value']['ChannelIDs']
     strChannelIDs = intListToString(channelIDs)
-    req = "SELECT ChannelID,COUNT(*) FROM FTSReq WHERE Status = 'Submitted' AND ChannelID IN (%s) GROUP BY ChannelID;" % strChannelIDs
+    req = "SELECT ChannelID,SUM(Status='Submitted') FROM FTSReq WHERE ChannelID IN (%s) GROUP BY ChannelID;" % strChannelIDs
     res = self._query(req)
     if not res['OK']:
       err = 'TransferDB._selectChannelForSubmission: Failed to count FTSJobs on Channels %s.' % strChannelIDs
       return S_ERROR('%s\n%s' % (err,res['Message']))
-    possibleChannels = []
     for channelID,numberOfJobs in res['Value']:
-      if numberOfJobs < maxJobsPerChannel:
-        possibleChannels.append(channelID)
-    if not possibleChannels:
+      if numberOfJobs >= maxJobsPerChannel:
+        channelIDs.remove(channelID)
+    if not channelIDs:
       return S_OK()
     #Write a more clever way of doing this by including the number of files waiting
     resDict = {}
-    selectedChannel = randomize(possibleChannels)[0]
+    selectedChannel = randomize(channelIDs)[0]
     resDict['ChannelID'] = selectedChannel
     res = self.getChannelAttribute(selectedChannel,'SourceSite')
     if not res['OK']:
@@ -245,14 +244,12 @@ class TransferDB(DB):
   def insertFTSReq(self,ftsGUID,ftsServer,channelID):
     self.getIdLock.acquire()
     req = "INSERT INTO FTSReq (FTSGUID,FTSServer,ChannelID,SubmitTime) VALUES ('%s','%s',%s,NOW());" % (ftsGUID,ftsServer,channelID)
-    print req
     res = self._update(req)
     if not res['OK']:
       self.getIdLock.release()
       err = "TransferDB._insertFTSReq: Failed to insert FTS GUID into FTSReq table."
       return S_ERROR('%s\n%s' % (err,res['Message']))
     req = "SELECT MAX(FTSReqID) FROM FTSReq;"
-    print req
     res = self._query(req)
     self.getIdLock.release()
     if not res['OK']:
@@ -267,7 +264,6 @@ class TransferDB(DB):
   def setFTSReqStatus(self,ftsReqID,status):
     self.getIdLock.acquire()
     req = "UPDATE FTSReq SET Status = '%s' WHERE FTSReqID = %s;" % (status,ftsReqID)
-    print req
     res = self._update(req)
     self.getIdLock.release()
     if not res['OK']:
@@ -278,7 +274,6 @@ class TransferDB(DB):
   def deleteFTSReq(self,ftsReqID):
     self.getIdLock.acquire()
     req = "DELETE FROM FTSReq WHERE FTSReqID = %s;" % (ftsReqID)
-    print req
     res = self._update(req)
     self.getIdLock.release()
     if not res['OK']:
