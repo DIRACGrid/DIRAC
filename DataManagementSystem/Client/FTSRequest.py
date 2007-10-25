@@ -1,10 +1,8 @@
-from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC  import gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.Subprocess import shellCall
 from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
 from DIRAC.Core.Utilities.File import checkGuid
-
 #from DIRAC.DataManagementSystem.Storage.StorageElement import StorageElement
-
 import re
 
 class FTSRequest:
@@ -37,19 +35,8 @@ class FTSRequest:
     self.sourceSE = None
     self.targetSE = None
     self.spaceToken = None
+    self.lfns = []
 
-    """
-    self.fileDict = fileDict
-    if self.fileDict:
-      self.lfns = self.fileDict.keys()
-      for lfn in self.lfns:
-        if self.fileDict[lfn].has_key('State'):
-          fileState = self.fileDict[lfn]['State']
-          if fileState == 'Done':
-            self.completedFiles.append(lfn)
-          elif fileState in self.failedStates:
-            self.failedFiles.append(lfn)
-    """
 ####################################################################
 #
 #  These are the methods used for submitting FTS transfers
@@ -62,22 +49,24 @@ class FTSRequest:
                   Resolves from FTS server controlling the desired channel.
                   Submit the FTS request through the CLI (checking the returned GUID).
     """
-    result = self.__createSURLPairFile()
-    if result['OK']:
-      if not self.ftsServer:
-        result = self.__resolveFTSEndpoint()
-      if result['OK']:
-        result = self.__submitFTSTransfer()
-        if result['OK']:
-          resDict = {'ftsGUID':self.ftsGUID,'ftsServer':self.ftsServer}
-          result['Value'] = resDict
-        else:
-          print result['Message']
-      else:
-        print result['Message']
-    else:
-      print result['Message']
-    return result
+    # Check that we have all the required params for submission
+    res = self.isSubmissionReady()
+    if not res['OK']:
+      return res
+    # Create the file containing the source and destination SURLs
+    res = self.__createSURLPairFile()
+    if not res['OK']:
+      return res
+    # Make sure that we have the correct FTS server to submit to
+    res = self.__resolveFTSEndpoint()
+    if not res['OK']:
+      return res
+    # Submit the fts request through the CLI
+    res = self.__submitFTSTransfer()
+    if not res['OK']:
+      return res
+    resDict = {'ftsGUID':self.ftsGUID,'ftsServer':self.ftsServer}
+    return S_OK(resDict)
 
   def __checkSupportedProtocols(self):
     """
@@ -107,7 +96,6 @@ class FTSRequest:
        OPERATION: Create temporary file.
                   Populate it with the source and destination SURL pairs.
     """
-
     try:
       tempfile = os.tmpnam()
     except RunTimeWarning:
@@ -176,18 +164,18 @@ class FTSRequest:
     else:
       comm = '/opt/glite/bin/glite-transfer-submit -s %s -p %s -f %s -m myproxy-fts.cern.ch' % (self.ftsServer,self.fts_pwd,self.surlFile)
     print comm
-    status, output, error, pythonerror = exeCommand(comm)
-    #returns a non zero status if error
-    if not status == 0:
-      return S_ERROR(error)
-
+    res = shellCall(120,comm)
+    if not res['OK']:
+      return res
+    returnCode,output,errStr = res['Value']
+    if not returnCode == 0:
+      return S_ERROR(errStr)
     guid = output.replace('\n','')
     res = checkGuid(guid)
-    if res['Value']:
-      self.ftsGUID = guid
-    else:
-      result = S_ERROR(error)
-    return result
+    if not res['Value']:
+      return S_ERROR(error)
+    self.ftsGUID = guid
+    return res
 
 ####################################################################
 #
@@ -207,23 +195,21 @@ class FTSRequest:
     res = self.isSummaryQueryReady()
     if not res['OK']:
       return res
-
     res = self.__getSummary()
     if res['OK']:
       summaryDict = res['Value']
-
+      # Set the status of the request
       self.requestStatus = summaryDict['Status']
-
       if self.requestStatus in self.finalStates:
         self.isTerminal = True
-
+      # Calculate the number of files completed
       completedFiles = 0
       for state in self.successfulStates:
         completedFiles += int(summaryDict[state])
-
+      # Calculate the percentage of the request that is completed
       totalFiles = float(summaryDict['Files'])
       self.percentageComplete = 100*(completedFiles/totalFiles)
-
+      # Create the status summary dictionary
       for status in self.fileStates:
         if summaryDict[status] != '0':
           self.statusSummary[status] = int(summaryDict[status])
@@ -246,23 +232,23 @@ class FTSRequest:
     """
     if not self.ftsServer:
       return S_ERROR('FTS Server information not supplied with request')
-    else:
-      comm = '/opt/glite/bin/glite-transfer-status --verbose -s %s %s' % (self.ftsServer,self.ftsGUID)
-      status , output , error, pythonerror = exeCommand(comm)
-      #returns a non zero status if error
-      if not status == 0:
-        return S_ERROR(error)
-
-      lines = output.splitlines()
-      res = {}
-      for line in lines:
-        line = line.split(':\t')
-        key = line[0].replace('\t','')
-        value = line[1].replace('\t','')
-        res[key] = value
-      result = S_OK()
-      result['Value'] = res
-      return result
+    comm = '/opt/glite/bin/glite-transfer-status --verbose -s %s %s' % (self.ftsServer,self.ftsGUID)
+    res = shellCall(180,comm)
+    if not res['OK']:
+      return res
+    returnCode,output,errStr = res['Value']
+    # Returns a non zero status if error
+    if not returnCode == 0:
+      return S_ERROR(errStr)
+    # Parse the output to get a summary dictionary
+    lines = output.splitlines()
+    summaryDict = {}
+    for line in lines:
+      line = line.split(':\t')
+      key = line[0].replace('\t','')
+      value = line[1].replace('\t','')
+      summaryDict[key] = value
+    return S_OK(summaryDict)
 
 ####################################################################
 #
@@ -283,7 +269,7 @@ class FTSRequest:
     if not res['OK']:
       return res
 
-    result = self.__updateRequestDetails()
+    res = self.__updateRequestDetails()
     if self.requestStatus in self.finalStates:
       self.isTerminal = True
 
@@ -301,7 +287,7 @@ class FTSRequest:
         else:
           self.activeFiles.append(lfn)
     self.percentageComplete = 100*(len(self.completedFiles)/float(len(self.lfns)))
-    return result
+    return res
 
   def __updateRequestDetails(self):
     """
@@ -316,12 +302,15 @@ class FTSRequest:
                     'Duration','Reason','Retries'
     """
     comm = '/opt/glite/bin/glite-transfer-status -s %s -l %s' % (self.ftsServer,self.ftsGUID)
-    status , output , error, pythonerror = exeCommand(comm)
-    #returns a non zero status if error
-    if not status == 0:
-      return S_ERROR(error)
+    res = shellCall(180,comm)
+    if not res['OK']:
+      return res
+    returnCode,output,errStr = res['Value']
+    # Returns a non zero status if error
+    if not returnCode == 0:
+      return S_ERROR(errStr)
     fileDetails = output.split('\n\n')
-    #For each of the files in the request
+    # For each of the files in the request
     for fileDetail in fileDetails:
       dict = {}
       for line in fileDetail.splitlines():
@@ -350,8 +339,14 @@ class FTSRequest:
   def setFTSGUID(self,guid):
     self.ftsGUID = guid
 
+  def getFTSGUID(self):
+    return self.ftsGUID
+
   def setFTSServer(self,server):
     self.ftsServer = server
+
+  def getFTSServer(self):
+    return self.ftsServer
 
   def isSummaryQueryReady(self):
     if self.ftsServer:
@@ -392,6 +387,11 @@ class FTSRequest:
     for lfn in self.lfns:
       if not self.fileDict.has_key(lfn):
         self.fileDict[lfn] = {}
+
+  def setLFN(self,lfn):
+    self.lfns.append(lfn)
+    if not self.fileDict.has_key(lfn):
+      self.fileDict[lfn] = {}
 
   def setSourceSURL(self,lfn,surl):
     self.fileDict[lfn]['Source'] = surl
@@ -445,6 +445,9 @@ class FTSRequest:
 
   def getTransferTime(self,lfn):
     return self.fileDict[lfn]['Duration']
+
+  def getFailReason(self,lfn):
+    return self.fileDict[lfn]['Reason']
 
   def getCompleted(self):
     return self.completedFiles
