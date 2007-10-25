@@ -88,6 +88,9 @@ CREATE TABLE FTSReq (
   FTSGUID varchar(64) NOT NULL,
   FTSServer varchar(255) NOT NULL,
   ChannelID INTEGER NOT NULL,
+  SubmitTime DATETIME NOT NULL,
+  LastMonitor  DATETIME,
+  PercentageComplete FLOAT DEFAULT 0.0,
   Status varchar(32) DEFAULT 'Submitted',
   PRIMARY KEY(FTSReqID,FTSGUID)
 );
