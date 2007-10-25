@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/File.py,v 1.16 2007/10/18 14:37:35 acsmith Exp $
-__RCSID__ = "$Id: File.py,v 1.16 2007/10/18 14:37:35 acsmith Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/File.py,v 1.17 2007/10/25 15:39:11 acsmith Exp $
+__RCSID__ = "$Id: File.py,v 1.17 2007/10/25 15:39:11 acsmith Exp $"
 
 """
    Collection of DIRAC useful file related modules
@@ -56,9 +56,9 @@ def checkGuid(guid):
           and len(guidSplit[2]) == 4 \
             and len(guidSplit[3]) ==4 \
               and len(guidSplit[4]) == 12:
-      return S_OK(True)
+      return True
     else:
-      return S_OK(False)
+      return False
 
 def getSize( fileName ):
   try:
