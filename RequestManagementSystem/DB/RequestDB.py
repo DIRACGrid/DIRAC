@@ -1,9 +1,11 @@
 """ RequestDB is a front end to the Request Database.
 """
 
-from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
+from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC.Core.Utilities.List import intListToString
 from DIRAC.RequestManagementSystem.Client.DataManagementRequest import DataManagementRequest
+
 import os
 import threading
 from types import *
@@ -429,7 +431,7 @@ class RequestDBMySQL(DB):
           subRequestIDs = []
           for reqID in res['Value']:
             subRequestIDs.append(reqID[0])
-          idString = self.intListToString(subRequestIDs)
+          idString = intListToString(subRequestIDs)
           req = "DELETE FROM Files WHERE SubRequestID IN (%s);" % idString['Value']
           res = self._update(req)
           if not res['OK']:
@@ -652,17 +654,3 @@ class RequestDBMySQL(DB):
       return S_ERROR( '%s\n%s' % (err, str(x) ) )
     self.getIdLock.release()
     return S_OK(subRequestID)
-
-  def stringListToString(self,list):
-    str_list = []
-    for item in list:
-      str_list.append("'%s'" % item)
-      str = ','.join(str_list)
-    return S_OK(str)
-
-  def intListToString(self,list):
-    str_list = []
-    for item in list:
-      str_list.append("%s" % item)
-      str = ','.join(str_list)
-    return S_OK(str)
