@@ -158,7 +158,7 @@ class ReplicationScheduler(Agent):
             gLogger.error(errStr)
             return S_ERROR(errStr)
         else:
-          errStr = "ReplicationScheduler._execute: % does not have a replica at %s." % (lfn,sourceSE)
+          errStr = "ReplicationScheduler._execute: %s does not have a replica at %s." % (lfn,sourceSE)
           gLogger.error(errStr)
     return res
 
