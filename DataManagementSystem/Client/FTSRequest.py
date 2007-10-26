@@ -469,8 +469,7 @@ class FTSRequest:
   def getStatusSummary(self):
     outStr = ''
     for status in self.statusSummary.keys():
-      outStr = '%s: %s,' % (status,self.statusSummary[status])
-    outStr = outStr.strip(',')
+      outStr = '%s\n%s: %s' % (outStr,status.ljust(10),self.statusSummary[status])
     return outStr
 
   def isRequestTerminal(self):
