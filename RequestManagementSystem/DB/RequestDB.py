@@ -355,7 +355,7 @@ class RequestDBMySQL(DB):
     if not res['OK']:
       return res
     requestID = res['Value']
-    subRequestIDs = []
+    subRequestIDs = {}
     res = self.__setRequestAttributes(requestID,request)
     if res['OK']:
       for requestType in requestTypes:
@@ -366,9 +366,9 @@ class RequestDBMySQL(DB):
             res = self._getSubRequestID(requestID,requestType)
             if res['OK']:
               subRequestID = res['Value']
-              subRequestIDs.append(subRequestID)
               res = self.__setSubRequestAttributes(ind,requestType,subRequestID,request)
               if res['OK']:
+                subRequestIDs[subRequestID] = res['Value']
                 res = self.__setSubRequestFiles(ind,requestType,subRequestID,request)
                 if res['OK']:
                   res = self.__setSubRequestDatasets(ind,requestType,subRequestID,request)
@@ -384,8 +384,8 @@ class RequestDBMySQL(DB):
           failed = True
     else:
       failed = True
-    for subRequestID in subRequestIDs:
-      res = self._setSubRequestAttribute(subRequestID,'Status','Waiting')
+    for subRequestID,status in subRequestIDs.items():
+      res = self._setSubRequestAttribute(subRequestID,'Status',status)
       if not res['OK']:
         failed = True
     res = self._setRequestAttribute(self,requestID,'Status','Waiting')
@@ -521,12 +521,15 @@ class RequestDBMySQL(DB):
     if not res['OK']:
       return S_ERROR('Failed to get sub request attributes')
     requestAttributes = res['Value']
+    status = 'Waiting'
     for requestAttribute,attributeValue in requestAttributes.items():
-      if not requestAttribute == 'SubRequestID':
+      if requestAttribute == 'Status':
+        status = attributeValue
+      elif not requestAttribute == 'SubRequestID':
         res = self._setSubRequestAttribute(subRequestID,requestAttribute,attributeValue)
         if not res['OK']:
           return S_ERROR('Failed to set sub request in DB')
-    return res
+    return S_OK(status)
 
   def __setRequestAttributes(self,requestID,request):
     """ Insert into the DB the request attributes
