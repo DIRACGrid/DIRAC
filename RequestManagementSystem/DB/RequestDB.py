@@ -355,6 +355,7 @@ class RequestDBMySQL(DB):
     if not res['OK']:
       return res
     requestID = res['Value']
+    subRequestIDs = []
     res = self.__setRequestAttributes(requestID,request)
     if res['OK']:
       for requestType in requestTypes:
@@ -365,6 +366,7 @@ class RequestDBMySQL(DB):
             res = self._getSubRequestID(requestID,requestType)
             if res['OK']:
               subRequestID = res['Value']
+              subRequestIDs.append(subRequestID)
               res = self.__setSubRequestAttributes(ind,requestType,subRequestID,request)
               if res['OK']:
                 res = self.__setSubRequestFiles(ind,requestType,subRequestID,request)
@@ -381,6 +383,13 @@ class RequestDBMySQL(DB):
         else:
           failed = True
     else:
+      failed = True
+    for subRequestID in subRequestIDs:
+      res = self._setSubRequestAttribute(subRequestID,'Status','Waiting')
+      if not res['OK']:
+        failed = True
+    res = self._setRequestAttribute(self,requestID,'Status','Waiting')
+    if not res['OK']:
       failed = True
     if failed:
       res = self._deleteRequest(requestName)
