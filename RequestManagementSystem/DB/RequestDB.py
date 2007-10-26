@@ -388,7 +388,7 @@ class RequestDBMySQL(DB):
       res = self._setSubRequestAttribute(subRequestID,'Status',status)
       if not res['OK']:
         failed = True
-    res = self._setRequestAttribute(self,requestID,'Status','Waiting')
+    res = self._setRequestAttribute(requestID,'Status','Waiting')
     if not res['OK']:
       failed = True
     if failed:
