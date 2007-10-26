@@ -16,7 +16,7 @@ use TransferDB;
 DROP TABLE IF EXISTS Requests;
 CREATE TABLE Requests (
    RequestID INTEGER NOT NULL AUTO_INCREMENT,
-   RequestName varchar(32) UNIQUE NOT NULL,
+   RequestName varchar(128) UNIQUE NOT NULL,
    JobID INTEGER,
    OwnerDN VARCHAR(255),
    DIRACInstance varchar(32),
