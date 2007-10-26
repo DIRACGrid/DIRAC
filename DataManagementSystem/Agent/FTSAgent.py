@@ -23,10 +23,10 @@ class FTSAgent(Agent):
   def initialize(self):
     result = Agent.initialize(self)
     self.TransferDB = TransferDB()
-    self.filesPerJob = gConfig.getValue('DataManagement/Agent/FTSAgent/MaxFilesPerJob',50)
-    self.maxJobsPerChannel = gConfig.getValue('DataManagement/Agent/FTSAgent/MaxJobsPerChannel',2)
-    self.submissionsPerLoop = gConfig.getValue('DataManagement/Agent/FTSAgent/SubmissionsPerLoop',1)
-    self.monitorsPerLoop = gConfig.getValue('DataManagement/Agent/FTSAgent/MonitorsPerLoop',1)
+    self.filesPerJob = gConfig.getValue('/Systems/DataManagement/Development/Agents/FTSAgent/MaxFilesPerJob',50)
+    self.maxJobsPerChannel = gConfig.getValue('/Systems/DataManagement/Development/Agents/FTSAgent/MaxJobsPerChannel',2)
+    self.submissionsPerLoop = gConfig.getValue('/Systems/DataManagement/Development/Agents/FTSAgent/SubmissionsPerLoop',1)
+    self.monitorsPerLoop = gConfig.getValue('/Systems/DataManagement/Development/Agents/FTSAgent/MonitorsPerLoop',1)
     return result
 
   def execute(self):
