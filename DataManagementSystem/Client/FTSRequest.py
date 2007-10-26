@@ -443,13 +443,13 @@ class FTSRequest:
     self.failedFiles.append(lfn)
 
   def getTransferTime(self,lfn):
-    return self.fileDict[lfn]['Duration']
+    return int(self.fileDict[lfn]['Duration'])
 
   def getFailReason(self,lfn):
     return self.fileDict[lfn]['Reason']
 
   def getRetries(self,lfn):
-    return self.fileDict[lfn]['Retries']
+    return int(self.fileDict[lfn]['Retries'])
 
   def getCompleted(self):
     return self.completedFiles
