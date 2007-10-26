@@ -1,12 +1,12 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/List.py,v 1.8 2007/10/26 10:24:51 acsmith Exp $
-__RCSID__ = "$Id: List.py,v 1.8 2007/10/26 10:24:51 acsmith Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/List.py,v 1.9 2007/10/26 10:41:53 acsmith Exp $
+__RCSID__ = "$Id: List.py,v 1.9 2007/10/26 10:41:53 acsmith Exp $"
 """
    Collection of DIRAC useful list related modules
    by default on Error they return None
 """
 
 from types import StringTypes
-import random
+import random,math
 random.seed()
 
 def uniqueElements( list ):
