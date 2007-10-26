@@ -201,10 +201,15 @@ class FTSAgent(Agent):
       for lfn in ftsReq.getFailed():
         res = self.TransferDB.setFileToFTSFileAttribute(ftsReqID,files[lfn],'Status','Failed')
         res = self.TransferDB.setFileToFTSFileAttribute(ftsReqID,files[lfn],'Reason',ftsReq.getFailReason(lfn))
+        res = self.TransferDB.setFileToFTSFileAttribute(ftsReqID,files[lfn],'Retries',ftsReq.getRetries(lfn))
       # Update the successful files status and transfer time
       for lfn in ftsReq.getCompleted():
         res = self.TransferDB.setFileToFTSFileAttribute(ftsReqID,files[lfn],'Status','Completed')
         res = self.TransferDB.setFileToFTSFileAttribute(ftsReqID,files[lfn],'Duration',ftsReq.getTransferTime(lfn))
+        retries = ftsReq.getRetries(lfn)
+        if retries:
+          res = self.TransferDB.setFileToFTSFileAttribute(ftsReqID,files[lfn],'Reason',ftsReq.getFailReason(lfn))
+          res = self.TransferDB.setFileToFTSFileAttribute(ftsReqID,files[lfn],'Retries',ftsReq.getRetries(lfn))
       # Now set the FTSReq status to terminal so that it is not monitored again
       res = self.TransferDB.setFTSReqStatus(ftsReqID,'Finished')
     return S_OK()
