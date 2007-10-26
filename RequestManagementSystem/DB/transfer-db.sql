@@ -78,6 +78,7 @@ CREATE TABLE FileToFTS (
   FTSReqID varchar(64) NOT NULL,
   Status varchar(32) DEFAULT 'Submitted',
   Duration INTEGER DEFAULT 0,
+  Retries INTEGER DEFAULT 0,
   Reason VARCHAR(255),
   PRIMARY KEY(FileID,FTSReqID)
 );
