@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/List.py,v 1.9 2007/10/26 10:41:53 acsmith Exp $
-__RCSID__ = "$Id: List.py,v 1.9 2007/10/26 10:41:53 acsmith Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/List.py,v 1.10 2007/10/26 10:44:55 acsmith Exp $
+__RCSID__ = "$Id: List.py,v 1.10 2007/10/26 10:44:55 acsmith Exp $"
 """
    Collection of DIRAC useful list related modules
    by default on Error they return None
@@ -84,9 +84,9 @@ def breakListIntoChunks(list,numberOfFilesInChunk):
       It returns a list of lists.
   """
   listOfLists = []
-  numberOfChunks = int(math.ceil(len(pfns)/float(numberOfFilesInChunk)))
+  numberOfChunks = int(math.ceil(len(list)/float(numberOfFilesInChunk)))
   count = 0
   for i in range(numberOfChunks):
-    listOfLists.append(pfns[count:count+numberOfFilesInChunk])
+    listOfLists.append(list[count:count+numberOfFilesInChunk])
     count += numberOfFilesInChunk
   return listOfLists
