@@ -129,33 +129,37 @@ class ReplicationScheduler(Agent):
         lfnReps = replicas[lfn]
         fileID = filesDict[lfn]
         #res = self.determineReplicationTree(lfnReps, sourceSE, targetSE)
-        sourceSURL = lfnReps[sourceSE]
-        targetStorage = StorageElement(targetSE)
-        res = targetStorage.getPfnForLfnForProtocol(lfn,'SRM2')
-        if not res['OK']:
-          errStr = 'ReplicationScheduler._execute: Failed to get target SURL: %s.' % res['Message']
-          self.log.error(errStr)
-          return S_ERROR(errStr)
-        targetSURL = res['Value']
+        if lfnReps.has_key(sourceSE):
+          sourceSURL = lfnReps[sourceSE]
+          targetStorage = StorageElement(targetSE)
+          res = targetStorage.getPfnForLfnForProtocol(lfn,'SRM2')
+          if not res['OK']:
+            errStr = 'ReplicationScheduler._execute: Failed to get target SURL: %s.' % res['Message']
+            self.log.error(errStr)
+            return S_ERROR(errStr)
+          targetSURL = res['Value']
 
-        ######################################################################################
-        # Obtain the ChannelID and insert the file into that channel (done at the file level to allow file by file scheduling)
+          ######################################################################################
+          # Obtain the ChannelID and insert the file into that channel (done at the file level to allow file by file scheduling)
 
-        res = self.TransferDB.getChannelID(sourceSE,targetSE)
-        if not res['OK']:
-          logStr = 'ReplicationScheduler._execute: Creating channel from %s to %s.' % (sourceSE,targetSE)
-          self.log.info(logStr)
-          res = self.TransferDB.createChannel(sourceSE, targetSE)
-          channelID = res['Value']['ChannelID']
-          logStr = 'ReplicationScheduler._execute: ChannelID = %s.' % (channelID)
-          self.log.info(logStr)
+          res = self.TransferDB.getChannelID(sourceSE,targetSE)
+          if not res['OK']:
+            logStr = 'ReplicationScheduler._execute: Creating channel from %s to %s.' % (sourceSE,targetSE)
+            self.log.info(logStr)
+            res = self.TransferDB.createChannel(sourceSE, targetSE)
+            channelID = res['Value']['ChannelID']
+            logStr = 'ReplicationScheduler._execute: ChannelID = %s.' % (channelID)
+            self.log.info(logStr)
+          else:
+            channelID = res['Value']
+          res = self.TransferDB.addFileToChannel(channelID, fileID, sourceSURL, targetSURL,spaceToken)
+          if not res['OK']:
+            errStr = "ReplicationScheduler._execute: Failed to add File %s to Channel %s." % (fileID,channelID)
+            gLogger.error(errStr)
+            return S_ERROR(errStr)
         else:
-          channelID = res['Value']
-        res = self.TransferDB.addFileToChannel(channelID, fileID, sourceSURL, targetSURL,spaceToken)
-        if not res['OK']:
-          errStr = "ReplicationScheduler._execute: Failed to add File %s to Channel %s." % (fileID,channelID)
+          errStr = "ReplicationScheduler._execute: % does not have a replica at %s." % (lfn,sourceSE)
           gLogger.error(errStr)
-          return S_ERROR(errStr)
     return res
 
   def determineReplicationTree(self,replicas,sourceSE,targetSE):
