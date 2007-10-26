@@ -20,7 +20,7 @@ CREATE TABLE Requests (
    JobID INTEGER,
    OwnerDN VARCHAR(255),
    DIRACInstance varchar(32),
-   Status varchar(32) DEFAULT 'New',
+   Status varchar(32) DEFAULT 'Receiving',
    CreationTime DATETIME,
    SubmissionTime DATETIME,
    PRIMARY KEY (RequestID,RequestName)
@@ -31,7 +31,7 @@ CREATE TABLE SubRequests (
    RequestID INTEGER NOT NULL,
    SubRequestID INTEGER NOT NULL AUTO_INCREMENT,
    RequestType varchar(32) NOT NULL,
-   Status varchar(32) DEFAULT 'New',
+   Status varchar(32) DEFAULT 'Receiving',
    SpaceToken varchar(32),
    Operation varchar(32),
    SourceSE varchar(32),
