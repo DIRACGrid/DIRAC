@@ -448,6 +448,9 @@ class FTSRequest:
   def getFailReason(self,lfn):
     return self.fileDict[lfn]['Reason']
 
+  def getRetries(self,lfn):
+    return self.fileDict[lfn]['Retries']
+
   def getCompleted(self):
     return self.completedFiles
 
