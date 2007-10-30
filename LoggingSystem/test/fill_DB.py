@@ -1,70 +1,81 @@
+"""  This class fills the main and auxiliary tables of the Logging Database.
+    It provides the functions:
+        FillMesssageRepository()
+"""
 import re, os, sys, string
 from random import randrange
 from time import localtime,strftime
-
 from dirac import DIRAC
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from types import *
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
+from DIRAC.Core.Utilities.Time import dateTime, toString, hour, second, minute
+from DIRAC.LoggingSystem.private.Message import tupleToMessage
+from DIRAC.LoggingSystem.DB.SystemLoggingDB import SystemLoggingDB
 
+DIRAC.gLogger.initialize('fill_DB','/testSectionDebug')
 
-Loglevel = { -30: 'FATAL' , -20: 'ERROR', -10: 'WARN', 0: 'DEBUG',
-             10: 'VERB', 20:'INFO',30:'ALWAYS'}
-
-class MsgLoggingDB_fill(DB):
-
-  def __init__(self, maxQueueSize=10):
-    DB.__init__(self,'MsgLoggingDB','Logging/MsgLoggingDB',maxQueueSize)
-
-  def FillAuxiliaryTables(self):
-    for i in range(-30,40,10):
-      cmd = 'INSERT INTO LogLevels VALUES ( %s, %s )' % (i,Loglevel[i])
-      #print cmd
-      self._update( cmd )
-
+class MessageLoggingDB_fill(SystemLoggingDB):
+  fixedMessages = []
+  systemNames = []
+  subSystemNames = []
+  clientIPs = []
+  sites = []
+  users = []
+    
+  def __CreateAuxiliaryLists(self):
+    """ This function is used to fill with template values the auxiliary list
+    """
     for i in range(1,7):
-      cmd = 'INSERT INTO FixtxtmsgTable (FixtxtString) VALUES ( "error message %s" )' % i
-      #print cmd
-      self._update( cmd )
+      self.fixedMessages.append( 'error message %s' % i)
 
     for i in range(1,6):
-      cmd = 'INSERT INTO System (SystemName) VALUES ( "system %s" )' % i
-      #print cmd
-      self._update( cmd )
+      self.systemNames.append( 'system %s' % i )
 
     for i in range(1,6):
-      cmd = 'INSERT INTO SubSystem (SubSystemName) VALUES ( "subsystem %s" )' % i
-      #print cmd
-      self._update( cmd )
-
-    for i in range(1,8):
-      cmd = 'INSERT INTO Frame (FrameName) VALUES ( "frame %s" )' % i
-      #print cmd
-      self._update( cmd )
+      self.subSystemNames.append( 'subsystem %s' % i )
 
     for i in range(1,21):
-      cmd = 'INSERT INTO ClientIPs (ClientIPNumberString) VALUES ( "%s.%s.%s.%s" )' % (randrange(2,255),randrange(2,255),randrange(2,255),randrange(2,255))
-      #print cmd
-      self._update( cmd )
-
+      self.clientIPs.append( '%s.%s.%s.%s' % ( randrange(2,255),
+                                               randrange(2,255),
+                                               randrange(2,255),
+                                               randrange(2,255) ) )
+    for i in range(1,6):
+      self.sites.append( 'site %s' % i )
+      
     groups={0:'lhcbsgm',1:'lhcbprod',2:'lhcb'}
 
     for i in range(0,3):
       for j in range(1,3+i*2):
-        cmd = 'INSERT INTO UserDNs (OwnerDN,OwnerGroup) VALUES ( "user%s", %s )' % (j,groups[i])
-        #print cmd
-        self._update( cmd )
+        self.users.append( [ 'user%s' % j, '%s' % groups[i] ] )
 
-  def DateTable(self):
+  def FillMessageRepository(self):
+    """This function fills the MessageRepository with random values.
+       It could be useful to test performance of the database.
+    """
+    self.__CreateAuxiliaryLists()
+    LogLevels = [ 'ALWAYS' , 'INFO', 'VERB', 'DEBUG', 'WARN',
+                  'ERROR', 'EXCEPT', 'FATAL' ]
+    initialDate=dateTime()
+
     for i in range(1,800):
-      cmd = 'INSERT INTO DateStamps VALUES (STR_TO_DATE("%s",GET_FORMAT(DATETIME,"ISO")),"variable text %s",%s,%s,%s,%s,%s,%s,%s)' % (strftime('%Y-%m-%d %H:%M:%S',localtime(randrange(1187617568,1188222011))),
-                                                                                            randrange(1,7),randrange(1,13),randrange(1,21),randrange(-30,40,10),
-                                                                                            randrange(1,7),randrange(1,6),randrange(1,6),randrange(1,8))
-      #print cmd
-      self._update(cmd)
-    
-DBfill=MsgLoggingDB_fill()
-#DBfill.FillAuxiliaryTables()
-DBfill.DateTable()
+      limitDate = toString( initialDate - randrange(0,1680) * hour -
+                            randrange( 0, 60) * minute -
+                            randrange( 0, 60) * second )
+      message = tupleToMessage ( [ self.systemNames[ randrange( 0, 5 ) ],
+                          LogLevels[ randrange( 0, 8 ) ], limitDate,
+                          self.fixedMessages[ randrange( 0, 6 ) ],
+                          'variable text %s' % randrange( 0, 6 ), '',
+                          self.subSystemNames[ randrange( 0, 5 ) ],
+                          self.sites[ randrange( 0, 5 ) ] ] )
+      userId = randrange( 0, 12 )
+      result = self.insertMessageIntoDB( message, self.users[ userId ][ 0 ],
+                                         self.users[ userId ][ 1 ],
+                                         self.clientIPs[ randrange( 0, 20 ) ] )
+      if not result['OK']:
+        print result['Value']
+        
+DBfill=MessageLoggingDB_fill()
+DBfill.FillMessageRepository()
