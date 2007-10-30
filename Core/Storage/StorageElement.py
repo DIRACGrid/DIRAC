@@ -1,127 +1,36 @@
+""" This is the StorageElement class.
+
+    self.name is the resolved name of the StorageElement i.e CERN-tape
+    self.options is dictionary containing the general options defined in the CS e.g. self.options['Backend] = 'Castor2'
+    self.storages is a list of the stub objects created by StorageFactory for the protocols found in the CS.
+    self.localProtocols is a list of the local protocols that were created by StorageFactory
+    self.remoteProtocols is a list of the remote protocols that were created by StorageFactory
+    self.protocolOptions is a list of dictionaries containing the options found in the CS. (should be removed)
+"""
+
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC.Core.Storage.StorageFactory import StorageFactory
 from DIRAC.Core.Utilities.Pfn import pfnparse,pfnunparse
 from DIRAC.Core.Utilities.List import sortList
 import re, time
 
-#from DIRAC.DataMgmt.Storage.StorageFactory                   import StorageFactory
-
 class StorageElement:
 
   def __init__(self,name):
-
     self.valid = True
-    # Resolve the supplied name to its real StorageName
-    res =  self._getStorageName(name)
-    print res
+    res = StorageFactory().getStorages(name)
     if not res['OK']:
       self.valid = False
-    self.name = res['Value']
+    factoryDict = res['Value']
+    self.name = factoryDict['StorageName']
+    self.options = factoryDict['StorageOptions']
+    self.localProtocols = factoryDict['LocalProtocols']
+    self.remoteProtocols = factoryDict['RemoteProtocols']
+    self.storages = factoryDict['StorageObjects']
+    self.protocolOptions = factoryDict['ProtocolOptions']
 
-    # Create the storages for the obtained storage name
-    self.localProtocols = []
-    self.remoteProtocols = []
-    self.storages = []
-    try:
-      res = self.__analyze()
-      if not res['OK']:
-        errStr = "Failed to create StorageElement %s." % self.name
-        gLogger.error(errStr)
-        self.valid = False
-    except:
-      errStr = "Failed to __analyse('%s')."  % self.name
-      gLogger.error(errStr)
-      self.valid = False
-
-  def _getStorageName(self,storage):
-    """
-      This gets the name of the storage the configuration service.
-      This is used when links are made in the SEs.
-      e.g. Tier0-disk -> CERN-disk
-    """
-    configPath = '/DataManagement/StorageElements/%s/StorageName' % storage
-    resolvedName = gConfig.getValue(configPath)
-    if not resolvedName:
-      errStr = "StorageElement definition not complete for %s: StorageName option not defined." % storage
-      gLogger.error(errStr)
-      return S_ERROR(errStr)
-    while resolvedName != storage:
-      storage = resolvedName
-      configPath = '/DataManagement/StorageElements/%s/StorageName' % storage
-      resolvedName = gConfig.getValue(configPath)
-    return S_OK(resolvedName)
-
-  def isValid(self):
-    return S_OK(self.valid)
-
-  def __analyze(self):
-    """
-      Parse the contents of the CS for the supplied storage element name.
-    """
-    rootConfigPath = '/DataManagement/StorageElements/%s' % self.name
-    # First get the options that are supplied at the base level of the storage.
-    # These are defined for all the protocols
-    res = gConfig.getOptions(rootConfigPath)
-    if not res['OK']:
-      errStr = 'StorageElement.__analyze: Failed to get options for %s: %s' % (self.name,res['Message'])
-      gLogger.error(errStr)
-      return S_ERROR(errStr)
-    options = res['Value']
-    self.options = {}
-    for option in options:
-      configPath = '%s/%s' % (rootConfigPath,option)
-      self.options[option] = gConfig.getValue(configPath)
-
-    # Next we get the sections for the storage element
-    # These contain information for the specific protocols
-    res = gConfig.getSections(rootConfigPath)
-    if not res['OK']:
-      errStr = 'StorageElement.__analyze: Failed to get sections for %s: %s' % (self.name,res['Message'])
-      gLogger.error(errStr)
-      return S_ERROR(errStr)
-    protocolSections = res['Value']
-    sortedProtocols = sortList(protocolSections)
-
-    for protocol in sortedProtocols:
-      res = self.__getProtocolDetails(protocol,rootConfigPath)
-      if not res['OK']:
-        return res
-      self.storages.append(res['Value'])
-    return S_OK()
-
-  def __getProtocolDetails(self,protocol,baseConfigPath):
-    """
-      Parse the contents of the protocol block
-    """
-    protocolConfigPath = '%s/%s' % (baseConfigPath,protocol)
-    res = gConfig.getOptions(protocolConfigPath)
-    if not res['OK']:
-      errStr = 'StorageElement.__getProtocolDetails: Failed for %s:%s' % (self.name,protocol)
-      gLogger.error(errStr)
-      return S_ERROR(errStr)
-    options = res['Value']
-    # We must have certain values internally even if not supplied in CS
-    protocolDict = {'Access':'','Host':'','Path':'','Port':'','Protocol':'','ProtocolName':''}
-    for option in options:
-      configPath = '%s/%s' % (protocolConfigPath,option)
-      optionValue = gConfig.getValue(configPath)
-      protocolDict[option] = optionValue
-    # Now update the local and remote protocol lists
-    if not protocolDict['Protocol']:
-      errStr = "StorageElement.__getProtocolDetails: The 'Protocol' option for %s:%s is not set." % (self.name,protocol)
-      gLogger.error(errStr)
-      return S_ERROR(errStr)
-    if not protocolDict['ProtocolName']:
-      errStr = "StorageElement.__getProtocolDetails: The 'ProtocolName' option for %s:%s is not set." % (self.name,protocol)
-      gLogger.error(errStr)
-      return S_ERROR(errStr)
-    if protocolDict['Access'] == 'remote':
-      self.remoteProtocols.append(protocolDict['ProtocolName'])
-    elif protocolDict['Access'] == 'local':
-      self.localProtocols.append(protocolDict['ProtocolName'])
-    else:
-      errStr = "StorageElement.__getProtocolDetails: The 'Access' option for %s:%s is neither 'local' or 'remote'." % (self.name,protocol)
-      gLogger.warn(errStr)
-    return S_OK(protocolDict)
+  def testStorageFactory(self,dict):
+    return StorageFactory().getStorage(dict)
 
   def dump(self):
     """
@@ -135,10 +44,35 @@ class StorageElement:
 
     for storage in self.storages:
       outStr = "%s============Protocol %s ============\n" % (outStr,i)
-      for key in sortList(storage.keys()):
-        outStr = "%s%s: %s\n" % (outStr,key.ljust(15),storage[key])
+      storageParameters = storage.getParameters()
+      for key in sortList(storageParameters.keys()):
+        outStr = "%s%s: %s\n" % (outStr,key.ljust(15),storageParameters[key])
       i = i + 1
     gLogger.info(outStr)
+
+  def isValid(self):
+    return S_OK(self.valid)
+
+  #################################################################################################
+  #
+  # These are the basic get functions to get information about the supported protocols
+  #
+
+  def getProtocols(self):
+    """ Get the list of all the protocols defined for this Storage Element
+    """
+    allProtocols = self.localProtocols+self.remoteProtocols
+    return S_OK(allProtocols)
+
+  def getRemoteProtocols(self):
+    """ Get the list of all the remote access protocols defined for this Storage Element
+    """
+    return S_OK(self.remoteProtocols)
+
+  def getLocalProtocols(self):
+    """ Get the list of all the local access protocols defined for this Storage Element
+    """
+    return S_OK(self.localProtocols)
 
   def getPrimaryProtocol(self):
     """ Get the primary protocol option
@@ -163,21 +97,22 @@ class StorageElement:
       gLogger.error(errStr)
       return S_ERROR(errStr)
 
-  def getProtocols(self):
-    """ Get the list of all the protocols defined for this Storage Element
+  def getStorageParameters(self,protocol):
+    """ Get protocol specific options
     """
-    allProtocols = self.localProtocols+self.remoteProtocols
-    return S_OK(allProtocols)
-
-  def getRemoteProtocols(self):
-    """ Get the list of all the remote access protocols defined for this Storage Element
-    """
-    return S_OK(self.remoteProtocols)
-
-  def getLocalProtocols(self):
-    """ Get the list of all the local access protocols defined for this Storage Element
-    """
-    return S_OK(self.localProtocols)
+    res = self.getProtocols()
+    availableProtocols = res['Value']
+    if not protocol in availableProtocols:
+      errStr = "StorageElement.getStorageParameters: %s protocol is not supported for %s." % (protocol,self.name)
+      gLogger.error(errStr)
+      return S_ERROR(errStr)
+    for storage in self.storages:
+      storageParameters = storage.getParameters()
+      if storageParameters['ProtocolName'] == protocol:
+        return S_OK(storageParameters)
+    errStr = "StorageElement.getStorageParameters: %s found in %s protocols list but no object found." % (protocol,self.name)
+    gLogger.error(errStr)
+    return S_ERROR(errStr)
 
   def isLocalSE(self):
     """ Test if the Storage Element is local in the current context
@@ -188,58 +123,9 @@ class StorageElement:
     else:
       return S_OK(False)
 
-  def getPfnForLfnForProtocol(self,lfn,protocolName,withPort=False):
-    """ Get the pfn for for a protocol an supplied LFN using the LHCb conventions:
-        protocol://host{:port}/path/lfn
-
-        This should really use the storage plug in as it knows how the PFN for the protocol should be created
-
-    """
-    res = self.getProtocolOptions(protocolName)
-    if not res['OK']:
-      return res
-    protocolDict = res['Value']
-    host = protocolDict['Host']
-    protocol = protocolDict['Protocol']
-    if host:
-      pfn = "%s://%s" % (protocol,host)
-    else:
-      pfn = "%s:" % (protocol)
-
-    path = protocolDict['Path']
-    port = protocolDict['Port']
-    if withPort and port:
-      pfn = "%s:%s%s%s" % (pfn,port,path,lfn)
-    else:
-      pfn = "%s%s%s" % (pfn,path,lfn)
-    return S_OK(pfn)
-
-  def getProtocolOptions(self,protocol):
-    """ Get protocol specific options
-    """
-    res = self.getProtocols()
-    availableProtocols = res['Value']
-    if not protocol in availableProtocols:
-      errStr = "StorageElement.getProtocolOptions: %s protocol is not supported for %s." % (protocol,self.name)
-      gLogger.error(errStr)
-      return S_ERROR(errStr)
-    for storage in self.storages:
-      if storage['ProtocolName'] == protocol:
-        return S_OK(storage)
-    errStr = "StorageElement.getProtocolOptions: %s found in %s protocols list but no deatils found." % (protocol,self.name)
-    gLogger.error(errStr)
-    return S_ERROR(errStr)
-
-#################################################################################################
-# Below this line things aren't implemented
-
-  def getStorage(self,protocolList=[]):
-    """ Get a list of storage access points for the specified list of protocols.
-    """
-    errStr = "StorageElement.getStorage: Implement me."
-    gLogger.error(errStr)
-    return S_ERROR(errStr)
-
+  #################################################################################################
+  # Below this line things aren't implemented
+  #
   def __getPfnDict(self,pfn,protocol):
     """ Gets the dictionary describing the PFN in terms of protocol
     """
