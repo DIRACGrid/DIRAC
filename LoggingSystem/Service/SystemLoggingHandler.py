@@ -28,12 +28,12 @@ class SystemLoggingHandler( RequestHandler ):
     """
     Credentials=self.getRemoteCredentials()
     if Credentials.has_key('DN'):
-      UserDN=Credentials['DN']
+      userDN=Credentials['DN']
     else:
-      UserDN='unknown'
-    Usergroup=Credentials['group']  
-    Address=self.transport.getRemoteAddress()[0]
-    LogDB.insertMsgIntoDB( messageObject, UserDN, Usergroup, Address )
+      userDN='unknown'
+    userGroup = Credentials['group']  
+    remoteAddress = self.transport.getRemoteAddress()[0]
+    LogDB.insertMessageIntoDB( messageObject, userDN, userGroup, remoteAddress )
 
         
   types_addMessages = []
