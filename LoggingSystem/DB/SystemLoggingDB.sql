@@ -22,6 +22,8 @@ DELETE FROM user WHERE user='Dirac';
 --
 
 GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON SystemLoggingDB.* TO Dirac@localhost IDENTIFIED BY 'must_be_set';
+GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON SystemLoggingDB.* TO Dirac@volhcb03.cern.ch IDENTIFIED BY 'must_be_set';
+GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON SystemLoggingDB.* TO Dirac@'%' IDENTIFIED BY 'must_be_set';
 
 FLUSH PRIVILEGES;
 
@@ -38,20 +40,17 @@ CREATE TABLE MessageRepository (
     ClientIPNumberID INTEGER NOT NULL,
     SiteID INTEGER NOT NULL,
 --    ClientIPNumber INTEGER NOT NULL DEFAULT 'FFFFFFFF',
-    LogLevel INTEGER NOT NULL,
+    LogLevel VARCHAR(6) NOT NULL,
     FixedTextID INTEGER NOT NULL,
     SystemID INTEGER NOT NULL,
     SubSystemID INTEGER NOT NULL,
-    FrameID INTEGER NOT NULL,
     FOREIGN KEY ( UserDNID ) REFERENCES UserDNs( UserDNID ),
     FOREIGN KEY ( ClientIPNumberID ) REFERENCES ClientIPs( ClientIPNumberID ),
-    FOREIGN KEY ( LogLevel ) REFERENCES LogLevels( LogLevel ),
     FOREIGN KEY ( FixedTextID ) REFERENCES FixedTextMessages( FixedTextID ),
     FOREIGN KEY ( SystemID ) REFERENCES System( SystemID ),
     FOREIGN KEY ( SubSystemID ) REFERENCES SubSystem( SubSystemID ),
-    FOREIGN KEY ( FrameID ) REFERENCES Frame( FrameID ),
     FOREIGN KEY ( SiteID ) REFERENCES Site( SiteID ),
-    PRIMARY KEY ( MessageID, MessageTime, UserDNID, ClientIPNumberID, LogLevel, FixedTextID, SystemID, SubSystemID, FrameID )
+    PRIMARY KEY ( MessageID, MessageTime, UserDNID, ClientIPNumberID, LogLevel, FixedTextID, SystemID, SubSystemID)
 );
 
 --------------------------------------------------------------------------------
@@ -71,15 +70,6 @@ CREATE TABLE ClientIPs (
     ClientIPNumberString VARCHAR(15) NOT NULL DEFAULT '0.0.0.0',
 --    DiracSite VARCHAR(25) NOT NULL DEFAULT 'None'
     PRIMARY KEY ( ClientIPNumberID )
-);
-
---------------------------------------------------------------------------------
-DROP TABLE IF EXISTS LogLevels;
-CREATE TABLE LogLevels (
---    LogLevel ENUM( -30, -20, -10, 0, 10, 20, 30) NOT NULL DEFAULT 30,
-    LogLevel INTEGER NOT NULL DEFAULT 30,
-    LogLevelName VARCHAR(6) NOT NULL DEFAULT 'ALWAYS',
-    PRIMARY KEY ( LogLevel )
 );
 
 --------------------------------------------------------------------------------
@@ -107,12 +97,6 @@ CREATE TABLE SubSystems (
 );
 
 --------------------------------------------------------------------------------
-DROP TABLE IF EXISTS Frames;
-CREATE TABLE Frames (
-    FrameID INTEGER NOT NULL AUTO_INCREMENT,
-    FrameName VARCHAR(128) NOT NULL DEFAULT 'Unknown',
-    PRIMARY KEY ( FrameID )
-);
 
 DROP TABLE IF EXISTS Sites;
 CREATE TABLE Sites (
@@ -120,12 +104,3 @@ CREATE TABLE Sites (
     SiteName VARCHAR(64) NOT NULL DEFAULT 'Unknown',
     PRIMARY KEY ( SiteID )
 );
-
-INSERT INTO LogLevels VALUES (30,'ALWAYS');
-INSERT INTO LogLevels VALUES (20,'INFO');
-INSERT INTO LogLevels VALUES (10,'VERB');
-INSERT INTO LogLevels VALUES (0,'DEBUG');
-INSERT INTO LogLevels VALUES (-10,'WARN');
-INSERT INTO LogLevels VALUES (-20,'ERROR');
---INSERT INTO LogLevels VALUES (-20,'EXCEPTION');
-INSERT INTO LogLevels VALUES (-30,'FATAL');

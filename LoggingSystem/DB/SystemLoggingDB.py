@@ -1,10 +1,10 @@
 """ SystemLoggingDB class is a front-end to the Message Logging Database.
     The following methods are provided
 
-    insertMsgIntoDB()
-    getMsgByDate()
-    getMsgByMainMsg()
-    getMsgs()
+    insertMessageIntoDB()
+    getMessagesByDate()
+    getMessagesByFixedText()
+    getMessages()
 """    
 
 import re, os, sys, string
@@ -16,7 +16,7 @@ from types                                     import *
 from DIRAC                                     import gLogger, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Config   import gConfig
 from DIRAC.Core.Base.DB import DB
-from DIRAC.Core.Utilities import Time, dateTime, hour, date, week, day
+from DIRAC.Core.Utilities import Time, dateTime, hour, date, week, day, fromString, toString
 from DIRAC.LoggingSystem.private.LogLevels import LogLevels
 
 ###########################################################
@@ -25,7 +25,8 @@ class SystemLoggingDB(DB):
   def __init__(self, maxQueueSize=10):
     """ Standard Constructor
     """
-    DB.__init__(self,'SystemLoggingDB','Logging/SystemLoggingDB',maxQueueSize)
+    DB.__init__( self, 'SystemLoggingDB', 'Logging/SystemLoggingDB',
+                 maxQueueSize)
 
   def __buildCondition(self, condDict, older=None, newer=None ):
     """ build SQL condition statement from provided condDict
@@ -40,13 +41,12 @@ class SystemLoggingDB(DB):
           attrValue = [ attrValue ]
         
         for attrVal in attrValue: 
-          condition = ' %s %s %s=\'%s\'' % ( condition,
-                                             conjonction,
-                                             str(attrName),
-                                             str(attrVal)  )
+          condition = " %s %s %s='%s'" % ( condition,
+                                           conjonction,
+                                           str( attrName ),
+                                           str( attrVal )  )
           conjonction = " OR "
 
-          
         conjonction = ") AND ("
 
       condition = ' %s )' % ( condition )
@@ -55,248 +55,240 @@ class SystemLoggingDB(DB):
       conjonction = "WHERE"
 
     if older:
-      condition = ' %s %s MsgTime <\'%s\'' % ( condition,
-                                                 conjonction,
-                                                 str(older) )
+      condition = " %s %s MessageTime <'%s'" % ( condition,
+                                                  conjonction,
+                                                  str( older ) )
       conjonction = "AND"
 
     if newer:
-      condition = ' %s %s MsgTime >\'%s\'' % ( condition,
+      condition = " %s %s MessageTime >'%s'" % ( condition,
                                                  conjonction,
-                                                 str(newer) )
+                                                 str( newer ) )
 
     return condition
 
-  def __UniqVal( self, VarList ):
-    IntList=list(set(VarList))
+  def __removeVariables( self, fieldList ):
+    """ auxiliar function of __buildTableList.  
+    """
+    internalList = list( set( fieldList ) )
 
-    if IntList.count('VariableText'):
-      IntList.remove('VariableText')
-      IntList=list(set(IntList.append('MessageTime')))
+    if internalList.count( 'VariableText' ):
+      internalList.remove( 'VariableText' )
+      internalList = list( set( intList.append( 'MessageTime' ) ) )
 
-    if IntList.count('OwnerGroup'):
-      IntList.remove('OwnerGroup')
-      IntList=list(set(IntList.append('OwnerDN')))
+    if internalList.count( 'LogLevel' ):
+      internalList.remove( 'LogLevel' )
+      internalList = list( set( intList.append( 'MessageTime' ) ) )
 
-    return IntList
+    if internalList.count( 'OwnerGroup' ):
+      internalList.remove( 'OwnerGroup' )
+      internalList = list( set( intList.append( 'OwnerDN' ) ) )
+
+    return internalList
 
       
-  def __buildTableList( self, showVarList ):
+  def __buildTableList( self, showFieldList ):
     """ build the SQL list of tables needed for the query
         from the list of variables provided
     """
-    TableDict={'MessageTime':'MessageRepository', 'FixedText':'FixedTextMessage',
-                 'SystemName':'Systems', 'SubSystemName':'SubSystems',
-                 'FrameName':'Frames', 'LogLevelName':'LogLevels',
-                 'OwnerDN':'UserDNs', 'ClientIPNumberString':'ClientIPs',
-                 'SiteName':'Sites'}
+    tableDict = { 'MessageTime':'MessageRepository',
+                  'FixedTextString':'FixedTextMessages',
+                  'SystemName':'Systems', 'SubSystemName':'SubSystems',
+                  'OwnerDN':'UserDNs',  
+                  'ClientIPNumberString':'ClientIPs', 'SiteName':'Sites'}
 
-    conjunction=' NATURAL JOIN '
+    conjunction = ' NATURAL JOIN '
 
-    TableList=TableDict.values()
-    TableList.remove( 'MessageRepository' )
-    TableList.insert( 0, 'MessageRepository' )
-    tablestring=conjunction.join(TableList)
+    tableList = tableDict.values()
+    tableList.remove( 'MessageRepository' )
+    tableList.insert( 0, 'MessageRepository' )
+    tableString = conjunction.join( tableList )
 
-    if not len(showVarList):
-      VarList=self.__UniqVal(showVarList)
+    if not len(showFieldList):
+      fieldList=self.__removeVariables(showFieldList)
 
-      tablestring=''
+      if fieldList.count( 'MessageTime' ):
+        fieldList.remove( 'MessageTime' )
+        
+      tableString = 'MessageRepository'
+      if not len(fieldList):
+          tableString = '%s%s' %  ( tableString, conjunction )
 
-      if VarList.count('MessageTime'):
-        VarList.drop('MessageTime')
-        tablestring='MessageRepository'
-        if not len(VarList):
-          tablestring='%s%s' %  ( tablestring, conjunction )
+      for field in fieldList:
+        tableString = '%s %s' % ( tableString, TableDict[field] )
+        if not len( fieldList ):
+          tableString = '%s%s' %  ( tableString, conjunction )
 
-      for var in VarList:
-        tablestring='%s %s' % ( tablestring, TableDict[var] )
-        if not len(VarList):
-          tablestring='%s%s' %  ( tablestring, conjunction )
+    return tableString
 
-    return tablestring
-
-  def __queryDB( self, showVarList=None, condDict={}, older=None, newer=None ):
+  def __queryDB( self, showFieldList=None, condDict=None, older=None, newer=None ):
     """ This function composes the SQL query from the conditions provided and
-        the desired columns and querys the SystemLoggingDB.
+        the desired columns and queries the SystemLoggingDB.
         If no list is provided the default is to use all the meaninful
         variables of the DB
     """
     cond = self.__buildCondition( condDict, older, newer )
 
-    if showVarList == None:
-      showVarList = ['MessageTime', 'LogLevelName', 'FixedText',
-                     'VariableText', 'SystemName', 'FrameName',
+    if showFieldList == None:
+      showFieldList = ['MessageTime', 'LogLevel', 'FixedTextString',
+                     'VariableText', 'SystemName', 
                      'SubSystemName', 'OwnerDN', 'OwnerGroup',
                      'ClientIPNumberString','SiteName']
             
-    cmd = 'SELECT %s FROM %s %s' % (','.join(showVarList),
-                                    self.__buildTableList(showVarList), cond)
+    cmd = 'SELECT %s FROM %s %s' % (','.join(showFieldList),
+                                    self.__buildTableList(showFieldList), cond)
 
     return self._query(cmd)
 
-
-  def insertMsgIntoDB( self, Msg, UserDN, usergroup, remoteAdd ):
-    """ This function inserts the Logging message into the DB
-    """
-    msgName = Msg.getName()
-    msgSubSysName = Msg.getSubSystemName()
-    msgFrameInfo = Msg.getFrameInfo()
-    msgFix = self._escapeString( Msg.getFixedMessage() )
-    msgVar = self._escapeString( Msg.getVariableMessage() )
-    if msgVar=='':
-      msgVar = "'No variable text'"
-    msgLevel = LogLevels().getLevelValue( Msg.getLevel() )
-    msgDate = Time.toString( Msg.getTime() )
-    msgDate = msgDate[:msgDate.find('.')]
-    msgSite = Msg.getSite()
-
-    result = self._escapeString( Msg.getFixedMessage() )
-    if result['OK']:
-      msgFix = result['Value']
-    else:
-      return result
-    
-    result = self._escapeString( Msg.getVariableMessage() )
-    if result['OK']:
-      msgVar = result['Value']
-      if msgVar=='':
-        msgVar = "'No variable text'"
-    else:
-      return result
-   
-    msgList = [ "STR_TO_DATE('%s',GET_FORMAT(DATETIME,'ISO'))" % msgDate, msgVar ]
-    
-    errstr = 'Could not insert the data into %s table'
-    
-    userDNvalues = ( UserDN, usergroup )
-    qry = 'SELECT UserDNID FROM UserDNs WHERE OwnerDN="%s" AND OwnerGroup="%s"' % userDNvalues
-    cmd = 'INSERT INTO UserDNs ( OwnerDN, OwnerGroup ) VALUES ( "%s", "%s" )' % userDNvalues
-    result = self.DBCommit( qry, cmd, errstr % 'UserDNs' )
-    if not result['OK']:
-      return result
-    else:
-      msgList.append(result['Value'])
-
-    qry = 'SELECT ClientIPNumberID FROM ClientIPs WHERE ClientIPNumberString="%s"' % remoteAdd
-    cmd = 'INSERT INTO ClientIPs ( ClientIPNumberString ) VALUES ( "%s" )' % remoteAdd
-    result = self.DBCommit( qry, cmd, errstr % 'ClientIPs' )
-    if not result['OK']:
-      return result
-    else:
-      msgList.append(result['Value'])
-
-    if not msgSite:
-      msgSite = 'Unknown'
-    qry = 'SELECT SiteID FROM Sites WHERE SiteName="%s"' % msgSite
-    cmd = 'INSERT INTO Sites ( SiteName ) VALUES ( "%s" )' % msgSite
-    result = self.DBCommit( qry, cmd, errstr % 'Sites' )
-    if not result['OK']:
-      return result
-    else:
-      msgList.append(result['Value'])
-
-    msgList.append(msgLevel)
-    
-    qry = 'SELECT FixedTextID FROM FixedTextMessages WHERE FixedTextString=%s' % msgFix
-    cmd = 'INSERT INTO FixedTextMessages ( FixedTextString ) VALUES ( %s )' % msgFix
-    result = self.DBCommit( qry, cmd, errstr % 'FixedTextMessages' )
-    if not result['OK']:
-      return result
-    else:
-      msgList.append(result['Value'])
-
-
-    if not msgName:
-      msgName = 'Unknown'
-    qry = 'SELECT SystemID FROM Systems WHERE SystemName="%s"' % msgName
-    cmd = 'INSERT INTO Systems ( SystemName ) VALUES ( "%s" )' % msgName
-    result = self.DBCommit( qry, cmd, errstr % 'Systems' )
-    if not result['OK']:
-      return result
-    else:
-      msgList.append(result['Value'])
-
-    if not msgSubSysName:
-      msgSubSysName = 'Unknown'
-    qry = 'SELECT SubSystemID FROM SubSystems WHERE SubSystemName="%s"' % msgSubSysName
-    cmd = 'INSERT INTO SubSystems ( SubSystemName ) VALUES ( "%s" )' % msgSubSysName
-    result = self.DBCommit( qry, cmd, errstr % 'SubSystems' )
-    if not result['OK']:
-      return result
-    else:
-      msgList.append(result['Value'])
-
-
-    if not msgFrameInfo:
-      msgFrameInfo = 'Unknown'
-    qry = 'SELECT FrameID FROM Frames WHERE FrameName="%s"' % msgFrameInfo
-    cmd = 'INSERT INTO Frames ( FrameName ) VALUES ( "%s" )' % msgFrameInfo
-    result = self.DBCommit( qry, cmd, errstr % 'Frames' )
-    if result['OK']:
-      msgList.append(result['Value'])
-    else:
-      return result
-
-    cmd = 'INSERT INTO MessageRepository (MessageTime,VariableText,UserDNID,ClientIPNumberID,SiteID,LogLevel,FixedTextID,SystemID,SubSystemID,FrameID) VALUES (%s)' % ', '.join( str(x) for x in msgList )
-    result = self._update(cmd)
-    if result['OK']:
-      msgList.append(result['Value'])
-    else:
-      return result
-
-
-  def DBCommit( self, qry, cmd, err ):
+  def __DBCommit( self, tableName, outFields, inFields, inValues ):
     """  This is an auxiliary function to insert values on a
          satellite Table if they do not exist and returns
          the unique KEY associated to the given set of values
     """
-    result= self._query( qry )
+    result = self._getFields( tableName, outFields, inFields, inValues )
     if not result['OK']:
       return S_ERROR('Unable to query the database')
     elif result['Value']==():
-      result = self._update(cmd)
+      result = self._insert( tableName, inFields, inValues )
       if not result['OK']:
-        return S_ERROR( err )
+        return S_ERROR( 'Could not insert the data into %s table' % tableName )
 
-      result = self._query( qry )
+      result = self._getFields( tableName, outFields, inFields, inValues )
       if not result['OK']:
         return S_ERROR( 'Unable to query the database' )
 
     return S_OK( int( result['Value'][0][0] ) )
-
-  def getMsgByDate(self, initDate = None, endDate = None):
-    """ query the database for all the messages between two given dates.
-        If no date is provided the date range comprises the last week
-        If no endDate is provided the date range is given by the week
-        that follows initdate
+      
+  def insertMessageIntoDB( self, Message, UserDN, usergroup, remoteAddress ):
+    """ This function inserts the Logging message into the DB
     """
-    if initDate == None and endDate == None:
-      endDate = dateTime()
-      initDate = endDate - 1 * week
-    elif endDate == None:
-      if dateTime() > initDate + week: 
-        endDate = initDate + week
-      elif dateTime() < initDate:
-        return S_ERROR ( "initDate can not be set in the future" )
-      else:
-        endDate = dateTime
-    elif initDate == None:
-      if endDate > dateTime() + week:
-        return S_ERROR ("endDate is too far into the future")
-      initDate = endDate - 1 * week
+    messageName = Message.getName()
+    messageSubSysName = Message.getSubSystemName()
+    messageLevel = Message.getLevel() 
+    messageDate = Time.toString( Message.getTime() )
+    messageDate = messageDate[:messageDate.find('.')]
+    messageSite = Message.getSite()
 
-    if endDate > dateTime():
-      endDate = dateTime()
+    result = self._escapeString( Message.getFixedMessage() )
+    if result['OK']:
+      messageFixedText = result['Value']
+    else:
+      return result
+    
+    result = self._escapeString( Message.getVariableMessage() )
+    if result['OK']:
+      messageVariableText = result['Value']
+      if messageVariableText=='':
+        messageVariableText = "'No variable text'"
+    else:
+      return result
+    
+    fieldsList = [ 'MessageTime', 'VariableText' ]
+    messageList = [ messageDate, messageVariableText ]
 
-    return self.__queryDB( newer = initDate, older = endDate )
+    inValues = [ UserDN, usergroup ]
+    inFields = [ 'OwnerDN', 'OwnerGroup' ]
+    outFields = [ 'UserDNID' ]
+    result = self.__DBCommit( 'UserDNs', outFields, inFields, inValues)
+    if not result['OK']:
+      return result
+    else:
+      messageList.append(result['Value'])
+      fieldsList.extend( outFields )
+      
+    inValues = [ remoteAddress ]
+    inFields = [ 'ClientIPNumberString' ]
+    outFields = [ 'ClientIPNumberID' ]
+    result = self.__DBCommit( 'ClientIPs', outFields, inFields, inValues)
+    if not result['OK']:
+      return result
+    else:
+      messageList.append(result['Value'])
+      fieldsList.extend( outFields )
 
-  def getMsgByMainTxt( self, Msgtxt, firstdate = None, lastdate = None ):
-    return self.__queryDB( condDict = {'FixedTextString': Msgtxt},
-                          older = lastdate, newer = firstdate )
+    if not messageSite:
+      messageSite = 'Unknown'
+    inFields = [ 'SiteName' ]
+    inValues = [ messageSite ]
+    outFields = [ 'SiteID' ]
+    result = self.__DBCommit( 'Sites', outFields, inFields, inValues)
+    if not result['OK']:
+      return result
+    else:
+      messageList.append(result['Value'])
+      fieldsList.extend( outFields )
 
-  def getMsgs(self, conds , firstdate = None, lastdate = None ):
-    return self.__queryDB( condDict = conds, older = lastdate,
-                          newer = firstdate )
+    messageList.append(messageLevel)
+    fieldsList.append( 'LogLevel' )
+    
+    inFields = [ 'FixedTextString' ]
+    inValues = [ messageFixedText ]
+    outFields = [ 'FixedTextID' ]
+    result = self.__DBCommit( 'FixedTextMessages', outFields, inFields,
+                              inValues)
+    if not result['OK']:
+      return result
+    else:
+      messageList.append(result['Value'])
+      fieldsList.extend( outFields )
 
+    if not messageName:
+      messageName = 'Unknown'
+    inFields = [ 'SystemName' ]
+    inValues = [ messageName ]
+    outFields = [ 'SystemID' ]
+    result = self.__DBCommit( 'Systems', outFields, inFields, inValues)
+    if not result['OK']:
+      return result
+    else:
+      messageList.append(result['Value'])
+      fieldsList.extend( outFields )
+
+    if not messageSubSysName:
+      messageSubSysName = 'Unknown'
+    inFields = [ 'SubSystemName' ]
+    inValues = [ messageSubSysName ]
+    outFields = [ 'SubSystemID' ]
+    result = self.__DBCommit( 'SubSystems', outFields, inFields, inValues)
+    if not result['OK']:
+      return result
+    else:
+      messageList.append(result['Value'])
+      fieldsList.extend( outFields )
+
+    return self._insert( 'MessageRepository', fieldsList, messageList )
+
+
+  def getMessagesByDate(self, initialDate = None, endDate = None):
+    """ Query the database for all the messages between two given dates.
+        If no date is provided then the records returned are those generated
+        during the last 24 hours.
+    """
+    from DIRAC.Core.Utilities import dateTime, day
+
+    if not (initialDate or endDate):
+      initialDate= dateTime() - 1 * day 
+      
+    return self.__queryDB( newer = initialDate, older = endDate )
+
+  def getMessagesByFixedText( self, texts, initialDate = None, endDate = None ):
+    """ Query the database for all messages whose fixed part match 'texts'
+        that were generated between initialDate and endDate
+    """
+    return self.__queryDB( condDict = {'FixedTextString': texts},
+                             older = endDate, newer = initialDate )
+    
+  def getMessagesBySite(self, site, initialDate = None, endDate = None ):
+    """ Query the database for all messages generated by 'site' that were
+        generated between initialDate and endDate     
+    """
+    return self.__queryDB( condDict = { 'SiteName':  site},
+                             older = endDate, newer = initialDate )
+ 
+  def getMessages(self, conds , initialDate = None, endDate = None ):
+    """ Query the database for all messages satisfying 'conds' that were 
+        generated between initialDate and endDate
+    """
+    return self.__queryDB( condDict = conds, older = endDate,
+                             newer = initialDate )
 
