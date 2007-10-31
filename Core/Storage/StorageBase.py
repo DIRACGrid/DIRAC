@@ -12,6 +12,7 @@
       fsize()
       get()
       getDir()
+      getLocalPath()
       getPFNBase()
       isdir()
       isfile()
@@ -23,6 +24,7 @@
 """
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
+import re
 
 class StorageBase:
 
@@ -47,12 +49,6 @@ class StorageBase:
   def getDir(self,path):
     """Get locally a directory from the physical storage together with all its
        files and subdirectories.
-    """
-    print "Storage.getDir: implement me!"
-
-  def getPFNBase(self):
-    """ Get the base of the URL for the storage.
-        This base is usually supplemented by the file LFN to comply with the LHCb conventions.
     """
     print "Storage.getDir: implement me!"
 
@@ -114,6 +110,16 @@ class StorageBase:
     """ Get the current directory
     """
     return self.cwd
+
+  def getLocalPath(self,fpath):
+    """ This the full path of a local file.
+    """
+    res = re.search("^/",fpath)
+    if res is not None:
+      return S_OK(fpath)
+    else:
+      path = '%s/%s' % (os.getcwd(),fpath)
+      return S_OK(path)
 
   def getPath(self,fpath):
     """ Get the full path of the given file name resolving the current working directory.
