@@ -12,7 +12,7 @@ from DIRAC.ConfigurationSystem.Client.Config import gConfig
 
 AGENT_NAME = 'Logging/SystemLoggingDBCleaner'
 
-class DBCleaner(Agent):
+class SystemLoggingDBCleaner(Agent):
 
   def __init__(self):
     """ Standard constructor
