@@ -44,7 +44,8 @@ class StorageElement:
 
     for storage in self.storages:
       outStr = "%s============Protocol %s ============\n" % (outStr,i)
-      storageParameters = storage.getParameters()
+      res = storage.getParameters()
+      storageParameters = res['Value']
       for key in sortList(storageParameters.keys()):
         outStr = "%s%s: %s\n" % (outStr,key.ljust(15),storageParameters[key])
       i = i + 1
@@ -107,7 +108,8 @@ class StorageElement:
       gLogger.error(errStr)
       return S_ERROR(errStr)
     for storage in self.storages:
-      storageParameters = storage.getParameters()
+      res = storage.getParameters()
+      storageParameters = res['Value']
       if storageParameters['ProtocolName'] == protocol:
         return S_OK(storageParameters)
     errStr = "StorageElement.getStorageParameters: %s found in %s protocols list but no object found." % (protocol,self.name)
