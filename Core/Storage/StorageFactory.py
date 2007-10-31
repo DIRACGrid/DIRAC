@@ -21,13 +21,7 @@ class StorageFactory:
 
   def __init__(self):
     self.rootConfigPath = '/DataManagement/StorageElements/'
-    self.remoteProtocols = []
-    self.localProtocols = []
     self.valid = True
-    self.name = ''
-    self.options = {}
-    self.protocolDetails = []
-    self.storages = []
 
   ###########################################################################################
   #
@@ -92,6 +86,13 @@ class StorageFactory:
     """ Get an instance of a Storage based on a description either from CS or
         directly from the parameters provided as a tuple or dictionary.
     """
+    self.remoteProtocols = []
+    self.localProtocols = []
+    self.name = ''
+    self.options = {}
+    self.protocolDetails = []
+    self.storages = []
+
     # Get the name of the storage provided
     res =  self._getConfigStorageName(storageName)
     if not res['OK']:
