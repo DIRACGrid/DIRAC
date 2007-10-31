@@ -1,21 +1,21 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.1 2007/10/29 17:38:49 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.2 2007/10/31 22:14:22 paterson Exp $
 # File  : Watchdog.py
 # Author: Stuart Paterson
 ########################################################################
 
 """  The Watchdog class is used by the Job Wrapper to resolve and monitor
-     the system CPU and memory consumed.  The Watchdog can determine if
+     the system resource consumption.  The Watchdog can determine if
      a running job is stalled and indicate this to the Job Wrapper.
+     Furthermore, the Watchdog will identify when the Job CPU limit has been
+     exceeded and fail jobs meaningfully.
 
-     This is a prototype and is currently untidy... other caveats include:
-     - log levels need to be set correctly
-     - still to implement:
-          - checkProgress()  - this makes the important decisions
-          - killRunningThread()
-          - sendSignOfLife()
-     - still to think about other messages etc.
-     - need to add call to report job parameters.
+     - Still to implement:
+          - Heartbeat, composition of all necessary information
+          - CPU normalization for comparison with job limit
+     - Waiting for:
+          - Job parameter reporting call
+          - Means to send heartbeat signal.
 """
 
 from DIRAC.Core.Base.Agent                          import Agent
@@ -23,19 +23,21 @@ from DIRAC.Core.Base.Agent                          import Agent
 from DIRAC.ConfigurationSystem.Client.Config        import gConfig
 from DIRAC.Core.Utilities.Subprocess                import shellCall
 from DIRAC                                          import S_OK, S_ERROR
-import os,thread,time
+
+import os,thread,time,shutil
 
 AGENT_NAME = 'WorkloadManagement/Watchdog'
 
 class Watchdog(Agent):
 
-  def __init__(self, pid, thread, systemFlag='linux2.4'):
+  def __init__(self, pid, thread, spObject, systemFlag='linux2.4'):
     """ Constructor, takes system flag as argument.
     """
     Agent.__init__(self,AGENT_NAME)
     self.systemFlag = systemFlag
     self.thread = thread
     self.pid = pid
+    self.spObject = spObject
     self.initialValues = {}
     self.parameters = {}
 
@@ -48,16 +50,29 @@ class Watchdog(Agent):
     if os.path.exists(self.controlDir+'/stop_agent'):
       os.remove(self.controlDir+'/stop_agent')
     self.log.debug('Watchdog initialization')
-    self.log.info('Attempting to Initialize Watchdog for: %s' % (self.systemFlag))
-    self.maxWallClockTime = gConfig.getValue(self.section+'/MaxWallClockTime',24*60*60) # 1 day
+    self.log.debug('Attempting to Initialize Watchdog for: %s' % (self.systemFlag))
+    #Test control flags
+    self.testWallClock   = gConfig.getValue(self.section+'/CheckWallClockFlag',1)
+    self.testDiskSpace   = gConfig.getValue(self.section+'/CheckDiskSpaceFlag',1)
+    self.testLoadAvg     = gConfig.getValue(self.section+'/CheckLoadAvgFlag',1)
+    self.testCPUConsumed = gConfig.getValue(self.section+'/CheckCPUConsumedFlag',1)
+    self.testCPULimit    = gConfig.getValue(self.section+'/CheckCPULimitFlag',1)
+    #Other parameters
+    self.maxWallClockTime = gConfig.getValue(self.section+'/MaxWallClockTime',36*60*60) # e.g. 1.5 days
+    self.jobPeekFlag      = gConfig.getValue(self.section+'/JobPeekFlag',1) # on / off
+    self.minDiskSpace     = gConfig.getValue(self.section+'/MinDiskSpace',10) #MB
+    self.loadAvgLimit     = gConfig.getValue(self.section+'/LoadAverageLimit',10) # > 10 and jobs killed
+    self.sampleCPUTime    = gConfig.getValue(self.section+'/CPUSampleTime',15*60) # e.g. up to 15mins sample
+    self.calibFactor      = gConfig.getValue(self.section+'/CPUFactor',2) #multiple of the cpu consumed during calibration
+    self.heartbeatPeriod  = gConfig.getValue(self.section+'/HeartbeatPeriod',5) #mins
     return result
 
   #############################################################################
   def execute(self):
     """ The main agent execution method of the Watchdog.
     """
-    self.log.info('------------------------------------')
-    self.log.info('Execution loop starts for Watchdog')
+    self.log.debug('------------------------------------')
+    self.log.debug('Execution loop starts for Watchdog')
     if not self.thread.isAlive():
       print self.parameters
       self.getUsageSummary()
@@ -66,25 +81,52 @@ class Watchdog(Agent):
       result = S_OK()
       return result
 
+    msg = ''
     result = self.getLoadAverage()
-    self.log.info('LoadAverage: %s' % (result['Value']) )
+    msg += 'LoadAvg: %s ' % (result['Value'])
     self.parameters['LoadAverage'].append(result['Value'])
     result = self.getMemoryUsed()
-    self.log.info('MemoryUsed: %.1f bytes' % (result['Value']) )
+    msg += 'MemUsed: %.1f bytes ' % (result['Value'])
     self.parameters['MemoryUsed'].append(result['Value'])
     result = self.getDiskSpace()
-    self.log.info('DiskSpace: %.1f MB' % (result['Value']) )
+    msg += 'DiskSpace: %.1f MB ' % (result['Value'])
     self.parameters['DiskSpace'].append(result['Value'])
     result = self.getCPUConsumed(self.pid)
-    self.log.info('CPUConsumed: %s (hours:mins:secs)' % (result['Value']) )
+    msg += 'CPU: %s (h:m:s) ' % (result['Value'])
     self.parameters['CPUConsumed'].append(result['Value'])
     result = self.getWallClockTime()
-    self.log.info('WallClockTime: %.2f s' % (result['Value']) )
+    msg += 'WallClock: %.2f s ' % (result['Value'])
     self.parameters['WallClockTime'].append(result['Value'])
+    self.log.info(msg)
 
     result = self.checkProgress()
     if not result['OK']:
-      self.killRunningThread(self.thread)
+      self.log.error('Watchdog identified problem with running job')
+      if self.jobPeekFlag:
+        result = self.peek()
+        if result['OK']:
+          outputList = result['Value']
+          size = len(outputList)
+          self.log.info('Last %s lines of application output:' % (size) )
+          for line in outputList:
+            self.log.info(line)
+
+      self.killRunningThread(self.spObject)
+      self.finish()
+      self.log.error(result['Message'])
+
+    if self.jobPeekFlag:
+      result = self.peek()
+      if result['OK']:
+        outputList = result['Value']
+        size = len(outputList)
+        self.log.info('Last %s lines of application output:' % (size) )
+        for line in outputList:
+          self.log.info(line)
+      else:
+        self.log.error('Watchdog could not obtain standard output from application thread')
+        self.log.error('Turning off job peeking for remainder of execution')
+        self.jobPeekFlag = 0
 
     result = S_OK()
     return result
@@ -92,10 +134,117 @@ class Watchdog(Agent):
   #############################################################################
   def checkProgress(self):
     """This method calls specific tests to determine whether the job execution
-       is proceeding normally.
+       is proceeding normally.  CS flags can easily be added to add or remove
+       tests via central configuration.
     """
-    #to Implement
+    report = ''
+
+    if self.testWallClock:
+      result = self.checkWallClockTime()
+      report += 'WallClock: OK, '
+      if not result['OK']:
+        return result
+    else:
+      report += 'WallClock: NA'
+
+    if self.testDiskSpace:
+      result = self.checkDiskSpace()
+      report += 'DiskSpace: OK, '
+      if not result['OK']:
+        return result
+    else:
+      report += 'DiskSpace: NA'
+
+    if self.testLoadAvg:
+      result = self.checkLoadAverage()
+      report += 'LoadAverage: OK, '
+      if not result['OK']:
+        return result
+    else:
+      report += 'LoadAverage: NA'
+
+    if self.testCPUConsumed:
+      result = self.checkCPUConsumed()
+      report += 'CPUConsumed: OK, '
+      if not result['OK']:
+        return result
+    else:
+      report += 'CPUConsumed: NA'
+
+    self.log.info(report)
+    return S_OK('All enabled checks passed')
+
+  #############################################################################
+
+  def checkCPUConsumed(self):
+    """ Checks whether the CPU consumed is reasonable, taking Watchdog
+        process into account via calibration. This method will report stalled
+        jobs to be killed.
+    """
+    # to be implemented
     return S_OK()
+
+  #############################################################################
+
+  def convertCPUTime(self,cpu):
+    """ Method to convert the CPU time as returned from the Watchdog
+        instances to the equivalent DIRAC normalized CPU time to be compared
+        to the Job CPU requirements etc.
+    """
+    #Normalization to be implemented
+    return S_OK()
+
+  #############################################################################
+  def checkDiskSpace(self):
+    """Checks whether the CS defined minimum disk space is available.
+    """
+    if self.parameters.has_key('DiskSpace'):
+      availSpace = self.parameters['DiskSpace'][-1]
+      if availSpace < self.minDiskSpace:
+        self.info('Not enough local disk space for job to continue, defined in CS as %s MB' % (self.minDiskSpace))
+      else:
+        result = S_OK('Job has enough disk space available')
+    else:
+      return S_ERROR('Job has insufficient disk space to continue')
+
+  #############################################################################
+  def checkWallClockTime(self):
+    """Checks whether the job has been running for the CS defined maximum
+       wall clock time.
+    """
+    if self.initialValues.has_key('StartTime'):
+      startTime = self.initialValues['StartTime']
+      if time.time() - startTime > self.maxWallClockTime:
+        self.info('Job has exceeded maximum wall clock time of %s seconds' % (self.maxWallClockTime))
+      else:
+        result = S_OK('Job within maximum wall clock time')
+    else:
+      return S_ERROR('Job start time could not be established')
+
+  #############################################################################
+  def checkLoadAverage(self):
+    """Checks whether the CS defined maximum load average is exceeded.
+    """
+    if self.parameters.has_key('LoadAverage'):
+      loadAvg = self.parameters['LoadAverage'][-1]
+      if loadAvg > float(self.loadAvgLimit):
+        self.info('Maximum load average exceeded, defined in CS as %s ' % (self.loadAvgLimit))
+      else:
+        result = S_OK('Job running with normal load average')
+    else:
+      return S_ERROR('Job exceeded maximum load average')
+
+  #############################################################################
+  def peek(self):
+    """ Uses ExecutionThread.getOutput() method to obtain standard output
+        from running thread via subprocess callback function.
+    """
+    result = self.thread.getOutput()
+    if not result['OK']:
+      self.log.error('Could not obtain output from running application thread')
+      self.log.error(result['Message'])
+
+    return result
 
   #############################################################################
   def calibrate(self):
@@ -170,7 +319,9 @@ class Watchdog(Agent):
     """Force the Watchdog to complete gracefully.
     """
     self.log.info('Watchdog has completed monitoring of the task')
-    shellCall(5,'touch '+self.controlDir+'/stop_agent')
+    fd = open(self.controlDir+'/stop_agent','w')
+    fd.write('Watchdog Agent Stopped at %s' % (time.asctime()))
+    fd.close()
 
   #############################################################################
   def getUsageSummary(self):
@@ -182,7 +333,10 @@ class Watchdog(Agent):
     summary['CPUConsumed(secs)'] = cpuList[-1] # to do, the initial value should be subtracted
     #DiskSpace
     space = self.parameters['DiskSpace']
-    summary['DiskSpace(MB)'] = space[-1] - self.initialValues['DiskSpace']
+    value = space[-1] - self.initialValues['DiskSpace']
+    if value < 0:
+      value = 0
+    summary['DiskSpace(MB)'] = value
     #MemoryUsed
     memory = self.parameters['MemoryUsed']
     summary['MemoryUsed(bytes)'] = memory[-1] - self.initialValues['MemoryUsed']
@@ -225,10 +379,11 @@ class Watchdog(Agent):
     return result
 
   #############################################################################
-  def killRunningThread(self,thread):
+  def killRunningThread(self,spObject):
     """ Will kill the running thread process"""
     #To implement
     #thread.stop()
+    os.kill( spObject.child.pid, 0 )
     return S_OK()
 
   #############################################################################
