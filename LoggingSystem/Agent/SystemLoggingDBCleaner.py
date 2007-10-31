@@ -1,6 +1,6 @@
-"""  DB Cleaner erases records whose messageTime column contains a time
-     older 'RemoveDate' days, where 'RemoveDate' is an entry in the 
-     Configuration Service section of the agent.
+"""  SystemLoggingDBCleaner erases records whose messageTime column 
+     contains a time older than 'RemoveDate' days, where 'RemoveDate' 
+     is an entry in the Configuration Service section of the agent.
 """
 
 from DIRAC.Core.Base.Agent import Agent
@@ -10,7 +10,7 @@ from DIRAC.LoggingSystem.DB.SystemLoggingDB import SystemLoggingDB
 from DIRAC.Core.Utilities import dateTime, toString, day
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 
-AGENT_NAME = 'Logging/DBCleaner'
+AGENT_NAME = 'Logging/SystemLoggingDBCleaner'
 
 class DBCleaner(Agent):
 
