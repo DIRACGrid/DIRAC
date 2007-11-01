@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/WatchdogLinux.py,v 1.1 2007/10/29 17:36:13 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/WatchdogLinux.py,v 1.2 2007/11/01 20:05:59 paterson Exp $
 # Author: Stuart Paterson
 # eMail : Stuart.Paterson@cern.ch
 ########################################################################
@@ -20,12 +20,11 @@ import string,re
 
 class WatchdogLinux(Watchdog):
 
-  def __init__(self, pid, thread, systemFlag='linux2.4'):
+  def __init__(self, pid, thread, spObject, jobCPUtime,systemFlag='mac'):
     """ Constructor, takes system flag as argument.
     """
-    Watchdog.__init__(self,pid,thread,systemFlag)
+    Watchdog.__init__(self,pid,thread,spObject,jobCPUtime,systemFlag)
     self.systemFlag = systemFlag
-    self.thread = thread
     self.pid = pid
 
   ############################################################################
