@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/WatchdogMac.py,v 1.2 2007/11/01 20:04:59 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/WatchdogMac.py,v 1.3 2007/11/04 18:08:38 paterson Exp $
 # Author: Stuart Paterson
 # eMail : Stuart.Paterson@cern.ch
 ########################################################################
@@ -119,7 +119,10 @@ class WatchdogMac(Watchdog):
     if cpuDict['OK']:
       cpu = string.split(cpuDict['Value'][1]) [0]
       if re.search('.',cpu):
-        cpu = cpu.replace('.',':')
+        val = cpu.split('.')
+        secs = int(int(val[1])*60/100)
+        cpu = val[0]+':'+str(secs)
+
       result['Value'] = cpu
     else:
       result = S_ERROR('Could not obtain CPU consumed')
