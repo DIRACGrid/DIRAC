@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.3 2007/11/01 20:06:48 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.4 2007/11/04 18:07:44 paterson Exp $
 # File  : Watchdog.py
 # Author: Stuart Paterson
 ########################################################################
@@ -65,11 +65,13 @@ class Watchdog(Agent):
     self.jobPeekFlag      = gConfig.getValue(self.section+'/JobPeekFlag',1) # on / off
     self.minDiskSpace     = gConfig.getValue(self.section+'/MinDiskSpace',10) #MB
     self.loadAvgLimit     = gConfig.getValue(self.section+'/LoadAverageLimit',10) # > 10 and jobs killed
-    self.sampleCPUTime    = gConfig.getValue(self.section+'/CPUSampleTime',10*60) # e.g. up to 15mins sample
-    self.calibFactor      = gConfig.getValue(self.section+'/CPUFactor',2) # multiple of the cpu consumed during calibration
+    self.sampleCPUTime    = gConfig.getValue(self.section+'/CPUSampleTime',10*60) # e.g. up to 10mins sample
+    self.calibFactor      = gConfig.getValue(self.section+'/CPUFactor',0.5) # multiple of the cpu consumed during calibration
     self.heartbeatPeriod  = gConfig.getValue(self.section+'/HeartbeatPeriod',5) #mins
     self.jobCPUMargin     = gConfig.getValue(self.section+'/JobCPULimitMargin',10) # %age buffer before killing job
-    self.minCPUWallClockRatio  = gConfig.getValue(self.section+'/MinCPUWallClockRatio',5) #%age
+    self.peekOutputLines  = gConfig.getValue(self.section+'/PeekOutputLines',5) # regularly printed # lines (up to)
+    self.finalOutputLines = gConfig.getValue(self.section+'/FinalOutputLines',50) # lines to print after failure (up to)
+    self.minCPUWallClockRatio  = gConfig.getValue(self.section+'/MinCPUWallClockRatio',5) #ratio %age
     return result
 
   #############################################################################
@@ -79,7 +81,7 @@ class Watchdog(Agent):
     self.log.debug('------------------------------------')
     self.log.debug('Execution loop starts for Watchdog')
     if not self.thread.isAlive():
-      print self.parameters
+      #print self.parameters
       self.getUsageSummary()
       self.log.info('Process to monitor has completed, Watchdog will exit.')
       self.finish()
@@ -97,34 +99,37 @@ class Watchdog(Agent):
     msg += 'DiskSpace: %.1f MB ' % (result['Value'])
     self.parameters['DiskSpace'].append(result['Value'])
     result = self.getCPUConsumed(self.pid)
-    msg += 'WallClock: %.2f s ' % (result['Value'])
-    self.parameters['WallClockTime'].append(result['Value'])
-    self.log.info(msg)
     msg += 'CPU: %s (h:m:s) ' % (result['Value'])
     self.parameters['CPUConsumed'].append(result['Value'])
-    result = self.getWallClockTime()
     #Estimate Watchdog overhead
     if not self.watchdogCPU:
       self.watchdogCPU=result['Value']
 
+    result = self.getWallClockTime()
+    msg += 'WallClock: %.2f s ' % (result['Value'])
+    self.parameters['WallClockTime'].append(result['Value'])
+    self.log.info(msg)
+
     result = self.checkProgress()
     if not result['OK']:
-      self.log.error('Watchdog identified problem with running job')
+      self.log.error(result['Message'])
       if self.jobPeekFlag:
-        result = self.peek()
+        result = self.peek(self.finalOutputLines)
         if result['OK']:
           outputList = result['Value']
           size = len(outputList)
-          self.log.info('Last %s lines of application output:' % (size) )
+          self.log.info('Last %s lines of available application output:' % (size) )
+          self.log.info('================START================')
           for line in outputList:
             self.log.info(line)
 
+          self.log.info('=================END=================')
+
       self.killRunningThread(self.spObject)
       self.finish()
-      self.log.error(result['Message'])
 
     if self.jobPeekFlag:
-      result = self.peek()
+      result = self.peek(self.peekOutputLines)
       if result['OK']:
         outputList = result['Value']
         size = len(outputList)
@@ -151,6 +156,7 @@ class Watchdog(Agent):
       result = self.checkWallClockTime()
       report += 'WallClock: OK, '
       if not result['OK']:
+        self.log.error(result['Message'])
         return result
     else:
       report += 'WallClock: NA,'
@@ -159,6 +165,7 @@ class Watchdog(Agent):
       result = self.checkDiskSpace()
       report += 'DiskSpace: OK, '
       if not result['OK']:
+        self.log.error(result['Message'])
         return result
     else:
       report += 'DiskSpace: NA,'
@@ -167,6 +174,7 @@ class Watchdog(Agent):
       result = self.checkLoadAverage()
       report += 'LoadAverage: OK, '
       if not result['OK']:
+        self.log.error(result['Message'])
         return result
     else:
       report += 'LoadAverage: NA,'
@@ -183,6 +191,7 @@ class Watchdog(Agent):
       result = self.checkCPULimit()
       report += 'CPULimit OK. '
       if not result['OK']:
+        self.log.error(result['Message'])
         return result
     else:
       report += 'CPUConsumed: NA.'
@@ -206,23 +215,68 @@ class Watchdog(Agent):
       if not result['OK']:
         return result
 
+    cpuList=[]
     deltaFactor = self.calibration * self.calibFactor
-
     if self.parameters.has_key('CPUConsumed'):
-      cpuList = parameters['CPUConsumed']
+      cpuList = self.parameters['CPUConsumed']
     else:
       return S_ERROR('No CPU consumed in collected parameters')
 
     #First restrict cpuList to specified sample time interval
     #Return OK if time not reached yet
+    interval = self.pollingTime
+    sampleTime = self.sampleCPUTime
+    iterations = int(sampleTime/interval)
+    if len(cpuList) < iterations:
+      return S_OK('Job running for less than CPU sample time')
+    else:
+      cut = len(cpuList) - iterations
+      cpuList = cpuList[cut:]
 
     #Apply deltaFactor to CPU list
+    cpuSample = []
+    counter = 0
+    for value in cpuList:
+      counter+=1
+      valueTime = self.convertCPUTime(value)
+      if not valueTime['OK']:
+        return valueTime
 
-    #If average CPU consumed / WallClock for iterations less than X%
+      print valueTime
+      watchdogCPU = deltaFactor*(iterations+counter)
+      amendedCPU = float(valueTime['Value'] - watchdogCPU - self.initialValues['CPUConsumed'])
+      print amendedCPU
+      if amendedCPU > 0:
+        cpuSample.append(amendedCPU)
+      else:
+        self.log.debug('Found -ve cpu consumed')
+        msg = 'AmendedCPU: ',amendedCPU
+        msg += 'RawConsumCPU: ',valueTime['Value']
+        msg += ' WatchdogCPU: ',watchdogCPU
+        msg += ' InitialCPU: ',self.initialValues['CPUConsumed']
+        self.log.info(msg)
+        cpuSample.append(0.0)
+
+    #If total CPU consumed / WallClock for iterations less than X
     #can fail job.
 
-    # to be implemented
-    return S_OK()
+    totalCPUConsumed = 0.0
+    for i in cpuSample:
+      totalCPUConsumed+=i
+
+    ratio = float(totalCPUConsumed)/float(sampleTime)
+    limit = float( self.minCPUWallClockRatio * 0.01 )
+    self.log.debug('CPU consumed / Wallclock time ratio is %f' % (ratio))
+    #print ratio
+    #print limit
+    #print cpuSample
+    #print self.calibration
+    if ratio < limit:
+      self.log.info('CPU consumed during last %s seconds: ' % (sampleTime))
+      print cpuSample
+      return S_ERROR('Watchdog identified this job as stalled')
+
+    return S_OK('Job consuming CPU')
 
   #############################################################################
 
@@ -237,20 +291,12 @@ class Watchdog(Agent):
       return S_ERROR('Consumed CPU estimate cannot be made')
 
     watchdog = self.watchdogCPU
-    initial = self.initialValues['CPUConsumed']
+    initialCPU = self.initialValues['CPUConsumed']
 
-    initialCPU = 0
     watchCPU   = 0
-
-    initCPUDict = self.convertCPUTime(initial)
-    if initCPUDict['OK']:
-      initialCPU = initCPUDict['Value']
-    else:
-      return S_ERROR('Not possible to determine initial CPU consumed')
-
     currCPUDict = self.convertCPUTime(watchdog)
     if currCPUDict['OK']:
-      currentCPU = currCPUDict['Value']
+      watchCPU = currCPUDict['Value']
     else:
       return S_ERROR('Not possible to determine Watchdog CPU consumed')
 
@@ -260,7 +306,6 @@ class Watchdog(Agent):
       return S_OK('Calibration value established')
     else:
       return S_ERROR('Not possible to determine CPU calibration factor')
-
 
   #############################################################################
 
@@ -281,7 +326,7 @@ class Watchdog(Agent):
       cpuValue = float(hours+mins+secs)
     except Exception,x:
       self.log.error(str(x))
-      return S_ERROR()
+      return S_ERROR('Could not calculate CPU time')
 
     #Normalization to be implemented
     normalizedCPUValue = cpuValue
@@ -300,15 +345,9 @@ class Watchdog(Agent):
     initialCPU = 0
     currentCPU = 0
     if self.initialValues.has_key('CPUConsumed'):
-      initialCPUps = self.initialValues['CPUConsumed']
+      initialCPU = self.initialValues['CPUConsumed']
     if self.parameters.has_key('CPUConsumed'):
       currentCPUps = self.parameters['CPUConsumed'][-1]
-
-    initCPUDict = self.convertCPUTime(initialCPUps)
-    if initCPUDict['OK']:
-      initialCPU = initCPUDict['Value']
-    else:
-      return S_ERROR('Not possible to determine initial CPU consumed')
 
     currCPUDict = self.convertCPUTime(currentCPUps)
     if currCPUDict['OK']:
@@ -320,8 +359,10 @@ class Watchdog(Agent):
       limit = self.jobCPUtime + self.jobCPUtime * (self.jobCPUMargin / 100 )
       cpuConsumed = currentCPU-initialCPU
       if cpuConsumed > limit:
-        self.info('Job has consumed more than the specified CPU limit with an additional %s% margin' % (self.jobCPUMargin))
+        self.log.info('Job has consumed more than the specified CPU limit with an additional %s% margin' % (self.jobCPUMargin))
         return S_ERROR('Job has exceeded maximum CPU time limit')
+      else:
+        return S_OK('Job within CPU limit')
     else:
       return S_ERROR('Not possible to determine CPU consumed')
 
@@ -332,10 +373,10 @@ class Watchdog(Agent):
     if self.parameters.has_key('DiskSpace'):
       availSpace = self.parameters['DiskSpace'][-1]
       if availSpace < self.minDiskSpace:
-        self.info('Not enough local disk space for job to continue, defined in CS as %s MB' % (self.minDiskSpace))
+        self.log.info('Not enough local disk space for job to continue, defined in CS as %s MB' % (self.minDiskSpace))
         return S_ERROR('Job has insufficient disk space to continue')
       else:
-        result = S_OK('Job has enough disk space available')
+        return S_OK('Job has enough disk space available')
     else:
       return S_ERROR('Available disk space could not be established')
 
@@ -347,10 +388,10 @@ class Watchdog(Agent):
     if self.initialValues.has_key('StartTime'):
       startTime = self.initialValues['StartTime']
       if time.time() - startTime > self.maxWallClockTime:
-        self.info('Job has exceeded maximum wall clock time of %s seconds' % (self.maxWallClockTime))
+        self.log.info('Job has exceeded maximum wall clock time of %s seconds' % (self.maxWallClockTime))
         return S_ERROR('Job has exceeded maximum wall clock time')
       else:
-        result = S_OK('Job within maximum wall clock time')
+        return S_OK('Job within maximum wall clock time')
     else:
       return S_ERROR('Job start time could not be established')
 
@@ -361,18 +402,19 @@ class Watchdog(Agent):
     if self.parameters.has_key('LoadAverage'):
       loadAvg = self.parameters['LoadAverage'][-1]
       if loadAvg > float(self.loadAvgLimit):
-        self.info('Maximum load average exceeded, defined in CS as %s ' % (self.loadAvgLimit))
+        self.log.info('Maximum load average exceeded, defined in CS as %s ' % (self.loadAvgLimit))
         return S_ERROR('Job exceeded maximum load average')
       else:
-        result = S_OK('Job running with normal load average')
+        return S_OK('Job running with normal load average')
     else:
       return S_ERROR('Job load average not established')
 
   #############################################################################
-  def peek(self):
+  def peek(self,lines=0):
     """ Uses ExecutionThread.getOutput() method to obtain standard output
         from running thread via subprocess callback function.
     """
+
     result = self.thread.getOutput()
     if not result['OK']:
       self.log.error('Could not obtain output from running application thread')
@@ -395,7 +437,14 @@ class Watchdog(Agent):
       result = S_ERROR(msg)
       return result
 
-    self.initialValues['CPUConsumed']=result['Value']
+    initialCPU = 0
+    initCPUDict = self.convertCPUTime(result['Value'])
+    if initCPUDict['OK']:
+      initialCPU = initCPUDict['Value']
+    else:
+      return S_ERROR('Not possible to determine initial CPU consumed')
+
+    self.initialValues['CPUConsumed']=initialCPU
     self.parameters['CPUConsumed'] = []
 
     result = self.getLoadAverage()
@@ -515,10 +564,8 @@ class Watchdog(Agent):
   #############################################################################
   def killRunningThread(self,spObject):
     """ Will kill the running thread process"""
-    #To implement
-    #thread.stop()
     os.kill( spObject.child.pid, 0 )
-    return S_OK()
+    return S_OK('Thread killed')
 
   #############################################################################
   def sendSignOfLife(self):
