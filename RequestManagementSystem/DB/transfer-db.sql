@@ -79,6 +79,9 @@ CREATE TABLE FileToFTS (
   Status varchar(32) DEFAULT 'Submitted',
   Duration INTEGER DEFAULT 0,
   Retries INTEGER DEFAULT 0,
+  FileSize INTEGER NOT NULL,
+  SubmissionTime DATETIME,
+  TerminalTime DATETIME,
   Reason VARCHAR(255),
   PRIMARY KEY(FileID,FTSReqID)
 );
@@ -92,6 +95,8 @@ CREATE TABLE FTSReq (
   SubmitTime DATETIME NOT NULL,
   LastMonitor  DATETIME,
   PercentageComplete FLOAT DEFAULT 0.0,
+  NumberOfFiles INTEGER NOT NULL,
+  TotalSize INTEGER NOT NULL,
   Status varchar(32) DEFAULT 'Submitted',
   PRIMARY KEY(FTSReqID,FTSGUID)
 );
@@ -115,6 +120,15 @@ CREATE TABLE Channel (
   TargetSURL varchar(256) NOT NULL,
   SpaceToken varchar(32) NOT NULL,
   SubmitTime DATETIME NOT NULL,
+  FileSize INTEGER NOT NULL,
   Status varchar(32) NOT NULL,
   PRIMARY KEY(ChannelID,FileID)
 );
+
+DROP TABLE IF EXISTS FTSReqLogging;
+CREATE TABLE FTSReqLogging (
+  FTSReqID INTEGER NOT NULL,
+  Event varchar(100),
+  EventDateTime DATETIME,
+);
+  Ê
