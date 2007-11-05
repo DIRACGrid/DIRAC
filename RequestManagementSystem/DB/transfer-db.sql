@@ -129,6 +129,6 @@ DROP TABLE IF EXISTS FTSReqLogging;
 CREATE TABLE FTSReqLogging (
   FTSReqID INTEGER NOT NULL,
   Event varchar(100),
-  EventDateTime DATETIME,
+  EventDateTime DATETIME
 );
   Ê
