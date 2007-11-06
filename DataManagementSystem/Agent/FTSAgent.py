@@ -135,6 +135,14 @@ class FTSAgent(Agent):
       gLogger.error(errStr)
 
     #########################################################################
+    #  Insert the submission event in the FTSReqLogging table
+    event = 'Submitted'
+    res = self.TransferDB.addLoggingEvent(ftsReqID,event) 
+    if not res['OK']:
+      errStr = "FTSAgent.%s" % res['Message']     
+      gLogger.error(errStr)
+
+    #########################################################################
     #  Insert the FileToFTS details and remove the files from the channel          
     res = self.TransferDB.setFTSReqFiles(ftsReqID,fileIDs)
     if not res['OK']:
@@ -203,12 +211,14 @@ class FTSAgent(Agent):
     if not res['OK']:
       errStr = "FTSAgent.%s" % res['Message']
       gLogger.error(errStr)
-      return S_ERROR(errStr)
+    res = self.TransferDB.addLoggingEvent(ftsReqID,percentComplete)
+    if not res['OK']:
+      errStr = "FTSAgent.%s" % res['Message']
+      gLogger.error(errStr)
     res = self.TransferDB.setFTSReqLastMonitor(ftsReqID)
     if not res['OK']:
       errStr = "FTSAgent.%s" % res['Message']
       gLogger.error(errStr)
-      return S_ERROR(errStr)
 
     #########################################################################
     # Update the information in the TransferDB if the transfer is terminal.
@@ -261,9 +271,13 @@ class FTSAgent(Agent):
             gLogger.error(errStr)
             failed = True
       # Now set the FTSReq status to terminal so that it is not monitored again
-      if failed:
+      if not failed:
+        res = self.TransferDB.addLoggingEvent(ftsReqID,'Finished')
+        if not res['OK']:
+          errStr = "FTSAgent.%s" % res['Message']
+          gLogger.error(errStr)
+        res = self.TransferDB.setFTSReqStatus(ftsReqID,'Finished')
+      else:  
         infoStr = "FTSAgent.monitor: Updating attributes in FileToFTS table failed for some files. Will monitor again."
         gLogger.info(infoStr) 
-      else:   
-        res = self.TransferDB.setFTSReqStatus(ftsReqID,'Finished')
     return S_OK()
