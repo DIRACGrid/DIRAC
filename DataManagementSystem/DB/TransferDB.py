@@ -1,6 +1,5 @@
 """ RequestDB is a front end to the Request Database.
 """
-
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities.List import randomize,stringListToString,intListToString
@@ -145,7 +144,7 @@ class TransferDB(DB):
     resDict['TargetSE'] = res['Value']
     return S_OK(resDict)
 
-  def addFileToChannel(self,channelID,fileID,sourceSURL,targetSURL,spaceToken):
+  def addFileToChannel(self,channelID,fileID,sourceSURL,targetSURL,fileSize,spaceToken,fileStatus='Waiting'):
     res = self.checkFileChannelExists(channelID, fileID)
     if not res['OK']:
       err = 'TransferDB._addFileToChannel: Failed check existance of File %s on Channel %s.' % (fileID,channelID)
@@ -153,7 +152,7 @@ class TransferDB(DB):
     if res['Value']:
       err = 'TransferDB._addFileToChannel: File %s already exists on Channel %s.' % (fileID,channelID)
       return S_ERROR(err)
-    req = "INSERT INTO Channel (ChannelID,FileID,SourceSURL,TargetSURL,SpaceToken,SubmitTime,Status) VALUES (%s,%s,'%s','%s','%s',NOW(),'Waiting');" % (channelID,fileID,sourceSURL,targetSURL,spaceToken)
+    req = "INSERT INTO Channel (ChannelID,FileID,SourceSURL,TargetSURL,SpaceToken,SubmitTime,FileSize,Status) VALUES (%s,%s,'%s','%s','%s',NOW(),%s,'%s');" % (channelID,fileID,sourceSURL,targetSURL,spaceToken,fileSize,fileStatus)
     res = self._update(req)
     if not res['OK']:
       err = 'TransferDB._addFileToChannel: Failed to insert File %s to Channel %s.' % (fileID,channelID)
@@ -218,7 +217,7 @@ class TransferDB(DB):
     if not res['Value']:
       return S_OK()
     spaceToken = res['Value'][0][0]
-    req = "SELECT FileID,SourceSURL,TargetSURL FROM Channel WHERE ChannelID = %s AND Status = 'Waiting' AND SpaceToken = '%s' ORDER BY SubmitTime LIMIT %s;" % (channelID,spaceToken,numberOfFiles)
+    req = "SELECT FileID,SourceSURL,TargetSURL,FileSize FROM Channel WHERE ChannelID = %s AND Status = 'Waiting' AND SpaceToken = '%s' ORDER BY SubmitTime LIMIT %s;" % (channelID,spaceToken,numberOfFiles)
     res = self._query(req)
     if not res['OK']:
       err = "TransferDB.getFilesForChannel: Failed to get files for Channel %s." % channelID
@@ -227,14 +226,14 @@ class TransferDB(DB):
       return S_OK()
     resDict = {'SpaceToken':spaceToken}
     files = []
-    for fileID,sourceSURL,targetSURL in res['Value']:
+    for fileID,sourceSURL,targetSURL,size in res['Value']:
       req = "SELECT LFN from Files WHERE FileID = %s;" % fileID
       res = self._query(req)
       if not res['OK']:
         err = "TransferDB.getFilesForChannel: Failed to get LFN for File %s." % fileID
         return S_ERROR('%s\n%s' % (err,res['Message']))
       lfn = res['Value'][0][0]
-      files.append({'FileID':fileID,'SourceSURL':sourceSURL,'TargetSURL':targetSURL,'LFN':lfn})
+      files.append({'FileID':fileID,'SourceSURL':sourceSURL,'TargetSURL':targetSURL,'LFN':lfn,'Size':size})
     resDict['Files'] = files
     return S_OK(resDict)
 
@@ -243,7 +242,7 @@ class TransferDB(DB):
 
   def insertFTSReq(self,ftsGUID,ftsServer,channelID):
     self.getIdLock.acquire()
-    req = "INSERT INTO FTSReq (FTSGUID,FTSServer,ChannelID,SubmitTime) VALUES ('%s','%s',%s,NOW());" % (ftsGUID,ftsServer,channelID)
+    req = "INSERT INTO FTSReq (FTSGUID,FTSServer,ChannelID,SubmitTime,LastMonitor) VALUES ('%s','%s',%s,NOW(),NOW());" % (ftsGUID,ftsServer,channelID)
     res = self._update(req)
     if not res['OK']:
       self.getIdLock.release()
@@ -372,3 +371,13 @@ class TransferDB(DB):
       return S_ERROR('%s\n%s' % (err,res['Message']))
     return res
 
+  #################################################################################
+  # These are the methods for managing the FTSReqLogging table
+
+  def addLoggingEvent(self,ftsReqID,event):
+    req = "INSERT INTO FTSReqLogging (FTSReqID,Event,EventDateTime) VALUES (%s,'%s',NOW());" % (ftsReqID,event)
+    res = self._update(req)
+    if not res['OK']:
+      err = "TransferDB._addLoggingEvent: Failed to add logging event to FTSReq %s" % ftsReqID
+      return S_ERROR(err)
+    return res 
