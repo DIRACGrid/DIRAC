@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.15 2007/10/02 14:08:18 acasajus Exp $
-__RCSID__ = "$Id: Logger.py,v 1.15 2007/10/02 14:08:18 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.16 2007/11/06 20:26:35 acasajus Exp $
+__RCSID__ = "$Id: Logger.py,v 1.16 2007/11/06 20:26:35 acasajus Exp $"
 """
    DIRAC Logger client
 """
@@ -31,7 +31,7 @@ class Logger:
   def initialized( self ):
     return not self._systemName == False
 
-  def __registerBackends( self, desiredBackends ):
+  def registerBackends( self, desiredBackends ):
     self._backendsDict = {}
     for backend in desiredBackends:
       backend = backend.lower()
@@ -44,7 +44,7 @@ class Logger:
   def __preinitialize ( self ):
     self._systemName = "Framework"
     self.cfgPath = "/"
-    self.__registerBackends( [ 'stdout' ] )
+    self.registerBackends( [ 'stdout' ] )
     self._minLevel = self._logLevels.getLevelValue( "INFO" )
 
   def initialize( self, systemName, cfgPath ):
@@ -57,7 +57,7 @@ class Logger:
         desiredBackendList = [ 'stdout' ]
       else:
         desiredBackendList = List.fromChar( retDict[ 'Value' ], ","  )
-      self.__registerBackends( desiredBackendList )
+      self.registerBackends( desiredBackendList )
       #Configure verbosity
       retDict = gConfig.getOption( "%s/LogLevel" % cfgPath )
       if not retDict[ 'OK' ]:
