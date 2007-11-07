@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ServiceInterface.py,v 1.7 2007/11/07 16:08:37 acasajus Exp $
-__RCSID__ = "$Id: ServiceInterface.py,v 1.7 2007/11/07 16:08:37 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ServiceInterface.py,v 1.8 2007/11/07 16:47:03 acasajus Exp $
+__RCSID__ = "$Id: ServiceInterface.py,v 1.8 2007/11/07 16:47:03 acasajus Exp $"
 
 import sys
 import os
@@ -119,9 +119,9 @@ class ServiceInterface( threading.Thread ):
     gConfigurationData.loadRemoteCFGFromCompressedMem( sBuffer )
     gConfigurationData.generateNewVersion()
     #self.__checkSlavesStatus( forceWriteConfiguration = True )
-    gConfigurationData.writeRemoteConfigurationToDisk( "%s@%s" % ( commiterDN, gConfigurationData.getVersion() ) )
+    retVal = gConfigurationData.writeRemoteConfigurationToDisk( "%s@%s" % ( commiterDN, gConfigurationData.getVersion() ) )
     gConfigurationData.unlock()
-    return S_OK()
+    return retVal
 
   def getCompressedConfigurationData( self ):
     return gConfigurationData.getCompressedData()

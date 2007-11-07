@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationData.py,v 1.10 2007/11/07 16:08:37 acasajus Exp $
-__RCSID__ = "$Id: ConfigurationData.py,v 1.10 2007/11/07 16:08:37 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationData.py,v 1.11 2007/11/07 16:47:03 acasajus Exp $
+__RCSID__ = "$Id: ConfigurationData.py,v 1.11 2007/11/07 16:47:03 acasajus Exp $"
 
 import os.path
 import zlib
@@ -305,7 +305,9 @@ class ConfigurationData:
     except:
       gLogger.fatal( "Cannot write new configuration to disk!",
                      "file %s" % configurationFile )
+      return S_ERROR( "Can't write cs file %s!: %s" % ( configurationFile, str( e ) ) )
     self.__backupCurrentConfiguration( backupName )
+    return S_OK()
 
   def lock(self):
     """
