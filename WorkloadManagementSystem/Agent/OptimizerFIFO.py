@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/OptimizerFIFO.py,v 1.4 2007/06/27 15:22:41 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/OptimizerFIFO.py,v 1.5 2007/11/07 17:26:47 paterson Exp $
 ########################################################################
 
 """  Optimizer FIFO is the simplest job validation optimizer
@@ -34,7 +34,7 @@ class OptimizerFIFO(Agent):
     """ The main agent execution method
     """
 
-    result = self.jobDB.selectJobWithStatus('received')
+    result = self.jobDB.selectJobWithStatus('checked')
     if not result['OK']:
       self.log.error('Failed to get a job list from the JobDB')
       return S_ERROR('Failed to get a job list from the JobDB')
