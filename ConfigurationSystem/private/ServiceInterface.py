@@ -1,11 +1,13 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ServiceInterface.py,v 1.6 2007/05/22 18:49:38 acasajus Exp $
-__RCSID__ = "$Id: ServiceInterface.py,v 1.6 2007/05/22 18:49:38 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ServiceInterface.py,v 1.7 2007/11/07 16:08:37 acasajus Exp $
+__RCSID__ = "$Id: ServiceInterface.py,v 1.7 2007/11/07 16:08:37 acasajus Exp $"
 
 import sys
 import os
 import time
 import re
 import threading
+import zipfile
+import zlib
 import DIRAC
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData, ConfigurationData
 from DIRAC.ConfigurationSystem.private.Refresher import gRefresher
@@ -93,12 +95,14 @@ class ServiceInterface( threading.Thread ):
   def getCompressedConfiguration( self ):
     sData = gConfigurationData.getCompressedData()
 
-  def updateConfiguration( self, sBuffer, commiterDN = "" ):
+  def updateConfiguration( self, sBuffer, commiterDN = "", updateVersionOption = False ):
     if not gConfigurationData.isMaster():
       return S_ERROR( "Configuration modification is not allowed in this server" )
     #Load the data in a ConfigurationData object
     oRemoteConfData = ConfigurationData( False )
     oRemoteConfData.loadRemoteCFGFromCompressedMem( sBuffer )
+    if updateVersionOption:
+      oRemoteConfData.setVersion( gConfigurationData.getVersion() )
     #Test that remote and new versions are the same
     sRemoteVersion = oRemoteConfData.getVersion()
     sLocalVersion = gConfigurationData.getVersion()
@@ -115,7 +119,7 @@ class ServiceInterface( threading.Thread ):
     gConfigurationData.loadRemoteCFGFromCompressedMem( sBuffer )
     gConfigurationData.generateNewVersion()
     #self.__checkSlavesStatus( forceWriteConfiguration = True )
-    gConfigurationData.writeRemoteConfigurationToDisk( "%s@%s" % ( commiterDN, sLocalVersion ) )
+    gConfigurationData.writeRemoteConfigurationToDisk( "%s@%s" % ( commiterDN, gConfigurationData.getVersion() ) )
     gConfigurationData.unlock()
     return S_OK()
 
@@ -130,7 +134,7 @@ class ServiceInterface( threading.Thread ):
     files.sort( reverse = True )
     confName = gConfigurationData.getName()
     rs = re.compile( "^%s\..+@.+\.zip$" % confName )
-    backups = [ file.split( "." )[1].split( "@" ) for file in files if rs.search( file ) ]
+    backups = [ ".".join( file.split( "." )[1:3] ).split( "@" ) for file in files if rs.search( file ) ]
     return backups
 
   def run( self ):
@@ -139,3 +143,16 @@ class ServiceInterface( threading.Thread ):
       time.sleep( iWaitTime )
       self.__checkSlavesStatus()
 
+  def getVersionContents( self, date ):
+    files = os.listdir( "%s/etc" % DIRAC.rootPath )
+    confName = gConfigurationData.getName()
+    rs = re.compile( "^%s\..+@%s.*\.zip$" % ( confName, date ) )
+    for fileName in files:
+      if rs.search( fileName ):
+        zFile = zipfile.ZipFile( "%s/etc/%s" % ( DIRAC.rootPath, fileName ), "r" )
+        cfgName = zFile.namelist()[0]
+        #retVal = S_OK( zlib.compress( str( fd.read() ), 9 ) )
+        retVal = S_OK(zlib.compress( zFile.read( cfgName ) , 9 ) )
+        zFile.close()
+        return retVal
+    return S_ERROR( "Version %s does not exist" % date )

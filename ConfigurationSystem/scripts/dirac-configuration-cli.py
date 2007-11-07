@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/scripts/dirac-configuration-cli.py,v 1.1 2007/05/22 18:49:38 acasajus Exp $
-__RCSID__ = "$Id: dirac-configuration-cli.py,v 1.1 2007/05/22 18:49:38 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/scripts/dirac-configuration-cli.py,v 1.2 2007/11/07 16:08:37 acasajus Exp $
+__RCSID__ = "$Id: dirac-configuration-cli.py,v 1.2 2007/11/07 16:08:37 acasajus Exp $"
 
 import cmd
 import sys
@@ -463,7 +463,7 @@ class CSCLI( cmd.Cmd ):
     Usage: showDiffWithServer
     """
     try:
-      diffData = self.modificator.showDiff()
+      diffData = self.modificator.showCurrentDiff()
       print "Diff with latest from server ( + local - remote )"
       for line in diffData:
         if line[0] in ( '-' ):
@@ -474,6 +474,57 @@ class CSCLI( cmd.Cmd ):
           print colorize( line, "yellow" ),
         else:
           print line
+    except Exception, v:
+      self.showTraceback()
+
+  def do_showDiffBetweenVersions( self, args ):
+    """
+    Shows diff between two versions
+    Usage: showDiffBetweenVersions <version 1 with spaces> <version 2 with spaces>
+    """
+    try:
+      argsList = args.split()
+      if len( argsList ) < 4:
+        print "What are the two versions to compare?"
+        return
+      v1 = " ".join ( argsList[0:2] )
+      v2 = " ".join ( argsList[2:4] )
+      print "Comparing '%s' with '%s' " % ( v1, v2 )
+      diffData = self.modificator.getVersionDiff( v1, v2 )
+      print "Diff with latest from server ( + %s - %s )" % ( v2, v1 )
+      for line in diffData:
+        if line[0] in ( '-' ):
+          print colorize( line, "red" )
+        elif line[0] in ( '+' ):
+          print colorize( line, "green" )
+        elif line[0] in ( '?' ):
+          print colorize( line, "yellow" ),
+        else:
+          print line
+    except Exception, v:
+      self.showTraceback()
+
+  def do_rollbackToVersion( self, args ):
+    """
+    rolls back to user selected version of the configuration
+    Usage: rollbackToVersion <version with spaces>>
+    """
+    try:
+      argsList = args.split()
+      if len( argsList ) < 2:
+        print "What version to rollback?"
+        return
+      version = " ".join ( argsList[0:2] )
+      choice = raw_input( "Do you really want to rollback to version %s? yes/no [no]: " % version)
+      choice = choice.lower()
+      if choice in ( "yes", "y" ):
+        response = self.modificator.rollbackToVersion( version )
+        if response[ 'OK' ]:
+          self.modifiedData = False
+          print "Rolled back."
+          self.modificator.loadFromRemote()
+        else:
+          print "Error sending data, server said: %s" % response['Message']
     except Exception, v:
       self.showTraceback()
 

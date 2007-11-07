@@ -1,8 +1,9 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationData.py,v 1.9 2007/10/04 12:54:25 acasajus Exp $
-__RCSID__ = "$Id: ConfigurationData.py,v 1.9 2007/10/04 12:54:25 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationData.py,v 1.10 2007/11/07 16:08:37 acasajus Exp $
+__RCSID__ = "$Id: ConfigurationData.py,v 1.10 2007/11/07 16:08:37 acasajus Exp $"
 
 import os.path
 import zlib
+import zipfile
 import threading
 import time
 import DIRAC
@@ -153,6 +154,7 @@ class ConfigurationData:
   def generateNewVersion( self ):
     self.setVersion( Time.toString() )
     self.sync()
+    gLogger.info( "Generated new version %s" % self.getVersion() )
 
   def setVersion( self, version, cfg = False ):
     if not cfg:
@@ -278,12 +280,12 @@ class ConfigurationData:
     fd.write( str( self.remoteCFG ) )
     fd.close()
 
-  def writeRemoteConfigurationToDisk( self, backupName = False ):
-    import zipfile
+  def __backupCurrentConfiguration( self, backupName = False ):
     if not backupName:
       backupName = self.getVersion()
     configurationFile = "%s/etc/%s.cfg" % ( DIRAC.rootPath, self.getName() )
     backupFile = configurationFile.replace( ".cfg", ".%s.zip" % backupName )
+    gLogger.info( "Making a backup of configuration in %s" % backupFile )
     if os.path.isfile( configurationFile ):
       try:
         zf = zipfile.ZipFile( backupFile, "w", zipfile.ZIP_DEFLATED );
@@ -293,6 +295,9 @@ class ConfigurationData:
         gLogger.exception()
         gLogger.error( "Cannot backup configuration data file",
                      "file %s" % backupFile )
+
+  def writeRemoteConfigurationToDisk( self, backupName = False ):
+    configurationFile = "%s/etc/%s.cfg" % ( DIRAC.rootPath, self.getName() )
     try:
       fd = open( configurationFile, "w" )
       fd.write( str( self.remoteCFG ) )
@@ -300,6 +305,7 @@ class ConfigurationData:
     except:
       gLogger.fatal( "Cannot write new configuration to disk!",
                      "file %s" % configurationFile )
+    self.__backupCurrentConfiguration( backupName )
 
   def lock(self):
     """

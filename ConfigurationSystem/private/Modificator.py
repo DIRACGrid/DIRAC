@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Modificator.py,v 1.5 2007/10/24 19:07:28 acasajus Exp $
-__RCSID__ = "$Id: Modificator.py,v 1.5 2007/10/24 19:07:28 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Modificator.py,v 1.6 2007/11/07 16:08:37 acasajus Exp $
+__RCSID__ = "$Id: Modificator.py,v 1.6 2007/11/07 16:08:37 acasajus Exp $"
 
 import zlib
 import difflib
@@ -121,7 +121,7 @@ class Modificator:
       return True
     else:
       return False
-    
+
   def copyKey( self, originalKeyPath, newKey ):
     parentCfg = self.cfgData.getRecursive( originalKeyPath, -1 )
     if not parentCfg:
@@ -178,12 +178,20 @@ class Modificator:
       return retVal[ 'Value' ]
     return []
 
-  def showDiff( self ):
+  def showCurrentDiff( self ):
     retVal = self.rpcClient.getCompressedData()
     if retVal[ 'OK' ]:
       remoteData = zlib.decompress( retVal[ 'Value' ] ).splitlines()
       localData = str( self.cfgData ).splitlines()
       return difflib.ndiff( remoteData, localData )
+    return []
+
+  def getVersionDiff( self, fromDate, toDate ):
+    retVal = self.rpcClient.getVersionContents( [ fromDate, toDate ] )
+    if retVal[ 'OK' ]:
+      fromData = zlib.decompress( retVal[ 'Value' ][0] )
+      toData = zlib.decompress( retVal[ 'Value' ][1] )
+      return difflib.ndiff( fromData.split( "\n" ), toData.split( "\n" ) )
     return []
 
   def mergeWithServer( self ):
@@ -195,3 +203,6 @@ class Modificator:
       self.cfgData = remoteCFG.mergeWith( self.cfgData )
       gConfigurationData.setVersion( serverVersion, self.cfgData )
     return retVal
+
+  def rollbackToVersion( self, version ):
+    return self.rpcClient.rollbackToVersion( version )

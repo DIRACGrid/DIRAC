@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Service/ConfigurationHandler.py,v 1.5 2007/05/22 18:49:38 acasajus Exp $
-__RCSID__ = "$Id: ConfigurationHandler.py,v 1.5 2007/05/22 18:49:38 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Service/ConfigurationHandler.py,v 1.6 2007/11/07 16:08:37 acasajus Exp $
+__RCSID__ = "$Id: ConfigurationHandler.py,v 1.6 2007/11/07 16:08:37 acasajus Exp $"
 import types
 from DIRAC.ConfigurationSystem.private.ServiceInterface import ServiceInterface
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -56,3 +56,23 @@ class ConfigurationHandler( RequestHandler ):
       history = history[ :limit ]
     return S_OK( history )
 
+  types_getVersionContents = [ types.ListType ]
+  def export_getVersionContents( self, versionList ):
+    contentsList = []
+    for version in versionList:
+      retVal = gServiceInterface.getVersionContents( version )
+      if retVal[ 'OK' ]:
+        contentsList.append( retVal[ 'Value' ] )
+      else:
+        return S_ERROR( "Can't get contents for version %s: %s" % ( version, retVal[ 'Message' ] ) )
+    return S_OK( contentsList )
+
+  types_rollbackToVersion = [ types.StringType ]
+  def export_rollbackToVersion( self, version ):
+    retVal = gServiceInterface.getVersionContents( version )
+    if not retVal[ 'OK' ]:
+      return S_ERROR( "Can't get contents for version %s: %s" % ( version, retVal[ 'Message' ] ) )
+    credDict = self.getRemoteCredentials()
+    if not 'DN' in credDict or not 'username' in credDict:
+      return S_ERROR( "You must be authenticated!" )
+    return gServiceInterface.updateConfiguration( retVal[ 'Value' ] , credDict[ 'username' ], updateVersionOption = True )
