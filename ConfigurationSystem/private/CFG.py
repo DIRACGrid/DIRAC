@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Attic/CFG.py,v 1.9 2007/10/24 19:07:28 acasajus Exp $
-__RCSID__ = "$Id: CFG.py,v 1.9 2007/10/24 19:07:28 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Attic/CFG.py,v 1.10 2007/11/07 15:39:09 acasajus Exp $
+__RCSID__ = "$Id: CFG.py,v 1.10 2007/11/07 15:39:09 acasajus Exp $"
 
 import types
 import copy
@@ -51,6 +51,9 @@ class CFG:
       self.__orderedList.append( entryName )
     self.__commentDict[ entryName ] = comment
 
+  def existsKey( self, key ):
+    return key in self.__orderedList
+
   def deleteKey( self, entryName ):
     if entryName in self.__orderedList:
       del( self.__commentDict[ entryName ] )
@@ -59,7 +62,7 @@ class CFG:
       del( self.__orderedList[ pos ] )
       return True
     return False
-  
+
   def copyKey( self, oldKey, newKey ):
     if oldKey in self.__orderedList:
       self.__dataDict[ newKey ] = copy.copy( self.__dataDict[ oldKey ] )
@@ -81,7 +84,7 @@ class CFG:
       return [ sKey for sKey in self.__dataDict.keys() if type( self.__dataDict[ sKey ] ) != types.StringType ]
 
   def isSection( self, sKey ):
-    return type( self.__dataDict[ sKey ] ) != types.StringType 
+    return type( self.__dataDict[ sKey ] ) != types.StringType
 
   def listAll( self ):
     return self.__orderedList
@@ -122,7 +125,7 @@ class CFG:
     else:
       refKeyPos = self.__orderedList.index( beforeKey )
       self.__orderedList.insert( refKeyPos + 1, key )
-      
+
   def renameKey( self, oldName, newName ):
     if oldName in self.__dataDict:
       self.__dataDict[ newName ] = self.__dataDict[ oldName ]
