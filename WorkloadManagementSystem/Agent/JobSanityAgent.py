@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSanityAgent.py,v 1.2 2007/11/07 15:23:44 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSanityAgent.py,v 1.3 2007/11/07 17:25:19 paterson Exp $
 # File :   JobSanityAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,7 +13,7 @@
        - Input sandbox not correctly uploaded.
 """
 
-__RCSID__ = "$Id: JobSanityAgent.py,v 1.2 2007/11/07 15:23:44 paterson Exp $"
+__RCSID__ = "$Id: JobSanityAgent.py,v 1.3 2007/11/07 17:25:19 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.DB.JobDB        import JobDB
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight      import ClassAd
@@ -113,7 +113,6 @@ class JobSanityAgent(Agent):
 
     if not result['OK']:
       self.log.error('Error retrieving job information from JobDB')
-      print result
       return result
 
     jobs = result['Value']
@@ -121,8 +120,9 @@ class JobSanityAgent(Agent):
       jobAttributes = self.jobDB.getAllJobAttributes(job)
       if jobAttributes['OK']:
         timeDict = jobAttributes['Value']
+        print timeDict
         if timeDict:
-          subTime = timeDict['SubmissionDate']+'T'+timeDict['SubmissionTime']
+          subTime = timeDict['SubmissionTime'].replace(' ','T')
           timeTuple = time.strptime(subTime,"%Y-%m-%dT%H:%M:%S")
           submissionTime = time.mktime(timeTuple)
           currentTime = time.time()
@@ -149,7 +149,7 @@ class JobSanityAgent(Agent):
 
      #Job JDL check
     message = 'Job: '+str(job)+' '
-    self.debug('Checking Loop Starts for job: '+str(job))
+    self.log.debug('Checking Loop Starts for job: '+str(job))
     checkJDL = self.checkJDL(job)
     if checkJDL['OK']:
       message+='JDL: OK, '
@@ -157,11 +157,11 @@ class JobSanityAgent(Agent):
       res = 'Job: '+str(job)+' Failed JDL check.'
       minorStatus = checkJDL['Value']
       self.updateJobStatus(job,'failed',minorStatus)
-      self.info(res)
+      self.log.info(res)
       return
 
     jdl = checkJDL['JDL']
-    classadJob = Classad.Classad(jdl)
+    classadJob = ClassAd('['+jdl+']')
    # jobType = classadJob.get_expression('JobType').replace('"','')
 
     #Input data check
@@ -174,8 +174,8 @@ class JobSanityAgent(Agent):
         res = 'Job: '+str(job)+' Failed input data check.'
         minorStatus = inputData['Value']
         self.updateJobStatus(job,'failed',minorStatus)
-        self.info(message)
-        self.info(res)
+        self.log.info(message)
+        self.log.info(res)
         return
 
     #Platform check
@@ -188,8 +188,8 @@ class JobSanityAgent(Agent):
         res = 'No supported platform for job '+str(job)+'.'
         minorStatus = platform['Value']
         self.updateJobStatus(job,'failed',minorStatus)
-        self.info(message)
-        self.info(res)
+        self.log.info(message)
+        self.log.info(res)
         return
 
     #Output data exists check
@@ -202,7 +202,7 @@ class JobSanityAgent(Agent):
             minorStatus = outputData['SUCCESS']
             report = outputData['Value']
             message += report
-            self.info(message)
+            self.log.info(message)
             self.setJobParam(job,'JobSanityCheck',message)
             self.updateJobStatus(job,success,minorStatus)
             return
@@ -213,8 +213,8 @@ class JobSanityAgent(Agent):
           res = 'Job: '+str(job)+' Failed since output data exists.'
           minorStatus=outputData['Value']
           self.updateJobStatus(job,'failed', minorStatus)
-          self.info(message)
-          self.info(res)
+          self.log.info(message)
+          self.log.info(res)
           return
 
     #Input Sandbox uploaded check
@@ -227,12 +227,12 @@ class JobSanityAgent(Agent):
         res = 'Job: '+str(job)+' Failed since input sandbox not uploaded.'
         minorStatus=inputSandbox['Value']
         self.updateJobStatus(job,'failed', minorStatus)
-        self.info(message)
-        self.info(res)
+        self.log.info(message)
+        self.log.info(res)
         return
 
     success = self.finalJobState
-    self.info(message)
+    self.log.info(message)
     self.setJobParam(job,'JobSanityCheck',message)
     self.updateJobStatus(job,success)
 
@@ -242,10 +242,10 @@ class JobSanityAgent(Agent):
     """This method updates the job status in the JobDB.
     """
     self.log.debug("self.jobDB.setJobAttribute("+str(job)+",Status,"+status+" update=True)")
-    self.jobDB.setJobAttribute(job,'Status',status, update=True)
+   # self.jobDB.setJobAttribute(job,'Status',status, update=True)
     if minorstatus:
       self.log.debug("self.jobDB.setJobAttribute("+str(job)+","+minorstatus+",update=True)")
-      self.jobDB.setJobAttribute(job,'ApplicationStatus',minorstatus,update=True)
+    #  self.jobDB.setJobAttribute(job,'ApplicationStatus',minorstatus,update=True)
 
   #############################################################################
   def setJobParam(self,job,reportName,value):
@@ -260,20 +260,28 @@ class JobSanityAgent(Agent):
     """
     jobID = str(job)
     self.log.debug("Checking JDL for job: "+jobID)
-    retVal = self.jobDB.getJobParameters(jobID,['JDL'])
-    if not retVal:
+    retVal = self.jobDB.getJobJDL(jobID)
+    if not retVal['OK']:    
+      self.log.warn(retVal['Message'])
+      retVal = self.jobDB.getJobJDL(jobID,original=True)
+      self.log.warn('Could not get current JDL from JobDB, trying original')      
+      if not retVal['OK']:
+        self.log.warn(retVal['Message'])  
+
+    if not retVal['OK']:
       result = S_ERROR()
-      result['Value'] = "Job not found in JobDB"
+      result['Value'] = "Job JDL not found in JobDB"
       return result
 
-    jdl = retVal['Value']['JDL']
+    jdl = retVal['Value'] 
+      
     if not jdl:
       self.log.debug("Warning: JDL not found for job "+jobID+", job will be marked problematic")
       result = S_ERROR()
       result['Value'] = "Job JDL Not Found"
       return result
 
-    classadJob = Classad.Classad(jdl)
+    classadJob = ClassAd('['+jdl+']')
     if not classadJob.isOK():
       self.log.debug("Warning: illegal JDL for job"+jobID+", job will be marked problematic")
       result = S_ERROR()
@@ -290,7 +298,7 @@ class JobSanityAgent(Agent):
        supported by DIRAC and will check these against what
        the job requests.
     """
-    classadJob = Classad.Classad(jdl)
+    classadJob = ClassAd('['+jdl+']')
     architecture = classadJob.get_expression("CompatiblePlatforms").replace('"','')
     if not architecture:
       result = S_OK()
@@ -325,7 +333,7 @@ class JobSanityAgent(Agent):
       dbCount = result['Value'][0][0]
       self.log.debug('Found '+str(dbCount)+' files in DB for job '+str(job))
 
-      classadJob = Classad.Classad(jdl)
+      classadJob = ClassAd('['+jdl+']')
       sandbox = ClassAddStringListToPythonList(classadJob.get_expression("InputSandbox"))
       if self.dbg:
         print sandbox
