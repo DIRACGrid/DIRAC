@@ -36,7 +36,9 @@ class AuthManager:
   def getValidGroupsForMethod( self, method ):
     authGroups = gConfig.getValue( "%s/%s" % ( self.authSection, method ), [] )
     if not authGroups:
-      authGroups = gConfig.getValue( "%s/Default" % self.authSection, [] )
+      defaultPath = "%s/Default" % "/".join( method.split( "/" )[:-1] )
+      gLogger.verbose( "Method %s has no groups defined, trying %s" % ( method, defaultPath ) )
+      authGroups = gConfig.getValue( "%s/%s" % ( self.authSection, defaultPath ), [] )
     return authGroups
 
   def forwardedCredentials( self, credDict ):
