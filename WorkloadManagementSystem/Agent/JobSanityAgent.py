@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSanityAgent.py,v 1.1 2007/11/07 14:26:28 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSanityAgent.py,v 1.2 2007/11/07 15:23:44 paterson Exp $
 # File :   JobSanityAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,7 +13,7 @@
        - Input sandbox not correctly uploaded.
 """
 
-__RCSID__ = "$Id: JobSanityAgent.py,v 1.1 2007/11/07 14:26:28 paterson Exp $"
+__RCSID__ = "$Id: JobSanityAgent.py,v 1.2 2007/11/07 15:23:44 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.DB.JobDB        import JobDB
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight      import ClassAd
@@ -53,11 +53,11 @@ class JobSanityAgent(Agent):
     self.platformCheck     = gConfig.getValue(self.section+'/PlatformCheck',1)
     #Other parameters
     self.pollingTime     = gConfig.getValue(self.section+'/PollingTime',60)
-    self.initialJobState = gConfig.getValue(self.section,'/InitialJobStatus','received')
-    self.finalJobState   = gConfig.getValue(self.section,'/FinalJobStatus','checked')
-    self.successStatus   = gConfig.getValue(self.section,'/SuccessfulJobStatus','outputready')
-    self.maxDataPerJob   = gConfig.getValue(self.section,'/MaxInputDataPerJob',200)
-    self.jobCheckDelay   = gConfig.getValue(self.section,'/JobCheckingDelay',10)
+    self.initialJobState = gConfig.getValue(self.section+'/InitialJobStatus','received')
+    self.finalJobState   = gConfig.getValue(self.section+'/FinalJobStatus','checked')
+    self.successStatus   = gConfig.getValue(self.section+'/SuccessfulJobStatus','outputready')
+    self.maxDataPerJob   = gConfig.getValue(self.section+'/MaxInputDataPerJob',200)
+    self.jobCheckDelay   = gConfig.getValue(self.section+'/JobCheckingDelay',10)
 
     self.log.debug( '==========================================='          )
     self.log.debug( 'DIRAC Job Sanity Agent is started with     '          )
@@ -107,9 +107,9 @@ class JobSanityAgent(Agent):
     """
     status = self.initialJobState
     delay = self.jobCheckDelay
-    result = self.jobDB.getJobWithStatus(status)['Value']
+    result = self.jobDB.selectJobWithStatus(status)
     if self.dbg:
-      print jobs
+      print result
 
     if not result['OK']:
       self.log.error('Error retrieving job information from JobDB')
@@ -118,21 +118,24 @@ class JobSanityAgent(Agent):
 
     jobs = result['Value']
     for job in jobs:
-      jobAttributes = self.jobDB.getAttributes(job)
+      jobAttributes = self.jobDB.getAllJobAttributes(job)
       if jobAttributes['OK']:
         timeDict = jobAttributes['Value']
-        subTime = timeDict['SubmissionDate']+'T'+timeDict['SubmissionTime']
-        timeTuple = time.strptime(subTime,"%Y-%m-%dT%H:%M:%S")
-        submissionTime = time.mktime(timeTuple)
-        currentTime = time.time()
-        if currentTime - submissionTime > delay:
-          self.checkJob(job)
+        if timeDict:
+          subTime = timeDict['SubmissionDate']+'T'+timeDict['SubmissionTime']
+          timeTuple = time.strptime(subTime,"%Y-%m-%dT%H:%M:%S")
+          submissionTime = time.mktime(timeTuple)
+          currentTime = time.time()
+          if currentTime - submissionTime > delay:
+            self.checkJob(job)
+          else:
+            msg = 'Job %s, submitted less than %s seconds ago' % (job,delay)
+            self.log.info(msg)
         else:
-          msg = 'Job %s, submitted less than %s seconds ago' % (job,delay)
-          self.log.info(msg)
+          self.log.error('No job attributes found for job '+str(job))
       else:
-        self.log.warn('Could not retrieve attributes for job '+str(job))
-        print timeDict
+        self.log.warn('JobDB returned error for job '+str(job))
+        print jobAttributes
 
     return S_OK('Successfully checked jobs')
 
