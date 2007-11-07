@@ -79,7 +79,7 @@ CREATE TABLE FileToFTS (
   Status varchar(32) DEFAULT 'Submitted',
   Duration INTEGER DEFAULT 0,
   Retries INTEGER DEFAULT 0,
-  FileSize INTEGER NOT NULL,
+  FileSize INTEGER DEFAULT 0,
   SubmissionTime DATETIME,
   TerminalTime DATETIME,
   Reason VARCHAR(255),
@@ -95,8 +95,8 @@ CREATE TABLE FTSReq (
   SubmitTime DATETIME NOT NULL,
   LastMonitor  DATETIME,
   PercentageComplete FLOAT DEFAULT 0.0,
-  NumberOfFiles INTEGER NOT NULL,
-  TotalSize INTEGER NOT NULL,
+  NumberOfFiles INTEGER DEFAULT 0,
+  TotalSize INTEGER DEFAULT 0,
   Status varchar(32) DEFAULT 'Submitted',
   PRIMARY KEY(FTSReqID,FTSGUID)
 );
