@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.9 2007/11/08 18:43:30 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.10 2007/11/08 19:00:51 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -51,7 +51,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.9 2007/11/08 18:43:30 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.10 2007/11/08 19:00:51 atsareg Exp $"
 
 import re, os, sys, string
 import time
@@ -398,6 +398,20 @@ class JobDB(DB):
     else:
       return result
 
+ #############################################################################
+  def getJobOptParameter(self,jobID,parameter):
+    """ Get optimizer parameters for the given job.
+    """
+
+    result = self._getFields( 'OptimizerParameters',['Value'],['JobID','Name'], [jobID,parameter])
+    if result['OK']:
+      if result['Value']:
+        return S_OK(result['Value'][0][0])
+      else:
+        return S_ERROR('Parameter not found')
+    else:
+      return S_ERROR('Failed to access database')
+
 #############################################################################
   def getInputData (self, jobID):
     """Get input data for the given job
@@ -515,6 +529,33 @@ class JobDB(DB):
       result = S_ERROR('JobDB.setJobParameter: operation failed.')
 
     return res
+
+ #############################################################################
+  def setJobOptParameter(self,jobID,name,value):
+    """ Set an optimzer parameter specified by name,value pair for the job JobID
+    """
+
+    cmd = 'DELETE FROM OptimizerParameters WHERE JobID=\'%s\' AND Name=\'%s\'' % ( jobID, name )
+    if not self._update( cmd )['OK']:
+      result = S_ERROR('JobDB.setJobOptParameter: operation failed.')
+
+    cmd = 'INSERT INTO OptimizerParameters VALUES(\'%s\', \'%s\', \'%s\' )' % ( jobID, name, value )
+    result = self._update( cmd )
+    if not result['OK']:
+      return S_ERROR('JobDB.setJobOptParameter: operation failed.')
+
+    return S_OK()
+
+#############################################################################
+  def removeJobOptParameter(self,jobID,name):
+    """ Remove the specified optimizer parameter for jobID
+    """
+
+    cmd = 'DELETE FROM OptimizerParameters WHERE JobID=\'%s\' AND Name=\'%s\'' % ( jobID, name )
+    if not self._update( cmd )['OK']:
+      return S_ERROR('JobDB.removeJobOptParameter: operation failed.')
+    else:
+      return S_OK()
 
 #############################################################################
   def setAtticJobParameter(self,jobID,key,value,rescheduleCounter):

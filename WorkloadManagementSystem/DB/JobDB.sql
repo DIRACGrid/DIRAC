@@ -1,4 +1,4 @@
--- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.sql,v 1.3 2007/06/28 13:36:06 atsareg Exp $
+-- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.sql,v 1.4 2007/11/08 19:00:51 atsareg Exp $
 
 --------------------------------------------------------------------------------
 --
@@ -27,7 +27,7 @@ GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON JobDB.* TO Di
 
 FLUSH PRIVILEGES;
 
-------------------------------------------------------------------------------- 
+-------------------------------------------------------------------------------
 USE JobDB;
 
 --------------------------------------------------------------------------------
@@ -52,10 +52,10 @@ CREATE TABLE Jobs (
     Status VARCHAR(32) NOT NULL DEFAULT 'received',
     MinorStatus VARCHAR(128) NOT NULL DEFAULT 'unknown',
     ApplicationStatus VARCHAR(256) NOT NULL DEFAULT 'unknown',
-    ApplicationNumStatus INTEGER NOT NULL DEFAULT 0, 
-    CPUTime FLOAT NOT NULL DEFAULT 0.0,  
-    UserPriority INTEGER NOT NULL DEFAULT 0,  
-    SystemPriority INTEGER NOT NULL DEFAULT 0,    
+    ApplicationNumStatus INTEGER NOT NULL DEFAULT 0,
+    CPUTime FLOAT NOT NULL DEFAULT 0.0,
+    UserPriority INTEGER NOT NULL DEFAULT 0,
+    SystemPriority INTEGER NOT NULL DEFAULT 0,
     RescheduleCounter INTEGER NOT NULL DEFAULT 0,
     VerifiedFlag  ENUM ('True','False') NOT NULL DEFAULT 'False',
     DeletedFlag  ENUM ('True','False') NOT NULL DEFAULT 'False',
@@ -74,7 +74,7 @@ CREATE TABLE JobJDLs (
     JobID INTEGER NOT NULL,
     JDL BLOB NOT NULL DEFAULT '',
     OriginalJDL BLOB,
-    PRIMARY KEY (JobID) 
+    PRIMARY KEY (JobID)
 );
 
 --------------------------------------------------------------------------------
@@ -103,6 +103,15 @@ CREATE TABLE InputData (
 --------------------------------------------------------------------------------
 DROP TABLE IF EXISTS JobParameters;
 CREATE TABLE JobParameters (
+    JobID INTEGER NOT NULL,
+    Name VARCHAR(100) NOT NULL,
+    Value BLOB NOT NULL,
+    PRIMARY KEY(JobID, Name)
+);
+
+--------------------------------------------------------------------------------
+DROP TABLE IF EXISTS OptimizerParameters;
+CREATE TABLE OptimizerParameters (
     JobID INTEGER NOT NULL,
     Name VARCHAR(100) NOT NULL,
     Value BLOB NOT NULL,
