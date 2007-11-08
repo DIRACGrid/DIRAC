@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobMonitoringHandler.py,v 1.2 2007/11/08 08:11:53 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobMonitoringHandler.py,v 1.3 2007/11/08 20:08:23 atsareg Exp $
 ########################################################################
 
 """ JobMonitoringHandler is the implementation of the JobMonitoring service
@@ -11,7 +11,7 @@
 
 """
 
-__RCSID__ = "$Id: JobMonitoringHandler.py,v 1.2 2007/11/08 08:11:53 atsareg Exp $"
+__RCSID__ = "$Id: JobMonitoringHandler.py,v 1.3 2007/11/08 20:08:23 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -21,6 +21,9 @@ from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 # This is a global instance of the JobDB class
 jobDB = False
 proxyRepository = False
+
+SUMMARY = []
+PRIMARY_SUMMARY = []
 
 def initializeJobMonitoringHandler( serviceInfo ):
 
@@ -136,67 +139,66 @@ class JobMonitoringHandler( RequestHandler ):
 
 ##############################################################################
   types_getJobStatus = [ IntType ]
-  def export_getJobStatus (self, jobId ):
+  def export_getJobStatus (self, jobID ):
 
-    return jobDB.getJobAttribute(jobId, 'Status')
+    return jobDB.getJobAttribute(jobID, 'Status')
 
 ##############################################################################
   types_getJobOwner = [ IntType ]
-  def export_getJobOwner (self, jobId ):
+  def export_getJobOwner (self, jobID ):
 
-    return jobDB.getJobAttribute(jobId,'Owner')
+    return jobDB.getJobAttribute(jobID,'Owner')
 
 ##############################################################################
   types_getJobSite = [ IntType ]
-  def export_getJobSite (self, jobId ):
+  def export_getJobSite (self, jobID ):
 
-    return jobDB.getJobAttribute(jobId, 'Site')
+    return jobDB.getJobAttribute(jobID, 'Site')
 
 ##############################################################################
 #  types_getJobLogInfo = [ IntType ]
-#  def export_getJobLogInfo(self, jobId):
+#  def export_getJobLogInfo(self, jobID):
 #
-#    return jobDB.getJobLogInfo( jobId )
+#    return jobDB.getJobLogInfo( jobID )
 
 ##############################################################################
   types_getJobsStatus = [ ListType ]
-  def export_getJobsStatus (self, jobIds):
+  def export_getJobsStatus (self, jobIDs):
 
-    return jobDB.getAttributesForJobList( jobIds, ['Status'] )
+    return jobDB.getAttributesForJobList( jobIDs, ['Status'] )
 
 ##############################################################################
   types_getJobsSites = [ ListType ]
-  def export_getJobsSites (self, jobIds):
+  def export_getJobsSites (self, jobIDs):
 
-    return jobDB.getAttributesForJobList( jobIds, ['Site'] )
+    return jobDB.getAttributesForJobList( jobIDs, ['Site'] )
 
 ##############################################################################
   types_getJobSummary = [ IntType ]
-  def export_getJobSummary(self, jobId):
-    #return jobDB.getAllJobAttributes( [jobId], self.summary )
-    return jobDB.getAllJobAttributes( jobId )
+  def export_getJobSummary(self, jobID):
+    return jobDB.getJobAttributes(jobID, SUMMARY)
 
 ##############################################################################
   types_getJobPrimarySummary = [ IntType ]
-  def export_getJobPrimarySummary(self, jobId ):
-    return jobDB.getJobsAttributes( [jobId], self.primarySummary )
+  def export_getJobPrimarySummary(self, jobID ):
+    return jobDB.getJobAttributes(jobID, PRIMARY_SUMMARY)
 
 ##############################################################################
   types_getJobsSummary = [ ListType ]
-  def export_getJobsSummary(self, jobIds):
-    return jobDB.getJobsAttributes( jobIds, self.summary )
+  def export_getJobsSummary(self, jobIDs):
+    return jobDB.getAttributesForJobList( jobIDs, SUMMARY )
 
 ##############################################################################
   types_getJobsPrimarySummary = [ ListType ]
-  def export_getJobsPrimarySummary (self, jobIds):
-    return jobDB.getJobsAttributes( jobIds, self.primarySummary )
+  def export_getJobsPrimarySummary (self, jobIDs):
+    return jobDB.getAttributesForJobList( jobIDs, PRIMARY_SUMMARY )
 
 ##############################################################################
   types_getJobParameter = [ IntType, StringType ]
-  def export_getJobParameter( self, jobId, parName ):
-    return jobDB.getJobParameters( jobId, [parName] )
+  def export_getJobParameter( self, jobID, parName ):
+    return jobDB.getJobParameters( jobID, [parName] )
 
 ##############################################################################
   types_getJobParameters = [ IntType ]
-  def export_getJobParameters( self, jobId ):
-    return jobDB.getJobParameters( jobId )
+  def export_getJobParameters( self, jobID ):
+    return jobDB.getJobParameters( jobID )

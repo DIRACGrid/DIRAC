@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.10 2007/11/08 19:00:51 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.11 2007/11/08 20:08:23 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -51,7 +51,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.10 2007/11/08 19:00:51 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.11 2007/11/08 20:08:23 atsareg Exp $"
 
 import re, os, sys, string
 import time
@@ -105,7 +105,7 @@ class JobDB(DB):
     """
 
     print "=================================================="
-    print "SystemSet:", self.system
+    #print "SystemSet:", self.system
     print "User:     ", self.dbUser
     print "Host:     ", self.dbHost
     print "Password  ", self.dbPass
@@ -306,7 +306,7 @@ class JobDB(DB):
       attrNames = string.join(map(lambda x: str(x),self.jobAttributeNames),',')
     self.log.debug( 'JobDB.getAllJobAttributes: Getting Attributes for job = "%s".' %jobID )
 
-    cmd = 'SELECT %s FROM Jobs WHERE JobID=\'%s\'' % (attrNames,jobID)
+    cmd = 'SELECT %s FROM Jobs WHERE JobID=%d' % (attrNames,int(jobID))
     res = self._query( cmd )
     if not res['OK']:
       return res
@@ -317,8 +317,12 @@ class JobDB(DB):
     values = res['Value'][0]
 
     attributes = {}
-    for i in range(len(attrNames)):
-      attributes[attrNames[i]] = str(values[i])
+    if attrList:
+      for i in range(len(attrList)):
+	attributes[attrList[i]] = str(values[i])
+    else:
+      for i in range(len(self.jobAttributeNames)):
+	attributes[self.jobAttributeNames[i]] = str(values[i])	
 
     return S_OK( attributes )
 
