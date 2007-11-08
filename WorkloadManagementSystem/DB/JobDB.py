@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.8 2007/11/07 15:22:18 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.9 2007/11/08 18:43:30 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -51,7 +51,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.8 2007/11/07 15:22:18 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.9 2007/11/08 18:43:30 atsareg Exp $"
 
 import re, os, sys, string
 import time
@@ -60,9 +60,10 @@ import threading
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from types                                     import *
 from DIRAC                                     import gLogger, S_OK, S_ERROR
-from DIRAC.ConfigurationSystem.Client.Config import gConfig
-from DIRAC.Core.Base.DB import DB
+from DIRAC.ConfigurationSystem.Client.Config   import gConfig
+from DIRAC.Core.Base.DB                        import DB
 
+DEBUG = 1
 
 #############################################################################
 class JobDB(DB):
@@ -82,21 +83,22 @@ class JobDB(DB):
       self.maxRescheduling = int(result['Value'])
 
 
-    self.jobAttributes = []
+    self.jobAttributeNames = []
     self.getIdLock = threading.Lock()
 
-    res = self.__getAttributeNames()
+    result = self.__getAttributeNames()
 
-    if not res['OK']:
-      err = 'Can not retrieve job Attributes.'
-      self.log.fatal( 'JobDB: %s' % err )
-      sys.exit( err )
+    if not result['OK']:
+      error = 'Can not retrieve job Attributes'
+      self.log.fatal( 'JobDB: %s' % error )
+      sys.exit( error )
       return
-
-    self.nJobAttributeNames = len(self.jobAttributeNames)
 
     self.log.always("MaxReschedule:  "+`self.maxRescheduling`)
     self.log.always("==================================================")
+
+    if DEBUG:
+      result = self.dumpParameters()
 
   def dumpParameters(self):
     """  Dump the JobDB connection parameters to the stdout
@@ -104,11 +106,12 @@ class JobDB(DB):
 
     print "=================================================="
     print "SystemSet:", self.system
-    print "User:", self.dbUser
-    print "Host:", self.dbHost
-    print "Password", self.dbPass
-    print "DBName", self.dbName
-    print "MaxQueue", self.maxQueueSize
+    print "User:     ", self.dbUser
+    print "Host:     ", self.dbHost
+    print "Password  ", self.dbPass
+    print "DBName    ", self.dbName
+    print "MaxQueue  ", self.maxQueueSize
+    print "=================================================="
 
     return S_OK()
 
@@ -127,6 +130,8 @@ class JobDB(DB):
     for Field, Type, Null, Key, Default, Extra in res['Value']:
       self.jobAttributeNames.append(Field)
 
+    self.nJobAttributeNames = len(self.jobAttributeNames)
+
     return S_OK( )
 
   def __buildCondition(self, condDict, older=None, newer=None ):
@@ -134,25 +139,25 @@ class JobDB(DB):
         and other extra conditions
     """
     condition = ''
-    conjonction = "WHERE"
+    conjunction = "WHERE"
 
     if condDict != None:
       for attrName, attrValue in condDict.items():
         condition = ' %s %s %s=\'%s\'' % ( condition,
-                                           conjonction,
+                                           conjunction,
                                            str(attrName),
                                            str(attrValue)  )
-        conjonction = "AND"
+        conjunction = "AND"
 
     if older:
       condition = ' %s %s LastUpdateTime<\'%s\'' % ( condition,
-                                                 conjonction,
+                                                 conjunction,
                                                  str(older) )
-      conjonction = "AND"
+      conjunction = "AND"
 
     if newer:
       condition = ' %s %s LastUpdateTime>\'%s\'' % ( condition,
-                                                 conjonction,
+                                                 conjunction,
                                                  str(newer) )
 
     return condition
@@ -171,39 +176,44 @@ class JobDB(DB):
     self.getIdLock.acquire()
 
     cmd = 'INSERT INTO Jobs (SubmissionTime) VALUES (CURDATE())'
-
     err = 'JobDB.getJobID: Failed to retrieve a new Id.'
 
+    self.getIDLock.acquire()
     res = self._update( cmd )
     if not res['OK']:
-      self.getIdLock.release()
+      self.getIDLock.release()
       return S_ERROR( '1 %s\n%s' % (err, res['Message'] ) )
 
     cmd = 'SELECT MAX(JobID) FROM Jobs'
     res = self._query( cmd )
     if not res['OK']:
-      self.getIdLock.release()
+      self.getIDLock.release()
       return S_ERROR( '2 %s\n%s' % (err, res['Message'] ) )
 
     try:
       jobID = int(res['Value'][0][0])
       self.log.info( 'JobDB: New JobID served "%s"' % jobID )
     except Exception, x:
-      self.getIdLock.release()
+      self.getIDLock.release()
       return S_ERROR( '3 %s\n%s' % (err, str(x) ) )
 
-    self.getIdLock.release()
+    self.getIDLock.release()
 
     return S_OK( jobID )
 
 
+
 #############################################################################
-  def getAttributesForJobList(self,jobIDList,attrList):
+  def getAttributesForJobList(self,jobIDList,attrList=[]):
     """ Get attributes for the jobs in the the jobIDList.
-        Returns an S_OK structure with a dictionary of dictionaries os its Value:
+        Returns an S_OK structure with a dictionary of dictionaries as its Value:
         ValueDict[jobID][attribute_name] = attribute_value
     """
-    attrNames = string.join(map(lambda x: str(x),attrList ),',')
+
+    if attrList:
+      attrNames = string.join(map(lambda x: str(x),attrList ),',')
+    else:
+      attrNames = string.join(map(lambda x: str(x),self.jobAttributeNames),',')
     jobList = string.join(map(lambda x: str(x),jobIDList),',')
 
     cmd = 'SELECT JobID,%s FROM Jobs WHERE JobID in ( %s )' % ( attrNames, jobList )
@@ -225,7 +235,7 @@ class JobDB(DB):
         retDict[int(jobID)] = jobDict
       return S_OK( retDict )
     except Exception,x:
-      return S_ERROR( 'JobDB.getJobsAttributes: Failed\n%s'  % str(x) )
+      return S_ERROR( 'JobDB.getAttributesForJobList: Failed\n%s'  % str(x) )
 
 
 #############################################################################
@@ -236,44 +246,67 @@ class JobDB(DB):
 
     cond = self.__buildCondition( condDict, older=older, newer=newer )
 
-    res = self._query( cmd + cond )
-    if not res['OK']:
-      return res
+    result = self._query( cmd + cond )
+    return result
 
-    return S_OK( map( self._to_value, res['Value'] ) )
+    #if not res['OK']:
+    #  return res
+
+    #return S_OK( map( self._to_value, res['Value'] ) )
 
 #############################################################################
-  def getAllJobParameters(self, jobID):
-    """ Get all Job Parameters defined for jobID.
-        Returns a dictionary with all Job Parameters.
-        Returns an empty dictionary if no matching job found.
+  def getJobParameters(self, jobID, paramList=[]):
+    """ Get Job Parameters defined for jobID.
+        Returns a dictionary with the Job Parameters.
+        If parameterList is empty - all the parameters are returned.
     """
 
     self.log.debug( 'JobDB.getParameters: Getting Parameters for job %s' %jobID )
-    result = self._getFields( 'JobParameters',
-                           ['Name', 'Value'],
-                           ['JobID'], [jobID])
-    if not result['OK']:
-      return result
 
-    parameters = {}
-    for name,value in result['Value']:
-      try:
-        parameters[name] = value.tostring()
-      except:
-        parameters[name] = value
+    resultDict = {}
+    if paramList:
+      paramNames = string.join(map(lambda x: '"'+str(x)+'"',paramList ),',')
+      cmd = "SELECT Name, Value from JobParameters WHERE JobID=%d and Name in (%s)" % (jobID,paramNames)
+      result = self._query(cmd)
+      if result['OK']:
+        if result['Value']:
+          for name,value in result['Value']:
+            try:
+              resultDict[name] = value.tostring()
+            except:
+              resultDict[name] = value
 
-    return S_OK( parameters )
+        return S_OK(resultDict)
+      else:
+        return S_ERROR('JobDB.getJobParameters: failed to retrieve parameters')
+
+    else:
+      result = self._getFields( 'JobParameters',['Name', 'Value'],['JobID'], [jobID])
+      if not result['OK']:
+        return result
+      else:
+        for name,value in result['Value']:
+          try:
+            resultDict[name] = value.tostring()
+          except:
+            resultDict[name] = value
+
+        return S_OK(resultDict)
 
 #############################################################################
-  def getAllJobAttributes(self, jobID):
+  def getJobAttributes(self,jobID,attrList=[]):
     """ Get all Job Attributes for a given jobID.
         Return a dictionary with all Job Attributes,
         return an empty dictionary if matching job found
     """
 
+    if attrList:
+      attrNames = string.join(map(lambda x: str(x),attrList ),',')
+    else:
+      attrNames = string.join(map(lambda x: str(x),self.jobAttributeNames),',')
     self.log.debug( 'JobDB.getAllJobAttributes: Getting Attributes for job = "%s".' %jobID )
-    cmd = 'SELECT * FROM Jobs WHERE JobID=\'%s\'' % jobID
+
+    cmd = 'SELECT %s FROM Jobs WHERE JobID=\'%s\'' % (attrNames,jobID)
     res = self._query( cmd )
     if not res['OK']:
       return res
@@ -282,17 +315,15 @@ class JobDB(DB):
       return S_OK ( {} )
 
     values = res['Value'][0]
-    if not len(values) == self.nJobAttributeNames:
-      return S_ERROR( 'Error in JobDB schema.' )
 
     attributes = {}
-    for i in range(len(self.jobAttributeNames)):
-      attributes[self.jobAttributeNames[i]] = str(values[i])
+    for i in range(len(attrNames)):
+      attributes[attrNames[i]] = str(values[i])
 
     return S_OK( attributes )
 
 #############################################################################
-  def getJobParameters( self, jobID, parameters ):
+  def getJobInfo( self, jobID, parameters=[] ):
     """ Get parameters for job specified by jobID. Parameters can be
         either job attributes ( fields in the Jobs table ) or those
         stored in the JobParameters table.
@@ -300,50 +331,64 @@ class JobDB(DB):
         Dict[Name] = Value
     """
 
-    jparameters = []
-    jattributes = []
+    resultDict = {}
+    # Parameters are not specified, get them all - parameters + attributes
+    if not parameters:
+      result = self.getJobAttributes(jobID)
+      if result['OK']:
+        resultDict = result['value']
+      else:
+       return S_ERROR('JobDB.getJobAttributes: can not retrieve job attributes')
+      result = self.getJobParameters(jobID)
+      if result['OK']:
+        resultDict.update(result['value'])
+      else:
+       return S_ERROR('JobDB.getJobParameters: can not retrieve job parameters')
+      return S_OK(resultDict)
+
+    paramList = []
+    attrList = []
     for p in parameters:
       if p in self.jobAttributeNames:
-        jattributes.append(p)
+        attrList.append(p)
       else:
-        jparameters.append(p)
-
-    result = {}
+        paramList.append(p)
 
     # Get Job Attributes first
-    if jattributes:
-      res = self._getFields( 'Jobs', jattributes, ['JobID'], [jobID] )
-      if not res['OK']:
-        return res
+    if attrList:
+      result = self.getJobAttributes(jobID,attrList)
+      if not result['OK']:
+        return result
       if len(res['Value']) > 0:
-        for i in range(len(jattributes)):
-          name = jattributes[i]
-          try:
-            value = res['Value'][0][i].tostring()
-          except:
-            value = str(res['Value'][0][i])
-          result[name] = value
+        resultDict = result['Value']
       else:
         return S_ERROR('Job '+str(jobID)+' not found')
 
     # Get Job Parameters
-    for i in range(len(jparameters)):
-      name = jparameters[i]
-      res = self._getFields('JobParameters',['Value'],['JobID','Name'],[jobID,name])
-      if not res['OK']:
-        return res
-      try:
-        value = res['Value'][0][0].tostring()
-      except:
-        value = 'Unknown'
+    if paramList:
+      result = self.getJobParameters(jobID,paramList)
+      if not result['OK']:
+        return result
+      if len(res['Value']) > 0:
+        resultDict.update(result['Value'])
 
-      result[name] = value
-
-    return S_OK(result)
+    return S_OK(resultDict)
 
 #############################################################################
   def getJobAttribute(self,jobID,attribute):
     """ Get the given attribute of a job specified by its jobID
+    """
+
+    result = self.getJobAttributes(jobID,[attribute])
+    if result['OK']:
+      value = result['Value'][attribute]
+      return S_OK(value)
+    else:
+      return result
+
+ #############################################################################
+  def getJobParameter(self,jobID,parameter):
+    """ Get the given parameter of a job specified by its jobID
     """
 
     result = self.getJobParameters(jobID,[attribute])
@@ -355,9 +400,7 @@ class JobDB(DB):
 
 #############################################################################
   def getInputData (self, jobID):
-    """Get input data
-
-       Get input data for the given job
+    """Get input data for the given job
     """
 
     cmd = 'SELECT LFN FROM InputData WHERE JobID=\'%s\'' %jobID
@@ -968,16 +1011,16 @@ class JobDB(DB):
     classQueue = ClassAd(requirements)
     if classQueue.isOK():
       reqJDL = classQueue.asJDL()
-      self.getIdLock.acquire()
+      self.getIDLock.acquire()
       cmd = 'INSERT INTO TaskQueues (Requirements, Priority) '\
             ' VALUES (\'%s\', \'%s\' )' \
             % ( reqJDL, priority )
       result = self._update( cmd )
       if not result['OK']:
-        self.getIdLock.release()
+        self.getIDLock.release()
         return result
       result = self._query( 'SELECT LAST_INSERT_ID()' )
-      self.getIdLock.release()
+      self.getIDLock.release()
       if not result['OK']:
         return result
 
