@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobMonitoringHandler.py,v 1.1 2007/05/26 20:47:19 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobMonitoringHandler.py,v 1.2 2007/11/08 08:11:53 atsareg Exp $
 ########################################################################
 
 """ JobMonitoringHandler is the implementation of the JobMonitoring service
@@ -11,7 +11,7 @@
 
 """
 
-__RCSID__ = "$Id: JobMonitoringHandler.py,v 1.1 2007/05/26 20:47:19 atsareg Exp $"
+__RCSID__ = "$Id: JobMonitoringHandler.py,v 1.2 2007/11/08 08:11:53 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -173,7 +173,8 @@ class JobMonitoringHandler( RequestHandler ):
 ##############################################################################
   types_getJobSummary = [ IntType ]
   def export_getJobSummary(self, jobId):
-    return jobDB.getJobsAttributes( [jobId], self.summary )
+    #return jobDB.getAllJobAttributes( [jobId], self.summary )
+    return jobDB.getAllJobAttributes( jobId )
 
 ##############################################################################
   types_getJobPrimarySummary = [ IntType ]
@@ -198,4 +199,4 @@ class JobMonitoringHandler( RequestHandler ):
 ##############################################################################
   types_getJobParameters = [ IntType ]
   def export_getJobParameters( self, jobId ):
-    return jobDB.getParameters( jobId )
+    return jobDB.getJobParameters( jobId )
