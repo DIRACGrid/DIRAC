@@ -96,7 +96,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
       else:
        errno = lfc.cvar.serrno
        errStr = lfc.sstrerror(errno).lower()
-       if (mess.find("no such file or directory") >= 0 ):
+       if (errStr.find("no such file or directory") >= 0 ):
           successful[lfn] = False
        else:
          failed[lfn] = lfc.sstrerror(errno)
@@ -262,9 +262,50 @@ class LcgFileCatalogClient(FileCatalogueBase):
       replicas = replicaTuple
     else:
       return S_ERROR('LFCClient.addReplica: Must supply a replica tuple of list of tuples')
-    for replicaTuple in replicas:
-      lfn,pfn,se = replicaTuple
-    return S_ERROR('Implement me')
+    failed = {}
+    successful = {}
+    # If we have less than three lfns to query a session doesn't make sense
+    self.__openSession()
+    for lfn,pfn,se in replicas:
+      res = self.__getLFNGuid(lfn)
+      if res['OK']:
+        guid = res['Value']
+        fid = lfc.lfc_fileid()
+        status = 'U'
+        f_type = 'D'
+        poolname = ''
+        fs = ''
+        value = lfc.lfc_addreplica(guid,fid,se,pfn,status,f_type,poolname,fs)
+        """
+        r_type = 'S' # S = secondary, P = primary
+        setname = 'SpaceToken
+        value = lfc.lfc_addreplica(guid,fid,se,pfn,status,f_type,poolname,fs,r_type,setname)
+        """
+        if value == 0:
+          successful[lfn] = True
+        else:
+          errStr = lfc.sstrerror(lfc.cvar.serrno)
+          # This replica already exists, not an error but a duplicate registration - to review !
+          if errStr == "File exists":
+            successful[lfn] = True
+          else:
+            failed[lfn] = errStr
+      else:
+        failed[lfn] = lfc.sstrerror(lfc.cvar.serrno)
+    self.__closeSession()
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+  def __getLFNGuid(self,lfn):
+    """Get the GUID for the given lfn"""
+    fstat = lfc.lfc_filestatg()
+    fullLfn = '%s%s' % (self.prefix,lfn)
+    value = lfc.lfc_statg(fullLfn,'',fstat)
+    if value == 0:
+      return S_OK(fstat.guid)
+    else:
+      errStr = lfc.sstrerror(lfc.cvar.serrno)
+      return S_ERROR(errStr)
 
   def removeReplica(self, replicaTuple):
     if type(replicaTuple) == types.TupleType:
@@ -273,10 +314,27 @@ class LcgFileCatalogClient(FileCatalogueBase):
       replicas = replicaTuple
     else:
       return S_ERROR('LFCClient.setReplicaStatus: Must supply a file tuple or list of file typles')
-    resDict = {}
-    for replicaTuple in replicas:
-      lfn,pfn,se = replicaTuple
-    return S_ERROR('Implement me')
+    failed = {}
+    successful = {}
+    # If we have less than three lfns to query a session doesn't make sense
+    if len(lfnsToRemove) > 2:
+      self.__openSession()
+    for lfn,pfn,se in replicas:
+      fid = lfc.lfc_fileid()
+      value = lfc.lfc_delreplica('',fid,pfn)
+      if value == 0:
+        successful[lfn] = True
+      else:
+        errno = lfc.cvar.serrno
+        errStr = lfc.sstrerror(errno).lower()
+        if (errStr.find("no such file or directory") >= 0 ):
+          successful[lfn] = True
+        else:
+          failed[lfn] = lfc.sstrerror(errno)
+    if self.session:
+      self.__closeSession()
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
 
   def removeFile(self, path):
     if type(replicaTuple) == types.TupleType:
@@ -448,12 +506,12 @@ class LcgFileCatalogClient(FileCatalogueBase):
       self.__openSession()
     for replicaTuple in replicas:
       lfn,pfn,se,status = replicaTuple
-      value = lfc_setrtype(pfn,status)
+      value = lfc_setrstatus(pfn,status)
       if not value == 0:
         errno = lfc.cvar.serrno
         failed[lfn] = lfc.sstrerror(errno)
       else:
-        successful[lfn] = value
+        successful[lfn] = True
     if self.session:
       self.__closeSession()
     resDict = {'Failed':failed,'Successful':successful}
