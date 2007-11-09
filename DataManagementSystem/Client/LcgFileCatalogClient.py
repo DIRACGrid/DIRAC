@@ -256,6 +256,11 @@ class LcgFileCatalogClient(FileCatalogueBase):
     return S_ERROR('Implement me')
 
   def addReplica(self, replicaTuple):
+    """ This adds a replica to the catalogue
+        The tuple to be supplied is of the following form:
+          (lfn,pfn,se,master)
+        where master = True or False
+    """
     if type(replicaTuple) == types.TupleType:
       replicas = [replicaTuple]
     elif type(path) == types.ListType:
@@ -264,9 +269,8 @@ class LcgFileCatalogClient(FileCatalogueBase):
       return S_ERROR('LFCClient.addReplica: Must supply a replica tuple of list of tuples')
     failed = {}
     successful = {}
-    # If we have less than three lfns to query a session doesn't make sense
     self.__openSession()
-    for lfn,pfn,se in replicas:
+    for lfn,pfn,se,master in replicas:
       res = self.__getLFNGuid(lfn)
       if res['OK']:
         guid = res['Value']
@@ -275,10 +279,12 @@ class LcgFileCatalogClient(FileCatalogueBase):
         f_type = 'D'
         poolname = ''
         fs = ''
+
         value = lfc.lfc_addreplica(guid,fid,se,pfn,status,f_type,poolname,fs)
         """
-        r_type = 'S' # S = secondary, P = primary
-        setname = 'SpaceToken
+        if master:
+          r_type = 'S' # S = secondary, P = primary
+        setname = 'SpaceToken'
         value = lfc.lfc_addreplica(guid,fid,se,pfn,status,f_type,poolname,fs,r_type,setname)
         """
         if value == 0:
@@ -507,6 +513,34 @@ class LcgFileCatalogClient(FileCatalogueBase):
     for replicaTuple in replicas:
       lfn,pfn,se,status = replicaTuple
       value = lfc_setrstatus(pfn,status)
+      if not value == 0:
+        errno = lfc.cvar.serrno
+        failed[lfn] = lfc.sstrerror(errno)
+      else:
+        successful[lfn] = True
+    if self.session:
+      self.__closeSession()
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+  def setReplicaHost(self,replicaTuple):
+    """ This modifies the replica metadata for the SE and space token.
+        The tuple supplied must be of the following form:
+        (lfn,pfn,se,spaceToken)
+    """
+    if type(replicaTuple) == types.TupleType:
+      replicas = [replicaTuple]
+    elif type(replicaTuple) == types.ListType:
+      replicas = replicaTuple
+    else:
+      return S_ERROR('LFCClient.setReplicaHost: Must supply a file tuple or list of file typles')
+    successful = {}
+    failed = {}
+    # If we have less than three lfns to query a session doesn't make sense
+    if len(replicas) > 2:
+      self.__openSession()
+    for lfn,pfn,se,spacetoken in replicas:
+      value = lfc_modreplica(pfn,spacetoken,'',se)
       if not value == 0:
         errno = lfc.cvar.serrno
         failed[lfn] = lfc.sstrerror(errno)
