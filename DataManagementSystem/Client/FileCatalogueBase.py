@@ -12,6 +12,8 @@
     getFileMetadata()
     getReplicas()
     getReplicaStatus()
+    getReplicaStatus()
+    setReplicaHost()
     getFileSize()
 
     createDirectory()
@@ -116,6 +118,28 @@ class FileCatalogueBase:
       replicas = replicaTuple
     for replicaTuple in replicas:
       lfn,se = replicaTuple
+    return S_ERROR('Implement me')
+
+  def setReplicaStatus(self,replicaTuple):
+    if type(replicaTuple) == types.TupleType:
+      replicas = [replicaTuple]
+    elif type(replicaTuple) == types.ListType:
+      replicas = replicaTuple
+    else:
+      return S_ERROR('LFCClient.setReplicaStatus: Must supply a file tuple or list of file typles')
+    return S_ERROR('Implement me')
+
+  def setReplicaHost(self,replicaTuple):
+    """ This modifies the replica metadata for the SE and space token.
+        The tuple supplied must be of the following form:
+        (lfn,pfn,se,spaceToken)
+    """
+    if type(replicaTuple) == types.TupleType:
+      replicas = [replicaTuple]
+    elif type(replicaTuple) == types.ListType:
+      replicas = replicaTuple
+    else:
+      return S_ERROR('LFCClient.setReplicaHost: Must supply a file tuple or list of file typles')
     return S_ERROR('Implement me')
 
   def getFileSize(self, path):
