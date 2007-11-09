@@ -1,5 +1,6 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/SubSystemLogger.py,v 1.3 2007/06/27 16:05:18 acasajus Exp $
-__RCSID__ = "$Id: SubSystemLogger.py,v 1.3 2007/06/27 16:05:18 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/SubSystemLogger.py,v 1.4 2007/11/09 16:51:23 acasajus Exp $
+__RCSID__ = "$Id: SubSystemLogger.py,v 1.4 2007/11/09 16:51:23 acasajus Exp $"
+import types
 from DIRAC.LoggingSystem.private.LogLevels import LogLevels
 from DIRAC.LoggingSystem.private.Message import Message
 from DIRAC.LoggingSystem.Client.Logger import Logger
@@ -8,9 +9,13 @@ class SubSystemLogger( Logger ):
 
   def __init__( self, subSystemName, masterLogger ):
     Logger.__init__( self )
-    self._subSystemName = subSystemName
+    for attrName in dir( masterLogger ):
+      attrValue = getattr( masterLogger, attrName )
+      if type( attrValue ) == types.StringType:
+        setattr( self, attrName, attrValue )
     self.__masterLogger = masterLogger
+    self._subSystemName = subSystemName
 
-  def queueMessage( self, messageObject ):
+  def _processMessage( self, messageObject ):
     messageObject.setSubSystemName( self._subSystemName )
-    self.__masterLogger.queueMessage( messageObject )
+    self.__masterLogger._processMessage( messageObject )

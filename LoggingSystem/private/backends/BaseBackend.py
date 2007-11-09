@@ -12,7 +12,7 @@ class BaseBackend:
 
   def doMessage( self ):
     raise Exception( "This function MUST be overloaded!!" )
-    
+
   def composeString( self, messageObject ):
     messageName = "%s" % messageObject.getName()
     if messageObject.getSubSystemName():
