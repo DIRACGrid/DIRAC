@@ -22,6 +22,8 @@
     getDirectorySize()
 
     isLink()
+    createLink()
+    removeLink()
 
     changeDirectory()
     getCurrentDirectory()
@@ -183,6 +185,20 @@ class FileCatalogueBase:
   #
 
   def isLink(self, path):
+    if type(path) == types.StringType:
+      paths = [path]
+    else:
+      paths = path
+    return S_ERROR('Implement me')
+
+  def createLink(self, path):
+    if type(path) == types.StringType:
+      paths = [path]
+    else:
+      paths = path
+    return S_ERROR('Implement me')
+
+  def removeLink(self, path):
     if type(path) == types.StringType:
       paths = [path]
     else:
