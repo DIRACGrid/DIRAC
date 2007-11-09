@@ -127,28 +127,29 @@ class LcgFileCatalogClient(FileCatalogueBase):
   #
 
   def isLink(self, path):
-    if type(replicaTuple) == types.TupleType:
-      lfns = [lfn]
-    elif type(path) == types.ListType:
-       lfns = lfn
+    if type(link) == types.StringType:
+      links = [link]
+    elif type(link) == types.ListType:
+      links = link
     else:
-      return S_ERROR('LFCClient.isLink: Must supply a path or list of paths')
+      return S_ERROR('LFCClient.isLink: Must supply a link list of link')
     failed = {}
     successful = {}
     # If we have less than three lfns to query a session doesn't make sense
-    if len(lfns) > 2:
+    if len(links) > 2:
       self.__openSession()
-    for lfn in lfns:
+    for link in links:
+      fullLink = '%s%s' % (self.prefix,linkName)
       fstat = lfc.lfc_filestat()
-      value = lfc.lfc_lstat(lfn,fstat)
+      value = lfc.lfc_lstat(linkName,fstat)
       if value == 0:
         if S_ISLNK(fstat.filemode):
-          successful[lfn] = True
+          successful[link] = True
         else:
-          successful[lfn] = False
+          successful[link] = False
       else:
         errno = lfc.cvar.serrno
-        failed[lfn] = lfc.sstrerror(errno)
+        failed[link] = lfc.sstrerror(errno)
     if self.session:
       self.__closeSession()
     resDict = {'Failed':failed,'Successful':successful}
@@ -156,25 +157,85 @@ class LcgFileCatalogClient(FileCatalogueBase):
 
   def createLink(self,linkTuple):
     if type(replicaTuple) == types.TupleType:
-      replicas = [replicaTuple]
+      links = [linkTuple]
     elif type(path) == types.ListType:
-      replicas = replicaTuple
+      links = linkTuple
     else:
       return S_ERROR('LFCClient.addReplica: Must supply a link tuple of list of tuples')
-    for replicaTuple in replicas:
-      lfn,pfn,se = replicaTuple
-    return S_ERROR('Implement me')
+    # If we have less than three lfns to query a session doesn't make sense
+    if len(links) > 2:
+      self.__openSession()
+    failed = {}
+    successful = {}
+    for linkName,lfn in links:
+      fullLink = '%s%s' % (self.prefix,linkName)
+      fullLfn = '%s%s' % (self.prefix,lfn)
+      value = lfn.lfc_symlink(fullLfn,fullLink)
+      if value == 0:
+        successful[linkName] = True
+      else:
+        errno = lfc.cvar.serrno
+        failed[linkName] = lfc.sstrerror(errno)
+    if self.session:
+      self.__closeSession()
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
 
   def removeLink(self,link):
-    if type(replicaTuple) == types.TupleType:
-      replicas = [replicaTuple]
-    elif type(path) == types.ListType:
-      replicas = replicaTuple
+    if type(link) == types.StringType:
+      links = [link]
+    elif type(link) == types.ListType:
+      links = link
     else:
-      return S_ERROR('LFCClient.removeLink: Must supply a link or list of links')
-    for replicaTuple in replicas:
-      lfn,pfn,se = replicaTuple
+      return S_ERROR('LFCClient.removeLink: Must supply a link list of link')
+    # If we have less than three lfns to query a session doesn't make sense
+    if len(links) > 2:
+      self.__openSession()
+    failed = {}
+    successful = {}
+    for link in links:
+      fullLink = '%s%s' % (self.prefix,link)
+      value = lfc.lfc_unlink(fullLink)
+      if value == 0:
+        successful[link] = True
+      else:
+        errno = lfc.cvar.serrno
+        failed[link] = lfc.sstrerror(errno)
+    if self.session:
+      self.__closeSession()
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+  def readLink(self,link):
+    if type(link) == types.StringType:
+      links = [link]
+    elif type(link) == types.ListType:
+      links = link
+    else:
+      return S_ERROR('LFCClient.removeLink: Must supply a link list of link')
+    # If we have less than three lfns to query a session doesn't make sense
+    if len(links) > 2:
+      self.__openSession()
+    failed = {}
+    successful = {}
+    for link in links:
+      fullLink = '%s%s' % (self.prefix,link)
+      """  The next six lines of code should be hung, drawn and quartered
+      """
+      strBuff = ''
+      for i in range(256):
+        strBuff+=' '
+      value = lfc.lfc_readlink(fullLink,strBuff,256)
+      if value == 0:
+        successful[link] = a.replace('\x00','').strip().replace(self.prefix,'')
+      else:
+        errno = lfc.cvar.serrno
+        failed[link] = lfc.sstrerror(errno)
+    if self.session:
+      self.__closeSession()
+    resDict = {'Failed':failed,'Successful':successful}
     return S_ERROR('Implement me')
+
 
   ####################################################################
   #
@@ -647,7 +708,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
       if fileInfo:
         lfn = '%s/%s' % (path,entry.d_name)
         resDict[lfn] = {'Replicas':{}}
-        for replica in lista:
+        for replica in fileInfo:
           resDict[lfn]['Replicas'][rep.host] = {'PFN':rep.sfn,'Status':rep.status}
         resDict[lfn]['MetaData'] = {'Size':entry.filesize,'GUID':entry.guid}
       else:
