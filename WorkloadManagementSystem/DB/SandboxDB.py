@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/SandboxDB.py,v 1.3 2007/11/09 13:22:29 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/SandboxDB.py,v 1.4 2007/11/09 18:35:18 atsareg Exp $
 ########################################################################
 """ SandboxDB class is a simple storage using MySQL as a container for
     relatively small sandbox files. The file size is limited to 16MB.
@@ -10,7 +10,7 @@
     getWMSTimeStamps()
 """
 
-__RCSID__ = "$Id: SandboxDB.py,v 1.3 2007/11/09 13:22:29 atsareg Exp $"
+__RCSID__ = "$Id: SandboxDB.py,v 1.4 2007/11/09 18:35:18 atsareg Exp $"
 
 import re, os, sys
 import time, datetime
@@ -38,17 +38,18 @@ class SandboxDB(DB):
       self.maxSize = int(result['Value'])
 
 #############################################################################
-  def storeFile(self,jobID,filename,body,sandbox='Input'):
+  def storeFile(self,jobID,filename,fileString,sandbox_type='Input'):
     """ Store input sandbox ASCII file for jobID with the name filename which
         is given with its string body
     """
 
-    if len(body) > self.Maxsize*1024*1024:
+    fileSize = len(fileString)
+    if fileSize > self.maxSize*1024*1024:
       return S_ERROR('File size too large %.2f MB for file %s' % \
-                     (len(body)/1024./1024.,filename))
+                     (fileSize/1024./1024.,filename))
 
     prefix = "O"
-    if sandbox == 'Input':
+    if sandbox_type == 'Input':
       prefix = "I"
 
     # Check that the file does not exist already
@@ -67,9 +68,9 @@ class SandboxDB(DB):
         return result
 
     inFields = ['JobID','FileName','FileBody']
-    inValues = [jobID,fname,fileString]
+    inValues = [jobID,filename,fileString]
 
-    result = sandboxDB._insert(sandbox_type,inFields,inValues)
+    result = self._insert(sandbox_type,inFields,inValues)
     return result
 
 #############################################################################
@@ -95,12 +96,12 @@ class SandboxDB(DB):
     return S_OK(body)
 
 #############################################################################
-  def getFileNames(self,jobID,sandbox='in'):
+  def getFileNames(self,jobID,sandbox='Input'):
     """ Get file names for a given job in a given sandbox
     """
 
     prefix = "O"
-    if sandbox == 'in':
+    if sandbox == 'Input':
       prefix = "I"
 
     req = "SELECT FileName FROM %sSandbox WHERE JobID=%d" % (prefix,int(jobID))

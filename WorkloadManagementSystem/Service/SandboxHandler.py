@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: SandboxHandler.py,v 1.4 2007/11/09 13:22:27 atsareg Exp $
+# $Id: SandboxHandler.py,v 1.5 2007/11/09 18:35:19 atsareg Exp $
 ########################################################################
 
 """ SandboxHandler is the implementation of the Sandbox service
@@ -12,7 +12,7 @@
 
 """
 
-__RCSID__ = "$Id: SandboxHandler.py,v 1.4 2007/11/09 13:22:27 atsareg Exp $"
+__RCSID__ = "$Id: SandboxHandler.py,v 1.5 2007/11/09 18:35:19 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -47,7 +47,7 @@ def initializeSandboxHandler(serviceInfo):
 class SandboxHandler(RequestHandler):
 
   def __parsefileID(self, fileID):
-    """
+    """ Parse the file ID string to extract job metadata, e.g. jobID
     """
 
     ind = fileID.find('::')
@@ -91,7 +91,7 @@ class SandboxHandler(RequestHandler):
         return S_ERROR('InputSandbox file %s for job %d already exists' % (fname,jobID))
     return result
 
-  def transfer_bulkFromClient( self, fileID, token, fileHelper ):
+  def transfer_bulkFromClient( self, fileID, token, fsize, fileHelper ):
     """ Receive files packed into a tar archive by the fileHelper logic.
         token is used for access rights confirmation.
     """
@@ -102,7 +102,7 @@ class SandboxHandler(RequestHandler):
 
     jobID,fname = result['Value']
 
-    result = fileHelper.networkToString(dir_path)
+    result = fileHelper.networkToString()
     if result['OK']:
       fileString = result['Value']
       gLogger.info('Received file %s of size %d for job %d' %
@@ -110,16 +110,13 @@ class SandboxHandler(RequestHandler):
     else:
       return result
 
-    inFields = ['JobID','FileName','FileBody']
-    inValues = [jobID,fname,fileString]
-
     result = sandboxDB.storeFile(jobID,fname,fileString,sandbox_type)
     if not result['OK']:
       if result['Message'].find('Duplicate entry') != -1:
         return S_ERROR('InputSandbox file %s for job %d already exists' % (fname,jobID))
-    return result
+    return S_OK()
 
-  def transfer_toClient( self, fileID, fileHelper ):
+  def transfer_toClient( self, fileID, token, fileHelper ):
     """ Method to send bytes to clients.
     """
 
@@ -159,6 +156,13 @@ class SandboxHandler(RequestHandler):
     """
 
     return jobDB.setSandboxReady(jobID,stype)
+    
+  types_getFileNames = [ IntType ]
+  def export_getFileNames(self,jobID,stype="Input"):
+    """ Remove sandbox for the given job
+    """  
+    
+    return sandboxDB.getFileNames(jobID,stype)
 
   types_removeSandbox = [ IntType ]
   def export_removeSandbox(self,jobID,stype="Input"):
