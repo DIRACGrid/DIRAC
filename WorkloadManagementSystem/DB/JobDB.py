@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.12 2007/11/09 13:19:11 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.13 2007/11/09 18:35:51 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -51,7 +51,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.12 2007/11/09 13:19:11 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.13 2007/11/09 18:35:51 atsareg Exp $"
 
 import re, os, sys, string
 import time
@@ -84,7 +84,7 @@ class JobDB(DB):
 
 
     self.jobAttributeNames = []
-    self.getIdLock = threading.Lock()
+    self.getIDLock = threading.Lock()
 
     result = self.__getAttributeNames()
 
@@ -172,8 +172,6 @@ class JobDB(DB):
     # server a new connection should be established here or in the client. or the server
     # should make sure that only 1 thread is allowed to call this method at any time.
     # for the moment I put a lock here.
-
-    self.getIdLock.acquire()
 
     cmd = 'INSERT INTO Jobs (SubmissionTime) VALUES (CURDATE())'
     err = 'JobDB.getJobID: Failed to retrieve a new Id.'
@@ -1192,13 +1190,13 @@ class JobDB(DB):
     """
 
     if stype == "Input":
-      field = "ISandboxReady"
+      field = "ISandboxReadyFlag"
     elif stype == "Output":
-      field = "OSandboxReady"
+      field = "OSandboxReadyFlag"
     else:
       return S_ERROR('Illegal Sandbox type: '+stype)
 
-    cmd = "UPDATE Jobs SET %s='True' WHERE JobID=%d" % (stype, int(jobID))
+    cmd = "UPDATE Jobs SET %s='True' WHERE JobID=%d" % (field, int(jobID))
     result = self._update(cmd)
     return result
 

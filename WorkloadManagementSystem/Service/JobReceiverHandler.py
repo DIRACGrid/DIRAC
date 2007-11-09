@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/Attic/JobReceiverHandler.py,v 1.4 2007/06/27 12:35:06 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/Attic/JobReceiverHandler.py,v 1.5 2007/11/09 18:36:44 atsareg Exp $
 ########################################################################
 
 """ JobReceiverHandler is the implementation of the JobReceiver service
@@ -12,7 +12,7 @@
     
 """
 
-__RCSID__ = "$Id: JobReceiverHandler.py,v 1.4 2007/06/27 12:35:06 atsareg Exp $"
+__RCSID__ = "$Id: JobReceiverHandler.py,v 1.5 2007/11/09 18:36:44 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -45,7 +45,7 @@ class JobReceiverHandler( RequestHandler ):
 
     # Get the new jobID first
     #gActivityClient.addMark( "getJobId" )
-    result_jobID  = jobDB.getJobID()
+    result_jobID  = jobDB.getJobID()   
     if not result_jobID['OK']:
       return S_ERROR('Failed to acquire a new JobID')
       
@@ -72,7 +72,7 @@ class JobReceiverHandler( RequestHandler ):
       gLogger.error("Failed to store the user proxy for job %s" % jobID)
       return S_ERROR("Failed to store the user proxy for job %s" % jobID)
 
-    return S_OK(result['JobID'])        
+    return S_OK(jobID)        
 
 ###########################################################################
   types_rescheduleJob = [ IntType, StringType ]
