@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.1 2007/11/09 15:06:44 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.2 2007/11/09 16:48:16 paterson Exp $
 # File :   InputDataAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
 
 """
 
-__RCSID__ = "$Id: InputDataAgent.py,v 1.1 2007/11/09 15:06:44 paterson Exp $"
+__RCSID__ = "$Id: InputDataAgent.py,v 1.2 2007/11/09 16:48:16 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.DB.JobDB        import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
@@ -32,6 +32,8 @@ class InputDataAgent(Agent):
 
   #############################################################################
   def initialize(self):
+    """ Initialization of the Agent.
+    """
 
     result = Agent.initialize(self)
     self.jobDB = JobDB()
@@ -56,7 +58,7 @@ class InputDataAgent(Agent):
     try:
       from DIRAC.DataManagement.Client.LcgFileCatalogCombinedClient import LcgFileCatalogCombinedClient
       self.FileCatalog = LcgFileCatalogCombinedClient()
-      self.log.info("Instantiating LFC File Catalog in mode %s %s %s" % (mode,host,infosys) )
+      self.log.debug("Instantiating LFC File Catalog in mode %s %s %s" % (mode,host,infosys) )
     except Exception,x:
       msg = "Failed to create LcgFileCatalogClient"
       self.log.fatal(msg)
@@ -101,49 +103,48 @@ class InputDataAgent(Agent):
     return result
 
   #############################################################################
-  def checkJob(self,jobsList):
-    """This method checks for any JDL parameters that require the treatment
-       of further optimizers.
+  def checkJob(self,job):
+    """This method controls the checking of the job.
     """
 
-    for job in jobList:
-      # Check if the job is suitable for Data Optimizer
-      result = self.jobDB.getInputData(job)
-      if result['OK']:
-        if result['Value']:
-          self.log.debug('Job %s has an input data requirement and will be processed' % (job))
-          inputData = result['Value']
-          result = self.resolveInputData(job,inputData)
-          if not result['OK']:
-            self.log.error(result['Message'])
-            return result
-          resolvedData = result['Value']
-          result = self.setOptimizerJobInfo(job,self.optimizerName,resolvedData)
-          if not result['OK']:
-            self.log.error(result['Message'])
-            return result
-          result = self.updateJobStatus(job,self.nextOptimizerName,self.nextOptMinorStatus)
-          if not result['OK']:
-            self.log.error(result['Message'])
-            return result
-        else:
-          self.log.debug('Job %s has no input data requirement' % (job))
-          result = self.updateJobStatus(job,self.jobStatus,self.schedulingStatus)
-          if not result['OK']:
-            self.log.error(result['Message'])
-            return result
+    result = self.jobDB.getInputData(job)
+    if result['OK']:
+      if result['Value']:
+        self.log.debug('Job %s has an input data requirement and will be processed' % (job))
+        inputData = result['Value']
+        result = self.resolveInputData(job,inputData)
+        if not result['OK']:
+          self.log.error(result['Message'])
+          return result
+        resolvedData = result['Value']
+        result = self.setOptimizerJobInfo(job,self.optimizerName,resolvedData)
+        if not result['OK']:
+          self.log.error(result['Message'])
+          return result
+        result = self.updateJobStatus(job,self.nextOptimizerName,self.nextOptMinorStatus)
+        if not result['OK']:
+          self.log.error(result['Message'])
+          return result
       else:
-        self.log.error('Failed to get input data from JobdB for %s' %(job) )
-        self.log.error(result['Message'])
+        self.log.debug('Job %s has no input data requirement' % (job) )
+        result = self.updateJobStatus(job,self.jobStatus,self.schedulingStatus)
+        if not result['OK']:
+          self.log.error(result['Message'])
+          return result
+    else:
+      self.log.error('Failed to get input data from JobdB for %s' % (job) )
+      self.log.error(result['Message'])
 
   #############################################################################
   def resolveInputData(self,job,inputData):
-    """This method checks for any JDL parameters that require the treatment
-       of further optimizers.
+    """This method checks the file catalogue for replica information.
     """
 
     lfns = [string.replace(fname,'LFN:','') for fname in inputData]
+    start = time.time()
     result = self.FileCatalog.getReplicas(lfns)
+    timing = time.time() - start
+    self.log.info(self.FileCatalogName+' Lookup Time: %s seconds ' % (timing) )
     if not result['OK']:
       self.log.error(result['Message'])
       return result
@@ -155,7 +156,7 @@ class InputDataAgent(Agent):
         badLFNCount+=1
 
     if badLFNCount:
-      self.log.info('Found %s LFNs not existing for job %s' %(job,badLFNCount))
+      self.log.info('Found %s LFNs not existing for job %s' % (job,badLFNCount) )
       result = self.updateJobStatus(job,self.failedStatus,self.failedMinorStatus)
       if not result['OK']:
         self.log.error(result['Message'])
