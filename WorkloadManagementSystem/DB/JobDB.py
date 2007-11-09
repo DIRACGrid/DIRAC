@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.11 2007/11/08 20:08:23 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.12 2007/11/09 13:19:11 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -51,7 +51,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.11 2007/11/08 20:08:23 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.12 2007/11/09 13:19:11 atsareg Exp $"
 
 import re, os, sys, string
 import time
@@ -212,12 +212,20 @@ class JobDB(DB):
 
     if attrList:
       attrNames = string.join(map(lambda x: str(x),attrList ),',')
+      attr_tmp_list = attrList
     else:
       attrNames = string.join(map(lambda x: str(x),self.jobAttributeNames),',')
+      attr_tmp_list = self.jobAttributeNames
     jobList = string.join(map(lambda x: str(x),jobIDList),',')
 
     cmd = 'SELECT JobID,%s FROM Jobs WHERE JobID in ( %s )' % ( attrNames, jobList )
+    
+    print cmd
+    
     res = self._query( cmd )
+    
+    print res
+    
     if not res['OK']:
       return res
     try:
@@ -227,11 +235,11 @@ class JobDB(DB):
         jobDict = {}
         jobDict[ 'JobID' ] = jobID
         attrValues = retValues[1:]
-        for i in range(len(attrList)):
+        for i in range(len(attr_tmp_list)):
           try:
-            jobDict[attrList[i]] = attrValues[i].tostring()
+            jobDict[attr_tmp_list[i]] = attrValues[i].tostring()
           except:
-            jobDict[attrList[i]] = str(attrValues[i])
+            jobDict[attr_tmp_list[i]] = str(attrValues[i])
         retDict[int(jobID)] = jobDict
       return S_OK( retDict )
     except Exception,x:
