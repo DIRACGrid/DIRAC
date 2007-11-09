@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: SandboxHandler.py,v 1.2 2007/06/28 13:36:59 atsareg Exp $
+# $Id: SandboxHandler.py,v 1.3 2007/11/09 08:13:50 atsareg Exp $
 ########################################################################
 
 """ SandboxHandler is the implementation of the Sandbox service
@@ -12,7 +12,7 @@
     
 """
 
-__RCSID__ = "$Id: SandboxHandler.py,v 1.2 2007/06/28 13:36:59 atsareg Exp $"
+__RCSID__ = "$Id: SandboxHandler.py,v 1.3 2007/11/09 08:13:50 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -61,7 +61,7 @@ class SandboxHandler(RequestHandler):
       
     return S_OK((jobID,fname))  
 
-  def transfer_fromClient( self, fileID, fileSize, fileHelper ):
+  def transfer_fromClient( self, fileID, token, fileSize, fileHelper ):
     """ Method to receive bytes from clients.
         fileSize can be Xbytes or -1 if unknown.
     """
@@ -131,11 +131,12 @@ class SandboxHandler(RequestHandler):
     
     return jobDB.setSandboxReady(jobID,stype)
     
-  types_setSandboxReady = [ IntType, StringType ]
-  def export_removeFile(self,jobID,fname,stype="Input"):  
-    """ Remove sandbox file
+  types_removeSandbox = [ IntType ]
+  def export_removeFile(self,jobID,stype="Input"):  
+    """ Remove sandbox for the given job
     """
     
+    return sandboxDB.removeSandbox(jobID,fname,stype)
     
     
     

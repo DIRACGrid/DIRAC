@@ -1,13 +1,13 @@
 ########################################################################
-# $Id: JobStateUpdateHandler.py,v 1.1 2007/05/26 21:09:20 atsareg Exp $
+# $Id: JobStateUpdateHandler.py,v 1.2 2007/11/09 08:13:50 atsareg Exp $
 ########################################################################
 
-""" JobMonitoringHandler is the implementation of the JobMonitoring service
-    in the DISET framework
+""" JobStateUpdateHandler is the implementation of the Job State updating
+    service in the DISET framework
 
     The following methods are available in the Service interface
-
-
+    
+    setJobStatus()
 
 """
 
