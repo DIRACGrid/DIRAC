@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/AncestorFilesAgent.py,v 1.1 2007/11/09 17:07:33 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/AncestorFilesAgent.py,v 1.2 2007/11/10 17:19:08 paterson Exp $
 # File :   AncestorFilesAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -11,7 +11,7 @@
 
 """
 
-__RCSID__ = "$Id: AncestorFilesAgent.py,v 1.1 2007/11/09 17:07:33 paterson Exp $"
+__RCSID__ = "$Id: AncestorFilesAgent.py,v 1.2 2007/11/10 17:19:08 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.DB.JobDB        import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
@@ -50,7 +50,7 @@ class AncestorFilesAgent(Agent):
     self.nextOptMinorStatus   = gConfig.getValue(self.section+'/FinalJobMinorStatus',self.nextOptimizerName)
     self.schedulingStatus     = gConfig.getValue(self.section+'/SchedulingJobMinorStatus',self.finalOptimizerName)
     self.failedStatus         = gConfig.getValue(self.section+'/FailedJobStatus','Failed')
-    self.failedMinorStatus    = gConfig.getValue(self.section+'/FailedJobStatus','genCatalog Failure')
+    self.failedMinorStatus    = gConfig.getValue(self.section+'/FailedJobStatus','genCatalog Error')
 
     infosys = gConfig.getValue(self.section,'LCG_GFAL_INFOSYS','lcg-bdii.cern.ch:2170')
     host    = gConfig.getValue(self.section,'LFC_HOST','lhcb-lfc.cern.ch')
@@ -145,7 +145,7 @@ class AncestorFilesAgent(Agent):
     """
 
     for job in jobList:
-      # Check if the job is suitable for Data Optimizer
+      # Check if the job is suitable for the AncestorFilesAgent
       result = self.jobDB.getInputData(job)
       if result['OK']:
         if result['Value']:
@@ -165,7 +165,7 @@ class AncestorFilesAgent(Agent):
           if not result['OK']:
             self.log.error(result['Message'])
             return result
-          result = self.updateJobStatus(job,self.nextOptimizerName,self.nextOptMinorStatus)
+          result = self.updateJobStatus(job,self.jobStatus,self.nextOptMinorStatus)
           if not result['OK']:
             self.log.error(result['Message'])
             return result
