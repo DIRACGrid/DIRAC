@@ -1,10 +1,11 @@
 """ Class for the LCG File Catalog Client
 
 """
+import DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig
 from DIRAC.DataManagementSystem.Client.FileCatalogueBase import FileCatalogueBase
 from stat import *
-import os, re, string, commands, types
+import os, re, string, commands, types,time
 
 try:
   import lfc
@@ -97,7 +98,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     elif type(path) == types.ListType:
       lfns = path
     else:
-      return S_ERROR('LFCClient.getFileMetadata: Must supply a path or list of paths')
+      return S_ERROR('LFCClient.exists: Must supply a path or list of paths')
     resdict = {}
     # If we have less than three lfns to query a session doesn't make sense
     if len(lfns) > 2:
@@ -106,7 +107,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     successful = {}
     for lfn in lfns:
       fullLfn = '%s%s' % (self.prefix,lfn)
-      value = lfc.lfc_access(path_pre,0)
+      value = lfc.lfc_access(fullLfn,0)
       if value == 0:
         successful[lfn] = True
       else:
@@ -142,7 +143,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
   # These are the methods for link manipulation
   #
 
-  def isLink(self, path):
+  def isLink(self, link):
     if type(link) == types.StringType:
       links = [link]
     elif type(link) == types.ListType:
@@ -155,9 +156,9 @@ class LcgFileCatalogClient(FileCatalogueBase):
     if len(links) > 2:
       self.__openSession()
     for link in links:
-      fullLink = '%s%s' % (self.prefix,linkName)
+      fullLink = '%s%s' % (self.prefix,link)
       fstat = lfc.lfc_filestat()
-      value = lfc.lfc_lstat(linkName,fstat)
+      value = lfc.lfc_lstat(fullLink,fstat)
       if value == 0:
         if S_ISLNK(fstat.filemode):
           successful[link] = True
@@ -456,7 +457,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     elif type(path) == types.ListType:
        lfns = lfn
     else:
-      return S_ERROR('LFCClient.isFile: Must supply a path or list of paths')
+      return S_ERROR('LFCClient.removeFile: Must supply a path or list of paths')
     failed = {}
     successful = {}
     res = self.exists(lfns)
@@ -486,9 +487,9 @@ class LcgFileCatalogClient(FileCatalogueBase):
     return S_OK(resDict)
 
   def isFile(self, lfn):
-    if type(replicaTuple) == types.TupleType:
+    if type(lfn) == types.TupleType:
       lfns = [lfn]
-    elif type(path) == types.ListType:
+    elif type(lfn) == types.ListType:
        lfns = lfn
     else:
       return S_ERROR('LFCClient.isFile: Must supply a path or list of paths')
@@ -500,7 +501,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     for lfn in lfns:
       fullLfn = '%s%s' % (self.prefix,lfn)
       fstat = lfc.lfc_filestatg()
-      value = lfc.lfc_statg(lfn,'',fstat)
+      value = lfc.lfc_statg(fullLfn,'',fstat)
       if value == 0:
         if S_ISREG(fstat.filemode):
           successful[lfn] = True
@@ -531,14 +532,14 @@ class LcgFileCatalogClient(FileCatalogueBase):
     for lfn in lfns:
       fullLfn = '%s%s' % (self.prefix,lfn)
       fstat = lfc.lfc_filestatg()
-      value = lfc.lfc_statg(lfn,'',fstat)
+      value = lfc.lfc_statg(fullLfn,'',fstat)
       if value == 0:
-        successful[path] = {}
-        successful[path]['Size'] = fstat.filesize
-        successful[path]['CheckSumType'] = fstat.csumtype
-        successful[path]['CheckSumValue'] = fstat.csumvalue
-        successful[path]['GUID'] = fstat.guid
-        successful[path]['Status'] = fstat.status
+        successful[lfn] = {}
+        successful[lfn]['Size'] = fstat.filesize
+        successful[lfn]['CheckSumType'] = fstat.csumtype
+        successful[lfn]['CheckSumValue'] = fstat.csumvalue
+        successful[lfn]['GUID'] = fstat.guid
+        successful[lfn]['Status'] = fstat.status
       else:
         errno = lfc.cvar.serrno
         failed[lfn] = lfc.sstrerror(errno)
@@ -556,7 +557,6 @@ class LcgFileCatalogClient(FileCatalogueBase):
       lfns = path
     else:
       return S_ERROR('LFCClient.getReplicas: Must supply a path or list of paths')
-    resdict = {}
     # If we have less than three lfns to query a session doesn't make sense
     if len(lfns) > 2:
       self.__openSession()
@@ -577,7 +577,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     if self.session:
       self.__closeSession()
     resDict = {'Failed':failed,'Successful':successful}
-    return S_OK(resdict)
+    return S_OK(resDict)
 
   def getReplicaStatus(self,replicaTuple):
     if type(replicaTuple) == types.TupleType:
@@ -674,12 +674,12 @@ class LcgFileCatalogClient(FileCatalogueBase):
     for path in paths:
       fullLfn = '%s%s' % (self.prefix,path)
       fstat = lfc.lfc_filestatg()
-      value = lfc.lfc_statg(lfn,'',fstat)
+      value = lfc.lfc_statg(fullLfn,'',fstat)
       if value == 0:
         successful[path] = fstat.filesize
       else:
         errno = lfc.cvar.serrno
-        failed[lfn] = lfc.sstrerror(errno)
+        failed[path] = lfc.sstrerror(errno)
     if self.session:
       self.__closeSession()
     resDict = {'Failed':failed,'Successful':successful}
@@ -713,10 +713,10 @@ class LcgFileCatalogClient(FileCatalogueBase):
   def isDirectory(self, path):
     if type(path) == types.StringType:
       paths = [path]
-    elif type(paths) == types.ListType:
+    elif type(path) == types.ListType:
       paths = path
     else:
-      return S_ERROR('LFCClient.getDirectoryReplicas: Must supply a path or list of paths')
+      return S_ERROR('LFCClient.isDirectory: Must supply a path or list of paths')
     # If we have less than three lfns to query a session doesn't make sense
     if len(paths) > 2:
       self.__openSession()
@@ -744,13 +744,13 @@ class LcgFileCatalogClient(FileCatalogueBase):
     """
     if type(path) == types.StringType:
       paths = [path]
-    elif type(paths) == types.ListType:
+    elif type(path) == types.ListType:
       paths = path
     else:
       return S_ERROR('LFCClient.getDirectoryReplicas: Must supply a path or list of paths')
     resDict ={}
     # If we have less than three lfns to query a session doesn't make sense
-    if len(lfns) > 2:
+    if len(paths) > 2:
       self.__openSession()
     failed = {}
     successful = {}
@@ -758,6 +758,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
       resDict[path] = {}
       res = self.__getDirectoryContents(path)
       if res['OK']:
+        successful[path] = {}
         files = res['Value']['Files']
         for lfn in files.keys():
           repDict = files[lfn]['Replicas']
@@ -774,12 +775,12 @@ class LcgFileCatalogClient(FileCatalogueBase):
   def listDirectory(self, path):
     if type(path) == types.StringType:
       paths = [path]
-    elif type(paths) == types.ListType:
+    elif type(path) == types.ListType:
       paths = path
     else:
-      return S_ERROR('LFCClient.removeDirectory: Must supply a path or list of paths')
+      return S_ERROR('LFCClient.listDirectory: Must supply a path or list of paths')
     # If we have less than three lfns to query a session doesn't make sense
-    if len(lfns) > 2:
+    if len(paths) > 2:
       self.__openSession()
     failed = {}
     successful = {}
@@ -825,7 +826,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
   def getDirectoryMetadata(self, path):
     if type(path) == types.StringType:
       paths = [path]
-    elif type(paths) == types.ListType:
+    elif type(path) == types.ListType:
       paths = path
     else:
       return S_ERROR('LFCClient.getDirectoryReplicas: Must supply a path or list of paths')
@@ -839,7 +840,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
       fstat = lfc.lfc_filestatg()
       value = lfc.lfc_statg(fullLfn,'',fstat)
       if value == 0:
-        successful[path] = {'CreationTime':fstat.ctime,'NumberOfSubDirs':fstat.nlink}
+        successful[path] = {'CreationTime':time.ctime(fstat.ctime),'NumberOfSubPaths':fstat.nlink}
       else:
         errno = lfc.cvar.serrno
         failed[path] = lfc.sstrerror(errno)
@@ -851,10 +852,10 @@ class LcgFileCatalogClient(FileCatalogueBase):
   def getDirectorySize(self, path):
     if type(path) == types.StringType:
       paths = [path]
-    elif type(paths) == types.ListType:
+    elif type(path) == types.ListType:
       paths = path
     else:
-      return S_ERROR('LFCClient.getDirectoryReplicas: Must supply a path or list of paths')
+      return S_ERROR('LFCClient.getDirectorySize: Must supply a path or list of paths')
     # If we have less than three lfns to query a session doesn't make sense
     if len(paths) > 2:
       self.__openSession()
@@ -863,7 +864,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     for path in paths:
       res = self.__getDirectoryContents(path)
       if res['OK']:
-        pathDict = {'Files':0,'TotalSize':0,'SiteUsage':{}}
+        pathDict = {'Files':0,'TotalSize':0,'SiteUsage':{},'SiteFiles':{}}
         files = res['Value']['Files']
         for lfn in files.keys():
           fileSize = files[lfn]['MetaData']['Size']
@@ -873,7 +874,10 @@ class LcgFileCatalogClient(FileCatalogueBase):
           for se in repDict.keys():
             if not pathDict['SiteUsage'].has_key(se):
               pathDict['SiteUsage'][se] = 0
+            if not pathDict['SiteFiles'].has_key(se):
+              pathDict['SiteFiles'][se] = 0
             pathDict['SiteUsage'][se] += fileSize
+            pathDict['SiteFiles'][se] += 1
         successful[path] = pathDict
       else:
         failed[path] = res['Message']
@@ -909,7 +913,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
         lfn = '%s/%s' % (path,entry.d_name)
         resDict[lfn] = {'Replicas':{}}
         for replica in fileInfo:
-          resDict[lfn]['Replicas'][rep.host] = {'PFN':rep.sfn,'Status':rep.status}
+          resDict[lfn]['Replicas'][replica.host] = {'PFN':replica.sfn,'Status':replica.status}
         resDict[lfn]['MetaData'] = {'Size':entry.filesize,'GUID':entry.guid}
       else:
         subDir = '%s/%s' % (path,entry.d_name)
