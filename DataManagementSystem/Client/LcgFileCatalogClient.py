@@ -54,7 +54,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
 
   ####################################################################
   #
-  # These are the methods for session manipulation
+  # These are the methods for session/transaction manipulation
   #
 
   def __openSession(self):
@@ -67,6 +67,22 @@ class LcgFileCatalogClient(FileCatalogueBase):
     """Close the LFC client/server session"""
     lfc.lfc_endsess()
     self.session = False
+
+  def __startTransaction(self):
+    """ Begin transaction for one time commit """
+    transactionName = 'Transaction: DIRAC_%s.%s at %s' % (DIRAC.majorVersion,DIRAC.minorVersion,self.site)
+    lfc.lfc_starttrans(self.host,transactionName)
+    self.transaction = True
+
+  def __abortTransaction(self):
+    """ Abort transaction """
+    lfc.lfc_aborttrans()
+    self.transaction = False
+
+  def __endTransaction(self):
+    """ End transaction gracefully """
+    lfc.lfc_endtrans()
+    self.transaction = False
 
   ####################################################################
   #
@@ -110,12 +126,12 @@ class LcgFileCatalogClient(FileCatalogueBase):
     """
     fstat = lfc.lfc_filestatg()
     value = lfc.lfc_statg('',guid,fstat)
-    if (value == 0):
+    if value == 0:
        res = S_OK(1)
     else:
        errno = lfc.cvar.serrno
-       mess = lfc.sstrerror(errno).lower()
-       if (mess.find("no such file or directory") >= 0):
+       errStr = lfc.sstrerror(errno).lower()
+       if (errStr.find("no such file or directory") >= 0):
           res = S_OK(0)
        else:
           res = S_ERROR(lfc.sstrerror(errno))
@@ -236,7 +252,6 @@ class LcgFileCatalogClient(FileCatalogueBase):
     resDict = {'Failed':failed,'Successful':successful}
     return S_ERROR('Implement me')
 
-
   ####################################################################
   #
   # These are the methods for file manipulation
@@ -249,11 +264,104 @@ class LcgFileCatalogClient(FileCatalogueBase):
     """
     if type(fileTuple) == types.TupleType:
       files = [fileTuple]
-    else:
+    elif type(fileTuple) == types.ListType:
       files = fileTuple
-    for fileTuple in files:
-      lfn,pfn,size,se,guid = fileTuple
-    return S_ERROR('Implement me')
+    else:
+      return S_ERROR('LFCClient.addFile: Must supply a file tuple of list of tuples')
+    failed = {}
+    successful = {}
+    self.__openSession()
+    for lfn,pfn,size,se,guid in files:
+      #Check the registration is correctly specified
+      res = self.__checkAddFile(lfn,pfn,size,se,guid)
+      if not res['OK']:
+        failed[lfn] = res['Message']
+      else:
+        size = long(size)
+        res = self.__addFile(lfn,pfn,size,se,guid)
+        if not res['OK']:
+          failed[lfn] = res['Message']
+        else:
+          #Finally, register the pfn replica
+          replicaTuple = (lfn,pfn,se,True)
+          res = self.addReplica(replicaTuple)
+          if not res['OK']:
+            failed[lfn] = res['Message']
+            res = self.removeLfn(lfn)
+          elif not lfn in res['Value']['Successful']:
+            failed[lfn] = res['Value']['Failed']
+            res = self.removeLfn(lfn)
+          else:
+            successful[lfn] = True
+    self.__closeSession()
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+    def __addFile(self,lfn,pfn,size,se,guid):
+      self.__startTransaction()
+      bdir = os.path.dirname(lfn)
+      res = self.exists(bdir)
+      # If we failed to find out whether the directory exists
+      if not res['OK']:
+        self.__abortTransaction()
+        return S_ERROR(res['Message'])
+      # If we failed to find out whether the directory exists
+      if lfn in res['Value']['Failed'].keys():
+        self.__abortTransaction()
+        return S_ERROR(res['Value']['Failed'][lfn])
+      # If the directory doesn't exist
+      if not res['Value']['Successful']:
+        #Make the directories recursively if needed
+        res = self.__makeDirs(bdir)
+        # If we failed to make the directory for the file
+        if not res['OK']:
+          self.__abortTransaction()
+          return S_ERROR(res['Message'])
+      #Create a new file
+      fullLfn = '%s%s' % (self.prefix+lfn)
+      value = lfc.lfc_creatg(fullLfn,guid,0664)
+      if value != 0:
+        self.__abortTransaction()
+        errStr = lfc.sstrerror(lfc.cvar.serrno)
+        # Remove the file we just attempted to add
+        res = self.removeFile(lfn)
+        return S_ERROR("__addFile: Failed to create GUID: %s" % errStr)
+      #Set the size of the file
+      value = lfc.lfc_setfsizeg(guid,size,'','')
+      if value != 0:
+        self.__abortTransaction()
+        errStr = lfc.sstrerror(lfc.cvar.serrno)
+        # Remove the file we just attempted to add
+        res = self.removeFile(lfn)
+        return S_ERROR("__addFile: Failed to set file size: %s" % errStr)
+      self.__endTransaction()
+      return S_OK()
+
+    def __checkAddFile(self,lfn,pfn,size,se,guid):
+      errStr = ""
+      try:
+        size = long(size)
+      except:
+        errStr += "The size of the file must be an 'int','long' or 'string'"
+      if not guid:
+        errStr += "There is no GUID, don't be silly"
+      res = self.__existsGuid(guid)
+      if res['OK'] and res['Value']:
+        errStr += "You can't register the same GUID twice"
+      if not se:
+        errStr += "You really want to register a file without giving the SE?!?!?"
+      if not pfn:
+        errStr += "Without a PFN a registration is nothing"
+      if not lfn:
+        errStr += "You really are rubbish!!!! Sort it out"
+      res = self.exists(lfn)
+      if res['OK'] and res['Value']['Successful'].has_key(lfn):
+        if res['Value']['Successful'][lfn]:
+          errStr += "This LFN is already taken, try another one"
+      if errStr:
+        return S_ERROR(errStr)
+      else:
+        return S_OK()
 
   def addReplica(self, replicaTuple):
     """ This adds a replica to the catalogue
@@ -263,7 +371,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     """
     if type(replicaTuple) == types.TupleType:
       replicas = [replicaTuple]
-    elif type(path) == types.ListType:
+    elif type(replicaTuple) == types.ListType:
       replicas = replicaTuple
     else:
       return S_ERROR('LFCClient.addReplica: Must supply a replica tuple of list of tuples')
