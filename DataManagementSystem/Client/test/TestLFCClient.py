@@ -1,4 +1,4 @@
-from DIRAC.DataManagementSystem.Client.LcgFileCatalogCombinedClient import LcgFileCatalogCombinedClient
+from DIRAC.DataManagementSystem.Client.LcgFileCatalogClient import LcgFileCatalogClient
 from DIRAC.Core.Utilities.File import makeGuid
 import unittest,types,time,os
 
@@ -6,14 +6,14 @@ class LFCClientTestCase(unittest.TestCase):
   """ Base class for the TransferDB test cases
   """
   def setUp(self):
-    self.lfc = LcgFileCatalogCombinedClient()
+    self.lfc = LcgFileCatalogClient(host='lfc-lhcb.cern.ch',infosys='lcg-bdii.cern.ch')
     ######################################################
     #
     #  Clean the test directory before starting
     #
     dir = '/lhcb/test/unit-test'
     res = self.lfc.listDirectory(dir)
-    self.assert_(res['OK'])   
+    self.assert_(res['OK'])
     self.assert_(res['Value'].has_key('Successful'))
     self.assert_(res['Value'].has_key('Failed'))
     self.assert_(res['Value']['Successful'].has_key(dir))
@@ -50,7 +50,7 @@ class FilesCase(LFCClientTestCase):
     # First create a file to use for remaining tests
     #
     lfn = '/lhcb/test/unit-test/testfile.%s' % time.time()
-    pfn = 'protocol://host:port/storage/path%s' % lfn 
+    pfn = 'protocol://host:port/storage/path%s' % lfn
     size = 10000000
     se = 'DIRAC-storage'
     guid = makeGuid()
@@ -61,7 +61,7 @@ class FilesCase(LFCClientTestCase):
     self.assert_(res['Value'].has_key('Successful'))
     self.assert_(res['Value'].has_key('Failed'))
     self.assert_(res['Value']['Successful'].has_key(lfn))
-    self.assert_(res['Value']['Successful'][lfn]) 
+    self.assert_(res['Value']['Successful'][lfn])
 
     ######################################################
     #
@@ -70,7 +70,7 @@ class FilesCase(LFCClientTestCase):
 
     targetLfn = lfn
     linkName = '/lhcb/test/unit-test/testlink.%s' % time.time()
-  
+
     linkTuple = (linkName,targetLfn)
     res = self.lfc.createLink(linkTuple)
     self.assert_(res['OK'])
@@ -83,14 +83,14 @@ class FilesCase(LFCClientTestCase):
     #
     #  Test the recognition of links works (with file it should fail)
     #
-     
-    res = self.lfc.isLink(targetLfn)   
+
+    res = self.lfc.isLink(targetLfn)
     self.assert_(res['OK'])
     self.assert_(res['Value'].has_key('Successful'))
     self.assert_(res['Value'].has_key('Failed'))
     self.assert_(res['Value']['Successful'].has_key(targetLfn))
     self.assertFalse(res['Value']['Successful'][targetLfn])
-    
+
     ######################################################
     #
     #  Test the recognition of links works (with link it shouldn't fail)
@@ -105,7 +105,7 @@ class FilesCase(LFCClientTestCase):
 
     ######################################################
     #
-    #  Test the resolution of links 
+    #  Test the resolution of links
     #
 
     res = self.lfc.readLink(linkName)
@@ -117,7 +117,7 @@ class FilesCase(LFCClientTestCase):
 
     ######################################################
     #
-    #  Test the removal of links 
+    #  Test the removal of links
     #
 
     res = self.lfc.removeLink(linkName)
@@ -128,7 +128,7 @@ class FilesCase(LFCClientTestCase):
     self.assert_(res['Value']['Successful'][linkName])
 
     ######################################################
-    #  
+    #
     #  Test the recognition of non existant links
     #
 
@@ -164,25 +164,25 @@ class FilesCase(LFCClientTestCase):
     self.assert_(res['Value'].has_key('Successful'))
     self.assert_(res['Value'].has_key('Failed'))
     self.assert_(res['Value']['Successful'].has_key(lfn))
-    self.assert_(res['Value']['Successful'][lfn])    
+    self.assert_(res['Value']['Successful'][lfn])
 
     ######################################################
     #
     #  Test the recognition of files
     #
-     
+
     res = self.lfc.isFile(lfn)
     self.assert_(res['OK'])
-    self.assert_(res['Value'].has_key('Successful'))  
+    self.assert_(res['Value'].has_key('Successful'))
     self.assert_(res['Value'].has_key('Failed'))
     self.assert_(res['Value']['Successful'].has_key(lfn))
-    self.assert_(res['Value']['Successful'][lfn])	
+    self.assert_(res['Value']['Successful'][lfn])
 
     ######################################################
     #
     #  Test obtaining the file metadata
     #
-     
+
     res = self.lfc.getFileMetadata(lfn)
     self.assert_(res['OK'])
     self.assert_(res['Value'].has_key('Successful'))
@@ -195,7 +195,7 @@ class FilesCase(LFCClientTestCase):
     self.assertEqual(metadataDict['Size'],10000000)
 
     ######################################################
-    #  
+    #
     #  Test obtaining the file replicas
     #
 
@@ -207,34 +207,34 @@ class FilesCase(LFCClientTestCase):
     self.assert_(res['Value']['Successful'][lfn].has_key('DIRAC-storage'))
     self.assertEqual(res['Value']['Successful'][lfn]['DIRAC-storage'],pfn)
     self.assert_(res['Value']['Successful'][lfn].has_key('Replica-storage'))
-    self.assertEqual(res['Value']['Successful'][lfn]['Replica-storage'],replicaPfn) 
+    self.assertEqual(res['Value']['Successful'][lfn]['Replica-storage'],replicaPfn)
 
     ######################################################
     #
     #  Test obtaining the replica status for the master replica
     #
-        
+
     replicaTuple = (lfn,pfn,se)
     res = self.lfc.getReplicaStatus(replicaTuple)
     self.assert_(res['OK'])
     self.assert_(res['Value'].has_key('Successful'))
     self.assert_(res['Value'].has_key('Failed'))
     self.assert_(res['Value']['Successful'].has_key(lfn))
-    self.assertEqual(res['Value']['Successful'][lfn],'U') 
+    self.assertEqual(res['Value']['Successful'][lfn],'U')
 
     ######################################################
     #
     #  Test setting the replica status for the master replica
     #
-     
-    replicaTuple = (lfn,pfn,se,'C')   
+
+    replicaTuple = (lfn,pfn,se,'C')
     res = self.lfc.setReplicaStatus(replicaTuple)
-    self.assert_(res['OK'])   
+    self.assert_(res['OK'])
     self.assert_(res['Value'].has_key('Successful'))
     self.assert_(res['Value'].has_key('Failed'))
     self.assert_(res['Value']['Successful'].has_key(lfn))
-    self.assert_(res['Value']['Successful'][lfn])    
- 
+    self.assert_(res['Value']['Successful'][lfn])
+
     ######################################################
     #
     #  Ensure the changing  of the replica status worked
@@ -245,7 +245,7 @@ class FilesCase(LFCClientTestCase):
     self.assert_(res['OK'])
     self.assert_(res['Value'].has_key('Successful'))
     self.assert_(res['Value'].has_key('Failed'))
-    self.assert_(res['Value']['Successful'].has_key(lfn)) 
+    self.assert_(res['Value']['Successful'].has_key(lfn))
     self.assertEqual(res['Value']['Successful'][lfn],'C')
 
     ######################################################
@@ -271,24 +271,24 @@ class FilesCase(LFCClientTestCase):
     res = self.lfc.getReplicas(lfn)
     self.assert_(res['OK'])
     self.assert_(res['Value'].has_key('Successful'))
-    self.assert_(res['Value'].has_key('Failed')) 
+    self.assert_(res['Value'].has_key('Failed'))
     self.assert_(res['Value']['Successful'].has_key(lfn))
     self.assert_(res['Value']['Successful'][lfn].has_key(newse))
     self.assertEqual(res['Value']['Successful'][lfn][newse],pfn)
     self.assert_(res['Value']['Successful'][lfn].has_key(replicase))
-    self.assertEqual(res['Value']['Successful'][lfn][replicase],replicaPfn)    
+    self.assertEqual(res['Value']['Successful'][lfn][replicase],replicaPfn)
 
     ######################################################
     #
     #  Test getting the file size
     #
-    
+
     res = self.lfc.getFileSize(lfn)
     self.assert_(res['OK'])
-    self.assert_(res['Value'].has_key('Successful'))  
+    self.assert_(res['Value'].has_key('Successful'))
     self.assert_(res['Value'].has_key('Failed'))
     self.assert_(res['Value']['Successful'].has_key(lfn))
-    self.assertEqual(res['Value']['Successful'][lfn],size)    
+    self.assertEqual(res['Value']['Successful'][lfn],size)
 
     ######################################################
     #
@@ -307,7 +307,7 @@ class FilesCase(LFCClientTestCase):
     #
     #  Test getting replicas for directories
     #
-     
+
     res = self.lfc.getDirectoryReplicas(dir)
     self.assert_(res['OK'])
     self.assert_(res['Value'].has_key('Successful'))
@@ -318,19 +318,19 @@ class FilesCase(LFCClientTestCase):
     self.assertEqual(res['Value']['Successful'][dir][lfn][newse],pfn)
     self.assert_(res['Value']['Successful'][dir][lfn].has_key(replicase))
     self.assertEqual(res['Value']['Successful'][dir][lfn][replicase],replicaPfn)
- 
+
     ######################################################
     #
     #  Test listing directories
     #
-    
+
     res = self.lfc.listDirectory(dir)
     self.assert_(res['OK'])
     self.assert_(res['Value'].has_key('Successful'))
     self.assert_(res['Value'].has_key('Failed'))
     self.assert_(res['Value']['Successful'].has_key(dir))
-    self.assertEqual(res['Value']['Successful'][dir],[lfn]) 
-    
+    self.assertEqual(res['Value']['Successful'][dir],[lfn])
+
     ######################################################
     #
     #  Test getting directory metadata
@@ -363,7 +363,7 @@ class FilesCase(LFCClientTestCase):
     self.assert_(res['Value']['Successful'][dir]['SiteFiles'].has_key(newse))
     self.assertEqual(res['Value']['Successful'][dir]['SiteFiles'][newse],1)
     self.assert_(res['Value']['Successful'][dir]['SiteFiles'].has_key(replicase))
-    self.assertEqual(res['Value']['Successful'][dir]['SiteFiles'][replicase],1)  
+    self.assertEqual(res['Value']['Successful'][dir]['SiteFiles'][replicase],1)
     self.assert_(res['Value']['Successful'][dir].has_key('SiteUsage'))
     self.assert_(res['Value']['Successful'][dir]['SiteUsage'].has_key(newse))
     self.assertEqual(res['Value']['Successful'][dir]['SiteUsage'][newse],size)
@@ -374,10 +374,10 @@ class FilesCase(LFCClientTestCase):
     #
     #  Test creation of directories
     #
-    
+
     newDir = '%s/%s' % (dir,'testDir')
     res = self.lfc.createDirectory(newDir)
-    self.assert_(res['OK'])   
+    self.assert_(res['OK'])
     self.assert_(res['Value'].has_key('Successful'))
     self.assert_(res['Value'].has_key('Failed'))
     self.assert_(res['Value']['Successful'].has_key(newDir))
@@ -386,12 +386,12 @@ class FilesCase(LFCClientTestCase):
     ######################################################
     #
     #  Test removal of directories
-    #    
+    #
     res = self.lfc.removeDirectory(newDir)
     self.assert_(res['OK'])
     self.assert_(res['Value'].has_key('Successful'))
     self.assert_(res['Value'].has_key('Failed'))
-    self.assert_(res['Value']['Successful'].has_key(newDir))      
+    self.assert_(res['Value']['Successful'].has_key(newDir))
     self.assert_(res['Value']['Successful'][newDir])
 
     ######################################################
@@ -399,7 +399,7 @@ class FilesCase(LFCClientTestCase):
     #  Test removal of replicas
     #
     res = self.lfc.listDirectory(dir)
-    self.assert_(res['OK'])   
+    self.assert_(res['OK'])
     self.assert_(res['Value'].has_key('Successful'))
     self.assert_(res['Value'].has_key('Failed'))
     self.assert_(res['Value']['Successful'].has_key(dir))
@@ -420,12 +420,12 @@ class FilesCase(LFCClientTestCase):
     self.assert_(res['Value'].has_key('Successful'))
     self.assert_(res['Value'].has_key('Failed'))
     self.assertFalse(res['Value']['Failed'])
- 
+
     ######################################################
     #
     #  Test removal of files
     #
-    
+
     res = self.lfc.removeFile(lfnsToDelete)
     self.assert_(res['OK'])
     self.assert_(res['Value'].has_key('Successful'))
