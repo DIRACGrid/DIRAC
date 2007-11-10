@@ -9,14 +9,13 @@ import random, time,os
 
 class LcgFileCatalogCombinedClient:
 
-  write_methods = ['addFiles','addFile','addPfns','addPfn','removeLfns',
-                   'removeLfn','rmFile','rmFiles','removePfns','removePfn',
-                   'mkdir','makedirs','rmdir','setMask','addUserACL',
-                   'delUserACL','addGroupACL','delGroupACL']
-  ro_methods = ['ls','exists','existsDir','existsGuid','getFileSize',
-                'getPfnsByLfn','getPfnsByLfnList','getPfnsInDir',
-                'getPfnsByGuid','getPfnsByPfn','getLfnsByGuid','getLfnsByPfn',
-                'getGuidByLfn','getGUIDsByLfnList','getGuidByPfn','getACL']
+  ro_methods = ['exists','isLink','readLink','isFile','getFileMetadata','getReplicas',
+                'getReplicaStatus','getFileSize','isDirectory','getDirectoryReplicas',
+                'listDirectory','getDirectoryMetadata','getDirectorySize']
+
+  write_methods = ['createLink','removeLink','addFile','addReplica','removeReplica',
+                   'removeFile','setReplicaStatus','setReplicaHost','createDirectory',
+                   'removeDirectory']
 
   def __init__(self, infosys=None, master_host=None, mirrors = []):
     """ Default constructor
