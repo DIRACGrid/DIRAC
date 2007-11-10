@@ -454,7 +454,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     return S_OK(resDict)
 
   def removeFile(self, path):
-    if type(path) == types.TupleType:
+    if type(path) == types.StringType:
       lfns = [path]
     elif type(path) == types.ListType:
        lfns = path
