@@ -1,7 +1,6 @@
 """ File catalog client for the LFC service combined with
     multiple read-only mirrors
 """
-
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.DataManagementSystem.Client.LcgFileCatalogClient import LcgFileCatalogClient
 from DIRAC.Core.Utilities.Subprocess import pythonCall
@@ -89,7 +88,7 @@ class LcgFileCatalogCombinedClient:
     count = 0
     result = S_ERROR()
 
-    while result['Status'] != "OK" and count <= max_retry:
+    while (not result['OK']) and (count <= max_retry):
       if count > 0:
         # If retrying, wait a bit
         time.sleep(1)
@@ -97,12 +96,12 @@ class LcgFileCatalogCombinedClient:
         result = S_OK()
         if userDN:
           resAuth = pythonCall(self.timeout,self.lfc.setAuthorizationId,userDN)
-          if resAuth['Status'] != "OK":
+          if not resAuth['OK']:
             result = S_ERROR('Failed to set user authorization')
-        if result['Status'] == "OK":
+        if result['OK']:
           method = getattr(self.lfc,self.call)
           resMeth = pythonCall(self.timeout,method,*parms,**kws)
-          if resMeth['Status'] != 'OK':
+          if not resMeth['OK']:
             result = S_ERROR('Timeout calling '+self.call+" method")
           else:
             result = resMeth['Value']
@@ -130,21 +129,21 @@ class LcgFileCatalogCombinedClient:
     max_retry = 2
     count = 0
 
-    while result['Status'] != "OK" and count <= max_retry:
+    while (not result['OK']) and (count <= max_retry):
       i = 0
-      while result['Status'] != "OK" and i < self.nmirrors:
+      while not result['OK'] and i < self.nmirrors:
         # Switch environment to the mirror instance
         os.environ['LFC_HOST'] = self.mirrors[i].host
         try:
           result = S_OK()
           if userDN:
             resAuth = pythonCall(self.timeout,self.mirrors[i].setAuthorizationId,userDN)
-            if resAuth['Status'] != "OK":
+            if not resAuth['OK']:
               result = S_ERROR('Failed to set user authorization')
-          if result['Status'] == "OK":
+          if result['OK']:
             method = getattr(self.mirrors[i],self.call)
             resMeth = pythonCall(self.timeout,method,*parms,**kws)
-            if resMeth['Status'] != 'OK':
+            if not resMeth['OK']:
               result = S_ERROR('Timout calling '+self.call+" method")
             else:
               result = resMeth['Value']
@@ -157,17 +156,17 @@ class LcgFileCatalogCombinedClient:
     os.environ['LFC_HOST'] = self.master_host
 
     # Call the master LFC if all the mirrors failed
-    if result['Status'] != "OK":
+    if not result['OK']:
       try:
         result = S_OK()
         if userDN:
           resAuth = pythonCall(self.timeout,self.lfc.setAuthorizationId,userDN)
-          if resAuth['Status'] != "OK":
+          if not resAuth['OK']:
             result = S_ERROR('Failed to set user authorization')
-        if result['Status'] == "OK":
+        if result['OK']:
           method = getattr(self.lfc,self.call)
           resMeth = pythonCall(self.timeout,method,*parms,**kws)
-          if resMeth['Status'] != 'OK':
+          if not resMeth['OK']:
             result = S_ERROR('Timout calling '+self.call+" method")
           else:
             result = resMeth['Value']
