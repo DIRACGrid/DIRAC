@@ -1,12 +1,45 @@
-import unittest,types,time,os
-from DIRAC.DataManagementSystem.Client.LcgFileCatalogClient import LcgFileCatalogClient
+from DIRAC.DataManagementSystem.Client.LcgFileCatalogCombinedClient import LcgFileCatalogCombinedClient
 from DIRAC.Core.Utilities.File import makeGuid
+import unittest,types,time,os
 
 class LFCClientTestCase(unittest.TestCase):
   """ Base class for the TransferDB test cases
   """
   def setUp(self):
-    self.lfc = LcgFileCatalogClient(host='lfc-lhcb.cern.ch',infosys='lcg-bdii.cern.ch')
+    self.lfc = LcgFileCatalogCombinedClient()
+    ######################################################
+    #
+    #  Clean the test directory before starting
+    #
+    dir = '/lhcb/test/unit-test'
+    res = self.lfc.listDirectory(dir)
+    self.assert_(res['OK'])   
+    self.assert_(res['Value'].has_key('Successful'))
+    self.assert_(res['Value'].has_key('Failed'))
+    self.assert_(res['Value']['Successful'].has_key(dir))
+    lfnsToDelete = res['Value']['Successful'][dir]
+    res = self.lfc.getReplicas(lfnsToDelete)
+    self.assert_(res['OK'])
+    self.assert_(res['Value'].has_key('Successful'))
+    self.assert_(res['Value'].has_key('Failed'))
+    replicas = res['Value']['Successful']
+    replicaTupleList = []
+    for lfn in replicas.keys():
+      for se in replicas[lfn].keys():
+        replicaTuple = (lfn,replicas[lfn][se],se)
+        replicaTupleList.append(replicaTuple)
+
+    res = self.lfc.removeReplica(replicaTupleList)
+    self.assert_(res['OK'])
+    self.assert_(res['Value'].has_key('Successful'))
+    self.assert_(res['Value'].has_key('Failed'))
+    self.assertFalse(res['Value']['Failed'])
+    res = self.lfc.removeFile(lfnsToDelete)
+    self.assert_(res['OK'])
+    self.assert_(res['Value'].has_key('Successful'))
+    self.assert_(res['Value'].has_key('Failed'))
+    self.assertFalse(res['Value']['Failed'])
+
 
 class FilesCase(LFCClientTestCase):
 
@@ -23,6 +56,7 @@ class FilesCase(LFCClientTestCase):
     guid = makeGuid()
     fileTuple = (lfn,pfn,size,se,guid)
     res = self.lfc.addFile(fileTuple)
+    print res
     self.assert_(res['OK'])
     self.assert_(res['Value'].has_key('Successful'))
     self.assert_(res['Value'].has_key('Failed'))
