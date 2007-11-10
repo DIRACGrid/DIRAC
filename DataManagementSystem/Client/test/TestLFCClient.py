@@ -6,7 +6,7 @@ class LFCClientTestCase(unittest.TestCase):
   """ Base class for the TransferDB test cases
   """
   def setUp(self):
-    self.lfc = LcgFileCatalogClient(host='lfc-lhcb.cern.ch',infosys='lcg-bdii.cern.ch')
+    self.lfc = LcgFileCatalogClient(host='lfc-lhcb.cern.ch',infosys='lcg-bdii.cern.ch:2170')
     ######################################################
     #
     #  Clean the test directory before starting
