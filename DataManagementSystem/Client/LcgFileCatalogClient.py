@@ -13,6 +13,8 @@ except ImportError, x:
   print "Failed to import lfc module !"
   print str(x)
 
+print dir(lfc)
+
 class LcgFileCatalogClient(FileCatalogueBase):
 
   def __init__(self,infosys=None,host=None):
@@ -173,12 +175,12 @@ class LcgFileCatalogClient(FileCatalogueBase):
     return S_OK(resDict)
 
   def createLink(self,linkTuple):
-    if type(replicaTuple) == types.TupleType:
+    if type(linkTuple) == types.TupleType:
       links = [linkTuple]
-    elif type(path) == types.ListType:
+    elif type(linkTuple) == types.ListType:
       links = linkTuple
     else:
-      return S_ERROR('LFCClient.addReplica: Must supply a link tuple of list of tuples')
+      return S_ERROR('LFCClient.createLink: Must supply a link tuple of list of tuples')
     # If we have less than three lfns to query a session doesn't make sense
     if len(links) > 2:
       self.__openSession()
@@ -187,7 +189,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     for linkName,lfn in links:
       fullLink = '%s%s' % (self.prefix,linkName)
       fullLfn = '%s%s' % (self.prefix,lfn)
-      value = lfn.lfc_symlink(fullLfn,fullLink)
+      value = lfc.lfc_symlink(fullLfn,fullLink)
       if value == 0:
         successful[linkName] = True
       else:
@@ -243,15 +245,15 @@ class LcgFileCatalogClient(FileCatalogueBase):
       for i in range(256):
         strBuff+=' '
       value = lfc.lfc_readlink(fullLink,strBuff,256)
-      if value == 0:
-        successful[link] = a.replace('\x00','').strip().replace(self.prefix,'')
+      if re.search('/',strBuff):
+        successful[link] = strBuff.replace('\x00','').strip().replace(self.prefix,'')
       else:
         errno = lfc.cvar.serrno
         failed[link] = lfc.sstrerror(errno)
     if self.session:
       self.__closeSession()
     resDict = {'Failed':failed,'Successful':successful}
-    return S_ERROR('Implement me')
+    return S_OK(resDict)
 
   ####################################################################
   #
@@ -298,71 +300,71 @@ class LcgFileCatalogClient(FileCatalogueBase):
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
-    def __addFile(self,lfn,pfn,size,se,guid):
-      self.__startTransaction()
-      bdir = os.path.dirname(lfn)
-      res = self.exists(bdir)
-      # If we failed to find out whether the directory exists
+  def __addFile(self,lfn,pfn,size,se,guid):
+    self.__startTransaction()
+    bdir = os.path.dirname(lfn)
+    res = self.exists(bdir)
+    # If we failed to find out whether the directory exists
+    if not res['OK']:
+      self.__abortTransaction()
+      return S_ERROR(res['Message'])
+    # If we failed to find out whether the directory exists
+    if lfn in res['Value']['Failed'].keys():
+      self.__abortTransaction()
+      return S_ERROR(res['Value']['Failed'][lfn])
+    # If the directory doesn't exist
+    if not res['Value']['Successful'][bdir]:
+      #Make the directories recursively if needed
+      res = self.__makeDirs(bdir)
+      # If we failed to make the directory for the file
       if not res['OK']:
         self.__abortTransaction()
         return S_ERROR(res['Message'])
-      # If we failed to find out whether the directory exists
-      if lfn in res['Value']['Failed'].keys():
-        self.__abortTransaction()
-        return S_ERROR(res['Value']['Failed'][lfn])
-      # If the directory doesn't exist
-      if not res['Value']['Successful']:
-        #Make the directories recursively if needed
-        res = self.__makeDirs(bdir)
-        # If we failed to make the directory for the file
-        if not res['OK']:
-          self.__abortTransaction()
-          return S_ERROR(res['Message'])
-      #Create a new file
-      fullLfn = '%s%s' % (self.prefix+lfn)
-      value = lfc.lfc_creatg(fullLfn,guid,0664)
-      if value != 0:
-        self.__abortTransaction()
-        errStr = lfc.sstrerror(lfc.cvar.serrno)
-        # Remove the file we just attempted to add
-        res = self.removeFile(lfn)
-        return S_ERROR("__addFile: Failed to create GUID: %s" % errStr)
-      #Set the size of the file
-      value = lfc.lfc_setfsizeg(guid,size,'','')
-      if value != 0:
-        self.__abortTransaction()
-        errStr = lfc.sstrerror(lfc.cvar.serrno)
-        # Remove the file we just attempted to add
-        res = self.removeFile(lfn)
-        return S_ERROR("__addFile: Failed to set file size: %s" % errStr)
-      self.__endTransaction()
-      return S_OK()
+    #Create a new file
+    fullLfn = '%s%s' % (self.prefix,lfn)
+    value = lfc.lfc_creatg(fullLfn,guid,0664)
+    if value != 0:
+      self.__abortTransaction()
+      errStr = lfc.sstrerror(lfc.cvar.serrno)
+      # Remove the file we just attempted to add
+      res = self.removeFile(lfn)
+      return S_ERROR("__addFile: Failed to create GUID: %s" % errStr)
+    #Set the size of the file
+    value = lfc.lfc_setfsizeg(guid,size,'','')
+    if value != 0:
+      self.__abortTransaction()
+      errStr = lfc.sstrerror(lfc.cvar.serrno)
+      # Remove the file we just attempted to add
+      res = self.removeFile(lfn)
+      return S_ERROR("__addFile: Failed to set file size: %s" % errStr)
+    self.__endTransaction()
+    return S_OK()
 
-    def __checkAddFile(self,lfn,pfn,size,se,guid):
-      errStr = ""
-      try:
-        size = long(size)
-      except:
-        errStr += "The size of the file must be an 'int','long' or 'string'"
-      if not guid:
-        errStr += "There is no GUID, don't be silly"
-      res = self.__existsGuid(guid)
-      if res['OK'] and res['Value']:
-        errStr += "You can't register the same GUID twice"
-      if not se:
-        errStr += "You really want to register a file without giving the SE?!?!?"
-      if not pfn:
-        errStr += "Without a PFN a registration is nothing"
-      if not lfn:
-        errStr += "You really are rubbish!!!! Sort it out"
-      res = self.exists(lfn)
-      if res['OK'] and res['Value']['Successful'].has_key(lfn):
-        if res['Value']['Successful'][lfn]:
-          errStr += "This LFN is already taken, try another one"
-      if errStr:
-        return S_ERROR(errStr)
-      else:
-        return S_OK()
+  def __checkAddFile(self,lfn,pfn,size,se,guid):
+    errStr = ""
+    try:
+      size = long(size)
+    except:
+      errStr += "The size of the file must be an 'int','long' or 'string'"
+    if not guid:
+      errStr += "There is no GUID, don't be silly"
+    res = self.__existsGuid(guid)
+    if res['OK'] and res['Value']:
+      errStr += "You can't register the same GUID twice"
+    if not se:
+      errStr += "You really want to register a file without giving the SE?!?!?"
+    if not pfn:
+      errStr += "Without a PFN a registration is nothing"
+    if not lfn:
+      errStr += "You really are rubbish!!!! Sort it out"
+    res = self.exists(lfn)
+    if res['OK'] and res['Value']['Successful'].has_key(lfn):
+      if res['Value']['Successful'][lfn]:
+        errStr += "This LFN is already taken, try another one"
+    if errStr:
+      return S_ERROR(errStr)
+    else:
+      return S_OK()
 
   def addReplica(self, replicaTuple):
     """ This adds a replica to the catalogue
@@ -432,7 +434,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     failed = {}
     successful = {}
     # If we have less than three lfns to query a session doesn't make sense
-    if len(lfnsToRemove) > 2:
+    if len(replicas) > 2:
       self.__openSession()
     for lfn,pfn,se in replicas:
       fid = lfc.lfc_fileid()
@@ -452,10 +454,10 @@ class LcgFileCatalogClient(FileCatalogueBase):
     return S_OK(resDict)
 
   def removeFile(self, path):
-    if type(replicaTuple) == types.TupleType:
-      lfns = [lfn]
+    if type(path) == types.TupleType:
+      lfns = [path]
     elif type(path) == types.ListType:
-       lfns = lfn
+       lfns = path
     else:
       return S_ERROR('LFCClient.removeFile: Must supply a path or list of paths')
     failed = {}
@@ -487,7 +489,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     return S_OK(resDict)
 
   def isFile(self, lfn):
-    if type(lfn) == types.TupleType:
+    if type(lfn) == types.StringType:
       lfns = [lfn]
     elif type(lfn) == types.ListType:
        lfns = lfn
@@ -590,13 +592,12 @@ class LcgFileCatalogClient(FileCatalogueBase):
     successful = {}
     if len(replicas) > 2:
       self.__openSession()
-    for replicaTuple in replicas:
-      lfn,pfn,se = replicaTuple
-      fullLfn = '%s%s' % (self.prefix,path)
+    for lfn,pfn,se in replicas:
+      fullLfn = '%s%s' % (self.prefix,lfn)
       value,replicaObjects = lfc.lfc_getreplica(fullLfn,'','')
       if value == 0:
         for replicaObject in replicaObjects:
-          if replicObject.host == se:
+          if (replicaObject.sfn == pfn) and (replicaObject.host == se):
             successful[lfn] = replicaObject.status
       else:
         errno = lfc.cvar.serrno
@@ -620,7 +621,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
       self.__openSession()
     for replicaTuple in replicas:
       lfn,pfn,se,status = replicaTuple
-      value = lfc_setrstatus(pfn,status)
+      value = lfc.lfc_setrstatus(pfn,status)
       if not value == 0:
         errno = lfc.cvar.serrno
         failed[lfn] = lfc.sstrerror(errno)
@@ -648,7 +649,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     if len(replicas) > 2:
       self.__openSession()
     for lfn,pfn,se,spacetoken in replicas:
-      value = lfc_modreplica(pfn,spacetoken,'',se)
+      value = lfc.lfc_modreplica(pfn,spacetoken,'',se)
       if not value == 0:
         errno = lfc.cvar.serrno
         failed[lfn] = lfc.sstrerror(errno)
@@ -926,7 +927,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
 
   def __makeDir(self, path):
     fullLfn = '%s%s' % (self.prefix,path)
-    value = lfc.lfc_mkdir(dirname, 0775)
+    value = lfc.lfc_mkdir(fullLfn, 0775)
     if value == 0:
       return S_OK()
     else:
@@ -946,8 +947,8 @@ class LcgFileCatalogClient(FileCatalogueBase):
           return S_OK()
         else:
           res = self.exists(dir)
-          if res['Value']['Successful'].has_key(path):
-            if res['Value']['Successful'][path]:
+          if res['Value']['Successful'].has_key(dir):
+            if res['Value']['Successful'][dir]:
               res = self.__makeDir(path)
             else:
               res = self.__makeDirs(dir)
