@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.2 2007/11/09 16:48:16 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.3 2007/11/11 11:25:43 paterson Exp $
 # File :   InputDataAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
 
 """
 
-__RCSID__ = "$Id: InputDataAgent.py,v 1.2 2007/11/09 16:48:16 paterson Exp $"
+__RCSID__ = "$Id: InputDataAgent.py,v 1.3 2007/11/11 11:25:43 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.DB.JobDB        import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
@@ -121,7 +121,7 @@ class InputDataAgent(Agent):
         if not result['OK']:
           self.log.error(result['Message'])
           return result
-        result = self.updateJobStatus(job,self.nextOptimizerName,self.nextOptMinorStatus)
+        result = self.updateJobStatus(job,self.jobStatus,self.nextOptimizerName)
         if not result['OK']:
           self.log.error(result['Message'])
           return result
@@ -184,14 +184,6 @@ class InputDataAgent(Agent):
         self.log.debug("self.jobDB.setJobAttribute("+str(job)+","+minorstatus+",update=True)")
         result = self.jobDB.setJobAttribute(job,'MinorStatus',minorstatus,update=True)
 
-    return result
-
-  #############################################################################
-  def setJobParam(self,job,reportName,value):
-    """This method updates a job parameter in the JobDB.
-    """
-    self.log.debug("self.jobDB.setJobParameter("+str(job)+","+reportName+","+value+")")
-    result = self.jobDB.setJobParameter(job,reportName,value)
     return result
 
   #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
