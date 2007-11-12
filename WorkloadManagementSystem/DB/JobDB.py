@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.13 2007/11/09 18:35:51 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.14 2007/11/12 09:49:55 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -51,7 +51,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.13 2007/11/09 18:35:51 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.14 2007/11/12 09:49:55 atsareg Exp $"
 
 import re, os, sys, string
 import time
@@ -105,7 +105,6 @@ class JobDB(DB):
     """
 
     print "=================================================="
-    #print "SystemSet:", self.system
     print "User:     ", self.dbUser
     print "Host:     ", self.dbHost
     print "Password  ", self.dbPass
@@ -199,8 +198,6 @@ class JobDB(DB):
 
     return S_OK( jobID )
 
-
-
 #############################################################################
   def getAttributesForJobList(self,jobIDList,attrList=[]):
     """ Get attributes for the jobs in the the jobIDList.
@@ -217,13 +214,7 @@ class JobDB(DB):
     jobList = string.join(map(lambda x: str(x),jobIDList),',')
 
     cmd = 'SELECT JobID,%s FROM Jobs WHERE JobID in ( %s )' % ( attrNames, jobList )
-    
-    print cmd
-    
     res = self._query( cmd )
-    
-    print res
-    
     if not res['OK']:
       return res
     try:
@@ -325,10 +316,10 @@ class JobDB(DB):
     attributes = {}
     if attrList:
       for i in range(len(attrList)):
-	attributes[attrList[i]] = str(values[i])
+        attributes[attrList[i]] = str(values[i])
     else:
       for i in range(len(self.jobAttributeNames)):
-	attributes[self.jobAttributeNames[i]] = str(values[i])	
+        attributes[self.jobAttributeNames[i]] = str(values[i])
 
     return S_OK( attributes )
 
@@ -434,6 +425,40 @@ class JobDB(DB):
 
     return S_OK( map( self._to_value, res['Value'] ) )
 
+#############################################################################
+  def setOptimizerChain(self,jobID,optimizerList):
+    """ Set the optimizer chain for the given job. The 'TaskQueue'
+        optimizer should be the last one in the chain, it is added
+        if not present in the optimizerList
+    """
+
+    optString = string.join(optimizerList,',')
+    result = self.setJobOptParameter(jobID,'OptimizerChain',optString)
+    return result
+
+ #############################################################################
+  def setNextOptimizer(self,jobID,currentOptimizer):
+    """ Set the job status to be processed by the next optimizer in the
+        chain
+    """
+
+    result = self.getJobOptParameter(jobID,'OptimizerChain')
+    if not result['OK']:
+      return result
+
+    optListString = result['Value']
+    optList = optListString.split(',')
+    try:
+      sindex = optList(currentOptimizer)
+      if sindex < len(optList)-1
+        nextOptimizer = optList[sindex+1]
+      else:
+        return S_ERROR('Unexpected end of the Optimizer Chain')
+    except ValueError, x:
+      return S_ERROR('The '+currentOptimizer+' not found in the chain')
+
+    result = self.setJobStatus(jobID,status="Checking",minor=nextOptimizer)
+    return result
 
 ############################################################################
   def countJobs(self, condDict, older=None, newer=None):
