@@ -32,4 +32,4 @@ def registerExitCallback( function ):
   """
   global gCallbackList
   if not function in gCallbackList:
-    exitCallbackList.append( function )
+    gCallbackList.append( function )
