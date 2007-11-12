@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.15 2007/06/28 13:54:09 acasajus Exp $
-__RCSID__ = "$Id: Server.py,v 1.15 2007/06/28 13:54:09 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.16 2007/11/12 19:00:44 acasajus Exp $
+__RCSID__ = "$Id: Server.py,v 1.16 2007/11/12 19:00:44 acasajus Exp $"
 
 import socket
 import sys
@@ -41,7 +41,8 @@ class Server:
     gMonitor.setComponentType( gMonitor.COMPONENT_SERVICE )
     gMonitor.setComponentName( self.serviceName )
     gMonitor.setComponentLocation( self.serviceURL )
-    gMonitor.registerActivity( "Queries", "framework", "queries/s", gMonitor.OP_MEAN, 1 )
+    gMonitor.initialize()
+    gMonitor.registerActivity( "Queries", "framework", "queries/s", gMonitor.OP_SUM, 1 )
 
   def __buildURL( self ):
     protocol = self.serviceCfg.getProtocol()
