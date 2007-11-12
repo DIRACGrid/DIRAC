@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.18 2007/10/02 14:07:14 acasajus Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.18 2007/10/02 14:07:14 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.19 2007/11/12 19:01:53 acasajus Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.19 2007/11/12 19:01:53 acasajus Exp $"
 
 import DIRAC
 from DIRAC.Core.DISET.private.Protocols import gProtocolDict
@@ -17,7 +17,7 @@ class BaseClient:
 
   def __init__( self, serviceName,
                 groupToUse = False,
-                useCertificates = False,
+                useCertificates = "auto",
                 timeout = False ):
     self.serviceName = serviceName
     #self.setup = gConfig.getOption( "/DIRAC/Setup" )
@@ -65,6 +65,7 @@ class BaseClient:
     return sURL
 
   def _connect( self ):
+    gLogger.info( "Connecting to: %s" % self.serviceURL )
     try:
       gLogger.debug( "Using %s protocol" % self.URLTuple[0] )
       self.transport = gProtocolDict[ self.URLTuple[0] ][0]( self.URLTuple[1:3], useCertificates = self.useCertificates )
