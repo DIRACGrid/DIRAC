@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.14 2007/11/12 09:49:55 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.15 2007/11/12 12:19:37 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -51,7 +51,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.14 2007/11/12 09:49:55 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.15 2007/11/12 12:19:37 atsareg Exp $"
 
 import re, os, sys, string
 import time
@@ -450,7 +450,7 @@ class JobDB(DB):
     optList = optListString.split(',')
     try:
       sindex = optList(currentOptimizer)
-      if sindex < len(optList)-1
+      if sindex < len(optList)-1:
         nextOptimizer = optList[sindex+1]
       else:
         return S_ERROR('Unexpected end of the Optimizer Chain')

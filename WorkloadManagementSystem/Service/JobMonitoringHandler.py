@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobMonitoringHandler.py,v 1.3 2007/11/08 20:08:23 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobMonitoringHandler.py,v 1.4 2007/11/12 12:18:06 atsareg Exp $
 ########################################################################
 
 """ JobMonitoringHandler is the implementation of the JobMonitoring service
@@ -11,7 +11,7 @@
 
 """
 
-__RCSID__ = "$Id: JobMonitoringHandler.py,v 1.3 2007/11/08 20:08:23 atsareg Exp $"
+__RCSID__ = "$Id: JobMonitoringHandler.py,v 1.4 2007/11/12 12:18:06 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -82,7 +82,7 @@ class JobMonitoringHandler( RequestHandler ):
 
  ##############################################################################
   types_getMinorStates = []
-  def export_getStates (self):
+  def export_getMinorStates (self):
     """
     Return Distict Values of Status job Attribute in WMS
     """
