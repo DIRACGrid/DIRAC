@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.16 2007/11/12 19:00:44 acasajus Exp $
-__RCSID__ = "$Id: Server.py,v 1.16 2007/11/12 19:00:44 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.17 2007/11/13 16:00:28 acasajus Exp $
+__RCSID__ = "$Id: Server.py,v 1.17 2007/11/13 16:00:28 acasajus Exp $"
 
 import socket
 import sys
@@ -90,7 +90,6 @@ class Server:
       if len( inList ) == 1:
         clientTransport = self.transport.acceptConnection()
       else:
-        gLogger.debug( "Restart accepting new connections", "" )
         return
     except socket.error:
       return
