@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSClient.py,v 1.1 2007/11/12 10:40:27 atsareg Exp $
+# $Id: WMSClient.py,v 1.2 2007/11/15 21:40:38 paterson Exp $
 ########################################################################
 
 """ DIRAC Workload Management System Client class encapsulates all the
@@ -35,6 +35,7 @@ class WMSClient:
       inputSandbox = inputSandbox.replace('{',"")
       inputSandbox = inputSandbox.replace('}',"")
       inputSandbox = inputSandbox.replace('"',"")
+      inputSandbox = inputSandbox.replace(',',"")
       inputSandbox = inputSandbox.split()
       ok = 1
       #print inputSandbox
