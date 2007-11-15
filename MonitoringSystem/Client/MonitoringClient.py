@@ -1,11 +1,12 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.2 2007/11/12 19:00:44 acasajus Exp $
-__RCSID__ = "$Id: MonitoringClient.py,v 1.2 2007/11/12 19:00:44 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.3 2007/11/15 16:03:54 acasajus Exp $
+__RCSID__ = "$Id: MonitoringClient.py,v 1.3 2007/11/15 16:03:54 acasajus Exp $"
 
 import threading
 import time
 from DIRAC import gConfig, gLogger
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Utilities import Time, ExitCallback
+from DIRAC.MonitoringSystem.private.ServiceInterface import gServiceInterface
 from DIRAC.Core.DISET.RPCClient import RPCClient
 
 class MonitoringClient:
@@ -30,7 +31,7 @@ class MonitoringClient:
     self.activitiesMarks = {}
     self.activitiesLock = threading.Lock()
     self.flushingLock = threading.Lock()
-    self.timeStep = 4
+    self.timeStep = 60
 
   def initialize( self ):
     self.logger = gLogger.getSubLogger( "Monitoring" )
@@ -96,13 +97,15 @@ class MonitoringClient:
     """
     self.sourceDict[ 'componentType' ] = componentType
 
-  def registerActivity( self, name, category, unit, operation, buckets ):
+  def registerActivity( self, name, description, category, unit, operation, ):
     """
     Register new activity. Before reporting information to the server, the activity
     must be registered.
 
     @type  name: string
-    @param name: Name of the activity to report
+    @param name: Id of the activity to report
+    @type description: string
+    @param description: Description of the activity
     @type  category: string
     @param category: Grouping of the activity
     @type  unit: string
@@ -110,18 +113,15 @@ class MonitoringClient:
     @type  operation: string
     @param operation: Type of data operation to represent data. All the possibilities
                         are defined in the Constants.py file
-    @type  buckets: number
-    @param buckets: Time resolution for the activity. Each buckets is 60s. The
-                          final time resolution will be buckets x 60 seconds
     """
     self.activitiesLock.acquire()
     try:
       self.logger.info( "Registering activity %s" % name )
       if name not in self.activitiesDefinitions:
         self.activitiesDefinitions[ name ] = { "category" : category,
+                                               "description" : description,
                                                "unit" : unit,
-                                               "operation" : operation,
-                                               "buckets" : buckets
+                                               "type" : operation
                                               }
         self.activitiesMarks[ name ] = {}
         self.newActivitiesDict[ name ] = self.activitiesDefinitions[ name ]
@@ -129,7 +129,7 @@ class MonitoringClient:
       self.activitiesLock.release()
 
   def __UTCStepTime(self):
-    return int( time.mktime( time.gmtime() ) ) / self.timeStep
+    return int( time.mktime( time.gmtime() ) / self.timeStep ) * self.timeStep
 
   def addMark( self, name, value = 1 ):
     """
@@ -174,11 +174,11 @@ class MonitoringClient:
           totalValue = 0
           for mark in consolidatedMarks[ key ][ markTime ]:
             totalValue += mark
-          if self.activitiesDefinitions[ key ][ 'operation' ] == self.OP_MEAN:
+          if self.activitiesDefinitions[ key ][ 'type' ] == self.OP_MEAN:
             totalValue /= len( consolidatedMarks[ key ][ markTime ] )
           consolidatedMarks[ key ][ markTime ] = totalValue
-          if len( consolidatedMarks[ key ] ) == 0:
-            del( consolidatedMarks[ key ] )
+      if len( consolidatedMarks[ key ] ) == 0:
+        del( consolidatedMarks[ key ] )
     self.activitiesMarks = remainderMarks
     return consolidatedMarks
 
@@ -202,22 +202,28 @@ class MonitoringClient:
         self.logger.info( "Sending data has been disabled" )
         return
       if len( activitiesToRegister ) or len( marksDict ):
-        rpcClient = RPCClient( "Monitoring/Server" )
-        if len( activitiesToRegister ):
-          self.logger.verbose( "Registering activities" )
-          retDict = rpcClient.registerActivities( self.sourceDict, activitiesToRegister )
-          if retDict[ 'OK' ]:
-            self.sourceId = retDict[ 'Value' ]
-          else:
-            self.logger.error( "Can't register activities", retDict[ 'Message' ] )
-        if len( marksDict ):
-          assert self.sourceId
-          self.logger.verbose( "Sending marks" )
-          retDict = rpcClient.commitMarks( self.sourceId, marksDict )
-          if not retDict[ 'OK' ]:
-            self.logger.error( "Can't send activities marks", retDict[ 'Message' ] )
+        self.__sendData( activitiesToRegister, marksDict )
     finally:
       self.flushingLock.release()
+
+  def __sendData( self, acRegister, acMarks ):
+    if gServiceInterface.serviceRunning():
+      rpcClient = gServiceInterface
+    else:
+      rpcClient = RPCClient( "Monitoring/Server", timeout = 30 )
+    if len( acRegister ):
+      self.logger.verbose( "Registering activities" )
+      retDict = rpcClient.registerActivities( self.sourceDict, acRegister )
+      if retDict[ 'OK' ]:
+        self.sourceId = retDict[ 'Value' ]
+      else:
+        self.logger.error( "Can't register activities", retDict[ 'Message' ] )
+    if len( acMarks ):
+      assert self.sourceId
+      self.logger.verbose( "Sending marks" )
+      retDict = rpcClient.commitMarks( self.sourceId, acMarks )
+      if not retDict[ 'OK' ]:
+        self.logger.error( "Can't send activities marks", retDict[ 'Message' ] )
 
   def forceFlush( self, exitCode ):
     self.flush()

@@ -6,24 +6,15 @@ import md5
 import DIRAC
 from DIRAC import gLogger
 
-class ActivitiesManager:
+class ActivitiesCatalog:
 
-  staticData = []
-
-  def __init__( self, dataPath = False ):
-    self.filename = "activities.xml"
-    if len( self.staticData ) == 0 and not dataPath:
-      raise Exception( "You must initialize activities manager with a datapath" )
-    if dataPath:
-      self.dataLocation = dataPath
-      self.staticData.append( dataPath )
-    else:
-      self.dataLocation = self.staticData[-1]
+  def __init__( self, dataPath ):
     self.dbConn = False
+    self.dataPath = dataPath
 
   def __connect( self ):
     if not self.dbConn:
-      dbPath = "%s/monitoring.db" % self.dataLocation
+      dbPath = "%s/monitoring.db" % self.dataPath
       self.dbConn = sqlite3.connect( dbPath, isolation_level = None )
 
   def __dbExecute( self, query, values = False ):
@@ -131,6 +122,7 @@ class ActivitiesManager:
       return self.__select( "filename", "activities", acDict )[0][0]
 
   def getFilename( self, sourceId, acName ):
+    self.__connect()
     queryDict = { 'sourceId' : sourceId, "name" : acName }
     retList = self.__select( "filename", "activities", queryDict )
     if len( retList ) == 0:

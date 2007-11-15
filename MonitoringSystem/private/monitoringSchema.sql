@@ -4,8 +4,8 @@ CREATE table activities (
     name TEXT,
     category TEXT,
     unit TEXT,
-    operation TEXT,
-    buckets INTEGER,
+    type TEXT,
+	description TEXT,
     filename TEXT
 );
 CREATE table sources (
@@ -16,4 +16,3 @@ CREATE table sources (
     componentLocation TEXT,
     componentName TEXT
 );
-
