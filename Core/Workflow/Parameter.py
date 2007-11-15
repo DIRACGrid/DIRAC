@@ -1,8 +1,8 @@
-# $Id: Parameter.py,v 1.7 2007/06/29 14:30:39 gkuznets Exp $
+# $Id: Parameter.py,v 1.8 2007/11/15 20:03:23 paterson Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.7 $"
+__RCSID__ = "$Revision: 1.8 $"
 
 # unbinded method, returns indentation string
 def indent(indent=0):
@@ -96,8 +96,9 @@ class Parameter(object):
         """returns True if type is the string kind"""
         type = self.type.lower() # change the register
         if type == 'string' or type == 'jdl' or \
-           type == 'param'  or type == 'parameter':
-            return True
+           type == 'param'  or type == 'parameter' or \
+           type == 'jdlreqt':
+           return True
         return False
 
     def getDescription(self):
