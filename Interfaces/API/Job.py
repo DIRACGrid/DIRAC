@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.1 2007/11/15 21:36:39 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.2 2007/11/15 21:53:25 paterson Exp $
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,7 +13,7 @@
 
 """
 
-__RCSID__ = "$Id: Job.py,v 1.1 2007/11/15 21:36:39 paterson Exp $"
+__RCSID__ = "$Id: Job.py,v 1.2 2007/11/15 21:53:25 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -532,9 +532,11 @@ class Job:
     for f in inputSandbox:
       if re.search('\*',f): #escape the star character...
         cmd = 'ls -d '+f
-        status, output, error, pythonError = exeCommand(cmd,iTimeout = 10)
-        if output:
-          files = string.split(output)
+        output = shellCall(10,cmd)
+        if not output['OK']:
+          self.log.error('Could not perform: %s' %(cmd))
+        else:
+          files = string.split(output['Value'])
           for check in files:
             if os.path.isfile(check):
               self.log.debug('Found file '+check+' appending to Input Sandbox')
@@ -549,7 +551,9 @@ class Job:
               else:
                 cmd = 'tar cfz '+tarname+'.tar.gz '+tarname
 
-              status, output, error, pythonError = exeCommand(cmd,iTimeout = 10)
+              output = shellCall(60,cmd)
+              if not output['OK']:
+                self.log.error('Could not perform: %s' %(cmd))
               resolvedIS.append(tarname+'.tar.gz')
               self.log.debug('Found directory '+check+', appending '+check+'.tar.gz to Input Sandbox')
 
@@ -563,8 +567,12 @@ class Job:
           cmd = 'tar cfz '+tarname+'.tar.gz '+' -C '+directory+' '+tarname
         else:
           cmd = 'tar cfz '+tarname+'.tar.gz '+tarname
-        status, output, error, pythonError = exeCommand(cmd,iTimeout = 10)
-        resolvedIS.append(tarname+'.tar.gz')
+
+        output = shellCall(60,cmd)
+        if not output['OK']:
+          self.log.error('Could not perform: %s' %(cmd))
+        else:
+          resolvedIS.append(tarname+'.tar.gz')
 
     return resolvedIS
 
