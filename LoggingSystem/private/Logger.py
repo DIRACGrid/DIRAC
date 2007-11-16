@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.17 2007/11/09 16:51:23 acasajus Exp $
-__RCSID__ = "$Id: Logger.py,v 1.17 2007/11/09 16:51:23 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.18 2007/11/16 16:15:01 acasajus Exp $
+__RCSID__ = "$Id: Logger.py,v 1.18 2007/11/16 16:15:01 acasajus Exp $"
 """
    DIRAC Logger client
 """
@@ -63,8 +63,7 @@ class Logger:
       if not retDict[ 'OK' ]:
         self._minLevel = self._logLevels.getLevelValue( "INFO" )
       else:
-        if retDict[ 'Value' ].upper() in self._logLevels.getLevels():
-          self._minLevel = abs( self._logLevels.getLevelValue( retDict[ 'Value' ].upper() ) )
+        self.setLevel( retDict[ 'Value' ] )
       #Configure framing
       retDict = gConfig.getOption( "%s/LogShowLine" % cfgPath )
       if retDict[ 'OK' ] and retDict[ 'Value' ].lower() in ( "y", "yes", "1", "true" ) :
@@ -73,6 +72,13 @@ class Logger:
       retDict = gConfig.getOption( "/DIRAC/Site" )
       if retDict[ 'OK' ]:
         self._site = retDict[ 'Value' ]
+
+  def setLevel( self, levelName ):
+    levelName = levelName.upper()
+    if levelName.upper() in self._logLevels.getLevels():
+        self._nimLevel = abs( self._logLevels.getLevelValue( levelName ) )
+        return True
+    return False
 
 
   def getName( self ):
