@@ -1,8 +1,9 @@
 try:
   import sqlite3
+  import xml.etree.ElementTree
 except:
   pass
-import xml.etree.ElementTree
+
 import os
 import types
 import md5
