@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.1 2007/11/15 21:47:25 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.2 2007/11/16 14:10:41 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -22,7 +22,7 @@ The initial instance just exposes job submission via the WMS client.
 
 """
 
-__RCSID__ = "$Id: Dirac.py,v 1.1 2007/11/15 21:47:25 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.2 2007/11/16 14:10:41 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types
 
@@ -152,8 +152,8 @@ class Dirac:
     jobid = None
 
     try:
-      jobid = self.client.SubmitJob(jdl)
-      raise 'problem'
+      jobid = self.client.submitJob(jdl)
+      #raise 'problem'
     except Exception,x:
       checkProxy = getGridProxy()
       if not checkProxy:
