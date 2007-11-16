@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfo.py,v 1.9 2007/11/16 16:20:15 acasajus Exp $
-__RCSID__ = "$Id: SocketInfo.py,v 1.9 2007/11/16 16:20:15 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfo.py,v 1.10 2007/11/16 16:24:05 acasajus Exp $
+__RCSID__ = "$Id: SocketInfo.py,v 1.10 2007/11/16 16:24:05 acasajus Exp $"
 
 import time
 import copy
@@ -56,7 +56,7 @@ class SocketInfo:
     return SocketInfo( copy.deepcopy( self.infoDict ) )
 
   def verifyCallback( self, *args, **kwargs ):
-    gLogger.debug( "verify Callback %s" % str( args ) )
+    #gLogger.debug( "verify Callback %s" % str( args ) )
     if self.infoDict[ 'clientMode' ]:
       return self._clientCallback( *args, **kwargs )
     else:
