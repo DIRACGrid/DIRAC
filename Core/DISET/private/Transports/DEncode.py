@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/Attic/DEncode.py,v 1.5 2007/11/15 11:10:42 acasajus Exp $
-__RCSID__ = "$Id: DEncode.py,v 1.5 2007/11/15 11:10:42 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/Attic/DEncode.py,v 1.6 2007/11/16 11:36:29 acasajus Exp $
+__RCSID__ = "$Id: DEncode.py,v 1.6 2007/11/16 11:36:29 acasajus Exp $"
 
 # Encoding and decoding for dirac
 #
@@ -43,7 +43,8 @@ g_dDecodeFunctions[ "i" ] = decodeInt
 
 #Encoding and decoding longs
 def encodeLong( iValue, eList ):
-  eList.extend( ( "l", str( iValue ), "e" ) )
+  # corrected by KGG   eList.extend( ( "l", str( iValue ), "e" ) )
+  eList.extend( ( "I", str( iValue ), "e" ) )
 
 def decodeLong( buffer, i ):
   i += 1
@@ -106,22 +107,26 @@ def encodeDateTime( oValue, eList ):
                       oValue.hour, oValue.minute, oValue.second, \
                       oValue.microsecond, oValue.tzinfo )
     eList.append( "za" )
-    encode( tDateTime, eList )
+    # corrected by KGG encode( tDateTime, eList )
+    g_dEncodeFunctions[ type( tDateTime) ]( tDateTime, eList )
   elif type( oValue ) == _dateType:
     tData = ( oValue.year, oValue.month, oValue. day )
     eList.append( "zd" )
-    encode( tData, eList )
+    # corrected by KGG encode( tData, eList )
+    g_dEncodeFunctions[ type( tData) ]( tData, eList )
   elif type( oValue ) == _timeType:
     tTime = ( oValue.hour, oValue.minute, oValue.second, oValue.microsecond, oValue.tzinfo )
     eList.append( "zt" )
-    encode( tTime, eList )
+    # corrected by KGG encode( tTime, eList )
+    g_dEncodeFunctions[ type( tTime) ]( tTime, eList )
   else:
     raise Exception( "Unexpected type %s while encoding a datetime object" % str( type( oValue ) ) )
 
 def decodeDateTime( buffer, i ):
   i += 1
   type = buffer[i]
-  tupleObject, i = decode( buffer, i + 1 )
+  # corrected by KGG tupleObject, i = decode( buffer, i + 1 )
+  tupleObject, i = g_dDecodeFunctions[ buffer[ i+1 ] ]( buffer, i+1 )
   if type == 'a':
     dtObject = datetime.datetime( *tupleObject )
   elif stype == 'd':
