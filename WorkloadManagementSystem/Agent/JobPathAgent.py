@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobPathAgent.py,v 1.1 2007/11/11 11:24:17 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobPathAgent.py,v 1.2 2007/11/16 11:51:51 paterson Exp $
 # File :   JobPathAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -12,10 +12,10 @@
       path through the optimizers. 
 
 """
-__RCSID__ = "$Id: JobPathAgent.py,v 1.1 2007/11/11 11:24:17 paterson Exp $"
+__RCSID__ = "$Id: JobPathAgent.py,v 1.2 2007/11/16 11:51:51 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.DB.JobDB        import JobDB
-from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
+#from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight      import ClassAd
 from DIRAC.Core.Base.Agent                          import Agent
 from DIRAC.ConfigurationSystem.Client.Config        import gConfig
@@ -38,17 +38,15 @@ class JobPathAgent(Agent):
 
     result = Agent.initialize(self)
     self.jobDB = JobDB()
-    self.logDB = JobLoggingDB()
+   # self.logDB = JobLoggingDB()
     self.FileCatalog        = None
     self.optimizerName      = 'JobPath'
     self.nextOptimizerName  = 'JobSanity'
 
-    self.pollingTime          = gConfig.getValue(self.section+'/PollingTime',60)
+    self.pollingTime          = gConfig.getValue(self.section+'/PollingTime',10)
     self.jobStatus            = gConfig.getValue(self.section+'/JobStatus','Received')
     self.optStatus            = gConfig.getValue(self.section+'/OptimizerJobStatus','Checking')
     self.nextOptMinorStatus   = gConfig.getValue(self.section+'/OptimizerMinorStatus',self.nextOptimizerName)
-    self.failedStatus         = gConfig.getValue(self.section+'/FailedJobStatus','Failed')
-    self.failedMinorStatus    = gConfig.getValue(self.section+'/FailedJobStatus','Input Data Not Available')
 
     self.log.debug( '==========================================='           )
     self.log.debug( 'DIRAC '+self.optimizerName+' Agent is started with'    )
@@ -56,8 +54,8 @@ class JobPathAgent(Agent):
     self.log.debug( '==========================================='           )
     self.log.debug( 'Polling Time        ==> %s' % self.pollingTime         )
     self.log.debug( 'Job Status          ==> %s' % self.jobStatus           )
-    self.log.debug( 'Opt Status          ==> %s' % self.minorStatus         )
-    self.log.debug( 'Opt Minor Status     ==> %s' % self.nextOptMinorStatus )
+    self.log.debug( 'Opt Status          ==> %s' % self.optStatus           )
+    self.log.debug( 'Opt Minor Status    ==> %s' % self.nextOptMinorStatus  )
     self.log.debug( '==========================================='           )
 
     return result
@@ -89,7 +87,7 @@ class JobPathAgent(Agent):
     """This method controls the checking of the job.
     """
     self.log.info('Job %s will be processed' % (job))
-    result = self.updateJobStatus(job,self.optStatus,self.nextOptimizerMinorStatus)
+    result = self.updateJobStatus(job,self.optStatus,self.nextOptMinorStatus)
     if not result['OK']:
       self.log.error(result['Message'])
 
@@ -100,6 +98,7 @@ class JobPathAgent(Agent):
     """This method updates the job status in the JobDB.
     """
     self.log.debug("self.jobDB.setJobAttribute("+str(job)+",Status,"+status+" update=True)")
+    result = S_OK()
     result = self.jobDB.setJobAttribute(job,'Status',status, update=True)
     if result['OK']:
       if minorstatus:
