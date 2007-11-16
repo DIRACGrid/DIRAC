@@ -1,4 +1,7 @@
-import sqlite3
+try:
+  import sqlite3
+except:
+  pass
 import xml.etree.ElementTree
 import os
 import types
