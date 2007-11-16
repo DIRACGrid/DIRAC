@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.3 2007/11/15 16:03:54 acasajus Exp $
-__RCSID__ = "$Id: MonitoringClient.py,v 1.3 2007/11/15 16:03:54 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.4 2007/11/16 11:45:34 acasajus Exp $
+__RCSID__ = "$Id: MonitoringClient.py,v 1.4 2007/11/16 11:45:34 acasajus Exp $"
 
 import threading
 import time
@@ -59,13 +59,13 @@ class MonitoringClient:
     """
     self.sendingMode = gConfig.getValue( "%s/SendMode" % self.cfgSection, "periodic" )
     if self.sendingMode == "periodic":
-      self.sendingPeriod = max( 2, gConfig.getValue( "%s/SendPeriod" % self.cfgSection, 2 ) )
+      self.sendingPeriod = max( 2, gConfig.getValue( "%s/SendPeriod" % self.cfgSection, 60 ) )
       self.sendingThread = threading.Thread( target = self.__periodicFlush )
       self.sendingThread.start()
 
   def __periodicFlush( self ):
     while self.sendingMode == "periodic":
-      self.logger.info( "Waiting %s seconds to send data" % self.sendingPeriod )
+      self.logger.verbose( "Waiting %s seconds to send data" % self.sendingPeriod )
       time.sleep( self.sendingPeriod )
       self.flush()
 
@@ -116,7 +116,7 @@ class MonitoringClient:
     """
     self.activitiesLock.acquire()
     try:
-      self.logger.info( "Registering activity %s" % name )
+      self.logger.verbose( "Registering activity %s" % name )
       if name not in self.activitiesDefinitions:
         self.activitiesDefinitions[ name ] = { "category" : category,
                                                "description" : description,
@@ -184,7 +184,7 @@ class MonitoringClient:
 
   def flush( self ):
     self.flushingLock.acquire()
-    self.logger.info( "Sending information to server" )
+    self.logger.verbose( "Sending information to server" )
     try:
       self.activitiesLock.acquire()
       try:
@@ -199,7 +199,7 @@ class MonitoringClient:
       #Commit new activities
       if gConfig.getValue( "%s/DisableMonitoring" % self.cfgSection, "true" ).lower() in \
             ( "yes", "y", "true", "1" ):
-        self.logger.info( "Sending data has been disabled" )
+        self.logger.verbose( "Sending data has been disabled" )
         return
       if len( activitiesToRegister ) or len( marksDict ):
         self.__sendData( activitiesToRegister, marksDict )
