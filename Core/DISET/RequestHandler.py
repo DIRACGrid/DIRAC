@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.23 2007/11/16 11:12:38 acasajus Exp $
-__RCSID__ = "$Id: RequestHandler.py,v 1.23 2007/11/16 11:12:38 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.24 2007/11/16 11:46:43 acasajus Exp $
+__RCSID__ = "$Id: RequestHandler.py,v 1.24 2007/11/16 11:46:43 acasajus Exp $"
 
 import types
 from DIRAC.Core.DISET.private.FileHelper import FileHelper
@@ -162,10 +162,10 @@ class RequestHandler:
     else:
       peerId = ""
     if False:
-      argsSring = ", ".join( [ str( arg )[:20] for arg in args ] )
+      argsString = ", ".join( [ str( arg )[:20] for arg in args ] )
     else:
       argsString = "<masked>"
-    gLogger.info( "Executing action", "%s %s( %s )" % ( peerId, method, argsSring ) )
+    gLogger.info( "Executing action", "%s %s( %s )" % ( peerId, method, argsString ) )
 
   def __logRemoteQueryResponse( self, retVal ):
     peerCreds = self.getRemoteCredentials()
