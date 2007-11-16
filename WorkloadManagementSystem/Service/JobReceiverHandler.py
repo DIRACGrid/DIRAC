@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/Attic/JobReceiverHandler.py,v 1.5 2007/11/09 18:36:44 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/Attic/JobReceiverHandler.py,v 1.6 2007/11/16 13:40:55 paterson Exp $
 ########################################################################
 
 """ JobReceiverHandler is the implementation of the JobReceiver service
@@ -12,7 +12,7 @@
     
 """
 
-__RCSID__ = "$Id: JobReceiverHandler.py,v 1.5 2007/11/09 18:36:44 atsareg Exp $"
+__RCSID__ = "$Id: JobReceiverHandler.py,v 1.6 2007/11/16 13:40:55 paterson Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -62,9 +62,13 @@ class JobReceiverHandler( RequestHandler ):
     result = self.getRemoteCredentials()
     DN = result['DN']
     group = result['group']
-    result  = jobDB.addJobToDB( jobID, JDL=newJDL, ownerDN=DN, ownerGroup=group)
+    result  = jobDB.insertJobIntoDB(jobID,newJDL)
     if not result['OK']:
       return result
+    result  = jobDB.addJobToDB( jobID, JDL=newJDL, ownerDN=DN, ownerGroup=group) 
+    if not result['OK']:
+      return result
+
     gLogger.info('Job %s added to the JobDB' % str(jobID) )
 
     resProxy = proxyRepository.storeProxy(proxy,DN,group)
