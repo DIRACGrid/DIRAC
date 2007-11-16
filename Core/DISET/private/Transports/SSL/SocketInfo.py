@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfo.py,v 1.8 2007/09/20 18:34:16 acasajus Exp $
-__RCSID__ = "$Id: SocketInfo.py,v 1.8 2007/09/20 18:34:16 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfo.py,v 1.9 2007/11/16 16:20:15 acasajus Exp $
+__RCSID__ = "$Id: SocketInfo.py,v 1.9 2007/11/16 16:20:15 acasajus Exp $"
 
 import time
 import copy
@@ -84,7 +84,7 @@ class SocketInfo:
     casPath = GridCert.getCAsLocation()
     if not casPath:
       DIRAC.abort( 10, "No valid CAs location found" )
-    gLogger.verbose( "CAs location is %s" % casPath )
+    gLogger.debug( "CAs location is %s" % casPath )
     self.sslContext.load_verify_locations_path( casPath )
 
   def __generateContextWithCerts( self ):
@@ -92,7 +92,7 @@ class SocketInfo:
     if not certKeyTuple:
       DIRAC.abort( 10, "No valid certificate or key found" )
     self.setLocalCredentialsLocation( certKeyTuple )
-    gLogger.verbose("Using certificate %s\nUsing key %s" % certKeyTuple )
+    gLogger.debug("Using certificate %s\nUsing key %s" % certKeyTuple )
     self.__createContext()
     self.sslContext.use_certificate_chain_file( certKeyTuple[0] )
     self.sslContext.use_privatekey_file(  certKeyTuple[1] )
@@ -102,7 +102,7 @@ class SocketInfo:
     if not proxyPath:
       DIRAC.abort( 10, "No valid proxy found" )
     self.setLocalCredentialsLocation( ( proxyPath, proxyPath ) )
-    gLogger.verbose( "Using proxy %s" % proxyPath )
+    gLogger.debug( "Using proxy %s" % proxyPath )
     self.__createContext()
     self.sslContext.use_certificate_chain_file( proxyPath )
     self.sslContext.use_privatekey_file( proxyPath )
@@ -130,5 +130,5 @@ class SocketInfo:
       gLogger.warn( "Error while handshaking", v )
       raise
     credentialsDict = self.gatherPeerCredentials()
-    gLogger.info( "", "Authenticated peer (%s)" % credentialsDict[ 'DN' ] )
+    gLogger.verbose( "", "Authenticated peer (%s)" % credentialsDict[ 'DN' ] )
     return credentialsDict
