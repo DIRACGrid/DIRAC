@@ -1,27 +1,27 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Subprocess.py,v 1.4 2007/05/24 08:16:46 rgracian Exp $
-__RCSID__ = "$Id: Subprocess.py,v 1.4 2007/05/24 08:16:46 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Subprocess.py,v 1.5 2007/11/16 16:14:17 acasajus Exp $
+__RCSID__ = "$Id: Subprocess.py,v 1.5 2007/11/16 16:14:17 acasajus Exp $"
 """
-   DIRAC Wrapper to execute python and system commands with a wrapper, that might 
+   DIRAC Wrapper to execute python and system commands with a wrapper, that might
    set a timeout.
    3 FUNCTIONS are provided:
-     - shellCall( iTimeOut, cmdSeq, callbackFunction = None, env = None ): 
-       it uses subprocess.Popen class with "shell = True". 
-       If cmdSeq is a string, it specifies the command string to execute through 
-       the shell.  If cmdSeq is a sequence, the first item specifies the command 
+     - shellCall( iTimeOut, cmdSeq, callbackFunction = None, env = None ):
+       it uses subprocess.Popen class with "shell = True".
+       If cmdSeq is a string, it specifies the command string to execute through
+       the shell.  If cmdSeq is a sequence, the first item specifies the command
        string, and any additional items will be treated as additional shell arguments.
-       
-     - systemCall( iTimeOut, cmdSeq, callbackFunction = None, env = None ):
-       it uses subprocess.Popen class with "shell = False". 
-       cmdSeq should be a string, or a sequence of program arguments. 
 
-       stderr and stdout are piped. callbackFunction( pipeId, line ) can be 
-       defined to process the stdout (pipeId = 0) and stderr (pipeId = 1) as 
+     - systemCall( iTimeOut, cmdSeq, callbackFunction = None, env = None ):
+       it uses subprocess.Popen class with "shell = False".
+       cmdSeq should be a string, or a sequence of program arguments.
+
+       stderr and stdout are piped. callbackFunction( pipeId, line ) can be
+       defined to process the stdout (pipeId = 0) and stderr (pipeId = 1) as
        they are produced
 
-       They return a DIRAC.ReturnValue dictionary with a tuple in Value 
-       ( returncode, stdout, stderr ) the tuple will also be available upon 
+       They return a DIRAC.ReturnValue dictionary with a tuple in Value
+       ( returncode, stdout, stderr ) the tuple will also be available upon
        timeout error or buffer overflow error.
-     
+
      - pythonCall( iTimeOut, function, *stArgs, **stKeyArgs )
        calls function with given arguments within a timeout Wrapper
        should be used to wrap third party python functions
@@ -60,13 +60,12 @@ class Subprocess:
 
   def __readFromFD( self, fd, baseLength = 0 ):
     dataString = ''
-    maxSliceLength = 8192
-    lastSliceLength = 8192
+    redBuf = " "
 
-    while lastSliceLength == maxSliceLength:
-      readBuffer = os.read( fd, maxSliceLength )
-      lastSliceLength = len( readBuffer )
-      dataString += readBuffer
+    while len( redBuf ) > 0:
+      redBuf = os.read( fd, 8192 )
+      lastSliceLength = len( redBuf )
+      dataString += redBuf
       if len( dataString ) + baseLength > self.bufferLimit:
         gLogger.error( 'Maximum output buffer length reached' )
         retDict = S_ERROR( 'Reached maximum allowed length (%d bytes) '
@@ -75,7 +74,7 @@ class Subprocess:
         return retDict
 
     return S_OK( dataString )
-                
+
   def __executePythonFunction( self, function, writePipe, *stArgs, **stKeyArgs ):
     try:
       os.write( writePipe, "%s\n" % str( S_OK( function( *stArgs, **stKeyArgs ) ) ) )
@@ -94,7 +93,7 @@ class Subprocess:
   def __selectFD( self, readSeq, timeout = False ):
     if self.timeout and not timeout:
       timeout = self.timeout
-    if not timeout: 
+    if not timeout:
       return select.select( readSeq , [], [] )[0]
     else:
       return select.select( readSeq , [], [], timeout )[0]
@@ -132,7 +131,7 @@ class Subprocess:
       if len( readSeq ) == 0:
         gLogger.debug( 'Timeout limit reached for pythonCall', function.__name__)
         self.__killPid( pid )
-        
+
         #HACK to avoid python bug
         # self.wait()
         while os.waitpid( pid, 0 ) == -1:
@@ -147,14 +146,14 @@ class Subprocess:
         if retDict[ 'OK' ]:
           return eval( retDict[ 'Value' ] )
         return retDict
-    
+
   def __generateSystemCommandError( self, exitStatus, message ):
     retDict = S_ERROR( message )
-    retDict[ 'Value' ] = ( exitStatus, 
-                           self.bufferList[0][0], 
+    retDict[ 'Value' ] = ( exitStatus,
+                           self.bufferList[0][0],
                            self.bufferList[1][0] )
     return retDict
-    
+
   def __readFromFile( self, file, baseLength, doAll ):
     try:
       if doAll:
@@ -173,8 +172,8 @@ class Subprocess:
     return S_OK( dataString )
 
   def __readFromSystemCommandOutput( self, file, bufferIndex, doAll = False ):
-    retDict = self.__readFromFile( file, 
-                                   len( self.bufferList[ bufferIndex ][0] ), 
+    retDict = self.__readFromFile( file,
+                                   len( self.bufferList[ bufferIndex ][0] ),
                                    doAll )
     if retDict[ 'OK' ]:
       self.bufferList[ bufferIndex ][0] += retDict[ 'Value' ]
@@ -185,17 +184,17 @@ class Subprocess:
     else: # buffer size limit reached killing process (see comment on __readFromFile)
       self.bufferList[ bufferIndex ][0] += retDict[ 'Value' ]
       exitStatus = self.__killChild( self.child.pid )
-      
-      return self.__generateSystemCommandError( 
-                  exitStatus, 
-                  "Exceeded maximum buffer size ( %d bytes ) for '%s' call" % 
+
+      return self.__generateSystemCommandError(
+                  exitStatus,
+                  "Exceeded maximum buffer size ( %d bytes ) for '%s' call" %
                   ( self.bufferLimit, self.cmdSeq ) )
 
   def systemCall( self, cmdSeq, callbackFunction = None, shell = False, env = None ):
     self.cmdSeq = cmdSeq
     self.callback = callbackFunction
     try:
-      self.child = subprocess.Popen( self.cmdSeq, 
+      self.child = subprocess.Popen( self.cmdSeq,
                                       shell = shell,
                                       stdout = subprocess.PIPE,
                                       stderr = subprocess.PIPE,
@@ -222,9 +221,9 @@ class Subprocess:
       if self.timeout and time.time() - initialTime > self.timeout:
         exitStatus = self.__killChild()
         self.__readFromCommand( True )
-        return self.__generateSystemCommandError( 
+        return self.__generateSystemCommandError(
                     exitStatus,
-                    "Timeout (%d seconds) for '%s' call" % 
+                    "Timeout (%d seconds) for '%s' call" %
                     ( self.timeout, cmdSeq ) )
 
       exitStatus = self.child.poll()
@@ -244,7 +243,7 @@ class Subprocess:
         self.child.stdout.close()
         self.child.stderr.close()
       except Exception, v:
-        gLogger.debug( 'Exception while closing pipes to child', str(v) ) 
+        gLogger.debug( 'Exception while closing pipes to child', str(v) )
       return retDict
     else:
       readSeq = self.__selectFD( [ self.child.stdout, self.child.stderr ], True )
@@ -258,41 +257,41 @@ class Subprocess:
           return retDict
       return S_OK()
 
-  
+
   def __callLineCallback( self, bufferIndex ):
     nextLineIndex = self.bufferList[ bufferIndex ][0][ self.bufferList[ bufferIndex ][1]: ].find( "\n" )
     if nextLineIndex > -1:
       try:
-        self.callback( bufferIndex, self.bufferList[ bufferIndex ][0][ 
-                        self.bufferList[ bufferIndex ][1]: 
+        self.callback( bufferIndex, self.bufferList[ bufferIndex ][0][
+                        self.bufferList[ bufferIndex ][1]:
                         self.bufferList[ bufferIndex ][1] + nextLineIndex ] )
       except Exception, v:
-        gLogger.exception( 'Exception while calling callback function', 
+        gLogger.exception( 'Exception while calling callback function',
                            '%s: %s' % ( self.callback.__name__, str(v) ) )
         gLogger.showStack()
-                           
-      self.bufferList[ bufferIndex ][1] += nextLineIndex + 1 
+
+      self.bufferList[ bufferIndex ][1] += nextLineIndex + 1
       return True
     return False
-      
+
 def systemCall( timeout, cmdSeq, callbackFunction = None, env = None ):
   """
      Use SubprocessExecutor class to execute cmdSeq (it can be a string or a sequence)
      with a timeout wrapper, it is executed directly without calling a shell
   """
   spObject = Subprocess( timeout )
-  return spObject.systemCall( cmdSeq, 
+  return spObject.systemCall( cmdSeq,
                               callbackFunction = callbackFunction,
                               env = env,
                               shell = False )
-                               
+
 def shellCall( timeout, cmdSeq, callbackFunction = None, env = None ):
   """
      Use SubprocessExecutor class to execute cmdSeq (it can be a string or a sequence)
      with a timeout wrapper, cmdSeq it is invoque by /bin/sh
   """
   spObject = Subprocess( timeout )
-  return spObject.systemCall( cmdSeq, 
+  return spObject.systemCall( cmdSeq,
                               callbackFunction = callbackFunction,
                               env = env,
                               shell = True )
