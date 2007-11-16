@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSanityAgent.py,v 1.4 2007/11/16 12:50:25 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSanityAgent.py,v 1.5 2007/11/16 13:56:32 paterson Exp $
 # File :   JobSanityAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,7 +13,7 @@
        - Input sandbox not correctly uploaded.
 """
 
-__RCSID__ = "$Id: JobSanityAgent.py,v 1.4 2007/11/16 12:50:25 paterson Exp $"
+__RCSID__ = "$Id: JobSanityAgent.py,v 1.5 2007/11/16 13:56:32 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.DB.JobDB        import JobDB
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight      import ClassAd
@@ -46,14 +46,16 @@ class JobSanityAgent(Agent):
     self.dbg = False
     if gConfig.getValue(self.section+'/LogLevel','INFO') == 'DEBUG':
       self.dbg = True
-      self.log.setLevel(logging.DEBUG)
 
+    #In disabled mode, no statuses will be updated to allow debugging.
+    self.enable = gConfig.getValue(self.section+'/EnableFlag',True)
     #Test control flags N.B. JDL check is mandatory
     self.inputDataCheck    = gConfig.getValue(self.section+'/InputDataCheck',1)
     self.outputDataCheck   = gConfig.getValue(self.section+'/OutputDataCheck',0)
     self.inputSandboxCheck = gConfig.getValue(self.section+'/InputSandboxCheck',0)
     self.platformCheck     = gConfig.getValue(self.section+'/PlatformCheck',0)
     #Other parameters
+    self.setup                = gConfig.getValue(self.section+'/VO','lhcb')
     self.pollingTime          = gConfig.getValue(self.section+'/PollingTime',10)
     self.jobStatus            = gConfig.getValue(self.section+'/JobStatus','Checking')
     self.minorStatus          = gConfig.getValue(self.section+'/InitialJobMinorStatus',self.optimizerName)
@@ -63,10 +65,9 @@ class JobSanityAgent(Agent):
     self.jobCheckDelay        = gConfig.getValue(self.section+'/JobCheckingDelay',5)
     self.failedJobStatus      = gConfig.getValue(self.section+'/FailedJobStatus','failed')
 
-    infosys = gConfig.getValue(self.section,'LCG_GFAL_INFOSYS','lcg-bdii.cern.ch:2170')
-    host    = gConfig.getValue(self.section,'LFC_HOST','lhcb-lfc.cern.ch')
-
 #needed for the output data check
+    infosys = gConfig.getValue(self.section+'/LCG_GFAL_INFOSYS','lcg-bdii.cern.ch:2170')
+    host    = gConfig.getValue(self.section+'/LFC_HOST','lhcb-lfc.cern.ch')
 #    try:
 #      from DIRAC.DataManagement.Client.LcgFileCatalogCombinedClient import LcgFileCatalogCombinedClient
 #      self.FileCatalog = LcgFileCatalogCombinedClient()
@@ -89,15 +90,15 @@ class JobSanityAgent(Agent):
     if self.outputDataCheck:
       self.log.debug( 'Output Data Check  ==>  Enabled'                    )
     else:
-      self.log.debug( 'Output Data Check ==>  Disabled'                    )
+      self.log.debug( 'Output Data Check  ==>  Disabled'                   )
     if self.inputSandboxCheck:
-      self.log.debug( 'Input Sbox Check  ==>  Enabled'                     )
+      self.log.debug( 'Input Sbox Check   ==>  Enabled'                    )
     else:
-      self.log.debug( 'Input Sbox Check  ==>  Disabled'                    )
+      self.log.debug( 'Input Sbox Check   ==>  Disabled'                   )
     if self.platformCheck:
-      self.log.debug( 'Platform Check  ==>  Enabled'                       )
+      self.log.debug( 'Platform Check     ==>  Enabled'                    )
     else:
-      self.log.debug( 'Platform Check  ==>  Disabled'                      )
+      self.log.debug( 'Platform Check     ==>  Disabled'                   )
     self.log.debug( '==========================================='          )
     self.log.debug( 'Polling Time       ==> %s' % self.pollingTime         )
     self.log.debug( 'Job Status         ==> %s' % self.jobStatus           )
@@ -263,11 +264,11 @@ class JobSanityAgent(Agent):
     """Checks JDL is OK for Job.
     """
     self.log.debug("Checking JDL for job: %s" %(job))
-    retVal = self.jobDB.getJobJDL(job)
+    retVal = self.jobDB.getJobJDL(job,original=True)
     if not retVal['OK']:
       self.log.warn(retVal['Message'])
-      retVal = self.jobDB.getJobJDL(job,original=True)
-      self.log.warn('Could not get current JDL from JobDB, trying original')
+      retVal = self.jobDB.getJobJDL(job)
+      self.log.warn('Could not get current JDL from JobDB, trying other')
       if not retVal['OK']:
         self.log.warn(retVal['Message'])
 
@@ -322,12 +323,12 @@ class JobSanityAgent(Agent):
         return result
 
     self.log.debug('Job %s has an input data requirement and will be checked' % (job))
-    inputData = result['Value']
+    data = result['Value']
     self.log.debug('Data is: ')
     if self.dbg:
       for i in data: print i
 
-    totalData = len(inputData)
+    totalData = len(data)
     if totalData > maxData:
       message = '%s datasets selected. Max limit is %s.'  % (totalData,maxData)
       self.setJobParam(job,'DatasetCheck',message)
@@ -388,12 +389,19 @@ class JobSanityAgent(Agent):
   def updateJobStatus(self,job,status,minorstatus=None):
     """This method updates the job status in the JobDB.
     """
-    self.log.debug("self.jobDB.setJobAttribute("+str(job)+",Status,"+status+" update=True)")
-    result = self.jobDB.setJobAttribute(job,'Status',status, update=True)
+    self.log.debug("self.jobDB.setJobAttribute("+str(job)+",'Status','"+status+"',update=True)")
+    if self.enable:
+      result = self.jobDB.setJobAttribute(job,'Status',status, update=True)
+    else:
+      result = S_OK('DisabledMode')
+        
     if result['OK']:
       if minorstatus:
-        self.log.debug("self.jobDB.setJobAttribute("+str(job)+","+minorstatus+",update=True)")
-        result = self.jobDB.setJobAttribute(job,'MinorStatus',minorstatus,update=True)
+        self.log.debug("self.jobDB.setJobAttribute("+str(job)+",'"+minorstatus+"',update=True)")
+        if self.enable:
+          result = self.jobDB.setJobAttribute(job,'MinorStatus',minorstatus,update=True)
+        else:
+          result = S_OK('DisabledMode')  
 
     return result
 
