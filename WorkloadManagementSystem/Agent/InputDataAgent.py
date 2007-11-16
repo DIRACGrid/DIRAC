@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.3 2007/11/11 11:25:43 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.4 2007/11/16 14:38:19 paterson Exp $
 # File :   InputDataAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
 
 """
 
-__RCSID__ = "$Id: InputDataAgent.py,v 1.3 2007/11/11 11:25:43 paterson Exp $"
+__RCSID__ = "$Id: InputDataAgent.py,v 1.4 2007/11/16 14:38:19 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.DB.JobDB        import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
@@ -43,7 +43,10 @@ class InputDataAgent(Agent):
     self.nextOptimizerName  = 'AncestorFiles'
     self.finalOptimizerName = 'JobScheduling'
 
-    self.FileCatalogName      = 'LFC'
+    self.FCName      = 'LFC'
+    #In disabled mode, no statuses will be updated to allow debugging.
+    self.enable               = gConfig.getValue(self.section+'/EnableFlag',True)
+    # other parameters
     self.pollingTime          = gConfig.getValue(self.section+'/PollingTime',60)
     self.jobStatus            = gConfig.getValue(self.section+'/JobStatus','Checking')
     self.minorStatus          = gConfig.getValue(self.section+'/InitialJobMinorStatus',self.optimizerName)
@@ -58,7 +61,7 @@ class InputDataAgent(Agent):
     try:
       from DIRAC.DataManagement.Client.LcgFileCatalogCombinedClient import LcgFileCatalogCombinedClient
       self.FileCatalog = LcgFileCatalogCombinedClient()
-      self.log.debug("Instantiating LFC File Catalog in mode %s %s %s" % (mode,host,infosys) )
+      self.log.debug("Instantiating %s File Catalog in mode %s %s %s" % (self.FCName,mode,host,infosys) )
     except Exception,x:
       msg = "Failed to create LcgFileCatalogClient"
       self.log.fatal(msg)
@@ -144,19 +147,23 @@ class InputDataAgent(Agent):
     start = time.time()
     result = self.FileCatalog.getReplicas(lfns)
     timing = time.time() - start
-    self.log.info(self.FileCatalogName+' Lookup Time: %s seconds ' % (timing) )
+    self.log.info(self.FCName+' Lookup Time: %s seconds ' % (timing) )
     if not result['OK']:
       self.log.error(result['Message'])
       return result
 
     badLFNCount = 0
+    badLFNs = []
     catalogResult = result['Value']
     for lfn,replicas in catalogResult.items():
       if not replicas:
         badLFNCount+=1
+        badLFNs.append(lfn)
 
     if badLFNCount:
       self.log.info('Found %s LFNs not existing for job %s' % (job,badLFNCount) )
+      param = string.join(badLFNs,'\n')
+
       result = self.updateJobStatus(job,self.failedStatus,self.failedMinorStatus)
       if not result['OK']:
         self.log.error(result['Message'])
@@ -169,21 +176,40 @@ class InputDataAgent(Agent):
     """This method sets the job optimizer information that will subsequently
        be used for job scheduling and TURL queries on the WN.
     """
-    self.log.debug("self.jobDB.setJobOptParameter(+str(job)+,"+self.OptimizerName+","+value+")")
-    result = self.jobDB.setJobOptParameter(jobID,name,value)
+    self.log.debug("self.jobDB.setJobOptParameter(+str(job)+,'%s','%s')" %(reportName,value))
+    if self.enable:
+      result = self.jobDB.setJobOptParameter(jobID,reportName,value)
+    else:
+      result = S_OK('DisabledMode')
+
     return result
 
   #############################################################################
   def updateJobStatus(self,job,status,minorstatus=None):
     """This method updates the job status in the JobDB.
     """
-    self.log.debug("self.jobDB.setJobAttribute("+str(job)+",Status,"+status+" update=True)")
-    result = self.jobDB.setJobAttribute(job,'Status',status, update=True)
+    self.log.debug("self.jobDB.setJobAttribute(%s,'Status','%s',update=True)" %(job,status))
+    if self.enable:
+      result = self.jobDB.setJobAttribute(job,'Status',status, update=True)
+    else:
+      result = S_OK('DisabledMode')
+
     if result['OK']:
       if minorstatus:
-        self.log.debug("self.jobDB.setJobAttribute("+str(job)+","+minorstatus+",update=True)")
-        result = self.jobDB.setJobAttribute(job,'MinorStatus',minorstatus,update=True)
+        self.log.debug("self.jobDB.setJobAttribute(%s,'%s',update=True)" %(job,minorstatus))
+        if self.enable:
+          result = self.jobDB.setJobAttribute(job,'MinorStatus',minorstatus,update=True)
+        else:
+          result = S_OK('DisabledMode')
 
+    return result
+
+  #############################################################################
+  def setJobParam(self,job,reportName,value):
+    """This method updates a job parameter in the JobDB.
+    """
+    self.log.debug("self.jobDB.setJobParameter(%s,'%s','%s')" %(job,reportName,value))
+    result = self.jobDB.setJobParameter(job,reportName,value)
     return result
 
   #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
