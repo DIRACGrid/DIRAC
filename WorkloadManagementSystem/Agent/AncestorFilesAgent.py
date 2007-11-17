@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/AncestorFilesAgent.py,v 1.2 2007/11/10 17:19:08 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/AncestorFilesAgent.py,v 1.3 2007/11/17 14:46:47 paterson Exp $
 # File :   AncestorFilesAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -11,16 +11,19 @@
 
 """
 
-__RCSID__ = "$Id: AncestorFilesAgent.py,v 1.2 2007/11/10 17:19:08 paterson Exp $"
+__RCSID__ = "$Id: AncestorFilesAgent.py,v 1.3 2007/11/17 14:46:47 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.DB.JobDB        import JobDB
-from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
+#from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight      import ClassAd
+#this won't function until the getAncestors call is available...
 #from DIRAC.Core.Utilities.genCatalog                import getAncestors
 from DIRAC.Core.Base.Agent                          import Agent
 from DIRAC.ConfigurationSystem.Client.Config        import gConfig
 from DIRAC.Core.Utilities.Subprocess                import shellCall
 from DIRAC                                          import S_OK, S_ERROR
+
+import os, re, time, string
 
 AGENT_NAME = 'WorkloadManagement/AncestorFilesAgent'
 
@@ -38,12 +41,17 @@ class AncestorFilesAgent(Agent):
     """
     result = Agent.initialize(self)
     self.jobDB = JobDB()
-    self.logDB = JobLoggingDB()
-    self.FileCatalog        = None
+    #self.logDB = JobLoggingDB()
     self.optimizerName      = 'AncestorFiles'
     self.nextOptimizerName  = 'ProcessingDB'
     self.finalOptimizerName = 'JobScheduling'
 
+    #until the BK interface is available, can disable the optimizer and pass jobs through
+    self.disableAncestorCheck = True
+
+    #In disabled mode, no statuses will be updated to allow debugging.
+    self.enable               = gConfig.getValue(self.section+'/EnableFlag',True)
+    #other parameters
     self.pollingTime          = gConfig.getValue(self.section+'/PollingTime',60)
     self.jobStatus            = gConfig.getValue(self.section+'/JobStatus','Checking')
     self.minorStatus          = gConfig.getValue(self.section+'/InitialJobMinorStatus',self.optimizerName)
@@ -51,19 +59,6 @@ class AncestorFilesAgent(Agent):
     self.schedulingStatus     = gConfig.getValue(self.section+'/SchedulingJobMinorStatus',self.finalOptimizerName)
     self.failedStatus         = gConfig.getValue(self.section+'/FailedJobStatus','Failed')
     self.failedMinorStatus    = gConfig.getValue(self.section+'/FailedJobStatus','genCatalog Error')
-
-    infosys = gConfig.getValue(self.section,'LCG_GFAL_INFOSYS','lcg-bdii.cern.ch:2170')
-    host    = gConfig.getValue(self.section,'LFC_HOST','lhcb-lfc.cern.ch')
-
-    try:
-      from DIRAC.DataManagement.Client.LcgFileCatalogCombinedClient import LcgFileCatalogCombinedClient
-      self.FileCatalog = LcgFileCatalogCombinedClient()
-      self.log.debug("Instantiating LFC File Catalog in mode %s %s %s" % (mode,host,infosys) )
-    except Exception,x:
-      msg = "Failed to create LcgFileCatalogClient"
-      self.log.fatal(msg)
-      self.log.fatal(str(x))
-      result = S_ERROR(msg)
 
     self.log.debug( '==========================================='           )
     self.log.debug( 'DIRAC '+self.optimizerName+' Agent is started with'    )
@@ -149,73 +144,49 @@ class AncestorFilesAgent(Agent):
       result = self.jobDB.getInputData(job)
       if result['OK']:
         if result['Value']:
-          self.log.debug('Job %s has an input data requirement and Ancestor Files will be checked' % (job))
+          self.log.info('Job %s has an input data requirement and Ancestor Files will be checked' % (job))
           inputData = result['Value']
-          result = self.resolveInputData(job,inputData)
-          if not result['OK']:
-            self.log.error(result['Message'])
-            return result
-          resolvedData = result['Value']
-          result = self.getInputDataWithAncestors(job,resolvedData,ancestorDepth)
-          if not result['OK']:
-            self.log.error(result['Message'])
-            self.updateJobStatus(job,self.failedStatus,self.failedMinorStatus)
-            return result
-          result = self.setOptimizerJobInfo(job,self.optimizerName,resolvedData)
-          if not result['OK']:
-            self.log.error(result['Message'])
-            return result
+          if not self.disableAncestorCheck:
+            result = self.getInputDataWithAncestors(job,inputData,ancestorDepth)
+            if not result['OK']:
+              self.log.error(result['Message'])
+              self.updateJobStatus(job,self.failedStatus,self.failedMinorStatus)
+              return result
+            ancestorFiles = result['Value']
+            result = self.setOptimizerJobInfo(job,self.optimizerName,ancestorFiles)
+            if not result['OK']:
+              self.log.error(result['Message'])
+              return result
+          else:
+            self.log.info('Ancestor files check is disabled')
           result = self.updateJobStatus(job,self.jobStatus,self.nextOptMinorStatus)
           if not result['OK']:
             self.log.error(result['Message'])
-            return result
+          return result
         else:
           self.log.debug('Job %s has no input data requirement' % (job))
           result = self.updateJobStatus(job,self.jobStatus,self.schedulingStatus)
           if not result['OK']:
             self.log.error(result['Message'])
-            return result
+          return result
       else:
         self.log.error('Failed to get input data from JobdB for %s' %(job) )
         self.log.error(result['Message'])
-
-  #############################################################################
-  def resolveInputData(self,job,inputData):
-    """This method checks the file catalogue for replica information.
-    """
-
-    lfns = [string.replace(fname,'LFN:','') for fname in inputData]
-    result = self.FileCatalog.getReplicas(lfns)
-    if not result['OK']:
-      self.log.error(result['Message'])
-      return result
-
-    badLFNCount = 0
-    catalogResult = result['Value']
-    for lfn,replicas in catalogResult.items():
-      if not replicas:
-        badLFNCount+=1
-
-    if badLFNCount:
-      self.log.info('Found %s LFNs not existing for job %s' %(job,badLFNCount))
-      result = self.updateJobStatus(job,self.failedStatus,self.failedMinorStatus)
-      if not result['OK']:
-        self.log.error(result['Message'])
         return result
-
-    return result
 
   ############################################################################
   def getInputDataWithAncestors(self,inputData,ancestorDepth):
     """Extend the list of LFNs with the LFNs for their ancestor files
-       for the generation depth specified
+       for the generation depth specified in the job.
     """
 
     inputData = [ i.replace('LFN:','') for i in inputData]
 
     start = time.time()
-    result = getAncestors(inputData,ancestorDepth)
-    self.log.info('getAncestors lookup time %s' %(time.time()-start))
+    self.log.info('Need to remove when getAncestors call available')
+    result = S_ERROR()
+    #result = getAncestors(inputData,ancestorDepth)
+    self.log.info('getAncestors lookup time %.2f' %(time.time()-start))
 
     if not result['OK']:
       self.log.error('Failed to get ancestor LFNs')
@@ -238,20 +209,31 @@ class AncestorFilesAgent(Agent):
     """This method sets the job optimizer information that will subsequently
        be used for job scheduling and TURL queries on the WN.
     """
-    self.log.debug("self.jobDB.setJobOptParameter(+str(job)+,"+self.OptimizerName+","+value+")")
-    result = self.jobDB.setJobOptParameter(jobID,name,value)
+    self.log.debug("self.jobDB.setJobOptParameter(%s,'%s','%s')" %(job,reportName,value))
+    if self.enable:
+      result = self.jobDB.setJobOptParameter(job,reportName,str(value))
+    else:
+      result = S_OK('DisabledMode')
+
     return result
 
   #############################################################################
   def updateJobStatus(self,job,status,minorstatus=None):
     """This method updates the job status in the JobDB.
     """
-    self.log.debug("self.jobDB.setJobAttribute("+str(job)+",Status,"+status+" update=True)")
-    result = self.jobDB.setJobAttribute(job,'Status',status, update=True)
+    self.log.debug("self.jobDB.setJobAttribute(%s,'Status','%s',update=True)" %(job,status))
+    if self.enable:
+      result = self.jobDB.setJobAttribute(job,'Status',status, update=True)
+    else:
+      result = S_OK('DisabledMode')
+
     if result['OK']:
       if minorstatus:
-        self.log.debug("self.jobDB.setJobAttribute("+str(job)+","+minorstatus+",update=True)")
-        result = self.jobDB.setJobAttribute(job,'MinorStatus',minorstatus,update=True)
+        self.log.debug("self.jobDB.setJobAttribute(%s,'%s',update=True)" %(job,minorstatus))
+        if self.enable:
+          result = self.jobDB.setJobAttribute(job,'MinorStatus',minorstatus,update=True)
+        else:
+          result = S_OK('DisabledMode')
 
     return result
 
@@ -259,8 +241,12 @@ class AncestorFilesAgent(Agent):
   def setJobParam(self,job,reportName,value):
     """This method updates a job parameter in the JobDB.
     """
-    self.log.debug("self.jobDB.setJobParameter("+str(job)+","+reportName+","+value+")")
-    result = self.jobDB.setJobParameter(job,reportName,value)
+    self.log.debug("self.jobDB.setJobParameter(%s,'%s','%s')" %(job,reportName,value))
+    if self.enable:
+      result = self.jobDB.setJobParameter(job,reportName,value)
+    else:
+      result = S_OK('DisabledMode')
+
     return result
 
   #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
