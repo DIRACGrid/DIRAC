@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.2 2007/11/16 14:10:41 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.3 2007/11/17 09:49:53 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -22,7 +22,7 @@ The initial instance just exposes job submission via the WMS client.
 
 """
 
-__RCSID__ = "$Id: Dirac.py,v 1.2 2007/11/16 14:10:41 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.3 2007/11/17 09:49:53 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types
 
@@ -98,7 +98,7 @@ class Dirac:
     if type(job) == type(" "):
       if os.path.exists(job):
         self.log.debug('Found job JDL file %s' % (job))
-        subResult = self.client.submitJob(job)
+        subResult = self._sendJob(job)
         return jobResult
       else:
         self.log.debug('Job is a JDL string')
@@ -107,10 +107,10 @@ class Dirac:
         os.mkdir(tmpdir)
         jdlfile = open(tmpdir+'/job.jdl','w')
         print >> jdlfile, job
-        jobid = self._sendJob(jdl)
-        subResult = self.client.submitJob(tmpdir+'/job.jdl')
+        jdlfile.close()
+        jobid = self._sendJob(tmpdir+'/job.jdl')
         shutil.rmtree(tmpdir)
-        return subResult
+        return jobid
 
    # if self.dbg:
     #  job.bootstrap()
@@ -158,8 +158,8 @@ class Dirac:
       checkProxy = getGridProxy()
       if not checkProxy:
         self.log.error(str(x))
-        self.log.error('ERROR: No valid proxy found')
-        return S_ERROR('ERROR: No valid proxy found')
+        self.log.error('No valid proxy found')
+        return S_ERROR('No valid proxy found')
 
     return jobid
 
