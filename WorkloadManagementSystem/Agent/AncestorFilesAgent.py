@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/AncestorFilesAgent.py,v 1.3 2007/11/17 14:46:47 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/AncestorFilesAgent.py,v 1.4 2007/11/17 15:58:43 paterson Exp $
 # File :   AncestorFilesAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -11,7 +11,7 @@
 
 """
 
-__RCSID__ = "$Id: AncestorFilesAgent.py,v 1.3 2007/11/17 14:46:47 paterson Exp $"
+__RCSID__ = "$Id: AncestorFilesAgent.py,v 1.4 2007/11/17 15:58:43 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.DB.JobDB        import JobDB
 #from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
@@ -105,7 +105,7 @@ class AncestorFilesAgent(Agent):
             return result
       else:
         self.log.info('Job %s has no AncestorDepth (>0) specified in JDL' %(job))
-        self.updateJobStatus(job,self.failedStatus,self.failedMinorStatus)
+        self.updateJobStatus(job,self.jobStatus,self.nextOptMinorStatus)
 
     return result
 
@@ -158,7 +158,7 @@ class AncestorFilesAgent(Agent):
               self.log.error(result['Message'])
               return result
           else:
-            self.log.info('Ancestor files check is disabled')
+            self.log.info('Ancestor files check is disabled, passing job to %s' %(self.nextOptMinorStatus))
           result = self.updateJobStatus(job,self.jobStatus,self.nextOptMinorStatus)
           if not result['OK']:
             self.log.error(result['Message'])
