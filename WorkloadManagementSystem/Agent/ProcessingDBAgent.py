@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/ProcessingDBAgent.py,v 1.1 2007/11/10 17:14:42 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/ProcessingDBAgent.py,v 1.2 2007/11/17 16:07:08 paterson Exp $
 # File :   ProcessingDBAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,10 +10,10 @@
 
 """
 
-__RCSID__ = "$Id: ProcessingDBAgent.py,v 1.1 2007/11/10 17:14:42 paterson Exp $"
+__RCSID__ = "$Id: ProcessingDBAgent.py,v 1.2 2007/11/17 16:07:08 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.DB.JobDB        import JobDB
-from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
+#from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight      import ClassAd
 from DIRAC.Core.Base.Agent                          import Agent
 from DIRAC.ConfigurationSystem.Client.Config        import gConfig
@@ -36,12 +36,16 @@ class ProcessingDBAgent(Agent):
 
     result = Agent.initialize(self)
     self.jobDB = JobDB()
-    self.logDB = JobLoggingDB()
+    #self.logDB = JobLoggingDB()
     self.PDBFileCatalog = None
     self.optimizerName      = 'ProcessingDB'
     self.nextOptimizerName  = 'JobScheduling'
     self.jobTypeToCheck       = 'processing'
 
+    #disabled until available
+    self.disableProcDBCheck = True
+    #In disabled mode, no statuses will be updated to allow debugging.
+    self.enable               = gConfig.getValue(self.section+'/EnableFlag',True)
     self.pollingTime          = gConfig.getValue(self.section+'/PollingTime',60)
     self.jobStatus            = gConfig.getValue(self.section+'/JobStatus','Checking')
     self.minorStatus          = gConfig.getValue(self.section+'/InitialJobMinorStatus',self.optimizerName)
@@ -49,17 +53,17 @@ class ProcessingDBAgent(Agent):
     self.failedStatus         = gConfig.getValue(self.section+'/FailedJobStatus','Failed')
     self.failedMinorStatus    = gConfig.getValue(self.section+'/FailedJobStatus','ProcessingDB Error')
 
-    dbURL = gConfig.getValue(self.section,'ProcDBURL','processingdb.cern.ch')
-
-    try:
-      from DIRAC.DataManagement.Client.ProcDBCatalogClient import ProcDBCatalogClient
-      self.PDBFileCatalog = ProcDBCatalogClient(dbURL)
-      self.log.debug("Instantiating ProcessingDB Catalog in mode %s %s %s" % (mode,dbURL) )
-    except Exception,x:
-     msg = "Failed to create ProcDBFileCatalogClient"
-      self.log.fatal(msg)
-      self.log.fatal(str(x))
-      result = S_ERROR(msg)
+    if self.disableProcDBCheck:
+      dbURL = gConfig.getValue(self.section,'ProcDBURL','processingdb.cern.ch')
+      try:
+        from DIRAC.DataManagement.Client.ProcDBCatalogClient import ProcDBCatalogClient
+        self.PDBFileCatalog = ProcDBCatalogClient(dbURL)
+        self.log.debug("Instantiating ProcessingDB Catalog in mode %s %s %s" % (mode,dbURL) )
+      except Exception,x:
+        msg = "Failed to create ProcDBFileCatalogClient"
+        self.log.fatal(msg)
+        self.log.fatal(str(x))
+        result = S_ERROR(msg)
 
     self.log.debug( '==========================================='           )
     self.log.debug( 'DIRAC '+self.optimizerName+' Agent is started with'    )
@@ -116,19 +120,20 @@ class ProcessingDBAgent(Agent):
 
         jobType = result['Value']
         if jobType == self.jobTypeToCheck:
-          self.log.info('Job %s is of type %s and will be ignored' % (job,jobType))
-          procDBResult = self.checkProcDB(job,inputData)
-          if not procDBResult['OK']:
-            self.log.error(procDBResult['Message'])
-            return procDBResult
-          result = self.setOptimizerJobInfo(job,self.optimizerName,procDBResult)
-          if not result['OK']:
-            self.log.error(result['Message'])
-            return result
+          self.log.info('Job %s is of type %s and will be processed' % (job,jobType))
+          if not self.disableProcDBCheck:
+            procDBResult = self.checkProcDB(job,inputData)
+            if not procDBResult['OK']:
+              self.log.error(procDBResult['Message'])
+              return procDBResult
+            result = self.setOptimizerJobInfo(job,self.optimizerName,procDBResult)
+            if not result['OK']:
+              self.log.error(result['Message'])
+              return result
           result = self.updateJobStatus(job,self.jobStatus,self.nextOptMinorStatus)
           if not result['OK']:
             self.log.error(result['Message'])
-            return result
+          return result
         else:
           self.log.info('Job %s is of type %s and will be ignored' % (job,jobType))
           result = self.updateJobStatus(job,self.jobStatus,self.nextOptMinorStatus)
@@ -170,8 +175,8 @@ class ProcessingDBAgent(Agent):
     """This method sets the job optimizer information that will subsequently
        be used for job scheduling and TURL queries on the WN.
     """
-    self.log.debug("self.jobDB.setJobOptParameter(+str(job)+,"+self.OptimizerName+","+value+")")
-    result = self.jobDB.setJobOptParameter(jobID,name,value)
+    self.log.debug("self.jobDB.setJobOptParameter(+str(job)+,"+reportName+","+value+")")
+    result = self.jobDB.setJobOptParameter(jobID,reportName,value)
     return result
 
   #############################################################################
