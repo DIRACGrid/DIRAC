@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/ProcessingDBAgent.py,v 1.2 2007/11/17 16:07:08 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/ProcessingDBAgent.py,v 1.3 2007/11/17 16:16:32 paterson Exp $
 # File :   ProcessingDBAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
 
 """
 
-__RCSID__ = "$Id: ProcessingDBAgent.py,v 1.2 2007/11/17 16:07:08 paterson Exp $"
+__RCSID__ = "$Id: ProcessingDBAgent.py,v 1.3 2007/11/17 16:16:32 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.DB.JobDB        import JobDB
 #from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
@@ -53,8 +53,8 @@ class ProcessingDBAgent(Agent):
     self.failedStatus         = gConfig.getValue(self.section+'/FailedJobStatus','Failed')
     self.failedMinorStatus    = gConfig.getValue(self.section+'/FailedJobStatus','ProcessingDB Error')
 
-    if self.disableProcDBCheck:
-      dbURL = gConfig.getValue(self.section,'ProcDBURL','processingdb.cern.ch')
+    if not self.disableProcDBCheck:
+      dbURL = gConfig.getValue(self.section+'/ProcDBURL','processingdb.cern.ch')
       try:
         from DIRAC.DataManagement.Client.ProcDBCatalogClient import ProcDBCatalogClient
         self.PDBFileCatalog = ProcDBCatalogClient(dbURL)
@@ -73,7 +73,6 @@ class ProcessingDBAgent(Agent):
     self.log.debug( 'Job Status          ==> %s' % self.jobStatus           )
     self.log.debug( 'Job Minor Status    ==> %s' % self.minorStatus         )
     self.log.debug( 'Next Opt Status     ==> %s' % self.nextOptMinorStatus  )
-    self.log.debug( 'Scheduling Status   ==> %s' % self.schedulingStatus    )
     self.log.debug( 'Failed Job Status   ==> %s' % self.failedStatus        )
     self.log.debug( 'Failed Minor Status ==> %s' % self.failedMinorStatus   )
     self.log.debug( '==========================================='           )
@@ -139,13 +138,13 @@ class ProcessingDBAgent(Agent):
           result = self.updateJobStatus(job,self.jobStatus,self.nextOptMinorStatus)
           if not result['OK']:
             self.log.error(result['Message'])
-            return result
+          return result
       else:
         self.log.info('Job %s has no input data requirement' % (job) )
         result = self.updateJobStatus(job,self.jobStatus,self.nextOptMinorStatus)
         if not result['OK']:
           self.log.error(result['Message'])
-          return result
+        return result
     else:
       self.log.error('Failed to get input data from JobdB for %s' % (job) )
       self.log.error(result['Message'])
@@ -175,20 +174,31 @@ class ProcessingDBAgent(Agent):
     """This method sets the job optimizer information that will subsequently
        be used for job scheduling and TURL queries on the WN.
     """
-    self.log.debug("self.jobDB.setJobOptParameter(+str(job)+,"+reportName+","+value+")")
-    result = self.jobDB.setJobOptParameter(jobID,reportName,value)
+    self.log.debug("self.jobDB.setJobOptParameter(%s,'%s','%s')" %(job,reportName,value))
+    if self.enable:
+      result = self.jobDB.setJobOptParameter(job,reportName,str(value))
+    else:
+      result = S_OK('DisabledMode')
+
     return result
 
   #############################################################################
   def updateJobStatus(self,job,status,minorstatus=None):
     """This method updates the job status in the JobDB.
     """
-    self.log.debug("self.jobDB.setJobAttribute("+str(job)+",Status,"+status+" update=True)")
-    result = self.jobDB.setJobAttribute(job,'Status',status, update=True)
+    self.log.debug("self.jobDB.setJobAttribute(%s,'Status','%s',update=True)" %(job,status))
+    if self.enable:
+      result = self.jobDB.setJobAttribute(job,'Status',status, update=True)
+    else:
+      result = S_OK('DisabledMode')
+
     if result['OK']:
       if minorstatus:
-        self.log.debug("self.jobDB.setJobAttribute("+str(job)+","+minorstatus+",update=True)")
-        result = self.jobDB.setJobAttribute(job,'MinorStatus',minorstatus,update=True)
+        self.log.debug("self.jobDB.setJobAttribute(%s,'%s',update=True)" %(job,minorstatus))
+        if self.enable:
+          result = self.jobDB.setJobAttribute(job,'MinorStatus',minorstatus,update=True)
+        else:
+          result = S_OK('DisabledMode')
 
     return result
 
@@ -196,8 +206,12 @@ class ProcessingDBAgent(Agent):
   def setJobParam(self,job,reportName,value):
     """This method updates a job parameter in the JobDB.
     """
-    self.log.debug("self.jobDB.setJobParameter("+str(job)+","+reportName+","+value+")")
-    result = self.jobDB.setJobParameter(job,reportName,value)
+    self.log.debug("self.jobDB.setJobParameter(%s,'%s','%s')" %(job,reportName,value))
+    if self.enable:
+      result = self.jobDB.setJobParameter(job,reportName,value)
+    else:
+      result = S_OK('DisabledMode')
+
     return result
 
   #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
