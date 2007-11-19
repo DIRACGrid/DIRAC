@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.5 2007/11/16 21:22:28 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.6 2007/11/19 16:08:41 paterson Exp $
 # File :   InputDataAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,103 +10,51 @@
 
 """
 
-__RCSID__ = "$Id: InputDataAgent.py,v 1.5 2007/11/16 21:22:28 paterson Exp $"
+__RCSID__ = "$Id: InputDataAgent.py,v 1.6 2007/11/19 16:08:41 paterson Exp $"
 
-from DIRAC.WorkloadManagementSystem.DB.JobDB        import JobDB
-#from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
-from DIRAC.Core.Utilities.ClassAd.ClassAdLight      import ClassAd
-from DIRAC.Core.Base.Agent                          import Agent
-from DIRAC.ConfigurationSystem.Client.Config        import gConfig
-from DIRAC.Core.Utilities.Subprocess                import shellCall
-from DIRAC                                          import S_OK, S_ERROR
+from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
+from DIRAC.ConfigurationSystem.Client.Config               import gConfig
+from DIRAC                                                 import S_OK, S_ERROR
 
 import os, re, time, string
 
-AGENT_NAME = 'WorkloadManagement/InputDataAgent'
+OPTIMIZER_NAME = 'InputData'
 
-class InputDataAgent(Agent):
+class InputDataAgent(Optimizer):
 
   #############################################################################
   def __init__(self):
-    """ Standard constructor
+    """ Constructor, takes system flag as argument.
     """
-    Agent.__init__(self,AGENT_NAME)
+    Optimizer.__init__(self,OPTIMIZER_NAME,enableFlag=True)
 
   #############################################################################
   def initialize(self):
-    """ Initialization of the Agent.
+    """Initialize specific parameters for JobSanityAgent.
     """
+    result = Optimizer.initialize(self)
 
-    result = Agent.initialize(self)
-    self.jobDB = JobDB()
-    #self.logDB = JobLoggingDB()
-    self.FileCatalog        = None
-    self.optimizerName      = 'InputData'
-    self.nextOptimizerName  = 'AncestorFiles'
-    self.finalOptimizerName = 'JobScheduling'
+    self.failedMinorStatus = gConfig.getValue(self.section+'/FailedJobStatus','Input Data Not Available')
+    self.diskSE            = gConfig.getValue(self.section+'/DiskSE','-disk')
+    self.tapeSE            = gConfig.getValue(self.section+'/TapeSE','-tape')
 
-    self.FCName      = 'LFC'
-    #In disabled mode, no statuses will be updated to allow debugging.
-    self.enable               = gConfig.getValue(self.section+'/EnableFlag',True)
-    # other parameters
-    self.pollingTime          = gConfig.getValue(self.section+'/PollingTime',60)
-    self.jobStatus            = gConfig.getValue(self.section+'/JobStatus','Checking')
-    self.minorStatus          = gConfig.getValue(self.section+'/InitialJobMinorStatus',self.optimizerName)
-    self.nextOptMinorStatus   = gConfig.getValue(self.section+'/FinalJobMinorStatus',self.nextOptimizerName)
-    self.schedulingStatus     = gConfig.getValue(self.section+'/SchedulingJobMinorStatus',self.finalOptimizerName)
-    self.failedStatus         = gConfig.getValue(self.section+'/FailedJobStatus','Failed')
-    self.failedMinorStatus    = gConfig.getValue(self.section+'/FailedJobStatus','Input Data Not Available')
+    mappingSection = gConfig.getSection('/Resources/SiteLocalSEMapping')
+    self.site_se_mapping = {}
+    for site,ses in mappingSection.items():
+      self.site_se_mapping[site] = [ x.strip() for x in ses.split(',')]
 
-    infosys = gConfig.getValue(self.section+'/LCG_GFAL_INFOSYS','lcg-bdii.cern.ch:2170')
-    host    = gConfig.getValue(self.section+'/LFC_HOST','lhcb-lfc.cern.ch')
-    mode    = gConfig.getValue(self.section+'/Mode','test')
-
+    infosys                = gConfig.getValue(self.section+'/LCG_GFAL_INFOSYS','lcg-bdii.cern.ch:2170')
+    host                   = gConfig.getValue(self.section+'/LFC_HOST','lhcb-lfc.cern.ch')
+    mode                   = gConfig.getValue(self.section+'/Mode','test')
     try:
       from DIRAC.DataManagementSystem.Client.LcgFileCatalogCombinedClient import LcgFileCatalogCombinedClient
       self.FileCatalog = LcgFileCatalogCombinedClient()
-      self.log.debug("Instantiating %s File Catalog in mode %s %s %s" % (self.FCName,mode,host,infosys) )
+      self.log.debug("Instantiating LFC File Catalog in mode %s %s %s" % (mode,host,infosys) )
     except Exception,x:
-      msg = "Failed to create LcgFileCatalogClient"
+      msg = 'Failed to create LcgFileCatalogClient'
       self.log.fatal(msg)
       self.log.fatal(str(x))
       result = S_ERROR(msg)
-
-    self.log.debug( '==========================================='           )
-    self.log.debug( 'DIRAC '+self.optimizerName+' Agent is started with'    )
-    self.log.debug( 'the following parameters:'                             )
-    self.log.debug( '==========================================='           )
-    self.log.debug( 'Polling Time        ==> %s' % self.pollingTime         )
-    self.log.debug( 'Job Status          ==> %s' % self.jobStatus           )
-    self.log.debug( 'Job Minor Status    ==> %s' % self.minorStatus         )
-    self.log.debug( 'Next Opt Status     ==> %s' % self.nextOptMinorStatus  )
-    self.log.debug( 'Scheduling Status   ==> %s' % self.schedulingStatus    )
-    self.log.debug( 'Failed Job Status   ==> %s' % self.failedStatus        )
-    self.log.debug( 'Failed Minor Status ==> %s' % self.failedMinorStatus   )
-    self.log.debug( '==========================================='           )
-
-    return result
-
-  #############################################################################
-  def execute(self):
-    """ The main agent execution method
-    """
-    condition = {'Status':self.jobStatus,'MinorStatus':self.minorStatus}
-    result = self.jobDB.selectJobs(condition)
-    if not result['OK']:
-      self.log.error('Failed to get a job list from the JobDB')
-      return S_ERROR('Failed to get a job list from the JobDB')
-
-    if not len(result['Value']):
-      self.log.debug('No pending jobs to process')
-      return S_OK('No work to do')
-
-    jobList = result['Value']
-    for job in jobList:
-      result = self.checkJob(job)
-      if not result:
-        self.log.error('Expected dict instead of: %s' %(result))
-      if not result['OK']:
-        return result  
 
     return result
 
@@ -129,13 +77,13 @@ class InputDataAgent(Agent):
         if not result['OK']:
           self.log.error(result['Message'])
           return result
-        result = self.updateJobStatus(job,self.jobStatus,self.nextOptimizerName)
+        result = self.setNextOptimizer(job)
         if not result['OK']:
           self.log.error(result['Message'])
         return result
       else:
         self.log.debug('Job %s has no input data requirement' % (job) )
-        result = self.updateJobStatus(job,self.jobStatus,self.schedulingStatus)
+        result = self.setNextOptimizer(job)
         if not result['OK']:
           self.log.error(result['Message'])
         return result
@@ -148,12 +96,11 @@ class InputDataAgent(Agent):
   def resolveInputData(self,job,inputData):
     """This method checks the file catalogue for replica information.
     """
-
     lfns = [string.replace(fname,'LFN:','') for fname in inputData]
     start = time.time()
     result = self.FileCatalog.getReplicas(lfns)
     timing = time.time() - start
-    self.log.info(self.FCName+' Lookup Time: %.2f seconds ' % (timing) )
+    self.log.info('LFC Lookup Time: %.2f seconds ' % (timing) )
     if not result['OK']:
       self.log.error(result['Message'])
       return result
@@ -167,6 +114,11 @@ class InputDataAgent(Agent):
         badLFNCount+=1
         badLFNs.append('LFN:%s Problem: %s' %(lfn,cause))
 
+    if catalogResult.has_key('Successful'):
+      for lfn,replicas in catalogResult['Successful'].items():
+        if not replicas:
+          badLFNCount+=1
+
     if badLFNCount:
       self.log.info('Found %s LFN(s) not existing for job %s' % (badLFNCount,job) )
       param = string.join(badLFNs,'\n')
@@ -174,57 +126,76 @@ class InputDataAgent(Agent):
       result = self.setJobParam(job,self.optimizerName,param)
       if not result['OK']:
         self.log.error(result['Message'])
-        return result
-      result = self.updateJobStatus(job,self.failedStatus,self.failedMinorStatus)
-      if not result['OK']:
-        self.log.error(result['Message'])
-        return result
+      return S_ERROR('Input Data Not Available')
 
-    return S_OK(catalogResult['Successful'])
+    inputData = catalogResult['Successful']
+    siteCandidates = self.getSiteCandidates(inputData)
+    if not result['OK']:
+      self.log.error(result['Message'])
+      return result
 
-  #############################################################################
-  def setOptimizerJobInfo(self,job,reportName,value):
-    """This method sets the job optimizer information that will subsequently
-       be used for job scheduling and TURL queries on the WN.
-    """
-    self.log.debug("self.jobDB.setJobOptParameter(%s,'%s','%s')" %(job,reportName,value))
-    if self.enable:
-      result = self.jobDB.setJobOptParameter(job,reportName,str(value))
-    else:
-      result = S_OK('DisabledMode')
-
-    return result
+    result = S_OK()
+    result['InputData'] = inputData
+    result['SiteCandidates'] = siteCandidates['Value']
+    return S_OK(result)
 
   #############################################################################
-  def updateJobStatus(self,job,status,minorstatus=None):
-    """This method updates the job status in the JobDB.
+  def getSiteCandidates(self,inputData):
+    """This method returns a list of possible site candidates based on the
+       job input data requirement.  For each site candidate, the number of files
+       on disk and tape is resolved.
     """
-    self.log.debug("self.jobDB.setJobAttribute(%s,'Status','%s',update=True)" %(job,status))
-    if self.enable:
-      result = self.jobDB.setJobAttribute(job,'Status',status, update=True)
-    else:
-      result = S_OK('DisabledMode')
+    siteSEMapping = self.site_se_mapping
+    for lfn,replicas in inputData.items():
+      siteList = []
+      for se in replicas.keys():
+        sites = self._getSitesForSE(se)
+        if sites:
+          siteList += sites
+      fileSEs[lfn] = sitelist
 
-    if result['OK']:
-      if minorstatus:
-        self.log.debug("self.jobDB.setJobAttribute(%s,'%s',update=True)" %(job,minorstatus))
-        if self.enable:
-          result = self.jobDB.setJobAttribute(job,'MinorStatus',minorstatus,update=True)
-        else:
-          result = S_OK('DisabledMode')
+    siteCandidates = []
+    i = 0
+    for file,sites in fileSEs.items():
+      if not i:
+        siteCandidates = sites
+      else:
+        tempSite = []
+        for site in siteCandidates:
+          if site in sites:
+            tempSite.append(site)
+        siteCandidates = tempSite
+      i += 1
 
-    return result
+    if not len(siteCandidates):
+      return S_ERROR('No candidate sites available')
+
+    #In addition, check number of files on tape and disk for each site
+    #for optimizations during scheduling
+    siteResult = {}
+    for site in siteCandidates: siteResult[site]={'disk':0,'tape':0}
+
+    for lfn,replicas in inputData.items():
+      for se,surl in replicas.items():
+        sites = self._getSitesForSE(se)
+        for site in sites:
+          if site in siteCandidates:
+            if re.search(self.diskSE+'$',se):
+              siteResult[site]['disk'] = siteResult[site]['disk']+1
+            if re.search(self.tapeSE+'$',se):
+              siteResult[site]['tape'] = siteResult[site]['tape']+1
+
+    return S_OK(siteResult)
 
   #############################################################################
-  def setJobParam(self,job,reportName,value):
-    """This method updates a job parameter in the JobDB.
+  def _getSitesForSE(self,se):
+    """Returns a list of sites via the site SE mapping for a given SE.
     """
-    self.log.debug("self.jobDB.setJobParameter(%s,'%s','%s')" %(job,reportName,value))
-    if self.enable:
-      result = self.jobDB.setJobParameter(job,reportName,value)
-    else:
-      result = S_OK('DisabledMode')      
+    sites = []
+    for site,ses in self.site_se_mapping.items():
+      if se in ses:
+        sites.append(site)
 
-    return result
+    return sites
 
   #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
