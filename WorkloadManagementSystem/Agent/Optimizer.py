@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Optimizer.py,v 1.1 2007/11/19 10:06:02 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Optimizer.py,v 1.2 2007/11/19 10:58:23 paterson Exp $
 # File :   Optimizer.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
      optimizer instances and associated actions are performed there.
 """
 
-__RCSID__ = "$Id: Optimizer.py,v 1.1 2007/11/19 10:06:02 paterson Exp $"
+__RCSID__ = "$Id: Optimizer.py,v 1.2 2007/11/19 10:58:23 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.DB.JobDB        import JobDB
 #from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
@@ -93,7 +93,7 @@ class Optimizer(Agent):
     for job in jobList:
       result = self.checkJob(job)
       if not result['OK']:
-        self.updateJobStatus(self.failedStatus,result['Message'])
+        self.updateJobStatus(job,self.failedStatus,result['Message'])
 
     return result
 
