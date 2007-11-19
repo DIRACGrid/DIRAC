@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSanityAgent.py,v 1.5 2007/11/16 13:56:32 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSanityAgent.py,v 1.6 2007/11/19 10:49:19 paterson Exp $
 # File :   JobSanityAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,42 +13,31 @@
        - Input sandbox not correctly uploaded.
 """
 
-__RCSID__ = "$Id: JobSanityAgent.py,v 1.5 2007/11/16 13:56:32 paterson Exp $"
+__RCSID__ = "$Id: JobSanityAgent.py,v 1.6 2007/11/19 10:49:19 paterson Exp $"
 
-from DIRAC.WorkloadManagementSystem.DB.JobDB        import JobDB
-from DIRAC.Core.Utilities.ClassAd.ClassAdLight      import ClassAd
-from DIRAC.Core.Base.Agent                          import Agent
-from DIRAC.ConfigurationSystem.Client.Config        import gConfig
-from DIRAC.Core.Utilities.Subprocess                import shellCall
-from DIRAC                                          import S_OK, S_ERROR
-
+from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
+from DIRAC.ConfigurationSystem.Client.Config               import gConfig
+from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
+from DIRAC.Core.Utilities.Subprocess                       import shellCall
+from DIRAC                                                 import S_OK, S_ERROR
 import os, re, time, string
 
-AGENT_NAME = 'WorkloadManagement/JobSanityAgent'
+OPTIMIZER_NAME = 'JobSanity'
 
-class JobSanityAgent(Agent):
+class JobSanityAgent(Optimizer):
 
   #############################################################################
   def __init__(self):
-    """ Standard constructor for Agent
+    """ Constructor, takes system flag as argument.
     """
-    Agent.__init__(self,AGENT_NAME)
+    Optimizer.__init__(self,OPTIMIZER_NAME,enableFlag=True)
 
   #############################################################################
   def initialize(self):
-    """Sets default parameters
+    """Initialize specific parameters for JobSanityAgent.
     """
-    result = Agent.initialize(self)
-    self.jobDB = JobDB()
-    self.optimizerName     = 'JobSanity'
-    self.nextOptimizerName = 'InputData'
+    result = Optimizer.initialize(self)
 
-    self.dbg = False
-    if gConfig.getValue(self.section+'/LogLevel','INFO') == 'DEBUG':
-      self.dbg = True
-
-    #In disabled mode, no statuses will be updated to allow debugging.
-    self.enable = gConfig.getValue(self.section+'/EnableFlag',True)
     #Test control flags N.B. JDL check is mandatory
     self.inputDataCheck    = gConfig.getValue(self.section+'/InputDataCheck',1)
     self.outputDataCheck   = gConfig.getValue(self.section+'/OutputDataCheck',0)
@@ -56,33 +45,10 @@ class JobSanityAgent(Agent):
     self.platformCheck     = gConfig.getValue(self.section+'/PlatformCheck',0)
     #Other parameters
     self.setup                = gConfig.getValue(self.section+'/VO','lhcb')
-    self.pollingTime          = gConfig.getValue(self.section+'/PollingTime',10)
-    self.jobStatus            = gConfig.getValue(self.section+'/JobStatus','Checking')
-    self.minorStatus          = gConfig.getValue(self.section+'/InitialJobMinorStatus',self.optimizerName)
-    self.nextOptMinorStatus   = gConfig.getValue(self.section+'/FinalJobMinorStatus',self.nextOptimizerName)
     self.successStatus        = gConfig.getValue(self.section+'/SuccessfulJobStatus','OutputReady')
     self.maxDataPerJob        = gConfig.getValue(self.section+'/MaxInputDataPerJob',200)
-    self.jobCheckDelay        = gConfig.getValue(self.section+'/JobCheckingDelay',5)
-    self.failedJobStatus      = gConfig.getValue(self.section+'/FailedJobStatus','failed')
 
-#needed for the output data check
-    infosys = gConfig.getValue(self.section+'/LCG_GFAL_INFOSYS','lcg-bdii.cern.ch:2170')
-    host    = gConfig.getValue(self.section+'/LFC_HOST','lhcb-lfc.cern.ch')
-#    try:
-#      from DIRAC.DataManagement.Client.LcgFileCatalogCombinedClient import LcgFileCatalogCombinedClient
-#      self.FileCatalog = LcgFileCatalogCombinedClient()
-#      self.log.debug("Instantiating LFC File Catalog in mode %s %s %s" % (mode,host,infosys) )
-#    except Exception,x:
-#      msg = "Failed to create LcgFileCatalogClient"
-#      self.log.fatal(msg)
-#      self.log.fatal(str(x))
-#      result = S_ERROR(msg)
-
-    self.log.debug( '==========================================='          )
-    self.log.debug( 'DIRAC '+self.optimizerName+' Agent is started with '  )
-    self.log.debug( 'the following parameters and checks:'                 )
-    self.log.debug( '==========================================='          )
-    self.log.debug( 'JDL Check          ==>  Enabled'                      )
+    self.log.debug(   'JDL Check          ==>  Enabled'                    )
     if self.inputDataCheck:
       self.log.debug( 'Input Data Check   ==>  Enabled'                    )
     else:
@@ -99,67 +65,21 @@ class JobSanityAgent(Agent):
       self.log.debug( 'Platform Check     ==>  Enabled'                    )
     else:
       self.log.debug( 'Platform Check     ==>  Disabled'                   )
-    self.log.debug( '==========================================='          )
-    self.log.debug( 'Polling Time       ==> %s' % self.pollingTime         )
-    self.log.debug( 'Job Status         ==> %s' % self.jobStatus           )
-    self.log.debug( 'Job Minor Status   ==> %s' % self.minorStatus         )
-    self.log.debug( 'Max Data Per Job   ==> %s' % self.maxDataPerJob       )
-    self.log.debug( 'Successful Status  ==> %s' % self.successStatus       )
-    self.log.debug( 'Job Check Delay    ==> %s' % self.jobCheckDelay       )
-    self.log.debug( 'Failed Job Status  ==> %s' % self.failedJobStatus     )
-    self.log.debug( '==========================================='          )
+
+#needed eventually for the output data check
+#    host    = gConfig.getValue(self.section+'/LFC_HOST','lhcb-lfc.cern.ch')
+#    infosys = gConfig.getValue(self.section+'/LCG_GFAL_INFOSYS','lcg-bdii.cern.ch:2170')
+#    try:
+#      from DIRAC.DataManagement.Client.LcgFileCatalogCombinedClient import LcgFileCatalogCombinedClient
+#      self.FileCatalog = LcgFileCatalogCombinedClient()
+#      self.log.debug("Instantiating LFC File Catalog in mode %s %s %s" % (mode,host,infosys) )
+#    except Exception,x:
+#      msg = "Failed to create LcgFileCatalogClient"
+#      self.log.fatal(msg)
+#      self.log.fatal(str(x))
+#      result = S_ERROR(msg)
 
     return result
-
-  #############################################################################
-  def execute(self):
-    """ The main agent execution method
-    """
-    self.log.debug( 'Waking up Job Sanity Agent.' )
-    result = self.selectJobsAndCheck()
-    return result
-
-  #############################################################################
-  def selectJobsAndCheck(self):
-    """Selects jobs from JobDB. Also allows general
-        conditions such as a delay before checking to
-        be inserted for all tests.
-    """
-    delay = self.jobCheckDelay
-
-    condition = {'Status':self.jobStatus,'MinorStatus':self.minorStatus}
-    result = self.jobDB.selectJobs(condition)
-    if not result['OK']:
-      self.log.error('Failed to get a job list from the JobDB')
-      return S_ERROR('Failed to get a job list from the JobDB')
-
-    if not len(result['Value']):
-      self.log.debug('No pending jobs to process')
-      return S_OK('No work to do')
-
-    jobs = result['Value']
-    for job in jobs:
-      jobAttributes = self.jobDB.getJobAttributes(job)
-      if jobAttributes['OK']:
-        timeDict = jobAttributes['Value']
-        print timeDict
-        if timeDict:
-          subTime = timeDict['SubmissionTime'].replace(' ','T')
-          timeTuple = time.strptime(subTime,"%Y-%m-%dT%H:%M:%S")
-          submissionTime = time.mktime(timeTuple)
-          currentTime = time.time()
-          if currentTime - submissionTime > delay:
-            self.checkJob(job)
-          else:
-            msg = 'Job %s, submitted less than %s seconds ago' % (job,delay)
-            self.log.info(msg)
-        else:
-          self.log.error('No job attributes found for job %s' %(job))
-      else:
-        self.log.warn('JobDB returned error for job %s' %(job))
-        print jobAttributes
-
-    return S_OK('Successfully checked jobs')
 
   #############################################################################
   def checkJob(self,job):
@@ -168,7 +88,7 @@ class JobSanityAgent(Agent):
         be easily extended in the future to accommodate
         any other potential checks.
     """
-
+    self.log.info('Job %s will be processed by %sAgent' % (job,self.optimizerName))
     #Job JDL check
     message = 'Job: '+str(job)+' '
     self.log.debug('Checking Loop Starts for job: '+str(job))
@@ -180,7 +100,7 @@ class JobSanityAgent(Agent):
       minorStatus = checkJDL['Value']
       self.updateJobStatus(job,self.failedJobStatus,minorStatus)
       self.log.info(res)
-      return
+      return S_ERROR(message)
 
     jdl = checkJDL['JDL']
     classadJob = ClassAd('['+jdl+']')
@@ -198,7 +118,7 @@ class JobSanityAgent(Agent):
         self.updateJobStatus(job,self.failedJobStatus,minorStatus)
         self.log.info(message)
         self.log.info(res)
-        return
+        return S_ERROR(message)
 
     #Platform check # disabled
     if self.platformCheck:
@@ -212,7 +132,7 @@ class JobSanityAgent(Agent):
         self.updateJobStatus(job,self.failedJobStatus,minorStatus)
         self.log.info(message)
         self.log.info(res)
-        return
+        return S_ERROR(message)
 
     #Output data exists check
     if self.outputDataCheck: # disabled
@@ -227,7 +147,7 @@ class JobSanityAgent(Agent):
             self.log.info(message)
             self.setJobParam(job,'JobSanityCheck',message)
             self.updateJobStatus(job,success,minorStatus)
-            return
+            return S_ERROR(message)
           else:
             flag = outputData['Value']
             message += 'Output Data: '+flag+', '
@@ -237,7 +157,7 @@ class JobSanityAgent(Agent):
           self.updateJobStatus(job,self.failedJobStatus, minorStatus)
           self.log.info(message)
           self.log.info(res)
-          return
+          return S_ERROR(message)
 
     #Input Sandbox uploaded check
     if self.inputSandboxCheck: # disabled
@@ -248,16 +168,17 @@ class JobSanityAgent(Agent):
       else:
         res = 'Job: '+str(job)+' Failed since input sandbox not uploaded.'
         minorStatus=inputSandbox['Value']
-        self.updateJobStatus(job,self.failedJobStatus, minorStatus)
         self.log.info(message)
         self.log.info(res)
-        return
+        return S_ERROR(message)
 
     self.log.info(message)
     self.setJobParam(job,'JobSanityCheck',message)
-    result = self.updateJobStatus(job,self.jobStatus,self.nextOptMinorStatus)
+    result = self.setNextOptimizer(job)
     if not result['OK']:
       self.log.error(result['Message'])
+
+    return S_OK('Job checking finished')
 
   #############################################################################
   def checkJDL(self,job):
@@ -267,10 +188,6 @@ class JobSanityAgent(Agent):
     retVal = self.jobDB.getJobJDL(job,original=True)
     if not retVal['OK']:
       self.log.warn(retVal['Message'])
-      retVal = self.jobDB.getJobJDL(job)
-      self.log.warn('Could not get current JDL from JobDB, trying other')
-      if not retVal['OK']:
-        self.log.warn(retVal['Message'])
 
     if not retVal['OK']:
       result = S_ERROR()
@@ -324,9 +241,10 @@ class JobSanityAgent(Agent):
 
     self.log.debug('Job %s has an input data requirement and will be checked' % (job))
     data = result['Value']
-    self.log.debug('Data is: ')
-    if self.dbg:
-      for i in data: print i
+    repData = '\n'
+    for i in data: repData+=i+'\n'
+    self.log.debug('Data is: %s' %(repData))
+
 
     totalData = len(data)
     if totalData > maxData:
@@ -384,33 +302,5 @@ class JobSanityAgent(Agent):
     """
     #To implement
     return S_OK()
-
-  #############################################################################
-  def updateJobStatus(self,job,status,minorstatus=None):
-    """This method updates the job status in the JobDB.
-    """
-    self.log.debug("self.jobDB.setJobAttribute("+str(job)+",'Status','"+status+"',update=True)")
-    if self.enable:
-      result = self.jobDB.setJobAttribute(job,'Status',status, update=True)
-    else:
-      result = S_OK('DisabledMode')
-        
-    if result['OK']:
-      if minorstatus:
-        self.log.debug("self.jobDB.setJobAttribute("+str(job)+",'"+minorstatus+"',update=True)")
-        if self.enable:
-          result = self.jobDB.setJobAttribute(job,'MinorStatus',minorstatus,update=True)
-        else:
-          result = S_OK('DisabledMode')  
-
-    return result
-
-  #############################################################################
-  def setJobParam(self,job,reportName,value):
-    """This method updates a job parameter in the JobDB.
-    """
-    self.log.debug("self.jobDB.setJobParameter("+str(job)+","+reportName+","+value+")")
-    result = self.jobDB.setJobParameter(job,reportName,value)
-    return result
 
   #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
