@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.6 2007/11/19 16:08:41 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.7 2007/11/19 17:16:27 paterson Exp $
 # File :   InputDataAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
 
 """
 
-__RCSID__ = "$Id: InputDataAgent.py,v 1.6 2007/11/19 16:08:41 paterson Exp $"
+__RCSID__ = "$Id: InputDataAgent.py,v 1.7 2007/11/19 17:16:27 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
@@ -26,7 +26,7 @@ class InputDataAgent(Optimizer):
   def __init__(self):
     """ Constructor, takes system flag as argument.
     """
-    Optimizer.__init__(self,OPTIMIZER_NAME,enableFlag=True)
+    Optimizer.__init__(self,OPTIMIZER_NAME,enableFlag=False)
 
   #############################################################################
   def initialize(self):
@@ -38,10 +38,12 @@ class InputDataAgent(Optimizer):
     self.diskSE            = gConfig.getValue(self.section+'/DiskSE','-disk')
     self.tapeSE            = gConfig.getValue(self.section+'/TapeSE','-tape')
 
-    mappingSection = gConfig.getSection('/Resources/SiteLocalSEMapping')
-    self.site_se_mapping = {}
-    for site,ses in mappingSection.items():
-      self.site_se_mapping[site] = [ x.strip() for x in ses.split(',')]
+    self.site_se_mapping = {}    
+    mappingKeys = gConfig.getOptions('/Resources/SiteLocalSEMapping')
+    for site in mappingKeys['Value']:
+      seStr = gConfig.getValue('/Resources/SiteLocalSEMapping/%s' %(site))
+      self.log.debug('Site: %s, SEs: %s' %(site,seStr))
+      self.site_se_mapping[site] = [ x.strip() for x in string.split(seStr,',')]
 
     infosys                = gConfig.getValue(self.section+'/LCG_GFAL_INFOSYS','lcg-bdii.cern.ch:2170')
     host                   = gConfig.getValue(self.section+'/LFC_HOST','lhcb-lfc.cern.ch')
@@ -145,6 +147,7 @@ class InputDataAgent(Optimizer):
        job input data requirement.  For each site candidate, the number of files
        on disk and tape is resolved.
     """
+    fileSEs = {}
     siteSEMapping = self.site_se_mapping
     for lfn,replicas in inputData.items():
       siteList = []
@@ -152,7 +155,7 @@ class InputDataAgent(Optimizer):
         sites = self._getSitesForSE(se)
         if sites:
           siteList += sites
-      fileSEs[lfn] = sitelist
+      fileSEs[lfn] = siteList
 
     siteCandidates = []
     i = 0
