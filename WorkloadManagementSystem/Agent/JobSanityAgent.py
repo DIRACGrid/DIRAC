@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSanityAgent.py,v 1.6 2007/11/19 10:49:19 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSanityAgent.py,v 1.7 2007/11/19 10:59:29 paterson Exp $
 # File :   JobSanityAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,7 +13,7 @@
        - Input sandbox not correctly uploaded.
 """
 
-__RCSID__ = "$Id: JobSanityAgent.py,v 1.6 2007/11/19 10:49:19 paterson Exp $"
+__RCSID__ = "$Id: JobSanityAgent.py,v 1.7 2007/11/19 10:59:29 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
@@ -115,7 +115,6 @@ class JobSanityAgent(Optimizer):
       else:
         res = 'Job: '+str(job)+' Failed input data check.'
         minorStatus = inputData['Value']
-        self.updateJobStatus(job,self.failedJobStatus,minorStatus)
         self.log.info(message)
         self.log.info(res)
         return S_ERROR(message)
@@ -129,7 +128,6 @@ class JobSanityAgent(Optimizer):
       else:
         res = 'No supported platform for job '+str(job)+'.'
         minorStatus = platform['Value']
-        self.updateJobStatus(job,self.failedJobStatus,minorStatus)
         self.log.info(message)
         self.log.info(res)
         return S_ERROR(message)
@@ -147,14 +145,13 @@ class JobSanityAgent(Optimizer):
             self.log.info(message)
             self.setJobParam(job,'JobSanityCheck',message)
             self.updateJobStatus(job,success,minorStatus)
-            return S_ERROR(message)
+            return S_OK('Found successful job')
           else:
             flag = outputData['Value']
             message += 'Output Data: '+flag+', '
         else:
           res = 'Job: '+str(job)+' Failed since output data exists.'
           minorStatus=outputData['Value']
-          self.updateJobStatus(job,self.failedJobStatus, minorStatus)
           self.log.info(message)
           self.log.info(res)
           return S_ERROR(message)
