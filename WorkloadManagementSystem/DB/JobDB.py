@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.17 2007/11/16 21:21:59 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.18 2007/11/19 10:09:42 paterson Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -51,7 +51,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.17 2007/11/16 21:21:59 paterson Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.18 2007/11/19 10:09:42 paterson Exp $"
 
 import re, os, sys, string
 import time
@@ -449,11 +449,17 @@ class JobDB(DB):
     optListString = result['Value']
     optList = optListString.split(',')
     try:
-      sindex = optList(currentOptimizer)
-      if sindex < len(optList)-1:
-        nextOptimizer = optList[sindex+1]
+      sindex = None
+      for i in xrange(len(optList)):
+        if optList[i] == currentOptimizer:
+          sindex = i
+      if sindex >= 0:
+        if sindex < len(optList)-1:
+          nextOptimizer = optList[sindex+1]
+        else:
+          return S_ERROR('Unexpected end of the Optimizer Chain')
       else:
-        return S_ERROR('Unexpected end of the Optimizer Chain')
+        return S_ERROR('Could not find '+currentOptimizer+' in chain')
     except ValueError, x:
       return S_ERROR('The '+currentOptimizer+' not found in the chain')
 
@@ -694,7 +700,6 @@ class JobDB(DB):
     else:
       cmd = "SELECT JDL FROM JobJDLs WHERE JobID=%d" % int(jobID)
 
-    print cmd
     result = self._query(cmd)
     if result['OK']:
       jdl = result['Value']
