@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/AncestorFilesAgent.py,v 1.5 2007/11/19 13:24:20 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/AncestorFilesAgent.py,v 1.6 2007/11/19 13:38:24 paterson Exp $
 # File :   AncestorFilesAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -12,7 +12,7 @@
 
 """
 
-__RCSID__ = "$Id: AncestorFilesAgent.py,v 1.5 2007/11/19 13:24:20 paterson Exp $"
+__RCSID__ = "$Id: AncestorFilesAgent.py,v 1.6 2007/11/19 13:38:24 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
@@ -44,7 +44,7 @@ class AncestorFilesAgent(Optimizer):
     return result
 
   #############################################################################
-  def checkJob(self):
+  def checkJob(self,job):
     """ The main agent execution method
     """
     self.log.info('Job %s will be processed by %sAgent' % (job,self.optimizerName))
@@ -154,7 +154,7 @@ class AncestorFilesAgent(Optimizer):
     """
     jobID = str(job)
     self.log.debug("Checking JDL for job: "+jobID)
-    retVal = self.jobDB.getJobJDL(jobID)
+    retVal = self.jobDB.getJobJDL(jobID,original=True)
 
     if not retVal['OK']:
       result = S_ERROR()
@@ -164,8 +164,11 @@ class AncestorFilesAgent(Optimizer):
     jdl = retVal['Value']
     classadJob = ClassAd('['+jdl+']')
     ancestorDepth = classadJob.get_expression('AncestorDepth').replace('"','').replace('Unknown','')
+    #self.log.debug('Job %s has AncestorDepth of %s' %(job,ancestorDepth))
     if not ancestorDepth:
       ancestorDepth=0
+    else:
+      ancestorDepth = int(ancestorDepth)  
     result = S_OK()
     result['Value'] = ancestorDepth
     return result
