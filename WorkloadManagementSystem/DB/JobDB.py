@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.18 2007/11/19 10:09:42 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.19 2007/11/19 13:25:19 paterson Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -30,6 +30,7 @@
     setJobParameters()
     setJobJDL()
     setJobStatus()
+    setInputData()
 
     insertJobIntoDB()
     addJobToDB()
@@ -51,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.18 2007/11/19 10:09:42 paterson Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.19 2007/11/19 13:25:19 paterson Exp $"
 
 import re, os, sys, string
 import time
@@ -417,13 +418,28 @@ class JobDB(DB):
   def getInputData (self, jobID):
     """Get input data for the given job
     """
-
     cmd = 'SELECT LFN FROM InputData WHERE JobID=\'%s\'' %jobID
     res = self._query(cmd)
     if not res['OK']:
       return res
 
     return S_OK( map( self._to_value, res['Value'] ) )
+
+#############################################################################
+  def setInputData (self, jobID, inputData):
+    """Inserts input data for the given job
+    """
+    cmd = 'DELETE FROM InputData WHERE JobID=\'%s\'' % (jobID)
+    if not self._update( cmd )['OK']:
+      result = S_ERROR('JobDB.setInputData: operation failed.')
+
+    for lfn in inputData:
+      cmd = 'INSERT INTO InputData (JobID,LFN) VALUES (\'%s\', \'%s\' )' % ( jobID, lfn )
+      res = self._update( cmd )
+      if not res['OK']:
+        return res
+
+    return S_OK('Files added')  
 
 #############################################################################
   def setOptimizerChain(self,jobID,optimizerList):
