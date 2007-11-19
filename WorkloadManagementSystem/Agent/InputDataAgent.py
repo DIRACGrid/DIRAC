@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.7 2007/11/19 17:16:27 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.8 2007/11/19 17:19:53 paterson Exp $
 # File :   InputDataAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
 
 """
 
-__RCSID__ = "$Id: InputDataAgent.py,v 1.7 2007/11/19 17:16:27 paterson Exp $"
+__RCSID__ = "$Id: InputDataAgent.py,v 1.8 2007/11/19 17:19:53 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
@@ -26,7 +26,7 @@ class InputDataAgent(Optimizer):
   def __init__(self):
     """ Constructor, takes system flag as argument.
     """
-    Optimizer.__init__(self,OPTIMIZER_NAME,enableFlag=False)
+    Optimizer.__init__(self,OPTIMIZER_NAME,enableFlag=True)
 
   #############################################################################
   def initialize(self):
