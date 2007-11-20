@@ -20,7 +20,7 @@ import re, time
 class StorageFactory:
 
   def __init__(self):
-    self.rootConfigPath = '/DataManagement/StorageElements/'
+    self.rootConfigPath = '/Resources/StorageElements/'
     self.valid = True
 
   ###########################################################################################
