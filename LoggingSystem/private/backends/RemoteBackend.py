@@ -7,15 +7,19 @@ from DIRAC.LoggingSystem.private.backends.BaseBackend import BaseBackend
 from DIRAC.LoggingSystem.private.LogLevels import LogLevels
 
 class RemoteBackend( BaseBackend, threading.Thread ):
-
+""" This Backend sends the log messages to a log server.
+It will only report to the server ERROR, EXCEPTION, FATAL
+and ALWAYS messages.
+"""
   def __init__( self, cfgPath ):
     threading.Thread.__init__( self )
     self._msgQueue = Queue.Queue()
     self._alive = True
 #    self._running= False
     self._logLevels = LogLevels()
+    self._negativeLevel = self._logLevels.getLevelValue( 'ERROR' ) 
+    self._positiveLevel = self._logLevels.getLevelValue( 'ALWAYS' )
     self._maxBundledMsgs = 20
-    self._minLevel = abs( self._logLevels.getLevelValue( 'ERROR' ) )
     self.config()
     self.setDaemon(1)
     self.start()
@@ -48,7 +52,9 @@ class RemoteBackend( BaseBackend, threading.Thread ):
     self.oSock = RPCClient( "Logging/SystemLogging", timeout = 10, useCertificates = "auto" )
 
   def _testLevel( self, sLevel ):
-    return abs( self._logLevels.getLevelValue( sLevel ) ) >= self._minLevel
+    
+    return self._logLevels.getLevelValue( sLevel ) <= self._negativeLevel or \
+           self._logLevels.getLevelValue( sLevel ) >= self._positiveLevel
 
   def flush(self):
     while not self._msgQueue.empty():
