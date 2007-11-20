@@ -1,4 +1,6 @@
-"""This is the Backed to send the Log Messages to the Log Server
+"""This Backend sends the Log Messages to a Log Server
+It will only report to the server ERROR, EXCEPTION, FATAL
+and ALWAYS messages.
 """
 import threading
 import Queue
@@ -7,10 +9,7 @@ from DIRAC.LoggingSystem.private.backends.BaseBackend import BaseBackend
 from DIRAC.LoggingSystem.private.LogLevels import LogLevels
 
 class RemoteBackend( BaseBackend, threading.Thread ):
-""" This Backend sends the log messages to a log server.
-It will only report to the server ERROR, EXCEPTION, FATAL
-and ALWAYS messages.
-"""
+
   def __init__( self, cfgPath ):
     threading.Thread.__init__( self )
     self._msgQueue = Queue.Queue()
