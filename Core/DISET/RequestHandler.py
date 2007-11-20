@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.24 2007/11/16 11:46:43 acasajus Exp $
-__RCSID__ = "$Id: RequestHandler.py,v 1.24 2007/11/16 11:46:43 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.25 2007/11/20 15:51:43 acasajus Exp $
+__RCSID__ = "$Id: RequestHandler.py,v 1.25 2007/11/20 15:51:43 acasajus Exp $"
 
 import types
 from DIRAC.Core.DISET.private.FileHelper import FileHelper
@@ -13,17 +13,43 @@ class RequestHandler:
   def __init__( self, serviceInfoDict,
                 transport,
                 lockManager ):
+    """
+    Constructor
+
+    @type serviceInfoDict: dictionary
+    @param serviceInfoDict: Information vars for the service
+    @type transport: object
+    @param transport: Transport to use
+    @type lockManager: object
+    @param lockManager: Lock manager to use
+    """
     self.serviceInfoDict = serviceInfoDict
     self.transport = transport
     self.lockManager = lockManager
 
   def initialize( self ):
+    """
+    Dummy function to be inherited by real handlers. This function will be called when initializing
+    the server.
+    """
     pass
 
   def getRemoteCredentials( self ):
+    """
+    Get the credentials of the remote peer.
+
+    @return : Credentials dictionary of remote peer.
+    """
     return self.transport.getConnectingCredentials()
 
   def executeAction( self, actionTuple ):
+    """
+    Execute an action.
+
+    @type actionTuple: tuple
+    @param actionTuple: Type of action to execute. First position of the tuple must be the type
+                        of action to execute. The second position is the action itself.
+    """
     gLogger.verbose( "Executing %s:%s action" % actionTuple )
     actionType = actionTuple[0]
     if actionType == "RPC":
@@ -46,6 +72,13 @@ class RequestHandler:
 #####
 
   def __doFileTransfer( self, sDirection ):
+    """
+    Execute a file transfer action
+
+    @type sDirection: string
+    @param sDirection: Direction of the transfer
+    @return: S_OK/S_ERROR
+    """
     retVal = self.transport.receiveData()
     if not retVal[ 'OK' ]:
       gLogger.error( "Error while receiving file description", retVal[ 'Message' ] )
@@ -97,6 +130,13 @@ class RequestHandler:
 #####
 
   def __doRPC( self, method ):
+    """
+    Execute an RPC action
+
+    @type method: string
+    @param method: Method to execute
+    @return: S_OK/S_ERROR
+    """
     retVal = self.transport.receiveData()
     if not retVal[ 'OK' ]:
       gLogger.error( "Error while receiving function arguments", retVal[ 'Message' ] )
@@ -127,6 +167,15 @@ class RequestHandler:
       return S_ERROR( "Server error while serving %s: %s" % ( method, str( v ) ) )
 
   def __RPCCheckExpectedArgumentTypes( self, method, args ):
+    """
+    Check that the arguments received match the ones expected
+
+    @type method: string
+    @param method: Method to check against
+    @type args: tuple
+    @params args: Arguments to check
+    @return: S_OK/S_ERROR
+    """
     sListName = "types_%s" % method
     try:
       oTypesList = getattr( self, sListName )
@@ -153,9 +202,24 @@ class RequestHandler:
 ####
 
   def __authQuery( self, method ):
+    """
+    Check if connecting user is allowed to perform an action
+
+    @type method: string
+    @param method: Method to check
+    @return: S_OK/S_ERROR
+    """
     return self.serviceInfoDict[ 'authManager' ].authQuery( method, self.getRemoteCredentials() )
 
   def __logRemoteQuery( self, method, args ):
+    """
+    Log the contents of a remote query
+
+    @type method: string
+    @param method: Method to log
+    @type args: tuple
+    @param args: Arguments of the method called
+    """
     peerCreds = self.getRemoteCredentials()
     if peerCreds.has_key( 'username' ):
       peerId = "[%s:%s]" % ( peerCreds[ 'group' ], peerCreds[ 'username' ] )
@@ -168,6 +232,12 @@ class RequestHandler:
     gLogger.info( "Executing action", "%s %s( %s )" % ( peerId, method, argsString ) )
 
   def __logRemoteQueryResponse( self, retVal ):
+    """
+    Log the result of a query
+
+    @type retVal: dictionary
+    @param retVal: Return value of the query
+    """
     peerCreds = self.getRemoteCredentials()
     if peerCreds.has_key( 'username' ):
       peerId = "[%s:%s]" % ( peerCreds[ 'group' ], peerCreds[ 'username' ] )
