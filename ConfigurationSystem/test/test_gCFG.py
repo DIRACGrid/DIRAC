@@ -1,8 +1,8 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/test/test_gCFG.py,v 1.4 2007/05/08 14:44:08 acasajus Exp $
-__RCSID__ = "$Id: test_gCFG.py,v 1.4 2007/05/08 14:44:08 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/test/test_gCFG.py,v 1.5 2007/11/20 17:19:03 acasajus Exp $
+__RCSID__ = "$Id: test_gCFG.py,v 1.5 2007/11/20 17:19:03 acasajus Exp $"
 
 from dirac import DIRAC
-from DIRAC.ConfigurationSystem.private.CFG import CFG
+from DIRAC.ConfigurationSystem.Client.CFG import CFG
 
 DIRAC.gLogger.initialize('test_gConfig','/testSectionDebug')
 

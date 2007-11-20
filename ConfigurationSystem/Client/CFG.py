@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Attic/CFG.py,v 1.11 2007/11/20 17:14:00 acasajus Exp $
-__RCSID__ = "$Id: CFG.py,v 1.11 2007/11/20 17:14:00 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/Attic/CFG.py,v 1.1 2007/11/20 17:19:03 acasajus Exp $
+__RCSID__ = "$Id: CFG.py,v 1.1 2007/11/20 17:19:03 acasajus Exp $"
 
 import types
 import copy
