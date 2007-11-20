@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.18 2007/11/15 16:04:45 acasajus Exp $
-__RCSID__ = "$Id: Server.py,v 1.18 2007/11/15 16:04:45 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.19 2007/11/20 16:31:45 acasajus Exp $
+__RCSID__ = "$Id: Server.py,v 1.19 2007/11/20 16:31:45 acasajus Exp $"
 
 import socket
 import sys
@@ -19,6 +19,12 @@ class Server:
   iListenQueueSize = 5
 
   def __init__( self, serviceName ):
+    """
+    Constructor
+
+    @type serviceName: string
+    @param serviceName: Name of the starting service
+    """
     gLogger.debug( "Starting service %s" % serviceName )
     while serviceName[0] == "/":
       serviceName = serviceName[1:]
@@ -38,6 +44,9 @@ class Server:
     self.threadPool.daemonize()
 
   def __initializeMonitor( self ):
+    """
+    Initialize the system monitor client
+    """
     gMonitor.setComponentType( gMonitor.COMPONENT_SERVICE )
     gMonitor.setComponentName( self.serviceName )
     gMonitor.setComponentLocation( self.serviceURL )
@@ -45,6 +54,9 @@ class Server:
     gMonitor.registerActivity( "Queries", "Queries served", "Framework", "queries/s", gMonitor.OP_SUM )
 
   def __buildURL( self ):
+    """
+    Build the service URL
+    """
     protocol = self.serviceCfg.getProtocol()
     self.serviceURL = self.serviceCfg.getURL()
     if self.serviceURL:
@@ -66,6 +78,9 @@ class Server:
     self.serviceCfg.setURL( sURL )
 
   def __initializeTransport( self ):
+    """
+    Initialize the transport
+    """
     protocol = self.serviceCfg.getProtocol()
     if protocol in gProtocolDict.keys():
       gLogger.verbose( "Initializing %s transport" % protocol, self.serviceURL )
@@ -78,12 +93,18 @@ class Server:
       sys.exit(1)
 
   def serve( self ):
+    """
+    Start serving petitions
+    """
     gLogger.info( "Handler up", "Serving from %s" % self.serviceURL )
     while True:
       self.__handleRequest()
       #self.threadPool.processResults()
 
   def __handleRequest( self ):
+    """
+    Handle an incoming request
+    """
     try:
       inList = [ self.transport.getSocket() ]
       inList, outList, exList = select.select( inList, [], [], 10 )
@@ -104,10 +125,16 @@ class Server:
     return True
 
   def processClientException( self, threadedJob, exceptionInfo ):
+    """
+    Process an exception generated in a petition
+    """
     gLogger.exception( "Exception in thread", lException = exceptionInfo )
 
 
   def __authorizeProposal( self, service, actionTuple, clientTransport ):
+    """
+    Authorize the action being proposed by the client
+    """
     serviceInfoDict = self.handlerManager.getServiceInfo( service )
     if not serviceInfoDict:
       clientTransport.sendData( S_ERROR( "No handler registered for %s" % service ) )
@@ -129,6 +156,9 @@ class Server:
     return True
 
   def processClient( self, clientTransport ):
+    """
+    Receive an action petition and process it from the client
+    """
     try:
       gMonitor.addMark( "Queries" )
       clientTransport.handshake()
@@ -154,6 +184,9 @@ class Server:
 
 
   def __executeAction( self, proposalTuple, handlerDict, clientTransport ):
+    """
+    Execute an action
+    """
     try:
       serviceInfoDict = self.handlerManager.getServiceInfo( proposalTuple[0][0] )
       serviceInfoDict[ 'instance' ] = proposalTuple[0][1]
