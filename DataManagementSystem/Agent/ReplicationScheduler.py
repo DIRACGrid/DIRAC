@@ -6,7 +6,7 @@ from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 from DIRAC.RequestManagementSystem.DB.RequestDB import RequestDB
 from DIRAC.DataManagementSystem.DB.TransferDB import TransferDB
 from DIRAC.RequestManagementSystem.Client.DataManagementRequest import DataManagementRequest
-from DIRAC.DataManagementSystem.Client.LcgFileCatalogClient import LcgFileCatalogClient
+from DIRAC.DataManagementSystem.Client.LcgFileCatalogCombinedClient import LcgFileCatalogCombinedClient
 from DIRAC.Core.Storage.StorageFactory import StorageFactory
 
 AGENT_NAME = 'DataManagement/ReplicationScheduler'
@@ -24,9 +24,9 @@ class ReplicationScheduler(Agent):
     self.TransferDB = TransferDB()
     self.factory = StorageFactory()	
     try:
-      serverUrl = gConfig.getValue('/DataManagement/FileCatalogs/LFC/LFCMaster')
-      infosysUrl = gConfig.getValue('/DataManagement/FileCatalogs/LFC/LcgGfalInfosys')
-      self.lfc = LcgFileCatalogClient(infosys=infosysUrl,host=serverUrl)
+      #serverUrl = gConfig.getValue('/DataManagement/FileCatalogs/LFC/LFCMaster')
+      #infosysUrl = gConfig.getValue('/DataManagement/FileCatalogs/LFC/LcgGfalInfosys')
+      self.lfc = LcgFileCatalogCombinedClient() #infosys=infosysUrl,host=serverUrl)
     except Exception,x:
       print "Failed to create LcgFileCatalogClient"
       print str(x)
@@ -116,12 +116,28 @@ class ReplicationScheduler(Agent):
       logStr = 'ReplicationScheduler._execute: Obtaining replica information for sub-request files.'
       self.log.info(logStr)
       lfns = filesDict.keys()
-      res = self.lfc.getPfnsByLfnList(lfns)
+      res = self.lfc.getReplicas(lfns)
       if not res['OK']:
         errStr = 'ReplicationScheduler._execute: Failed to get replica infomation: %s.' % res['Message']
         self.log.error(errStr)
         return S_ERROR(errStr)
-      replicas = res['Value']
+      replicas = res['Value']['Successful']
+
+
+      ######################################################################################
+      #
+      #  Now obtain the file sizes for the files associated to the sub-request.
+      #
+            
+      logStr = 'ReplicationScheduler._execute: Obtaining file sizes for sub-request files.'
+      self.log.info(logStr)
+      lfns = filesDict.keys()
+      res = self.lfc.getFileMetadata(lfns)
+      if not res['OK']:
+        errStr = 'ReplicationScheduler._execute: Failed to get file size infomation: %s.' % res['Message']
+        self.log.error(errStr)
+        return S_ERROR(errStr)
+      metadata = res['Value']['Successful']
 
       ######################################################################################
       # Take the sourceSURL from the catalog entries and contruct the target SURL from the CS
@@ -165,8 +181,7 @@ class ReplicationScheduler(Agent):
             self.log.info(logStr)
           else:
             channelID = res['Value']
-          # for now just set the file size = 0
-          fileSize = 0
+          fileSize = metadata[lfn]['Size']
           res = self.TransferDB.addFileToChannel(channelID, fileID, sourceSURL, targetSURL,fileSize,spaceToken)
           if not res['OK']:
             errStr = "ReplicationScheduler._execute: Failed to add File %s to Channel %s." % (fileID,channelID)
