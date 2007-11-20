@@ -7,7 +7,7 @@ from DIRAC.RequestManagementSystem.DB.RequestDB import RequestDB
 from DIRAC.DataManagementSystem.DB.TransferDB import TransferDB
 from DIRAC.RequestManagementSystem.Client.DataManagementRequest import DataManagementRequest
 from DIRAC.DataManagementSystem.Client.LcgFileCatalogClient import LcgFileCatalogClient
-from DIRAC.Core.Storage.StorageElement import StorageElement
+from DIRAC.Core.Storage.StorageFactory import StorageFactory
 
 AGENT_NAME = 'DataManagement/ReplicationScheduler'
 
@@ -22,6 +22,7 @@ class ReplicationScheduler(Agent):
     result = Agent.initialize(self)
     self.RequestDB = RequestDB('mysql')
     self.TransferDB = TransferDB()
+    self.factory = StorageFactory()	
     try:
       serverUrl = gConfig.getValue('/DataManagement/FileCatalogs/LFC/LFCMaster')
       infosysUrl = gConfig.getValue('/DataManagement/FileCatalogs/LFC/LcgGfalInfosys')
@@ -131,13 +132,25 @@ class ReplicationScheduler(Agent):
         #res = self.determineReplicationTree(lfnReps, sourceSE, targetSE)
         if lfnReps.has_key(sourceSE):
           sourceSURL = lfnReps[sourceSE]
-          targetStorage = StorageElement(targetSE)
-          res = targetStorage.getPfnForLfnForProtocol(lfn,'SRM2')
+          res = self.factory.getStorages(targetSE)
           if not res['OK']:
-            errStr = 'ReplicationScheduler._execute: Failed to get target SURL: %s.' % res['Message']
+            errStr = 'ReplicationScheduler._execute: Failed to create SRM2 storage for %s: %s. ' % (targetSE,res['Message'])
             self.log.error(errStr)
             return S_ERROR(errStr)
-          targetSURL = res['Value']
+          storageObjects = res['Value']['StorageObjects']
+          targetSURL = ''
+          for storageObject in storageObjects:
+            if storageObject.getProtocol() == 'SRM2':
+              res = storageObject.getUrl(lfn) 
+              if not res['OK']:
+                errStr = 'ReplicationScheduler._execute: Failed to get target SURL: %s.' % res['Message']
+                self.log.error(errStr) 
+                return S_ERROR(errStr) 							
+              targetSURL = res['Value']
+          if not targetSURL:
+            errStr = 'ReplicationScheduler._execute: Failed to get SRM compliant storage for %s.' % targetSE
+            self.log.error(errStr)
+            return S_ERROR(errStr)
 
           ######################################################################################
           # Obtain the ChannelID and insert the file into that channel (done at the file level to allow file by file scheduling)
@@ -152,7 +165,9 @@ class ReplicationScheduler(Agent):
             self.log.info(logStr)
           else:
             channelID = res['Value']
-          res = self.TransferDB.addFileToChannel(channelID, fileID, sourceSURL, targetSURL,spaceToken)
+          # for now just set the file size = 0
+          fileSize = 0
+          res = self.TransferDB.addFileToChannel(channelID, fileID, sourceSURL, targetSURL,fileSize,spaceToken)
           if not res['OK']:
             errStr = "ReplicationScheduler._execute: Failed to add File %s to Channel %s." % (fileID,channelID)
             gLogger.error(errStr)
