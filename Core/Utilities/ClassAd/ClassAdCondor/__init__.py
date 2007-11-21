@@ -1,5 +1,5 @@
 ##############################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/ClassAd/ClassAdCondor/__init__.py,v 1.1 2007/11/21 18:36:20 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/ClassAd/ClassAdCondor/__init__.py,v 1.2 2007/11/21 18:39:21 atsareg Exp $
 ##############################################################
 
 """This is a Python binding module for the Condor ClassAd
@@ -20,6 +20,15 @@ def insertAttributeStringList(self,name,attrList):
   return result
 
 ClassAd.insertAttributeStringList = insertAttributeStringList
+
+def getAttributeStringList(self,name):
+  """ Get a list of values from a given expression
+  """
+
+  tempString = self.get_expression(name)
+  tempString = tempString.replace("{","").replace("}","").replace("\"","").replace(" ","")
+
+  return tempString.split(',')
 
 def lookupAttribute(self,name):
   return self.get_expression(name) is not None
