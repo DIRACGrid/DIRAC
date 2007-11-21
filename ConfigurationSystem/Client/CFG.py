@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/Attic/CFG.py,v 1.1 2007/11/20 17:19:03 acasajus Exp $
-__RCSID__ = "$Id: CFG.py,v 1.1 2007/11/20 17:19:03 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/Attic/CFG.py,v 1.2 2007/11/21 16:13:59 acasajus Exp $
+__RCSID__ = "$Id: CFG.py,v 1.2 2007/11/21 16:13:59 acasajus Exp $"
 
 import types
 import copy
@@ -171,6 +171,16 @@ class CFG:
     @return: Boolean with the results
     """
     return key in self.__dataDict and type( self.__dataDict[ key ] ) != types.StringType
+
+  def isOption( self, key ):
+    """
+    Return if an option exists
+
+    @type key: string
+    @param key: Name to check
+    @return: Boolean with the results
+    """
+    return key in self.__dataDict and type( self.__dataDict[ key ] ) == types.StringType
 
   def listAll( self ):
     """
