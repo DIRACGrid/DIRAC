@@ -1,5 +1,5 @@
 ##############################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/ClassAd/ClassAdCondor/__init__.py,v 1.2 2007/11/21 18:39:21 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/ClassAd/ClassAdCondor/__init__.py,v 1.3 2007/11/21 18:44:03 atsareg Exp $
 ##############################################################
 
 """This is a Python binding module for the Condor ClassAd
@@ -29,6 +29,8 @@ def getAttributeStringList(self,name):
   tempString = tempString.replace("{","").replace("}","").replace("\"","").replace(" ","")
 
   return tempString.split(',')
+
+ClassAd.getAttributeStringList = getAttributeStringList
 
 def lookupAttribute(self,name):
   return self.get_expression(name) is not None
