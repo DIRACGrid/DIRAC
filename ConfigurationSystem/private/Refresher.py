@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Refresher.py,v 1.15 2007/06/05 15:18:42 acasajus Exp $
-__RCSID__ = "$Id: Refresher.py,v 1.15 2007/06/05 15:18:42 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Refresher.py,v 1.16 2007/11/21 16:15:38 acasajus Exp $
+__RCSID__ = "$Id: Refresher.py,v 1.16 2007/11/21 16:15:38 acasajus Exp $"
 
 import threading
 import time
@@ -111,7 +111,7 @@ class Refresher( threading.Thread ):
         else:
           updatingErrorsList.append( dRetVal[ 'Message' ] )
           gLogger.warn( "Can't update from server", "Error while updating from %s: %s" %( sServer, dRetVal[ 'Message' ] ) )
-    return S_ERROR( "Can't update from any server\nReason(s):\n\t%s" % "\n\t".join( List.uniqueElements( updatingErrorsList) ) )
+    return S_ERROR( "Reason(s):\n\t%s" % "\n\t".join( List.uniqueElements( updatingErrorsList) ) )
 
   def __updateFromRemoteLocation( self, serviceClient ):
     gLogger.debug( "", "Trying to refresh from %s" % serviceClient.serviceURL )

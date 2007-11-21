@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/LocalConfiguration.py,v 1.12 2007/05/29 16:25:10 acasajus Exp $
-__RCSID__ = "$Id: LocalConfiguration.py,v 1.12 2007/05/29 16:25:10 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/LocalConfiguration.py,v 1.13 2007/11/21 16:15:39 acasajus Exp $
+__RCSID__ = "$Id: LocalConfiguration.py,v 1.13 2007/11/21 16:15:39 acasajus Exp $"
 
 import sys
 import os
@@ -188,7 +188,7 @@ class LocalConfiguration:
         return S_OK()
     retDict = gRefresher.forceRefresh()
     if not retDict['OK']:
-      gLogger.fatal( retDict[ 'Message' ] )
+      gLogger.fatal( "Can't update from any server", retDict[ 'Message' ] )
       return S_ERROR()
     return S_OK()
 
