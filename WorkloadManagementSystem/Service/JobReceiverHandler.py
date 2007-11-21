@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/Attic/JobReceiverHandler.py,v 1.6 2007/11/16 13:40:55 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/Attic/JobReceiverHandler.py,v 1.7 2007/11/21 14:49:36 paterson Exp $
 ########################################################################
 
 """ JobReceiverHandler is the implementation of the JobReceiver service
@@ -12,7 +12,7 @@
     
 """
 
-__RCSID__ = "$Id: JobReceiverHandler.py,v 1.6 2007/11/16 13:40:55 paterson Exp $"
+__RCSID__ = "$Id: JobReceiverHandler.py,v 1.7 2007/11/21 14:49:36 paterson Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -66,6 +66,10 @@ class JobReceiverHandler( RequestHandler ):
     if not result['OK']:
       return result
     result  = jobDB.addJobToDB( jobID, JDL=newJDL, ownerDN=DN, ownerGroup=group) 
+    if not result['OK']:
+      return result
+
+    result = jobDB.setJobJDL(jobID,newJDL)
     if not result['OK']:
       return result
 
