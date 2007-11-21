@@ -22,11 +22,10 @@ class ReplicationScheduler(Agent):
     result = Agent.initialize(self)
     self.RequestDB = RequestDB('mysql')
     self.TransferDB = TransferDB()
-    self.factory = StorageFactory()	
+    self.factory = StorageFactory()
     try:
-      #serverUrl = gConfig.getValue('/DataManagement/FileCatalogs/LFC/LFCMaster')
-      #infosysUrl = gConfig.getValue('/DataManagement/FileCatalogs/LFC/LcgGfalInfosys')
       self.lfc = LcgFileCatalogCombinedClient() #infosys=infosysUrl,host=serverUrl)
+      self.throughputTimescale = gConfig.getValue(self.section+'/ThroughputTimescale',3600) 
     except Exception,x:
       print "Failed to create LcgFileCatalogClient"
       print str(x)
@@ -35,6 +34,33 @@ class ReplicationScheduler(Agent):
   def execute(self):
     """ The main agent execution method
     """
+
+    ######################################################################################
+    #
+    #  Obtain information on the current state of the channel queues
+    #
+
+    res = self.TransferDB.getActiveChannelQueues()
+    if not res['OK']:
+      errStr = 'ReplicationScheduler._execute: Failed to get channel queues from TransferDB: %s.' % res['Message']
+      self.log.error(errStr)
+      return S_ERROR(errStr)
+    if not res['Value']:
+      infoStr = 'ReplicationScheduler._execute: No active channels found for replication.'
+      self.log.info(infoStr)
+      return S_OK()
+    channelQueues = res['Value']
+
+    res = self.TransferDB.getActiveChannelObservedThroughput(self.throughputTimescale)
+    if not res['OK']:
+      errStr = 'ReplicationScheduler._execute: Failed to get observed throughput from TransferDB: %s.' % res['Message']
+      self.log.error(errStr)
+      return S_ERROR(errStr)
+    if not res['Value']:
+      infoStr = 'ReplicationScheduler._execute: No active channels found for replication.'
+      self.log.info(infoStr)
+      return S_OK()
+    observedThroughput = res['Value']
 
     ######################################################################################
     #
