@@ -109,6 +109,7 @@ class TransferDB(DB):
     resDict = {'ChannelIDs':channelIDs,'Channels':channels}
     return S_OK(resDict)
 
+
   #################################################################################
   # These are the methods for managing the Channel table
 
@@ -237,6 +238,31 @@ class TransferDB(DB):
     resDict['Files'] = files
     return S_OK(resDict)
 
+  def getChannelQueues(self,channelIDs):
+    strChannelIDs = intListToString(channelIDs)
+    req = "SELECT ChannelID,COUNT(*),SUM(FileSize) FROM Channel WHERE ChannelID IN (%s) AND Status LIKE 'Waiting%s' GROUP BY ChannelID;" % (strChannelIDs,'%')
+    res = self._query(req)
+    if not res['OK']:
+      err = "TransferDB.getChannelQueues: Failed to get Channel contents for Channels." % strChannelIDs
+      return S_ERROR('%s\n%s' % (err,res['Message']))
+    channelDict = {}
+    for channelID,fileCount,sizeCount in res['Value']:
+      channelDict[channelID] = {'Files': int(fileCount),'Size': int(sizeCount)}
+    for channelID in channelIDs:
+      if not channelDict.has_key(channelID):
+        channelDict[channelID] = {'Files':0,'Size':0}
+    return S_OK(channelDict)  
+
+  def getActiveChannelQueues(self):
+    res = self.getChannelsForState('Active')
+    if not res['OK']:
+      return res
+    if not res['Value']:
+      return res
+    channelIDs = res['Value']['ChannelIDs']
+    res = self.getChannelQueues(channelIDs)
+    return res
+
   #################################################################################
   # These are the methods for managing the FTSReq table
 
@@ -332,9 +358,9 @@ class TransferDB(DB):
       files[lfn] = fileID
     return S_OK(files)
 
-  def setFTSReqFiles(self,ftsReqID,fileIDs):
+  def setFTSReqFiles(self,ftsReqID,fileIDs,channelID):
     for fileID in fileIDs:
-      req = "INSERT INTO FileToFTS (FTSReqID,FileID) VALUES (%s,%s);" % (ftsReqID,fileID)
+      req = "INSERT INTO FileToFTS (FTSReqID,FileID,ChannelID,SubmissionTime) VALUES (%s,%s,%s,NOW());" % (ftsReqID,fileID,channelID)
       res = self._update(req)
       if not res['OK']:
         err = "TransferDB._setFTSReqFiles: Failed to set File %s for FTSReq %s." % (fileID,ftsReqID)
@@ -371,6 +397,39 @@ class TransferDB(DB):
       return S_ERROR('%s\n%s' % (err,res['Message']))
     return res
 
+  def setFileToFTSTerminalTime(self,ftsReqID,fileID):
+    req = "UPDATE FileToFTS SET TerminalTime = NOW() WHERE FTSReqID = %s AND FileID = %s;" % (ftsReqID,fileID)
+    res = self._update(req)
+    if not res['OK']:
+      err = "TransferDB._setFileToFTSTerminalTime: Failed to set terminal time for File %s and FTSReq %s;" % (fileID,ftsReqID)
+      return S_ERROR('%s\n%s' % (err,res['Message']))
+    return res
+
+  def getActiveChannelObservedThroughput(self,interval):
+    res = self.getChannelsForState('Active')
+    if not res['OK']:
+      return res
+    if not res['Value']:
+      return res
+    channelIDs = res['Value']['ChannelIDs']
+    res = self.getFTSObservedThroughput(interval,channelIDs)
+    return res     
+ 
+  def getFTSObservedThroughput(self,interval,channelIDs):
+    strChannelIDs = intListToString(channelIDs)
+    req = "SELECT ChannelID,SUM(FileSize/%s),COUNT(*)/%s from FileToFTS WHERE SubmissionTime > (NOW() - INTERVAL %s SECOND) AND Status = 'Completed' GROUP BY ChannelID;" % (interval,interval,interval)
+    res = self._query(req)
+    if not res['OK']:
+      err = 'TransferDB._getFTSObservedThroughput: Failed to obtain observed throughput.'
+      return S_ERROR('%s\n%s' % (err,res['Message']))
+    channelDict = {}
+    for channelID,throughput,fileput in res['Value']:
+      channelDict[channelID] = {'Throughput': float(throughput),'Fileput': float(fileput)}
+    for channelID in channelIDs:
+      if not channelDict.has_key(channelID):
+        channelDict[channelID] = {'Throughput': 0,'Fileput': 0}
+    return S_OK(channelDict)
+      
   #################################################################################
   # These are the methods for managing the FTSReqLogging table
 
