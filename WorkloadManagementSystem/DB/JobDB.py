@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.19 2007/11/19 13:25:19 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.20 2007/11/21 14:14:27 paterson Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.19 2007/11/19 13:25:19 paterson Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.20 2007/11/21 14:14:27 paterson Exp $"
 
 import re, os, sys, string
 import time
@@ -1006,8 +1006,9 @@ class JobDB(DB):
 
     if siteList:
       # Form the site mask as JDL
-      mask = self.__getMaskJDL(siteList)
-      return S_OK(mask)
+      # mask = self.__getMaskJDL(siteList)
+      #return S_OK(mask)
+      return S_OK(siteList)
     else:
       return S_ERROR('Failed to get site mask')
 
