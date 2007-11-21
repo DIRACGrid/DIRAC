@@ -77,6 +77,7 @@ CREATE TABLE FileToFTS (
   FileID INTEGER NOT NULL,
   FTSReqID varchar(64) NOT NULL,
   Status varchar(32) DEFAULT 'Submitted',
+  ChannelID INTEGER NOT NULL,
   Duration INTEGER DEFAULT 0,
   Retries INTEGER DEFAULT 0,
   FileSize INTEGER DEFAULT 0,
