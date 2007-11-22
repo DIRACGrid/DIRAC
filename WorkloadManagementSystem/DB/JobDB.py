@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.21 2007/11/21 14:48:59 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.22 2007/11/22 11:37:24 paterson Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.21 2007/11/21 14:48:59 paterson Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.22 2007/11/22 11:37:24 paterson Exp $"
 
 import re, os, sys, string
 import time
@@ -264,7 +264,7 @@ class JobDB(DB):
     resultDict = {}
     if paramList:
       paramNames = string.join(map(lambda x: '"'+str(x)+'"',paramList ),',')
-      cmd = "SELECT Name, Value from JobParameters WHERE JobID=%d and Name in (%s)" % (jobID,paramNames)
+      cmd = "SELECT Name, Value from JobParameters WHERE JobID=%s and Name in (%s)" % (jobID,paramNames)
       result = self._query(cmd)
       if result['OK']:
         if result['Value']:
