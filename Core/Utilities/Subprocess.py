@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Subprocess.py,v 1.5 2007/11/16 16:14:17 acasajus Exp $
-__RCSID__ = "$Id: Subprocess.py,v 1.5 2007/11/16 16:14:17 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Subprocess.py,v 1.6 2007/11/22 10:50:04 acasajus Exp $
+__RCSID__ = "$Id: Subprocess.py,v 1.6 2007/11/22 10:50:04 acasajus Exp $"
 """
    DIRAC Wrapper to execute python and system commands with a wrapper, that might
    set a timeout.
@@ -38,6 +38,7 @@ from DIRAC.LoggingSystem.Client.Logger import gLogger
 import time
 import select
 import os
+import sys
 import subprocess
 
 gLogger = gLogger.getSubLogger( 'Subprocess' )
@@ -193,12 +194,16 @@ class Subprocess:
   def systemCall( self, cmdSeq, callbackFunction = None, shell = False, env = None ):
     self.cmdSeq = cmdSeq
     self.callback = callbackFunction
+    if sys.platform.find( "win" ) == 0:
+        closefd = False
+    else:
+        closefd = True
     try:
       self.child = subprocess.Popen( self.cmdSeq,
                                       shell = shell,
                                       stdout = subprocess.PIPE,
                                       stderr = subprocess.PIPE,
-                                      close_fds = True,
+                                      close_fds = closefd,
                                       env=env )
     except OSError, v:
       retDict = S_ERROR( v )
