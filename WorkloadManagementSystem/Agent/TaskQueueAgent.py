@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueAgent.py,v 1.2 2007/11/22 11:19:49 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueAgent.py,v 1.3 2007/11/22 11:39:47 paterson Exp $
 # File :   TaskQueueAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
      into a Task Queue.
 """
 
-__RCSID__ = "$Id: TaskQueueAgent.py,v 1.2 2007/11/22 11:19:49 paterson Exp $"
+__RCSID__ = "$Id: TaskQueueAgent.py,v 1.3 2007/11/22 11:39:47 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
@@ -70,10 +70,13 @@ class TaskQueueAgent(Optimizer):
     """
     retVal = self.jobDB.getJobParameters(job,['Priority'])
     if retVal['OK']:
-      priority = retVal['Value']['Priority']
+      if retVal['Value']:
+        priority = retVal['Value']['Priority']
+      else:
+        self.log.warn('No priority specified for job %d' % int(job))
+        priority = 0
     else:
-      self.log.warn('No priority specified for job %d' % int(job))
-      priority = 0
+      priority=0
 
     result = self.jobDB.getJobJDL(job)
     if result['OK']:
