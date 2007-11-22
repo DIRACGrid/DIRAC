@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.2 2007/11/21 17:15:32 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.3 2007/11/22 09:23:04 paterson Exp $
 # File :   JobSchedulingAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,14 +14,14 @@
       meaningfully.
 
 """
-__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.2 2007/11/21 17:15:32 paterson Exp $"
+__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.3 2007/11/22 09:23:04 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
 from DIRAC                                                 import S_OK, S_ERROR
 
-import random
+import random,string,re
 
 OPTIMIZER_NAME = 'JobScheduling'
 
@@ -45,7 +45,7 @@ class JobSchedulingAgent(Optimizer):
   def checkJob(self,job):
     """This method controls the checking of the job.
     """
-    self.log.info('Job %s will be processed' % (job))
+    self.log.debug('Job %s will be processed' % (job))
     #First check whether the job has an input data requirement
     result = self.jobDB.getInputData(job)
     if not result['OK']:
@@ -53,7 +53,7 @@ class JobSchedulingAgent(Optimizer):
       self.log.error(result['Message'])
     if not result['Value']:
       #With no input data requirement, job can proceed directly to task queue
-      self.log.info('Job %s has no input data requirement' % (job))
+      self.log.debug('Job %s has no input data requirement' % (job))
       result = sendJobToTaskQueue(job)
       return result
 
@@ -104,24 +104,24 @@ class JobSchedulingAgent(Optimizer):
       self.log.warn(result['Message'])
       return checkStaging
 
-    destinationSites = stagerDict['SiteCandidates']
+    destinationSites = checkStaging['SiteCandidates']
     if not destinationSites:
       return S_ERROR('No destination sites available')
     
     stagingFlag = checkStaging['Value']
     if stagingFlag:
       #Single site candidate chosen and staging required
-      self.log.info('Job %s requires staging of input data' %(job))      
+      self.log.debug('Job %s requires staging of input data' %(job))      
       stagerDict = self.setStagingRequest(job,destinationSites,optInfo['Value'])
       if not stagerDict['OK']:
         return stagerDict
       #Staging request is saved as job optimizer parameter
     else:
       #No staging required, can proceed to task queue agent and then waiting status
-      self.log.info('Job %s does not require staging of input data' %(job))
+      self.log.debug('Job %s does not require staging of input data' %(job))
  
     #Finally send job to TaskQueueAgent
-    result = sendJobToTaskQueue(job,destinationSites)
+    result = self.sendJobToTaskQueue(job,destinationSites)
     if not result['OK']:
       return result
     
@@ -141,9 +141,8 @@ class JobSchedulingAgent(Optimizer):
       if not dataResult.has_key('SiteCandidates'):
         return S_ERROR('No possible site candidates')
       siteCandidates = dataResult['SiteCandidates'].keys()
-      self.log.debug(siteCandidates)
     else:
-      self.log.info('No information available for optimizer %s' %(self.dataAgentName))
+      self.log.debug('No information available for optimizer %s' %(self.dataAgentName))
 
     if not len(siteCandidates):
       msg = 'No possible sites for input data'
@@ -223,6 +222,7 @@ class JobSchedulingAgent(Optimizer):
     """     
     self.log.debug('Destination site %s' % (destination))
     self.log.debug('Input Data: %s' % (inputDataDict))
+    
     return S_OK('To implement')
 
   #############################################################################
@@ -230,14 +230,15 @@ class JobSchedulingAgent(Optimizer):
     """Get Grid site list from the DIRAC CS, choose only those which are allowed
        in the Matcher mask for the scheduling decision.
     """
-    result = self.__getJobSiteRequirement(job)
+    result = self.getJobSiteRequirement(job)
     if not result['OK']:
       return result
     bannedSites = result['BannedSites']
     chosenSite = result['ChosenSite']
     
     if chosenSite:
-      if not chosenSite in siteCandidates:
+      chosen = chosenSite[0]
+      if not chosen in siteCandidates:
         self.log.info('%s is not a possible site candidate for %s' %(chosenSite,siteCandidates))
         return S_ERROR('Chosen site is not eligible')        
       else:
@@ -261,11 +262,11 @@ class JobSchedulingAgent(Optimizer):
     return S_OK(siteCandidates)
 
   #############################################################################
-  def __getJobSiteRequirement(self,job):
+  def getJobSiteRequirement(self,job):
     """Returns any candidate sites specified by the job or sites that have been
        banned and could affect the scheduling decision.
     """
-    result = self.jobDB.getJobJDL(job)
+    result = self.jobDB.getJobJDL(job,original=True)
     if not result['OK']:
       return result
     if not result['Value']:
@@ -284,11 +285,11 @@ class JobSchedulingAgent(Optimizer):
     result = S_OK()
     site = classadJob.get_expression('Site').replace('"','').replace('Unknown','')
     bannedSites = classadJob.get_expression('BannedSites').replace('"','').replace('Unknown','')      
-    if site:
+    if site and site!='ANY':
       self.log.info('Job %s has chosen site %s specified in JDL' %(job,site))
       result['ChosenSite']=[site]
     else:
-      result['ChosenSite']=''  
+      result['ChosenSite']=[]  
 
     if bannedSites:
       self.log.info('Job %s has JDL requirement to ban %s' %(job,bannedSites))
@@ -297,27 +298,6 @@ class JobSchedulingAgent(Optimizer):
       result['BannedSites']=[]      
       
     return result
-
-  #############################################################################
-  def __setJobSiteRequirement(self,job,siteCandidates):
-    """Will set the job site requirement for the final candidate sites.
-    """
-    result = self.jobDB.getJobJDL(job)
-    if not result['OK']:
-      return result
-    if not result['Value']:
-      self.log.warn('No JDL found for job')
-      return S_ERROR('No JDL found for job')
-    
-    jdl = result['Value']
-    classadJob = ClassAd('['+jdl+']')
-    if not classadJob.isOK():
-      self.log.debug("Warning: illegal JDL for job %s, will be marked problematic" % (job))
-      result = S_ERROR()
-      result['Value'] = "Illegal Job JDL"
-      return result
-          
-    return S_OK()
 
   #############################################################################
   def checkSitesInMask(self,job,siteCandidates):
@@ -345,15 +325,65 @@ class JobSchedulingAgent(Optimizer):
     """This method sends jobs to the task queue agent and if candidate sites
        are defined, updates job JDL accordingly.
     """
-    if siteCandidates:
-      # must update JDL to include only selected sites
-      self.log.info('Restricting possible sites to %s for job %s' % (job,siteCandidates))
+    result = self.jobDB.getJobJDL(job,original=True) 
+    #means that reqts field will not be changed by any other optimizer
+    if not result['OK']:
+      return result
+    if not result['Value']:
+      self.log.warn('No JDL found for job')
+      return S_ERROR('No JDL found for job')
+    
+    jdl = result['Value']
+    classadJob = ClassAd('['+jdl+']')
+    if not classadJob.isOK():
+      self.log.debug("Warning: illegal JDL for job %s, will be marked problematic" % (job))
+      result = S_ERROR()
+      result['Value'] = "Illegal Job JDL"
+      return result
 
+    requirements = classadJob.get_expression('Requirements').replace('Unknown','')
+    self.log.debug('Existing job requirements: %s' % (requirements))    
+    newRequirements = ''
+    if not requirements:
+      newRequirements = 'Requirements = true;'
+    else:
+      newRequirements = self.__resolveJobJDLRequirement(requirements,siteCandidates)
+
+    if newRequirements:
+      self.log.debug('Resolved requirements for job: %s' %(newRequirements))
+      classadJob.set_expression ("Requirements", newRequirements)
+      sites = string.join(siteCandidates,',')
+      classadJob.insertAttributeString("Site",sites)      
+      result = self.jobDB.setJobJDL(int(job),classadJob.asJDL())
+      if not result['OK']:
+        return result
+                
     result = self.setNextOptimizer(job)
     if not result['OK']:
-      self.log.error(result['Message'])
+      self.log.warn(result['Message'])
 
     return result
+
+  #############################################################################
+  def __resolveJobJDLRequirement(self,requirements,siteCandidates):
+    """Returns the job site requirement for the final candidate sites. Any existing
+       site requirements are replaced.
+    """
+    requirementsList = string.split(requirements,'&&')
+    for req in requirementsList:
+      if re.search(req.replace(' ',''),'other.Site=='):
+        return requirements
+      
+    jdlsite = ' && ( '
+    for site in siteCandidates:
+      jdlsite = jdlsite + ' other.Site == "'+site+'" || '
+
+    if jdlsite != ' && ( ':
+      jdlsite = jdlsite[0:-4]
+      jdlsite = jdlsite + " )"
+
+    requirements += jdlsite
+    return requirements      
 
   #############################################################################
   def getGridSitesInMask(self):
