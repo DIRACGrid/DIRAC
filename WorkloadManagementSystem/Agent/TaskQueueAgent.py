@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueAgent.py,v 1.1 2007/11/09 17:38:48 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueAgent.py,v 1.2 2007/11/22 11:19:49 paterson Exp $
 # File :   TaskQueueAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,100 +8,84 @@
      into a Task Queue.
 """
 
-from DIRAC.WorkloadManagementSystem.DB.JobDB        import JobDB
-from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
-from DIRAC.Core.Utilities.ClassAd.ClassAdLight      import ClassAd
-from DIRAC.Core.Base.Agent                          import Agent
-from DIRAC.ConfigurationSystem.Client.PathFinder    import getDatabaseSection
-from DIRAC.ConfigurationSystem.Client.Config        import gConfig
-from DIRAC                                          import S_OK, S_ERROR
+__RCSID__ = "$Id: TaskQueueAgent.py,v 1.2 2007/11/22 11:19:49 paterson Exp $"
 
-AGENT_NAME = 'WorkloadManagement/TaskQueueAgent'
+from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
+from DIRAC.ConfigurationSystem.Client.Config               import gConfig
+from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
+from DIRAC                                                 import S_OK, S_ERROR
+import string,re
 
-class TaskQueueAgent(Agent):
+OPTIMIZER_NAME = 'TaskQueue'
 
+class TaskQueueAgent(Optimizer):
+
+  #############################################################################
   def __init__(self):
     """ Standard constructor
     """
+    Optimizer.__init__(self,OPTIMIZER_NAME,enableFlag=True)
 
-    Agent.__init__(self,AGENT_NAME)
-
+  #############################################################################
   def initialize(self):
-    """Sets default parameters
+    """Initialize specific parameters for TaskQueueAgent.
     """
-    result = Agent.initialize(self)
-    self.jobDB = JobDB()
-    self.logDB = JobLoggingDB()
-    self.optimizerName        = 'TaskQueue'
-    self.jobStatus            = gConfig.getValue(self.section+'/JobStatus','Checking')
-    self.minorStatus          = gConfig.getValue(self.section+'/InitialJobMinorStatus',self.optimizerName)
+    result = Optimizer.initialize(self)
+    self.stagingRequest     = gConfig.getValue(self.section+'/StagingRequest','StagingRequest')
+    self.stagingStatus      = gConfig.getValue(self.section+'/StagingStatus','Staging')
+    self.stagingMinorStatus = gConfig.getValue(self.section+'/StagingMinorStatus','Request Sent')
+    self.waitingStatus      = gConfig.getValue(self.section+'/WaitingStatus','Waiting')
+    self.waitingMinorStatus = gConfig.getValue(self.section+'/WaitingMinorStatus','Pilot Agent Submission')
     return result
 
-  def execute(self):
-    """ The main agent execution method
+  #############################################################################
+  def checkJob(self,job):
+    """This method controls the checking of the job.
     """
-
-    condition = {'Status':self.jobStatus,'MinorStatus':self.minorStatus}
-    result = self.jobDB.selectJobs(condition)
-    if not result['OK']:
-      self.log.error('Failed to get a job list from the JobDB')
-      return S_ERROR('Failed to get a job list from the JobDB')
-
-    if not len(result['Value']):
-      self.log.debug('No pending jobs to process')
-      return S_OK('No work to do')
-
-    jobList = result['Value']
-    for job in jobList:
-      result = self.insertJobInQueue(job)
-
-    return result
-
-  def insertJobInQueue(self,jobID):
-    """ Check individual job and add to the Task Queue eventually
-    """
-
-    # Check if the job is suitable for FIFO
-    result = self.jobDB.getInputData(jobID)
+    primaryStatus = None
+    minorStatus   = None
+    result = self.getOptimizerJobInfo(job,'StagingRequest')
     if result['OK']:
-      if  result['Value']:
-        return
+      primaryStatus  = self.stagingStatus
+      minorStatus    = self.stagingMinorStatus
+      stagingRequest = result['Value']
+      self.log.debug('StagingRequest is: %s' %s)
+    else:
+      primaryStatus = self.waitingStatus
+      minorStatus   = self.waitingMinorStatus
 
-    retVal = self.jobDB.getJobParameters(jobID,['Priority'])
+    result = self.insertJobInQueue(job)
+    if not result['OK']:
+      self.log.warn(result['Message'])
+
+    result = self.updateJobStatus(job,primaryStatus,minorStatus)
+    if not result['OK']:
+      self.log.warn(result['Message'])
+
+    return result
+
+  #############################################################################
+  def insertJobInQueue(self,job):
+    """ Check individual job and add to the Task Queue eventually.
+    """
+    retVal = self.jobDB.getJobParameters(job,['Priority'])
     if retVal['OK']:
       priority = retVal['Value']['Priority']
     else:
-      self.log.error('Failed to get parameters for job %d' % int(jobID))
-      return S_ERROR('Failed to get parameters for job %d' % int(jobID))
+      self.log.warn('No priority specified for job %d' % int(job))
+      priority = 0
 
-    result = self.jobDB.getJobJDL(jobID)
+    result = self.jobDB.getJobJDL(job)
     if result['OK']:
       jdl = result['Value']
     else:
-      jdl = None
-
-    if not jdl:
-      self.log.error("JDL not found for job %d" % int(jobID))
-      self.log.error("The job will be marked problematic")
-      self.jobDB.setJobStatus(jobID,status='problem',
-                              minor='JDL not found')
-      self.logDB.addLoggingRecord(jobID,status='problem',
-                                  minor='JDL not found',
-                                  source="TaskQueueAgent")
-      return S_ERROR('Failed to get jdl for job %d' % int(jobID))
-
-    print "$$$$$$$$$$$$$$",jdl
+      return S_ERROR('Could not obtain JDL for job')
 
     classadJob = ClassAd(jdl)
     if not classadJob.isOK():
-      self.log.error("Illegal JDL for job %d " % int(jobID))
+      self.log.error("Illegal JDL for job %d " % int(job))
       self.log.error("The job will be marked problematic")
-      self.jobDB.setJobStatus(jobID,status='problem',
-                              minor='JDL illegal')
-      self.logDB.addLoggingRecord(jobID,status='problem',
-                                  minor='JDL illegal',
-                                  source="TaskQueueAgent")
-      return S_ERROR("Warning: illegal JDL for job %d " % int(jobID))
+      return S_ERROR("Warning: illegal JDL for job %d " % int(job))
 
     requirements = classadJob.get_expression("Requirements")
     jobType = classadJob.get_expression("JobType")
@@ -115,11 +99,10 @@ class TaskQueueAgent(Agent):
       return S_ERROR("Failed to obtain a task queue")
 
     rank = priority
-    self.jobDB.addJobToQueue(jobID,queueID,rank)
-    # Update status
-    self.jobDB.setJobStatus(jobID,status='waiting',
-                            minor='PilotAgent Submission')
-    self.logDB.addLoggingRecord(jobID,status="waiting",
-                                minor='PilotAgent Submission',
-                                source="TaskQueueAgent")
-    return S_OK()
+    result = self.jobDB.addJobToQueue(job,queueID,rank)
+    if not result['OK']:
+      return result
+
+    return S_OK('Job Added to Task Queue')
+
+  #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
