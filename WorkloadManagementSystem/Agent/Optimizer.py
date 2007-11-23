@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Optimizer.py,v 1.2 2007/11/19 10:58:23 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Optimizer.py,v 1.3 2007/11/23 10:53:59 paterson Exp $
 # File :   Optimizer.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,10 +9,10 @@
      optimizer instances and associated actions are performed there.
 """
 
-__RCSID__ = "$Id: Optimizer.py,v 1.2 2007/11/19 10:58:23 paterson Exp $"
+__RCSID__ = "$Id: Optimizer.py,v 1.3 2007/11/23 10:53:59 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.DB.JobDB        import JobDB
-#from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
+from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight      import ClassAd
 from DIRAC.Core.Base.Agent                          import Agent
 from DIRAC.ConfigurationSystem.Client.Config        import gConfig
@@ -36,7 +36,7 @@ class Optimizer(Agent):
     """
     result = Agent.initialize(self)
     self.jobDB = JobDB()
-
+    self.logDB = JobLoggingDB()
     #In disabled mode, no statuses will be updated to allow debugging.
 
     if self.enableFlag:
@@ -173,6 +173,10 @@ class Optimizer(Agent):
           result = self.jobDB.setJobAttribute(job,'MinorStatus',minorstatus,update=True)
         else:
           result = S_OK('DisabledMode')
+
+    if self.enable:
+      logStatus=status
+      self.logDB.addLoggingRecord(jobID,status=logStatus,minor=minorstatus,source=self.optimizerName)
 
     return result
 
