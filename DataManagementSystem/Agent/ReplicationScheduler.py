@@ -8,6 +8,7 @@ from DIRAC.DataManagementSystem.DB.TransferDB import TransferDB
 from DIRAC.RequestManagementSystem.Client.DataManagementRequest import DataManagementRequest
 from DIRAC.DataManagementSystem.Client.LcgFileCatalogCombinedClient import LcgFileCatalogCombinedClient
 from DIRAC.Core.Storage.StorageFactory import StorageFactory
+import types,re
 
 AGENT_NAME = 'DataManagement/ReplicationScheduler'
 
@@ -26,6 +27,8 @@ class ReplicationScheduler(Agent):
     try:
       self.lfc = LcgFileCatalogCombinedClient() #infosys=infosysUrl,host=serverUrl)
       self.throughputTimescale = gConfig.getValue(self.section+'/ThroughputTimescale',3600) 
+      self.activeStrategies = gConfig.getValue(self.section+'/ActiveStrategies',['Simple'])
+      self.failureRate = gConfig.getValue(self.section+'/AcceptableFailureRate',75)
     except Exception,x:
       print "Failed to create LcgFileCatalogClient"
       print str(x)
@@ -49,7 +52,8 @@ class ReplicationScheduler(Agent):
       infoStr = 'ReplicationScheduler._execute: No active channels found for replication.'
       self.log.info(infoStr)
       return S_OK()
-    channelQueues = res['Value']
+    channelQueues = res['Value']['ChannelQueues']
+    channelSites = res['Value']['ChannelSites']
 
     res = self.TransferDB.getActiveChannelObservedThroughput(self.throughputTimescale)
     if not res['OK']:
@@ -62,6 +66,8 @@ class ReplicationScheduler(Agent):
       return S_OK()
     observedThroughput = res['Value']
 
+    self.strategyHandler = StrategyHandler(observedThroughput,channelQueues,channelSites,self.activeStrategies,self.failureRate)
+ 
     ######################################################################################
     #
     #  The first step is to obtain a transfer request from the RequestDB which should be scheduled.
@@ -101,7 +107,9 @@ class ReplicationScheduler(Agent):
     self.log.info(logStr)
 
     ######################################################################################
+    #
     #  The important request attributes are the source and target SEs.
+    #
 
     for ind in range(numberRequests):
       logStr = "ReplicationScheduler._execute: Treating sub-request %s from '%s'." % (ind,requestName)
@@ -114,11 +122,21 @@ class ReplicationScheduler(Agent):
       attributes = res['Value']
       sourceSE = attributes['SourceSE']
       targetSE = attributes['TargetSE']
+      """ This section should go in the transfer request class """
+      if type(targetSE) in types.StringTypes:
+        if re.search(',',targetSE):
+          targetSEs = targetSE.split(',')
+        else:
+          targetSEs = [targetSE]
+      """----------------------------------------------------- """
+
       operation = attributes['Operation']
       spaceToken = attributes['SpaceToken']
 
       ######################################################################################
+      # 
       # Then obtain the file attribute of interest are the  LFN and FileID
+      #
 
       res = dmRequest.getSubRequestFiles(ind,'transfer')
       if not res['OK']:
@@ -149,7 +167,6 @@ class ReplicationScheduler(Agent):
         return S_ERROR(errStr)
       replicas = res['Value']['Successful']
 
-
       ######################################################################################
       #
       #  Now obtain the file sizes for the files associated to the sub-request.
@@ -166,63 +183,157 @@ class ReplicationScheduler(Agent):
       metadata = res['Value']['Successful']
 
       ######################################################################################
-      # Take the sourceSURL from the catalog entries and contruct the target SURL from the CS
+      #
+      # For each lfn determine the replication tree
+      #
 
       for lfn in filesDict.keys():
+        fileSize = metadata[lfn]['Size']
         lfnReps = replicas[lfn]
         fileID = filesDict[lfn]
-        #res = self.determineReplicationTree(lfnReps, sourceSE, targetSE)
-        if lfnReps.has_key(sourceSE):
+        res = self.strategyHandler.determineReplicationTree(sourceSE,targetSEs,lfnReps,fileSize)
+        if not res['OK']:
+          errStr = res['Message']
+          gLogger.error(errStr)  
+          return S_ERROR(errStr)
+        tree = res['Value']        
+
+        ######################################################################################
+        #
+        # For each item in the replication tree obtain the source and target SURLS
+        # 
+
+        for channelID,dict in tree.items():
+          ancestor = dict['Ancestor']
+          status = 'Waiting'
+          if ancestor:
+            status = '%s%s' % (status,ancestor)
+          sourceSite = dict['SourceSite']
+          destSite = dict['DestSite']
           sourceSURL = lfnReps[sourceSE]
-          res = self.factory.getStorages(targetSE)
+          res = self.obtainTargetSURL(destSite,lfn)
           if not res['OK']:
-            errStr = 'ReplicationScheduler._execute: Failed to create SRM2 storage for %s: %s. ' % (targetSE,res['Message'])
-            self.log.error(errStr)
+            errStr = res['Message']
+            gLogger.error(errStr)
             return S_ERROR(errStr)
-          storageObjects = res['Value']['StorageObjects']
-          targetSURL = ''
-          for storageObject in storageObjects:
-            if storageObject.getProtocol() == 'SRM2':
-              res = storageObject.getUrl(lfn) 
-              if not res['OK']:
-                errStr = 'ReplicationScheduler._execute: Failed to get target SURL: %s.' % res['Message']
-                self.log.error(errStr) 
-                return S_ERROR(errStr) 							
-              targetSURL = res['Value']
-          if not targetSURL:
-            errStr = 'ReplicationScheduler._execute: Failed to get SRM compliant storage for %s.' % targetSE
-            self.log.error(errStr)
-            return S_ERROR(errStr)
+          targetSURL = res['Value']
 
           ######################################################################################
-          # Obtain the ChannelID and insert the file into that channel (done at the file level to allow file by file scheduling)
+          #
+          # For each item in the replication tree add the file to the channel
+          #
 
-          res = self.TransferDB.getChannelID(sourceSE,targetSE)
-          if not res['OK']:
-            logStr = 'ReplicationScheduler._execute: Creating channel from %s to %s.' % (sourceSE,targetSE)
-            self.log.info(logStr)
-            res = self.TransferDB.createChannel(sourceSE, targetSE)
-            channelID = res['Value']['ChannelID']
-            logStr = 'ReplicationScheduler._execute: ChannelID = %s.' % (channelID)
-            self.log.info(logStr)
-          else:
-            channelID = res['Value']
-          fileSize = metadata[lfn]['Size']
-          res = self.TransferDB.addFileToChannel(channelID, fileID, sourceSURL, targetSURL,fileSize,spaceToken)
+          res = self.TransferDB.addFileToChannel(channelID, fileID, sourceSURL, targetSURL,fileSize,spaceToken,fileStatus=status)
           if not res['OK']:
             errStr = "ReplicationScheduler._execute: Failed to add File %s to Channel %s." % (fileID,channelID)
             gLogger.error(errStr)
             return S_ERROR(errStr)
-        else:
-          errStr = "ReplicationScheduler._execute: %s does not have a replica at %s." % (lfn,sourceSE)
-          gLogger.error(errStr)
     return res
 
-  def determineReplicationTree(self,replicas,sourceSE,targetSE):
-    # This is where the intelligence is supposed to go. At the moment we just do source->target.
-    # The dictionary stores the replication tree. It is done with the heirarchy of the dictionary.
-    # The first level i.e. dict[ind] are transfers from currently existing sources.
-    # The second level dict[ind][ind] ar dependant on the transfers in the first etc.
-    dict = {}
-    dict[0] = {'Source':sourceSE,'Target':targetSE,'Dependants':None}
-    return S_OK(dict)
+
+  def obtainTargetSURL(self,targetSE,lfn):
+    """ Creates the targetSURL for the storage and LFN supplied
+    """
+    res = self.factory.getStorages(targetSE)
+    if not res['OK']:
+      errStr = 'ReplicationScheduler._execute: Failed to create SRM2 storage for %s: %s. ' % (targetSE,res['Message'])
+      self.log.error(errStr)
+      return S_ERROR(errStr)
+    storageObjects = res['Value']['StorageObjects']
+    targetSURL = ''
+    for storageObject in storageObjects:
+      if storageObject.getProtocol() == 'SRM2':
+        res = storageObject.getUrl(lfn)
+        if not res['OK']:
+          errStr = 'ReplicationScheduler._execute: Failed to get target SURL: %s.' % res['Message']
+          self.log.error(errStr)
+          return S_ERROR(errStr)
+        targetSURL = res['Value']
+    if not targetSURL:
+      errStr = 'ReplicationScheduler._execute: Failed to get SRM compliant storage for %s.' % targetSE
+      self.log.error(errStr)
+      return S_ERROR(errStr)
+    return S_OK(targetSURL)
+
+class StrategyHandler:
+
+  def __init__(self,bandwidths,queues,channelsites,activeStrategies,failureRate):
+    """ Standard constructor
+    """
+    self.chosenStrategy = 0
+    self.activeStrategies = activeStrategies 
+    self.numberOfStrategies = len(self.activeStrategies)
+    self.bandwidths = bandwidths
+    self.queues = queues
+    self.channelSites = channelsites
+    self.acceptableFailureRate = failureRate
+              	
+  def __incrementChosenStrategy(self):
+    """ This will increment the counter of the chosen strategy
+    """
+    self.chosenStrategy += 1
+    if self.chosenStrategy == self.numberOfStrategies:
+      self.chosenStrategy = 0
+
+  def __selectStrategy(self):
+    """ If more than one active strategy use one after the other  
+    """  
+    chosenStrategy = self.activeStrategies[self.chosenStrategy]
+    self.__incrementChosenStrategy()
+    return chosenStrategy     
+
+  def determineReplicationTree(self,sourceSE,targetSEs,replicas,size,strategy=None):
+    """ 
+    """ 
+    if not strategy:
+      strategy = self.__selectStrategy()
+
+    # For each strategy implemented an 'if' must be placed here    
+    if strategy == 'Simple':
+      tree = self.__simple(sourceSE,targetSEs)
+    elif strategy == 'DynamicThroughput':
+      tree = self.__dynamicThroughput(sourceSE,targetSEs)
+
+    # Now update the queues to reflect the chosen strategies
+    for channelID,ancestor in tree.items():
+      self.queues[channelID]['Files'] += 1
+      self.queues[channelID]['Size'] += size
+    return S_OK(tree)   
+
+  def __simple(self,sourceSE,targetSEs):
+    """ This just does a simple replication from the source to all the targets 
+    """
+    tree = {}
+    for targetSE in targetSEs:
+      for channelID,dict in self.channelSites.items():
+        if dict['SourceSite'] == sourceSE and dict['DestinationSite'] == targetSE:
+          tree[channelID] = {}
+          tree[channelID]['Ancestor'] = False
+          tree[channelID]['SourceSite'] = sourceSE
+          tree[channelID]['DestSite'] = targetSE           
+    return tree     
+
+  def __dynamicThroughput(self,sourceSEs,targetSEs):
+    """ 
+    """ 
+    for channelID,value in self.bandwidths.items():
+      channelThroughput = value['Throughput']
+      channelFileput = value['Fileput']
+      channelFileSuccess = value['SuccessfulFiles']
+      channelFileFailed = value['FailedFiles']
+      attempted = channelFileSuccess+channelFileFailed
+      if attempted != 0:
+        successRate = 100.0*(channelFileSuccess/float(attempted))
+      else:
+        successRate = 0.0
+      if successRate < self.acceptableFailureRate:
+        pass
+      channelFiles = self.queues[channelID]['Files']
+      channelSize = self.queues[channelID]['Size'] 
+      fileTimeToStart = channelFiles/channelFileput
+      throughputTimeToStart = channelSize/channelThroughput
+      
+      print fileTimeToStart
+      print throughputTimeToStart
+    
+
