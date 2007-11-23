@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfo.py,v 1.11 2007/11/23 10:35:46 acasajus Exp $
-__RCSID__ = "$Id: SocketInfo.py,v 1.11 2007/11/23 10:35:46 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfo.py,v 1.12 2007/11/23 13:34:28 acasajus Exp $
+__RCSID__ = "$Id: SocketInfo.py,v 1.12 2007/11/23 13:34:28 acasajus Exp $"
 
 import time
 import copy
@@ -117,7 +117,7 @@ class SocketInfo:
 
   def __generateServerContext( self ):
       self.__generateContextWithCerts()
-      self.sslContext.set_session_id( "DISETConnection" )
+      self.sslContext.set_session_id( "DISETConnection%s" % str( time.time() ) )
       self.sslContext.get_cert_store().set_flags( crypto.X509_CRL_CHECK )
       self.sslContext.set_GSI_verify()
 
