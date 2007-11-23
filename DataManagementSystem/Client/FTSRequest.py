@@ -163,7 +163,6 @@ class FTSRequest:
       comm = 'glite-transfer-submit -s %s -p %s -f %s -m myproxy-fts.cern.ch -t %s' % (self.ftsServer,self.fts_pwd,self.surlFile,self.spaceToken)
     else:
       comm = 'glite-transfer-submit -s %s -p %s -f %s -m myproxy-fts.cern.ch' % (self.ftsServer,self.fts_pwd,self.surlFile)
-    print comm
     res = shellCall(120,comm)
     if not res['OK']:
       return res
@@ -308,22 +307,40 @@ class FTSRequest:
     # Returns a non zero status if error
     if not returnCode == 0:
       return S_ERROR(errStr)
-    fileDetails = output.split('\n\n')
+
+
+    """
+    output = output.replace('\r','')
+    output = output.replace('DESTINATION error during PREPARATION phase: [GENERAL_FAILURE] Not able to find the version of castor in the database Original error was ORA-00904: "SCHEMAVERSION": invalid identifier\n\n','DESTINATION error during PREPARATION phase: [GENERAL_FAILURE] Not able to find the version of castor in the database Original error was ORA-00904: "SCHEMAVERSION": invalid identifier\n')
+    output = output.replace(' not found)\n\n',' not found)\n')
+    output = output.replace("TRANSFER error during TRANSFER phase: [GRIDFTP] the server sent an error response: 425 425 Can't open data connection. .\n\n",'TRANSFER error during TRANSFER phase: [GRIDFTP] the server sent an error response: 425 425 Cant open data connection.\n')
+    output = output.replace("TRANSFER error during TRANSFER phase: [GRIDFTP] the server sent an error response: 451 451 rfio read failure: Connection closed by remote end.\n\n","TRANSFER error during TRANSFER phase: [GRIDFTP] the server sent an error response: 451 451 rfio read failure: Connection closed by remote end.\n")
+    """
+
+    requiredKeys = ['Source','Destination','State','Retries','Reason','Duration']
+    fileDetails = output.split('\n\n  Source:')
     # For each of the files in the request
     for fileDetail in fileDetails:
       dict = {}
+      fileDetail = '  Source:%s' % fileDetail
       for line in fileDetail.splitlines():
         if re.search(':',line):
           line = line.replace("'",'')
           line = line.replace("<",'')
           line = line.replace(">",'')
-          key = line.split(':',1)[0].strip()
+        key = line.split(':',1)[0].strip()
+        if key in requiredKeys:
           value = line.split(':',1)[1].strip()
-          if key == 'Source' or key == 'Destination':
+          if key == 'Source':
+            value = value.replace(':8443/srm/managerv2?SFN=','')
+          if key == 'Destination':
             value = value.replace(':8443/srm/managerv2?SFN=','')
           dict[key] = value
         else:
-          self.requestStatus = line
+          if dict.has_key('Reason'):
+            dict['Reason'] = '%s %s' % (dict['Reason'],line)
+          else:
+            self.requestStatus = line
       for lfn in self.lfns:
         if re.search(lfn,dict['Source']):
           for key,value in dict.items():
