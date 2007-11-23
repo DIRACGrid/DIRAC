@@ -26,9 +26,6 @@ class ReplicationScheduler(Agent):
     self.factory = StorageFactory()
     try:
       self.lfc = LcgFileCatalogCombinedClient() #infosys=infosysUrl,host=serverUrl)
-      self.throughputTimescale = gConfig.getValue(self.section+'/ThroughputTimescale',3600) 
-      self.activeStrategies = gConfig.getValue(self.section+'/ActiveStrategies',['Simple'])
-      self.failureRate = gConfig.getValue(self.section+'/AcceptableFailureRate',75)
     except Exception,x:
       print "Failed to create LcgFileCatalogClient"
       print str(x)
@@ -37,6 +34,8 @@ class ReplicationScheduler(Agent):
   def execute(self):
     """ The main agent execution method
     """
+    # This allows dynamic changing of the throughput timescale
+    self.throughputTimescale = gConfig.getValue(self.section+'/ThroughputTimescale',3600)
 
     ######################################################################################
     #
@@ -66,8 +65,8 @@ class ReplicationScheduler(Agent):
       return S_OK()
     observedThroughput = res['Value']
 
-    self.strategyHandler = StrategyHandler(observedThroughput,channelQueues,channelSites,self.activeStrategies,self.failureRate)
- 
+    self.strategyHandler = StrategyHandler(observedThroughput,channelQueues,channelSites,self.section)
+
     ######################################################################################
     #
     #  The first step is to obtain a transfer request from the RequestDB which should be scheduled.
@@ -134,7 +133,7 @@ class ReplicationScheduler(Agent):
       spaceToken = attributes['SpaceToken']
 
       ######################################################################################
-      # 
+      #
       # Then obtain the file attribute of interest are the  LFN and FileID
       #
 
@@ -171,7 +170,7 @@ class ReplicationScheduler(Agent):
       #
       #  Now obtain the file sizes for the files associated to the sub-request.
       #
-            
+
       logStr = 'ReplicationScheduler._execute: Obtaining file sizes for sub-request files.'
       self.log.info(logStr)
       lfns = filesDict.keys()
@@ -194,14 +193,14 @@ class ReplicationScheduler(Agent):
         res = self.strategyHandler.determineReplicationTree(sourceSE,targetSEs,lfnReps,fileSize)
         if not res['OK']:
           errStr = res['Message']
-          gLogger.error(errStr)  
+          gLogger.error(errStr)
           return S_ERROR(errStr)
-        tree = res['Value']        
+        tree = res['Value']
 
         ######################################################################################
         #
         # For each item in the replication tree obtain the source and target SURLS
-        # 
+        #
 
         for channelID,dict in tree.items():
           ancestor = dict['Ancestor']
@@ -257,38 +256,26 @@ class ReplicationScheduler(Agent):
 
 class StrategyHandler:
 
-  def __init__(self,bandwidths,queues,channelsites,activeStrategies,failureRate):
+  def __init__(self,bandwidths,queues,channelsites,configSection):
     """ Standard constructor
     """
-    self.chosenStrategy = 0
-    self.activeStrategies = activeStrategies 
+    self.schedulingType = gConfig.getValue(configSection+'/SchedulingType','File')
+    self.activeStrategies = gConfig.getValue(configSection+'/ActiveStrategies',['Simple'])
     self.numberOfStrategies = len(self.activeStrategies)
+    self.chosenStrategy = 0
+
+    self.acceptableFailureRate = gConfig.getValue(configSection+'/AcceptableFailureRate',75)
     self.bandwidths = bandwidths
     self.queues = queues
     self.channelSites = channelsites
-    self.acceptableFailureRate = failureRate
-              	
-  def __incrementChosenStrategy(self):
-    """ This will increment the counter of the chosen strategy
-    """
-    self.chosenStrategy += 1
-    if self.chosenStrategy == self.numberOfStrategies:
-      self.chosenStrategy = 0
-
-  def __selectStrategy(self):
-    """ If more than one active strategy use one after the other  
-    """  
-    chosenStrategy = self.activeStrategies[self.chosenStrategy]
-    self.__incrementChosenStrategy()
-    return chosenStrategy     
 
   def determineReplicationTree(self,sourceSE,targetSEs,replicas,size,strategy=None):
-    """ 
-    """ 
+    """
+    """
     if not strategy:
       strategy = self.__selectStrategy()
 
-    # For each strategy implemented an 'if' must be placed here    
+    # For each strategy implemented an 'if' must be placed here
     if strategy == 'Simple':
       tree = self.__simple(sourceSE,targetSEs)
     elif strategy == 'DynamicThroughput':
@@ -298,10 +285,24 @@ class StrategyHandler:
     for channelID,ancestor in tree.items():
       self.queues[channelID]['Files'] += 1
       self.queues[channelID]['Size'] += size
-    return S_OK(tree)   
+    return S_OK(tree)
+
+  def __incrementChosenStrategy(self):
+    """ This will increment the counter of the chosen strategy
+    """
+    self.chosenStrategy += 1
+    if self.chosenStrategy == self.numberOfStrategies:
+      self.chosenStrategy = 0
+
+  def __selectStrategy(self):
+    """ If more than one active strategy use one after the other
+    """
+    chosenStrategy = self.activeStrategies[self.chosenStrategy]
+    self.__incrementChosenStrategy()
+    return chosenStrategy
 
   def __simple(self,sourceSE,targetSEs):
-    """ This just does a simple replication from the source to all the targets 
+    """ This just does a simple replication from the source to all the targets
     """
     tree = {}
     for targetSE in targetSEs:
@@ -310,12 +311,19 @@ class StrategyHandler:
           tree[channelID] = {}
           tree[channelID]['Ancestor'] = False
           tree[channelID]['SourceSite'] = sourceSE
-          tree[channelID]['DestSite'] = targetSE           
-    return tree     
+          tree[channelID]['DestSite'] = targetSE
+    return tree
 
-  def __dynamicThroughput(self,sourceSEs,targetSEs):
-    """ 
-    """ 
+  def __dynamicThroughput(self,sourceSE,targetSEs):
+    """ This creates a replication tree based on observed throughput on the channels
+    """
+    ############################################################################
+    #
+    # First generate the matrix of times to start based on task queue contents and observed throughput
+    #
+
+    channelIDs = {}
+    channelsTimeToStart = {}
     for channelID,value in self.bandwidths.items():
       channelThroughput = value['Throughput']
       channelFileput = value['Fileput']
@@ -325,15 +333,72 @@ class StrategyHandler:
       if attempted != 0:
         successRate = 100.0*(channelFileSuccess/float(attempted))
       else:
-        successRate = 0.0
+        successRate = 100.0
       if successRate < self.acceptableFailureRate:
-        pass
-      channelFiles = self.queues[channelID]['Files']
-      channelSize = self.queues[channelID]['Size'] 
-      fileTimeToStart = channelFiles/channelFileput
-      throughputTimeToStart = channelSize/channelThroughput
-      
-      print fileTimeToStart
-      print throughputTimeToStart
-    
+        channelFiles = self.queues[channelID]['Files']
+        channelSize = self.queues[channelID]['Size']
+        if channelFile > 0:
+          fileTimeToStart = channelFiles/channelFileput
+        else:
+          fileTimeToStart = 0.0
+        if channelSize > 0:
+          throughputTimeToStart = channelSize/channelThroughput
+        else:
+          throughputTimeToStart = 0.0
+        channelDict = self.channelSites[channelID]
+        sourceSE = channelDict['SourceSite']
+        targetSE = channelDict['DestinationSite']
+        channelName = '%s%s' % (sourceSE,targetSE)
+        channelIDs[channelID] = channelName
+        if self.schedulingType == 'File':
+          channelsTimeToStart[channelID] = fileTimeToStart
+        elif self.schedulingType == 'Throughput':
+          channelsTimeToStart[channelID] = throughputTimeToStart
+        else:
+          errStr = 'StrategyHandler.__dynamicThroughput: CS SchedulingType entry must be either File or Throughput'
+          gLogger.error(errStr)
+          return S_ERROR(errStr)
 
+    ############################################################################
+    #
+    # Use the matrix of time to start to create scheduling tree
+    #
+
+    timeToSite = {}                # Maintains time to site including previous hops
+    siteAncestor = {}              # Maintains the ancestor channel for a site
+    tree = {}                      # Maintains replication tree
+    sourceSites = [sourceSE]
+    destSites = targetSEs
+
+    while len(destSites) > 0:
+      minTotalTimeToStart = float("inf")
+      for destSite in destSites:
+        for sourceSite in sourceSites:
+          channelName = '%s%s' % (sourceSite,destSite)
+          channelID = channelIDs[channelName]
+          channelTimeToStart = channelsTimeToStart[channelID]
+          if timeToSite.has_key(sourceSite):
+            totalTimeToStart = timeToSite[sourceSite]+channelTimeToStart+self.sigma
+          else:
+            totalTimeToStart = channelTimeToStart
+          if totalTimeToStart < minTotalTimeToStart:
+            minTotalTimeToStart = totalTimeToStart
+            selectedPathTimeToStart = totalTimeToStart
+            selectedSourceSite = sourceSite
+            selectedDestSite = destSite
+            selectedChannelID = channelID
+
+      timeToSite[selectedDestSite] = selectedPathTimeToStart
+      siteAncestor[selectedDestSite] = selectedChannelID
+
+      if siteAncestor.has_key(selectedSourceSite):
+        waitingChannel = siteAncestor[selectedSourceSite]
+      else:
+        waitingChannel = False
+      tree[selectedChannelID] = {}
+      tree[selectedChannelID]['Ancestor'] = waitingChannel
+      tree[selectedChannelID]['SourceSite'] = selectedSourceSite
+      tree[selectedChannelID]['DestSite'] = selectedDestSite
+      sourceSites.append(selectedDestSite)
+      destSites.remove(selectedDestSite)
+    return tree
