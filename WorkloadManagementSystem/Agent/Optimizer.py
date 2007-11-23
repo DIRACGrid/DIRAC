@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Optimizer.py,v 1.5 2007/11/23 11:04:23 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Optimizer.py,v 1.6 2007/11/23 11:06:40 paterson Exp $
 # File :   Optimizer.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
      optimizer instances and associated actions are performed there.
 """
 
-__RCSID__ = "$Id: Optimizer.py,v 1.5 2007/11/23 11:04:23 paterson Exp $"
+__RCSID__ = "$Id: Optimizer.py,v 1.6 2007/11/23 11:06:40 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.DB.JobDB        import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
@@ -181,7 +181,7 @@ class Optimizer(Agent):
 
     if self.enable:
       logStatus=status
-      result = self.logDB.addLoggingRecord(job,status=logStatus,minor=minorstatus,source=self.optimizerName)
+      result = self.logDB.addLoggingRecord(job,status=logStatus,minor=minorstatus,source=self.optimizerName+'Agent')
       if not result['OK']:
         self.log.warn(result['Message'])
 
