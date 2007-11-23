@@ -101,10 +101,10 @@ class TransferDB(DB):
       return S_ERROR('%s\n%s' % (err,res['Message']))
     if not res['Value']:
       return S_OK()
-    channels = []
+    channels = {}
     channelIDs = []
     for channelID,sourceSite,destinationSite in res['Value']:
-      channels.append({'ChannelID':channelID,'SourceSite':sourceSite,'DestinationSite':destinationSite})
+      channels[channelID] = {'SourceSite':sourceSite,'DestinationSite':destinationSite}
       channelIDs.append(channelID)
     resDict = {'ChannelIDs':channelIDs,'Channels':channels}
     return S_OK(resDict)
@@ -260,8 +260,13 @@ class TransferDB(DB):
     if not res['Value']:
       return res
     channelIDs = res['Value']['ChannelIDs']
+    channelSites = res['Value']['Channels']
     res = self.getChannelQueues(channelIDs)
-    return res
+    if not res['OK']:
+      return res
+    channelQueues = res['Value']
+    resDict = {'ChannelIDs':channelIDs,'ChannelSites':channelSites,'ChannelQueues':channelQueues}
+    return S_OK(resDict)
 
   #################################################################################
   # These are the methods for managing the FTSReq table
@@ -417,7 +422,7 @@ class TransferDB(DB):
  
   def getFTSObservedThroughput(self,interval,channelIDs):
     strChannelIDs = intListToString(channelIDs)
-    req = "SELECT ChannelID,SUM(FileSize/%s),COUNT(*)/%s from FileToFTS WHERE SubmissionTime > (NOW() - INTERVAL %s SECOND) AND Status = 'Completed' GROUP BY ChannelID;" % (interval,interval,interval)
+    req = "SELECT ChannelID,SUM(FileSize/%s),COUNT(*)/%s from FileToFTS WHERE ChannelID IN (%s) AND SubmissionTime > (NOW() - INTERVAL %s SECOND) AND Status = 'Completed' GROUP BY ChannelID;" % (interval,interval,strChannelIDs,interval)
     res = self._query(req)
     if not res['OK']:
       err = 'TransferDB._getFTSObservedThroughput: Failed to obtain observed throughput.'
@@ -428,6 +433,18 @@ class TransferDB(DB):
     for channelID in channelIDs:
       if not channelDict.has_key(channelID):
         channelDict[channelID] = {'Throughput': 0,'Fileput': 0}
+    req = "SELECT ChannelID,SUM(Status='Completed'),SUM(Status='Failed') from FileToFTS WHERE ChannelID IN (%s) AND SubmissionTime > (NOW() - INTERVAL %s SECOND) GROUP BY ChannelID;" % (strChannelIDs,interval)
+    res = self._query(req)
+    if not res['OK']:
+      err = 'TransferDB._getFTSObservedThroughput: Failed to obtain success rate.'
+      return S_ERROR('%s\n%s' % (err,res['Message']))
+    for channelID,successful,failed in res['Value']:
+      channelDict[channelID]['SuccessfulFiles'] = int(successful)
+      channelDict[channelID]['FailedFiles'] = int(failed)
+    for channelID in channelIDs:
+      if not channelDict[channelID].has_key('SuccessfulFiles'):
+        channelDict[channelID]['SuccessfulFiles'] = 0
+        channelDict[channelID]['FailedFiles'] = 0
     return S_OK(channelDict)
       
   #################################################################################
