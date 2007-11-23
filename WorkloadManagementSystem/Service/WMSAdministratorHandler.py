@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSAdministratorHandler.py,v 1.1 2007/11/21 10:14:56 atsareg Exp $
+# $Id: WMSAdministratorHandler.py,v 1.2 2007/11/23 16:39:43 atsareg Exp $
 ########################################################################
 """
 This is a DIRAC WMS administrator interface
@@ -16,7 +16,7 @@ This starts an XMLRPC service exporting the following methods:
 
 """
 
-__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.1 2007/11/21 10:14:56 atsareg Exp $"
+__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.2 2007/11/23 16:39:43 atsareg Exp $"
 
 import os, sys, string, uu, shutil
 from types import *
@@ -24,6 +24,7 @@ from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
+from DIRAC.WorkloadManagementSystem.DB.ProxyRepositoryDB import ProxyRepositoryDB
 
 # This is a global instance of the JobDB class
 jobDB = False
