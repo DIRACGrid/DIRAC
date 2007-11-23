@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.19 2007/11/12 19:01:53 acasajus Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.19 2007/11/12 19:01:53 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.20 2007/11/23 13:33:54 acasajus Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.20 2007/11/23 13:33:54 acasajus Exp $"
 
 import DIRAC
 from DIRAC.Core.DISET.private.Protocols import gProtocolDict
@@ -25,15 +25,12 @@ class BaseClient:
     self.serviceURL = self.__discoverServiceURL()
     self.useCertificates = useCertificates
     self.setup = gConfig.getValue( "/DIRAC/Setup", "Production" )
-    try:
-      retVal = Network.splitURL( self.serviceURL )
-      if retVal[ 'OK' ]:
-        self.URLTuple = retVal[ 'Value' ]
-      else:
-        return retVal
-    except:
-      gLogger.error( "URL is malformed", "%s is not valid" % self.sURL)
-      return S_ERROR( "URL is malformed" )
+    retVal = Network.splitURL( self.serviceURL )
+    if retVal[ 'OK' ]:
+      self.URLTuple = retVal[ 'Value' ]
+    else:
+      gLogger.error( "URL is malformed", retVal[ 'Message' ] )
+      raise Exception( retVal[ 'Message' ] )
     if groupToUse:
       self.groupToUse = groupToUse
     else:
