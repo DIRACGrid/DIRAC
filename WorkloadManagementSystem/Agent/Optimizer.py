@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Optimizer.py,v 1.3 2007/11/23 10:53:59 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Optimizer.py,v 1.4 2007/11/23 11:01:46 paterson Exp $
 # File :   Optimizer.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
      optimizer instances and associated actions are performed there.
 """
 
-__RCSID__ = "$Id: Optimizer.py,v 1.3 2007/11/23 10:53:59 paterson Exp $"
+__RCSID__ = "$Id: Optimizer.py,v 1.4 2007/11/23 11:01:46 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.DB.JobDB        import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
@@ -152,6 +152,9 @@ class Optimizer(Agent):
       result = self.jobDB.setNextOptimizer(job,self.optimizerName)
     else:
       result = S_OK('DisabledMode')
+
+    if self.enable: # this will set the logging record to the current optimizer at present :(
+      self.logDB.addLoggingRecord(jobID,status=self.jobStatus,minor=self.optimizerName,source=self.optimizerName)
 
     return result
 
