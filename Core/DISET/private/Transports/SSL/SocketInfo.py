@@ -1,24 +1,32 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfo.py,v 1.10 2007/11/16 16:24:05 acasajus Exp $
-__RCSID__ = "$Id: SocketInfo.py,v 1.10 2007/11/16 16:24:05 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfo.py,v 1.11 2007/11/23 10:35:46 acasajus Exp $
+__RCSID__ = "$Id: SocketInfo.py,v 1.11 2007/11/23 10:35:46 acasajus Exp $"
 
 import time
 import copy
+import threading
 from OpenSSL import SSL, crypto
 import DIRAC
 from DIRAC.Core.Utilities import GridCert
 from DIRAC.LoggingSystem.Client.Logger import gLogger
 
+SSL.set_thread_safe()
+
+gHandshakeLock  = threading.Lock()
+
 class SocketInfo:
 
-  def __init__( self, infoDict ):
+  def __init__( self, infoDict, sslContext = False ):
     self.infoDict = infoDict
-    if self.infoDict[ 'clientMode' ]:
-      if self.infoDict.has_key( 'useCertificates' ) and self.infoDict[ 'useCertificates' ]:
-        self.__generateContextWithCerts()
-      else:
-        self.__generateContextWithProxy()
+    if sslContext:
+      self.sslContext = sslContext
     else:
-      self.__generateServerContext()
+      if self.infoDict[ 'clientMode' ]:
+        if self.infoDict.has_key( 'useCertificates' ) and self.infoDict[ 'useCertificates' ]:
+          self.__generateContextWithCerts()
+        else:
+          self.__generateContextWithProxy()
+      else:
+        self.__generateServerContext()
 
   def setLocalCredentialsLocation( self, credTuple ):
     self.infoDict[ 'localCredentialsLocation' ] = credTuple
@@ -53,7 +61,7 @@ class SocketInfo:
     return self.sslContext
 
   def clone( self ):
-    return SocketInfo( copy.deepcopy( self.infoDict ) )
+    return SocketInfo( copy.deepcopy( self.infoDict ), self.sslContext )
 
   def verifyCallback( self, *args, **kwargs ):
     #gLogger.debug( "verify Callback %s" % str( args ) )
@@ -109,7 +117,7 @@ class SocketInfo:
 
   def __generateServerContext( self ):
       self.__generateContextWithCerts()
-      self.sslContext.set_session_id( "DISETConnection%s" % str( time.time() ) )
+      self.sslContext.set_session_id( "DISETConnection" )
       self.sslContext.get_cert_store().set_flags( crypto.X509_CRL_CHECK )
       self.sslContext.set_GSI_verify()
 
@@ -123,7 +131,11 @@ class SocketInfo:
 
   def __sslHandshake( self ):
     try:
-      self.sslSocket.do_handshake()
+      gHandshakeLock.acquire()
+      try:
+        self.sslSocket.do_handshake()
+      finally:
+        gHandshakeLock.release()
     except SSL.Error, v:
       #FIXME: S_ERROR?
       #gLogger.warn( "Error while handshaking", "\n".join( [ stError[2] for stError in v.args[0] ] ) )

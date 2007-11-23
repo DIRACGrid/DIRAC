@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfoFactory.py,v 1.5 2007/09/20 18:34:16 acasajus Exp $
-__RCSID__ = "$Id: SocketInfoFactory.py,v 1.5 2007/09/20 18:34:16 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfoFactory.py,v 1.6 2007/11/23 10:35:46 acasajus Exp $
+__RCSID__ = "$Id: SocketInfoFactory.py,v 1.6 2007/11/23 10:35:46 acasajus Exp $"
 
 import socket
 from OpenSSL import SSL
@@ -28,11 +28,14 @@ class SocketInfoFactory:
     sslSocket = SSL.Connection( socketInfo.getSSLContext(), osSocket )
     #sslSocket = ThreadSafeSSLObject( sslSocket )
     #sslSocket = FakeSocket( sslSocket )
+    sessionId = str( hash(  ":".join( socketInfo.getLocalCredentialsLocation() )  ) )
+    socketInfo.sslContext.set_session_id( str( hash( sessionId ) ) )
     socketInfo.setSSLSocket( sslSocket )
-    sessionId = ":".join( socketInfo.getLocalCredentialsLocation() )
-    sslSocket.set_session( gSessionManager.getSession( sessionId ) )
+    if gSessionManager.isValid( sessionId ):
+      sslSocket.set_session( gSessionManager.get( sessionId ) )
     sslSocket.connect( hostAddress )
     socketInfo.doClientHandshake()
+    gSessionManager.set( sessionId, sslSocket.get_session() )
 
     return socketInfo
 
