@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/List.py,v 1.10 2007/10/26 10:44:55 acsmith Exp $
-__RCSID__ = "$Id: List.py,v 1.10 2007/10/26 10:44:55 acsmith Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/List.py,v 1.11 2007/11/25 15:56:16 acsmith Exp $
+__RCSID__ = "$Id: List.py,v 1.11 2007/11/25 15:56:16 acsmith Exp $"
 """
    Collection of DIRAC useful list related modules
    by default on Error they return None
@@ -65,7 +65,7 @@ def stringListToString(list):
   str_list = []
   for item in list:
     str_list.append("'%s'" % item)
-    str = ','.join(str_list)
+  str = ','.join(str_list)
   return str
 
 def intListToString(list):
@@ -75,7 +75,7 @@ def intListToString(list):
   str_list = []
   for item in list:
     str_list.append("%s" % item)
-    str = ','.join(str_list)
+  str = ','.join(str_list)
   return str
 
 
