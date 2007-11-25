@@ -79,18 +79,18 @@ class TransferDB(DB):
     return res
 
   def getChannels(self):
-    req = "SELECT ChannelID,SourceSite,DestinationSite,ActiveJobs,LatestThroughPut from Channels WHERE Status = 'Active';"
+    req = "SELECT ChannelID,SourceSite,DestinationSite,Status,ChannelName from Channels;"
     res = self._query(req)
     if not res['OK']:
       err = 'TransferDB._getChannels: Failed to retrieve channel information.'
       return S_ERROR('%s\n%s' % (err,res['Message']))
     channels = {}
-    for channelID,sourceSite,destSite,activeJobs,throughPut in res['Value']:
+    for channelID,sourceSite,destSite,status,channelName in res['Value']:
       channels[channelID] = {}
       channels[channelID]['Source'] = sourceSite
       channels[channelID]['Destination'] = destSite
-      channels[channelID]['ActiveJobs'] = activeJobs
-      channels[channelID]['Throughput'] = throughPut
+      channels[channelID]['Status'] = status
+      channels[channelID]['ChannelName'] = channelName
     return S_OK(channels)
 
   def getChannelsForState(self,status):
@@ -114,13 +114,20 @@ class TransferDB(DB):
   # These are the methods for managing the Channel table
 
   def selectChannelForSubmission(self,maxJobsPerChannel):
-    res = self.getChannelsForState('Active')
+    res = self.getChannelQueues()
     if not res['OK']:
       return res
     if not res['Value']:
       return S_OK()
-    channelIDs = res['Value']['ChannelIDs']
-    strChannelIDs = intListToString(channelIDs)
+    channels = res['Value']
+    candidateChannels = []
+    for channelID in channels.keys():
+      if channels[channelID]['Status'] == 'Active':
+        if channels[channelID]['Files'] > 0:
+          candidateChannels.append(channelID)
+    if not len(candidateChannels) >0:
+      return S_OK()
+    strChannelIDs = intListToString(candidateChannels)
     req = "SELECT ChannelID,SUM(Status='Submitted') FROM FTSReq WHERE ChannelID IN (%s) GROUP BY ChannelID;" % strChannelIDs
     res = self._query(req)
     if not res['OK']:
@@ -128,21 +135,14 @@ class TransferDB(DB):
       return S_ERROR('%s\n%s' % (err,res['Message']))
     for channelID,numberOfJobs in res['Value']:
       if numberOfJobs >= maxJobsPerChannel:
-        channelIDs.remove(channelID)
-    if not channelIDs:
+        candidateChannels.remove(channelID)
+    if not candidateChannels:
       return S_OK()
     #Write a more clever way of doing this by including the number of files waiting
     resDict = {}
-    selectedChannel = randomize(channelIDs)[0]
+    selectedChannel = randomize(candidateChannels)[0]
+    resDict = channels[selectedChannel]
     resDict['ChannelID'] = selectedChannel
-    res = self.getChannelAttribute(selectedChannel,'SourceSite')
-    if not res['OK']:
-      return res
-    resDict['SourceSE'] = res['Value']
-    res = self.getChannelAttribute(selectedChannel,'DestinationSite')
-    if not res['OK']:
-      return res
-    resDict['TargetSE'] = res['Value']
     return S_OK(resDict)
 
   def addFileToChannel(self,channelID,fileID,sourceSURL,targetSURL,fileSize,spaceToken,fileStatus='Waiting'):
@@ -175,6 +175,26 @@ class TransferDB(DB):
       res = self.removeFileFromChannel(channelID,fileID)
       if not res['OK']:
         return res
+    return res
+
+  def setChannelFilesExecuting(self,channelID,fileIDs):
+    strFileIDs = intListToString(fileIDs)
+    req = "UPDATE Channel SET Status = 'Executing',  ExecutionTime=NOW() WHERE FileID IN (%s) AND ChannelID = %s;" % (strFileIDs,channelID)
+    res = self._update(req)
+    if not res['OK']:
+      err = 'TransferDB._setChannelFilesExecuting: Failed to set file executing.'
+      return S_ERROR('%s\n%s' % (err,res['Message']))
+    return res
+
+  def updateAncestorChannelStatus(self,channelID,fileIDs):
+    if not len(fileIDs) >0:
+      return S_OK()
+    strFileIDs = intListToString(fileIDs)
+    req = "UPDATE Channel SET Status = 'Waiting' WHERE FileID IN (%s) AND Status = 'Waiting%s';" % (strFileIDs,channelID)
+    res = self._update(req)
+    if not res['OK']:
+      err = "TransferDB._updateAncestorChannelStatus: Failed to update status."
+      return S_ERROR('%s\n%s' % (err,res['Message']))
     return res
 
   def removeFileFromChannel(self,channelID,fileID):
@@ -238,35 +258,26 @@ class TransferDB(DB):
     resDict['Files'] = files
     return S_OK(resDict)
 
-  def getChannelQueues(self,channelIDs):
-    strChannelIDs = intListToString(channelIDs)
-    req = "SELECT ChannelID,COUNT(*),SUM(FileSize) FROM Channel WHERE ChannelID IN (%s) AND Status LIKE 'Waiting%s' GROUP BY ChannelID;" % (strChannelIDs,'%')
+  def getChannelQueues(self):
+    res = self.getChannels()
+    if not res['OK']:
+      return res
+    channels = res['Value']
+    channelIDs = channels.keys()
+    req = "SELECT ChannelID,COUNT(*),SUM(FileSize) FROM Channel WHERE Status LIKE 'Waiting%s' GROUP BY ChannelID;" % ('%')
     res = self._query(req)
     if not res['OK']:
       err = "TransferDB.getChannelQueues: Failed to get Channel contents for Channels." % strChannelIDs
       return S_ERROR('%s\n%s' % (err,res['Message']))
     channelDict = {}
     for channelID,fileCount,sizeCount in res['Value']:
-      channelDict[channelID] = {'Files': int(fileCount),'Size': int(sizeCount)}
+      channels[channelID]['Files'] = int(fileCount)
+      channels[channelID]['Size'] = int(sizeCount)
     for channelID in channelIDs:
-      if not channelDict.has_key(channelID):
-        channelDict[channelID] = {'Files':0,'Size':0}
-    return S_OK(channelDict)  
-
-  def getActiveChannelQueues(self):
-    res = self.getChannelsForState('Active')
-    if not res['OK']:
-      return res
-    if not res['Value']:
-      return res
-    channelIDs = res['Value']['ChannelIDs']
-    channelSites = res['Value']['Channels']
-    res = self.getChannelQueues(channelIDs)
-    if not res['OK']:
-      return res
-    channelQueues = res['Value']
-    resDict = {'ChannelIDs':channelIDs,'ChannelSites':channelSites,'ChannelQueues':channelQueues}
-    return S_OK(resDict)
+      if not channels[channelID].has_key('Files'):
+        channels[channelID]['Files'] = 0
+        channels[channelID]['Size'] = 0
+    return S_OK(channels)  
 
   #################################################################################
   # These are the methods for managing the FTSReq table
@@ -312,7 +323,7 @@ class TransferDB(DB):
     return res
 
   def getFTSReq(self):
-    req = "SELECT FTSReqID,FTSGUID,FTSServer FROM FTSReq WHERE Status = 'Submitted' ORDER BY LastMonitor LIMIT 1;"
+    req = "SELECT FTSReqID,FTSGUID,FTSServer,ChannelID FROM FTSReq WHERE Status = 'Submitted' ORDER BY LastMonitor LIMIT 1;"
     res = self._query(req)
     if not res['OK']:
       err = "TransferDB._getFTSReq: Failed to get entry from FTSReq table."
@@ -321,10 +332,11 @@ class TransferDB(DB):
       # It is not an error that there are not requests
       return S_OK()
     resDict = {}
-    ftsReqID,ftsGUID,ftsServer = res['Value'][0]
+    ftsReqID,ftsGUID,ftsServer,channelID = res['Value'][0]
     resDict['FTSReqID'] = ftsReqID
     resDict['FTSGuid'] = ftsGUID
     resDict['FTSServer'] = ftsServer
+    resDict['ChannelID'] = channelID
     return S_OK(resDict)
 
   def setFTSReqAttribute(self,ftsReqID,attribute,attrValue):
@@ -410,19 +422,15 @@ class TransferDB(DB):
       return S_ERROR('%s\n%s' % (err,res['Message']))
     return res
 
-  def getActiveChannelObservedThroughput(self,interval):
-    res = self.getChannelsForState('Active')
+  def getChannelObservedThroughput(self,interval):
+    res = self.getChannels()
     if not res['OK']:
       return res
-    if not res['Value']:
-      return res
-    channelIDs = res['Value']['ChannelIDs']
-    res = self.getFTSObservedThroughput(interval,channelIDs)
-    return res     
- 
-  def getFTSObservedThroughput(self,interval,channelIDs):
-    strChannelIDs = intListToString(channelIDs)
-    req = "SELECT ChannelID,SUM(FileSize/%s),COUNT(*)/%s from FileToFTS WHERE ChannelID IN (%s) AND SubmissionTime > (NOW() - INTERVAL %s SECOND) AND Status = 'Completed' GROUP BY ChannelID;" % (interval,interval,strChannelIDs,interval)
+    channels = res['Value']
+    channelIDs = channels.keys()
+    #############################################
+    # First get the throughput on the channels 
+    req = "SELECT ChannelID,SUM(FileSize/%s),COUNT(*)/%s from FileToFTS WHERE SubmissionTime > (NOW() - INTERVAL %s SECOND) AND Status = 'Completed' GROUP BY ChannelID;" % (interval,interval,interval)
     res = self._query(req)
     if not res['OK']:
       err = 'TransferDB._getFTSObservedThroughput: Failed to obtain observed throughput.'
@@ -433,7 +441,9 @@ class TransferDB(DB):
     for channelID in channelIDs:
       if not channelDict.has_key(channelID):
         channelDict[channelID] = {'Throughput': 0,'Fileput': 0}
-    req = "SELECT ChannelID,SUM(Status='Completed'),SUM(Status='Failed') from FileToFTS WHERE ChannelID IN (%s) AND SubmissionTime > (NOW() - INTERVAL %s SECOND) GROUP BY ChannelID;" % (strChannelIDs,interval)
+    #############################################
+    # Now get the success rate on the channels 
+    req = "SELECT ChannelID,SUM(Status='Completed'),SUM(Status='Failed') from FileToFTS WHERE SubmissionTime > (NOW() - INTERVAL %s SECOND) GROUP BY ChannelID;" % (interval)
     res = self._query(req)
     if not res['OK']:
       err = 'TransferDB._getFTSObservedThroughput: Failed to obtain success rate.'
@@ -457,3 +467,20 @@ class TransferDB(DB):
       err = "TransferDB._addLoggingEvent: Failed to add logging event to FTSReq %s" % ftsReqID
       return S_ERROR(err)
     return res 
+
+  #################################################################################
+  # These are the methods for managing the ReplicationTree table
+      
+  def addReplicationTree(self,fileID,tree):
+    for channelID,dict in tree.items():
+       ancestor = dict['Ancestor']
+       if not ancestor:
+         ancestor = '-' 
+       strategy = dict['Strategy']
+       req = "INSERT INTO ReplicationTree (FileID,ChannelID,AncestorChannel,Strategy,CreationTime) VALUES (%s,%s,'%s','%s',NOW());" % (fileID,channelID,ancestor,strategy)
+       res = self._update(req)
+       if not res['OK']:
+        err = "TransferDB._addReplicationTree: Failed to add ReplicationTree for file %s" % fileID
+        return S_ERROR(err)
+    return res
+      
