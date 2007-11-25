@@ -10,6 +10,7 @@ from DIRAC.DataManagementSystem.Client.LcgFileCatalogCombinedClient import LcgFi
 from DIRAC.Core.Storage.StorageFactory import StorageFactory
 import types,re
 
+
 AGENT_NAME = 'DataManagement/ReplicationScheduler'
 
 class ReplicationScheduler(Agent):
@@ -42,7 +43,7 @@ class ReplicationScheduler(Agent):
     #  Obtain information on the current state of the channel queues
     #
 
-    res = self.TransferDB.getActiveChannelQueues()
+    res = self.TransferDB.getChannelQueues()
     if not res['OK']:
       errStr = 'ReplicationScheduler._execute: Failed to get channel queues from TransferDB: %s.' % res['Message']
       self.log.error(errStr)
@@ -51,10 +52,9 @@ class ReplicationScheduler(Agent):
       infoStr = 'ReplicationScheduler._execute: No active channels found for replication.'
       self.log.info(infoStr)
       return S_OK()
-    channelQueues = res['Value']['ChannelQueues']
-    channelSites = res['Value']['ChannelSites']
+    channels = res['Value']
 
-    res = self.TransferDB.getActiveChannelObservedThroughput(self.throughputTimescale)
+    res = self.TransferDB.getChannelObservedThroughput(self.throughputTimescale)
     if not res['OK']:
       errStr = 'ReplicationScheduler._execute: Failed to get observed throughput from TransferDB: %s.' % res['Message']
       self.log.error(errStr)
@@ -63,9 +63,9 @@ class ReplicationScheduler(Agent):
       infoStr = 'ReplicationScheduler._execute: No active channels found for replication.'
       self.log.info(infoStr)
       return S_OK()
-    observedThroughput = res['Value']
+    bandwidths = res['Value']
 
-    self.strategyHandler = StrategyHandler(observedThroughput,channelQueues,channelSites,self.section)
+    self.strategyHandler = StrategyHandler(bandwidths,channels,self.section)
 
     ######################################################################################
     #
@@ -203,14 +203,21 @@ class ReplicationScheduler(Agent):
         #
 
         for channelID,dict in tree.items():
+          sourceSE = dict['SourceSE']
+          destSE = dict['DestSE']
           ancestor = dict['Ancestor']
-          status = 'Waiting'
           if ancestor:
-            status = '%s%s' % (status,ancestor)
-          sourceSite = dict['SourceSite']
-          destSite = dict['DestSite']
-          sourceSURL = lfnReps[sourceSE]
-          res = self.obtainTargetSURL(destSite,lfn)
+            status = 'Waiting%s' % (ancestor)
+            res = self.obtainSESURL(sourceSE,lfn)
+            if not res['OK']:
+              errStr = res['Message']
+              gLogger.error(errStr)
+              return S_ERROR(errStr)    
+            sourceSURL = res['Value']        
+          else:
+            status = 'Waiting'
+            sourceSURL = lfnReps[sourceSE]
+          res = self.obtainSESURL(destSE,lfn)
           if not res['OK']:
             errStr = res['Message']
             gLogger.error(errStr)
@@ -227,10 +234,11 @@ class ReplicationScheduler(Agent):
             errStr = "ReplicationScheduler._execute: Failed to add File %s to Channel %s." % (fileID,channelID)
             gLogger.error(errStr)
             return S_ERROR(errStr)
+        res = self.TransferDB.addReplicationTree(fileID,tree)
     return res
 
 
-  def obtainTargetSURL(self,targetSE,lfn):
+  def obtainSESURL(self,targetSE,lfn):
     """ Creates the targetSURL for the storage and LFN supplied
     """
     res = self.factory.getStorages(targetSE)
@@ -256,18 +264,18 @@ class ReplicationScheduler(Agent):
 
 class StrategyHandler:
 
-  def __init__(self,bandwidths,queues,channelsites,configSection):
+  def __init__(self,bandwidths,channels,configSection):
     """ Standard constructor
     """
+    self.sigma = gConfig.getValue(configSection+'/HopSigma',1)
     self.schedulingType = gConfig.getValue(configSection+'/SchedulingType','File')
-    self.activeStrategies = gConfig.getValue(configSection+'/ActiveStrategies',['Simple'])
+    self.activeStrategies = gConfig.getValue(configSection+'/ActiveStrategies',['DynamicThroughput'])
     self.numberOfStrategies = len(self.activeStrategies)
     self.chosenStrategy = 0
 
     self.acceptableFailureRate = gConfig.getValue(configSection+'/AcceptableFailureRate',75)
     self.bandwidths = bandwidths
-    self.queues = queues
-    self.channelSites = channelsites
+    self.channels = channels
 
   def determineReplicationTree(self,sourceSE,targetSEs,replicas,size,strategy=None):
     """
@@ -283,8 +291,8 @@ class StrategyHandler:
 
     # Now update the queues to reflect the chosen strategies
     for channelID,ancestor in tree.items():
-      self.queues[channelID]['Files'] += 1
-      self.queues[channelID]['Size'] += size
+      self.channels[channelID]['Files'] += 1
+      self.channels[channelID]['Size'] += size
     return S_OK(tree)
 
   def __incrementChosenStrategy(self):
@@ -306,12 +314,13 @@ class StrategyHandler:
     """
     tree = {}
     for targetSE in targetSEs:
-      for channelID,dict in self.channelSites.items():
-        if dict['SourceSite'] == sourceSE and dict['DestinationSite'] == targetSE:
+      for channelID,dict in self.channels.items():
+        if re.search(dict['Source'],sourceSE) and re.search(dict['Destination'],targetSE):
           tree[channelID] = {}
           tree[channelID]['Ancestor'] = False
-          tree[channelID]['SourceSite'] = sourceSE
-          tree[channelID]['DestSite'] = targetSE
+          tree[channelID]['SourceSE'] = sourceSE
+          tree[channelID]['DestSE'] = targetSE
+          tree[channelID]['Strategy'] = 'Simple'
     return tree
 
   def __dynamicThroughput(self,sourceSE,targetSEs):
@@ -325,39 +334,47 @@ class StrategyHandler:
     channelIDs = {}
     channelsTimeToStart = {}
     for channelID,value in self.bandwidths.items():
-      channelThroughput = value['Throughput']
-      channelFileput = value['Fileput']
-      channelFileSuccess = value['SuccessfulFiles']
-      channelFileFailed = value['FailedFiles']
-      attempted = channelFileSuccess+channelFileFailed
-      if attempted != 0:
-        successRate = 100.0*(channelFileSuccess/float(attempted))
+      channelDict = self.channels[channelID]
+      channelFiles = channelDict['Files']
+      channelSize = channelDict['Size']
+      status = channelDict['Status']
+      channelName = channelDict['ChannelName']
+      channelIDs[channelName] = channelID
+
+      if status == 'Disabled':
+        throughputTimeToStart = 1e10 # Make the channel extremely unattractive but still available
+        fileTimeToStart = 1e10 #Make the channel extremely unattractive but still available
+      else: 
+        channelThroughput = value['Throughput']
+        channelFileput = value['Fileput']
+        channelFileSuccess = value['SuccessfulFiles']
+        channelFileFailed = value['FailedFiles']
+        attempted = channelFileSuccess+channelFileFailed
+        if attempted != 0:
+          successRate = 100.0*(channelFileSuccess/float(attempted))
+        else:
+          successRate = 100.0
+        if successRate < self.acceptableFailureRate:
+          throughputTimeToStart = 1e10 # Make the channel extremely unattractive but still available
+          fileTimeToStart = 1e10 # Make the channel extremely unattractive but still available
+        else:
+          if channelFiles > 0:
+            fileTimeToStart = channelFiles/channelFileput
+          else:
+            fileTimeToStart = 0.0
+          if channelSize > 0:
+            throughputTimeToStart = channelSize/channelThroughput
+          else:
+            throughputTimeToStart = 0.0
+
+      if self.schedulingType == 'File':
+        channelsTimeToStart[channelID] = fileTimeToStart
+      elif self.schedulingType == 'Throughput':
+        channelsTimeToStart[channelID] = throughputTimeToStart
       else:
-        successRate = 100.0
-      if successRate < self.acceptableFailureRate:
-        channelFiles = self.queues[channelID]['Files']
-        channelSize = self.queues[channelID]['Size']
-        if channelFile > 0:
-          fileTimeToStart = channelFiles/channelFileput
-        else:
-          fileTimeToStart = 0.0
-        if channelSize > 0:
-          throughputTimeToStart = channelSize/channelThroughput
-        else:
-          throughputTimeToStart = 0.0
-        channelDict = self.channelSites[channelID]
-        sourceSE = channelDict['SourceSite']
-        targetSE = channelDict['DestinationSite']
-        channelName = '%s%s' % (sourceSE,targetSE)
-        channelIDs[channelID] = channelName
-        if self.schedulingType == 'File':
-          channelsTimeToStart[channelID] = fileTimeToStart
-        elif self.schedulingType == 'Throughput':
-          channelsTimeToStart[channelID] = throughputTimeToStart
-        else:
-          errStr = 'StrategyHandler.__dynamicThroughput: CS SchedulingType entry must be either File or Throughput'
-          gLogger.error(errStr)
-          return S_ERROR(errStr)
+        errStr = 'StrategyHandler.__dynamicThroughput: CS SchedulingType entry must be either File or Throughput'
+        gLogger.error(errStr)
+        return S_ERROR(errStr)
 
     ############################################################################
     #
@@ -367,38 +384,44 @@ class StrategyHandler:
     timeToSite = {}                # Maintains time to site including previous hops
     siteAncestor = {}              # Maintains the ancestor channel for a site
     tree = {}                      # Maintains replication tree
-    sourceSites = [sourceSE]
-    destSites = targetSEs
+    sourceSEs = [sourceSE]
+    destSEs = targetSEs
 
-    while len(destSites) > 0:
+    while len(destSEs) > 0:
       minTotalTimeToStart = float("inf")
-      for destSite in destSites:
-        for sourceSite in sourceSites:
-          channelName = '%s%s' % (sourceSite,destSite)
-          channelID = channelIDs[channelName]
-          channelTimeToStart = channelsTimeToStart[channelID]
-          if timeToSite.has_key(sourceSite):
-            totalTimeToStart = timeToSite[sourceSite]+channelTimeToStart+self.sigma
+      for destSE in destSEs:
+        destSite = destSE.split('-')[0].split('_')[0] 
+        for sourceSE in sourceSEs:
+          sourceSite = sourceSE.split('-')[0].split('_')[0]
+          channelName = '%s-%s' % (sourceSite,destSite)
+          if channelIDs.has_key(channelName):
+            channelID = channelIDs[channelName]
+            channelTimeToStart = channelsTimeToStart[channelID]
+            if timeToSite.has_key(sourceSE):
+              totalTimeToStart = timeToSite[sourceSE]+channelTimeToStart+self.sigma
+            else:
+              totalTimeToStart = channelTimeToStart
+            if totalTimeToStart <= minTotalTimeToStart:
+              minTotalTimeToStart = totalTimeToStart
+              selectedPathTimeToStart = totalTimeToStart
+              selectedSourceSE = sourceSE
+              selectedDestSE = destSE
+              selectedChannelID = channelID
           else:
-            totalTimeToStart = channelTimeToStart
-          if totalTimeToStart < minTotalTimeToStart:
-            minTotalTimeToStart = totalTimeToStart
-            selectedPathTimeToStart = totalTimeToStart
-            selectedSourceSite = sourceSite
-            selectedDestSite = destSite
-            selectedChannelID = channelID
+            errStr = 'StrategyHandler.__dynamicThroughput: Channel not defined'
+            gLogger.error(errStr,channelName)        
+      timeToSite[selectedDestSE] = selectedPathTimeToStart
+      siteAncestor[selectedDestSE] = selectedChannelID
 
-      timeToSite[selectedDestSite] = selectedPathTimeToStart
-      siteAncestor[selectedDestSite] = selectedChannelID
-
-      if siteAncestor.has_key(selectedSourceSite):
-        waitingChannel = siteAncestor[selectedSourceSite]
+      if siteAncestor.has_key(selectedSourceSE):
+        waitingChannel = siteAncestor[selectedSourceSE]
       else:
         waitingChannel = False
       tree[selectedChannelID] = {}
       tree[selectedChannelID]['Ancestor'] = waitingChannel
-      tree[selectedChannelID]['SourceSite'] = selectedSourceSite
-      tree[selectedChannelID]['DestSite'] = selectedDestSite
-      sourceSites.append(selectedDestSite)
-      destSites.remove(selectedDestSite)
+      tree[selectedChannelID]['SourceSE'] = selectedSourceSE
+      tree[selectedChannelID]['DestSE'] = selectedDestSE
+      tree[selectedChannelID]['Strategy'] = 'DynamicThroughput'
+      sourceSEs.append(selectedDestSE)
+      destSEs.remove(selectedDestSE)
     return tree
