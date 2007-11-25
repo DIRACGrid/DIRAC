@@ -62,8 +62,8 @@ class FTSAgent(Agent):
       return S_OK()
     channelDict = res['Value']
     channelID = channelDict['ChannelID']
-    sourceSE = channelDict['SourceSE']
-    targetSE = channelDict['TargetSE']
+    sourceSE = channelDict['Source']
+    targetSE = channelDict['Destination']
     ftsRequest.setSourceSE(sourceSE)
     ftsRequest.setTargetSE(targetSE)
 
@@ -154,7 +154,7 @@ class FTSAgent(Agent):
       if not res['OK']:
         errStr = "FTSAgent.%s" % res['Message']
         gLogger.error(errStr)
-    res = self.TransferDB.removeFilesFromChannel(channelID,fileIDs)
+    res = self.TransferDB.setChannelFilesExecuting(channelID,fileIDs)
     if not res['OK']:
       errStr = "FTSAgent.%s" % res['Message']
       gLogger.error(errStr)
@@ -181,6 +181,7 @@ class FTSAgent(Agent):
     ftsReqID = ftsReqDict['FTSReqID']
     ftsGUID = ftsReqDict['FTSGuid']
     ftsServer = ftsReqDict['FTSServer']
+    channelID = ftsReqDict['ChannelID']
     ftsReq.setFTSGUID(ftsGUID)
     ftsReq.setFTSServer(ftsServer)
 
@@ -252,7 +253,9 @@ class FTSAgent(Agent):
           gLogger.error(errStr)
           failed = True
       # Update the successful files status and transfer time
+      completedFileIDs = []
       for lfn in ftsReq.getCompleted():
+        completedFileIDs.append(files[lfn])
         res = self.TransferDB.setFileToFTSFileAttribute(ftsReqID,files[lfn],'Status','Completed')
         if not res['OK']:
           errStr = "FTSAgent.%s" % res['Message']
@@ -280,6 +283,13 @@ class FTSAgent(Agent):
             errStr = "FTSAgent.%s" % res['Message']
             gLogger.error(errStr)
             failed = True
+
+      # Update the status of the files waiting for the completion of this transfer
+      res = self.TransferDB.updateAncestorChannelStatus(channelID,completedFileIDs)
+      if not res['OK']:
+        errStr = "FTSAgent.%s" % res['Message']
+        gLogger.error(errStr)
+        failed = True
 
       # Now set the FTSReq status to terminal so that it is not monitored again
       if not failed:
