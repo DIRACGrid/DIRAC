@@ -135,7 +135,7 @@ class FTSRequest:
     if re.search('CERN',self.sourceSE) or re.search('CERN',self.targetSE):
       ep = 'CERN'
     else:
-      ep = targetSE.split('-')[0]
+      ep = self.targetSE.split('-')[0]
 
     try:
       configPath = 'Systems/DataManagement/Development/URLs/FTSEndpoints/%s' % ep
