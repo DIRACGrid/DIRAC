@@ -121,6 +121,7 @@ CREATE TABLE Channel (
   TargetSURL varchar(256) NOT NULL,
   SpaceToken varchar(32) NOT NULL,
   SubmitTime DATETIME NOT NULL,
+  ExecutionTime DATETIME NOT NULL,
   FileSize INTEGER NOT NULL,
   Status varchar(32) NOT NULL,
   PRIMARY KEY(ChannelID,FileID)
@@ -133,3 +134,11 @@ CREATE TABLE FTSReqLogging (
   EventDateTime DATETIME
 );
   Ê
+DROP TABLE IF EXISTS ReplicationTree;
+CREATE TABLE ReplicationTree (
+  FileID INTEGER NOT NULL,
+  ChannelID INTEGER NOT NULL,
+  AncestorChannel INTEGER NOT NULL,
+  Strategy varchar(32),
+  CreationTime DATETIME NOT NULL
+);
