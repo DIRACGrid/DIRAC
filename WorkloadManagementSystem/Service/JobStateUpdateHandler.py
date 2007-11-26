@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobStateUpdateHandler.py,v 1.2 2007/11/09 08:13:50 atsareg Exp $
+# $Id: JobStateUpdateHandler.py,v 1.3 2007/11/26 13:22:52 atsareg Exp $
 ########################################################################
 
 """ JobStateUpdateHandler is the implementation of the Job State updating
@@ -16,10 +16,12 @@ __RCSID__ = "$Release:  $"
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gLogger, S_OK, S_ERROR
-from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB,JobLoggingDB
+from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
+from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 
 # This is a global instance of the JobDB class
 jobDB = False
+logDB = False
 
 def initializeJobStateUpdateHandler( serviceInfo ):
 
@@ -31,7 +33,7 @@ def initializeJobStateUpdateHandler( serviceInfo ):
 
 class JobStateUpdateHandler( RequestHandler ):
 
-    ###########################################################################
+  ###########################################################################
   types_setJobStatus = [IntType,StringType,StringType,StringType,StringType]
   def export_setJobStatus(self,jobId,status,minorStatus,source='Unknown',datetime=None):
     """ Set the major and minor status for job specified by its JobId.
