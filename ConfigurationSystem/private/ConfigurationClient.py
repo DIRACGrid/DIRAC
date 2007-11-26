@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationClient.py,v 1.9 2007/10/04 12:54:25 acasajus Exp $
-__RCSID__ = "$Id: ConfigurationClient.py,v 1.9 2007/10/04 12:54:25 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationClient.py,v 1.10 2007/11/26 13:40:42 acasajus Exp $
+__RCSID__ = "$Id: ConfigurationClient.py,v 1.10 2007/11/26 13:40:42 acasajus Exp $"
 
 import types
 from DIRAC.Core.Utilities import List
@@ -81,5 +81,17 @@ class ConfigurationClient:
     optionList = gConfigurationData.getOptionsFromCFG( sectionPath, ordered = listOrdered )
     if optionList:
       return S_OK( optionList )
+    else:
+      return S_ERROR( "Path %s does not exist or it's not a section" % sectionPath )
+
+  def getOptionsDict( self, sectionPath ):
+    gRefresher.refreshConfigurationIfNeeded()
+    optionsDict ={}
+    optionList = gConfigurationData.getOptionsFromCFG( sectionPath )
+    if optionList:
+      for option in optionList:
+        optionsDict[ option ] = gConfigurationData.extractOptionFromCFG( "%s/%s" %
+                                                              ( sectionPath, option ) )
+      return S_OK( optionsDict )
     else:
       return S_ERROR( "Path %s does not exist or it's not a section" % sectionPath )
