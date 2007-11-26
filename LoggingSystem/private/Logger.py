@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.18 2007/11/16 16:15:01 acasajus Exp $
-__RCSID__ = "$Id: Logger.py,v 1.18 2007/11/16 16:15:01 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.19 2007/11/26 11:47:03 paterson Exp $
+__RCSID__ = "$Id: Logger.py,v 1.19 2007/11/26 11:47:03 paterson Exp $"
 """
    DIRAC Logger client
 """
@@ -76,7 +76,7 @@ class Logger:
   def setLevel( self, levelName ):
     levelName = levelName.upper()
     if levelName.upper() in self._logLevels.getLevels():
-        self._nimLevel = abs( self._logLevels.getLevelValue( levelName ) )
+        self._minLevel = abs( self._logLevels.getLevelValue( levelName ) )
         return True
     return False
 
