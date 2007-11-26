@@ -1,10 +1,4 @@
 """ This is the SRM2 StorageClass
-
-    Implemented:
-                getParameters()
-                getUrl()
-    Not implemented:
-
 """
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
@@ -13,9 +7,6 @@ from DIRAC.Core.Utilities.Subprocess import pythonCall
 from stat import *
 import types, re,os
 
-loadPath = os.environ['LD_LIBRARY_PATH']
-newLoadPath = '%s:%s' % ('/afs/cern.ch/project/gd/egee/glite/ui_PPS_glite3.1_UPDATE06/globus/lib',loadPath)
-os.environ['LD_LIBRARY_PATH'] = newLoadPath
 try:
   import lcg_util
   infoStr = 'Using lcg_util from: %s' % lcg_util.__file__
@@ -37,8 +28,8 @@ DEBUG = 0
 class SRM2Storage(StorageBase):
 
   def __init__(self,storageName,protocol,path,host,port,spaceToken):
-    self.name = storageName
     self.protocolName = 'SRM2'
+    self.name = storageName
     self.protocol = protocol
     self.path = path
     self.host = host
@@ -59,23 +50,661 @@ class SRM2Storage(StorageBase):
     self.conf_file = 'ignored'
     self.insecure = 0
 
-  def getProtocol(self):
-    return self.protocolName
+  def exists(self,path):
+    """ Check if the given path exists. The 'path' variable can be a string or a list of strings.
+    """
+    if type(path) == types.StringType:
+      urls = [path]
+    elif type(path) == types.ListType:
+      urls = path
+    else:
+      return S_ERROR("SRM2Storage.exists: Supplied path must be string or list of strings")
 
-  def getName(self):
-    return self.name
+    # Create the dictionary used by gfal
+    gfalDict = {}
+    gfalDict['surls'] = urls
+    gfalDict['nbfiles'] =  len(urls)
+    gfalDict['defaultsetype'] = 'srmv2'
+    gfalDict['no_bdii_check'] = 1
+    gfalDict['srmv2_lslevels'] = 0
+    gfalDict['timeout'] = self.long_timeout
 
-  def getPath(self):
-    return self.path
+    errCode,gfalObject,errMessage = gfal.gfal_init(gfalDict)
+    if not errCode == 0:
+      errStr = "SRM2Storage:exists: Failed to initialise gfal_init:"
+      gLogger.error(errStr,errMessage)
+      return S_ERROR('%s%s' % (errStr,errMessage))
+    gLogger.debug("SRM2Storage:exists: Initialised gfal_init.")
 
-  def getHost(self):
-    return self.host
+    errCode,gfalObject,errMessage = gfal.gfal_ls(gfalObject)
+    if not errCode == 0:
+      errStr = "SRM2Storage.exists: Failed to perform gfal_ls:"
+      gLogger.error(errStr,errMessage)
+      return S_ERROR("%s%s" % (errStr,errMessage))
+    gLogger.debug("SRM2Storage.exists: Performed gfal_ls.")
 
-  def getPort(self):
-    return self.port
+    numberOfResults,gfalObject,listOfResults = gfal.gfal_get_results(gfalObject)
+    if numberOfResults <= 0:
+      errStr = "SRM2Storage.exists: Did not obtain gfal_get_results."
+      gLogger.error(errStr)
+      return S_ERROR(errStr)
+    gLogger.debug("SRM2Storage.exists: Retrieved %s results from gfal_get_results." % numberOfResults)
 
-  def getSpaceToken(self):
-    return self.spaceToken
+    failed = {}
+    successful = {}
+    for urlDict in listOfResults:
+      pathSURL = self.getUrl(urlDict['surl'])['Value']
+      if urlDict['status'] == 0:
+        successful[pathSURL] = True
+      elif urlDict['status'] == 2:
+        successful[pathSURL] = False
+      else:
+        failed[pathSURL] = os.strerror(urlDict['status'])
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+  #############################################################
+  #
+  # These are the methods for file manipulation
+  #
+
+  def isFile(self,fname):
+    """Check if the given path exists and it is a file
+    """
+    if type(path) == types.StringType:
+      urls = [path]
+    elif type(path) == types.ListType:
+      urls = path
+    else:
+      return S_ERROR("SRM2Storage.isFile: Supplied path must be string or list of strings")
+
+    # Create the dictionary used by gfal
+    gfalDict = {}
+    gfalDict['surls'] = urls
+    gfalDict['nbfiles'] =  len(urls)
+    gfalDict['defaultsetype'] = 'srmv2'
+    gfalDict['no_bdii_check'] = 1
+    gfalDict['srmv2_lslevels'] = 0
+    gfalDict['timeout'] = self.long_timeout
+
+    errCode,gfalObject,errMessage = gfal.gfal_init(gfalDict)
+    if not errCode == 0:
+      errStr = "SRM2Storage:isFile: Failed to initialise gfal_init:"
+      gLogger.error(errStr,errMessage)
+      return S_ERROR('%s%s' % (errStr,errMessage))
+    gLogger.debug("SRM2Storage:isFile: Initialised gfal_init.")
+
+    errCode,gfalObject,errMessage = gfal.gfal_ls(gfalObject)
+    if not errCode == 0:
+      errStr = "SRM2Storage.isFile: Failed to perform gfal_ls:"
+      gLogger.error(errStr,errMessage)
+      return S_ERROR("%s%s" % (errStr,errMessage))
+    gLogger.debug("SRM2Storage.isFile: Performed gfal_ls.")
+
+    numberOfResults,gfalObject,listOfResults = gfal.gfal_get_results(gfalObject)
+    if numberOfResults <= 0:
+      errStr = "SRM2Storage.isFile: Did not obtain gfal_get_results."
+      gLogger.error(errStr)
+      return S_ERROR(errStr)
+    gLogger.debug("SRM2Storage.isFile: Retrieved %s results from gfal_get_results." % numberOfResults)
+
+    failed = {}
+    successful = {}
+    for urlDict in listOfResults:
+      pathSURL = self.getUrl(urlDict['surl'])['Value']
+      if urlDict['status'] == 0:
+        subPathStat = urlDict['stat']
+        if S_ISREG(subPathStat[ST_MODE]):
+          successful[pathSURL] = True
+        else:
+          successful[pathSURL] = False
+      else:
+        failed[pathSURL] = os.strerror(urlDict['status'])
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+  def getFile(self,path):
+    """Get a local copy in the current directory of a physical file specified by its path
+    """
+    if type(path) == types.StringType:
+      urls = [path]
+    elif type(path) == types.ListType:
+      urls = path
+    else:
+      return S_ERROR("SRM2Storage.getFile: Supplied path must be string or list of strings")
+
+    srctype = self.defaulttype
+    dsttype = 0
+    src_spacetokendesc = self.spaceToken
+    dest_spacetokendesc = ''
+    failed = {}
+    successful = {}
+    for url in urls:
+      dest_file = 'file://%s/%s' % (os.curdir(),os.path.basename(url))
+      src_file = url
+      errCode,errStr = lcg_util.lcg_cp3(src_file, dest_file, self.defaulttype, srctype, dsttype, self.nobdii, self.vo, self.nbstreams, self.conf_file, self.insecure, self.verbose, self.timeout,src_spacetokendesc,dest_spacetokendesc)
+      if errCode == 0:
+        successful[url] = True
+      else:
+        failed[url] = errStr
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+  def putFile(self,path):
+    """Put a copy of the local file in the current directory to the physical storage
+    """
+    if type(path) == types.StringType:
+      urls = [path]
+    elif type(path) == types.ListType:
+      urls = path
+    else:
+      return S_ERROR("SRM2Storage.putFile: Supplied path must be string or list of strings")
+    srctype = 0
+    dsttype = self.defaulttype
+    src_spacetokendesc = ''
+    dest_spacetokendesc = self.spaceToken
+    failed = {}
+    successful = {}
+    for url in urls:
+      dest_file = url
+      src_file = os.path.basename(url)
+      errCode,errStr = lcg_util.lcg_cp3(src_file, dest_file, self.defaulttype, srctype, dsttype, self.nobdii, self.vo, self.nbstreams, self.conf_file, self.insecure, self.verbose, self.timeout,src_spacetokendesc,dest_spacetokendesc)
+      if errCode == 0:
+        successful[url] = True
+      else:
+        failed[url] = errStr
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+  def removeFile(self,path):
+    """Remove physically the file specified by its path
+    """
+    if type(path) == types.StringType:
+      urls = [path]
+    elif type(path) == types.ListType:
+      urls = path
+    else:
+      return S_ERROR("SRM2Storage.removeFile: Supplied path must be string or list of strings")
+
+    gfalDict = {}
+    gfalDict['surls'] = urls
+    gfalDict['nbfiles'] =  len(urls)
+    gfalDict['defaultsetype'] = 'srmv2'
+    gfalDict['no_bdii_check'] = 1
+    gfalDict['timeout'] = self.long_timeout
+
+    errCode,gfalObject,errMessage = gfal.gfal_init(gfalDict)
+    if not errCode == 0:
+      errStr = "SRM2Storage.removeFile: Failed to initialise gfal_init:"
+      gLogger.error(errStr,errMessage)
+      return S_ERROR('%s%s' % (errStr,errMessage))
+    gLogger.debug("SRM2Storage.removeFile: Initialised gfal_init.")
+
+    errCode,gfalObject,errMessage = gfal.gfal_deletesurls(gfalObject)
+    if not errCode == 0:
+      errStr = "SRM2Storage.removeFile: Failed to perform gfal_deletesurls:"
+      gLogger.error(errStr,errMessage)
+      return S_ERROR('%s%s' % (errStr,errMessage))
+    gLogger.debug("SRM2Storage.removeFile: Performed gfal_deletesurls.")
+
+    numberOfResults,gfalObject,listOfResults = gfal.gfal_get_results(gfalObject)
+    if numberOfResults <= 0:
+      errStr = "SRM2Storage.removeFile: Did not obtain results with gfal_get_results."
+      gLogger.error(errStr)
+      return S_ERROR(errStr)
+    gLogger.debug("SRM2Storage.removeFile: Retrieved %s results from gfal_get_results." % numberOfResults)
+
+    successful = {}
+    failed = {}
+    for urlDict in listOfResults:
+      pathSURL = self.getUrl(urlDict['surl'])['Value']
+      if urlDict['status'] == 0:
+        successful[pathSURL] = True
+      elif dict['status'] == 2:
+        # This is the case where the file doesn't exist.
+        successful[pathSURL] = True
+      else:
+        failed[pathSURL] = os.strerror(urlDict['status'])
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+  def getFileMetadata(self,path):
+    """  Get metadata associated to the file
+    """
+    if type(path) == types.StringType:
+      urls = [path]
+    elif type(path) == types.ListType:
+      urls = path
+    else:
+      return S_ERROR("SRM2Storage.getFileMetadata: Supplied path must be string or list of strings")
+
+    # Create the dictionary used by gfal
+    gfalDict = {}
+    gfalDict['surls'] = urls
+    gfalDict['nbfiles'] =  len(urls)
+    gfalDict['defaultsetype'] = 'srmv2'
+    gfalDict['no_bdii_check'] = 1
+    gfalDict['srmv2_lslevels'] = 0
+    gfalDict['timeout'] = self.long_timeout
+
+    errCode,gfalObject,errMessage = gfal.gfal_init(gfalDict)
+    if not errCode == 0:
+      errStr = "SRM2Storage.getFileMetadata: Failed to initialise gfal_init:"
+      gLogger.error(errStr,errMessage)
+      return S_ERROR('%s%s' % (errStr,errMessage))
+    gLogger.debug("SRM2Storage.getFileMetadata: Initialised gfal_init.")
+
+    errCode,gfalObject,errMessage = gfal.gfal_ls(gfalObject)
+    if not errCode == 0:
+      errStr = "SRM2Storage.getFileMetadata: Failed to perform gfal_ls:"
+      gLogger.error(errStr,errMessage)
+      return S_ERROR("%s%s" % (errStr,errMessage))
+    gLogger.debug("SRM2Storage.getFileMetadata: Performed gfal_ls.")
+
+    numberOfResults,gfalObject,listOfResults = gfal.gfal_get_results(gfalObject)
+    if numberOfResults <= 0:
+      errStr = "SRM2Storage.getFileMetadata: Did not obtain gfal_get_results."
+      gLogger.error(errStr)
+      return S_ERROR(errStr)
+    gLogger.debug("SRM2Storage.getFileMetadata: Retrieved %s results from gfal_get_results." % numberOfResults)
+
+    failed = {}
+    successful = {}
+    for urlDict in listOfResults:
+      pathSURL = self.getUrl(urlDict['surl'])['Value']
+      if urlDict['status'] == 0:
+        urlStat = urlDict['stat']
+        if S_ISREG(urlStat[ST_MODE]):
+          urlSize = urlStat[ST_SIZE]
+          urlLocality = urlDict['locality']
+          if re.search('ONLINE',urlLocality):
+            urlCached = 1
+          else:
+            urlCached = 0
+          if re.search('NEARLINE',urlLocality):
+            urlMigrated = 1
+          else:
+            urlMigrated = 0
+          successful[pathSURL] = {'Size':urlSize,'Cached':urlCached,'Migrated':urlMigrated}
+        else:
+          failed[pathSURL] = 'Supplied path is not a file'
+      else:
+        failed[pathSURL] = os.strerror(urlDict['status'])
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+  def getFileSize(self,path):
+    """Get the physical size of the given file
+    """
+    if type(path) == types.StringType:
+      urls = [path]
+    elif type(path) == types.ListType:
+      urls = path
+    else:
+      return S_ERROR("SRM2Storage.getFileSize: Supplied path must be string or list of strings")
+
+    # Create the dictionary used by gfal
+    gfalDict = {}
+    gfalDict['surls'] = urls
+    gfalDict['nbfiles'] =  len(urls)
+    gfalDict['defaultsetype'] = 'srmv2'
+    gfalDict['no_bdii_check'] = 1
+    gfalDict['srmv2_lslevels'] = 0
+    gfalDict['timeout'] = self.long_timeout
+
+    errCode,gfalObject,errMessage = gfal.gfal_init(gfalDict)
+    if not errCode == 0:
+      errStr = "SRM2Storage.getFileSize: Failed to initialise gfal_init:"
+      gLogger.error(errStr,errMessage)
+      return S_ERROR('%s%s' % (errStr,errMessage))
+    gLogger.debug("SRM2Storage.getFileSize: Initialised gfal_init.")
+
+    errCode,gfalObject,errMessage = gfal.gfal_ls(gfalObject)
+    if not errCode == 0:
+      errStr = "SRM2Storage.getFileSize: Failed to perform gfal_ls:"
+      gLogger.error(errStr,errMessage)
+      return S_ERROR("%s%s" % (errStr,errMessage))
+    gLogger.debug("SRM2Storage.getFileSize: Performed gfal_ls.")
+
+    numberOfResults,gfalObject,listOfResults = gfal.gfal_get_results(gfalObject)
+    if numberOfResults <= 0:
+      errStr = "SRM2Storage.getFileSize: Did not obtain gfal_get_results."
+      gLogger.error(errStr)
+      return S_ERROR(errStr)
+    gLogger.debug("SRM2Storage.getFileSize: Retrieved %s results from gfal_get_results." % numberOfResults)
+
+    failed = {}
+    successful = {}
+    for urlDict in listOfResults:
+      pathSURL = self.getUrl(urlDict['surl'])['Value']
+      if urlDict['status'] == 0:
+        subPathStat = urlDict['stat']
+        if S_ISREG(subPathStat[ST_MODE]):
+          successful[pathSURL] = pathStat[ST_SIZE]
+        else:
+          failed[pathSURL] = 'Supplied path is not a file'
+      else:
+        failed[pathSURL] = os.strerror(urlDict['status'])
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+  def prestageFile(self,path):
+    """ Issue prestage request for file
+    """
+    return S_ERROR("Storage.prestageFile: implement me!")
+
+  def getTransportURL(self,path,protocols):
+    """ Obtain the TURLs for the supplied path and protocols
+    """
+    if type(path) == types.StringType:
+      urls = [path]
+    elif type(path) == types.ListType:
+      urls = path
+    else:
+      return S_ERROR("SRM2Storage.getTransportURL: Supplied path must be string or list of strings")
+
+    # Create the dictionary used by gfal
+    gfalDict = {}
+    gfalDict['surls'] = urls
+    gfalDict['nbfiles'] = len(dict['surls'])
+    gfalDict['defaultsetype'] = 'srmv2'
+    gfalDict['no_bdii_check'] = 1
+    gfalDict['protocols'] = ['gsidcap','dcap','root','rfio']
+
+    errCode,gfalObject,errMessage = gfal.gfal_init(gfalDict)
+    if not errCode == 0:
+      errStr = "SRM2Storage.getTransportURL: Failed to initialise gfal_init: %s" % errMessage
+      gLogger.error(errStr)
+      return S_ERROR(errStr)
+    gLogger.debug("SRM2Storage.getTransportURL: Initialised gfal_init.")
+
+    errCode,gfalObject,errMessage = gfal.gfal_turlsfromsurls(gfalObject)
+    if not errCode == 0:
+      errStr = "SRM2Storage.getTransportURL: Failed to perform gfal_turlsfromsurls: %s" % errMessage
+      gLogger.error(errStr)
+      return S_ERROR(errStr)
+    gLogger.debug("SRM2Storage.getTransportURL: Performed gfal_turlsfromsurls.")
+
+    numberOfResults,gfalObject,listOfResults = gfal.gfal_get_results(gfalObject)
+    if numberOfResults <= 0:
+      errStr = "SRM2Storage.getTransportURL: Did not obtain results with gfal_get_results."
+      gLogger.error(errStr)
+      return S_ERROR(errStr)
+    gLogger.debug("SRM2Storage.getTransportURL: Retrieved %s results from gfal_get_results." % numberOfResults)
+
+    failed = {}
+    successful = {}
+    for urlDict in listOfResults:
+      pathSURL = self.getUrl(urlDict['surl'])['Value']
+      if urlDict['status'] == 0:
+        successful[pathSURL] = dict['turl']
+      else:
+        failed[pathSURL] = os.strerror(urlDict['status'])
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+  #############################################################
+  #
+  # These are the methods for directory manipulation
+  #
+
+  def isDirectory(self,path):
+    """Check if the given path exists and it is a directory
+    """
+    if type(path) == types.StringType:
+      urls = [path]
+    elif type(path) == types.ListType:
+      urls = path
+    else:
+      return S_ERROR("SRM2Storage.isDirectory: Supplied path must be string or list of strings")
+
+    # Create the dictionary used by gfal
+    gfalDict = {}
+    gfalDict['surls'] = urls
+    gfalDict['nbfiles'] =  len(urls)
+    gfalDict['defaultsetype'] = 'srmv2'
+    gfalDict['no_bdii_check'] = 1
+    gfalDict['srmv2_lslevels'] = 0
+    gfalDict['timeout'] = self.long_timeout
+
+    errCode,gfalObject,errMessage = gfal.gfal_init(gfalDict)
+    if not errCode == 0:
+      errStr = "SRM2Storage:isDirectory: Failed to initialise gfal_init:"
+      gLogger.error(errStr,errMessage)
+      return S_ERROR('%s%s' % (errStr,errMessage))
+    gLogger.debug("SRM2Storage:isDirectory: Initialised gfal_init.")
+
+    errCode,gfalObject,errMessage = gfal.gfal_ls(gfalObject)
+    if not errCode == 0:
+      errStr = "SRM2Storage.isDirectory: Failed to perform gfal_ls:"
+      gLogger.error(errStr,errMessage)
+      return S_ERROR("%s%s" % (errStr,errMessage))
+    gLogger.debug("SRM2Storage.isDirectory: Performed gfal_ls.")
+
+    numberOfResults,gfalObject,listOfResults = gfal.gfal_get_results(gfalObject)
+    if numberOfResults <= 0:
+      errStr = "SRM2Storage.isDirectory: Did not obtain gfal_get_results."
+      gLogger.error(errStr)
+      return S_ERROR(errStr)
+    gLogger.debug("SRM2Storage.isDirectory: Retrieved %s results from gfal_get_results." % numberOfResults)
+
+    failed = {}
+    successful = {}
+    for urlDict in listOfResults:
+      pathSURL = self.getUrl(urlDict['surl'])['Value']
+      if urlDict['status'] == 0:
+        subPathStat = urlDict['stat']
+        if S_ISDIR(subPathStat[ST_MODE]):
+          successful[pathSURL] = True
+        else:
+          successful[pathSURL] = False
+      else:
+        failed[pathSURL] = os.strerror(urlDict['status'])
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+  def getDirectory(self,path):
+    """Get locally a directory from the physical storage together with all its
+       files and subdirectories.
+    """
+    return S_ERROR("Storage.getDirectory: implement me!")
+
+  def putDirectory(self,path):
+    """Put a local directory to the physical storage together with all its
+       files and subdirectories.
+    """
+    return S_ERROR("Storage.putDirectory: implement me!")
+
+  def createDirectory(self,newdir):
+    """ Make a new directory on the physical storage
+    """
+    dfile = open("dirac_directory",'w')
+    dfile.write("This is a DIRAC system directory")
+    dfile.close()
+    return S_ERROR("Storage.createDirectory: implement me!")
+
+  def removeDirectory(self,path):
+    """Remove a directory on the physical storage together with all its files and
+       subdirectories.
+    """
+    if type(path) == types.StringType:
+      urls = [path]
+    elif type(path) == types.ListType:
+      urls = path
+    else:
+      return S_ERROR("SRM2Storage.removeDirectory: Supplied path must be string or list of strings")
+
+
+
+  def listDirectory(self,path):
+    """ List the supplied path. First checks whether the path is a directory then gets the contents.
+    """
+    if type(path) == types.StringType:
+      urls = [path]
+    elif type(path) == types.ListType:
+      urls = path
+    else:
+      return S_ERROR("SRM2Storage.listDirectory: Supplied path must be string or list of strings")
+
+    res = self.isDirectory(urls)
+    if not res['OK']:
+      return res
+    failed = res['Value']['Failed']
+
+    directories = []
+    for url,isDirectory in res['Value']['Successful'].items():
+      if isDirectory:
+         directories.append(url)
+
+    # Create the dictionary used by gfal
+    gfalDict = {}
+    gfalDict['surls'] = directories
+    gfalDict['nbfiles'] =  len(directories)
+    gfalDict['defaultsetype'] = 'srmv2'
+    gfalDict['no_bdii_check'] = 1
+    gfalDict['srmv2_lslevels'] = 1
+    gfalDict['timeout'] = self.long_timeout
+
+    errCode,gfalObject,errMessage = gfal.gfal_init(gfalDict)
+    if not errCode == 0:
+      errStr = "SRM2Storage.listDirectory: Failed to initialise gfal_init: %s" % errMessage
+      gLogger.error(errStr)
+      return S_ERROR(errStr)
+    gLogger.debug("SRM2Storage.listDirectory: Initialised gfal_init.")
+
+    errCode,gfalObject,errMessage = gfal.gfal_ls(gfalObject)
+    if not errCode == 0:
+      errStr = "SRM2Storage.listDirectory: Failed to perform gfal_ls: %s" % errMessage
+      gLogger.error(errStr)
+      return S_ERROR(errStr)
+    gLogger.debug("SRM2Storage.listDirectory: Performed gfal_ls.")
+
+    numberOfResults,gfalObject,listOfResults = gfal.gfal_get_results(gfalObject)
+    if numberOfResults <= 0:
+      errStr = "SRM2Storage.listDirectory: Did not obtain results with gfal_get_results."
+      gLogger.error(errStr)
+      return S_ERROR(errStr)
+    gLogger.debug("SRM2Storage.listDirectory: Retrieved %s results from gfal_get_results." % numberOfResults)
+
+    successful = {}
+    for pathDict in listOfResults:
+      pathSURL = self.getUrl(pathDict['surl'])['Value']
+      if not pathDict['status'] == 0:
+        errorStr = os.strerror(pathDict['status'])
+        gLogger.info("SRM2Storage.listDirectory: %s %s." % (pathSURL,errorStr))
+        failed[pathSURL] = errorStr
+      else:
+        successful[pathSURL] = {}
+        if pathDict.has_key('subpaths'):
+          subPathDirs = {}
+          subPathFiles = {}
+          subPaths = pathDict['subpaths']
+          # Parse the subpaths for the directory
+          for subPathDict in subPaths:
+            subPathSURL = self.getUrl(subPathDict['surl'])['Value']
+            subPathLocality = subPathDict['locality']
+            if re.search('ONLINE',subPathLocality):
+              subPathCached = 1
+            else:
+              subPathCached = 0
+            if re.search('NEARLINE',subPathLocality):
+              subPathMigrated = 1
+            else:
+              subPathMigrated = 0
+            subPathStat = subPathDict['stat']
+            subPathSize = subPathStat[ST_SIZE]
+            subPathIsDir = S_ISDIR(subPathStat[ST_MODE])
+            if subPathIsDir:
+              # If the subpath is a directory
+              subPathDirs[subPathSURL] = True
+            else:
+              # In the case that the subPath is a file
+              subPathFiles[subPathSURL] = {'Size':subPathSize,'Cached':subPathCached,'Migrated':subPathMigrated}
+          # Keep the infomation about this path's subpaths
+          successful[pathSURL]['SubDirs'] = subPathDirs
+          successful[pathSURL]['Files'] = subPathFiles
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+  def getDirectoryMetadata(self,path):
+    """ Get the metadata for the directory
+    """
+    if type(path) == types.StringType:
+      urls = [path]
+    elif type(path) == types.ListType:
+      urls = path
+    else:
+      return S_ERROR("SRM2Storage.getDirectoryMetadata: Supplied path must be string or list of strings")
+
+    # Create the dictionary used by gfal
+    gfalDict = {}
+    gfalDict['surls'] = urls
+    gfalDict['nbfiles'] =  len(urls)
+    gfalDict['defaultsetype'] = 'srmv2'
+    gfalDict['no_bdii_check'] = 1
+    gfalDict['srmv2_lslevels'] = 0
+    gfalDict['timeout'] = self.long_timeout
+
+    errCode,gfalObject,errMessage = gfal.gfal_init(gfalDict)
+    if not errCode == 0:
+      errStr = "SRM2Storage.getDirectoryMetadata: Failed to initialise gfal_init:"
+      gLogger.error(errStr,errMessage)
+      return S_ERROR('%s%s' % (errStr,errMessage))
+    gLogger.debug("SRM2Storage.getDirectoryMetadata: Initialised gfal_init.")
+
+    errCode,gfalObject,errMessage = gfal.gfal_ls(gfalObject)
+    if not errCode == 0:
+      errStr = "SRM2Storage.getDirectoryMetadata: Failed to perform gfal_ls:"
+      gLogger.error(errStr,errMessage)
+      return S_ERROR("%s%s" % (errStr,errMessage))
+    gLogger.debug("SRM2Storage.getDirectoryMetadata: Performed gfal_ls.")
+
+    numberOfResults,gfalObject,listOfResults = gfal.gfal_get_results(gfalObject)
+    if numberOfResults <= 0:
+      errStr = "SRM2Storage.getDirectoryMetadata: Did not obtain gfal_get_results."
+      gLogger.error(errStr)
+      return S_ERROR(errStr)
+    gLogger.debug("SRM2Storage.getDirectoryMetadata: Retrieved %s results from gfal_get_results." % numberOfResults)
+
+    failed = {}
+    successful = {}
+    for urlDict in listOfResults:
+      pathSURL = self.getUrl(urlDict['surl'])['Value']
+      if urlDict['status'] == 0:
+        subPathStat = urlDict['stat']
+        if S_ISDIR(subPathStat[ST_MODE]):
+          successful[pathSURL] = {'Permissions':S_IMODE(subPathStat[ST_MODE])}
+        else:
+          failed[pathSURL] = 'Supplied path is not a directory'
+      else:
+        failed[pathSURL] = os.strerror(urlDict['status'])
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+  def getDirectorySize(self,path):
+    """ Get the size of the directory on the storage
+    """
+    if type(path) == types.StringType:
+      urls = [path]
+    elif type(path) == types.ListType:
+      urls = path
+    else:
+      return S_ERROR("SRM2Storage.getDirectorySize: Supplied path must be string or list of strings")
+
+    res = self.listDirectory(urls)
+    if not res['OK']:
+      return res
+    failed = res['Value']['Failed']
+    successful = {}
+    for directory,dict in res['Value']['Successful'].values():
+      directorySize = 0
+      filesDict = dict['Files']
+      for fileURL,fileDict in filesDict.items():
+        directorySize += fileDict['Size']
+      successful[directory] = directorySize
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
 
   ################################################################################
   #
@@ -124,58 +753,6 @@ class SRM2Storage(StorageBase):
   # The methods below are for removal operations
   #
 
-  def remove(self,fname):
-    """ Remove from the physical storage the files provided (can be single file or list of files)
-    """
-    if type(fname) == types.StringType:
-      urls = [fname]
-    else:
-      urls = fname
-
-    gfalDict = {}
-    gfalDict['surls'] = urls
-    gfalDict['nbfiles'] =  len(urls)
-    gfalDict['defaultsetype'] = 'srmv2'
-    gfalDict['no_bdii_check'] = 1
-    gfalDict['timeout'] = 1000
-
-    errCode,gfalObject,errMessage = gfal.gfal_init(gfalDict)
-    if not errCode == 0:
-      errStr = "SRM2Storage:remove: Failed to initialise gfal_init: %s" % errMessage
-      gLogger.error(errStr)
-      return S_ERROR(errStr)
-    gLogger.debug("SRM2Storage.remove: Initialised gfal_init.")
-
-    errCode,gfalObject,errMessage = gfal.gfal_deletesurls(gfalObject)
-    if not errCode == 0:
-      errStr = "SRM2Storage.remove: Failed to perform gfal_deletesurls: %s" % errMessage
-      gLogger.error(errStr)
-      return S_ERROR(errStr)
-    gLogger.debug("SRM2Storage.remove: Performed gfal_deletesurls.")
-
-    numberOfResults,gfalObject,listOfResults = gfal.gfal_get_results(gfalObject)
-    if numberOfResults <= 0:
-      errStr = "SRM2Storage.remove: Did not obtain results with gfal_get_results."
-      gLogger.error(errStr)
-      return S_ERROR(errStr)
-    gLogger.debug("SRM2Storage.remove: Retrieved %s results from gfal_get_results." % numberOfResults)
-
-    successRemove = []
-    failRemove = []
-    for dict in listOfResults:
-      if dict['status'] == 0:
-        successRemove.append(dict['surl'])
-        gLogger.info("SRM2Storage.remove: %s removed successfully." % dict['surl'])
-      elif dict['status'] == 2:
-        # This is the case where the file doesn't exist. Should not be accounted or retried.
-        gLogger.info("SRM2Storage.remove: %s %s." % (dict['surl'],os.strerror(dict['status'])))
-      else:
-        failRemove.append(dict['surl'])
-        gLogger.info("SRM2Storage.remove: %s %s." % (dict['surl'],os.strerror(dict['status'])))
-
-    resDict = {'Success':successRemove,'Failed':failRemove}
-    return S_OK(resDict)
-
   def removeDir(self,directoryPath):
     """ Remove the contents of the directory from the physical storage
     """
@@ -209,252 +786,3 @@ class SRM2Storage(StorageBase):
     res['SizeRemoved'] = sizeRemoved
     return res
 
-  ################################################################################
-  #
-  # The methods below are for listing operations
-  #
-
-  def ls(self,fname):
-    """ The supplied argmuments should either be a list of files or a directory. It should not be a list of directories.
-    """
-    if type(fname) == types.StringType:
-      urls = [fname]
-    else:
-      urls = fname
-
-    gfalDict = {}
-    gfalDict['surls'] = urls
-    gfalDict['nbfiles'] =  len(urls)
-    gfalDict['defaultsetype'] = 'srmv2'
-    gfalDict['no_bdii_check'] = 1
-    gfalDict['srmv2_lslevels'] = 1
-    gfalDict['timeout'] = 1000
-
-    errCode,gfalObject,errMessage = gfal.gfal_init(gfalDict)
-    if not errCode == 0:
-      errStr = "SRM2Storage:ls: Failed to initialise gfal_init: %s" % errMessage
-      gLogger.error(errStr)
-      return S_ERROR(errStr)
-    gLogger.debug("SRM2Storage:ls: Initialised gfal_init.")
-
-    errCode,gfalObject,errMessage = gfal.gfal_ls(gfalObject)
-    if not errCode == 0:
-      errStr = "SRM2Storage.ls: Failed to perform gfal_ls: %s" % errMessage
-      gLogger.error(errStr)
-      return S_ERROR(errStr)
-    gLogger.debug("SRM2Storage.ls: Performed gfal_ls.")
-
-    numberOfResults,gfalObject,listOfResults = gfal.gfal_get_results(gfalObject)
-    if numberOfResults <= 0:
-      errStr = "SRM2Storage.ls: Did not obtain results with gfal_get_results."
-      gLogger.error(errStr)
-      return S_ERROR(errStr)
-    gLogger.debug("SRM2Storage.ls: Retrieved %s results from gfal_get_results." % numberOfResults)
-
-    pathsDict = {}
-    failedList = []
-    # Each of the original paths can be a file or a directory
-    for pathDict in listOfResults:
-      if pathDict['status'] == 0:
-        pathSURL = self.getUrl(pathDict['surl'])['Value']
-        pathLocality = pathDict['locality']
-        if re.search('ONLINE',pathLocality):
-          pathCached = 1
-        else:
-          pathCached = 0
-        if re.search('NEARLINE',pathLocality):
-          pathMigrated = 1
-        else:
-          pathMigrated = 0
-        pathStat = pathDict['stat']
-        pathSize = pathStat[ST_SIZE]
-        pathIsDir = S_ISDIR(pathStat[ST_MODE])
-
-        if not pathIsDir:
-          # In the case that the path supplied is a file
-          fileDict = {'Directory':0,'Size':pathSize,'Cached':pathCached,'Migrated':pathMigrated}
-          pathsDict[pathSURL] = fileDict
-          gLogger.info("SRM2Storage.ls: %s %s %s." % (pathSURL.ljust(125),str(pathSize).ljust(10),pathLocality))
-
-        else:
-          gLogger.info("SRM2Storage.ls: %s" % (pathSURL))
-          pathsDict[pathSURL] = {'Directory':1}
-          subDirs = []
-          subFiles = {}
-          if pathDict.has_key('subpaths'):
-            subPaths = pathDict['subpaths']
-
-            # Parse the subpaths for the directory
-            for subPathDict in subPaths:
-              subPathSURL = self.getUrl(subPathDict['surl'])['Value']
-              subPathLocality = subPathDict['locality']
-              if re.search('ONLINE',subPathLocality):
-                subPathCached = 1
-              else:
-                subPathCached = 0
-              if re.search('NEARLINE',subPathLocality):
-                subPathMigrated = 1
-              else:
-                subPathMigrated = 0
-              subPathStat = subPathDict['stat']
-              subPathSize = subPathStat[ST_SIZE]
-              subPathIsDir = S_ISDIR(subPathStat[ST_MODE])
-
-              if subPathIsDir:
-                # If the subpath is a directory
-                subDirs.append(subPathSURL)
-                gLogger.info("SRM2Storage.ls:\t%s" % (subPathSURL))
-              else:
-                # In the case that the subPath is a file
-                fileDict = {'Directory':0,'Size':subPathSize,'Cached':subPathCached,'Migrated':subPathMigrated}
-                subFiles[subPathSURL] = fileDict
-                gLogger.info("SRM2Storage.ls:\t%s %s %s." % (subPathSURL.ljust(125),str(subPathSize).ljust(10),subPathLocality))
-
-          # Keep the infomation about this path's subpaths
-          pathsDict[pathSURL]['SubDirs'] = subDirs
-          pathsDict[pathSURL]['Files'] = subFiles
-          gLogger.info("SRM2Storage.ls:")
-      else:
-        pathSURL = self.getUrl(pathDict['surl'])['Value']
-        pathExplanation = pathDict['explanation']
-        errorStr = os.strerror(pathDict['status'])
-        gLogger.info("SRM2Storage.ls: %s : %s : %s ." % (pathSURL,pathExplanation,errorStr))
-        failedList.append(pathSURL)
-    resDict = {'PathDetails': pathsDict,'FailedPaths': failedList}
-    return S_OK(resDict)
-
-  def getTurls(self,fname):
-    """ get the turls for the files provided
-    """
-    if type(fname) == types.StringType:
-      urls = [fname]
-    else:
-      urls = fname
-
-    gfalDict = {}
-    gfalDict['surls'] = urls
-    gfalDict['nbfiles'] = len(dict['surls'])
-    gfalDict['defaultsetype'] = 'srmv2'
-    gfalDict['no_bdii_check'] = 1
-    gfalDict['protocols'] = ['gsidcap','dcap','root','rfio']
-
-    errCode,gfalObject,errMessage = gfal.gfal_init(gfalDict)
-    if not errCode == 0:
-      errStr = "SRM2Storage.getTurls: Failed to initialise gfal_init: %s" % errMessage
-      gLogger.error(errStr)
-      return S_ERROR(errStr)
-    gLogger.debug("SRM2Storage.getTurls: Initialised gfal_init.")
-
-    errCode,gfalObject,errMessage = gfal.gfal_turlsfromsurls(gfalObject)
-    if not errCode == 0:
-      errStr = "SRM2Storage.getTurls: Failed to perform gfal_turlsfromsurls: %s" % errMessage
-      gLogger.error(errStr)
-      return S_ERROR(errStr)
-    gLogger.debug("SRM2Storage.getTurls: Performed gfal_turlsfromsurls.")
-
-    numberOfResults,gfalObject,listOfResults = gfal.gfal_get_results(gfalObject)
-    if numberOfResults <= 0:
-      errStr = "SRM2Storage.getTurls: Did not obtain results with gfal_get_results."
-      gLogger.error(errStr)
-      return S_ERROR(errStr)
-    gLogger.debug("SRM2Storage.getTurls: Retrieved %s results from gfal_get_results." % numberOfResults)
-
-    turlDict = {}
-    failed = []
-    for dict in listOfResults:
-      surl = dict['surl']
-      if dict['status'] == 0:
-        turl = dict['turl']
-        turlDict[surl] = turl
-      else:
-        failed.append(surl)
-        errStr = "SRM2Storage.getTurls: Failed to get turl for %s: %s." % (surl,dict['explanation'])
-        gLogger.debug(errStr)
-    if turlDict:
-      resDict = {'TurlDict':turlDict,'Failed':failed}
-      return S_OK(resDict)
-    else:
-      errStr = "SRM2Storage.getTurls: Failed to get any turls in request."
-      return S_ERROR(errStr)
-
-  ################################################################################
-  #
-  # The methods below are not yet finished.
-  #
-
-  def put(self,fname):
-    """ Put file to the current directory
-    """
-    dest_file = fname
-    src_file = 'file:///etc/group'
-    srctype = 0
-    dsttype = self.defaulttype
-    src_spacetokendesc = ''
-    dest_spacetokendesc = self.spaceToken
-    errCode,errStr = lcg_util.lcg_cp3(src_file, dest_file, self.defaulttype, srctype, dsttype, self.nobdii, self.vo, self.nbstreams, self.conf_file, self.insecure, self.verbose, self.timeout,src_spacetokendesc,dest_spacetokendesc)
-    if not errCode == 0:
-      errStr = "SRM2Storage.put: Failed to put %s: %s." % (src_file,errStr)
-      gLogger.error(errStr)
-      return S_ERROR(errStr)
-    return S_OK()
-
-
-  def makeDir(self,newdir):
-    dfile = open("dirac_directory",'w')
-    dfile.write("This is a DIRAC system directory")
-    dfile.close()
-    result = self.put("dirac_directory")
-    return result
-
-  def isdir(self,rdir):
-
-    return self.exists(rdir+'/dirac_directory')
-
-  def isfile(self,fname):
-    return self.exists(fname)
-
-  def exists(self,fpath):
-    """ Check if the file exists on the storage
-    """
-
-    comm = "lcg-exist --vo lhcb "+self.getUrl(fpath)
-    #print comm
-    status,output,error,pythonError = exeCommand(comm,self.timeout)
-
-    if re.search(' exists',output):
-      return 1
-    else:
-      return 0
-
-  def get(self,fname):
-    """ Get a copt of the local file in the current local directory.
-    """
-    src_file = fname
-    dest_file = 'file://%s/%s' % (os.curdir(),os.path.basename(fname))
-    defaulttype = 2
-    srctype = 2
-    dsttype = 0
-    nobdii = 1
-    vo = 'lhcb'
-    nbstreams = 4
-    conf_file = 'ignore'
-    insecure = 1
-    verbose = 1
-    timeout = 0
-    src_spacetokendesc = self.spaceToken
-    dest_spacetokendesc = ''
-    errCode,errStr = lcg_util.lcg_cp3(src_file, dest_file, defaulttype,srctype, dsttype, nobdii, vo,nbstreams,conf_file,insecure,verbose,timeout,src_spacetokendesc,dest_spacetokendesc)
-
-  def getDir(self,gdir):
-    print "Not yet implemented"
-
-  def fsize(self, fname):
-    """ Get the file size in the storage
-    """
-    url = self.getUrl(fname)
-    return S_OK('Implement me')
-
-  def getMetaData(self,fnames):
-    """ Get all metadata associated with a file
-    """
-    return S_OK('Implement me')
