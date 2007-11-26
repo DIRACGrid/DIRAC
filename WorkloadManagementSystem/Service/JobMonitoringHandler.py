@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobMonitoringHandler.py,v 1.4 2007/11/12 12:18:06 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobMonitoringHandler.py,v 1.5 2007/11/26 13:21:21 atsareg Exp $
 ########################################################################
 
 """ JobMonitoringHandler is the implementation of the JobMonitoring service
@@ -11,7 +11,7 @@
 
 """
 
-__RCSID__ = "$Id: JobMonitoringHandler.py,v 1.4 2007/11/12 12:18:06 atsareg Exp $"
+__RCSID__ = "$Id: JobMonitoringHandler.py,v 1.5 2007/11/26 13:21:21 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -22,7 +22,9 @@ from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 jobDB = False
 proxyRepository = False
 
-SUMMARY = []
+SUMMARY = ['JobType','Site','JobName','Owner','SubmissionTime',
+           'LastUpdateTime','Status','MinorStatus','ApplicationStatus']
+SUMMARY = []	   
 PRIMARY_SUMMARY = []
 
 def initializeJobMonitoringHandler( serviceInfo ):
@@ -96,15 +98,17 @@ class JobMonitoringHandler( RequestHandler ):
     """
     queryDict = {}
 
-    if attrDict:
-      if type ( attrDict ) != DictType:
-        return S_ERROR( 'Argument must be of Dict Type' )
-      for attribute in self.queryAttributes:
-        # Only those Attribute in self.queryAttributes can be used
-        if attrDict.has_key(attribute):
-          queryDict[attribute] = attrDict[attribute]
+    #if attrDict:
+    #  if type ( attrDict ) != DictType:
+    #    return S_ERROR( 'Argument must be of Dict Type' )
+    #  for attribute in self.queryAttributes:
+    #    # Only those Attribute in self.queryAttributes can be used
+    #    if attrDict.has_key(attribute):
+    #      queryDict[attribute] = attrDict[attribute]
 
-    return jobDB.selectJobs( queryDict, newer=cutDate)
+    print attrDict
+
+    return jobDB.selectJobs( attrDict, newer=cutDate)
 
 ##############################################################################
   types_getCounters = [ ListType ]
@@ -154,6 +158,13 @@ class JobMonitoringHandler( RequestHandler ):
   def export_getJobSite (self, jobID ):
 
     return jobDB.getJobAttribute(jobID, 'Site')
+    
+##############################################################################
+  types_getJobJDL = [ IntType ]
+  def export_getJobJDL (self, jobID ):
+
+    result = jobDB.getJobJDL(jobID) 
+    return result    
 
 ##############################################################################
 #  types_getJobLogInfo = [ IntType ]
@@ -186,7 +197,14 @@ class JobMonitoringHandler( RequestHandler ):
 ##############################################################################
   types_getJobsSummary = [ ListType ]
   def export_getJobsSummary(self, jobIDs):
-    return jobDB.getAttributesForJobList( jobIDs, SUMMARY )
+  
+    if not jobIDs:
+      return S_ERROR('JobMonitoring.getJobsSummary: Received empty job list')
+  
+    result = jobDB.getAttributesForJobList( jobIDs, SUMMARY )
+    #return result
+    restring = str(result['Value'])
+    return S_OK(restring)
 
 ##############################################################################
   types_getJobsPrimarySummary = [ ListType ]
