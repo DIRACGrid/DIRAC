@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.19 2007/11/20 16:31:45 acasajus Exp $
-__RCSID__ = "$Id: Server.py,v 1.19 2007/11/20 16:31:45 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.20 2007/11/27 16:15:48 acasajus Exp $
+__RCSID__ = "$Id: Server.py,v 1.20 2007/11/27 16:15:48 acasajus Exp $"
 
 import socket
 import sys
@@ -51,7 +51,7 @@ class Server:
     gMonitor.setComponentName( self.serviceName )
     gMonitor.setComponentLocation( self.serviceURL )
     gMonitor.initialize()
-    gMonitor.registerActivity( "Queries", "Queries served", "Framework", "queries/s", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "Queries", "Queries served", "Framework", "queries", gMonitor.OP_SUM )
 
   def __buildURL( self ):
     """
@@ -189,7 +189,7 @@ class Server:
     """
     try:
       serviceInfoDict = self.handlerManager.getServiceInfo( proposalTuple[0][0] )
-      serviceInfoDict[ 'instance' ] = proposalTuple[0][1]
+      serviceInfoDict[ 'setup' ] = proposalTuple[0][1]
       handlerInstance = handlerDict[ "handlerClass" ]( serviceInfoDict,
                       clientTransport,
                       handlerDict[ "lockManager" ] )
