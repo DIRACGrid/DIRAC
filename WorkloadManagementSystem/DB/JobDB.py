@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.22 2007/11/22 11:37:24 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.23 2007/11/27 18:01:40 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.22 2007/11/22 11:37:24 paterson Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.23 2007/11/27 18:01:40 atsareg Exp $"
 
 import re, os, sys, string
 import time
@@ -264,7 +264,7 @@ class JobDB(DB):
     resultDict = {}
     if paramList:
       paramNames = string.join(map(lambda x: '"'+str(x)+'"',paramList ),',')
-      cmd = "SELECT Name, Value from JobParameters WHERE JobID=%s and Name in (%s)" % (jobID,paramNames)
+      cmd = "SELECT Name, Value from JobParameters WHERE JobID=%d and Name in (%s)" % (jobID,paramNames)
       result = self._query(cmd)
       if result['OK']:
         if result['Value']:
@@ -439,7 +439,7 @@ class JobDB(DB):
       if not res['OK']:
         return res
 
-    return S_OK('Files added')  
+    return S_OK('Files added')
 
 #############################################################################
   def setOptimizerChain(self,jobID,optimizerList):
@@ -692,7 +692,7 @@ class JobDB(DB):
         cmd = "UPDATE JobJDLs Set JDL='%s' WHERE JobID=%d" % (JDL,jobID)
       else:
         cmd = "INSERT INTO JobJDLs (JobID,JDL) VALUES (%d,'%s')" % (jobID,JDL)
-      result = self._update(cmd)
+      result = self.jobDB._update(cmd)
       if not result['OK']:
         return result
     if originalJDL:
@@ -706,7 +706,7 @@ class JobDB(DB):
     return result
 
 #############################################################################
-  def getJobJDL(self,jobID,original=False):
+  def getJobJDL(self,jobID,original=False,status=''):
     """ Get JDL for job specified by its jobID. By default the current job JDL
         is returned. If 'original' argument is True, original JDL is returned
     """
@@ -715,6 +715,9 @@ class JobDB(DB):
       cmd = "SELECT OriginalJDL FROM JobJDLs WHERE JobID=%d" % int(jobID)
     else:
       cmd = "SELECT JDL FROM JobJDLs WHERE JobID=%d" % int(jobID)
+
+    if status:
+      cmd = cmd + " AND Status='%s'" % status
 
     result = self._query(cmd)
     if result['OK']:
@@ -1004,23 +1007,7 @@ class JobDB(DB):
     if result['OK']:
       siteList = [ x[0] for x in result['Value']]
 
-    if siteList:
-      # Form the site mask as JDL
-      # mask = self.__getMaskJDL(siteList)
-      #return S_OK(mask)
-      return S_OK(siteList)
-    else:
-      return S_ERROR('Failed to get site mask')
-
-#############################################################################
-  def __getMaskJDL(self,siteList):
-    """ Create a Site Mask in a form of a JDL from the site list
-    """
-
-    mask = '[  Requirements = OtherSite == "'
-    mask = mask + string.join(siteList,'" || Other.Site == "')
-    mask = mask + '"   ]'
-    return mask
+    return S_OK(siteList)
 
 #############################################################################
   def setMask(self,mask,authorDN='Unknown'):
@@ -1110,9 +1097,9 @@ class JobDB(DB):
     self.log.info( 'JobDB.__addQueue: Adding new Task Queue with requirements' )
     self.log.info( 'JobDB.__addQueue: %s' % requirements )
 
-    classQueue = ClassAd(requirements)
-    if classQueue.isOK():
-      reqJDL = classQueue.asJDL()
+    classAdQueue = ClassAd(requirements)
+    if classAdQueue.isOK():
+      reqJDL = classAdQueue.asJDL()
       self.getIDLock.acquire()
       cmd = 'INSERT INTO TaskQueues (Requirements, Priority) '\
             ' VALUES (\'%s\', \'%s\' )' \
@@ -1126,10 +1113,18 @@ class JobDB(DB):
       if not result['OK']:
         return result
 
-      queueId = int(result['Value'][0][0])
-      return S_OK(queueId)
+      queueID = int(result['Value'][0][0])
+      return S_OK(queueID)
     else:
       return S_ERROR('JobDB.addQueue: Invalid requirements JDL')
+
+#############################################################################
+  def deleteQueue(self,queueID):
+    """ Delete a Task Queue with queueID
+    """
+    req = "DELETE FROM TaskQueues WHERE TaskQueueId=%d" % queueId
+    result = self._update(req)
+    return result
 
 #############################################################################
   def selectQueue(self, requirements):
@@ -1142,20 +1137,33 @@ class JobDB(DB):
     if not res['OK']:
       return res
     for row in res['Value']:
-      classadQueue = ClassAd(row[0])
-      queueId = row[1]
-      if not classadQueue.isOK():
+      classAdQueue = ClassAd(row[0])
+      queueID = row[1]
+      if not classAdQueue.isOK():
         cmd = 'DELETE from TaskQueues WHERE TaskQueueId=\'%s\'' % queueId
         self._update( cmd )
       else:
-        queueRequirement = classadQueue.get_expression("Requirements")
-        classadJob = ClassAd('[ Requirements = '+requirements+' ]')
-        jobRequirement = classadJob.get_expression("Requirements")
+        queueRequirement = classAdQueue.get_expression("Requirements")
+        classAdJob = ClassAd('[ Requirements = '+requirements+' ]')
+        jobRequirement = classAdJob.get_expression("Requirements")
         if queueRequirement.upper() == jobRequirement.upper():
-          return S_OK( queueId )
+          return S_OK( queueID )
 
     self.log.info( 'JobDB.selectQueue: creating a new Queue' )
     return self.__addQueue( '[ Requirements = %s ]' % requirements )
+
+#############################################################################
+  def getTaskQueues(self):
+    """ Get all the Task Queue requirements ordered descendingly by their
+        priorities
+    """
+
+    req = "select TaskQueueId,Requirements,Priority from TaskQueues order by Priority DESC"
+    result = self._query(req)
+    if not result['OK']:
+      return result
+
+    return S_OK(result['Value'])
 
 #############################################################################
   def addJobToQueue(self,jobID,queueId,rank):
@@ -1163,7 +1171,7 @@ class JobDB(DB):
        <queueId> with the job rank <rank>
     """
 
-    self.log.info('JobDB.addJobToQueue: Adding job %s to queue %s' \
+    self.log.verbose('JobDB.addJobToQueue: Adding job %s to queue %s' \
                   ' with rank %s' % ( jobID, queueId, rank ) )
 
     cmd = 'INSERT INTO TaskQueue(TaskQueueId, JobID, Rank) ' \
@@ -1172,6 +1180,12 @@ class JobDB(DB):
     result = self._update( cmd )
     if not result['OK']:
       self.log.error("Failed to add job "+str(jobID)+" to the Task Queue")
+      return result
+
+    cmd = "UPDATE TaskQueues SET NumberOfJobs = NumberOfJobs + 1 WHERE TaskQueueId=%d" % queueId
+    result = self._update( cmd )
+    if not result['OK']:
+      self.log.error("Failed to increment the job counter for the Task Queue %d" % queueId)
       return result
 
     # Check the Task Queue priority and adjust if necessary
@@ -1190,6 +1204,54 @@ class JobDB(DB):
         return result
 
     return S_OK()
+
+ #############################################################################
+  def lookUpJobInQueue(self,jobID):
+    """ Check if the job with jobID is in the Task Queue
+    """
+
+    req = "SELECT * FROM TaskQueue WHERE JobId=" + str(jobID)
+    result = self._query(req)
+    if result['OK']:
+      if result['Value']:
+        return jobID
+
+    return 0
+
+ #############################################################################
+  def getJobsInQueue(self,queueID):
+    """ Get job IDs from the Task Queue with queueID ordered by their
+        priorities
+    """
+    req = "SELECT JobID FROM TaskQueue WHERE TaskQueueId="+ str(queueID)+ \
+          " ORDER BY Rank DESC, JobId"
+    result = self._query(req)
+    if result['OK']:
+      if result['Value']:
+        jobList = [x[0] for x in result['Value']]
+        return S_OK(jobList)
+      else:
+        return S_OK([])
+    else:
+      return result
+
+#############################################################################
+  def getTaskQueueReport(self,queueList):
+    """ Get the report of the Task Queue state:
+        number of jobs per queue and queue priorities
+    """
+    if not queueList:
+      req =  "SELECT TaskQueueId,NumberOfJobs,Priority FROM TaskQueues"
+    else:
+      idstring = string.join([str(x) for x in queueList],',')
+      req = "SELECT TaskQueueId,NumberOfJobs,Priority FROM TaskQueues WHERE TaskQueueId in ( "+idstring+" )"
+
+    result = self._queue(req)
+    if result['OK']:
+      return S_OK(result['Value'])
+    else:
+      return S_ERROR('Can not access the Task Queue tables')
+
 
 #############################################################################
   def deleteJobFromQueue(self,jobID):
@@ -1212,6 +1274,12 @@ class JobDB(DB):
     if not result['OK']:
       return result
 
+    cmd = "UPDATE TaskQueues SET NumberOfJobs = NumberOfJobs - 1 WHERE TaskQueueId=%d" % queueId
+    result = self._update( cmd )
+    if not result['OK']:
+      self.log.error("Failed to decrement the job counter for the Task Queue %d" % queueId)
+      return result
+
     # Check that the queue is empty and remove it eventually
     req = "SELECT TaskQueueID FROM TaskQueue WHERE TaskQueueID=%d" % int(queueID)
     result = self._query(req)
@@ -1228,9 +1296,9 @@ class JobDB(DB):
             result = self._update(req)
             return result
           else:
-            self.log.error('JobDB: Error while removing empty Task Queue' )
+            self.log.warn('JobDB: Error while removing empty Task Queue' )
         else:
-          self.log.error('JobDB: Error while removing empty Task Queue' )
+          self.log.warn('JobDB: Error while removing empty Task Queue' )
 
     return S_OK()
 
