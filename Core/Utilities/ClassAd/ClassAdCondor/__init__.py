@@ -1,5 +1,5 @@
 ##############################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/ClassAd/ClassAdCondor/__init__.py,v 1.3 2007/11/21 18:44:03 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/ClassAd/ClassAdCondor/__init__.py,v 1.4 2007/11/27 20:52:32 atsareg Exp $
 ##############################################################
 
 """This is a Python binding module for the Condor ClassAd
@@ -7,6 +7,7 @@
    DIRAC project
 """
 
+from DIRAC import S_OK, S_ERROR
 from ClassAdBase import ClassAd, MatchClassAd
 import string
 
@@ -58,6 +59,6 @@ def matchClassAd(ca1,ca2):
   mca.release()
 
   if error_s and error_l and error_r:
-    return result_s, result_l, result_r
+    return S_OK((result_s, result_l, result_r))
   else:
     return S_ERROR('Failed to match the given ClassAds: sym:%d left:%d right"%d' % (error_s,error_l,error_r))
