@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/LocalConfiguration.py,v 1.13 2007/11/21 16:15:39 acasajus Exp $
-__RCSID__ = "$Id: LocalConfiguration.py,v 1.13 2007/11/21 16:15:39 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/LocalConfiguration.py,v 1.14 2007/11/28 11:57:42 acasajus Exp $
+__RCSID__ = "$Id: LocalConfiguration.py,v 1.14 2007/11/28 11:57:42 acasajus Exp $"
 
 import sys
 import os
@@ -229,7 +229,7 @@ class LocalConfiguration:
     self.__setOptionValue( "/DIRAC/Security/UseServerCertificate", useCert )
     return S_OK()
 
-  def __showHelp( self, dummy ):
+  def __showHelp( self, dummy = False):
     gLogger.info( "Usage:" )
     gLogger.info( "  %s (<options>|<cfgFile>)*" % sys.argv[0] )
     gLogger.info( "Options:" )
