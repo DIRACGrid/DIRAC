@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.19 2007/11/26 11:47:03 paterson Exp $
-__RCSID__ = "$Id: Logger.py,v 1.19 2007/11/26 11:47:03 paterson Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.20 2007/11/28 10:15:01 acasajus Exp $
+__RCSID__ = "$Id: Logger.py,v 1.20 2007/11/28 10:15:01 acasajus Exp $"
 """
    DIRAC Logger client
 """
@@ -210,7 +210,7 @@ class Logger:
       oActualFrame = inspect.currentframe()
       lOuterFrames = inspect.getouterframes( oActualFrame )
       lCallingFrame = lOuterFrames[2]
-      return " %s:%s" % ( lCallingFrame[1].replace( sys.path[0], "" )[1:], lCallingFrame[2] )
+      return "%s:%s" % ( lCallingFrame[1].replace( sys.path[0], "" )[1:], lCallingFrame[2] )
     else:
       return ""
 
