@@ -131,8 +131,104 @@ class StorageElement:
   # These are the methods that implement the StorageElement functionality
   #
 
+  def getFile(self,pfn,catalogueFileSize):
+    """ This method will obtain a local copy of a file from the SE
+
+        'pfn' is the physical file name (as registered in the LFC)
+        'catalogueFileSize' is the size from the catalogue
+    """
+    pfnDict = pfnparse(pfn)
+    fileName = os.path.basename(pfn)
+
+    # If the file is on a local storage element try the local protocols first
+    for storage in self.storages:
+      res = storage.getParameters()
+      protocolName = res['Value']['ProtocolName']
+      protocolPfn = storage.getProtocolPfn(pfnDict)
+      protocolSize = None
+
+      ###############################################################################################
+      # Pre-transfer check. Check if file exists, get the size and check against the catalogue
+      res = storage.exists(protocolPfn)
+      if res['OK']:
+        if res['Value']['Successful'].has_key(protocolPfn):
+          fileExists = res['Value']['Successful'][destUrl]
+          if not fileExists:
+            infoStr = "StorageElement.getFile: File does not exist."
+            gLogger.error(infoStr,'%s for protocol %s' % (protocolPfn,protocolName))
+            return S_ERROR('StorageElement.getFile: Physical file does not exist')
+          else:
+            infoStr = "StorageElement.getFile: File exists, checking size."
+            gLogger.info(infoStr,'%s for protocol %s' % (protocolPfn,protocolName))
+            res = storage.getFileSize(protocolPfn)
+            if res['OK']:
+              if res['Value']['Successful'].has_key(protocolPfn):
+                protocolSize = res['Value']['Successful'][protocolPfn]
+                if not catalogueFileSize == protocolSize:
+                  infoStr ="StorageElement.getFile: Physical file size and catalogue file size mismatch."
+                  gLogger.error(infoStr,'%s : Physical %s, Catalogue %s' % (protocolPfn,protocolSize,catalogueFileSize))
+                  return S_ERROR('StorageElement.getFile: Physical file zero size')
+                if protocolSize == 0:
+                  infoStr ="StorageElement.getFile: Physical file found with zero size."
+                  gLogger.error(infoStr,'%s' % protocolPfn)
+                  res = storage.removeFile(protocolPfn)
+                  if res['OK']:
+                    if res['Value']['Successful'].has_key(protocolPfn):
+                      infoStr ="StorageElement.getFile: Removed zero size file from storage."
+                      gLogger.info(infoStr,'%s with protocol %s' % (protocolPfn,protocolName))
+                    else:
+                      infoStr ="StorageElement.getFile: Failed to removed zero size file from storage."
+                      gLogger.error(infoStr,'%s with protocol %s' % (protocolPfn,protocolName))
+                  else:
+                    infoStr ="StorageElement.getFile: Failed to removed zero size file from storage."
+                    gLogger.error(infoStr,'%s with protocol %s' % (protocolPfn,protocolName))
+                  return S_ERROR('StorageElement.getFile: Physical file zero size')
+                else:
+                  infoStr ="StorageElement.getFile: %s file size: %s." %  (protocolPfn,protocolSize)
+                  gLogger.info(infoStr)
+            else:
+              infoStr = "StorageElement.getFile: Failed to get remote file size."
+              gLogger.error(infoStr,'%s for protocol %s' % (protocolPfn,protocolName))
+        else:
+          infoStr = "StorageElement.getFile: Failed to determine whether file exists."
+          gLogger.error(infoStr,'%s for protocol %s' % (protocolPfn,protocolName))
+      else:
+        infoStr = "StorageElement.getFile: Failed to determine whether file exists."
+        gLogger.error(infoStr,'%s for protocol %s' % (protocolPfn,protocolName))
+
+      ###########################################################################################
+      # If the check was successful (i.e. we obtained correctly the file size) perform the transfer
+      if protocolSize:
+        localPath = '%s/%s' % (os.getcwd(),fileName)
+        fileTuple = (protocolPfn,localPath,protocolSize)
+        res = storage.getFile(fileTuple)
+        if res['OK']:
+          if res['Value']['Successful'].has_key(protocolPfn):
+            infoStr ="StorageElement.getFile: Got local copy of file. Checking size..."
+            gLogger.info(infoStr)
+            ##############################################################
+            # Post-transfer check. Check the local file size and remove it if not correct
+            localSize = getSize(localPath)
+            if localSize == protocolSize:
+              infoStr ="StorageElement.getFile: Local file size correct."
+              gLogger.info(infoStr,'%s with protocol %s' % (localPath,protocolName))
+              # woohoo, good work!!!
+              return S_OK(localPath)
+          ##############################################################
+          # If the transfer failed or the sizes don't match clean up the mess
+          if os.path.exists(localPath):
+            os.remove(localPath)
+        else:
+          infoStr = "StorageElement.getFile%s" % res['Message']
+          gLogger.error(infoStr)
+
+    # If we get here we tried all the protocols and failed with all of them
+    errStr = "StorageElement.putFile: Failed to get file for all protocols."
+    gLogger.error(errStr,pfn)
+    return S_ERROR(errStr)
+
   def putFile(self,file,alternativePath=None,desiredProtocol=None):
-    """ This method will upload a local file to the SE element
+    """ This method will upload a local file to the SE
 
         'file' is the full local path to the file e.g. /opt/dirac/file/for/upload.file
         'alternativePath' is the path on the storage the file will be put
@@ -213,11 +309,34 @@ class StorageElement:
             # Perform the transfer here....
             fileTuple = (fileName,destUrl,size)
             res = storage.putFile(fileTuple)
-            if not res['OK']:
+            if res['OK']:
+              if res['Value']['Successful'].has_key(destUrl):
+                ##############################################################
+                # Post-transfer check. Check the file size and remove it if not correct
+                res = storage.getFileSize(destUrl)
+                if res['OK']:
+                  if res['Value']['Successful'].has_key(destUrl):
+                    # If the file size matched we are finished
+                    if res['Value']['Successful'][destUrl] == size:
+                      infoStr ="StorageElement.putFile: Destination file size correct."
+                      gLogger.info(infoStr,'%s with protocol %s' % (destUrl,protocolName))
+                      # woohoo, good work!!!
+                      return S_OK(destUrl)
+                    else:
+                      infoStr ="StorageElement.putFile: Destination file size does not match. Removing..."
+                      gLogger.info(infoStr)
+                  else:
+                    infoStr ="StorageElement.putFile: Failed to get destination file size. Removing..."
+                    gLogger.info(infoStr)
+                else:
+                  infoStr ="StorageElement.putFile: Failed to get destination file size. Removing..."
+                  gLogger.info(infoStr)
+              else:
+                infoStr ="StorageElement.putFile: Failed to put file."
+                gLogger.error(infoStr,'%s with protocol %s' % (destUrl,protocolName))
+
               ##############################################################
-              # If the transfer failed clean up the mess
-              infoStr ="StorageElement.putFile: Failed to put file."
-              gLogger.error(infoStr,'%s with protocol %s' % (destUrl,protocolName))
+              # If the transfer failed or the sizes don't match clean up the mess
               infoStr ="StorageElement.putFile: Removing failed file remnant."
               gLogger.info(infoStr,'%s with protocol %s' % (destUrl,protocolName))
               res = storage.removeFile(destUrl)
@@ -231,35 +350,13 @@ class StorageElement:
               else:
                 infoStr ="StorageElement.putFile: Failed to remove failed file remnant from storage."
                 gLogger.error(infoStr,'%s with protocol %s' % (destUrl,protocolName))
+
+            ##############################################################
+            # If the transfer completely failed
             else:
-              ##############################################################
-              # Post-transfer check. Check the file size and remove it if not correct
-              res = storage.getFileSize(destUrl)
-              if res['OK']:
-                if res['Value']['Successful'].has_key(destUrl):
-                  # If the file size matched we are finished
-                  if res['Value']['Successful'][destUrl] == size:
-                    # woohoo, good work!!!
-                    return S_OK()
-                  # Otherwise we want to remove the corrupt file
-                  else:
-                    res = storage.removeFile(destUrl)
-                    if res['OK']:
-                      if res['Value']['Successful'].has_key(destUrl):
-                        infoStr ="StorageElement.putFile: Removed corrupted file from storage."
-                        gLogger.info(infoStr,'%s with protocol %s' % (destUrl,protocolName))
-                      else:
-                        infoStr ="StorageElement.putFile: Failed to remove corrupted file from storage."
-                        gLogger.error(infoStr,'%s with protocol %s' % (destUrl,protocolName))
-                    else:
-                      infoStr ="StorageElement.putFile: Failed to remove corrupted file from storage."
-                      gLogger.error(infoStr,'%s with protocol %s' % (destUrl,protocolName))
-                else:
-                  infoStr ="StorageElement.putFile: Failed to get destination file size."
-                  gLogger.error(infoStr,'%s with protocol %s' % (destUrl,protocolName))
-              else:
-                infoStr ="StorageElement.putFile: Failed to get destination file size."
-                gLogger.error(infoStr,'%s with protocol %s' % (destUrl,protocolName))
+              infoStr = "StorageElement.putFile%s" % res['Message']
+              gLogger.error(infoStr)
+
     # If we get here we tried all the protocols and failed with all of them
     errStr = "StorageElement.putFile: Failed to put file for all protocols."
     gLogger.error(errStr,file)
