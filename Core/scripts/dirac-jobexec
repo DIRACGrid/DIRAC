@@ -1,0 +1,41 @@
+#!/usr/bin/env python
+########################################################################
+# $Id: dirac-jobexec,v 1.1 2007/11/28 22:12:38 paterson Exp $
+# File :   dirac-jobexec
+# Author : Stuart Paterson
+########################################################################
+
+""" The dirac-jobexec script is equipped to execute workflows that
+    are specified via their XML description.  The main client of
+    this script is the Job Wrapper.
+"""
+
+import sys
+from DIRAC.Core.Workflow.Workflow                   import *
+from DIRAC.Core.Base                                import Script
+from DIRAC                                          import S_OK, S_ERROR, gLogger
+import DIRAC
+
+def jobexec(jobxml):
+  workflow = Workflow(os.path.basename(jobxml))
+  code = workflow.createCode()
+  gLogger.debug(code)
+  eval(compile(code,'<string>','exec'))
+  workflow.execute()
+  return S_OK() #workflow execute() currently returns nothing...
+
+Script.parseCommandLine()
+
+positionalArgs = Script.getPositionalArgs()
+if len( positionalArgs ) != 2:
+  DIRAC.abort( 1, "Must specify the Job XML file description" )
+
+gLogger.info('JobID: %s' %(os.environ['JOBID']))
+gLogger.info('PYTHONPATH:\n %s' %(sys.path))
+result = jobexec(*positionalArgs)
+if not result['OK']:
+  gLogger.debug('Workflow execution finished with errors, exiting')
+  sys.exit(1)
+else:
+  gLogger.debug('Workflow execution successful, exiting')
+  sys.exit(0)
