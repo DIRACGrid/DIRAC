@@ -1,54 +1,122 @@
-#################################
-# Author : Vincent Garonne      #
-# Mail : garonne@cppm.in2p3.fr  #
-# file : Pfn.py                 #
-# date : 21/11/03               ##################################
-# description :  Module to (un)parse physical file name          #
-# modified: A.Tsaregorodtsev, 06.06.2005                         #
-##################################################################
+from DIRAC import S_OK, S_ERROR
+import os,re
 
-from DIRAC  import S_OK, S_ERROR
-import string, os
-from urlparse import *
+def pfnunparse(pfnDict):
+  """ This method takes a dictionary containing a the pfn attributes and contructs it
+  """
+  try:
+    # All files must have a path and a filename. Or else...
+    # fullPath = '/some/path/to/a/file.file'
+    fullPath = "%s/%s" % (pfnDict['Path'],pfnDict['FileName'])
+    fullPath = os.path.realpath(fullPath)
 
-def pfnparse (pfn):
-    result    = {}
-    protocols = ['http', 'ftp', 'file']
-    #protocols = []
-    protocol, host, path, params, query, fragment = urlparse(pfn)
-    result['protocol'] = protocol
-    if protocol not in protocols:
-        protocol, host, path, params, query, fragment = urlparse (urljoin ("http:",path))
-    if string.find(host,':')!=-1:
-        result['port'] = string.split (host,':')[1]
-        result['host'] = string.split (host,':')[0]
-        if not result['port']:
-          result['host'] = result['host']+":"
+    # If they have a port they must also have a host...
+    if pfnDict['Port']:
+      pfnHost ="%s:%s" % (pfnDict['Host'],pfnDict['Port'])
+      # pfnHost = 'host:port'
+      # If there is a port then there may be a web service url
+      if pfnDict['WSUrl']:
+        pfnHost = "%s%s" % (pfnHost,pfnDict['WSUrl'])
+        #pfnHost = 'host:port/wsurl'
     else:
-        result['port'] = ''
-        result['host'] = host
+      # It is possible that the host is an empty string
+      pfnHost = pfnDict['Host']
+      #pfnHost = 'host'
+      #pfnHost = ''
 
-    #result['path'] = path[0:string.rfind(path,'/')+1]
-    #result['file'] = path[string.rfind(path,'/')+1:len(path)]
-    result['path'] = os.path.dirname(path)
-    result['file'] = os.path.basename(path)
-    return S_OK(result)
+    # But, if the host is not an empty string we must put a protocol infront of it...
+    if pfnHost:
+      pfnHost = "%s://%s" % (pfnDict['Protocol'],pfnHost)
+      #pfnHost = 'protocol://host'
+      #pfnHost = 'protocol://host:port'
+      #pfnHost = 'protocol://host:port/wsurl'
+    else:
+      # If there is no host there may or may not be a protocol
+      if pfnDict['Protocol']:
+        pfnHost = '%s:' % pfnDict['Protocol']
+        #pfnHost = 'protocol:'
+      else:
+        pfnHost = ''
 
-def pfnunparse (pfn):
+    fullPfn = '%s%s' % (pfnHost,fullPath)
+    #fullPfn = 'fullPath'
+    #fullPfn = 'protocol:/fullPath'
+    #fullPfn = 'protocol://host/fullPath'
+    #fullPfn = 'protocol://host:port/fullPath'
+    #fullPfn = 'protocol://host:port/wsurl/fullPath'
+    return S_OK(fullPfn)
 
-  path = pfn['path']+'/'+pfn['file']
-  path = path.replace('//','/')
+  except Exception,x:
+    errStr = "Pfn.pfnunparse: Failed to un-parse pfn dictionary: %s" % x
+    return S_ERROR(errStr)
 
-  if pfn['port']:
-      host =pfn['host']+':'+ pfn['port']
-  else:
-      host = pfn['host']
 
-  if host:
-    result = pfn['protocol']+"://"+host+path
-  else:
-    result = pfn['protocol']+":"+path
+def pfnparse(pfn):
 
-  #result = urlunparse ((pfn['protocol'],host, path, None, None, None))
-  #result = result.replace(" ","")
-  return S_OK(result)
+  pfnDict = {'Protocol':'','Host':'','Port':'','WSUrl':'','Path':'','FileName':''}
+  try:
+    if not re.search(':',pfn):
+      # pfn = 'fullPath'
+      directory = os.path.dirname(pfn)
+      pfnDict['Path'] = directory
+      fileName = os.path.basename(pfn)
+      pfnDict['FileName'] = fileName
+    else:
+      #pfn = 'protocol:/fullPath'
+      #pfn = 'protocol://host/fullPath'
+      #pfn = 'protocol://host:port/fullPath'
+      #pfn = 'protocol://host:port/wsurl/fullPath'
+      protocol = pfn.split(':',1)[0]
+      pfnDict['Protocol'] = protocol
+      if re.search('%s://' % protocol,pfn):
+        pfn = pfn.replace('%s://' % protocol,'')
+      else:
+        pfn = pfn.replace('%s:' % protocol,'')
+      #pfn = 'fullPath'
+      #pfn = 'host/fullPath'
+      #pfn = 'host:port/fullPath'
+      #pfn = 'host:port/wsurl/fullPath'
+      if pfn[0] == '/':
+        #pfn = 'fullPath'
+        directory = os.path.dirname(pfn)
+        pfnDict['Path'] = directory
+        fileName = os.path.basename(pfn)
+        pfnDict['FileName'] = fileName
+      else:
+        #pfn = 'host/fullPath'
+        #pfn = 'host:port/fullPath'
+        #pfn = 'host:port/wsurl/fullPath'
+        if not re.search(':',pfn):
+          #pfn = 'host/fullPath'
+          host = pfn.split('/',1)[0]
+          pfnDict['Host'] = host
+          fullPath = pfn.replace(host,'')
+          directory = os.path.dirname(fullPath)
+          pfnDict['Path'] = directory
+          fileName = os.path.basename(fullPath)
+          pfnDict['FileName'] = fileName
+        else:
+          #pfn = 'host:port/fullPath'
+          #pfn = 'host:port/wsurl/fullPath'
+          host = pfn.split(':',1)[0]
+          pfnDict['Host'] = host
+          pfn = pfn.replace('%s:'%host,'')
+          port = pfn.split('/',1)[0]
+          pfnDict['Port'] = port
+          pfn = pfn.replace(port,'')
+          #pfn = '/fullPath'
+          #pfn = '/wsurl/fullPath'
+          if re.search('\?',pfn):
+            #/wsurl/fullPath'
+            wsurl = '%s=' % pfn.split('=',1)[0]
+            pfnDict['WSUrl'] = wsurl
+            pfn = pfn.replace(wsurl,'')
+          #pfn = '/fullPath'
+          directory = os.path.dirname(pfn)
+          pfnDict['Path'] = directory
+          fileName = os.path.basename(pfn)
+          pfnDict['FileName'] = fileName
+    return S_OK(pfnDict)
+  except Exception,x:
+    errStr = "Pfn.pfnparse: Failed to parse pfn: %s" % x
+    return S_ERROR(errStr)
