@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: InProcessComputingElement.py,v 1.1 2007/11/26 22:04:01 paterson Exp $
+# $Id: InProcessComputingElement.py,v 1.2 2007/11/28 22:14:27 paterson Exp $
 # File :   InProcessComputingElement.py
 # Author : Stuart Paterson
 ########################################################################
@@ -7,13 +7,13 @@
 """ The simplest Computing Element instance that submits jobs locally.
 """
 
-__RCSID__ = "$Id: InProcessComputingElement.py,v 1.1 2007/11/26 22:04:01 paterson Exp $"
+__RCSID__ = "$Id: InProcessComputingElement.py,v 1.2 2007/11/28 22:14:27 paterson Exp $"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Core.Utilities.Subprocess                     import shellCall
 from DIRAC                                               import S_OK, S_ERROR
 
-import os
+import os,sys
 
 CE_NAME = 'InProcess'
 
@@ -32,11 +32,16 @@ class InProcessComputingElement(ComputingElement):
     """
     if not os.access(executableFile, 5):
       os.chmod(executableFile,0755)
-    file = os.path.abspath(executableFile)
-    result = shellCall(executableFile)
-    self.log.info(result['Value'][1])
+    filePath = os.path.abspath(executableFile)
+    diracPython = sys.executable
+    self.log.debug('DIRAC Python executable is %s' %(sys.executable))
+    cmd = '%s %s' % (diracPython,filePath)
+    self.log.debug('CE submission command:\n %s' %(cmd))
+    result = shellCall(0,cmd,callbackFunction = self.sendOutput)
+    self.log.debug('===========>In process CE result')
+    self.log.debug(result)
     self.submittedJobs += 1
-    return result
+    return S_OK(localID)
 
   #############################################################################
   def getDynamicInfo(self):
