@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Resources/Computing/ComputingElement.py,v 1.1 2007/11/26 22:02:07 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Resources/Computing/ComputingElement.py,v 1.2 2007/11/28 16:31:07 paterson Exp $
 # File :   ComputingElement.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
      resource JDL for subsequent use during the matching process.
 """
 
-__RCSID__ = "$Id: ComputingElement.py,v 1.1 2007/11/26 22:02:07 paterson Exp $"
+__RCSID__ = "$Id: ComputingElement.py,v 1.2 2007/11/28 16:31:07 paterson Exp $"
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight      import *
 from DIRAC.ConfigurationSystem.Client.Config        import gConfig
@@ -220,6 +220,12 @@ class ComputingElement:
       return S_OK(jdl)
     else:
       return S_ERROR('ClassAd job is not valid')
+
+  #############################################################################
+  def sendOutput(self,stdid,line):
+    """ Callback function such that the results from the CE may be returned.
+    """
+    print line
 
   #############################################################################
   def submitJob(self,executableFile,jdl,localID):
