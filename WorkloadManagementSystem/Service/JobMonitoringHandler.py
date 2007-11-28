@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobMonitoringHandler.py,v 1.5 2007/11/26 13:21:21 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobMonitoringHandler.py,v 1.6 2007/11/28 18:45:50 atsareg Exp $
 ########################################################################
 
 """ JobMonitoringHandler is the implementation of the JobMonitoring service
@@ -11,7 +11,7 @@
 
 """
 
-__RCSID__ = "$Id: JobMonitoringHandler.py,v 1.5 2007/11/26 13:21:21 atsareg Exp $"
+__RCSID__ = "$Id: JobMonitoringHandler.py,v 1.6 2007/11/28 18:45:50 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -24,7 +24,7 @@ proxyRepository = False
 
 SUMMARY = ['JobType','Site','JobName','Owner','SubmissionTime',
            'LastUpdateTime','Status','MinorStatus','ApplicationStatus']
-SUMMARY = []	   
+SUMMARY = []
 PRIMARY_SUMMARY = []
 
 def initializeJobMonitoringHandler( serviceInfo ):
@@ -158,13 +158,13 @@ class JobMonitoringHandler( RequestHandler ):
   def export_getJobSite (self, jobID ):
 
     return jobDB.getJobAttribute(jobID, 'Site')
-    
+
 ##############################################################################
   types_getJobJDL = [ IntType ]
   def export_getJobJDL (self, jobID ):
 
-    result = jobDB.getJobJDL(jobID) 
-    return result    
+    result = jobDB.getJobJDL(jobID)
+    return result
 
 ##############################################################################
 #  types_getJobLogInfo = [ IntType ]
@@ -197,10 +197,10 @@ class JobMonitoringHandler( RequestHandler ):
 ##############################################################################
   types_getJobsSummary = [ ListType ]
   def export_getJobsSummary(self, jobIDs):
-  
+
     if not jobIDs:
       return S_ERROR('JobMonitoring.getJobsSummary: Received empty job list')
-  
+
     result = jobDB.getAttributesForJobList( jobIDs, SUMMARY )
     #return result
     restring = str(result['Value'])
@@ -220,3 +220,8 @@ class JobMonitoringHandler( RequestHandler ):
   types_getJobParameters = [ IntType ]
   def export_getJobParameters( self, jobID ):
     return jobDB.getJobParameters( jobID )
+
+##############################################################################
+  types_getJobAttributes = [ IntType ]
+  def export_getJobAttributes( self, jobID ):
+    return jobDB.getJobAttributes( jobID )
