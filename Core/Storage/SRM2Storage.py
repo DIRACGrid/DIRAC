@@ -164,26 +164,33 @@ class SRM2Storage(StorageBase):
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
-  def getFile(self,path):
+  def getFile(self,fileTuple):
     """Get a local copy in the current directory of a physical file specified by its path
     """
-    if type(path) == types.StringType:
-      urls = [path]
-    elif type(path) == types.ListType:
-      urls = path
+    if type(fileTuple) == types.TupleType:
+      urls = [fileTuple]
+    elif type(fileTuple) == types.ListType:
+      urls = fileTuple
     else:
-      return S_ERROR("SRM2Storage.getFile: Supplied path must be string or list of strings")
+      return S_ERROR("SRM2Storage.getFile: Supplied file information must be tuple of list of tuples")
+
+    MAX_SINGLE_STREAM_SIZE = 1024*1024*10 # 10 MB
+    MIN_BANDWIDTH = 1024*100 # 100 KB/s
 
     srctype = self.defaulttype
-    dsttype = 0
     src_spacetokendesc = self.spaceToken
+    dsttype = 0
     dest_spacetokendesc = ''
     failed = {}
     successful = {}
-    for url in urls:
-      dest_file = 'file://%s/%s' % (os.curdir(),os.path.basename(url))
-      src_file = url
-      errCode,errStr = lcg_util.lcg_cp3(src_file, dest_file, self.defaulttype, srctype, dsttype, self.nobdii, self.vo, self.nbstreams, self.conf_file, self.insecure, self.verbose, self.timeout,src_spacetokendesc,dest_spacetokendesc)
+    for src_url,dest_file,size in urls:
+      timeout = size/MIN_BANDWIDTH + 300
+      if size > MAX_SINGLE_STREAM_SIZE:
+        nbstreams = 4
+      else:
+        nbstreams = 1
+      dest_url = 'file:%s' % dest_file
+      errCode,errStr = lcg_util.lcg_cp3(src_url, dest_url, self.defaulttype, srctype, dsttype, self.nobdii, self.vo, nbstreams, self.conf_file, self.insecure, self.verbose, timeout,src_spacetokendesc,dest_spacetokendesc)
       if errCode == 0:
         successful[url] = True
       else:
@@ -204,7 +211,6 @@ class SRM2Storage(StorageBase):
     MAX_SINGLE_STREAM_SIZE = 1024*1024*10 # 10 MB
     MIN_BANDWIDTH = 1024*100 # 100 KB/s
 
-    srctype = 0
     dsttype = self.defaulttype
     src_spacetokendesc = ''
     dest_spacetokendesc = self.spaceToken
@@ -218,8 +224,10 @@ class SRM2Storage(StorageBase):
         nbstreams = 1
       if re.search('srm:',src_file) or re.search('gsiftp:',src_file):
         src_url = src_file
+        srctype = 2
       else:
         src_url = 'file:%s' % src_file
+        srctype = 0
       errCode,errStr = lcg_util.lcg_cp3(src_url, dest_url, self.defaulttype, srctype, dsttype, self.nobdii, self.vo, nbstreams, self.conf_file, self.insecure, self.verbose, timeout,src_spacetokendesc,dest_spacetokendesc)
       if errCode == 0:
         successful[dest_url] = True
