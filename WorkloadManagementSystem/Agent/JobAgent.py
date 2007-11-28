@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.1 2007/11/27 19:07:39 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.2 2007/11/28 22:16:38 paterson Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,10 +10,8 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.1 2007/11/27 19:07:39 paterson Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.2 2007/11/28 22:16:38 paterson Exp $"
 
-#from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB      import JobLoggingDB
-#from DIRAC.WorkloadManagementSystem.Client.SandboxClient import SandboxClient
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
 from DIRAC.Core.Base.Agent                               import Agent
 from DIRAC.Core.Utilities.Subprocess                     import shellCall
@@ -43,7 +41,7 @@ class JobAgent(Agent):
   def initialize(self,loops=0):
     """Sets default parameters and creates CE instance
     """
-    self.log.setLevel('debug') #temporary for debugging
+   # self.log.setLevel('debug') #temporary for debugging
     self.maxcount = loops
     result = Agent.initialize(self)
     ceUniqueID = gConfig.getOption(self.section+'/CEUniqueID','InProcess')
@@ -191,7 +189,7 @@ class JobAgent(Agent):
     submission = self.computingElement.submitJob(wrapperFile,jobJDL,batchID)
 
     if submission['OK']:
-      batchID = submission['Value'][1]
+      batchID = submission['Value']
       self.log.info('Job %s submitted as %s' %(jobID,batchID))
       self.log.debug('Set JobParameter: Local batch ID %s' %(batchID))
       jobParam = self.jobReport.setJobParameter(jobID,'LocalBatchID',str(batchID))
@@ -200,9 +198,13 @@ class JobAgent(Agent):
       #setRequestStatus('jdl',req,'Submitted')
       time.sleep(self.jobSubmissionDelay)
     else:
-      self.log.error("Job "+str(jobID)+' submition failed')
+      self.log.error("Job "+str(jobID)+' submission failed')
       self.report.setJobState(jobID, "failed")
       self.report.setJobParameter(jobID, "Error Message", "submission error")
+      jobStatus = self.jobReport.setJobStatus(jobID,'Failed','Submission Error','JobAgent')
+      if not jobStatus['OK']:
+        self.log.warn(jobStatus['Message'])
+      self.log.debug('JobStatus update to failed %s' %(jobStatus))
 
     return S_OK('Job submitted')
 
@@ -258,12 +260,12 @@ class JobAgent(Agent):
     """Request a single job from the matcher service.
     """
     try:
-     # print string.replace(string.replace(resourceJDL ,'[',''),']','')
-      result = self.matcher.requestJob(resourceJDL)
+      result = self.matcher.RequestJob(string.replace(ResourceJDL ,'[',''),']','')
       return result
     except Exception, x:
       self.log.exception(x)
       return S_ERROR('Job request to matcher service failed with exception')
+
 
   #############################################################################
   def __getJDLParameters(self,jdl):
@@ -279,7 +281,14 @@ class JobAgent(Agent):
       for param,value in paramsDict.items():
         if re.search('{',value):
           self.log.debug('Found list type parameter %s' %(param))
-          parameters[param] = value.replace('{','').replace('}','').replace('"','').replace('LFN:','').split()
+          rawValues = value.replace('{','').replace('}','').replace('"','').replace('LFN:','').split()
+          valueList = []
+          for val in rawValues:
+            if re.search(',$',val):
+              valueList.append(val[:-1])
+            else:
+              valueList.append(val)
+          parameters[param] = valueList
         else:
           self.log.debug('Found standard parameter %s' %(param))
           parameters[param]= value.replace('"','')
