@@ -27,15 +27,16 @@ DEBUG = 0
 
 class SRM2Storage(StorageBase):
 
-  def __init__(self,storageName,protocol,path,host,port,spaceToken):
+  def __init__(self,storageName,protocol,path,host,port,wspath,spaceToken):
     self.protocolName = 'SRM2'
     self.name = storageName
     self.protocol = protocol
     self.path = path
     self.host = host
     self.port = port
+    self.wspath = wspath
     self.spaceToken = spaceToken
-
+    self.cwd = self.path
     apply(StorageBase.__init__,(self,self.name,self.path))
 
     self.timeout = 100
@@ -190,29 +191,40 @@ class SRM2Storage(StorageBase):
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
-  def putFile(self,path):
-    """Put a copy of the local file in the current directory to the physical storage
+  def putFile(self,fileTuple):
+    """Put a file to the physical storage
     """
-    if type(path) == types.StringType:
-      urls = [path]
-    elif type(path) == types.ListType:
-      urls = path
+    if type(fileTuple) == types.TupleType:
+      urls = [fileTuple]
+    elif type(fileTuple) == types.ListType:
+      urls = fileTuple
     else:
-      return S_ERROR("SRM2Storage.putFile: Supplied path must be string or list of strings")
+      return S_ERROR("SRM2Storage.putFile: Supplied file info must be tuple of list of tuples.")
+
+    MAX_SINGLE_STREAM_SIZE = 1024*1024*10 # 10 MB
+    MIN_BANDWIDTH = 1024*100 # 100 KB/s
+
     srctype = 0
     dsttype = self.defaulttype
     src_spacetokendesc = ''
     dest_spacetokendesc = self.spaceToken
     failed = {}
     successful = {}
-    for url in urls:
-      dest_file = url
-      src_file = os.path.basename(url)
-      errCode,errStr = lcg_util.lcg_cp3(src_file, dest_file, self.defaulttype, srctype, dsttype, self.nobdii, self.vo, self.nbstreams, self.conf_file, self.insecure, self.verbose, self.timeout,src_spacetokendesc,dest_spacetokendesc)
-      if errCode == 0:
-        successful[url] = True
+    for src_file,dest_url,size in urls:
+      timeout = size/MIN_BANDWIDTH + 300
+      if size > MAX_SINGLE_STREAM_SIZE:
+        nbstreams = 4
       else:
-        failed[url] = errStr
+        nbstreams = 1
+      if re.search('srm:',src_file) or re.search('gsiftp:',src_file):
+        src_url = src_file
+      else:
+        src_url = 'file:%s' % src_file
+      errCode,errStr = lcg_util.lcg_cp3(src_url, dest_url, self.defaulttype, srctype, dsttype, self.nobdii, self.vo, nbstreams, self.conf_file, self.insecure, self.verbose, timeout,src_spacetokendesc,dest_spacetokendesc)
+      if errCode == 0:
+        successful[dest_url] = True
+      else:
+        failed[dest_url] = errStr
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
@@ -705,6 +717,25 @@ class SRM2Storage(StorageBase):
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
+  ################################################################################
+  #
+  # The methods below are for manipulating the client
+  #
+
+  def changeDirectory(self,directory):
+    """ Change the directory to the supplied directory
+    """
+    self.cwd = '%s/%s' % (self.cwd,directory)
+
+  def getCurrentURL(self,fileName):
+    """ Obtain the current file URL from the current working directory and the filename
+    """
+    try:
+      fullUrl = '%s://%s:%s%s%s%s' % (self.protocol,self.host,self.port,self.wspath,self.cwd,fileName)
+      return S_OK(fullUrl)
+    except Exception,x:
+      errStr = "Failed to create URL %s" % x
+      return S_ERROR(errStr)
 
   ################################################################################
   #
