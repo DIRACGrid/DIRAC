@@ -12,6 +12,7 @@ from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Storage.StorageFactory import StorageFactory
 from DIRAC.Core.Utilities.Pfn import pfnparse,pfnunparse
 from DIRAC.Core.Utilities.List import sortList
+from DIRAC.Core.Utilities.File import getSize
 import re, time
 
 class StorageElement:
@@ -124,6 +125,145 @@ class StorageElement:
       return S_OK(True)
     else:
       return S_OK(False)
+
+  #################################################################################################
+  #
+  # These are the methods that implement the StorageElement functionality
+  #
+
+  def putFile(self,file,alternativePath=None,desiredProtocol=None):
+    """ This method will upload a local file to the SE element
+
+        'file' is the full local path to the file e.g. /opt/dirac/file/for/upload.file
+        'alternativePath' is the path on the storage the file will be put
+        'desiredProtocol' is a protocol name
+    """
+    size = getSize(file)
+    fileName = os.path.basename(file)
+    if size == -1:
+      infoStr = "StorageElement.putFile: Failed to get file size"
+      gLogger.error(infoStr,file)
+      return S_ERROR(infoStr)
+    elif size == 0:
+      infoStr ="StorageElement.putFile: File is zero size"
+      gLogger.error(infoStr,file)
+      return S_ERROR(infoStr)
+
+    # The method will try all storages
+    for storage in self.storages:
+      # Get the parameters for the current storage
+      res = storage.getParameters()
+      protocolName = res['Value']['ProtocolName']
+      # If we only wish to try a single protocol then perform check here
+      tryProtocol = False
+      if desiredProtocol:
+        if desiredProtocol == protocolName:
+          tryProtocol = True
+      else:
+        tryProtocol = True
+      if tryProtocol:
+        res = S_OK()
+        # If we require to create an alternative path create it then move there in the storage
+        if alternativePath:
+          res = storage.makeDirectory(alternativePath)
+          if not res['OK']:
+            infoStr ="StorageElement.putFile: Failed to create directory."
+            gLogger.error(infoStr,'%s with protocol %s' % (alternativePath,protocolName))
+          else:
+            storage.changeDirectory(alternativePath)
+        if res['OK']:
+          # Obtain the full URL for the file from the file name and the cwd on the storage
+          res = storage.getCurrentURL(fileName)
+          if not res['OK']:
+            infoStr ="StorageElement.putFile: Failed to get the file URL."
+            gLogger.error(infoStr,'%s with protocol %s' % (fileName,protocolName))
+          else:
+            destUrl = res['Value']
+
+            ##############################################################
+            # Pre-transfer check. Check if file already exists and remove it
+            res = storage.exists(destUrl)
+            if res['OK']:
+              if res['Value']['Successful'].has_key(destUrl):
+                fileExists = res['Value']['Successful'][destUrl]
+                if not fileExists:
+                  infoStr = "StorageElement.putFile: pre-transfer check completed successfully"
+                  gLogger.info(infoStr)
+                else:
+                  infoStr = "StorageElement.putFile: pre-transfer check failed. File already exists. Removing..."
+                  gLogger.info(infoStr)
+                  res = storage.removeFile(destUrl)
+                  if res['OK']:
+                    if res['Value']['Successful'].has_key(destUrl):
+                      infoStr ="StorageElement.putFile: Removed pre-existing file from storage."
+                      gLogger.info(infoStr,'%s with protocol %s' % (destUrl,protocolName))
+                    else:
+                      infoStr ="StorageElement.putFile: Failed to remove pre-existing file from storage."
+                      gLogger.error(infoStr,'%s with protocol %s' % (destUrl,protocolName))
+                  else:
+                    infoStr ="StorageElement.putFile: Failed to remove pre-existing file from storage."
+                    gLogger.error(infoStr,'%s with protocol %s' % (destUrl,protocolName))
+              else:
+                infoStr ="StorageElement.putFile: Failed to find pre-existance of file."
+                gLogger.error(infoStr,'%s with protocol %s' % (destUrl,protocolName))
+            else:
+              infoStr ="StorageElement.putFile: Failed to find pre-existance of file."
+              gLogger.error(infoStr,'%s with protocol %s' % (destUrl,protocolName))
+            ##############################################################
+            # Perform the transfer here....
+            fileTuple = (fileName,destUrl,size)
+            res = storage.putFile(fileTuple)
+            if not res['OK']:
+              ##############################################################
+              # If the transfer failed clean up the mess
+              infoStr ="StorageElement.putFile: Failed to put file."
+              gLogger.error(infoStr,'%s with protocol %s' % (destUrl,protocolName))
+              infoStr ="StorageElement.putFile: Removing failed file remnant."
+              gLogger.info(infoStr,'%s with protocol %s' % (destUrl,protocolName))
+              res = storage.removeFile(destUrl)
+              if res['OK']:
+                if res['Value']['Successful'].has_key(destUrl):
+                  infoStr ="StorageElement.putFile: Removed failed file remnant from storage."
+                  gLogger.info(infoStr,'%s with protocol %s' % (destUrl,protocolName))
+                else:
+                  infoStr ="StorageElement.putFile: Failed to remove failed file remnant from storage."
+                  gLogger.error(infoStr,'%s with protocol %s' % (destUrl,protocolName))
+              else:
+                infoStr ="StorageElement.putFile: Failed to remove failed file remnant from storage."
+                gLogger.error(infoStr,'%s with protocol %s' % (destUrl,protocolName))
+            else:
+              ##############################################################
+              # Post-transfer check. Check the file size and remove it if not correct
+              res = storage.getFileSize(destUrl)
+              if res['OK']:
+                if res['Value']['Successful'].has_key(destUrl):
+                  # If the file size matched we are finished
+                  if res['Value']['Successful'][destUrl] == size:
+                    # woohoo, good work!!!
+                    return S_OK()
+                  # Otherwise we want to remove the corrupt file
+                  else:
+                    res = storage.removeFile(destUrl)
+                    if res['OK']:
+                      if res['Value']['Successful'].has_key(destUrl):
+                        infoStr ="StorageElement.putFile: Removed corrupted file from storage."
+                        gLogger.info(infoStr,'%s with protocol %s' % (destUrl,protocolName))
+                      else:
+                        infoStr ="StorageElement.putFile: Failed to remove corrupted file from storage."
+                        gLogger.error(infoStr,'%s with protocol %s' % (destUrl,protocolName))
+                    else:
+                      infoStr ="StorageElement.putFile: Failed to remove corrupted file from storage."
+                      gLogger.error(infoStr,'%s with protocol %s' % (destUrl,protocolName))
+                else:
+                  infoStr ="StorageElement.putFile: Failed to get destination file size."
+                  gLogger.error(infoStr,'%s with protocol %s' % (destUrl,protocolName))
+              else:
+                infoStr ="StorageElement.putFile: Failed to get destination file size."
+                gLogger.error(infoStr,'%s with protocol %s' % (destUrl,protocolName))
+    # If we get here we tried all the protocols and failed with all of them
+    errStr = "StorageElement.putFile: Failed to put file for all protocols."
+    gLogger.error(errStr,file)
+    return S_ERROR(errStr)
 
   #################################################################################################
   # Below this line things aren't implemented
