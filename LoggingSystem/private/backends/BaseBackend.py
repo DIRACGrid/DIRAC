@@ -2,7 +2,7 @@ from DIRAC.Core.Utilities import Time
 
 class BaseBackend:
 
-  _showCallingFrame = False
+  _showCallingFrame = True
 
   def __init__( self, cfgPath ):
     self.cfgPath = cfgPath
