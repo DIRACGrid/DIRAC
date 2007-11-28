@@ -4,6 +4,7 @@
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Storage.StorageBase import StorageBase
 from DIRAC.Core.Utilities.Subprocess import pythonCall
+from DIRAC.Core.Utilities.Pfn import pfnparse,pfnunparse
 from stat import *
 import types, re,os
 
@@ -745,6 +746,21 @@ class SRM2Storage(StorageBase):
       errStr = "Failed to create URL %s" % x
       return S_ERROR(errStr)
 
+  def getProtocolPfn(self,pfnDict,withPort):
+    """ From the pfn dict construct the SURL to be used
+    """
+    #For srm2 keep the file name and path
+    pfnDict['Protocol'] = self.protocol
+    pfnDict['Host'] = self.host
+    if withPort:
+      pfnDict['Port'] = self.port
+      pfnDict['WSUrl'] = self.wspath
+    else:
+      pfnDict['Port'] = ''
+      pfnDict['WSUrl'] = ''
+    res = pfnunparse(pfnDict)
+    return res
+
   ################################################################################
   #
   # The methods below are URL manipulation methods
@@ -785,6 +801,7 @@ class SRM2Storage(StorageBase):
     parameterDict['Path'] = self.path
     parameterDict['Port'] = self.port
     parameterDict['SpaceToken'] = self.spaceToken
+    parameterDict['WSUrl'] = self.wspath
     return S_OK(parameterDict)
 
   ################################################################################
