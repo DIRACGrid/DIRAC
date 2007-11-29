@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSClient.py,v 1.2 2007/11/15 21:40:38 paterson Exp $
+# $Id: WMSClient.py,v 1.3 2007/11/29 15:36:33 atsareg Exp $
 ########################################################################
 
 """ DIRAC Workload Management System Client class encapsulates all the
@@ -19,7 +19,7 @@ class WMSClient:
   def __init__(self):
     """ WMS Client constructor
     """
-    self.jobReceiver = RPCClient('WorkloadManagement/JobReceiver')
+    self.jobReceiver = RPCClient('WorkloadManagement/JobManager')
     self.sandbox = SandboxClient()
 
 ###############################################################################
