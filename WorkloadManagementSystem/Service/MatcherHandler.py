@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: MatcherHandler.py,v 1.2 2007/11/27 20:51:42 atsareg Exp $
+# $Id: MatcherHandler.py,v 1.3 2007/11/29 09:59:08 atsareg Exp $
 ########################################################################
 """
 Matcher class. It matches Agent Site capabilities to job requirements.
@@ -7,7 +7,7 @@ It also provides an XMLRPC interface to the Matcher
 
 """
 
-__RCSID__ = "$Id: MatcherHandler.py,v 1.2 2007/11/27 20:51:42 atsareg Exp $"
+__RCSID__ = "$Id: MatcherHandler.py,v 1.3 2007/11/29 09:59:08 atsareg Exp $"
 
 import re, os, sys, time
 import string
@@ -34,7 +34,7 @@ def initializeMatcherHandler( serviceInfo ):
   global jobLoggingDB
 
   jobDB = JobDB()
-  jobLoggingDB = jobLoggingDB
+  jobLoggingDB = JobLoggingDB()
   return S_OK()
 
 class MatcherHandler(RequestHandler):
@@ -105,6 +105,10 @@ class MatcherHandler(RequestHandler):
 
         # Find the matching job now
         classAdQueue = ClassAd(tqReqs)
+	if not classAdQueue.isOK():
+	  gLogger.warn("Illegal requirements for Task Queue %d" % tqID)
+	  gLogger.warn(tqReqs)
+	  continue
         result = matchClassAd(classAdAgent,classAdQueue)
         if result['OK']:
           symmetricMatch, leftToRightMatch, rightToLeftMatch = result['Value']
@@ -115,7 +119,7 @@ class MatcherHandler(RequestHandler):
 
     if jobID > 0:
       result = jobDB.setJobStatus(jobID,status='Matched',minor='Assigned')
-      result = jobLoggingDB.addLoggingRecord(self,jobID,
+      result = jobLoggingDB.addLoggingRecord(jobID,
                                              status='Matched',
                                              minor='Assigned',
                                              source='Matcher')

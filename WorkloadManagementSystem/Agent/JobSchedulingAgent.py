@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.3 2007/11/22 09:23:04 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.4 2007/11/29 09:58:38 atsareg Exp $
 # File :   JobSchedulingAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@
       meaningfully.
 
 """
-__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.3 2007/11/22 09:23:04 paterson Exp $"
+__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.4 2007/11/29 09:58:38 atsareg Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
@@ -30,7 +30,7 @@ class JobSchedulingAgent(Optimizer):
   def __init__(self):
     """ Standard constructor
     """
-    Optimizer.__init__(self,OPTIMIZER_NAME,enableFlag=False)
+    Optimizer.__init__(self,OPTIMIZER_NAME,enableFlag=True)
 
   #############################################################################
   def initialize(self):
@@ -49,12 +49,12 @@ class JobSchedulingAgent(Optimizer):
     #First check whether the job has an input data requirement
     result = self.jobDB.getInputData(job)
     if not result['OK']:
-      self.log.warn('Failed to get input data from JobdB for %s' % (job))
+      self.log.warn('Failed to get input data from JobDB for %s' % (job))
       self.log.error(result['Message'])
     if not result['Value']:
       #With no input data requirement, job can proceed directly to task queue
       self.log.debug('Job %s has no input data requirement' % (job))
-      result = sendJobToTaskQueue(job)
+      result = self.sendJobToTaskQueue(job)
       return result
 
     self.log.debug('Job %s has an input data requirement ' % (job))
@@ -321,7 +321,7 @@ class JobSchedulingAgent(Optimizer):
     return S_OK(sites)
 
   #############################################################################
-  def sendJobToTaskQueue(self,job,siteCandidates=None):
+  def sendJobToTaskQueue(self,job,siteCandidates=[]):
     """This method sends jobs to the task queue agent and if candidate sites
        are defined, updates job JDL accordingly.
     """
@@ -334,27 +334,27 @@ class JobSchedulingAgent(Optimizer):
       return S_ERROR('No JDL found for job')
     
     jdl = result['Value']
-    classadJob = ClassAd('['+jdl+']')
-    if not classadJob.isOK():
+    classAdJob = ClassAd(jdl)
+    if not classAdJob.isOK():
       self.log.debug("Warning: illegal JDL for job %s, will be marked problematic" % (job))
       result = S_ERROR()
       result['Value'] = "Illegal Job JDL"
       return result
 
-    requirements = classadJob.get_expression('Requirements').replace('Unknown','')
+    requirements = classAdJob.get_expression('Requirements').replace('Unknown','')
     self.log.debug('Existing job requirements: %s' % (requirements))    
     newRequirements = ''
     if not requirements:
-      newRequirements = 'Requirements = true;'
+      newRequirements = 'True'
     else:
       newRequirements = self.__resolveJobJDLRequirement(requirements,siteCandidates)
 
     if newRequirements:
       self.log.debug('Resolved requirements for job: %s' %(newRequirements))
-      classadJob.set_expression ("Requirements", newRequirements)
+      classAdJob.set_expression ("Requirements", newRequirements)
       sites = string.join(siteCandidates,',')
-      classadJob.insertAttributeString("Site",sites)      
-      result = self.jobDB.setJobJDL(int(job),classadJob.asJDL())
+      classAdJob.insertAttributeString("Site",sites)      
+      result = self.jobDB.setJobJDL(int(job),classAdJob.asJDL())
       if not result['OK']:
         return result
                 
@@ -374,15 +374,16 @@ class JobSchedulingAgent(Optimizer):
       if re.search(req.replace(' ',''),'other.Site=='):
         return requirements
       
-    jdlsite = ' && ( '
-    for site in siteCandidates:
-      jdlsite = jdlsite + ' other.Site == "'+site+'" || '
+    if siteCandidates:
+      jdlsite = ' && ( '
+      for site in siteCandidates:
+	jdlsite = jdlsite + ' other.Site == "'+site+'" || '
 
-    if jdlsite != ' && ( ':
       jdlsite = jdlsite[0:-4]
       jdlsite = jdlsite + " )"
 
-    requirements += jdlsite
+      requirements += jdlsite
+      
     return requirements      
 
   #############################################################################

@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.23 2007/11/27 18:01:40 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.24 2007/11/29 09:59:08 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.23 2007/11/27 18:01:40 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.24 2007/11/29 09:59:08 atsareg Exp $"
 
 import re, os, sys, string
 import time
@@ -692,7 +692,7 @@ class JobDB(DB):
         cmd = "UPDATE JobJDLs Set JDL='%s' WHERE JobID=%d" % (JDL,jobID)
       else:
         cmd = "INSERT INTO JobJDLs (JobID,JDL) VALUES (%d,'%s')" % (jobID,JDL)
-      result = self.jobDB._update(cmd)
+      result = self._update(cmd)
       if not result['OK']:
         return result
     if originalJDL:
@@ -1122,7 +1122,7 @@ class JobDB(DB):
   def deleteQueue(self,queueID):
     """ Delete a Task Queue with queueID
     """
-    req = "DELETE FROM TaskQueues WHERE TaskQueueId=%d" % queueId
+    req = "DELETE FROM TaskQueues WHERE TaskQueueId=%d" % queueID
     result = self._update(req)
     return result
 
@@ -1140,7 +1140,7 @@ class JobDB(DB):
       classAdQueue = ClassAd(row[0])
       queueID = row[1]
       if not classAdQueue.isOK():
-        cmd = 'DELETE from TaskQueues WHERE TaskQueueId=\'%s\'' % queueId
+        cmd = 'DELETE from TaskQueues WHERE TaskQueueId=\'%s\'' % queueID
         self._update( cmd )
       else:
         queueRequirement = classAdQueue.get_expression("Requirements")
@@ -1166,41 +1166,41 @@ class JobDB(DB):
     return S_OK(result['Value'])
 
 #############################################################################
-  def addJobToQueue(self,jobID,queueId,rank):
+  def addJobToQueue(self,jobID,queueID,rank):
     """Add the job specified by <jobID> to the Task Queue specified by
-       <queueId> with the job rank <rank>
+       <queueID> with the job rank <rank>
     """
 
     self.log.verbose('JobDB.addJobToQueue: Adding job %s to queue %s' \
-                  ' with rank %s' % ( jobID, queueId, rank ) )
+                  ' with rank %s' % ( jobID, queueID, rank ) )
 
     cmd = 'INSERT INTO TaskQueue(TaskQueueId, JobID, Rank) ' \
-          'VALUES ( %d, %d, %d )' % ( int(queueId), int(jobID), int(rank) )
+          'VALUES ( %d, %d, %d )' % ( int(queueID), int(jobID), int(rank) )
 
     result = self._update( cmd )
     if not result['OK']:
       self.log.error("Failed to add job "+str(jobID)+" to the Task Queue")
       return result
 
-    cmd = "UPDATE TaskQueues SET NumberOfJobs = NumberOfJobs + 1 WHERE TaskQueueId=%d" % queueId
+    cmd = "UPDATE TaskQueues SET NumberOfJobs = NumberOfJobs + 1 WHERE TaskQueueId=%d" % queueID
     result = self._update( cmd )
     if not result['OK']:
-      self.log.error("Failed to increment the job counter for the Task Queue %d" % queueId)
+      self.log.error("Failed to increment the job counter for the Task Queue %d" % queueID)
       return result
 
     # Check the Task Queue priority and adjust if necessary
-    cmd = "SELECT Priority FROM TaskQueues WHERE TaskQueueId=%s" % queueId
+    cmd = "SELECT Priority FROM TaskQueues WHERE TaskQueueId=%s" % queueID
     result = self._query(cmd)
     if not result['OK']:
-      self.log.error("Failed to get priority of the TaskQueue "+str(queueId))
+      self.log.error("Failed to get priority of the TaskQueue "+str(queueID))
       return result
 
     old_priority = int(result['Value'][0][0])
     if rank > old_priority:
-      cmd = "UPDATE TaskQueues SET Priority=%s WHERE TaskQueueId=%s" % (rank,queueId)
+      cmd = "UPDATE TaskQueues SET Priority=%s WHERE TaskQueueId=%s" % (rank,queueID)
       result = self._update(cmd)
       if not result['OK']:
-        self.log.error("Failed to update priority of the TaskQueue "+str(queueId))
+        self.log.error("Failed to update priority of the TaskQueue "+str(queueID))
         return result
 
     return S_OK()
@@ -1274,10 +1274,10 @@ class JobDB(DB):
     if not result['OK']:
       return result
 
-    cmd = "UPDATE TaskQueues SET NumberOfJobs = NumberOfJobs - 1 WHERE TaskQueueId=%d" % queueId
+    cmd = "UPDATE TaskQueues SET NumberOfJobs = NumberOfJobs - 1 WHERE TaskQueueId=%d" % queueID
     result = self._update( cmd )
     if not result['OK']:
-      self.log.error("Failed to decrement the job counter for the Task Queue %d" % queueId)
+      self.log.error("Failed to decrement the job counter for the Task Queue %d" % queueID)
       return result
 
     # Check that the queue is empty and remove it eventually
