@@ -5,6 +5,7 @@ from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Storage.StorageBase import StorageBase
 from DIRAC.Core.Utilities.Subprocess import pythonCall
 from DIRAC.Core.Utilities.Pfn import pfnparse,pfnunparse
+from DIRAC.Core.Utilities.File import getSize
 from stat import *
 import types, re,os
 
@@ -486,10 +487,14 @@ class SRM2Storage(StorageBase):
     else:
       return S_ERROR("SRM2Storage.isDirectory: Supplied path must be string or list of strings")
 
+    files = []
+    for url in urls:
+      files.append('%s/dirac_directory' % url)
+
     # Create the dictionary used by gfal
     gfalDict = {}
     gfalDict['surls'] = urls
-    gfalDict['nbfiles'] =  len(urls)
+    gfalDict['nbfiles'] =  len(files)
     gfalDict['defaultsetype'] = 'srmv2'
     gfalDict['no_bdii_check'] = 1
     gfalDict['srmv2_lslevels'] = 0
@@ -519,15 +524,14 @@ class SRM2Storage(StorageBase):
     failed = {}
     successful = {}
     for urlDict in listOfResults:
-      pathSURL = self.getUrl(urlDict['surl'])['Value']
+      fileSURL = self.getUrl(urlDict['surl'])['Value']
+      dirSURL = os.path.dirname(fileSURL)
       if urlDict['status'] == 0:
-        subPathStat = urlDict['stat']
-        if S_ISDIR(subPathStat[ST_MODE]):
-          successful[pathSURL] = True
-        else:
-          successful[pathSURL] = False
+        successful[dirSURL] = True
+      elif urlDict['status'] == 2:
+        successful[dirSURL] = False
       else:
-        failed[pathSURL] = os.strerror(urlDict['status'])
+        failed[dirSURL] = os.strerror(urlDict['status'])
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
@@ -543,17 +547,73 @@ class SRM2Storage(StorageBase):
     """
     return S_ERROR("Storage.putDirectory: implement me!")
 
-  def createDirectory(self,newdir):
-    """ Make a new directory on the physical storage
+  def createDirectory(self,path):
+    """ Make recursively new directory(ies) on the physical storage
     """
+    if type(path) == types.StringType:
+      urls = [path]
+    elif type(path) == types.ListType:
+      urls = path
+    else:
+      return S_ERROR("SRM2Storage.createDirectory: Supplied path must be string or list of strings")
+    successful = {}
+    failed = {}
+    for url in urls:
+      res = self.__makeDirs(url)
+      if res['OK']:
+        successful[path] = True
+      else:
+        failed[path] = res['Message']
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+  def __makeDir(self,path):
+    # First create a local file that will be used as a directory place holder in storage name space
     dfile = open("dirac_directory",'w')
     dfile.write("This is a DIRAC system directory")
     dfile.close()
-    return S_ERROR("Storage.createDirectory: implement me!")
+    srcFile = '%s/%s' % (os.getcwd(),'dirac_directory')
+    size = getSize(srcFile)
+    if size == -1:
+      infoStr = "SRM2Storage.createDirectory: Failed to get file size."
+      gLogger.error(infoStr,srcFile)
+      return S_ERROR(infoStr)
+
+    destFile = '%s/%s' % (url,'dirac_directory')
+    directoryTuple = (srcFile,destFile,size)
+    res = self.putFile(directoryTuple)
+    if os.path.exists(srcFile):
+      os.remove(srcFile)
+    if not res['OK']:
+      return res
+    if res['Value']['Successful'].has_key(destFile):
+      return S_OK()
+    else:
+      return S_ERROR(res['Value']['Failed'][destFile])
+
+  def __makeDirs(self,path):
+    """  Black magic contained within....
+    """
+    dir = os.path.dirname(path)
+    res = self.isDirectory(path)
+    if not res['OK']:
+      return res
+    if res['OK']:
+      if res['Value']['Successful'].has_key(path):
+        if res['Value']['Successful'][path]:
+          return S_OK()
+        else:
+          res = self.isDirectory(dir)
+          if res['Value']['Successful'].has_key(dir):
+            if res['Value']['Successful'][dir]:
+              res = self.__makeDir(path)
+            else:
+              res = self.__makeDirs(dir)
+              res = self.__makeDir(path)
+    return res
 
   def removeDirectory(self,path):
-    """Remove a directory on the physical storage together with all its files and
-       subdirectories.
+    """Remove the 'dirac_directory' file from the directory (making it no longer a dirac directory)
     """
     if type(path) == types.StringType:
       urls = [path]
@@ -561,8 +621,23 @@ class SRM2Storage(StorageBase):
       urls = path
     else:
       return S_ERROR("SRM2Storage.removeDirectory: Supplied path must be string or list of strings")
-
-
+    files = []
+    for url in urls:
+      files.append('%s/dirac_directory' % url)
+    res = self.removeFile(files)
+    successful = {}
+    failed = {}
+    if not res['OK']:
+      return res
+    else:
+      for fileUrl in res['Value']['Successful'].keys():
+        directory = fileUrl.replace('/dirac_directory','')
+        successful[directory] = True
+      for fileUrl in res['Value']['Failed'].keys():
+        directory = fileUrl.replace('/dirac_directory','')
+        failed[directory] = res['Value']['Failed'][fileUrl]
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
 
   def listDirectory(self,path):
     """ List the supplied path. First checks whether the path is a directory then gets the contents.
@@ -738,6 +813,11 @@ class SRM2Storage(StorageBase):
   # The methods below are for manipulating the client
   #
 
+  def resetWorkingDirectory(self):
+    """ Reset the working directory to the base dir
+    """
+    self.cwd = self.path
+
   def changeDirectory(self,directory):
     """ Change the directory to the supplied directory
     """
@@ -752,6 +832,16 @@ class SRM2Storage(StorageBase):
     except Exception,x:
       errStr = "Failed to create URL %s" % x
       return S_ERROR(errStr)
+
+  def isPfnForProtocol(self,pfn):
+    res = pfnparse(pfn)
+    if not res['OK']:
+      return res
+    pfnDict = res['Value']
+    if pfnDict['Protocol'] == self.protocol:
+      return S_OK(True)
+    else:
+      return S_OK(False)
 
   def getProtocolPfn(self,pfnDict,withPort):
     """ From the pfn dict construct the SURL to be used
@@ -810,42 +900,3 @@ class SRM2Storage(StorageBase):
     parameterDict['SpaceToken'] = self.spaceToken
     parameterDict['WSUrl'] = self.wspath
     return S_OK(parameterDict)
-
-  ################################################################################
-  #
-  # The methods below are for removal operations
-  #
-
-  def removeDir(self,directoryPath):
-    """ Remove the contents of the directory from the physical storage
-    """
-    res = self.ls(directoryPath)
-    if not res['OK']:
-      return res
-    resDict = res['Value']
-    if directoryPath in resDict['FailedPaths']:
-      errStr = "SRM2Storage.removeDir: Failed to list the contents of %s." % directoryPath
-      gLogger.error(errStr)
-      return S_ERROR(errStr)
-
-    surlsInDir = []
-    if not resDict['PathDetails'][directoryPath]['Directory']:
-      errStr = "SRM2Storage.removeDir: The supplied path was not a directory."
-      gLogger.error(errStr)
-      return S_ERROR(errStr)
-
-    surlsInDir = []
-    filesDict = resDict['PathDetails'][directoryPath]['Files']
-    surlsInDir = filesDict.keys()
-    res = self.remove(surlsInDir)
-    if not res['OK']:
-      return res
-
-    sizeRemoved = 0
-
-    for surl in surlsInDir:
-      if surl in res['Value']['Success']:
-        sizeRemoved += filesDict[surl]['Size']
-    res['SizeRemoved'] = sizeRemoved
-    return res
-
