@@ -414,7 +414,7 @@ class SRM2Storage(StorageBase):
     """
     return S_ERROR("Storage.prestageFile: implement me!")
 
-  def getTransportURL(self,path,protocols):
+  def getTransportURL(self,path,protocols=False):
     """ Obtain the TURLs for the supplied path and protocols
     """
     if type(path) == types.StringType:
@@ -424,13 +424,20 @@ class SRM2Storage(StorageBase):
     else:
       return S_ERROR("SRM2Storage.getTransportURL: Supplied path must be string or list of strings")
 
+    if type(protocols) == types.StringType:
+      listProtocols = [protocols]
+    elif type(protocols) == types.ListType:
+      listProtocols = protocols
+    else:
+      return S_ERROR("SRM2Storage.getTransportURL: Must supply desired protocols to this plug-in.")
+
     # Create the dictionary used by gfal
     gfalDict = {}
     gfalDict['surls'] = urls
     gfalDict['nbfiles'] = len(dict['surls'])
     gfalDict['defaultsetype'] = 'srmv2'
     gfalDict['no_bdii_check'] = 1
-    gfalDict['protocols'] = ['gsidcap','dcap','root','rfio']
+    gfalDict['protocols'] = listProtocols
 
     errCode,gfalObject,errMessage = gfal.gfal_init(gfalDict)
     if not errCode == 0:
