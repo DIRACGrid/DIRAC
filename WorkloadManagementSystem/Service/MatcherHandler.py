@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: MatcherHandler.py,v 1.3 2007/11/29 09:59:08 atsareg Exp $
+# $Id: MatcherHandler.py,v 1.4 2007/11/29 22:55:51 atsareg Exp $
 ########################################################################
 """
 Matcher class. It matches Agent Site capabilities to job requirements.
@@ -7,7 +7,7 @@ It also provides an XMLRPC interface to the Matcher
 
 """
 
-__RCSID__ = "$Id: MatcherHandler.py,v 1.3 2007/11/29 09:59:08 atsareg Exp $"
+__RCSID__ = "$Id: MatcherHandler.py,v 1.4 2007/11/29 22:55:51 atsareg Exp $"
 
 import re, os, sys, time
 import string
@@ -46,24 +46,27 @@ class MatcherHandler(RequestHandler):
     """
 
     startTime = time.time()
-    classAdAgent = ClassAd("["+resourceJDL+"]")
+    classAdAgent = ClassAd(resourceJDL)
     if not classAdAgent.isOK():
       return S_ERROR('Illegal Resource JDL')
     gLogger.verbose(classAdAgent.asJDL())
-    agentSite = classAdAgent.getAttributeString('Site')[0]
-    agentRequirements = classAdAgent.get_expression("Requirements")
-    if not agentRequirements:
-      classAdAgent.insertAttributeBool("Requirements", 'True')
+    agentSite = classAdAgent.getAttributeString('Site')
+    if not classAdAgent.lookupAttribute("Requirements"):
+      classAdAgent.insertAttributeBool("Requirements", True)
+      agentRequirements = classAdAgent.get_expression("Requirements")
+    else:
+      agentRequirements = classAdAgent.get_expression("Requirements")  
 
-    fields = agentRequirements.split()
     agent_jobID = 0
-    for ind in range(len(fields)):
-      if fields[ind].strip() == "other.JobID":
-        agent_jobID = int(fields[ind+2])
+    if agentRequirements:
+      fields = agentRequirements.split()
+      for ind in range(len(fields)):
+        if fields[ind].strip() == "other.JobID":
+          agent_jobID = int(fields[ind+2].replace('"','').replace(';',''))
 
     if agent_jobID:
       # The Agent requires a particular job
-      jobID = self.matchJob(ClassAdAgent,agent_jobID)
+      jobID = self.matchJob(classAdAgent,agent_jobID)
     else:
       # Get common site mask and check the agent site
       result = jobDB.getMask()
@@ -71,7 +74,7 @@ class MatcherHandler(RequestHandler):
         maskList = result['Value']
       else:
         return S_ERROR('Internal error: can not get site mask')
-	
+        
       siteIsBanned = 0
       if agentSite not in maskList:
         gLogger.info("Site [%s] is not allowed to take jobs" % agentSite)
@@ -105,17 +108,23 @@ class MatcherHandler(RequestHandler):
 
         # Find the matching job now
         classAdQueue = ClassAd(tqReqs)
-	if not classAdQueue.isOK():
-	  gLogger.warn("Illegal requirements for Task Queue %d" % tqID)
-	  gLogger.warn(tqReqs)
-	  continue
+        if not classAdQueue.isOK():
+          gLogger.warn("Illegal requirements for Task Queue %d" % tqID)
+          gLogger.warn(tqReqs)
+          continue
+          
         result = matchClassAd(classAdAgent,classAdQueue)
-        if result['OK']:
-          symmetricMatch, leftToRightMatch, rightToLeftMatch = result['Value']
-          if leftToRightMatch:
-            jobID = self.findMatchInQueue(classAdAgent, tqID)
-            if jobID > 0:
-              break
+        symmetricMatch, leftToRightMatch, rightToLeftMatch = result['Value']
+        if not result['OK']:
+          if leftToRightMatch is None:
+            gLogger.warn("Error while matching the Queue to Agent requirements")
+            continue
+        if leftToRightMatch:
+          jobID = self.findMatchInQueue(classAdAgent, tqID)
+          if jobID > 0:
+            break
+        else:
+          gLogger.warn('Error while matching the JDLs')      
 
     if jobID > 0:
       result = jobDB.setJobStatus(jobID,status='Matched',minor='Assigned')
@@ -125,7 +134,7 @@ class MatcherHandler(RequestHandler):
                                              source='Matcher')
       result = jobDB.getJobJDL(jobID)
       if not result['OK']:
-        return S_ERROR('Failed to get the job JDL')	
+        return S_ERROR('Failed to get the job JDL')        
     else:
       gLogger.verbose("No match found for site: %s" % agentSite)
       return S_ERROR("No match found for site: %s" % agentSite)
@@ -170,7 +179,7 @@ class MatcherHandler(RequestHandler):
     if jobID > 0:
       result = jobDB.deleteJobFromQueue(jobID)
 
-    gMmutex.release()
+    gMutex.release()
     return jobID
 
 ##############################################################################
@@ -209,17 +218,17 @@ class MatcherHandler(RequestHandler):
       result = jobDB.getJobAttributes(job,['SystemPriority','Status'])
       if result['OK']:
         if result['Value']:
-	  resJDL = jobDB.getJobJDL(job)
+          resJDL = jobDB.getJobJDL(job)
           jobJDL = resJDL['Value']
-	  if not jobJDL:
-	    continue
+          if not jobJDL:
+            continue
           priority = result['Value']['SystemPriority']
           status = result['Value']['Status']
           if status == "Waiting":
             classAdJob = ClassAd(jobJDL)
-	    if not classAdJob.isOK():
-	      gLogger.warn('Illegal job JDL for job %d' % job)
-	      continue
+            if not classAdJob.isOK():
+              gLogger.warn('Illegal job JDL for job %d' % job)
+              continue
             result = matchClassAd(classAdJob,classAdAgent)
             if result['OK']:
               symmetricMatch, leftToRightMatch, rightToLeftMatch = result['Value']
