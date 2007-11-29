@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobMonitoringHandler.py,v 1.6 2007/11/28 18:45:50 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobMonitoringHandler.py,v 1.7 2007/11/29 22:53:23 atsareg Exp $
 ########################################################################
 
 """ JobMonitoringHandler is the implementation of the JobMonitoring service
@@ -11,15 +11,17 @@
 
 """
 
-__RCSID__ = "$Id: JobMonitoringHandler.py,v 1.6 2007/11/28 18:45:50 atsareg Exp $"
+__RCSID__ = "$Id: JobMonitoringHandler.py,v 1.7 2007/11/29 22:53:23 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
+from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 
-# This is a global instance of the JobDB class
+# These are global instances of the DB classes
 jobDB = False
+jobLoggingDB = False
 proxyRepository = False
 
 SUMMARY = ['JobType','Site','JobName','Owner','SubmissionTime',
@@ -29,8 +31,9 @@ PRIMARY_SUMMARY = []
 
 def initializeJobMonitoringHandler( serviceInfo ):
 
-  global jobDB
+  global jobDB, jobLoggingDB
   jobDB = JobDB()
+  jobLoggingDB = JobLoggingDB()
   return S_OK()
 
 class JobMonitoringHandler( RequestHandler ):
@@ -167,10 +170,10 @@ class JobMonitoringHandler( RequestHandler ):
     return result
 
 ##############################################################################
-#  types_getJobLogInfo = [ IntType ]
-#  def export_getJobLogInfo(self, jobID):
-#
-#    return jobDB.getJobLogInfo( jobID )
+  types_getJobLoggingInfo = [ IntType ]
+  def export_getJobLoggingInfo(self, jobID):
+
+    return jobLoggingDB.getJobLoggingInfo(jobID)
 
 ##############################################################################
   types_getJobsStatus = [ ListType ]
