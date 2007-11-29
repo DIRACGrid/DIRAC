@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobLoggingDB.py,v 1.3 2007/06/27 15:22:41 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobLoggingDB.py,v 1.4 2007/11/29 11:37:03 atsareg Exp $
 ########################################################################
 """ JobLoggingDB class is a front-end to the Job Logging Database.
     The following methods are provided
@@ -9,7 +9,7 @@
     getWMSTimeStamps()    
 """    
 
-__RCSID__ = "$Id: JobLoggingDB.py,v 1.3 2007/06/27 15:22:41 atsareg Exp $"
+__RCSID__ = "$Id: JobLoggingDB.py,v 1.4 2007/11/29 11:37:03 atsareg Exp $"
 
 import re, os, sys
 import time, datetime
@@ -100,11 +100,20 @@ class JobLoggingDB(DB):
     if not result['OK']:
       return result
     if result['OK'] and not result['Value']:
-      return S_ERROR('No Logging information fro job %d' % int(jobID))
+      return S_ERROR('No Logging information for job %d' % int(jobID))
       
     return_value = []  
+    status,minor,app = result['Value'][0][:3]
+    if app == "idem":
+      app = "Unknown"
     for row in result['Value']:  
-      return_value.append((row[0],row[1],row[2],str(row[3]),row[4]))
+      if row[0] != "idem":
+        status = row[0];
+      if row[1] != "idem":
+        minor = row[1];	
+      if row[2] != "idem":
+        app = row[2];		
+      return_value.append((status,minor,app,str(row[3]),row[4]))
       
     return S_OK(return_value)    
     
