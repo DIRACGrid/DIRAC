@@ -87,7 +87,7 @@ class StorageBase:
     """
     return S_ERROR("Storage.prestageFile: implement me!")
 
-  def getTransportURL(self,path,protocols):
+  def getTransportURL(self,path,protocols=False):
     """ Obtain the TURLs for the supplied path and protocols
     """
     return S_ERROR("Storage.getTransportURL: implement me!")
