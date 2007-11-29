@@ -140,15 +140,69 @@ class StorageElement:
         pfnDict = pfnparse(pfn)
         res = storage.getProtocolPfn(pfnDict,withPort)
         return res
-    errStr = "StorageElement.getStorageParameters: Requested protocol supported but no object found."
+    errStr = "StorageElement.getPfnForProtocol: Requested protocol supported but no object found."
     gLogger.error(errStr,"%s for %s" % (protocol,self.name))
     return S_ERROR(errStr)
-
 
   #################################################################################################
   #
   # These are the methods that implement the StorageElement functionality
   #
+
+  def getAccessUrl(self,pfns):
+    """ This method obtains a tURL for a pfn (or list of pfns)
+
+        'pfn' is the physical file name (as registered in the LFC)
+    """
+    if type(pfns) == types.StringType:
+      pfnsToGet = [pfns]
+    elif type(pfns) == types.ListType:
+      pfnsToGet = pfns
+    else:
+      return S_ERROR("StorageElement.getTurls: Supplied pfns must be string or list of strings")
+
+    pfnToProtocolPfn = {}
+    turlDict = {}
+    # We try all the available storages for this SE
+    for storage in self.storages:
+      res = storage.getParameters()
+      protocolName = res['Value']['ProtocolName']
+      # First get all the protocol pfns we for this protocol
+      for pfn in pfnsToGet:
+        res = self.getPfnForProtocol(pfn, protocolName)
+        if res['OK']:
+          protocolPfn = res['Value']
+          pfnToProtocolPfn[protocolPfn] = pfn
+      # If there is anything to get
+      if len(pfnToProtocolPfn.keys()) > 0:
+        res = storage.getTransportURL(pfnToProtocolPfn.keys(),protocols=self.localProtocols)
+        if not res['OK']:
+          infoStr = "StorageElement.getTurls%s." % res['Message']
+          gLogger.error(infoStr)
+        else:
+          # Obtain the success or failure for each attempted pfn
+          for protocolPfn in pfnToProtocolPfn.keys():
+            if res['Value']['Successful'].has_key(protocolPfn):
+              turl = res['Value']['Successful'][protocolPfn]
+              pfn = pfnToProtocolPfn[protocolPfn]
+              # Populate a dictionary with the supplied pfn and obtained turl
+              turlDict[pfn] = turl
+              # Remove this pfn from the list so we don't try it again
+              pfnsToGet.remove(pfn)
+            else:
+              # This means that obtaining a tURL for this pfn failed
+              pfn = pfnToProtocolPfn[protocolPfn]
+              infoStr = "StorageElement.getTurls: Failed to get tURL: %s" % res['Value']['Failed'][protocolPfn]
+              gLogger.error(infoStr,'%s for protocol %s' % (pfn,protocolName))
+    successful = turlDict
+    failed = {}
+    # Check if there are any pfns which still remain to get
+    if len(pfnsToGet) > 0:
+      # If we get here we tried all the protocols and failed with all of them
+      for pfn in pfnsToGet:
+        failed[pfn] = True
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
 
   def getFile(self,pfn,catalogueFileSize):
     """ This method will obtain a local copy of a file from the SE
@@ -165,8 +219,8 @@ class StorageElement:
       protocolName = res['Value']['ProtocolName']
       res = storage.getProtocolPfn(pfnDict,True)
       if not res['OK']:
-        infoStr = "StorageElement.getFile%s."
-        gLogger.error(infoStr,'%s for protocol %s' % (protocolPfn,protocolName))
+        infoStr = "StorageElement.getFile%s." % res['Message']
+        gLogger.error(infoStr,'%s for protocol %s' % (pfn,protocolName))
       else:
         protocolPfn = res['Value']
         protocolSize = None
