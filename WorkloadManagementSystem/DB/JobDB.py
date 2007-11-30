@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.24 2007/11/29 09:59:08 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.25 2007/11/30 18:10:24 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.24 2007/11/29 09:59:08 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.25 2007/11/30 18:10:24 atsareg Exp $"
 
 import re, os, sys, string
 import time
@@ -580,12 +580,11 @@ class JobDB(DB):
     if not self._update( cmd )['OK']:
       result = S_ERROR('JobDB.setJobParameter: operation failed.')
 
-    cmd = 'INSERT INTO JobParameters VALUES(\'%s\', \'%s\', \'%s\' )' % ( jobID, key, value )
-    res = self._update( cmd )
-    if not res['OK']:
+    result = self._insert('JobParameters',['JobID','Name','Value'],[jobID, key, value])
+    if not result['OK']:
       result = S_ERROR('JobDB.setJobParameter: operation failed.')
 
-    return res
+    return result
 
  #############################################################################
   def setJobOptParameter(self,jobID,name,value):
@@ -596,8 +595,7 @@ class JobDB(DB):
     if not self._update( cmd )['OK']:
       result = S_ERROR('JobDB.setJobOptParameter: operation failed.')
 
-    cmd = 'INSERT INTO OptimizerParameters VALUES(\'%s\', \'%s\', \"%s\" )' % ( jobID, name, value )
-    result = self._update( cmd )
+    result = self._insert('OptimizerParameters',['JobID','Name','Value'],[jobID, key, value])
     if not result['OK']:
       return S_ERROR('JobDB.setJobOptParameter: operation failed.')
 
@@ -949,7 +947,7 @@ class JobDB(DB):
       return res
 
     # Save the job parameters for later debugging
-    result = self.getAllJobParameters(jobID)
+    result = self.getJobParameters(jobID)
     if result['OK']:
       parDict = result['Value']
       for key,value in parDict.items():
