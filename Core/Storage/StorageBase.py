@@ -40,7 +40,6 @@ class StorageBase:
     self.name = name
     self.rootdir = rootdir
     self.cwd = self.rootdir
-    self.isok = True
 
   def exists(self,path):
     """Check if the given path exists
