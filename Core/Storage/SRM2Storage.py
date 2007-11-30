@@ -194,9 +194,15 @@ class SRM2Storage(StorageBase):
       dest_url = 'file:%s' % dest_file
       errCode,errStr = lcg_util.lcg_cp3(src_url, dest_url, self.defaulttype, srctype, dsttype, self.nobdii, self.vo, nbstreams, self.conf_file, self.insecure, self.verbose, timeout,src_spacetokendesc,dest_spacetokendesc)
       if errCode == 0:
-        successful[url] = True
+        localSize = getSize(dest_file)
+        if localSize == size:
+          successful[src_url] = True
+        else:
+          if os.path.exists(dest_file):
+            os.remove(dest_file)
+          failed[src_url] = 'SRM2Storage.getFile: local and remote file size mismatch.'
       else:
-        failed[url] = errStr
+        failed[src_url] = errStr
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
@@ -232,9 +238,24 @@ class SRM2Storage(StorageBase):
         srctype = 0
       errCode,errStr = lcg_util.lcg_cp3(src_url, dest_url, self.defaulttype, srctype, dsttype, self.nobdii, self.vo, nbstreams, self.conf_file, self.insecure, self.verbose, timeout,src_spacetokendesc,dest_spacetokendesc)
       if errCode == 0:
-        successful[dest_url] = True
+        res = self.getFileSize(dest_url)
+        removeFile = True
+        if res['OK']:
+          if res['Value']['Successful'].has_key(dest_url):
+            if res['Value']['Successful'][dest_url] == size:
+              successful[dest_url] = True
+              removeFile = False
+            else:
+              failed[dest_url] = "SRM2Storage.putFile: Source and destination file sizes do not match."
+          else:
+            failed[dest_url] = "SRM2Storage.putFile: Failed to determine remote file size."
+        else:
+          failed[dest_url] = "SRM2Storage.putFile: Failed to determine remote file size."
       else:
         failed[dest_url] = errStr
+      if removeFile:
+        # This is because some part of the transfer failed.
+        res = self.removeFile(dest_url)
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
@@ -413,7 +434,52 @@ class SRM2Storage(StorageBase):
   def prestageFile(self,path):
     """ Issue prestage request for file
     """
-    return S_ERROR("Storage.prestageFile: implement me!")
+    if type(path) == types.StringType:
+      urls = [path]
+    elif type(path) == types.ListType:
+      urls = path
+    else:
+      return S_ERROR("SRM2Storage.getFileSize: Supplied path must be string or list of strings")
+
+    # Create the dictionary used by gfal
+    gfalDict = {}
+    gfalDict['surls'] = urls
+    gfalDict['nbfiles'] =  len(urls)
+    gfalDict['defaultsetype'] = 'srmv2'
+    gfalDict['no_bdii_check'] = 1
+    gfalDict['timeout'] = self.long_timeout
+
+    errCode,gfalObject,errMessage = gfal.gfal_init(gfalDict)
+    if not errCode == 0:
+      errStr = "SRM2Storage.prestageFile: Failed to initialise gfal_init: %s" % errMessage
+      gLogger.error(errStr)
+      return S_ERROR(errStr)
+    gLogger.debug("SRM2Storage.prestageFile: Initialised gfal_init.")
+
+    errCode,gfalObject,errMessage = gfal.gfal_prestage(gfalObject)
+    if not errCode == 0:
+      errStr = "SRM2Storage.prestageFile: Failed to perform gfal_prestage: %s" % errMessage
+      gLogger.error(errStr)
+      return S_ERROR(errStr)
+    gLogger.debug("SRM2Storage.prestageFile: Performed gfal_prestage.")
+
+    numberOfResults,gfalObject,listOfResults = gfal.gfal_get_results(gfalObject)
+    if numberOfResults <= 0:
+      errStr = "SRM2Storage.prestageFile: Did not obtain results with gfal_get_results."
+      gLogger.error(errStr)
+      return S_ERROR(errStr)
+    gLogger.debug("SRM2Storage.prestageFile: Retrieved %s results from gfal_get_results." % numberOfResults)
+
+    failed = {}
+    successful = {}
+    for urlDict in listOfResults:
+      pathSURL = self.getUrl(urlDict['surl'])['Value']
+      if urlDict['status'] == 0:
+        successful[pathSURL] = dict['turl']
+      else:
+        failed[pathSURL] = os.strerror(urlDict['status'])
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
 
   def getTransportURL(self,path,protocols=False):
     """ Obtain the TURLs for the supplied path and protocols
@@ -535,17 +601,178 @@ class SRM2Storage(StorageBase):
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
-  def getDirectory(self,path):
-    """Get locally a directory from the physical storage together with all its
-       files and subdirectories.
+  def getDirectory(self,directoryTuple):
+    """ Get locally a directory from the physical storage together with all its files and subdirectories.
     """
-    return S_ERROR("Storage.getDirectory: implement me!")
+    if type(directoryTuple) == types.TupleType:
+      urls = [directoryTuple]
+    elif type(directoryTuple) == types.ListType:
+      urls = directoryTuple
+    else:
+      return S_ERROR("SRM2Storage.getDirectory: Supplied directory info must be tuple of list of tuples.")
+    successful = {}
+    failed = {}
+    for src_directory,destination_directory in urls:
+      res = self.__getDir(src_directory,destination_directory)
+      if res['OK']:
+        if res['Value']['AllGot']:
+          successful[src_directory] = {'Files':res['Value']['Files'],'Size':['Value']['Size']}
+        else:
+          failed[src_directory] = {'Files':res['Value']['Files'],'Size':['Value']['Size']}
+      else:
+        failed[src_directory] = {'Files':0,'Size':0}
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
 
-  def putDirectory(self,path):
-    """Put a local directory to the physical storage together with all its
-       files and subdirectories.
+  def __getDir(self,srcDirectory,destDirectory):
+    """ Black magic contained within...
     """
-    return S_ERROR("Storage.putDirectory: implement me!")
+    filesGot = 0
+    sizeGot = 0
+
+    # Check the remote directory exists
+    res = self.isDirectory(srcDirectory)
+    if not res['OK']:
+      errStr = "SRM2Storage.__getDir: Failed to find the supplied source directory."
+      gLogger.error(errStr,srcDirectory)
+      return S_ERROR(errStr)
+    if not res['Value']['Successful'].has_key(srcDirectory):
+      errStr = "SRM2Storage.__getDir: Failed to find the supplied source directory."
+      gLogger.error(errStr,srcDirectory)
+      return S_ERROR(errStr)
+    if not res['Value']['Successful'][srcDirectory]:
+      errStr = "SRM2Storage.__getDir: The supplied source directory does not exist."
+      gLogger.error(errStr,srcDirectory)
+      return S_ERROR(errStr)
+
+    # Check the local directory exists and create it if not
+    if not os.path.exists(destDirectory):
+      os.makedirs(destDirectory)
+
+    # Get the remote directory contents
+    res = self.listDirectory(srcDirectory)
+    if not res['OK']:
+      errStr = "SRM2Storage.__getDir: Failed to list the source directory."
+      gLogger.error(errStr,srcDirectory)
+    if not res['Value']['Successful'].has_key(srcDirectory):
+      errStr = "SRM2Storage.__getDir: Failed to list the source directory."
+      gLogger.error(errStr,srcDirectory)
+
+    surlsDict = res['Value']['Successful'][srcDirectory]['Files']
+    subDirsDict = res['Value']['Successful'][directoryPath]['SubDirs']
+
+    # First get all the files in the directory
+    filesGot = True
+    for surl in surlsDict.keys():
+      surlGot = False
+      fileSize = surlsDict[surl]['Size']
+      fileName = os.path.basename(surl)
+      localPath = '%/%s' % (destDirectory,fileName)
+      fileTuple = (surl,localPath,fileSize)
+      res = self.getFile(fileTuple)
+      if res['OK']:
+        if res['Value']['Successful'].has_key(surl):
+          fileGot += 1
+          sizeGot += size
+          surlGot = True
+      if not surlGot:
+        filesGot = False
+
+    # Then recursively get the sub directories
+    subDirsGot = True
+    for subDir in subDirsDict.keys():
+      subDirName = os.path.basename(subDir)
+      localPath = '%s/%s' % (destDirectory,subDirName)
+      dirSuccessful = False
+      res = self.__getDir(subDir,localPath)
+      if res['OK']:
+        if res['Value']['AllGot']:
+          dirSuccessful = True
+        filesGot += res['Value']['Files']
+        sizeGot += res['Value']['Size']
+      if not dirSuccessful:
+        subDirsGot = False
+
+    # Check whether all the operations were successful
+    if subDirsGot and filesGot:
+      allGot = True
+    else:
+      allGot = False
+    resDict = {'AllGot':allGot,'Files':filesGot,'Size':sizeGot}
+    return S_OK(resDict)
+
+  def putDirectory(self, directoryTuple):
+    """ Put a local directory to the physical storage together with all its files and subdirectories.
+    """
+    if type(directoryTuple) == types.TupleType:
+      urls = [directoryTuple]
+    elif type(directoryTuple) == types.ListType:
+      urls = directoryTuple
+    else:
+      return S_ERROR("SRM2Storage.putDirectory: Supplied directory info must be tuple of list of tuples.")
+    successful = {}
+    failed = {}
+    for src_directory,destination_directory in urls:
+      res = self.__putDir(src_directory,destination_directory)
+      if res['OK']:
+        if res['Value']['AllPut']:
+          successful[src_directory] = {'Files':res['Value']['Files'],'Size':['Value']['Size']}
+        else:
+          failed[src_directory] = {'Files':res['Value']['Files'],'Size':['Value']['Size']}
+      else:
+        failed[src_directory] = {'Files':0,'Size':0}
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+  def __putDir(self,src_directory,dest_directory):
+    """ Black magic contained within...
+    """
+    filesPut = 0
+    sizePut = 0
+
+    remote_cwd = dest_directory
+    # Check the local directory exists
+    if not os.path.isdir(src_directory):
+      errStr = "SRM2Storage.__putDir: The supplied directory does not exist."
+      gLogger.error(errStr,src_directory)
+      return S_ERROR(errStr)
+
+    # Create the remote directory
+    res = self.createDirectory(dest_directory)
+    if not res['OK']:
+      errStr = "SRM2Storage.__putDir: Failed to create destination directory."
+      gLogger.error(errStr,dest_directory)
+      return S_ERROR(errStr)
+
+    # Get the local directory contents
+    contents = os.listdir(src_directory)
+    allSuccessful = True
+    for file in contents:
+      pathSuccessful = False
+      localPath = '%s/%s' % (src_directory,file)
+      remotePath = '%s/%s' % (dest_directory,file)
+      if os.path.isdir(localPath):
+        res = self.__putDir(localPath,remoteDirectory)
+        if res['OK']:
+          if res['Value']['AllPut']:
+            pathSuccessful = True
+          filesPut += res['Value']['Files']
+          sizePut += res['Value']['Size']
+        else:
+          return S_ERROR('Failed to put directory')
+      else:
+        localFileSize = getSize(localPath)
+        fileTuple = (localPath,remotePath,localFileSize)
+        res = self.putFile(fileTuple)
+        if res['OK']:
+          if res['Value']['Successful'].has_key(remotePath):
+            files += 1
+            size += localFileSize
+            pathSuccessful = True
+      if not pathSuccessful:
+        allSuccessful = False
+    resDict = {'AllPut':allSuccessful,'Files':filesPut,'Size':sizePut}
+    return S_OK(resDict)
 
   def createDirectory(self,path):
     """ Make recursively new directory(ies) on the physical storage
@@ -613,7 +840,7 @@ class SRM2Storage(StorageBase):
     return res
 
   def removeDirectory(self,path):
-    """Remove the 'dirac_directory' file from the directory (making it no longer a dirac directory)
+    """Remove the recursively the files and sub directories
     """
     if type(path) == types.StringType:
       urls = [path]
@@ -621,22 +848,55 @@ class SRM2Storage(StorageBase):
       urls = path
     else:
       return S_ERROR("SRM2Storage.removeDirectory: Supplied path must be string or list of strings")
-    files = []
-    for url in urls:
-      files.append('%s/dirac_directory' % url)
-    res = self.removeFile(files)
     successful = {}
     failed = {}
-    if not res['OK']:
-      return res
-    else:
-      for fileUrl in res['Value']['Successful'].keys():
-        directory = fileUrl.replace('/dirac_directory','')
-        successful[directory] = True
-      for fileUrl in res['Value']['Failed'].keys():
-        directory = fileUrl.replace('/dirac_directory','')
-        failed[directory] = res['Value']['Failed'][fileUrl]
+    for url in urls:
+      res = self.__removeDir(url)
+      if res['OK']:
+        if res['Value']['AllRemoved']:
+          successful[url] = {'Files':res['Value']['Files'],'Size':['Value']['Size']}
+        else:
+          failed[url] = {'Files':res['Value']['Files'],'Size':['Value']['Size']}
+      else:
+        failed[url] = {'Files':0,'Size':0}
     resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+  def __removeDir(self,directory):
+    """ Black magic to recursively remove the directory and sub dirs. Repeatedly calls itself to delete recursively.
+    """
+    filesRemoved = 0
+    sizeRemoved = 0
+    res = self.listDirectory(directory)
+    if not res['OK']:
+      return S_ERROR("Failed to list directory")
+    if not res['Value']['Successful'].has_key(directory):
+      return S_ERROR("Failed to list directory")
+    filesRemoved = False
+    surlsDict = res['Value']['Successful'][directoryPath]['Files']
+    subDirsDict = res['Value']['Successful'][directoryPath]['SubDirs']
+    res = storage.removeFile(surlsDict.keys())
+    if res['OK']:
+      for removedSurl in res['Value']['Successful'].keys():
+        filesRemoved += 1
+        sizeRemoved += files[removedSurl]['Size']
+        if len(res['Value']['Failed'].keys()) == 0:
+          filesRemoved = True
+    # Remove the sub directories found
+    subDirsRemoved = True
+    for subDir in subDirsDict.keys():
+      res = self.__removeDir(subDir)
+      if not res['OK']:
+        subDirsRemoved = False
+      if not res['Value']['AllRemoved']:
+        subDirsRemoved = False
+      filesRemoved += res['Value']['Files']
+      sizeRemoved += res['Value']['Size']
+    if subDirsRemoved and filesRemoved:
+      allRemoved = True
+    else:
+      allRemoved = False
+    resDict = {'AllRemoved':allRemoved,'Files':filesRemoved,'Size':sizeRemoved}
     return S_OK(resDict)
 
   def listDirectory(self,path):
