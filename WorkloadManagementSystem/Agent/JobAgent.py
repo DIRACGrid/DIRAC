@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.2 2007/11/28 22:16:38 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.3 2007/11/30 17:17:34 paterson Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.2 2007/11/28 22:16:38 paterson Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.3 2007/11/30 17:17:34 paterson Exp $"
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
 from DIRAC.Core.Base.Agent                               import Agent
@@ -20,7 +20,7 @@ from DIRAC.Resources.Computing.ComputingElementFactory   import ComputingElement
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC                                               import S_OK, S_ERROR, gConfig
 
-import os, re, string,time
+import os, sys, re, string, time
 
 AGENT_NAME = 'WorkloadManagement/JobAgent'
 
@@ -31,11 +31,10 @@ class JobAgent(Agent):
     """ Standard constructor for Agent
     """
     Agent.__init__(self,AGENT_NAME)
-    self.jobReceiver  = RPCClient('WorkloadManagement/JobReceiver')
-   #  self.inputSandbox = RPCClient('WorkloadManagement/InputSandbox')
+    self.log.setLevel('verb')
+    self.jobManager  = RPCClient('WorkloadManagement/JobManager')
     self.matcher = RPCClient('WorkloadManagement/Matcher')
     self.jobReport  = RPCClient('WorkloadManagement/JobStateUpdate')
-    #self.matcher = True
 
   #############################################################################
   def initialize(self,loops=0):
@@ -78,7 +77,7 @@ class JobAgent(Agent):
     self.log.debug(resourceJDL)
     start = time.time()
     jobRequest = self.__requestJob(resourceJDL)
-    matchTime = start - time.time()
+    matchTime = time.time() - start
     self.log.info('MatcherTime = %.2f (s)' %(matchTime))
 
     if not jobRequest['OK']:
@@ -103,23 +102,16 @@ class JobAgent(Agent):
     jobID = params['JobID']
     jobType = params['JobType']
     systemConfig = params['SystemConfig']
-    self.log.debug('Job request successful: \n %s' %(jobRequest['Value']))
+    self.log.verbose('Job request successful: \n %s' %(jobRequest['Value']))
     self.log.info('Received JobID=%s, JobType=%s, SystemConfig=%s' %(jobID,jobType,systemConfig))
 
     try:
-      jobParam = self.jobReport.setJobParameter(jobID,'MatcherServiceTime',str(matchTime))
-      if not jobParam['OK']:
-        self.log.warn(jobParam['Message'])
+      self.__setJobParam(jobID,'MatcherServiceTime',str(matchTime))
+      self.__report(jobID,'Matched','Job Received by Agent')
 
-      self.log.debug('Set JobParameter: MatcherServiceTime %s' %(jobParam))
-      jobStatus = self.jobReport.setJobStatus(jobID,'Matched','Job Received by Agent','JobAgent')
-      if not jobStatus['OK']:
-        self.log.warn(jobStatus['Message'])
-
-      self.log.debug('JobStatus set to matched, job received by agent %s' %(jobStatus))
       saveJDL = self.__saveJobJDLRequest(jobID,jobJDL)
       if not saveJDL['OK']:
-        result = self.jobReceiver.rescheduleJob(jobID)
+        result = self.jobManager.rescheduleJob(int(jobID))
         if not result['OK']:
           self.log.error(result['Message'])
         else:
@@ -130,17 +122,14 @@ class JobAgent(Agent):
       if not software['OK']:
         self.log.error('Failed to install software for job %s' %(jobID))
         self.log.error(software['Message'])
-        result = self.jobReceiver.rescheduleJob(jobID)
+        result = self.jobManager.rescheduleJob(jobID)
         if not result['OK']:
           self.log.error(result['Message'])
           return result
         else:
-          self.log.info('Rescheduled job %s' %(jobID))
+          self.log.info('Rescheduled job after software installation failure %s' %(jobID))
 
-      jobStatus = self.jobReport.setJobStatus(jobID,'Matched','Job Prepared to Submit','JobAgent')
-      if not jobStatus['OK']:
-        self.log.warn(jobStatus['Message'])
-      self.log.debug('JobStatus update to prepared to submit %s' %(jobStatus))
+      self.__report(jobID,'Matched','Job Prepared to Submit')
       resourceParameters = self.__getJDLParameters(resourceJDL)
       if not resourceParameters['OK']:
         return resourceParameters
@@ -150,7 +139,7 @@ class JobAgent(Agent):
       self.log.debug('After %sCE submitJob()' %(self.ceName))
     except Exception, x:
       self.log.exception(x)
-      result = self.jobReceiver.rescheduleJob(jobID)
+      result = self.jobManager.rescheduleJob(jobID)
       if not result['OK']:
         self.log.error(result['Message'])
       else:
@@ -165,10 +154,8 @@ class JobAgent(Agent):
     """Checks software requirement of job and whether this is already present
        before installing software locally.
     """
-    jobStatus = self.jobReport.setJobStatus(jobID,'Matched','Installing Software','JobAgent')
-    if not jobStatus['OK']:
-      self.log.warn(jobStatus['Message'])
-    self.log.debug('JobStatus update to installing software %s' %(jobStatus))
+    self.__report(jobID,'Matched','Installing Software')
+    # to implement
     return S_OK()
 
   #############################################################################
@@ -178,10 +165,8 @@ class JobAgent(Agent):
     """
     result = self.__createJobWrapper(jobID,jobParams,resourceParams)
     wrapperFile = result['Value']
-    jobStatus = self.jobReport.setJobStatus(jobID,'Matched','Queued','JobAgent')
-    if not jobStatus['OK']:
-      self.log.warn(jobStatus['Message'])
-    self.log.debug('JobStatus update to queued %s' %(jobStatus))
+    self.__report(jobID,'Matched','Queued')
+
     wrapperName = os.path.basename(wrapperFile)
     self.log.info('Submitting %s to %sCE' %(wrapperName,self.ceName))
 
@@ -192,19 +177,12 @@ class JobAgent(Agent):
       batchID = submission['Value']
       self.log.info('Job %s submitted as %s' %(jobID,batchID))
       self.log.debug('Set JobParameter: Local batch ID %s' %(batchID))
-      jobParam = self.jobReport.setJobParameter(jobID,'LocalBatchID',str(batchID))
-      if not jobParam['OK']:
-        self.log.warn(jobParam['Message'])
-      #setRequestStatus('jdl',req,'Submitted')
+      self.__setJobParam(jobID,'LocalBatchID',str(batchID))
       time.sleep(self.jobSubmissionDelay)
     else:
-      self.log.error("Job "+str(jobID)+' submission failed')
-      self.report.setJobState(jobID, "failed")
-      self.report.setJobParameter(jobID, "Error Message", "submission error")
-      jobStatus = self.jobReport.setJobStatus(jobID,'Failed','Submission Error','JobAgent')
-      if not jobStatus['OK']:
-        self.log.warn(jobStatus['Message'])
-      self.log.debug('JobStatus update to failed %s' %(jobStatus))
+      self.log.warn('Job '+str(jobID)+' submission failed')
+      self.__setJobParam(jobID,'ErrorMessage','%s CE Submission Error' %(self.ceName))
+      self.__report(jobID,'Failed','%s CE Submission Error' %(self.ceName))
 
     return S_OK('Job submitted')
 
@@ -229,9 +207,9 @@ class JobAgent(Agent):
     timeStr = time.strftime("%H:%M",time.localtime(time.time()))
     date_time = '%s %s' %(dateStr,timeStr)
     signature = __RCSID__
-    print >> wrapper, wrapperTemplate % (signature,jobID,date_time)
+    dPython = sys.executable
+    print >> wrapper, wrapperTemplate % (dPython,signature,jobID,date_time)
     wrapper.write('sys.path.insert(0,"%s")\n' %(self.siteRoot))
-    wrapper.write('print sys.path\n')
     jobArgs = "execute("+str(arguments)+")\n"
     wrapper.write(jobArgs)
     wrapper.close ()
@@ -249,10 +227,6 @@ class JobAgent(Agent):
     jdl = classAdJob.asJDL()
     jdlFile.write(jdl)
     jdlFile.close()
-    #result = setRequest('jdl',jdlfilename)
-#    if not result['OK']:
-#      return S_ERROR()
- #   os.remove(jdlfilename)
     return S_OK(jdlFileName)
 
   #############################################################################
@@ -260,12 +234,11 @@ class JobAgent(Agent):
     """Request a single job from the matcher service.
     """
     try:
-      result = self.matcher.RequestJob(string.replace(ResourceJDL ,'[',''),']','')
+      result = self.matcher.requestJob(resourceJDL)
       return result
     except Exception, x:
       self.log.exception(x)
       return S_ERROR('Job request to matcher service failed with exception')
-
 
   #############################################################################
   def __getJDLParameters(self,jdl):
@@ -296,5 +269,27 @@ class JobAgent(Agent):
     except Exception, x:
       self.log.exception(x)
       return S_ERROR('Exception while extracting JDL parameters for job')
+
+  #############################################################################
+  def __report(self,jobID,status,minorStatus):
+    """Wraps around setJobStatus of state update client
+    """
+    jobStatus = self.jobReport.setJobStatus(int(jobID),status,minorStatus,'JobAgent')
+    self.log.debug('setJobStatus(%s,%s,%s,%s)' %(jobID,status,minorStatus,'JobAgent'))
+    if not jobStatus['OK']:
+        self.log.warn(jobStatus['Message'])
+
+    return jobStatus
+
+  #############################################################################
+  def __setJobParam(self,jobID,name,value):
+    """Wraps around setJobParameter of state update client
+    """
+    jobParam = self.jobReport.setJobParameter(int(jobID),str(name),str(value))
+    self.log.debug('setJobParameter(%s,%s,%s)' %(jobID,name,value))
+    if not jobParam['OK']:
+        self.log.warn(jobParam['Message'])
+
+    return jobParam
 
   #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
