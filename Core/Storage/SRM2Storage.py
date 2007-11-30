@@ -9,6 +9,8 @@ from DIRAC.Core.Utilities.File import getSize
 from stat import *
 import types, re,os
 
+ISOK = True
+
 try:
   import lcg_util
   infoStr = 'Using lcg_util from: %s' % lcg_util.__file__
@@ -16,6 +18,7 @@ try:
 except Exception,x:
   errStr = "SRM2Storage.__init__: Failed to import lcg_util: %s" % (x)
   gLogger.exception(errStr)
+  ISOK = False
 
 try:
   import gfal
@@ -24,12 +27,13 @@ try:
 except Exception,x:
   errStr = "SRM2Storage.__init__: Failed to import gfal: %s" % (x)
   gLogger.exception(errStr)
-
-DEBUG = 0
+  ISOK = False
 
 class SRM2Storage(StorageBase):
 
   def __init__(self,storageName,protocol,path,host,port,wspath,spaceToken):
+    self.isok = ISOK
+
     self.protocolName = 'SRM2'
     self.name = storageName
     self.protocol = protocol
@@ -52,6 +56,9 @@ class SRM2Storage(StorageBase):
     self.verbose = 1
     self.conf_file = 'ignored'
     self.insecure = 0
+
+  def isOK(self):
+    return self.isok
 
   def exists(self,path):
     """ Check if the given path exists. The 'path' variable can be a string or a list of strings.
