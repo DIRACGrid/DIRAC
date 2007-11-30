@@ -145,17 +145,21 @@ class StorageFactory:
             requestedRemoteProtocols.append(protocolName)
           requestedProcotlDetails.append(protocolDict)
         else:
-          gLogger.warn(res['Message'])
+          gLogger.info(res['Message'])
 
-    resDict = {}
-    resDict['StorageName'] = self.name
-    resDict['StorageOptions'] = self.options
-    resDict['StorageObjects'] = self.storages
-    resDict['LocalProtocols'] = requestedLocalProtocols
-    resDict['RemoteProtocols'] = requestedRemoteProtocols
-    resDict['ProtocolOptions'] = requestedProcotlDetails
-    return S_OK(resDict)
-
+    if len(self.storages) > 0:
+      resDict = {}
+      resDict['StorageName'] = self.name
+      resDict['StorageOptions'] = self.options
+      resDict['StorageObjects'] = self.storages
+      resDict['LocalProtocols'] = requestedLocalProtocols
+      resDict['RemoteProtocols'] = requestedRemoteProtocols
+      resDict['ProtocolOptions'] = requestedProcotlDetails
+      return S_OK(resDict)
+    else:
+      errStr = "StorageFactory.getStorages: Failed to instantiate any storage protocols."
+      gLogger.error(errStr,self.name)
+      return S_ERROR(errStr)
   ###########################################################################################
   #
   # Below are internal methods for obtaining section/option/value configuration
@@ -168,7 +172,7 @@ class StorageFactory:
 
       'storageName' is the storage section to check in the CS
     """
-    configPath = '%s/%s%' % (self.rootConfigPath,storageName)
+    configPath = '%s/%s' % (self.rootConfigPath,storageName)
     res = gConfig.getOptions(configPath)
     if not res['OK']:
       errStr = "StorageFactory._getConfigStorageName: Failed to get storage options"
@@ -265,15 +269,19 @@ class StorageFactory:
       moduleName = "%sStorage" % (protocolName)
       storageModule = __import__('DIRAC.Core.Storage.%s' % moduleName,globals(),locals(),[moduleName])
     except Exception, x:
-      errStr = "StorageFactory._storage: Failed to import %s: %s" % (storageName, x)
+      errStr = "StorageFactory._generateStorageObject: Failed to import %s: %s" % (storageName, x)
       gLogger.exception(errStr)
       return S_ERROR(errStr)
 
     try:
       evalString = "storageModule.%s(storageName,protocol,path,host,port,spaceToken,wsUrl)" % moduleName
       storage = eval(evalString)
+      if not storage.isOK():
+        errStr = "StorageFactory._generateStorageObject: Failed to instatiate storage plug in."
+        gLogger.error(errStr,"%s" % (moduleName))
+        return S_ERROR(errStr)
     except Exception, x:
-      errStr = "StorageFactory._storage: Failed to instatiate %s(): %s" % (moduleName, x)
+      errStr = "StorageFactory._generateStorageObject: Failed to instatiate %s(): %s" % (moduleName, x)
       gLogger.exception(errStr)
       return S_ERROR(errStr)
     return S_OK(storage)
