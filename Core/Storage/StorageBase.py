@@ -40,6 +40,7 @@ class StorageBase:
     self.name = name
     self.rootdir = rootdir
     self.cwd = self.rootdir
+    self.isok = True
 
   def exists(self,path):
     """Check if the given path exists
@@ -145,6 +146,9 @@ class StorageBase:
   #
   # These are the methods for manipulting the client
   #
+
+  def isOK(self):
+    return self.isok
 
   def changeDirectory(self,newdir):
     """ Change the current directory
