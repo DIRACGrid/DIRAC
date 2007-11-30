@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Resources/Computing/ComputingElement.py,v 1.2 2007/11/28 16:31:07 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Resources/Computing/ComputingElement.py,v 1.3 2007/11/30 17:44:53 paterson Exp $
 # File :   ComputingElement.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
      resource JDL for subsequent use during the matching process.
 """
 
-__RCSID__ = "$Id: ComputingElement.py,v 1.2 2007/11/28 16:31:07 paterson Exp $"
+__RCSID__ = "$Id: ComputingElement.py,v 1.3 2007/11/30 17:44:53 paterson Exp $"
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight      import *
 from DIRAC.ConfigurationSystem.Client.Config        import gConfig
@@ -55,16 +55,38 @@ class ComputingElement:
     reqsDict = result['Value']
     for option,value in reqsDict.items():
       if type(value) == type(' '):
-        requirements += ' other.'+option+' == "'+value+'" &&'
+        jdlInt = self.__getInt(value)
+        if type(jdlInt) == type(1):
+          requirements += ' other.'+option+' == %d &&' %(jdlInt)
+        else:
+          requirements += ' other.'+option+' == "%s" &&' %(value)
       elif type(value) == type(1):
-        requirements += ' other.'+option+' == '+value+' &&'
+        requirements += ' other.'+option+' == %d &&' %(value)
       else:
         self.log.warn('Could not determine type of:  %s = %s' %(option,value))
 
     if requirements:
+      if re.search('&&$',requirements):
+        requirements = requirements[:-3]
       self.classAd.set_expression('Requirements',requirements)
 
     return S_OK('Added requirements')
+
+  #############################################################################
+  def __getInt(self,value):
+    """To deal with JDL integer values.
+    """
+    tmpValue = None
+
+    try:
+     tmpValue = int(value.replace('"',''))
+    except Exception, x:
+      pass
+
+    if tmpValue:
+      value = tmpValue
+
+    return value
 
   #############################################################################
   def __getSiteParameters(self):
@@ -102,8 +124,13 @@ class ComputingElement:
       elif option == 'LocalSE':
         self.classAd.insertAttributeVectorString('LocalSE',value.split(','))
       elif type(value) == type(' '):
-        self.log.debug('Found string attribute: %s = %s' %(option,value))
-        self.classAd.insertAttributeString(option, value)
+        jdlInt = self.__getInt(value)
+        if type(jdlInt) == type(1):
+          self.log.debug('Found JDL integer attribute: %s = %s' %(option,jdlInt))
+          self.classAd.insertAttributeInt(option, jdlInt)
+        else:
+          self.log.debug('Found string attribute: %s = %s' %(option,value))
+          self.classAd.insertAttributeString(option, value)
       elif type(value) == type(1):
         self.log.debug('Found integer attribute: %s = %s' %(option,value))
         self.classAd.insertAttributeInt(option, value)
@@ -129,8 +156,13 @@ class ComputingElement:
     self.ceParameters = ceOptions
     for option,value in ceOptions.items():
       if type(value) == type(' '):
-        self.log.debug('Found string attribute: %s = %s' %(option,value))
-        self.classAd.insertAttributeString(option, value)
+        jdlInt = self.__getInt(value)
+        if type(jdlInt) == type(1):
+          self.log.debug('Found JDL integer attribute: %s = %s' %(option,jdlInt))
+          self.classAd.insertAttributeInt(option, jdlInt)
+        else:
+          self.log.debug('Found string attribute: %s = %s' %(option,value))
+          self.classAd.insertAttributeString(option, value)
       elif type(value) == type(1):
         self.log.debug('Found integer attribute: %s = %s' %(option,value))
         self.classAd.insertAttributeInt(option, value)
