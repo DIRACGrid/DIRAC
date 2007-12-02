@@ -1,4 +1,4 @@
-import unittest,types,time,os
+import unittest,types,time,os,shutil
 from DIRAC.Core.Storage.StorageFactory import StorageFactory
 from DIRAC.Core.Utilities.File import getSize
 
@@ -13,7 +13,275 @@ class StoragePlugInTestCase(unittest.TestCase):
     self.storage = storageDetails['StorageObjects'][0]
     self.storage.changeDirectory('lhcb/test/unit-test')
 
-class PutFileTestCase(StoragePlugInTestCase):
+  def test_createUnitTestDir(self):
+    print '\n\n#########################################################################\n\n\t\t\tCreate Directory test\n'
+    destDir = self.storage.getCurrentURL('')['Value']
+    res = self.storage.createDirectory(destDir)
+    self.assert_(res['OK'])
+    self.assert_(res['Value']['Successful'].has_key(destDir))
+    self.assert_(res['Value']['Successful'][destDir]) 
+
+class DirectoryTestCase(StoragePlugInTestCase):
+
+  def test_isDirectory(self):
+    print '\n\n#########################################################################\n\n\t\t\tIs Directory test\n' 
+    # Test that we can determine what is a directory
+    destDir = self.storage.getCurrentURL('')['Value']  
+    res = self.storage.isDirectory(destDir)
+    self.assert_(res['OK'])
+    self.assert_(res['Value']['Successful'].has_key(destDir))
+    self.assert_(res['Value']['Successful'][destDir])
+
+    # Test that we can determine that a directory is not a directory
+    destDir = self.storage.getCurrentURL('NonExistantFile')['Value']
+    res = self.storage.isDirectory(destDir)
+    self.assert_(res['OK'])
+    self.assert_(res['Value']['Successful'].has_key(destDir))
+    self.assertFalse(res['Value']['Successful'][destDir])
+
+  def test_putRemoveDirectory(self):
+    print '\n\n#########################################################################\n\n\t\t\tPut Directory test\n'    
+    # First create a local directory to upload
+    localDir = '/tmp/unit-test'
+    srcFile = '/etc/group'
+    numberOfFiles = 5
+    sizeOfLocalFile = getSize(srcFile)
+    print 'Creating local directory: %s' % localDir
+    if not os.path.exists(localDir):
+      os.mkdir(localDir)
+    for i in range(numberOfFiles):
+      shutil.copy(srcFile,'%s/testFile.%s' % (localDir,time.time()))
+      time.sleep(1)
+
+    # Check that we can successfully upload the directory to the storage element
+    remoteDir = self.storage.getCurrentURL('putDirTest')['Value']
+    dirTuple = (localDir,remoteDir)
+    res = self.storage.putDirectory(dirTuple)
+    self.assert_(res['OK'])
+    self.assert_(res['Value']['Successful'].has_key(remoteDir))
+    resDict = res['Value']['Successful'][remoteDir]
+    self.assertEqual(resDict['Files'],numberOfFiles)    
+    self.assertEqual(resDict['Size'],numberOfFiles*sizeOfLocalFile)
+
+    # Now remove the remove directory
+    res = self.storage.removeDirectory(remoteDir)
+    self.assert_(res['OK'])
+    self.assert_(res['Value']['Successful'].has_key(remoteDir))
+    resDict = res['Value']['Successful'][remoteDir]
+    self.assertEqual(resDict['Files'],numberOfFiles)
+    self.assertEqual(resDict['Size'],numberOfFiles*sizeOfLocalFile)
+
+    #Clean up the locally created directory
+    print 'Removing local directory: %s' % localDir
+    localFiles = os.listdir(localDir)
+    for fileName in localFiles:
+      fullPath = '%s/%s' % (localDir,fileName)
+      os.remove(fullPath)
+    os.removedirs(localDir)
+
+  def test_putGetDirectoryMetadata(self):
+    print '\n\n#########################################################################\n\n\t\t\tGet Directory Metadata test\n'
+    # First create a local directory to upload
+    localDir = '/tmp/unit-test'
+    srcFile = '/etc/group'
+    numberOfFiles = 5
+    sizeOfLocalFile = getSize(srcFile)
+    print 'Creating local directory: %s' % localDir
+    if not os.path.exists(localDir):
+      os.mkdir(localDir)
+    for i in range(numberOfFiles):
+      shutil.copy(srcFile,'%s/testFile.%s' % (localDir,time.time()))
+      time.sleep(1)
+    
+    # Check that we can successfully upload the directory to the storage element
+    remoteDir = self.storage.getCurrentURL('putDirTest')['Value']
+    dirTuple = (localDir,remoteDir)
+    res = self.storage.putDirectory(dirTuple)
+    self.assert_(res['OK'])
+    self.assert_(res['Value']['Successful'].has_key(remoteDir))
+    resDict = res['Value']['Successful'][remoteDir]
+    self.assertEqual(resDict['Files'],numberOfFiles)
+    self.assertEqual(resDict['Size'],numberOfFiles*sizeOfLocalFile)
+
+    # Get the directory metadata
+    res = self.storage.getDirectoryMetadata(remoteDir)
+    self.assert_(res['OK'])
+    self.assert_(res['Value']['Successful'].has_key(remoteDir))
+    resDict = res['Value']['Successful'][remoteDir]
+    self.assert_(resDict.has_key('Permissions'))
+    self.assertEqual(resDict['Permissions'],493)
+
+    # Now remove the remove directory
+    res = self.storage.removeDirectory(remoteDir)
+    self.assert_(res['OK'])
+    self.assert_(res['Value']['Successful'].has_key(remoteDir))
+    resDict = res['Value']['Successful'][remoteDir]
+    self.assertEqual(resDict['Files'],numberOfFiles)
+    self.assertEqual(resDict['Size'],numberOfFiles*sizeOfLocalFile)
+    
+    #Clean up the locally created directory
+    print 'Removing local directory: %s' % localDir
+    localFiles = os.listdir(localDir)
+    for fileName in localFiles:
+      fullPath = '%s/%s' % (localDir,fileName)
+      os.remove(fullPath)
+    os.removedirs(localDir)
+
+  def test_putGetDirectorySize(self):
+    print '\n\n#########################################################################\n\n\t\t\tGet Directory Size test\n'
+    # First create a local directory to upload
+    localDir = '/tmp/unit-test'
+    srcFile = '/etc/group'
+    numberOfFiles = 5
+    sizeOfLocalFile = getSize(srcFile)
+    print 'Creating local directory: %s' % localDir
+    if not os.path.exists(localDir): 
+      os.mkdir(localDir)
+    for i in range(numberOfFiles):
+      shutil.copy(srcFile,'%s/testFile.%s' % (localDir,time.time()))
+      time.sleep(1)
+
+    # Check that we can successfully upload the directory to the storage element
+    remoteDir = self.storage.getCurrentURL('putDirTest')['Value']
+    dirTuple = (localDir,remoteDir)
+    res = self.storage.putDirectory(dirTuple)
+    self.assert_(res['OK'])
+    self.assert_(res['Value']['Successful'].has_key(remoteDir))
+    resDict = res['Value']['Successful'][remoteDir]
+    self.assertEqual(resDict['Files'],numberOfFiles)
+    self.assertEqual(resDict['Size'],numberOfFiles*sizeOfLocalFile)
+
+    # Now get the directory size
+    res = self.storage.getDirectorySize(remoteDir)
+    self.assert_(res['OK'])
+    self.assert_(res['Value']['Successful'].has_key(remoteDir))
+    resDict = res['Value']['Successful'][remoteDir]
+    self.assertEqual(resDict['Size'],numberOfFiles*sizeOfLocalFile)
+    self.assertEqual(resDict['Files'],numberOfFiles)
+
+    # Now remove the remove directory
+    res = self.storage.removeDirectory(remoteDir)
+    self.assert_(res['OK'])
+    self.assert_(res['Value']['Successful'].has_key(remoteDir))
+    resDict = res['Value']['Successful'][remoteDir]
+    self.assertEqual(resDict['Files'],numberOfFiles)
+    self.assertEqual(resDict['Size'],numberOfFiles*sizeOfLocalFile)
+   
+    #Clean up the locally created directory
+    print 'Removing local directory: %s' % localDir
+    localFiles = os.listdir(localDir)
+    for fileName in localFiles:
+      fullPath = '%s/%s' % (localDir,fileName)
+      os.remove(fullPath)
+    os.removedirs(localDir)
+
+  def test_putListDirectory(self):
+    print '\n\n#########################################################################\n\n\t\t\tList Directory test\n'
+    # First create a local directory to upload
+    localDir = '/tmp/unit-test'
+    srcFile = '/etc/group'
+    numberOfFiles = 5
+    sizeOfLocalFile = getSize(srcFile)
+    print 'Creating local directory: %s' % localDir
+    if not os.path.exists(localDir): 
+      os.mkdir(localDir)
+    for i in range(numberOfFiles):
+      shutil.copy(srcFile,'%s/testFile.%s' % (localDir,time.time()))
+      time.sleep(1)
+  
+    # Check that we can successfully upload the directory to the storage element
+    remoteDir = self.storage.getCurrentURL('putDirTest')['Value']
+    dirTuple = (localDir,remoteDir)
+    res = self.storage.putDirectory(dirTuple)
+    self.assert_(res['OK'])
+    self.assert_(res['Value']['Successful'].has_key(remoteDir))
+    resDict = res['Value']['Successful'][remoteDir]
+    self.assertEqual(resDict['Files'],numberOfFiles)
+    self.assertEqual(resDict['Size'],numberOfFiles*sizeOfLocalFile)
+       
+    # List the remote directory
+    res = self.storage.listDirectory(remoteDir)
+    self.assert_(res['OK'])
+    self.assert_(res['Value']['Successful'].has_key(remoteDir))
+    resDict = res['Value']['Successful'][remoteDir]
+    self.assert_(resDict.has_key('SubDirs'))    
+    self.assert_(resDict.has_key('Files'))
+    self.assertEqual(len(resDict['Files'].keys()), numberOfFiles)
+
+    # Now remove the remove directory
+    res = self.storage.removeDirectory(remoteDir)
+    self.assert_(res['OK'])
+    self.assert_(res['Value']['Successful'].has_key(remoteDir))
+    resDict = res['Value']['Successful'][remoteDir]
+    self.assertEqual(resDict['Files'],numberOfFiles)
+    self.assertEqual(resDict['Size'],numberOfFiles*sizeOfLocalFile)
+    
+    #Clean up the locally created directory
+    print 'Removing local directory: %s' % localDir
+    localFiles = os.listdir(localDir)
+    for fileName in localFiles:
+      fullPath = '%s/%s' % (localDir,fileName)
+      os.remove(fullPath)
+    os.removedirs(localDir)
+  
+  def test_putGetDirectory(self):
+    print '\n\n#########################################################################\n\n\t\t\tGet Directory test\n'
+    # First create a local directory to upload
+    localDir = '/tmp/unit-test'
+    srcFile = '/etc/group'
+    numberOfFiles = 5
+    sizeOfLocalFile = getSize(srcFile)
+    print 'Creating local directory: %s' % localDir
+    if not os.path.exists(localDir):
+      os.mkdir(localDir)
+    for i in range(numberOfFiles):
+      shutil.copy(srcFile,'%s/testFile.%s' % (localDir,time.time()))
+      time.sleep(1)
+
+    # Check that we can successfully upload the directory to the storage element
+    remoteDir = self.storage.getCurrentURL('putDirTest')['Value']  
+    dirTuple = (localDir,remoteDir)
+    res = self.storage.putDirectory(dirTuple)
+    self.assert_(res['OK'])
+    self.assert_(res['Value']['Successful'].has_key(remoteDir))
+    resDict = res['Value']['Successful'][remoteDir]
+    self.assertEqual(resDict['Files'],numberOfFiles)
+    self.assertEqual(resDict['Size'],numberOfFiles*sizeOfLocalFile)
+
+    #Clean up the locally created directory
+    print 'Removing local directory: %s' % localDir
+    localFiles = os.listdir(localDir)
+    for fileName in localFiles:
+      fullPath = '%s/%s' % (localDir,fileName)
+      os.remove(fullPath)
+    os.removedirs(localDir)
+
+    # Check that we can get directories from the storage element
+    directoryTuple = (remoteDir,localDir)
+    res = self.storage.getDirectory(directoryTuple)
+    self.assert_(res['OK'])
+    self.assert_(res['Value']['Successful'].has_key(remoteDir))
+    resDict = res['Value']['Successful'][remoteDir] 
+    self.assertEqual(resDict['Files'],numberOfFiles)
+    self.assertEqual(resDict['Size'],numberOfFiles*sizeOfLocalFile) 
+
+    # Now remove the remove directory
+    res = self.storage.removeDirectory(remoteDir)
+    self.assert_(res['OK'])
+    self.assert_(res['Value']['Successful'].has_key(remoteDir))
+    resDict = res['Value']['Successful'][remoteDir]
+    self.assertEqual(resDict['Files'],numberOfFiles)
+    self.assertEqual(resDict['Size'],numberOfFiles*sizeOfLocalFile)
+
+    #Clean up the locally created directory
+    print 'Removing local directory: %s' % localDir
+    localFiles = os.listdir(localDir)
+    for fileName in localFiles:
+      fullPath = '%s/%s' % (localDir,fileName)
+      os.remove(fullPath)
+    os.removedirs(localDir)
+
+class FileTestCase(StoragePlugInTestCase):
 
   def test_putRemoveFile(self):
     print '\n\n#########################################################################\n\n\t\t\tPut and Remove test\n'
@@ -137,7 +405,7 @@ class PutFileTestCase(StoragePlugInTestCase):
     self.assert_(res['Value']['Successful'].has_key(destFile)) 
 
   def test_putGetFileMetaData(self):
-    print '\n\n#########################################################################\n\n\t\t\Get file metadata test\n'  
+    print '\n\n#########################################################################\n\n\t\t\tGet file metadata test\n'  
     # First upload a file to the storage   
     srcFile = '/etc/group' 
     fileSize = getSize(srcFile)
@@ -166,7 +434,7 @@ class PutFileTestCase(StoragePlugInTestCase):
     res = self.storage.getFileMetadata(destFile) 
     self.assert_(res['OK'])
     self.assert_(res['Value']['Failed'].has_key(destFile))
-    expectedError = 'SRM2Storage.getFileMetadata: Failed to get file metadata. No such file or directory'
+    expectedError = "SRM2Storage.getFileMetadata: File does not exist."
     self.assertEqual(res['Value']['Failed'][destFile],expectedError)
 
     # Check directories are handled properly
@@ -204,7 +472,7 @@ class PutFileTestCase(StoragePlugInTestCase):
     res = self.storage.getFileMetadata(destFile)
     self.assert_(res['OK'])
     self.assert_(res['Value']['Failed'].has_key(destFile))
-    expectedError = 'SRM2Storage.getFileMetadata: Failed to get file metadata. No such file or directory'
+    expectedError = "SRM2Storage.getFileMetadata: File does not exist."
     self.assertEqual(res['Value']['Failed'][destFile],expectedError)
    
     # Check directories are handled properly
@@ -213,7 +481,7 @@ class PutFileTestCase(StoragePlugInTestCase):
     self.assert_(res['OK'])   
     self.assert_(res['Value']['Failed'].has_key(destDir))
     expectedError = "SRM2Storage.getFileSize: Supplied path is not a file."
-    self.assertEqual(res['Value']['Failed'][destDir],expectedError)   
+    self.assertEqual(res['Value']['Failed'][destDir],expectedError)
 
   def test_putPrestageFile(self):
     print '\n\n#########################################################################\n\n\t\t\tFile prestage test\n'  
@@ -237,10 +505,15 @@ class PutFileTestCase(StoragePlugInTestCase):
     res = self.storage.removeFile(destFile)   
     self.assert_(res['OK'])
     self.assert_(res['Value']['Successful'].has_key(destFile))
+        
+    # Check what happens with deleted files
+    #res = self.storage.prestageFile(destFile)
+    #self.assert_(res['OK'])
+    #self.assert_(res['Value']['Failed'].has_key(destFile))
     
-    # Check what happens with deleted files #THIS IS A BUG, REPORT IR
-    testFile = "%sSDFKSDJFSDKJ" % destFile
-    res = self.storage.prestageFile(testFile)
+    # Check what happens with non-existant files #THIS IS A BUG, REPORT IR
+    testFile = "%s-THIS-IS-DEFINATELY-NOT-A-FILE" % destFile
+    res = self.storage.prestageFile(testFile)    
     self.assert_(res['OK'])
     #self.assert_(res['Value']['Failed'].has_key(destFile))
 
@@ -257,7 +530,7 @@ class PutFileTestCase(StoragePlugInTestCase):
     self.assert_(res['Value']['Successful'].has_key(destFile))
 
     #Check that we can get a turl
-    res = self.storage.getTransportURL(destFile,['gsidcap'])
+    res = self.storage.getTransportURL(destFile,['dcap','gsidcap'])
     self.assert_(res['OK'])
     self.assert_(res['Value']['Successful'].has_key(destFile))
 
@@ -270,11 +543,11 @@ class PutFileTestCase(StoragePlugInTestCase):
     res = self.storage.getTransportURL(destFile,['gsidcap'])
     self.assert_(res['OK'])
     self.assert_(res['Value']['Failed'].has_key(destFile))
-    expectedError = "SRM2Storage.getTransportURL: Failed to obtain tURL for file. No such file or directory"
+    expectedError = "SRM2Storage.getTransportURL: File does not exist."
     self.assertEqual(res['Value']['Failed'][destFile],expectedError) 
 
 if __name__ == '__main__':
-  suite = unittest.defaultTestLoader.loadTestsFromTestCase(PutFileTestCase)
-  #suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(CreateFTSReqCase))
+  suite = unittest.defaultTestLoader.loadTestsFromTestCase(FileTestCase)
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(DirectoryTestCase))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)
 
