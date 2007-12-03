@@ -529,7 +529,8 @@ class SRM2Storage(StorageBase):
     gfalDict['defaultsetype'] = 'srmv2'
     gfalDict['no_bdii_check'] = 1
     gfalDict['timeout'] = self.long_timeout
-
+    gfalDict['srmv2_spacetokendesc'] = self.spaceToken
+    
     gLogger.info("SRM2Storage.prestageFile: Attempting to issue stage requests for %s file(s)." % len(urls))
 
     errCode,gfalObject,errMessage = gfal.gfal_init(gfalDict)
@@ -596,6 +597,7 @@ class SRM2Storage(StorageBase):
     gfalDict['defaultsetype'] = 'srmv2'
     gfalDict['no_bdii_check'] = 1
     gfalDict['protocols'] = listProtocols
+    gfalDict['srmv2_spacetokendesc'] = self.spaceToken
 
     gLogger.info("SRM2Storage.getTransportURL: Obtaining tURLs for %s file(s)." % len(urls))
  
