@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.2 2007/11/15 21:53:25 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.3 2007/12/03 18:23:29 paterson Exp $
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,7 +13,7 @@
 
 """
 
-__RCSID__ = "$Id: Job.py,v 1.2 2007/11/15 21:53:25 paterson Exp $"
+__RCSID__ = "$Id: Job.py,v 1.3 2007/12/03 18:23:29 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -54,7 +54,7 @@ class Job:
     self.origin = 'DIRAC'
     self.stdout = 'std.out'
     self.stderr = 'std.err'
-    self.executable = '$DIRACROOT/DIRAC/scripts/jobexec' # to be clarified
+    self.executable = '$DIRACROOT/scripts/jobexec' # to be clarified
     self.addToInputSandbox = []
     self.addToOutputSandbox = []
 
@@ -93,17 +93,17 @@ class Job:
     self.stepCount +=1
     moduleName = 'Script'
     module = ModuleDefinition(moduleName)
-    body = 'from DIRAC.WorkflowLib.Module.Script import Script\n'
+    body = 'from WorkflowLib.Module.Script import Script\n'
     if os.path.exists(executable):
       self.log.debug('Found script executable file %s' % (executable))
-      self._addParameter(module,'Name','Parameter',os.path.basename(executable),'Executable Script')
+      self._addParameter(module,'Executable','Parameter',os.path.basename(executable),'Executable Script')
 
       self._addParameter(module,'Name','Parameter',os.path.basename(executable),'Executable ')
       self.addToInputSandbox.append(executable)
       logName = os.path.basename(executable)+'.log'
     else:
       self.log.debug('Found executable code')
-      self._addParameter(module,'ExecutableCode','PARAMETER',executable,'Lines of executable code')
+      self._addParameter(module,'Executable','Parameter',executable,'Lines of executable code')
       body = executable
       logName = 'ScriptOutput.log'
 
@@ -431,7 +431,19 @@ class Job:
     """Developer function.
        Wrapper method to create the code.
     """
-    print self.workflow.createCode()
+    return self.workflow.createCode()
+
+  #############################################################################
+  def execute(self):
+    """Executes the job locally.
+    """
+    code = self.createCode()
+    #eval(compile(code,'<string>','exec'))
+    self.workflow.execute()
+
+  #############################################################################
+  def printObj(self):
+    return self.workflow
 
   #############################################################################
 
