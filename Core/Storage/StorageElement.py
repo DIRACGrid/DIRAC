@@ -13,7 +13,7 @@ from DIRAC.Core.Storage.StorageFactory import StorageFactory
 from DIRAC.Core.Utilities.Pfn import pfnparse,pfnunparse
 from DIRAC.Core.Utilities.List import sortList
 from DIRAC.Core.Utilities.File import getSize
-import re, time
+import re, time,os
 
 class StorageElement:
 
@@ -406,13 +406,18 @@ class StorageElement:
     gLogger.error(errStr,pfn)
     return S_ERROR(errStr)
 
-  def putFile(self,file,alternativePath=None):
+  def putFile(self,file,directoryPath,alternativeFileName=None):
     """ This method will upload a local file to the SE
 
         'file' is the full local path to the file e.g. /opt/dirac/file/for/upload.file
-        'alternativePath' is the path on the storage the file will be put
-        'desiredProtocol' is a protocol name
+        'directoryPath' is the path on the storage the file will be put
+        'alternativeFileName' is the target file name
     """
+    if alternativeFileName:
+      gLogger.info("StorageElement.putFile: Attempting to put %s to %s with file name %s." % (file,directoryPath,alternativeFileName))
+    else:
+      gLogger.info("StorageElement.putFile: Attempting to put %s to %s." % (file,directoryPath))
+
     size = getSize(file)
     fileName = os.path.basename(file)
     if size == -1:
@@ -424,11 +429,14 @@ class StorageElement:
       gLogger.error(infoStr,file)
       return S_ERROR(infoStr)
 
+    gLogger.info("StorageElement.putFile: Determined file size of %s to be %s." % (file,size))
+
     # The method will try all storages
     for storage in self.storages:
       # Get the parameters for the current storage
       res = storage.getParameters()
       protocolName = res['Value']['ProtocolName']
+      gLogger.info("StorageElement.putFile: Attempting to put file with %s." % protocolName)
       # If the SE is not local then we can't use local protocols
       if protocolName in self.remoteProtocols:
         useProtocol = True
@@ -436,23 +444,26 @@ class StorageElement:
         useProtocol = True
       else:
         useProtocol = False
-        gLogger.info("StorageElement.putDirectory: Protocol not appropriate for use: %s." % protocolName)
+        gLogger.info("StorageElement.putDirectory: %s not appropriate for use." % protocolName)
       if useProtocol:
-        res = S_OK()
-        # If we require to create an alternative path create it then move there in the storage
-        if alternativePath:
-          res = storage.createDirectory(alternativePath)
+        res =  storage.getCurrentURL(directoryPath)
+        if res['OK']:
+          destinationDirectory = res['Value']
+          res = storage.createDirectory(destinationDirectory)
           if not res['OK']:
             infoStr ="StorageElement.putFile: Failed to create directory."
-            gLogger.error(infoStr,'%s with protocol %s' % (alternativePath,protocolName))
+            gLogger.error(infoStr,'%s with protocol %s' % (directoryPath,protocolName))
           else:
-            storage.changeDirectory(alternativePath)
+            storage.changeDirectory(directoryPath)
         if res['OK']:
           # Obtain the full URL for the file from the file name and the cwd on the storage
-          res = storage.getCurrentURL(fileName)
+          if alternativeFileName:
+            res = storage.getCurrentURL(alternativeFileName)
+          else:
+            res = storage.getCurrentURL(fileName)
           if not res['OK']:
             infoStr ="StorageElement.putFile: Failed to get the file URL."
-            gLogger.error(infoStr,'%s with protocol %s' % (fileName,protocolName))
+            gLogger.error(infoStr,' With protocol %s' % protocolName)
           else:
             destUrl = res['Value']
             ##############################################################
@@ -486,7 +497,7 @@ class StorageElement:
               gLogger.error(infoStr,'%s with protocol %s' % (destUrl,protocolName))
             ##############################################################
             # Perform the transfer here....
-            fileTuple = (fileName,destUrl,size)
+            fileTuple = (file,destUrl,size)
             res = storage.putFile(fileTuple)
             if res['OK']:
               if res['Value']['Successful'].has_key(destUrl):
