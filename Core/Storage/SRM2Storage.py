@@ -1243,11 +1243,16 @@ class SRM2Storage(StorageBase):
   def changeDirectory(self,directory):
     """ Change the directory to the supplied directory
     """
+    if directory[0] == '/':
+      directory = directory.lstrip('/')
     self.cwd = '%s/%s' % (self.cwd,directory)
 
   def getCurrentURL(self,fileName):
     """ Obtain the current file URL from the current working directory and the filename
     """
+    if fileName:
+      if fileName[0] == '/':
+        fileName = fileName.lstrip('/')
     try:
       fullUrl = '%s://%s:%s%s%s/%s' % (self.protocol,self.host,self.port,self.wspath,self.cwd,fileName)
       return S_OK(fullUrl)
