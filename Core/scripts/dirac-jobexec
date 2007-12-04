@@ -1,6 +1,5 @@
-#!/usr/bin/env python
 ########################################################################
-# $Id: dirac-jobexec,v 1.1 2007/11/28 22:12:38 paterson Exp $
+# $Id: dirac-jobexec,v 1.2 2007/12/04 11:01:39 paterson Exp $
 # File :   dirac-jobexec
 # Author : Stuart Paterson
 ########################################################################
@@ -10,27 +9,48 @@
     this script is the Job Wrapper.
 """
 
-import sys
-from DIRAC.Core.Workflow.Workflow                   import *
+__RCSID__ = "$Id: dirac-jobexec,v 1.2 2007/12/04 11:01:39 paterson Exp $"
+
+import os,os.path,sys
+from DIRAC.Core.Workflow.Parameter import *
+from DIRAC.Core.Workflow.Module import *
+from DIRAC.Core.Workflow.Step import *
+from DIRAC.Core.Workflow.Workflow import *
+from DIRAC.Core.Workflow.WorkflowReader import *
 from DIRAC.Core.Base                                import Script
 from DIRAC                                          import S_OK, S_ERROR, gLogger
 import DIRAC
 
 def jobexec(jobxml):
-  workflow = Workflow(os.path.basename(jobxml))
+  jobfile = os.path.abspath(jobxml)
+  if not os.path.exists(jobfile):
+    gLogger.warn('Path to specified workflow %s does not exist' %(jobfile))
+    sys.exit(1)
+  #workflow = fromXMLFile(jobfile)
+  xmlfile = open(jobfile,'rb')
+  xmlStr = xmlfile.read()
+  xmlfile.close()
+  workflow = fromXMLString(xmlStr)
+  gLogger.debug(workflow)
+  #workflow.resolveGlobalVars()
   code = workflow.createCode()
   gLogger.debug(code)
-  eval(compile(code,'<string>','exec'))
+  #eval(compile(code,'<string>','exec'))
   workflow.execute()
-  return S_OK() #workflow execute() currently returns nothing...
+  return S_OK() #workflow.execute() currently returns nothing...
 
 Script.parseCommandLine()
 
+gLogger.setLevel('debug') # for debugging
+
 positionalArgs = Script.getPositionalArgs()
-if len( positionalArgs ) != 2:
+if len( positionalArgs ) != 1:
+  gLogger.debug('Positional arguments were %s' %(positionalArgs))
   DIRAC.abort( 1, "Must specify the Job XML file description" )
 
-gLogger.info('JobID: %s' %(os.environ['JOBID']))
+if os.environ.has_key('JOBID'):
+  gLogger.info('JobID: %s' %(os.environ['JOBID']))
+
 gLogger.info('PYTHONPATH:\n %s' %(sys.path))
 result = jobexec(*positionalArgs)
 if not result['OK']:
