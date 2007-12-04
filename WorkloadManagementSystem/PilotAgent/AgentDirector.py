@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/AgentDirector.py,v 1.1 2007/12/03 23:19:50 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/AgentDirector.py,v 1.2 2007/12/04 17:58:48 paterson Exp $
 # File :   AgentDirector.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,13 +9,13 @@
      are overridden in Grid specific subclasses.
 """
 
-__RCSID__ = "$Id: AgentDirector.py,v 1.1 2007/12/03 23:19:50 paterson Exp $"
+__RCSID__ = "$Id: AgentDirector.py,v 1.2 2007/12/04 17:58:48 paterson Exp $"
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
 from DIRAC.Core.Utilities.Subprocess                     import shellCall
 from DIRAC                                               import S_OK, S_ERROR, gConfig, gLogger
 
-import os, sys, re, string, time
+import os, sys, re, string, time, shutil
 from threading import Thread, Lock
 
 lock = Lock()
@@ -141,7 +141,8 @@ class AgentDirector(Thread):
 
     softwareTag = ''
     if classadJob.lookupAttribute("SoftwareTag"):
-      softwareTag = string.replace(classadJob.get_expression("SoftwareTag"),'"','')
+      jdlTag = string.replace(classadJob.get_expression("SoftwareTag"),'"','')
+      softwareTag = string.replace(string.replace(string.replace(jdlTag,'{',''),'}',''),' ','').split(',')
 
     requirements = ''
     if (classadJob.lookupAttribute("Requirements")):
@@ -193,55 +194,95 @@ class AgentDirector(Thread):
     self.log.verbose('Candidate %s Sites for job %s: %s' %(self.type,job,string.join(siteList,', ')))
     workingDirectory = '%s/%s' %(self.workingDirectory,job)
 
-    self.log.verbose('Submitting %s Pilot Agent for job %s' %(self.type,job))
-
     if os.path.exists(workingDirectory):
       shutil.rmtree(workingDirectory)
 
-    #determine whether a generic or specific pilot should be submitted
-    if jobType.lower() == 'sam':
-      ownerFile = self.__addOwner(owner)
-      if not ownerFile['OK']:
-        return ownerFile
-      jobIDFile = self.__addJobID(job)
-      if not jobIDFile['OK']:
-        return jobIDFile
+    if not os.path.exists(workingDirectory):
+      os.makedirs(workingDirectory)
 
-    submission = self.submitJob(job,self.workingDirectory,siteList,jdlCPU,gridRequirements,executable)
+    #determine whether a generic or specific pilot should be submitted
+    #for initial instance this is ignored and pilots will pick up specific jobs
+    #if jobType.lower() == 'sam':
+    inputSandbox = []
+    ownerFile = self.__addOwner(workingDirectory,owner)
+    if not ownerFile['OK']:
+      return ownerFile
+    inputSandbox.append(ownerFile['Value'])
+    jobIDFile = self.__addJobID(workingDirectory,job)
+    if not jobIDFile['OK']:
+      return jobIDFile
+    inputSandbox.append(jobIDFile['Value'])
+    self.log.verbose('Submitting %s Pilot Agent for job %s' %(self.type,job))
+    result = self.submitJob(job,self.workingDirectory,siteList,jdlCPU,inputSandbox,gridRequirements,executable,softwareTag)
     self.__cleanUp(workingDirectory)
+
+    if not result['OK']:
+      self.__updateJobStatus('Waiting','Pilot Agent Submission')
+      return result
+
+    submittedPilot = result['Value']
+    report = self.__reportSubmittedPilot(job,submittedPilot,ownerDN)
+    if not report['OK']:
+      self.log.warn(report['Message'])
+
+    return S_OK('Pilot Submitted')
+
+  #############################################################################
+  def __reportSubmittedPilot(self,job,submittedPilot,ownerDN):
+    """The pilot reference is added to the JobDB and appended to the
+        SubmittedAgents job parameter.
+    """
+    #can add pilot reference to DB here when available
+    existingParam = self.jobDB.getJobParameters(int(job),['SubmittedAgents'])
+    if not existingParam['OK']:
+      return existingParam
+
+    if not existingParam['Value']:
+      self.log.debug('Adding first submitted pilot parameter for job %s' %job)
+      if self.enable:
+        self.__setJobParam(job,'SubmittedAgents',submittedPilot)
+    else:
+      pilots = len(existingParam['Value'])
+      self.log.debug('Adding submitted pilot number %s for job %s' %(pilots,job))
+      pilots += ',%s' %(submittedPilot)
+      if self.enable:
+        self.__setJobParam(job,'SubmittedAgents',submittedPilot)
+
     return S_OK()
 
   #############################################################################
   def __addOwner(self,workingDirectory,owner):
     """Adds owner ID to pilot requirements
     """
-    self.verbose( 'Adding Owner.cfg to be used in agent requirements' )
+    self.log.verbose( 'Adding Owner.cfg to be used in agent requirements' )
     path = '%s/Owner.cfg' % workingDirectory
     try:
       if os.path.exists( path ):
         os.remove( path )
       ownerCFG = open( path ,'w')
-      ownerCFG.write( 'AgentJobRequirements{\nOwner=%s\n}' %(owner))
+      ownerCFG.write( 'AgentJobRequirements\n{\nOwner=%s\n}\n' %(owner))
       ownerCFG.close()
     except Exception, x:
-      self.warn( str(x) )
+      self.log.warn( str(x) )
       return S_ERROR('Cannot create Owner.cfg')
+    return S_OK(path)
 
   #############################################################################
-  def __addJobID(self,jobID):
+  def __addJobID(self,workingDirectory,jobID):
     """Adds jobID to pilot requirements
     """
-    self.verbose( 'Adding JobID.cfg to be used in agent requirements' )
+    self.log.verbose( 'Adding JobID.cfg to be used in agent requirements' )
     path = '%s/JobID.cfg' % workingDirectory
     try:
       if os.path.exists( path ):
         os.remove( path )
       jobCFG = open( path ,'w')
-      jobCFG.write( 'AgentJobRequirements{\nJobID=%s\n}' %(jobID))
+      jobCFG.write( 'AgentJobRequirements\n{\nJobID=%s\n}\n' %(jobID))
       jobCFG.close()
     except Exception, x:
-      self.warn( str(x) )
+      self.log.warn( str(x) )
       return S_ERROR('Cannot create JobID.cfg')
+    return S_OK(path)
 
   #############################################################################
   def __resolveSiteCandidates(self,job,candidateSites,bannedSites,gridRequirements):
