@@ -1,8 +1,8 @@
-# $Id: Parameter.py,v 1.9 2007/11/28 13:47:34 paterson Exp $
+# $Id: Parameter.py,v 1.10 2007/12/05 15:28:41 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.9 $"
+__RCSID__ = "$Revision: 1.10 $"
 
 # unbinded method, returns indentation string
 def indent(indent=0):
@@ -243,8 +243,21 @@ class ParameterCollection(list):
             raise TypeError('Can not create object type '+str(type(self))+' from the '+ str(type(coll)))
 
     def append(self, opt):
-        if isinstance(opt, Parameter):
+        if isinstance(opt, ParameterCollection):
+            for p in opt:
+                list.append(self, p)
+        elif isinstance(opt, Parameter):
             list.append(self, opt)
+            return opt
+        else:
+            raise TypeError('Can not append object type '+ str(type(opt))+' to the '+str(type(self))+'. Parameter type appendable only')
+
+    def appendCopy(self, opt):
+        if isinstance(opt, ParameterCollection):
+            for p in opt:
+                list.append(self, Parameter(parameter=p))
+        elif isinstance(opt, Parameter):
+            list.append(self, Parameter(parameter=opt))
             return opt
         else:
             raise TypeError('Can not append object type '+ str(type(opt))+' to the '+str(type(self))+'. Parameter type appendable only')
@@ -406,6 +419,9 @@ class AttributeCollection(dict):
 
     def appendParameter(self, opt):
         self.parameters.append(opt)
+
+    def appendParameterCopy(self, opt):
+        self.parameters.appendCopy(opt)
 
     def removeParameter(self, name_or_ind):
         self.parameters.remove(name_or_ind)
