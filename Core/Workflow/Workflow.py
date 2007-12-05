@@ -1,9 +1,10 @@
-# $Id: Workflow.py,v 1.12 2007/12/05 14:29:19 gkuznets Exp $
+# $Id: Workflow.py,v 1.13 2007/12/05 14:30:43 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.12 $"
+__RCSID__ = "$Revision: 1.13 $"
 
+import os
 #try: # this part to inport as part of the DIRAC framework
 from DIRAC.Core.Workflow.Parameter import *
 from DIRAC.Core.Workflow.Module import *
