@@ -1,9 +1,10 @@
-# $Id: Step.py,v 1.12 2007/06/29 14:30:39 gkuznets Exp $
+# $Id: Step.py,v 1.13 2007/12/05 14:33:28 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.12 $"
+__RCSID__ = "$Revision: 1.13 $"
 
+import os
 #try: # this part to inport as part of the DIRAC framework
 from DIRAC.Core.Workflow.Parameter import *
 from DIRAC.Core.Workflow.Module import *
@@ -159,6 +160,13 @@ class StepInstance(AttributeCollection):
         ret = ret + self.parameters.toXML()
         ret = ret + '</StepInstance>\n'
         return ret
+
+    def toXMLFile(self, outFile):
+        if os.path.exists(outFile):
+          os.remove(outFile)
+        xmlfile = open(outFile, 'w')
+        xmlfile.write(self.toXML())
+        xmlfile.close()
 
     def execute(self, step_exec_attr, definitions):
         """step_exec_attr is array to hold parameters belong to this Step, filled above """

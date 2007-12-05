@@ -1,8 +1,8 @@
-# $Id: Workflow.py,v 1.13 2007/12/05 14:30:43 gkuznets Exp $
+# $Id: Workflow.py,v 1.14 2007/12/05 14:31:22 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.13 $"
+__RCSID__ = "$Revision: 1.14 $"
 
 import os
 #try: # this part to inport as part of the DIRAC framework
@@ -70,8 +70,8 @@ class Workflow(AttributeCollection):
     return ret
 
   def toXMLFile(self, outFile):
-    if os.path.exists(testFile):
-      os.remove(testFile)
+    if os.path.exists(outFile):
+      os.remove(outFile)
     xmlfile = open(outFile, 'w')
     xmlfile.write(self.toXML())
     xmlfile.close()

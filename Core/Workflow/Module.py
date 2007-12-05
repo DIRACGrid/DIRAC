@@ -1,13 +1,13 @@
-# $Id: Module.py,v 1.16 2007/06/29 14:30:39 gkuznets Exp $
+# $Id: Module.py,v 1.17 2007/12/05 14:33:14 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.16 $"
+__RCSID__ = "$Revision: 1.17 $"
 
 # $Source: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Workflow/Module.py,v $
 
 import copy
-import new, sys
+import new, sys, os
 
 #try: # this part to inport as part of the DIRAC framework
 from DIRAC.Core.Workflow.Parameter import *
@@ -64,6 +64,13 @@ class ModuleDefinition(AttributeCollection):
         ret = ret + self.parameters.toXML()
         ret = ret + '</ModuleDefinition>\n'
         return ret
+
+    def toXMLFile(self, outFile):
+        if os.path.exists(outFile):
+          os.remove(outFile)
+        xmlfile = open(outFile, 'w')
+        xmlfile.write(self.toXML())
+        xmlfile.close()
 
     def loadCode(self):
         #print 'Loading code of the Module =', self.getType()
