@@ -1,8 +1,8 @@
-# $Id: Workflow.py,v 1.11 2007/06/29 14:30:39 gkuznets Exp $
+# $Id: Workflow.py,v 1.12 2007/12/05 14:29:19 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.11 $"
+__RCSID__ = "$Revision: 1.12 $"
 
 #try: # this part to inport as part of the DIRAC framework
 from DIRAC.Core.Workflow.Parameter import *
@@ -67,6 +67,13 @@ class Workflow(AttributeCollection):
     ret = ret + self.step_instances.toXML()
     ret = ret + '</Workflow>\n'
     return ret
+
+  def toXMLFile(self, outFile):
+    if os.path.exists(testFile):
+      os.remove(testFile)
+    xmlfile = open(outFile, 'w')
+    xmlfile.write(self.toXML())
+    xmlfile.close()
 
   def addStep(self, step):
     # this is WERY importatnt piece of code
