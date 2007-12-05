@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/dirac-pilot-lcg.py,v 1.1 2007/12/05 16:27:39 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/dirac-pilot-lcg.py,v 1.2 2007/12/05 16:53:52 paterson Exp $
 # File :   dirac-pilot-lcg.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,7 +13,7 @@ import os,sys,string,re
     for the VO.
 """
 
-__RCSID__ = "$Id: dirac-pilot-lcg.py,v 1.1 2007/12/05 16:27:39 paterson Exp $"
+__RCSID__ = "$Id: dirac-pilot-lcg.py,v 1.2 2007/12/05 16:53:52 paterson Exp $"
 
 
 DEBUG = 1
@@ -141,6 +141,7 @@ printPilot('====================================================================
 
 printPilot('Proxy information:')
 os.system('grid-proxy-info')
+sys.stdout.flush()
 printPilot('========================================================================')
 
 glite = runCommand('command -v glite-brokerinfo')
@@ -189,17 +190,17 @@ printPilot('====================================================================
 TARFILE = 'DIRAC-%s.tar.gz' % diracSetup
 diracDist = '%s/%s' %(DIRAC_URL,TARFILE)
 printPilot('DIRAC Tar File to be downloaded is: %s' %(diracDist))
-
-installDIRAC = './dirac-install -f -p %s ' #perform full DIRAC installation for now
+installDIRAC = './dirac-install -f -p %s ' %() #perform full DIRAC installation for now
 
 DIRAC_INSTALLED = 0
 for attempt in xrange(INSTALL_RETRIES):
   if not DIRAC_INSTALLED:
     installation = runCommand(installDIRAC,1)
-    printPilot('>>>>>>>>>>Start Installation Attempt %s: DIRAC Installation Log' %(attempt),'DEBUG')
+    printPilot('>>>>>>>>>>Start Installation Attempt %s: DIRAC Installation Log' %(attempt+1),'DEBUG')
     if DEBUG:
       print installation
-    printPilot('<<<<<<<<<<End Installation Attempt %s: DIRAC Installation Log' %(attempt),'DEBUG')
+      sys.stdout.flush()
+    printPilot('<<<<<<<<<<End Installation Attempt %s: DIRAC Installation Log' %(attempt+1),'DEBUG')
 
     if os.path.exists('DIRAC'):
       DIRAC_INSTALLED = 1
@@ -207,18 +208,21 @@ for attempt in xrange(INSTALL_RETRIES):
 if not DIRAC_INSTALLED:
   printPilot('Could not install DIRAC from $s, exiting' %(diracDist),'ERROR')
   pilotOutput.close()
+  sys.stdout.flush()
   sys.exit(1)
 
 #Initial setup of DIRAC to enable CS settings
 initialDIRACsetup = './scripts/dirac-setup -s LCG.Unknown.ch'
 printPilot('>>>>>>>>>>Start: Initial DIRAC Setup Log','DEBUG')
 if DEBUG:
+  sys.stdout.flush()
   print initialDIRACsetup
 printPilot('<<<<<<<<<<End: Initial DIRAC Setup Log','DEBUG')
 if DEBUG:
   printPilot('Checking local configuration file:','DEBUG')
   if os.path.exists('etc/dirac.cfg'):
     cfg = runCommand('cat etc/dirac.cfg',1)
+    sys.stdout.flush()
     print cfg
   else:
     printPilot('etc/dirac.cfg file does not exist','WARN')
@@ -245,6 +249,7 @@ if not siteDict['OK']:
   printPilot('Returned LCG site dictionary not OK','ERROR')
   printPilot(siteDict['Message'],'ERROR')
   pilotOutput.close()
+  sys.stdout.flush()
   sys.exit(1)
 
 sites = siteDict['Value']
@@ -257,18 +262,21 @@ for ce,siteName in siteDict.items():
 if not DIRAC_SITE_NAME:
   printPilot('No DIRAC site names were found for CE %s' %(LCG_SITE_CE),'ERROR')
   pilotOutput.close()
+  sys.stdout.flush()
   sys.exit(1)
 #-s $LCG_NEW_SITE_NAME -m $DIRACInstance -f $FACTOR -q $LCG_SITE_CE -t $time -a $CMTCONFIG -p $SITETYPE LCG.ini
 #Full setup of DIRAC with LCG site name
 fullDIRACsetup = './scripts/dirac-setup -m %s -q %s -a %s -p %s ' %(diracSetup,LCG_SITE_CE,CMTCONFIG,'LCG')
 printPilot('>>>>>>>>>>Start: Full DIRAC Setup Log','DEBUG')
 if DEBUG:
+  sys.stdout.flush()
   print fullDIRACsetup
 printPilot('<<<<<<<<<<End: Full DIRAC Setup Log','DEBUG')
 if DEBUG:
   printPilot('Checking local configuration file:','DEBUG')
   if os.path.exists('etc/dirac.cfg'):
     cfg = runCommand('cat etc/dirac.cfg',1)
+    sys.stdout.flush()
     print cfg
   else:
     printPilot('etc/dirac.cfg file does not exist','WARN')
@@ -279,6 +287,7 @@ if DEBUG:
 runJobAgent = '%s DIRAC/Core/scripts/dirac-agent WorkloadManagement/JobAgent -o LogLevel=debug' %(diracPython)
 printPilot('Running DIRAC Job Agent:\n%s' %(runJobAgent),'DEBUG')
 os.system(runJobAgent)
+sys.stdout.flush()
 
 #############################################################################
 #Perform any post-execution tasks / debugging and exit gracefully
@@ -288,8 +297,10 @@ for i in os.listdir('.'): print i
 
 printPilot('Post-execution proxy information:')
 os.system('grid-proxy-info')
+sys.stdout.flush()
 printPilot('Execution of %s complete.' %(scriptName))
 printPilot('========================================================================')
 pilotOutput.close()
+sys.stdout.flush()
 sys.exit(0)
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
