@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Agent.py,v 1.3 2007/06/27 15:25:57 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Agent.py,v 1.4 2007/12/06 21:08:55 paterson Exp $
 ########################################################################
 """ Base class for all the Agents.
 
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: Agent.py,v 1.3 2007/06/27 15:25:57 atsareg Exp $"
+__RCSID__ = "$Id: Agent.py,v 1.4 2007/12/06 21:08:55 paterson Exp $"
 
 import os
 import threading
@@ -51,6 +51,7 @@ class Agent:
 
     self.pollingTime = gConfig.getValue(self.section+'/PollingTime',60)
     self.controlDir = gConfig.getValue(self.section+'/ControlDirectory','')
+    self.maxCount = gConfig.getValue(self.section+'/MaxCycles','')
 
     gLogger.always('')
     gLogger.always('==========================================================')
