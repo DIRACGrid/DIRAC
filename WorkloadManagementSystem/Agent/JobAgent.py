@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.3 2007/11/30 17:17:34 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.4 2007/12/06 20:44:09 paterson Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.3 2007/11/30 17:17:34 paterson Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.4 2007/12/06 20:44:09 paterson Exp $"
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
 from DIRAC.Core.Base.Agent                               import Agent
@@ -58,6 +58,7 @@ class JobAgent(Agent):
     self.siteRoot = gConfig.getValue('LocalSite/Root','/Users/stuart/dirac/workspace/DIRAC3')
     self.jobWrapperTemplate = self.siteRoot+gConfig.getValue(self.section+'/JobWrapperTemplate','/DIRAC/WorkloadManagementSystem/JobWrapper/JobWrapperTemplate')
     self.jobSubmissionDelay = gConfig.getValue(self.section+'/SubmissionDelay',10)
+    return result
 
   #############################################################################
   def execute(self):
