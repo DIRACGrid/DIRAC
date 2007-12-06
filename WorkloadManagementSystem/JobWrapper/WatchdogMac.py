@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/WatchdogMac.py,v 1.3 2007/11/04 18:08:38 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/WatchdogMac.py,v 1.4 2007/12/06 21:36:55 paterson Exp $
 # Author: Stuart Paterson
 # eMail : Stuart.Paterson@cern.ch
 ########################################################################
@@ -10,6 +10,8 @@
 
      This is the Mac compatible Watchdog subclass.
 """
+
+__RCSID__ = "$Id: WatchdogMac.py,v 1.4 2007/12/06 21:36:55 paterson Exp $"
 
 from DIRAC.Core.Base.Agent                              import Agent
 from DIRAC.WorkloadManagementSystem.JobWrapper.Watchdog import Watchdog
