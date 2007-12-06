@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: dirac-jobexec,v 1.2 2007/12/04 11:01:39 paterson Exp $
+# $Id: dirac-jobexec,v 1.3 2007/12/06 22:52:12 paterson Exp $
 # File :   dirac-jobexec
 # Author : Stuart Paterson
 ########################################################################
@@ -9,39 +9,35 @@
     this script is the Job Wrapper.
 """
 
-__RCSID__ = "$Id: dirac-jobexec,v 1.2 2007/12/04 11:01:39 paterson Exp $"
+__RCSID__ = "$Id: dirac-jobexec,v 1.3 2007/12/06 22:52:12 paterson Exp $"
 
-import os,os.path,sys
+from DIRAC.Core.Base import Script
+Script.parseCommandLine()
+
 from DIRAC.Core.Workflow.Parameter import *
 from DIRAC.Core.Workflow.Module import *
 from DIRAC.Core.Workflow.Step import *
 from DIRAC.Core.Workflow.Workflow import *
 from DIRAC.Core.Workflow.WorkflowReader import *
-from DIRAC.Core.Base                                import Script
 from DIRAC                                          import S_OK, S_ERROR, gLogger
+
 import DIRAC
+
+import os,os.path,sys
 
 def jobexec(jobxml):
   jobfile = os.path.abspath(jobxml)
   if not os.path.exists(jobfile):
     gLogger.warn('Path to specified workflow %s does not exist' %(jobfile))
     sys.exit(1)
-  #workflow = fromXMLFile(jobfile)
-  xmlfile = open(jobfile,'rb')
-  xmlStr = xmlfile.read()
-  xmlfile.close()
-  workflow = fromXMLString(xmlStr)
-  gLogger.debug(workflow)
+  workflow = fromXMLFile(jobfile)
+  gLogger.verbose(workflow)
   #workflow.resolveGlobalVars()
   code = workflow.createCode()
-  gLogger.debug(code)
+  gLogger.verbose(code)
   #eval(compile(code,'<string>','exec'))
   workflow.execute()
   return S_OK() #workflow.execute() currently returns nothing...
-
-Script.parseCommandLine()
-
-gLogger.setLevel('debug') # for debugging
 
 positionalArgs = Script.getPositionalArgs()
 if len( positionalArgs ) != 1:
