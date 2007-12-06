@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/dirac-pilot-lcg.py,v 1.2 2007/12/05 16:53:52 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/dirac-pilot-lcg.py,v 1.3 2007/12/06 22:41:44 paterson Exp $
 # File :   dirac-pilot-lcg.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,7 +13,7 @@ import os,sys,string,re
     for the VO.
 """
 
-__RCSID__ = "$Id: dirac-pilot-lcg.py,v 1.2 2007/12/05 16:53:52 paterson Exp $"
+__RCSID__ = "$Id: dirac-pilot-lcg.py,v 1.3 2007/12/06 22:41:44 paterson Exp $"
 
 
 DEBUG = 1
@@ -24,6 +24,8 @@ DIRAC_PYTHON ='2.4'
 INSTALL_RETRIES = 5
 MIN_DISK_SPACE = 2560 #MB
 CLEANUP = 0
+LOCAL = 1
+JOB_AGENT_CE = 'InProcess'
 
 start = os.getcwd()
 os.system('chmod 750 . 1> /dev/null 2>&1')
@@ -88,6 +90,44 @@ def fixPythonEnvironment(sharedPython):
   printPilot('Corrected PATH is:\n%s' %newPath,'DEBUG')
 
 #############################################################################
+def writeConfigFile(fname,section,optionsDict):
+  """Wrapper function to write a .cfg file to control Agent behaviour.
+     Assumes only key value pairs in the options dict.
+  """
+  printPilot('Attempting to create %s' %(fname))
+  sections = string.split(section,'/')
+  contents = []
+  for s in sections: contents.append('%s{ ' %(s))
+
+  for n,v in optionsDict.items(): contents.append('%s = %s ' %(n,v))
+
+  for i in xrange(len(sections)): contents += '}'
+
+  cfg = string.join(contents,'\n')
+  fopen = open(fname,'w')
+  fopen.write(cfg)
+  fopen.close()
+
+#############################################################################
+def pilotExit(code):
+  """This method resets the LD_LIBRARY_PATH, PATH and PYTHONPATH
+     when using a pre-installed python version.
+  """
+  printPilot('Exiting with status code %s' %(code),'INFO')
+  if DEBUG:
+    toCheck = os.listdir('.')
+    for directory in toCheck:
+      if os.path.isdir(directory):
+        printPilot('Files in %s are:' %(directory),'DEBUG')
+        for i in os.listdir(directory): print i
+      else:
+        printPilot('File %s' %(directory),'DEBUG')
+
+  pilotOutput.close()
+  sys.stdout.flush()
+  sys.exit(int(code))
+
+#############################################################################
 if len(sys.argv)!=3:
   script = sys.argv[0]
   print 'Illegal number of arguments: %s' %(sys.argv)
@@ -101,6 +141,7 @@ scriptName = sys.argv[0]
 printPilot('Version %s' %(__RCSID__))
 diracSetup = sys.argv[1]
 jobCPUReqt = sys.argv[2]
+CEUNIQUEID = 'InProcess' #This will be specified by the Agent Director eventually
 printPilot('Running in %s setup on %s' %(diracSetup,runCommand('date')))
 printPilot('WMS CPU Requirement is %s' %jobCPUReqt)
 
@@ -144,25 +185,30 @@ os.system('grid-proxy-info')
 sys.stdout.flush()
 printPilot('========================================================================')
 
-glite = runCommand('command -v glite-brokerinfo')
-lcg = runCommand('command -v edg-brokerinfo')
-if glite:
-  printPilot('Running with gLite middleware')
-  CE = runCommand('glite-brokerinfo getCE')
-  LCG_SITE_CE = runCommand('glite-brokerinfo getCE | cut -d ":" -f 1')
-  printPilot('CE = %s && LCG_SITE_CE = %s' %(CE,LCG_SITE_CE))
-elif lcg:
-  printPilot('Running with LCG middleware')
-  CE = runCommand('edg-brokerinfo getCE')
-  LCG_SITE_CE = runCommand('edg-brokerinfo getCE | cut -d ":" -f 1')
-  printPilot('CE = %s && LCG_SITE_CE = %s' %(CE,LCG_SITE_CE))
+if not LOCAL:
+  glite = runCommand('command -v glite-brokerinfo')
+  lcg = runCommand('command -v edg-brokerinfo')
+  if glite:
+    printPilot('Running with gLite middleware')
+    CE = runCommand('glite-brokerinfo getCE')
+    LCG_SITE_CE = runCommand('glite-brokerinfo getCE | cut -d ":" -f 1')
+    printPilot('CE = %s && LCG_SITE_CE = %s' %(CE,LCG_SITE_CE))
+  elif lcg:
+    printPilot('Running with LCG middleware')
+    CE = runCommand('edg-brokerinfo getCE')
+    LCG_SITE_CE = runCommand('edg-brokerinfo getCE | cut -d ":" -f 1')
+    printPilot('CE = %s && LCG_SITE_CE = %s' %(CE,LCG_SITE_CE))
+  else:
+    printPilot('WN has no access to glite or edg brokerinfo commands, exiting','ERROR')
+    pilotExit(1)
 else:
-  printPilot('WN has no access to glite or edg brokerinfo commands, exiting','ERROR')
-  pilotOutput.close()
-  sys.exit(1)
+  LCG_SITE_CE = 'Local'
+  printPilot('Running locally')
 
 printPilot('Hostname = %s' %(runCommand('hostname')))
-printPilot('LocalAccount = %s' %(runCommand('whoami')))
+whoami = runCommand('whoami')
+printPilot('LocalAccount = %s' %())
+printPilot('ID = %s' %(runCommand('id')))
 printPilot('CurrentDir = %s' %(start))
 if os.path.exists('/etc/redhat-release'):
   printPilot('RedHat Release = %s' %(runCommand('cat /etc/redhat-release')))
@@ -174,13 +220,11 @@ printPilot('Available Space (MB) = %s' %(diskSpace))
 
 if diskSpace < MIN_DISK_SPACE:
   printPilot('%s MB < %s MB, not enough local disk space available, exiting' %(diskSpace,MIN_DISK_SPACE),'ERROR')
-  pilotOutput.close()
-  sys.exit(1)
+  pilotExit(1)
 
 if not LCG_SITE_CE:
   printPilot('LCG_SITE_CE is not defined, exiting','ERROR')
-  pilotOutput.close()
-  sys.exit(1)
+  pilotExit(1)
 
 printPilot('========================================================================')
 
@@ -190,8 +234,10 @@ printPilot('====================================================================
 TARFILE = 'DIRAC-%s.tar.gz' % diracSetup
 diracDist = '%s/%s' %(DIRAC_URL,TARFILE)
 printPilot('DIRAC Tar File to be downloaded is: %s' %(diracDist))
-installDIRAC = './dirac-install -f -p %s ' %() #perform full DIRAC installation for now
-
+#installDIRAC = './dirac-install -f -p %s ' %(diracDist) #perform full DIRAC installation for now
+installDIRAC = 'echo disabled installation'
+runCommand('chmod a+x dirac-install')
+printPilot(runCommand('ls -al dirac-install'),'DEBUG')
 DIRAC_INSTALLED = 0
 for attempt in xrange(INSTALL_RETRIES):
   if not DIRAC_INSTALLED:
@@ -206,17 +252,42 @@ for attempt in xrange(INSTALL_RETRIES):
       DIRAC_INSTALLED = 1
 
 if not DIRAC_INSTALLED:
-  printPilot('Could not install DIRAC from $s, exiting' %(diracDist),'ERROR')
-  pilotOutput.close()
-  sys.stdout.flush()
-  sys.exit(1)
+  printPilot('Could not install DIRAC from %s, exiting' %(diracDist),'ERROR')
+  pilotExit(1)
+
+#Temporarily add a link to the correct CMTCONFIG (to be updated when all binaries available)
+printPilot('Creating link to %s from slc4_amd64_gcc34' %(CMTCONFIG),'DEBUG')
+runCommand('ln -s slc4_amd64_gcc34 %s' %(CMTCONFIG))
+
+#Get site name from CS and repeat setup
+if not DIRAC_PYTHON:
+  diracPython='%s/%s/bin/python%s' %(start,CMTCONFIG,DIRAC_PYTHON)
+  printPilot('Using locally installed DIRAC python: %s' %(diracPython))
+else:
+  diracPython=DIRAC_PYTHON
+  printPilot('Using DIRAC python from shared area: %s' %(diracPython))
+
+if not os.path.exists(diracPython):
+  printPilot('DIRAC Python does not exist','ERROR')
+  pilotExit(1)
+
+printPilot(runCommand('chmod a+x %s' %(diracPython),1),'DEBUG')
+printPilot(runCommand('ls -al %s' %(diracPython),1),'DEBUG')
+
+#Insert DIRAC ROOT to sys.path
+printPilot('Adding %s to sys.path' %(start),'DEBUG')
+sys.path.insert(0,start)
 
 #Initial setup of DIRAC to enable CS settings
-initialDIRACsetup = './scripts/dirac-setup -s LCG.Unknown.ch'
+initialDIRACSetup = '%s scripts/dirac-setup -s LCG.Unknown.ch -m %s' %(diracPython,diracSetup)
 printPilot('>>>>>>>>>>Start: Initial DIRAC Setup Log','DEBUG')
 if DEBUG:
-  sys.stdout.flush()
-  print initialDIRACsetup
+  print initialDIRACSetup
+printPilot('Setting PYTHONPATH to null for dirac-setup','DEBUG')
+os.putenv('PYTHONPATH','')
+sys.stdout.flush()
+os.system(initialDIRACSetup)
+sys.stdout.flush()
 printPilot('<<<<<<<<<<End: Initial DIRAC Setup Log','DEBUG')
 if DEBUG:
   printPilot('Checking local configuration file:','DEBUG')
@@ -227,30 +298,31 @@ if DEBUG:
   else:
     printPilot('etc/dirac.cfg file does not exist','WARN')
 
-#Get site name from CS and repeat setup
-if not DIRAC_PYTHON:
-  diracPython='%s/%s/bin/python%s' %(start,CMTCONFIG,DIRAC_PYTHON)
-  printPilot('Using locally installed DIRAC python: %s' %(diracPython))
-else:
-  diracPython=DIRAC_PYTHON
-  printPilot('Using DIRAC python from shared area: %s' %(diracPython))
-
-getSite = """ "from DIRAC import gConfig; result = gConfig.getOptionsDict('/Resources/GridSites/LCG'); print result" """
-siteDictStr = runCommand('%s -c %s' %(diracPython,getSite))
+getSite = """ "from DIRAC.Core.Base import Script; Script.parseCommandLine(); from DIRAC import gConfig; result = gConfig.getOptionsDict('/Resources/GridSites/LCG'); print result" """
+siteDictStr = runCommand('%s -c %s' %(diracPython,getSite),1)
+printPilot('CS query returned: \n%s' %(siteDictStr),'DEBUG')
 try:
-  siteDict = dict(siteDictStr)
+  res = string.split(siteDictStr,'\n')
+  siteCSDict = None
+  for i in res:
+    if re.search('^{',i):
+      printPilot(i,'DEBUG')
+      siteCSDict = i
+  if siteCSDict:
+    siteDict = eval(siteCSDict)
 except Exception,x:
   printPilot('Could not obtain LCG site list from CS with exception:','ERROR')
   printPilot(str(x),'ERROR')
-  pilotOutput.close()
-  sys.exit(1)
+  pilotExit(1)
+
+if not siteDict:
+  printPilot('Null object returned from CS','ERROR')
+  pilotExit(1)
 
 if not siteDict['OK']:
   printPilot('Returned LCG site dictionary not OK','ERROR')
   printPilot(siteDict['Message'],'ERROR')
-  pilotOutput.close()
-  sys.stdout.flush()
-  sys.exit(1)
+  pilotExit(1)
 
 sites = siteDict['Value']
 DIRAC_SITE_NAME = ''
@@ -259,18 +331,21 @@ for ce,siteName in siteDict.items():
     printPilot('Found DIRAC site name: %s' %(ce))
     DIRAC_SITE_NAME = siteName
 
+if LOCAL:
+  DIRAC_SITE_NAME = 'LCG.Local.ch'
+
 if not DIRAC_SITE_NAME:
   printPilot('No DIRAC site names were found for CE %s' %(LCG_SITE_CE),'ERROR')
-  pilotOutput.close()
-  sys.stdout.flush()
-  sys.exit(1)
-#-s $LCG_NEW_SITE_NAME -m $DIRACInstance -f $FACTOR -q $LCG_SITE_CE -t $time -a $CMTCONFIG -p $SITETYPE LCG.ini
+  pilotExit(1)
+
 #Full setup of DIRAC with LCG site name
-fullDIRACsetup = './scripts/dirac-setup -m %s -q %s -a %s -p %s ' %(diracSetup,LCG_SITE_CE,CMTCONFIG,'LCG')
+fullDIRACSetup = '%s scripts/dirac-setup -m %s -s %s -a %s -p %s ' %(diracPython,diracSetup,LCG_SITE_CE,CMTCONFIG,'LCG')
 printPilot('>>>>>>>>>>Start: Full DIRAC Setup Log','DEBUG')
 if DEBUG:
-  sys.stdout.flush()
-  print fullDIRACsetup
+  print fullDIRACSetup
+sys.stdout.flush()
+os.system(fullDIRACSetup)
+sys.stdout.flush()
 printPilot('<<<<<<<<<<End: Full DIRAC Setup Log','DEBUG')
 if DEBUG:
   printPilot('Checking local configuration file:','DEBUG')
@@ -279,28 +354,51 @@ if DEBUG:
     sys.stdout.flush()
     print cfg
   else:
-    printPilot('etc/dirac.cfg file does not exist','WARN')
+    printPilot('etc/dirac.cfg file does not exist','ERROR')
+
+if not os.path.exists('etc/dirac.cfg'):
+  pilotExit(1)
+
+#Add default extra CS values to cfg file
+
+cfg = open('etc/dirac.cfg','a')
+cfg.close()
 
 #############################################################################
 #Start DIRAC Job Agent
 
-runJobAgent = '%s DIRAC/Core/scripts/dirac-agent WorkloadManagement/JobAgent -o LogLevel=debug' %(diracPython)
+runJobAgent = '%s DIRAC/Core/scripts/dirac-agent WorkloadManagement/JobAgent -o LogLevel=debug ' %(diracPython)
+
+#write any necessary configuration files
+inProcessSection = 'Resources/Computing/InProcess'
+inProcessDict = {'WorkingDirectory':start,'LocalAccountString':whoami,'TotalCPUs':1,'MaxCPUTime':jobCPUReqt+1,'MaxRunningJobs':1}
+inProcessDict['CPUScalingFactor']=1
+writeConfigFile('InProcess.cfg',inProcessSection,inProcessDict)
+
+jobAgentSection = 'Systems/WorkloadManagement/Development/Agents/JobAgent'
+writeConfigFile('jobAgent.cfg',jobAgentSection,{'CEUniqueID':'InProcess','MaxCycles':1})
+writeConfigFile('security.cfg','DIRAC/Security',{'UseServerCertificate':'no'})
+#below is because LHCb-Development differs from Development, this is fine for initial tests
+#but will be replaced...
+writeConfigFile('setup.cfg','DIRAC',{'Setup':'LHCb-Development'})
+
+#find any .cfg files and append to script to run job agent, all files created in '.'
+for i in os.listdir(start):
+  if re.search('.cfg$',i):
+    runJobAgent += i+' '
+
 printPilot('Running DIRAC Job Agent:\n%s' %(runJobAgent),'DEBUG')
-os.system(runJobAgent)
+
+sys.stdout.flush()
+os.system(runJobAgentCmd)
 sys.stdout.flush()
 
 #############################################################################
 #Perform any post-execution tasks / debugging and exit gracefully
-
-printPilot('Files in current directory are:')
-for i in os.listdir('.'): print i
-
 printPilot('Post-execution proxy information:')
 os.system('grid-proxy-info')
 sys.stdout.flush()
 printPilot('Execution of %s complete.' %(scriptName))
 printPilot('========================================================================')
-pilotOutput.close()
-sys.stdout.flush()
-sys.exit(0)
+pilotExit(0)
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
