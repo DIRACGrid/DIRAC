@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ########################################################################
-# $Id: JobWrapper.py,v 1.1 2007/11/30 17:50:55 paterson Exp $
+# $Id: JobWrapper.py,v 1.2 2007/12/06 23:00:24 paterson Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.1 2007/11/30 17:50:55 paterson Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.2 2007/12/06 23:00:24 paterson Exp $"
 
 #from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB      import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.Client.SandboxClient        import SandboxClient
@@ -46,6 +46,7 @@ class JobWrapper:
     self.defaultOutputFile = gConfig.getValue(self.section+'/DefaultOutputFile','std.out')
     self.defaultErrorFile = gConfig.getValue(self.section+'/DefaultErrorFile','std.err')
     self.cleanUpFlag  = gConfig.getValue(self.section+'/CleanUpFlag',False)
+    self.localSiteRoot = gConfig.getValue('/LocalSite/Root',self.root)
     self.log.debug('===========================================================================')
     self.log.debug('CVS version %s' %(__RCSID__))
     self.log.debug(self.diracVersion)
@@ -101,6 +102,11 @@ class JobWrapper:
     executable = os.path.expandvars(executable)
     thread = None
     spObject = None
+
+    if re.search('$DIRACROOT',executable):
+      executable = executable.replace('$DIRACROOT',localSiteRoot)
+      self.log.debug('Replaced $DIRACROOT for executable')
+
     if os.path.exists(executable):
       self.__report('Running','Application')
       spObject = Subprocess( 0 )
