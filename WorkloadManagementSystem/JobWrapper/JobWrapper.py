@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ########################################################################
-# $Id: JobWrapper.py,v 1.2 2007/12/06 23:00:24 paterson Exp $
+# $Id: JobWrapper.py,v 1.3 2007/12/07 12:31:30 paterson Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.2 2007/12/06 23:00:24 paterson Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.3 2007/12/07 12:31:30 paterson Exp $"
 
 #from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB      import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.Client.SandboxClient        import SandboxClient
@@ -103,9 +103,9 @@ class JobWrapper:
     thread = None
     spObject = None
 
-    if re.search('$DIRACROOT',executable):
-      executable = executable.replace('$DIRACROOT',localSiteRoot)
-      self.log.debug('Replaced $DIRACROOT for executable')
+    if re.search('DIRACROOT',executable):
+      executable = executable.replace('$DIRACROOT',self.localSiteRoot)
+      self.log.debug('Replaced $DIRACROOT for executable %s' %(self.localSiteRoot))
 
     if os.path.exists(executable):
       self.__report('Running','Application')
@@ -126,6 +126,7 @@ class JobWrapper:
       return watchdogInstance
 
     watchdog = watchdogInstance['Value']
+    self.log.verbose('Calibrating Watchdog instance')
     watchdog.calibrate()
     if thread.isAlive():
       self.log.info('Application thread is started in Job Wrapper')
