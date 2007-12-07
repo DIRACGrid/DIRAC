@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.5 2007/12/06 21:37:52 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.6 2007/12/07 12:23:41 paterson Exp $
 # File  : Watchdog.py
 # Author: Stuart Paterson
 ########################################################################
@@ -18,7 +18,7 @@
           - Means to send heartbeat signal.
 """
 
-__RCSID__ = "$Id: Watchdog.py,v 1.5 2007/12/06 21:37:52 paterson Exp $"
+__RCSID__ = "$Id: Watchdog.py,v 1.6 2007/12/07 12:23:41 paterson Exp $"
 
 from DIRAC.Core.Base.Agent                          import Agent
 #from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
@@ -545,7 +545,8 @@ class Watchdog(Agent):
     self.log.info('==========================================================')
     vals = params
     if params.has_key('Value'):
-      vals = params['Value']
+      if vals['Value']:
+        vals = params['Value']
     for k,v in vals.items():
       self.log.info(str(k)+' = '+str(v))
     self.log.info('==========================================================')
