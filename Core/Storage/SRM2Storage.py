@@ -1,5 +1,4 @@
-""" This is the SRM2 StorageClass
-"""
+""" This is the SRM2 StorageClass """
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Storage.StorageBase import StorageBase
@@ -957,12 +956,13 @@ class SRM2Storage(StorageBase):
           return S_OK()
         else:
           res = self.isDirectory(dir)
-          if res['Value']['Successful'].has_key(dir):
-            if res['Value']['Successful'][dir]:
-              res = self.__makeDir(path)
-            else:
-              res = self.__makeDirs(dir)
-              res = self.__makeDir(path)
+          if res['OK']:
+            if res['Value']['Successful'].has_key(dir):
+              if res['Value']['Successful'][dir]:
+                res = self.__makeDir(path)
+              else:
+                res = self.__makeDirs(dir)
+                res = self.__makeDir(path)
     return res
 
   def removeDirectory(self,path):
