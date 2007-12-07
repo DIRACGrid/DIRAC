@@ -53,6 +53,8 @@ class StorageElement:
     gLogger.info("StorageElement.isValid: Determining whether the StorageElement %s is valid for use." % self.name)
     return S_OK(self.valid)
 
+  def getStorageElementName(self):
+    return S_OK(self.name)
   #################################################################################################
   #
   # These are the basic get functions to get information about the supported protocols
@@ -68,7 +70,7 @@ class StorageElement:
   def getRemoteProtocols(self):
     """ Get the list of all the remote access protocols defined for this Storage Element
     """
-    gLogger.info("StorageElement.getRemoteProtocols: Obtaining remote protocols for %s." % self.name) 
+    gLogger.info("StorageElement.getRemoteProtocols: Obtaining remote protocols for %s." % self.name)
     return S_OK(self.remoteProtocols)
 
   def getLocalProtocols(self):
@@ -310,7 +312,7 @@ class StorageElement:
         'catalogueFileSize' is the size from the catalogue
     """
     localSE = self.isLocalSE()['Value']
-    
+
     res  = pfnparse(pfn)
     if not res['OK']:
       errStr = "StorageElement.getFile: Failed to parse supplied PFN."
