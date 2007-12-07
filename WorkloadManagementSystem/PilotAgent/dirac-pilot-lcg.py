@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/dirac-pilot-lcg.py,v 1.3 2007/12/06 22:41:44 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/dirac-pilot-lcg.py,v 1.4 2007/12/07 12:42:09 paterson Exp $
 # File :   dirac-pilot-lcg.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,7 +13,7 @@ import os,sys,string,re
     for the VO.
 """
 
-__RCSID__ = "$Id: dirac-pilot-lcg.py,v 1.3 2007/12/06 22:41:44 paterson Exp $"
+__RCSID__ = "$Id: dirac-pilot-lcg.py,v 1.4 2007/12/07 12:42:09 paterson Exp $"
 
 
 DEBUG = 1
@@ -24,7 +24,8 @@ DIRAC_PYTHON ='2.4'
 INSTALL_RETRIES = 5
 MIN_DISK_SPACE = 2560 #MB
 CLEANUP = 0
-LOCAL = 1
+LOCAL = 0
+DISABLE_INSTALL = 0
 JOB_AGENT_CE = 'InProcess'
 
 start = os.getcwd()
@@ -123,6 +124,7 @@ def pilotExit(code):
       else:
         printPilot('File %s' %(directory),'DEBUG')
 
+  printPilot('==================================EOF===================================')
   pilotOutput.close()
   sys.stdout.flush()
   sys.exit(int(code))
@@ -207,7 +209,7 @@ else:
 
 printPilot('Hostname = %s' %(runCommand('hostname')))
 whoami = runCommand('whoami')
-printPilot('LocalAccount = %s' %())
+printPilot('LocalAccount = %s' %(whoami))
 printPilot('ID = %s' %(runCommand('id')))
 printPilot('CurrentDir = %s' %(start))
 if os.path.exists('/etc/redhat-release'):
@@ -234,8 +236,11 @@ printPilot('====================================================================
 TARFILE = 'DIRAC-%s.tar.gz' % diracSetup
 diracDist = '%s/%s' %(DIRAC_URL,TARFILE)
 printPilot('DIRAC Tar File to be downloaded is: %s' %(diracDist))
-#installDIRAC = './dirac-install -f -p %s ' %(diracDist) #perform full DIRAC installation for now
-installDIRAC = 'echo disabled installation'
+installDIRAC = './dirac-install -f -p %s ' %(diracDist) #perform full DIRAC installation for now
+
+if DISABLE_INSTALL:
+  installDIRAC = 'echo disabled DIRAC installation'
+
 runCommand('chmod a+x dirac-install')
 printPilot(runCommand('ls -al dirac-install'),'DEBUG')
 DIRAC_INSTALLED = 0
@@ -275,8 +280,9 @@ printPilot(runCommand('chmod a+x %s' %(diracPython),1),'DEBUG')
 printPilot(runCommand('ls -al %s' %(diracPython),1),'DEBUG')
 
 #Insert DIRAC ROOT to sys.path
-printPilot('Adding %s to sys.path' %(start),'DEBUG')
-sys.path.insert(0,start)
+#printPilot('Adding %s to sys.path' %(start),'DEBUG')
+#sys.path.insert(0,start)
+#sys.path.insert(0,start+'/scripts')
 
 #Initial setup of DIRAC to enable CS settings
 initialDIRACSetup = '%s scripts/dirac-setup -s LCG.Unknown.ch -m %s' %(diracPython,diracSetup)
@@ -332,14 +338,16 @@ for ce,siteName in siteDict.items():
     DIRAC_SITE_NAME = siteName
 
 if LOCAL:
-  DIRAC_SITE_NAME = 'LCG.Local.ch'
+  DIRAC_SITE_NAME = 'LCG.CERN.ch'
+  printPilot('Found DIRAC site name: %s' %(DIRAC_SITE_NAME))
 
 if not DIRAC_SITE_NAME:
   printPilot('No DIRAC site names were found for CE %s' %(LCG_SITE_CE),'ERROR')
   pilotExit(1)
 
 #Full setup of DIRAC with LCG site name
-fullDIRACSetup = '%s scripts/dirac-setup -m %s -s %s -a %s -p %s ' %(diracPython,diracSetup,LCG_SITE_CE,CMTCONFIG,'LCG')
+#temporarily append LHCb to dev string from AD
+fullDIRACSetup = '%s scripts/dirac-setup -m %s -s %s -a %s -p %s ' %(diracPython,'LHCb-'+diracSetup,DIRAC_SITE_NAME,CMTCONFIG,'LCG')
 printPilot('>>>>>>>>>>Start: Full DIRAC Setup Log','DEBUG')
 if DEBUG:
   print fullDIRACSetup
@@ -367,16 +375,18 @@ cfg.close()
 #############################################################################
 #Start DIRAC Job Agent
 
-runJobAgent = '%s DIRAC/Core/scripts/dirac-agent WorkloadManagement/JobAgent -o LogLevel=debug ' %(diracPython)
+#runJobAgent = '%s %s/DIRAC/Core/scripts/dirac-agent WorkloadManagement/JobAgent -o LogLevel=debug ' %(diracPython,start)
+runJobAgent = '%s scripts/dirac-agent WorkloadManagement/JobAgent -o LogLevel=debug ' %(diracPython)
 
 #write any necessary configuration files
 inProcessSection = 'Resources/Computing/InProcess'
-inProcessDict = {'WorkingDirectory':start,'LocalAccountString':whoami,'TotalCPUs':1,'MaxCPUTime':jobCPUReqt+1,'MaxRunningJobs':1}
+inProcessDict = {'WorkingDirectory':start,'LocalAccountString':whoami,'TotalCPUs':1,'MaxCPUTime':int(jobCPUReqt)+1,'MaxRunningJobs':1}
 inProcessDict['CPUScalingFactor']=1
+inProcessDict['MaxTotalJobs']=1
 writeConfigFile('InProcess.cfg',inProcessSection,inProcessDict)
 
 jobAgentSection = 'Systems/WorkloadManagement/Development/Agents/JobAgent'
-writeConfigFile('jobAgent.cfg',jobAgentSection,{'CEUniqueID':'InProcess','MaxCycles':1})
+writeConfigFile('JobAgent.cfg',jobAgentSection,{'CEUniqueID':'InProcess','MaxCycles':1})
 writeConfigFile('security.cfg','DIRAC/Security',{'UseServerCertificate':'no'})
 #below is because LHCb-Development differs from Development, this is fine for initial tests
 #but will be replaced...
@@ -390,7 +400,10 @@ for i in os.listdir(start):
 printPilot('Running DIRAC Job Agent:\n%s' %(runJobAgent),'DEBUG')
 
 sys.stdout.flush()
-os.system(runJobAgentCmd)
+#printPilot('Setting PYTHONPATH to null')
+#os.putenv('PYTHONPATH',' ')
+
+os.system(runJobAgent)
 sys.stdout.flush()
 
 #############################################################################
