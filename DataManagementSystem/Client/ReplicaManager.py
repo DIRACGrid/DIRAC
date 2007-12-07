@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalogue. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.2 2007/12/07 17:37:09 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.3 2007/12/07 19:30:40 acsmith Exp $"
 
 import re, time, commands, random,os
 from types import *
@@ -55,14 +55,20 @@ class ReplicaManager:
     res = self.fileCatalogue.exists(lfn) #checkFileExistence(lfn,guid)
     if not res['OK']:
       return res
-
+    # If the local file name is not the same as the LFN filename then use the LFN file name
+    alternativeFile = None
+    lfnFileName = os.path.basename(lfn)
+    localFileName = os.path.basename(file)
+    if not lfnFileName == localFileName:
+      alternativeFile = lfnFileName       
+   
     ##########################################################
     #  Perform the put here
     storageElement = StorageElement(diracSE)
     if not storageElement.isValid()['Value']:
       errStr = "ReplicaManager.putAndRegister: Failed to instantiate destination StorageElement."
       gLogger.error(errStr,diracSE)
-    res = storageElement.putFile(file,path)
+    res = storageElement.putFile(file,path,alternativeFileName=alternativeFile)
     if not res['OK']:
       errStr = "ReplicaManager.putAndRegister: Failed to put file to Storage Element."
       errMessage = res['Message']
@@ -111,9 +117,9 @@ class ReplicaManager:
       return res
     if not res['Value']['Successful'].has_key(lfn):
       errStr = "ReplicaManager.getFile: Failed to get replicas for LFN."
-      gLogger.error(errStr,lfn)
-      return S_ERROR(errStr,"%s: %s" % (lfn,res['Message']))
-    lfnReplicas = replicas['Value']['Successful'][lfn]
+      gLogger.error(errStr,"%s %s" % (lfn,res['Value']['Failed'][lfn]))
+      return S_ERROR("%s %s" % (errStr,res['Value']['Failed'][lfn]))
+    lfnReplicas = res['Value']['Successful'][lfn]
     res = self.fileCatalogue.getFileSize(lfn)
     if not res['OK']:
       errStr = "ReplicaManager.getFile: Failed to get file size from FileCatalogue."
@@ -128,7 +134,7 @@ class ReplicaManager:
     ###########################################################
     # Determine the best replica
     replicaPreference = []
-    for diracSE,pfn in lfnReplicas.keys():
+    for diracSE,pfn in lfnReplicas.items():
       storageElement = StorageElement(diracSE)
       if storageElement.isValid()['Value']:
         local = storageElement.isLocalSE()['Value']
