@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobStateUpdateHandler.py,v 1.3 2007/11/26 13:22:52 atsareg Exp $
+# $Id: JobStateUpdateHandler.py,v 1.4 2007/12/07 08:56:31 paterson Exp $
 ########################################################################
 
 """ JobStateUpdateHandler is the implementation of the Job State updating
@@ -35,30 +35,33 @@ class JobStateUpdateHandler( RequestHandler ):
 
   ###########################################################################
   types_setJobStatus = [IntType,StringType,StringType,StringType,StringType]
-  def export_setJobStatus(self,jobId,status,minorStatus,source='Unknown',datetime=None):
+  def export_setJobStatus(self,jobID,status,minorStatus,source='Unknown',datetime=None):
     """ Set the major and minor status for job specified by its JobId.
         Set optionally the status date and source component which sends the
         status information.
     """
 
     if status:
-      result = jobDB.setJobAttribute(jobId,'Status',status)
-      if result['Status'] != "OK":
+      result = jobDB.setJobAttribute(jobID,'Status',status)
+      if not result['OK']:
         return result
     if minorStatus:
-      result = jobDB.setJobAttribute(jobId,'MinorStatus',minorStatus,True)
-      if result['Status'] != "OK":
+      result = jobDB.setJobAttribute(jobID,'MinorStatus',minorStatus,True)
+      if not result['OK']:
         return result
 
-    result = jobDB.getJobsAttributes([jobId], ['Status','MinorStatus'] )
-    status = result['Value'][0]['Status']
-    minorStatus = result['Value'][0]['MinorStatus']
-    if date_time:
-      date = date_time.split()[0]
-      time = date_time.split()[1]
-      result = jobDB.addLoggingRecord(jobId,status+'/'+minorStatus,date,time,source)
+    result = jobDB.getJobAttributes(jobID, ['Status','MinorStatus'] )
+    if not result['OK']:
+      return result
+
+    status = result['Value']['Status']
+    minorStatus = result['Value']['MinorStatus']
+    if datetime:
+      date = datetime.split()[0]
+      time = datetime.split()[1]
+      result = logDB.addLoggingRecord(jobID,status,minorStatus,date,time,source)
     else:
-      result = jobDB.addLoggingRecord(jobId,status+'/'+minorStatus,source=source)
+      result = logDB.addLoggingRecord(jobID,status,minorStatus,source=source)
 
     return result
 
@@ -104,8 +107,8 @@ class JobStateUpdateHandler( RequestHandler ):
       return S_ERROR('Failed to store some of the parameters')
 
   ###########################################################################
-  types_sendSignOfLife = [IntType]
-  def export_sendSignOfLife(self,jobId):
+  types_sendHeartBeat = [IntType]
+  def export_sendHeartBeat(self,jobId):
     """ Send a heart beat sign of life for a job jobId
     """
 
@@ -117,18 +120,3 @@ class JobStateUpdateHandler( RequestHandler ):
     if status == "stalled":
       result = jobDB.setJobAttribute(jobId,'Status','running',True)
 
-  ###########################################################################
-  types_deleteJob = [IntType]
-  def export_deleteJob(self,jobId):
-    """ Delete job jobId
-    """
-
-    result = jobDB.deleteJobFromQueue(jobId)
-
-    result = jobDB.getJobsAttributes([jobId], ['MinorStatus'] )
-    minorStatus = result['Value'][0]['MinorStatus']
-
-    result = jobDB.setJobAttribute(jobId,'Status','deleted',True)
-    result = jobDB.addLoggingRecord(jobId,'deleted/'+minorStatus,source='JobStateService')
-
-    return S_OK()
