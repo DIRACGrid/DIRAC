@@ -419,7 +419,7 @@ class StorageElement:
               gLogger.error(infoStr)
 
     # If we get here we tried all the protocols and failed with all of them
-    errStr = "StorageElement.putFile: Failed to get file for all protocols."
+    errStr = "StorageElement.getFile: Failed to get file for all protocols."
     gLogger.error(errStr,pfn)
     return S_ERROR(errStr)
 
