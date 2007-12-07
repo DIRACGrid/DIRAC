@@ -1,12 +1,13 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalogue. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.1 2007/12/07 14:45:24 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.2 2007/12/07 17:37:09 acsmith Exp $"
 
-import re, time, commands, random
+import re, time, commands, random,os
 from types import *
 
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig
 from DIRAC.Core.Storage.StorageElement import StorageElement
+from DIRAC.DataManagementSystem.Client.LcgFileCatalogCombinedClient import LcgFileCatalogCombinedClient 
 from DIRAC.Core.Utilities.File import makeGuid
 from DIRAC.Core.Utilities.File import getSize
 
@@ -16,7 +17,7 @@ class ReplicaManager:
     """ Constructor function.
     """
 
-    self.fileCatalogue = FileCatalogue()
+    self.fileCatalogue = LcgFileCatalogCombinedClient()
     self.accountingClient = None
     self.registrationProtocol = 'SRM2'
 
@@ -51,7 +52,7 @@ class ReplicaManager:
     # If the GUID is not given, generate it here
     if not guid:
       guid = makeGuid(file)
-    res = self.fileCatalogue.checkFileExistence(lfn,guid)
+    res = self.fileCatalogue.exists(lfn) #checkFileExistence(lfn,guid)
     if not res['OK']:
       return res
 
@@ -66,7 +67,7 @@ class ReplicaManager:
       errStr = "ReplicaManager.putAndRegister: Failed to put file to Storage Element."
       errMessage = res['Message']
       gLogger.error(errStr,"%s: %s" % (file,errMessage))
-      return S_ERROR("%s %s" % errStr,errMessage)
+      return S_ERROR("%s %s" % (errStr,errMessage))
     destPfn = res['Value']
     destinationSE = storageElement.getStorageElementName()['Value']
 
@@ -79,7 +80,8 @@ class ReplicaManager:
       pfnForRegistration = destPfn
     else:
       pfnForRegistration = res['Value']
-    res = self.fileCatalogue.addFile(lfn,pfnForRegistration,size,destinationSE,guid)
+    fileTuple = (lfn,pfnForRegistration,size,destinationSE,guid)
+    res = self.fileCatalogue.addFile(fileTuple)
     if not res['OK']:
       errStr = "ReplicaManager.putAndRegister: Failed to add file to catalogue."
       gLogger.error(errStr,"%s: %s" % (lfn,res['Message']))
