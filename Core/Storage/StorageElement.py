@@ -34,9 +34,9 @@ class StorageElement:
     """
       Dump to the logger a sumary of the StorageElement items
     """
-    outStr = "\nStorage Element %s:\n" % (self.name)
+    gLogger.info("StorageElement.dump: Perparing dump for StorageElement %s." % self.name)
     i = 1
-    outStr = "%s============ Options ============\n" % (outStr)
+    outStr = "\n\n============ Options ============\n"
     for key in sortList(self.options.keys()):
       outStr = "%s%s: %s\n" % (outStr,key.ljust(15),self.options[key])
 
@@ -50,6 +50,7 @@ class StorageElement:
     gLogger.info(outStr)
 
   def isValid(self):
+    gLogger.info("StorageElement.isValid: Determining whether the StorageElement %s is valid for use." % self.name)
     return S_OK(self.valid)
 
   #################################################################################################
@@ -60,17 +61,20 @@ class StorageElement:
   def getProtocols(self):
     """ Get the list of all the protocols defined for this Storage Element
     """
+    gLogger.info("StorageElement.getProtocols: Obtaining all protocols for %s." % self.name)
     allProtocols = self.localProtocols+self.remoteProtocols
     return S_OK(allProtocols)
 
   def getRemoteProtocols(self):
     """ Get the list of all the remote access protocols defined for this Storage Element
     """
+    gLogger.info("StorageElement.getRemoteProtocols: Obtaining remote protocols for %s." % self.name) 
     return S_OK(self.remoteProtocols)
 
   def getLocalProtocols(self):
     """ Get the list of all the local access protocols defined for this Storage Element
     """
+    gLogger.info("StorageElement.getLocalProtocols: Obtaining local protocols for %s." % self.name)
     return S_OK(self.localProtocols)
 
   #################################################################################################
@@ -81,6 +85,7 @@ class StorageElement:
   def getStorageElementOption(self,option):
     """ Get the value for the option supplied from self.options
     """
+    gLogger.info("StorageElement.getStorageElementOption: Obtaining %s option for Storage Element %s." % (option,self.name))
     if self.options.has_key(option):
       optionValue = self.options[option]
       return S_OK(optionValue)
@@ -92,6 +97,7 @@ class StorageElement:
   def getStorageParameters(self,protocol):
     """ Get protocol specific options
     """
+    gLogger.info("StorageElement.getStorageParameters: Obtaining storage parameters for %s protocol %s." % (self.name,protocol))
     res = self.getProtocols()
     availableProtocols = res['Value']
     if not protocol in availableProtocols:
@@ -110,6 +116,7 @@ class StorageElement:
   def isLocalSE(self):
     """ Test if the Storage Element is local in the current context
     """
+    gLogger.info("StorageElement.isLocalSE: Determining whether %s is a local SE." % self.name)
     configStr = '/DIRAC/Site'
     localSite = gConfig.getValue(configStr)
     configStr = '/Resources/SiteLocalSEMapping/%s' % localSite
@@ -296,14 +303,20 @@ class StorageElement:
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
-  def getFile(self,pfn,catalogueFileSize):
+  def getFile(self,pfn,catalogueFileSize,localPath = ''):
     """ This method will obtain a local copy of a file from the SE
 
         'pfn' is the physical file name (as registered in the LFC)
         'catalogueFileSize' is the size from the catalogue
     """
     localSE = self.isLocalSE()['Value']
-    pfnDict = pfnparse(pfn)
+    
+    res  = pfnparse(pfn)
+    if not res['OK']:
+      errStr = "StorageElement.getFile: Failed to parse supplied PFN."
+      gLogger.error(errStr,"%s: %s" % (pfn,res['Message']))
+      return S_ERROR(errStr)
+    pfnDict = res['Value']
     fileName = os.path.basename(pfn)
 
     # Try all of the storages one by one until success
@@ -311,7 +324,7 @@ class StorageElement:
       res = storage.getParameters()
       protocolName = res['Value']['ProtocolName']
       # If the SE is not local then we can't use local protocols
-      if protocolName in self.remoteProtocol:
+      if protocolName in self.remoteProtocols:
         useProtocol = True
       elif localSE:
         useProtocol = True
@@ -331,11 +344,11 @@ class StorageElement:
           res = storage.exists(protocolPfn)
           if res['OK']:
             if res['Value']['Successful'].has_key(protocolPfn):
-              fileExists = res['Value']['Successful'][destUrl]
+              fileExists = res['Value']['Successful'][protocolPfn]
               if not fileExists:
-                infoStr = "StorageElement.getFile: File does not exist."
-                gLogger.error(infoStr,'%s for protocol %s' % (protocolPfn,protocolName))
-                return S_ERROR('StorageElement.getFile: Physical file does not exist')
+                errStr = "StorageElement.getFile: Source file does not exist."
+                gLogger.error(errStr,'%s for protocol %s' % (protocolPfn,protocolName))
+                return S_ERROR(errStr)
               else:
                 infoStr = "StorageElement.getFile: File exists, checking size."
                 gLogger.info(infoStr,'%s for protocol %s' % (protocolPfn,protocolName))
@@ -378,7 +391,8 @@ class StorageElement:
           ###########################################################################################
           # If the check was successful (i.e. we obtained correctly the file size) perform the transfer
           if protocolSize:
-            localPath = '%s/%s' % (os.getcwd(),fileName)
+            if not localPath:
+              localPath = '%s/%s' % (os.getcwd(),fileName)
             fileTuple = (protocolPfn,localPath,protocolSize)
             res = storage.getFile(fileTuple)
             if res['OK']:
