@@ -146,8 +146,9 @@ class StorageElement:
     for storage in self.storages:
       res = storage.getParameters()
       if protocol == res['Value']['ProtocolName']:
-        pfnDict = pfnparse(pfn)
-        res = storage.getProtocolPfn(pfnDict,withPort)
+        res = pfnparse(pfn)
+        if res['OK']:
+          res = storage.getProtocolPfn(res['Value'],withPort)
         return res
     errStr = "StorageElement.getPfnForProtocol: Requested protocol supported but no object found."
     gLogger.error(errStr,"%s for %s" % (protocol,self.name))
