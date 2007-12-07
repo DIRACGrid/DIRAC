@@ -278,7 +278,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
       #Check the registration is correctly specified
       res = self.__checkAddFile(lfn,pfn,size,se,guid)
       if not res['OK']:
-        failed[lfn] = res['Message']
+        failed[lfn] = "LFCClient.addFile: %s" % res['Message']
       else:
         size = long(size)
         res = self.__addFile(lfn,pfn,size,se,guid)
