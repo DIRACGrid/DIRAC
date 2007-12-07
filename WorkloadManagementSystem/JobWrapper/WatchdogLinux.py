@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/WatchdogLinux.py,v 1.3 2007/12/06 21:36:39 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/WatchdogLinux.py,v 1.4 2007/12/07 12:24:02 paterson Exp $
 # Author: Stuart Paterson
 # eMail : Stuart.Paterson@cern.ch
 ########################################################################
@@ -11,18 +11,18 @@
      This is the Unix / Linux compatible Watchdog subclass.
 """
 
-__RCSID__ = "$Id: WatchdogLinux.py,v 1.3 2007/12/06 21:36:39 paterson Exp $"
+__RCSID__ = "$Id: WatchdogLinux.py,v 1.4 2007/12/07 12:24:02 paterson Exp $"
 
-from DIRAC.Core.Base.Agent                              import Agent
-from DIRAC.WorkloadManagementSystem.JobWrapper.Watchdog import Watchdog
-from DIRAC.Core.Utilities.Subprocess                    import shellCall
-from DIRAC                                              import S_OK, S_ERROR
+from DIRAC.Core.Base.Agent                               import Agent
+from DIRAC.WorkloadManagementSystem.JobWrapper.Watchdog  import Watchdog
+from DIRAC.Core.Utilities.Subprocess                     import shellCall
+from DIRAC                                               import S_OK, S_ERROR
 
-import string,re
+import string,re,socket
 
 class WatchdogLinux(Watchdog):
 
-  def __init__(self, pid, thread, spObject, jobCPUtime, systemFlag='mac'):
+  def __init__(self, pid, thread, spObject, jobCPUtime, systemFlag='linux'):
     """ Constructor, takes system flag as argument.
     """
     Watchdog.__init__(self,pid,thread,spObject,jobCPUtime,systemFlag)
@@ -97,8 +97,8 @@ class WatchdogLinux(Watchdog):
     spaceDict = shellCall(5,comm)
     print spaceDict
     if spaceDict['OK']:
-      space = string.split(spcaeDict['Value'][1]) [10]
-      result['Value'] = float(mem)
+      space = string.split(spaceDict['Value'][1]) [10]
+      result['Value'] = float(space)
     else:
       result = S_ERROR('Could not obtain disk usage')
 
