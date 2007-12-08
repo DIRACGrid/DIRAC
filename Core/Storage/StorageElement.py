@@ -137,21 +137,37 @@ class StorageElement:
     """ Transform the input pfn into another with the given protocol for the Storage Element.
     """
     res = self.getProtocols()
+    if type(protocol) == types.StringType:
+      protocols = [protocol]
+    elif type(protocol) == types.ListType:
+      protocols = protocol
+    else:
+      errStr = "StorageElement.getPfnForProtocol: Supplied protocol must be string or list of strings."
+      gLogger.error(errStr,"%s %s" % (protocol,self.name))
+      return S_ERROR(errStr)
     availableProtocols = res['Value']
-    if not protocol in availableProtocols:
-      errStr = "StorageElement.getPfnForProtocol: Requested protocol not available for SE."
+    protocolsToTry = []
+    for protocol in protocols:
+      if protocol in availableProtocols:
+        protocolsToTry.append(protocol)
+      else:
+        errStr = "StorageElement.getPfnForProtocol: Requested protocol not available for SE."
+        gLogger.error(errStr,'%s for %s' % (protocol,self.name))
+    if not protocolsToTry:
+      errStr = "StorageElement.getPfnForProtocol: None of the requested protocols were available for SE."
       gLogger.error(errStr,'%s for %s' % (protocol,self.name))
       return S_ERROR(errStr)
     # Check all available storages for required protocol then contruct the PFN
     for storage in self.storages:
       res = storage.getParameters()
-      if protocol == res['Value']['ProtocolName']:
+      if res['Value']['ProtocolName'] in protocolsToTry:
         res = pfnparse(pfn)
         if res['OK']:
           res = storage.getProtocolPfn(res['Value'],withPort)
-        return res
-    errStr = "StorageElement.getPfnForProtocol: Requested protocol supported but no object found."
-    gLogger.error(errStr,"%s for %s" % (protocol,self.name))
+          if res['OK']:
+            return res
+    errStr = "StorageElement.getPfnForProtocol: Failed to get PFN for requested protocols."
+    gLogger.error(errStr,"%s for %s" % (protocols,self.name))
     return S_ERROR(errStr)
 
   def getPfnPath(self,pfn):
