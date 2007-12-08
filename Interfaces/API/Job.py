@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.3 2007/12/03 18:23:29 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.4 2007/12/08 18:38:01 paterson Exp $
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,7 +13,7 @@
 
 """
 
-__RCSID__ = "$Id: Job.py,v 1.3 2007/12/03 18:23:29 paterson Exp $"
+__RCSID__ = "$Id: Job.py,v 1.4 2007/12/08 18:38:01 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -43,7 +43,7 @@ class Job:
 
     self.defaultOutputSE = 'CERN-tape' # to discuss
     #gConfig.getValue('Tier0SE-tape','SEName')
-    self.stepCount = 1
+    self.stepCount = 0
     self.owner = 'NotSpecified'
     self.name = 'Name'
     self.type = 'user'
@@ -89,41 +89,44 @@ class Job:
        @param executable: Executable, can include path to file
        @type executable: string
     """
-    stepNumber = self.stepCount
-    self.stepCount +=1
-    moduleName = 'Script'
-    module = ModuleDefinition(moduleName)
-    body = 'from WorkflowLib.Module.Script import Script\n'
+
     if os.path.exists(executable):
       self.log.debug('Found script executable file %s' % (executable))
-      self._addParameter(module,'Executable','Parameter',os.path.basename(executable),'Executable Script')
-
-      self._addParameter(module,'Name','Parameter',os.path.basename(executable),'Executable ')
       self.addToInputSandbox.append(executable)
       logName = os.path.basename(executable)+'.log'
+      moduleName = os.path.basename(executable)
     else:
       self.log.debug('Found executable code')
-      self._addParameter(module,'Executable','Parameter',executable,'Lines of executable code')
-      body = executable
-      logName = 'ScriptOutput.log'
+      logName = 'CodeOutput.log'
+      moduleName = 'CodeSegment'
 
     if logFile:
       if type(logFile) == type(' '):
-        logName = logFile+'.log'
+        logName = logFile
 
-    self._addParameter(module,'LogFile','Parameter',logName,'Log file name',io='output')
     self.addToOutputSandbox.append(logName)
+    self.stepCount +=1
+    module =  self.__getScriptModule()
 
-    module.setBody(body)
-    stepName = 'ScriptStep%s' %(stepNumber)
+    moduleName = moduleName.replace('.','')
+    stepNumber = self.stepCount
+    stepDefn = 'ScriptStep%s' %(stepNumber)
+    stepName = 'RunScriptStep%s' %(stepNumber)
 
-    step = StepDefinition(stepName)
+    step = StepDefinition(stepDefn)
     step.addModule(module)
 
-    moduleInstance = step.createModuleInstance('Script', moduleName)
+    module.findParameter('Executable').setValue(executable)
+    module.findParameter('Name').setValue(moduleName)
+    module.findParameter('LogFile').setValue(logName)
+
+    moduleInstance = step.createModuleInstance('Script',moduleName)
+    output = module.findParameter('Output')
+    step.appendParameter(Parameter(parameter=output))
+    step.findParameter('Output').link(moduleName,'Output')
 
     self.workflow.addStep(step)
-    stepInstance = self.workflow.createStepInstance(stepName, 'Step')
+    stepInstance = self.workflow.createStepInstance(stepDefn,stepName)
 
   #############################################################################
   def setName(self,jobname):
@@ -278,6 +281,7 @@ class Job:
        Choose platform (system) on which job is executed e.g. DIRAC, LCG.
        Default of LCG in place for users.
     """
+    #should add protection here for list of supported platforms
     if type(backend) == type(" "):
       description = 'Platform type'
       self._addParameter(self.workflow,'Platform','JDLReqt',backend,description)
@@ -526,6 +530,7 @@ class Job:
 
     p = Parameter(name,value,ptype,"","",inBool,outBool,description)
     object.appendParameter(Parameter(parameter=p))
+    return p
 
   ############################################################################
   def _resolveInputSandbox(self, inputSandbox):
@@ -589,6 +594,23 @@ class Job:
     return resolvedIS
 
   #############################################################################
+  def __getScriptModule(self):
+    """Internal function.
+
+      This method controls the definition for a script module.
+    """
+    moduleName = 'Script'
+    module = ModuleDefinition(moduleName)
+    name = self._addParameter(module,'Name','Parameter','string','Name of executable')
+    self._addParameter(module,'Executable','Parameter','string','Executable Script')
+    self._addParameter(module,'LogFile','Parameter','string','Log file name')
+    self._addParameter(module,'Output','Parameter','string','Script output string',io='output')
+    module.setDescription('A module that can execute any provided code segment or script.')
+    body = 'from WorkflowLib.Module.Script import Script\n'
+    module.setBody(body)
+    return module
+
+  #############################################################################
   def _toXML(self):
     """Internal Function.
 
@@ -619,6 +641,7 @@ class Job:
       if xmlFile:
         scriptname = xmlFile
 
+    self.addToInputSandbox.append(scriptname)
     classadJob.insertAttributeString('Arguments',scriptname)
     classadJob.insertAttributeString('Executable',self.executable)
 
