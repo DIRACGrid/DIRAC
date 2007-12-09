@@ -1,13 +1,13 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalogue. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.3 2007/12/07 19:30:40 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.4 2007/12/09 16:17:10 acsmith Exp $"
 
 import re, time, commands, random,os
 from types import *
 
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig
 from DIRAC.Core.Storage.StorageElement import StorageElement
-from DIRAC.DataManagementSystem.Client.LcgFileCatalogCombinedClient import LcgFileCatalogCombinedClient 
+from DIRAC.DataManagementSystem.Client.LcgFileCatalogCombinedClient import LcgFileCatalogCombinedClient
 from DIRAC.Core.Utilities.File import makeGuid
 from DIRAC.Core.Utilities.File import getSize
 
@@ -20,6 +20,7 @@ class ReplicaManager:
     self.fileCatalogue = LcgFileCatalogCombinedClient()
     self.accountingClient = None
     self.registrationProtocol = 'SRM2'
+    self.thirdPartyProtocols = ['SRM2,SRM1']
 
   def setAccountingClient(self,client):
     """ Set Accounting Client instance
@@ -60,14 +61,15 @@ class ReplicaManager:
     lfnFileName = os.path.basename(lfn)
     localFileName = os.path.basename(file)
     if not lfnFileName == localFileName:
-      alternativeFile = lfnFileName       
-   
+      alternativeFile = lfnFileName
+
     ##########################################################
     #  Perform the put here
     storageElement = StorageElement(diracSE)
     if not storageElement.isValid()['Value']:
       errStr = "ReplicaManager.putAndRegister: Failed to instantiate destination StorageElement."
       gLogger.error(errStr,diracSE)
+      return S_ERROR(errStr)
     res = storageElement.putFile(file,path,alternativeFileName=alternativeFile)
     if not res['OK']:
       errStr = "ReplicaManager.putAndRegister: Failed to put file to Storage Element."
@@ -163,153 +165,207 @@ class ReplicaManager:
     gLogger.error(errStr,lfn)
     return S_ERROR(errStr)
 
-  def __isLocalSE(self,se):
-    """  Check if the SE is local in the current environment
-    """
 
-    lse = cfgSvc.get('Site','LocalSE')
-    localse = map( lambda x : x.strip(), lse.split(','))
-    if se in localse:
-      return 1
+  def replicateAndRegister(self,lfn,destSE,sourceSE='',destPath='',localCache=''):
+    """ Replicate a LFN to a destination SE and register the replica.
+
+        'lfn' is the LFN to be replicated
+        'destSE' is the Storage Element the file should be replicated to
+        'sourceSE' is the source for the file replication (where not specified all replicas will be attempted)
+        'destPath' is the path on the destination storage element, if to be different from LHCb convention
+        'localCache' is the local file system location to be used as a temporary cache
+    """
+    res = self.__replicate(lfn,destSE,sourceSE,destPath)
+    if not res['OK']:
+      return res
+    if not res['Value']:
+      # The file was already present at the destination SE
+      return res
+    destPfn = res['Value']
+    res = self.__registerReplica(lfn,destPfn,destSE)
+    if not res['OK']:
+      # Need to return to the client that the file was replicated but not registered
+      pass
     else:
-      return 0
+      return res
 
-#    site = cfgSvc.get('Site','Site')
-#
-#    siteShort = site.split('.')[1]
-#
-#    sesite = se.split('_')[0]
-#
-#    if siteShort == sesite:
-#      return 1
-#    else:
-#      return 0
 
-  def __get_SE_PFN_Names(self,lfn):
-    """Get SE's having the given lfn
+  def __replicate(self,lfn,destSE,sourceSE='',destPath=''):
+    """ Replicate a LFN to a destination SE.
 
-    Get all the names of all the SE's posseding the given lfn.
-    The returned list of SE's is ordered to contain local SE's
-    first.
+        'lfn' is the LFN to be replicated
+        'destSE' is the Storage Element the file should be replicated to
+        'sourceSE' is the source for the file replication (where not specified all replicas will be attempted)
+        'destPath' is the path on the destination storage element, if to be different from LHCb convention
     """
 
-    replicas = {}
-    for fcname,fc in self.fcs.items():
-      result = fc.getPfnsByLfn (lfn)
-      if result['Status'] == 'OK':
-        for se,pfn in result['Replicas'].items():
-          replicas[se] = pfn
-
-    ses = replicas.keys()
-    if not ses:
-      return []
-
-    result = []
-    bannedSource = cfgSvc.get('ReplicaManager','BannedSource',[])
-    for se in ses:
-      if se in bannedSource:
-        continue
-      if self.__isLocalSE(se):
-        result.append((se,replicas[se],'local'))
-    for se in ses:
-      if se in bannedSource:
-        continue
-      if not self.__isLocalSE(se):
-        result.append((se,replicas[se],'remote'))
-
-    # Take the replicas in the arbitrary order until a better criteria
-    random.shuffle(result)
-    return result
-
-  def replicateAndRegister(self,lfn,se_target,path='',localcache='',se_source='',tr_request={}):
-    """Replicate and register file
-
-       Replicates a file specified by its lfn to the se_target SE and register
-       the newly created replica to the existing file catalogs
-    """
-
-    se_target = self._getStorageName(se_target)
-
-    # Get the replicas of the given lfn
-    start = time.time()
-    replicas = self.__get_SE_PFN_Names(lfn)
-    if not replicas:
-      return S_ERROR( 'No replica available' )
-    #print "get_SE_PFN_Names time:",time.time()-start
-    for serep,pfn,flag in replicas:
-      if se_target == serep:
-        print "ReplicateAndRegister: replica of",lfn,"already exists in",se_target
-        return S_OK( "LFN "+lfn+" already exists in "+se_target )
-
-    log = {}
-    # Result cumulates the outcome of both replicate and registerReplica
-    # operations
-    result = S_OK()
-    failed_SEs = {}
-    resRep = self.replicate(lfn,se_target,path,localcache,se_source,replicas,rr_operation=True)
-
-    if resRep['Status'] == 'OK':
-      result.update(resRep)
-      result['TargetSE'] = se_target
-      log['TransferStatus'] = 'OK'
-      result['Log'] = log
-      pfn = resRep['PFN']
-      #print lfn,pfn,se_target
-      resReg = self.registerReplica(lfn,pfn,se_target)
-      result.update(resReg)
-      result['Log']['RegisterLog'] = resReg['RegisterLog']
-    else:
-      if resRep.has_key('FailedSEs'):
-        # Result is not OK, choose the first failed source SE if any
-        # as the result
-        failed_se_names = resRep['FailedSEs'].keys()
-        se = failed_se_names[0]
-        result.update(resRep['FailedSEs'][se])
-      else:
-        # Just in case - result is not OK but no failed SEs
-        result['Status'] = "Error"
-        result['Message'] = resRep['Message']
-
-      log['TransferStatus'] = 'Error'
-      result['Log'] = log
-      result['Size'] = 0
-      resReg = S_ERROR()
-
-    if resRep.has_key('FailedSEs'):
-      failed_SEs = resRep['FailedSEs']
-
-    if self.accountingClient:
-
-      request = {}
-      if os.environ.has_key('TransferID'):
-        request['TransferID'] = os.environ['TransferID']
-      else:
-        request['TransferID'] = "0"
-      request['TargetSE'] = se_target
-      request.update(tr_request)
-      if resRep['Status'] == 'OK':
-        result['TransferSuccessRate'] = "1:1"
-        if resReg['Status'] == 'OK':
-          result['RegistrationSuccessRate'] = "1:1"
+    res = self.__initializeReplication(lfn, destSE)
+    if not res['OK']:
+      return res
+    destStorageElement = res['Value']['DestStorage']
+    lfnReplicas = res['Value']['Replicas']
+    destSE = res['Value']['DestSE']
+    catalogueSize = res['Value']['CatalogueSize']
+    ###########################################################
+    # If the LFN already exists at the destination we have nothing to do
+    if lfnReplicas.has_key(destSE):
+      return S_OK()
+    res = self.__resolveBestReplicas(sourceSE,lfnReplicas,catalogueSize)
+    if not res['OK']:
+      return res
+    replicaPreference = res['Value']
+    ###########################################################
+    # Now perform the replication for the file
+    if not destPath:
+      destPath = os.path.dirname(lfn)
+    for sourceSE,sourcePfn in replicaPreference:
+      if not replicatedFile:
+        gLogger.info("ReplicaManager.replicateAndRegister: Attempting replication from %s to %s." % (sourceSE,destSE))
+        res = destStorageElement.replicateFile(self,sourcePfn,catalogueSize,destPath)
+        if res['OK']:
+          return S_OK(res['Value'])
         else:
-          result['RegistrationSuccessRate'] = "0:1"
+          errStr = "ReplicaManager.replicateAndRegister: Failed replication of LFN."
+          gLogger.error(errStr,"%s from %s to %s." % (lfn,sourceSE,destSE))
+    ##########################################################
+    # If the replication failed for all sources give up
+    errStr = "ReplicaManager.replicateAndRegister: Failed to replicate LFN from any source."
+    gLogger.error(errStr,lfn)
+    return S_ERROR(errStr)
+
+  def __initializeReplication(self,lfn,destSE,):
+    ###########################################################
+    # Check that the destination storage element is sane and resolve its name
+    destStorageElement = StorageElement(destSE)
+    if not destStorageElement.isValid()['Value']:
+      errStr = "ReplicaManager.replicateAndRegister: Failed to instantiate destination StorageElement."
+      gLogger.error(errStr,destSE)
+      return S_ERROR(errStr)
+    destSE = storageElement.getStorageElementName()['Value']
+    ###########################################################
+    # Get the LFN replicas from the file catalogue
+    res = self.fileCatalogue.getReplicas(lfn)
+    if not res['OK']:
+      return res
+    if not res['Value']['Successful'].has_key(lfn):
+      errStr = "ReplicaManager.replicateAndRegister: Failed to get replicas for LFN."
+      gLogger.error(errStr,"%s %s" % (lfn,res['Value']['Failed'][lfn]))
+      return S_ERROR("%s %s" % (errStr,res['Value']['Failed'][lfn]))
+    lfnReplicas = res['Value']['Successful'][lfn]
+    ###########################################################
+    # If the file catalogue size is zero fail the transfer
+    res = self.fileCatalogue.getFileSize(lfn)
+    if not res['OK']:
+      return res
+    if not res['Value']['Successful'].has_key(lfn):
+      errStr = "ReplicaManager.replicateAndRegister: Failed to get size registered for LFN."
+      gLogger.error(errStr,"%s %s" % (lfn,res['Value']['Failed'][lfn]))
+      return S_ERROR("%s %s" % (errStr,res['Value']['Failed'][lfn]))
+    catalogueSize = res['Value']['Successful'][lfn]
+    if catalogueSize == 0:
+      errStr = "ReplicaManager.replicateAndRegister: Registered file size is 0."
+      gLogger.error(errStr,lfn)
+      return S_ERROR(errStr)
+    ###########################################################
+    # Check whether the destination storage element is banned
+    configStr = '/Resources/StorageElements/BannedTarget'
+    bannedTargets = gConfig.getValue(configStr,[])
+    if destSE in bannedTargets:
+      infoStr = "ReplicaManager.replicateAndRegister: Destination Storage Element is currently banned."
+      gLogger.info(infoStr,destSE)
+      return S_ERROR(infoStr)
+    ###########################################################
+    # Check whether the supplied source SE is sane
+    configStr = '/Resources/StorageElements/BannedSource'
+    bannedSources = gConfig.getValue(configStr,[])
+    if sourceSE:
+      if not lfnReplicas.has_key(sourceSE):
+        errStr = "ReplicaManager.replicateAndRegister: LFN does not exist at supplied source SE."
+        gLogger.error(errStr,"%s %s" % (lfn,sourceSE))
+        return S_ERROR(errStr)
+      elif sourceSE in bannedSources:
+        infoStr = "ReplicaManager.replicateAndRegister: Supplied source Storage Element is currently banned."
+        gLogger.info(infoStr,sourceSE)
+        return S_ERROR(errStr)
+    resDict = {'DestStorage':destStorageElement,'DestSE':destSE,'Replicas':lfnReplicas,'CatalogueSize':catalogueSize}
+    return S_OK(resDict)
+
+  def __resolveBestReplicas(self,sourceSE,lfnReplicas,catalogueSize):
+    ###########################################################
+    # Determine the best replicas (remove banned sources, invalid storage elements and file with the wrong size)
+    replicaPreference = []
+    for diracSE,pfn in lfnReplicas.items():
+      if sourceSE and diracSE != sourceSE:
+        infoStr = "ReplicaManager.replicateAndRegister: Storage Element replica not requested."
+        gLogger.info(infoStr,diracSE)
+      elif diracSE in bannedSources:
+        infoStr = "ReplicaManager.replicateAndRegister: Storage Element is currently banned as a source."
+        gLogger.info(infoStr,diracSE)
       else:
-        result['TransferSuccessRate'] = "0:1"
-        result['RegistrationSuccessRate'] = "0:0"
-      self.accountingClient.sendAccountingInfo(request,result)
+        storageElement = StorageElement(diracSE)
+        if storageElement.isValid()['Value']:
+          if storageElement.getRemoteProtocols()['Value']:
+            res = storageElement.getPfnForProtocol(pfn,self.thirdPartyProtocols)
+            if res['OK']:
+              sourcePfn = res['Value']
+              res = storageElement.getFileSize(sourcePfn)
+              if res['OK']:
+                sourceFileSize = res['Value']
+                if catalogueSize == sourceFileSize:
+                  fileTuple = (diracSE,sourcePfn)
+                  replicaPreference.append(fileTuple)
+                else:
+                  errStr = "ReplicaManager.replicateAndRegister: Catalogue size and physical file size mismatch."
+                  gLogger.error(errStr,"%s %s" % (diracSE,sourcePfn))
+              else:
+                errStr = "ReplicaManager.replicateAndRegister: Failed to get physical file size."
+                gLogger.error(errStr,"%s %s: %s" % (sourcePfn,diracSE,res['Message']))
+            else:
+              errStr = "ReplicaManager.replicateAndRegister: Failed to get PFN for replication for StorageElement."
+              gLogger.error(errStr,"%s %s" % (diracSE,res['Message']))
+          else:
+            errStr = "ReplicaManager.replicateAndRegister: Source Storage Element has no remote protocols."
+            gLogger.info(errStr,diracSE)
+        else:
+          errStr = "ReplicaManager.replicateAndRegister: Failed to get valid Storage Element."
+          gLogger.error(errStr,diracSE)
+    if not replicaPreference:
+      errStr = "ReplicaManager.getFile: Failed to find any valid StorageElements."
+      gLogger.error(errStr,lfn)
+      return S_ERROR(errStr)
+    else:
+      return S_OK(replicaPreference)
 
-      source_se = None
-      if result.has_key('SourceSE'):
-        source_se = result['SourceSE']
+  def __registerReplica(self,lfn,destPfn,destSE):
+    ##########################################################
+    # Register the pfn at a given storage element
+    destStorageElement = StorageElement(destSE)
+    if not destStorageElement.isValid()['Value']:
+      errStr = "ReplicaManager.__registerReplica: Failed to instantiate destination StorageElement."
+      gLogger.error(errStr,destSE)
+      return S_ERROR(errStr)
+    destSE = storageElement.getStorageElementName()['Value']
+    res = destStorageElement.getPfnForProtocol(destPfn,self.registrationProtocol,withPort=False)
+    if not res['OK']:
+      errStr = "ReplicaManager.__registerReplica: Failed to resolve desired PFN for registration."
+      gLogger.error(errStr,destPfn)
+      pfnForRegistration = destPfn
+    else:
+      pfnForRegistration = res['Value']
+    replicaTuple = (lfn,pfnForRegistration,destSE,False)
+    res = self.fileCatalogue.addReplica(replicaTuple)
+    if res['OK']:
+      if res['Value']['Successful'].has_key(lfn):
+        return S_OK(pfnForRegistration)
+      else:
+        errStr = "ReplicaManager.replicateAndRegister: Failed to register replica in file catalogue."
+        gLogger.error(errStr,"%s %s" % (pfnForRegistration,res['Value']['Failed'][lfn]))
+    else:
+      errStr = "ReplicaManager.replicateAndRegister: Completely failed to register replica."
+      gLogger.error(errStr,"%s %s" % (pfnForRegistration,res['Message']))
+    return S_ERROR(errStr)
 
-      if failed_SEs:
-        for se,fresult in failed_SEs.items():
-          if se != source_se:
-            fresult['Size'] = 0
-            fresult['TransferSuccessRate'] = "0:1"
-            self.accountingClient.sendAccountingInfo(request,fresult)
 
-    return result
 
   def __check_third_party(self,se1,se2):
     """Check the availability of the third party transfer
@@ -372,101 +428,6 @@ class ReplicaManager:
 
     return result
 
-  def replicate(self,lfn,se_target,path='',localcache='',se_source='',replicas=None,rr_operation=False):
-    """Replicate file
-
-       Replicate a file specified by its lfn to the SE sepcified by
-       the se_target argument. Optional argument localcache defines
-       the path of the local disk space used as a cache before sending
-       file to the destination. Optional se_source argument specifies
-       the prefered source SE.
-    """
-
-    timing = {}
-    # Make use of UTC time
-    timing['TransferStartDate'] = time.strftime('%Y-%m-%d',time.gmtime())
-    timing['TransferStartTime'] = time.strftime('%H:%M:%S',time.gmtime())
-    startOp = time.time()
-
-    result = S_ERROR()
-    third_party_tried = False
-    if not replicas:
-      replicas = self.__get_SE_PFN_Names(lfn)
-    failed_SEs = {}
-
-    if se_source:
-      # If the source is indicated, try the 3d party transfer first
-      if self.__check_third_party(source,target):
-        third_party_tried = True
-        result = self.__replicate_third_party(lfn,se_source,se_target,replicas,path)
-        if result['Status'] == "OK":
-          message = "File %s replicated \n   from %s to %s via %s protocol" % \
-                      (lfn,se_source,se_target,result['Protocol'])
-          result['Message'] = message
-          result['SourceSE'] = se_source
-        else:
-          resultFailed = {}
-          resultFailed['SourceSE'] = se
-          resultFailed.update(result)
-          failed_SEs[se_source] = resultFailed
-
-    if result['Status'] != 'OK':
-      # Try other possible 3d party transfers
-      for se,pfn,flag in replicas:
-        #print se,pfn,flag
-        if self.__check_third_party(se,se_target) and se != se_source:
-          third_party_tried = True
-          #print "Trying",se,"source"
-          result = self.__replicate_third_party(lfn,se,se_target,replicas,path)
-          #print result
-          if result['Status'] == "OK":
-            message = "File %s replicated \n   from %s to %s via %s protocol" % \
-                      (lfn,se,se_target,result['Protocol'])
-            result['Message'] = message
-            result['SourceSE'] = se
-            break
-          else:
-            resultFailed = {}
-            resultFailed['SourceSE'] = se
-            resultFailed.update(result)
-            failed_SEs[se] = resultFailed
-
-    if result['Status'] != 'OK' and not third_party_tried and replicas:
-      # Third party transfers not possible, try through the local cache
-      result = self.__replicate_local_cache(lfn,se_target,path,localcache)
-
-    if failed_SEs:
-      result['FailedSEs'] = failed_SEs
-
-    # Send accounting information if requested
-    result.update(timing)
-    if self.accountingClient and not rr_operation:
-
-      print "Sending accounting info in replicate()"
-      request = {}
-      if os.environ.has_key('TransferID'):
-        request['TransferID'] = os.environ['TransferID']
-      else:
-        request['TransferID'] = "0"
-      request['TargetSE'] = se_target
-      if result['Status'] == 'OK':
-        result['TransferSuccessRate'] = "1:1"
-      else:
-        result['Size'] = 0
-        result['TransferSuccessRate'] = "0:1"
-      self.accountingClient.sendAccountingInfo(request,result)
-
-      source_se = None
-      if result.has_key('SourceSE'):
-        source_se = result['SourceSE']
-
-      for se,fresult in failed_SEs.items():
-        if se != source_se:
-          fresult['Size'] = 0
-          fresult['TransferSuccessRate'] = "0:1"
-          self.accountingClient.sendAccountingInfo(request,fresult)
-
-    return result
 
   def __replicate_local_cache(self,lfn,se_target,path,localcache=''):
     """ Replicate a given LFN by copying to the intermediate local
@@ -498,54 +459,6 @@ class ReplicaManager:
       os.remove(fname)
     os.chdir(cwd)
     return result
-
-
-  def registerReplica(self,lfn,pfname,se_register,catalog=None):
-    """Registers file replica in catalog(s)
-
-    Registers a file replica to one or many catalogs. The specific catalog
-    name can be given. Otherwise registers in all the existing
-    catalogs
-    """
-
-    result = S_OK()
-    start = time.time()
-    log = []
-
-    se = self._getStorageName(se_register)
-
-    if catalog:
-      if self.fcs.has_key(catalog):
-        fc = self.fcs[catalog]
-        res = fc.addPfn(lfn,pfname,se)
-        if res['Status'] != 'OK':
-          result = S_ERROR( "Failed to register replica in catalog "+catalog )
-        else:
-          result = S_OK()
-          log.append((fc.getName(),'OK'))
-          result['RegisterLog'] = log
-      else:
-        print "Unknown catalog",catalog
-        result = S_ERROR( "Unknown catalog "+catalog )
-        log.append((fc.getName(),'Error'))
-        result['RegisterLog'] = log
-    else:
-      for fcname,fc in self.fcs.items():
-        res = fc.addPfn(lfn,pfname,se)
-        if res['Status'] != 'OK':
-          result = S_ERROR( "Failed to register in catalog "+fcname )
-          print result
-          log.append((fc.getName(),'Error'))
-          result['RegisterLog'] = log
-        else:
-          log.append((fc.getName(),'OK'))
-          result['RegisterLog'] = log
-
-    #print "Registration in",fc.name,time.time()-startF
-    end = time.time()
-    result['RegisterOperationTime'] = end - start
-    return result
-
 
   def removeReplica(self,lfn,se,pfn = None):
     """Remove physical replica
@@ -709,15 +622,6 @@ class ReplicaManager:
       result['RemoveLog'] = log
 
     return result
-
-  def getPFNsForLFNs(self,lfnlist):
-    for fcname,fc in self.fcs.items():
-      if fcname == 'LFC':
-        replicadict = fc.getPfnsByLfnList(lfnlist)
-    if replicadict['Status']== 'OK':
-      return replicadict
-    else:
-      return S_ERROR('Failed to obtain PFNs from LFC')
 
   def getFileMetaData(self,lfn,site):
     """
