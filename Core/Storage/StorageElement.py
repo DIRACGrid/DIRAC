@@ -13,7 +13,7 @@ from DIRAC.Core.Storage.StorageFactory import StorageFactory
 from DIRAC.Core.Utilities.Pfn import pfnparse,pfnunparse
 from DIRAC.Core.Utilities.List import sortList
 from DIRAC.Core.Utilities.File import getSize
-import re, time,os
+import re, time,os,types
 
 class StorageElement:
 
