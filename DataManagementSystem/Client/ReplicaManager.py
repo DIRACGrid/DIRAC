@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalogue. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.4 2007/12/09 16:17:10 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.5 2007/12/09 19:48:01 acsmith Exp $"
 
 import re, time, commands, random,os
 from types import *
@@ -20,7 +20,7 @@ class ReplicaManager:
     self.fileCatalogue = LcgFileCatalogCombinedClient()
     self.accountingClient = None
     self.registrationProtocol = 'SRM2'
-    self.thirdPartyProtocols = ['SRM2,SRM1']
+    self.thirdPartyProtocols = ['SRM2','SRM1']
 
   def setAccountingClient(self,client):
     """ Set Accounting Client instance
@@ -175,20 +175,47 @@ class ReplicaManager:
         'destPath' is the path on the destination storage element, if to be different from LHCb convention
         'localCache' is the local file system location to be used as a temporary cache
     """
+    gLogger.info("ReplicaManager.replicateAndRegister: Attempting to replicate %s to %s." % (lfn,destSE))
     res = self.__replicate(lfn,destSE,sourceSE,destPath)
     if not res['OK']:
+      errStr = "ReplicaManager.replicateAndRegister: Replication failed."
+      gLogger.errStr(errStr,"%s %s" % (lfn,destSE)) 
       return res
     if not res['Value']:
       # The file was already present at the destination SE
+      gLogger.info("ReplicaManager.replicateAndRegister: %s already present at %s." % (lfn,destSE))
       return res
     destPfn = res['Value']
+    gLogger.info("ReplicaManager.replicateAndRegister: Attempting to register %s at %s." % (destPfn,destSE))
     res = self.__registerReplica(lfn,destPfn,destSE)
     if not res['OK']:
       # Need to return to the client that the file was replicated but not registered
-      pass
+      errStr = "ReplicaManager.replicateAndRegister: Replica registration failed." 
+      gLogger.error(errStr,"%s %s %s" % (lfn,destPfn,destSE))
     else:
-      return res
+      gLogger.info("ReplicaManager.replicateAndRegister: Successfully registered replica.")  
+      return S_OK(lfn)
 
+  def replicate(self,lfn,destSE,sourceSE='',destPath='',localCache=''):
+    """ Replicate a LFN to a destination SE and register the replica.
+      
+        'lfn' is the LFN to be replicated
+        'destSE' is the Storage Element the file should be replicated to
+        'sourceSE' is the source for the file replication (where not specified all replicas will be attempted)
+        'destPath' is the path on the destination storage element, if to be different from LHCb convention
+        'localCache' is the local file system location to be used as a temporary cache
+    """
+    gLogger.info("ReplicaManager.replicate: Attempting to replicate %s to %s." % (lfn,destSE))
+    res = self.__replicate(lfn,destSE,sourceSE,destPath)
+    if not res['OK']:
+      errStr = "ReplicaManager.replicate: Replication failed."
+      gLogger.errStr(errStr,"%s %s" % (lfn,destSE))
+      return res
+    if not res['Value']:
+      # The file was already present at the destination SE
+      gLogger.info("ReplicaManager.replicate: %s already present at %s." % (lfn,destSE))
+      return res
+    return S_OK(lfn)
 
   def __replicate(self,lfn,destSE,sourceSE='',destPath=''):
     """ Replicate a LFN to a destination SE.
@@ -198,9 +225,10 @@ class ReplicaManager:
         'sourceSE' is the source for the file replication (where not specified all replicas will be attempted)
         'destPath' is the path on the destination storage element, if to be different from LHCb convention
     """
-
-    res = self.__initializeReplication(lfn, destSE)
+    gLogger.info("ReplicaManager.__replicate: Performing replication initialization.")
+    res = self.__initializeReplication(lfn,sourceSE,destSE)
     if not res['OK']:
+      gLogger.error("ReplicaManager.__replicate: Replication initialisation failed.",lfn) 
       return res
     destStorageElement = res['Value']['DestStorage']
     lfnReplicas = res['Value']['Replicas']
@@ -209,9 +237,14 @@ class ReplicaManager:
     ###########################################################
     # If the LFN already exists at the destination we have nothing to do
     if lfnReplicas.has_key(destSE):
+      gLogger.info("ReplicaManager.__replicate: LFN is already registered at %s." % destSE)
       return S_OK()
+    ###########################################################
+    # Resolve the best source storage elements for replication
+    gLogger.info("ReplicaManager.__replicate: Determining the best source replicas.")
     res = self.__resolveBestReplicas(sourceSE,lfnReplicas,catalogueSize)
     if not res['OK']:
+      gLogger.error("ReplicaManager.__replicate: Best replica resolution failed." % lfn)
       return res
     replicaPreference = res['Value']
     ###########################################################
@@ -219,119 +252,138 @@ class ReplicaManager:
     if not destPath:
       destPath = os.path.dirname(lfn)
     for sourceSE,sourcePfn in replicaPreference:
-      if not replicatedFile:
-        gLogger.info("ReplicaManager.replicateAndRegister: Attempting replication from %s to %s." % (sourceSE,destSE))
-        res = destStorageElement.replicateFile(self,sourcePfn,catalogueSize,destPath)
-        if res['OK']:
-          return S_OK(res['Value'])
-        else:
-          errStr = "ReplicaManager.replicateAndRegister: Failed replication of LFN."
-          gLogger.error(errStr,"%s from %s to %s." % (lfn,sourceSE,destSE))
+      gLogger.info("ReplicaManager.__replicate: Attempting replication from %s to %s." % (sourceSE,destSE))
+      res = destStorageElement.replicateFile(sourcePfn,catalogueSize,destPath)
+      if res['OK']:
+        gLogger.info("ReplicaManager.__replicate: Replication successful.")
+        return S_OK(res['Value'])
+      else:
+        errStr = "ReplicaManager.__replicate: Replication failed."
+        gLogger.error(errStr,"%s from %s to %s." % (lfn,sourceSE,destSE))
     ##########################################################
     # If the replication failed for all sources give up
-    errStr = "ReplicaManager.replicateAndRegister: Failed to replicate LFN from any source."
+    errStr = "ReplicaManager.__replicate: Failed to replicate with all sources."
     gLogger.error(errStr,lfn)
     return S_ERROR(errStr)
 
-  def __initializeReplication(self,lfn,destSE,):
+  def __initializeReplication(self,lfn,sourceSE,destSE,):
     ###########################################################
     # Check that the destination storage element is sane and resolve its name
+    gLogger.info("ReplicaManager.__initializeReplication: Verifying destination Storage Element validity (%s)." % destSE)
     destStorageElement = StorageElement(destSE)
     if not destStorageElement.isValid()['Value']:
-      errStr = "ReplicaManager.replicateAndRegister: Failed to instantiate destination StorageElement."
+      errStr = "ReplicaManager.__initializeReplication: Failed to instantiate destination StorageElement."
       gLogger.error(errStr,destSE)
       return S_ERROR(errStr)
-    destSE = storageElement.getStorageElementName()['Value']
+    destSE = destStorageElement.getStorageElementName()['Value']
+    gLogger.info("ReplicaManager.__initializeReplication: Destination Storage Element verified.")
     ###########################################################
     # Get the LFN replicas from the file catalogue
+    gLogger.info("ReplicaManager.__initializeReplication: Attempting to obtain replicas for %s." % lfn)
     res = self.fileCatalogue.getReplicas(lfn)
     if not res['OK']:
+      errStr = "ReplicaManager.__initializeReplication: Completely failed to get replicas for LFN."
+      gLogger.error(errStr,"%s %s" % (lfn,res['Message']))
       return res
     if not res['Value']['Successful'].has_key(lfn):
-      errStr = "ReplicaManager.replicateAndRegister: Failed to get replicas for LFN."
+      errStr = "ReplicaManager.__initializeReplication: Failed to get replicas for LFN."
       gLogger.error(errStr,"%s %s" % (lfn,res['Value']['Failed'][lfn]))
       return S_ERROR("%s %s" % (errStr,res['Value']['Failed'][lfn]))
+    gLogger.info("ReplicaManager.__initializeReplication: Successfully obtained replicas for LFN.")  
     lfnReplicas = res['Value']['Successful'][lfn]
     ###########################################################
     # If the file catalogue size is zero fail the transfer
+    gLogger.info("ReplicaManager.__initializeReplication: Attempting to obtain size for %s." % lfn)
     res = self.fileCatalogue.getFileSize(lfn)
     if not res['OK']:
+      errStr = "ReplicaManager.__initializeReplication: Completely failed to get size for LFN."
+      gLogger.error(errStr,"%s %s" % (lfn,res['Message']))
       return res
     if not res['Value']['Successful'].has_key(lfn):
-      errStr = "ReplicaManager.replicateAndRegister: Failed to get size registered for LFN."
+      errStr = "ReplicaManager.__initializeReplication: Failed to get size for LFN."
       gLogger.error(errStr,"%s %s" % (lfn,res['Value']['Failed'][lfn]))
       return S_ERROR("%s %s" % (errStr,res['Value']['Failed'][lfn]))
     catalogueSize = res['Value']['Successful'][lfn]
     if catalogueSize == 0:
-      errStr = "ReplicaManager.replicateAndRegister: Registered file size is 0."
+      errStr = "ReplicaManager.__initializeReplication: Registered file size is 0."
       gLogger.error(errStr,lfn)
       return S_ERROR(errStr)
+    gLogger.info("ReplicaManager.__initializeReplication: File size determined to be %s." % catalogueSize)
     ###########################################################
     # Check whether the destination storage element is banned
+    gLogger.info("ReplicaManager.__initializeReplication: Determining whether %s is banned." % destSE)
     configStr = '/Resources/StorageElements/BannedTarget'
     bannedTargets = gConfig.getValue(configStr,[])
     if destSE in bannedTargets:
-      infoStr = "ReplicaManager.replicateAndRegister: Destination Storage Element is currently banned."
+      infoStr = "ReplicaManager.__initializeReplication: Destination Storage Element is currently banned."
       gLogger.info(infoStr,destSE)
       return S_ERROR(infoStr)
+    gLogger.info("ReplicaManager.__initializeReplication: Destination site not banned.")
     ###########################################################
     # Check whether the supplied source SE is sane
+    gLogger.info("ReplicaManager.__initializeReplication: Determining whether source Storage Element is sane.")
     configStr = '/Resources/StorageElements/BannedSource'
     bannedSources = gConfig.getValue(configStr,[])
     if sourceSE:
       if not lfnReplicas.has_key(sourceSE):
-        errStr = "ReplicaManager.replicateAndRegister: LFN does not exist at supplied source SE."
+        errStr = "ReplicaManager.__initializeReplication: LFN does not exist at supplied source SE."
         gLogger.error(errStr,"%s %s" % (lfn,sourceSE))
         return S_ERROR(errStr)
       elif sourceSE in bannedSources:
-        infoStr = "ReplicaManager.replicateAndRegister: Supplied source Storage Element is currently banned."
+        infoStr = "ReplicaManager.__initializeReplication: Supplied source Storage Element is currently banned."
         gLogger.info(infoStr,sourceSE)
         return S_ERROR(errStr)
+    gLogger.info("ReplicaManager.__initializeReplication: Replication initialization successful.")
     resDict = {'DestStorage':destStorageElement,'DestSE':destSE,'Replicas':lfnReplicas,'CatalogueSize':catalogueSize}
     return S_OK(resDict)
 
   def __resolveBestReplicas(self,sourceSE,lfnReplicas,catalogueSize):
     ###########################################################
     # Determine the best replicas (remove banned sources, invalid storage elements and file with the wrong size)
+    configStr = '/Resources/StorageElements/BannedSource' 
+    bannedSources = gConfig.getValue(configStr,[])
+    gLogger.info("ReplicaManager.__resolveBestReplicas: Obtained current banned sources.")
     replicaPreference = []
     for diracSE,pfn in lfnReplicas.items():
       if sourceSE and diracSE != sourceSE:
-        infoStr = "ReplicaManager.replicateAndRegister: Storage Element replica not requested."
-        gLogger.info(infoStr,diracSE)
+        gLogger.info("ReplicaManager.__resolveBestReplicas: %s replica not requested." % diracSE)
       elif diracSE in bannedSources:
-        infoStr = "ReplicaManager.replicateAndRegister: Storage Element is currently banned as a source."
-        gLogger.info(infoStr,diracSE)
+        gLogger.info("ReplicaManager.__resolveBestReplicas: %s is currently banned as a source." % diracSE)
       else:
+        gLogger.info("ReplicaManager.__resolveBestReplicas: %s is available for use." % diracSE)
         storageElement = StorageElement(diracSE)
         if storageElement.isValid()['Value']:
           if storageElement.getRemoteProtocols()['Value']:
+            gLogger.info("ReplicaManager.__resolveBestReplicas: Attempting to get source pfns for remote protocols.")
             res = storageElement.getPfnForProtocol(pfn,self.thirdPartyProtocols)
             if res['OK']:
               sourcePfn = res['Value']
+              gLogger.info("ReplicaManager.__resolveBestReplicas: Attempting to get source file size.")
               res = storageElement.getFileSize(sourcePfn)
               if res['OK']:
                 sourceFileSize = res['Value']
+                gLogger.info("ReplicaManager.__resolveBestReplicas: Source file size determined to be %s." % sourceFileSize)
                 if catalogueSize == sourceFileSize:
                   fileTuple = (diracSE,sourcePfn)
                   replicaPreference.append(fileTuple)
                 else:
-                  errStr = "ReplicaManager.replicateAndRegister: Catalogue size and physical file size mismatch."
+                  errStr = "ReplicaManager.__resolveBestReplicas: Catalogue size and physical file size mismatch."
                   gLogger.error(errStr,"%s %s" % (diracSE,sourcePfn))
               else:
-                errStr = "ReplicaManager.replicateAndRegister: Failed to get physical file size."
+                errStr = "ReplicaManager.__resolveBestReplicas: Failed to get physical file size."
                 gLogger.error(errStr,"%s %s: %s" % (sourcePfn,diracSE,res['Message']))
             else:
-              errStr = "ReplicaManager.replicateAndRegister: Failed to get PFN for replication for StorageElement."
+              errStr = "ReplicaManager.__resolveBestReplicas: Failed to get PFN for replication for StorageElement."
               gLogger.error(errStr,"%s %s" % (diracSE,res['Message']))
           else:
-            errStr = "ReplicaManager.replicateAndRegister: Source Storage Element has no remote protocols."
+            errStr = "ReplicaManager.__resolveBestReplicas: Source Storage Element has no remote protocols."
             gLogger.info(errStr,diracSE)
         else:
-          errStr = "ReplicaManager.replicateAndRegister: Failed to get valid Storage Element."
+          errStr = "ReplicaManager.__resolveBestReplicas: Failed to get valid Storage Element."
           gLogger.error(errStr,diracSE)
     if not replicaPreference:
-      errStr = "ReplicaManager.getFile: Failed to find any valid StorageElements."
-      gLogger.error(errStr,lfn)
+      errStr = "ReplicaManager.__resolveBestReplicas: Failed to find any valid source Storage Elements."
+      gLogger.error(errStr)
       return S_ERROR(errStr)
     else:
       return S_OK(replicaPreference)
@@ -341,10 +393,11 @@ class ReplicaManager:
     # Register the pfn at a given storage element
     destStorageElement = StorageElement(destSE)
     if not destStorageElement.isValid()['Value']:
-      errStr = "ReplicaManager.__registerReplica: Failed to instantiate destination StorageElement."
+      errStr = "ReplicaManager.__registerReplica: Failed to instantiate destination Storage Element."
       gLogger.error(errStr,destSE)
       return S_ERROR(errStr)
-    destSE = storageElement.getStorageElementName()['Value']
+    destSE = destStorageElement.getStorageElementName()['Value']
+    gLogger.info("ReplicaManager.__registerReplica: Attempting to obtain pfn for registration.")
     res = destStorageElement.getPfnForProtocol(destPfn,self.registrationProtocol,withPort=False)
     if not res['OK']:
       errStr = "ReplicaManager.__registerReplica: Failed to resolve desired PFN for registration."
@@ -353,15 +406,17 @@ class ReplicaManager:
     else:
       pfnForRegistration = res['Value']
     replicaTuple = (lfn,pfnForRegistration,destSE,False)
+    gLogger.info("ReplicaManager.__registerReplica: Adding replica...")
     res = self.fileCatalogue.addReplica(replicaTuple)
     if res['OK']:
       if res['Value']['Successful'].has_key(lfn):
+        gLogger.info("ReplicaManager.__registerReplica: ...successful.")
         return S_OK(pfnForRegistration)
       else:
-        errStr = "ReplicaManager.replicateAndRegister: Failed to register replica in file catalogue."
+        errStr = "ReplicaManager.__registerReplica: Failed to register replica in file catalogue."
         gLogger.error(errStr,"%s %s" % (pfnForRegistration,res['Value']['Failed'][lfn]))
     else:
-      errStr = "ReplicaManager.replicateAndRegister: Completely failed to register replica."
+      errStr = "ReplicaManager.__registerReplica: Completely failed to register replica."
       gLogger.error(errStr,"%s %s" % (pfnForRegistration,res['Message']))
     return S_ERROR(errStr)
 
