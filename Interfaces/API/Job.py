@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.4 2007/12/08 18:38:01 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.5 2007/12/09 17:12:48 paterson Exp $
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,7 +13,7 @@
 
 """
 
-__RCSID__ = "$Id: Job.py,v 1.4 2007/12/08 18:38:01 paterson Exp $"
+__RCSID__ = "$Id: Job.py,v 1.5 2007/12/09 17:12:48 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -66,7 +66,7 @@ class Job:
 
     self.script = script
     if not script:
-      self.workflow = Workflow()
+      self.workflow = Workflow('User')
       self.__setJobDefaults()
 
   #############################################################################
@@ -115,18 +115,32 @@ class Job:
 
     step = StepDefinition(stepDefn)
     step.addModule(module)
-
-    module.findParameter('Executable').setValue(executable)
-    module.findParameter('Name').setValue(moduleName)
-    module.findParameter('LogFile').setValue(logName)
+    step.appendParameter(module.findParameter('Executable'))
+    step.appendParameter(module.findParameter('Name'))
+    step.appendParameter(module.findParameter('LogFile'))
 
     moduleInstance = step.createModuleInstance('Script',moduleName)
-    output = module.findParameter('Output')
+    moduleInstance.findParameter('Executable').link('self','Executable')
+    moduleInstance.findParameter('Name').link('self','Name')
+    moduleInstance.findParameter('LogFile').link('self','LogFile')
+
+    output = moduleInstance.findParameter('Output')
     step.appendParameter(Parameter(parameter=output))
     step.findParameter('Output').link(moduleName,'Output')
 
     self.workflow.addStep(step)
+    self.workflow.appendParameter(step.findParameter('Executable'))
+    self.workflow.appendParameter(step.findParameter('Name'))
+    self.workflow.appendParameter(step.findParameter('LogFile'))
+    self.workflow.appendParameter(step.findParameter('Output'))
     stepInstance = self.workflow.createStepInstance(stepDefn,stepName)
+    stepInstance.findParameter('Executable').link('self','Executable')
+    self.workflow.findParameter('Executable').setValue(executable)
+    stepInstance.findParameter('Name').link('self','Name')
+    self.workflow.findParameter('Name').setValue(moduleName)
+    stepInstance.findParameter('LogFile').link('self','LogFile')
+    self.workflow.findParameter('LogFile').setValue(logName)
+    self.workflow.findParameter('Output').link(stepName,'Output')
 
   #############################################################################
   def setName(self,jobname):
