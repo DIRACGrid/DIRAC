@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalogue. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.6 2007/12/09 19:54:49 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.7 2007/12/09 20:23:27 acsmith Exp $"
 
 import re, time, commands, random,os
 from types import *
@@ -185,7 +185,8 @@ class ReplicaManager:
       # The file was already present at the destination SE
       gLogger.info("ReplicaManager.replicateAndRegister: %s already present at %s." % (lfn,destSE))
       return res
-    destPfn = res['Value']
+    destPfn = res['Value']['DestPfn']
+    destSE = res['Value']['DestSE']
     gLogger.info("ReplicaManager.replicateAndRegister: Attempting to register %s at %s." % (destPfn,destSE))
     res = self.__registerReplica(lfn,destPfn,destSE)
     if not res['OK']:
@@ -272,7 +273,8 @@ class ReplicaManager:
       res = destStorageElement.replicateFile(sourcePfn,catalogueSize,destPath)
       if res['OK']:
         gLogger.info("ReplicaManager.__replicate: Replication successful.")
-        return S_OK(res['Value'])
+        resDict = {'DestSE':destSE,'DestPfn':res['Value']}
+        return S_OK(resDict)
       else:
         errStr = "ReplicaManager.__replicate: Replication failed."
         gLogger.error(errStr,"%s from %s to %s." % (lfn,sourceSE,destSE))
