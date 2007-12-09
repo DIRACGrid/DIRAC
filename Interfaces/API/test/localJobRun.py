@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/test/localJobRun.py,v 1.1 2007/12/03 18:23:11 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/test/localJobRun.py,v 1.2 2007/12/09 17:28:31 paterson Exp $
 # File  : TestJob.py
 # Author: Stuart Paterson
 ########################################################################
@@ -11,6 +11,7 @@ import unittest,types,time,sys
 #from DIRAC.Interfaces.API.DIRAC                            import *
 from DIRAC                                                 import S_OK, S_ERROR
 from DIRAC.Core.Utilities.Subprocess import shellCall
+from DIRAC.Core.Workflow.WorkflowReader import *
 import os
 #############################################################################
 
@@ -28,7 +29,7 @@ class JobTests:
     j = Job()
     j.setCPUTime(50000)
     j.setExecutable('/Users/stuart/dirac/workspace/DIRAC3/DIRAC/Interfaces/API/test/myPythonScript.py')
-    j.setExecutable('/bin/echo hello')
+   # j.setExecutable('/bin/echo hello')
     j.setOwner('paterson')
     j.setType('test')
     j.setName('MyJobName')
@@ -45,21 +46,27 @@ class JobTests:
     #print j._toJDL()
     #print j.printObj()
     xml = j._toXML()
-    testFile = '/Users/stuart/dirac/workspace/DIRAC3/DIRAC/Interfaces/API/test/jobxml.xml'
+    testFile = 'jobDescription.xml'
     if os.path.exists(testFile):
       os.remove(testFile)
     xmlfile = open(testFile,'w')
     xmlfile.write(xml)
     xmlfile.close()
-    print 'Creating code for the workflow'
+    print '>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>Creating code for the workflow'
     print j.createCode()
+    print '>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>Executing the workflow'
     j.execute()
-    output = shellCall(0,'/Users/stuart/dirac/workspace/DIRAC3/scripts/jobexec %s' %(testFile))
+    print '>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>Trying to run the same workflow from generated XML file'
+    workflow = fromXMLFile(testFile)
+    code = workflow.createCode()
+    print code
+    workflow.execute()
+   # output = shellCall(0,'/Users/stuart/dirac/workspace/DIRAC3/scripts/jobexec %s' %(testFile))
 
-    stdout = output['Value'][1]
-    print stdout
-    stderr = output['Value'][2]
-    print stderr
+ #   stdout = output['Value'][1]
+  #  print stdout
+   # stderr = output['Value'][2]
+    #print stderr
 
 
   #############################################################################
