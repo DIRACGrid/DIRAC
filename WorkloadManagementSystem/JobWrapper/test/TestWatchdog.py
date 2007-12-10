@@ -1,15 +1,15 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/test/TestWatchdog.py,v 1.1 2007/11/04 18:11:41 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/test/TestWatchdog.py,v 1.2 2007/12/10 15:24:57 paterson Exp $
 # File  : TestWatchdogMac.py
 # Author: Stuart Paterson
 ########################################################################
+from DIRAC.Core.Base import Script
+Script.parseCommandLine()
 
-from DIRAC.WorkloadManagementSystem.JobWrapper.WatchdogMac import WatchdogMac
+from DIRAC.WorkloadManagementSystem.JobWrapper.WatchdogFactory  import WatchdogFactory
 
 import unittest,types,time,sys
 
-#from DIRAC.WorkloadManagementSystem.JobWrapper.WatchdogLinux import WatchdogLinux
-from DIRAC.WorkloadManagementSystem.JobWrapper.WatchdogMac import WatchdogMac
 from DIRAC                                                 import S_OK, S_ERROR
 import os,threading,time
 
@@ -43,8 +43,15 @@ class JobWrapper:
       print 'Path to executable not found'
 
     pid = os.getpid()
-    jobcputime = 60
-    watchdog = WatchdogMac(pid, thread, spObject, jobcputime)
+    jobCPUTime = 60
+
+    watchdogFactory = WatchdogFactory()
+    watchdogInstance = watchdogFactory.getWatchdog(pid, thread, spObject, jobCPUTime)
+    if not watchdogInstance['OK']:
+      return watchdogInstance
+
+    watchdog = watchdogInstance['Value']
+
     watchdog.calibrate()
     if thread.isAlive():
       print 'Thread alive and started in Job Wrapper'
