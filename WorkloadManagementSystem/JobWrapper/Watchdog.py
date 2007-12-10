@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.6 2007/12/07 12:23:41 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.7 2007/12/10 14:49:19 paterson Exp $
 # File  : Watchdog.py
 # Author: Stuart Paterson
 ########################################################################
@@ -18,9 +18,10 @@
           - Means to send heartbeat signal.
 """
 
-__RCSID__ = "$Id: Watchdog.py,v 1.6 2007/12/07 12:23:41 paterson Exp $"
+__RCSID__ = "$Id: Watchdog.py,v 1.7 2007/12/10 14:49:19 paterson Exp $"
 
 from DIRAC.Core.Base.Agent                          import Agent
+from DIRAC.Core.DISET.RPCClient                     import RPCClient
 #from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.ConfigurationSystem.Client.Config        import gConfig
 from DIRAC.Core.Utilities.Subprocess                import shellCall
@@ -50,6 +51,8 @@ class Watchdog(Agent):
   def initialize(self,loops=0):
     """ Watchdog initialization.
     """
+    self.jobReport  = RPCClient('WorkloadManagement/JobStateUpdate')
+
     self.maxcount = loops
     result = Agent.initialize(self)
     if os.path.exists(self.controlDir+'/stop_agent'):
@@ -306,6 +309,9 @@ class Watchdog(Agent):
       deltaValue = watchCPU - initialCPU
       self.calibration = deltaValue
       return S_OK('Calibration value established')
+    elif not initialCPU and not watchCPU:
+      self.calibration = 0.0
+      return S_OK('Watchdog CPU consumed was negligible')
     else:
       return S_ERROR('Not possible to determine CPU calibration factor')
 
@@ -365,6 +371,9 @@ class Watchdog(Agent):
         return S_ERROR('Job has exceeded maximum CPU time limit')
       else:
         return S_OK('Job within CPU limit')
+    elif not initialCPU and not currentCPU:
+      self.log.warn('Both initial and current CPU consumed are null')
+      return S_OK('CPU consumed is not measurable')
     else:
       return S_ERROR('Not possible to determine CPU consumed')
 
@@ -493,7 +502,7 @@ class Watchdog(Agent):
     if os.environ.has_key('QSUB_REQNAME'):
       result['Value']['LocalJobID'] = os.environ['QSUB_REQNAME']
 
-    self.reportParameters(result,'NodeInformation')
+    self.reportParameters(result,'NodeInformation',True)
     self.reportParameters(self.initialValues,'InitialValues')
 
     result = S_OK()
@@ -533,10 +542,10 @@ class Watchdog(Agent):
     self.reportParameters(summary,'UsageSummary')
 
   #############################################################################
-  def reportParameters(self,params,title=None):
+  def reportParameters(self,params,title=None,report=False):
     """Will report parameters for job.
     """
-    #To implement
+    params = []
     self.log.info('==========================================================')
     if title:
       self.log.info('Watchdog will report %s' % (title))
@@ -548,7 +557,12 @@ class Watchdog(Agent):
       if vals['Value']:
         vals = params['Value']
     for k,v in vals.items():
-      self.log.info(str(k)+' = '+str(v))
+      if v:
+        self.log.info(str(k)+' = '+str(v))
+        params.append((k,v))
+    if report:
+      self.__setJobParamList(params)
+
     self.log.info('==========================================================')
 
   #############################################################################
@@ -575,6 +589,17 @@ class Watchdog(Agent):
     """ Will send sign of life 'heartbeat' signal"""
     #To implement
     return S_OK()
+
+  #############################################################################
+  def __setJobParamList(self,value):
+    """Wraps around setJobParameters of state update client
+    """
+    jobParam = self.jobReport.setJobParameters(int(self.jobID),value)
+    self.log.debug('setJobParameters(%s,%s)' %(self.jobID,value))
+    if not jobParam['OK']:
+        self.log.warn(jobParam['Message'])
+
+    return jobParam
 
   #############################################################################
   def getNodeInformation(self):
