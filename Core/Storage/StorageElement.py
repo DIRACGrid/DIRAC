@@ -217,7 +217,7 @@ class StorageElement:
       res = storage.getParameters()
       protocolName = res['Value']['ProtocolName']
       # If the SE is not local then we can't use local protocols
-      if protocolName in self.remoteProtocol:
+      if protocolName in self.remoteProtocols:
         useProtocol = True
       elif localSE:
         useProtocol = True
@@ -228,7 +228,7 @@ class StorageElement:
         res = self.getPfnForProtocol(physicalFile, protocolName)
         if res['OK']:
           pfnForProtocol = res['Value']
-          res = storage.removeDirectory(pfnForProtocol)
+          res = storage.removeFile(pfnForProtocol)
           if res['OK']:
             if res['Value']['Successful'].has_key(pfnForProtocol):
               return S_OK(res['Value']['Successful'][pfnForProtocol])
@@ -247,7 +247,7 @@ class StorageElement:
       res = storage.getParameters()
       protocolName = res['Value']['ProtocolName']
       # If the SE is not local then we can't use local protocols
-      if protocolName in self.remoteProtocol:
+      if protocolName in self.remoteProtocols:
         useProtocol = True
       elif localSE:
         useProtocol = True
@@ -279,7 +279,7 @@ class StorageElement:
       res = storage.getParameters()
       protocolName = res['Value']['ProtocolName']
       # If the SE is not local then we can't use local protocols
-      if protocolName in self.remoteProtocol:
+      if protocolName in self.remoteProtocols:
         useProtocol = True
       elif localSE:
         useProtocol = True
