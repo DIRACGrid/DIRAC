@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/dirac-pilot-lcg.py,v 1.4 2007/12/07 12:42:09 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/dirac-pilot-lcg.py,v 1.5 2007/12/10 14:28:45 paterson Exp $
 # File :   dirac-pilot-lcg.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,7 +13,7 @@ import os,sys,string,re
     for the VO.
 """
 
-__RCSID__ = "$Id: dirac-pilot-lcg.py,v 1.4 2007/12/07 12:42:09 paterson Exp $"
+__RCSID__ = "$Id: dirac-pilot-lcg.py,v 1.5 2007/12/10 14:28:45 paterson Exp $"
 
 
 DEBUG = 1
@@ -385,12 +385,18 @@ inProcessDict['CPUScalingFactor']=1
 inProcessDict['MaxTotalJobs']=1
 writeConfigFile('InProcess.cfg',inProcessSection,inProcessDict)
 
+#below is because LHCb-Development differs from Development, this is fine for initial tests
+#but will be replaced...  also 'Development' below will be replaced by local sites / agents section
+writeConfigFile('setup.cfg','DIRAC',{'Setup':'LHCb-Development'})
+
 jobAgentSection = 'Systems/WorkloadManagement/Development/Agents/JobAgent'
 writeConfigFile('JobAgent.cfg',jobAgentSection,{'CEUniqueID':'InProcess','MaxCycles':1})
+
 writeConfigFile('security.cfg','DIRAC/Security',{'UseServerCertificate':'no'})
-#below is because LHCb-Development differs from Development, this is fine for initial tests
-#but will be replaced...
-writeConfigFile('setup.cfg','DIRAC',{'Setup':'LHCb-Development'})
+#need to define watchdog control directory
+watchdogSection = 'Systems/WorkloadManagement/Development/Agents/Watchdog'
+writeConfigFile('Watchdog.cfg',watchdogSection,{'PollingTime':20,'ControlDirectory':start})
+
 
 #find any .cfg files and append to script to run job agent, all files created in '.'
 for i in os.listdir(start):
