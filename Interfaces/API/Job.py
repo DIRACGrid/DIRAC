@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.5 2007/12/09 17:12:48 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.6 2007/12/10 18:01:59 paterson Exp $
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,7 +13,7 @@
 
 """
 
-__RCSID__ = "$Id: Job.py,v 1.5 2007/12/09 17:12:48 paterson Exp $"
+__RCSID__ = "$Id: Job.py,v 1.6 2007/12/10 18:01:59 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -115,9 +115,9 @@ class Job:
 
     step = StepDefinition(stepDefn)
     step.addModule(module)
-    step.appendParameter(module.findParameter('Executable'))
-    step.appendParameter(module.findParameter('Name'))
-    step.appendParameter(module.findParameter('LogFile'))
+    step.appendParameterCopy(module.findParameter('Executable'))
+    step.appendParameterCopy(module.findParameter('Name'))
+    step.appendParameterCopy(module.findParameter('LogFile'))
 
     moduleInstance = step.createModuleInstance('Script',moduleName)
     moduleInstance.findParameter('Executable').link('self','Executable')
@@ -129,10 +129,10 @@ class Job:
     step.findParameter('Output').link(moduleName,'Output')
 
     self.workflow.addStep(step)
-    self.workflow.appendParameter(step.findParameter('Executable'))
-    self.workflow.appendParameter(step.findParameter('Name'))
-    self.workflow.appendParameter(step.findParameter('LogFile'))
-    self.workflow.appendParameter(step.findParameter('Output'))
+    self.workflow.appendParameterCopy(step.findParameter('Executable'))
+    self.workflow.appendParameterCopy(step.findParameter('Name'))
+    self.workflow.appendParameterCopy(step.findParameter('LogFile'))
+    self.workflow.appendParameterCopy(step.findParameter('Output'))
     stepInstance = self.workflow.createStepInstance(stepDefn,stepName)
     stepInstance.findParameter('Executable').link('self','Executable')
     self.workflow.findParameter('Executable').setValue(executable)
@@ -218,10 +218,10 @@ class Job:
     if type(files) == list and len(files):
       fileList = string.join(files,";")
       description = 'Output sandbox file list'
-      self._addParameter(self.workflow,'OutputSandbox','JDL',fileList,description,io='output')
+      self._addParameter(self.workflow,'OutputSandbox','JDL',fileList,description)
     elif type(files) == type(" "):
       description = 'Output sandbox file'
-      self._addParameter(self.workflow,'OutputSandbox','JDL',files,description,io='output')
+      self._addParameter(self.workflow,'OutputSandbox','JDL',files,description)
     else:
       raise TypeError,'Expected string or list for OutputSandbox'
 
@@ -274,10 +274,10 @@ class Job:
     if type(lfns)==list and len(lfns):
       outputDataStr = string.join(lfns,';')
       description = 'List of output data files'
-      self._addParameter(self.workflow,'OutputData','JDL',outputDataStr,description,io='output')
+      self._addParameter(self.workflow,'OutputData','JDL',outputDataStr,description)
     elif type(lfns)==type(" "):
       description = 'Output data file'
-      self._addParameter(self.workflow,'OutputData','JDL',lfns,description,io='output')
+      self._addParameter(self.workflow,'OutputData','JDL',lfns,description)
     else:
       raise TypeError,'Expected string or list of output data files'
 
