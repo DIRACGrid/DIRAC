@@ -1,9 +1,9 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalogue. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.8 2007/12/10 14:46:18 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.9 2007/12/10 16:15:23 acsmith Exp $"
 
 import re, time, commands, random,os
-from types import *
+import types
 
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig
 from DIRAC.Core.Storage.StorageElement import StorageElement
@@ -738,7 +738,7 @@ class ReplicaManager:
         failed[lfn] = errStr
       else:
         pfnDict = {res['Value']['Successful'][lfn][storageElementName]:lfn}
-    res = self.__getPhysicalFileMetadata(pfns,storageElementName)
+    res = self.__getPhysicalFileMetadata(pfnDict.keys(),storageElementName)
     if not res['OK']:
       return res
     else:
@@ -824,7 +824,7 @@ class ReplicaManager:
         failed[lfn] = errStr
       else:
         pfnDict = {res['Value']['Successful'][lfn][storageElementName]:lfn}
-    res = self.__getPhysicalFileAccessUrl(pfns,storageElementName)
+    res = self.__getPhysicalFileAccessUrl(pfnDict.keys(),storageElementName)
     if not res['OK']:
       return res
     else:
