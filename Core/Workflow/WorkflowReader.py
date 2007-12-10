@@ -1,21 +1,14 @@
-# $Id: WorkflowReader.py,v 1.7 2007/12/10 15:37:31 gkuznets Exp $
+# $Id: WorkflowReader.py,v 1.8 2007/12/10 23:58:20 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.7 $"
+__RCSID__ = "$Revision: 1.8 $"
 
 #try: # this part to inport as part of the DIRAC framework
 from DIRAC.Core.Workflow.Parameter import *
 from DIRAC.Core.Workflow.Module import *
 from DIRAC.Core.Workflow.Step import *
 from DIRAC.Core.Workflow.Workflow import *
-#  print "DIRAC.Core.Workflow.Parameter"
-#except: # this part is to import code without DIRAC
-#  from Parameter import *
-#  from Module import *
-#  from Step import *
-#  from Workflow import *
-#  print "Parameter"
 
 import xml.sax
 from xml.sax.handler import ContentHandler
@@ -43,43 +36,36 @@ class WorkflowXMLHandler(ContentHandler):
     self.clearCharacters() # clear to remove empty or nonprintable characters
 
     if name == "Workflow":
-      self.root = Workflow()
+      self.root = Workflow("TemporaryXMLObject_Workflow")
       self.stack.append(self.root)
 
     elif name == "StepDefinition":
-      obj = StepDefinition()
+      obj = StepDefinition("TemporaryXMLObject_StepDefinition")
       if self.root == None: # in case we are saving Step only
         self.root = obj
-      else:
-        self.root.addStep(obj)
       self.stack.append(obj)
 
     elif name == "StepInstance":
-      obj = StepInstance("")
-      self.stack[len(self.stack)-1].step_instances.append(obj)
+      obj = StepInstance("TemporaryXMLObject_StepInstance")
       self.stack.append(obj)
 
     elif name == "ModuleDefinition":
-      obj = ModuleDefinition("TemporaryXMLReadingObject")
+      obj = ModuleDefinition("TemporaryXMLObject_ModuleDefinition")
       if self.root == None: # in case we are saving Module only
         self.root = obj
-      else:
-        self.root.addModule(obj)
       self.stack.append(obj)
 
     elif name == "ModuleInstance":
-      obj = ModuleInstance("")
-      self.stack[len(self.stack)-1].module_instances.append(obj)
+      obj = ModuleInstance("TemporaryXMLObject_ModuleInstance")
       self.stack.append(obj)
 
     elif name == "Parameter":
-      obj = Parameter(attrs['name'], None, attrs['type'], attrs['linked_module'], attrs['linked_parameter'], attrs['in'], attrs['out'], None)
-      self.stack[len(self.stack)-1].appendParameter(obj)
+      obj = Parameter(str(attrs['name']), None, str(attrs['type']), str(attrs['linked_module']), str(attrs['linked_parameter']), str(attrs['in']), str(attrs['out']), str(attrs['description']))
       self.stack.append(obj)
 
     # TEMPORARY CODE
     elif name=="origin" or name == "version" or name == "name" or name == "type" or name == "value" or\
-    name == "required" or name == "descr_short" or name == "name" or name == "type"  or name == "description"  or name == "body" or name == "Parameter":
+    name == "required" or name == "descr_short" or name == "name" or name == "type"  or name == "description"  or name == "body":
       pass
     else:
       print "UNTREATED! startElement name=", name, "attr=", attrs.getLength(), attrs.getNames()
@@ -115,15 +101,17 @@ class WorkflowXMLHandler(ContentHandler):
     elif name=="Workflow":
       self.stack.pop()
     elif name == "StepDefinition":
-      self.stack.pop()
+      self.root.step_definitions.append(self.stack.pop())
     elif name == "StepInstance":
-      self.stack.pop()
+      self.root.step_instances.append(self.stack.pop())
     elif name == "ModuleDefinition":
-      self.stack.pop()
+      self.root.addModule(self.stack.pop())
     elif name == "ModuleInstance":
-      self.stack.pop()
+      obj=self.stack.pop()
+      self.stack[len(self.stack)-1].module_instances.append(obj)
     elif name == "Parameter":
-      self.stack.pop()
+      obj=self.stack.pop();
+      self.stack[len(self.stack)-1].appendParameter(obj)
     else:
       print "UNTREATED! endElement", name
 
@@ -131,7 +119,7 @@ class WorkflowXMLHandler(ContentHandler):
     # combine all strings and clear the list
     ret = ''.join(self.strings)
     self.clearCharacters()
-    return ret
+    return str(ret)
 
   def clearCharacters(self):
     del self.strings

@@ -1,8 +1,8 @@
-# $Id: JobSamples.py,v 1.1 2007/12/05 16:08:54 gkuznets Exp $
+# $Id: JobSamples.py,v 1.2 2007/12/10 23:59:34 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.1 $"
+__RCSID__ = "$Revision: 1.2 $"
 
 # $Source: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Workflow/test/JobSamples.py,v $
 
@@ -100,11 +100,13 @@ for p in gaudiParams:
 # There is a second solution (see above)
 #workflow1.findParameter(step_prefix+"appName").setValue("Boole")
 #workflow1.findParameter(step_prefix+"appVersion").setValue("v8r16")
-
-#workflow1.toXMLFile('/opt/DIRAC3/DIRAC/Core/Workflow/test/testjobxml.xml')
-#w4 = fromXMLFile(testFile)
+testFile = '/opt/DIRAC3/DIRAC/Core/Workflow/test/jobDescription.xml'
+#testFile = '/opt/DIRAC3/DIRAC/Core/Workflow/test/testjobxml.xml'
+#workflow1.toXMLFile(testFile)
+#print workflow1.createCode()
+w4 = fromXMLFile(testFile)
 #print 'Creating code for the workflow'
-print workflow1.createCode()
-#j.execute()
+#print w4.createCode()
+w4.execute()
 #print w4.createCode()
 #w4.execute()

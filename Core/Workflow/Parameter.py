@@ -1,8 +1,8 @@
-# $Id: Parameter.py,v 1.10 2007/12/05 15:28:41 gkuznets Exp $
+# $Id: Parameter.py,v 1.11 2007/12/10 23:59:33 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.10 $"
+__RCSID__ = "$Revision: 1.11 $"
 
 # unbinded method, returns indentation string
 def indent(indent=0):
@@ -22,8 +22,8 @@ class Parameter(object):
             self.description = parameter.description
             self.linked_module = parameter.linked_module
             self.linked_parameter = parameter.linked_parameter
-            self.typein = parameter.typein
-            self.typeout = parameter.typeout
+            self.typein = bool(parameter.typein)
+            self.typeout = bool(parameter.typeout)
         else:
             #  default values
             self.name = ""
@@ -48,9 +48,9 @@ class Parameter(object):
         if linked_parameter != None:
             self.linked_parameter = linked_parameter
         if typein != None:
-            self.typein = typein
+            self.setInput(typein)
         if typeout != None:
-            self.typeout = typeout
+            self.setOutput(typeout)
 
     def getName(self):
         return self.name
@@ -157,16 +157,22 @@ class Parameter(object):
         return self.typeout
 
     def setInput(self, i):
-        if i :
-            self.typein = True
+        if isinstance(i, str) or isinstance(i, unicode):
+            self.typein = self.__setBooleanFromString(i)
         else:
-            self.typein = False
+            self.typein = bool(i)
 
     def setOutput(self, i):
-        if i :
-            self.typeout = True
+        if isinstance(i, str) or isinstance(i, unicode):
+            self.typeout = self.__setBooleanFromString(i)
         else:
-            self.typeout = False
+            self.typeout = bool(i)
+
+    def __setBooleanFromString(self, i):
+        if i.upper() == "TRUE":
+            return True
+        else:
+            return False
 
     def __str__(self):
         return str(type(self))+": name="+self.name + " value="+str(self.value) +" type="+str(self.type)\

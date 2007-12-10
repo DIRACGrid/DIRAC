@@ -1,0 +1,2 @@
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Workflow/test/__init__.py,v 1.2 2007/12/10 23:59:34 gkuznets Exp $
+__RCSID__ = "$Id: __init__.py,v 1.2 2007/12/10 23:59:34 gkuznets Exp $"

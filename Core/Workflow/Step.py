@@ -1,8 +1,8 @@
-# $Id: Step.py,v 1.13 2007/12/05 14:33:28 gkuznets Exp $
+# $Id: Step.py,v 1.14 2007/12/10 23:59:33 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.13 $"
+__RCSID__ = "$Revision: 1.14 $"
 
 import os
 #try: # this part to inport as part of the DIRAC framework
@@ -170,7 +170,7 @@ class StepInstance(AttributeCollection):
 
     def execute(self, step_exec_attr, definitions):
         """step_exec_attr is array to hold parameters belong to this Step, filled above """
-        #print 'Executing StepInstance',self.getName(),'of type',self.getType()
+        #print 'Executing StepInstance',self.getName(),'of type',self.getType(), definitions.keys()
         step_def = definitions[self.getType()]
         step_exec_modules={}
         for mod_inst in step_def.module_instances:
