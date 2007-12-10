@@ -204,8 +204,38 @@ class StorageElement:
 
   #################################################################################################
   #
-  # These are the methods that implement the StorageElement functionality
+  # These are the removal methods
   #
+
+  def removeFile(self,physicalFile):
+    """ This method removes the physical file.
+
+        'physicalFile' is a pfn for the storage
+    """
+    localSE = self.isLocalSE()['Value']
+    for storage in self.storages:
+      res = storage.getParameters()
+      protocolName = res['Value']['ProtocolName']
+      # If the SE is not local then we can't use local protocols
+      if protocolName in self.remoteProtocol:
+        useProtocol = True
+      elif localSE:
+        useProtocol = True
+      else:
+        useProtocol = False
+        gLogger.info("StorageElement.removeFile: Protocol not appropriate for use: %s." % protocolName)
+      if useProtocol:
+        res = self.getPfnForProtocol(physicalFile, protocolName)
+        if res['OK']:
+          pfnForProtocol = res['Value']
+          res = storage.removeDirectory(pfnForProtocol)
+          if res['OK']:
+            if res['Value']['Successful'].has_key(pfnForProtocol):
+              return S_OK(res['Value']['Successful'][pfnForProtocol])
+    # If we get here we tried all the protocols and failed with all of them
+    errStr = "StorageElement.removeFile: Failed to remove file for all protocols."
+    gLogger.error(errStr,physicalFile)
+    return S_ERROR(errStr)
 
   def removeDirectory(self,directoryUrl):
     """ This method removes the contents of a directory on the storage including files and subdirectories.
@@ -233,9 +263,11 @@ class StorageElement:
             if res['Value']['Successful'].has_key(directory):
               return S_OK(res['Value']['Successful'][directory])
     # If we get here we tried all the protocols and failed with all of them
-    errStr = "StorageElement.removeDirectory: Failed to create directory for all protocols."
+    errStr = "StorageElement.removeDirectory: Failed to remove directory for all protocols."
     gLogger.error(errStr,directoryUrl)
     return S_ERROR(errStr)
+
+
 
   def makeDirectory(self,directoryUrl):
     """ This will recursively create the directories on the storage until the desired path
@@ -438,6 +470,63 @@ class StorageElement:
     errStr = "StorageElement.getFile: Failed to get file for all protocols."
     gLogger.error(errStr,pfn)
     return S_ERROR(errStr)
+
+  def getFileMetadata(self,pfns):
+    """ This method obtains the metadata for the pfns given
+
+        'pfn' is the physical file name
+    """
+    successful = {}
+    failed = {}
+    # Try all of the storages one by one
+    for storage in self.storages:
+      pfnDict = {}
+      res = storage.getParameters()
+      protocolName = res['Value']['ProtocolName']
+      # If the SE is not local then we can't use local protocols
+      if protocolName in self.remoteProtocols:
+        useProtocol = True
+      elif localSE:
+        useProtocol = True
+      else:
+        useProtocol = False
+        gLogger.info("StorageElement.getFileMetadata: Protocol not appropriate for use: %s." % protocolName)
+      if useProtocol:
+        gLogger.info("StorageElement.getFileMetadata: Generating protocol PFNs for %s." % protocolName)
+        for pfn in pfns:
+          # If we have not already obtained metadata for the supplied pfn
+          if not successful.has_key(pfn):
+            res  = pfnparse(pfn)
+            if not res['OK']:
+              errStr = "StorageElement.getFileMetadata: Failed to parse supplied PFN."
+              gLogger.error(errStr,"%s: %s" % (pfn,res['Message']))
+              if not failed.has_key(pfn):
+                failed[pfn] = ''
+              failed[pfn] = "%s %s" % (failed[pfn],errStr)
+            else:
+              res = storage.getProtocolPfn(res['Value'],True)
+              if not res['OK']:
+                infoStr = "StorageElement.getFileMetadata%s." % res['Message']
+                gLogger.error(infoStr,'%s for protocol %s' % (pfn,protocolName))
+              else:
+                pfnDict[res['Value']] = pfn
+        gLogger.info("StorageElement.getFileMetadata: Attempting to get metadata for %s physical files." % len(pfnDict.keys()))
+        res = storage.getFileMetadata(pfnDict.keys())
+        if not res['OK']:
+          infoStr = "StorageElement.getFileMetadata: Completely failed to get file metadata."
+          gLogger.error(infoStr,'%s for protocol %s: %s' % (self.name,protocolName,res['Message']))
+        else:
+          for protocolPfn,pfn in pfnDict.items():
+            if not res['Value']['Successful'].has_key(protocolPfn):
+              if not failed.has_key(pfn):
+                failed[pfn] = ''
+              failed[pfn] = "%s %s" % (failed[pfn],res['Value']['Failed'][protocolPfn])
+            else:
+              successful[pfn] = res['Value']['Successful'][protocolPfn]
+              if failed.has_key(pfn):
+                failed.pop(pfn)
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
 
   def getFileSize(self,pfn):
     """ This method obtains the size for the pfn given
