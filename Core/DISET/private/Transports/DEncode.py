@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/Attic/DEncode.py,v 1.6 2007/11/16 11:36:29 acasajus Exp $
-__RCSID__ = "$Id: DEncode.py,v 1.6 2007/11/16 11:36:29 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/Attic/DEncode.py,v 1.7 2007/12/11 17:34:52 acasajus Exp $
+__RCSID__ = "$Id: DEncode.py,v 1.7 2007/12/11 17:34:52 acasajus Exp $"
 
 # Encoding and decoding for dirac
 #
@@ -73,7 +73,7 @@ def encodeBool( bValue, eList ):
   if bValue:
     eList.append( "b1" )
   else:
-    eList.append( "b0" )	
+    eList.append( "b0" )
 
 def decodeBool( buffer, i ):
   if buffer[ i + 1 ] == "0":
@@ -86,7 +86,7 @@ g_dDecodeFunctions[ "b" ] = decodeBool
 
 #Encoding and decoding strings
 def encodeString( sValue, eList ):
-  eList.extend( ( 's', str( len( sValue ) ), ':', sValue ) ) 
+  eList.extend( ( 's', str( len( sValue ) ), ':', sValue ) )
 
 def decodeString( buffer, i ):
   i += 1
@@ -98,6 +98,22 @@ def decodeString( buffer, i ):
 
 g_dEncodeFunctions[ types.StringType ] = encodeString
 g_dDecodeFunctions[ "s" ] = decodeString
+
+#Encoding and decoding unicode strings
+def encodeUnicode( sValue, eList ):
+  valueStr = sValue.encode( 'utf-8' )
+  eList.extend( ( 'u', str( len( valueStr ) ), ':', valueStr ) )
+
+def decodeUnicode( buffer, i ):
+  i += 1
+  colon = buffer.index( ":", i )
+  n = int( buffer[ i : colon ] )
+  colon += 1
+  end = colon + n
+  return ( unicode( buffer[ colon : end], 'utf-8' ) , end )
+
+g_dEncodeFunctions[ types.UnicodeType ] = encodeUnicode
+g_dDecodeFunctions[ "u" ] = decodeUnicode
 
 #Encoding and decoding datetime
 def encodeDateTime( oValue, eList ):
@@ -156,7 +172,7 @@ g_dDecodeFunctions[ 'n' ] = decodeNone
 def encodeList( lValue, eList ):
   eList.append( "l" )
   for uObject in lValue:
-    g_dEncodeFunctions[ type( uObject ) ]( uObject, eList ) 
+    g_dEncodeFunctions[ type( uObject ) ]( uObject, eList )
   eList.append( "e" )
 
 def decodeList( buffer, i ):
@@ -189,7 +205,7 @@ def encodeDict( dValue, eList ):
   eList.append( "d" )
   for key, value in dValue.items():
     g_dEncodeFunctions[ type( key ) ]( key, eList )
-    g_dEncodeFunctions[ type( value ) ]( value, eList )	
+    g_dEncodeFunctions[ type( value ) ]( value, eList )
   eList.append( "e" )
 
 def decodeDict( buffer, i ):
