@@ -1,8 +1,8 @@
-# $Id: JobSamples.py,v 1.2 2007/12/10 23:59:34 gkuznets Exp $
+# $Id: JobSamples.py,v 1.3 2007/12/11 00:11:59 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.2 $"
+__RCSID__ = "$Revision: 1.3 $"
 
 # $Source: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Workflow/test/JobSamples.py,v $
 
@@ -44,10 +44,6 @@ module1.setBody('from WorkflowLib.Module.GaudiApplication import GaudiApplicatio
 step1 = StepDefinition('Gaudi_App_Step',gaudiParams) # again creating deep copy of the parameters
 step1.addModule(module1)
 
-#for p in gaudiParams:
-#  step1.appendParameter(Parameter(parameter=p))
-#step1.appendParameter(Parameter(parameter=p)
-
 moduleInstance = step1.createModuleInstance('GaudiApplication', 'Module1')
 
 # in this instance we want to connect parm belong to ModuleInstance with the Step perams
@@ -59,6 +55,8 @@ step1.appendParameterCopy(result)
 step1.appendParameterCopy(logfile)
 step1.findParameter('result').link(moduleInstance.getName(),'result') # output param
 step1.findParameter('logfile').link(moduleInstance.getName(),'logfile')
+# Input setep parameter
+step1.appendParameter(Parameter("result_in","Error",'string','','',True,False,"Input Result from prev step"))
 
 workflow1 = Workflow('main')
 workflow1.setDescription('Workflow of GaudiApplication')
@@ -90,6 +88,9 @@ gaudiParams.find("appVersion").setValue("v8r16")
 
 #let as to create another step instance
 stepInstance2 = workflow1.createStepInstance('Gaudi_App_Step', 'Step2')
+# linking two steps
+stepInstance2.findParameter("result_in").link('Step1',"result")
+
 step_prefix="step2_"
 for p in gaudiParams:
   newparm = Parameter(parameter=p)
@@ -97,16 +98,17 @@ for p in gaudiParams:
   workflow1.appendParameter(newparm)
   stepInstance2.findParameter(p.getName()).link('self',step_prefix+p.getName())
 
+
 # There is a second solution (see above)
 #workflow1.findParameter(step_prefix+"appName").setValue("Boole")
 #workflow1.findParameter(step_prefix+"appVersion").setValue("v8r16")
-testFile = '/opt/DIRAC3/DIRAC/Core/Workflow/test/jobDescription.xml'
-#testFile = '/opt/DIRAC3/DIRAC/Core/Workflow/test/testjobxml.xml'
-#workflow1.toXMLFile(testFile)
-#print workflow1.createCode()
-w4 = fromXMLFile(testFile)
+#testFile = '/opt/DIRAC3/DIRAC/Core/Workflow/test/jobDescription.xml'
+testFile = '/opt/DIRAC3/DIRAC/Core/Workflow/test/testjobxml.xml'
+workflow1.toXMLFile(testFile)
+print workflow1.createCode()
+#w4 = fromXMLFile(testFile)
 #print 'Creating code for the workflow'
 #print w4.createCode()
-w4.execute()
+#w4.execute()
 #print w4.createCode()
 #w4.execute()
