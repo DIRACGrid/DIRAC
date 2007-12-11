@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.8 2007/11/19 17:19:53 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.9 2007/12/11 14:37:14 paterson Exp $
 # File :   InputDataAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
 
 """
 
-__RCSID__ = "$Id: InputDataAgent.py,v 1.8 2007/11/19 17:19:53 paterson Exp $"
+__RCSID__ = "$Id: InputDataAgent.py,v 1.9 2007/12/11 14:37:14 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
@@ -38,7 +38,7 @@ class InputDataAgent(Optimizer):
     self.diskSE            = gConfig.getValue(self.section+'/DiskSE','-disk')
     self.tapeSE            = gConfig.getValue(self.section+'/TapeSE','-tape')
 
-    self.site_se_mapping = {}    
+    self.site_se_mapping = {}
     mappingKeys = gConfig.getOptions('/Resources/SiteLocalSEMapping')
     for site in mappingKeys['Value']:
       seStr = gConfig.getValue('/Resources/SiteLocalSEMapping/%s' %(site))
@@ -119,10 +119,11 @@ class InputDataAgent(Optimizer):
     if catalogResult.has_key('Successful'):
       for lfn,replicas in catalogResult['Successful'].items():
         if not replicas:
+          badLFNs.append('LFN:%s Problem: Null replica value' %(lfn))
           badLFNCount+=1
 
     if badLFNCount:
-      self.log.info('Found %s LFN(s) not existing for job %s' % (badLFNCount,job) )
+      self.log.info('Found %s problematic LFN(s) for job %s' % (badLFNCount,job) )
       param = string.join(badLFNs,'\n')
       self.log.info(param)
       result = self.setJobParam(job,self.optimizerName,param)
