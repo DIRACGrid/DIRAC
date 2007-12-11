@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalogue. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.9 2007/12/10 16:15:23 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.10 2007/12/11 17:49:19 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -830,8 +830,8 @@ class ReplicaManager:
     else:
       successful = {}
       failed = {}
-      for pfn,metadataDict in res['Value']['Successful'].items():
-        successful[pfnDict[pfn]] = metadataDict
+      for pfn,turl in res['Value']['Successful'].items():
+        successful[pfnDict[pfn]] = turl
       for pfn, errorMessage in res['Value']['Failed'].items():
         failed[pfnDict[pfn]] = errorMessage
       resDict = {'Successful':successful,'Failed':failed}
