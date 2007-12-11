@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ########################################################################
-# $Id: JobWrapper.py,v 1.3 2007/12/07 12:31:30 paterson Exp $
+# $Id: JobWrapper.py,v 1.4 2007/12/11 18:44:16 paterson Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,20 +10,23 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.3 2007/12/07 12:31:30 paterson Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.4 2007/12/11 18:44:16 paterson Exp $"
 
-#from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB      import JobLoggingDB
-from DIRAC.WorkloadManagementSystem.Client.SandboxClient        import SandboxClient
-from DIRAC.WorkloadManagementSystem.JobWrapper.WatchdogFactory  import WatchdogFactory
-from DIRAC.Core.DISET.RPCClient                                 import RPCClient
-from DIRAC.Core.Utilities.Subprocess                            import shellCall
-from DIRAC.Core.Utilities.Subprocess                            import Subprocess
-from DIRAC                                                      import S_OK, S_ERROR, gConfig, gLogger
+from DIRAC.DataManagementSystem.Client.FileCatalog.LcgFileCatalogCombinedClient import LcgFileCatalogCombinedClient
+
+from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
+from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
+from DIRAC.WorkloadManagementSystem.Client.SandboxClient            import SandboxClient
+from DIRAC.WorkloadManagementSystem.JobWrapper.WatchdogFactory      import WatchdogFactory
+from DIRAC.Core.DISET.RPCClient                                     import RPCClient
+from DIRAC.Core.Utilities.Subprocess                                import shellCall
+from DIRAC.Core.Utilities.Subprocess                                import Subprocess
+from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger
 import DIRAC
 
 import os, re, sys, string, time, shutil, threading, tarfile
 
-COMPONENT_NAME = 'WorkloadManagement/JobWrapper'
+COMPONENT_NAME = '/LocalSite/JobWrapper'
 
 EXECUTION_RESULT = {}
 
@@ -39,7 +42,8 @@ class JobWrapper:
     self.jobID = jobID
     self.root = os.getcwd()
     self.jobReport  = RPCClient('WorkloadManagement/JobStateUpdate')
-    self.sandboxClient = SandboxClient()
+    self.inputSandboxClient = SandboxClient()
+    self.outputSandboxClient = SandboxClient('Output')
     self.diracVersion = 'DIRAC version v%dr%d build %d' %(DIRAC.majorVersion,DIRAC.minorVersion,DIRAC.patchLevel)
     self.maxPeekLines = gConfig.getValue(self.section+'/MaxJobPeekLines',200)
     self.defaultCPUTime = gConfig.getValue(self.section+'/DefaultCPUTime',600)
@@ -47,25 +51,30 @@ class JobWrapper:
     self.defaultErrorFile = gConfig.getValue(self.section+'/DefaultErrorFile','std.err')
     self.cleanUpFlag  = gConfig.getValue(self.section+'/CleanUpFlag',False)
     self.localSiteRoot = gConfig.getValue('/LocalSite/Root',self.root)
-    self.log.debug('===========================================================================')
-    self.log.debug('CVS version %s' %(__RCSID__))
-    self.log.debug(self.diracVersion)
-    self.log.debug('Developer tag: 1')
+    self.vo = gConfig.getValue('/DIRAC/VirtualOrganization','lhcb')
+    self.fileCatalog = LcgFileCatalogCombinedClient()
+    self.rm = ReplicaManager()
+    self.log.verbose('===========================================================================')
+    self.log.verbose('CVS version %s' %(__RCSID__))
+    self.log.verbose(self.diracVersion)
+    self.log.verbose('Developer tag: 1')
     currentPID = os.getpid()
-    self.log.debug('Job Wrapper started under PID: %s' % currentPID )
-    self.log.debug('==========================================================================')
+    self.log.verbose('Job Wrapper started under PID: %s' % currentPID )
+    self.log.verbose('==========================================================================')
     if not self.cleanUpFlag:
       self.log.debug('CleanUp Flag is disabled by configuration')
 
-  #############################################################################
 
+  #############################################################################
   def initialize(self, arguments):
     """ Initializes parameters and environment for job.
     """
     self.__report('Running','Job Initialization')
     self.log.info('Starting Job Wrapper Initialization for Job %s' %(self.jobID))
     jobArgs = arguments['Job']
+    self.log.debug(jobArgs)
     ceArgs = arguments ['CE']
+    self.log.debug(ceArgs)
     self.__setInitialJobParameters(arguments)
 
     # Prepare the working directory and cd to there
@@ -168,19 +177,269 @@ class JobWrapper:
 
   #############################################################################
   def resolveInputData(self,arguments):
-    """Input data is resolved here.
+    """Input data is resolved here for the first iteration of SRM2 testing.
     """
-    self.__report('Running','InputData Resolution')
-    self.log.info('To implement: resolveInputData()')
-    return S_OK()
+    self.__report('Running','Input Data Resolution')
+    self.log.info('Initial iteration of input data resolution in Job Wrapper for SRM2 testing')
+    jobArgs = arguments['Job']
+    if not jobArgs.has_key('InputData'):
+      msg = 'Could not obtain job input data requirement from available parameters'
+      self.log.warn(msg)
+      return S_ERROR(msg)
+
+    ceArgs = arguments['CE']
+    if not ceArgs.has_key('LocalSE'):
+      msg = 'Job has input data requirement but no LocalSE defined'
+      self.log.warn(msg)
+      return S_ERROR(msg)
+
+    inputData = jobArgs['InputData']
+    localSEList = ceArgs['LocalSE']
+
+    msg = 'Job Wrapper cannot resolve input data with null '
+    if not inputData:
+      msg += 'job input data parameter '
+      self.log.warn(msg)
+      return S_ERROR(msg)
+    if not localSEList:
+      msg += 'site localSE list'
+      self.log.warn(msg)
+      return S_ERROR(msg)
+
+    self.log.verbose('Job input data requirement is \n%s' %(string.join(inputData,',\n')))
+    self.log.verbose('Site has the following local SEs: %s' %(string.join(localSElist,', ')))
+
+    lfns = [string.replace(fname,'LFN:','') for fname in inputData]
+    start = time.time()
+    result = self.fileCatalog.getReplicas(lfns)
+    timing = time.time() - start
+    self.log.info('LFC Lookup Time: %.2f seconds ' % (timing) )
+    if not result['OK']:
+      self.log.warn(result['Message'])
+      return result
+
+    badLFNCount = 0
+    badLFNs = []
+    catalogResult = result['Value']
+
+    if catalogResult.has_key('Failed'):
+      for lfn,cause in catalogResult['Failed'].items():
+        badLFNCount+=1
+        badLFNs.append('LFN:%s Problem: %s' %(lfn,cause))
+
+    if catalogResult.has_key('Successful'):
+      for lfn,replicas in catalogResult['Successful'].items():
+        if not replicas:
+          badLFNCount+=1
+          badLFNs.append('LFN:%s Problem: Null replica value' %(lfn))
+
+    if badLFNCount:
+      self.log.warn('Job Wrapper found %s problematic LFN(s) for job %s' % (badLFNCount,self.jobID))
+      param = string.join(badLFNs,'\n')
+      self.log.info(param)
+      result = self.__setJobParam('MissingLFNs',param)
+      return S_ERROR('Input Data Not Available')
+
+    replicas = catalogResult['Successful']
+    self.log.debug(replicas)
+    seFilesDict = {}
+    failedReplicas = []
+    pfnList = []
+    #For the unlikely case that a file is found on two SEs at the same site
+    #only the first SURL/SE is taken
+    for localSE in localSElist:
+      for lfn,reps in replicas.items():
+        if reps.has_key(localSE):
+          pfn = reps[localSE]
+          if not pfn in pfnList:
+            pfnList.append(pfn)
+            if seFilesDict.has_key(localSE):
+              currentFiles = seFilesDict[localSE]
+              newFiles = currentFiles.append(pfn)
+              seFilesDict[localSE] = newFiles
+            else:
+              seFilesDict[localSE] = [pfn]
+          else:
+            self.log.warn('Replicas of %s exist at > 1 LocalSE' %(pfn))
+        else:
+          failedReplicas.append(lfn)
+
+    if failedReplicas:
+      msg = 'The following files were found not to have replicas for available LocalSEs:\n%s' %(string.join(failedReplicas,',\n'))
+      self.log.warn(msg)
+      return S_ERROR(msg)
+
+    for se,pfnList in seFilesDict.items():
+      seTotal = len(pfnList)
+      self.log.verbose(' %s SURLs found from LFC for LocalSE %s' %(seTotal,se))
+      for pfn in pfnList:
+        self.log.debug('%s %s' % (se,pfn))
+
+    # Can now start to resolve turls... finally
+    resolvedData = {}
+    for se,pfnList in seFilesDict.items():
+      result = self.rm.getPhysicalFileAccessUrl(pfnList,se)
+      self.log.debug(result)
+      if not result['OK']:
+        self.log.warn(result['Message'])
+        return result
+
+      badTURLCount = 0
+      badTURLs = []
+      seResult = result['Value']
+
+      if seResult.has_key('Failed'):
+        for pfn,cause in seResult['Failed'].items():
+          badTURLCount+=1
+          badTURLs.append('%s Problem: %s' %(pfn,cause))
+
+      if seResult.has_key('Successful'):
+        for pfn,turl in seResult['Successful'].items():
+          if not turl:
+            badTURLCount+=1
+            badTURLs.append('%s problem: null TURL returned' %(pfn))
+
+      if badTURLCount:
+        self.log.warn('Job Wrapper found %s problematic TURL(s) for job %s' % (badLFNCount,self.jobID))
+        param = string.join(badTURLs,'\n')
+        self.log.info(param)
+        result = self.__setJobParam('MissingTURLs',param)
+        return S_ERROR('TURL resoulution error')
+
+      pfnTurlDict = seResult['Successful']
+      for lfn,reps in replicas.items():
+        for se,rep in reps:
+          if rep == pfn:
+            turl = pfnTurlDict[pfn]
+            resolvedData[lfn] = {'turl':turl,'pfn':pfn,'se':se}
+            self.log.debug('Resolved %s %s\n %s\n %s' %(se,lfn,pfn,turl))
+
+      #Must retrieve GUIDs from LFC for files
+      lfns = resolvedData.keys()
+      guidDict = self.fileCatalog.getPhysicalFileMetadata()
+      if not guidDict['OK']:
+        self.log.warn(guidDict['Message'])
+        return guidDict
+
+      failed = guidDict['Failed']
+      if failed:
+        self.log.warn(failed)
+        return failed
+
+      guids = guidDict['Successful']
+      for lfn,mdata in guids.items():
+        resolvedData[lfn]['guid'] = mdata['GUID']
+
+    #Create POOL XML slice for applications
+    self.log.debug(resolvedData)
+    xmlResult = self.__createXMLSlice(resolvedData)
+    if not xmlResult['OK']:
+      self.log.warn(xmlResult)
+
+    return S_OK('Input Data Resolved')
+
+  #############################################################################
+  def __createXMLSlice(self,dataDict):
+    """Given a dictionary of resolved input data, this will create a POOL
+       XML slice.
+    """
+    try:
+      poolXMLCat = PoolXMLCatalog()
+      self.log.verbose('Creating POOL XML slice')
+
+      for lfn,mdata in dataDict.items():
+        local = os.path.basename(mdata['pfn'])
+        if os.path.exists(local):
+          poolXMLCat.addFile(mdata['guid'],lfn,os.path.abspath(local),se=mdata['se'])
+        else:
+          poolXMLCat.addFile(mdata['guid'],lfn,mdata['pfn'],se=mdata['se'])
+
+      xmlSlice = poolXMLcat.toXML()
+      self.log.debug('POOL XML Slice is: ')
+      self.log.debug(xmlSlice)
+      poolSlice = open('pool_xml_catalog.xml','w')
+      poolSlice.write(xmlSlice)
+      poolSlice.close()
+
+      # Temporary solution to the problem of storing the SE in the Pool XML
+      poolSlice_temp = open('pool_xml_catalog.xml.temp','w')
+      xmlSlice = poolXMLcat.toXML(True)
+      poolSlice_temp.write(xmlSlice)
+      poolSlice_temp.close()
+    except Exception,x:
+      self.log.warn(str(x))
+      return S_ERROR(x)
+
+    return S_OK('POOL XML Slice created')
 
   #############################################################################
   def processJobOutputs(self,arguments):
     """Outputs for a job may be treated here.
     """
     self.__report('Running','Uploading Job Outputs')
-    self.log.info('To implement: processJobOutputs()')
+    jobArgs = arguments['Job']
+
+    #first iteration of this, no checking of wildcards or oversize sandbox files etc.
+    outputSandbox = []
+    if jobArgs.has_key('OutputSandbox'):
+      outputSandbox = jobArgs['OutputSandbox']
+      self.log.verbose('OutputSandbox files are: %s' %(string.join(outputSandbox,', ')))
+    outputData = []
+    if jobArgs.has_key('OutputData'):
+      outputData = jobArgs['OutputData']
+      self.log.verbose('OutputData files are: %s' %(string.join(outputData,', ')))
+
+    fileList = []
+    missingFiles = []
+    for local in outputSandbox:
+      if os.path.exists(local):
+        fileList.append(local)
+      else:
+        missingFiles.append(local)
+
+    if missingFiles:
+      self.__setJobParam('OutputSandbox','MissingFiles: %s' %(string.join(missingFiles,', ')))
+
+    result = self.outputSandboxClient.sendFiles(self.jobID, fileList)
+    if not result['OK']:
+      self.log.warn(result['Message'])
+
+    if jobArgs.has_key('OutputSE'):
+      outputSE = jobArgs['OutputSE']
+    else:
+      outputSE = 'CERN-USER' # should move to a default CS location
+
+    self.log.verbose('Output data will be uploaded to %s SE' %(outputSE))
+
+    self.__transferOutputDataFiles(outputData,outputSE)
+
     return S_OK()
+
+  #############################################################################
+  def __transferOutputDataFiles(self,owner,outputData,outputSE):
+    """Performs the upload and registration in the LFC
+    """
+    for outputFile in outputData:
+      lfn = self.__getLFNfromOutputFile(owner,outputFile)
+      upload = self.rm.putAndRegister(lfn, outputFile, outputSE)
+      self.log.info(upload)
+
+    return S_OK()
+
+  #############################################################################
+  def __getLFNfromOutputFile(self, owner, outputFile):
+    """Provides a generic convention for VO output data
+       files if no path is specified.
+    """
+    localfile = os.path.basename(string.replace(outputFile,"LFN:",""))
+    lfn = outputFile
+    if not re.search('^LFN:',outputFile):
+      initial = owner[:1]
+      lfn = '/'+self.vo+'/user/'+initial+'/'+owner+'/'+str(self.jobID)+'/'+localfile
+    else:
+      lfn = string.replace(outputFile,"LFN:","")
+
+    return lfn
 
   #############################################################################
   def transferInputSandbox(self,inputSandbox):
@@ -201,7 +460,7 @@ class JobWrapper:
           shutil.copy(self.root+'/inputsandbox/'+inputFile,inputFile)
       result = S_OK(sandboxFiles)
     else:
-      result =  self.sandboxClient.getSandbox(int(self.jobID))
+      result =  self.inputSandboxClient.getSandbox(int(self.jobID))
       if not result['OK']:
         self.__report('Running','Failed Downloading InputSandbox')
         return S_ERROR('InputSandbox download failed for job %s and sandbox %s' %(self.jobID,sandboxFiles))
