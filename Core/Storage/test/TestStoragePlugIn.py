@@ -7,14 +7,11 @@ class StoragePlugInTestCase(unittest.TestCase):
   """
   def setUp(self):
     factory = StorageFactory()
-    res = factory.getStorages('IN2P3-RAW', ['SRM2'])
+    res = factory.getStorages('CERN-RAW', ['SRM2'])
     self.assert_(res['OK'])
     storageDetails = res['Value']
     self.storage = storageDetails['StorageObjects'][0]
     self.storage.changeDirectory('lhcb/test/unit-test')
-    unitTestDir = self.storage.getCurrentURL('')['Value']
-    # Clean the unit test dir incase something was left over (and avoid memory leek)
-    res = self.storage.removeDirectory(unitTestDir)
 
   def test_createUnitTestDir(self):
     print '\n\n#########################################################################\n\n\t\t\tCreate Directory test\n'
@@ -402,7 +399,6 @@ class FileTestCase(StoragePlugInTestCase):
     self.assert_(failedExistRes['Value']['Successful'].has_key(destFile))
     self.assertFalse(failedExistRes['Value']['Successful'][destFile])
 
-
   def test_putIsFile(self):
     print '\n\n#########################################################################\n\n\t\t\tIs file test\n'
     # First upload a file to the storage
@@ -517,7 +513,6 @@ class FileTestCase(StoragePlugInTestCase):
     self.assert_(directorySizeRes['Value']['Failed'].has_key(destDir))
     expectedError = "SRM2Storage.getFileSize: Supplied path is not a file."
     self.assertEqual(directorySizeRes['Value']['Failed'][destDir],expectedError)
-
   def test_putPrestageFile(self):
     print '\n\n#########################################################################\n\n\t\t\tFile prestage test\n'
     # First upload a file to the storage
@@ -544,18 +539,16 @@ class FileTestCase(StoragePlugInTestCase):
     self.assert_(removeFileRes['Value']['Successful'].has_key(destFile))
 
     # These checks are currently disabled until a bug is fixed
-    """
     # Check what happens with deleted files
-    deletedPrestageRes = self.storage.prestageFile(destFile)
-    self.assert_(deletedPrestageRes['OK'])
-    self.assert_(deletedPrestageRes['Value']['Failed'].has_key(destFile))
+    #deletedPrestageRes = self.storage.prestageFile(destFile)
+    #self.assert_(deletedPrestageRes['OK'])
+    #self.assert_(deletedPrestageRes['Value']['Failed'].has_key(destFile))
 
     # Check what happens with non-existant files #THIS IS A BUG, REPORT IR
-    testFile = "%s-THIS-IS-DEFINATELY-NOT-A-FILE" % destFile
-    nonExistantPrestageRes= self.storage.prestageFile(testFile)
-    self.assert_(nonExistantPrestageRes['OK'])
-    self.assert_(nonExistantPrestageRes['Value']['Failed'].has_key(destFile))
-    """
+    #testFile = "%s-THIS-IS-DEFINATELY-NOT-A-FILE" % destFile
+    #nonExistantPrestageRes= self.storage.prestageFile(testFile)
+    #self.assert_(nonExistantPrestageRes['OK'])
+    #self.assert_(nonExistantPrestageRes['Value']['Failed'].has_key(destFile))
 
   def test_putFilegetTransportURL(self):
     print '\n\n#########################################################################\n\n\t\t\tGet tURL test\n'
@@ -571,12 +564,14 @@ class FileTestCase(StoragePlugInTestCase):
     # Clean up the remote mess
     removeFileRes = self.storage.removeFile(destFile)
     # Try and get a turl for a non existant file
-    failedGetTurlRes = self.storage.getTransportURL(destFile,['gsidcap'])
+    failedGetTurlRes = self.storage.getTransportURL(destFile,['dcap','gsidcap'])
 
     # Check the put file operation
+    print putFileRes
     self.assert_(putFileRes['OK'])
     self.assert_(putFileRes['Value']['Successful'].has_key(destFile))
     # check the get turl operation
+    print getTurlRes, destFile
     self.assert_(getTurlRes['OK'])
     self.assert_(getTurlRes['Value']['Successful'].has_key(destFile))
     # check the remove file operation
@@ -590,6 +585,6 @@ class FileTestCase(StoragePlugInTestCase):
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(FileTestCase)
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(DirectoryTestCase))
+  #suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(DirectoryTestCase))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)
 
