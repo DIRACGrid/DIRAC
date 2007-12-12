@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ########################################################################
-# $Id: JobWrapper.py,v 1.4 2007/12/11 18:44:16 paterson Exp $
+# $Id: JobWrapper.py,v 1.5 2007/12/12 11:29:45 paterson Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,9 +10,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.4 2007/12/11 18:44:16 paterson Exp $"
-
-from DIRAC.DataManagementSystem.Client.FileCatalog.LcgFileCatalogCombinedClient import LcgFileCatalogCombinedClient
+__RCSID__ = "$Id: JobWrapper.py,v 1.5 2007/12/12 11:29:45 paterson Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -24,9 +22,9 @@ from DIRAC.Core.Utilities.Subprocess                                import Subpr
 from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger
 import DIRAC
 
-import os, re, sys, string, time, shutil, threading, tarfile
-
 COMPONENT_NAME = '/LocalSite/JobWrapper'
+
+import os, re, sys, string, time, shutil, threading, tarfile
 
 EXECUTION_RESULT = {}
 
@@ -52,7 +50,6 @@ class JobWrapper:
     self.cleanUpFlag  = gConfig.getValue(self.section+'/CleanUpFlag',False)
     self.localSiteRoot = gConfig.getValue('/LocalSite/Root',self.root)
     self.vo = gConfig.getValue('/DIRAC/VirtualOrganization','lhcb')
-    self.fileCatalog = LcgFileCatalogCombinedClient()
     self.rm = ReplicaManager()
     self.log.verbose('===========================================================================')
     self.log.verbose('CVS version %s' %(__RCSID__))
@@ -63,7 +60,14 @@ class JobWrapper:
     self.log.verbose('==========================================================================')
     if not self.cleanUpFlag:
       self.log.debug('CleanUp Flag is disabled by configuration')
-
+    self.log.verbose('Trying to import LFC File Catalog client')
+    try:
+      from DIRAC.DataManagementSystem.Client.Catalog.LcgFileCatalogCombinedClient import LcgFileCatalogCombinedClient
+      self.fileCatalog = LcgFileCatalogCombinedClient()
+    except Exception,x:
+      msg = 'Failed to create LcgFileCatalogClient with exception:'
+      self.log.fatal(msg)
+      self.log.fatal(str(x))
 
   #############################################################################
   def initialize(self, arguments):
