@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.9 2007/12/11 14:37:14 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.10 2007/12/12 08:30:54 paterson Exp $
 # File :   InputDataAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
 
 """
 
-__RCSID__ = "$Id: InputDataAgent.py,v 1.9 2007/12/11 14:37:14 paterson Exp $"
+__RCSID__ = "$Id: InputDataAgent.py,v 1.10 2007/12/12 08:30:54 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
@@ -49,7 +49,7 @@ class InputDataAgent(Optimizer):
     host                   = gConfig.getValue(self.section+'/LFC_HOST','lhcb-lfc.cern.ch')
     mode                   = gConfig.getValue(self.section+'/Mode','test')
     try:
-      from DIRAC.DataManagementSystem.Client.LcgFileCatalogCombinedClient import LcgFileCatalogCombinedClient
+      from DIRAC.DataManagementSystem.Client.FileCatalog.LcgFileCatalogCombinedClient import LcgFileCatalogCombinedClient
       self.FileCatalog = LcgFileCatalogCombinedClient()
       self.log.debug("Instantiating LFC File Catalog in mode %s %s %s" % (mode,host,infosys) )
     except Exception,x:
