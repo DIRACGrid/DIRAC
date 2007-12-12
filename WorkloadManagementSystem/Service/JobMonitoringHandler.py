@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobMonitoringHandler.py,v 1.7 2007/11/29 22:53:23 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobMonitoringHandler.py,v 1.8 2007/12/12 11:49:40 atsareg Exp $
 ########################################################################
 
 """ JobMonitoringHandler is the implementation of the JobMonitoring service
@@ -11,7 +11,7 @@
 
 """
 
-__RCSID__ = "$Id: JobMonitoringHandler.py,v 1.7 2007/11/29 22:53:23 atsareg Exp $"
+__RCSID__ = "$Id: JobMonitoringHandler.py,v 1.8 2007/12/12 11:49:40 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -208,6 +208,51 @@ class JobMonitoringHandler( RequestHandler ):
     #return result
     restring = str(result['Value'])
     return S_OK(restring)
+
+##############################################################################
+  types_getJobPageSummary = [DictType, StringType, IntType, IntType]
+  def export_getJobPageSummary(self, attrDict, orderAttribute, pageNumber, numberPerPage):
+    """ Get the summary of the job information for a given page in the
+        job monitor
+    """
+    last_update = None
+    if attrDict.has_key('LastUpdate'):
+      last_update = attrDict['LastUpdate']
+    result = jobDB.selectJobs(attrDict, orderAttribute=orderAttribute, newer=last_update)
+    if not result['OK']:
+      return S_ERROR('Failed to select jobs: '+result['Message'])
+
+    jobList = result['Value']
+    iniJob = pageNumber*numberPerPage
+    lastJob = iniJob+numberPerPage-1
+    if iniJob >= len(jobList):
+      return S_ERROR('Page number out of range')
+
+    nJobs = len(jobList)
+    if lastJob > nJobs:
+      lastJob = nJobs
+
+    summaryJobList = jobList[iniJob:lastJob]
+    result = jobDB.getAttributesForJobList(summaryJobList,SUMMARY)
+    if not result['OK']:
+      return S_ERROR('Failed to get job summary: '+result['Message'])
+
+    statusDict = {}
+    statusAttrDict = attrDict
+    for status in ['Running','Waiting','Outputready']:
+      statusAttrDict['Status'] = status
+      result = jobDB.countJobs(statusAttrDict)
+      if result['OK']:
+        statusDict[status] = result['Value']
+      else:
+        break
+
+    resultDict = {}
+    resultDict['SummaryDict'] = result['Value']
+    resultDict['TotalJobs'] = nJobs
+    resultDict['SummaryStatus'] = statusDict
+
+    return S_OK(resultDict)
 
 ##############################################################################
   types_getJobsPrimarySummary = [ ListType ]
