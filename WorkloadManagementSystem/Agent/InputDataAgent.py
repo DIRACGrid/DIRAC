@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.10 2007/12/12 08:30:54 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.11 2007/12/12 12:57:29 paterson Exp $
 # File :   InputDataAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
 
 """
 
-__RCSID__ = "$Id: InputDataAgent.py,v 1.10 2007/12/12 08:30:54 paterson Exp $"
+__RCSID__ = "$Id: InputDataAgent.py,v 1.11 2007/12/12 12:57:29 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
@@ -35,8 +35,9 @@ class InputDataAgent(Optimizer):
     result = Optimizer.initialize(self)
 
     self.failedMinorStatus = gConfig.getValue(self.section+'/FailedJobStatus','Input Data Not Available')
-    self.diskSE            = gConfig.getValue(self.section+'/DiskSE','-disk')
-    self.tapeSE            = gConfig.getValue(self.section+'/TapeSE','-tape')
+    #this will ignore failover SE files
+    self.diskSE            = gConfig.getValue(self.section+'/DiskSE',['-disk','-DST','-USER'])
+    self.tapeSE            = gConfig.getValue(self.section+'/TapeSE',['-tape','-RDST','-RAW'])
 
     self.site_se_mapping = {}
     mappingKeys = gConfig.getOptions('/Resources/SiteLocalSEMapping')
@@ -45,15 +46,11 @@ class InputDataAgent(Optimizer):
       self.log.debug('Site: %s, SEs: %s' %(site,seStr))
       self.site_se_mapping[site] = [ x.strip() for x in string.split(seStr,',')]
 
-    infosys                = gConfig.getValue(self.section+'/LCG_GFAL_INFOSYS','lcg-bdii.cern.ch:2170')
-    host                   = gConfig.getValue(self.section+'/LFC_HOST','lhcb-lfc.cern.ch')
-    mode                   = gConfig.getValue(self.section+'/Mode','test')
     try:
-      from DIRAC.DataManagementSystem.Client.FileCatalog.LcgFileCatalogCombinedClient import LcgFileCatalogCombinedClient
-      self.FileCatalog = LcgFileCatalogCombinedClient()
-      self.log.debug("Instantiating LFC File Catalog in mode %s %s %s" % (mode,host,infosys) )
+      from DIRAC.DataManagementSystem.Client.Catalog.LcgFileCatalogCombinedClient import LcgFileCatalogCombinedClient
+      self.fileCatalog = LcgFileCatalogCombinedClient()
     except Exception,x:
-      msg = 'Failed to create LcgFileCatalogClient'
+      msg = 'Failed to create LcgFileCatalogClient with exception:'
       self.log.fatal(msg)
       self.log.fatal(str(x))
       result = S_ERROR(msg)
@@ -100,7 +97,7 @@ class InputDataAgent(Optimizer):
     """
     lfns = [string.replace(fname,'LFN:','') for fname in inputData]
     start = time.time()
-    result = self.FileCatalog.getReplicas(lfns)
+    result = self.fileCatalog.getReplicas(lfns)
     timing = time.time() - start
     self.log.info('LFC Lookup Time: %.2f seconds ' % (timing) )
     if not result['OK']:
@@ -184,10 +181,12 @@ class InputDataAgent(Optimizer):
         sites = self._getSitesForSE(se)
         for site in sites:
           if site in siteCandidates:
-            if re.search(self.diskSE+'$',se):
-              siteResult[site]['disk'] = siteResult[site]['disk']+1
-            if re.search(self.tapeSE+'$',se):
-              siteResult[site]['tape'] = siteResult[site]['tape']+1
+            for disk in self.diskSE:
+              if re.search(disk+'$',se):
+                siteResult[site]['disk'] = siteResult[site]['disk']+1
+            for tape in self.tapeSE:
+              if re.search(tape+'$',se):
+                siteResult[site]['tape'] = siteResult[site]['tape']+1
 
     return S_OK(siteResult)
 
