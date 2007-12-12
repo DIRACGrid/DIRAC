@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.25 2007/11/30 18:10:24 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.26 2007/12/12 11:49:13 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.25 2007/11/30 18:10:24 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.26 2007/12/12 11:49:13 atsareg Exp $"
 
 import re, os, sys, string
 import time
@@ -495,7 +495,7 @@ class JobDB(DB):
     return ret
 
 #############################################################################
-  def selectJobs(self, condDict, older=None, newer=None, ordered=None, limit=None ):
+  def selectJobs(self, condDict, older=None, newer=None, orderAttribute=None, limit=None ):
     """ Select jobs matching the following conditions:
         - condDict dictionary of required Key = Value pairs;
         - with the last update date older and/or newer than given dates;
@@ -508,8 +508,13 @@ class JobDB(DB):
 
     condition = self.__buildCondition(condDict, older, newer)
 
-    if ordered:
-      condition = condition + ' Order by JobID'
+    if orderAttribute:
+      orderType = None
+      if orderAttribute.find(':') != -1:
+        orderType = orderAttribute.split(':')[1].upper()
+      condition = condition + ' ORDER BY ' + orderAttribute
+      if orderType:
+        condition = condition + ' ' + orderType
 
     if limit:
       condition = condition + ' LIMIT ' + str(limit)
