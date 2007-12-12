@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobMonitoringHandler.py,v 1.8 2007/12/12 11:49:40 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobMonitoringHandler.py,v 1.9 2007/12/12 12:01:32 atsareg Exp $
 ########################################################################
 
 """ JobMonitoringHandler is the implementation of the JobMonitoring service
@@ -11,7 +11,7 @@
 
 """
 
-__RCSID__ = "$Id: JobMonitoringHandler.py,v 1.8 2007/12/12 11:49:40 atsareg Exp $"
+__RCSID__ = "$Id: JobMonitoringHandler.py,v 1.9 2007/12/12 12:01:32 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -223,12 +223,12 @@ class JobMonitoringHandler( RequestHandler ):
       return S_ERROR('Failed to select jobs: '+result['Message'])
 
     jobList = result['Value']
+    nJobs = len(jobList)
     iniJob = pageNumber*numberPerPage
     lastJob = iniJob+numberPerPage-1
-    if iniJob >= len(jobList):
+    if iniJob >= nJobs:
       return S_ERROR('Page number out of range')
 
-    nJobs = len(jobList)
     if lastJob > nJobs:
       lastJob = nJobs
 
@@ -236,6 +236,8 @@ class JobMonitoringHandler( RequestHandler ):
     result = jobDB.getAttributesForJobList(summaryJobList,SUMMARY)
     if not result['OK']:
       return S_ERROR('Failed to get job summary: '+result['Message'])
+      
+    summaryDict = result['Value']  
 
     statusDict = {}
     statusAttrDict = attrDict
@@ -248,7 +250,7 @@ class JobMonitoringHandler( RequestHandler ):
         break
 
     resultDict = {}
-    resultDict['SummaryDict'] = result['Value']
+    resultDict['SummaryDict'] = summaryDict
     resultDict['TotalJobs'] = nJobs
     resultDict['SummaryStatus'] = statusDict
 
