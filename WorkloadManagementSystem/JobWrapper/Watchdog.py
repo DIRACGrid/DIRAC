@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.7 2007/12/10 14:49:19 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.8 2007/12/12 08:20:05 paterson Exp $
 # File  : Watchdog.py
 # Author: Stuart Paterson
 ########################################################################
@@ -18,7 +18,7 @@
           - Means to send heartbeat signal.
 """
 
-__RCSID__ = "$Id: Watchdog.py,v 1.7 2007/12/10 14:49:19 paterson Exp $"
+__RCSID__ = "$Id: Watchdog.py,v 1.8 2007/12/12 08:20:05 paterson Exp $"
 
 from DIRAC.Core.Base.Agent                          import Agent
 from DIRAC.Core.DISET.RPCClient                     import RPCClient
@@ -37,6 +37,7 @@ class Watchdog(Agent):
     """ Constructor, takes system flag as argument.
     """
     Agent.__init__(self,AGENT_NAME)
+    self.jobReport  = RPCClient('WorkloadManagement/JobStateUpdate')
     self.systemFlag = systemFlag
     self.thread = thread
     self.pid = pid
@@ -51,8 +52,6 @@ class Watchdog(Agent):
   def initialize(self,loops=0):
     """ Watchdog initialization.
     """
-    self.jobReport  = RPCClient('WorkloadManagement/JobStateUpdate')
-
     self.maxcount = loops
     result = Agent.initialize(self)
     if os.path.exists(self.controlDir+'/stop_agent'):
@@ -545,7 +544,7 @@ class Watchdog(Agent):
   def reportParameters(self,params,title=None,report=False):
     """Will report parameters for job.
     """
-    params = []
+    parameters = []
     self.log.info('==========================================================')
     if title:
       self.log.info('Watchdog will report %s' % (title))
@@ -559,9 +558,9 @@ class Watchdog(Agent):
     for k,v in vals.items():
       if v:
         self.log.info(str(k)+' = '+str(v))
-        params.append((k,v))
+        parameters.append((k,v))
     if report:
-      self.__setJobParamList(params)
+      self.__setJobParamList(parameters)
 
     self.log.info('==========================================================')
 
@@ -594,8 +593,13 @@ class Watchdog(Agent):
   def __setJobParamList(self,value):
     """Wraps around setJobParameters of state update client
     """
-    jobParam = self.jobReport.setJobParameters(int(self.jobID),value)
-    self.log.debug('setJobParameters(%s,%s)' %(self.jobID,value))
+    #job wrapper template sets the jobID variable
+    if not os.environ.has_key('JOBID'):
+      self.log.info('Running without JOBID so parameters will not be reported')
+      return S_OK()
+    jobID = os.environ['JOBID']
+    jobParam = self.jobReport.setJobParameters(int(jobID),value)
+    self.log.debug('setJobParameters(%s,%s)' %(jobID,value))
     if not jobParam['OK']:
         self.log.warn(jobParam['Message'])
 
