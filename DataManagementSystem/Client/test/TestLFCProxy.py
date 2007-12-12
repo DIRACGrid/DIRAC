@@ -6,6 +6,10 @@ class LFCProxyTestCase(unittest.TestCase):
   """ Base class for the TransferDB test cases
   """
   def setUp(self):
+<<<<<<< TestLFCProxy.py
+    self.LFCProxy = LcgFileCatalogProxyClient()
+    print dir(self.LFCProxy)
+=======
     self.lfc = LcgFileCatalogProxyClient()
 
     ######################################################
@@ -62,12 +66,19 @@ class FilesCase(LFCProxyTestCase):
     self.assert_(res['Value'].has_key('Failed'))
     self.assert_(res['Value']['Successful'].has_key(lfn))
     self.assert_(res['Value']['Successful'][lfn])
+>>>>>>> 1.2
 
     ######################################################
     #
     #  Test the creation of links using the test file
     #
 
+<<<<<<< TestLFCProxy.py
+  def test_init(self):
+    lfns = ['/lhcb/production/DC06/phys-lumi2/00001620/DST/0000/00001620_00000597_5.dst','/lhcb/production/DC06/phys-lumi2/00001620/DST/0000/00001620_00000598_5.dst','/lhcb/production/DC06/phys-lumi2/00001620/DST/0000/00001620_00000600_5.dst']
+    print lfns
+    res = self.LFCProxy.getPfnsByLfn(lfns[0])
+=======
     targetLfn = lfn
     linkName = '/lhcb/test/unit-test/testlink.%s' % time.time()
 
@@ -85,6 +96,7 @@ class FilesCase(LFCProxyTestCase):
     #
 
     res = self.lfc.isLink(targetLfn)
+>>>>>>> 1.2
     print res
     self.assert_(res['OK'])
     self.assert_(res['Value'].has_key('Successful'))
