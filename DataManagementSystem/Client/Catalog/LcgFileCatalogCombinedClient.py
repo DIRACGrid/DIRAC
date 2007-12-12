@@ -20,7 +20,7 @@ class LcgFileCatalogCombinedClient:
     """ Default constructor
     """
     # Obtain the site configuration
-    result = gConfig.getOption('/DIRAC/Site')
+    result = gConfig.getOption('/LocalSite/Site')
     if not result['OK']:
       gLogger.error('Failed to get the /DIRAC/Site')
       self.site = 'Unknown'
@@ -28,17 +28,17 @@ class LcgFileCatalogCombinedClient:
       self.site = result['Value']
 
     if not infosys:
-      configPath = '/DataManagement/FileCatalogs/LFC/LcgGfalInfosys'
+      configPath = '/Resources/FileCatalogs/LFC/LcgGfalInfosys'
       infosys = gConfig.getValue(configPath)
 
     if not master_host:
-      configPath = '/DataManagement/FileCatalogs/LFC/LFCMaster'
+      configPath = '/Resources/FileCatalogs/LFC/LFCMaster'
       master_host = gConfig.getValue(configPath)
     # Create the master LFC client first
     self.lfc = LcgFileCatalogClient(infosys,master_host)
 
     if not mirrors:
-      configPath = '/DataManagement/FileCatalogs/LFC/LFCReadOnlyMirrors'
+      configPath = '/Resources/FileCatalogs/LFC/LFCReadOnlyMirrors'
       mirrors = gConfig.getValue(configPath,[])
     # Create the mirror LFC instances
     self.mirrors = []
