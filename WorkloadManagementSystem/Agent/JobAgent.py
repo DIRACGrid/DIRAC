@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.5 2007/12/07 12:32:31 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.6 2007/12/12 11:16:45 paterson Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.5 2007/12/07 12:32:31 paterson Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.6 2007/12/12 11:16:45 paterson Exp $"
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
 from DIRAC.Core.Base.Agent                               import Agent
@@ -100,9 +100,25 @@ class JobAgent(Agent):
       return parameters
 
     params = parameters['Value']
-    jobID = params['JobID']
-    jobType = params['JobType']
-    systemConfig = params['SystemConfig']
+    if not params.has_key('JobID'):
+      msg = 'Job has not JobID defined in JDL parameters'
+      self.log.warn(msg)
+      return S_ERROR(msg)
+    else:
+      jobID = params['JobID']
+
+    if not params.has_key('JobType'):
+      self.log.warn('Job has no JobType defined in JDL parameters')
+      jobType = 'Unknown'
+    else:
+      jobType = params['JobType']
+
+    if not params.has_key('SystemConfig'):
+      self.log.warn('Job has no system configuration defined in JDL parameters')
+      systemConfig = 'ANY'
+    else:
+      systemConfig = params['SystemConfig']
+
     self.log.verbose('Job request successful: \n %s' %(jobRequest['Value']))
     self.log.info('Received JobID=%s, JobType=%s, SystemConfig=%s' %(jobID,jobType,systemConfig))
 
