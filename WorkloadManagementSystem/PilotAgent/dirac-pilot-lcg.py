@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/dirac-pilot-lcg.py,v 1.5 2007/12/10 14:28:45 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/dirac-pilot-lcg.py,v 1.6 2007/12/12 15:34:03 paterson Exp $
 # File :   dirac-pilot-lcg.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,7 +13,7 @@ import os,sys,string,re
     for the VO.
 """
 
-__RCSID__ = "$Id: dirac-pilot-lcg.py,v 1.5 2007/12/10 14:28:45 paterson Exp $"
+__RCSID__ = "$Id: dirac-pilot-lcg.py,v 1.6 2007/12/12 15:34:03 paterson Exp $"
 
 
 DEBUG = 1
@@ -108,6 +108,45 @@ def writeConfigFile(fname,section,optionsDict):
   fopen = open(fname,'w')
   fopen.write(cfg)
   fopen.close()
+
+#############################################################################
+def getDictFromCS(diracPython,csSection):
+  """This function executes a query for CS Dictionaries using the installed
+     DIRAC python distribution before running the Agent to retrieve jobs.
+     If a query fails, the PilotAgent will terminate gracefully since the
+     information is always vital to the execution of the Agent.
+  """
+  csQuery = """ "from DIRAC.Core.Base import Script; Script.parseCommandLine(); from DIRAC import gConfig; result = gConfig.getOptionsDict('%s'); print result" """ % (csSection)
+  csDictStr = runCommand('%s -c %s' %(diracPython,csQuery),1)
+  printPilot('CS query returned: \n%s' %(csDictStr),'DEBUG')
+  try:
+    res = string.split(csDictStr,'\n')
+    resCSDict = None
+    for i in res:
+      if re.search('^{',i):
+        printPilot(i,'DEBUG')
+        resCSDict = i
+    if resCSDict:
+      result = eval(resCSDict)
+  except Exception,x:
+    printPilot('Could not obtain section %s from CS with exception:' %(csSection),'ERROR')
+    printPilot(str(x),'ERROR')
+    pilotExit(1)
+
+  if not result:
+    printPilot('Null object returned from CS for section %s' %(csSection),'ERROR')
+    pilotExit(1)
+
+  if not result['OK']:
+    printPilot('CS returned S_ERROR() for section %s' %(csSection),'ERROR')
+    printPilot(result['Message'],'ERROR')
+    pilotExit(1)
+
+  if not result['Value']:
+    printPilot('Empty dictionary returned from CS for section %s' %(csSection),'ERROR')
+    pilotExit(1)
+
+  return result['Value']
 
 #############################################################################
 def pilotExit(code):
@@ -304,33 +343,7 @@ if DEBUG:
   else:
     printPilot('etc/dirac.cfg file does not exist','WARN')
 
-getSite = """ "from DIRAC.Core.Base import Script; Script.parseCommandLine(); from DIRAC import gConfig; result = gConfig.getOptionsDict('/Resources/GridSites/LCG'); print result" """
-siteDictStr = runCommand('%s -c %s' %(diracPython,getSite),1)
-printPilot('CS query returned: \n%s' %(siteDictStr),'DEBUG')
-try:
-  res = string.split(siteDictStr,'\n')
-  siteCSDict = None
-  for i in res:
-    if re.search('^{',i):
-      printPilot(i,'DEBUG')
-      siteCSDict = i
-  if siteCSDict:
-    siteDict = eval(siteCSDict)
-except Exception,x:
-  printPilot('Could not obtain LCG site list from CS with exception:','ERROR')
-  printPilot(str(x),'ERROR')
-  pilotExit(1)
-
-if not siteDict:
-  printPilot('Null object returned from CS','ERROR')
-  pilotExit(1)
-
-if not siteDict['OK']:
-  printPilot('Returned LCG site dictionary not OK','ERROR')
-  printPilot(siteDict['Message'],'ERROR')
-  pilotExit(1)
-
-sites = siteDict['Value']
+sites = getDictFromCS(diracPython,'/Resources/GridSites/LCG')
 DIRAC_SITE_NAME = ''
 for ce,siteName in siteDict.items():
   if LCG_SITE_CE == ce:
@@ -344,6 +357,16 @@ if LOCAL:
 if not DIRAC_SITE_NAME:
   printPilot('No DIRAC site names were found for CE %s' %(LCG_SITE_CE),'ERROR')
   pilotExit(1)
+
+LOCALSE = ''
+siteLocalSEMapping = getDictFromCS(diracPython,'/Resources/SiteLocalSEMapping')
+for site,ses in siteLocalSEMapping.items():
+  if site == DIRAC_SITE_NAME:
+    LOCALSE = string.join(ses,',')
+
+if not LOCALSE:
+  printPilot('No LocalSE found in SiteLocalSEMapping for %s setting to None' %(DIRAC_SITE_NAME),'WARN')
+  LOCALSE = 'None'
 
 #Full setup of DIRAC with LCG site name
 #temporarily append LHCb to dev string from AD
@@ -367,11 +390,6 @@ if DEBUG:
 if not os.path.exists('etc/dirac.cfg'):
   pilotExit(1)
 
-#Add default extra CS values to cfg file
-
-cfg = open('etc/dirac.cfg','a')
-cfg.close()
-
 #############################################################################
 #Start DIRAC Job Agent
 
@@ -387,16 +405,19 @@ writeConfigFile('InProcess.cfg',inProcessSection,inProcessDict)
 
 #below is because LHCb-Development differs from Development, this is fine for initial tests
 #but will be replaced...  also 'Development' below will be replaced by local sites / agents section
-writeConfigFile('setup.cfg','DIRAC',{'Setup':'LHCb-Development'})
+writeConfigFile('Setup.cfg','DIRAC',{'Setup':'LHCb-Development'})
 
 jobAgentSection = 'Systems/WorkloadManagement/Development/Agents/JobAgent'
 writeConfigFile('JobAgent.cfg',jobAgentSection,{'CEUniqueID':'InProcess','MaxCycles':1})
 
-writeConfigFile('security.cfg','DIRAC/Security',{'UseServerCertificate':'no'})
+writeConfigFile('Security.cfg','DIRAC/Security',{'UseServerCertificate':'no'})
 #need to define watchdog control directory
 watchdogSection = 'Systems/WorkloadManagement/Development/Agents/Watchdog'
 writeConfigFile('Watchdog.cfg',watchdogSection,{'PollingTime':20,'ControlDirectory':start})
 
+#setup local site SE to be automatically picked up in Job Wrapper arguments
+localSESection = 'LocalSite/LocalSE'
+writeConfigFile('LocalSE.cfg',localSESection,{'LocalSE':LOCALSE})
 
 #find any .cfg files and append to script to run job agent, all files created in '.'
 for i in os.listdir(start):
@@ -408,7 +429,6 @@ printPilot('Running DIRAC Job Agent:\n%s' %(runJobAgent),'DEBUG')
 sys.stdout.flush()
 #printPilot('Setting PYTHONPATH to null')
 #os.putenv('PYTHONPATH',' ')
-
 os.system(runJobAgent)
 sys.stdout.flush()
 
@@ -420,4 +440,5 @@ sys.stdout.flush()
 printPilot('Execution of %s complete.' %(scriptName))
 printPilot('========================================================================')
 pilotExit(0)
+
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
