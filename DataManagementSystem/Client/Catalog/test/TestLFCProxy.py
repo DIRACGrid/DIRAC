@@ -1,4 +1,4 @@
-from DIRAC.DataManagementSystem.Client.LcgFileCatalogProxyClient import LcgFileCatalogProxyClient
+from DIRAC.DataManagementSystem.Client.Catalog.LcgFileCatalogProxyClient import LcgFileCatalogProxyClient
 from DIRAC.Core.Utilities.File import makeGuid
 import unittest,types,time
 

@@ -1,4 +1,4 @@
-from DIRAC.DataManagementSystem.Client.LcgFileCatalogClient import LcgFileCatalogClient
+from DIRAC.DataManagementSystem.Client.Catalog.LcgFileCatalogClient import LcgFileCatalogClient
 from DIRAC.Core.Utilities.File import makeGuid
 import unittest,types,time,os
 

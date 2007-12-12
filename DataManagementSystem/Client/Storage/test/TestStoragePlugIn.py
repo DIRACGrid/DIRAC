@@ -1,5 +1,5 @@
 import unittest,types,time,os,shutil
-from DIRAC.Core.Storage.StorageFactory import StorageFactory
+from DIRAC.DataManagementSystem.Client.Storage.StorageFactory import StorageFactory
 from DIRAC.Core.Utilities.File import getSize
 
 class StoragePlugInTestCase(unittest.TestCase):

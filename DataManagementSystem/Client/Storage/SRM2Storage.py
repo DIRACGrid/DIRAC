@@ -1,7 +1,7 @@
 """ This is the SRM2 StorageClass """
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.Core.Storage.StorageBase import StorageBase
+from DIRAC.DataManagementSystem.Client.Storage.StorageBase import StorageBase
 from DIRAC.Core.Utilities.Subprocess import pythonCall
 from DIRAC.Core.Utilities.Pfn import pfnparse,pfnunparse
 from DIRAC.Core.Utilities.File import getSize
@@ -114,7 +114,7 @@ class SRM2Storage(StorageBase):
       else:
         errMessage = "SRM2Storage.exists: Failed to determine existance of file."
         errStr = os.strerror(urlDict['status'])
-        gLogger.error(errMessage,"%s: %s" % (pathSURL,errStr))  
+        gLogger.error(errMessage,"%s: %s" % (pathSURL,errStr))
         failed[pathSURL] = errStr
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
@@ -216,7 +216,7 @@ class SRM2Storage(StorageBase):
       else:
         nbstreams = 1
       dest_url = 'file:%s' % dest_file
-      gLogger.info("SRM2Storage.getFile: Executing transfer of %s to %s" % (src_url, dest_url)) 
+      gLogger.info("SRM2Storage.getFile: Executing transfer of %s to %s" % (src_url, dest_url))
       errCode,errStr = lcg_util.lcg_cp3(src_url, dest_url, self.defaulttype, srctype, dsttype, self.nobdii, self.vo, nbstreams, self.conf_file, self.insecure, self.verbose, timeout,src_spacetokendesc,dest_spacetokendesc)
       if errCode == 0:
         gLogger.info('SRM2Storage.getFile: Got file from storage, performing post transfer check.')
@@ -354,10 +354,10 @@ class SRM2Storage(StorageBase):
       elif urlDict['status'] == 2:
         # This is the case where the file doesn't exist.
         infoStr = 'SRM2Storage.removeFile: File did not exist, sucessfully removed: %s' % pathSURL
-        gLogger.info(infoStr) 
+        gLogger.info(infoStr)
         successful[pathSURL] = True
       else:
-        # We failed to remove the file 
+        # We failed to remove the file
         errStr = "SRM2Storage.removeFile: Failed to remove file."
         reason = os.strerror(urlDict['status'])
         gLogger.error(errStr,'%s: %s' % (pathSURL,reason))
@@ -463,7 +463,7 @@ class SRM2Storage(StorageBase):
     gfalDict['timeout'] = self.long_timeout
 
     gLogger.info("SRM2Storage.getFileSize: Obtaining the size of %s file(s)." % len(urls))
- 
+
     errCode,gfalObject,errMessage = gfal.gfal_init(gfalDict)
     if not errCode == 0:
       errStr = "SRM2Storage.getFileSize: Failed to initialise gfal_init:"
@@ -529,7 +529,7 @@ class SRM2Storage(StorageBase):
     gfalDict['no_bdii_check'] = 1
     gfalDict['timeout'] = self.long_timeout
     gfalDict['srmv2_spacetokendesc'] = self.spaceToken
-    
+
     gLogger.info("SRM2Storage.prestageFile: Attempting to issue stage requests for %s file(s)." % len(urls))
 
     errCode,gfalObject,errMessage = gfal.gfal_init(gfalDict)
@@ -599,7 +599,7 @@ class SRM2Storage(StorageBase):
     gfalDict['srmv2_spacetokendesc'] = self.spaceToken
 
     gLogger.info("SRM2Storage.getTransportURL: Obtaining tURLs for %s file(s)." % len(urls))
- 
+
     errCode,gfalObject,errMessage = gfal.gfal_init(gfalDict)
     if not errCode == 0:
       errStr = "SRM2Storage.getTransportURL: Failed to initialise gfal_init: %s" % errMessage
@@ -626,7 +626,7 @@ class SRM2Storage(StorageBase):
     for urlDict in listOfResults:
       pathSURL = urlDict['surl']
       if urlDict['status'] == 0:
-        gLogger.info("SRM2Storage.getTransportURL: Obtained tURL for file. %s" % pathSURL)   
+        gLogger.info("SRM2Storage.getTransportURL: Obtained tURL for file. %s" % pathSURL)
         successful[pathSURL] = urlDict['turl']
       elif urlDict['status'] == 2:
         errMessage = "SRM2Storage.getTransportURL: File does not exist."
@@ -905,7 +905,7 @@ class SRM2Storage(StorageBase):
       return S_ERROR("SRM2Storage.createDirectory: Supplied path must be string or list of strings")
     successful = {}
     failed = {}
- 
+
     gLogger.info("SRM2Storage.createDirectory: Attempting to create %s directories." % len(urls))
     for url in urls:
       strippedUrl = url.rstrip('/')
@@ -1096,7 +1096,7 @@ class SRM2Storage(StorageBase):
     for pathDict in listOfResults:
       pathSURL = self.getUrl(pathDict['surl'])['Value']
       if not pathDict['status'] == 0:
-        errMessage = "SRM2Storage.listDirectory: Failed to list directory."   
+        errMessage = "SRM2Storage.listDirectory: Failed to list directory."
         errStr = os.strerror(pathDict['status'])
         gLogger.error(errMessage, "%s: %s." % (pathSURL,errStr))
         failed[pathSURL] = "%s %s" % (errMessage,errStr)
