@@ -1,13 +1,13 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalogue. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.10 2007/12/11 17:49:19 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.11 2007/12/13 13:36:33 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
 
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig
-from DIRAC.Core.Storage.StorageElement import StorageElement
-from DIRAC.DataManagementSystem.Client.LcgFileCatalogCombinedClient import LcgFileCatalogCombinedClient
+from DIRAC.DataManagementSystem.Client.StorageElement import StorageElement
+from DIRAC.DataManagementSystem.Client.Catalog.LcgFileCatalogCombinedClient import LcgFileCatalogCombinedClient
 from DIRAC.Core.Utilities.File import makeGuid
 from DIRAC.Core.Utilities.File import getSize
 
