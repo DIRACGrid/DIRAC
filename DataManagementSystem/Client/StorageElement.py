@@ -9,7 +9,7 @@
 """
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.DataManagement.Client.Storage.StorageFactory import StorageFactory
+from DIRAC.DataManagementSystem.Client.Storage.StorageFactory import StorageFactory
 from DIRAC.Core.Utilities.Pfn import pfnparse,pfnunparse
 from DIRAC.Core.Utilities.List import sortList
 from DIRAC.Core.Utilities.File import getSize
