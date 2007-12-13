@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.6 2007/12/12 11:16:45 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.7 2007/12/13 21:08:21 paterson Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,8 +10,9 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.6 2007/12/12 11:16:45 paterson Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.7 2007/12/13 21:08:21 paterson Exp $"
 
+from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
 from DIRAC.Core.Base.Agent                               import Agent
 from DIRAC.Core.Utilities.Subprocess                     import shellCall
@@ -135,7 +136,13 @@ class JobAgent(Agent):
           self.log.info('Rescheduled job %s' %(jobID))
         return saveJDL
 
-      software = self.__checkInstallSoftware(jobID,params)
+      self.__report(jobID,'Matched','Job Prepared to Submit')
+      resourceParameters = self.__getJDLParameters(resourceJDL)
+      if not resourceParameters['OK']:
+        return resourceParameters
+      resourceParams = resourceParameters['Value']
+
+      software = self.__checkInstallSoftware(jobID,params,resourceParams)
       if not software['OK']:
         self.log.error('Failed to install software for job %s' %(jobID))
         self.log.error(software['Message'])
@@ -146,11 +153,6 @@ class JobAgent(Agent):
         else:
           self.log.info('Rescheduled job after software installation failure %s' %(jobID))
 
-      self.__report(jobID,'Matched','Job Prepared to Submit')
-      resourceParameters = self.__getJDLParameters(resourceJDL)
-      if not resourceParameters['OK']:
-        return resourceParameters
-      resourceParams = resourceParameters['Value']
       self.log.debug('Before %sCE submitJob()' %(self.ceName))
       submission = self.__submitJob(jobID,params,resourceParams,jobJDL)
       self.log.debug('After %sCE submitJob()' %(self.ceName))
@@ -167,13 +169,28 @@ class JobAgent(Agent):
     return S_OK('Job Agent cycle complete')
 
   #############################################################################
-  def __checkInstallSoftware(self,jobID,parameters):
+  def __checkInstallSoftware(self,jobID,jobParams,resourceParams):
     """Checks software requirement of job and whether this is already present
        before installing software locally.
     """
+
+    if not jobParams.has_key('SoftwareDistModule'):
+      msg = 'Job has no software installation requirement'
+      self.log.verbose(msg)
+      return S_OK(msg)
+
     self.__report(jobID,'Matched','Installing Software')
-    # to implement
-    return S_OK()
+    softwareDist = jobParams['SoftwareDistModule']
+    self.log.verbose('Found VO Software Distribution module: %s' %(softwareDist))
+    argumentsDict = {'Job':jobParams,'CE':resourceParams}
+    moduleFactory = ModuleFactory()
+    moduleInstance = moduleFactory.getModule(softwareDist,argumentsDict)
+    if not moduleInstance['OK']:
+      return moduleInstance
+
+    module = moduleInstance['Value']
+    result = module.execute()
+    return result
 
   #############################################################################
   def __submitJob(self,jobID,jobParams,resourceParams,jobJDL):
