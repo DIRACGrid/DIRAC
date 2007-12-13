@@ -319,15 +319,30 @@ class RFIOStorage(StorageBase):
       urls = path
     else:
       return S_ERROR("RFIOStorage.prestageFile: Supplied path must be string or list of strings")
-    comm = "stager_get"
+    comm = "stager_get -S %s" % self.spaceToken
     for url in urls:
       comm = "%s -M %s" % (comm,url)
     res = shellCall(100,comm)
+    successful = {}
+    failed = {}
     if res['OK']:
       returncode,stdout,stderr = res['Value']
-      print returncode
-      print stdout
-      print stderr
+      if stderr:
+        errStr = "RFIOStorage.prestageFile: Comepletely failed to issue stage requests."
+        gLogger.error(errStr,stderr)
+        return S_ERROR(errStr)
+      else:
+        for line in stdout.splitlines():
+          if re.search('SUBREQUEST_READY',line):
+            pfn,status = line.split()
+            successful[pfn] = True
+          elif re.search('SUBREQUEST_FAILED',line):
+            pfn,status,err = line.split(' ',2)
+            failed[pfn] = err
+        if not successful:
+          errStr = "RFIOStorage.prestageFile: Completely failed to issue stage requests."
+          gLogger.error(errStr,err)
+          return S_ERROR(errStr)
     else:
       errStr = "RFIOStorage.prestageFile: Completely failed to issue stage requests."
       gLogger.error(errStr,res['Message'])
@@ -352,7 +367,7 @@ class RFIOStorage(StorageBase):
           tURL = "castor://%s:%s/?svcClass=%s&castorVersion=2&path=%s" % (self.host,self.port,self.spaceToken,path)
         else:
           tURL = "castor:%s" % (path)
-        successful[path] = turl
+        successful[path] = tURL
       except Exception,x:
         errStr = "RFIOStorage.getTransportURL: Failed to create tURL for path."
         gLogger.error(errStr,"% %s" % (self.name,x))
