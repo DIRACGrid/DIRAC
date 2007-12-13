@@ -1,8 +1,8 @@
-# $Id: Parameter.py,v 1.12 2007/12/13 12:22:12 gkuznets Exp $
+# $Id: Parameter.py,v 1.13 2007/12/13 12:23:17 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.12 $"
+__RCSID__ = "$Revision: 1.13 $"
 
 # unbinded method, returns indentation string
 def indent(indent=0):
@@ -445,7 +445,7 @@ class AttributeCollection(dict):
         self.parameters.appendCopy(opt, prefix, postfix)
 
     def linkParameterUp(self, opt, prefix="", postfix="", objname="self"):
-        self.parameters.ParameterUp(opt, prefix, postfix, objname)
+        self.parameters.linkUp(opt, prefix, postfix, objname)
 
     def removeParameter(self, name_or_ind):
         self.parameters.remove(name_or_ind)

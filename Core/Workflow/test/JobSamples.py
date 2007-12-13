@@ -1,8 +1,8 @@
-# $Id: JobSamples.py,v 1.4 2007/12/13 12:22:28 gkuznets Exp $
+# $Id: JobSamples.py,v 1.5 2007/12/13 12:27:11 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.4 $"
+__RCSID__ = "$Revision: 1.5 $"
 
 # $Source: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Workflow/test/JobSamples.py,v $
 
@@ -47,8 +47,9 @@ step1.addModule(module1)
 moduleInstance = step1.createModuleInstance('GaudiApplication', 'Module1')
 
 # in this instance we want to connect parm belong to ModuleInstance with the Step perams
-for p in gaudiParams:
-  moduleInstance.findParameter(p.getName()).link('self',p.getName()) # input params
+moduleInstance.linkParameterUp(gaudiParams)
+#for p in gaudiParams:
+#  moduleInstance.findParameter(p.getName()).link('self',p.getName()) # input params
 
 
 step1.appendParameterCopy(result)
