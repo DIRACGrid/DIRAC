@@ -29,7 +29,7 @@ class StorageElement:
     self.remoteProtocols = factoryDict['RemoteProtocols']
     self.storages = factoryDict['StorageObjects']
     self.protocolOptions = factoryDict['ProtocolOptions']
-    self.turlProtocols = factoryDoct['TurlProtocols']
+    self.turlProtocols = factoryDict['TurlProtocols']
 
   def dump(self):
     """
