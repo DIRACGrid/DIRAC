@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.7 2007/12/13 14:19:43 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.8 2007/12/13 18:14:22 paterson Exp $
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,7 +13,7 @@
 
 """
 
-__RCSID__ = "$Id: Job.py,v 1.7 2007/12/13 14:19:43 paterson Exp $"
+__RCSID__ = "$Id: Job.py,v 1.8 2007/12/13 18:14:22 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -41,7 +41,7 @@ class Job:
     if gConfig.getValue(self.section+'/LogLevel','DEBUG') == 'DEBUG':
       self.dbg = True
 
-    self.defaultOutputSE = 'CERN-tape' # to discuss
+    self.defaultOutputSE = 'CERN-USER' # default SE CS location to be decided
     #gConfig.getValue('Tier0SE-tape','SEName')
     self.stepCount = 0
     self.owner = 'NotSpecified'
@@ -57,7 +57,7 @@ class Job:
     self.executable = '$DIRACROOT/scripts/jobexec' # to be clarified
     self.addToInputSandbox = []
     self.addToOutputSandbox = []
-
+    self.systemConfig = ''
     self.reqParams = {'MaxCPUTime':   'other.NAME>=VALUE',
                       'MinCPUTime':   'other.NAME<=VALUE',
                       'Site':         'other.NAME=="VALUE"',
@@ -104,7 +104,6 @@ class Job:
       if type(logFile) == type(' '):
         logName = logFile
 
-    self.addToOutputSandbox.append(logName)
     self.stepCount +=1
     module =  self.__getScriptModule()
 
@@ -112,6 +111,10 @@ class Job:
     stepNumber = self.stepCount
     stepDefn = 'ScriptStep%s' %(stepNumber)
     stepName = 'RunScriptStep%s' %(stepNumber)
+
+    logPrefix = 'Script%s_' %(stepNumber)
+    logName = '%s%s' %(logPrefix,logName)
+    self.addToOutputSandbox.append(logName)
 
     step = StepDefinition(stepDefn)
     step.addModule(module)
@@ -196,8 +199,10 @@ class Job:
       fileList = string.join(resolvedFiles,";")
       description = 'Input sandbox file list'
       self._addParameter(self.workflow,'InputSandbox','JDL',fileList,description)
+      self.sandboxFiles=resolvedFiles
     elif type(files) == type(" "):
       description = 'Input sandbox file'
+      self.sandboxFiles = [files]
       self._addParameter(self.workflow,'InputSandbox','JDL',files,description)
     else:
       raise TypeError,'Expected string or list for InputSandbox'
@@ -325,6 +330,7 @@ class Job:
     if type(config) == type(" "):
       description = 'User specified system configuration for job'
       self._addParameter(self.workflow,'SystemConfig','JDLReqt',config,description)
+      self.systemConfig = config
     else:
       raise TypeError,'Expected string for platform'
 
@@ -619,7 +625,7 @@ class Job:
     """
     moduleName = 'Script'
     module = ModuleDefinition(moduleName)
-    name = self._addParameter(module,'Name','Parameter','string','Name of executable')
+    self._addParameter(module,'Name','Parameter','string','Name of executable')
     self._addParameter(module,'Executable','Parameter','string','Executable Script')
     self._addParameter(module,'LogFile','Parameter','string','Log file name')
     self._addParameter(module,'Output','Parameter','string','Script output string',io='output')
