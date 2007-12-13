@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/ProxyRenewalAgent.py,v 1.1 2007/12/13 15:01:09 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/ProxyRenewalAgent.py,v 1.2 2007/12/13 15:05:48 atsareg Exp $
 ########################################################################
 
 """  Proxy Renewal agent is the key element of the Proxy Repository
@@ -10,7 +10,6 @@ from DIRAC.Core.Base.Agent import Agent
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.ProxyRepositoryDB import ProxyRepositoryDB
-from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 
 AGENT_NAME = 'WorkloadManagement/ProxyRenewal'
 
@@ -30,6 +29,16 @@ class ProxyRenewal(Agent):
     self.proxyDB = ProxyRepositoryDB()
 
     self.minValidity = gConfig.getValue(self.section+'/MinValidity',12)
+    result = gConfig.getOption('/DIRAC/Security/ServerKey')
+    if result['OK']:
+      self.server_key = result['Value']
+    else:
+      return S_ERROR('Failed to get server Key location')
+    result = gConfig.getOption('/DIRAC/Security/ServerCert')
+    if result['OK']:
+      self.server_cert = result['Value']
+    else:
+      return S_ERROR('Failed to get server Certificate location')
 
     return S_OK()
 
