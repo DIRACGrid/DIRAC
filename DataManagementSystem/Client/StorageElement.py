@@ -29,6 +29,7 @@ class StorageElement:
     self.remoteProtocols = factoryDict['RemoteProtocols']
     self.storages = factoryDict['StorageObjects']
     self.protocolOptions = factoryDict['ProtocolOptions']
+    self.turlProtocols = factoryDoct['TurlProtocols']
 
   def dump(self):
     """
@@ -1093,7 +1094,7 @@ class StorageElement:
           gLogger.info("StorageElement.getAccessUrl: No pfns generated for protocol %s." % protocolName)
         else:
           gLogger.info("StorageElement.getAccessUrl: Attempting to get access urls for %s physical files." % len(pfnDict.keys()))
-          res = storage.getTransportURL(pfnDict.keys(),protocols=self.localProtocols)
+          res = storage.getTransportURL(pfnDict.keys(),protocols=self.turlProtocols)
           if not res['OK']:
             infoStr = "StorageElement.getAccessUrl: Completely failed to get access urls."
             gLogger.error(infoStr,'%s for protocol %s: %s' % (self.name,protocolName,res['Message']))
