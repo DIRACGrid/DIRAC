@@ -21,13 +21,13 @@ DELETE FROM user WHERE user='Dirac';
 -- Must set passwords for database user by replacing "must_be_set".
 --
 
-GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON ProxyRepositoryDB.* TO Dirac@localhost IDENTIFIED BY 'lhcbMySQL';
-GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON ProxyRepositoryDB.* TO Dirac@volhcb03.cern.ch IDENTIFIED BY 'lhcbMySQL';
-GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON ProxyRepositoryDB.* TO Dirac@'%' IDENTIFIED BY 'lhcbMySQL';
+GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON ProxyRepositoryDB.* TO Dirac@localhost IDENTIFIED BY 'must_be_set';
+GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON ProxyRepositoryDB.* TO Dirac@volhcb03.cern.ch IDENTIFIED BY 'must_be_set';
+-- GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON ProxyRepositoryDB.* TO Dirac@'%' IDENTIFIED BY 'must_be_set';
 
 FLUSH PRIVILEGES;
 
-------------------------------------------------------------------------------- 
+-------------------------------------------------------------------------------
 USE ProxyRepositoryDB;
 
 --------------------------------------------------------------------------------
@@ -37,6 +37,8 @@ CREATE TABLE Proxies (
     UserGroup VARCHAR(128) NOT NULL DEFAULT '/lhcb',
     Proxy BLOB NOT NULL,
     ExpirationTime DATETIME,
+    ProxyType VARCHAR(32) NOT NULL DEFAULT 'Unknown',
+    ProxyAttributes VARCHAR(255),
     PRIMARY KEY (UserDN)
 );
 
