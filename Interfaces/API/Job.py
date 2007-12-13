@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.6 2007/12/10 18:01:59 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.7 2007/12/13 14:19:43 paterson Exp $
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,7 +13,7 @@
 
 """
 
-__RCSID__ = "$Id: Job.py,v 1.6 2007/12/10 18:01:59 paterson Exp $"
+__RCSID__ = "$Id: Job.py,v 1.7 2007/12/13 14:19:43 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -129,18 +129,22 @@ class Job:
     step.findParameter('Output').link(moduleName,'Output')
 
     self.workflow.addStep(step)
-    self.workflow.appendParameterCopy(step.findParameter('Executable'))
-    self.workflow.appendParameterCopy(step.findParameter('Name'))
-    self.workflow.appendParameterCopy(step.findParameter('LogFile'))
-    self.workflow.appendParameterCopy(step.findParameter('Output'))
+    stepPrefix = '%s_' % stepName
+    self.workflow.appendParameterCopy(step.findParameter('Executable'),stepPrefix)
+    self.workflow.appendParameterCopy(step.findParameter('Name'),stepPrefix)
+    self.workflow.appendParameterCopy(step.findParameter('LogFile'),stepPrefix)
+    self.workflow.appendParameterCopy(step.findParameter('Output'),stepPrefix)
     stepInstance = self.workflow.createStepInstance(stepDefn,stepName)
-    stepInstance.findParameter('Executable').link('self','Executable')
-    self.workflow.findParameter('Executable').setValue(executable)
-    stepInstance.findParameter('Name').link('self','Name')
-    self.workflow.findParameter('Name').setValue(moduleName)
-    stepInstance.findParameter('LogFile').link('self','LogFile')
-    self.workflow.findParameter('LogFile').setValue(logName)
-    self.workflow.findParameter('Output').link(stepName,'Output')
+
+    scriptParams = ParameterCollection()
+    scriptParams.append(moduleInstance.findParameter('Executable'))
+    scriptParams.append(moduleInstance.findParameter('Name'))
+    scriptParams.append(moduleInstance.findParameter('LogFile'))
+    stepInstance.linkParameterUp(scriptParams,stepPrefix)
+    self.workflow.findParameter('%sOutput' %(stepPrefix)).link(stepInstance.getName(),'Output')
+    self.workflow.findParameter('%sExecutable' %(stepPrefix)).setValue(executable)
+    self.workflow.findParameter('%sName' %(stepPrefix)).setValue(moduleName)
+    self.workflow.findParameter('%sLogFile' %(stepPrefix)).setValue(logName)
 
   #############################################################################
   def setName(self,jobname):
