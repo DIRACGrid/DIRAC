@@ -1,4 +1,4 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.1 2007/12/10 18:15:30 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.2 2007/12/13 10:52:32 atsareg Exp $
 """ Grid Credentials module contains utilities to manage user and host
     certificates and proxies.
 
@@ -11,7 +11,7 @@
     getDIRACGroup()
 """
 
-__RCSID__ = "$Id: GridCredentials.py,v 1.1 2007/12/10 18:15:30 atsareg Exp $"
+__RCSID__ = "$Id: GridCredentials.py,v 1.2 2007/12/13 10:52:32 atsareg Exp $"
 
 import os
 import os.path
@@ -20,10 +20,13 @@ import socket
 import time
 import shutil
 import tempfile
+import stat
+import getpass
+import re
 
 import DIRAC
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.Core.Utilities.Subprocess import systemCall
+from DIRAC.Core.Utilities.Subprocess import shellCall
 
 securityConfPath = "/DIRAC/Security"
 PROXY_COMMAND_TIMEOUT = 30
@@ -160,6 +163,35 @@ def getHostCertificateAndKey():
     return False
   return ( fileDict[ "cert" ], fileDict[ "key" ] )
 
+def getCertificateAndKey():
+  """ Get the locations of the user X509 certificate and key pem files
+  """
+
+  certfile = ''
+  if os.environ.has_key("X509_USER_CERT"):
+    if os.path.exists(os.environ["X509_USER_CERT"]):
+      certfile = os.environ["X509_USER_CERT"]
+  if not certfile:
+    if os.path.exists(os.environ["HOME"]+'/.globus/usercert.pem'):
+      certfile = os.environ["HOME"]+'/.globus/usercert.pem'
+
+  if not certfile:
+    return False
+
+  keyfile = ''
+  if os.environ.has_key("X509_USER_KEY"):
+    if os.path.exists(os.environ["X509_USER_KEY"]):
+      keyfile = os.environ["X509_USER_KEY"]
+  if not keyfile:
+    if os.path.exists(os.environ["HOME"]+'/.globus/userkey.pem'):
+      keyfile = os.environ["HOME"]+'/.globus/userkey.pem'
+
+  if not keyfile:
+     return False
+
+  return (certfile,keyfile)
+
+
 def setDIRACGroup( userGroup ):
   """ Define the user group in the DIRAC framework
   """
@@ -216,7 +248,7 @@ def parseProxy(proxy=None,option=None):
     proxy_file = getActiveGridProxy()
     cmd = "openssl x509 -noout -text -in %s" % proxy_file
 
-  result = systemCall(PROXY_COMMAND_TIMEOUT,cmd)
+  result = shellCall(PROXY_COMMAND_TIMEOUT,cmd)
   if temp_proxy_file:
     os.remove(temp_proxy_file)
 
@@ -249,7 +281,11 @@ def parseProxy(proxy=None,option=None):
         proxyDict['Subject'] = subject
         # Assume full legacy proxy
         # This should be updated with more modern proxy types
-        DN = subject.replace('/CN=proxy','')
+        #DN = subject.replace('/CN=proxy','').replace('/CN=limited proxy','')
+        DN = subject
+        cn_list = re.findall('/CN=proxy|/CN=limited proxy|/CN=[0-9]+',DN)
+        for cn in cn_list:
+          DN = DN.replace(cn,'')
         proxyDict['DN'] = DN
       if item == "Issuer":
         issuer = fields[1].replace(", ","/").strip()
@@ -272,7 +308,7 @@ def getProxyTimeLeft(proxy=None):
   """
   return parseProxy(proxy,option="TimeLeft")
 
-def getProxyDN(proxy_file = None):
+def getProxyDN(proxy= None):
   """ Get proxy DN, returns S_OK structure
   """
   return parseProxy(proxy,option="DN")
@@ -397,7 +433,7 @@ keyUsage = critical, digitalSignature, keyEncipherment, dataEncipherment
 
   subject = result['Value']
   psubject = subject+"/CN=proxy"
-  fields = string.split(psubject,'/')
+  fields = psubject.split('/')
   fieldKeys = {}
   for OID in fields:
     if len( OID ) == 0:
@@ -420,27 +456,39 @@ def createProxy(certfile='',keyfile='',hours=0,bits=512,password=''):
   """
   debug = 0
   openssl = "openssl"
+  # Directory where all the temporary files will be put
   tmpdir = tempfile.mkdtemp()
 
-  serial = getProxySerial(certfile)
+  if not certfile:
+    result = getCertificateAndKey()
+    if result:
+      certfile,keyfile = result
+  if not certfile:
+    return S_ERROR('Grid credentials are not found')
+
+  serial = 1000
+  result = getProxySerial(certfile)
+  if result['OK']:
+    serial = int(result['Value'])
+  # Transform int into a hex string
+  serial_string = hex(serial).replace('0x','').zfill(4).upper()
   serialfile = tmpdir+'/cert_serial'
   sfile = open(serialfile,'w')
-  sfile.write(str(serial))
+  sfile.write(serial_string)
   sfile.close()
 
   configfile = tmpdir+'/proxy_config'
   newkeyfile = tmpdir+'/proxy_key'
 
   if debug:
-    print "\nCreating new certificate request in %s and placing" % (configfile,)
-    print "private key in %s:" % (outputfile,)
+    print "\nCreating new certificate request in %s" % configfile
+    print "and placing private key in %s:" % newkeyfile
 
   configfile = __makeX509ConfigFile(configfile,certfile,bits)
-
   comm = openssl+" req -new -nodes -config %s -keyout %s " % (configfile,newkeyfile)
   if debug:
     print "\n",comm
-  result = systemCall(0,comm)
+  result = shellCall(0,comm)
   if not result['OK']:
     shutil.rmtree(tmpdir)
     return S_ERROR('Failed to create the proxy request')
@@ -458,7 +506,7 @@ def createProxy(certfile='',keyfile='',hours=0,bits=512,password=''):
   rfile.close()
 
   if debug:
-    print "\nSigning certificate request, and append new proxy to",outputfile,":"
+    print "\nSigning certificate request"
 
   days = int(hours)/24 + 1
 
@@ -471,13 +519,13 @@ def createProxy(certfile='',keyfile='',hours=0,bits=512,password=''):
   else:
     passwd = password
 
-  # Should be done in a secure way
-  comm = comm + " -passin pass:%s" % passwd
-
+  os.environ['TMPTICKET'] = passwd
+  comm = comm + " -passin pass:$TMPTICKET"
   if debug:
     print "\n",comm,"\n"
 
-  result = systemCall(0,comm)
+  result = shellCall(0,comm)
+  del os.environ['TMPTICKET']
   if not result['OK']:
     shutil.rmtree(tmpdir)
     return result
@@ -491,10 +539,10 @@ def createProxy(certfile='',keyfile='',hours=0,bits=512,password=''):
   newkey = kf.read()
 
   if debug:
-    print "\nAppending user certificate to",outputfile,":"
+    print "\nAppending user certificate"
     print "\nopenssl x509 -in "+certfile
 
-  result = systemCall(0,openssl+' x509 -in '+certfile)
+  result = shellCall(0,openssl+' x509 -in '+certfile)
   if not result['OK']:
     shutil.rmtree(tmpdir)
     return S_ERROR('Failed to read in certificate')
@@ -504,7 +552,8 @@ def createProxy(certfile='',keyfile='',hours=0,bits=512,password=''):
     shutil.rmtree(tmpdir)
     return S_ERROR('Failed to read in certificate: '+error)
 
-  result_proxy = proxy+'/n'+newkey+'/n'+certificate
+  shutil.rmtree(tmpdir)
+  result_proxy = proxy+newkey+certificate
   return S_OK(result_proxy)
 
 
