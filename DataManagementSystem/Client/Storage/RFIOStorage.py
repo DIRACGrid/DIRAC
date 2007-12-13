@@ -344,7 +344,21 @@ class RFIOStorage(StorageBase):
       urls = path
     else:
       return S_ERROR("RFIOStorage.getTransportURL: Supplied path must be string or list of strings")
-
+    successful = {}
+    failed = {}
+    for path in urls:
+      try:
+        if self.spaceToken:
+          tURL = "castor://%s:%s/?svcClass=%s&castorVersion=2&path=%s" % (self.host,self.port,self.spaceToken,path)
+        else:
+          tURL = "castor:%s" % (path)
+        successful[path] = turl
+      except Exception,x:
+        errStr = "RFIOStorage.getTransportURL: Failed to create tURL for path."
+        gLogger.error(errStr,"% %s" % (self.name,x))
+        failed[path] = errStr
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
 
   #############################################################
   #
