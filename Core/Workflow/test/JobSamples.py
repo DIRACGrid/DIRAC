@@ -1,8 +1,8 @@
-# $Id: JobSamples.py,v 1.3 2007/12/11 00:11:59 gkuznets Exp $
+# $Id: JobSamples.py,v 1.4 2007/12/13 12:22:28 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.3 $"
+__RCSID__ = "$Revision: 1.4 $"
 
 # $Source: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Workflow/test/JobSamples.py,v $
 
@@ -69,11 +69,14 @@ stepInstance1 = workflow1.createStepInstance('Gaudi_App_Step', 'Step1')
 # there is a problem here
 # we might have a several steps to lets change the names of the variables
 step_prefix="step1_"
-for p in gaudiParams:
-  newparm = Parameter(parameter=p)
-  newparm.setName(step_prefix+p.getName())
-  workflow1.appendParameter(newparm)
-  stepInstance1.findParameter(p.getName()).link('self',step_prefix+p.getName())
+workflow1.appendParameterCopy(gaudiParams, step_prefix)
+stepInstance1.linkParameterUp(gaudiParams, step_prefix)
+# replaced by two lines above
+#for p in gaudiParams:
+#  newparm = Parameter(parameter=p)
+#  newparm.setName(step_prefix+p.getName())
+#  workflow1.appendParameter(newparm)
+#  stepInstance1.findParameter(p.getName()).link('self',step_prefix+p.getName())
 
 
 workflow1.findParameter('result').link(stepInstance1.getName(),'result')
@@ -92,19 +95,22 @@ stepInstance2 = workflow1.createStepInstance('Gaudi_App_Step', 'Step2')
 stepInstance2.findParameter("result_in").link('Step1',"result")
 
 step_prefix="step2_"
-for p in gaudiParams:
-  newparm = Parameter(parameter=p)
-  newparm.setName(step_prefix+p.getName())
-  workflow1.appendParameter(newparm)
-  stepInstance2.findParameter(p.getName()).link('self',step_prefix+p.getName())
+workflow1.appendParameterCopy(gaudiParams, step_prefix)
+stepInstance2.linkParameterUp(gaudiParams, step_prefix)
+# replaced by two lines above
+#for p in gaudiParams:
+#  newparm = Parameter(parameter=p)
+#  newparm.setName(step_prefix+p.getName())
+#  workflow1.appendParameter(newparm)
+#  stepInstance2.findParameter(p.getName()).link('self',step_prefix+p.getName())
 
 
 # There is a second solution (see above)
 #workflow1.findParameter(step_prefix+"appName").setValue("Boole")
 #workflow1.findParameter(step_prefix+"appVersion").setValue("v8r16")
 #testFile = '/opt/DIRAC3/DIRAC/Core/Workflow/test/jobDescription.xml'
-testFile = '/opt/DIRAC3/DIRAC/Core/Workflow/test/testjobxml.xml'
-workflow1.toXMLFile(testFile)
+#testFile = '/opt/DIRAC3/DIRAC/Core/Workflow/test/testjobxml.xml'
+#workflow1.toXMLFile(testFile)
 print workflow1.createCode()
 #w4 = fromXMLFile(testFile)
 #print 'Creating code for the workflow'

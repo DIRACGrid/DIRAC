@@ -1,8 +1,8 @@
-# $Id: Parameter.py,v 1.11 2007/12/10 23:59:33 gkuznets Exp $
+# $Id: Parameter.py,v 1.12 2007/12/13 12:22:12 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.11 $"
+__RCSID__ = "$Revision: 1.12 $"
 
 # unbinded method, returns indentation string
 def indent(indent=0):
@@ -258,15 +258,30 @@ class ParameterCollection(list):
         else:
             raise TypeError('Can not append object type '+ str(type(opt))+' to the '+str(type(self))+'. Parameter type appendable only')
 
-    def appendCopy(self, opt):
+    def appendCopy(self, opt, prefix="", postfix=""):
         if isinstance(opt, ParameterCollection):
             for p in opt:
-                list.append(self, Parameter(parameter=p))
+                list.append(self, Parameter(name=prefix+p.getName()+postfix, parameter=p))
         elif isinstance(opt, Parameter):
-            list.append(self, Parameter(parameter=opt))
+            list.append(self, Parameter(name=prefix+opt.getName()+postfix, parameter=opt))
             return opt
         else:
             raise TypeError('Can not append object type '+ str(type(opt))+' to the '+str(type(self))+'. Parameter type appendable only')
+
+    def linkUp(self, opt, prefix="", postfix="", objname="self"):
+        """ This method will link parameters with the outer object (self) peremeters using prefix and postfix
+        for example if we want to link module instance with the step or step instance with the workflow
+        opt - ParameterCollection or sigle Parameter
+        objname - name of the object to connect with, usually 'self'
+        """
+        if isinstance(opt, ParameterCollection):
+            for p in opt:
+                self.find(p.getName()).link(objname, prefix+p.getName()+postfix)
+        elif isinstance(opt, Parameter):
+            self.find(opt.getName()).link(objname, prefix+opt.getName()+postfix)
+            return opt
+        else:
+            raise TypeError('Can not link object type '+ str(type(opt))+' to the '+str(type(self))+'.')
 
     def removeAllParameters(self):
         self[:]=[]
@@ -426,8 +441,11 @@ class AttributeCollection(dict):
     def appendParameter(self, opt):
         self.parameters.append(opt)
 
-    def appendParameterCopy(self, opt):
-        self.parameters.appendCopy(opt)
+    def appendParameterCopy(self, opt, prefix="", postfix=""):
+        self.parameters.appendCopy(opt, prefix, postfix)
+
+    def linkParameterUp(self, opt, prefix="", postfix="", objname="self"):
+        self.parameters.ParameterUp(opt, prefix, postfix, objname)
 
     def removeParameter(self, name_or_ind):
         self.parameters.remove(name_or_ind)
