@@ -1,4 +1,4 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.2 2007/12/13 10:52:32 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.3 2007/12/13 14:30:43 atsareg Exp $
 """ Grid Credentials module contains utilities to manage user and host
     certificates and proxies.
 
@@ -11,7 +11,7 @@
     getDIRACGroup()
 """
 
-__RCSID__ = "$Id: GridCredentials.py,v 1.2 2007/12/13 10:52:32 atsareg Exp $"
+__RCSID__ = "$Id: GridCredentials.py,v 1.3 2007/12/13 14:30:43 atsareg Exp $"
 
 import os
 import os.path
@@ -381,7 +381,9 @@ def setupProxy(proxy, fname=None):
   if os.environ.has_key('X509_USER_PROXY'):
     old_proxy = os.environ['X509_USER_PROXY']
   os.environ['X509_USER_PROXY'] = proxy_file_name
-  return S_OK((proxy_file_name,old_proxy))
+  result = S_OK((proxy_file_name,old_proxy))
+  result['TimeLeft'] = time_left
+  return result
 
 def restoreProxy(new_proxy,old_proxy):
   """ Restore the proxy valid before the setupProxy() call
