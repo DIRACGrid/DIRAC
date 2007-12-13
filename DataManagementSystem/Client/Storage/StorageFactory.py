@@ -120,7 +120,8 @@ class StorageFactory:
 
     requestedLocalProtocols = []
     requestedRemoteProtocols = []
-    requestedProcotlDetails = []
+    requestedProtocolDetails = []
+    turlProtocols = []
     # Generate the protocol specific plug-ins
     self.storages = []
     for protocolDict in self.protocolDetails:
@@ -140,10 +141,11 @@ class StorageFactory:
         if res['OK']:
           self.storages.append(res['Value'])
           if protocolName in self.localProtocols:
+            turlProtocols.append(protocol)
             requestedLocalProtocols.append(protocolName)
           if protocolName in self.remoteProtocols:
             requestedRemoteProtocols.append(protocolName)
-          requestedProcotlDetails.append(protocolDict)
+          requestedProtocolDetails.append(protocolDict)
         else:
           gLogger.info(res['Message'])
 
@@ -154,7 +156,8 @@ class StorageFactory:
       resDict['StorageObjects'] = self.storages
       resDict['LocalProtocols'] = requestedLocalProtocols
       resDict['RemoteProtocols'] = requestedRemoteProtocols
-      resDict['ProtocolOptions'] = requestedProcotlDetails
+      resDict['ProtocolOptions'] = requestedProtocolDetails
+      resDict['TurlProtocols'] = turlProtocols
       return S_OK(resDict)
     else:
       errStr = "StorageFactory.getStorages: Failed to instantiate any storage protocols."
