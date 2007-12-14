@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/dirac-pilot-lcg.py,v 1.6 2007/12/12 15:34:03 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/dirac-pilot-lcg.py,v 1.7 2007/12/14 12:05:46 paterson Exp $
 # File :   dirac-pilot-lcg.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,7 +13,7 @@ import os,sys,string,re
     for the VO.
 """
 
-__RCSID__ = "$Id: dirac-pilot-lcg.py,v 1.6 2007/12/12 15:34:03 paterson Exp $"
+__RCSID__ = "$Id: dirac-pilot-lcg.py,v 1.7 2007/12/14 12:05:46 paterson Exp $"
 
 
 DEBUG = 1
@@ -120,6 +120,7 @@ def getDictFromCS(diracPython,csSection):
   csDictStr = runCommand('%s -c %s' %(diracPython,csQuery),1)
   printPilot('CS query returned: \n%s' %(csDictStr),'DEBUG')
   try:
+    result = None
     res = string.split(csDictStr,'\n')
     resCSDict = None
     for i in res:
@@ -343,7 +344,7 @@ if DEBUG:
   else:
     printPilot('etc/dirac.cfg file does not exist','WARN')
 
-sites = getDictFromCS(diracPython,'/Resources/GridSites/LCG')
+siteDict = getDictFromCS(diracPython,'/Resources/GridSites/LCG')
 DIRAC_SITE_NAME = ''
 for ce,siteName in siteDict.items():
   if LCG_SITE_CE == ce:
