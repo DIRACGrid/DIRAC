@@ -314,6 +314,8 @@ class SRM2Storage(StorageBase):
       urls = path
     else:
       return S_ERROR("SRM2Storage.removeFile: Supplied path must be string or list of strings")
+    if not len(path) > 0:
+      return S_ERROR("SRM2Storage.removeFile: No surls supplied.")
 
     gfalDict = {}
     gfalDict['surls'] = urls
@@ -1017,13 +1019,17 @@ class SRM2Storage(StorageBase):
     filesToRemove = []
     for url in surlsDict.keys():
       filesToRemove.append(url)
-    res = self.removeFile(filesToRemove)
-    if res['OK']:
-      for removedSurl in res['Value']['Successful'].keys():
-        filesRemoved += 1
-        sizeRemoved += surlsDict[removedSurl]['Size']
-        if len(res['Value']['Failed'].keys()) == 0:
-          allFilesRemoved = True
+    if len(filesToRemove) > 0:
+      res = self.removeFile(filesToRemove)
+      if res['OK']:
+        for removedSurl in res['Value']['Successful'].keys():
+          filesRemoved += 1
+          sizeRemoved += surlsDict[removedSurl]['Size']
+          if len(res['Value']['Failed'].keys()) == 0:
+            allFilesRemoved = True
+    else:
+      allFilesRemoved = True
+
     # Remove the sub directories found
     subDirsRemoved = True
     for subDir in subDirsDict.keys():
