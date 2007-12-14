@@ -55,6 +55,7 @@ class SRM2Storage(StorageBase):
     self.verbose = 0
     self.conf_file = 'ignored'
     self.insecure = 0
+    self.defaultLocalProtocols = gConfig.getValue('/Resources/StorageElemens/DefaultProtocols',['dcap','gsidcap','root','rfio'])
 
   def isOK(self):
     return self.isok
@@ -582,6 +583,10 @@ class SRM2Storage(StorageBase):
     else:
       return S_ERROR("SRM2Storage.getTransportURL: Supplied path must be string or list of strings")
 
+    if not protocols:
+      infoStr = "SRM2Storage.getTransportURL: No protocols provided, using defaults."
+      gLogger.info(infoStr)
+      protocols = self.defaultLocalProtocols
     if type(protocols) == types.StringType:
       listProtocols = [protocols]
     elif type(protocols) == types.ListType:
