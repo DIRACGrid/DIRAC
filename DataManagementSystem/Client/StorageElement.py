@@ -120,7 +120,7 @@ class StorageElement:
     """ Test if the Storage Element is local in the current context
     """
     gLogger.info("StorageElement.isLocalSE: Determining whether %s is a local SE." % self.name)
-    configStr = '/DIRAC/Site'
+    configStr = '/LocalSite/Site'
     localSite = gConfig.getValue(configStr)
     configStr = '/Resources/SiteLocalSEMapping/%s' % localSite
     localSEs = gConfig.getValue(configStr,[])
@@ -217,7 +217,7 @@ class StorageElement:
     elif type(directoryUrl) == types.ListType:
       directoryUrls = directoryUrl
     else:
-      return S_ERROR("StorageElement.makeDirectory: Supplied directory must be string or list of strings")
+      return S_ERROR("StorageElement.createDirectory: Supplied directory must be string or list of strings")
     successful = {}
     failed = {}
     localSE = self.isLocalSE()['Value']
@@ -233,33 +233,36 @@ class StorageElement:
         useProtocol = True
       else:
         useProtocol = False
-        gLogger.info("StorageElement.makeDirectory: Protocol not appropriate for use: %s." % protocolName)
+        gLogger.info("StorageElement.createDirectory: Protocol not appropriate for use: %s." % protocolName)
       if useProtocol:
-        gLogger.info("StorageElement.makeDirectory: Generating protocol PFNs for %s." % protocolName)
+        gLogger.info("StorageElement.createDirectory: Generating protocol PFNs for %s." % protocolName)
         for directoryUrl in directoryUrls:
           # If we have not already obtained metadata for the supplied pfn
           if not successful.has_key(directoryUrl):
-            res  = pfnparse(directoryUrl)
-            if not res['OK']:
-              errStr = "StorageElement.makeDirectory: Failed to parse supplied PFN."
-              gLogger.error(errStr,"%s: %s" % (directoryUrl,res['Message']))
-              if not failed.has_key(directoryUrl):
-                failed[directoryUrl] = ''
-              failed[directoryUrl] = "%s %s" % (failed[directoryUrl],errStr)
-            else:
-              res = storage.getProtocolPfn(res['Value'],True)
+            res =  storage.getCurrentURL(directoryUrl)
+            if res['OK']:
+              storageDirectory = res['Value']
+              res  = pfnparse(storageDirectory)
               if not res['OK']:
-                infoStr = "StorageElement.makeDirectory%s." % res['Message']
-                gLogger.error(infoStr,'%s for protocol %s' % (directoryUrl,protocolName))
+                errStr = "StorageElement.createDirectory: Failed to parse supplied PFN."
+                gLogger.error(errStr,"%s: %s" % (storageDirectory,res['Message']))
+                if not failed.has_key(directoryUrl):
+                  failed[directoryUrl] = ''
+                failed[directoryUrl] = "%s %s" % (failed[directoryUrl],errStr)
               else:
-                pfnDict[res['Value']] = directoryUrl
+                res = storage.getProtocolPfn(res['Value'],True)
+                if not res['OK']:
+                  infoStr = "StorageElement.createDirectory%s." % res['Message']
+                  gLogger.error(infoStr,'%s for protocol %s' % (directoryUrl,protocolName))
+                else:
+                  pfnDict[res['Value']] = directoryUrl
         if not len(pfnDict.keys()) > 0:
-          gLogger.info("StorageElement.makeDirectory: No pfns generated for protocol %s." % protocolName)
+          gLogger.info("StorageElement.createDirectory: No pfns generated for protocol %s." % protocolName)
         else:
-          gLogger.info("StorageElement.makeDirectory: Attempting to create %s directories." % len(pfnDict.keys()))
+          gLogger.info("StorageElement.createDirectory: Attempting to create %s directories." % len(pfnDict.keys()))
           res = storage.createDirectory(pfnDict.keys())
           if not res['OK']:
-            infoStr = "StorageElement.makeDirectory: Completely failed to create directories."
+            infoStr = "StorageElement.createDirectory: Completely failed to create directories."
             gLogger.error(infoStr,'%s for protocol %s: %s' % (self.name,protocolName,res['Message']))
           else:
             for protocolPfn,directoryUrl in pfnDict.items():
@@ -268,7 +271,7 @@ class StorageElement:
                   failed[directoryUrl] = ''
                 failed[directoryUrl] = "%s %s" % (failed[directoryUrl],res['Value']['Failed'][protocolPfn])
               else:
-                successful[directoryUrl] = res['Value']['Successful'][protocolPfn]
+                successful[directoryUrl] = protocolPfn
                 if failed.has_key(directoryUrl):
                   failed.pop(directoryUrl)
     resDict = {'Failed':failed,'Successful':successful}
@@ -1098,6 +1101,8 @@ class StorageElement:
           if not res['OK']:
             infoStr = "StorageElement.getAccessUrl: Completely failed to get access urls."
             gLogger.error(infoStr,'%s for protocol %s: %s' % (self.name,protocolName,res['Message']))
+            for protocolPfn,pfn in pfnDict.items():
+              failed[pfn] = res['Message']
           else:
             for protocolPfn,pfn in pfnDict.items():
               if not res['Value']['Successful'].has_key(protocolPfn):
