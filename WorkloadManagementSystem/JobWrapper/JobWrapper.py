@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ########################################################################
-# $Id: JobWrapper.py,v 1.5 2007/12/12 11:29:45 paterson Exp $
+# $Id: JobWrapper.py,v 1.6 2007/12/14 12:04:48 paterson Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.5 2007/12/12 11:29:45 paterson Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.6 2007/12/14 12:04:48 paterson Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -408,6 +408,13 @@ class JobWrapper:
     if not result['OK']:
       self.log.warn(result['Message'])
 
+    if jobArgs.has_key('Owner'):
+      owner = jobArgs['Owner']
+    else:
+      msg = 'Job has no owner specified'
+      self.log.warn(msg)
+      return S_OK(msg)
+
     if jobArgs.has_key('OutputSE'):
       outputSE = jobArgs['OutputSE']
     else:
@@ -415,7 +422,7 @@ class JobWrapper:
 
     self.log.verbose('Output data will be uploaded to %s SE' %(outputSE))
 
-    self.__transferOutputDataFiles(outputData,outputSE)
+    self.__transferOutputDataFiles(owner,outputData,outputSE)
 
     return S_OK()
 
