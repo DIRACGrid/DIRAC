@@ -1,17 +1,17 @@
 ########################################################################
-# $Id: JobStateUpdateHandler.py,v 1.4 2007/12/07 08:56:31 paterson Exp $
+# $Id: JobStateUpdateHandler.py,v 1.5 2007/12/14 11:52:52 paterson Exp $
 ########################################################################
 
 """ JobStateUpdateHandler is the implementation of the Job State updating
     service in the DISET framework
 
     The following methods are available in the Service interface
-    
+
     setJobStatus()
 
 """
 
-__RCSID__ = "$Release:  $"
+__RCSID__ = "$Id: JobStateUpdateHandler.py,v 1.5 2007/12/14 11:52:52 paterson Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -67,56 +67,54 @@ class JobStateUpdateHandler( RequestHandler ):
 
   ###########################################################################
   types_setJobApplicationStatus = [IntType,StringType]
-  def export_setJobApplicationStatus(self,jobId,status):
+  def export_setJobApplicationStatus(self,jobID,status):
     """ Set the application status for job specified by its JobId.
     """
 
-    result = jobDB.setJobAttribute(jobId,'ApplicationStatus',status)
-    if result['Status'] != "OK":
-      return result
-
-    return S_OK()
+    result = jobDB.setJobAttribute(jobID,'ApplicationStatus',status)
+    return result
 
   ###########################################################################
   types_setJobParameter = [IntType,StringType,StringType]
-  def export_setJobParameter(self,jobId,name,value):
+  def export_setJobParameter(self,jobID,name,value):
     """ Set arbitrary parameter specified by name/value pair
         for job specified by its JobId
     """
 
-    result = jobDB.setJobParameter(jobId,name,value)
-
+    result = jobDB.setJobParameter(jobID,name,value)
     return result
 
   ###########################################################################
   types_setJobParameters = [IntType,ListType]
-  def export_setJobParameters(self,jobId,parameters):
+  def export_setJobParameters(self,jobID,parameters):
     """ Set arbitrary parameters specified by a list of name/value pairs
         for job specified by its JobId
     """
 
     OK = True
     for name,value in parameters:
-      result = jobDB.setJobParameter(jobId,name,value)
-      if result['Status'] != "OK":
+      result = jobDB.setJobParameter(jobID,name,value)
+      if not result['OK']:
         OK = False
 
     if OK:
-      return S_OK()
+      return S_OK('All parameters stored for job')
     else:
       return S_ERROR('Failed to store some of the parameters')
 
   ###########################################################################
   types_sendHeartBeat = [IntType]
-  def export_sendHeartBeat(self,jobId):
-    """ Send a heart beat sign of life for a job jobId
+  def export_sendHeartBeat(self,jobID):
+    """ Send a heart beat sign of life for a job jobID
     """
 
-    result = jobDB.getJobsAttributes([jobId], ['Status'] )
-    if result['Status'] != "OK":
+    result = jobDB.getJobAttributes(jobID,['Status'])
+    if not result['OK']:
       return result
 
-    status = result['Value'][0]['Status']
+    status = result['Value']['Status']
     if status == "stalled":
-      result = jobDB.setJobAttribute(jobId,'Status','running',True)
+      result = jobDB.setJobAttribute(jobID,'Status','Running',True)
+
+    return S_OK('HeatBeat signal sent')
 
