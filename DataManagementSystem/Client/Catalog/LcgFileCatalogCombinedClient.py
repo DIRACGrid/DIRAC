@@ -22,7 +22,7 @@ class LcgFileCatalogCombinedClient:
     # Obtain the site configuration
     result = gConfig.getOption('/LocalSite/Site')
     if not result['OK']:
-      gLogger.error('Failed to get the /DIRAC/Site')
+      gLogger.error('Failed to get the /LocalSite/Site')
       self.site = 'Unknown'
     else:
       self.site = result['Value']
