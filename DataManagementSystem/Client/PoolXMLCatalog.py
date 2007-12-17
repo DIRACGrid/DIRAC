@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: PoolXMLCatalog.py,v 1.2 2007/12/11 17:58:20 atsareg Exp $
+# $Id: PoolXMLCatalog.py,v 1.3 2007/12/17 14:45:54 paterson Exp $
 ########################################################################
 """ POOL XML Catalog Class
     This class handles simple XML-based File Catalog following the
@@ -7,7 +7,7 @@
     although not complete and with several extensions
 """
 
-__RCSID__ = "$Id: PoolXMLCatalog.py,v 1.2 2007/12/11 17:58:20 atsareg Exp $"
+__RCSID__ = "$Id: PoolXMLCatalog.py,v 1.3 2007/12/17 14:45:54 paterson Exp $"
 
 import re, os, xml.dom.minidom, types
 from DIRAC import S_OK, S_ERROR
@@ -256,6 +256,16 @@ class PoolXMLCatalog:
       return 1
     else:
       return 0
+
+  def getLfnsList(self):
+    """Get list of LFNs in catalogue.
+    """
+    lfnsList = []
+    for guid in self.files.keys():
+      lfn = self.files[guid].getLfns()
+      lfnsList.append(lfn[0])
+
+    return lfnsList
 
   def getLfnsByGuid(self,guid):
     """ Get LFN for a given GUID
