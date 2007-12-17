@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/ModuleFactory.py,v 1.1 2007/12/13 20:47:31 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/ModuleFactory.py,v 1.2 2007/12/17 16:29:43 paterson Exp $
 # File :   ModuleFactory.py
 # Author : Stuart Paterson
 ########################################################################
@@ -11,7 +11,7 @@
 
 from DIRAC                                               import S_OK, S_ERROR, gLogger
 
-__RCSID__ = "$Id: ModuleFactory.py,v 1.1 2007/12/13 20:47:31 paterson Exp $"
+__RCSID__ = "$Id: ModuleFactory.py,v 1.2 2007/12/17 16:29:43 paterson Exp $"
 
 import re,sys,types,string
 
@@ -31,7 +31,7 @@ class ModuleFactory:
     try:
       moduleName = string.split(importString,'.')[-1]
       modulePath = importString.replace('.%s' %(moduleName),'')
-      importModule = __import__('%s.%s' % modulePath,moduleName,globals(),locals(),[moduleName])
+      importModule = __import__('%s.%s' %(modulePath,moduleName),globals(),locals(),[moduleName])
     except Exception, x:
       msg = 'ModuleFactory could not import %s.%s' %(modulePath,moduleName)
       self.log.warn(x)
