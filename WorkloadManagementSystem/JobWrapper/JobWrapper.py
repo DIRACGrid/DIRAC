@@ -1,6 +1,5 @@
-#!/usr/bin/env python
 ########################################################################
-# $Id: JobWrapper.py,v 1.6 2007/12/14 12:04:48 paterson Exp $
+# $Id: JobWrapper.py,v 1.7 2007/12/17 11:08:48 paterson Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.6 2007/12/14 12:04:48 paterson Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.7 2007/12/17 11:08:48 paterson Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -198,7 +197,7 @@ class JobWrapper:
       return S_ERROR(msg)
 
     inputData = jobArgs['InputData']
-    localSEList = ceArgs['LocalSE']
+    localSEList = ceArgs['LocalSE'].split(',')
 
     msg = 'Job Wrapper cannot resolve input data with null '
     if not inputData:
@@ -211,7 +210,7 @@ class JobWrapper:
       return S_ERROR(msg)
 
     self.log.verbose('Job input data requirement is \n%s' %(string.join(inputData,',\n')))
-    self.log.verbose('Site has the following local SEs: %s' %(string.join(localSElist,', ')))
+    self.log.verbose('Site has the following local SEs: %s' %(string.join(localSEList,', ')))
 
     lfns = [string.replace(fname,'LFN:','') for fname in inputData]
     start = time.time()
@@ -249,33 +248,41 @@ class JobWrapper:
     seFilesDict = {}
     failedReplicas = []
     pfnList = []
-    #For the unlikely case that a file is found on two SEs at the same site
-    #only the first SURL/SE is taken
-    for localSE in localSElist:
-      for lfn,reps in replicas.items():
+
+    for lfn,reps in replicas.items():
+      localReplica = False
+      for localSE in localSEList:
         if reps.has_key(localSE):
-          pfn = reps[localSE]
-          if not pfn in pfnList:
-            pfnList.append(pfn)
-            if seFilesDict.has_key(localSE):
-              currentFiles = seFilesDict[localSE]
-              newFiles = currentFiles.append(pfn)
-              seFilesDict[localSE] = newFiles
-            else:
-              seFilesDict[localSE] = [pfn]
-          else:
-            self.log.warn('Replicas of %s exist at > 1 LocalSE' %(pfn))
-        else:
-          failedReplicas.append(lfn)
+          localReplica = True
+      if not localReplica:
+        failedReplicas.append(lfn)
 
     if failedReplicas:
       msg = 'The following files were found not to have replicas for available LocalSEs:\n%s' %(string.join(failedReplicas,',\n'))
-      self.log.warn(msg)
       return S_ERROR(msg)
+
+    #For the unlikely case that a file is found on two SEs at the same site
+    #only the first SURL/SE is taken
+    trackLFNs = []
+    for localSE in localSEList:
+      for lfn,reps in replicas.items():
+        if reps.has_key(localSE):
+          pfn = reps[localSE]
+          if seFilesDict.has_key(localSE):
+            currentFiles = seFilesDict[localSE]
+            if not lfn in trackLFNs:
+              currentFiles.append(pfn)
+            seFilesDict[localSE] = currentFiles
+            trackLFNs.append(lfn)
+          else:
+            seFilesDict[localSE] = [pfn]
+            trackLFNs.append(lfn)
+
+    self.log.debug(seFilesDict)
 
     for se,pfnList in seFilesDict.items():
       seTotal = len(pfnList)
-      self.log.verbose(' %s SURLs found from LFC for LocalSE %s' %(seTotal,se))
+      self.log.verbose(' %s SURLs found from catalog for LocalSE %s' %(seTotal,se))
       for pfn in pfnList:
         self.log.debug('%s %s' % (se,pfn))
 
@@ -312,27 +319,36 @@ class JobWrapper:
 
       pfnTurlDict = seResult['Successful']
       for lfn,reps in replicas.items():
-        for se,rep in reps:
-          if rep == pfn:
-            turl = pfnTurlDict[pfn]
-            resolvedData[lfn] = {'turl':turl,'pfn':pfn,'se':se}
-            self.log.debug('Resolved %s %s\n %s\n %s' %(se,lfn,pfn,turl))
+        for se,rep in reps.items():
+          for pfn in pfnTurlDict.keys():
+            if rep == pfn:
+              turl = pfnTurlDict[pfn]
+              resolvedData[lfn] = {'turl':turl,'pfn':pfn,'se':se}
+              self.log.debug('Resolved %s %s\n %s\n %s' %(se,lfn,pfn,turl))
 
-      #Must retrieve GUIDs from LFC for files
-      lfns = resolvedData.keys()
-      guidDict = self.fileCatalog.getPhysicalFileMetadata()
-      if not guidDict['OK']:
-        self.log.warn(guidDict['Message'])
-        return guidDict
+    #Must retrieve GUIDs from LFC for files
+    guids = {}
+    self.log.debug(resolvedData)
+    lfns = resolvedData.keys()
+    guidDict = self.fileCatalog.getFileMetadata(lfns)
 
-      failed = guidDict['Failed']
-      if failed:
-        self.log.warn(failed)
-        return failed
+    if not guidDict['OK']:
+      self.log.warn(guidDict['Message'])
+      return guidDict
 
-      guids = guidDict['Successful']
-      for lfn,mdata in guids.items():
-        resolvedData[lfn]['guid'] = mdata['GUID']
+    failed = guidDict['Value']['Failed']
+    if failed:
+      self.log.warn(failed)
+      return failed
+
+    for lfn,mdata in resolvedData.items():
+      se = mdata['se']
+      self.log.debug('Attempting to get GUID for %s %s' %(lfn,se))
+      guids[lfn]=guidDict['Value']['Successful'][lfn]['GUID']
+
+    self.log.debug(guids)
+    for lfn,guid in guids.items():
+      resolvedData[lfn]['guid'] = guid
 
     #Create POOL XML slice for applications
     self.log.debug(resolvedData)
@@ -347,27 +363,29 @@ class JobWrapper:
     """Given a dictionary of resolved input data, this will create a POOL
        XML slice.
     """
+    poolXMLCatName = 'pool_xml_catalog.xml'
     try:
       poolXMLCat = PoolXMLCatalog()
       self.log.verbose('Creating POOL XML slice')
 
       for lfn,mdata in dataDict.items():
         local = os.path.basename(mdata['pfn'])
+        #lfn,pfn,size,se,guid tuple taken by POOL XML Catalogue
         if os.path.exists(local):
-          poolXMLCat.addFile(mdata['guid'],lfn,os.path.abspath(local),se=mdata['se'])
+          poolXMLCat.addFile((lfn,os.path.abspath(local),0,mdata['se'],mdata['guid']))
         else:
-          poolXMLCat.addFile(mdata['guid'],lfn,mdata['pfn'],se=mdata['se'])
+          poolXMLCat.addFile((lfn,mdata['turl'],0,mdata['se'],mdata['guid']))
 
-      xmlSlice = poolXMLcat.toXML()
+      xmlSlice = poolXMLCat.toXML()
       self.log.debug('POOL XML Slice is: ')
       self.log.debug(xmlSlice)
-      poolSlice = open('pool_xml_catalog.xml','w')
+      poolSlice = open(poolXMLCatName,'w')
       poolSlice.write(xmlSlice)
       poolSlice.close()
-
+      self.log.verbose('POOL XML Catalogue slice written to %s' %(poolXMLCatName))
       # Temporary solution to the problem of storing the SE in the Pool XML
-      poolSlice_temp = open('pool_xml_catalog.xml.temp','w')
-      xmlSlice = poolXMLcat.toXML(True)
+      poolSlice_temp = open('%s.temp' %(poolXMLCatName),'w')
+      xmlSlice = poolXMLCat.toXML(True)
       poolSlice_temp.write(xmlSlice)
       poolSlice_temp.close()
     except Exception,x:
@@ -420,7 +438,7 @@ class JobWrapper:
     else:
       outputSE = 'CERN-USER' # should move to a default CS location
 
-    self.log.verbose('Output data will be uploaded to %s SE' %(outputSE))
+    self.log.verbose('Output data files %s to be uploaded to %s SE' %(string.join(outputData,', '),outputSE))
 
     self.__transferOutputDataFiles(owner,outputData,outputSE)
 
@@ -431,9 +449,12 @@ class JobWrapper:
     """Performs the upload and registration in the LFC
     """
     for outputFile in outputData:
-      lfn = self.__getLFNfromOutputFile(owner,outputFile)
-      upload = self.rm.putAndRegister(lfn, outputFile, outputSE)
-      self.log.info(upload)
+      if os.path.exists(outputFile):
+        lfn = self.__getLFNfromOutputFile(owner,outputFile)
+        upload = self.rm.putAndRegister(lfn, outputFile, outputSE)
+        self.log.info(upload)
+      else:
+        self.log.warn('Output data file: %s is missing after execution' %(outputFile))
 
     return S_OK()
 
@@ -514,7 +535,7 @@ class JobWrapper:
 
     ceArgs = arguments['CE']
     if ceArgs.has_key('LocalSE'):
-      parameters.append(('AgentLocalSE',string.join(ceArgs['LocalSE'],',')))
+      parameters.append(('AgentLocalSE',ceArgs['LocalSE']))
     if ceArgs.has_key('CompatiblePlatforms'):
       parameters.append(('AgentCompatiblePlatforms',string.join(ceArgs['CompatiblePlatforms'],',')))
 
@@ -567,7 +588,6 @@ class ExecutionThread(threading.Thread):
     self.spObject = spObject
     self.outputLines = []
     self.maxPeekLines = maxPeekLines
-    self.outputFile = 'appstd.out'
 
   #############################################################################
   def run(self):
