@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.7 2007/12/17 11:08:48 paterson Exp $
+# $Id: JobWrapper.py,v 1.8 2007/12/17 18:26:18 paterson Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.7 2007/12/17 11:08:48 paterson Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.8 2007/12/17 18:26:18 paterson Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -57,6 +57,10 @@ class JobWrapper:
     currentPID = os.getpid()
     self.log.verbose('Job Wrapper started under PID: %s' % currentPID )
     self.log.verbose('==========================================================================')
+    self.log.debug('Sys path is: \n%s' %(string.join(sys.path,'\n')))
+    self.log.debug('==========================================================================')
+    self.log.debug('PYTHONPATH is: \n%s' %(string.join(os.environ['PYTHONPATH'].split(':')),'\n'))
+    self.log.debug('==========================================================================')
     if not self.cleanUpFlag:
       self.log.debug('CleanUp Flag is disabled by configuration')
     self.log.verbose('Trying to import LFC File Catalog client')
@@ -197,6 +201,9 @@ class JobWrapper:
       return S_ERROR(msg)
 
     inputData = jobArgs['InputData']
+    if type(inputData)==type(' '):
+      inputData = [inputData]
+
     localSEList = ceArgs['LocalSE'].split(',')
 
     msg = 'Job Wrapper cannot resolve input data with null '
@@ -398,7 +405,7 @@ class JobWrapper:
   def processJobOutputs(self,arguments):
     """Outputs for a job may be treated here.
     """
-    self.__report('Running','Uploading Job Outputs')
+    self.__report('Completed','Uploading Job Outputs')
     jobArgs = arguments['Job']
 
     #first iteration of this, no checking of wildcards or oversize sandbox files etc.
@@ -422,8 +429,10 @@ class JobWrapper:
     if missingFiles:
       self.__setJobParam('OutputSandbox','MissingFiles: %s' %(string.join(missingFiles,', ')))
 
+    self.__report('Running','Uploading Output Sandbox')
     result = self.outputSandboxClient.sendFiles(self.jobID, fileList)
     if not result['OK']:
+      self.log.debug('Output sandbox upload failed:')
       self.log.warn(result['Message'])
 
     if jobArgs.has_key('Owner'):
@@ -438,9 +447,8 @@ class JobWrapper:
     else:
       outputSE = 'CERN-USER' # should move to a default CS location
 
-    self.log.verbose('Output data files %s to be uploaded to %s SE' %(string.join(outputData,', '),outputSE))
-
-    self.__transferOutputDataFiles(owner,outputData,outputSE)
+    if outputData:
+      self.__transferOutputDataFiles(owner,outputData,outputSE)
 
     return S_OK()
 
@@ -448,6 +456,9 @@ class JobWrapper:
   def __transferOutputDataFiles(self,owner,outputData,outputSE):
     """Performs the upload and registration in the LFC
     """
+    self.log.debug('Uploading output data files')
+    self.__report('Running','Uploading Output Data')
+    self.log.verbose('Output data files %s to be uploaded to %s SE' %(string.join(outputData,', '),outputSE))
     for outputFile in outputData:
       if os.path.exists(outputFile):
         lfn = self.__getLFNfromOutputFile(owner,outputFile)
@@ -504,6 +515,7 @@ class JobWrapper:
   def finalize(self,arguments):
     """Perform any final actions to clean up after job execution.
     """
+    self.__report('Done','Execution Complete')
     self.__cleanUp()
     return S_OK()
 
