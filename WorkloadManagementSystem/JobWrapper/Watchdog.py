@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.8 2007/12/12 08:20:05 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.9 2007/12/17 17:16:26 paterson Exp $
 # File  : Watchdog.py
 # Author: Stuart Paterson
 ########################################################################
@@ -18,11 +18,10 @@
           - Means to send heartbeat signal.
 """
 
-__RCSID__ = "$Id: Watchdog.py,v 1.8 2007/12/12 08:20:05 paterson Exp $"
+__RCSID__ = "$Id: Watchdog.py,v 1.9 2007/12/17 17:16:26 paterson Exp $"
 
 from DIRAC.Core.Base.Agent                          import Agent
 from DIRAC.Core.DISET.RPCClient                     import RPCClient
-#from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.ConfigurationSystem.Client.Config        import gConfig
 from DIRAC.Core.Utilities.Subprocess                import shellCall
 from DIRAC                                          import S_OK, S_ERROR
@@ -47,6 +46,8 @@ class Watchdog(Agent):
     self.calibration = 0
     self.initialValues = {}
     self.parameters = {}
+    self.peekFailCount = 0
+    self.peekRetry = 5
 
   #############################################################################
   def initialize(self,loops=0):
@@ -141,9 +142,11 @@ class Watchdog(Agent):
         for line in outputList:
           self.log.info(line)
       else:
-        self.log.error('Watchdog could not obtain standard output from application thread')
-        self.log.error('Turning off job peeking for remainder of execution')
-        self.jobPeekFlag = 0
+        self.log.warn('Watchdog could not obtain standard output from application thread')
+        self.peekFailCount += 1
+        if self.peekFailCount > self.peekRetry:
+          self.jobPeekFlag = 0
+          self.log.warn('Turning off job peeking for remainder of execution')
 
     result = S_OK()
     return result
@@ -427,8 +430,8 @@ class Watchdog(Agent):
 
     result = self.thread.getOutput()
     if not result['OK']:
-      self.log.error('Could not obtain output from running application thread')
-      self.log.error(result['Message'])
+      self.log.warn('Could not obtain output from running application thread')
+      self.log.warn(result['Message'])
 
     return result
 
