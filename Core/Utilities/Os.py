@@ -1,12 +1,12 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Os.py,v 1.6 2007/12/03 13:45:16 joel Exp $
-__RCSID__ = "$Id: Os.py,v 1.6 2007/12/03 13:45:16 joel Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Os.py,v 1.7 2007/12/17 11:54:35 paterson Exp $
+__RCSID__ = "$Id: Os.py,v 1.7 2007/12/17 11:54:35 paterson Exp $"
 """
    Collection of DIRAC useful os related modules
    by default on Error they return None
 """
 
 from types                          import StringTypes
-#from string                         import split,strip,join
+from string                         import join
 
 from DIRAC.Core.Utilities.Subprocess import shellCall
 from DIRAC.Core.Utilities import List
