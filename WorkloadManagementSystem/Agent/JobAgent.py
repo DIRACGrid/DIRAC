@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.7 2007/12/13 21:08:21 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.8 2007/12/18 13:40:57 paterson Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.7 2007/12/13 21:08:21 paterson Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.8 2007/12/18 13:40:57 paterson Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -242,6 +242,22 @@ class JobAgent(Agent):
     date_time = '%s %s' %(dateStr,timeStr)
     signature = __RCSID__
     dPython = sys.executable
+
+    if jobParams.has_key('SystemConfig'):
+      sysConfig = jobParams['SystemConfig']
+      self.log.verbose('Job system configuration requirement is %s' %(systemConfig))
+      if resourceParams.has_key('Root'):
+        jobPython = '%s/%s/bin/python' %(resourceParams['Root'],sysConfig)
+        if os.path.exists(jobPython):
+          self.log.verbose('Found local python for job:\n%s' %(jobPython))
+          dPython = jobPython
+        else:
+          self.log.warn('Job requested python \n%s\n but this is not available locally' %(jobPython))
+      else:
+        self.log.warn('Job requested python \n%s\n but no LocalSite/Root defined' %(jobPython))
+    else:
+      self.log.warn('Job has no system configuration requirement')
+
     print >> wrapper, wrapperTemplate % (dPython,signature,jobID,date_time)
     wrapper.write('sys.path.insert(0,"%s")\n' %(self.siteRoot))
     jobArgs = "execute("+str(arguments)+")\n"
