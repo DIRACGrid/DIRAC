@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.8 2007/12/18 13:40:57 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.9 2007/12/18 14:35:16 paterson Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.8 2007/12/18 13:40:57 paterson Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.9 2007/12/18 14:35:16 paterson Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -244,10 +244,10 @@ class JobAgent(Agent):
     dPython = sys.executable
 
     if jobParams.has_key('SystemConfig'):
-      sysConfig = jobParams['SystemConfig']
+      systemConfig = jobParams['SystemConfig']
       self.log.verbose('Job system configuration requirement is %s' %(systemConfig))
       if resourceParams.has_key('Root'):
-        jobPython = '%s/%s/bin/python' %(resourceParams['Root'],sysConfig)
+        jobPython = '%s/%s/bin/python' %(resourceParams['Root'],systemConfig)
         if os.path.exists(jobPython):
           self.log.verbose('Found local python for job:\n%s' %(jobPython))
           dPython = jobPython
