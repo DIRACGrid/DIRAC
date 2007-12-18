@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalogue. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.11 2007/12/13 13:36:33 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.12 2007/12/18 11:13:44 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -394,311 +394,393 @@ class ReplicaManager:
   # These are the file/replica registration methods
   #
 
-  def registerFile(self,lfn,physicalFile,fileSize,storageElementName,fileGuid):
+  def registerFile(self,fileTuple):
     """ Register a file.
 
-        'lfn' is the LFN to be registered
-        'physicalFile' is the PFN to be registered
-        'fileSize' is the size of the file
-        'storageElementName' is the location of the replica
-        'fileGuid' is the unique GUID for the file
+        'fileTuple' is the file tuple to be registered of the form (lfn,physicalFile,fileSize,storageElementName,fileGuid)
     """
-    gLogger.info("ReplicaManager.registerFile: Attempting to register %s at %s." % (lfn,destSE))
-    res = self.__registerFile(lfn,physicalFile,fileSize,storageElementName,fileGuid)
-    if not res['OK']:
-      errStr = "ReplicaManager.registerFile: File registration failed."
-      gLogger.error(errStr,"%s %s %s %s %s" % (lfn,physicalFile,fileSize,storageElementName,fileGuid))
+    if type(fileTuple) == types.ListType:
+      fileTuples = fileTuple
+    elif type(fileTuple) == types.TupleType:
+      fileTuples = [fileTuple]
     else:
-      gLogger.info("ReplicaManager.registerFile: Successfully registered file.")
-      return S_OK(lfn)
-
-  def __registerFile(self,lfn,physicalFile,fileSize,storageElementName,fileGuid):
-    ##########################################################
-    # Register the file at a given storage element
-    storageElement = StorageElement(storageElementName)
-    if not storageElement.isValid()['Value']:
-      errStr = "ReplicaManager.__registerFile: Failed to instantiate destination Storage Element."
-      gLogger.error(errStr,storageElementName)
+      errStr = "ReplicaManager.registerFile: Supplied file info must be tuple of list of tuples."
+      gLogger.error(errStr)
       return S_ERROR(errStr)
-    resolvedSEName = storageElement.getStorageElementName()['Value']
-    gLogger.info("ReplicaManager.__registerFile: Attempting to obtain pfn for registration.")
-    res = storageElement.getPfnForProtocol(physicalFile,self.registrationProtocol,withPort=False)
+    gLogger.info("ReplicaManager.registerFile: Attempting to register %s files." % len(fileTuples))
+    res = self.__registerFile(fileTuples)
     if not res['OK']:
-      errStr = "ReplicaManager.__registerFile: Failed to resolve desired PFN for registration."
-      gLogger.error(errStr,physicalFile)
-      pfnForRegistration = physicalFile
-    else:
-      pfnForRegistration = res['Value']
-    fileTuple = (lfn,pfnForRegistration,fileSize,resolvedSEName,fileGuid)
-    gLogger.info("ReplicaManager.__registerFile: Adding file...")
-    res = self.fileCatalogue.addFile(fileTuple)
-    if res['OK']:
-      if res['Value']['Successful'].has_key(lfn):
-        gLogger.info("ReplicaManager.__registerFile: ...successful.")
-        return S_OK(lfn)
+      errStr = "ReplicaManager.registerFile: Completely failed to register files."
+      gLogger.error(errStr,res['Message'])
+      return S_ERROR(errStr)
+    return res
+
+  def __registerFile(self,fileTuples):
+    seDict = {}
+    for lfn,physicalFile,fileSize,storageElementName,fileGuid in fileTuples:
+      if not seDict.has_key(storageElementName):
+        seDict[storageElementName] = []
+      seDict[storageElementName].append((lfn,physicalFile,fileSize,storageElementName,fileGuid))
+    successful = {}
+    failed = {}
+    fileTuples = []
+    for storageElementName,fileTuple in seDict.items():
+      destStorageElement = StorageElement(storageElementName)
+      if not destStorageElement.isValid()['Value']:
+        errStr = "ReplicaManager.__registerFile: Failed to instantiate destination Storage Element."
+        gLogger.error(errStr,storageElementName)
+        for lfn,physicalFile,fileSize,storageElementName,fileGuid in fileTuple:
+          failed[lfn] = errStr
       else:
-        errStr = "ReplicaManager.__registerFile: Failed to register file."
-        gLogger.error(errStr,"%s %s" % (lfn,res['Value']['Failed'][lfn]))
-    else:
-      errStr = "ReplicaManager.__registerFile: Completely failed to register file."
-      gLogger.error(errStr,"%s %s" % (lfn,res['Message']))
-    return S_ERROR(errStr)
+        storageElementName = destStorageElement.getStorageElementName()['Value']
+        for lfn,physicalFile,fileSize,storageElementName,fileGuid in fileTuple:
+          res = destStorageElement.getPfnForProtocol(physicalFile,self.registrationProtocol,withPort=False)
+          if not res['OK']:
+            failed[lfn] = res['Message']
+          else:
+            tuple = (lfn,physicalFile,fileSize,storageElementName,fileGuid)
+            fileTuples.append(tuple)
+    gLogger.info("ReplicaManager.__registerFile: Resolved %s files for registration." % len(fileTuples))
+    res = self.fileCatalogue.addFile(fileTuples)
+    if not res['OK']:
+      errStr = "ReplicaManager.__registerFile: Completely failed to register files."
+      gLogger.error(errStr,res['Message'])
+      return S_ERROR(errStr)
+    failed.update(res['Value']['Failed'])
+    successful = res['Value']['Successful']
+    resDict = {'Successful':successful,'Failed':failed}
+    return S_OK(resDict)
 
-  def registerReplica(self,lfn,destPfn,destSE):
-    """ Register a replica.
+  def registerReplica(self,replicaTuple):
+    """ Register a replica supplied in the replicaTuples.
 
-        'lfn' is the LFN to be registered
-        'destPfn' is the PFN to be registered
-        'destSE' is the Storage Element the file should be replicated to
+        'replicaTuple' is a tuple or list of tuples of the form (lfn,pfn,se)
     """
-    gLogger.info("ReplicaManager.registerReplica: Attempting to register %s at %s." % (destPfn,destSE))
-    res = self.__registerReplica(lfn,destPfn,destSE)
-    if not res['OK']:
-      errStr = "ReplicaManager.registerReplica: Replica registration failed."
-      gLogger.error(errStr,"%s %s %s" % (lfn,destPfn,destSE))
+    if type(replicaTuple) == types.ListType:
+      replicaTuples = replicaTuple
+    elif type(replicaTuple) == types.TupleType:
+      replicaTuples = [replicaTuple]
     else:
-      gLogger.info("ReplicaManager.registerReplica: Successfully registered replica.")
-      return S_OK(lfn)
-
-  def __registerReplica(self,lfn,destPfn,destSE):
-    ##########################################################
-    # Register the pfn at a given storage element
-    destStorageElement = StorageElement(destSE)
-    if not destStorageElement.isValid()['Value']:
-      errStr = "ReplicaManager.__registerReplica: Failed to instantiate destination Storage Element."
-      gLogger.error(errStr,destSE)
+      errStr = "ReplicaManager.registerReplica: Supplied file info must be tuple of list of tuples."
+      gLogger.error(errStr)
       return S_ERROR(errStr)
-    destSE = destStorageElement.getStorageElementName()['Value']
-    gLogger.info("ReplicaManager.__registerReplica: Attempting to obtain pfn for registration.")
-    res = destStorageElement.getPfnForProtocol(destPfn,self.registrationProtocol,withPort=False)
+    gLogger.info("ReplicaManager.registerReplica: Attempting to register %s replicas." % len(replicaTuples))
+    res = self.__registerReplica(replicaTuples)
     if not res['OK']:
-      errStr = "ReplicaManager.__registerReplica: Failed to resolve desired PFN for registration."
-      gLogger.error(errStr,destPfn)
-      pfnForRegistration = destPfn
-    else:
-      pfnForRegistration = res['Value']
-    replicaTuple = (lfn,pfnForRegistration,destSE,False)
-    gLogger.info("ReplicaManager.__registerReplica: Adding replica...")
-    res = self.fileCatalogue.addReplica(replicaTuple)
-    if res['OK']:
-      if res['Value']['Successful'].has_key(lfn):
-        gLogger.info("ReplicaManager.__registerReplica: ...successful.")
-        return S_OK(pfnForRegistration)
+      errStr = "ReplicaManager.registerReplica: Completely failed to register replicas."
+      gLogger.error(errStr,res['Message'])
+    return res
+
+  def __registerReplica(self,replicaTuples):
+    seDict = {}
+    for lfn,pfn,storageElementName in replicaTuples:
+      if not seDict.has_key(storageElementName):
+        seDict[storageElementName] = []
+      seDict[storageElementName].append((lfn,pfn))
+    successful = {}
+    failed = {}
+    replicaTuples = []
+    for storageElementName,replicaTuple in seDict.items():
+      destStorageElement = StorageElement(storageElementName)
+      if not destStorageElement.isValid()['Value']:
+        errStr = "ReplicaManager.__registerReplica: Failed to instantiate destination Storage Element."
+        gLogger.error(errStr,storageElementName)
+        for lfn,pfn in replicaTuple:
+          failed[lfn] = errStr
       else:
-        errStr = "ReplicaManager.__registerReplica: Failed to register replica in file catalogue."
-        gLogger.error(errStr,"%s %s" % (pfnForRegistration,res['Value']['Failed'][lfn]))
-    else:
-      errStr = "ReplicaManager.__registerReplica: Completely failed to register replica."
-      gLogger.error(errStr,"%s %s" % (pfnForRegistration,res['Message']))
-    return S_ERROR(errStr)
+        storageElementName = destStorageElement.getStorageElementName()['Value']
+        for lfn,pfn in replicaTuple:
+          res = destStorageElement.getPfnForProtocol(pfn,self.registrationProtocol,withPort=False)
+          if not res['OK']:
+            failed[lfn] = res['Message']
+          else:
+            replicaTuple = (lfn,res['Message'],storageElementName,False)
+            replicaTuples.append(replicaTuple)
+    gLogger.info("ReplicaManager.__registerReplica: Successfully resolved %s replicas for registration." % len(replicaTuples))
+    res = self.fileCatalogue.addReplica(replicaTuples)
+    if not res['OK']:
+      errStr = "ReplicaManager.__registerReplica: Completely failed to register replicas."
+      gLogger.error(errStr,res['Message'])
+      return S_ERROR(errStr)
+    failed.update(res['Value']['Failed'])
+    successful = res['Value']['Successful']
+    resDict = {'Successful':successful,'Failed':failed}
+    return S_OK(resDict)
 
   ###################################################################
   #
   # These are the removal methods for physical and catalogue removal
   #
 
-  def removeFile(self,lfn,replicas=False):
+  def removeFile(self,lfn):
     """ Remove the file (all replicas) from Storage Elements and file catalogue
 
         'lfn' is the file to be removed
-        'replicas' is a dictionary containing ALL the file replicas
     """
-    gLogger.info("ReplicaManager.removeFile: Attempting to remove file from Storage and Catalogue.")
-    if replicas:
-      gLogger.info("ReplicaManager.removeFile: Using supplied replicas for %s." % lfn)
-      lfnReplicas = replicas
+    if type(lfn) == types.ListType:
+      lfns = lfn
+    elif type(lfn) == types.StringType:
+      lfns = [lfn]
     else:
-      ###########################################################
-      # Get the LFN replicas from the file catalogue
-      gLogger.info("ReplicaManager.removeFile: Attempting to obtain replicas for %s." % lfn)
-      res = self.fileCatalogue.getReplicas(lfn)
-      if not res['OK']:
-        errStr = "ReplicaManager.removeFile: Completely failed to get replicas for LFN."
-        gLogger.error(errStr,"%s %s" % (lfn,res['Message']))
-        return res
-      if not res['Value']['Successful'].has_key(lfn):
-        errStr = "ReplicaManager.removeFile: Failed to get replicas for LFN."
-        gLogger.error(errStr,"%s %s" % (lfn,res['Value']['Failed'][lfn]))
-        return S_ERROR("%s %s" % (errStr,res['Value']['Failed'][lfn]))
-      gLogger.info("ReplicaManager.removeFile: Successfully obtained replicas for LFN.")
-      lfnReplicas = res['Value']['Successful'][lfn]
-    res = self.__removeFile(lfn,lfnReplicas)
-    return res
-
-  def __removeFile(self,lfn,lfnReplicas):
-    allRemoved = True
-    for storageElementName,physicalFile in lfnReplicas.items():
-      res = self.__removeReplica(lfn,storageElementName,physicalFile)
-      if not res['OK']:
-        allRemoved = False
-    if not allRemoved:
-      errStr = "ReplicaManager.__removeFile: Failed to remove all replicas."
-      gLogger.error(errStr,lfn)
+      errStr = "ReplicaManager.removeFile: Supplied lfns must be string or list of strings."
+      gLogger.error(errStr)
       return S_ERROR(errStr)
-    else:
-      gLogger.info("ReplicaManager.__removeFile: Successfully removed all replicas.")
-      res = self.fileCatalogue.removeFile(lfn)
+    gLogger.info("ReplicaManager.removeFile: Attempting to remove %s files from Storage and Catalogue." % len(lfns))
+    gLogger.info("ReplicaManager.removeFile: Attempting to obtain replicas for %s lfns." % len(lfns))
+    res = self.fileCatalogue.getReplicas(lfns)
+    if not res['OK']:
+      errStr = "ReplicaManager.removeFile: Completely failed to get replicas for lfns."
+      gLogger.error(errStr,res['Message'])
+      return res
+    failed = res['Value']['Failed']
+    lfnDict = res['Value']['Successful']
+    res = self.__removeFile(lfnDict)
+    if not res['OK']:
+      errStr = "ReplicaManager.removeFile: Completely failed to remove files."
+      gLogger.error(errStr,res['Message'])
+      return res
+    failed.update(res['Value']['Failed'])
+    successful = res['Value']['Successful']
+    resDict = {'Successful':successful,'Failed':failed}
+    return S_OK(resDict)
+
+  def __removeFile(self,lfnDict):
+    storageElementDict = {}
+    for lfn,repDict in lfnDict.items():
+      for se,pfn in repDict.items():
+        if not storageElementDict.has_key(se):
+          storageElementDict[se] = []
+        storageElementDict.append((lfn,pfn))
+    failed = {}
+    for storageElementName,fileTuple in storageElementDict.items():
+      res = self.__removeReplica(self,storageElementName,fileTuple)
       if not res['OK']:
-        errStr = "ReplicaManager.__removeFile: Completely failed to remove file."
-        gLogger.error(errStr,"%s %s" % (lfn,res['Message']))
-        return S_ERROR(errStr)
+        errStr = res['Message']
+        for lfn,pfn in fileTuple:
+          if not failed.has_key(lfn):
+            failed[lfn] = ''
+          failed[lfn] = "%s %s" % (failed[lfn],errStr)
       else:
-        if not res['Value']['Successful'].has_key(lfn):
-          errStr = "ReplicaManager.__removeFile: Failed to remove file."
-          gLogger.error(errStr,"%s %s" % (lfn,res['Value']['Failed'][lfn]))
-          return S_ERROR(errStr)
-        else:
-          gLogger.info("ReplicaManager.__removeFile: Successfully removed file.")
-          return S_OK()
+        for lfn,error in res['Value']['Failed'].items():
+          if not failed.has_key(lfn):
+            failed[lfn] = ''
+          failed[lfn] = "%s %s" % (failed[lfn],error)
+    completelyRemovedFiles = []
+    for lfn in lfnDict.keys():
+      if not failed.has_key(lfn):
+        completelyRemovedFiles.append(lfn)
+    res = self.fileCatalogue.removeFile(completelyRemovedFiles)
+    failed.update(res['Value']['Failed'])
+    successful = res['Value']['Successful']
+    resDict = {'Successful':successful,'Failed':failed}
+    return S_OK(resDict)
 
-  def removeReplica(self,lfn,storageElementName,physicalFile=None):
-    """ Remove replica from Storage Element and file catalogue
+  def removeReplica(self,storageElementName,lfn):
+    """ Remove replica at the supplied Storage Element from Storage Element then file catalogue
 
-       'lfn' is the file to be removed
        'storageElementName' is the storage where the file is to be removed
-       'physicalFile' is optionally the physical file to be removed
+       'lfn' is the file to be removed
     """
-    gLogger.info("ReplicaManager.removeReplica: Attempting to remove %s at %s." % (lfn,storageElementName))
-    if physicalFile:
-      gLogger.info("ReplicaManager.removeReplica: Using provided PFN: %s." % physicalFile)
-      pfnToRemove = physicalFile
+    if type(lfn) == types.ListType:
+      lfns = lfn
+    elif type(lfn) == types.StringType:
+      lfns = [lfn]
     else:
-      gLogger.info("ReplicaManager.removeReplica: Attempting to resolve replicas.")
-      res = self.fileCatalogue.getReplicas(lfn)
-      if not res['OK']:
-        errStr = "ReplicaManager.removeReplica: Completely failed to get replicas for LFN."
-        gLogger.error(errStr,"%s %s" % (lfn,res['Message']))
-        return res
-      if not res['Value']['Successful'].has_key(lfn):
-        errStr = "ReplicaManager.removeReplica: Failed to get replicas for LFN."
-        gLogger.error(errStr,"%s %s" % (lfn,res['Value']['Failed'][lfn]))
-        return S_ERROR("%s %s" % (errStr,res['Value']['Failed'][lfn]))
-      gLogger.info("ReplicaManager.removeReplica: Successfully obtained replicas for LFN.")
-      lfnReplicas = res['Value']['Successful'][lfn]
-      if not lfnReplicas.has_key(storageElementName):
-        # The file doesn't exist so therefore don't have to remove it
-        return S_OK()
-      else:
-        pfnToRemove = lfnReplicas[storageElementName]
-    res = self.__removeReplica(lfn,storageElementName,pfnToRemove)
-    return res
-
-  def __removeReplica(self,lfn,storageElementName,pfnToRemove):
-    gLogger.info("ReplicaManager.__removeReplica: Attmepting to remove %s from %s." % (lfn,storageElementName))
-    res = self.__removePhysicalReplica(storageElementName,pfnToRemove)
-    if res['OK']:
-      gLogger.info("ReplicaManager.__removeReplica: Successfully removed physical replica.")
-      res = self.__removeCatalogReplica(lfn,storageElementName,pfnToRemove)
-      if res['OK']:
-        gLogger.info("ReplicaManager.__removeReplica: Successfully removed catalogue replica.")
-        return S_OK()
-      else:
-        errStr = "ReplicaManager.__removeReplica: Failed to remove catalogue replica."
-        gLogger.error(errStr, "%s %s" % (pfnToRemove,res['Message']))
-        return S_ERROR(errStr)
-    else:
-      errStr = "ReplicaManager.__removeReplica: Failed to remove physical replica."
-      gLogger.error(errStr, "%s %s" % (pfnToRemove,res['Message']))
+      errStr = "ReplicaManager.removeReplica: Supplied lfns must be string or list of strings."
+      gLogger.error(errStr)
       return S_ERROR(errStr)
+    gLogger.info("ReplicaManager.removeReplica: Attempting to remove catalogue entry for %s lfns at %s." % (len(lfns),storageElementName))
+    res = self.fileCatalogue.getReplicas(lfns)
+    if not res['OK']:
+      errStr = "ReplicaManager.removeReplica: Completely failed to get replicas for lfns."
+      gLogger.error(errStr,res['Message'])
+      return res
+    failed = res['Value']['Failed']
+    successful = {}
+    replicaTuples = []
+    for lfn,repDict in res['Value']['Successful'].items():
+      if not repDict.has_key(storageElementName):
+        # The file doesn't exist at the storage element so don't have to remove it
+        successful[lfn] = True
+      else:
+        sePfn = repDict[storageElementName]
+        replicaTuple = (lfn,sePfn)
+        replicaTuples.append(replicaTuple)
+    res = self.__removeReplica(storageElementName,replicaTuples)
+    failed.update(res['Value']['Failed'])
+    successful = res['Value']['Successful']
+    resDict = {'Successful':successful,'Failed':failed}
+    return S_OK(resDict)
 
-  def removeCatalogReplica(self,lfn,storageElementName,physicalFile=None):
+  def __removeReplica(self,storageElementName,fileTuple):
+    pfnDict = {}
+    for lfn,pfn in fileTuple:
+      pfnDict[pfn] = lfn
+    failed = {}
+    res = self.__removePhysicalReplica(storageElementName,pfnDict.keys())
+    if not res['OK']:
+      errStr = "ReplicaManager.__removeReplica: Failed to remove catalog replicas."
+      gLogger.error(errStr,res['Message'])
+      return S_ERROR(errStr)
+    for pfn,error in res['Value']['Failed'].items():
+      failed[pfnDict[pfn]] = error
+    replicaTuples = []
+    for pfn in res['Value']['Successful'].keys():
+      replicaTuple = (pfnDict[pfn],pfn,storageElementName)
+      replicaTuples.append(replicaTuple)
+    res = self.__removeCatalogReplica(replicaTuple)
+    if not res['OK']:
+      errStr = "ReplicaManager.__removeReplica: Completely failed to remove physical files."
+      gLogger.error(errStr,res['Message'])
+      for lfn in pfnDict.values():
+        if not failed.has_key(lfn):
+          failed[lfn] = errStr
+    failed.update(res['Value']['Failed'])
+    successful = res['Value']['Successful']
+    resDict = {'Successful':successful,'Failed':failed}
+    return S_OK(resDict)
+
+  def removeCatalogReplica(self,storageElementName,lfn):
     """ Remove replica from the file catalog
 
-       'lfn' is the file to be removed
+       'lfn' are the file to be removed
        'storageElementName' is the storage where the file is to be removed
-       'physicalFile' is optionally the physical file to be removed
     """
-    gLogger.info("ReplicaManager.removeCatalogReplica: Attempting to remove catalogue entry for %s at %s." % (lfn,storageElementName))
-    if physicalFile:
-      gLogger.info("ReplicaManager.removeCatalogReplica: Using provided PFN: %s." % physicalFile)
-      pfnToRemove = physicalFile
+    if type(lfn) == types.ListType:
+      lfns = lfn
+    elif type(lfn) == types.StringType:
+      lfns = [lfn]
     else:
-      gLogger.info("ReplicaManager.removeCatalogReplica: Attempting to resolve replicas.")
-      res = self.fileCatalogue.getReplicas(lfn)
-      if not res['OK']:
-        errStr = "ReplicaManager.removeCatalogReplica: Completely failed to get replicas for LFN."
-        gLogger.error(errStr,"%s %s" % (lfn,res['Message']))
-        return res
-      if not res['Value']['Successful'].has_key(lfn):
-        errStr = "ReplicaManager.removeCatalogReplica: Failed to get replicas for LFN."
-        gLogger.error(errStr,"%s %s" % (lfn,res['Value']['Failed'][lfn]))
-        return S_ERROR("%s %s" % (errStr,res['Value']['Failed'][lfn]))
-      gLogger.info("ReplicaManager.removeCatalogReplica: Successfully obtained replicas for LFN.")
-      lfnReplicas = res['Value']['Successful'][lfn]
-      if not lfnReplicas.has_key(storageElementName):
-        # The file doesn't exist so therefore don't have to remove it
-        return S_OK()
+      errStr = "ReplicaManager.removeCatalogReplica: Supplied lfns must be string or list of strings."
+      gLogger.error(errStr)
+      return S_ERROR(errStr)
+    gLogger.info("ReplicaManager.removeCatalogReplica: Attempting to remove catalogue entry for %s lfns at %s." % (len(lfns),storageElementName))
+    res = self.fileCatalogue.getReplicas(lfns)
+    if not res['OK']:
+      errStr = "ReplicaManager.removeCatalogReplica: Completely failed to get replicas for lfns."
+      gLogger.error(errStr,res['Message'])
+      return res
+    failed = res['Value']['Failed']
+    successful = {}
+    replicaTuples = []
+    for lfn,repDict in res['Value']['Successful'].items():
+      if not repDict.has_key(storageElementName):
+        # The file doesn't exist at the storage element so don't have to remove it
+        successful[lfn] = True
       else:
-        pfnToRemove = lfnReplicas[storageElementName]
-    res = self.__removeCatalogReplica(lfn,storageElementName,pfnToRemove)
+        sePfn = repDict[storageElementName]
+        replicaTuple = (lfn,sePfn,storageElementName)
+        replicaTuples.append(replicaTuple)
+    gLogger.info("ReplicaManager.removeCatalogReplica: Resolved %s pfns for catalog removal at %s." % (len(replicaTuples), storageElementName))
+    res = self.__removeCatalogReplica(replicaTuples)
+    failed.update(res['Value']['Failed'])
+    successful.update(res['Value']['Successful'])
+    resDict = {'Successful':successful,'Failed':failed}
+    return S_OK(resDict)
+
+  def removeCatalogPhysicalFileNames(self,replicaTuple):
+    """ Remove replicas from the file catalog specified by replica tuple
+
+       'replicaTuple' is a tuple containing the replica to be removed and is of the form (lfn,pfn,se)
+    """
+    if type(replicaTuple) == types.ListType:
+      replicaTuples = replicaTuple
+    elif type(lfn) == types.TupleType:
+      replicaTuples = [replicaTuple]
+    else:
+      errStr = "ReplicaManager.removeCatalogPhysicalFileNames: Supplied info must be tuple or list of tuples."
+      gLogger.error(errStr)
+      return S_ERROR(errStr)
+    res = self.__removeCatalogReplica(replicaTuples)
     return res
 
-  def __removeCatalogReplica(self,lfn,storageElementName,pfnToRemove):
-    #######################################################
-    # This performs the removal of the catalogue replica
-    replicaTuple = (lfn,pfnToRemove,storageElementName)
+  def __removeCatalogReplica(self,replicaTuple):
     res = self.fileCatalogue.removeReplica(replicaTuple)
     if not res['OK']:
       errStr = "ReplicaManager.__removeCatalogReplica: Completely failed to remove replica."
       gLogger.error(errStr,res['Message'])
       return S_ERROR(errStr)
-    elif not res['Value']['Successful'].has_key(lfn):
-      errStr = "ReplicaManager.__removeCatalogReplica: Failed to remove replica."
-      gLogger.error(errStr,"%s %s" % (lfn,res['Value']['Failed'][lfn]))
-      return S_ERROR(errStr)
-    else:
+    for lfn in res['Value']['Successful'].keys():
       infoStr = "ReplicaManager.__removeCatalogReplica: Successfully removed replica."
       gLogger.info(infoStr,lfn)
-      return S_OK()
-
-  def removePhysicalReplica(self,lfn,storageElementName,physicalFile=None):
-    """ Remove replica from Storage Element.
-
-       'lfn' is the file to be removed
-       'storageElementName' is the storage where the file is to be removed
-       'physicalFile' is optionally the physical file to be removed
-    """
-    gLogger.info("ReplicaManager.removePhysicalReplica: Attempting to remove %s at %s." % (lfn,storageElementName))
-    if physicalFile:
-      gLogger.info("ReplicaManager.removePhysicalReplica: Using provided PFN: %s." % physicalFile)
-      pfnToRemove = physicalFile
-    else:
-      gLogger.info("ReplicaManager.removePhysicalReplica: Attempting to resolve replicas.")
-      res = self.fileCatalogue.getReplicas(lfn)
-      if not res['OK']:
-        errStr = "ReplicaManager.removePhysicalReplica: Completely failed to get replicas for LFN."
-        gLogger.error(errStr,"%s %s" % (lfn,res['Message']))
-        return res
-      if not res['Value']['Successful'].has_key(lfn):
-        errStr = "ReplicaManager.removePhysicalReplica: Failed to get replicas for LFN."
-        gLogger.error(errStr,"%s %s" % (lfn,res['Value']['Failed'][lfn]))
-        return S_ERROR("%s %s" % (errStr,res['Value']['Failed'][lfn]))
-      gLogger.info("ReplicaManager.removePhysicalReplica: Successfully obtained replicas for LFN.")
-      lfnReplicas = res['Value']['Successful'][lfn]
-      if not lfnReplicas.has_key(storageElementName):
-        # The file doesn't exist so therefore don't have to remove it
-        return S_OK()
-      else:
-        pfnToRemove = lfnReplicas[storageElementName]
-    res = self.__removePhysicalReplica(storageElementName,pfnToRemove)
+    for lfn,error in res['Value']['Failed'].items():
+      errStr = "ReplicaManager.__removeCatalogReplica: Failed to remove replica."
+      gLogger.error(errStr,"%s %s" % (lfn,error))
     return res
 
-  def __removePhysicalReplica(self,storageElementName,pfnToRemove):
-    gLogger.info("ReplicaManager.__removePhysicalReplica: Attempting to remove %s at %s." % (pfnToRemove,storageElementName))
+  def removePhysicalReplica(self,storageElementName,lfn):
+    """ Remove replica from Storage Element.
+
+       'lfn' are the files to be removed
+       'storageElementName' is the storage where the file is to be removed
+    """
+    if type(lfn) == types.ListType:
+      lfns = lfn
+    elif type(lfn) == types.StringType:
+      lfns = [lfn]
+    else:
+      errStr = "ReplicaManager.removePhysicalReplica: Supplied lfns must be string or list of strings."
+      gLogger.error(errStr)
+      return S_ERROR(errStr)
+    gLogger.info("ReplicaManager.removePhysicalReplica: Attempting to remove %s lfns at %s." % (len(lfns),storageElementName))
+    gLogger.info("ReplicaManager.removePhysicalReplica: Attempting to resolve replicas.")
+    res = self.fileCatalogue.getReplicas(lfns)
+    if not res['OK']:
+      errStr = "ReplicaManager.removePhysicalReplica: Completely failed to get replicas for lfns."
+      gLogger.error(errStr,res['Message'])
+      return res
+    failed = res['Value']['Failed']
+    successful = {}
+    pfnDict = {}
+    for lfn,repDict in res['Value']['Successful'].items():
+      if not lfnReplicas.has_key(storageElementName):
+        # The file doesn't exist at the storage element so don't have to remove it
+        successful[lfn] = True
+      else:
+        sePfn = repDict[storageElementName]
+        pfnDict[sePfn] = lfn
+    gLogger.info("ReplicaManager.removePhysicalReplica: Resolved %s pfns for removal at %s." % (len(pfnDict.keys()), storageElementName))
+    res = self.__removePhysicalReplica(storageElementName,pfnDict.keys())
+    for pfn,error in res['Value']['Failed'].items():
+      failed[pfnDict[pfn]] = error
+    for pfn in res['Value']['Successful'].keys():
+      successful[pfnDict[pfn]]
+    resDict = {'Successful':successful,'Failed':failed}
+    return res
+
+  def removePhysicalFile(self,storageElementName,pfnToRemove):
+    """ This removes physical files given by a the physical file names
+
+        'storageElementName' is the storage element where the file should be removed from
+        'pfnsToRemove' is the physical files
+    """
+    if type(pfnToRemove) == types.ListType:
+      pfns = pfnToRemove
+    elif type(pfnToRemove) == types.StringType:
+      pfns = [pfnToRemove]
+    else:
+      errStr = "ReplicaManager.removePhysicalFile: Supplied pfns must be string or list of strings."
+      gLogger.error(errStr)
+      return S_ERROR(errStr)
+    res = self.__removePhysicalReplica(storageElementName, pfns)
+    return res
+
+  def __removePhysicalReplica(self,storageElementName,pfnsToRemove):
+    gLogger.info("ReplicaManager.__removePhysicalReplica: Attempting to remove %s pfns at %s." % (len(pfnsToRemove),storageElementName))
     storageElement = StorageElement(storageElementName)
     if not storageElement.isValid()['Value']:
       errStr = "ReplicaManager.__removePhysicalReplica: Failed to instantiate Storage Element for removal."
       gLogger.error(errStr,destSE)
       return S_ERROR(errStr)
-    res = storageElement.removeFile(pfnToRemove)
+    res = storageElement.removeFile(pfnsToRemove)
     if not res['OK']:
-      errStr = "ReplicaManager.__removePhysicalReplica: Failed to remove replica."
+      errStr = "ReplicaManager.__removePhysicalReplica: Failed to remove replicas."
       gLogger.error(errStr,res['Message'])
       return S_ERROR(errStr)
     else:
-      infoStr = "ReplicaManager.__removePhysicalReplica: Successfully removed replica."
-      gLogger.info(infoStr,pfnToRemove)
-      return S_OK()
+      infoStr = "ReplicaManager.__removePhysicalReplica: Successfully issued removal request."
+      gLogger.info(infoStr)
+      return res
 
   ###################################################################
   #
@@ -743,7 +825,6 @@ class ReplicaManager:
       return res
     else:
       successful = {}
-      failed = {}
       for pfn,metadataDict in res['Value']['Successful'].items():
         successful[pfnDict[pfn]] = metadataDict
       for pfn, errorMessage in res['Value']['Failed'].items():
