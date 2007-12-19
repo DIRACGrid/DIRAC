@@ -1,11 +1,11 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.4 2007/11/16 11:45:34 acasajus Exp $
-__RCSID__ = "$Id: MonitoringClient.py,v 1.4 2007/11/16 11:45:34 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.5 2007/12/19 18:43:42 acasajus Exp $
+__RCSID__ = "$Id: MonitoringClient.py,v 1.5 2007/12/19 18:43:42 acasajus Exp $"
 
 import threading
 import time
 from DIRAC import gConfig, gLogger
 from DIRAC.ConfigurationSystem.Client import PathFinder
-from DIRAC.Core.Utilities import Time, ExitCallback
+from DIRAC.Core.Utilities import Time, ExitCallback, Network
 from DIRAC.MonitoringSystem.private.ServiceInterface import gServiceInterface
 from DIRAC.Core.DISET.RPCClient import RPCClient
 
@@ -13,12 +13,14 @@ class MonitoringClient:
 
   #Different types of operations
   OP_MEAN = "mean"
+  OP_ACUM = "acum"
   OP_SUM  = "sum"
   OP_RATE = "rate"
 
   #Predefined components that can be registered
   COMPONENT_SERVICE = "service"
   COMPONENT_AGENT   = "agent"
+  COMPONENT_WEB     = "web"
 
   def __init__( self ):
     self.sourceId = 0
@@ -29,9 +31,11 @@ class MonitoringClient:
     self.newActivitiesDict = {}
     self.activitiesDefinitions = {}
     self.activitiesMarks = {}
+    self.failedTransmissions = []
     self.activitiesLock = threading.Lock()
     self.flushingLock = threading.Lock()
     self.timeStep = 60
+    self.enabled = False
 
   def initialize( self ):
     self.logger = gLogger.getSubLogger( "Monitoring" )
@@ -42,6 +46,10 @@ class MonitoringClient:
       self.cfgSection = PathFinder.getSystemSection( self.sourceDict[ 'componentName' ] )
     elif self.sourceDict[ 'componentType' ] == self.COMPONENT_AGENT:
       self.cfgSection = PathFinder.getAgentSection( self.sourceDict[ 'componentName' ] )
+    elif self.sourceDict[ 'componentType' ] == self.COMPONENT_WEB:
+      self.cfgSection = "/Website"
+      self.setComponentLocation( 'http://%s' % Network.getFQDN() )
+      self.setComponentName( 'Web' )
     else:
       raise Exception( "Component type has not been defined" )
     self.__initializeSendMode()
@@ -59,7 +67,7 @@ class MonitoringClient:
     """
     self.sendingMode = gConfig.getValue( "%s/SendMode" % self.cfgSection, "periodic" )
     if self.sendingMode == "periodic":
-      self.sendingPeriod = max( 2, gConfig.getValue( "%s/SendPeriod" % self.cfgSection, 60 ) )
+      self.sendingPeriod = max( 60, gConfig.getValue( "%s/SendPeriod" % self.cfgSection, 60 ) )
       self.sendingThread = threading.Thread( target = self.__periodicFlush )
       self.sendingThread.start()
 
@@ -69,14 +77,17 @@ class MonitoringClient:
       time.sleep( self.sendingPeriod )
       self.flush()
 
-  def setComponentLocation( self, componentLocation ):
+  def setComponentLocation( self, componentLocation = False ):
     """
     Set the location of the component reporting.
 
     @type  componentLocation: string
     @param componentLocation: Location of the component reporting
     """
-    self.sourceDict[ 'componentLocation' ] = componentLocation
+    if not componentLocation:
+      self.sourceDict[ 'componentLocation' ] = gConfig.getValue( "/Site" )
+    else:
+      self.sourceDict[ 'componentLocation' ] = componentLocation
 
   def setComponentName( self, componentName ):
     """
@@ -153,12 +164,15 @@ class MonitoringClient:
     finally:
       self.activitiesLock.release()
 
-  def __consolidateMarks(self):
+  def __consolidateMarks( self, allData ):
     """
       Copies all marks except last step ones
       and consolidates them
     """
-    lastStepToSend = self.__UTCStepTime() - self.timeStep
+    if allData:
+      lastStepToSend = int( time.mktime( time.gmtime() ) )
+    else:
+      lastStepToSend = self.__UTCStepTime() - self.timeStep
     consolidatedMarks = {}
     remainderMarks = {}
     for key in self.activitiesMarks:
@@ -176,13 +190,15 @@ class MonitoringClient:
             totalValue += mark
           if self.activitiesDefinitions[ key ][ 'type' ] == self.OP_MEAN:
             totalValue /= len( consolidatedMarks[ key ][ markTime ] )
+          elif self.activitiesDefinitions[ key ][ 'type' ] == self.OP_RATE:
+            totalValue /= 60
           consolidatedMarks[ key ][ markTime ] = totalValue
       if len( consolidatedMarks[ key ] ) == 0:
         del( consolidatedMarks[ key ] )
     self.activitiesMarks = remainderMarks
     return consolidatedMarks
 
-  def flush( self ):
+  def flush( self, allData = False ):
     self.flushingLock.acquire()
     self.logger.verbose( "Sending information to server" )
     try:
@@ -193,39 +209,84 @@ class MonitoringClient:
         if len( self.newActivitiesDict ) > 0:
           activitiesToRegister = self.newActivitiesDict
           self.newActivitiesDict = {}
-        marksDict = self.__consolidateMarks()
+        marksDict = self.__consolidateMarks( allData )
       finally:
         self.activitiesLock.release()
       #Commit new activities
-      if gConfig.getValue( "%s/DisableMonitoring" % self.cfgSection, "true" ).lower() in \
+      if gConfig.getValue( "%s/DisableMonitoring" % self.cfgSection, "false" ).lower() in \
             ( "yes", "y", "true", "1" ):
         self.logger.verbose( "Sending data has been disabled" )
         return
       if len( activitiesToRegister ) or len( marksDict ):
-        self.__sendData( activitiesToRegister, marksDict )
+        if allData:
+          timeout = False
+        else:
+          timeout = 10
+        self.__sendData( activitiesToRegister, marksDict, timeout )
     finally:
       self.flushingLock.release()
 
-  def __sendData( self, acRegister, acMarks ):
+  def __sendData( self, acRegister, acMarks, secsTimeout = 30 ):
+    if not self.enabled:
+      return
     if gServiceInterface.serviceRunning():
       rpcClient = gServiceInterface
     else:
-      rpcClient = RPCClient( "Monitoring/Server", timeout = 30 )
+      rpcClient = RPCClient( "Monitoring/Server", timeout = secsTimeout )
+    if not self.__sendFailed( rpcClient ):
+      return
     if len( acRegister ):
-      self.logger.verbose( "Registering activities" )
-      retDict = rpcClient.registerActivities( self.sourceDict, acRegister )
-      if retDict[ 'OK' ]:
-        self.sourceId = retDict[ 'Value' ]
-      else:
-        self.logger.error( "Can't register activities", retDict[ 'Message' ] )
+      if not self.__sendRegistration( rpcClient, acRegister ):
+        self.failedTransmissions.append( ( self.__sendMarks, acMarks ) )
+        return
     if len( acMarks ):
-      assert self.sourceId
-      self.logger.verbose( "Sending marks" )
-      retDict = rpcClient.commitMarks( self.sourceId, acMarks )
-      if not retDict[ 'OK' ]:
-        self.logger.error( "Can't send activities marks", retDict[ 'Message' ] )
+      self.__sendMarks( rpcClient, acMarks )
+
+  def __sendFailed( self, rpcClient ):
+    while len( self.failedTransmissions ) > 100:
+      self.failedTransmissions.pop(0)
+    while len( self.failedTransmissions ) > 0:
+      transTuple = self.failedTransmissions[0]
+      if not transTuple[0]( rpcClient, transTuple[1] ):
+        return False
+      self.failedTransmissions.pop(0)
+    return True
+
+  def __sendRegistration( self, rpcClient, acRegister ):
+    self.logger.verbose( "Registering activities" )
+    retDict = rpcClient.registerActivities( self.sourceDict, acRegister )
+    if not retDict[ 'OK' ]:
+      self.logger.error( "Can't register activities", retDict[ 'Message' ] )
+      self.failedTransmissions.append( ( self.__sendRegistration, acRegister ) )
+      return False
+    self.sourceId = retDict[ 'Value' ]
+    return True
+
+  def __sendMarks( self, rpcClient, acMarks ):
+    assert self.sourceId
+    self.logger.verbose( "Sending marks" )
+    retDict = rpcClient.commitMarks( self.sourceId, acMarks )
+    if not retDict[ 'OK' ]:
+      self.logger.error( "Can't send activities marks", retDict[ 'Message' ] )
+      self.failedTransmissions.append( ( self.__sendMarks, acMarks ) )
+      return False
+    if len ( retDict[ 'Value' ] ) > 0:
+      gLogger.verbose( "There are activities unregistered" )
+      acRegister = {}
+      acMissedMarks = {}
+      for acName in retDict[ 'Value' ]:
+        if acName in self.activitiesDefinitions:
+          acRegister[ acName ] = self.activitiesDefinitions[ acName ]
+          acMissedMarks[ acName ] = acMarks[ acName ]
+        else:
+          gLogger.verbose( "Server reported unregistered activity that does not exist" )
+      gLogger.verbose( "Reregistering activities %s" % ", ".join( acRegister.keys() ) )
+      return self.__sendRegistration( rpcClient, acRegister ) and rpcClient.commitMarks( self.sourceId, acMissedMarks )[ 'OK' ]
+    return True
+
 
   def forceFlush( self, exitCode ):
-    self.flush()
+    self.sendingMode = "none"
+    self.flush( allData = True )
 
 gMonitor = MonitoringClient()
