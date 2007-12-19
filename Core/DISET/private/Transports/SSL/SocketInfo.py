@@ -1,17 +1,14 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfo.py,v 1.12 2007/11/23 13:34:28 acasajus Exp $
-__RCSID__ = "$Id: SocketInfo.py,v 1.12 2007/11/23 13:34:28 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfo.py,v 1.13 2007/12/19 18:01:51 acasajus Exp $
+__RCSID__ = "$Id: SocketInfo.py,v 1.13 2007/12/19 18:01:51 acasajus Exp $"
 
 import time
 import copy
-import threading
 from OpenSSL import SSL, crypto
 import DIRAC
-from DIRAC.Core.Utilities import GridCert
+from DIRAC.Core.Utilities import GridCredentials
 from DIRAC.LoggingSystem.Client.Logger import gLogger
 
 SSL.set_thread_safe()
-
-gHandshakeLock  = threading.Lock()
 
 class SocketInfo:
 
@@ -89,14 +86,14 @@ class SocketInfo:
     # Initialize context
     self.sslContext = SSL.Context( SSL.SSLv23_METHOD )
     self.sslContext.set_verify( SSL.VERIFY_PEER|SSL.VERIFY_FAIL_IF_NO_PEER_CERT, self.verifyCallback ) # Demand a certificate
-    casPath = GridCert.getCAsLocation()
+    casPath = GridCredentials.getCAsLocation()
     if not casPath:
       DIRAC.abort( 10, "No valid CAs location found" )
     gLogger.debug( "CAs location is %s" % casPath )
     self.sslContext.load_verify_locations_path( casPath )
 
   def __generateContextWithCerts( self ):
-    certKeyTuple = GridCert.getCertificateAndKey()
+    certKeyTuple = GridCredentials.getHostCertificateAndKey()
     if not certKeyTuple:
       DIRAC.abort( 10, "No valid certificate or key found" )
     self.setLocalCredentialsLocation( certKeyTuple )
@@ -106,7 +103,7 @@ class SocketInfo:
     self.sslContext.use_privatekey_file(  certKeyTuple[1] )
 
   def __generateContextWithProxy( self ):
-    proxyPath = GridCert.getGridProxy()
+    proxyPath = GridCredentials.getGridProxy()
     if not proxyPath:
       DIRAC.abort( 10, "No valid proxy found" )
     self.setLocalCredentialsLocation( ( proxyPath, proxyPath ) )
@@ -129,13 +126,10 @@ class SocketInfo:
     self.sslSocket.set_accept_state()
     return self.__sslHandshake()
 
+  #@gSynchro
   def __sslHandshake( self ):
     try:
-      gHandshakeLock.acquire()
-      try:
-        self.sslSocket.do_handshake()
-      finally:
-        gHandshakeLock.release()
+      self.sslSocket.do_handshake()
     except SSL.Error, v:
       #FIXME: S_ERROR?
       #gLogger.warn( "Error while handshaking", "\n".join( [ stError[2] for stError in v.args[0] ] ) )

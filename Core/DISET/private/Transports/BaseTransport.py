@@ -1,8 +1,8 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/BaseTransport.py,v 1.13 2007/06/27 18:19:25 acasajus Exp $
-__RCSID__ = "$Id: BaseTransport.py,v 1.13 2007/06/27 18:19:25 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/BaseTransport.py,v 1.14 2007/12/19 18:01:51 acasajus Exp $
+__RCSID__ = "$Id: BaseTransport.py,v 1.14 2007/12/19 18:01:51 acasajus Exp $"
 
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR
-from DIRAC.Core.DISET.private.Transports.DEncode import encode, decode
+from DIRAC.Core.Utilities import DEncode
 from DIRAC.LoggingSystem.Client.Logger import gLogger
 import socket
 
@@ -53,7 +53,7 @@ class BaseTransport:
       return ""
 
   def sendData( self, uData ):
-    sCodedData = encode( uData )
+    sCodedData = DEncode.encode( uData )
     dataToSend = "%s:%s" % ( len( sCodedData ), sCodedData )
     for index in range( 0, len( dataToSend ), self.packetSize ):
       bytesToSend = len( dataToSend[ index : index + self.packetSize ] )
@@ -84,7 +84,7 @@ class BaseTransport:
           raise RuntimeError( "Read limit exceeded (%s chars)" % iMaxLength )
       data = self.byteStream[ :size ]
       self.byteStream = self.byteStream[ size + 1: ]
-      return decode( data )[0]
+      return DEncode.decode( data )[0]
     except Exception, e:
       gLogger.exception( "Network error while receiving data" )
       return S_ERROR( "Network error while receiving data: %s" % str( e ) )

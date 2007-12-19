@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/Attic/DEncode.py,v 1.7 2007/12/11 17:34:52 acasajus Exp $
-__RCSID__ = "$Id: DEncode.py,v 1.7 2007/12/11 17:34:52 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/DEncode.py,v 1.1 2007/12/19 18:01:49 acasajus Exp $
+__RCSID__ = "$Id: DEncode.py,v 1.1 2007/12/19 18:01:49 acasajus Exp $"
 
 # Encoding and decoding for dirac
 #
@@ -231,6 +231,8 @@ def encode( uObject ):
     raise
 
 def decode( buffer ):
+  if not buffer:
+    return buffer
   try:
     #print "DECODE FUNCTION : %s" % g_dDecodeFunctions[ sStream [ iIndex ] ]
     return g_dDecodeFunctions[ buffer[ 0 ] ]( buffer, 0 )

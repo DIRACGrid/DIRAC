@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Subprocess.py,v 1.6 2007/11/22 10:50:04 acasajus Exp $
-__RCSID__ = "$Id: Subprocess.py,v 1.6 2007/11/22 10:50:04 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Subprocess.py,v 1.7 2007/12/19 18:01:49 acasajus Exp $
+__RCSID__ = "$Id: Subprocess.py,v 1.7 2007/12/19 18:01:49 acasajus Exp $"
 """
    DIRAC Wrapper to execute python and system commands with a wrapper, that might
    set a timeout.
@@ -34,6 +34,7 @@ __RCSID__ = "$Id: Subprocess.py,v 1.6 2007/11/22 10:50:04 acasajus Exp $"
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 # from DIRAC import gLogger
 from DIRAC.LoggingSystem.Client.Logger import gLogger
+from DIRAC.Core.Utilities import DEncode
 
 import time
 import select
@@ -78,14 +79,14 @@ class Subprocess:
 
   def __executePythonFunction( self, function, writePipe, *stArgs, **stKeyArgs ):
     try:
-      os.write( writePipe, "%s\n" % str( S_OK( function( *stArgs, **stKeyArgs ) ) ) )
+      os.write( writePipe, DEncode.encode( S_OK( function( *stArgs, **stKeyArgs ) ) ) )
     except OSError, v:
       if str(v) == '[Errno 32] Broken pipe':
         # the parent has died
         pass
     except Exception, v:
       gLogger.exception( 'Exception while executing', function.__name__ )
-      os.write( writePipe, "%s\n" % str( S_ERROR( str( v ) ) ) )
+      os.write( writePipe, DEncode.encode( S_ERROR( str( v ) ) ) )
     try:
       os.close( writePipe )
     finally:
@@ -145,7 +146,12 @@ class Subprocess:
         os.close( readFD )
         os.waitpid( pid, 0 )
         if retDict[ 'OK' ]:
-          return eval( retDict[ 'Value' ] )
+          dataStub = retDict[ 'Value' ]
+          retObj, stubLen = DEncode.decode( dataStub )
+          if stubLen == len( dataStub ):
+            return retObj
+          else:
+            return S_ERROR( "Error decoding data coming from call" )
         return retDict
 
   def __generateSystemCommandError( self, exitStatus, message ):
