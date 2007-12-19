@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobMonitoringHandler.py,v 1.9 2007/12/12 12:01:32 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobMonitoringHandler.py,v 1.10 2007/12/19 14:54:09 atsareg Exp $
 ########################################################################
 
 """ JobMonitoringHandler is the implementation of the JobMonitoring service
@@ -11,7 +11,7 @@
 
 """
 
-__RCSID__ = "$Id: JobMonitoringHandler.py,v 1.9 2007/12/12 12:01:32 atsareg Exp $"
+__RCSID__ = "$Id: JobMonitoringHandler.py,v 1.10 2007/12/19 14:54:09 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -225,7 +225,7 @@ class JobMonitoringHandler( RequestHandler ):
     jobList = result['Value']
     nJobs = len(jobList)
     iniJob = pageNumber*numberPerPage
-    lastJob = iniJob+numberPerPage-1
+    lastJob = iniJob+numberPerPage
     if iniJob >= nJobs:
       return S_ERROR('Page number out of range')
 
