@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.25 2007/11/20 15:51:43 acasajus Exp $
-__RCSID__ = "$Id: RequestHandler.py,v 1.25 2007/11/20 15:51:43 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.26 2007/12/19 17:57:28 acasajus Exp $
+__RCSID__ = "$Id: RequestHandler.py,v 1.26 2007/12/19 17:57:28 acasajus Exp $"
 
 import types
 from DIRAC.Core.DISET.private.FileHelper import FileHelper
@@ -103,8 +103,8 @@ class RequestHandler:
       uRetVal = self.transfer_listBulk( fileInfo[0], fileInfo[1], fileHelper )
     else:
       return S_ERROR( "Direction %s does not exist!!!" % sDirection )
-    if not fileHelper.finishedTransmission():
-      gLogger.error( "You haven't finished receiving the file", str( fileInfo ) )
+    if uRetVal[ 'OK' ] and not fileHelper.finishedTransmission():
+      gLogger.error( "You haven't finished receiving/sending the file", str( fileInfo ) )
       return S_ERROR( "Incomplete transfer" )
     return uRetVal
 
