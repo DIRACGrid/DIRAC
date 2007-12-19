@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.20 2007/11/23 13:33:54 acasajus Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.20 2007/11/23 13:33:54 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.21 2007/12/19 17:51:40 acasajus Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.21 2007/12/19 17:51:40 acasajus Exp $"
 
 import DIRAC
 from DIRAC.Core.DISET.private.Protocols import gProtocolDict
@@ -8,39 +8,54 @@ from DIRAC.Core.Utilities import List, Network
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.ConfigurationSystem.Client.PathFinder import *
-from DIRAC.Core.Utilities import GridCert
+from DIRAC.Core.Utilities import GridCredentials
 
 class BaseClient:
 
   defaultUserGroup = "lhcb"
   defaultHostGroup = "hosts"
 
+#TODO
+
   def __init__( self, serviceName,
                 groupToUse = False,
                 useCertificates = "auto",
-                timeout = False ):
+                timeout = False,
+                setup = "",
+                delegatedDN = "",
+                delegatedGroup = "" ):
     self.serviceName = serviceName
-    #self.setup = gConfig.getOption( "/DIRAC/Setup" )
     self.timeout = timeout
+    #Which setup to use?
+    if setup:
+      self.setup = str( setup )
+    else:
+      self.setup = gConfig.getValue( "/DIRAC/Setup", "LHCb-Development" )
+    #Calculate final URL
     self.serviceURL = self.__discoverServiceURL()
-    self.useCertificates = useCertificates
-    self.setup = gConfig.getValue( "/DIRAC/Setup", "Production" )
     retVal = Network.splitURL( self.serviceURL )
     if retVal[ 'OK' ]:
       self.URLTuple = retVal[ 'Value' ]
     else:
       gLogger.error( "URL is malformed", retVal[ 'Message' ] )
       raise Exception( retVal[ 'Message' ] )
+    #Use certificates?
+    self.useCertificates = useCertificates
+    if self.useCertificates == "auto":
+      self.useCertificates = gConfig._useServerCertificate()
+    #Wich group to use?
     if groupToUse:
       self.groupToUse = groupToUse
     else:
-      if self.useCertificates == "auto":
-        self.useCertificates = gConfig._useServerCertificate()
-
       if self.useCertificates:
         self.groupToUse = self.defaultHostGroup
       else:
-        self.groupToUse = GridCert.getDIRACGroup( self.defaultUserGroup )
+        self.groupToUse = GridCredentials.getDIRACGroup( self.defaultUserGroup )
+    #Are we delegating something?
+    if delegatedDN:
+      if delegatedGroup:
+        self.groupToUse = delegatedGroup
+      self.groupToUse = ( delegatedDN, self.groupToUse )
     self.__checkTransportSanity()
 
   def __discoverServiceURL( self ):
@@ -54,7 +69,7 @@ class BaseClient:
       gLogger.debug( "Using gateway", "%s" % dRetVal[ 'Value' ] )
       return "%s/%s" % ( List.randomize( List.fromChar( dRetVal[ 'Value'], "," ) ), self.serviceName )
 
-    urls = getServiceURL( self.serviceName )
+    urls = getServiceURL( self.serviceName, setup = self.setup )
     if not urls:
       raise Exception( "URL for service %s not found" % self.serviceName )
     sURL = List.randomize( List.fromChar( urls, "," ) )[0]
