@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.8 2007/12/17 18:26:18 paterson Exp $
+# $Id: JobWrapper.py,v 1.9 2007/12/19 15:16:18 paterson Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.8 2007/12/17 18:26:18 paterson Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.9 2007/12/19 15:16:18 paterson Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -48,6 +48,7 @@ class JobWrapper:
     self.defaultErrorFile = gConfig.getValue(self.section+'/DefaultErrorFile','std.err')
     self.cleanUpFlag  = gConfig.getValue(self.section+'/CleanUpFlag',False)
     self.localSiteRoot = gConfig.getValue('/LocalSite/Root',self.root)
+    self.__loadLocalCFGFiles(self.localSiteRoot)
     self.vo = gConfig.getValue('/DIRAC/VirtualOrganization','lhcb')
     self.rm = ReplicaManager()
     self.log.verbose('===========================================================================')
@@ -59,8 +60,13 @@ class JobWrapper:
     self.log.verbose('==========================================================================')
     self.log.debug('Sys path is: \n%s' %(string.join(sys.path,'\n')))
     self.log.debug('==========================================================================')
-    self.log.debug('PYTHONPATH is: \n%s' %(string.join(os.environ['PYTHONPATH'].split(':')),'\n'))
-    self.log.debug('==========================================================================')
+    pypath = os.environ['PYTHONPATH']
+    print pypath
+    if not pypath:
+      self.log.debug('PYTHONPATH is: null')
+    else:
+      self.log.debug('PYTHONPATH is: \n%s' %(string.join(string.split(pypath,':'),'\n')))
+      self.log.debug('==========================================================================')
     if not self.cleanUpFlag:
       self.log.debug('CleanUp Flag is disabled by configuration')
     self.log.verbose('Trying to import LFC File Catalog client')
@@ -91,10 +97,24 @@ class JobWrapper:
     os.chdir(str(self.jobID))
 
   #############################################################################
+  def __loadLocalCFGFiles(self,localRoot):
+    """Loads any extra CFG files residing in the local DIRAC site root.
+    """
+    files = os.listdir(localRoot)
+    for i in files:
+      if re.search('.cfg$',i):
+        gConfig.loadFile(i)
+
+  #############################################################################
   def execute(self, arguments):
     """The main execution method of the Job Wrapper
     """
     self.log.info('Job Wrapper is starting execution phase for job %s' %(self.jobID))
+    os.environ['DIRACROOT'] = self.localSiteRoot
+    self.log.verbose('DIRACROOT = %s' %(self.localSiteRoot))
+    os.environ['DIRACPYTHON'] = sys.executable
+    self.log.verbose('DIRACPYTHON = %s' %(sys.executable))
+
     jobArgs = arguments['Job']
     ceArgs = arguments ['CE']
 
@@ -121,12 +141,11 @@ class JobWrapper:
 
     if re.search('DIRACROOT',executable):
       executable = executable.replace('$DIRACROOT',self.localSiteRoot)
-      self.log.debug('Replaced $DIRACROOT for executable %s' %(self.localSiteRoot))
+      self.log.debug('Replaced $DIRACROOT for executable as %s' %(self.localSiteRoot))
 
     if os.path.exists(executable):
       self.__report('Running','Application')
       spObject = Subprocess( 0 )
-#      command = sys.executable+' '+executable+' '+jobArguments
       command = '%s %s' % (executable,os.path.basename(jobArguments))
       self.log.verbose('Execution command: %s' %(command))
       maxPeekLines = self.maxPeekLines
@@ -196,15 +215,22 @@ class JobWrapper:
 
     ceArgs = arguments['CE']
     if not ceArgs.has_key('LocalSE'):
-      msg = 'Job has input data requirement but no LocalSE defined'
-      self.log.warn(msg)
-      return S_ERROR(msg)
+      csLocalSE = gConfig.getValue('LocalSite/LocalSE','')
+      if not csLocalSE:
+        msg = 'Job has input data requirement but no LocalSE defined'
+        self.log.warn(msg)
+        return S_ERROR(msg)
+      else:
+        ceArgs['LocalSE'] = csLocalSE
 
     inputData = jobArgs['InputData']
+    self.log.debug('Input Data is: \n%s' %(inputData))
     if type(inputData)==type(' '):
       inputData = [inputData]
 
-    localSEList = ceArgs['LocalSE'].split(',')
+    localSEList = ceArgs['LocalSE']
+    if type(localSEList)==type(' '):
+      localSEList=localSEList.split(',')
 
     msg = 'Job Wrapper cannot resolve input data with null '
     if not inputData:
