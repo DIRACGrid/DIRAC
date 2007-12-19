@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.9 2007/12/18 14:35:16 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.10 2007/12/19 15:07:10 paterson Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.9 2007/12/18 14:35:16 paterson Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.10 2007/12/19 15:07:10 paterson Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -56,7 +56,7 @@ class JobAgent(Agent):
       return ceInstance
 
     self.computingElement = ceInstance['Value']
-    self.siteRoot = gConfig.getValue('LocalSite/Root','/Users/stuart/dirac/workspace/DIRAC3')
+    self.siteRoot = gConfig.getValue('LocalSite/Root',os.getcwd())
     self.jobWrapperTemplate = self.siteRoot+gConfig.getValue(self.section+'/JobWrapperTemplate','/DIRAC/WorkloadManagementSystem/JobWrapper/JobWrapperTemplate')
     self.jobSubmissionDelay = gConfig.getValue(self.section+'/SubmissionDelay',10)
     return result
@@ -155,6 +155,10 @@ class JobAgent(Agent):
 
       self.log.debug('Before %sCE submitJob()' %(self.ceName))
       submission = self.__submitJob(jobID,params,resourceParams,jobJDL)
+      if not submission['OK']:
+        self.log.warn('Job submission failed during creation of the Job Wrapper')
+        return submission
+
       self.log.debug('After %sCE submitJob()' %(self.ceName))
     except Exception, x:
       self.log.exception(x)
@@ -198,6 +202,10 @@ class JobAgent(Agent):
        Job Wrapper with the available job parameters.
     """
     result = self.__createJobWrapper(jobID,jobParams,resourceParams)
+
+    if not result['OK']:
+      return result
+
     wrapperFile = result['Value']
     self.__report(jobID,'Matched','Queued')
 
@@ -243,6 +251,7 @@ class JobAgent(Agent):
     signature = __RCSID__
     dPython = sys.executable
 
+    systemConfig = ''
     if jobParams.has_key('SystemConfig'):
       systemConfig = jobParams['SystemConfig']
       self.log.verbose('Job system configuration requirement is %s' %(systemConfig))
@@ -252,14 +261,30 @@ class JobAgent(Agent):
           self.log.verbose('Found local python for job:\n%s' %(jobPython))
           dPython = jobPython
         else:
-          self.log.warn('Job requested python \n%s\n but this is not available locally' %(jobPython))
+          if systemConfig == 'ANY':
+            self.log.verbose('Using standard available python %s for job' %(dPython))
+          else:
+            self.log.warn('Job requested python \n%s\n but this is not available locally' %(jobPython))
       else:
         self.log.warn('Job requested python \n%s\n but no LocalSite/Root defined' %(jobPython))
     else:
       self.log.warn('Job has no system configuration requirement')
 
+    if not systemConfig or systemConfig=='ANY':
+      systemConfig = gConfig.getValue('/LocalSite/Architecture','')
+      if not systemConfig:
+        return S_ERROR('Could not establish system configuration from Job requirements or LocalSite/Architecture section')
+
     print >> wrapper, wrapperTemplate % (dPython,signature,jobID,date_time)
+    libDir = '%s/%s/lib' %(self.siteRoot,systemConfig)
+    scriptsDir = '%s/scripts' %(self.siteRoot)
+    contribDir = '%s/contrib' %(self.siteRoot)
     wrapper.write('sys.path.insert(0,"%s")\n' %(self.siteRoot))
+    wrapper.write('sys.path.insert(0,"%s")\n' %(libDir))
+    wrapper.write('sys.path.insert(0,"%s")\n' %(scriptsDir))
+    wrapper.write('sys.path.insert(0,"%s")\n' %(contribDir))
+    wrapper.write("os.environ['PYTHONPATH'] = '%s:%s:%s:%s:'+os.environ['PYTHONPATH']\n" %(contribDir,scriptsDir,libDir,self.siteRoot))
+    wrapper.write("os.environ['LD_LIBRARY_PATH'] = '%s:'+os.environ['LD_LIBRARY_PATH']\n" %(libDir))
     jobArgs = "execute("+str(arguments)+")\n"
     wrapper.write(jobArgs)
     wrapper.close ()
