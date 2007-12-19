@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.20 2007/11/27 16:15:48 acasajus Exp $
-__RCSID__ = "$Id: Server.py,v 1.20 2007/11/27 16:15:48 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.21 2007/12/19 17:59:11 acasajus Exp $
+__RCSID__ = "$Id: Server.py,v 1.21 2007/12/19 17:59:11 acasajus Exp $"
 
 import socket
 import sys
@@ -32,6 +32,7 @@ class Server:
     self.serviceCfg = ServiceConfiguration( serviceName )
     self.__buildURL()
     self.servicesList = [ self.serviceCfg ]
+    self.__initializeMonitor()
     self.handlerManager = Dispatcher( self.servicesList )
     retDict = self.handlerManager.loadHandlers()
     if not retDict[ 'OK' ]:
@@ -39,7 +40,6 @@ class Server:
       sys.exit(1)
     self.handlerManager.initializeHandlers()
     self.__initializeTransport()
-    self.__initializeMonitor()
     self.threadPool = ThreadPool( 1, self.serviceCfg.getMaxThreads() )
     self.threadPool.daemonize()
 
@@ -189,7 +189,7 @@ class Server:
     """
     try:
       serviceInfoDict = self.handlerManager.getServiceInfo( proposalTuple[0][0] )
-      serviceInfoDict[ 'setup' ] = proposalTuple[0][1]
+      serviceInfoDict[ 'clientSetup' ] = proposalTuple[0][1]
       handlerInstance = handlerDict[ "handlerClass" ]( serviceInfoDict,
                       clientTransport,
                       handlerDict[ "lockManager" ] )
