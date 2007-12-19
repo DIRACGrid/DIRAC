@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.26 2007/12/12 11:49:13 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.27 2007/12/19 10:53:56 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.26 2007/12/12 11:49:13 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.27 2007/12/19 10:53:56 atsareg Exp $"
 
 import re, os, sys, string
 import time
@@ -510,9 +510,11 @@ class JobDB(DB):
 
     if orderAttribute:
       orderType = None
+      orderField = orderAttribute
       if orderAttribute.find(':') != -1:
         orderType = orderAttribute.split(':')[1].upper()
-      condition = condition + ' ORDER BY ' + orderAttribute
+        orderField = orderAttribute.split(':')[0]
+      condition = condition + ' ORDER BY ' + orderField
       if orderType:
         condition = condition + ' ' + orderType
 
