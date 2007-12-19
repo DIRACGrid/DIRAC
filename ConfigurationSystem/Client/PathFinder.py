@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/PathFinder.py,v 1.4 2007/05/13 20:44:57 atsareg Exp $
-__RCSID__ = "$Id: PathFinder.py,v 1.4 2007/05/13 20:44:57 atsareg Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/PathFinder.py,v 1.5 2007/12/19 17:51:18 acasajus Exp $
+__RCSID__ = "$Id: PathFinder.py,v 1.5 2007/12/19 17:51:18 acasajus Exp $"
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import List
@@ -14,8 +14,9 @@ def divideFullName( entityName ):
     raise Exception( "Service (%s) name must be with the form system/service" % entityName )
   return tuple( fields )
 
-def getSystemInstance( systemName ):
-  setup = gConfigurationData.extractOptionFromCFG( "/DIRAC/Setup" )
+def getSystemInstance( systemName, setup = False ):
+  if not setup:
+    setup = gConfigurationData.extractOptionFromCFG( "/DIRAC/Setup" )
   optionPath = "/DIRAC/Setups/%s/%s" % ( setup, systemName )
   instance = gConfigurationData.extractOptionFromCFG( optionPath )
   if instance:
@@ -23,39 +24,39 @@ def getSystemInstance( systemName ):
   else:
     raise Exception( "Option %s is not defined" % optionPath )
 
-def getSystemSection( serviceName, serviceTuple = False, instance = False ):
+def getSystemSection( serviceName, serviceTuple = False, instance = False, setup = False ):
   if not serviceTuple:
     serviceTuple = divideFullName( serviceName )
   if not instance:
-    instance = getSystemInstance( serviceTuple[0] )
+    instance = getSystemInstance( serviceTuple[0], setup = setup )
   return "/Systems/%s/%s" % ( serviceTuple[0], instance )
 
-def getServiceSection( serviceName, serviceTuple = False ):
+def getServiceSection( serviceName, serviceTuple = False, setup = False ):
   if not serviceTuple:
     serviceTuple = divideFullName( serviceName )
-  systemSection = getSystemSection( serviceName, serviceTuple )
+  systemSection = getSystemSection( serviceName, serviceTuple, setup = setup )
   return "%s/Services/%s" % ( systemSection, serviceTuple[1] )
 
-def getAgentSection( agentName, agentTuple = False ):
+def getAgentSection( agentName, agentTuple = False, setup = False ):
   if not agentTuple:
     agentTuple = divideFullName( agentName )
-  systemSection = getSystemSection( agentName, agentTuple )
+  systemSection = getSystemSection( agentName, agentTuple, setup = setup )
   return "%s/Agents/%s" % ( systemSection, agentTuple[1] )
-  
-def getDatabaseSection(dbName, dbTuple = False):
+
+def getDatabaseSection(dbName, dbTuple = False, setup = False ):
   if not dbTuple:
     dbTuple = divideFullName( dbName )
-  systemSection = getSystemSection( dbName, dbTuple )
-  return "%s/Databases/%s" % ( systemSection, dbTuple[1] )  
+  systemSection = getSystemSection( dbName, dbTuple, setup = setup )
+  return "%s/Databases/%s" % ( systemSection, dbTuple[1] )
 
-def getSystemURLSection( serviceName, serviceTuple = False ):
-  systemSection = getSystemSection( serviceName, serviceTuple )
+def getSystemURLSection( serviceName, serviceTuple = False, setup = False ):
+  systemSection = getSystemSection( serviceName, serviceTuple, setup = setup )
   return "%s/URLs" % systemSection
 
-def getServiceURL( serviceName, serviceTuple = False ):
+def getServiceURL( serviceName, serviceTuple = False, setup = False ):
   if not serviceTuple:
     serviceTuple = divideFullName( serviceName )
-  systemSection = getSystemSection( serviceName, serviceTuple )
+  systemSection = getSystemSection( serviceName, serviceTuple, setup = setup )
   return gConfigurationData.extractOptionFromCFG( "%s/URLs/%s" % ( systemSection, serviceTuple[1] ) )
 
 def getGatewayURL():
