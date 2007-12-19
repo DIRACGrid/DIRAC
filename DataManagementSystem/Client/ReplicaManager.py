@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalogue. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.12 2007/12/18 11:13:44 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.13 2007/12/19 16:04:59 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -78,92 +78,120 @@ class ReplicaManager:
       return S_ERROR("%s %s" % (errStr,errMessage))
     destPfn = res['Value']
     destinationSE = storageElement.getStorageElementName()['Value']
-
     ###########################################################
     # Perform the registration here
-    res = storageElement.getPfnForProtocol(destPfn,self.registrationProtocol,withPort=False)
-    if not res['OK']:
-      errStr = "ReplicaManager.putAndRegister: Failed to resolve desired PFN for registration."
-      gLogger.error(errStr,destPfn)
-      pfnForRegistration = destPfn
-    else:
-      pfnForRegistration = res['Value']
-    fileTuple = (lfn,pfnForRegistration,size,destinationSE,guid)
-    res = self.fileCatalogue.addFile(fileTuple)
-    if not res['OK']:
-      errStr = "ReplicaManager.putAndRegister: Failed to add file to catalogue."
-      gLogger.error(errStr,"%s: %s" % (lfn,res['Message']))
-      res['Message'] = "%s %s" % (errStr,res['Message'])
-      resDict = {}
-      resDict['Put'] = True
-      resDict['Registration'] = False
-      resDict['LFN'] = lfn
-      resDict['PFN'] = pfnForRegistration
-      resDict['Size'] = size
-      resDict['SE'] = destinationSE
-      resDict['GUID'] = guid
-      res['FileInfo'] = resDict
-      return res
-    else:
-      return res
+    fileTuple = (lfn,destPfn,size,destinationSE,guid)
+    res = self.registerFile(fileTuple)
+    return res
+          
 
+  def getReplicas(self,lfn):
+    """ Get the replicas registered in the catalog for supplied file.
+
+        'lfn' is the files to check (can be a single lfn or list of lfns)
+    """
+    if type(lfn) == types.ListType:
+      lfns = lfn
+    elif type(lfn) == types.StringType:
+      lfns = [lfn]
+    else:
+      errStr = "ReplicaManager.getReplicas: Supplied lfn must be string or list of strings."
+      gLogger.error(errStr)
+      return S_ERROR(errStr)
+    gLogger.info("ReplicaManager.getReplicas: Attempting to get replicas for %s files." % len(lfns))
+    res = self.fileCatalogue.getReplicas(lfns)
+    if not res['OK']:
+      errStr = "ReplicaManager.__getReplicas: Completely failed to get replicas for %s lfns." % len(lfns)
+      gLogger.error(errStr,res['Message'])
+      return S_ERROR(errStr)
+    return res
+  
+  def getFileSize(self,lfn):
+    """ Get the size registered in the catalog for supplied file.
+    
+        'lfn' is the files to check (can be a single lfn or list of lfns)
+    """
+    if type(lfn) == types.ListType:
+      lfns = lfn
+    elif type(lfn) == types.StringType:
+      lfns = [lfn]
+    else:
+      errStr = "ReplicaManager.getFileSize: Supplied lfn must be string or list of strings."
+      gLogger.error(errStr)
+      return S_ERROR(errStr)
+    gLogger.info("ReplicaManager.getFileSize: Attempting to get sizes for %s files." % len(lfns))
+    res = self.fileCatalogue.getFileSize(lfns)
+    if not res['OK']:
+      errStr = "ReplicaManager.getFile: Completely failed to get file size for %s lfns." % len(lfns)
+      gLogger.error(errStr,res['Message'])
+      return S_ERROR(errStr)  
+    return res
+  
   def getFile(self,lfn):
     """ Get a local copy of a LFN from Storage Elements.
-
+    
         'lfn' is the logical file name for the desired file
     """
-    ###########################################################
-    # Get the LFN replicas from here
-    res = self.fileCatalogue.getReplicas(lfn)
+    if type(lfn) == types.ListType:
+      lfns = lfn
+    elif type(lfn) == types.StringType:
+      lfns = [lfn]
+    else:
+      errStr = "ReplicaManager.getFile: Supplied lfn must be string or list of strings."
+      gLogger.error(errStr) 
+      return S_ERROR(errStr)
+    gLogger.info("ReplicaManager.getFile: Attempting to get %s files." % len(lfns))
+    res = self.getReplicas(lfns)
     if not res['OK']:
       return res
-    if not res['Value']['Successful'].has_key(lfn):
-      errStr = "ReplicaManager.getFile: Failed to get replicas for LFN."
-      gLogger.error(errStr,"%s %s" % (lfn,res['Value']['Failed'][lfn]))
-      return S_ERROR("%s %s" % (errStr,res['Value']['Failed'][lfn]))
-    lfnReplicas = res['Value']['Successful'][lfn]
-    res = self.fileCatalogue.getFileSize(lfn)
+    failed = res['Value']['Failed']
+    lfnReplicas = res['Value']['Successful']
+    res = self.getFileSize(lfnReplicas.keys())
     if not res['OK']:
-      errStr = "ReplicaManager.getFile: Failed to get file size from FileCatalogue."
-      gLogger.error(errStr,"%s: %s" % (lfn,res['Message']))
-      return S_ERROR("%s %s" % (errStr,res['Message']))
-    if not res['Value']['Successful'].has_key(lfn):
-      errStr = "ReplicaManager.getFile: Failed to get file size."
-      gLogger.error(errStr,"%s %s" % (lfn,res['Value']['Failed'][lfn]))
-      return S_ERROR("%s %s %s" % (errStr,lfn,res['Value']['Failed'][lfn]))
-    catalogueSize = res['Value']['Successful'][lfn]
-
+      return res
+    failed.update(res['Value']['Failed'])
+    fileSizes = res['Value']['Successful'] 
     ###########################################################
-    # Determine the best replica
-    replicaPreference = []
-    for diracSE,pfn in lfnReplicas.items():
-      storageElement = StorageElement(diracSE)
-      if storageElement.isValid()['Value']:
-        local = storageElement.isLocalSE()['Value']
-        fileTuple = (diracSE,pfn)
-        if local:
-          replicaPreference.insert(0,fileTuple)
+    # Determine the best replicas
+    replicaPreference = {}
+    for lfn,size in fileSizes.items():
+      replicas = []
+      for diracSE,pfn in lfnReplicas[lfn].items():
+        storageElement = StorageElement(diracSE)
+        if storageElement.isValid()['Value']:
+          local = storageElement.isLocalSE()['Value']
+          fileTuple = (diracSE,pfn)
+          if local:
+            replicas.insert(0,fileTuple)
+          else:
+            replicas.append(fileTuple)
         else:
-          replicaPreference.append(fileTuple)
+          errStr = "ReplicaManager.getFile: Failed to determine whether SE is local."
+          gLogger.error(errStr,diracSE)
+      if not replicas:
+        errStr = "ReplicaManager.getFile: Failed to find any valid StorageElements."
+        gLogger.error(errStr,lfn)
+        failed[lfn] = errStr
       else:
-        errStr = "ReplicaManager.getFile: Failed to determine whether SE is local."
-        gLogger.error(errStr,diracSE)
-    if not replicaPreference:
-      errStr = "ReplicaManager.getFile: Failed to find any valid StorageElements."
-      gLogger.error(errStr,lfn)
-      return S_ERROR(errStr)
-
+        replicaPreference[lfn] = replicas
     ###########################################################
     # Get a local copy depending on replica preference
-    for diracSE,pfn in replicaPreference:
-      storageElement = StorageElement(diracSE)
-      res = storageElement.getFile(pfn,catalogueSize)
-      if res['OK']:
-        return res
-    # If we get here then we failed to get any replicas
-    errStr = "ReplicaManager.getFile: Failed to get local copy of file."
-    gLogger.error(errStr,lfn)
-    return S_ERROR(errStr)
+    successful = {}
+    for lfn,replicas in replicaPreference.items():
+      gotFile = False
+      for diracSE,pfn in replicas:
+        if not gotFile:
+          storageElement = StorageElement(diracSE)
+          res = storageElement.getFile(pfn,fileSizes[lfn])
+          if res['OK']:
+            gotFile = True
+            successful[lfn] = res['Value']     
+      # If we get here then we failed to get any replicas
+      errStr = "ReplicaManager.getFile: Failed to get local copy from any replicas."
+      gLogger.error(errStr,lfn)
+      failed[lfn] = errStr
+    resDict = {'Successful':successful,'Failed':failed}
+    return S_OK(resDict)
 
   def replicateAndRegister(self,lfn,destSE,sourceSE='',destPath='',localCache=''):
     """ Replicate a LFN to a destination SE and register the replica.
@@ -174,27 +202,40 @@ class ReplicaManager:
         'destPath' is the path on the destination storage element, if to be different from LHCb convention
         'localCache' is the local file system location to be used as a temporary cache
     """
+    successful = {}
+    failed = {}
     gLogger.info("ReplicaManager.replicateAndRegister: Attempting to replicate %s to %s." % (lfn,destSE))
     res = self.__replicate(lfn,destSE,sourceSE,destPath)
     if not res['OK']:
-      errStr = "ReplicaManager.replicateAndRegister: Replication failed."
-      gLogger.errStr(errStr,"%s %s" % (lfn,destSE))
-      return res
+      errStr = "ReplicaManager.replicateAndRegister: Completely failed to replicate file."
+      gLogger.errStr(errStr,res['Message'])
+      return S_ERROR(errStr)     
     if not res['Value']:
       # The file was already present at the destination SE
       gLogger.info("ReplicaManager.replicateAndRegister: %s already present at %s." % (lfn,destSE))
-      return res
+      successful[lfn] = True
+      resDict = {'Successful':successful,'Failed':failed}
+      return S_OK(resDict)       
     destPfn = res['Value']['DestPfn']
     destSE = res['Value']['DestSE']
     gLogger.info("ReplicaManager.replicateAndRegister: Attempting to register %s at %s." % (destPfn,destSE))
-    res = self.__registerReplica(lfn,destPfn,destSE)
+    replicaTuple = (lfn,destPfn,destSE)
+    res = self.registerReplica(replicaTuple)
     if not res['OK']:
       # Need to return to the client that the file was replicated but not registered
-      errStr = "ReplicaManager.replicateAndRegister: Replica registration failed."
-      gLogger.error(errStr,"%s %s %s" % (lfn,destPfn,destSE))
+      errStr = "ReplicaManager.replicateAndRegister: Completely failed to register replica."
+      gLogger.error(errStr,res['Message'])
+      failed[lfn] = {'Registration':{'LFN':lfn,'TargetSE':destSE,'PFN':destPfn}}     
     else:
-      gLogger.info("ReplicaManager.replicateAndRegister: Successfully registered replica.")
-      return S_OK(lfn)
+      if res['Value']['Successful'].has_key(lfn): 
+        gLogger.info("ReplicaManager.replicateAndRegister: Successfully registered replica.")
+        successful[lfn] = True
+      else:
+        errStr = "ReplicaManager.replicateAndRegister: Failed to register replica."
+        gLogger.info(errStr,res['Value']['Failed'][lfn])
+        failed[lfn] = {'Registration':{'LFN':lfn,'TargetSE':destSE,'PFN':destPfn}}           
+    resDict = {'Successful':successful,'Failed':failed}
+    return S_OK(resDict)
 
   def replicate(self,lfn,destSE,sourceSE='',destPath='',localCache=''):
     """ Replicate a LFN to a destination SE and register the replica.
@@ -362,16 +403,20 @@ class ReplicaManager:
               gLogger.info("ReplicaManager.__resolveBestReplicas: Attempting to get source file size.")
               res = storageElement.getFileSize(sourcePfn)
               if res['OK']:
-                sourceFileSize = res['Value']
-                gLogger.info("ReplicaManager.__resolveBestReplicas: Source file size determined to be %s." % sourceFileSize)
-                if catalogueSize == sourceFileSize:
-                  fileTuple = (diracSE,sourcePfn)
-                  replicaPreference.append(fileTuple)
+                if res['Value']['Successful'].has_key(sourcePfn):
+                  sourceFileSize = res['Value']['Successful'][sourcePfn]
+                  gLogger.info("ReplicaManager.__resolveBestReplicas: Source file size determined to be %s." % sourceFileSize)
+                  if catalogueSize == sourceFileSize:
+                    fileTuple = (diracSE,sourcePfn)
+                    replicaPreference.append(fileTuple)
+                  else:
+                    errStr = "ReplicaManager.__resolveBestReplicas: Catalogue size and physical file size mismatch."
+                    gLogger.error(errStr,"%s %s" % (diracSE,sourcePfn))
                 else:
-                  errStr = "ReplicaManager.__resolveBestReplicas: Catalogue size and physical file size mismatch."
-                  gLogger.error(errStr,"%s %s" % (diracSE,sourcePfn))
+                  errStr = "ReplicaManager.__resolveBestReplicas: Failed to get physical file size."
+                  gLogger.error(errStr,"%s %s: %s" % (sourcePfn,diracSE,res['Value']['Failed'][sourcePfn]))                
               else:
-                errStr = "ReplicaManager.__resolveBestReplicas: Failed to get physical file size."
+                errStr = "ReplicaManager.__resolveBestReplicas: Completely failed to get physical file size."
                 gLogger.error(errStr,"%s %s: %s" % (sourcePfn,diracSE,res['Message']))
             else:
               errStr = "ReplicaManager.__resolveBestReplicas: Failed to get PFN for replication for StorageElement."
@@ -438,7 +483,7 @@ class ReplicaManager:
           if not res['OK']:
             failed[lfn] = res['Message']
           else:
-            tuple = (lfn,physicalFile,fileSize,storageElementName,fileGuid)
+            tuple = (lfn,res['Value'],fileSize,storageElementName,fileGuid)
             fileTuples.append(tuple)
     gLogger.info("ReplicaManager.__registerFile: Resolved %s files for registration." % len(fileTuples))
     res = self.fileCatalogue.addFile(fileTuples)
@@ -494,7 +539,7 @@ class ReplicaManager:
           if not res['OK']:
             failed[lfn] = res['Message']
           else:
-            replicaTuple = (lfn,res['Message'],storageElementName,False)
+            replicaTuple = (lfn,res['Value'],storageElementName,False)
             replicaTuples.append(replicaTuple)
     gLogger.info("ReplicaManager.__registerReplica: Successfully resolved %s replicas for registration." % len(replicaTuples))
     res = self.fileCatalogue.addReplica(replicaTuples)
@@ -550,10 +595,10 @@ class ReplicaManager:
       for se,pfn in repDict.items():
         if not storageElementDict.has_key(se):
           storageElementDict[se] = []
-        storageElementDict.append((lfn,pfn))
+        storageElementDict[se].append((lfn,pfn))
     failed = {}
     for storageElementName,fileTuple in storageElementDict.items():
-      res = self.__removeReplica(self,storageElementName,fileTuple)
+      res = self.__removeReplica(storageElementName,fileTuple)
       if not res['OK']:
         errStr = res['Message']
         for lfn,pfn in fileTuple:
@@ -628,7 +673,7 @@ class ReplicaManager:
     for pfn in res['Value']['Successful'].keys():
       replicaTuple = (pfnDict[pfn],pfn,storageElementName)
       replicaTuples.append(replicaTuple)
-    res = self.__removeCatalogReplica(replicaTuple)
+    res = self.__removeCatalogReplica(replicaTuples)
     if not res['OK']:
       errStr = "ReplicaManager.__removeReplica: Completely failed to remove physical files."
       gLogger.error(errStr,res['Message'])
