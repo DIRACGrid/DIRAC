@@ -16,3 +16,9 @@ CREATE table sources (
     componentLocation TEXT,
     componentName TEXT
 );
+CREATE table views (
+	id INTEGER PRIMARY KEY,
+	name TEXT,
+	definition TEXT,
+	variableFields TEXT
+);
