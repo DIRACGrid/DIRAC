@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/AuthManager.py,v 1.10 2007/11/20 15:51:44 acasajus Exp $
-__RCSID__ = "$Id: AuthManager.py,v 1.10 2007/11/20 15:51:44 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/AuthManager.py,v 1.11 2007/12/19 17:49:57 acasajus Exp $
+__RCSID__ = "$Id: AuthManager.py,v 1.11 2007/12/19 17:49:57 acasajus Exp $"
 
 import types
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
@@ -34,6 +34,10 @@ class AuthManager:
       gLogger.verbose( "Query comes from a gateway" )
       self.unpackForwardedCredentials( credDict )
       return self.authQuery( methodQuery, credDict )
+    else:
+      if 'group' in credDict and type( credDict[ 'group' ] ) not in  ( types.StringType, types.UnicodeType ):
+        gLogger.warn( "The credentials seem to be forwarded by a host, but it is not a trusted one" )
+        return False
     if 'DN' in credDict:
       #Get the username
       if not self.getUsername( credDict ):
