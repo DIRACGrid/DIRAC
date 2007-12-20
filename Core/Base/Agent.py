@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Agent.py,v 1.5 2007/12/06 21:27:48 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Agent.py,v 1.6 2007/12/20 19:33:20 acasajus Exp $
 ########################################################################
 """ Base class for all the Agents.
 
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: Agent.py,v 1.5 2007/12/06 21:27:48 paterson Exp $"
+__RCSID__ = "$Id: Agent.py,v 1.6 2007/12/20 19:33:20 acasajus Exp $"
 
 import os
 import threading
@@ -26,6 +26,7 @@ from DIRAC  import gLogger, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.ConfigurationSystem.Client.PathFinder import getAgentSection
 from DIRAC.Core.Utilities.Subprocess import pythonCall
+from DIRAC.MonitoringSystem.Client.MonitoringClient import gMonitor
 
 class Agent:
 
@@ -37,6 +38,14 @@ class Agent:
     self.fullname = name
     self.system,self.name = name.split('/')
     self.log = gLogger
+
+  def __initializeMonitor( self ):
+    """
+    Initialize the system monitor client
+    """
+    gMonitor.setComponentType( gMonitor.COMPONENT_AGENT )
+    gMonitor.setComponentName( self.fullname )
+    gMonitor.initialize()
 
   def initialize(self):
     """ Default common agent initialization
@@ -78,6 +87,8 @@ class Agent:
     self.count = 0   # Counter of the number of cycles
     self.start = time.time()
     self.exit_status = 'OK'
+
+    self.__initializeMonitor()
 
     # Set the signal handler
     signal.signal(signal.SIGINT, self.__signal_handler)
