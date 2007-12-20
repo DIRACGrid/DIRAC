@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: SandboxHandler.py,v 1.5 2007/11/09 18:35:19 atsareg Exp $
+# $Id: SandboxHandler.py,v 1.6 2007/12/20 13:24:17 atsareg Exp $
 ########################################################################
 
 """ SandboxHandler is the implementation of the Sandbox service
@@ -12,7 +12,7 @@
 
 """
 
-__RCSID__ = "$Id: SandboxHandler.py,v 1.5 2007/11/09 18:35:19 atsareg Exp $"
+__RCSID__ = "$Id: SandboxHandler.py,v 1.6 2007/12/20 13:24:17 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -40,7 +40,7 @@ def initializeSandboxHandler(serviceInfo):
   else:
     return S_ERROR('Uknown sandbox service '+sandbox_type)
 
-  sandboxDB = SandboxDB()
+  sandboxDB = SandboxDB(sandbox_type)
   jobDB = JobDB()
   return S_OK()
 
@@ -156,12 +156,12 @@ class SandboxHandler(RequestHandler):
     """
 
     return jobDB.setSandboxReady(jobID,stype)
-    
+
   types_getFileNames = [ IntType ]
   def export_getFileNames(self,jobID,stype="Input"):
     """ Remove sandbox for the given job
-    """  
-    
+    """
+
     return sandboxDB.getFileNames(jobID,stype)
 
   types_removeSandbox = [ IntType ]
