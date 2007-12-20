@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/SandboxDB.py,v 1.4 2007/11/09 18:35:18 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/SandboxDB.py,v 1.5 2007/12/20 13:24:48 atsareg Exp $
 ########################################################################
 """ SandboxDB class is a simple storage using MySQL as a container for
     relatively small sandbox files. The file size is limited to 16MB.
@@ -10,7 +10,7 @@
     getWMSTimeStamps()
 """
 
-__RCSID__ = "$Id: SandboxDB.py,v 1.4 2007/11/09 18:35:18 atsareg Exp $"
+__RCSID__ = "$Id: SandboxDB.py,v 1.5 2007/12/20 13:24:48 atsareg Exp $"
 
 import re, os, sys
 import time, datetime
@@ -23,11 +23,11 @@ from DIRAC.Core.Base.DB import DB
 #############################################################################
 class SandboxDB(DB):
 
-  def __init__( self, maxQueueSize=10 ):
+  def __init__( self, sandbox_type, maxQueueSize=10 ):
     """ Standard Constructor
     """
 
-    DB.__init__(self,'ISandboxDB','WorkloadManagement/SandboxDB',maxQueueSize)
+    DB.__init__(self,sandbox_type,'WorkloadManagement/SandboxDB',maxQueueSize)
 
     self.maxSize = 16
     result = gConfig.getOption( self.cs_path+'/MaxSize')
