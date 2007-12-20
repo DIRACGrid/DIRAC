@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/SandboxDB.py,v 1.5 2007/12/20 13:24:48 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/SandboxDB.py,v 1.6 2007/12/20 14:20:04 atsareg Exp $
 ########################################################################
 """ SandboxDB class is a simple storage using MySQL as a container for
     relatively small sandbox files. The file size is limited to 16MB.
@@ -10,14 +10,13 @@
     getWMSTimeStamps()
 """
 
-__RCSID__ = "$Id: SandboxDB.py,v 1.5 2007/12/20 13:24:48 atsareg Exp $"
+__RCSID__ = "$Id: SandboxDB.py,v 1.6 2007/12/20 14:20:04 atsareg Exp $"
 
 import re, os, sys
 import time, datetime
 from types import *
 
-from DIRAC  import gLogger, S_OK, S_ERROR
-from DIRAC.ConfigurationSystem.Client.Config import gConfig
+from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
 
 #############################################################################
@@ -60,7 +59,7 @@ class SandboxDB(DB):
       return result
     if len(result['Value']) > 0:
       # Remove the already existing file - overwrite
-      self.gLogger.warn('Overwriting file %s for job %d' % (filename,int(jobID)))
+      gLogger.warn('Overwriting file %s for job %d' % (filename,int(jobID)))
       req = "DELETE FROM %sSandbox WHERE JobID=%d AND FileName='%s'" % \
             (prefix,int(jobID),filename)
       result = self._update(req)
