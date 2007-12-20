@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.5 2007/12/19 18:43:42 acasajus Exp $
-__RCSID__ = "$Id: MonitoringClient.py,v 1.5 2007/12/19 18:43:42 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.6 2007/12/20 18:46:34 acasajus Exp $
+__RCSID__ = "$Id: MonitoringClient.py,v 1.6 2007/12/20 18:46:34 acasajus Exp $"
 
 import threading
 import time
@@ -21,6 +21,7 @@ class MonitoringClient:
   COMPONENT_SERVICE = "service"
   COMPONENT_AGENT   = "agent"
   COMPONENT_WEB     = "web"
+  COMPONENT_SCRIPT  = "script"
 
   def __init__( self ):
     self.sourceId = 0
@@ -50,6 +51,8 @@ class MonitoringClient:
       self.cfgSection = "/Website"
       self.setComponentLocation( 'http://%s' % Network.getFQDN() )
       self.setComponentName( 'Web' )
+    elif self.sourceDict[ 'componentType' ] == self.COMPONENT_SCRIPT:
+      self.cfgSection = "/Script"
     else:
       raise Exception( "Component type has not been defined" )
     self.__initializeSendMode()
