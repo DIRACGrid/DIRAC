@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.8 2007/12/13 18:14:22 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.9 2007/12/20 14:00:50 paterson Exp $
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,7 +13,7 @@
 
 """
 
-__RCSID__ = "$Id: Job.py,v 1.8 2007/12/13 18:14:22 paterson Exp $"
+__RCSID__ = "$Id: Job.py,v 1.9 2007/12/20 14:00:50 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -91,12 +91,12 @@ class Job:
     """
 
     if os.path.exists(executable):
-      self.log.debug('Found script executable file %s' % (executable))
+      self.log.verbose('Found script executable file %s' % (executable))
       self.addToInputSandbox.append(executable)
       logName = os.path.basename(executable)+'.log'
       moduleName = os.path.basename(executable)
     else:
-      self.log.debug('Found executable code')
+      self.log.verbose('Found executable code')
       logName = 'CodeOutput.log'
       moduleName = 'CodeSegment'
 
@@ -580,7 +580,7 @@ class Job:
           files = string.split(output['Value'])
           for check in files:
             if os.path.isfile(check):
-              self.log.debug('Found file '+check+' appending to Input Sandbox')
+              self.log.verbose('Found file '+check+' appending to Input Sandbox')
               resolvedIS.append(check)
             if os.path.isdir(check):
               if re.search('/$',check): #users can specify e.g. /my/dir/lib/
@@ -596,10 +596,10 @@ class Job:
               if not output['OK']:
                 self.log.error('Could not perform: %s' %(cmd))
               resolvedIS.append(tarname+'.tar.gz')
-              self.log.debug('Found directory '+check+', appending '+check+'.tar.gz to Input Sandbox')
+              self.log.verbose('Found directory '+check+', appending '+check+'.tar.gz to Input Sandbox')
 
       if os.path.isdir(f):
-        self.log.debug('Found specified directory '+f+', appending '+f+'.tar.gz to Input Sandbox')
+        self.log.verbose('Found specified directory '+f+', appending '+f+'.tar.gz to Input Sandbox')
         if re.search('/$',f): #users can specify e.g. /my/dir/lib/
            f = f[:-1]
         tarname = os.path.basename(f)
@@ -661,8 +661,10 @@ class Job:
     if self.script:
       if os.path.exists(self.script):
         scriptname = os.path.abspath(self.script)
+        self.log.verbose('Found script name %s' %scriptName)
     else:
       if xmlFile:
+        self.log.verbose('Found XML File %s' %xmlFile)
         scriptname = xmlFile
 
     self.addToInputSandbox.append(scriptname)
@@ -678,14 +680,14 @@ class Job:
         extraFiles = string.join(self.addToInputSandbox,';')
         currentFiles = paramsDict['InputSandbox']['value']
         paramsDict['InputSandbox']['value'] = currentFiles+';'+extraFiles
-        self.log.debug('Final Input Sandbox %s' %(currentFiles+';'+extraFiles))
+        self.log.verbose('Final Input Sandbox %s' %(currentFiles+';'+extraFiles))
 
     if self.addToOutputSandbox:
       if paramsDict.has_key('OutputSandbox'):
         extraFiles = string.join(self.addToOutputSandbox,';')
         currentFiles = paramsDict['OutputSandbox']['value']
         paramsDict['OutputSandbox']['value'] = currentFiles+';'+extraFiles
-        self.log.debug('Final Output Sandbox %s' %(currentFiles+';'+extraFiles))
+        self.log.verbose('Final Output Sandbox %s' %(currentFiles+';'+extraFiles))
 
     #Add any JDL parameters to classad obeying lists with ';' rule
     requirements = False
@@ -693,7 +695,7 @@ class Job:
       ptype = paramsDict[name]['type']
       value = paramsDict[name]['value']
       if name.lower()=='requirements' and ptype=='JDL':
-        self.log.debug('Found existing requirements: %s' %(value))
+        self.log.verbose('Found existing requirements: %s' %(value))
         requirements = True
 
       if re.search('^JDL',ptype):
@@ -713,7 +715,7 @@ class Job:
           exprn += reqtsDict[name].replace('NAME',name).replace('VALUE',str(value))+plus
 
       exprn = exprn[:-len(plus)]
-      self.log.debug('Requirements: %s' %(exprn))
+      self.log.verbose('Requirements: %s' %(exprn))
       classadJob.set_expression('Requirements', exprn)
 
     jdl = classadJob.asJDL()
