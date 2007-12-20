@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.27 2007/12/19 10:53:56 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.28 2007/12/20 14:43:11 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.27 2007/12/19 10:53:56 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.28 2007/12/20 14:43:11 atsareg Exp $"
 
 import re, os, sys, string
 import time
@@ -259,12 +259,12 @@ class JobDB(DB):
         If parameterList is empty - all the parameters are returned.
     """
 
-    self.log.debug( 'JobDB.getParameters: Getting Parameters for job %s' %jobID )
+    self.log.debug( 'JobDB.getParameters: Getting Parameters for job %d' % int(jobID) )
 
     resultDict = {}
     if paramList:
       paramNames = string.join(map(lambda x: '"'+str(x)+'"',paramList ),',')
-      cmd = "SELECT Name, Value from JobParameters WHERE JobID=%d and Name in (%s)" % (jobID,paramNames)
+      cmd = "SELECT Name, Value from JobParameters WHERE JobID=%d and Name in (%s)" % (int(jobID),paramNames)
       result = self._query(cmd)
       if result['OK']:
         if result['Value']:
@@ -393,9 +393,9 @@ class JobDB(DB):
     """ Get the given parameter of a job specified by its jobID
     """
 
-    result = self.getJobParameters(jobID,[attribute])
+    result = self.getJobParameters(jobID,[parameter])
     if result['OK']:
-      value = result['Value'][attribute]
+      value = result['Value'][parameter]
       return S_OK(value)
     else:
       return result
@@ -602,7 +602,7 @@ class JobDB(DB):
     if not self._update( cmd )['OK']:
       result = S_ERROR('JobDB.setJobOptParameter: operation failed.')
 
-    result = self._insert('OptimizerParameters',['JobID','Name','Value'],[jobID, key, value])
+    result = self._insert('OptimizerParameters',['JobID','Name','Value'],[jobID, name, value])
     if not result['OK']:
       return S_ERROR('JobDB.setJobOptParameter: operation failed.')
 
@@ -944,8 +944,7 @@ class JobDB(DB):
     # Exit if the limit of the reschedulings is reached
     if rescheduleCounter >= self.maxRescheduling:
       self.log.error('Maximum number of reschedulings is reached for job %s' % jobID)
-      res = self.setJobStatus(jobID, status='failed',update=True)
-      res = self.setJobStatus(jobID, application='Maximum of reschedulings reached')
+      res = self.setJobStatus(jobID, status='failed', minor='Maximum of reschedulings reached')
       return S_ERROR('Maximum number of reschedulings is reached: %s' % self.maxRescheduling)
 
     req = "UPDATE Jobs set RescheduleCounter=RescheduleCounter+1 WHERE JobID=%s" % jobID
@@ -1309,13 +1308,13 @@ class JobDB(DB):
 
 
 #############################################################################
-  def setSandboxReady(self,jobID,stype='Input'):
+  def setSandboxReady(self,jobID,stype='ISandbox'):
     """ Set the sandbox status ready for the job with jobID
     """
 
-    if stype == "Input":
+    if stype == "ISandbox":
       field = "ISandboxReadyFlag"
-    elif stype == "Output":
+    elif stype == "OSandbox":
       field = "OSandboxReadyFlag"
     else:
       return S_ERROR('Illegal Sandbox type: '+stype)
