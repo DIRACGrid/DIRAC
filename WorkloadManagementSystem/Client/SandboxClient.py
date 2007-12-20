@@ -82,7 +82,7 @@ class SandboxClient:
       return S_ERROR("Can't find file "+ fname)
 
 ########################################################################
-  def getSandbox(self,jobID,sandbox="Input",output_dir=''):
+  def getSandbox(self,jobID,output_dir=''):
     """  Get the job complete sandbox
     """
 
