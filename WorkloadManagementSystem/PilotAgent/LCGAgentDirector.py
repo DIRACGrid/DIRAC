@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/LCGAgentDirector.py,v 1.1 2007/12/04 17:57:23 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/LCGAgentDirector.py,v 1.2 2007/12/20 12:09:16 paterson Exp $
 # File :   LCGAgentDirector.py
 # Author : Stuart Paterson
 ########################################################################
@@ -11,7 +11,7 @@
      the invokation of the Agent Director instance is performed here.
 """
 
-__RCSID__ = "$Id: LCGAgentDirector.py,v 1.1 2007/12/04 17:57:23 paterson Exp $"
+__RCSID__ = "$Id: LCGAgentDirector.py,v 1.2 2007/12/20 12:09:16 paterson Exp $"
 
 from DIRACEnvironment                                        import DIRAC
 from DIRAC.Core.Utilities.Subprocess                         import shellCall
@@ -35,7 +35,7 @@ class LCGAgentDirector(AgentDirector):
     self.resourceBroker = resourceBroker
     self.pilotScript = 'dirac-pilot-lcg.py'
     self.section = '/DIRAC/WorkloadManagementSystem/PilotAgent/LCGAgentDirector'
-    self.diracSetup = 'Development'
+    self.diracSetup = gConfig.getValue(self.section+'/Setup','LHCb-Development')
     self.confFile1 = None
     self.confFile2 = None
     AgentDirector.__init__(self,self.jobDB,resourceBroker)
@@ -148,7 +148,7 @@ class LCGAgentDirector(AgentDirector):
       #Input Sandbox
       diracinstallPath = self.root+'/scripts/dirac-install'
       executablePath   = self.root+'/DIRAC/WorkloadManagementSystem/PilotAgent/'+self.pilotScript
-      guessplatformPath = self.root+'/DIRAC/WorkloadManagementSystem/PilotAgent/guessPlatform'
+      guessplatformPath = self.root+'/scripts/dirac-architecture'
       inputSandboxList = [diracinstallPath, executablePath, guessplatformPath]
 
       for inFile in inputSandbox: inputSandboxList.append(inFile)
