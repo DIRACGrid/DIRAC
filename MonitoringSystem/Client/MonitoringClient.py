@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.6 2007/12/20 18:46:34 acasajus Exp $
-__RCSID__ = "$Id: MonitoringClient.py,v 1.6 2007/12/20 18:46:34 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.7 2007/12/20 18:52:36 acasajus Exp $
+__RCSID__ = "$Id: MonitoringClient.py,v 1.7 2007/12/20 18:52:36 acasajus Exp $"
 
 import threading
 import time
@@ -47,6 +47,7 @@ class MonitoringClient:
       self.cfgSection = PathFinder.getSystemSection( self.sourceDict[ 'componentName' ] )
     elif self.sourceDict[ 'componentType' ] == self.COMPONENT_AGENT:
       self.cfgSection = PathFinder.getAgentSection( self.sourceDict[ 'componentName' ] )
+      self.setComponentLocation( Network.getFQDN() )
     elif self.sourceDict[ 'componentType' ] == self.COMPONENT_WEB:
       self.cfgSection = "/Website"
       self.setComponentLocation( 'http://%s' % Network.getFQDN() )
