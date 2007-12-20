@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/dirac-pilot-lcg.py,v 1.7 2007/12/14 12:05:46 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/dirac-pilot-lcg.py,v 1.8 2007/12/20 12:15:41 paterson Exp $
 # File :   dirac-pilot-lcg.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,7 +13,7 @@ import os,sys,string,re
     for the VO.
 """
 
-__RCSID__ = "$Id: dirac-pilot-lcg.py,v 1.7 2007/12/14 12:05:46 paterson Exp $"
+__RCSID__ = "$Id: dirac-pilot-lcg.py,v 1.8 2007/12/20 12:15:41 paterson Exp $"
 
 
 DEBUG = 1
@@ -150,6 +150,58 @@ def getDictFromCS(diracPython,csSection):
   return result['Value']
 
 #############################################################################
+def installDIRACDist(architecture,diracDistribution):
+  """Simple wrapper to install DIRAC (since done more than once now).
+  """
+  if not os.path.exists('dirac-install'):
+    printPilot('dirac-install not present in local directory','ERROR')
+
+  installDIRAC = './dirac-install -f %s -p %s ' %(architecture,diracDistribution)
+  if DISABLE_INSTALL:
+    installDIRAC = 'echo disabled DIRAC installation'
+
+  runCommand('chmod a+x dirac-install')
+  printPilot(runCommand('ls -al dirac-install'),'DEBUG')
+  DIRAC_INSTALLED = 0
+  for attempt in xrange(INSTALL_RETRIES):
+    if not DIRAC_INSTALLED:
+      installation = runCommand(installDIRAC,1)
+      printPilot('>>>>>>>>>>Start Installation Attempt %s: DIRAC Installation Log' %(attempt+1),'DEBUG')
+      if DEBUG:
+        print installation
+        sys.stdout.flush()
+      printPilot('<<<<<<<<<<End Installation Attempt %s: DIRAC Installation Log' %(attempt+1),'DEBUG')
+
+      if os.path.exists('DIRAC') and os.path.exists(architecture):
+        DIRAC_INSTALLED = 1
+
+  if not DIRAC_INSTALLED:
+    printPilot('Could not install DIRAC from %s, exiting' %(diracDistribution),'ERROR')
+    pilotExit(1)
+
+#############################################################################
+def setupDIRAC(cmd):
+  """Simple wrapper to setup DIRAC (done more than once).
+  """
+  printPilot('>>>>>>>>>>Start: DIRAC Setup Log','DEBUG')
+  if DEBUG:
+    print cmd
+  sys.stdout.flush()
+  os.system(cmd)
+  sys.stdout.flush()
+  printPilot('<<<<<<<<<<End: DIRAC Setup Log','DEBUG')
+
+  if DEBUG:
+    printPilot('Checking local configuration file:','DEBUG')
+    if os.path.exists('etc/dirac.cfg'):
+      cfg = runCommand('cat etc/dirac.cfg',1)
+      sys.stdout.flush()
+      print cfg
+    else:
+      printPilot('etc/dirac.cfg file does not exist','ERROR')
+      pilotExit(1)
+
+#############################################################################
 def pilotExit(code):
   """This method resets the LD_LIBRARY_PATH, PATH and PYTHONPATH
      when using a pre-installed python version.
@@ -187,12 +239,14 @@ CEUNIQUEID = 'InProcess' #This will be specified by the Agent Director eventuall
 printPilot('Running in %s setup on %s' %(diracSetup,runCommand('date')))
 printPilot('WMS CPU Requirement is %s' %jobCPUReqt)
 
-CMTCONFIG = runCommand('python guessPlatform')
+CMTCONFIG = runCommand('python dirac-architecture')
+#printPilot('Temporarily hardcoding CMTCONFIG to slc4_ia32_gcc34')
+#CMTCONFIG = 'slc4_ia32_gcc34'
 printPilot('Setting CMTCONFIG for site to %s' %(CMTCONFIG))
 
 if CMTCONFIG == 'Unknown':
-  CMTCONFIG = 'slc3_ia32_gcc323'
-  printPilot('Since Unknown, setting default CMTCONFIG value to %s' %CMTCONFIG,'WARN')
+  CMTCONFIG = 'slc4_ia32_gcc34'
+  printPilot('Since Unknown, setting default CMTCONFIG value to %s' %(CMTCONFIG),'WARN')
 
 os.putenv('CMTCONFIG',CMTCONFIG)
 printPilot('Current python is: %s' %(sys.executable))
@@ -276,35 +330,10 @@ printPilot('====================================================================
 TARFILE = 'DIRAC-%s.tar.gz' % diracSetup
 diracDist = '%s/%s' %(DIRAC_URL,TARFILE)
 printPilot('DIRAC Tar File to be downloaded is: %s' %(diracDist))
-installDIRAC = './dirac-install -f -p %s ' %(diracDist) #perform full DIRAC installation for now
+printPilot('Performing initial DIRAC installation for %s' %(CMTCONFIG))
+installDIRACDist(CMTCONFIG,diracDist)
 
-if DISABLE_INSTALL:
-  installDIRAC = 'echo disabled DIRAC installation'
-
-runCommand('chmod a+x dirac-install')
-printPilot(runCommand('ls -al dirac-install'),'DEBUG')
-DIRAC_INSTALLED = 0
-for attempt in xrange(INSTALL_RETRIES):
-  if not DIRAC_INSTALLED:
-    installation = runCommand(installDIRAC,1)
-    printPilot('>>>>>>>>>>Start Installation Attempt %s: DIRAC Installation Log' %(attempt+1),'DEBUG')
-    if DEBUG:
-      print installation
-      sys.stdout.flush()
-    printPilot('<<<<<<<<<<End Installation Attempt %s: DIRAC Installation Log' %(attempt+1),'DEBUG')
-
-    if os.path.exists('DIRAC'):
-      DIRAC_INSTALLED = 1
-
-if not DIRAC_INSTALLED:
-  printPilot('Could not install DIRAC from %s, exiting' %(diracDist),'ERROR')
-  pilotExit(1)
-
-#Temporarily add a link to the correct CMTCONFIG (to be updated when all binaries available)
-printPilot('Creating link to %s from slc4_amd64_gcc34' %(CMTCONFIG),'DEBUG')
-runCommand('ln -s slc4_amd64_gcc34 %s' %(CMTCONFIG))
-
-#Get site name from CS and repeat setup
+#Locate DIRAC python
 if not DIRAC_PYTHON:
   diracPython='%s/%s/bin/python%s' %(start,CMTCONFIG,DIRAC_PYTHON)
   printPilot('Using locally installed DIRAC python: %s' %(diracPython))
@@ -313,37 +342,19 @@ else:
   printPilot('Using DIRAC python from shared area: %s' %(diracPython))
 
 if not os.path.exists(diracPython):
-  printPilot('DIRAC Python does not exist','ERROR')
+  printPilot('DIRAC Python does not exist:','ERROR')
+  printPilot(diracPython,'ERROR')
   pilotExit(1)
 
 printPilot(runCommand('chmod a+x %s' %(diracPython),1),'DEBUG')
 printPilot(runCommand('ls -al %s' %(diracPython),1),'DEBUG')
 
-#Insert DIRAC ROOT to sys.path
-#printPilot('Adding %s to sys.path' %(start),'DEBUG')
-#sys.path.insert(0,start)
-#sys.path.insert(0,start+'/scripts')
-
 #Initial setup of DIRAC to enable CS settings
-initialDIRACSetup = '%s scripts/dirac-setup -s LCG.Unknown.ch -m %s' %(diracPython,diracSetup)
-printPilot('>>>>>>>>>>Start: Initial DIRAC Setup Log','DEBUG')
-if DEBUG:
-  print initialDIRACSetup
-printPilot('Setting PYTHONPATH to null for dirac-setup','DEBUG')
-os.putenv('PYTHONPATH','')
-sys.stdout.flush()
-os.system(initialDIRACSetup)
-sys.stdout.flush()
-printPilot('<<<<<<<<<<End: Initial DIRAC Setup Log','DEBUG')
-if DEBUG:
-  printPilot('Checking local configuration file:','DEBUG')
-  if os.path.exists('etc/dirac.cfg'):
-    cfg = runCommand('cat etc/dirac.cfg',1)
-    sys.stdout.flush()
-    print cfg
-  else:
-    printPilot('etc/dirac.cfg file does not exist','WARN')
+initial = '%s scripts/dirac-setup -s LCG.Unknown.ch -m %s' %(diracPython,diracSetup)
+printPilot('Performing initial DIRAC setup to enable CS')
+setupDIRAC(initial)
 
+#Retrieve current site name and local SEs from CS
 siteDict = getDictFromCS(diracPython,'/Resources/GridSites/LCG')
 DIRAC_SITE_NAME = ''
 for ce,siteName in siteDict.items():
@@ -363,61 +374,63 @@ LOCALSE = ''
 siteLocalSEMapping = getDictFromCS(diracPython,'/Resources/SiteLocalSEMapping')
 for site,ses in siteLocalSEMapping.items():
   if site == DIRAC_SITE_NAME:
-    LOCALSE = string.join(ses,',')
+    LOCALSE = ses
+    printPilot('Found LocalSE = %s' %(LOCALSE))
 
 if not LOCALSE:
   printPilot('No LocalSE found in SiteLocalSEMapping for %s setting to None' %(DIRAC_SITE_NAME),'WARN')
   LOCALSE = 'None'
 
-#Full setup of DIRAC with LCG site name
-#temporarily append LHCb to dev string from AD
-fullDIRACSetup = '%s scripts/dirac-setup -m %s -s %s -a %s -p %s ' %(diracPython,'LHCb-'+diracSetup,DIRAC_SITE_NAME,CMTCONFIG,'LCG')
-printPilot('>>>>>>>>>>Start: Full DIRAC Setup Log','DEBUG')
-if DEBUG:
-  print fullDIRACSetup
-sys.stdout.flush()
-os.system(fullDIRACSetup)
-sys.stdout.flush()
-printPilot('<<<<<<<<<<End: Full DIRAC Setup Log','DEBUG')
-if DEBUG:
-  printPilot('Checking local configuration file:','DEBUG')
-  if os.path.exists('etc/dirac.cfg'):
-    cfg = runCommand('cat etc/dirac.cfg',1)
-    sys.stdout.flush()
-    print cfg
-  else:
-    printPilot('etc/dirac.cfg file does not exist','ERROR')
-
-if not os.path.exists('etc/dirac.cfg'):
+#Now that CS can be accessed, other possible system configurations can now be resolved
+extraArchitectures = getDictFromCS(diracPython,'/Resources/Computing/OSCompatibility')
+newArch = []
+if extraArchitectures.has_key(CMTCONFIG):
+  newArch = extraArchitectures[CMTCONFIG]
+  printPilot('Compatible OS Architectures are: %s' %(newArch))
+else:
+  printPilot('Platform %s undefined in /Resources/Computing/OSCompatibility' %(CMTCONFIG),'ERROR')
   pilotExit(1)
 
-#############################################################################
-#Start DIRAC Job Agent
+newArch = string.split(newArch,',')
+#Trigger installations of additional tags but retain original CMTCONFIG for final dirac-setup
+for archToInstall in newArch:
+  if not archToInstall==CMTCONFIG: #already installed this one
+    printPilot('Installing DIRAC for %s' %(archToInstall))
+    installDIRACDist(archToInstall,diracDist)
 
-#runJobAgent = '%s %s/DIRAC/Core/scripts/dirac-agent WorkloadManagement/JobAgent -o LogLevel=debug ' %(diracPython,start)
+#Full setup of DIRAC with LCG site name
+fullSetup = '%s scripts/dirac-setup -m %s -s %s -a %s -p %s ' %(diracPython,diracSetup,DIRAC_SITE_NAME,CMTCONFIG,'LCG')
+setupDIRAC(fullSetup)
+
+#############################################################################
+#Start DIRAC Job Agent after creating some cfg files
+
 runJobAgent = '%s scripts/dirac-agent WorkloadManagement/JobAgent -o LogLevel=debug ' %(diracPython)
 
-#write any necessary configuration files
 inProcessSection = 'Resources/Computing/InProcess'
 inProcessDict = {'WorkingDirectory':start,'LocalAccountString':whoami,'TotalCPUs':1,'MaxCPUTime':int(jobCPUReqt)+1,'MaxRunningJobs':1}
 inProcessDict['CPUScalingFactor']=1
 inProcessDict['MaxTotalJobs']=1
 writeConfigFile('InProcess.cfg',inProcessSection,inProcessDict)
+#writeConfigFile('Setup.cfg','DIRAC',{'Setup':'LHCb-Development'})
 
-#below is because LHCb-Development differs from Development, this is fine for initial tests
-#but will be replaced...  also 'Development' below will be replaced by local sites / agents section
-writeConfigFile('Setup.cfg','DIRAC',{'Setup':'LHCb-Development'})
+#Must get 'Development' string from CS to set certain parameters
+setupDict = getDictFromCS(diracPython,'DIRAC/Setups/%s' %(diracSetup))
+if not setupDict.has_key('WorkloadManagement'):
+  printPilot('Could not find setup for %s/WorkloadManagement' %(diracSetup))
+  pilotExit(1)
 
-jobAgentSection = 'Systems/WorkloadManagement/Development/Agents/JobAgent'
+wmsSetup = setupDict['WorkloadManagement']
+jobAgentSection = 'Systems/WorkloadManagement/%s/Agents/JobAgent' %(wmsSetup)
 writeConfigFile('JobAgent.cfg',jobAgentSection,{'CEUniqueID':'InProcess','MaxCycles':1})
-
 writeConfigFile('Security.cfg','DIRAC/Security',{'UseServerCertificate':'no'})
+
 #need to define watchdog control directory
-watchdogSection = 'Systems/WorkloadManagement/Development/Agents/Watchdog'
+watchdogSection = 'Systems/WorkloadManagement/%s/Agents/Watchdog' %(wmsSetup)
 writeConfigFile('Watchdog.cfg',watchdogSection,{'PollingTime':20,'ControlDirectory':start})
 
 #setup local site SE to be automatically picked up in Job Wrapper arguments
-localSESection = 'LocalSite/LocalSE'
+localSESection = 'LocalSite'
 writeConfigFile('LocalSE.cfg',localSESection,{'LocalSE':LOCALSE})
 
 #find any .cfg files and append to script to run job agent, all files created in '.'
@@ -426,15 +439,13 @@ for i in os.listdir(start):
     runJobAgent += i+' '
 
 printPilot('Running DIRAC Job Agent:\n%s' %(runJobAgent),'DEBUG')
-
 sys.stdout.flush()
-#printPilot('Setting PYTHONPATH to null')
-#os.putenv('PYTHONPATH',' ')
 os.system(runJobAgent)
 sys.stdout.flush()
 
 #############################################################################
 #Perform any post-execution tasks / debugging and exit gracefully
+
 printPilot('Post-execution proxy information:')
 os.system('grid-proxy-info')
 sys.stdout.flush()
