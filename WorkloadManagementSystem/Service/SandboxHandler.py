@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: SandboxHandler.py,v 1.6 2007/12/20 13:24:17 atsareg Exp $
+# $Id: SandboxHandler.py,v 1.7 2007/12/20 14:20:48 atsareg Exp $
 ########################################################################
 
 """ SandboxHandler is the implementation of the Sandbox service
@@ -12,7 +12,7 @@
 
 """
 
-__RCSID__ = "$Id: SandboxHandler.py,v 1.6 2007/12/20 13:24:17 atsareg Exp $"
+__RCSID__ = "$Id: SandboxHandler.py,v 1.7 2007/12/20 14:20:48 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -129,6 +129,9 @@ class SandboxHandler(RequestHandler):
     req = "SELECT FileBody from %s where JobID=%d and FileName='%s'" % \
           (sandbox_type,jobID,fname)
 
+    print "-----------------------"
+    print req
+
     result = sandboxDB._query(req)
     if not result['OK']:
       return result
@@ -150,26 +153,26 @@ class SandboxHandler(RequestHandler):
 
     return S_OK()
 
-  types_setSandboxReady = [ IntType, StringType ]
-  def export_setSandboxReady(self,jobID,stype="Input"):
+  types_setSandboxReady = [ IntType ]
+  def export_setSandboxReady(self,jobID):
     """  Set the sandbox ready for the job with jobID
     """
 
-    return jobDB.setSandboxReady(jobID,stype)
+    return jobDB.setSandboxReady(jobID,sandbox_type)
 
   types_getFileNames = [ IntType ]
-  def export_getFileNames(self,jobID,stype="Input"):
+  def export_getFileNames(self,jobID):
     """ Remove sandbox for the given job
     """
 
-    return sandboxDB.getFileNames(jobID,stype)
+    return sandboxDB.getFileNames(jobID,sandbox_type)
 
   types_removeSandbox = [ IntType ]
-  def export_removeSandbox(self,jobID,stype="Input"):
+  def export_removeSandbox(self,jobID):
     """ Remove sandbox for the given job
     """
 
-    return sandboxDB.removeSandbox(jobID,fname,stype)
+    return sandboxDB.removeSandbox(jobID,fname,sandbox_type)
 
 
 
