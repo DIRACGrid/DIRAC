@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.10 2007/12/20 14:32:23 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.11 2007/12/20 14:57:46 paterson Exp $
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,7 +13,7 @@
 
 """
 
-__RCSID__ = "$Id: Job.py,v 1.10 2007/12/20 14:32:23 paterson Exp $"
+__RCSID__ = "$Id: Job.py,v 1.11 2007/12/20 14:57:46 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -230,7 +230,7 @@ class Job:
       self._addParameter(self.workflow,'OutputSandbox','JDL',fileList,description)
     elif type(files) == type(" "):
       description = 'Output sandbox file'
-      self._addParameter(self.workflow,'OutputSandbox','JDL',files,description)
+      self._addParameter(self.workflow,'OutputSandbox','JDL',[files],description)
     else:
       raise TypeError,'Expected string or list for OutputSandbox'
 
@@ -670,24 +670,34 @@ class Job:
     self.addToInputSandbox.append(scriptname)
     classadJob.insertAttributeString('Arguments',scriptname)
     classadJob.insertAttributeString('Executable',self.executable)
+    self.addToOutputSandbox.append(self.stderr)
+    self.addToOutputSandbox.append(self.stdout)
 
     #Extract i/o sandbox parameters from steps and any input data parameters
     #to do when introducing step-level api...
 
     #To add any additional files to input and output sandboxes
     if self.addToInputSandbox:
+      extraFiles = string.join(self.addToInputSandbox,';')
       if paramsDict.has_key('InputSandbox'):
-        extraFiles = string.join(self.addToInputSandbox,';')
         currentFiles = paramsDict['InputSandbox']['value']
         paramsDict['InputSandbox']['value'] = currentFiles+';'+extraFiles
         self.log.verbose('Final Input Sandbox %s' %(currentFiles+';'+extraFiles))
+      else:
+        paramsDict['InputSandbox'] = {}
+        paramsDict['InputSandbox']['value']=extraFiles
+        paramsDict['InputSandbox']['type']='JDL'
 
     if self.addToOutputSandbox:
+      extraFiles = string.join(self.addToOutputSandbox,';')
       if paramsDict.has_key('OutputSandbox'):
-        extraFiles = string.join(self.addToOutputSandbox,';')
         currentFiles = paramsDict['OutputSandbox']['value']
         paramsDict['OutputSandbox']['value'] = currentFiles+';'+extraFiles
         self.log.verbose('Final Output Sandbox %s' %(currentFiles+';'+extraFiles))
+      else:
+        paramsDict['OutputSandbox'] = {}
+        paramsDict['OutputSandbox']['value']=extraFiles
+        paramsDict['OutputSandbox']['type']='JDL'
 
     #Add any JDL parameters to classad obeying lists with ';' rule
     requirements = False
