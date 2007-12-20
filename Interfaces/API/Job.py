@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.9 2007/12/20 14:00:50 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.10 2007/12/20 14:32:23 paterson Exp $
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,7 +13,7 @@
 
 """
 
-__RCSID__ = "$Id: Job.py,v 1.9 2007/12/20 14:00:50 paterson Exp $"
+__RCSID__ = "$Id: Job.py,v 1.10 2007/12/20 14:32:23 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -718,6 +718,8 @@ class Job:
       self.log.verbose('Requirements: %s' %(exprn))
       classadJob.set_expression('Requirements', exprn)
 
+    self.addToInputSandbox = []
+    self.addToOutputSandbox = []
     jdl = classadJob.asJDL()
     start = string.find(jdl,'[')
     end   = string.rfind(jdl,']')
