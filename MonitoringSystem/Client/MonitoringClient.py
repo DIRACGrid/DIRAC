@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.8 2007/12/21 15:34:19 acasajus Exp $
-__RCSID__ = "$Id: MonitoringClient.py,v 1.8 2007/12/21 15:34:19 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.9 2007/12/21 16:04:44 acasajus Exp $
+__RCSID__ = "$Id: MonitoringClient.py,v 1.9 2007/12/21 16:04:44 acasajus Exp $"
 
 import threading
 import time
@@ -36,7 +36,7 @@ class MonitoringClient:
     self.activitiesLock = threading.Lock()
     self.flushingLock = threading.Lock()
     self.timeStep = 60
-    self.enabled = False
+    self.enabled = True
 
   def initialize( self ):
     self.logger = gLogger.getSubLogger( "Monitoring" )
