@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.10 2007/12/19 15:07:10 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.11 2007/12/21 08:45:20 paterson Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.10 2007/12/19 15:07:10 paterson Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.11 2007/12/21 08:45:20 paterson Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -275,11 +275,11 @@ class JobAgent(Agent):
       if not systemConfig:
         return S_ERROR('Could not establish system configuration from Job requirements or LocalSite/Architecture section')
 
-    print >> wrapper, wrapperTemplate % (dPython,signature,jobID,date_time)
+    siteRootPython = 'sys.path.insert(0,"%s")' %(self.siteRoot)
+    print >> wrapper, wrapperTemplate % (dPython,siteRootPython,signature,jobID,date_time)
     libDir = '%s/%s/lib' %(self.siteRoot,systemConfig)
     scriptsDir = '%s/scripts' %(self.siteRoot)
     contribDir = '%s/contrib' %(self.siteRoot)
-    wrapper.write('sys.path.insert(0,"%s")\n' %(self.siteRoot))
     wrapper.write('sys.path.insert(0,"%s")\n' %(libDir))
     wrapper.write('sys.path.insert(0,"%s")\n' %(scriptsDir))
     wrapper.write('sys.path.insert(0,"%s")\n' %(contribDir))
