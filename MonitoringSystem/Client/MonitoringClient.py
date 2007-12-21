@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.7 2007/12/20 18:52:36 acasajus Exp $
-__RCSID__ = "$Id: MonitoringClient.py,v 1.7 2007/12/20 18:52:36 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.8 2007/12/21 15:34:19 acasajus Exp $
+__RCSID__ = "$Id: MonitoringClient.py,v 1.8 2007/12/21 15:34:19 acasajus Exp $"
 
 import threading
 import time
@@ -73,6 +73,7 @@ class MonitoringClient:
     if self.sendingMode == "periodic":
       self.sendingPeriod = max( 60, gConfig.getValue( "%s/SendPeriod" % self.cfgSection, 60 ) )
       self.sendingThread = threading.Thread( target = self.__periodicFlush )
+      self.sendingThread.setDaemon( 1 )
       self.sendingThread.start()
 
   def __periodicFlush( self ):
@@ -232,6 +233,7 @@ class MonitoringClient:
 
   def __sendData( self, acRegister, acMarks, secsTimeout = 30 ):
     if not self.enabled:
+      print "OUT"
       return
     if gServiceInterface.serviceRunning():
       rpcClient = gServiceInterface
