@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/AgentDirector.py,v 1.2 2007/12/04 17:58:48 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/AgentDirector.py,v 1.3 2007/12/21 14:18:01 paterson Exp $
 # File :   AgentDirector.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
      are overridden in Grid specific subclasses.
 """
 
-__RCSID__ = "$Id: AgentDirector.py,v 1.2 2007/12/04 17:58:48 paterson Exp $"
+__RCSID__ = "$Id: AgentDirector.py,v 1.3 2007/12/21 14:18:01 paterson Exp $"
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
 from DIRAC.Core.Utilities.Subprocess                     import shellCall
@@ -39,7 +39,7 @@ class AgentDirector(Thread):
     self.pollingTime = 120
     self.selectJobLimit = 1000
     self.workingDirectory = '/opt/dirac/work/%s' %(self.name)
-    self.diracSetup = 'Development'
+    self.diracSetup = gConfig.getValue('DIRAC/Setup','LHCb-Development')
     Thread.__init__(self)
 
   #############################################################################
