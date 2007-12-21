@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/LCGAgentDirector.py,v 1.2 2007/12/20 12:09:16 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/LCGAgentDirector.py,v 1.3 2007/12/21 14:21:09 paterson Exp $
 # File :   LCGAgentDirector.py
 # Author : Stuart Paterson
 ########################################################################
@@ -11,7 +11,7 @@
      the invokation of the Agent Director instance is performed here.
 """
 
-__RCSID__ = "$Id: LCGAgentDirector.py,v 1.2 2007/12/20 12:09:16 paterson Exp $"
+__RCSID__ = "$Id: LCGAgentDirector.py,v 1.3 2007/12/21 14:21:09 paterson Exp $"
 
 from DIRACEnvironment                                        import DIRAC
 from DIRAC.Core.Utilities.Subprocess                         import shellCall
@@ -30,7 +30,7 @@ class LCGAgentDirector(AgentDirector):
     self.name = 'LCG'
     self.type = 'LCG'
     self.log  = gLogger
-    self.root = '/opt/dirac/'
+    self.root = '/opt/dirac'
     self.log.debug('Starting LCGAgentDirector')
     self.resourceBroker = resourceBroker
     self.pilotScript = 'dirac-pilot-lcg.py'
@@ -155,7 +155,7 @@ class LCGAgentDirector(AgentDirector):
 
       inputSandbox = string.join(inputSandboxList,'","')
       lcgJDL.write('InputSandbox = {"'+inputSandbox+'"}; \n')
-      lcgJDL.write('OutputSandbox = {"std.out","std.err",".BrokerInfo"};\n')
+      lcgJDL.write('OutputSandbox = {"std.out","std.err",".BrokerInfo","pilotOutput.log"};\n')
       lcgJDL.close()
       lcgJDL = open( lcgJDLFile, 'r' )
       self.log.debug( 'Contents of LCG JDL File... \n%s' % string.join(lcgJDL.readlines(),'') )
