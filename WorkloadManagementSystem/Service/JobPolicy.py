@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobPolicy.py,v 1.1 2007/12/19 14:53:18 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobPolicy.py,v 1.2 2007/12/22 15:55:00 atsareg Exp $
 ########################################################################
 
 """ JobPolicy encapsulates authorization rules for different groups
@@ -7,7 +7,7 @@
 
 """
 
-__RCSID__ = "$Id: JobPolicy.py,v 1.1 2007/12/19 14:53:18 atsareg Exp $"
+__RCSID__ = "$Id: JobPolicy.py,v 1.2 2007/12/22 15:55:00 atsareg Exp $"
 
 from DIRAC import gConfig, S_OK, S_ERROR
 
@@ -48,6 +48,7 @@ class JobPolicy:
       return S_OK(jobDict)
 
     result = gConfig.getOption('/Groups/'+userGroup+'/Properties')
+     
     if result['OK']:
       propertyList = result['Value']
     else:
@@ -62,7 +63,7 @@ class JobPolicy:
       jobDict['Run'] = True
 
     # Administrators can do everything
-    if 'JobAdministration' in propertyList:
+    if 'JobAdministrator' in propertyList:
       for r in rightsList:
         jobDict[r] = True
       return S_OK(jobDict)
@@ -74,4 +75,4 @@ class JobPolicy:
           jobDict[r] = True
         return S_OK(jobDict)
 
-
+    return S_OK(jobDict)
