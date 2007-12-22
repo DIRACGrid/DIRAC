@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/ProxyRenewalAgent.py,v 1.2 2007/12/13 15:05:48 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/ProxyRenewalAgent.py,v 1.3 2007/12/22 15:52:25 atsareg Exp $
 ########################################################################
 
 """  Proxy Renewal agent is the key element of the Proxy Repository
@@ -11,9 +11,9 @@ from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.ProxyRepositoryDB import ProxyRepositoryDB
 
-AGENT_NAME = 'WorkloadManagement/ProxyRenewal'
+AGENT_NAME = 'WorkloadManagement/ProxyRenewalAgent'
 
-class ProxyRenewal(Agent):
+class ProxyRenewalAgent(Agent):
 
   def __init__(self):
     """ Standard constructor
@@ -25,16 +25,15 @@ class ProxyRenewal(Agent):
 
     result = Agent.initialize(self)
     self.jobDB = JobDB()
-    self.logDB = JobLoggingDB()
     self.proxyDB = ProxyRepositoryDB()
 
     self.minValidity = gConfig.getValue(self.section+'/MinValidity',12)
-    result = gConfig.getOption('/DIRAC/Security/ServerKey')
+    result = gConfig.getOption('/DIRAC/Security/KeyFile')
     if result['OK']:
       self.server_key = result['Value']
     else:
       return S_ERROR('Failed to get server Key location')
-    result = gConfig.getOption('/DIRAC/Security/ServerCert')
+    result = gConfig.getOption('/DIRAC/Security/CertFile')
     if result['OK']:
       self.server_cert = result['Value']
     else:
@@ -46,15 +45,18 @@ class ProxyRenewal(Agent):
     """ The main agent execution method
     """
 
-    result = self.proxyDB(validity=self.minValidity)
+    result = self.proxyDB.getUsers(validity=self.minValidity)
     if not result["OK"]:
       self.log.error("Failed to acces Proxy Repository Database",result['Message'])
       return S_ERROR("Failed to acces Proxy Repository Database")
 
     ticket_dn_list = result['Value']
-    self.log.verbose("Proxies stored in repository with validity less than %s minutes:" % self.validity)
-    for dn in ticket_dn_list:
-      self.log.verbose(dn)
+    if ticket_dn_list:
+      self.log.verbose("Proxies stored in repository with validity less than %s minutes:" % self.minValidity)
+      for dn in ticket_dn_list:
+        self.log.verbose(dn)
+    else:
+      return S_OK()	
 
     result = self.jobDB.getDistinctJobAttributes("OwnerDN")
     if not result["OK"]:
@@ -111,3 +113,5 @@ class ProxyRenewal(Agent):
           else:
             self.log.warn(result["Message"])
             self.log.warn('Failed to remove proxy for '+dn)
+	    
+    return S_OK()
