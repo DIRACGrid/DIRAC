@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobManagerHandler.py,v 1.2 2007/12/22 15:54:06 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobManagerHandler.py,v 1.3 2008/01/06 21:00:49 atsareg Exp $
 ########################################################################
 
 """ JobManagerHandler is the implementation of the JobManager service
@@ -14,7 +14,7 @@
     
 """
 
-__RCSID__ = "$Id: JobManagerHandler.py,v 1.2 2007/12/22 15:54:06 atsareg Exp $"
+__RCSID__ = "$Id: JobManagerHandler.py,v 1.3 2008/01/06 21:00:49 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -43,8 +43,22 @@ class JobManagerHandler( RequestHandler ):
   ###########################################################################
   types_submitJob = [ StringType, StringType ]
   def export_submitJob( self, JDL, proxy ):
-    """ Submit a single job to DIRAC 
+    """ Submit a single job to DIRAC WMS
     """    
+
+    self.policy = JobPolicy()
+    result = self.getRemoteCredentials()
+    userDN = result['DN']
+    userGroup = result['group'] 
+      
+    # Check job submission permission  
+    result = self.policy.getJobPolicy(userDN,userGroup)      
+    if result['OK']:
+      policyDict = result['Value']
+      if not policyDict['Submit']:
+        return S_ERROR('Job submission not authorized')
+    else:
+      return S_ERROR('Failed to get job policies')    
 
     # Get the new jobID first
     #gActivityClient.addMark( "getJobId" )
@@ -62,13 +76,11 @@ class JobManagerHandler( RequestHandler ):
     classAdJob = ClassAd('['+JDL+']')
     classAdJob.insertAttributeInt('JobID',jobID)
     newJDL = classAdJob.asJDL()
-    result = self.getRemoteCredentials()
-    DN = result['DN']
-    group = result['group']
     result  = jobDB.insertJobIntoDB(jobID,newJDL)
     if not result['OK']:
       return result
-    result  = jobDB.addJobToDB( jobID, JDL=newJDL, ownerDN=DN, ownerGroup=group) 
+    result  = jobDB.addJobToDB( jobID, JDL=newJDL, ownerDN=userDN, 
+                                ownerGroup=userGroup) 
     if not result['OK']:
       return result
 
@@ -78,12 +90,21 @@ class JobManagerHandler( RequestHandler ):
 
     gLogger.info('Job %s added to the JobDB' % str(jobID) )
 
-    resProxy = proxyRepository.storeProxy(proxy,DN,group)
+    resProxy = proxyRepository.storeProxy(proxy,userDN,userGroup)
     if not resProxy['OK']:
       gLogger.error("Failed to store the user proxy for job %s" % jobID)
       return S_ERROR("Failed to store the user proxy for job %s" % jobID)
 
     return S_OK(jobID)   
+    
+###########################################################################
+  types_invalidateJob = [ IntType ]
+  def invalidateJob(self,jobID):
+    """ Make job with jobID invalid, e.g. because of the sandbox submission
+        errors.
+    """    
+    
+    pass
     
 ###########################################################################
   def __get_job_list(self,jobInput):
@@ -106,20 +127,6 @@ class JobManagerHandler( RequestHandler ):
         return []     
    	
     return []
-      
-###########################################################################
-  def __get_job_rights(self,jobID,userDN,userGroup):
-    """ Get access rights to jobID for the user userDN/userGroup 
-    """   
-
-    result = jobDB.getJobAttributes(jobID,['OwnerDN','OwnerGroup'])
-    if not result['OK']:
-      return result
-    elif result['Value']:
-      owner = result['Value']['OwnerDN']
-      group = result['Value']['OwnerGroup']
-      result = self.policy.getJobPolicy(userDN,userGroup,owner,group)
-      return result
 
 ###########################################################################
   def __evaluate_rights(self,jobList,userDN,userGroup,right):
@@ -127,11 +134,12 @@ class JobManagerHandler( RequestHandler ):
     """   
 
     self.policy = JobPolicy()
+    self.policy.setJobDB(jobDB)
     validJobList = []
     invalidJobList = []
     nonauthJobList = []
     for jobID in jobList:
-      result = self.__get_job_rights(jobID,userDN,userGroup)
+      result = self.policy.getUserRightsForJob(jobID,userDN,userGroup)
       if result['OK']:
         if result['Value'][right]:
           validJobList.append(jobID)
@@ -155,12 +163,12 @@ class JobManagerHandler( RequestHandler ):
 
     result = self.getRemoteCredentials()
     userDN = result['DN']
-    userGroup = result['group']  
+    userGroup = result['group'] 
         
     validJobList,invalidJobList,nonauthJobList = self.__evaluate_rights(jobList,
                                                                         userDN,
                                                                         userGroup,
-                                                                        'Run')
+                                                                        'Reschedule')
                                                                         
     if validJobList:
       if proxy:
@@ -218,7 +226,7 @@ class JobManagerHandler( RequestHandler ):
     return result     
     
 ###########################################################################
-  types_killJob = [ IntType, StringType ]
+  types_killJob = [  ]
   def export_killJob(self, jobIDs):
     """  Kill a single running job
     """ 
