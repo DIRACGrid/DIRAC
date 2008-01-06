@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/ProxyRenewalAgent.py,v 1.3 2007/12/22 15:52:25 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/ProxyRenewalAgent.py,v 1.4 2008/01/06 21:37:54 atsareg Exp $
 ########################################################################
 
 """  Proxy Renewal agent is the key element of the Proxy Repository
@@ -10,6 +10,8 @@ from DIRAC.Core.Base.Agent import Agent
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.ProxyRepositoryDB import ProxyRepositoryDB
+from DIRAC.Core.Utilities.GridCredentials import getProxyTimeLeft
+from DIRAC.Core.Utilities.VOMS import getVOMSAttributes, renewProxy
 
 AGENT_NAME = 'WorkloadManagement/ProxyRenewalAgent'
 
@@ -28,6 +30,7 @@ class ProxyRenewalAgent(Agent):
     self.proxyDB = ProxyRepositoryDB()
 
     self.minValidity = gConfig.getValue(self.section+'/MinValidity',12)
+    self.validity_period = gConfig.getValue(self.section+'/ValidityPeriod',15)
     result = gConfig.getOption('/DIRAC/Security/KeyFile')
     if result['OK']:
       self.server_key = result['Value']
@@ -63,7 +66,11 @@ class ProxyRenewalAgent(Agent):
       return S_ERROR("Can not get existing job owner DNs")
 
     job_dn_list = result['Value']
-    for dn in ticket_dn_list:
+    
+    print job_dn_list
+    
+    for dn,group in ticket_dn_list:
+      print dn,group
       if dn in job_dn_list:
         self.log.verbose("Renewing proxy for "+dn)
         result = self.proxyDB.getProxy(dn)
@@ -85,7 +92,7 @@ class ProxyRenewalAgent(Agent):
             else:
               self.log.error('Failed to remove proxy for '+dn)
           else:
-            result = renewVOMSProxy(ticket,
+            result = renewProxy(ticket,
                                     self.validity_period,
                                     server_key=self.server_key,
                                     server_cert=self.server_cert
