@@ -1,4 +1,4 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/VOMS.py,v 1.2 2008/01/06 19:12:16 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/VOMS.py,v 1.3 2008/01/06 19:13:10 atsareg Exp $
 
 """ VOMS module contains utilities to manage VOMS proxies
 
@@ -9,7 +9,7 @@
     createVOMSProxy()
 """
 
-__RCSID__ = "$Id: VOMS.py,v 1.2 2008/01/06 19:12:16 atsareg Exp $"
+__RCSID__ = "$Id: VOMS.py,v 1.3 2008/01/06 19:13:10 atsareg Exp $"
 
 import os
 import time
@@ -278,7 +278,7 @@ def getVOMSAttributes(proxy,switch="all"):
   else:
     if os.path.exists(new_proxy) and rm_proxy == 1:
       restoreProxy(new_proxy,old_proxy)
-    return S_ERROR('Failed to extract info from proxy. Given proxy is: %s' % (new_proxy))
+    return S_ERROR('Failed to extract info from the VOMS proxy: %s' % (new_proxy))
 
   # Clean-up files
   if os.path.exists(new_proxy) and rm_proxy == 1:
