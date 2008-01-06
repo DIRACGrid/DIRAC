@@ -1,4 +1,4 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/VOMS.py,v 1.1 2007/12/13 14:30:02 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/VOMS.py,v 1.2 2008/01/06 19:12:16 atsareg Exp $
 
 """ VOMS module contains utilities to manage VOMS proxies
 
@@ -9,7 +9,7 @@
     createVOMSProxy()
 """
 
-__RCSID__ = "$Id: VOMS.py,v 1.1 2007/12/13 14:30:02 atsareg Exp $"
+__RCSID__ = "$Id: VOMS.py,v 1.2 2008/01/06 19:12:16 atsareg Exp $"
 
 import os
 import time
@@ -20,6 +20,8 @@ import DIRAC
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.Subprocess import shellCall
 from DIRAC.Core.Utilities.GridCredentials import *
+
+TIMEOUT = 10
 
 def renewProxy(proxy,lifetime=72,
                 server="myproxy.cern.ch",
@@ -75,7 +77,7 @@ def renewProxy(proxy,lifetime=72,
 
   # Here "lifetime + 1" used just for get rid off warning status rised by voms-proxy-init
   cmd = "myproxy-get-delegation -s %s -a %s -d -t %s -o %s" % (server, new_proxy, lifetime + 1, my_proxy)
-  result = shellCall(timeout,cmd)
+  result = shellCall(TIMEOUT,cmd)
   if not result['OK']:
     return S_ERROR('Call to myproxy-get-delegation failed')
   status,output,error = result['Value']
@@ -159,7 +161,7 @@ def createVOMSProxy(proxy,attributes="",vo=""):
     return S_ERROR('Failed to create temporary file to store VOMS proxy')
 
   # Lifetime of proxy
-  lifetime = lifetime - 300 # liftime of extension should be less than 5min
+  lifetime = lifetime - 300 # lifetime of extension should be less than 5min
   minutes, seconds = divmod(lifetime,60)
   hours, minutes = divmod(minutes,60)
 
@@ -167,12 +169,12 @@ def createVOMSProxy(proxy,attributes="",vo=""):
   if not len(voms_attr) > 0 and not len(vo) > 0:
     return S_ERROR('Neither VOMS attributes nor VO is set')
   elif len(voms_attr) > 0 and not len(vo) > 0:
-    cmd = "voms-proxy-init %s " % voms_attr
+    cmd = "voms-proxy-init --voms %s " % voms_attr
   elif not len(voms_attr) > 0 and len(vo) > 0:
     cmd = "voms-proxy-init --voms %s " % vo
   cmd += "-cert %s -key %s -out %s " % (new_proxy,new_proxy,voms_proxy)
   cmd += "-valid %s:%s -vomslife %s:%s" % (hours,minutes,hours,minutes)
-  result = shellCall(timeout,cmd)
+  result = shellCall(TIMEOUT,cmd)
   if not result['OK']:
     return S_ERROR('Failed to call voms-proxy-init')
 
@@ -214,7 +216,7 @@ def createVOMSProxy(proxy,attributes="",vo=""):
           restoreProxy(new_proxy,old_proxy)
           return S_ERROR('Failed to setup given proxy. Proxy is: %s' % ("\n".join(block)) )
 # Create subject=proxy pair
-        result = getSubject(new_proxy)
+        result = getProxySubject(new_proxy)
         if result["OK"]:
           subject = result["Value"]
           subjectProxy[subject] =  "\n".join(block)
@@ -272,7 +274,7 @@ def getVOMSAttributes(proxy,switch="all"):
   result = getVOMSProxyInfo(new_proxy,"all")
   if result["OK"]:
     voms_info_output = result["Value"]
-    voms_info_output = string.split(voms_info_output,"\n")
+    voms_info_output = voms_info_output.split("\n")
   else:
     if os.path.exists(new_proxy) and rm_proxy == 1:
       restoreProxy(new_proxy,old_proxy)
@@ -285,7 +287,7 @@ def getVOMSAttributes(proxy,switch="all"):
   # Parse output of voms-proxy-info command
   attribute = []
   for i in voms_info_output:
-    j = string.split(i,":")
+    j = i.split(":")
     if j[0].strip() == "VO":
       if switch == "option":
         attribute.append("--voms %s" % j[1].strip())
