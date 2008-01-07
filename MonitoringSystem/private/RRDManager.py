@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/RRDManager.py,v 1.3 2007/12/19 18:04:32 acasajus Exp $
-__RCSID__ = "$Id: RRDManager.py,v 1.3 2007/12/19 18:04:32 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/RRDManager.py,v 1.4 2008/01/07 19:09:35 acasajus Exp $
+__RCSID__ = "$Id: RRDManager.py,v 1.4 2008/01/07 19:09:35 acasajus Exp $"
 import os
 import os.path
 import time
@@ -186,3 +186,9 @@ class RRDManager:
     if not retVal[ 'OK' ]:
       return retVal
     return S_OK( graphFilename )
+
+  def deleteRRD( self, rrdFile ):
+    try:
+      os.unlink( "%s/%s" % ( self.rrdLocation, rrdFile ) )
+    except Exception, e:
+      gLogger.error( "Could not delete rrd file %s: %s" % ( rrdFile, str(e) ) )

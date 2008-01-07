@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.9 2007/12/21 16:04:44 acasajus Exp $
-__RCSID__ = "$Id: MonitoringClient.py,v 1.9 2007/12/21 16:04:44 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.10 2008/01/07 19:09:34 acasajus Exp $
+__RCSID__ = "$Id: MonitoringClient.py,v 1.10 2008/01/07 19:09:34 acasajus Exp $"
 
 import threading
 import time
@@ -233,7 +233,6 @@ class MonitoringClient:
 
   def __sendData( self, acRegister, acMarks, secsTimeout = 30 ):
     if not self.enabled:
-      print "OUT"
       return
     if gServiceInterface.serviceRunning():
       rpcClient = gServiceInterface

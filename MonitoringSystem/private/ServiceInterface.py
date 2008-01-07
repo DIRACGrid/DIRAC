@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/ServiceInterface.py,v 1.2 2007/12/19 18:04:34 acasajus Exp $
-__RCSID__ = "$Id: ServiceInterface.py,v 1.2 2007/12/19 18:04:34 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/ServiceInterface.py,v 1.3 2008/01/07 19:09:35 acasajus Exp $
+__RCSID__ = "$Id: ServiceInterface.py,v 1.3 2008/01/07 19:09:35 acasajus Exp $"
 import DIRAC
 from DIRAC import gLogger
 from DIRAC.MonitoringSystem.private.MonitoringCatalog import MonitoringCatalog
@@ -264,6 +264,27 @@ class ServiceInterface:
     Delete a view
     """
     self.__createCatalog().deleteView( viewId )
+    return S_OK()
+
+  def getActivities( self, dbCond = {} ):
+    """
+    Get a list of activities
+    """
+    acDict = {}
+    catalog = self.__createCatalog()
+    for sourceTuple in catalog.getSources( dbCond ):
+      activityCond = { 'sourceId' : sourceTuple[0] }
+      acDict[ sourceTuple ] = catalog.getActivities( activityCond )
+    return acDict
+
+  def deleteActivity( self, sourceId, activityId ):
+    """
+    Delete a view
+    """
+    retVal = self.__createCatalog().deleteActivity( sourceId, activityId )
+    if not retVal[ 'OK' ]:
+      return retVal
+    self.__createRRDManager().deleteRRD( retVal[ 'Value' ] )
     return S_OK()
 
 gServiceInterface = ServiceInterface()

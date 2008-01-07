@@ -253,3 +253,28 @@ class MonitoringCatalog:
     """
     self.__delete( "views", { 'id' : viewId } )
 
+
+  def getSources( self, dbCond ):
+    return self.__select( "id, site, componentType, componentLocation, componentName",
+                           "sources",
+                           dbCond)
+
+  def getActivities( self, dbCond ):
+    return self.__select( "id, name, category, unit, type, description",
+                          "activities",
+                        dbCond)
+
+  def deleteActivity( self, sourceId, activityId ):
+    """
+    Delete a view
+    """
+    acCond = { 'sourceId' : sourceId, 'id' : activityId }
+    acList = self.__select( "filename", "activities", acCond )
+    if len( acList ) == 0:
+      return S_ERROR( "Activity does not exist" )
+    rrdFile = acList[0][0]
+    self.__delete( "activities", acCond )
+    acList = self.__select( "id", "activities", { 'sourceId' : sourceId } )
+    if len( acList ) == 0:
+      self.__delete( "sources", { 'id' : sourceId } )
+    return S_OK( rrdFile )
