@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/AgentDirector.py,v 1.3 2007/12/21 14:18:01 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/AgentDirector.py,v 1.4 2008/01/07 15:47:26 paterson Exp $
 # File :   AgentDirector.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,11 +9,12 @@
      are overridden in Grid specific subclasses.
 """
 
-__RCSID__ = "$Id: AgentDirector.py,v 1.3 2007/12/21 14:18:01 paterson Exp $"
+__RCSID__ = "$Id: AgentDirector.py,v 1.4 2008/01/07 15:47:26 paterson Exp $"
 
-from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
-from DIRAC.Core.Utilities.Subprocess                     import shellCall
-from DIRAC                                               import S_OK, S_ERROR, gConfig, gLogger
+from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
+from DIRAC.Core.Utilities.Subprocess                       import shellCall
+from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB        import JobLoggingDB
+from DIRAC                                                 import S_OK, S_ERROR, gConfig, gLogger
 
 import os, sys, re, string, time, shutil
 from threading import Thread, Lock
@@ -25,12 +26,13 @@ COMPONENT_NAME = 'WorkloadManagement/AgentDirector'
 class AgentDirector(Thread):
 
   #############################################################################
-  def __init__(self,jobDB,resourceBroker=None,enableFlag=False):
+  def __init__(self,jobDB,resourceBroker=None,enableFlag=True):
     """ Constructor for Agent Director
     """
     self.enable = enableFlag
     self.resourceBroker = resourceBroker
     self.jobDB = jobDB
+    self.logDB = JobLoggingDB()
     self.name = '%sAgentDirector' %(self.type)
     #self.log = self.log.getSubLogger('AgentDirector')
     self.log = gLogger
@@ -49,7 +51,7 @@ class AgentDirector(Thread):
     if self.failed:
       return
     while True:
-      self.log.debug( 'Waking up Agent Director thread for %s' %(self.resourceBroker))
+      self.log.info( 'Waking up Agent Director thread for %s' %(self.resourceBroker))
       try:
         result = self.__checkJobs()
         if not result['OK']:
@@ -72,8 +74,8 @@ class AgentDirector(Thread):
     if not jobs:
       return S_ERROR('No work to do')
 
-    self.log.debug('restricting jobs for debugging')
-    jobs = jobs[0:1]
+    #self.log.debug('restricting jobs for debugging')
+    #jobs = jobs[0:2]
     for job in jobs:
       lock.acquire()
       attributes = self.jobDB.getJobAttributes(job)
@@ -90,6 +92,7 @@ class AgentDirector(Thread):
 
       currentMinorStatus = attributes['Value']['MinorStatus']
       if not currentMinorStatus == 'Pilot Agent Submission':
+#      if not currentMinorStatus == 'Pilot Agent Response':
         self.log.warn('Job %s has changed minor status to %s and will be ignored by %s' %(job,currentMinorStatus,self.name))
         lock.release()
         continue
@@ -97,7 +100,7 @@ class AgentDirector(Thread):
       result = self.jobDB.getJobJDL(job)
       if not result['OK']:
         self.log.warn(result['Message'])
-        self.__updateJobStatus('Failed','No Job JDL Available',logRecord=True)
+        self.__updateJobStatus(job,'Failed','No Job JDL Available',logRecord=True)
         lock.release()
         continue
 
@@ -105,24 +108,30 @@ class AgentDirector(Thread):
       classadJob = ClassAd(jdl)
       if not classadJob.isOK():
         self.log.warn('Illegal JDL for job %d ' % int(job))
-        self.__updateJobStatus('Failed','Job JDL Illegal',logRecord=True)
+        self.__updateJobStatus(job,'Failed','Job JDL Illegal',logRecord=True)
         lock.release()
         continue
 
       platform = string.replace(classadJob.get_expression("Platform"),'"','')
+      if not platform:
+        self.log.warn('Job %s has no platform defined' % job)
+        self.__updateJobStatus(job,'Failed','No Platform Specified',logRecord=True)
+        lock.release()
+        continue
+
       if platform.lower() == 'dirac':
-        self.__updateJobStatus('Waiting','DIRAC Site Response',logRecord=True)
+        self.__updateJobStatus(job,'Waiting','DIRAC Site Response',logRecord=True)
         lock.release()
         continue
       elif platform.lower() == self.type.lower():
         self.log.debug('Job %s is of type %s and will be considered by %s' %(job,platform,self.name))
-      else:
+      else:          
         self.log.verbose('Job %s is of type %s and will be ignored by %s' %(job,platform,self.name))
         lock.release()
         continue
 
       self.log.info( 'Changing Status to "Waiting Pilot Agent Response" for Job %s' % job )
-      self.__updateJobStatus('Waiting','Pilot Agent Response')
+      self.__updateJobStatus(job,'Waiting','Pilot Agent Response')
       lock.release()
       result = self.__preparePilot(job,classadJob,attributes['Value'])
       if not result['OK']:
@@ -152,7 +161,7 @@ class AgentDirector(Thread):
 
     for param in ['Owner','OwnerDN','JobType']:
       if not attributes.has_key(param):
-        self.__updateJobStatus('Failed','%s Undefined' %(param))
+        self.__updateJobStatus(job,'Failed','%s Undefined' %(param))
         return S_ERROR('%s Undefined' %(param))
 
     owner = attributes['Owner']
@@ -211,13 +220,13 @@ class AgentDirector(Thread):
     jobIDFile = self.__addJobID(workingDirectory,job)
     if not jobIDFile['OK']:
       return jobIDFile
-    inputSandbox.append(jobIDFile['Value'])
+#    inputSandbox.append(jobIDFile['Value'])
     self.log.verbose('Submitting %s Pilot Agent for job %s' %(self.type,job))
     result = self.submitJob(job,self.workingDirectory,siteList,jdlCPU,inputSandbox,gridRequirements,executable,softwareTag)
     self.__cleanUp(workingDirectory)
 
     if not result['OK']:
-      self.__updateJobStatus('Waiting','Pilot Agent Submission')
+      self.__updateJobStatus(job,'Waiting','Pilot Agent Submission')
       return result
 
     submittedPilot = result['Value']
@@ -319,7 +328,7 @@ class AgentDirector(Thread):
           self.log.verbose('Site %s is a candidate site in the mask for job %s' %(site,job))
 
     if not candidates:
-      self.__updateJobStatus('Failed','No Candidate Sites in Mask')
+      self.__updateJobStatus(job,'Failed','No Candidate Sites in Mask')
       return S_ERROR('No Candidate Sites in Mask')
 
     self.log.verbose('Candidate Sites: %s' %(string.join(siteMask,', ')))
@@ -368,6 +377,7 @@ class AgentDirector(Thread):
     """Returns the list of waiting jobs for which pilots should be submitted
     """
     selection = {'Status':'Waiting','MinorStatus':'Pilot Agent Submission'}
+    #selection = {'Status':'Waiting','MinorStatus':'Pilot Agent Response'}
     result = self.jobDB.selectJobs(selection, limit=self.selectJobLimit)
     if not result['OK']:
       return result
