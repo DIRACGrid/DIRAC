@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/LCGAgentDirector.py,v 1.3 2007/12/21 14:21:09 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/LCGAgentDirector.py,v 1.4 2008/01/07 15:44:30 paterson Exp $
 # File :   LCGAgentDirector.py
 # Author : Stuart Paterson
 ########################################################################
@@ -11,7 +11,7 @@
      the invokation of the Agent Director instance is performed here.
 """
 
-__RCSID__ = "$Id: LCGAgentDirector.py,v 1.3 2007/12/21 14:21:09 paterson Exp $"
+__RCSID__ = "$Id: LCGAgentDirector.py,v 1.4 2008/01/07 15:44:30 paterson Exp $"
 
 from DIRACEnvironment                                        import DIRAC
 from DIRAC.Core.Utilities.Subprocess                         import shellCall
@@ -59,6 +59,14 @@ class LCGAgentDirector(AgentDirector):
     self.log.info('Temporarily using %s ' %(proxyFile))
     os.environ['X509_USER_PROXY'] = proxyFile
     os.environ['GRID_PROXY_FILE'] = proxyFile
+    proxyInfo = shellCall(30,'grid-proxy-info -debug')
+    status = proxyInfo['Value'][0]
+    stdout = proxyInfo['Value'][1]
+    stderr = proxyInfo['Value'][2]
+    self.log.debug('Status %s' %status)
+    self.log.debug(stdout)
+    self.log.debug(stderr)
+
     cmd = "edg-job-submit -config %s --config-vo %s %s" % (self.confFile1,self.confFile2,lcgJDLFile)
     start = time.time()
     self.log.debug( cmd )
@@ -82,7 +90,7 @@ class LCGAgentDirector(AgentDirector):
         if (m):
           lcg_id = m.group(1)
           submittedPilot = lcg_id
-          self.log.info( '>>> LCG Reference %s for job %s' % ( job, lcg_id ) )
+          self.log.info( '>>> LCG Reference %s for job %s' % ( lcg_id, job ) )
           subtime = time.time() - start
           self.log.verbose( '>>> LCG Submission time %.2fs' % subtime )
           failed = 0
@@ -155,7 +163,7 @@ class LCGAgentDirector(AgentDirector):
 
       inputSandbox = string.join(inputSandboxList,'","')
       lcgJDL.write('InputSandbox = {"'+inputSandbox+'"}; \n')
-      lcgJDL.write('OutputSandbox = {"std.out","std.err",".BrokerInfo","pilotOutput.log"};\n')
+      lcgJDL.write('OutputSandbox = {"std.out","std.err",".BrokerInfo","pilotOutput.log","wrappers.tar.gz"};\n')
       lcgJDL.close()
       lcgJDL = open( lcgJDLFile, 'r' )
       self.log.debug( 'Contents of LCG JDL File... \n%s' % string.join(lcgJDL.readlines(),'') )
@@ -206,7 +214,7 @@ DefaultVo = "lhcb";
 VirtualOrganisation = "lhcb";
 NSAddresses = %s;
 LBAddresses = %s;
-MyProxyServer = "myproxy.cern.ch"
+MyProxyServer = "myproxy.cern.ch";
 ]
     """ % (rbstring,curlyrbstring) )
     confFile2.close()
@@ -234,6 +242,7 @@ if __name__ == "__main__":
     sys.exit(1)
 
   resourceBrokers = gConfig.getValue('LCGAgentDirector/ResourceBrokers','lhcb-lcg-rb04.cern.ch')
+#  resourceBrokers = gConfig.getValue('LCGAgentDirector/ResourceBrokers','lcgrb03.gridpp.rl.ac.uk,lhcb-lcg-rb03.cern.ch')
   if  not type(resourceBrokers)==type([]):
     resourceBrokers = resourceBrokers.split(',')
   for rb in resourceBrokers:
