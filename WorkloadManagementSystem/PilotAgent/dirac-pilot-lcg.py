@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/dirac-pilot-lcg.py,v 1.8 2007/12/20 12:15:41 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/dirac-pilot-lcg.py,v 1.9 2008/01/07 15:45:46 paterson Exp $
 # File :   dirac-pilot-lcg.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,10 +13,10 @@ import os,sys,string,re
     for the VO.
 """
 
-__RCSID__ = "$Id: dirac-pilot-lcg.py,v 1.8 2007/12/20 12:15:41 paterson Exp $"
+__RCSID__ = "$Id: dirac-pilot-lcg.py,v 1.9 2008/01/07 15:45:46 paterson Exp $"
 
 
-DEBUG = 1
+DEBUG = 0
 DIRAC_URL = 'http://cern.ch/lhcbproject/dist/DIRAC3'
 SW_DIR = 'VO_LHCB_SW_DIR'
 SW_PATH ='lib'
@@ -449,6 +449,11 @@ sys.stdout.flush()
 printPilot('Post-execution proxy information:')
 os.system('grid-proxy-info')
 sys.stdout.flush()
+if os.path.exists('%s/job/Wrapper' %(start)):
+  printPilot('Saving all job wrappers to wrappers.tar.gz')
+  os.system('tar cfz wrappers.tar.gz %s/job/Wrapper' %(start))
+else:
+  printPilot('job/Wrapper directory does not exist','WARN')
 printPilot('Execution of %s complete.' %(scriptName))
 printPilot('========================================================================')
 pilotExit(0)
