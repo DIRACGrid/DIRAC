@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: InProcessComputingElement.py,v 1.3 2007/11/30 17:16:26 paterson Exp $
+# $Id: InProcessComputingElement.py,v 1.4 2008/01/08 22:47:08 paterson Exp $
 # File :   InProcessComputingElement.py
 # Author : Stuart Paterson
 ########################################################################
@@ -7,7 +7,7 @@
 """ The simplest Computing Element instance that submits jobs locally.
 """
 
-__RCSID__ = "$Id: InProcessComputingElement.py,v 1.3 2007/11/30 17:16:26 paterson Exp $"
+__RCSID__ = "$Id: InProcessComputingElement.py,v 1.4 2008/01/08 22:47:08 paterson Exp $"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Core.Utilities.Subprocess                     import shellCall
@@ -32,15 +32,15 @@ class InProcessComputingElement(ComputingElement):
     """
     if not os.access(executableFile, 5):
       os.chmod(executableFile,0755)
-    filePath = os.path.abspath(executableFile)
- #   diracPython = sys.executable
- #   self.log.debug('DIRAC Python executable is %s' %(sys.executable))
- #   cmd = '%s %s' % (diracPython,filePath)
-    cmd = filePath
+    cmd = os.path.abspath(executableFile)
     self.log.verbose('CE submission command: %s' %(cmd))
     result = shellCall(0,cmd,callbackFunction = self.sendOutput)
-    self.log.debug('===========>In process CE result')
-    self.log.debug(result)
+    if not result['OK']:
+      self.log.warn('===========>In process CE result NOT OK')
+      self.log.debug(result)
+    else:
+      self.log.debug('InProcess CE result OK')
+
     self.submittedJobs += 1
     return S_OK(localID)
 
