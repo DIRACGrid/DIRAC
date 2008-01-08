@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.12 2008/01/07 14:54:12 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.13 2008/01/08 12:13:58 paterson Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.12 2008/01/07 14:54:12 paterson Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.13 2008/01/08 12:13:58 paterson Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -276,12 +276,14 @@ class JobAgent(Agent):
         return S_ERROR('Could not establish system configuration from Job requirements or LocalSite/Architecture section')
 
     realPythonPath = os.path.realpath(dPython)
-    if dPython != realPythonPath:
-      self.log.verbose('Real python path after resolving links is:')
-      self.log.verbose(realPythonPath)
-      dPython = realPythonPath
+#    if dPython != realPythonPath:
+    self.log.verbose('Real python path after resolving links is:')
+    self.log.verbose(realPythonPath)
+    dPython = realPythonPath
 
     siteRootPython = 'sys.path.insert(0,"%s")' %(self.siteRoot)
+    self.log.debug('DIRACPython is:\n%s' %dPython)
+    self.log.debug('SiteRootPythonDir is:\n%s' %siteRootPython)
     print >> wrapper, wrapperTemplate % (dPython,siteRootPython,signature,jobID,date_time)
     libDir = '%s/%s/lib' %(self.siteRoot,systemConfig)
     scriptsDir = '%s/scripts' %(self.siteRoot)
