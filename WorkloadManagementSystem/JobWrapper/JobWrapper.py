@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.9 2007/12/19 15:16:18 paterson Exp $
+# $Id: JobWrapper.py,v 1.10 2008/01/08 23:02:25 paterson Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.9 2007/12/19 15:16:18 paterson Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.10 2008/01/08 23:02:25 paterson Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -531,6 +531,7 @@ class JobWrapper:
     else:
       result =  self.inputSandboxClient.getSandbox(int(self.jobID))
       if not result['OK']:
+        self.log.warn(result)
         self.__report('Running','Failed Downloading InputSandbox')
         return S_ERROR('InputSandbox download failed for job %s and sandbox %s' %(self.jobID,sandboxFiles))
 
@@ -573,7 +574,7 @@ class JobWrapper:
 
     ceArgs = arguments['CE']
     if ceArgs.has_key('LocalSE'):
-      parameters.append(('AgentLocalSE',ceArgs['LocalSE']))
+      parameters.append(('AgentLocalSE',string.join(ceArgs['LocalSE'],',')))
     if ceArgs.has_key('CompatiblePlatforms'):
       parameters.append(('AgentCompatiblePlatforms',string.join(ceArgs['CompatiblePlatforms'],',')))
 
