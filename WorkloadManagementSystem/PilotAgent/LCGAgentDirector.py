@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/LCGAgentDirector.py,v 1.4 2008/01/07 15:44:30 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/LCGAgentDirector.py,v 1.5 2008/01/09 18:21:26 paterson Exp $
 # File :   LCGAgentDirector.py
 # Author : Stuart Paterson
 ########################################################################
@@ -11,7 +11,7 @@
      the invokation of the Agent Director instance is performed here.
 """
 
-__RCSID__ = "$Id: LCGAgentDirector.py,v 1.4 2008/01/07 15:44:30 paterson Exp $"
+__RCSID__ = "$Id: LCGAgentDirector.py,v 1.5 2008/01/09 18:21:26 paterson Exp $"
 
 from DIRACEnvironment                                        import DIRAC
 from DIRAC.Core.Utilities.Subprocess                         import shellCall
@@ -30,11 +30,13 @@ class LCGAgentDirector(AgentDirector):
     self.name = 'LCG'
     self.type = 'LCG'
     self.log  = gLogger
+#    self.log.setLevel('debug')
     self.root = '/opt/dirac'
     self.log.debug('Starting LCGAgentDirector')
     self.resourceBroker = resourceBroker
     self.pilotScript = 'dirac-pilot-lcg.py'
     self.section = '/DIRAC/WorkloadManagementSystem/PilotAgent/LCGAgentDirector'
+    self.voSoftwareDir = 'VO_LHCB_SW_DIR'
     self.diracSetup = gConfig.getValue(self.section+'/Setup','LHCb-Development')
     self.confFile1 = None
     self.confFile2 = None
@@ -122,7 +124,7 @@ class LCGAgentDirector(AgentDirector):
       else:
         lcgJDL.write( 'Executable = "%s";\n'     % self.pilotScript )
 
-      lcgJDL.write( 'Arguments  = "%s %s";\n'  % (self.diracSetup,cpuRequirement) )
+      lcgJDL.write( 'Arguments  = "%s %s %s";\n'  % (self.diracSetup,cpuRequirement,self.voSoftwareDir) )
       lcgJDL.write( 'LCGTimeRef = %s ;\n'      % cpuRequirement )
       lcgJDL.write( 'MyPolicyTime = ( %s );\n' % myPolicyTime )
 
