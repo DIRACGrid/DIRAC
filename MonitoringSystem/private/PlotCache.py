@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/PlotCache.py,v 1.1 2007/12/19 18:04:30 acasajus Exp $
-__RCSID__ = "$Id: PlotCache.py,v 1.1 2007/12/19 18:04:30 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/PlotCache.py,v 1.2 2008/01/09 16:38:42 acasajus Exp $
+__RCSID__ = "$Id: PlotCache.py,v 1.2 2008/01/09 16:38:42 acasajus Exp $"
 
 import os
 import os.path
@@ -68,7 +68,11 @@ class PlotCache:
       if fileData[0] + fileData[1] < now:
         graphsToDelete.append( cachedFile )
     for cachedFile in graphsToDelete:
-      os.unlink( "%s/%s" % ( self.plotsLocation, cachedFile ) )
+      try:
+        filePath = "%s/%s" % ( self.plotsLocation, cachedFile )
+        os.unlink( filePath )
+      except Exception, e:
+        gLogger.error( "Can't delete plot file %s: %s" % ( filePath, str(e) ) )
       del( self.cachedPlots[ cachedFile ] )
 
   def groupPlot( self, *args ):
