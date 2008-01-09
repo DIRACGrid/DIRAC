@@ -10,6 +10,7 @@ class SandboxClient:
     """ Standard constructor
     """
 
+    self.sandbox_type = sandbox_type
     self.sandbox = TransferClient('WorkloadManagement/%sSandbox' % sandbox_type)
     self.sandbox_status = RPCClient('WorkloadManagement/%sSandbox' % sandbox_type)
 
