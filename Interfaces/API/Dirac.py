@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.4 2008/01/09 09:11:32 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.5 2008/01/09 15:34:05 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -24,7 +24,7 @@ The initial instance just exposes job submission via the WMS client.
 
 """
 
-__RCSID__ = "$Id: Dirac.py,v 1.4 2008/01/09 09:11:32 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.5 2008/01/09 15:34:05 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types
 
@@ -62,7 +62,8 @@ class Dirac:
       self.dbg = True
 
     self.scratchDir = gConfig.getValue(self.section+'/ScratchDir','/tmp')
-
+    self.outputSandboxClient = SandboxClient('Output')
+    self.inputSandboxClient = SandboxClient('Input')
     self.client = WMSClient()
 
   #############################################################################
@@ -135,6 +136,9 @@ class Dirac:
     jdl=jdlfilename
     jobid = self._sendJob(jdl)
     shutil.rmtree(tmpdir)
+    if not jobid['OK']:
+      self.log.warn(jobid['Message'])
+
     return jobid
 
   #############################################################################
@@ -156,22 +160,21 @@ class Dirac:
     except Exception,x:
       checkProxy = getGridProxy()
       if not checkProxy:
-        self.log.warn(str(x))
-        self.log.warn('No valid proxy found')
-        return S_ERROR('No valid proxy found')
+        return self.__errorReport(str(x),'No valid proxy found')
 
     return jobid
 
   #############################################################################
-  def getJobInputSandbox(self,jobID,outputDir=None):
+  def getInputSandbox(self,jobID,outputDir=None):
     """Retrieve input sandbox for existing JobID.
 
        This method allows the retrieval of an existing job input sandbox for
        debugging purposes.  By default the sandbox is downloaded to the current
-       directory but this can be overidden via the outputDir parameter.
+       directory but this can be overidden via the outputDir parameter. All files
+       are extracted into a InputSandbox<JOBID> directory that is automatically created.
 
        >>> print dirac.getInputSandbox(12345)
-       {'OK': True, 'Value': '12345'}
+       {'OK': True, 'Value': ['Job__Sandbox__.tar.bz2']}
 
        @param job: JobID
        @type job: integer or string
@@ -184,16 +187,86 @@ class Dirac:
       try:
         jobID = int(jobID)
       except Exception,x:
-        self.log.warn(str(x))
-        return S_ERROR('Expected integer or convertible integer for existing jobID')
-    inputSandboxClient = SandboxClient()
-    if outputDir:
-      self.log.verbose('Attempting to store InputSandbox files for job %s in %s' %(jobID,outputDir))
+        return self.__errorReport(str(x),'Expected integer or convertible integer for existing jobID')
 
-    result =  inputSandboxClient.getSandbox(int(sys.argv[1]),outputDir)
+    dirPath = ''
+    if outputDir:
+      dirPath = '%s/InputSandbox%s' %(outputDir,jobID)
+      if os.path.exists(dirPath):
+        return self.__errorReport('Job input sandbox directory %s already exists' %(dirPath))
+    else:
+      dirPath = '%s/InputSandbox%s' %(os.getcwd(),jobID)
+      if os.path.exists(dirPath):
+        return self.__errorReport('Job input sandbox directory %s already exists' %(dirPath))
+
+    try:
+      os.mkdir(dirPath)
+    except Exception,x:
+      return self.__errorReport(str(x),'Could not create directory in %s' %(dirPath))
+
+    result = self.inputSandboxClient.getSandbox(int(sys.argv[1]),dirPath)
     if not result['OK']:
       self.log.warn(result['Message'])
+    else:
+      self.log.info('Files retrieved and extracted in %s' %(dirPath))
     return result
+
+  #############################################################################
+  def getOutputSandbox(self,jobID,outputDir=None):
+    """Retrieve output sandbox for existing JobID.
+
+       This method allows the retrieval of an existing job output sandbox.
+       By default the sandbox is downloaded to the current directory but
+       this can be overidden via the outputDir parameter. All files are
+       extracted into a <JOBID> directory that is automatically created.
+
+       >>> print dirac.getOutputSandbox(12345)
+       {'OK': True, 'Value': ['Job__Sandbox__.tar.bz2']}
+
+       @param job: JobID
+       @type job: integer or string
+       @return: S_OK,S_ERROR
+
+       @param outputDir: Optional directory path
+       @type outputDir: string
+    """
+    if type(jobID)==type(" "):
+      try:
+        jobID = int(jobID)
+      except Exception,x:
+        return self.__errorReport(str(x),'Expected integer or convertible integer for existing jobID')
+
+    dirPath = ''
+    if outputDir:
+      dirPath = '%s/%s' %(outputDir,jobID)
+      if os.path.exists(dirPath):
+        return self.__errorReport('Job output directory %s already exists' %(dirPath))
+    else:
+      dirPath = '%s/%s' %(os.getcwd(),jobID)
+      if os.path.exists(dirPath):
+        return self.__errorReport('Job output directory %s already exists' %(dirPath))
+
+    try:
+      os.mkdir(dirPath)
+    except Exception,x:
+      return self.__errorReport(str(x),'Could not create directory in %s' %(dirPath))
+
+    result = self.outputSandboxClient.getSandbox(int(sys.argv[1]),dirPath)
+    if not result['OK']:
+      self.log.warn(result['Message'])
+    else:
+      self.log.info('Files retrieved and extracted in %s' %(dirPath))
+    return result
+
+  #############################################################################
+  def __errorReport(self,error,message=None):
+    """Internal function to return errors and exit with an S_ERROR()
+    """
+    if not message:
+      message = error
+
+    self.log.warn(error)
+    return S_ERROR(message)
 
   #############################################################################
   def __printInfo(self):
