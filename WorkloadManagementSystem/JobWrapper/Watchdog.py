@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.10 2008/01/09 12:03:13 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.11 2008/01/09 12:35:25 paterson Exp $
 # File  : Watchdog.py
 # Author: Stuart Paterson
 ########################################################################
@@ -18,7 +18,7 @@
           - Means to send heartbeat signal.
 """
 
-__RCSID__ = "$Id: Watchdog.py,v 1.10 2008/01/09 12:03:13 paterson Exp $"
+__RCSID__ = "$Id: Watchdog.py,v 1.11 2008/01/09 12:35:25 paterson Exp $"
 
 from DIRAC.Core.Base.Agent                          import Agent
 from DIRAC.Core.DISET.RPCClient                     import RPCClient
@@ -504,11 +504,11 @@ class Watchdog(Agent):
       return result
 
     if os.environ.has_key('LSB_JOBID'):
-      result['Value']['LocalJobID'] = os.environ['LSB_JOBID']
+      result['LocalJobID'] = os.environ['LSB_JOBID']
     if os.environ.has_key('PBS_JOBID'):
-      result['Value']['LocalJobID'] = os.environ['PBS_JOBID']
+      result['LocalJobID'] = os.environ['PBS_JOBID']
     if os.environ.has_key('QSUB_REQNAME'):
-      result['Value']['LocalJobID'] = os.environ['QSUB_REQNAME']
+      result['LocalJobID'] = os.environ['QSUB_REQNAME']
 
     self.reportParameters(result,'NodeInformation',True)
     self.reportParameters(self.initialValues,'InitialValues')
