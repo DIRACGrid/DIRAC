@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.10 2008/01/07 19:09:34 acasajus Exp $
-__RCSID__ = "$Id: MonitoringClient.py,v 1.10 2008/01/07 19:09:34 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.11 2008/01/09 15:30:24 acasajus Exp $
+__RCSID__ = "$Id: MonitoringClient.py,v 1.11 2008/01/09 15:30:24 acasajus Exp $"
 
 import threading
 import time
@@ -140,7 +140,7 @@ class MonitoringClient:
                                                "type" : operation
                                               }
         self.activitiesMarks[ name ] = {}
-        self.newActivitiesDict[ name ] = self.activitiesDefinitions[ name ]
+        self.newActivitiesDict[ name ] = dict( self.activitiesDefinitions[ name ] )
     finally:
       self.activitiesLock.release()
 
@@ -196,7 +196,7 @@ class MonitoringClient:
           if self.activitiesDefinitions[ key ][ 'type' ] == self.OP_MEAN:
             totalValue /= len( consolidatedMarks[ key ][ markTime ] )
           elif self.activitiesDefinitions[ key ][ 'type' ] == self.OP_RATE:
-            totalValue /= 60
+            totalValue /= 60.0
           consolidatedMarks[ key ][ markTime ] = totalValue
       if len( consolidatedMarks[ key ] ) == 0:
         del( consolidatedMarks[ key ] )
@@ -276,12 +276,12 @@ class MonitoringClient:
       self.failedTransmissions.append( ( self.__sendMarks, acMarks ) )
       return False
     if len ( retDict[ 'Value' ] ) > 0:
-      gLogger.verbose( "There are activities unregistered" )
+      gLogger.info( "There are activities unregistered" )
       acRegister = {}
       acMissedMarks = {}
       for acName in retDict[ 'Value' ]:
         if acName in self.activitiesDefinitions:
-          acRegister[ acName ] = self.activitiesDefinitions[ acName ]
+          acRegister[ acName ] = dict( self.activitiesDefinitions[ acName ] )
           acMissedMarks[ acName ] = acMarks[ acName ]
         else:
           gLogger.verbose( "Server reported unregistered activity that does not exist" )
