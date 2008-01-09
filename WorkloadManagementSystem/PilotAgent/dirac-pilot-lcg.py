@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/dirac-pilot-lcg.py,v 1.9 2008/01/07 15:45:46 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/dirac-pilot-lcg.py,v 1.10 2008/01/09 18:20:13 paterson Exp $
 # File :   dirac-pilot-lcg.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,14 +13,13 @@ import os,sys,string,re
     for the VO.
 """
 
-__RCSID__ = "$Id: dirac-pilot-lcg.py,v 1.9 2008/01/07 15:45:46 paterson Exp $"
+__RCSID__ = "$Id: dirac-pilot-lcg.py,v 1.10 2008/01/09 18:20:13 paterson Exp $"
 
 
-DEBUG = 0
+DEBUG = 1
 DIRAC_URL = 'http://cern.ch/lhcbproject/dist/DIRAC3'
-SW_DIR = 'VO_LHCB_SW_DIR'
 SW_PATH ='lib'
-DIRAC_PYTHON ='2.4'
+DIRAC_PYTHON_VERSION ='2.4'
 INSTALL_RETRIES = 5
 MIN_DISK_SPACE = 2560 #MB
 CLEANUP = 0
@@ -211,8 +210,9 @@ def pilotExit(code):
     toCheck = os.listdir('.')
     for directory in toCheck:
       if os.path.isdir(directory):
-        printPilot('Files in %s are:' %(directory),'DEBUG')
-        for i in os.listdir(directory): print i
+        if not directory=='lib':
+          printPilot('Files in %s are:' %(directory),'DEBUG')
+          for i in os.listdir(directory): print i
       else:
         printPilot('File %s' %(directory),'DEBUG')
 
@@ -235,10 +235,11 @@ scriptName = sys.argv[0]
 printPilot('Version %s' %(__RCSID__))
 diracSetup = sys.argv[1]
 jobCPUReqt = sys.argv[2]
+SW_DIR = sys.argv[3]
 CEUNIQUEID = 'InProcess' #This will be specified by the Agent Director eventually
 printPilot('Running in %s setup on %s' %(diracSetup,runCommand('date')))
 printPilot('WMS CPU Requirement is %s' %jobCPUReqt)
-
+printPilot('VO SW directory environment variable is %s' %(SW_DIR),'DEBUG')
 CMTCONFIG = runCommand('python dirac-architecture')
 #printPilot('Temporarily hardcoding CMTCONFIG to slc4_ia32_gcc34')
 #CMTCONFIG = 'slc4_ia32_gcc34'
@@ -256,7 +257,7 @@ DIRAC_PYTHON = ''
 if os.environ.has_key(SW_DIR):
   sharedArea = os.environ.get(SW_DIR)
   printPilot('Found %s = %s' %(SW_DIR,sharedArea))
-  sharedPython='%s/%s/%s/bin/python%s' %(sharedArea,SW_PATH,CMTCONFIG,DIRAC_PYTHON)
+  sharedPython='%s/%s/%s/bin/python%s' %(sharedArea,SW_PATH,CMTCONFIG,DIRAC_PYTHON_VERSION)
   printPilot('Searching for pre-installed DIRAC python:','INFO')
   printPilot(sharedPython,'INFO')
   if os.path.exists(sharedPython):
@@ -335,7 +336,7 @@ installDIRACDist(CMTCONFIG,diracDist)
 
 #Locate DIRAC python
 if not DIRAC_PYTHON:
-  diracPython='%s/%s/bin/python%s' %(start,CMTCONFIG,DIRAC_PYTHON)
+  diracPython='%s/%s/bin/python%s' %(start,CMTCONFIG,DIRAC_PYTHON_VERSION)
   printPilot('Using locally installed DIRAC python: %s' %(diracPython))
 else:
   diracPython=DIRAC_PYTHON
@@ -397,6 +398,9 @@ for archToInstall in newArch:
   if not archToInstall==CMTCONFIG: #already installed this one
     printPilot('Installing DIRAC for %s' %(archToInstall))
     installDIRACDist(archToInstall,diracDist)
+    newPython = '%s/%s/bin/python%s' %(start,archToInstall,DIRAC_PYTHON_VERSION)
+    printPilot(runCommand('chmod a+x %s' %(newPython),1),'DEBUG')
+    printPilot(runCommand('ls -al %s' %(newPython),1),'DEBUG')
 
 #Full setup of DIRAC with LCG site name
 fullSetup = '%s scripts/dirac-setup -m %s -s %s -a %s -p %s ' %(diracPython,diracSetup,DIRAC_SITE_NAME,CMTCONFIG,'LCG')
@@ -451,9 +455,10 @@ os.system('grid-proxy-info')
 sys.stdout.flush()
 if os.path.exists('%s/job/Wrapper' %(start)):
   printPilot('Saving all job wrappers to wrappers.tar.gz')
-  os.system('tar cfz wrappers.tar.gz %s/job/Wrapper' %(start))
+  os.system('tar cfz wrappers.tar.gz job/Wrapper')
 else:
   printPilot('job/Wrapper directory does not exist','WARN')
+  
 printPilot('Execution of %s complete.' %(scriptName))
 printPilot('========================================================================')
 pilotExit(0)
