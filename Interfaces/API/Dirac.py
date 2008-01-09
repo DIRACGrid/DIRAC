@@ -1,11 +1,13 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.3 2007/11/17 09:49:53 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.4 2008/01/09 09:11:32 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
 
-"""
-DIRAC API Class
+from DIRAC.Core.Base import Script
+Script.parseCommandLine()
+
+"""DIRAC API Class
 
 All DIRAC functionality is exposed through the DIRAC API and this
 serves as a source of documentation for the project via EpyDoc.
@@ -22,20 +24,20 @@ The initial instance just exposes job submission via the WMS client.
 
 """
 
-__RCSID__ = "$Id: Dirac.py,v 1.3 2007/11/17 09:49:53 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.4 2008/01/09 09:11:32 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types
 
 import DIRAC
 
-from DIRAC.Interfaces.API.Job                        import Job
-from DIRAC.ConfigurationSystem.Client.Config         import gConfig
-from DIRAC.Core.Utilities.ClassAd.ClassAdLight       import ClassAd
-from DIRAC.Core.Utilities.File                       import makeGuid
-from DIRAC.Core.Utilities.Subprocess                 import shellCall
-from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
-from DIRAC.Core.Utilities.GridCert                   import getGridProxy
-from DIRAC                                           import gLogger, S_OK, S_ERROR
+from DIRAC.Interfaces.API.Job                            import Job
+from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
+from DIRAC.Core.Utilities.File                           import makeGuid
+from DIRAC.Core.Utilities.Subprocess                     import shellCall
+from DIRAC.WorkloadManagementSystem.Client.WMSClient     import WMSClient
+from DIRAC.WorkloadManagementSystem.Client.SandboxClient import SandboxClient
+from DIRAC.Core.Utilities.GridCert                       import getGridProxy
+from DIRAC                                               import gConfig, gLogger, S_OK, S_ERROR
 
 COMPONENT_NAME='/Interfaces/API/Dirac'
 
@@ -44,9 +46,11 @@ class Dirac:
   #############################################################################
 
   def __init__(self):
+    """Internal initialization of the DIRAC API.
+    """
     self.log = gLogger
 
-    self.site       = gConfig.getValue('/DIRAC/Site','Unknown')
+    self.site       = gConfig.getValue('/LocalSite/Site','Unknown')
     self.setup      = gConfig.getValue('/DIRAC/Setup','Unknown')
     self.section    = COMPONENT_NAME
     self.cvsVersion = 'CVS version '+__RCSID__
@@ -62,7 +66,6 @@ class Dirac:
     self.client = WMSClient()
 
   #############################################################################
-
   def submit(self,job,mode=None):
     """Submit jobs to DIRAC WMS.
        These can be either:
@@ -83,7 +86,7 @@ class Dirac:
 
        @param job: Instance of Job class or JDL string
        @type job: Job() or string
-       @return: S_OK{}
+       @return: S_OK,S_ERROR
 
        @param mode: Submit job locally
        @type mode: string
@@ -92,16 +95,16 @@ class Dirac:
     self.__printInfo()
 
     if mode=='local':
-      self.log.debug('Executing job locally...')
-      job.bootstrap()
+      self.log.info('Executing job locally')
+      job.execute()
 
     if type(job) == type(" "):
       if os.path.exists(job):
-        self.log.debug('Found job JDL file %s' % (job))
+        self.log.verbose('Found job JDL file %s' % (job))
         subResult = self._sendJob(job)
         return jobResult
       else:
-        self.log.debug('Job is a JDL string')
+        self.log.verbose('Job is a JDL string')
         guid = makeGuid()
         tmpdir = self.scratchDir+'/'+guid
         os.mkdir(tmpdir)
@@ -112,14 +115,10 @@ class Dirac:
         shutil.rmtree(tmpdir)
         return jobid
 
-   # if self.dbg:
-    #  job.bootstrap()
-   #   job.dumpParameters()
-
     #creating a /tmp/guid/ directory for job submission files
     guid = makeGuid()
     tmpdir = self.scratchDir+'/'+guid
-    self.log.debug('Created temporary directory for submission %s' % (tmpdir))
+    self.log.verbose('Created temporary directory for submission %s' % (tmpdir))
     os.mkdir(tmpdir)
 
     jfilename = tmpdir+'/jobDescription.xml'
@@ -130,7 +129,7 @@ class Dirac:
     jdlfilename = tmpdir+'/jobDescription.jdl'
     jdlfile=open(jdlfilename,'w')
 
-    print >> jdlfile , job._toJDL(xmlFile = jfilename)
+    print >> jdlfile , job._toJDL(xmlFile=jfilename)
     jdlfile.close()
 
     jdl=jdlfilename
@@ -157,19 +156,52 @@ class Dirac:
     except Exception,x:
       checkProxy = getGridProxy()
       if not checkProxy:
-        self.log.error(str(x))
-        self.log.error('No valid proxy found')
+        self.log.warn(str(x))
+        self.log.warn('No valid proxy found')
         return S_ERROR('No valid proxy found')
 
     return jobid
 
   #############################################################################
+  def getJobInputSandbox(self,jobID,outputDir=None):
+    """Retrieve input sandbox for existing JobID.
+
+       This method allows the retrieval of an existing job input sandbox for
+       debugging purposes.  By default the sandbox is downloaded to the current
+       directory but this can be overidden via the outputDir parameter.
+
+       >>> print dirac.getInputSandbox(12345)
+       {'OK': True, 'Value': '12345'}
+
+       @param job: JobID
+       @type job: integer or string
+       @return: S_OK,S_ERROR
+
+       @param outputDir: Optional directory for files
+       @type outputDir: string
+    """
+    if type(jobID)==type(" "):
+      try:
+        jobID = int(jobID)
+      except Exception,x:
+        self.log.warn(str(x))
+        return S_ERROR('Expected integer or convertible integer for existing jobID')
+    inputSandboxClient = SandboxClient()
+    if outputDir:
+      self.log.verbose('Attempting to store InputSandbox files for job %s in %s' %(jobID,outputDir))
+
+    result =  inputSandboxClient.getSandbox(int(sys.argv[1]),outputDir)
+    if not result['OK']:
+      self.log.warn(result['Message'])
+    return result
+
+  #############################################################################
   def __printInfo(self):
-    """Internal function to print the DIRAC API version.
+    """Internal function to print the DIRAC API version and related information.
     """
     self.log.info('<=====%s=====>' % (self.diracInfo))
     if self.dbg:
-      self.log.debug(self.cvsVersion)
-      self.log.debug('DIRAC is running at %s in setup %s' % (self.site,self.setup))
+      self.log.verbose(self.cvsVersion)
+      self.log.verbose('DIRAC is running at %s in setup %s' % (self.site,self.setup))
 
   #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
