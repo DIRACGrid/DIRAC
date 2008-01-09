@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: SandboxHandler.py,v 1.7 2007/12/20 14:20:48 atsareg Exp $
+# $Id: SandboxHandler.py,v 1.8 2008/01/09 09:04:30 atsareg Exp $
 ########################################################################
 
 """ SandboxHandler is the implementation of the Sandbox service
@@ -12,7 +12,7 @@
 
 """
 
-__RCSID__ = "$Id: SandboxHandler.py,v 1.7 2007/12/20 14:20:48 atsareg Exp $"
+__RCSID__ = "$Id: SandboxHandler.py,v 1.8 2008/01/09 09:04:30 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -32,13 +32,11 @@ def initializeSandboxHandler(serviceInfo):
   global jobDB
   global sandbox_type
 
-  sandbox = serviceInfo["serviceName"].split('/')[1]
-  if sandbox == "InputSandbox":
-    sandbox_type = 'ISandbox'
-  elif sandbox == "OutputSandbox":
-    sandbox_type = 'OSandbox'
+  sandbox = serviceInfo["serviceName"].split('/')[1]  
+  if sandbox == "InputSandbox" or sandbox == "OutputSandbox":
+    sandbox_type = sandbox
   else:
-    return S_ERROR('Uknown sandbox service '+sandbox_type)
+    return S_ERROR('Unknown sandbox service '+sandbox_type)
 
   sandboxDB = SandboxDB(sandbox_type)
   jobDB = JobDB()
