@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.9 2007/12/17 17:16:26 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.10 2008/01/09 12:03:13 paterson Exp $
 # File  : Watchdog.py
 # Author: Stuart Paterson
 ########################################################################
@@ -18,7 +18,7 @@
           - Means to send heartbeat signal.
 """
 
-__RCSID__ = "$Id: Watchdog.py,v 1.9 2007/12/17 17:16:26 paterson Exp $"
+__RCSID__ = "$Id: Watchdog.py,v 1.10 2008/01/09 12:03:13 paterson Exp $"
 
 from DIRAC.Core.Base.Agent                          import Agent
 from DIRAC.Core.DISET.RPCClient                     import RPCClient
@@ -444,6 +444,7 @@ class Watchdog(Agent):
     self.parameters['WallClockTime'] = []
 
     result = self.getCPUConsumed(self.pid)
+    self.log.debug('CPU consumed %s' %(result))
     if not result['OK']:
       msg = 'Could not establish CPU consumed'
       self.log.error(msg)
@@ -455,12 +456,14 @@ class Watchdog(Agent):
     if initCPUDict['OK']:
       initialCPU = initCPUDict['Value']
     else:
+      self.log.debug('ConvertedCPUTime: %s' %(initCPUDict))
       return S_ERROR('Not possible to determine initial CPU consumed')
 
     self.initialValues['CPUConsumed']=initialCPU
     self.parameters['CPUConsumed'] = []
 
     result = self.getLoadAverage()
+    self.log.debug('LoadAverage: %s' %(result))
     if not result['OK']:
       msg = 'Could not establish LoadAverage'
       self.log.error(msg)
@@ -471,6 +474,7 @@ class Watchdog(Agent):
     self.parameters['LoadAverage'] = []
 
     result = self.getMemoryUsed()
+    self.log.debug('MemUsed: %s' %(result))
     if not result['OK']:
       msg = 'Could not establish MemoryUsed'
       self.log.error(msg)
@@ -481,6 +485,7 @@ class Watchdog(Agent):
     self.parameters['MemoryUsed'] = []
 
     result = self. getDiskSpace()
+    self.log.debug('DiskSpace: %s' %(result))
     if not result['OK']:
       msg = 'Could not establish DiskSpace'
       self.log.error(msg)
@@ -491,6 +496,7 @@ class Watchdog(Agent):
     self.parameters['DiskSpace'] = []
 
     result = self.getNodeInformation()
+    self.log.debug('NodeInfo: %s' %(result))
     if not result['OK']:
       msg = 'Could not establish static system information'
       self.log.error(msg)
