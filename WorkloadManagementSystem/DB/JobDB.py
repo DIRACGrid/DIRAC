@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.29 2008/01/06 21:18:11 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.30 2008/01/09 09:01:16 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.29 2008/01/06 21:18:11 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.30 2008/01/09 09:01:16 atsareg Exp $"
 
 import re, os, sys, string
 import time
@@ -1312,13 +1312,13 @@ class JobDB(DB):
 
 
 #############################################################################
-  def setSandboxReady(self,jobID,stype='ISandbox'):
+  def setSandboxReady(self,jobID,stype='InputSandbox'):
     """ Set the sandbox status ready for the job with jobID
     """
 
-    if stype == "ISandbox":
+    if stype == "InputSandbox":
       field = "ISandboxReadyFlag"
-    elif stype == "OSandbox":
+    elif stype == "OutputSandbox":
       field = "OSandboxReadyFlag"
     else:
       return S_ERROR('Illegal Sandbox type: '+stype)
