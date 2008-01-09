@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/SandboxDB.py,v 1.6 2007/12/20 14:20:04 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/SandboxDB.py,v 1.7 2008/01/09 09:12:02 atsareg Exp $
 ########################################################################
 """ SandboxDB class is a simple storage using MySQL as a container for
     relatively small sandbox files. The file size is limited to 16MB.
@@ -10,7 +10,7 @@
     getWMSTimeStamps()
 """
 
-__RCSID__ = "$Id: SandboxDB.py,v 1.6 2007/12/20 14:20:04 atsareg Exp $"
+__RCSID__ = "$Id: SandboxDB.py,v 1.7 2008/01/09 09:12:02 atsareg Exp $"
 
 import re, os, sys
 import time, datetime
@@ -37,7 +37,7 @@ class SandboxDB(DB):
       self.maxSize = int(result['Value'])
 
 #############################################################################
-  def storeFile(self,jobID,filename,fileString,sandbox_type='Input'):
+  def storeFile(self,jobID,filename,fileString,sandbox):
     """ Store input sandbox ASCII file for jobID with the name filename which
         is given with its string body
     """
@@ -47,21 +47,18 @@ class SandboxDB(DB):
       return S_ERROR('File size too large %.2f MB for file %s' % \
                      (fileSize/1024./1024.,filename))
 
-    prefix = "O"
-    if sandbox_type == 'Input':
-      prefix = "I"
 
     # Check that the file does not exist already
-    req = "SELECT FileName FROM %sSandbox WHERE JobID=%d AND FileName='%s'" % \
-          (prefix,int(jobID),filename)
+    req = "SELECT FileName FROM %s WHERE JobID=%d AND FileName='%s'" % \
+          (sandbox,int(jobID),filename)
     result = self._query(req)
     if not result['OK']:
       return result
     if len(result['Value']) > 0:
       # Remove the already existing file - overwrite
       gLogger.warn('Overwriting file %s for job %d' % (filename,int(jobID)))
-      req = "DELETE FROM %sSandbox WHERE JobID=%d AND FileName='%s'" % \
-            (prefix,int(jobID),filename)
+      req = "DELETE FROM %s WHERE JobID=%d AND FileName='%s'" % \
+            (sandbox,int(jobID),filename)
       result = self._update(req)
       if not result['OK']:
         return result
@@ -69,21 +66,17 @@ class SandboxDB(DB):
     inFields = ['JobID','FileName','FileBody']
     inValues = [jobID,filename,fileString]
 
-    result = self._insert(sandbox_type,inFields,inValues)
+    result = self._insert(sandbox,inFields,inValues)
     return result
 
 #############################################################################
-  def getSandboxFile(self,jobID,filename,sandbox='in'):
+  def getSandboxFile(self,jobID,filename,sandbox):
     """ Store input sandbox ASCII file for jobID with the name filename which
         is given with its string body
     """
 
-    prefix = "O"
-    if sandbox == 'in':
-      prefix = "I"
-
-    req = "SELECT FileBody FROM %sSandbox WHERE JobID=%d AND FileName='%s'" % \
-          (prefix, int(jobID), filename)
+    req = "SELECT FileBody FROM %s WHERE JobID=%d AND FileName='%s'" % \
+          (sandbox, int(jobID), filename)
 
     result = self._query(req)
     if not result['OK']:
@@ -95,15 +88,11 @@ class SandboxDB(DB):
     return S_OK(body)
 
 #############################################################################
-  def getFileNames(self,jobID,sandbox='Input'):
+  def getFileNames(self,jobID,sandbox):
     """ Get file names for a given job in a given sandbox
     """
 
-    prefix = "O"
-    if sandbox == 'Input':
-      prefix = "I"
-
-    req = "SELECT FileName FROM %sSandbox WHERE JobID=%d" % (prefix,int(jobID))
+    req = "SELECT FileName FROM %s WHERE JobID=%d" % (sandbox,int(jobID))
     result = self._query(req)
     if not result['OK']:
       return result

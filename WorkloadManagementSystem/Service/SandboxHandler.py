@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: SandboxHandler.py,v 1.8 2008/01/09 09:04:30 atsareg Exp $
+# $Id: SandboxHandler.py,v 1.9 2008/01/09 09:12:02 atsareg Exp $
 ########################################################################
 
 """ SandboxHandler is the implementation of the Sandbox service
@@ -12,7 +12,7 @@
 
 """
 
-__RCSID__ = "$Id: SandboxHandler.py,v 1.8 2008/01/09 09:04:30 atsareg Exp $"
+__RCSID__ = "$Id: SandboxHandler.py,v 1.9 2008/01/09 09:12:02 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -126,9 +126,6 @@ class SandboxHandler(RequestHandler):
 
     req = "SELECT FileBody from %s where JobID=%d and FileName='%s'" % \
           (sandbox_type,jobID,fname)
-
-    print "-----------------------"
-    print req
 
     result = sandboxDB._query(req)
     if not result['OK']:
