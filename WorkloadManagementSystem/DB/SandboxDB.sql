@@ -21,7 +21,7 @@ DELETE FROM user WHERE user='Dirac';
 -- Must set passwords for database user by replacing "must_be_set".
 --
 
-GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON SandboxDB.* TO Dirac@localhost IDENTIFIED BY 'lhcbMySQL';
+GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON SandboxDB.* TO Dirac@localhost IDENTIFIED BY 'must_be_set';
 
 FLUSH PRIVILEGES;
 
@@ -29,8 +29,8 @@ FLUSH PRIVILEGES;
 USE SandboxDB;
 
 --------------------------------------------------------------------------------
-DROP TABLE IF EXISTS ISandbox;
-CREATE TABLE ISandbox (
+DROP TABLE IF EXISTS InputSandbox;
+CREATE TABLE InputSandbox (
     JobID INTEGER NOT NULL,
     FileName VARCHAR(255) NOT NULL,
     FileBody LONGBLOB NOT NULL,
@@ -38,8 +38,8 @@ CREATE TABLE ISandbox (
 ) TYPE=MyISAM MAX_ROWS=150000 AVG_ROW_LENGTH=150000;
 
 --------------------------------------------------------------------------------
-DROP TABLE IF EXISTS OSandbox;
-CREATE TABLE OSandbox (
+DROP TABLE IF EXISTS OutputSandbox;
+CREATE TABLE OutputSandbox (
     JobID INTEGER NOT NULL,
     FileName VARCHAR(255) NOT NULL,
     FileBody LONGBLOB NOT NULL,
