@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.10 2008/01/08 23:02:25 paterson Exp $
+# $Id: JobWrapper.py,v 1.11 2008/01/09 11:31:23 paterson Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.10 2008/01/08 23:02:25 paterson Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.11 2008/01/09 11:31:23 paterson Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -158,7 +158,8 @@ class JobWrapper:
     watchdogFactory = WatchdogFactory()
     watchdogInstance = watchdogFactory.getWatchdog(pid, thread, spObject, jobCPUTime)
     if not watchdogInstance['OK']:
-      return watchdogInstance
+      self.log.warn(watchdogInstance['Message'])
+      return S_ERROR('Could not create Watchdog instance')
 
     watchdog = watchdogInstance['Value']
     self.log.verbose('Calibrating Watchdog instance')
@@ -169,8 +170,13 @@ class JobWrapper:
     else:
       self.log.warn('Application thread stopped very quickly...')
 
-    self.log.debug( 'Execution Result is : ')
-    self.log.debug( EXECUTION_RESULT )
+    if thread.isAlive():
+      self.log.warn('Watchdog exited before completion of execution thread')
+      while thread.isAlive():
+        time.sleep(5)
+
+#    self.log.debug( 'Execution Result is : ')
+#    self.log.debug( EXECUTION_RESULT )
     outputs = None
     if EXECUTION_RESULT.has_key('Thread'):
       threadResult = EXECUTION_RESULT['Thread']
@@ -185,19 +191,28 @@ class JobWrapper:
       status = threadResult['Value'][0]
       stdout = threadResult['Value'][1]
       stderr = threadResult['Value'][2]
-      self.log.debug('Execution thread status = %s' %(status))
+      self.log.verbose('Execution thread status = %s' %(status))
       if jobArgs.has_key('StdError'):
         errorFileName = jobArgs['StdError']
       if jobArgs.has_key('StdOutput'):
         outputFileName = jobArgs['StdOutput']
+      self.log.verbose('Writing stdOutput to %s' %(outputFileName))
       outputFile = open(outputFileName,'w')
       print >> outputFile, stdout
       outputFile.close()
+      self.log.verbose('Writing stdError to %s' %(errorFileName))
       errorFile = open(errorFileName,'w')
       print >> errorFile, stderr
       errorFile.close()
     else:
       self.log.warn('No outputs generated from job execution')
+      toCheck = os.listdir(os.getcwd())
+      for directory in toCheck:
+        if os.path.isdir(directory):
+          self.log.verbose('Files in directory %s are:' %(directory))
+          for i in os.listdir(directory): print i
+        else:
+          self.log.verbose('File %s' %(directory))
 
     return S_OK()
 
