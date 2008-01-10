@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/FileHelper.py,v 1.12 2007/11/04 11:26:55 atsareg Exp $
-__RCSID__ = "$Id: FileHelper.py,v 1.12 2007/11/04 11:26:55 atsareg Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/FileHelper.py,v 1.13 2008/01/10 15:38:07 atsareg Exp $
+__RCSID__ = "$Id: FileHelper.py,v 1.13 2008/01/10 15:38:07 atsareg Exp $"
 
 import os
 import md5
@@ -165,7 +165,8 @@ class FileHelper:
     tarMode = "w|"
     if compress:
       tarMode = "w|bz2"
-    tar = tarfile.open( mode = tarMode, fileobj = filePipe )
+
+    tar = tarfile.open( name = "Pipe", mode = tarMode, fileobj = filePipe )
     for entry in fileList:
       tar.add( os.path.realpath( entry ), os.path.basename( entry ), recursive = True )
     tar.close()
