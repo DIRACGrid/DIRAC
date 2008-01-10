@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.21 2007/12/19 17:51:40 acasajus Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.21 2007/12/19 17:51:40 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.22 2008/01/10 15:36:57 atsareg Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.22 2008/01/10 15:36:57 atsareg Exp $"
 
 import DIRAC
 from DIRAC.Core.DISET.private.Protocols import gProtocolDict
@@ -12,7 +12,7 @@ from DIRAC.Core.Utilities import GridCredentials
 
 class BaseClient:
 
-  defaultUserGroup = "lhcb"
+  defaultUserGroup = gConfig.getValue('DIRAC/DefaultGroup','lhcb_user')
   defaultHostGroup = "hosts"
 
 #TODO
