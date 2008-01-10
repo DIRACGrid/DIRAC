@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/RRDManager.py,v 1.4 2008/01/07 19:09:35 acasajus Exp $
-__RCSID__ = "$Id: RRDManager.py,v 1.4 2008/01/07 19:09:35 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/RRDManager.py,v 1.5 2008/01/10 12:04:10 acasajus Exp $
+__RCSID__ = "$Id: RRDManager.py,v 1.5 2008/01/10 12:04:10 acasajus Exp $"
 import os
 import os.path
 import time
@@ -7,7 +7,7 @@ import md5
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection
 from DIRAC.MonitoringSystem.private.ColorGenerator import ColorGenerator
-from DIRAC.Core.Utilities import Subprocess
+from DIRAC.Core.Utilities import Subprocess, Time
 
 class RRDManager:
 
@@ -132,6 +132,9 @@ class RRDManager:
       return varStr
     raise Exception( "rrdType %s is not valid" % rrdType )
 
+  def __graphTimeComment( self ):
+    return " 'COMMENT:Generated on %s GMT'" % Time.toString().replace( ":", "\:" ).split( "." )[0]
+
   def groupPlot( self, fromSecs, toSecs, activitiesList, stackActivities, size, graphFilename = "" ):
     """
     Generate a group plot
@@ -156,6 +159,7 @@ class RRDManager:
         rrdCmd += " 'AREA:%s#%s:%s:STACK'" % ( idActivity, colorGen.getHexColor(), activity.getLabel().replace( ":", "\:" ) )
       else:
         rrdCmd += " 'LINE2:%s#%s:%s'" % ( idActivity, colorGen.getHexColor(), activity.getLabel().replace( ":", "\:" ) )
+    rrdCmd += self.__graphTimeComment()
     retVal = self.__exec( rrdCmd )
     if not retVal[ 'OK' ]:
       return retVal
@@ -182,6 +186,7 @@ class RRDManager:
       rrdCmd += " 'AREA:0#FF0000::STACK'"
     else:
       rrdCmd += " 'LINE2:0#FF0000'"
+    rrdCmd += self.__graphTimeComment()
     retVal = self.__exec( rrdCmd )
     if not retVal[ 'OK' ]:
       return retVal
