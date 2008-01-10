@@ -1,8 +1,8 @@
-# $Id: Workflow.py,v 1.14 2007/12/05 14:31:22 gkuznets Exp $
+# $Id: Workflow.py,v 1.15 2008/01/10 20:17:28 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.14 $"
+__RCSID__ = "$Revision: 1.15 $"
 
 import os
 #try: # this part to inport as part of the DIRAC framework
@@ -17,12 +17,13 @@ from DIRAC.Core.Workflow.Step import *
 #  print "Parameter"
 
 class Workflow(AttributeCollection):
-  def __init__(self, type=None, obj=None):
+  def __init__(self, name=None, obj=None):
     AttributeCollection.__init__(self)
 
     # sort out parameters and class attributes
     if (obj == None) or isinstance(obj, ParameterCollection):
-      self.setType(type)
+      self.setName(name)
+      self.setType('')
       self.setDescrShort('')
       self.setDescription('')
       self.setOrigin('')
@@ -32,10 +33,11 @@ class Workflow(AttributeCollection):
       self.step_definitions = DefinitionsPool(self)
       self.module_definitions = DefinitionsPool(self)
     elif isinstance(obj, Workflow):
-      if type == None:
-        self.setType(obj.getType())
+      if name == None:
+        self.setName(obj.getName())
       else:
-        self.setType(type)
+        self.setName(name)
+      self.setType(obj.getType())
       self.setDescrShort(obj.getDescrShort())
       self.setDescription(obj.getDescription())
       self.setOrigin(obj.getOrigin())
@@ -50,15 +52,17 @@ class Workflow(AttributeCollection):
     #self.module_definitions.setOwner(self)
 
   def __str__(self):
-    """Creates an XML representation of itself
+    """Creates a string representation of itself
     """
-    ret = str(type(self))+':\n'+ AttributeCollection.__str__(self) + self.parameters.__str__()
+    ret = str(name(self))+':\n'+ AttributeCollection.__str__(self) + self.parameters.__str__()
     ret = ret + str(self.step_definitions)
     ret = ret + str(self.step_instances)
     ret = ret + str(self.module_definitions)
     return ret
 
   def toXML(self):
+    """Creates an XML representation of itself
+    """
     # THIS is very importatnt that Definitions should be written before instances
     ret = '<Workflow>\n'
     ret = ret + AttributeCollection.toXML(self)

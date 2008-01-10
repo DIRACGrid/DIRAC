@@ -1,8 +1,8 @@
-# $Id: Parameter.py,v 1.13 2007/12/13 12:23:17 gkuznets Exp $
+# $Id: Parameter.py,v 1.14 2008/01/10 20:17:28 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.13 $"
+__RCSID__ = "$Revision: 1.14 $"
 
 # unbinded method, returns indentation string
 def indent(indent=0):
@@ -475,26 +475,30 @@ class AttributeCollection(dict):
     def setName(self, name):
         # we have to replace _ with the printable character
         # for that we create temporary string
-        if name:
-            nametmp = name.replace('_', '0')
-            if not nametmp.isalnum( ):
-                raise AttributeError('Can not have NOT alphnumeric name for the object'+ str(type(self))+' requested name='+name)
+        #if name:
+        #    nametmp = name.replace('_', '0')
+        #    if not nametmp.isalnum( ):
+        #        raise AttributeError('Can not have NOT alphnumeric name for the object'+ str(type(self))+' requested name='+name)
         self['name'] = name
 
     def getName(self):
-        return self['name']
+        if self.has_key('name'):
+            return self['name']
+        return ''
 
     def setType(self, type_):
         # we have to replace _ with the printable character
         # for that we create temporary string
-        if type_:
-            typetmp = type_.replace('_', '0')
-            if not typetmp.isalnum():
-                raise AttributeError('We can have alphnumeric characters only as type for the object'+ str(type(self))+' type='+type_)
+        #if type_:
+        #    typetmp = type_.replace('_', '0')
+        #    if not typetmp.isalnum():
+        #        raise AttributeError('We can have alphnumeric characters only as type for the object'+ str(type(self))+' type='+type_)
         self['type'] = type_
 
     def getType(self):
-        return self['type']
+        if self.has_key('type'):
+            return self['type']
+        return ''
 
     def setRequired(self, required):
         self['required'] = required
