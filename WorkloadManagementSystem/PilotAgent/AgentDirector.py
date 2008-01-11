@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/AgentDirector.py,v 1.4 2008/01/07 15:47:26 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/AgentDirector.py,v 1.5 2008/01/11 10:56:16 paterson Exp $
 # File :   AgentDirector.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,11 +9,13 @@
      are overridden in Grid specific subclasses.
 """
 
-__RCSID__ = "$Id: AgentDirector.py,v 1.4 2008/01/07 15:47:26 paterson Exp $"
+__RCSID__ = "$Id: AgentDirector.py,v 1.5 2008/01/11 10:56:16 paterson Exp $"
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
 from DIRAC.Core.Utilities.Subprocess                       import shellCall
+from DIRAC.Core.Utilities.GridCredentials                  import setupProxy,destroyProxy
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB        import JobLoggingDB
+from DIRAC.WorkloadManagementSystem.DB.ProxyRepositoryDB   import ProxyRepositoryDB
 from DIRAC                                                 import S_OK, S_ERROR, gConfig, gLogger
 
 import os, sys, re, string, time, shutil
@@ -33,6 +35,7 @@ class AgentDirector(Thread):
     self.resourceBroker = resourceBroker
     self.jobDB = jobDB
     self.logDB = JobLoggingDB()
+    self.proxyDB = ProxyRepositoryDB()
     self.name = '%sAgentDirector' %(self.type)
     #self.log = self.log.getSubLogger('AgentDirector')
     self.log = gLogger
@@ -167,6 +170,10 @@ class AgentDirector(Thread):
     owner = attributes['Owner']
     ownerDN = attributes['OwnerDN']
     jobType = attributes['JobType']
+    if not attributes.has_key('OwnerGroup'):
+      self.log.warn('No OwnerGroup parameter for job')
+      
+    jobGroup = attributes['OwnerGroup']
 
     self.log.debug('JobID: %s' %(job))
     self.log.debug('Owner: %s' %(owner))
@@ -209,22 +216,41 @@ class AgentDirector(Thread):
     if not os.path.exists(workingDirectory):
       os.makedirs(workingDirectory)
 
-    #determine whether a generic or specific pilot should be submitted
-    #for initial instance this is ignored and pilots will pick up specific jobs
-    #if jobType.lower() == 'sam':
+    #Determine whether a generic or specific pilot should be submitted e.g.
+    #for SAM jobs will have a job type requirement and this should be added
+    #to the Pilot Agent
+    
     inputSandbox = []
-    ownerFile = self.__addOwner(workingDirectory,owner)
-    if not ownerFile['OK']:
-      return ownerFile
-    inputSandbox.append(ownerFile['Value'])
-    jobIDFile = self.__addJobID(workingDirectory,job)
-    if not jobIDFile['OK']:
-      return jobIDFile
-#    inputSandbox.append(jobIDFile['Value'])
+    if re.search('JobType',requirements):
+      self.log.verbose('Found job type requirement, adding AgentJobRequirement for Pilot Agent')
+      jobTypeFile = self.__addPilotCFGParameter(workingDirectory,'JobType',jobType)
+      if not jobTypeFile['OK']:
+        return jobTypeFile
+      inputSandbox.append(jobTypeFile['Value'])  
+    
+    if jobType=='test':
+      self.log.verbose('Job is of type "test", adding owner and jobID AgentJobRequirement to PilotAgent')  
+      ownerFile = self.__addPilotCFGParameter(workingDirectory,'Owner',owner)
+      if not ownerFile['OK']:
+        return ownerFile
+      inputSandbox.append(ownerFile['Value'])
+      jobIDFile = self.__addPilotCFGParameter(workingDirectory,'JobID',job)
+      if not jobIDFile['OK']:
+        return jobIDFile
+      inputSandbox.append(jobIDFile['Value'])
+    
+    if jobType=='user':
+      self.log.debug('Job type is "user" restricting Pilot Agent to pick up jobs from owner')   
+      ownerFile = self.__addPilotCFGParameter(workingDirectory,'Owner',owner)
+      if not ownerFile['OK']:
+        return ownerFile
+      inputSandbox.append(ownerFile['Value'])      
+
+    self.log.verbose('Setting up proxy for job %s group %s and owner %s' %(job,jobGroup,ownerDN))
+    proxyResult = self.__setupProxy(job,ownerDN,jobGroup,workingDirectory)
     self.log.verbose('Submitting %s Pilot Agent for job %s' %(self.type,job))
     result = self.submitJob(job,self.workingDirectory,siteList,jdlCPU,inputSandbox,gridRequirements,executable,softwareTag)
     self.__cleanUp(workingDirectory)
-
     if not result['OK']:
       self.__updateJobStatus(job,'Waiting','Pilot Agent Submission')
       return result
@@ -235,6 +261,30 @@ class AgentDirector(Thread):
       self.log.warn(report['Message'])
 
     return S_OK('Pilot Submitted')
+
+  #############################################################################
+  def __setupProxy(self,job,ownerDN,jobGroup,workingDir):
+    """Retrieves user proxy with correct role for job and sets up environment for
+       pilot agent submission.
+    """
+    result = self.proxyDB.getProxy(ownerDN,jobGroup)
+    if not result['OK']:
+      self.log.warn('Could not retrieve proxy from ProxyRepositoryDB')
+      self.log.debug(result)
+      self.__updateJobStatus(job,'Failed','Valid Proxy Not Found')
+      return S_ERROR('Error retrieving proxy')
+
+    proxyStr = result['Value']  
+    proxyFile = '%s/proxy%s' %(workingDir,job)
+    setupResult = setupProxy(proxyStr,proxyFile)
+    if not setupResult['OK']:
+      self.log.warn('Could not create environment for proxy')
+      self.log.debug(setupResult)
+      self.__updateJobStatus(job,'Failed','Proxy WMS Error')
+      return S_ERROR('Error setting up proxy')
+    
+    self.log.debug(setupResult)
+    return setupResult  
 
   #############################################################################
   def __reportSubmittedPilot(self,job,submittedPilot,ownerDN):
@@ -260,37 +310,20 @@ class AgentDirector(Thread):
     return S_OK()
 
   #############################################################################
-  def __addOwner(self,workingDirectory,owner):
-    """Adds owner ID to pilot requirements
+  def __addPilotCFGParameter(self,workingDirectory,option,value):
+    """Adds optional pilot requirements from the job e.g. owner or jobid 
     """
-    self.log.verbose( 'Adding Owner.cfg to be used in agent requirements' )
-    path = '%s/Owner.cfg' % workingDirectory
+    self.log.verbose( 'Adding %s.cfg to be used in agent requirements' %(option))
+    path = '%s/%s.cfg' % (workingDirectory,option)
     try:
       if os.path.exists( path ):
         os.remove( path )
-      ownerCFG = open( path ,'w')
-      ownerCFG.write( 'AgentJobRequirements\n{\nOwner=%s\n}\n' %(owner))
-      ownerCFG.close()
+      optionCFG = open( path ,'w')
+      optionCFG.write( 'AgentJobRequirements\n{\n%s=%s\n}\n' %(option,value))
+      optionCFG.close()
     except Exception, x:
       self.log.warn( str(x) )
-      return S_ERROR('Cannot create Owner.cfg')
-    return S_OK(path)
-
-  #############################################################################
-  def __addJobID(self,workingDirectory,jobID):
-    """Adds jobID to pilot requirements
-    """
-    self.log.verbose( 'Adding JobID.cfg to be used in agent requirements' )
-    path = '%s/JobID.cfg' % workingDirectory
-    try:
-      if os.path.exists( path ):
-        os.remove( path )
-      jobCFG = open( path ,'w')
-      jobCFG.write( 'AgentJobRequirements\n{\nJobID=%s\n}\n' %(jobID))
-      jobCFG.close()
-    except Exception, x:
-      self.log.warn( str(x) )
-      return S_ERROR('Cannot create JobID.cfg')
+      return S_ERROR('Cannot create %s.cfg' %(option))
     return S_OK(path)
 
   #############################################################################
@@ -367,27 +400,34 @@ class AgentDirector(Thread):
   def __cleanUp(self,jobDirectory):
     """  Clean up all the remnant files of the job submission
     """
+    destroyProxy()    
     if os.path.exists(jobDirectory):
       if self.enable:
         shutil.rmtree(jobDirectory, True )
         self.log.debug('Cleaning up working directory: %s' %(jobDirectory))
-
+        
   #############################################################################
   def __getWaitingJobs(self):
     """Returns the list of waiting jobs for which pilots should be submitted
     """
     selection = {'Status':'Waiting','MinorStatus':'Pilot Agent Submission'}
-    #selection = {'Status':'Waiting','MinorStatus':'Pilot Agent Response'}
+#    selection = {'Status':'Waiting','MinorStatus':'Pilot Agent Response'}
     result = self.jobDB.selectJobs(selection, limit=self.selectJobLimit)
     if not result['OK']:
       return result
 
     jobs = result['Value']
-    if jobs > 0:
+    if not jobs:
+      self.log.info('No eligible jobs selected from DB')
+    else:
       if len(jobs)>15:
         self.log.info( 'Selected jobs %s...' % string.join(jobs[0:14],', ') )
       else:
         self.log.info('Selected jobs %s' % string.join(jobs,', '))
+
+#    for job in jobs:
+#      self.__updateJobStatus(job,'Failed','InputSandbox',logRecord=False)
+#    return S_OK([])
 
     return S_OK(jobs)
 
