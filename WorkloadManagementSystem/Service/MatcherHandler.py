@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: MatcherHandler.py,v 1.4 2007/11/29 22:55:51 atsareg Exp $
+# $Id: MatcherHandler.py,v 1.5 2008/01/11 15:24:55 atsareg Exp $
 ########################################################################
 """
 Matcher class. It matches Agent Site capabilities to job requirements.
@@ -7,7 +7,7 @@ It also provides an XMLRPC interface to the Matcher
 
 """
 
-__RCSID__ = "$Id: MatcherHandler.py,v 1.4 2007/11/29 22:55:51 atsareg Exp $"
+__RCSID__ = "$Id: MatcherHandler.py,v 1.5 2008/01/11 15:24:55 atsareg Exp $"
 
 import re, os, sys, time
 import string
@@ -38,7 +38,7 @@ def initializeMatcherHandler( serviceInfo ):
   return S_OK()
 
 class MatcherHandler(RequestHandler):
-    
+
 ##############################################################################
   def selectJob(self, resourceJDL):
     """ Main job selection function to find the highest priority job
@@ -55,7 +55,7 @@ class MatcherHandler(RequestHandler):
       classAdAgent.insertAttributeBool("Requirements", True)
       agentRequirements = classAdAgent.get_expression("Requirements")
     else:
-      agentRequirements = classAdAgent.get_expression("Requirements")  
+      agentRequirements = classAdAgent.get_expression("Requirements")
 
     agent_jobID = 0
     if agentRequirements:
@@ -69,12 +69,12 @@ class MatcherHandler(RequestHandler):
       jobID = self.matchJob(classAdAgent,agent_jobID)
     else:
       # Get common site mask and check the agent site
-      result = jobDB.getMask()
+      result = jobDB.getSiteMask(siteState='Active')
       if result['OK']:
         maskList = result['Value']
       else:
         return S_ERROR('Internal error: can not get site mask')
-        
+
       siteIsBanned = 0
       if agentSite not in maskList:
         gLogger.info("Site [%s] is not allowed to take jobs" % agentSite)
@@ -112,7 +112,7 @@ class MatcherHandler(RequestHandler):
           gLogger.warn("Illegal requirements for Task Queue %d" % tqID)
           gLogger.warn(tqReqs)
           continue
-          
+
         result = matchClassAd(classAdAgent,classAdQueue)
         symmetricMatch, leftToRightMatch, rightToLeftMatch = result['Value']
         if not result['OK']:
@@ -124,7 +124,7 @@ class MatcherHandler(RequestHandler):
           if jobID > 0:
             break
         else:
-          gLogger.warn('Error while matching the JDLs')      
+          gLogger.warn('Error while matching the JDLs')
 
     if jobID > 0:
       result = jobDB.setJobStatus(jobID,status='Matched',minor='Assigned')
@@ -134,7 +134,7 @@ class MatcherHandler(RequestHandler):
                                              source='Matcher')
       result = jobDB.getJobJDL(jobID)
       if not result['OK']:
-        return S_ERROR('Failed to get the job JDL')        
+        return S_ERROR('Failed to get the job JDL')
     else:
       gLogger.verbose("No match found for site: %s" % agentSite)
       return S_ERROR("No match found for site: %s" % agentSite)
