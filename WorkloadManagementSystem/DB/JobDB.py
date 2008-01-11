@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.30 2008/01/09 09:01:16 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.31 2008/01/11 15:26:55 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.30 2008/01/09 09:01:16 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.31 2008/01/11 15:26:55 atsareg Exp $"
 
 import re, os, sys, string
 import time
@@ -250,11 +250,6 @@ class JobDB(DB):
 
     attr_list = [ x[0] for x in result['Value'] ]
     return S_OK(attr_list)
-
-    #if not res['OK']:
-    #  return res
-
-    #return S_OK( map( self._to_value, res['Value'] ) )
 
 #############################################################################
   def getJobParameters(self, jobID, paramList=[]):
@@ -1005,11 +1000,15 @@ class JobDB(DB):
     return result
 
 #############################################################################
-  def getMask(self):
+  def getSiteMask(self,siteState='Active'):
     """ Get the currently active site list
     """
 
-    cmd = "SELECT Site FROM SiteMask WHERE Status='Active'"
+    if siteState == "All":
+      cmd = "SELECT Site FROM SiteMask"
+    else:
+      cmd = "SELECT Site FROM SiteMask WHERE Status='%s'" % siteState
+
     result = self._query( cmd )
     siteList = []
     if result['OK']:
@@ -1018,37 +1017,12 @@ class JobDB(DB):
     return S_OK(siteList)
 
 #############################################################################
-  def setMask(self,mask,authorDN='Unknown'):
-    """ Set the Site Mask to the given mask in a form of JDL string or
-        in a form of a site list
+  def setSiteMask(self,siteMaskList,authorDN='Unknown'):
+    """ Set the Site Mask to the given mask in a form of a list of tuples (site,status)
     """
 
-    _mask = mask
-
-    if type(mask) in StringTypes:
-      classadMask = ClassAd(_mask)
-      if classadMask.isOK():
-        if  classadMask.lookupAttribute("Requirements"):
-          requirements = classadMask.get_expression("Requirements")
-        else:
-          return S_ERROR("Empty mask")
-
-        tmp_list = requirements.split('"')
-        _mask = []
-        for i in range(1,len(tmp_list),2):
-          _mask.append(tmp_list[i])
-      else:
-        return S_ERROR('Invalid Site Mask')
-
-    # Ban all the sites first
-    req = "UPDATE SiteMask SET Status='Banned', LastUpdateTime=NOW(), Author='%s'"
-    req = req % authorDN
-    result = self._update(req)
-    if not result['OK']:
-      return result
-
-    for site in _mask:
-      result = self.allowSiteInMask(site)
+    for site,status in siteMaskList:
+      result = self.__setSiteStatusInMask(site,status,authorDN)
       if not result['OK']:
         return result
 
@@ -1095,6 +1069,17 @@ class JobDB(DB):
 
     result = self.__setSiteStatusInMask(site,'Active',authorDN)
     return result
+
+#############################################################################
+  def removeSiteFromMask(selfself,site):
+    """ Remove the given site from the mask
+    """
+
+    if site == "All":
+      req = "DELETE FROM SiteMask"
+    else:
+      req = "DELETE FROM SiteMask WHERE Site='%s'" % site
+    return self._update(req)
 
 #############################################################################
   def __addQueue (self, requirements="[Requirements=true;]", priority=0):
