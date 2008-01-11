@@ -1,4 +1,4 @@
--- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.sql,v 1.4 2007/11/08 19:00:51 atsareg Exp $
+-- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.sql,v 1.5 2008/01/11 15:25:52 atsareg Exp $
 
 --------------------------------------------------------------------------------
 --
@@ -73,6 +73,7 @@ DROP TABLE IF EXISTS JobJDLs;
 CREATE TABLE JobJDLs (
     JobID INTEGER NOT NULL,
     JDL BLOB NOT NULL DEFAULT '',
+    JobRequirements BLOB,
     OriginalJDL BLOB,
     PRIMARY KEY (JobID)
 );
