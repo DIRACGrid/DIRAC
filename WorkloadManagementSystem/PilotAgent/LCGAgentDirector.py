@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/LCGAgentDirector.py,v 1.5 2008/01/09 18:21:26 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/LCGAgentDirector.py,v 1.6 2008/01/11 10:57:33 paterson Exp $
 # File :   LCGAgentDirector.py
 # Author : Stuart Paterson
 ########################################################################
@@ -11,7 +11,7 @@
      the invokation of the Agent Director instance is performed here.
 """
 
-__RCSID__ = "$Id: LCGAgentDirector.py,v 1.5 2008/01/09 18:21:26 paterson Exp $"
+__RCSID__ = "$Id: LCGAgentDirector.py,v 1.6 2008/01/11 10:57:33 paterson Exp $"
 
 from DIRACEnvironment                                        import DIRAC
 from DIRAC.Core.Utilities.Subprocess                         import shellCall
@@ -30,7 +30,7 @@ class LCGAgentDirector(AgentDirector):
     self.name = 'LCG'
     self.type = 'LCG'
     self.log  = gLogger
-#    self.log.setLevel('debug')
+    self.log.setLevel('debug')
     self.root = '/opt/dirac'
     self.log.debug('Starting LCGAgentDirector')
     self.resourceBroker = resourceBroker
@@ -41,6 +41,40 @@ class LCGAgentDirector(AgentDirector):
     self.confFile1 = None
     self.confFile2 = None
     AgentDirector.__init__(self,self.jobDB,resourceBroker)
+
+  #############################################################################
+  def __checkProxy(self):
+    """Print some debugging information for the current proxy.
+    """
+    proxyInfo = shellCall(30,'grid-proxy-info -debug')
+    status = proxyInfo['Value'][0]
+    stdout = proxyInfo['Value'][1]
+    stderr = proxyInfo['Value'][2]
+    self.log.debug('Status %s' %status)
+    self.log.debug(stdout)
+    self.log.debug(stderr)  
+
+  #############################################################################
+  def __exeCommand(self,cmd):
+    """Runs a submit / list-match command and prints debugging information.
+    """  
+    start = time.time()
+    self.log.debug( cmd )
+    result = shellCall(60,cmd)
+
+    status = result['Value'][0]
+    stdout = result['Value'][1]
+    stderr = result['Value'][2]
+    self.log.debug('Status = %s' %status)
+    self.log.debug(stdout)
+    if stderr:
+      self.log.warn(stderr)
+    result['Status']=status
+    result['StdOut']=stdout
+    result['StdErr']=stderr
+    subtime = time.time() - start
+    result['Time']=subtime
+    return result    
 
   #############################################################################
   def submitJob(self,job,workingDirectory,siteList,cpuRequirement,inputSandbox=None,gridRequirements=None,executable=None,softwareTag=None):
@@ -55,34 +89,20 @@ class LCGAgentDirector(AgentDirector):
       return lcgJDL
 
     lcgJDLFile = lcgJDL['Value']
-
     self.log.info( '--- Executing edg-job-submit for %s' % job )
-    proxyFile = '/opt/dirac/runit/LCGAgentDirector/proxy'
-    self.log.info('Temporarily using %s ' %(proxyFile))
-    os.environ['X509_USER_PROXY'] = proxyFile
-    os.environ['GRID_PROXY_FILE'] = proxyFile
-    proxyInfo = shellCall(30,'grid-proxy-info -debug')
-    status = proxyInfo['Value'][0]
-    stdout = proxyInfo['Value'][1]
-    stderr = proxyInfo['Value'][2]
-    self.log.debug('Status %s' %status)
-    self.log.debug(stdout)
-    self.log.debug(stderr)
-
+    self.__checkProxy()
+    
     cmd = "edg-job-submit -config %s --config-vo %s %s" % (self.confFile1,self.confFile2,lcgJDLFile)
-    start = time.time()
-    self.log.debug( cmd )
-    result = shellCall(60,cmd)
+    result = self.__exeCommand(cmd)
 
     if not result['OK']:
+      self.log.warn(result)
       return result
 
-    status = result['Value'][0]
-    stdout = result['Value'][1]
-    stderr = result['Value'][2]
-    self.log.debug('Status = %s' %status)
-    self.log.debug(stdout)
-    self.log.debug(stderr)
+    status = result['Status']
+    stdout = result['StdOut']
+    subtime = result['Time']
+    self.log.verbose( '>>> LCG Submission time %.2fs' % subtime )    
 
     submittedPilot = None
     if status==0:
@@ -93,8 +113,6 @@ class LCGAgentDirector(AgentDirector):
           lcg_id = m.group(1)
           submittedPilot = lcg_id
           self.log.info( '>>> LCG Reference %s for job %s' % ( lcg_id, job ) )
-          subtime = time.time() - start
-          self.log.verbose( '>>> LCG Submission time %.2fs' % subtime )
           failed = 0
 
       if failed:
