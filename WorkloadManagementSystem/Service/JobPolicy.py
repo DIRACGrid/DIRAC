@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobPolicy.py,v 1.3 2008/01/06 20:59:23 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobPolicy.py,v 1.4 2008/01/11 08:16:39 atsareg Exp $
 ########################################################################
 
 """ JobPolicy encapsulates authorization rules for different groups
@@ -7,18 +7,19 @@
 
 """
 
-__RCSID__ = "$Id: JobPolicy.py,v 1.3 2008/01/06 20:59:23 atsareg Exp $"
+__RCSID__ = "$Id: JobPolicy.py,v 1.4 2008/01/11 08:16:39 atsareg Exp $"
 
 from DIRAC import gConfig, S_OK, S_ERROR
 
-JOB_RIGHTS = ['GetJob','GetInfo','GetInput','GetOutput','ChangeStatus',
+JOB_RIGHTS = ['GetJob','GetInfo','GetSandbox','PutSandbox','ChangeStatus',
               'Delete','Kill','Submit','Reschedule','GetStats']
 GROUP_RIGHTS = {}
 GROUP_RIGHTS['Visitor'] = ['GetInfo']
 GROUP_RIGHTS['NormalUser'] = ['GetInfo','Submit']
-GROUP_RIGHTS['JobSharing'] = ['GetInfo','GetInput','GetOutput','ChangeStatus',
+GROUP_RIGHTS['JobSharing'] = ['GetInfo','GetSandbox','PutSandbox','ChangeStatus',
                               'Delete','Kill','Reschedule']
-GROUP_RIGHTS['JobAgent'] = ['GetJob','GetInfo','GetInput','ChangeStatus','Reschedule']                              
+GROUP_RIGHTS['JobAgent'] = ['GetJob','GetInfo','GetSandbox','PutSandbox','ChangeStatus',
+                            'Reschedule']
 GROUP_RIGHTS['JobAdministrator'] = JOB_RIGHTS
 
 JOB_OWNER_RIGHTS = ['GetInfo','GetInput','GetOutput','ChangeStatus',
@@ -40,8 +41,8 @@ class JobPolicy:
 ###########################################################################
   def getUserRightsForJob(self,jobID,userDN,userGroup):
     """ Get access rights to job with jobID for the user specified by
-        userDN/userGroup 
-    """   
+        userDN/userGroup
+    """
 
     result = self.jobDB.getJobAttributes(jobID,['OwnerDN','OwnerGroup'])
     if not result['OK']:
@@ -51,8 +52,8 @@ class JobPolicy:
       group = result['Value']['OwnerGroup']
       result = self.getJobPolicy(userDN,userGroup,owner,group)
       return result
-      
-###########################################################################      
+
+###########################################################################
   def getJobPolicy(self,userDN,userGroup,jobOwnerDN='',jobOwnerGroup=''):
     """ Get the job operations rights for a job owned by jobOwnerDN/jobOwnerGroup
         for a user with userDN/userGroup.
@@ -73,7 +74,7 @@ class JobPolicy:
         jobDict[r] = True
 
     result = gConfig.getOption('/Groups/'+userGroup+'/Properties')
-     
+
     if result['OK']:
       propertyList = result['Value']
     else:
