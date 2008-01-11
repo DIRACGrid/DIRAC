@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSAdministratorHandler.py,v 1.2 2007/11/23 16:39:43 atsareg Exp $
+# $Id: WMSAdministratorHandler.py,v 1.3 2008/01/11 15:24:11 atsareg Exp $
 ########################################################################
 """
 This is a DIRAC WMS administrator interface
@@ -16,7 +16,7 @@ This starts an XMLRPC service exporting the following methods:
 
 """
 
-__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.2 2007/11/23 16:39:43 atsareg Exp $"
+__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.3 2008/01/11 15:24:11 atsareg Exp $"
 
 import os, sys, string, uu, shutil
 from types import *
@@ -25,6 +25,7 @@ from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.ProxyRepositoryDB import ProxyRepositoryDB
+from DIRAC.Core.Utilities.GridCredentials import renewProxy
 
 # This is a global instance of the JobDB class
 jobDB = False
@@ -58,23 +59,24 @@ class WMSAdministratorHandler(RequestHandler):
 
 ###########################################################################
   types_setMask = [StringType]
-  def export_setMask(self, mask):
+  def export_setSiteMask(self, siteList):
     """ Set the site mask for matching. The mask is given in a form of Classad
         string.
     """
 
-    result = jobDB.setMask(mask)
+    maskList = [ (site,'Active') for site in siteList ]
+    result = jobDB.setSiteMask(maskList)
     return result
 
 ##############################################################################
   types_getMask = []
-  def export_getMask(self):
+  def export_getSiteMask(self):
     """ Get the site mask
     """
 
-    result = jobDB.getMask()
+    result = jobDB.getSiteMask('Active')
     if result['Status'] == "OK":
-      tmp_list = result['Value'].split('"')
+      active_list = result['Value']
       mask = []
       for i in range(1,len(tmp_list),2):
         mask.append(tmp_list[i])
@@ -89,21 +91,8 @@ class WMSAdministratorHandler(RequestHandler):
     """ Ban the given site in the site mask
     """
 
-    result = jobDB.getMask()
-    if  result['OK']:
-      mask = result ['Value']
-      ClassadMask  = Classad(mask)
-      Requirements = ClassadMask.get_expression("Requirements")
-
-      if string.find(Requirements, '|| Other.Site == "' + site+'"') >= 0:
-        Requirements = string.replace (Requirements, '|| Other.Site == "' + site +'"', '')
-
-        return jobDB.setMask('[Requirements='+Requirements +']')
-      else:
-        return S_OK()
-    else:
-      result = S_ERROR('Can not get the mask from the Job DB')
-
+    result = jobDB.banSiteInMask()
+    return result
 
 ##############################################################################
   types_allowSite = [StringType]
@@ -111,33 +100,8 @@ class WMSAdministratorHandler(RequestHandler):
     """ Allow the given site in the site mask
     """
 
-    result = jobDB.getMask()
-    if  result['OK']:
-      mask = result ['Value']
-      ClassadMask  = Classad(mask)
-      Requirements = ClassadMask.get_expression("Requirements")
-
-      if string.find(Requirements, '&& Other.Site != "' + site+'"') >= 0:
-        Requirements = string.replace (Requirements, '&& Other.Site != "' + site +'"', '')
-
-      elif string.find(Requirements, 'Other.Site != "' + site+'"') >= 0:
-        Requirements = string.replace (Requirements, 'Other.Site != "' + site +'"', '')
-
-      if string.find(Requirements, 'Other.Site == "' + site+'"') < 0:
-        Requirements = Requirements + '|| Other.Site == "' + site +'"'
-
-      return jobDB.setMask('[Requirements='+Requirements +']')
-
-#            conditions   = string.split(ClassadMask.get_expression("Requirements"),'&&')
-#            conjonction  = ''
-#            Requirements = ''
-#            for condition in conditions:
-#                #condition  = string.split(condition ,'||') [0]
-#                if string.find(condition, Site)<0:
-#                     Requirements = conjonction + condition
-#                     conjonction  = " && "
-    return S_ERROR('Failed to access site mask')
-
+    result = jobDB.allowSiteInMask(site)
+    return result
 
 ##############################################################################
   types_clearMask = []
@@ -145,35 +109,35 @@ class WMSAdministratorHandler(RequestHandler):
     """ Clear up the entire site mask
     """
 
-    return jobDB.setMask("[Requirements = false]")
+    return jobDB.removeSiteFromMask("All")
 
 ##############################################################################
   types_getProxy = [StringType,IntType]
-  def export_getProxy(self,ownerDN,validity=1):
+  def export_getProxy(self,ownerDN,ownerGroup,validity=1):
     """ Get a short user proxy from the central WMS repository for the user
-        with DN ownerDN with the valididty period of <valididty> hours
+        with DN ownerDN with the validity period of <validity> hours
     """
-    result = jobDB.getTicketForDN(ownerDN)
+    result = proxyRepository.getProxy(ownerDN,ownerGroup)
     if not result['OK']:
       return result
     new_proxy = None
     user_proxy = result['Value']
-    result = renewProxy(user_proxy)
+    result = renewProxy(user_proxy,validity)
     if result["OK"]:
-      proxy = result["Value"]
-      result = setupProxy(proxy)
-      if result["OK"]:
-        new_proxy,old_proxy = result["Value"]
-        cmd = "voms-proxy-info --file %s -timeleft" % new_proxy
-      else:
-        restoreProxy(new_proxy,proxy)
-        return S_ERROR("Can not set up proxy")
-    if not new_proxy:
-      result = S_OK(user_proxy)
-      result['Message'] = 'Could not get myproxy delegation'
-      return result
-    else:
+      new_proxy = result["Value"]
       return S_OK(new_proxy)
+    else:
+      resTime = getProxyTimeLeft()
+      if resTime['OK']:
+        timeLeft = resTime['Value']
+        if timeLeft/3600. > validity:
+          result = S_OK(user_proxy)
+          result['Message'] = 'Could not get myproxy delegation'
+          return result
+        else:
+          return S_ERROR('Could not get proxy delegation and the stored proxy is not sufficient')
+      else:
+        return S_ERROR("Could not get proxy delegation and the stored proxy is not valid")
 
 ##############################################################################
   types_getLCGOutput = [IntType]
