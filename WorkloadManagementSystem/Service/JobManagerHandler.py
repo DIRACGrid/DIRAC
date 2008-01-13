@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobManagerHandler.py,v 1.3 2008/01/06 21:00:49 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobManagerHandler.py,v 1.4 2008/01/13 01:28:05 atsareg Exp $
 ########################################################################
 
 """ JobManagerHandler is the implementation of the JobManager service
@@ -14,7 +14,7 @@
     
 """
 
-__RCSID__ = "$Id: JobManagerHandler.py,v 1.3 2008/01/06 21:00:49 atsareg Exp $"
+__RCSID__ = "$Id: JobManagerHandler.py,v 1.4 2008/01/13 01:28:05 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -67,11 +67,9 @@ class JobManagerHandler( RequestHandler ):
       return S_ERROR('Failed to acquire a new JobID')
       
     jobID = int(result_jobID['Value'])
-    gLogger.info( "Served jobID %s" % jobID )
+    gLogger.verbose( "Served jobID %s" % jobID )
     # Now add a new job
     #gActivityClient.addMark( "submitJob" )
-
-    gLogger.info( "Submitting job %s" % jobID )
 
     classAdJob = ClassAd('['+JDL+']')
     classAdJob.insertAttributeInt('JobID',jobID)
@@ -88,7 +86,7 @@ class JobManagerHandler( RequestHandler ):
     if not result['OK']:
       return result
 
-    gLogger.info('Job %s added to the JobDB' % str(jobID) )
+    gLogger.info('Job %s added to the JobDB for %s/%s' % (str(jobID),userDN,userGroup))
 
     resProxy = proxyRepository.storeProxy(proxy,userDN,userGroup)
     if not resProxy['OK']:
