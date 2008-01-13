@@ -1,4 +1,4 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.4 2008/01/11 13:56:27 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.5 2008/01/13 01:21:21 atsareg Exp $
 
 """ Grid Credentials module contains utilities to manage user and host
     certificates and proxies.
@@ -33,7 +33,7 @@
     getVOMSProxyInfo()
 """
 
-__RCSID__ = "$Id: GridCredentials.py,v 1.4 2008/01/11 13:56:27 atsareg Exp $"
+__RCSID__ = "$Id: GridCredentials.py,v 1.5 2008/01/13 01:21:21 atsareg Exp $"
 
 import os
 import os.path
@@ -615,10 +615,10 @@ def renewProxy(proxy,lifetime=72,
   # Get voms extensions if any and convert it to option format
   result = getVOMSAttributes(new_proxy,"option")
   if result["OK"]:
-    voms_attr = str(result["Value"])
+    voms_attr = result["Value"]
   else:
     voms_attr = ""
-
+    
   # Get proxy from MyProxy service
   try:
     f_descriptor,my_proxy = tempfile.mkstemp()
@@ -641,9 +641,9 @@ def renewProxy(proxy,lifetime=72,
   os.environ["X509_USER_CERT"] = server_cert
 
   # Here "lifetime + 1" used just for get rid off warning status rised by voms-proxy-init
-  cmd = "myproxy-get-delegation -s %s -a %s -d -t %s -o %s" % (server, new_proxy, lifetime + 1, my_proxy)
-    
+  cmd = "myproxy-get-delegation -s %s -a %s -d -t %s -o %s" % (server, new_proxy, lifetime + 1, my_proxy)      
   result = shellCall(PROXY_COMMAND_TIMEOUT,cmd)
+  
   if not result['OK']:
     return S_ERROR('Call to myproxy-get-delegation failed')
   status,output,error = result['Value']
@@ -677,7 +677,7 @@ def renewProxy(proxy,lifetime=72,
     return S_ERROR('Failed to read proxy received from MyProxy service')
 
   if len(voms_attr) > 0:
-    result = createVOMSProxy(proxy_string,voms_attr)
+    result = createVOMSProxy(proxy_string,voms_attr)    
     if result["OK"]:
       proxy_string = result["Value"]
     else:
@@ -739,8 +739,9 @@ def createVOMSProxy(proxy,attributes="",vo=""):
   elif not len(voms_attr) > 0 and len(vo) > 0:
     cmd = "voms-proxy-init --voms %s " % vo
   cmd += "-cert %s -key %s -out %s " % (new_proxy,new_proxy,voms_proxy)
-  cmd += "-valid %s:%s -vomslife %s:%s" % (hours,minutes,hours,minutes)
+  cmd += "-valid %s:%s -vomslife %s:%s" % (hours,minutes,hours,minutes)  
   result = shellCall(PROXY_COMMAND_TIMEOUT,cmd)
+  
   if not result['OK']:
     return S_ERROR('Failed to call voms-proxy-init')
 
@@ -851,28 +852,31 @@ def getVOMSAttributes(proxy,switch="all"):
     restoreProxy(new_proxy,old_proxy)
 
   # Parse output of voms-proxy-info command
-  attribute = []
+  attributes = []
+  voName = ''
   for i in voms_info_output:
     j = i.split(":")
     if j[0].strip() == "VO":
-      if switch == "option":
-        attribute.append(j[1].strip())
+      voName = j[1].strip()
     elif j[0].strip()=="attribute":
-      if switch == "option":
-
-        # Cut off unsupported Capability selection part
-        j[1] = j[1].replace("/Capability=NULL","")
-        attribute.append(" -order %s" % j[1].strip())
-      else:
-        attribute.append(j[1].strip())
+      # Cut off unsupported Capability selection part
+      j[1] = j[1].replace("/Capability=NULL","")
+      if j[1].find('Role=NULL') == -1:
+        attributes.append(j[1].strip())
 
   # Sorting and joining attributes
   if switch == "db":
-    attribute.sort()
-    attribute = "".join(attribute)
+    attributes.sort()
+    returnValue = ":".join(attributes)
   elif switch == "option":
-    attribute = "".join(attribute)
-  return S_OK(attribute)
+    if len(attributes)>1:
+      returnValue = voName+" -order "+' -order '.join(attributes)
+    else:
+      returnValue = voName+":"+attributes[0]
+  elif switch == 'all':
+    returnValue = attributes    
+      
+  return S_OK(returnValue)
 
 def getVOMSProxyFQAN(proxy):
   """ Get the VOMS proxy fqan attributes
