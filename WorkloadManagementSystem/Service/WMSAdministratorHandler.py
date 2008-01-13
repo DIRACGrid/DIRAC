@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSAdministratorHandler.py,v 1.3 2008/01/11 15:24:11 atsareg Exp $
+# $Id: WMSAdministratorHandler.py,v 1.4 2008/01/13 01:31:58 atsareg Exp $
 ########################################################################
 """
 This is a DIRAC WMS administrator interface
@@ -16,7 +16,7 @@ This starts an XMLRPC service exporting the following methods:
 
 """
 
-__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.3 2008/01/11 15:24:11 atsareg Exp $"
+__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.4 2008/01/13 01:31:58 atsareg Exp $"
 
 import os, sys, string, uu, shutil
 from types import *
@@ -25,7 +25,7 @@ from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.ProxyRepositoryDB import ProxyRepositoryDB
-from DIRAC.Core.Utilities.GridCredentials import renewProxy
+from DIRAC.Core.Utilities.GridCredentials import renewProxy, getProxyTimeLeft
 
 # This is a global instance of the JobDB class
 jobDB = False
@@ -69,12 +69,14 @@ class WMSAdministratorHandler(RequestHandler):
     return result
 
 ##############################################################################
-  types_getMask = []
+  types_getSiteMask = []
   def export_getSiteMask(self):
     """ Get the site mask
     """
 
     result = jobDB.getSiteMask('Active')
+    return result 
+    
     if result['Status'] == "OK":
       active_list = result['Value']
       mask = []
@@ -112,7 +114,7 @@ class WMSAdministratorHandler(RequestHandler):
     return jobDB.removeSiteFromMask("All")
 
 ##############################################################################
-  types_getProxy = [StringType,IntType]
+  types_getProxy = [StringType,StringType,IntType]
   def export_getProxy(self,ownerDN,ownerGroup,validity=1):
     """ Get a short user proxy from the central WMS repository for the user
         with DN ownerDN with the validity period of <validity> hours
@@ -122,7 +124,10 @@ class WMSAdministratorHandler(RequestHandler):
       return result
     new_proxy = None
     user_proxy = result['Value']
-    result = renewProxy(user_proxy,validity)
+    result = renewProxy(user_proxy,validity,
+                        server_cert=self.servercert, 
+                        server_key=self.serverkey)
+                              
     if result["OK"]:
       new_proxy = result["Value"]
       return S_OK(new_proxy)
