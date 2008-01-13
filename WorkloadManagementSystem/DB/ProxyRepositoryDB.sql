@@ -39,6 +39,7 @@ CREATE TABLE Proxies (
     ExpirationTime DATETIME,
     ProxyType VARCHAR(32) NOT NULL DEFAULT 'Unknown',
     ProxyAttributes VARCHAR(255),
+    PersistentFlag ENUM ('True','False') NOT NULL DEFAULT 'True',
     PRIMARY KEY (UserDN, UserGroup)
 );
 
