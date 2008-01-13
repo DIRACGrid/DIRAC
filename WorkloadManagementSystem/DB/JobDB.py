@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.31 2008/01/11 15:26:55 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.32 2008/01/13 01:24:58 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.31 2008/01/11 15:26:55 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.32 2008/01/13 01:24:58 atsareg Exp $"
 
 import re, os, sys, string
 import time
@@ -64,7 +64,7 @@ from DIRAC                                     import gLogger, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Config   import gConfig
 from DIRAC.Core.Base.DB                        import DB
 
-DEBUG = 1
+DEBUG = 0
 
 #############################################################################
 class JobDB(DB):
@@ -150,13 +150,13 @@ class JobDB(DB):
         conjunction = "AND"
 
     if older:
-      condition = ' %s %s LastUpdateTime<\'%s\'' % ( condition,
+      condition = ' %s %s LastUpdateTime < \'%s\'' % ( condition,
                                                  conjunction,
                                                  str(older) )
       conjunction = "AND"
 
     if newer:
-      condition = ' %s %s LastUpdateTime>\'%s\'' % ( condition,
+      condition = ' %s %s LastUpdateTime >= \'%s\'' % ( condition,
                                                  conjunction,
                                                  str(newer) )
 
@@ -755,8 +755,6 @@ class JobDB(DB):
       result = self.getJobJDL(jobID,original=True)
       if result['OK']:
         jdl = result['Value']
-
-    print "JobDB:",jdl
 
     classadJob = ClassAd(jdl)
 
