@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/ProxyRenewalAgent.py,v 1.4 2008/01/06 21:37:54 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/ProxyRenewalAgent.py,v 1.5 2008/01/13 01:23:42 atsareg Exp $
 ########################################################################
 
 """  Proxy Renewal agent is the key element of the Proxy Repository
@@ -10,8 +10,7 @@ from DIRAC.Core.Base.Agent import Agent
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.ProxyRepositoryDB import ProxyRepositoryDB
-from DIRAC.Core.Utilities.GridCredentials import getProxyTimeLeft
-from DIRAC.Core.Utilities.VOMS import getVOMSAttributes, renewProxy
+from DIRAC.Core.Utilities.GridCredentials import getProxyTimeLeft, getVOMSAttributes, renewProxy
 
 AGENT_NAME = 'WorkloadManagement/ProxyRenewalAgent'
 
@@ -29,7 +28,7 @@ class ProxyRenewalAgent(Agent):
     self.jobDB = JobDB()
     self.proxyDB = ProxyRepositoryDB()
 
-    self.minValidity = gConfig.getValue(self.section+'/MinValidity',12)
+    self.minValidity = gConfig.getValue(self.section+'/MinValidity',1800)
     self.validity_period = gConfig.getValue(self.section+'/ValidityPeriod',15)
     result = gConfig.getOption('/DIRAC/Security/KeyFile')
     if result['OK']:
@@ -55,7 +54,7 @@ class ProxyRenewalAgent(Agent):
 
     ticket_dn_list = result['Value']
     if ticket_dn_list:
-      self.log.verbose("Proxies stored in repository with validity less than %s minutes:" % self.minValidity)
+      self.log.verbose("Proxies stored in repository with validity less than %s seconds:" % self.minValidity)
       for dn in ticket_dn_list:
         self.log.verbose(dn)
     else:
@@ -66,11 +65,9 @@ class ProxyRenewalAgent(Agent):
       return S_ERROR("Can not get existing job owner DNs")
 
     job_dn_list = result['Value']
-    
-    print job_dn_list
-    
+        
     for dn,group in ticket_dn_list:
-      print dn,group
+    
       if dn in job_dn_list:
         self.log.verbose("Renewing proxy for "+dn)
         result = self.proxyDB.getProxy(dn)
@@ -102,9 +99,9 @@ class ProxyRenewalAgent(Agent):
               resTime = getProxyTimeLeft(new_proxy)
               if resTime['OK']:
                 tleft = resTime['Value']
-                result = self.proxyDB.storeProxy(new_proxy,dn,tleft)
+                result = self.proxyDB.storeProxy(new_proxy,dn,group)
                 if result["OK"]:
-                  self.log.verbose('Proxy extended for '+dn)
+                  self.log.verbose('Proxy extended for %s for %d hours' % (dn,self.validity_period))
                 else:
                   self.log.warn('Failed to store the renewed proxy')
               else:
