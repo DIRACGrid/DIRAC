@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/AgentDirector.py,v 1.5 2008/01/11 10:56:16 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/AgentDirector.py,v 1.6 2008/01/13 17:37:58 paterson Exp $
 # File :   AgentDirector.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
      are overridden in Grid specific subclasses.
 """
 
-__RCSID__ = "$Id: AgentDirector.py,v 1.5 2008/01/11 10:56:16 paterson Exp $"
+__RCSID__ = "$Id: AgentDirector.py,v 1.6 2008/01/13 17:37:58 paterson Exp $"
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
 from DIRAC.Core.Utilities.Subprocess                       import shellCall
@@ -336,7 +336,7 @@ class AgentDirector(Thread):
     if gridRequirements:
       return S_OK(gridRequirements)
 
-    mask = self.jobDB.getMask()
+    mask = self.jobDB.getSiteMask()
     if not mask['OK']:
       return mask
 
