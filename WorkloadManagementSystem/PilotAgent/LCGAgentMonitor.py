@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: LCGAgentMonitor.py,v 1.1 2008/01/11 18:17:53 paterson Exp $
+# $Id: LCGAgentMonitor.py,v 1.2 2008/01/13 20:52:02 paterson Exp $
 # File :   LCGAgentMonitor.py
 # Author : Stuart Paterson
 ########################################################################
@@ -7,7 +7,7 @@
 """ The LCG Agent Monitor performs the pilot job status tracking activity for LCG.
 """
 
-__RCSID__ = "$Id: LCGAgentMonitor.py,v 1.1 2008/01/11 18:17:53 paterson Exp $"
+__RCSID__ = "$Id: LCGAgentMonitor.py,v 1.2 2008/01/13 20:52:02 paterson Exp $"
 
 from DIRACEnvironment                                        import DIRAC
 from DIRAC.Core.Utilities.Subprocess                         import shellCall
@@ -27,6 +27,7 @@ class LCGAgentMonitor(AgentMonitor):
     self.log.setLevel('debug')
     self.cmd = 'edg-job-status'
     self.cmdTimeout = 60
+    AgentMonitor.__init__(self,'LCG')
 
   #############################################################################
   def getPilotStatus(self,jobID,pilotID):
@@ -34,10 +35,9 @@ class LCGAgentMonitor(AgentMonitor):
        LCG job IDs. Returns for each JobID its status in the LCG WMS and
        its destination CE as a tuple of 2 elements
     """
-    self.log.verbose( '--- Executing %s for %s' %(cmd,jobID) )
     self.__checkProxy()
-
     cmd = "%s %s" % (self.cmd,pilotID)
+    self.log.verbose( '--- Executing %s for %s' %(cmd,jobID) )
     result = self.__exeCommand(cmd)
 
     if not result['OK']:
@@ -47,24 +47,31 @@ class LCGAgentMonitor(AgentMonitor):
     status = result['Status']
     stdout = result['StdOut']
     queryTime = result['Time']
-
-    self.log.verbose( '>>> LCG status query time %.2fs' % queryTime )
+    timing = '>>> LCG status query time %.2fs' % queryTime
+    self.log.verbose( timing )
     if status == 0:
-      lines = output.split('\n')
+      jobStatus = ''
+      lines = stdout.split('\n')
       for line in lines:
         if line.find('Current Status:') != -1 :
-          jobstatus = re.search(':\s+(\w+)',line).group(1)
+          jobStatus = re.search(':\s+(\w+)',line).group(1)
         if line.find('Destination:') != -1 :
           destination = line.split()[1].split(":")[0]
 
-      self.log.debug('JobID: %s, PilotStatus: %s, Destination: %s' %(jobID,status,destination))
+      self.log.debug('JobID: %s, PilotStatus: %s, Destination: %s' %(jobID,jobStatus,destination))
       pilot = S_OK()
       pilot['JobID']=jobID
-      pilot['PilotStatus']=status
+      pilot['PilotStatus']=jobStatus
       pilot['Destination']=destination
-      if status == 'Aborted':
+      if jobStatus == 'Aborted':
         pilot['Aborted']=True
-      elif status == 'Waiting' or status == 'Ready' or status == 'Scheduled' or status == 'Submitted':
+      elif jobStatus == 'Waiting' or jobStatus == 'Ready' or jobStatus == 'Scheduled' or jobStatus == 'Submitted' or jobStatus == 'Running':
+        pilot['Aborted']=False
+      elif jobStatus=='Done':
+        pilot['Aborted']=False
+        self.log.verbose('Pilot %s has entered the Done status' %(pilotID))
+      else:
+        self.log.warn('Unknown status %s for pilot %s' %(jobStatus,pilotID))
         pilot['Aborted']=False
 
       return pilot
@@ -110,18 +117,10 @@ if __name__ == "__main__":
   """ Main execution method.
   """
   localCfg = LocalConfiguration()
-  localCfg.setConfigurationForScript('LCGAgentMonitor')
-  localCfg.addMandatoryEntry( "/DIRAC/Setup" )
   localCfg.addDefaultEntry( "/DIRAC/Security/UseServerCertificate", "yes" )
-  resultDict = localCfg.loadUserData()
-
-  pollingTime = 100
-
-  if not resultDict[ 'OK' ]:
-    gLogger.warn( "There were errors when loading configuration", resultDict[ 'Message' ] )
-    sys.exit(1)
-
-  monitor = AgentMonitor('LCG')
+  from DIRAC.Core.Base import Script
+  Script.parseCommandLine()
+  monitor = LCGAgentMonitor()
   monitor.run()
 
   #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
