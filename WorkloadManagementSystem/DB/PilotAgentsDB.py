@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.3 2008/01/13 01:18:45 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.4 2008/01/13 21:53:08 paterson Exp $
 ########################################################################
 """ PilotAgentsDB class is a front-end to the Pilot Agent Database.
     This database keeps track of all the submitted grid pilot jobs.
@@ -12,7 +12,7 @@
 
 """
 
-__RCSID__ = "$Id: PilotAgentsDB.py,v 1.3 2008/01/13 01:18:45 atsareg Exp $"
+__RCSID__ = "$Id: PilotAgentsDB.py,v 1.4 2008/01/13 21:53:08 paterson Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
@@ -24,7 +24,6 @@ gLogger.initialize('WMS','/Databases/PilotAgentsDB/Test')
 class PilotAgentsDB(DB):
 
   def __init__(self, maxQueueSize=10 ):
-
      DB.__init__(self,'PilotAgentsDB','WorkloadManagement/PilotAgentsDB',maxQueueSize)
 
 ##########################################################################################
@@ -34,7 +33,7 @@ class PilotAgentsDB(DB):
     req = "INSERT INTO PilotAgents( PilotJobReference, InitialJobID, OwnerDN, " + \
           "OwnerGroup, WMSType, SubmissionTime, LastUpdateTime, Status ) " + \
           "VALUES ('%s',%d,'%s',%s,'%s',NOW(),NOW(),'Submitted')" % \
-          (pilotRef,int(jobID),ownerDN,ownerGroup,ptype)
+          (pilotRef,int(jobID),ownerDN,ownerGroup,pilotType)
     return self._update(req)
 
 ##########################################################################################
@@ -125,12 +124,12 @@ class PilotAgentsDB(DB):
         return result
       else:
         if result['Value']:
-    for res in result['Value']:
-      site = res[0]
-      count = res[1]
-      if site:
-        if not summary_dict.has_key(site):
-    summary_dict[site] = {}
-        summary_dict[site][st] = int(count)
+          for res in result['Value']:
+            site = res[0]
+            count = res[1]
+            if site:
+              if not summary_dict.has_key(site):
+                summary_dict[site] = {}
+              summary_dict[site][st] = int(count)
 
     return S_OK(summary_dict)
