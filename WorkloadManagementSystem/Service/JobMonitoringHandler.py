@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobMonitoringHandler.py,v 1.10 2007/12/19 14:54:09 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobMonitoringHandler.py,v 1.11 2008/01/13 01:29:36 atsareg Exp $
 ########################################################################
 
 """ JobMonitoringHandler is the implementation of the JobMonitoring service
@@ -11,7 +11,7 @@
 
 """
 
-__RCSID__ = "$Id: JobMonitoringHandler.py,v 1.10 2007/12/19 14:54:09 atsareg Exp $"
+__RCSID__ = "$Id: JobMonitoringHandler.py,v 1.11 2008/01/13 01:29:36 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -215,15 +215,21 @@ class JobMonitoringHandler( RequestHandler ):
     """ Get the summary of the job information for a given page in the
         job monitor
     """
+        
     last_update = None
     if attrDict.has_key('LastUpdate'):
       last_update = attrDict['LastUpdate']
+      del attrDict['LastUpdate']
     result = jobDB.selectJobs(attrDict, orderAttribute=orderAttribute, newer=last_update)
     if not result['OK']:
       return S_ERROR('Failed to select jobs: '+result['Message'])
 
     jobList = result['Value']
     nJobs = len(jobList)
+    if nJobs == 0:
+      resultDict = {'TotalJobs':nJobs}
+      return S_OK(resultDict)
+    
     iniJob = pageNumber*numberPerPage
     lastJob = iniJob+numberPerPage
     if iniJob >= nJobs:
