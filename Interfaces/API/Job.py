@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.12 2007/12/20 15:21:22 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.13 2008/01/14 21:31:28 paterson Exp $
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,7 +13,7 @@
 
 """
 
-__RCSID__ = "$Id: Job.py,v 1.12 2007/12/20 15:21:22 paterson Exp $"
+__RCSID__ = "$Id: Job.py,v 1.13 2008/01/14 21:31:28 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -717,6 +717,7 @@ class Job:
     if not requirements:
       reqtsDict = self.reqParams
       exprn = ''
+      plus = ''
       for name,props in paramsDict.items():
         ptype = paramsDict[name]['type']
         value = paramsDict[name]['value']
@@ -724,7 +725,9 @@ class Job:
           plus = ' && '
           exprn += reqtsDict[name].replace('NAME',name).replace('VALUE',str(value))+plus
 
-      exprn = exprn[:-len(plus)]
+      if len(plus):
+        exprn = exprn[:-len(plus)]
+
       self.log.verbose('Requirements: %s' %(exprn))
       classadJob.set_expression('Requirements', exprn)
 
