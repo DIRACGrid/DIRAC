@@ -20,9 +20,8 @@ class RequestDB:
     elif backend == 'file':
       self.requestDB = RequestDBFile()
 
-  def setRequest(self,requestType,requestName,requestStatus,requestString):
-    # Can probably get rid of (requestType,requestStatus) from this request, it is incoded in the request string.
-    result = self.requestDB._setRequest(requestType,requestName,requestStatus,requestString)
+  def setRequest(self,requestName,requestString):
+    result = self.requestDB._setRequest(requestName,requestString)
     return result
 
   def setRequestStatus(self,requestType,requestName,status):
@@ -68,7 +67,7 @@ class RequestDBFile:
     self.lastRequest = {}
 
   def __getRequestDBPath(self):
-    root = gConfig.getValue('/Systems/RequestManagement/Development/Services/RequestHandler/Path')
+    root = gConfig.getValue('/Systems/RequestManagement/Development/Services/RequestManager/Path')
     if not root:
       diracRoot = gConfig.getValue('/LocalSite/Root')
       root = diracRoot+'/requestdb'
@@ -144,10 +143,21 @@ class RequestDBFile:
     result['Value'] = summaryDict
     return result
 
-  def _setRequest(self,requestType,requestName,requestStatus,requestString):
-    result = self.__getRequestStatus(requestType,requestName)
-    if result['OK']:
-      self.__deleteRequest(requestType,requestName)
+  def _setRequest(self,requestName,requestString):
+    request = DataManagementRequest(request=requestString)
+    return S_OK()
+    """
+    requestTypes = ['transfer','register','removal','stage']
+    failed = False
+    for requestType in requestTypes:
+      res = request.getNumSubRequests(requestType)
+      if res['OK']:
+        numRequests = res['Value']
+        for ind in range(numRequests):
+    
+    if failed:
+      res = self._deleteRequest(requestName)
+
     reqDir = '%s/%s/%s' % (self.root,requestType,requestStatus)
     if not os.path.exists(reqDir):
       os.makedirs(reqDir)
@@ -155,10 +165,12 @@ class RequestDBFile:
     requestFile = open(requestPath,'w')
     requestFile.write(requestString)
     requestFile.close()
-    return S_OK()
+    """
 
-  def _getRequest(self,requestType,requestStatus):
+
+  def _getRequest(self,requestType):
     requests = []
+    requestStatus = 'ToDo'
     reqDir = '%s/%s/%s' % (self.root,requestType,requestStatus)
     if os.path.exists(reqDir):
       requestList = os.listdir(reqDir)
@@ -168,15 +180,13 @@ class RequestDBFile:
     result = S_OK()
     if len(requests) > 0:
       if not self.lastRequest.has_key(requestType):
-        self.lastRequest[requestType] = {requestStatus:''}
-      if not self.lastRequest[requestType].has_key(requestStatus):
-        self.lastRequest[requestType][requestStatus] = ''
-      lastRequest = self.lastRequest[requestType][requestStatus]
+        self.lastRequest[requestType] = ''
+      lastRequest = self.lastRequest[requestType]
       requestName = self.__selectRequestCursor(requests,lastRequest)
       reqStr = self.__getRequestString(requestType,requestName,requestStatus)
       if reqStr['OK']:
         requestString = reqStr['Value']
-        self.lastRequest[requestType][requestStatus] = requestName
+        self.lastRequest[requestType] = requestName
         resDict = {'requestString':requestString,'requestName':requestName}
         result['Value'] = resDict
       else:
@@ -347,7 +357,7 @@ class RequestDBMySQL(DB):
     return S_OK(resultDict)
 
 
-  def _setRequest(self,requestType,requestName,requestStatus,requestString):
+  def _setRequest(self,requestName,requestString):
     request = DataManagementRequest(request=requestString)
     requestTypes = ['transfer','register','removal','stage']
     failed = False

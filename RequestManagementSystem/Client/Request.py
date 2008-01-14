@@ -1,6 +1,5 @@
 """
   This is the client implementation for the RequestDB using the DISET framework.
-  A.Smith 23/5/07
 """
 
 from types import *
@@ -13,32 +12,30 @@ class RequestClient:
   def __init__(self, useCertificates = False):
     """ Constructor of the RequestClient class
     """
-    self.localUrl = gConfig.getValue('/Systems/DataManagement/Development/Services/RequestDB/localURL')
-    self.centralUrl = gConfig.getValue('/Systems/DataManagement/Development/Services/RequestDB/centralURL')
-    voBoxUrls = gConfig.getValue('/Systems/DataManagement/Development/Services/RequestDB/voBoxURLs')
+    self.localUrl = gConfig.getValue('/Systems/RequestManagement/Development/URLs/RequestDB/localURL')
+    self.centralUrl = gConfig.getValue('/Systems/RequestManagement/Development/URLs/RequestDB/centralURL')
+    voBoxUrls = gConfig.getValue('/Systems/RequestManagement/Development/URLs/RequestDB/voBoxURLs',[])
     self.voBoxUrls = randomize(voBoxUrls).remove(self.localUrl)
 
-  def setRequest(self,requestType,requestName,requestString,requestStatus='ToDo',url=''):
+  def setRequest(self,requestName,requestString,url=''):   
     """ Set request. URL can be supplied if not a all VOBOXes will be tried in random order.
-    """
+    """ 
     try:
-      urls = []
-      if url:
-        urls[url]
-      urls.append(self.voBoxUrls)
+      url = self.localUrl
+      urls = [url]
       for url in urls:
-        requestRPCClient = DISETClient(url)
-        res = requestRPCClient.setRequest(requestType,requestName,requestStatus,requestString)
+        requestRPCClient = RPCClient(url)
+        res = requestRPCClient.setRequest(requestName,requestString)
         if res['OK']:
-          gLogger.info("Succeded setting request for %s at %s" % (requestName,status,url))
-          result["Server"] = url
-          return result
+          gLogger.info("Succeded setting request  %s at %s" % (requestName,url))
+          res["Server"] = url
+          return res
         else:
           errKey = "Failed setting request at %s" % url
           errExpl = " : for %s because: %s" % (requestName,res['Message'])
           gLogger.error(errKey,errExpl)
       errKey = "Completely failed setting request"
-      errExpl = " : %s\n%s\n%s" % (requestName,requestType,requestString)
+      errExpl = " : %s\n%s" % (requestName,requestString)
       gLogger.fatal(errKey,errExpl)
       return S_ERROR(errKey)
     except Exception,x:
@@ -72,7 +69,7 @@ class RequestClient:
       gLogger.exception(errKey,errExpl)
       return S_ERROR(errKey+errExpl)
 
-  def getRequest(self,requestType,status):
+  def getRequest(self,requestType):
     """ Get request from RequestDB.
         First try the local repository then if none available or error try random repository
     """
@@ -80,21 +77,22 @@ class RequestClient:
       #Create list with two RequestDB URLs to try
       url = self.localUrl
       urls = [url]
-      urls.append(self.voBoxUrls.pop())
-
+      #urls.append(self.voBoxUrls.pop())
+      
       for url in urls:
+        gLogger.info("RequestDBClient.getRequest: Attempting to get request.", "%s %s" % (url,requestType)) 
         requestRPCClient = RPCClient(url)
-        res = requestRPCClient.getRequest(requestType,status)
+        res = requestRPCClient.getRequest(requestType)
         if res['OK']:
-          if res['Request']:
-            gLogger.info("Got '%s' request from RequestDB (%s) with status '%s'" % (requestType,url,status))
+          if res['Value']:
+            gLogger.info("Got '%s' request from RequestDB (%s)" % (requestType,url))
             res['Server'] = url
             return res
           else:
-            gLogger.info("Found no '%s' requests on RequestDB (%s) with status '%s'" % (requestType,url,status))
+            gLogger.info("Found no '%s' requests on RequestDB (%s)" % (requestType,url))
         else:
           errKey = "Failed getting request from %s" % url
-          errExpl = " : %s of %s because: %s" % (requestType,status,res['Message'])
+          errExpl = " : %s : %s" % (requestType,res['Message'])
           gLogger.error(errKey,errExpl)
       return res
     except Exception,x:
@@ -102,7 +100,6 @@ class RequestClient:
       errExpl = " : %s" %str(x)
       gLogger.exception(errKey,errExpl)
       return S_ERROR(errKey+errExpl)
-
 
   def getRequestSummary(self,url=''):
     """ Get the summary of requests in the RequestDBs. If a URL is not supplied will get status for all.

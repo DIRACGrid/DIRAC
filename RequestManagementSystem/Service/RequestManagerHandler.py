@@ -22,13 +22,12 @@ def initializeRequestManagerHandler(serviceInfo):
 
 class RequestManagerHandler(RequestHandler):
 
-  types_setRequest = [StringType,StringType,StringType,StringType]
-  def export_setRequest(self,requestType,requestName,requestStatus,requestString):
+  types_setRequest = [StringType,StringType]
+  def export_setRequest(self,requestName,requestString):
     """ Set a new request
     """
-    gLogger.verbose("Setting request "+requestName+" of type "+requestType+" with "+requestString)
     try:
-      result = requestDB.setRequest(requestType,requestName,requestStatus,requestString)
+      result = requestDB.setRequest(requestName,requestString)
       if not result['OK']:
         errKey = "Setting request failed"
         errExpl = " : for %s because %s" % (requestName,result['Message'])
@@ -58,32 +57,35 @@ class RequestManagerHandler(RequestHandler):
       gLogger.exception(errKey,errExpl)
       return S_ERROR('Setting request status failed: '+str(x))
 
-  types_getRequest = [StringType,StringType]
-  def export_getRequest(self,requestType,status):
+  types_getRequest = [StringType]
+  def export_getRequest(self,requestType):
     """ Get a requests of given type from the DB
     """
-    gLogger.info("RequestHandler.getRequest: Attempting to get request","%s %s" % (status,requestType))
+    gLogger.info("RequestHandler.getRequest: Attempting to get request type", requestType)
     try:
-      result = requestDB.getRequest(requestType,status)
-      if not result['OK']:
-        errKey = "Getting request failed"
-        errExpl = " : for %s because %s" % (requestType,result['Message'])
+      res = requestDB.getRequest(requestType)
+      if not res['OK']:
+        errKey = "RequestHandler.getRequest: Getting request failed"
+        errExpl = "%s: %s" % (requestType,res['Message'])
         gLogger.error(errKey,errExpl)
-        return result
-      requestName = result['requestName']
+        return res
+      elif not res['Value']:
+        gLogger.info("RequestHandler.getRequest: No requests found.")
+        return res
+      requestName = res['requestName']
       setStatus = requestDB.setRequestStatus(requestType,requestName,'Assigned')
       if setStatus['OK']:
-        return result
+        return res
       else:
-        errKey = "Setting request status failed"
-        errExpl = " : for %s because %s" % (requestName,setStatus['Message'])
-        gLogger.error(errKey,errKey)
+        errKey = "RequestHandler.getRequest: Setting request status failed"
+        errExpl = "%s: %s" % (requestName,setStatus['Message'])
+        gLogger.error(errKey,errExpl)
         return S_ERROR(errKey)
     except Exception,x:
-      errKey = "Getting request failed"
-      errExpl = " for %s because %s" % (requestName,str(x))
+      errKey = "RequestManagerHandler.getRequest: Failed to get request type:"
+      errExpl = "%s:  %s" % (requestType,str(x))
       gLogger.exception(errKey,errExpl)
-      return S_ERROR('Getting request failed: '+str(x))
+      return S_ERROR("%s %s" % (errKey,errExpl))
 
   types_getRequestSummary = []
   def export_getDBSummary(self):
