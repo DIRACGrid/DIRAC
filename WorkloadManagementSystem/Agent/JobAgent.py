@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.14 2008/01/08 17:53:25 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.15 2008/01/14 14:39:19 paterson Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.14 2008/01/08 17:53:25 paterson Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.15 2008/01/14 14:39:19 paterson Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -287,12 +287,15 @@ class JobAgent(Agent):
     print >> wrapper, wrapperTemplate % (siteRootPython,signature,jobID,date_time)
     libDir = '%s/%s/lib' %(self.siteRoot,systemConfig)
     scriptsDir = '%s/scripts' %(self.siteRoot)
-    contribDir = '%s/contrib' %(self.siteRoot)
+    #contribDir = '%s/contrib' %(self.siteRoot)
+    archLibDir = '%s/%s/lib/python' %(self.siteRoot,systemConfig)
     wrapper.write('sys.path.insert(0,"%s")\n' %(libDir))
     wrapper.write('sys.path.insert(0,"%s")\n' %(scriptsDir))
-    wrapper.write('sys.path.insert(0,"%s")\n' %(contribDir))
-    wrapper.write("os.environ['PYTHONPATH'] = '%s:%s:%s:%s:'+os.environ['PYTHONPATH']\n" %(contribDir,scriptsDir,libDir,self.siteRoot))
-    wrapper.write("os.environ['LD_LIBRARY_PATH'] = '%s:'+os.environ['LD_LIBRARY_PATH']\n" %(libDir))
+    #wrapper.write('sys.path.insert(0,"%s")\n' %(contribDir))
+    wrapper.write('sys.path.insert(0,"%s")\n' %(archLibDir))
+    #wrapper.write("os.environ['PYTHONPATH'] = '%s:%s:%s:%s:'+os.environ['PYTHONPATH']\n" %(contribDir,scriptsDir,libDir,self.siteRoot))
+    wrapper.write("os.environ['PYTHONPATH'] = '%s:%s:%s:%s:'+os.environ['PYTHONPATH']\n" %(archLibDir,scriptsDir,libDir,self.siteRoot))
+    wrapper.write("os.environ['LD_LIBRARY_PATH'] = '%s:%s:'+os.environ['LD_LIBRARY_PATH']\n" %(archLibDir,libDir))
     jobArgs = "execute("+str(arguments)+")\n"
     wrapper.write(jobArgs)
     wrapper.close ()
