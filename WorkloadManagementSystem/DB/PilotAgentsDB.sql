@@ -25,7 +25,7 @@ GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON PilotAgentsDB
 
 FLUSH PRIVILEGES;
 
-------------------------------------------------------------------------------- 
+-------------------------------------------------------------------------------
 USE PilotAgentsDB;
 
 --------------------------------------------------------------------------------
@@ -50,5 +50,13 @@ CREATE TABLE PilotAgents (
     SubmissionTime DATETIME,
     LastUpdateTime DATETIME,
     Status VARCHAR(32) NOT NULL DEFAULT 'Unknown',
+    StdOutput BLOB,
     PRIMARY KEY (PilotJobReference)
+);
+
+DROP TABLE IF EXISTS JobToPilotMapping;
+CREATE TABLE JobToPilotMapping (
+    PilotID INTEGER NOT NULL,
+    JobID INTEGER NOT NULL,
+    StartTime DATETIME NOT NULL,
 );
