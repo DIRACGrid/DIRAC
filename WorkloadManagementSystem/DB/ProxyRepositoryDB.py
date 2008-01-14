@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/Attic/ProxyRepositoryDB.py,v 1.8 2008/01/13 01:27:12 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/Attic/ProxyRepositoryDB.py,v 1.9 2008/01/14 22:14:54 atsareg Exp $
 ########################################################################
 """ ProxyRepository class is a front-end to the proxy repository Database
 """
 
-__RCSID__ = "$Id: ProxyRepositoryDB.py,v 1.8 2008/01/13 01:27:12 atsareg Exp $"
+__RCSID__ = "$Id: ProxyRepositoryDB.py,v 1.9 2008/01/14 22:14:54 atsareg Exp $"
 
 import time
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
@@ -182,4 +182,18 @@ class ProxyRepositoryDB(DB):
     else:
       cmd = "DELETE  from Proxies WHERE UserDN='%s'" % userDN
     result = self._update( cmd )
+    return result
+
+#############################################################################
+  def setProxyPersistencyFlag(self,userDN,userGroup,flag = True):
+    """ Set the proxy PersistentFlag to the flag value
+    """
+    
+    if flag:
+      cmd = "UPDATE Proxies SET PersistentFlag='True' "
+    else:
+      cmd = "UPDATE Proxies SET PersistentFlag='False' "  
+    cmd = cmd + "where UserDN='%s' and UserGroup='%s'" % (userDN,userGroup)
+    
+    result = self._update(cmd)
     return result
