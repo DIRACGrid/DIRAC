@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalogue. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.13 2007/12/19 16:04:59 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.14 2008/01/14 14:16:02 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -83,7 +83,7 @@ class ReplicaManager:
     fileTuple = (lfn,destPfn,size,destinationSE,guid)
     res = self.registerFile(fileTuple)
     return res
-          
+
 
   def getReplicas(self,lfn):
     """ Get the replicas registered in the catalog for supplied file.
@@ -105,10 +105,10 @@ class ReplicaManager:
       gLogger.error(errStr,res['Message'])
       return S_ERROR(errStr)
     return res
-  
+
   def getFileSize(self,lfn):
     """ Get the size registered in the catalog for supplied file.
-    
+
         'lfn' is the files to check (can be a single lfn or list of lfns)
     """
     if type(lfn) == types.ListType:
@@ -124,12 +124,12 @@ class ReplicaManager:
     if not res['OK']:
       errStr = "ReplicaManager.getFile: Completely failed to get file size for %s lfns." % len(lfns)
       gLogger.error(errStr,res['Message'])
-      return S_ERROR(errStr)  
+      return S_ERROR(errStr)
     return res
-  
+
   def getFile(self,lfn):
     """ Get a local copy of a LFN from Storage Elements.
-    
+
         'lfn' is the logical file name for the desired file
     """
     if type(lfn) == types.ListType:
@@ -138,7 +138,7 @@ class ReplicaManager:
       lfns = [lfn]
     else:
       errStr = "ReplicaManager.getFile: Supplied lfn must be string or list of strings."
-      gLogger.error(errStr) 
+      gLogger.error(errStr)
       return S_ERROR(errStr)
     gLogger.info("ReplicaManager.getFile: Attempting to get %s files." % len(lfns))
     res = self.getReplicas(lfns)
@@ -150,7 +150,7 @@ class ReplicaManager:
     if not res['OK']:
       return res
     failed.update(res['Value']['Failed'])
-    fileSizes = res['Value']['Successful'] 
+    fileSizes = res['Value']['Successful']
     ###########################################################
     # Determine the best replicas
     replicaPreference = {}
@@ -185,7 +185,7 @@ class ReplicaManager:
           res = storageElement.getFile(pfn,fileSizes[lfn])
           if res['OK']:
             gotFile = True
-            successful[lfn] = res['Value']     
+            successful[lfn] = res['Value']
       # If we get here then we failed to get any replicas
       errStr = "ReplicaManager.getFile: Failed to get local copy from any replicas."
       gLogger.error(errStr,lfn)
@@ -208,14 +208,14 @@ class ReplicaManager:
     res = self.__replicate(lfn,destSE,sourceSE,destPath)
     if not res['OK']:
       errStr = "ReplicaManager.replicateAndRegister: Completely failed to replicate file."
-      gLogger.errStr(errStr,res['Message'])
-      return S_ERROR(errStr)     
+      gLogger.error(errStr,res['Message'])
+      return S_ERROR(errStr)
     if not res['Value']:
       # The file was already present at the destination SE
       gLogger.info("ReplicaManager.replicateAndRegister: %s already present at %s." % (lfn,destSE))
       successful[lfn] = True
       resDict = {'Successful':successful,'Failed':failed}
-      return S_OK(resDict)       
+      return S_OK(resDict)
     destPfn = res['Value']['DestPfn']
     destSE = res['Value']['DestSE']
     gLogger.info("ReplicaManager.replicateAndRegister: Attempting to register %s at %s." % (destPfn,destSE))
@@ -225,15 +225,15 @@ class ReplicaManager:
       # Need to return to the client that the file was replicated but not registered
       errStr = "ReplicaManager.replicateAndRegister: Completely failed to register replica."
       gLogger.error(errStr,res['Message'])
-      failed[lfn] = {'Registration':{'LFN':lfn,'TargetSE':destSE,'PFN':destPfn}}     
+      failed[lfn] = {'Registration':{'LFN':lfn,'TargetSE':destSE,'PFN':destPfn}}
     else:
-      if res['Value']['Successful'].has_key(lfn): 
+      if res['Value']['Successful'].has_key(lfn):
         gLogger.info("ReplicaManager.replicateAndRegister: Successfully registered replica.")
         successful[lfn] = True
       else:
         errStr = "ReplicaManager.replicateAndRegister: Failed to register replica."
         gLogger.info(errStr,res['Value']['Failed'][lfn])
-        failed[lfn] = {'Registration':{'LFN':lfn,'TargetSE':destSE,'PFN':destPfn}}           
+        failed[lfn] = {'Registration':{'LFN':lfn,'TargetSE':destSE,'PFN':destPfn}}
     resDict = {'Successful':successful,'Failed':failed}
     return S_OK(resDict)
 
@@ -250,7 +250,7 @@ class ReplicaManager:
     res = self.__replicate(lfn,destSE,sourceSE,destPath)
     if not res['OK']:
       errStr = "ReplicaManager.replicate: Replication failed."
-      gLogger.errStr(errStr,"%s %s" % (lfn,destSE))
+      gLogger.error(errStr,"%s %s" % (lfn,destSE))
       return res
     if not res['Value']:
       # The file was already present at the destination SE
@@ -414,7 +414,7 @@ class ReplicaManager:
                     gLogger.error(errStr,"%s %s" % (diracSE,sourcePfn))
                 else:
                   errStr = "ReplicaManager.__resolveBestReplicas: Failed to get physical file size."
-                  gLogger.error(errStr,"%s %s: %s" % (sourcePfn,diracSE,res['Value']['Failed'][sourcePfn]))                
+                  gLogger.error(errStr,"%s %s: %s" % (sourcePfn,diracSE,res['Value']['Failed'][sourcePfn]))
               else:
                 errStr = "ReplicaManager.__resolveBestReplicas: Completely failed to get physical file size."
                 gLogger.error(errStr,"%s %s: %s" % (sourcePfn,diracSE,res['Message']))
