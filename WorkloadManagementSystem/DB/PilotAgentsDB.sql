@@ -29,19 +29,10 @@ FLUSH PRIVILEGES;
 USE PilotAgentsDB;
 
 --------------------------------------------------------------------------------
-DROP TABLE IF EXISTS JobPilots;
-CREATE TABLE JobPilots (
-    PilotID INTEGER NOT NULL AUTO_INCREMENT,
-    JobID INTEGER NOT NULL,
-    PilotStatus VARCHAR(32) NOT NULL DEFAULT 'Unknown',
-    PRIMARY KEY (PilotID)
-);
-
---------------------------------------------------------------------------------
 DROP TABLE IF EXISTS PilotAgents;
 CREATE TABLE PilotAgents (
-    PilotID INTEGER NOT NULL,
-    InitialJobID NOT NULL DEFAULT 0,
+    PilotID INTEGER NOT NULL AUTO_INCREMENT,
+    InitialJobID INTEGER NOT NULL DEFAULT 0,
     PilotJobReference VARCHAR(255) NOT NULL DEFAULT 'Unknown',
     DestinationSite VARCHAR(128) NOT NULL DEFAULT 'Multiple',
     OwnerDN VARCHAR(255) NOT NULL,
@@ -52,12 +43,13 @@ CREATE TABLE PilotAgents (
     Status VARCHAR(32) NOT NULL DEFAULT 'Unknown',
     StdOutput BLOB,
     StdError BLOB,
-    PRIMARY KEY (PilotJobReference)
+    PRIMARY KEY (PilotID),
+    INDEX (PilotJobReference)
 );
 
 DROP TABLE IF EXISTS JobToPilotMapping;
 CREATE TABLE JobToPilotMapping (
     PilotID INTEGER NOT NULL,
     JobID INTEGER NOT NULL,
-    StartTime DATETIME NOT NULL,
+    StartTime DATETIME NOT NULL
 );
