@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSAdministratorHandler.py,v 1.4 2008/01/13 01:31:58 atsareg Exp $
+# $Id: WMSAdministratorHandler.py,v 1.5 2008/01/14 22:16:19 atsareg Exp $
 ########################################################################
 """
 This is a DIRAC WMS administrator interface
@@ -16,7 +16,7 @@ This starts an XMLRPC service exporting the following methods:
 
 """
 
-__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.4 2008/01/13 01:31:58 atsareg Exp $"
+__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.5 2008/01/14 22:16:19 atsareg Exp $"
 
 import os, sys, string, uu, shutil
 from types import *
@@ -143,6 +143,40 @@ class WMSAdministratorHandler(RequestHandler):
           return S_ERROR('Could not get proxy delegation and the stored proxy is not sufficient')
       else:
         return S_ERROR("Could not get proxy delegation and the stored proxy is not valid")
+
+##############################################################################
+  types_uploadProxy = [StringType]
+  def export_uploadProxy(self,proxy,DN=None,group=None):
+    """ Upload a proxy to the WMS Proxy Repository
+    """
+    
+    result = self.getRemoteCredentials()
+    userDN = DN
+    if not DN:
+      userDN = result['DN']
+    userGroup = group
+    if not group:  
+      userGroup = result['group'] 
+    
+    result = proxyRepository.storeProxy(proxy,userDN,userGroup)
+    return result
+    
+##############################################################################
+  types_setProxyPersistencyFlag = [BooleanType]
+  def export_setProxyPersistencyFlag(self,flag,DN=None,group=None):
+    """ Upload a proxy to the WMS Proxy Repository
+    """    
+    
+    result = self.getRemoteCredentials()
+    userDN = DN
+    if not DN:
+      userDN = result['DN']
+    userGroup = group
+    if not group:  
+      userGroup = result['group'] 
+      
+    result = proxyRepository.setProxyPersistencyFlag(userDN,userGroup,flag)  
+    return result
 
 ##############################################################################
   types_getLCGOutput = [IntType]
