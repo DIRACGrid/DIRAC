@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.11 2008/01/09 11:31:23 paterson Exp $
+# $Id: JobWrapper.py,v 1.12 2008/01/14 14:53:57 paterson Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.11 2008/01/09 11:31:23 paterson Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.12 2008/01/14 14:53:57 paterson Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -35,7 +35,6 @@ class JobWrapper:
     """
     self.section = COMPONENT_NAME
     self.log = gLogger
-    #self.log.setLevel('debug')
     self.jobID = jobID
     self.root = os.getcwd()
     self.jobReport  = RPCClient('WorkloadManagement/JobStateUpdate')
@@ -58,15 +57,21 @@ class JobWrapper:
     currentPID = os.getpid()
     self.log.verbose('Job Wrapper started under PID: %s' % currentPID )
     self.log.verbose('==========================================================================')
-    self.log.debug('Sys path is: \n%s' %(string.join(sys.path,'\n')))
-    self.log.debug('==========================================================================')
-    pypath = os.environ['PYTHONPATH']
-    print pypath
-    if not pypath:
-      self.log.debug('PYTHONPATH is: null')
+    self.log.verbose('sys.path is: \n%s' %(string.join(sys.path,'\n')))
+    self.log.verbose('==========================================================================')
+    if not os.environ.has_key('PYTHONPATH'):
+      self.log.verbose('PYTHONPATH is: null')
     else:
-      self.log.debug('PYTHONPATH is: \n%s' %(string.join(string.split(pypath,':'),'\n')))
-      self.log.debug('==========================================================================')
+      pypath = os.environ['PYTHONPATH']
+      self.log.verbose('PYTHONPATH is: \n%s' %(string.join(string.split(pypath,':'),'\n')))
+      self.log.verbose('==========================================================================')
+    if not os.environ.has_key('LD_LIBRARY_PATH'):
+      self.log.verbose('LD_LIBRARY_PATH is: null')
+    else:
+      ldpath = os.environ['LD_LIBRARY_PATH']
+      self.log.verbose('LD_LIBRARY_PATH is: \n%s' %(string.join(string.split(ldpath,':'),'\n')))
+      self.log.verbose('==========================================================================')
+
     if not self.cleanUpFlag:
       self.log.debug('CleanUp Flag is disabled by configuration')
     self.log.verbose('Trying to import LFC File Catalog client')
@@ -149,7 +154,7 @@ class JobWrapper:
       command = '%s %s' % (executable,os.path.basename(jobArguments))
       self.log.verbose('Execution command: %s' %(command))
       maxPeekLines = self.maxPeekLines
-      thread = ExecutionThread(spObject,command, maxPeekLines)
+      thread = ExecutionThread(spObject,command,maxPeekLines)
       thread.start()
     else:
       return S_ERROR('Path to executable %s not found' %(executable))
@@ -161,6 +166,7 @@ class JobWrapper:
       self.log.warn(watchdogInstance['Message'])
       return S_ERROR('Could not create Watchdog instance')
 
+    self.log.debug('WatchdogInstance %s' %(watchdogInstance))
     watchdog = watchdogInstance['Value']
     self.log.verbose('Calibrating Watchdog instance')
     watchdog.calibrate()
