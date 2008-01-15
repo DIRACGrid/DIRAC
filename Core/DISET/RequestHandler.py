@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.26 2007/12/19 17:57:28 acasajus Exp $
-__RCSID__ = "$Id: RequestHandler.py,v 1.26 2007/12/19 17:57:28 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.27 2008/01/15 18:15:30 acasajus Exp $
+__RCSID__ = "$Id: RequestHandler.py,v 1.27 2008/01/15 18:15:30 acasajus Exp $"
 
 import types
 from DIRAC.Core.DISET.private.FileHelper import FileHelper
@@ -189,6 +189,8 @@ class RequestHandler:
         if not type( args[ iIndex ] ) == oTypesList[ iIndex ]:
           sError = "Type mismatch in parameter %d" % iIndex
           return S_ERROR( sError )
+      if len( args ) < len( oTypesList ):
+        return S_ERROR( "Function %s expects at least %s arguments" % ( method, len( oTypesList ) ) )
     except Exception, v:
       sError = "Error in parameter check: %s" % str(v)
       gLogger.exception( sError )
