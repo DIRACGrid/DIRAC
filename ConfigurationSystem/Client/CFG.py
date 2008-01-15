@@ -1,10 +1,12 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/Attic/CFG.py,v 1.2 2007/11/21 16:13:59 acasajus Exp $
-__RCSID__ = "$Id: CFG.py,v 1.2 2007/11/21 16:13:59 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/Attic/CFG.py,v 1.3 2008/01/15 08:42:06 acasajus Exp $
+__RCSID__ = "$Id: CFG.py,v 1.3 2008/01/15 08:42:06 acasajus Exp $"
 
 import types
 import copy
 
-from DIRAC.Core.Utilities import List
+from DIRAC.Core.Utilities import List, ThreadSafe
+
+gCFGSynchro = ThreadSafe.Synchronizer( recursive = True )
 
 class CFG:
 
@@ -14,6 +16,7 @@ class CFG:
     """
     self.reset()
 
+  @gCFGSynchro
   def reset( self ):
     """
     Empty the CFG
@@ -22,6 +25,7 @@ class CFG:
     self.__commentDict = {}
     self.__dataDict = {}
 
+  @gCFGSynchro
   def createNewSection( self, sectionName, comment = "", contents = False ):
     """
     Create a new section
@@ -59,6 +63,7 @@ class CFG:
       raise Exception( "Section %s does not exist" % sectionName )
     self.__dataDict[ sectionName ] = oCFGToClone.clone()
 
+  @gCFGSynchro
   def setOption( self, optionName, value, comment = "" ):
     """
     Create a new option.
@@ -76,7 +81,6 @@ class CFG:
       raise Exception( "Sections and options can't contain '/' character. Correct %s" % optionName )
     self.__addEntry( optionName, comment )
     self.__dataDict[ optionName ] = str( value )
-
 
   def __addEntry( self, entryName, comment ):
     """
@@ -101,6 +105,7 @@ class CFG:
     """
     return key in self.__orderedList
 
+  @gCFGSynchro
   def deleteKey( self, key ):
     """
     Delete an option/section
@@ -117,6 +122,7 @@ class CFG:
       return True
     return False
 
+  @gCFGSynchro
   def copyKey( self, originalKey, newKey ):
     """
     Copy an option/section
@@ -136,6 +142,7 @@ class CFG:
       return True
     return False
 
+  @gCFGSynchro
   def listOptions( self, ordered = False ):
     """
     List options
@@ -149,6 +156,7 @@ class CFG:
     else:
       return [ sKey for sKey in self.__dataDict.keys() if type( self.__dataDict[ sKey ] ) == types.StringType ]
 
+  @gCFGSynchro
   def listSections( self, ordered = False ):
     """
     List subsections
@@ -162,6 +170,7 @@ class CFG:
     else:
       return [ sKey for sKey in self.__dataDict.keys() if type( self.__dataDict[ sKey ] ) != types.StringType ]
 
+  @gCFGSynchro
   def isSection( self, key ):
     """
     Return if a section exists
@@ -172,6 +181,7 @@ class CFG:
     """
     return key in self.__dataDict and type( self.__dataDict[ key ] ) != types.StringType
 
+  @gCFGSynchro
   def isOption( self, key ):
     """
     Return if an option exists
@@ -207,6 +217,7 @@ class CFG:
     else:
       return False
 
+  @gCFGSynchro
   def getRecursive( self, path, levelsAbove = 0 ):
     """
     Get path contents
@@ -232,6 +243,7 @@ class CFG:
       pathList = pathList[:-levelsAbove]
     return self.__recurse( pathList )
 
+  @gCFGSynchro
   def appendToOption( self, optionName, value ):
     """
     Append a value to an option prepending a comma
@@ -245,6 +257,7 @@ class CFG:
       raise Exception( "Option %s has not been declared" % optionName )
     self.__dataDict[ optionName ] += str( value )
 
+  @gCFGSynchro
   def addKey( self, key, value, comment, beforeKey = "" ):
     """
     Add a new entry (option or section)
@@ -269,6 +282,7 @@ class CFG:
       refKeyPos = self.__orderedList.index( beforeKey )
       self.__orderedList.insert( refKeyPos + 1, key )
 
+  @gCFGSynchro
   def renameKey( self, oldName, newName ):
     """
     Rename a option/section
@@ -332,6 +346,7 @@ class CFG:
     """
     return True
 
+  @gCFGSynchro
   def getComment( self, entryName ):
     """
     Get the comment for an option/section
@@ -345,6 +360,7 @@ class CFG:
     except:
       raise Exception( "%s does not have any comment defined" % entryName )
 
+  @gCFGSynchro
   def setComment( self, entryName, comment ):
     """
     Set the comment for an option/section
@@ -359,6 +375,7 @@ class CFG:
       return True
     return False
 
+  @gCFGSynchro
   def serialize( self, tabLevelString = "" ):
     """
     Generate a human readable serialization of a CFG
@@ -389,6 +406,7 @@ class CFG:
         raise Exception( "Oops. There is an entry in the order which is not a section nor an option" )
     return CFGSTring
 
+  @gCFGSynchro
   def clone( self ):
     """
     Create a copy of the CFG
@@ -404,6 +422,7 @@ class CFG:
       clonedCFG.__dataDict[ section ] = self[ section ].clone()
     return clonedCFG
 
+  @gCFGSynchro
   def mergeWith( self, cfgToMergeWith ):
     """
     Generate a CFG by merging with the contents of another CFG.
@@ -453,6 +472,7 @@ class CFG:
     fd.close()
     return self.loadFromBuffer( fileData )
 
+  @gCFGSynchro
   def loadFromBuffer( self, data ):
     """
     Load the contents of the CFG from a string
