@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.22 2008/01/10 15:36:57 atsareg Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.22 2008/01/10 15:36:57 atsareg Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.23 2008/01/15 17:39:21 acasajus Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.23 2008/01/15 17:39:21 acasajus Exp $"
 
 import DIRAC
 from DIRAC.Core.DISET.private.Protocols import gProtocolDict
@@ -12,7 +12,6 @@ from DIRAC.Core.Utilities import GridCredentials
 
 class BaseClient:
 
-  defaultUserGroup = gConfig.getValue('DIRAC/DefaultGroup','lhcb_user')
   defaultHostGroup = "hosts"
 
 #TODO
@@ -24,6 +23,7 @@ class BaseClient:
                 setup = "",
                 delegatedDN = "",
                 delegatedGroup = "" ):
+    self.defaultUserGroup = gConfig.getValue( '/DIRAC/DefaultGroup', 'lhcb_user' )
     self.serviceName = serviceName
     self.timeout = timeout
     #Which setup to use?
