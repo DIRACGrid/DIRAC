@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Refresher.py,v 1.16 2007/11/21 16:15:38 acasajus Exp $
-__RCSID__ = "$Id: Refresher.py,v 1.16 2007/11/21 16:15:38 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Refresher.py,v 1.17 2008/01/15 18:10:48 acasajus Exp $
+__RCSID__ = "$Id: Refresher.py,v 1.17 2008/01/15 18:10:48 acasajus Exp $"
 
 import threading
 import time
@@ -98,7 +98,7 @@ class Refresher( threading.Thread ):
       gLogger.debug( "Using configuration gateway", str( lInitialListOfServers[0] ) )
     else:
       lInitialListOfServers = gConfigurationData.getServers()
-      gLogger.debug( "Refresing from list %s" % str( lInitialListOfServers ) )
+      gLogger.debug( "Refreshing from list %s" % str( lInitialListOfServers ) )
     lRandomListOfServers = List.randomize( lInitialListOfServers )
     gLogger.debug( "Randomized server list is %s" % ", ".join( lRandomListOfServers ) )
 
@@ -120,9 +120,9 @@ class Refresher( threading.Thread ):
     if retVal[ 'OK' ]:
       dataDict = retVal[ 'Value' ]
       if localVersion < dataDict[ 'newestVersion' ] :
-        gLogger.verbose( "New version available", "Updating to version %s..." % dataDict[ 'newestVersion' ] )
+        gLogger.debug( "New version available", "Updating to version %s..." % dataDict[ 'newestVersion' ] )
         gConfigurationData.loadRemoteCFGFromCompressedMem( dataDict[ 'data' ] )
-        gLogger.info( "Updated to version %s" % gConfigurationData.getVersion() )
+        gLogger.verbose( "Updated to version %s" % gConfigurationData.getVersion() )
       return S_OK()
     return retVal
 
