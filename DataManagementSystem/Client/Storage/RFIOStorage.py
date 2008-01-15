@@ -35,7 +35,7 @@ class RFIOStorage(StorageBase):
   def exists(self,path):
     """ Check if the given path exists. The 'path' variable can be a string or a list of strings.
     """
-    if type(path) == types.StringType:
+    if type(path) in types.StringTypes:
       urls = [path]
     elif type(path) == types.ListType:
       urls = path
@@ -78,7 +78,7 @@ class RFIOStorage(StorageBase):
   def isFile(self,path):
     """Check if the given path exists and it is a file
     """
-    if type(path) == types.StringType:
+    if type(path) in types.StringTypes:
       urls = [path]
     elif type(path) == types.ListType:
       urls = path
@@ -239,7 +239,7 @@ class RFIOStorage(StorageBase):
   def removeFile(self,path):
     """Remove physically the file specified by its path
     """
-    if type(path) == types.StringType:
+    if type(path) in types.StringTypes:
       urls = [path]
     elif type(path) == types.ListType:
       urls = path
@@ -271,7 +271,7 @@ class RFIOStorage(StorageBase):
   def getFileMetadata(self,path):
     """  Get metadata associated to the file
     """
-    if type(path) == types.StringType:
+    if type(path) in types.StringTypes:
       urls = [path]
     elif type(path) == types.ListType:
       urls = path
@@ -292,7 +292,7 @@ class RFIOStorage(StorageBase):
   def getFileSize(self,path):
     """Get the physical size of the given file
     """
-    if type(path) == types.StringType:
+    if type(path) in types.StringTypes:
       urls = [path]
     elif type(path) == types.ListType:
       urls = path
@@ -313,7 +313,7 @@ class RFIOStorage(StorageBase):
   def prestageFile(self,path):
     """ Issue prestage request for file
     """
-    if type(path) == types.StringType:
+    if type(path) in types.StringTypes:
       urls = [path]
     elif type(path) == types.ListType:
       urls = path
@@ -353,7 +353,7 @@ class RFIOStorage(StorageBase):
   def getTransportURL(self,path,protocols=False):
     """ Obtain the TURLs for the supplied path and protocols
     """
-    if type(path) == types.StringType:
+    if type(path) in types.StringTypes:
       urls = [path]
     elif type(path) == types.ListType:
       urls = path
@@ -383,7 +383,7 @@ class RFIOStorage(StorageBase):
   def isDirectory(self,path):
     """Check if the given path exists and it is a directory
     """
-    if type(path) == types.StringType:
+    if type(path) in types.StringTypes:
       urls = [path]
     elif type(path) == types.ListType:
       urls = path
@@ -591,7 +591,7 @@ class RFIOStorage(StorageBase):
     return S_OK(resDict)
 
   def createDirectory(self,path):
-    if type(path) == types.StringType:
+    if type(path) in types.StringTypes:
       urls = [path]
     elif type(path) == types.ListType:
       urls = path
@@ -662,7 +662,7 @@ class RFIOStorage(StorageBase):
     """Remove a directory on the physical storage together with all its files and
        subdirectories.
     """
-    if type(path) == types.StringType:
+    if type(path) in types.StringTypes:
       urls = [path]
     elif type(path) == types.ListType:
       urls = path
@@ -692,7 +692,7 @@ class RFIOStorage(StorageBase):
   def listDirectory(self,path):
     """ List the supplied path. First checks whether the path is a directory then gets the contents.
     """
-    if type(path) == types.StringType:
+    if type(path) in types.StringTypes:
       urls = [path]
     elif type(path) == types.ListType:
       urls = path
@@ -751,7 +751,7 @@ class RFIOStorage(StorageBase):
   def getDirectoryMetadata(self,path):
     """ Get the metadata for the directory
     """
-    if type(path) == types.StringType:
+    if type(path) in types.StringTypes:
       urls = [path]
     elif type(path) == types.ListType:
       urls = path
@@ -783,7 +783,7 @@ class RFIOStorage(StorageBase):
   def getDirectorySize(self,path):
     """ Get the size of the directory on the storage
     """
-    if type(path) == types.StringType:
+    if type(path) in types.StringTypes:
       urls = [path]
     elif type(path) == types.ListType:
       urls = path
@@ -812,7 +812,7 @@ class RFIOStorage(StorageBase):
   # These are the methods for manipulting the client
   #
 
-  def changeDirectory(self,newdir):
+  def changeDirectory(self,directory):
     """ Change the current directory
     """
     if directory[0] == '/':

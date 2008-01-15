@@ -63,7 +63,7 @@ class SRM2Storage(StorageBase):
   def exists(self,path):
     """ Check if the given path exists. The 'path' variable can be a string or a list of strings.
     """
-    if type(path) == types.StringType:
+    if type(path) in types.StringTypes:
       urls = [path]
     elif type(path) == types.ListType:
       urls = path
@@ -128,7 +128,7 @@ class SRM2Storage(StorageBase):
   def isFile(self,path):
     """Check if the given path exists and it is a file
     """
-    if type(path) == types.StringType:
+    if type(path) in types.StringTypes:
       urls = [path]
     elif type(path) == types.ListType:
       urls = path
@@ -308,7 +308,7 @@ class SRM2Storage(StorageBase):
   def removeFile(self,path):
     """Remove physically the file specified by its path
     """
-    if type(path) == types.StringType:
+    if type(path) in types.StringTypes:
       urls = [path]
     elif type(path) == types.ListType:
       urls = path
@@ -372,7 +372,7 @@ class SRM2Storage(StorageBase):
   def getFileMetadata(self,path):
     """  Get metadata associated to the file
     """
-    if type(path) == types.StringType:
+    if type(path) in types.StringTypes:
       urls = [path]
     elif type(path) == types.ListType:
       urls = path
@@ -449,7 +449,7 @@ class SRM2Storage(StorageBase):
   def getFileSize(self,path):
     """Get the physical size of the given file
     """
-    if type(path) == types.StringType:
+    if type(path) in types.StringTypes:
       urls = [path]
     elif type(path) == types.ListType:
       urls = path
@@ -517,7 +517,7 @@ class SRM2Storage(StorageBase):
   def prestageFile(self,path):
     """ Issue prestage request for file
     """
-    if type(path) == types.StringType:
+    if type(path) in types.StringTypes:
       urls = [path]
     elif type(path) == types.ListType:
       urls = path
@@ -578,7 +578,7 @@ class SRM2Storage(StorageBase):
   def getTransportURL(self,path,protocols=False):
     """ Obtain the TURLs for the supplied path and protocols
     """
-    if type(path) == types.StringType:
+    if type(path) in types.StringTypes:
       urls = [path]
     elif type(path) == types.ListType:
       urls = path
@@ -655,7 +655,7 @@ class SRM2Storage(StorageBase):
   def isDirectory(self,path):
     """Check if the given path exists and it is a directory
     """
-    if type(path) == types.StringType:
+    if type(path) in types.StringTypes:
       urls = [path]
     elif type(path) == types.ListType:
       urls = path
@@ -904,7 +904,7 @@ class SRM2Storage(StorageBase):
   def createDirectory(self,path):
     """ Make recursively new directory(ies) on the physical storage
     """
-    if type(path) == types.StringType:
+    if type(path) in types.StringTypes:
       urls = [path]
     elif type(path) == types.ListType:
       urls = path
@@ -921,7 +921,7 @@ class SRM2Storage(StorageBase):
         gLogger.info("SRM2Storage.createDirectory: Successfully created directory on storage: %s" % url)
         successful[url] = True
       else:
-        gLogger.error("SRM2Storage.createDirectory: Failed to create directory on storage.", url)
+        gLogger.error("SRM2Storage.createDirectory: Failed to create directory on storage.", "%s: %s" % (url,res['Message']))
         failed[url] = res['Message']
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
@@ -975,7 +975,7 @@ class SRM2Storage(StorageBase):
   def removeDirectory(self,path):
     """Remove the recursively the files and sub directories
     """
-    if type(path) == types.StringType:
+    if type(path) in types.StringTypes:
       urls = [path]
     elif type(path) == types.ListType:
       urls = path
@@ -1050,7 +1050,7 @@ class SRM2Storage(StorageBase):
   def listDirectory(self,path):
     """ List the supplied path. First checks whether the path is a directory then gets the contents.
     """
-    if type(path) == types.StringType:
+    if type(path) in types.StringTypes:
       urls = [path]
     elif type(path) == types.ListType:
       urls = path
@@ -1149,7 +1149,7 @@ class SRM2Storage(StorageBase):
   def getDirectoryMetadata(self,path):
     """ Get the metadata for the directory
     """
-    if type(path) == types.StringType:
+    if type(path) in types.StringTypes:
       urls = [path]
     elif type(path) == types.ListType:
       urls = path
@@ -1216,7 +1216,7 @@ class SRM2Storage(StorageBase):
   def getDirectorySize(self,path):
     """ Get the size of the directory on the storage
     """
-    if type(path) == types.StringType:
+    if type(path) in types.StringTypes:
       urls = [path]
     elif type(path) == types.ListType:
       urls = path
