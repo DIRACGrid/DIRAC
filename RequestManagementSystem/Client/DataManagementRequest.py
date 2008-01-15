@@ -586,7 +586,7 @@ class DataManagementRequest:
 
 ###############################################################
 
-  def toXML(self):
+  def toXML(self,requestType = ''):
     """ Output the request (including all sub-requests) to XML.
     """
 
@@ -614,15 +614,21 @@ class DataManagementRequest:
     out = out + '<Header '+attributes+' />\n\n'
 
     for type in ['transfer','register','removal','stage']:
-      res = self.getNumSubRequests(type)
-      if not res['OK']:
-        return res
-      for ind in range(res['Value']):
-        res = self.__createSubRequestXML(ind,type)
+      # This allows us to supply a request type
+      useType = True
+      if requestType:
+        if not type == requestType:
+          useType = False
+      if useType:
+        res = self.getNumSubRequests(type)
         if not res['OK']:
           return res
-        outStr = res['Value']
-        out = '%s%s\n\n' % (out,outStr)
+        for ind in range(res['Value']):
+          res = self.__createSubRequestXML(ind,type)
+          if not res['OK']:
+            return res
+          outStr = res['Value']
+          out = '%s%s\n\n' % (out,outStr)
 
     out = '%s</DATA_MANAGEMENT_REQUEST>\n' % out
     return S_OK(out)
