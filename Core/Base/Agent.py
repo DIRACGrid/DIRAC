@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Agent.py,v 1.7 2007/12/21 10:08:12 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Agent.py,v 1.8 2008/01/15 16:01:24 acasajus Exp $
 ########################################################################
 """ Base class for all the Agents.
 
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: Agent.py,v 1.7 2007/12/21 10:08:12 paterson Exp $"
+__RCSID__ = "$Id: Agent.py,v 1.8 2008/01/15 16:01:24 acasajus Exp $"
 
 import os
 import threading
@@ -30,7 +30,7 @@ from DIRAC.MonitoringSystem.Client.MonitoringClient import gMonitor
 
 class Agent:
 
-  def __init__(self,name,initializeMonitor=False):
+  def __init__( self, name, initializeMonitor = True ):
     """ Standard constructor takes the full name of the agent as its argument.
         The full name consists of the system name and the Agent name separated
         by /, e.g. WorkloadManagement/Optimizer
@@ -39,6 +39,9 @@ class Agent:
     self.system,self.name = name.split('/')
     self.monitorFlag = initializeMonitor
     self.log = gLogger
+
+    if self.monitorFlag:
+      self.__initializeMonitor()
 
   def __initializeMonitor( self ):
     """
@@ -88,9 +91,6 @@ class Agent:
     self.count = 0   # Counter of the number of cycles
     self.start = time.time()
     self.exit_status = 'OK'
-
-    if self.monitorFlag:
-      self.__initializeMonitor()
 
     # Set the signal handler
     signal.signal(signal.SIGINT, self.__signal_handler)
