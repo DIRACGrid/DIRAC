@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Script.py,v 1.6 2007/12/21 09:49:07 paterson Exp $
-__RCSID__ = "$Id: Script.py,v 1.6 2007/12/21 09:49:07 paterson Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Script.py,v 1.7 2008/01/15 18:12:21 acasajus Exp $
+__RCSID__ = "$Id: Script.py,v 1.7 2008/01/15 18:12:21 acasajus Exp $"
 
 import sys
 import os.path
@@ -9,7 +9,7 @@ from DIRAC.MonitoringSystem.Client.MonitoringClient import gMonitor
 
 localCfg = LocalConfiguration()
 
-def parseCommandLine( scriptName = False, ignoreErrors = False, initializeMonitor = False ):
+def parseCommandLine( scriptName = False, ignoreErrors = False, initializeMonitor = True ):
   global localCfg
 
   if not scriptName:
