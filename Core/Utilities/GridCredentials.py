@@ -1,4 +1,4 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.5 2008/01/13 01:21:21 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.6 2008/01/15 18:20:12 acasajus Exp $
 
 """ Grid Credentials module contains utilities to manage user and host
     certificates and proxies.
@@ -33,7 +33,7 @@
     getVOMSProxyInfo()
 """
 
-__RCSID__ = "$Id: GridCredentials.py,v 1.5 2008/01/13 01:21:21 atsareg Exp $"
+__RCSID__ = "$Id: GridCredentials.py,v 1.6 2008/01/15 18:20:12 acasajus Exp $"
 
 import os
 import os.path
@@ -62,7 +62,7 @@ def getGridProxy():
   if retVal[ 'OK' ]:
     filePath = os.path.realpath( retVal[ 'Value' ] )
     if os.path.isfile( filePath ):
-      gLogger.verbose( "Using %s/UserProxy value for grid proxy" % securityConfPath )
+      gLogger.debug( "Using %s/UserProxy value for grid proxy" % securityConfPath )
       return retVal[ 'Value' ]
   #UserProxyPath
   proxyName = "x509up_u%d" % os.getuid()
@@ -71,18 +71,18 @@ def getGridProxy():
     for proxyPath in [ "%s/%s" % ( retVal[ 'Value' ], proxyName ), "%s/tmp/%s" % ( retVal[ 'Value' ], proxyName ) ]:
       proxyPath = os.path.realpath( proxyPath )
       if os.path.isfile( proxyPath ):
-        gLogger.verbose( "Using %s/UserProxyPath value for grid proxy (%s)" % ( securityConfPath, proxyPath ) )
+        gLogger.debug( "Using %s/UserProxyPath value for grid proxy (%s)" % ( securityConfPath, proxyPath ) )
         return proxyPath
   #Environment vars
   for envVar in [ 'GRID_PROXY_FILE', 'X509_USER_PROXY' ]:
     if os.environ.has_key( envVar ):
       proxyPath = os.path.realpath( os.environ[ envVar ] )
       if os.path.isfile( proxyPath ):
-        gLogger.verbose( "Using %s env var for grid proxy" % proxyPath )
+        gLogger.debug( "Using %s env var for grid proxy" % proxyPath )
         return proxyPath
   #/tmp/x509up_u<uid>
   if os.path.isfile( "/tmp/%s" % proxyName ):
-    gLogger.verbose( "Using auto-discovered proxy in /tmp/%s" % proxyName )
+    gLogger.debug( "Using auto-discovered proxy in /tmp/%s" % proxyName )
     return "/tmp/%s" % proxyName
   #No gridproxy found
   return False
@@ -116,7 +116,7 @@ def getCAsLocation():
     casPath = "%s/certificates" % retVal[ 'Value' ]
     gLogger.debug( "Trying %s for CAs" % casPath )
     if os.path.isdir( casPath ):
-      gLogger.verbose( "Using %s/Grid-Security + /certificates as location for CA's" % securityConfPath )
+      gLogger.debug( "Using %s/Grid-Security + /certificates as location for CA's" % securityConfPath )
       return casPath
   #CAPath
   retVal = gConfig.getOption( '%s/CALocation' % securityConfPath )
@@ -124,7 +124,7 @@ def getCAsLocation():
     casPath = retVal[ 'Value' ]
     gLogger.debug( "Trying %s for CAs" % casPath )
     if os.path.isdir( casPath ):
-      gLogger.verbose( "Using %s/CALocation as location for CA's" % securityConfPath )
+      gLogger.debug( "Using %s/CALocation as location for CA's" % securityConfPath )
       return casPath
   # Look up the X509_CERT_DIR environment variable
   if os.environ.has_key( 'X509_CERT_DIR' ):
@@ -157,7 +157,7 @@ def getHostCertificateAndKey():
     #Direct file in config
     retVal = gConfig.getOption( '%s/%sFile' % ( securityConfPath, fileType.capitalize() ) )
     if retVal[ 'OK' ]:
-      gLogger.verbose( 'Using %s/%sFile' % ( securityConfPath, fileType.capitalize() ) )
+      gLogger.debug( 'Using %s/%sFile' % ( securityConfPath, fileType.capitalize() ) )
       fileDict[ fileType ] = retVal[ 'Value' ]
       continue
     else:
@@ -175,7 +175,7 @@ def getHostCertificateAndKey():
         filePath = os.path.realpath( "%s/%s%s.pem" % ( path, filePrefix, fileType ) )
         gLogger.debug( "Trying %s for %s file" % ( filePath, fileType ) )
         if os.path.isfile( filePath ):
-          gLogger.verbose( "Using %s for %s" % ( filePath, fileType ) )
+          gLogger.debug( "Using %s for %s" % ( filePath, fileType ) )
           fileDict[ fileType ] = filePath
           fileFound = True
           break
