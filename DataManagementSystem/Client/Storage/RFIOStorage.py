@@ -590,7 +590,7 @@ class RFIOStorage(StorageBase):
     resDict = {'AllPut':allSuccessful,'Files':filesPut,'Size':sizePut}
     return S_OK(resDict)
 
-  def createDirectory(self,newdir):
+  def createDirectory(self,path):
     if type(path) == types.StringType:
       urls = [path]
     elif type(path) == types.ListType:
