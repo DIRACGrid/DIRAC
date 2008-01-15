@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.11 2008/01/09 15:30:24 acasajus Exp $
-__RCSID__ = "$Id: MonitoringClient.py,v 1.11 2008/01/09 15:30:24 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.12 2008/01/15 18:37:57 acasajus Exp $
+__RCSID__ = "$Id: MonitoringClient.py,v 1.12 2008/01/15 18:37:57 acasajus Exp $"
 
 import threading
 import time
@@ -218,11 +218,11 @@ class MonitoringClient:
       finally:
         self.activitiesLock.release()
       #Commit new activities
-      if gConfig.getValue( "%s/DisableMonitoring" % self.cfgSection, "false" ).lower() in \
-            ( "yes", "y", "true", "1" ):
-        self.logger.verbose( "Sending data has been disabled" )
-        return
       if len( activitiesToRegister ) or len( marksDict ):
+        if gConfig.getValue( "%s/DisableMonitoring" % self.cfgSection, "false" ).lower() in \
+            ( "yes", "y", "true", "1" ):
+          self.logger.verbose( "Sending data has been disabled" )
+          return
         if allData:
           timeout = False
         else:
