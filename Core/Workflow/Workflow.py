@@ -1,8 +1,8 @@
-# $Id: Workflow.py,v 1.15 2008/01/10 20:17:28 gkuznets Exp $
+# $Id: Workflow.py,v 1.16 2008/01/16 12:16:44 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.15 $"
+__RCSID__ = "$Revision: 1.16 $"
 
 import os
 #try: # this part to inport as part of the DIRAC framework
@@ -54,7 +54,7 @@ class Workflow(AttributeCollection):
   def __str__(self):
     """Creates a string representation of itself
     """
-    ret = str(name(self))+':\n'+ AttributeCollection.__str__(self) + self.parameters.__str__()
+    ret = str(self.getName())+':\n'+ AttributeCollection.__str__(self) + self.parameters.__str__()
     ret = ret + str(self.step_definitions)
     ret = ret + str(self.step_instances)
     ret = ret + str(self.module_definitions)
