@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/PilotAgent.py,v 1.1 2008/01/16 15:36:23 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/PilotAgent.py,v 1.2 2008/01/16 15:41:36 paterson Exp $
 # File :   PilotAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
      of the PilotDirector instances.
 """
 
-__RCSID__ = "$Id: PilotAgent.py,v 1.1 2008/01/16 15:36:23 paterson Exp $"
+__RCSID__ = "$Id: PilotAgent.py,v 1.2 2008/01/16 15:41:36 paterson Exp $"
 
 from DIRAC.Core.Base.Agent                                      import Agent
 from DIRAC.Core.Utilities                                       import List
@@ -65,10 +65,10 @@ class PilotAgent(Agent):
       for rb in resourceBrokers:
         gLogger.verbose('Starting thread for %s RB %s' %(self.type,rb))
         try:
-          moduleStr = 'self.importModule.%s(self.pdSection,rb,self.type)' %(self.pmName)
+          moduleStr = 'self.importModule.%s(self.pdSection,rb,self.type)' %(self.pdName)
           agent[rb] = eval(moduleStr)
         except Exception, x:
-          msg = 'Could not instantiate %s()' %(self.pmName)
+          msg = 'Could not instantiate %s()' %(self.pdName)
           self.log.warn(x)
           self.log.warn(msg)
           return S_ERROR(msg)
