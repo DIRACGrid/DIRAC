@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: AgentMonitor.py,v 1.2 2008/01/13 20:51:34 paterson Exp $
+# $Id: AgentMonitor.py,v 1.3 2008/01/16 14:44:46 paterson Exp $
 # File :   AgentMonitor.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     specific monitoring commands are overridden in subclasses.
 """
 
-__RCSID__ = "$Id: AgentMonitor.py,v 1.2 2008/01/13 20:51:34 paterson Exp $"
+__RCSID__ = "$Id: AgentMonitor.py,v 1.3 2008/01/16 14:44:46 paterson Exp $"
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
 from DIRAC.Core.Utilities.Subprocess                       import shellCall
@@ -17,7 +17,7 @@ from DIRAC.Core.Utilities.GridCredentials                  import setupProxy,des
 from DIRAC.Core.Utilities.ThreadPool                       import *
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB        import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.DB.ProxyRepositoryDB   import ProxyRepositoryDB
-#from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB       import PilotAgentsDB
+from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB       import PilotAgentsDB
 from DIRAC.WorkloadManagementSystem.DB.JobDB               import JobDB
 from DIRAC                                                 import S_OK, S_ERROR, gConfig, gLogger
 from threading import Lock
@@ -30,61 +30,62 @@ lock = Lock()
 class AgentMonitor:
 
   #############################################################################
-  def __init__(self,type='LCG',enableFlag=True):
+  def __init__(self,configPath,mode,enableFlag=True):
     """ Standard constructor
     """
+    self.log = gLogger.getSubLogger('AgentMonitor')
+    self.type = mode
     self.log = gLogger
     self.enable = enableFlag
-    self.type = type
     self.jobDB = JobDB()
     self.logDB = JobLoggingDB()
     self.proxyDB = ProxyRepositoryDB()
-    self.log.setLevel('debug')
-#    self.pilotAgentsDB = PilotAgentsDB()
-    self.selectJobLimit = 100
-    self.maxWaitingTime = 5*60
-    self.maxPilotAgents = 4
-    self.pollingTime = 180
-    self.minThreads = 1
-    self.maxThreads = 1
+    self.pilotAgentDB = PilotAgentsDB()
+    self.configSection = configPath
+    self.selectJobLimit = gConfig.getValue(self.configSection+'/JobSelectLimit',100)
+    self.maxWaitingTime = gConfig.getValue(self.configSection+'/MaxJobWaitingTime',5*60)
+    self.maxPilotAgents = gConfig.getValue(self.configSection+'/MaxPilotsPerJob',4)
+    self.minThreads = gConfig.getValue(self.configSection+'/MaxThreads',1)
+    self.maxThreads = gConfig.getValue(self.configSection+'/MinThreads',1)
     self.name = '%sAgentMonitor' %(self.type)
-    self.workingDirectory = '/opt/dirac/work/%s' %(self.name)
+    self.scratchDir = gConfig.getValue(self.configSection+'/ScratchDir','/opt/dirac/work')
+    self.workingDirectory = '%s/%s' %(self.scratchDir,self.name)
     self.threadPool = ThreadPool( self.minThreads, self.maxThreads )
     self.currentQueue = []
 
   #############################################################################
   def run(self):
-    """ The run method of the Agent Monitor
+    """ The run method of the Agent Monitor to be called periodically to gather new jobs.
     """
-    while True:
-      self.log.info('%sAgentMonitor: %s working threads, %s pending jobs' %(self.type,self.threadPool.numWorkingThreads(),self.threadPool.pendingJobs()))
-      result = self.__getWaitingJobs()
-      if not result['OK']:
-        self.log.warn(result['Message'])
-        return result
 
-      jobsList = result['Value']
-      lock.acquire()
-      self.log.debug('Jobs to Monitor: %s' %(string.join(self.currentQueue,',')))
-      if not self.currentQueue:
-        self.currentQueue = jobsList
-      else:
-        for job in jobsList:
-          if job in self.currentQueue:
-            self.log.debug('Job %s already present in current queue' %job)
-          else:
-            self.log.debug('Adding job %s to current queue' %job)
-            self.currentQueue.append(job)
+    self.log.info('%sAgentMonitor: %s working threads, %s pending jobs' %(self.type,self.threadPool.numWorkingThreads(),self.threadPool.pendingJobs()))
+    result = self.__getWaitingJobs()
+    if not result['OK']:
+      self.log.warn(result['Message'])
+      return result
 
-      for job in self.currentQueue:
-        self.log.verbose('Monitoring starts for job %s' %(job))
-        self.__checkPilot(job)
+    jobsList = result['Value']
+    lock.acquire()
+    self.log.verbose('Jobs to Monitor: %s' %(string.join(self.currentQueue,',')))
+    if not self.currentQueue:
+      self.currentQueue = jobsList
+    else:
+      for job in jobsList:
+        if job in self.currentQueue:
+          self.log.verbose('Job %s already present in current queue' %job)
+        else:
+          self.log.verbose('Adding job %s to current queue' %job)
+          self.currentQueue.append(job)
 
-      self.log.debug('Jobs to Monitor after JobDB selection: %s' %(string.join(self.currentQueue,',')))
-      lock.release()
-      self.log.info('%sAgentMonitor: %s working threads, %s pending jobs' %(self.type,self.threadPool.numWorkingThreads(),self.threadPool.pendingJobs()))
-      self.threadPool.processResults()
-      time.sleep(self.pollingTime)
+    for job in self.currentQueue:
+      self.log.verbose('Monitoring starts for job %s' %(job))
+      self.__checkPilot(job)
+
+    self.log.verbose('Jobs to Monitor after JobDB selection: %s' %(string.join(self.currentQueue,',')))
+    lock.release()
+    self.log.info('%sAgentMonitor: %s working threads, %s pending jobs' %(self.type,self.threadPool.numWorkingThreads(),self.threadPool.pendingJobs()))
+    self.threadPool.processResults()
+    self.pilotAgentDB.clearPilots()
 
   #############################################################################
   def __checkPilot(self,jobID):
@@ -126,7 +127,7 @@ class AgentMonitor:
     ownerDN = attributes['OwnerDN']
     jobGroup = attributes['OwnerGroup']
     currentStatus = attributes['Status']
-    self.log.debug('Job %s, DN %s, Group %s' %(jobID,ownerDN,jobGroup))
+    self.log.verbose('Job %s, DN %s, Group %s' %(jobID,ownerDN,jobGroup))
     if not currentStatus == 'Waiting':
       msg = 'Job %s has changed status to %s and will be ignored by %s' %(jobID,currentStatus,self.name)
       result = S_ERROR(msg)
@@ -152,7 +153,7 @@ class AgentMonitor:
     if agents.has_key('SubmittedAgents'):
       pilotIDs = agents['SubmittedAgents'].split(',')
       submittedAgents = pilotIDs
-      self.log.debug('Monitoring %s pilot(s) for job %s' %(len(submittedAgents),jobID))
+      self.log.verbose('Monitoring %s pilot(s) for job %s' %(len(submittedAgents),jobID))
 
     if agents.has_key('AbortedAgents'):
       pilotIDs = agents['AbortedAgents'].split(',')
@@ -176,13 +177,14 @@ class AgentMonitor:
         pilotStatus['Value']=monResult
         destroyProxy()
         return pilotStatus
+
+      self.__setPilotStatus(pilotID,pilotStatus['PilotStatus'],pilotStatus['Destination'])
+
       if pilotStatus['Aborted']:
-        #have the information to report to pilotDB here
         abortedAgents.append(pilotID)
         submittedAgents.remove(pilotID)
         pilotSummary += '%s Aborted\n' %(pilotID)
       else:
-        #report to pilotDB here
         pilotSummary += '%s %s\n' %(pilotID,pilotStatus['PilotStatus'])
 
     if submittedAgents:
@@ -197,7 +199,7 @@ class AgentMonitor:
       self.__updateJobStatus(jobID,'Waiting','Max %s Pilot Agents Submitted' %(self.maxPilotAgents))
       pilotSummary += 'Max pilots submitted for job %s' % jobID
 
-    self.log.debug('Destroying proxy for %s' %jobID)
+    self.log.verbose('Destroying proxy for %s' %jobID)
     destryProxy()
     monResult['Value']=pilotSummary
     result = S_OK(monResult)
@@ -208,7 +210,7 @@ class AgentMonitor:
     """CallBack function for reporting the thread result.
     """
     #print threadedJob
-    self.log.debug(result)
+    self.log.verbose(result)
     jobID = result['Value']['JobID']
 
     if result['OK']:
@@ -222,7 +224,7 @@ class AgentMonitor:
       self.__cleanUp(result['Value']['WorkingDir'])
 
     if jobID in self.currentQueue:
-      self.log.debug('Removing job %s from current queue' %jobID)
+      self.log.verbose('Removing job %s from current queue' %jobID)
       self.currentQueue.remove(jobID)
     else:
       self.log.warn('Job %s missing from current queue' %jobID)
@@ -246,7 +248,7 @@ class AgentMonitor:
     if os.path.exists(jobDirectory):
       if self.enable:
         shutil.rmtree(jobDirectory, True )
-        self.log.debug('Cleaning up working directory: %s' %(jobDirectory))
+        self.log.verbose('Cleaning up working directory: %s' %(jobDirectory))
 
   #############################################################################
   def __setupProxy(self,job,ownerDN,jobGroup,workingDir):
@@ -256,7 +258,7 @@ class AgentMonitor:
     result = self.proxyDB.getProxy(ownerDN,jobGroup)
     if not result['OK']:
       self.log.warn('Could not retrieve proxy from ProxyRepositoryDB')
-      self.log.debug(result)
+      self.log.verbose(result)
       self.__updateJobStatus(job,'Failed','Valid Proxy Not Found')
       return S_ERROR('Error retrieving proxy')
 
@@ -265,11 +267,11 @@ class AgentMonitor:
     setupResult = setupProxy(proxyStr,proxyFile)
     if not setupResult['OK']:
       self.log.warn('Could not create environment for proxy')
-      self.log.debug(setupResult)
+      self.log.verbose(setupResult)
       self.__updateJobStatus(job,'Failed','Proxy WMS Error')
       return S_ERROR('Error setting up proxy')
 
-    self.log.debug(setupResult)
+    self.log.verbose(setupResult)
     return setupResult
 
   #############################################################################
@@ -299,7 +301,7 @@ class AgentMonitor:
   def __updateJobStatus(self,job,status,minorstatus=None,logRecord=False):
     """This method updates the job status in the JobDB when enable flag is true.
     """
-    self.log.debug("self.jobDB.setJobAttribute(%s,'Status','%s',update=True)" %(job,status))
+    self.log.verbose("self.jobDB.setJobAttribute(%s,'Status','%s',update=True)" %(job,status))
     if self.enable:
       result = self.jobDB.setJobAttribute(job,'Status',status, update=True)
     else:
@@ -307,7 +309,7 @@ class AgentMonitor:
 
     if result['OK']:
       if minorstatus:
-        self.log.debug("self.jobDB.setJobAttribute(%s,'MinorStatus','%s',update=True)" %(job,minorstatus))
+        self.log.verbose("self.jobDB.setJobAttribute(%s,'MinorStatus','%s',update=True)" %(job,minorstatus))
         if self.enable:
           result = self.jobDB.setJobAttribute(job,'MinorStatus',minorstatus,update=True)
           if not result['OK']:
@@ -330,7 +332,7 @@ class AgentMonitor:
   def __setJobParam(self,job,reportName,value):
     """This method updates a job parameter in the JobDB.
     """
-    self.log.debug("self.jobDB.setJobParameter(%s,'%s','%s')" %(job,reportName,value))
+    self.log.verbose("self.jobDB.setJobParameter(%s,'%s','%s')" %(job,reportName,value))
     if self.enable:
       result = self.jobDB.setJobParameter(job,reportName,value)
       if not result['OK']:
@@ -340,6 +342,23 @@ class AgentMonitor:
       result = S_OK('DisabledMode')
 
     return result
+
+  #############################################################################
+  def __setPilotStatus(self,pilotRef,status,destination=None):
+    """This method sets the status of a monitored pilot in the PilotAgentsDB.
+    """
+    if destination:
+      self.log.verbose("self.pilotAgentDB.setPilotStatus('%s','%s','%s')" %(pilotRef,status,destination))
+    else:
+      self.log.verbose("self.pilotAgentDB.setPilotStatus('%s','%s')" %(pilotRef,status))
+
+    if self.enable:
+      result = self.pilotAgentDB.setPilotStatus(pilotRef,status,destination)
+      if not result['OK']:
+        self.log.warn('Error setting pilot status')
+        self.log.warn(result['Message'])
+    else:
+      result = S_OK('DisabledMode')
 
   #############################################################################
   def getPilotStatus(self,jobID,pilotID):
