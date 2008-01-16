@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/dirac-pilot-lcg.py,v 1.10 2008/01/09 18:20:13 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/dirac-pilot-lcg.py,v 1.11 2008/01/16 12:07:34 paterson Exp $
 # File :   dirac-pilot-lcg.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,7 +13,7 @@ import os,sys,string,re
     for the VO.
 """
 
-__RCSID__ = "$Id: dirac-pilot-lcg.py,v 1.10 2008/01/09 18:20:13 paterson Exp $"
+__RCSID__ = "$Id: dirac-pilot-lcg.py,v 1.11 2008/01/16 12:07:34 paterson Exp $"
 
 
 DEBUG = 1
@@ -222,10 +222,10 @@ def pilotExit(code):
   sys.exit(int(code))
 
 #############################################################################
-if len(sys.argv)!=3:
+if len(sys.argv)!=4:
   script = sys.argv[0]
   print 'Illegal number of arguments: %s' %(sys.argv)
-  print 'Usage: %s <DIRAC Setup> <Job CPU Requirement>' % sys.argv[0]
+  print 'Usage: %s <DIRAC Setup> <Job CPU Requirement> <VO_SW_DIR_Variable>' % sys.argv[0]
   sys.exit(1)
 
 #############################################################################
