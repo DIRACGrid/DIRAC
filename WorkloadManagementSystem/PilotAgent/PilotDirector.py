@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/PilotDirector.py,v 1.1 2008/01/16 11:57:29 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/PilotDirector.py,v 1.2 2008/01/16 18:00:37 paterson Exp $
 # File :   PilotDirector.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
      are overridden in Grid specific subclasses.
 """
 
-__RCSID__ = "$Id: PilotDirector.py,v 1.1 2008/01/16 11:57:29 paterson Exp $"
+__RCSID__ = "$Id: PilotDirector.py,v 1.2 2008/01/16 18:00:37 paterson Exp $"
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
 from DIRAC.Core.Utilities.Subprocess                       import shellCall
@@ -32,18 +32,19 @@ class PilotDirector(Thread):
     """ Constructor for Pilot Director
     """
     self.log = gLogger.getSubLogger('PilotDirector')
-    self.log.setLevel('debug')
     self.enable = enableFlag
     self.resourceBroker = resourceBroker
     self.jobDB = JobDB()
     self.logDB = JobLoggingDB()
     self.proxyDB = ProxyRepositoryDB()
-    self.pilotAgentDB = PilotAgentsDB()
+    self.pilotDB = PilotAgentsDB()
     self.name = '%sPilotDirector' %(self.type)
     self.configSection = configPath
     self.pollingTime = gConfig.getValue(self.configSection+'/PollingTime',120)
     self.selectJobLimit = gConfig.getValue(self.configSection+'/JobSelectLimit',500)
     self.scratchDir = gConfig.getValue(self.configSection+'/ScratchDir','/opt/dirac/work')
+    self.genericPilotDN = gConfig.getValue(self.configSection+'/GenericPilotDN','/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=paterson/CN=607602/CN=Stuart Paterson')
+    self.genericPilotGroup = gConfig.getValue(self.configSection+'/GenericPilotGroup','LHCb_Pilot')
     self.workingDirectory = '%s/%s' %(self.scratchDir,self.name)
     self.diracSetup = gConfig.getValue('/DIRAC/Setup','LHCb-Development')
     Thread.__init__(self)
@@ -67,7 +68,7 @@ class PilotDirector(Thread):
   def __checkJobs(self):
     """Retrieves waiting jobs and loops over the selection.
     """
-    self.log.debug('Preparing list of waiting jobs')
+    self.log.verbose('Preparing list of waiting jobs')
     workload = self.__getWaitingJobs()
     if not workload['OK']:
       return workload
@@ -76,8 +77,6 @@ class PilotDirector(Thread):
     if not jobs:
       return S_ERROR('No work to do')
 
-    #self.log.debug('restricting jobs for debugging')
-    #jobs = jobs[0:2]
     for job in jobs:
       lock.acquire()
       attributes = self.jobDB.getJobAttributes(job)
@@ -125,7 +124,9 @@ class PilotDirector(Thread):
         lock.release()
         continue
       elif platform.lower() == self.type.lower():
-        self.log.debug('Job %s is of type %s and will be considered by %s' %(job,platform,self.name))
+        self.log.verbose('Job %s is of type %s and will be considered by %s' %(job,platform,self.name))
+      elif platform.lower() == 'any':
+        self.log.verbose('Job %s is of type %s and will be considered by %s' %(job,platform,self.name))
       else:
         self.log.verbose('Job %s is of type %s and will be ignored by %s' %(job,platform,self.name))
         lock.release()
@@ -159,6 +160,23 @@ class PilotDirector(Thread):
       requirements = classadJob.get_expression("Requirements")
     else:
       self.log.warn('Job %s has no JDL requirements and will not be processed' %(job))
+      self.__updateJobStatus(job,'Failed','Undefined JDL Requirements')
+      return S_ERROR('Undefined JDL Requirements')
+
+    pilotType = ''
+    if classadJob.lookupAttribute("PilotType"):
+      pilotType = int(string.replace(classadJob.get_expression("PilotType"),'"','') )
+
+    if not pilotType:
+      self.log.warn('PilotType is not defined for job %s' %(job))
+      self.__updateJobStatus(job,'Failed','PilotType not defined')
+      return S_ERROR('Undefined PilotType for job %s' %(job))
+
+    if pilotType.lower() == 'generic' or pilotType.lower() == 'private':
+      self.log.verbose('Job %s has %s PilotType specified' %(job,pilotType))
+    else:
+      self.__updateJobStatus(job,'Failed','PilotType not defined')
+      return S_ERROR('Undefined PilotType %s for job %s' %(pilotType,job))
 
     for param in ['Owner','OwnerDN','JobType','OwnerGroup']:
       if not attributes.has_key(param):
@@ -168,14 +186,14 @@ class PilotDirector(Thread):
     owner = attributes['Owner']
     ownerDN = attributes['OwnerDN']
     jobType = attributes['JobType']
-    jobGroup = attributes['OwnerGroup']
+    ownerGroup = attributes['OwnerGroup']
 
-    self.log.debug('JobID: %s' %(job))
-    self.log.debug('Owner: %s' %(owner))
-    self.log.debug('OwnerDN: %s' %(ownerDN))
-    self.log.debug('JobType: %s' %(jobType))
-    self.log.debug('MaxCPUTime: %s' %(jdlCPU))
-    self.log.debug('Requirements: %s' %(requirements))
+    self.log.verbose('JobID: %s' %(job))
+    self.log.verbose('Owner: %s' %(owner))
+    self.log.verbose('OwnerDN: %s' %(ownerDN))
+    self.log.verbose('JobType: %s' %(jobType))
+    self.log.verbose('MaxCPUTime: %s' %(jdlCPU))
+    self.log.verbose('Requirements: %s' %(requirements))
 
     executable = None
     if classadJob.lookupAttribute("GridExecutable"):
@@ -211,38 +229,19 @@ class PilotDirector(Thread):
     if not os.path.exists(workingDirectory):
       os.makedirs(workingDirectory)
 
-    #Determine whether a generic or specific pilot should be submitted e.g.
-    #for SAM jobs will have a job type requirement and this should be added
-    #to the Pilot Agent
-
     inputSandbox = []
-    if re.search('JobType',requirements):
-      self.log.verbose('Found job type requirement, adding AgentJobRequirement for Pilot Agent')
-      jobTypeFile = self.__addPilotCFGParameter(workingDirectory,'JobType',jobType)
-      if not jobTypeFile['OK']:
-        return jobTypeFile
-      inputSandbox.append(jobTypeFile['Value'])
-
-    if jobType=='test':
-      self.log.verbose('Job is of type "test", adding owner and jobID AgentJobRequirement to PilotAgent')
+    if re.search('PilotType',requirements) and pilotType.lower()=='private':
+      self.log.verbose('Found private PilotType requirement, adding Owner Requirement for Pilot Agent')
       ownerFile = self.__addPilotCFGParameter(workingDirectory,'Owner',owner)
       if not ownerFile['OK']:
         return ownerFile
-      inputSandbox.append(ownerFile['Value'])
-      jobIDFile = self.__addPilotCFGParameter(workingDirectory,'JobID',job)
-      if not jobIDFile['OK']:
-        return jobIDFile
-      inputSandbox.append(jobIDFile['Value'])
+    else:
+      self.log.verbose('Job %s will be submitted with a generic pilot')
+      ownerGroup=self.genericPilotGroup
+      ownerDN = self.genericPilotDN
 
-    if jobType=='user':
-      self.log.debug('Job type is "user" restricting Pilot Agent to pick up jobs from owner')
-      ownerFile = self.__addPilotCFGParameter(workingDirectory,'Owner',owner)
-      if not ownerFile['OK']:
-        return ownerFile
-      inputSandbox.append(ownerFile['Value'])
-
-    self.log.verbose('Setting up proxy for job %s group %s and owner %s' %(job,jobGroup,ownerDN))
-    proxyResult = self.__setupProxy(job,ownerDN,jobGroup,workingDirectory)
+    self.log.verbose('Setting up proxy for job %s group %s and owner %s' %(job,ownerGroup,ownerDN))
+    proxyResult = self.__setupProxy(job,ownerDN,ownerGroup,workingDirectory)
     self.log.verbose('Submitting %s Pilot Agent for job %s' %(self.type,job))
     result = self.submitJob(job,self.workingDirectory,siteList,jdlCPU,inputSandbox,gridRequirements,executable,softwareTag)
     self.__cleanUp(workingDirectory)
@@ -251,21 +250,21 @@ class PilotDirector(Thread):
       return result
 
     submittedPilot = result['Value']
-    report = self.__reportSubmittedPilot(job,submittedPilot,ownerDN,jobGroup)
+    report = self.__reportSubmittedPilot(job,submittedPilot,ownerDN,ownerGroup)
     if not report['OK']:
       self.log.warn(report['Message'])
 
     return S_OK('Pilot Submitted')
 
   #############################################################################
-  def __setupProxy(self,job,ownerDN,jobGroup,workingDir):
+  def __setupProxy(self,job,ownerDN,ownerGroup,workingDir):
     """Retrieves user proxy with correct role for job and sets up environment for
        pilot agent submission.
     """
-    result = self.proxyDB.getProxy(ownerDN,jobGroup)
+    result = self.proxyDB.getProxy(ownerDN,ownerGroup)
     if not result['OK']:
       self.log.warn('Could not retrieve proxy from ProxyRepositoryDB')
-      self.log.debug(result)
+      self.log.verbose(result)
       self.__updateJobStatus(job,'Failed','Valid Proxy Not Found')
       return S_ERROR('Error retrieving proxy')
 
@@ -274,11 +273,11 @@ class PilotDirector(Thread):
     setupResult = setupProxy(proxyStr,proxyFile)
     if not setupResult['OK']:
       self.log.warn('Could not create environment for proxy')
-      self.log.debug(setupResult)
+      self.log.verbose(setupResult)
       self.__updateJobStatus(job,'Failed','Proxy WMS Error')
       return S_ERROR('Error setting up proxy')
 
-    self.log.debug(setupResult)
+    self.log.verbose(setupResult)
     return setupResult
 
   #############################################################################
@@ -292,22 +291,22 @@ class PilotDirector(Thread):
       return existingParam
 
     if not existingParam['Value']:
-      self.log.debug('Adding first submitted pilot parameter for job %s' %job)
+      self.log.verbose('Adding first submitted pilot parameter for job %s' %job)
       if self.enable:
         self.__setJobParam(job,'SubmittedAgents',submittedPilot)
     else:
       pilots = len(existingParam['Value'])
-      self.log.debug('Adding submitted pilot number %s for job %s' %(pilots,job))
+      self.log.verbose('Adding submitted pilot number %s for job %s' %(pilots,job))
       pilots += ',%s' %(submittedPilot)
       if self.enable:
         self.__setJobParam(job,'SubmittedAgents',submittedPilot)
 
     if self.enable:
-      result = self.pilotAgentsDB.addPilotReference(submittedPilot,ownerDN,job,ownerGroup,self.type)
+      result = self.pilotDB.addPilotReference(submittedPilot,job,ownerDN,ownerGroup,self.type)
       if not result['OK']:
         self.log.warn('Problem reporting to PilotAgentsDB:')
         self.log.warn(result['Message'])
-      self.log.debug(result)
+      self.log.verbose(result)
 
     return S_OK()
 
@@ -346,7 +345,7 @@ class PilotDirector(Thread):
     if not siteMask:
       return S_ERROR('Returned site mask is empty for %s' %(self.type))
 
-    self.log.debug('Site Mask: %s' %(string.join(siteMask,', ')))
+    self.log.verbose('Site Mask: %s' %(string.join(siteMask,', ')))
     candidates = siteMask
 
     if bannedSites:
@@ -385,7 +384,7 @@ class PilotDirector(Thread):
       return S_ERROR('Empty CS section %s' %(section))
 
     gridSites = sites['Value']
-    self.log.debug('%s Grid Sites are: %s' %(self.type,string.join(gridSites,', ')))
+    self.log.verbose('%s Grid Sites are: %s' %(self.type,string.join(gridSites,', ')))
 
     candidateList = []
 
@@ -406,7 +405,7 @@ class PilotDirector(Thread):
     if os.path.exists(jobDirectory):
       if self.enable:
         shutil.rmtree(jobDirectory, True )
-        self.log.debug('Cleaning up working directory: %s' %(jobDirectory))
+        self.log.verbose('Cleaning up working directory: %s' %(jobDirectory))
 
   #############################################################################
   def __getWaitingJobs(self):
@@ -432,7 +431,7 @@ class PilotDirector(Thread):
   def __updateJobStatus(self,job,status,minorstatus=None,logRecord=False):
     """This method updates the job status in the JobDB when enable flag is true.
     """
-    self.log.debug("self.jobDB.setJobAttribute(%s,'Status','%s',update=True)" %(job,status))
+    self.log.verbose("self.jobDB.setJobAttribute(%s,'Status','%s',update=True)" %(job,status))
     if self.enable:
       result = self.jobDB.setJobAttribute(job,'Status',status, update=True)
     else:
@@ -440,7 +439,7 @@ class PilotDirector(Thread):
 
     if result['OK']:
       if minorstatus:
-        self.log.debug("self.jobDB.setJobAttribute(%s,'MinorStatus','%s',update=True)" %(job,minorstatus))
+        self.log.verbose("self.jobDB.setJobAttribute(%s,'MinorStatus','%s',update=True)" %(job,minorstatus))
         if self.enable:
           result = self.jobDB.setJobAttribute(job,'MinorStatus',minorstatus,update=True)
           if not result['OK']:
@@ -461,7 +460,7 @@ class PilotDirector(Thread):
   def __setJobParam(self,job,reportName,value):
     """This method updates a job parameter in the JobDB.
     """
-    self.log.debug("self.jobDB.setJobParameter(%s,'%s','%s')" %(job,reportName,value))
+    self.log.verbose("self.jobDB.setJobParameter(%s,'%s','%s')" %(job,reportName,value))
     if self.enable:
       result = self.jobDB.setJobParameter(job,reportName,value)
       if not result['OK']:
