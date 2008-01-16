@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: LCGAgentMonitor.py,v 1.3 2008/01/16 14:27:08 paterson Exp $
+# $Id: LCGAgentMonitor.py,v 1.4 2008/01/16 14:42:51 paterson Exp $
 # File :   LCGAgentMonitor.py
 # Author : Stuart Paterson
 ########################################################################
@@ -7,7 +7,7 @@
 """ The LCG Agent Monitor performs the pilot job status tracking activity for LCG.
 """
 
-__RCSID__ = "$Id: LCGAgentMonitor.py,v 1.3 2008/01/16 14:27:08 paterson Exp $"
+__RCSID__ = "$Id: LCGAgentMonitor.py,v 1.4 2008/01/16 14:42:51 paterson Exp $"
 
 from DIRACEnvironment                                        import DIRAC
 from DIRAC.Core.Utilities.Subprocess                         import shellCall
@@ -38,7 +38,7 @@ class LCGAgentMonitor(AgentMonitor):
     """
     self.__checkProxy()
     cmd = "%s %s" % (self.cmd,pilotID)
-    self.log.verbose( '--- Executing %s for %s' %(cmd,jobID) )
+    self.log.info( '--- Executing %s for %s' %(cmd,jobID) )
     result = self.__exeCommand(cmd)
 
     if not result['OK']:
@@ -49,7 +49,9 @@ class LCGAgentMonitor(AgentMonitor):
     stdout = result['StdOut']
     queryTime = result['Time']
     timing = '>>> LCG status query time %.2fs' % queryTime
-    self.log.verbose( timing )
+    self.log.info( timing )
+    destination=None
+    jobStatus=None
     if status == 0:
       jobStatus = ''
       lines = stdout.split('\n')
@@ -59,7 +61,7 @@ class LCGAgentMonitor(AgentMonitor):
         if line.find('Destination:') != -1 :
           destination = line.split()[1].split(":")[0]
 
-      self.log.debug('JobID: %s, PilotStatus: %s, Destination: %s' %(jobID,jobStatus,destination))
+      self.log.info('JobID: %s, PilotStatus: %s, Destination: %s' %(jobID,jobStatus,destination))
       pilot = S_OK()
       pilot['JobID']=jobID
       pilot['PilotStatus']=jobStatus
@@ -87,23 +89,23 @@ class LCGAgentMonitor(AgentMonitor):
     status = proxyInfo['Value'][0]
     stdout = proxyInfo['Value'][1]
     stderr = proxyInfo['Value'][2]
-    self.log.debug('Status %s' %status)
-    self.log.debug(stdout)
-    self.log.debug(stderr)
+    self.log.verbose('Status %s' %status)
+    self.log.verbose(stdout)
+    self.log.verbose(stderr)
 
   #############################################################################
   def __exeCommand(self,cmd):
     """Runs a submit / list-match command and prints debugging information.
     """
     start = time.time()
-    self.log.debug( cmd )
+    self.log.verbose( cmd )
     result = shellCall(60,cmd)
 
     status = result['Value'][0]
     stdout = result['Value'][1]
     stderr = result['Value'][2]
-    self.log.debug('Status = %s' %status)
-    self.log.debug(stdout)
+    self.log.verbose('Status = %s' %status)
+    self.log.verbose(stdout)
     if stderr:
       self.log.warn(stderr)
     result['Status']=status
