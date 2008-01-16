@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/AuthManager.py,v 1.11 2007/12/19 17:49:57 acasajus Exp $
-__RCSID__ = "$Id: AuthManager.py,v 1.11 2007/12/19 17:49:57 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/AuthManager.py,v 1.12 2008/01/16 16:33:31 acasajus Exp $
+__RCSID__ = "$Id: AuthManager.py,v 1.12 2008/01/16 16:33:31 acasajus Exp $"
 
 import types
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
@@ -31,7 +31,7 @@ class AuthManager:
     """
     #Check if query comes though a gateway/web server
     if self.forwardedCredentials( credDict ):
-      gLogger.verbose( "Query comes from a gateway" )
+      gLogger.debug( "Query comes from a gateway" )
       self.unpackForwardedCredentials( credDict )
       return self.authQuery( methodQuery, credDict )
     else:
@@ -41,7 +41,7 @@ class AuthManager:
     if 'DN' in credDict:
       #Get the username
       if not self.getUsername( credDict ):
-        gLogger.verbose( "User is invalid or does not belong to the group it's saying" )
+        gLogger.debug( "User is invalid or does not belong to the group it's saying" )
         return False
     #Check everyone is authorized
     authGroups = self.getValidGroupsForMethod( methodQuery )
@@ -49,11 +49,11 @@ class AuthManager:
       return True
     #Check user is authenticated
     if not 'DN' in credDict:
-      gLogger.verbose( "User has no DN" )
+      gLogger.debug( "User has no DN" )
       return False
     #Check authorized groups
     if not credDict[ 'group' ] in authGroups and not "authenticated" in authGroups:
-      gLogger.verbose( "User group is not authorized" )
+      gLogger.debug( "User group is not authorized" )
       return False
     return True
 
@@ -68,7 +68,7 @@ class AuthManager:
     authGroups = gConfig.getValue( "%s/%s" % ( self.authSection, method ), [] )
     if not authGroups:
       defaultPath = "%s/Default" % "/".join( method.split( "/" )[:-1] )
-      gLogger.verbose( "Method %s has no groups defined, trying %s" % ( method, defaultPath ) )
+      gLogger.debug( "Method %s has no groups defined, trying %s" % ( method, defaultPath ) )
       authGroups = gConfig.getValue( "%s/%s" % ( self.authSection, defaultPath ), [] )
     return authGroups
 

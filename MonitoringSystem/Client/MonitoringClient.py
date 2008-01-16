@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.12 2008/01/15 18:37:57 acasajus Exp $
-__RCSID__ = "$Id: MonitoringClient.py,v 1.12 2008/01/15 18:37:57 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.13 2008/01/16 16:39:42 acasajus Exp $
+__RCSID__ = "$Id: MonitoringClient.py,v 1.13 2008/01/16 16:39:42 acasajus Exp $"
 
 import threading
 import time
@@ -40,7 +40,7 @@ class MonitoringClient:
 
   def initialize( self ):
     self.logger = gLogger.getSubLogger( "Monitoring" )
-    self.logger.info( "Initializing Service Monitor")
+    self.logger.debug( "Initializing Service Monitor")
     self.sourceDict[ 'setup' ] = gConfig.getValue( "/DIRAC/Setup" )
     self.sourceDict[ 'site' ] = gConfig.getValue( "/DIRAC/Site", "" )
     if self.sourceDict[ 'componentType' ] == self.COMPONENT_SERVICE:
@@ -78,7 +78,7 @@ class MonitoringClient:
 
   def __periodicFlush( self ):
     while self.sendingMode == "periodic":
-      self.logger.verbose( "Waiting %s seconds to send data" % self.sendingPeriod )
+      self.logger.debug( "Waiting %s seconds to send data" % self.sendingPeriod )
       time.sleep( self.sendingPeriod )
       self.flush()
 
@@ -132,7 +132,7 @@ class MonitoringClient:
     """
     self.activitiesLock.acquire()
     try:
-      self.logger.verbose( "Registering activity %s" % name )
+      self.logger.debug( "Registering activity %s" % name )
       if name not in self.activitiesDefinitions:
         self.activitiesDefinitions[ name ] = { "category" : category,
                                                "description" : description,
@@ -160,7 +160,7 @@ class MonitoringClient:
       raise Exception( "You must register activity %s before adding marks to it" % name)
     self.activitiesLock.acquire()
     try:
-      self.logger.verbose( "Adding mark to %s" % name )
+      self.logger.debug( "Adding mark to %s" % name )
       markTime = self.__UTCStepTime()
       if markTime in self.activitiesMarks[ name ]:
         self.activitiesMarks[ name ][ markTime ].append( value )
@@ -205,11 +205,11 @@ class MonitoringClient:
 
   def flush( self, allData = False ):
     self.flushingLock.acquire()
-    self.logger.verbose( "Sending information to server" )
+    self.logger.debug( "Sending information to server" )
     try:
       self.activitiesLock.acquire()
       try:
-        self.logger.verbose( "Consolidating data...")
+        self.logger.debug( "Consolidating data...")
         activitiesToRegister = {}
         if len( self.newActivitiesDict ) > 0:
           activitiesToRegister = self.newActivitiesDict
@@ -221,7 +221,7 @@ class MonitoringClient:
       if len( activitiesToRegister ) or len( marksDict ):
         if gConfig.getValue( "%s/DisableMonitoring" % self.cfgSection, "false" ).lower() in \
             ( "yes", "y", "true", "1" ):
-          self.logger.verbose( "Sending data has been disabled" )
+          self.logger.debug( "Sending data has been disabled" )
           return
         if allData:
           timeout = False
@@ -258,7 +258,7 @@ class MonitoringClient:
     return True
 
   def __sendRegistration( self, rpcClient, acRegister ):
-    self.logger.verbose( "Registering activities" )
+    self.logger.debug( "Registering activities" )
     retDict = rpcClient.registerActivities( self.sourceDict, acRegister )
     if not retDict[ 'OK' ]:
       self.logger.error( "Can't register activities", retDict[ 'Message' ] )
@@ -269,14 +269,14 @@ class MonitoringClient:
 
   def __sendMarks( self, rpcClient, acMarks ):
     assert self.sourceId
-    self.logger.verbose( "Sending marks" )
+    self.logger.debug( "Sending marks" )
     retDict = rpcClient.commitMarks( self.sourceId, acMarks )
     if not retDict[ 'OK' ]:
       self.logger.error( "Can't send activities marks", retDict[ 'Message' ] )
       self.failedTransmissions.append( ( self.__sendMarks, acMarks ) )
       return False
     if len ( retDict[ 'Value' ] ) > 0:
-      gLogger.info( "There are activities unregistered" )
+      self.logger.debug( "There are activities unregistered" )
       acRegister = {}
       acMissedMarks = {}
       for acName in retDict[ 'Value' ]:
@@ -284,8 +284,8 @@ class MonitoringClient:
           acRegister[ acName ] = dict( self.activitiesDefinitions[ acName ] )
           acMissedMarks[ acName ] = acMarks[ acName ]
         else:
-          gLogger.verbose( "Server reported unregistered activity that does not exist" )
-      gLogger.verbose( "Reregistering activities %s" % ", ".join( acRegister.keys() ) )
+          self.logger.debug( "Server reported unregistered activity that does not exist" )
+      self.logger.debug( "Reregistering activities %s" % ", ".join( acRegister.keys() ) )
       return self.__sendRegistration( rpcClient, acRegister ) and rpcClient.commitMarks( self.sourceId, acMissedMarks )[ 'OK' ]
     return True
 

@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfo.py,v 1.13 2007/12/19 18:01:51 acasajus Exp $
-__RCSID__ = "$Id: SocketInfo.py,v 1.13 2007/12/19 18:01:51 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfo.py,v 1.14 2008/01/16 16:37:24 acasajus Exp $
+__RCSID__ = "$Id: SocketInfo.py,v 1.14 2008/01/16 16:37:24 acasajus Exp $"
 
 import time
 import copy
@@ -136,5 +136,5 @@ class SocketInfo:
       gLogger.warn( "Error while handshaking", v )
       raise
     credentialsDict = self.gatherPeerCredentials()
-    gLogger.verbose( "", "Authenticated peer (%s)" % credentialsDict[ 'DN' ] )
+    gLogger.debug( "", "Authenticated peer (%s)" % credentialsDict[ 'DN' ] )
     return credentialsDict

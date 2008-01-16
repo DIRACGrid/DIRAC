@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.24 2008/01/15 18:13:46 acasajus Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.24 2008/01/15 18:13:46 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.25 2008/01/16 16:34:40 acasajus Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.25 2008/01/16 16:34:40 acasajus Exp $"
 
 import DIRAC
 from DIRAC.Core.DISET.private.Protocols import gProtocolDict
@@ -77,9 +77,8 @@ class BaseClient:
     return sURL
 
   def _connect( self ):
-    gLogger.verbose( "Connecting to: %s" % self.serviceURL )
+    gLogger.debug( "Connecting to: %s" % self.serviceURL )
     try:
-      gLogger.debug( "Using %s protocol" % self.URLTuple[0] )
       self.transport = gProtocolDict[ self.URLTuple[0] ][0]( self.URLTuple[1:3], useCertificates = self.useCertificates )
       self.transport.initAsClient()
     except Exception, e:

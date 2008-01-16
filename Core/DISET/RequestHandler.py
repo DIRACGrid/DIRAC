@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.27 2008/01/15 18:15:30 acasajus Exp $
-__RCSID__ = "$Id: RequestHandler.py,v 1.27 2008/01/15 18:15:30 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.28 2008/01/16 16:36:13 acasajus Exp $
+__RCSID__ = "$Id: RequestHandler.py,v 1.28 2008/01/16 16:36:13 acasajus Exp $"
 
 import types
 from DIRAC.Core.DISET.private.FileHelper import FileHelper
@@ -50,7 +50,7 @@ class RequestHandler:
     @param actionTuple: Type of action to execute. First position of the tuple must be the type
                         of action to execute. The second position is the action itself.
     """
-    gLogger.verbose( "Executing %s:%s action" % actionTuple )
+    gLogger.debug( "Executing %s:%s action" % actionTuple )
     actionType = actionTuple[0]
     if actionType == "RPC":
       retVal = self.__doRPC( actionTuple[1] )
