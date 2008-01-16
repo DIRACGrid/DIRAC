@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/SubSystemLogger.py,v 1.4 2007/11/09 16:51:23 acasajus Exp $
-__RCSID__ = "$Id: SubSystemLogger.py,v 1.4 2007/11/09 16:51:23 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/SubSystemLogger.py,v 1.5 2008/01/16 11:46:05 acasajus Exp $
+__RCSID__ = "$Id: SubSystemLogger.py,v 1.5 2008/01/16 11:46:05 acasajus Exp $"
 import types
 from DIRAC.LoggingSystem.private.LogLevels import LogLevels
 from DIRAC.LoggingSystem.private.Message import Message
@@ -16,6 +16,6 @@ class SubSystemLogger( Logger ):
     self.__masterLogger = masterLogger
     self._subSystemName = subSystemName
 
-  def _processMessage( self, messageObject ):
+  def processMessage( self, messageObject ):
     messageObject.setSubSystemName( self._subSystemName )
-    self.__masterLogger._processMessage( messageObject )
+    self.__masterLogger.processMessage( messageObject )
