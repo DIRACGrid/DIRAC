@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: LCGAgentMonitor.py,v 1.2 2008/01/13 20:52:02 paterson Exp $
+# $Id: LCGAgentMonitor.py,v 1.3 2008/01/16 14:27:08 paterson Exp $
 # File :   LCGAgentMonitor.py
 # Author : Stuart Paterson
 ########################################################################
@@ -7,11 +7,11 @@
 """ The LCG Agent Monitor performs the pilot job status tracking activity for LCG.
 """
 
-__RCSID__ = "$Id: LCGAgentMonitor.py,v 1.2 2008/01/13 20:52:02 paterson Exp $"
+__RCSID__ = "$Id: LCGAgentMonitor.py,v 1.3 2008/01/16 14:27:08 paterson Exp $"
 
 from DIRACEnvironment                                        import DIRAC
 from DIRAC.Core.Utilities.Subprocess                         import shellCall
-from DIRAC.ConfigurationSystem.Client.LocalConfiguration     import LocalConfiguration
+from DIRAC.Core.Utilities                                    import List
 from DIRAC.WorkloadManagementSystem.PilotAgent.AgentMonitor  import AgentMonitor
 from DIRAC                                                   import S_OK, S_ERROR, gConfig, gLogger
 
@@ -20,14 +20,15 @@ import os, sys, re, string, time
 class LCGAgentMonitor(AgentMonitor):
 
   #############################################################################
-  def __init__(self):
+  def __init__(self,configPath,mode):
     """ Standard constructor
     """
-    self.log = gLogger
-    self.log.setLevel('debug')
-    self.cmd = 'edg-job-status'
-    self.cmdTimeout = 60
-    AgentMonitor.__init__(self,'LCG')
+    self.log = gLogger.getSubLogger('%sAgentMonitor' %(mode))
+    self.sectionPath = configPath
+    self.cmd = gConfig.getValue(self.sectionPath+'/StatusCommand','edg-job-status')
+    self.cmdTimeout = gConfig.getValue(self.sectionPath+'/StatusCommandTimeout',60)
+    self.agentMonConfig = '/%s/%s' % ( '/'.join( List.fromChar(configPath, '/' )[:-1] ), 'AgentMonitor')
+    AgentMonitor.__init__(self,self.agentMonConfig,mode)
 
   #############################################################################
   def getPilotStatus(self,jobID,pilotID):
@@ -111,16 +112,5 @@ class LCGAgentMonitor(AgentMonitor):
     subtime = time.time() - start
     result['Time']=subtime
     return result
-
-###############################################################################
-if __name__ == "__main__":
-  """ Main execution method.
-  """
-  localCfg = LocalConfiguration()
-  localCfg.addDefaultEntry( "/DIRAC/Security/UseServerCertificate", "yes" )
-  from DIRAC.Core.Base import Script
-  Script.parseCommandLine()
-  monitor = LCGAgentMonitor()
-  monitor.run()
 
   #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
