@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/LCGPilotAgent.py,v 1.1 2008/01/16 09:46:47 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/LCGPilotAgent.py,v 1.2 2008/01/16 10:51:33 paterson Exp $
 # File :   LCGPilotAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,11 +9,12 @@
      of the PilotDirector instance for either LCG or gLite.
 """
 
-__RCSID__ = "$Id: LCGPilotAgent.py,v 1.1 2008/01/16 09:46:47 paterson Exp $"
+__RCSID__ = "$Id: LCGPilotAgent.py,v 1.2 2008/01/16 10:51:33 paterson Exp $"
 
-from DIRAC.Core.Base.Agent                               import Agent
-from DIRAC.Core.Utilities.Subprocess                     import shellCall
-from DIRAC                                               import S_OK, S_ERROR, gConfig, gLogger
+from DIRAC.Core.Base.Agent                                      import Agent
+from DIRAC.WorkloadManagementSystem.PilotAgent.LCGPilotDirector import LCGPilotDirector
+from DIRAC.Core.Utilities                                       import List
+from DIRAC                                                      import S_OK, S_ERROR, gConfig, gLogger
 
 import os, sys, re, string, time
 
@@ -46,6 +47,7 @@ class LCGPilotAgent(Agent):
   def execute(self):
     """The PilotAgent execution method.
     """
+    agent = {}
     if not self.started:
       resourceBrokers = gConfig.getValue(self.pdSection+'/ResourceBrokers','lhcb-lcg-rb04.cern.ch')
   #  resourceBrokers = gConfig.getValue('LCGPilotDirector/ResourceBrokers','lcgrb03.gridpp.rl.ac.uk,lhcb-lcg-rb03.cern.ch')
@@ -67,5 +69,7 @@ class LCGPilotAgent(Agent):
         gLogger.verbose('Thread isAlive() = %s' %(th.isAlive()))
         gLogger.warn('Thread for %s RB %s is dead, restarting ...' %(self.type,rb))
         th.start()
+
+    return S_OK()
 
   #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
