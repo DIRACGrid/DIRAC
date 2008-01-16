@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotMonitor.py,v 1.1 2008/01/16 13:46:10 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotMonitor.py,v 1.2 2008/01/16 14:27:58 paterson Exp $
 # File :   PilotMonitor.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
      of the AgentMonitor instance for all Grids.
 """
 
-__RCSID__ = "$Id: PilotMonitor.py,v 1.1 2008/01/16 13:46:10 paterson Exp $"
+__RCSID__ = "$Id: PilotMonitor.py,v 1.2 2008/01/16 14:27:58 paterson Exp $"
 
 from DIRAC.Core.Base.Agent                                      import Agent
 from DIRAC.Core.Utilities                                       import List
@@ -36,9 +36,9 @@ class PilotMonitor(Agent):
     self.type = gConfig.getValue(self.section+'/Middleware','LCG')
     self.pollingTime = gConfig.getValue(self.section+'/PollingTime',120)
     self.threadStartDelay = gConfig.getValue(self.section+'/ThreadStartDelay',5)
-    self.pmName = '%sPilotMonitor' %(self.type)
-    self.pmSection = '/%s/%s' % ( '/'.join( List.fromChar(self.section, '/' )[:-2] ), 'PilotAgent/%s' %(self.pdName))
-    self.log.debug('%sPilotMonitor CS section is: %s' %(self.type,self.pdSection))
+    self.pmName = '%sAgentMonitor' %(self.type)
+    self.pmSection = '/%s/%s' % ( '/'.join( List.fromChar(self.section, '/' )[:-2] ), 'PilotAgent/%s' %(self.pmName))
+    self.log.debug('%sPilotMonitor CS section is: %s' %(self.type,self.pmSection))
     self.pmPath = gConfig.getValue(self.section+'/ModulePath','DIRAC.WorkloadManagementSystem.PilotAgent')
 
     try:
