@@ -69,6 +69,56 @@ class DataManagementRequest:
 
 ###############################################################
 
+  def getRequestAttributes(self):
+    """ Get the attribues associated to this request
+    """
+    attributeDict = {}
+    attributeDict['JobID'] = self.jobid
+    attributeDict['OwnerDN'] = self.ownerDN
+    attributeDict['Date'] = self.date
+    attributeDict['Mode'] = self.mode
+    attributeDict['Instance'] = self.dirac_instance
+    attributeDict['RequestID'] = self.requestid
+    attributeDict['RequestName'] = self.requestname
+    return attributeDict
+
+  def setRequestAttributes(self,attributeDict):
+    """ Set the attributes associated to this request
+    """
+    self.jobid = attributeDict['JobID']
+    self.ownerDN = attributeDict['OwnerDN'] 
+    self.date = attributeDict['Date']
+    self.mode = attributeDict['Mode']
+    self.dirac_instance = attributeDict['Instance'] 
+    self.requestid = attributeDict['RequestID']
+    self.requestname = attributeDict['RequestName']
+
+  def getSubRequests(self,type):
+    """ Get the the sub-requests of a particular type
+    """
+    if type == 'transfer':
+      return self.transfers
+    if type == 'register':
+      return self.registers
+    if type == 'removal':
+      return self.removals
+    if type == 'stage':
+      return self.stages
+
+  def setSubRequests(self,type,subRequests):
+    """ Set the sub-requests of a particular type associated to this request
+    """
+    if type == 'transfer':
+      self.transfers.extend(subRequests)
+    if type == 'register':
+      self.registers.extend(subRequests)
+    if type == 'removal':
+      self.removals.extend(subRequests)
+    if type == 'stage':
+      self.stages.extend(subRequests)
+    
+###############################################################
+
   def setCurrentDate(self):
     """ Set the request date to the current date and time
     """
@@ -436,7 +486,58 @@ class DataManagementRequest:
           return S_OK(0)
     return S_OK(1)
 
+  def isRequestEmpty(self,type):
+    """ Check whether the requests of given type are complete
+    """
+    res = self.getNumSubRequests(type)
+    if not res['OK']:
+      return res
+    numSubRequests = res['Value'] 
+    if type == 'transfer':
+      for ind in range(numSubRequests):
+        status = self.getSubRequestAttributeValue(ind,type,'Status')['Value']
+        if status != 'Done':    
+          return S_OK(0)  
+    if type == 'register':
+      for ind in range(numSubRequests):
+        status = self.getSubRequestAttributeValue(ind,type,'Status')['Value']
+        if status != 'Done':
+          return S_OK(0)
+    if type == 'removal':
+      for ind in range(numSubRequests):
+        status = self.getSubRequestAttributeValue(ind,type,'Status')['Value']
+        if status != 'Done':
+          return S_OK(0)
+    if type == 'stage':
+      for ind in range(numSubRequests):
+        status = self.getSubRequestAttributeValue(ind,type,'Status')['Value']
+        if status != 'Done':
+          return S_OK(0)
+    return S_OK(1)
+
+  def isSubRequestEmpty(self,ind,type):
+    """ Check if the request contains more operations to be performed
+    """
+    if type == 'transfer':
+      for file in self.transfers[ind]['Files']:
+        if file['Status'] != "Done":
+          return S_OK(0)
+    if type == 'register':
+      for file in self.registers[ind]['Files']:
+        if file['Status'] != "Done":
+          return S_OK(0)
+    if type == 'removal':
+      for file in self.removals[ind]['Files']:
+        if file['Status'] != "Done":
+          return S_OK(0)
+    if type == 'stage':
+      for file in self.stages[ind]['Files']:
+        if file['Status'] != "Done":
+          return S_OK(0)
+    return S_OK(1)
+
 ###############################################################
+
   def initiateSubRequest(self,type):
     """ Add dictionary to list of requests and return the list index
     """
@@ -615,10 +716,18 @@ class DataManagementRequest:
 
     for type in ['transfer','register','removal','stage']:
       # This allows us to supply a request type
-      useType = True
-      if requestType:
-        if not type == requestType:
-          useType = False
+      useType = False
+      if not requestType:
+        useType = True
+      else:
+        if type == requestType:
+          res = self.getNumSubRequests(type)
+          if not res['OK']:
+            return res
+          elif not res['Value'] > 0:
+            return S_OK()
+          else:
+            useType = True
       if useType:
         res = self.getNumSubRequests(type)
         if not res['OK']:
@@ -631,7 +740,7 @@ class DataManagementRequest:
           out = '%s%s\n\n' % (out,outStr)
 
     out = '%s</DATA_MANAGEMENT_REQUEST>\n' % out
-    return S_OK(out)
+    return S_OK(str(out))
 
 ###############################################################
 
