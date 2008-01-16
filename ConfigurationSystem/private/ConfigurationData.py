@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationData.py,v 1.12 2007/11/20 17:19:02 acasajus Exp $
-__RCSID__ = "$Id: ConfigurationData.py,v 1.12 2007/11/20 17:19:02 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationData.py,v 1.13 2008/01/16 16:23:07 acasajus Exp $
+__RCSID__ = "$Id: ConfigurationData.py,v 1.13 2008/01/16 16:23:07 acasajus Exp $"
 
 import os.path
 import zlib
@@ -54,7 +54,7 @@ class ConfigurationData:
       fileCFG.loadFromFile( fileName )
       self.localCFG = self.localCFG.mergeWith( fileCFG )
       self.unlock()
-      gLogger.verbose( "Configuration file loaded", "'%s'" % fileName )
+      gLogger.debug( "Configuration file loaded", "'%s'" % fileName )
     except IOError, e:
       self.unlock()
       gLogger.warn( "Can't load a cfg file", "'%s'" % fileName )
@@ -268,7 +268,7 @@ class ConfigurationData:
       fd.close()
       gLogger.verbose( "Configuration file dumped", "'%s'" % fileName )
     except IOError, e:
-      gLogger.warn( "Can't dump cfg file", "'%s'" % fileName )
+      gLogger.error( "Can't dump cfg file", "'%s'" % fileName )
       return S_ERROR( "Can't dump cfg file '%s'" % fileName )
     return S_OK()
 

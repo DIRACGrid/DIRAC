@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Refresher.py,v 1.17 2008/01/15 18:10:48 acasajus Exp $
-__RCSID__ = "$Id: Refresher.py,v 1.17 2008/01/15 18:10:48 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Refresher.py,v 1.18 2008/01/16 16:22:31 acasajus Exp $
+__RCSID__ = "$Id: Refresher.py,v 1.18 2008/01/16 16:22:31 acasajus Exp $"
 
 import threading
 import time
@@ -49,9 +49,9 @@ class Refresher( threading.Thread ):
     return S_OK()
 
   def autoRefreshAndPublish( self, sURL ):
-    gLogger.info( "Setting configuration refresh as automatic" )
+    gLogger.debug( "Setting configuration refresh as automatic" )
     if not gConfigurationData.getAutoPublish():
-      gLogger.info( "Slave server won't auto publish itself" )
+      gLogger.debug( "Slave server won't auto publish itself" )
     if not gConfigurationData.getName():
       DIRAC.abort( 10, "Missing configuration name!" )
     self.sURL = sURL
@@ -69,7 +69,7 @@ class Refresher( threading.Thread ):
 
   def __refreshAndPublish( self ):
     self.iLastUpdateTime = time.time()
-    gLogger.info( "Refresing from master server" )
+    gLogger.debug( "Refresing from master server" )
     from DIRAC.Core.DISET.RPCClient import RPCClient
     sMasterServer = gConfigurationData.getMasterServer()
     if sMasterServer:
@@ -90,7 +90,7 @@ class Refresher( threading.Thread ):
 
   def __refresh( self ):
     self.iLastUpdateTime = time.time()
-    gLogger.verbose( "Refresing configuration..." )
+    gLogger.debug( "Refresing configuration..." )
     sGateway = getGatewayURL()
     updatingErrorsList = []
     if sGateway:
@@ -122,7 +122,7 @@ class Refresher( threading.Thread ):
       if localVersion < dataDict[ 'newestVersion' ] :
         gLogger.debug( "New version available", "Updating to version %s..." % dataDict[ 'newestVersion' ] )
         gConfigurationData.loadRemoteCFGFromCompressedMem( dataDict[ 'data' ] )
-        gLogger.verbose( "Updated to version %s" % gConfigurationData.getVersion() )
+        gLogger.debug( "Updated to version %s" % gConfigurationData.getVersion() )
       return S_OK()
     return retVal
 
