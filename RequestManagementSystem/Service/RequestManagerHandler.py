@@ -1,12 +1,11 @@
 """ RequestManager is the implementation of the RequestDB service in the DISET framework
-    A.Smith (23/05/07)
 """
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.RequestManagementSystem.DB.RequestDB import RequestDB
+from DIRAC.RequestManagementSystem.DB.RequestDBFile import RequestDBFile
+from DIRAC.RequestManagementSystem.DB.RequestDBMySQL import RequestDBMySQL
 
-#This is a global instance of the RequestDB class
 requestDB = False
 
 def initializeRequestManagerHandler(serviceInfo):
@@ -17,7 +16,14 @@ def initializeRequestManagerHandler(serviceInfo):
     gLogger.fatal(fatStr)
     return S_ERROR(fatStr)
   gLogger.info("RequestManager.initializeRequestManagerHandler: Initialising with backend",backend)
-  requestDB = RequestDB(backend)
+  if backend == 'file':
+    requestDB = RequestDBFile()
+  elif backend == 'mysql':
+    requestDB = RequestDBMySQL()
+  else:
+    fatStr = "RequestManager.initializeRequestManagerHandler: Supplied backend is not supported."
+    gLogger.fatal(fatStr,backend)
+    return S_ERROR(fatStr)  
   return S_OK()
 
 class RequestManagerHandler(RequestHandler):
@@ -26,81 +32,89 @@ class RequestManagerHandler(RequestHandler):
   def export_setRequest(self,requestName,requestString):
     """ Set a new request
     """
+    gLogger.info("RequestManagerHandler.setRequest: Attempting to set %s." % requestName)
     try:
-      result = requestDB.setRequest(requestName,requestString)
-      if not result['OK']:
-        errKey = "Setting request failed"
-        errExpl = " : for %s because %s" % (requestName,result['Message'])
-        gLogger.error(errKey,errKey)
-      return result
+      res = requestDB.setRequest(requestName,requestString)
+      return res
     except Exception,x:
-      errKey = "Setting request failed"
-      errExpl = " : for %s because %s" % (requestName,str(x))
-      gLogger.exception(errKey,errExpl)
-      return S_ERROR('Setting request failed: '+str(x))
+      errStr = "RequestManagerHandler.setRequest: Exception while setting request."
+      gLogger.exception(errStr,"%s %s" % (requestName,str(x)))
+      return S_ERROR(errStr)
 
-  types_setRequestStatus = [StringType,StringType,StringType]
-  def export_setRequestStatus(self,requestType,requestName,status):
+  types_setRequestStatus = [StringType,StringType]
+  def export_setRequestStatus(self,requestName,requestStatus):
     """ Set status of a request
     """
-    gLogger.verbose("Setting request status for %s to %s" % (requestName,status))
+    gLogger.info("RequestHandler.setRequestStatus: Setting status of %s to %s." % (requestName,requestStatus))
     try:
-      result = requestDB.setRequestStatus(requestType,requestName,status)
-      if not result['OK']:
-        errKey = "Setting request status failed"
-        errExpl = " : for %s because %s" % (requestName,result['Message'])
-        gLogger.error(errKey,errKey)
-      return result
+      res = requestDB.setRequestStatus(requestName,requestStatus)
+      return res
     except Exception,x:
-      errKey = "Setting request status failed"
-      errExpl = " for %s because %s" % (requestName,str(x))
-      gLogger.exception(errKey,errExpl)
-      return S_ERROR('Setting request status failed: '+str(x))
+      errStr = "RequestHandler.setRequestStatus: Exception while setting request status."
+      gLogger.exception(errStr,"%s %s" % (requestName,str(x)))
+      return S_ERROR(errStr)
+
+  types_updateRequest = [StringType,StringType]
+  def export_updateRequest(self,requestName,requestString):
+    """ Update the request with the supplied string
+    """
+    gLogger.info("RequestManagerHandler.updateRequest: Attempting to update %s." % requestName)
+    try:
+      res = requestDB.updateRequest(requestName,requestString)
+      return res
+    except Exception,x:
+      errStr = "RequestManagerHandler.updateRequest: Exception which updating request."
+      gLogger.exception(errStr,"%s %s" % (requestName,str(x)))
+      return S_ERROR(errStr)
+
+  types_deleteRequest = [StringType]
+  def export_deleteRequest(self,requestName):
+    """ Delete the request with the supplied name
+    """
+    gLogger.info("RequestManagerHandler.deleteRequest: Attempting to delete %s." % requestName)
+    try:
+      res = requestDB.deleteRequest(requestName)
+      return res
+    except Exception,x:
+      errStr = "RequestManagerHandler.deleteRequest: Exception which deleting request."
+      gLogger.exception(errStr,"%s %s" % (requestName,str(x)))
+      return S_ERROR(errStr)
+
+  types_getDBSummary = []
+  def export_getDBSummary(self):
+    """ Get the summary of requests in the Request DB
+    """
+    gLogger.info("RequestManagerHandler.getDBSummary: Attempting to obtain database summary.")
+    try:
+      res = requestDB.getDBSummary()
+      return res
+    except Exception,x:
+      errStr = "RequestManagerHandler.getDBSummary: Exception while getting database summary."
+      gLogger.exception(errStr,str(x))
+      return S_ERROR(errStr)      
 
   types_getRequest = [StringType]
   def export_getRequest(self,requestType):
-    """ Get a requests of given type from the DB
+    """ Get a request of given type from the database
     """
     gLogger.info("RequestHandler.getRequest: Attempting to get request type", requestType)
     try:
       res = requestDB.getRequest(requestType)
-      if not res['OK']:
-        errKey = "RequestHandler.getRequest: Getting request failed"
-        errExpl = "%s: %s" % (requestType,res['Message'])
-        gLogger.error(errKey,errExpl)
-        return res
-      elif not res['Value']:
-        gLogger.info("RequestHandler.getRequest: No requests found.")
-        return res
-      requestName = res['requestName']
-      setStatus = requestDB.setRequestStatus(requestType,requestName,'Assigned')
-      if setStatus['OK']:
-        return res
-      else:
-        errKey = "RequestHandler.getRequest: Setting request status failed"
-        errExpl = "%s: %s" % (requestName,setStatus['Message'])
-        gLogger.error(errKey,errExpl)
-        return S_ERROR(errKey)
+      return res
     except Exception,x:
-      errKey = "RequestManagerHandler.getRequest: Failed to get request type:"
-      errExpl = "%s:  %s" % (requestType,str(x))
-      gLogger.exception(errKey,errExpl)
-      return S_ERROR("%s %s" % (errKey,errExpl))
+      errStr = "RequestManagerHandler.getRequest: Exception while getting request."
+      gLogger.exception(errStr,"%s %s" % (requestType,str(x)))
+      return S_ERROR(errStr)
 
-  types_getRequestSummary = []
-  def export_getDBSummary(self):
-    """ Get the summary of requests in the Request DB
+  types_serveRequest = [StringType]
+  def export_serveRequest(self,requestType):
+    """ Serve a request of a given type from the database
     """
-    gLogger.verbose("Getting request summary")
+    gLogger.info("RequestHandler.serveRequest: Attempting to serve request type", requestType)
     try:
-      result = requestDB.getDBSummary()
-      if not result['OK']:
-        errKey = "Getting RequestDB summary failed"
-        errExpl = " : because %s" % result['Message']
-        gLogger.error(errKey,errKey)
-      return result
+      res = requestDB.serveRequest(requestType)
+      return res
     except Exception,x:
-      errKey = "SGetting RequestDB summary failed"
-      errExpl = " because %s" % str(x)
-      gLogger.exception(errKey,errExpl)
-      return S_ERROR('Getting RequestDB summary failed: '+str(x))
+      errStr = "RequestManagerHandler.serveRequest: Exception while serving request."
+      gLogger.exception(errStr,"%s %s" % (requestType,str(x)))
+      return S_ERROR(errStr)
