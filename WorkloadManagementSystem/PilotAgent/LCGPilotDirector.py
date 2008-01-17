@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/LCGPilotDirector.py,v 1.1 2008/01/16 11:59:26 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/LCGPilotDirector.py,v 1.2 2008/01/17 10:32:05 paterson Exp $
 # File :   LCGPilotDirector.py
 # Author : Stuart Paterson
 ########################################################################
@@ -11,7 +11,7 @@
      the invokation of the Pilot Director instance is performed here.
 """
 
-__RCSID__ = "$Id: LCGPilotDirector.py,v 1.1 2008/01/16 11:59:26 paterson Exp $"
+__RCSID__ = "$Id: LCGPilotDirector.py,v 1.2 2008/01/17 10:32:05 paterson Exp $"
 
 from DIRACEnvironment                                        import DIRAC
 from DIRAC.Core.Utilities                                    import List
@@ -29,7 +29,7 @@ class LCGPilotDirector(PilotDirector):
     self.resourceBroker = resourceBroker
     self.name = '%sPilotDirector' %(self.type)
     self.log = gLogger.getSubLogger(self.name)
-    self.log.verbose('Starting %s for RB %s' %(self.name,self.resourceBroker))
+    self.log.info('Starting %s for RB %s' %(self.name,self.resourceBroker))
     self.sectionPath = configPath
     self.diracRoot = gConfig.getValue(self.sectionPath+'/DIRACRoot','/opt/dirac')
     self.pilotScript = gConfig.getValue(self.sectionPath+'/PilotScript','%s/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot-lcg.py' %(self.diracRoot))
@@ -37,9 +37,12 @@ class LCGPilotDirector(PilotDirector):
     self.archScript = gConfig.getValue(self.sectionPath+'/ArchitectureScript','%s/scripts/dirac-architecture' %(self.diracRoot))
     self.voSoftwareDir = gConfig.getValue(self.sectionPath+'VOSoftware','VO_LHCB_SW_DIR')
     self.diracSetup = gConfig.getValue(self.sectionPath+'/Setup','LHCb-Development')
+    self.enableListMatch = gConfig.getValue(self.sectionPath+'/EnableListMatch',1)
+    self.listMatchDelay = gConfig.getValue(self.sectionPath+'/ListMatchDelay',15*60)
     self.confFile1 = None
     self.confFile2 = None
     self.pilotDirConfig = '/%s/%s' % ( '/'.join( List.fromChar(configPath, '/' )[:-1] ), 'PilotDirector')
+    self.jobsWithoutCEs = {}
     PilotDirector.__init__(self,configPath,self.resourceBroker)
 
   #############################################################################
@@ -50,23 +53,23 @@ class LCGPilotDirector(PilotDirector):
     status = proxyInfo['Value'][0]
     stdout = proxyInfo['Value'][1]
     stderr = proxyInfo['Value'][2]
-    self.log.debug('Status %s' %status)
-    self.log.debug(stdout)
-    self.log.debug(stderr)
+    self.log.verbose('Status %s' %status)
+    self.log.verbose(stdout)
+    self.log.verbose(stderr)
 
   #############################################################################
   def __exeCommand(self,cmd):
     """Runs a submit / list-match command and prints debugging information.
     """
     start = time.time()
-    self.log.debug( cmd )
+    self.log.verbose( cmd )
     result = shellCall(60,cmd)
 
     status = result['Value'][0]
     stdout = result['Value'][1]
     stderr = result['Value'][2]
-    self.log.debug('Status = %s' %status)
-    self.log.debug(stdout)
+    self.log.verbose('Status = %s' %status)
+    self.log.verbose(stdout)
     if stderr:
       self.log.warn(stderr)
     result['Status']=status
@@ -80,7 +83,8 @@ class LCGPilotDirector(PilotDirector):
   def submitJob(self,job,workingDirectory,siteList,cpuRequirement,inputSandbox=None,gridRequirements=None,executable=None,softwareTag=None):
     """ Submit Pilot Job to the LCG Resource Broker
     """
-    self.log.debug('Preparing %s pilot for job %s in %s' %(self.type,job,workingDirectory))
+
+    self.log.verbose('Preparing %s pilot for job %s in %s' %(self.type,job,workingDirectory))
     confFiles = self.__writeConfFiles(job,workingDirectory)
     if not confFiles['OK']:
       return confFiles
@@ -88,9 +92,15 @@ class LCGPilotDirector(PilotDirector):
     if not lcgJDL['OK']:
       return lcgJDL
 
+    self.__checkProxy() # debuggging tool
+
+    #list-match before each submission
+    listMatchResult = self.__checkCEsForJob()
+    if not listMatchResult['OK']:
+      return listMatchResult
+
     lcgJDLFile = lcgJDL['Value']
     self.log.info( '--- Executing edg-job-submit for %s' % job )
-    self.__checkProxy()
 
     cmd = "edg-job-submit -config %s --config-vo %s %s" % (self.confFile1,self.confFile2,lcgJDLFile)
     result = self.__exeCommand(cmd)
@@ -101,8 +111,9 @@ class LCGPilotDirector(PilotDirector):
 
     status = result['Status']
     stdout = result['StdOut']
+    stderr = result['StdErr']
     subtime = result['Time']
-    self.log.verbose( '>>> LCG Submission time %.2fs' % subtime )
+    self.log.info( '>>> LCG Submission time %.2fs' % subtime )
 
     submittedPilot = None
     if status==0:
@@ -116,8 +127,11 @@ class LCGPilotDirector(PilotDirector):
           failed = 0
 
       if failed:
-        self.log.warn( '>>> LCG Submission Failed for Job %s with status %s' %(job,status))
-        return S_ERROR('LCG Submission failed with status %s' %(status))
+        return S_ERROR('>>> LCG Submission Failed for Job %s with status %s, no result found' %(job,status))
+    else:
+      self.log.warn( stdout )
+      self.log.warn( stderr )
+      return S_ERROR('>>> LCG Submission Failed for job %s with status %s' %(job,status))
 
     return S_OK(submittedPilot)
 
@@ -127,7 +141,7 @@ class LCGPilotDirector(PilotDirector):
         case. Prepares the LCG job JDL file.
     """
     lcgJDLFile = '%s/%s/%s.jdl' % (workingDirectory,job,job)
-    self.log.debug( 'Writing LCG JDL file %s ' %lcgJDLFile)
+    self.log.verbose( 'Writing LCG JDL file %s ' %lcgJDLFile)
 
     try:
       if os.path.exists(lcgJDLFile):
@@ -189,7 +203,7 @@ class LCGPilotDirector(PilotDirector):
       lcgJDL.write('OutputSandbox = {"std.out","std.err",".BrokerInfo","pilotOutput.log","wrappers.tar.gz"};\n')
       lcgJDL.close()
       lcgJDL = open( lcgJDLFile, 'r' )
-      self.log.debug( 'Contents of LCG JDL File... \n%s' % string.join(lcgJDL.readlines(),'') )
+      self.log.verbose( 'Contents of LCG JDL File... \n%s' % string.join(lcgJDL.readlines(),'') )
       lcgJDL.close()
 
     except Exception, x:
@@ -203,7 +217,7 @@ class LCGPilotDirector(PilotDirector):
   def __writeConfFiles(self,job,workingDirectory):
     """ Creates configuration files necessary for the LCG job submission
     """
-    self.log.debug('Writing configuration files for LCG job submission')
+    self.log.verbose('Writing configuration files for LCG job submission')
     self.confFile1 = '%s/%s/edgLHCb1.conf' % (workingDirectory,job)
     confFile1 = open(self.confFile1,'w')
     confFile1.write("""
@@ -246,5 +260,130 @@ MyProxyServer = "myproxy.cern.ch";
       return S_OK()
     else:
       return S_ERROR('Configuration files not written')
+
+  #############################################################################
+  def __listMatchJob(self, job, jdlFile):
+    """ Get available LCG CEs for Pilot Job
+    """
+    self.log.info( '--- Executing edg-job-list-match for %s' % job )
+
+    cmd = "edg-job-list-match -config %s --config-vo %s %s" % (self.confFile1,self.confFile2,jdlFile )
+
+    result = self.__exeCommand(cmd)
+    if not result['OK']:
+      self.log.warn(result)
+      return result
+
+    status = result['Status']
+    stdout = result['StdOut']
+    stderr = result['StdErr']
+    subtime = result['Time']
+    self.log.info( '>>> LCG List-Match time %.2fs' % subtime )
+
+    availableCEs = []
+    if status == 0:
+      failed = 1
+      for line in string.split(stdout):
+        m = re.search("(.*\/\S+)",line)
+        if (m):
+          ce = m.group(1)
+          availableCEs.append(ce)
+
+      if not availableCEs:
+        self.log.warn( '>>> LCG List-Match failed to find CEs for Job %s' %job )
+        self.log.warn( stdout )
+        self.log.warn( stderr )
+
+      self.log.info( '>>> %s LCG CEs for job %s' % (job,len(availableCEs)) )
+
+    else:
+      self.log.warn( stdout )
+      self.log.warn( stderr )
+      return S_ERROR('>>> LCG List-Match Failed for job %s with status %s' %(job,status))
+
+    return S_OK(availableCEs)
+
+  #############################################################################
+  def __checkCEsForJob(self,job):
+    """ Method to check number of suitable CEs for job
+        and prevent Pilot submission for jobs with no
+        available CEs. Wraps around list-match command.
+    """
+
+    flag = self.protectRBs
+    minimumCEs = 1 #this will only catch jobs that the RB cannot schedule
+    noCEsAvailable = self.jobsWithoutCEs
+    submitFlag = True
+
+    if flag != True:
+      self.log.verbose( 'LCG List-Match is disabled by configuration' )
+    else:
+      check = self.jobDB.getJobParameters(int(job),['Available_CEs'])
+      if not check['OK']:
+        return existingParam
+
+      check = check['Value']
+      self.log.verbose( check )
+
+      if check['Available_CEs']:
+        self.log.verbose( 'Available CEs already found for job: %s' % job )
+        ces = check['Available_CEs'].strip()
+        numberOfCEs = int(ces[0])
+
+        if numberOfCEs < minimumCEs:
+          self.log.verbose( 'Job %s has no available CEs' % job )
+          if noCEsAvailable.has_key(job):
+            lastCheck = noCEsAvailable[job] # in Python time units
+            waitingTime = time.time() - lastCheck
+            if waitingTime > self.listMatchDelay:
+              waitingMins = round(waitingTime/60)
+              self.log.verbose( 'Job has waited %s mins so retry list match' % waitingMins )
+              getCEs = self.__listMatchJob(job)
+              if not getCEs['OK']:
+                return getCEs
+              newCEs = len(getCEs['Value'])
+              if newCEs < minimumCEs:
+                noCEsAvailable[job] = time.time()
+                submitFlag = False
+              else:
+                self.log.verbose( 'Number of CEs has changed for Job: %s  updating Available_CEs' % job )
+                self.jobDB.setJobParameter( job, 'Available_CEs' , '%s CEs returned from list-match on %s' %(newCEs,time.asctime()) )
+
+            else:
+              waitingTime = time.time() - lastCheck
+              waitingTime = round(waitingTime/60)
+              self.log.verbose( 'Skipping list match for Job %s, has waited %s mins so far' % (job,waitingTime) )
+              submitFlag = False
+
+          else:
+            getCEs = self.__listMatchJob(job)  #if restarted, must redo list-match
+            if not getCEs['OK']:
+              return getCEs
+            newCEs = len(getCEs)
+            if newCEs < minimumCEs:
+              noCEsAvailable[job] = time.time()
+              submitFlag = False
+            else:
+              self.log.verbose( 'Number of CEs has changed for Job: %s  updating Available_CEs' % job )
+              self.jobDB.setJobParameter( job, 'Available_CEs' , '%s CEs returned from list-match on %s' %(newCEs,time.asctime()) )
+
+      else:
+        self.log.verbose( 'Job %s has not yet passed through list match' % job )
+        getCEs = self.__listMatchJob(job)
+        if not getCEs['OK']:
+          return getCEs
+        numberOfCEs = len(getCEs)
+        self.jobDB.setJobParameter( job, 'Available_CEs' , '%s CEs returned from list-match on %s' %(numberOfCEs,time.asctime()) )
+
+        if numberOfCEs < minimumCEs:
+          self.log.info('No CEs available for job  %s ' % job )
+          submitFlag = False #do not submit pilots for these jobs
+          noCEsAvailable[job] = time.time()
+
+    self.jobsWithoutCEs = noCEsAvailable #update list of jobs with no CEs
+    if submitFlag:
+      return S_OK('Submission OK')
+    else:
+      return S_ERROR('Job %s has no CEs available' % job)
 
   #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
