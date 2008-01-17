@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/LCGPilotDirector.py,v 1.3 2008/01/17 14:58:46 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/LCGPilotDirector.py,v 1.4 2008/01/17 15:13:10 paterson Exp $
 # File :   LCGPilotDirector.py
 # Author : Stuart Paterson
 ########################################################################
@@ -11,7 +11,7 @@
      the invokation of the Pilot Director instance is performed here.
 """
 
-__RCSID__ = "$Id: LCGPilotDirector.py,v 1.3 2008/01/17 14:58:46 paterson Exp $"
+__RCSID__ = "$Id: LCGPilotDirector.py,v 1.4 2008/01/17 15:13:10 paterson Exp $"
 
 from DIRACEnvironment                                        import DIRAC
 from DIRAC.Core.Utilities                                    import List
@@ -43,7 +43,7 @@ class LCGPilotDirector(PilotDirector):
     self.confFile2 = None
     self.pilotDirConfig = '/%s/%s' % ( '/'.join( List.fromChar(configPath, '/' )[:-1] ), 'PilotDirector')
     self.jobsWithoutCEs = {}
-    PilotDirector.__init__(self,configPath,self.resourceBroker)
+    PilotDirector.__init__(self,self.pilotDirConfig,self.resourceBroker)
 
   #############################################################################
   def __checkProxy(self):
