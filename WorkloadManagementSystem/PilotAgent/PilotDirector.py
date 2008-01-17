@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/PilotDirector.py,v 1.4 2008/01/17 10:31:41 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/PilotDirector.py,v 1.5 2008/01/17 14:58:26 paterson Exp $
 # File :   PilotDirector.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
      are overridden in Grid specific subclasses.
 """
 
-__RCSID__ = "$Id: PilotDirector.py,v 1.4 2008/01/17 10:31:41 paterson Exp $"
+__RCSID__ = "$Id: PilotDirector.py,v 1.5 2008/01/17 14:58:26 paterson Exp $"
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
 from DIRAC.Core.Utilities.Subprocess                       import shellCall
@@ -44,7 +44,7 @@ class PilotDirector(Thread):
     self.selectJobLimit = gConfig.getValue(self.configSection+'/JobSelectLimit',500)
     self.scratchDir = gConfig.getValue(self.configSection+'/ScratchDir','/opt/dirac/work')
     self.genericPilotDN = gConfig.getValue(self.configSection+'/GenericPilotDN','/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=paterson/CN=607602/CN=Stuart Paterson')
-    self.genericPilotGroup = gConfig.getValue(self.configSection+'/GenericPilotGroup','LHCb_Pilot')
+    self.genericPilotGroup = gConfig.getValue(self.configSection+'/GenericPilotGroup','lhcb_pilot')
     self.defaultPilotType = gConfig.getValue(self.configSection+'/DefaultPilotType','generic')
     self.workingDirectory = '%s/%s' %(self.scratchDir,self.name)
     self.diracSetup = gConfig.getValue('/DIRAC/Setup','LHCb-Development')
@@ -237,7 +237,7 @@ class PilotDirector(Thread):
         return ownerFile
       inputSandbox.append(ownerFile['Value'])
     else:
-      self.log.verbose('Job %s will be submitted with a generic pilot')
+      self.log.verbose('Job %s will be submitted with a generic pilot' %(job))
       ownerGroup=self.genericPilotGroup
       ownerDN = self.genericPilotDN
 

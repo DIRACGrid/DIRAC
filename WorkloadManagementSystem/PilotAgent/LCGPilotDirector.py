@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/LCGPilotDirector.py,v 1.2 2008/01/17 10:32:05 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/LCGPilotDirector.py,v 1.3 2008/01/17 14:58:46 paterson Exp $
 # File :   LCGPilotDirector.py
 # Author : Stuart Paterson
 ########################################################################
@@ -11,7 +11,7 @@
      the invokation of the Pilot Director instance is performed here.
 """
 
-__RCSID__ = "$Id: LCGPilotDirector.py,v 1.2 2008/01/17 10:32:05 paterson Exp $"
+__RCSID__ = "$Id: LCGPilotDirector.py,v 1.3 2008/01/17 14:58:46 paterson Exp $"
 
 from DIRACEnvironment                                        import DIRAC
 from DIRAC.Core.Utilities                                    import List
@@ -93,13 +93,13 @@ class LCGPilotDirector(PilotDirector):
       return lcgJDL
 
     self.__checkProxy() # debuggging tool
+    lcgJDLFile = lcgJDL['Value']
 
     #list-match before each submission
-    listMatchResult = self.__checkCEsForJob()
+    listMatchResult = self.__checkCEsForJob(job,lcgJDLFile)
     if not listMatchResult['OK']:
       return listMatchResult
 
-    lcgJDLFile = lcgJDL['Value']
     self.log.info( '--- Executing edg-job-submit for %s' % job )
 
     cmd = "edg-job-submit -config %s --config-vo %s %s" % (self.confFile1,self.confFile2,lcgJDLFile)
@@ -268,7 +268,6 @@ MyProxyServer = "myproxy.cern.ch";
     self.log.info( '--- Executing edg-job-list-match for %s' % job )
 
     cmd = "edg-job-list-match -config %s --config-vo %s %s" % (self.confFile1,self.confFile2,jdlFile )
-
     result = self.__exeCommand(cmd)
     if not result['OK']:
       self.log.warn(result)
@@ -304,28 +303,26 @@ MyProxyServer = "myproxy.cern.ch";
     return S_OK(availableCEs)
 
   #############################################################################
-  def __checkCEsForJob(self,job):
+  def __checkCEsForJob(self,job,jdlFile):
     """ Method to check number of suitable CEs for job
         and prevent Pilot submission for jobs with no
         available CEs. Wraps around list-match command.
     """
-
-    flag = self.protectRBs
     minimumCEs = 1 #this will only catch jobs that the RB cannot schedule
     noCEsAvailable = self.jobsWithoutCEs
     submitFlag = True
 
-    if flag != True:
+    if not self.enableListMatch:
       self.log.verbose( 'LCG List-Match is disabled by configuration' )
     else:
       check = self.jobDB.getJobParameters(int(job),['Available_CEs'])
       if not check['OK']:
-        return existingParam
+        return check
 
       check = check['Value']
       self.log.verbose( check )
 
-      if check['Available_CEs']:
+      if check.has_key('Available_CEs'):
         self.log.verbose( 'Available CEs already found for job: %s' % job )
         ces = check['Available_CEs'].strip()
         numberOfCEs = int(ces[0])
@@ -338,7 +335,7 @@ MyProxyServer = "myproxy.cern.ch";
             if waitingTime > self.listMatchDelay:
               waitingMins = round(waitingTime/60)
               self.log.verbose( 'Job has waited %s mins so retry list match' % waitingMins )
-              getCEs = self.__listMatchJob(job)
+              getCEs = self.__listMatchJob(job,jdlFile)
               if not getCEs['OK']:
                 return getCEs
               newCEs = len(getCEs['Value'])
@@ -356,7 +353,7 @@ MyProxyServer = "myproxy.cern.ch";
               submitFlag = False
 
           else:
-            getCEs = self.__listMatchJob(job)  #if restarted, must redo list-match
+            getCEs = self.__listMatchJob(job,jdlFile)  #if restarted, must redo list-match
             if not getCEs['OK']:
               return getCEs
             newCEs = len(getCEs)
@@ -366,10 +363,9 @@ MyProxyServer = "myproxy.cern.ch";
             else:
               self.log.verbose( 'Number of CEs has changed for Job: %s  updating Available_CEs' % job )
               self.jobDB.setJobParameter( job, 'Available_CEs' , '%s CEs returned from list-match on %s' %(newCEs,time.asctime()) )
-
       else:
         self.log.verbose( 'Job %s has not yet passed through list match' % job )
-        getCEs = self.__listMatchJob(job)
+        getCEs = self.__listMatchJob(job,jdlFile)
         if not getCEs['OK']:
           return getCEs
         numberOfCEs = len(getCEs)
