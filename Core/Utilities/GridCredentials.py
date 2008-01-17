@@ -1,4 +1,4 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.6 2008/01/15 18:20:12 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.7 2008/01/17 14:23:50 atsareg Exp $
 
 """ Grid Credentials module contains utilities to manage user and host
     certificates and proxies.
@@ -11,7 +11,7 @@
     getHostCertificateAndKey()
     setDIRACGroup()
     getDIRACGroup()
-    
+
     Generic Grid Proxy related functions:
     parseProxy()
     getProxyTimeLeft()
@@ -25,7 +25,7 @@
     destroyProxy()
     createProxy()
     renewProxy()
-    
+
     VOMS proxy specific functions:
     createVOMSProxy()
     getVOMSAttributes()
@@ -33,7 +33,7 @@
     getVOMSProxyInfo()
 """
 
-__RCSID__ = "$Id: GridCredentials.py,v 1.6 2008/01/15 18:20:12 acasajus Exp $"
+__RCSID__ = "$Id: GridCredentials.py,v 1.7 2008/01/17 14:23:50 atsareg Exp $"
 
 import os
 import os.path
@@ -299,24 +299,30 @@ def parseProxy(proxy=None,option=None):
         else:
           proxyDict['TimeLeft'] = diff
       if item == "Subject":
-        subject = fields[1].replace(", ","/").strip()
+        subject = '/'+fields[1].replace(", ","/").strip()
         proxyDict['Subject'] = subject
         # Assume full legacy proxy
         # This should be updated with more modern proxy types
         #DN = subject.replace('/CN=proxy','').replace('/CN=limited proxy','')
         DN = subject
-        cn_list = re.findall('/CN=proxy|/CN=limited proxy|/CN=[0-9]+',DN)
+
+        # Suppress proxy indicators
+        cn_list = re.findall('/CN=proxy|/CN=limited proxy+',DN)
         for cn in cn_list:
           DN = DN.replace(cn,'')
+        cn_list = re.findall('/CN=[0-9]+$',DN)
+        for cn in cn_list:
+          DN = DN.replace(cn,'')
+
         proxyDict['DN'] = DN
       if item == "Issuer":
         issuer = fields[1].replace(", ","/").strip()
         proxyDict['Issuer'] = issuer
       if item == "Serial Number":
-        if fields[1]: 
+        if fields[1]:
           serial = int(fields[1].split()[0])
         else:
-          serial = 0  
+          serial = 0
         proxyDict['Serial'] = serial
 
   if option:
@@ -595,7 +601,7 @@ def renewProxy(proxy,lifetime=72,
       lifetime is a preferable lifetime of returned proxy.
       server is the address of MyProxy service server.
   """
-  
+
   #print proxy,lifetime,server,server_key,server_cert,vo
 
   rm_proxy = 0
@@ -618,7 +624,7 @@ def renewProxy(proxy,lifetime=72,
     voms_attr = result["Value"]
   else:
     voms_attr = ""
-    
+
   # Get proxy from MyProxy service
   try:
     f_descriptor,my_proxy = tempfile.mkstemp()
@@ -629,7 +635,7 @@ def renewProxy(proxy,lifetime=72,
       restoreProxy(new_proxy,old_proxy)
     return S_ERROR('Failed to create temporary file for store proxy from MyProxy service')
   #os.chmod(my_proxy, stat.S_IRUSR | stat.S_IWUSR)
-  
+
   # myproxy-get-delegation works only with environment variables
   old_server_key = ''
   if os.environ.has_key("X509_USER_KEY"):
@@ -641,9 +647,9 @@ def renewProxy(proxy,lifetime=72,
   os.environ["X509_USER_CERT"] = server_cert
 
   # Here "lifetime + 1" used just for get rid off warning status rised by voms-proxy-init
-  cmd = "myproxy-get-delegation -s %s -a %s -d -t %s -o %s" % (server, new_proxy, lifetime + 1, my_proxy)      
+  cmd = "myproxy-get-delegation -s %s -a %s -d -t %s -o %s" % (server, new_proxy, lifetime + 1, my_proxy)
   result = shellCall(PROXY_COMMAND_TIMEOUT,cmd)
-  
+
   if not result['OK']:
     return S_ERROR('Call to myproxy-get-delegation failed')
   status,output,error = result['Value']
@@ -677,7 +683,7 @@ def renewProxy(proxy,lifetime=72,
     return S_ERROR('Failed to read proxy received from MyProxy service')
 
   if len(voms_attr) > 0:
-    result = createVOMSProxy(proxy_string,voms_attr)    
+    result = createVOMSProxy(proxy_string,voms_attr)
     if result["OK"]:
       proxy_string = result["Value"]
     else:
@@ -692,7 +698,7 @@ def renewProxy(proxy,lifetime=72,
   if os.path.exists(my_proxy):
     os.remove(my_proxy)
   return S_OK(proxy_string)
-  
+
 def createVOMSProxy(proxy,attributes="",vo=""):
   """ This function takes a proxy (grid or voms) as a string and returns
       the voms proxy as a string with disaired attributes (second argument)
@@ -739,9 +745,9 @@ def createVOMSProxy(proxy,attributes="",vo=""):
   elif not len(voms_attr) > 0 and len(vo) > 0:
     cmd = "voms-proxy-init --voms %s " % vo
   cmd += "-cert %s -key %s -out %s " % (new_proxy,new_proxy,voms_proxy)
-  cmd += "-valid %s:%s -vomslife %s:%s" % (hours,minutes,hours,minutes)  
+  cmd += "-valid %s:%s -vomslife %s:%s" % (hours,minutes,hours,minutes)
   result = shellCall(PROXY_COMMAND_TIMEOUT,cmd)
-  
+
   if not result['OK']:
     return S_ERROR('Failed to call voms-proxy-init')
 
@@ -874,8 +880,8 @@ def getVOMSAttributes(proxy,switch="all"):
     else:
       returnValue = voName+":"+attributes[0]
   elif switch == 'all':
-    returnValue = attributes    
-      
+    returnValue = attributes
+
   return S_OK(returnValue)
 
 def getVOMSProxyFQAN(proxy):
@@ -919,7 +925,7 @@ def getVOMSProxyInfo(proxy_file,option=None):
       new_proxy = proxy_file
   except ValueError:
     return S_ERROR('Failed to setup given proxy. Proxy is: %s' % (proxy))
-  
+
   #a = ''
   b = ''
   c = ''
@@ -934,7 +940,7 @@ def getVOMSProxyInfo(proxy_file,option=None):
   os.putenv('X509_USER_CERT',servercert)
   serverkey = gConfig.getValue('DIRAC/Security/KeyFile','opt/dirac/etc/grid-security/serverkey.pem')
   os.putenv('X509_USER_KEY',serverkey)
-  
+
   cmd = 'voms-proxy-info -file %s' % new_proxy
   if option:
     cmd += ' -%s' % option
@@ -944,11 +950,11 @@ def getVOMSProxyInfo(proxy_file,option=None):
     return S_ERROR('Failed to call voms-proxy-info')
 
   status, output, error = result['Value']
-  
+
   #os.putenv('X509_CERT_DIR',a)
   os.putenv('X509_USER_KEY',b)
   os.putenv('X509_USER_CERT',c)
-  
+
   if option == 'fqan':
     if output:
       output = output.split('/Role')[0]
