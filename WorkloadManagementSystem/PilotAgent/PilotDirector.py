@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/PilotDirector.py,v 1.2 2008/01/16 18:00:37 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/PilotDirector.py,v 1.3 2008/01/17 08:06:46 paterson Exp $
 # File :   PilotDirector.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
      are overridden in Grid specific subclasses.
 """
 
-__RCSID__ = "$Id: PilotDirector.py,v 1.2 2008/01/16 18:00:37 paterson Exp $"
+__RCSID__ = "$Id: PilotDirector.py,v 1.3 2008/01/17 08:06:46 paterson Exp $"
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
 from DIRAC.Core.Utilities.Subprocess                       import shellCall
@@ -45,6 +45,7 @@ class PilotDirector(Thread):
     self.scratchDir = gConfig.getValue(self.configSection+'/ScratchDir','/opt/dirac/work')
     self.genericPilotDN = gConfig.getValue(self.configSection+'/GenericPilotDN','/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=paterson/CN=607602/CN=Stuart Paterson')
     self.genericPilotGroup = gConfig.getValue(self.configSection+'/GenericPilotGroup','LHCb_Pilot')
+    self.defaultPilotType = gConfig.getValue(self.configSection+'/DefaultPilotType','generic')
     self.workingDirectory = '%s/%s' %(self.scratchDir,self.name)
     self.diracSetup = gConfig.getValue('/DIRAC/Setup','LHCb-Development')
     Thread.__init__(self)
@@ -169,8 +170,7 @@ class PilotDirector(Thread):
 
     if not pilotType:
       self.log.warn('PilotType is not defined for job %s' %(job))
-      self.__updateJobStatus(job,'Failed','PilotType not defined')
-      return S_ERROR('Undefined PilotType for job %s' %(job))
+      pilotType = self.defaultPilotType
 
     if pilotType.lower() == 'generic' or pilotType.lower() == 'private':
       self.log.verbose('Job %s has %s PilotType specified' %(job,pilotType))
@@ -230,11 +230,12 @@ class PilotDirector(Thread):
       os.makedirs(workingDirectory)
 
     inputSandbox = []
-    if re.search('PilotType',requirements) and pilotType.lower()=='private':
+    if pilotType.lower()=='private':
       self.log.verbose('Found private PilotType requirement, adding Owner Requirement for Pilot Agent')
       ownerFile = self.__addPilotCFGParameter(workingDirectory,'Owner',owner)
       if not ownerFile['OK']:
         return ownerFile
+      inputSandbox.append(ownerFile['Value'])
     else:
       self.log.verbose('Job %s will be submitted with a generic pilot')
       ownerGroup=self.genericPilotGroup
