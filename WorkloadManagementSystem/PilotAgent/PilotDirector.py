@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/PilotDirector.py,v 1.3 2008/01/17 08:06:46 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/PilotDirector.py,v 1.4 2008/01/17 10:31:41 paterson Exp $
 # File :   PilotDirector.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
      are overridden in Grid specific subclasses.
 """
 
-__RCSID__ = "$Id: PilotDirector.py,v 1.3 2008/01/17 08:06:46 paterson Exp $"
+__RCSID__ = "$Id: PilotDirector.py,v 1.4 2008/01/17 10:31:41 paterson Exp $"
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
 from DIRAC.Core.Utilities.Subprocess                       import shellCall
@@ -247,7 +247,8 @@ class PilotDirector(Thread):
     result = self.submitJob(job,self.workingDirectory,siteList,jdlCPU,inputSandbox,gridRequirements,executable,softwareTag)
     self.__cleanUp(workingDirectory)
     if not result['OK']:
-      self.__updateJobStatus(job,'Waiting','Pilot Agent Submission')
+      self.log.warn('Pilot submission failed for job %s with message:')
+      self.log.warn(result['Message'])
       return result
 
     submittedPilot = result['Value']
