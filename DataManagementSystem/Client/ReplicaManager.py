@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalogue. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.14 2008/01/14 14:16:02 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.15 2008/01/18 12:32:36 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -64,26 +64,49 @@ class ReplicaManager:
       alternativeFile = lfnFileName
 
     ##########################################################
-    #  Perform the put here
+    #  Instantiate the destination storage element here.
     storageElement = StorageElement(diracSE)
     if not storageElement.isValid()['Value']:
       errStr = "ReplicaManager.putAndRegister: Failed to instantiate destination StorageElement."
       gLogger.error(errStr,diracSE)
       return S_ERROR(errStr)
+    destinationSE = storageElement.getStorageElementName()['Value']
+
+
+    successful = {}
+    failed = {}
+    ##########################################################
+    #  Perform the put here.
+    startTime = time.time()
     res = storageElement.putFile(file,path,alternativeFileName=alternativeFile)
+    putTime = time.time() - startTime
     if not res['OK']:
       errStr = "ReplicaManager.putAndRegister: Failed to put file to Storage Element."
-      errMessage = res['Message']
-      gLogger.error(errStr,"%s: %s" % (file,errMessage))
+      gLogger.error(errStr,"%s: %s" % (file,res['Messsage']))
       return S_ERROR("%s %s" % (errStr,errMessage))
     destPfn = res['Value']
-    destinationSE = storageElement.getStorageElementName()['Value']
+    successful[lfn] = {'put': putTime}
+
     ###########################################################
     # Perform the registration here
     fileTuple = (lfn,destPfn,size,destinationSE,guid)
+    registerDict = {'LFN':lfn,'PFN':destPfn,'Size':size,'TargetSE':destinationSE,'GUID':guid} 
+    startTime = time.time() 
     res = self.registerFile(fileTuple)
-    return res
+    registerTime = time.time() - startTime
 
+    if not res['OK']:
+      errStr = "ReplicaManager.putAndRegister: Completely failed to register file."
+      gLogger.error(errStr,res['Message'])
+      failed[lfn] = {'register':registerDict}
+    elif not res['Value']['Successful'].has_key(lfn):
+      errStr = "ReplicaManager.putAndRegister: Failed to register file."
+      gLogger.error(errStr,"%s %s" % (lfn,res['Value']['Failed'][lfn]))
+      failed[lfn] = {'register':registerDict}
+    else:
+      successful['register'] = registerTime
+    resDict = {'Successful': successful,'Failed':failed}
+    return S_OK(resDict)    
 
   def getReplicas(self,lfn):
     """ Get the replicas registered in the catalog for supplied file.
@@ -209,7 +232,7 @@ class ReplicaManager:
     if not res['OK']:
       errStr = "ReplicaManager.replicateAndRegister: Completely failed to replicate file."
       gLogger.error(errStr,res['Message'])
-      return S_ERROR(errStr)
+      return S_ERROR(errStr)     
     if not res['Value']:
       # The file was already present at the destination SE
       gLogger.info("ReplicaManager.replicateAndRegister: %s already present at %s." % (lfn,destSE))
