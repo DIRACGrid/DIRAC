@@ -7,7 +7,8 @@ from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
 from DIRAC.RequestManagementSystem.Client.Request import RequestClient
 from DIRAC.RequestManagementSystem.Client.DataManagementRequest import DataManagementRequest
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
-from DIRAC.DataManagementSystem.Client.Catalog import LcgFileCatalogCombinedClient
+from DIRAC.DataManagementSystem.DB.RAWIntegrityDB import RAWIntegrityDB
+
 import time
 from types import *
 
@@ -141,7 +142,7 @@ class RAWIntegrityAgent(Agent):
             # Remove the file from the list of files awaiting migration in database
             #
             gLogger.info("RAWIntegrityAgent.execute: Updating status of %s in raw integrity database." %  lfn)
-            res = self.RAWIntegrityDB.setMigrationComplete(lfn)
+            res = self.RAWIntegrityDB.setFileStatus(lfn,'Done')
             if not res['OK']:
               gLogger.error("RAWIntegrityAgent.execute: Failed to update status in raw integrity database.", res['Message'])
             else:
@@ -191,7 +192,7 @@ class RAWIntegrityAgent(Agent):
             # Remove the file from the list of files awaiting migration in database
             #
             gLogger.info("RAWIntegrityAgent.execute: Updating status of %s in raw integrity database." %  lfn)
-            res = self.RAWIntegrityDB.setMigrationFailed(lfn)
+            res = self.RAWIntegrityDB.setFileStatus(lfn,'Failed')
             if not res['OK']:
               gLogger.error("RAWIntegrityAgent.execute: Failed to update status in raw integrity database.", res['Message'])
             else:
