@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Optimizer.py,v 1.7 2007/11/23 11:13:29 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Optimizer.py,v 1.8 2008/01/20 16:01:29 paterson Exp $
 # File :   Optimizer.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
      optimizer instances and associated actions are performed there.
 """
 
-__RCSID__ = "$Id: Optimizer.py,v 1.7 2007/11/23 11:13:29 paterson Exp $"
+__RCSID__ = "$Id: Optimizer.py,v 1.8 2008/01/20 16:01:29 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.DB.JobDB        import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
@@ -45,7 +45,7 @@ class Optimizer(Agent):
       self.enable               = False
 
     #Other parameters
-    self.pollingTime            = gConfig.getValue(self.section+'/PollingTime',30)
+    self.pollingTime            = gConfig.getValue(self.section+'/PollingTime',5)
     if not self.initialStatus:
       self.jobStatus            = gConfig.getValue(self.section+'/JobStatus','Checking')
     else:
