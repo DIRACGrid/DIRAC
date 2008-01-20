@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.11 2007/12/12 12:57:29 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.12 2008/01/20 16:00:02 paterson Exp $
 # File :   InputDataAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
 
 """
 
-__RCSID__ = "$Id: InputDataAgent.py,v 1.11 2007/12/12 12:57:29 paterson Exp $"
+__RCSID__ = "$Id: InputDataAgent.py,v 1.12 2008/01/20 16:00:02 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
@@ -36,8 +36,12 @@ class InputDataAgent(Optimizer):
 
     self.failedMinorStatus = gConfig.getValue(self.section+'/FailedJobStatus','Input Data Not Available')
     #this will ignore failover SE files
-    self.diskSE            = gConfig.getValue(self.section+'/DiskSE',['-disk','-DST','-USER'])
-    self.tapeSE            = gConfig.getValue(self.section+'/TapeSE',['-tape','-RDST','-RAW'])
+    self.diskSE            = gConfig.getValue(self.section+'/DiskSE','-disk,-DST,-USER')
+    self.tapeSE            = gConfig.getValue(self.section+'/TapeSE','-tape,-RDST,-RAW')
+    if type(self.diskSE) == type(' '):
+      self.diskSE = self.diskSE.split(',')
+    if type(self.tapeSE) == type(' '):
+      self.tapeSE = self.tapeSE.split(',')
 
     self.site_se_mapping = {}
     mappingKeys = gConfig.getOptions('/Resources/SiteLocalSEMapping')
