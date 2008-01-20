@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.12 2008/01/20 16:00:02 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.13 2008/01/20 16:03:36 paterson Exp $
 # File :   InputDataAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
 
 """
 
-__RCSID__ = "$Id: InputDataAgent.py,v 1.12 2008/01/20 16:00:02 paterson Exp $"
+__RCSID__ = "$Id: InputDataAgent.py,v 1.13 2008/01/20 16:03:36 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
@@ -47,7 +47,7 @@ class InputDataAgent(Optimizer):
     mappingKeys = gConfig.getOptions('/Resources/SiteLocalSEMapping')
     for site in mappingKeys['Value']:
       seStr = gConfig.getValue('/Resources/SiteLocalSEMapping/%s' %(site))
-      self.log.debug('Site: %s, SEs: %s' %(site,seStr))
+      self.log.verbose('Site: %s, SEs: %s' %(site,seStr))
       self.site_se_mapping[site] = [ x.strip() for x in string.split(seStr,',')]
 
     try:
@@ -69,30 +69,30 @@ class InputDataAgent(Optimizer):
     result = self.jobDB.getInputData(job)
     if result['OK']:
       if result['Value']:
-        self.log.debug('Job %s has an input data requirement and will be processed' % (job))
+        self.log.verbose('Job %s has an input data requirement and will be processed' % (job))
         inputData = result['Value']
         result = self.resolveInputData(job,inputData)
         if not result['OK']:
-          self.log.error(result['Message'])
+          self.log.warn(result['Message'])
           return result
         resolvedData = result['Value']
         result = self.setOptimizerJobInfo(job,self.optimizerName,resolvedData)
         if not result['OK']:
-          self.log.error(result['Message'])
+          self.log.warn(result['Message'])
           return result
         result = self.setNextOptimizer(job)
         if not result['OK']:
-          self.log.error(result['Message'])
+          self.log.warn(result['Message'])
         return result
       else:
-        self.log.debug('Job %s has no input data requirement' % (job) )
+        self.log.verbose('Job %s has no input data requirement' % (job) )
         result = self.setNextOptimizer(job)
         if not result['OK']:
-          self.log.error(result['Message'])
+          self.log.warn(result['Message'])
         return result
     else:
-      self.log.error('Failed to get input data from JobdB for %s' % (job) )
-      self.log.error(result['Message'])
+      self.log.warn('Failed to get input data from JobdB for %s' % (job) )
+      self.log.warn(result['Message'])
       return result
 
   #############################################################################
@@ -105,7 +105,7 @@ class InputDataAgent(Optimizer):
     timing = time.time() - start
     self.log.info('LFC Lookup Time: %.2f seconds ' % (timing) )
     if not result['OK']:
-      self.log.error(result['Message'])
+      self.log.warn(result['Message'])
       return result
 
     badLFNCount = 0
@@ -129,13 +129,13 @@ class InputDataAgent(Optimizer):
       self.log.info(param)
       result = self.setJobParam(job,self.optimizerName,param)
       if not result['OK']:
-        self.log.error(result['Message'])
+        self.log.warn(result['Message'])
       return S_ERROR('Input Data Not Available')
 
     inputData = catalogResult['Successful']
     siteCandidates = self.getSiteCandidates(inputData)
     if not result['OK']:
-      self.log.error(result['Message'])
+      self.log.warn(result['Message'])
       return result
 
     result = S_OK()
