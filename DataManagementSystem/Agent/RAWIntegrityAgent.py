@@ -40,69 +40,62 @@ class RAWIntegrityAgent(Agent):
       errStr = "RAWIntegrityAgent.execute: Failed to obtain un-migrated files."
       gLogger.error(errStr,res['Message'])
       return S_OK()
-    unMigratedFiles = res['Value']
-    gLogger.info("RAWIntegrityAgent.execute: Obtained %s un-migrated files." % len(unMigratedFiles))
-    if not len(unMigratedFiles) > 0:
+    activeFiles = res['Value']
+    gLogger.info("RAWIntegrityAgent.execute: Obtained %s un-migrated files." % len(activeFiles.keys()))
+    if not len(activeFiles.keys()) > 0:
       return S_OK()
 
     ############################################################
     #
-    # Obtain the physical file metadata for the file awating migration
+    # Obtain the physical file metadata for the files awating migration
     #
     gLogger.info("RAWIntegrityAgent.execute: Obtaining physical file metadata.")
-    res = self.ReplicaManager.getPhysicalFileMetadata(physicalFiles,'CERN-RAW')
-    if not res['OK']:
-      errStr = "RAWIntegrityAgent.execute: Failed to obtain physical file metadata."
-      gLogger.error(errStr,res['Message'])
+    sePfns = {}
+    pfnDict = {}
+    for lfn,metadataDict in activeFiles.items():
+      pfn = metadataDict['PFN']
+      pfnDict[pfn] = lfn
+      se = metadataDict['SE']
+      if not sePfns.has_key(se):
+        sePfns[se] = []
+      sePfns[se].append(pfn)
+    pfnMetadata = {'Successful':{},'Failed':{}}
+    for se,pfnList in sePfns.items():
+      res = self.ReplicaManager.getPhysicalFileMetadata(pfnList,se)
+      if not res['OK']:
+        errStr = "RAWIntegrityAgent.execute: Failed to obtain physical file metadata."
+        gLogger.error(errStr,res['Message'])
+        for pfn in pfnList:
+          pfnMetadata['Failed'][pfn] = errStr
+      else:
+        pfnMetadata['Successful'].update(res['Value']['Successful'])
+        pfnMetadata['Failed'].update(res['Value']['Failed'])
+    if len(pfnMetadata['Failed']) > 0:
+      gLogger.info("RAWIntegrityAgent.execute: Failed to obtain physical file metadata for %s files." % len(pfnMetadata['Failed']))
+    gLogger.info("RAWIntegrityAgent.execute: Obtained physical file metadata for %s files." % len(pfnMetadata['Successful']))
+    if not len(pfnMetadata['Successful']) > 0:
       return S_OK()
-    if len(res['Value']['Failed']) > 0:
-      gLogger.info("RAWIntegrityAgent.execute: Failed to obtain physical file metadata for %s files." % len(res['Value']['Failed']))
-    gLogger.info("RAWIntegrityAgent.execute: Obtained physical file metadata for %s files." % len(res['Value']['Successful']))
 
     ############################################################
     #
-    # Determine the files that have been newly migrated
-    #
-    migratedFiles = []
-    pfnMetadata = res['Value']['Successful']
-    for pfn,metadataDict in pfnMetadata.items():
-      if metadataDict['Migrated']:
-        gLogger.info("RAWIntegrityAgent.execute: %s is newly migrated." % pfn)
-        migratedFiles.append(pfn)
-    gLogger.info("RAWIntegrityAgent.execute: Found %s newly migrated files." % len(migratedFiles))
-    if not len(migratedFiles) > 0:
-      return S_OK()
-
-    ############################################################
-    #
-    # Obtain the file catalogue checksum information for the newly migrated files
-    #
-    gLogger.info("RAWIntegrityAgent.execute: Obtaining catalogue checksum information for %s files." % len(migratedFiles))
-    res = self.RAWIntegrityDB.getFileMetadata(lfns)
-    if not res['OK']:
-      errStr = "RAWIntegrityAgent.execute: Failed to obtain checksum information."
-      gLogger.error(errStr,res['Message'])
-      return S_OK()
-    if len(res['Value']['Failed']) > 0:
-      gLogger.info("RAWIntegrityAgent.execute: Failed to obtain checksum information for %s files." % len(res['Value']['Failed']))
-    gLogger.info("RAWIntegrityAgent.execute: Obtained checksum information for %s files." % len(res['Value']['Successful']))
-
-    ############################################################
-    #
-    # Determine the files that were migrated (in)correctly
+    # Determine the files that have been newly migrated and their success
     #
     filesToRemove = []
     filesToTransfer = []
-    fileMetadata = res['Value']['Successful']
-    for lfn,metadata in fileMetadata.items():
-      if metadata['Checksum'] == pfnMetadata[lfn]['Checksum']:
-        gLogger.info("RAWIntegrityAgent.execute: %s migrated checksum match." % lfn)
-        filesToRemove.append(lfn)
-      else:
-        gLogger.error("RAWIntegrityAgent.execute: Migrated checksum mis-match.",lfn)
-        filesToTransfer.append(lfn)
+    for pfn,pfnMetadataDict in pfnMetadata.items():
+      if pfnMetadataDict['Migrated']:
+        lfn = pfnDict[pfn]
+        gLogger.info("RAWIntegrityAgent.execute: %s is newly migrated." % lfn)
+        if pfnMetadataDict['Checksum'] == activeFile[lfn]['Checksum']:
+          gLogger.info("RAWIntegrityAgent.execute: %s migrated checksum match." % lfn)
+          filesToRemove.append(lfn)
+        else:
+          gLogger.error("RAWIntegrityAgent.execute: Migrated checksum mis-match.",lfn)
+          filesToTransfer.append(lfn)
+    gLogger.info("RAWIntegrityAgent.execute: %s files newly migrated." % len(filesToRemove)+len(filesToTransfer))
     gLogger.info("RAWIntegrityAgent.execute: Found %s checksum matches." % len(filesToRemove))
     gLogger.info("RAWIntegrityAgent.execute: Found %s checksum mis-matches." % len(filesToTransfer))
+
 
     if len(filesToRemove) > 0:
       ############################################################
@@ -110,49 +103,49 @@ class RAWIntegrityAgent(Agent):
       # Register the correctly migrated files to the file catalogue
       #
       gLogger.info("RAWIntegrityAgent.execute: Registering correctly migrated files to the File Catalog.")
-      res = self.RAWIntegrityDB.getFileMetadata(filesToRemove)
-      if not res['OK']:
-        gLogger.error("RAWIntegrityAgent.execute: Failed to get file metadata from RAW integrity database.", res['Message'])
-      else:
-        for lfn,pfn,size,se,guid in res['Value']:
-          fileTuple = (lfn,pfn,size,se,guid)
-          res = self.ReplicaManager.registerFile(fileTuple)
+      for lfn in filesToRemove:
+        pfn = activeFiles[lfn]['PFN']
+        size = activeFiles[lfn]['Size']
+        se = activeFiles[lfn]['SE']
+        guid = activeFiles[lfn]['GUID']
+        fileTuple = (lfn,pfn,size,se,guid)
+        res = self.ReplicaManager.registerFile(fileTuple)
+        if not res['OK']:
+          gLogger.error("RAWIntegrityAgent.execute: Completely failed to register successfully migrated file.", res['Message'])
+        elif not res['Value']['Successful'].has_key(lfn):
+          gLogger.error("RAWIntegrityAgent.execute: Failed to register lfn in the File Catalog.", res['Value']['Failed'][lfn])
+        else:
+          gLogger.info("RAWIntegrityAgent.execute: Successfully registered %s in the File Catalog.", lfn)
+          ############################################################
+          #
+          # Create a removal request and set it to the gateway request DB
+          #
+          gLogger.info("RAWIntegrityAgent.execute: Creating removal request for correctly migrated files.")
+          oRequest = DataManagementRequest()
+          subRequestIndex = oRequest.initiateSubRequest('removal')['Value']
+          attributeDict = {'Operation':'physicalRemoval','TargetSE':'OnlineRunDB'}
+          oRequest.setSubRequestAttributes(subRequestIndex,'removal',attributeDict)
+          filesDict = [{'LFN':lfn,'PFN':pfn}]
+          oRequest.setSubRequestFiles(subRequestIndex,'removal',filesDict)
+          fileName = os.path.basename(lfn)
+          requestName = 'remove_%s.xml' % fileName
+          requestString = oRequest.toXML()['Value']
+          gLogger.info("RAWIntegrityAgent.execute: Attempting to put %s to gateway requestDB." %  requestName)
+          res = self.RequestDBClient.setRequest(requestName,requestString)
           if not res['OK']:
-            gLogger.error("RAWIntegrityAgent.execute: Completely failed to register successfully migrated file.", res['Message'])
-          elif not res['Value']['Successful'].has_key(lfn):
-            gLogger.error("RAWIntegrityAgent.execute: Failed to register lfn in the File Catalog.", res['Value']['Failed'][lfn])
+            gLogger.error("RAWIntegrityAgent.execute: Failed to set removal request to gateway requestDB.", res['Message'])
           else:
-            gLogger.info("RAWIntegrityAgent.execute: Successfully registered %s in the File Catalog.", lfn)
+            gLogger.info("RAWIntegrityAgent.execute: Successfully put %s to gateway requestDB." %  requestName)
             ############################################################
             #
-            # Create a removal request and set it to the gateway request DB
+            # Remove the file from the list of files awaiting migration in database
             #
-            gLogger.info("RAWIntegrityAgent.execute: Creating removal request for correctly migrated files.")
-            oRequest = DataManagementRequest()
-            subRequestIndex = oRequest.initiateSubRequest('removal')['Value']
-            attributeDict = {'Operation':'physicalRemoval','TargetSE':'OnlineRunDB'}
-            oRequest.setSubRequestAttributes(subRequestIndex,'removal',attributeDict)
-            filesDict = [{'LFN':lfn,'PFN':pfn}]
-            oRequest.setSubRequestFiles(subRequestIndex,'removal',filesDict)
-            fileName = os.path.basename(lfn)
-            requestName = 'remove_%s.xml' % fileName
-            requestString = oRequest.toXML()['Value']
-            gLogger.info("RAWIntegrityAgent.execute: Attempting to put %s to gateway requestDB." %  requestName)
-            res = self.RequestDBClient.setRequest(requestName,requestString)
+            gLogger.info("RAWIntegrityAgent.execute: Updating status of %s in raw integrity database." %  lfn)
+            res = self.RAWIntegrityDB.setMigrationComplete(lfn)
             if not res['OK']:
-              gLogger.error("RAWIntegrityAgent.execute: Failed to set removal request to gateway requestDB.", res['Message'])
+              gLogger.error("RAWIntegrityAgent.execute: Failed to update status in raw integrity database.", res['Message'])
             else:
-              gLogger.info("RAWIntegrityAgent.execute: Successfully put %s to gateway requestDB." %  requestName)
-              ############################################################
-              #
-              # Remove the file from the list of files awaiting migration in database
-              #
-              gLogger.info("RAWIntegrityAgent.execute: Updating status of %s in raw integrity database." %  lfn)
-              res = self.RAWIntegrityDB.setMigrationComplete(lfn)
-              if not res['OK']:
-                gLogger.error("RAWIntegrityAgent.execute: Failed to update status in raw integrity database.", res['Message'])
-              else:
-                gLogger.info("RAWIntegrityAgent.execute: Successfully updated status in raw integrity database.")
+              gLogger.info("RAWIntegrityAgent.execute: Successfully updated status in raw integrity database.")
 
 
     if len(filesToTransfer) > 0:
@@ -161,48 +154,48 @@ class RAWIntegrityAgent(Agent):
       # Remove the incorrectly migrated files from the storage element (will be over written anyways)
       #
       gLogger.info("RAWIntegrityAgent.execute: Removing incorrectly migrated files from Storage Element.")
-      res = self.RAWIntegrityDB.getFileMetadata(filesToTransfer)
-      if not res['OK']:
-        gLogger.error("RAWIntegrityAgent.execute: Failed to get file metadata from RAW integrity database.", res['Message'])
-      else:
-        for lfn,pfn,size,se,guid in res['Value']:
-          res = self.ReplicaManager.removePhysicalFile(se,pfn)
+      for lfn in filesToRemove:
+        pfn = activeFiles[lfn]['PFN']
+        size = activeFiles[lfn]['Size']
+        se = activeFiles[lfn]['SE']
+        guid = activeFiles[lfn]['GUID']
+        res = self.ReplicaManager.removePhysicalFile(se,pfn)
+        if not res['OK']:
+          gLogger.error("RAWIntegrityAgent.execute: Completely failed to remove pfn from the storage element.", res['Message'])
+        elif not res['Value']['Successful'].has_key(pfn):
+          gLogger.error("RAWIntegrityAgent.execute: Failed to remove pfn from the storage element.", res['Value']['Failed'][pfn])
+        else:
+          gLogger.info("RAWIntegrityAgent.execute: Successfully removed pfn from the storage element.")
+          ############################################################
+          #
+          # Create a transfer request for the files incorrectly migrated
+          #
+          gLogger.info("RAWIntegrityAgent.execute: Creating (re)transfer request for incorrectly migrated files.")
+          oRequest = DataManagementRequest()
+          subRequestIndex = oRequest.initiateSubRequest('transfer')['Value']
+          attributeDict = {'Operation':'putAndRegister','TargetSE':se}
+          oRequest.setSubRequestAttributes(subRequestIndex,'transfer',attributeDict)
+          fileName = os.path.basename(lfn)
+          filesDict = [{'LFN':lfn,'PFN':fileName,'GUID':guid}]
+          oRequest.setSubRequestFiles(subRequestIndex,'transfer',filesDict)
+          requestName = 'retransfer_%s.xml' % fileName
+          requestString = oRequest.toXML()['Value']
+          gLogger.info("RAWIntegrityAgent.execute: Attempting to put %s to gateway requestDB." %  requestName)
+          res = self.RequestDBClient.setRequest(requestName,requestString)
           if not res['OK']:
-            gLogger.error("RAWIntegrityAgent.execute: Completely failed to remove pfn from the storage element.", res['Message'])
-          elif not res['Value']['Successful'].has_key(pfn):
-            gLogger.error("RAWIntegrityAgent.execute: Failed to remove pfn from the storage element.", res['Value']['Failed'][pfn])
+            gLogger.error("RAWIntegrityAgent.execute: Failed to set removal request to gateway requestDB.", res['Message'])
           else:
-            gLogger.info("RAWIntegrityAgent.execute: Successfully removed pfn from the storage element.")
+            gLogger.info("RAWIntegrityAgent.execute: Successfully put %s to gateway requestDB." %  requestName)
             ############################################################
             #
-            # Create a transfer request for the files incorrectly migrated
+            # Remove the file from the list of files awaiting migration in database
             #
-            gLogger.info("RAWIntegrityAgent.execute: Creating (re)transfer request for incorrectly migrated files.")
-            oRequest = DataManagementRequest()
-            subRequestIndex = oRequest.initiateSubRequest('transfer')['Value']
-            attributeDict = {'Operation':'putAndRegister','TargetSE':se}
-            oRequest.setSubRequestAttributes(subRequestIndex,'transfer',attributeDict)
-            fileName = os.path.basename(lfn)
-            filesDict = [{'LFN':lfn,'PFN':fileName,'GUID':guid}]
-            oRequest.setSubRequestFiles(subRequestIndex,'transfer',filesDict)
-            requestName = 'retransfer_%s.xml' % fileName
-            requestString = oRequest.toXML()['Value']
-            gLogger.info("RAWIntegrityAgent.execute: Attempting to put %s to gateway requestDB." %  requestName)
-            res = self.RequestDBClient.setRequest(requestName,requestString)
+            gLogger.info("RAWIntegrityAgent.execute: Updating status of %s in raw integrity database." %  lfn)
+            res = self.RAWIntegrityDB.setMigrationFailed(lfn)
             if not res['OK']:
-              gLogger.error("RAWIntegrityAgent.execute: Failed to set removal request to gateway requestDB.", res['Message'])
+              gLogger.error("RAWIntegrityAgent.execute: Failed to update status in raw integrity database.", res['Message'])
             else:
-              gLogger.info("RAWIntegrityAgent.execute: Successfully put %s to gateway requestDB." %  requestName)
-              ############################################################
-              #
-              # Remove the file from the list of files awaiting migration in database
-              #
-              gLogger.info("RAWIntegrityAgent.execute: Updating status of %s in raw integrity database." %  lfn)
-              res = self.RAWIntegrityDB.setMigrationComplete(lfn)
-              if not res['OK']:
-                gLogger.error("RAWIntegrityAgent.execute: Failed to update status in raw integrity database.", res['Message'])
-              else:
-                gLogger.info("RAWIntegrityAgent.execute: Successfully updated status in raw integrity database.")
+              gLogger.info("RAWIntegrityAgent.execute: Successfully updated status in raw integrity database.")
 
     return S_OK()
 
