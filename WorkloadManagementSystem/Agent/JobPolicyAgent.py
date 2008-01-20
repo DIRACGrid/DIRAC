@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobPolicyAgent.py,v 1.1 2008/01/20 15:53:16 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobPolicyAgent.py,v 1.2 2008/01/20 16:32:50 paterson Exp $
 # File :   JobPolicyAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
 
 """
 
-__RCSID__ = "$Id: JobPolicyAgent.py,v 1.1 2008/01/20 15:53:16 paterson Exp $"
+__RCSID__ = "$Id: JobPolicyAgent.py,v 1.2 2008/01/20 16:32:50 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
@@ -76,8 +76,8 @@ class JobPolicyAgent(Optimizer):
 
     if jdlModified:
       self.log.verbose('Storing modified JDL for %s' %(job))
-      newJDL = classAdJob.asJDL()
-      result = jobDB.setJobJDL(jobID,newJDL)
+      newJDL = classadJob.asJDL()
+      result = self.jobDB.setJobJDL(int(job),newJDL)
       if not result['OK']:
         self.log.warn('Problem storing modified job JDL')
         self.log.warn(result)
