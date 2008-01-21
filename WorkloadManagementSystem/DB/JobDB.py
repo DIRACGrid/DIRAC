@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.32 2008/01/13 01:24:58 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.33 2008/01/21 14:26:47 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.32 2008/01/13 01:24:58 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.33 2008/01/21 14:26:47 atsareg Exp $"
 
 import re, os, sys, string
 import time
@@ -412,6 +412,33 @@ class JobDB(DB):
         return S_ERROR('Parameter not found')
     else:
       return S_ERROR('Failed to access database')
+
+ #############################################################################
+  def getJobOptParameters(self,jobID,paramList=[]):
+    """ Get optimizer parameters for the given job. If the list of parameter names is
+        empty, get all the parameters then
+    """
+
+    resultDict = {}
+
+    if paramList:
+      paramNames = ','.join( ['"'+str(x)+'"' for x in paramList ] )
+      cmd = "SELECT Name, Value from OptimizerParameters WHERE JobID=%d and Name in (%s)" % (int(jobID),paramNames)
+    else:
+      cmd = "SELECT Name, Value from OptimizerParameters WHERE JobID=%d" % jobID
+
+    result = self._query(cmd)
+    if result['OK']:
+      if result['Value']:
+        for name,value in result['Value']:
+          try:
+            resultDict[name] = value.tostring()
+          except:
+            resultDict[name] = value
+
+      return S_OK(resultDict)
+    else:
+      return S_ERROR('JobDB.getJobOptParameters: failed to retrieve parameters')
 
 #############################################################################
   def getInputData (self, jobID):
