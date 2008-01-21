@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: MatcherHandler.py,v 1.5 2008/01/11 15:24:55 atsareg Exp $
+# $Id: MatcherHandler.py,v 1.6 2008/01/21 14:27:28 atsareg Exp $
 ########################################################################
 """
 Matcher class. It matches Agent Site capabilities to job requirements.
@@ -7,7 +7,7 @@ It also provides an XMLRPC interface to the Matcher
 
 """
 
-__RCSID__ = "$Id: MatcherHandler.py,v 1.5 2008/01/11 15:24:55 atsareg Exp $"
+__RCSID__ = "$Id: MatcherHandler.py,v 1.6 2008/01/21 14:27:28 atsareg Exp $"
 
 import re, os, sys, time
 import string
@@ -141,6 +141,17 @@ class MatcherHandler(RequestHandler):
 
     matchTime = time.time() - startTime
     gLogger.verbose("Match time: [%s]" % str(matchTime))
+
+    # Get some extra stuff into the response returned
+    resOpt = self.jobDB.getJobOptParameters(jobID)
+    if resOpt['OK']:
+      result['OptimizerParameters'] = resOpt['Value']
+    resAtt = self.jobDB.getAttributes(joID,['OwnerDN','OwnerGroup'])
+    if resAtt['OK']:
+      if result['Value']:
+        result['DN'] = result['Value']['OwnerDN']
+        result['Group'] = result['Value']['OwnerGroup']
+
     return result
 
 ##############################################################################
