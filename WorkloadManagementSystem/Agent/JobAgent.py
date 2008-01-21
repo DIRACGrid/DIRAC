@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.19 2008/01/16 10:40:41 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.20 2008/01/21 21:58:45 paterson Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.19 2008/01/16 10:40:41 paterson Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.20 2008/01/21 21:58:45 paterson Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -19,6 +19,7 @@ from DIRAC.Core.Utilities.Subprocess                     import shellCall
 from DIRAC.Core.DISET.RPCClient                          import RPCClient
 from DIRAC.Resources.Computing.ComputingElementFactory   import ComputingElementFactory
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
+from DIRAC.Core.Utilities.GridCredentials                import setupProxy,restoreProxy
 from DIRAC                                               import S_OK, S_ERROR, gConfig
 
 import os, sys, re, string, time
@@ -36,6 +37,7 @@ class JobAgent(Agent):
     self.jobManager  = RPCClient('WorkloadManagement/JobManager')
     self.matcher = RPCClient('WorkloadManagement/Matcher')
     self.jobReport  = RPCClient('WorkloadManagement/JobStateUpdate')
+    self.wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
 
   #############################################################################
   def initialize(self,loops=0):
@@ -59,13 +61,15 @@ class JobAgent(Agent):
     self.siteRoot = gConfig.getValue('LocalSite/Root',os.getcwd())
     self.jobWrapperTemplate = self.siteRoot+gConfig.getValue(self.section+'/JobWrapperTemplate','/DIRAC/WorkloadManagementSystem/JobWrapper/JobWrapperTemplate')
     self.jobSubmissionDelay = gConfig.getValue(self.section+'/SubmissionDelay',10)
+    self.defaultProxyLength = gConfig.getValue(self.section+'/DefaultProxyLength',12)
+    self.maxProxyLength =  gConfig.getValue(self.section+'/MaxProxyLength',72)
     return result
 
   #############################################################################
   def execute(self):
     """The JobAgent execution method.
     """
-    self.log.debug('Job Agent execution loop')
+    self.log.verbose('Job Agent execution loop')
     available = self.computingElement.available()
     if not available['OK']:
       self.log.info('Resource is not available')
@@ -76,7 +80,7 @@ class JobAgent(Agent):
 
     ceJDL = self.computingElement.getJDL()
     resourceJDL = ceJDL['Value']
-    self.log.debug(resourceJDL)
+    self.log.verbose(resourceJDL)
     start = time.time()
     jobRequest = self.__requestJob(resourceJDL)
     matchTime = time.time() - start
@@ -90,11 +94,19 @@ class JobAgent(Agent):
         self.log.info('Failed to get jobs: %s'  %(jobRequest['Message']))
         return S_ERROR(jobRequest['Message'])
 
-    jobJDL = jobRequest['Value']
-    if not jobJDL:
-      msg = 'Matcher service returned S_OK with null JDL'
-      self.log.error(msg)
-      return S_ERROR(msg)
+    matcherInfo = jobRequest['Value']
+    matcherParams = ['JDL','DN','Group']
+    for p in matcherParams:
+      if not matcherInfo.has_key(p):
+        self.__report(jobID,'Failed','Matcher did not return %s' %(p))
+      elif not matcherInfo[p]:
+        self.__report(jobID,'Failed','Matcher returned null %s' %(p))
+      else:
+        self.log.verbose('Matcher returned %s = %s ' %(p,matcherInfo[p]))
+
+    jobJDL = matcherInfo['JDL']
+    jobGroup = matcherInfo['Group']
+    ownerDN = matcherInfo['DN']
 
     parameters = self.__getJDLParameters(jobJDL)
     if not parameters['OK']:
@@ -120,23 +132,33 @@ class JobAgent(Agent):
     else:
       systemConfig = params['SystemConfig']
 
+    if not params.has_key('MaxCPUTime'):
+      self.log.warn('Job has no CPU requirement defined in JDL parameters')
+      jobCPUReqt = 0
+    else:
+      jobCPUReqt = params['MaxCPUTime']
+
     self.log.verbose('Job request successful: \n %s' %(jobRequest['Value']))
     self.log.info('Received JobID=%s, JobType=%s, SystemConfig=%s' %(jobID,jobType,systemConfig))
-
+    self.log.info('OwnerDN: %s JobGroup: %s' %(ownerDN,jobGroup) )
     try:
       self.__setJobParam(jobID,'MatcherServiceTime',str(matchTime))
       self.__report(jobID,'Matched','Job Received by Agent')
 
-      saveJDL = self.__saveJobJDLRequest(jobID,jobJDL)
-      if not saveJDL['OK']:
-        result = self.jobManager.rescheduleJob(int(jobID))
-        if not result['OK']:
-          self.log.error(result['Message'])
-        else:
-          self.log.info('Rescheduled job %s' %(jobID))
-        return saveJDL
+      proxyResult = self.__setupProxy(jobID,ownerDN,jobGroup,self.siteRoot,jobCPUReqt)
+      if not proxyResult['OK']:
+        self.log.warn('Problem while setting up proxy')
+        return proxyResult
 
+      proxyTuple = proxyResult['Value']
+      proxyLogging = self.__changeProxy(proxyTuple[1],proxyTuple[0])
+      if not proxyLogging['OK']:
+        self.log.warn('Problem while changing the proxy for job %s' %jobID)
+        return proxyLogging
+
+      saveJDL = self.__saveJobJDLRequest(jobID,jobJDL)
       self.__report(jobID,'Matched','Job Prepared to Submit')
+
       resourceParameters = self.__getJDLParameters(resourceJDL)
       if not resourceParameters['OK']:
         return resourceParameters
@@ -148,18 +170,20 @@ class JobAgent(Agent):
         self.log.error(software['Message'])
         result = self.jobManager.rescheduleJob(jobID)
         if not result['OK']:
-          self.log.error(result['Message'])
+          self.log.warn(result['Message'])
           return result
         else:
           self.log.info('Rescheduled job after software installation failure %s' %(jobID))
 
-      self.log.debug('Before %sCE submitJob()' %(self.ceName))
+      self.log.verbose('Before %sCE submitJob()' %(self.ceName))
       submission = self.__submitJob(jobID,params,resourceParams,jobJDL)
       if not submission['OK']:
         self.log.warn('Job submission failed during creation of the Job Wrapper')
         return submission
 
-      self.log.debug('After %sCE submitJob()' %(self.ceName))
+      self.log.verbose('After %sCE submitJob()' %(self.ceName))
+      self.log.info('Restoring original proxy %s' %(proxyTuple[1]))
+      restoreProxy(proxyTuple[0],proxyTuple[1])
     except Exception, x:
       self.log.exception(x)
       result = self.jobManager.rescheduleJob(jobID)
@@ -171,6 +195,46 @@ class JobAgent(Agent):
       return S_ERROR('Job processing failed with exception')
 
     return S_OK('Job Agent cycle complete')
+
+  #############################################################################
+  def __changeProxy(self,oldProxy,newProxy):
+    """Can call glexec utility here to set uid or simply log the changeover
+       of a proxy.
+    """
+    self.log.verbose('Log proxy change')
+    return S_OK()
+
+  #############################################################################
+  def __setupProxy(self,job,ownerDN,jobGroup,workingDir,jobCPUTime):
+    """Retrieves user proxy with correct role for job and sets up environment to
+       run job locally.
+    """
+    hours = int(round(int(jobCPUTime)/60))
+    if hours > self.maxProxyLength:
+      hours = self.maxProxyLength
+    if hours < self.defaultProxyLength:
+      hours = self.defaultProxyLength
+
+    self.log.info('Attempting to obtain proxy with length %s hours for DN\n %s' %(hours,ownerDN))
+    result = self.wmsAdmin.getProxy(ownerDN,jobGroup,hours)
+    if not result['OK']:
+      self.log.warn('Could not retrieve proxy from WMS Administrator')
+      self.log.verbose(result)
+      self.__report(job,'Failed','Proxy Retrieval')
+      return S_ERROR('Error retrieving proxy')
+
+    proxyStr = result['Value']
+    proxyFile = '%s/job/proxy%s' %(workingDir,job)
+    setupResult = setupProxy(proxyStr,proxyFile)
+    if not setupResult['OK']:
+      self.log.warn('Could not create environment for proxy')
+      self.log.verbose(setupResult)
+      self.__report(job,'Failed','Proxy Environment')
+      return S_ERROR('Error setting up proxy')
+
+    self.log.verbose(setupResult)
+
+    return setupResult
 
   #############################################################################
   def __checkInstallSoftware(self,jobID,jobParams,resourceParams):
@@ -218,7 +282,7 @@ class JobAgent(Agent):
     if submission['OK']:
       batchID = submission['Value']
       self.log.info('Job %s submitted as %s' %(jobID,batchID))
-      self.log.debug('Set JobParameter: Local batch ID %s' %(batchID))
+      self.log.verbose('Set JobParameter: Local batch ID %s' %(batchID))
       self.__setJobParam(jobID,'LocalBatchID',str(batchID))
       time.sleep(self.jobSubmissionDelay)
     else:
@@ -234,14 +298,14 @@ class JobAgent(Agent):
        to executed the job.
     """
     arguments = {'Job':jobParams,'CE':resourceParams}
-    self.log.debug('Job arguments are: \n %s' %(arguments))
+    self.log.verbose('Job arguments are: \n %s' %(arguments))
 
     if not os.path.exists(self.siteRoot+'/job/Wrapper'):
       os.makedirs(self.siteRoot+'/job/Wrapper')
 
     jobWrapperFile = self.siteRoot+'/job/Wrapper/Wrapper_%s' %(jobID)
     if os.path.exists(jobWrapperFile):
-      self.log.debug('Removing existing Job Wrapper for %s' %(jobID))
+      self.log.verbose('Removing existing Job Wrapper for %s' %(jobID))
       os.remove(jobWrapperFile)
     wrapperTemplate = open(self.jobWrapperTemplate,'r').read()
     wrapper = open (jobWrapperFile,"w")
@@ -371,9 +435,9 @@ class JobAgent(Agent):
     """Wraps around setJobStatus of state update client
     """
     jobStatus = self.jobReport.setJobStatus(int(jobID),status,minorStatus,'JobAgent')
-    self.log.debug('setJobStatus(%s,%s,%s,%s)' %(jobID,status,minorStatus,'JobAgent'))
+    self.log.verbose('setJobStatus(%s,%s,%s,%s)' %(jobID,status,minorStatus,'JobAgent'))
     if not jobStatus['OK']:
-        self.log.warn(jobStatus['Message'])
+      self.log.warn(jobStatus['Message'])
 
     return jobStatus
 
@@ -382,7 +446,7 @@ class JobAgent(Agent):
     """Wraps around setJobParameter of state update client
     """
     jobParam = self.jobReport.setJobParameter(int(jobID),str(name),str(value))
-    self.log.debug('setJobParameter(%s,%s,%s)' %(jobID,name,value))
+    self.log.verbose('setJobParameter(%s,%s,%s)' %(jobID,name,value))
     if not jobParam['OK']:
         self.log.warn(jobParam['Message'])
 
