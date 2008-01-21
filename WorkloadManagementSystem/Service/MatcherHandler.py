@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: MatcherHandler.py,v 1.6 2008/01/21 14:27:28 atsareg Exp $
+# $Id: MatcherHandler.py,v 1.7 2008/01/21 17:42:38 atsareg Exp $
 ########################################################################
 """
 Matcher class. It matches Agent Site capabilities to job requirements.
@@ -7,7 +7,7 @@ It also provides an XMLRPC interface to the Matcher
 
 """
 
-__RCSID__ = "$Id: MatcherHandler.py,v 1.6 2008/01/21 14:27:28 atsareg Exp $"
+__RCSID__ = "$Id: MatcherHandler.py,v 1.7 2008/01/21 17:42:38 atsareg Exp $"
 
 import re, os, sys, time
 import string
@@ -139,20 +139,24 @@ class MatcherHandler(RequestHandler):
       gLogger.verbose("No match found for site: %s" % agentSite)
       return S_ERROR("No match found for site: %s" % agentSite)
 
+    resultDict = {}
+    resultDict['JDL'] = result['Value']
+
     matchTime = time.time() - startTime
     gLogger.verbose("Match time: [%s]" % str(matchTime))
 
     # Get some extra stuff into the response returned
-    resOpt = self.jobDB.getJobOptParameters(jobID)
+    resOpt = jobDB.getJobOptParameters(jobID)
     if resOpt['OK']:
-      result['OptimizerParameters'] = resOpt['Value']
-    resAtt = self.jobDB.getAttributes(joID,['OwnerDN','OwnerGroup'])
+      for key,value in resOpt['Value'].items():
+        resultDict[key] = value
+    resAtt = jobDB.getJobAttributes(jobID,['OwnerDN','OwnerGroup'])
     if resAtt['OK']:
-      if result['Value']:
-        result['DN'] = result['Value']['OwnerDN']
-        result['Group'] = result['Value']['OwnerGroup']
+      if resAtt['Value']:
+        resultDict['DN'] = resAtt['Value']['OwnerDN']
+        resultDict['Group'] = resAtt['Value']['OwnerGroup']
 
-    return result
+    return S_OK(resultDict)
 
 ##############################################################################
   def matchJob(self,classAdAgent,agent_jobID):
