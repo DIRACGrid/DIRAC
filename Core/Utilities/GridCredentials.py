@@ -1,4 +1,4 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.7 2008/01/17 14:23:50 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.8 2008/01/22 17:41:21 acasajus Exp $
 
 """ Grid Credentials module contains utilities to manage user and host
     certificates and proxies.
@@ -33,7 +33,7 @@
     getVOMSProxyInfo()
 """
 
-__RCSID__ = "$Id: GridCredentials.py,v 1.7 2008/01/17 14:23:50 atsareg Exp $"
+__RCSID__ = "$Id: GridCredentials.py,v 1.8 2008/01/22 17:41:21 acasajus Exp $"
 
 import os
 import os.path
@@ -54,40 +54,6 @@ securityConfPath = "/DIRAC/Security"
 PROXY_COMMAND_TIMEOUT = 30
 
 def getGridProxy():
-  """ Get the path of the grid proxy file in the DIRAC framework
-  """
-
-  #UserProxy
-  retVal = gConfig.getOption( '%s/UserProxy' % securityConfPath )
-  if retVal[ 'OK' ]:
-    filePath = os.path.realpath( retVal[ 'Value' ] )
-    if os.path.isfile( filePath ):
-      gLogger.debug( "Using %s/UserProxy value for grid proxy" % securityConfPath )
-      return retVal[ 'Value' ]
-  #UserProxyPath
-  proxyName = "x509up_u%d" % os.getuid()
-  retVal = gConfig.getOption( '%s/UserProxyPath' % securityConfPath )
-  if retVal[ 'OK' ]:
-    for proxyPath in [ "%s/%s" % ( retVal[ 'Value' ], proxyName ), "%s/tmp/%s" % ( retVal[ 'Value' ], proxyName ) ]:
-      proxyPath = os.path.realpath( proxyPath )
-      if os.path.isfile( proxyPath ):
-        gLogger.debug( "Using %s/UserProxyPath value for grid proxy (%s)" % ( securityConfPath, proxyPath ) )
-        return proxyPath
-  #Environment vars
-  for envVar in [ 'GRID_PROXY_FILE', 'X509_USER_PROXY' ]:
-    if os.environ.has_key( envVar ):
-      proxyPath = os.path.realpath( os.environ[ envVar ] )
-      if os.path.isfile( proxyPath ):
-        gLogger.debug( "Using %s env var for grid proxy" % proxyPath )
-        return proxyPath
-  #/tmp/x509up_u<uid>
-  if os.path.isfile( "/tmp/%s" % proxyName ):
-    gLogger.debug( "Using auto-discovered proxy in /tmp/%s" % proxyName )
-    return "/tmp/%s" % proxyName
-  #No gridproxy found
-  return False
-
-def getActiveGridProxy():
   """ Get the path of the currently active grid proxy file
   """
 
@@ -213,28 +179,37 @@ def getCertificateAndKey():
 
   return (certfile,keyfile)
 
-
+#Following two functions completely replace VOMS
+#It's a horrible hack, but against all odds it works
+#(VOMS people: I was forced to do that!)
 def setDIRACGroup( userGroup ):
   """ Define the user group in the DIRAC framework
   """
-
-  filename = "/tmp/diracGroup-%s" % os.getuid()
-  fd = file( filename, "w" )
-  fd.write( userGroup )
+  proxyLocation = getGridProxy()
+  fd = file( proxyLocation, "r" )
+  contents = fd.readlines()
+  fd.close()
+  groupLine = ":::diracgroup=%s\n" % userGroup
+  if contents[0].find( ":::diracgroup=" ) == 0:
+    contents[0] = groupLine
+  else:
+    contents.insert( 0, groupLine )
+  fd = file( proxyLocation, "w" )
+  fd.write( "".join( contents ) )
   fd.close()
 
 def getDIRACGroup( defaultGroup = "none" ):
   """ Get the user group in the DIRAC framework
   """
 
-  filename = "/tmp/diracGroup-%s" % os.getuid()
-  try:
-    fd = file( filename )
-    userGroup = fd.readline()
-    fd.close()
-    return userGroup.strip()
-  except:
-    return defaultGroup
+  proxyLocation = getGridProxy()
+  fd = file( proxyLocation, "r" )
+  groupLine = fd.readline()
+  fd.close()
+  if groupLine.find( ":::diracgroup=" ) == 0:
+    return groupLine.split( "=" )[1].strip()
+  else:
+    return gConfig.getValue( '/DIRAC/DefaultGroup' % securityConfPath, defaultGroup )
 
 def __makeProxyFile(proxy_string):
   """ Create a random file containing the proxy
