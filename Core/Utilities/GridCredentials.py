@@ -1,4 +1,4 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.8 2008/01/22 17:41:21 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.9 2008/01/22 17:55:10 acasajus Exp $
 
 """ Grid Credentials module contains utilities to manage user and host
     certificates and proxies.
@@ -33,7 +33,7 @@
     getVOMSProxyInfo()
 """
 
-__RCSID__ = "$Id: GridCredentials.py,v 1.8 2008/01/22 17:41:21 acasajus Exp $"
+__RCSID__ = "$Id: GridCredentials.py,v 1.9 2008/01/22 17:55:10 acasajus Exp $"
 
 import os
 import os.path
@@ -242,7 +242,7 @@ def parseProxy(proxy=None,option=None):
       temp_proxy_file = __makeProxyFile(proxy)
       cmd = "openssl x509 -noout -text -in %s" % temp_proxy_file
   else:
-    proxy_file = getActiveGridProxy()
+    proxy_file = getGridProxy()
     cmd = "openssl x509 -noout -text -in %s" % proxy_file
 
   result = shellCall(PROXY_COMMAND_TIMEOUT,cmd)
@@ -404,7 +404,7 @@ def destroyProxy():
   """ Destroy the current user proxy
   """
 
-  proxy_file_name = getActiveGridProxy()
+  proxy_file_name = getGridProxy()
   if os.path.exists(proxy_file_name):
     os.remove(proxy_file_name)
   if os.environ.has_key('X509_USER_PROXY'):
