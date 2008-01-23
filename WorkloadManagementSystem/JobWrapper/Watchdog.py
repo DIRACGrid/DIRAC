@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.11 2008/01/09 12:35:25 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.12 2008/01/23 10:27:32 paterson Exp $
 # File  : Watchdog.py
 # Author: Stuart Paterson
 ########################################################################
@@ -10,15 +10,15 @@
      Furthermore, the Watchdog will identify when the Job CPU limit has been
      exceeded and fail jobs meaningfully.
 
+     Information is returned to the WMS via the heart-beat mechanism.  This
+     also interprets control signals from the WMS e.g. to kill a running
+     job.
+
      - Still to implement:
-          - Heartbeat, composition of all necessary information
           - CPU normalization for correct comparison with job limit
-     - Waiting for:
-          - Job parameter reporting call
-          - Means to send heartbeat signal.
 """
 
-__RCSID__ = "$Id: Watchdog.py,v 1.11 2008/01/09 12:35:25 paterson Exp $"
+__RCSID__ = "$Id: Watchdog.py,v 1.12 2008/01/23 10:27:32 paterson Exp $"
 
 from DIRAC.Core.Base.Agent                          import Agent
 from DIRAC.Core.DISET.RPCClient                     import RPCClient
@@ -93,26 +93,31 @@ class Watchdog(Agent):
       result = S_OK()
       return result
 
+    heartBeatDict = {}
     msg = ''
     result = self.getLoadAverage()
     msg += 'LoadAvg: %s ' % (result['Value'])
+    heartBeatDict['LoadAverage'] = result['Value']
     self.parameters['LoadAverage'].append(result['Value'])
     result = self.getMemoryUsed()
     msg += 'MemUsed: %.1f bytes ' % (result['Value'])
+    heartBeatDict['MemoryUsed'] = result['Value']
     self.parameters['MemoryUsed'].append(result['Value'])
     result = self.getDiskSpace()
     msg += 'DiskSpace: %.1f MB ' % (result['Value'])
     self.parameters['DiskSpace'].append(result['Value'])
+    heartBeatDict['AvailableDiskSpace'] = result['Value']
     result = self.getCPUConsumed(self.pid)
     msg += 'CPU: %s (h:m:s) ' % (result['Value'])
     self.parameters['CPUConsumed'].append(result['Value'])
+    heartBeatDict['CPUConsumed'] = result['Value']
     #Estimate Watchdog overhead
     if not self.watchdogCPU:
       self.watchdogCPU=result['Value']
-
     result = self.getWallClockTime()
     msg += 'WallClock: %.2f s ' % (result['Value'])
     self.parameters['WallClockTime'].append(result['Value'])
+
     self.log.info(msg)
 
     result = self.checkProgress()
@@ -133,23 +138,49 @@ class Watchdog(Agent):
       self.killRunningThread(self.spObject)
       self.finish()
 
+    recentStdOut = 'None'
     if self.jobPeekFlag:
       result = self.peek(self.peekOutputLines)
       if result['OK']:
         outputList = result['Value']
         size = len(outputList)
-        self.log.info('Last %s lines of application output:' % (size) )
+        recentStdOut = 'Last %s lines of application output:\n' % (size)
+        self.log.info(recentStdOut)
         for line in outputList:
           self.log.info(line)
+          recentStdOut += line+'\n'
       else:
-        self.log.warn('Watchdog could not obtain standard output from application thread')
+        recentStdOut = 'Watchdog could not obtain standard output from application thread'
+        self.log.warn(recentStdOut)
         self.peekFailCount += 1
         if self.peekFailCount > self.peekRetry:
           self.jobPeekFlag = 0
           self.log.warn('Turning off job peeking for remainder of execution')
 
-    result = S_OK()
-    return result
+    if not os.environ.has_key('JOBID'):
+      self.log.info('Running without JOBID so parameters will not be reported')
+      return S_OK()
+
+    jobID = os.environ['JOBID']
+    staticParamDict = {'StandardOutput':recentStdOut}
+    self.sendSignOfLife(int(jobID),heartBeatDict,staticParamDict)
+
+    return S_OK('Watchdog cycle complete')
+
+  #############################################################################
+  def __interpretControlSignal(self,signalDict):
+    """This method is called whenever a signal is sent via the result of
+       sending a sign of life.
+    """
+    self.log.info('Received control signal %s')
+    if type(signal) == type({}):
+      if signal.has_key('Command'):
+        if signal['Command'].lower() == 'kill':
+          self.log.info('Killing job via control signal')
+          self.killRunningThread(self.spObject)
+          self.finish()
+
+    return S_OK()
 
   #############################################################################
   def checkProgress(self):
@@ -593,10 +624,19 @@ class Watchdog(Agent):
     return S_OK('Thread killed')
 
   #############################################################################
-  def sendSignOfLife(self):
-    """ Will send sign of life 'heartbeat' signal"""
-    #To implement
-    return S_OK()
+  def sendSignOfLife(self,jobID,heartBeatDict,staticParamDict):
+    """ Sends sign of life 'heartbeat' signal and triggers control signal
+        interpretation.
+    """
+    result = self.jobReport.sendHeartBeat(jobID,heartBeatDict,staticParamDict)
+    if not result['OK']:
+      self.log.warn('Problem sending sign of life')
+      self.log.warn(result)
+
+    if result['OK'] and result['Value']:
+      self.__interpretControlSignal(result['Value'])
+
+    return result
 
   #############################################################################
   def __setJobParamList(self,value):
