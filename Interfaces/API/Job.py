@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.13 2008/01/14 21:31:28 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.14 2008/01/23 11:03:50 paterson Exp $
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,7 +13,7 @@
 
 """
 
-__RCSID__ = "$Id: Job.py,v 1.13 2008/01/14 21:31:28 paterson Exp $"
+__RCSID__ = "$Id: Job.py,v 1.14 2008/01/23 11:03:50 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -68,6 +68,8 @@ class Job:
     if not script:
       self.workflow = Workflow('User')
       self.__setJobDefaults()
+    else:
+      self.workflow = Workflow(script)
 
   #############################################################################
   def setExecutable(self,executable,logFile=''):
