@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/LCGPilotDirector.py,v 1.5 2008/01/23 08:50:08 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/LCGPilotDirector.py,v 1.6 2008/01/23 09:22:55 paterson Exp $
 # File :   LCGPilotDirector.py
 # Author : Stuart Paterson
 ########################################################################
@@ -11,7 +11,7 @@
      the invokation of the Pilot Director instance is performed here.
 """
 
-__RCSID__ = "$Id: LCGPilotDirector.py,v 1.5 2008/01/23 08:50:08 paterson Exp $"
+__RCSID__ = "$Id: LCGPilotDirector.py,v 1.6 2008/01/23 09:22:55 paterson Exp $"
 
 from DIRACEnvironment                                        import DIRAC
 from DIRAC.Core.Utilities                                    import List
@@ -80,7 +80,7 @@ class LCGPilotDirector(PilotDirector):
     return result
 
   #############################################################################
-  def submitJob(self,job,workingDirectory,siteList,cpuRequirement,inputSandbox=None,gridRequirements=None,executable=None,softwareTag=None):
+  def submitJob(self,job,workingDirectory,siteList,cpuRequirement,ownerGroup,inputSandbox=None,gridRequirements=None,executable=None,softwareTag=None):
     """ Submit Pilot Job to the LCG Resource Broker
     """
 
@@ -88,7 +88,7 @@ class LCGPilotDirector(PilotDirector):
     confFiles = self.__writeConfFiles(job,workingDirectory)
     if not confFiles['OK']:
       return confFiles
-    lcgJDL = self.__writeJDL(job,workingDirectory,siteList,cpuRequirement,inputSandbox,gridRequirements,executable,softwareTag)
+    lcgJDL = self.__writeJDL(job,workingDirectory,siteList,cpuRequirement,ownerGroup,inputSandbox,gridRequirements,executable,softwareTag)
     if not lcgJDL['OK']:
       return lcgJDL
 
@@ -136,7 +136,7 @@ class LCGPilotDirector(PilotDirector):
     return S_OK(submittedPilot)
 
   #############################################################################
-  def __writeJDL(self,job,workingDirectory,siteList,cpuRequirement,inputSandbox,ownerGroup,gridRequirements=None,executable=None,softwareTag=None):
+  def __writeJDL(self,job,workingDirectory,siteList,cpuRequirement,ownerGroup,inputSandbox,gridRequirements=None,executable=None,softwareTag=None):
     """ Implementation of the writeJdl() method for the LCG Resource Broker
         case. Prepares the LCG job JDL file.
     """
