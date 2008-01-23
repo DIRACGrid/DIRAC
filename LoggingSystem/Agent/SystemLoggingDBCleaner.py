@@ -4,11 +4,10 @@
 """
 
 from DIRAC.Core.Base.Agent import Agent
-from DIRAC  import S_OK, S_ERROR
+from DIRAC  import S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 from DIRAC.LoggingSystem.DB.SystemLoggingDB import SystemLoggingDB
 from DIRAC.Core.Utilities import dateTime, toString, day
-from DIRAC.ConfigurationSystem.Client.Config import gConfig
 
 AGENT_NAME = 'Logging/SystemLoggingDBCleaner'
 
@@ -24,35 +23,39 @@ class SystemLoggingDBCleaner(Agent):
 
     result = Agent.initialize(self)
     if not result['OK']:
-      self.log.info('')
+      self.log.error('Agent could not initialize')
+      return result
     
     self.SystemLoggingDB = SystemLoggingDB()
     
     self.section=getAgentSection( AGENT_NAME )
     
-    self.period = toString( dateTime() -
-                            int( gConfig.getValue( "%s/RemoveDate" %
-                                                   self.section ) ) * day )
+    self.period = int( gConfig.getValue( "%s/RemoveDate" %
+                                         self.section ) ) * day
     
     return result
 
   def execute(self):
     """ The main agent execution method
     """
-    limitDate = self.period[:self.period.find('.')]
+    limitDate = toString( dateTime() - self.period )
+    limitDate = limitDate[:limitDate.find('.')]
 
-    cmd = "SELECT messageTime FROM MessageRepository WHERE messageTime < '%s'" %limitDate
+    cmd = "SELECT count(*) FROM MessageRepository WHERE messageTime < '%s'" %limitDate
     result = self.SystemLoggingDB._query( cmd )
-    if not result['OK']:
-      self.log.error('SystemLogging','Could not query the SystemLoggingDB')
-      return S_ERROR('Could not query the SystemLoggingDB')
-    elif not len(result['Value']):
+    if not result['OK']: 
+      return result
+    recordsToErase=result['Value'][0][0]
+
+    if recordsToErase == 0:
+      self.log.info('No records to erase')
       return S_OK('No records to erase')
     else:
       cmd = "DELETE LOW_PRIORITY FROM MessageRepository WHERE messageTime < '%s'" % limitDate
       result =  self.SystemLoggingDB._update( cmd )
       if not result['OK']:
-        self.log.error('LoggingSystem','Could not erase the required records')
-        return S_ERROR('Could not erase the required records')
+        self.log.error('Could not erase the requested records','those older than %s' % limitDate)
+        return result
       else:
+        self.log.info('%s records have been erased' % recordsToErase )
         return result
