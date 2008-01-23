@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobStateUpdateHandler.py,v 1.5 2007/12/14 11:52:52 paterson Exp $
+# $Id: JobStateUpdateHandler.py,v 1.6 2008/01/23 08:52:17 atsareg Exp $
 ########################################################################
 
 """ JobStateUpdateHandler is the implementation of the Job State updating
@@ -11,7 +11,7 @@
 
 """
 
-__RCSID__ = "$Id: JobStateUpdateHandler.py,v 1.5 2007/12/14 11:52:52 paterson Exp $"
+__RCSID__ = "$Id: JobStateUpdateHandler.py,v 1.6 2008/01/23 08:52:17 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -103,10 +103,15 @@ class JobStateUpdateHandler( RequestHandler ):
       return S_ERROR('Failed to store some of the parameters')
 
   ###########################################################################
-  types_sendHeartBeat = [IntType]
-  def export_sendHeartBeat(self,jobID):
+  types_sendHeartBeat = [IntType, DictType, DictType]
+  def export_sendHeartBeat(self,jobID,staticData, dynamicData):
     """ Send a heart beat sign of life for a job jobID
     """
+
+    print "Static heart beat data"
+    print staticData
+    print "Dynamic heart beat data"
+    print dynamicData
 
     result = jobDB.getJobAttributes(jobID,['Status'])
     if not result['OK']:
