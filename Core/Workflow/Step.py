@@ -1,8 +1,8 @@
-# $Id: Step.py,v 1.14 2007/12/10 23:59:33 gkuznets Exp $
+# $Id: Step.py,v 1.15 2008/01/23 15:07:50 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.14 $"
+__RCSID__ = "$Revision: 1.15 $"
 
 import os
 #try: # this part to inport as part of the DIRAC framework
@@ -25,7 +25,7 @@ class StepDefinition(AttributeCollection):
 
         # sort out Parameters and class attributes
         if (obj == None) or isinstance(obj, ParameterCollection):
-            self.setType(type)
+            self.setType('notgiven')
             self.setDescrShort('')
             self.setDescription('')
             self.setOrigin('')
@@ -34,10 +34,7 @@ class StepDefinition(AttributeCollection):
             self.module_instances = InstancesPool(self)
             self.module_definitions = DefinitionsPool(self)
         elif isinstance(obj, StepDefinition):
-            if type == None:
-                self.setType(obj.getType())
-            else:
-                self.setType(type)
+            self.setType(obj.getType())
             self.setDescrShort(obj.getDescrShort())
             self.setDescription(obj.getDescription())
             self.setOrigin(obj.getOrigin())
@@ -49,6 +46,8 @@ class StepDefinition(AttributeCollection):
                 self.module_definitions = DefinitionsPool(self. obj.module_definitions)
         else:
             raise TypeError('Can not create object type '+ str(type(self)) + ' from the '+ str(type(obj)))
+        if type :
+          self.setType(type)
 
     def __str__(self):
         ret =  str(type(self))+':\n'+ AttributeCollection.__str__(self) + self.parameters.__str__()
@@ -69,6 +68,13 @@ class StepDefinition(AttributeCollection):
         ret = ret + self.module_instances.toXML()
         ret = ret + '</StepDefinition>\n'
         return ret
+
+    def toXMLFile(self, outFile):
+        if os.path.exists(outFile):
+          os.remove(outFile)
+        xmlfile = open(outFile, 'w')
+        xmlfile.write(self.toXML())
+        xmlfile.close()
 
     def addModule(self, module):
         # KGG We need to add code to update existing modules
@@ -160,13 +166,6 @@ class StepInstance(AttributeCollection):
         ret = ret + self.parameters.toXML()
         ret = ret + '</StepInstance>\n'
         return ret
-
-    def toXMLFile(self, outFile):
-        if os.path.exists(outFile):
-          os.remove(outFile)
-        xmlfile = open(outFile, 'w')
-        xmlfile.write(self.toXML())
-        xmlfile.close()
 
     def execute(self, step_exec_attr, definitions):
         """step_exec_attr is array to hold parameters belong to this Step, filled above """

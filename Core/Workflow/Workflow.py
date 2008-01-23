@@ -1,8 +1,8 @@
-# $Id: Workflow.py,v 1.16 2008/01/16 12:16:44 gkuznets Exp $
+# $Id: Workflow.py,v 1.17 2008/01/23 15:07:50 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.16 $"
+__RCSID__ = "$Revision: 1.17 $"
 
 import os
 #try: # this part to inport as part of the DIRAC framework
@@ -19,37 +19,50 @@ from DIRAC.Core.Workflow.Step import *
 class Workflow(AttributeCollection):
   def __init__(self, name=None, obj=None):
     AttributeCollection.__init__(self)
-
-    # sort out parameters and class attributes
     if (obj == None) or isinstance(obj, ParameterCollection):
-      self.setName(name)
+      self.setName('notgiven')
       self.setType('')
       self.setDescrShort('')
       self.setDescription('')
       self.setOrigin('')
       self.setVersion(0.0)
-      self.parameters = ParameterCollection(obj) # creating copy
+      self.parameters = ParameterCollection(obj)
       self.step_instances = InstancesPool(self)
       self.step_definitions = DefinitionsPool(self)
       self.module_definitions = DefinitionsPool(self)
+
     elif isinstance(obj, Workflow):
-      if name == None:
-        self.setName(obj.getName())
+      self.fromWorkflow(obj)
+    elif isinstance(obj, str):
+      # if obj is an XML string
+      if obj.startswith('<'):
+        self.fromXMLString(obj)
       else:
-        self.setName(name)
-      self.setType(obj.getType())
-      self.setDescrShort(obj.getDescrShort())
-      self.setDescription(obj.getDescription())
-      self.setOrigin(obj.getOrigin())
-      self.setVersion(obj.getVersion())
-      # copy instances and definitions
-      self.parameters = ParameterCollection(obj.parameters)
-      self.module_definitions = DefinitionsPool(self, obj.module_definitions)
-      self.step_instances = InstancesPool(self, obj.step_instances)
-      self.step_definitions = DefinitionsPool(self, obj.step_definitions)
-    else:
+        self.fromXMLFile(obj)
+    elif obj!=None:
       raise TypeError('Can not create object type '+ str(type(self)) + ' from the '+ str(type(obj)))
-    #self.module_definitions.setOwner(self)
+
+    if name :
+        self.setName(name)
+
+  def fromWorkflow(self, obj):
+    self.setName(obj.getName())
+    self.setType(obj.getType())
+    self.setDescrShort(obj.getDescrShort())
+    self.setDescription(obj.getDescription())
+    self.setOrigin(obj.getOrigin())
+    self.setVersion(obj.getVersion())
+    # copy instances and definitions
+    self.parameters = ParameterCollection(obj.parameters)
+    self.module_definitions = DefinitionsPool(self, obj.module_definitions)
+    self.step_instances = InstancesPool(self, obj.step_instances)
+    self.step_definitions = DefinitionsPool(self, obj.step_definitions)
+
+  def fromXMLString(self, obj):
+      self.fromWorkflow(WorkflowReader.fromXMLString(obj))
+
+  def fromXMLFile(self, obj):
+      self.fromWorkflow(WorkflowReader.fromXMLFile(obj))
 
   def __str__(self):
     """Creates a string representation of itself

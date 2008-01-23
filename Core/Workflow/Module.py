@@ -1,8 +1,8 @@
-# $Id: Module.py,v 1.17 2007/12/05 14:33:14 gkuznets Exp $
+# $Id: Module.py,v 1.18 2008/01/23 15:07:50 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.17 $"
+__RCSID__ = "$Revision: 1.18 $"
 
 # $Source: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Workflow/Module.py,v $
 
@@ -25,7 +25,7 @@ class ModuleDefinition(AttributeCollection):
         self.parent=parent
 
         if (obj == None) or isinstance(obj, ParameterCollection):
-            self.setType(type)
+            self.setType('nitgiven')
             self.setDescrShort('')
             self.setDescription('')
             self.setRequired('')
@@ -35,10 +35,7 @@ class ModuleDefinition(AttributeCollection):
             self.parameters = ParameterCollection(obj) # creating copy
 
         elif isinstance(obj, ModuleDefinition):
-            if type == None:
-                self.setType(obj.getType())
-            else:
-                self.setType(type)
+            self.setType(obj.getType())
             self.setDescrShort(obj.getDescrShort())
             self.setDescription(obj.getDescription())
             self.setBody(obj.getBody())
@@ -48,6 +45,8 @@ class ModuleDefinition(AttributeCollection):
             self.parameters = ParameterCollection(obj.parameters)
         else:
             raise TypeError('Can not create object type '+ str(type(self)) + ' from the '+ str(type(obj)))
+        if type :
+          self.setType(type)
 
 
     def createCode(self):
