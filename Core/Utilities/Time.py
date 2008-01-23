@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Time.py,v 1.1 2007/03/09 15:33:19 rgracian Exp $
-__RCSID__ = "$Id: Time.py,v 1.1 2007/03/09 15:33:19 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Time.py,v 1.2 2008/01/23 18:40:31 acasajus Exp $
+__RCSID__ = "$Id: Time.py,v 1.2 2008/01/23 18:40:31 acasajus Exp $"
 """
 DIRAC Times module
 Support for basic Date and Time operations
@@ -17,7 +17,7 @@ Useful timedelta constant are also provided to
 define time intervals.
 
 Notice: datetime.timedelta objects allow multiplication and division by interger
-but not by float. Thus: 
+but not by float. Thus:
   - DIRAC.Times.second * 1.5             is not allowed
   - DIRAC.Times.second * 3 / 2           is allowed
 
@@ -25,6 +25,7 @@ An timeInterval class provides a method to check
 if a give datetime is in the defined interval.
 
 """
+import time as nativetime
 import datetime
 from types import StringTypes
 
@@ -61,6 +62,20 @@ def time( myDateTime = None ):
     myDateTime = dateTime()
   return myDateTime - datetime.datetime( myDateTime.year, myDateTime.month, myDateTime.day )
 
+def toEpoch( dateTimeObject = None ):
+  """
+  Get seconds since epoch
+  """
+  if dateTimeObject == None:
+    dateTimeObject = dateTime()
+  return nativetime.mktime( dateTimeObject.timetuple() )
+
+def fromEpoch( epoch ):
+  """
+  Get datetime object from epoch
+  """
+  return datetime.datetime.fromtimestamp( epoch )
+
 def toString( myDate = None ):
   """
   Convert to String
@@ -69,11 +84,11 @@ def toString( myDate = None ):
 
   Notice: datetime.timedelta are converted to strings using the format:
     [day] days [hour]:[min]:[sec]:[microsec]
-    where hour, min, sec, microsec are always positive integers, 
+    where hour, min, sec, microsec are always positive integers,
     and day carries the sign.
   To keep internal consistency we are using:
     [hour]:[min]:[sec]:[microsec]
-    where min, sec, microsec are alwys positive intergers and hour carries the 
+    where min, sec, microsec are alwys positive intergers and hour carries the
     sign.
   """
   if type( myDate ) == _dateTimeType :
@@ -93,7 +108,7 @@ def toString( myDate = None ):
 def fromString( myDate = None ):
   """
   Convert date/time/datetime String back to appropriated objects
-  
+
   The format of the string it is assume to be that returned by toString method.
   See notice on toString method
   On Error, return None
@@ -142,7 +157,7 @@ class timeInterval:
   """
   def __init__( self, initialDateTime, intervalTimeDelta ):
     """
-       Initialization method, it requires the initial dateTime and the 
+       Initialization method, it requires the initial dateTime and the
        timedelta that define the limits.
        The upper limit is not included thus it is [begin,end)
        If not properly initialized an error flag is set, and subsequent calls
