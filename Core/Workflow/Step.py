@@ -1,8 +1,8 @@
-# $Id: Step.py,v 1.15 2008/01/23 15:07:50 gkuznets Exp $
+# $Id: Step.py,v 1.16 2008/01/23 15:48:13 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.15 $"
+__RCSID__ = "$Revision: 1.16 $"
 
 import os
 #try: # this part to inport as part of the DIRAC framework

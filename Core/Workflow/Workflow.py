@@ -1,8 +1,8 @@
-# $Id: Workflow.py,v 1.17 2008/01/23 15:07:50 gkuznets Exp $
+# $Id: Workflow.py,v 1.18 2008/01/23 15:47:16 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.17 $"
+__RCSID__ = "$Revision: 1.18 $"
 
 import os
 #try: # this part to inport as part of the DIRAC framework
@@ -17,7 +17,11 @@ from DIRAC.Core.Workflow.Step import *
 #  print "Parameter"
 
 class Workflow(AttributeCollection):
-  def __init__(self, name=None, obj=None):
+  def __init__(self, obj=None, name=None):
+    """ Be aware that 1-st param is an obj not a name!!!!
+        obj can me a string with XML representation or with filename
+        also obj can be a Workflow or ParameterCollections
+    """
     AttributeCollection.__init__(self)
     if (obj == None) or isinstance(obj, ParameterCollection):
       self.setName('notgiven')
