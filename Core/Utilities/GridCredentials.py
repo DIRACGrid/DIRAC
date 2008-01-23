@@ -1,4 +1,4 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.9 2008/01/22 17:55:10 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.10 2008/01/23 10:01:34 acasajus Exp $
 
 """ Grid Credentials module contains utilities to manage user and host
     certificates and proxies.
@@ -33,7 +33,7 @@
     getVOMSProxyInfo()
 """
 
-__RCSID__ = "$Id: GridCredentials.py,v 1.9 2008/01/22 17:55:10 acasajus Exp $"
+__RCSID__ = "$Id: GridCredentials.py,v 1.10 2008/01/23 10:01:34 acasajus Exp $"
 
 import os
 import os.path
@@ -209,7 +209,7 @@ def getDIRACGroup( defaultGroup = "none" ):
   if groupLine.find( ":::diracgroup=" ) == 0:
     return groupLine.split( "=" )[1].strip()
   else:
-    return gConfig.getValue( '/DIRAC/DefaultGroup' % securityConfPath, defaultGroup )
+    return defaultGroup
 
 def __makeProxyFile(proxy_string):
   """ Create a random file containing the proxy
