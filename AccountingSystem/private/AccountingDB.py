@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.2 2008/01/23 18:41:06 acasajus Exp $
-__RCSID__ = "$Id: AccountingDB.py,v 1.2 2008/01/23 18:41:06 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.3 2008/01/23 19:00:17 acasajus Exp $
+__RCSID__ = "$Id: AccountingDB.py,v 1.3 2008/01/23 19:00:17 acasajus Exp $"
 
 import time
 import threading
@@ -230,7 +230,6 @@ class AccountingDB(DB):
     retVal = self._insert( "type%s" % typeName, self.dbCatalog[ typeName ][ 'allfields' ], insertList )
     if not retVal[ 'OK' ]:
       return retVal
-    #TODO:Bucket
     return self.__bucketize( typeName, startTime, endTime, valuesList )
 
   def __bucketize( self, typeName, startTime, endTime, valuesList ):
@@ -268,6 +267,9 @@ class AccountingDB(DB):
     return S_OK()
 
   def __generateSQLConditionForKeys( self, typeName, keyValues ):
+    """
+    Generate sql condition for buckets when coming from the raw insert
+    """
     realCondList = []
     for keyPos in range( len( self.dbCatalog[ typeName ][ 'keys' ] ) ):
       keyField = self.dbCatalog[ typeName ][ 'keys' ][ keyPos ]
@@ -280,6 +282,9 @@ class AccountingDB(DB):
     return " AND ".join( realCondList )
 
   def __getBucketFromDB( self, typeName, bucketTime, keyValues ):
+    """
+    Get a bucket from the DB
+    """
     sqlFields = []
     for valueField in self.dbCatalog[ typeName ][ 'values' ]:
       sqlFields.append( "`bucket%s`.`%s`" % ( typeName, valueField ) )
@@ -289,6 +294,9 @@ class AccountingDB(DB):
     return self._query( cmd )
 
   def __updateBucket( self, typeName, bucketTime, keyValues, bucketValues ):
+    """
+    Update a bucket when coming from the raw insert
+    """
     cmd = "UPDATE `bucket%s` SET " % typeName
     sqlValList = []
     for pos in range( len( self.dbCatalog[ typeName ][ 'values' ] ) ):
@@ -301,6 +309,9 @@ class AccountingDB(DB):
     return self._update( cmd )
 
   def __insertBucket( self, typeName, bucketTime, keyValues, bucketValues ):
+    """
+    Insert a bucket when coming from the raw insert
+    """
     sqlFields = [ 'bucketTime' ]
     sqlValues = [ '%s' % bucketTime ]
     for keyPos in range( len( self.dbCatalog[ typeName ][ 'keys' ] ) ):
