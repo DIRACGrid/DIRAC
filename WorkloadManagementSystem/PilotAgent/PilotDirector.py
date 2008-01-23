@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/PilotDirector.py,v 1.5 2008/01/17 14:58:26 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/PilotDirector.py,v 1.6 2008/01/23 08:50:45 paterson Exp $
 # File :   PilotDirector.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
      are overridden in Grid specific subclasses.
 """
 
-__RCSID__ = "$Id: PilotDirector.py,v 1.5 2008/01/17 14:58:26 paterson Exp $"
+__RCSID__ = "$Id: PilotDirector.py,v 1.6 2008/01/23 08:50:45 paterson Exp $"
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
 from DIRAC.Core.Utilities.Subprocess                       import shellCall
@@ -173,7 +173,7 @@ class PilotDirector(Thread):
       pilotType = self.defaultPilotType
 
     if pilotType.lower() == 'generic' or pilotType.lower() == 'private':
-      self.log.verbose('Job %s has %s PilotType specified' %(job,pilotType))
+      self.log.warn('Job %s has %s PilotType specified' %(job,pilotType))
     else:
       self.__updateJobStatus(job,'Failed','PilotType not defined')
       return S_ERROR('Undefined PilotType %s for job %s' %(pilotType,job))
@@ -244,7 +244,7 @@ class PilotDirector(Thread):
     self.log.verbose('Setting up proxy for job %s group %s and owner %s' %(job,ownerGroup,ownerDN))
     proxyResult = self.__setupProxy(job,ownerDN,ownerGroup,workingDirectory)
     self.log.verbose('Submitting %s Pilot Agent for job %s' %(self.type,job))
-    result = self.submitJob(job,self.workingDirectory,siteList,jdlCPU,inputSandbox,gridRequirements,executable,softwareTag)
+    result = self.submitJob(job,self.workingDirectory,siteList,jdlCPU,inputSandbox,ownerGroup,gridRequirements,executable,softwareTag)
     self.__cleanUp(workingDirectory)
     if not result['OK']:
       self.log.warn('Pilot submission failed for job %s with message:')
