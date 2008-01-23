@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/gLitePilotDirector.py,v 1.1 2008/01/17 15:28:38 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/gLitePilotDirector.py,v 1.2 2008/01/23 09:40:59 paterson Exp $
 # File :   gLitePilotDirector.py
 # Author : Stuart Paterson
 ########################################################################
@@ -11,7 +11,7 @@
      the invokation of the Pilot Director instance is performed here.
 """
 
-__RCSID__ = "$Id: gLitePilotDirector.py,v 1.1 2008/01/17 15:28:38 paterson Exp $"
+__RCSID__ = "$Id: gLitePilotDirector.py,v 1.2 2008/01/23 09:40:59 paterson Exp $"
 
 from DIRACEnvironment                                        import DIRAC
 from DIRAC.Core.Utilities                                    import List
@@ -80,7 +80,7 @@ class gLitePilotDirector(PilotDirector):
     return result
 
   #############################################################################
-  def submitJob(self,job,workingDirectory,siteList,cpuRequirement,inputSandbox=None,gridRequirements=None,executable=None,softwareTag=None):
+  def submitJob(self,job,workingDirectory,siteList,cpuRequirement,ownerGroup,inputSandbox=None,gridRequirements=None,executable=None,softwareTag=None):
     """ Submit Pilot Job to the gLite Resource Broker
     """
 
@@ -88,7 +88,7 @@ class gLitePilotDirector(PilotDirector):
     confFiles = self.__writeConfFiles(job,workingDirectory)
     if not confFiles['OK']:
       return confFiles
-    gLiteJDL = self.__writeJDL(job,workingDirectory,siteList,cpuRequirement,inputSandbox,gridRequirements,executable,softwareTag)
+    gLiteJDL = self.__writeJDL(job,workingDirectory,siteList,cpuRequirement,ownerGroup,inputSandbox,gridRequirements,executable,softwareTag)
     if not gLiteJDL['OK']:
       return gLiteJDL
 
@@ -135,7 +135,7 @@ class gLitePilotDirector(PilotDirector):
     return S_OK(submittedPilot)
 
   #############################################################################
-  def __writeJDL(self,job,workingDirectory,siteList,cpuRequirement,inputSandbox,gridRequirements=None,executable=None,softwareTag=None):
+  def __writeJDL(self,job,workingDirectory,siteList,cpuRequirement,ownerGroup,inputSandbox,gridRequirements=None,executable=None,softwareTag=None):
     """ Implementation of the writeJdl() method for the gLite Resource Broker
         case. Prepares the gLite job JDL file.
     """
@@ -155,7 +155,7 @@ class gLitePilotDirector(PilotDirector):
       else:
         gLiteJDL.write( 'Executable = "%s";\n'     % self.pilotScript )
 
-      gLiteJDL.write( 'Arguments  = "%s %s %s";\n'  % (self.diracSetup,cpuRequirement,self.voSoftwareDir) )
+      gLiteJDL.write( 'Arguments  = "%s %s %s %s";\n'  % (self.diracSetup,cpuRequirement,self.voSoftwareDir,ownerGroup) )
       gLiteJDL.write( 'gLiteTimeRef = %s ;\n'      % cpuRequirement )
       gLiteJDL.write( 'MyPolicyTime = ( %s );\n' % myPolicyTime )
 
