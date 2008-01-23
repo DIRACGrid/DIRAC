@@ -1,9 +1,10 @@
 #################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/ThreadPool.py,v 1.8 2007/06/28 10:43:49 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/ThreadPool.py,v 1.9 2008/01/23 12:09:42 acasajus Exp $
 #################################################################
 
-__RCSID__ = "$Id: ThreadPool.py,v 1.8 2007/06/28 10:43:49 acasajus Exp $"
+__RCSID__ = "$Id: ThreadPool.py,v 1.9 2008/01/23 12:09:42 acasajus Exp $"
 
+import time
 import sys
 import Queue
 import threading
@@ -174,8 +175,10 @@ class ThreadPool( threading.Thread ):
     return iProcessed
 
   def processAllResults( self ):
-    while not self.oPendingQueue.empty() and self.__countWorkingThreads():
+    while not self.oPendingQueue.empty() or self.__countWorkingThreads():
+      self.processResults()
       time.sleep( 0.1 )
+    self.processResults()
 
   def daemonize( self ):
     self.setDaemon(1)
