@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/dirac-pilot-lcg.py,v 1.11 2008/01/16 12:07:34 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/dirac-pilot-lcg.py,v 1.12 2008/01/23 08:46:00 paterson Exp $
 # File :   dirac-pilot-lcg.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,7 +13,7 @@ import os,sys,string,re
     for the VO.
 """
 
-__RCSID__ = "$Id: dirac-pilot-lcg.py,v 1.11 2008/01/16 12:07:34 paterson Exp $"
+__RCSID__ = "$Id: dirac-pilot-lcg.py,v 1.12 2008/01/23 08:46:00 paterson Exp $"
 
 
 DEBUG = 1
@@ -222,10 +222,10 @@ def pilotExit(code):
   sys.exit(int(code))
 
 #############################################################################
-if len(sys.argv)!=4:
+if len(sys.argv)!=5:
   script = sys.argv[0]
   print 'Illegal number of arguments: %s' %(sys.argv)
-  print 'Usage: %s <DIRAC Setup> <Job CPU Requirement> <VO_SW_DIR_Variable>' % sys.argv[0]
+  print 'Usage: %s <DIRAC Setup> <Job CPU Requirement> <VO_SW_DIR_Variable> <ProxyRole>' % sys.argv[0]
   sys.exit(1)
 
 #############################################################################
@@ -236,7 +236,7 @@ printPilot('Version %s' %(__RCSID__))
 diracSetup = sys.argv[1]
 jobCPUReqt = sys.argv[2]
 SW_DIR = sys.argv[3]
-CEUNIQUEID = 'InProcess' #This will be specified by the Agent Director eventually
+PROXY_ROLE = sys.argv[4]
 printPilot('Running in %s setup on %s' %(diracSetup,runCommand('date')))
 printPilot('WMS CPU Requirement is %s' %jobCPUReqt)
 printPilot('VO SW directory environment variable is %s' %(SW_DIR),'DEBUG')
@@ -426,7 +426,7 @@ if not setupDict.has_key('WorkloadManagement'):
 
 wmsSetup = setupDict['WorkloadManagement']
 jobAgentSection = 'Systems/WorkloadManagement/%s/Agents/JobAgent' %(wmsSetup)
-writeConfigFile('JobAgent.cfg',jobAgentSection,{'CEUniqueID':'InProcess','MaxCycles':1})
+writeConfigFile('JobAgent.cfg',jobAgentSection,{'CEUniqueID':JOB_AGENT_CE,'MaxCycles':1})
 writeConfigFile('Security.cfg','DIRAC/Security',{'UseServerCertificate':'no'})
 
 #need to define watchdog control directory
@@ -441,6 +441,11 @@ writeConfigFile('LocalSE.cfg',localSESection,{'LocalSE':LOCALSE})
 for i in os.listdir(start):
   if re.search('.cfg$',i):
     runJobAgent += i+' '
+
+#Add DIRAC group to proxy
+diracGroup = """ "from DIRAC.Core.Base import Script; Script.parseCommandLine(); from DIRAC.Core.Utilities.GridCredentials import setDIRACGroup; result = setDIRACGroup('%s'); print result" """ % (PROXY_ROLE)
+diracGroupResult = runCommand('%s -c %s' %(diracPython,diracGroup),1)
+printPilot('Setting DIRAC Group Result: \n%s' %(diracGroupResult),'DEBUG')
 
 printPilot('Running DIRAC Job Agent:\n%s' %(runJobAgent),'DEBUG')
 sys.stdout.flush()
@@ -458,7 +463,7 @@ if os.path.exists('%s/job/Wrapper' %(start)):
   os.system('tar cfz wrappers.tar.gz job/Wrapper')
 else:
   printPilot('job/Wrapper directory does not exist','WARN')
-  
+
 printPilot('Execution of %s complete.' %(scriptName))
 printPilot('========================================================================')
 pilotExit(0)
