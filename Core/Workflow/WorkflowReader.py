@@ -1,8 +1,8 @@
-# $Id: WorkflowReader.py,v 1.8 2007/12/10 23:58:20 gkuznets Exp $
+# $Id: WorkflowReader.py,v 1.9 2008/01/23 15:53:46 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.8 $"
+__RCSID__ = "$Revision: 1.9 $"
 
 #try: # this part to inport as part of the DIRAC framework
 from DIRAC.Core.Workflow.Parameter import *
@@ -36,7 +36,7 @@ class WorkflowXMLHandler(ContentHandler):
     self.clearCharacters() # clear to remove empty or nonprintable characters
 
     if name == "Workflow":
-      self.root = Workflow("TemporaryXMLObject_Workflow")
+      self.root = Workflow()
       self.stack.append(self.root)
 
     elif name == "StepDefinition":
