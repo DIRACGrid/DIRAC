@@ -7,11 +7,10 @@ class BaseType:
 
   validDataValues = ( types.IntType, types.LongType )
 
-  def __init__(self):
-    self.descriptionKeysList = []
-    self.keysList = []
+  def __init__( self ):
+    self.keyFieldsList = []
+    self.valueFieldsList = []
     self.valuesList = []
-    self.typeName = ""
     self.startTime = 0
     self.endTime = 0
 
@@ -19,14 +18,15 @@ class BaseType:
     """
     Check that everything is defined
     """
-    if len( self.descriptionKeysList ) == 0:
-      raise Exception( "descriptionKeysList has to be filled prior to utilization" )
-    if len( self.keysList ) == 0:
-      raise Exception( "keysList has to be filled prior to utilization" )
-    if len( self.valuesList ) != len( self.keysList ):
-      self.valuesList = [ None for i in range( len( self.keysList ) ) ]
-    if not self.typeName:
-      raise Exception( "typeName has not been defined" )
+    if len( self.keyFieldsList ) == 0:
+      raise Exception( "keyFieldsList has to be filled prior to utilization" )
+    if len( self.valueFieldsList ) == 0:
+      raise Exception( "valueFieldsList has to be filled prior to utilization" )
+    self.fieldsList = []
+    self.fieldsList.extend( self.keyFieldsList )
+    self.fieldsList.extend( self.valueFieldsList )
+    if len( self.valuesList ) != len( self.fieldsList ):
+      self.valuesList = [ None for i in range( len( self.fieldsList ) ) ]
 
   def setStartTime( self, startTime ):
     """
@@ -44,40 +44,31 @@ class BaseType:
     """
     Set current time as start time of the report
     """
-    self.startTime = Time.datetime()
+    self.startTime = Time.dateTime()
 
   def setNowAsEndTime( self ):
     """
     Set current time as end time of the report
     """
-    self.endTime = Time.datetime()
+    self.endTime = Time.dateTime()
 
 
   def setNowAsStartAndEndTime( self ):
     """
     Set current time as start and end time of the report
     """
-    self.startTime = Time.datetime()
+    self.startTime = Time.dateTime()
     self.endTime = self.startTime
 
   def setValueByKey( self, key, value ):
     """
     Add value for key
     """
-    if key not in self.keysList:
+    if key not in self.fieldsList:
       return S_ERROR( "Key %s is not defined" % key )
-    keyPos = self.keysList.find( key )
+    keyPos = self.fieldsList.index( key )
     self.valuesList[ keyPos ] = value
     return S_OK()
-
-  def setValues( self, valuesList ):
-    """
-    Set values to contents of list
-    """
-    if len( valuesList ) == len( self.valuesList ):
-      self.valuesList = valuesList
-      return S_OK()
-    return S_ERROR( "Length mismatch between passing values list and list of keys" )
 
   def setValuesFromDict( self, dataDict ):
     """
@@ -85,7 +76,7 @@ class BaseType:
     """
     errKeys = []
     for key in dataDict:
-      if not key in self.keysList:
+      if not key in self.fieldsList:
         errKeys.append( key )
     if errKeys:
       return S_ERROR( "Key(s) %s are not valid" % ", ".join( errKeys ) )
@@ -99,33 +90,37 @@ class BaseType:
     """
     errorList = []
     for i in range( len( self.valuesList ) ):
-      key = self.keysList[i]
+      key = self.fieldsList[i]
       if self.valuesList[i] == None:
         errorList.append( "no value for %s" % key )
-      if key not in self.descriptionKeysList and type( self.valuesList[i] ) not in self.validDataValues:
+      if key in self.valueFieldsList and type( self.valuesList[i] ) not in self.validDataValues:
         errorList.append( "value for key %s is not int/long type" % key )
     if errorList:
       return S_ERROR( "Invalid values: %s" % ", ".join( errorList ) )
     if not self.startTime:
       return S_ERROR( "Start time has not been defined" )
+    if type( self.startTime ) != Time._dateTimeType:
+      return S_ERROR( "Start time is not a datetime object" )
     if not self.endTime:
       return S_ERROR( "End time has not been defined" )
+    if type( self.endTime ) != Time._dateTimeType:
+      return S_ERROR( "End time is not a datetime object" )
     return S_OK()
 
   def getDefinition( self ):
     """
     Get a tuple containing type definition
     """
-    return ( self.typeName,
-             self.descriptionKeysList,
-             self.keysList
+    return (  self.__class__.__name__,
+             self.keyFieldsList,
+             self.valueFieldsList
            )
 
   def getValues( self ):
     """
     Get a tuple containing report values
     """
-    return ( self.typeName,
+    return (  self.__class__.__name__,
              self.startTime,
              self.endTime,
              self.valuesList
