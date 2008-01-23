@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/LCGPilotDirector.py,v 1.4 2008/01/17 15:13:10 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/LCGPilotDirector.py,v 1.5 2008/01/23 08:50:08 paterson Exp $
 # File :   LCGPilotDirector.py
 # Author : Stuart Paterson
 ########################################################################
@@ -11,7 +11,7 @@
      the invokation of the Pilot Director instance is performed here.
 """
 
-__RCSID__ = "$Id: LCGPilotDirector.py,v 1.4 2008/01/17 15:13:10 paterson Exp $"
+__RCSID__ = "$Id: LCGPilotDirector.py,v 1.5 2008/01/23 08:50:08 paterson Exp $"
 
 from DIRACEnvironment                                        import DIRAC
 from DIRAC.Core.Utilities                                    import List
@@ -136,7 +136,7 @@ class LCGPilotDirector(PilotDirector):
     return S_OK(submittedPilot)
 
   #############################################################################
-  def __writeJDL(self,job,workingDirectory,siteList,cpuRequirement,inputSandbox,gridRequirements=None,executable=None,softwareTag=None):
+  def __writeJDL(self,job,workingDirectory,siteList,cpuRequirement,inputSandbox,ownerGroup,gridRequirements=None,executable=None,softwareTag=None):
     """ Implementation of the writeJdl() method for the LCG Resource Broker
         case. Prepares the LCG job JDL file.
     """
@@ -156,7 +156,7 @@ class LCGPilotDirector(PilotDirector):
       else:
         lcgJDL.write( 'Executable = "%s";\n'     % self.pilotScript )
 
-      lcgJDL.write( 'Arguments  = "%s %s %s";\n'  % (self.diracSetup,cpuRequirement,self.voSoftwareDir) )
+      lcgJDL.write( 'Arguments  = "%s %s %s %s";\n'  % (self.diracSetup,cpuRequirement,self.voSoftwareDir,ownerGroup) )
       lcgJDL.write( 'LCGTimeRef = %s ;\n'      % cpuRequirement )
       lcgJDL.write( 'MyPolicyTime = ( %s );\n' % myPolicyTime )
 
