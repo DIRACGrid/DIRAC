@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.13 2008/01/16 16:39:42 acasajus Exp $
-__RCSID__ = "$Id: MonitoringClient.py,v 1.13 2008/01/16 16:39:42 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.14 2008/01/23 15:54:01 acasajus Exp $
+__RCSID__ = "$Id: MonitoringClient.py,v 1.14 2008/01/23 15:54:01 acasajus Exp $"
 
 import threading
 import time
@@ -57,7 +57,7 @@ class MonitoringClient:
     else:
       raise Exception( "Component type has not been defined" )
     self.__initializeSendMode()
-    ExitCallback.registerExitCallback( self.forceFlush )
+    #ExitCallback.registerExitCallback( self.forceFlush )
 
   def __initializeSendMode( self ):
     """
@@ -113,7 +113,7 @@ class MonitoringClient:
     """
     self.sourceDict[ 'componentType' ] = componentType
 
-  def registerActivity( self, name, description, category, unit, operation, ):
+  def registerActivity( self, name, description, category, unit, operation ):
     """
     Register new activity. Before reporting information to the server, the activity
     must be registered.
