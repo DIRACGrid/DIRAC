@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.14 2008/01/23 15:54:01 acasajus Exp $
-__RCSID__ = "$Id: MonitoringClient.py,v 1.14 2008/01/23 15:54:01 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.15 2008/01/24 16:25:59 acasajus Exp $
+__RCSID__ = "$Id: MonitoringClient.py,v 1.15 2008/01/24 16:25:59 acasajus Exp $"
 
 import threading
 import time
@@ -80,7 +80,10 @@ class MonitoringClient:
     while self.sendingMode == "periodic":
       self.logger.debug( "Waiting %s seconds to send data" % self.sendingPeriod )
       time.sleep( self.sendingPeriod )
-      self.flush()
+      try:
+        self.flush()
+      except Exception, e:
+        gLogger.error( "Error in commiting data to monitoring", str( e ) )
 
   def setComponentLocation( self, componentLocation = False ):
     """
