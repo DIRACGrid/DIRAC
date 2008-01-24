@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.20 2008/01/21 21:58:45 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.21 2008/01/24 14:21:51 paterson Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.20 2008/01/21 21:58:45 paterson Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.21 2008/01/24 14:21:51 paterson Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -19,7 +19,7 @@ from DIRAC.Core.Utilities.Subprocess                     import shellCall
 from DIRAC.Core.DISET.RPCClient                          import RPCClient
 from DIRAC.Resources.Computing.ComputingElementFactory   import ComputingElementFactory
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
-from DIRAC.Core.Utilities.GridCredentials                import setupProxy,restoreProxy
+from DIRAC.Core.Utilities.GridCredentials                import setupProxy,restoreProxy,setDIRACGroup
 from DIRAC                                               import S_OK, S_ERROR, gConfig
 
 import os, sys, re, string, time
@@ -108,6 +108,12 @@ class JobAgent(Agent):
     jobGroup = matcherInfo['Group']
     ownerDN = matcherInfo['DN']
 
+    optimizerParams = {}
+    for key in matcherInfo.keys():
+      if not key in matcherParams:
+        value = matcherInfo[key]
+        optimizerParams[key] = value
+
     parameters = self.__getJDLParameters(jobJDL)
     if not parameters['OK']:
       return parameters
@@ -176,7 +182,7 @@ class JobAgent(Agent):
           self.log.info('Rescheduled job after software installation failure %s' %(jobID))
 
       self.log.verbose('Before %sCE submitJob()' %(self.ceName))
-      submission = self.__submitJob(jobID,params,resourceParams,jobJDL)
+      submission = self.__submitJob(jobID,params,resourceParams,optimizerParams,jobJDL)
       if not submission['OK']:
         self.log.warn('Job submission failed during creation of the Job Wrapper')
         return submission
@@ -184,6 +190,10 @@ class JobAgent(Agent):
       self.log.verbose('After %sCE submitJob()' %(self.ceName))
       self.log.info('Restoring original proxy %s' %(proxyTuple[1]))
       restoreProxy(proxyTuple[0],proxyTuple[1])
+      proxyLogging = self.__changeProxy(proxyTuple[1],proxyTuple[0])
+      if not proxyLogging['OK']:
+        self.log.warn('Problem while changing the proxy for job %s' %jobID)
+        return proxyLogging
     except Exception, x:
       self.log.exception(x)
       result = self.jobManager.rescheduleJob(jobID)
@@ -201,7 +211,7 @@ class JobAgent(Agent):
     """Can call glexec utility here to set uid or simply log the changeover
        of a proxy.
     """
-    self.log.verbose('Log proxy change')
+    self.log.verbose('Log proxy change (to be instrumented)')
     return S_OK()
 
   #############################################################################
@@ -224,7 +234,10 @@ class JobAgent(Agent):
       return S_ERROR('Error retrieving proxy')
 
     proxyStr = result['Value']
-    proxyFile = '%s/job/proxy%s' %(workingDir,job)
+    if not os.path.exists('%s/proxy' %(workingDir)):
+      os.mkdir('%s/proxy' %(workingDir))
+
+    proxyFile = '%s/proxy/proxy%s' %(workingDir,job)
     setupResult = setupProxy(proxyStr,proxyFile)
     if not setupResult['OK']:
       self.log.warn('Could not create environment for proxy')
@@ -232,8 +245,10 @@ class JobAgent(Agent):
       self.__report(job,'Failed','Proxy Environment')
       return S_ERROR('Error setting up proxy')
 
-    self.log.verbose(setupResult)
+    self.log.info('Setting DIRAC group to %s' %jobGroup)
+    setDIRACGroup(jobGroup)
 
+    self.log.verbose(setupResult)
     return setupResult
 
   #############################################################################
@@ -261,11 +276,11 @@ class JobAgent(Agent):
     return result
 
   #############################################################################
-  def __submitJob(self,jobID,jobParams,resourceParams,jobJDL):
+  def __submitJob(self,jobID,jobParams,resourceParams,optimizerParams,jobJDL):
     """Submit job to the Computing Element instance after creating a custom
        Job Wrapper with the available job parameters.
     """
-    result = self.__createJobWrapper(jobID,jobParams,resourceParams)
+    result = self.__createJobWrapper(jobID,jobParams,resourceParams,optimizerParams)
 
     if not result['OK']:
       return result
@@ -293,11 +308,11 @@ class JobAgent(Agent):
     return S_OK('Job submitted')
 
   #############################################################################
-  def __createJobWrapper(self,jobID,jobParams,resourceParams):
+  def __createJobWrapper(self,jobID,jobParams,resourceParams,optimizerParams):
     """This method creates a job wrapper filled with the CE and Job parameters
        to executed the job.
     """
-    arguments = {'Job':jobParams,'CE':resourceParams}
+    arguments = {'Job':jobParams,'CE':resourceParams,'Optimizer':optimizerParams}
     self.log.verbose('Job arguments are: \n %s' %(arguments))
 
     if not os.path.exists(self.siteRoot+'/job/Wrapper'):
