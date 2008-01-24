@@ -1,9 +1,11 @@
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Types/BaseAccountingType.py,v 1.1 2008/01/24 11:03:33 acasajus Exp $
+__RCSID__ = "$Id: BaseAccountingType.py,v 1.1 2008/01/24 11:03:33 acasajus Exp $"
 
 import types
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import Time
 
-class BaseType:
+class BaseAccountingType:
 
   validDataValues = ( types.IntType, types.LongType )
 
