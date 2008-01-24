@@ -39,7 +39,6 @@ CREATE TABLE MessageRepository (
     UserDNID INTEGER NOT NULL,
     ClientIPNumberID INTEGER NOT NULL,
     SiteID INTEGER NOT NULL,
---    ClientIPNumber INTEGER NOT NULL DEFAULT 'FFFFFFFF',
     LogLevel VARCHAR(6) NOT NULL,
     FixedTextID INTEGER NOT NULL,
     SystemID INTEGER NOT NULL,
@@ -57,7 +56,6 @@ CREATE TABLE MessageRepository (
 DROP TABLE IF EXISTS UserDNs;
 CREATE TABLE UserDNs (
     UserDNID INTEGER NOT NULL AUTO_INCREMENT,
---    Owner VARCHAR(32) NOT NULL DEFAULT 'noname',
     OwnerDN VARCHAR(255) NOT NULL DEFAULT 'unknown',
     OwnerGroup VARCHAR(128) NOT NULL DEFAULT 'nogroup',
     PRIMARY KEY ( UserDNID )
@@ -68,7 +66,7 @@ DROP TABLE IF EXISTS ClientIPs;
 CREATE TABLE ClientIPs (
     ClientIPNumberID INTEGER NOT NULL AUTO_INCREMENT,
     ClientIPNumberString VARCHAR(15) NOT NULL DEFAULT '0.0.0.0',
---    DiracSite VARCHAR(25) NOT NULL DEFAULT 'None'
+    ClientFDQN VARCHAR(128) NOT NULL DEFAULT 'unknown',
     PRIMARY KEY ( ClientIPNumberID )
 );
 
@@ -77,6 +75,7 @@ DROP TABLE IF EXISTS FixedTextMessages;
 CREATE TABLE FixedTextMessages (
     FixedTextID INTEGER NOT NULL AUTO_INCREMENT,
     FixedTextString VARCHAR(255) NOT NULL DEFAULT 'Unknown',
+    ReviewedMessage BOOLEAN NOT NULL DEFAULT FALSE,
     PRIMARY KEY ( FixedTextID )
 );
 
@@ -103,4 +102,14 @@ CREATE TABLE Sites (
     SiteID INTEGER NOT NULL AUTO_INCREMENT,
     SiteName VARCHAR(64) NOT NULL DEFAULT 'Unknown',
     PRIMARY KEY ( SiteID )
+);
+
+--------------------------------------------------------------------------------
+
+DROP TABLE IF EXISTS AgentPersistentData;
+CREATE TABLE AgentPersistentData (
+	AgentID INTEGER NOT NULL AUTO_INCREMENT,
+	AgentName VARCHAR(64) NOT NULL DEFAULT 'unkwown',
+	AgentData VARCHAR(512), 
+	PRIMARY KEY ( AgentID )
 );

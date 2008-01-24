@@ -1,7 +1,7 @@
 """ SystemLoggingDB class is a front-end to the Message Logging Database.
     The following methods are provided
 
-    insertMessageIntoDB()
+    insertMessageIntoSystemLoggingDB()
     getMessagesByDate()
     getMessagesByFixedText()
     getMessages()
@@ -13,8 +13,7 @@ import threading
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from types                                     import *
-from DIRAC                                     import gLogger, S_OK, S_ERROR
-from DIRAC.ConfigurationSystem.Client.Config   import gConfig
+from DIRAC                                     import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities import Time, dateTime, hour, date, week, day, fromString, toString
 from DIRAC.LoggingSystem.private.LogLevels import LogLevels
@@ -32,43 +31,53 @@ class SystemLoggingDB(DB):
     """ build SQL condition statement from provided condDict
         and other extra conditions
     """
+    from types import ListType, StringTypes
     condition = ''
+    conjonction = ''
 
-    if condDict != None:
-      conjonction = "WHERE ("
+    if condDict:
       for attrName, attrValue in condDict.items():
-        if isinstance( attrValue, str ):
+        preCondition = ''
+        conjonction = ''
+        if type( attrValue ) in StringTypes:
           attrValue = [ attrValue ]
+        if not type( attrValue ) is ListType:
+          errorString='The values of conditions should be strings or lists'
+          gLogger.error( errorString )
+          return S_ERROR( errorString )
         
-        for attrVal in attrValue: 
-          condition = " %s %s %s='%s'" % ( condition,
-                                           conjonction,
-                                           str( attrName ),
-                                           str( attrVal )  )
-          conjonction = " OR "
+        for attrVal in attrValue:
+          preCondition = "%s%s %s='%s'" % ( preCondition,
+                                             conjonction,
+                                             str( attrName ),
+                                             str( attrVal ) )
+          conjonction = " OR"
 
-        conjonction = ") AND ("
+        if condition:
+          condition += " AND" 
+        condition += ' (%s )' % preCondition
 
-      condition = ' %s )' % ( condition )
-      conjonction = " AND "
-    else:
-      conjonction = "WHERE"
-
+      conjonction = " AND"
+      
     if older:
-      condition = " %s %s MessageTime <'%s'" % ( condition,
-                                                  conjonction,
-                                                  str( older ) )
-      conjonction = "AND"
+      condition = "%s%s MessageTime<'%s'" % ( condition,
+                                                conjonction,
+                                                str( older ) )
+      conjonction = " AND"
 
     if newer:
-      condition = " %s %s MessageTime >'%s'" % ( condition,
-                                                 conjonction,
-                                                 str( newer ) )
+      condition = "%s%s MessageTime>'%s'" % ( condition,
+                                                conjonction,
+                                                str( newer ) )
 
-    return condition
+    if condition:
+      condition = " WHERE%s" % condition
+      
+    return S_OK(condition)
 
   def __removeVariables( self, fieldList ):
-    """ auxiliar function of __buildTableList.  
+    """ Auxiliar function of __buildTableList. It substitutes all the
+        variables that share the same table by just one of them.
     """
     internalList = list( set( fieldList ) )
 
@@ -127,16 +136,18 @@ class SystemLoggingDB(DB):
         If no list is provided the default is to use all the meaninful
         variables of the DB
     """
-    cond = self.__buildCondition( condDict, older, newer )
-
-    if showFieldList == None:
+    result = self.__buildCondition( condDict, older, newer )
+    if not result['OK']: return result
+    condition = result['Value']
+    
+    if not showFieldList:
       showFieldList = ['MessageTime', 'LogLevel', 'FixedTextString',
                      'VariableText', 'SystemName', 
                      'SubSystemName', 'OwnerDN', 'OwnerGroup',
                      'ClientIPNumberString','SiteName']
             
     cmd = 'SELECT %s FROM %s %s' % (','.join(showFieldList),
-                                    self.__buildTableList(showFieldList), cond)
+                                    self.__buildTableList(showFieldList), condition)
 
     return self._query(cmd)
 
@@ -159,78 +170,59 @@ class SystemLoggingDB(DB):
 
     return S_OK( int( result['Value'][0][0] ) )
       
-  def insertMessageIntoDB( self, Message, UserDN, usergroup, remoteAddress ):
-    """ This function inserts the Logging message into the DB
+  def _insertMessageIntoSystemLoggingDB( self, message, site, nodeFDQN, 
+                                         userDN, userGroup, remoteAddress ):
+    """ This function inserts the Log message into the DB
     """
-    messageName = Message.getName()
-    messageSubSysName = Message.getSubSystemName()
-    messageLevel = Message.getLevel() 
-    messageDate = Time.toString( Message.getTime() )
+    messageDate = Time.toString( message.getTime() )
     messageDate = messageDate[:messageDate.find('.')]
-    messageSite = Message.getSite()
-
-    result = self._escapeString( Message.getFixedMessage() )
-    if result['OK']:
-      messageFixedText = result['Value']
-    else:
-      return result
-    
-    result = self._escapeString( Message.getVariableMessage() )
-    if result['OK']:
-      messageVariableText = result['Value']
-      if messageVariableText=='':
-        messageVariableText = "'No variable text'"
-    else:
-      return result
+    messageName = message.getName()
+    messageSubSystemName = message.getSubSystemName()
     
     fieldsList = [ 'MessageTime', 'VariableText' ]
-    messageList = [ messageDate, messageVariableText ]
+    messageList = [ messageDate, message.getVariableMessage() ]
 
-    inValues = [ UserDN, usergroup ]
+    inValues = [ userDN, userGroup ]
     inFields = [ 'OwnerDN', 'OwnerGroup' ]
     outFields = [ 'UserDNID' ]
     result = self.__DBCommit( 'UserDNs', outFields, inFields, inValues)
     if not result['OK']:
       return result
-    else:
-      messageList.append(result['Value'])
-      fieldsList.extend( outFields )
+    messageList.append(result['Value'])
+    fieldsList.extend( outFields )
       
-    inValues = [ remoteAddress ]
-    inFields = [ 'ClientIPNumberString' ]
+    inValues = [ remoteAddress, nodeFDQN ]
+    inFields = [ 'ClientIPNumberString', 'ClientFDQN' ]
     outFields = [ 'ClientIPNumberID' ]
     result = self.__DBCommit( 'ClientIPs', outFields, inFields, inValues)
     if not result['OK']:
       return result
-    else:
-      messageList.append(result['Value'])
-      fieldsList.extend( outFields )
+    messageList.append(result['Value'])
+    fieldsList.extend( outFields )
 
-    if not messageSite:
-      messageSite = 'Unknown'
+    if not site:
+      site = 'Unknown'
     inFields = [ 'SiteName' ]
-    inValues = [ messageSite ]
+    inValues = [ site ]
     outFields = [ 'SiteID' ]
     result = self.__DBCommit( 'Sites', outFields, inFields, inValues)
     if not result['OK']:
       return result
-    else:
-      messageList.append(result['Value'])
-      fieldsList.extend( outFields )
+    messageList.append(result['Value'])
+    fieldsList.extend( outFields )
 
-    messageList.append(messageLevel)
+    messageList.append(message.getLevel())
     fieldsList.append( 'LogLevel' )
     
     inFields = [ 'FixedTextString' ]
-    inValues = [ messageFixedText ]
+    inValues = [ message.getFixedMessage() ]
     outFields = [ 'FixedTextID' ]
     result = self.__DBCommit( 'FixedTextMessages', outFields, inFields,
                               inValues)
     if not result['OK']:
       return result
-    else:
-      messageList.append(result['Value'])
-      fieldsList.extend( outFields )
+    messageList.append( result['Value'] )
+    fieldsList.extend( outFields )
 
     if not messageName:
       messageName = 'Unknown'
@@ -240,25 +232,44 @@ class SystemLoggingDB(DB):
     result = self.__DBCommit( 'Systems', outFields, inFields, inValues)
     if not result['OK']:
       return result
-    else:
-      messageList.append(result['Value'])
-      fieldsList.extend( outFields )
+    messageList.append(result['Value'])
+    fieldsList.extend( outFields )
 
-    if not messageSubSysName:
+    if not messageSubSystemName:
       messageSubSysName = 'Unknown'
     inFields = [ 'SubSystemName' ]
-    inValues = [ messageSubSysName ]
+    inValues = [ messageSubSystemName ]
     outFields = [ 'SubSystemID' ]
-    result = self.__DBCommit( 'SubSystems', outFields, inFields, inValues)
+    result = self.__DBCommit( 'SubSystems', outFields, inFields, inValues )
     if not result['OK']:
       return result
-    else:
-      messageList.append(result['Value'])
-      fieldsList.extend( outFields )
+    messageList.append(result['Value'])
+    fieldsList.extend( outFields )
 
     return self._insert( 'MessageRepository', fieldsList, messageList )
 
-
+  def _insertDataIntoAgentTable(self, agentName, data):
+    """Insert the persistent data needed by the agents running on top of
+       the SystemLoggingDB.
+    """
+    outFields = ['AgentID']
+    inFields = [ 'AgentName' ]
+    inValues = [ agentName ]
+    result = self._getFields('AgentPersitentData', outFields, inFields, inValues)
+    if not result ['OK']:
+      return result
+    elif result['Value'] == ():
+      inFields = [ 'AgentName', 'AgentData' ]
+      inValues = [ agentName, data]
+      result=self._insert( 'AgentPersitentData', inFields, inValues )
+      if not result['OK']:
+        return result
+    escapeData = self._escapeString( data )
+    cmd = "UPDATE LOW PRIORITY AgentPersitentData SET AgentData='%s' WHERE AgentID=%s" % \
+                                                    ( agentName, result['Value'] )
+    return self._query(update)
+    
+    
   def getMessagesByDate(self, initialDate = None, endDate = None):
     """ Query the database for all the messages between two given dates.
         If no date is provided then the records returned are those generated
@@ -285,6 +296,27 @@ class SystemLoggingDB(DB):
     return self.__queryDB( condDict = { 'SiteName':  site},
                              older = endDate, newer = initialDate )
  
+  def getMessagesByUser(self, userDN, initialDate = None, endDate = None ):
+    """ Query the database for all messages generated by the user: 'userDN' 
+        that were generated between initialDate and endDate     
+    """
+    return self.__queryDB( condDict = { 'OwnerDN':  userDN},
+                             older = endDate, newer = initialDate )
+ 
+  def getMessagesByGroup(self, group, initialDate = None, endDate = None ):
+    """ Query the database for all messages generated by the group 'Group'
+        that were generated between initialDate and endDate     
+    """
+    return self.__queryDB( condDict = { 'OwnerGroup':  group},
+                             older = endDate, newer = initialDate )
+
+  def getMessagesBySiteNode(self, node, initialDate = None, endDate = None ):
+    """ Query the database for all messages generated at 'node' that were
+        generated between initialDate and endDate     
+    """
+    return self.__queryDB( condDict = { 'ClientFDQN':  node},
+                             older = endDate, newer = initialDate )
+
   def getMessages(self, conds , initialDate = None, endDate = None ):
     """ Query the database for all messages satisfying 'conds' that were 
         generated between initialDate and endDate
