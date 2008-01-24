@@ -1,6 +1,7 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.25 2008/01/16 16:34:40 acasajus Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.25 2008/01/16 16:34:40 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.26 2008/01/24 17:31:35 acasajus Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.26 2008/01/24 17:31:35 acasajus Exp $"
 
+import sys
 import DIRAC
 from DIRAC.Core.DISET.private.Protocols import gProtocolDict
 from DIRAC.LoggingSystem.Client.Logger import gLogger
@@ -26,6 +27,9 @@ class BaseClient:
     self.defaultUserGroup = gConfig.getValue( '/DIRAC/DefaultGroup', 'lhcb_user' )
     self.serviceName = serviceName
     self.timeout = timeout
+    #HACK: For windows there is no timeout! (YingYing...)
+    if sys.platform == "win32":
+      self.timeout = False
     #Which setup to use?
     if setup:
       self.setup = str( setup )
