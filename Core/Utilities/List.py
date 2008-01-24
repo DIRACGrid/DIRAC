@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/List.py,v 1.11 2007/11/25 15:56:16 acsmith Exp $
-__RCSID__ = "$Id: List.py,v 1.11 2007/11/25 15:56:16 acsmith Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/List.py,v 1.12 2008/01/24 17:38:40 acasajus Exp $
+__RCSID__ = "$Id: List.py,v 1.12 2008/01/24 17:38:40 acasajus Exp $"
 """
    Collection of DIRAC useful list related modules
    by default on Error they return None
@@ -21,6 +21,13 @@ def uniqueElements( list ):
     return newList
   except:
     return None
+
+def appendUnique( list, object ):
+  """
+  Append to list if object does not exist
+  """
+  if object not in list:
+    list.append()
 
 def fromChar( inputString, sepChar = "," ):
   """
