@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Subprocess.py,v 1.8 2008/01/24 09:11:20 paterson Exp $
-__RCSID__ = "$Id: Subprocess.py,v 1.8 2008/01/24 09:11:20 paterson Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Subprocess.py,v 1.9 2008/01/24 09:50:30 acasajus Exp $
+__RCSID__ = "$Id: Subprocess.py,v 1.9 2008/01/24 09:50:30 acasajus Exp $"
 """
    DIRAC Wrapper to execute python and system commands with a wrapper, that might
    set a timeout.
@@ -239,11 +239,14 @@ class Subprocess:
 
       exitStatus = self.child.poll()
 
-    self.__readFromCommand(True )
+    self.__readFromCommand( True )
 
     if exitStatus >= 256:
       exitStatus /= 256
     return S_OK( ( exitStatus, self.bufferList[0][0], self.bufferList[1][0] ) )
+
+  def getChildPID( self ):
+    return self.child.pid
 
   def __readFromCommand( self, isLast = False ):
     if isLast:
