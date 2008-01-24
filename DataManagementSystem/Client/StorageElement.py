@@ -1110,7 +1110,7 @@ class StorageElement:
                   failed[pfn] = ''
                 failed[pfn] = "%s %s" % (failed[pfn],res['Value']['Failed'][protocolPfn])
               else:
-                successful[pfn] = res['Value']['Successful'][protocolPfn]
+                successful[pfn] = {protocolName:res['Value']['Successful'][protocolPfn]}
                 if failed.has_key(pfn):
                   failed.pop(pfn)
     resDict = {'Failed':failed,'Successful':successful}
