@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.12 2008/01/23 10:27:32 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.13 2008/01/24 10:17:21 paterson Exp $
 # File  : Watchdog.py
 # Author: Stuart Paterson
 ########################################################################
@@ -18,7 +18,7 @@
           - CPU normalization for correct comparison with job limit
 """
 
-__RCSID__ = "$Id: Watchdog.py,v 1.12 2008/01/23 10:27:32 paterson Exp $"
+__RCSID__ = "$Id: Watchdog.py,v 1.13 2008/01/24 10:17:21 paterson Exp $"
 
 from DIRAC.Core.Base.Agent                          import Agent
 from DIRAC.Core.DISET.RPCClient                     import RPCClient
@@ -32,14 +32,15 @@ AGENT_NAME = 'WorkloadManagement/Watchdog'
 
 class Watchdog(Agent):
 
-  def __init__(self, pid, thread, spObject, jobCPUtime, systemFlag='linux2.4'):
+  def __init__(self, pid, exeThread, spObject, jobCPUtime, systemFlag='linux2.4'):
     """ Constructor, takes system flag as argument.
     """
     Agent.__init__(self,AGENT_NAME)
     self.jobReport  = RPCClient('WorkloadManagement/JobStateUpdate')
     self.systemFlag = systemFlag
-    self.thread = thread
-    self.pid = pid
+    self.exeThread = exeThread
+    self.wrapperPID = pid
+    self.pid = self.exeThread.getCurrentPID()
     self.spObject = spObject
     self.jobCPUtime = jobCPUtime
     self.watchdogCPU = 0
@@ -77,6 +78,10 @@ class Watchdog(Agent):
     self.peekOutputLines  = gConfig.getValue(self.section+'/PeekOutputLines',5) # regularly printed # lines (up to)
     self.finalOutputLines = gConfig.getValue(self.section+'/FinalOutputLines',50) # lines to print after failure (up to)
     self.minCPUWallClockRatio  = gConfig.getValue(self.section+'/MinCPUWallClockRatio',5) #ratio %age
+    if not self.pid:
+      self.pid = self.wrapperPID
+      self.log.info('Could not establish child PID so monitoring job wrapper process...')
+
     return result
 
   #############################################################################
@@ -85,7 +90,7 @@ class Watchdog(Agent):
     """
     self.log.debug('------------------------------------')
     self.log.debug('Execution loop starts for Watchdog')
-    if not self.thread.isAlive():
+    if not self.exeThread.isAlive():
       #print self.parameters
       self.getUsageSummary()
       self.log.info('Process to monitor has completed, Watchdog will exit.')
@@ -150,7 +155,7 @@ class Watchdog(Agent):
           self.log.info(line)
           recentStdOut += line+'\n'
       else:
-        recentStdOut = 'Watchdog could not obtain standard output from application thread'
+        recentStdOut = 'Watchdog is initializing and will attempt to obtain standard output from application thread'
         self.log.warn(recentStdOut)
         self.peekFailCount += 1
         if self.peekFailCount > self.peekRetry:
@@ -459,7 +464,7 @@ class Watchdog(Agent):
         from running thread via subprocess callback function.
     """
 
-    result = self.thread.getOutput()
+    result = self.exeThread.getOutput()
     if not result['OK']:
       self.log.warn('Could not obtain output from running application thread')
       self.log.warn(result['Message'])
