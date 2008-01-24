@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.4 2008/01/24 18:50:02 acasajus Exp $
-__RCSID__ = "$Id: AccountingDB.py,v 1.4 2008/01/24 18:50:02 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.5 2008/01/24 19:19:52 acasajus Exp $
+__RCSID__ = "$Id: AccountingDB.py,v 1.5 2008/01/24 19:19:52 acasajus Exp $"
 
 import time
 import threading
@@ -320,7 +320,7 @@ class AccountingDB(DB):
     cmd += self.__generateSQLConditionForKeys( typeName, keyValues )
     return self._update( cmd )
 
-  def __insertBucket( self, typeName, bucketTime, keyValues, bucketValues, tableType ):
+  def __insertBucket( self, typeName, bucketTime, keyValues, bucketValues ):
     """
     Insert a bucket when coming from the raw insert
     """
