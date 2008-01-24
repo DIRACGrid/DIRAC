@@ -1,8 +1,9 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.3 2008/01/23 19:00:17 acasajus Exp $
-__RCSID__ = "$Id: AccountingDB.py,v 1.3 2008/01/23 19:00:17 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.4 2008/01/24 18:50:02 acasajus Exp $
+__RCSID__ = "$Id: AccountingDB.py,v 1.4 2008/01/24 18:50:02 acasajus Exp $"
 
 import time
 import threading
+import types
 from DIRAC.Core.Base.DB import DB
 from DIRAC import S_OK, S_ERROR, gLogger, gMonitor
 from DIRAC.Core.Utilities import List, ThreadSafe, Time
@@ -15,6 +16,7 @@ class AccountingDB(DB):
     DB.__init__( self, 'AccountingDB','Accounting/AccountingDB', maxQueueSize )
     self.bucketTime = 900 #15 mins
     self.dbCatalog = {}
+    self.dbKeys = {}
     self.dbLocks = {}
     self._createTables( { 'catalogTypes' : { 'Fields' : { 'name' : "VARCHAR(64) UNIQUE",
                                                           'keyFields' : "VARCHAR(256)",
@@ -39,48 +41,69 @@ class AccountingDB(DB):
       typeName = typesEntry[0]
       keyFields = List.fromChar( typesEntry[1], "," )
       valueFields = List.fromChar( typesEntry[2], "," )
-      self.dbCatalog[ typeName ] = { 'keys' : keyFields , 'values' : valueFields, 'allfields' : [] }
-      self.dbCatalog[ typeName ][ 'allfields' ].extend( keyFields )
-      self.dbCatalog[ typeName ][ 'allfields' ].extend( valueFields )
-      self.dbCatalog[ typeName ][ 'allfields' ].extend( [ 'startTime', 'endTime' ] )
-      self.dbLocks[ "bucket%s" % typeName ] = threading.Lock()
-      for key in keyFields:
-        if not key in self.dbLocks:
-          self.dbLocks[ "key%s" % key ] = threading.Lock()
+      self.__addToCatalog( typeName, keyFields, valueFields )
+
+  def __addToCatalog( self, typeName, keyFields, valueFields ):
+    """
+    Add type to catalog
+    """
+    for key in keyFields:
+      if key in self.dbKeys:
+        self.dbKeys[ key ] += 1
+      else:
+        self.dbKeys[ key ] = 1
+    self.dbCatalog[ typeName ] = { 'keys' : keyFields , 'values' : valueFields, 'typefields' : [] }
+    self.dbCatalog[ typeName ][ 'typefields' ].extend( keyFields )
+    self.dbCatalog[ typeName ][ 'typefields' ].extend( valueFields )
+    self.dbCatalog[ typeName ][ 'bucketfields' ] = list( self.dbCatalog[ typeName ][ 'typefields' ] )
+    self.dbCatalog[ typeName ][ 'typefields' ].extend( [ 'startTime', 'endTime' ] )
+    self.dbCatalog[ typeName ][ 'bucketfields' ].append( 'bucketTime' )
+    self.dbLocks[ "bucket%s" % typeName ] = threading.Lock()
+    for key in keyFields:
+      if not key in self.dbLocks:
+        self.dbLocks[ "key%s" % key ] = threading.Lock()
 
   @gSynchro
-  def registerType( self, name, keyFields, valueFields ):
+  def registerType( self, name, definitionKeyFields, definitionAccountingFields ):
     """
     Register a new type
     """
-    for field in keyFields:
-      if field in valueFields:
+    keyFieldsList = []
+    valueFieldsList = []
+    for t in definitionKeyFields:
+      keyFieldsList.append( t[0] )
+    for t in definitionAccountingFields:
+      valueFieldsList.append( t[0] )
+    for field in definitionKeyFields:
+      if field in valueFieldsList:
         return S_ERROR( "Key field %s is also in the list of value fields" % field )
-    for field in valueFields:
-      if field in keyFields:
+    for field in definitionAccountingFields:
+      if field in keyFieldsList:
         return S_ERROR( "Value field %s is also in the list of key fields" % field )
     if name in self.dbCatalog:
       gLogger.error( "Type %s is already registered" % name )
       return S_ERROR( "Type %s already exists in db" % name )
     tables = {}
-    for key in keyFields:
-      tables[ "key%s" % key ] = { 'Fields' : { 'id' : 'INTEGER NOT NULL AUTO_INCREMENT',
-                                              'value' : 'VARCHAR(256) UNIQUE'
-                                             },
-                                  'Indexes' : { 'valueindex' : [ 'value' ] },
-                                  'PrimaryKey' : 'id'
-                                }
+    for key in definitionKeyFields:
+      if key[0] not in self.dbKeys:
+        gLogger.info( "Table for key %s has to be created" % key[0] )
+        tables[ "key%s" % key[0] ] = { 'Fields' : { 'id' : 'INTEGER NOT NULL AUTO_INCREMENT',
+                                                    'value' : '%s UNIQUE' % key[1]
+                                                  },
+                                       'Indexes' : { 'valueindex' : [ 'value' ] },
+                                       'PrimaryKey' : 'id'
+                                     }
     #Registering type
     fieldsDict = {}
     indexesDict = {}
     bucketFieldsDict = {}
-    for key in keyFields:
-      indexesDict[ "%sIndex" % key ] = [ key ]
-      fieldsDict[ key ] = "INT"
-      bucketFieldsDict[ key ] = "INT"
-    for field in valueFields:
-      fieldsDict[ field ] = "BIGINT"
-      bucketFieldsDict[ field ] = "DOUBLE"
+    for field in definitionKeyFields:
+      indexesDict[ "%sIndex" % field[0] ] = [ field[0] ]
+      fieldsDict[ field[0] ] = "INTEGER"
+      bucketFieldsDict[ field[0] ] = "INTEGER"
+    for field in definitionAccountingFields:
+      fieldsDict[ field[0]  ] = field[1]
+      bucketFieldsDict[ field[0]  ] = field[1]
 
     bucketFieldsDict[ 'bucketTime' ] = "DATETIME"
     tables[ "bucket%s" % name ] = { 'Fields' : bucketFieldsDict,
@@ -97,18 +120,11 @@ class AccountingDB(DB):
     if not retVal[ 'OK' ]:
       gLogger.error( "Can't create type %s: %s" % ( name, retVal[ 'Message' ] ) )
       return S_ERROR( "Can't create type %s: %s" % ( name, retVal[ 'Message' ] ) )
-    self.dbCatalog[ name ] = { 'keys' : keyFields , 'values' : valueFields, 'allfields' : [] }
-    self.dbCatalog[ name ][ 'allfields' ].extend( keyFields )
-    self.dbCatalog[ name ][ 'allfields' ].extend( valueFields )
-    self.dbCatalog[ name ][ 'allfields' ].extend( [ 'startTime', 'endTime' ] )
     self._insert( 'catalogTypes',
                   [ 'name', 'keyFields', 'valueFields' ],
-                  [ name, ",".join( keyFields ), ",".join( valueFields ) ] )
+                  [ name, ",".join( keyFieldsList ), ",".join( valueFieldsList ) ] )
+    self.__addToCatalog( name, keyFieldsList, valueFieldsList )
     gLogger.info( "Registered type %s" % name )
-    self.dbLocks[ "bucket%s" % name ] = threading.Lock()
-    for key in keyFields:
-      if not key in self.dbLocks:
-        self.dbLocks[ "key%s" % key ] = threading.Lock()
     return S_OK()
 
   def getRegisteredTypes( self ):
@@ -133,15 +149,11 @@ class AccountingDB(DB):
     gLogger.info( "Deleting type", typeName )
     tablesToDelete = []
     for keyField in self.dbCatalog[ typeName ][ 'keys' ]:
-      found = False
-      for otherType in self.dbCatalog:
-        if otherType == typeName:
-          continue
-        if keyField not in self.dbCatalog[ otherType ][ 'keys' ]:
-          found = True
-      if not found:
+      self.dbKeys[ keyField ] -= 1
+      if self.dbKeys[ keyField ] == 0:
         tablesToDelete.append( "key%s" % keyField )
         gLogger.info( "Deleting key table", keyField )
+        del( self.dbKeys[ keyField ] )
     tablesToDelete.insert( 0, "type%s" % typeName )
     tablesToDelete.insert( 0, "bucket%s" % typeName )
     retVal = self._query( "DROP TABLE %s" % ", ".join( tablesToDelete ) )
@@ -227,7 +239,7 @@ class AccountingDB(DB):
     insertList = list( valuesList )
     insertList.append( startTime.strftime( "%Y-%m-%d %H:%M:%S" ) )
     insertList.append( endTime.strftime( "%Y-%m-%d %H:%M:%S" ) )
-    retVal = self._insert( "type%s" % typeName, self.dbCatalog[ typeName ][ 'allfields' ], insertList )
+    retVal = self._insert( "type%s" % typeName, self.dbCatalog[ typeName ][ 'typefields' ], insertList )
     if not retVal[ 'OK' ]:
       return retVal
     return self.__bucketize( typeName, startTime, endTime, valuesList )
@@ -308,7 +320,7 @@ class AccountingDB(DB):
     cmd += self.__generateSQLConditionForKeys( typeName, keyValues )
     return self._update( cmd )
 
-  def __insertBucket( self, typeName, bucketTime, keyValues, bucketValues ):
+  def __insertBucket( self, typeName, bucketTime, keyValues, bucketValues, tableType ):
     """
     Insert a bucket when coming from the raw insert
     """
@@ -322,6 +334,125 @@ class AccountingDB(DB):
       sqlValues.append( bucketValues[ valPos ] )
     return self._insert( "bucket%s" % typeName, sqlFields, sqlValues )
 
+  def __checkFieldsExistsInType( self, typeName, fields, tableType ):
+    """
+    Check wether a list of fields exist for a given typeName
+    """
+    missing = []
+    for key in fields:
+      if key not in self.dbCatalog[ typeName ][ '%sfields' % tableType ]:
+        missing.append( key )
+    return missing
+
+  def __checkIncomingFieldsForQuery( self, typeName, condDict, valueFields, groupFields, tableType ):
+    missing = self.__checkFieldsExistsInType( typeName, condDict, tableType )
+    if missing:
+      return S_ERROR( "Condition keys %s are not defined" % ", ".join( missing ) )
+    missing = self.__checkFieldsExistsInType( typeName, [ vT[0] for vT in valueFields ], tableType )
+    if missing:
+      return S_ERROR( "Value keys %s are not defined" % ", ".join( missing ) )
+    missing = self.__checkFieldsExistsInType( typeName, groupFields, tableType )
+    if missing:
+      return S_ERROR( "Group fields %s are not defined" % ", ".join( missing ) )
+    return S_OK()
 
 
+  def retrieveBucketedData( self, typeName, startTime, endTime, condDict, valueFields, groupFields ):
+    """
+    Get data from the DB
+      Parameters:
+        typeName -> typeName
+        startTime & endTime -> datetime objects. Do I need to explain the meaning?
+        condDict -> conditions for the query
+                    key -> name of the field
+                    value -> list of possible values
+        valueFields -> list of fields to retrieve. Has to contain tuples with:
+                        ( <name of value field>, <function to apply> )
+        groupFields -> list of fields to group by
+    """
+    if typeName not in self.dbCatalog:
+      return S_ERROR( "Type %s is not defined" % typeName )
+    retVal = self.__checkIncomingFieldsForQuery( typeName, condDict, valueFields, groupFields, "bucket" )
+    if not retVal[ 'OK' ]:
+      return retVal
+    return self.__generateSQLSelect( typeName,
+                                     startTime,
+                                     endTime,
+                                     condDict,
+                                     valueFields,
+                                     groupFields,
+                                     "bucket" )
 
+  def __generateSQLSelect( self, typeName, startTime, endTime, condDict, valueFields, groupFields, tableType ):
+    cmd = "SELECT"
+    sqlValues = []
+    sqlLinkList = []
+    for vTu in valueFields:
+      if vTu[0] in self.dbCatalog[ typeName ][ 'keys' ]:
+        sqlValues.append( "`key%s`.`value`" % ( vTu[0] ) )
+        List.appendUnique( sqlLinkList, "`%s%s`.`%s` = `key%s`.`id`" % ( tableType,
+                                                                         typeName,
+                                                                         vTu[0],
+                                                                         vTu[0] ) )
+      else:
+        sqlValues.append( "`%s%s`.`%s`" % ( tableType, typeName, vTu[0] ) )
+      if vTu[1]:
+        if not groupFields:
+          return S_OK( "Can't do a %s function without specifying grouping fields" )
+        sqlValues[-1] = "%s(%s)" % ( vTu[1], sqlValues[-1] )
+    cmd += " %s" % ", ".join( sqlValues )
+    cmd += " FROM `%s%s`" % ( tableType, typeName )
+    for key in condDict:
+      cmd += ", `key%s`" % key
+    if tableType == "bucket":
+      cmd += " WHERE `bucket%s`.`bucketTime` >= '%s' AND `bucket%s`.`bucketTime` <= '%s'" % (
+                                                    typeName,
+                                                    startTime.strftime( "%Y-%m-%d %H:%M:%S" ),
+                                                    typeName,
+                                                    endTime.strftime( "%Y-%m-%d %H:%M:%S" )
+                                                    )
+    else:
+      cmd += " WHERE `type%s`.`startTime` >= '%s' AND `type%s`.`startTime` <= '%s'" % (
+                                                    typeName,
+                                                    startTime.strftime( "%Y-%m-%d %H:%M:%S" ),
+                                                    typeName,
+                                                    endTime.strftime( "%Y-%m-%d %H:%M:%S" )
+                                                    )
+    sqlCondList = []
+    for keyName in condDict:
+      sqlORList = []
+      if keyName in self.dbCatalog[ typeName ][ 'keys' ]:
+        List.appendUnique( sqlLinkList, "`%s%s`.`%s` = `key%s`.`id`" % ( tableType,
+                                                                         typeName,
+                                                                         keyName,
+                                                                         keyName ) )
+      if type( condDict[ keyName ] ) not in ( types.ListType, types.TupleType ):
+        condDict[ keyName ] = [ condDict[ keyName ] ]
+      for keyValue in condDict[ keyName ]:
+        retVal = self._escapeString( keyValue )
+        if not retVal[ 'OK' ]:
+          return retVal
+        keyValue = retVal[ 'Value' ]
+        if keyName in self.dbCatalog[ typeName ][ 'keys' ]:
+          sqlORList.append( "`key%s`.`value` = %s" % ( keyName, keyValue ) )
+        else:
+          sqlORList.appen( "`%s%s`.`%s` = %s" % ( tableType, typeName, keyName, keyValue ) )
+      sqlCondList.append( "( %s )" % " OR ".join( sqlORList ) )
+    if sqlCondList:
+      cmd += " AND %s" % " AND ".join( sqlCondList )
+    sqlGroupList = []
+    if groupFields:
+      for field in groupFields:
+        if field in self.dbCatalog[ typeName ][ 'keys' ]:
+          List.appendUnique( sqlLinkList, "`%s%s`.`%s` = `key%s`.`id`" % ( tableType,
+                                                                         typeName,
+                                                                         field,
+                                                                         field ) )
+          sqlGroupList.append( "`key%s`.`value`" % field )
+        else:
+          sqlGroupList.append( "`%s%s`.`%s`" % ( tableType, typeName, field ) )
+    if sqlLinkList:
+      cmd += " AND %s" % " AND ".join( sqlLinkList )
+    if sqlGroupList:
+      cmd += " GROUP BY %s" % ", ".join( sqlGroupList )
+    return self._query( cmd )

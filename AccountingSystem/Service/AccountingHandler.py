@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/Attic/AccountingHandler.py,v 1.2 2008/01/23 18:41:07 acasajus Exp $
-__RCSID__ = "$Id: AccountingHandler.py,v 1.2 2008/01/23 18:41:07 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/Attic/AccountingHandler.py,v 1.3 2008/01/24 18:50:02 acasajus Exp $
+__RCSID__ = "$Id: AccountingHandler.py,v 1.3 2008/01/24 18:50:02 acasajus Exp $"
 import types
 from DIRAC import S_OK, S_ERROR
 from DIRAC.AccountingSystem.private.AccountingDB import AccountingDB
@@ -16,12 +16,12 @@ def initializeAccountingHandler( serviceInfo ):
 class AccountingHandler( RequestHandler ):
 
   types_registerType = [ types.StringType, types.ListType, types.ListType ]
-  def export_registerType( self, name, keyFields, valuesFields ):
+  def export_registerType( self, name, definitionKeyFields, definitionAccountingFields ):
     """
       Register a new type. (Only for all powerful admins)
       (Bow before me for I am admin! :)
     """
-    return gAccountingDB.registerType( name, keyFields, valuesFields )
+    return gAccountingDB.registerType( name, definitionKeyFields, definitionAccountingFields )
 
   types_getRegisteredTypes = []
   def export_getRegisteredTypes( self ):
@@ -45,3 +45,19 @@ class AccountingHandler( RequestHandler ):
       Add a record for a type
     """
     return gAccountingDB.addEntry( typeName, startTime, endTime, valuesList )
+
+  types_retrieveBucketedData = [ types.StringType, Time._dateTimeType, Time._dateTimeType, types.DictType, types.ListType, types.ListType ]
+  def export_retrieveBucketedData( self, name, startTime, endTime, condDict, returnList, groupFields ):
+    """
+    Get data from the DB
+      Parameters:
+        name -> typeName
+        startTime & endTime -> datetime objects. Do I need to explain the meaning?
+        condDict -> conditions for the query
+                    key -> name of the key field
+                    value -> list of possible values
+        returnList -> list of value fields to retrieve. Has to contain tuples with:
+                        ( <name of value field>, <function to apply> )
+        groupFields -> list of fields to group by
+    """
+    return gAccountingDB.retrieveBucketedData( name, startTime, endTime, condDict, returnList, groupFields )

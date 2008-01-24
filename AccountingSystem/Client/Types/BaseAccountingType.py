@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Types/BaseAccountingType.py,v 1.1 2008/01/24 11:03:33 acasajus Exp $
-__RCSID__ = "$Id: BaseAccountingType.py,v 1.1 2008/01/24 11:03:33 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Types/BaseAccountingType.py,v 1.2 2008/01/24 18:50:01 acasajus Exp $
+__RCSID__ = "$Id: BaseAccountingType.py,v 1.2 2008/01/24 18:50:01 acasajus Exp $"
 
 import types
 from DIRAC import S_OK, S_ERROR
@@ -20,10 +20,14 @@ class BaseAccountingType:
     """
     Check that everything is defined
     """
-    if len( self.keyFieldsList ) == 0:
-      raise Exception( "keyFieldsList has to be filled prior to utilization" )
-    if len( self.valueFieldsList ) == 0:
-      raise Exception( "valueFieldsList has to be filled prior to utilization" )
+    if len( self.definitionKeyFields ) == 0:
+      raise Exception( "definitionKeyFields has to be filled prior to utilization" )
+    if len( self.definitionAccountingFields ) == 0:
+      raise Exception( "definitionAccountingFields has to be filled prior to utilization" )
+    for t in self.definitionKeyFields:
+      self.keyFieldsList.append( t[0] )
+    for t in self.definitionAccountingFields:
+      self.valueFieldsList.append( t[0] )
     self.fieldsList = []
     self.fieldsList.extend( self.keyFieldsList )
     self.fieldsList.extend( self.valueFieldsList )
@@ -114,8 +118,8 @@ class BaseAccountingType:
     Get a tuple containing type definition
     """
     return (  self.__class__.__name__,
-             self.keyFieldsList,
-             self.valueFieldsList
+             self.definitionKeyFields,
+             self.definitionAccountingFields
            )
 
   def getValues( self ):
