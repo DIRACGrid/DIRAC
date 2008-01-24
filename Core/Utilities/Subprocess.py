@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Subprocess.py,v 1.9 2008/01/24 09:50:30 acasajus Exp $
-__RCSID__ = "$Id: Subprocess.py,v 1.9 2008/01/24 09:50:30 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Subprocess.py,v 1.10 2008/01/24 09:52:35 acasajus Exp $
+__RCSID__ = "$Id: Subprocess.py,v 1.10 2008/01/24 09:52:35 acasajus Exp $"
 """
    DIRAC Wrapper to execute python and system commands with a wrapper, that might
    set a timeout.
@@ -53,6 +53,7 @@ class Subprocess:
     except Exception, v:
       gLogger.exception( 'Failed initialisation of Subprocess object' )
       raise v
+    self.childPID = 0
 
   def changeTimeout( self, timeout ):
     self.timeout = int( timeout )
@@ -122,6 +123,7 @@ class Subprocess:
   def pythonCall( self, function, *stArgs, **stKeyArgs ):
     readFD, writeFD = os.pipe()
     pid = os.fork()
+    self.childPID = pid
     if pid == 0:
       os.close( readFD )
       self.__executePythonFunction( function, writeFD, *stArgs, **stKeyArgs )
@@ -211,6 +213,7 @@ class Subprocess:
                                       stderr = subprocess.PIPE,
                                       close_fds = closefd,
                                       env=env )
+      self.childPID = self.child.pid
     except OSError, v:
       retDict = S_ERROR( v )
       retDict['Value'] = ( -1, '' , str(v) )
@@ -246,7 +249,7 @@ class Subprocess:
     return S_OK( ( exitStatus, self.bufferList[0][0], self.bufferList[1][0] ) )
 
   def getChildPID( self ):
-    return self.child.pid
+    return self.childPID
 
   def __readFromCommand( self, isLast = False ):
     if isLast:
