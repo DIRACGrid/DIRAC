@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.13 2008/01/24 10:17:21 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.14 2008/01/24 11:02:10 paterson Exp $
 # File  : Watchdog.py
 # Author: Stuart Paterson
 ########################################################################
@@ -18,7 +18,7 @@
           - CPU normalization for correct comparison with job limit
 """
 
-__RCSID__ = "$Id: Watchdog.py,v 1.13 2008/01/24 10:17:21 paterson Exp $"
+__RCSID__ = "$Id: Watchdog.py,v 1.14 2008/01/24 11:02:10 paterson Exp $"
 
 from DIRAC.Core.Base.Agent                          import Agent
 from DIRAC.Core.DISET.RPCClient                     import RPCClient
@@ -58,8 +58,8 @@ class Watchdog(Agent):
     result = Agent.initialize(self)
     if os.path.exists(self.controlDir+'/stop_agent'):
       os.remove(self.controlDir+'/stop_agent')
-    self.log.debug('Watchdog initialization')
-    self.log.debug('Attempting to Initialize Watchdog for: %s' % (self.systemFlag))
+    self.log.verbose('Watchdog initialization')
+    self.log.info('Attempting to Initialize Watchdog for: %s' % (self.systemFlag))
     #Test control flags
     self.testWallClock   = gConfig.getValue(self.section+'/CheckWallClockFlag',1)
     self.testDiskSpace   = gConfig.getValue(self.section+'/CheckDiskSpaceFlag',1)
@@ -67,6 +67,7 @@ class Watchdog(Agent):
     self.testCPUConsumed = gConfig.getValue(self.section+'/CheckCPUConsumedFlag',1)
     self.testCPULimit    = gConfig.getValue(self.section+'/CheckCPULimitFlag',1)
     #Other parameters
+    self.pollingTime      = gConfig.getValue(self.section+'/PollingTime',5*60)
     self.maxWallClockTime = gConfig.getValue(self.section+'/MaxWallClockTime',48*60*60) # e.g.2 days
     self.jobPeekFlag      = gConfig.getValue(self.section+'/JobPeekFlag',1) # on / off
     self.minDiskSpace     = gConfig.getValue(self.section+'/MinDiskSpace',10) #MB
@@ -81,15 +82,17 @@ class Watchdog(Agent):
     if not self.pid:
       self.pid = self.wrapperPID
       self.log.info('Could not establish child PID so monitoring job wrapper process...')
-
+    if self.pollingTime < 60:
+      self.log.info('Requested PollingTime of %s setting to 1 minute (minimum)' %(self.pollingTime))
+      self.pollingTime=60
     return result
 
   #############################################################################
   def execute(self):
     """ The main agent execution method of the Watchdog.
     """
-    self.log.debug('------------------------------------')
-    self.log.debug('Execution loop starts for Watchdog')
+    self.log.info('------------------------------------')
+    self.log.info('Execution loop starts for Watchdog')
     if not self.exeThread.isAlive():
       #print self.parameters
       self.getUsageSummary()
@@ -127,7 +130,7 @@ class Watchdog(Agent):
 
     result = self.checkProgress()
     if not result['OK']:
-      self.log.error(result['Message'])
+      self.log.warn(result['Message'])
       if self.jobPeekFlag:
         result = self.peek(self.finalOutputLines)
         if result['OK']:
@@ -149,7 +152,10 @@ class Watchdog(Agent):
       if result['OK']:
         outputList = result['Value']
         size = len(outputList)
-        recentStdOut = 'Last %s lines of application output:\n' % (size)
+        border = ''
+        for i in xrange(len(recentStdOut)):
+          border+='='
+        recentStdOut = '\n%s\nLast %s lines of application output from Watchdog:\n%s\n' % (border,size,border)
         self.log.info(recentStdOut)
         for line in outputList:
           self.log.info(line)
@@ -199,7 +205,7 @@ class Watchdog(Agent):
       result = self.checkWallClockTime()
       report += 'WallClock: OK, '
       if not result['OK']:
-        self.log.error(result['Message'])
+        self.log.warn(result['Message'])
         return result
     else:
       report += 'WallClock: NA,'
@@ -208,7 +214,7 @@ class Watchdog(Agent):
       result = self.checkDiskSpace()
       report += 'DiskSpace: OK, '
       if not result['OK']:
-        self.log.error(result['Message'])
+        self.log.warn(result['Message'])
         return result
     else:
       report += 'DiskSpace: NA,'
@@ -217,7 +223,7 @@ class Watchdog(Agent):
       result = self.checkLoadAverage()
       report += 'LoadAverage: OK, '
       if not result['OK']:
-        self.log.error(result['Message'])
+        self.log.warn(result['Message'])
         return result
     else:
       report += 'LoadAverage: NA,'
@@ -234,7 +240,7 @@ class Watchdog(Agent):
       result = self.checkCPULimit()
       report += 'CPULimit OK. '
       if not result['OK']:
-        self.log.error(result['Message'])
+        self.log.warn(result['Message'])
         return result
     else:
       report += 'CPUConsumed: NA.'
@@ -292,7 +298,7 @@ class Watchdog(Agent):
       if amendedCPU > 0:
         cpuSample.append(amendedCPU)
       else:
-        self.log.debug('Found -ve cpu consumed')
+        self.log.verbose('Found -ve cpu consumed')
         msg = 'AmendedCPU: ',amendedCPU
         msg += 'RawConsumCPU: ',valueTime['Value']
         msg += ' WatchdogCPU: ',watchdogCPU
@@ -309,7 +315,7 @@ class Watchdog(Agent):
 
     ratio = float(totalCPUConsumed)/float(sampleTime)
     limit = float( self.minCPUWallClockRatio * 0.01 )
-    self.log.debug('CPU consumed / Wallclock time ratio is %f' % (ratio))
+    self.log.verbose('CPU consumed / Wallclock time ratio is %f' % (ratio))
     #print ratio
     #print limit
     #print cpuSample
@@ -371,7 +377,7 @@ class Watchdog(Agent):
       secs  = float(cpuHMS[2])
       cpuValue = float(hours+mins+secs)
     except Exception,x:
-      self.log.error(str(x))
+      self.log.warn(str(x))
       return S_ERROR('Could not calculate CPU time')
 
     #Normalization to be implemented
@@ -480,10 +486,10 @@ class Watchdog(Agent):
     self.parameters['WallClockTime'] = []
 
     result = self.getCPUConsumed(self.pid)
-    self.log.debug('CPU consumed %s' %(result))
+    self.log.verbose('CPU consumed %s' %(result))
     if not result['OK']:
       msg = 'Could not establish CPU consumed'
-      self.log.error(msg)
+      self.log.warn(msg)
       result = S_ERROR(msg)
       return result
 
@@ -492,17 +498,17 @@ class Watchdog(Agent):
     if initCPUDict['OK']:
       initialCPU = initCPUDict['Value']
     else:
-      self.log.debug('ConvertedCPUTime: %s' %(initCPUDict))
+      self.log.verbose('ConvertedCPUTime: %s' %(initCPUDict))
       return S_ERROR('Not possible to determine initial CPU consumed')
 
     self.initialValues['CPUConsumed']=initialCPU
     self.parameters['CPUConsumed'] = []
 
     result = self.getLoadAverage()
-    self.log.debug('LoadAverage: %s' %(result))
+    self.log.verbose('LoadAverage: %s' %(result))
     if not result['OK']:
       msg = 'Could not establish LoadAverage'
-      self.log.error(msg)
+      self.log.warn(msg)
       result = S_ERROR(msg)
       return result
 
@@ -510,10 +516,10 @@ class Watchdog(Agent):
     self.parameters['LoadAverage'] = []
 
     result = self.getMemoryUsed()
-    self.log.debug('MemUsed: %s' %(result))
+    self.log.verbose('MemUsed: %s' %(result))
     if not result['OK']:
       msg = 'Could not establish MemoryUsed'
-      self.log.error(msg)
+      self.log.warn(msg)
       result = S_ERROR(msg)
       return result
 
@@ -521,10 +527,10 @@ class Watchdog(Agent):
     self.parameters['MemoryUsed'] = []
 
     result = self. getDiskSpace()
-    self.log.debug('DiskSpace: %s' %(result))
+    self.log.verbose('DiskSpace: %s' %(result))
     if not result['OK']:
       msg = 'Could not establish DiskSpace'
-      self.log.error(msg)
+      self.log.warn(msg)
       result = S_ERROR(msg)
       return result
 
@@ -532,10 +538,10 @@ class Watchdog(Agent):
     self.parameters['DiskSpace'] = []
 
     result = self.getNodeInformation()
-    self.log.debug('NodeInfo: %s' %(result))
+    self.log.verbose('NodeInfo: %s' %(result))
     if not result['OK']:
       msg = 'Could not establish static system information'
-      self.log.error(msg)
+      self.log.warn(msg)
       result = S_ERROR(msg)
       return result
 
@@ -653,7 +659,7 @@ class Watchdog(Agent):
       return S_OK()
     jobID = os.environ['JOBID']
     jobParam = self.jobReport.setJobParameters(int(jobID),value)
-    self.log.debug('setJobParameters(%s,%s)' %(jobID,value))
+    self.log.verbose('setJobParameters(%s,%s)' %(jobID,value))
     if not jobParam['OK']:
         self.log.warn(jobParam['Message'])
 
@@ -663,35 +669,35 @@ class Watchdog(Agent):
   def getNodeInformation(self):
     """ Attempts to retrieve all static system information, should be overridden in a subclass"""
     methodName = 'getNodeInformation'
-    self.log.error('Watchdog: '+methodName+' method should be implemented in a subclass')
+    self.log.warn('Watchdog: '+methodName+' method should be implemented in a subclass')
     return S_ERROR('Watchdog: '+methodName+' method should be implemented in a subclass')
 
   #############################################################################
   def getLoadAverage(self):
     """ Attempts to get the load average, should be overridden in a subclass"""
     methodName = 'getLoadAverage'
-    self.log.error('Watchdog: '+methodName+' method should be implemented in a subclass')
+    self.log.warn('Watchdog: '+methodName+' method should be implemented in a subclass')
     return S_ERROR('Watchdog: '+methodName+' method should be implemented in a subclass')
 
   #############################################################################
   def getMemoryUsed(self):
     """ Attempts to get the memory used, should be overridden in a subclass"""
     methodName = 'getMemoryUsed'
-    self.log.error('Watchdog: '+methodName+' method should be implemented in a subclass')
+    self.log.warn('Watchdog: '+methodName+' method should be implemented in a subclass')
     return S_ERROR('Watchdog: '+methodName+' method should be implemented in a subclass')
 
   #############################################################################
   def getDiskSpace(self):
     """ Attempts to get the available disk space, should be overridden in a subclass"""
     methodName = 'getDiskSpace'
-    self.log.error('Watchdog: '+methodName+' method should be implemented in a subclass')
+    self.log.warn('Watchdog: '+methodName+' method should be implemented in a subclass')
     return S_ERROR('Watchdog: '+methodName+' method should be implemented in a subclass')
 
   #############################################################################
   def getCPUConsumed(self):
     """ Attempts to get the CPU consumed, should be overridden in a subclass"""
     methodName = 'getCPUConsumed'
-    self.log.error('Watchdog: '+methodName+' method should be implemented in a subclass')
+    self.log.warn('Watchdog: '+methodName+' method should be implemented in a subclass')
     return S_ERROR('Watchdog: '+methodName+' method should be implemented in a subclass')
 
   #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
