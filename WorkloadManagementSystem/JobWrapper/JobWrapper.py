@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.12 2008/01/14 14:53:57 paterson Exp $
+# $Id: JobWrapper.py,v 1.13 2008/01/24 10:16:19 paterson Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.12 2008/01/14 14:53:57 paterson Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.13 2008/01/24 10:16:19 paterson Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -41,7 +41,7 @@ class JobWrapper:
     self.inputSandboxClient = SandboxClient()
     self.outputSandboxClient = SandboxClient('Output')
     self.diracVersion = 'DIRAC version v%dr%d build %d' %(DIRAC.majorVersion,DIRAC.minorVersion,DIRAC.patchLevel)
-    self.maxPeekLines = gConfig.getValue(self.section+'/MaxJobPeekLines',200)
+    self.maxPeekLines = gConfig.getValue(self.section+'/MaxJobPeekLines',20)
     self.defaultCPUTime = gConfig.getValue(self.section+'/DefaultCPUTime',600)
     self.defaultOutputFile = gConfig.getValue(self.section+'/DefaultOutputFile','std.out')
     self.defaultErrorFile = gConfig.getValue(self.section+'/DefaultErrorFile','std.err')
@@ -73,7 +73,7 @@ class JobWrapper:
       self.log.verbose('==========================================================================')
 
     if not self.cleanUpFlag:
-      self.log.debug('CleanUp Flag is disabled by configuration')
+      self.log.verbose('CleanUp Flag is disabled by configuration')
     self.log.verbose('Trying to import LFC File Catalog client')
     try:
       from DIRAC.DataManagementSystem.Client.Catalog.LcgFileCatalogCombinedClient import LcgFileCatalogCombinedClient
@@ -82,6 +82,7 @@ class JobWrapper:
       msg = 'Failed to create LcgFileCatalogClient with exception:'
       self.log.fatal(msg)
       self.log.fatal(str(x))
+    sys.stdout.flush()
 
   #############################################################################
   def initialize(self, arguments):
@@ -90,9 +91,9 @@ class JobWrapper:
     self.__report('Running','Job Initialization')
     self.log.info('Starting Job Wrapper Initialization for Job %s' %(self.jobID))
     jobArgs = arguments['Job']
-    self.log.debug(jobArgs)
+    self.log.verbose(jobArgs)
     ceArgs = arguments ['CE']
-    self.log.debug(ceArgs)
+    self.log.verbose(ceArgs)
     self.__setInitialJobParameters(arguments)
 
     # Prepare the working directory and cd to there
@@ -141,12 +142,12 @@ class JobWrapper:
       jobArguments = jobArgs['Arguments']
 
     executable = os.path.expandvars(executable)
-    thread = None
+    exeThread = None
     spObject = None
 
     if re.search('DIRACROOT',executable):
       executable = executable.replace('$DIRACROOT',self.localSiteRoot)
-      self.log.debug('Replaced $DIRACROOT for executable as %s' %(self.localSiteRoot))
+      self.log.verbose('Replaced $DIRACROOT for executable as %s' %(self.localSiteRoot))
 
     if os.path.exists(executable):
       self.__report('Running','Application')
@@ -154,35 +155,35 @@ class JobWrapper:
       command = '%s %s' % (executable,os.path.basename(jobArguments))
       self.log.verbose('Execution command: %s' %(command))
       maxPeekLines = self.maxPeekLines
-      thread = ExecutionThread(spObject,command,maxPeekLines)
-      thread.start()
+      exeThread = ExecutionThread(spObject,command,maxPeekLines)
+      exeThread.start()
     else:
       return S_ERROR('Path to executable %s not found' %(executable))
 
     pid = os.getpid()
     watchdogFactory = WatchdogFactory()
-    watchdogInstance = watchdogFactory.getWatchdog(pid, thread, spObject, jobCPUTime)
+    watchdogInstance = watchdogFactory.getWatchdog(pid, exeThread, spObject, jobCPUTime)
     if not watchdogInstance['OK']:
       self.log.warn(watchdogInstance['Message'])
       return S_ERROR('Could not create Watchdog instance')
 
-    self.log.debug('WatchdogInstance %s' %(watchdogInstance))
+    self.log.verbose('WatchdogInstance %s' %(watchdogInstance))
     watchdog = watchdogInstance['Value']
     self.log.verbose('Calibrating Watchdog instance')
     watchdog.calibrate()
-    if thread.isAlive():
+    if exeThread.isAlive():
       self.log.info('Application thread is started in Job Wrapper')
       watchdog.run()
     else:
       self.log.warn('Application thread stopped very quickly...')
 
-    if thread.isAlive():
+    if exeThread.isAlive():
       self.log.warn('Watchdog exited before completion of execution thread')
-      while thread.isAlive():
+      while exeThread.isAlive():
         time.sleep(5)
 
-#    self.log.debug( 'Execution Result is : ')
-#    self.log.debug( EXECUTION_RESULT )
+#    self.log.verbose( 'Execution Result is : ')
+#    self.log.verbose( EXECUTION_RESULT )
     outputs = None
     if EXECUTION_RESULT.has_key('Thread'):
       threadResult = EXECUTION_RESULT['Thread']
@@ -245,7 +246,7 @@ class JobWrapper:
         ceArgs['LocalSE'] = csLocalSE
 
     inputData = jobArgs['InputData']
-    self.log.debug('Input Data is: \n%s' %(inputData))
+    self.log.verbose('Input Data is: \n%s' %(inputData))
     if type(inputData)==type(' '):
       inputData = [inputData]
 
@@ -397,7 +398,7 @@ class JobWrapper:
 
     for lfn,mdata in resolvedData.items():
       se = mdata['se']
-      self.log.debug('Attempting to get GUID for %s %s' %(lfn,se))
+      self.log.verbose('Attempting to get GUID for %s %s' %(lfn,se))
       guids[lfn]=guidDict['Value']['Successful'][lfn]['GUID']
 
     self.log.debug(guids)
@@ -431,8 +432,8 @@ class JobWrapper:
           poolXMLCat.addFile((lfn,mdata['turl'],0,mdata['se'],mdata['guid']))
 
       xmlSlice = poolXMLCat.toXML()
-      self.log.debug('POOL XML Slice is: ')
-      self.log.debug(xmlSlice)
+      self.log.verbose('POOL XML Slice is: ')
+      self.log.verbose(xmlSlice)
       poolSlice = open(poolXMLCatName,'w')
       poolSlice.write(xmlSlice)
       poolSlice.close()
@@ -479,7 +480,7 @@ class JobWrapper:
     self.__report('Running','Uploading Output Sandbox')
     result = self.outputSandboxClient.sendFiles(self.jobID, fileList)
     if not result['OK']:
-      self.log.debug('Output sandbox upload failed:')
+      self.log.warn('Output sandbox upload failed:')
       self.log.warn(result['Message'])
 
     if jobArgs.has_key('Owner'):
@@ -503,7 +504,7 @@ class JobWrapper:
   def __transferOutputDataFiles(self,owner,outputData,outputSE):
     """Performs the upload and registration in the LFC
     """
-    self.log.debug('Uploading output data files')
+    self.log.verbose('Uploading output data files')
     self.__report('Running','Uploading Output Data')
     self.log.verbose('Output data files %s to be uploaded to %s SE' %(string.join(outputData,', '),outputSE))
     for outputFile in outputData:
@@ -608,7 +609,7 @@ class JobWrapper:
     """Wraps around setJobStatus of state update client
     """
     jobStatus = self.jobReport.setJobStatus(int(self.jobID),status,minorStatus,'JobWrapper')
-    self.log.debug('setJobStatus(%s,%s,%s,%s)' %(self.jobID,status,minorStatus,'JobWrapper'))
+    self.log.verbose('setJobStatus(%s,%s,%s,%s)' %(self.jobID,status,minorStatus,'JobWrapper'))
     if not jobStatus['OK']:
         self.log.warn(jobStatus['Message'])
 
@@ -619,7 +620,7 @@ class JobWrapper:
     """Wraps around setJobParameter of state update client
     """
     jobParam = self.jobReport.setJobParameter(int(self.jobID),str(name),str(value))
-    self.log.debug('setJobParameter(%s,%s,%s)' %(self.jobID,name,value))
+    self.log.verbose('setJobParameter(%s,%s,%s)' %(self.jobID,name,value))
     if not jobParam['OK']:
         self.log.warn(jobParam['Message'])
 
@@ -630,7 +631,7 @@ class JobWrapper:
     """Wraps around setJobParameters of state update client
     """
     jobParam = self.jobReport.setJobParameters(int(self.jobID),value)
-    self.log.debug('setJobParameters(%s,%s)' %(self.jobID,value))
+    self.log.verbose('setJobParameters(%s,%s)' %(self.jobID,value))
     if not jobParam['OK']:
         self.log.warn(jobParam['Message'])
 
@@ -660,6 +661,10 @@ class ExecutionThread(threading.Thread):
     timing = time.time() - start
     EXECUTION_RESULT['PID']=pid
     EXECUTION_RESULT['Timing']=timing
+
+  #############################################################################
+  def getCurrentPID(self):
+    return self.spObject.getChildPID()
 
   #############################################################################
   def sendOutput(self,stdid,line):
