@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.20 2007/11/28 10:15:01 acasajus Exp $
-__RCSID__ = "$Id: Logger.py,v 1.20 2007/11/28 10:15:01 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.21 2008/01/24 19:04:32 mseco Exp $
+__RCSID__ = "$Id: Logger.py,v 1.21 2008/01/24 19:04:32 mseco Exp $"
 """
    DIRAC Logger client
 """
@@ -26,7 +26,6 @@ class Logger:
     self._subLoggersDict = {}
     self._logLevels = LogLevels()
     self.__preinitialize()
-    self._site = False
 
   def initialized( self ):
     return not self._systemName == False
@@ -39,20 +38,31 @@ class Logger:
         self.warn( "Unexistant method for showing messages",
                    "Unexistant %s logging method" % backend )
       else:
-        self._backendsDict[ backend ] = gBackendIndex[ backend ]( self.cfgPath )
+        self._backendsDict[ backend ] = gBackendIndex[ backend ]( self.backendsOptions )
 
   def __preinitialize ( self ):
     self._systemName = "Framework"
-    self.cfgPath = "/"
+    self.backendsOptions = {}
     self.registerBackends( [ 'stdout' ] )
     self._minLevel = self._logLevels.getLevelValue( "INFO" )
 
   def initialize( self, systemName, cfgPath ):
     if self._systemName == "Framework":
-      self.cfgPath = cfgPath
       from DIRAC.ConfigurationSystem.Client.Config import gConfig
+      #Get the options for the different outputs
+      retDict = gConfig.getOption( "/DIRAC/Site" )
+      if retDict[ 'OK' ]:
+        site = retDict[ 'Value' ]
+      else:
+        site = 'Unknown'
+      retDict = gConfig.getOptionsDict( "%s" % cfgPath)
+      if not retDict[ 'OK' ]:
+        self.backendsOptions = {'Site': site}
+      else:
+        self.backendsOptions = retDict[ 'Value' ]
+        self.backendsOptions[ 'Site' ] = site
       #Configure outputs
-      retDict = gConfig.getOption( "%s/LogBackends" % cfgPath )
+      retDict = gConfig.getOption( "%s/LogBackends" % cfgPath )      
       if not retDict[ 'OK' ]:
         desiredBackendList = [ 'stdout' ]
       else:
@@ -69,9 +79,6 @@ class Logger:
       if retDict[ 'OK' ] and retDict[ 'Value' ].lower() in ( "y", "yes", "1", "true" ) :
         self._showCallingFrame = True
       self._systemName = str( systemName )
-      retDict = gConfig.getOption( "/DIRAC/Site" )
-      if retDict[ 'OK' ]:
-        self._site = retDict[ 'Value' ]
 
   def setLevel( self, levelName ):
     levelName = levelName.upper()
@@ -90,8 +97,7 @@ class Logger:
                              Time.dateTime(),
                              sMsg,
                              sVarMsg,
-                             self.__discoverCallingFrame(),
-                             self._site)
+                             self.__discoverCallingFrame() )
     return self.processMessage( messageObject )
 
   def info( self, sMsg, sVarMsg = '' ):
@@ -100,8 +106,7 @@ class Logger:
                              Time.dateTime(),
                              sMsg,
                              sVarMsg,
-                             self.__discoverCallingFrame(),
-                             self._site )
+                             self.__discoverCallingFrame() )
     return self.processMessage( messageObject )
 
   def verbose( self, sMsg, sVarMsg = '' ):
@@ -110,8 +115,7 @@ class Logger:
                              Time.dateTime(),
                              sMsg,
                              sVarMsg,
-                             self.__discoverCallingFrame(),
-                             self._site )
+                             self.__discoverCallingFrame() )
     return self.processMessage( messageObject )
 
   def debug( self, sMsg, sVarMsg = '' ):
@@ -120,8 +124,7 @@ class Logger:
                              Time.dateTime(),
                              sMsg,
                              sVarMsg,
-                             self.__discoverCallingFrame(),
-                             self._site )
+                             self.__discoverCallingFrame() )
     return self.processMessage( messageObject )
 
   def warn( self, sMsg, sVarMsg = '' ):
@@ -130,8 +133,7 @@ class Logger:
                              Time.dateTime(),
                              sMsg,
                              sVarMsg,
-                             self.__discoverCallingFrame(),
-                             self._site )
+                             self.__discoverCallingFrame() )
     return self.processMessage( messageObject )
 
   def error( self, sMsg, sVarMsg = '' ):
@@ -140,8 +142,7 @@ class Logger:
                              Time.dateTime(),
                              sMsg,
                              sVarMsg,
-                             self.__discoverCallingFrame(),
-                             self._site )
+                             self.__discoverCallingFrame() )
     return self.processMessage( messageObject )
 
   def exception( self, sMsg = "", sVarMsg = '', lException = False ):
@@ -154,8 +155,7 @@ class Logger:
                              Time.dateTime(),
                              sMsg,
                              sVarMsg,
-                             self.__discoverCallingFrame(),
-                             self._site )
+                             self.__discoverCallingFrame() )
     return self.processMessage( messageObject )
 
   def fatal( self, sMsg, sVarMsg = '' ):
@@ -164,8 +164,7 @@ class Logger:
                              Time.dateTime(),
                              sMsg,
                              sVarMsg,
-                             self.__discoverCallingFrame(),
-                             self._site )
+                             self.__discoverCallingFrame() )
     return self.processMessage( messageObject )
 
   def showStack( self ):
@@ -174,8 +173,7 @@ class Logger:
                              Time.dateTime(),
                              "",
                              self.__getStackString(),
-                             self.__discoverCallingFrame(),
-                             self._site )
+                             self.__discoverCallingFrame() )
     self.processMessage( messageObject )
 
   def processMessage( self, messageObject ):

@@ -1,11 +1,15 @@
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/backends/BaseBackend.py,v 1.6 2008/01/24 19:04:32 mseco Exp $
+__RCSID__ = "$Id: BaseBackend.py,v 1.6 2008/01/24 19:04:32 mseco Exp $"
+"""  This constitues the base class for the backends of the logger
+"""
 from DIRAC.Core.Utilities import Time
 
 class BaseBackend:
 
   _showCallingFrame = True
 
-  def __init__( self, cfgPath ):
-    self.cfgPath = cfgPath
+  def __init__( self, optionsDictionary ):
+    self._optionsDictionary = optionsDictionary
 
   def flush( self ):
     pass

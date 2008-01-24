@@ -1,3 +1,5 @@
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Service/SystemLoggingHandler.py,v 1.4 2008/01/24 19:04:32 mseco Exp $
+__RCSID__ = "$Id: SystemLoggingHandler.py,v 1.4 2008/01/24 19:04:32 mseco Exp $"
 """
 SystemLoggingHandler is the implementation of the Logging service
     in the DISET framework
@@ -22,34 +24,42 @@ def initializeSystemLoggingHandler( serviceInfo ):
 
 class SystemLoggingHandler( RequestHandler ):
 
-  def __addMessage( self, messageObject ):
+  def __addMessage( self, messageObject, site, nodeFDQN ):
     """  This is the function that actually adds the Message to 
          the log Database
     """
+    import socket
     Credentials=self.getRemoteCredentials()
     if Credentials.has_key('DN'):
       userDN=Credentials['DN']
     else:
       userDN='unknown'
-    userGroup = Credentials['group']  
+    userGroup = Credentials['group']
     remoteAddress = self.transport.getRemoteAddress()[0]
-    LogDB.insertMessageIntoDB( messageObject, userDN, userGroup, remoteAddress )
+    return LogDB._insertMessageIntoSystemLoggingDB( messageObject, site,
+                                                    nodeFDQN, userDN,
+                                                    userGroup, remoteAddress )
 
         
   types_addMessages = []
 
   #A normal exported function (begins with export_)
-  def export_addMessages( self, msgList ):
+  def export_addMessages( self, messagesList, site, nodeFDQN ):
     """ This is the interface to the service
         inputs:
            msgList contains a  list of Message Objects.
+        outputs:
+           S_OK if no exception was raised
+           S_ERROR if an exception was raised
     """
-    for msgTuple in msgList:
-      msgObject = tupleToMessage( msgTuple )
+    for messageTuple in messagesList:
+      messageObject = tupleToMessage( messageTuple )
       try:
-        self.__addMessage( msgObject )
+        self.__addMessage( messageObject, site, nodeFDQN )
       except Exception, v:
-        print v
-        return S_ERROR( "Error doing something: %s" % str( v ) )
+        errorString = 'Message was not added because of exception: '
+        exceptionString = str(v)
+        gLogger.exception( errorString ,exceptionString )
+        return S_ERROR( "%s %s" % ( errorString, exceptionString ) )
     return S_OK()
 
