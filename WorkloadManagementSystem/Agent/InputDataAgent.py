@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.13 2008/01/20 16:03:36 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.14 2008/01/24 15:31:17 paterson Exp $
 # File :   InputDataAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
 
 """
 
-__RCSID__ = "$Id: InputDataAgent.py,v 1.13 2008/01/20 16:03:36 paterson Exp $"
+__RCSID__ = "$Id: InputDataAgent.py,v 1.14 2008/01/24 15:31:17 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
@@ -138,8 +138,25 @@ class InputDataAgent(Optimizer):
       self.log.warn(result['Message'])
       return result
 
-    result = S_OK()
-    result['InputData'] = inputData
+    guids = True
+    guidDict = self.fileCatalog.getFileMetadata(lfns)
+    if not guidDict['OK']:
+      self.log.warn(guidDict['Message'])
+      guids = False
+
+    failed = guidDict['Value']['Failed']
+    if failed:
+      self.log.warn(failed)
+      guids = False
+
+    if not guids:
+      guidDict = {}
+    else:
+      guidDict = guidDict['Value']
+
+    result = {}
+    result['GUIDs'] = guidDict
+    result['Replicas'] = inputData
     result['SiteCandidates'] = siteCandidates['Value']
     return S_OK(result)
 
