@@ -30,6 +30,11 @@ class PlacementDBClient:
   def execute(self, *parms, **kws):
     """ Magic method dispatcher """
     try:
+      inputParameter = parms[0]
+      if not type(inputParameter) == ListType:
+        inputParameters = [inputParameter]
+      else:
+        inputParameters = inputParameter
       return self.server.callProxyMethod(self.call,parms,kws)
     except Exception,x:
       return S_ERROR("PlacementDBClient.execute: Exception while calling the server.",str(x))

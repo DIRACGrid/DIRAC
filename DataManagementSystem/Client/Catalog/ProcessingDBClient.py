@@ -4,6 +4,7 @@
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.ConfigurationSystem.Client import PathFinder
+from types import *
 
 class ProcessingDBClient:
   """ File catalog client for processing DB
@@ -30,6 +31,11 @@ class ProcessingDBClient:
   def execute(self, *parms, **kws):
     """ Magic method dispatcher """
     try:
-      return self.server.callProxyMethod(self.call,parms,kws)
+      inputParameter = parms[0]
+      if not type(inputParameter) == ListType:
+        inputParameters = [inputParameter]
+      else:
+        inputParameters = inputParameter
+      return self.server.callProxyMethod(self.call,inputParameters,kws)
     except Exception,x:
       return S_ERROR("ProcessingDBClient.execute: Exception while calling the server.",str(x))
