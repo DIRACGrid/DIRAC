@@ -634,7 +634,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
   def setReplicaHost(self,replicaTuple):
     """ This modifies the replica metadata for the SE and space token.
         The tuple supplied must be of the following form:
-        (lfn,pfn,se,spaceToken)
+        (lfn,pfn,oldse,newse)
     """
     if type(replicaTuple) == types.TupleType:
       replicas = [replicaTuple]
@@ -647,8 +647,8 @@ class LcgFileCatalogClient(FileCatalogueBase):
     # If we have less than three lfns to query a session doesn't make sense
     if len(replicas) > 2:
       self.__openSession()
-    for lfn,pfn,se,spacetoken in replicas:
-      value = lfc.lfc_modreplica(pfn,spacetoken,'',se)
+    for lfn,pfn,oldse,newse in replicas:
+      value = lfc.lfc_modreplica(pfn,'','',newse)
       if not value == 0:
         errno = lfc.cvar.serrno
         failed[lfn] = lfc.sstrerror(errno)
