@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/ProxyRenewalAgent.py,v 1.5 2008/01/13 01:23:42 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/ProxyRenewalAgent.py,v 1.6 2008/01/25 19:10:46 atsareg Exp $
 ########################################################################
 
 """  Proxy Renewal agent is the key element of the Proxy Repository
@@ -10,7 +10,7 @@ from DIRAC.Core.Base.Agent import Agent
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.ProxyRepositoryDB import ProxyRepositoryDB
-from DIRAC.Core.Utilities.GridCredentials import getProxyTimeLeft, getVOMSAttributes, renewProxy
+from DIRAC.Core.Utilities.GridCredentials import *
 
 AGENT_NAME = 'WorkloadManagement/ProxyRenewalAgent'
 
@@ -66,9 +66,9 @@ class ProxyRenewalAgent(Agent):
 
     job_dn_list = result['Value']
         
-    for dn,group in ticket_dn_list:
+    for dn,group,ptype in ticket_dn_list:
     
-      if dn in job_dn_list:
+      if dn in job_dn_list or ptype=="True":
         self.log.verbose("Renewing proxy for "+dn)
         result = self.proxyDB.getProxy(dn)
         if not result["OK"]:
@@ -94,12 +94,16 @@ class ProxyRenewalAgent(Agent):
                                     server_key=self.server_key,
                                     server_cert=self.server_cert
                                     )
+                                    
+            print result                        
+                                    
             if result["OK"]:
               new_proxy = result['Value']
               resTime = getProxyTimeLeft(new_proxy)
               if resTime['OK']:
                 tleft = resTime['Value']
-                result = self.proxyDB.storeProxy(new_proxy,dn,group)
+                proxy_to_store = setDIRACGroupInProxy(new_proxy,group)
+                result = self.proxyDB.storeProxy(proxy_to_store,dn,group)
                 if result["OK"]:
                   self.log.verbose('Proxy extended for %s for %d hours' % (dn,self.validity_period))
                 else:
