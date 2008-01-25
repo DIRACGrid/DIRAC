@@ -1,4 +1,4 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.11 2008/01/24 10:47:06 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.12 2008/01/25 14:22:19 atsareg Exp $
 
 """ Grid Credentials module contains utilities to manage user and host
     certificates and proxies.
@@ -33,7 +33,7 @@
     getVOMSProxyInfo()
 """
 
-__RCSID__ = "$Id: GridCredentials.py,v 1.11 2008/01/24 10:47:06 acasajus Exp $"
+__RCSID__ = "$Id: GridCredentials.py,v 1.12 2008/01/25 14:22:19 atsareg Exp $"
 
 import os
 import os.path
@@ -568,6 +568,40 @@ def createProxy(certfile='',keyfile='',hours=0,bits=512,password=''):
   return S_OK(result_proxy)
 
 ###########################################################################
+def isVOMS(proxy):
+  """ Determine if the proxy is of VOMS type or not
+  """
+
+  temp_proxy_file=""
+  if proxy:
+    if os.path.exists(proxy):
+      cmd = "openssl x509 -noout -text -in %s" % proxy
+    else:
+      # Create temporary proxy file, do not forget to remove it before leaving
+      temp_proxy_file = __makeProxyFile(proxy)
+      cmd = "openssl x509 -noout -text -in %s" % temp_proxy_file
+  else:
+    proxy_file = getGridProxy()
+    cmd = "openssl x509 -noout -text -in %s" % proxy_file
+
+  result = shellCall(PROXY_COMMAND_TIMEOUT,cmd)
+  if temp_proxy_file:
+    os.remove(temp_proxy_file)
+
+  if not result['OK']:
+    return S_ERROR('OpenSSL call failed')
+
+  status,output,error = result['Value']
+
+  if status != 0 :
+    return S_ERROR('Failed to execute command. Cmd: %s; StdOut: %s; StdErr: %s' % (cmd,output,error))
+
+  if output.find('1.3.6.1.4.1.8005.100.100.5') != -1:
+    return S_OK(True)
+  else:
+    return S_OK(False)
+
+###########################################################################
 def renewProxy(proxy,lifetime=72,
                 server="myproxy.cern.ch",
                 server_key="/opt/dirac/etc/grid-security/serverkey.pem",
@@ -878,6 +912,7 @@ def getVOMSProxyInfo(proxy_file,option=None):
       @type  option: a string
       @param option: None is the default value. Other option available are:
         - timeleft
+        - actimeleft
         - identity
         - fqan
         - all
