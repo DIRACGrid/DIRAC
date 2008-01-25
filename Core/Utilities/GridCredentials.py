@@ -1,4 +1,4 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.13 2008/01/25 17:14:42 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.14 2008/01/25 19:12:58 atsareg Exp $
 
 """ Grid Credentials module contains utilities to manage user and host
     certificates and proxies.
@@ -33,7 +33,7 @@
     getVOMSProxyInfo()
 """
 
-__RCSID__ = "$Id: GridCredentials.py,v 1.13 2008/01/25 17:14:42 atsareg Exp $"
+__RCSID__ = "$Id: GridCredentials.py,v 1.14 2008/01/25 19:12:58 atsareg Exp $"
 
 import os
 import os.path
@@ -250,15 +250,17 @@ def parseProxy(proxy=None,option=None):
   if proxy:
     if os.path.exists(proxy):
       cmd = "openssl x509 -noout -text -in %s" % proxy
+      resultVOMS = isVOMS(proxy)
     else:
       # Create temporary proxy file, do not forget to remove it before leaving
       temp_proxy_file = __makeProxyFile(proxy)
       cmd = "openssl x509 -noout -text -in %s" % temp_proxy_file
+      resultVOMS = isVOMS(temp_proxy_file)
   else:
-    proxy_file = getGridProxy()
+    proxy_file = getGridProxy()    
     cmd = "openssl x509 -noout -text -in %s" % proxy_file
+    resultVOMS = isVOMS(proxy_file)
 
-  resultVOMS = isVOMS(proxy_file)
   voms = False
   if resultVOMS['OK']:
     if resultVOMS['Value']:
@@ -733,6 +735,9 @@ def renewProxy(proxy,lifetime=72,
 
   if len(voms_attr) > 0:
     result = createVOMSProxy(proxy_string,voms_attr)
+    
+    print result
+    
     if result["OK"]:
       proxy_string = result["Value"]
     else:
@@ -923,7 +928,7 @@ def getVOMSAttributes(proxy,switch="all"):
     elif j[0].strip()=="attribute":
       # Cut off unsupported Capability selection part
       j[1] = j[1].replace("/Capability=NULL","")
-      if j[1].find('Role=NULL') == -1:
+      if j[1].find('Role=NULL') == -1 and j[1].find('Role') != -1:
         attributes.append(j[1].strip())
 
   # Sorting and joining attributes
