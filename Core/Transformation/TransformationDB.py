@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.2 2008/01/25 13:59:13 acsmith Exp $
+# $Id: TransformationDB.py,v 1.3 2008/01/25 16:00:32 acsmith Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -35,19 +35,6 @@ class TransformationDB(DB):
     self.filters = self.__getFilters()
     self.catalog = None
 
-  def __getLFCClient(self):
-    """Gets the LFC client instance
-    """
-
-    try:
-      self.catalog = LcgFileCatalogClient()
-      self.catalog.setAuthenticationID('/O=GRID-FR/C=FR/O=CNRS/OU=CPPM/CN=Andrei Tsaregorodtsev')
-      result = S_OK()
-    except Exception,x:
-      self.log.exception("Failed to create LcgFileCatalogClient")
-      result = S_ERROR(str(x))
-
-    return result
 
 ####################################################################################
 #
@@ -107,44 +94,6 @@ class TransformationDB(DB):
     """  Get the database name
     """
     return self.dbname
-
-  def addDirectory(self,directory,force=False):
-    """ Adds all the files stored in a given directory in the LFC catalog.
-        Adds all the replicas of the processed files
-    """
-    print "Adding files in the directory",directory
-    if self.catalog is None:
-      result = self.__getLFCClient()
-    if self.catalog is None:
-      print "Failed to get the LFC client"
-      return S_ERROR("Failed to get the LFC client")
-
-    start = time.time()
-    result = self.catalog.getPfnsInDir(directory)
-    end = time.time()
-    print "getPfnsInDir",directory,"operation time",(end-start)
-    if result['Status'] == 'OK':
-      lfndict =  result['Replicas']
-      counter_lfn = 0
-      counter = 0
-      lfns = []
-      for lfn,repdict in lfndict.items():
-        counter_lfn += 1
-        for se,pfn in repdict.items():
-          counter += 1
-          lfns.append((se,lfn))
-
-      result = self.addFiles(lfns,force)
-      added = result['Added']
-      forced = result['Forced']
-
-      rstring = "Lookup "+str(counter_lfn)+" lfns, added "+ \
-                str(added)+ " replicas, forced"+ str(forced)+" replicas"
-      print rstring
-      return S_OK(rstring)
-    else:
-      print "Failed to ls directory",directory
-      return S_ERROR("Failed to ls directory "+directory)
 
 
   def getTransformationStats(self,production):
@@ -532,6 +481,71 @@ PRIMARY KEY (FileID,StreamName)
 #  This part should correspond to the DIRAC Standard File Catalog interface
 #
 ####################################################################################
+
+  def addDirectory(self,path,force=False):
+    """ Adds all the files stored in a given directory in the LFC catalog.
+    """
+    gLogger.info("TransformationDB.addDirectory: Attempting to populate %s." % path)
+    if self.catalog is None:
+      res = self.__getLFCClient()
+      if not res['OK']:
+        return res
+    start = time.time()
+    res = self.catalog.getDirectoryReplicas(path)
+    end = time.time()
+    if not res['OK']:
+      gLogger.error("TransformationDB.addDirectory: Failed to get replicas." % res['Message'])
+      return res
+    elif not res['Value']['Successful'].has_key(path):
+      gLogger.error("TransformationDB.addDirectory: Failed to get replicas." % res['Message'])
+      return res
+    else:
+      gLogger.info("TransformationDB.addDirectory: Obtained %s replicas in %s seconds." % (path,end-start))
+      replicas = res['Value'][path]
+      fileCount = 0
+      filesAdded = 0
+      replicaCount = 0
+      replicasAdded = 0
+      replicasFailed = 0
+      replicasForced = 0
+      for lfn,replicaDict in replicas.items():
+        fileCount += 1
+        addFile = False
+        for se,pfn in replicaDict.items():
+          replicaCount += 1
+          replicaTuples = [(lfn,pfn,se,'IGNORED-MASTER')]
+          res = self.addReplica(replicaTuples,force)
+          if not res['OK']:
+            replicasFailed += 1
+          elif not res['Value']['Successful'].has_key(lfn):
+            replicasFailed += 1
+          else:
+            addFile = True
+            if res['Value']['Successful'][lfn]['AddedToCatalog']:
+              replicasAdded += 1
+            if res['Value']['Successful'][lfn]['Forced']:
+              replicasForced += 1
+        if addFile:
+          filesAdded += 1
+      infoStr = "Found %s files and %s replicas\n" % (fileCount,replicaCount)
+      infoStr = "%sAdded %s files.\n" % (infoStr,filesAdded)
+      infoStr = "%sAdded %s replicas.\n" % (infoStr,replicasAdded)
+      infoStr = "%sFailed to add %s replicas.\n" % (infoStr,replicasFailed)
+      infoStr = "%sForced %s replicas." % (infoStr,replicasForced)
+      gLogger.info(infoStr)
+      return S_OK(infoStr)
+
+  def __getLFCClient(self):
+    """Gets the LFC client instance
+    """
+    try:
+      self.catalog = LcgFileCatalogClient()
+      self.catalog.setAuthenticationID('/O=GRID-FR/C=FR/O=CNRS/OU=CPPM/CN=Andrei Tsaregorodtsev')
+      return S_OK()
+    except Exception,x:
+      errStr = "TransformationDB.__getLFCClient: Failed to create LcgFileCatalogClient"
+      gLogger.exception(errStr, str(x))
+      return S_ERROR(errStr)
 
   def exists(self,lfns):
     """ Check the presence of the lfn in the TransformationDB DataFiles table
