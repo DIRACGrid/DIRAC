@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.3 2008/01/25 16:00:32 acsmith Exp $
+# $Id: TransformationDB.py,v 1.4 2008/01/25 17:14:55 acsmith Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -81,9 +81,11 @@ class TransformationDB(DB):
     self.filters = self.__getFilters()
     return S_OK()
 
-  def setTransformationStatus(self,transID,status):
+  def setTransformationStatus(self,name,status):
     """ Set the status of the transformation specified by transID
     """
+    res = self.getTransformation(name)
+    transID = res['Transformation']['TransID']
     req = "UPDATE Transformations SET Status='"+status+"' WHERE TransformationID="+transID
     result = self._update(req)
     if not result['OK']:
@@ -96,7 +98,7 @@ class TransformationDB(DB):
     return self.dbname
 
 
-  def getTransformationStats(self,production):
+  def getTransformationStats(self,name):
     """Get Transformation statistics
 
        Get the statistics of Transformation idendified by production ID
@@ -162,7 +164,7 @@ class TransformationDB(DB):
     else:
       return S_ERROR('Transformation not found')
 
-  def modifyTransformationInput(self,name,fileMask):
+  def setTransformationMask(self,name,fileMask):
     """ Modify the input stream definition for the given transformation
         identified by production
     """
@@ -176,10 +178,11 @@ class TransformationDB(DB):
 
     return S_OK()
 
-  def changeTransformationName(self,transID,new_name):
+  def changeTransformationName(self,name,newName):
     """ Change the transformation name
     """
-
+    result = self.getTransformation(name)
+    transID = result["Transformation"]['TransID']
     req = "UPDATE Transformations SET TransformationName='"+new_name+ \
           "' where TransformationID="+str(transID)
     result = self._update(req)
@@ -243,7 +246,6 @@ class TransformationDB(DB):
     result['Files'] = flist
     print result
     return result
-
 
   def getInputData(self,name,status):
     """ Get input data for the given transformation, only files
