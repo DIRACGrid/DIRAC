@@ -1,4 +1,4 @@
--- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Transformation/TransformationDB.sql,v 1.1 2008/01/23 16:27:29 atsareg Exp $
+-- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Transformation/TransformationDB.sql,v 1.2 2008/01/25 16:36:51 gkuznets Exp $
 --------------------------------------------------------------------------------
 --
 --  Schema definition for the TransformationDB database -
@@ -51,7 +51,7 @@ CREATE TABLE Transformations (
     CreationDate DATETIME,
     AuthorDN VARCHAR(255) NOT NULL,
     AuthorGroup VARCHAR(255) NOT NULL,
-    Type CHAR(16) DEFAULT 'Simulation'
+    Type CHAR(16) DEFAULT 'Simulation',
     Mode CHAR(16) DEFAULT 'Manual',
     AgentType CHAR(16) DEFAULT 'Unknown',
     Status  CHAR(16) DEFAULT 'New',
@@ -92,6 +92,7 @@ CREATE TABLE TransformationLog (
     Author VARCHAR(255) NOT NULL DEFAULT "Unknown",
     MessageDate DATETIME NOT NULL,
     INDEX (TransformationID)
+);
 
 --------------------------------------------------------------------------------
 DROP TABLE IF EXISTS DataFiles;
