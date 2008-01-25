@@ -1,15 +1,15 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/Attic/ProxyRepositoryDB.py,v 1.10 2008/01/25 15:27:49 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/Attic/ProxyRepositoryDB.py,v 1.11 2008/01/25 19:11:39 atsareg Exp $
 ########################################################################
 """ ProxyRepository class is a front-end to the proxy repository Database
 """
 
-__RCSID__ = "$Id: ProxyRepositoryDB.py,v 1.10 2008/01/25 15:27:49 atsareg Exp $"
+__RCSID__ = "$Id: ProxyRepositoryDB.py,v 1.11 2008/01/25 19:11:39 atsareg Exp $"
 
 import time
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
-from DIRAC.Core.Utilities.GridCredentials import getProxyTimeLeft, getVOMSAttributes, createVOMSProxy
+from DIRAC.Core.Utilities.GridCredentials import *
 
 #############################################################################
 class ProxyRepositoryDB(DB):
@@ -91,7 +91,8 @@ class ProxyRepositoryDB(DB):
           
         if result['OK']:
           self.log.info('VOMS conversion done for '+dn) 
-          proxy_to_store = result['Value']
+          new_proxy = result['Value']
+          proxy_to_store = setDIRACGroupInProxy(new_proxy,group)
           proxyType = "VOMS"  
       else:
         proxy_to_store = proxy
