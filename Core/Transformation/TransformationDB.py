@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.1 2008/01/23 16:27:29 atsareg Exp $
+# $Id: TransformationDB.py,v 1.2 2008/01/25 13:59:13 acsmith Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -16,8 +16,9 @@ import re,time,types
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
 from DIRAC.DataManagementSystem.Client.Catalog.LcgFileCatalogClient import LcgFileCatalogClient
-
-DEBUG = 1
+from DIRAC.DataManagementSystem.Client.Catalog.FileCatalogueBase import FileCatalogueBase
+from DIRAC.Core.Utilities.List import stringListToString, intListToString
+import threading
 
 #############################################################################
 
@@ -29,7 +30,7 @@ class TransformationDB(DB):
     """
 
     DB.__init__(self,dbname, dbconfig, maxQueueSize)
-
+    self.lock = threading.Lock()
     self.dbname = dbname
     self.filters = self.__getFilters()
     self.catalog = None
@@ -48,85 +49,49 @@ class TransformationDB(DB):
 
     return result
 
+####################################################################################
+#
+#  This part contains the transformation manipulation methods
+#
+####################################################################################
+
   def addTransformation(self,name,fileMask,groupSize):
     """ Add new transformation definition including its input streams
     """
-
     inFields = ['TransformationName', 'CreationDate', 'FileMask', 'FileGroupSize']
     inValues = [name,'NOW()',fileMask,groupSize]
+    self.lock.acquire()
     result = self._insert('Transformations',inFields,inValues)
     if not result['OK']:
+      self.lock.release()
       return result
     req = " SELECT LAST_INSERT_ID()"
     result = self._query(req)
-    if result['OK']:
-      transID = int(result['Value'])
-    else:
+    self.lock.release()
+    if not result['OK']:
       return result
-
+    transID = int(result['Value'])
     self.filters.append((transID,re.compile(fileMask)))
-
-    result = self.__addProcessingTable(transID)
+    result = self.__addTransformationTable(transID)
     # Add already existing files to this transformation if any
     result = self.__addExistingFiles(transID)
     return S_OK(transID)
 
-  def __addExistingFiles(self,transID):
-    """ Add files that already exist in the DataFiles table to the
-        transformation specified by the transID
-    """
-
-    # Add already existing files to this transformation if any
-    filters = self.__getFilters(transID)
-    req = "SELECT LFN,FileID FROM DataFiles"
-    result = self._query(req)
-    if result['OK']:
-      files = result['Value']
-      for lfn,fileID in files:
-        resultFilter = self.__filterFile(lfn,filters)
-        if resultFilter:
-          result = self.__addFileToTransformation(fileID,resultFilter)
-    else:
-      return result
-
-    return S_OK()
-
-  def __addProcessingTable(self,transID):
-    """ Add a new Processing table for a given transformation
-    """
-
-    req = "CREATE TABLE P_"+str(transID) + " (" + """
-FileID INTEGER NOT NULL,
-Status VARCHAR(32) DEFAULT "unused",
-ErrorCount INT(4) NOT NULL DEFAULT 0,
-JobID VARCHAR(32),
-UsedSE VARCHAR(32) DEFAULT "Unknown",
-PRIMARY KEY (FileID,StreamName)
-)"""
-    result = self._update(req)
-    if not result['OK']:
-      return S_ERROR("Failed to add new processing table "+str(x))
-    else:
-      return S_OK()
-
   def removeTransformation(self,name):
     """ Remove the transformation specified by transID
     """
-
     res = self.getTransformation(name)
     transID = res['Transformation']['TransID']
     req = "DELETE FROM Transformations WHERE TransformationName='"+str(name)+"'"
     result = self._update(req)
     if not result['OK']:
       return result
-    req = "DROP TABLE IF EXISTS P_"+str(transID)
+    req = "DROP TABLE IF EXISTS T_"+str(transID)
     result = self._update(req)
     if not result['OK']:
       return result
-
     # Update the filter information
     self.filters = self.__getFilters()
-
     return S_OK()
 
   def setTransformationStatus(self,transID,status):
@@ -139,309 +104,17 @@ PRIMARY KEY (FileID,StreamName)
     return S_OK()
 
   def getName(self):
-    """  et the database name
+    """  Get the database name
     """
-
     return self.dbname
-
-####################################################################################
-#
-#  This part should correspond to the DIRAC Standard File Catalog interface
-#
-####################################################################################
-
-  def exists(self,lfn):
-    """ Check the presence of the lfn in the Processing DB DataFiles table
-    """
-    req = "SELECT FileID FROM DataFiles WHERE LFN='"+lfn+"'"
-    resQ = self._query(req)
-    if resQ['OK']:
-      result = S_OK()
-      if len(resQ['Value']) == 0:
-        result['Exists'] = 0
-      else:
-        result['Exists'] = 1
-      return result
-    else:
-      return S_ERROR("ProcessingDB: failed to check existence of file "+lfn)
-
-  def addFile(self,lfn,pfn,size,se,guid,force=False):
-    """Add file
-
-       Add a new file to the Production DB together with its first replica.
-    """
-
-    print "Adding file",lfn,pfn,size,se,guid
-
-    pass_filter = 0
-    retained = 0
-    forced = 0
-    added = 0
-    added_to_transformation = 0
-    lfn_exist = 0
-    replica_exist = 0
-
-    resultFilter = self.__filterFile(lfn)
-    if resultFilter:
-      pass_filter = 1
-    if not resultFilter:
-      if force:
-        resultFilter = 1
-        forced = 1
-
-    if resultFilter:
-
-      retained = 1
-      result = self.__add_file(lfn,pfn,size,se,guid)
-      lfn_exist = result['LfnExist']
-      replica_exist = result['ReplicaExist']
-      if result['Status'] == "OK":
-        added = 1
-        if resultFilter != 1:
-          fileID = result['FileID']
-          result = self.__addFileToTransformation(fileID,resultFilter)
-          if result['Status'] == "OK":
-            added_to_transformation = 1
-
-    else:
-      print "File",lfn,"is not requested"
-      result = S_OK()
-      result['Message'] = "File is not requested"
-
-    result['PassFilter'] = pass_filter
-    result['Retained'] = retained
-    result['Forced'] = forced
-    result['Added'] = added
-    result['AddedToTransformation'] = added_to_transformation
-    result['LfnExist'] = lfn_exist
-    result['ReplicaExist'] = replica_exist
-
-    return result
-
-  def __add_file(self,lfn,pfn,size,se,guid):
-
-    """Add file without checking for filters
-    """
-
-    #print "__add_file_without_filter: Adding file",lfn,pfn,size,se,guid
-
-    lfn_exist = 0
-    replica_exist = 0
-
-    # Check if the file already added
-    req = "SELECT FileID FROM DataFiles WHERE LFN='"+lfn+"'"
-    result = self._query(req)
-    if not result['OK']:
-      return result
-    if len(result['Value']) == 0:
-      req = "INSERT INTO DataFiles ( LFN, Status ) VALUES ( '"+lfn+"', 'New' )"
-      result = self._update(req)
-      if not result['OK']:
-        return result
-      req = " SELECT LAST_INSERT_ID()"
-      if not result['OK']:
-        return result
-      fileID = result['Value'][0][0]
-    else:
-      fileID = str(int(result[0][0]))
-      lfn_exist = 1
-
-    req = "SELECT FileID FROM Replicas WHERE FileID="+fileID+" AND SE='"+se+"'"
-    result = self._query(req)
-    if not result['OK']:
-      return result
-    if len(result['Value']):
-      req = "INSERT INTO Replicas ( FileID, SE, PFN ) VALUES ( "+fileID+", '"+se+"', '"+pfn+"' )"
-      result = self._update(req)
-      if not result['OK']:
-        return result
-    else:
-      replica_exist = 1
-
-    result = S_OK()
-    result['FileID'] = fileID
-    result['LfnExist'] = lfn_exist
-    result['ReplicaExist'] = replica_exist
-
-    return result
-
-  def addFiles(self,lfns,force=False):
-    """Add files
-
-       Add a list of replicas in one go
-    """
-
-    ok = 1
-    counter = 0
-    counter_not_retained = 0
-    counter_add = 0
-    counter_bad = 0
-    counter_force = 0
-    counter_exist = 0
-
-    for se,lfn in lfns:
-
-      counter += 1
-      pfn = se+":"+lfn
-      result = self.addFile(lfn,pfn,999999,se,'0000000000000',force)
-      if result['Status'] != 'OK':
-        print "Failed to add file",lfn,"at",se
-        ok = 0
-        counter_bad += 1
-      else:
-        if result.has_key('Message') and result['Message'] == 'File is not requested':
-          counter_not_retained += 1
-        if result['Forced'] :
-          counter_force += 1
-        if result['ReplicaExist'] :
-          counter_exist += 1
-        if result['Added']:
-          counter_add += 1
-          print counter_add,"Added file",lfn,"at",se
-
-    result = S_OK()
-
-    rstring = "Received "+str(counter)+" replicas: added "+ \
-                  str(counter-counter_not_retained-counter_exist)+ \
-            ", not retained "+ str(counter_not_retained)+ \
-                  ", forced "+ str(counter_force)+", already existed "+str(counter_exist)+\
-                  ", failed "+str(counter_bad)
-    result['Message'] = rstring
-    result['Added'] = counter_add
-    result['Forced'] = counter_force
-    result['Bad'] = counter_bad
-    result['ReplicaExist'] = counter_exist
-
-    return result
-
-
-  def addPfn(self,lfn,pfn,se):
-    """Add replica
-
-       Add new replica to the Production DB for an existing lfn.
-       This is just for compatibility with the File Catalog interface.
-    """
-
-    result = self.addFile(lfn,pfn,999999,se,'01234567890')
-    return result
-
-  def addPfns(self,listOfTuples):
-    """ Add a list of replicas (pfn) to the catalog
-    """
-
-    result = S_OK()
-    listOfMessages = []
-    listOfStatus = []
-    result['Message'] = "There is a message per added file in result['listOfMessages']"
-
-
-
-    for lfn,pfn,se in listOfTuples:
-      print 'addPfns: lfn,pfn,se in listOfTuples :'
-      print lfn,pfn,se
-      res = self.addPfn(lfn,pfn,se)
-      if ( res['Status'] == 'OK' ):
-         listOfMessages.append("File " + pfn + " inserted in the catalog")
-         listOfStatus.append((lfn,pfn,'Done'))
-      else:
-         listOfMessages.append("Failed to insert file " + pfn + "\n" + res['Message'])
-         listOfStatus.append((lfn,pfn,'Failed'))
-         result['Status']= "Error"
-
-    result['listOfStatus'] = listOfStatus
-    result['listOfMessages'] = listOfMessages
-    return result
-
-  def getPfnsByLfn(self,lfn,session=False):
-    """ Get replicas for the file specified by lfn
-    """
-
-    repdict = {}
-    req = "SELECT FileID from DataFiles WHERE LFN='"+ lfn+"'"
-    result = self._query(req)
-    if not result['OK']:
-      return result
-    if not result['Value']:
-      print "ProcessingDB: LFN not found",lfn
-      return S_ERROR("ProcessingDB: LFN not found "+lfn)
-
-    fileID = result['Value'][0][0]
-    req = "SELECT SE,PFN FROM Replicas WHERE FileID="+str(fileID)
-    result = self._query(req)
-    if not result['OK']:
-      return result
-
-    if result['Value']:
-      for row in result['Value']:
-        repdict[row[0]] = row[1]
-    result = S_OK()
-    result['Replicas'] = repdict
-    return result
-
-  def getPfnsByLfnList(self,lfns):
-    """ Get replicas for the files specified by the lfn list
-    """
-
-    resdict = {}
-    result = S_OK()
-
-    for lfn in lfns:
-      result = self.getPfnsByLfn(lfn,False)
-      if result['Status'] == 'OK':
-        resdict[lfn] = result['Replicas']
-      else:
-        resdict[lfn] = {}
-
-    result['Replicas'] = resdict
-    return result
-
-  def removePfn(self,lfn,pfn):
-    """Remove replica
-
-       Remove replica pfn of lfn
-    """
-
-    req = "DELETE Replicas FROM Replicas,DataFiles WHERE "+ \
-          "Replicas.FileID=DataFiles.FileID AND DataFiles.LFN='"+ \
-          lfn+"' AND Replicas.PFN='"+pfn+"'"
-    result = self._update(req)
-    return result
-
-  def rmFile(self,lfn,update_transformations=True):
-    """Remove file
-
-       Remove file specified by lfn from the ProcessingDB
-    """
-
-    req = "DELETE Replicas FROM Replicas,DataFiles WHERE Replicas.FileID=DataFiles.FileID AND DataFiles.LFN='"+lfn+"'"
-    result = self._update(req)
-    req = "DELETE FROM DataFiles WHERE LFN='"+lfn+"'"
-    result = self._update(req)
-    result = self.getAllTransformations()
-    if result['Status'] == "OK":
-      for t in result["Transformations"]:
-        transID = t['TransID']
-        print "++++",transID,'any','deleted',lfn
-        result = self.setFileStatusForTransformation(transID,'any','deleted',[lfn])
-    print "File",lfn,"removed from the Processing DB"
-    return S_OK()
-
-#########################################################################################
-#
-#  End of File Catalog section
-#
-#########################################################################################
 
   def addDirectory(self,directory,force=False):
     """ Adds all the files stored in a given directory in the LFC catalog.
         Adds all the replicas of the processed files
     """
-
     print "Adding files in the directory",directory
-
     if self.catalog is None:
       result = self.__getLFCClient()
-
     if self.catalog is None:
       print "Failed to get the LFC client"
       return S_ERROR("Failed to get the LFC client")
@@ -474,73 +147,6 @@ PRIMARY KEY (FileID,StreamName)
       return S_ERROR("Failed to ls directory "+directory)
 
 
-
-  def __getFilters(self,transID=None):
-    """ Get filters for all defined input streams in all the transformations.
-        If transID argument is given, get filters only for this transformation.
-    """
-
-    resultList = []
-    req = "SELECT TransformationID,FileMask FROM Transformations"
-    result = self._query(req)
-    if not result['OK']:
-      return result
-    for transID,mask in result['Value']:
-      refilter = re.compile(mask)
-      resultList.append((transID,refilter))
-
-    return resultList
-
-  def __filterFile(self,lfn,filters=None):
-    """Pass the input file through a filter
-
-       Apply input file filters of the currently active transformations to the
-       given lfn and select appropriate transformations if any. If 'filters'
-       argument is given, use this one instead of the global filter list.
-       Filter list is composed of triplet tuples transID,StreamName,refilter
-       where refilter is a compiled RE object to check the lfn against.
-    """
-
-    result = []
-
-    # If the list of filters is given use it, otherwise use the complete list
-    if filters:
-      for transID,refilter in filters:
-        #print transID,refilter
-        if refilter.search(lfn):
-          result.append(transID)
-    else:
-      for transID,refilter in self.filters:
-        #print transID,refilter
-        if refilter.search(lfn):
-          result.append(transID)
-
-    #print result
-    return result
-
-  def __addFileToTransformation(self,fileID,resultFilter):
-    """Add file to transformations
-
-       Add file to all the transformations which require this kind of files.
-       resultFilter is a list of pairs transID,StreamName which needs this file
-    """
-
-    if resultFilter:
-      for transID in resultFilter:
-        req = "SELECT * FROM P_"+str(transID)+" WHERE FileID="+str(fileID)
-        result = self._query(req)
-        if not result['OK']:
-          return result
-        if result['Value']:
-          req = "INSERT INTO P_%s ( FileID ) VALUES ( '%s' )" % (str(transID),str(fileID))
-          result = self._update(req)
-          if not result['OK']:
-            return result
-        else:
-          print "File",fileID,"already added to transformation",transID
-
-    return S_OK()
-
   def getTransformationStats(self,production):
     """Get Transformation statistics
 
@@ -550,22 +156,22 @@ PRIMARY KEY (FileID,StreamName)
     result = self.getTransformation(production)
     if result['Status'] == "OK":
       transID = result['Transformation']['TransID']
-      req = "SELECT COUNT(*) FROM P_"+str(transID)
+      req = "SELECT COUNT(*) FROM T_"+str(transID)
       result = self.query(req)
       if not result['OK']:
         return result
       total = int(result['Value'][0][0])
-      req = "SELECT COUNT(*) FROM P_"+str(transID)+" WHERE Status='unused'"
+      req = "SELECT COUNT(*) FROM T_"+str(transID)+" WHERE Status='unused'"
       result = self.query(req)
       if not result['OK']:
         return result
       unused = int(result['Value'][0][0])
-      req = "SELECT COUNT(*) FROM P_"+str(transID)+" WHERE Status='assigned'"
+      req = "SELECT COUNT(*) FROM T_"+str(transID)+" WHERE Status='assigned'"
       result = self.query(req)
       if not result['OK']:
         return result
       assigned = int(result['Value'][0][0])
-      req = "SELECT COUNT(*) FROM P_"+str(transID)+" WHERE Status='done'"
+      req = "SELECT COUNT(*) FROM T_"+str(transID)+" WHERE Status='done'"
       result = self.query(req)
       if not result['OK']:
         return result
@@ -665,10 +271,10 @@ PRIMARY KEY (FileID,StreamName)
     transID = res['Transformation']['TransID']
 
     flist = []
-    req = "SELECT LFN,p.Status,p.JobID,p.UsedSE FROM DataFiles AS d,P_"+ \
+    req = "SELECT LFN,p.Status,p.JobID,p.UsedSE FROM DataFiles AS d,T_"+ \
           str(transID)+" AS p WHERE "+"p.FileID=d.FileID ORDER by LFN"
     if order_by_job:
-      req = "SELECT LFN,p.Status,p.JobID,p.UsedSE FROM DataFiles AS d,P_"+ \
+      req = "SELECT LFN,p.Status,p.JobID,p.UsedSE FROM DataFiles AS d,T_"+ \
             str(transID)+" AS p WHERE "+"p.FileID=d.FileID ORDER by p.JobID"
 
     result = self._query(req)
@@ -701,7 +307,7 @@ PRIMARY KEY (FileID,StreamName)
     transID = result['Transformation']['TransID']
 
     reslist = []
-    req = "SELECT FileID from P_"+str(transID)+" WHERE Status='unused'"
+    req = "SELECT FileID from T_"+str(transID)+" WHERE Status='unused'"
     result = self._query(req)
     if not result['OK']:
       return result
@@ -726,26 +332,6 @@ PRIMARY KEY (FileID,StreamName)
     result['Data'] = reslist
     return result
 
-  def __getFileIDsForLfns(self,lfns):
-    """ Get file Ids for the given list of lfn's
-    """
-
-    fids = []
-
-    str_lfns = []
-    for lfn in lfns:
-      str_lfns.append("'"+lfn+"'")
-    str_lfn = string.join(str_lfns,",")
-
-    req = "SELECT FileID FROM DataFiles WHERE LFN in ( "+str_lfn+" )"
-    result = self._query(req)
-    if not result['OK']:
-      return result
-    for row in result['Value']:
-      fids.append(str(row[0]))
-
-    return fids
-
   def setFileSEForTransformation(self,name,se,lfns):
     """ Set file SE for the given transformation identified by transID
         for files in the list of lfns
@@ -756,11 +342,11 @@ PRIMARY KEY (FileID,StreamName)
       return S_ERROR("Transformation is not found")
     transID = result['Transformation']['TransID']
 
-    fids = self.__getFileIDsForLfns(lfns)
+    fids = self.__getFileIDsForLfns(lfns).keys()
 
     if fids:
       s_fids = string.join(fids,",")
-      req = "UPDATE P_"+str(transID)+" SET FileSE='"+se+"' WHERE FileID IN ( "+ \
+      req = "UPDATE T_"+str(transID)+" SET FileSE='"+se+"' WHERE FileID IN ( "+ \
             s_fids+" ) "
       print req
       result = self._update(req)
@@ -768,74 +354,12 @@ PRIMARY KEY (FileID,StreamName)
 
     return S_ERROR('Files not found')
 
-  def setReplicaStatus(self,lfn,status,site):
-    """Set file status
-
-       Set file status for the replica specified by se
-    """
-
-    fids = self.__getFileIDsForLfns([lfn])
-    if fids:
-      fileID = fids[0]
-    else:
-      print "File",lfn,"not known"
-      return S_ERROR("File "+lfn+" not known")
-
-    if site.lower() == "any" :
-      req = "UPDATE Replicas SET Status='"+status+"' WHERE FileID="+fileID
-      result = self._update(req)
-    else:
-      result = gConfig.getValue('/Resources/SiteLocalSEMapping',site,types.ListType)
-      if result['Status'] == 'OK':
-        ses = [ "'"+x+"'" for x in result['Value'] ]
-        sesstr = string.join(ses,',')
-        req = "UPDATE Replicas SET Status='"+status+"' WHERE FileID="+fileID+ \
-              " AND SE IN ("+sesstr+")"
-        result = self._update(req)
-      else:
-        return S_ERROR('Failed to get SiteLocalSEMapping')
-
-    if status == "Problematic":
-      req = "UPDATE DataFiles SET Status='Problematic' WHERE FileID="+fileID
-      result = self._update(req)
-
-    return S_OK()
-
-  def getReplicaStatus(self,lfn):
-    """ Get all the replica information for a given LFN
-    """
-
-    print "Getting replica status for",lfn
-
-    repdict = {}
-    req = "SELECT FileID from DataFiles WHERE LFN='"+ lfn+"'"
-    result = self._query(req)
-    if not result['OK']:
-      return result
-    if not result['Value']:
-      print "ProcessingDB: LFN not found",lfn
-      return S_ERROR("ProcessingDB: LFN not found "+lfn)
-
-    fileid = int(result['Value'][0][0])
-    req = "SELECT SE,PFN,Status FROM Replicas WHERE FileID="+str(fileid)
-    result = self._query(req)
-    if not result['OK']:
-      return result
-    if result['Value']:
-      for row in result['Value']:
-        pfn = row[1]
-        status = row[2]
-        repdict[row[0]] = (pfn,status)
-    result = S_OK()
-    result['ReplicaStatus'] = repdict
-    return result
-
   def setFileStatusForTransformation(self,name,status,lfns):
     """ Set file status for the given transformation identified by transID
         for the given stream for files in the list of lfns
     """
 
-    fids = self.__getFileIDsForLfns(lfns)
+    fids = self.__getFileIDsForLfns(lfns).keys()
 
     result = self.getTransformation(name)
     if result['Status'] != "OK":
@@ -844,7 +368,7 @@ PRIMARY KEY (FileID,StreamName)
 
     if fids:
       s_fids = string.join(fids,",")
-      req = "UPDATE P_"+str(transID)+" SET Status='"+status+"' WHERE FileID IN ( "+ \
+      req = "UPDATE T_"+str(transID)+" SET Status='"+status+"' WHERE FileID IN ( "+ \
               s_fids+" )"
 
       print req
@@ -866,12 +390,13 @@ PRIMARY KEY (FileID,StreamName)
 
     return result
 
+
   def setFileJobID(self,name,jobID,lfns):
     """ Set file job ID for the given transformation identified by transID
         for the given stream for files in the list of lfns
     """
 
-    fids = self.__getFileIDsForLfns(lfns)
+    fids = self.__getFileIDsForLfns(lfns).keys()
 
     result = self.getTransformation(name)
     if result['Status'] != "OK":
@@ -881,10 +406,397 @@ PRIMARY KEY (FileID,StreamName)
 
     if fids:
       s_fids = string.join(fids,",")
-      req = "UPDATE P_"+str(transID)+" SET JobID='"+jobID+"' WHERE FileID IN ( "+ s_fids+" )"
+      req = "UPDATE T_"+str(transID)+" SET JobID='"+jobID+"' WHERE FileID IN ( "+ s_fids+" )"
       result = self._update(req)
       return result
 
     else:
       return S_ERROR('Files not found')
 
+
+####################################################################################
+#
+#  This part should correspond to the internal methods required for tranformation manipulation
+#
+####################################################################################
+
+  def __addExistingFiles(self,transID):
+    """ Add files that already exist in the DataFiles table to the
+        transformation specified by the transID
+    """
+    # Add already existing files to this transformation if any
+    filters = self.__getFilters(transID)
+    req = "SELECT LFN,FileID FROM DataFiles"
+    result = self._query(req)
+    if not result['OK']:
+      return result
+    files = result['Value']
+    for lfn,fileID in files:
+      resultFilter = self.__filterFile(lfn,filters)
+      if resultFilter:
+        result = self.__addFileToTransformation(fileID,resultFilter)
+    return S_OK()
+
+  def __addTransformationTable(self,transID):
+    """ Add a new Transformation table for a given transformation
+    """
+    req = """CREATE TABLE T_%s(
+FileID INTEGER NOT NULL,
+Status VARCHAR(32) DEFAULT "unused",
+ErrorCount INT(4) NOT NULL DEFAULT 0,
+JobID VARCHAR(32),
+UsedSE VARCHAR(32) DEFAULT "Unknown",
+PRIMARY KEY (FileID,StreamName)
+)""" % str(transID)
+    result = self._update(req)
+    if not result['OK']:
+      return S_ERROR("Failed to add new transformation table "+str(x))
+    else:
+      return S_OK()
+
+  def __getFilters(self,transID=None):
+    """ Get filters for all defined input streams in all the transformations.
+        If transID argument is given, get filters only for this transformation.
+    """
+
+    resultList = []
+    req = "SELECT TransformationID,FileMask FROM Transformations"
+    result = self._query(req)
+    if not result['OK']:
+      return result
+    for transID,mask in result['Value']:
+      refilter = re.compile(mask)
+      resultList.append((transID,refilter))
+
+    return resultList
+
+
+  def __addFileToTransformation(self,fileID,resultFilter):
+    """Add file to transformations
+
+       Add file to all the transformations which require this kind of files.
+       resultFilter is a list of pairs transID,StreamName which needs this file
+    """
+
+    if resultFilter:
+      for transID in resultFilter:
+        req = "SELECT * FROM T_"+str(transID)+" WHERE FileID="+str(fileID)
+        result = self._query(req)
+        if not result['OK']:
+          return result
+        if result['Value']:
+          req = "INSERT INTO T_%s ( FileID ) VALUES ( '%s' )" % (str(transID),str(fileID))
+          result = self._update(req)
+          if not result['OK']:
+            return result
+        else:
+          print "File",fileID,"already added to transformation",transID
+
+    return S_OK()
+
+  def __getFileIDsForLfns(self,lfns):
+    """ Get file IDs for the given list of lfns
+    """
+    fids = {}
+    req = "SELECT LFN,FileID FROM DataFiles WHERE LFN in (%s);" % stringListToString(lfns)
+    res = self._query(req)
+    if not res['OK']:
+      return res
+    for lfn,fileID in res['Value']:
+      fids[fileID] = lfn
+    return fids
+
+  def __filterFile(self,lfn,filters=None):
+    """Pass the input file through a filter
+
+       Apply input file filters of the currently active transformations to the
+       given lfn and select appropriate transformations if any. If 'filters'
+       argument is given, use this one instead of the global filter list.
+       Filter list is composed of triplet tuples transID,StreamName,refilter
+       where refilter is a compiled RE object to check the lfn against.
+    """
+    result = []
+    # If the list of filters is given use it, otherwise use the complete list
+    if filters:
+      for transID,refilter in filters:
+        if refilter.search(lfn):
+          result.append(transID)
+    else:
+      for transID,refilter in self.filters:
+        if refilter.search(lfn):
+          result.append(transID)
+    return result
+
+####################################################################################
+#
+#  This part should correspond to the DIRAC Standard File Catalog interface
+#
+####################################################################################
+
+  def exists(self,lfns):
+    """ Check the presence of the lfn in the TransformationDB DataFiles table
+    """
+    gLogger.info("TransformationDB.exists: Attempting to determine existence of %s files." % len(lfns))
+    fileIDs = self.__getFileIDsForLfns(lfns)
+    failed = {}
+    successful = {}
+    for lfn in lfns:
+      if not lfn in fileIDs.values():
+        successful[lfn] = False
+      else:
+        successful[lfn] = True
+    resDict = {'Successful':successful,'Failed':failed}
+    return S_OK(resDict)
+
+  def removeFile(self,lfns):
+    """ Remove file specified by lfn from the ProcessingDB
+    """
+    gLogger.info("TransformationDB.removeFile: Attempting to remove %s files." % len(lfns))
+    res = self.getAllTransformations()
+    if res['OK']:
+      for transformation in result['Value']:
+        transID = transformation['TransID']
+        res = self.setFileStatusForTransformation(transID,'deleted',lfns)
+    fileIDs = self.__getFileIDsForLfns(lfns)
+    failed = {}
+    successful = {}
+    for lfn in lfns:
+      if not lfn in fileIDs.values():
+        successful[lfn] = True
+    req = "DELETE Replicas FROM Replicas WHERE FileID IN (%s);" % intListToString(fileIDs.keys())
+    res = self._update(req)
+    if not res['OK']:
+      return S_ERROR("TransformationDB.removeFile: Failed to remove file replicas.")
+    req = "DELETE FROM DataFiles WHERE FileID IN (%s);" % intListToString(fileIDs.keys())
+    res = self._update(req)
+    if not res['OK']:
+      return S_ERROR("TransformationDB.removeFile: Failed to remove files.")
+    for lfn in fileIDs.values():
+      successful[lfn] = True
+    resDict = {'Successful':successful,'Failed':failed}
+    return S_OK(resDict)
+
+  def addReplica(self,replicaTuples,force=False):
+    """ Add new replica to the TransformationDB for an existing lfn.
+    """
+    gLogger.info("TransformationDB.addReplica: Attempting to add %s replicas." % len(replicaTuples))
+    fileTuples = []
+    for lfn,pfn,se,master in replicaTuples:
+      fileTuples.append((lfn,pfn,0,se,'IGNORED-GUID'))
+    res = self.addFile(fileTuples,force)
+    return res
+
+  def addFile(self,fileTuples,force=False):
+    """  Add a new file to the TransformationDB together with its first replica.
+    """
+    gLogger.info("TransformationDB.addFile: Attempting to add %s files." % len(fileTuples))
+    successful = {}
+    failed = {}
+    for lfn,pfn,size,se,guid in fileTuples:
+
+      passFilter = False
+      forced = False
+      retained = False
+      lFilters = self.__filterFile(lfn)
+      if lFilters:
+        passFilter = True
+        retained = True
+      elif force:
+        forced = True
+        retained = True
+
+      addedToCatalog = False
+      addedToTransformation = False
+      if retained:
+        res = self.__addFile(lfn,pfn,se)
+        if not res['OK']:
+          failed[lfn] = "TransformationDB.addFile: Failed to add file. %s" % res['Message']
+        else:
+          addedToCatalog = True
+          fileID = res['Value']['FileID']
+          fileExists = res['Value']['LFNExist']
+          replicaExists = res['Value']['ReplicaExist']
+          if pass_filter:
+            res = self.__addFileToTransformation(fileID,lFilters)
+            if res['OK']:
+              addedToTransformation = True
+          successful[lfn] = {'PassFilter':passFilter,'Retained':retained,'Forced':forced,'AddedToCatalog':addedToCatalog,'AddedToTransformation':addedToTransformation,'FileExists':fileExists,'ReplicaExists':replicaExists}
+      else:
+        successful[lfn] = {'PassFilter':passFilter,'Retained':retained,'Forced':forced,'AddedToCatalog':addedToCatalog,'AddedToTransformation':addedToTransformation}
+    resDict = {'Successful':successful,'Failed':failed}
+    return S_OK(resDict)
+
+  def __addFile(self,lfn,pfn,se):
+    """ Add file without checking for filters
+    """
+    lfn_exist = 0
+    fileIDs = self.__getFileIDsForLfns([lfn])
+    if lfn in fileIDs.values():
+      lfn_exist = 1
+      fileID = fileIDs.keys()[0]
+    else:
+      self.lock.acquire()
+      req = "INSERT INTO DataFiles (LFN,Status) VALUES ('%s','New');" % lfn
+      res = self._update(req)
+      if not res['OK']:
+        self.lock.release()
+        return S_ERROR("TransformationDB.__addFile: %s" % res['Message'])
+      req = " SELECT LAST_INSERT_ID();"
+      res = self._query(req)
+      self.lock.release()
+      if not res['OK']:
+        return S_ERROR("TransformationDB.__addFile: %s" % res['Message'])
+      fileID = result['Value'][0][0]
+
+    replica_exist = 0
+    res = self.__addReplica(fileID,se,pfn)
+    if not res['OK']:
+      self.removeFile([lfn])
+      return S_ERROR("TransformationDB.__addFile: %s" % res['Message'])
+    elif not res['Value']:
+      replica_exist = 1
+
+    resDict = {'FileID':fileID,'LFNExist':lfn_exist,'ReplicaExist':replica_exist}
+    return S_OK(resDict)
+
+  def __addReplica(self,fileID,se,pfn):
+    """ Add a SE,PFN for the given fileID in the Replicas table.
+
+        If the SQL fails this method returns S_ERROR()
+        If the replica already exists it returns S_OK(0)
+        If the replica was inserted it returns S_OK(1)
+    """
+    req = "SELECT FileID FROM Replicas WHERE FileID=%s AND SE='%s';" % (fileID,se)
+    res = self._query(req)
+    if not res['OK']:
+      return S_ERROR("TransformationDB.addReplica: %s" % res['Message'])
+    elif len(result['Value']) == 0:
+      return S_OK(0)
+    else:
+      req = "INSERT INTO Replicas (FileID,SE,PFN) VALUES (%s,'%s','%s');" % (fileID,se,pfn)
+      res = self._update(req)
+      if not res['OK']:
+        return S_ERROR("TransformationDB.addReplica: %s" % res['Message'])
+      else:
+        return S_OK(1)
+
+  def removeReplica(self,replicaTuples):
+    """ Remove replica pfn of lfn. If this is the last replica then remove the file.
+    """
+    gLogger.info("TransformationDB.removeReplica: Attempting to remove %s replicas." % len(replicaTuples))
+    successful = {}
+    failed = {}
+    for lfn,pfn,se in replicaTuples:
+      res = self.getReplicas([lfn])
+      if not res['OK']:
+        failed[lfn] = "TransformationDB.removeReplica. Failed to get replicas before removal. %s" % res['Message']
+      elif not res['Value']['Successful'].has_key(lfn):
+        failed[lfn] = "TransformationDB.removeReplica. Failed to get replicas before removal. %s" % res['Value']['Failed'][lfn]
+      else:
+        replicas = res['Value']['Successful'][lfn]
+        if len(replics.keys()) < 2:
+          res = self.removeFile([lfn])
+          if not res['OK']:
+            failed[lfn] = "TransformationDB.removeReplica. Failed to remove replica. %s" % res['Message']
+          else:
+            successful[lfn] = True
+        else:
+          req = "DELETE FROM Replicas as r,DataFiles as d WHERE r.FileID=d.FileID AND d.LFN='%s' r.SE='%s';" % (lfn,se)
+          res = self._update(req)
+          if not res['OK']:
+            failed[lfn] = "TransformationDB.removeReplica. Failed to remove replica. %s" % res['Message']
+          else:
+            successful[lfn] = True
+    resDict = {'Successful':successful,'Failed':failed}
+    return S_OK(resDict)
+
+  def getReplicas(self,lfns):
+    """ Get replicas for the files specified by the lfn list
+    """
+    gLogger.info("TransformationDB.getReplicas: Attempting to get replicas for %s files." % len(lfns))
+    fileIDs = self.__getFileIDsForLfns(lfns)
+    failed = {}
+    for lfn in lfns:
+      if not lfn in fileIDs.values():
+        failed[lfn] = "TransformationDB.getReplicas: File not found."
+    req = "SELECT FileID,SE,PFN FROM Replicas WHERE FileID IN (%s);" % intListToString(fileIDs.keys())
+    res = self._query(req)
+    if not res['OK']:
+      return res
+    successful = {}
+    for fileID,se,pfn in res['Value']:
+      lfn = fileIDs[fileID]
+      if not successful.has_key(lfn):
+        successful[lfn] = {}
+      successful[lfn][se] = pfn
+    for lfn in fileIDs.values():
+      if not successful.has_key(lfn):
+        failed[lfn] = "TransformationDB.getReplicas: No replicas found."
+    resDict = {'Successful':successful,'Failed':failed}
+    return S_OK(resDict)
+
+  def setReplicaStatus(self,replicaTuples):
+    """Set status for the supplied replica tuples
+    """
+    gLogger.info("TransformationDB.getReplicaStatus: Attempting to set statuses for %s replicas." % len(replicaTuples))
+    successful = {}
+    failed = {}
+    for lfn,pfn,se,status in replicaTuples:
+      fileIDs = self.__getFileIDsForLfns([lfn])
+      if not lfn in fileIDs.values():
+        failed[lfn] = "TransformationDB.setReplicaStatus: File not found."
+      else:
+        fileID = fileIDs.keys()[0]
+        if se.lower() == "any" :
+          req = "UPDATE Replicas SET Status='%s' WHERE FileID=%s;" % (status,fileID)
+        else:
+          req = "UPDATE Replicas SET Status='%s' WHERE FileID= %s AND SE = '%s';" % (status,fileID,se)
+        res = self._update(req)
+        if not res['OK']:
+          failed[lfn] = "TransformationDB.setReplicaStatus: Failed to update status."
+        else:
+          successful[lfn] = True
+    resDict = {'Successful':successful,'Failed':failed}
+    return S_OK(resDict)
+
+  def getReplicaStatus(self,lfns):
+    """ Get the status for the supplied file replicas
+    """
+    gLogger.info("TransformationDB.getReplicaStatus: Attempting to get statuses of file replicas.")
+    fileIDs = self.__getFileIDsForLfns(lfns)
+    failed = {}
+    for lfn in lfns:
+      if not lfn in fileIDs.values():
+        failed[lfn] = "TransformationDB.getReplicaStatus: File not found."
+    req = "SELECT FileID,SE,Status FROM Replicas WHERE FileID IN (%s);" % intListToString(fileIDs.keys())
+    res = self._query(req)
+    if not res['OK']:
+      return res
+    successful = {}
+    for fileID,se,status in res['Value']:
+      lfn = fileIDs[fileID]
+      if not successful.has_key(lfn):
+        successful[lfn] = {}
+      successful[lfn][se] = status
+    for lfn in fileIDs.values():
+      if not successful.has_key(lfn):
+        failed[lfn] = "TransformationDB.getReplicaStatus: No replicas found."
+    resDict = {'Successful':successful,'Failed':failed}
+    return S_OK(resDict)
+
+  def setReplicaHost(self,replicaTuples):
+    gLogger.info("TransformationDB.setReplicaHost: Attempting to set SE for %s replicas." % len(replicaTuples))
+    for lfn,pfn,oldse,newse in replicaTuples:
+      fileIDs = self.__getFileIDsForLfns([lfn])
+      if not lfn in fileIDs.values():
+        failed[lfn] = "TransformationDB.setReplicaHost: File not found."
+      else:
+        fileID = fileIDs[lfn]
+        req = "UPDATE Replicas SET SE='%s' WHERE FileID=%s AND SE ='%s';" % (newse,fileID,oldse)
+        res = self._update(req)
+        if not res['OK']:
+          failed[lfn] = "TransformationDB.setReplicaHost: Failed to update status."
+        else:
+          successful[lfn] = True
+    resDict = {'Successful':successful,'Failed':failed}
+    return S_OK(resDict)
