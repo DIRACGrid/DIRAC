@@ -1,4 +1,4 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.12 2008/01/25 14:22:19 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.13 2008/01/25 17:14:42 atsareg Exp $
 
 """ Grid Credentials module contains utilities to manage user and host
     certificates and proxies.
@@ -33,7 +33,7 @@
     getVOMSProxyInfo()
 """
 
-__RCSID__ = "$Id: GridCredentials.py,v 1.12 2008/01/25 14:22:19 atsareg Exp $"
+__RCSID__ = "$Id: GridCredentials.py,v 1.13 2008/01/25 17:14:42 atsareg Exp $"
 
 import os
 import os.path
@@ -52,6 +52,7 @@ from DIRAC.Core.Utilities.Subprocess import shellCall
 
 securityConfPath = "/DIRAC/Security"
 PROXY_COMMAND_TIMEOUT = 30
+MAX_PROXY_VALIDITY_DAYS = 7
 
 def getGridProxy():
   """ Get the path of the currently active grid proxy file
@@ -187,16 +188,26 @@ def setDIRACGroup( userGroup ):
   """
   proxyLocation = getGridProxy()
   fd = file( proxyLocation, "r" )
-  contents = fd.readlines()
+  proxy = fd.read()
   fd.close()
-  groupLine = ":::diracgroup=%s\n" % userGroup
-  if contents[0].find( ":::diracgroup=" ) == 0:
-    contents[0] = groupLine
-  else:
-    contents.insert( 0, groupLine )
+  new_proxy = setDIRACGroupInProxy(proxy,userGroup)
   fd = file( proxyLocation, "w" )
-  fd.write( "".join( contents ) )
+  fd.write( new_proxy )
   fd.close()
+
+def setDIRACGroupInProxy(proxy,group):
+  """ Add the DIRAC group string to the proxy
+  """
+
+  if proxy.find( ":::diracgroup=" ) == 0:
+    lines = proxy.split('\n')
+    lines[0] = ":::diracgroup=%s\n" % group
+    new_proxy = '\n'.join(lines)
+  else:
+    new_proxy = ":::diracgroup=%s\n" % group
+    new_proxy = new_proxy + proxy
+
+  return new_proxy
 
 def getDIRACGroup( defaultGroup = "none" ):
   """ Get the user group in the DIRAC framework
@@ -247,17 +258,28 @@ def parseProxy(proxy=None,option=None):
     proxy_file = getGridProxy()
     cmd = "openssl x509 -noout -text -in %s" % proxy_file
 
+  resultVOMS = isVOMS(proxy_file)
+  voms = False
+  if resultVOMS['OK']:
+    if resultVOMS['Value']:
+      voms = True
+
   result = shellCall(PROXY_COMMAND_TIMEOUT,cmd)
+
   if temp_proxy_file:
     os.remove(temp_proxy_file)
 
   if not result['OK']:
-    return S_ERROR('OpenSSL call failed')
+    result = S_ERROR('OpenSSL call failed')
+    result['VOMS'] = voms
+    return result
 
   status,output,error = result['Value']
 
   if status != 0 :
-    return S_ERROR('Failed to execute command. Cmd: %s; StdOut: %s; StdErr: %s' % (cmd,output,error))
+    result = S_ERROR('Failed to execute command. Cmd: %s; StdOut: %s; StdErr: %s' % (cmd,output,error))
+    result['VOMS'] = voms
+    return result
 
   text_lines = output.split("\n")
   proxyDict = {}
@@ -305,16 +327,26 @@ def parseProxy(proxy=None,option=None):
   if option:
     try:
       value = proxyDict[option]
-      return S_OK(value)
+      result = S_OK(value)
     except KeyValue:
-      return S_ERROR('Illegal option '+option)
+      result = S_ERROR('Illegal option '+option)
   else:
-    return S_OK(proxyDict)
+    result = S_OK(proxyDict)
+
+  result['VOMS'] = voms
+  return result
 
 def getProxyTimeLeft(proxy=None):
   """ Get proxy time left, returns S_OK structure
   """
-  return parseProxy(proxy,option="TimeLeft")
+  result = parseProxy(proxy,option="TimeLeft")
+  timeleft = result['Value']
+  actimeleft = 99999999
+  if result['VOMS']:
+    result = getVOMSProxyInfo(proxy,'actimeleft')
+    actimeleft = result['Value']
+
+  return S_OK(min(timeleft,actimeleft))
 
 def getProxyDN(proxy= None):
   """ Get proxy DN, returns S_OK structure
@@ -470,6 +502,9 @@ def createProxy(certfile='',keyfile='',hours=0,bits=512,password=''):
   # Directory where all the temporary files will be put
   tmpdir = tempfile.mkdtemp()
 
+  if hours > MAX_PROXY_VALIDITY_DAYS*24:
+    hours = MAX_PROXY_VALIDITY_DAYS*24
+
   if not certfile:
     result = getCertificateAndKey()
     if result:
@@ -615,6 +650,9 @@ def renewProxy(proxy,lifetime=72,
 
   #print proxy,lifetime,server,server_key,server_cert,vo
 
+  if lifetime > MAX_PROXY_VALIDITY_DAYS*24:
+    lifetime = MAX_PROXY_VALIDITY_DAYS*24
+
   rm_proxy = 0
   try:
     if not os.path.exists(proxy):
@@ -726,7 +764,10 @@ def createVOMSProxy(proxy,attributes="",vo=""):
       if result["OK"]:
         new_proxy,old_proxy = result["Value"]
         rm_proxy = 1
-        lifetime = result['TimeLeft']
+        result = getProxyTimeLeft(new_proxy)
+        if not result["OK"]:
+          return S_ERROR('Failed to setup given proxy. Proxy is: %s' % (proxy))
+        lifetime = result['Value']
       else:
         return S_ERROR('Failed to setup given proxy. Proxy is: %s' % (proxy))
     else:
@@ -744,7 +785,11 @@ def createVOMSProxy(proxy,attributes="",vo=""):
     return S_ERROR('Failed to create temporary file to store VOMS proxy')
 
   # Lifetime of proxy
-  lifetime = lifetime - 300 # lifetime of extension should be less than 5min
+
+  if lifetime > MAX_PROXY_VALIDITY_DAYS*24*3600:
+    lifetime = MAX_PROXY_VALIDITY_DAYS*24*3600
+
+  lifetime = lifetime - 300 # lifetime of extension should be less by 5min
   minutes, seconds = divmod(lifetime,60)
   hours, minutes = divmod(minutes,60)
 
@@ -920,7 +965,7 @@ def getVOMSProxyInfo(proxy_file,option=None):
       @return:  status, output, error, pyerror.
   """
 
-  options = ['timeleft','identity','fqan','all']
+  options = ['actimeleft','timeleft','identity','fqan','all']
   if option:
     if option not in options:
       S_ERROR('Non valid option %s' % option)
