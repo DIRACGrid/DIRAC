@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.14 2008/01/24 15:31:17 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.15 2008/01/25 17:19:41 paterson Exp $
 # File :   InputDataAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
 
 """
 
-__RCSID__ = "$Id: InputDataAgent.py,v 1.14 2008/01/24 15:31:17 paterson Exp $"
+__RCSID__ = "$Id: InputDataAgent.py,v 1.15 2008/01/25 17:19:41 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
@@ -101,16 +101,16 @@ class InputDataAgent(Optimizer):
     """
     lfns = [string.replace(fname,'LFN:','') for fname in inputData]
     start = time.time()
-    result = self.fileCatalog.getReplicas(lfns)
+    replicas = self.fileCatalog.getReplicas(lfns)
     timing = time.time() - start
     self.log.info('LFC Lookup Time: %.2f seconds ' % (timing) )
-    if not result['OK']:
-      self.log.warn(result['Message'])
-      return result
+    if not replicas['OK']:
+      self.log.warn(replicas['Message'])
+      return replicas
 
     badLFNCount = 0
     badLFNs = []
-    catalogResult = result['Value']
+    catalogResult = replicas['Value']
 
     if catalogResult.has_key('Failed'):
       for lfn,cause in catalogResult['Failed'].items():
@@ -118,8 +118,8 @@ class InputDataAgent(Optimizer):
         badLFNs.append('LFN:%s Problem: %s' %(lfn,cause))
 
     if catalogResult.has_key('Successful'):
-      for lfn,replicas in catalogResult['Successful'].items():
-        if not replicas:
+      for lfn,reps in catalogResult['Successful'].items():
+        if not reps:
           badLFNs.append('LFN:%s Problem: Null replica value' %(lfn))
           badLFNCount+=1
 
@@ -146,17 +146,18 @@ class InputDataAgent(Optimizer):
 
     failed = guidDict['Value']['Failed']
     if failed:
+      self.log.warn('Failed to establish some GUIDs')
       self.log.warn(failed)
       guids = False
 
-    if not guids:
-      guidDict = {}
-    else:
-      guidDict = guidDict['Value']
+    if guids:
+      inputData.update(guidDict)
+      for lfn,reps in replicas['Value']['Successful'].items():
+        guidDict['Value']['Successful'][lfn].update(reps)
+      replicas = guidDict
 
     result = {}
-    result['GUIDs'] = guidDict
-    result['Replicas'] = inputData
+    result['CatalogResult'] = replicas
     result['SiteCandidates'] = siteCandidates['Value']
     return S_OK(result)
 
