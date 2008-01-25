@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.33 2008/01/21 14:26:47 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.34 2008/01/25 19:08:06 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.33 2008/01/21 14:26:47 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.34 2008/01/25 19:08:06 atsareg Exp $"
 
 import re, os, sys, string
 import time
@@ -173,7 +173,7 @@ class JobDB(DB):
     # should make sure that only 1 thread is allowed to call this method at any time.
     # for the moment I put a lock here.
 
-    cmd = 'INSERT INTO Jobs (SubmissionTime) VALUES (CURDATE())'
+    cmd = 'INSERT INTO Jobs (SubmissionTime) VALUES (NOW())'
     err = 'JobDB.getJobID: Failed to retrieve a new Id.'
 
     self.getIDLock.acquire()
@@ -570,7 +570,7 @@ class JobDB(DB):
     """
 
     if update:
-      cmd = 'UPDATE Jobs SET %s=\'%s\',LastUpdateTime=CURDATE() WHERE JobID=\'%s\'' % ( attrName, attrValue, jobID )
+      cmd = 'UPDATE Jobs SET %s=\'%s\',LastUpdateTime=NOW() WHERE JobID=\'%s\'' % ( attrName, attrValue, jobID )
     else:
       cmd = 'UPDATE Jobs SET %s=\'%s\' WHERE JobID=\'%s\'' % ( attrName, attrValue, jobID )
 
