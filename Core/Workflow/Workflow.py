@@ -1,22 +1,17 @@
-# $Id: Workflow.py,v 1.18 2008/01/23 15:47:16 gkuznets Exp $
+# $Id: Workflow.py,v 1.19 2008/01/27 10:40:31 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.18 $"
+__RCSID__ = "$Revision: 1.19 $"
 
 import os
-#try: # this part to inport as part of the DIRAC framework
 from DIRAC.Core.Workflow.Parameter import *
 from DIRAC.Core.Workflow.Module import *
 from DIRAC.Core.Workflow.Step import *
-#  print "DIRAC.Core.Workflow.Parameter"
-#except: # this part is to import code without DIRAC
-#  from Parameter import *
-#  from Module import *
-#  from Step import *
-#  print "Parameter"
+from DIRAC.Core.Workflow.WorkflowReader import *
 
 class Workflow(AttributeCollection):
+
   def __init__(self, obj=None, name=None):
     """ Be aware that 1-st param is an obj not a name!!!!
         obj can me a string with XML representation or with filename
