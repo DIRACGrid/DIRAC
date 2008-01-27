@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSClient.py,v 1.3 2007/11/29 15:36:33 atsareg Exp $
+# $Id: WMSClient.py,v 1.4 2008/01/27 15:19:48 atsareg Exp $
 ########################################################################
 
 """ DIRAC Workload Management System Client class encapsulates all the
@@ -19,7 +19,7 @@ class WMSClient:
   def __init__(self):
     """ WMS Client constructor
     """
-    self.jobReceiver = RPCClient('WorkloadManagement/JobManager')
+    self.jobManager = RPCClient('WorkloadManagement/JobManager')
     self.sandbox = SandboxClient()
 
 ###############################################################################
@@ -109,7 +109,7 @@ class WMSClient:
     # Submit the job now and get the new job ID
     proxyfile = getGridProxy()
     proxy = open(proxyfile,'r').read()
-    result = self.jobReceiver.submitJob(jdlString, proxy)
+    result = self.jobManager.submitJob(jdlString, proxy)
 
     if not result['OK']:
       return result
@@ -134,3 +134,31 @@ class WMSClient:
         return S_ERROR('Failed to set the Input Sandbox flag to ready')
 
     return S_OK(jobID)
+
+  def killJob(self,jobID):
+    """ Kill running job.
+        jobID can be an integer representing a single DIRAC job ID or a list of IDs
+    """
+
+    return self.jobManager.killJob(jobID)
+
+  def deleteJob(self,jobID):
+    """ Delete job(s) from the WMS Job database.
+        jobID can be an integer representing a single DIRAC job ID or a list of IDs
+    """
+
+    return self.jobManager.deleteJob(jobID)
+
+  def rescheduleJob(self,jobID):
+    """ Reschedule job(s) in WMS Job database.
+        jobID can be an integer representing a single DIRAC job ID or a list of IDs
+    """
+
+    return self.jobManager.rescheduleJob(jobID)
+
+  def resetJob(self,jobID):
+    """ Reset job(s) in WMS Job database.
+        jobID can be an integer representing a single DIRAC job ID or a list of IDs
+    """
+
+    return self.jobManager.resetJob(jobID)
