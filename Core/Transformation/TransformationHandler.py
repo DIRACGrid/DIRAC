@@ -5,7 +5,7 @@ from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Transformation.TransformationDB import TransformationDB
 
-class TransformationDBHandler(RequestHandler):
+class TransformationHandler(RequestHandler):
 
   def setDatabase(self,oDatabase):
     self.database = oDatabase
