@@ -1,4 +1,4 @@
--- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Transformation/TransformationDB.sql,v 1.3 2008/01/28 14:26:58 gkuznets Exp $
+-- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Transformation/TransformationDB.sql,v 1.4 2008/01/28 14:31:57 gkuznets Exp $
 --------------------------------------------------------------------------------
 --
 --  Schema definition for the TransformationDB database -
@@ -36,11 +36,6 @@ DROP TABLE IF EXISTS Transformations;
 --   ERROR - Production with error, equivalent to STOPPED
 --   TERMINATED - stopped, extension impossible
 -- FileMask - filter mask
--- Body - XML body of the Transformation if required.
--- In the Table PArAmeters
---     PRParent - name of the parent Workflow used to create the current one.
---            taken from the XML field "type"
---     GroupSize - number of files per Transformation
 --------------------------------------------------------------------------------
 
 CREATE TABLE Transformations (
