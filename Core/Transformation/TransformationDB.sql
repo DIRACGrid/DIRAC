@@ -1,4 +1,4 @@
--- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Transformation/TransformationDB.sql,v 1.2 2008/01/25 16:36:51 gkuznets Exp $
+-- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Transformation/TransformationDB.sql,v 1.3 2008/01/28 14:26:58 gkuznets Exp $
 --------------------------------------------------------------------------------
 --
 --  Schema definition for the TransformationDB database -
@@ -56,9 +56,8 @@ CREATE TABLE Transformations (
     AgentType CHAR(16) DEFAULT 'Unknown',
     Status  CHAR(16) DEFAULT 'New',
     FileMask VARCHAR(255),
-    FileGroupSize INT NOT NULL DEFAULT 0,
-    Body BLOB,
-    PRIMARY KEY(TransformationID,TransformationName)
+    PRIMARY KEY(TransformationID),
+    INDEX(TransformationName)
 ) ENGINE=InnoDB;
 
 --------------------------------------------------------------------------------
