@@ -1,8 +1,6 @@
 import signal
 import os
 
-from DIRAC.LoggingSystem.Client.Logger import gLogger
-
 gCallbackList = []
 
 def registerSignals():
@@ -23,6 +21,7 @@ def execute( exitCode, frame ):
     try:
       callback( exitCode )
     except:
+      from DIRAC.LoggingSystem.Client.Logger import gLogger
       gLogger.exception( "Exception while calling callback" )
   os._exit( exitCode )
 
