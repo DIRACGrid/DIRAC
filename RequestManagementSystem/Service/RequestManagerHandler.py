@@ -3,8 +3,6 @@
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.RequestManagementSystem.DB.RequestDBFile import RequestDBFile
-from DIRAC.RequestManagementSystem.DB.RequestDBMySQL import RequestDBMySQL
 
 requestDB = False
 
@@ -17,8 +15,10 @@ def initializeRequestManagerHandler(serviceInfo):
     return S_ERROR(fatStr)
   gLogger.info("RequestManager.initializeRequestManagerHandler: Initialising with backend",backend)
   if backend == 'file':
+    from DIRAC.RequestManagementSystem.DB.RequestDBFile import RequestDBFile
     requestDB = RequestDBFile()
   elif backend == 'mysql':
+    from DIRAC.RequestManagementSystem.DB.RequestDBMySQL import RequestDBMySQL
     requestDB = RequestDBMySQL()
   else:
     fatStr = "RequestManager.initializeRequestManagerHandler: Supplied backend is not supported."
