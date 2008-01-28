@@ -47,7 +47,7 @@ class LHCbOnlineStorage(StorageBase):
     failed = {}
     for lfn,ignored in urls:
       try:
-        res = self.server.findOutTheServerMethodName(lfn)
+        res = self.server.errorMigratingFile(lfn)
         if res:
           successful[lfn] = True
           gLogger.info("LHCbOnline.getFile: Successfully requested file from Online storage.")
