@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.5 2008/01/28 11:02:39 gkuznets Exp $
+# $Id: TransformationDB.py,v 1.6 2008/01/28 14:48:37 gkuznets Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -65,11 +65,11 @@ class TransformationDB(DB):
         return True
     return False
 
-  def addTransformation(self,name,fileMask,groupSize):
+  def addTransformation(self, name, description, long_description, authorDN, authorGroup, type, mode, agentType, status, fileMask):
     """ Add new transformation definition including its input streams
     """
-    inFields = ['TransformationName', 'CreationDate', 'FileMask', 'FileGroupSize']
-    inValues = [name,'NOW()',fileMask,groupSize]
+    inFields = ['TransformationName', 'Description', 'LongDescription', 'CreationDate', 'AuthorDN', 'AuthorGroup', 'Type', 'Mode', 'AgentType', 'Status', 'FileMask']
+    inValues = [name, description, long_description, 'NOW()', authorDN, authorGroup, type, mode, agentType, status, fileMask]
     self.lock.acquire()
     result = self._insert('Transformations',inFields,inValues)
     if not result['OK']:
