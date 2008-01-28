@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.4 2008/01/25 17:14:55 acsmith Exp $
+# $Id: TransformationDB.py,v 1.5 2008/01/28 11:02:39 gkuznets Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -41,6 +41,29 @@ class TransformationDB(DB):
 #  This part contains the transformation manipulation methods
 #
 ####################################################################################
+
+  def _isTransformationExists(self, name):
+    """ Method returns number of transformation with the name=<name>
+        Returns 0 if no transformations with such name
+    """
+    cmd = "SELECT COUNT(*) from Transformations WHERE TransformationName='%s'" % name
+    result = self._query(cmd)
+    if not result['OK']:
+      gLogger.error("Failed to check if Transformation with name %s exists %s" % (name, result['Message']))
+      return 0
+    return result['Value'][0][0]
+
+  def _isTransformationExistsID(self, id):
+    """ Method returns TRUE if transformation with the ID=<id> exists
+    """
+    cmd = "SELECT COUNT(*) from Productions WHERE TransformationID='%d'" % id
+    result = self._query(cmd)
+    if not result['OK']:
+      gLogger.error("Failed to check if Transformation with ID %d exists %s" % (id, result['Message']))
+      return False
+    elif result['Value'][0][0] > 0:
+        return True
+    return False
 
   def addTransformation(self,name,fileMask,groupSize):
     """ Add new transformation definition including its input streams
