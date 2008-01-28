@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.15 2008/01/24 16:25:59 acasajus Exp $
-__RCSID__ = "$Id: MonitoringClient.py,v 1.15 2008/01/24 16:25:59 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.16 2008/01/28 19:13:40 acasajus Exp $
+__RCSID__ = "$Id: MonitoringClient.py,v 1.16 2008/01/28 19:13:40 acasajus Exp $"
 
 import threading
 import time
@@ -71,7 +71,7 @@ class MonitoringClient:
     """
     self.sendingMode = gConfig.getValue( "%s/SendMode" % self.cfgSection, "periodic" )
     if self.sendingMode == "periodic":
-      self.sendingPeriod = max( 60, gConfig.getValue( "%s/SendPeriod" % self.cfgSection, 60 ) )
+      self.sendingPeriod = max( 60, gConfig.getValue( "%s/SendPeriod" % self.cfgSection, 300 ) )
       self.sendingThread = threading.Thread( target = self.__periodicFlush )
       self.sendingThread.setDaemon( 1 )
       self.sendingThread.start()
