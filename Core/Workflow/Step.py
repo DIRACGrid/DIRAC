@@ -1,8 +1,8 @@
-# $Id: Step.py,v 1.16 2008/01/23 15:48:13 gkuznets Exp $
+# $Id: Step.py,v 1.17 2008/01/29 17:08:21 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.16 $"
+__RCSID__ = "$Revision: 1.17 $"
 
 import os
 #try: # this part to inport as part of the DIRAC framework
@@ -148,7 +148,15 @@ class StepInstance(AttributeCollection):
 
     def resolveGlobalVars(self, step_definitions, wf_parameters):
         self.parameters.resolveGlobalVars(wf_parameters)
+        module_instance_number=0
         for inst in step_definitions[self.getType()].module_instances:
+            module_instance_number=module_instance_number+1
+            inst.parameters.append(Parameter("MODULE_NUMBER","%s"%module_instance_number,"string","","",True,False,"Number of the ModuleInstance within the Step"))
+            inst.parameters.append(Parameter("MODULE_INSTANCE_NAME",inst.getName(),"string","","",True,False,"Name of the ModuleInstance within the Step"))
+            inst.parameters.append(Parameter("MODULE_DEFINITION_NAME",inst.getType(),"string","","",True,False,"Type of the ModuleInstance within the Step"))
+            inst.parameters.append(Parameter("JOB_ID","","string","self","JOB_ID",True,False,"Type of the ModuleInstance within the Step"))
+            inst.parameters.append(Parameter("PRODUCTION_ID","","string","self","PRODUCTION_ID",True,False,"Type of the ModuleInstance within the Step"))
+            inst.parameters.append(Parameter("STEP_NUMBER","","string","self","STEP_NUMBER",True,False,"Type of the ModuleInstance within the Step"))
             inst.resolveGlobalVars(wf_parameters, self.parameters)
 
     def createCode(self, ind=2):
@@ -180,15 +188,7 @@ class StepInstance(AttributeCollection):
             step_exec_modules[mod_inst_name] = step_def.parent.module_definitions[mod_inst.getType()].main_class_obj() # creating instance
 
             # add some mandatory attributes to the instance
-            setattr(step_exec_modules[mod_inst_name], 'MODULE' , mod_inst)
-            setattr(step_exec_modules[mod_inst_name], 'MODULE_INSTANCE_NAME' , mod_inst_name)
-            setattr(step_exec_modules[mod_inst_name], 'MODULE_DEFINITION_NAME' , mod_inst.getType())
-            setattr(step_exec_modules[mod_inst_name], 'STEP' , self)
-            setattr(step_exec_modules[mod_inst_name], 'STEP_INSTANCE_NAME' , self.getName())
-            setattr(step_exec_modules[mod_inst_name], 'STEP_DEFINITION_NAME' , self.getType())
-            #setattr(step_exec_modules[mod_inst_name], 'WF' , self.parent)
-            #setattr(step_exec_modules[mod_inst_name], 'WF_NAME' , self.parent.getName())
-
+            # moved to the resolveGlobalVars
             for parameter in mod_inst.parameters:
                 if parameter.preExecute():
                     if parameter.isLinked():

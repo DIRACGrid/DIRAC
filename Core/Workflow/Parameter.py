@@ -1,8 +1,8 @@
-# $Id: Parameter.py,v 1.14 2008/01/10 20:17:28 gkuznets Exp $
+# $Id: Parameter.py,v 1.15 2008/01/29 17:08:21 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.14 $"
+__RCSID__ = "$Revision: 1.15 $"
 
 # unbinded method, returns indentation string
 def indent(indent=0):
@@ -271,7 +271,7 @@ class ParameterCollection(list):
     def linkUp(self, opt, prefix="", postfix="", objname="self"):
         """ This method will link parameters with the outer object (self) peremeters using prefix and postfix
         for example if we want to link module instance with the step or step instance with the workflow
-        opt - ParameterCollection or sigle Parameter
+        opt - ParameterCollection or sigle Parameter (WARNING!! used as reference to get a names!!! opt is not changed!!!)
         objname - name of the object to connect with, usually 'self'
         """
         if isinstance(opt, ParameterCollection):

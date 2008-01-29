@@ -1,8 +1,8 @@
-# $Id: Workflow.py,v 1.19 2008/01/27 10:40:31 gkuznets Exp $
+# $Id: Workflow.py,v 1.20 2008/01/29 17:08:21 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.19 $"
+__RCSID__ = "$Revision: 1.20 $"
 
 import os
 from DIRAC.Core.Workflow.Parameter import *
@@ -140,12 +140,28 @@ class Workflow(AttributeCollection):
     Be aware that parameters of that type are GLOBAL!!! are string and can not be dynamically change
     The scope: the resolution of that parameters apply from lower to upper object, for example if
     parameter use in module, then it checks module, then step, then workflow"""
+
+    # reenforced global parameters
+    if self.parameters.find("PRODUCTION_ID") == None:
+      self.parameters.append(Parameter("PRODUCTION_ID","00000000","string","","",True,False,"Transformation ID taken from the ProductionManager"))
+    if self.parameters.find("JOB_ID") == None:
+      self.parameters.append(Parameter("JOB_ID","00000000","string","","",True,False,"Job ID within Tranformationtaken from the ProductionManager"))
+
     self.parameters.resolveGlobalVars()
+    step_instance_number=0
     for inst in self.step_instances:
+      # for each step instance we can define STEP_NUMBER
+      step_instance_number=step_instance_number+1
+      inst.parameters.append(Parameter("STEP_NUMBER","%s"%step_instance_number,"string","","",True,False,"Number of the StepInstance within the Workflow"))
+      inst.parameters.append(Parameter("STEP_INSTANCE_NAME",inst.getName(),"string","","",True,False,"Name of the StepInstance within the Workflow"))
+      inst.parameters.append(Parameter("STEP_DEFINITION_NAME",inst.getType(),"string","","",True,False,"Type of the StepInstance within the Workflow"))
+      inst.parameters.append(Parameter("JOB_ID","","string","self","JOB_ID",True,False,"Type of the StepInstance within the Workflow"))
+      inst.parameters.append(Parameter("PRODUCTION_ID","","string","self","PRODUCTION_ID",True,False,"Type of the StepInstance within the Workflow"))
       inst.resolveGlobalVars(self.step_definitions, self.parameters)
 
 
   def createCode(self, combine_steps=False):
+    self.resolveGlobalVars()
     str=''
     str=str+self.module_definitions.createCode()
     str=str+self.step_definitions.createCode()
@@ -165,6 +181,7 @@ class Workflow(AttributeCollection):
     return str
 
   def execute(self):
+    self.resolveGlobalVars()
     # define workflow attributes
     wf_exec_attr={} # dictianary with the WF attributes, used to resolve links to self.attrname
     for wf_parameter in self.parameters:
