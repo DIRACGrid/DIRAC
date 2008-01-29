@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Types/BaseAccountingType.py,v 1.2 2008/01/24 18:50:01 acasajus Exp $
-__RCSID__ = "$Id: BaseAccountingType.py,v 1.2 2008/01/24 18:50:01 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Types/BaseAccountingType.py,v 1.3 2008/01/29 15:34:03 acasajus Exp $
+__RCSID__ = "$Id: BaseAccountingType.py,v 1.3 2008/01/29 15:34:03 acasajus Exp $"
 
 import types
 from DIRAC import S_OK, S_ERROR
@@ -131,3 +131,20 @@ class BaseAccountingType:
              self.endTime,
              self.valuesList
            )
+
+  def registerToServer( self ):
+    """
+    Register type in server
+    """
+    rpcClient = RPCClient( "Accounting/Server" )
+    return rpcClient.registerType( *self.getDefinition() )
+
+  def commit(self):
+    """
+    Commit register to server
+    """
+    retVal = register.checkValues()
+    if not retVal[ 'OK' ]:
+      return retVal
+    rpcClient = RPCClient( "Accounting/Server" )
+    return rpcClient.addEntryToType( *self.getValues() )

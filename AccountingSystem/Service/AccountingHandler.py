@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/Attic/AccountingHandler.py,v 1.3 2008/01/24 18:50:02 acasajus Exp $
-__RCSID__ = "$Id: AccountingHandler.py,v 1.3 2008/01/24 18:50:02 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/Attic/AccountingHandler.py,v 1.4 2008/01/29 15:34:03 acasajus Exp $
+__RCSID__ = "$Id: AccountingHandler.py,v 1.4 2008/01/29 15:34:03 acasajus Exp $"
 import types
 from DIRAC import S_OK, S_ERROR
 from DIRAC.AccountingSystem.private.AccountingDB import AccountingDB
@@ -16,12 +16,14 @@ def initializeAccountingHandler( serviceInfo ):
 class AccountingHandler( RequestHandler ):
 
   types_registerType = [ types.StringType, types.ListType, types.ListType ]
-  def export_registerType( self, name, definitionKeyFields, definitionAccountingFields ):
+  def export_registerType( self, typeName, definitionKeyFields, definitionAccountingFields ):
     """
       Register a new type. (Only for all powerful admins)
       (Bow before me for I am admin! :)
     """
-    return gAccountingDB.registerType( name, definitionKeyFields, definitionAccountingFields )
+    setup = self.serviceInfoDict[ 'clientSetup' ]
+    typeName = "%s_%s" % ( typeName, setup )
+    return gAccountingDB.registerType( typeName, definitionKeyFields, definitionAccountingFields )
 
   types_getRegisteredTypes = []
   def export_getRegisteredTypes( self ):
@@ -37,6 +39,8 @@ class AccountingHandler( RequestHandler ):
       Delete accounting type and ALL its contents. VERY DANGEROUS! (Only for all powerful admins)
       (Bow before me for I am admin! :)
     """
+    setup = self.serviceInfoDict[ 'clientSetup' ]
+    typeName = "%s_%s" % ( typeName, setup )
     return gAccountingDB.deleteType( typeName )
 
   types_addEntryToType = [ types.StringType, Time._dateTimeType, Time._dateTimeType, types.ListType ]
@@ -44,14 +48,16 @@ class AccountingHandler( RequestHandler ):
     """
       Add a record for a type
     """
+    setup = self.serviceInfoDict[ 'clientSetup' ]
+    typeName = "%s_%s" % ( typeName, setup )
     return gAccountingDB.addEntry( typeName, startTime, endTime, valuesList )
 
   types_retrieveBucketedData = [ types.StringType, Time._dateTimeType, Time._dateTimeType, types.DictType, types.ListType, types.ListType ]
-  def export_retrieveBucketedData( self, name, startTime, endTime, condDict, returnList, groupFields ):
+  def export_retrieveBucketedData( self, typeName, startTime, endTime, condDict, returnList, groupFields ):
     """
     Get data from the DB
       Parameters:
-        name -> typeName
+        typeName -> typeName
         startTime & endTime -> datetime objects. Do I need to explain the meaning?
         condDict -> conditions for the query
                     key -> name of the key field
@@ -60,4 +66,13 @@ class AccountingHandler( RequestHandler ):
                         ( <name of value field>, <function to apply> )
         groupFields -> list of fields to group by
     """
-    return gAccountingDB.retrieveBucketedData( name, startTime, endTime, condDict, returnList, groupFields )
+    setup = self.serviceInfoDict[ 'clientSetup' ]
+    typeName = "%s_%s" % ( typeName, setup )
+    return gAccountingDB.retrieveBucketedData( typeName, startTime, endTime, condDict, returnList, groupFields )
+
+  types_compactDB = []
+  def export_compactDB( self ):
+    """
+    Compact the db by grouping buckets
+    """
+    return gAccountingDB.compactBuckets()
