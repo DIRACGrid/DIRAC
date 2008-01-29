@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.15 2008/01/25 17:19:41 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.16 2008/01/29 11:14:01 paterson Exp $
 # File :   InputDataAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
 
 """
 
-__RCSID__ = "$Id: InputDataAgent.py,v 1.15 2008/01/25 17:19:41 paterson Exp $"
+__RCSID__ = "$Id: InputDataAgent.py,v 1.16 2008/01/29 11:14:01 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
@@ -134,8 +134,8 @@ class InputDataAgent(Optimizer):
 
     inputData = catalogResult['Successful']
     siteCandidates = self.getSiteCandidates(inputData)
-    if not result['OK']:
-      self.log.warn(result['Message'])
+    if not siteCandidates['OK']:
+      self.log.warn(siteCandidates['Message'])
       return result
 
     guids = True
@@ -151,9 +151,9 @@ class InputDataAgent(Optimizer):
       guids = False
 
     if guids:
-      inputData.update(guidDict)
       for lfn,reps in replicas['Value']['Successful'].items():
         guidDict['Value']['Successful'][lfn].update(reps)
+
       replicas = guidDict
 
     result = {}
