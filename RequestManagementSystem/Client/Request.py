@@ -12,10 +12,18 @@ class RequestClient:
   def __init__(self, useCertificates = False):
     """ Constructor of the RequestClient class
     """
-    self.localUrl = gConfig.getValue('/Systems/RequestManagement/Development/URLs/RequestDB/localURL')
-    self.centralUrl = gConfig.getValue('/Systems/RequestManagement/Development/URLs/RequestDB/centralURL')
+    local = gConfig.getValue('/Systems/RequestManagement/Development/URLs/RequestDB/localURL')
+    if local:
+      self.local = local
+    
+    central = gConfig.getValue('/Systems/RequestManagement/Development/URLs/RequestDB/centralURL','')
+    if central:
+      self.central = central
+
     voBoxUrls = gConfig.getValue('/Systems/RequestManagement/Development/URLs/RequestDB/voBoxURLs',[])
-    self.voBoxUrls = randomize(voBoxUrls).remove(self.localUrl)
+    self.voBoxUrls = randomize(voBoxUrls)
+    if self.local in self.voBoxUrls: 
+      self.voBoxUrls.remove(self.local)
 
   ########################################################################
   #
@@ -70,7 +78,7 @@ class RequestClient:
     """ Set request. URL can be supplied if not a all VOBOXes will be tried in random order.
     """
     try:
-      url = self.localUrl
+      url = self.local
       urls = [url]
       for url in urls:
         requestRPCClient = RPCClient(url)
@@ -98,7 +106,7 @@ class RequestClient:
         First try the local repository then if none available or error try random repository
     """
     try:
-      url = self.localUrl
+      url = self.local
       urls = [url]
       for url in urls:
         gLogger.info("RequestDBClient.getRequest: Attempting to get request.", "%s %s" % (url,requestType)) 
@@ -127,7 +135,7 @@ class RequestClient:
     """ Get a request from RequestDB.
     """
     try:
-      url = self.localUrl
+      url = self.local
       urls = [url]
       for url in urls:
         gLogger.info("RequestDBClient.serveRequest: Attempting to obtain request.", "%s %s" % (url,requestType))
@@ -155,7 +163,7 @@ class RequestClient:
     """ Get the summary of requests in the RequestDBs. If a URL is not supplied will get status for all.
     """
     try:
-      url = self.localUrl
+      url = self.local
       urls = [url]
       urlDict = {}
       for url in urls:
