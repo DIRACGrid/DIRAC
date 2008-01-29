@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.6 2008/01/29 11:16:37 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.7 2008/01/29 11:24:31 paterson Exp $
 # File :   JobSchedulingAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@
       meaningfully.
 
 """
-__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.6 2008/01/29 11:16:37 paterson Exp $"
+__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.7 2008/01/29 11:24:31 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
@@ -325,7 +325,7 @@ class JobSchedulingAgent(Optimizer):
     """This method sends jobs to the task queue agent and if candidate sites
        are defined, updates job JDL accordingly.
     """
-    result = self.jobDB.getJobJDL(job,original=True)
+    result = self.jobDB.getJobJDL(job)
     #means that reqts field will not be changed by any other optimizer
     if not result['OK']:
       return result
