@@ -1,12 +1,12 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.6 2008/01/29 15:34:03 acasajus Exp $
-__RCSID__ = "$Id: AccountingDB.py,v 1.6 2008/01/29 15:34:03 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.7 2008/01/29 19:11:06 acasajus Exp $
+__RCSID__ = "$Id: AccountingDB.py,v 1.7 2008/01/29 19:11:06 acasajus Exp $"
 
 import datetime
 import threading
 import types
 from DIRAC.Core.Base.DB import DB
 from DIRAC import S_OK, S_ERROR, gLogger, gMonitor
-from DIRAC.Core.Utilities import List, ThreadSafe, Time
+from DIRAC.Core.Utilities import List, ThreadSafe, Time, DEncode
 
 gSynchro = ThreadSafe.Synchronizer()
 
@@ -18,14 +18,11 @@ class AccountingDB(DB):
     self.dbCatalog = {}
     self.dbKeys = {}
     self.dbLocks = {}
-    self.bucketsLength = ( #( 604800, 900 ), #<1w = 15m
-                           ( 86400, 900 ), #<1w = 15m
-                           ( 15552000, 86400 ), #>1w <6m = 1d
-                           ( 31104000, 604800 ), #>6m = 1w
-                         )
+    self.dbBucketsLength = {}
     self._createTables( { 'catalogTypes' : { 'Fields' : { 'name' : "VARCHAR(64) UNIQUE",
                                                           'keyFields' : "VARCHAR(256)",
-                                                          'valueFields' : "VARCHAR(256)"
+                                                          'valueFields' : "VARCHAR(256)",
+                                                          'bucketsLength' : "VARCHAR(256)",
                                                        },
                                              'PrimaryKey' : 'name'
                                            }
@@ -39,19 +36,21 @@ class AccountingDB(DB):
                                gMonitor.OP_ACUM )
 
   def __loadCatalogFromDB(self):
-    retVal = self._query( "SELECT name, keyFields, valueFields FROM catalogTypes" )
+    retVal = self._query( "SELECT name, keyFields, valueFields, bucketsLength FROM catalogTypes" )
     if not retVal[ 'OK' ]:
       raise Exception( retVal[ 'Message' ] )
     for typesEntry in retVal[ 'Value' ]:
       typeName = typesEntry[0]
       keyFields = List.fromChar( typesEntry[1], "," )
       valueFields = List.fromChar( typesEntry[2], "," )
-      self.__addToCatalog( typeName, keyFields, valueFields )
+      bucketsLength = DEncode.decode( typesEntry[3] )[0]
+      self.__addToCatalog( typeName, keyFields, valueFields, bucketsLength )
 
-  def __addToCatalog( self, typeName, keyFields, valueFields ):
+  def __addToCatalog( self, typeName, keyFields, valueFields, bucketsLength ):
     """
     Add type to catalog
     """
+    gLogger.verbose( "Adding to catalog type %s" % typeName, "with length %s" % str( bucketsLength ) )
     for key in keyFields:
       if key in self.dbKeys:
         self.dbKeys[ key ] += 1
@@ -64,12 +63,13 @@ class AccountingDB(DB):
     self.dbCatalog[ typeName ][ 'typeFields' ].extend( [ 'startTime', 'endTime' ] )
     self.dbCatalog[ typeName ][ 'bucketFields' ].extend( [ 'startTime', 'bucketLength' ] )
     self.dbLocks[ "bucket%s" % typeName ] = threading.Lock()
+    self.dbBucketsLength[ typeName ] = bucketsLength
     for key in keyFields:
       if not key in self.dbLocks:
         self.dbLocks[ "key%s" % key ] = threading.Lock()
 
   @gSynchro
-  def registerType( self, name, definitionKeyFields, definitionAccountingFields ):
+  def registerType( self, name, definitionKeyFields, definitionAccountingFields, bucketsLength ):
     """
     Register a new type
     """
@@ -85,6 +85,11 @@ class AccountingDB(DB):
     for field in definitionAccountingFields:
       if field in keyFieldsList:
         return S_ERROR( "Value field %s is also in the list of key fields" % field )
+    for bucket in bucketsLength:
+      if type( bucket ) != types.TupleType:
+        return S_ERROR( "Length of buckets should be a list of tuples" )
+      if len( bucket ) != 2:
+        return S_ERROR( "Length of buckets should have 2d tuples" )
     if name in self.dbCatalog:
       gLogger.error( "Type %s is already registered" % name )
       return S_ERROR( "Type %s already exists in db" % name )
@@ -124,10 +129,13 @@ class AccountingDB(DB):
     if not retVal[ 'OK' ]:
       gLogger.error( "Can't create type %s: %s" % ( name, retVal[ 'Message' ] ) )
       return S_ERROR( "Can't create type %s: %s" % ( name, retVal[ 'Message' ] ) )
+    bucketsLength.sort()
+    print bucketsLength
+    bucketsEncoding = DEncode.encode( bucketsLength )
     self._insert( 'catalogTypes',
-                  [ 'name', 'keyFields', 'valueFields' ],
-                  [ name, ",".join( keyFieldsList ), ",".join( valueFieldsList ) ] )
-    self.__addToCatalog( name, keyFieldsList, valueFieldsList )
+                  [ 'name', 'keyFields', 'valueFields', 'bucketsLength' ],
+                  [ name, ",".join( keyFieldsList ), ",".join( valueFieldsList ), bucketsEncoding ] )
+    self.__addToCatalog( name, keyFieldsList, valueFieldsList, bucketsLength )
     gLogger.info( "Registered type %s" % name )
     return S_OK()
 
@@ -204,17 +212,17 @@ class AccountingDB(DB):
       self.dbLocks[ keyTable ].release()
     return S_OK( keyId )
 
-  def __getBucketTimeLength( self, now, when ):
+  def __getBucketTimeLength( self, typeName,now, when ):
     """
     Get the expected bucket time for a moment in time
     """
     dif = abs( now - when )
-    for granuT in self.bucketsLength:
+    for granuT in self.dbBucketsLength[ typeName ]:
       if dif < granuT[0]:
         return granuT[1]
     return self.maxBucketTime
 
-  def __calculateBuckets( self, startTime, endTime ):
+  def __calculateBuckets( self, typeName, startTime, endTime ):
     """
     Magic function for calculating buckets between two times and
     the proportional part for each bucket
@@ -222,7 +230,7 @@ class AccountingDB(DB):
     nowEpoch = int( Time.toEpoch( Time.dateTime() ) )
     startEpoch = int( Time.toEpoch( startTime ) )
     endEpoch = int( Time.toEpoch( endTime ) )
-    bucketTimeLength = self.__getBucketTimeLength( nowEpoch, startEpoch )
+    bucketTimeLength = self.__getBucketTimeLength( typeName, nowEpoch, startEpoch )
     currentBucketStart = ( startEpoch / bucketTimeLength ) * bucketTimeLength
     if startEpoch == endEpoch:
       return [ ( Time.fromEpoch( currentBucketStart ),
@@ -238,7 +246,7 @@ class AccountingDB(DB):
                         proportion,
                         bucketTimeLength ) )
       currentBucketStart += bucketTimeLength
-      bucketTimeLength = self.__getBucketTimeLength( nowEpoch, currentBucketStart )
+      bucketTimeLength = self.__getBucketTimeLength( typeName, nowEpoch, currentBucketStart )
     return buckets
 
   def addEntry( self, typeName, startTime, endTime, valuesList ):
@@ -269,7 +277,7 @@ class AccountingDB(DB):
     """
     Bucketize a record
     """
-    buckets = self.__calculateBuckets( startTime, endTime )
+    buckets = self.__calculateBuckets( typeName, startTime, endTime )
     numKeys = len( self.dbCatalog[ typeName ][ 'keys' ] )
     keyValues = valuesList[ :numKeys ]
     valuesList = valuesList[ numKeys: ]
@@ -418,7 +426,7 @@ class AccountingDB(DB):
     print startTime
     nowEpoch = Time.toEpoch( Time.dateTime () )
     startEpoch = Time.toEpoch( startTime )
-    bucketTimeLength = self.__getBucketTimeLength( nowEpoch , startEpoch )
+    bucketTimeLength = self.__getBucketTimeLength( typeName, nowEpoch , startEpoch )
     print bucketTimeLength
     print startEpoch
     startEpoch = int( startEpoch / bucketTimeLength ) * bucketTimeLength
@@ -570,10 +578,10 @@ class AccountingDB(DB):
     if not retVal[ 'OK' ]:
       return retVal
     connObj = retVal[ 'Value' ]
-    for bPos in range( len( self.bucketsLength ) - 1 ):
-      secondsLimit = self.bucketsLength[ bPos ][0]
-      bucketLength = self.bucketsLength[ bPos ][1]
-      nextBucketLength = self.bucketsLength[ bPos + 1 ][1]
+    for bPos in range( len( self.dbBucketsLength[ typeName ] ) - 1 ):
+      secondsLimit = self.dbBucketsLength[ typeName ][ bPos ][0]
+      bucketLength = self.dbBucketsLength[ typeName ][ bPos ][1]
+      nextBucketLength = self.dbBucketsLength[ typeName ][ bPos + 1 ][1]
       endEpoch = int( nowEpoch / bucketLength ) * bucketLength - secondsLimit
       timeLimit = Time.fromEpoch( endEpoch )
       #Retrieve the data

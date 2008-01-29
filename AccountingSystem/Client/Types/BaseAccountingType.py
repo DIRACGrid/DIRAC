@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Types/BaseAccountingType.py,v 1.4 2008/01/29 16:06:25 acasajus Exp $
-__RCSID__ = "$Id: BaseAccountingType.py,v 1.4 2008/01/29 16:06:25 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Types/BaseAccountingType.py,v 1.5 2008/01/29 19:11:07 acasajus Exp $
+__RCSID__ = "$Id: BaseAccountingType.py,v 1.5 2008/01/29 19:11:07 acasajus Exp $"
 
 import types
 from DIRAC import S_OK, S_ERROR
@@ -16,6 +16,10 @@ class BaseAccountingType:
     self.valuesList = []
     self.startTime = 0
     self.endTime = 0
+    self.bucketsLength = [ ( 604800, 3600 ), #<1w = 1h
+                           ( 15552000, 86400 ), #>1w <6m = 1d
+                           ( 31104000, 604800 ), #>6m = 1w
+                         ]
 
   def checkType( self ):
     """
@@ -120,7 +124,8 @@ class BaseAccountingType:
     """
     return (  self.__class__.__name__,
              self.definitionKeyFields,
-             self.definitionAccountingFields
+             self.definitionAccountingFields,
+             self.bucketsLength
            )
 
   def getValues( self ):
@@ -148,4 +153,4 @@ class BaseAccountingType:
     if not retVal[ 'OK' ]:
       return retVal
     rpcClient = RPCClient( "Accounting/Server" )
-    return rpcClient.addEntryToType( *self.getValues() )
+    return rpcClient.commit( *self.getValues() )
