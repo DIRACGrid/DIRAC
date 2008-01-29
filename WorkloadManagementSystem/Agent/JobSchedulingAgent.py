@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.5 2008/01/23 16:13:04 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.6 2008/01/29 11:16:37 paterson Exp $
 # File :   JobSchedulingAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@
       meaningfully.
 
 """
-__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.5 2008/01/23 16:13:04 paterson Exp $"
+__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.6 2008/01/29 11:16:37 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
@@ -266,7 +266,7 @@ class JobSchedulingAgent(Optimizer):
     """Returns any candidate sites specified by the job or sites that have been
        banned and could affect the scheduling decision.
     """
-    result = self.jobDB.getJobJDL(job,original=True)
+    result = self.jobDB.getJobJDL(job)
     if not result['OK']:
       return result
     if not result['Value']:
