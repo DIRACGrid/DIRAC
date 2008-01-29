@@ -17,6 +17,8 @@ def execute( exitCode, frame ):
   """
   Executes the callback list
   """
+  #TODO: <Adri> Disable ExitCallback until I can debug it
+  os._exit( exitCode )
   for callback in gCallbackList:
     try:
       callback( exitCode )
