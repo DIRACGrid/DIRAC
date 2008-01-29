@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.16 2008/01/29 11:14:01 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.17 2008/01/29 11:46:16 paterson Exp $
 # File :   InputDataAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
 
 """
 
-__RCSID__ = "$Id: InputDataAgent.py,v 1.16 2008/01/29 11:14:01 paterson Exp $"
+__RCSID__ = "$Id: InputDataAgent.py,v 1.17 2008/01/29 11:46:16 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
@@ -157,7 +157,7 @@ class InputDataAgent(Optimizer):
       replicas = guidDict
 
     result = {}
-    result['CatalogResult'] = replicas
+    result['Value'] = replicas
     result['SiteCandidates'] = siteCandidates['Value']
     return S_OK(result)
 
