@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.7 2008/01/29 11:24:31 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.8 2008/01/29 11:30:27 paterson Exp $
 # File :   JobSchedulingAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@
       meaningfully.
 
 """
-__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.7 2008/01/29 11:24:31 paterson Exp $"
+__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.8 2008/01/29 11:30:27 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
@@ -377,7 +377,7 @@ class JobSchedulingAgent(Optimizer):
     if siteCandidates:
       jdlsite = ' && ( '
       for site in siteCandidates:
-	jdlsite = jdlsite + ' other.Site == "'+site+'" || '
+        jdlsite = jdlsite + ' other.Site == "'+site+'" || '
 
       jdlsite = jdlsite[0:-4]
       jdlsite = jdlsite + " )"
