@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobPolicyAgent.py,v 1.2 2008/01/20 16:32:50 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobPolicyAgent.py,v 1.3 2008/01/29 15:33:09 paterson Exp $
 # File :   JobPolicyAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
 
 """
 
-__RCSID__ = "$Id: JobPolicyAgent.py,v 1.2 2008/01/20 16:32:50 paterson Exp $"
+__RCSID__ = "$Id: JobPolicyAgent.py,v 1.3 2008/01/29 15:33:09 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
@@ -57,7 +57,7 @@ class JobPolicyAgent(Optimizer):
       result = S_ERROR('Null JDL returned from JobDB')
       return result
 
-    classadJob = ClassAd('['+jdl+']')
+    classadJob = ClassAd(jdl)
     if not classadJob.isOK():
       self.log.debug("Warning: illegal JDL for job %s, will be marked problematic" % (job))
       result = S_ERROR()

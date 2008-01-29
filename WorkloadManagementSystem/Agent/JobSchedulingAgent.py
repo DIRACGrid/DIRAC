@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.9 2008/01/29 14:45:20 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.10 2008/01/29 15:36:25 paterson Exp $
 # File :   JobSchedulingAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@
       meaningfully.
 
 """
-__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.9 2008/01/29 14:45:20 paterson Exp $"
+__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.10 2008/01/29 15:36:25 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
@@ -276,7 +276,7 @@ class JobSchedulingAgent(Optimizer):
       return S_ERROR('No JDL found for job')
 
     jdl = result['Value']
-    classadJob = ClassAd('['+jdl+']')
+    classadJob = ClassAd(jdl)
     if not classadJob.isOK():
       self.log.debug("Warning: illegal JDL for job %s, will be marked problematic" % (job))
       result = S_ERROR()

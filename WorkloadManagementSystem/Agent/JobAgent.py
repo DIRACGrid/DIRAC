@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.21 2008/01/24 14:21:51 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.22 2008/01/29 15:33:51 paterson Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.21 2008/01/24 14:21:51 paterson Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.22 2008/01/29 15:33:51 paterson Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -395,7 +395,7 @@ class JobAgent(Agent):
   def __saveJobJDLRequest(self,jobID,jobJDL):
     """Save job JDL local to JobAgent.
     """
-    classAdJob = ClassAd('['+jobJDL+']')
+    classAdJob = ClassAd(jobJDL)
     classAdJob.insertAttributeString('LocalCE',self.ceName)
     jdlFileName = jobID+'.jdl'
     jdlFile = open(jdlFileName,'w')
