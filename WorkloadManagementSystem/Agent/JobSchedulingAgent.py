@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.8 2008/01/29 11:30:27 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.9 2008/01/29 14:45:20 paterson Exp $
 # File :   JobSchedulingAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@
       meaningfully.
 
 """
-__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.8 2008/01/29 11:30:27 paterson Exp $"
+__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.9 2008/01/29 14:45:20 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
@@ -88,6 +88,7 @@ class JobSchedulingAgent(Optimizer):
     if not jobReqtCandidates['OK']:
       msg=jobReqtCandidates['Message']
       self.log.warn(msg)
+      self.updateJobStatus(job,self.failedStatus,msg)
       return S_OK(msg)
 
     siteCandidates = jobReqtCandidates['Value']
@@ -370,14 +371,16 @@ class JobSchedulingAgent(Optimizer):
        site requirements are replaced.
     """
     requirementsList = string.split(requirements,'&&')
+    #First check whether site is already assigned
     for req in requirementsList:
-      if re.search(req.replace(' ',''),'other.Site=='):
+      if re.search('other.Site==',req.replace(' ','')):
         return requirements
 
     if siteCandidates:
       jdlsite = ' && ( '
       for site in siteCandidates:
-        jdlsite = jdlsite + ' other.Site == "'+site+'" || '
+        if not re.search(site,jdlsite):
+          jdlsite = jdlsite + ' other.Site == "'+site+'" || '
 
       jdlsite = jdlsite[0:-4]
       jdlsite = jdlsite + " )"
