@@ -1,9 +1,10 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Types/BaseAccountingType.py,v 1.3 2008/01/29 15:34:03 acasajus Exp $
-__RCSID__ = "$Id: BaseAccountingType.py,v 1.3 2008/01/29 15:34:03 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Types/BaseAccountingType.py,v 1.4 2008/01/29 16:06:25 acasajus Exp $
+__RCSID__ = "$Id: BaseAccountingType.py,v 1.4 2008/01/29 16:06:25 acasajus Exp $"
 
 import types
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import Time
+from DIRAC.Core.DISET.RPCClient import RPCClient
 
 class BaseAccountingType:
 
@@ -143,7 +144,7 @@ class BaseAccountingType:
     """
     Commit register to server
     """
-    retVal = register.checkValues()
+    retVal = self.checkValues()
     if not retVal[ 'OK' ]:
       return retVal
     rpcClient = RPCClient( "Accounting/Server" )
