@@ -384,8 +384,5 @@ class TransformationDBCLI(cmd.Cmd):
 if __name__ == "__main__":
 
     import DIRAC
-    mode = cfgSvc.get('Site','Mode')
-
-    url = cfgSvc.get(mode,'ProcessingDBURL')
-    cli = ProcessingDBCLI(url)
+    cli = TransformationDBCLI()
     cli.cmdloop()
