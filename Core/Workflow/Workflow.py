@@ -1,8 +1,8 @@
-# $Id: Workflow.py,v 1.21 2008/01/30 16:00:25 gkuznets Exp $
+# $Id: Workflow.py,v 1.22 2008/01/30 16:59:57 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.21 $"
+__RCSID__ = "$Revision: 1.22 $"
 
 import os
 from DIRAC.Core.Workflow.Parameter import *
@@ -143,10 +143,10 @@ class Workflow(AttributeCollection):
 
     Comment: If varible linked it should not be used in a global list"""
 
-    # reenforced global parameters
-    if self.parameters.find("PRODUCTION_ID") == None:
+    # reenforced global parameters on the level of Workflow
+    if not self.parameters.find("PRODUCTION_ID"):
       self.parameters.append(Parameter("PRODUCTION_ID","00000000","string","","",True,False,"Transformation ID taken from the ProductionManager"))
-    if self.parameters.find("JOB_ID") == None:
+    if not self.parameters.find("JOB_ID"):
       self.parameters.append(Parameter("JOB_ID","00000000","string","","",True,False,"Job ID within Tranformationtaken from the ProductionManager"))
 
     self.parameters.resolveGlobalVars()
@@ -154,11 +154,16 @@ class Workflow(AttributeCollection):
     for inst in self.step_instances:
       # for each step instance we can define STEP_NUMBER
       step_instance_number=step_instance_number+1
-      inst.parameters.append(Parameter("STEP_NUMBER","%s"%step_instance_number,"string","","",True,False,"Number of the StepInstance within the Workflow"))
-      inst.parameters.append(Parameter("STEP_INSTANCE_NAME",inst.getName(),"string","","",True,False,"Name of the StepInstance within the Workflow"))
-      inst.parameters.append(Parameter("STEP_DEFINITION_NAME",inst.getType(),"string","","",True,False,"Type of the StepInstance within the Workflow"))
-      inst.parameters.append(Parameter("JOB_ID","","string","self","JOB_ID",True,False,"Type of the StepInstance within the Workflow"))
-      inst.parameters.append(Parameter("PRODUCTION_ID","","string","self","PRODUCTION_ID",True,False,"Type of the StepInstance within the Workflow"))
+      if not inst.parameters.find("STEP_NUMBER"):
+        inst.parameters.append(Parameter("STEP_NUMBER","%s"%step_instance_number,"string","","",True,False,"Number of the StepInstance within the Workflow"))
+      if not inst.parameters.find("STEP_INSTANCE_NAME"):
+        inst.parameters.append(Parameter("STEP_INSTANCE_NAME",inst.getName(),"string","","",True,False,"Name of the StepInstance within the Workflow"))
+      if not inst.parameters.find("STEP_DEFINITION_NAME"):
+        inst.parameters.append(Parameter("STEP_DEFINITION_NAME",inst.getType(),"string","","",True,False,"Type of the StepInstance within the Workflow"))
+      if not inst.parameters.find("JOB_ID"):
+        inst.parameters.append(Parameter("JOB_ID","","string","self","JOB_ID",True,False,"Type of the StepInstance within the Workflow"))
+      if not inst.parameters.find("PRODUCTION_ID"):
+        inst.parameters.append(Parameter("PRODUCTION_ID","","string","self","PRODUCTION_ID",True,False,"Type of the StepInstance within the Workflow"))
       inst.resolveGlobalVars(self.step_definitions, self.parameters)
 
 

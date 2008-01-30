@@ -1,8 +1,8 @@
-# $Id: Step.py,v 1.17 2008/01/29 17:08:21 gkuznets Exp $
+# $Id: Step.py,v 1.18 2008/01/30 16:59:57 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.17 $"
+__RCSID__ = "$Revision: 1.18 $"
 
 import os
 #try: # this part to inport as part of the DIRAC framework
@@ -151,12 +151,18 @@ class StepInstance(AttributeCollection):
         module_instance_number=0
         for inst in step_definitions[self.getType()].module_instances:
             module_instance_number=module_instance_number+1
-            inst.parameters.append(Parameter("MODULE_NUMBER","%s"%module_instance_number,"string","","",True,False,"Number of the ModuleInstance within the Step"))
-            inst.parameters.append(Parameter("MODULE_INSTANCE_NAME",inst.getName(),"string","","",True,False,"Name of the ModuleInstance within the Step"))
-            inst.parameters.append(Parameter("MODULE_DEFINITION_NAME",inst.getType(),"string","","",True,False,"Type of the ModuleInstance within the Step"))
-            inst.parameters.append(Parameter("JOB_ID","","string","self","JOB_ID",True,False,"Type of the ModuleInstance within the Step"))
-            inst.parameters.append(Parameter("PRODUCTION_ID","","string","self","PRODUCTION_ID",True,False,"Type of the ModuleInstance within the Step"))
-            inst.parameters.append(Parameter("STEP_NUMBER","","string","self","STEP_NUMBER",True,False,"Type of the ModuleInstance within the Step"))
+            if not inst.parameters.find("MODULE_NUMBER"):
+              inst.parameters.append(Parameter("MODULE_NUMBER","%s"%module_instance_number,"string","","",True,False,"Number of the ModuleInstance within the Step"))
+            if not inst.parameters.find("MODULE_INSTANCE_NAME"):
+              inst.parameters.append(Parameter("MODULE_INSTANCE_NAME",inst.getName(),"string","","",True,False,"Name of the ModuleInstance within the Step"))
+            if not inst.parameters.find("MODULE_DEFINITION_NAME"):
+              inst.parameters.append(Parameter("MODULE_DEFINITION_NAME",inst.getType(),"string","","",True,False,"Type of the ModuleInstance within the Step"))
+            if not inst.parameters.find("JOB_ID"):
+              inst.parameters.append(Parameter("JOB_ID","","string","self","JOB_ID",True,False,"Type of the ModuleInstance within the Step"))
+            if not inst.parameters.find("PRODUCTION_ID"):
+              inst.parameters.append(Parameter("PRODUCTION_ID","","string","self","PRODUCTION_ID",True,False,"Type of the ModuleInstance within the Step"))
+            if not inst.parameters.find("STEP_NUMBER"):
+              inst.parameters.append(Parameter("STEP_NUMBER","","string","self","STEP_NUMBER",True,False,"Type of the ModuleInstance within the Step"))
             inst.resolveGlobalVars(wf_parameters, self.parameters)
 
     def createCode(self, ind=2):
