@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.7 2008/01/29 19:11:06 acasajus Exp $
-__RCSID__ = "$Id: AccountingDB.py,v 1.7 2008/01/29 19:11:06 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.8 2008/01/30 09:53:42 acasajus Exp $
+__RCSID__ = "$Id: AccountingDB.py,v 1.8 2008/01/30 09:53:42 acasajus Exp $"
 
 import datetime
 import threading
@@ -528,6 +528,7 @@ class AccountingDB(DB):
       cmd += " GROUP BY %s" % ", ".join( sqlGroupList )
     return self._query( cmd )
 
+  @gSynchro
   def compactBuckets( self ):
     """
     Compact buckets for all defined types
