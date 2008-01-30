@@ -10,9 +10,9 @@ from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 from DIRAC.DataManagementSystem.DB.RAWIntegrityDB import RAWIntegrityDB
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.GridCredentials import setupProxy,restoreProxy,setDIRACGroup, getProxyTimeLeft
+from DIRAC.Core.Utilities.Subprocess import shellCall
 
-
-import time
+import time,os
 from types import *
 
 AGENT_NAME = 'DataManagement/RAWIntegrityAgent'
@@ -46,6 +46,7 @@ class RAWIntegrityAgent(Agent):
     self.log.info("RAWIntegrityAgent.execute: Determining the length of the %s proxy." %self.proxyDN)
     obtainProxy = False
     if not os.path.exists(self.proxyLocation):
+      self.log.info("RAWIntegrityAgent.execute: No proxy found.")
       obtainProxy = True
     else:
       currentProxy = open(self.proxyLocation,'r')
@@ -55,6 +56,7 @@ class RAWIntegrityAgent(Agent):
         gLogger.error("RAWIntegrityAgent.execute: Could not determine the time left for proxy.", res['Message'])
         return S_OK()
       proxyValidity = int(res['Value'])
+      gLogger.error("RAWIntegrityAgent.execute: Current proxy found to be valid for %s seconds." % proxyValidity)
       self.log.info("RAWIntegrityAgent.execute: %s proxy found to be valid for %s seconds."% (self.proxyDN,proxyValidity))
       if proxyValidity <= 60:
         obtainProxy = True
@@ -127,17 +129,30 @@ class RAWIntegrityAgent(Agent):
     #
     filesToRemove = []
     filesToTransfer = []
-    for pfn,pfnMetadataDict in pfnMetadata.items():
+    filesMigrated = []
+    for pfn,pfnMetadataDict in pfnMetadata['Successful'].items():
       if pfnMetadataDict['Migrated']:
+        filesMigrated.append(lfn) 
         lfn = pfnDict[pfn]
         gLogger.info("RAWIntegrityAgent.execute: %s is newly migrated." % lfn)
-        if pfnMetadataDict['Checksum'] == activeFile[lfn]['Checksum']:
+        if not pfnMetadataDict.has_key('Checksum'):
+          gLogger.error("RAWIntegrityAgent.execute: No checksum information available.",lfn)
+
+          comm = "nsls -lT --checksum /castor/%s" % pfn.split('/castor/')[-1]
+          res = shellCall(180,comm)
+          returnCode,stdOut,stdErr = res['Value']
+          if not returnCode:
+            pfnMetadataDict['Checksum'] = stdOut.split()[9]
+          else:
+            pfnMetadataDict['Checksum'] = 'Not available'
+    
+        if pfnMetadataDict['Checksum'] == activeFiles[lfn]['Checksum']:
           gLogger.info("RAWIntegrityAgent.execute: %s migrated checksum match." % lfn)
           filesToRemove.append(lfn)
         else:
           gLogger.error("RAWIntegrityAgent.execute: Migrated checksum mis-match.",lfn)
           filesToTransfer.append(lfn)
-    gLogger.info("RAWIntegrityAgent.execute: %s files newly migrated." % len(filesToRemove)+len(filesToTransfer))
+    gLogger.info("RAWIntegrityAgent.execute: %s files newly migrated." % len(filesMigrated))
     gLogger.info("RAWIntegrityAgent.execute: Found %s checksum matches." % len(filesToRemove))
     gLogger.info("RAWIntegrityAgent.execute: Found %s checksum mis-matches." % len(filesToTransfer))
 
@@ -199,7 +214,7 @@ class RAWIntegrityAgent(Agent):
       # Remove the incorrectly migrated files from the storage element (will be over written anyways)
       #
       gLogger.info("RAWIntegrityAgent.execute: Removing incorrectly migrated files from Storage Element.")
-      for lfn in filesToRemove:
+      for lfn in filesToTransfer:
         pfn = activeFiles[lfn]['PFN']
         size = activeFiles[lfn]['Size']
         se = activeFiles[lfn]['SE']
