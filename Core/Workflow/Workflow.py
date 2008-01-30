@@ -1,8 +1,8 @@
-# $Id: Workflow.py,v 1.20 2008/01/29 17:08:21 gkuznets Exp $
+# $Id: Workflow.py,v 1.21 2008/01/30 16:00:25 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.20 $"
+__RCSID__ = "$Revision: 1.21 $"
 
 import os
 from DIRAC.Core.Workflow.Parameter import *
@@ -139,7 +139,9 @@ class Workflow(AttributeCollection):
     """ This method will create global parameter list and then will resolve all instances of @{VARNAME}
     Be aware that parameters of that type are GLOBAL!!! are string and can not be dynamically change
     The scope: the resolution of that parameters apply from lower to upper object, for example if
-    parameter use in module, then it checks module, then step, then workflow"""
+    parameter use in module, then it checks module, then step, then workflow
+
+    Comment: If varible linked it should not be used in a global list"""
 
     # reenforced global parameters
     if self.parameters.find("PRODUCTION_ID") == None:
