@@ -1,8 +1,8 @@
-# $Id: Parameter.py,v 1.16 2008/01/30 15:59:58 gkuznets Exp $
+# $Id: Parameter.py,v 1.17 2008/01/30 16:21:47 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.16 $"
+__RCSID__ = "$Revision: 1.17 $"
 
 # unbinded method, returns indentation string
 def indent(indent=0):
@@ -307,6 +307,15 @@ class ParameterCollection(list):
             return self[name_or_ind]
         return self[int(name_or_ind)]
 
+    def findLinked(self, name_or_ind, linked_status=True):
+        """ Method to find Parameters
+        if linked_status is True it returns only linked Var from the list
+        if linked_status is False it returns only NOTlinked Var from the list
+        Return: Parameter """
+        v = self.find(name_or_ind)
+        if (v!= None) and (v.isLinked() != linked_status):
+            return None
+        return v
 
     def findIndex(self, name):
         i=0
@@ -376,21 +385,15 @@ class ParameterCollection(list):
                     #print v.value, start, stop, parameterName, v.value[start:stop+1]
 
                     # looking in the currens scope
-                    v_other = self.find(parameterName)
-                    if v_other.isLinked(): # ignoring linked parameters thus it can not be used
-                        v_other=None
+                    v_other = self.findLinked(parameterName, False)
 
                     # looking in the scope of step instance
                     if v_other == None and step_parameters != None :
-                        v_other = step_parameters.find(parameterName)
-                    if v_other.isLinked(): # ignoring linked parameters thus it can not be used
-                        v_other=None
+                        v_other = step_parameters.findLinked(parameterName, False)
 
                     # looking in the scope of workflow
                     if v_other == None and wf_parameters != None :
-                        v_other = wf_parameters.find(parameterName)
-                    if v_other.isLinked(): # ignoring linked parameters thus it can not be used
-                        v_other=None
+                        v_other = wf_parameters.findLinked(parameterName, False)
 
                     # finnaly the action itself
                     if v_other != None:
