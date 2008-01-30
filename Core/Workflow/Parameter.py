@@ -1,8 +1,8 @@
-# $Id: Parameter.py,v 1.15 2008/01/29 17:08:21 gkuznets Exp $
+# $Id: Parameter.py,v 1.16 2008/01/30 15:59:58 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.15 $"
+__RCSID__ = "$Revision: 1.16 $"
 
 # unbinded method, returns indentation string
 def indent(indent=0):
@@ -294,6 +294,8 @@ class ParameterCollection(list):
             del self[name_or_ind]
 
     def find(self, name_or_ind):
+        """ Method to find Parameters
+        Return: Parameter """
         # work for index as well as for the string
         if isinstance(name_or_ind, str): # we given name
             for v in self:
@@ -372,14 +374,25 @@ class ParameterCollection(list):
                     stop=v.value.find('}',start+1)
                     parameterName=v.value[start+2:stop]
                     #print v.value, start, stop, parameterName, v.value[start:stop+1]
+
                     # looking in the currens scope
                     v_other = self.find(parameterName)
+                    if v_other.isLinked(): # ignoring linked parameters thus it can not be used
+                        v_other=None
+
                     # looking in the scope of step instance
                     if v_other == None and step_parameters != None :
                         v_other = step_parameters.find(parameterName)
+                    if v_other.isLinked(): # ignoring linked parameters thus it can not be used
+                        v_other=None
+
                     # looking in the scope of workflow
                     if v_other == None and wf_parameters != None :
                         v_other = wf_parameters.find(parameterName)
+                    if v_other.isLinked(): # ignoring linked parameters thus it can not be used
+                        v_other=None
+
+                    # finnaly the action itself
                     if v_other != None:
                         v.value = v.value[:start]+v_other.value+v.value[stop+1:]
                         # we replaced part of the string so we need to reset indexes
