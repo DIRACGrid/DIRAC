@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.8 2008/01/30 09:53:42 acasajus Exp $
-__RCSID__ = "$Id: AccountingDB.py,v 1.8 2008/01/30 09:53:42 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.9 2008/01/30 10:40:04 acasajus Exp $
+__RCSID__ = "$Id: AccountingDB.py,v 1.9 2008/01/30 10:40:04 acasajus Exp $"
 
 import datetime
 import threading
@@ -433,7 +433,7 @@ class AccountingDB(DB):
     print startEpoch
     startTime = Time.fromEpoch( startEpoch )
     print startTime
-    return self.__generateSQLSelect( typeName,
+    return self.__queryType( typeName,
                                      startTime,
                                      endTime,
                                      condDict,
@@ -441,7 +441,7 @@ class AccountingDB(DB):
                                      groupFields,
                                      "bucket" )
 
-  def __generateSQLSelect( self, typeName, startTime, endTime, condDict, valueFields, groupFields, tableType ):
+  def __queryType( self, typeName, startTime, endTime, condDict, valueFields, groupFields, tableType ):
     cmd = "SELECT"
     sqlValues = []
     sqlLinkList = []
