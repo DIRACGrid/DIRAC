@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.1 2008/01/21 16:47:36 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.2 2008/01/30 13:31:56 paterson Exp $
 # File :   DiracAdmin.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,11 +14,11 @@ site banning and unbanning, WMS proxy uploading etc.
 
 """
 
-__RCSID__ = "$Id: DiracAdmin.py,v 1.1 2008/01/21 16:47:36 paterson Exp $"
+__RCSID__ = "$Id: DiracAdmin.py,v 1.2 2008/01/30 13:31:56 paterson Exp $"
 
 import DIRAC
 from DIRAC.Core.DISET.RPCClient                          import RPCClient
-from DIRAC.Core.Utilities.GridCredentials                import getGridProxy,getCurrentDN
+from DIRAC.Core.Utilities.GridCredentials                import getGridProxy,getCurrentDN,setDIRACGroup
 from DIRAC                                               import gConfig, gLogger, S_OK, S_ERROR
 
 import re, os, sys, string, time, shutil, types
@@ -45,6 +45,9 @@ class DiracAdmin:
 
     self.scratchDir = gConfig.getValue(self.section+'/ScratchDir','/tmp')
     self.wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
+    diracAdmin = 'diracAdmin'
+    self.log.info('Setting DIRAC role for current proxy to %s' %diracAdmin)
+    setDIRACGroup(diracAdmin)
     self.currentDir = os.getcwd()
 
   #############################################################################
@@ -203,6 +206,18 @@ class DiracAdmin:
     os.putenv('X509_USER_PROXY',proxyPath)
     self.log.info('Proxy written to %s' %(proxyPath))
     self.log.info('Setting X509_USER_PROXY=%s' %(proxyPath))
+    self.log.info('Adding DIRAC role %s to downloaded proxy for later use' %(ownerGroup))
+    fd = file( proxyPath, "r" )
+    contents = fd.readlines()
+    fd.close()
+    groupLine = ":::diracgroup=%s\n" % ownerGroup
+    if contents[0].find( ":::diracgroup=" ) == 0:
+      contents[0] = groupLine
+    else:
+      contents.insert( 0, groupLine )
+    fd = file( proxyPath, "w" )
+    fd.write( "".join( contents ) )
+    fd.close()
     result = S_OK(proxyPath)
     return result
 
