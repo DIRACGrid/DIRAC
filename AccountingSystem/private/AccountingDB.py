@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.10 2008/01/30 15:33:48 acasajus Exp $
-__RCSID__ = "$Id: AccountingDB.py,v 1.10 2008/01/30 15:33:48 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.11 2008/01/30 15:38:35 acasajus Exp $
+__RCSID__ = "$Id: AccountingDB.py,v 1.11 2008/01/30 15:38:35 acasajus Exp $"
 
 import datetime
 import threading
@@ -19,7 +19,8 @@ class AccountingDB(DB):
     self.dbKeys = {}
     self.dbLocks = {}
     self.dbBucketsLength = {}
-    self._createTables( { 'ac_catalogTypes' : { 'Fields' : { 'name' : "VARCHAR(64) UNIQUE",
+    self.catalogTableName = self.__getTableName( "catalog", "Types" )
+    self._createTables( { self.catalogTableName : { 'Fields' : { 'name' : "VARCHAR(64) UNIQUE",
                                                           'keyFields' : "VARCHAR(256)",
                                                           'valueFields' : "VARCHAR(256)",
                                                           'bucketsLength' : "VARCHAR(256)",
@@ -36,7 +37,7 @@ class AccountingDB(DB):
                                gMonitor.OP_ACUM )
 
   def __loadCatalogFromDB(self):
-    retVal = self._query( "SELECT `name`, `keyFields`, `valueFields`, `bucketsLength` FROM `ac_catalogTypes`" )
+    retVal = self._query( "SELECT `name`, `keyFields`, `valueFields`, `bucketsLength` FROM `%s`" % self.catalogTableName )
     if not retVal[ 'OK' ]:
       raise Exception( retVal[ 'Message' ] )
     for typesEntry in retVal[ 'Value' ]:
@@ -142,7 +143,7 @@ class AccountingDB(DB):
       return S_ERROR( "Can't create type %s: %s" % ( name, retVal[ 'Message' ] ) )
     bucketsLength.sort()
     bucketsEncoding = DEncode.encode( bucketsLength )
-    self._insert( 'ac_catalogTypes',
+    self._insert( self.catalogTableName,
                   [ 'name', 'keyFields', 'valueFields', 'bucketsLength' ],
                   [ name, ",".join( keyFieldsList ), ",".join( valueFieldsList ), bucketsEncoding ] )
     self.__addToCatalog( name, keyFieldsList, valueFieldsList, bucketsLength )
@@ -153,7 +154,7 @@ class AccountingDB(DB):
     """
     Get list of registered types
     """
-    retVal = self._query( "SELECT `name`, `keyFields`, `valueFields`, `bucketLength` FROM `ac_catalogTypes`" )
+    retVal = self._query( "SELECT `name`, `keyFields`, `valueFields`, `bucketLength` FROM `%s`" % self.catalogTableName )
     if not retVal[ 'OK' ]:
       return retVal
     typesList = []
