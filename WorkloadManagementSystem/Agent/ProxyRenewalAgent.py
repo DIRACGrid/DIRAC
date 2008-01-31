@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/ProxyRenewalAgent.py,v 1.6 2008/01/25 19:10:46 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/ProxyRenewalAgent.py,v 1.7 2008/01/31 18:56:59 atsareg Exp $
 ########################################################################
 
 """  Proxy Renewal agent is the key element of the Proxy Repository
@@ -47,7 +47,7 @@ class ProxyRenewalAgent(Agent):
     """ The main agent execution method
     """
 
-    result = self.proxyDB.getUsers(validity=self.minValidity)
+    result = self.proxyDB.getUsers(validity=self.minValidity)    
     if not result["OK"]:
       self.log.error("Failed to acces Proxy Repository Database",result['Message'])
       return S_ERROR("Failed to acces Proxy Repository Database")
@@ -66,11 +66,11 @@ class ProxyRenewalAgent(Agent):
 
     job_dn_list = result['Value']
         
-    for dn,group,ptype in ticket_dn_list:
+    for dn,group,ptype,pflag in ticket_dn_list:
     
-      if dn in job_dn_list or ptype=="True":
+      if dn in job_dn_list or pflag=="True":
         self.log.verbose("Renewing proxy for "+dn)
-        result = self.proxyDB.getProxy(dn)
+        result = self.proxyDB.getProxy(dn,group)
         if not result["OK"]:
           self.log.warn('Can not get ticket for '+dn)
           self.log.warn(result['Message'])

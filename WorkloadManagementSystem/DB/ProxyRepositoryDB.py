@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/Attic/ProxyRepositoryDB.py,v 1.11 2008/01/25 19:11:39 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/Attic/ProxyRepositoryDB.py,v 1.12 2008/01/31 18:59:45 atsareg Exp $
 ########################################################################
 """ ProxyRepository class is a front-end to the proxy repository Database
 """
 
-__RCSID__ = "$Id: ProxyRepositoryDB.py,v 1.11 2008/01/25 19:11:39 atsareg Exp $"
+__RCSID__ = "$Id: ProxyRepositoryDB.py,v 1.12 2008/01/31 18:59:45 atsareg Exp $"
 
 import time
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
@@ -93,7 +93,11 @@ class ProxyRepositoryDB(DB):
           self.log.info('VOMS conversion done for '+dn) 
           new_proxy = result['Value']
           proxy_to_store = setDIRACGroupInProxy(new_proxy,group)
-          proxyType = "VOMS"  
+          proxyType = "VOMS" 
+          result = getProxyTimeLeft(proxy_to_store)
+          if not result['OK']:
+            return S_ERROR('Proxy not valid')
+          time_left = result['Value'] 
       else:
         proxy_to_store = proxy
         
@@ -159,15 +163,15 @@ class ProxyRepositoryDB(DB):
     """
 
     if validity:
-      cmd = "SELECT UserDN,UserGroup,ProxyType FROM Proxies WHERE (NOW() + INTERVAL %d SECOND) > ExpirationTime" % validity
+      cmd = "SELECT UserDN,UserGroup,ProxyType,PersistentFlag FROM Proxies WHERE (NOW() + INTERVAL %d SECOND) > ExpirationTime" % validity
     else:
-      cmd = "SELECT UserDN,UserGroup FROM Proxies"
+      cmd = "SELECT UserDN,UserGroup,ProxyType,PersistentFlag FROM Proxies"
     result = self._query( cmd )
     if not result['OK']:
       return result
     try:
       dn_list = result['Value']
-      result_list = [ (x[0],x[1],x[2] ) for x in dn_list]
+      result_list = [ (x[0],x[1],x[2],x[3] ) for x in dn_list]
       return S_OK(result_list)
     except:
       return S_ERROR('Failed to get proxy owner DNs and groups from the Proxy Repository')
