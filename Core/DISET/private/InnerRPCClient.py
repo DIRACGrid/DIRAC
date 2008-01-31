@@ -1,6 +1,7 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/InnerRPCClient.py,v 1.3 2007/06/19 13:29:53 acasajus Exp $
-__RCSID__ = "$Id: InnerRPCClient.py,v 1.3 2007/06/19 13:29:53 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/InnerRPCClient.py,v 1.4 2008/01/31 15:55:56 acasajus Exp $
+__RCSID__ = "$Id: InnerRPCClient.py,v 1.4 2008/01/31 15:55:56 acasajus Exp $"
 
+import types
 from DIRAC.Core.Utilities import Subprocess
 from DIRAC.Core.DISET.private.BaseClient import BaseClient
 from DIRAC.Core.Utilities.ReturnValues import S_OK
@@ -18,14 +19,19 @@ class InnerRPCClient( BaseClient ):
       return self.__serverRPC( functionName, args )
 
   def __serverRPC( self, functionName, args ):
+    rpcStub = ( self.serviceName, self.kwargs, functionName, args )
     retVal = self._connect()
     if not retVal[ 'OK' ]:
+      retVal[ 'rpcStub' ] = rpcStub
       return retVal
     retVal = self._proposeAction( ( "RPC", functionName ) )
     if not retVal[ 'OK' ]:
+      retVal[ 'rpcStub' ] = rpcStub
       return retVal
     self.transport.sendData( S_OK( args ) )
     receivedData = self.transport.receiveData()
     self.transport.close()
+    if type( receivedData ) == types.DictType:
+      retVal[ 'rpcStub' ] = rpcStub
     return receivedData
 

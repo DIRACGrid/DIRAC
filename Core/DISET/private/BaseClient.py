@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.26 2008/01/24 17:31:35 acasajus Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.26 2008/01/24 17:31:35 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.27 2008/01/31 15:55:56 acasajus Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.27 2008/01/31 15:55:56 acasajus Exp $"
 
 import sys
 import DIRAC
@@ -15,54 +15,73 @@ class BaseClient:
 
   defaultHostGroup = "hosts"
 
-#TODO
+  KW_USE_CERTIFICATES = "useCertificates"
+  KW_GROUP_TO_USE = "groupToUse"
+  KW_TIMEOUT = "timeout"
+  KW_SETUP = "setup"
+  KW_DELEGATED_DN = "delegatedDN"
+  KW_DELEGATED_GROUP = "delegatedGroup"
 
-  def __init__( self, serviceName,
-                groupToUse = False,
-                useCertificates = "auto",
-                timeout = False,
-                setup = "",
-                delegatedDN = "",
-                delegatedGroup = "" ):
+  def __init__( self, serviceName, **kwargs ):
     self.defaultUserGroup = gConfig.getValue( '/DIRAC/DefaultGroup', 'lhcb_user' )
     self.serviceName = serviceName
-    self.timeout = timeout
-    #HACK: For windows there is no timeout! (YingYing...)
-    if sys.platform == "win32":
-      self.timeout = False
+    self.kwargs = kwargs
+    self.__discoverSetup()
+    self.__discoverURL()
+    self.__discoverTimeout()
+    self.__discoverCredentialsToUse()
+    self.__discoverGroup()
+    self.__checkTransportSanity()
+
+  def __discoverSetup(self):
     #Which setup to use?
-    if setup:
-      self.setup = str( setup )
+    if self.KW_SETUP in self.kwargs:
+      self.setup = str( self.kwargs[ self.KW_SETUP ] )
     else:
       self.setup = gConfig.getValue( "/DIRAC/Setup", "LHCb-Development" )
+
+  def __discoverURL(self):
     #Calculate final URL
-    self.serviceURL = self.__discoverServiceURL()
+    self.serviceURL = self.__findServiceURL()
     retVal = Network.splitURL( self.serviceURL )
     if retVal[ 'OK' ]:
       self.URLTuple = retVal[ 'Value' ]
     else:
       gLogger.error( "URL is malformed", retVal[ 'Message' ] )
       raise Exception( retVal[ 'Message' ] )
+
+  def __discoverTimeout( self ):
+    if self.KW_TIMEOUT in self.kwargs:
+      self.timeout = self.kwargs[ self.KW_TIMEOUT ]
+    else:
+      self.timeout = False
+    #HACK: For windows there is no timeout! (YingYing...)
+    if sys.platform == "win32":
+      self.timeout = False
+
+  def __discoverCredentialsToUse( self ):
     #Use certificates?
-    self.useCertificates = useCertificates
-    if self.useCertificates == "auto":
+    if self.KW_USE_CERTIFICATES in self.kwargs:
+      self.useCertificates = self.kwargs[ self.KW_USE_CERTIFICATES ]
+    else:
       self.useCertificates = gConfig._useServerCertificate()
+
+  def __discoverGroup( self ):
     #Wich group to use?
-    if groupToUse:
-      self.groupToUse = groupToUse
+    if self.KW_GROUP_TO_USE in self.kwargs:
+      self.groupToUse = self.kwargs[ self.KW_GROUP_TO_USE ]
     else:
       if self.useCertificates:
         self.groupToUse = self.defaultHostGroup
       else:
         self.groupToUse = GridCredentials.getDIRACGroup( self.defaultUserGroup )
     #Are we delegating something?
-    if delegatedDN:
-      if delegatedGroup:
-        self.groupToUse = delegatedGroup
-      self.groupToUse = ( delegatedDN, self.groupToUse )
-    self.__checkTransportSanity()
+    if self.KW_DELEGATED_DN in self.kwargs:
+      if self.KW_GROUP_TO_USE in self.kwargs:
+        self.groupToUse = self.kwargs[ self.KW_GROUP_TO_USE ]
+      self.groupToUse = ( self.kwargs[ self.KW_DELEGATED_DN ], self.groupToUse )
 
-  def __discoverServiceURL( self ):
+  def __findServiceURL( self ):
     for protocol in gProtocolDict.keys():
       if self.serviceName.find( "%s://" % protocol ) == 0:
         gLogger.debug( "Already given a valid url", self.serviceName )
