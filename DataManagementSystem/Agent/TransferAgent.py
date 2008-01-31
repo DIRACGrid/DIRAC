@@ -10,7 +10,7 @@ from DIRAC.RequestManagementSystem.Client.Request import RequestClient
 from DIRAC.RequestManagementSystem.Client.DataManagementRequest import DataManagementRequest
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 
-import time
+import time,os
 from types import *
 
 AGENT_NAME = 'DataManagement/TransferAgent'
@@ -27,10 +27,10 @@ class TransferAgent(Agent):
     self.RequestDBClient = RequestClient()
     self.ReplicaManager = ReplicaManager()
     self.wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
-    self.proxyDN = gConfig.getValue(self.section+'/ProxyDN')
-    self.proxyGroup = gConfig.getValue(self.section+'/ProxyGroup')
+    self.proxyDN = gConfig.getValue(self.section+'/ProxyDN','')
+    self.proxyGroup = gConfig.getValue(self.section+'/ProxyGroup','')
     self.proxyLength = gConfig.getValue(self.section+'/DefaultProxyLength',12)
-    self.proxyLocation = gConfig.getValue(self.section+'/ProxyLocation')
+    self.proxyLocation = gConfig.getValue(self.section+'/ProxyLocation','')
     gMonitor.registerActivity( "Iteration", "Agent Loops/min",          "TransferAgent", "Atemps", gMonitor.OP_SUM )
     gMonitor.registerActivity( "Execute",   "Request Processed/min",    "TransferAgent", "Atemps", gMonitor.OP_SUM )
     gMonitor.registerActivity( "Done",      "Request Completed/min",    "TransferAgent", "Atemps", gMonitor.OP_SUM )
