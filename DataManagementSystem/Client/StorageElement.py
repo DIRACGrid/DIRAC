@@ -692,7 +692,7 @@ class StorageElement:
       return S_ERROR(infoStr)
 
     gLogger.info("StorageElement.putFile: Determined file size of %s to be %s." % (file,size))
-
+    localSE = self.isLocalSE()['Value']
     # The method will try all storages
     for storage in self.storages:
       # Get the parameters for the current storage
