@@ -1,14 +1,13 @@
-# $Id: Workflow.py,v 1.22 2008/01/30 16:59:57 gkuznets Exp $
+# $Id: Workflow.py,v 1.23 2008/01/31 18:48:49 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.22 $"
+__RCSID__ = "$Revision: 1.23 $"
 
 import os
 from DIRAC.Core.Workflow.Parameter import *
 from DIRAC.Core.Workflow.Module import *
 from DIRAC.Core.Workflow.Step import *
-from DIRAC.Core.Workflow.WorkflowReader import *
 
 class Workflow(AttributeCollection):
 
@@ -58,10 +57,10 @@ class Workflow(AttributeCollection):
     self.step_definitions = DefinitionsPool(self, obj.step_definitions)
 
   def fromXMLString(self, obj):
-      self.fromWorkflow(WorkflowReader.fromXMLString(obj))
+      self.fromWorkflow(DIRAC.Core.Workflow.WorkflowReaderfromXMLString(obj))
 
   def fromXMLFile(self, obj):
-      self.fromWorkflow(WorkflowReader.fromXMLFile(obj))
+      self.fromWorkflow(DIRAC.Core.Workflow.WorkflowReaderfromXMLFile(obj))
 
   def __str__(self):
     """Creates a string representation of itself
