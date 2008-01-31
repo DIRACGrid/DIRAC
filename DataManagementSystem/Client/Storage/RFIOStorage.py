@@ -106,6 +106,8 @@ class RFIOStorage(StorageBase):
     for url in urls:
       comm = " %s %s" % (comm,url)
     res = shellCall(self.timeout,comm)
+    print comm
+    print res
     successful = {}
     failed = {}
     if res['OK']:
@@ -113,6 +115,7 @@ class RFIOStorage(StorageBase):
       if returncode in [0,1]:
         for line in stdout.splitlines():
           permissions,subdirs,owner,group,size,month,date,timeYear,pfn = line.split()
+          (1, '', '/castor/cern.ch/grid/lhcb/debug/lhcb/production/DC06/phys-v2-lumi2/00001820/SIM/0000/dirac_directory: No such file or directory\n')
           successful[pfn] = {}
           successful[pfn]['Permissions'] = permissions
           successful[pfn]['NbSubDirs'] = subdirs
@@ -134,6 +137,8 @@ class RFIOStorage(StorageBase):
       errStr = "RFIOStorage.__getPathMetadata: Completely failed to get path metadata."
       gLogger.error(errStr,"%s %s" % (self.name,res['Message']))
       return S_ERROR(errStr)
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
 
   def getFile(self,fileTuple):
     """Get a local copy in the current directory of a physical file specified by its path
@@ -204,22 +209,22 @@ class RFIOStorage(StorageBase):
           res = self.getFileSize(destUrl)
           if res['OK']:
             if res['Value']['Successful'].has_key(destUrl):
-              if res['Value']['Successful'][destUrl] == size:
+              if int(res['Value']['Successful'][destUrl]) == int(size):
                 gLogger.info("RFIOStorage.putFile: Post transfer check successful.")
-                successful[dest_url] = True
+                successful[destUrl] = True
                 removeFile = False
               else:
                 errMessage = "RFIOStorage.putFile: Source and destination file sizes do not match."
                 gLogger.error(errMessage,destUrl)
-                failed[dest_url] = errMessage
+                failed[destUrl] = errMessage
             else:
               errMessage = "RFIOStorage.putFile: Failed to determine remote file size."
               gLogger.error(errMessage,destUrl)
-              failed[dest_url] = errMessage
+              failed[destUrl] = errMessage
           else:
             errMessage = "RFIOStorage.putFile: Failed to determine remote file size."
             gLogger.error(errMessage,destUrl)
-            failed[dest_url] = errMessage
+            failed[destUrl] = errMessage
         else:
           errStr = "RFIOStorage.putFile: Failed to put file to remote storage."
           gLogger.error(errStr,stderr)
@@ -395,16 +400,19 @@ class RFIOStorage(StorageBase):
       destFile = '%s/dirac_directory' % url
       files[destFile] = url
     res = self.__getPathMetadata(files.keys())
+    print res['Value']
     if not res['OK']:
       return res
     else:
-      failed = res['Value']['Failed']
       successful = {}
-      for pfn,pfnDict in res['Value']['Successful'].items():
-        if pfnDict['Permissions'][0] == 'd':
-          successful[files[pfn]] = True
-        else:
+      failed = {}
+      for pfn,errorMessage in res['Value']['Failed'].items():
+        if errorMessage == 'No such file or directory':
           successful[files[pfn]] = False
+        else:
+          failed[files[pfn]] = errorMessage
+      for pfn,pfnDict in res['Value']['Successful'].items():
+        successful[files[pfn]] = True
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
@@ -623,6 +631,13 @@ class RFIOStorage(StorageBase):
       infoStr = "RFIOStorage.createDirectory: Failed to get file size."
       gLogger.error(infoStr,srcFile)
       return S_ERROR(infoStr)
+
+    comm = "nsmkdir -m 775 %s" % path
+    res = shellCall(100,comm)
+    if res['OK']:
+      returncode,stdout,stderr = res['Value']
+      if not returncode ==  0:
+        return S_ERROR(stderr)
 
     destFile = '%s/%s' % (path,'dirac_directory')
     directoryTuple = (srcFile,destFile,size)
