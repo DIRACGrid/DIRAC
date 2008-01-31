@@ -3,12 +3,14 @@
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC.ConfigurationSystem.Client import PathFinder
 
 requestDB = False
 
 def initializeRequestManagerHandler(serviceInfo):
   global requestDB
-  backend = gConfig.getValue('/Systems/RequestManagement/Development/Services/RequestManager/Backend')
+  csSection = PathFinder.getServiceSection( "RequestManagement/RequestManager" )
+  backend = gConfig.getValue('%s/Backend' % csSection)
   if not backend:
     fatStr = "RequestManager.initializeRequestManagerHandler: Failed to get backed for RequestDB from CS."
     gLogger.fatal(fatStr)
@@ -23,7 +25,7 @@ def initializeRequestManagerHandler(serviceInfo):
   else:
     fatStr = "RequestManager.initializeRequestManagerHandler: Supplied backend is not supported."
     gLogger.fatal(fatStr,backend)
-    return S_ERROR(fatStr)  
+    return S_ERROR(fatStr)
   return S_OK()
 
 class RequestManagerHandler(RequestHandler):
@@ -91,7 +93,7 @@ class RequestManagerHandler(RequestHandler):
     except Exception,x:
       errStr = "RequestManagerHandler.getDBSummary: Exception while getting database summary."
       gLogger.exception(errStr,str(x))
-      return S_ERROR(errStr)      
+      return S_ERROR(errStr)
 
   types_getRequest = [StringType]
   def export_getRequest(self,requestType):
