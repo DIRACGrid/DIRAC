@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/LocalConfiguration.py,v 1.15 2008/01/23 11:53:00 acasajus Exp $
-__RCSID__ = "$Id: LocalConfiguration.py,v 1.15 2008/01/23 11:53:00 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/LocalConfiguration.py,v 1.16 2008/01/31 15:56:09 acasajus Exp $
+__RCSID__ = "$Id: LocalConfiguration.py,v 1.16 2008/01/31 15:56:09 acasajus Exp $"
 
 import sys
 import os
@@ -156,7 +156,7 @@ class LocalConfiguration:
     elif self.componentType == "agent":
       self.__setDefaultSection( getAgentSection( self.componentName ) )
     elif self.componentType == "script":
-      if self.componentName[0] == "/":
+      if self.componentName and self.componentName[0] == "/":
         self.__setDefaultSection( self.componentName )
         self.componentName = self.componentName[1:]
       else:
