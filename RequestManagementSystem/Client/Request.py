@@ -9,7 +9,7 @@ from DIRAC.Core.Utilities.List import randomize
 
 class RequestClient:
 
-  def __init__(self, useCertificates = False):
+  def __init__(self,useCertificates = False):
     """ Constructor of the RequestClient class
     """
     local = gConfig.getValue('/Systems/RequestManagement/Development/URLs/RequestDB/localURL')
@@ -78,7 +78,8 @@ class RequestClient:
     """ Set request. URL can be supplied if not a all VOBOXes will be tried in random order.
     """
     try:
-      url = self.local
+      if not url:
+        url = self.local
       urls = [url]
       for url in urls:
         requestRPCClient = RPCClient(url)
