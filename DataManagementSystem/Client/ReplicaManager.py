@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalogue. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.15 2008/01/18 12:32:36 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.16 2008/01/31 16:16:10 joel Exp $"
 
 import re, time, commands, random,os
 import types
@@ -82,16 +82,16 @@ class ReplicaManager:
     putTime = time.time() - startTime
     if not res['OK']:
       errStr = "ReplicaManager.putAndRegister: Failed to put file to Storage Element."
-      gLogger.error(errStr,"%s: %s" % (file,res['Messsage']))
-      return S_ERROR("%s %s" % (errStr,errMessage))
+      gLogger.error(errStr,"%s: %s" % (file,res['Message']))
+      return S_ERROR("%s %s" % (errStr,res['Message']))
     destPfn = res['Value']
     successful[lfn] = {'put': putTime}
 
     ###########################################################
     # Perform the registration here
     fileTuple = (lfn,destPfn,size,destinationSE,guid)
-    registerDict = {'LFN':lfn,'PFN':destPfn,'Size':size,'TargetSE':destinationSE,'GUID':guid} 
-    startTime = time.time() 
+    registerDict = {'LFN':lfn,'PFN':destPfn,'Size':size,'TargetSE':destinationSE,'GUID':guid}
+    startTime = time.time()
     res = self.registerFile(fileTuple)
     registerTime = time.time() - startTime
 
@@ -106,7 +106,7 @@ class ReplicaManager:
     else:
       successful['register'] = registerTime
     resDict = {'Successful': successful,'Failed':failed}
-    return S_OK(resDict)    
+    return S_OK(resDict)
 
   def getReplicas(self,lfn):
     """ Get the replicas registered in the catalog for supplied file.
@@ -232,7 +232,7 @@ class ReplicaManager:
     if not res['OK']:
       errStr = "ReplicaManager.replicateAndRegister: Completely failed to replicate file."
       gLogger.error(errStr,res['Message'])
-      return S_ERROR(errStr)     
+      return S_ERROR(errStr)
     if not res['Value']:
       # The file was already present at the destination SE
       gLogger.info("ReplicaManager.replicateAndRegister: %s already present at %s." % (lfn,destSE))
