@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.27 2008/01/31 15:55:56 acasajus Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.27 2008/01/31 15:55:56 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.28 2008/01/31 16:33:06 acasajus Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.28 2008/01/31 16:33:06 acasajus Exp $"
 
 import sys
 import DIRAC
@@ -77,8 +77,8 @@ class BaseClient:
         self.groupToUse = GridCredentials.getDIRACGroup( self.defaultUserGroup )
     #Are we delegating something?
     if self.KW_DELEGATED_DN in self.kwargs:
-      if self.KW_GROUP_TO_USE in self.kwargs:
-        self.groupToUse = self.kwargs[ self.KW_GROUP_TO_USE ]
+      if self.KW_DELEGATED_GROUP in self.kwargs:
+        self.groupToUse = self.kwargs[ self.KW_DELEGATED_GROUP ]
       self.groupToUse = ( self.kwargs[ self.KW_DELEGATED_DN ], self.groupToUse )
 
   def __findServiceURL( self ):
