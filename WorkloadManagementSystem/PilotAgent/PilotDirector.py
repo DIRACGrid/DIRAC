@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/PilotDirector.py,v 1.6 2008/01/23 08:50:45 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/PilotDirector.py,v 1.7 2008/01/31 19:34:42 paterson Exp $
 # File :   PilotDirector.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
      are overridden in Grid specific subclasses.
 """
 
-__RCSID__ = "$Id: PilotDirector.py,v 1.6 2008/01/23 08:50:45 paterson Exp $"
+__RCSID__ = "$Id: PilotDirector.py,v 1.7 2008/01/31 19:34:42 paterson Exp $"
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
 from DIRAC.Core.Utilities.Subprocess                       import shellCall
@@ -166,7 +166,7 @@ class PilotDirector(Thread):
 
     pilotType = ''
     if classadJob.lookupAttribute("PilotType"):
-      pilotType = int(string.replace(classadJob.get_expression("PilotType"),'"','') )
+      pilotType = str(string.replace(classadJob.get_expression("PilotType"),'"','') )
 
     if not pilotType:
       self.log.warn('PilotType is not defined for job %s' %(job))
@@ -244,7 +244,10 @@ class PilotDirector(Thread):
     self.log.verbose('Setting up proxy for job %s group %s and owner %s' %(job,ownerGroup,ownerDN))
     proxyResult = self.__setupProxy(job,ownerDN,ownerGroup,workingDirectory)
     self.log.verbose('Submitting %s Pilot Agent for job %s' %(self.type,job))
-    result = self.submitJob(job,self.workingDirectory,siteList,jdlCPU,inputSandbox,ownerGroup,gridRequirements,executable,softwareTag)
+        
+    result = self.submitJob(job,self.workingDirectory,
+                            siteList,jdlCPU,ownerGroup,inputSandbox,
+                            gridRequirements,executable,softwareTag)
     self.__cleanUp(workingDirectory)
     if not result['OK']:
       self.log.warn('Pilot submission failed for job %s with message:')
@@ -288,20 +291,22 @@ class PilotDirector(Thread):
         SubmittedAgents job parameter.
     """
 
-    existingParam = self.jobDB.getJobParameters(int(job),['SubmittedAgents'])
-    if not existingParam['OK']:
-      return existingParam
-
-    if not existingParam['Value']:
-      self.log.verbose('Adding first submitted pilot parameter for job %s' %job)
-      if self.enable:
-        self.__setJobParam(job,'SubmittedAgents',submittedPilot)
-    else:
-      pilots = len(existingParam['Value'])
-      self.log.verbose('Adding submitted pilot number %s for job %s' %(pilots,job))
-      pilots += ',%s' %(submittedPilot)
-      if self.enable:
-        self.__setJobParam(job,'SubmittedAgents',submittedPilot)
+#    This info is now taken from the PilotAgentsDB
+#
+#    existingParam = self.jobDB.getJobParameters(int(job),['SubmittedAgents'])
+#    if not existingParam['OK']:
+#      return existingParam
+#
+#    if not existingParam['Value']:
+#      self.log.verbose('Adding first submitted pilot parameter for job %s' %job)
+#      if self.enable:
+#        self.__setJobParam(job,'SubmittedAgents',submittedPilot)
+#    else:
+#      pilots = len(existingParam['Value'])
+#      self.log.verbose('Adding submitted pilot number %s for job %s' %(pilots,job))
+#      pilots += ',%s' %(submittedPilot)
+#      if self.enable:
+#        self.__setJobParam(job,'SubmittedAgents',submittedPilot)
 
     if self.enable:
       result = self.pilotDB.addPilotReference(submittedPilot,job,ownerDN,ownerGroup,self.type)
@@ -378,6 +383,12 @@ class PilotDirector(Thread):
     """
     section = '/Resources/GridSites/%s' % (self.type)
     sites = gConfig.getOptionsDict(section)
+    if not sites['OK']:
+      #To avoid duplicating sites listed in LCG for gLite for example.  This could be passed as a parameter from
+      #the sub class to avoid below...
+      section = '/Resources/GridSites/LCG' 
+      sites = gConfig.getOptionsDict(section)      
+    
     if not sites['OK']:
       self.log.warn(sites['Message'])
       return S_ERROR('Could not obtain %s section from CS' %(section))
