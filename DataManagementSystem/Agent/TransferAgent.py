@@ -4,6 +4,7 @@
 from DIRAC  import gLogger, gConfig, gMonitor, S_OK, S_ERROR
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
+from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.GridCredentials import setupProxy,restoreProxy,setDIRACGroup, getProxyTimeLeft
 from DIRAC.RequestManagementSystem.Client.Request import RequestClient
 from DIRAC.RequestManagementSystem.Client.DataManagementRequest import DataManagementRequest
