@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/Attic/CFG.py,v 1.3 2008/01/15 08:42:06 acasajus Exp $
-__RCSID__ = "$Id: CFG.py,v 1.3 2008/01/15 08:42:06 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/Attic/CFG.py,v 1.4 2008/01/31 19:13:40 acasajus Exp $
+__RCSID__ = "$Id: CFG.py,v 1.4 2008/01/31 19:13:40 acasajus Exp $"
 
 import types
 import copy
@@ -514,7 +514,7 @@ class CFG:
           break
         elif line[ index: index + 2 ] == "+=":
           valueList = line.split( "+=" )
-          currentLevel.appendToOption( valueList[0].strip(), ",%s" % "+=".join( valueList[1:] ).strip() )
+          currentLevel.appendToOption( valueList[0].strip(), ", %s" % "+=".join( valueList[1:] ).strip() )
           currentlyParsedString = ""
           currentComment = ""
           break
