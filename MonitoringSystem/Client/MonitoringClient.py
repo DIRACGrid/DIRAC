@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.16 2008/01/28 19:13:40 acasajus Exp $
-__RCSID__ = "$Id: MonitoringClient.py,v 1.16 2008/01/28 19:13:40 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.17 2008/01/31 18:52:18 acasajus Exp $
+__RCSID__ = "$Id: MonitoringClient.py,v 1.17 2008/01/31 18:52:18 acasajus Exp $"
 
 import threading
 import time
@@ -40,7 +40,7 @@ class MonitoringClient:
 
   def initialize( self ):
     self.logger = gLogger.getSubLogger( "Monitoring" )
-    self.logger.debug( "Initializing Service Monitor")
+    self.logger.debug( "Initializing Monitoring Client")
     self.sourceDict[ 'setup' ] = gConfig.getValue( "/DIRAC/Setup" )
     self.sourceDict[ 'site' ] = gConfig.getValue( "/DIRAC/Site", "" )
     if self.sourceDict[ 'componentType' ] == self.COMPONENT_SERVICE:
