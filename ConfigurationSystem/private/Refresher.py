@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Refresher.py,v 1.18 2008/01/16 16:22:31 acasajus Exp $
-__RCSID__ = "$Id: Refresher.py,v 1.18 2008/01/16 16:22:31 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Refresher.py,v 1.19 2008/01/31 14:51:52 acasajus Exp $
+__RCSID__ = "$Id: Refresher.py,v 1.19 2008/01/31 14:51:52 acasajus Exp $"
 
 import threading
 import time
@@ -19,6 +19,7 @@ class Refresher( threading.Thread ):
     self.iLastUpdateTime = 0
     self.sURL = False
     self.bEnabled = True
+    self.timeout = False
     random.seed()
     self.oTriggeredRefreshLock = threading.Lock()
 
@@ -39,6 +40,7 @@ class Refresher( threading.Thread ):
         return
       self.iLastUpdateTime = time.time()
       thd = threading.Thread( target = self.__refreshInThread )
+      thd.setDaemon(1)
       thd.start()
     finally:
       self.oTriggeredRefreshLock.release()
@@ -73,7 +75,7 @@ class Refresher( threading.Thread ):
     from DIRAC.Core.DISET.RPCClient import RPCClient
     sMasterServer = gConfigurationData.getMasterServer()
     if sMasterServer:
-      oClient = RPCClient( sMasterServer, timeout = 10, useCertificates = gConfigurationData.useServerCertificate() )
+      oClient = RPCClient( sMasterServer, timeout = self.timeout, useCertificates = gConfigurationData.useServerCertificate() )
       if gConfigurationData.getAutoPublish():
         gLogger.debug( "Publishing to master server..." )
         dRetVal = oClient.publishSlaveServer( self.sURL )
@@ -104,7 +106,7 @@ class Refresher( threading.Thread ):
 
     for sServer in lRandomListOfServers:
         from DIRAC.Core.DISET.RPCClient import RPCClient
-        oClient = RPCClient( sServer, timeout = 10, useCertificates = gConfigurationData.useServerCertificate() )
+        oClient = RPCClient( sServer, timeout = self.timeout, useCertificates = gConfigurationData.useServerCertificate() )
         dRetVal = self.__updateFromRemoteLocation( oClient )
         if dRetVal[ 'OK' ]:
           return dRetVal
