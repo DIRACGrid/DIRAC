@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSAdministratorHandler.py,v 1.5 2008/01/14 22:16:19 atsareg Exp $
+# $Id: WMSAdministratorHandler.py,v 1.6 2008/01/31 18:56:17 atsareg Exp $
 ########################################################################
 """
 This is a DIRAC WMS administrator interface
@@ -16,7 +16,7 @@ This starts an XMLRPC service exporting the following methods:
 
 """
 
-__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.5 2008/01/14 22:16:19 atsareg Exp $"
+__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.6 2008/01/31 18:56:17 atsareg Exp $"
 
 import os, sys, string, uu, shutil
 from types import *
@@ -132,7 +132,8 @@ class WMSAdministratorHandler(RequestHandler):
       new_proxy = result["Value"]
       return S_OK(new_proxy)
     else:
-      resTime = getProxyTimeLeft()
+      resTime = getProxyTimeLeft(user_proxy)
+            
       if resTime['OK']:
         timeLeft = resTime['Value']
         if timeLeft/3600. > validity:
