@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalogue. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.16 2008/01/31 16:16:10 joel Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.17 2008/01/31 19:25:03 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -26,6 +26,63 @@ class ReplicaManager:
     """ Set Accounting Client instance
     """
     self.accountingClient = client
+
+  def put(self,lfn,file,diracSE,path=None):
+    """ Put a local file to a Storage Element
+
+        'lfn' is the file LFN
+        'file' is the full path to the local file
+        'diracSE' is the Storage Element to which to put the file
+        'path' is the path on the storage where the file will be put (if not provided the LFN will be used)
+    """
+    # Check that the local file exists
+    if not os.path.exists(file):
+      errStr = "ReplicaManager.put: Supplied file does not exist."
+      gLogger.error(errStr, file)
+      return S_ERROR(errStr)
+    # If the path is not provided then use the LFN path
+    if not path:
+      path = os.path.dirname(lfn)
+    # Obtain the size of the local file
+    size = getSize(file)
+    if size == 0:
+      errStr = "ReplicaManager.put: Supplied file is zero size."
+      gLogger.error(errStr,file)
+      return S_ERROR(errStr)
+    # If the local file name is not the same as the LFN filename then use the LFN file name
+    alternativeFile = None
+    lfnFileName = os.path.basename(lfn)
+    localFileName = os.path.basename(file)
+    if not lfnFileName == localFileName:
+      alternativeFile = lfnFileName
+
+    ##########################################################
+    #  Instantiate the destination storage element here.
+    storageElement = StorageElement(diracSE)
+    if not storageElement.isValid()['Value']:
+      errStr = "ReplicaManager.put: Failed to instantiate destination StorageElement."
+      gLogger.error(errStr,diracSE)
+      return S_ERROR(errStr)
+    destinationSE = storageElement.getStorageElementName()['Value']
+
+    successful = {}
+    failed = {}
+    ##########################################################
+    #  Perform the put here.
+    startTime = time.time()
+    res = storageElement.putFile(file,path,alternativeFileName=alternativeFile)
+    putTime = time.time() - startTime
+    if not res['OK']:
+      errStr = "ReplicaManager.put: Failed to put file to Storage Element."
+      failed[lfn] = res['Message']
+      gLogger.error(errStr,"%s: %s" % (file,res['Message']))
+    else:
+      gLogger.info("ReplicaManager.put: Put file to storage in %s seconds." % putTime)
+      successful[lfn] = putTime
+    resDict = {'Successful': successful,'Failed':failed}
+    return S_OK(resDict)
+
+
 
   def putAndRegister(self,lfn,file,diracSE,guid=None,path=None):
     """ Put a local file to a Storage Element and register in the File Catalogues
