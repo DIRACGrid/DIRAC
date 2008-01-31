@@ -1,8 +1,8 @@
-# $Id: Parameter.py,v 1.17 2008/01/30 16:21:47 gkuznets Exp $
+# $Id: Parameter.py,v 1.18 2008/01/31 16:34:33 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.17 $"
+__RCSID__ = "$Revision: 1.18 $"
 
 # unbinded method, returns indentation string
 def indent(indent=0):
@@ -66,9 +66,9 @@ class Parameter(object):
             return "'"+self.value+"'"
         return self.value
 
-    def setValue(self, value, type=None):
-        if type != None:
-            self.setType(type)
+    def setValue(self, value, type_=None):
+        if type_ != None:
+            self.setType(type_)
         self.setValueByType(value)
 
     def setValueByType(self, value):
@@ -89,8 +89,8 @@ class Parameter(object):
     def getType(self):
         return self.type
 
-    def setType(self, type):
-        self.type=type
+    def setType(self, type_):
+        self.type=type_
 
     def isTypeString(self):
         """returns True if type is the string kind"""
@@ -248,12 +248,20 @@ class ParameterCollection(list):
         elif coll != None:
             raise TypeError('Can not create object type '+str(type(self))+' from the '+ str(type(coll)))
 
+    def appendOrOwerrite(self, opt):
+        index = self.findIndex(opt.getName())
+        if index > -1:
+            #print "Warning: Overriting Parameter %s = \"%s\" with the value \"%s\""%(self[index].getName(), self[index].getValue(), opt.getValue())
+            self[index]=opt
+        else:
+            list.append(self, opt)
+
     def append(self, opt):
         if isinstance(opt, ParameterCollection):
             for p in opt:
-                list.append(self, p)
+                self.appendOrOwerrite(p)
         elif isinstance(opt, Parameter):
-            list.append(self, opt)
+            self.appendOrOwerrite(opt)
             return opt
         else:
             raise TypeError('Can not append object type '+ str(type(opt))+' to the '+str(type(self))+'. Parameter type appendable only')
@@ -261,24 +269,56 @@ class ParameterCollection(list):
     def appendCopy(self, opt, prefix="", postfix=""):
         if isinstance(opt, ParameterCollection):
             for p in opt:
-                list.append(self, Parameter(name=prefix+p.getName()+postfix, parameter=p))
+                self.appendOrOwerrite(Parameter(name=prefix+p.getName()+postfix, parameter=p))
         elif isinstance(opt, Parameter):
-            list.append(self, Parameter(name=prefix+opt.getName()+postfix, parameter=opt))
+            self.appendOrOwerrite(Parameter(name=prefix+opt.getName()+postfix, parameter=opt))
             return opt
         else:
             raise TypeError('Can not append object type '+ str(type(opt))+' to the '+str(type(self))+'. Parameter type appendable only')
 
+    def setValue(self, name, value, type_=None):
+        """ Method finds parameter with the name "name" and if exists its set value
+        Returns True if sucsessfull
+        """
+        par = self.find(name)
+        if par == None:
+            print "ERROR ParameterCollection.setValue() can not find parameter with the name=%s to set Value=%s"% (name, value)
+            return False
+        else:
+            par.setValue(value, type_)
+            return True
+
+    def setLink(self, name, module_name, parameter_name):
+        """ Method finds parameter with the name "name" and if exists its set value
+        Returns True if sucsessfull
+        """
+        par = self.find(name)
+        if par == None:
+            print "ERROR ParameterCollection.setLink() can not find parameter with the name=%s to link it with %s.%s"% (name, module_name, parameter_name)
+            return False
+        else:
+            par.link(module_name, parameter_name)
+            return True
+
+
     def linkUp(self, opt, prefix="", postfix="", objname="self"):
-        """ This method will link parameters with the outer object (self) peremeters using prefix and postfix
+        """ This is a GROUP method operates on the 'obj' parameters using only parameters listed in 'opt' list
+        Method will link self.parameters with the outer object (self) perameters using prefix and postfix
         for example if we want to link module instance with the step or step instance with the workflow
-        opt - ParameterCollection or sigle Parameter (WARNING!! used as reference to get a names!!! opt is not changed!!!)
+        opt - ParameterCollection or sigle Parameter (WARNING!! used as reference to get a names!!! opt is not changing!!!)
         objname - name of the object to connect with, usually 'self'
         """
         if isinstance(opt, ParameterCollection):
+            # if parameter in the list opt is not present in the self
+            # we are going to ignore this
             for p in opt:
-                self.find(p.getName()).link(objname, prefix+p.getName()+postfix)
+                par = self.find(p.getName())
+                if par == None:
+                    print "WARNING ParameterCollection.linkUp can not find parameter with the name=", p.getName(), " IGNORING"
+                else:
+                    par.link(objname, prefix+p.getName()+postfix)
         elif isinstance(opt, Parameter):
-            self.find(opt.getName()).link(objname, prefix+opt.getName()+postfix)
+            self.setLink(opt.getName(), objname, prefix+opt.getName()+postfix)
             return opt
         else:
             raise TypeError('Can not link object type '+ str(type(opt))+' to the '+str(type(self))+'.')
@@ -477,6 +517,14 @@ class AttributeCollection(dict):
 
     def compareParameters(self, s):
         return self.parameters.compare(s)
+
+    def setValue(self, name, value, type_=None):
+        if not self.parameters.setValue(name, value, type_):
+            print " in the object=", type(self), "with name=", self.getName(), "of type=", self.getType()
+
+    def setLink(self, name, module_name, parameter_name):
+        if not  self.parameters.setLink(name, module_name, parameter_name):
+            print " in the object=", type(self), "with name=", self.getName(), "of type=", self.getType()
 
     def compare(self, s):
         return (self == s) and  self.parameters.compare(s.parameters)
