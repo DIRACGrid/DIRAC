@@ -4,6 +4,7 @@
 from DIRAC.Core.Base.DB import DB
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.RequestManagementSystem.Client.DataManagementRequest import DataManagementRequest
+from DIRAC.ConfigurationSystem.Client import PathFinder
 
 import os
 import threading
@@ -19,7 +20,8 @@ class RequestDBFile:
   def __getRequestDBPath(self):
     """ Obtain the root of the requestDB from the configuration
     """
-    root = gConfig.getValue('/Systems/RequestManagement/Development/Services/RequestManager/Path')
+    csSection = csSection = PathFinder.getServiceSection( "RequestManagement/RequestManager" )
+    root = gConfig.getValue('%s/Path' % csSection)
     if not root:
       diracRoot = gConfig.getValue('/LocalSite/Root')
       root = diracRoot+'/requestdb'
@@ -30,11 +32,11 @@ class RequestDBFile:
   #######################################################################################
   #
   # These are the methods that expose the common functionality
-  # 
+  #
 
   def getDBSummary(self):
     """ Obtain a summary of the contents of the requestDB
-    """ 
+    """
     gLogger.info("RequestDBFile._getDBSummary: Attempting to get database summary.")
     requestTypes = ['transfer','register','removal','stage']
     try:
@@ -48,7 +50,7 @@ class RequestDBFile:
             reqTypeStatusDir = '%s/%s' % (reqTypeDir,status)
             requests = os.listdir(reqTypeStatusDir)
             summaryDict[requestType][status] = len(requests)
-      gLogger.info("RequestDBFile._getDBSummary: Successfully obtained database summary.")  
+      gLogger.info("RequestDBFile._getDBSummary: Successfully obtained database summary.")
       return S_OK(summaryDict)
     except Exception,x:
       errStr = "RequestDBFile._getDBSummary: Exception while getting DB summary."
@@ -57,11 +59,11 @@ class RequestDBFile:
 
   def setRequest(self,requestName,requestString,desiredStatus=None):
     """ Set request to the database (including all sub-requests)
-    """  
+    """
     gLogger.info("RequestDBFile._setRequest: Attempting to set %s." % requestName)
-    oRequest = DataManagementRequest(request=requestString)  
+    oRequest = DataManagementRequest(request=requestString)
     requestTypes = ['transfer','register','removal','stage']
-    try: 
+    try:
       for requestType in requestTypes:
         subRequestString = oRequest.toXML(requestType)['Value']
         if subRequestString:
@@ -70,7 +72,7 @@ class RequestDBFile:
           elif not oRequest.isRequestEmpty(requestType)['Value']:
             status = 'ToDo'
           else:
-            status = 'Done'  
+            status = 'Done'
           subRequestDir = '%s/%s/%s' % (self.root,requestType,status)
           if not os.path.exists(subRequestDir):
             os.makedirs(subRequestDir)
@@ -87,7 +89,7 @@ class RequestDBFile:
       return S_ERROR(errStr)
 
   def deleteRequest(self,requestName):
-    """ Delete all sub requests associated to a request  
+    """ Delete all sub requests associated to a request
     """
     gLogger.info("RequestDBFile._deleteRequest: Attempting to delete %s." % requestName)
     res = self.__locateRequest(requestName)
@@ -106,7 +108,7 @@ class RequestDBFile:
       return S_ERROR(errStr)
 
   def getRequest(self,requestType):
-    """ Obtain a request from the database of a certain type   
+    """ Obtain a request from the database of a certain type
     """
     gLogger.info("RequestDBFile._getRequest: Attempting to get %s type request." % requestType)
     try:
@@ -145,16 +147,16 @@ class RequestDBFile:
         gLogger.error(errStr,res['Message'])
         return S_ERROR(errStr)
       selectedRequestString = res['Value']
-      
-      # Set the request status to assigned       
+
+      # Set the request status to assigned
       res = self.setRequestStatus(selectedRequestName,'Assigned')
       if not res['OK']:
         self.getIdLock.release()
         errStr = "RequestDBFile._getRequest: Failed to set %s status to 'Assigned'." % selectedRequestName
         gLogger.error(errStr,res['Message'])
         return S_ERROR(errStr)
-               
-      # Update the request cursor and return the selected request       
+
+      # Update the request cursor and return the selected request
       self.lastRequest[requestType] = selectedRequestName
       self.getIdLock.release()
       gLogger.info("RequestDBFile._getRequest: Successfully obtained %s request." % selectedRequestName)
@@ -164,7 +166,7 @@ class RequestDBFile:
       errStr = "RequestDBFile._getRequest: Exception while getting request."
       gLogger.exception(errStr,"%s %s" % (requestType,str(x)))
       return S_ERROR(errStr)
-         
+
   def setRequestStatus(self,requestName,requestStatus):
     """ Set the request status
     """
@@ -177,12 +179,12 @@ class RequestDBFile:
         gLogger.error(errStr,res['Message'])
         return S_ERROR(errStr)
       requestString = res['Value']
-      # Delete the original request    
+      # Delete the original request
       res = self.deleteRequest(requestName)
       if not res['OK']:
         errStr = "RequestDBFile._setRequestStatus: Failed to remove %s." %  requestName
         gLogger.error(errStr,res['Message'])
-        return S_ERROR(errStr) 
+        return S_ERROR(errStr)
       # Set the request with the desired status
       res = self.setRequest(requestName,requestString,desiredStatus=requestStatus)
       if not res['OK']:
@@ -196,7 +198,7 @@ class RequestDBFile:
       errStr = "RequestDBFile._setRequestStatus: Exception while setting request status."
       gLogger.exception(errStr,"%s %s" % (requestName,str(x)))
       return S_ERROR(errStr)
-     
+
   def serveRequest(self,requestType):
     """ Get a request from the DB and serve it (delete locally)
     """
@@ -209,7 +211,7 @@ class RequestDBFile:
         gLogger.error(errStr,res['Message'])
         return S_ERROR(errStr)
       if not res['Value']:
-        return res      
+        return res
       requestDict = res['Value']
       requestName = requestDict['requestName']
       # Delete the original request
@@ -224,7 +226,7 @@ class RequestDBFile:
       errStr = "RequestDBFile.serveRequest: Exception while serving request."
       gLogger.exception(errStr,"%s %s" % (requestName,str(x)))
       return S_ERROR(errStr)
-      
+
   def updateRequest(self,requestName,requestString):
     """ Update the contents of a pre-existing request
     """
@@ -248,21 +250,21 @@ class RequestDBFile:
       errStr = "RequestDBFile._updateRequest: Exception while updating request."
       gLogger.exception(errStr,"%s %s" % (requestName,str(x)))
       return S_ERROR(errStr)
-      
+
   #######################################################################################
   #
   # These are the internal methods
   #
-    
+
   def __locateRequest(self,requestName):
-    """ Locate the sub requests associated with a requestName 
+    """ Locate the sub requests associated with a requestName
     """
-    gLogger.info("RequestDBFile.__locateRequest: Attempting to locate %s." % requestName) 
+    gLogger.info("RequestDBFile.__locateRequest: Attempting to locate %s." % requestName)
     requestTypes = ['transfer','register','removal','stage']
     subRequests = []
     try:
       for requestType in requestTypes:
-        reqDir = "%s/%s" % (self.root,requestType)        
+        reqDir = "%s/%s" % (self.root,requestType)
         if os.path.isdir(reqDir):
           statusList = os.listdir(reqDir)
           for status in statusList:
@@ -281,7 +283,7 @@ class RequestDBFile:
 
   def __getRequestString(self,requestName):
     """ Obtain the string for request (including all sub-requests)
-    """ 
+    """
     gLogger.info("RequestDBFile.__getRequestString: Attempting to get string for %s." % requestName)
     requestTypes = ['transfer','register','removal','stage']
     res = self.__locateRequest(requestName)
@@ -325,7 +327,7 @@ class RequestDBFile:
     """
     gLogger.info("RequestDBFile.__selectRequestCursor: Attempting to select next valid request.")
     try:
-      if lastRequest in requestList:  
+      if lastRequest in requestList:
         numberOfRequests = len(requestList)
         lastIndex = requestList.index(lastRequest)
         newIndex = lastIndex+1
@@ -340,4 +342,4 @@ class RequestDBFile:
       errStr = "RequestDBFile.__selectRequestCursor: Exception while selecting next valid request."
       gLogger.exception(errStr,str(x))
       return S_ERROR(errStr)
-    
+
