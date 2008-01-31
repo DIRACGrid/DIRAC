@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobPolicy.py,v 1.4 2008/01/11 08:16:39 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobPolicy.py,v 1.5 2008/01/31 19:03:53 atsareg Exp $
 ########################################################################
 
 """ JobPolicy encapsulates authorization rules for different groups
@@ -7,7 +7,7 @@
 
 """
 
-__RCSID__ = "$Id: JobPolicy.py,v 1.4 2008/01/11 08:16:39 atsareg Exp $"
+__RCSID__ = "$Id: JobPolicy.py,v 1.5 2008/01/31 19:03:53 atsareg Exp $"
 
 from DIRAC import gConfig, S_OK, S_ERROR
 
@@ -45,6 +45,7 @@ class JobPolicy:
     """
 
     result = self.jobDB.getJobAttributes(jobID,['OwnerDN','OwnerGroup'])
+        
     if not result['OK']:
       return result
     elif result['Value']:
@@ -52,6 +53,8 @@ class JobPolicy:
       group = result['Value']['OwnerGroup']
       result = self.getJobPolicy(userDN,userGroup,owner,group)
       return result
+    else:
+      return S_ERROR('Job not found')  
 
 ###########################################################################
   def getJobPolicy(self,userDN,userGroup,jobOwnerDN='',jobOwnerGroup=''):
