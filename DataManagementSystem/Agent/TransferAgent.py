@@ -1,7 +1,10 @@
 """  TransferAgent takes transfer requests from the RequestDB and replicates them
 """
 
-from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
+
+
+
+from DIRAC  import gLogger, gConfig, gMonitor, S_OK, S_ERROR
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
 from DIRAC.RequestManagementSystem.Client.Request import RequestClient
@@ -23,12 +26,16 @@ class TransferAgent(Agent):
     result = Agent.initialize(self)
     self.RequestDBClient = RequestClient()
     self.ReplicaManager = ReplicaManager()
+    gMonitor.registerActivity( "Iteration", "Agent Loops/min",          "TransferAgent", "Atemps", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "Execute",   "Request Processed/min",    "TransferAgent", "Atemps", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "Done",      "Request Completed/min",    "TransferAgent", "Atemps", gMonitor.OP_SUM )
     return result
 
   def execute(self):
 
     ################################################
     # Get a request from request DB
+    gMonitor.addMark( "Iteration", 1 )
     res = self.RequestDBClient.getRequest('transfer')
     if not res['OK']:
       gLogger.info("TransferAgent.execute: Failed to get request from database.")
@@ -54,6 +61,7 @@ class TransferAgent(Agent):
     ################################################
     # For all the sub-requests in the request
     for ind in range(res['Value']):
+      gMonitor.addMark( "Execute", 1 )
       gLogger.info("TransferAgent.execute: Processing sub-request %s." % ind)
       subRequestAttributes = oRequest.getSubRequestAttributes(ind,'transfer')['Value']
       if subRequestAttributes['Status'] == 'Waiting':
@@ -186,6 +194,7 @@ class TransferAgent(Agent):
         #  Determine whether there are any active files
         if oRequest.isSubRequestEmpty(ind,'transfer')['Value']:
           oRequest.setSubRequestStatus(ind,'transfer','Done')
+          gMonitor.addMark( "Done", 1 )
 
       ################################################
       #  If the sub-request is already in terminal state
