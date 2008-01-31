@@ -5,24 +5,25 @@
 from types import *
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC.Core.Utilities.List import randomize
+from DIRAC.Core.Utilities.List import randomize, fromChar
+from DIRAC.ConfigurationSystem.Client import PathFinder
 
 class RequestClient:
 
   def __init__(self,useCertificates = False):
     """ Constructor of the RequestClient class
     """
-    local = gConfig.getValue('/Systems/RequestManagement/Development/URLs/RequestDB/localURL')
+    local = PathFinder.getServiceURL( "RequestManagement/localURL" )
     if local:
       self.local = local
-    
-    central = gConfig.getValue('/Systems/RequestManagement/Development/URLs/RequestDB/centralURL','')
+
+    central = PathFinder.getServiceURL( "RequestManagement/centralURL" )
     if central:
       self.central = central
 
-    voBoxUrls = gConfig.getValue('/Systems/RequestManagement/Development/URLs/RequestDB/voBoxURLs',[])
+    voBoxUrls = fromChar( PathFinder.getServiceURL( "RequestManagement/voBoxURLs" ) )
     self.voBoxUrls = randomize(voBoxUrls)
-    if self.local in self.voBoxUrls: 
+    if self.local in self.voBoxUrls:
       self.voBoxUrls.remove(self.local)
 
   ########################################################################
@@ -42,7 +43,7 @@ class RequestClient:
       errStr = "Request.updateRequest: Exception while updating request."
       gLogger.exception(errStr,"%s %s" % (requestName,str(x)))
       return S_ERROR(errStr)
-        
+
   def deleteRequest(self,requestName,url):
     """ Delete the request at the supplied url
     """
@@ -72,7 +73,7 @@ class RequestClient:
   ##############################################################################
   #
   # These are the methods which require URL manipulation
-  # 
+  #
 
   def setRequest(self,requestName,requestString,url=''):
     """ Set request. URL can be supplied if not a all VOBOXes will be tried in random order.
@@ -110,7 +111,7 @@ class RequestClient:
       url = self.local
       urls = [url]
       for url in urls:
-        gLogger.info("RequestDBClient.getRequest: Attempting to get request.", "%s %s" % (url,requestType)) 
+        gLogger.info("RequestDBClient.getRequest: Attempting to get request.", "%s %s" % (url,requestType))
         requestRPCClient = RPCClient(url)
         res = requestRPCClient.getRequest(requestType)
         if res['OK']:
@@ -146,7 +147,7 @@ class RequestClient:
           if res['Value']:
             gLogger.info("Got '%s' request from RequestDB (%s)" % (requestType,url))
             res['Value']['Server'] = url
-            return res 
+            return res
           else:
             gLogger.info("Found no '%s' requests on RequestDB (%s)" % (requestType,url))
         else:
