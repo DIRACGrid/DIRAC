@@ -691,6 +691,8 @@ class StorageElement:
       gLogger.error(infoStr,file)
       return S_ERROR(infoStr)
 
+    localSE = self.isLocalSE()['Value']
+   
     gLogger.info("StorageElement.putFile: Determined file size of %s to be %s." % (file,size))
     localSE = self.isLocalSE()['Value']
     # The method will try all storages
@@ -706,7 +708,7 @@ class StorageElement:
         useProtocol = True
       else:
         useProtocol = False
-        gLogger.info("StorageElement.putDirectory: %s not appropriate for use." % protocolName)
+        gLogger.info("StorageElement.putFile: %s not appropriate for use." % protocolName)
       if useProtocol:
         res =  storage.getCurrentURL(directoryPath)
         if res['OK']:
@@ -874,7 +876,6 @@ class StorageElement:
         useProtocol = False
         gLogger.info("StorageElement.getFileMetadata: Protocol not appropriate for use: %s." % protocolName)
       if useProtocol:
-        gLogger.info("StorageElement.getFileMetadata: Generating protocol PFNs for %s." % protocolName)
         for pfn in pfns:
           # If we have not already obtained metadata for the supplied pfn
           if not successful.has_key(pfn):
