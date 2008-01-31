@@ -1,4 +1,4 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.14 2008/01/25 19:12:58 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.15 2008/01/31 19:11:06 atsareg Exp $
 
 """ Grid Credentials module contains utilities to manage user and host
     certificates and proxies.
@@ -33,7 +33,7 @@
     getVOMSProxyInfo()
 """
 
-__RCSID__ = "$Id: GridCredentials.py,v 1.14 2008/01/25 19:12:58 atsareg Exp $"
+__RCSID__ = "$Id: GridCredentials.py,v 1.15 2008/01/31 19:11:06 atsareg Exp $"
 
 import os
 import os.path
@@ -343,9 +343,11 @@ def getProxyTimeLeft(proxy=None):
   """
   result = parseProxy(proxy,option="TimeLeft")
   timeleft = result['Value']
+  if int(timeleft) <= 0:
+    return S_OK(0)
   actimeleft = 99999999
   if result['VOMS']:
-    result = getVOMSProxyInfo(proxy,'actimeleft')
+    result = getVOMSProxyInfo(proxy,'actimeleft')   
     actimeleft = result['Value']
 
   return S_OK(min(timeleft,actimeleft))
@@ -938,8 +940,10 @@ def getVOMSAttributes(proxy,switch="all"):
   elif switch == "option":
     if len(attributes)>1:
       returnValue = voName+" -order "+' -order '.join(attributes)
-    else:
+    elif attributes:
       returnValue = voName+":"+attributes[0]
+    else:
+      returnValue = voName  
   elif switch == 'all':
     returnValue = attributes
 
@@ -982,7 +986,7 @@ def getVOMSProxyInfo(proxy_file,option=None):
         new_proxy,old_proxy = result["Value"]
         rm_proxy = 1
       else:
-        return S_ERROR('Failed to setup given proxy. Proxy is: %s' % (proxy))
+        return S_ERROR('Failed to setup given proxy. Proxy is: %s' % (proxy_file))
     else:
       new_proxy = proxy_file
   except ValueError:

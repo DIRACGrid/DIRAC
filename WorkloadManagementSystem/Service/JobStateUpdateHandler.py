@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobStateUpdateHandler.py,v 1.7 2008/01/23 08:54:09 atsareg Exp $
+# $Id: JobStateUpdateHandler.py,v 1.8 2008/01/31 19:09:08 atsareg Exp $
 ########################################################################
 
 """ JobStateUpdateHandler is the implementation of the Job State updating
@@ -11,7 +11,7 @@
 
 """
 
-__RCSID__ = "$Id: JobStateUpdateHandler.py,v 1.7 2008/01/23 08:54:09 atsareg Exp $"
+__RCSID__ = "$Id: JobStateUpdateHandler.py,v 1.8 2008/01/31 19:09:08 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -34,7 +34,7 @@ def initializeJobStateUpdateHandler( serviceInfo ):
 class JobStateUpdateHandler( RequestHandler ):
 
   ###########################################################################
-  types_setJobStatus = [IntType,StringType,StringType,StringType,StringType]
+  types_setJobStatus = [IntType,StringType,StringType,StringType]
   def export_setJobStatus(self,jobID,status,minorStatus,source='Unknown',datetime=None):
     """ Set the major and minor status for job specified by its JobId.
         Set optionally the status date and source component which sends the
@@ -57,9 +57,7 @@ class JobStateUpdateHandler( RequestHandler ):
     status = result['Value']['Status']
     minorStatus = result['Value']['MinorStatus']
     if datetime:
-      date = datetime.split()[0]
-      time = datetime.split()[1]
-      result = logDB.addLoggingRecord(jobID,status,minorStatus,date,time,source)
+      result = logDB.addLoggingRecord(jobID,status,minorStatus,datetime,source)
     else:
       result = logDB.addLoggingRecord(jobID,status,minorStatus,source=source)
 
@@ -112,6 +110,11 @@ class JobStateUpdateHandler( RequestHandler ):
     print staticData
     print "Dynamic heart beat data"
     print dynamicData
+
+    if dynamicData.has_key('StandardOutput'):
+      result = jobDB.setJobParameter(jobID,'StandardOutput',dynamicData['StandardOutput'])
+      if not result['OK']:
+        self.log.warn(result)
 
     result = jobDB.getJobAttributes(jobID,['Status'])
     if not result['OK']:
