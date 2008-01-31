@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.13 2008/01/24 10:16:19 paterson Exp $
+# $Id: JobWrapper.py,v 1.14 2008/01/31 14:39:56 paterson Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,19 +9,19 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.13 2008/01/24 10:16:19 paterson Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.14 2008/01/31 14:39:56 paterson Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
 from DIRAC.WorkloadManagementSystem.Client.SandboxClient            import SandboxClient
 from DIRAC.WorkloadManagementSystem.JobWrapper.WatchdogFactory      import WatchdogFactory
+from DIRAC.ConfigurationSystem.Client.PathFinder                    import getSystemSection
 from DIRAC.Core.DISET.RPCClient                                     import RPCClient
+from DIRAC.Core.Utilities.ModuleFactory                             import ModuleFactory
 from DIRAC.Core.Utilities.Subprocess                                import shellCall
 from DIRAC.Core.Utilities.Subprocess                                import Subprocess
 from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger
 import DIRAC
-
-COMPONENT_NAME = '/LocalSite/JobWrapper'
 
 import os, re, sys, string, time, shutil, threading, tarfile
 
@@ -33,7 +33,7 @@ class JobWrapper:
   def __init__(self, jobID=None):
     """ Standard constructor
     """
-    self.section = COMPONENT_NAME
+    self.section = "%s/JobWrapper" % ( getSystemSection( "WorkloadManagement/" ))
     self.log = gLogger
     self.jobID = jobID
     self.root = os.getcwd()
@@ -45,6 +45,12 @@ class JobWrapper:
     self.defaultCPUTime = gConfig.getValue(self.section+'/DefaultCPUTime',600)
     self.defaultOutputFile = gConfig.getValue(self.section+'/DefaultOutputFile','std.out')
     self.defaultErrorFile = gConfig.getValue(self.section+'/DefaultErrorFile','std.err')
+    self.diskSE            = gConfig.getValue(self.section+'/DiskSE','-disk,-DST,-USER')
+    if type(self.diskSE) == type(' '):
+      self.diskSE = self.diskSE.split(',')
+    self.tapeSE            = gConfig.getValue(self.section+'/TapeSE','-tape,-RDST,-RAW')
+    if type(self.tapeSE) == type(' '):
+      self.tapeSE = self.tapeSE.split(',')
     self.cleanUpFlag  = gConfig.getValue(self.section+'/CleanUpFlag',False)
     self.localSiteRoot = gConfig.getValue('/LocalSite/Root',self.root)
     self.__loadLocalCFGFiles(self.localSiteRoot)
@@ -182,8 +188,6 @@ class JobWrapper:
       while exeThread.isAlive():
         time.sleep(5)
 
-#    self.log.verbose( 'Execution Result is : ')
-#    self.log.verbose( EXECUTION_RESULT )
     outputs = None
     if EXECUTION_RESULT.has_key('Thread'):
       threadResult = EXECUTION_RESULT['Thread']
@@ -228,7 +232,7 @@ class JobWrapper:
     """Input data is resolved here for the first iteration of SRM2 testing.
     """
     self.__report('Running','Input Data Resolution')
-    self.log.info('Initial iteration of input data resolution in Job Wrapper for SRM2 testing')
+
     jobArgs = arguments['Job']
     if not jobArgs.has_key('InputData'):
       msg = 'Could not obtain job input data requirement from available parameters'
@@ -239,7 +243,7 @@ class JobWrapper:
     if not ceArgs.has_key('LocalSE'):
       csLocalSE = gConfig.getValue('LocalSite/LocalSE','')
       if not csLocalSE:
-        msg = 'Job has input data requirement but no LocalSE defined'
+        msg = 'Job has input data requirement but no site LocalSE defined'
         self.log.warn(msg)
         return S_ERROR(msg)
       else:
@@ -264,21 +268,128 @@ class JobWrapper:
       self.log.warn(msg)
       return S_ERROR(msg)
 
-    self.log.verbose('Job input data requirement is \n%s' %(string.join(inputData,',\n')))
-    self.log.verbose('Site has the following local SEs: %s' %(string.join(localSEList,', ')))
+    if not jobArgs.has_key('InputDataModule'):
+      msg = 'Job has no input data resolution module'
+      self.log.warn(msg)
+      return S_ERROR(msg)
 
+    inputDataPolicy = jobArgs['InputDataModule']
+    self.log.verbose('Job input data requirement is \n%s' %(string.join(inputData,',\n')))
+    self.log.verbose('Job input data resolution policy module is %s' %(inputDataPolicy))
+    self.log.info('Site has the following local SEs: %s' %(string.join(localSEList,', ')))
     lfns = [string.replace(fname,'LFN:','') for fname in inputData]
-    start = time.time()
-    result = self.fileCatalog.getReplicas(lfns)
-    timing = time.time() - start
-    self.log.info('LFC Lookup Time: %.2f seconds ' % (timing) )
+
+    optReplicas = {}
+    optGUIDs = {}
+    if arguments.has_key('Optimizer'):
+      optArgs = arguments['Optimizer']
+      optDict = None
+      try:
+        optDict = eval(optArgs['InputData'])
+        optReplicas = optDict['Value']
+        self.log.info('Found optimizer catalogue result')
+        self.log.verbose(optReplicas)
+      except Exception,x:
+        optDict = None
+        self.log.warn(str(x))
+        self.log.warn('Optimizer information could not be converted to a dictionary will call catalogue directly')
+
+    resolvedData = {}
+    result = self.__checkFileCatalog(lfns,localSEList,optReplicas)
     if not result['OK']:
-      self.log.warn(result['Message'])
+      self.log.info('Could not obtain replica information from Optimizer File Catalog information')
+      self.log.warn(result)
+      result = self.__checkFileCatalog(lfns,localSEList)
+      if not result['OK']:
+        self.log.warn('Could not obtain replica information from File Catalog directly')
+        self.log.warn(result)
+        return S_ERROR(result['Message'])
+      else:
+        resolvedData = result
+    else:
+      resolvedData = result
+
+    configDict = {'JobID':self.jobID,'LocalSEList':localSEList,'DiskSEList':self.diskSE,'TapeSEList':self.tapeSE}
+    self.log.info(configDict)
+    argumentsDict = {'FileCatalog':resolvedData,'Configuration':configDict,'InputData':lfns}
+    self.log.info(argumentsDict)
+    moduleFactory = ModuleFactory()
+    moduleInstance = moduleFactory.getModule(inputDataPolicy,argumentsDict)
+    if not moduleInstance['OK']:
+      return moduleInstance
+
+    module = moduleInstance['Value']
+    result = module.execute()
+    if not result['OK']:
+      self.log.warn('Input data resolution failed')
       return result
+
+    return S_OK()
+
+  #############################################################################
+  def __checkFileCatalog(self,lfns,localSEList,optReplicaInfo=None):
+    """This function returns dictionaries containing all relevant parameters
+       to allow data access from the relevant file catalogue.  Optionally, optimizer
+       parameters can be supplied here but if these are not sufficient, the file catalogue
+       is subsequently consulted.
+
+       N.B. this will be considerably simplified when the DMS evolves to have a
+       generic FC interface and a single call for all available information.
+    """
+    replicas = optReplicaInfo
+    if not replicas:
+      replicas = self.__getReplicaMetadata(lfns)
+      if not replicas['OK']:
+        return replicas
+
+    self.log.verbose(replicas)
+    failedReplicas = []
+    pfnList = []
+    originalReplicaInfo = replicas
+
+    #First make a check in case replicas have been removed from the local site
+    for lfn,reps in replicas['Value']['Successful'].items():
+      localReplica = False
+      for localSE in localSEList:
+        if reps.has_key(localSE):
+          localReplica = True
+      if not localReplica:
+        failedReplicas.append(lfn)
+
+    #Check that all LFNs have at least one replica and GUID
+    if failedReplicas:
+      #in principle this is not a failure but depends on the policy of the VO
+      #datasets can be downloaded from another site
+      self.log.info('The following file(s) were found not to have replicas for available LocalSEs:\n%s' %(string.join(failedReplicas,',\n')))
+
+    failedGUIDs = []
+    for lfn,reps in replicas['Value']['Successful'].items():
+      if not lfn in failedReplicas:
+        if not reps.has_key('GUID'):
+          failedGUIDs.append(lfn)
+
+    if failedGUIDs:
+      self.log.info('The following file(s) were found not to have a GUID:\n%s' %(string.join(failedGUIDs,',\n')))
+
+    return replicas
+
+  #############################################################################
+  def __getReplicaMetadata(self,lfns):
+    """ Wrapper function to consult LFC for all necessary file metadata
+        and check the result.  To be revisited when file catalogue interface
+        is available and when all info can be returned from a single call.
+    """
+    start = time.time()
+    repsResult = self.fileCatalog.getReplicas(lfns)
+    timing = time.time() - start
+    self.log.info('Replica Lookup Time: %.2f seconds ' % (timing) )
+    if not repsResult['OK']:
+      self.log.warn(repsResult['Message'])
+      return repsResult
 
     badLFNCount = 0
     badLFNs = []
-    catalogResult = result['Value']
+    catalogResult = repsResult['Value']
 
     if catalogResult.has_key('Failed'):
       for lfn,cause in catalogResult['Failed'].items():
@@ -298,156 +409,27 @@ class JobWrapper:
       result = self.__setJobParam('MissingLFNs',param)
       return S_ERROR('Input Data Not Available')
 
-    replicas = catalogResult['Successful']
-    self.log.debug(replicas)
-    seFilesDict = {}
-    failedReplicas = []
-    pfnList = []
-
-    for lfn,reps in replicas.items():
-      localReplica = False
-      for localSE in localSEList:
-        if reps.has_key(localSE):
-          localReplica = True
-      if not localReplica:
-        failedReplicas.append(lfn)
-
-    if failedReplicas:
-      msg = 'The following files were found not to have replicas for available LocalSEs:\n%s' %(string.join(failedReplicas,',\n'))
-      return S_ERROR(msg)
-
-    #For the unlikely case that a file is found on two SEs at the same site
-    #only the first SURL/SE is taken
-    trackLFNs = []
-    for localSE in localSEList:
-      for lfn,reps in replicas.items():
-        if reps.has_key(localSE):
-          pfn = reps[localSE]
-          if seFilesDict.has_key(localSE):
-            currentFiles = seFilesDict[localSE]
-            if not lfn in trackLFNs:
-              currentFiles.append(pfn)
-            seFilesDict[localSE] = currentFiles
-            trackLFNs.append(lfn)
-          else:
-            seFilesDict[localSE] = [pfn]
-            trackLFNs.append(lfn)
-
-    self.log.debug(seFilesDict)
-
-    for se,pfnList in seFilesDict.items():
-      seTotal = len(pfnList)
-      self.log.verbose(' %s SURLs found from catalog for LocalSE %s' %(seTotal,se))
-      for pfn in pfnList:
-        self.log.debug('%s %s' % (se,pfn))
-
-    # Can now start to resolve turls... finally
-    resolvedData = {}
-    for se,pfnList in seFilesDict.items():
-      result = self.rm.getPhysicalFileAccessUrl(pfnList,se)
-      self.log.debug(result)
-      if not result['OK']:
-        self.log.warn(result['Message'])
-        return result
-
-      badTURLCount = 0
-      badTURLs = []
-      seResult = result['Value']
-
-      if seResult.has_key('Failed'):
-        for pfn,cause in seResult['Failed'].items():
-          badTURLCount+=1
-          badTURLs.append('%s Problem: %s' %(pfn,cause))
-
-      if seResult.has_key('Successful'):
-        for pfn,turl in seResult['Successful'].items():
-          if not turl:
-            badTURLCount+=1
-            badTURLs.append('%s problem: null TURL returned' %(pfn))
-
-      if badTURLCount:
-        self.log.warn('Job Wrapper found %s problematic TURL(s) for job %s' % (badLFNCount,self.jobID))
-        param = string.join(badTURLs,'\n')
-        self.log.info(param)
-        result = self.__setJobParam('MissingTURLs',param)
-        return S_ERROR('TURL resoulution error')
-
-      pfnTurlDict = seResult['Successful']
-      for lfn,reps in replicas.items():
-        for se,rep in reps.items():
-          for pfn in pfnTurlDict.keys():
-            if rep == pfn:
-              turl = pfnTurlDict[pfn]
-              resolvedData[lfn] = {'turl':turl,'pfn':pfn,'se':se}
-              self.log.debug('Resolved %s %s\n %s\n %s' %(se,lfn,pfn,turl))
-
     #Must retrieve GUIDs from LFC for files
-    guids = {}
-    self.log.debug(resolvedData)
-    lfns = resolvedData.keys()
+    start = time.time()
     guidDict = self.fileCatalog.getFileMetadata(lfns)
-
+    timing = time.time() - start
+    self.log.info('GUID Lookup Time: %.2f seconds ' % (timing) )
     if not guidDict['OK']:
+      self.log.warn('Failed to retrieve GUIDs from file catalogue')
       self.log.warn(guidDict['Message'])
       return guidDict
 
     failed = guidDict['Value']['Failed']
     if failed:
+      self.log.warn('Could not retrieve GUIDs from catalogue for the following files')
       self.log.warn(failed)
-      return failed
+      return S_ERROR('Missing GUIDs')
 
-    for lfn,mdata in resolvedData.items():
-      se = mdata['se']
-      self.log.verbose('Attempting to get GUID for %s %s' %(lfn,se))
-      guids[lfn]=guidDict['Value']['Successful'][lfn]['GUID']
+    for lfn,reps in repsResult['Value']['Successful'].items():
+      guidDict['Value']['Successful'][lfn].update(reps)
 
-    self.log.debug(guids)
-    for lfn,guid in guids.items():
-      resolvedData[lfn]['guid'] = guid
-
-    #Create POOL XML slice for applications
-    self.log.debug(resolvedData)
-    xmlResult = self.__createXMLSlice(resolvedData)
-    if not xmlResult['OK']:
-      self.log.warn(xmlResult)
-
-    return S_OK('Input Data Resolved')
-
-  #############################################################################
-  def __createXMLSlice(self,dataDict):
-    """Given a dictionary of resolved input data, this will create a POOL
-       XML slice.
-    """
-    poolXMLCatName = 'pool_xml_catalog.xml'
-    try:
-      poolXMLCat = PoolXMLCatalog()
-      self.log.verbose('Creating POOL XML slice')
-
-      for lfn,mdata in dataDict.items():
-        local = os.path.basename(mdata['pfn'])
-        #lfn,pfn,size,se,guid tuple taken by POOL XML Catalogue
-        if os.path.exists(local):
-          poolXMLCat.addFile((lfn,os.path.abspath(local),0,mdata['se'],mdata['guid']))
-        else:
-          poolXMLCat.addFile((lfn,mdata['turl'],0,mdata['se'],mdata['guid']))
-
-      xmlSlice = poolXMLCat.toXML()
-      self.log.verbose('POOL XML Slice is: ')
-      self.log.verbose(xmlSlice)
-      poolSlice = open(poolXMLCatName,'w')
-      poolSlice.write(xmlSlice)
-      poolSlice.close()
-      self.log.verbose('POOL XML Catalogue slice written to %s' %(poolXMLCatName))
-      # Temporary solution to the problem of storing the SE in the Pool XML
-      poolSlice_temp = open('%s.temp' %(poolXMLCatName),'w')
-      xmlSlice = poolXMLCat.toXML(True)
-      poolSlice_temp.write(xmlSlice)
-      poolSlice_temp.close()
-    except Exception,x:
-      self.log.warn(str(x))
-      return S_ERROR(x)
-
-    return S_OK('POOL XML Slice created')
+    catResult = guidDict
+    return catResult
 
   #############################################################################
   def processJobOutputs(self,arguments):
@@ -611,7 +593,7 @@ class JobWrapper:
     jobStatus = self.jobReport.setJobStatus(int(self.jobID),status,minorStatus,'JobWrapper')
     self.log.verbose('setJobStatus(%s,%s,%s,%s)' %(self.jobID,status,minorStatus,'JobWrapper'))
     if not jobStatus['OK']:
-        self.log.warn(jobStatus['Message'])
+      self.log.warn(jobStatus['Message'])
 
     return jobStatus
 
@@ -622,7 +604,7 @@ class JobWrapper:
     jobParam = self.jobReport.setJobParameter(int(self.jobID),str(name),str(value))
     self.log.verbose('setJobParameter(%s,%s,%s)' %(self.jobID,name,value))
     if not jobParam['OK']:
-        self.log.warn(jobParam['Message'])
+      self.log.warn(jobParam['Message'])
 
     return jobParam
 
@@ -633,7 +615,7 @@ class JobWrapper:
     jobParam = self.jobReport.setJobParameters(int(self.jobID),value)
     self.log.verbose('setJobParameters(%s,%s)' %(self.jobID,value))
     if not jobParam['OK']:
-        self.log.warn(jobParam['Message'])
+      self.log.warn(jobParam['Message'])
 
     return jobParam
 
