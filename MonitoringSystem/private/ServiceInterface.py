@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/ServiceInterface.py,v 1.3 2008/01/07 19:09:35 acasajus Exp $
-__RCSID__ = "$Id: ServiceInterface.py,v 1.3 2008/01/07 19:09:35 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/ServiceInterface.py,v 1.4 2008/02/01 13:28:04 acasajus Exp $
+__RCSID__ = "$Id: ServiceInterface.py,v 1.4 2008/02/01 13:28:04 acasajus Exp $"
 import DIRAC
 from DIRAC import gLogger
 from DIRAC.MonitoringSystem.private.MonitoringCatalog import MonitoringCatalog
@@ -118,7 +118,6 @@ class ServiceInterface:
         retDict = rrdManager.update( rrdFile, entries )
         if not retDict[ 'OK' ]:
           gLogger.error( "There was an error updating %s:%s activity [%s]" % ( sourceId, acName, rrdFile ) )
-          unregisteredActivities.append( acName )
     return S_OK( unregisteredActivities )
 
   def fieldValue( self, field, definedFields ):
