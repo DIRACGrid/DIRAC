@@ -129,15 +129,15 @@ class RequestDBFile:
 
       # Select a request
       if not self.lastRequest.has_key(requestType):
-        self.lastRequest[requestType] = ''
-      lastRequest = self.lastRequest[requestType]
-      res = self.__selectRequestCursor(candidateRequests,lastRequest)
+        self.lastRequest[requestType] = ('',0)
+      lastRequest,lastRequestIndex = self.lastRequest[requestType]
+      res = self.__selectRequestCursor(candidateRequests,lastRequest,lastRequestIndex)
       if not res['OK']:
         self.getIdLock.release()
         errStr = "RequestDBFile._getRequest: Failed to get request cursor."
         gLogger.error(errStr,res['Message'])
         return S_ERROR(errStr)
-      selectedRequestName = res['Value']
+      selectedRequestName,selectedRequestIndex = res['Value']
 
       # Obtain the string for the selected request
       res = self.__getRequestString(selectedRequestName)
@@ -157,7 +157,7 @@ class RequestDBFile:
         return S_ERROR(errStr)
 
       # Update the request cursor and return the selected request
-      self.lastRequest[requestType] = selectedRequestName
+      self.lastRequest[requestType] = (selectedRequestName,selectedRequestIndex)
       self.getIdLock.release()
       gLogger.info("RequestDBFile._getRequest: Successfully obtained %s request." % selectedRequestName)
       resDict = {'requestString':selectedRequestString,'requestName':selectedRequestName}
@@ -322,22 +322,23 @@ class RequestDBFile:
       gLogger.exception(errStr,"%s %s" % (subRequestPath,str(x)))
       return S_ERROR(errStr)
 
-  def __selectRequestCursor(self,requestList,lastRequest):
+  def __selectRequestCursor(self,requestList,lastRequest,lastRequestIndex):
     """ Select the next valid request in the data base
     """
     gLogger.info("RequestDBFile.__selectRequestCursor: Attempting to select next valid request.")
     try:
       if lastRequest in requestList:
-        numberOfRequests = len(requestList)
         lastIndex = requestList.index(lastRequest)
         newIndex = lastIndex+1
-        if newIndex >= numberOfRequests:
-          newIndex = 0
+      elif lastRequestIndex:
+        newIndex = lastRequestIndex+1
       else:
+        newIndex = 0
+      if newIndex >= len(requestList):
         newIndex = 0
       nextRequestName = requestList[newIndex]
       gLogger.info("RequestDBFile.__selectRequestCursor: Selected %s as next request." % nextRequestName)
-      return S_OK(nextRequestName)
+      return S_OK(nextRequestName,newIndex)
     except Exception, x:
       errStr = "RequestDBFile.__selectRequestCursor: Exception while selecting next valid request."
       gLogger.exception(errStr,str(x))
