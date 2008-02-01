@@ -1,8 +1,8 @@
-# $Id: Parameter.py,v 1.18 2008/01/31 16:34:33 gkuznets Exp $
+# $Id: Parameter.py,v 1.19 2008/02/01 18:37:39 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.18 $"
+__RCSID__ = "$Revision: 1.19 $"
 
 # unbinded method, returns indentation string
 def indent(indent=0):
@@ -328,7 +328,7 @@ class ParameterCollection(list):
 
     def remove(self, name_or_ind):
         # work for index as well as for the string
-        if isinstance(name_or_ind, string): # we given name
+        if isinstance(name_or_ind, str): # we given name
             del self[self.findIndex(name_or_ind)]
         elif isinstance(name_or_ind, int) or isinstance(name_or_ind): # we given index
             del self[name_or_ind]
