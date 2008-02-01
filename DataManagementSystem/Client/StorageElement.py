@@ -22,14 +22,16 @@ class StorageElement:
     res = StorageFactory().getStorages(name)
     if not res['OK']:
       self.valid = False
-    factoryDict = res['Value']
-    self.name = factoryDict['StorageName']
-    self.options = factoryDict['StorageOptions']
-    self.localProtocols = factoryDict['LocalProtocols']
-    self.remoteProtocols = factoryDict['RemoteProtocols']
-    self.storages = factoryDict['StorageObjects']
-    self.protocolOptions = factoryDict['ProtocolOptions']
-    self.turlProtocols = factoryDict['TurlProtocols']
+      self.name = name
+    else:
+      factoryDict = res['Value']
+      self.name = factoryDict['StorageName']
+      self.options = factoryDict['StorageOptions']
+      self.localProtocols = factoryDict['LocalProtocols']
+      self.remoteProtocols = factoryDict['RemoteProtocols']
+      self.storages = factoryDict['StorageObjects']
+      self.protocolOptions = factoryDict['ProtocolOptions']
+      self.turlProtocols = factoryDict['TurlProtocols']
 
   def dump(self):
     """
