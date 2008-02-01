@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/RRDManager.py,v 1.5 2008/01/10 12:04:10 acasajus Exp $
-__RCSID__ = "$Id: RRDManager.py,v 1.5 2008/01/10 12:04:10 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/RRDManager.py,v 1.6 2008/02/01 13:44:42 acasajus Exp $
+__RCSID__ = "$Id: RRDManager.py,v 1.6 2008/02/01 13:44:42 acasajus Exp $"
 import os
 import os.path
 import time
@@ -96,7 +96,7 @@ class RRDManager:
     Add marks to an rrd
     """
     rrdFilePath = "%s/%s" % ( self.rrdLocation, rrdFile )
-    gLogger.verbose( "Updating rrd file", rrdFilePath )
+    gLogger.info( "Updating rrd file", rrdFilePath )
     retVal = self.__getLastUpdateTime( rrdFilePath )
     if not retVal[ 'OK' ]:
       return retVal
@@ -104,12 +104,17 @@ class RRDManager:
     cmd = "%s update %s" % ( self.rrdExec, rrdFilePath )
     gLogger.verbose( "Last expected time is %s" % expectedTime )
     for entry in valuesList:
+      if entry[0] < expectedTime:
+        continue
       while expectedTime < entry[0]:
         cmd += " %s:0" % expectedTime
         expectedTime += self.bucketTime
       cmd += " %s:%s" % entry
       expectedTime = entry[0]
-    return self.__exec( cmd )
+    retVal = self.__exec( cmd )
+    if not retVal[ 'OK' ]:
+      gLogger.error( "Error updating %s rrd: %s" % ( rrdFile, retVal[ 'Message' ] ) )
+    return retVal
 
   def __generateName( self, *args, **kwargs ):
     """

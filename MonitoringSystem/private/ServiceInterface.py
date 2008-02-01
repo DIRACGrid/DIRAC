@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/ServiceInterface.py,v 1.4 2008/02/01 13:28:04 acasajus Exp $
-__RCSID__ = "$Id: ServiceInterface.py,v 1.4 2008/02/01 13:28:04 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/ServiceInterface.py,v 1.5 2008/02/01 13:44:42 acasajus Exp $
+__RCSID__ = "$Id: ServiceInterface.py,v 1.5 2008/02/01 13:44:42 acasajus Exp $"
 import DIRAC
 from DIRAC import gLogger
 from DIRAC.MonitoringSystem.private.MonitoringCatalog import MonitoringCatalog
@@ -100,7 +100,6 @@ class ServiceInterface:
     rrdManager = self.__createRRDManager()
     unregisteredActivities = []
     for acName in activitiesDict:
-      gLogger.info( "Updating activity", acName)
       acData = activitiesDict[ acName ]
       rrdFile = acCatalog.getFilename( sourceId, acName )
       if not rrdFile:

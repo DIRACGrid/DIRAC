@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.18 2008/02/01 11:34:54 acasajus Exp $
-__RCSID__ = "$Id: MonitoringClient.py,v 1.18 2008/02/01 11:34:54 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.19 2008/02/01 13:44:56 acasajus Exp $
+__RCSID__ = "$Id: MonitoringClient.py,v 1.19 2008/02/01 13:44:56 acasajus Exp $"
 
 import threading
 import time
@@ -248,13 +248,15 @@ class MonitoringClient:
     self.__flushQueue( rpcClient )
 
   def __flushQueue( self, rpcClient ):
+    executionsNum = 0
     while len( self.dataToSend ) > 100:
-      self.dataToSend.pop(0)
-    while len( self.dataToSend ) > 0:
+      del( self.dataToSend[0] )
+    while self.dataToSend and executionsNum < 100:
+      executionsNum += 1
       transTuple = self.dataToSend[0]
       if not transTuple[0]( rpcClient, transTuple[1] ):
         return False
-      self.dataToSend.pop(0)
+      del( self.dataToSend[0] )
     return True
 
   def __sendRegistration( self, rpcClient, acRegister ):
