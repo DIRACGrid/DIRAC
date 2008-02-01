@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Subprocess.py,v 1.11 2008/01/30 13:40:37 acasajus Exp $
-__RCSID__ = "$Id: Subprocess.py,v 1.11 2008/01/30 13:40:37 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Subprocess.py,v 1.12 2008/02/01 09:47:02 acasajus Exp $
+__RCSID__ = "$Id: Subprocess.py,v 1.12 2008/02/01 09:47:02 acasajus Exp $"
 """
    DIRAC Wrapper to execute python and system commands with a wrapper, that might
    set a timeout.
@@ -132,29 +132,30 @@ class Subprocess:
     else:
       os.close( writeFD )
       readSeq = self.__selectFD( [ readFD ] )
-      if len( readSeq ) == 0:
-        gLogger.debug( 'Timeout limit reached for pythonCall', function.__name__)
-        self.__killPid( pid )
+      try:
+        if len( readSeq ) == 0:
+          gLogger.debug( 'Timeout limit reached for pythonCall', function.__name__)
+          self.__killPid( pid )
 
-        #HACK to avoid python bug
-        # self.wait()
-        while os.waitpid( pid, 0 ) == -1:
-          time.sleep( 0.000001 )
+          #HACK to avoid python bug
+          # self.wait()
+          while os.waitpid( pid, 0 ) == -1:
+            time.sleep( 0.000001 )
 
+          return S_ERROR( '%d seconds timeout for "%s" call' % ( self.timeout, function.__name__ ) )
+        elif readSeq[0] == readFD:
+          retDict = self.__readFromFD( readFD )
+          os.waitpid( pid, 0 )
+          if retDict[ 'OK' ]:
+            dataStub = retDict[ 'Value' ]
+            retObj, stubLen = DEncode.decode( dataStub )
+            if stubLen == len( dataStub ):
+              return retObj
+            else:
+              return S_ERROR( "Error decoding data coming from call" )
+          return retDict
+      finally:
         os.close( readFD )
-        return S_ERROR( '%d seconds timeout for "%s" call' % ( self.timeout, function.__name__ ) )
-      elif readSeq[0] == readFD:
-        retDict = self.__readFromFD( readFD )
-        os.close( readFD )
-        os.waitpid( pid, 0 )
-        if retDict[ 'OK' ]:
-          dataStub = retDict[ 'Value' ]
-          retObj, stubLen = DEncode.decode( dataStub )
-          if stubLen == len( dataStub ):
-            return retObj
-          else:
-            return S_ERROR( "Error decoding data coming from call" )
-        return retDict
 
   def __generateSystemCommandError( self, exitStatus, message ):
     retDict = S_ERROR( message )
@@ -219,56 +220,55 @@ class Subprocess:
       retDict['Value'] = ( -1, '' , str(v) )
       return retDict
     except Exception, v:
+      try:
+        self.child.stdout.close()
+        self.child.stderr.close()
+      except:
+        pass
       retDict = S_ERROR( v )
       retDict['Value'] = ( -1, '' , str(v) )
       return retDict
 
-    self.bufferList = [ [ "", 0 ], [ "", 0 ] ]
-    initialTime = time.time()
-    exitStatus = self.child.poll()
-
-    while exitStatus == None:
-      retDict = self.__readFromCommand()
-      if not retDict[ 'OK' ]:
-        return retDict
-
-      if self.timeout and time.time() - initialTime > self.timeout:
-        exitStatus = self.__killChild()
-        self.__readFromCommand( True )
-        return self.__generateSystemCommandError(
-                    exitStatus,
-                    "Timeout (%d seconds) for '%s' call" %
-                    ( self.timeout, cmdSeq ) )
-
+    try:
+      self.bufferList = [ [ "", 0 ], [ "", 0 ] ]
+      initialTime = time.time()
       exitStatus = self.child.poll()
 
-    self.__readFromCommand( True )
+      while exitStatus == None:
+        retDict = self.__readFromCommand()
+        if not retDict[ 'OK' ]:
+          return retDict
 
-    if exitStatus >= 256:
-      exitStatus /= 256
-    return S_OK( ( exitStatus, self.bufferList[0][0], self.bufferList[1][0] ) )
+        if self.timeout and time.time() - initialTime > self.timeout:
+          exitStatus = self.__killChild()
+          self.__readFromCommand( True )
+          return self.__generateSystemCommandError(
+                      exitStatus,
+                      "Timeout (%d seconds) for '%s' call" %
+                      ( self.timeout, cmdSeq ) )
+
+        exitStatus = self.child.poll()
+
+      self.__readFromCommand( True )
+
+      if exitStatus >= 256:
+        exitStatus /= 256
+      return S_OK( ( exitStatus, self.bufferList[0][0], self.bufferList[1][0] ) )
+    finally:
+      try:
+        self.child.stdout.close()
+        self.child.stderr.close()
+      except:
+        pass
 
   def getChildPID( self ):
     return self.childPID
 
   def __readFromCommand( self, isLast = False ):
     if isLast:
-      try:
-        self.child.stdout.flush()
-      except:
-        pass
       retDict = self.__readFromSystemCommandOutput( self.child.stdout, 0, True )
       if retDict[ 'OK' ]:
-        try:
-          self.child.stderr.flush()
-        except:
-          pass
         retDict = self.__readFromSystemCommandOutput( self.child.stderr, 1, True )
-      try:
-        self.child.stdout.close()
-        self.child.stderr.close()
-      except Exception, v:
-        gLogger.debug( 'Exception while closing pipes to child', str(v) )
       return retDict
     else:
       readSeq = self.__selectFD( [ self.child.stdout, self.child.stderr ], True )
