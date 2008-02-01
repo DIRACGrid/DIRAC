@@ -338,7 +338,7 @@ class RequestDBFile:
         newIndex = 0
       nextRequestName = requestList[newIndex]
       gLogger.info("RequestDBFile.__selectRequestCursor: Selected %s as next request." % nextRequestName)
-      return S_OK(nextRequestName,newIndex)
+      return S_OK((nextRequestName,newIndex))
     except Exception, x:
       errStr = "RequestDBFile.__selectRequestCursor: Exception while selecting next valid request."
       gLogger.exception(errStr,str(x))
