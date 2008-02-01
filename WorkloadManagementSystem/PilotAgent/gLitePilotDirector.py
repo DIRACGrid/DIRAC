@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/gLitePilotDirector.py,v 1.2 2008/01/23 09:40:59 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/gLitePilotDirector.py,v 1.3 2008/02/01 12:09:16 paterson Exp $
 # File :   gLitePilotDirector.py
 # Author : Stuart Paterson
 ########################################################################
@@ -11,7 +11,7 @@
      the invokation of the Pilot Director instance is performed here.
 """
 
-__RCSID__ = "$Id: gLitePilotDirector.py,v 1.2 2008/01/23 09:40:59 paterson Exp $"
+__RCSID__ = "$Id: gLitePilotDirector.py,v 1.3 2008/02/01 12:09:16 paterson Exp $"
 
 from DIRACEnvironment                                        import DIRAC
 from DIRAC.Core.Utilities                                    import List
@@ -36,7 +36,7 @@ class gLitePilotDirector(PilotDirector):
     self.diracInstallScript = gConfig.getValue(self.sectionPath+'/DIRACInstallScript','%s/scripts/dirac-install' %(self.diracRoot))
     self.archScript = gConfig.getValue(self.sectionPath+'/ArchitectureScript','%s/scripts/dirac-architecture' %(self.diracRoot))
     self.voSoftwareDir = gConfig.getValue(self.sectionPath+'/VOSoftware','VO_LHCB_SW_DIR')
-    self.loggingService = gConfig.getValue(self.sectionPath+'/LoggingService',self.resourceBroker)
+    self.loggingService = gConfig.getValue(self.sectionPath+'/LoggingService','lb101.cern.ch')
     self.diracSetup = gConfig.getValue(self.sectionPath+'/Setup','LHCb-Development')
     self.enableListMatch = gConfig.getValue(self.sectionPath+'/EnableListMatch',1)
     self.listMatchDelay = gConfig.getValue(self.sectionPath+'/ListMatchDelay',15*60)
@@ -119,10 +119,11 @@ class gLitePilotDirector(PilotDirector):
     if status==0:
       failed = 1
       for line in string.split(stdout):
-        if line.count('https') and line.count('glite_wms_wmproxy_server') == 0:
-          glite_id = line.split('\n')[0]
-          submittedPilot = gLite_id
-          self.log.info( '>>> gLite Reference %s for job %s' % ( gLite_id, job ) )
+        m = re.search("(https:\S+)",line)
+        if (m):
+          glite_id = m.group(1)
+          submittedPilot = glite_id
+          self.log.info( '>>> gLite Reference %s for job %s' % ( glite_id, job ) )
           failed = 0
 
       if failed:
@@ -234,7 +235,7 @@ WMProxyEndPoints = {"https://%s:7443/glite_wms_wmproxy_server"};
 LBEndPoints = {"https://%s:9000"};
 ];
 ]
-    """ % self.resourceBroker,self.loggingService)
+    """ %(self.resourceBroker,self.loggingService))
     confFile1.close()
 
     rbstring = '"%s:7772"' % self.resourceBroker
@@ -249,6 +250,7 @@ LBEndPoints = {"https://%s:9000"};
   def __listMatchJob(self, job, jdlFile):
     """ Get available gLite CEs for Pilot Job
     """
+    self.__checkProxy() # debuggging tool
     self.log.info( '--- Executing edg-job-list-match for %s' % job )
 
     cmd = "glite-wms-job-list-match -a -c  %s %s" % (self.confFile1,jdlFile )
@@ -267,19 +269,17 @@ LBEndPoints = {"https://%s:9000"};
     if status == 0:
       failed = 1
       for line in string.split(stdout):
-        if not line.count('glite_wms_wmproxy_server'):
-          m = re.search("(.*\/\S+)",line)
-
-          if (m):
-            ce = m.group(1)
-            availableCEs.append(ce)
+        m = re.search("(.*\/\S+)",line)
+        if (m):
+          ce = m.group(1)
+          availableCEs.append(ce)
 
       if not availableCEs:
         self.log.warn( '>>> gLite List-Match failed to find CEs for Job %s' %job )
         self.log.warn( stdout )
         self.log.warn( stderr )
 
-      self.log.info( '>>> %s gLite CEs for job %s' % (job,len(availableCEs)) )
+      self.log.info( '>>> %s gLite CEs for job %s' % (len(availableCEs),job) )
 
     else:
       self.log.warn( stdout )
@@ -342,7 +342,7 @@ LBEndPoints = {"https://%s:9000"};
             getCEs = self.__listMatchJob(job,jdlFile)  #if restarted, must redo list-match
             if not getCEs['OK']:
               return getCEs
-            newCEs = len(getCEs)
+            newCEs = len(getCEs['Value'])
             if newCEs < minimumCEs:
               noCEsAvailable[job] = time.time()
               submitFlag = False
