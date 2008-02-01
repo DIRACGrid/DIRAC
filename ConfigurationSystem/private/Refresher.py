@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Refresher.py,v 1.20 2008/02/01 10:13:02 acasajus Exp $
-__RCSID__ = "$Id: Refresher.py,v 1.20 2008/02/01 10:13:02 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Refresher.py,v 1.21 2008/02/01 10:13:30 acasajus Exp $
+__RCSID__ = "$Id: Refresher.py,v 1.21 2008/02/01 10:13:30 acasajus Exp $"
 
 import threading
 import time
@@ -92,7 +92,7 @@ class Refresher( threading.Thread ):
 
   def __refresh( self ):
     self.iLastUpdateTime = time.time()
-    gLogger.debug( "Refresing configuration..." )
+    gLogger.debug( "Refreshing configuration..." )
     sGateway = getGatewayURL()
     updatingErrorsList = []
     if sGateway:
