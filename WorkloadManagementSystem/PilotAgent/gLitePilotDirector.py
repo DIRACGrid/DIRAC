@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/gLitePilotDirector.py,v 1.3 2008/02/01 12:09:16 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/gLitePilotDirector.py,v 1.4 2008/02/01 12:21:26 paterson Exp $
 # File :   gLitePilotDirector.py
 # Author : Stuart Paterson
 ########################################################################
@@ -11,7 +11,7 @@
      the invokation of the Pilot Director instance is performed here.
 """
 
-__RCSID__ = "$Id: gLitePilotDirector.py,v 1.3 2008/02/01 12:09:16 paterson Exp $"
+__RCSID__ = "$Id: gLitePilotDirector.py,v 1.4 2008/02/01 12:21:26 paterson Exp $"
 
 from DIRACEnvironment                                        import DIRAC
 from DIRAC.Core.Utilities                                    import List
@@ -250,7 +250,6 @@ LBEndPoints = {"https://%s:9000"};
   def __listMatchJob(self, job, jdlFile):
     """ Get available gLite CEs for Pilot Job
     """
-    self.__checkProxy() # debuggging tool
     self.log.info( '--- Executing edg-job-list-match for %s' % job )
 
     cmd = "glite-wms-job-list-match -a -c  %s %s" % (self.confFile1,jdlFile )
@@ -354,7 +353,7 @@ LBEndPoints = {"https://%s:9000"};
         getCEs = self.__listMatchJob(job,jdlFile)
         if not getCEs['OK']:
           return getCEs
-        numberOfCEs = len(getCEs)
+        numberOfCEs = len(getCEs['Value'])
         self.jobDB.setJobParameter( job, 'Available_CEs' , '%s CEs returned from list-match on %s' %(numberOfCEs,time.asctime()) )
 
         if numberOfCEs < minimumCEs:
