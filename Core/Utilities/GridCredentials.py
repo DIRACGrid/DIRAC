@@ -1,4 +1,4 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.15 2008/01/31 19:11:06 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.16 2008/02/01 12:01:29 atsareg Exp $
 
 """ Grid Credentials module contains utilities to manage user and host
     certificates and proxies.
@@ -33,7 +33,7 @@
     getVOMSProxyInfo()
 """
 
-__RCSID__ = "$Id: GridCredentials.py,v 1.15 2008/01/31 19:11:06 atsareg Exp $"
+__RCSID__ = "$Id: GridCredentials.py,v 1.16 2008/02/01 12:01:29 atsareg Exp $"
 
 import os
 import os.path
@@ -196,15 +196,23 @@ def setDIRACGroup( userGroup ):
   fd.close()
 
 def setDIRACGroupInProxy(proxy,group):
-  """ Add the DIRAC group string to the proxy
+  """ Add the DIRAC group string to the proxy. If the group value is None, strip the group
+      from the proxy
   """
+
+  if group is None:
+    if proxy.find( ":::diracgroup=" ) == 0:
+      lines = proxy.split('\n')
+      new_proxy = '\n'.join(lines[1:])
+    else:
+      new_proxy = proxy
 
   if proxy.find( ":::diracgroup=" ) == 0:
     lines = proxy.split('\n')
-    lines[0] = ":::diracgroup=%s\n" % group
+    lines[0] = ":::diracgroup=%s\n" % group.strip()
     new_proxy = '\n'.join(lines)
   else:
-    new_proxy = ":::diracgroup=%s\n" % group
+    new_proxy = ":::diracgroup=%s\n" % group.strip()
     new_proxy = new_proxy + proxy
 
   return new_proxy
@@ -247,25 +255,31 @@ def parseProxy(proxy=None,option=None):
   """
 
   temp_proxy_file=""
+  proxy_file=""
   if proxy:
     if os.path.exists(proxy):
-      cmd = "openssl x509 -noout -text -in %s" % proxy
-      resultVOMS = isVOMS(proxy)
+      proxy_file = proxy
     else:
       # Create temporary proxy file, do not forget to remove it before leaving
       temp_proxy_file = __makeProxyFile(proxy)
-      cmd = "openssl x509 -noout -text -in %s" % temp_proxy_file
-      resultVOMS = isVOMS(temp_proxy_file)
+      proxy_file = temp_proxy_file
   else:
-    proxy_file = getGridProxy()    
-    cmd = "openssl x509 -noout -text -in %s" % proxy_file
-    resultVOMS = isVOMS(proxy_file)
+    proxy_file = getGridProxy()
 
+  proxy_f = file(proxy_file,'r')
+  proxy_line = proxy_f.readline()
+  proxy_f.close()
+  diracGroup = ""
+  if proxy_line.find( ":::diracgroup=" ) == 0:
+    diracGroup = proxy_line.split( "=" )[1].strip()
+
+  resultVOMS = isVOMS(proxy_file)
   voms = False
   if resultVOMS['OK']:
     if resultVOMS['Value']:
       voms = True
 
+  cmd = "openssl x509 -noout -text -in %s" % proxy_file
   result = shellCall(PROXY_COMMAND_TIMEOUT,cmd)
 
   if temp_proxy_file:
@@ -285,6 +299,7 @@ def parseProxy(proxy=None,option=None):
 
   text_lines = output.split("\n")
   proxyDict = {}
+  proxyDict['DiracGroup'] = diracGroup
   for line in text_lines:
     fields = line.split(":")
     if len(fields) < 5 and len(fields) > 1:
@@ -737,9 +752,9 @@ def renewProxy(proxy,lifetime=72,
 
   if len(voms_attr) > 0:
     result = createVOMSProxy(proxy_string,voms_attr)
-    
+
     print result
-    
+
     if result["OK"]:
       proxy_string = result["Value"]
     else:
