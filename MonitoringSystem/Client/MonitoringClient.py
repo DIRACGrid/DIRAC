@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.17 2008/01/31 18:52:18 acasajus Exp $
-__RCSID__ = "$Id: MonitoringClient.py,v 1.17 2008/01/31 18:52:18 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.18 2008/02/01 11:34:54 acasajus Exp $
+__RCSID__ = "$Id: MonitoringClient.py,v 1.18 2008/02/01 11:34:54 acasajus Exp $"
 
 import threading
 import time
@@ -32,7 +32,7 @@ class MonitoringClient:
     self.newActivitiesDict = {}
     self.activitiesDefinitions = {}
     self.activitiesMarks = {}
-    self.failedTransmissions = []
+    self.dataToSend = []
     self.activitiesLock = threading.Lock()
     self.flushingLock = threading.Lock()
     self.timeStep = 60
@@ -180,7 +180,7 @@ class MonitoringClient:
     if allData:
       lastStepToSend = int( time.mktime( time.gmtime() ) )
     else:
-      lastStepToSend = self.__UTCStepTime() - self.timeStep
+      lastStepToSend = self.__UTCStepTime()
     consolidatedMarks = {}
     remainderMarks = {}
     for key in self.activitiesMarks:
@@ -188,7 +188,7 @@ class MonitoringClient:
       remainderMarks [ key ] = {}
       for markTime in self.activitiesMarks[ key ]:
         markValue = self.activitiesMarks[ key ][ markTime ]
-        if markTime > lastStepToSend:
+        if markTime >= lastStepToSend:
           remainderMarks[ key ][ markTime ] = markValue
         else:
           consolidatedMarks[ key ][ markTime ] = markValue
@@ -241,23 +241,20 @@ class MonitoringClient:
       rpcClient = gServiceInterface
     else:
       rpcClient = RPCClient( "Monitoring/Server", timeout = secsTimeout )
-    if not self.__sendFailed( rpcClient ):
-      return
     if len( acRegister ):
-      if not self.__sendRegistration( rpcClient, acRegister ):
-        self.failedTransmissions.append( ( self.__sendMarks, acMarks ) )
-        return
+      self.dataToSend.append( ( self.__sendRegistration, acRegister ) )
     if len( acMarks ):
-      self.__sendMarks( rpcClient, acMarks )
+      self.dataToSend.append( ( self.__sendMarks, acMarks ) )
+    self.__flushQueue( rpcClient )
 
-  def __sendFailed( self, rpcClient ):
-    while len( self.failedTransmissions ) > 100:
-      self.failedTransmissions.pop(0)
-    while len( self.failedTransmissions ) > 0:
-      transTuple = self.failedTransmissions[0]
+  def __flushQueue( self, rpcClient ):
+    while len( self.dataToSend ) > 100:
+      self.dataToSend.pop(0)
+    while len( self.dataToSend ) > 0:
+      transTuple = self.dataToSend[0]
       if not transTuple[0]( rpcClient, transTuple[1] ):
         return False
-      self.failedTransmissions.pop(0)
+      self.dataToSend.pop(0)
     return True
 
   def __sendRegistration( self, rpcClient, acRegister ):
@@ -265,7 +262,6 @@ class MonitoringClient:
     retDict = rpcClient.registerActivities( self.sourceDict, acRegister )
     if not retDict[ 'OK' ]:
       self.logger.error( "Can't register activities", retDict[ 'Message' ] )
-      self.failedTransmissions.append( ( self.__sendRegistration, acRegister ) )
       return False
     self.sourceId = retDict[ 'Value' ]
     return True
@@ -276,7 +272,6 @@ class MonitoringClient:
     retDict = rpcClient.commitMarks( self.sourceId, acMarks )
     if not retDict[ 'OK' ]:
       self.logger.error( "Can't send activities marks", retDict[ 'Message' ] )
-      self.failedTransmissions.append( ( self.__sendMarks, acMarks ) )
       return False
     if len ( retDict[ 'Value' ] ) > 0:
       self.logger.debug( "There are activities unregistered" )
@@ -289,7 +284,8 @@ class MonitoringClient:
         else:
           self.logger.debug( "Server reported unregistered activity that does not exist" )
       self.logger.debug( "Reregistering activities %s" % ", ".join( acRegister.keys() ) )
-      return self.__sendRegistration( rpcClient, acRegister ) and rpcClient.commitMarks( self.sourceId, acMissedMarks )[ 'OK' ]
+      self.dataToSend.append( ( self.__sendRegistration, acRegister ) )
+      self.dataToSend.append( ( self.__sendMarks, acMissedMarks ) )
     return True
 
 
