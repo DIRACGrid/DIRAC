@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalogue. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.17 2008/01/31 19:25:03 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.18 2008/02/02 18:36:41 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -285,7 +285,9 @@ class ReplicaManager:
     successful = {}
     failed = {}
     gLogger.info("ReplicaManager.replicateAndRegister: Attempting to replicate %s to %s." % (lfn,destSE))
+    startReplication = time.time()
     res = self.__replicate(lfn,destSE,sourceSE,destPath)
+    replicationTime = time.time()-startReplication
     if not res['OK']:
       errStr = "ReplicaManager.replicateAndRegister: Completely failed to replicate file."
       gLogger.error(errStr,res['Message'])
@@ -293,14 +295,18 @@ class ReplicaManager:
     if not res['Value']:
       # The file was already present at the destination SE
       gLogger.info("ReplicaManager.replicateAndRegister: %s already present at %s." % (lfn,destSE))
-      successful[lfn] = True
+      successful[lfn] = {'replicate':0,'register':0}
       resDict = {'Successful':successful,'Failed':failed}
       return S_OK(resDict)
+    successful[lfn] = {'replicate':replicationTime}
+
     destPfn = res['Value']['DestPfn']
     destSE = res['Value']['DestSE']
     gLogger.info("ReplicaManager.replicateAndRegister: Attempting to register %s at %s." % (destPfn,destSE))
     replicaTuple = (lfn,destPfn,destSE)
+    startRegistration = time.time()
     res = self.registerReplica(replicaTuple)
+    registrationTime = time.time()-startRegistration
     if not res['OK']:
       # Need to return to the client that the file was replicated but not registered
       errStr = "ReplicaManager.replicateAndRegister: Completely failed to register replica."
@@ -309,7 +315,7 @@ class ReplicaManager:
     else:
       if res['Value']['Successful'].has_key(lfn):
         gLogger.info("ReplicaManager.replicateAndRegister: Successfully registered replica.")
-        successful[lfn] = True
+        successful[lfn]['register'] = registrationTime
       else:
         errStr = "ReplicaManager.replicateAndRegister: Failed to register replica."
         gLogger.info(errStr,res['Value']['Failed'][lfn])
