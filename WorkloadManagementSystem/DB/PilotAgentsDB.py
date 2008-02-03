@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.6 2008/01/31 18:58:33 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.7 2008/02/03 12:22:35 atsareg Exp $
 ########################################################################
 """ PilotAgentsDB class is a front-end to the Pilot Agent Database.
     This database keeps track of all the submitted grid pilot jobs.
@@ -23,7 +23,7 @@
 
 """
 
-__RCSID__ = "$Id: PilotAgentsDB.py,v 1.6 2008/01/31 18:58:33 atsareg Exp $"
+__RCSID__ = "$Id: PilotAgentsDB.py,v 1.7 2008/02/03 12:22:35 atsareg Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
@@ -35,13 +35,12 @@ DEBUG = 1
 class PilotAgentsDB(DB):
 
   def __init__(self, maxQueueSize=10 ):
-  
+
      print "Initializing PilotAgentsDB"
-  
+
      DB.__init__(self,'PilotAgentsDB','WorkloadManagement/PilotAgentsDB',maxQueueSize)
-     
+
      print "Initializing PilotAgentsDB - done"
-     
 
 ##########################################################################################
   def addPilotReference(self,pilotRef,jobID,ownerDN,ownerGroup,gridType='DIRAC'):
@@ -59,47 +58,47 @@ class PilotAgentsDB(DB):
 
     if not destination:
       req = "UPDATE PilotAgents SET Status='%s',LastUpdateTime=NOW() " + \
-            "WHERE PilotJobReference='%s'" 
+            "WHERE PilotJobReference='%s'"
       req = req  % (status,pilotRef)
     else:
       req = "UPDATE PilotAgents SET Status='%s',LastUpdateTime=NOW(), DestinationSite='%s' " + \
             "WHERE PilotJobReference='%s'"
-      req = req  % (status,destination,pilotRef)      
+      req = req  % (status,destination,pilotRef)
 
     return self._update(req)
-    
+
 ##########################################################################################
   def selectPilots(self,statusList=[],owner=None,ownerGroup=None):
-    """ Select pilot references according to the provided criteria  
-    """    
-        
+    """ Select pilot references according to the provided criteria
+    """
+
     req = "SELECT PilotJobReference from PilotAgents"
-    
+
     # Build conditions
     condList = []
-    
+
     if statusList:
       cList = ["'"+x+"'" for x in statusList]
       condList.append("Status IN (%s)" % ",".join(cList))
     if owner:
       condList.append("OwnerDN = '%s'" % owner)
     if ownerGroup:
-      condList.append("OwnerGroup = '%s'" % ownerGroup) 
-      
+      condList.append("OwnerGroup = '%s'" % ownerGroup)
+
     if condList:
       conditions = " AND ".join(condList)
       req += " WHERE "+conditions
-           
+
     result = self._query(req)
     if not result['OK']:
       return result
-      
-    pilotList = []  
+
+    pilotList = []
     if result['Value']:
       pilotList = [ x[0] for x in result['Value']]
-      
-    return S_OK(pilotList)       
-       
+
+    return S_OK(pilotList)
+
 
 ##########################################################################################
   def deletePilot(self,pilotRef):
@@ -117,22 +116,26 @@ class PilotAgentsDB(DB):
 
 ##########################################################################################
   def getPilotInfo(self,pilotRef):
-    """ Get an OwnerDN for the LCG pilot reference or reference list 
+    """ Get all the information for the pilot job reference or reference list
     """
-   
+
+    parameters = ['PilotJobReference','OwnerDN','OwnerGroup','GridType','Broker',
+                  'Status','DestinationSite']
+    param_string = ','.join(parameters)
+
     list_type = False
     if type(pilotRef) == ListType:
       list_type = True
       if pilotRef:
         refString = ",".join(["'"+x+"'" for x in pilotRef])
-        req = "SELECT OwnerDN,OwnerGroup,Status,PilotJobReference FROM PilotAgents WHERE PilotJobReference IN (%s)" % refString
+        req = "SELECT "+param_string+" FROM PilotAgents WHERE PilotJobReference IN (%s)" % refString
       else:
-        req = "SELECT OwnerDN,OwnerGroup,Status,PilotJobReference FROM PilotAgents"
+        req = "SELECT "+param_string+" FROM PilotAgents"
     else:
-      req = "SELECT OwnerDN,OwnerGroup,Status FROM PilotAgents WHERE PilotJobReference='%s'" % pilotRef
-    
+      req = "SELECT "+param_string+" WHERE PilotJobReference='%s'" % pilotRef
+
     print req
-    
+
     result = self._query(req)
     if not result['OK']:
       return result
@@ -140,11 +143,17 @@ class PilotAgentsDB(DB):
       if result['Value']:
         if list_type:
           resDict = {}
-          for owner,group,status,ref in result['Value']:
-            resDict[ref] = owner,group,status
+          for row in result['Value']:
+            pilotDict = {}
+            for i in range(len(parameters)-1):
+              pilotDict[parameters[i+1]] = row[i+1]
+            resDict[row[0]] = pilotDict
           return S_OK(resDict)
-        else:   
-          return S_OK((result['Value'][0][0],result['Value'][0][1],result['Value'][0][2]))
+        else:
+          pilotDict = {}
+          for i in range(len(parameters)-1):
+            pilotDict[parameters[i+1]] = result['Value'][0][i+1]
+          return S_OK(pilotDict)
       else:
         return S_ERROR('PilotJobReference(s) not found: '+str(pilotRef))
 
@@ -208,7 +217,7 @@ class PilotAgentsDB(DB):
       return result
     else:
       return S_ERROR('PilotJobReference '+pilotRef+' not found')
-      
+
 ##########################################################################################
   def getExePilotsForJob(self,jobID):
     """ Get IDs of Pilot Agents that attempted to execute the given job
@@ -222,22 +231,18 @@ class PilotAgentsDB(DB):
         pilotList = [ x[0] for x in result['Value'] ]
         return S_OK(pilotList)
       else:
-        return S_ERROR('PilotJobReference '+pilotRef+' not found'  )    
+        return S_ERROR('PilotJobReference '+pilotRef+' not found'  )
 
 ##########################################################################################
   def getPilotsForJob(self,jobID,gridType=None):
     """ Get IDs of Pilot Agents that were submitted for the given job, specify optionally the grid type
     """
-    
-    print "11111",jobID,gridType
-    
+
     if gridType:
       req = "SELECT PilotJobReference FROM PilotAgents WHERE InitialJobID=%s AND GridType='%s' " % (jobID,gridType)
     else:
       req = "SELECT PilotJobReference FROM PilotAgents WHERE InitialJobID=%d " % jobID
-      
-    print req  
-      
+
     result = self._query(req)
     if not result['OK']:
       return result
@@ -265,7 +270,6 @@ class PilotAgentsDB(DB):
         return S_ERROR('PilotID '+str(pilotID)+' not found')
 
 ##########################################################################################
-
   def getPilotsSummary(self,startdate='',enddate=''):
     """ Get summary of the pilot jobs status by site
     """
