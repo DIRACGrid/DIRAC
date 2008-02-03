@@ -1,7 +1,6 @@
 """ RequestDBFile is the plug in for the file backend.
 """
 
-from DIRAC.Core.Base.DB import DB
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.RequestManagementSystem.Client.DataManagementRequest import DataManagementRequest
 from DIRAC.ConfigurationSystem.Client import PathFinder
