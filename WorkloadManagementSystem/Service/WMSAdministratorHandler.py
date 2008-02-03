@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSAdministratorHandler.py,v 1.6 2008/01/31 18:56:17 atsareg Exp $
+# $Id: WMSAdministratorHandler.py,v 1.7 2008/02/03 12:25:32 atsareg Exp $
 ########################################################################
 """
 This is a DIRAC WMS administrator interface
@@ -16,7 +16,7 @@ This starts an XMLRPC service exporting the following methods:
 
 """
 
-__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.6 2008/01/31 18:56:17 atsareg Exp $"
+__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.7 2008/02/03 12:25:32 atsareg Exp $"
 
 import os, sys, string, uu, shutil
 from types import *
@@ -25,11 +25,13 @@ from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.ProxyRepositoryDB import ProxyRepositoryDB
+from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC.Core.Utilities.GridCredentials import renewProxy, getProxyTimeLeft
 
 # This is a global instance of the JobDB class
 jobDB = False
 proxyRepository = False
+pilotDB = False
 
 def initializeWMSAdministratorHandler( serviceInfo ):
   """  WMS AdministratorService initialization
@@ -37,9 +39,11 @@ def initializeWMSAdministratorHandler( serviceInfo ):
 
   global jobDB
   global proxyRepository
+  global pilotDB
 
   jobDB = JobDB()
   proxyRepository = ProxyRepositoryDB()
+  pilotDB = PilotAgentsDB()
   return S_OK()
 
 class WMSAdministratorHandler(RequestHandler):
@@ -75,8 +79,8 @@ class WMSAdministratorHandler(RequestHandler):
     """
 
     result = jobDB.getSiteMask('Active')
-    return result 
-    
+    return result
+
     if result['Status'] == "OK":
       active_list = result['Value']
       mask = []
@@ -125,15 +129,15 @@ class WMSAdministratorHandler(RequestHandler):
     new_proxy = None
     user_proxy = result['Value']
     result = renewProxy(user_proxy,validity,
-                        server_cert=self.servercert, 
+                        server_cert=self.servercert,
                         server_key=self.serverkey)
-                              
+
     if result["OK"]:
       new_proxy = result["Value"]
       return S_OK(new_proxy)
     else:
       resTime = getProxyTimeLeft(user_proxy)
-            
+
       if resTime['OK']:
         timeLeft = resTime['Value']
         if timeLeft/3600. > validity:
@@ -150,95 +154,97 @@ class WMSAdministratorHandler(RequestHandler):
   def export_uploadProxy(self,proxy,DN=None,group=None):
     """ Upload a proxy to the WMS Proxy Repository
     """
-    
+
+    # If the group is given, then replace it in the proxy
+    if group:
+      tmp_proxy = setDIRACGroupInProxy(proxy,None)
+      proxy_to_send = setDIRACGroupInProxy(tmp_proxy,group)
+    else:
+      proxy_to_send = proxy
     result = self.getRemoteCredentials()
     userDN = DN
     if not DN:
       userDN = result['DN']
     userGroup = group
-    if not group:  
-      userGroup = result['group'] 
-    
-    result = proxyRepository.storeProxy(proxy,userDN,userGroup)
+    if not group:
+      userGroup = result['group']
+
+    result = proxyRepository.storeProxy(proxy_to_send,userDN,userGroup)
     return result
-    
+
+ ##############################################################################
+  types_destroyProxy = [StringType]
+  def export_destroyProxy(self,DN=None,group=None):
+    """ Destroy proxy in the proxy repository
+    """
+    userDN = DN
+    if not DN:
+      userDN = result['DN']
+    userGroup = group
+    if not group:
+      userGroup = result['group']
+
+    result = proxyRepository.destroyProxy(userDN,userGroup)
+    return result
+
 ##############################################################################
   types_setProxyPersistencyFlag = [BooleanType]
   def export_setProxyPersistencyFlag(self,flag,DN=None,group=None):
     """ Upload a proxy to the WMS Proxy Repository
-    """    
-    
+    """
+
     result = self.getRemoteCredentials()
     userDN = DN
     if not DN:
       userDN = result['DN']
     userGroup = group
-    if not group:  
-      userGroup = result['group'] 
-      
-    result = proxyRepository.setProxyPersistencyFlag(userDN,userGroup,flag)  
+    if not group:
+      userGroup = result['group']
+
+    result = proxyRepository.setProxyPersistencyFlag(userDN,userGroup,flag)
     return result
 
 ##############################################################################
-  types_getLCGOutput = [IntType]
-  def export_getLCGOutput(self,jobID):
-    """ Get the LCG pilot standard output and standard error files for the DIRAC
+  types_getPilotOutput = [StringType]
+  def export_getPilotOutput(self,pilotReference):
+    """ Get the pilot job standard output and standard error files for the DIRAC
         job identified by the jobID
     """
 
-    result = jobDB.getLCGPilotOwnerDNForJob(jobID)
-    if result['Status'] != "OK":
-      return S_ERROR('Can not get the LCG job reference')
+    result = pilotDB.getPilotInfo(pilotReference)
+    if not result['OK']:
+      return S_ERROR('Failed to determine owner for pilot ' + pilotReference)
 
-    lcg_reference = result['LCGJobReference']
-    pilotDN = result['Value']
-
-    result = jobDB.getTicketForDN(pilotDN)
-    if result['Status'] != "OK":
-      result = S_ERROR('Can not get the LCG job owner proxy')
-      result['PilotOwnerDN'] = pilotDN
-      return result
+    pilotDict = result['Value']
+    owner = pilotDict['OwnerDN']
+    group = pilotDict['OwnerGroup']
+    result = proxyRepository.getProxy(owner,group)
+    if not result['OK']:
+      return S_ERROR("Failed to get the pilot's owner proxy")
 
     proxy = result['Value']
-    proxy = setupProxy(proxy)
-    if proxy["Status"] == "OK":
-      proxy_file = str(proxy["Value"][0])
-      old_proxy_file = str(proxy["Value"][1])
-    else:
-      self.log.error("Can not setup owner proxy, proxy is not valid")
+    result = setupProxy(proxy)
+    if not result['OK']:
+      return S_ERROR("Failed to setup the pilot's owner proxy")
 
-#    proxy_file,old_proxy_file = setupProxy(proxy)
+    new_proxy,old_proxy = result['Value']
+    # make temporary directory tmp_dir
 
-    if not os.path.exists(str(jobID)):
-      os.makedirs(str(jobID))
-    result = getLCGOutput(lcg_reference,str(jobID))
+    gridType = pilotDict['GridType']
+    result = eval('get'+gridType+'PilotOutput("'+tmp_dir+'")')
+    if not result['OK']:
+      return S_ERROR('Failed to get pilot output'+result['Message'])
 
-    if old_proxy_file:
-      os.environ['X509_USER_PROXY'] = old_proxy_file
-    os.remove(proxy_file)
+    stdout = result['StdOut']
+    error = result['Error']
+    result = pilotDB.storePilotOutput(pilotReference,stdout,error)
 
-    if result['Status'] != "OK":
-      result['PilotOwnerDN'] = pilotDN
-      return result
-
-    outputdir = result['Value']
-    # Tar the output directory
-    comm = "tar czvf %s.tar.gz -C %s %s" % (str(jobID),os.path.dirname(outputdir),os.path.basename(outputdir))
-    #print comm
-    status,out,error,pythonError = exeCommand(comm)
-    if status != 0:
-      return S_ERROR('Can not get the LCG output directory')
-
-    uu.encode(str(jobID)+'.tar.gz',str(jobID)+'.tar.gz.bin')
-    outfile = open(str(jobID)+'.tar.gz.bin','r')
-    contents = outfile.read()
-    outfile.close()
-    os.remove(str(jobID)+'.tar.gz')
-    os.remove(str(jobID)+'.tar.gz.bin')
-    shutil.rmtree(str(jobID))
-    result = S_OK(contents)
-    result['PilotOwnerDN'] = pilotDN
-    return result
+    resultDict = {}
+    resultDict['StdOut'] = stdout
+    resultDict['StdError'] = error
+    resultDict['OwnerDN'] = owner
+    resultDict['OwnerGroup'] = group
+    return S_OK(resultDict)
 
   ##############################################################################
   types_getLCGSummary = [StringType,StringType]
