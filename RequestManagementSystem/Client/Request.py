@@ -13,18 +13,22 @@ class RequestClient:
   def __init__(self,useCertificates = False):
     """ Constructor of the RequestClient class
     """
-    local = PathFinder.getServiceURL( "RequestManagement/localURL" )
+    voBoxUrls = fromChar( PathFinder.getServiceURL( "RequestManagement/voBoxURLs" ) )
+    self.voBoxUrls = [] 
+    if voBoxUrls:
+      self.voBoxUrls = randomize(voBoxUrls)
+      
+    self.local = False
+    local = PathFinder.getServiceURL("RequestManagement/localURL")
     if local:
       self.local = local
+      if local in self.voBoxUrls:   
+        self.voBoxUrls.remove(self.local)
 
-    central = PathFinder.getServiceURL( "RequestManagement/centralURL" )
+    self.central = False
+    central = PathFinder.getServiceURL("RequestManagement/centralURL")
     if central:
       self.central = central
-
-    voBoxUrls = fromChar( PathFinder.getServiceURL( "RequestManagement/voBoxURLs" ) )
-    self.voBoxUrls = randomize(voBoxUrls)
-    if self.local in self.voBoxUrls:
-      self.voBoxUrls.remove(self.local)
 
   ########################################################################
   #
