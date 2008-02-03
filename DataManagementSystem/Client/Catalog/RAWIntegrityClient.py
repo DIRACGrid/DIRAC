@@ -14,6 +14,8 @@ class RAWIntegrityClient(FileCatalogueBase):
       self.server = RPCClient('DataManagement/RAWIntegrity')
       self.valid = True
     except Exception,x:
+      errStr = "RAWIntegrityClient.__init__: Exception while generating server connection."
+      gLogger.exception(errStr,str(x))
       self.valid = False
 
   def isOK(self):
