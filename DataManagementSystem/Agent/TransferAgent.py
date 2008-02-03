@@ -6,6 +6,7 @@ from DIRAC.Core.Base.Agent import Agent
 from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.GridCredentials import setupProxy,restoreProxy,setDIRACGroup, getProxyTimeLeft
+from DIRAC.Core.Utilities.ThreadPool import ThreadPool,ThreadedJob
 from DIRAC.RequestManagementSystem.Client.Request import RequestClient
 from DIRAC.RequestManagementSystem.Client.DataManagementRequest import DataManagementRequest
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
@@ -34,6 +35,12 @@ class TransferAgent(Agent):
     gMonitor.registerActivity( "Iteration", "Agent Loops/min",          "TransferAgent", "Atemps", gMonitor.OP_SUM )
     gMonitor.registerActivity( "Execute",   "Request Processed/min",    "TransferAgent", "Atemps", gMonitor.OP_SUM )
     gMonitor.registerActivity( "Done",      "Request Completed/min",    "TransferAgent", "Atemps", gMonitor.OP_SUM )
+    gMonitor.registerActivity("Replicate and register","Replicate and register operations attempted/min","TransferAgent", "Atemps", gMonitor.OP_SUM )
+    gMonitor.registerActivity("Replication successful","Successful replications/min","TransferAgent", "Atemps", gMonitor.OP_SUM )
+    gMonitor.registerActivity("Replication failed","Failed replications/min","TransferAgent", "Atemps", gMonitor.OP_SUM )
+    gMonitor.registerActivity("Replica registration successful","Successful replica registrations/min","TransferAgent", "Atemps", gMonitor.OP_SUM )
+    gMonitor.registerActivity("Replica registration failed","Failed replica registrations/min","TransferAgent", "Atemps", gMonitor.OP_SUM )  
+    self.threadPool = ThreadPool(1,10)
     return result
 
   def execute(self):
@@ -54,7 +61,7 @@ class TransferAgent(Agent):
         gLogger.error("TransferAgent.execute: Could not determine the time left for proxy.", res['Message'])
         return S_OK()
       proxyValidity = int(res['Value'])
-      gLogger.error("TransferAgent.execute: Current proxy found to be valid for %s seconds." % proxyValidity)
+      gLogger.debug("TransferAgent.execute: Current proxy found to be valid for %s seconds." % proxyValidity)
       self.log.info("TransferAgent.execute: %s proxy found to be valid for %s seconds."% (self.proxyDN,proxyValidity))
       if proxyValidity <= 60:
         obtainProxy = True
@@ -75,6 +82,13 @@ class TransferAgent(Agent):
       setDIRACGroup(self.proxyGroup)
       self.log.info("TransferAgent.execute: Successfully renewed %s proxy." %self.proxyDN)
 
+    for i in range(100):
+      requestExecutor = ThreadedJob(self.executeRequest)
+      self.threadPool.queueJob(requestExecutor)
+    self.threadPool.processResults()
+    return self.executeRequest()
+
+  def executeRequest(self):
     ################################################
     # Get a request from request DB
     gMonitor.addMark( "Iteration", 1 )
@@ -177,13 +191,17 @@ class TransferAgent(Agent):
           sourceSE = subRequestAttributes['SourceSE']
           for subRequestFile in subRequestFiles:
             if subRequestFile['Status'] == 'Waiting':
+              gMonitor.addMark("Replicate and register",1)
               lfn = subRequestFile['LFN']
               res = self.ReplicaManager.replicateAndRegister(lfn,targetSE,sourceSE=sourceSE)
               if res['OK']:
                 if res['Value']['Successful'].has_key(lfn):
                   if not res['Value']['Successful'][lfn].has_key('replicate'):
                     gLogger.info("TransferAgent.execute: Failed to replicate %s to %s." % (lfn,targetSE))
+                    gMonitor.addMark("Replication failed",1)
                   elif not res['Value']['Successful'][lfn].has_key('register'):
+                    gMonitor.addMark("Replication successful",1)
+                    gMonitor.addMark("Replica registration failed",1)
                     gLogger.info("TransferAgent.execute: Successfully replicated %s to %s in %s seconds." % (lfn,targetSE,res['Value']['Successful'][lfn]['replicate']))
                     gLogger.info("TransferAgent.execute: Failed to register %s to %s." % (lfn,targetSE))
                     oRequest.setSubRequestFileAttributeValue(ind,'transfer',lfn,'Status','Done')
@@ -192,6 +210,8 @@ class TransferAgent(Agent):
                     gLogger.info("TransferAgent.execute: Setting registration request for failed replica.")
                     oRequest.addSubRequest(registerRequestDict,'register')
                   else:
+                    gMonitor.addMark("Replication successful",1)
+                    gMonitor.addMark("Replica registration successful",1)
                     gLogger.info("TransferAgent.execute: Successfully replicated %s to %s in %s seconds." % (lfn,targetSE,res['Value']['Successful'][lfn]['replicate']))
                     gLogger.info("TransferAgent.execute: Successfully registered %s to %s in %s seconds." % (lfn,targetSE,res['Value']['Successful'][lfn]['register']))
                     oRequest.setSubRequestFileAttributeValue(ind,'transfer',lfn,'Status','Done')
