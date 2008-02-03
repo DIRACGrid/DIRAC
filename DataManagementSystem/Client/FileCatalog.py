@@ -17,17 +17,21 @@ class FileCatalog:
                    'removeFile','setReplicaStatus','setReplicaHost','createDirectory',
                    'removeDirectory']
 
-  def __init__(self,catalogs = []):
+  def __init__(self,catalogs=[]):
     """ Default constructor
     """
-    if type(catalogs) in types.StringTypes:
-      catalogs = [catalogs]
     self.valid = True
     self.timeout = 180
     self.readCatalogs = {}
     self.writeCatalogs = {}
     self.rootConfigPath = '/Resources/FileCatalogs'
-    res = self._getCatalogConfigs()
+
+    if type(catalogs) in types.StringTypes:
+      catalogs = [catalogs]
+    if catalogs:
+      res = self._getSelectedCatalogs(catalogs)
+    else:
+      res = self._getCatalogsConfigs()
     if not res['OK']:
       self.valid = False
 
@@ -101,10 +105,20 @@ class FileCatalog:
   # Below is the method for obtaining the objects instantiated for a provided catalogue configuration
   #
 
-  def _getCatalogConfigs(self):
+  def _getSelectedCatalogs(self,desiredCatalogs):
+    for catalogName in desiredCatalogs:
+      res = self._generateCatalogObject(catalogName)
+      if not res['OK']:
+        return res
+      oCatalog = res['Value']
+      self.readCatalogs[catalogName] = oCatalog
+      self.writeCatalogs[catalogName] = oCatalog
+    return S_OK()
+
+  def _getCatalogs(self):
     res = gConfig.getSections(self.rootConfigPath)
     if not res['OK']:
-      errStr = "FileCatalog._getCatalogConfigs: Failed to get file catalog configuration."
+      errStr = "FileCatalog._getCatalogs: Failed to get file catalog configuration."
       gLogger.error(errStr,res['Message'])
       return S_ERROR(errStr)
     fileCatalogs = res['Value']
