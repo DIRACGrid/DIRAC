@@ -36,6 +36,7 @@ CREATE TABLE PilotAgents (
     CurrentJobID INTEGER NOT NULL DEFAULT 0,
     PilotJobReference VARCHAR(255) NOT NULL DEFAULT 'Unknown',
     DestinationSite VARCHAR(128) NOT NULL DEFAULT 'Multiple',
+    Broker VARCHAR(128) NOT NULL DEFAULT 'Unknown',
     OwnerDN VARCHAR(255) NOT NULL,
     OwnerGroup VARCHAR(128) NOT NULL,
     GridType VARCHAR(32) NOT NULL DEFAULT 'LCG',
