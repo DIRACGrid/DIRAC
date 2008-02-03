@@ -10,7 +10,14 @@ import types
 class RAWIntegrityClient(FileCatalogueBase):
 
   def __init__(self):
-    self.server = RPCClient('DataManagement/RAWIntegrity')
+    try:
+      self.server = RPCClient('DataManagement/RAWIntegrity')
+      self.valid = True
+    except Exception,x:
+      self.valid = False
+
+  def isOK(self):
+    return self.valid
 
   def addFile(self, fileTuple):
     """ A tuple should be supplied to this method which contains: (lfn,pfn,size,se,guid)
