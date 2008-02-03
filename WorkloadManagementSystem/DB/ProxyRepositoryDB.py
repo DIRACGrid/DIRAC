@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/Attic/ProxyRepositoryDB.py,v 1.12 2008/01/31 18:59:45 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/Attic/ProxyRepositoryDB.py,v 1.13 2008/02/03 12:24:10 atsareg Exp $
 ########################################################################
 """ ProxyRepository class is a front-end to the proxy repository Database
 """
 
-__RCSID__ = "$Id: ProxyRepositoryDB.py,v 1.12 2008/01/31 18:59:45 atsareg Exp $"
+__RCSID__ = "$Id: ProxyRepositoryDB.py,v 1.13 2008/02/03 12:24:10 atsareg Exp $"
 
 import time
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
@@ -23,13 +23,13 @@ class ProxyRepositoryDB(DB):
       self.VO = result['Value']
     else:
       self.VO = "unknown"
-      
+
     result = gConfig.getOption('/DIRAC/DefaultGroup')
     if result['OK']:
       self.defaultGroup = result['Value']
     else:
-      self.defaultGroup = "unknown"    
-     
+      self.defaultGroup = "unknown"
+
     result = gConfig.getOptionsDict('Groups/DiracToVOMSGroupMapping')
     if result['OK']:
       self.vomsGroupMappingDict = result['Value']
@@ -46,7 +46,7 @@ class ProxyRepositoryDB(DB):
     result = getVOMSAttributes(proxy,'db')
     if not result['OK']:
       return S_ERROR('Can not analyze proxy')
-      
+
     attributeString = result['Value']
     if attributeString:
       proxyType = "VOMS"
@@ -54,13 +54,13 @@ class ProxyRepositoryDB(DB):
     else:
       proxyType = "GRID"
       proxyAttr = ''
-       
+
     result = getProxyTimeLeft(proxy)
     if not result['OK']:
       return S_ERROR('Proxy not valid')
     time_left = result['Value']
-    ownergroup = group    
-      
+    ownergroup = group
+
     # Check what we have already got in the repository
     proxy_exists = False
     cmd = 'SELECT ExpirationTime,ProxyType FROM Proxies WHERE UserDN=\'%s\' AND UserGroup=\'%s\'' % (dn,group)
@@ -71,36 +71,36 @@ class ProxyRepositoryDB(DB):
     if result['Value']:
       expired = result['Value'][0][0]
       old_type = result['Value'][0][1]
-      old_time_left = time.mktime(expired.timetuple())-time.time() 
+      old_time_left = time.mktime(expired.timetuple())-time.time()
       time_delta = time_left - old_time_left
       relative_time_delta = time_delta/time_left
-      proxy_exists = True    
-      
+      proxy_exists = True
+
     # Decide if we should store and convert the new proxy
-    if not proxy_exists:      
-      if proxyType != "VOMS":     
+    if not proxy_exists:
+      if proxyType != "VOMS":
         # Attempt to convert into a VOMS proxy
-        
+
         self.log.verbose('Converting proxy to VOMS for '+dn)
-        
+
         if self.vomsGroupMappingDict.has_key(group):
-          proxyAttr = self.VO+":"+self.vomsGroupMappingDict[group]         
+          proxyAttr = self.VO+":"+self.vomsGroupMappingDict[group]
           result = createVOMSProxy(proxy,attributes=proxyAttr)
-        else:  
-          result = createVOMSProxy(proxy,vo=self.VO)  
-          
+        else:
+          result = createVOMSProxy(proxy,vo=self.VO)
+
         if result['OK']:
-          self.log.info('VOMS conversion done for '+dn) 
+          self.log.info('VOMS conversion done for '+dn)
           new_proxy = result['Value']
           proxy_to_store = setDIRACGroupInProxy(new_proxy,group)
-          proxyType = "VOMS" 
+          proxyType = "VOMS"
           result = getProxyTimeLeft(proxy_to_store)
           if not result['OK']:
             return S_ERROR('Proxy not valid')
-          time_left = result['Value'] 
+          time_left = result['Value']
       else:
         proxy_to_store = proxy
-        
+
       cmd = 'INSERT INTO Proxies ( Proxy, UserDN, UserGroup, ExpirationTime, ' \
             'ProxyType, ProxyAttributes ) VALUES ' \
             '(\'%s\', \'%s\', \'%s\', NOW() + INTERVAL %d second, \'%s\', \'%s\')' % (proxy_to_store,dn,group,time_left,proxyType,proxyAttr)
@@ -109,14 +109,14 @@ class ProxyRepositoryDB(DB):
         self.log.verbose( 'Proxy inserted for DN="%s" and Group="%s"' % (dn,group) )
       else:
         self.log.error( 'Proxy insert failed for DN="%s" and Group="%s"' % (dn,group) )
-        return S_ERROR('Failed to store proxy')    
+        return S_ERROR('Failed to store proxy')
     else:
-      # Check if we have to replace the old proxy       
+      # Check if we have to replace the old proxy
       force_proxy = False
       if old_type and old_type != 'VOMS' and proxyType == 'VOMS':
         force_proxy = True
       # Store new proxy if it is significantly longer than the existing one
-      # or the new VOMS proxy replaces the old GRID proxy 
+      # or the new VOMS proxy replaces the old GRID proxy
       if relative_time_delta > 0.1 or force_proxy:
         cmd = 'UPDATE Proxies SET Proxy=\'%s\',' % proxy
         cmd = cmd + ' ExpirationTime = NOW() + INTERVAL %d SECOND, ' % time_left
@@ -136,8 +136,17 @@ class ProxyRepositoryDB(DB):
     return S_OK()
 
 #############################################################################
+  def destroyProxy(self,userDN,userGroup):
+    """ Remove proxy of the given user from the repository
+    """
+
+    req = "DELETE FROM Proxies WHERE UserDN='%s' AND UserGroup='%s'" % (userDN,userGroup)
+    result = self._update(req)
+    return result
+
+#############################################################################
   def getProxy(self,userDN,userGroup=None):
-    """ Get proxy string from the Proxy Repository for use with userDN 
+    """ Get proxy string from the Proxy Repository for use with userDN
         in the userGroup
     """
 
@@ -193,12 +202,12 @@ class ProxyRepositoryDB(DB):
   def setProxyPersistencyFlag(self,userDN,userGroup,flag = True):
     """ Set the proxy PersistentFlag to the flag value
     """
-    
+
     if flag:
       cmd = "UPDATE Proxies SET PersistentFlag='True' "
     else:
-      cmd = "UPDATE Proxies SET PersistentFlag='False' "  
+      cmd = "UPDATE Proxies SET PersistentFlag='False' "
     cmd = cmd + "where UserDN='%s' and UserGroup='%s'" % (userDN,userGroup)
-    
+
     result = self._update(cmd)
     return result
