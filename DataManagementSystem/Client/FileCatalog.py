@@ -31,7 +31,7 @@ class FileCatalog:
     if catalogs:
       res = self._getSelectedCatalogs(catalogs)
     else:
-      res = self._getCatalogsConfigs()
+      res = self._getCatalogs()
     if not res['OK']:
       self.valid = False
 
