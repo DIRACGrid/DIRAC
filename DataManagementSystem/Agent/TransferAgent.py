@@ -37,7 +37,9 @@ class TransferAgent(Agent):
     gMonitor.registerActivity("Replica registration successful","Successful replica registrations/min","TransferAgent", "Atemps", gMonitor.OP_SUM )
     gMonitor.registerActivity("Replica registration failed","Failed replica registrations/min","TransferAgent", "Atemps", gMonitor.OP_SUM )  
 
-    self.threadPool = ThreadPool(1,1)
+    self.maxNumberOfThreads = gConfig.getValue(self.section+'/NumberOfThreads',1)
+    self.threadPoolDepth = gConfig.getValue(self.section+'/ThreadPoolDepth',1) 
+    self.threadPool = ThreadPool(1,self.maxNumberOfThreads)
 
     self.useProxies = gConfig.getValue(self.section+'/UseProxies',False)
     if self.useProxies:
@@ -90,7 +92,7 @@ class TransferAgent(Agent):
         setDIRACGroup(self.proxyGroup)
         self.log.info("TransferAgent.execute: Successfully renewed %s proxy." %self.proxyDN)
 
-    for i in range(1):
+    for i in range(self.threadPoolDepth):
       requestExecutor = ThreadedJob(self.executeRequest)
       self.threadPool.queueJob(requestExecutor)
     self.threadPool.processResults()
@@ -137,12 +139,14 @@ class TransferAgent(Agent):
         if operation == 'putAndRegister':
           gLogger.info("TransferAgent.execute: Attempting to execute %s sub-request." % operation)
           diracSE = subRequestAttributes['TargetSE']
+          catalog = subRequestAttributes['Catalogue']
           for subRequestFile in subRequestFiles:
             if subRequestFile['Status'] == 'Waiting':
               lfn = subRequestFile['LFN']
               file = subRequestFile['PFN']
               guid = subRequestFile['GUID']
-              res = self.ReplicaManager.putAndRegister(lfn, file, diracSE, guid=guid)
+              addler = subRequestFile['Addler']
+              res = self.ReplicaManager.putAndRegister(lfn, file, diracSE, guid=guid,checksum=addler,catalog=catalog)
               if res['OK']:
                 if res['Value']['Successful'].has_key(lfn):
                   if not res['Value']['Successful'][lfn].has_key('put'):
