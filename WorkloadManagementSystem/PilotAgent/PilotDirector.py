@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/PilotDirector.py,v 1.8 2008/02/01 12:19:38 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/PilotDirector.py,v 1.9 2008/02/04 16:01:23 paterson Exp $
 # File :   PilotDirector.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
      are overridden in Grid specific subclasses.
 """
 
-__RCSID__ = "$Id: PilotDirector.py,v 1.8 2008/02/01 12:19:38 paterson Exp $"
+__RCSID__ = "$Id: PilotDirector.py,v 1.9 2008/02/04 16:01:23 paterson Exp $"
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
 from DIRAC.Core.Utilities.Subprocess                       import shellCall
@@ -73,8 +73,8 @@ class PilotDirector(Thread):
     workload = self.__getWaitingJobs()
     if not workload['OK']:
       return workload
-    jobs = workload['Value']
 
+    jobs = workload['Value']
     if not jobs:
       return S_ERROR('No work to do')
 
@@ -205,15 +205,15 @@ class PilotDirector(Thread):
       gridRequirements = string.replace(classadJob.get_expression("GridRequirements"),'"','')
       self.log.verbose('Will attempt to use pilot script %s for job %s' %(gridRequirements,job))
 
-    candidateSites = None
+    candidateSites = None  #although only one site candidate is normally specified, can imagine having >1 ;)
     if classadJob.lookupAttribute("Site"):
-      candidateSites = string.replace(classadJob.get_expression("Site"),'"','')
-      self.log.verbose('Candidate sites for job %s are %s' %(job,candidateSites))
+      candidateSites = classadJob.get_expression("Site").replace('{','').replace('}','').replace('"','').split()
+      self.log.verbose('Single candidate site for job %s is %s' %(job,string.join(candidateSites,',')))
 
     bannedSites = None
     if classadJob.lookupAttribute("BannedSites"):
-      candidateSites = string.replace(classadJob.get_expression("BannedSites"),'"','')
-      self.log.verbose('Banned sites for job %s are %s' %(job,candidateSites))
+      bannedSites = classadJob.get_expression("BannedSites").replace('{','').replace('}','').replace('"','').split()
+      self.log.verbose('Banned sites for job %s are %s' %(job,string.join(bannedSites,',')))
 
     sites = self.__resolveSiteCandidates(job,candidateSites,bannedSites,gridRequirements)
     if not sites['OK']:
@@ -355,24 +355,35 @@ class PilotDirector(Thread):
     self.log.verbose('Site Mask: %s' %(string.join(siteMask,', ')))
     candidates = siteMask
 
+    tmpSites = []
+    
     if bannedSites:
+      for i in candidates:
+        tmpSites.append(i)
       for site in bannedSites:
         if site in candidates:
-          candidates.remove(site)
+          tmpSites.remove(site)
           self.log.verbose('Removing banned site %s from site candidate list for job %s' %(site,job))
+      candidates = tmpSites 
 
+    tmpSites = []
     if candidateSites:
+      for i in candidates: 
+        tmpSites.append(i) 
       for site in candidates:
-        if not site in candidateSites:
-          candidates.remove(site)
-        else:
+        if site in candidateSites:
           self.log.verbose('Site %s is a candidate site in the mask for job %s' %(site,job))
+        else:
+          tmpSites.remove(site)
+          self.log.verbose('Removing %s as a candidate site for job %s' %(site,job))
+          
+      candidates = tmpSites        
 
     if not candidates:
       self.__updateJobStatus(job,'Failed','No Candidate Sites in Mask')
       return S_ERROR('No Candidate Sites in Mask')
 
-    self.log.verbose('Candidate Sites: %s' %(string.join(siteMask,', ')))
+    self.log.info('Candidate sites for job %s: %s' %(job,string.join(candidates,', ')))
     finalSites = self.__getGridSites(candidates)
     return finalSites
 
