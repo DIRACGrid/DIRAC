@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/gLitePilotDirector.py,v 1.4 2008/02/01 12:21:26 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/gLitePilotDirector.py,v 1.5 2008/02/04 09:24:30 paterson Exp $
 # File :   gLitePilotDirector.py
 # Author : Stuart Paterson
 ########################################################################
@@ -11,7 +11,7 @@
      the invokation of the Pilot Director instance is performed here.
 """
 
-__RCSID__ = "$Id: gLitePilotDirector.py,v 1.4 2008/02/01 12:21:26 paterson Exp $"
+__RCSID__ = "$Id: gLitePilotDirector.py,v 1.5 2008/02/04 09:24:30 paterson Exp $"
 
 from DIRACEnvironment                                        import DIRAC
 from DIRAC.Core.Utilities                                    import List
@@ -154,7 +154,7 @@ class gLitePilotDirector(PilotDirector):
       if executable:
         gLiteJDL.write( 'Executable = "%s";\n'     % executable )
       else:
-        gLiteJDL.write( 'Executable = "%s";\n'     % self.pilotScript )
+        gLiteJDL.write( 'Executable = "%s";\n'     % os.path.basename(self.pilotScript))
 
       gLiteJDL.write( 'Arguments  = "%s %s %s %s";\n'  % (self.diracSetup,cpuRequirement,self.voSoftwareDir,ownerGroup) )
       gLiteJDL.write( 'gLiteTimeRef = %s ;\n'      % cpuRequirement )
