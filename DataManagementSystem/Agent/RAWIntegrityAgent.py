@@ -11,6 +11,7 @@ from DIRAC.DataManagementSystem.DB.RAWIntegrityDB import RAWIntegrityDB
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.GridCredentials import setupProxy,restoreProxy,setDIRACGroup, getProxyTimeLeft
 from DIRAC.Core.Utilities.Subprocess import shellCall
+from DIRAC.ConfigurationSystem.Client import PathFinder
 
 import time,os
 from types import *
@@ -26,7 +27,6 @@ class RAWIntegrityAgent(Agent):
 
   def initialize(self):
     result = Agent.initialize(self)
-    # need to get the online requestDB URL.'http://lbora01.cern.ch:9135'
     self.RequestDBClient = RequestClient()
     self.ReplicaManager = ReplicaManager()
     self.RAWIntegrityDB = RAWIntegrityDB()
@@ -35,6 +35,7 @@ class RAWIntegrityAgent(Agent):
     self.proxyGroup = gConfig.getValue(self.section+'/ProxyGroup')
     self.proxyLength = gConfig.getValue(self.section+'/DefaultProxyLength',12)
     self.proxyLocation = gConfig.getValue(self.section+'/ProxyLocation')
+    self.gatewayUrl = PathFinder.getServiceURL( 'RequestManagement/onlineGateway')
     return result
 
   def execute(self):
@@ -137,7 +138,6 @@ class RAWIntegrityAgent(Agent):
         gLogger.info("RAWIntegrityAgent.execute: %s is newly migrated." % lfn)
         if not pfnMetadataDict.has_key('Checksum'):
           gLogger.error("RAWIntegrityAgent.execute: No checksum information available.",lfn)
-
           comm = "nsls -lT --checksum /castor/%s" % pfn.split('/castor/')[-1]
           res = shellCall(180,comm)
           returnCode,stdOut,stdErr = res['Value']
@@ -149,8 +149,10 @@ class RAWIntegrityAgent(Agent):
         if pfnMetadataDict['Checksum'] == activeFiles[lfn]['Checksum']:
           gLogger.info("RAWIntegrityAgent.execute: %s migrated checksum match." % lfn)
           filesToRemove.append(lfn)
-        else:
-          gLogger.error("RAWIntegrityAgent.execute: Migrated checksum mis-match.",lfn)
+        elif pfnMetadataDict['Checksum'] == 'Not available':
+          gLogger.info("RAWIntegrityAgent.execute: Unable to determine checksum.", lfn)
+        else:  
+          gLogger.error("RAWIntegrityAgent.execute: Migrated checksum mis-match.","%s %s %s" % (lfn,pfnMetadataDict['Checksum'], activeFiles[lfn]['Checksum']))
           filesToTransfer.append(lfn)
     gLogger.info("RAWIntegrityAgent.execute: %s files newly migrated." % len(filesMigrated))
     gLogger.info("RAWIntegrityAgent.execute: Found %s checksum matches." % len(filesToRemove))
@@ -168,14 +170,16 @@ class RAWIntegrityAgent(Agent):
         size = activeFiles[lfn]['Size']
         se = activeFiles[lfn]['SE']
         guid = activeFiles[lfn]['GUID']
-        fileTuple = (lfn,pfn,size,se,guid)
+        checksum = activeFiles[lfn]['Checksum']
+        fileTuple = (lfn,pfn,size,se,guid,checksum)
         res = self.ReplicaManager.registerFile(fileTuple)
+        print res
         if not res['OK']:
           gLogger.error("RAWIntegrityAgent.execute: Completely failed to register successfully migrated file.", res['Message'])
         elif not res['Value']['Successful'].has_key(lfn):
           gLogger.error("RAWIntegrityAgent.execute: Failed to register lfn in the File Catalog.", res['Value']['Failed'][lfn])
         else:
-          gLogger.info("RAWIntegrityAgent.execute: Successfully registered %s in the File Catalog.", lfn)
+          gLogger.info("RAWIntegrityAgent.execute: Successfully registered %s in the File Catalog." % lfn)
           ############################################################
           #
           # Create a removal request and set it to the gateway request DB
@@ -191,7 +195,7 @@ class RAWIntegrityAgent(Agent):
           requestName = 'remove_%s.xml' % fileName
           requestString = oRequest.toXML()['Value']
           gLogger.info("RAWIntegrityAgent.execute: Attempting to put %s to gateway requestDB." %  requestName)
-          res = self.RequestDBClient.setRequest(requestName,requestString)
+          res = self.RequestDBClient.setRequest(requestName,requestString,self.gatewayUrl)
           if not res['OK']:
             gLogger.error("RAWIntegrityAgent.execute: Failed to set removal request to gateway requestDB.", res['Message'])
           else:
@@ -233,7 +237,7 @@ class RAWIntegrityAgent(Agent):
           gLogger.info("RAWIntegrityAgent.execute: Creating (re)transfer request for incorrectly migrated files.")
           oRequest = DataManagementRequest()
           subRequestIndex = oRequest.initiateSubRequest('transfer')['Value']
-          attributeDict = {'Operation':'putAndRegister','TargetSE':se}
+          attributeDict = {'Operation':'get','TargetSE':'OnlineRunDB'}
           oRequest.setSubRequestAttributes(subRequestIndex,'transfer',attributeDict)
           fileName = os.path.basename(lfn)
           filesDict = [{'LFN':lfn,'PFN':fileName,'GUID':guid}]
@@ -241,7 +245,7 @@ class RAWIntegrityAgent(Agent):
           requestName = 'retransfer_%s.xml' % fileName
           requestString = oRequest.toXML()['Value']
           gLogger.info("RAWIntegrityAgent.execute: Attempting to put %s to gateway requestDB." %  requestName)
-          res = self.RequestDBClient.setRequest(requestName,requestString)
+          res = self.RequestDBClient.setRequest(requestName,requestString,self.gatewayUrl)
           if not res['OK']:
             gLogger.error("RAWIntegrityAgent.execute: Failed to set removal request to gateway requestDB.", res['Message'])
           else:
