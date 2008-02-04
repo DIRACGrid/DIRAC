@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSAdministratorHandler.py,v 1.8 2008/02/04 22:11:30 atsareg Exp $
+# $Id: WMSAdministratorHandler.py,v 1.9 2008/02/04 22:43:52 atsareg Exp $
 ########################################################################
 """
 This is a DIRAC WMS administrator interface
@@ -16,7 +16,7 @@ This starts an XMLRPC service exporting the following methods:
 
 """
 
-__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.8 2008/02/04 22:11:30 atsareg Exp $"
+__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.9 2008/02/04 22:43:52 atsareg Exp $"
 
 import os, sys, string, uu, shutil
 from types import *
@@ -212,6 +212,21 @@ class WMSAdministratorHandler(RequestHandler):
         job reference
     """
 
+    return self.__getGridJobOutput(pilotReference)
+
+  ##############################################################################
+  types_getJobPilotOutput = [IntType]
+  def export_getJobPilotOutput(self,jobID):
+    """ Get the pilot job standard output and standard error files for the DIRAC
+        job reference
+    """
+
+    # Get the pilot grid reference first
+    result = jobDB.getJobParameter(jobID,'GLITE_WMS_JOBID')
+    if not result['OK']:
+      return result
+
+    pilotReference = result['Value']
     return self.__getGridJobOutput(pilotReference)
 
   def __getGridJobOutput(self,pilotReference):
