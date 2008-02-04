@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/RRDManager.py,v 1.8 2008/02/04 14:21:39 acasajus Exp $
-__RCSID__ = "$Id: RRDManager.py,v 1.8 2008/02/04 14:21:39 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/RRDManager.py,v 1.9 2008/02/04 16:22:17 acasajus Exp $
+__RCSID__ = "$Id: RRDManager.py,v 1.9 2008/02/04 16:22:17 acasajus Exp $"
 import os
 import os.path
 import time
@@ -108,8 +108,6 @@ class RRDManager:
     cmd = "%s update %s" % ( self.rrdExec, rrdFilePath )
     gLogger.verbose( "Last expected time is %s" % expectedTime )
     for entry in valuesList:
-      if entry[0] <= expectedTime:
-        continue
       while expectedTime < entry[0]:
         cmd += " %s:0" % expectedTime
         expectedTime += self.bucketTime
