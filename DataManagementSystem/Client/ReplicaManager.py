@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalogue. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.19 2008/02/04 17:21:52 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.20 2008/02/04 22:48:52 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -18,7 +18,7 @@ class ReplicaManager:
     """ Constructor function.
     """
 
-    #self.fileCatalogue = LcgFileCatalogCombinedClient()
+    self.fileCatalogue = FileCatalog()
     self.accountingClient = None
     self.registrationProtocol = 'SRM2'
     self.thirdPartyProtocols = ['SRM2','SRM1']
@@ -375,7 +375,7 @@ class ReplicaManager:
     gLogger.info("ReplicaManager.__replicate: Determining the best source replicas.")
     res = self.__resolveBestReplicas(sourceSE,lfnReplicas,catalogueSize)
     if not res['OK']:
-      gLogger.error("ReplicaManager.__replicate: Best replica resolution failed." % lfn)
+      gLogger.error("ReplicaManager.__replicate: Best replica resolution failed.", lfn)
       return res
     replicaPreference = res['Value']
     ###########################################################
