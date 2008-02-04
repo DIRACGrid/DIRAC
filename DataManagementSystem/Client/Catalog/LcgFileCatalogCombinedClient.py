@@ -36,6 +36,10 @@ class LcgFileCatalogCombinedClient:
       master_host = gConfig.getValue(configPath)
     # Create the master LFC client first
     self.lfc = LcgFileCatalogClient(infosys,master_host)
+    
+    self.valid = False
+    if self.lfc.isOK():
+      self.valid = True 
 
     if not mirrors:
       configPath = '/Resources/FileCatalogs/LFC/LFCReadOnlyMirrors'
@@ -53,8 +57,10 @@ class LcgFileCatalogCombinedClient:
     os.environ['LFC_HOST'] = self.master_host
     os.environ['LCG_GFAL_INFOSYS'] = infosys
     self.name = 'LFC'
-
     self.timeout = 300
+
+  def isOK(self):
+    return self.valid
 
   def getName(self,DN=''):
     """ Get the file catalog type name
