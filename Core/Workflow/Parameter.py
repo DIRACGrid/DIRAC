@@ -1,8 +1,8 @@
-# $Id: Parameter.py,v 1.19 2008/02/01 18:37:39 gkuznets Exp $
+# $Id: Parameter.py,v 1.20 2008/02/04 13:25:29 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.19 $"
+__RCSID__ = "$Revision: 1.20 $"
 
 # unbinded method, returns indentation string
 def indent(indent=0):
@@ -112,8 +112,8 @@ class Parameter(object):
         self.linked_parameter = parameter
 
     def unlink(self):
-        self.linked_module = None
-        self.linked_parameter = None
+        self.linked_module = ""
+        self.linked_parameter = ""
 
     def getLinkedModule(self):
         return self.linked_module
@@ -272,7 +272,17 @@ class ParameterCollection(list):
                 self.appendOrOwerrite(Parameter(name=prefix+p.getName()+postfix, parameter=p))
         elif isinstance(opt, Parameter):
             self.appendOrOwerrite(Parameter(name=prefix+opt.getName()+postfix, parameter=opt))
-            return opt
+        else:
+            raise TypeError('Can not append object type '+ str(type(opt))+' to the '+str(type(self))+'. Parameter type appendable only')
+
+    def appendCopyLinked(self, opt, prefix="", postfix=""):
+        if isinstance(opt, ParameterCollection):
+            for p in opt:
+                if p.isLinked():
+                    self.appendOrOwerrite(Parameter(name=prefix+p.getName()+postfix, parameter=p))
+        elif isinstance(opt, Parameter):
+            if opt.isLinked():
+                self.appendOrOwerrite(Parameter(name=prefix+opt.getName()+postfix, parameter=opt))
         else:
             raise TypeError('Can not append object type '+ str(type(opt))+' to the '+str(type(self))+'. Parameter type appendable only')
 
@@ -306,6 +316,7 @@ class ParameterCollection(list):
         Method will link self.parameters with the outer object (self) perameters using prefix and postfix
         for example if we want to link module instance with the step or step instance with the workflow
         opt - ParameterCollection or sigle Parameter (WARNING!! used as reference to get a names!!! opt is not changing!!!)
+        opt ALSO can be a list of string with the names of parameters to link
         objname - name of the object to connect with, usually 'self'
         """
         if isinstance(opt, ParameterCollection):
@@ -319,16 +330,70 @@ class ParameterCollection(list):
                     par.link(objname, prefix+p.getName()+postfix)
         elif isinstance(opt, Parameter):
             self.setLink(opt.getName(), objname, prefix+opt.getName()+postfix)
-            return opt
+        elif isinstance(opt, list) and isinstance(opt[0], str):
+            for s in opt:
+                par = self.find(s)
+                if par == None:
+                    print "ERROR ParameterCollection.linkUp() can not find parameter with the name=%s"% (s)
+                else:
+                    par.link(objname, prefix+p.getName()+postfix)
+        elif isinstance(opt, str):
+            par = self.find(opt)
+            if par == None:
+                print "ERROR ParameterCollection.linkUp() can not find parameter with the name=%s"% (s)
+            else:
+                par.link(objname, prefix+p.getName()+postfix)
         else:
             raise TypeError('Can not link object type '+ str(type(opt))+' to the '+str(type(self))+'.')
+
+    def unlink(self, opt):
+        """ This is a GROUP method operates on the 'obj' parameters using only parameters listed in 'opt' list
+        Method will unlink some self.parameters
+        opt - ParameterCollection or sigle Parameter (WARNING!! used as reference to get a names!!! opt is not changing!!!)
+        opt ALSO can be a list of string with the names of parameters to link
+        objname - name of the object to connect with, usually 'self'
+        """
+        if isinstance(opt, ParameterCollection):
+            # if parameter in the list opt is not present in the self
+            # we are going to ignore this
+            for p in opt:
+                par = self.find(p.getName())
+                if par == None:
+                    print "WARNING ParameterCollection.linkUp can not find parameter with the name=", p.getName(), " IGNORING"
+                else:
+                    par.unlink()
+        elif isinstance(opt, Parameter):
+            self.unlink()
+        elif isinstance(opt, list) and isinstance(opt[0], str):
+            for s in opt:
+                par = self.find(s)
+                if par == None:
+                    print "ERROR ParameterCollection.unlink() can not find parameter with the name=%s"% (s)
+                else:
+                    par.unlink()
+        elif isinstance(opt, str):
+            par = self.find(opt)
+            if par == None:
+                print "ERROR ParameterCollection.unlink() can not find parameter with the name=%s"% (s)
+            else:
+                par.unlink()
+        else:
+            raise TypeError('Can not unlink object type '+ str(type(opt))+' to the '+str(type(self))+'.')
 
     def removeAllParameters(self):
         self[:]=[]
 
     def remove(self, name_or_ind):
         # work for index as well as for the string
-        if isinstance(name_or_ind, str): # we given name
+        if isinstance(name_or_ind, list) and isinstance(name_or_ind[0], str):
+             for s in opt:
+                par = self.find(s)
+                if par == None:
+                    print "ERROR ParameterCollection.remove() can not find parameter with the name=%s"% (s)
+                else:
+                    del self[self.findIndex(s)]
+
+        elif isinstance(name_or_ind, str): # we given name
             del self[self.findIndex(name_or_ind)]
         elif isinstance(name_or_ind, int) or isinstance(name_or_ind): # we given index
             del self[name_or_ind]
@@ -500,8 +565,14 @@ class AttributeCollection(dict):
     def appendParameterCopy(self, opt, prefix="", postfix=""):
         self.parameters.appendCopy(opt, prefix, postfix)
 
+    def appendParameterCopyLinked(self, opt, prefix="", postfix=""):
+        self.parameters.appendCopyLinked(opt, prefix, postfix)
+
     def linkParameterUp(self, opt, prefix="", postfix="", objname="self"):
         self.parameters.linkUp(opt, prefix, postfix, objname)
+
+    def unlinkParameter(self, opt):
+        self.parameters.unlink(opt)
 
     def removeParameter(self, name_or_ind):
         self.parameters.remove(name_or_ind)
@@ -525,6 +596,7 @@ class AttributeCollection(dict):
     def setLink(self, name, module_name, parameter_name):
         if not  self.parameters.setLink(name, module_name, parameter_name):
             print " in the object=", type(self), "with name=", self.getName(), "of type=", self.getType()
+
 
     def compare(self, s):
         return (self == s) and  self.parameters.compare(s.parameters)
