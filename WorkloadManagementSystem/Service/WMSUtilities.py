@@ -1,11 +1,11 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/WMSUtilities.py,v 1.1 2008/02/04 21:52:33 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/WMSUtilities.py,v 1.2 2008/02/04 22:10:57 atsareg Exp $
 ########################################################################
 
 """ A set of utilities used in the WMS services
 """
 
-__RCSID__ = "$Id: WMSUtilities.py,v 1.1 2008/02/04 21:52:33 atsareg Exp $"
+__RCSID__ = "$Id: WMSUtilities.py,v 1.2 2008/02/04 22:10:57 atsareg Exp $"
 
 from tempfile import mkdtemp
 import shutil, os
@@ -29,7 +29,7 @@ def getLCGPilotOutput(jRef):
   f = file(tmp_dir+'/std.out','r').read()
   result['StdOut'] = f
   f = file(tmp_dir+'/std.err','r').read()
-  result['StdOut'] = f
+  result['StdError'] = f
   shutil.rmtree(tmp_dir)
   return result
 
@@ -49,6 +49,6 @@ def getgLitePilotOutput():
   f = file(tmp_dir+'/std.out','r').read()
   result['StdOut'] = f
   f = file(tmp_dir+'/std.err','r').read()
-  result['StdOut'] = f
+  result['StdError'] = f
   shutil.rmtree(tmp_dir)
   return result
