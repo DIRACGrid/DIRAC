@@ -106,8 +106,6 @@ class RFIOStorage(StorageBase):
     for url in urls:
       comm = " %s %s" % (comm,url)
     res = shellCall(self.timeout,comm)
-    print comm
-    print res
     successful = {}
     failed = {}
     if res['OK']:
@@ -115,13 +113,12 @@ class RFIOStorage(StorageBase):
       if returncode in [0,1]:
         for line in stdout.splitlines():
           permissions,subdirs,owner,group,size,month,date,timeYear,pfn = line.split()
-          (1, '', '/castor/cern.ch/grid/lhcb/debug/lhcb/production/DC06/phys-v2-lumi2/00001820/SIM/0000/dirac_directory: No such file or directory\n')
           successful[pfn] = {}
           successful[pfn]['Permissions'] = permissions
           successful[pfn]['NbSubDirs'] = subdirs
           successful[pfn]['Owner'] = owner
           successful[pfn]['Group'] = group
-          successful[pfn]['Size'] = size
+          successful[pfn]['Size'] = int(size)
           successful[pfn]['Month'] = month
           successful[pfn]['Date'] = date
           successful[pfn]['Year'] = timeYear
@@ -198,9 +195,13 @@ class RFIOStorage(StorageBase):
     successful = {}
     for srcFile,destUrl,size in urls:
       timeout = size/MIN_BANDWIDTH + 300
-      gLogger.info("RFIOStorage.putFile: Executing transfer of %s to %s" % (srcFile, destUrl))
-      comm = "rfcp %s %s" % (srcFile,destUrl)
-      res = shellCall(timeout,comm)
+      res = self.getTransportURL(destUrl)
+      if res['OK']:
+        if res['Value']['Successful'].has_key(destUrl):
+          turl = res['Value']['Successful'][destUrl]
+          gLogger.info("RFIOStorage.putFile: Executing transfer of %s to %s" % (srcFile, destUrl))
+          comm = "rfcp %s '%s'" % (srcFile,turl)
+          res = shellCall(timeout,comm)
       removeFile = True
       if res['OK']:
         returncode,stdout,stderr = res['Value']
@@ -308,10 +309,12 @@ class RFIOStorage(StorageBase):
     if not res['OK']:
       return res
     else:
-      failed = res['Value']['Failed']
+      failed = {}
+      for pfn,err in res['Value']['Failed'].items():
+        failed[pfn] = "RFIOStorage.getFileMetadata: %s." % err 
       successful = {}
       for pfn,pfnDict in res['Value']['Successful'].items():
-        successful[pfn] = pfnDict['Size']
+        successful[pfn] = int(pfnDict['Size'])
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
@@ -369,7 +372,7 @@ class RFIOStorage(StorageBase):
     for path in urls:
       try:
         if self.spaceToken:
-          tURL = "castor://%s:%s/?svcClass=%s&castorVersion=2&path=%s" % (self.host,self.port,self.spaceToken,path)
+          tURL = "%s://%s:%s/?svcClass=%s&castorVersion=2&path=%s" % (self.protocol,self.host,self.port,self.spaceToken,path)
         else:
           tURL = "castor:%s" % (path)
         successful[path] = tURL
@@ -400,7 +403,6 @@ class RFIOStorage(StorageBase):
       destFile = '%s/dirac_directory' % url
       files[destFile] = url
     res = self.__getPathMetadata(files.keys())
-    print res['Value']
     if not res['OK']:
       return res
     else:
@@ -636,7 +638,7 @@ class RFIOStorage(StorageBase):
     res = shellCall(100,comm)
     if res['OK']:
       returncode,stdout,stderr = res['Value']
-      if not returncode ==  0:
+      if not returncode in [0,1]:
         return S_ERROR(stderr)
 
     destFile = '%s/%s' % (path,'dirac_directory')
