@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/RRDManager.py,v 1.6 2008/02/01 13:44:42 acasajus Exp $
-__RCSID__ = "$Id: RRDManager.py,v 1.6 2008/02/01 13:44:42 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/RRDManager.py,v 1.7 2008/02/04 11:49:55 acasajus Exp $
+__RCSID__ = "$Id: RRDManager.py,v 1.7 2008/02/04 11:49:55 acasajus Exp $"
 import os
 import os.path
 import time
@@ -186,6 +186,7 @@ class RRDManager:
     rrdCmd += " -w %s" % self.sizesList[ size ][0]
     rrdCmd += " -h %s" % self.sizesList[ size ][1]
     rrdCmd += " --title '%s'" % activity.getLabel()
+    rrdCmd += " --vertical-label '%s'" % activity.getRRDUnit()
     rrdCmd += " %s" % self.__generateRRDGraphVar( 0, activity.getFile(), activity.getType() )
     if stackActivities:
       rrdCmd += " 'AREA:0#FF0000::STACK'"
