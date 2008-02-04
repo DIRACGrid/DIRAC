@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.1 2008/02/03 22:24:00 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.2 2008/02/04 00:37:10 atsareg Exp $
 ########################################################################
 
 """  The Pilot Status Agent updates the status of the pilot jobs if the 
      PilotAgents database.
 """
 
-__RCSID__ = "$Id: PilotStatusAgent.py,v 1.1 2008/02/03 22:24:00 atsareg Exp $"
+__RCSID__ = "$Id: PilotStatusAgent.py,v 1.2 2008/02/04 00:37:10 atsareg Exp $"
 
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
@@ -44,8 +44,8 @@ class PilotStatusAgent(Agent):
     """
 
     # Select pilots in non-final states
-    #stateList = ['Aborted','Submitted','Running','Waiting','Scheduled']
-    stateList = ['Submitted','Running','Waiting','Scheduled']
+    #stateList = ['Ready','Aborted','Submitted','Running','Waiting','Scheduled']
+    stateList = ['Ready','Submitted','Running','Waiting','Scheduled']
     
     result = self.pilotDB.selectPilots(stateList)  
     if not result['OK']:
