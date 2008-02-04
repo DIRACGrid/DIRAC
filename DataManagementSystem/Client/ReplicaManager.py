@@ -1,13 +1,14 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalogue. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.18 2008/02/02 18:36:41 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.19 2008/02/04 17:21:52 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
 
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig
 from DIRAC.DataManagementSystem.Client.StorageElement import StorageElement
-from DIRAC.DataManagementSystem.Client.Catalog.LcgFileCatalogCombinedClient import LcgFileCatalogCombinedClient
+from DIRAC.DataManagementSystem.Client.FileCatalog import FileCatalog
+#from DIRAC.DataManagementSystem.Client.Catalog.LcgFileCatalogCombinedClient import LcgFileCatalogCombinedClient
 from DIRAC.Core.Utilities.File import makeGuid
 from DIRAC.Core.Utilities.File import getSize
 
@@ -17,7 +18,7 @@ class ReplicaManager:
     """ Constructor function.
     """
 
-    self.fileCatalogue = LcgFileCatalogCombinedClient()
+    #self.fileCatalogue = LcgFileCatalogCombinedClient()
     self.accountingClient = None
     self.registrationProtocol = 'SRM2'
     self.thirdPartyProtocols = ['SRM2','SRM1']
@@ -82,9 +83,7 @@ class ReplicaManager:
     resDict = {'Successful': successful,'Failed':failed}
     return S_OK(resDict)
 
-
-
-  def putAndRegister(self,lfn,file,diracSE,guid=None,path=None):
+  def putAndRegister(self,lfn,file,diracSE,guid=None,path=None,checksum=None,catalog=None):
     """ Put a local file to a Storage Element and register in the File Catalogues
 
         'lfn' is the file LFN
@@ -93,6 +92,11 @@ class ReplicaManager:
         'guid' is the guid with which the file is to be registered (if not provided will be generated)
         'path' is the path on the storage where the file will be put (if not provided the LFN will be used)
     """
+    # Instantiate the desired file catalog
+    if catalog:
+      self.fileCatalogue = FileCatalog(catalog)
+    else:
+      self.fileCatalogue = FileCatalog()
     # Check that the local file exists
     if not os.path.exists(file):
       errStr = "ReplicaManager.putAndRegister: Supplied file does not exist."
@@ -146,8 +150,8 @@ class ReplicaManager:
 
     ###########################################################
     # Perform the registration here
-    fileTuple = (lfn,destPfn,size,destinationSE,guid)
-    registerDict = {'LFN':lfn,'PFN':destPfn,'Size':size,'TargetSE':destinationSE,'GUID':guid}
+    fileTuple = (lfn,destPfn,size,destinationSE,guid,checksum)
+    registerDict = {'LFN':lfn,'PFN':destPfn,'Size':size,'TargetSE':destinationSE,'GUID':guid,'Addler':checksum}
     startTime = time.time()
     res = self.registerFile(fileTuple)
     registerTime = time.time() - startTime
@@ -161,7 +165,7 @@ class ReplicaManager:
       gLogger.error(errStr,"%s %s" % (lfn,res['Value']['Failed'][lfn]))
       failed[lfn] = {'register':registerDict}
     else:
-      successful['register'] = registerTime
+      successful[lfn]['register'] = registerTime
     resDict = {'Successful': successful,'Failed':failed}
     return S_OK(resDict)
 
@@ -548,10 +552,10 @@ class ReplicaManager:
 
   def __registerFile(self,fileTuples):
     seDict = {}
-    for lfn,physicalFile,fileSize,storageElementName,fileGuid in fileTuples:
+    for lfn,physicalFile,fileSize,storageElementName,fileGuid,checksum in fileTuples:
       if not seDict.has_key(storageElementName):
         seDict[storageElementName] = []
-      seDict[storageElementName].append((lfn,physicalFile,fileSize,storageElementName,fileGuid))
+      seDict[storageElementName].append((lfn,physicalFile,fileSize,storageElementName,fileGuid,checksum))
     successful = {}
     failed = {}
     fileTuples = []
@@ -560,17 +564,18 @@ class ReplicaManager:
       if not destStorageElement.isValid()['Value']:
         errStr = "ReplicaManager.__registerFile: Failed to instantiate destination Storage Element."
         gLogger.error(errStr,storageElementName)
-        for lfn,physicalFile,fileSize,storageElementName,fileGuid in fileTuple:
+        for lfn,physicalFile,fileSize,storageElementName,fileGuid,checksum in fileTuple:
           failed[lfn] = errStr
       else:
         storageElementName = destStorageElement.getStorageElementName()['Value']
-        for lfn,physicalFile,fileSize,storageElementName,fileGuid in fileTuple:
+        for lfn,physicalFile,fileSize,storageElementName,fileGuid,checksum in fileTuple:
           res = destStorageElement.getPfnForProtocol(physicalFile,self.registrationProtocol,withPort=False)
           if not res['OK']:
-            failed[lfn] = res['Message']
+            pfn = physicalFile
           else:
-            tuple = (lfn,res['Value'],fileSize,storageElementName,fileGuid)
-            fileTuples.append(tuple)
+            pfn = res['Value']  
+          tuple = (lfn,pfn,fileSize,storageElementName,fileGuid,checksum)
+          fileTuples.append(tuple)
     gLogger.info("ReplicaManager.__registerFile: Resolved %s files for registration." % len(fileTuples))
     res = self.fileCatalogue.addFile(fileTuples)
     if not res['OK']:
