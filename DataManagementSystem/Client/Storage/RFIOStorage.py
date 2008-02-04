@@ -126,6 +126,39 @@ class RFIOStorage(StorageBase):
           pfn,error = line.split(': ')
           url = pfn.strip()
           failed[url] = error
+        existingPfns = successful.keys()
+        # Check whether the files that exist are staged
+        if existingPfns:
+          comm = "stager_qry -S %s" % self.spaceToken 
+          for pfn in existingPfns:
+            comm = "%s -M %s" % (comm,pfn)
+          res = shellCall(self.timeout,comm)
+          if res['OK']:
+            returncode,stdout,stderr = res['Value']
+            for line in stdout.splitlines():
+              pfn = line.split()[0]
+              status = line.split()[-1]
+              if status in ['STAGED','CANBEMIGR']:
+                successful[pfn]['Cached'] = True
+          for pfn in existingPfns:
+            if not successful[pfn].has_key('Cached'):
+              successful[pfn]['Cached'] = False
+        # Now for the files that exist get the tape segment (i.e. whether they have been migrated) and related checksum
+        if existingPfns:
+          comm = "nsls -lT --checksum"
+          for pfn in existingPfns:
+            comm = "%s %s" % (comm,pfn)
+          res = shellCall(self.timeout,comm)
+          if res['OK']:
+            returncode,stdout,stderr = res['Value']
+            for line in stdout.splitlines():
+              pfn = line.split()[-1]
+              checksum = line.split()[-2]
+              successful[pfn]['Migrated'] = True
+              successful[pfn]['Checksum'] = checksum
+          for pfn in existingPfns:
+            if not successful[pfn].has_key('Migrated'):
+              successful[pfn]['Migrated'] = False
       else:
         errStr = "RFIOStorage.__getPathMetadata: Completely failed to get path metadata."
         gLogger.error(errStr,"%s %s" % (self.name,stderr))
