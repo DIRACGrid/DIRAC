@@ -7,16 +7,24 @@ from DIRAC.DataManagementSystem.Client.Catalog.FileCatalogueBase import FileCata
 from stat import *
 import os, re, string, commands, types,time
 
+global importCorrectly
 try:
   import lfc
+  importCorrectly = True
+  gLogger.info("LcgFileCatalogClient.__init__: Successfully imported lfc module.")
 except ImportError, x:
-  print "Failed to import lfc module !"
-  print str(x)
-
+  gLogger.exception("LcgFileCatalogClient.__init__: Failed to import lfc module.",str(x))
+  importCorrectly = False 
 
 class LcgFileCatalogClient(FileCatalogueBase):
 
   def __init__(self,infosys=None,host=None):
+
+    if importCorrectly:
+      self.valid = True
+    else:
+      self.valid = False
+
     self.host = host
     result = gConfig.getOption('/DIRAC/Setup')
     if not result['OK']:
@@ -39,6 +47,8 @@ class LcgFileCatalogClient(FileCatalogueBase):
     self.session = False
     self.name = "LFC"
 
+  def isOK(self):
+    return self.valid
   ####################################################################
   #
   # These are the get/set methods for use within the client
@@ -94,7 +104,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
   def exists(self,path):
     """ Check if the path exists
     """
-    if type(path) == types.StringType:
+    if type(path) in types.StringTypes:
       lfns = [path]
     elif type(path) == types.ListType:
       lfns = path
@@ -273,14 +283,14 @@ class LcgFileCatalogClient(FileCatalogueBase):
     failed = {}
     successful = {}
     self.__openSession()
-    for lfn,pfn,size,se,guid in files:
+    for lfn,pfn,size,se,guid,checksum in files:
       #Check the registration is correctly specified
       res = self.__checkAddFile(lfn,pfn,size,se,guid)
       if not res['OK']:
         failed[lfn] = "LFCClient.addFile: %s" % res['Message']
       else:
         size = long(size)
-        res = self.__addFile(lfn,pfn,size,se,guid)
+        res = self.__addFile(lfn,pfn,size,se,guid,checksum)
         if not res['OK']:
           failed[lfn] = res['Message']
         else:
@@ -299,7 +309,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
-  def __addFile(self,lfn,pfn,size,se,guid):
+  def __addFile(self,lfn,pfn,size,se,guid,checksum):
     self.__startTransaction()
     bdir = os.path.dirname(lfn)
     res = self.exists(bdir)
@@ -329,7 +339,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
       res = self.removeFile(lfn)
       return S_ERROR("__addFile: Failed to create GUID: %s" % errStr)
     #Set the size of the file
-    value = lfc.lfc_setfsizeg(guid,size,'','')
+    value = lfc.lfc_setfsizeg(guid,size,'AD',checksum)
     if value != 0:
       self.__abortTransaction()
       errStr = lfc.sstrerror(lfc.cvar.serrno)
@@ -552,7 +562,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
   def getReplicas(self,path):
     """ Returns replicas for an LFN or list of LFNs
     """
-    if type(path) == types.StringType:
+    if type(path) in types.StringTypes:
       lfns = [path]
     elif type(path) == types.ListType:
       lfns = path
@@ -660,7 +670,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     return S_OK(resDict)
 
   def getFileSize(self, path):
-    if type(path) == types.StringType:
+    if type(path) in types.StringTypes:
       paths = [path]
     elif type(path) == types.ListType:
       paths = path
