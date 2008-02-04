@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.19 2008/02/01 13:44:56 acasajus Exp $
-__RCSID__ = "$Id: MonitoringClient.py,v 1.19 2008/02/01 13:44:56 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.20 2008/02/04 14:21:39 acasajus Exp $
+__RCSID__ = "$Id: MonitoringClient.py,v 1.20 2008/02/04 14:21:39 acasajus Exp $"
 
 import threading
 import time
@@ -29,10 +29,10 @@ class MonitoringClient:
     self.sourceDict[ 'componentType' ] = "unknown"
     self.sourceDict[ 'componentName' ] = "unknown"
     self.sourceDict[ 'componentLocation' ] = "unknown"
-    self.newActivitiesDict = {}
     self.activitiesDefinitions = {}
     self.activitiesMarks = {}
-    self.dataToSend = []
+    self.definitionsToSend = {}
+    self.marksToSend = {}
     self.activitiesLock = threading.Lock()
     self.flushingLock = threading.Lock()
     self.timeStep = 60
@@ -143,7 +143,7 @@ class MonitoringClient:
                                                "type" : operation
                                               }
         self.activitiesMarks[ name ] = {}
-        self.newActivitiesDict[ name ] = dict( self.activitiesDefinitions[ name ] )
+        self.definitionsToSend[ name ] = dict( self.activitiesDefinitions[ name ] )
     finally:
       self.activitiesLock.release()
 
@@ -213,15 +213,11 @@ class MonitoringClient:
       self.activitiesLock.acquire()
       try:
         self.logger.debug( "Consolidating data...")
-        activitiesToRegister = {}
-        if len( self.newActivitiesDict ) > 0:
-          activitiesToRegister = self.newActivitiesDict
-          self.newActivitiesDict = {}
-        marksDict = self.__consolidateMarks( allData )
+        self.__appendMarksToSend( self.__consolidateMarks( allData ) )
       finally:
         self.activitiesLock.release()
       #Commit new activities
-      if len( activitiesToRegister ) or len( marksDict ):
+      if self.__dataToSend():
         if gConfig.getValue( "%s/DisableMonitoring" % self.cfgSection, "false" ).lower() in \
             ( "yes", "y", "true", "1" ):
           self.logger.debug( "Sending data has been disabled" )
@@ -230,65 +226,72 @@ class MonitoringClient:
           timeout = False
         else:
           timeout = 10
-        self.__sendData( activitiesToRegister, marksDict, timeout )
+        self.__sendData( timeout )
     finally:
       self.flushingLock.release()
 
-  def __sendData( self, acRegister, acMarks, secsTimeout = 30 ):
+  def __dataToSend( self ):
+    return len( self.definitionsToSend ) or len( self.marksToSend )
+
+  def __appendMarksToSend( self, acMarks ):
+    for acName in acMarks:
+      if acName in self.marksToSend:
+        for timeMark in acMarks[ acName ]:
+          self.marksToSend[ acName ][ timeMark ] = acMarks[ acName ][ timeMark ]
+      else:
+        self.marksToSend[ acName ] = acMarks[ acName ]
+
+  def __sendData( self, acRegister, secsTimeout = 30 ):
     if not self.enabled:
       return
     if gServiceInterface.serviceRunning():
       rpcClient = gServiceInterface
     else:
       rpcClient = RPCClient( "Monitoring/Server", timeout = secsTimeout )
-    if len( acRegister ):
-      self.dataToSend.append( ( self.__sendRegistration, acRegister ) )
-    if len( acMarks ):
-      self.dataToSend.append( ( self.__sendMarks, acMarks ) )
-    self.__flushQueue( rpcClient )
-
-  def __flushQueue( self, rpcClient ):
-    executionsNum = 0
-    while len( self.dataToSend ) > 100:
-      del( self.dataToSend[0] )
-    while self.dataToSend and executionsNum < 100:
-      executionsNum += 1
-      transTuple = self.dataToSend[0]
-      if not transTuple[0]( rpcClient, transTuple[1] ):
+    #Send registrations
+    if not self.__sendRegistration( rpcClient ):
+      return False
+    #Send marks
+    maxIteration = 5
+    if self.__sendMarks( rpcClient ) and maxIteration:
+      maxIteration -= 1
+      if not self.__sendRegistration( rpcClient ):
         return False
-      del( self.dataToSend[0] )
-    return True
 
-  def __sendRegistration( self, rpcClient, acRegister ):
+
+  def __sendRegistration( self, rpcClient ):
+    if not len( self.definitionsToSend ):
+      return True
     self.logger.debug( "Registering activities" )
-    retDict = rpcClient.registerActivities( self.sourceDict, acRegister )
+    retDict = rpcClient.registerActivities( self.sourceDict, self.definitionsToSend )
     if not retDict[ 'OK' ]:
       self.logger.error( "Can't register activities", retDict[ 'Message' ] )
       return False
     self.sourceId = retDict[ 'Value' ]
+    self.definitionsToSend = {}
     return True
 
-  def __sendMarks( self, rpcClient, acMarks ):
+  def __sendMarks( self, rpcClient ):
+    """
+    Return true if activities to declare
+    """
     assert self.sourceId
     self.logger.debug( "Sending marks" )
-    retDict = rpcClient.commitMarks( self.sourceId, acMarks )
+    retDict = rpcClient.commitMarks( self.sourceId, self.marksToSend )
     if not retDict[ 'OK' ]:
       self.logger.error( "Can't send activities marks", retDict[ 'Message' ] )
       return False
+    acMissedMarks = {}
     if len ( retDict[ 'Value' ] ) > 0:
       self.logger.debug( "There are activities unregistered" )
-      acRegister = {}
-      acMissedMarks = {}
       for acName in retDict[ 'Value' ]:
         if acName in self.activitiesDefinitions:
-          acRegister[ acName ] = dict( self.activitiesDefinitions[ acName ] )
-          acMissedMarks[ acName ] = acMarks[ acName ]
+          self.definitionsToSend[ acName ] = dict( self.activitiesDefinitions[ acName ] )
+          acMissedMarks[ acName ] = self.marksToSend[ acName ]
         else:
           self.logger.debug( "Server reported unregistered activity that does not exist" )
-      self.logger.debug( "Reregistering activities %s" % ", ".join( acRegister.keys() ) )
-      self.dataToSend.append( ( self.__sendRegistration, acRegister ) )
-      self.dataToSend.append( ( self.__sendMarks, acMissedMarks ) )
-    return True
+    self.marksToSend = acMissedMarks
+    return len( self.definitionsToSend )
 
 
   def forceFlush( self, exitCode ):

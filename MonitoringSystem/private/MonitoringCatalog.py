@@ -179,10 +179,12 @@ class MonitoringCatalog:
     if len( retList ) > 0:
       return retList[0][0]
     else:
+      filePath = m.hexdigest()
+      filePath = "%s/%s.rrd" % ( filePath[:2], filePath )
       gLogger.info( "Registering activity", str( acDict ) )
       if self.__insert( "activities", {
                                'id' : 'NULL',
-                               'filename' : "'%s.rrd'" % m.hexdigest()
+                               'filename' : "'%s'" % filePath
                                },
                                acDict ) == 0:
         return -1

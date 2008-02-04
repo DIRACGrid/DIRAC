@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/RRDManager.py,v 1.7 2008/02/04 11:49:55 acasajus Exp $
-__RCSID__ = "$Id: RRDManager.py,v 1.7 2008/02/04 11:49:55 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/RRDManager.py,v 1.8 2008/02/04 14:21:39 acasajus Exp $
+__RCSID__ = "$Id: RRDManager.py,v 1.8 2008/02/04 14:21:39 acasajus Exp $"
 import os
 import os.path
 import time
@@ -65,6 +65,10 @@ class RRDManager:
     rrdFilePath = "%s/%s" % ( self.rrdLocation, rrdFile )
     if os.path.isfile( rrdFilePath ):
       return True
+    try:
+      os.makedirs( os.path.dirname( rrdFilePath ) )
+    except:
+      pass
     gLogger.info( "Creating rrd file %s" % rrdFile )
     cmd = "%s create '%s'" % ( self.rrdExec, rrdFilePath )
     #Start GMT(now) - 1h
@@ -104,7 +108,7 @@ class RRDManager:
     cmd = "%s update %s" % ( self.rrdExec, rrdFilePath )
     gLogger.verbose( "Last expected time is %s" % expectedTime )
     for entry in valuesList:
-      if entry[0] < expectedTime:
+      if entry[0] <= expectedTime:
         continue
       while expectedTime < entry[0]:
         cmd += " %s:0" % expectedTime
@@ -114,7 +118,7 @@ class RRDManager:
     retVal = self.__exec( cmd )
     if not retVal[ 'OK' ]:
       gLogger.error( "Error updating %s rrd: %s" % ( rrdFile, retVal[ 'Message' ] ) )
-    return retVal
+    return S_OK()
 
   def __generateName( self, *args, **kwargs ):
     """
