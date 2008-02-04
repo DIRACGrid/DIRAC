@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotMonitor.py,v 1.2 2008/01/16 14:27:58 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotMonitor.py,v 1.3 2008/02/04 00:03:16 atsareg Exp $
 # File :   PilotMonitor.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,13 +9,14 @@
      of the AgentMonitor instance for all Grids.
 """
 
-__RCSID__ = "$Id: PilotMonitor.py,v 1.2 2008/01/16 14:27:58 paterson Exp $"
+__RCSID__ = "$Id: PilotMonitor.py,v 1.3 2008/02/04 00:03:16 atsareg Exp $"
 
-from DIRAC.Core.Base.Agent                                      import Agent
-from DIRAC.Core.Utilities                                       import List
-from DIRAC                                                      import S_OK, S_ERROR, gConfig, gLogger
+from DIRAC.Core.Base.Agent    import Agent
+from DIRAC                    import S_OK, S_ERROR, gConfig, gLogger
+from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
+from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 
-import os, sys, re, string, time
+import os, time
 
 AGENT_NAME = 'WorkloadManagement/PilotMonitor'
 
@@ -32,39 +33,71 @@ class PilotMonitor(Agent):
     """Sets defaults
     """
     result = Agent.initialize(self)
-    #Can be passed via a command line .cfg file for gLite and others
-    self.type = gConfig.getValue(self.section+'/Middleware','LCG')
     self.pollingTime = gConfig.getValue(self.section+'/PollingTime',120)
-    self.threadStartDelay = gConfig.getValue(self.section+'/ThreadStartDelay',5)
-    self.pmName = '%sAgentMonitor' %(self.type)
-    self.pmSection = '/%s/%s' % ( '/'.join( List.fromChar(self.section, '/' )[:-2] ), 'PilotAgent/%s' %(self.pmName))
-    self.log.debug('%sPilotMonitor CS section is: %s' %(self.type,self.pmSection))
-    self.pmPath = gConfig.getValue(self.section+'/ModulePath','DIRAC.WorkloadManagementSystem.PilotAgent')
-
-    try:
-      importModule = __import__('%s.%s' %(self.pmPath,self.pmName),globals(),locals(),[self.pmName])
-    except Exception, x:
-      msg = 'Could not import %s.%s' %(self.pmPath,self.pmName)
-      self.log.warn(x)
-      self.log.warn(msg)
-      return S_ERROR(msg)
-
-    try:
-      moduleStr = 'importModule.%s(self.pmSection,self.type)' %(self.pmName)
-      self.agentMonitor = eval(moduleStr)
-    except Exception, x:
-      msg = 'Could not instantiate %s()' %(self.pmName)
-      self.log.warn(x)
-      self.log.warn(msg)
-      return S_ERROR(msg)
-
+    self.selectJobLimit = gConfig.getValue(self.section+'/JobSelectLimit',100)
+    self.maxWaitingTime = gConfig.getValue(self.section+'/MaxJobWaitingTime',5*60)
+    self.maxPilotAgents = gConfig.getValue(self.section+'/MaxPilotsPerJob',4)
+    self.clearPilotsDelay = gConfig.getValue(self.section+'/ClearPilotsDelay',7)
+    
+    self.pilotDB = PilotAgentsDB()
+    self.jobDB = JobDB()
     return result
 
   #############################################################################
   def execute(self):
-    """The PilotAgent execution method.
+    """The PilotMonitor execution method.
     """
-    self.agentMonitor.run()
+    
+    selection = {'Status':'Waiting','MinorStatus':'Pilot Agent Response'}
+    delay  = time.localtime( time.time() - self.maxWaitingTime )
+    delay = time.strftime( "%Y-%m-%d %H:%M:%S", delay )
+    result = self.jobDB.selectJobs(selection, older=delay, limit=self.selectJobLimit)
+    if not result['OK']:
+      return result
+      
+    jobList = result['Value']  
+    for jobID in jobList:
+    
+      print "Processing job",jobID
+    
+      result = self.pilotDB.getPilotsForJob(int(jobID))
+      if not result['OK']:
+        self.log.warn('Failed to get pilots for job %d' % int(jobID))
+        # Assume no pilots were sent yet
+        result = self.jobDB.setJobAttribute(jobID,"MinorStatus",
+                                            "Pilot Agent Submission",
+                                            update=True) 
+        continue
+        
+      pilotList = result['Value']  
+      result = self.pilotDB.getPilotInfo(pilotList)
+      if not result['OK']:
+        self.log.warn('Failed to get pilots info for job %d' % int(jobID))
+        continue
+        
+      resultDict = result['Value']
+      
+      print "Pilot info",resultDict
+      
+      aborted_pilots = []
+      submitted_pilots = []
+      for pRef,pilotDict in resultDict.items():
+        if pilotDict['Status'] == "Aborted":
+          aborted_pilots.append(pRef)
+        if pilotDict['Status'] == "Submitted" or \
+           pilotDict['Status'] == "Scheduled":
+          submitted_pilots.append(pRef)
+          
+      if not submitted_pilots:
+        if len(submitted_pilots) < self.maxPilotAgents:
+          result = self.jobDB.setJobAttribute(jobID,"MinorStatus",
+                                              "Pilot Agent Submission",
+                                              update=True)       
+          
+    result = self.pilotDB.clearPilots(self.clearPilotsDelay)
+    if not result['OK']:
+      self.log.warn('Failed to clear old pilots in the PilotAgentsDB')  
+    
     return S_OK('Monitoring cycle complete.')
-
+    
   #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
