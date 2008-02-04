@@ -84,12 +84,12 @@ class FileCatalog:
       method = getattr(oCatalog,self.call)
       res = method(*parms,**kws)
       if res['OK']:
-        for key,item in res['Value']['Successful']:
+        for key,item in res['Value']['Successful'].items():
           if not successful.has_key(key):
             successful[key] = item
             if failed.has_key(key):
               failed.pop(key)
-        for key,item in res['Value']['Failed']:
+        for key,item in res['Value']['Failed'].items():
           if not successful.has_key(key):
             failed[key] = item
         if len(failed) == 0:
