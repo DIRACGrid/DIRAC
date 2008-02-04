@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSAdministratorHandler.py,v 1.7 2008/02/03 12:25:32 atsareg Exp $
+# $Id: WMSAdministratorHandler.py,v 1.8 2008/02/04 22:11:30 atsareg Exp $
 ########################################################################
 """
 This is a DIRAC WMS administrator interface
@@ -16,7 +16,7 @@ This starts an XMLRPC service exporting the following methods:
 
 """
 
-__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.7 2008/02/03 12:25:32 atsareg Exp $"
+__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.8 2008/02/04 22:11:30 atsareg Exp $"
 
 import os, sys, string, uu, shutil
 from types import *
@@ -27,6 +27,7 @@ from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.ProxyRepositoryDB import ProxyRepositoryDB
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC.Core.Utilities.GridCredentials import renewProxy, getProxyTimeLeft
+from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import *
 
 # This is a global instance of the JobDB class
 jobDB = False
@@ -207,8 +208,15 @@ class WMSAdministratorHandler(RequestHandler):
 ##############################################################################
   types_getPilotOutput = [StringType]
   def export_getPilotOutput(self,pilotReference):
-    """ Get the pilot job standard output and standard error files for the DIRAC
-        job identified by the jobID
+    """ Get the pilot job standard output and standard error files for the Grid
+        job reference
+    """
+
+    return self.__getGridJobOutput(pilotReference)
+
+  def __getGridJobOutput(self,pilotReference):
+    """ Get the pilot job standard output and standard error files for the Grid
+        job reference
     """
 
     result = pilotDB.getPilotInfo(pilotReference)
@@ -228,15 +236,14 @@ class WMSAdministratorHandler(RequestHandler):
       return S_ERROR("Failed to setup the pilot's owner proxy")
 
     new_proxy,old_proxy = result['Value']
-    # make temporary directory tmp_dir
 
     gridType = pilotDict['GridType']
-    result = eval('get'+gridType+'PilotOutput("'+tmp_dir+'")')
+    result = eval('self.__get'+gridType+'PilotOutput("'+tmp_dir+'")')
     if not result['OK']:
       return S_ERROR('Failed to get pilot output'+result['Message'])
 
     stdout = result['StdOut']
-    error = result['Error']
+    error = result['StdError']
     result = pilotDB.storePilotOutput(pilotReference,stdout,error)
 
     resultDict = {}
@@ -244,17 +251,16 @@ class WMSAdministratorHandler(RequestHandler):
     resultDict['StdError'] = error
     resultDict['OwnerDN'] = owner
     resultDict['OwnerGroup'] = group
+    resultDict['FileList'] = result['FileList']
     return S_OK(resultDict)
 
   ##############################################################################
-  types_getLCGSummary = [StringType,StringType]
-  def export_getLCGSummary(self,startdate='',enddate=''):
+  types_getPilotSummary = [StringType,StringType]
+  def export_getPilotSummary(self,startdate='',enddate=''):
     """ Get summary of the status of the LCG Pilot Jobs
     """
 
-    print "----------------------- Inside getLCGSummary "
-
-    result = jobDB.getLCGPilotSummary(startdate,enddate)
+    result = pilotDB.getPilotsSummary(startdate,enddate)
     return result
 
 
