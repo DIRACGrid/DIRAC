@@ -12,6 +12,7 @@ class RAWIntegrityDB(DB):
   def __init__(self, systemInstance='Default', maxQueueSize=10 ):
     DB.__init__(self,'RAWIntegrityDB','DataManagement/RAWIntegrityDB',maxQueueSize)
 
+
   def getActiveFiles(self):
     """ Obtain all the active files in the database along with all their associated metadata
     """
@@ -49,6 +50,26 @@ class RAWIntegrityDB(DB):
       errStr = "RAWIntegrityDB.setFileStatus: Exception while updating file status."
       gLogger.exception(errStr, str(x))
       return S_ERROR(errStr)
+
+  def getMigrationTime(self,lfn):
+    """  Get the migration time for the supplied lfn
+    """  
+    try:
+      gLogger.info("RAWIntegrityDB.getMigrationTime: Attempting to get migration time for %s."  % (lfn))
+      req = "SELECT TIME_TO_SEC(TIMEDIFF(CompleteTime,SubmitTime)) from Files WHERE LFN = '%s' AND Status = 'Done';" % lfn
+      res = self._query(req)
+      if not res['OK']:
+        gLogger.error("RAWIntegrityDB.setFileStatus: Failed to get the migration time.",res['Message'])
+        return res
+      else:
+        migrationTime = int(res['Value'][0][0])
+        return S_OK(migrationTime)
+    except Exception,x:
+      errStr = "RAWIntegrityDB.getMigrationTime: Exception while updating file status."
+      gLogger.exception(errStr, str(x))
+      return S_ERROR(errStr)
+    
+
 
   def addFile(self,lfn,pfn,size,se,guid,checksum):
     """ Insert file into the database
