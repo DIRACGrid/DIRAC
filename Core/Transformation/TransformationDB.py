@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.7 2008/02/05 19:24:17 gkuznets Exp $
+# $Id: TransformationDB.py,v 1.8 2008/02/05 19:25:46 gkuznets Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -80,7 +80,7 @@ class TransformationDB(DB):
     self.lock.release()
     if not result['OK']:
       return result
-    transID = int(result['Value'][0])
+    transID = int(result['Value'][0][0])
     self.filters.append((transID,re.compile(fileMask)))
     result = self.__addTransformationTable(transID)
     # Add already existing files to this transformation if any
