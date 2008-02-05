@@ -31,34 +31,76 @@ class LHCbOnlineStorage(StorageBase):
     serverString = "%s://%s:%s" % (protocol,host,port)
     self.server = xmlrpclib.Server(serverString)
 
+  def getParameters(self):
+    """ This gets all the storage specific parameters pass when instantiating the storage
+    """
+    parameterDict = {}
+    parameterDict['StorageName'] = self.name
+    parameterDict['ProtocolName'] = self.protocolName
+    parameterDict['Protocol'] = self.protocol
+    parameterDict['Host'] = self.host
+    parameterDict['Path'] = self.path
+    parameterDict['Port'] = self.port
+    parameterDict['SpaceToken'] = self.spaceToken
+    parameterDict['WSUrl'] = self.wspath
+    return S_OK(parameterDict)
+
   def isOK(self):
     return self.isok
 
-  def getFile(self,fileTuple):
-    """ Tell the Online system that the migration failed and we want to get the request again
+  def getProtocolPfn(self,pfnDict,withPort):
+    """ From the pfn dict construct the SURL to be used
     """
-    if type(fileTuple) == types.TupleType:
-      urls = [fileTuple]
-    elif type(fileTuple) == types.ListType:
-      urls = fileTuple
+    pfnDict['Path'] = ''
+    res = pfnunparse(pfnDict)
+    pfn = res['Value'].replace('/','')
+    return S_OK(pfn)
+
+  def getFileSize(self,path):
+    """ Get a fake file size
+    """
+    if type(path) == types.StringType:
+      urls = [path]
+    elif type(path) == types.ListType:
+      urls = path
     else:
-      return S_ERROR("LHCbOnline.getFile: Supplied file information must be tuple of list of tuples")
+      return S_ERROR("LHCbOnline.removeFile: Supplied path must be string or list of strings")
+    if not len(path) > 0:
+      return S_ERROR("LHCbOnline.removeFile: No surls supplied.")
     successful = {}
     failed = {}
-    for lfn,ignored in urls:
+    for pfn in urls:
+      successful[pfn] = 0
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+  def requestRetransfer(self,path):
+    """ Tell the Online system that the migration failed and we want to get the request again
+    """
+    if type(path) == types.StringType:
+      urls = [path]
+    elif type(path) == types.ListType:
+      urls = path
+    else:
+      return S_ERROR("LHCbOnline.requestRetransfer: Supplied path must be string or list of strings")
+    if not len(path) > 0:
+      return S_ERROR("LHCbOnline.requestRetransfer: No surls supplied.")
+    successful = {}
+    failed = {}
+    for pfn in urls:
       try:
-        res = self.server.errorMigratingFile(lfn)
+        res = self.server.errorMigratingFile(pfn)
         if res:
-          successful[lfn] = True
-          gLogger.info("LHCbOnline.getFile: Successfully requested file from Online storage.")
+          successful[pfn] = True
+          gLogger.info("LHCbOnline.requestRetransfer: Successfully requested file from Online storage.")
         else:
-          errStr = "LHCbOnline.getFile: Failed to request file from Online storage."
-          failed[lfn] = errStr
-          gLogger.error(errStr,lfn)
+          errStr = "LHCbOnline.requestRetransfer: Failed to request file from Online storage."
+          failed[pfn] = errStr
+          gLogger.error(errStr,pfn)
       except Exception,x:
-        errStr = "LHCbOnline.getFile: Exception while requesting file from Online storage."
+        errStr = "LHCbOnline.requestRetransfer: Exception while requesting file from Online storage."
         gLogger.exception(errStr,str(x))
-        failed[lfn] = errStr
+        failed[pfn] = errStr
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
@@ -75,19 +117,19 @@ class LHCbOnlineStorage(StorageBase):
       return S_ERROR("LHCbOnline.removeFile: No surls supplied.")
     successful = {}
     failed = {}
-    for lfn,ignored in urls:
+    for pfn in urls:
       try:
-        res = self.server.endMigratingFile(lfn)
+        res = self.server.endMigratingFile(pfn)
         if res:
-          successful[lfn] = True
+          successful[pfn] = True
           gLogger.info("LHCbOnline.getFile: Successfully requested file from Online storage.")
         else:
           errStr = "LHCbOnline.getFile: Failed to request file from Online storage."
-          failed[lfn] = errStr
-          gLogger.error(errStr,lfn)
+          failed[pfn] = errStr
+          gLogger.error(errStr,pfn)
       except Exception,x:
         errStr = "LHCbOnline.getFile: Exception while requesting file from Online storage."
         gLogger.exception(errStr,str(x))
-        failed[lfn] = errStr
+        failed[pfn] = errStr
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
