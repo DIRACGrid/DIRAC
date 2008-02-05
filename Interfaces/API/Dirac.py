@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.5 2008/01/09 15:34:05 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.6 2008/02/05 18:48:22 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -24,7 +24,7 @@ The initial instance just exposes job submission via the WMS client.
 
 """
 
-__RCSID__ = "$Id: Dirac.py,v 1.5 2008/01/09 15:34:05 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.6 2008/02/05 18:48:22 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types
 
@@ -36,20 +36,20 @@ from DIRAC.Core.Utilities.File                           import makeGuid
 from DIRAC.Core.Utilities.Subprocess                     import shellCall
 from DIRAC.WorkloadManagementSystem.Client.WMSClient     import WMSClient
 from DIRAC.WorkloadManagementSystem.Client.SandboxClient import SandboxClient
+from DIRAC.Core.DISET.RPCClient                          import RPCClient
 from DIRAC.Core.Utilities.GridCert                       import getGridProxy
 from DIRAC                                               import gConfig, gLogger, S_OK, S_ERROR
 
-COMPONENT_NAME='/Interfaces/API/Dirac'
+COMPONENT_NAME='DiracAPI'
 
 class Dirac:
 
   #############################################################################
-
   def __init__(self):
     """Internal initialization of the DIRAC API.
     """
-    self.log = gLogger
-
+    #self.log = gLogger
+    self.log = gLogger.getSubLogger(COMPONENT_NAME)
     self.site       = gConfig.getValue('/LocalSite/Site','Unknown')
     self.setup      = gConfig.getValue('/DIRAC/Setup','Unknown')
     self.section    = COMPONENT_NAME
@@ -61,10 +61,11 @@ class Dirac:
     if gConfig.getValue(self.section+'/LogLevel','DEBUG') == 'DEBUG':
       self.dbg = True
 
-    self.scratchDir = gConfig.getValue(self.section+'/ScratchDir','/tmp')
+    self.scratchDir = gConfig.getValue(self.section+'/LocalSite/ScratchDir','/tmp')
     self.outputSandboxClient = SandboxClient('Output')
     self.inputSandboxClient = SandboxClient('Input')
     self.client = WMSClient()
+    self.monitoring = RPCClient('WorkloadManagement/JobMonitoring')
 
   #############################################################################
   def submit(self,job,mode=None):
@@ -112,9 +113,9 @@ class Dirac:
         jdlfile = open(tmpdir+'/job.jdl','w')
         print >> jdlfile, job
         jdlfile.close()
-        jobid = self._sendJob(tmpdir+'/job.jdl')
+        jobID = self._sendJob(tmpdir+'/job.jdl')
         shutil.rmtree(tmpdir)
-        return jobid
+        return jobID
 
     #creating a /tmp/guid/ directory for job submission files
     guid = makeGuid()
@@ -134,12 +135,18 @@ class Dirac:
     jdlfile.close()
 
     jdl=jdlfilename
-    jobid = self._sendJob(jdl)
+    jobID = self._sendJob(jdl)
     shutil.rmtree(tmpdir)
-    if not jobid['OK']:
-      self.log.warn(jobid['Message'])
+    if not jobID['OK']:
+      self.log.warn(jobID['Message'])
 
-    return jobid
+    return jobID
+
+  #############################################################################
+  def runLocal(self,job):
+    """This method is equivalent to submit(job,mode='Local').
+    """
+    return S_OK()
 
   #############################################################################
   def _sendJob(self,jdl):
@@ -152,17 +159,17 @@ class Dirac:
        direct use.
 
     """
-    jobid = None
+    jobID = None
 
     try:
-      jobid = self.client.submitJob(jdl)
+      jobID = self.client.submitJob(jdl)
       #raise 'problem'
     except Exception,x:
       checkProxy = getGridProxy()
       if not checkProxy:
         return self.__errorReport(str(x),'No valid proxy found')
 
-    return jobid
+    return jobID
 
   #############################################################################
   def getInputSandbox(self,jobID,outputDir=None):
@@ -172,6 +179,8 @@ class Dirac:
        debugging purposes.  By default the sandbox is downloaded to the current
        directory but this can be overidden via the outputDir parameter. All files
        are extracted into a InputSandbox<JOBID> directory that is automatically created.
+
+       Example Usage:
 
        >>> print dirac.getInputSandbox(12345)
        {'OK': True, 'Value': ['Job__Sandbox__.tar.bz2']}
@@ -187,7 +196,7 @@ class Dirac:
       try:
         jobID = int(jobID)
       except Exception,x:
-        return self.__errorReport(str(x),'Expected integer or convertible integer for existing jobID')
+        return self.__errorReport(str(x),'Expected integer or string for existing jobID')
 
     dirPath = ''
     if outputDir:
@@ -220,6 +229,8 @@ class Dirac:
        this can be overidden via the outputDir parameter. All files are
        extracted into a <JOBID> directory that is automatically created.
 
+       Example Usage:
+
        >>> print dirac.getOutputSandbox(12345)
        {'OK': True, 'Value': ['Job__Sandbox__.tar.bz2']}
 
@@ -234,7 +245,7 @@ class Dirac:
       try:
         jobID = int(jobID)
       except Exception,x:
-        return self.__errorReport(str(x),'Expected integer or convertible integer for existing jobID')
+        return self.__errorReport(str(x),'Expected integer or string for existing jobID')
 
     dirPath = ''
     if outputDir:
@@ -257,6 +268,254 @@ class Dirac:
     else:
       self.log.info('Files retrieved and extracted in %s' %(dirPath))
     return result
+
+  #############################################################################
+  def delete(self,jobID):
+    """Delete job or list of jobs from the WMS, if running these jobs will
+       also be killed.
+
+       Example Usage:
+
+       >>> print dirac.delete(12345)
+       {'OK': True, 'Value': [12345]}
+
+       @param job: JobID
+       @type job: int, string or list
+       @return: S_OK,S_ERROR
+
+    """
+    if type(jobID)==type(" "):
+      try:
+        jobID = int(jobID)
+      except Exception,x:
+        return self.__errorReport(str(x),'Expected integer or string for existing jobID')
+    elif type(jobID)==type([]):
+      try:
+        jobID = [int(job) for job in jobID]
+      except Exception,x:
+        return self.__errorReport(str(x),'Expected integer or string for existing jobID')
+
+    result = self.client.deleteJob(jobID)
+    return result
+
+  #############################################################################
+  def reschedule(self,jobID):
+    """Reschedule a job or list of jobs in the WMS.  This operation is the same
+       as resubmitting the same job as new.  The rescheduling operation may be
+       performed to a configurable maximum number of times but the owner of a job
+       can also reset this counter and reschedule jobs again by hand.
+
+       Example Usage:
+
+       >>> print dirac.reschedule(12345)
+       {'OK': True, 'Value': [12345]}
+
+       @param job: JobID
+       @type job: int, string or list
+       @return: S_OK,S_ERROR
+
+    """
+    if type(jobID)==type(" "):
+      try:
+        jobID = int(jobID)
+      except Exception,x:
+        return self.__errorReport(str(x),'Expected integer or string for existing jobID')
+    elif type(jobID)==type([]):
+      try:
+        jobID = [int(job) for job in jobID]
+      except Exception,x:
+        return self.__errorReport(str(x),'Expected integer or string for existing jobID')
+
+    result = self.client.rescheduleJob(jobID)
+    return result
+
+  #############################################################################
+  def kill(self,jobID):
+    """Issue a kill signal to a running job.  If a job has already completed this
+       action is harmless but otherwise the process will be killed on the compute
+       resource by the Watchdog.
+
+       Example Usage:
+
+        >>> print dirac.kill(12345)
+       {'OK': True, 'Value': [12345]}
+
+       @param job: JobID
+       @type job: int, string or list
+       @return: S_OK,S_ERROR
+
+    """
+    if type(jobID)==type(" "):
+      try:
+        jobID = int(jobID)
+      except Exception,x:
+        return self.__errorReport(str(x),'Expected integer or string for existing jobID')
+    elif type(jobID)==type([]):
+      try:
+        jobID = [int(job) for job in jobID]
+      except Exception,x:
+        return self.__errorReport(str(x),'Expected integer or string for existing jobID')
+
+    result = self.client.killJob(jobID)
+    return result
+
+  #############################################################################
+  def status(self,jobID):
+    """Monitor the status of DIRAC Jobs.
+
+       Example Usage:
+
+       >>> print dirac.status(79241)
+       {79241: {'status': 'outputready', 'site': 'LCG.CERN.ch'}}
+
+       @param jobID: JobID
+       @type jobID: int, string or list
+       @return: S_OK,S_ERROR
+    """
+    if type(jobID)==type(" "):
+      try:
+        jobID = int(jobID).split()
+      except Exception,x:
+        return self.__errorReport(str(x),'Expected integer or string for existing jobID')
+    elif type(jobID)==type([]):
+      try:
+        jobID = [int(job) for job in jobID]
+      except Exception,x:
+        return self.__errorReport(str(x),'Expected integer or string for existing jobID')
+    elif type(jobID)==type(1):
+      jobID = [jobID]
+
+    statusDict = self.monitoring.getJobsStatus(jobID)
+    siteDict = self.monitoring.getJobsSites(jobID)
+    if not statusDict['OK'] or not siteDict['OK']:
+      self.log.warn('Could not obtain job status information')
+      return statusDict
+
+    result = {}
+    for job,vals in statusDict['Value'].items():
+      result[job]=vals
+    for job,vals in siteDict['Value'].items():
+      result[job].update(vals)
+    for job,vals in result.items():
+      if result[job].has_key('JobID'):
+        del result[job]['JobID']
+
+    return S_OK(result)
+
+  #############################################################################
+  def parameters(self,jobID):
+    """Return DIRAC parameters associated with the given job.
+
+       DIRAC keeps track of several job parameters which are kept in the job monitoring
+       service, see example below. Selected parameters also printed to screen.
+
+       Example Usage:
+
+       >>> print dirac.parameters(79241)
+
+       @param jobID: JobID
+       @type jobID: int, string or list
+       @return: S_OK,S_ERROR
+    """
+    if type(jobID)==type(" "):
+      try:
+        jobID = int(jobID).split()
+      except Exception,x:
+        return self.__errorReport(str(x),'Expected integer or string for existing jobID')
+    elif type(jobID)==type([]):
+      try:
+        jobID = [int(job) for job in jobID]
+      except Exception,x:
+        return self.__errorReport(str(x),'Expected integer or string for existing jobID')
+
+    result = self.monitoring.getJobParameters(jobID)
+    if not result['OK']:
+      return result
+
+    if result['Value'].has_key('StandardOutput'):
+      del result['Value']['StandardOutput']
+
+    return result
+
+  #############################################################################
+  def loggingInfo(self,jobID):
+    """DIRAC keeps track of job transitions which are kept in the job monitoring
+       service, see example below.  Logging summary also printed to screen at the
+       INFO level.
+
+       Example Usage:
+
+       >>> print dirac.loggingInfo(79241)
+       {'OK': True, 'Value': [('Received', 'JobPath', 'Unknown', '2008-01-29 15:37:09', 'JobPathAgent'),
+       ('Checking', 'JobSanity', 'Unknown', '2008-01-29 15:37:14', 'JobSanityAgent')]}
+
+       @param jobID: JobID
+       @type jobID: int or string
+       @return: S_OK,S_ERROR
+     """
+    if type(jobID)==type(" "):
+      try:
+        jobID = int(jobID)
+      except Exception,x:
+        return self.__errorReport(str(x),'Expected integer or string for existing jobID')
+    elif type(jobID)==type([]):
+      return self.__errorReport('Expected int or string, not list')
+
+    result = self.monitoring.getJobLoggingInfo(jobID)
+    if not result['OK']:
+      self.log.warn('Could not retrieve logging information for job %s' %jobID)
+      self.log.warn(result)
+      return result
+
+    loggingTupleList = result['Value']
+    #source is removed for printing to control width
+    headers = ('Status','MinorStatus','ApplicationStatus','DateTime')
+    line = ''
+    for i in headers:
+      line += i.ljust(25)
+    self.log.info(line)
+
+    for i in loggingTupleList:
+      line = ''
+      for j in xrange(len(i)-1):
+        line += i[j].ljust(25)
+      self.log.info(line)
+
+    return result
+
+  #############################################################################
+  def peek(self,jobID):
+    """The peek function will attempt to return standard output from the WMS for
+       a given job if this is available.  The standard output is periodically
+       updated from the compute resource via the application Watchdog. Available
+       standard output is  printed to screen at the INFO level.
+
+       Example Usage:
+
+       >>> print dirac.peek(1484)
+       {'OK': True, 'Value': 'Job peek result printed at DIRAC INFO level'}
+
+       @param jobID: JobID
+       @type jobID: int or string
+       @return: S_OK,S_ERROR
+    """
+    if type(jobID)==type(" "):
+      try:
+        jobID = int(jobID)
+      except Exception,x:
+        return self.__errorReport(str(x),'Expected integer or string for existing jobID')
+    elif type(jobID)==type([]):
+      return self.__errorReport('Expected int or string, not list')
+
+    result = self.monitoring.getJobParameter(jobID,'StandardOutput')
+    if not result['OK']:
+      return self.__errorReport(result,'Could not retrieve job attributes')
+
+    if result['Value'].has_key('StandardOutput'):
+      self.log.info(result['Value']['StandardOutput'])
+
+    #deliberately don't return result as this is strictly for visual inspection only
+    return S_OK('Job peek result printed at DIRAC INFO level')
 
   #############################################################################
   def __errorReport(self,error,message=None):
