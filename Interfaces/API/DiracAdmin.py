@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.2 2008/01/30 13:31:56 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.3 2008/02/05 14:01:56 paterson Exp $
 # File :   DiracAdmin.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@ site banning and unbanning, WMS proxy uploading etc.
 
 """
 
-__RCSID__ = "$Id: DiracAdmin.py,v 1.2 2008/01/30 13:31:56 paterson Exp $"
+__RCSID__ = "$Id: DiracAdmin.py,v 1.3 2008/02/05 14:01:56 paterson Exp $"
 
 import DIRAC
 from DIRAC.Core.DISET.RPCClient                          import RPCClient
@@ -220,6 +220,32 @@ class DiracAdmin:
     fd.close()
     result = S_OK(proxyPath)
     return result
+
+  #############################################################################
+  def resetJob(self,jobID):
+    """Reset a job or list of jobs in the WMS.  This operation resets the reschedule
+       counter for a job or list of jobs and allows them to run as new.
+
+       >>> print dirac.reset(12345)
+       {'OK': True, 'Value': [12345]}
+
+       @param job: JobID
+       @type job: integer or list of integers
+       @return: S_OK,S_ERROR
+
+    """
+    if type(jobID)==type(" "):
+      try:
+        jobID = int(jobID)
+      except Exception,x:
+        return self.__errorReport(str(x),'Expected integer or convertible integer for existing jobID')
+    elif type(jobID)==type([]):
+      try:
+        jobID = [int(job) for job in jobID]
+      except Exception,x:
+        return self.__errorReport(str(x),'Expected integer or convertible integer for existing jobIDs')
+
+    self.wmsAdmin.resetJob(jobID)
 
   #############################################################################
   def __errorReport(self,error,message=None):
