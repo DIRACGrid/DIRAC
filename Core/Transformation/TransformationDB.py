@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.8 2008/02/05 19:25:46 gkuznets Exp $
+# $Id: TransformationDB.py,v 1.9 2008/02/05 19:30:15 gkuznets Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -424,7 +424,7 @@ PRIMARY KEY (FileID,StreamName)
 )""" % str(transID)
     result = self._update(req)
     if not result['OK']:
-      return S_ERROR("Failed to add new transformation table "+str(x))
+      return S_ERROR("Failed to add new transformation table "+result['Message'])
     else:
       return S_OK()
 
