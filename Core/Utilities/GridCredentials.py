@@ -1,4 +1,4 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.16 2008/02/01 12:01:29 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.17 2008/02/05 15:49:24 acasajus Exp $
 
 """ Grid Credentials module contains utilities to manage user and host
     certificates and proxies.
@@ -33,7 +33,7 @@
     getVOMSProxyInfo()
 """
 
-__RCSID__ = "$Id: GridCredentials.py,v 1.16 2008/02/01 12:01:29 atsareg Exp $"
+__RCSID__ = "$Id: GridCredentials.py,v 1.17 2008/02/05 15:49:24 acasajus Exp $"
 
 import os
 import os.path
@@ -195,27 +195,20 @@ def setDIRACGroup( userGroup ):
   fd.write( new_proxy )
   fd.close()
 
-def setDIRACGroupInProxy(proxy,group):
+def setDIRACGroupInProxy( proxyData, group ):
   """ Add the DIRAC group string to the proxy. If the group value is None, strip the group
       from the proxy
   """
+  proxyLines = proxyData.split( "\n" )
+  #Strip previous group
+  if proxyLines[0].find( ":::diracgroup=" ) > -1:
+    proxyLines.pop(0)
 
-  if group is None:
-    if proxy.find( ":::diracgroup=" ) == 0:
-      lines = proxy.split('\n')
-      new_proxy = '\n'.join(lines[1:])
-    else:
-      new_proxy = proxy
+  #If group is not None add it
+  if group != None:
+    proxyLines.insert( 0, ":::diracgroup=%s" % group.strip() )
 
-  if proxy.find( ":::diracgroup=" ) == 0:
-    lines = proxy.split('\n')
-    lines[0] = ":::diracgroup=%s\n" % group.strip()
-    new_proxy = '\n'.join(lines)
-  else:
-    new_proxy = ":::diracgroup=%s\n" % group.strip()
-    new_proxy = new_proxy + proxy
-
-  return new_proxy
+  return "%s\n" % "\n".join( proxyLines )
 
 def getDIRACGroup( defaultGroup = "none" ):
   """ Get the user group in the DIRAC framework
@@ -362,7 +355,7 @@ def getProxyTimeLeft(proxy=None):
     return S_OK(0)
   actimeleft = 99999999
   if result['VOMS']:
-    result = getVOMSProxyInfo(proxy,'actimeleft')   
+    result = getVOMSProxyInfo(proxy,'actimeleft')
     actimeleft = result['Value']
 
   return S_OK(min(timeleft,actimeleft))
@@ -958,7 +951,7 @@ def getVOMSAttributes(proxy,switch="all"):
     elif attributes:
       returnValue = voName+":"+attributes[0]
     else:
-      returnValue = voName  
+      returnValue = voName
   elif switch == 'all':
     returnValue = attributes
 
