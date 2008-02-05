@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/RRDManager.py,v 1.9 2008/02/04 16:22:17 acasajus Exp $
-__RCSID__ = "$Id: RRDManager.py,v 1.9 2008/02/04 16:22:17 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/RRDManager.py,v 1.10 2008/02/05 15:25:33 acasajus Exp $
+__RCSID__ = "$Id: RRDManager.py,v 1.10 2008/02/05 15:25:33 acasajus Exp $"
 import os
 import os.path
 import time
@@ -104,18 +104,24 @@ class RRDManager:
     retVal = self.__getLastUpdateTime( rrdFilePath )
     if not retVal[ 'OK' ]:
       return retVal
-    expectedTime = retVal[ 'Value' ] + self.bucketTime
+    nextUpdateTime = retVal[ 'Value' ] + self.bucketTime
     cmd = "%s update %s" % ( self.rrdExec, rrdFilePath )
-    gLogger.verbose( "Last expected time is %s" % expectedTime )
+    gLogger.verbose( "Expected update time is %s" % nextUpdateTime )
+    print valuesList
+    rrdUpdates = []
     for entry in valuesList:
-      while expectedTime < entry[0]:
-        cmd += " %s:0" % expectedTime
-        expectedTime += self.bucketTime
-      cmd += " %s:%s" % entry
-      expectedTime = entry[0]
-    retVal = self.__exec( cmd )
-    if not retVal[ 'OK' ]:
-      gLogger.error( "Error updating %s rrd: %s" % ( rrdFile, retVal[ 'Message' ] ) )
+      while nextUpdateTime < entry[0]:
+        rrdUpdates.append( "%s:0" % nextUpdateTime )
+        nextUpdateTime += self.bucketTime
+      rrdUpdates.append( "%s:%s" % entry )
+      nextUpdateTime = entry[0] + self.bucketTime
+    maxRRDArgs = 50
+    for i in range( 0, len( rrdUpdates ), maxRRDArgs ):
+      finalCmd = "%s %s" % ( cmd, " ".join( rrdUpdates[ i: i + maxRRDArgs ] ) )
+      print finalCmd
+      retVal = self.__exec( finalCmd )
+      if not retVal[ 'OK' ]:
+        gLogger.error( "Error updating %s rrd: %s" % ( rrdFile, retVal[ 'Message' ] ) )
     return S_OK()
 
   def __generateName( self, *args, **kwargs ):
