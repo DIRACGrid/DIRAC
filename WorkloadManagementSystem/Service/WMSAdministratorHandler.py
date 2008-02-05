@@ -1,22 +1,23 @@
 ########################################################################
-# $Id: WMSAdministratorHandler.py,v 1.9 2008/02/04 22:43:52 atsareg Exp $
+# $Id: WMSAdministratorHandler.py,v 1.10 2008/02/05 23:36:43 atsareg Exp $
 ########################################################################
 """
-This is a DIRAC WMS administrator interface
+This is a DIRAC WMS administrator interface.
+It exposes the following methods:
 
-usage: WMSAdministrator <ini-file> ...
-
-This starts an XMLRPC service exporting the following methods:
-
+Site mask related methods:
     setMask(<site mask>)
     getMask()
-    getLCGOutput(jobid)
+  
+User proxy related methods:     
     getProxy(DN)
+    
+Access to the pilot data:    
     getWMSStats()
 
 """
 
-__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.9 2008/02/04 22:43:52 atsareg Exp $"
+__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.10 2008/02/05 23:36:43 atsareg Exp $"
 
 import os, sys, string, uu, shutil
 from types import *
@@ -26,7 +27,7 @@ from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.ProxyRepositoryDB import ProxyRepositoryDB
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
-from DIRAC.Core.Utilities.GridCredentials import renewProxy, getProxyTimeLeft
+from DIRAC.Core.Utilities.GridCredentials import setupProxy, renewProxy, getProxyTimeLeft, setDIRACGroupInProxy
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import *
 
 # This is a global instance of the JobDB class
@@ -253,12 +254,13 @@ class WMSAdministratorHandler(RequestHandler):
     new_proxy,old_proxy = result['Value']
 
     gridType = pilotDict['GridType']
-    result = eval('self.__get'+gridType+'PilotOutput("'+tmp_dir+'")')
+    result = eval('get'+gridType+'PilotOutput("'+pilotReference+'")')
     if not result['OK']:
       return S_ERROR('Failed to get pilot output'+result['Message'])
 
     stdout = result['StdOut']
     error = result['StdError']
+    fileList = result['FileList']
     result = pilotDB.storePilotOutput(pilotReference,stdout,error)
 
     resultDict = {}
@@ -266,7 +268,7 @@ class WMSAdministratorHandler(RequestHandler):
     resultDict['StdError'] = error
     resultDict['OwnerDN'] = owner
     resultDict['OwnerGroup'] = group
-    resultDict['FileList'] = result['FileList']
+    resultDict['FileList'] = fileList
     return S_OK(resultDict)
 
   ##############################################################################
