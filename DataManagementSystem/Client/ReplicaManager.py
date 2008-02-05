@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalogue. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.21 2008/02/05 11:06:19 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.22 2008/02/05 11:37:01 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -211,6 +211,39 @@ class ReplicaManager:
       return S_ERROR(errStr)
     return res
 
+  def getPfn(self,pfn,diracSE):
+    """ Get a local copy of the PFN from the given Storage Element.
+
+        'pfn' is the pfn
+        'storageElement' is the DIRAC storage element
+    """
+    if type(pfn) == types.ListType:
+      pfns = pfn
+    elif type(pfn) == types.StringType:
+      pfns = [pfn]
+    else:
+      errStr = "ReplicaManager.getPfn: Supplied pfn must be string or list of strings."
+      gLogger.error(errStr)
+      return S_ERROR(errStr)
+    ###########################################################
+    # Get a local copy depending on replica preference
+    storageElement = StorageElement(diracSE)
+    res = storageElement.getFileSize(pfns)
+    if not res['OK']:
+      errStr = "ReplicaManager.getPfn: Failed to get file sizes for pfns."
+      gLogger.error(errStr,res['Message'])
+      return res
+    successful = {}
+    failed = res['Valued']['Failed']
+    for pfn,size in res['Value']['Successful'].items():
+      res = storageElement.getFile(pfn,size)
+      if res['OK']:
+        successful[pfn] = True
+      else:
+        failed[pfn] = res['Message']
+    resDict = {'Successful':successful,'Failed':failed}
+    return S_OK(resDict)
+
   def getFile(self,lfn):
     """ Get a local copy of a LFN from Storage Elements.
 
@@ -270,10 +303,11 @@ class ReplicaManager:
           if res['OK']:
             gotFile = True
             successful[lfn] = res['Value']
-      # If we get here then we failed to get any replicas
-      errStr = "ReplicaManager.getFile: Failed to get local copy from any replicas."
-      gLogger.error(errStr,lfn)
-      failed[lfn] = errStr
+      if not gotFile:
+        # If we get here then we failed to get any replicas
+        errStr = "ReplicaManager.getFile: Failed to get local copy from any replicas."
+        gLogger.error(errStr,lfn)
+        failed[lfn] = errStr
     resDict = {'Successful':successful,'Failed':failed}
     return S_OK(resDict)
 
@@ -573,7 +607,7 @@ class ReplicaManager:
           if not res['OK']:
             pfn = physicalFile
           else:
-            pfn = res['Value']  
+            pfn = res['Value']
           tuple = (lfn,pfn,fileSize,storageElementName,fileGuid,checksum)
           fileTuples.append(tuple)
     gLogger.info("ReplicaManager.__registerFile: Resolved %s files for registration." % len(fileTuples))
