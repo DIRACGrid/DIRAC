@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalogue. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.20 2008/02/04 22:48:52 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.21 2008/02/05 11:06:19 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -906,7 +906,7 @@ class ReplicaManager:
     storageElement = StorageElement(storageElementName)
     if not storageElement.isValid()['Value']:
       errStr = "ReplicaManager.__removePhysicalReplica: Failed to instantiate Storage Element for removal."
-      gLogger.error(errStr,destSE)
+      gLogger.error(errStr,storageElement)
       return S_ERROR(errStr)
     res = storageElement.removeFile(pfnsToRemove)
     if not res['OK']:
