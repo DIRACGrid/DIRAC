@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/RRDManager.py,v 1.12 2008/02/05 17:57:01 acasajus Exp $
-__RCSID__ = "$Id: RRDManager.py,v 1.12 2008/02/05 17:57:01 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/RRDManager.py,v 1.13 2008/02/05 20:01:52 acasajus Exp $
+__RCSID__ = "$Id: RRDManager.py,v 1.13 2008/02/05 20:01:52 acasajus Exp $"
 import os
 import os.path
 import time
@@ -102,18 +102,13 @@ class RRDManager:
     rrdFilePath = "%s/%s" % ( self.rrdLocation, rrdFile )
     gLogger.info( "Updating rrd file", rrdFilePath )
     retVal = self.__getLastUpdateTime( rrdFilePath )
-    if not retVal[ 'OK' ]:
-      return retVal
-    nextUpdateTime = retVal[ 'Value' ] + self.bucketTime
+    if retVal[ 'OK' ]:
+      lastUpdateTime = retVal[ 'Value' ]
+      gLogger.verbose( "Last update time is %s" % lastUpdateTime )
     cmd = "%s update %s" % ( self.rrdExec, rrdFilePath )
-    gLogger.verbose( "Expected update time is %s" % nextUpdateTime )
     rrdUpdates = []
     for entry in valuesList:
-      while nextUpdateTime < entry[0]:
-        rrdUpdates.append( "%s:0" % nextUpdateTime )
-        nextUpdateTime += self.bucketTime
       rrdUpdates.append( "%s:%s" % entry )
-      nextUpdateTime = entry[0] + self.bucketTime
     maxRRDArgs = 50
     for i in range( 0, len( rrdUpdates ), maxRRDArgs ):
       finalCmd = "%s %s" % ( cmd, " ".join( rrdUpdates[ i: i + maxRRDArgs ] ) )
@@ -136,10 +131,13 @@ class RRDManager:
     Calculate the graph query in rrd lingo for an activity
     """
     if rrdType in ( "mean", "sum", "rate" ):
-      return "'DEF:%s=%s/%s:value:AVERAGE'" % ( entryName, self.rrdLocation, rrdFile )
+      varStr = "'DEF:ac%sRAW=%s/%s:value:AVERAGE'" % ( entryName, self.rrdLocation, rrdFile )
+      varStr += " 'CDEF:%s=ac%sRAW,UN,0,ac%sRAW,IF'" % ( entryName, entryName, entryName )
+      return varStr
     elif rrdType == "acum":
-      varStr = "'DEF:raw%s=%s/%s:value:AVERAGE'" % ( entryName, self.rrdLocation, rrdFile )
-      varStr += " 'CDEF:%s=PREV,UN,raw%s,PREV,raw%s,+,IF'" % ( entryName, entryName, entryName )
+      varStr = "'DEF:ac%sRAW=%s/%s:value:AVERAGE'" % ( entryName, self.rrdLocation, rrdFile )
+      varStr += " 'CDEF:ac%sNOTUN=ac%sRAW,UN,0,ac%sRAW,IF'" % ( entryName, entryName, entryName )
+      varStr += " 'CDEF:%s=PREV,UN,ac%sNOTUN,PREV,ac%sNOTUN,+,IF'" % ( entryName, entryName, entryName )
       return varStr
     raise Exception( "rrdType %s is not valid" % rrdType )
 
