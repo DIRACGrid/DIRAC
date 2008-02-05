@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalogue. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.22 2008/02/05 11:37:01 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.23 2008/02/05 13:22:07 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -234,7 +234,7 @@ class ReplicaManager:
       gLogger.error(errStr,res['Message'])
       return res
     successful = {}
-    failed = res['Valued']['Failed']
+    failed = res['Value']['Failed']
     for pfn,size in res['Value']['Successful'].items():
       res = storageElement.getFile(pfn,size)
       if res['OK']:
@@ -949,6 +949,35 @@ class ReplicaManager:
       return S_ERROR(errStr)
     else:
       infoStr = "ReplicaManager.__removePhysicalReplica: Successfully issued removal request."
+      gLogger.info(infoStr)
+      return res
+
+  def  onlineRetransfer(self,diracSE,pfnToRemove):
+    """ Requests the online system to re-transfer files
+      
+        'diracSE' is the storage element where the file should be removed from
+        'pfnsToRemove' is the physical files
+    """
+    if type(pfnToRemove) == types.ListType:
+      pfns = pfnToRemove
+    elif type(pfnToRemove) == types.StringType:
+      pfns = [pfnToRemove]
+    else:
+      errStr = "ReplicaManager.onlineRetransfer: Supplied pfns must be string or list of strings."
+      gLogger.error(errStr)
+      return S_ERROR(errStr)
+    storageElement = StorageElement(diracSE)
+    if not storageElement.isValid()['Value']:
+      errStr = "ReplicaManager.onlineRetransfer: Failed to instantiate Storage Element for retransfer."
+      gLogger.error(errStr,diracSE)
+      return S_ERROR(errStr)
+    res = storageElement.retransferOnlineFile(pfns)
+    if not res['OK']:
+      errStr = "ReplicaManager.onlineRetransfer: Failed to request retransfers."
+      gLogger.error(errStr,res['Message'])  
+      return S_ERROR(errStr)
+    else:
+      infoStr = "ReplicaManager.onlineRetransfer: Successfully issued retransfer request."
       gLogger.info(infoStr)
       return res
 
