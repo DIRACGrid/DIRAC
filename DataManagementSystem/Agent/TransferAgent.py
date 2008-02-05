@@ -260,6 +260,33 @@ class TransferAgent(Agent):
               gLogger.info("TransferAgent.execute: File already completed.")
 
         ################################################
+        #  If the sub-request is a get operation
+        elif operation == 'get':
+          gLogger.info("TransferAgent.execute: Attempting to execute %s sub-request." % operation)
+          sourceSE = subRequestAttributes['TargetSE']
+          for subRequestFile in subRequestFiles:
+            if subRequestFile['Status'] == 'Waiting':
+              lfn = str(subRequestFile['LFN'])
+              pfn = str(subRequestFile['PFN'])
+              got = False
+              if sourceSE and pfn:
+                res = self.ReplicaManager.getPfn(pfn,sourceSE)
+                if res['Value']['Successful'].has_key(pfn):
+                  got = True
+              else:
+                res = self.ReplicaManager.getFile(lfn)
+                if res['Value']['Successful'].has_key(lfn):
+                  got = False
+              if got: 
+                gLogger.info("TransferAgent.execute: Successfully got %s." % lfn)
+                oRequest.setSubRequestFileAttributeValue(ind,'transfer',lfn,'Status','Done')
+              else:
+                errStr = "TransferAgent.execute: Failed to get file."
+                gLogger.error(errStr,lfn)
+            else:
+              gLogger.info("TransferAgent.execute: File already completed.")   
+
+        ################################################
         #  If the sub-request is none of the above types
         else:
           gLogger.error("TransferAgent.execute: Operation not supported.", operation)
