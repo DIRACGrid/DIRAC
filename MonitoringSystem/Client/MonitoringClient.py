@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.20 2008/02/04 14:21:39 acasajus Exp $
-__RCSID__ = "$Id: MonitoringClient.py,v 1.20 2008/02/04 14:21:39 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.21 2008/02/05 16:07:48 acasajus Exp $
+__RCSID__ = "$Id: MonitoringClient.py,v 1.21 2008/02/05 16:07:48 acasajus Exp $"
 
 import threading
 import time
@@ -75,6 +75,8 @@ class MonitoringClient:
       self.sendingThread = threading.Thread( target = self.__periodicFlush )
       self.sendingThread.setDaemon( 1 )
       self.sendingThread.start()
+      #HACK: Avoid exiting while the thread is starting
+      time.sleep( 0.1 )
 
   def __periodicFlush( self ):
     while self.sendingMode == "periodic":
