@@ -1119,6 +1119,65 @@ class StorageElement:
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
+
+  def retransferOnlineFile(self,pfn):
+    """ This method requests that online system attempts to retransfer files
+
+        'pfn' is the physical file name (as registered in the LFC)
+    """
+    if type(pfn) == types.StringType:
+      pfns = [pfn]
+    elif type(pfn) == types.ListType:
+      pfns = pfn
+    else:
+      return S_ERROR("StorageElement.retransferOnlineFile: Supplied pfns must be string or list of strings")
+    successful = {}
+    failed = {}
+    # Try all of the storages one by one
+    for storage in self.storages:
+      pfnDict = {}
+      res = storage.getParameters()
+      protocolName = res['Value']['ProtocolName']
+      for pfn in pfns:
+        # If we have not already obtained metadata for the supplied pfn
+        if not successful.has_key(pfn):
+          res  = pfnparse(pfn)
+          if not res['OK']:
+            errStr = "StorageElement.retransferOnlineFile: Failed to parse supplied PFN."
+            gLogger.error(errStr,"%s: %s" % (pfn,res['Message']))
+            if not failed.has_key(pfn):
+              failed[pfn] = ''
+            failed[pfn] = "%s %s" % (failed[pfn],errStr)
+          else:
+            res = storage.getProtocolPfn(res['Value'],True)
+            if not res['OK']:
+              infoStr = "StorageElement.retransferOnlineFile%s." % res['Message']
+              gLogger.error(infoStr,'%s for protocol %s' % (pfn,protocolName))
+            else:
+              pfnDict[res['Value']] = pfn
+      if not len(pfnDict.keys()) > 0:
+        gLogger.info("StorageElement.retransferOnlineFile: No pfns generated for protocol %s." % protocolName)
+      else:
+        gLogger.info("StorageElement.retransferOnlineFile: Attempting to get access urls for %s physical files." % len(pfnDict.keys()))
+        res = storage.requestRetransfer(pfnDict.keys())
+        if not res['OK']:
+          infoStr = "StorageElement.retransferOnlineFile: Completely failed to get access urls."
+          gLogger.error(infoStr,'%s for protocol %s: %s' % (self.name,protocolName,res['Message']))
+          for protocolPfn,pfn in pfnDict.items():
+            failed[pfn] = res['Message']
+        else:
+          for protocolPfn,pfn in pfnDict.items():
+            if not res['Value']['Successful'].has_key(protocolPfn):
+              if not failed.has_key(pfn):
+                failed[pfn] = ''
+              failed[pfn] = "%s %s" % (failed[pfn],res['Value']['Failed'][protocolPfn])
+            else:
+              successful[pfn] = {protocolName:res['Value']['Successful'][protocolPfn]}
+              if failed.has_key(pfn):
+                failed.pop(pfn)
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
   #################################################################################################
   #
   # These are the methods for file replication (not supported directly in the storage plug-ins
