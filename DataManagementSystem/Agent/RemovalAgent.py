@@ -42,8 +42,8 @@ class RemovalAgent(Agent):
     self.threadPoolDepth = gConfig.getValue(self.section+'/ThreadPoolDepth',1)
     self.threadPool = ThreadPool(1,self.maxNumberOfThreads)
 
-    self.useProxies = gConfig.getValue(self.section+'/UseProxies',False)
-    if self.useProxies:
+    self.useProxies = gConfig.getValue(self.section+'/UseProxies')
+    if self.useProxies == 'True':
       self.wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
       self.proxyDN = gConfig.getValue(self.section+'/ProxyDN','')
       self.proxyGroup = gConfig.getValue(self.section+'/ProxyGroup','')
@@ -54,7 +54,7 @@ class RemovalAgent(Agent):
 
   def execute(self):
 
-    if self.useProxies:
+    if self.useProxies == 'True':
       ############################################################
       #
       # Get a valid proxy for the current activity
@@ -136,14 +136,14 @@ class RemovalAgent(Agent):
         operation = subRequestAttributes['Operation']
 
         ################################################
-        #  If the sub-request is a put and register operation
+        #  If the sub-request is a physical removal operation
         if operation == 'physicalRemoval':
           gLogger.info("RemovalAgent.execute: Attempting to execute %s sub-request." % operation)
           diracSE = subRequestAttributes['TargetSE']
           for subRequestFile in subRequestFiles:
             if subRequestFile['Status'] == 'Waiting':
-              pfn = subRequestFile['PFN']
-              lfn = subRequestFile['LFN']
+              pfn = str(subRequestFile['PFN'])
+              lfn = str(subRequestFile['LFN'])
               res = self.ReplicaManager.removePhysicalFile(diracSE,pfn)
               if res['OK']:
                 if res['Value']['Successful'].has_key(pfn):
@@ -154,6 +154,29 @@ class RemovalAgent(Agent):
                   gLogger.error(errStr,"%s %s %s" % (pfn,diracSE,res['Value']['Failed'][pfn]))
               else:
                 errStr = "RemovalAgent.execute: Completely failed to remove physical."
+                gLogger.error(errStr, res['Message'])
+            else:
+              gLogger.info("RemovalAgent.execute: File already completed.")
+
+        ################################################
+        #  If the sub-request is a request to the online system to retransfer
+        elif operation == 'reTransfer':
+          gLogger.info("RemovalAgent.execute: Attempting to execute %s sub-request." % operation)
+          diracSE = subRequestAttributes['TargetSE']
+          for subRequestFile in subRequestFiles:
+            if subRequestFile['Status'] == 'Waiting':
+              pfn = str(subRequestFile['PFN'])
+              lfn = str(subRequestFile['LFN'])
+              res = self.ReplicaManager.onlineRetransfer(diracSE,pfn)
+              if res['OK']:
+                if res['Value']['Successful'].has_key(pfn):
+                  gLogger.info("RemovalAgent.execute: Successfully requested retransfer of %s." % pfn)
+                  oRequest.setSubRequestFileAttributeValue(ind,'removal',lfn,'Status','Done')
+                else:
+                  errStr = "RemovalAgent.execute: Failed to request retransfer."
+                  gLogger.error(errStr,"%s %s %s" % (pfn,diracSE,res['Value']['Failed'][pfn]))
+              else:
+                errStr = "RemovalAgent.execute: Completely failed to request retransfer."
                 gLogger.error(errStr, res['Message'])
             else:
               gLogger.info("RemovalAgent.execute: File already completed.")
