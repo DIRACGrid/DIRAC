@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/Activity.py,v 1.2 2008/02/04 11:49:55 acasajus Exp $
-__RCSID__ = "$Id: Activity.py,v 1.2 2008/02/04 11:49:55 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/Activity.py,v 1.3 2008/02/05 17:57:01 acasajus Exp $
+__RCSID__ = "$Id: Activity.py,v 1.3 2008/02/05 17:57:01 acasajus Exp $"
 
 import types
 from string import Template
@@ -67,11 +67,6 @@ class Activity:
 
   def getUnit(self):
     return self.__getField( 'activities.unit' )
-
-  def getRRDUnit(self):
-    if self.getType() == "rate":
-      return "%s/sec" % self.getUnit()
-    return "%s/min" % self.getUnit()
 
   def getFile(self):
     return self.__getField( 'activities.filename' )
