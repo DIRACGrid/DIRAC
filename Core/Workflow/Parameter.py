@@ -1,8 +1,8 @@
-# $Id: Parameter.py,v 1.20 2008/02/04 13:25:29 gkuznets Exp $
+# $Id: Parameter.py,v 1.21 2008/02/06 14:15:52 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.20 $"
+__RCSID__ = "$Revision: 1.21 $"
 
 # unbinded method, returns indentation string
 def indent(indent=0):
@@ -340,9 +340,9 @@ class ParameterCollection(list):
         elif isinstance(opt, str):
             par = self.find(opt)
             if par == None:
-                print "ERROR ParameterCollection.linkUp() can not find parameter with the name=%s"% (s)
+                print "ERROR ParameterCollection.linkUp() can not find parameter with the name=%s"% (par)
             else:
-                par.link(objname, prefix+p.getName()+postfix)
+                par.link(objname, prefix+par.getName()+postfix)
         else:
             raise TypeError('Can not link object type '+ str(type(opt))+' to the '+str(type(self))+'.')
 
