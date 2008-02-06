@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSAdministratorHandler.py,v 1.10 2008/02/05 23:36:43 atsareg Exp $
+# $Id: WMSAdministratorHandler.py,v 1.11 2008/02/06 18:16:55 atsareg Exp $
 ########################################################################
 """
 This is a DIRAC WMS administrator interface.
@@ -17,7 +17,7 @@ Access to the pilot data:
 
 """
 
-__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.10 2008/02/05 23:36:43 atsareg Exp $"
+__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.11 2008/02/06 18:16:55 atsareg Exp $"
 
 import os, sys, string, uu, shutil
 from types import *
@@ -163,6 +163,7 @@ class WMSAdministratorHandler(RequestHandler):
       proxy_to_send = setDIRACGroupInProxy(tmp_proxy,group)
     else:
       proxy_to_send = proxy
+            
     result = self.getRemoteCredentials()
     userDN = DN
     if not DN:
@@ -170,6 +171,8 @@ class WMSAdministratorHandler(RequestHandler):
     userGroup = group
     if not group:
       userGroup = result['group']
+
+    gLogger.info('Uploading proxy of %s, group %s' %(userDN,userGroup))
 
     result = proxyRepository.storeProxy(proxy_to_send,userDN,userGroup)
     return result
@@ -185,6 +188,8 @@ class WMSAdministratorHandler(RequestHandler):
     userGroup = group
     if not group:
       userGroup = result['group']
+      
+    gLogger.info('Destroying proxy of %s, group %s' %(userDN,userGroup))  
 
     result = proxyRepository.destroyProxy(userDN,userGroup)
     return result
@@ -228,8 +233,12 @@ class WMSAdministratorHandler(RequestHandler):
       return result
 
     pilotReference = result['Value']
-    return self.__getGridJobOutput(pilotReference)
+    if pilotReference:
+      return self.__getGridJobOutput(pilotReference)
+    else:
+      return S_ERROR('No pilot job reference found')  
 
+  ##############################################################################
   def __getGridJobOutput(self,pilotReference):
     """ Get the pilot job standard output and standard error files for the Grid
         job reference
@@ -242,6 +251,23 @@ class WMSAdministratorHandler(RequestHandler):
     pilotDict = result['Value']
     owner = pilotDict['OwnerDN']
     group = pilotDict['OwnerGroup']
+    
+    result = pilotDB.getPilotOutput(pilotReference)
+    if result['OK']:
+      stdout = result['Value']['StdOut']
+      error = result['Value']['StdError']
+      print "Pilot Output from DB"
+      print stdout
+      print error
+      if stdout or error:
+        resultDict = {}
+        resultDict['StdOut'] = stdout
+        resultDict['StdError'] = error
+        resultDict['OwnerDN'] = owner
+        resultDict['OwnerGroup'] = group
+        resultDict['FileList'] = []
+        return S_OK(resultDict)
+    
     result = proxyRepository.getProxy(owner,group)
     if not result['OK']:
       return S_ERROR("Failed to get the pilot's owner proxy")
@@ -256,7 +282,7 @@ class WMSAdministratorHandler(RequestHandler):
     gridType = pilotDict['GridType']
     result = eval('get'+gridType+'PilotOutput("'+pilotReference+'")')
     if not result['OK']:
-      return S_ERROR('Failed to get pilot output'+result['Message'])
+      return S_ERROR('Failed to get pilot output: '+result['Message'])
 
     stdout = result['StdOut']
     error = result['StdError']
