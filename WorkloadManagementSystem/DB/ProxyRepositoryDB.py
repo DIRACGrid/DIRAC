@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/Attic/ProxyRepositoryDB.py,v 1.13 2008/02/03 12:24:10 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/Attic/ProxyRepositoryDB.py,v 1.14 2008/02/06 18:13:04 atsareg Exp $
 ########################################################################
 """ ProxyRepository class is a front-end to the proxy repository Database
 """
 
-__RCSID__ = "$Id: ProxyRepositoryDB.py,v 1.13 2008/02/03 12:24:10 atsareg Exp $"
+__RCSID__ = "$Id: ProxyRepositoryDB.py,v 1.14 2008/02/06 18:13:04 atsareg Exp $"
 
 import time
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
@@ -35,6 +35,11 @@ class ProxyRepositoryDB(DB):
       self.vomsGroupMappingDict = result['Value']
     else:
       self.vomsGroupMappingDict = {}
+    
+    self.servercert = gConfig.getValue('/DIRAC/Security/CertFile',
+                              '/opt/dirac/etc/grid-security/hostcert.pem')
+    self.serverkey = gConfig.getValue('/DIRAC/Security/KeyFile',
+                              '/opt/dirac/etc/grid-security/hostkey.pem')
 
 #############################################################################
   def storeProxy(self,proxy,dn,group):
@@ -58,6 +63,16 @@ class ProxyRepositoryDB(DB):
     result = getProxyTimeLeft(proxy)
     if not result['OK']:
       return S_ERROR('Proxy not valid')
+      
+    # Force the VOMS conversion with the proper role corresponding to the 
+    # group in the request  
+    force_VOMS = False
+    if self.vomsGroupMappingDict.has_key(group):
+      if attributeString != self.vomsGroupMappingDict[group]:
+        force_VOMS = True  
+    else:
+      return S_ERROR('Non-valid user group requested for proxy '+group)    
+      
     time_left = result['Value']
     ownergroup = group
 
@@ -78,26 +93,12 @@ class ProxyRepositoryDB(DB):
 
     # Decide if we should store and convert the new proxy
     if not proxy_exists:
-      if proxyType != "VOMS":
-        # Attempt to convert into a VOMS proxy
-
-        self.log.verbose('Converting proxy to VOMS for '+dn)
-
-        if self.vomsGroupMappingDict.has_key(group):
-          proxyAttr = self.VO+":"+self.vomsGroupMappingDict[group]
-          result = createVOMSProxy(proxy,attributes=proxyAttr)
-        else:
-          result = createVOMSProxy(proxy,vo=self.VO)
-
-        if result['OK']:
-          self.log.info('VOMS conversion done for '+dn)
-          new_proxy = result['Value']
-          proxy_to_store = setDIRACGroupInProxy(new_proxy,group)
-          proxyType = "VOMS"
-          result = getProxyTimeLeft(proxy_to_store)
-          if not result['OK']:
-            return S_ERROR('Proxy not valid')
-          time_left = result['Value']
+      if proxyType != "VOMS" or force_VOMS:
+        result = self.__convertProxyToVOMS(proxy,group,dn,proxyType)
+        if not result['OK']:
+          return S_ERROR('Failed to convert proxy to VOMS')
+        proxy_to_store = result['VOMS']
+        time_left = result['TimeLeft']  
       else:
         proxy_to_store = proxy
 
@@ -118,6 +119,16 @@ class ProxyRepositoryDB(DB):
       # Store new proxy if it is significantly longer than the existing one
       # or the new VOMS proxy replaces the old GRID proxy
       if relative_time_delta > 0.1 or force_proxy:
+        # check if have to convert the proxy to VOMS
+        if proxyType != "VOMS" or force_VOMS:
+          result = self.__convertProxyToVOMS(proxy,group,dn,proxyType)
+          if not result['OK']:
+            return S_ERROR('Failed to convert proxy to VOMS')
+          proxy_to_store = result['VOMS']
+          time_left = result['TimeLeft'] 
+        else:
+          proxy_to_store = proxy  
+          
         cmd = 'UPDATE Proxies SET Proxy=\'%s\',' % proxy
         cmd = cmd + ' ExpirationTime = NOW() + INTERVAL %d SECOND, ' % time_left
         cmd = cmd + ' ProxyType=\'%s\' ' % proxyType
@@ -134,6 +145,59 @@ class ProxyRepositoryDB(DB):
           return S_ERROR('Failed to store ticket')
 
     return S_OK()
+    
+#############################################################################
+  def __convertProxyToVOMS(self,proxy,group,dn,proxytype):
+    """ Convert the proxy to the VOMS proxy with the given group. If proxytype
+        is already VOMS, recreate the grid proxy from MyProxy
+    """    
+            
+    # If proxy is VOMS, we have to start from MyProxy delegation
+    result = getProxyTimeLeft(proxy)
+    if result['OK']:
+      time_left = result['Value']
+    else:
+      return S_ERROR('Invalid proxy')
+                
+    if proxytype == "VOMS":
+      result = getMyProxyDelegation(proxy,time_left,
+                                    server_cert=self.servercert,
+                                    server_key=self.serverkey)
+            
+      if result['OK']:
+        proxy_plain = result['Value']
+      else:
+        return S_ERROR('Failed to get MyProxy delegation')
+    else:
+      proxy_plain = proxy      
+            
+    # Attempt to convert into a VOMS proxy
+
+    self.log.verbose('Converting proxy to VOMS for '+dn)
+
+    if self.vomsGroupMappingDict.has_key(group):
+      proxyAttr = self.VO+":"+self.vomsGroupMappingDict[group]
+      result = createVOMSProxy(proxy_plain,attributes=proxyAttr)
+    else:
+      result = createVOMSProxy(proxy_plain,vo=self.VO)
+
+    if result['OK']:
+      self.log.info('VOMS conversion done for '+dn)
+      new_proxy = result['Value']
+      proxy_to_store = setDIRACGroupInProxy(new_proxy,group)
+      proxyType = "VOMS"
+      result = getProxyTimeLeft(proxy_to_store)
+      if not result['OK']:
+        return S_ERROR('Proxy not valid')
+      time_left = result['Value']
+    else:
+      return S_ERROR('Failed to create VOMS proxy')
+
+    result = S_OK()
+    result['VOMS'] = proxy_to_store
+    result['TimeLeft'] = time_left
+    return result      
+
 
 #############################################################################
   def destroyProxy(self,userDN,userGroup):
