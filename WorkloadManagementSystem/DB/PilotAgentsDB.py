@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.7 2008/02/03 12:22:35 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.8 2008/02/06 18:09:46 atsareg Exp $
 ########################################################################
 """ PilotAgentsDB class is a front-end to the Pilot Agent Database.
     This database keeps track of all the submitted grid pilot jobs.
@@ -23,7 +23,7 @@
 
 """
 
-__RCSID__ = "$Id: PilotAgentsDB.py,v 1.7 2008/02/03 12:22:35 atsareg Exp $"
+__RCSID__ = "$Id: PilotAgentsDB.py,v 1.8 2008/02/06 18:09:46 atsareg Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
@@ -53,17 +53,20 @@ class PilotAgentsDB(DB):
     return self._update(req)
 
 ##########################################################################################
-  def setPilotStatus(self,pilotRef,status,destination=None):
+  def setPilotStatus(self,pilotRef,status,destination=None,updateTime=None):
     """ Set pilot job LCG status """
 
-    if not destination:
-      req = "UPDATE PilotAgents SET Status='%s',LastUpdateTime=NOW() " + \
-            "WHERE PilotJobReference='%s'"
-      req = req  % (status,pilotRef)
+    setList = []
+    setList.append("Status='%s'" % status)
+    if destination:
+      setList.append("DestinationSite='%s'" % destination)
+    if updateTime:
+      setList.append("LastUpdateTime='%s'" % updateTime) 
     else:
-      req = "UPDATE PilotAgents SET Status='%s',LastUpdateTime=NOW(), DestinationSite='%s' " + \
-            "WHERE PilotJobReference='%s'"
-      req = req  % (status,destination,pilotRef)
+      setList.append("LastUpdateTime=NOW()")    
+
+    set_string = ','.join(setList)
+    req = "UPDATE PilotAgents SET "+set_string+" WHERE PilotJobReference='%s'" % pilotRef    
 
     return self._update(req)
 
@@ -132,7 +135,7 @@ class PilotAgentsDB(DB):
       else:
         req = "SELECT "+param_string+" FROM PilotAgents"
     else:
-      req = "SELECT "+param_string+" WHERE PilotJobReference='%s'" % pilotRef
+      req = "SELECT "+param_string+" FROM PilotAgents WHERE PilotJobReference='%s'" % pilotRef
 
     print req
 
@@ -171,7 +174,16 @@ class PilotAgentsDB(DB):
     """ Store standard output and error for a pilot with pilotRef
     """
 
-    req = "UPDATE PilotAgents SET StdOutput='%s', StdError='%s' WHERE PilotJobReference='%s'" % pilotRef
+    result = self._escapeString(output)
+    if not result['OK']:
+      return S_ERROR('Failed to escape output string')
+    e_output = result['Value'] 
+    result = self._escapeString(error)
+    if not result['OK']:
+      return S_ERROR('Failed to escape error string')
+    e_error = result['Value']  
+    req = "UPDATE PilotAgents SET StdOutput='%s', StdError='%s' WHERE PilotJobReference='%s'" 
+    req = req % (e_output,e_error,pilotRef)
     result = self._update(req)
     return result
 
@@ -186,7 +198,13 @@ class PilotAgentsDB(DB):
       return result
     else:
       if result['Value']:
-        return S_OK((result['Value'][0][0],result['Value'][0][1]))
+        stdout = result['Value'][0][0]
+        error = result['Value'][0][0]
+        if stdout == '""':
+          stdout = ''
+        if error == '""':
+          error = ''  
+        return S_OK({'StdOut':stdout,'StdError':error})
       else:
         return S_ERROR('PilotJobReference '+pilotRef+' not found')
 
