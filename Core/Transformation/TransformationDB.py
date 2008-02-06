@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.9 2008/02/05 19:30:15 gkuznets Exp $
+# $Id: TransformationDB.py,v 1.10 2008/02/06 17:34:25 gkuznets Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -174,7 +174,7 @@ class TransformationDB(DB):
     transdict = {}
     req = "SELECT TransformationID,Status,FileMask FROM Transformations "+\
           "WHERE TransformationName='"+str(name)+"'"
-    result = self.query(req)
+    result = self._query(req)
     if not result['OK']:
       return result
     if result['Value']:
