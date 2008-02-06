@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.6 2008/02/05 18:48:22 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.7 2008/02/06 18:11:27 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -24,7 +24,7 @@ The initial instance just exposes job submission via the WMS client.
 
 """
 
-__RCSID__ = "$Id: Dirac.py,v 1.6 2008/02/05 18:48:22 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.7 2008/02/06 18:11:27 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types
 
@@ -34,6 +34,7 @@ from DIRAC.Interfaces.API.Job                            import Job
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
 from DIRAC.Core.Utilities.File                           import makeGuid
 from DIRAC.Core.Utilities.Subprocess                     import shellCall
+from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.WorkloadManagementSystem.Client.WMSClient     import WMSClient
 from DIRAC.WorkloadManagementSystem.Client.SandboxClient import SandboxClient
 from DIRAC.Core.DISET.RPCClient                          import RPCClient
@@ -67,6 +68,15 @@ class Dirac:
     self.client = WMSClient()
     self.monitoring = RPCClient('WorkloadManagement/JobMonitoring')
 
+    try:
+      from DIRAC.DataManagementSystem.Client.Catalog.LcgFileCatalogCombinedClient import LcgFileCatalogCombinedClient
+      self.fileCatalog = LcgFileCatalogCombinedClient()
+    except Exception,x:
+      msg = 'Failed to create LcgFileCatalogClient with exception:'
+      self.log.warn(msg)
+      self.log.warn(str(x))
+      self.fileCatalog=False
+
   #############################################################################
   def submit(self,job,mode=None):
     """Submit jobs to DIRAC WMS.
@@ -95,10 +105,6 @@ class Dirac:
 
     """
     self.__printInfo()
-
-    if mode=='local':
-      self.log.info('Executing job locally')
-      job.execute()
 
     if type(job) == type(" "):
       if os.path.exists(job):
@@ -135,6 +141,15 @@ class Dirac:
     jdlfile.close()
 
     jdl=jdlfilename
+
+    if mode:
+      if mode.lower()=='local':
+        self.log.verbose('Executing job locally')
+        result = self.runLocal(jdl,jfilename)
+        self.log.verbose('Cleaning up %s...' %tmpdir)
+        shutil.rmtree(tmpdir)
+        return result
+
     jobID = self._sendJob(jdl)
     shutil.rmtree(tmpdir)
     if not jobID['OK']:
@@ -143,10 +158,164 @@ class Dirac:
     return jobID
 
   #############################################################################
-  def runLocal(self,job):
-    """This method is equivalent to submit(job,mode='Local').
+  def runLocal(self,jobJDL,jobXML):
+    """Under development.  This method is equivalent to submit(job,mode='Local').
     """
+    if not self.site or self.site == 'Unknown':
+      return self.__errorReport('LocalSite/Site configuration section is unknown, please set this correctly')
+
+    siteRoot = gConfig.getValue('/LocalSite/Root','')
+    if not siteRoot:
+      self.log.warn('LocalSite/Root configuration section is not defined, trying local directory')
+      siteRoot = os.getcwd()
+      if not os.path.exists('%s/DIRAC' %(siteRoot)):
+        return self.__errorReport('LocalSite/Root should be set to DIRACROOT')
+
+    self.log.info('Preparing environment for site %s to execute job' %self.site)
+
+    os.environ['DIRACROOT'] = siteRoot
+    self.log.verbose('DIRACROOT = %s' %(siteRoot))
+    os.environ['DIRACPYTHON'] = sys.executable
+    self.log.verbose('DIRACPYTHON = %s' %(sys.executable))
+    self.log.verbose('JDL file is: %s' %jobJDL)
+    self.log.verbose('Job XML file description is: %s' %jobXML)
+
+    parameters = self.__getJDLParameters(jobJDL)
+    if not parameters['OK']:
+      self.log.warn('Could not extract job parameters from JDL file %s' %(jobJDL))
+      return parameters
+
+    self.log.verbose(parameters)
+    inputData = None
+    if parameters['Value'].has_key('InputData'):
+      inputData = parameters['Value']['InputData']
+      if type(inputData) == type(" "):
+        inputData = [inputData]
+
+    if inputData:
+      localSEList = gConfig.getValue('/LocalSite/LocalSE','')
+      if not localSEList:
+        return self.__errorReport('LocalSite/LocalSE should be defined in your config file')
+      if re.search(',',localSEList):
+        localSEList = localSEList.split(',')
+      inputDataPolicy = gConfig.getValue('DIRAC/VOPolicy/InputDataModule','')
+      if not inputDataPolicy:
+        return self.__errorReport('Could not retrieve DIRAC/VOPolicy/InputDataModule for VO')
+
+      self.log.info('Job has input data requirement, will attempt to resolve data for %s' %self.site)
+      self.log.verbose('%s' %(string.join(inputData,'\n')))
+      replicaDict = self.getReplicas(inputData)
+      if not replicaDict['OK']:
+        return replicaDict
+      guidDict = self.getMetadata(inputData)
+      if not guidDict['OK']:
+        return guidDict
+      for lfn,reps in replicaDict['Value']['Successful'].items():
+        guidDict['Value']['Successful'][lfn].update(reps)
+      resolvedData = guidDict
+      diskSE = gConfig.getValue(self.section+'/DiskSE','-disk,-DST,-USER')
+      if re.search(',',diskSE):
+        diskSE = diskSE.split(',')
+      tapeSE = gConfig.getValue(self.section+'/TapeSE','-tape,-RDST,-RAW')
+      if re.search(',',tapeSE):
+        tapeSE = tapeSE.split(',')
+      configDict = {'JobID':None,'LocalSEList':localSEList,'DiskSEList':diskSE,'TapeSEList':tapeSE}
+      self.log.verbose(configDict)
+      argumentsDict = {'FileCatalog':resolvedData,'Configuration':configDict,'InputData':inputData}
+      self.log.verbose(argumentsDict)
+      moduleFactory = ModuleFactory()
+      moduleInstance = moduleFactory.getModule(inputDataPolicy,argumentsDict)
+      if not moduleInstance['OK']:
+        self.log.warn('Could not create InputDataModule')
+        return moduleInstance
+
+      module = moduleInstance['Value']
+      result = module.execute()
+      if not result['OK']:
+        self.log.warn('Input data resolution failed')
+        return result
+
+      softwarePolicy = gConfig.getValue('DIRAC/VOPolicy/SoftwareDistModule','')
+      if not softwarePolicy:
+        return self.__errorReport('Could not retrieve DIRAC/VOPolicy/SoftwareDistModule for VO')
+      moduleFactory = ModuleFactory()
+      moduleInstance = moduleFactory.getModule(softwarePolicy,argumentsDict)
+      if not moduleInstance['OK']:
+        self.log.warn('Could not create SoftwareDistModule')
+        return moduleInstance
+
+      module = moduleInstance['Value']
+      result = module.execute()
+      if not result['OK']:
+        self.log.warn('Software installation failed')
+        return result
+
+    self.log.info('Attempting to submit job to local site: %s' %self.site)
+    if parameters['Value'].has_key('Executable') and parameters['Value'].has_key('Arguments'):
+      executable = os.path.expandvars(parameters['Value']['Executable'])
+      arguments = parameters['Value']['Arguments']
+      command = '%s %s' % (executable,arguments)
+      self.log.verbose(command)
+      os.system(command)
+    else:
+      return self.__errorReport('Missing job arguments or executable')
+
     return S_OK()
+
+  #############################################################################
+  def getReplicas(self,lfns):
+    """ Under development. Obtain replica information from file catalogue client.
+    """
+    if not self.fileCatalog:
+      return self.__errorReport('File catalog client was not successfully imported')
+
+    if type(lfns)==type(" "):
+      lfns = lfns.replace('LFN:','')
+    elif type(lfns)==type([]):
+      try:
+        lfns = [str(lfn.replace('LFN:','')) for lfn in lfns]
+      except Exception,x:
+        return self.__errorReport(str(x),'Expected strings for LFNs')
+    else:
+      return self.__errorReport('Expected single string or list of strings for LFN(s)')
+
+    start = time.time()
+    repsResult = self.fileCatalog.getReplicas(lfns)
+    timing = time.time() - start
+    self.log.info('Replica Lookup Time: %.2f seconds ' % (timing) )
+    self.log.verbose(repsResult)
+    if not repsResult['OK']:
+      self.log.warn(repsResult['Message'])
+
+    return repsResult
+
+  #############################################################################
+  def getMetadata(self,lfns):
+    """ Under development. Obtain replica information from file catalogue client.
+    """
+    if not self.fileCatalog:
+      return self.__errorReport('File catalog client was not successfully imported')
+
+    if type(lfns)==type(" "):
+      lfns = lfns.replace('LFN:','')
+    elif type(lfns)==type([]):
+      try:
+        lfns = [str(lfn.replace('LFN:','')) for lfn in lfns]
+      except Exception,x:
+        return self.__errorReport(str(x),'Expected strings for LFNs')
+    else:
+      return self.__errorReport('Expected single string or list of strings for LFN(s)')
+
+    start = time.time()
+    guidDict = self.fileCatalog.getFileMetadata(lfns)
+    timing = time.time() - start
+    self.log.info('GUID Lookup Time: %.2f seconds ' % (timing) )
+    self.log.verbose(guidDict)
+    if not guidDict['OK']:
+      self.log.warn('Failed to retrieve GUIDs from file catalogue')
+      self.log.warn(guidDict['Message'])
+
+    return guidDict
 
   #############################################################################
   def _sendJob(self,jdl):
@@ -516,6 +685,40 @@ class Dirac:
 
     #deliberately don't return result as this is strictly for visual inspection only
     return S_OK('Job peek result printed at DIRAC INFO level')
+
+  #############################################################################
+  def __getJDLParameters(self,jdl):
+    """Internal function. Returns a dictionary of JDL parameters.
+    """
+    if os.path.exists(jdl):
+      jdlFile = open(jdl,'r')
+      jdl = jdlFile.read()
+      jdlFile.close()
+
+    try:
+      parameters = {}
+      if not re.search('\[',jdl):
+        jdl = '['+jdl+']'
+      classAdJob = ClassAd(jdl)
+      paramsDict = classAdJob.contents
+      for param,value in paramsDict.items():
+        if re.search('{',value):
+          self.log.debug('Found list type parameter %s' %(param))
+          rawValues = value.replace('{','').replace('}','').replace('"','').replace('LFN:','').split()
+          valueList = []
+          for val in rawValues:
+            if re.search(',$',val):
+              valueList.append(val[:-1])
+            else:
+              valueList.append(val)
+          parameters[param] = valueList
+        else:
+          self.log.debug('Found standard parameter %s' %(param))
+          parameters[param]= value.replace('"','')
+      return S_OK(parameters)
+    except Exception, x:
+      self.log.exception(x)
+      return S_ERROR('Exception while extracting JDL parameters for job')
 
   #############################################################################
   def __errorReport(self,error,message=None):
