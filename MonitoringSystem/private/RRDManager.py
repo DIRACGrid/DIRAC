@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/RRDManager.py,v 1.13 2008/02/05 20:01:52 acasajus Exp $
-__RCSID__ = "$Id: RRDManager.py,v 1.13 2008/02/05 20:01:52 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/RRDManager.py,v 1.14 2008/02/06 13:31:03 acasajus Exp $
+__RCSID__ = "$Id: RRDManager.py,v 1.14 2008/02/06 13:31:03 acasajus Exp $"
 import os
 import os.path
 import time
@@ -76,7 +76,7 @@ class RRDManager:
     cmd += " --step %s" % self.bucketTime
     dst = "GAUGE"
     cf = "AVERAGE"
-    cmd += " DS:value:%s:120:0:U" % dst
+    cmd += " DS:value:%s:120:U:U" % dst
     # 1m res for 1 month
     cmd += " RRA:%s:0.9:1:43200" % cf
     return self.__exec( cmd ) == 0
