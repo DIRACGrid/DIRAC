@@ -1,4 +1,4 @@
--- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Transformation/TransformationDB.sql,v 1.5 2008/02/07 14:06:17 acsmith Exp $
+-- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Transformation/TransformationDB.sql,v 1.6 2008/02/07 19:05:38 gkuznets Exp $
 --------------------------------------------------------------------------------
 --
 --  Schema definition for the TransformationDB database -
@@ -29,7 +29,7 @@ DROP TABLE IF EXISTS Transformations;
 --   NONE
 --   BROADCAST
 --   LOADBALANCE
--- Agent - the agent that will process the transformation
+-- AgentType - the agent that will process the transformation
 --   Manual
 --   ReplicationPlacement
 --   ProductionAgent
