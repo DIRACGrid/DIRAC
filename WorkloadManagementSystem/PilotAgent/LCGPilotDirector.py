@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/LCGPilotDirector.py,v 1.6 2008/01/23 09:22:55 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/LCGPilotDirector.py,v 1.7 2008/02/07 16:46:07 paterson Exp $
 # File :   LCGPilotDirector.py
 # Author : Stuart Paterson
 ########################################################################
@@ -11,7 +11,7 @@
      the invokation of the Pilot Director instance is performed here.
 """
 
-__RCSID__ = "$Id: LCGPilotDirector.py,v 1.6 2008/01/23 09:22:55 paterson Exp $"
+__RCSID__ = "$Id: LCGPilotDirector.py,v 1.7 2008/02/07 16:46:07 paterson Exp $"
 
 from DIRACEnvironment                                        import DIRAC
 from DIRAC.Core.Utilities                                    import List
@@ -156,7 +156,7 @@ class LCGPilotDirector(PilotDirector):
       else:
         lcgJDL.write( 'Executable = "%s";\n'     % self.pilotScript )
 
-      lcgJDL.write( 'Arguments  = "%s %s %s %s";\n'  % (self.diracSetup,cpuRequirement,self.voSoftwareDir,ownerGroup) )
+      lcgJDL.write( 'Arguments  = "%s %s %s %s %s";\n'  % (self.diracSetup,cpuRequirement,self.voSoftwareDir,ownerGroup,self.type) )
       lcgJDL.write( 'LCGTimeRef = %s ;\n'      % cpuRequirement )
       lcgJDL.write( 'MyPolicyTime = ( %s );\n' % myPolicyTime )
 
