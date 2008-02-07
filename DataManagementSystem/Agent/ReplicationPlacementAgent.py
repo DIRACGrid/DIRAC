@@ -3,11 +3,13 @@
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.Agent import Agent
-from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
 from DIRAC.RequestManagementSystem.Client.Request import RequestClient
 from DIRAC.RequestManagementSystem.Client.DataManagementRequest import DataManagementRequest
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
-from DIRAC.DataManagementSystem.Client.Catalog import LcgFileCatalogCombinedClient
+from DIRAC.DataManagementSystem.Client.FileCatalog import FileCatalog
+from DIRAC.DataManagementSystem.Client.Catalog.PlacementDBClient import PlacementDBClient
+from DIRAC.Core.DISET.RPCClient import RPCClient
+
 import time
 from types import *
 
@@ -22,17 +24,75 @@ class ReplicationPlacementAgent(Agent):
 
   def initialize(self):
     result = Agent.initialize(self)
-    # need to get the online requestDB URL.'http://lbora01.cern.ch:9135'
-    self.RequestDBClient = RequestClient()
-    self.ReplicaManager = ReplicaManager()
+    self.RequestDB = RequestClient()
+    self.PlacementDB = PlacementDBClient()
+    self.server = RPCClient("DataManagement/PlacementDB")
     return result
 
   def execute(self):
+    """
+    transName = 'T0-Export'
+    desciption = 'Export of RAW file from T0 to the Tier1s'
+    longDesription = ''   
+    type = 'Replication' 
+    mode = 'Automatic' 
+    fileMask = '/*'
+    res = self.server.publishTransformation(transName, desciption,longDesription, type, mode, fileMask)
+    print res
+    """
+    lfn = '/lfn/file'
+    pfn = 'srm://host:/path/lfn'
+    size = 0
+    se = 'storage-element'
+    guid = 'IGNORED-GUID'
+    checksum = 'IGNORED-CHECKSUM'
+
+    fileTuple = (lfn,pfn,size,se,guid,checksum)
+    res = self.PlacementDB.addFile(fileTuple)
+    print res
+    if not res['OK']:
+      print res
+
+    replicaTuple = (lfn,pfn,se+'2',False)
+    res = self.PlacementDB.addReplica(replicaTuple)
+    print res
+    if not res['OK']:
+      print res
+
+    replicaTuple = (lfn,se)
+    res = self.PlacementDB.getReplicaStatus(replicaTuple)
+    if not res['OK']:
+      print res
+  
+    replicaTuple = (lfn,pfn,se,'storage-element3')
+    res = self.PlacementDB.setReplicaHost(replicaTuple)
+    print res
+    if not res['OK']:
+      print res    
+
+    res = self.PlacementDB.getReplicas(lfn)
+    print res
+    if not res['OK']:
+      print res    
+
+    replicaTuple = (lfn,pfn,se,'Problematic')
+    res = self.PlacementDB.setReplicaStatus(replicaTuple)
+    if not res['OK']:
+      print res
+     
+    replicaTuple = (lfn,pfn,se)
+    res = self.PlacementDB.removeReplica(replicaTuple)
+    if not res['OK']:
+      print res
+
+    res = self.PlacementDB.removeFile(lfn)
+    if not res['OK']:
+      print res
+
     return S_OK()
 
 
-
-
+  """
   def initialize(self):
 
     AgentBase.initialize(self)
@@ -106,7 +166,7 @@ class ReplicationPlacementAgent(Agent):
     else:
       return S_OK()
 
-
+  """
   def getTransformationStream(self,prodID,active=True):
     """Get definition of the input stream for an Active Transformation,
        return error if the Transformation defined by prodID is not active
