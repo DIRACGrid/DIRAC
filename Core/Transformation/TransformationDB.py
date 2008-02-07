@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.11 2008/02/07 12:06:54 acsmith Exp $
+# $Id: TransformationDB.py,v 1.12 2008/02/07 12:35:43 gkuznets Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -87,12 +87,27 @@ class TransformationDB(DB):
     result = self.__addExistingFiles(transID)
     return S_OK(transID)
 
-  def removeTransformation(self,name):
-    """ Remove the transformation specified by transID
+  def removeTransformation(self, name):
+    """ Remove the transformation specified by name
     """
     res = self.getTransformation(name)
     transID = res['Transformation']['TransID']
     req = "DELETE FROM Transformations WHERE TransformationName='"+str(name)+"'"
+    result = self._update(req)
+    if not result['OK']:
+      return result
+    req = "DROP TABLE IF EXISTS T_"+str(transID)
+    result = self._update(req)
+    if not result['OK']:
+      return result
+    # Update the filter information
+    self.filters = self.__getFilters()
+    return S_OK()
+
+  def removeTransformationID(self, transID):
+    """ Remove the transformation specified by transID
+    """
+    req = "DELETE FROM Transformations WHERE TransformationID='"+str(transID)+"'"
     result = self._update(req)
     if not result['OK']:
       return result
