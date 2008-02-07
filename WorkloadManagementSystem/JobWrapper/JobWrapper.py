@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.14 2008/01/31 14:39:56 paterson Exp $
+# $Id: JobWrapper.py,v 1.15 2008/02/07 14:28:21 paterson Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.14 2008/01/31 14:39:56 paterson Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.15 2008/02/07 14:28:21 paterson Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -572,9 +572,9 @@ class JobWrapper:
     """
     parameters = []
     if os.environ.has_key('EDG_WL_JOBID'):
-      parameters.append(('EDG_WL_JOBID', os.environ['EDG_WL_JOBID']))
+      parameters.append(('PILOT_REFERENCE', os.environ['EDG_WL_JOBID']))
     if os.environ.has_key('GLITE_WMS_JOBID'):
-      parameters.append(('GLITE_WMS_JOBID', os.environ['GLITE_WMS_JOBID']))
+      parameters.append(('PILOT_REFERENCE', os.environ['GLITE_WMS_JOBID']))
 
     ceArgs = arguments['CE']
     if ceArgs.has_key('LocalSE'):
