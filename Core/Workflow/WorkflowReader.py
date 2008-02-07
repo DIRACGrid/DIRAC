@@ -1,24 +1,25 @@
-# $Id: WorkflowReader.py,v 1.9 2008/01/23 15:53:46 gkuznets Exp $
+# $Id: WorkflowReader.py,v 1.10 2008/02/07 14:50:09 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.9 $"
+__RCSID__ = "$Revision: 1.10 $"
 
 #try: # this part to inport as part of the DIRAC framework
+import xml.sax
+from xml.sax.handler import ContentHandler
+
 from DIRAC.Core.Workflow.Parameter import *
 from DIRAC.Core.Workflow.Module import *
 from DIRAC.Core.Workflow.Step import *
 from DIRAC.Core.Workflow.Workflow import *
 
-import xml.sax
-from xml.sax.handler import ContentHandler
-
 
 class WorkflowXMLHandler(ContentHandler):
 
-  def __init__(self):
+  def __init__(self, new_wf=None):
+    """ If new_wf defined, it will be used as root of document """
     # this is an attribute for the object to be created from the XML document
-    self.root=None # the reference on the all document
+    self.root=new_wf # the reference on the all document
     self.stack=None # to keep last object
     self.strings=None # to accumulate string object (list of strings) used to split long string
 
@@ -36,7 +37,8 @@ class WorkflowXMLHandler(ContentHandler):
     self.clearCharacters() # clear to remove empty or nonprintable characters
 
     if name == "Workflow":
-      self.root = Workflow()
+      if not self.root: #if root not defined by constractor
+        self.root = Workflow()
       self.stack.append(self.root)
 
     elif name == "StepDefinition":
@@ -128,13 +130,4 @@ class WorkflowXMLHandler(ContentHandler):
   def characters(self, content):
     self.strings.append(content)
 
-def fromXMLString(xml_string):
-  handler = WorkflowXMLHandler()
-  xml.sax.parseString(xml_string, handler)
-  return handler.root
-
-def fromXMLFile(xml_file):
-  handler = WorkflowXMLHandler()
-  xml.sax.parse(xml_file, handler)
-  return handler.root
 

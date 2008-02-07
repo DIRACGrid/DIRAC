@@ -1,10 +1,11 @@
-# $Id: Workflow.py,v 1.23 2008/01/31 18:48:49 gkuznets Exp $
+# $Id: Workflow.py,v 1.24 2008/02/07 14:50:09 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.23 $"
+__RCSID__ = "$Revision: 1.24 $"
 
 import os
+import xml.sax
 from DIRAC.Core.Workflow.Parameter import *
 from DIRAC.Core.Workflow.Module import *
 from DIRAC.Core.Workflow.Step import *
@@ -34,9 +35,9 @@ class Workflow(AttributeCollection):
     elif isinstance(obj, str):
       # if obj is an XML string
       if obj.startswith('<'):
-        self.fromXMLString(obj)
+        fromXMLString(obj, self)
       else:
-        self.fromXMLFile(obj)
+        fromXMLFile(obj, self)
     elif obj!=None:
       raise TypeError('Can not create object type '+ str(type(self)) + ' from the '+ str(type(obj)))
 
@@ -55,12 +56,6 @@ class Workflow(AttributeCollection):
     self.module_definitions = DefinitionsPool(self, obj.module_definitions)
     self.step_instances = InstancesPool(self, obj.step_instances)
     self.step_definitions = DefinitionsPool(self, obj.step_definitions)
-
-  def fromXMLString(self, obj):
-      self.fromWorkflow(DIRAC.Core.Workflow.WorkflowReaderfromXMLString(obj))
-
-  def fromXMLFile(self, obj):
-      self.fromWorkflow(DIRAC.Core.Workflow.WorkflowReaderfromXMLFile(obj))
 
   def __str__(self):
     """Creates a string representation of itself
@@ -247,3 +242,15 @@ class Workflow(AttributeCollection):
           wf_exec_attr[wf_parameter.getName()] = wf_parameter.getValue()
           #print "WorkflowInstance  self."+ wf_parameter.getName(),'=',wf_parameter.getValue()
 
+
+from DIRAC.Core.Workflow.WorkflowReader import WorkflowXMLHandler
+
+def fromXMLString(xml_string, obj=None):
+    handler = WorkflowXMLHandler(obj)
+    xml.sax.parseString(xml_string, handler)
+    return handler.root
+
+def fromXMLFile(xml_file, obj=None):
+    handler = WorkflowXMLHandler(obj)
+    xml.sax.parse(xml_file, handler)
+    return handler.root
