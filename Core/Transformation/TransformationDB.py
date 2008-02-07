@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.13 2008/02/07 14:10:21 acsmith Exp $
+# $Id: TransformationDB.py,v 1.14 2008/02/07 14:48:49 acsmith Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -470,10 +470,12 @@ PRIMARY KEY (FileID)
     if resultFilter:
       for transID in resultFilter:
         req = "SELECT * FROM T_"+str(transID)+" WHERE FileID="+str(fileID)
+        print req
         result = self._query(req)
+        print result
         if not result['OK']:
           return result
-        if result['Value']:
+        if not result['Value']:
           req = "INSERT INTO T_%s ( FileID ) VALUES ( '%s' )" % (str(transID),str(fileID))
           result = self._update(req)
           if not result['OK']:
@@ -675,7 +677,7 @@ PRIMARY KEY (FileID)
           fileID = res['Value']['FileID']
           fileExists = res['Value']['LFNExist']
           replicaExists = res['Value']['ReplicaExist']
-          if retained:
+          if lFilters:
             res = self.__addFileToTransformation(fileID,lFilters)
             if res['OK']:
               addedToTransformation = True
