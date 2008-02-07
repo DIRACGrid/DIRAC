@@ -1,4 +1,4 @@
--- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Transformation/TransformationDB.sql,v 1.6 2008/02/07 19:05:38 gkuznets Exp $
+-- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Transformation/TransformationDB.sql,v 1.7 2008/02/07 19:20:19 acsmith Exp $
 --------------------------------------------------------------------------------
 --
 --  Schema definition for the TransformationDB database -
@@ -133,7 +133,7 @@ DROP TABLE IF EXISTS FileTransformations;
 CREATE TABLE FileTransformations(
    FileID INTEGER NOT NULL,
    TransformationID INTEGER NOT NULL,
-   TransformationType SE VARCHAR(32),
+   TransformationType VARCHAR(32),
    PRIMARY KEY (FileID, TransformationID)
 );
 
