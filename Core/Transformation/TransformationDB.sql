@@ -1,4 +1,4 @@
--- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Transformation/TransformationDB.sql,v 1.4 2008/01/28 14:31:57 gkuznets Exp $
+-- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Transformation/TransformationDB.sql,v 1.5 2008/02/07 14:06:17 acsmith Exp $
 --------------------------------------------------------------------------------
 --
 --  Schema definition for the TransformationDB database -
@@ -25,9 +25,14 @@ DROP TABLE IF EXISTS Transformations;
 --   SIMULATION - Montecarlo production, no input data required
 --   PROCESSING - Processing production, input files required
 --   REPLICATION - data replication production, no body required
--- Mode - submission mode of the jobs for the submission agent
---   MANUAL
---   AUTOMATIC
+-- Plugin - the plugin used to group files into jobs
+--   NONE
+--   BROADCAST
+--   LOADBALANCE
+-- Agent - the agent that will process the transformation
+--   Manual
+--   ReplicationPlacement
+--   ProductionAgent
 -- Status - information about current status of the production
 --   NEW - newly created, equivalent to STOPED
 --   ACTIVE - can submit
@@ -47,13 +52,26 @@ CREATE TABLE Transformations (
     AuthorDN VARCHAR(255) NOT NULL,
     AuthorGroup VARCHAR(255) NOT NULL,
     Type CHAR(16) DEFAULT 'Simulation',
-    Mode CHAR(16) DEFAULT 'Manual',
-    AgentType CHAR(16) DEFAULT 'Unknown',
+    Plugin CHAR(16) DEFAULT 'None',
+    AgentType CHAR(16) DEFAULT 'Manual',
     Status  CHAR(16) DEFAULT 'New',
     FileMask VARCHAR(255),
     PRIMARY KEY(TransformationID),
     INDEX(TransformationName)
 ) ENGINE=InnoDB;
+
+----------------------------------------------------------------------------------
+-- Once a transformation in entered in the the database a table is created to contain its associated files
+--
+-- CREATE TABLE T_$TransformationID(
+--   FileID INTEGER NOT NULL,
+--   Status VARCHAR(32) DEFAULT "unused",
+--   ErrorCount INT(4) NOT NULL DEFAULT 0,
+--   JobID VARCHAR(32),
+--   UsedSE VARCHAR(32) DEFAULT "Unknown",
+--   PRIMARY KEY (FileID,Status)
+--
+-------------------------------------------------------------------------------------
 
 --------------------------------------------------------------------------------
 DROP TABLE IF EXISTS TransformationParameters;
@@ -98,7 +116,9 @@ CREATE TABLE DataFiles (
    PRIMARY KEY (FileID, LFN)
 );
 
+--------------------------------------------------------------------------------
 DROP TABLE IF EXISTS Replicas;
+--------------------------------------------------------------------------------
 CREATE TABLE Replicas (
   FileID INTEGER NOT NULL,
   PFN VARCHAR(255),
@@ -106,3 +126,15 @@ CREATE TABLE Replicas (
   Status VARCHAR(32) DEFAULT 'AprioriGood',
   PRIMARY KEY (FileID, SE)
 );
+
+--------------------------------------------------------------------------------
+DROP TABLE IF EXISTS FileTransformations;
+--------------------------------------------------------------------------------
+CREATE TABLE FileTransformations(
+   FileID INTEGER NOT NULL,
+   TransformationID INTEGER NOT NULL,
+   TransformationType SE VARCHAR(32),
+   PRIMARY KEY (FileID, TransformationID)
+);
+
+
