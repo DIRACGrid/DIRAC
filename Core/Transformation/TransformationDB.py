@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.15 2008/02/07 15:47:00 acsmith Exp $
+# $Id: TransformationDB.py,v 1.16 2008/02/07 16:56:18 acsmith Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -231,10 +231,10 @@ class TransformationDB(DB):
     result = S_OK()
     translist = []
     req = "SELECT TransformationID,TransformationName,Status FROM Transformations;"
-    resQ = self._query(req)
-    if not resQ['OK']:
-      return resQ
-    for transID,transName,status in resQ['Value']:
+    res = self._query(req)
+    if not res['OK']:
+      return res
+    for transID,transName,status in res['Value']:
       transdict = {}
       transdict['TransID'] = transID
       transdict['Name'] = transName
@@ -245,7 +245,6 @@ class TransformationDB(DB):
   def getFilesForTransformation(self,name,order_by_job=False):
     """ Get files and their status for the given transformation
     """
-
     res = self.getTransformation(name)
     if not res['OK']:
       return S_ERROR("Transformation is not found")
@@ -261,7 +260,7 @@ class TransformationDB(DB):
     result = self._query(req)
     if not result['OK']:
       return result
-    for lfn,status,jobid,usedse in dbc.fetchall():
+    for lfn,status,jobid,usedse in res['Value']:
       print lfn,status,jobid,usedse
       fdict = {}
       fdict['LFN'] = lfn
