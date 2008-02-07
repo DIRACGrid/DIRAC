@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.14 2008/02/07 14:48:49 acsmith Exp $
+# $Id: TransformationDB.py,v 1.15 2008/02/07 15:47:00 acsmith Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -91,7 +91,7 @@ class TransformationDB(DB):
     """ Remove the transformation specified by name
     """
     res = self.getTransformation(name)
-    transID = res['Transformation']['TransID']
+    transID = res['Value']['TransID']
     req = "DELETE FROM Transformations WHERE TransformationName='"+str(name)+"'"
     result = self._update(req)
     if not result['OK']:
@@ -123,7 +123,7 @@ class TransformationDB(DB):
     """ Set the status of the transformation specified by transID
     """
     res = self.getTransformation(name)
-    transID = res['Transformation']['TransID']
+    transID = res['Value']['TransID']
     req = "UPDATE Transformations SET Status='"+status+"' WHERE TransformationID="+transID
     result = self._update(req)
     if not result['OK']:
@@ -143,8 +143,8 @@ class TransformationDB(DB):
     """
 
     result = self.getTransformation(production)
-    if result['Status'] == "OK":
-      transID = result['Transformation']['TransID']
+    if result['OK']:
+      transID = result['Value']['TransID']
       req = "SELECT COUNT(*) FROM T_"+str(transID)
       result = self.query(req)
       if not result['OK']:
@@ -181,24 +181,20 @@ class TransformationDB(DB):
 
   def getTransformation(self,name):
     """Get Transformation definition
-
        Get the parameters of Transformation idendified by production ID
     """
-
     result = S_OK()
     transdict = {}
-    req = "SELECT TransformationID,Status,FileMask FROM Transformations "+\
-          "WHERE TransformationName='"+str(name)+"'"
-    result = self._query(req)
-    if not result['OK']:
-      return result
-    if result['Value']:
-      row = result['Value'][0]
-      transdict['TransID'] = row[0]
-      transdict['Status'] = row[1]
-      transdict['FileMask'] = row[2]
-      result["Transformation"] = transdict
-      return result
+    req = "SELECT TransformationID,Status,FileMask FROM Transformations WHERE TransformationName='%s';" % str(name)
+    res = self._query(req)
+    if not res['OK']:
+      return res
+    if res['Value']:
+      transID,status,fileMask = res['Value'][0]
+      transdict['TransID'] = transID
+      transdict['Status'] = status
+      transdict['FileMask'] = fileMask
+      return S_OK(transdict)
     else:
       return S_ERROR('Transformation not found')
 
@@ -208,19 +204,18 @@ class TransformationDB(DB):
     """
 
     result = self.getTransformation(name)
-    transID = result["Transformation"]['TransID']
+    transID = result['Value']['TransID']
     req = "UPDATE Transformations SET FileMask='%s' WHERE TransformationID=%s" % (fileMask,str(transID))
     result = self._update(req)
     if not result['OK']:
       return result
-
     return S_OK()
 
   def changeTransformationName(self,name,newName):
     """ Change the transformation name
     """
     result = self.getTransformation(name)
-    transID = result["Transformation"]['TransID']
+    transID = result['Value']['TransID']
     req = "UPDATE Transformations SET TransformationName='"+new_name+ \
           "' where TransformationID="+str(transID)
     result = self._update(req)
@@ -233,32 +228,28 @@ class TransformationDB(DB):
   def getAllTransformations(self):
     """ Get parameters of all the Transformations
     """
-
     result = S_OK()
     translist = []
-    req = "SELECT TransformationID,TransformationName,Status FROM Transformations "
-    print req
+    req = "SELECT TransformationID,TransformationName,Status FROM Transformations;"
     resQ = self._query(req)
     if not resQ['OK']:
       return resQ
-    for row in resQ['Value']:
+    for transID,transName,status in resQ['Value']:
       transdict = {}
-      transdict['TransID'] = row[0]
-      transdict['Name'] = row[1]
-      transdict['Status'] = row[2]
+      transdict['TransID'] = transID
+      transdict['Name'] = transName
+      transdict['Status'] = status
       translist.append(transdict)
-
-    result["Transformations"] = translist
-    return result
+    return S_OK(translist)
 
   def getFilesForTransformation(self,name,order_by_job=False):
     """ Get files and their status for the given transformation
     """
 
     res = self.getTransformation(name)
-    if res['Status'] != "OK":
+    if not res['OK']:
       return S_ERROR("Transformation is not found")
-    transID = res['Transformation']['TransID']
+    transID = res['Value']['TransID']
 
     flist = []
     req = "SELECT LFN,p.Status,p.JobID,p.UsedSE FROM DataFiles AS d,T_"+ \
@@ -291,9 +282,9 @@ class TransformationDB(DB):
     """
 
     result = self.getTransformation(name)
-    if result['Status'] != "OK":
+    if not result["OK"]:
       return S_ERROR("Transformation is not found")
-    transID = result['Transformation']['TransID']
+    transID = result['Value']['TransID']
 
     reslist = []
     req = "SELECT FileID from T_"+str(transID)+" WHERE Status='unused'"
@@ -327,9 +318,9 @@ class TransformationDB(DB):
     """
 
     result = self.getTransformation(name)
-    if result['Status'] != "OK":
+    if not res['OK']:
       return S_ERROR("Transformation is not found")
-    transID = result['Transformation']['TransID']
+    transID = result['Value']['TransID']
 
     fids = self.__getFileIDsForLfns(lfns).keys()
 
@@ -347,36 +338,28 @@ class TransformationDB(DB):
     """ Set file status for the given transformation identified by transID
         for the given stream for files in the list of lfns
     """
-
-    fids = self.__getFileIDsForLfns(lfns).keys()
-
-    result = self.getTransformation(name)
-    if result['Status'] != "OK":
+    fileIDs = self.__getFileIDsForLfns(lfns).keys()
+    res = self.getTransformation(name)
+    if not res['OK']:
       return S_ERROR("Transformation is not found")
-    transID = result['Transformation']['TransID']
-
-    if fids:
-      s_fids = string.join(fids,",")
-      req = "UPDATE T_"+str(transID)+" SET Status='"+status+"' WHERE FileID IN ( "+ \
-              s_fids+" )"
-
-      print req
-      result = self._update(req)
-      return result
+    transID = res['Value']['TransID']
+    if fileIDs:
+      req = "UPDATE T_%s SET Status='%s' WHERE FileID IN (%s);" % (transID,status,intListToString(fileIDs))
+      res = self._update(req)
+    return S_OK() 
 
   def setFileStatus(self,name,lfn,status):
     """ Set file status for the given production identified by production
         for the given lfn
     """
     result = self.getTransformation(name)
-    if result['Status'] == "OK":
-      transID = result['Transformation']['TransID']
-      result = self.setFileStatusForTransformation(transID,status,[lfn])
-      if result['Status'] != "OK":
+    if not res['OK']:
+      transID = result['Value']['TransID']
+      res = self.setFileStatusForTransformation(transID,status,[lfn])
+      if not res['OK']:
         print "Failed to set status for file",lfn,"transformation",transID,'/',name
     else:
       print "Failed to set status for file",lfn,"transformation",transID,'/',name
-
     return result
 
 
@@ -388,9 +371,9 @@ class TransformationDB(DB):
     fids = self.__getFileIDsForLfns(lfns).keys()
 
     result = self.getTransformation(name)
-    if result['Status'] != "OK":
+    if not res['OK']:
       return S_ERROR("Transformation is not found")
-    transID = result['Transformation']['TransID']
+    transID = result['Value']['TransID']
 
 
     if fids:
@@ -482,7 +465,6 @@ PRIMARY KEY (FileID)
             return result
         else:
           print "File",fileID,"already added to transformation",transID
-
     return S_OK()
 
   def __getFileIDsForLfns(self,lfns):
@@ -611,8 +593,8 @@ PRIMARY KEY (FileID)
     res = self.getAllTransformations()
     if res['OK']:
       for transformation in res['Value']:
-        transID = transformation['TransID']
-        res = self.setFileStatusForTransformation(transID,'deleted',lfns)
+        transName = transformation['Name']
+        res = self.setFileStatusForTransformation(transName,'deleted',lfns)
     fileIDs = self.__getFileIDsForLfns(lfns)
     failed = {}
     successful = {}
