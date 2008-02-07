@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.3 2008/02/05 14:01:56 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.4 2008/02/07 15:53:50 paterson Exp $
 # File :   DiracAdmin.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@ site banning and unbanning, WMS proxy uploading etc.
 
 """
 
-__RCSID__ = "$Id: DiracAdmin.py,v 1.3 2008/02/05 14:01:56 paterson Exp $"
+__RCSID__ = "$Id: DiracAdmin.py,v 1.4 2008/02/07 15:53:50 paterson Exp $"
 
 import DIRAC
 from DIRAC.Core.DISET.RPCClient                          import RPCClient
@@ -245,7 +245,169 @@ class DiracAdmin:
       except Exception,x:
         return self.__errorReport(str(x),'Expected integer or convertible integer for existing jobIDs')
 
-    self.wmsAdmin.resetJob(jobID)
+    result = self.wmsAdmin.resetJob(jobID)
+    return result
+
+  #############################################################################
+  def getJobJDL(self,jobID):
+    """Retrieve the JDL of an existing job in the WMS.
+
+       >>> print dirac.getJobJDL(12345)
+       {'OK': True, 'Value': [12345]}
+
+       @param job: JobID
+       @type job: integer or string
+       @return: S_OK,S_ERROR
+    """
+    if type(jobID)==type(" "):
+      try:
+        jobID = int(jobID)
+      except Exception,x:
+        return self.__errorReport(str(x),'Expected integer or convertible integer for existing jobID')
+
+    result = self.monitoring.getJobJDL(jobID)
+    return result
+
+  #############################################################################
+  def getJobPilotOutput(self,jobID,directory=''):
+    """Retrieve the pilot output for an existing job in the WMS.
+       The output will be retrieved in a local directory unless
+       otherwise specified.
+
+       >>> print dirac.getJobPilotOutput(12345)
+       {'OK': True, StdOut:'',StdError:''}
+
+       @param job: JobID
+       @type job: integer or string
+       @return: S_OK,S_ERROR
+    """
+    if not directory:
+      directory = self.currentDir
+
+    if not os.path.exists(directory):
+      self.__report('Directory %s does not exist' % directory)
+
+    result = self.wmsAdmin.getJobPilotOutput(jobID)
+    if not result['OK']:
+      return result
+
+    outputPath = '%s/pilot_%s' %(directory,jobID)
+    if os.path.exists(outputPath):
+      self.log.info('Remove %s and retry to continue' %outputPath)
+      return S_ERROR('Remove %s and retry to continue' %outputPath)
+
+    if not os.path.exists(outputPath):
+      self.log.verbose('Creating directory %s' %outputPath)
+      os.mkdir(outputPath)
+
+    outputs = result['Value']
+    if outputs.has_key('StdOut'):
+      stdout = '%s/std.out' %(outputPath)
+      fopen = open(stdout,'w')
+      fopen.write(outputs['StdOut'])
+      fopen.close()
+      self.log.verbose('Standard output written to %s' %(stdout))
+    else:
+      self.log.warn('No standard output returned')
+
+    if outputs.has_key('StdError'):
+      stderr = '%s/std.err' %(outputPath)
+      fopen = open(stderr,'w')
+      fopen.write(outputs['StdError'])
+      fopen.close()
+      self.log.verbose('Standard error written to %s' %(stderr))
+    else:
+      self.log.warn('No standard error returned')
+
+    self.log.info('Outputs retrieved in %s' %outputPath)
+    return result
+
+  #############################################################################
+  def getPilotOutput(self,gridReference,directory=''):
+    """Retrieve the pilot output  (std.out and std.err) for an existing job in the WMS.
+
+       >>> print dirac.getJobPilotOutput(12345)
+       {'OK': True, 'Value': [12345]}
+
+       @param job: JobID
+       @type job: integer or string
+       @return: S_OK,S_ERROR
+    """
+    if not type(gridReference)==type(" "):
+      return self.__errorReport(str(x),'Expected string for pilot reference')
+
+    if not directory:
+      directory = self.currentDir
+
+    if not os.path.exists(directory):
+      self.__report('Directory %s does not exist' % directory)
+
+    result = self.wmsAdmin.getPilotOutput(gridReference)
+    if not result['OK']:
+      return result
+
+    gridReferenceSmall = string.split(gridReference,'/')[-1]
+    if not gridReferenceSmall:
+      gridReferenceSmall='reference'
+    outputPath = '%s/pilot_%s' %(directory,gridReferenceSmall)
+
+    if os.path.exists(outputPath):
+      self.log.info('Remove %s and retry to continue' %outputPath)
+      return S_ERROR('Remove %s and retry to continue' %outputPath)
+
+    if not os.path.exists(outputPath):
+      self.log.verbose('Creating directory %s' %outputPath)
+      os.mkdir(outputPath)
+
+    outputs = result['Value']
+    if outputs.has_key('StdOut'):
+      stdout = '%s/std.out' %(outputPath)
+      fopen = open(stdout,'w')
+      fopen.write(outputs['StdOut'])
+      fopen.close()
+      self.log.verbose('Standard output written to %s' %(stdout))
+    else:
+      self.log.warn('No standard output returned')
+
+    if outputs.has_key('StdError'):
+      stderr = '%s/std.err' %(outputPath)
+      fopen = open(stderr,'w')
+      fopen.write(outputs['StdError'])
+      fopen.close()
+      self.log.verbose('Standard error written to %s' %(stderr))
+    else:
+      self.log.warn('No standard error returned')
+
+    self.log.info('Outputs retrieved in %s' %outputPath)
+    return result
+
+  #############################################################################
+  def getPilotSummary(self,startDate='',endDate=''):
+    """Retrieve the pilot output for an existing job in the WMS.  Summary is
+       printed at INFO level, full dictionary of results also returned.
+
+       >>> print dirac.getPilotSummary()
+       {'OK': True, 'Value': [12345]}
+
+       @param job: JobID
+       @type job: integer or string
+       @return: S_OK,S_ERROR
+    """
+    result = self.wmsAdmin.getPilotSummary(startDate,endDate)
+    if not result['OK']:
+      return result
+
+    ceDict = result['Value']
+    for ce,summary in ceDict.items():
+      line = ce.ljust(28)
+      states = summary.keys()
+      states.sort()
+      for state in states:
+        count = str(summary[state])
+        line += state.ljust(12)+count.ljust(10)
+      self.log.info(line)
+
+    return result
 
   #############################################################################
   def __errorReport(self,error,message=None):
