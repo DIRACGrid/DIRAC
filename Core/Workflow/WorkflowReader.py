@@ -1,8 +1,8 @@
-# $Id: WorkflowReader.py,v 1.11 2008/02/07 15:12:26 gkuznets Exp $
+# $Id: WorkflowReader.py,v 1.12 2008/02/07 16:01:24 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.11 $"
+__RCSID__ = "$Revision: 1.12 $"
 
 #try: # this part to inport as part of the DIRAC framework
 import xml.sax
@@ -25,7 +25,6 @@ class WorkflowXMLHandler(ContentHandler):
 
   def startDocument(self):
     #reset the process
-
     #self.root=None
     self.stack=[]
     self.strings=[]
@@ -38,7 +37,7 @@ class WorkflowXMLHandler(ContentHandler):
     self.clearCharacters() # clear to remove empty or nonprintable characters
 
     if name == "Workflow":
-      if not self.root: #if root not defined by constractor
+      if self.root == None: #if root not defined by constractor
         self.root = Workflow()
       self.stack.append(self.root)
 

@@ -1,8 +1,8 @@
-# $Id: Workflow.py,v 1.24 2008/02/07 14:50:09 gkuznets Exp $
+# $Id: Workflow.py,v 1.25 2008/02/07 16:01:24 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.24 $"
+__RCSID__ = "$Revision: 1.25 $"
 
 import os
 import xml.sax
@@ -33,6 +33,10 @@ class Workflow(AttributeCollection):
     elif isinstance(obj, Workflow):
       self.fromWorkflow(obj)
     elif isinstance(obj, str):
+      self.parameters = ParameterCollection(None)
+      self.step_instances = InstancesPool(self)
+      self.step_definitions = DefinitionsPool(self)
+      self.module_definitions = DefinitionsPool(self)
       # if obj is an XML string
       if obj.startswith('<'):
         fromXMLString(obj, self)
@@ -246,11 +250,13 @@ class Workflow(AttributeCollection):
 from DIRAC.Core.Workflow.WorkflowReader import WorkflowXMLHandler
 
 def fromXMLString(xml_string, obj=None):
+    # KGG !!! We need to reset Workflow if it exists
     handler = WorkflowXMLHandler(obj)
     xml.sax.parseString(xml_string, handler)
     return handler.root
 
 def fromXMLFile(xml_file, obj=None):
+    # KGG !!! We need to reset Workflow if it exists
     handler = WorkflowXMLHandler(obj)
     xml.sax.parse(xml_file, handler)
     return handler.root
