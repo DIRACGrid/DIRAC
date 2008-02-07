@@ -1,8 +1,8 @@
-# $Id: WorkflowReader.py,v 1.10 2008/02/07 14:50:09 gkuznets Exp $
+# $Id: WorkflowReader.py,v 1.11 2008/02/07 15:12:26 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.10 $"
+__RCSID__ = "$Revision: 1.11 $"
 
 #try: # this part to inport as part of the DIRAC framework
 import xml.sax
@@ -25,7 +25,8 @@ class WorkflowXMLHandler(ContentHandler):
 
   def startDocument(self):
     #reset the process
-    self.root=None
+
+    #self.root=None
     self.stack=[]
     self.strings=[]
 
