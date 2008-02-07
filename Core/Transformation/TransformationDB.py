@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.12 2008/02/07 12:35:43 gkuznets Exp $
+# $Id: TransformationDB.py,v 1.13 2008/02/07 14:10:21 acsmith Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -435,7 +435,7 @@ Status VARCHAR(32) DEFAULT "unused",
 ErrorCount INT(4) NOT NULL DEFAULT 0,
 JobID VARCHAR(32),
 UsedSE VARCHAR(32) DEFAULT "Unknown",
-PRIMARY KEY (FileID,StreamName)
+PRIMARY KEY (FileID)
 )""" % str(transID)
     result = self._update(req)
     if not result['OK']:
