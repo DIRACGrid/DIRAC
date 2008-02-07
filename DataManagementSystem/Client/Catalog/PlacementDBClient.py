@@ -3,6 +3,7 @@
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.ConfigurationSystem.Client import PathFinder
+from DIRAC.Core.Transformation.TransformationDBClient import TransformationDBClient
 import types
 
 class PlacementDBClient(TransformationDBClient):
@@ -15,9 +16,9 @@ class PlacementDBClient(TransformationDBClient):
     self.valid = True
     try:
       if not url:
-        oServer = RPCClient("DataManagement/PlacementDB",useCertificates,timeout=120)
+        oServer = RPCClient("DataManagement/PlacementDB")
       else:
-        oServer = RPCClient(self.url,useCertificates,timeout = 120)
+        oServer = RPCClient(self.url)
       self.setServer(oServer)
-    except Exception,x:
+    except:
       self.valid = False
