@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/LCGPilotDirector.py,v 1.8 2008/02/07 18:51:28 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/LCGPilotDirector.py,v 1.9 2008/02/07 19:02:01 paterson Exp $
 # File :   LCGPilotDirector.py
 # Author : Stuart Paterson
 ########################################################################
@@ -11,7 +11,7 @@
      the invokation of the Pilot Director instance is performed here.
 """
 
-__RCSID__ = "$Id: LCGPilotDirector.py,v 1.8 2008/02/07 18:51:28 paterson Exp $"
+__RCSID__ = "$Id: LCGPilotDirector.py,v 1.9 2008/02/07 19:02:01 paterson Exp $"
 
 from DIRACEnvironment                                        import DIRAC
 from DIRAC.Core.Utilities                                    import List
@@ -36,7 +36,7 @@ class LCGPilotDirector(PilotDirector):
     self.diracInstallScript = gConfig.getValue(self.sectionPath+'/DIRACInstallScript','%s/scripts/dirac-install' %(self.diracRoot))
     self.archScript = gConfig.getValue(self.sectionPath+'/ArchitectureScript','%s/scripts/dirac-architecture' %(self.diracRoot))
     self.voSoftwareDir = gConfig.getValue(self.sectionPath+'VOSoftware','VO_LHCB_SW_DIR')
-    self.diracSetup = gConfig.getValue(self.sectionPath+'/Setup','Development')
+    self.diracSetup = gConfig.getValue(self.sectionPath+'/Setup','LHCb-Development')
     self.enableListMatch = gConfig.getValue(self.sectionPath+'/EnableListMatch',1)
     self.listMatchDelay = gConfig.getValue(self.sectionPath+'/ListMatchDelay',15*60)
     self.confFile1 = None
