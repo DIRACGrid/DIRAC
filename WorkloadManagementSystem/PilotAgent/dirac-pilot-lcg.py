@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/dirac-pilot-lcg.py,v 1.12 2008/01/23 08:46:00 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/dirac-pilot-lcg.py,v 1.13 2008/02/07 16:44:58 paterson Exp $
 # File :   dirac-pilot-lcg.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,7 +13,7 @@ import os,sys,string,re
     for the VO.
 """
 
-__RCSID__ = "$Id: dirac-pilot-lcg.py,v 1.12 2008/01/23 08:46:00 paterson Exp $"
+__RCSID__ = "$Id: dirac-pilot-lcg.py,v 1.13 2008/02/07 16:44:58 paterson Exp $"
 
 
 DEBUG = 1
@@ -222,7 +222,7 @@ def pilotExit(code):
   sys.exit(int(code))
 
 #############################################################################
-if len(sys.argv)!=5:
+if len(sys.argv)!=6:
   script = sys.argv[0]
   print 'Illegal number of arguments: %s' %(sys.argv)
   print 'Usage: %s <DIRAC Setup> <Job CPU Requirement> <VO_SW_DIR_Variable> <ProxyRole>' % sys.argv[0]
@@ -237,6 +237,7 @@ diracSetup = sys.argv[1]
 jobCPUReqt = sys.argv[2]
 SW_DIR = sys.argv[3]
 PROXY_ROLE = sys.argv[4]
+PILOT_TYPE = sys.argv[5]
 printPilot('Running in %s setup on %s' %(diracSetup,runCommand('date')))
 printPilot('WMS CPU Requirement is %s' %jobCPUReqt)
 printPilot('VO SW directory environment variable is %s' %(SW_DIR),'DEBUG')
@@ -389,7 +390,7 @@ if extraArchitectures.has_key(CMTCONFIG):
   newArch = extraArchitectures[CMTCONFIG]
   printPilot('Compatible OS Architectures are: %s' %(newArch))
 else:
-  printPilot('Platform %s undefined in /Resources/Computing/OSCompatibility' %(CMTCONFIG),'ERROR')
+  printPilot('Compatible OS Architectures for %s undefined in /Resources/Computing/OSCompatibility' %(CMTCONFIG),'ERROR')
   pilotExit(1)
 
 newArch = string.split(newArch,',')
@@ -403,7 +404,7 @@ for archToInstall in newArch:
     printPilot(runCommand('ls -al %s' %(newPython),1),'DEBUG')
 
 #Full setup of DIRAC with LCG site name
-fullSetup = '%s scripts/dirac-setup -m %s -s %s -a %s -p %s ' %(diracPython,diracSetup,DIRAC_SITE_NAME,CMTCONFIG,'LCG')
+fullSetup = '%s scripts/dirac-setup -m %s -s %s -a %s -p %s ' %(diracPython,diracSetup,DIRAC_SITE_NAME,CMTCONFIG,PILOT_TYPE)
 setupDIRAC(fullSetup)
 
 #############################################################################
