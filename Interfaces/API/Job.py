@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.15 2008/01/23 15:37:39 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.16 2008/02/07 21:42:45 paterson Exp $
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,7 +13,7 @@
 
 """
 
-__RCSID__ = "$Id: Job.py,v 1.15 2008/01/23 15:37:39 paterson Exp $"
+__RCSID__ = "$Id: Job.py,v 1.16 2008/02/07 21:42:45 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -125,7 +125,7 @@ class Job:
     step.appendParameterCopy(module.findParameter('LogFile'))
 
     moduleInstance = step.createModuleInstance('Script',moduleName)
-    moduleInstance.findParameter('Executable').link('self','Executable')
+    moduleInstance.setLink('Executable','self','Executable')
     moduleInstance.findParameter('Name').link('self','Name')
     moduleInstance.findParameter('LogFile').link('self','LogFile')
 
@@ -147,7 +147,7 @@ class Job:
     scriptParams.append(moduleInstance.findParameter('LogFile'))
     stepInstance.linkParameterUp(scriptParams,stepPrefix)
     self.workflow.findParameter('%sOutput' %(stepPrefix)).link(stepInstance.getName(),'Output')
-    self.workflow.findParameter('%sExecutable' %(stepPrefix)).setValue(executable)
+    self.workflow.setValue('%sExecutable' %(stepPrefix), executable)
     self.workflow.findParameter('%sName' %(stepPrefix)).setValue(moduleName)
     self.workflow.findParameter('%sLogFile' %(stepPrefix)).setValue(logName)
 
@@ -663,7 +663,7 @@ class Job:
     if self.script:
       if os.path.exists(self.script):
         scriptname = os.path.abspath(self.script)
-        self.log.verbose('Found script name %s' %scriptName)
+        self.log.verbose('Found script name %s' %scriptname)
     else:
       if xmlFile:
         self.log.verbose('Found XML File %s' %xmlFile)
