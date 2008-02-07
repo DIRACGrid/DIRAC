@@ -116,7 +116,7 @@ class TransformationHandler(RequestHandler):
     res = self.database.removeReplica(replicaTuples)
     return res
 
-  types_exists = [ListType]
+  types_getReplicas = [ListType]
   def export_getReplicas(self,lfns):
     res = self.database.getReplicas(lfns)
     return res
