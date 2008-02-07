@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.10 2008/02/06 17:34:25 gkuznets Exp $
+# $Id: TransformationDB.py,v 1.11 2008/02/07 12:06:54 acsmith Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -593,7 +593,7 @@ PRIMARY KEY (FileID,StreamName)
     gLogger.info("TransformationDB.removeFile: Attempting to remove %s files." % len(lfns))
     res = self.getAllTransformations()
     if res['OK']:
-      for transformation in result['Value']:
+      for transformation in res['Value']:
         transID = transformation['TransID']
         res = self.setFileStatusForTransformation(transID,'deleted',lfns)
     fileIDs = self.__getFileIDsForLfns(lfns)
@@ -603,10 +603,12 @@ PRIMARY KEY (FileID,StreamName)
       if not lfn in fileIDs.values():
         successful[lfn] = True
     req = "DELETE Replicas FROM Replicas WHERE FileID IN (%s);" % intListToString(fileIDs.keys())
+    print req
     res = self._update(req)
     if not res['OK']:
       return S_ERROR("TransformationDB.removeFile: Failed to remove file replicas.")
     req = "DELETE FROM DataFiles WHERE FileID IN (%s);" % intListToString(fileIDs.keys())
+    print req
     res = self._update(req)
     if not res['OK']:
       return S_ERROR("TransformationDB.removeFile: Failed to remove files.")
@@ -621,9 +623,11 @@ PRIMARY KEY (FileID,StreamName)
     gLogger.info("TransformationDB.addReplica: Attempting to add %s replicas." % len(replicaTuples))
     fileTuples = []
     for lfn,pfn,se,master in replicaTuples:
-      fileTuples.append((lfn,pfn,0,se,'IGNORED-GUID'))
+      fileTuples.append((lfn,pfn,0,se,'IGNORED-GUID','IGNORED-CHECKSUM'))
+    print fileTuples
     res = self.addFile(fileTuples,force)
     return res
+
 
   def addFile(self,fileTuples,force=False):
     """  Add a new file to the TransformationDB together with its first replica.
@@ -631,7 +635,7 @@ PRIMARY KEY (FileID,StreamName)
     gLogger.info("TransformationDB.addFile: Attempting to add %s files." % len(fileTuples))
     successful = {}
     failed = {}
-    for lfn,pfn,size,se,guid in fileTuples:
+    for lfn,pfn,size,se,guid,checksum in fileTuples:
 
       passFilter = False
       forced = False
@@ -646,6 +650,7 @@ PRIMARY KEY (FileID,StreamName)
 
       addedToCatalog = False
       addedToTransformation = False
+
       if retained:
         res = self.__addFile(lfn,pfn,se)
         if not res['OK']:
@@ -655,7 +660,7 @@ PRIMARY KEY (FileID,StreamName)
           fileID = res['Value']['FileID']
           fileExists = res['Value']['LFNExist']
           replicaExists = res['Value']['ReplicaExist']
-          if pass_filter:
+          if retained:
             res = self.__addFileToTransformation(fileID,lFilters)
             if res['OK']:
               addedToTransformation = True
@@ -685,7 +690,7 @@ PRIMARY KEY (FileID,StreamName)
       self.lock.release()
       if not res['OK']:
         return S_ERROR("TransformationDB.__addFile: %s" % res['Message'])
-      fileID = result['Value'][0][0]
+      fileID = res['Value'][0][0]
 
     replica_exist = 0
     res = self.__addReplica(fileID,se,pfn)
@@ -709,15 +714,16 @@ PRIMARY KEY (FileID,StreamName)
     res = self._query(req)
     if not res['OK']:
       return S_ERROR("TransformationDB.addReplica: %s" % res['Message'])
-    elif len(result['Value']) == 0:
-      return S_OK(0)
-    else:
+    elif len(res['Value']) == 0:
       req = "INSERT INTO Replicas (FileID,SE,PFN) VALUES (%s,'%s','%s');" % (fileID,se,pfn)
       res = self._update(req)
       if not res['OK']:
         return S_ERROR("TransformationDB.addReplica: %s" % res['Message'])
       else:
         return S_OK(1)
+    else:
+      return S_OK(0)
+
 
   def removeReplica(self,replicaTuples):
     """ Remove replica pfn of lfn. If this is the last replica then remove the file.
@@ -726,30 +732,35 @@ PRIMARY KEY (FileID,StreamName)
     successful = {}
     failed = {}
     for lfn,pfn,se in replicaTuples:
-      res = self.getReplicas([lfn])
+      req = "DELETE r FROM Replicas as r,DataFiles as d WHERE r.FileID=d.FileID AND d.LFN='%s' AND r.SE='%s';" % (lfn,se)
+      res = self._update(req)
       if not res['OK']:
-        failed[lfn] = "TransformationDB.removeReplica. Failed to get replicas before removal. %s" % res['Message']
-      elif not res['Value']['Successful'].has_key(lfn):
-        failed[lfn] = "TransformationDB.removeReplica. Failed to get replicas before removal. %s" % res['Value']['Failed'][lfn]
+        failed[lfn] = "TransformationDB.removeReplica. Failed to remove replica. %s" % res['Message']
       else:
-        replicas = res['Value']['Successful'][lfn]
-        if len(replics.keys()) < 2:
-          res = self.removeFile([lfn])
+          successful[lfn] = True
+          failedToRemove = False
+          res = self.getReplicas([lfn],True)
           if not res['OK']:
-            failed[lfn] = "TransformationDB.removeReplica. Failed to remove replica. %s" % res['Message']
+            gLogger.error("TransformationDB.removeReplica. Failed to get replicas for file removal",res['Message'])
+            failedToRemove = True
+          elif not res['Value']['Successful'].has_key(lfn):
+            gLogger.error("TransformationDB.removeReplica. Failed to get replicas for file removal",res['Value']['Failed'][lfn])
+            failedToRemove = True
           else:
-            successful[lfn] = True
-        else:
-          req = "DELETE FROM Replicas as r,DataFiles as d WHERE r.FileID=d.FileID AND d.LFN='%s' r.SE='%s';" % (lfn,se)
-          res = self._update(req)
-          if not res['OK']:
-            failed[lfn] = "TransformationDB.removeReplica. Failed to remove replica. %s" % res['Message']
-          else:
-            successful[lfn] = True
+            replicas = res['Value']['Successful'][lfn]
+            if len(replicas.keys()) == 0:
+              res = self.removeFile([lfn])
+              if not res['OK']:
+                failedToRemove = True
+              if not res['Value']['Successful'].has_key(lfn):
+                failedToRemove = True
+          if failedToRemove:
+            successful.pop(lfn)
+            failed[lfn] = "TransformationDB.removeReplica. Failed to remove replica and associated file."
     resDict = {'Successful':successful,'Failed':failed}
     return S_OK(resDict)
 
-  def getReplicas(self,lfns):
+  def getReplicas(self,lfns,getAll=False):
     """ Get replicas for the files specified by the lfn list
     """
     gLogger.info("TransformationDB.getReplicas: Attempting to get replicas for %s files." % len(lfns))
@@ -758,26 +769,31 @@ PRIMARY KEY (FileID,StreamName)
     for lfn in lfns:
       if not lfn in fileIDs.values():
         failed[lfn] = "TransformationDB.getReplicas: File not found."
-    req = "SELECT FileID,SE,PFN FROM Replicas WHERE FileID IN (%s);" % intListToString(fileIDs.keys())
+    req = "SELECT FileID,SE,PFN,Status FROM Replicas WHERE FileID IN (%s);" % intListToString(fileIDs.keys())
     res = self._query(req)
     if not res['OK']:
       return res
     successful = {}
-    for fileID,se,pfn in res['Value']:
-      lfn = fileIDs[fileID]
-      if not successful.has_key(lfn):
-        successful[lfn] = {}
-      successful[lfn][se] = pfn
+    for fileID,se,pfn,status in res['Value']:
+      takeReplica = True
+      if status != "AprioriGood":
+        if not getAll:
+          takeReplica = False
+      if takeReplica:
+        lfn = fileIDs[fileID]
+        if not successful.has_key(lfn):
+          successful[lfn] = {}
+        successful[lfn][se] = pfn
     for lfn in fileIDs.values():
       if not successful.has_key(lfn):
-        failed[lfn] = "TransformationDB.getReplicas: No replicas found."
+        successful[lfn] = {} #"TransformationDB.getReplicas: No replicas found."
     resDict = {'Successful':successful,'Failed':failed}
     return S_OK(resDict)
 
   def setReplicaStatus(self,replicaTuples):
     """Set status for the supplied replica tuples
     """
-    gLogger.info("TransformationDB.getReplicaStatus: Attempting to set statuses for %s replicas." % len(replicaTuples))
+    gLogger.info("TransformationDB.setReplicaStatus: Attempting to set statuses for %s replicas." % len(replicaTuples))
     successful = {}
     failed = {}
     for lfn,pfn,se,status in replicaTuples:
@@ -798,20 +814,23 @@ PRIMARY KEY (FileID,StreamName)
     resDict = {'Successful':successful,'Failed':failed}
     return S_OK(resDict)
 
-  def getReplicaStatus(self,lfns):
+  def getReplicaStatus(self,replicaTuples):
     """ Get the status for the supplied file replicas
     """
     gLogger.info("TransformationDB.getReplicaStatus: Attempting to get statuses of file replicas.")
+    lfns = []
+    for lfn,se in replicaTuples:
+      lfns.append(lfn)
     fileIDs = self.__getFileIDsForLfns(lfns)
     failed = {}
-    for lfn in lfns:
+    successful = {}
+    for lfn,se in replicaTuples:
       if not lfn in fileIDs.values():
         failed[lfn] = "TransformationDB.getReplicaStatus: File not found."
     req = "SELECT FileID,SE,Status FROM Replicas WHERE FileID IN (%s);" % intListToString(fileIDs.keys())
     res = self._query(req)
     if not res['OK']:
       return res
-    successful = {}
     for fileID,se,status in res['Value']:
       lfn = fileIDs[fileID]
       if not successful.has_key(lfn):
@@ -825,12 +844,15 @@ PRIMARY KEY (FileID,StreamName)
 
   def setReplicaHost(self,replicaTuples):
     gLogger.info("TransformationDB.setReplicaHost: Attempting to set SE for %s replicas." % len(replicaTuples))
+    successful = {}
+    failed = {} 
     for lfn,pfn,oldse,newse in replicaTuples:
       fileIDs = self.__getFileIDsForLfns([lfn])
       if not lfn in fileIDs.values():
         failed[lfn] = "TransformationDB.setReplicaHost: File not found."
       else:
-        fileID = fileIDs[lfn]
+        ############## Need to consider the case where the new se already exists for the file (breaks the primary key restriction)
+        fileID = fileIDs.keys()[0]
         req = "UPDATE Replicas SET SE='%s' WHERE FileID=%s AND SE ='%s';" % (newse,fileID,oldse)
         res = self._update(req)
         if not res['OK']:
