@@ -1,0 +1,27 @@
+#!/usr/bin/env python
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/Attic/dirac-wms-job-submit,v 1.1 2008/02/08 16:36:04 paterson Exp $
+__RCSID__ = "$Id: dirac-wms-job-submit,v 1.1 2008/02/08 16:36:04 paterson Exp $"
+import sys
+
+def usage(argv):
+  print 'Usage: %s <Path to JDL file>' %(argv[0])
+  sys.exit(2)
+
+if len(sys.argv)!=2:
+  usage(sys.argv)
+
+from DIRAC.Interfaces.API.Dirac                          import Dirac
+dirac=Dirac()
+try:
+  job = str(sys.argv[1])
+except Exception,x:
+  print 'Expected string for JDL file'
+  sys.exit(2)
+
+result = dirac.submit(job)
+if result['OK']:
+  print 'JobID = %s' %(result['Value'])
+  sys.exit(0)
+else:
+  print result['Message']
+  sys.exit(2)
