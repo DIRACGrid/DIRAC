@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.21 2008/02/08 13:37:15 acsmith Exp $
+# $Id: TransformationDB.py,v 1.22 2008/02/08 15:00:04 gkuznets Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -36,7 +36,7 @@ class TransformationDB(DB):
     self.catalog = None
 
 
-  def _isTransformationExists(self, name):
+  def _transformationExists(self, name):
     """ Method returns number of transformation with the name=<name>
         Returns transformation ID if exists otherwise 0
     """
@@ -49,7 +49,7 @@ class TransformationDB(DB):
       return 0
     return result['Value'][0][0]
 
-  def _isTransformationExistsID(self, id):
+  def _transformationExistsID(self, id):
     """ Method returns TRUE if transformation with the ID=<id> exists
     """
     cmd = "SELECT COUNT(*) from Productions WHERE TransformationID='%d'" % id
