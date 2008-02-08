@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.6 2008/02/08 18:15:31 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.7 2008/02/08 18:51:14 paterson Exp $
 # File :   DiracAdmin.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@ site banning and unbanning, WMS proxy uploading etc.
 
 """
 
-__RCSID__ = "$Id: DiracAdmin.py,v 1.6 2008/02/08 18:15:31 paterson Exp $"
+__RCSID__ = "$Id: DiracAdmin.py,v 1.7 2008/02/08 18:51:14 paterson Exp $"
 
 import DIRAC
 from DIRAC.Core.DISET.RPCClient                          import RPCClient
@@ -99,6 +99,8 @@ class DiracAdmin:
 
     """
     result = self.wmsAdmin.getSiteMask()
+    if result['OK']:
+      print self.pPrint.pformat(result['Value'])
     return result
 
   #############################################################################
