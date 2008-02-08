@@ -19,7 +19,7 @@ class ProcessingDBClient:
       if not url:
         oServer = RPCClient("ProductionManagement/ProcessingDB")
       else:
-        oServer = RPCClient(self.url)
+        oServer = RPCClient(url)
       self.setServer(oServer)
     except:
       self.valid = False
