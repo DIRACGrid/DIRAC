@@ -6,8 +6,8 @@ from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Transformation.TransformationDBClient import TransformationDBClient
 import types
 
-class ProductionDBClient:
-  """ File catalog client for production DB
+class ProductionDBClient(TransformationDBClient):
+  """ File catalog client for Production DB
   """
 
   def __init__(self, url=False, useCertificates=False):
