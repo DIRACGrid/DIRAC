@@ -31,18 +31,30 @@ class TransferAgent(Agent):
     gMonitor.registerActivity( "Iteration", "Agent Loops",          "TransferAgent", "Loops/min", gMonitor.OP_SUM )
     gMonitor.registerActivity( "Execute",   "Request Processed",    "TransferAgent", "Requests/min", gMonitor.OP_SUM )
     gMonitor.registerActivity( "Done",      "Request Completed",    "TransferAgent", "Requests/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity("Replicate and register","Replicate and register operations","TransferAgent", "Attempts/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity("Replication successful","Successful replications","TransferAgent", "Successful/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity("Replication failed","Failed replications","TransferAgent", "Failed/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity("Replica registration successful","Successful replica registrations","TransferAgent", "Successful/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity("Replica registration failed","Failed replica registrations","TransferAgent", "Failed/min", gMonitor.OP_SUM )  
 
+    gMonitor.registerActivity("Replicate and register","Replicate and register operations","TransferAgent", "Attempts/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity("Replicate","Replicate operations","TransferAgent", "Attempts/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity("Put and register","Put and register operations","TransferAgent", "Attempts/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity("Put","Put operations","TransferAgent", "Attempts/min", gMonitor.OP_SUM )
+
+    gMonitor.registerActivity("Replication successful","Successful replications","TransferAgent", "Successful/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity("Put successful","Successful puts","TransferAgent", "Successful/min", gMonitor.OP_SUM )
+
+    gMonitor.registerActivity("Replication failed","Failed replications","TransferAgent", "Failed/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity("Put failed","Failed puts","TransferAgent", "Failed/min", gMonitor.OP_SUM )
+
+    gMonitor.registerActivity("Replica registration successful","Successful replica registrations","TransferAgent", "Successful/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity("File registration successful","Successful file registrations","TransferAgent", "Successful/min", gMonitor.OP_SUM )
+
+    gMonitor.registerActivity("Replica registration failed","Failed replica registrations","TransferAgent", "Failed/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity("File registration failed","Failed file registrations","TransferAgent", "Failed/min", gMonitor.OP_SUM )
+      
     self.maxNumberOfThreads = gConfig.getValue(self.section+'/NumberOfThreads',1)
     self.threadPoolDepth = gConfig.getValue(self.section+'/ThreadPoolDepth',1) 
     self.threadPool = ThreadPool(1,self.maxNumberOfThreads)
 
-    self.useProxies = gConfig.getValue(self.section+'/UseProxies',False)
-    if self.useProxies:
+    self.useProxies = gConfig.getValue(self.section+'/UseProxies','True')
+    if self.useProxies == 'True':
       self.wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
       self.proxyDN = gConfig.getValue(self.section+'/ProxyDN','')
       self.proxyGroup = gConfig.getValue(self.section+'/ProxyGroup','')
@@ -53,7 +65,7 @@ class TransferAgent(Agent):
 
   def execute(self):
 
-    if self.useProxies:
+    if self.useProxies == 'True':
       ############################################################
       #
       # Get a valid proxy for the current activity
@@ -141,7 +153,8 @@ class TransferAgent(Agent):
           diracSE = subRequestAttributes['TargetSE']
           catalog = subRequestAttributes['Catalogue']
           for subRequestFile in subRequestFiles:
-            if subRequestFile['Status'] == 'Waiting':
+            if subRequestFile['Status'] == 'Waiting': 
+              gMonitor.addMark("Put and register",1)
               lfn = subRequestFile['LFN']
               file = subRequestFile['PFN']
               guid = subRequestFile['GUID']
@@ -150,8 +163,11 @@ class TransferAgent(Agent):
               if res['OK']:
                 if res['Value']['Successful'].has_key(lfn):
                   if not res['Value']['Successful'][lfn].has_key('put'):
+                    gMonitor.addMark("Put failed",1)
                     gLogger.info("TransferAgent.execute: Failed to put %s to %s." % (lfn,diracSE))
                   elif not res['Value']['Successful'][lfn].has_key('register'):
+                    gMonitor.addMark("Put successful",1)  
+                    gMonitor.addMark("File registration failed",1)
                     gLogger.info("TransferAgent.execute: Successfully put %s to %s in %s seconds." % (lfn,diracSE,res['Value']['Successful'][lfn]['put']))
                     gLogger.info("TransferAgent.execute: Failed to register %s to %s." % (lfn,diracSE))
                     oRequest.setSubRequestFileAttributeValue(ind,'transfer',lfn,'Status','Done')
@@ -160,13 +176,17 @@ class TransferAgent(Agent):
                     gLogger.info("TransferAgent.execute: Setting registration request for failed file.")
                     oRequest.addSubRequest(registerRequestDict,'register')
                   else:
+                    gMonitor.addMark("Put successful",1)  
+                    gMonitor.addMark("File registration successful",1)
                     gLogger.info("TransferAgent.execute: Successfully put %s to %s in %s seconds." % (lfn,diracSE,res['Value']['Successful'][lfn]['put']))
                     gLogger.info("TransferAgent.execute: Successfully registered %s to %s in %s seconds." % (lfn,diracSE,res['Value']['Successful'][lfn]['register']))
                     oRequest.setSubRequestFileAttributeValue(ind,'transfer',lfn,'Status','Done')
                 else:
+                  gMonitor.addMark("Put failed",1)
                   errStr = "TransferAgent.execute: Failed to put and register file."
                   gLogger.error(errStr,"%s %s %s" % (lfn,diracSE,res['Value']['Failed'][lfn]))
               else:
+                gMonitor.addMark("Put failed",1) 
                 errStr = "TransferAgent.execute: Completely failed to put and register file."
                 gLogger.error(errStr, res['Message'])
             else:
@@ -179,17 +199,21 @@ class TransferAgent(Agent):
           diracSE = subRequestAttributes['TargetSE']
           for subRequestFile in subRequestFiles:
             if subRequestFile['Status'] == 'Waiting':
+              gMonitor.addMark("Put",1)
               lfn = subRequestFile['LFN']
               file = subRequestFile['PFN']
               res = self.ReplicaManager.put(lfn, file, diracSE)
               if res['OK']:
                 if res['Value']['Successful'].has_key(lfn):
+                  gMonitor.addMark("Put successful",1)
                   gLogger.info("TransferAgent.execute: Successfully put %s to %s in %s seconds." % (lfn,diracSE,res['Value']['Successful'][lfn]))
                   oRequest.setSubRequestFileAttributeValue(ind,'transfer',lfn,'Status','Done')
                 else:
+                  gMonitor.addMark("Put failed",1)
                   errStr = "TransferAgent.execute: Failed to put file."
                   gLogger.error(errStr,"%s %s %s" % (lfn,diracSE,res['Value']['Failed'][lfn]))
               else:
+                gMonitor.addMark("Put failed",1)
                 errStr = "TransferAgent.execute: Completely failed to put file."
                 gLogger.error(errStr, res['Message'])
             else:
@@ -228,9 +252,11 @@ class TransferAgent(Agent):
                     gLogger.info("TransferAgent.execute: Successfully registered %s to %s in %s seconds." % (lfn,targetSE,res['Value']['Successful'][lfn]['register']))
                     oRequest.setSubRequestFileAttributeValue(ind,'transfer',lfn,'Status','Done')
                 else:
+                  gMonitor.addMark("Replication failed",1)
                   errStr = "TransferAgent.execute: Failed to replicate and register file."
                   gLogger.error(errStr,"%s %s %s" % (lfn,targetSE,res['Value']['Failed'][lfn]))
               else:
+                gMonitor.addMark("Replication failed",1)
                 errStr = "TransferAgent.execute: Completely failed to replicate and register file."
                 gLogger.error(errStr, res['Message'])
             else:
@@ -244,16 +270,20 @@ class TransferAgent(Agent):
           sourceSE = subRequestAttributes['SourceSE']
           for subRequestFile in subRequestFiles:
             if subRequestFile['Status'] == 'Waiting':
+              gMonitor.addMark("Replicate",1)
               lfn = subRequestFile['LFN']
               res = self.ReplicaManager.replicate(lfn,targetSE,sourceSE=sourceSE)
               if res['OK']:
                 if res['Value']['Successful'].has_key(lfn):
+                  gMonitor.addMark("Replication successful",1)
                   gLogger.info("TransferAgent.execute: Successfully replicated %s to %s in %s seconds." % (lfn,diracSE,res['Value']['Successful'][lfn]))
                   oRequest.setSubRequestFileAttributeValue(ind,'transfer',lfn,'Status','Done')
                 else:
+                  gMonitor.addMark("Replication failed",1)
                   errStr = "TransferAgent.execute: Failed to replicate file."
                   gLogger.error(errStr,"%s %s %s" % (lfn,targetSE,res['Value']['Failed'][lfn]))
               else:
+                gMonitor.addMark("Replication failed",1)
                 errStr = "TransferAgent.execute: Completely failed to replicate file."
                 gLogger.error(errStr, res['Message'])
             else:
