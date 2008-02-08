@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.17 2008/02/08 00:26:53 acsmith Exp $
+# $Id: TransformationDB.py,v 1.18 2008/02/08 12:37:55 gkuznets Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -38,14 +38,16 @@ class TransformationDB(DB):
 
   def _isTransformationExists(self, name):
     """ Method returns number of transformation with the name=<name>
-        Returns 0 if no transformations with such name
+        Returns transformation ID if exists otherwise 0
     """
-    cmd = "SELECT COUNT(*) from Transformations WHERE TransformationName='%s'" % name
+    cmd = "SELECT TransformationID from Transformations WHERE TransformationName='%s'" % name
     result = self._query(cmd)
     if not result['OK']:
       gLogger.error("Failed to check if Transformation with name %s exists %s" % (name, result['Message']))
       return 0
-    return result['Value'][0][0]
+    elif result['Value'] == ():
+      return 0
+    return result['Value'][0]
 
   def _isTransformationExistsID(self, id):
     """ Method returns TRUE if transformation with the ID=<id> exists
