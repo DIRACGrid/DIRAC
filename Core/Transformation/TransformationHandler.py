@@ -15,15 +15,6 @@ class TransformationHandler(RequestHandler):
     res = self.database.getName()
     return res
 
-  types_addTransformation = [StringType,StringType,IntType]
-  def export_addTransformation(self,transformationName,fileMask,groupSize):
-    res = self.database.addTransformation(transformationName,fileMask,groupSize)
-    authorDN = self.transport.peerCredentials['DN']
-    if res['OK']:
-      message = 'Transformation created'
-      res = self.database.updateTransformationLogging(transformationName,message,authorDN)
-    return res
-
   types_removeTransformation = [StringType]
   def export_removeTransformation(self,transformationName):
     res = self.database.removeTransformation(transformationName)
