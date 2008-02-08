@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.8 2008/02/08 12:27:08 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.9 2008/02/08 19:25:17 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -24,10 +24,10 @@ The initial instance just exposes job submission via the WMS client.
 
 """
 
-__RCSID__ = "$Id: Dirac.py,v 1.8 2008/02/08 12:27:08 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.9 2008/02/08 19:25:17 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types
-
+import pprint
 import DIRAC
 
 from DIRAC.Interfaces.API.Job                            import Job
@@ -67,7 +67,7 @@ class Dirac:
     self.inputSandboxClient = SandboxClient('Input')
     self.client = WMSClient()
     self.monitoring = RPCClient('WorkloadManagement/JobMonitoring')
-
+    self.pPrint = pprint.PrettyPrinter()
     try:
       from DIRAC.DataManagementSystem.Client.Catalog.LcgFileCatalogCombinedClient import LcgFileCatalogCombinedClient
       self.fileCatalog = LcgFileCatalogCombinedClient()
@@ -110,7 +110,7 @@ class Dirac:
       if os.path.exists(job):
         self.log.verbose('Found job JDL file %s' % (job))
         subResult = self._sendJob(job)
-        return jobResult
+        return subResult
       else:
         self.log.verbose('Job is a JDL string')
         guid = makeGuid()
@@ -310,9 +310,11 @@ class Dirac:
     if not self.fileCatalog:
       return self.__errorReport('File catalog client was not successfully imported')
 
+    bulkQuery = False
     if type(lfns)==type(" "):
       lfns = lfns.replace('LFN:','')
     elif type(lfns)==type([]):
+      bulkQuery = True
       try:
         lfns = [str(lfn.replace('LFN:','')) for lfn in lfns]
       except Exception,x:
@@ -328,6 +330,12 @@ class Dirac:
     if not repsResult['OK']:
       self.log.warn(repsResult['Message'])
 
+    if not bulkQuery:
+      if repsResult['OK']:
+        if repsResult['Value'].has_key('Successful'):
+          if repsResult['Value']['Successful'].has_key(lfns):
+             self.log.info(self.pPrint.pformat(repsResult['Value']['Successful'][lfns]))
+
     return repsResult
 
   #############################################################################
@@ -337,9 +345,11 @@ class Dirac:
     if not self.fileCatalog:
       return self.__errorReport('File catalog client was not successfully imported')
 
+    bulkQuery = False
     if type(lfns)==type(" "):
       lfns = lfns.replace('LFN:','')
     elif type(lfns)==type([]):
+      bulkQuery=True
       try:
         lfns = [str(lfn.replace('LFN:','')) for lfn in lfns]
       except Exception,x:
@@ -348,15 +358,21 @@ class Dirac:
       return self.__errorReport('Expected single string or list of strings for LFN(s)')
 
     start = time.time()
-    guidDict = self.fileCatalog.getFileMetadata(lfns)
+    repsResult = self.fileCatalog.getFileMetadata(lfns)
     timing = time.time() - start
-    self.log.info('GUID Lookup Time: %.2f seconds ' % (timing) )
-    self.log.verbose(guidDict)
-    if not guidDict['OK']:
-      self.log.warn('Failed to retrieve GUIDs from file catalogue')
-      self.log.warn(guidDict['Message'])
+    self.log.info('Metadata Lookup Time: %.2f seconds ' % (timing) )
+    self.log.verbose(repsResult)
+    if not repsResult['OK']:
+      self.log.warn('Failed to retrieve file metadata from the catalogue')
+      self.log.warn(repsResult['Message'])
 
-    return guidDict
+    if not bulkQuery:
+      if repsResult['OK']:
+        if repsResult['Value'].has_key('Successful'):
+          if repsResult['Value']['Successful'].has_key(lfns):
+            self.log.info(self.pPrint.pformat(repsResult['Value']['Successful'][lfns]))
+
+    return repsResult
 
   #############################################################################
   def _sendJob(self,jdl):
