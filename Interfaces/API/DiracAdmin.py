@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.4 2008/02/07 15:53:50 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.5 2008/02/08 11:25:33 paterson Exp $
 # File :   DiracAdmin.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@ site banning and unbanning, WMS proxy uploading etc.
 
 """
 
-__RCSID__ = "$Id: DiracAdmin.py,v 1.4 2008/02/07 15:53:50 paterson Exp $"
+__RCSID__ = "$Id: DiracAdmin.py,v 1.5 2008/02/08 11:25:33 paterson Exp $"
 
 import DIRAC
 from DIRAC.Core.DISET.RPCClient                          import RPCClient
@@ -22,6 +22,8 @@ from DIRAC.Core.Utilities.GridCredentials                import getGridProxy,get
 from DIRAC                                               import gConfig, gLogger, S_OK, S_ERROR
 
 import re, os, sys, string, time, shutil, types
+import pprint
+
 
 COMPONENT_NAME='/Interfaces/API/DiracAdmin'
 
@@ -49,6 +51,7 @@ class DiracAdmin:
     self.log.info('Setting DIRAC role for current proxy to %s' %diracAdmin)
     setDIRACGroup(diracAdmin)
     self.currentDir = os.getcwd()
+    self.pPrint = pprint.PrettyPrinter()
 
   #############################################################################
   def uploadProxy(self,group,permanent=True):
@@ -327,7 +330,7 @@ class DiracAdmin:
     """Retrieve the pilot output  (std.out and std.err) for an existing job in the WMS.
 
        >>> print dirac.getJobPilotOutput(12345)
-       {'OK': True, 'Value': [12345]}
+       {'OK': True, 'Value': {}}
 
        @param job: JobID
        @type job: integer or string
@@ -382,12 +385,36 @@ class DiracAdmin:
     return result
 
   #############################################################################
+  def getJobPilots(self,jobID):
+    """Extract the list of submitted pilots and their status for a given
+       jobID from the WMS.  Useful information is printed to the screen.
+
+       >>> print dirac.getJobPilots()
+       {'OK': True, 'Value': {PilotID:{StatusDict}}}
+
+       @param job: JobID
+       @type job: integer or string
+       @return: S_OK,S_ERROR
+
+    """
+    if type(jobID)==type(" "):
+      try:
+        jobID = int(jobID)
+      except Exception,x:
+        return self.__errorReport(str(x),'Expected integer or string for existing jobID')
+
+    result = self.wmsAdmin.getPilots(jobID)
+    if result['OK']:
+      print self.pPrint.pformat(result['Value'])
+    return result
+
+  #############################################################################
   def getPilotSummary(self,startDate='',endDate=''):
     """Retrieve the pilot output for an existing job in the WMS.  Summary is
        printed at INFO level, full dictionary of results also returned.
 
        >>> print dirac.getPilotSummary()
-       {'OK': True, 'Value': [12345]}
+       {'OK': True, 'Value': {CE:{Status:Count}}}
 
        @param job: JobID
        @type job: integer or string
