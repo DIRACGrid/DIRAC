@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.16 2008/02/07 21:42:45 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.17 2008/02/08 10:23:28 paterson Exp $
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,7 +13,7 @@
 
 """
 
-__RCSID__ = "$Id: Job.py,v 1.16 2008/02/07 21:42:45 paterson Exp $"
+__RCSID__ = "$Id: Job.py,v 1.17 2008/02/08 10:23:28 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -24,6 +24,7 @@ from DIRAC.Core.Workflow.Workflow                   import *
 from DIRAC.Core.Workflow.WorkflowReader             import *
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight      import ClassAd
 from DIRAC.ConfigurationSystem.Client.Config        import gConfig
+from DIRAC.Core.Utilities.Subprocess                import shellCall
 from DIRAC                                          import gLogger
 
 COMPONENT_NAME='/Interfaces/API/Job'
