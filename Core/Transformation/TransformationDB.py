@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.20 2008/02/08 12:59:33 acsmith Exp $
+# $Id: TransformationDB.py,v 1.21 2008/02/08 13:37:15 acsmith Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -224,8 +224,7 @@ class TransformationDB(DB):
       return res
     ids = [ str(x[0]) for x in res['Value'] ]
     if not ids:
-    resDict = {'Data': []}
-    return S_OK(resDict)
+      return S_OK([])
 
     if status:
       req = "SELECT LFN,SE FROM Replicas,DataFiles WHERE Replicas.Status = '%' AND \
@@ -239,8 +238,7 @@ class TransformationDB(DB):
     replicaList = []
     for lfn,se in res['Value']:
       replicaList.append((lfn,se))
-    resDict = {'Data': replicaList}
-    return S_OK(resDict)
+    return S_OK(replicaList)
 
   def getFilesForTransformation(self,transName,jobOrdered=False):
     """ Get files and their status for the given transformation
