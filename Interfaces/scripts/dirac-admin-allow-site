@@ -1,0 +1,26 @@
+#!/usr/bin/env python
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/Attic/dirac-admin-allow-site,v 1.1 2008/02/08 18:55:20 paterson Exp $
+__RCSID__ = "$Id: dirac-admin-allow-site,v 1.1 2008/02/08 18:55:20 paterson Exp $"
+import sys
+
+def usage(argv):
+  print 'Usage: %s <DIRAC site name>' %(argv[0])
+  sys.exit(2)
+
+if len(sys.argv)!=2:
+  usage(sys.argv)
+
+from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
+diracAdmin = DiracAdmin()
+try:
+  site = str(sys.argv[1])
+except Exception,x:
+  print 'Expected string for DIRAC site name'
+  sys.exit(2)
+
+result = diracAdmin.addSiteInMask(site)
+if result['OK']:
+  sys.exit(0)
+else:
+  print result['Message']
+  sys.exit(2)
