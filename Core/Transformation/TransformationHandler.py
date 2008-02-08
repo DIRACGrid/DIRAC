@@ -10,45 +10,66 @@ class TransformationHandler(RequestHandler):
   def setDatabase(self,oDatabase):
     self.database = oDatabase
 
-  types_addDirectory = [StringType]
-  def export_addDirectory(self,path,force):
-    res = self.database.addDirectory(path,force)
+  types_getName = []
+  def export_getName(self):
+    res = self.database.getName()
     return res
 
   types_addTransformation = [StringType,StringType,IntType]
   def export_addTransformation(self,transformationName,fileMask,groupSize):
     res = self.database.addTransformation(transformationName,fileMask,groupSize)
+    authorDN = self.transport.peerCredentials['DN']
+    if res['OK']:
+      message = 'Transformation created'
+      res = self.database.updateTransformationLogging(transformationName,message,authorDN)
     return res
 
   types_removeTransformation = [StringType]
   def export_removeTransformation(self,transformationName):
     res = self.database.removeTransformation(transformationName)
+    authorDN = self.transport.peerCredentials['DN']
+    if res['OK']:
+      message = 'Removed'
+      res = self.database.updateTransformationLogging(transformationName,message,authorDN)
     return res
 
   types_setTransformationStatus = [StringType,StringType]
   def export_setTransformationStatus(self,transformationName,status):
     res = self.database.setTransformationStatus(transformationName,status)
-    return res
-
-
-  types_getTransformationStats = [StringType]
-  def export_getTransformationStats(self,transformationName):
-    res = self.database.setTransformationStatus(transformationName)
-    return res
-
-  types_getTransformation = [StringType]
-  def export_getTransformation(self,transformationName):
-    res = self.database.getTransformation(transformationName)
+    authorDN = self.transport.peerCredentials['DN']
+    if res['OK']:
+      message = "Status changed to %s" % status
+      res = self.database.updateTransformationLogging(transformationName,message,authorDN)
     return res
 
   types_setTransformationMask = [StringType,StringType]
   def export_setTransformationMask(self,transformationName,fileMask):
     res = self.database.setTransformationMask(transformationName,fileMask)
+    authorDN = self.transport.peerCredentials['DN']
+    if res['OK']:
+      message = "Mask changed to %s" % fileMask
+      res = self.database.updateTransformationLogging(transformationName,message,authorDN)
     return res
 
   types_changeTransformationName = [StringType,StringType]
   def export_changeTransformationName(self,transformationName,newName):
     res = self.database.changeTransformationName(transformationName,newName)
+    authorDN = self.transport.peerCredentials['DN']
+    if res['OK']:
+      message = "Transformation name changed to %s" % newName
+      res = self.database.updateTransformationLogging(newName,message,authorDN)
+    return res
+
+  ############################################################################
+
+  types_getTransformationStats = [StringType]
+  def export_getTransformationStats(self,transformationName):
+    res = self.database.getTransformationStats(transformationName)
+    return res
+
+  types_getTransformation = [StringType]
+  def export_getTransformation(self,transformationName):
+    res = self.database.getTransformation(transformationName)
     return res
 
   types_getAllTransformations = []
@@ -57,11 +78,11 @@ class TransformationHandler(RequestHandler):
     return res
 
   types_getFilesForTransformation = [StringType]
-  def export_getFilesForTransformation(self,transformationName,orderByJobs):
+  def export_getFilesForTransformation(self,transformationName,orderByJobs=False):
     res = self.database.getFilesForTransformation(transformationName,orderByJobs)
     return res
 
-  types_getInputData = [StringType]
+  types_getInputData = [StringType,StringType]
   def export_getInputData(self,transformationName,status):
     res = self.database.getInputData(transformationName,status)
     return res
@@ -76,11 +97,6 @@ class TransformationHandler(RequestHandler):
     res = self.database.setFileStatusForTransformation(transformationName,status,lfns)
     return res
 
-  types_setFileStatus = [StringType,StringType,StringType]
-  def export_setFileStatus(self,transformationName,lfn,status):
-    res = self.database.setFileStatus(transformationName,lfn,status)
-    return res
-
   types_setFileJobID = [StringType,IntType,ListType]
   def export_setFileJobID(self,transformationName,jobID,lfns):
     res = self.database.setFileJobID(transformationName,jobID,lfns)
@@ -90,6 +106,11 @@ class TransformationHandler(RequestHandler):
   #
   # These are the methods to file manipulation
   #
+
+  types_addDirectory = [StringType]
+  def export_addDirectory(self,path,force):
+    res = self.database.addDirectory(path,force)
+    return res
 
   types_exists = [ListType]
   def export_exists(self,lfns):
@@ -136,7 +157,3 @@ class TransformationHandler(RequestHandler):
     res = self.database.setReplicaHost(replicaTuples)
     return res
 
-  types_getName = []
-  def export_getName(self):
-    res = self.database.getName()
-    return res
