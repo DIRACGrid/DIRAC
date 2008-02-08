@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSAdministratorHandler.py,v 1.11 2008/02/06 18:16:55 atsareg Exp $
+# $Id: WMSAdministratorHandler.py,v 1.12 2008/02/08 10:30:41 atsareg Exp $
 ########################################################################
 """
 This is a DIRAC WMS administrator interface.
@@ -8,16 +8,16 @@ It exposes the following methods:
 Site mask related methods:
     setMask(<site mask>)
     getMask()
-  
-User proxy related methods:     
+
+User proxy related methods:
     getProxy(DN)
-    
-Access to the pilot data:    
+
+Access to the pilot data:
     getWMSStats()
 
 """
 
-__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.11 2008/02/06 18:16:55 atsareg Exp $"
+__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.12 2008/02/08 10:30:41 atsareg Exp $"
 
 import os, sys, string, uu, shutil
 from types import *
@@ -163,7 +163,7 @@ class WMSAdministratorHandler(RequestHandler):
       proxy_to_send = setDIRACGroupInProxy(tmp_proxy,group)
     else:
       proxy_to_send = proxy
-            
+
     result = self.getRemoteCredentials()
     userDN = DN
     if not DN:
@@ -188,8 +188,8 @@ class WMSAdministratorHandler(RequestHandler):
     userGroup = group
     if not group:
       userGroup = result['group']
-      
-    gLogger.info('Destroying proxy of %s, group %s' %(userDN,userGroup))  
+
+    gLogger.info('Destroying proxy of %s, group %s' %(userDN,userGroup))
 
     result = proxyRepository.destroyProxy(userDN,userGroup)
     return result
@@ -236,7 +236,7 @@ class WMSAdministratorHandler(RequestHandler):
     if pilotReference:
       return self.__getGridJobOutput(pilotReference)
     else:
-      return S_ERROR('No pilot job reference found')  
+      return S_ERROR('No pilot job reference found')
 
   ##############################################################################
   def __getGridJobOutput(self,pilotReference):
@@ -251,7 +251,7 @@ class WMSAdministratorHandler(RequestHandler):
     pilotDict = result['Value']
     owner = pilotDict['OwnerDN']
     group = pilotDict['OwnerGroup']
-    
+
     result = pilotDB.getPilotOutput(pilotReference)
     if result['OK']:
       stdout = result['Value']['StdOut']
@@ -267,7 +267,7 @@ class WMSAdministratorHandler(RequestHandler):
         resultDict['OwnerGroup'] = group
         resultDict['FileList'] = []
         return S_OK(resultDict)
-    
+
     result = proxyRepository.getProxy(owner,group)
     if not result['OK']:
       return S_ERROR("Failed to get the pilot's owner proxy")
@@ -306,4 +306,16 @@ class WMSAdministratorHandler(RequestHandler):
     result = pilotDB.getPilotsSummary(startdate,enddate)
     return result
 
+  ##############################################################################
+  types_getPilots = [IntType]
+  def export_getPilots(self,jobID):
+    """ Get pilot references and their statuses for those submitted for the given job
+    """
 
+    result = pilotDB.getPilotsForJob(jobID)
+    if not result['OK']:
+      return S_ERROR('Failed to get pilots: '+result['Message'])
+
+    pilots = result['Value']
+    result = pilotDB.getPilotInfo(pilots)
+    return result
