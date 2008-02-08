@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.18 2008/02/08 12:37:55 gkuznets Exp $
+# $Id: TransformationDB.py,v 1.19 2008/02/08 12:45:46 gkuznets Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -47,7 +47,7 @@ class TransformationDB(DB):
       return 0
     elif result['Value'] == ():
       return 0
-    return result['Value'][0]
+    return result['Value'][0][0]
 
   def _isTransformationExistsID(self, id):
     """ Method returns TRUE if transformation with the ID=<id> exists
