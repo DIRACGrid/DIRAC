@@ -30,6 +30,9 @@ class ReplicationPlacementHandler(TransformationHandler):
     authorGroup = self.transport.peerCredentials['group']
     try:
       res = placementDB.addTransformation(transName,desciption,longDesription,authorDN,authorGroup,type,plugin,'ReplicationPlacementAgent',fileMask)
+      if res['OK']:
+        message = 'Transformation created'
+        res = self.database.updateTransformationLogging(transformationName,message,authorDN)
       return res
     except Exception,x:
       errStr = "ReplicationPlacementHandler.publishTransformation: Exception while adding transformation."
