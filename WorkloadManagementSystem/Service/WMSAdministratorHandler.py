@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSAdministratorHandler.py,v 1.12 2008/02/08 10:30:41 atsareg Exp $
+# $Id: WMSAdministratorHandler.py,v 1.13 2008/02/08 10:33:03 atsareg Exp $
 ########################################################################
 """
 This is a DIRAC WMS administrator interface.
@@ -17,7 +17,7 @@ Access to the pilot data:
 
 """
 
-__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.12 2008/02/08 10:30:41 atsareg Exp $"
+__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.13 2008/02/08 10:33:03 atsareg Exp $"
 
 import os, sys, string, uu, shutil
 from types import *
@@ -27,7 +27,7 @@ from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.ProxyRepositoryDB import ProxyRepositoryDB
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
-from DIRAC.Core.Utilities.GridCredentials import setupProxy, renewProxy, getProxyTimeLeft, setDIRACGroupInProxy
+from DIRAC.Core.Utilities.GridCredentials import restoreProxy, setupProxy, renewProxy, getProxyTimeLeft, setDIRACGroupInProxy
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import *
 
 # This is a global instance of the JobDB class
@@ -281,6 +281,7 @@ class WMSAdministratorHandler(RequestHandler):
 
     gridType = pilotDict['GridType']
     result = eval('get'+gridType+'PilotOutput("'+pilotReference+'")')
+    resProxy = restoreProxy(new_proxy,old_proxy)
     if not result['OK']:
       return S_ERROR('Failed to get pilot output: '+result['Message'])
 
