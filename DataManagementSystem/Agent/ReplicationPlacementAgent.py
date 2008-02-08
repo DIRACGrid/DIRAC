@@ -1,7 +1,7 @@
 """  ReplicationPlacementAgent determines the replications to be performed based on operations defined in the operations database
 """
 
-from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC  import gLogger,gMonitor, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC.RequestManagementSystem.Client.Request import RequestClient
 from DIRAC.RequestManagementSystem.Client.DataManagementRequest import DataManagementRequest
@@ -24,24 +24,95 @@ class ReplicationPlacementAgent(Agent):
 
   def initialize(self):
     result = Agent.initialize(self)
-    self.RequestDB = RequestClient()
+    #self.RequestDB = RequestClient()
     self.PlacementDB = PlacementDBClient()
     self.server = RPCClient("DataManagement/PlacementDB")
+    gMonitor.registerActivity("Iteration","Agent Loops","ReplicationPlacementAgent","Loops/min",gMonitor.OP_SUM)
     return result
 
   def execute(self):
+    gMonitor.addMark('Iteration',1)
+
+    transName = gConfig.getValue(self.section+'/Transformation')
+    if transName:
+      self.singleTransformation = transName
+      gLogger.info("Initializing Replication Agent for transformation %s." % transName)
+    else:
+      self.singleTransformation = False
+      gLogger.info("ReplicationPlacementAgent.execute: Initializing general purpose agent.")
+
+    res = self.server.getAllTransformations()
+    activeTransforms = []
+    if not res['OK']:
+      gLogger.error("ReplicationPlacementAgent.execute: Failed to get transformations.", res['Message'])
+
+    for transDict in res['Value']:
+      transName = transDict['Name']
+      transStatus = transDict['Status']
+
+      processTransformation = True
+      if self.singleTransformation:
+        if not self.singleTransformation == transName:
+          gLogger.info("ReplicationPlacementAgent.execute: Skipping %s (not selected)." % transName)
+          processTransformation = False
+
+      if processTransformation:
+        startTime = time.time()
+        # process the active transformations
+        if transStatus == 'Active':
+          gLogger.info("ReplicationPlacementAgent.execute: Processing transformation '%s'." % transName)
+          res = self.processTransformation(transDict, False)
+          gLogger.info("ReplicationPlacementAgent.execute: Transformation '%s' processed in %s seconds." % (transName,time.time()-startTime))
+
+        # flush transformations
+        elif transStatus == 'Flush':
+          gLogger.info("ReplicationPlacementAgent.execute: Flushing transformation '%s'." % transName)
+          res = self.processTransformation(transDict, True)
+          if not res['OK']:
+            gLogger.error("ReplicationPlacementAgent.execute: Failed to flush transformation '%s'." % transName, res['Message'])
+          else:
+            gLogger.info("ReplicationPlacementAgent.execute: Transformation '%s' flushed in %s seconds." % (transName,time.time()-startTime))
+            res = self.server.setTransformationStatus(transName, 'Stopped')
+            if not res['OK']:
+              gLogger.error("ReplicationPlacementAgent.execute: Failed to update transformation status to 'Stopped'.", res['Message'])
+            else:
+              gLogger.info("ReplicationPlacementAgent.execute: Updated transformation status to 'Stopped'.")
+
+        # skip the transformations of other statuses
+        else:
+          gLogger.info("ReplicationPlacementAgent.execute: Skipping transformation '%s' with status %s." % (transName,transStatus))
+
+    return S_OK()
+
+  def processTransformation(self,transDict,flush=False):
+    """ Process a single transformation
+    """
+    res = self.server.getInputData(transDict['Name'],'')
+    if not res['OK']:
+      errStr = "ReplicationPlacementAgent.processTransformation: Failed to obtain input data."
+      gLogger.error(errStr,res['Message'])
+      return S_ERROR(errStr)
+    data = res['Value']
+    plugin = transDict['Plugin']
+    params = transDict['Additional']
+
+    ### need to instanciate the plugin module to group the files
+    ### need another module which will submit the jobs/transfers
+    return S_OK()
+
     """
     transName = 'T0-Export'
     desciption = 'Export of RAW file from T0 to the Tier1s'
-    longDesription = ''   
-    type = 'Replication' 
-    mode = 'Automatic' 
+    longDesription = ''
+    type = 'Replication'
+    mode = 'Automatic'
     fileMask = '/*'
     res = self.server.publishTransformation(transName, desciption,longDesription, type, mode, fileMask)
     print res
-    """
-    lfn = '/lfn/file'
-    pfn = 'srm://host:/path/lfn'
+
+    import time
+    lfn = '/lfn/file.%s' % time.time()
+    pfn = 'srm://host:/path/%s' % lfn
     size = 0
     se = 'storage-element'
     guid = 'IGNORED-GUID'
@@ -63,23 +134,23 @@ class ReplicationPlacementAgent(Agent):
     res = self.PlacementDB.getReplicaStatus(replicaTuple)
     if not res['OK']:
       print res
-  
+
     replicaTuple = (lfn,pfn,se,'storage-element3')
     res = self.PlacementDB.setReplicaHost(replicaTuple)
     print res
     if not res['OK']:
-      print res    
+      print res
 
     res = self.PlacementDB.getReplicas(lfn)
     print res
     if not res['OK']:
-      print res    
+      print res
 
     replicaTuple = (lfn,pfn,se,'Problematic')
     res = self.PlacementDB.setReplicaStatus(replicaTuple)
     if not res['OK']:
       print res
-     
+
     replicaTuple = (lfn,pfn,se)
     res = self.PlacementDB.removeReplica(replicaTuple)
     if not res['OK']:
@@ -88,131 +159,11 @@ class ReplicationPlacementAgent(Agent):
     res = self.PlacementDB.removeFile(lfn)
     if not res['OK']:
       print res
-
-    return S_OK()
-
-
-  """
-  def initialize(self):
-
-    AgentBase.initialize(self)
-
-    mode = cfgSvc.get( "Site", "Mode" )
-    # get the dirac scripts path
-    self.scriptdir = cfgSvc.get( "Site", "Root" )+"/DIRAC/scripts"
-    # get urls for the processing db and adtdb urls
-    adtDB_URL = cfgSvc.get( mode, "AutoDataTransferDBURL")
-    self.adtDB = xmlrpclib.Server(adtDB_URL)
-    procDB_URL = cfgSvc.get( mode, "ProcessingDBURL" )
-    self.procDB = xmlrpclib.Server(procDB_URL)
-
-
-
-    prod_id = cfgSvc.get( "ReplicationAgent", "ProductionID")
-    if prod_id == "ALL":
-      self.production = None
-      print 'Initializing general purpose Replication Agent'
-    else:
-      self.production = prod_id
-      print "Initializing Replication Agent for production",prod_id
-
-    print'Obtaining the config values of the active productions'
-    #activeTransforms = self.procDB.getTransformationsWithStatus('Active')
-    activeTransforms = self.adtDB.getTransformationsWithStatus('Active')
-    print activeTransforms
-    self.activeProductionConfig = {}
-    if activeTransforms['Status'] == 'OK':
-      for transform in activeTransforms['Transformations']:
-        inputStream = self.getTransformationStream(transform['Production'])
-        sname = inputStream['Value'][1]
-        self.activeProductionConfig[sname] = {}
-        self.activeProductionConfig[sname]['TargetSEs'] = cfgSvc.get(sname,'targetse').replace(' ','').split(',')
-        self.activeProductionConfig[sname]['SourceSE'] = cfgSvc.get(sname,'sourcese')
-        self.activeProductionConfig[sname]['Broadcast'] = cfgSvc.get(sname,'Broadcast')
-        self.activeProductionConfig[sname]['DistinguishSites'] =  cfgSvc.get(sname,'DistinguishSites')
-
-
-  def execute(self):
-
-    if self.production:
-      # Transformation agent is defined for a definite production
-      if DEBUG:
-        print "Processing Transformation for Production",self.production
-      result = self.processTransformation(self.production)
-      return result
-    else:
-      OK = 1
-      # Process all the active transformations otherwise
-      #result = self.procDB.getTransformationsWithStatus('Active')
-      result = self.adtDB.getTransformationsWithStatus('Active')
-      if result['Status'] == "OK":
-        transformations = result['Transformations']
-        for transformation in transformations:
-          production = transformation['Production']
-          if DEBUG:
-            print "Processing Transformation for Production",production
-            start = time.time()
-          result = self.processTransformation(production)
-          if DEBUG:
-            total = time.time() - start
-            print "Processing done in",total,"seconds"
-          if result['Status'] != "OK":
-            OK = 0
-      else:
-        return S_ERROR('Can not get data from the Processing DB')
-
-    if not OK:
-      return S_ERROR('Can not process all the active transformations')
-    else:
-      return S_OK()
-
-  """
-  def getTransformationStream(self,prodID,active=True):
-    """Get definition of the input stream for an Active Transformation,
-       return error if the Transformation defined by prodID is not active
-       or stream data is not available
     """
 
-    #result = self.procDB.getTransformation(prodID)
-    result = self.adtDB.getTransformation(prodID)
-
-    #print result
-
-    if result['Status'] == "OK":
-      transformation = result['Transformation']
-      status = transformation['Status']
-      if active:
-        if status != "Active":
-          result = S_ERROR('Transformation is not Active')
-          return result
-    else:
-      result = S_ERROR('Can not get data for transformation '+str(prodID))
-      return result
-
-    transID = transformation['TransID']
-
-    #result = self.procDB.getInputStreams(transID)
-    result = self.adtDB.getInputStreams(transID)
-    if result['Status'] == "OK":
-      inputs = result['InputStreams']
-      if len(inputs) > 1:
-        print "Multiple input streams are not supported yet"
-        return S_ERROR("Multiple input streams are not supported yet")
-      else:
-        sname = inputs.keys()[0]
-        mask,site_flag,group_size = inputs[sname]
-        sflag = 1
-        if site_flag == "False": sflag = 0
-    else:
-      result = S_ERROR('Can not get data for transformation '+str(prodID))
-      return result
-
-    result = S_OK((transID,sname,mask,sflag,group_size))
-    return result
+  """
 
   def processTransformation(self,prodID):
-    """Process one Transformation defined by prodID
-    """
     result = self.getTransformationStream(prodID)
     if result['Status'] == "OK":
       transID,sname,mask,sflag,group_size = result['Value']
@@ -245,17 +196,15 @@ class ReplicationPlacementAgent(Agent):
             #if this transformation is a broadcast then the lfn should be exluded
             if self.activeProductionConfig[transsname]['Broadcast'] == '1':
               exclude = 1
-            """
-            else:
-              print 'isnt boradcast!!!!!!!!!!!!'
-              #get all target ses of lfn transforms
-              transTargetSEs = self.activeProductionConfig[sname]['TargetSEs']
-              print 'target sesi of transform', transTargetSEs
-              #if the lfn is active in any transform with a targetSE the same as that of the current transformation then don't include
-              for transTargetSE in transTargetSEs:
-                if targetSEs.__contains__(transTargetSE):
-                  exclude = 1
-            """
+            #else:
+            #  print 'isnt boradcast!!!!!!!!!!!!'
+            #  #get all target ses of lfn transforms
+            #  transTargetSEs = self.activeProductionConfig[sname]['TargetSEs']
+            #  print 'target sesi of transform', transTargetSEs
+            #  #if the lfn is active in any transform with a targetSE the same as that of the current transformation then don't include
+            #  for transTargetSE in transTargetSEs:
+            #    if targetSEs.__contains__(transTargetSE):
+            #      exclude = 1
           if exclude == 0:
             #print 'LFN '+lfn+ ' selected for transformation '+sname
             sourceData.append((lfn,se))
@@ -275,14 +224,7 @@ class ReplicationPlacementAgent(Agent):
       else:
         return result
 
-
-
   def generateJob(self,data,production,transID,sname,sflag,group_size):
-    """Generate a job
-
-       Generates a job based on the input data, adds job to the repository
-       and returns a reduced list of the lfns that rest to be processed
-    """
     targetSites = self.activeProductionConfig[sname]['TargetSEs']
     distinguishSites= self.activeProductionConfig[sname]['DistinguishSites']
     broadcast = self.activeProductionConfig[sname]['Broadcast']
@@ -384,6 +326,7 @@ class ReplicationPlacementAgent(Agent):
     data_m = data[totalLoad:]
     return data_m
 
+  """
 class TransformationGrouping:
 
   def loadBalance(self):
