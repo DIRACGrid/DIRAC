@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.5 2008/02/08 11:25:33 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.6 2008/02/08 18:15:31 paterson Exp $
 # File :   DiracAdmin.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@ site banning and unbanning, WMS proxy uploading etc.
 
 """
 
-__RCSID__ = "$Id: DiracAdmin.py,v 1.5 2008/02/08 11:25:33 paterson Exp $"
+__RCSID__ = "$Id: DiracAdmin.py,v 1.6 2008/02/08 18:15:31 paterson Exp $"
 
 import DIRAC
 from DIRAC.Core.DISET.RPCClient                          import RPCClient
@@ -48,7 +48,7 @@ class DiracAdmin:
     self.scratchDir = gConfig.getValue(self.section+'/ScratchDir','/tmp')
     self.wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
     diracAdmin = 'diracAdmin'
-    self.log.info('Setting DIRAC role for current proxy to %s' %diracAdmin)
+    self.log.verbose('Setting DIRAC role for current proxy to %s' %diracAdmin)
     setDIRACGroup(diracAdmin)
     self.currentDir = os.getcwd()
     self.pPrint = pprint.PrettyPrinter()
@@ -425,14 +425,25 @@ class DiracAdmin:
       return result
 
     ceDict = result['Value']
+    headers = 'CE'.ljust(28)
+    i = 0
+    for ce,summary in ceDict.items():
+      states = summary.keys()
+      if len(states)>i:
+        i = len(states)
+
+    for i in xrange(i):
+      headers += 'Status'.ljust(12)+'Count'.ljust(12)
+    print headers
+
     for ce,summary in ceDict.items():
       line = ce.ljust(28)
       states = summary.keys()
       states.sort()
       for state in states:
         count = str(summary[state])
-        line += state.ljust(12)+count.ljust(10)
-      self.log.info(line)
+        line += state.ljust(12)+count.ljust(12)
+      print line
 
     return result
 
