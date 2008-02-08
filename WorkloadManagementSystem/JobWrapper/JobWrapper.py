@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.15 2008/02/07 14:28:21 paterson Exp $
+# $Id: JobWrapper.py,v 1.16 2008/02/08 16:24:43 paterson Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.15 2008/02/07 14:28:21 paterson Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.16 2008/02/08 16:24:43 paterson Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -540,6 +540,12 @@ class JobWrapper:
         return S_ERROR('InputSandbox download failed for job %s and sandbox %s' %(self.jobID,sandboxFiles))
 
     self.log.verbose('Sandbox download result: %s' %(result))
+    for sandboxFile in sandboxFiles:
+      if re.search('.tar.gz$',sandboxFile) or re.search('.tgz$',sandboxFile):
+        if os.path.exists(sandboxFile):
+          self.log.verbose('Unpacking input sandbox file %s' %(sandboxFile))
+          os.system('tar -zxf %s' %sandboxFile)
+
     return result
 
   #############################################################################
