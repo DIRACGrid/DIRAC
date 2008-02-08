@@ -23,14 +23,13 @@ class ReplicationPlacementHandler(TransformationHandler):
     TransformationHandler.__init__(self,*args,**kargs)
 
   types_publishTransformation = []
-  def export_publishTransformation(self, transName, desciption,longDesription, type, mode, fileMask):
+  def export_publishTransformation(self, transName, desciption,longDesription, type, plugin, fileMask):
     """ Publish new transformation in the TransformationDB
     """
     authorDN = self.transport.peerCredentials['DN']
-    #authorName = self.transport.peerCredentials['user']
     authorGroup = self.transport.peerCredentials['group']
     try:
-      res = placementDB.addTransformation(transName,desciption,longDesription,authorDN,authorGroup,type,mode,'ReplicationPlacementAgent','New',fileMask)
+      res = placementDB.addTransformation(transName,desciption,longDesription,authorDN,authorGroup,type,plugin,'ReplicationPlacementAgent',fileMask)
       return res
     except Exception,x:
       errStr = "ReplicationPlacementHandler.publishTransformation: Exception while adding transformation."
