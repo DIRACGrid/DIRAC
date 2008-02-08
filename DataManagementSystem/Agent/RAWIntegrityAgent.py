@@ -1,7 +1,7 @@
 """  RAWIntegrityAgent determines whether RAW files in Castor were migrated correctly
 """
 
-from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC  import gLogger, gConfig, gMonitor,S_OK, S_ERROR
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
 from DIRAC.RequestManagementSystem.Client.Request import RequestClient
@@ -36,9 +36,22 @@ class RAWIntegrityAgent(Agent):
     self.proxyLength = gConfig.getValue(self.section+'/DefaultProxyLength',12)
     self.proxyLocation = gConfig.getValue(self.section+'/ProxyLocation')
     self.gatewayUrl = PathFinder.getServiceURL( 'RequestManagement/onlineGateway')
+
+    gMonitor.registerActivity("Iteration","Agent Loops/min","RAWIntegriryAgent", "Loops", gMonitor.OP_SUM)
+    gMonitor.registerActivity("WaitingFiles","Files waiting for migration","RAWIntegriryAgent","Files",gMonitor.OP_MEAN)
+    gMonitor.registerActivity("NewlyMigrated","Newly migrated files","RAWIntegriryAgent","Files", gMonitor.OP_SUM)
+    gMonitor.registerActivity("TotMigrated","Total migrated files","RAWIntegriryAgent","Files", gMonitor.OP_ACUM)
+    gMonitor.registerActivity("SuccessfullyMigrated","Successfully migrated files","RAWIntegriryAgent","Files", gMonitor.OP_SUM)
+    gMonitor.registerActivity("TotSucMigrated","Total successfully migrated files","RAWIntegriryAgent","Files", gMonitor.OP_ACUM)
+    gMonitor.registerActivity("FailedMigrated","Erroneously migrated files","RAWIntegriryAgent","Files", gMonitor.OP_SUM)
+    gMonitor.registerActivity("TotFailMigrated","Total erroneously migrated files","RAWIntegriryAgent","Files", gMonitor.OP_ACUM)
+    gMonitor.registerActivity("MigrationTime","Average migration time","RAWIntegriryAgent","Seconds",gMonitor.OP_MEAN)
+
     return result
 
+
   def execute(self):
+    gMonitor.addMark("Iteration",1)
 
     ############################################################
     #
@@ -89,6 +102,7 @@ class RAWIntegrityAgent(Agent):
       gLogger.error(errStr,res['Message'])
       return S_OK()
     activeFiles = res['Value']
+    gMonitor.addMark("WaitingFiles",len(activeFiles.keys()))
     gLogger.info("RAWIntegrityAgent.execute: Obtained %s un-migrated files." % len(activeFiles.keys()))
     if not len(activeFiles.keys()) > 0:
       return S_OK()
@@ -145,15 +159,23 @@ class RAWIntegrityAgent(Agent):
             pfnMetadataDict['Checksum'] = stdOut.split()[9]
           else:
             pfnMetadataDict['Checksum'] = 'Not available'
-    
-        if pfnMetadataDict['Checksum'] == activeFiles[lfn]['Checksum']:
+        castorChecksum = pfnMetadataDict['Checksum']
+        onlineChecksum = activeFiles[lfn]['Checksum']
+        if castorChecksum.lstrip('0') == onlineChecksum.lstrip('0'):
           gLogger.info("RAWIntegrityAgent.execute: %s migrated checksum match." % lfn)
           filesToRemove.append(lfn)
+          activeFiles[lfn]['Checksum'] = castorChecksum
         elif pfnMetadataDict['Checksum'] == 'Not available':
           gLogger.info("RAWIntegrityAgent.execute: Unable to determine checksum.", lfn)
         else:  
-          gLogger.error("RAWIntegrityAgent.execute: Migrated checksum mis-match.","%s %s %s" % (lfn,pfnMetadataDict['Checksum'], activeFiles[lfn]['Checksum']))
+          gLogger.error("RAWIntegrityAgent.execute: Migrated checksum mis-match.","%s %s %s" % (lfn,castorChecksum.lstrip('0'),onlineChecksum.lstrip('0')))
           filesToTransfer.append(lfn)
+    gMonitor.addMark("NewlyMigrated",len(filesMigrated))
+    gMonitor.addMark("TotMigrated",len(filesMigrated))
+    gMonitor.addMark("SuccessfullyMigrated",len(filesToRemove))
+    gMonitor.addMark("TotSucMigrated",len(filesToRemove))
+    gMonitor.addMark("FailedMigrated",len(filesToTransfer))
+    gMonitor.addMark("TotFailMigrated",len(filesToTransfer))
     gLogger.info("RAWIntegrityAgent.execute: %s files newly migrated." % len(filesMigrated))
     gLogger.info("RAWIntegrityAgent.execute: Found %s checksum matches." % len(filesToRemove))
     gLogger.info("RAWIntegrityAgent.execute: Found %s checksum mis-matches." % len(filesToTransfer))
@@ -210,6 +232,10 @@ class RAWIntegrityAgent(Agent):
               gLogger.error("RAWIntegrityAgent.execute: Failed to update status in raw integrity database.", res['Message'])
             else:
               gLogger.info("RAWIntegrityAgent.execute: Successfully updated status in raw integrity database.")
+              res = self.RAWIntegrityDB.getMigrationTime(lfn)
+              if res['OK']:
+                time = res['Value']
+                gMonitor.addMark("MigrationTime",time) 
 
 
     if len(filesToTransfer) > 0:
@@ -236,12 +262,12 @@ class RAWIntegrityAgent(Agent):
           #
           gLogger.info("RAWIntegrityAgent.execute: Creating (re)transfer request for incorrectly migrated files.")
           oRequest = DataManagementRequest()
-          subRequestIndex = oRequest.initiateSubRequest('transfer')['Value']
-          attributeDict = {'Operation':'get','TargetSE':'OnlineRunDB'}
-          oRequest.setSubRequestAttributes(subRequestIndex,'transfer',attributeDict)
+          subRequestIndex = oRequest.initiateSubRequest('removal')['Value']
+          attributeDict = {'Operation':'reTransfer','TargetSE':'OnlineRunDB'}
+          oRequest.setSubRequestAttributes(subRequestIndex,'removal',attributeDict)
           fileName = os.path.basename(lfn)
-          filesDict = [{'LFN':lfn,'PFN':fileName,'GUID':guid}]
-          oRequest.setSubRequestFiles(subRequestIndex,'transfer',filesDict)
+          filesDict = [{'LFN':lfn,'PFN':fileName}]
+          oRequest.setSubRequestFiles(subRequestIndex,'removal',filesDict)
           requestName = 'retransfer_%s.xml' % fileName
           requestString = oRequest.toXML()['Value']
           gLogger.info("RAWIntegrityAgent.execute: Attempting to put %s to gateway requestDB." %  requestName)
@@ -263,15 +289,5 @@ class RAWIntegrityAgent(Agent):
 
     return S_OK()
 
-
-
-  #############################################################################
-  def __setupProxy(self,job,ownerDN,jobGroup,proxyDir):
-    """Retrieves user proxy with correct role for job and sets up environment to
-       run job locally.
-    """
-
-    self.log.verbose(setupResult)
-    return setupResult
 
 
