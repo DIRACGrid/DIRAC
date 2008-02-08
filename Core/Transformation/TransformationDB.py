@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.19 2008/02/08 12:45:46 gkuznets Exp $
+# $Id: TransformationDB.py,v 1.20 2008/02/08 12:59:33 acsmith Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -220,11 +220,12 @@ class TransformationDB(DB):
     res = self._query(req)
     if not res['OK']:
       return res
-    if res['Value']:
-      ids = [ str(x[0]) for x in res['Value'] ]
+    if not res['Value']:
+      return res
+    ids = [ str(x[0]) for x in res['Value'] ]
     if not ids:
-      resDict = {'Data': []}
-      return S_OK(resDict)
+    resDict = {'Data': []}
+    return S_OK(resDict)
 
     if status:
       req = "SELECT LFN,SE FROM Replicas,DataFiles WHERE Replicas.Status = '%' AND \
