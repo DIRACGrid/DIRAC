@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.23 2008/02/08 16:28:31 gkuznets Exp $
+# $Id: TransformationDB.py,v 1.24 2008/02/08 16:29:39 gkuznets Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -316,7 +316,7 @@ class TransformationDB(DB):
 
     transID = self._transformationExists(transName)
     if transID > 0:
-      return self.removeTransformationID(transID)
+      return self.removeTransformationID(str(transID))
     else:
       return S_ERROR("No Transformation with the name '%s' in the TransformationDB" % transName)
 
