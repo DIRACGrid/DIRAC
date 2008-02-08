@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.7 2008/02/06 18:11:27 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.8 2008/02/08 12:27:08 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -24,7 +24,7 @@ The initial instance just exposes job submission via the WMS client.
 
 """
 
-__RCSID__ = "$Id: Dirac.py,v 1.7 2008/02/06 18:11:27 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.8 2008/02/08 12:27:08 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types
 
@@ -73,8 +73,8 @@ class Dirac:
       self.fileCatalog = LcgFileCatalogCombinedClient()
     except Exception,x:
       msg = 'Failed to create LcgFileCatalogClient with exception:'
-      self.log.warn(msg)
-      self.log.warn(str(x))
+      self.log.verbose(msg)
+      self.log.debug(str(x))
       self.fileCatalog=False
 
   #############################################################################
@@ -160,6 +160,7 @@ class Dirac:
   #############################################################################
   def runLocal(self,jobJDL,jobXML):
     """Under development.  This method is equivalent to submit(job,mode='Local').
+       All output files are written to the local directory.
     """
     if not self.site or self.site == 'Unknown':
       return self.__errorReport('LocalSite/Site configuration section is unknown, please set this correctly')
@@ -256,11 +257,51 @@ class Dirac:
       arguments = parameters['Value']['Arguments']
       command = '%s %s' % (executable,arguments)
       self.log.verbose(command)
-      os.system(command)
+      result = shellCall(0,command,callbackFunction=self.__printOutput)
+      if not result['OK']:
+        return result
+
+      status = result['Value'][0]
+      self.log.verbose('Status after execution is %s' %(status))
+
+      outputFileName = None
+      errorFileName = None
+      if parameters['Value'].has_key('StdOutput'):
+        outputFileName = parameters['Value']['StdOutput']
+      if parameters['Value'].has_key('StdError'):
+        errorFileName = parameters['Value']['StdError']
+
+      if outputFileName:
+        stdout = result['Value'][1]
+        if os.path.exists(outputFileName):
+          os.remove(outputFileName)
+        self.log.info('Standard output written to %s' %(outputFileName))
+        outputFile =  open(outputFileName,'w')
+        print >> outputFile, stdout
+        outputFile.close()
+      else:
+        self.log.warn('Job JDL has no StdOutput file parameter defined')
+
+      if errorFileName:
+        stderr = result['Value'][2]
+        if os.path.exists(errorFileName):
+          os.remove(errorFileName)
+        self.log.verbose('Standard error written to %s' %(errorFileName))
+        errorFile = open(errorFileName,'w')
+        print >> errorFile, stderr
+        errorFile.close()
+      else:
+        self.log.warn('Job JDL has no StdError file parameter defined')
     else:
       return self.__errorReport('Missing job arguments or executable')
 
     return S_OK()
+
+  #############################################################################
+  def __printOutput(self,fd,message):
+    """Internal callback function to return standard output when running locally.
+    """
+    print message
 
   #############################################################################
   def getReplicas(self,lfns):
