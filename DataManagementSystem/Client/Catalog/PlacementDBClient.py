@@ -18,7 +18,7 @@ class PlacementDBClient(TransformationDBClient):
       if not url:
         oServer = RPCClient("DataManagement/PlacementDB")
       else:
-        oServer = RPCClient(self.url)
+        oServer = RPCClient(url)
       self.setServer(oServer)
     except:
       self.valid = False
