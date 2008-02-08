@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.14 2008/01/24 11:02:10 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.15 2008/02/08 15:45:58 paterson Exp $
 # File  : Watchdog.py
 # Author: Stuart Paterson
 ########################################################################
@@ -18,7 +18,7 @@
           - CPU normalization for correct comparison with job limit
 """
 
-__RCSID__ = "$Id: Watchdog.py,v 1.14 2008/01/24 11:02:10 paterson Exp $"
+__RCSID__ = "$Id: Watchdog.py,v 1.15 2008/02/08 15:45:58 paterson Exp $"
 
 from DIRAC.Core.Base.Agent                          import Agent
 from DIRAC.Core.DISET.RPCClient                     import RPCClient
@@ -71,8 +71,8 @@ class Watchdog(Agent):
     self.maxWallClockTime = gConfig.getValue(self.section+'/MaxWallClockTime',48*60*60) # e.g.2 days
     self.jobPeekFlag      = gConfig.getValue(self.section+'/JobPeekFlag',1) # on / off
     self.minDiskSpace     = gConfig.getValue(self.section+'/MinDiskSpace',10) #MB
-    self.loadAvgLimit     = gConfig.getValue(self.section+'/LoadAverageLimit',10) # > 10 and jobs killed
-    self.sampleCPUTime    = gConfig.getValue(self.section+'/CPUSampleTime',10*60) # e.g. up to 10mins sample
+    self.loadAvgLimit     = gConfig.getValue(self.section+'/LoadAverageLimit',100) # > 100 and jobs killed
+    self.sampleCPUTime    = gConfig.getValue(self.section+'/CPUSampleTime',20*60) # e.g. up to 20mins sample
     self.calibFactor      = gConfig.getValue(self.section+'/CPUFactor',0.5) # multiple of the cpu consumed during calibration
     self.heartbeatPeriod  = gConfig.getValue(self.section+'/HeartbeatPeriod',5) #mins
     self.jobCPUMargin     = gConfig.getValue(self.section+'/JobCPULimitMargin',10) # %age buffer before killing job
@@ -152,10 +152,11 @@ class Watchdog(Agent):
       if result['OK']:
         outputList = result['Value']
         size = len(outputList)
+        recentStdOut = 'Last %s lines of application output from Watchdog:' % (size)
         border = ''
         for i in xrange(len(recentStdOut)):
           border+='='
-        recentStdOut = '\n%s\nLast %s lines of application output from Watchdog:\n%s\n' % (border,size,border)
+        recentStdOut = '\n%s\n%s\n%s\n' % (border,recentStdOut,border)
         self.log.info(recentStdOut)
         for line in outputList:
           self.log.info(line)
@@ -190,6 +191,10 @@ class Watchdog(Agent):
           self.log.info('Killing job via control signal')
           self.killRunningThread(self.spObject)
           self.finish()
+        else:
+          if signal['Command']:
+            self.log.info('Control signal sent but not understood by watchdog:')
+            self.log.info(signal)
 
     return S_OK()
 
@@ -252,20 +257,16 @@ class Watchdog(Agent):
   #############################################################################
 
   def checkCPUConsumed(self):
-    """ Checks whether the CPU consumed is reasonable, taking Watchdog
-        process into account via calibration. This method will report stalled
-        jobs to be killed.
+    """ Checks whether the CPU consumed by application process is reasonable. This
+        method will report stalled jobs to be killed.
     """
-    #Here the CPU time is amended for the Watchdog via the calibration factor
-    #normalization in the convertCPUTime method doesn't affect the result.
-
-    if not self.calibration:
-      result = self.getCalibFactor()
-      if not result['OK']:
-        return result
+#    if not self.calibration:
+#      result = self.getCalibFactor()
+#      if not result['OK']:
+#        return result
+#    deltaFactor = self.calibration * self.calibFactor
 
     cpuList=[]
-    deltaFactor = self.calibration * self.calibFactor
     if self.parameters.has_key('CPUConsumed'):
       cpuList = self.parameters['CPUConsumed']
     else:
@@ -284,44 +285,24 @@ class Watchdog(Agent):
 
     #Apply deltaFactor to CPU list
     cpuSample = []
-    counter = 0
     for value in cpuList:
-      counter+=1
       valueTime = self.convertCPUTime(value)
       if not valueTime['OK']:
         return valueTime
-
-      print valueTime
-      watchdogCPU = deltaFactor*(iterations+counter)
-      amendedCPU = float(valueTime['Value'] - watchdogCPU - self.initialValues['CPUConsumed'])
-      print amendedCPU
-      if amendedCPU > 0:
-        cpuSample.append(amendedCPU)
-      else:
-        self.log.verbose('Found -ve cpu consumed')
-        msg = 'AmendedCPU: ',amendedCPU
-        msg += 'RawConsumCPU: ',valueTime['Value']
-        msg += ' WatchdogCPU: ',watchdogCPU
-        msg += ' InitialCPU: ',self.initialValues['CPUConsumed']
-        self.log.info(msg)
-        cpuSample.append(0.0)
+      cpuSample.append(valueTime['Value'])
 
     #If total CPU consumed / WallClock for iterations less than X
     #can fail job.
 
-    totalCPUConsumed = 0.0
-    for i in cpuSample:
-      totalCPUConsumed+=i
+    totalCPUConsumed = cpuSample[-1]
+    self.log.info('Cumulative CPU consumed is: %s s' % (totalCPUConsumed))
+    cpuConsumedInterval = cpuSample[-1]-cpuSample[0]  #during last interval
 
     ratio = float(totalCPUConsumed)/float(sampleTime)
     limit = float( self.minCPUWallClockRatio * 0.01 )
-    self.log.verbose('CPU consumed / Wallclock time ratio is %f' % (ratio))
-    #print ratio
-    #print limit
-    #print cpuSample
-    #print self.calibration
+    self.log.info('CPU consumed / Wallclock time ratio during last %s seconds is %f' % (sampleTime,ratio))
+
     if ratio < limit:
-      self.log.info('CPU consumed during last %s seconds: ' % (sampleTime))
       print cpuSample
       return S_ERROR('Watchdog identified this job as stalled')
 
@@ -631,7 +612,7 @@ class Watchdog(Agent):
   #############################################################################
   def killRunningThread(self,spObject):
     """ Will kill the running thread process"""
-    os.kill( spObject.child.pid, 0 )
+    os.kill( spObject.child.pid, 9 )
     return S_OK('Thread killed')
 
   #############################################################################
