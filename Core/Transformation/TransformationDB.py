@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.22 2008/02/08 15:00:04 gkuznets Exp $
+# $Id: TransformationDB.py,v 1.23 2008/02/08 16:28:31 gkuznets Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -40,7 +40,7 @@ class TransformationDB(DB):
     """ Method returns number of transformation with the name=<name>
         Returns transformation ID if exists otherwise 0
     """
-    cmd = "SELECT TransformationID from Transformations WHERE TransformationName='%s'" % name
+    cmd = "SELECT TransformationID from Transformations WHERE TransformationName='%s';" % name
     result = self._query(cmd)
     if not result['OK']:
       gLogger.error("Failed to check if Transformation with name %s exists %s" % (name, result['Message']))
@@ -49,13 +49,13 @@ class TransformationDB(DB):
       return 0
     return result['Value'][0][0]
 
-  def _transformationExistsID(self, id):
+  def _transformationExistsID(self, transID):
     """ Method returns TRUE if transformation with the ID=<id> exists
     """
-    cmd = "SELECT COUNT(*) from Productions WHERE TransformationID='%d'" % id
+    cmd = "SELECT COUNT(*) from Transformations WHERE TransformationID='%s';" % transID
     result = self._query(cmd)
     if not result['OK']:
-      gLogger.error("Failed to check if Transformation with ID %d exists %s" % (id, result['Message']))
+      gLogger.error("Failed to check if Transformation with ID %d exists %s" % (transID, result['Message']))
       return False
     elif result['Value'][0][0] > 0:
         return True
@@ -313,22 +313,31 @@ class TransformationDB(DB):
       return self._update(req)
 
   def removeTransformation(self,transName):
-    """ Remove the transformation specified by name
+
+    transID = self._transformationExists(transName)
+    if transID > 0:
+      return self.removeTransformationID(transID)
+    else:
+      return S_ERROR("No Transformation with the name '%s' in the TransformationDB" % transName)
+
+
+  def removeTransformationID(self, transID):
+    """ Remove the transformation specified by id
     """
-    res = self.getTransformation(transName)
-    if not res['OK']:
-      return res
-    transID = res['Value']['TransID']
-    req = "DELETE FROM Transformations WHERE TransformationName='%s';" % transName
-    res = self._update(req)
-    if not res['OK']:
-      return res
-    req = "DROP TABLE IF EXISTS T_%s;" % transID
-    res = self._update(req)
-    if not res['OK']:
-      return res
-    self.filters = self.__getFilters()
-    return S_OK()
+    if self._transformationExistsID(transID) > 0:
+      req = "DELETE FROM Transformations WHERE TransformationID=%s;" % transID
+      res = self._update(req)
+      if not res['OK']:
+        return res
+      req = "DROP TABLE IF EXISTS T_%s;" % transID
+      res = self._update(req)
+      if not res['OK']:
+        return res
+      self.filters = self.__getFilters()
+      return S_OK()
+    else:
+      return S_ERROR("No Transformation with the id '%s' in the TransformationDB" % transID)
+
 
 ####################################################################################
 #
