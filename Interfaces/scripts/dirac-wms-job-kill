@@ -1,0 +1,27 @@
+#!/usr/bin/env python
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/Attic/dirac-wms-job-kill,v 1.1 2008/02/08 18:33:22 paterson Exp $
+__RCSID__ = "$Id: dirac-wms-job-kill,v 1.1 2008/02/08 18:33:22 paterson Exp $"
+import sys
+
+def usage(argv):
+  print 'Usage: %s <JobID>' %(argv[0])
+  sys.exit(2)
+
+if len(sys.argv)!=2:
+  usage(sys.argv)
+
+from DIRAC.Interfaces.API.Dirac                          import Dirac
+dirac=Dirac()
+try:
+  job = int(sys.argv[1])
+except Exception,x:
+  print 'Expected integer for jobID'
+  sys.exit(2)
+
+result = dirac.kill(job)
+if result['OK']:
+  print 'Killed job %s' %(job)
+  sys.exit(0)
+else:
+  print result['Message']
+  sys.exit(2)
