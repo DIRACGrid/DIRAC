@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.8 2008/02/06 18:09:46 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.9 2008/02/09 13:28:04 atsareg Exp $
 ########################################################################
 """ PilotAgentsDB class is a front-end to the Pilot Agent Database.
     This database keeps track of all the submitted grid pilot jobs.
@@ -23,7 +23,7 @@
 
 """
 
-__RCSID__ = "$Id: PilotAgentsDB.py,v 1.8 2008/02/06 18:09:46 atsareg Exp $"
+__RCSID__ = "$Id: PilotAgentsDB.py,v 1.9 2008/02/09 13:28:04 atsareg Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
@@ -43,13 +43,13 @@ class PilotAgentsDB(DB):
      print "Initializing PilotAgentsDB - done"
 
 ##########################################################################################
-  def addPilotReference(self,pilotRef,jobID,ownerDN,ownerGroup,gridType='DIRAC'):
+  def addPilotReference(self,pilotRef,jobID,ownerDN,ownerGroup,broker='Unknown',gridType='DIRAC'):
     """ Add a new pilot job reference """
 
     req = "INSERT INTO PilotAgents( PilotJobReference, InitialJobID, OwnerDN, " + \
-          "OwnerGroup, GridType, SubmissionTime, LastUpdateTime, Status ) " + \
+          "OwnerGroup, Broker, GridType, SubmissionTime, LastUpdateTime, Status ) " + \
           "VALUES ('%s',%d,'%s','%s','%s',NOW(),NOW(),'Submitted')" % \
-          (pilotRef,int(jobID),ownerDN,ownerGroup,gridType)
+          (pilotRef,int(jobID),ownerDN,ownerGroup,broker,gridType)
     return self._update(req)
 
 ##########################################################################################
@@ -61,12 +61,12 @@ class PilotAgentsDB(DB):
     if destination:
       setList.append("DestinationSite='%s'" % destination)
     if updateTime:
-      setList.append("LastUpdateTime='%s'" % updateTime) 
+      setList.append("LastUpdateTime='%s'" % updateTime)
     else:
-      setList.append("LastUpdateTime=NOW()")    
+      setList.append("LastUpdateTime=NOW()")
 
     set_string = ','.join(setList)
-    req = "UPDATE PilotAgents SET "+set_string+" WHERE PilotJobReference='%s'" % pilotRef    
+    req = "UPDATE PilotAgents SET "+set_string+" WHERE PilotJobReference='%s'" % pilotRef
 
     return self._update(req)
 
@@ -177,12 +177,12 @@ class PilotAgentsDB(DB):
     result = self._escapeString(output)
     if not result['OK']:
       return S_ERROR('Failed to escape output string')
-    e_output = result['Value'] 
+    e_output = result['Value']
     result = self._escapeString(error)
     if not result['OK']:
       return S_ERROR('Failed to escape error string')
-    e_error = result['Value']  
-    req = "UPDATE PilotAgents SET StdOutput='%s', StdError='%s' WHERE PilotJobReference='%s'" 
+    e_error = result['Value']
+    req = "UPDATE PilotAgents SET StdOutput='%s', StdError='%s' WHERE PilotJobReference='%s'"
     req = req % (e_output,e_error,pilotRef)
     result = self._update(req)
     return result
@@ -203,7 +203,7 @@ class PilotAgentsDB(DB):
         if stdout == '""':
           stdout = ''
         if error == '""':
-          error = ''  
+          error = ''
         return S_OK({'StdOut':stdout,'StdError':error})
       else:
         return S_ERROR('PilotJobReference '+pilotRef+' not found')
