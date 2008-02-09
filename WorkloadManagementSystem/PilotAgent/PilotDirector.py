@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/PilotDirector.py,v 1.9 2008/02/04 16:01:23 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/PilotDirector.py,v 1.10 2008/02/09 13:26:20 atsareg Exp $
 # File :   PilotDirector.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
      are overridden in Grid specific subclasses.
 """
 
-__RCSID__ = "$Id: PilotDirector.py,v 1.9 2008/02/04 16:01:23 paterson Exp $"
+__RCSID__ = "$Id: PilotDirector.py,v 1.10 2008/02/09 13:26:20 atsareg Exp $"
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
 from DIRAC.Core.Utilities.Subprocess                       import shellCall
@@ -244,7 +244,7 @@ class PilotDirector(Thread):
     self.log.verbose('Setting up proxy for job %s group %s and owner %s' %(job,ownerGroup,ownerDN))
     proxyResult = self.__setupProxy(job,ownerDN,ownerGroup,workingDirectory)
     self.log.verbose('Submitting %s Pilot Agent for job %s' %(self.type,job))
-        
+
     result = self.submitJob(job,self.workingDirectory,
                             siteList,jdlCPU,ownerGroup,inputSandbox,
                             gridRequirements,executable,softwareTag)
@@ -309,7 +309,8 @@ class PilotDirector(Thread):
 #        self.__setJobParam(job,'SubmittedAgents',submittedPilot)
 
     if self.enable:
-      result = self.pilotDB.addPilotReference(submittedPilot,job,ownerDN,ownerGroup,self.type)
+      result = self.pilotDB.addPilotReference(submittedPilot,job,ownerDN,ownerGroup,
+                                              self.resourceBroker,self.type)
       if not result['OK']:
         self.log.warn('Problem reporting to PilotAgentsDB:')
         self.log.warn(result['Message'])
@@ -356,7 +357,7 @@ class PilotDirector(Thread):
     candidates = siteMask
 
     tmpSites = []
-    
+
     if bannedSites:
       for i in candidates:
         tmpSites.append(i)
@@ -364,20 +365,20 @@ class PilotDirector(Thread):
         if site in candidates:
           tmpSites.remove(site)
           self.log.verbose('Removing banned site %s from site candidate list for job %s' %(site,job))
-      candidates = tmpSites 
+      candidates = tmpSites
 
     tmpSites = []
     if candidateSites:
-      for i in candidates: 
-        tmpSites.append(i) 
+      for i in candidates:
+        tmpSites.append(i)
       for site in candidates:
         if site in candidateSites:
           self.log.verbose('Site %s is a candidate site in the mask for job %s' %(site,job))
         else:
           tmpSites.remove(site)
           self.log.verbose('Removing %s as a candidate site for job %s' %(site,job))
-          
-      candidates = tmpSites        
+
+      candidates = tmpSites
 
     if not candidates:
       self.__updateJobStatus(job,'Failed','No Candidate Sites in Mask')
@@ -397,9 +398,9 @@ class PilotDirector(Thread):
     if not sites['OK']:
       #To avoid duplicating sites listed in LCG for gLite for example.  This could be passed as a parameter from
       #the sub class to avoid below...
-      section = '/Resources/GridSites/LCG' 
-      sites = gConfig.getOptionsDict(section)      
-    
+      section = '/Resources/GridSites/LCG'
+      sites = gConfig.getOptionsDict(section)
+
     if not sites['OK']:
       self.log.warn(sites['Message'])
       return S_ERROR('Could not obtain %s section from CS' %(section))
