@@ -87,18 +87,67 @@ class ReplicationPlacementAgent(Agent):
   def processTransformation(self,transDict,flush=False):
     """ Process a single transformation
     """
-    res = self.server.getInputData(transDict['Name'],'')
+    transName = transDict['Name']
+    res = self.server.getInputData(transName,'')
     if not res['OK']:
       errStr = "ReplicationPlacementAgent.processTransformation: Failed to obtain input data."
       gLogger.error(errStr,res['Message'])
       return S_ERROR(errStr)
     data = res['Value']
-    plugin = transDict['Plugin']
-    params = transDict['Additional']
+    gLogger.info("ReplicationPlacementAgent.processTransformation: %s files found for transformation '%s'." % (len(data),transName))
 
-    ### need to instanciate the plugin module to group the files
-    ### need another module which will submit the jobs/transfers
+    if not transDict.has_key('Plugin'):
+      errStr = "ReplicationPlacementAgent.processTransformation: No plugin defined."
+      gLogger.error(errStr,transName)
+      return S_ERROR(errStr)
+    plugin = transDict['Plugin']
+    gLogger.info("ReplicationPlacementAgent.processTransformation: Processing transformation '%s' with '%s' plugin." % (transName,plugin))
+
+    res = self._generatePluginObject(plugin)
+    if not res['OK']:
+      errStr = "ReplicationPlacementAgent.processTransformation: Failed to instnatiate plugin."
+      gLogger.error(errStr,plugin)
+      return S_ERROR(errStr)        
+    oPlugin = res['Value']
+    oPlugin.setInputData(data) 
+
+    print transDict['Additional']
+
     return S_OK()
+
+    #type = Replication
+    #plugin=Automatic
+    """
+    res = self.prepareTask(data,transDict    
+    while len(data) > 0:
+      ldata = len(data)
+      data = self.generateJob(data,transDict,flush)
+      if ldata == len(data):
+        break
+    """
+
+  def _generatePluginObject(self,plugin):
+    """ This simply instantiates the TransformationPlugin class with the relevant plugin name
+    """
+    try:
+      plugModule = __import__('DIRAC.Core.Transformation.TransformationPlugin',globals(),locals(),['TransformationPlugin'])
+    except Exception, x:
+      errStr = "ReplicationPlacementAgent._generatePluginObject: Failed to import 'TransformationPlugin': %s" % (x)
+      gLogger.exception(errStr)
+      return S_ERROR(errStr)
+    try:
+      moduleName = "%sPlugin" % (plugin)
+      evalString = "plugModule.TransformationPlugin('%s')" % moduleName
+      plugin = eval(evalString)
+      if not plugin.isOK():
+        errStr = "ReplicationPlacementAgent._generatePluginObject: Failed to instatiate plug in."
+        gLogger.error(errStr,moduleName)
+        return S_ERROR(errStr)
+    except Exception, x:
+      errStr = "ReplicationPlacementAgent._generatePluginObject: Failed to instatiate  %s()." % (moduleName)
+      gLogger.exception(errStr,str(x))
+      return S_ERROR(errStr)
+    return S_OK(plugin)
 
     """
     transName = 'T0-Export'
@@ -108,7 +157,7 @@ class ReplicationPlacementAgent(Agent):
     mode = 'Automatic'
     fileMask = '/*'
     res = self.server.publishTransformation(transName, desciption,longDesription, type, mode, fileMask)
-    print res
+    res = self.server.setTransformationStatus(transName, 'Active')
 
     import time
     lfn = '/lfn/file.%s' % time.time()
@@ -327,10 +376,3 @@ class ReplicationPlacementAgent(Agent):
     return data_m
 
   """
-class TransformationGrouping:
-
-  def loadBalance(self):
-    pass
-
-  def broadCast(self):
-    pass
