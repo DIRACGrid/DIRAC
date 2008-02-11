@@ -53,7 +53,7 @@ class TransformationPlugin:
       elif sourceSE == se:
         useFile = True
       if useFile:
-        selectedFiles.append((lfn,se))
+        selectedFiles.append(lfn)
 
     seFiles = {}
     multiplier = int(len(selectedFiles)/float(totalRatio))
