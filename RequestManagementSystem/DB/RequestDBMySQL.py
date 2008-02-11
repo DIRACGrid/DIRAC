@@ -55,7 +55,7 @@ class RequestDBMySQL(DB):
     # STILL TO DO: remove the request completely from the db
     # STILL TO DO: return the request string
 
-  def _getRequest(self,requestType):
+  def getRequest(self,requestType):
     dmRequest = DataManagementRequest()
     self.getIdLock.acquire()
     req = "SELECT RequestID,SubRequestID FROM SubRequests WHERE Status = 'Waiting' AND RequestType = '%s' ORDER BY RequestID LIMIT 1;" % requestType
@@ -160,7 +160,7 @@ class RequestDBMySQL(DB):
     return S_OK(resultDict)
 
 
-  def _setRequest(self,requestName,requestString):
+  def setRequest(self,requestName,requestString):
     request = DataManagementRequest(request=requestString)
     requestTypes = ['transfer','register','removal','stage']
     failed = False
