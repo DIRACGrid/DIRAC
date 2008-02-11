@@ -3,11 +3,13 @@
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
-from DIRAC.RequestManagementSystem.DB.RequestDB import RequestDB
+
+from DIRAC.RequestManagementSystem.DB.RequestDBMySQL import RequestDBMySQL
 from DIRAC.DataManagementSystem.DB.TransferDB import TransferDB
 from DIRAC.RequestManagementSystem.Client.DataManagementRequest import DataManagementRequest
-from DIRAC.DataManagementSystem.Client.LcgFileCatalogCombinedClient import LcgFileCatalogCombinedClient
-from DIRAC.Core.Storage.StorageFactory import StorageFactory
+from DIRAC.DataManagementSystem.Client.FileCatalog import FileCatalog 
+from DIRAC.DataManagementSystem.Client.Storage.StorageFactory import StorageFactory
+from DIRAC.DataManagementSystem.Client.StorageElement import StorageElement
 import types,re
 
 
@@ -22,13 +24,13 @@ class ReplicationScheduler(Agent):
 
   def initialize(self):
     result = Agent.initialize(self)
-    self.RequestDB = RequestDB('mysql')
+    self.RequestDB = RequestDBMySQL()
     self.TransferDB = TransferDB()
     self.factory = StorageFactory()
     try:
-      self.lfc = LcgFileCatalogCombinedClient() #infosys=infosysUrl,host=serverUrl)
+      self.lfc = FileCatalog()
     except Exception,x:
-      print "Failed to create LcgFileCatalogClient"
+      print "Failed to create FileCatalog()"
       print str(x)
     return result
 
@@ -208,27 +210,33 @@ class ReplicationScheduler(Agent):
           ancestor = dict['Ancestor']
           if ancestor:
             status = 'Waiting%s' % (ancestor)
-            res = self.obtainSESURL(sourceSE,lfn)
+            res = self.obtainLFNSURL(sourceSE,lfn)
             if not res['OK']:
               errStr = res['Message']
               gLogger.error(errStr)
               return S_ERROR(errStr)    
-            sourceSURL = res['Value']        
+            sourceSURL = res['Value']['SURL']        
           else:
             status = 'Waiting'
-            sourceSURL = lfnReps[sourceSE]
-          res = self.obtainSESURL(destSE,lfn)
+            res  = self.resolvePFNSURL(sourceSE,lfnReps[sourceSE])
+            if not res['OK']:
+              sourceSURL = lfnReps[sourceSE]
+            else:
+              sourceSURL = res['Value'] 
+          res = self.obtainLFNSURL(destSE,lfn)
           if not res['OK']:
             errStr = res['Message']
             gLogger.error(errStr)
             return S_ERROR(errStr)
-          targetSURL = res['Value']
-
+          targetSURL = res['Value']['SURL']
+          spaceToken = res['Value']['SpaceToken']
+            
           ######################################################################################
           #
           # For each item in the replication tree add the file to the channel
           #
 
+          print channelID, fileID, sourceSURL, targetSURL,fileSize
           res = self.TransferDB.addFileToChannel(channelID, fileID, sourceSURL, targetSURL,fileSize,spaceToken,fileStatus=status)
           if not res['OK']:
             errStr = "ReplicationScheduler._execute: Failed to add File %s to Channel %s." % (fileID,channelID)
@@ -238,29 +246,38 @@ class ReplicationScheduler(Agent):
     return res
 
 
-  def obtainSESURL(self,targetSE,lfn):
+  def obtainLFNSURL(self,targetSE,lfn):
     """ Creates the targetSURL for the storage and LFN supplied
     """
-    res = self.factory.getStorages(targetSE)
+    res = self.factory.getStorages(targetSE,protocolList=['SRM2'])
     if not res['OK']:
       errStr = 'ReplicationScheduler._execute: Failed to create SRM2 storage for %s: %s. ' % (targetSE,res['Message'])
       self.log.error(errStr)
       return S_ERROR(errStr)
     storageObjects = res['Value']['StorageObjects']
-    targetSURL = ''
     for storageObject in storageObjects:
-      if storageObject.getProtocol() == 'SRM2':
-        res = storageObject.getUrl(lfn)
-        if not res['OK']:
-          errStr = 'ReplicationScheduler._execute: Failed to get target SURL: %s.' % res['Message']
-          self.log.error(errStr)
-          return S_ERROR(errStr)
-        targetSURL = res['Value']
-    if not targetSURL:
-      errStr = 'ReplicationScheduler._execute: Failed to get SRM compliant storage for %s.' % targetSE
+       res =  storageObject.getCurrentURL(lfn)         
+       if res['OK']:
+         resDict = {'SURL':res['Value']}
+         res = storageObject.getParameters()
+         if res['OK']:
+           resDict['SpaceToken'] = res['Value']['SpaceToken'] 
+           return S_OK(resDict)
+    errStr = 'ReplicationScheduler._execute: Failed to get SRM compliant storage for %s.' % targetSE
+    self.log.error(errStr)
+    return S_ERROR(errStr)
+
+  def resolvePFNSURL(self,sourceSE,pfn):
+    """ Creates the targetSURL for the storage and LFN supplied
+    """
+    storageElement = StorageElement(sourceSE)
+    if storageElement.isValid()['Value']:
+      res = storageElement.getPfnForProtocol(pfn,['SRM2'])
+      return res 
+    else:
+      errStr = "ReplicationScheduler._execute: Failed to get source PFN for %s." % sourceSE
       self.log.error(errStr)
-      return S_ERROR(errStr)
-    return S_OK(targetSURL)
+      return S_ERROR(errStr) 
 
 class StrategyHandler:
 
@@ -269,7 +286,7 @@ class StrategyHandler:
     """
     self.sigma = gConfig.getValue(configSection+'/HopSigma',1)
     self.schedulingType = gConfig.getValue(configSection+'/SchedulingType','File')
-    self.activeStrategies = gConfig.getValue(configSection+'/ActiveStrategies',['DynamicThroughput'])
+    self.activeStrategies = gConfig.getValue(configSection+'/ActiveStrategies',['Simple'])
     self.numberOfStrategies = len(self.activeStrategies)
     self.chosenStrategy = 0
 
