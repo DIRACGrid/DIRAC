@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.18 2008/02/11 15:18:29 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.19 2008/02/11 17:44:59 paterson Exp $
 # File  : Watchdog.py
 # Author: Stuart Paterson
 ########################################################################
@@ -18,7 +18,7 @@
           - CPU normalization for correct comparison with job limit
 """
 
-__RCSID__ = "$Id: Watchdog.py,v 1.18 2008/02/11 15:18:29 paterson Exp $"
+__RCSID__ = "$Id: Watchdog.py,v 1.19 2008/02/11 17:44:59 paterson Exp $"
 
 from DIRAC.Core.Base.Agent                          import Agent
 from DIRAC.Core.DISET.RPCClient                     import RPCClient
@@ -81,7 +81,7 @@ class Watchdog(Agent):
     self.finalOutputLines = gConfig.getValue(self.section+'/FinalOutputLines',50) # lines to print after failure (up to)
     self.minCPUWallClockRatio  = gConfig.getValue(self.section+'/MinCPUWallClockRatio',5) #ratio %age
     self.log.verbose('PID of child is %s' %self.appPID)
-    if not int(self.appPID) > 0:
+    if not int(self.appPID):
       self.appPID = self.wrapperPID
       self.log.info('Could not establish distinct child PID so monitoring job wrapper process...')
     if self.pollingTime < self.minPollingTime:
@@ -464,6 +464,12 @@ class Watchdog(Agent):
     """ The calibrate method obtains the initial values for system memory and load
         and calculates the margin for error for the rest of the Watchdog cycle.
     """
+    self.log.verbose('PID of child is %s' %self.appPID)
+    if not int(self.appPID):
+      self.appPID = self.exeThread.getCurrentPID()
+      if not int(self.appPID):
+        self.log.verbose('Child PID could not be found during calibration, setting to wrapper PID temporarily')
+
     self.log.verbose('Child PID %s, Wrapper PID %s' %(self.appPID,self.wrapperPID))
     self.getWallClockTime()
     self.parameters['WallClockTime'] = []
@@ -491,6 +497,9 @@ class Watchdog(Agent):
 
       wrapCPU = result['Value']
       self.initialValues['WrapperCPUConsumed']=wrapCPU
+      self.parameters['WrapperCPUConsumed'] = []
+    else:
+      self.initialValues['WrapperCPUConsumed']=0.0
       self.parameters['WrapperCPUConsumed'] = []
 
     result = self.getLoadAverage()
