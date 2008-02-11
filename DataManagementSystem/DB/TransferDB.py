@@ -482,5 +482,5 @@ class TransferDB(DB):
        if not res['OK']:
         err = "TransferDB._addReplicationTree: Failed to add ReplicationTree for file %s" % fileID
         return S_ERROR(err)
-    return res
+    return S_OK()
       
