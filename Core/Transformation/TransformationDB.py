@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.25 2008/02/08 18:49:09 gkuznets Exp $
+# $Id: TransformationDB.py,v 1.26 2008/02/11 10:47:25 acsmith Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -228,7 +228,7 @@ class TransformationDB(DB):
       return S_OK([])
 
     if status:
-      req = "SELECT LFN,SE FROM Replicas,DataFiles WHERE Replicas.Status = '%' AND \
+      req = "SELECT LFN,SE FROM Replicas,DataFiles WHERE Replicas.Status = '%s' AND \
       Replicas.FileID=DataFiles.FileID AND Replicas.FileID in (%s);" % (status,intListToString(ids))
     else:
       req = "SELECT LFN,SE FROM Replicas,DataFiles WHERE Replicas.Status = 'AprioriGood' AND \
