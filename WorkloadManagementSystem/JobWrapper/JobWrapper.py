@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.16 2008/02/08 16:24:43 paterson Exp $
+# $Id: JobWrapper.py,v 1.17 2008/02/11 14:03:12 paterson Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.16 2008/02/08 16:24:43 paterson Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.17 2008/02/11 14:03:12 paterson Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -60,8 +60,8 @@ class JobWrapper:
     self.log.verbose('CVS version %s' %(__RCSID__))
     self.log.verbose(self.diracVersion)
     self.log.verbose('Developer tag: 1')
-    currentPID = os.getpid()
-    self.log.verbose('Job Wrapper started under PID: %s' % currentPID )
+    self.currentPID = os.getpid()
+    self.log.verbose('Job Wrapper started under PID: %s' % self.currentPID )
     self.log.verbose('==========================================================================')
     self.log.verbose('sys.path is: \n%s' %(string.join(sys.path,'\n')))
     self.log.verbose('==========================================================================')
@@ -166,9 +166,8 @@ class JobWrapper:
     else:
       return S_ERROR('Path to executable %s not found' %(executable))
 
-    pid = os.getpid()
     watchdogFactory = WatchdogFactory()
-    watchdogInstance = watchdogFactory.getWatchdog(pid, exeThread, spObject, jobCPUTime)
+    watchdogInstance = watchdogFactory.getWatchdog(self.currentPID, exeThread, spObject, jobCPUTime)
     if not watchdogInstance['OK']:
       self.log.warn(watchdogInstance['Message'])
       return S_ERROR('Could not create Watchdog instance')
@@ -642,12 +641,10 @@ class ExecutionThread(threading.Thread):
   def run(self):
     cmd = self.cmd
     spObject = self.spObject
-    pid = os.getpid()
     start = time.time()
     output = spObject.systemCall( cmd, callbackFunction = self.sendOutput, shell = True )
     EXECUTION_RESULT['Thread'] = output
     timing = time.time() - start
-    EXECUTION_RESULT['PID']=pid
     EXECUTION_RESULT['Timing']=timing
 
   #############################################################################
