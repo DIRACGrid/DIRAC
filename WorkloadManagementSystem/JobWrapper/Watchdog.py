@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.19 2008/02/11 17:44:59 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.20 2008/02/11 21:19:31 paterson Exp $
 # File  : Watchdog.py
 # Author: Stuart Paterson
 ########################################################################
@@ -18,7 +18,7 @@
           - CPU normalization for correct comparison with job limit
 """
 
-__RCSID__ = "$Id: Watchdog.py,v 1.19 2008/02/11 17:44:59 paterson Exp $"
+__RCSID__ = "$Id: Watchdog.py,v 1.20 2008/02/11 21:19:31 paterson Exp $"
 
 from DIRAC.Core.Base.Agent                          import Agent
 from DIRAC.Core.DISET.RPCClient                     import RPCClient
@@ -80,19 +80,32 @@ class Watchdog(Agent):
     self.peekOutputLines  = gConfig.getValue(self.section+'/PeekOutputLines',5) # regularly printed # lines (up to)
     self.finalOutputLines = gConfig.getValue(self.section+'/FinalOutputLines',50) # lines to print after failure (up to)
     self.minCPUWallClockRatio  = gConfig.getValue(self.section+'/MinCPUWallClockRatio',5) #ratio %age
-    self.log.verbose('PID of child is %s' %self.appPID)
-    if not int(self.appPID):
-      self.appPID = self.wrapperPID
-      self.log.info('Could not establish distinct child PID so monitoring job wrapper process...')
+    self.__getAppPID()
     if self.pollingTime < self.minPollingTime:
       self.log.info('Requested PollingTime of %s setting to %s seconds (minimum)' %(self.pollingTime,self.minPollingTime))
       self.pollingTime=self.minPollingTime
     return result
 
   #############################################################################
+  def __getAppPID(self):
+    """ This function attempts to obtain the application PID.
+    """
+    self.log.verbose('PID of child is %s' %self.appPID)
+    if self.appPID==self.wrapperPID or not int(self.appPID):
+      self.log.verbose('Attempting to get PID of child')
+      self.appPID = self.exeThread.getCurrentPID()
+
+    if not int(self.appPID):
+      self.appPID = self.wrapperPID
+      self.log.info('Could not establish distinct child PID so monitoring job wrapper process...')
+
+  #############################################################################
   def execute(self):
     """ The main agent execution method of the Watchdog.
     """
+    if self.appPID == self.wrapperPID or not int(self.appPID):
+      self.__getAppPID()
+
     self.log.info('------------------------------------')
     self.log.info('Execution loop starts for Watchdog')
     if not self.exeThread.isAlive():
@@ -464,25 +477,23 @@ class Watchdog(Agent):
     """ The calibrate method obtains the initial values for system memory and load
         and calculates the margin for error for the rest of the Watchdog cycle.
     """
-    self.log.verbose('PID of child is %s' %self.appPID)
-    if not int(self.appPID):
-      self.appPID = self.exeThread.getCurrentPID()
-      if not int(self.appPID):
-        self.log.verbose('Child PID could not be found during calibration, setting to wrapper PID temporarily')
-
+    self.__getAppPID()
     self.log.verbose('Child PID %s, Wrapper PID %s' %(self.appPID,self.wrapperPID))
     self.getWallClockTime()
     self.parameters['WallClockTime'] = []
 
-    result = self.getCPUConsumed(self.appPID)
-    self.log.verbose('CPU consumed %s' %(result))
-    if not result['OK']:
-      msg = 'Could not establish CPU consumed'
-      self.log.warn(msg)
-      result = S_ERROR(msg)
-      return result
+    initialCPU=0.0
+    if self.appPID:
+      result = self.getCPUConsumed(self.appPID)
+      self.log.verbose('CPU consumed %s' %(result))
+      if not result['OK']:
+        msg = 'Could not establish CPU consumed'
+        self.log.warn(msg)
+        result = S_ERROR(msg)
+        return result
 
-    initialCPU = result['Value']
+      initialCPU = result['Value']
+
     self.initialValues['CPUConsumed']=initialCPU
     self.parameters['CPUConsumed'] = []
 
