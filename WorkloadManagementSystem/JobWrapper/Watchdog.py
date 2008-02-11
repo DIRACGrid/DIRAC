@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.15 2008/02/08 15:45:58 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.16 2008/02/11 14:00:24 paterson Exp $
 # File  : Watchdog.py
 # Author: Stuart Paterson
 ########################################################################
@@ -18,7 +18,7 @@
           - CPU normalization for correct comparison with job limit
 """
 
-__RCSID__ = "$Id: Watchdog.py,v 1.15 2008/02/08 15:45:58 paterson Exp $"
+__RCSID__ = "$Id: Watchdog.py,v 1.16 2008/02/11 14:00:24 paterson Exp $"
 
 from DIRAC.Core.Base.Agent                          import Agent
 from DIRAC.Core.DISET.RPCClient                     import RPCClient
@@ -40,7 +40,9 @@ class Watchdog(Agent):
     self.systemFlag = systemFlag
     self.exeThread = exeThread
     self.wrapperPID = pid
-    self.pid = self.exeThread.getCurrentPID()
+    self.appPID = self.exeThread.getCurrentPID()
+    print '>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>PID %s' %self.appPID
+    print 'type PID is %s' %type(self.appPID)
     self.spObject = spObject
     self.jobCPUtime = jobCPUtime
     self.watchdogCPU = 0
@@ -68,6 +70,7 @@ class Watchdog(Agent):
     self.testCPULimit    = gConfig.getValue(self.section+'/CheckCPULimitFlag',1)
     #Other parameters
     self.pollingTime      = gConfig.getValue(self.section+'/PollingTime',5*60)
+    self.minPollingTime   = gConfig.getValue(self.section+'/MinPollingTime',60)
     self.maxWallClockTime = gConfig.getValue(self.section+'/MaxWallClockTime',48*60*60) # e.g.2 days
     self.jobPeekFlag      = gConfig.getValue(self.section+'/JobPeekFlag',1) # on / off
     self.minDiskSpace     = gConfig.getValue(self.section+'/MinDiskSpace',10) #MB
@@ -79,12 +82,13 @@ class Watchdog(Agent):
     self.peekOutputLines  = gConfig.getValue(self.section+'/PeekOutputLines',5) # regularly printed # lines (up to)
     self.finalOutputLines = gConfig.getValue(self.section+'/FinalOutputLines',50) # lines to print after failure (up to)
     self.minCPUWallClockRatio  = gConfig.getValue(self.section+'/MinCPUWallClockRatio',5) #ratio %age
-    if not self.pid:
-      self.pid = self.wrapperPID
-      self.log.info('Could not establish child PID so monitoring job wrapper process...')
-    if self.pollingTime < 60:
-      self.log.info('Requested PollingTime of %s setting to 1 minute (minimum)' %(self.pollingTime))
-      self.pollingTime=60
+    self.log.verbose('PID of child is %s' %self.appPID)
+    if not int(self.appPID) > 0:
+      self.appPID = self.wrapperPID
+      self.log.info('Could not establish distinct child PID so monitoring job wrapper process...')
+    if self.pollingTime < self.minPollingTime:
+      self.log.info('Requested PollingTime of %s setting to %s seconds (minimum)' %(self.pollingTime,self.minPollingTime))
+      self.pollingTime=self.minPollingTime
     return result
 
   #############################################################################
@@ -115,10 +119,16 @@ class Watchdog(Agent):
     msg += 'DiskSpace: %.1f MB ' % (result['Value'])
     self.parameters['DiskSpace'].append(result['Value'])
     heartBeatDict['AvailableDiskSpace'] = result['Value']
-    result = self.getCPUConsumed(self.pid)
+    result = self.getCPUConsumed(self.appPID)
     msg += 'CPU: %s (h:m:s) ' % (result['Value'])
     self.parameters['CPUConsumed'].append(result['Value'])
     heartBeatDict['CPUConsumed'] = result['Value']
+    if self.appPID != self.wrapperPID:
+      result = self.getCPUConsumed(self.wrapperPID)
+      msg += 'WrapperCPU: %s (h:m:s) ' % (result['Value'])
+      self.parameters['WrapperCPUConsumed'].append(result['Value'])
+      heartBeatDict['WrapperCPUConsumed'] = result['Value']
+
     #Estimate Watchdog overhead
     if not self.watchdogCPU:
       self.watchdogCPU=result['Value']
@@ -176,7 +186,6 @@ class Watchdog(Agent):
     jobID = os.environ['JOBID']
     staticParamDict = {'StandardOutput':recentStdOut}
     self.sendSignOfLife(int(jobID),heartBeatDict,staticParamDict)
-
     return S_OK('Watchdog cycle complete')
 
   #############################################################################
@@ -260,12 +269,6 @@ class Watchdog(Agent):
     """ Checks whether the CPU consumed by application process is reasonable. This
         method will report stalled jobs to be killed.
     """
-#    if not self.calibration:
-#      result = self.getCalibFactor()
-#      if not result['OK']:
-#        return result
-#    deltaFactor = self.calibration * self.calibFactor
-
     cpuList=[]
     if self.parameters.has_key('CPUConsumed'):
       cpuList = self.parameters['CPUConsumed']
@@ -283,7 +286,6 @@ class Watchdog(Agent):
       cut = len(cpuList) - iterations
       cpuList = cpuList[cut:]
 
-    #Apply deltaFactor to CPU list
     cpuSample = []
     for value in cpuList:
       valueTime = self.convertCPUTime(value)
@@ -295,50 +297,36 @@ class Watchdog(Agent):
     #can fail job.
 
     totalCPUConsumed = cpuSample[-1]
-    self.log.info('Cumulative CPU consumed is: %s s' % (totalCPUConsumed))
-    cpuConsumedInterval = cpuSample[-1]-cpuSample[0]  #during last interval
+    self.log.info('Cumulative CPU consumed by application process is: %s' % (totalCPUConsumed))
+    if len(cpuSample)>1:
+      cpuConsumedInterval = cpuSample[-1]-cpuSample[0]  #during last interval
 
-    ratio = float(totalCPUConsumed)/float(sampleTime)
-    limit = float( self.minCPUWallClockRatio * 0.01 )
-    self.log.info('CPU consumed / Wallclock time ratio during last %s seconds is %f' % (sampleTime,ratio))
+      ratio = float(totalCPUConsumed)/float(sampleTime)
+      limit = float( self.minCPUWallClockRatio * 0.01 )
+      self.log.info('CPU consumed / Wallclock time ratio during last %s seconds is %f' % (sampleTime,ratio))
 
-    if ratio < limit:
-      print cpuSample
-      return S_ERROR('Watchdog identified this job as stalled')
+      if ratio < limit:
+        self.log.info(cpuSample)
+        return S_ERROR('Watchdog identified this job as stalled')
+
+      if self.appPID != self.wrapperPID:
+        if self.parameters.has_key('WrapperCPUConsumed') and self.initialValues.has_key('WrapperCPUConsumed'):
+          wrapperCPUList = self.parameters['WrapperCPUConsumed']
+          result = self.convertCPUTime(wrapperCPUList[-1])
+          if result['OK']:
+            currentWrapperCPU = float(result['Value']) - float(self.initialValues['WrapperCPUConsumed'])
+            self.log.info('Cumulative Wrapper CPU consumed is: %s' %(currentWrapperCPU))
+          else:
+            self.log.info('Not possible to convert current wrapper CPU consumed from %s' %(wrapperCPUList[-1]))
+        else:
+          self.log.info('Not enough information to calculate CPU consumed by wrapper')
+
+    else:
+      self.log.info('Insufficient CPU consumed information')
+      self.log.verbose(cpuList)
+
 
     return S_OK('Job consuming CPU')
-
-  #############################################################################
-
-  def getCalibFactor(self):
-    """ Uses CPU consumed from calibrate method to estimate Watchdog CPU
-        consumption.
-    """
-    if not self.watchdogCPU:
-      return S_ERROR('Watchdog CPU estimate cannot be made')
-
-    if not self.initialValues.has_key('CPUConsumed'):
-      return S_ERROR('Consumed CPU estimate cannot be made')
-
-    watchdog = self.watchdogCPU
-    initialCPU = self.initialValues['CPUConsumed']
-
-    watchCPU   = 0
-    currCPUDict = self.convertCPUTime(watchdog)
-    if currCPUDict['OK']:
-      watchCPU = currCPUDict['Value']
-    else:
-      return S_ERROR('Not possible to determine Watchdog CPU consumed')
-
-    if initialCPU and watchCPU:
-      deltaValue = watchCPU - initialCPU
-      self.calibration = deltaValue
-      return S_OK('Calibration value established')
-    elif not initialCPU and not watchCPU:
-      self.calibration = 0.0
-      return S_OK('Watchdog CPU consumed was negligible')
-    else:
-      return S_ERROR('Not possible to determine CPU calibration factor')
 
   #############################################################################
 
@@ -366,6 +354,7 @@ class Watchdog(Agent):
 
     result = S_OK()
     result['Value'] = normalizedCPUValue
+    self.log.debug('CPU value %s converted to %s' %(cputime,normalizedCPUValue))
     return result
 
   #############################################################################
@@ -382,6 +371,12 @@ class Watchdog(Agent):
     if self.parameters.has_key('CPUConsumed'):
       currentCPUps = self.parameters['CPUConsumed'][-1]
 
+    initialCPUDict = self.convertCPUTime(initialCPU)
+    if initialCPUDict['OK']:
+      initialCPU = initialCPUDict['Value']
+    else:
+      return S_ERROR('Not possible to determine initial CPU consumed')
+
     currCPUDict = self.convertCPUTime(currentCPUps)
     if currCPUDict['OK']:
       currentCPU = currCPUDict['Value']
@@ -390,15 +385,15 @@ class Watchdog(Agent):
 
     if initialCPU and currentCPU:
       limit = self.jobCPUtime + self.jobCPUtime * (self.jobCPUMargin / 100 )
-      cpuConsumed = currentCPU-initialCPU
+      cpuConsumed = float(currentCPU)-float(initialCPU)
       if cpuConsumed > limit:
         self.log.info('Job has consumed more than the specified CPU limit with an additional %s% margin' % (self.jobCPUMargin))
         return S_ERROR('Job has exceeded maximum CPU time limit')
       else:
         return S_OK('Job within CPU limit')
     elif not initialCPU and not currentCPU:
-      self.log.warn('Both initial and current CPU consumed are null')
-      return S_OK('CPU consumed is not measurable')
+      self.log.verbose('Both initial and current CPU consumed are null')
+      return S_OK('CPU consumed is not measurable yet')
     else:
       return S_ERROR('Not possible to determine CPU consumed')
 
@@ -463,10 +458,11 @@ class Watchdog(Agent):
     """ The calibrate method obtains the initial values for system memory and load
         and calculates the margin for error for the rest of the Watchdog cycle.
     """
+    self.log.verbose('Child PID %s, Wrapper PID %s' %(self.appPID,self.wrapperPID))
     self.getWallClockTime()
     self.parameters['WallClockTime'] = []
 
-    result = self.getCPUConsumed(self.pid)
+    result = self.getCPUConsumed(self.appPID)
     self.log.verbose('CPU consumed %s' %(result))
     if not result['OK']:
       msg = 'Could not establish CPU consumed'
@@ -474,16 +470,22 @@ class Watchdog(Agent):
       result = S_ERROR(msg)
       return result
 
-    initialCPU = 0
-    initCPUDict = self.convertCPUTime(result['Value'])
-    if initCPUDict['OK']:
-      initialCPU = initCPUDict['Value']
-    else:
-      self.log.verbose('ConvertedCPUTime: %s' %(initCPUDict))
-      return S_ERROR('Not possible to determine initial CPU consumed')
-
+    initialCPU = result['Value']
     self.initialValues['CPUConsumed']=initialCPU
     self.parameters['CPUConsumed'] = []
+
+    if self.appPID != self.wrapperPID:
+      result = self.getCPUConsumed(self.wrapperPID)
+      self.log.verbose('Wrapper CPU consumed %s' %(result))
+      if not result['OK']:
+        msg = 'Could not establish Wrapper CPU consumed'
+        self.log.warn(msg)
+        result = S_ERROR(msg)
+        return result
+
+      wrapCPU = result['Value']
+      self.initialValues['WrapperCPUConsumed']=wrapCPU
+      self.parameters['WrapperCPUConsumed'] = []
 
     result = self.getLoadAverage()
     self.log.verbose('LoadAverage: %s' %(result))
@@ -554,22 +556,32 @@ class Watchdog(Agent):
     """
     summary = {}
     #CPUConsumed
-    cpuList = self.parameters['CPUConsumed']
-    summary['CPUConsumed(secs)'] = cpuList[-1] # to do, the initial value should be subtracted
+    if self.parameters.has_key('CPUConsumed'):
+      cpuList = self.parameters['CPUConsumed']
+      summary['CPUConsumed(h:m:s)'] = cpuList[-1] # to do, the initial value should be subtracted
     #DiskSpace
-    space = self.parameters['DiskSpace']
-    value = space[-1] - self.initialValues['DiskSpace']
-    if value < 0:
-      value = 0
-    summary['DiskSpace(MB)'] = value
+    if self.parameters.has_key('DiskSpace'):
+      space = self.parameters['DiskSpace']
+      value = float(space[-1]) - float(self.initialValues['DiskSpace'])
+      if value < 0:
+        value = 0
+      summary['DiskSpace(MB)'] = value
     #MemoryUsed
-    memory = self.parameters['MemoryUsed']
-    summary['MemoryUsed(bytes)'] = memory[-1] - self.initialValues['MemoryUsed']
+    if self.parameters.has_key('MemoryUsed'):
+      memory = self.parameters['MemoryUsed']
+      summary['MemoryUsed(bytes)'] = float(memory[-1]) - float(self.initialValues['MemoryUsed'])
     #LoadAverage
-    laList = self.parameters['LoadAverage']
-    la = 0.0
-    for load in laList: la += load
-    summary['LoadAverage'] = float(la) / float(len(laList))
+    if self.parameters.has_key('LoadAverage'):
+      laList = self.parameters['LoadAverage']
+      la = 0.0
+      for load in laList: la += load
+      summary['LoadAverage'] = float(la) / float(len(laList))
+    #wrapper CPU
+    if self.parameters.has_key('WrapperCPUConsumed'):
+      wrapCPU = self.parameters['WrapperCPUConsumed']
+      value = wrapCPU[-1]
+      summary['WrapperCPUConsumed(h:m:s)']=value
+
     self.reportParameters(summary,'UsageSummary')
 
   #############################################################################
@@ -613,6 +625,7 @@ class Watchdog(Agent):
   def killRunningThread(self,spObject):
     """ Will kill the running thread process"""
     os.kill( spObject.child.pid, 9 )
+    self.log.info('Sent kill signal to application PID %s' %(spObject.child.pid))
     return S_OK('Thread killed')
 
   #############################################################################
