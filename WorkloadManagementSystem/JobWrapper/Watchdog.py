@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.17 2008/02/11 14:01:18 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.18 2008/02/11 15:18:29 paterson Exp $
 # File  : Watchdog.py
 # Author: Stuart Paterson
 ########################################################################
@@ -18,7 +18,7 @@
           - CPU normalization for correct comparison with job limit
 """
 
-__RCSID__ = "$Id: Watchdog.py,v 1.17 2008/02/11 14:01:18 paterson Exp $"
+__RCSID__ = "$Id: Watchdog.py,v 1.18 2008/02/11 15:18:29 paterson Exp $"
 
 from DIRAC.Core.Base.Agent                          import Agent
 from DIRAC.Core.DISET.RPCClient                     import RPCClient
@@ -305,6 +305,14 @@ class Watchdog(Agent):
 
       if ratio < limit:
         self.log.info(cpuSample)
+        noCPURecordedFlag = True
+        for i in cpuSample:
+          if i:
+            noCPURecordedFlag = False
+        if noCPURecordedFlag:
+          self.log.info('Watchdog would have identified job as stalled but CPU is consistently zero')
+          return S_OK('Watchdog cannot obtain CPU')
+
         return S_ERROR('Watchdog identified this job as stalled')
 
       if self.appPID != self.wrapperPID:
