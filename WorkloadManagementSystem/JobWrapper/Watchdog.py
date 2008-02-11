@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.16 2008/02/11 14:00:24 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.17 2008/02/11 14:01:18 paterson Exp $
 # File  : Watchdog.py
 # Author: Stuart Paterson
 ########################################################################
@@ -18,7 +18,7 @@
           - CPU normalization for correct comparison with job limit
 """
 
-__RCSID__ = "$Id: Watchdog.py,v 1.16 2008/02/11 14:00:24 paterson Exp $"
+__RCSID__ = "$Id: Watchdog.py,v 1.17 2008/02/11 14:01:18 paterson Exp $"
 
 from DIRAC.Core.Base.Agent                          import Agent
 from DIRAC.Core.DISET.RPCClient                     import RPCClient
@@ -41,8 +41,6 @@ class Watchdog(Agent):
     self.exeThread = exeThread
     self.wrapperPID = pid
     self.appPID = self.exeThread.getCurrentPID()
-    print '>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>PID %s' %self.appPID
-    print 'type PID is %s' %type(self.appPID)
     self.spObject = spObject
     self.jobCPUtime = jobCPUtime
     self.watchdogCPU = 0
