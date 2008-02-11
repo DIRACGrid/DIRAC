@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.9 2008/02/08 19:25:17 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.10 2008/02/11 09:35:51 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -24,7 +24,7 @@ The initial instance just exposes job submission via the WMS client.
 
 """
 
-__RCSID__ = "$Id: Dirac.py,v 1.9 2008/02/08 19:25:17 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.10 2008/02/11 09:35:51 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -661,6 +661,7 @@ class Dirac:
     if result['Value'].has_key('StandardOutput'):
       del result['Value']['StandardOutput']
 
+    self.log.info(self.pPrint.pformat(result['Value']))
     return result
 
   #############################################################################
@@ -739,6 +740,8 @@ class Dirac:
 
     if result['Value'].has_key('StandardOutput'):
       self.log.info(result['Value']['StandardOutput'])
+    else:
+      self.log.info('No standard output to print')
 
     #deliberately don't return result as this is strictly for visual inspection only
     return S_OK('Job peek result printed at DIRAC INFO level')
