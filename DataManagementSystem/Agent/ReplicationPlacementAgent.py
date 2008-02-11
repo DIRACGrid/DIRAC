@@ -25,7 +25,7 @@ class ReplicationPlacementAgent(Agent):
 
   def initialize(self):
     result = Agent.initialize(self)
-    self.transferDBURL = PathFinder.getServiceURL('RequestManagement/centralURL')
+    self.transferDBUrl = PathFinder.getServiceURL('RequestManagement/centralURL')
     self.TransferDB = RequestClient()
     self.PlacementDB = PlacementDBClient()
     self.server = RPCClient("DataManagement/PlacementDB")
@@ -90,7 +90,7 @@ class ReplicationPlacementAgent(Agent):
     """ Process a single transformation
     """
     transName = transDict['Name']
-    res = self.server.getInputData(transName,'')
+    res = self.server.getInputData(transName,'AprioriGood')
     if not res['OK']:
       errStr = "ReplicationPlacementAgent.processTransformation: Failed to obtain input data."
       gLogger.error(errStr,res['Message'])
@@ -125,33 +125,36 @@ class ReplicationPlacementAgent(Agent):
       gLogger.error(errStr,res['Message'])
       return S_ERROR(errStr)
     seFiles = res['Value']
-
-    for targetSE,lfns in seFiles.items():
-      res = self.submitRequest(sourceSE,targetSE,lfns,transName)
-      if not res['OK']:
-        errStr = "ReplicationPlacementAgent.processTransformation: Failed to process task for transformation."
-        gLogger.error(errStr,res['Message'])
-      else:
+    if not seFiles:
+      gLogger.info("ReplicationPlacementAgent.processTransformation: Sufficient number of files not found for %s." % transName)
+      return S_OK()
+		
+    res = self.submitRequest(sourceSE,seFiles,transName)
+    if not res['OK']:
+      errStr = "ReplicationPlacementAgent.processTransformation: Failed to process task for transformation."
+      gLogger.error(errStr,res['Message'])
+    else:
+      for targetSE,lfns in seFiles.items():
         res = self.server.setFileStatusForTransformation(transName,'Assigned',lfns)
         if not res['OK']:
           errStr = "ReplicationPlacementAgent.processTransformation: Failed to update file status."
           gLogger.error(errStr,res['Message'])
-        else:
-          res = self.server.setFileSEForTransformation(transName,targetSE,lfns)
-          if not res['OK']:
-            errStr = "ReplicationPlacementAgent.processTransformation: Failed to update file status."
-            gLogger.error(errStr,res['Message'])
+        res = self.server.setFileSEForTransformation(transName,targetSE,lfns)
+        if not res['OK']:
+          errStr = "ReplicationPlacementAgent.processTransformation: Failed to update file status."
+          gLogger.error(errStr,res['Message'])
     return S_OK()
 
-  def submitRequest(self,sourceSE,targetSE,lfns,transName):
+  def submitRequest(self,sourceSE,targetSEFiles,transName):
     oRequest = DataManagementRequest()
-    subRequestIndex = oRequest.initiateSubRequest('transfer')['Value']
-    attributeDict = {'Operation':'replicateAndRegister','TargetSE':targetSE,'SourceSE':sourceSE}
-    oRequest.setSubRequestAttributes(subRequestIndex,'transfer',attributeDict)
-    files = []
-    for lfn in lfns:
-      files.append({'LFN':lfn})
-    oRequest.setSubRequestFiles(subRequestIndex,'transfer',files)
+    for targetSE,lfns in targetSEFiles.items():
+      subRequestIndex = oRequest.initiateSubRequest('transfer')['Value']
+      attributeDict = {'Operation':'replicateAndRegister','TargetSE':targetSE,'SourceSE':sourceSE}
+      oRequest.setSubRequestAttributes(subRequestIndex,'transfer',attributeDict)
+      files = []
+      for lfn in lfns:
+        files.append({'LFN':lfn})
+      oRequest.setSubRequestFiles(subRequestIndex,'transfer',files)
     requestString = oRequest.toXML()['Value']
     requestName = '%s_transfer_%s.xml' % (transName,time.time())
     res = self.TransferDB.setRequest(requestName,requestString,self.transferDBUrl)
