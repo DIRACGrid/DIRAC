@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/RRDManager.py,v 1.14 2008/02/06 13:31:03 acasajus Exp $
-__RCSID__ = "$Id: RRDManager.py,v 1.14 2008/02/06 13:31:03 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/RRDManager.py,v 1.15 2008/02/11 18:15:12 acasajus Exp $
+__RCSID__ = "$Id: RRDManager.py,v 1.15 2008/02/11 18:15:12 acasajus Exp $"
 import os
 import os.path
 import time
@@ -74,8 +74,12 @@ class RRDManager:
     #Start GMT(now) - 1h
     cmd += " --start %s" % ( self.getCurrentBucketTime() - 86400 )
     cmd += " --step %s" % self.bucketTime
-    dst = "GAUGE"
-    cf = "AVERAGE"
+    if type in ( 'mean' ):
+      dst = "ABSOLUTE"
+      cf = "AVERAGE"
+    elif type in ( 'sum', 'acum', 'rate' ):
+      dst = "GAUGE"
+      cf = "AVERAGE"
     cmd += " DS:value:%s:120:U:U" % dst
     # 1m res for 1 month
     cmd += " RRA:%s:0.9:1:43200" % cf
@@ -94,8 +98,18 @@ class RRDManager:
       return S_ERROR( "Failed to fetch last update %s : %s" % ( rrdFile, retTuple[2] ) )
     return S_OK( int( retTuple[1].strip() ) )
 
+  def __fillWithZeros( self, lastUpdateTime, valuesList ):
+    filledList = []
+    expectedUpdateTime = lastUpdateTime + self.bucketTime
+    for valueTuple in valuesList:
+      while expectedUpdateTime < valueTuple[0]:
+        filledList.append( ( expectedUpdateTime, 0 ) )
+        expectedUpdateTime += self.bucketTime
+      filledList.append( valueTuple )
+      expectedUpdateTime = valueTuple[0] + self.bucketTime
+    return filledList
 
-  def update( self, rrdFile, valuesList ):
+  def update( self, type, rrdFile, valuesList ):
     """
     Add marks to an rrd
     """
@@ -106,6 +120,9 @@ class RRDManager:
       lastUpdateTime = retVal[ 'Value' ]
       gLogger.verbose( "Last update time is %s" % lastUpdateTime )
     cmd = "%s update %s" % ( self.rrdExec, rrdFilePath )
+    #If sum or acum we have to fill with 0 the db to ensure the mean is valid
+    if type in ( "sum", "acum" ):
+      valuesList = self.__fillWithZeros( lastUpdateTime, valuesList )
     rrdUpdates = []
     for entry in valuesList:
       rrdUpdates.append( "%s:%s" % entry )
@@ -126,28 +143,37 @@ class RRDManager:
     m.update( str( kwargs ) )
     return m.hexdigest()
 
-  def __generateRRDGraphVar( self, entryName, rrdFile, rrdType ):
+  def __generateRRDGraphVar( self, entryName, rrdFile, rrdType, yScaleFactor = 1 ):
     """
     Calculate the graph query in rrd lingo for an activity
     """
-    if rrdType in ( "mean", "sum", "rate" ):
-      varStr = "'DEF:ac%sRAW=%s/%s:value:AVERAGE'" % ( entryName, self.rrdLocation, rrdFile )
+    varStr = "'DEF:ac%sRAW=%s/%s:value:AVERAGE'" % ( entryName, self.rrdLocation, rrdFile )
+    if rrdType in ( "mean", "rate" ):
       varStr += " 'CDEF:%s=ac%sRAW,UN,0,ac%sRAW,IF'" % ( entryName, entryName, entryName )
-      return varStr
+    elif rrdType == "sum":
+      scale = yScaleFactor * self.bucketTime
+      varStr += " 'CDEF:%s=ac%sRAW,UN,0,ac%sRAW,%s,*,IF'" % ( entryName, entryName, entryName, scale )
     elif rrdType == "acum":
-      varStr = "'DEF:ac%sRAW=%s/%s:value:AVERAGE'" % ( entryName, self.rrdLocation, rrdFile )
-      varStr += " 'CDEF:ac%sNOTUN=ac%sRAW,UN,0,ac%sRAW,IF'" % ( entryName, entryName, entryName )
+      scale = yScaleFactor * self.bucketTime
+      varStr += " 'CDEF:ac%sNOTUN=ac%sRAW,UN,0,ac%sRAW,%s,*,IF'" % ( entryName, entryName, entryName, scale )
       varStr += " 'CDEF:%s=PREV,UN,ac%sNOTUN,PREV,ac%sNOTUN,+,IF'" % ( entryName, entryName, entryName )
-      return varStr
-    raise Exception( "rrdType %s is not valid" % rrdType )
+    return varStr
 
   def __graphTimeComment( self ):
     return " 'COMMENT:Generated on %s GMT'" % Time.toString().replace( ":", "\:" ).split( "." )[0]
+
+  def __getYScalingFactor( self, timeSpan, plotWidth ):
+    expectedTimeSpan = plotWidth * self.bucketTime
+    if timeSpan < expectedTimeSpan:
+      return 1
+    else:
+      return float( timeSpan ) / expectedTimeSpan
 
   def groupPlot( self, fromSecs, toSecs, activitiesList, stackActivities, size, graphFilename = "" ):
     """
     Generate a group plot
     """
+    yScalingFactor = self.__getYScalingFactor( toSecs - fromSecs, self.sizesList[ size ][0] )
     if not graphFilename:
       graphFilename = "%s.png" % self.__generateName( fromSecs,
                                                     toSecs,
@@ -163,7 +189,7 @@ class RRDManager:
     colorGen = ColorGenerator()
     for idActivity in range( len( activitiesList ) ):
       activity = activitiesList[ idActivity ]
-      rrdCmd += " %s" % self.__generateRRDGraphVar( idActivity, activity.getFile(), activity.getType() )
+      rrdCmd += " %s" % self.__generateRRDGraphVar( idActivity, activity.getFile(), activity.getType(), yScaleFactor = yScalingFactor )
       if stackActivities:
         rrdCmd += " 'AREA:%s#%s:%s:STACK'" % ( idActivity, colorGen.getHexColor(), activity.getLabel().replace( ":", "\:" ) )
       else:
@@ -178,6 +204,7 @@ class RRDManager:
     """
     Generate a non grouped plot
     """
+    yScalingFactor = self.__getYScalingFactor( toSecs - fromSecs, self.sizesList[ size ][0] )
     if not graphFilename:
       graphFilename = "%s.png" % self.__generateName( fromSecs,
                                                     toSecs,
@@ -191,7 +218,7 @@ class RRDManager:
     rrdCmd += " -h %s" % self.sizesList[ size ][1]
     rrdCmd += " --title '%s'" % activity.getLabel()
     rrdCmd += " --vertical-label '%s'" % activity.getUnit()
-    rrdCmd += " %s" % self.__generateRRDGraphVar( 0, activity.getFile(), activity.getType() )
+    rrdCmd += " %s" % self.__generateRRDGraphVar( 0, activity.getFile(), activity.getType(), yScaleFactor = yScalingFactor )
     if stackActivities:
       rrdCmd += " 'AREA:0#FF0000::STACK'"
     else:

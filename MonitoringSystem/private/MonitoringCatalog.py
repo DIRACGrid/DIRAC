@@ -201,6 +201,17 @@ class MonitoringCatalog:
     else:
       return retList[0][0]
 
+  def findActivity( self, sourceId, acName ):
+    """
+    Find activity
+    """
+    queryDict = { 'sourceId' : sourceId, "name" : acName }
+    retList = self.__select( "id, name, category, unit, type, description, filename", "activities", queryDict )
+    if len( retList ) == 0:
+      return False
+    else:
+      return retList[0]
+
   def queryField( self, field, definedFields ):
     """
     Query the values of a field given a set of defined ones
