@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/dirac-pilot-lcg.py,v 1.14 2008/02/07 17:12:36 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/dirac-pilot-lcg.py,v 1.15 2008/02/11 15:23:32 paterson Exp $
 # File :   dirac-pilot-lcg.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,7 +13,7 @@ import os,sys,string,re
     for the VO.
 """
 
-__RCSID__ = "$Id: dirac-pilot-lcg.py,v 1.14 2008/02/07 17:12:36 paterson Exp $"
+__RCSID__ = "$Id: dirac-pilot-lcg.py,v 1.15 2008/02/11 15:23:32 paterson Exp $"
 
 
 DEBUG = 1
@@ -171,7 +171,7 @@ def installDIRACDist(architecture,diracDistribution):
         sys.stdout.flush()
       printPilot('<<<<<<<<<<End Installation Attempt %s: DIRAC Installation Log' %(attempt+1),'DEBUG')
 
-      if os.path.exists('%s/DIRAC' %(start)) and os.path.exists('%s/%s' %(start,architecture)):
+      if os.path.exists('%s/DIRAC' %(start)):
         DIRAC_INSTALLED = 1
 
   if not DIRAC_INSTALLED:
