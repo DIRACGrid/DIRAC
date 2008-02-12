@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.22 2008/01/29 15:33:51 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.23 2008/02/12 12:21:16 paterson Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.22 2008/01/29 15:33:51 paterson Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.23 2008/02/12 12:21:16 paterson Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -59,6 +59,7 @@ class JobAgent(Agent):
 
     self.computingElement = ceInstance['Value']
     self.siteRoot = gConfig.getValue('LocalSite/Root',os.getcwd())
+    self.siteName = gConfig.getValue('LocalSite/Site','Unknown')
     self.jobWrapperTemplate = self.siteRoot+gConfig.getValue(self.section+'/JobWrapperTemplate','/DIRAC/WorkloadManagementSystem/JobWrapper/JobWrapperTemplate')
     self.jobSubmissionDelay = gConfig.getValue(self.section+'/SubmissionDelay',10)
     self.defaultProxyLength = gConfig.getValue(self.section+'/DefaultProxyLength',12)
@@ -150,7 +151,7 @@ class JobAgent(Agent):
     try:
       self.__setJobParam(jobID,'MatcherServiceTime',str(matchTime))
       self.__report(jobID,'Matched','Job Received by Agent')
-
+      self.__setJobSite(jobID,self.siteName)
       proxyResult = self.__setupProxy(jobID,ownerDN,jobGroup,self.siteRoot,jobCPUReqt)
       if not proxyResult['OK']:
         self.log.warn('Problem while setting up proxy')
@@ -455,6 +456,17 @@ class JobAgent(Agent):
       self.log.warn(jobStatus['Message'])
 
     return jobStatus
+
+  #############################################################################
+  def __setJobSite(self,jobID,site):
+    """Wraps around setJobSite of state update client
+    """
+    jobSite = self.jobReport.setJobSite(int(jobID),site)
+    self.log.verbose('setJobSite(%s,%s)' %(jobID,site))
+    if not jobSite['OK']:
+      self.log.warn(jobSite['Message'])
+
+    return jobSite
 
   #############################################################################
   def __setJobParam(self,jobID,name,value):
