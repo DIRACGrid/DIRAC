@@ -379,6 +379,8 @@ class SRM2Storage(StorageBase):
     else:
       return S_ERROR("SRM2Storage.getFileMetadata: Supplied path must be string or list of strings")
 
+    #SKP commented below line 120208
+    #return S_ERROR('sdklfjsdklfjlskdfj lsdkf')
     # Create the dictionary used by gfal
     gfalDict = {}
     gfalDict['surls'] = urls
@@ -409,12 +411,20 @@ class SRM2Storage(StorageBase):
       errStr = "SRM2Storage.getFileMetadata: Did not obtain gfal_get_results."
       gLogger.error(errStr)
       return S_ERROR(errStr)
-    gLogger.debug("SRM2Storage.getFileMetadata: Retrieved %s results from gfal_get_results." % numberOfResults)
+    gLogger.info("SRM2Storage.getFileMetadata: Retrieved %s results from gfal_get_results." % numberOfResults)
 
     failed = {}
     successful = {}
     for urlDict in listOfResults:
-      pathSURL = self.getUrl(urlDict['surl'])['Value']
+      checkFlag = True
+      pathSURL = ''
+      if not urlDict.has_key('surl'):
+        checkFlag = False
+        urlDict['status'] = 'Temporary nasty hack to avoid crash when surl key does not exist'
+        pathSURL = 'None'
+      
+      if checkFlag:
+        pathSURL = self.getUrl(urlDict['surl'])['Value']
       if urlDict['status'] == 0:
         urlStat = urlDict['stat']
         if S_ISREG(urlStat[ST_MODE]):
