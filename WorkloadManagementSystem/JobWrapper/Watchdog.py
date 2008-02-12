@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.21 2008/02/12 12:44:02 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.22 2008/02/12 14:02:50 paterson Exp $
 # File  : Watchdog.py
 # Author: Stuart Paterson
 ########################################################################
@@ -18,7 +18,7 @@
           - CPU normalization for correct comparison with job limit
 """
 
-__RCSID__ = "$Id: Watchdog.py,v 1.21 2008/02/12 12:44:02 paterson Exp $"
+__RCSID__ = "$Id: Watchdog.py,v 1.22 2008/02/12 14:02:50 paterson Exp $"
 
 from DIRAC.Core.Base.Agent                          import Agent
 from DIRAC.Core.DISET.RPCClient                     import RPCClient
@@ -43,7 +43,6 @@ class Watchdog(Agent):
     self.appPID = self.exeThread.getCurrentPID()
     self.spObject = spObject
     self.jobCPUtime = jobCPUtime
-    self.watchdogCPU = 0
     self.calibration = 0
     self.initialValues = {}
     self.parameters = {}
@@ -140,9 +139,6 @@ class Watchdog(Agent):
       self.parameters['WrapperCPUConsumed'].append(result['Value'])
       heartBeatDict['WrapperCPUConsumed'] = result['Value']
 
-    #Estimate Watchdog overhead
-    if not self.watchdogCPU:
-      self.watchdogCPU=result['Value']
     result = self.getWallClockTime()
     msg += 'WallClock: %.2f s ' % (result['Value'])
     self.parameters['WallClockTime'].append(result['Value'])
@@ -384,9 +380,10 @@ class Watchdog(Agent):
     """
     #Here we 'charge' for the CPU time including Watchdog.
     wrapperCPU = 0
-    watchdogCPU = 0
-    if self.initialValues.has_key('WrapperCPUConsumed'):
-      wrapperCPU = self.initialValues['WrapperCPUConsumed']
+    appCPU = 0
+    if self.appPID != self.wrapperPID:
+      if self.initialValues.has_key('WrapperCPUConsumed'):
+        wrapperCPU = self.initialValues['WrapperCPUConsumed']
     if self.parameters.has_key('CPUConsumed'):
       appCPU = self.parameters['CPUConsumed'][-1]
 
@@ -402,7 +399,7 @@ class Watchdog(Agent):
     else:
       return S_OK('Not possible to determine current CPU consumed')
 
-    if wrapperCPU or watchdogCPU:
+    if wrapperCPU or appCPU:
       limit = self.jobCPUtime + self.jobCPUtime * (self.jobCPUMargin / 100 )
       cpuConsumed = float(currentCPU)+float(wrapperCPU)
       if cpuConsumed > limit:
@@ -510,7 +507,7 @@ class Watchdog(Agent):
       self.initialValues['WrapperCPUConsumed']=wrapCPU
       self.parameters['WrapperCPUConsumed'] = []
     else:
-      self.initialValues['WrapperCPUConsumed']=0.0
+      self.initialValues['WrapperCPUConsumed']='0:0:0'
       self.parameters['WrapperCPUConsumed'] = []
 
     result = self.getLoadAverage()
