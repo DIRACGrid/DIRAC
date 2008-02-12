@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobStateUpdateHandler.py,v 1.8 2008/01/31 19:09:08 atsareg Exp $
+# $Id: JobStateUpdateHandler.py,v 1.9 2008/02/12 12:20:52 paterson Exp $
 ########################################################################
 
 """ JobStateUpdateHandler is the implementation of the Job State updating
@@ -11,7 +11,7 @@
 
 """
 
-__RCSID__ = "$Id: JobStateUpdateHandler.py,v 1.8 2008/01/31 19:09:08 atsareg Exp $"
+__RCSID__ = "$Id: JobStateUpdateHandler.py,v 1.9 2008/02/12 12:20:52 paterson Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -61,6 +61,14 @@ class JobStateUpdateHandler( RequestHandler ):
     else:
       result = logDB.addLoggingRecord(jobID,status,minorStatus,source=source)
 
+    return result
+
+  ###########################################################################
+  types_setJobSite = [IntType,StringType]
+  def export_setJobSite(self,jobID,site):
+    """Allows the site attribute to be set for a job specified by its jobID.
+    """
+    result = jobDB.setJobAttribute(jobID,'Site',site)
     return result
 
   ###########################################################################
