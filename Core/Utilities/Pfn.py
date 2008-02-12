@@ -1,9 +1,10 @@
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR, gLogger
 import os,re
 
 def pfnunparse(pfnDict):
   """ This method takes a dictionary containing a the pfn attributes and contructs it
   """
+  gLogger.debug("Pfn.pfnunparse: Attempting to un-parse pfnDict.")
   try:
     # All files must have a path and a filename. Or else...
     # fullPath = '/some/path/to/a/file.file'
@@ -44,6 +45,7 @@ def pfnunparse(pfnDict):
     #fullPfn = 'protocol://host/fullPath'
     #fullPfn = 'protocol://host:port/fullPath'
     #fullPfn = 'protocol://host:port/wsurl/fullPath'
+    gLogger.debug("Pfn.pfnunparse: Successfully un-parsed pfn dictionary.")
     return S_OK(fullPfn)
 
   except Exception,x:
@@ -55,6 +57,7 @@ def pfnparse(pfn):
 
   pfnDict = {'Protocol':'','Host':'','Port':'','WSUrl':'','Path':'','FileName':''}
   try:
+    gLogger.debug("Pfn.pfnunparse: Attempting to parse pfn %s." % pfn)
     if not re.search(':',pfn):
       # pfn = 'fullPath'
       directory = os.path.dirname(pfn)
@@ -116,6 +119,7 @@ def pfnparse(pfn):
           pfnDict['Path'] = directory
           fileName = os.path.basename(pfn)
           pfnDict['FileName'] = fileName
+    gLogger.debug("Pfn.pfnparse: Successfully parsed pfn.")
     return S_OK(pfnDict)
   except Exception,x:
     errStr = "Pfn.pfnparse: Failed to parse pfn: %s" % x
