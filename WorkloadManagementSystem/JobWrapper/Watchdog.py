@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.20 2008/02/11 21:19:31 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.21 2008/02/12 12:44:02 paterson Exp $
 # File  : Watchdog.py
 # Author: Stuart Paterson
 ########################################################################
@@ -18,7 +18,7 @@
           - CPU normalization for correct comparison with job limit
 """
 
-__RCSID__ = "$Id: Watchdog.py,v 1.20 2008/02/11 21:19:31 paterson Exp $"
+__RCSID__ = "$Id: Watchdog.py,v 1.21 2008/02/12 12:44:02 paterson Exp $"
 
 from DIRAC.Core.Base.Agent                          import Agent
 from DIRAC.Core.DISET.RPCClient                     import RPCClient
@@ -383,34 +383,34 @@ class Watchdog(Agent):
         (plus a configurable margin) and kills them as necessary.
     """
     #Here we 'charge' for the CPU time including Watchdog.
-    initialCPU = 0
-    currentCPU = 0
-    if self.initialValues.has_key('CPUConsumed'):
-      initialCPU = self.initialValues['CPUConsumed']
+    wrapperCPU = 0
+    watchdogCPU = 0
+    if self.initialValues.has_key('WrapperCPUConsumed'):
+      wrapperCPU = self.initialValues['WrapperCPUConsumed']
     if self.parameters.has_key('CPUConsumed'):
-      currentCPUps = self.parameters['CPUConsumed'][-1]
+      appCPU = self.parameters['CPUConsumed'][-1]
 
-    initialCPUDict = self.convertCPUTime(initialCPU)
-    if initialCPUDict['OK']:
-      initialCPU = initialCPUDict['Value']
+    wrapperCPUDict = self.convertCPUTime(wrapperCPU)
+    if wrapperCPUDict['OK']:
+      wrapperCPU = wrapperCPUDict['Value']
     else:
-      return S_ERROR('Not possible to determine initial CPU consumed')
+      self.log.verbose('Not possible to determine Wrapper CPU consumed')
 
-    currCPUDict = self.convertCPUTime(currentCPUps)
-    if currCPUDict['OK']:
-      currentCPU = currCPUDict['Value']
+    appCPUDict = self.convertCPUTime(appCPU)
+    if appCPUDict['OK']:
+      currentCPU = appCPUDict['Value']
     else:
-      return S_ERROR('Not possible to determine current CPU consumed')
+      return S_OK('Not possible to determine current CPU consumed')
 
-    if initialCPU and currentCPU:
+    if wrapperCPU or watchdogCPU:
       limit = self.jobCPUtime + self.jobCPUtime * (self.jobCPUMargin / 100 )
-      cpuConsumed = float(currentCPU)-float(initialCPU)
+      cpuConsumed = float(currentCPU)+float(wrapperCPU)
       if cpuConsumed > limit:
         self.log.info('Job has consumed more than the specified CPU limit with an additional %s% margin' % (self.jobCPUMargin))
         return S_ERROR('Job has exceeded maximum CPU time limit')
       else:
         return S_OK('Job within CPU limit')
-    elif not initialCPU and not currentCPU:
+    elif not wrapperCPU and not currentCPU:
       self.log.verbose('Both initial and current CPU consumed are null')
       return S_OK('CPU consumed is not measurable yet')
     else:
