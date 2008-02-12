@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.11 2008/01/30 15:38:35 acasajus Exp $
-__RCSID__ = "$Id: AccountingDB.py,v 1.11 2008/01/30 15:38:35 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.12 2008/02/12 14:37:01 acasajus Exp $
+__RCSID__ = "$Id: AccountingDB.py,v 1.12 2008/02/12 14:37:01 acasajus Exp $"
 
 import datetime
 import threading
@@ -68,14 +68,11 @@ class AccountingDB(DB):
     self.dbCatalog[ typeName ][ 'typeFields' ].extend( valueFields )
     self.dbCatalog[ typeName ][ 'bucketFields' ] = list( self.dbCatalog[ typeName ][ 'typeFields' ] )
     self.dbCatalog[ typeName ][ 'typeFields' ].extend( [ 'startTime', 'endTime' ] )
-    self.dbCatalog[ typeName ][ 'bucketFields' ].extend( [ 'startTime', 'bucketLength' ] )
+    self.dbCatalog[ typeName ][ 'bucketFields' ].extend( [  'entriesInBucket', 'startTime', 'bucketLength' ] )
     self.dbLocks[ self.__getTableName( "bucket", typeName ) ] = threading.Lock()
     self.dbBucketsLength[ typeName ] = bucketsLength
     #ADRI: TEST COMPACT BUCKETS
-    #self.dbBucketsLength[ typeName ] = [ ( 86400, 3600 ), #<1d = 1h
-    #                       ( 15552000, 86400 ), #>1w <6m = 1d
-    #                       ( 31104000, 604800 ), #>6m = 1w
-    #                     ]
+    #self.dbBucketsLength[ typeName ] = [ ( 86400, 3600 ), ( 15552000, 86400 ), ( 31104000, 604800 ) ]
     for key in keyFields:
       if not key in self.dbLocks:
         self.dbLocks[ self.__getTableName( "key", key ) ] = threading.Lock()
@@ -128,6 +125,7 @@ class AccountingDB(DB):
       bucketFieldsDict[ field[0] ] = "FLOAT"
     fieldsDict[ 'startTime' ] = "DATETIME"
     fieldsDict[ 'endTime' ] = "DATETIME"
+    bucketFieldsDict[ 'entriesInBucket' ] = "FLOAT"
     bucketFieldsDict[ 'startTime' ] = "DATETIME"
     bucketFieldsDict[ 'bucketLength' ] = "INT"
     tables[ self.__getTableName( "bucket", name ) ] = { 'Fields' : bucketFieldsDict,
@@ -291,13 +289,17 @@ class AccountingDB(DB):
                          )
     if not retVal[ 'OK' ]:
       return retVal
+    #HACK: One more record to split in the buckets
+    valuesList.append(1)
     return self.__splitInBuckets( typeName, startTime, endTime, valuesList )
 
   def __splitInBuckets( self, typeName, startTime, endTime, valuesList, connObj = False ):
     """
     Bucketize a record
     """
+    #Calculate amount of buckets
     buckets = self.__calculateBuckets( typeName, startTime, endTime )
+    #Separate key values from normal values
     numKeys = len( self.dbCatalog[ typeName ][ 'keys' ] )
     keyValues = valuesList[ :numKeys ]
     valuesList = valuesList[ numKeys: ]
@@ -306,15 +308,18 @@ class AccountingDB(DB):
       try:
         bucketStartTime = bucketInfo[0]
         bucketLength = bucketInfo[2]
+        #Discover if bucket existed
         retVal = self.__getBucketFromDB( typeName,
                                          bucketStartTime,
                                          bucketLength,
                                          keyValues, connObj = connObj )
         if not retVal[ 'OK' ]:
           return retVal
+        #Calculate proportional values
         proportionalValues = []
         for value in valuesList:
           proportionalValues.append( value * bucketInfo[1] )
+        #If no previous bucket, insert this
         if len( retVal[ 'Value' ] ) == 0:
           retVal = self.__insertBucket( typeName,
                                         bucketStartTime,
@@ -325,6 +330,7 @@ class AccountingDB(DB):
             return retVal
         else:
           bucketValues = retVal[ 'Value' ][0]
+          #Add previous bucket values to the new one and update
           for pos in range( len( bucketValues ) ):
             proportionalValues[ pos ] += bucketValues[ pos ]
           retVal = self.__updateBucket( typeName,
@@ -361,6 +367,7 @@ class AccountingDB(DB):
     sqlFields = []
     for valueField in self.dbCatalog[ typeName ][ 'values' ]:
       sqlFields.append( "`%s`.`%s`" % ( tableName, valueField ) )
+    sqlFields.append( "`%s`.`entriesInBucket`" % ( tableName ) )
     cmd = "SELECT %s FROM `%s`" % ( ", ".join( sqlFields ), self.__getTableName( "bucket", typeName ) )
     cmd += " WHERE `%s`.`startTime`='%s' AND `%s`.`bucketLength`='%s' AND " % (
                                                                               tableName,
@@ -381,6 +388,7 @@ class AccountingDB(DB):
       valueField = self.dbCatalog[ typeName ][ 'values' ][ pos ]
       value = bucketValues[ pos ]
       sqlValList.append( "`%s`.`%s`=%s" % ( tableName, valueField, value ) )
+    sqlValList.append( "`%s`.`entriesInBucket`=%s" % ( tableName, bucketValues[-1] ) )
     cmd += ", ".join( sqlValList )
     cmd += " WHERE `%s`.`startTime`='%s' AND `%s`.`bucketLength`='%s' AND " % (
                                                                             tableName,
@@ -394,8 +402,8 @@ class AccountingDB(DB):
     """
     Insert a bucket when coming from the raw insert
     """
-    sqlFields = [ 'startTime', 'bucketLength' ]
-    sqlValues = [ startTime.strftime( "%Y-%m-%d %H:%M:%S" ), bucketLength ]
+    sqlFields = [ 'startTime', 'bucketLength', 'entriesInBucket' ]
+    sqlValues = [ startTime.strftime( "%Y-%m-%d %H:%M:%S" ), bucketLength, bucketValues[-1] ]
     for keyPos in range( len( self.dbCatalog[ typeName ][ 'keys' ] ) ):
       sqlFields.append( self.dbCatalog[ typeName ][ 'keys' ][ keyPos ] )
       sqlValues.append( keyValues[ keyPos ] )
@@ -572,6 +580,7 @@ class AccountingDB(DB):
       sqlSelectList.append( "`%s`.`%s`" % ( tableName, field ) )
     for field in self.dbCatalog[ typeName ][ 'values' ]:
       sqlSelectList.append( "SUM( `%s`.`%s` )" % ( tableName, field ) )
+    sqlSelectList.append( "SUM( `%s`.`entriesInBucket` )" % ( tableName ) )
     sqlSelectList.append( "MIN( `%s`.`startTime` )" % tableName )
     sqlSelectList.append( "MAX( `%s`.`startTime` )" % tableName )
     selectSQL += ", ".join( sqlSelectList )
