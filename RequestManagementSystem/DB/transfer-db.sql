@@ -67,9 +67,14 @@ CREATE TABLE Datasets (
 DROP TABLE IF EXISTS FileToCat;
 CREATE TABLE FileToCat (
   FileID INTEGER NOT NULL,
-  Catalog varchar(32) NOT NULL,
-  Status varchar(32) DEFAULT 'Waiting',
-  PRIMARY KEY(FileID)
+  ChannelID INTEGER NOT NULL,
+  LFN VARCHAR(255) NOT NULL,
+  PFN VARCHAR(255) NOT NULL,
+  SE VARCHAR(255) NOT NULL,
+  Status varchar(32) DEFAULT 'Executing',
+  SubmitTime DATETIME NOT NULL,
+  CompleteTime DATETIME,
+  PRIMARY KEY(FileID,ChannelID,Status)
 );
 
 DROP TABLE IF EXISTS FileToFTS;
