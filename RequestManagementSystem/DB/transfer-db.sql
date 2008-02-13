@@ -3,7 +3,8 @@ DROP DATABASE IF EXISTS TransferDB;
 CREATE DATABASE TransferDB;
 
 
---Create user DIRACuse mysql;
+--Create user DIRAC
+use mysql;
 GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON TransferDB.* TO 'Dirac'@'localhost' IDENTIFIED BY 'lhcbMySQL';
 GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON TransferDB.* TO 'Dirac'@'%' IDENTIFIED BY 'lhcbMySQL';
 FLUSH PRIVILEGES;
@@ -138,7 +139,7 @@ CREATE TABLE FTSReqLogging (
   Event varchar(100),
   EventDateTime DATETIME
 );
-  Ê
+
 DROP TABLE IF EXISTS ReplicationTree;
 CREATE TABLE ReplicationTree (
   FileID INTEGER NOT NULL,
