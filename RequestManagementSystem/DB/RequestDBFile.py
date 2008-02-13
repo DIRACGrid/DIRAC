@@ -68,7 +68,7 @@ class RequestDBFile:
         if subRequestString:
           if desiredStatus:
             status = desiredStatus
-          elif not oRequest.isRequestEmpty(requestType)['Value']:
+          elif not oRequest.isRequestTypeEmpty(requestType)['Value']:
             status = 'ToDo'
           else:
             status = 'Done'
