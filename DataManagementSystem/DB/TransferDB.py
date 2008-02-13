@@ -505,7 +505,7 @@ class TransferDB(DB):
 
   def getWaitingRegistrations(self):
     req = "SELECT FileID,ChannelID,LFN,PFN,SE FROM FileToCat WHERE Status='Waiting';"
-    res = self._select(req)
+    res = self._query(req)
     if not res['OK']:
       err = "TransferDB._getWaitingRegistrations: Failed to get registrations."
       return S_ERROR(err)
@@ -515,7 +515,7 @@ class TransferDB(DB):
     return S_OK(tuples)
 
   def setRegistrationWaiting(self,channelID,fileID):
-    res = "UPDATE FileToCat SET Status='Waiting' WHERE FileID=%s AND ChannelID=%s AND Status='Executing';" % fileID,channelID
+    req = "UPDATE FileToCat SET Status='Waiting' WHERE FileID=%s AND ChannelID=%s AND Status='Executing';" % (fileID,channelID)
     res = self._update(req)
     if not res['OK']:
       err = "TransferDB._setRegistrationWaiting: Failed to update %s status." % fileID
@@ -523,7 +523,7 @@ class TransferDB(DB):
     return S_OK()
 
   def setRegistrationDone(self,channelID,fileID):
-    res = "UPDATE FileToCat SET Status='Done',CompleteTime=NOW() WHERE FileID=%s AND ChannelID=%s AND Status='Waiting';" % fileID,channelID
+    req = "UPDATE FileToCat SET Status='Done',CompleteTime=NOW() WHERE FileID=%s AND ChannelID=%s AND Status='Waiting';" % (fileID,channelID)
     res = self._update(req)
     if not res['OK']:
       err = "TransferDB._setRegistrationDone: Failed to update %s status." % fileID

@@ -183,7 +183,7 @@ class FTSMonitor(Agent):
       completedFileIDs = []
       for lfn in ftsReq.getCompleted():
         completedFileIDs.append(files[lfn])
-        res = self.TransferDB.setRegistrationWaiting(channelID,fileID)
+        res = self.TransferDB.setRegistrationWaiting(channelID,files[lfn])
         if not res['OK']:
           errStr = "FTSAgent.%s" % res['Message']
           gLogger.error(errStr)
