@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.28 2008/02/13 12:01:57 gkuznets Exp $
+# $Id: TransformationDB.py,v 1.29 2008/02/13 21:32:56 acsmith Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -248,7 +248,7 @@ class TransformationDB(DB):
     if not res['OK']:
       return res
     transID = res['Value']['TransID']
-    req = "SELECT LFN,t.Status,t.JobID,t.UsedSE FROM DataFiles AS d,T_%s AS t WHERE t.FileID=t.FileID" % transID
+    req = "SELECT d.LFN,t.Status,t.JobID,t.UsedSE FROM DataFiles AS d,T_%s AS t WHERE t.FileID=d.FileID" % transID
     if jobOrdered:
       req = "%s ORDER by t.JobID;" % req
     else:
