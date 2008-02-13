@@ -210,12 +210,11 @@ class RequestDBMySQL(DB):
     else:
       return S_OK(requestID)
 
-  def _updateRequest(self,requestName,requestString):
+  def updateRequest(self,requestName,requestString):
     request = DataManagementRequest(request=requestString)
     requestTypes = ['transfer','register','removal','stage']
-    failed = False
     requestID = request.getRequestID()
-    failed = False
+    updateRequestFailed = False
     for requestType in requestTypes:
       res = request.getNumSubRequests(requestType)
       if res['OK']:
@@ -226,18 +225,32 @@ class RequestDBMySQL(DB):
             if res['Value'].has_key('SubRequestID'):
               subRequestID = res['Value']['SubRequestID']
               res = self.__updateSubRequestFiles(ind,requestType,subRequestID,request)
-              if not res['OK']:
-                failed = True
+              if res['OK']:
+                if request.isSubRequestEmpty(ind,requestType)['Value']:
+                  res = self._setSubRequestAttribute(subRequestID,'Status','Done')
+                else:
+                  res = self._setSubRequestAttribute(subRequestID,'Status','Waiting')
+                if not res['OK']:
+                  updateRequestFailed = True
+              else:
+                updateRequestFailed = True
             else:
-              failed = True
+              updateRequestFailed = True
           else:
-            failed = True
+            updateRequestFailed = True
       else:
-        failed = True
-    if failed:
-      errStr = 'Failed to update request %s status' % requestID
+        updateRequestFailed = True
+    if updateRequestFailed:
+      errStr = 'Failed to update request %s.' % requestID
       return S_ERROR(errStr)
-    return S_OK()
+    else:
+      print
+      if request.isRequestEmpty()['Value']:
+        res = self._setRequestAttribute(requestID,'Status','Done')
+        if not res['OK']:
+          errStr = 'Failed to update request status of %s to Done.' % requestID
+          return S_ERROR(errStr)
+      return S_OK()
 
   def _deleteRequest(self,requestName):
     #This method needs extended to truely remove everything that is being removed i.e.fts job entries etc.
