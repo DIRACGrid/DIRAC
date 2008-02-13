@@ -277,7 +277,7 @@ class TransferDB(DB):
       if not channels[channelID].has_key('Files'):
         channels[channelID]['Files'] = 0
         channels[channelID]['Size'] = 0
-    return S_OK(channels)  
+    return S_OK(channels)
 
   #################################################################################
   # These are the methods for managing the FTSReq table
@@ -429,7 +429,7 @@ class TransferDB(DB):
     channels = res['Value']
     channelIDs = channels.keys()
     #############################################
-    # First get the throughput on the channels 
+    # First get the throughput on the channels
     req = "SELECT ChannelID,SUM(FileSize/%s),COUNT(*)/%s from FileToFTS WHERE SubmissionTime > (NOW() - INTERVAL %s SECOND) AND Status = 'Completed' GROUP BY ChannelID;" % (interval,interval,interval)
     res = self._query(req)
     if not res['OK']:
@@ -442,7 +442,7 @@ class TransferDB(DB):
       if not channelDict.has_key(channelID):
         channelDict[channelID] = {'Throughput': 0,'Fileput': 0}
     #############################################
-    # Now get the success rate on the channels 
+    # Now get the success rate on the channels
     req = "SELECT ChannelID,SUM(Status='Completed'),SUM(Status='Failed') from FileToFTS WHERE SubmissionTime > (NOW() - INTERVAL %s SECOND) GROUP BY ChannelID;" % (interval)
     res = self._query(req)
     if not res['OK']:
@@ -456,7 +456,7 @@ class TransferDB(DB):
         channelDict[channelID]['SuccessfulFiles'] = 0
         channelDict[channelID]['FailedFiles'] = 0
     return S_OK(channelDict)
-      
+
   #################################################################################
   # These are the methods for managing the FTSReqLogging table
 
@@ -466,16 +466,16 @@ class TransferDB(DB):
     if not res['OK']:
       err = "TransferDB._addLoggingEvent: Failed to add logging event to FTSReq %s" % ftsReqID
       return S_ERROR(err)
-    return res 
+    return res
 
   #################################################################################
   # These are the methods for managing the ReplicationTree table
-      
+
   def addReplicationTree(self,fileID,tree):
     for channelID,dict in tree.items():
        ancestor = dict['Ancestor']
        if not ancestor:
-         ancestor = '-' 
+         ancestor = '-'
        strategy = dict['Strategy']
        req = "INSERT INTO ReplicationTree (FileID,ChannelID,AncestorChannel,Strategy,CreationTime) VALUES (%s,%s,'%s','%s',NOW());" % (fileID,channelID,ancestor,strategy)
        res = self._update(req)
@@ -483,7 +483,45 @@ class TransferDB(DB):
         err = "TransferDB._addReplicationTree: Failed to add ReplicationTree for file %s" % fileID
         return S_ERROR(err)
     return S_OK()
-      
+
+  #################################################################################
+  # These are the methods for managing the FileToCat table
+
+  def addFileRegistration(self,channelID,fileID,lfn,targetSURL,destSE):
+    req = "INSERT INTO FileToCat (FileID,ChannelID,LFN,PFN,SE,SubmitTime) VALUES (%s,%s,'%s','%s','%s',NOW());"
+    res = self._update(req)
+    if not res['OK']:
+      err = "TransferDB._addFileRegistration: Failed to add registration entry for file %s" % fileID
+      return S_ERROR(err)
+    return S_OK()
+
+  def getWaitingRegistrations(self):
+    req = "SELECT FileID,ChannelID,LFN,PFN,SE FROM FileToCat WHERE Status='Waiting';"
+    res = self._select(req)
+    if not res['OK']:
+      err = "TransferDB._getWaitingRegistrations: Failed to get registrations."
+      return S_ERROR(err)
+    tuples = []
+    for tuple in res['Value']:
+      tuples.append(tuple)
+    return S_OK(tuples)
+
+  def setRegistrationWaiting(self,channelID,fileID):
+    res = "UPDATE FileToCat SET Status='Waiting' WHERE FileID=%s AND ChannelID=%s AND Status='Executing';" % fileID,channelID
+    res = self._update(req)
+    if not res['OK']:
+      err = "TransferDB._setRegistrationWaiting: Failed to update %s status." % fileID
+      return S_ERROR(err)
+    return S_OK()
+
+  def setRegistrationDone(self,channelID,fileID):
+    res = "UPDATE FileToCat SET Status='Done',CompleteTime=NOW() WHERE FileID=%s AND ChannelID=%s AND Status='Waiting';" % fileID,channelID
+    res = self._update(req)
+    if not res['OK']:
+      err = "TransferDB._setRegistrationDone: Failed to update %s status." % fileID
+      return S_ERROR(err)
+    return S_OK()
+
   #################################################################################
   # These are the methods used by the monitoring server
 
@@ -493,7 +531,7 @@ class TransferDB(DB):
     if not res['OK']:
       err = "TransferDB.getFTSJobDetail: Failed to get detailed info for FTSReq %s: %s." %s (ftsReqID,res['Message'])
       return S_ERROR(err)
-    files = [] 
+    files = []
     for tuple in res['Value']:
       files.append(tuple)
     return S_OK(files)
