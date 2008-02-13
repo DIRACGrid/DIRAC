@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.27 2008/02/13 11:29:56 gkuznets Exp $
+# $Id: TransformationDB.py,v 1.28 2008/02/13 12:01:57 gkuznets Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -163,8 +163,8 @@ class TransformationDB(DB):
       return res
     for transID,transName,description,longDesc,createDate,authorDN,authorGroup,type,plugin,agentType,status,mask in res['Value']:
       transdict = {}
-      transdict['TransformationID'] = transID
-      transdict['TransformationName'] = transName
+      transdict['TransID'] = transID
+      transdict['Name'] = transName
       transdict['Description'] = description
       transdict['LongDescription'] = longDesc
       transdict['CreationDate'] = createDate
