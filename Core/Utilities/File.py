@@ -1,12 +1,12 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/File.py,v 1.18 2008/02/04 17:16:10 acsmith Exp $
-__RCSID__ = "$Id: File.py,v 1.18 2008/02/04 17:16:10 acsmith Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/File.py,v 1.19 2008/02/13 10:27:56 joel Exp $
+__RCSID__ = "$Id: File.py,v 1.19 2008/02/13 10:27:56 joel Exp $"
 
 """
    Collection of DIRAC useful file related modules
    by default on Error they return None
 """
 
-import os
+import os, re
 import md5
 import random
 
@@ -65,3 +65,43 @@ def getSize( fileName ):
     return os.stat( fileName )[6]
   except Exception, v:
     return -1
+
+
+def makeProductionLfn(self,filetuple,mode,prodstring):
+    """ Constructs the logical file name according to LHCb conventions.
+    Returns the lfn without 'lfn:' prepended
+    """
+
+    try:
+      jobid = int(self.JOB_ID)
+      jobindex = string.zfill(jobid/10000,4)
+    except:
+      jobindex = '0000'
+
+    fname = filetuple[0]
+    if re.search('lfn:',fname):
+      return fname.replace('lfn:','')
+    else:
+      if re.search('LFN:',fname):
+        return fname.replace('LFN:','')
+      else:
+#        path = makeProductionPath(self,mode,prodstring)
+        return self.LFN_ROOT+'/'+filetuple[1]+'/'+prodstring+'/'+jobindex+'/'+filetuple[0]
+
+def makeProductionPath(self,typeName,mode,prodstring,log=False):
+  """ Constructs the path in the logical name space where the output
+  data for the given production will go.
+  """
+#  result = '/lhcb/'+mode+'/'+self.CONFIG_NAME+'/'+self.CONFIG_VERSION+'/'+prodstring+'/'
+#  result = '/lhcb/'+self.DataType+'/'+self.YEAR+'/'+self.appType.upper()+'/'+self.CONFIG_NAME+'/'+prodstring+'/'
+  result = self.LFN_ROOT+'/'+typeName+'/'+self.CONFIG_NAME+'/'+prodstring+'/'
+
+  if log:
+    try:
+      jobid = int(self.JOB_ID)
+      jobindex = string.zfill(jobid/10000,4)
+    except:
+      jobindex = '0000'
+    result += 'LOG/'+jobindex
+
+  return result
