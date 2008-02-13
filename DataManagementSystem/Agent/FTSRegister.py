@@ -83,11 +83,15 @@ class FTSRegister(Agent):
     for fileID,channelID,lfn,pfn,se in res['Value']:
       lfns[lfn] = (channelID,fileID)
       replicaTuples.append((lfn,pfn,se))
-    res = self.ReplicaManager.registerReplica(replicaTuples)
-    if not res['OK']:
-      gLogger.error("FTSRegister.execute: Completely failed to regsiter replicas.",res['Message'])
-      return S_OK()
-    for lfn in res['Value']['Successful'].keys():
-      channelID,fileID = lfns[lfn]
-      res = self.TransferDB.setRegistrationDone(channelID,fileID)
+    if replicaTuples:
+      gLogger.info("FTSRegister.execute: Found  %s waiting replica registrations." % len(replicaTuples))
+      res = self.ReplicaManager.registerReplica(replicaTuples)
+      if not res['OK']:
+        gLogger.error("FTSRegister.execute: Completely failed to regsiter replicas.",res['Message'])
+        return S_OK()
+      for lfn in res['Value']['Successful'].keys():
+        channelID,fileID = lfns[lfn]
+        res = self.TransferDB.setRegistrationDone(channelID,fileID)
+    else:
+      gLogger.info("FTSRegister.execute: No waiting registrations found.")
     return S_OK()
