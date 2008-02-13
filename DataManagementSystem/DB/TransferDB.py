@@ -484,3 +484,30 @@ class TransferDB(DB):
         return S_ERROR(err)
     return S_OK()
       
+  #################################################################################
+  # These are the methods used by the monitoring server
+
+  def getFTSJobDetail(self,ftsReqID):
+    req = "SELECT Files.LFN,FileToFTS.Status,Duration,Reason,Retries,FileSize FROM FileToFTS,Files WHERE FTSReqID =%s and Files.FileID=FileToFTS.FileID;" % ftsReqID
+    res = self._query(req)
+    if not res['OK']:
+      err = "TransferDB.getFTSJobDetail: Failed to get detailed info for FTSReq %s: %s." %s (ftsReqID,res['Message'])
+      return S_ERROR(err)
+    files = [] 
+    for tuple in res['Value']:
+      files.append(tuple)
+    return S_OK(files)
+
+  def getFTSJobs(self):
+    req = "SELECT FTSReqID,FTSGUID,FTSServer,SubmitTime,LastMonitor,PercentageComplete,Status,NumberOfFiles,TotalSize FROM FTSReq;"
+    res = self._query(req)
+    if not res['OK']:
+      err = "TransferDB.getFTSJobs: Failed to get detailed FTS jobs: %s." % (res['Message'])
+      return S_ERROR(err)
+    ftsReqs = []
+    for ftsReqID,ftsGUID,ftsServer,submitTime,lastMonitor,complete,status,files,size in res['Value']:
+      strSubTime = str(submitTime)
+      strLastMonitor = str(lastMonitor)
+      tuple = (ftsReqID,ftsGUID,ftsServer,strSubTime,strLastMonitor,complete,status,files,size)
+      ftsReqs.append(tuple)
+    return S_OK(ftsReqs)
