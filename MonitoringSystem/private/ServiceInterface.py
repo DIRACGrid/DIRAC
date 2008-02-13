@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/ServiceInterface.py,v 1.6 2008/02/11 18:15:12 acasajus Exp $
-__RCSID__ = "$Id: ServiceInterface.py,v 1.6 2008/02/11 18:15:12 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/ServiceInterface.py,v 1.7 2008/02/13 19:46:23 acasajus Exp $
+__RCSID__ = "$Id: ServiceInterface.py,v 1.7 2008/02/13 19:46:23 acasajus Exp $"
 import DIRAC
 from DIRAC import gLogger
 from DIRAC.MonitoringSystem.private.MonitoringCatalog import MonitoringCatalog
@@ -107,6 +107,10 @@ class ServiceInterface:
         gLogger.error( "Cant find rrd filename for %s:%s activity" % ( sourceId, acName ) )
         continue
       rrdFile = acInfo[6]
+      if not rrdManager.existsRRDFile( rrdFile ):
+        Logger.error( "RRD file does not exist for %s:%s activity" % ( sourceId, acName ) )
+        unregisteredActivities.append( acName )
+        continue
       gLogger.info( "Updating activity", "%s -> %s" % ( acName, rrdFile ) )
       timeList = acData.keys()
       timeList.sort()

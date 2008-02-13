@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/RRDManager.py,v 1.15 2008/02/11 18:15:12 acasajus Exp $
-__RCSID__ = "$Id: RRDManager.py,v 1.15 2008/02/11 18:15:12 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/RRDManager.py,v 1.16 2008/02/13 19:46:23 acasajus Exp $
+__RCSID__ = "$Id: RRDManager.py,v 1.16 2008/02/13 19:46:23 acasajus Exp $"
 import os
 import os.path
 import time
@@ -26,6 +26,10 @@ class RRDManager:
         os.makedirs( path )
       except:
         pass
+
+  def existsRRDFile( self, rrdFile ):
+    rrdFilePath = "%s/%s" % ( self.rrdLocation, rrdFile )
+    return os.path.isfile( rrdFilePath )
 
   def getGraphLocation(self):
     """
