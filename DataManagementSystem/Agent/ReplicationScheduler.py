@@ -7,7 +7,7 @@ from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 from DIRAC.RequestManagementSystem.DB.RequestDBMySQL import RequestDBMySQL
 from DIRAC.DataManagementSystem.DB.TransferDB import TransferDB
 from DIRAC.RequestManagementSystem.Client.DataManagementRequest import DataManagementRequest
-from DIRAC.DataManagementSystem.Client.FileCatalog import FileCatalog 
+from DIRAC.DataManagementSystem.Client.FileCatalog import FileCatalog
 from DIRAC.DataManagementSystem.Client.Storage.StorageFactory import StorageFactory
 from DIRAC.DataManagementSystem.Client.StorageElement import StorageElement
 import types,re
@@ -214,15 +214,15 @@ class ReplicationScheduler(Agent):
             if not res['OK']:
               errStr = res['Message']
               gLogger.error(errStr)
-              return S_ERROR(errStr)    
-            sourceSURL = res['Value']['SURL']        
+              return S_ERROR(errStr)
+            sourceSURL = res['Value']['SURL']
           else:
             status = 'Waiting'
             res  = self.resolvePFNSURL(sourceSE,lfnReps[sourceSE])
             if not res['OK']:
               sourceSURL = lfnReps[sourceSE]
             else:
-              sourceSURL = res['Value'] 
+              sourceSURL = res['Value']
           res = self.obtainLFNSURL(destSE,lfn)
           if not res['OK']:
             errStr = res['Message']
@@ -230,16 +230,20 @@ class ReplicationScheduler(Agent):
             return S_ERROR(errStr)
           targetSURL = res['Value']['SURL']
           spaceToken = res['Value']['SpaceToken']
-            
+
           ######################################################################################
           #
           # For each item in the replication tree add the file to the channel
           #
 
-          print channelID, fileID, sourceSURL, targetSURL,fileSize
           res = self.TransferDB.addFileToChannel(channelID, fileID, sourceSURL, targetSURL,fileSize,spaceToken,fileStatus=status)
           if not res['OK']:
             errStr = "ReplicationScheduler._execute: Failed to add File %s to Channel %s." % (fileID,channelID)
+            gLogger.error(errStr)
+            return S_ERROR(errStr)
+          res = self.TransferDB.addFileRegistration(channelID,fileID,lfn,targetSURL,destSE)
+          if not res['OK']:
+            errStr = "ReplicationScheduler._execute: Failed to add registration entry %s to %s." % (fileID,destSE)
             gLogger.error(errStr)
             return S_ERROR(errStr)
         res = self.TransferDB.addReplicationTree(fileID,tree)
@@ -256,12 +260,12 @@ class ReplicationScheduler(Agent):
       return S_ERROR(errStr)
     storageObjects = res['Value']['StorageObjects']
     for storageObject in storageObjects:
-       res =  storageObject.getCurrentURL(lfn)         
+       res =  storageObject.getCurrentURL(lfn)
        if res['OK']:
          resDict = {'SURL':res['Value']}
          res = storageObject.getParameters()
          if res['OK']:
-           resDict['SpaceToken'] = res['Value']['SpaceToken'] 
+           resDict['SpaceToken'] = res['Value']['SpaceToken']
            return S_OK(resDict)
     errStr = 'ReplicationScheduler._execute: Failed to get SRM compliant storage for %s.' % targetSE
     self.log.error(errStr)
@@ -273,11 +277,11 @@ class ReplicationScheduler(Agent):
     storageElement = StorageElement(sourceSE)
     if storageElement.isValid()['Value']:
       res = storageElement.getPfnForProtocol(pfn,['SRM2'])
-      return res 
+      return res
     else:
       errStr = "ReplicationScheduler._execute: Failed to get source PFN for %s." % sourceSE
       self.log.error(errStr)
-      return S_ERROR(errStr) 
+      return S_ERROR(errStr)
 
 class StrategyHandler:
 
@@ -361,7 +365,7 @@ class StrategyHandler:
       if status == 'Disabled':
         throughputTimeToStart = 1e10 # Make the channel extremely unattractive but still available
         fileTimeToStart = 1e10 #Make the channel extremely unattractive but still available
-      else: 
+      else:
         channelThroughput = value['Throughput']
         channelFileput = value['Fileput']
         channelFileSuccess = value['SuccessfulFiles']
@@ -407,7 +411,7 @@ class StrategyHandler:
     while len(destSEs) > 0:
       minTotalTimeToStart = float("inf")
       for destSE in destSEs:
-        destSite = destSE.split('-')[0].split('_')[0] 
+        destSite = destSE.split('-')[0].split('_')[0]
         for sourceSE in sourceSEs:
           sourceSite = sourceSE.split('-')[0].split('_')[0]
           channelName = '%s-%s' % (sourceSite,destSite)
@@ -426,7 +430,7 @@ class StrategyHandler:
               selectedChannelID = channelID
           else:
             errStr = 'StrategyHandler.__dynamicThroughput: Channel not defined'
-            gLogger.error(errStr,channelName)        
+            gLogger.error(errStr,channelName)
       timeToSite[selectedDestSE] = selectedPathTimeToStart
       siteAncestor[selectedDestSE] = selectedChannelID
 
