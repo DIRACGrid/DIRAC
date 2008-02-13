@@ -1,4 +1,4 @@
--- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Transformation/TransformationDB.sql,v 1.7 2008/02/07 19:20:19 acsmith Exp $
+-- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Transformation/TransformationDB.sql,v 1.8 2008/02/13 19:57:21 gkuznets Exp $
 --------------------------------------------------------------------------------
 --
 --  Schema definition for the TransformationDB database -
@@ -34,12 +34,13 @@ DROP TABLE IF EXISTS Transformations;
 --   ReplicationPlacement
 --   ProductionAgent
 -- Status - information about current status of the production
---   NEW - newly created, equivalent to STOPED
---   ACTIVE - can submit
---   STOPPED - stopped by manager
---   DONE - job limits reached, extension is possible
---   ERROR - Production with error, equivalent to STOPPED
---   TERMINATED - stopped, extension impossible
+--   New - newly created, equivalent to STOPED
+--   Active - can submit
+--   Flush - final stage, ignoring GroupSize
+--   Stopped - stopped by manager
+--   Done - job limits reached, extension is possible
+--   Error - Production with error, equivalent to STOPPED
+--   Terminated - stopped, extension impossible
 -- FileMask - filter mask
 --------------------------------------------------------------------------------
 
