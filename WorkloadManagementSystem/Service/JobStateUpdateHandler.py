@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobStateUpdateHandler.py,v 1.11 2008/02/13 11:23:50 paterson Exp $
+# $Id: JobStateUpdateHandler.py,v 1.12 2008/02/13 11:43:52 paterson Exp $
 ########################################################################
 
 """ JobStateUpdateHandler is the implementation of the Job State updating
@@ -11,7 +11,7 @@
 
 """
 
-__RCSID__ = "$Id: JobStateUpdateHandler.py,v 1.11 2008/02/13 11:23:50 paterson Exp $"
+__RCSID__ = "$Id: JobStateUpdateHandler.py,v 1.12 2008/02/13 11:43:52 paterson Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -76,7 +76,7 @@ class JobStateUpdateHandler( RequestHandler ):
   def export_setJobApplicationStatus(self,jobID,appStatus,source='Unknown'):
     """ Set the application status for job specified by its JobId.
     """
-    result = jobDB.setJobAttribute(jobID,'ApplicationStatus',status)
+    result = jobDB.setJobAttribute(jobID,'ApplicationStatus',appStatus)
     if not result['OK']:
       return result
 
