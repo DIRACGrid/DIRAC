@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.17 2008/02/11 14:03:12 paterson Exp $
+# $Id: JobWrapper.py,v 1.18 2008/02/13 11:03:29 paterson Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.17 2008/02/11 14:03:12 paterson Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.18 2008/02/13 11:03:29 paterson Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -458,7 +458,7 @@ class JobWrapper:
     if missingFiles:
       self.__setJobParam('OutputSandbox','MissingFiles: %s' %(string.join(missingFiles,', ')))
 
-    self.__report('Running','Uploading Output Sandbox')
+    self.__report('Completed','Uploading Output Sandbox')
     result = self.outputSandboxClient.sendFiles(self.jobID, fileList)
     if not result['OK']:
       self.log.warn('Output sandbox upload failed:')
@@ -486,7 +486,7 @@ class JobWrapper:
     """Performs the upload and registration in the LFC
     """
     self.log.verbose('Uploading output data files')
-    self.__report('Running','Uploading Output Data')
+    self.__report('Completed','Uploading Output Data')
     self.log.verbose('Output data files %s to be uploaded to %s SE' %(string.join(outputData,', '),outputSE))
     for outputFile in outputData:
       if os.path.exists(outputFile):
@@ -577,9 +577,9 @@ class JobWrapper:
     """
     parameters = []
     if os.environ.has_key('EDG_WL_JOBID'):
-      parameters.append(('PILOT_REFERENCE', os.environ['EDG_WL_JOBID']))
+      parameters.append(('Pilot_Reference', os.environ['EDG_WL_JOBID']))
     if os.environ.has_key('GLITE_WMS_JOBID'):
-      parameters.append(('PILOT_REFERENCE', os.environ['GLITE_WMS_JOBID']))
+      parameters.append(('Pilot_Reference', os.environ['GLITE_WMS_JOBID']))
 
     ceArgs = arguments['CE']
     if ceArgs.has_key('LocalSE'):
