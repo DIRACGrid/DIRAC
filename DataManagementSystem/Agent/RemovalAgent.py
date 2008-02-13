@@ -39,7 +39,7 @@ class RemovalAgent(Agent):
 
     gMonitor.registerActivity("ReplicaRemovalAtt",  "Replica removal attempted",    "RemovalAgent",       "Removal/min",     gMonitor.OP_SUM)
     gMonitor.registerActivity("ReplicaRemovalDone", "Successful replica removals",  "RemovalAgent",       "Removal/min",     gMonitor.OP_SUM)
-    gMonitor.registerActivity("ReplicaRemovalFail", "Failed replica removals",      "Removal/min",        "Removal/min",     gMonitor.OP_SUM)
+    gMonitor.registerActivity("ReplicaRemovalFail", "Failed replica removals",      "RemovalAgent",       "Removal/min",     gMonitor.OP_SUM)
 
     self.maxNumberOfThreads = gConfig.getValue(self.section+'/NumberOfThreads',1)
     self.threadPoolDepth = gConfig.getValue(self.section+'/ThreadPoolDepth',1)
