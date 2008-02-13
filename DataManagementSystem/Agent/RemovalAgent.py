@@ -28,15 +28,18 @@ class RemovalAgent(Agent):
     self.RequestDBClient = RequestClient()
     self.ReplicaManager = ReplicaManager()
 
-    gMonitor.registerActivity( "Iteration", "Agent Loops/min",          "TransferAgent", "Atemps", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "Execute",   "Request Processed/min",    "TransferAgent", "Atemps", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "Done",      "Request Completed/min",    "TransferAgent", "Atemps", gMonitor.OP_SUM )
-    gMonitor.registerActivity("PhysicalRemovalAtt","Physical removal operations attempted/min","TransferAgent", "Atemps", gMonitor.OP_SUM )
-    gMonitor.registerActivity("PhysicalRemovalDone","Successful physical removals/min","TransferAgent", "Atemps", gMonitor.OP_SUM )
-    gMonitor.registerActivity("PhysicalRemovalFail","Failed physical removals/min","TransferAgent", "Atemps", gMonitor.OP_SUM )
-    gMonitor.registerActivity("ReplicaRemovalAtt","Replcica removal operations attempted/min","TransferAgent", "Atemps", gMonitor.OP_SUM )
-    gMonitor.registerActivity("ReplicaRemovalDone","Successful replica removals/min","TransferAgent", "Atemps", gMonitor.OP_SUM )
-    gMonitor.registerActivity("ReplicaRemovalFail","Failed replica removals/min","TransferAgent", "Atemps", gMonitor.OP_SUM )
+    gMonitor.registerActivity("Iteration",          "Agent Loops",                  "RemovalAgent",       "Loops/min",       gMonitor.OP_SUM)
+    gMonitor.registerActivity("Execute",            "Request Processed",            "RemovalAgent",       "Requests/min",    gMonitor.OP_SUM)
+    gMonitor.registerActivity("Done",               "Request Completed",            "RemovalAgent",       "Requests/min",    gMonitor.OP_SUM)
+
+    gMonitor.registerActivity("PhysicalRemovalAtt", "Physical removals attempted",  "RemovalAgent",       "Removal/min",     gMonitor.OP_SUM)
+    gMonitor.registerActivity("PhysicalRemovalDone","Successful physical removals", "RemovalAgent",       "Removal/min",     gMonitor.OP_SUM)
+    gMonitor.registerActivity("PhysicalRemovalFail","Failed physical removals",     "RemovalAgent",       "Removal/min",     gMonitor.OP_SUM)
+    gMonitor.registerActivity("PhysicalRemovalSize","Physically removed size",      "RemovalAgent",       "Bytes",           gMonitor.OP_ACUM)
+
+    gMonitor.registerActivity("ReplicaRemovalAtt",  "Replica removal attempted",    "RemovalAgent",       "Removal/min",     gMonitor.OP_SUM)
+    gMonitor.registerActivity("ReplicaRemovalDone", "Successful replica removals",  "RemovalAgent",       "Removal/min",     gMonitor.OP_SUM)
+    gMonitor.registerActivity("ReplicaRemovalFail", "Failed replica removals",      "Removal/min",        "Removal/min",     gMonitor.OP_SUM)
 
     self.maxNumberOfThreads = gConfig.getValue(self.section+'/NumberOfThreads',1)
     self.threadPoolDepth = gConfig.getValue(self.section+'/ThreadPoolDepth',1)
@@ -140,23 +143,28 @@ class RemovalAgent(Agent):
         if operation == 'physicalRemoval':
           gLogger.info("RemovalAgent.execute: Attempting to execute %s sub-request." % operation)
           diracSE = subRequestAttributes['TargetSE']
+          physicalFiles = []
+          pfnToLfn = {}
           for subRequestFile in subRequestFiles:
             if subRequestFile['Status'] == 'Waiting':
               pfn = str(subRequestFile['PFN'])
               lfn = str(subRequestFile['LFN'])
-              res = self.ReplicaManager.removePhysicalFile(diracSE,pfn)
-              if res['OK']:
-                if res['Value']['Successful'].has_key(pfn):
-                  gLogger.info("RemovalAgent.execute: Successfully removed %s at %s in %s seconds." % (pfn,diracSE,res['Value']['Successful'][pfn]))
-                  oRequest.setSubRequestFileAttributeValue(ind,'removal',lfn,'Status','Done')
-                else:
-                  errStr = "RemovalAgent.execute: Failed to remove physical file."
-                  gLogger.error(errStr,"%s %s %s" % (pfn,diracSE,res['Value']['Failed'][pfn]))
-              else:
-                errStr = "RemovalAgent.execute: Completely failed to remove physical."
-                gLogger.error(errStr, res['Message'])
-            else:
-              gLogger.info("RemovalAgent.execute: File already completed.")
+              pfnToLfn[pfn] = lfn
+              physicalFiles.append(pfn)
+          gMonitor.addMark('PhysicalRemovalAtt',len(physicalFiles))
+          res = self.ReplicaManager.removePhysicalFile(diracSE,physicalFiles)
+          if res['OK']:
+            gMonitor.addMark('PhysicalRemovalDone',len(res['Value']['Successful'].keys()))
+            for pfn in res['Value']['Successful'].keys():
+              gLogger.info("RemovalAgent.execute: Successfully removed %s at %s in %s seconds." % (pfn,diracSE,res['Value']['Successful'][pfn]))
+              oRequest.setSubRequestFileAttributeValue(ind,'removal',pfnToLfn[pfn],'Status','Done')
+            gMonitor.addMark('PhysicalRemovalFail',len(res['Value']['Failed'].keys()))
+            for pfn in res['Value']['Failed'].keys():
+              gLogger.info("RemovalAgent.execute: Failed to remove physical file." , "%s %s %s" % (pfn,diracSE,res['Value']['Failed'][pfn]))
+          else:
+            gMonitor.addMark('PhysicalRemovalFail',len(physicalFiles))
+            errStr = "RemovalAgent.execute: Completely failed to remove physical files."
+            gLogger.error(errStr, res['Message'])
 
         ################################################
         #  If the sub-request is a request to the online system to retransfer
