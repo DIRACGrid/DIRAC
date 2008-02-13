@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: InputDataByProtocol.py,v 1.1 2008/01/31 14:42:14 paterson Exp $
+# $Id: InputDataByProtocol.py,v 1.2 2008/02/13 09:06:21 paterson Exp $
 # File :   InputDataByProtocol.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,13 +9,13 @@
     defined in the CS for the VO.
 """
 
-__RCSID__ = "$Id: InputDataByProtocol.py,v 1.1 2008/01/31 14:42:14 paterson Exp $"
+__RCSID__ = "$Id: InputDataByProtocol.py,v 1.2 2008/02/13 09:06:21 paterson Exp $"
 
 from DIRAC.Core.DISET.RPCClient                                     import RPCClient
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger
 
-import os,sys,re
+import os,sys,re,string
 
 COMPONENT_NAME = 'InputDataByProtocol'
 
