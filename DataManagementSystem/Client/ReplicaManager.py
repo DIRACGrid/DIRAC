@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalogue. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.23 2008/02/05 13:22:07 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.24 2008/02/13 17:24:44 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -82,6 +82,40 @@ class ReplicaManager:
       successful[lfn] = putTime
     resDict = {'Successful': successful,'Failed':failed}
     return S_OK(resDict)
+
+  def putDirectory(self,storagePath,localDirectory,diracSE):
+    """ Put a local file to a Storage Element
+
+        'lfn' is the path on the storage
+        'localDirectory' is the full path to local directory
+        'diracSE' is the Storage Element to which to put the file
+    """
+    # Check that the local directory exists
+    if not os.path.exists(localDirectory):
+      errStr = "ReplicaManager.putDirectory: Supplied directory does not exist."
+      gLogger.error(errStr,localDirectory)
+      return S_ERROR(errStr)
+    ##########################################################
+    #  Instantiate the destination storage element here.
+    storageElement = StorageElement(diracSE)
+    if not storageElement.isValid()['Value']:
+      errStr = "ReplicaManager.put: Failed to instantiate destination StorageElement."
+      gLogger.error(errStr,diracSE)
+      return S_ERROR(errStr)
+    destinationSE = storageElement.getStorageElementName()['Value']
+
+    ##########################################################
+    #  Perform the put here.
+    startTime = time.time()
+    res = storageElement.putDirectory(localDirectory,storagePath)
+    putTime = time.time() - startTime
+    if not res['OK']:
+      errStr = "ReplicaManager.put: Failed to put file to Storage Element."
+      gLogger.error(errStr,"%s: %s" % (localDirectory,res['Message']))
+    else:
+      gLogger.info("ReplicaManager.put: Put directory to storage in %s seconds." % putTime)
+    return res
+
 
   def putAndRegister(self,lfn,file,diracSE,guid=None,path=None,checksum=None,catalog=None):
     """ Put a local file to a Storage Element and register in the File Catalogues
@@ -954,7 +988,7 @@ class ReplicaManager:
 
   def  onlineRetransfer(self,diracSE,pfnToRemove):
     """ Requests the online system to re-transfer files
-      
+
         'diracSE' is the storage element where the file should be removed from
         'pfnsToRemove' is the physical files
     """
@@ -974,7 +1008,7 @@ class ReplicaManager:
     res = storageElement.retransferOnlineFile(pfns)
     if not res['OK']:
       errStr = "ReplicaManager.onlineRetransfer: Failed to request retransfers."
-      gLogger.error(errStr,res['Message'])  
+      gLogger.error(errStr,res['Message'])
       return S_ERROR(errStr)
     else:
       infoStr = "ReplicaManager.onlineRetransfer: Successfully issued retransfer request."

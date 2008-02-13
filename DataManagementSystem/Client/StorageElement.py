@@ -279,6 +279,56 @@ class StorageElement:
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
+  def putDirectory(self,localDirectory,directoryPath):
+    """ This will recursively put the directory on the storage
+
+        'localDirectory' is the local directory
+        'directoryPath' is a string containing the destination directory
+    """
+    successful = {}
+    failed = {}
+    localSE = self.isLocalSE()['Value']
+    # Try all of the storages one by one
+    for storage in self.storages:
+      pfnDict = {}
+      res = storage.getParameters()
+      protocolName = res['Value']['ProtocolName']
+      # If the SE is not local then we can't use local protocols
+      if protocolName in self.remoteProtocols:
+        useProtocol = True
+      elif localSE:
+        useProtocol = True
+      else:
+        useProtocol = False
+        gLogger.info("StorageElement.putDirectory: Protocol not appropriate for use: %s." % protocolName)
+      if useProtocol:
+        gLogger.info("StorageElement.putDirectory: Generating protocol PFNs for %s." % protocolName)
+        res =  storage.getCurrentURL(directoryPath)
+        if res['OK']:
+          storageDirectory = res['Value']
+          res  = pfnparse(storageDirectory)
+          if not res['OK']:
+            errStr = "StorageElement.putDirectory: Failed to parse supplied PFN."
+            gLogger.error(errStr,"%s: %s" % (storageDirectory,res['Message']))
+          else:
+            res = storage.getProtocolPfn(res['Value'],True)
+            if not res['OK']:
+              infoStr = "StorageElement.putDirectory%s." % res['Message']
+              gLogger.error(infoStr,'%s for protocol %s' % (storageDirectory,protocolName))
+            else:
+              remoteDirectory = res['Value']
+              res = storage.putDirectory((localDirectory,remoteDirectory))
+              if not res['OK']:
+                infoStr = "StorageElement.putDirectory: Completely failed to put directory."
+                gLogger.error(infoStr,'%s for protocol %s: %s' % (self.name,protocolName,res['Message']))
+              else:
+                if res['Value']['Successful'].has_key(remoteDirectory):
+                  return S_OK(res['Value']['Successful'][remoteDirectory])
+    # If we get here we tried all the protocols and failed with all of them
+    errStr = "StorageElement.putDirectory: Failed to put directory with all protocols."
+    gLogger.error(errStr,localDirectory)
+    return S_ERROR(errStr)
+
   def removeDirectory(self,directoryUrl):
     """ This method removes the contents of a directory on the storage including files and subdirectories.
 
@@ -694,7 +744,7 @@ class StorageElement:
       return S_ERROR(infoStr)
 
     localSE = self.isLocalSE()['Value']
-   
+
     gLogger.info("StorageElement.putFile: Determined file size of %s to be %s." % (file,size))
     localSE = self.isLocalSE()['Value']
     # The method will try all storages
