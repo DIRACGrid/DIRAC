@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobStateUpdateHandler.py,v 1.9 2008/02/12 12:20:52 paterson Exp $
+# $Id: JobStateUpdateHandler.py,v 1.10 2008/02/13 11:21:18 paterson Exp $
 ########################################################################
 
 """ JobStateUpdateHandler is the implementation of the Job State updating
@@ -11,7 +11,7 @@
 
 """
 
-__RCSID__ = "$Id: JobStateUpdateHandler.py,v 1.9 2008/02/12 12:20:52 paterson Exp $"
+__RCSID__ = "$Id: JobStateUpdateHandler.py,v 1.10 2008/02/13 11:21:18 paterson Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -72,12 +72,21 @@ class JobStateUpdateHandler( RequestHandler ):
     return result
 
   ###########################################################################
-  types_setJobApplicationStatus = [IntType,StringType]
-  def export_setJobApplicationStatus(self,jobID,status):
+  types_setJobApplicationStatus = [IntType,StringType,StringType]
+  def export_setJobApplicationStatus(self,jobID,status,source='Unknown'):
     """ Set the application status for job specified by its JobId.
     """
-
     result = jobDB.setJobAttribute(jobID,'ApplicationStatus',status)
+    if not result['OK']:
+      return result
+
+    result = jobDB.getJobAttributes(jobID, ['Status','MinorStatus'] )
+    if not result['OK']:
+      return result
+
+    status = result['Value']['Status']
+    minorStatus = result['Value']['MinorStatus']
+    result = logDB.addLoggingRecord(jobID,status,minorStatus,source=source)
     return result
 
   ###########################################################################
