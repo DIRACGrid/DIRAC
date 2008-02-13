@@ -86,10 +86,10 @@ class DataManagementRequest:
     """ Set the attributes associated to this request
     """
     self.jobid = attributeDict['JobID']
-    self.ownerDN = attributeDict['OwnerDN'] 
+    self.ownerDN = attributeDict['OwnerDN']
     self.date = attributeDict['Date']
     self.mode = attributeDict['Mode']
-    self.dirac_instance = attributeDict['Instance'] 
+    self.dirac_instance = attributeDict['Instance']
     self.requestid = attributeDict['RequestID']
     self.requestname = attributeDict['RequestName']
 
@@ -116,7 +116,7 @@ class DataManagementRequest:
       self.removals.extend(subRequests)
     if type == 'stage':
       self.stages.extend(subRequests)
-    
+
 ###############################################################
 
   def setCurrentDate(self):
@@ -486,18 +486,33 @@ class DataManagementRequest:
           return S_OK(0)
     return S_OK(1)
 
-  def isRequestEmpty(self,type):
+  def isRequestEmpty(self):
+    """ Check whether all sub-requests are complete
+    """
+    for type in ['transfer','register','removal','stage']:
+      res = self.getNumSubRequests(type)
+      if not res['OK']:
+        return res
+      numSubRequests = res['Value']
+      for ind in range(numSubRequests):
+        status = self.getSubRequestAttributeValue(ind,type,'Status')['Value']
+        if status != 'Done':
+          return S_OK(0)
+    return S_OK(1)
+
+  def isRequestTypeEmpty(self,type):
     """ Check whether the requests of given type are complete
     """
-    res = self.getNumSubRequests(type)
-    if not res['OK']:
-      return res
-    numSubRequests = res['Value'] 
+    if type:
+      res = self.getNumSubRequests(type)
+      if not res['OK']:
+        return res
+      numSubRequests = res['Value']
     if type == 'transfer':
       for ind in range(numSubRequests):
         status = self.getSubRequestAttributeValue(ind,type,'Status')['Value']
-        if status != 'Done':    
-          return S_OK(0)  
+        if status != 'Done':
+          return S_OK(0)
     if type == 'register':
       for ind in range(numSubRequests):
         status = self.getSubRequestAttributeValue(ind,type,'Status')['Value']
