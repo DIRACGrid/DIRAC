@@ -150,11 +150,11 @@ class RequestDBMySQL(DB):
     resultDict['RequestName'] = requestName
     resultDict['RequestString'] = requestString
     return S_OK(resultDict)
-  
+
   def __releaseSubRequests(self,subRequestIDs):
     for subRequestID in subRequestIDs:
       res = self._setSubRequestAttribute(subRequestID,'Status','Waiting')
- 
+
   def setRequest(self,requestName,requestString):
     request = DataManagementRequest(request=requestString)
     requestTypes = ['transfer','register','removal','stage']
@@ -321,21 +321,23 @@ class RequestDBMySQL(DB):
     return res
 
   def __setSubRequestFiles(self,ind,requestType,subRequestID,request):
+    """ This is the new method for updating the File table
+    """
     res = request.getSubRequestFiles(ind,requestType)
     if not res['OK']:
       return S_ERROR('Failed to get request files')
     files = res['Value']
-    for file in files:
-      res = self._getFileID(subRequestID)
-      if not res['OK']:
-        return S_ERROR('Failed to get FileID')
-      fileID = res['Value']
-      for fileAttribute,attributeValue in file.items():
+    for fileDict in files:
+      fileAttributes = ['Status','SubRequestID']
+      attributeValues = ['New',subRequestID]
+      for fileAttribute,attributeValue in fileDict.items():
         if not fileAttribute == 'FileID':
-          res = self._setFileAttribute(subRequestID,fileID,fileAttribute,attributeValue)
-          if not res['OK']:
-            return S_ERROR('Failed to set file attribute in DB')
-    return res
+          fileAttributes.append(fileAttribute)
+          attributeValues.append(attributeValue)
+      res = self._insert('Files',fileAttributes,attributeValues)
+      if not res['OK']:
+        return S_ERROR('Failed to insert file into db')
+    return S_OK()
 
   def __setSubRequestAttributes(self,ind,requestType,subRequestID,request):
     res = request.getSubRequestAttributes(ind,requestType)
