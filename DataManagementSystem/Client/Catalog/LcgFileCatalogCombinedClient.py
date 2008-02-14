@@ -57,7 +57,7 @@ class LcgFileCatalogCombinedClient:
     os.environ['LFC_HOST'] = self.master_host
     os.environ['LCG_GFAL_INFOSYS'] = infosys
     self.name = 'LFC'
-    self.timeout = 300
+    self.timeout = 3000
 
   def isOK(self):
     return self.valid
