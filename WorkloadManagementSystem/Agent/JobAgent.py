@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.23 2008/02/12 12:21:16 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.24 2008/02/14 15:52:31 paterson Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,16 +10,15 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.23 2008/02/12 12:21:16 paterson Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.24 2008/02/14 15:52:31 paterson Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
 from DIRAC.Core.Base.Agent                               import Agent
-from DIRAC.Core.Utilities.Subprocess                     import shellCall
 from DIRAC.Core.DISET.RPCClient                          import RPCClient
 from DIRAC.Resources.Computing.ComputingElementFactory   import ComputingElementFactory
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
-from DIRAC.Core.Utilities.GridCredentials                import setupProxy,restoreProxy,setDIRACGroup
+from DIRAC.Core.Utilities.GridCredentials                import setupProxy,restoreProxy,setDIRACGroup,getDIRACGroup
 from DIRAC                                               import S_OK, S_ERROR, gConfig
 
 import os, sys, re, string, time
@@ -64,6 +63,8 @@ class JobAgent(Agent):
     self.jobSubmissionDelay = gConfig.getValue(self.section+'/SubmissionDelay',10)
     self.defaultProxyLength = gConfig.getValue(self.section+'/DefaultProxyLength',12)
     self.maxProxyLength =  gConfig.getValue(self.section+'/MaxProxyLength',72)
+    #TODO: added default in case pilot role was stripped somehow
+    self.defaultProxyGroup = gConfig.getValue(self.section+'/DefaultProxyGroup','lhcb_pilot')
     return result
 
   #############################################################################
@@ -226,11 +227,23 @@ class JobAgent(Agent):
     if hours < self.defaultProxyLength:
       hours = self.defaultProxyLength
 
+    #TODO: tidy this debugging information once proxy issue solved
+    currentGroup =  getDIRACGroup('None')
+    if currentGroup == 'None':
+      self.log.warn('Current DIRAC group is not found, setting to %s explicitly' %(self.defaultProxyGroup))
+      setDIRACGroup(self.defaultProxyGroup)
+
+    currentGroup =  getDIRACGroup('None')
+    self.log.info('Current DIRAC Group is: %s' %(currentGroup))
     self.log.info('Attempting to obtain proxy with length %s hours for DN\n %s' %(hours,ownerDN))
     result = self.wmsAdmin.getProxy(ownerDN,jobGroup,hours)
     if not result['OK']:
       self.log.warn('Could not retrieve proxy from WMS Administrator')
       self.log.verbose(result)
+      self.__setJobParam(job,'ProxyError',str(result))
+      self.log.info('Checking current proxy info:')
+      os.system('voms-proxy-info -all')
+      sys.stdout.flush()
       self.__report(job,'Failed','Proxy Retrieval')
       return S_ERROR('Error retrieving proxy')
 
