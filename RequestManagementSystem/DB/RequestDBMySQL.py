@@ -262,11 +262,11 @@ class RequestDBMySQL(DB):
           for reqID in res['Value']:
             subRequestIDs.append(reqID[0])
           idString = intListToString(subRequestIDs)
-          req = "DELETE FROM Files WHERE SubRequestID IN (%s);" % idString['Value']
+          req = "DELETE FROM Files WHERE SubRequestID IN (%s);" % idString
           res = self._update(req)
           if not res['OK']:
             failed = True
-          req = "DELETE FROM Datasets WHERE SubRequestID IN (%s);" % idString['Value']
+          req = "DELETE FROM Datasets WHERE SubRequestID IN (%s);" % idString
           res = self._update(req)
           if not res['OK']:
             failed = True
@@ -328,12 +328,16 @@ class RequestDBMySQL(DB):
       return S_ERROR('Failed to get request files')
     files = res['Value']
     for fileDict in files:
-      fileAttributes = ['Status','SubRequestID']
-      attributeValues = ['New',subRequestID]
+      fileAttributes = ['SubRequestID']
+      attributeValues = [subRequestID]
       for fileAttribute,attributeValue in fileDict.items():
         if not fileAttribute == 'FileID':
-          fileAttributes.append(fileAttribute)
-          attributeValues.append(attributeValue)
+          if attributeValue:
+            fileAttributes.append(fileAttribute)
+            attributeValues.append(attributeValue)
+      if not 'Status' in fileAttributes:
+        fileAttributes.append('Status')
+        attributeValues.append('Waiting')  
       res = self._insert('Files',fileAttributes,attributeValues)
       if not res['OK']:
         return S_ERROR('Failed to insert file into db')
