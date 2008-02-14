@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.29 2008/02/13 21:32:56 acsmith Exp $
+# $Id: TransformationDB.py,v 1.30 2008/02/14 00:23:54 gkuznets Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -38,17 +38,23 @@ class TransformationDB(DB):
 
   def getTransformationID(self, name):
     """ Method returns ID of transformation with the name=<name>
+        it checks type of the argument, and if it is string returns transformationID
+        if not we assume that prodName is actually prodID
+
         Returns transformation ID if exists otherwise 0
         WARNING!! returned value is long !!
     """
-    cmd = "SELECT TransformationID from Transformations WHERE TransformationName='%s';" % name
-    result = self._query(cmd)
-    if not result['OK']:
-      gLogger.error("Failed to check if Transformation with name %s exists %s" % (name, result['Message']))
-      return 0L
-    elif result['Value'] == ():
-      return 0L
-    return result['Value'][0][0]
+    if isinstance(name, str):
+      cmd = "SELECT TransformationID from Transformations WHERE TransformationName='%s';" % name
+      result = self._query(cmd)
+      if not result['OK']:
+        gLogger.error("Failed to check if Transformation with name %s exists %s" % (name, result['Message']))
+        return 0L # we do not terminate execution here but log error
+      elif result['Value'] == ():
+        gLogger.verbose("Transformation with name %s do not exists" % (name))
+        return 0L # we do not terminate execution here
+      return result['Value'][0][0]
+    return name # it is actually number
 
   def transformationExists(self, transID):
     """ Method returns TRUE if transformation with the ID=<id> exists
@@ -99,10 +105,7 @@ class TransformationDB(DB):
   def updateTransformationLogging(self,transName,message,authorDN):
     """ Update the Transformation log table with any modifications (we know who you are!!)
     """
-    res = self.getTransformation(transName)
-    if not res['OK']:
-      return res
-    transID = res['Value']['TransID']
+    transID = self.getTransformationID(transName)
     req = "INSERT INTO TransformationLog (TransformationID,Message,Author,MessageDate) \
     VALUES (%s,'%s','%s',NOW());" % (transID,message,authorDN)
     res = self._update(req)
@@ -111,10 +114,7 @@ class TransformationDB(DB):
   def setTransformationStatus(self,transName,status):
     """ Set the status of the transformation specified by transID
     """
-    res = self.getTransformation(transName)
-    if not res['OK']:
-      return res
-    transID = res['Value']['TransID']
+    transID = self.getTransformationID(transName)
     req = "UPDATE Transformations SET Status='%s' WHERE TransformationID=%s;" % (status,transID)
     res = self._update(req)
     return res
@@ -122,10 +122,7 @@ class TransformationDB(DB):
   def getTransformationStats(self,transName):
     """ Get the statistics of Transformation by supplied transformation name.
     """
-    res = self.getTransformation(transName)
-    if not res['OK']:
-      return res
-    transID = res['Value']['TransID']
+    transID = self.getTransformationID(transName)
     req = "SELECT FileID,Status from T_%s;" % transID
     res = self._query(req)
     if not res['OK']:
@@ -143,7 +140,39 @@ class TransformationDB(DB):
   def getTransformation(self,transName):
     """Get Transformation definition
        Get the parameters of Transformation idendified by production ID
+       KGG This code must be corrected - better version is commented
     """
+#    transID = self.getTransformationID(transName)
+#    if transID > 0:
+#      req = "SELECT TransformationID,TransformationName,Description,LongDescription,CreationDate,\
+#             AuthorDN,AuthorGroup,Type,Plugin,AgentType,Status,FileMask FROM Transformations WHERE TransformationID=%d;"%transID
+#      res = self._query(req)
+#      if not res['OK']:
+#        return res
+#      tr=result['Value']
+#      transdict = {}
+#      transdict['TransID'] = tr[0]
+#      transdict['Name'] = tr[1]
+#      transdict['Description'] = tr[2]
+#      transdict['LongDescription'] = tr[3]
+#      transdict['CreationDate'] = tr[4]
+#      transdict['AuthorDN'] = tr[5]
+#      transdict['AuthorGroup'] = tr[6]
+#      transdict['Type'] = tr[7]
+#      transdict['Plugin'] = tr[8]
+#      transdict['AgentType'] = tr[9]
+#      transdict['Status'] = tr[10]
+#      transdict['FileMask'] = tr[11]
+#      req = "SELECT ParameterName,ParameterValue FROM TransformationParameters WHERE TransformationID = %s;" % transID
+#      res = self._query(req)
+#      if res['OK']:
+#        if res['Value']:
+#          transdict['Additional'] = {}
+#          for parameterName,parameterValue in res['Value']:
+#            transdict['Additional'][parameterName] = parameterValue
+#      return S_OK(transDict)
+#    return S_ERROR('Transformation with id =%d not found'%transID)
+
     res = self.getAllTransformations()
     if not res['OK']:
       return res
@@ -189,10 +218,7 @@ class TransformationDB(DB):
     """ Modify the input stream definition for the given transformation
         identified by production
     """
-    res = self.getTransformation(transName)
-    if not res['OK']:
-      return res
-    transID = res['Value']['TransID']
+    transID = self.getTransformationID(transName)
     req = "UPDATE Transformations SET FileMask='%s' WHERE TransformationID=%s" % (fileMask,transID)
     res = self._update(req)
     return res
@@ -200,23 +226,16 @@ class TransformationDB(DB):
   def changeTransformationName(self,transName,newName):
     """ Change the transformation name
     """
-    res = self.getTransformation(transName)
-    if not res['OK']:
-      return res
-    transID = result['Value']['TransID']
+    transID = self.getTransformationID(transName)
     req = "UPDATE Transformations SET TransformationName='%s' WHERE TransformationID=%s;" % (newName,transID)
     res = self._update(req)
     return res
 
-  def getInputData(self,name,status):
+  def getInputData(self,transName,status):
     """ Get input data for the given transformation, only files
         with a given status which is defined for the file replicas.
     """
-    res = self.getTransformation(name)
-    if not res["OK"]:
-      return res
-    transID = res['Value']['TransID']
-
+    transID = self.getTransformationID(transName)
     req = "SELECT FileID from T_%s WHERE Status='unused';" % (transID)
     res = self._query(req)
     if not res['OK']:
@@ -244,10 +263,7 @@ class TransformationDB(DB):
   def getFilesForTransformation(self,transName,jobOrdered=False):
     """ Get files and their status for the given transformation
     """
-    res = self.getTransformation(transName)
-    if not res['OK']:
-      return res
-    transID = res['Value']['TransID']
+    transID = self.getTransformationID(transName)
     req = "SELECT d.LFN,t.Status,t.JobID,t.UsedSE FROM DataFiles AS d,T_%s AS t WHERE t.FileID=d.FileID" % transID
     if jobOrdered:
       req = "%s ORDER by t.JobID;" % req
@@ -272,10 +288,7 @@ class TransformationDB(DB):
     """ Set file SE for the given transformation identified by transID
         for files in the list of lfns
     """
-    res = self.getTransformation(transName)
-    if not res['OK']:
-      return res
-    transID = res['Value']['TransID']
+    transID = self.getTransformationID(transName)
     fileIDs = self.__getFileIDsForLfns(lfns).keys()
     if not fileIDs:
       return S_ERROR('TransformationDB.setFileSEForTransformation: No files found.')
@@ -287,10 +300,7 @@ class TransformationDB(DB):
     """ Set file status for the given transformation identified by transID
         for the given stream for files in the list of lfns
     """
-    res = self.getTransformation(transName)
-    if not res['OK']:
-      return res
-    transID = res['Value']['TransID']
+    transID = self.getTransformationID(transName)
     fileIDs = self.__getFileIDsForLfns(lfns).keys()
     if not fileIDs:
       return S_ERROR('TransformationDB.setFileStatusForTransformation: No files found.')
@@ -302,10 +312,7 @@ class TransformationDB(DB):
     """ Set file job ID for the given transformation identified by transID
         for the given stream for files in the list of lfns
     """
-    res = self.getTransformation(transName)
-    if not res['OK']:
-      return res
-    transID = res['Value']['TransID']
+    transID = self.getTransformationID(transName)
     fileIDs = self.__getFileIDsForLfns(lfns).keys()
     if not fileIDs:
       return S_ERROR('TransformationDB.setFileStatusForTransformation: No files found.')
@@ -313,18 +320,11 @@ class TransformationDB(DB):
       req = "UPDATE T_%s SET JobID=%s WHERE FileID IN (%s);" % (transID,jobID,intListToString(fileIDs))
       return self._update(req)
 
-  def deleteTransformation(self,transName):
 
-    transID = self.getTransformationID(transName)
-    if transID > 0:
-      return self.deleteTransformationByID(str(transID))
-    else:
-      return S_ERROR("No Transformation with the name '%s' in the TransformationDB" % transName)
-
-
-  def deleteTransformationByID(self, transID):
-    """ Remove the transformation specified by id
+  def deleteTransformation(self, transName):
+    """ Remove the transformation specified by name or id
     """
+    transID = self.getTransformationID(transName)
     if self.transformationExists(transID) > 0:
       req = "DELETE FROM Transformations WHERE TransformationID=%s;" % transID
       res = self._update(req)
