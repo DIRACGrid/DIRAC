@@ -309,16 +309,21 @@ class RequestDBMySQL(DB):
     if not res['OK']:
       return S_ERROR('Failed to get request files')
     files = res['Value']
-    for file in files:
-      if not file.has_key('FileID'):
+    for fileDict in files:
+      if not fileDict.has_key('FileID'):
         return S_ERROR('No FileID associated to file')
-      fileID = file['FileID']
-      for fileAttribute,attributeValue in file.items():
+      fileID = fileDict['FileID']
+      req = "UPDATE Files SET"
+      for fileAttribute,attributeValue in fileDict.items():
         if not fileAttribute == 'FileID':
-          res = self._setFileAttribute(subRequestID,fileID,fileAttribute,attributeValue)
-          if not res['OK']:
-            return S_ERROR('Failed to set file attribute in DB')
-    return res
+          if attributeValue:
+            req = "%s %s='%s'," %  (req,fileAttribute,attributeValue)
+      req = req.rstrip(',')
+      req = "%s WHERE SubRequestID = %s AND FileID = %s;" % (req,subRequestID,fileID)
+      res = self._update(req)
+      if not res['OK']:
+        return S_ERROR('Failed to update file in db')
+    return S_OK()
 
   def __setSubRequestFiles(self,ind,requestType,subRequestID,request):
     """ This is the new method for updating the File table
@@ -337,7 +342,7 @@ class RequestDBMySQL(DB):
             attributeValues.append(attributeValue)
       if not 'Status' in fileAttributes:
         fileAttributes.append('Status')
-        attributeValues.append('Waiting')  
+        attributeValues.append('Waiting')
       res = self._insert('Files',fileAttributes,attributeValues)
       if not res['OK']:
         return S_ERROR('Failed to insert file into db')
