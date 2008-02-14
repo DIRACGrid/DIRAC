@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.31 2008/02/14 12:31:48 acsmith Exp $
+# $Id: TransformationDB.py,v 1.32 2008/02/14 13:39:49 acsmith Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -715,6 +715,7 @@ PRIMARY KEY (FileID)
     gLogger.info("TransformationDB.getReplicas: Attempting to get replicas for %s files." % len(lfns))
     fileIDs = self.__getFileIDsForLfns(lfns)
     failed = {}
+    successful = {}
     for lfn in lfns:
       if not lfn in fileIDs.values():
         failed[lfn] = "TransformationDB.getReplicas: File not found."
@@ -723,7 +724,6 @@ PRIMARY KEY (FileID)
       res = self._query(req)
       if not res['OK']:
         return res
-      successful = {}
       for fileID,se,pfn,status in res['Value']:
         takeReplica = True
         if status != "AprioriGood":
