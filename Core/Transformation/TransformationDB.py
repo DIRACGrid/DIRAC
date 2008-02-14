@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.30 2008/02/14 00:23:54 gkuznets Exp $
+# $Id: TransformationDB.py,v 1.31 2008/02/14 12:31:48 acsmith Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -718,21 +718,22 @@ PRIMARY KEY (FileID)
     for lfn in lfns:
       if not lfn in fileIDs.values():
         failed[lfn] = "TransformationDB.getReplicas: File not found."
-    req = "SELECT FileID,SE,PFN,Status FROM Replicas WHERE FileID IN (%s);" % intListToString(fileIDs.keys())
-    res = self._query(req)
-    if not res['OK']:
-      return res
-    successful = {}
-    for fileID,se,pfn,status in res['Value']:
-      takeReplica = True
-      if status != "AprioriGood":
-        if not getAll:
-          takeReplica = False
-      if takeReplica:
-        lfn = fileIDs[fileID]
-        if not successful.has_key(lfn):
-          successful[lfn] = {}
-        successful[lfn][se] = pfn
+    if len(fileIDs.keys()) > 0:
+      req = "SELECT FileID,SE,PFN,Status FROM Replicas WHERE FileID IN (%s);" % intListToString(fileIDs.keys())
+      res = self._query(req)
+      if not res['OK']:
+        return res
+      successful = {}
+      for fileID,se,pfn,status in res['Value']:
+        takeReplica = True
+        if status != "AprioriGood":
+          if not getAll:
+            takeReplica = False
+        if takeReplica:
+          lfn = fileIDs[fileID]
+          if not successful.has_key(lfn):
+            successful[lfn] = {}
+          successful[lfn][se] = pfn
     for lfn in fileIDs.values():
       if not successful.has_key(lfn):
         successful[lfn] = {} #"TransformationDB.getReplicas: No replicas found."
