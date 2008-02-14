@@ -440,11 +440,9 @@ class LcgFileCatalogClient(FileCatalogueBase):
       replicas = replicaTuple
     else:
       return S_ERROR('LFCClient.setReplicaStatus: Must supply a file tuple or list of file typles')
+    self.__openSession()
     failed = {}
     successful = {}
-    # If we have less than three lfns to query a session doesn't make sense
-    if len(replicas) > 2:
-      self.__openSession()
     for lfn,pfn,se in replicas:
       fid = lfc.lfc_fileid()
       value = lfc.lfc_delreplica('',fid,pfn)
@@ -457,8 +455,21 @@ class LcgFileCatalogClient(FileCatalogueBase):
           successful[lfn] = True
         else:
           failed[lfn] = lfc.sstrerror(errno)
-    if self.session:
-      self.__closeSession()
+    lfnRemoved = successful.keys()
+    if len(lfnRemoved) > 0:
+      res = self.getReplicas(lfnRemoved)
+      zeroReplicaFiles = []
+      if not res['OK']:
+        return res
+      else:
+        for lfn,repDict in res['Value']['Successful'].items():
+          if len(repDict.keys()) == 0:
+            zeroReplicaFiles.append(lfn)
+      if len(zeroReplicaFiles) > 0:
+        res = self.removeFile(zeroReplicaFiles)
+        if not res['OK']:
+          return res
+    self.__closeSession()
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
