@@ -41,8 +41,8 @@ class RemovalAgent(Agent):
     gMonitor.registerActivity("ReplicaRemovalDone", "Successful replica removals",  "RemovalAgent",       "Removal/min",     gMonitor.OP_SUM)
     gMonitor.registerActivity("ReplicaRemovalFail", "Failed replica removals",      "RemovalAgent",       "Removal/min",     gMonitor.OP_SUM)
 
-    self.maxNumberOfThreads = gConfig.getValue(self.section+'/NumberOfThreads',1)
-    self.threadPoolDepth = gConfig.getValue(self.section+'/ThreadPoolDepth',1)
+    self.maxNumberOfThreads = gConfig.getValue(self.section+'/NumberOfThreads',0)
+    self.threadPoolDepth = gConfig.getValue(self.section+'/ThreadPoolDepth',0)
     self.threadPool = ThreadPool(1,self.maxNumberOfThreads)
 
     self.useProxies = gConfig.getValue(self.section+'/UseProxies')
@@ -50,6 +50,7 @@ class RemovalAgent(Agent):
       self.wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
       self.proxyDN = gConfig.getValue(self.section+'/ProxyDN','')
       self.proxyGroup = gConfig.getValue(self.section+'/ProxyGroup','')
+      self.proxyGroup = 'lhcb_prod'
       self.proxyLength = gConfig.getValue(self.section+'/DefaultProxyLength',12)
       self.proxyLocation = gConfig.getValue(self.section+'/ProxyLocation','')
 
@@ -113,8 +114,8 @@ class RemovalAgent(Agent):
     elif not res['Value']:
       gLogger.info("RemovalAgent.execute: No requests to be executed found.")
       return S_OK()
-    requestString = res['Value']['requestString']
-    requestName = res['Value']['requestName']
+    requestString = res['Value']['RequestString']
+    requestName = res['Value']['RequestName']
     sourceServer= res['Value']['Server']
     gLogger.info("RemovalAgent.execute: Obtained request %s" % requestName)
     oRequest = DataManagementRequest(request=requestString)
@@ -164,6 +165,31 @@ class RemovalAgent(Agent):
           else:
             gMonitor.addMark('PhysicalRemovalFail',len(physicalFiles))
             errStr = "RemovalAgent.execute: Completely failed to remove physical files."
+            gLogger.error(errStr, res['Message'])
+
+        ################################################
+        #  If the sub-request is a physical removal operation
+        if operation == 'replicaRemoval':
+          gLogger.info("RemovalAgent.execute: Attempting to execute %s sub-request." % operation)
+          diracSE = subRequestAttributes['TargetSE']
+          lfns = []
+          for subRequestFile in subRequestFiles:
+            if subRequestFile['Status'] == 'Waiting':
+              lfn = str(subRequestFile['LFN'])
+              lfns.append(lfn)
+          gMonitor.addMark('ReplicaRemovalAtt',len(lfns))           
+          res = self.ReplicaManager.removeReplica(diracSE,lfns)
+          if res['OK']:
+            gMonitor.addMark('ReplicaRemovalDone',len(res['Value']['Successful'].keys()))
+            for lfn in res['Value']['Successful'].keys():
+              gLogger.info("RemovalAgent.execute: Successfully removed %s at %s in %s seconds." % (lfn,diracSE,res['Value']['Successful'][lfn]))
+              oRequest.setSubRequestFileAttributeValue(ind,'removal',lfn,'Status','Done')
+            gMonitor.addMark('PhysicalRemovalFail',len(res['Value']['Failed'].keys()))
+            for lfn in res['Value']['Failed'].keys():
+              gLogger.info("RemovalAgent.execute: Failed to remove replica." , "%s %s %s" % (lfn,diracSE,res['Value']['Failed'][lfn]))
+          else:
+            gMonitor.addMark('ReplicaRemovalFail',len(lfns))
+            errStr = "RemovalAgent.execute: Completely failed to remove replicas."
             gLogger.error(errStr, res['Message'])
 
         ################################################
