@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.32 2008/02/14 13:39:49 acsmith Exp $
+# $Id: TransformationDB.py,v 1.33 2008/02/14 18:00:19 acsmith Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -235,8 +235,11 @@ class TransformationDB(DB):
     """ Get input data for the given transformation, only files
         with a given status which is defined for the file replicas.
     """
+    
+    print 'TransformationDB 1:',transName,status
+    
     transID = self.getTransformationID(transName)
-    req = "SELECT FileID from T_%s WHERE Status='unused';" % (transID)
+    req = "SELECT FileID from T_%s WHERE Status='Unused';" % (transID)
     res = self._query(req)
     if not res['OK']:
       return res
@@ -264,7 +267,7 @@ class TransformationDB(DB):
     """ Get files and their status for the given transformation
     """
     transID = self.getTransformationID(transName)
-    req = "SELECT d.LFN,t.Status,t.JobID,t.UsedSE FROM DataFiles AS d,T_%s AS t WHERE t.FileID=d.FileID" % transID
+    req = "SELECT d.LFN,t.Status,t.JobID,t.TargetSE FROM DataFiles AS d,T_%s AS t WHERE t.FileID=d.FileID" % transID
     if jobOrdered:
       req = "%s ORDER by t.JobID;" % req
     else:
@@ -280,7 +283,7 @@ class TransformationDB(DB):
       fdict['Status'] = status
       if jobid is None: jobid = 'No JobID assigned'
       fdict['JobID'] = jobid
-      fdict['UsedSE'] = usedse
+      fdict['TargetSE'] = usedse
       flist.append(fdict)
     return S_OK(flist)
 
@@ -293,7 +296,7 @@ class TransformationDB(DB):
     if not fileIDs:
       return S_ERROR('TransformationDB.setFileSEForTransformation: No files found.')
     else:
-      req = "UPDATE T_%s SET UsedSE='%s' WHERE FileID IN (%s);" % (transID,se,intListToString(fileIDs))
+      req = "UPDATE T_%s SET TargetSE='%s' WHERE FileID IN (%s);" % (transID,se,intListToString(fileIDs))
       return self._update(req)
 
   def setFileStatusForTransformation(self,transName,status,lfns):
@@ -317,7 +320,7 @@ class TransformationDB(DB):
     if not fileIDs:
       return S_ERROR('TransformationDB.setFileStatusForTransformation: No files found.')
     else:
-      req = "UPDATE T_%s SET JobID=%s WHERE FileID IN (%s);" % (transID,jobID,intListToString(fileIDs))
+      req = "UPDATE T_%s SET JobID='%s' WHERE FileID IN (%s);" % (transID,jobID,intListToString(fileIDs))
       return self._update(req)
 
 
@@ -367,10 +370,10 @@ class TransformationDB(DB):
     """
     req = """CREATE TABLE T_%s(
 FileID INTEGER NOT NULL,
-Status VARCHAR(32) DEFAULT "unused",
+Status VARCHAR(32) DEFAULT "Unused",
 ErrorCount INT(4) NOT NULL DEFAULT 0,
 JobID VARCHAR(32),
-UsedSE VARCHAR(32) DEFAULT "Unknown",
+TargetSE VARCHAR(32) DEFAULT "Unknown",
 PRIMARY KEY (FileID)
 )""" % str(transID)
     res = self._update(req)
@@ -508,6 +511,14 @@ PRIMARY KEY (FileID)
       infoStr = "%sForced %s replicas." % (infoStr,replicasForced)
       gLogger.info(infoStr)
       return S_OK(infoStr)
+      
+  def updateTransformation(self,transName):
+    """ Update the transformation w.r.t files registered already
+    """    
+    
+    transID = self.getTransformationID(transName)
+    result = self.__addExistingFiles(transID)
+    return result
 
   def __getLFCClient(self):
     """Gets the LFC client instance
@@ -551,16 +562,17 @@ PRIMARY KEY (FileID)
     for lfn in lfns:
       if not lfn in fileIDs.values():
         successful[lfn] = True
-    req = "DELETE Replicas FROM Replicas WHERE FileID IN (%s);" % intListToString(fileIDs.keys())
-    print req
-    res = self._update(req)
-    if not res['OK']:
-      return S_ERROR("TransformationDB.removeFile: Failed to remove file replicas.")
-    req = "DELETE FROM DataFiles WHERE FileID IN (%s);" % intListToString(fileIDs.keys())
-    print req
-    res = self._update(req)
-    if not res['OK']:
-      return S_ERROR("TransformationDB.removeFile: Failed to remove files.")
+    if len(fileIDs.keys()) > 0:
+      req = "DELETE Replicas FROM Replicas WHERE FileID IN (%s);" % intListToString(fileIDs.keys())
+      print req
+      res = self._update(req)
+      if not res['OK']:
+        return S_ERROR("TransformationDB.removeFile: Failed to remove file replicas.")
+      req = "DELETE FROM DataFiles WHERE FileID IN (%s);" % intListToString(fileIDs.keys())
+      print req
+      res = self._update(req)
+      if not res['OK']:
+        return S_ERROR("TransformationDB.removeFile: Failed to remove files.")
     for lfn in fileIDs.values():
       successful[lfn] = True
     resDict = {'Successful':successful,'Failed':failed}
@@ -701,7 +713,7 @@ PRIMARY KEY (FileID)
               res = self.removeFile([lfn])
               if not res['OK']:
                 failedToRemove = True
-              if not res['Value']['Successful'].has_key(lfn):
+              elif not res['Value']['Successful'].has_key(lfn):
                 failedToRemove = True
           if failedToRemove:
             successful.pop(lfn)
@@ -718,7 +730,7 @@ PRIMARY KEY (FileID)
     successful = {}
     for lfn in lfns:
       if not lfn in fileIDs.values():
-        failed[lfn] = "TransformationDB.getReplicas: File not found."
+        successful[lfn] = {}
     if len(fileIDs.keys()) > 0:
       req = "SELECT FileID,SE,PFN,Status FROM Replicas WHERE FileID IN (%s);" % intListToString(fileIDs.keys())
       res = self._query(req)
