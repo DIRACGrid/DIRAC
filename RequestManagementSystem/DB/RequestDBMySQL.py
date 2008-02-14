@@ -77,6 +77,11 @@ class RequestDBMySQL(DB):
       err = 'RequestDB._getRequest: Failed to retrieve SubRequests for RequestID %s' % requestID
       self.getIdLock.release()
       return S_ERROR('%s\n%s' % (err,res['Message']))
+
+    for subRequestID,operation,sourceSE,targetSE,spaceToken,catalogue in res['Value']:
+      res = self._setSubRequestAttribute(subRequestID,'Status','Assigned')
+    self.getIdLock.release()
+
     for subRequestID,operation,sourceSE,targetSE,spaceToken,catalogue in res['Value']:
       subRequestIDs.append(subRequestID)
       res = dmRequest.initiateSubRequest(requestType)
@@ -85,7 +90,7 @@ class RequestDBMySQL(DB):
       res = dmRequest.setSubRequestAttributes(ind,requestType,subRequestDict)
       if not res['OK']:
         err = 'RequestDB._getRequest: Failed to set subRequest attributes for RequestID %s' % requestID
-        self.getIdLock.release()
+        self.__releaseSubRequests(subRequestIDs)
         return S_ERROR('%s\n%s' % (err,res['Message']))
 
       req = "SELECT FileID,LFN,Size,PFN,GUID,Md5,Addler,Attempt,Status \
@@ -93,7 +98,7 @@ class RequestDBMySQL(DB):
       res = self._query(req)
       if not res['OK']:
         err = 'RequestDB._getRequest: Failed to get File attributes for RequestID %s.%s' % (requestID,subRequestID)
-        self.getIdLock.release()
+        self.__releaseSubRequests(subRequestIDs)
         return S_ERROR('%s\n%s' % (err,res['Message']))
       files = []
       for fileID,lfn,size,pfn,guid,md5,addler,attempt,status in res['Value']:
@@ -102,14 +107,14 @@ class RequestDBMySQL(DB):
       res = dmRequest.setSubRequestFiles(ind,requestType,files)
       if not res['OK']:
         err = 'RequestDB._getRequest: Failed to set files into Request for RequestID %s.%s' % (requestID,subRequestID)
-        self.getIdLock.release()
+        self.__releaseSubRequests(subRequestIDs)
         return S_ERROR('%s\n%s' % (err,res['Message']))
 
       req = "SELECT Dataset,Status FROM Datasets WHERE SubRequestID = %s;" % subRequestID
       res = self._query(req)
       if not res['OK']:
         err = 'RequestDB._getRequest: Failed to get Datasets for RequestID %s.%s' % (requestID,subRequestID)
-        self.getIdLock.release()
+        self.__releaseSubRequests(subRequestIDs)
         return S_ERROR('%s\n%s' % (err,res['Message']))
       datasets = []
       for dataset,status in res['Value']:
@@ -117,14 +122,14 @@ class RequestDBMySQL(DB):
       res = dmRequest.setSubRequestDatasets(ind,requestType,datasets)
       if not res['OK']:
         err = 'RequestDB._getRequest: Failed to set datasets into Request for RequestID %s.%s' % (requestID,subRequestID)
-        self.getIdLock.release()
+        self.__releaseSubRequests(subRequestIDs)
         return S_ERROR('%s\n%s' % (err,res['Message']))
 
     req = "SELECT RequestName,JobID,OwnerDN,DIRACInstance,CreationTime from Requests WHERE RequestID = %s;" % requestID
     res = self._query(req)
     if not res['OK']:
       err = 'RequestDB._getRequest: Failed to retrieve max RequestID'
-      self.getIdLock.release()
+      self.__releaseSubRequests(subRequestIDs)
       return S_ERROR('%s\n%s' % (err,res['Message']))
     requestName,jobID,ownerDN,diracInstance,creationTime = res['Value'][0]
     dmRequest.setRequestName(requestName)
@@ -136,30 +141,20 @@ class RequestDBMySQL(DB):
     res = dmRequest.toXML()
     if not res['OK']:
       err = 'RequestDB._getRequest: Failed to create XML for RequestID %s' % (requestID)
-      self.getIdLock.release()
+      self.__releaseSubRequests(subRequestIDs)
       return S_ERROR('%s\n%s' % (err,res['Message']))
     requestString = res['Value']
-
-    failed = False
-    for subRequestID in subRequestIDs:
-      res = self._setSubRequestAttribute(subRequestID,'Status','Assigned')
-      if not res['OK']:
-        failed = True
-    if failed:
-      for subRequestID in subRequestIDs:
-        res = self._setSubRequestAttribute(subRequestID,'Status','Waiting')
-      self.getIdLock.release()
-      err = 'RequestDB._getRequest: Failed to set sub request status to assigned'
-      return S_ERROR(err)
-    self.getIdLock.release()
 
     #still have to manage the status of the dataset properly
     resultDict = {}
     resultDict['RequestName'] = requestName
     resultDict['RequestString'] = requestString
     return S_OK(resultDict)
-
-
+  
+  def __releaseSubRequests(self,subRequestIDs):
+    for subRequestID in subRequestIDs:
+      res = self._setSubRequestAttribute(subRequestID,'Status','Waiting')
+ 
   def setRequest(self,requestName,requestString):
     request = DataManagementRequest(request=requestString)
     requestTypes = ['transfer','register','removal','stage']
