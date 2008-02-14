@@ -4,6 +4,7 @@ from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.DataManagementSystem.Client.Storage.StorageBase import StorageBase
 from DIRAC.Core.Utilities.Subprocess import pythonCall
 from DIRAC.Core.Utilities.Pfn import pfnparse,pfnunparse
+from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Core.Utilities.File import getSize
 from stat import *
 import types, re,os
@@ -45,7 +46,7 @@ class SRM2Storage(StorageBase):
     apply(StorageBase.__init__,(self,self.name,self.path))
 
     self.timeout = 100
-    self.long_timeout = 600
+    self.long_timeout = 1200
 
     # setting some variables for use with lcg_utils
     self.nobdii = 1
@@ -317,38 +318,47 @@ class SRM2Storage(StorageBase):
     if not len(path) > 0:
       return S_ERROR("SRM2Storage.removeFile: No surls supplied.")
 
-    gfalDict = {}
-    gfalDict['surls'] = urls
-    gfalDict['nbfiles'] =  len(urls)
-    gfalDict['defaultsetype'] = 'srmv2'
-    gfalDict['no_bdii_check'] = 1
-    gfalDict['timeout'] = self.long_timeout
-
-    gLogger.debug("SRM2Storage.removeFile: Performing the removal of %s file(s)" % len(urls))
-    errCode,gfalObject,errMessage = gfal.gfal_init(gfalDict)
-    if not errCode == 0:
-      errStr = "SRM2Storage.removeFile: Failed to initialise gfal_init:"
-      gLogger.error(errStr,errMessage)
-      return S_ERROR('%s%s' % (errStr,errMessage))
-    gLogger.debug("SRM2Storage.removeFile: Initialised gfal_init.")
-
-    errCode,gfalObject,errMessage = gfal.gfal_deletesurls(gfalObject)
-    if not errCode == 0:
-      errStr = "SRM2Storage.removeFile: Failed to perform gfal_deletesurls:"
-      gLogger.error(errStr,errMessage)
-      return S_ERROR('%s%s' % (errStr,errMessage))
-    gLogger.debug("SRM2Storage.removeFile: Performed gfal_deletesurls.")
-
-    numberOfResults,gfalObject,listOfResults = gfal.gfal_get_results(gfalObject)
-    if numberOfResults <= 0:
-      errStr = "SRM2Storage.removeFile: Did not obtain results with gfal_get_results."
-      gLogger.error(errStr)
-      return S_ERROR(errStr)
-    gLogger.debug("SRM2Storage.removeFile: Retrieved %s results from gfal_get_results." % numberOfResults)
-
+    allResults = []
     successful = {}
     failed = {}
-    for urlDict in listOfResults:
+    listOfLists = breakListIntoChunks(urls,100)
+    for urls in listOfLists:
+      gfalDict = {}
+      gfalDict['surls'] = urls
+      gfalDict['nbfiles'] =  len(urls)
+      gfalDict['defaultsetype'] = 'srmv2'
+      gfalDict['no_bdii_check'] = 1
+      gfalDict['timeout'] = self.long_timeout
+
+      failedLoop = False
+      gLogger.debug("SRM2Storage.removeFile: Performing the removal of %s file(s)" % len(urls))
+      errCode,gfalObject,errMessage = gfal.gfal_init(gfalDict)
+      if not errCode == 0:
+        errStr = "SRM2Storage.removeFile: Failed to initialise gfal_init:"
+        gLogger.error(errStr,errMessage)
+        failedLoop = True
+      else:
+        gLogger.debug("SRM2Storage.removeFile: Initialised gfal_init.")
+        errCode,gfalObject,errMessage = gfal.gfal_deletesurls(gfalObject)
+        if not errCode == 0:
+          errStr = "SRM2Storage.removeFile: Failed to perform gfal_deletesurls:"
+          gLogger.error(errStr,errMessage)
+          failedLoop = True
+        else:
+          gLogger.debug("SRM2Storage.removeFile: Performed gfal_deletesurls.")
+          numberOfResults,gfalObject,listOfResults = gfal.gfal_get_results(gfalObject)
+          if numberOfResults <= 0:
+            errStr = "SRM2Storage.removeFile: Did not obtain results with gfal_get_results."
+            gLogger.error(errStr)
+            failedLoop = True
+          else:
+            gLogger.debug("SRM2Storage.removeFile: Retrieved %s results from gfal_get_results." % numberOfResults)
+            allResults.extend(listOfResults)
+      if failedLoop:
+        for url in urls:
+          failed[url] = "SRM2Storage.removeFile: Failed to perform gfal_deletesurls."
+
+    for urlDict in allResults:
       pathSURL = urlDict['surl']
       if urlDict['status'] == 0:
         infoStr = 'SRM2Storage.removeFile: Successfully removed file: %s' % pathSURL

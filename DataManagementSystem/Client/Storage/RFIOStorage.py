@@ -4,6 +4,7 @@ from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.DataManagementSystem.Client.Storage.StorageBase import StorageBase
 from DIRAC.Core.Utilities.Subprocess import shellCall
 from DIRAC.Core.Utilities.Pfn import pfnparse,pfnunparse
+from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Core.Utilities.File import getSize
 from stat import *
 import types, re,os
@@ -284,26 +285,31 @@ class RFIOStorage(StorageBase):
       urls = path
     else:
       return S_ERROR("RFIOStorage.removeFile: Supplied path must be string or list of strings")
-    gLogger.info("RFIOStorage.removeFile: Attempting to remove %s files." % len(urls))
+
     successful = {}
     failed = {}
-    comm = 'nsrm'
-    for url in urls:
-      comm = "%s %s" % (comm,url)
-    res = shellCall(100,comm)
-    if res['OK']:
-      returncode,stdout,stderr = res['Value']
-      if returncode in [0,1]:
-        for pfn in urls:
-          successful[pfn] = True
+    listOfLists = breakListIntoChunks(urls,100)
+    for urls in listOfLists:
+      gLogger.info("RFIOStorage.removeFile: Attempting to remove %s files." % len(urls))
+      comm = 'nsrm -f'
+      for url in urls:
+        comm = "%s %s" % (comm,url)
+      res = shellCall(100,comm)
+      if res['OK']:
+        returncode,stdout,stderr = res['Value']
+        if returncode in [0,1]:
+          for pfn in urls:
+            successful[pfn] = True
+        else:
+          errStr = "RFIOStorage.removeFile. Completely failed to remove files."
+          gLogger.error(errStr,stderr)
+          for pfn in urls:
+            failed[pfn] = errStr
       else:
-        errStr = "RFIOStorage.removeFile. Completely failed to remove files."
-        gLogger.error(errStr,stderr)
-        return S_ERROR(errStr)
-    else:
-      errStr = "RFIOStorage.removeFile: Completely failed to remove files."
-      gLogger.error(errStr,res['Message'])
-      return S_ERROR(errStr)
+        errStr = "RFIOStorage.removeFile: Completely failed to remove files."
+        gLogger.error(errStr,res['Message'])
+        for pfn in urls:
+          failed[pfn] = errStr
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
