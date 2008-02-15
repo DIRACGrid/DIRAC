@@ -812,35 +812,42 @@ class DataManagementRequest:
 
   def __createSubRequestXML(self,ind,type):
 
-    requestTypeStr = '%s_REQUEST' % type.upper()
-    out = '  <%s\n' % requestTypeStr
+    requestTypeStr = '%s_REQUEST' % type.upper()   
     res = self.getSubRequestAttributes(ind,type)
     if not res['OK']:
       return res
-    attributes = res['Value']
+    attributes = res['Value'] 
+    headerXML = '  <%s\n' % requestTypeStr
     for attribute in attributes:
       res = self.getSubRequestAttributeValue(ind,type,attribute)
       if not res['OK']:
         return res
       atttributeValue = res['Value']
-      out = '%s    %s="%s"\n' % (out,attribute,atttributeValue)
-    out = '%s    >\n' % out
+      headerXML = '%s    %s="%s"\n' % (headerXML,attribute,atttributeValue)       
+    headerXML = '%s    >\n' % headerXML       
 
     res = self.getSubRequestFiles(ind,type)
     if not res['OK']:
       return res
     files = res['Value']
+    filesXML=''
     for file in files:
-      out = '%s    <File\n' % out
+      fileXML="    <File\n"
       for attribute,atttributeValue in file.items():
-        out = '%s      %s="%s"\n' % (out,attribute,atttributeValue)
-      out = '%s    />\n' % out
+        if atttributeValue:
+          fileXML = '%s      %s="%s"\n' % (fileXML,attribute,atttributeValue)
+      fileXML='%s    />\n' % fileXML
+      filesXML = "%s%s" %( filesXML,fileXML)
 
     res = self.getSubRequestDatasets(ind,type)
     if not res['OK']:
       return res
     datasets = res['Value']
+    datasetsXML = ''
     for dataset in datasets:
-      out = '%s    <Dataset\n      Handle="%s"\n    />\n' % (out,dataset)
-    out = '%s  </%s>\n' % (out,requestTypeStr)
+      datasetXML = '    <Dataset\n      Handle="%s"\n    />\n' % dataset
+      datasetsXML = "%s%s" % (datasetsXML,datasetXML)  
+
+    footerXML = '  </%s>\n' % (requestTypeStr)
+    out = "%s%s%s%s" % (headerXML,filesXML,datasetsXML,footerXML)
     return S_OK(out)
