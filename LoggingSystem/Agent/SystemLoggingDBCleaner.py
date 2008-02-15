@@ -28,10 +28,10 @@ class SystemLoggingDBCleaner(Agent):
     
     self.SystemLoggingDB = SystemLoggingDB()
     
-    self.section=getAgentSection( AGENT_NAME )
-    
-    self.period = int( gConfig.getValue( "%s/RemoveDate" %
-                                         self.section ) ) * day
+    self.section = getAgentSection( AGENT_NAME )
+
+    self.period = int( gConfig.getValue( "%s/RemoveDate" % \
+                                         self.section, '30' ) ) * day
     
     return result
 
@@ -41,7 +41,8 @@ class SystemLoggingDBCleaner(Agent):
     limitDate = toString( dateTime() - self.period )
     limitDate = limitDate[:limitDate.find('.')]
 
-    cmd = "SELECT count(*) FROM MessageRepository WHERE messageTime < '%s'" %limitDate
+    commonString = 'FROM MessageRepository WHERE messageTime <'
+    cmd = "SELECT count(*) %s '%s'" % (commonString, limitDate)
     result = self.SystemLoggingDB._query( cmd )
     if not result['OK']: 
       return result
@@ -51,10 +52,11 @@ class SystemLoggingDBCleaner(Agent):
       self.log.info('No records to erase')
       return S_OK('No records to erase')
     else:
-      cmd = "DELETE LOW_PRIORITY FROM MessageRepository WHERE messageTime < '%s'" % limitDate
+      cmd = "DELETE LOW_PRIORITY %s '%s'" % (commonString, limitDate)
       result =  self.SystemLoggingDB._update( cmd )
       if not result['OK']:
-        self.log.error('Could not erase the requested records','those older than %s' % limitDate)
+        self.log.error( 'Could not erase the requested records',
+                        'those older than %s' % limitDate)
         return result
       else:
         self.log.info('%s records have been erased' % recordsToErase )
