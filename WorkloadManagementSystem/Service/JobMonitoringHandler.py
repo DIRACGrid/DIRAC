@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobMonitoringHandler.py,v 1.11 2008/01/13 01:29:36 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobMonitoringHandler.py,v 1.12 2008/02/15 13:22:41 atsareg Exp $
 ########################################################################
 
 """ JobMonitoringHandler is the implementation of the JobMonitoring service
@@ -11,7 +11,7 @@
 
 """
 
-__RCSID__ = "$Id: JobMonitoringHandler.py,v 1.11 2008/01/13 01:29:36 atsareg Exp $"
+__RCSID__ = "$Id: JobMonitoringHandler.py,v 1.12 2008/02/15 13:22:41 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -215,7 +215,7 @@ class JobMonitoringHandler( RequestHandler ):
     """ Get the summary of the job information for a given page in the
         job monitor
     """
-        
+
     last_update = None
     if attrDict.has_key('LastUpdate'):
       last_update = attrDict['LastUpdate']
@@ -229,7 +229,7 @@ class JobMonitoringHandler( RequestHandler ):
     if nJobs == 0:
       resultDict = {'TotalJobs':nJobs}
       return S_OK(resultDict)
-    
+
     iniJob = pageNumber*numberPerPage
     lastJob = iniJob+numberPerPage
     if iniJob >= nJobs:
@@ -242,8 +242,8 @@ class JobMonitoringHandler( RequestHandler ):
     result = jobDB.getAttributesForJobList(summaryJobList,SUMMARY)
     if not result['OK']:
       return S_ERROR('Failed to get job summary: '+result['Message'])
-      
-    summaryDict = result['Value']  
+
+    summaryDict = result['Value']
 
     statusDict = {}
     statusAttrDict = attrDict
@@ -281,3 +281,8 @@ class JobMonitoringHandler( RequestHandler ):
   types_getJobAttributes = [ IntType ]
   def export_getJobAttributes( self, jobID ):
     return jobDB.getJobAttributes( jobID )
+
+##############################################################################
+  types_getSiteSummary = [ ]
+  def export_getSiteSummary( self ):
+    return jobDB.getSiteSummary()

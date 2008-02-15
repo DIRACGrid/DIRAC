@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.35 2008/02/06 18:08:32 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.36 2008/02/15 13:23:05 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.35 2008/02/06 18:08:32 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.36 2008/02/15 13:23:05 atsareg Exp $"
 
 import re, os, sys, string
 import time
@@ -397,7 +397,7 @@ class JobDB(DB):
       if result['Value']:
         value = result['Value'][parameter]
       else:
-        value = None  
+        value = None
       return S_OK(value)
     else:
       return result
@@ -1418,3 +1418,43 @@ class JobDB(DB):
           distinctAttributesList = list(newdistinctAttributesList)
 
     return S_OK(distinctAttributesList)
+
+  def getSiteSummary(self,status):
+    """ Get the summary of jobs in a given status on all the sites
+    """
+
+    waitingList = ['Submitted','Assigned','Waiting','Matched']
+    waitingString = ','.join(["'"+x+"'" for x in waitingList])
+
+    result = self.getDistinctJobAttributes('Site')
+    if not result['OK']:
+      return result
+
+    siteList = result['Value']
+    siteDict = {}
+    totalDict = {'Waiting':0,'Running':0,'Done':0,'Failed':0}
+
+    for site in siteList:
+      # Waiting
+      siteDict[site] = {}
+      req = "SELECT COUNT(JobID) FROM Jobs WHERE Status IN (%s) AND Site='%s'" % (waitingString,site)
+      result = self._query(req)
+      if result['OK']:
+        count = result['Value'][0][0]
+      else:
+        return S_ERROR('Failed to get Site data from the JobDB')
+      siteDict[site]['Waiting'] = count
+      totalDict['Waiting'] += count
+      # Running,Done,Failed
+      for status in ['Running','Done','Failed']:
+        req = "SELECT COUNT(JobID) FROM Jobs WHERE Status='%s' AND Site='%s'" % (status,site)
+        result = self._query(req)
+        if result['OK']:
+          count = result['Value'][0][0]
+        else:
+          return S_ERROR('Failed to get Site data from the JobDB')
+        siteDict[site][status] = count
+        totalDict[status] += count
+
+    siteDict['Total'] = totalDict
+    return S_OK(siteDict)
