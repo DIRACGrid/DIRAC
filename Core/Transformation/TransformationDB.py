@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.33 2008/02/14 18:00:19 acsmith Exp $
+# $Id: TransformationDB.py,v 1.34 2008/02/15 22:49:21 gkuznets Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -296,6 +296,18 @@ class TransformationDB(DB):
     if not fileIDs:
       return S_ERROR('TransformationDB.setFileSEForTransformation: No files found.')
     else:
+      req = "UPDATE T_%s SET UsedSE='%s' WHERE FileID IN (%s);" % (transID,se,intListToString(fileIDs))
+      return self._update(req)
+
+  def setFileTargetSEForTransformation(self,transName,se,lfns):
+    """ Set file Target SE for the given transformation identified by transID
+        for files in the list of lfns
+    """
+    transID = self.getTransformationID(transName)
+    fileIDs = self.__getFileIDsForLfns(lfns).keys()
+    if not fileIDs:
+      return S_ERROR('TransformationDB.setFileSEForTransformation: No files found.')
+    else:
       req = "UPDATE T_%s SET TargetSE='%s' WHERE FileID IN (%s);" % (transID,se,intListToString(fileIDs))
       return self._update(req)
 
@@ -374,6 +386,7 @@ Status VARCHAR(32) DEFAULT "Unused",
 ErrorCount INT(4) NOT NULL DEFAULT 0,
 JobID VARCHAR(32),
 TargetSE VARCHAR(32) DEFAULT "Unknown",
+UsedSE VARCHAR(32) DEFAULT "Unknown",
 PRIMARY KEY (FileID)
 )""" % str(transID)
     res = self._update(req)
