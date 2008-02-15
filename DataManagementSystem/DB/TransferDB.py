@@ -496,7 +496,7 @@ class TransferDB(DB):
   # These are the methods for managing the FileToCat table
 
   def addFileRegistration(self,channelID,fileID,lfn,targetSURL,destSE):
-    req = "INSERT INTO FileToCat (FileID,ChannelID,LFN,PFN,SE,SubmitTime) VALUES (%s,%s,'%s','%s','%s',NOW());"
+    req = "INSERT INTO FileToCat (FileID,ChannelID,LFN,PFN,SE,SubmitTime) VALUES (%s,%s,'%s','%s','%s',NOW());" % (fileID,channelID,lfn,targetSURL,destSE)
     res = self._update(req)
     if not res['OK']:
       err = "TransferDB._addFileRegistration: Failed to add registration entry for file %s" % fileID
