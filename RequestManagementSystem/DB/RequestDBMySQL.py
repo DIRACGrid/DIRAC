@@ -72,6 +72,7 @@ class RequestDBMySQL(DB):
     subRequestIDs = []
     req = "SELECT SubRequestID,Operation,SourceSE,TargetSE,SpaceToken,Catalogue \
     from SubRequests WHERE RequestID=%s AND RequestType='%s' AND Status='%s'" % (requestID,requestType,'Waiting')
+    print req
     res = self._query(req)
     if not res['OK']:
       err = 'RequestDB._getRequest: Failed to retrieve SubRequests for RequestID %s' % requestID
@@ -79,7 +80,7 @@ class RequestDBMySQL(DB):
       return S_ERROR('%s\n%s' % (err,res['Message']))
 
     for subRequestID,operation,sourceSE,targetSE,spaceToken,catalogue in res['Value']:
-      res = self._setSubRequestAttribute(subRequestID,'Status','Assigned')
+      self._setSubRequestAttribute(subRequestID,'Status','Assigned')
     self.getIdLock.release()
 
     for subRequestID,operation,sourceSE,targetSE,spaceToken,catalogue in res['Value']:
@@ -144,7 +145,6 @@ class RequestDBMySQL(DB):
       self.__releaseSubRequests(subRequestIDs)
       return S_ERROR('%s\n%s' % (err,res['Message']))
     requestString = res['Value']
-
     #still have to manage the status of the dataset properly
     resultDict = {}
     resultDict['RequestName'] = requestName
