@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.17 2008/01/29 11:46:16 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.18 2008/02/15 14:02:10 paterson Exp $
 # File :   InputDataAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
 
 """
 
-__RCSID__ = "$Id: InputDataAgent.py,v 1.17 2008/01/29 11:46:16 paterson Exp $"
+__RCSID__ = "$Id: InputDataAgent.py,v 1.18 2008/02/15 14:02:10 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
@@ -136,7 +136,7 @@ class InputDataAgent(Optimizer):
     siteCandidates = self.getSiteCandidates(inputData)
     if not siteCandidates['OK']:
       self.log.warn(siteCandidates['Message'])
-      return result
+      return siteCandidates
 
     guids = True
     guidDict = self.fileCatalog.getFileMetadata(lfns)
