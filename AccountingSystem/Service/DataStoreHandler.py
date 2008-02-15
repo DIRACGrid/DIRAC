@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/Attic/AccountingHandler.py,v 1.5 2008/01/29 19:11:06 acasajus Exp $
-__RCSID__ = "$Id: AccountingHandler.py,v 1.5 2008/01/29 19:11:06 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/DataStoreHandler.py,v 1.1 2008/02/15 17:17:15 acasajus Exp $
+__RCSID__ = "$Id: DataStoreHandler.py,v 1.1 2008/02/15 17:17:15 acasajus Exp $"
 import types
 from DIRAC import S_OK, S_ERROR
 from DIRAC.AccountingSystem.private.AccountingDB import AccountingDB
@@ -8,12 +8,12 @@ from DIRAC.Core.Utilities import Time
 
 gAccountingDB = False
 
-def initializeAccountingHandler( serviceInfo ):
+def initializeDataStoreHandler( serviceInfo ):
   global gAccountingDB
   gAccountingDB = AccountingDB()
   return S_OK()
 
-class AccountingHandler( RequestHandler ):
+class DataStoreHandler( RequestHandler ):
 
   types_registerType = [ types.StringType, types.ListType, types.ListType, types.ListType ]
   def export_registerType( self, typeName, definitionKeyFields, definitionAccountingFields, bucketsLength ):

@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Types/BaseAccountingType.py,v 1.5 2008/01/29 19:11:07 acasajus Exp $
-__RCSID__ = "$Id: BaseAccountingType.py,v 1.5 2008/01/29 19:11:07 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Types/BaseAccountingType.py,v 1.6 2008/02/15 17:17:16 acasajus Exp $
+__RCSID__ = "$Id: BaseAccountingType.py,v 1.6 2008/02/15 17:17:16 acasajus Exp $"
 
 import types
 from DIRAC import S_OK, S_ERROR
@@ -8,7 +8,7 @@ from DIRAC.Core.DISET.RPCClient import RPCClient
 
 class BaseAccountingType:
 
-  validDataValues = ( types.IntType, types.LongType )
+  validDataValues = ( types.IntType, types.LongType, types.FloatType, types.LongType )
 
   def __init__( self ):
     self.keyFieldsList = []
@@ -105,7 +105,7 @@ class BaseAccountingType:
       if self.valuesList[i] == None:
         errorList.append( "no value for %s" % key )
       if key in self.valueFieldsList and type( self.valuesList[i] ) not in self.validDataValues:
-        errorList.append( "value for key %s is not int/long type" % key )
+        errorList.append( "value for key %s is not numerical type" % key )
     if errorList:
       return S_ERROR( "Invalid values: %s" % ", ".join( errorList ) )
     if not self.startTime:
@@ -142,7 +142,7 @@ class BaseAccountingType:
     """
     Register type in server
     """
-    rpcClient = RPCClient( "Accounting/Server" )
+    rpcClient = RPCClient( "Accounting/DataStore" )
     return rpcClient.registerType( *self.getDefinition() )
 
   def commit(self):
@@ -152,5 +152,5 @@ class BaseAccountingType:
     retVal = self.checkValues()
     if not retVal[ 'OK' ]:
       return retVal
-    rpcClient = RPCClient( "Accounting/Server" )
+    rpcClient = RPCClient( "Accounting/DataStore" )
     return rpcClient.commit( *self.getValues() )

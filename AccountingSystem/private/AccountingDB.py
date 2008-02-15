@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.12 2008/02/12 14:37:01 acasajus Exp $
-__RCSID__ = "$Id: AccountingDB.py,v 1.12 2008/02/12 14:37:01 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.13 2008/02/15 17:17:15 acasajus Exp $
+__RCSID__ = "$Id: AccountingDB.py,v 1.13 2008/02/15 17:17:15 acasajus Exp $"
 
 import datetime
 import threading
@@ -227,7 +227,7 @@ class AccountingDB(DB):
       self.dbLocks[ keyTable ].release()
     return S_OK( keyId )
 
-  def __getBucketTimeLength( self, typeName,now, when ):
+  def calculateBucketLengthForTime( self, typeName, now, when ):
     """
     Get the expected bucket time for a moment in time
     """
@@ -237,7 +237,7 @@ class AccountingDB(DB):
         return granuT[1]
     return self.maxBucketTime
 
-  def __calculateBuckets( self, typeName, startTime, endTime ):
+  def calculateBuckets( self, typeName, startTime, endTime ):
     """
     Magic function for calculating buckets between two times and
     the proportional part for each bucket
@@ -245,8 +245,8 @@ class AccountingDB(DB):
     nowEpoch = int( Time.toEpoch( Time.dateTime() ) )
     startEpoch = int( Time.toEpoch( startTime ) )
     endEpoch = int( Time.toEpoch( endTime ) )
-    bucketTimeLength = self.__getBucketTimeLength( typeName, nowEpoch, startEpoch )
-    currentBucketStart = ( startEpoch / bucketTimeLength ) * bucketTimeLength
+    bucketTimeLength = self.calculateBucketLengthForTime( typeName, nowEpoch, startEpoch )
+    currentBucketStart = startEpoch - startEpoch % bucketTimeLength
     if startEpoch == endEpoch:
       return [ ( Time.fromEpoch( currentBucketStart ),
                  1,
@@ -261,7 +261,7 @@ class AccountingDB(DB):
                         proportion,
                         bucketTimeLength ) )
       currentBucketStart += bucketTimeLength
-      bucketTimeLength = self.__getBucketTimeLength( typeName, nowEpoch, currentBucketStart )
+      bucketTimeLength = self.calculateBucketLengthForTime( typeName, nowEpoch, currentBucketStart )
     return buckets
 
   def addEntry( self, typeName, startTime, endTime, valuesList ):
@@ -298,7 +298,7 @@ class AccountingDB(DB):
     Bucketize a record
     """
     #Calculate amount of buckets
-    buckets = self.__calculateBuckets( typeName, startTime, endTime )
+    buckets = self.calculateBuckets( typeName, startTime, endTime )
     #Separate key values from normal values
     numKeys = len( self.dbCatalog[ typeName ][ 'keys' ] )
     keyValues = valuesList[ :numKeys ]
@@ -343,6 +343,9 @@ class AccountingDB(DB):
       finally:
         self.dbLocks[ self.__getTableName( "bucket", typeName ) ].release()
     return S_OK()
+
+  def getBucketsDef( self, typeName ):
+    return self.dbBucketsLength[ typeName ]
 
   def __generateSQLConditionForKeys( self, typeName, keyValues ):
     """
@@ -422,7 +425,7 @@ class AccountingDB(DB):
         missing.append( key )
     return missing
 
-  def __checkIncomingFieldsForQuery( self, typeName, condDict, valueFields, groupFields, tableType ):
+  def __checkIncomingFieldsForQuery( self, typeName, condDict, valueFields, groupFields, orderFields, tableType ):
     missing = self.__checkFieldsExistsInType( typeName, condDict, tableType )
     if missing:
       return S_ERROR( "Condition keys %s are not defined" % ", ".join( missing ) )
@@ -432,10 +435,13 @@ class AccountingDB(DB):
     missing = self.__checkFieldsExistsInType( typeName, groupFields, tableType )
     if missing:
       return S_ERROR( "Group fields %s are not defined" % ", ".join( missing ) )
+    missing = self.__checkFieldsExistsInType( typeName,  orderFields, tableType )
+    if missing:
+      return S_ERROR( "Order fields %s are not defined" % ", ".join( missing ) )
     return S_OK()
 
 
-  def retrieveBucketedData( self, typeName, startTime, endTime, condDict, valueFields, groupFields ):
+  def retrieveBucketedData( self, typeName, startTime, endTime, condDict, valueFields, groupFields, orderFields ):
     """
     Get data from the DB
       Parameters:
@@ -450,13 +456,13 @@ class AccountingDB(DB):
     """
     if typeName not in self.dbCatalog:
       return S_ERROR( "Type %s is not defined" % typeName )
-    retVal = self.__checkIncomingFieldsForQuery( typeName, condDict, valueFields, groupFields, "bucket" )
+    retVal = self.__checkIncomingFieldsForQuery( typeName, condDict, valueFields, groupFields, orderFields, "bucket" )
     if not retVal[ 'OK' ]:
       return retVal
     print startTime
     nowEpoch = Time.toEpoch( Time.dateTime () )
     startEpoch = Time.toEpoch( startTime )
-    bucketTimeLength = self.__getBucketTimeLength( typeName, nowEpoch , startEpoch )
+    bucketTimeLength = self.calculateBucketLengthForTime( typeName, nowEpoch , startEpoch )
     print bucketTimeLength
     print startEpoch
     startEpoch = int( startEpoch / bucketTimeLength ) * bucketTimeLength
@@ -469,9 +475,10 @@ class AccountingDB(DB):
                              condDict,
                              valueFields,
                              groupFields,
+                             orderFields,
                              "bucket" )
 
-  def __queryType( self, typeName, startTime, endTime, condDict, valueFields, groupFields, tableType ):
+  def __queryType( self, typeName, startTime, endTime, condDict, valueFields, groupFields, orderFields, tableType ):
     """
     Execute a query over a main table
     """
@@ -554,10 +561,24 @@ class AccountingDB(DB):
           sqlGroupList.append( "`%s`.`value`" % self.__getTableName( "key", field ) )
         else:
           sqlGroupList.append( "`%s`.`%s`" % ( tableName, field ) )
+    #Calculate ordering
+    sqlOrderList = []
+    if orderFields:
+      for field in orderFields:
+        if field in self.dbCatalog[ typeName ][ 'keys' ]:
+          List.appendUnique( sqlLinkList, "`%s`.`%s` = `%s`.`id`" % ( tableName,
+                                                                      field,
+                                                                      self.__getTableName( "key", field )
+                                                                    ) )
+          sqlOrderList.append( "`%s`.`value`" % self.__getTableName( "key", field ) )
+        else:
+          sqlOrderList.append( "`%s`.`%s`" % ( tableName, field ) )
     if sqlLinkList:
       cmd += " AND %s" % " AND ".join( sqlLinkList )
     if sqlGroupList:
       cmd += " GROUP BY %s" % ", ".join( sqlGroupList )
+    if sqlOrderList:
+      cmd += " ORDER BY %s" % ", ".join( sqlOrderList )
     return self._query( cmd )
 
   @gSynchro
