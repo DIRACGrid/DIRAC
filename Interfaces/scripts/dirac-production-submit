@@ -1,0 +1,34 @@
+#!/usr/bin/env python
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/Attic/dirac-production-submit,v 1.1 2008/02/15 13:57:44 paterson Exp $
+__RCSID__ = "$Id: dirac-production-submit,v 1.1 2008/02/15 13:57:44 paterson Exp $"
+import sys
+
+def usage(argv):
+  print 'Usage: %s <ProductionID> <NumberOfJobs>' %(argv[0])
+  print 'Will take site as an optional extra parameter in due course...'
+  sys.exit(2)
+
+if len(sys.argv)!=3:
+  usage(sys.argv)
+
+from DIRAC.Interfaces.API.DiracProduction import DiracProduction
+diracProd=DiracProduction()
+
+try:
+  prodID = str(sys.argv[1])
+except Exception,x:
+  print 'Expected string for production identifier'
+  sys.exit(2)
+
+try:
+  jobs = int(sys.argv[2])
+except Exception,x:
+  print 'Expected integer for number of jobs'
+  sys.exit(2)
+
+result = diracProd.submitProduction(prodID,jobs)
+if result['OK']:
+  sys.exit(0)
+else:
+  print result['Message']
+  sys.exit(2)
