@@ -14,7 +14,7 @@ try:
   gLogger.info("LcgFileCatalogClient.__init__: Successfully imported lfc module.")
 except ImportError, x:
   gLogger.exception("LcgFileCatalogClient.__init__: Failed to import lfc module.",str(x))
-  importCorrectly = False 
+  importCorrectly = False
 
 class LcgFileCatalogClient(FileCatalogueBase):
 
@@ -339,6 +339,8 @@ class LcgFileCatalogClient(FileCatalogueBase):
       res = self.removeFile(lfn)
       return S_ERROR("__addFile: Failed to create GUID: %s" % errStr)
     #Set the size of the file
+    if not checksum:
+      checksum = ''
     value = lfc.lfc_setfsizeg(guid,size,'AD',checksum)
     if value != 0:
       self.__abortTransaction()
