@@ -359,14 +359,19 @@ class SystemLoggingDB(DB):
                            newer = initialDate )
 
 
-  def getCountMessages( self, conds = {}, initialDate = None, endDate = None ):
+  def getCountMessages( self, conds = {}, initialDate = None, 
+                        endDate = None ):
     """ Query the database for the number of messages that match 'conds' and
         were generated between initialDate and endDate. If no condition is
         provided it returns the total number of messages present in the
         database
     """
-    returnValue = self.__queryDB( condDict = conds, older = endDate,
-                               newer = initialDate, count = True )
+    if conds:
+      fieldList=conds.keys()
+      fieldList.append('MessageTime')
+    returnValue = self.__queryDB( showFieldList = fieldList, condDict = conds, 
+                                  older = endDate, newer = initialDate, 
+                                  count = True )
     if not returnValue['OK']:
       return returnValue
     
