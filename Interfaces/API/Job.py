@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.17 2008/02/08 10:23:28 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.18 2008/02/15 13:48:12 paterson Exp $
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,7 +13,7 @@
 
 """
 
-__RCSID__ = "$Id: Job.py,v 1.17 2008/02/08 10:23:28 paterson Exp $"
+__RCSID__ = "$Id: Job.py,v 1.18 2008/02/15 13:48:12 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -741,5 +741,13 @@ class Job:
     start = string.find(jdl,'[')
     end   = string.rfind(jdl,']')
     return jdl[(start+1):(end-1)]
+
+  #############################################################################
+  def _setParamValue(self,name,value):
+    """Internal Function.
+
+       Sets a parameter value, used for production.
+    """
+    return self.workflow.setValue(name,value)
 
   #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
