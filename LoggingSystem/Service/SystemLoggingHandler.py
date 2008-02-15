@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Service/SystemLoggingHandler.py,v 1.4 2008/01/24 19:04:32 mseco Exp $
-__RCSID__ = "$Id: SystemLoggingHandler.py,v 1.4 2008/01/24 19:04:32 mseco Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Service/SystemLoggingHandler.py,v 1.5 2008/02/15 17:45:07 mseco Exp $
+__RCSID__ = "$Id: SystemLoggingHandler.py,v 1.5 2008/02/15 17:45:07 mseco Exp $"
 """
 SystemLoggingHandler is the implementation of the Logging service
     in the DISET framework
@@ -24,11 +24,10 @@ def initializeSystemLoggingHandler( serviceInfo ):
 
 class SystemLoggingHandler( RequestHandler ):
 
-  def __addMessage( self, messageObject, site, nodeFDQN ):
+  def __addMessage( self, messageObject, site, nodeFQDN ):
     """  This is the function that actually adds the Message to 
          the log Database
     """
-    import socket
     Credentials=self.getRemoteCredentials()
     if Credentials.has_key('DN'):
       userDN=Credentials['DN']
@@ -37,14 +36,14 @@ class SystemLoggingHandler( RequestHandler ):
     userGroup = Credentials['group']
     remoteAddress = self.transport.getRemoteAddress()[0]
     return LogDB._insertMessageIntoSystemLoggingDB( messageObject, site,
-                                                    nodeFDQN, userDN,
+                                                    nodeFQDN, userDN,
                                                     userGroup, remoteAddress )
 
         
   types_addMessages = []
 
   #A normal exported function (begins with export_)
-  def export_addMessages( self, messagesList, site, nodeFDQN ):
+  def export_addMessages( self, messagesList, site, nodeFQDN ):
     """ This is the interface to the service
         inputs:
            msgList contains a  list of Message Objects.
@@ -55,7 +54,7 @@ class SystemLoggingHandler( RequestHandler ):
     for messageTuple in messagesList:
       messageObject = tupleToMessage( messageTuple )
       try:
-        self.__addMessage( messageObject, site, nodeFDQN )
+        self.__addMessage( messageObject, site, nodeFQDN )
       except Exception, v:
         errorString = 'Message was not added because of exception: '
         exceptionString = str(v)

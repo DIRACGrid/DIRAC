@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.21 2008/01/24 19:04:32 mseco Exp $
-__RCSID__ = "$Id: Logger.py,v 1.21 2008/01/24 19:04:32 mseco Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.22 2008/02/15 17:45:05 mseco Exp $
+__RCSID__ = "$Id: Logger.py,v 1.22 2008/02/15 17:45:05 mseco Exp $"
 """
    DIRAC Logger client
 """
@@ -15,6 +15,7 @@ from DIRAC.LoggingSystem.private.LogLevels import LogLevels
 from DIRAC.LoggingSystem.private.Message import Message
 from DIRAC.Core.Utilities import Time, List
 from DIRAC.LoggingSystem.private.backends.BackendIndex import gBackendIndex
+from DIRAC.Core.Utilities import ExitCallback, ColorCLI
 
 class Logger:
 
@@ -49,36 +50,40 @@ class Logger:
   def initialize( self, systemName, cfgPath ):
     if self._systemName == "Framework":
       from DIRAC.ConfigurationSystem.Client.Config import gConfig
-      #Get the options for the different outputs
-      retDict = gConfig.getOption( "/DIRAC/Site" )
-      if retDict[ 'OK' ]:
-        site = retDict[ 'Value' ]
-      else:
-        site = 'Unknown'
-      retDict = gConfig.getOptionsDict( "%s" % cfgPath)
+      #Get the options for the different output backends
+      retDict = gConfig.getOptionsDict( "%s" % cfgPath )
       if not retDict[ 'OK' ]:
-        self.backendsOptions = {'Site': site}
+        self.backendsOptions = {}
       else:
         self.backendsOptions = retDict[ 'Value' ]
-        self.backendsOptions[ 'Site' ] = site
+
+      site = gConfig.getValue( "/DIRAC/Site", 'Unknown' )
+      self.backendsOptions[ 'Site' ] = site
+
+      filename = gConfig.getValue( "%s/Filename" % cfgPath, 
+                                   'SystemLoggingService.log' )
+      self.backendsOptions[ 'FileName' ] = filename
+      
+      retValue = gConfig.getValue( "%s/Interactive" % cfgPath, 'true' )
+      if retValue.lower() in ( "n", "no", "0", "false" ) :
+        self.backendsOptions[ 'Interactive' ] = False
+      else:
+        self.backendsOptions[ 'Interactive' ] = True    
       #Configure outputs
-      retDict = gConfig.getOption( "%s/LogBackends" % cfgPath )      
-      if not retDict[ 'OK' ]:
-        desiredBackendList = [ 'stdout' ]
-      else:
-        desiredBackendList = List.fromChar( retDict[ 'Value' ], ","  )
-      self.registerBackends( desiredBackendList )
+      #  In production versions the default of the desired backend list
+      #should be just stdout.
+      desiredBackends = gConfig.getValue( "%s/LogBackends" % cfgPath, 
+                                          'stdout, server' )
+      self.registerBackends( List.fromChar( desiredBackends ) )
       #Configure verbosity
-      retDict = gConfig.getOption( "%s/LogLevel" % cfgPath )
-      if not retDict[ 'OK' ]:
-        self._minLevel = self._logLevels.getLevelValue( "INFO" )
-      else:
-        self.setLevel( retDict[ 'Value' ] )
+      self.setLevel( gConfig.getValue( "%s/LogLevel" % cfgPath, "INFO" ) )
       #Configure framing
       retDict = gConfig.getOption( "%s/LogShowLine" % cfgPath )
       if retDict[ 'OK' ] and retDict[ 'Value' ].lower() in ( "y", "yes", "1", "true" ) :
         self._showCallingFrame = True
       self._systemName = str( systemName )
+      if not self.backendsOptions['Interactive']:
+        ExitCallback.registerExitCallback( self.flushAllMessages )
 
   def setLevel( self, levelName ):
     levelName = levelName.upper()
@@ -251,12 +256,17 @@ class Logger:
     return sExtendedException
 
   def __getStackString( self ):
-    # FIXME: this function should return the stack as a sring to be printed via
+    # FIXME: this function should return the stack as a string to be printed via
     # a debug message, the upper 3 levels should be skipped since they correspond
     # to gLogger.showStack,  self.__getStackString, traceback.print_stack
     traceback.print_stack()
     return ""
 
+  def flushAllMessages( self, exitCode ):
+    for backend in self._backendsDict:
+      self._backendsDict[ backend ].flush()
+    
+  
   def getSubLogger( self, subName ):
     from DIRAC.LoggingSystem.private.SubSystemLogger import SubSystemLogger
     if not subName in self._subLoggersDict.keys():

@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/backends/RemoteBackend.py,v 1.10 2008/01/24 19:04:32 mseco Exp $
-__RCSID__ = "$Id: RemoteBackend.py,v 1.10 2008/01/24 19:04:32 mseco Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/backends/RemoteBackend.py,v 1.11 2008/02/15 17:45:06 mseco Exp $
+__RCSID__ = "$Id: RemoteBackend.py,v 1.11 2008/02/15 17:45:06 mseco Exp $"
 """This Backend sends the Log Messages to a Log Server
 It will only report to the server ERROR, EXCEPTION, FATAL
 and ALWAYS messages.
@@ -14,8 +14,11 @@ class RemoteBackend( BaseBackend, threading.Thread ):
 
   def __init__( self, optionsDictionary ):
     from socket import getfqdn
+    from DIRAC.Core.DISET.RPCClient import RPCClient
     threading.Thread.__init__( self )
+    self.__interactive = optionsDictionary[ 'Interactive' ]
     self._messageQueue = Queue.Queue()
+    self._Transactions = []
     self._alive = True
     self._site = optionsDictionary[ 'Site' ]
     self._domainName = getfqdn()
@@ -23,7 +26,7 @@ class RemoteBackend( BaseBackend, threading.Thread ):
     self._negativeLevel = self._logLevels.getLevelValue( 'ERROR' ) 
     self._positiveLevel = self._logLevels.getLevelValue( 'ALWAYS' )
     self._maxBundledMessages = 20
-    self.config()
+    self.oSock = RPCClient( "Logging/SystemLogging", timeout = 10 )
     self.setDaemon(1)
     self.start()
 
@@ -31,36 +34,50 @@ class RemoteBackend( BaseBackend, threading.Thread ):
     self._messageQueue.put( messageObject )
 
   def run( self ):
+    import time
     while self._alive:
+      self._bundleMessages()
+      time.sleep(1)
+
+  def _bundleMessages( self ):
+    while not self._messageQueue.empty():
       bundle = []
-      message = self._messageQueue.get()
-      if self._testLevel( message.getLevel() ):
-        bundle.append( message.toTuple() )
-      while len( bundle ) < self._maxBundledMessages:
-        if not self._messageQueue.empty():
-          message = self._messageQueue.get()
-          Level=message.getLevel()
-          if self._testLevel( message.getLevel() ):
-            bundle.append( message.toTuple() )
-        else:
-          break
+      while ( len( bundle ) < self._maxBundledMessages ) and \
+                ( not self._messageQueue.empty() ):
+        message = self._messageQueue.get()
+        if self._testLevel( message.getLevel() ):
+          bundle.append( message.toTuple() )
+
       if len( bundle ) > 0:
         self._sendMessageToServer( bundle )
 
-
   def _sendMessageToServer( self, messageBundle ):
-    self.oSock.addMessages( messageBundle, self._site, self._domainName )
-
-  def config(self):
-    from DIRAC.Core.DISET.RPCClient import RPCClient
-    self.oSock = RPCClient( "Logging/SystemLogging", timeout = 10, useCertificates = "auto" )
+    self._Transactions.append( messageBundle )
+    TransactionsLength = len( self._Transactions )
+    if TransactionsLength > 100:
+      del self._Transactions[:-100]
+      TransactionsLength = 100
+    while TransactionsLength:
+      print self._Transactions[0]
+      result = self.oSock.addMessages( self._Transactions[0],
+                                       self._site, self._domainName )
+      if result['OK']:
+        print result['Value']
+        TransactionsLength = TransactionsLength - 1
+        self._Transactions.pop(0) 
+      else:
+        print result['Message']
+        return False
+    return True
 
   def _testLevel( self, sLevel ):
-    
-    return self._logLevels.getLevelValue( sLevel ) <= self._negativeLevel or \
-           self._logLevels.getLevelValue( sLevel ) >= self._positiveLevel
+    messageLevel = self._logLevels.getLevelValue( sLevel )
+    return messageLevel <= self._negativeLevel or \
+           messageLevel >= self._positiveLevel
 
-  def flush(self):
-    while not self._messageQueue.empty():
-      import time
-      time.sleep( .1 )
+  def flush( self ):
+    self._alive = False
+    if not self._interactive and self._sendMessageToServer():
+      while not self._messageQueue.empty():     
+        self._bundleMessages()
+

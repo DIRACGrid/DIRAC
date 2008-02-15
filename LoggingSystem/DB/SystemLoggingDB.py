@@ -41,10 +41,11 @@ class SystemLoggingDB(DB):
         conjonction = ''
         if type( attrValue ) in StringTypes:
           attrValue = [ attrValue ]
-        if not type( attrValue ) is ListType:
-          errorString='The values of conditions should be strings or lists'
-          gLogger.error( errorString )
-          return S_ERROR( errorString )
+        elif not type( attrValue ) is ListType:
+          errorString = 'The values of conditions should be strings or lists'
+          errorDesc = 'The type provided was: %s' % type ( attrValue )
+          gLogger.error( errorString, errorDesc )
+          return S_ERROR( '%s: %s' % ( errorString, errorDesc ) )
         
         for attrVal in attrValue:
           preCondition = "%s%s %s='%s'" % ( preCondition,
@@ -75,25 +76,54 @@ class SystemLoggingDB(DB):
       
     return S_OK(condition)
 
+  def _buildConditionTest(self, condDict, olderDate = None, newerDate = None ):
+    """ a wrapper to the private function __buildCondition so test programs
+        can access it
+    """
+    return self.__buildCondition( condDict, older = olderDate,
+                                  newer = newerDate )
+
   def __removeVariables( self, fieldList ):
     """ Auxiliar function of __buildTableList. It substitutes all the
         variables that share the same table by just one of them.
     """
-    internalList = list( set( fieldList ) )
+    addTimeKey = True
+    addOwnerKey = True
+    internalList = self.__uniq( list( set( fieldList ) ) )
 
+    if internalList.count( 'MessageTime' ): addTimeKey = False
     if internalList.count( 'VariableText' ):
       internalList.remove( 'VariableText' )
-      internalList = list( set( intList.append( 'MessageTime' ) ) )
+      if addTimeKey:
+        internalList.append( 'MessageTime' )
+        addTimeKey = False
 
     if internalList.count( 'LogLevel' ):
       internalList.remove( 'LogLevel' )
-      internalList = list( set( intList.append( 'MessageTime' ) ) )
+      if addTimeKey:
+        internalList.append( 'MessageTime' )
 
+    if internalList.count( 'OwnerDN' ): addOwnerKey = False
     if internalList.count( 'OwnerGroup' ):
       internalList.remove( 'OwnerGroup' )
-      internalList = list( set( intList.append( 'OwnerDN' ) ) )
+      if addOwnerKey:
+        internalList.append( 'OwnerDN' )
 
-    return internalList
+    return internalList 
+
+  def __uniq( self, array ):
+    """http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/52560
+    """
+
+    arrayLength = len( array )
+    if arrayLength == 0:
+        return []
+
+    sortDictionary = {}
+
+    for key in array:
+      sortDictionary[ key ] = 1
+    return sortDictionary.keys()
 
       
   def __buildTableList( self, showFieldList ):
@@ -108,29 +138,27 @@ class SystemLoggingDB(DB):
 
     conjunction = ' NATURAL JOIN '
 
-    tableList = tableDict.values()
-    tableList.remove( 'MessageRepository' )
-    tableList.insert( 0, 'MessageRepository' )
-    tableString = conjunction.join( tableList )
+    if len(showFieldList):
+      fieldList=self.__removeVariables( showFieldList )
 
-    if not len(showFieldList):
-      fieldList=self.__removeVariables(showFieldList)
+      if len(fieldList) == 1:
+        tableString = tableDict[fieldList[0]]
+      else:
+        if fieldList.count('MessageTime'):
+          fieldList.remove('MessageTime')
+        tableString = 'MessageRepository'
 
-      if fieldList.count( 'MessageTime' ):
-        fieldList.remove( 'MessageTime' )
-        
-      tableString = 'MessageRepository'
-      if not len(fieldList):
-          tableString = '%s%s' %  ( tableString, conjunction )
+        for field in fieldList:
+          tableString = '%s%s%s' % ( tableString, conjunction,
+                                     tableDict[ field ] )
 
-      for field in fieldList:
-        tableString = '%s %s' % ( tableString, TableDict[field] )
-        if not len( fieldList ):
-          tableString = '%s%s' %  ( tableString, conjunction )
+    else:
+      tableString = conjunction.join( tableDict.values() )
 
     return tableString
 
-  def __queryDB( self, showFieldList=None, condDict=None, older=None, newer=None ):
+  def __queryDB( self, showFieldList=None, condDict=None,
+                 older=None, newer=None, count=False ):
     """ This function composes the SQL query from the conditions provided and
         the desired columns and queries the SystemLoggingDB.
         If no list is provided the default is to use all the meaninful
@@ -145,9 +173,15 @@ class SystemLoggingDB(DB):
                      'VariableText', 'SystemName', 
                      'SubSystemName', 'OwnerDN', 'OwnerGroup',
                      'ClientIPNumberString','SiteName']
-            
+    elif type( showFieldList ) in StringTypes:
+      showFieldList = [ showFieldList ]
+
+    tableList = self.__buildTableList(showFieldList)
+    if count:
+      showFieldList = [ 'count(*)' ]
+      
     cmd = 'SELECT %s FROM %s %s' % (','.join(showFieldList),
-                                    self.__buildTableList(showFieldList), condition)
+                                    tableList, condition)
 
     return self._query(cmd)
 
@@ -170,7 +204,7 @@ class SystemLoggingDB(DB):
 
     return S_OK( int( result['Value'][0][0] ) )
       
-  def _insertMessageIntoSystemLoggingDB( self, message, site, nodeFDQN, 
+  def _insertMessageIntoSystemLoggingDB( self, message, site, nodeFQDN, 
                                          userDN, userGroup, remoteAddress ):
     """ This function inserts the Log message into the DB
     """
@@ -191,8 +225,8 @@ class SystemLoggingDB(DB):
     messageList.append(result['Value'])
     fieldsList.extend( outFields )
       
-    inValues = [ remoteAddress, nodeFDQN ]
-    inFields = [ 'ClientIPNumberString', 'ClientFDQN' ]
+    inValues = [ remoteAddress, nodeFQDN ]
+    inFields = [ 'ClientIPNumberString', 'ClientFQDN' ]
     outFields = [ 'ClientIPNumberID' ]
     result = self.__DBCommit( 'ClientIPs', outFields, inFields, inValues)
     if not result['OK']:
@@ -266,7 +300,7 @@ class SystemLoggingDB(DB):
         return result
     escapeData = self._escapeString( data )
     cmd = "UPDATE LOW PRIORITY AgentPersitentData SET AgentData='%s' WHERE AgentID=%s" % \
-                                                    ( agentName, result['Value'] )
+          ( agentName, result['Value'] )
     return self._query(update)
     
     
@@ -287,40 +321,68 @@ class SystemLoggingDB(DB):
         that were generated between initialDate and endDate
     """
     return self.__queryDB( condDict = {'FixedTextString': texts},
-                             older = endDate, newer = initialDate )
+                           older = endDate, newer = initialDate )
     
   def getMessagesBySite(self, site, initialDate = None, endDate = None ):
     """ Query the database for all messages generated by 'site' that were
         generated between initialDate and endDate     
     """
     return self.__queryDB( condDict = { 'SiteName':  site},
-                             older = endDate, newer = initialDate )
+                           older = endDate, newer = initialDate )
  
   def getMessagesByUser(self, userDN, initialDate = None, endDate = None ):
     """ Query the database for all messages generated by the user: 'userDN' 
         that were generated between initialDate and endDate     
     """
     return self.__queryDB( condDict = { 'OwnerDN':  userDN},
-                             older = endDate, newer = initialDate )
+                           older = endDate, newer = initialDate )
  
   def getMessagesByGroup(self, group, initialDate = None, endDate = None ):
     """ Query the database for all messages generated by the group 'Group'
         that were generated between initialDate and endDate     
     """
     return self.__queryDB( condDict = { 'OwnerGroup':  group},
-                             older = endDate, newer = initialDate )
+                           older = endDate, newer = initialDate )
 
   def getMessagesBySiteNode(self, node, initialDate = None, endDate = None ):
     """ Query the database for all messages generated at 'node' that were
         generated between initialDate and endDate     
     """
     return self.__queryDB( condDict = { 'ClientFDQN':  node},
-                             older = endDate, newer = initialDate )
+                           older = endDate, newer = initialDate )
 
-  def getMessages(self, conds , initialDate = None, endDate = None ):
+  def getMessages(self, conds = {} , initialDate = None, endDate = None ):
     """ Query the database for all messages satisfying 'conds' that were 
         generated between initialDate and endDate
     """
     return self.__queryDB( condDict = conds, older = endDate,
-                             newer = initialDate )
+                           newer = initialDate )
 
+
+  def getCountMessages( self, conds = {}, initialDate = None, endDate = None ):
+    """ Query the database for the number of messages that match 'conds' and
+        were generated between initialDate and endDate. If no condition is
+        provided it returns the total number of messages present in the
+        database
+    """
+    returnValue = self.__queryDB( condDict = conds, older = endDate,
+                               newer = initialDate, count = True )
+    if not returnValue['OK']:
+      return returnValue
+    
+    return S_OK(returnValue['Value'][0][0])
+
+  def getSites( self ):
+    return self.__queryDB( showFieldList = [ 'SiteName' ] )
+  
+  def getSystems( self ):
+    return self.__queryDB( showFieldList = [ 'SystemName' ] )
+  
+  def getSubSystems( self ):
+    return self.__queryDB( showFieldList = [ 'SubSystemName' ] )
+
+  def getGroups( self ):
+    return self.__queryDB( showFieldList = [ 'OwnerGroup' ] )
+
+  def getFixedTextStrings( self ):
+    return self.__queryDB( showFieldList = [ 'FixedTextString' ] )
