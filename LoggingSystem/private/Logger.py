@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.22 2008/02/15 17:45:05 mseco Exp $
-__RCSID__ = "$Id: Logger.py,v 1.22 2008/02/15 17:45:05 mseco Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.23 2008/02/15 19:31:21 mseco Exp $
+__RCSID__ = "$Id: Logger.py,v 1.23 2008/02/15 19:31:21 mseco Exp $"
 """
    DIRAC Logger client
 """
@@ -63,6 +63,10 @@ class Logger:
       filename = gConfig.getValue( "%s/Filename" % cfgPath, 
                                    'SystemLoggingService.log' )
       self.backendsOptions[ 'FileName' ] = filename
+      
+      remoteBackendSleepTime = gConfig.getValue( "%s/RemoteBackendSleepTime" %cfgPath,
+                                                  150 )
+      self.backendsOptions[ 'SleepTime' ] = remoteBackendSleepTime
       
       retValue = gConfig.getValue( "%s/Interactive" % cfgPath, 'true' )
       if retValue.lower() in ( "n", "no", "0", "false" ) :

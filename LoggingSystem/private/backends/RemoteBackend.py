@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/backends/RemoteBackend.py,v 1.11 2008/02/15 17:45:06 mseco Exp $
-__RCSID__ = "$Id: RemoteBackend.py,v 1.11 2008/02/15 17:45:06 mseco Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/backends/RemoteBackend.py,v 1.12 2008/02/15 19:31:22 mseco Exp $
+__RCSID__ = "$Id: RemoteBackend.py,v 1.12 2008/02/15 19:31:22 mseco Exp $"
 """This Backend sends the Log Messages to a Log Server
 It will only report to the server ERROR, EXCEPTION, FATAL
 and ALWAYS messages.
@@ -17,6 +17,7 @@ class RemoteBackend( BaseBackend, threading.Thread ):
     from DIRAC.Core.DISET.RPCClient import RPCClient
     threading.Thread.__init__( self )
     self.__interactive = optionsDictionary[ 'Interactive' ]
+    self.__sleep = optionsDictionary[ 'SleepTime' ]
     self._messageQueue = Queue.Queue()
     self._Transactions = []
     self._alive = True
@@ -37,7 +38,7 @@ class RemoteBackend( BaseBackend, threading.Thread ):
     import time
     while self._alive:
       self._bundleMessages()
-      time.sleep(1)
+      time.sleep( self.__sleep )
 
   def _bundleMessages( self ):
     while not self._messageQueue.empty():
