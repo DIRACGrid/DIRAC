@@ -114,8 +114,8 @@ class RemovalAgent(Agent):
     elif not res['Value']:
       gLogger.info("RemovalAgent.execute: No requests to be executed found.")
       return S_OK()
-    requestString = res['Value']['RequestString']
-    requestName = res['Value']['RequestName']
+    requestString = res['Value']['requestString']
+    requestName = res['Value']['requestName']
     sourceServer= res['Value']['Server']
     gLogger.info("RemovalAgent.execute: Obtained request %s" % requestName)
     oRequest = DataManagementRequest(request=requestString)
@@ -169,7 +169,7 @@ class RemovalAgent(Agent):
 
         ################################################
         #  If the sub-request is a physical removal operation
-        if operation == 'replicaRemoval':
+        elif operation == 'replicaRemoval':
           gLogger.info("RemovalAgent.execute: Attempting to execute %s sub-request." % operation)
           diracSE = subRequestAttributes['TargetSE']
           lfns = []
