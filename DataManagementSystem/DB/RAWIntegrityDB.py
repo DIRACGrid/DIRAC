@@ -68,3 +68,39 @@ class RAWIntegrityDB(DB):
       errStr = "RAWIntegrityDB.addFile: Exception while updating file status."
       gLogger.exception(errStr, str(x))
       return S_ERROR(errStr)
+
+  def setLastMonitorTime(self):
+    """ Set the last time the migration rate was calculated
+    """
+    try:
+      gLogger.info("RAWIntegrityDB.setLastMonitorTime: Attempting to set the last migration marker.")
+      req = "UPDATE LastMonitor SET LastMonitorTime=NOW();"
+      res = self._update(req)
+      if not res['OK']:
+        gLogger.error("RAWIntegrityDB.setLastMonitorTime: Failed update migration marker.",res['Message'])
+      else:
+        gLogger.info("RAWIntegrityDB.setLastMonitorTime: Successfully updated migration marker.")
+      return res
+    except Exception,x:
+      errStr = "RAWIntegrityDB.setLastMonitorTime: Exception while updating migration marker."
+      gLogger.exception(errStr, str(x))
+      return S_ERROR(errStr)
+
+  def getLastMonitorTimeDiff(self):
+    """ Get the last time the migration rate was calculated
+    """
+    try:
+      gLogger.info("RAWIntegrityDB.getLastMonitorTimeDiff: Attempting to get the last migration marker.")
+      req = "SELECT TIME_TO_SEC(TIMEDIFF(NOW(),LastMonitorTime)) FROM LastMonitor LIMIT 1;"
+      res = self._query(req)
+      if not res['OK']:
+        gLogger.error("RAWIntegrityDB.getLastMonitorTimeDiff: Failed get migration marker.",res['Message'])
+        return res
+      else:
+        gLogger.info("RAWIntegrityDB.getLastMonitorTimeDiff: Successfully obtained migration marker.")
+        timediff = res['Value'][0][0]
+        return S_OK(timediff)
+    except Exception,x:
+      errStr = "RAWIntegrityDB.getLastMonitorTimeDiff: Exception while getting migration marker."
+      gLogger.exception(errStr, str(x))
+      return S_ERROR(errStr)
