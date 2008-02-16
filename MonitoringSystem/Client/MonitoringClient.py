@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.21 2008/02/05 16:07:48 acasajus Exp $
-__RCSID__ = "$Id: MonitoringClient.py,v 1.21 2008/02/05 16:07:48 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.22 2008/02/16 19:11:45 acsmith Exp $
+__RCSID__ = "$Id: MonitoringClient.py,v 1.22 2008/02/16 19:11:45 acsmith Exp $"
 
 import threading
 import time
@@ -243,7 +243,7 @@ class MonitoringClient:
       else:
         self.marksToSend[ acName ] = acMarks[ acName ]
 
-  def __sendData( self, acRegister, secsTimeout = 30 ):
+  def __sendData( self, acRegister, secsTimeout = 60 ):
     if not self.enabled:
       return
     if gServiceInterface.serviceRunning():
