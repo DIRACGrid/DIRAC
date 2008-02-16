@@ -47,6 +47,11 @@ class RAWIntegrityAgent(Agent):
     gMonitor.registerActivity("TotFailMigrated","Total erroneously migrated files","RAWIntegriryAgent","Files", gMonitor.OP_ACUM)
     gMonitor.registerActivity("MigrationTime","Average migration time","RAWIntegriryAgent","Seconds",gMonitor.OP_MEAN)
 
+    gMonitor.registerActivity("TotMigratedSize","Total migrated file size","RAWIntegriryAgent","GB",gMonitor.OP_ACUM)
+    gMonitor.registerActivity("TimeInQueue","Average current wait for migration","RAWIntegriryAgent","Minutes",gMonitor.OP_MEAN)
+    gMonitor.registerActivity("WaitSize","Size of migration buffer","RAWIntegriryAgent","GB",gMonitor.OP_MEAN)
+    gMonitor.registerActivity("MigrationRate","Observed migration rate","RAWIntegriryAgent","MB/s",gMonitor.OP_MEAN)
+
     return result
 
 
@@ -102,10 +107,16 @@ class RAWIntegrityAgent(Agent):
       gLogger.error(errStr,res['Message'])
       return S_OK()
     activeFiles = res['Value']
+
     gMonitor.addMark("WaitingFiles",len(activeFiles.keys()))
     gLogger.info("RAWIntegrityAgent.execute: Obtained %s un-migrated files." % len(activeFiles.keys()))
     if not len(activeFiles.keys()) > 0:
       return S_OK()
+    totalSize = 0
+    for lfn,fileDict in activeFiles.items():
+      totalSize += int(fileDict['Size'])
+      gMonitor.addMark("TimeInQueue", (fileDict['WaitTime']/60))
+    gMonitor.addMark("WaitSize",(totalSize/(1024*1024*1024.0)))
 
     ############################################################
     #
@@ -148,7 +159,7 @@ class RAWIntegrityAgent(Agent):
     for pfn,pfnMetadataDict in pfnMetadata['Successful'].items():
       if pfnMetadataDict['Migrated']:
         lfn = pfnDict[pfn]
-        filesMigrated.append(lfn) 
+        filesMigrated.append(lfn)
         gLogger.info("RAWIntegrityAgent.execute: %s is newly migrated." % lfn)
         if not pfnMetadataDict.has_key('Checksum'):
           gLogger.error("RAWIntegrityAgent.execute: No checksum information available.",lfn)
@@ -167,9 +178,21 @@ class RAWIntegrityAgent(Agent):
           activeFiles[lfn]['Checksum'] = castorChecksum
         elif pfnMetadataDict['Checksum'] == 'Not available':
           gLogger.info("RAWIntegrityAgent.execute: Unable to determine checksum.", lfn)
-        else:  
+        else:
           gLogger.error("RAWIntegrityAgent.execute: Migrated checksum mis-match.","%s %s %s" % (lfn,castorChecksum.lstrip('0'),onlineChecksum.lstrip('0')))
           filesToTransfer.append(lfn)
+
+    migratedSize = 0
+    for lfn in fileMigrated:
+      migratedSize += int(activeFiles[lfn]['Size'])
+    res = self.RAWIntegrityDB.getLastMonitorTimeDiff()
+    if res['OK']:
+      timeSinceLastMonitor = res['Value']
+      migratedSizeMB = migratedSize/(1024*1024.0)
+      gMonitor.addMark("MigrationRate",migratedSizeMB/timeSinceLastMonitor)
+    res = self.RAWIntegrityDB.setLastMonitorTime()
+    migratedSizeGB = migratedSize/(1024*1024*1024.0)
+    gMonitor.addMark("TotMigratedSize",migratedSizeGB)
     gMonitor.addMark("NewlyMigrated",len(filesMigrated))
     gMonitor.addMark("TotMigrated",len(filesMigrated))
     gMonitor.addMark("SuccessfullyMigrated",len(filesToRemove))
@@ -232,11 +255,7 @@ class RAWIntegrityAgent(Agent):
               gLogger.error("RAWIntegrityAgent.execute: Failed to update status in raw integrity database.", res['Message'])
             else:
               gLogger.info("RAWIntegrityAgent.execute: Successfully updated status in raw integrity database.")
-              res = self.RAWIntegrityDB.getMigrationTime(lfn)
-              if res['OK']:
-                time = res['Value']
-                gMonitor.addMark("MigrationTime",time) 
-
+              gMonitor.addMark("MigrationTime",activeFiles[lfn]['WaitTime'])
 
     if len(filesToTransfer) > 0:
       ############################################################
