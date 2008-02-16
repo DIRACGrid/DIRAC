@@ -18,15 +18,15 @@ class RAWIntegrityDB(DB):
     """
     try:
       gLogger.info("RAWIntegrityDB.getActiveFiles: Obtaining files awaiting migration from database.")
-      req = "SELECT LFN,PFN,Size,StorageElement,GUID,FileChecksum from Files WHERE Status = 'Active';"
+      req = "SELECT LFN,PFN,Size,StorageElement,GUID,FileChecksum,TIME_TO_SEC(TIMEDIFF(NOW(),SubmitTime)) from Files WHERE Status = 'Active';"
       res = self._query(req)
       if not res['OK']:
         gLogger.error("RAWIntegrityDB.getActiveFiles: Failed to get files from database.",res['Message'])
         return res
       else:
         fileDict = {}
-        for lfn,pfn,size,se,guid,checksum in res['Value']:
-          fileDict[lfn] = {'PFN':pfn,'Size':size,'SE':se,'GUID':guid,'Checksum':checksum}
+        for lfn,pfn,size,se,guid,checksum,waittime in res['Value']:
+          fileDict[lfn] = {'PFN':pfn,'Size':size,'SE':se,'GUID':guid,'Checksum':checksum,'WaitTime':waittime}
         gLogger.info("RAWIntegrityDB.getActiveFiles: Obtained %s files awaiting migration from database." % len(fileDict.keys()))
         return S_OK(fileDict)
     except Exception,x:
@@ -50,26 +50,6 @@ class RAWIntegrityDB(DB):
       errStr = "RAWIntegrityDB.setFileStatus: Exception while updating file status."
       gLogger.exception(errStr, str(x))
       return S_ERROR(errStr)
-
-  def getMigrationTime(self,lfn):
-    """  Get the migration time for the supplied lfn
-    """  
-    try:
-      gLogger.info("RAWIntegrityDB.getMigrationTime: Attempting to get migration time for %s."  % (lfn))
-      req = "SELECT TIME_TO_SEC(TIMEDIFF(CompleteTime,SubmitTime)) from Files WHERE LFN = '%s' AND Status = 'Done';" % lfn
-      res = self._query(req)
-      if not res['OK']:
-        gLogger.error("RAWIntegrityDB.setFileStatus: Failed to get the migration time.",res['Message'])
-        return res
-      else:
-        migrationTime = int(res['Value'][0][0])
-        return S_OK(migrationTime)
-    except Exception,x:
-      errStr = "RAWIntegrityDB.getMigrationTime: Exception while updating file status."
-      gLogger.exception(errStr, str(x))
-      return S_ERROR(errStr)
-    
-
 
   def addFile(self,lfn,pfn,size,se,guid,checksum):
     """ Insert file into the database
