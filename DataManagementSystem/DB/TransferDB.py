@@ -209,7 +209,7 @@ class TransferDB(DB):
     res = self.setFileChannelAttribute(channelID, fileID, 'Status', status)
     return res
 
-  def resetFileChannelStatus(channelID,fileID):
+  def resetFileChannelStatus(self,channelID,fileID):
     req = "UPDATE Channel SET Status = 'Waiting',ExecutionTime=NULL WHERE FileID=%s AND ChannelID=%s;" % (fileID,channelID)
     res = self._update(req)
     if not res['OK']:
