@@ -147,8 +147,8 @@ class RAWIntegrityAgent(Agent):
     filesMigrated = []
     for pfn,pfnMetadataDict in pfnMetadata['Successful'].items():
       if pfnMetadataDict['Migrated']:
-        filesMigrated.append(lfn) 
         lfn = pfnDict[pfn]
+        filesMigrated.append(lfn) 
         gLogger.info("RAWIntegrityAgent.execute: %s is newly migrated." % lfn)
         if not pfnMetadataDict.has_key('Checksum'):
           gLogger.error("RAWIntegrityAgent.execute: No checksum information available.",lfn)
