@@ -1,4 +1,4 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.18 2008/02/14 13:26:50 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.19 2008/02/17 15:24:49 atsareg Exp $
 
 """ Grid Credentials module contains utilities to manage user and host
     certificates and proxies.
@@ -33,7 +33,7 @@
     getVOMSProxyInfo()
 """
 
-__RCSID__ = "$Id: GridCredentials.py,v 1.18 2008/02/14 13:26:50 atsareg Exp $"
+__RCSID__ = "$Id: GridCredentials.py,v 1.19 2008/02/17 15:24:49 atsareg Exp $"
 
 import os
 import os.path
@@ -936,6 +936,7 @@ def getVOMSAttributes(proxy,switch="all"):
   # Parse output of voms-proxy-info command
   attributes = []
   voName = ''
+  nickName = ''
   for i in voms_info_output:
     j = i.split(":")
     if j[0].strip() == "VO":
@@ -945,6 +946,8 @@ def getVOMSAttributes(proxy,switch="all"):
       j[1] = j[1].replace("/Capability=NULL","")
       if j[1].find('Role=NULL') == -1 and j[1].find('Role') != -1:
         attributes.append(j[1].strip())
+      if j[1].find('nickname') != -1:
+        nickName = j[3]
 
   # Sorting and joining attributes
   if switch == "db":
@@ -957,6 +960,8 @@ def getVOMSAttributes(proxy,switch="all"):
       returnValue = voName+":"+attributes[0]
     else:
       returnValue = voName
+  elif switch == 'nickname':
+    returnValue = nickName
   elif switch == 'all':
     returnValue = attributes
 
