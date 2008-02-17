@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.1 2008/02/15 13:55:50 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.2 2008/02/17 16:29:08 paterson Exp $
 # File :   LHCbJob.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are documented with example usage for the DIRAC API.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.1 2008/02/15 13:55:50 paterson Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.2 2008/02/17 16:29:08 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -28,6 +28,7 @@ from DIRAC.Interfaces.API.Job                       import Job
 from DIRAC.Interfaces.API.Dirac                     import Dirac
 from DIRAC.Core.DISET.RPCClient                     import RPCClient
 from DIRAC.Core.Utilities.File                      import makeGuid
+from DIRAC.Core.Utilities.GridCredentials           import getGridProxy,getVOMSAttributes,getCurrentDN
 from DIRAC                                          import gConfig, gLogger, S_OK, S_ERROR
 
 COMPONENT_NAME='DiracProduction'
@@ -45,12 +46,14 @@ class DiracProduction:
     self.scratchDir = gConfig.getValue('/LocalSite/ScratchDir','/tmp')
     self.scratchDir = gConfig.getValue('/LocalSite/ScratchDir','/tmp')
     self.submittedStatus = gConfig.getValue(self.section+'/ProcDBSubStatus','SUBMITTED')
+    self.defaultOwnerGroup = gConfig.getValue(self.section+'/DefaultOwnerGroup','lhcb_prod')
     self.prodClient = RPCClient('ProductionManagement/ProductionManager')
     self.toCleanUp = []
+    self.proxy = getGridProxy()
     self.diracAPI = Dirac()
 
   #############################################################################
-  def submitProduction(self,productionID,numberOfJobs):
+  def submitProduction(self,productionID,numberOfJobs,site=None):
     """Calls the production manager service to retrieve the necessary information
        to construct jobs, these are then submitted via the API.
     """
@@ -62,15 +65,19 @@ class DiracProduction:
       except Exception,x:
         return self.__errorReport(str(x),'Expected integer or string for number of jobs to submit')
 
-    result = self.prodClient.getJobsToSubmit(long(productionID),numberOfJobs)
+    userID = self.__getCurrentUser()
+    if not userID['OK']:
+      return self.__errorReport(userID,'Could not establish user ID from proxy credential or configuration')
+
+    result = self.prodClient.getJobsToSubmit(long(productionID),numberOfJobs,site)
     if not result['OK']:
       return self.__errorReport(result,'Problem while requesting data from ProductionManager')
 
-    submission = self.__createProductionJobs(productionID,result['Value'],numberOfJobs)
+    submission = self.__createProductionJobs(productionID,result['Value'],numberOfJobs,userID['Value'],site)
     return submission
 
   #############################################################################
-  def __createProductionJobs(self,prodID,prodDict,number):
+  def __createProductionJobs(self,prodID,prodDict,number,userID,site=None):
     """Wrapper to submit job to WMS.
     """
     #{'Body':<workflow_xml>,'JobDictionary':{<job_number(int)>:{paramname:paramvalue}}}
@@ -86,16 +93,21 @@ class DiracProduction:
     jobDict = prodDict['JobDictionary']
     for jobNumber,paramsDict in jobDict.items():
       for paramName,paramValue in paramsDict.items():
-        print jobNumber,paramName,paramValue
+        self.log.verbose('ProdID: %s, JobID: %s, ParamName: %s, ParamValue: %s' %(prodID,jobNumber,paramName,paramValue))
         if paramName=='InputData':
           self.log.verbose('Setting input data to %s' %paramValue)
           prodJob.setInputData(paramValue)
-          constructedName = str(prodID).zfill(8)+'_'+str(jobNumber).zfill(8)
-          self.log.verbose('Setting job name to %s' %constructedName)
-          prodJob.setName(constructedName)
-          prodJob._setParamValue('PRODUCTION_ID',str(prodID).zfill(8))
-          prodJob._setParamValue('JOB_ID',str(jobNumber).zfill(8))
-
+      if site:
+        self.log.verbose('Setting destination site to %s' %(site))
+        prodJob.setDestination(site)
+      self.log.verbose('Setting job owner to %s' %(userID))
+      prodJob.setOwner(userID)
+      self.log.verbose('Adding default job group of %s' %(self.defaultOwnerGroup))
+      constructedName = str(prodID).zfill(8)+'_'+str(jobNumber).zfill(8)
+      self.log.verbose('Setting job name to %s' %constructedName)
+      prodJob.setName(constructedName)
+      prodJob._setParamValue('PRODUCTION_ID',str(prodID).zfill(8))
+      prodJob._setParamValue('JOB_ID',str(jobNumber).zfill(8))
       self.log.debug(prodJob.createCode())
       updatedJob = self.__createJobDescriptionFile(prodJob._toXML())
       self.log.verbose(prodJob._toJDL(updatedJob))
@@ -118,6 +130,36 @@ class DiracProduction:
     return result
 
   #############################################################################
+  def __getCurrentUser(self):
+    nickname = getVOMSAttributes(self.proxy,'nickname')
+    if nickname['OK']:
+      owner = nickname['Value']
+      self.log.verbose('Established user nickname from current proxy ( %s )' %(owner))
+      return S_OK(owner)
+
+    activeDN = getCurrentDN()
+    if not activeDN['OK']:
+      return self.__errorReport(result,'Could not get current DN from proxy')
+
+    dn = activeDN['Value']
+    userKeys = gConfig.getSections('/Users')
+    if not userKeys['OK']:
+      return self.__errorReport(result,'Could not get current list of DIRAC users')
+
+    currentUser = None
+    for user in userKeys['Value']:
+      dnDict = gConfig.getOptionsDict('/Users/%s' %(user))
+      if dnDict['OK']:
+        if dn == dnDict['Value']['DN']:
+          currentUser = user
+          self.log.verbose('Found user nickname from CS: %s => %s' %(dn,user))
+
+    if not currentUser:
+      return self.__errorReport('Could not get nickname for user DN = %s from CS' %(dn))
+    else:
+      return S_OK(currentUser)
+
+  #############################################################################
   def __createJobDescriptionFile(self,xmlString):
     guid = makeGuid()
     tmpdir = self.scratchDir+'/'+guid
@@ -135,7 +177,8 @@ class DiracProduction:
   def __cleanUp(self):
     for i in self.toCleanUp:
       self.log.debug('Removing temporary directory %s' %i)
-      shutil.rmtree(i)
+      if os.path.exists(i):
+        shutil.rmtree(i)
     return S_OK()
 
   #############################################################################
