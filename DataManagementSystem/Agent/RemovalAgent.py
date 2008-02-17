@@ -53,6 +53,8 @@ class RemovalAgent(Agent):
       self.proxyGroup = 'lhcb_prod'
       self.proxyLength = gConfig.getValue(self.section+'/DefaultProxyLength',12)
       self.proxyLocation = gConfig.getValue(self.section+'/ProxyLocation','')
+      if os.path.exists(self.proxyLocation):
+        os.remove(self.proxyLocation)
 
     return result
 
@@ -177,7 +179,7 @@ class RemovalAgent(Agent):
             if subRequestFile['Status'] == 'Waiting':
               lfn = str(subRequestFile['LFN'])
               lfns.append(lfn)
-          gMonitor.addMark('ReplicaRemovalAtt',len(lfns))           
+          gMonitor.addMark('ReplicaRemovalAtt',len(lfns))
           res = self.ReplicaManager.removeReplica(diracSE,lfns)
           if res['OK']:
             gMonitor.addMark('ReplicaRemovalDone',len(res['Value']['Successful'].keys()))

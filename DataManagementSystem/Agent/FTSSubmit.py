@@ -33,6 +33,8 @@ class FTSSubmit(Agent):
       self.proxyGroup = gConfig.getValue(self.section+'/ProxyGroup','')
       self.proxyLength = gConfig.getValue(self.section+'/DefaultProxyLength',12)
       self.proxyLocation = gConfig.getValue(self.section+'/ProxyLocation','')
+      if os.path.exists(self.proxyLocation):
+        os.remove(self.proxyLocation)
 
     return result
 

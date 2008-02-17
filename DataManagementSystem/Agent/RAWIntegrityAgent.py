@@ -35,6 +35,9 @@ class RAWIntegrityAgent(Agent):
     self.proxyGroup = gConfig.getValue(self.section+'/ProxyGroup')
     self.proxyLength = gConfig.getValue(self.section+'/DefaultProxyLength',12)
     self.proxyLocation = gConfig.getValue(self.section+'/ProxyLocation')
+    if os.path.exists(self.proxyLocation):
+      os.remove(self.proxyLocation)
+
     self.gatewayUrl = PathFinder.getServiceURL( 'RequestManagement/onlineGateway')
 
     gMonitor.registerActivity("Iteration","Agent Loops/min","RAWIntegriryAgent", "Loops", gMonitor.OP_SUM)

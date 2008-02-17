@@ -48,9 +48,9 @@ class TransferAgent(Agent):
 
     gMonitor.registerActivity("Replica registration failed","Failed replica registrations","TransferAgent", "Failed/min", gMonitor.OP_SUM )
     gMonitor.registerActivity("File registration failed","Failed file registrations","TransferAgent", "Failed/min", gMonitor.OP_SUM )
-      
+
     self.maxNumberOfThreads = gConfig.getValue(self.section+'/NumberOfThreads',1)
-    self.threadPoolDepth = gConfig.getValue(self.section+'/ThreadPoolDepth',1) 
+    self.threadPoolDepth = gConfig.getValue(self.section+'/ThreadPoolDepth',1)
     self.threadPool = ThreadPool(1,self.maxNumberOfThreads)
 
     self.useProxies = gConfig.getValue(self.section+'/UseProxies','True')
@@ -60,6 +60,8 @@ class TransferAgent(Agent):
       self.proxyGroup = gConfig.getValue(self.section+'/ProxyGroup','')
       self.proxyLength = gConfig.getValue(self.section+'/DefaultProxyLength',12)
       self.proxyLocation = gConfig.getValue(self.section+'/ProxyLocation','')
+      if os.path.exists(self.proxyLocation):
+        os.remove(self.proxyLocation)
 
     return result
 
@@ -153,7 +155,7 @@ class TransferAgent(Agent):
           diracSE = subRequestAttributes['TargetSE']
           catalog = subRequestAttributes['Catalogue']
           for subRequestFile in subRequestFiles:
-            if subRequestFile['Status'] == 'Waiting': 
+            if subRequestFile['Status'] == 'Waiting':
               gMonitor.addMark("Put and register",1)
               lfn = subRequestFile['LFN']
               file = subRequestFile['PFN']
@@ -166,7 +168,7 @@ class TransferAgent(Agent):
                     gMonitor.addMark("Put failed",1)
                     gLogger.info("TransferAgent.execute: Failed to put %s to %s." % (lfn,diracSE))
                   elif not res['Value']['Successful'][lfn].has_key('register'):
-                    gMonitor.addMark("Put successful",1)  
+                    gMonitor.addMark("Put successful",1)
                     gMonitor.addMark("File registration failed",1)
                     gLogger.info("TransferAgent.execute: Successfully put %s to %s in %s seconds." % (lfn,diracSE,res['Value']['Successful'][lfn]['put']))
                     gLogger.info("TransferAgent.execute: Failed to register %s to %s." % (lfn,diracSE))
@@ -176,7 +178,7 @@ class TransferAgent(Agent):
                     gLogger.info("TransferAgent.execute: Setting registration request for failed file.")
                     oRequest.addSubRequest(registerRequestDict,'register')
                   else:
-                    gMonitor.addMark("Put successful",1)  
+                    gMonitor.addMark("Put successful",1)
                     gMonitor.addMark("File registration successful",1)
                     gLogger.info("TransferAgent.execute: Successfully put %s to %s in %s seconds." % (lfn,diracSE,res['Value']['Successful'][lfn]['put']))
                     gLogger.info("TransferAgent.execute: Successfully registered %s to %s in %s seconds." % (lfn,diracSE,res['Value']['Successful'][lfn]['register']))
@@ -186,7 +188,7 @@ class TransferAgent(Agent):
                   errStr = "TransferAgent.execute: Failed to put and register file."
                   gLogger.error(errStr,"%s %s %s" % (lfn,diracSE,res['Value']['Failed'][lfn]))
               else:
-                gMonitor.addMark("Put failed",1) 
+                gMonitor.addMark("Put failed",1)
                 errStr = "TransferAgent.execute: Completely failed to put and register file."
                 gLogger.error(errStr, res['Message'])
             else:
@@ -307,14 +309,14 @@ class TransferAgent(Agent):
                 res = self.ReplicaManager.getFile(lfn)
                 if res['Value']['Successful'].has_key(lfn):
                   got = False
-              if got: 
+              if got:
                 gLogger.info("TransferAgent.execute: Successfully got %s." % lfn)
                 oRequest.setSubRequestFileAttributeValue(ind,'transfer',lfn,'Status','Done')
               else:
                 errStr = "TransferAgent.execute: Failed to get file."
                 gLogger.error(errStr,lfn)
             else:
-              gLogger.info("TransferAgent.execute: File already completed.")   
+              gLogger.info("TransferAgent.execute: File already completed.")
 
         ################################################
         #  If the sub-request is none of the above types
