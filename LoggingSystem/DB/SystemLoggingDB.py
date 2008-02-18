@@ -1,3 +1,5 @@
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/DB/SystemLoggingDB.py,v 1.11 2008/02/18 16:28:01 mseco Exp $
+__RCSID__ = "$Id: SystemLoggingDB.py,v 1.11 2008/02/18 16:28:01 mseco Exp $"
 """ SystemLoggingDB class is a front-end to the Message Logging Database.
     The following methods are provided
 
@@ -367,8 +369,11 @@ class SystemLoggingDB(DB):
         database
     """
     if conds:
-      fieldList=conds.keys()
-      fieldList.append('MessageTime')
+      fieldList = conds.keys()
+      fieldList.append( 'MessageTime' )
+    else:
+      fieldList = {}
+
     returnValue = self.__queryDB( showFieldList = fieldList, condDict = conds, 
                                   older = endDate, newer = initialDate, 
                                   count = True )

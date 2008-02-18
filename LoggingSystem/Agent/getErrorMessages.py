@@ -1,3 +1,5 @@
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Agent/Attic/getErrorMessages.py,v 1.2 2008/02/18 16:28:01 mseco Exp $
+__RCSID__ = "$Id: getErrorMessages.py,v 1.2 2008/02/18 16:28:01 mseco Exp $"
 """  getErrorNames get new errors that have been injected into the
      SystemLoggingDB and sends them by mail to the person(s) in charge
      of checking that they conform with DIRAC style. ReviewersMail option

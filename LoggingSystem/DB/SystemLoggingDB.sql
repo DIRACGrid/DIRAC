@@ -1,4 +1,5 @@
--- $Header $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/DB/SystemLoggingDB.sql,v 1.8 2008/02/18 16:28:01 mseco Exp $
+__RCSID__ = "$Id: SystemLoggingDB.sql,v 1.8 2008/02/18 16:28:01 mseco Exp $"
 
 --------------------------------------------------------------------------------
 --
