@@ -258,7 +258,11 @@ class MonitoringCatalog:
     """
     Get a view for a given id
     """
-    return self.__select( "definition, variableFields", "views", { "id" : viewId } )
+    print "VID", type( viewId )
+    if type( viewId ) in ( types.StringType, types.UnicodeType ):
+      return self.__select( "definition, variableFields", "views", { "name" : viewId } )
+    else:
+      return self.__select( "definition, variableFields", "views", { "id" : viewId } )
 
   def deleteView( self, viewId ):
     """
