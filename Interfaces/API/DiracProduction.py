@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.2 2008/02/17 16:29:08 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.3 2008/02/18 18:50:42 paterson Exp $
 # File :   LHCbJob.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are documented with example usage for the DIRAC API.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.2 2008/02/17 16:29:08 paterson Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.3 2008/02/18 18:50:42 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -111,7 +111,8 @@ class DiracProduction:
       self.log.debug(prodJob.createCode())
       updatedJob = self.__createJobDescriptionFile(prodJob._toXML())
       self.log.verbose(prodJob._toJDL(updatedJob))
-      subResult = self.__submitJob(prodJob)
+      self.log.verbose('Final XML file is %s' %updatedJob)
+      subResult = self.__submitJob(updateJob)
       if subResult['OK']:
         jobID = subResult['Value']
         submitted.append(jobID)
@@ -122,6 +123,7 @@ class DiracProduction:
           return self.__errorReport(result,'Could not report status to ProcDB, stopping submission of further jobs')
       else:
         failed.append(jobNumber)
+        self.log.warn(subResult)
 
     self.__cleanUp()
     result = S_OK()
