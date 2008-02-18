@@ -1,4 +1,4 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.19 2008/02/17 15:24:49 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.20 2008/02/18 14:24:44 atsareg Exp $
 
 """ Grid Credentials module contains utilities to manage user and host
     certificates and proxies.
@@ -33,7 +33,7 @@
     getVOMSProxyInfo()
 """
 
-__RCSID__ = "$Id: GridCredentials.py,v 1.19 2008/02/17 15:24:49 atsareg Exp $"
+__RCSID__ = "$Id: GridCredentials.py,v 1.20 2008/02/18 14:24:44 atsareg Exp $"
 
 import os
 import os.path
@@ -577,13 +577,16 @@ def createProxy(certfile='',keyfile='',hours=0,bits=512,password=''):
   comm = comm + "-extfile %s -extensions ext_section -days %s " % (configfile,days)
   comm = comm + "-CA %s -CAcreateserial -CAserial %s" % (certfile,serialfile)
 
+  passwd = None 
   if not password:
-    passwd = getpass.getpass("Enter GRID pass phrase:")
+    if password != "NoPassword":   
+      passwd = getpass.getpass("Enter GRID pass phrase:")
   else:
     passwd = password
 
-  os.environ['TMPTICKET'] = passwd
-  comm = comm + " -passin pass:$TMPTICKET"
+  if passwd:
+    os.environ['TMPTICKET'] = passwd
+    comm = comm + " -passin pass:$TMPTICKET"
   if debug:
     print "\n",comm,"\n"
 
@@ -690,6 +693,8 @@ def renewProxy(proxy,lifetime=72,
     voms_attr = result["Value"]
   else:
     voms_attr = ""
+    
+  #voms_attr = "lhcb:/lhcb/Role=pilot"  
 
   # Get proxy from MyProxy service
   try:
@@ -750,9 +755,6 @@ def renewProxy(proxy,lifetime=72,
 
   if len(voms_attr) > 0:
     result = createVOMSProxy(proxy_string,voms_attr)
-
-    print result
-
     if result["OK"]:
       proxy_string = result["Value"]
     else:
@@ -767,7 +769,97 @@ def renewProxy(proxy,lifetime=72,
   if os.path.exists(my_proxy):
     os.remove(my_proxy)
   return S_OK(proxy_string)
+  
+  
+def getMyProxyDelegation(proxy,lifetime=72,
+                         server="myproxy.cern.ch",
+                         server_key="/opt/dirac/etc/grid-security/serverkey.pem",
+                         server_cert="/opt/dirac/etc/grid-security/servercert.pem"):
+  """ Get delegated proxy from MyProxy server
+  """  
+                        
+  rm_proxy = 0
+  try:
+    if not os.path.exists(proxy):
+      result = setupProxy(proxy)
+      if result["OK"]:
+        new_proxy,old_proxy = result["Value"]
+        rm_proxy = 1
+      else:
+        return S_ERROR('Failed to setup given proxy. Proxy is: %s' % (proxy))
+    else:
+      new_proxy = proxy
+  except ValueError:
+    return S_ERROR('Failed to setup given proxy. Proxy is: %s' % (proxy))
+    
+  try:
+    f_descriptor,my_proxy = tempfile.mkstemp()
+    os.close(f_descriptor)
+  except IOError:
+    if os.path.exists(new_proxy) and rm_proxy == 1:
+      os.remove(new_proxy)
+      restoreProxy(new_proxy,old_proxy)
+    return S_ERROR('Failed to create temporary file for store proxy from MyProxy service')
+  #os.chmod(my_proxy, stat.S_IRUSR | stat.S_IWUSR)
 
+  # myproxy-get-delegation works only with environment variables
+  old_server_key = ''
+  if os.environ.has_key("X509_USER_KEY"):
+    old_server_key = os.environ["X509_USER_KEY"]
+  old_server_cert = ''
+  if os.environ.has_key("X509_USER_CERT"):
+    old_server_cert = os.environ["X509_USER_CERT"]
+  os.environ["X509_USER_KEY"] = server_key
+  os.environ["X509_USER_CERT"] = server_cert
+
+  # Here "lifetime + 1" used just for get rid off warning status raised by voms-proxy-init
+  cmd = "myproxy-get-delegation -s %s -a %s -d -t %s -o %s" % (server, new_proxy, lifetime + 1, my_proxy)
+  result = shellCall(PROXY_COMMAND_TIMEOUT,cmd)
+
+  if not result['OK']:
+    if os.path.exists(new_proxy) and rm_proxy == 1:
+      os.remove(new_proxy)
+      restoreProxy(new_proxy,old_proxy)
+    return S_ERROR('Call to myproxy-get-delegation failed')
+    
+  status,output,error = result['Value']
+
+  # Clean-up files
+  if status:
+    if os.path.exists(new_proxy) and rm_proxy == 1:
+      restoreProxy(new_proxy,old_proxy)
+    if os.path.exists(my_proxy):
+      os.remove(my_proxy)
+    return S_ERROR('Failed to get delegations. Command: %s; StdOut: %s; StdErr: %s' % (cmd,result,error))
+
+  if old_server_key:
+    os.environ["X509_USER_KEY"] = old_server_key
+  else:
+    del os.environ["X509_USER_KEY"]
+  if old_server_cert:
+    os.environ["X509_USER_CERT"] = old_server_cert
+  else:
+    del os.environ["X509_USER_CERT"]
+
+  try:
+    f = open(my_proxy, 'r')
+    proxy_string = f.read() # extended proxy as a string
+    f.close()
+  except IOError:
+    if os.path.exists(new_proxy) and rm_proxy == 1:
+      restoreProxy(new_proxy,old_proxy)
+    if os.path.exists(my_proxy):
+      os.remove(my_proxy)
+    return S_ERROR('Failed to read proxy received from MyProxy service')
+    
+  if os.path.exists(new_proxy) and rm_proxy == 1:
+    restoreProxy(new_proxy,old_proxy)
+  if os.path.exists(my_proxy):
+    os.remove(my_proxy)
+    
+  return S_OK(proxy_string)  
+
+###################################################################################    
 def createVOMSProxy(proxy,attributes="",vo=""):
   """ This function takes a proxy (grid or voms) as a string and returns
       the voms proxy as a string with disaired attributes (second argument)
@@ -822,6 +914,11 @@ def createVOMSProxy(proxy,attributes="",vo=""):
     cmd = "voms-proxy-init --voms %s " % vo
   cmd += "-cert %s -key %s -out %s " % (new_proxy,new_proxy,voms_proxy)
   cmd += "-valid %s:%s -vomslife %s:%s" % (hours,minutes,hours,minutes)
+  
+  print "##################################################"
+  print cmd
+  print "##################################################"
+  
   result = shellCall(PROXY_COMMAND_TIMEOUT,cmd)
 
   if not result['OK']:
@@ -947,7 +1044,7 @@ def getVOMSAttributes(proxy,switch="all"):
       if j[1].find('Role=NULL') == -1 and j[1].find('Role') != -1:
         attributes.append(j[1].strip())
       if j[1].find('nickname') != -1:
-        nickName = j[3]
+        nickName = j[1].strip().split()[2]
 
   # Sorting and joining attributes
   if switch == "db":
