@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/Activity.py,v 1.3 2008/02/05 17:57:01 acasajus Exp $
-__RCSID__ = "$Id: Activity.py,v 1.3 2008/02/05 17:57:01 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/Activity.py,v 1.4 2008/02/18 17:14:34 acasajus Exp $
+__RCSID__ = "$Id: Activity.py,v 1.4 2008/02/18 17:14:34 acasajus Exp $"
 
 import types
 from string import Template
@@ -10,6 +10,7 @@ class Activity:
                'activities.type',
                'activities.description',
                'activities.filename',
+               'activities.bucketLength',
                'sources.site',
                'sources.componentType',
                'sources.componentLocation',
@@ -76,6 +77,9 @@ class Activity:
 
   def getDescription(self):
     return self.__getField( 'activities.description' )
+
+  def getBucketLength(self):
+    return self.__getField( 'activities.bucketLength' )
 
   def getSite(self):
     return self.__getField( 'sources.site' )

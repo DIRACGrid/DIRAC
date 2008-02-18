@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.22 2008/02/16 19:11:45 acsmith Exp $
-__RCSID__ = "$Id: MonitoringClient.py,v 1.22 2008/02/16 19:11:45 acsmith Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.23 2008/02/18 17:14:35 acasajus Exp $
+__RCSID__ = "$Id: MonitoringClient.py,v 1.23 2008/02/18 17:14:35 acasajus Exp $"
 
 import threading
 import time
@@ -118,7 +118,7 @@ class MonitoringClient:
     """
     self.sourceDict[ 'componentType' ] = componentType
 
-  def registerActivity( self, name, description, category, unit, operation ):
+  def registerActivity( self, name, description, category, unit, operation, bucketLength = 60 ):
     """
     Register new activity. Before reporting information to the server, the activity
     must be registered.
@@ -134,6 +134,8 @@ class MonitoringClient:
     @type  operation: string
     @param operation: Type of data operation to represent data. All the possibilities
                         are defined in the Constants.py file
+    @type  bucketLength: int
+    @param bucketLength: Bucket length in seconds
     """
     self.activitiesLock.acquire()
     try:
@@ -142,15 +144,18 @@ class MonitoringClient:
         self.activitiesDefinitions[ name ] = { "category" : category,
                                                "description" : description,
                                                "unit" : unit,
-                                               "type" : operation
+                                               "type" : operation,
+                                               "bucketLength" : bucketLength
                                               }
         self.activitiesMarks[ name ] = {}
         self.definitionsToSend[ name ] = dict( self.activitiesDefinitions[ name ] )
     finally:
       self.activitiesLock.release()
 
-  def __UTCStepTime(self):
-    return int( time.mktime( time.gmtime() ) / self.timeStep ) * self.timeStep
+  def __UTCStepTime( self, acName ):
+    stepLength = self.activitiesDefinitions[ acName ][ 'bucketLength' ]
+    nowEpoch = int( time.mktime( time.gmtime() ) )
+    return nowEpoch - nowEpoch % stepLength
 
   def addMark( self, name, value = 1 ):
     """
@@ -166,7 +171,7 @@ class MonitoringClient:
     self.activitiesLock.acquire()
     try:
       self.logger.debug( "Adding mark to %s" % name )
-      markTime = self.__UTCStepTime()
+      markTime = self.__UTCStepTime( name )
       if markTime in self.activitiesMarks[ name ]:
         self.activitiesMarks[ name ][ markTime ].append( value )
       else:
@@ -179,13 +184,13 @@ class MonitoringClient:
       Copies all marks except last step ones
       and consolidates them
     """
-    if allData:
-      lastStepToSend = int( time.mktime( time.gmtime() ) )
-    else:
-      lastStepToSend = self.__UTCStepTime()
     consolidatedMarks = {}
     remainderMarks = {}
     for key in self.activitiesMarks:
+      if allData:
+        lastStepToSend = int( time.mktime( time.gmtime() ) )
+      else:
+        lastStepToSend = self.__UTCStepTime( key )
       consolidatedMarks[ key ] = {}
       remainderMarks [ key ] = {}
       for markTime in self.activitiesMarks[ key ]:
@@ -200,8 +205,6 @@ class MonitoringClient:
             totalValue += mark
           if self.activitiesDefinitions[ key ][ 'type' ] == self.OP_MEAN:
             totalValue /= len( consolidatedMarks[ key ][ markTime ] )
-          elif self.activitiesDefinitions[ key ][ 'type' ] == self.OP_RATE:
-            totalValue /= 60.0
           consolidatedMarks[ key ][ markTime ] = totalValue
       if len( consolidatedMarks[ key ] ) == 0:
         del( consolidatedMarks[ key ] )

@@ -6,6 +6,7 @@ CREATE table activities (
     unit TEXT,
     type TEXT,
 	description TEXT,
+	bucketLength INTEGER,
     filename TEXT
 );
 CREATE table sources (

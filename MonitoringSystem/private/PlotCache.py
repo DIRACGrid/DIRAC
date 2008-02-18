@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/PlotCache.py,v 1.2 2008/01/09 16:38:42 acasajus Exp $
-__RCSID__ = "$Id: PlotCache.py,v 1.2 2008/01/09 16:38:42 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/PlotCache.py,v 1.3 2008/02/18 17:14:34 acasajus Exp $
+__RCSID__ = "$Id: PlotCache.py,v 1.3 2008/02/18 17:14:34 acasajus Exp $"
 
 import os
 import os.path
@@ -25,6 +25,7 @@ class PlotCache:
         os.unlink( "%s/%s" % ( self.plotsLocation, file ) )
     self.cachedPlots = {}
     self.alive = True
+    self.graceTime = 60
     self.purgeThread = threading.Thread( target = self.purgeCached )
     self.purgeThread.start()
 
@@ -35,12 +36,12 @@ class PlotCache:
     return m.hexdigest()
 
   def __isCurrentTime( self, toSecs ):
-    currentBucket = self.rrdManager.getCurrentBucketTime()
-    return toSecs + self.rrdManager.bucketTime > currentBucket
+    currentBucket = self.rrdManager.getCurrentBucketTime( self.graceTime )
+    return toSecs + self.graceTime > currentBucket
 
   def purgeCached( self ):
     while self.alive:
-      time.sleep( self.rrdManager.bucketTime * 2 )
+      time.sleep( self.graceTime * 2 )
       self.__purgeExpiredGraphs()
 
   @gSynchro
@@ -50,7 +51,7 @@ class PlotCache:
   @gSynchro
   def __registerGraph( self, graphFile, fromSecs, toSecs ):
     if self.__isCurrentTime( toSecs ):
-      cacheTime = self.rrdManager.bucketTime * 2
+      cacheTime = self.graceTime * 2
     else:
       cacheTime = 3600
     self.cachedPlots[ graphFile ] = [ cacheTime, time.time() ]
@@ -84,10 +85,10 @@ class PlotCache:
   def __getGraph( self, plotFunc, args ):
     fromSecs = args[0]
     toSecs = args[1]
-    print args[2:]
+    print "JANDNDNDN", args[2:]
     graphFile = "%s-%s-%s.png" % ( self.__generateName( *args[2:] ),
-                                   self.rrdManager.bucketize( fromSecs ),
-                                   self.rrdManager.bucketize( toSecs )
+                                   self.rrdManager.bucketize( fromSecs, self.graceTime ),
+                                   self.rrdManager.bucketize( toSecs, self.graceTime )
                                 )
     if self.__isCacheGraph( graphFile ):
       self.__refreshGraph( graphFile )

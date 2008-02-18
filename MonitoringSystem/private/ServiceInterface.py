@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/ServiceInterface.py,v 1.7 2008/02/13 19:46:23 acasajus Exp $
-__RCSID__ = "$Id: ServiceInterface.py,v 1.7 2008/02/13 19:46:23 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/ServiceInterface.py,v 1.8 2008/02/18 17:14:34 acasajus Exp $
+__RCSID__ = "$Id: ServiceInterface.py,v 1.8 2008/02/18 17:14:34 acasajus Exp $"
 import DIRAC
 from DIRAC import gLogger
 from DIRAC.MonitoringSystem.private.MonitoringCatalog import MonitoringCatalog
@@ -53,7 +53,7 @@ class ServiceInterface:
     """
     Check that the dictionary is a valid activity one
     """
-    validKeys = ( "name", "category", "unit", "type", "description" )
+    validKeys = ( "name", "category", "unit", "type", "description", "bucketLength" )
     for key in acDict:
       if key not in validKeys:
         return False
@@ -88,7 +88,7 @@ class ServiceInterface:
       rrdFile = acCatalog.registerActivity( sourceId, name, activitiesDict[ name ] )
       if not rrdFile:
         return S_ERROR( "Could not register activity %s" % name )
-      rrdManager.create( activitiesDict[ name ][ 'type' ], rrdFile )
+      rrdManager.create( activitiesDict[ name ][ 'type' ], rrdFile, activitiesDict[ name ][ 'bucketLength' ] )
     return S_OK( sourceId )
 
   def commitMarks( self, sourceId, activitiesDict ):
@@ -119,7 +119,7 @@ class ServiceInterface:
         entries.append( ( instant , acData[ instant ] ) )
       if len( entries ) > 0:
         gLogger.verbose( "There are %s entries for %s" % ( len( entries ), acName ) )
-        retDict = rrdManager.update( acInfo[4], rrdFile, entries )
+        retDict = rrdManager.update( acInfo[4], rrdFile, acInfo[7], entries )
         if not retDict[ 'OK' ]:
           gLogger.error( "There was an error updating %s:%s activity [%s]" % ( sourceId, acName, rrdFile ) )
     return S_OK( unregisteredActivities )

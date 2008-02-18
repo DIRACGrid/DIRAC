@@ -206,7 +206,7 @@ class MonitoringCatalog:
     Find activity
     """
     queryDict = { 'sourceId' : sourceId, "name" : acName }
-    retList = self.__select( "id, name, category, unit, type, description, filename", "activities", queryDict )
+    retList = self.__select( "id, name, category, unit, type, description, filename, bucketLength", "activities", queryDict )
     if len( retList ) == 0:
       return False
     else:
@@ -277,7 +277,7 @@ class MonitoringCatalog:
                            dbCond)
 
   def getActivities( self, dbCond ):
-    return self.__select( "id, name, category, unit, type, description",
+    return self.__select( "id, name, category, unit, type, description, bucketLength",
                           "activities",
                         dbCond)
 
