@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/Attic/dirac-production-submit,v 1.2 2008/02/17 16:51:19 paterson Exp $
-__RCSID__ = "$Id: dirac-production-submit,v 1.2 2008/02/17 16:51:19 paterson Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/Attic/dirac-production-submit,v 1.3 2008/02/18 11:04:21 paterson Exp $
+__RCSID__ = "$Id: dirac-production-submit,v 1.3 2008/02/18 11:04:21 paterson Exp $"
 import sys
 
 def usage(argv):
@@ -10,7 +10,7 @@ def usage(argv):
 
 if len(sys.argv)<3:
   usage(sys.argv)
-
+print sys.argv
 from DIRAC.Interfaces.API.DiracProduction import DiracProduction
 diracProd=DiracProduction()
 
@@ -26,10 +26,11 @@ except Exception,x:
   print 'Expected integer for number of jobs'
   sys.exit(2)
 
-site=None
-if len(sys.argv)==4:
+site=''
+if len(sys.argv)>=4:
   try:
     site = str(sys.argv[3])
+    print 'Destination site = %s' %site
   except Exception,x:
     print 'Expected string for DIRAC site name'
     sys.exit(2)
