@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/RRDManager.py,v 1.18 2008/02/18 14:28:15 acasajus Exp $
-__RCSID__ = "$Id: RRDManager.py,v 1.18 2008/02/18 14:28:15 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/RRDManager.py,v 1.19 2008/02/18 15:12:49 acasajus Exp $
+__RCSID__ = "$Id: RRDManager.py,v 1.19 2008/02/18 15:12:49 acasajus Exp $"
 import os
 import os.path
 import time
@@ -137,9 +137,8 @@ class RRDManager:
       lastUpdateTime = retVal[ 'Value' ]
       gLogger.verbose( "Last update time is %s" % lastUpdateTime )
     cmd = "%s update %s" % ( self.rrdExec, rrdFilePath )
-    #If sum or acum we have to fill with 0 the db to ensure the mean is valid
-    if type in ( "sum", "acum" ):
-      valuesList = self.__fillWithZeros( lastUpdateTime, valuesList )
+    #we have to fill with 0 the db to ensure the mean is valid
+    valuesList = self.__fillWithZeros( lastUpdateTime, valuesList )
     rrdUpdates = []
     for entry in valuesList:
       rrdUpdates.append( "%s:%s" % entry )
