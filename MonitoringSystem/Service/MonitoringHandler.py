@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Service/MonitoringHandler.py,v 1.4 2008/01/07 19:09:33 acasajus Exp $
-__RCSID__ = "$Id: MonitoringHandler.py,v 1.4 2008/01/07 19:09:33 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Service/MonitoringHandler.py,v 1.5 2008/02/18 17:38:09 acasajus Exp $
+__RCSID__ = "$Id: MonitoringHandler.py,v 1.5 2008/02/18 17:38:09 acasajus Exp $"
 import types
 import os
 from DIRAC import gLogger, gConfig, rootPath, S_OK, S_ERROR
@@ -130,9 +130,23 @@ class MonitoringHandler( RequestHandler ):
   types_deleteActivity = [ types.IntType, types.IntType ]
   def export_deleteActivity( self, sourceId, activityId ):
     """
-    Deletes a view
+    Deletes an activity
     """
     return gServiceInterface.deleteActivity( sourceId, activityId )
+
+  types_deleteActivities = [ types.ListType ]
+  def export_deleteActivities( self, deletionList ):
+    """
+    Deletes a list of activities
+    """
+    failed = []
+    for acList in deletionList:
+      retVal = gServiceInterface.deleteActivity( acList[0], acList[1] )
+      if not retVal[ 'OK' ]:
+        failed.append( retVal[ 'Value' ] )
+    if failed:
+      return S_ERROR( "\n".join( failed ) )
+    return S_OK()
 
   def transfer_toClient( self, fileId, token, fileHelper ):
     retVal = gServiceInterface.getGraphData( fileId )
