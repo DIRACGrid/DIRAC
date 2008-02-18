@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.18 2008/02/15 13:48:12 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.19 2008/02/18 11:03:53 paterson Exp $
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,7 +13,7 @@
 
 """
 
-__RCSID__ = "$Id: Job.py,v 1.18 2008/02/15 13:48:12 paterson Exp $"
+__RCSID__ = "$Id: Job.py,v 1.19 2008/02/18 11:03:53 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -730,7 +730,8 @@ class Job:
 
       if len(plus):
         exprn = exprn[:-len(plus)]
-
+      if not exprn:
+        exprn = 'true'
       self.log.verbose('Requirements: %s' %(exprn))
       classadJob.set_expression('Requirements', exprn)
 
