@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/ServiceInterface.py,v 1.8 2008/02/18 17:14:34 acasajus Exp $
-__RCSID__ = "$Id: ServiceInterface.py,v 1.8 2008/02/18 17:14:34 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/ServiceInterface.py,v 1.9 2008/02/18 17:49:06 acasajus Exp $
+__RCSID__ = "$Id: ServiceInterface.py,v 1.9 2008/02/18 17:49:06 acasajus Exp $"
 import DIRAC
 from DIRAC import gLogger
 from DIRAC.MonitoringSystem.private.MonitoringCatalog import MonitoringCatalog
@@ -82,6 +82,8 @@ class ServiceInterface:
     #Register activities
     for name in activitiesDict:
       activitiesDict[ name ][ 'name' ] = name
+      if not 'bucketLength' in activitiesDict[ name ]:
+        activitiesDict[ name ][ 'bucketLength' ] = 60
       if not self.__checkActivityDict( activitiesDict[ name ] ):
         return S_ERROR( "Activity %s definition is not valid" % name )
       gLogger.info( "Received activity", "%s [%s]" % ( name, str( activitiesDict[ name ] ) ) )
