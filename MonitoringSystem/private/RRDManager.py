@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/RRDManager.py,v 1.16 2008/02/13 19:46:23 acasajus Exp $
-__RCSID__ = "$Id: RRDManager.py,v 1.16 2008/02/13 19:46:23 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/RRDManager.py,v 1.17 2008/02/18 14:19:00 acasajus Exp $
+__RCSID__ = "$Id: RRDManager.py,v 1.17 2008/02/18 14:19:00 acasajus Exp $"
 import os
 import os.path
 import time
@@ -11,7 +11,8 @@ from DIRAC.Core.Utilities import Subprocess, Time
 
 class RRDManager:
 
-  sizesList = [ [ 200, 50 ], [ 400, 100 ], [ 600, 150 ], [ 800, 200 ] ]
+  __sizesList = [ [ 200, 50 ], [ 400, 100 ], [ 600, 150 ], [ 800, 200 ] ]
+  __logRRDCommands = True
 
   def __init__( self, rrdLocation, graphLocation ):
     """
@@ -37,12 +38,22 @@ class RRDManager:
     """
     return self.graphLocation
 
-  def __exec( self, cmd ):
+  def __exec( self, cmd, rrdFile = None ):
     """
     Execute a system command
     """
     gLogger.debug( "RRD command: %s" % cmd)
     retVal = Subprocess.shellCall( 0, cmd )
+    if self.__logRRDCommands and rrdFile:
+      try:
+        fd = file( "%s.log" % rrdFile, "a" )
+        if not retVal[ 'OK' ]:
+          fd.write( "ERROR %s\n" % cmd )
+        else:
+          fd.write( "OK    %s\n" % cmd )
+        fd.close()
+      except:
+        pass
     if not retVal[ 'OK' ]:
       return retVal
     retTuple = retVal[ 'Value' ]
@@ -86,8 +97,10 @@ class RRDManager:
       cf = "AVERAGE"
     cmd += " DS:value:%s:120:U:U" % dst
     # 1m res for 1 month
-    cmd += " RRA:%s:0.9:1:43200" % cf
-    return self.__exec( cmd ) == 0
+    #cmd += " RRA:%s:0.9:1:43200" % cf
+    # 1m red for 1 year
+    cmd += " RRA:%s:0.9:1:525600" % cf
+    return self.__exec( cmd, rrdFilePath ) == 0
 
   def __getLastUpdateTime( self, rrdFile ):
     """
@@ -133,7 +146,7 @@ class RRDManager:
     maxRRDArgs = 50
     for i in range( 0, len( rrdUpdates ), maxRRDArgs ):
       finalCmd = "%s %s" % ( cmd, " ".join( rrdUpdates[ i: i + maxRRDArgs ] ) )
-      retVal = self.__exec( finalCmd )
+      retVal = self.__exec( finalCmd, rrdFilePath )
       if not retVal[ 'OK' ]:
         gLogger.error( "Error updating %s rrd: %s" % ( rrdFile, retVal[ 'Message' ] ) )
     return S_OK()
@@ -177,7 +190,7 @@ class RRDManager:
     """
     Generate a group plot
     """
-    yScalingFactor = self.__getYScalingFactor( toSecs - fromSecs, self.sizesList[ size ][0] )
+    yScalingFactor = self.__getYScalingFactor( toSecs - fromSecs, self.__sizesList[ size ][0] )
     if not graphFilename:
       graphFilename = "%s.png" % self.__generateName( fromSecs,
                                                     toSecs,
@@ -187,8 +200,8 @@ class RRDManager:
     rrdCmd = "%s graph %s/%s" % ( self.rrdExec, self.graphLocation, graphFilename )
     rrdCmd += " -s %s" % fromSecs
     rrdCmd += " -e %s" % toSecs
-    rrdCmd += " -w %s" % self.sizesList[ size ][0]
-    rrdCmd += " -h %s" % self.sizesList[ size ][1]
+    rrdCmd += " -w %s" % self.__sizesList[ size ][0]
+    rrdCmd += " -h %s" % self.__sizesList[ size ][1]
     rrdCmd += " --title '%s'" % activitiesList[ 0 ].getGroupLabel()
     colorGen = ColorGenerator()
     for idActivity in range( len( activitiesList ) ):
@@ -208,7 +221,7 @@ class RRDManager:
     """
     Generate a non grouped plot
     """
-    yScalingFactor = self.__getYScalingFactor( toSecs - fromSecs, self.sizesList[ size ][0] )
+    yScalingFactor = self.__getYScalingFactor( toSecs - fromSecs, self.__sizesList[ size ][0] )
     if not graphFilename:
       graphFilename = "%s.png" % self.__generateName( fromSecs,
                                                     toSecs,
@@ -218,8 +231,8 @@ class RRDManager:
     rrdCmd = "%s graph %s/%s" % ( self.rrdExec, self.graphLocation, graphFilename )
     rrdCmd += " -s %s" % fromSecs
     rrdCmd += " -e %s" % toSecs
-    rrdCmd += " -w %s" % self.sizesList[ size ][0]
-    rrdCmd += " -h %s" % self.sizesList[ size ][1]
+    rrdCmd += " -w %s" % self.__sizesList[ size ][0]
+    rrdCmd += " -h %s" % self.__sizesList[ size ][1]
     rrdCmd += " --title '%s'" % activity.getLabel()
     rrdCmd += " --vertical-label '%s'" % activity.getUnit()
     rrdCmd += " %s" % self.__generateRRDGraphVar( 0, activity.getFile(), activity.getType(), yScaleFactor = yScalingFactor )
@@ -228,7 +241,7 @@ class RRDManager:
     else:
       rrdCmd += " 'LINE2:0#FF0000'"
     rrdCmd += self.__graphTimeComment()
-    retVal = self.__exec( rrdCmd )
+    retVal = self.__exec( rrdCmd, rrdFilePath )
     if not retVal[ 'OK' ]:
       return retVal
     return S_OK( graphFilename )
