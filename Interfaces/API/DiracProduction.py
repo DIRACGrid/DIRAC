@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.4 2008/02/18 18:54:35 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.5 2008/02/18 19:19:51 paterson Exp $
 # File :   LHCbJob.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are documented with example usage for the DIRAC API.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.4 2008/02/18 18:54:35 paterson Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.5 2008/02/18 19:19:51 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -110,9 +110,9 @@ class DiracProduction:
       prodJob._setParamValue('JOB_ID',str(jobNumber).zfill(8))
       self.log.debug(prodJob.createCode())
       updatedJob = self.__createJobDescriptionFile(prodJob._toXML())
-      self.log.verbose(prodJob._toJDL(updatedJob))
+      newJob = Job(updatedJob)
       self.log.verbose('Final XML file is %s' %updatedJob)
-      subResult = self.__submitJob(updatedJob)
+      subResult = self.__submitJob(newJob)
       if subResult['OK']:
         jobID = subResult['Value']
         submitted.append(jobID)
