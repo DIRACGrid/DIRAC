@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobHistoryAgent.py,v 1.2 2008/02/18 09:42:04 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobHistoryAgent.py,v 1.3 2008/02/18 10:10:11 atsareg Exp $
 
 
 """  JobHistoryAgent sends periodically numbers of jobs in various states for various
@@ -29,7 +29,8 @@ class JobHistoryAgent(Agent):
     self.jobDB = JobDB()
 
     for status in MONITOR_STATUS:
-      for site in MONITOR_SITE:
+      for site in MONITOR_SITES:
+        gLogger.verbose("Registering activity %s-%s" % (status,site)) 
         gMonitor.registerActivity("%s-%s" % (status,site),"%s jos" % status,"JobHistoryAgent","Jobs",gMonitor.OP_MEAN)
 
     return S_OK()
@@ -38,7 +39,7 @@ class JobHistoryAgent(Agent):
     """ Main execution method
     """
 
-    result = self.jobDB.getCounters(['Status','Site'])
+    result = self.jobDB.getCounters(['Status','Site'],{},'')    
     if not result['OK']:
       return S_ERROR('Failed to get data from the Job Database')
 
@@ -46,15 +47,18 @@ class JobHistoryAgent(Agent):
     for status in MONITOR_STATUS:
       totalDict[status] = 0
 
-    for dict in result['Value']:
+    for row in result['Value']:
+      dict = row[0]
       site = dict['Site']
       status = dict['Status']
-      count = dict['Count']
-      if site in MONITOR_SITES:
+      count = row[1]
+      if site in MONITOR_SITES and status in MONITOR_STATUS:
+        gLogger.verbose("Adding mark %s-%s: " % (status,site)+str(count))
         gMonitor.addMark("%s-%s" % (status,site),count)
         totalDict[status] += count
 
     for status in MONITOR_STATUS:
+      gLogger.verbose("Adding mark %s-All sites: " % status + str(totalDict[status]))
       gMonitor.addMark("%s-All sites" % status,totalDict[status])
 
     return S_OK()
