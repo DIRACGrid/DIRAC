@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobHistoryAgent.py,v 1.1 2008/02/18 09:38:35 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobHistoryAgent.py,v 1.2 2008/02/18 09:42:04 atsareg Exp $
 
 
 """  JobHistoryAgent sends periodically numbers of jobs in various states for various
@@ -50,8 +50,9 @@ class JobHistoryAgent(Agent):
       site = dict['Site']
       status = dict['Status']
       count = dict['Count']
-      gMonitor.addMark("%s-%s" % (status,site),count)
-      totalDict[status] += count
+      if site in MONITOR_SITES:
+        gMonitor.addMark("%s-%s" % (status,site),count)
+        totalDict[status] += count
 
     for status in MONITOR_STATUS:
       gMonitor.addMark("%s-All sites" % status,totalDict[status])
