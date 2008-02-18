@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobHistoryAgent.py,v 1.3 2008/02/18 10:10:11 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobHistoryAgent.py,v 1.4 2008/02/18 17:25:46 atsareg Exp $
 
 
 """  JobHistoryAgent sends periodically numbers of jobs in various states for various
@@ -31,23 +31,32 @@ class JobHistoryAgent(Agent):
     for status in MONITOR_STATUS:
       for site in MONITOR_SITES:
         gLogger.verbose("Registering activity %s-%s" % (status,site)) 
-        gMonitor.registerActivity("%s-%s" % (status,site),"%s jos" % status,"JobHistoryAgent","Jobs",gMonitor.OP_MEAN)
+        gLogger.verbose("Jobs in %s state at %s" % (status,site)) 
+        gMonitor.registerActivity("%s-%s" % (status,site),"Jobs in %s state at %s" % (status,site),
+                                  "JobHistoryAgent","Jobs/minute",gMonitor.OP_MEAN)
 
+    self.last_update = 0
+    self.resultDB = None
+    self.reportPeriod = 300
     return S_OK()
 
   def execute(self):
     """ Main execution method
     """
 
-    result = self.jobDB.getCounters(['Status','Site'],{},'')    
-    if not result['OK']:
-      return S_ERROR('Failed to get data from the Job Database')
+    delta = time.time() - self.last_update
+    if delta > self.reportPeriod:
+      result = self.jobDB.getCounters(['Status','Site'],{},'')    
+      if not result['OK']:
+        return S_ERROR('Failed to get data from the Job Database')
+      self.resultDB = result['Value'] 
+      self.last_update = time.time() 
 
     totalDict = {}
     for status in MONITOR_STATUS:
       totalDict[status] = 0
 
-    for row in result['Value']:
+    for row in self.resultDB:
       dict = row[0]
       site = dict['Site']
       status = dict['Status']
