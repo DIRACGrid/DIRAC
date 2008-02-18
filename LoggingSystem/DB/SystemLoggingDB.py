@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/DB/SystemLoggingDB.py,v 1.11 2008/02/18 16:28:01 mseco Exp $
-__RCSID__ = "$Id: SystemLoggingDB.py,v 1.11 2008/02/18 16:28:01 mseco Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/DB/SystemLoggingDB.py,v 1.12 2008/02/18 19:20:21 mseco Exp $
+__RCSID__ = "$Id: SystemLoggingDB.py,v 1.12 2008/02/18 19:20:21 mseco Exp $"
 """ SystemLoggingDB class is a front-end to the Message Logging Database.
     The following methods are provided
 
@@ -91,6 +91,8 @@ class SystemLoggingDB(DB):
     """
     addTimeKey = True
     addOwnerKey = True
+    addIPkey = True
+
     internalList = self.__uniq( list( set( fieldList ) ) )
 
     if internalList.count( 'MessageTime' ): addTimeKey = False
@@ -110,6 +112,12 @@ class SystemLoggingDB(DB):
       internalList.remove( 'OwnerGroup' )
       if addOwnerKey:
         internalList.append( 'OwnerDN' )
+
+    if internalList.count( 'ClientIPNumberString' ): addIPKey = False
+    if internalList.count( 'ClientFQDN' ):
+      internalList.remove( 'ClientFQDN' )
+      if addIPKey:
+        internalList.append( 'ClientIPNumberString' )
 
     return internalList 
 
@@ -132,6 +140,8 @@ class SystemLoggingDB(DB):
     """ build the SQL list of tables needed for the query
         from the list of variables provided
     """
+    import re
+    iDpattern = re.compile( r'ID' )   
     tableDict = { 'MessageTime':'MessageRepository',
                   'FixedTextString':'FixedTextMessages',
                   'SystemName':'Systems', 'SubSystemName':'SubSystems',
@@ -151,8 +161,9 @@ class SystemLoggingDB(DB):
         tableString = 'MessageRepository'
 
         for field in fieldList:
-          tableString = '%s%s%s' % ( tableString, conjunction,
-                                     tableDict[ field ] )
+          if not iDpattern.search( field):
+            tableString = '%s%s%s' % ( tableString, conjunction,
+                                       tableDict[ field ] )
 
     else:
       tableString = conjunction.join( tableDict.values() )
@@ -353,12 +364,13 @@ class SystemLoggingDB(DB):
     return self.__queryDB( condDict = { 'ClientFDQN':  node},
                            older = endDate, newer = initialDate )
 
-  def getMessages(self, conds = {} , initialDate = None, endDate = None ):
+  def getMessages(self, showFields = [], conds = {} , initialDate = None,
+                  endDate = None ):
     """ Query the database for all messages satisfying 'conds' that were 
         generated between initialDate and endDate
     """
-    return self.__queryDB( condDict = conds, older = endDate,
-                           newer = initialDate )
+    return self.__queryDB( showFieldList = showFields, condDict = conds,
+                           older = endDate, newer = initialDate )
 
 
   def getCountMessages( self, conds = {}, initialDate = None, 

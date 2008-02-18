@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Agent/Attic/getErrorMessages.py,v 1.2 2008/02/18 16:28:01 mseco Exp $
-__RCSID__ = "$Id: getErrorMessages.py,v 1.2 2008/02/18 16:28:01 mseco Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Agent/Attic/getErrorMessages.py,v 1.3 2008/02/18 19:20:20 mseco Exp $
+__RCSID__ = "$Id: getErrorMessages.py,v 1.3 2008/02/18 19:20:20 mseco Exp $"
 """  getErrorNames get new errors that have been injected into the
      SystemLoggingDB and sends them by mail to the person(s) in charge
      of checking that they conform with DIRAC style. ReviewersMail option
@@ -12,7 +12,7 @@ from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 from DIRAC.LoggingSystem.DB.SystemLoggingDB import SystemLoggingDB
 from DIRAC.Core.Utilities import List, Mail
 
-AGENT_NAME = 'Logging/getErrorNames'
+AGENT_NAME = 'Logging/getErrorMessages'
 
 class getErrorMessages(Agent):
 
@@ -55,27 +55,34 @@ class getErrorMessages(Agent):
       self.log.info('No messages need review')
       return S_OK('No messages need review')
     else:
-      cmd = "SELECT FixedTextID,FixedTextString FROM FixedTextMessages WHERE ReviewedMessage=0"
-      result =  self.SystemLoggingDB._query( cmd )
+      conds = { 'ReviewedMessage': '0' }
+      returnFields = [ 'FixedTextID', 'FixedTextString', 'SystemName',
+                    'SubSystemName' ]
+      result =  self.SystemLoggingDB.getMessages( returnFields, conds )
       if not result['OK']:
-        self.log.error('Failed to obtain ')
+        self.log.error('Failed to obtain the non reviewed Strings',
+                       result['Message'])
         self.runFlag = False
         return S_OK()
       messageList = result['Value']
 
+      print messageList
       mailBody ='This new messages have arrived into the Logging Service\n'
       for message in messageList:
-        mailBody = mailBody+message[1]+"\n"
+        mailBody = mailBody + "String: '" + message[1] + "'\tSystem: '" \
+                   + message[2] + "'\tSubsystem: '" + message[3] + "'\n"
 
       self.mail._message = mailBody
+
       result = self.mail._send()
       if not result[ 'OK' ]:
          self.log.warn( "The mail could not be sent" )
          return S_OK()
 
       for message in messageList:
-        cmd = "UPDATE LOW_PRIORITY FixedTextMessages SET ReviewedMessage=1 WHERE FixedTextID=%s" % message[0]
-        result =  self.SystemLoggingDB._query( cmd )
+        cmd = "UPDATE LOW_PRIORITY FixedTextMessages SET ReviewedMessage=1"
+        cond = " WHERE FixedTextID=%s" % message[0]
+        result =  self.SystemLoggingDB._query( cmd + cond )
         if not result['OK']:
           self.log.error( 'Could not update status of Message', message[1] )
           return S_OK()
