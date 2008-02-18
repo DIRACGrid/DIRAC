@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/RRDManager.py,v 1.17 2008/02/18 14:19:00 acasajus Exp $
-__RCSID__ = "$Id: RRDManager.py,v 1.17 2008/02/18 14:19:00 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/RRDManager.py,v 1.18 2008/02/18 14:28:15 acasajus Exp $
+__RCSID__ = "$Id: RRDManager.py,v 1.18 2008/02/18 14:28:15 acasajus Exp $"
 import os
 import os.path
 import time
@@ -241,7 +241,7 @@ class RRDManager:
     else:
       rrdCmd += " 'LINE2:0#FF0000'"
     rrdCmd += self.__graphTimeComment()
-    retVal = self.__exec( rrdCmd, rrdFilePath )
+    retVal = self.__exec( rrdCmd )
     if not retVal[ 'OK' ]:
       return retVal
     return S_OK( graphFilename )
