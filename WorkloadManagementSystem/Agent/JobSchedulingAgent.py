@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.10 2008/01/29 15:36:25 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.11 2008/02/19 17:29:49 paterson Exp $
 # File :   JobSchedulingAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@
       meaningfully.
 
 """
-__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.10 2008/01/29 15:36:25 paterson Exp $"
+__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.11 2008/02/19 17:29:49 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
@@ -135,6 +135,7 @@ class JobSchedulingAgent(Optimizer):
     """
     dataDict = {}
     #Check input data agent result and limit site candidates accordingly
+    siteCandidates = {}
     dataResult = self.getOptimizerJobInfo(job,self.dataAgentName)
     if dataResult['OK'] and len(dataResult['Value']):
       self.log.debug(dataResult)
@@ -143,10 +144,10 @@ class JobSchedulingAgent(Optimizer):
         return S_ERROR('No possible site candidates')
       siteCandidates = dataResult['SiteCandidates'].keys()
     else:
-      self.log.debug('No information available for optimizer %s' %(self.dataAgentName))
+      self.log.warn('No information available for optimizer %s' %(self.dataAgentName))
 
-    if not len(siteCandidates):
-      msg = 'No possible sites for input data'
+    if not siteCandidates:
+      msg = 'File Catalog Access Failure'
       self.log.info(msg)
       return S_ERROR(msg)
 
