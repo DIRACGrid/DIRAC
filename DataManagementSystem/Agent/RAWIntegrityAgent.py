@@ -99,6 +99,7 @@ class RAWIntegrityAgent(Agent):
       setDIRACGroup(self.proxyGroup)
       self.log.info("RAWIntegrityAgent.execute: Successfully renewed %s proxy." %self.proxyDN)
 
+
     ############################################################
     #
     # Obtain the files which have not yet been migrated
@@ -175,7 +176,7 @@ class RAWIntegrityAgent(Agent):
             pfnMetadataDict['Checksum'] = 'Not available'
         castorChecksum = pfnMetadataDict['Checksum']
         onlineChecksum = activeFiles[lfn]['Checksum']
-        if castorChecksum.lstrip('0') == onlineChecksum.lstrip('0'):
+        if castorChecksum.lower().lstrip('0') == onlineChecksum.lower().lstrip('0'):
           gLogger.info("RAWIntegrityAgent.execute: %s migrated checksum match." % lfn)
           filesToRemove.append(lfn)
           activeFiles[lfn]['Checksum'] = castorChecksum
@@ -186,7 +187,7 @@ class RAWIntegrityAgent(Agent):
           filesToTransfer.append(lfn)
 
     migratedSize = 0
-    for lfn in fileMigrated:
+    for lfn in filesMigrated:
       migratedSize += int(activeFiles[lfn]['Size'])
     res = self.RAWIntegrityDB.getLastMonitorTimeDiff()
     if res['OK']:
