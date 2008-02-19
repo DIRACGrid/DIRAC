@@ -1,8 +1,8 @@
-# $Id: Workflow.py,v 1.25 2008/02/07 16:01:24 gkuznets Exp $
+# $Id: Workflow.py,v 1.26 2008/02/19 14:44:33 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.25 $"
+__RCSID__ = "$Revision: 1.26 $"
 
 import os
 import xml.sax
@@ -167,6 +167,25 @@ class Workflow(AttributeCollection):
 
   def createCode(self, combine_steps=False):
     self.resolveGlobalVars()
+    str=''
+    str=str+self.module_definitions.createCode()
+    str=str+self.step_definitions.createCode()
+    str=str+"\nclass job:\n"
+    str=str+indent(1)+'def execute(self):\n'
+    #str=str+indent(2)+'# flush self.step_instances\n'
+    str=str+self.step_instances.createCode()
+    # it seems we do not need it on this level
+    str=str+indent(2)+'# output assignment\n'
+    for v in self.parameters:
+      if v.isOutput():
+        str=str+v.createParameterCode(2,'self')
+
+    str=str+'\nj=job()\n'
+    str=str+self.parameters.createParametersCode(0,'j')
+    str=str+'j.execute()'
+    return str
+
+  def showCode(self, combine_steps=False):
     str=''
     str=str+self.module_definitions.createCode()
     str=str+self.step_definitions.createCode()
