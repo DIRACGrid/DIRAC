@@ -897,7 +897,7 @@ class SRM2Storage(StorageBase):
       localPath = '%s/%s' % (src_directory,file)
       remotePath = '%s/%s' % (dest_directory,file)
       if os.path.isdir(localPath):
-        res = self.__putDir(localPath,remoteDirectory)
+        res = self.__putDir(localPath,remotePath)
         if res['OK']:
           if res['Value']['AllPut']:
             pathSuccessful = True
