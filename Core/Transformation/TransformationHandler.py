@@ -99,8 +99,8 @@ class TransformationHandler(RequestHandler):
   #
 
   types_addDirectory = [StringType]
-  def export_addDirectory(self,path,force):
-    res = self.database.addDirectory(path,force)
+  def export_addDirectory(self,path): #,force):
+    res = self.database.addDirectory(path) #,force)
     return res
 
   types_exists = [ListType]

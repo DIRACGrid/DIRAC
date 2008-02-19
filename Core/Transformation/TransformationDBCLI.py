@@ -221,31 +221,6 @@ class TransformationDBCLI(cmd.Cmd):
     # KGG checking if directory has / at the end, if yes we remove it
     directory=directory.rstrip('/')
 
-    if not self.lfc:
-      from DIRAC.DataMgmt.FileCatalog.LcgFileCatalogClient import LcgFileCatalogClient
-      self.lfc = LcgFileCatalogClient()
-
-    start = time.time()
-    result = self.lfc.getPfnsInDir(directory)
-    end = time.time()
-    print "getPfnsInDir",directory,"operation time",(end-start)
-
-    lfns = []
-    if result['Status'] == 'OK':
-      lfndict = result['Replicas']
-      for lfn,repdict in lfndict.items():
-        for se,pfn in repdict.items():
-          lfns.append((se,lfn))
-
-    result = self.procdb.addFiles(lfns,force)
-    if result['Status'] != "OK":
-      print "Failed to add files with local LFC interrogation"
-      print "Trying the addDirectory on the Server side"
-    else:
-      print result['Message']
-      return
-
-    # Local file addition failed, try the remote one
     result = self.procdb.addDirectory(directory)
     if result['Status'] != "OK":
       print result['Message']

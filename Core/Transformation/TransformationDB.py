@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.34 2008/02/15 22:49:21 gkuznets Exp $
+# $Id: TransformationDB.py,v 1.35 2008/02/19 09:52:08 gkuznets Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -79,13 +79,13 @@ class TransformationDB(DB):
     """
     return self.dbname
 
-  def addTransformation(self, name, description, longDescription, authorDN, authorGroup, type, plugin, agentType,fileMask):
+  def addTransformation(self, name, description, longDescription, authorDN, authorGroup, type_, plugin, agentType,fileMask):
     """ Add new transformation definition including its input streams
     """
     self.lock.acquire()
     req = "INSERT INTO Transformations (TransformationName,Description,LongDescription,\
     CreationDate,AuthorDN,AuthorGroup,Type,Plugin,AgentType,FileMask,Status) VALUES\
-    ('%s','%s','%s',NOW(),'%s','%s','%s','%s','%s','%s','New');" % (name, description, longDescription,authorDN, authorGroup, type, plugin, agentType,fileMask)
+    ('%s','%s','%s',NOW(),'%s','%s','%s','%s','%s','%s','New');" % (name, description, longDescription,authorDN, authorGroup, type_, plugin, agentType,fileMask)
     res = self._update(req)
     if not res['OK']:
       self.lock.release()
@@ -102,6 +102,22 @@ class TransformationDB(DB):
     result = self.__addExistingFiles(transID)
     return S_OK(transID)
 
+  def modifyTransformation(self, transID, name, description, longDescription, authorDN, authorGroup, type_, plugin, agentType,fileMask):
+    # Warnung method updateTransformation already exists and its updating files
+    """ Updates transformation record
+    """
+    req = "UPDATE Transformations SET TransformationName='%s',Description='%s',LongDescription='%s',\
+    AuthorDN='%s',AuthorGroup='%s',Type='%s',Plugin='%s',AgentType='%s',FileMask='%s',Status='%s' WHERE TransformationID=%d;"%\
+    (name, description, longDescription, authorDN, authorGroup, type_, plugin, agentType, fileMask, transID)
+    res = self._update(req)
+    if not res['OK']:
+      return res
+    self.filters.append((transID,re.compile(fileMask)))
+    result = self.__addTransformationTable(transID)
+    # Add already existing files to this transformation if any
+    result = self.__addExistingFiles(transID)
+    return S_OK(transID)
+    
   def updateTransformationLogging(self,transName,message,authorDN):
     """ Update the Transformation log table with any modifications (we know who you are!!)
     """
