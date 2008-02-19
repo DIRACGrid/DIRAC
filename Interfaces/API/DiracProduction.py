@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.5 2008/02/18 19:19:51 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.6 2008/02/19 10:29:53 paterson Exp $
 # File :   LHCbJob.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are documented with example usage for the DIRAC API.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.5 2008/02/18 19:19:51 paterson Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.6 2008/02/19 10:29:53 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -45,7 +45,7 @@ class DiracProduction:
     self.section    = COMPONENT_NAME
     self.scratchDir = gConfig.getValue('/LocalSite/ScratchDir','/tmp')
     self.scratchDir = gConfig.getValue('/LocalSite/ScratchDir','/tmp')
-    self.submittedStatus = gConfig.getValue(self.section+'/ProcDBSubStatus','SUBMITTED')
+    self.submittedStatus = gConfig.getValue(self.section+'/ProcDBSubStatus','Submitted')
     self.defaultOwnerGroup = gConfig.getValue(self.section+'/DefaultOwnerGroup','lhcb_prod')
     self.prodClient = RPCClient('ProductionManagement/ProductionManager')
     self.toCleanUp = []
