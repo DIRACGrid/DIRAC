@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/RRDManager.py,v 1.20 2008/02/18 17:14:34 acasajus Exp $
-__RCSID__ = "$Id: RRDManager.py,v 1.20 2008/02/18 17:14:34 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/RRDManager.py,v 1.21 2008/02/19 18:55:38 acasajus Exp $
+__RCSID__ = "$Id: RRDManager.py,v 1.21 2008/02/19 18:55:38 acasajus Exp $"
 import os
 import os.path
 import time
@@ -167,6 +167,7 @@ class RRDManager:
     rrdType = activity.getType()
     bucketLength = activity.getBucketLength()
     yScaleFactor = self.__getYScalingFactor( timeSpan, bucketLength, plotWidth )
+    activity.setBucketScaleFactor( yScaleFactor )
     varStr = "'DEF:ac%sRAW=%s/%s:value:AVERAGE'" % ( entryName, self.rrdLocation, rrdFile )
     if rrdType in ( "mean", "rate" ):
       varStr += " 'CDEF:%s=ac%sRAW,UN,0,ac%sRAW,IF'" % ( entryName, entryName, entryName )
@@ -231,6 +232,7 @@ class RRDManager:
                                                     activity,
                                                     stackActivities
                                                     )
+    graphVar = self.__generateRRDGraphVar( 0, activity, plotTimeSpan, self.__sizesList[ size ][0] )
     rrdCmd = "%s graph %s/%s" % ( self.rrdExec, self.graphLocation, graphFilename )
     rrdCmd += " -s %s" % fromSecs
     rrdCmd += " -e %s" % toSecs
@@ -238,7 +240,7 @@ class RRDManager:
     rrdCmd += " -h %s" % self.__sizesList[ size ][1]
     rrdCmd += " --title '%s'" % activity.getLabel()
     rrdCmd += " --vertical-label '%s'" % activity.getUnit()
-    rrdCmd += " %s" % self.__generateRRDGraphVar( 0, activity, plotTimeSpan, self.__sizesList[ size ][0] )
+    rrdCmd += " %s" % graphVar
     if stackActivities:
       rrdCmd += " 'AREA:0#FF0000::STACK'"
     else:

@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/Activity.py,v 1.4 2008/02/18 17:14:34 acasajus Exp $
-__RCSID__ = "$Id: Activity.py,v 1.4 2008/02/18 17:14:34 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/Activity.py,v 1.5 2008/02/19 18:55:38 acasajus Exp $
+__RCSID__ = "$Id: Activity.py,v 1.5 2008/02/19 18:55:38 acasajus Exp $"
 
 import types
 from string import Template
@@ -26,10 +26,11 @@ class Activity:
     """
     self.dataList = dataList
     self.groupList = []
-    self.label = ""
     self.groupLabel = ""
     self.__initMapping()
     self.templateMap = {}
+    self.scaleFactor = 1
+    self.labelTemplate = ""
     for fieldName in self.dbFields:
       capsFieldName = fieldName.split(".")[1].upper()
       self.templateMap[ capsFieldName ] = self.__getField( fieldName )
@@ -41,6 +42,20 @@ class Activity:
     if not self.dbMapping:
       for index in range( len( self.dbFields ) ):
         self.dbMapping[ self.dbFields[index] ] = index
+
+  def setBucketScaleFactor( self, scaleFactor ):
+    self.scaleFactor = scaleFactor
+    self.__calculateUnit()
+
+  def __calculateUnit( self ):
+    unit = self.templateMap[ 'UNIT' ].split("/")[0]
+    if self.getType() in ( "sum" ):
+      sF = int( self.getBucketLength() * self.scaleFactor ) / 60
+      if sF == 1:
+        unit = "%s/min" % unit
+      else:
+        unit = "%s/%s mins" % ( unit, sF )
+    self.templateMap[ 'UNIT' ] = unit
 
   def setGroup( self, group ):
     """
@@ -56,9 +71,7 @@ class Activity:
     """
     Set activity label
     """
-    if type( labelTemplate ) == types.UnicodeType:
-      labelTemplate = labelTemplate.encode( "utf-8" )
-    self.label = Template( labelTemplate ).safe_substitute( self.templateMap )
+    self.labelTemplate = labelTemplate
 
   def __getField( self, name ):
     """
@@ -97,7 +110,9 @@ class Activity:
     return self.groupLabel
 
   def getLabel(self):
-    return self.label
+    if type( self.labelTemplate ) == types.UnicodeType:
+      self.labelTemplate = self.labelTemplate.encode( "utf-8" )
+    return Template( self.labelTemplate ).safe_substitute( self.templateMap )
 
   def __str__( self ):
     return "[%s][%s][%s]" % ( self.getLabel(), self.getGroupLabel(), str( self.dataList ) )
