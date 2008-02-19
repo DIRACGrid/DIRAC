@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/Activity.py,v 1.5 2008/02/19 18:55:38 acasajus Exp $
-__RCSID__ = "$Id: Activity.py,v 1.5 2008/02/19 18:55:38 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/Activity.py,v 1.6 2008/02/19 19:13:26 acasajus Exp $
+__RCSID__ = "$Id: Activity.py,v 1.6 2008/02/19 19:13:26 acasajus Exp $"
 
 import types
 from string import Template
@@ -48,13 +48,15 @@ class Activity:
     self.__calculateUnit()
 
   def __calculateUnit( self ):
-    unit = self.templateMap[ 'UNIT' ].split("/")[0]
+    self.dataList = list( self.dataList )
+    unit = self.dataList[ self.dbMapping[ 'activities.unit' ] ].split("/")[0]
     if self.getType() in ( "sum" ):
       sF = int( self.getBucketLength() * self.scaleFactor ) / 60
       if sF == 1:
         unit = "%s/min" % unit
       else:
         unit = "%s/%s mins" % ( unit, sF )
+    self.dataList[ self.dbMapping[ 'activities.unit' ] ] = unit
     self.templateMap[ 'UNIT' ] = unit
 
   def setGroup( self, group ):
