@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.35 2008/02/19 09:52:08 gkuznets Exp $
+# $Id: TransformationDB.py,v 1.36 2008/02/19 23:42:42 gkuznets Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -86,12 +86,17 @@ class TransformationDB(DB):
     req = "INSERT INTO Transformations (TransformationName,Description,LongDescription,\
     CreationDate,AuthorDN,AuthorGroup,Type,Plugin,AgentType,FileMask,Status) VALUES\
     ('%s','%s','%s',NOW(),'%s','%s','%s','%s','%s','%s','New');" % (name, description, longDescription,authorDN, authorGroup, type_, plugin, agentType,fileMask)
-    res = self._update(req)
+    result = self._getConnection()
+    if result['OK']:
+      connection = result['Value']
+    else:
+      return S_ERROR('Failed to get connection to MySQL: '+result['Message'])  
+    res = self._update(req,connection)
     if not res['OK']:
       self.lock.release()
       return res
     req = "SELECT LAST_INSERT_ID();"
-    res = self._query(req)
+    res = self._query(req,connection)
     self.lock.release()
     if not res['OK']:
       return res
@@ -500,10 +505,10 @@ PRIMARY KEY (FileID)
     res = self.catalog.getDirectoryReplicas(path)
     end = time.time()
     if not res['OK']:
-      gLogger.error("TransformationDB.addDirectory: Failed to get replicas." % res['Message'])
+      gLogger.error("TransformationDB.addDirectory: Failed to get replicas. %s" % res['Message'])
       return res
     elif not res['Value']['Successful'].has_key(path):
-      gLogger.error("TransformationDB.addDirectory: Failed to get replicas." % res['Message'])
+      gLogger.error("TransformationDB.addDirectory: Failed to get replicas. %s" % res['Message'])
       return res
     else:
       gLogger.info("TransformationDB.addDirectory: Obtained %s replicas in %s seconds." % (path,end-start))
@@ -671,12 +676,17 @@ PRIMARY KEY (FileID)
     else:
       self.lock.acquire()
       req = "INSERT INTO DataFiles (LFN,Status) VALUES ('%s','New');" % lfn
-      res = self._update(req)
+      result = self._getConnection()
+      if result['OK']:
+        connection = result['Value']
+      else:
+        return S_ERROR('Failed to get connection to MySQL: '+result['Message'])
+      res = self._update(req,connection)
       if not res['OK']:
         self.lock.release()
         return S_ERROR("TransformationDB.__addFile: %s" % res['Message'])
       req = " SELECT LAST_INSERT_ID();"
-      res = self._query(req)
+      res = self._query(req,connection)
       self.lock.release()
       if not res['OK']:
         return S_ERROR("TransformationDB.__addFile: %s" % res['Message'])

@@ -109,8 +109,8 @@ class TransformationHandler(RequestHandler):
     return res
 
   types_addFile = [ListType]
-  def export_addFile(self,fileTuples,force):
-    res = self.database.addFile(fileTuples,force)
+  def export_addFile(self,fileTuples): #,force):
+    res = self.database.addFile(fileTuples) #,force)
     return res
 
   types_removeFile = [ListType]
