@@ -171,6 +171,30 @@ class RemovalAgent(Agent):
 
         ################################################
         #  If the sub-request is a physical removal operation
+        elif operation == 'removeFile':
+          gLogger.info("RemovalAgent.execute: Attempting to execute %s sub-request." % operation)
+          lfns = []
+          for subRequestFile in subRequestFiles:
+            if subRequestFile['Status'] == 'Waiting':
+              lfn = str(subRequestFile['LFN'])
+              lfns.append(lfn)
+          gMonitor.addMark('RemoveFileAtt',len(lfns))
+          res = self.ReplicaManager.removeFile(lfns)
+          if res['OK']:
+            gMonitor.addMark('RemoveFileDone',len(res['Value']['Successful'].keys()))
+            for lfn in res['Value']['Successful'].keys():
+              gLogger.info("RemovalAgent.execute: Successfully removed %s." % lfn)
+              oRequest.setSubRequestFileAttributeValue(ind,'removal',lfn,'Status','Done')
+            gMonitor.addMark('RemoveFileFail',len(res['Value']['Failed'].keys()))
+            for lfn in res['Value']['Failed'].keys():
+              gLogger.info("RemovalAgent.execute: Failed to remove file.", "%s %s" % (lfn,res['Value']['Failed'][lfn]))
+          else:
+            gMonitor.addMark('RemoveFileFail',len(lfns))
+            errStr = "RemovalAgent.execute: Completely failed to remove files files."
+            gLogger.error(errStr, res['Message'])
+
+        ################################################
+        #  If the sub-request is a physical removal operation
         elif operation == 'replicaRemoval':
           gLogger.info("RemovalAgent.execute: Attempting to execute %s sub-request." % operation)
           diracSE = subRequestAttributes['TargetSE']
