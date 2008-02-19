@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.22 2008/02/12 14:02:50 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.23 2008/02/19 17:46:20 paterson Exp $
 # File  : Watchdog.py
 # Author: Stuart Paterson
 ########################################################################
@@ -18,7 +18,7 @@
           - CPU normalization for correct comparison with job limit
 """
 
-__RCSID__ = "$Id: Watchdog.py,v 1.22 2008/02/12 14:02:50 paterson Exp $"
+__RCSID__ = "$Id: Watchdog.py,v 1.23 2008/02/19 17:46:20 paterson Exp $"
 
 from DIRAC.Core.Base.Agent                          import Agent
 from DIRAC.Core.DISET.RPCClient                     import RPCClient
@@ -66,8 +66,8 @@ class Watchdog(Agent):
     self.testCPUConsumed = gConfig.getValue(self.section+'/CheckCPUConsumedFlag',1)
     self.testCPULimit    = gConfig.getValue(self.section+'/CheckCPULimitFlag',1)
     #Other parameters
-    self.pollingTime      = gConfig.getValue(self.section+'/PollingTime',5*60)
-    self.minPollingTime   = gConfig.getValue(self.section+'/MinPollingTime',60)
+    self.pollingTime      = gConfig.getValue(self.section+'/PollingTime',20*60)
+    self.minPollingTime   = gConfig.getValue(self.section+'/MinPollingTime',10*60)
     self.maxWallClockTime = gConfig.getValue(self.section+'/MaxWallClockTime',48*60*60) # e.g.2 days
     self.jobPeekFlag      = gConfig.getValue(self.section+'/JobPeekFlag',1) # on / off
     self.minDiskSpace     = gConfig.getValue(self.section+'/MinDiskSpace',10) #MB
