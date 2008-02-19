@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/dirac-pilot-lcg.py,v 1.15 2008/02/11 15:23:32 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/dirac-pilot-lcg.py,v 1.16 2008/02/19 17:48:24 paterson Exp $
 # File :   dirac-pilot-lcg.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,7 +13,7 @@ import os,sys,string,re
     for the VO.
 """
 
-__RCSID__ = "$Id: dirac-pilot-lcg.py,v 1.15 2008/02/11 15:23:32 paterson Exp $"
+__RCSID__ = "$Id: dirac-pilot-lcg.py,v 1.16 2008/02/19 17:48:24 paterson Exp $"
 
 
 DEBUG = 1
@@ -432,7 +432,8 @@ writeConfigFile('Security.cfg','DIRAC/Security',{'UseServerCertificate':'no'})
 
 #need to define watchdog control directory
 watchdogSection = 'Systems/WorkloadManagement/%s/Agents/Watchdog' %(wmsSetup)
-writeConfigFile('Watchdog.cfg',watchdogSection,{'PollingTime':20,'ControlDirectory':start})
+#writeConfigFile('Watchdog.cfg',watchdogSection,{'PollingTime':20,'ControlDirectory':start})
+writeConfigFile('Watchdog.cfg',watchdogSection,{'ControlDirectory':start})
 
 #setup local site SE to be automatically picked up in Job Wrapper arguments
 localSESection = 'LocalSite'
