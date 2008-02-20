@@ -10,6 +10,7 @@ from DIRAC.Core.Utilities.GridCredentials import setupProxy,setDIRACGroup, getPr
 import os,time
 from types import *
 
+
 AGENT_NAME = 'DataManagement/FTSMonitor'
 
 class FTSMonitor(Agent):
@@ -23,6 +24,7 @@ class FTSMonitor(Agent):
     result = Agent.initialize(self)
     self.TransferDB = TransferDB()
     self.monitorsPerLoop = gConfig.getValue(self.section+'/MonitorsPerLoop',1)
+    self.DataLog = RPCClient('DataManagement/DataLogging')
 
     self.useProxies = gConfig.getValue(self.section+'/UseProxies','True')
     if self.useProxies == 'True':
@@ -180,6 +182,7 @@ class FTSMonitor(Agent):
           errStr = "FTSAgent.%s" % res['Message']
           gLogger.error(errStr)
           failed = True
+        print self.DataLog.addFileRecord(lfn,'FTSFailed',str(ftsReqID),'','FTSMonitorAgent')
       # Update the successful files status and transfer time
       completedFileIDs = []
       for lfn in ftsReq.getCompleted():
@@ -216,6 +219,7 @@ class FTSMonitor(Agent):
             errStr = "FTSAgent.%s" % res['Message']
             gLogger.error(errStr)
             failed = True
+        print self.DataLog.addFileRecord(lfn,'FTSDone',str(ftsReqID),'','FTSMonitorAgent')
 
       # Update the status of the files waiting for the completion of this transfer
       res = self.TransferDB.updateAncestorChannelStatus(channelID,completedFileIDs)
