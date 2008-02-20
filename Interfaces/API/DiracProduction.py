@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.6 2008/02/19 10:29:53 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.7 2008/02/20 11:56:28 paterson Exp $
 # File :   LHCbJob.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are documented with example usage for the DIRAC API.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.6 2008/02/19 10:29:53 paterson Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.7 2008/02/20 11:56:28 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -46,11 +46,32 @@ class DiracProduction:
     self.scratchDir = gConfig.getValue('/LocalSite/ScratchDir','/tmp')
     self.scratchDir = gConfig.getValue('/LocalSite/ScratchDir','/tmp')
     self.submittedStatus = gConfig.getValue(self.section+'/ProcDBSubStatus','Submitted')
+    self.createdStatus = gConfig.getValue(self.section+'/ProcDBCreatedStatus','Created')
     self.defaultOwnerGroup = gConfig.getValue(self.section+'/DefaultOwnerGroup','lhcb_prod')
     self.prodClient = RPCClient('ProductionManagement/ProductionManager')
     self.toCleanUp = []
     self.proxy = getGridProxy()
     self.diracAPI = Dirac()
+
+  #############################################################################
+  def getActiveProductions(self):
+    """Returns a dictionary of production IDs and their status.
+    """
+    result = self.prodClient.getAllProductions()
+    if not result['OK']:
+      return result
+    prodList = result['Value']
+    currentProductions = {}
+    for prodDict in prodList:
+      self.log.debug(prodDict)
+      if prodDict.has_key('Status') and prodDict.has_key('TransID'):
+        prodID = prodDict['TransID']
+        status = prodDict['Status']
+        currentProductions[prodID] = status
+        if status.lower() == 'active':
+          self.log.verbose('Found active production %s eligible to submit jobs' %prodID)
+
+    return S_OK(currentProductions)
 
   #############################################################################
   def submitProduction(self,productionID,numberOfJobs,site=None):
@@ -97,9 +118,13 @@ class DiracProduction:
         if paramName=='InputData':
           self.log.verbose('Setting input data to %s' %paramValue)
           prodJob.setInputData(paramValue)
-      if site:
-        self.log.verbose('Setting destination site to %s' %(site))
-        prodJob.setDestination(site)
+        if paramName=='Site':
+          if site and not site==paramName:
+            return self.__errorReport(result,'Specified destination site %s does not match allocated site %s' %(site,paramName))
+          self.log.verbose('Setting destination site to %s' %(paramValue))
+          prodJob.setDestination(paramValue)
+        if paramName=='TargetSE':
+          self.log.verbose('Job is targeted to SE: %s' %(paramValue))
       self.log.verbose('Setting job owner to %s' %(userID))
       prodJob.setOwner(userID)
       self.log.verbose('Adding default job group of %s' %(self.defaultOwnerGroup))
@@ -108,26 +133,30 @@ class DiracProduction:
       prodJob.setName(constructedName)
       prodJob._setParamValue('PRODUCTION_ID',str(prodID).zfill(8))
       prodJob._setParamValue('JOB_ID',str(jobNumber).zfill(8))
-      self.log.debug(prodJob.createCode())
+      ###self.log.debug(prodJob.createCode()) #never create the code, it resolves global vars ;)
       updatedJob = self.__createJobDescriptionFile(prodJob._toXML())
       newJob = Job(updatedJob)
       self.log.verbose('Final XML file is %s' %updatedJob)
       subResult = self.__submitJob(newJob)
+      self.log.verbose(subResult)
       if subResult['OK']:
         jobID = subResult['Value']
         submitted.append(jobID)
         #Now update status in the processing DB
         result = self.prodClient.setJobStatusAndWmsID(long(prodID),long(jobNumber),self.submittedStatus,str(jobID))
-        self.log.debug(result)
         if not result['OK']:
-          return self.__errorReport(result,'Could not report status to ProcDB, stopping submission of further jobs')
+          self.log.warn('Could not report submitted status to ProcDB for job %s %s %s' %(prodID,jobNumber,jobID))
+          self.log.warn(result)
       else:
         failed.append(jobNumber)
-        self.log.warn(subResult)
+        self.log.warn('Job submission failed for productionID %s and prodJobID %s setting prodJob status to %s' %(prodID,jobNumber,self.createdStatus))
+        result = self.prodClient.setJobStatus(long(prodID),long(jobNumber),self.createdStatus)
+        if not result['OK']:
+          self.log.warn(result)
 
     self.__cleanUp()
     result = S_OK()
-    self.log.info('Job Submission Summary: Requested=%s, Submitted=%s, Failed=%s' %(number,len(submitted),len(failed)))
+    self.log.info('Job Submission Summary: ProdID=%s, Requested=%s, Submitted=%s, Failed=%s' %(prodID,number,len(submitted),len(failed)))
     result['Value'] = {'Successful':submitted,'Failed':failed}
     return result
 
@@ -137,7 +166,11 @@ class DiracProduction:
     if nickname['OK']:
       owner = nickname['Value']
       self.log.verbose('Established user nickname from current proxy ( %s )' %(owner))
-      return S_OK(owner)
+      if owner:
+        self.log.verbose('Obtained nickname from VOMS proxy => %s' %owner)
+        return S_OK(owner)
+      else:
+        self.log.verbose('Could not get nickname from current proxy credential, trying CS')
 
     activeDN = getCurrentDN()
     if not activeDN['OK']:
