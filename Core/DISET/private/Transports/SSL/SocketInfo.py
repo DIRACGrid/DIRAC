@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfo.py,v 1.14 2008/01/16 16:37:24 acasajus Exp $
-__RCSID__ = "$Id: SocketInfo.py,v 1.14 2008/01/16 16:37:24 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfo.py,v 1.15 2008/02/20 12:17:17 acasajus Exp $
+__RCSID__ = "$Id: SocketInfo.py,v 1.15 2008/02/20 12:17:17 acasajus Exp $"
 
 import time
 import copy
@@ -33,8 +33,9 @@ class SocketInfo:
 
   def gatherPeerCredentials( self ):
     peerCert = self.sslSocket.get_peer_certificate()
-    peerDN = self.__cleanDN( peerCert.get_subject() )
-    credDict = { 'DN' : peerDN }
+    certSubject = peerCert.get_subject()
+    peerDN = self.__cleanDN( certSubject )
+    credDict = { 'DN' : peerDN, 'CN' : certSubject.commonName }
     self.infoDict[ 'peerCredentials' ] = credDict
     return credDict
 
@@ -86,6 +87,7 @@ class SocketInfo:
     # Initialize context
     self.sslContext = SSL.Context( SSL.SSLv23_METHOD )
     self.sslContext.set_verify( SSL.VERIFY_PEER|SSL.VERIFY_FAIL_IF_NO_PEER_CERT, self.verifyCallback ) # Demand a certificate
+    #self.sslContext.set_verify( SSL.VERIFY_PEER|SSL.VERIFY_FAIL_IF_NO_PEER_CERT, None ) # Demand a certificate
     casPath = GridCredentials.getCAsLocation()
     if not casPath:
       DIRAC.abort( 10, "No valid CAs location found" )
@@ -136,5 +138,10 @@ class SocketInfo:
       gLogger.warn( "Error while handshaking", v )
       raise
     credentialsDict = self.gatherPeerCredentials()
+    if self.infoDict[ 'clientMode' ]:
+      hostnameCN = credentialsDict[ 'CN' ]
+      if hostnameCN.split("/")[-1] != self.infoDict[ 'hostname' ]:
+        gLogger.warn( "Server is not who it's supposed to be",
+                      "Connecting to %s and it's %s" % ( self.infoDict[ 'hostname' ], hostnameCN ) )
     gLogger.debug( "", "Authenticated peer (%s)" % credentialsDict[ 'DN' ] )
     return credentialsDict
