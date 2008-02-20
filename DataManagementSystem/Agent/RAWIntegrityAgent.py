@@ -30,6 +30,8 @@ class RAWIntegrityAgent(Agent):
     self.RequestDBClient = RequestClient()
     self.ReplicaManager = ReplicaManager()
     self.RAWIntegrityDB = RAWIntegrityDB()
+    self.DataLog = RPCClient('DataManagement/DataLogging')
+
     self.wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
     self.proxyDN = gConfig.getValue(self.section+'/ProxyDN')
     self.proxyGroup = gConfig.getValue(self.section+'/ProxyGroup')
@@ -78,7 +80,7 @@ class RAWIntegrityAgent(Agent):
         gLogger.error("RAWIntegrityAgent.execute: Could not determine the time left for proxy.", res['Message'])
         return S_OK()
       proxyValidity = int(res['Value'])
-      gLogger.error("RAWIntegrityAgent.execute: Current proxy found to be valid for %s seconds." % proxyValidity)
+      gLogger.info("RAWIntegrityAgent.execute: Current proxy found to be valid for %s seconds." % proxyValidity)
       self.log.info("RAWIntegrityAgent.execute: %s proxy found to be valid for %s seconds."% (self.proxyDN,proxyValidity))
       if proxyValidity <= 60:
         obtainProxy = True
@@ -178,12 +180,14 @@ class RAWIntegrityAgent(Agent):
         onlineChecksum = activeFiles[lfn]['Checksum']
         if castorChecksum.lower().lstrip('0') == onlineChecksum.lower().lstrip('0'):
           gLogger.info("RAWIntegrityAgent.execute: %s migrated checksum match." % lfn)
+          self.DataLog.addFileRecord(lfn,'Checksum match',castorChecksum,'','RAWIntegrityAgent')
           filesToRemove.append(lfn)
           activeFiles[lfn]['Checksum'] = castorChecksum
         elif pfnMetadataDict['Checksum'] == 'Not available':
           gLogger.info("RAWIntegrityAgent.execute: Unable to determine checksum.", lfn)
         else:
           gLogger.error("RAWIntegrityAgent.execute: Migrated checksum mis-match.","%s %s %s" % (lfn,castorChecksum.lstrip('0'),onlineChecksum.lstrip('0')))
+          self.DataLog.addFileRecord(lfn,'Checksum mismatch','%s %s' % (castorChecksum.lower().lstrip('0'),onlineChecksum.lower().lstrip('0')),'','RAWIntegrityAgent')
           filesToTransfer.append(lfn)
 
     migratedSize = 0
