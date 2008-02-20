@@ -23,6 +23,7 @@ class FTSRegister(Agent):
     result = Agent.initialize(self)
     self.TransferDB = TransferDB()
     self.ReplicaManager = ReplicaManager()
+    self.DataLog = RPCClient('DataManagement/DataLogging')
 
     self.useProxies = gConfig.getValue(self.section+'/UseProxies','True')
     if self.useProxies == 'True':
@@ -84,7 +85,7 @@ class FTSRegister(Agent):
     lfns = {}
     replicaTuples = []
     for fileID,channelID,lfn,pfn,se in res['Value']:
-      lfns[lfn] = (channelID,fileID)
+      lfns[lfn] = (channelID,fileID,se)
       replicaTuples.append((lfn,pfn,se))
     if replicaTuples:
       gLogger.info("FTSRegister.execute: Found  %s waiting replica registrations." % len(replicaTuples))
@@ -92,9 +93,12 @@ class FTSRegister(Agent):
       if not res['OK']:
         gLogger.error("FTSRegister.execute: Completely failed to regsiter replicas.",res['Message'])
         return S_OK()
+      channelID,fileID,se = lfns[lfn]
       for lfn in res['Value']['Successful'].keys():
-        channelID,fileID = lfns[lfn]
-        res = self.TransferDB.setRegistrationDone(channelID,fileID)
+        self.DataLog.addFileRecord(lfn,'Register',se,'','FTSRegisterAgent')
+        self.TransferDB.setRegistrationDone(channelID,fileID)
+      for lfn in res['Value']['Failed'].keys():
+        self.DataLog.addFileRecord(lfn,'RegisterFailed',se,'','FTSRegisterAgent') 
     else:
       gLogger.info("FTSRegister.execute: No waiting registrations found.")
     return S_OK()
