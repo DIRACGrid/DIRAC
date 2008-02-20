@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.10 2008/02/20 17:22:06 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.11 2008/02/20 17:25:34 paterson Exp $
 # File :   LHCbJob.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are documented with example usage for the DIRAC API.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.10 2008/02/20 17:22:06 paterson Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.11 2008/02/20 17:25:34 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -122,7 +122,7 @@ class DiracProduction:
           self.log.verbose('Setting input data to %s' %paramValue)
           prodJob.setInputData(paramValue)
         if paramName=='Site':
-          if site and not site==paramName:
+          if site and not site==paramValue:
             return self.__errorReport('Specified destination site %s does not match allocated site %s' %(site,paramName))
           self.log.verbose('Setting destination site to %s' %(paramValue))
           prodJob.setDestination(paramValue)
