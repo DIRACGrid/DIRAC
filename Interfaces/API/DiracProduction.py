@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.8 2008/02/20 15:16:38 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.9 2008/02/20 17:17:22 paterson Exp $
 # File :   LHCbJob.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are documented with example usage for the DIRAC API.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.8 2008/02/20 15:16:38 paterson Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.9 2008/02/20 17:17:22 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -79,7 +79,7 @@ class DiracProduction:
        to construct jobs, these are then submitted via the API.
     """
     if not type(productionID)==type(long(1)):
-      if not type(producitonID) == type(" "):      
+      if not type(producitonID) == type(" "):
         return self.__errorReport('Expected string or long for production ID')
 
     if type(numberOfJobs) == type(" "):
@@ -123,7 +123,7 @@ class DiracProduction:
           prodJob.setInputData(paramValue)
         if paramName=='Site':
           if site and not site==paramName:
-            return self.__errorReport(result,'Specified destination site %s does not match allocated site %s' %(site,paramName))
+            return self.__errorReport('Specified destination site %s does not match allocated site %s' %(site,paramName))
           self.log.verbose('Setting destination site to %s' %(paramValue))
           prodJob.setDestination(paramValue)
         if paramName=='TargetSE':
@@ -169,8 +169,8 @@ class DiracProduction:
     if not self.proxy:
       return self.__errorReport('No proxy found in local environment')
     else:
-      self.log.verbose('Current proxy is %s' %self.proxy)  
-    
+      self.log.verbose('Current proxy is %s' %self.proxy)
+
     nickname = getVOMSAttributes(self.proxy,'nickname')
     if nickname['OK']:
       owner = nickname['Value']
