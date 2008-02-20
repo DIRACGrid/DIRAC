@@ -1,14 +1,18 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfo.py,v 1.15 2008/02/20 12:17:17 acasajus Exp $
-__RCSID__ = "$Id: SocketInfo.py,v 1.15 2008/02/20 12:17:17 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfo.py,v 1.16 2008/02/20 18:52:39 acasajus Exp $
+__RCSID__ = "$Id: SocketInfo.py,v 1.16 2008/02/20 18:52:39 acasajus Exp $"
 
 import time
 import copy
-from OpenSSL import SSL, crypto
+import OpenSSL
 import DIRAC
 from DIRAC.Core.Utilities import GridCredentials
 from DIRAC.LoggingSystem.Client.Logger import gLogger
 
-SSL.set_thread_safe()
+requiredOpenSSLVersion = "0.7"
+if OpenSSL.version.__version__ < requiredOpenSSLVersion:
+  raise Exception( "pyOpenSSL is not the latest version (installed %s required %s)" % ( OpenSSL.version.__version__, requiredOpenSSLVersion ) )
+
+OpenSSL.SSL.set_thread_safe()
 
 class SocketInfo:
 
@@ -85,9 +89,9 @@ class SocketInfo:
 
   def __createContext( self ):
     # Initialize context
-    self.sslContext = SSL.Context( SSL.SSLv23_METHOD )
-    self.sslContext.set_verify( SSL.VERIFY_PEER|SSL.VERIFY_FAIL_IF_NO_PEER_CERT, self.verifyCallback ) # Demand a certificate
-    #self.sslContext.set_verify( SSL.VERIFY_PEER|SSL.VERIFY_FAIL_IF_NO_PEER_CERT, None ) # Demand a certificate
+    self.sslContext = OpenSSL.SSL.Context( OpenSSL.SSL.SSLv23_METHOD )
+    #self.sslContext.set_verify( SSL.VERIFY_PEER|SSL.VERIFY_FAIL_IF_NO_PEER_CERT, self.verifyCallback ) # Demand a certificate
+    self.sslContext.set_verify( OpenSSL.SSL.VERIFY_PEER|OpenSSL.SSL.VERIFY_FAIL_IF_NO_PEER_CERT, None ) # Demand a certificate
     casPath = GridCredentials.getCAsLocation()
     if not casPath:
       DIRAC.abort( 10, "No valid CAs location found" )
@@ -117,7 +121,7 @@ class SocketInfo:
   def __generateServerContext( self ):
       self.__generateContextWithCerts()
       self.sslContext.set_session_id( "DISETConnection%s" % str( time.time() ) )
-      self.sslContext.get_cert_store().set_flags( crypto.X509_CRL_CHECK )
+      self.sslContext.get_cert_store().set_flags( OpenSSL.crypto.X509_CRL_CHECK )
       self.sslContext.set_GSI_verify()
 
   def doClientHandshake( self ):
@@ -132,7 +136,7 @@ class SocketInfo:
   def __sslHandshake( self ):
     try:
       self.sslSocket.do_handshake()
-    except SSL.Error, v:
+    except OpenSSL.SSL.Error, v:
       #FIXME: S_ERROR?
       #gLogger.warn( "Error while handshaking", "\n".join( [ stError[2] for stError in v.args[0] ] ) )
       gLogger.warn( "Error while handshaking", v )
