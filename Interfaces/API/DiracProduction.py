@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.9 2008/02/20 17:17:22 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.10 2008/02/20 17:22:06 paterson Exp $
 # File :   LHCbJob.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are documented with example usage for the DIRAC API.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.9 2008/02/20 17:17:22 paterson Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.10 2008/02/20 17:22:06 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -79,7 +79,7 @@ class DiracProduction:
        to construct jobs, these are then submitted via the API.
     """
     if not type(productionID)==type(long(1)):
-      if not type(producitonID) == type(" "):
+      if not type(productionID) == type(" "):
         return self.__errorReport('Expected string or long for production ID')
 
     if type(numberOfJobs) == type(" "):
