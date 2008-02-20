@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.38 2008/02/20 16:23:00 acsmith Exp $
+# $Id: TransformationDB.py,v 1.39 2008/02/20 17:50:15 gkuznets Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -36,7 +36,7 @@ class TransformationDB(DB):
     self.dbname = dbname
     self.filters = self.__getFilters()
     self.catalog = None
-    self.DataLog = RPCClient('DataManagement/DataLogging')
+    self.dataLog = RPCClient('DataManagement/DataLogging')
 
   def getTransformationID(self, name):
     """ Method returns ID of transformation with the name=<name>
@@ -401,7 +401,11 @@ class TransformationDB(DB):
         if res['OK']:
           if res['Value']:
             for transID in res['Value']:
-              self.DataLog.addFileRecord(lfn,'AddedToTransformation','Transformation %s' % transID,'',dbname)
+              ret = self.dataLog.addFileRecord(lfn,'AddedToTransformation','Transformation %s' % transID,'',dbname)
+	      if not ret['OK']:
+	            gLogger.warning('Unable to add dataLogging record for Transformation %s FileID %s' % (transID, fileID))
+
+	        
     return S_OK()
 
   def __addTransformationTable(self,transID):
@@ -669,7 +673,10 @@ PRIMARY KEY (FileID)
               if res['Value']:
                 addedToTransformation = True
                 for transID in res['Value']:
-                  print self.DataLog.addFileRecord(lfn,'AddedToTransformation','Transformation %s' % transID,'',dbname) 
+                  ret = self.dataLog.addFileRecord(lfn,'AddedToTransformation','Transformation %s' % transID,'',dbname) 
+		  if not ret['OK']:
+ 	            gLogger.warning('Unable to add dataLogging record for Transformation %s FileID %s' % (transID, fileID))
+
           successful[lfn] = {'PassFilter':passFilter,'Retained':retained,'Forced':forced,'AddedToCatalog':addedToCatalog,'AddedToTransformation':addedToTransformation,'FileExists':fileExists,'ReplicaExists':replicaExists}
       else:
         successful[lfn] = {'PassFilter':passFilter,'Retained':retained,'Forced':forced,'AddedToCatalog':addedToCatalog,'AddedToTransformation':addedToTransformation}
