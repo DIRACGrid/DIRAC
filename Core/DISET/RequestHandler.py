@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.28 2008/01/16 16:36:13 acasajus Exp $
-__RCSID__ = "$Id: RequestHandler.py,v 1.28 2008/01/16 16:36:13 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.29 2008/02/20 16:13:55 acasajus Exp $
+__RCSID__ = "$Id: RequestHandler.py,v 1.29 2008/02/20 16:13:55 acasajus Exp $"
 
 import types
 from DIRAC.Core.DISET.private.FileHelper import FileHelper
@@ -185,8 +185,20 @@ class RequestHandler:
                                                                                   self.serviceInfoDict[ 'serviceName' ],
                                                                                   method ) )
     try:
+      mismatch = False
       for iIndex in range( min( len( oTypesList ), len( args ) ) ):
-        if not type( args[ iIndex ] ) == oTypesList[ iIndex ]:
+        #If none skip a parameter
+        if oTypesList[ iIndex ] == None:
+          continue
+        #If parameter is a list or a tuple check types inside
+        elif type( oTypesList[ iIndex ] ) in ( types.TupleType, types.ListType ):
+          if not type( args[ iIndex ] ) in oTypesList[ iIndex ]:
+            mismatch = True
+        #else check the parameter
+        elif not type( args[ iIndex ] ) == oTypesList[ iIndex ]:
+          mismatch = True
+        #Has there been a mismatch?
+        if mismatch:
           sError = "Type mismatch in parameter %d" % iIndex
           return S_ERROR( sError )
       if len( args ) < len( oTypesList ):
