@@ -228,13 +228,13 @@ class RAWIntegrityAgent(Agent):
         res = self.ReplicaManager.registerFile(fileTuple)
         print res
         if not res['OK']:
-          self.DataLog.addFileRecord(lfn,'RegsiterFailed',se,'','RAWIntegrityAgent')
+          self.DataLog.addFileRecord(lfn,'RegisterFailed',se,'','RAWIntegrityAgent')
           gLogger.error("RAWIntegrityAgent.execute: Completely failed to register successfully migrated file.", res['Message'])
         elif not res['Value']['Successful'].has_key(lfn):
-          self.DataLog.addFileRecord(lfn,'RegsiterFailed',se,'','RAWIntegrityAgent')
+          self.DataLog.addFileRecord(lfn,'RegisterFailed',se,'','RAWIntegrityAgent')
           gLogger.error("RAWIntegrityAgent.execute: Failed to register lfn in the File Catalog.", res['Value']['Failed'][lfn])
         else:
-          self.DataLog.addFileRecord(lfn,'Regsiter',se,'','RAWIntegrityAgent')
+          self.DataLog.addFileRecord(lfn,'Register',se,'','RAWIntegrityAgent')
           gLogger.info("RAWIntegrityAgent.execute: Successfully registered %s in the File Catalog." % lfn)
           ############################################################
           #
