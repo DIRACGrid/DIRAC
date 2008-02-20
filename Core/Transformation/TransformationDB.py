@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.37 2008/02/20 16:20:35 acsmith Exp $
+# $Id: TransformationDB.py,v 1.38 2008/02/20 16:23:00 acsmith Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -401,7 +401,7 @@ class TransformationDB(DB):
         if res['OK']:
           if res['Value']:
             for transID in res['Value']:
-              self.DataLog.addFileRecord(lfn,'AddedToTransformation','Transformation %s' % transID,'','TransformationDB')
+              self.DataLog.addFileRecord(lfn,'AddedToTransformation','Transformation %s' % transID,'',dbname)
     return S_OK()
 
   def __addTransformationTable(self,transID):
@@ -669,7 +669,7 @@ PRIMARY KEY (FileID)
               if res['Value']:
                 addedToTransformation = True
                 for transID in res['Value']:
-                  print self.DataLog.addFileRecord(lfn,'AddedToTransformation','Transformation %s' % transID,'','TransformationDB') 
+                  print self.DataLog.addFileRecord(lfn,'AddedToTransformation','Transformation %s' % transID,'',dbname) 
           successful[lfn] = {'PassFilter':passFilter,'Retained':retained,'Forced':forced,'AddedToCatalog':addedToCatalog,'AddedToTransformation':addedToTransformation,'FileExists':fileExists,'ReplicaExists':replicaExists}
       else:
         successful[lfn] = {'PassFilter':passFilter,'Retained':retained,'Forced':forced,'AddedToCatalog':addedToCatalog,'AddedToTransformation':addedToTransformation}
