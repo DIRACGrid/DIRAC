@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.39 2008/02/20 17:50:15 gkuznets Exp $
+# $Id: TransformationDB.py,v 1.40 2008/02/20 18:33:34 acsmith Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -401,7 +401,7 @@ class TransformationDB(DB):
         if res['OK']:
           if res['Value']:
             for transID in res['Value']:
-              ret = self.dataLog.addFileRecord(lfn,'AddedToTransformation','Transformation %s' % transID,'',dbname)
+              ret = self.dataLog.addFileRecord(lfn,'AddedToTransformation','Transformation %s' % transID,'',self.dbname)
 	      if not ret['OK']:
 	            gLogger.warning('Unable to add dataLogging record for Transformation %s FileID %s' % (transID, fileID))
 
@@ -673,7 +673,7 @@ PRIMARY KEY (FileID)
               if res['Value']:
                 addedToTransformation = True
                 for transID in res['Value']:
-                  ret = self.dataLog.addFileRecord(lfn,'AddedToTransformation','Transformation %s' % transID,'',dbname) 
+                  ret = self.dataLog.addFileRecord(lfn,'AddedToTransformation','Transformation %s' % transID,'',self.dbname) 
 		  if not ret['OK']:
  	            gLogger.warning('Unable to add dataLogging record for Transformation %s FileID %s' % (transID, fileID))
 
