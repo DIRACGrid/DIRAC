@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.23 2008/02/19 17:46:20 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.24 2008/02/20 16:51:43 paterson Exp $
 # File  : Watchdog.py
 # Author: Stuart Paterson
 ########################################################################
@@ -18,7 +18,7 @@
           - CPU normalization for correct comparison with job limit
 """
 
-__RCSID__ = "$Id: Watchdog.py,v 1.23 2008/02/19 17:46:20 paterson Exp $"
+__RCSID__ = "$Id: Watchdog.py,v 1.24 2008/02/20 16:51:43 paterson Exp $"
 
 from DIRAC.Core.Base.Agent                          import Agent
 from DIRAC.Core.DISET.RPCClient                     import RPCClient
@@ -605,31 +605,35 @@ class Watchdog(Agent):
       value = wrapCPU[-1]
       summary['WrapperCPUConsumed(h:m:s)']=value
 
-    self.reportParameters(summary,'UsageSummary')
+    self.reportParameters(summary,'UsageSummary',True)
 
   #############################################################################
   def reportParameters(self,params,title=None,report=False):
     """Will report parameters for job.
     """
-    parameters = []
-    self.log.info('==========================================================')
-    if title:
-      self.log.info('Watchdog will report %s' % (title))
-    else:
-      self.log.info('Watchdog will report parameters')
-    self.log.info('==========================================================')
-    vals = params
-    if params.has_key('Value'):
-      if vals['Value']:
-        vals = params['Value']
-    for k,v in vals.items():
-      if v:
-        self.log.info(str(k)+' = '+str(v))
-        parameters.append((k,v))
-    if report:
-      self.__setJobParamList(parameters)
+    try:
+      parameters = []
+      self.log.info('==========================================================')
+      if title:
+        self.log.info('Watchdog will report %s' % (title))
+      else:
+        self.log.info('Watchdog will report parameters')
+      self.log.info('==========================================================')
+      vals = params
+      if params.has_key('Value'):
+        if vals['Value']:
+          vals = params['Value']
+      for k,v in vals.items():
+        if v:
+          self.log.info(str(k)+' = '+str(v))
+          parameters.append((k,v))
+      if report:
+        self.__setJobParamList(parameters)
 
-    self.log.info('==========================================================')
+      self.log.info('==========================================================')
+    except Exception,x:
+      self.log.warn('Problem while reporting parameters')
+      self.log.warn(str(x))
 
   #############################################################################
   def getWallClockTime(self):
