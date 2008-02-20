@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/RRDManager.py,v 1.21 2008/02/19 18:55:38 acasajus Exp $
-__RCSID__ = "$Id: RRDManager.py,v 1.21 2008/02/19 18:55:38 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/RRDManager.py,v 1.22 2008/02/20 08:21:21 acasajus Exp $
+__RCSID__ = "$Id: RRDManager.py,v 1.22 2008/02/20 08:21:21 acasajus Exp $"
 import os
 import os.path
 import time
@@ -214,7 +214,7 @@ class RRDManager:
       if stackActivities:
         rrdCmd += " 'AREA:%s#%s:%s:STACK'" % ( idActivity, colorGen.getHexColor(), activity.getLabel().replace( ":", "\:" ) )
       else:
-        rrdCmd += " 'LINE2:%s#%s:%s'" % ( idActivity, colorGen.getHexColor(), activity.getLabel().replace( ":", "\:" ) )
+        rrdCmd += " 'LINE1:%s#%s:%s'" % ( idActivity, colorGen.getHexColor(), activity.getLabel().replace( ":", "\:" ) )
     rrdCmd += self.__graphTimeComment()
     retVal = self.__exec( rrdCmd )
     if not retVal[ 'OK' ]:
@@ -242,9 +242,9 @@ class RRDManager:
     rrdCmd += " --vertical-label '%s'" % activity.getUnit()
     rrdCmd += " %s" % graphVar
     if stackActivities:
-      rrdCmd += " 'AREA:0#FF0000::STACK'"
+      rrdCmd += " 'AREA:0#0000FF::STACK'"
     else:
-      rrdCmd += " 'LINE2:0#FF0000'"
+      rrdCmd += " 'LINE1:0#0000FF'"
     rrdCmd += self.__graphTimeComment()
     retVal = self.__exec( rrdCmd )
     if not retVal[ 'OK' ]:
