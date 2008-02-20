@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.7 2008/02/20 11:56:28 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.8 2008/02/20 15:16:38 paterson Exp $
 # File :   LHCbJob.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are documented with example usage for the DIRAC API.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.7 2008/02/20 11:56:28 paterson Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.8 2008/02/20 15:16:38 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -25,7 +25,7 @@ from DIRAC.Core.Workflow.Step                       import *
 from DIRAC.Core.Workflow.Workflow                   import *
 from DIRAC.Core.Workflow.WorkflowReader             import *
 from DIRAC.Interfaces.API.Job                       import Job
-from DIRAC.Interfaces.API.Dirac                     import Dirac
+#from DIRAC.Interfaces.API.Dirac                     import Dirac
 from DIRAC.Core.DISET.RPCClient                     import RPCClient
 from DIRAC.Core.Utilities.File                      import makeGuid
 from DIRAC.Core.Utilities.GridCredentials           import getGridProxy,getVOMSAttributes,getCurrentDN
@@ -50,8 +50,8 @@ class DiracProduction:
     self.defaultOwnerGroup = gConfig.getValue(self.section+'/DefaultOwnerGroup','lhcb_prod')
     self.prodClient = RPCClient('ProductionManagement/ProductionManager')
     self.toCleanUp = []
-    self.proxy = getGridProxy()
-    self.diracAPI = Dirac()
+    self.proxy = None
+    #self.diracAPI = Dirac()
 
   #############################################################################
   def getActiveProductions(self):
@@ -74,12 +74,14 @@ class DiracProduction:
     return S_OK(currentProductions)
 
   #############################################################################
-  def submitProduction(self,productionID,numberOfJobs,site=None):
+  def submitProduction(self,productionID,numberOfJobs,site=''):
     """Calls the production manager service to retrieve the necessary information
        to construct jobs, these are then submitted via the API.
     """
-    if not type(productionID) == type(" "):
-      return self.__errorReport('Expected string for production ID')
+    if not type(productionID)==type(long(1)):
+      if not type(producitonID) == type(" "):      
+        return self.__errorReport('Expected string or long for production ID')
+
     if type(numberOfJobs) == type(" "):
       try:
         numberOfJobs = int(numberOfJobs)
@@ -90,7 +92,7 @@ class DiracProduction:
     if not userID['OK']:
       return self.__errorReport(userID,'Could not establish user ID from proxy credential or configuration')
 
-    result = self.prodClient.getJobsToSubmit(long(productionID),numberOfJobs,site)
+    result = self.prodClient.getJobsToSubmit(long(productionID),int(numberOfJobs),str(site))
     if not result['OK']:
       return self.__errorReport(result,'Problem while requesting data from ProductionManager')
 
@@ -112,6 +114,7 @@ class DiracProduction:
     jfilename = self.__createJobDescriptionFile(xmlString)
     prodJob = Job(jfilename)
     jobDict = prodDict['JobDictionary']
+    self.log.verbose(jobDict)
     for jobNumber,paramsDict in jobDict.items():
       for paramName,paramValue in paramsDict.items():
         self.log.verbose('ProdID: %s, JobID: %s, ParamName: %s, ParamValue: %s' %(prodID,jobNumber,paramName,paramValue))
@@ -162,6 +165,12 @@ class DiracProduction:
 
   #############################################################################
   def __getCurrentUser(self):
+    self.proxy = getGridProxy()
+    if not self.proxy:
+      return self.__errorReport('No proxy found in local environment')
+    else:
+      self.log.verbose('Current proxy is %s' %self.proxy)  
+    
     nickname = getVOMSAttributes(self.proxy,'nickname')
     if nickname['OK']:
       owner = nickname['Value']
@@ -220,11 +229,12 @@ class DiracProduction:
   def __submitJob(self,prodJob):
     """Wrapper to submit job to WMS.
     """
+    from DIRAC.Interfaces.API.Dirac import Dirac #to force the WMS Client to pick up the current proxy
+    diracAPI = Dirac()
     self.log.verbose('Attempting to submit job to WMS')
-    submitted = self.diracAPI.submit(prodJob)
+    submitted = diracAPI.submit(prodJob)
     if not submitted['OK']:
       self.log.warn('Problem during submission of job')
-      self.log.warn(submitted)
     return submitted
 
   #############################################################################
