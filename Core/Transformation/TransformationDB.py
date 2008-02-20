@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.36 2008/02/19 23:42:42 gkuznets Exp $
+# $Id: TransformationDB.py,v 1.37 2008/02/20 16:20:35 acsmith Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -18,6 +18,8 @@ from DIRAC.Core.Base.DB import DB
 from DIRAC.DataManagementSystem.Client.Catalog.LcgFileCatalogClient import LcgFileCatalogClient
 from DIRAC.DataManagementSystem.Client.Catalog.FileCatalogueBase import FileCatalogueBase
 from DIRAC.Core.Utilities.List import stringListToString, intListToString
+from DIRAC.Core.DISET.RPCClient import RPCClient
+
 import threading
 
 #############################################################################
@@ -34,7 +36,7 @@ class TransformationDB(DB):
     self.dbname = dbname
     self.filters = self.__getFilters()
     self.catalog = None
-
+    self.DataLog = RPCClient('DataManagement/DataLogging')
 
   def getTransformationID(self, name):
     """ Method returns ID of transformation with the name=<name>
@@ -395,7 +397,11 @@ class TransformationDB(DB):
     for lfn,fileID in res['Value']:
       resultFilter = self.__filterFile(lfn,filters)
       if resultFilter:
-        result = self.__addFileToTransformation(fileID,resultFilter)
+        res = self.__addFileToTransformation(fileID,resultFilter)
+        if res['OK']:
+          if res['Value']:
+            for transID in res['Value']:
+              self.DataLog.addFileRecord(lfn,'AddedToTransformation','Transformation %s' % transID,'','TransformationDB')
     return S_OK()
 
   def __addTransformationTable(self,transID):
@@ -437,7 +443,7 @@ PRIMARY KEY (FileID)
        Add file to all the transformations which require this kind of files.
        resultFilter is a list of pairs transID,StreamName which needs this file
     """
-
+    addedTransforms = []
     if resultFilter:
       for transID in resultFilter:
         req = "SELECT * FROM T_%s WHERE FileID=%s;" % (transID,fileID)
@@ -449,10 +455,12 @@ PRIMARY KEY (FileID)
           res = self._update(req)
           if not res['OK']:
             return res
-          gLogger.info("TransformationDB.__addFileToTransformation: File %s added to transformation %s." % (fileID,transID))
+          else:
+            gLogger.info("TransformationDB.__addFileToTransformation: File %s added to transformation %s." % (fileID,transID))
+            addedTransforms.append(transID)
         else:
           gLogger.info("TransformationDB.__addFileToTransformation: File %s already present in transformation %s." % (fileID,transID))
-    return S_OK()
+    return S_OK(addedTransforms)
 
   def __getFileIDsForLfns(self,lfns):
     """ Get file IDs for the given list of lfns
@@ -658,7 +666,10 @@ PRIMARY KEY (FileID)
           if lFilters:
             res = self.__addFileToTransformation(fileID,lFilters)
             if res['OK']:
-              addedToTransformation = True
+              if res['Value']:
+                addedToTransformation = True
+                for transID in res['Value']:
+                  print self.DataLog.addFileRecord(lfn,'AddedToTransformation','Transformation %s' % transID,'','TransformationDB') 
           successful[lfn] = {'PassFilter':passFilter,'Retained':retained,'Forced':forced,'AddedToCatalog':addedToCatalog,'AddedToTransformation':addedToTransformation,'FileExists':fileExists,'ReplicaExists':replicaExists}
       else:
         successful[lfn] = {'PassFilter':passFilter,'Retained':retained,'Forced':forced,'AddedToCatalog':addedToCatalog,'AddedToTransformation':addedToTransformation}
