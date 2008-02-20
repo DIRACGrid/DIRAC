@@ -1,4 +1,4 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.20 2008/02/18 14:24:44 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.21 2008/02/20 19:48:30 atsareg Exp $
 
 """ Grid Credentials module contains utilities to manage user and host
     certificates and proxies.
@@ -33,7 +33,7 @@
     getVOMSProxyInfo()
 """
 
-__RCSID__ = "$Id: GridCredentials.py,v 1.20 2008/02/18 14:24:44 atsareg Exp $"
+__RCSID__ = "$Id: GridCredentials.py,v 1.21 2008/02/20 19:48:30 atsareg Exp $"
 
 import os
 import os.path
@@ -673,104 +673,30 @@ def renewProxy(proxy,lifetime=72,
   if lifetime > MAX_PROXY_VALIDITY_DAYS*24:
     lifetime = MAX_PROXY_VALIDITY_DAYS*24
 
-  rm_proxy = 0
-  try:
-    if not os.path.exists(proxy):
-      result = setupProxy(proxy)
-      if result["OK"]:
-        new_proxy,old_proxy = result["Value"]
-        rm_proxy = 1
-      else:
-        return S_ERROR('Failed to setup given proxy. Proxy is: %s' % (proxy))
-    else:
-      new_proxy = proxy
-  except ValueError:
-    return S_ERROR('Failed to setup given proxy. Proxy is: %s' % (proxy))
-
   # Get voms extensions if any and convert it to option format
-  result = getVOMSAttributes(new_proxy,"option")
+  result = getVOMSAttributes(proxy,"option")
   if result["OK"]:
     voms_attr = result["Value"]
   else:
     voms_attr = ""
-    
-  #voms_attr = "lhcb:/lhcb/Role=pilot"  
-
-  # Get proxy from MyProxy service
-  try:
-    f_descriptor,my_proxy = tempfile.mkstemp()
-    os.close(f_descriptor)####
-  except IOError:
-    if os.path.exists(new_proxy) and rm_proxy == 1:
-      os.remove(new_proxy)
-      restoreProxy(new_proxy,old_proxy)
-    return S_ERROR('Failed to create temporary file for store proxy from MyProxy service')
-  #os.chmod(my_proxy, stat.S_IRUSR | stat.S_IWUSR)
-
-  # myproxy-get-delegation works only with environment variables
-  old_server_key = ''
-  if os.environ.has_key("X509_USER_KEY"):
-    old_server_key = os.environ["X509_USER_KEY"]
-  old_server_cert = ''
-  if os.environ.has_key("X509_USER_CERT"):
-    old_server_cert = os.environ["X509_USER_CERT"]
-  os.environ["X509_USER_KEY"] = server_key
-  os.environ["X509_USER_CERT"] = server_cert
-
-  # Here "lifetime + 1" used just for get rid off warning status rised by voms-proxy-init
-  cmd = "myproxy-get-delegation -s %s -a %s -d -t %s -o %s" % (server, new_proxy, lifetime + 1, my_proxy)
-  result = shellCall(PROXY_COMMAND_TIMEOUT,cmd)
-
+  
+  # Get extended plain proxy from the MyProxy server  
+  result = getMyProxyDelegation(proxy,lifetime,server,server_key,server_cert)
   if not result['OK']:
-    return S_ERROR('Call to myproxy-get-delegation failed')
-  status,output,error = result['Value']
-
-  # Clean-up files
-  if status:
-    if os.path.exists(new_proxy) and rm_proxy == 1:
-      restoreProxy(new_proxy,old_proxy)
-    if os.path.exists(my_proxy):
-      os.remove(my_proxy)
-    return S_ERROR('Failed to get delegations. Command: %s; StdOut: %s; StdErr: %s' % (cmd,result,error))
-
-  if old_server_key:
-    os.environ["X509_USER_KEY"] = old_server_key
-  else:
-    del os.environ["X509_USER_KEY"]
-  if old_server_cert:
-    os.environ["X509_USER_CERT"] = old_server_cert
-  else:
-    del os.environ["X509_USER_CERT"]
-
-  try:
-    f = open(my_proxy, 'r')
-    proxy_string = f.read() # extended proxy as a string
-    f.close()
-  except IOError:
-    if os.path.exists(new_proxy) and rm_proxy == 1:
-      restoreProxy(new_proxy,old_proxy)
-    if os.path.exists(my_proxy):
-      os.remove(my_proxy)
-    return S_ERROR('Failed to read proxy received from MyProxy service')
+    return result
+    
+  proxy_string = result['Value']  
 
   if len(voms_attr) > 0:
     result = createVOMSProxy(proxy_string,voms_attr)
     if result["OK"]:
       proxy_string = result["Value"]
     else:
-      if os.path.exists(new_proxy) and rm_proxy == 1:
-        restoreProxy(new_proxy,old_proxy)
-      if os.path.exists(my_proxy):
-        os.remove(my_proxy)
       return S_ERROR('Failed to create VOMS proxy')
-
-  if os.path.exists(new_proxy) and rm_proxy == 1:
-    restoreProxy(new_proxy,old_proxy)
-  if os.path.exists(my_proxy):
-    os.remove(my_proxy)
+      
   return S_OK(proxy_string)
   
-  
+#######################################################################################  
 def getMyProxyDelegation(proxy,lifetime=72,
                          server="myproxy.cern.ch",
                          server_key="/opt/dirac/etc/grid-security/serverkey.pem",
@@ -812,9 +738,19 @@ def getMyProxyDelegation(proxy,lifetime=72,
   os.environ["X509_USER_KEY"] = server_key
   os.environ["X509_USER_CERT"] = server_cert
 
-  # Here "lifetime + 1" used just for get rid off warning status raised by voms-proxy-init
+  # Here "lifetime + 1" used just to get rid off warning status raised by the voms-proxy-init
   cmd = "myproxy-get-delegation -s %s -a %s -d -t %s -o %s" % (server, new_proxy, lifetime + 1, my_proxy)
   result = shellCall(PROXY_COMMAND_TIMEOUT,cmd)
+
+  # Return back the environment in any outcome case
+  if old_server_key:
+    os.environ["X509_USER_KEY"] = old_server_key
+  else:
+    del os.environ["X509_USER_KEY"]
+  if old_server_cert:
+    os.environ["X509_USER_CERT"] = old_server_cert
+  else:
+    del os.environ["X509_USER_CERT"] 
 
   if not result['OK']:
     if os.path.exists(new_proxy) and rm_proxy == 1:
@@ -831,15 +767,6 @@ def getMyProxyDelegation(proxy,lifetime=72,
     if os.path.exists(my_proxy):
       os.remove(my_proxy)
     return S_ERROR('Failed to get delegations. Command: %s; StdOut: %s; StdErr: %s' % (cmd,result,error))
-
-  if old_server_key:
-    os.environ["X509_USER_KEY"] = old_server_key
-  else:
-    del os.environ["X509_USER_KEY"]
-  if old_server_cert:
-    os.environ["X509_USER_CERT"] = old_server_cert
-  else:
-    del os.environ["X509_USER_CERT"]
 
   try:
     f = open(my_proxy, 'r')
