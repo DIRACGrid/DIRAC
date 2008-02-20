@@ -228,10 +228,13 @@ class RAWIntegrityAgent(Agent):
         res = self.ReplicaManager.registerFile(fileTuple)
         print res
         if not res['OK']:
+          self.DataLog.addFileRecord(lfn,'RegsiterFailed',se,'','RAWIntegrityAgent')
           gLogger.error("RAWIntegrityAgent.execute: Completely failed to register successfully migrated file.", res['Message'])
         elif not res['Value']['Successful'].has_key(lfn):
+          self.DataLog.addFileRecord(lfn,'RegsiterFailed',se,'','RAWIntegrityAgent')
           gLogger.error("RAWIntegrityAgent.execute: Failed to register lfn in the File Catalog.", res['Value']['Failed'][lfn])
         else:
+          self.DataLog.addFileRecord(lfn,'Regsiter',se,'','RAWIntegrityAgent')
           gLogger.info("RAWIntegrityAgent.execute: Successfully registered %s in the File Catalog." % lfn)
           ############################################################
           #
@@ -278,10 +281,13 @@ class RAWIntegrityAgent(Agent):
         guid = activeFiles[lfn]['GUID']
         res = self.ReplicaManager.removePhysicalFile(se,pfn)
         if not res['OK']:
+          self.DataLog.addFileRecord(lfn,'RemoveReplicaFailed',se,'','RAWIntegrityAgent')
           gLogger.error("RAWIntegrityAgent.execute: Completely failed to remove pfn from the storage element.", res['Message'])
         elif not res['Value']['Successful'].has_key(pfn):
+          self.DataLog.addFileRecord(lfn,'RemoveReplicaFailed',se,'','RAWIntegrityAgent')
           gLogger.error("RAWIntegrityAgent.execute: Failed to remove pfn from the storage element.", res['Value']['Failed'][pfn])
         else:
+          self.DataLog.addFileRecord(lfn,'RemoveReplica',se,'','RAWIntegrityAgent')
           gLogger.info("RAWIntegrityAgent.execute: Successfully removed pfn from the storage element.")
           ############################################################
           #
