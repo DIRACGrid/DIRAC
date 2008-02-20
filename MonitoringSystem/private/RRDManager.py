@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/RRDManager.py,v 1.22 2008/02/20 08:21:21 acasajus Exp $
-__RCSID__ = "$Id: RRDManager.py,v 1.22 2008/02/20 08:21:21 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/RRDManager.py,v 1.23 2008/02/20 16:50:40 acasajus Exp $
+__RCSID__ = "$Id: RRDManager.py,v 1.23 2008/02/20 16:50:40 acasajus Exp $"
 import os
 import os.path
 import time
@@ -46,7 +46,7 @@ class RRDManager:
     if self.__logRRDCommands and rrdFile:
       try:
         fd = file( "%s.log" % rrdFile, "a" )
-        if not retVal[ 'OK' ]:
+        if not retVal[ 'OK' ] or retVal[ 'OK' ][0]:
           fd.write( "ERROR %s\n" % cmd )
         else:
           fd.write( "OK    %s\n" % cmd )
