@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/ColorGenerator.py,v 1.1 2007/12/19 18:04:30 acasajus Exp $
-__RCSID__ = "$Id: ColorGenerator.py,v 1.1 2007/12/19 18:04:30 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/ColorGenerator.py,v 1.2 2008/02/20 08:21:34 acasajus Exp $
+__RCSID__ = "$Id: ColorGenerator.py,v 1.2 2008/02/20 08:21:34 acasajus Exp $"
 
 class ColorGenerator:
 
@@ -28,17 +28,17 @@ class ColorGenerator:
     def __generateColor( self ):
         iNumColorsUsed = len( self.lUsedColors )
         if iNumColorsUsed == 0:
-            self.lUsedColors.append( ( 255, 0, 0 ) )
+            self.lUsedColors.append( ( 0, 0, 255 ) )
         elif iNumColorsUsed == 1:
             self.lUsedColors.append( ( 0, 255, 0 ) )
         elif iNumColorsUsed == 2:
-            self.lUsedColors.append( ( 0, 0, 255 ) )
+            self.lUsedColors.append( ( 255, 0, 0 ) )
         elif iNumColorsUsed == 3:
-            self.lUsedColors.append( ( 255, 255, 0 ) )
+            self.lUsedColors.append( ( 0, 255, 255 ) )
         elif iNumColorsUsed == 4:
             self.lUsedColors.append( ( 255, 0, 255 ) )
         elif iNumColorsUsed == 5:
-            self.lUsedColors.append( ( 0, 255, 255 ) )
+            self.lUsedColors.append( ( 255, 255, 0 ) )
         else:
             im = 0
             iM = 1
