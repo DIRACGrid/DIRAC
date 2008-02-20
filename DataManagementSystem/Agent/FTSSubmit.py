@@ -25,6 +25,7 @@ class FTSSubmit(Agent):
     self.filesPerJob = gConfig.getValue(self.section+'/MaxFilesPerJob',50)
     self.maxJobsPerChannel = gConfig.getValue(self.section+'/MaxJobsPerChannel',2)
     self.submissionsPerLoop = gConfig.getValue(self.section+'/SubmissionsPerLoop',1)
+    self.DataLog = RPCClient('DataManagement/DataLogging')
 
     self.useProxies = gConfig.getValue(self.section+'/UseProxies','True')
     if self.useProxies == 'True':
@@ -192,7 +193,10 @@ class FTSSubmit(Agent):
       errStr = "FTSAgent.%s" % res['Message']
       gLogger.error(errStr)
       return S_ERROR(errStr)
-    for fileID in fileIDs:
+    for file in files:
+      lfn = file['LFN']
+      fileID = file['FileID']
+      self.DataLog.addFileRecord(lfn,'FTSSubmit',str(ftsReqID),'','FTSSubmitAgent')
       res = self.TransferDB.setFileToFTSFileAttribute(ftsReqID,fileID,'FileSize',fileIDSizes[fileID])
       if not res['OK']:
         errStr = "FTSAgent.%s" % res['Message']
