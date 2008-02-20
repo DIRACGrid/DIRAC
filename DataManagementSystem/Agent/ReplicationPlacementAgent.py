@@ -29,6 +29,7 @@ class ReplicationPlacementAgent(Agent):
     self.TransferDB = RequestClient()
     self.PlacementDB = PlacementDBClient()
     self.server = RPCClient("DataManagement/PlacementDB")
+    self.DataLog = RPCClient('DataManagement/DataLogging')
     gMonitor.registerActivity("Iteration","Agent Loops","ReplicationPlacementAgent","Loops/min",gMonitor.OP_SUM)
     return result
 
@@ -135,6 +136,8 @@ class ReplicationPlacementAgent(Agent):
       gLogger.error(errStr,res['Message'])
     else:
       for targetSE,lfns in seFiles.items():
+        for lfn in lfns:
+          self.DataLog.addFileRecord(lfn,'Tier1Assigned',targetSE,'','ReplicationPlacementAgent')
         res = self.server.setFileStatusForTransformation(transName,'Assigned',lfns)
         if not res['OK']:
           errStr = "ReplicationPlacementAgent.processTransformation: Failed to update file status."
