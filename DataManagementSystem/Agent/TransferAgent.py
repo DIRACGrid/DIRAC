@@ -10,6 +10,7 @@ from DIRAC.Core.Utilities.ThreadPool import ThreadPool,ThreadedJob
 from DIRAC.RequestManagementSystem.Client.Request import RequestClient
 from DIRAC.RequestManagementSystem.Client.DataManagementRequest import DataManagementRequest
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
+from DIRAC.Core.DISET.RPCClient import RPCClient
 
 import time,os
 from types import *
@@ -27,6 +28,7 @@ class TransferAgent(Agent):
     result = Agent.initialize(self)
     self.RequestDBClient = RequestClient()
     self.ReplicaManager = ReplicaManager()
+    self.DataLog = RPCClient('DataManagement/DataLogging')
 
     gMonitor.registerActivity( "Iteration", "Agent Loops",          "TransferAgent", "Loops/min", gMonitor.OP_SUM )
     gMonitor.registerActivity( "Execute",   "Request Processed",    "TransferAgent", "Requests/min", gMonitor.OP_SUM )
@@ -166,10 +168,13 @@ class TransferAgent(Agent):
                 if res['Value']['Successful'].has_key(lfn):
                   if not res['Value']['Successful'][lfn].has_key('put'):
                     gMonitor.addMark("Put failed",1)
+                    self.DataLog.addFileRecord(lfn,'PutFail',diracSE,'','TransferAgent')
                     gLogger.info("TransferAgent.execute: Failed to put %s to %s." % (lfn,diracSE))
                   elif not res['Value']['Successful'][lfn].has_key('register'):
                     gMonitor.addMark("Put successful",1)
                     gMonitor.addMark("File registration failed",1)
+                    self.DataLog.addFileRecord(lfn,'Put',diracSE,'','TransferAgent')
+                    self.DataLog.addFileRecord(lfn,'RegisterFail',diracSE,'','TransferAgent')
                     gLogger.info("TransferAgent.execute: Successfully put %s to %s in %s seconds." % (lfn,diracSE,res['Value']['Successful'][lfn]['put']))
                     gLogger.info("TransferAgent.execute: Failed to register %s to %s." % (lfn,diracSE))
                     oRequest.setSubRequestFileAttributeValue(ind,'transfer',lfn,'Status','Done')
@@ -180,15 +185,19 @@ class TransferAgent(Agent):
                   else:
                     gMonitor.addMark("Put successful",1)
                     gMonitor.addMark("File registration successful",1)
+                    self.DataLog.addFileRecord(lfn,'Put',diracSE,'','TransferAgent')
+                    self.DataLog.addFileRecord(lfn,'Register',diracSE,'','TransferAgent')
                     gLogger.info("TransferAgent.execute: Successfully put %s to %s in %s seconds." % (lfn,diracSE,res['Value']['Successful'][lfn]['put']))
                     gLogger.info("TransferAgent.execute: Successfully registered %s to %s in %s seconds." % (lfn,diracSE,res['Value']['Successful'][lfn]['register']))
                     oRequest.setSubRequestFileAttributeValue(ind,'transfer',lfn,'Status','Done')
                 else:
                   gMonitor.addMark("Put failed",1)
+                  self.DataLog.addFileRecord(lfn,'PutFail',diracSE,'','TransferAgent')
                   errStr = "TransferAgent.execute: Failed to put and register file."
                   gLogger.error(errStr,"%s %s %s" % (lfn,diracSE,res['Value']['Failed'][lfn]))
               else:
                 gMonitor.addMark("Put failed",1)
+                self.DataLog.addFileRecord(lfn,'PutFail',diracSE,'','TransferAgent')
                 errStr = "TransferAgent.execute: Completely failed to put and register file."
                 gLogger.error(errStr, res['Message'])
             else:
@@ -208,14 +217,17 @@ class TransferAgent(Agent):
               if res['OK']:
                 if res['Value']['Successful'].has_key(lfn):
                   gMonitor.addMark("Put successful",1)
+                  self.DataLog.addFileRecord(lfn,'Put',diracSE,'','TransferAgent')
                   gLogger.info("TransferAgent.execute: Successfully put %s to %s in %s seconds." % (lfn,diracSE,res['Value']['Successful'][lfn]))
                   oRequest.setSubRequestFileAttributeValue(ind,'transfer',lfn,'Status','Done')
                 else:
                   gMonitor.addMark("Put failed",1)
+                  self.DataLog.addFileRecord(lfn,'PutFail',diracSE,'','TransferAgent')
                   errStr = "TransferAgent.execute: Failed to put file."
                   gLogger.error(errStr,"%s %s %s" % (lfn,diracSE,res['Value']['Failed'][lfn]))
               else:
                 gMonitor.addMark("Put failed",1)
+                self.DataLog.addFileRecord(lfn,'PutFail',diracSE,'','TransferAgent')
                 errStr = "TransferAgent.execute: Completely failed to put file."
                 gLogger.error(errStr, res['Message'])
             else:
