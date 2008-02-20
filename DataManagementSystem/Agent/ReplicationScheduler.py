@@ -10,6 +10,8 @@ from DIRAC.RequestManagementSystem.Client.DataManagementRequest import DataManag
 from DIRAC.DataManagementSystem.Client.FileCatalog import FileCatalog
 from DIRAC.DataManagementSystem.Client.Storage.StorageFactory import StorageFactory
 from DIRAC.DataManagementSystem.Client.StorageElement import StorageElement
+from DIRAC.Core.DISET.RPCClient import RPCClient
+
 import types,re
 
 
@@ -26,6 +28,7 @@ class ReplicationScheduler(Agent):
     result = Agent.initialize(self)
     self.RequestDB = RequestDBMySQL()
     self.TransferDB = TransferDB()
+    self.DataLog = RPCClient('DataManagement/DataLogging')
     self.factory = StorageFactory()
     try:
       self.lfc = FileCatalog()
@@ -235,7 +238,8 @@ class ReplicationScheduler(Agent):
           #
           # For each item in the replication tree add the file to the channel
           #
-
+          channelName = '%s-%s' % (sourceSE,destSE)
+          self.DataLog.addFileRecord(str(lfn),'ReplicationScheduled',channelName,'','ReplicationScheduler')
           res = self.TransferDB.addFileToChannel(channelID, fileID, sourceSURL, targetSURL,fileSize,spaceToken,fileStatus=status)
           if not res['OK']:
             errStr = "ReplicationScheduler._execute: Failed to add File %s to Channel %s." % (fileID,channelID)
