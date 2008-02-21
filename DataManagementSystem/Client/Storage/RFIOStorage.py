@@ -130,7 +130,7 @@ class RFIOStorage(StorageBase):
         existingPfns = successful.keys()
         # Check whether the files that exist are staged
         if existingPfns:
-          comm = "stager_qry -S %s" % self.spaceToken 
+          comm = "stager_qry -S %s" % self.spaceToken
           for pfn in existingPfns:
             comm = "%s -M %s" % (comm,pfn)
           res = shellCall(self.timeout,comm)
@@ -291,22 +291,39 @@ class RFIOStorage(StorageBase):
     listOfLists = breakListIntoChunks(urls,100)
     for urls in listOfLists:
       gLogger.info("RFIOStorage.removeFile: Attempting to remove %s files." % len(urls))
-      comm = 'nsrm -f'
+      comm = 'stager_rm -S %s' % self.spaceToken
       for url in urls:
-        comm = "%s %s" % (comm,url)
+        comm = "%s -M %s" % (comm,url)
       res = shellCall(100,comm)
       if res['OK']:
         returncode,stdout,stderr = res['Value']
         if returncode in [0,1]:
-          for pfn in urls:
-            successful[pfn] = True
+          comm = 'nsrm -f'
+          for url in urls:
+            comm = "%s %s" % (comm,url)
+          res = shellCall(100,comm)
+          if res['OK']:
+            returncode,stdout,stderr = res['Value']
+            if returncode in [0,1]:
+              for pfn in urls:
+                successful[pfn] = True
+            else:
+              errStr = "RFIOStorage.removeFile. Completely failed to remove files from the nameserver."
+              gLogger.error(errStr,stderr)
+              for pfn in urls:
+                failed[pfn] = errStr
+          else:
+            errStr = "RFIOStorage.removeFile. Completely failed to remove files from the nameserver."
+            gLogger.error(errStr,res['Message'])
+            for pfn in urls:
+              failed[pfn] = errStr
         else:
-          errStr = "RFIOStorage.removeFile. Completely failed to remove files."
+          errStr = "RFIOStorage.removeFile. Completely failed to remove files from the stager."
           gLogger.error(errStr,stderr)
           for pfn in urls:
             failed[pfn] = errStr
       else:
-        errStr = "RFIOStorage.removeFile: Completely failed to remove files."
+        errStr = "RFIOStorage.removeFile. Completely failed to remove files from the stager."
         gLogger.error(errStr,res['Message'])
         for pfn in urls:
           failed[pfn] = errStr
@@ -350,7 +367,7 @@ class RFIOStorage(StorageBase):
     else:
       failed = {}
       for pfn,err in res['Value']['Failed'].items():
-        failed[pfn] = "RFIOStorage.getFileMetadata: %s." % err 
+        failed[pfn] = "RFIOStorage.getFileMetadata: %s." % err
       successful = {}
       for pfn,pfnDict in res['Value']['Successful'].items():
         successful[pfn] = int(pfnDict['Size'])
