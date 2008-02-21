@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.41 2008/02/21 11:32:44 gkuznets Exp $
+# $Id: TransformationDB.py,v 1.42 2008/02/21 17:42:14 atsareg Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -87,7 +87,7 @@ class TransformationDB(DB):
     self.lock.acquire()
     req = "INSERT INTO Transformations (TransformationName,Description,LongDescription,\
     CreationDate,AuthorDN,AuthorGroup,Type,Plugin,AgentType,FileMask,Status) VALUES\
-    ('%s','%s','%s',NOW(),'%s','%s','%s','%s','%s','%s','New');" % (name, description, longDescription,authorDN, authorGroup, type_, plugin, agentType,fileMask)
+    ('%s','%s','%s',UTC_TIMESTAMP(),'%s','%s','%s','%s','%s','%s','New');" % (name, description, longDescription,authorDN, authorGroup, type_, plugin, agentType,fileMask)
     result = self._getConnection()
     if result['OK']:
       connection = result['Value']
@@ -130,7 +130,7 @@ class TransformationDB(DB):
     """
     transID = self.getTransformationID(transName)
     req = "INSERT INTO TransformationLog (TransformationID,Message,Author,MessageDate) \
-    VALUES (%s,'%s','%s',NOW());" % (transID,message,authorDN)
+    VALUES (%s,'%s','%s',UTC_TIMESTAMP());" % (transID,message,authorDN)
     res = self._update(req)
     return res
 
