@@ -1,20 +1,18 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/backends/RemoteBackend.py,v 1.12 2008/02/15 19:31:22 mseco Exp $
-__RCSID__ = "$Id: RemoteBackend.py,v 1.12 2008/02/15 19:31:22 mseco Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/backends/RemoteBackend.py,v 1.13 2008/02/21 11:34:56 acasajus Exp $
+__RCSID__ = "$Id: RemoteBackend.py,v 1.13 2008/02/21 11:34:56 acasajus Exp $"
 """This Backend sends the Log Messages to a Log Server
 It will only report to the server ERROR, EXCEPTION, FATAL
 and ALWAYS messages.
 """
 import threading
 import Queue
-from DIRAC.Core.Utilities import Time
+from DIRAC.Core.Utilities import Time, Network
 from DIRAC.LoggingSystem.private.backends.BaseBackend import BaseBackend
 from DIRAC.LoggingSystem.private.LogLevels import LogLevels
 
 class RemoteBackend( BaseBackend, threading.Thread ):
 
   def __init__( self, optionsDictionary ):
-    from socket import getfqdn
-    from DIRAC.Core.DISET.RPCClient import RPCClient
     threading.Thread.__init__( self )
     self.__interactive = optionsDictionary[ 'Interactive' ]
     self.__sleep = optionsDictionary[ 'SleepTime' ]
@@ -22,12 +20,11 @@ class RemoteBackend( BaseBackend, threading.Thread ):
     self._Transactions = []
     self._alive = True
     self._site = optionsDictionary[ 'Site' ]
-    self._domainName = getfqdn()
+    self._hostname = Network.getFQDN()
     self._logLevels = LogLevels()
-    self._negativeLevel = self._logLevels.getLevelValue( 'ERROR' ) 
+    self._negativeLevel = self._logLevels.getLevelValue( 'ERROR' )
     self._positiveLevel = self._logLevels.getLevelValue( 'ALWAYS' )
     self._maxBundledMessages = 20
-    self.oSock = RPCClient( "Logging/SystemLogging", timeout = 10 )
     self.setDaemon(1)
     self.start()
 
@@ -53,19 +50,18 @@ class RemoteBackend( BaseBackend, threading.Thread ):
         self._sendMessageToServer( bundle )
 
   def _sendMessageToServer( self, messageBundle ):
+    from DIRAC.Core.DISET.RPCClient import RPCClient
+    oSock = RPCClient( "Logging/SystemLogging", timeout = 10 )
     self._Transactions.append( messageBundle )
-    TransactionsLength = len( self._Transactions )
-    if TransactionsLength > 100:
-      del self._Transactions[:-100]
-      TransactionsLength = 100
-    while TransactionsLength:
+    if len( self._Transactions ) > 100:
+      del self._Transactions[:len(self._Transactions)-100]
+    while len( self._Transactions ):
       print self._Transactions[0]
-      result = self.oSock.addMessages( self._Transactions[0],
-                                       self._site, self._domainName )
+      result = oSock.addMessages( self._Transactions[0],
+                                       self._site, self._hostname )
       if result['OK']:
         print result['Value']
-        TransactionsLength = TransactionsLength - 1
-        self._Transactions.pop(0) 
+        self._Transactions.pop(0)
       else:
         print result['Message']
         return False
@@ -79,6 +75,6 @@ class RemoteBackend( BaseBackend, threading.Thread ):
   def flush( self ):
     self._alive = False
     if not self._interactive and self._sendMessageToServer():
-      while not self._messageQueue.empty():     
+      while not self._messageQueue.empty():
         self._bundleMessages()
 
