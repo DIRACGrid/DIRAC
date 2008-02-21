@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.40 2008/02/20 18:33:34 acsmith Exp $
+# $Id: TransformationDB.py,v 1.41 2008/02/21 11:32:44 gkuznets Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -596,6 +596,9 @@ PRIMARY KEY (FileID)
   def removeFile(self,lfns):
     """ Remove file specified by lfn from the ProcessingDB
     """
+    if len(lfns) == 0:
+      resDict = {'Successful':{},'Failed':{}}
+      return S_OK(resDict)
     gLogger.info("TransformationDB.removeFile: Attempting to remove %s files." % len(lfns))
     res = self.getAllTransformations()
     if res['OK']:
