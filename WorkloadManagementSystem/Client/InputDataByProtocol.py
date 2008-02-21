@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: InputDataByProtocol.py,v 1.3 2008/02/14 16:28:56 paterson Exp $
+# $Id: InputDataByProtocol.py,v 1.4 2008/02/21 15:38:25 paterson Exp $
 # File :   InputDataByProtocol.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     defined in the CS for the VO.
 """
 
-__RCSID__ = "$Id: InputDataByProtocol.py,v 1.3 2008/02/14 16:28:56 paterson Exp $"
+__RCSID__ = "$Id: InputDataByProtocol.py,v 1.4 2008/02/21 15:38:25 paterson Exp $"
 
 from DIRAC.Core.DISET.RPCClient                                     import RPCClient
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
@@ -80,11 +80,10 @@ class InputDataByProtocol:
 
     #For the unlikely case that a file is found on two SEs at the same site
     #disk-based replicas are favoured.
-
     newReplicasDict = {}
     for lfn,reps in replicas.items():
       localStorage = {}
-      tapeSE = ''
+      localTapeSE = ''
       if not lfn in failedReplicas:
         for localSE in localSEList:
           if reps.has_key(localSE):
@@ -93,8 +92,8 @@ class InputDataByProtocol:
                 localStorage[localSE]=1
             for tapeSE in tapeSEList:
               if re.search(tapeSE,localSE):
-                localStorage[localSE]=0
-                tapeSE = localSE
+                localTapeSE = localSE
+                localStorage[localTapeSE]=0
 
         for se,flag in localStorage.items():
           if flag:
@@ -102,8 +101,8 @@ class InputDataByProtocol:
             newReplicasDict[lfn] = {se:pfn}
 
         if not newReplicasDict.has_key(lfn):
-          pfn = replicas[lfn][tapeSE]
-          newReplicasDict[lfn] = {tapeSE:pfn}
+          pfn = replicas[lfn][localTapeSE]
+          newReplicasDict[lfn] = {localTapeSE:pfn}
 
     replicas = newReplicasDict
 
