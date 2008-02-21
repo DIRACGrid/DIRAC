@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.18 2008/02/13 11:03:29 paterson Exp $
+# $Id: JobWrapper.py,v 1.19 2008/02/21 16:00:33 paterson Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.18 2008/02/13 11:03:29 paterson Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.19 2008/02/21 16:00:33 paterson Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -201,6 +201,9 @@ class JobWrapper:
       status = threadResult['Value'][0]
       stdout = threadResult['Value'][1]
       stderr = threadResult['Value'][2]
+      #Send final heartbeat of a configurable number of lines here
+      self.log.verbose('Sending final application standard output heartbeat')
+      self.__sendFinalStdOut(stdout)
       self.log.verbose('Execution thread status = %s' %(status))
       if jobArgs.has_key('StdError'):
         errorFileName = jobArgs['StdError']
@@ -225,6 +228,37 @@ class JobWrapper:
           self.log.verbose('File %s' %(directory))
 
     return S_OK()
+
+  #############################################################################
+  def __sendFinalStdOut(self,stdout):
+    """After the Watchdog process has finished, this function sends a final
+       report to be presented in the StdOut in the web page via the heartbeat
+       mechanism.
+    """
+    splitRes = stdout.split('\n')
+    appStdOut = ''
+    if len(splitRes)>self.maxPeekLines:
+      appStdOut = string.join(splitRes[len(splitRes)-self.maxPeekLines:],'\n')
+    else:
+      self.log.verbose('Standard output is less than %s lines long' %(self.maxPeekLines))
+      appStdOut = stdout
+
+    curTime = time.asctime()
+    header = 'Last %s lines of application output from JobWrapper on %s:' % (self.maxPeekLines,curTime)
+    border = ''
+    for i in xrange(len(header)):
+      border+='='
+    header = '\n%s\n%s\n%s\n' % (border,header,border)
+    appStdOut = header+appStdOut
+    self.log.info(appStdOut)
+    heartBeatDict = {}
+    staticParamDict = {'StandardOutput':appStdOut}
+    result = self.jobReport.sendHeartBeat(int(self.jobID),heartBeatDict,staticParamDict)
+    if not result['OK']:
+      self.log.warn('Problem sending final heartbeat standard output from JobWrapper')
+      self.log.warn(result)
+
+    return result
 
   #############################################################################
   def resolveInputData(self,arguments):
