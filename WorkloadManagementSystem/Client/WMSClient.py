@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSClient.py,v 1.5 2008/02/20 15:10:26 paterson Exp $
+# $Id: WMSClient.py,v 1.6 2008/02/22 14:45:49 paterson Exp $
 ########################################################################
 
 """ DIRAC Workload Management System Client class encapsulates all the
@@ -116,7 +116,7 @@ class WMSClient:
     else:
       jobID = result['Value']
 
-    print "Sandbox uploading"
+    #print "Sandbox uploading"
 
     # Upload input sandbox if any
     if insize > 0:
