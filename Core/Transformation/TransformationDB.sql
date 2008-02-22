@@ -1,4 +1,4 @@
--- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Transformation/TransformationDB.sql,v 1.9 2008/02/22 11:26:28 gkuznets Exp $
+-- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Transformation/TransformationDB.sql,v 1.10 2008/02/22 15:25:22 gkuznets Exp $
 --------------------------------------------------------------------------------
 --
 --  Schema definition for the TransformationDB database -
@@ -78,7 +78,7 @@ CREATE TABLE Transformations (
 --
 -- CREATE TABLE T_$TransformationID(
 --   FileID INTEGER NOT NULL,
---   Status VARCHAR(32) DEFAULT "unused",
+--   Status VARCHAR(32) DEFAULT "Unused",
 --   ErrorCount INT(4) NOT NULL DEFAULT 0,
 --   JobID VARCHAR(32),
 --   UsedSE VARCHAR(32) DEFAULT "Unknown",
