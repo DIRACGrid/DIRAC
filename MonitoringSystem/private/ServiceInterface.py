@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/ServiceInterface.py,v 1.9 2008/02/18 17:49:06 acasajus Exp $
-__RCSID__ = "$Id: ServiceInterface.py,v 1.9 2008/02/18 17:49:06 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/ServiceInterface.py,v 1.10 2008/02/22 10:19:27 acasajus Exp $
+__RCSID__ = "$Id: ServiceInterface.py,v 1.10 2008/02/22 10:19:27 acasajus Exp $"
 import DIRAC
 from DIRAC import gLogger
 from DIRAC.MonitoringSystem.private.MonitoringCatalog import MonitoringCatalog
@@ -106,11 +106,11 @@ class ServiceInterface:
       acInfo = acCatalog.findActivity( sourceId, acName )
       if not acInfo:
         unregisteredActivities.append( acName )
-        gLogger.error( "Cant find rrd filename for %s:%s activity" % ( sourceId, acName ) )
+        gLogger.warn( "Cant find rrd filename", "%s:%s activity" % ( sourceId, acName ) )
         continue
       rrdFile = acInfo[6]
       if not rrdManager.existsRRDFile( rrdFile ):
-        Logger.error( "RRD file does not exist for %s:%s activity" % ( sourceId, acName ) )
+        Logger.error( "RRD file does not exist", "%s:%s activity" % ( sourceId, acName ) )
         unregisteredActivities.append( acName )
         continue
       gLogger.info( "Updating activity", "%s -> %s" % ( acName, rrdFile ) )
@@ -123,7 +123,7 @@ class ServiceInterface:
         gLogger.verbose( "There are %s entries for %s" % ( len( entries ), acName ) )
         retDict = rrdManager.update( acInfo[4], rrdFile, acInfo[7], entries )
         if not retDict[ 'OK' ]:
-          gLogger.error( "There was an error updating %s:%s activity [%s]" % ( sourceId, acName, rrdFile ) )
+          gLogger.error( "There was an error updating", "%s:%s activity [%s]" % ( sourceId, acName, rrdFile ) )
     return S_OK( unregisteredActivities )
 
   def fieldValue( self, field, definedFields ):
