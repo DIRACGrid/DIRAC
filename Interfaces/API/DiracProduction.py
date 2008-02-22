@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.12 2008/02/22 11:56:50 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.13 2008/02/22 12:00:19 paterson Exp $
 # File :   LHCbJob.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are documented with example usage for the DIRAC API.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.12 2008/02/22 11:56:50 paterson Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.13 2008/02/22 12:00:19 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -64,11 +64,11 @@ class DiracProduction:
     currentProductions = {}
     for prodDict in prodList:
       self.log.debug(prodDict)
-      if prodDict.has_key('Agent') and prodDict.has_key('TransID'):
+      if prodDict.has_key('AgentType') and prodDict.has_key('TransID'):
         prodID = prodDict['TransID']
-        status = prodDict['Status']
+        status = prodDict['AgentType']
         currentProductions[prodID] = status
-        if status.lower() == 'active':
+        if status.lower() == 'automatic':
           self.log.verbose('Found active production %s eligible to submit jobs' %prodID)
 
     return S_OK(currentProductions)
