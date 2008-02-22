@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/PlotCache.py,v 1.3 2008/02/18 17:14:34 acasajus Exp $
-__RCSID__ = "$Id: PlotCache.py,v 1.3 2008/02/18 17:14:34 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/PlotCache.py,v 1.4 2008/02/22 14:27:53 acasajus Exp $
+__RCSID__ = "$Id: PlotCache.py,v 1.4 2008/02/22 14:27:53 acasajus Exp $"
 
 import os
 import os.path
@@ -85,7 +85,6 @@ class PlotCache:
   def __getGraph( self, plotFunc, args ):
     fromSecs = args[0]
     toSecs = args[1]
-    print "JANDNDNDN", args[2:]
     graphFile = "%s-%s-%s.png" % ( self.__generateName( *args[2:] ),
                                    self.rrdManager.bucketize( fromSecs, self.graceTime ),
                                    self.rrdManager.bucketize( toSecs, self.graceTime )
