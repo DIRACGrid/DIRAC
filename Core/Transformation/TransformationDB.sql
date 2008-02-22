@@ -1,4 +1,4 @@
--- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Transformation/TransformationDB.sql,v 1.8 2008/02/13 19:57:21 gkuznets Exp $
+-- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Transformation/TransformationDB.sql,v 1.9 2008/02/22 11:26:28 gkuznets Exp $
 --------------------------------------------------------------------------------
 --
 --  Schema definition for the TransformationDB database -
@@ -31,17 +31,29 @@ DROP TABLE IF EXISTS Transformations;
 --   LOADBALANCE
 -- AgentType - the agent that will process the transformation
 --   Manual
---   ReplicationPlacement
---   ProductionAgent
+--   Automatic
+--   ReplicationPlacement ???
+--   ProductionAgent ???
 -- Status - information about current status of the production
 --   New - newly created, equivalent to STOPED
 --   Active - can submit
 --   Flush - final stage, ignoring GroupSize
 --   Stopped - stopped by manager
---   Done - job limits reached, extension is possible
 --   Error - Production with error, equivalent to STOPPED
 --   Terminated - stopped, extension impossible
 -- FileMask - filter mask
+------- Explanation about status field ------
+We have execute three types of action for each transformation
+1 - Publish files in the Transformation table
+2 - Create jobs
+3 - Submit jobs
+     STATUS | Avalible actions
+New           1
+Stopped       1
+Active        1 2 3
+Flush           2 3
+Error         x
+Terminated    x
 --------------------------------------------------------------------------------
 
 CREATE TABLE Transformations (

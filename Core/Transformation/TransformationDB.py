@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.42 2008/02/21 17:42:14 atsareg Exp $
+# $Id: TransformationDB.py,v 1.43 2008/02/22 11:26:28 gkuznets Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -142,6 +142,14 @@ class TransformationDB(DB):
     res = self._update(req)
     return res
 
+  def setTransformationAgentType(self,transName,status):
+    """ Set the submission status of the transformation specified by transID
+    """
+    transID = self.getTransformationID(transName)
+    req = "UPDATE Transformations SET AgentType='%s' WHERE TransformationID=%s;" % (status,transID)
+    res = self._update(req)
+    return res
+    
   def getTransformationStats(self,transName):
     """ Get the statistics of Transformation by supplied transformation name.
     """

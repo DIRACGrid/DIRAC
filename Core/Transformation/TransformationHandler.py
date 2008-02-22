@@ -32,6 +32,13 @@ class TransformationHandler(RequestHandler):
       message = "Status changed to %s" % status
       res = self.database.updateTransformationLogging(transformationName,message,authorDN)
     return res
+    
+  types_setTransformationAgentType = [ [StringType, LongType, IntType], StringType ]
+  def export_setTransformationAgentType( self, idOrName, status ):
+    result = self.database.setTransformationAgentType(idOrName, status)
+    if not result['OK']:
+      gLogger.error(result['Message'])
+    return result
 
   types_setTransformationMask = [StringType,StringType]
   def export_setTransformationMask(self,transformationName,fileMask):
