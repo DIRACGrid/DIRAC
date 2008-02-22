@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.20 2008/02/22 11:37:19 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.21 2008/02/22 11:41:15 paterson Exp $
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,7 +13,7 @@
 
 """
 
-__RCSID__ = "$Id: Job.py,v 1.20 2008/02/22 11:37:19 paterson Exp $"
+__RCSID__ = "$Id: Job.py,v 1.21 2008/02/22 11:41:15 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -472,8 +472,8 @@ class Job:
        @param optsLine: string
     """
 
-    if type(destination) == type("  "):
-      description = 'User specified destination site'
+    if type(jobGroup) == type("  "):
+      description = 'User specified job group'
       self._addParameter(self.workflow,'JobGroup','JDL',jobGroup,description)
     else:
       raise TypeError,'Expected string for destination site'
