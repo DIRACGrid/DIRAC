@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Dispatcher.py,v 1.6 2007/06/13 19:29:39 acasajus Exp $
-__RCSID__ = "$Id: Dispatcher.py,v 1.6 2007/06/13 19:29:39 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Dispatcher.py,v 1.7 2008/02/22 10:18:49 acasajus Exp $
+__RCSID__ = "$Id: Dispatcher.py,v 1.7 2008/02/22 10:18:49 acasajus Exp $"
 
 import DIRAC
 from DIRAC.LoggingSystem.Client.Logger import gLogger
@@ -7,6 +7,7 @@ from DIRAC.Core.DISET.private.LockManager import LockManager
 from DIRAC.Core.Utilities import List
 from DIRAC.Core.DISET.AuthManager import AuthManager
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
+from DIRAC.MonitoringSystem.Client.MonitoringClient import MonitoringClient
 
 class Dispatcher:
 
@@ -14,6 +15,22 @@ class Dispatcher:
     self.servicesDict = {}
     for serviceCfg in serviceCfgList:
       self.servicesDict[ serviceCfg.getName() ] = { 'cfg' : serviceCfg }
+
+  def __initializeMonitor( self, serviceName ):
+    """
+    Initialize the system monitor client
+    """
+    serviceCfg = self.servicesDict[ serviceName ][ 'cfg' ]
+    serviceMonitor = MonitoringClient()
+    serviceMonitor.setComponentType( serviceMonitor.COMPONENT_SERVICE )
+    serviceMonitor.setComponentName( serviceCfg.getName() )
+    serviceMonitor.setComponentLocation( serviceCfg.getURL() )
+    serviceMonitor.initialize()
+    serviceMonitor.registerActivity( "Queries", "Queries served", "Framework", "queries", serviceMonitor.OP_SUM )
+    self.servicesDict[ serviceName ][ 'monitorClient' ] = serviceMonitor
+
+  def addMark( self, serviceName ):
+    self.servicesDict[ serviceName ][ 'monitorClient' ].addMark( "Queries", 1 )
 
   def loadHandlers( self ):
     for serviceName in self.servicesDict.keys():
@@ -23,6 +40,7 @@ class Dispatcher:
         return retVal
       self.__initializeLocks( serviceName )
       self.__generateServiceInfo( serviceName )
+      #self.__initializeMonitor( serviceName )
     return S_OK()
 
   def __generateServiceInfo( self, serviceName ):
@@ -31,9 +49,9 @@ class Dispatcher:
                         'URL' : serviceCfg.getURL(),
                         'systemSectionPath' : serviceCfg.getSystemPath(),
                         'serviceSectionPath' : serviceCfg.getServicePath(),
-                        'authManager' : AuthManager( "%s/Authorization" % serviceCfg.getServicePath() )
                   }
     self.servicesDict[ serviceName ][ 'serviceInfo' ] = serviceInfoDict
+    self.servicesDict[ serviceName ][ 'authManager' ] = AuthManager( "%s/Authorization" % serviceCfg.getServicePath() )
 
   def __initializeLocks( self, serviceName ):
     serviceCfg = self.servicesDict[ serviceName ][ 'cfg' ]
@@ -94,7 +112,7 @@ class Dispatcher:
 
   def getServiceInfo( self, serviceName ):
     if serviceName in self.servicesDict:
-      return self.servicesDict[ serviceName ][ 'serviceInfo' ]
+      return dict( self.servicesDict[ serviceName ][ 'serviceInfo' ] )
     return False
 
   def initializeHandlers( self ):
@@ -116,3 +134,29 @@ class Dispatcher:
 
   def unlock( self, serviceName ):
     self.servicesDict[ serviceName ][ 'lockManager' ].unlockGlobal()
+
+  def authorizeAction( self, serviceName, action, credDict ):
+    if not serviceName in self.servicesDict:
+      return S_ERROR( "No handler registered for %s" % serviceName )
+    gLogger.debug( "Trying credentials %s" % credDict )
+    if not self.servicesDict[ serviceName ][ 'authManager' ].authQuery( action, credDict ):
+      if 'username' in credDict.keys():
+        username = credDict[ 'username' ]
+      else:
+        username = 'unauthenticated'
+      gLogger.verbose( "Unauthorized query", "%s by %s" % ( action, username ) )
+      return S_ERROR( "Unauthorized query to %s:%s" % ( service, action ) )
+    return S_OK()
+
+  def instantiateHandler( self, serviceName, clientSetup, clientTransport ):
+    """
+    Execute an action
+    """
+    serviceInfoDict = self.getServiceInfo( serviceName )
+    handlerDict = self.getHandlerInfo( serviceName )
+    serviceInfoDict[ 'clientSetup' ] = clientSetup
+    handlerInstance = handlerDict[ "handlerClass" ]( serviceInfoDict,
+                    clientTransport,
+                    handlerDict[ "lockManager" ] )
+    handlerInstance.initialize()
+    return handlerInstance

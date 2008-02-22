@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.29 2008/02/20 16:13:55 acasajus Exp $
-__RCSID__ = "$Id: RequestHandler.py,v 1.29 2008/02/20 16:13:55 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.30 2008/02/22 10:18:49 acasajus Exp $
+__RCSID__ = "$Id: RequestHandler.py,v 1.30 2008/02/22 10:18:49 acasajus Exp $"
 
 import types
 from DIRAC.Core.DISET.private.FileHelper import FileHelper
@@ -24,8 +24,8 @@ class RequestHandler:
     @param lockManager: Lock manager to use
     """
     self.serviceInfoDict = serviceInfoDict
-    self.transport = transport
-    self.lockManager = lockManager
+    self._clientTransport = transport
+    self._lockManager = lockManager
 
   def initialize( self ):
     """
@@ -34,13 +34,21 @@ class RequestHandler:
     """
     pass
 
+  def getRemoteAddress(self):
+    """
+    Get the address of the remote peer.
+
+    @return : Address of remote peer.
+    """
+    return self._clientTransport.getRemoteAddress()
+
   def getRemoteCredentials( self ):
     """
     Get the credentials of the remote peer.
 
     @return : Credentials dictionary of remote peer.
     """
-    return self.transport.getConnectingCredentials()
+    return self._clientTransport.getConnectingCredentials()
 
   def executeAction( self, actionTuple ):
     """
@@ -63,7 +71,7 @@ class RequestHandler:
       gLogger.error( message )
       retVal = S_ERROR( message )
     self.__logRemoteQueryResponse(  retVal )
-    self.transport.sendData( retVal )
+    self._clientTransport.sendData( retVal )
 
 #####
 #
@@ -79,18 +87,18 @@ class RequestHandler:
     @param sDirection: Direction of the transfer
     @return: S_OK/S_ERROR
     """
-    retVal = self.transport.receiveData()
+    retVal = self._clientTransport.receiveData()
     if not retVal[ 'OK' ]:
       gLogger.error( "Error while receiving file description", retVal[ 'Message' ] )
       return S_ERROR( "Error while receiving file description: %s" % retVal[ 'Message' ] )
     fileInfo = retVal[ 'Value' ]
     sDirection = "%s%s" % ( sDirection[0].lower(), sDirection[1:] )
     if "transfer_%s" % sDirection not in dir( self ):
-      self.transport.sendData( S_ERROR( "Service can't transfer files %s" % sDirection ) )
+      self._clientTransport.sendData( S_ERROR( "Service can't transfer files %s" % sDirection ) )
       return
-    self.transport.sendData( S_OK( "Accepted" ) )
+    self._clientTransport.sendData( S_OK( "Accepted" ) )
     self.__logRemoteQuery( "FileTransfer/%s" % sDirection, fileInfo )
-    fileHelper = FileHelper( self.transport )
+    fileHelper = FileHelper( self._clientTransport )
     if sDirection == "fromClient":
       uRetVal = self.transfer_fromClient( fileInfo[0], fileInfo[1], fileInfo[2], fileHelper )
     elif sDirection == "toClient" :
@@ -137,7 +145,7 @@ class RequestHandler:
     @param method: Method to execute
     @return: S_OK/S_ERROR
     """
-    retVal = self.transport.receiveData()
+    retVal = self._clientTransport.receiveData()
     if not retVal[ 'OK' ]:
       gLogger.error( "Error while receiving function arguments", retVal[ 'Message' ] )
       return S_ERROR( "Error while receiving function arguments: %s" % retVal[ 'Message' ] )
@@ -155,13 +163,13 @@ class RequestHandler:
     dRetVal = self.__RPCCheckExpectedArgumentTypes( method, args )
     if not dRetVal[ 'OK' ]:
       return dRetVal
-    self.lockManager.lock( method )
+    self._lockManager.lock( method )
     try:
       try:
         uReturnValue = oMethod( *args )
         return uReturnValue
       finally:
-        self.lockManager.unlock( method )
+        self._lockManager.unlock( method )
     except Exception, v:
       gLogger.exception( "Uncaught exception when serving RPC", "Function %s" % method )
       return S_ERROR( "Server error while serving %s: %s" % ( method, str( v ) ) )

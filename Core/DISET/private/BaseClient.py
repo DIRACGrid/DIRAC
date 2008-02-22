@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.28 2008/01/31 16:33:06 acasajus Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.28 2008/01/31 16:33:06 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.29 2008/02/22 10:18:49 acasajus Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.29 2008/02/22 10:18:49 acasajus Exp $"
 
 import sys
 import DIRAC
@@ -21,6 +21,7 @@ class BaseClient:
   KW_SETUP = "setup"
   KW_DELEGATED_DN = "delegatedDN"
   KW_DELEGATED_GROUP = "delegatedGroup"
+  KW_IGNORE_GATEWAYS = "ignoreGateways"
 
   def __init__( self, serviceName, **kwargs ):
     self.defaultUserGroup = gConfig.getValue( '/DIRAC/DefaultGroup', 'lhcb_user' )
@@ -87,10 +88,17 @@ class BaseClient:
         gLogger.debug( "Already given a valid url", self.serviceName )
         return self.serviceName
 
-    dRetVal = gConfig.getOption( "/DIRAC/Gateway" )
-    if dRetVal[ 'OK' ]:
-      gLogger.debug( "Using gateway", "%s" % dRetVal[ 'Value' ] )
-      return "%s/%s" % ( List.randomize( List.fromChar( dRetVal[ 'Value'], "," ) ), self.serviceName )
+    if self.KW_IGNORE_GATEWAYS not in self.kwargs or not self.kwargs[ self.KW_IGNORE_GATEWAYS ]:
+      print "Calculating gateways"
+      dRetVal = gConfig.getOption( "/LocalSite/Site" )
+      if dRetVal[ 'OK' ]:
+        siteName = dRetVal[ 'Value' ]
+        dRetVal = gConfig.getOption( "/DIRAC/Gateways/%s" % siteName )
+        if dRetVal[ 'OK' ]:
+          rawGatewayURL = List.randomize( List.fromChar( dRetVal[ 'Value'], "," ) )[0]
+          gatewayURL = "/".join( rawGatewayURL.split( "/" )[:3] )
+          gLogger.debug( "Using gateway", gatewayURL )
+          return "%s/%s" % (  gatewayURL, self.serviceName )
 
     urls = getServiceURL( self.serviceName, setup = self.setup )
     if not urls:
