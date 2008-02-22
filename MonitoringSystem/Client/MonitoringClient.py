@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.23 2008/02/18 17:14:35 acasajus Exp $
-__RCSID__ = "$Id: MonitoringClient.py,v 1.23 2008/02/18 17:14:35 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.24 2008/02/22 10:20:08 acasajus Exp $
+__RCSID__ = "$Id: MonitoringClient.py,v 1.24 2008/02/22 10:20:08 acasajus Exp $"
 
 import threading
 import time
@@ -42,7 +42,7 @@ class MonitoringClient:
     self.logger = gLogger.getSubLogger( "Monitoring" )
     self.logger.debug( "Initializing Monitoring Client")
     self.sourceDict[ 'setup' ] = gConfig.getValue( "/DIRAC/Setup" )
-    self.sourceDict[ 'site' ] = gConfig.getValue( "/DIRAC/Site", "" )
+    self.sourceDict[ 'site' ] = gConfig.getValue( "/LocalSite/Site", "Not specified" )
     if self.sourceDict[ 'componentType' ] == self.COMPONENT_SERVICE:
       self.cfgSection = PathFinder.getSystemSection( self.sourceDict[ 'componentName' ] )
     elif self.sourceDict[ 'componentType' ] == self.COMPONENT_AGENT:
