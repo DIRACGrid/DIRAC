@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.36 2008/02/15 13:23:05 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.37 2008/02/22 11:41:09 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.36 2008/02/15 13:23:05 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.37 2008/02/22 11:41:09 atsareg Exp $"
 
 import re, os, sys, string
 import time
@@ -772,7 +772,7 @@ class JobDB(DB):
     if not result['OK']:
       return result
 
-    return self.setJobStatus(jobID,status='received',minor='Initial insertion')
+    return self.setJobStatus(jobID,status='Received',minor='Initial insertion')
 
 #############################################################################
   def addJobToDB (self, jobID, JDL=None, ownerDN='Unknown', ownerGroup = "Unknown"):
@@ -861,7 +861,7 @@ class JobDB(DB):
     if not result['OK']:
       return result
 
-    result = self.setJobStatus(jobID,status='received',minor='Job accepted')
+    result = self.setJobStatus(jobID,status='Received',minor='Job accepted')
     result = self.setJobAttribute(jobID,'VerifiedFlag','True')
 
     result = S_OK()
@@ -1009,7 +1009,7 @@ class JobDB(DB):
       return res
 
     res = self.setJobStatus(jobID,
-                            status='received',
+                            status='Received',
                             minor = 'Job Rescheduled',
                             application='Unknown',
                             appCounter=0)
