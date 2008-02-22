@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.11 2008/02/19 17:29:49 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.12 2008/02/22 15:18:11 paterson Exp $
 # File :   JobSchedulingAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@
       meaningfully.
 
 """
-__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.11 2008/02/19 17:29:49 paterson Exp $"
+__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.12 2008/02/22 15:18:11 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
@@ -45,7 +45,7 @@ class JobSchedulingAgent(Optimizer):
   def checkJob(self,job):
     """This method controls the checking of the job.
     """
-    self.log.debug('Job %s will be processed' % (job))
+    self.log.verbose('Job %s will be processed' % (job))
     #First check whether the job has an input data requirement
     result = self.jobDB.getInputData(job)
     if not result['OK']:
@@ -53,11 +53,11 @@ class JobSchedulingAgent(Optimizer):
       self.log.error(result['Message'])
     if not result['Value']:
       #With no input data requirement, job can proceed directly to task queue
-      self.log.debug('Job %s has no input data requirement' % (job))
+      self.log.verbose('Job %s has no input data requirement' % (job))
       result = self.sendJobToTaskQueue(job)
       return result
 
-    self.log.debug('Job %s has an input data requirement ' % (job))
+    self.log.verbose('Job %s has an input data requirement ' % (job))
 
     #Check all optimizer information
     optInfo = self.checkOptimizerInfo(job)
@@ -112,14 +112,14 @@ class JobSchedulingAgent(Optimizer):
     stagingFlag = checkStaging['Value']
     if stagingFlag:
       #Single site candidate chosen and staging required
-      self.log.debug('Job %s requires staging of input data' %(job))
+      self.log.verbose('Job %s requires staging of input data' %(job))
       stagerDict = self.setStagingRequest(job,destinationSites,optInfo['Value'])
       if not stagerDict['OK']:
         return stagerDict
       #Staging request is saved as job optimizer parameter
     else:
       #No staging required, can proceed to task queue agent and then waiting status
-      self.log.debug('Job %s does not require staging of input data' %(job))
+      self.log.verbose('Job %s does not require staging of input data' %(job))
 
     #Finally send job to TaskQueueAgent
     result = self.sendJobToTaskQueue(job,destinationSites)
@@ -138,7 +138,7 @@ class JobSchedulingAgent(Optimizer):
     siteCandidates = {}
     dataResult = self.getOptimizerJobInfo(job,self.dataAgentName)
     if dataResult['OK'] and len(dataResult['Value']):
-      self.log.debug(dataResult)
+      self.log.verbose(dataResult)
       dataResult = dataResult['Value']
       if not dataResult.has_key('SiteCandidates'):
         return S_ERROR('No possible site candidates')
@@ -158,36 +158,36 @@ class JobSchedulingAgent(Optimizer):
     """Site candidates are resolved from potential candidates and any job site
        requirement is compared at this point.
     """
-    self.log.debug(inputDataDict)
+    self.log.verbose(inputDataDict)
     finalSiteCandidates = []
     tapeCount = 0
     tapeList  = []
     stagingFlag = 0
     numberOfCandidates = len(siteCandidates)
-    self.log.debug('Job %s has %s candidate sites' %(job,numberOfCandidates))
+    self.log.verbose('Job %s has %s candidate sites' %(job,numberOfCandidates))
     for site in siteCandidates:
       tape = inputDataDict[site]['tape']
       tapeList.append(tape)
       if tape > 0:
-        self.log.debug('%s replicas on tape storage for %s' %(tape,site))
+        self.log.verbose('%s replicas on tape storage for %s' %(tape,site))
         tapeCount += 1
 
     if not tapeCount:
-      self.log.debug('All replicas on disk, no staging required')
+      self.log.verbose('All replicas on disk, no staging required')
       finalSiteCandidates = siteCandidates
       result = S_OK()
       result['SiteCandidates']=finalSiteCandidates
       return result
 
     if tapeCount < numberOfCandidates:
-      self.log.debug('All replicas on disk for some candidate sites, restricting to those')
+      self.log.verbose('All replicas on disk for some candidate sites, restricting to those')
       for site in siteCandidates:
         tape = inputDataDict[site]['tape']
         if tape==0:
           finalSiteCandidates.append(site)
 
     if tapeCount == numberOfCandidates:
-      self.log.debug('Staging is required for job')
+      self.log.verbose('Staging is required for job')
       tapeList.sort()
       minTapeValue = tapeList[0]
       minTapeSites = []
@@ -199,14 +199,14 @@ class JobSchedulingAgent(Optimizer):
         return S_ERROR('No possible site candidates')
 
       if len(minTapeSites) > 1:
-        self.log.debug('The following sites have %s tape replicas: %s' %(minTapeValue,minTapeSites))
+        self.log.verbose('The following sites have %s tape replicas: %s' %(minTapeValue,minTapeSites))
         random.shuffle(minTapeSites)
         randomSite = minTapeSites[0]
         finalSiteCandidates.append(randomSite)
-        self.log.debug('Site %s has been randomly chosen for job' %(randomSite))
+        self.log.verbose('Site %s has been randomly chosen for job' %(randomSite))
         stagingFlag = 1
       else:
-        self.log.debug('%s is the candidate site with smallest number of tape replicas (=%s)' %(minTapeSites[0],minTapeValue))
+        self.log.verbose('%s is the candidate site with smallest number of tape replicas (=%s)' %(minTapeSites[0],minTapeValue))
         finalSiteCandidates.append(minTapeSites[0])
         stagingFlag = 1
 
@@ -222,8 +222,8 @@ class JobSchedulingAgent(Optimizer):
   def setStagingRequest(self,job,destination,inputDataDict):
     """A Staging request is formulated and saved as a job optimizer parameter.
     """
-    self.log.debug('Destination site %s' % (destination))
-    self.log.debug('Input Data: %s' % (inputDataDict))
+    self.log.verbose('Destination site %s' % (destination))
+    self.log.verbose('Input Data: %s' % (inputDataDict))
 
     return S_OK('To implement')
 
@@ -273,13 +273,13 @@ class JobSchedulingAgent(Optimizer):
       return result
     if not result['Value']:
       self.log.warn('No JDL found for job')
-      self.log.debug(result)
+      self.log.verbose(result)
       return S_ERROR('No JDL found for job')
 
     jdl = result['Value']
     classadJob = ClassAd(jdl)
     if not classadJob.isOK():
-      self.log.debug("Warning: illegal JDL for job %s, will be marked problematic" % (job))
+      self.log.verbose("Warning: illegal JDL for job %s, will be marked problematic" % (job))
       result = S_ERROR()
       result['Value'] = "Illegal Job JDL"
       return result
@@ -314,7 +314,7 @@ class JobSchedulingAgent(Optimizer):
     allowedSites = result['Value']
     for candidate in siteCandidates:
       if not candidate in allowedSites:
-        self.log.debug('%s is a candidate site for job %s but not in mask' %(candidate,job))
+        self.log.verbose('%s is a candidate site for job %s but not in mask' %(candidate,job))
       else:
         sites.append(candidate)
 
@@ -338,13 +338,13 @@ class JobSchedulingAgent(Optimizer):
     jdl = result['Value']
     classAdJob = ClassAd(jdl)
     if not classAdJob.isOK():
-      self.log.debug("Warning: illegal JDL for job %s, will be marked problematic" % (job))
+      self.log.verbose("Warning: illegal JDL for job %s, will be marked problematic" % (job))
       result = S_ERROR()
       result['Value'] = "Illegal Job JDL"
       return result
 
     requirements = classAdJob.get_expression('Requirements').replace('Unknown','')
-    self.log.debug('Existing job requirements: %s' % (requirements))
+    self.log.verbose('Existing job requirements: %s' % (requirements))
     newRequirements = ''
     if not requirements:
       newRequirements = 'True'
@@ -352,17 +352,43 @@ class JobSchedulingAgent(Optimizer):
       newRequirements = self.__resolveJobJDLRequirement(requirements,siteCandidates)
 
     if newRequirements:
-      self.log.debug('Resolved requirements for job: %s' %(newRequirements))
+      self.log.verbose('Resolved requirements for job: %s' %(newRequirements))
       classAdJob.set_expression ("Requirements", newRequirements)
       sites = string.join(siteCandidates,',')
       classAdJob.insertAttributeString("Site",sites)
-      result = self.jobDB.setJobJDL(int(job),classAdJob.asJDL())
+      jdl = classAdJob.asJDL()
+      result = self.jobDB.setJobJDL(int(job),jdl)
       if not result['OK']:
         return result
+
+    if siteCandidates:
+      if len(siteCandidates)==1:
+        self.log.verbose('Individual site candidate for job %s is %s' %(job,siteCandidates[0]))
+
+    #To assign site if single candidate
+    result = self.__setSiteCandidate(job,classAdJob)
+    if not result['OK']:
+      self.log.warn(result['Message'])
 
     result = self.setNextOptimizer(job)
     if not result['OK']:
       self.log.warn(result['Message'])
+
+    return result
+
+  #############################################################################
+  def __setSiteCandidate(self,job,classAdJob):
+    """Sets the candidate site if a single site such that it appears in the monitoring
+       webpage.
+    """
+    result = S_OK()
+    siteRequirement = classAdJob.get_expression('Requirements').replace('Unknown','').replace(' ','')
+    self.log.verbose('Final site requirement is: %s' %(siteRequirement))
+    if not re.search(',',siteRequirement):
+      result = self.jobDB.setJobAttribute(job,'Site',siteRequirement)
+      if not result['OK']:
+        self.log.warn('Problem setting job site parameter')
+        self.log.warn(result)
 
     return result
 
@@ -396,7 +422,7 @@ class JobSchedulingAgent(Optimizer):
        in the Matcher mask for the scheduling decision.
     """
     result = self.jobDB.getSiteMask()
-    self.log.debug(result)
+    self.log.verbose(result)
     if result['OK'] and result['Value']:
       tmp_list = result['Value'].split('"')
       mask = []
