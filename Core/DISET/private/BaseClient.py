@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.29 2008/02/22 10:18:49 acasajus Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.29 2008/02/22 10:18:49 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.30 2008/02/22 12:12:10 acasajus Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.30 2008/02/22 12:12:10 acasajus Exp $"
 
 import sys
 import DIRAC
@@ -89,7 +89,6 @@ class BaseClient:
         return self.serviceName
 
     if self.KW_IGNORE_GATEWAYS not in self.kwargs or not self.kwargs[ self.KW_IGNORE_GATEWAYS ]:
-      print "Calculating gateways"
       dRetVal = gConfig.getOption( "/LocalSite/Site" )
       if dRetVal[ 'OK' ]:
         siteName = dRetVal[ 'Value' ]
