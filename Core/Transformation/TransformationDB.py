@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.43 2008/02/22 11:26:28 gkuznets Exp $
+# $Id: TransformationDB.py,v 1.44 2008/02/22 14:47:39 gkuznets Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -171,46 +171,37 @@ class TransformationDB(DB):
   def getTransformation(self,transName):
     """Get Transformation definition
        Get the parameters of Transformation idendified by production ID
-       KGG This code must be corrected - better version is commented
     """
-#    transID = self.getTransformationID(transName)
-#    if transID > 0:
-#      req = "SELECT TransformationID,TransformationName,Description,LongDescription,CreationDate,\
-#             AuthorDN,AuthorGroup,Type,Plugin,AgentType,Status,FileMask FROM Transformations WHERE TransformationID=%d;"%transID
-#      res = self._query(req)
-#      if not res['OK']:
-#        return res
-#      tr=result['Value']
-#      transdict = {}
-#      transdict['TransID'] = tr[0]
-#      transdict['Name'] = tr[1]
-#      transdict['Description'] = tr[2]
-#      transdict['LongDescription'] = tr[3]
-#      transdict['CreationDate'] = tr[4]
-#      transdict['AuthorDN'] = tr[5]
-#      transdict['AuthorGroup'] = tr[6]
-#      transdict['Type'] = tr[7]
-#      transdict['Plugin'] = tr[8]
-#      transdict['AgentType'] = tr[9]
-#      transdict['Status'] = tr[10]
-#      transdict['FileMask'] = tr[11]
-#      req = "SELECT ParameterName,ParameterValue FROM TransformationParameters WHERE TransformationID = %s;" % transID
-#      res = self._query(req)
-#      if res['OK']:
-#        if res['Value']:
-#          transdict['Additional'] = {}
-#          for parameterName,parameterValue in res['Value']:
-#            transdict['Additional'][parameterName] = parameterValue
-#      return S_OK(transDict)
-#    return S_ERROR('Transformation with id =%d not found'%transID)
-
-    res = self.getAllTransformations()
-    if not res['OK']:
-      return res
-    for transDict in res['Value']:
-      if transDict['Name'] == transName:
-        return S_OK(transDict)
-    return S_ERROR('Transformation not found')
+    transID = self.getTransformationID(transName)
+    if transID > 0:
+      req = "SELECT TransformationID,TransformationName,Description,LongDescription,CreationDate,\
+             AuthorDN,AuthorGroup,Type,Plugin,AgentType,Status,FileMask FROM Transformations WHERE TransformationID=%d;"%transID
+      res = self._query(req)
+      if not res['OK']:
+        return res
+      tr=res['Value'][0]
+      transdict = {}
+      transdict['TransID'] = tr[0]
+      transdict['Name'] = tr[1]
+      transdict['Description'] = tr[2]
+      transdict['LongDescription'] = tr[3]
+      transdict['CreationDate'] = tr[4]
+      transdict['AuthorDN'] = tr[5]
+      transdict['AuthorGroup'] = tr[6]
+      transdict['Type'] = tr[7]
+      transdict['Plugin'] = tr[8]
+      transdict['AgentType'] = tr[9]
+      transdict['Status'] = tr[10]
+      transdict['FileMask'] = tr[11]
+      req = "SELECT ParameterName,ParameterValue FROM TransformationParameters WHERE TransformationID = %s;" % transID
+      res = self._query(req)
+      if res['OK']:
+        if res['Value']:
+          transdict['Additional'] = {}
+          for parameterName,parameterValue in res['Value']:
+            transdict['Additional'][parameterName] = parameterValue
+      return S_OK(transdict)
+    return S_ERROR('Transformation with id =%d not found'%transID)
 
   def getAllTransformations(self):
     """ Get parameters of all the Transformations
