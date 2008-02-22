@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.19 2008/02/18 11:03:53 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.20 2008/02/22 11:37:19 paterson Exp $
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,7 +13,7 @@
 
 """
 
-__RCSID__ = "$Id: Job.py,v 1.19 2008/02/18 11:03:53 paterson Exp $"
+__RCSID__ = "$Id: Job.py,v 1.20 2008/02/22 11:37:19 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -456,6 +456,27 @@ class Job:
       self._addParameter(self.workflow,'SoftwareTag','JDL',swTags,'List of VO software tags')
     else:
       raise TypeError,'Expected String or List of software tags'
+
+  #############################################################################
+  def setJobGroup(self,jobGroup):
+    """Helper function.
+
+       Allows to group certain jobs according to an ID.
+
+       Example usage:
+
+       >>> job = Job()
+       >>> job.setJobGroup('0000090')
+
+       @param optsLine: site string
+       @param optsLine: string
+    """
+
+    if type(destination) == type("  "):
+      description = 'User specified destination site'
+      self._addParameter(self.workflow,'JobGroup','JDL',jobGroup,description)
+    else:
+      raise TypeError,'Expected string for destination site'
 
   #############################################################################
   def createCode(self):
