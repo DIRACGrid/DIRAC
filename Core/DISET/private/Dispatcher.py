@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Dispatcher.py,v 1.7 2008/02/22 10:18:49 acasajus Exp $
-__RCSID__ = "$Id: Dispatcher.py,v 1.7 2008/02/22 10:18:49 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Dispatcher.py,v 1.8 2008/02/22 11:24:10 acasajus Exp $
+__RCSID__ = "$Id: Dispatcher.py,v 1.8 2008/02/22 11:24:10 acasajus Exp $"
 
 import DIRAC
 from DIRAC.LoggingSystem.Client.Logger import gLogger
@@ -145,7 +145,7 @@ class Dispatcher:
       else:
         username = 'unauthenticated'
       gLogger.verbose( "Unauthorized query", "%s by %s" % ( action, username ) )
-      return S_ERROR( "Unauthorized query to %s:%s" % ( service, action ) )
+      return S_ERROR( "Unauthorized query to %s:%s" % ( serviceName, action ) )
     return S_OK()
 
   def instantiateHandler( self, serviceName, clientSetup, clientTransport ):
