@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.11 2008/02/20 17:25:34 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.12 2008/02/22 11:56:50 paterson Exp $
 # File :   LHCbJob.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are documented with example usage for the DIRAC API.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.11 2008/02/20 17:25:34 paterson Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.12 2008/02/22 11:56:50 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -64,7 +64,7 @@ class DiracProduction:
     currentProductions = {}
     for prodDict in prodList:
       self.log.debug(prodDict)
-      if prodDict.has_key('Status') and prodDict.has_key('TransID'):
+      if prodDict.has_key('Agent') and prodDict.has_key('TransID'):
         prodID = prodDict['TransID']
         status = prodDict['Status']
         currentProductions[prodID] = status
@@ -130,7 +130,9 @@ class DiracProduction:
           self.log.verbose('Job is targeted to SE: %s' %(paramValue))
       self.log.verbose('Setting job owner to %s' %(userID))
       prodJob.setOwner(userID)
-      self.log.verbose('Adding default job group of %s' %(self.defaultOwnerGroup))
+      jobGroupName = str(prodID).zfill(8)
+      self.log.verbose('Adding default job group of %s' %(jobGroupName))
+      prodJob.setJobGroup(jobGroupName)
       constructedName = str(prodID).zfill(8)+'_'+str(jobNumber).zfill(8)
       self.log.verbose('Setting job name to %s' %constructedName)
       prodJob.setName(constructedName)
