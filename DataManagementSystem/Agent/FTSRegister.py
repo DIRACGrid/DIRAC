@@ -93,12 +93,10 @@ class FTSRegister(Agent):
       if not res['OK']:
         gLogger.error("FTSRegister.execute: Completely failed to regsiter replicas.",res['Message'])
         return S_OK()
-      channelID,fileID,se = lfns[lfn]
       for lfn in res['Value']['Successful'].keys():
-        self.DataLog.addFileRecord(lfn,'Register',se,'','FTSRegisterAgent')
+        channelID,fileID,se = lfns[lfn]
         self.TransferDB.setRegistrationDone(channelID,fileID)
-      for lfn in res['Value']['Failed'].keys():
-        self.DataLog.addFileRecord(lfn,'RegisterFailed',se,'','FTSRegisterAgent') 
+        self.DataLog.addFileRecord(lfn,'Register',se,'','FTSRegisterAgent')
     else:
       gLogger.info("FTSRegister.execute: No waiting registrations found.")
     return S_OK()
