@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationData.py,v 1.13 2008/01/16 16:23:07 acasajus Exp $
-__RCSID__ = "$Id: ConfigurationData.py,v 1.13 2008/01/16 16:23:07 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationData.py,v 1.14 2008/02/22 12:05:14 acasajus Exp $
+__RCSID__ = "$Id: ConfigurationData.py,v 1.14 2008/02/22 12:05:14 acasajus Exp $"
 
 import os.path
 import zlib
@@ -21,6 +21,7 @@ class ConfigurationData:
     self.runningThreadsNumber = 0
     self.compressedConfigurationData= ""
     self.configurationPath = "/DIRAC/Configuration"
+    self.backupsDir = "%s/etc/csbackup" % DIRAC.rootPath
     self.isService = False
     self.localCFG = CFG()
     self.remoteCFG = CFG()
@@ -31,6 +32,9 @@ class ConfigurationData:
       if not retVal[ 'OK' ]:
         gLogger.error( "Can't load %s file" % defaultCFGFile )
     self.sync()
+
+  def getBackupDir( self ):
+    return self.backupsDir
 
   def sync( self ):
     gLogger.debug( "Updating configuration internals" )
@@ -283,10 +287,17 @@ class ConfigurationData:
   def __backupCurrentConfiguration( self, backupName = False ):
     if not backupName:
       backupName = self.getVersion()
-    configurationFile = "%s/etc/%s.cfg" % ( DIRAC.rootPath, self.getName() )
-    backupFile = configurationFile.replace( ".cfg", ".%s.zip" % backupName )
-    gLogger.info( "Making a backup of configuration in %s" % backupFile )
+    configurationFilename = "%s.cfg" % self.getName()
+    configurationFile = "%s/etc/%s" % ( DIRAC.rootPath, configurationFilename )
+    today = Time.date()
+    backupPath = "%s/%s/%s" % ( self.getBackupDir(), today.year, today.month )
+    try:
+      os.makedirs( backupPath )
+    except:
+      pass
+    backupFile = "%s/%s" % ( backupPath, configurationFilename.replace( ".cfg", ".%s.zip" % backupName ) )
     if os.path.isfile( configurationFile ):
+      gLogger.info( "Making a backup of configuration in %s" % backupFile )
       try:
         zf = zipfile.ZipFile( backupFile, "w", zipfile.ZIP_DEFLATED );
         zf.write( configurationFile, "%s.backup.%s" % ( os.path.split( configurationFile )[1], backupName )  )
@@ -295,6 +306,8 @@ class ConfigurationData:
         gLogger.exception()
         gLogger.error( "Cannot backup configuration data file",
                      "file %s" % backupFile )
+    else:
+      gLogger.warn( "CS data file does not exist", configurationFile )
 
   def writeRemoteConfigurationToDisk( self, backupName = False ):
     configurationFile = "%s/etc/%s.cfg" % ( DIRAC.rootPath, self.getName() )

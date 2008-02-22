@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ServiceInterface.py,v 1.8 2007/11/07 16:47:03 acasajus Exp $
-__RCSID__ = "$Id: ServiceInterface.py,v 1.8 2007/11/07 16:47:03 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ServiceInterface.py,v 1.9 2008/02/22 12:05:14 acasajus Exp $
+__RCSID__ = "$Id: ServiceInterface.py,v 1.9 2008/02/22 12:05:14 acasajus Exp $"
 
 import sys
 import os
@@ -40,6 +40,10 @@ class ServiceInterface( threading.Thread ):
     self.start()
 
   def __loadConfigurationData( self ):
+    try:
+      os.makedirs( "%s/etc/csbackup" % DIRAC.rootPath )
+    except:
+      pass
     gConfigurationData.loadConfigurationData()
     if gConfigurationData.isMaster():
       bBuiltNewConfiguration = False
@@ -130,11 +134,8 @@ class ServiceInterface( threading.Thread ):
     return gConfigurationData.getVersion()
 
   def getCommitHistory( self ):
-    files = os.listdir( "%s/etc" % DIRAC.rootPath )
-    files.sort( reverse = True )
-    confName = gConfigurationData.getName()
-    rs = re.compile( "^%s\..+@.+\.zip$" % confName )
-    backups = [ ".".join( file.split( "." )[1:3] ).split( "@" ) for file in files if rs.search( file ) ]
+    files = self.__getCfgBackups( gConfigurationData.getBackupDir() )
+    backups = [ ".".join( file.split( "." )[1:3] ).split( "@" ) for file in files ]
     return backups
 
   def run( self ):
@@ -144,15 +145,28 @@ class ServiceInterface( threading.Thread ):
       self.__checkSlavesStatus()
 
   def getVersionContents( self, date ):
-    files = os.listdir( "%s/etc" % DIRAC.rootPath )
-    confName = gConfigurationData.getName()
-    rs = re.compile( "^%s\..+@%s.*\.zip$" % ( confName, date ) )
+    backupDir = gConfigurationData.getBackupDir()
+    files = self.__getCfgBackups( backupDir, date )
     for fileName in files:
-      if rs.search( fileName ):
-        zFile = zipfile.ZipFile( "%s/etc/%s" % ( DIRAC.rootPath, fileName ), "r" )
-        cfgName = zFile.namelist()[0]
-        #retVal = S_OK( zlib.compress( str( fd.read() ), 9 ) )
-        retVal = S_OK(zlib.compress( zFile.read( cfgName ) , 9 ) )
-        zFile.close()
-        return retVal
+      zFile = zipfile.ZipFile( "%s/%s" % ( backupDir, fileName ), "r" )
+      cfgName = zFile.namelist()[0]
+      #retVal = S_OK( zlib.compress( str( fd.read() ), 9 ) )
+      retVal = S_OK(zlib.compress( zFile.read( cfgName ) , 9 ) )
+      zFile.close()
+      return retVal
     return S_ERROR( "Version %s does not exist" % date )
+
+  def __getCfgBackups( self, basePath, date = "", subPath = "" ):
+    rs = re.compile( "^%s\..+@%s.*\.zip$" % ( gConfigurationData.getName(), date ) )
+    fsEntries = os.listdir( "%s/%s" % ( basePath, subPath ) )
+    fsEntries.sort( reverse = True )
+    backupsList = []
+    for entry in fsEntries:
+      entryPath = "%s/%s/%s" % ( basePath, subPath, entry )
+      if os.path.isdir( entryPath ):
+        backupsList.extend( self.__getCfgBackups( basePath, date, "%s/%s" % ( subPath, entry ) ) )
+      elif os.path.isfile( entryPath ):
+        if rs.search( entry ):
+          backupsList.append( "%s/%s" % ( subPath, entry ) )
+    return backupsList
+
