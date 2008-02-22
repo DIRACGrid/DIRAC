@@ -3,7 +3,7 @@
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities.List import randomize,stringListToString,intListToString
-import threading,types
+import threading,types,string
 
 gLogger.initialize('DMS','/Databases/TransferDB/Test')
 
@@ -544,6 +544,26 @@ class TransferDB(DB):
       files.append(tuple)
     return S_OK(files)
 
+  def getSites(self):
+    req = "SELECT DISTINCT SourceSite FROM Channels;"
+    res = self._query(req)
+    if not res['OK']:
+      err = "TransferDB.getSites: Failed to get channel SourceSite: %s" % res['Message']
+      return S_ERROR(err)
+    sourceSites = []
+    for tuple in res['Value']:
+      sourceSites.append(tuple[0])
+    req = "SELECT DISTINCT DestinationSite FROM Channels;"
+    res = self._query(req)
+    if not res['OK']:
+      err = "TransferDB.getSites: Failed to get channel DestinationSite: %s" % res['Message'] 
+      return S_ERROR(err)
+    destSites = []        
+    for tuple in res['Value']:
+      destSites.append(tuple[0])
+    resDict = {'SourceSites':sourceSites,'DestinationSites':destSites}
+    return S_OK(resDict)
+ 
   def getFTSJobs(self):
     req = "SELECT FTSReqID,FTSGUID,FTSServer,SubmitTime,LastMonitor,PercentageComplete,Status,NumberOfFiles,TotalSize FROM FTSReq;"
     res = self._query(req)
@@ -557,3 +577,97 @@ class TransferDB(DB):
       tuple = (ftsReqID,ftsGUID,ftsServer,strSubTime,strLastMonitor,complete,status,files,size)
       ftsReqs.append(tuple)
     return S_OK(ftsReqs)
+
+  def getAttributesForReqList(self,reqIDList,attrList=[]):
+    """ Get attributes for the requests in the req ID list.
+        Returns an S_OK structure with a dictionary of dictionaries as its Value:
+        ValueDict[FTSReqID][attribute_name] = attribute_value 
+    """
+    self.ftsReqAttributeNames = []
+
+    if not attrList:
+      attrList = self.ftsReqAttributeNames
+    attrNames = ''
+    attr_tmp_list = ['FTSReqID','SourceSite','DestinationSite']
+    for attr in attrList:
+      if not attr in attr_tmp_list:
+        attrNames = '%sFTSReq.%s,' % (attrNames,attr)
+        attr_tmp_list.append(attr)    
+    attrNames = attrNames.strip(',')
+    reqList = string.join(map(lambda x: str(x),reqIDList),',')
+
+    req = 'SELECT FTSReq.FTSReqID,Channels.SourceSite,Channels.DestinationSite,%s FROM FTSReq,Channels WHERE FTSReqID in (%s) AND Channels.ChannelID=FTSReq.ChannelID' % ( attrNames, reqList )
+    print req
+    res = self._query( req)  
+    if not res['OK']:
+      return res
+    retDict = {}
+    for attrValues in res['Value']:
+      reqDict = {}
+      for i in range(len(attr_tmp_list)):
+        try:
+          reqDict[attr_tmp_list[i]] = attrValues[i].tostring()
+        except:
+          reqDict[attr_tmp_list[i]] = str(attrValues[i])
+      retDict[int(reqDict['FTSReqID'])] = reqDict
+    return S_OK( retDict )  
+
+  def selectFTSReqs(self, condDict, older=None, newer=None, orderAttribute=None, limit=None ):
+    """ Select fts requests matching the following conditions:
+        - condDict dictionary of required Key = Value pairs;
+        - with the last update date older and/or newer than given dates;
+    
+        The result is ordered by FTSReqID if requested, the result is limited to a given
+        number of jobs if requested.
+    """
+    condition = self.__buildCondition(condDict, older, newer)
+
+    if orderAttribute:
+      orderType = None
+      orderField = orderAttribute
+      if orderAttribute.find(':') != -1:   
+        orderType = orderAttribute.split(':')[1].upper()
+        orderField = orderAttribute.split(':')[0]
+      condition = condition + ' ORDER BY ' + orderField
+      if orderType:
+        condition = condition + ' ' + orderType
+
+    if limit:
+      condition = condition + ' LIMIT ' + str(limit)  
+
+    cmd = 'SELECT FTSReqID from FTSReq ' + condition
+    res = self._query( cmd )
+    if not res['OK']:
+      return res
+       
+    if not len(res['Value']):
+      return S_OK([])
+    return S_OK( map( self._to_value, res['Value'] ) )
+
+  def __buildCondition(self, condDict, older=None, newer=None ):
+    """ build SQL condition statement from provided condDict
+        and other extra conditions
+    """
+    condition = ''
+    conjunction = "WHERE"
+        
+    if condDict != None:
+      for attrName, attrValue in condDict.items():
+        condition = ' %s %s FTSReq.%s=\'%s\'' % ( condition,
+                                           conjunction,
+                                           str(attrName),
+                                           str(attrValue)  )
+        conjunction = "AND"
+
+    if older:
+      condition = ' %s %s LastUpdateTime < \'%s\'' % ( condition,
+                                                 conjunction,
+                                                 str(older) )
+      conjunction = "AND"
+
+    if newer:
+      condition = ' %s %s LastUpdateTime >= \'%s\'' % ( condition,
+                                                 conjunction,   
+                                                 str(newer) )
+        
+    return condition
