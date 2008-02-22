@@ -41,6 +41,10 @@ class RemovalAgent(Agent):
     gMonitor.registerActivity("ReplicaRemovalDone", "Successful replica removals",  "RemovalAgent",       "Removal/min",     gMonitor.OP_SUM)
     gMonitor.registerActivity("ReplicaRemovalFail", "Failed replica removals",      "RemovalAgent",       "Removal/min",     gMonitor.OP_SUM)
 
+    gMonitor.registerActivity("RemoveFileAtt",      "File removal attempted",       "RemovalAgent",       "Removal/min",     gMonitor.OP_SUM) 
+    gMonitor.registerActivity("RemoveFileDone",     "File removal done",            "RemovalAgent",       "Removal/min",     gMonitor.OP_SUM)   
+    gMonitor.registerActivity("RemoveFileFail",     "File removal failed",          "RemovalAgent",       "Removal/min",     gMonitor.OP_SUM)
+
     self.maxNumberOfThreads = gConfig.getValue(self.section+'/NumberOfThreads',0)
     self.threadPoolDepth = gConfig.getValue(self.section+'/ThreadPoolDepth',0)
     self.threadPool = ThreadPool(1,self.maxNumberOfThreads)
@@ -116,8 +120,8 @@ class RemovalAgent(Agent):
     elif not res['Value']:
       gLogger.info("RemovalAgent.execute: No requests to be executed found.")
       return S_OK()
-    requestString = res['Value']['requestString']
-    requestName = res['Value']['requestName']
+    requestString = res['Value']['RequestString']
+    requestName = res['Value']['RequestName']
     sourceServer= res['Value']['Server']
     gLogger.info("RemovalAgent.execute: Obtained request %s" % requestName)
     oRequest = DataManagementRequest(request=requestString)
