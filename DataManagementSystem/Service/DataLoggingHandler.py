@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: DataLoggingHandler.py,v 1.2 2008/02/21 18:32:49 acsmith Exp $
+# $Id: DataLoggingHandler.py,v 1.3 2008/02/23 17:33:07 acsmith Exp $
 ########################################################################
 
 """ DataLoggingHandler is the implementation of the Data Logging
@@ -12,21 +12,46 @@
 
 """
 
-__RCSID__ = "$Id: DataLoggingHandler.py,v 1.2 2008/02/21 18:32:49 acsmith Exp $"
+__RCSID__ = "$Id: DataLoggingHandler.py,v 1.3 2008/02/23 17:33:07 acsmith Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC import gLogger, gConfig, rootPath, S_OK, S_ERROR
 from DIRAC.DataManagementSystem.DB.DataLoggingDB import DataLoggingDB
 from DIRAC.Core.Utilities.Graph import Graph
+from DIRAC.ConfigurationSystem.Client import PathFinder
 import time,os
 # This is a global instance of the DataLoggingDB class
 logDB = False
+dataPath = False
 
 def initializeDataLoggingHandler( serviceInfo ):
 
+  global dataPath
   global logDB
   logDB = DataLoggingDB()
+
+  monitoringSection = PathFinder.getServiceSection( "DataManagement/DataLogging" )
+  #Get data location
+  retDict = gConfig.getOption( "%s/DataLocation" % monitoringSection )
+  if not retDict[ 'OK' ]:
+    return retDict
+  dataPath = retDict[ 'Value' ].strip()
+  if "/" != dataPath[0]:
+    dataPath = os.path.realpath( "%s/%s" % ( rootPath, dataPath ) )
+  gLogger.info( "Data will be written into %s" % dataPath )
+  try:
+    os.makedirs( dataPath )
+  except:
+    pass
+  try:
+    testFile = "%s/mon.jarl.test" % dataPath
+    fd = file( testFile, "w" )
+    fd.close()
+    os.unlink( testFile )
+  except IOError:
+    gLogger.fatal( "Can't write to %s" % dataPath )
+    return S_ERROR( "Data location is not writable" )
   return S_OK()
 
 class DataLoggingHandler( RequestHandler ):
@@ -36,7 +61,6 @@ class DataLoggingHandler( RequestHandler ):
   def export_addFileRecord(self,lfn,status,minor,date,source):
     """ Add a logging record for the given file
     """
-
     result = logDB.addFileRecord(lfn,status,minor,date,source)
     return result
 
@@ -64,18 +88,18 @@ class DataLoggingHandler( RequestHandler ):
     endState = paramsDict['EndState']
     startTime = ''
     endTime = ''
-    title = 'Time between %s and %s events' % (startState,endState)
+    title = '%s till %s' % (startState,endState)
     if paramsDict.has_key('StartTime'):
       startTime = paramsDict['StartTime']
     if paramsDict.has_key('EndTime'):
       endTime = paramsDict['EndTime']
-    xlabel = 'Time between states (min)'
+    xlabel = 'Time (seconds)'
     ylabel = ''
+    outputFile = '%s/%s-%s' % (dataPath,startState,endState)
     res = logDB.getStateDiff(startState,endState,startTime,endTime)
     if not res['OK']:
       return S_ERROR('Failed to get DB info: %s' % res['Message'])
     dataPoints = res['Value']
-    outputFile = '%s-%s-%s' % (time.time(),startState,endState)
     res = Graph().histogram(title,xlabel,ylabel,dataPoints,outputFile)
     if not res['OK']:
       return res
