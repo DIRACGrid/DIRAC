@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/Attic/ProxyRepositoryDB.py,v 1.15 2008/02/25 23:33:42 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/Attic/ProxyRepositoryDB.py,v 1.16 2008/02/25 23:35:47 atsareg Exp $
 ########################################################################
 """ ProxyRepository class is a front-end to the proxy repository Database
 """
 
-__RCSID__ = "$Id: ProxyRepositoryDB.py,v 1.15 2008/02/25 23:33:42 atsareg Exp $"
+__RCSID__ = "$Id: ProxyRepositoryDB.py,v 1.16 2008/02/25 23:35:47 atsareg Exp $"
 
 import time
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
@@ -104,7 +104,7 @@ class ProxyRepositoryDB(DB):
 
       cmd = 'INSERT INTO Proxies ( Proxy, UserDN, UserGroup, ExpirationTime, ' \
             'ProxyType, ProxyAttributes ) VALUES ' \
-            '(\'%s\', \'%s\', \'%s\', UTC_TIMESTAMP() + INTERVAL %d second, \'%s\', \'%s\')' % (proxy_to_store,dn,group,time_left,proxyType,proxyAttr)
+            '(\'%s\', \'%s\', \'%s\', NOW() + INTERVAL %d second, \'%s\', \'%s\')' % (proxy_to_store,dn,group,time_left,proxyType,proxyAttr)
       result = self._update( cmd )
       if result['OK']:
         self.log.verbose( 'Proxy inserted for DN="%s" and Group="%s"' % (dn,group) )
@@ -130,7 +130,7 @@ class ProxyRepositoryDB(DB):
           proxy_to_store = proxy
 
         cmd = 'UPDATE Proxies SET Proxy=\'%s\',' % proxy
-        cmd = cmd + ' ExpirationTime = UTC_TIMESTAMP() + INTERVAL %d SECOND, ' % time_left
+        cmd = cmd + ' ExpirationTime = NOW() + INTERVAL %d SECOND, ' % time_left
         cmd = cmd + ' ProxyType=\'%s\' ' % proxyType
         if proxyAttr:
           cmd = cmd + ', ProxyAttributes=\'%s\' ' % proxyAttr
@@ -236,7 +236,7 @@ class ProxyRepositoryDB(DB):
     """
 
     if validity:
-      cmd = "SELECT UserDN,UserGroup,ProxyType,PersistentFlag FROM Proxies WHERE (UTC_TIMESTAMP() + INTERVAL %d SECOND) > ExpirationTime" % validity
+      cmd = "SELECT UserDN,UserGroup,ProxyType,PersistentFlag FROM Proxies WHERE (NOW() + INTERVAL %d SECOND) > ExpirationTime" % validity
     else:
       cmd = "SELECT UserDN,UserGroup,ProxyType,PersistentFlag FROM Proxies"
     result = self._query( cmd )
