@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.9 2008/02/09 13:28:04 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.10 2008/02/25 22:56:19 atsareg Exp $
 ########################################################################
 """ PilotAgentsDB class is a front-end to the Pilot Agent Database.
     This database keeps track of all the submitted grid pilot jobs.
@@ -23,7 +23,7 @@
 
 """
 
-__RCSID__ = "$Id: PilotAgentsDB.py,v 1.9 2008/02/09 13:28:04 atsareg Exp $"
+__RCSID__ = "$Id: PilotAgentsDB.py,v 1.10 2008/02/25 22:56:19 atsareg Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
@@ -48,7 +48,7 @@ class PilotAgentsDB(DB):
 
     req = "INSERT INTO PilotAgents( PilotJobReference, InitialJobID, OwnerDN, " + \
           "OwnerGroup, Broker, GridType, SubmissionTime, LastUpdateTime, Status ) " + \
-          "VALUES ('%s',%d,'%s','%s','%s',NOW(),NOW(),'Submitted')" % \
+          "VALUES ('%s',%d,'%s','%s','%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),'Submitted')" % \
           (pilotRef,int(jobID),ownerDN,ownerGroup,broker,gridType)
     return self._update(req)
 
@@ -63,7 +63,7 @@ class PilotAgentsDB(DB):
     if updateTime:
       setList.append("LastUpdateTime='%s'" % updateTime)
     else:
-      setList.append("LastUpdateTime=NOW()")
+      setList.append("LastUpdateTime=UTC_TIMESTAMP()")
 
     set_string = ','.join(setList)
     req = "UPDATE PilotAgents SET "+set_string+" WHERE PilotJobReference='%s'" % pilotRef
@@ -230,7 +230,7 @@ class PilotAgentsDB(DB):
 
     pilotID = self.__getPilotID(pilotRef)
     if pilotID:
-      req = "INSERT INTO JobToPilotMapping VALUES (%d,%d,NOW())" % (pilotID,jobID)
+      req = "INSERT INTO JobToPilotMapping VALUES (%d,%d,UTC_TIMESTAMP())" % (pilotID,jobID)
       result = self._update(req)
       return result
     else:
