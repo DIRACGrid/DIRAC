@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSAdministratorHandler.py,v 1.13 2008/02/08 10:33:03 atsareg Exp $
+# $Id: WMSAdministratorHandler.py,v 1.14 2008/02/25 23:02:47 atsareg Exp $
 ########################################################################
 """
 This is a DIRAC WMS administrator interface.
@@ -17,7 +17,7 @@ Access to the pilot data:
 
 """
 
-__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.13 2008/02/08 10:33:03 atsareg Exp $"
+__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.14 2008/02/25 23:02:47 atsareg Exp $"
 
 import os, sys, string, uu, shutil
 from types import *
@@ -145,9 +145,14 @@ class WMSAdministratorHandler(RequestHandler):
         if timeLeft/3600. > validity:
           result = S_OK(user_proxy)
           result['Message'] = 'Could not get myproxy delegation'
+          result['TimeLeft'] = timeLeft
           return result
         else:
-          return S_ERROR('Could not get proxy delegation and the stored proxy is not sufficient')
+          result = S_OK(user_proxy)
+          result['Message'] = 'WARNING: a shorter than requested proxy is returned'
+          result['TimeLeft'] = timeLeft
+          return result
+          #return S_ERROR('Could not get proxy delegation and the stored proxy is not sufficient')
       else:
         return S_ERROR("Could not get proxy delegation and the stored proxy is not valid")
 
@@ -228,7 +233,7 @@ class WMSAdministratorHandler(RequestHandler):
     """
 
     # Get the pilot grid reference first
-    result = jobDB.getJobParameter(jobID,'GLITE_WMS_JOBID')
+    result = jobDB.getJobParameter(jobID,'Pilot_Reference')
     if not result['OK']:
       return result
 
