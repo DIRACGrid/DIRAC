@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/backends/RemoteBackend.py,v 1.13 2008/02/21 11:34:56 acasajus Exp $
-__RCSID__ = "$Id: RemoteBackend.py,v 1.13 2008/02/21 11:34:56 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/backends/RemoteBackend.py,v 1.14 2008/02/25 19:34:13 mseco Exp $
+__RCSID__ = "$Id: RemoteBackend.py,v 1.14 2008/02/25 19:34:13 mseco Exp $"
 """This Backend sends the Log Messages to a Log Server
 It will only report to the server ERROR, EXCEPTION, FATAL
 and ALWAYS messages.
@@ -46,24 +46,33 @@ class RemoteBackend( BaseBackend, threading.Thread ):
         if self._testLevel( message.getLevel() ):
           bundle.append( message.toTuple() )
 
-      if len( bundle ) > 0:
+      if len( bundle ):
         self._sendMessageToServer( bundle )
 
-  def _sendMessageToServer( self, messageBundle ):
+    if len( self._Transactions ):
+      self._sendMessageToServer()
+
+  def _sendMessageToServer( self, messageBundle=None ):
     from DIRAC.Core.DISET.RPCClient import RPCClient
-    oSock = RPCClient( "Logging/SystemLogging", timeout = 10 )
-    self._Transactions.append( messageBundle )
-    if len( self._Transactions ) > 100:
-      del self._Transactions[:len(self._Transactions)-100]
-    while len( self._Transactions ):
-      print self._Transactions[0]
+    if messageBundle:
+      self._Transactions.append( messageBundle )
+    TransactionsLength = len( self._Transactions )
+    if TransactionsLength > 100:
+      del self._Transactions[:TransactionsLength-100]
+      TransactionsLength = 100
+
+    try:
+      oSock = RPCClient( "Logging/SystemLogging", timeout = 10 )
+    except Exception,v:
+      return False
+
+    while TransactionsLength:
       result = oSock.addMessages( self._Transactions[0],
-                                       self._site, self._hostname )
+                                  self._site, self._hostname )
       if result['OK']:
-        print result['Value']
-        self._Transactions.pop(0)
+        TransactionsLength = TransactionsLength - 1
+        self._Transactions.pop(0) 
       else:
-        print result['Message']
         return False
     return True
 
@@ -74,7 +83,7 @@ class RemoteBackend( BaseBackend, threading.Thread ):
 
   def flush( self ):
     self._alive = False
-    if not self._interactive and self._sendMessageToServer():
+    if not self.__interactive and self._sendMessageToServer()['OK']:
       while not self._messageQueue.empty():
         self._bundleMessages()
 

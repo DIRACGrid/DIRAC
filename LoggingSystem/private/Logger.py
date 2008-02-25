@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.23 2008/02/15 19:31:21 mseco Exp $
-__RCSID__ = "$Id: Logger.py,v 1.23 2008/02/15 19:31:21 mseco Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.24 2008/02/25 19:34:13 mseco Exp $
+__RCSID__ = "$Id: Logger.py,v 1.24 2008/02/25 19:34:13 mseco Exp $"
 """
    DIRAC Logger client
 """
@@ -50,34 +50,36 @@ class Logger:
   def initialize( self, systemName, cfgPath ):
     if self._systemName == "Framework":
       from DIRAC.ConfigurationSystem.Client.Config import gConfig
+      from os import getpid
       #Get the options for the different output backends
-      retDict = gConfig.getOptionsDict( "%s" % cfgPath )
+      retDict = gConfig.getOptionsDict( "%s/BackendsOptions" % cfgPath )
       if not retDict[ 'OK' ]:
-        self.backendsOptions = {}
+        self.backendsOptions = { 'FileName': 'Dirac-log_%s.log' % getpid(),
+                                 'Interactive': True, 'SleepTime': 150 }
       else:
         self.backendsOptions = retDict[ 'Value' ]
+
+        if not self.backendsOptions.has_key( 'Filename' ):
+          self.backendsOptions[ 'FileName' ] = 'Dirac-log_%s.log' % getpid()
+
+        if self.backendsOptions.has_key( 'SleepTime' ):
+          self.backendsOptions[ 'SleepTime' ] = int ( self.backendsOptions[ 'SleepTime' ] )
+        else:
+          self.backendsOptions[ 'SleepTime' ] = 150
+
+        if self.backendsOptions.has_key( 'Interactive' ) and \
+               self.backendsOptions[ 'Interactive' ].lower() \
+               in ( "n", "no", "0", "false" ) :
+          self.backendsOptions[ 'Interactive' ] = False
+        else:
+          self.backendsOptions[ 'Interactive' ] = True
 
       site = gConfig.getValue( "/DIRAC/Site", 'Unknown' )
       self.backendsOptions[ 'Site' ] = site
 
-      filename = gConfig.getValue( "%s/Filename" % cfgPath, 
-                                   'SystemLoggingService.log' )
-      self.backendsOptions[ 'FileName' ] = filename
-      
-      remoteBackendSleepTime = gConfig.getValue( "%s/RemoteBackendSleepTime" %cfgPath,
-                                                  150 )
-      self.backendsOptions[ 'SleepTime' ] = remoteBackendSleepTime
-      
-      retValue = gConfig.getValue( "%s/Interactive" % cfgPath, 'true' )
-      if retValue.lower() in ( "n", "no", "0", "false" ) :
-        self.backendsOptions[ 'Interactive' ] = False
-      else:
-        self.backendsOptions[ 'Interactive' ] = True    
       #Configure outputs
-      #  In production versions the default of the desired backend list
-      #should be just stdout.
       desiredBackends = gConfig.getValue( "%s/LogBackends" % cfgPath, 
-                                          'stdout, server' )
+                                          'stdout' )
       self.registerBackends( List.fromChar( desiredBackends ) )
       #Configure verbosity
       self.setLevel( gConfig.getValue( "%s/LogLevel" % cfgPath, "INFO" ) )
@@ -260,12 +262,9 @@ class Logger:
     return sExtendedException
 
   def __getStackString( self ):
-    # FIXME: this function should return the stack as a string to be printed via
-    # a debug message, the upper 3 levels should be skipped since they correspond
-    # to gLogger.showStack,  self.__getStackString, traceback.print_stack
-    traceback.print_stack()
-    return ""
-
+    stack_list = traceback.extract_stack()
+    return ''.join( traceback.format_list( stack_list[3:0] ))
+    
   def flushAllMessages( self, exitCode ):
     for backend in self._backendsDict:
       self._backendsDict[ backend ].flush()
