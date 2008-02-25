@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.38 2008/02/25 22:49:57 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.39 2008/02/25 23:06:04 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.38 2008/02/25 22:49:57 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.39 2008/02/25 23:06:04 atsareg Exp $"
 
 import re, os, sys, string
 import time
@@ -173,7 +173,7 @@ class JobDB(DB):
     # should make sure that only 1 thread is allowed to call this method at any time.
     # for the moment I put a lock here.
 
-    cmd = 'INSERT INTO Jobs (SubmissionTime) VALUES (NOW())'
+    cmd = 'INSERT INTO Jobs (SubmissionTime) VALUES (UTC_TIMESTAMP())'
     err = 'JobDB.getJobID: Failed to retrieve a new Id.'
 
     self.getIDLock.acquire()
@@ -573,7 +573,7 @@ class JobDB(DB):
     """
 
     if update:
-      cmd = 'UPDATE Jobs SET %s=\'%s\',LastUpdateTime=NOW() WHERE JobID=\'%s\'' % ( attrName, attrValue, jobID )
+      cmd = 'UPDATE Jobs SET %s=\'%s\',LastUpdateTime=UTC_TIMESTAMP() WHERE JobID=\'%s\'' % ( attrName, attrValue, jobID )
     else:
       cmd = 'UPDATE Jobs SET %s=\'%s\' WHERE JobID=\'%s\'' % ( attrName, attrValue, jobID )
 
@@ -1069,11 +1069,11 @@ class JobDB(DB):
         if current_status == status:
           return S_OK()
         else:
-          req =  "UPDATE SiteMask SET Status='%s',LastUpdateTime=NOW()," \
+          req =  "UPDATE SiteMask SET Status='%s',LastUpdateTime=UTC_TIMESTAMP()," \
                  "Author='%s' WHERE Site='%s'"
           req = req % (status,author,site)
       else:
-        req = "INSERT INTO SiteMask VALUES ('%s','%s',NOW(),'%s')" % (site,status,author)
+        req = "INSERT INTO SiteMask VALUES ('%s','%s',UTC_TIMESTAMP(),'%s')" % (site,status,author)
       result = self._update(req)
       if not result['OK']:
         return S_ERROR('Failed to update the Site Mask')
