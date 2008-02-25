@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: FileCatalogDB.py,v 1.1 2007/12/02 12:46:18 atsareg Exp $
+# $Id: FileCatalogDB.py,v 1.2 2008/02/25 23:25:43 atsareg Exp $
 ########################################################################
 """ DIRAC FileCatalog Database
 
@@ -17,7 +17,7 @@
     addPfn
 """
 
-__RCSID__ = "$Id: FileCatalogDB.py,v 1.1 2007/12/02 12:46:18 atsareg Exp $"
+__RCSID__ = "$Id: FileCatalogDB.py,v 1.2 2008/02/25 23:25:43 atsareg Exp $"
 
 import re, os, sys
 import string, time, datetime
@@ -75,7 +75,7 @@ class FileCatalogDB(DB):
       status,guid,error,pythonerror = exeCommand('uuidgen')
       req = "INSERT INTO FC_Directories (DirPath,Name,ParentID,GUID,UID,GID,"
       req = req + "CreateDate,ModifyDate,AccessDate,Umask,MinACL) Values "
-      req = req + "('/','',-1,'%s',0,0,NOW(),NOW(),NOW(),0777,0775)" % guid
+      req = req + "('/','',-1,'%s',0,0,UTC_TIMESTAMP(),UTC_TIMESTAMP(),UTC_TIMESTAMP(),0777,0775)" % guid
       result = self._update(req)
       if result['OK']:
         resGet = self.getDirectory('/')
@@ -106,7 +106,7 @@ class FileCatalogDB(DB):
       status,guid,error,pythonerror = exeCommand('uuidgen')
       req = "INSERT INTO FC_Directories (DirPath,ParentID,GUID,UID,GID,"
       req = req + "CreateDate,ModifyDate,AccessDate,Umask,MinACL) Values "
-      req = req + "('%s',%d,'%s',%d,%d,NOW(),NOW(),NOW(),%d,%d)" % \
+      req = req + "('%s',%d,'%s',%d,%d,UTC_TIMESTAMP(),UTC_TIMESTAMP(),UTC_TIMESTAMP(),%d,%d)" % \
             (path,parent_id,guid,uid,gid,umask,acl)
       result = self._update(req)
 
@@ -601,7 +601,7 @@ CREATE TABLE F_%d (
 
     fname = os.path.basename(lfn)
     req = "INSERT INTO F_%d (LFN,FileName,Size,CheckSum,GUID,UID,GID,CreateDate," % dirID
-    req = req + "ModifyDate,AccessDate,MinACL) VALUES ('%s','%s',%d,'%s','%s',%d,%d,NOW(),NOW(),NOW(),%d)" % \
+    req = req + "ModifyDate,AccessDate,MinACL) VALUES ('%s','%s',%d,'%s','%s',%d,%d,UTC_TIMESTAMP(),UTC_TIMESTAMP(),UTC_TIMESTAMP(),%d)" % \
           (lfn,fname,size,checksum,gguid,uid,gid,dirDict['MinACL'])
     resAdd = self._update(req)
     if resAdd['OK']:

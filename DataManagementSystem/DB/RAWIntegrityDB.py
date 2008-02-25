@@ -18,7 +18,7 @@ class RAWIntegrityDB(DB):
     """
     try:
       gLogger.info("RAWIntegrityDB.getActiveFiles: Obtaining files awaiting migration from database.")
-      req = "SELECT LFN,PFN,Size,StorageElement,GUID,FileChecksum,TIME_TO_SEC(TIMEDIFF(NOW(),SubmitTime)) from Files WHERE Status = 'Active';"
+      req = "SELECT LFN,PFN,Size,StorageElement,GUID,FileChecksum,TIME_TO_SEC(TIMEDIFF(UTC_TIMESTAMP(),SubmitTime)) from Files WHERE Status = 'Active';"
       res = self._query(req)
       if not res['OK']:
         gLogger.error("RAWIntegrityDB.getActiveFiles: Failed to get files from database.",res['Message'])
@@ -39,7 +39,7 @@ class RAWIntegrityDB(DB):
     """
     try:
       gLogger.info("RAWIntegrityDB.setFileStatus: Attempting to update status of %s to '%s'." % (lfn,status))
-      req = "UPDATE Files SET Status='%s',CompleteTime=NOW() WHERE LFN = '%s' AND Status = 'Active';" % (status,lfn)
+      req = "UPDATE Files SET Status='%s',CompleteTime=UTC_TIMESTAMP() WHERE LFN = '%s' AND Status = 'Active';" % (status,lfn)
       res = self._update(req)
       if not res['OK']:
         gLogger.error("RAWIntegrityDB.setFileStatus: Failed update file status.",res['Message'])
@@ -57,7 +57,7 @@ class RAWIntegrityDB(DB):
     try:
       gLogger.info("RAWIntegrityDB.addFile: Attempting to add %s to database." % lfn)
       req = "INSERT INTO Files (LFN,PFN,Size,StorageElement,GUID,FileChecksum,SubmitTime) VALUES\
-            ('%s','%s',%s,'%s','%s','%s',NOW());" % (lfn,pfn,size,se,guid,checksum)
+            ('%s','%s',%s,'%s','%s','%s',UTC_TIMESTAMP());" % (lfn,pfn,size,se,guid,checksum)
       res = self._update(req)
       if not res['OK']:
         gLogger.error("RAWIntegrityDB.addFile: Failed update add file to database.",res['Message'])
@@ -74,7 +74,7 @@ class RAWIntegrityDB(DB):
     """
     try:
       gLogger.info("RAWIntegrityDB.setLastMonitorTime: Attempting to set the last migration marker.")
-      req = "UPDATE LastMonitor SET LastMonitorTime=NOW();"
+      req = "UPDATE LastMonitor SET LastMonitorTime=UTC_TIMESTAMP();"
       res = self._update(req)
       if not res['OK']:
         gLogger.error("RAWIntegrityDB.setLastMonitorTime: Failed update migration marker.",res['Message'])
@@ -91,7 +91,7 @@ class RAWIntegrityDB(DB):
     """
     try:
       gLogger.info("RAWIntegrityDB.getLastMonitorTimeDiff: Attempting to get the last migration marker.")
-      req = "SELECT TIME_TO_SEC(TIMEDIFF(NOW(),LastMonitorTime)) FROM LastMonitor LIMIT 1;"
+      req = "SELECT TIME_TO_SEC(TIMEDIFF(UTC_TIMESTAMP(),LastMonitorTime)) FROM LastMonitor LIMIT 1;"
       res = self._query(req)
       if not res['OK']:
         gLogger.error("RAWIntegrityDB.getLastMonitorTimeDiff: Failed get migration marker.",res['Message'])

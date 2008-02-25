@@ -457,7 +457,7 @@ class RequestDBMySQL(DB):
     if not len(res['Value']) == 0:
       err = 'RequestDB._getRequestID: Duplicate entry for RequestName'
       return S_ERROR(err)
-    req = 'INSERT INTO Requests (RequestName,SubmissionTime) VALUES ("%s",NOW());' % requestName
+    req = 'INSERT INTO Requests (RequestName,SubmissionTime) VALUES ("%s",UTC_TIMESTAMP());' % requestName
     err = 'RequestDB._getRequestID: Failed to retrieve RequestID'
     res = self._update(req)
     if not res['OK']:
@@ -479,7 +479,7 @@ class RequestDBMySQL(DB):
 
   def _getSubRequestID(self,requestID,requestType):
     self.getIdLock.acquire()
-    req = 'INSERT INTO SubRequests (RequestID,RequestType,SubmissionTime) VALUES (%s,"%s",NOW())' % (requestID,requestType)
+    req = 'INSERT INTO SubRequests (RequestID,RequestType,SubmissionTime) VALUES (%s,"%s",UTC_TIMESTAMP())' % (requestID,requestType)
     err = 'RequestDB._getSubRequestID: Failed to retrieve SubRequestID'
     res = self._update(req)
     if not res['OK']:

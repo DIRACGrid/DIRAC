@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/Attic/ProxyRepositoryDB.py,v 1.14 2008/02/06 18:13:04 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/Attic/ProxyRepositoryDB.py,v 1.15 2008/02/25 23:33:42 atsareg Exp $
 ########################################################################
 """ ProxyRepository class is a front-end to the proxy repository Database
 """
 
-__RCSID__ = "$Id: ProxyRepositoryDB.py,v 1.14 2008/02/06 18:13:04 atsareg Exp $"
+__RCSID__ = "$Id: ProxyRepositoryDB.py,v 1.15 2008/02/25 23:33:42 atsareg Exp $"
 
 import time
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
@@ -35,7 +35,7 @@ class ProxyRepositoryDB(DB):
       self.vomsGroupMappingDict = result['Value']
     else:
       self.vomsGroupMappingDict = {}
-    
+
     self.servercert = gConfig.getValue('/DIRAC/Security/CertFile',
                               '/opt/dirac/etc/grid-security/hostcert.pem')
     self.serverkey = gConfig.getValue('/DIRAC/Security/KeyFile',
@@ -63,16 +63,16 @@ class ProxyRepositoryDB(DB):
     result = getProxyTimeLeft(proxy)
     if not result['OK']:
       return S_ERROR('Proxy not valid')
-      
-    # Force the VOMS conversion with the proper role corresponding to the 
-    # group in the request  
+
+    # Force the VOMS conversion with the proper role corresponding to the
+    # group in the request
     force_VOMS = False
     if self.vomsGroupMappingDict.has_key(group):
       if attributeString != self.vomsGroupMappingDict[group]:
-        force_VOMS = True  
+        force_VOMS = True
     else:
-      return S_ERROR('Non-valid user group requested for proxy '+group)    
-      
+      return S_ERROR('Non-valid user group requested for proxy '+group)
+
     time_left = result['Value']
     ownergroup = group
 
@@ -98,13 +98,13 @@ class ProxyRepositoryDB(DB):
         if not result['OK']:
           return S_ERROR('Failed to convert proxy to VOMS')
         proxy_to_store = result['VOMS']
-        time_left = result['TimeLeft']  
+        time_left = result['TimeLeft']
       else:
         proxy_to_store = proxy
 
       cmd = 'INSERT INTO Proxies ( Proxy, UserDN, UserGroup, ExpirationTime, ' \
             'ProxyType, ProxyAttributes ) VALUES ' \
-            '(\'%s\', \'%s\', \'%s\', NOW() + INTERVAL %d second, \'%s\', \'%s\')' % (proxy_to_store,dn,group,time_left,proxyType,proxyAttr)
+            '(\'%s\', \'%s\', \'%s\', UTC_TIMESTAMP() + INTERVAL %d second, \'%s\', \'%s\')' % (proxy_to_store,dn,group,time_left,proxyType,proxyAttr)
       result = self._update( cmd )
       if result['OK']:
         self.log.verbose( 'Proxy inserted for DN="%s" and Group="%s"' % (dn,group) )
@@ -125,12 +125,12 @@ class ProxyRepositoryDB(DB):
           if not result['OK']:
             return S_ERROR('Failed to convert proxy to VOMS')
           proxy_to_store = result['VOMS']
-          time_left = result['TimeLeft'] 
+          time_left = result['TimeLeft']
         else:
-          proxy_to_store = proxy  
-          
+          proxy_to_store = proxy
+
         cmd = 'UPDATE Proxies SET Proxy=\'%s\',' % proxy
-        cmd = cmd + ' ExpirationTime = NOW() + INTERVAL %d SECOND, ' % time_left
+        cmd = cmd + ' ExpirationTime = UTC_TIMESTAMP() + INTERVAL %d SECOND, ' % time_left
         cmd = cmd + ' ProxyType=\'%s\' ' % proxyType
         if proxyAttr:
           cmd = cmd + ', ProxyAttributes=\'%s\' ' % proxyAttr
@@ -145,32 +145,32 @@ class ProxyRepositoryDB(DB):
           return S_ERROR('Failed to store ticket')
 
     return S_OK()
-    
+
 #############################################################################
   def __convertProxyToVOMS(self,proxy,group,dn,proxytype):
     """ Convert the proxy to the VOMS proxy with the given group. If proxytype
         is already VOMS, recreate the grid proxy from MyProxy
-    """    
-            
+    """
+
     # If proxy is VOMS, we have to start from MyProxy delegation
     result = getProxyTimeLeft(proxy)
     if result['OK']:
       time_left = result['Value']
     else:
       return S_ERROR('Invalid proxy')
-                
+
     if proxytype == "VOMS":
       result = getMyProxyDelegation(proxy,time_left,
                                     server_cert=self.servercert,
                                     server_key=self.serverkey)
-            
+
       if result['OK']:
         proxy_plain = result['Value']
       else:
         return S_ERROR('Failed to get MyProxy delegation')
     else:
-      proxy_plain = proxy      
-            
+      proxy_plain = proxy
+
     # Attempt to convert into a VOMS proxy
 
     self.log.verbose('Converting proxy to VOMS for '+dn)
@@ -196,7 +196,7 @@ class ProxyRepositoryDB(DB):
     result = S_OK()
     result['VOMS'] = proxy_to_store
     result['TimeLeft'] = time_left
-    return result      
+    return result
 
 
 #############################################################################
@@ -236,7 +236,7 @@ class ProxyRepositoryDB(DB):
     """
 
     if validity:
-      cmd = "SELECT UserDN,UserGroup,ProxyType,PersistentFlag FROM Proxies WHERE (NOW() + INTERVAL %d SECOND) > ExpirationTime" % validity
+      cmd = "SELECT UserDN,UserGroup,ProxyType,PersistentFlag FROM Proxies WHERE (UTC_TIMESTAMP() + INTERVAL %d SECOND) > ExpirationTime" % validity
     else:
       cmd = "SELECT UserDN,UserGroup,ProxyType,PersistentFlag FROM Proxies"
     result = self._query( cmd )
