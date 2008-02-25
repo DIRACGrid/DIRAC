@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Time.py,v 1.2 2008/01/23 18:40:31 acasajus Exp $
-__RCSID__ = "$Id: Time.py,v 1.2 2008/01/23 18:40:31 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Time.py,v 1.3 2008/02/25 22:23:16 atsareg Exp $
+__RCSID__ = "$Id: Time.py,v 1.3 2008/02/25 22:23:16 atsareg Exp $"
 """
 DIRAC Times module
 Support for basic Date and Time operations
@@ -135,10 +135,18 @@ def fromString( myDate = None ):
     elif myDate.find( ':' ) > 0:
       timeTuple = myDate.replace('.',':').split( ':' )
       try:
-        return datetime.timedelta( hours        = int(timeTuple[0]),
-                                   minutes      = int(timeTuple[1]),
-                                   seconds      = int(timeTuple[2]),
-                                   microseconds = int(timeTuple[3]) )
+        if len(timeTuple) == 4:
+          return datetime.timedelta( hours        = int(timeTuple[0]),
+                                     minutes      = int(timeTuple[1]),
+                                     seconds      = int(timeTuple[2]),
+                                     microseconds = int(timeTuple[3]) )
+        elif len(timeTuple) == 3:
+          return datetime.timedelta( hours        = int(timeTuple[0]),
+                                     minutes      = int(timeTuple[1]),
+                                     seconds      = int(timeTuple[2]),
+                                     microseconds = 0 )
+        else:
+          return None
       except:
         return None
     elif myDate.find( '-' ) > 0:
