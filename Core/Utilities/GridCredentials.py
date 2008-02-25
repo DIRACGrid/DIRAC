@@ -1,4 +1,4 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.21 2008/02/20 19:48:30 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.22 2008/02/25 23:43:18 atsareg Exp $
 
 """ Grid Credentials module contains utilities to manage user and host
     certificates and proxies.
@@ -33,7 +33,7 @@
     getVOMSProxyInfo()
 """
 
-__RCSID__ = "$Id: GridCredentials.py,v 1.21 2008/02/20 19:48:30 atsareg Exp $"
+__RCSID__ = "$Id: GridCredentials.py,v 1.22 2008/02/25 23:43:18 atsareg Exp $"
 
 import os
 import os.path
@@ -729,28 +729,23 @@ def getMyProxyDelegation(proxy,lifetime=72,
   #os.chmod(my_proxy, stat.S_IRUSR | stat.S_IWUSR)
 
   # myproxy-get-delegation works only with environment variables
-  old_server_key = ''
-  if os.environ.has_key("X509_USER_KEY"):
-    old_server_key = os.environ["X509_USER_KEY"]
-  old_server_cert = ''
-  if os.environ.has_key("X509_USER_CERT"):
-    old_server_cert = os.environ["X509_USER_CERT"]
-  os.environ["X509_USER_KEY"] = server_key
-  os.environ["X509_USER_CERT"] = server_cert
+
+  environment = {}
+  environment["PATH"] = os.environ['PATH']
+  environment["LD_LIBRARY_PATH"] = os.environ['LD_LIBRARY_PATH']
+  environment["X509_USER_KEY"] = server_key
+  environment["X509_USER_CERT"] = server_cert
 
   # Here "lifetime + 1" used just to get rid off warning status raised by the voms-proxy-init
   cmd = "myproxy-get-delegation -s %s -a %s -d -t %s -o %s" % (server, new_proxy, lifetime + 1, my_proxy)
-  result = shellCall(PROXY_COMMAND_TIMEOUT,cmd)
-
-  # Return back the environment in any outcome case
-  if old_server_key:
-    os.environ["X509_USER_KEY"] = old_server_key
-  else:
-    del os.environ["X509_USER_KEY"]
-  if old_server_cert:
-    os.environ["X509_USER_CERT"] = old_server_cert
-  else:
-    del os.environ["X509_USER_CERT"] 
+  start = time.time()
+  result = shellCall(PROXY_COMMAND_TIMEOUT,cmd,env=environment)
+  query_time = time.time() - start
+  #print "#################################################"
+  #print cmd
+  #print "#################################################"
+  #print "myproxy-get-delegation took %f.2 seconds" % query_time
+  #print result
 
   if not result['OK']:
     if os.path.exists(new_proxy) and rm_proxy == 1:
@@ -847,6 +842,13 @@ def createVOMSProxy(proxy,attributes="",vo=""):
   print "##################################################"
   
   result = shellCall(PROXY_COMMAND_TIMEOUT,cmd)
+
+  print "voms-proxy-init output",result
+  print "++++++++++++++++++++++++++++++++++++++++++++"
+  for key,value in os.environ.items():
+    if key.find('509') != -1:
+      print key,":",value
+  print "++++++++++++++++++++++++++++++++++++++++++++"    
 
   if not result['OK']:
     return S_ERROR('Failed to call voms-proxy-init')
