@@ -80,7 +80,7 @@ class TransformationHandler(RequestHandler):
     res = self.database.getFilesForTransformation(transformationName,orderByJobs)
     return res
 
-  types_getInputData = [StringType,StringType]
+  types_getInputData = [[LongType, IntType, StringType],StringType]
   def export_getInputData(self,transformationName,status):
     res = self.database.getInputData(transformationName,status)
     return res
