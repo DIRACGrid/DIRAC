@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.37 2008/02/22 11:41:09 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.38 2008/02/25 22:49:57 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.37 2008/02/22 11:41:09 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.38 2008/02/25 22:49:57 atsareg Exp $"
 
 import re, os, sys, string
 import time
@@ -1419,7 +1419,7 @@ class JobDB(DB):
 
     return S_OK(distinctAttributesList)
 
-  def getSiteSummary(self,status):
+  def getSiteSummary(self):
     """ Get the summary of jobs in a given status on all the sites
     """
 
@@ -1435,6 +1435,8 @@ class JobDB(DB):
     totalDict = {'Waiting':0,'Running':0,'Done':0,'Failed':0}
 
     for site in siteList:
+      if site == "ANY":
+        continue
       # Waiting
       siteDict[site] = {}
       req = "SELECT COUNT(JobID) FROM Jobs WHERE Status IN (%s) AND Site='%s'" % (waitingString,site)
