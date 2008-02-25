@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/gLitePilotDirector.py,v 1.8 2008/02/07 19:01:42 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/gLitePilotDirector.py,v 1.9 2008/02/25 13:19:57 paterson Exp $
 # File :   gLitePilotDirector.py
 # Author : Stuart Paterson
 ########################################################################
@@ -11,7 +11,7 @@
      the invokation of the Pilot Director instance is performed here.
 """
 
-__RCSID__ = "$Id: gLitePilotDirector.py,v 1.8 2008/02/07 19:01:42 paterson Exp $"
+__RCSID__ = "$Id: gLitePilotDirector.py,v 1.9 2008/02/25 13:19:57 paterson Exp $"
 
 from DIRACEnvironment                                        import DIRAC
 from DIRAC.Core.Utilities                                    import List
@@ -100,7 +100,7 @@ class gLitePilotDirector(PilotDirector):
     if not listMatchResult['OK']:
       return listMatchResult
 
-    self.log.info( '--- Executing edg-job-submit for %s' % job )
+    self.log.info( '--- Executing glite-wms-job-submit for %s' % job )
 
     cmd = "glite-wms-job-submit -a -c %s %s" % (self.confFile1,gLiteJDLFile)
     result = self.__exeCommand(cmd)
@@ -250,7 +250,7 @@ LBEndPoints = {"https://%s:9000"};
   def __listMatchJob(self, job, jdlFile):
     """ Get available gLite CEs for Pilot Job
     """
-    self.log.info( '--- Executing edg-job-list-match for %s' % job )
+    self.log.info( '--- Executing glite-wms-job-list-match for %s' % job )
 
     cmd = "glite-wms-job-list-match -a -c  %s %s" % (self.confFile1,jdlFile )
     result = self.__exeCommand(cmd)
@@ -270,8 +270,9 @@ LBEndPoints = {"https://%s:9000"};
       for line in string.split(stdout):
         m = re.search("(.*\/\S+)",line)
         if (m):
-          ce = m.group(1)
-          availableCEs.append(ce)
+          ce = m.group(1)        
+          if not re.search('^https',ce):
+            availableCEs.append(ce)
 
       if not availableCEs:
         self.log.warn( '>>> gLite List-Match failed to find CEs for Job %s' %job )
@@ -323,6 +324,7 @@ LBEndPoints = {"https://%s:9000"};
               getCEs = self.__listMatchJob(job,jdlFile)
               if not getCEs['OK']:
                 return getCEs
+              self.log.verbose(getCEs['Value'])  
               newCEs = len(getCEs['Value'])
               if newCEs < minimumCEs:
                 noCEsAvailable[job] = time.time()
@@ -342,6 +344,7 @@ LBEndPoints = {"https://%s:9000"};
             if not getCEs['OK']:
               return getCEs
             newCEs = len(getCEs['Value'])
+            self.log.verbose(getCEs['Value'])
             if newCEs < minimumCEs:
               noCEsAvailable[job] = time.time()
               submitFlag = False
@@ -351,6 +354,7 @@ LBEndPoints = {"https://%s:9000"};
       else:
         self.log.verbose( 'Job %s has not yet passed through list match' % job )
         getCEs = self.__listMatchJob(job,jdlFile)
+        self.log.verbose(getCEs['Value'])
         if not getCEs['OK']:
           return getCEs
         numberOfCEs = len(getCEs['Value'])
