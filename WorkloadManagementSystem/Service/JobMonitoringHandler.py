@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobMonitoringHandler.py,v 1.12 2008/02/15 13:22:41 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobMonitoringHandler.py,v 1.13 2008/02/25 23:01:10 atsareg Exp $
 ########################################################################
 
 """ JobMonitoringHandler is the implementation of the JobMonitoring service
@@ -11,13 +11,14 @@
 
 """
 
-__RCSID__ = "$Id: JobMonitoringHandler.py,v 1.12 2008/02/15 13:22:41 atsareg Exp $"
+__RCSID__ = "$Id: JobMonitoringHandler.py,v 1.13 2008/02/25 23:01:10 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
+import DIRAC.Core.Utilities.Time
 
 # These are global instances of the DB classes
 jobDB = False
@@ -127,17 +128,17 @@ class JobMonitoringHandler( RequestHandler ):
     # Check that Attributes in attrList and attrDict, they must be in
     # self.queryAttributes.
 
-    for attr in attrList:
-      try:
-        self.queryAttributes.index(attr)
-      except:
-        return S_ERROR( 'Requested Attribute not Allowed: %s.' % attr )
-
-    for attr in attrDict:
-      try:
-        self.queryAttributes.index(attr)
-      except:
-        return S_ERROR( 'Condition Attribute not Allowed: %s.' % attr )
+    #for attr in attrList:
+    #  try:
+    #    self.queryAttributes.index(attr)
+    #  except:
+    #    return S_ERROR( 'Requested Attribute not Allowed: %s.' % attr )
+    #
+    #for attr in attrDict:
+    #  try:
+    #    self.queryAttributes.index(attr)
+    #  except:
+    #    return S_ERROR( 'Condition Attribute not Allowed: %s.' % attr )
 
 
     cutdate = str(cutDate)
@@ -244,7 +245,19 @@ class JobMonitoringHandler( RequestHandler ):
       return S_ERROR('Failed to get job summary: '+result['Message'])
 
     summaryDict = result['Value']
-
+    
+    # Evaluate last sign of life time
+    for jobID, jobDict in summaryDict.items():
+      if jobDict['HeartBeatTime'] == 'None':
+        jobDict['LastSignOfLife'] = jobDict['LastUpdateTime']
+      else:
+        lastTime = Time.fromString(jobDict['LastUpdateTime'])
+        hbTime = Time.fromString(jobDict['HeartBeatTime'])  
+        if (hbTime-lastTime) > (lastTime-lastTime):
+          jobDict['LastSignOfLife'] = jobDict['HeartBeatTime']
+        else:
+          jobDict['LastSignOfLife'] = jobDict['LastUpdateTime'] 
+                    
     statusDict = {}
     statusAttrDict = attrDict
     for status in ['Running','Waiting','Outputready']:
