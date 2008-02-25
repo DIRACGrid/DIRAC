@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/ProxyRenewalAgent.py,v 1.7 2008/01/31 18:56:59 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/ProxyRenewalAgent.py,v 1.8 2008/02/25 22:52:58 atsareg Exp $
 ########################################################################
 
 """  Proxy Renewal agent is the key element of the Proxy Repository
@@ -90,12 +90,10 @@ class ProxyRenewalAgent(Agent):
               self.log.error('Failed to remove proxy for '+dn)
           else:
             result = renewProxy(ticket,
-                                    self.validity_period,
-                                    server_key=self.server_key,
-                                    server_cert=self.server_cert
-                                    )
-                                    
-            print result                        
+                                self.validity_period,
+                                server_key=self.server_key,
+                                server_cert=self.server_cert
+                                )                        
                                     
             if result["OK"]:
               new_proxy = result['Value']
