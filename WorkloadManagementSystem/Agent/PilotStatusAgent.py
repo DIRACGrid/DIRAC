@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.2 2008/02/04 00:37:10 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.3 2008/02/25 22:48:30 atsareg Exp $
 ########################################################################
 
 """  The Pilot Status Agent updates the status of the pilot jobs if the 
      PilotAgents database.
 """
 
-__RCSID__ = "$Id: PilotStatusAgent.py,v 1.2 2008/02/04 00:37:10 atsareg Exp $"
+__RCSID__ = "$Id: PilotStatusAgent.py,v 1.3 2008/02/25 22:48:30 atsareg Exp $"
 
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
@@ -19,6 +19,7 @@ import os, sys, re, string, time
 from types import *
 
 AGENT_NAME = 'WorkloadManagement/PilotStatusAgent'
+MAX_JOBS_QUERY = 100
 
 class PilotStatusAgent(Agent):
 
@@ -111,7 +112,28 @@ class PilotStatusAgent(Agent):
           self.log.verbose("Getting status for pilots in broker %s" % broker)
           self.log.verbose("for owner %s, group %s" % (owner,group))
 
-          result = eval("self.get"+grid+"PilotStatus(pList)")
+          # Do not call more than MAX_JOBS_QUERY pilots at a time
+          start_index = 0
+          resultDict = {}
+          
+          while len(pList) > start_index + MAX_JOBS_QUERY:
+            self.log.verbose('Querying %d pilots starting from %d' % (MAX_JOBS_QUERY,start_index))
+            result = eval("self.get"+grid+"PilotStatus(pList[start_index:start_index+MAX_JOBS_QUERY])")
+            if not result['OK']:
+              self.log.warn('Failed to get pilot status:')
+              self.log.warn('%s/%s, broker: %s, grid: %s' % (owner,group,broker,grid))
+              continue
+              
+            for pRef,pDict in result['Value'].items():
+              if pDict:
+                result = self.pilotDB.setPilotStatus(pRef,pDict['Status'],
+                                                     pDict['Destination'],
+                                                     pDict['StatusDate']) 
+            start_index += MAX_JOBS_QUERY
+            
+          self.log.verbose('Querying last %d pilots' % (len(pList)-start_index) )
+          result = eval("self.get"+grid+"PilotStatus(pList[start_index:])")
+          
           os.remove('tmp_proxy')
 
           if not result['OK']:
@@ -119,14 +141,11 @@ class PilotStatusAgent(Agent):
             self.log.warn('%s/%s, broker: %s, grid: %s' % (owner,group,broker,grid))
             continue
 
-          print result['Value']
-
           for pRef,pDict in result['Value'].items():
             if pDict:
               result = self.pilotDB.setPilotStatus(pRef,pDict['Status'],
                                                    pDict['Destination'],
-                                                   pDict['StatusDate'])
-
+                                                   pDict['StatusDate'])                                             
 
     return S_OK()
 
@@ -217,7 +236,7 @@ class PilotStatusAgent(Agent):
     status = result['Status']
     stdout = result['StdOut']
     queryTime = result['Time']
-    timing = '>>> Lite status query time %.2fs' % queryTime
+    timing = '>>> gLite status query time %.2fs' % queryTime
     self.log.verbose( timing )
         
     lines = stdout.split('\n')
