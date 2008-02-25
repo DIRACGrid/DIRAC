@@ -3,7 +3,7 @@
 from DIRACEnvironment import DIRAC
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.GridCert import setDIRACGroup
+from DIRAC.Core.Utilities.GridCredentials import setDIRACGroup
 
 doCheck = True
 def setNoCheck( value ):
