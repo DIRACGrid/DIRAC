@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: StorageElementHandler.py,v 1.3 2008/02/26 11:05:05 acsmith Exp $
+# $Id: StorageElementHandler.py,v 1.4 2008/02/26 12:12:22 acsmith Exp $
 ########################################################################
 
 """
@@ -23,7 +23,7 @@
 
 """
 
-__RCSID__ = "$Id: StorageElementHandler.py,v 1.3 2008/02/26 11:05:05 acsmith Exp $"
+__RCSID__ = "$Id: StorageElementHandler.py,v 1.4 2008/02/26 12:12:22 acsmith Exp $"
 
 import os, shutil
 from stat import *
@@ -228,7 +228,7 @@ class StorageElementHandler(RequestHandler):
     else:
       return result
 
-  def transfer_bulkFromClient( self, fileID, token, fileHelper ):
+  def transfer_bulkFromClient( self, fileID, token, ignoredSize,fileHelper ):
     """ Receive files packed into a tar archive by the fileHelper logic.
         token is used for access rights confirmation.
     """
