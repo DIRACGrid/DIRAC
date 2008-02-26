@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.19 2008/02/21 16:00:33 paterson Exp $
+# $Id: JobWrapper.py,v 1.20 2008/02/26 13:56:53 paterson Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.19 2008/02/21 16:00:33 paterson Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.20 2008/02/26 13:56:53 paterson Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -243,8 +243,8 @@ class JobWrapper:
       self.log.verbose('Standard output is less than %s lines long' %(self.maxPeekLines))
       appStdOut = stdout
 
-    curTime = time.asctime()
-    header = 'Last %s lines of application output from JobWrapper on %s:' % (self.maxPeekLines,curTime)
+    curTime = time.asctime(time.gmtime())
+    header = 'Last %s lines of application output from JobWrapper on %s [UTC]:' % (self.maxPeekLines,curTime)
     border = ''
     for i in xrange(len(header)):
       border+='='
