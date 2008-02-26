@@ -2,7 +2,8 @@
 """
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
-import types
+from DIRAC.DataManagementSystem.Client.Catalog.FileCatalogueBase import FileCatalogueBase
+import types, os
 
 class BookkeepingDBClient(FileCatalogueBase):
   """ File catalog client for placement DB
@@ -14,10 +15,11 @@ class BookkeepingDBClient(FileCatalogueBase):
     self.valid = True
     try:
       if not url:
-        self.server = RPCClient("BookkeepingManagement/BookkeepingManager")
+        self.server = RPCClient("Bookkeeping/BookkeepingManager")
       else:
         self.server = RPCClient(url)
-    except:
+    except Exception,x:
+      print x
       self.valid = False
 
   def __addReplica(self,lfn,pfn,se):
@@ -66,10 +68,90 @@ class BookkeepingDBClient(FileCatalogueBase):
       replicas = [replicaTuple]
     else:
       replicas = replicaTuple
+
+    failed_lfns = []
+
     for replicaTuple in replicas:
       lfn,pfn,se = replicaTuple
       resRep = self.__addReplica(lfn,pfn,se)
       if not resRep['OK']:
-        result = S_ERROR('Failed to send replica data for '+lfn)
+        failed_lfns.append((lfn,se))
 
-    return result
+    if failed_lfns:
+      result = S_ERROR('Failed to add all replicas')
+      result['FailedLFNs'] = failed_lfns
+    else:
+      return S_OK()
+
+  def removeFile(self,lfns):
+    """Remove the LFN record from the BK Catalog
+    """
+
+    if type(lfns) == types.StringType:
+      lfnList = [lfns]
+    else:
+      lfnList = lfns
+
+    result = S_OK()
+    failed_lfns = []
+
+    for lfn in lfnList:
+
+      repscript = """<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE Replicas SYSTEM "book.dtd">
+<Replicas>
+  <Replica File="%s"
+           Name=""
+           Location="anywhere"
+           Action="Delete"  />
+</Replicas>
+""" % (lfn)
+      #print repscript
+      fname = os.path.basename(lfn)+".R.xml"
+      #print "sending",fname
+      resRem = self.server.sendBookkeeping(fname,repscript)
+      if not resRem['OK']:
+        failed_lfns.append(lfn)
+
+    if failed_lfns:
+      result = S_ERROR('Failed to remove all files')
+      result['FailedLFNs'] = failed_lfns
+    else:
+      return S_OK()
+
+
+  def removeReplica(self,replicas):
+    """ Remove replica info from bookkeeping
+    """
+
+    if type(replicas) == types.StringType:
+      replicaList = [replicas]
+    else:
+      replicaList = replicas
+
+    result = S_OK()
+    failed_lfns = []
+
+    for lfn,se in replicaList:
+      repscript = """<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE Replicas SYSTEM "book.dtd">
+<Replicas>
+  <Replica File="%s"
+           Name="%s"
+           Location="%s"
+           SE="%s"
+           Action="Delete"  />
+</Replicas>
+""" % (lfn,'ANY',se,se)
+      #print repscript
+      fname = os.path.basename(lfn)+".R.xml"
+      #print "sending",fname
+      resRem = self.server.sendBookkeeping(fname,repscript)
+      if not resRem['OK']:
+        failed_lfns.append((lfn,se))
+
+    if failed_lfns:
+      result = S_ERROR('Failed to remove all replicas')
+      result['FailedLFNs'] = failed_lfns
+    else:
+      return S_OK()
