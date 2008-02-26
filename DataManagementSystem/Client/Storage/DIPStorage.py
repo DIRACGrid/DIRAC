@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: DIPStorage.py,v 1.4 2008/02/26 11:20:14 acsmith Exp $
+# $Id: DIPStorage.py,v 1.5 2008/02/26 12:10:46 acsmith Exp $
 ########################################################################
 
 """ DIPStorage class is the client of the DIRAC Storage Element.
@@ -15,9 +15,10 @@
 
 """
 
-__RCSID__ = "$Id: DIPStorage.py,v 1.4 2008/02/26 11:20:14 acsmith Exp $"
+__RCSID__ = "$Id: DIPStorage.py,v 1.5 2008/02/26 12:10:46 acsmith Exp $"
 
 from DIRAC.DataManagementSystem.Client.Storage.StorageBase import StorageBase
+from DIRAC.Core.Utilities.Pfn import pfnparse,pfnunparse
 from DIRAC.Core.DISET.TransferClient import TransferClient
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.Subprocess import systemCall
@@ -264,3 +265,13 @@ class DIPStorage(StorageBase):
     except Exception,x:
       errStr = "Failed to create URL %s" % x
       return S_ERROR(errStr)
+
+  def getProtocolPfn(self,pfnDict,withPort):
+    """ From the pfn dict construct the pfn to be used
+    """
+    pfnDict['Protocol'] = ''
+    pfnDict['Host'] = ''
+    pfnDict['Port'] = ''
+    pfnDict['WSUrl'] = ''
+    res = pfnunparse(pfnDict)
+    return res
