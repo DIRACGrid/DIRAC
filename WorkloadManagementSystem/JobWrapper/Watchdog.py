@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.25 2008/02/21 17:21:29 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.26 2008/02/26 13:55:31 paterson Exp $
 # File  : Watchdog.py
 # Author: Stuart Paterson
 ########################################################################
@@ -18,7 +18,7 @@
           - CPU normalization for correct comparison with job limit
 """
 
-__RCSID__ = "$Id: Watchdog.py,v 1.25 2008/02/21 17:21:29 paterson Exp $"
+__RCSID__ = "$Id: Watchdog.py,v 1.26 2008/02/26 13:55:31 paterson Exp $"
 
 from DIRAC.Core.Base.Agent                          import Agent
 from DIRAC.Core.DISET.RPCClient                     import RPCClient
@@ -169,7 +169,7 @@ class Watchdog(Agent):
       if result['OK']:
         outputList = result['Value']
         size = len(outputList)
-        recentStdOut = 'Last %s lines of application output from Watchdog on %s:' % (size,time.asctime())
+        recentStdOut = 'Last %s lines of application output from Watchdog on %s [UTC]:' % (size,time.asctime(time.gmtime()))
         border = ''
         for i in xrange(len(recentStdOut)):
           border+='='
