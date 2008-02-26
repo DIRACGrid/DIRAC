@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: StorageElementHandler.py,v 1.2 2007/09/20 17:23:36 atsareg Exp $
+# $Id: StorageElementHandler.py,v 1.3 2008/02/26 11:05:05 acsmith Exp $
 ########################################################################
 
 """
@@ -23,7 +23,7 @@
 
 """
 
-__RCSID__ = "$Id: StorageElementHandler.py,v 1.2 2007/09/20 17:23:36 atsareg Exp $"
+__RCSID__ = "$Id: StorageElementHandler.py,v 1.3 2008/02/26 11:05:05 acsmith Exp $"
 
 import os, shutil
 from stat import *
@@ -75,22 +75,20 @@ class StorageElementHandler(RequestHandler):
   def __checkForDiskSpace(self,dpath,size):
     """ Check if the directory dpath can accomodate 'size' volume of data
     """
-
     dsize = (getDiskSpace(dpath)-1)*1024*1024
-    return ( min(dsize,max_storage_size) > size )
+    maxStorageSizeBytes = max_storage_size*1024*1024
+    return ( min(dsize,maxStorageSizeBytes) > size )
 
   types_getMetadata = [StringType]
   def export_getMetadata(self,fileID):
     """ Get metadata for the file or directory specified by fileID
     """
-
     file_path = base_path+fileID
     return self.__getFileStat(file_path)
 
   def __getFileStat(self,path):
     """ Get the file stat information
     """
-
     resultDict = {}
     try:
       statTuple = os.stat(path)
@@ -111,11 +109,33 @@ class StorageElementHandler(RequestHandler):
 
     return S_OK(resultDict)
 
+  types_createDirectory = [StringType]
+  def export_createDirectory(self,dir_path):
+    """ Creates the directory on the storage
+    """
+    path = base_path+dir_path
+    gLogger.info("StorageElementHandler.createDirectory: Attempting to create %s." % path)
+    if os.path.exists(path):
+      if os.path.isfile(path):
+        errStr = "Supplied path exists and is a file"
+        gLogger.error("StorageElementHandler.createDirectory: %s." % errStr,path)
+        return S_ERROR(errStr)
+      else:
+        gLogger.info("StorageElementHandler.createDirectory: %s already exists." % path)
+        return S_OK()
+    # Need to think about permissions.
+    try:
+      os.makedirs(path)
+      return S_OK()
+    except Exception,x:
+      errStr = "Exception creating directory."
+      gLogger.error("StorageElementHandler.createDirectory: %s" % errStr,str(x))
+      return S_ERROR(errStr)
+
   types_listDirectory = [StringType,StringType]
   def export_listDirectory(self,dir_path,mode):
     """ Return the dir_path directory listing
     """
-
     is_file = False
     path = base_path+dir_path
     if not os.path.exists(path):
@@ -168,8 +188,7 @@ class StorageElementHandler(RequestHandler):
         fileSize can be Xbytes or -1 if unknown.
         token is used for access rights confirmation.
     """
-
-    if not self.__checkDiskSpace(base_path,fileSize):
+    if not self.__checkForDiskSpace(base_path,fileSize):
       return S_ERROR('Not enough disk space')
 
     file_path = base_path+fileID
@@ -204,7 +223,6 @@ class StorageElementHandler(RequestHandler):
 
     fileDescriptor = result['Value']
     result = fileHelper.FDToNetwork(fileDescriptor)
-    print result
     if not result['OK']:
       return S_ERROR('Failed to get file '+fileID)
     else:
