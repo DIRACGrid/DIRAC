@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: DIPStorage.py,v 1.2 2008/02/15 10:25:59 atsareg Exp $
+# $Id: DIPStorage.py,v 1.3 2008/02/26 11:06:26 acsmith Exp $
 ########################################################################
 
 """ DIPStorage class is the client of the DIRAC Storage Element.
@@ -15,15 +15,16 @@
 
 """
 
-__RCSID__ = "$Id: DIPStorage.py,v 1.2 2008/02/15 10:25:59 atsareg Exp $"
+__RCSID__ = "$Id: DIPStorage.py,v 1.3 2008/02/26 11:06:26 acsmith Exp $"
 
+from DIRAC.DataManagementSystem.Client.Storage.StorageBase import StorageBase
 from DIRAC.Core.DISET.TransferClient import TransferClient
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.Subprocess import systemCall
 from DIRAC import gLogger, S_OK, S_ERROR
-import re,os
+import re,os,types
 
-class DIPStorage:
+class DIPStorage(StorageBase):
 
   def __init__(self,storageName,protocol,path,host,port,spaceToken,wspath):
     """
@@ -38,15 +39,192 @@ class DIPStorage:
     self.wspath = wspath
     self.spaceToken = spaceToken
 
-    url = protocol+"://"+host+":"+port+"/"+path
+    url = protocol+"://"+host+":"+port+path
     self.transferClient = TransferClient(url)
     self.serviceClient = RPCClient(url)
 
-    self.cwd = '/'
+    self.cwd = ''
     self.isok = True
+
+  def exists(self,path):
+    """ Check if the given path exists. The 'path' variable can be a string or a list of strings.
+    """
+    if type(path) in types.StringTypes:
+      urls = [path]
+    elif type(path) == types.ListType:
+      urls = path
+    else:
+      return S_ERROR("DIPStorage.exists: Supplied path must be string or list of strings")
+    successful = {}
+    failed = {}
+    for url in urls:
+      gLogger.debug("DIPStorage.exists: Determining existence of %s." % url)
+      res = self.serviceClient.exists(url)
+      if res['OK']:
+        successful[url] = True
+      else:
+        failed[url] = res['Message']
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+  #############################################################
+  #
+  # These are the methods for directory manipulation
+  #
+
+  def putFile(self,fileTuple):
+    """Put a file to the physical storage
+    """
+    if type(fileTuple) == types.TupleType:
+      urls = [fileTuple]
+    elif type(fileTuple) == types.ListType:
+      urls = fileTuple
+    else:
+      return S_ERROR("DIPStorage.putFile: Supplied file info must be tuple of list of tuples.")
+    successful = {}
+    failed = {}
+    for src_file,dest_url,size in urls:
+      gLogger.debug("DIPStorage.putFile: Executing transfer of %s to %s" % (src_file, dest_url))
+      res = self.transferClient.sendFile(src_file,dest_url)
+      print res
+      if res['OK']:
+        successful[dest_url] = True
+      else:
+        failed[dest_url] = res['Message']
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+  def getFile(self,fileTuple):
+    """Get a local copy in the current directory of a physical file specified by its path
+    """
+    if type(fileTuple) == types.TupleType:
+      urls = [fileTuple]
+    elif type(fileTuple) == types.ListType:
+      urls = fileTuple
+    else:
+      return S_ERROR("DIPStorage.getFile: Supplied file information must be tuple of list of tuples")
+    successful = {}
+    failed = {}
+    for src_url,dest_file,size in urls:
+      gLogger.debug("DIPStorage.putFile: Executing transfer of %s to %s" % (src_url, dest_file))
+      res = self.transferClient.receiveFile(src_url,dest_file)
+      if res['OK']:
+        successful[src_url] = True
+      else:
+        failed[src_url] = res['Message']
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+  def removeFile(self,path):
+    """Remove physically the file specified by its path
+    """
+    if type(path) in types.StringTypes:
+      urls = [path]
+    elif type(path) == types.ListType:
+      urls = path
+    else:
+      return S_ERROR("DIPStorage.removeFile: Supplied path must be string or list of strings")
+    if not len(path) > 0:
+      return S_ERROR("DIPStorage.removeFile: No surls supplied.")
+    successful = {}
+    failed = {}
+    for url in urls:
+      gLogger.debug("DIPStorage.removeFile: Attempting to remove %s." % url)
+      res = self.serviceClient.remove(url,'')
+      if res['OK']:
+        successful[url] = True
+      else:
+        failed[url] = res['Message']
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+  def getFileMetadata(self,path):
+    """  Get metadata associated to the file
+    """
+    if type(path) in types.StringTypes:
+      urls = [path]
+    elif type(path) == types.ListType:
+      urls = path
+    else:
+      return S_ERROR("DIPStorage.getFileMetadata: Supplied path must be string or list of strings")
+    successful = {}
+    failed = {}
+    gLogger.debug("DIPStorage.getFileMetadata: Attempting to obtain metadata for %s files." % len(urls))
+    for url in urls:
+      res = self.serviceClient.getMetadata(url)
+      if res['OK']:
+        gLogger.debug("DIPStorage.getFileMetadata: Successfully obtained metadata for %s." % url)
+        successful[url] = res['Value']
+      else:
+        gLogger.error("DIPStorage.getFileMetadata: Failed to get metdata for %s." % url,res['Message'])
+        failed[url] = res['Message']
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+  #############################################################
+  #
+  # These are the methods for directory manipulation
+  #
+
+  def createDirectory(self,path):
+    """ Create the remote directory
+    """
+    if type(path) in types.StringTypes:
+      urls = [path]
+    elif type(path) == types.ListType:
+      urls = path
+    else:
+      return S_ERROR("DIPStorage.createDirectory: Supplied path must be string or list of strings")
+    successful = {}
+    failed = {}
+
+    gLogger.debug("DIPStorage.createDirectory: Attempting to create %s directories." % len(urls))
+    for url in urls:
+      strippedUrl = url.rstrip('/')
+      res = self.serviceClient.createDirectory(url)
+      if res['OK']:
+        gLogger.debug("DIPStorage.createDirectory: Successfully created directory on storage: %s" % url)
+        successful[url] = True
+      else:
+        gLogger.error("DIPStorage.createDirectory: Failed to create directory on storage.", "%s: %s" % (url,res['Message']))
+        failed[url] = res['Message']
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+  def putDir(self,dname):
+    """ Upload a directory dname to the storage current directory
+    """
+
+    bname = os.path.basename(dname)
+    sendName = self.cwd+'/'+bname
+    result = self.transferClient.sendBulk([dname],sendName)
+    return result
+
+  def getDir(self,dname):
+    """ Get file directory dname from the storage
+    """
+
+    return S_OK()
+
+  ################################################################################
+  #
+  # The methods below are for manipulating the client
+  #
 
   def isOK(self):
     return self.isok
+
+  def resetWorkingDirectory(self):
+    """ Reset the working directory to the base dir
+    """
+    self.cwd = self.path
+
+  def changeDirectory(self,directory):
+    """ Change the directory to the supplied directory
+    """
+    if directory[0] == '/':
+      directory = directory.lstrip('/')
+    self.cwd = '%s/%s' % (self.cwd,directory)
 
   def getParameters(self):
     """ This gets all the storage specific parameters pass when instantiating the storage
@@ -69,79 +247,8 @@ class DIPStorage:
       if fileName[0] == '/':
         fileName = fileName.lstrip('/')
     try:
-      fullUrl = '%s://%s:%s%s%s/%s' % (self.protocol,self.host,self.port,self.wspath,self.cwd,fileName)
+      fullUrl = '%s/%s' % (self.cwd,fileName)
       return S_OK(fullUrl)
     except Exception,x:
       errStr = "Failed to create URL %s" % x
       return S_ERROR(errStr)
-
-  def createDirectory(self,dirpath):
-    """ Create the remote directory
-    """
-
-    print dirpath
-    return S_OK()
-
-  def chdir(self,newdir):
-
-    self.cwd = newdir
-
-  def exists(self,fname):
-    """
-    """
-
-    result = self.serviceClient.exists(fname)
-    return result
-
-  def getMetadata(self,fname):
-    """
-    """
-
-    result = self.serviceClient.getMetadata(fname)
-    return result
-
-  def remove(self,fname):
-    """ Remove file fname from the storage
-    """
-
-    result = self.serviceClient.remove(fname,'')
-    return result
-
-  def put(self,fname):
-    """ Send file with the name fname to the Storage Element
-    """
-
-    bname = os.path.basename(fname)
-    sendName = self.cwd+'/'+bname
-
-    print sendName,fname
-    result = self.transferClient.sendFile(fname,sendName)
-    return result
-
-  def putDir(self,dname):
-    """ Upload a directory dname to the storage current directory
-    """
-
-    bname = os.path.basename(dname)
-    sendName = self.cwd+'/'+bname
-    result = self.transferClient.sendBulk([dname],sendName)
-    return result
-
-  def putFileList(self,fileList):
-    """ Upload files in the fileList to the current directory
-    """
-
-    return S_OK()
-
-  def get(self,fname):
-    """ Get file with the name fname from the Storage Element
-    """
-    bname = os.path.basename(fname)
-    result = self.transferClient.receiveFile(bname,fname)
-    return result
-
-  def getDir(self,dname):
-    """ Get file directory dname from the storage
-    """
-
-    return S_OK()
