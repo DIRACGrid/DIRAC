@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.39 2008/02/25 23:06:04 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.40 2008/02/26 08:19:07 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.39 2008/02/25 23:06:04 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.40 2008/02/26 08:19:07 atsareg Exp $"
 
 import re, os, sys, string
 import time
@@ -1419,6 +1419,7 @@ class JobDB(DB):
 
     return S_OK(distinctAttributesList)
 
+#################################################################################
   def getSiteSummary(self):
     """ Get the summary of jobs in a given status on all the sites
     """
@@ -1460,3 +1461,16 @@ class JobDB(DB):
 
     siteDict['Total'] = totalDict
     return S_OK(siteDict)
+
+#####################################################################################
+  def setHeartBeatData(self,jobID,staticDataDict, dynamicDataDict):
+    """ Add the job's heart beat data to the database
+    """
+
+    # Set the time stamp first
+    req = "UPDATE Jobs SET HeartBeatTime=UTC_TIMESTAMP() WHERE JobID=%d" % jobID
+    result = self._update(req)
+    if not result['OK']:
+      return S_ERROR('Failed to set the heart beat time: '+result['Message'])
+
+    #
