@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: DIPStorage.py,v 1.3 2008/02/26 11:06:26 acsmith Exp $
+# $Id: DIPStorage.py,v 1.4 2008/02/26 11:20:14 acsmith Exp $
 ########################################################################
 
 """ DIPStorage class is the client of the DIRAC Storage Element.
@@ -15,7 +15,7 @@
 
 """
 
-__RCSID__ = "$Id: DIPStorage.py,v 1.3 2008/02/26 11:06:26 acsmith Exp $"
+__RCSID__ = "$Id: DIPStorage.py,v 1.4 2008/02/26 11:20:14 acsmith Exp $"
 
 from DIRAC.DataManagementSystem.Client.Storage.StorageBase import StorageBase
 from DIRAC.Core.DISET.TransferClient import TransferClient
@@ -191,14 +191,26 @@ class DIPStorage(StorageBase):
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
-  def putDir(self,dname):
-    """ Upload a directory dname to the storage current directory
+  def putDirectory(self, directoryTuple):
+    """ Put a local directory to the physical storage together with all its files and subdirectories.
     """
-
-    bname = os.path.basename(dname)
-    sendName = self.cwd+'/'+bname
-    result = self.transferClient.sendBulk([dname],sendName)
-    return result
+    if type(directoryTuple) == types.TupleType:
+      urls = [directoryTuple]
+    elif type(directoryTuple) == types.ListType:
+      urls = directoryTuple
+    else:
+      return S_ERROR("DIPStorage.putDirectory: Supplied directory info must be tuple of list of tuples.")
+    successful = {}
+    failed = {}
+    gLogger.debug("DIPStorage.putDirectory: Attemping to put %s directories to remote storage." % len(urls))
+    for sourceDir,destDir in urls:
+      res = self.transferClient.sendBulk([sourceDir],destDir)
+      if res['OK']:
+        successful[destDir] = True
+      else:
+         failed[destDir] = res['Message']
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
 
   def getDir(self,dname):
     """ Get file directory dname from the storage
