@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobStateUpdateHandler.py,v 1.12 2008/02/13 11:43:52 paterson Exp $
+# $Id: JobStateUpdateHandler.py,v 1.13 2008/02/26 08:19:49 atsareg Exp $
 ########################################################################
 
 """ JobStateUpdateHandler is the implementation of the Job State updating
@@ -11,7 +11,7 @@
 
 """
 
-__RCSID__ = "$Id: JobStateUpdateHandler.py,v 1.12 2008/02/13 11:43:52 paterson Exp $"
+__RCSID__ = "$Id: JobStateUpdateHandler.py,v 1.13 2008/02/26 08:19:49 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -128,6 +128,10 @@ class JobStateUpdateHandler( RequestHandler ):
     print "Dynamic heart beat data"
     print dynamicData
 
+    result = jobDB.setHeartBeatData(jobID,staticData, dynamicData)
+    if not result['OK']:
+      return result
+
     if dynamicData.has_key('StandardOutput'):
       result = jobDB.setJobParameter(jobID,'StandardOutput',dynamicData['StandardOutput'])
       if not result['OK']:
@@ -138,7 +142,7 @@ class JobStateUpdateHandler( RequestHandler ):
       return result
 
     status = result['Value']['Status']
-    if status == "stalled":
+    if status == "Stalled":
       result = jobDB.setJobAttribute(jobID,'Status','Running',True)
 
     jobMessageDict = {}
