@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.41 2008/02/27 20:17:58 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.42 2008/02/27 20:47:52 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.41 2008/02/27 20:17:58 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.42 2008/02/27 20:47:52 atsareg Exp $"
 
 import re, os, sys, string
 import time
@@ -1477,16 +1477,23 @@ class JobDB(DB):
 
     # Add static data items as job parameters
     for key,value in staticDataDict.items():
-      result = jobDB.setJobParameter(jobID,key,value)
+      result = self.setJobParameter(jobID,key,value)
       if not result['OK']:
         ok = False
         self.log.warn(result['Message'])
 
     # Add dynamic data to the job heart beat log
     for key,value in dynamicDataDict.items():
+      result = self._escapeString(value)
+      if not result['OK']:
+        self.log.warn('Failed to escape string '+value)
+        continue
+      e_value = result['Value']
       names = ['JobID','Name','Value','HeartBeatTime']
       values = [jobID,key,value,'UTC_TIMESTAMP()']
-      result = self._insert('HeartBeatLoggingInfoz',names,values)
+      req = "INSERT INTO HeartBeatLoggingInfo (JobID,Name,Value,HeartBeatTime) "
+      req += "VALUES (%d,'%s','%s',UTC_TIMESTAMP())" % (jobID,key,e_value)
+      result = self._update(req)
       if not result['OK']:
         ok = False
         self.log.warn(result['Message'])

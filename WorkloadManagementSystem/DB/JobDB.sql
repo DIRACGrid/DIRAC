@@ -1,4 +1,4 @@
--- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.sql,v 1.6 2008/02/27 20:17:59 atsareg Exp $
+-- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.sql,v 1.7 2008/02/27 20:47:52 atsareg Exp $
 
 --------------------------------------------------------------------------------
 --
@@ -164,7 +164,7 @@ CREATE TABLE HeartBeatLoggingInfo (
     Name VARCHAR(100) NOT NULL,
     Value BLOB NOT NULL,
     HeartBeatTime DATETIME NOT NULL,
-    PRIMARY KEY (JobID)
+    INDEX (JobID)
 );
 
 --------------------------------------------------------------------------------
@@ -176,5 +176,5 @@ CREATE TABLE JobCommands (
     Status VARCHAR(64) NOT NULL DEFAULT 'Received',
     ReceptionTime DATETIME NOT NULL,
     ExecutionTime DATETIME,
-    PRIMARY KEY (JobID)
+    INDEX (JobID)
 );
