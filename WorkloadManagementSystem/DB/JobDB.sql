@@ -1,4 +1,4 @@
--- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.sql,v 1.5 2008/01/11 15:25:52 atsareg Exp $
+-- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.sql,v 1.6 2008/02/27 20:17:59 atsareg Exp $
 
 --------------------------------------------------------------------------------
 --
@@ -155,4 +155,26 @@ CREATE TABLE SiteMask (
     LastUpdateTime DATETIME NOT NULL,
     Author VARCHAR(255) NOT NULL,
     PRIMARY KEY (Site)
+);
+
+--------------------------------------------------------------------------------
+DROP TABLE IF EXISTS HeartBeatLoggingInfo;
+CREATE TABLE HeartBeatLoggingInfo (
+    JobID INTEGER NOT NULL,
+    Name VARCHAR(100) NOT NULL,
+    Value BLOB NOT NULL,
+    HeartBeatTime DATETIME NOT NULL,
+    PRIMARY KEY (JobID)
+);
+
+--------------------------------------------------------------------------------
+DROP TABLE IF EXISTS JobCommands;
+CREATE TABLE JobCommands (
+    JobID INTEGER NOT NULL,
+    Command VARCHAR(100) NOT NULL,
+    Arguments VARCHAR(100) NOT NULL,
+    Status VARCHAR(64) NOT NULL DEFAULT 'Received',
+    ReceptionTime DATETIME NOT NULL,
+    ExecutionTime DATETIME,
+    PRIMARY KEY (JobID)
 );

@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.40 2008/02/26 08:19:07 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.41 2008/02/27 20:17:58 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.40 2008/02/26 08:19:07 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.41 2008/02/27 20:17:58 atsareg Exp $"
 
 import re, os, sys, string
 import time
@@ -1473,4 +1473,54 @@ class JobDB(DB):
     if not result['OK']:
       return S_ERROR('Failed to set the heart beat time: '+result['Message'])
 
-    #
+    ok = True
+
+    # Add static data items as job parameters
+    for key,value in staticDataDict.items():
+      result = jobDB.setJobParameter(jobID,key,value)
+      if not result['OK']:
+        ok = False
+        self.log.warn(result['Message'])
+
+    # Add dynamic data to the job heart beat log
+    for key,value in dynamicDataDict.items():
+      names = ['JobID','Name','Value','HeartBeatTime']
+      values = [jobID,key,value,'UTC_TIMESTAMP()']
+      result = self._insert('HeartBeatLoggingInfoz',names,values)
+      if not result['OK']:
+        ok = False
+        self.log.warn(result['Message'])
+
+    if ok:
+      return S_OK()
+    else:
+      return S_ERROR('Failed to store some or all the parameters')
+
+#####################################################################################
+  def setJobCommand(self,jobID,command,arguments=''):
+    """ Store a command to be passed to the job together with the
+        next heart beat
+    """
+
+    names = ['JobID','Command','Arguments','ReceptionTime']
+    values = [jobID, command, arguments, 'UTC_TIMESTAMP()']
+    result = self._insert('JobCommands',names,values)
+    return result
+
+ #####################################################################################
+  def getJobCommand(self,jobID,status='Received'):
+    """ Get a command to be passed to the job together with the
+        next heart beat
+    """
+
+    req = "SELECT Command, Arguments FROM JobCommands WHERE JobID=%d AND Status='%s'" % (jobID,status)
+    result = self._query(req)
+    if not result['OK']:
+      return result
+
+    resultDict = {}
+    if result['Value']:
+      for row in result['Value']:
+        resultDict[row[0]] = row[1]
+
+    return S_OK(resultDict)
