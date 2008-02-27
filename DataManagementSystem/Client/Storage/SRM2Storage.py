@@ -274,35 +274,36 @@ class SRM2Storage(StorageBase):
       errCode,errStr = lcg_util.lcg_cp3(src_url, dest_url, self.defaulttype, srctype, dsttype, self.nobdii, self.vo, nbstreams, self.conf_file, self.insecure, self.verbose, timeout,src_spacetokendesc,dest_spacetokendesc)
       removeFile = True
       if errCode == 0:
-        # Skipping the post transfer file size check A.T.
-        gLogger.debug("SRM2Storage.putFile: Put file to storage, skipping post transfer check.")
-        successful[dest_url] = True
-        removeFile = False
-        ###########################################################################
-        #
-        #  Original checking code to restore when the lcg-utils are fixed
-        #
-        #gLogger.debug("SRM2Storage.putFile: Put file to storage, performing post transfer check.")
-        #res = self.getFileSize(dest_url)
-        #if res['OK']:
-        #  if res['Value']['Successful'].has_key(dest_url):
-        #    if res['Value']['Successful'][dest_url] == size:
-        #      gLogger.debug("SRM2Storage.putFile: Post transfer check successful.")
-        #      successful[dest_url] = True
-        #      removeFile = False
-        #    else:
-        #      errMessage = "SRM2Storage.putFile: Source and destination file sizes do not match."
-        #      gLogger.error(errMessage,dest_url)
-        #      failed[dest_url] = errMessage
-        #  else:
-        #    errMessage = "SRM2Storage.putFile: Failed to determine remote file size."
-        #    gLogger.error(errMessage,dest_url)
-        #    failed[dest_url] = errMessage
-        #else:
-        #  errMessage = "SRM2Storage.putFile: Failed to determine remote file size."
-        #  gLogger.error(errMessage,dest_url)
-        #  failed[dest_url] = errMessage
-        #############################################################################
+
+        # Skipping the post transfer size check for large files
+        # Put here temporarily before the lcg_utils clients are fixed A.T.
+
+        if size > 1024*1024*1024*2-1:
+          # Skipping the post transfer file size check
+          gLogger.debug("SRM2Storage.putFile: Put file to storage, skipping post transfer check.")
+          successful[dest_url] = True
+          removeFile = False
+        else:
+          gLogger.debug("SRM2Storage.putFile: Put file to storage, performing post transfer check.")
+          res = self.getFileSize(dest_url)
+          if res['OK']:
+            if res['Value']['Successful'].has_key(dest_url):
+              if res['Value']['Successful'][dest_url] == size:
+                gLogger.debug("SRM2Storage.putFile: Post transfer check successful.")
+                successful[dest_url] = True
+                removeFile = False
+              else:
+                errMessage = "SRM2Storage.putFile: Source and destination file sizes do not match."
+                gLogger.error(errMessage,dest_url)
+                failed[dest_url] = errMessage
+            else:
+              errMessage = "SRM2Storage.putFile: Failed to determine remote file size."
+              gLogger.error(errMessage,dest_url)
+              failed[dest_url] = errMessage
+          else:
+            errMessage = "SRM2Storage.putFile: Failed to determine remote file size."
+            gLogger.error(errMessage,dest_url)
+            failed[dest_url] = errMessage
       else:
         errMessage = "SRM2Storage.putFile: Failed to put file to remote storage."
         gLogger.error(errMessage,errStr)
