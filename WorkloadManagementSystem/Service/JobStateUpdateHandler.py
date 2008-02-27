@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobStateUpdateHandler.py,v 1.13 2008/02/26 08:19:49 atsareg Exp $
+# $Id: JobStateUpdateHandler.py,v 1.14 2008/02/27 20:18:49 atsareg Exp $
 ########################################################################
 
 """ JobStateUpdateHandler is the implementation of the Job State updating
@@ -11,7 +11,7 @@
 
 """
 
-__RCSID__ = "$Id: JobStateUpdateHandler.py,v 1.13 2008/02/26 08:19:49 atsareg Exp $"
+__RCSID__ = "$Id: JobStateUpdateHandler.py,v 1.14 2008/02/27 20:18:49 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -119,24 +119,15 @@ class JobStateUpdateHandler( RequestHandler ):
 
   ###########################################################################
   types_sendHeartBeat = [IntType, DictType, DictType]
-  def export_sendHeartBeat(self,jobID,staticData, dynamicData):
+  def export_sendHeartBeat(self,jobID,dynamicData,staticData):
     """ Send a heart beat sign of life for a job jobID
     """
 
-    print "Static heart beat data"
-    print staticData
-    print "Dynamic heart beat data"
-    print dynamicData
-
     result = jobDB.setHeartBeatData(jobID,staticData, dynamicData)
     if not result['OK']:
-      return result
+      gLogger.error('Failed to set the heart beat data for job %d ' % jobID)
 
-    if dynamicData.has_key('StandardOutput'):
-      result = jobDB.setJobParameter(jobID,'StandardOutput',dynamicData['StandardOutput'])
-      if not result['OK']:
-        self.log.warn(result)
-
+    # Restore the Running status if necessary
     result = jobDB.getJobAttributes(jobID,['Status'])
     if not result['OK']:
       return result
@@ -144,8 +135,13 @@ class JobStateUpdateHandler( RequestHandler ):
     status = result['Value']['Status']
     if status == "Stalled":
       result = jobDB.setJobAttribute(jobID,'Status','Running',True)
+      if not result['OK']:
+        gLogger.error('Failed to restore the job status to Running')
 
     jobMessageDict = {}
+    result = jobDB.getJobCommand(jobID)
+    if result['OK']:
+      jobMessageDict = result['Value']
 
     return S_OK(jobMessageDict)
 
