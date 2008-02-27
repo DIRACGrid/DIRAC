@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.20 2008/02/26 13:56:53 paterson Exp $
+# $Id: JobWrapper.py,v 1.21 2008/02/27 18:42:16 paterson Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.20 2008/02/26 13:56:53 paterson Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.21 2008/02/27 18:42:16 paterson Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -235,6 +235,9 @@ class JobWrapper:
        report to be presented in the StdOut in the web page via the heartbeat
        mechanism.
     """
+    cpuConsumed = self.__getCPU()['Value']
+    self.log.info('Total CPU Consumed is: %s' %(cpuConsumed))
+    #TODO:
     splitRes = stdout.split('\n')
     appStdOut = ''
     if len(splitRes)>self.maxPeekLines:
@@ -248,7 +251,8 @@ class JobWrapper:
     border = ''
     for i in xrange(len(header)):
       border+='='
-    header = '\n%s\n%s\n%s\n' % (border,header,border)
+    cpuTotal = 'CPU Total for job is %s (h:m:s)' %(cpuConsumed)
+    header = '\n%s\n%s\n%s\n%s\n' % (border,header,cpuTotal,border)
     appStdOut = header+appStdOut
     self.log.info(appStdOut)
     heartBeatDict = {}
@@ -259,6 +263,24 @@ class JobWrapper:
       self.log.warn(result)
 
     return result
+
+  #############################################################################
+  def __getCPU(self):
+    """Uses os.times() to get CPU time and returns HH:MM:SS after conversion.
+    """
+    utime, stime, cutime, cstime, elapsed = os.times()
+    cpuTime = utime + stime
+    self.log.verbose("CPU time consumed = %s" % (cpuTime))
+    result = self.__getCPUHMS(cpuTime)
+    return result
+
+  #############################################################################
+  def __getCPUHMS(self,cpuTime):
+    mins, secs = divmod(cpuTime, 60)
+    hours, mins = divmod(mins, 60)
+    humanTime = '%02d:%02d:%02d' % (hours, mins, secs)
+    self.log.verbose('Human readable CPU time is: %s' %humanTime)
+    return S_OK(humanTime)
 
   #############################################################################
   def resolveInputData(self,arguments):
