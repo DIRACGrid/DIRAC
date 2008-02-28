@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.42 2008/02/27 20:47:52 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.43 2008/02/28 09:10:18 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.42 2008/02/27 20:47:52 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.43 2008/02/28 09:10:18 atsareg Exp $"
 
 import re, os, sys, string
 import time
@@ -1433,7 +1433,7 @@ class JobDB(DB):
 
     siteList = result['Value']
     siteDict = {}
-    totalDict = {'Waiting':0,'Running':0,'Done':0,'Failed':0}
+    totalDict = {'Waiting':0,'Running':0,'Stalled':0,'Done':0,'Failed':0}
 
     for site in siteList:
       if site == "ANY":
@@ -1448,8 +1448,8 @@ class JobDB(DB):
         return S_ERROR('Failed to get Site data from the JobDB')
       siteDict[site]['Waiting'] = count
       totalDict['Waiting'] += count
-      # Running,Done,Failed
-      for status in ['Running','Done','Failed']:
+      # Running,Stalled,Done,Failed
+      for status in ['Running','Stalled','Done','Failed']:
         req = "SELECT COUNT(JobID) FROM Jobs WHERE Status='%s' AND Site='%s'" % (status,site)
         result = self._query(req)
         if result['OK']:
