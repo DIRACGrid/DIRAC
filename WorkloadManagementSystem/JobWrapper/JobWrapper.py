@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.21 2008/02/27 18:42:16 paterson Exp $
+# $Id: JobWrapper.py,v 1.22 2008/02/28 11:57:51 paterson Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.21 2008/02/27 18:42:16 paterson Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.22 2008/02/28 11:57:51 paterson Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -269,8 +269,8 @@ class JobWrapper:
     """Uses os.times() to get CPU time and returns HH:MM:SS after conversion.
     """
     utime, stime, cutime, cstime, elapsed = os.times()
-    cpuTime = utime + stime
-    self.log.verbose("CPU time consumed = %s" % (cpuTime))
+    cpuTime = utime + stime + cutime
+    self.log.verbose("Total CPU time consumed = %s" % (cpuTime))
     result = self.__getCPUHMS(cpuTime)
     return result
 
@@ -280,6 +280,7 @@ class JobWrapper:
     hours, mins = divmod(mins, 60)
     humanTime = '%02d:%02d:%02d' % (hours, mins, secs)
     self.log.verbose('Human readable CPU time is: %s' %humanTime)
+    self.__setJobParam('TotalCPUTime(s)',cpuTime)
     return S_OK(humanTime)
 
   #############################################################################
