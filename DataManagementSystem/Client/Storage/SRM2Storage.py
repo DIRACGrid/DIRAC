@@ -15,6 +15,8 @@ try:
   import lcg_util
   infoStr = 'Using lcg_util from: %s' % lcg_util.__file__
   gLogger.info(infoStr)
+  infoStr = "The version of lcg_utils is %s" % lcg_util.lcg_util_version()
+  gLogger.info(infoStr)
 except Exception,x:
   errStr = "SRM2Storage.__init__: Failed to import lcg_util: %s" % (x)
   gLogger.exception(errStr)
@@ -23,6 +25,8 @@ except Exception,x:
 try:
   import gfal
   infoStr = "Using gfal from: %s" % gfal.__file__
+  gLogger.info(infoStr)
+  infoStr = "The version of gfal is %s" % gfal.gfal_version()
   gLogger.info(infoStr)
 except Exception,x:
   errStr = "SRM2Storage.__init__: Failed to import gfal: %s" % (x)
