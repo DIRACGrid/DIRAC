@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobManagerHandler.py,v 1.6 2008/02/28 07:59:47 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobManagerHandler.py,v 1.7 2008/02/28 18:20:46 atsareg Exp $
 ########################################################################
 
 """ JobManagerHandler is the implementation of the JobManager service
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: JobManagerHandler.py,v 1.6 2008/02/28 07:59:47 atsareg Exp $"
+__RCSID__ = "$Id: JobManagerHandler.py,v 1.7 2008/02/28 18:20:46 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -249,6 +249,7 @@ class JobManagerHandler( RequestHandler ):
                                                                         userDN,
                                                                         userGroup,
                                                                         'Kill')
+        
     bad_ids = []
     good_ids = []
     for jobID in validJobList:
@@ -257,7 +258,11 @@ class JobManagerHandler( RequestHandler ):
       if not result['OK']:
         bad_ids.append(jobID)
       else:
+        gLogger.info('Job %d is marked for termination' % jobID)
         good_ids.append(jobID)
+        result = jobDB.setJobStatus(jobID,'Killed','Marked for termination')
+        if not result['OK']:
+          gLogger.warn('Failed to set job status')
 
     result = S_OK(validJobList)
     if invalidJobList or nonauthJobList or bad_ids:
