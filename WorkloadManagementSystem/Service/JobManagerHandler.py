@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobManagerHandler.py,v 1.5 2008/01/25 13:12:32 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobManagerHandler.py,v 1.6 2008/02/28 07:59:47 atsareg Exp $
 ########################################################################
 
 """ JobManagerHandler is the implementation of the JobManager service
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: JobManagerHandler.py,v 1.5 2008/01/25 13:12:32 atsareg Exp $"
+__RCSID__ = "$Id: JobManagerHandler.py,v 1.6 2008/02/28 07:59:47 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -210,8 +210,14 @@ class JobManagerHandler( RequestHandler ):
                                                                         userGroup,
                                                                         'Delete')
 
+    bad_ids = []
+    good_ids = []
     for jobID in validJobList:
       result = jobDB.setJobStatus(jobID,'Deleted','Checking accounting')
+      if not result['OK']:
+        bad_ids.append(jobID)
+      else:
+        good_ids.append(jobID)
 
     result = S_OK(validJobList)
     if invalidJobList or nonauthJobList:
@@ -220,6 +226,8 @@ class JobManagerHandler( RequestHandler ):
         result['InvalidJobIDs'] = invalidJobList
       if nonauthJobList:
         result['NonauthorizedJobIDs'] = nonauthJobList
+      if bad_ids:
+        result['FailedJobIDs'] = bad_ids
 
     return result
 
@@ -241,17 +249,25 @@ class JobManagerHandler( RequestHandler ):
                                                                         userDN,
                                                                         userGroup,
                                                                         'Kill')
+    bad_ids = []
+    good_ids = []
     for jobID in validJobList:
       # kill jobID
-      pass
+      result = jobDB.setJobCommand(jobID,'Kill','')
+      if not result['OK']:
+        bad_ids.append(jobID)
+      else:
+        good_ids.append(jobID)
 
     result = S_OK(validJobList)
-    if invalidJobList or nonauthJobList:
+    if invalidJobList or nonauthJobList or bad_ids:
       result = S_ERROR('Some jobs failed deletion')
       if invalidJobList:
         result['InvalidJobIDs'] = invalidJobList
       if nonauthJobList:
         result['NonauthorizedJobIDs'] = nonauthJobList
+      if bad_ids:
+        result['FailedJobIDs'] = bad_ids
 
     return result
 
