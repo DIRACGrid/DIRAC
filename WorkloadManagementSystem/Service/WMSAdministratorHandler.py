@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSAdministratorHandler.py,v 1.14 2008/02/25 23:02:47 atsareg Exp $
+# $Id: WMSAdministratorHandler.py,v 1.15 2008/02/28 18:34:58 atsareg Exp $
 ########################################################################
 """
 This is a DIRAC WMS administrator interface.
@@ -17,7 +17,7 @@ Access to the pilot data:
 
 """
 
-__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.14 2008/02/25 23:02:47 atsareg Exp $"
+__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.15 2008/02/28 18:34:58 atsareg Exp $"
 
 import os, sys, string, uu, shutil
 from types import *
@@ -309,7 +309,7 @@ class WMSAdministratorHandler(RequestHandler):
     """ Get summary of the status of the LCG Pilot Jobs
     """
 
-    result = pilotDB.getPilotsSummary(startdate,enddate)
+    result = pilotDB.getPilotSummary(startdate,enddate)
     return result
 
   ##############################################################################

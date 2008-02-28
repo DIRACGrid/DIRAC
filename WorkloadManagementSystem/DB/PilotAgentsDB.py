@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.10 2008/02/25 22:56:19 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.11 2008/02/28 18:34:58 atsareg Exp $
 ########################################################################
 """ PilotAgentsDB class is a front-end to the Pilot Agent Database.
     This database keeps track of all the submitted grid pilot jobs.
@@ -23,7 +23,7 @@
 
 """
 
-__RCSID__ = "$Id: PilotAgentsDB.py,v 1.10 2008/02/25 22:56:19 atsareg Exp $"
+__RCSID__ = "$Id: PilotAgentsDB.py,v 1.11 2008/02/28 18:34:58 atsareg Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
@@ -288,7 +288,7 @@ class PilotAgentsDB(DB):
         return S_ERROR('PilotID '+str(pilotID)+' not found')
 
 ##########################################################################################
-  def getPilotsSummary(self,startdate='',enddate=''):
+  def getPilotSummary(self,startdate='',enddate=''):
     """ Get summary of the pilot jobs status by site
     """
     st_list = ['Aborted','Running','Done','Submitted','Ready','Scheduled','Waiting']
