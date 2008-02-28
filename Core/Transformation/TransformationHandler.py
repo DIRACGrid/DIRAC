@@ -16,37 +16,63 @@ class TransformationHandler(RequestHandler):
     return res
 
   types_removeTransformation = [[LongType, IntType, StringType]]
-  def export_removeTransformation(self,transformationName):
-    res = self.database.removeTransformation(transformationName)
-    authorDN = self._clientTransport.peerCredentials['DN']
-    if res['OK']:
+  def export_removeTransformation(self,transNameOrID):
+    result = self.database.removeTransformation(transNameOrID)
+    if result['OK']:
+      authorDN = self._clientTransport.peerCredentials['DN']
       message = 'Removed'
-      res = self.database.updateTransformationLogging(transformationName,message,authorDN)
-    return res
+      result = self.database.updateTransformationLogging(transNameOrID,message,authorDN)
+    return result
 
   types_setTransformationStatus = [[LongType, IntType, StringType],StringType]
-  def export_setTransformationStatus(self,transformationName,status):
-    res = self.database.setTransformationStatus(transformationName,status)
-    authorDN = self._clientTransport.peerCredentials['DN']
-    if res['OK']:
+  def export_setTransformationStatus(self,transNameOrID,status):
+    result = self.database.setTransformationStatus(transNameOrID,status)
+    if result['OK']:
+      authorDN = self._clientTransport.peerCredentials['DN']
       message = "Status changed to %s" % status
-      res = self.database.updateTransformationLogging(transformationName,message,authorDN)
-    return res
-    
+      result = self.database.updateTransformationLogging(transNameOrID,message,authorDN)
+    return result
+
   types_setTransformationAgentType = [ [LongType, IntType, StringType], StringType ]
-  def export_setTransformationAgentType( self, idOrName, status ):
-    result = self.database.setTransformationAgentType(idOrName, status)
+  def export_setTransformationAgentType( self, transNameOrID, status ):
+    result = self.database.setTransformationAgentType(transNameOrID, status)
     if not result['OK']:
       gLogger.error(result['Message'])
+    else:
+      authorDN = self._clientTransport.peerCredentials['DN']
+      message = "Transformation AgentType changed to %s" % status
+      result = self.database.updateTransformationLogging(transNameOrID,message,authorDN)
+    return result
+
+  types_setTransformationType = [ [LongType, IntType, StringType], StringType ]
+  def export_setTransformationType( self, transNameOrID, status ):
+    result = self.database.setTransformationType(transNameOrID, status)
+    if not result['OK']:
+      gLogger.error(result['Message'])
+    else:
+      authorDN = self._clientTransport.peerCredentials['DN']
+      message = "Transformation Type changed to %s" % status
+      result = self.database.updateTransformationLogging(transNameOrID,message,authorDN)
+    return result
+
+  types_setTransformationPlugin = [ [LongType, IntType, StringType], StringType ]
+  def export_setTransformationPlugin( self, transNameOrID, status ):
+    result = self.database.setTransformationPlugin(transNameOrID, status)
+    if not result['OK']:
+      gLogger.error(result['Message'])
+    else:
+      authorDN = self._clientTransport.peerCredentials['DN']
+      message = "Transformation Plugin changed to %s" % status
+      result = self.database.updateTransformationLogging(transNameOrID,message,authorDN)
     return result
 
   types_setTransformationMask = [[LongType, IntType, StringType],StringType]
-  def export_setTransformationMask(self,transformationName,fileMask):
-    res = self.database.setTransformationMask(transformationName,fileMask)
-    authorDN = self._clientTransport.peerCredentials['DN']
+  def export_setTransformationMask(self,transNameOrID,fileMask):
+    res = self.database.setTransformationMask(transNameOrID,fileMask)
     if res['OK']:
+      authorDN = self._clientTransport.peerCredentials['DN']
       message = "Mask changed to %s" % fileMask
-      res = self.database.updateTransformationLogging(transformationName,message,authorDN)
+      res = self.database.updateTransformationLogging(transNameOrID,message,authorDN)
     return res
 
   types_changeTransformationName = [[LongType, IntType, StringType],StringType]
@@ -75,6 +101,11 @@ class TransformationHandler(RequestHandler):
     res = self.database.getAllTransformations()
     return res
 
+  types_getTransformationLogging = [[LongType, IntType, StringType]]
+  def export_getTransformationLogging(self,transID):
+    res = self.database.getTransformationLogging(transID)
+    return res
+
   types_getFilesForTransformation = [[LongType, IntType, StringType]]
   def export_getFilesForTransformation(self,transformationName,orderByJobs=False):
     res = self.database.getFilesForTransformation(transformationName,orderByJobs)
@@ -99,6 +130,13 @@ class TransformationHandler(RequestHandler):
   def export_setFileJobID(self,transformationName,jobID,lfns):
     res = self.database.setFileJobID(transformationName,jobID,lfns)
     return res
+
+  types_updateTransformation = [ [LongType, IntType, StringType]]
+  def export_updateTransformation( self, id_ ):
+    result = productionDB.updateTransformation(id_)
+    if not result['OK']:
+      gLogger.error(result['Message'])
+    return result
 
   ####################################################################
   #

@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.44 2008/02/22 14:47:39 gkuznets Exp $
+# $Id: TransformationDB.py,v 1.45 2008/02/28 09:47:17 gkuznets Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -92,7 +92,7 @@ class TransformationDB(DB):
     if result['OK']:
       connection = result['Value']
     else:
-      return S_ERROR('Failed to get connection to MySQL: '+result['Message'])  
+      return S_ERROR('Failed to get connection to MySQL: '+result['Message'])
     res = self._update(req,connection)
     if not res['OK']:
       self.lock.release()
@@ -124,7 +124,7 @@ class TransformationDB(DB):
     # Add already existing files to this transformation if any
     result = self.__addExistingFiles(transID)
     return S_OK(transID)
-    
+
   def updateTransformationLogging(self,transName,message,authorDN):
     """ Update the Transformation log table with any modifications (we know who you are!!)
     """
@@ -133,6 +133,27 @@ class TransformationDB(DB):
     VALUES (%s,'%s','%s',UTC_TIMESTAMP());" % (transID,message,authorDN)
     res = self._update(req)
     return res
+
+  def getTransformationLogging(self,transName):
+    """ Get Transformation log table
+        Works with TransformationID only
+    """
+    transID = self.getTransformationID(transName)
+    req = "SELECT TransformationID, Message, Author, MessageDate FROM TransformationLog WHERE TransformationID=%s;" % (transID)
+    res = self._query(req)
+    if not res['OK']:
+      return res
+
+    translist = []
+    for transID, message, authorDN, messageDate in res['Value']:
+      transdict = {}
+      transdict['TransID'] = transID
+      transdict['Message'] = message
+      transdict['AuthorDN'] = authorDN
+      transdict['MessageDate'] = messageDate
+      translist.append(transdict)
+
+    return S_OK(translist)
 
   def setTransformationStatus(self,transName,status):
     """ Set the status of the transformation specified by transID
@@ -149,7 +170,23 @@ class TransformationDB(DB):
     req = "UPDATE Transformations SET AgentType='%s' WHERE TransformationID=%s;" % (status,transID)
     res = self._update(req)
     return res
-    
+
+  def setTransformationPlugin(self,transName,status):
+    """ Set the Plugin the transformation specified by transID
+    """
+    transID = self.getTransformationID(transName)
+    req = "UPDATE Transformations SET Plugin='%s' WHERE TransformationID=%s;" % (status,transID)
+    res = self._update(req)
+    return res
+
+  def setTransformationType(self,transName,status):
+    """ Set the Plugin the transformation specified by transID
+    """
+    transID = self.getTransformationID(transName)
+    req = "UPDATE Transformations SET Type='%s' WHERE TransformationID=%s;" % (status,transID)
+    res = self._update(req)
+    return res
+
   def getTransformationStats(self,transName):
     """ Get the statistics of Transformation by supplied transformation name.
     """
@@ -243,6 +280,8 @@ class TransformationDB(DB):
     transID = self.getTransformationID(transName)
     req = "UPDATE Transformations SET FileMask='%s' WHERE TransformationID=%s" % (fileMask,transID)
     res = self._update(req)
+    if res['OK']: # we must update transformation
+      res = self.__addExistingFiles(transID)
     return res
 
   def changeTransformationName(self,transName,newName):
@@ -257,9 +296,9 @@ class TransformationDB(DB):
     """ Get input data for the given transformation, only files
         with a given status which is defined for the file replicas.
     """
-    
+
     print 'TransformationDB 1:',transName,status
-    
+
     transID = self.getTransformationID(transName)
     req = "SELECT FileID from T_%s WHERE Status='Unused';" % (transID)
     res = self._query(req)
@@ -404,7 +443,7 @@ class TransformationDB(DB):
 	      if not ret['OK']:
 	            gLogger.warning('Unable to add dataLogging record for Transformation %s FileID %s' % (transID, fileID))
 
-	        
+
     return S_OK()
 
   def __addTransformationTable(self,transID):
@@ -556,11 +595,11 @@ PRIMARY KEY (FileID)
       infoStr = "%sForced %s replicas." % (infoStr,replicasForced)
       gLogger.info(infoStr)
       return S_OK(infoStr)
-      
+
   def updateTransformation(self,transName):
     """ Update the transformation w.r.t files registered already
-    """    
-    
+    """
+
     transID = self.getTransformationID(transName)
     result = self.__addExistingFiles(transID)
     return result
@@ -675,7 +714,7 @@ PRIMARY KEY (FileID)
               if res['Value']:
                 addedToTransformation = True
                 for transID in res['Value']:
-                  ret = self.dataLog.addFileRecord(lfn,'AddedToTransformation','Transformation %s' % transID,'',self.dbname) 
+                  ret = self.dataLog.addFileRecord(lfn,'AddedToTransformation','Transformation %s' % transID,'',self.dbname)
 		  if not ret['OK']:
  	            gLogger.warning('Unable to add dataLogging record for Transformation %s FileID %s' % (transID, fileID))
 
