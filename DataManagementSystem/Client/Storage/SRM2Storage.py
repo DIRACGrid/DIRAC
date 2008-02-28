@@ -274,36 +274,44 @@ class SRM2Storage(StorageBase):
       errCode,errStr = lcg_util.lcg_cp3(src_url, dest_url, self.defaulttype, srctype, dsttype, self.nobdii, self.vo, nbstreams, self.conf_file, self.insecure, self.verbose, timeout,src_spacetokendesc,dest_spacetokendesc)
       removeFile = True
       if errCode == 0:
-
-        # Skipping the post transfer size check for large files
-        # Put here temporarily before the lcg_utils clients are fixed A.T.
-
-        if size > 1024*1024*1024*2-1:
-          # Skipping the post transfer file size check
-          gLogger.debug("SRM2Storage.putFile: Put file to storage, skipping post transfer check.")
-          successful[dest_url] = True
-          removeFile = False
-        else:
-          gLogger.debug("SRM2Storage.putFile: Put file to storage, performing post transfer check.")
-          res = self.getFileSize(dest_url)
-          if res['OK']:
-            if res['Value']['Successful'].has_key(dest_url):
-              if res['Value']['Successful'][dest_url] == size:
-                gLogger.debug("SRM2Storage.putFile: Post transfer check successful.")
-                successful[dest_url] = True
-                removeFile = False
-              else:
+        gLogger.debug("SRM2Storage.putFile: Put file to storage, performing post transfer check.")
+        res = self.getFileSize(dest_url)
+        if res['OK']:
+          if res['Value']['Successful'].has_key(dest_url):
+            remoteSize = res['Value']['Successful'][dest_url]
+            #######################################################################
+            # This is a dirty hack because gfal is rubbish
+            if size > 1024*1024*1024*2-1:
+              gLogger.debug("SRM2Storage.putFile: The file put was larger than 2GB.")
+              gLogger.debug("SRM2Storage.putFile: Checking whether (remoteSize-size)%(2**32) == 0.")
+              gLogger.debug("SRM2Storage.putFile: gfal returned size = %s and the file size is %s" % (remoteSize,size))
+              gLogger.debug("SRM2Storage.putFile: Checking whether (remoteSize-size)%(2**32) == 0.")
+              if (remoteSize-size)%(2**32) != 0:
+                gLogger.debug("SRM2Storage.putFile: != 0")
                 errMessage = "SRM2Storage.putFile: Source and destination file sizes do not match."
                 gLogger.error(errMessage,dest_url)
                 failed[dest_url] = errMessage
+              else:
+                gLogger.debug("SRM2Storage.putFile: = 0")
+                successful[dest_url] = True
+                removeFile = False
+            #######################################################################
+            elif remoteSize == size:
+              gLogger.debug("SRM2Storage.putFile: Post transfer check successful.")
+              successful[dest_url] = True
+              removeFile = False
             else:
-              errMessage = "SRM2Storage.putFile: Failed to determine remote file size."
+              errMessage = "SRM2Storage.putFile: Source and destination file sizes do not match."
               gLogger.error(errMessage,dest_url)
               failed[dest_url] = errMessage
           else:
             errMessage = "SRM2Storage.putFile: Failed to determine remote file size."
             gLogger.error(errMessage,dest_url)
             failed[dest_url] = errMessage
+        else:
+          errMessage = "SRM2Storage.putFile: Completely failed to determine remote file size."
+          gLogger.error(errMessage,dest_url)
+          failed[dest_url] = errMessage
       else:
         errMessage = "SRM2Storage.putFile: Failed to put file to remote storage."
         gLogger.error(errMessage,errStr)
@@ -520,6 +528,21 @@ class SRM2Storage(StorageBase):
     successful = {}
     for urlDict in listOfResults:
       pathSURL = self.getUrl(urlDict['surl'])['Value']
+
+      ################################################################################################
+      # This is a check to see what file size we get back from GFAL regardless of the file status.
+      gLogger.info("SRM2Storage.getFileSize: The file status was found to be %s." % urlDict['status'])
+      if urlDict.has_key('stat'):
+        gLogger.info("SRM2Storage.getFileSize: The file has a 'stat' key.")
+        if S_ISREG(urlDict['stat'][ST_MODE]):
+          size = urlDict['stat'][ST_SIZE]
+          gLogger.info("SRM2Storage.getFileSize: Obtained file size of %s." % (size))
+        else:
+          gLogger.info("SRM2Storage.getFileSize: The file is not a file ;).")
+      else:
+        gLogger.info("SRM2Storage.getFileSize: The file does not have a 'stat' key.")
+      ################################################################################################
+
       if urlDict['status'] == 0:
         subPathStat = urlDict['stat']
         if S_ISREG(subPathStat[ST_MODE]):
