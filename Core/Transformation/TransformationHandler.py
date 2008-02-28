@@ -133,7 +133,7 @@ class TransformationHandler(RequestHandler):
 
   types_updateTransformation = [ [LongType, IntType, StringType]]
   def export_updateTransformation( self, id_ ):
-    result = self.database.self.database(id_)
+    result = self.database.updateTransformation(id_)
     if not result['OK']:
       gLogger.error(result['Message'])
     return result
