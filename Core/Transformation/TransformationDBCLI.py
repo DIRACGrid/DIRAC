@@ -33,28 +33,28 @@ class TransformationDBCLI(cmd.Cmd):
     sys.exit( 0 )
 
    # overriting default help command
-#  def do_help( self, args ):
-#    """
-#    Shows help information
-#        Usage: help <command>
-#        If no command is specified all commands are shown
-#    """
-#    if len( args ) == 0:
-#      print "\nAvailable commands:\n"
-#      attrList = dir( self )
-#      attrList.sort()
-#      for attribute in attrList:
-#        if attribute.find( "do_" ) == 0:
-#          self.printPair( attribute[ 3: ], getattr( self, attribute ).__doc__[ 1: ] )
-#          print ""
-#    else:
-#      command = args.split()[0].strip()
-#      try:
-#        obj = getattr( self, "do_%s" % command )
-#      except:
-#        print "There's no such %s command" % command
-#        return
-#      self.printPair( command, obj.__doc__[1:] )
+  def do_helpall( self, args ):
+    """
+    Shows help information
+        Usage: helpall <command>
+        If no command is specified all commands are shown
+    """
+    if len( args ) == 0:
+      print "\nAvailable commands:\n"
+      attrList = dir( self )
+      attrList.sort()
+      for attribute in attrList:
+        if attribute.find( "do_" ) == 0:
+          self.printPair( attribute[ 3: ], getattr( self, attribute ).__doc__[ 1: ] )
+          print ""
+    else:
+      command = args.split()[0].strip()
+      try:
+        obj = getattr( self, "do_%s" % command )
+      except:
+        print "There's no such %s command" % command
+        return
+      self.printPair( command, obj.__doc__[1:] )
 
   def check_params(self, args, num):
     """Checks if the number of parameters correct"""
