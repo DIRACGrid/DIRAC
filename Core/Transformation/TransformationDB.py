@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.45 2008/02/28 09:47:17 gkuznets Exp $
+# $Id: TransformationDB.py,v 1.46 2008/02/29 16:19:41 gkuznets Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -139,7 +139,7 @@ class TransformationDB(DB):
         Works with TransformationID only
     """
     transID = self.getTransformationID(transName)
-    req = "SELECT TransformationID, Message, Author, MessageDate FROM TransformationLog WHERE TransformationID=%s;" % (transID)
+    req = "SELECT TransformationID, Message, Author, MessageDate FROM TransformationLog WHERE TransformationID=%s ORDER BY MessageDate;" % (transID)
     res = self._query(req)
     if not res['OK']:
       return res
@@ -187,23 +187,47 @@ class TransformationDB(DB):
     res = self._update(req)
     return res
 
+# Unefficient version commented
+#  def getTransformationStats(self,transName):
+#    """ Get the statistics of Transformation by supplied transformation name.
+#    """
+#    transID = self.getTransformationID(transName)
+#    req = "SELECT FileID,Status from T_%s;" % transID
+#    res = self._query(req)
+#    if not res['OK']:
+#      return res
+#    total = 0
+#    resDict = {}
+#    for fileID,status in res['Value']:
+#      total += 1
+#      if not resDict.has_key(status):
+#        resDict[status] = 0
+#      resDict[status] += 1
+#    resDict['total'] = total
+#    return S_OK(resDict)
+
   def getTransformationStats(self,transName):
-    """ Get the statistics of Transformation by supplied transformation name.
+    """ Get number of files in Transformation Table for each status
     """
     transID = self.getTransformationID(transName)
-    req = "SELECT FileID,Status from T_%s;" % transID
-    res = self._query(req)
-    if not res['OK']:
-      return res
-    total = 0
-    resDict = {}
-    for fileID,status in res['Value']:
-      total += 1
-      if not resDict.has_key(status):
-        resDict[status] = 0
-      resDict[status] += 1
-    resDict['total'] = total
-    return S_OK(resDict)
+    req = "SELECT DISTINCT Status FROM T_%s;" % transID
+    result1 = self._query(req)
+    if not result1['OK']:
+      return result1
+
+    statusList = {}
+    total=0
+    for status_ in result1["Value"]:
+      status = status_[0]
+      statusList[status]=0
+      req = "SELECT count(FileID) FROM T_%s WHERE Status='%s';" % (transID, status)
+      result2 = self._query(req)
+      if not result2['OK']:
+        return result2
+      statusList[status]=result2['Value'][0][0]
+      total = total + result2['Value'][0][0]
+    statusList['Total']=total
+    return S_OK(statusList)
 
   def getTransformation(self,transName):
     """Get Transformation definition
