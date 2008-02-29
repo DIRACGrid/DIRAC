@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/WatchdogLinux.py,v 1.6 2008/02/27 18:22:01 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/WatchdogLinux.py,v 1.7 2008/02/29 10:16:41 paterson Exp $
 # Author: Stuart Paterson
 # eMail : Stuart.Paterson@cern.ch
 ########################################################################
@@ -11,7 +11,7 @@
      This is the Unix / Linux compatible Watchdog subclass.
 """
 
-__RCSID__ = "$Id: WatchdogLinux.py,v 1.6 2008/02/27 18:22:01 paterson Exp $"
+__RCSID__ = "$Id: WatchdogLinux.py,v 1.7 2008/02/29 10:16:41 paterson Exp $"
 
 from DIRAC.Core.Base.Agent                               import Agent
 from DIRAC.WorkloadManagementSystem.JobWrapper.Watchdog  import Watchdog
@@ -40,15 +40,19 @@ class WatchdogLinux(Watchdog):
       file = open ("/proc/cpuinfo","r")
       info =  file.readlines()
       file.close()
-      #Value  = {"CPU":6, "MODEL":4,"CACHE":7}
       result["HostName"] = socket.gethostname()
       result["CPU(MHz)"]   = string.replace(string.replace(string.split(info[6],":")[1]," ",""),"\n","")
       result["ModelName"] = string.replace(string.replace(string.split(info[4],":")[1]," ",""),"\n","")
-      result["CacheSize(KB)"] = string.replace(string.replace(string.split(info[7],":")[1]," ",""),"\n","")
+      result["CacheSize(kB)"] = string.replace(string.replace(string.split(info[7],":")[1]," ",""),"\n","")
       file = open ("/proc/meminfo","r")
       info =  file.readlines()
       file.close()
-      result["Memory"] =  string.replace(string.replace(string.split(info[3],":")[1]," ",""),"\n","")
+      result["Memory(kB)"] =  string.replace(string.replace(string.split(info[3],":")[1]," ",""),"\n","")
+      account = 'Unknown'
+      localID = shellCall(10,'whoami')
+      if localID['OK']:
+        account = localID['Value'][1].strip()
+      result["LocalAccount"] = account
     except Exception, x:
       self.log.fatal('Watchdog failed to obtain node information with Exception:')
       self.log.fatal(str(x))
@@ -100,21 +104,6 @@ class WatchdogLinux(Watchdog):
       result['Value'] = float(space)
     else:
       result = S_ERROR('Could not obtain disk usage')
-
-    return result
-
- #############################################################################
-  def getCPUConsumed(self,pid):
-    """Obtains the CPU consumed via PID.
-    """
-    result = S_OK()
-    comm = ' ps -p '+str(pid)+' -o time | grep -v TIME'
-    cpuDict = shellCall(5,comm)
-    if cpuDict['OK']:
-      cpu = string.split(cpuDict['Value'][1]) [0]
-      result['Value'] = cpu
-    else:
-      result = S_ERROR('Could not obtain CPU consumed')
 
     return result
 

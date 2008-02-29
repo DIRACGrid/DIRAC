@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/WatchdogMac.py,v 1.4 2007/12/06 21:36:55 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/WatchdogMac.py,v 1.5 2008/02/29 10:17:28 paterson Exp $
 # Author: Stuart Paterson
 # eMail : Stuart.Paterson@cern.ch
 ########################################################################
@@ -11,7 +11,7 @@
      This is the Mac compatible Watchdog subclass.
 """
 
-__RCSID__ = "$Id: WatchdogMac.py,v 1.4 2007/12/06 21:36:55 paterson Exp $"
+__RCSID__ = "$Id: WatchdogMac.py,v 1.5 2008/02/29 10:17:28 paterson Exp $"
 
 from DIRAC.Core.Base.Agent                              import Agent
 from DIRAC.WorkloadManagementSystem.JobWrapper.Watchdog import Watchdog
@@ -57,6 +57,11 @@ class WatchdogMac(Watchdog):
         if re.search('^hw.memsize =',val):
           memory = str(int(val.split('=')[1].strip())/2**20)+'MB'
           result['Value']['Memory']=memory
+      account = 'Unknown'
+      localID = shellCall(10,'whoami')
+      if localID['OK']:
+        account = localID['Value'][1].strip()
+      result['LocalAccount'] = account
     else:
       result = S_ERROR('Could not obtain system information')
 
@@ -108,26 +113,6 @@ class WatchdogMac(Watchdog):
       result['Value'] = float(space)  # MB
     else:
       result = S_ERROR('Could not obtain disk usage')
-
-    return result
-
- #############################################################################
-  def getCPUConsumed(self,pid):
-    """Obtains the CPU consumed via PID.
-    """
-    result = S_OK()
-    comm = ' ps -p '+str(pid)+' -o time | grep -v TIME'  #ps -p 294 -o cpu | grep -v CPU
-    cpuDict = shellCall(5,comm)
-    if cpuDict['OK']:
-      cpu = string.split(cpuDict['Value'][1]) [0]
-      if re.search('.',cpu):
-        val = cpu.split('.')
-        secs = int(int(val[1])*60/100)
-        cpu = val[0]+':'+str(secs)
-
-      result['Value'] = cpu
-    else:
-      result = S_ERROR('Could not obtain CPU consumed')
 
     return result
 
