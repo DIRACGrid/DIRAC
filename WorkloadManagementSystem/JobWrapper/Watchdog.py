@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.27 2008/02/27 18:49:33 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.28 2008/02/29 10:18:22 paterson Exp $
 # File  : Watchdog.py
 # Author: Stuart Paterson
 ########################################################################
@@ -18,12 +18,13 @@
           - CPU normalization for correct comparison with job limit
 """
 
-__RCSID__ = "$Id: Watchdog.py,v 1.27 2008/02/27 18:49:33 paterson Exp $"
+__RCSID__ = "$Id: Watchdog.py,v 1.28 2008/02/29 10:18:22 paterson Exp $"
 
 from DIRAC.Core.Base.Agent                          import Agent
 from DIRAC.Core.DISET.RPCClient                     import RPCClient
 from DIRAC.ConfigurationSystem.Client.Config        import gConfig
 from DIRAC.Core.Utilities.Subprocess                import shellCall
+from DIRAC.Core.Utilities.ProcessMonitor            import ProcessMonitor
 from DIRAC                                          import S_OK, S_ERROR
 
 import os,thread,time,shutil
@@ -48,6 +49,7 @@ class Watchdog(Agent):
     self.parameters = {}
     self.peekFailCount = 0
     self.peekRetry = 5
+    self.processMonitor = ProcessMonitor()
 
   #############################################################################
   def initialize(self,loops=0):
@@ -67,19 +69,16 @@ class Watchdog(Agent):
     self.testCPULimit    = gConfig.getValue(self.section+'/CheckCPULimitFlag',0)
     #Other parameters
     self.pollingTime      = gConfig.getValue(self.section+'/PollingTime',60) # 60 seconds
-    self.checkingTime     = gConfig.getValue(self.section+'/CheckingTime',30*60) #30 minute period
-    self.minCheckingTime   = gConfig.getValue(self.section+'/MinCheckingTime',30*60) # 20 mins
+    self.checkingTime     = gConfig.getValue(self.section+'/CheckingTime',30*60) #10 minute period
+    self.minCheckingTime   = gConfig.getValue(self.section+'/MinCheckingTime',20*60) # 20 mins
     self.maxWallClockTime = gConfig.getValue(self.section+'/MaxWallClockTime',4*24*60*60) # e.g. 4 days
     self.jobPeekFlag      = gConfig.getValue(self.section+'/JobPeekFlag',1) # on / off
     self.minDiskSpace     = gConfig.getValue(self.section+'/MinDiskSpace',10) #MB
     self.loadAvgLimit     = gConfig.getValue(self.section+'/LoadAverageLimit',1000) # > 1000 and jobs killed
     self.sampleCPUTime    = gConfig.getValue(self.section+'/CPUSampleTime',30*60) # e.g. up to 20mins sample
-    self.calibFactor      = gConfig.getValue(self.section+'/CPUFactor',0.5) # multiple of the cpu consumed during calibration
     self.jobCPUMargin     = gConfig.getValue(self.section+'/JobCPULimitMargin',20) # %age buffer before killing job
-    self.peekOutputLines  = gConfig.getValue(self.section+'/PeekOutputLines',5) # regularly printed # lines (up to)
-    self.finalOutputLines = gConfig.getValue(self.section+'/FinalOutputLines',50) # lines to print after failure (up to)
-    self.minCPUWallClockRatio  = gConfig.getValue(self.section+'/MinCPUWallClockRatio',1) #ratio %age
-    self.nullCPULimit = gConfig.getValue(self.section+'/NullCPUCountLimit',5) #After 5 sample times return no CPU change kill job
+    self.minCPUWallClockRatio  = gConfig.getValue(self.section+'/MinCPUWallClockRatio',5) #ratio %age
+    self.nullCPULimit = gConfig.getValue(self.section+'/NullCPUCountLimit',5) #After 5 sample times return null CPU consumption kill job
     self.checkCount = 0
     self.nullCPUCount = 0
     if self.checkingTime < self.minCheckingTime:
@@ -143,7 +142,7 @@ class Watchdog(Agent):
     if not result['OK']:
       self.log.warn(result['Message'])
       if self.jobPeekFlag:
-        result = self.__peek(self.finalOutputLines)
+        result = self.__peek()
         if result['OK']:
           outputList = result['Value']
           size = len(outputList)
@@ -160,7 +159,7 @@ class Watchdog(Agent):
 
     recentStdOut = 'None'
     if self.jobPeekFlag:
-      result = self.__peek(self.peekOutputLines)
+      result = self.__peek()
       if result['OK']:
         outputList = result['Value']
         size = len(outputList)
@@ -194,9 +193,21 @@ class Watchdog(Agent):
   def __getCPU(self):
     """Uses os.times() to get CPU time and returns HH:MM:SS after conversion.
     """
-    utime, stime, cutime, cstime, elapsed = os.times()
-    cpuTime = utime + stime
-    self.log.verbose("CPU time consumed = %s" % (cpuTime))
+    cpuTime = 0.0
+    try:
+      cpuTime = self.processMonitor.getCPUConsumed(self.wrapperPID)
+    except Exception,x:
+      self.log.warn('Could not determine CPU time consumed with exception')
+      self.log.warn(str(x))
+      return S_OK(cpuTime) #just return null CPU
+
+    if not cpuTime['OK']:
+      self.log.warn('Problem while checking consumed CPU')
+      self.log.warn(cpuTime)
+      return S_OK(cpuTime) #again return null CPU in this case
+
+    cpuTime = cpuTime['Value']
+    self.log.verbose("Raw CPU time consumed (s) = %s" % (cpuTime))
     result = self.__getCPUHMS(cpuTime)
     return result
 
@@ -354,7 +365,6 @@ class Watchdog(Agent):
       self.log.info('Insufficient CPU consumed information')
       self.log.verbose(cpuList)
 
-
     return S_OK('Job consuming CPU')
 
   #############################################################################
@@ -460,7 +470,7 @@ class Watchdog(Agent):
       return S_ERROR('Job load average not established')
 
   #############################################################################
-  def __peek(self,lines=0):
+  def __peek(self):
     """ Uses ExecutionThread.getOutput() method to obtain standard output
         from running thread via subprocess callback function.
     """
@@ -705,13 +715,6 @@ class Watchdog(Agent):
   def getDiskSpace(self):
     """ Attempts to get the available disk space, should be overridden in a subclass"""
     methodName = 'getDiskSpace'
-    self.log.warn('Watchdog: '+methodName+' method should be implemented in a subclass')
-    return S_ERROR('Watchdog: '+methodName+' method should be implemented in a subclass')
-
-  #############################################################################
-  def getCPUConsumed(self):
-    """ Attempts to get the CPU consumed, should be overridden in a subclass"""
-    methodName = 'getCPUConsumed'
     self.log.warn('Watchdog: '+methodName+' method should be implemented in a subclass')
     return S_ERROR('Watchdog: '+methodName+' method should be implemented in a subclass')
 
