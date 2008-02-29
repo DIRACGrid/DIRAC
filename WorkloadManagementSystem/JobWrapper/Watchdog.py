@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.28 2008/02/29 10:18:22 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.29 2008/02/29 11:16:39 paterson Exp $
 # File  : Watchdog.py
 # Author: Stuart Paterson
 ########################################################################
@@ -18,7 +18,7 @@
           - CPU normalization for correct comparison with job limit
 """
 
-__RCSID__ = "$Id: Watchdog.py,v 1.28 2008/02/29 10:18:22 paterson Exp $"
+__RCSID__ = "$Id: Watchdog.py,v 1.29 2008/02/29 11:16:39 paterson Exp $"
 
 from DIRAC.Core.Base.Agent                          import Agent
 from DIRAC.Core.DISET.RPCClient                     import RPCClient
@@ -131,7 +131,10 @@ class Watchdog(Agent):
     result = self.__getCPU()
     msg += 'CPU: %s (h:m:s) ' % (result['Value'])
     self.parameters['CPUConsumed'].append(result['Value'])
-    heartBeatDict['CPUConsumed'] = result['Value']
+    hmsCPU = result['Value']
+    rawCPU = self.__convertCPUTime(hmsCPU)
+    if rawCPU['OK']:
+      heartBeatDict['CPUConsumed'] = rawCPU['Value']
     result = self.__getWallClockTime()
     msg += 'WallClock: %.2f s ' % (result['Value'])
     self.parameters['WallClockTime'].append(result['Value'])
@@ -167,14 +170,15 @@ class Watchdog(Agent):
         border = ''
         for i in xrange(len(recentStdOut)):
           border+='='
-        recentStdOut = '\n%s\n%s\n%s\n' % (border,recentStdOut,border)
+        cpuTotal = 'Last reported CPU consumed for job is %s (h:m:s)' %(hmsCPU)
+        recentStdOut = '\n%s\n%s\n%s\n%s\n' % (border,recentStdOut,cpuTotal,border)
         self.log.info(recentStdOut)
         for line in outputList:
           self.log.info(line)
           recentStdOut += line+'\n'
       else:
         recentStdOut = 'Watchdog is initializing and will attempt to obtain standard output from application thread'
-        self.log.warn(recentStdOut)
+        self.log.info(recentStdOut)
         self.peekFailCount += 1
         if self.peekFailCount > self.peekRetry:
           self.jobPeekFlag = 0
@@ -575,9 +579,12 @@ class Watchdog(Agent):
     if self.parameters.has_key('CPUConsumed'):
       cpuList = self.parameters['CPUConsumed']
       if cpuList:
-        summary['CPUConsumed(h:m:s)'] = cpuList[-1]
+        hmsCPU = cpuList[-1]
+        rawCPU = self.__convertCPUTime(hmsCPU)
+        if rawCPU['OK']:
+          summary['LastUpdateCPU(s)'] = rawCPU['Value']
       else:
-        summary['CPUConsumed(h:m:s)'] = 'Could not be estimated'
+        summary['LastUpdateCPU(s)'] = 'Could not be estimated'
     #DiskSpace
     if self.parameters.has_key('DiskSpace'):
       space = self.parameters['DiskSpace']
