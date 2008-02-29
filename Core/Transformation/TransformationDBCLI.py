@@ -32,7 +32,13 @@ class TransformationDBCLI(cmd.Cmd):
     """
     sys.exit( 0 )
 
-   # overriting default help command
+  def do_help( self, args ):
+    """ Default version of the help command
+       Usage: help <command>
+       OR use helpall to see description for all commans"""
+    cmd.Cmd.do_help(self, args)
+
+  # overriting default help command
   def do_helpall( self, args ):
     """
     Shows help information
