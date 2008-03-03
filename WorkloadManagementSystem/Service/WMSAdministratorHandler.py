@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSAdministratorHandler.py,v 1.17 2008/03/03 13:21:31 atsareg Exp $
+# $Id: WMSAdministratorHandler.py,v 1.18 2008/03/03 14:38:55 atsareg Exp $
 ########################################################################
 """
 This is a DIRAC WMS administrator interface.
@@ -17,9 +17,9 @@ Access to the pilot data:
 
 """
 
-__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.17 2008/03/03 13:21:31 atsareg Exp $"
+__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.18 2008/03/03 14:38:55 atsareg Exp $"
 
-import os, sys, string, uu, shutil
+import os, sys, string, uu, shutil, datetime
 from types import *
 
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -29,11 +29,15 @@ from DIRAC.WorkloadManagementSystem.DB.ProxyRepositoryDB import ProxyRepositoryD
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC.Core.Utilities.GridCredentials import restoreProxy, setupProxy, renewProxy, getProxyTimeLeft, setDIRACGroupInProxy
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import *
+import DIRAC.Core.Utilities.Time as Time
 
-# This is a global instance of the JobDB class
+# This is a global instance of the database classes
 jobDB = False
 proxyRepository = False
 pilotDB = False
+
+# In memory proxy store
+proxyStore = {}
 
 def initializeWMSAdministratorHandler( serviceInfo ):
   """  WMS AdministratorService initialization
@@ -129,17 +133,37 @@ class WMSAdministratorHandler(RequestHandler):
     """ Get a short user proxy from the central WMS repository for the user
         with DN ownerDN with the validity period of <validity> hours
     """
+
+    global proxyStore
+    key = ownerDN+':::'+ownerGroup
+    if proxyStore.has_key(key):
+      expirationTime = proxyStore[key]['ExpirationTime']
+      exTime = Time.fromString(expirationTime)
+      validityDelta = datetime.timedelta(0,3600*validity)
+      if (exTime - datetime.datetime.now()) > validityDelta:
+        proxy = proxyStore[key]["Proxy"]
+        gLogger.info('Proxy for %s served from memory' % key)
+        return S_OK(proxy)
+
     result = proxyRepository.getProxy(ownerDN,ownerGroup)
     if not result['OK']:
       return result
     new_proxy = None
     user_proxy = result['Value']
-    result = renewProxy(user_proxy,validity,
+
+    d_validity = validity*0.1
+    if d_validity < 1.:
+      d_validity = 1.
+
+    result = renewProxy(user_proxy,validity+d_validity,
                         server_cert=self.servercert,
                         server_key=self.serverkey)
 
     if result["OK"]:
       new_proxy = result["Value"]
+      new_exTime = (datetime.datetime.now()+datetime.timedelta(0,3600*(validity+d_validity))).strftime('%Y-%m-%d %H:%M:%S')
+      proxyStore[key] = {'Proxy':new_proxy,'ExpirationTime':new_exTime}
+      gLogger.info('Updated proxy for %s saved in memory' % key)
       return S_OK(new_proxy)
     else:
       resTime = getProxyTimeLeft(user_proxy)
