@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.43 2008/02/28 09:10:18 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.44 2008/03/03 13:20:37 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.43 2008/02/28 09:10:18 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.44 2008/03/03 13:20:37 atsareg Exp $"
 
 import re, os, sys, string
 import time
@@ -1057,7 +1057,7 @@ class JobDB(DB):
     return S_OK()
 
 #############################################################################
-  def __setSiteStatusInMask(self,site,status,author):
+  def __setSiteStatusInMask(self,site,status,author,comment):
     """  Set the given site status to 'status' or add a new active site
     """
 
@@ -1070,8 +1070,8 @@ class JobDB(DB):
           return S_OK()
         else:
           req =  "UPDATE SiteMask SET Status='%s',LastUpdateTime=UTC_TIMESTAMP()," \
-                 "Author='%s' WHERE Site='%s'"
-          req = req % (status,author,site)
+                 "Author='%s', Comment='%s' WHERE Site='%s'"
+          req = req % (status,author,comment,site)
       else:
         req = "INSERT INTO SiteMask VALUES ('%s','%s',UTC_TIMESTAMP(),'%s')" % (site,status,author)
       result = self._update(req)
@@ -1083,19 +1083,19 @@ class JobDB(DB):
       return S_ERROR('Failed to get the Site Status from the Mask')
 
 #############################################################################
-  def banSiteInMask(self,site,authorDN='Unknown'):
+  def banSiteInMask(self,site,authorDN='Unknown',comment='No comment'):
     """  Forbid the given site in the Site Mask
     """
 
-    result = self.__setSiteStatusInMask(site,'Banned',authorDN)
+    result = self.__setSiteStatusInMask(site,'Banned',authorDN,comment)
     return result
 
 #############################################################################
-  def allowSiteInMask(self,site,authorDN='Unknown'):
+  def allowSiteInMask(self,site,authorDN='Unknown',comment='No comment'):
     """  Forbid the given site in the Site Mask
     """
 
-    result = self.__setSiteStatusInMask(site,'Active',authorDN)
+    result = self.__setSiteStatusInMask(site,'Active',authorDN,comment)
     return result
 
 #############################################################################
@@ -1489,8 +1489,6 @@ class JobDB(DB):
         self.log.warn('Failed to escape string '+value)
         continue
       e_value = result['Value']
-      names = ['JobID','Name','Value','HeartBeatTime']
-      values = [jobID,key,value,'UTC_TIMESTAMP()']
       req = "INSERT INTO HeartBeatLoggingInfo (JobID,Name,Value,HeartBeatTime) "
       req += "VALUES (%d,'%s','%s',UTC_TIMESTAMP())" % (jobID,key,e_value)
       result = self._update(req)
@@ -1509,9 +1507,9 @@ class JobDB(DB):
         next heart beat
     """
 
-    names = ['JobID','Command','Arguments','ReceptionTime']
-    values = [jobID, command, arguments, 'UTC_TIMESTAMP()']
-    result = self._insert('JobCommands',names,values)
+    req = "INSERT INTO JobCommands (JobID,Command,Arguments,ReceptionTime) "
+    req += "VALUES (%d,'%s','%s',UTC_TIMESTAMP())" % (jobID,command, arguments)
+    result = self._update(req)
     return result
 
  #####################################################################################
@@ -1531,3 +1529,12 @@ class JobDB(DB):
         resultDict[row[0]] = row[1]
 
     return S_OK(resultDict)
+
+#####################################################################################
+  def setJobCommandStatus(self,jobID,command,status):
+    """ Set the command status
+    """
+
+    req = "UPDATE JobCommands SET Status='%s' WHERE JobID=%d AND Command='%s'" % (jobID,command)
+    result = self._update(req)
+    return result
