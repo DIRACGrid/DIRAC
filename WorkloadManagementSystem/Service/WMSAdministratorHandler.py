@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSAdministratorHandler.py,v 1.16 2008/02/29 11:33:23 atsareg Exp $
+# $Id: WMSAdministratorHandler.py,v 1.17 2008/03/03 13:21:31 atsareg Exp $
 ########################################################################
 """
 This is a DIRAC WMS administrator interface.
@@ -17,7 +17,7 @@ Access to the pilot data:
 
 """
 
-__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.16 2008/02/29 11:33:23 atsareg Exp $"
+__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.17 2008/03/03 13:21:31 atsareg Exp $"
 
 import os, sys, string, uu, shutil
 from types import *
@@ -95,20 +95,24 @@ class WMSAdministratorHandler(RequestHandler):
 
 ##############################################################################
   types_banSite = [StringType]
-  def export_banSite(self, site):
+  def export_banSite(self, site,comment='No comment'):
     """ Ban the given site in the site mask
     """
 
-    result = jobDB.banSiteInMask()
+    result = self.getRemoteCredentials()
+    dn = result['DN']
+    result = jobDB.banSiteInMask(site,dn)
     return result
 
 ##############################################################################
   types_allowSite = [StringType]
-  def export_allowSite(self,site):
+  def export_allowSite(self,site,comment='No comment'):
     """ Allow the given site in the site mask
     """
 
-    result = jobDB.allowSiteInMask(site)
+    result = self.getRemoteCredentials()
+    dn = result['DN']
+    result = jobDB.allowSiteInMask(site,dn)
     return result
 
 ##############################################################################
