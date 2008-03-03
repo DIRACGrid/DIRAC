@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/DB/DataLoggingDB.py,v 1.3 2008/02/21 18:31:55 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/DB/DataLoggingDB.py,v 1.4 2008/03/03 11:52:40 acsmith Exp $
 ########################################################################
 """ DataLoggingDB class is a front-end to the Data Logging Database.
     The following methods are provided
@@ -8,7 +8,7 @@
     getFileLoggingInfo()
 """
 
-__RCSID__ = "$Id: DataLoggingDB.py,v 1.3 2008/02/21 18:31:55 acsmith Exp $"
+__RCSID__ = "$Id: DataLoggingDB.py,v 1.4 2008/03/03 11:52:40 acsmith Exp $"
 
 import re, os, sys
 import time, datetime
@@ -107,12 +107,12 @@ class DataLoggingDB(DB):
     """ Get all the event time stamps for the supplied arguments 
     """
     req = "SELECT TIME_TO_SEC(TIMEDIFF(t2.StatusTime,t1.StatusTime)) FROM DataLoggingInfo AS t1, DataLoggingInfo AS t2 WHERE t2.LFN=t1.LFN AND t1.Status='%s' and t2.Status='%s'" % (state1,state2)
-    cond = 'WHERE'
+    cond = ''
     if fromTime:
-      cond = "%s StatusTime > %s" % (cond,fromTime)
+      cond = "%s AND t1.StatusTime > '%s'" % (cond,fromTime)
     if endTime:
-      cond = "%s StatusTime < %s" % (cond,endTime)
-    if not cond == 'WHERE':
+      cond = "%s AND t1.StatusTime < '%s'" % (cond,endTime)
+    if cond:
       req = "%s %s" % (req,cond)
 
     res = self._query(req)
