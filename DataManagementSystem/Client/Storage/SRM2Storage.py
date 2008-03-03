@@ -312,6 +312,9 @@ class SRM2Storage(StorageBase):
             errMessage = "SRM2Storage.putFile: Failed to determine remote file size."
             gLogger.error(errMessage,dest_url)
             failed[dest_url] = errMessage
+            gLogger.info("SRM2Storage.putFile: Even though we failed to get the file size I am not removing the file.")
+            gLogger.info("SRM2Storage.putFile: Please remove the next line of code.")
+            removeFile = False # HACK REMOVE
         else:
           errMessage = "SRM2Storage.putFile: Completely failed to determine remote file size."
           gLogger.error(errMessage,dest_url)
