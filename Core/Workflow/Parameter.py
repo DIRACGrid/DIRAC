@@ -1,8 +1,8 @@
-# $Id: Parameter.py,v 1.21 2008/02/06 14:15:52 gkuznets Exp $
+# $Id: Parameter.py,v 1.22 2008/03/04 15:21:52 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.21 $"
+__RCSID__ = "$Revision: 1.22 $"
 
 # unbinded method, returns indentation string
 def indent(indent=0):
@@ -511,7 +511,7 @@ class ParameterCollection(list):
                     recurrency=recurrency+1
                     if recurrency > recurrency_max:
                         # mast be an exception
-                        print "ERROR! reached maxumum recurrency level", recurrency, "within the parameter ", v.value
+                        print "ERROR! reached maximum recurrency level", recurrency, "within the parameter ", v.value
                         if step_parameters == None:
                             if wf_parameters == None:
                                 print "on the level of Workflow"
