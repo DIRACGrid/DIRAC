@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationClient.py,v 1.10 2007/11/26 13:40:42 acasajus Exp $
-__RCSID__ = "$Id: ConfigurationClient.py,v 1.10 2007/11/26 13:40:42 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationClient.py,v 1.11 2008/03/05 10:18:58 acasajus Exp $
+__RCSID__ = "$Id: ConfigurationClient.py,v 1.11 2008/03/05 10:18:58 acasajus Exp $"
 
 import types
 from DIRAC.Core.Utilities import List
@@ -23,6 +23,9 @@ class ConfigurationClient:
 
   def dumpRemoteCFGToFile( self, fileName ):
     return gConfigurationData.dumpRemoteCFGToFile( fileName )
+
+  def getServersList( self ):
+    return gConfigurationData.getServers()
 
   def _useServerCertificate( self ):
     return gConfigurationData.useServerCertificate()
