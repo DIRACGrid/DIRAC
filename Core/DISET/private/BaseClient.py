@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.30 2008/02/22 12:12:10 acasajus Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.30 2008/02/22 12:12:10 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.31 2008/03/05 10:53:59 acasajus Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.31 2008/03/05 10:53:59 acasajus Exp $"
 
 import sys
 import DIRAC
@@ -22,6 +22,7 @@ class BaseClient:
   KW_DELEGATED_DN = "delegatedDN"
   KW_DELEGATED_GROUP = "delegatedGroup"
   KW_IGNORE_GATEWAYS = "ignoreGateways"
+  KW_PROXY_LOCATION = "proxyLocation"
 
   def __init__( self, serviceName, **kwargs ):
     self.defaultUserGroup = gConfig.getValue( '/DIRAC/DefaultGroup', 'lhcb_user' )
@@ -109,7 +110,7 @@ class BaseClient:
   def _connect( self ):
     gLogger.debug( "Connecting to: %s" % self.serviceURL )
     try:
-      self.transport = gProtocolDict[ self.URLTuple[0] ][0]( self.URLTuple[1:3], useCertificates = self.useCertificates )
+      self.transport = gProtocolDict[ self.URLTuple[0] ][0]( self.URLTuple[1:3], **self.kwargs )
       self.transport.initAsClient()
     except Exception, e:
       return S_ERROR( "Can't connect: %s" % str( e ) )
@@ -121,9 +122,9 @@ class BaseClient:
     return self.transport.receiveData()
 
   def __checkTransportSanity( self ):
-      retVal = gProtocolDict[ self.URLTuple[0] ][1]( self.URLTuple[1:3], useCertificates = self.useCertificates )
-      if not retVal:
-        DIRAC.abort( 10, "Insane environment for protocol" )
+    retVal = gProtocolDict[ self.URLTuple[0] ][1]( self.URLTuple[1:3], **self.kwargs )
+    if not retVal:
+      DIRAC.abort( 10, "Insane environment for protocol" )
 
   def __nonzero__( self ):
     return True

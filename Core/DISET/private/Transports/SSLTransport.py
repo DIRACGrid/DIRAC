@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSLTransport.py,v 1.8 2007/12/19 18:01:51 acasajus Exp $
-__RCSID__ = "$Id: SSLTransport.py,v 1.8 2007/12/19 18:01:51 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSLTransport.py,v 1.9 2008/03/05 10:56:23 acasajus Exp $
+__RCSID__ = "$Id: SSLTransport.py,v 1.9 2008/03/05 10:56:23 acasajus Exp $"
 
 from DIRAC.Core.DISET.private.Transports.BaseTransport import BaseTransport
 from DIRAC.LoggingSystem.Client.Logger import gLogger
@@ -54,7 +54,11 @@ def checkSanity( *args, **kwargs ):
         gLogger.fatal( "No cert/key found! " )
         saneEnv = False
     else:
-      if not GridCredentials.getGridProxy():
+      if "proxyLocation" in kwargs:
+        if not os.path.isfile( kwargs[ "proxyLocation" ] ):
+          gLogger.fatal( "Defined proxy file does not exist" )
+          saneEnv = False
+      elif not GridCredentials.getGridProxy():
           gLogger.fatal( "No proxy found!" )
           saneEnv = False
     return saneEnv
