@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.32 2008/03/05 14:44:46 acasajus Exp $
-__RCSID__ = "$Id: RequestHandler.py,v 1.32 2008/03/05 14:44:46 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.33 2008/03/05 20:36:43 acasajus Exp $
+__RCSID__ = "$Id: RequestHandler.py,v 1.33 2008/03/05 20:36:43 acasajus Exp $"
 
 import os
 import types
@@ -267,7 +267,7 @@ class RequestHandler:
     else:
       peerId = ""
     argsSring = str( retVal )[:100]
-    gLogger.info( "Returning response", "%s %s" % ( peerId, argsSring ) )
+    gLogger.info( "Returning response", "(%s)%s %s" % ( self.serviceInfoDict[ 'clientAddress' ][0], peerId, argsSring ) )
 
 ####
 #

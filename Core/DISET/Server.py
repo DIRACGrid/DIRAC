@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.23 2008/03/05 10:54:42 acasajus Exp $
-__RCSID__ = "$Id: Server.py,v 1.23 2008/03/05 10:54:42 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.24 2008/03/05 20:36:43 acasajus Exp $
+__RCSID__ = "$Id: Server.py,v 1.24 2008/03/05 20:36:43 acasajus Exp $"
 
 import socket
 import sys
@@ -190,7 +190,9 @@ class Server:
     """
     Execute an action
     """
-    clientParams = { 'clientSetup' : proposalTuple[0][1], 'serviceStartTime' : self.startTime }
+    clientParams = { 'clientSetup' : proposalTuple[0][1],
+                     'serviceStartTime' : self.startTime,
+                     'clientAddress' : clientTransport.getRemoteAddress() }
     try:
       handlerInstance = self.handlerManager.instantiateHandler( proposalTuple[0][0],
                                                                 clientParams,
