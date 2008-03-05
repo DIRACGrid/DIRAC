@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ServiceInterface.py,v 1.9 2008/02/22 12:05:14 acasajus Exp $
-__RCSID__ = "$Id: ServiceInterface.py,v 1.9 2008/02/22 12:05:14 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ServiceInterface.py,v 1.10 2008/03/05 16:32:00 acasajus Exp $
+__RCSID__ = "$Id: ServiceInterface.py,v 1.10 2008/03/05 16:32:00 acasajus Exp $"
 
 import sys
 import os
@@ -13,6 +13,7 @@ from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationDat
 from DIRAC.ConfigurationSystem.private.Refresher import gRefresher
 from DIRAC.LoggingSystem.Client.Logger import gLogger
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
+from DIRAC.Core.DISET.RPCClient import RPCClient
 
 class ServiceInterface( threading.Thread ):
 
@@ -71,6 +72,15 @@ class ServiceInterface( threading.Thread ):
       gConfigurationData.writeRemoteConfigurationToDisk()
 
   def publishSlaveServer( self, sSlaveURL ):
+    gLogger.info( "Pinging slave %s" % sSlaveURL )
+    rpcClient = RPCClient( sSlaveURL, timeout = 10, useCertificates = True )
+    retVal = rpcClient.ping()
+    if not retVal[ 'OK' ]:
+      gLogger.info( "Slave %s didn't reply" % sSlaveURL )
+      return
+    if retVal[ 'Value' ][ 'name' ] != 'Configuration/Server':
+      gLogger.info( "Slave %s is not a CS serveR" % sSlaveURL )
+      return
     bNewSlave = False
     if not sSlaveURL in self.dAliveSlaveServers.keys():
       bNewSlave = True
