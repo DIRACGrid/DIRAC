@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/LocalConfiguration.py,v 1.16 2008/01/31 15:56:09 acasajus Exp $
-__RCSID__ = "$Id: LocalConfiguration.py,v 1.16 2008/01/31 15:56:09 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/LocalConfiguration.py,v 1.17 2008/03/05 14:47:27 acasajus Exp $
+__RCSID__ = "$Id: LocalConfiguration.py,v 1.17 2008/03/05 14:47:27 acasajus Exp $"
 
 import sys
 import os
@@ -136,12 +136,16 @@ class LocalConfiguration:
 
     gConfigurationData.loadFile( os.path.expanduser( "~/.diracrc" ) )
     for fileName in self.additionalCFGFiles:
+      gLogger.debug( "Loading file %s" % fileName )
       retVal = gConfigurationData.loadFile( fileName )
       if not retVal[ 'OK' ]:
+        gLogger.debug( "Could not load file %s: %s" % ( fileName, retVal[ 'Message' ] ) )
         errorsList.append( retVal[ 'Message' ] )
     for fileName in self.cliAdditionalCFGFiles:
+      gLogger.debug( "Loading file %s" % fileName )
       retVal = gConfigurationData.loadFile( fileName )
       if not retVal[ 'OK' ]:
+        gLogger.debug( "Could not load file %s: %s" % ( fileName, retVal[ 'Message' ] ) )
         errorsList.append( retVal[ 'Message' ] )
 
     if gConfigurationData.getServers():
@@ -151,18 +155,21 @@ class LocalConfiguration:
     else:
       gLogger.info( "Running without remote configuration" )
 
-    if self.componentType == "service":
-      self.__setDefaultSection( getServiceSection( self.componentName ) )
-    elif self.componentType == "agent":
-      self.__setDefaultSection( getAgentSection( self.componentName ) )
-    elif self.componentType == "script":
-      if self.componentName and self.componentName[0] == "/":
-        self.__setDefaultSection( self.componentName )
-        self.componentName = self.componentName[1:]
+    try:
+      if self.componentType == "service":
+        self.__setDefaultSection( getServiceSection( self.componentName ) )
+      elif self.componentType == "agent":
+        self.__setDefaultSection( getAgentSection( self.componentName ) )
+      elif self.componentType == "script":
+        if self.componentName and self.componentName[0] == "/":
+          self.__setDefaultSection( self.componentName )
+          self.componentName = self.componentName[1:]
+        else:
+          self.__setDefaultSection( "/Scripts/%s" % self.componentName )
       else:
-        self.__setDefaultSection( "/Scripts/%s" % self.componentName )
-    else:
-      self.__setDefaultSection( "/" )
+        self.__setDefaultSection( "/" )
+    except Exception, e:
+      errorsList.append( str(e) )
 
     self.unprocessedSwitches = []
 
