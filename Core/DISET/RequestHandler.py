@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.30 2008/02/22 10:18:49 acasajus Exp $
-__RCSID__ = "$Id: RequestHandler.py,v 1.30 2008/02/22 10:18:49 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.31 2008/03/05 10:54:42 acasajus Exp $
+__RCSID__ = "$Id: RequestHandler.py,v 1.31 2008/03/05 10:54:42 acasajus Exp $"
 
 import types
 from DIRAC.Core.DISET.private.FileHelper import FileHelper
@@ -283,13 +283,13 @@ class RequestHandler:
       oFD = file( "/proc/uptime" )
       iUptime = long( float( oFD.readline().split()[0].strip() ) )
       oFD.close()
-      iDays = iUptime / ( 86400 )
-      iHours = iUptime / 3600  - iDays * 24
-      iMinutes = iUptime / 60 - iHours * 60 - iDays * 1440
-      iSeconds = iUptime - iMinutes * 60- iHours * 3600 - iDays * 86400
-      dInfo[ 'uptime' ] = "%dd %02d:%02d:%02d" % ( iDays, iHours, iMinutes, iSeconds)
+      dInfo[ 'host uptime' ] = iUptime
     except:
       pass
+    startTime = self.serviceInfoDict[ 'serviceStartTime' ]
+    dInfo[ 'service start time' ] = self.serviceInfoDict[ 'serviceStartTime' ]
+    serviceUptime = Time.dateTime() - startTime
+    dInfo[ 'service uptime' ] = serviceUptime.days * 3600 + serviceUptime.seconds
     #Load average
     try:
       oFD = file( "/proc/loadavg" )

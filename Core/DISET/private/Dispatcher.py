@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Dispatcher.py,v 1.8 2008/02/22 11:24:10 acasajus Exp $
-__RCSID__ = "$Id: Dispatcher.py,v 1.8 2008/02/22 11:24:10 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Dispatcher.py,v 1.9 2008/03/05 10:54:43 acasajus Exp $
+__RCSID__ = "$Id: Dispatcher.py,v 1.9 2008/03/05 10:54:43 acasajus Exp $"
 
 import DIRAC
 from DIRAC.LoggingSystem.Client.Logger import gLogger
@@ -148,13 +148,14 @@ class Dispatcher:
       return S_ERROR( "Unauthorized query to %s:%s" % ( serviceName, action ) )
     return S_OK()
 
-  def instantiateHandler( self, serviceName, clientSetup, clientTransport ):
+  def instantiateHandler( self, serviceName, clientDataDict, clientTransport ):
     """
     Execute an action
     """
     serviceInfoDict = self.getServiceInfo( serviceName )
     handlerDict = self.getHandlerInfo( serviceName )
-    serviceInfoDict[ 'clientSetup' ] = clientSetup
+    for key in clientDataDict:
+      serviceInfoDict[ key ] = clientDataDict[ key ]
     handlerInstance = handlerDict[ "handlerClass" ]( serviceInfoDict,
                     clientTransport,
                     handlerDict[ "lockManager" ] )

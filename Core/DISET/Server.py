@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.22 2008/02/22 10:18:49 acasajus Exp $
-__RCSID__ = "$Id: Server.py,v 1.22 2008/02/22 10:18:49 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.23 2008/03/05 10:54:42 acasajus Exp $
+__RCSID__ = "$Id: Server.py,v 1.23 2008/03/05 10:54:42 acasajus Exp $"
 
 import socket
 import sys
@@ -10,7 +10,7 @@ from DIRAC.Core.DISET.private.GatewayDispatcher import GatewayDispatcher
 from DIRAC.Core.DISET.private.ServiceConfiguration import ServiceConfiguration
 from DIRAC.Core.Utilities.ThreadPool import ThreadPool
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
-from DIRAC.Core.Utilities import Network
+from DIRAC.Core.Utilities import Network, Time
 from DIRAC.LoggingSystem.Client.Logger import gLogger
 from DIRAC.MonitoringSystem.Client.MonitoringClient import gMonitor
 
@@ -30,6 +30,7 @@ class Server:
     while serviceName[0] == "/":
       serviceName = serviceName[1:]
     self.serviceName = serviceName
+    self.startTime = Time.dateTime()
     serviceCfg = ServiceConfiguration( serviceName )
     self.__buildURL( serviceCfg )
     self.__initializeMonitor( serviceCfg )
@@ -55,7 +56,7 @@ class Server:
     gMonitor.setComponentName( serviceCfg.getName() )
     gMonitor.setComponentLocation( serviceCfg.getURL() )
     gMonitor.initialize()
-    gMonitor.registerActivity( "Queries", "Queries served", "Framework", "queries", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "Queries", "Queries served", "Framework", "queries", gMonitor.OP_RATE )
 
   def __buildURL( self, serviceCfg ):
     """
@@ -84,12 +85,18 @@ class Server:
     """
     Initialize the transport
     """
+    transportArgs = {}
+    transportExtraKeywords = [ "SSLSessionTimeout" ]
+    for kw in transportExtraKeywords:
+      value = serviceCfg.getOption( kw )
+      if value:
+        transportArgs[ kw ] = value
     protocol = serviceCfg.getProtocol()
     if protocol in gProtocolDict.keys():
       gLogger.verbose( "Initializing %s transport" % protocol, serviceCfg.getURL() )
       from DIRAC.Core.DISET.private.Transports.PlainTransport import PlainTransport
       self.transport = gProtocolDict[ protocol ][0]( ( "", serviceCfg.getPort() ),
-                            bServerMode = True )
+                            bServerMode = True, **transportArgs )
       self.transport.initAsServer()
     else:
       gLogger.fatal( "No valid protocol specified for the service", "%s is not a valid protocol" % sProtocol )
@@ -183,9 +190,10 @@ class Server:
     """
     Execute an action
     """
+    clientParams = { 'clientSetup' : proposalTuple[0][1], 'serviceStartTime' : self.startTime }
     try:
       handlerInstance = self.handlerManager.instantiateHandler( proposalTuple[0][0],
-                                                                proposalTuple[0][1],
+                                                                clientParams,
                                                                 clientTransport )
     except Exception, e:
       clientTransport.sendData( S_ERROR( "Server error while initializing handler: %s" % str(e) ) )
