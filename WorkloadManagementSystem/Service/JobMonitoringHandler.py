@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobMonitoringHandler.py,v 1.13 2008/02/25 23:01:10 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobMonitoringHandler.py,v 1.14 2008/03/05 20:10:26 paterson Exp $
 ########################################################################
 
 """ JobMonitoringHandler is the implementation of the JobMonitoring service
@@ -11,14 +11,14 @@
 
 """
 
-__RCSID__ = "$Id: JobMonitoringHandler.py,v 1.13 2008/02/25 23:01:10 atsareg Exp $"
+__RCSID__ = "$Id: JobMonitoringHandler.py,v 1.14 2008/03/05 20:10:26 paterson Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
-import DIRAC.Core.Utilities.Time
+import DIRAC.Core.Utilities.Time as Time
 
 # These are global instances of the DB classes
 jobDB = False
@@ -299,3 +299,8 @@ class JobMonitoringHandler( RequestHandler ):
   types_getSiteSummary = [ ]
   def export_getSiteSummary( self ):
     return jobDB.getSiteSummary()
+
+##############################################################################
+  types_getJobHeartBeatData = [ IntType ]
+  def export_getJobHeartBeatData( self, jobID ):
+    return jobDB.getHeartBeatData( jobID )
