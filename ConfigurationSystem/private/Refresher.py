@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Refresher.py,v 1.22 2008/02/19 09:54:37 acasajus Exp $
-__RCSID__ = "$Id: Refresher.py,v 1.22 2008/02/19 09:54:37 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Refresher.py,v 1.23 2008/03/05 15:02:35 acasajus Exp $
+__RCSID__ = "$Id: Refresher.py,v 1.23 2008/03/05 15:02:35 acasajus Exp $"
 
 import threading
 import time
@@ -71,13 +71,13 @@ class Refresher( threading.Thread ):
 
   def __refreshAndPublish( self ):
     self.iLastUpdateTime = time.time()
-    gLogger.debug( "Refreshing from master server" )
+    gLogger.info( "Refreshing from master server" )
     from DIRAC.Core.DISET.RPCClient import RPCClient
     sMasterServer = gConfigurationData.getMasterServer()
     if sMasterServer:
       oClient = RPCClient( sMasterServer, timeout = self.timeout, useCertificates = gConfigurationData.useServerCertificate() )
       if gConfigurationData.getAutoPublish():
-        gLogger.debug( "Publishing to master server..." )
+        gLogger.info( "Publishing to master server..." )
         dRetVal = oClient.publishSlaveServer( self.sURL )
         if not dRetVal[ 'OK' ]:
           gLogger.error( "Can't publish to master server", dRetVal[ 'Message' ] )
