@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.24 2008/02/22 10:20:08 acasajus Exp $
-__RCSID__ = "$Id: MonitoringClient.py,v 1.24 2008/02/22 10:20:08 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.25 2008/03/05 16:27:30 acasajus Exp $
+__RCSID__ = "$Id: MonitoringClient.py,v 1.25 2008/03/05 16:27:30 acasajus Exp $"
 
 import threading
 import time
@@ -36,7 +36,6 @@ class MonitoringClient:
     self.activitiesLock = threading.Lock()
     self.flushingLock = threading.Lock()
     self.timeStep = 60
-    self.enabled = True
 
   def initialize( self ):
     self.logger = gLogger.getSubLogger( "Monitoring" )
@@ -223,22 +222,26 @@ class MonitoringClient:
         self.activitiesLock.release()
       #Commit new activities
       if self.__dataToSend():
-        if gConfig.getValue( "%s/DisableMonitoring" % self.cfgSection, "false" ).lower() in \
-            ( "yes", "y", "true", "1" ):
-          self.logger.debug( "Sending data has been disabled" )
-          return
-        if allData:
-          timeout = False
-        else:
-          timeout = 10
-        self.__sendData( timeout )
+        if not self.__disabled():
+          if allData:
+            timeout = False
+          else:
+            timeout = 10
+          self.__sendData( timeout )
+      self.__pruneMarksData()
     finally:
       self.flushingLock.release()
+
+  def __disabled( self ):
+    return gConfig.getValue( "%s/DisableMonitoring" % self.cfgSection, "false" ).lower() in \
+        ( "yes", "y", "true", "1" )
 
   def __dataToSend( self ):
     return len( self.definitionsToSend ) or len( self.marksToSend )
 
   def __appendMarksToSend( self, acMarks ):
+    if self.__disabled():
+      return
     for acName in acMarks:
       if acName in self.marksToSend:
         for timeMark in acMarks[ acName ]:
@@ -246,9 +249,7 @@ class MonitoringClient:
       else:
         self.marksToSend[ acName ] = acMarks[ acName ]
 
-  def __sendData( self, acRegister, secsTimeout = 60 ):
-    if not self.enabled:
-      return
+  def __sendData( self, secsTimeout = 60 ):
     if gServiceInterface.serviceRunning():
       rpcClient = gServiceInterface
     else:
@@ -263,6 +264,14 @@ class MonitoringClient:
       if not self.__sendRegistration( rpcClient ):
         return False
 
+  def __pruneMarksData(self):
+    for acName in self.marksToSend:
+      maxBuckets = 86400 / self.activitiesDefinitions[ acName ][ 'bucketLength' ]
+      if len( self.marksToSend[ acName ] ) > maxBuckets:
+        timeSlots = self.marksToSend[ acName ].keys()
+        timeSlots.sort()
+        while len( self.marksToSend[ acName ] ) > maxBuckets:
+          del( self.marksToSend[ acName ][ timeSlots.pop(0) ] )
 
   def __sendRegistration( self, rpcClient ):
     if not len( self.definitionsToSend ):
