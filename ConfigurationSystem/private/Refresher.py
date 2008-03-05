@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Refresher.py,v 1.23 2008/03/05 15:02:35 acasajus Exp $
-__RCSID__ = "$Id: Refresher.py,v 1.23 2008/03/05 15:02:35 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Refresher.py,v 1.24 2008/03/05 15:53:33 acasajus Exp $
+__RCSID__ = "$Id: Refresher.py,v 1.24 2008/03/05 15:53:33 acasajus Exp $"
 
 import threading
 import time
@@ -76,15 +76,15 @@ class Refresher( threading.Thread ):
     sMasterServer = gConfigurationData.getMasterServer()
     if sMasterServer:
       oClient = RPCClient( sMasterServer, timeout = self.timeout, useCertificates = gConfigurationData.useServerCertificate() )
+      dRetVal = self.__updateFromRemoteLocation( oClient )
+      if not dRetVal[ 'OK' ]:
+        gLogger.error( "Can't update from master server", dRetVal[ 'Message' ] )
+        return False
       if gConfigurationData.getAutoPublish():
         gLogger.info( "Publishing to master server..." )
         dRetVal = oClient.publishSlaveServer( self.sURL )
         if not dRetVal[ 'OK' ]:
           gLogger.error( "Can't publish to master server", dRetVal[ 'Message' ] )
-      dRetVal = self.__updateFromRemoteLocation( oClient )
-      if not dRetVal[ 'OK' ]:
-        gLogger.error( "Can't update from master server", dRetVal[ 'Message' ] )
-        return False
       return True
     else:
       gLogger.warn( "No master server is specified in the configuration, trying to get data from other slaves")
