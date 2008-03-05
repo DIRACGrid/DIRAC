@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.44 2008/03/03 13:20:37 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.45 2008/03/05 19:59:11 paterson Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.44 2008/03/03 13:20:37 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.45 2008/03/05 19:59:11 paterson Exp $"
 
 import re, os, sys, string
 import time
@@ -1500,6 +1500,25 @@ class JobDB(DB):
       return S_OK()
     else:
       return S_ERROR('Failed to store some or all the parameters')
+
+#####################################################################################
+  def getHeartBeatData(self,jobID):
+    """ Retrieve the job's heart beat data
+    """
+    cmd = 'SELECT Name,Value,HeartBeatTime from HeartBeatLoggingInfo WHERE JobID=%d' % (int(jobID))
+    res = self._query( cmd )
+    if not res['OK']:
+      return res
+      
+    if len(res['Value']) == 0:
+      return S_OK ([])
+
+    result = []
+    values = res['Value']
+    for row in values:
+      result.append((str(row[0]),'%.01f' %(float(row[1].replace('"',''))),str(row[2])))
+
+    return S_OK(result)
 
 #####################################################################################
   def setJobCommand(self,jobID,command,arguments=''):
