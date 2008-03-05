@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/DataStoreHandler.py,v 1.1 2008/02/15 17:17:15 acasajus Exp $
-__RCSID__ = "$Id: DataStoreHandler.py,v 1.1 2008/02/15 17:17:15 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/DataStoreHandler.py,v 1.2 2008/03/05 21:02:27 acasajus Exp $
+__RCSID__ = "$Id: DataStoreHandler.py,v 1.2 2008/03/05 21:02:27 acasajus Exp $"
 import types
 from DIRAC import S_OK, S_ERROR
 from DIRAC.AccountingSystem.private.AccountingDB import AccountingDB
@@ -71,24 +71,6 @@ class DataStoreHandler( RequestHandler ):
       if not retVal[ 'OK' ]:
         return retVal
     return S_OK()
-
-  types_retrieveBucketedData = [ types.StringType, Time._dateTimeType, Time._dateTimeType, types.DictType, types.ListType, types.ListType ]
-  def export_retrieveBucketedData( self, typeName, startTime, endTime, condDict, returnList, groupFields ):
-    """
-    Get data from the DB
-      Parameters:
-        typeName -> typeName
-        startTime & endTime -> datetime objects. Do I need to explain the meaning?
-        condDict -> conditions for the query
-                    key -> name of the key field
-                    value -> list of possible values
-        returnList -> list of value fields to retrieve. Has to contain tuples with:
-                        ( <name of value field>, <function to apply> )
-        groupFields -> list of fields to group by
-    """
-    setup = self.serviceInfoDict[ 'clientSetup' ]
-    typeName = "%s_%s" % ( typeName, setup )
-    return gAccountingDB.retrieveBucketedData( typeName, startTime, endTime, condDict, returnList, groupFields )
 
   types_compactDB = []
   def export_compactDB( self ):

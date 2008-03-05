@@ -9,7 +9,7 @@ class DBUtils:
                              typeName,
                              startTime,
                              endTime,
-                             returnList,
+                             selectFields,
                              condDict = {},
                              groupFields = [],
                              orderFields = [] ):
@@ -18,8 +18,8 @@ class DBUtils:
       Parameters:
         typeName -> typeName
         startTime & endTime -> datetime objects. Do I need to explain the meaning?
-        returnList -> list of value fields to retrieve. Has to contain tuples with:
-                        ( <name of value field>, <function to apply> )
+        selectFields -> tuple containing a string and a list of fields:
+                        ( "SUM(%s), %s/%s", ( "field1name", "field2name", "field3name" ) )
         condDict -> conditions for the query
                     key -> name of the key field
                     value -> list of possible values
@@ -27,16 +27,14 @@ class DBUtils:
         orderFields -> list of fields to order by
     """
     typeName = "%s_%s" % ( typeName, self._setup )
-    return self._acDB.retrieveBucketedData( typeName, startTime, endTime, returnList, condDict, groupFields, orderFields )
+    return self._acDB.retrieveBucketedData( typeName, startTime, endTime, selectFields, condDict, groupFields, orderFields )
 
   def _getUniqueValues( self, typeName, startTime, endTime, condDict, fieldList ):
-    returnList = []
-    for field in fieldList:
-      returnList.append( ( field, "" ) )
+    stringList = [ "%s" for field in fieldList ]
     return self._retrieveBucketedData( typeName,
                                        startTime,
                                        endTime,
-                                       returnList,
+                                       ( ",".join( stringList ), fieldList ),
                                        condDict,
                                        fieldList )
 

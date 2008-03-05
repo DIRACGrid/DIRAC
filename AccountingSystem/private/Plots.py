@@ -35,12 +35,12 @@ class Plots(DBUtils):
       condDict = {}
     else:
       condDict = { "Source" : argsDict[ 'Source' ] }
-    valueFields = [ ( 'startTime', '' ), ( 'bucketLength', '' ), ( 'TransferOK', 'SUM' ), ( 'TransferTotal', 'SUM' ) ]
+    selectFields = ( "%s, %s, SUM(%s), SUM(%s)", ( 'startTime', 'bucketLength', 'TransferOK', 'TransferTotal' ) )
     retVal = self._retrieveBucketedData( "DataOperation",
                                           startTime,
                                           endTime,
+                                          selectFields,
                                           condDict,
-                                          returnFields,
                                           [ 'startTime', "Source" ],
                                           [ 'startTime' ]
                                           )

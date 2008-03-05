@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/scripts/Attic/dirac-accounting-cli.py,v 1.2 2008/02/15 17:17:16 acasajus Exp $
-__RCSID__ = "$Id: dirac-accounting-cli.py,v 1.2 2008/02/15 17:17:16 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/scripts/Attic/dirac-accounting-admin-cli.py,v 1.1 2008/03/05 21:02:27 acasajus Exp $
+__RCSID__ = "$Id: dirac-accounting-admin-cli.py,v 1.1 2008/03/05 21:02:27 acasajus Exp $"
 
 import cmd
 import sys

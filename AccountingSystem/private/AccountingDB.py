@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.13 2008/02/15 17:17:15 acasajus Exp $
-__RCSID__ = "$Id: AccountingDB.py,v 1.13 2008/02/15 17:17:15 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.14 2008/03/05 21:02:27 acasajus Exp $
+__RCSID__ = "$Id: AccountingDB.py,v 1.14 2008/03/05 21:02:27 acasajus Exp $"
 
 import datetime
 import threading
@@ -420,18 +420,19 @@ class AccountingDB(DB):
     Check wether a list of fields exist for a given typeName
     """
     missing = []
+    tableFields = self.dbCatalog[ typeName ][ '%sFields' % tableType ]
     for key in fields:
-      if key not in self.dbCatalog[ typeName ][ '%sFields' % tableType ]:
+      if key not in tableFields:
         missing.append( key )
     return missing
 
-  def __checkIncomingFieldsForQuery( self, typeName, condDict, valueFields, groupFields, orderFields, tableType ):
+  def __checkIncomingFieldsForQuery( self, typeName, selectFields, condDict, groupFields, orderFields, tableType ):
+    missing = self.__checkFieldsExistsInType( typeName, selectFields[1], tableType )
+    if missing:
+      return S_ERROR( "Value keys %s are not defined" % ", ".join( missing ) )
     missing = self.__checkFieldsExistsInType( typeName, condDict, tableType )
     if missing:
       return S_ERROR( "Condition keys %s are not defined" % ", ".join( missing ) )
-    missing = self.__checkFieldsExistsInType( typeName, [ vT[0] for vT in valueFields ], tableType )
-    if missing:
-      return S_ERROR( "Value keys %s are not defined" % ", ".join( missing ) )
     missing = self.__checkFieldsExistsInType( typeName, groupFields, tableType )
     if missing:
       return S_ERROR( "Group fields %s are not defined" % ", ".join( missing ) )
@@ -441,71 +442,66 @@ class AccountingDB(DB):
     return S_OK()
 
 
-  def retrieveBucketedData( self, typeName, startTime, endTime, condDict, valueFields, groupFields, orderFields ):
+  def retrieveBucketedData( self, typeName, startTime, endTime, selectFields, condDict, groupFields, orderFields ):
     """
     Get data from the DB
       Parameters:
         typeName -> typeName
         startTime & endTime -> datetime objects. Do I need to explain the meaning?
+        selectFields -> tuple containing a string and a list of fields:
+                        ( "SUM(%s), %s/%s", ( "field1name", "field2name", "field3name" ) )
         condDict -> conditions for the query
                     key -> name of the field
                     value -> list of possible values
-        valueFields -> list of fields to retrieve. Has to contain tuples with:
-                        ( <name of value field>, <function to apply> )
         groupFields -> list of fields to group by
     """
     if typeName not in self.dbCatalog:
       return S_ERROR( "Type %s is not defined" % typeName )
-    retVal = self.__checkIncomingFieldsForQuery( typeName, condDict, valueFields, groupFields, orderFields, "bucket" )
+    if len( selectFields ) < 2:
+      return S_ERROR( "selectFields has to be a list containing a string and a list of fields" )
+    retVal = self.__checkIncomingFieldsForQuery( typeName, selectFields, condDict, groupFields, orderFields, "bucket" )
     if not retVal[ 'OK' ]:
       return retVal
-    print startTime
     nowEpoch = Time.toEpoch( Time.dateTime () )
     startEpoch = Time.toEpoch( startTime )
     bucketTimeLength = self.calculateBucketLengthForTime( typeName, nowEpoch , startEpoch )
-    print bucketTimeLength
-    print startEpoch
     startEpoch = int( startEpoch / bucketTimeLength ) * bucketTimeLength
-    print startEpoch
     startTime = Time.fromEpoch( startEpoch )
-    print startTime
     return self.__queryType( typeName,
                              startTime,
                              endTime,
+                             selectFields,
                              condDict,
-                             valueFields,
                              groupFields,
                              orderFields,
                              "bucket" )
 
-  def __queryType( self, typeName, startTime, endTime, condDict, valueFields, groupFields, orderFields, tableType ):
+  def __queryType( self, typeName, startTime, endTime, selectFields, condDict, groupFields, orderFields, tableType ):
     """
     Execute a query over a main table
     """
     tableName = self.__getTableName( tableType, typeName )
     cmd = "SELECT"
-    sqlValues = []
     sqlLinkList = []
     #Calculate fields to retrieve
-    for vTu in valueFields:
-      if vTu[0] in self.dbCatalog[ typeName ][ 'keys' ]:
-        keyTable = self.__getTableName( "key", vTu[0] )
-        sqlValues.append( "`%s`.`value`" % keyTable )
+    realFieldList = []
+    for rawFieldName in selectFields[1]:
+      keyTable = self.__getTableName( "key", rawFieldName )
+      if rawFieldName in self.dbCatalog[ typeName ][ 'keys' ]:
+        realFieldList.append( "`%s`.`value`" % keyTable )
         List.appendUnique( sqlLinkList, "`%s`.`%s` = `%s`.`id`" % ( tableName,
-                                                                    vTu[0],
+                                                                    rawFieldName,
                                                                     keyTable ) )
       else:
-        sqlValues.append( "`%s`.`%s`" % ( tableName, vTu[0] ) )
-      if vTu[1]:
-        if not groupFields:
-          return S_OK( "Can't do a %s function without specifying grouping fields" )
-        sqlValues[-1] = "%s(%s)" % ( vTu[1], sqlValues[-1] )
-    cmd += " %s" % ", ".join( sqlValues )
+        realFieldList.append( "`%s`.`%s`" % ( tableName, rawFieldName ) )
+    try:
+      cmd += " %s" % selectFields[0] % tuple( realFieldList )
+    except Exception, e:
+      return S_ERROR( "Error generating select fields string: %s" % str(e) )
     #Calculate tables needed
-    keysInRequestedFields = [ value[0] for value in valueFields ]
     sqlFromList = [ "`%s`" % tableName ]
     for key in self.dbCatalog[ typeName ][ 'keys' ]:
-      if key in condDict or key in groupFields or key in keysInRequestedFields:
+      if key in condDict or key in groupFields or key in selectFields[1]:
         sqlFromList.append( "`%s`" % self.__getTableName( "key", key ) )
     cmd += " FROM %s" % ", ".join( sqlFromList )
     #Calculate time conditions

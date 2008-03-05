@@ -15,6 +15,14 @@ class Summaries(DBUtils):
       return S_ERROR( "Summary %s is not defined" % summaryName )
     return funcObj( startTime, endTime, argsDict )
 
+  def summariesList( self ):
+    sumList = []
+    for attr in dir( self ):
+      if attr.find( "_summary" ) == 0:
+        sumList.append( attr.replace( "_summary", "" ) )
+    sumList.sort()
+    return sumList
+
   def _summaryDataBySource( self, startTime, endTime, argsDict ):
     """
       argsDict: Source -> Summary only sites in source. If not present summary all.
@@ -23,20 +31,22 @@ class Summaries(DBUtils):
       condDict = {}
     else:
       condDict = { "Source" : argsDict[ 'Source' ] }
-    returnFields = [ ( "Source", "" ) ]
     do = DataOperation()
+    selectFields = [ "Source" ]
+    selectStringList = [ "%s" ]
     for fieldTuple in do.definitionAccountingFields:
-      returnFields.append( ( fieldTuple[0], "SUM" ) )
+      selectStringList.append( "%s" )
+      selectFields.append( fieldTuple[0] )
     retVal = self._retrieveBucketedData( "DataOperation",
                                               startTime,
                                               endTime,
-                                              returnFields,
+                                              ( ", ".join( selectStringList ), selectFields ),
                                               condDict,
                                               [ "Source" ],
                                               [ "Source" ] )
     if not retVal[ 'OK' ]:
       return retVal
-    return S_OK( ( returnFields, retVal[ 'Value' ] ) )
+    return S_OK( ( selectFields, retVal[ 'Value' ] ) )
 
   def _summaryDataByDestination( self, startTime, endTime, argsDict ):
     """
@@ -46,17 +56,19 @@ class Summaries(DBUtils):
       condDict = {}
     else:
       condDict = { "Destination" : argsDict[ 'Destination' ] }
-    returnFields = [ ( "Destination", "" ) ]
     do = DataOperation()
+    selectFields = [ "Destination" ]
+    selectStringList = [ "%s" ]
     for fieldTuple in do.definitionAccountingFields:
-      returnFields.append( ( fieldTuple[0], "SUM" ) )
+      selectStringList.append( "%s" )
+      selectFields.append( fieldTuple[0] )
     retVal = self._retrieveBucketedData( "DataOperation",
                                               startTime,
                                               endTime,
-                                              returnFields,
+                                              ( ", ".join( selectStringList ), selectFields ),
                                               condDict,
                                               [ "Destination" ],
                                               [ "Destination" ] )
     if not retVal[ 'OK' ]:
       return retVal
-    return S_OK( ( returnFields, retVal[ 'Value' ] ) )
+    return S_OK( ( selectFields, retVal[ 'Value' ] ) )
