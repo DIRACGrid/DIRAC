@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.29 2008/02/29 11:16:39 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.30 2008/03/05 08:53:05 paterson Exp $
 # File  : Watchdog.py
 # Author: Stuart Paterson
 ########################################################################
@@ -18,7 +18,7 @@
           - CPU normalization for correct comparison with job limit
 """
 
-__RCSID__ = "$Id: Watchdog.py,v 1.29 2008/02/29 11:16:39 paterson Exp $"
+__RCSID__ = "$Id: Watchdog.py,v 1.30 2008/03/05 08:53:05 paterson Exp $"
 
 from DIRAC.Core.Base.Agent                          import Agent
 from DIRAC.Core.DISET.RPCClient                     import RPCClient
@@ -102,7 +102,10 @@ class Watchdog(Agent):
     if (time.time() - self.initialValues['StartTime']) > self.checkingTime*self.checkCount:
       self.checkCount += 1
       result = self.__performChecks()
-      return result
+      if not result['OK']:
+        self.log.warn('Problem during recent checks')
+        self.log.warn(result['Message'])
+      return S_OK()
     else:
       #self.log.debug('Application thread is alive: checking count is %s' %(self.checkCount))
       return S_OK()
@@ -159,6 +162,7 @@ class Watchdog(Agent):
       self.__killRunningThread(self.spObject)
       self.__getUsageSummary()
       self.__finish()
+      return S_OK()
 
     recentStdOut = 'None'
     if self.jobPeekFlag:
@@ -693,7 +697,7 @@ class Watchdog(Agent):
     jobParam = self.jobReport.setJobParameters(int(jobID),value)
     self.log.verbose('setJobParameters(%s,%s)' %(jobID,value))
     if not jobParam['OK']:
-        self.log.warn(jobParam['Message'])
+      self.log.warn(jobParam['Message'])
 
     return jobParam
 
