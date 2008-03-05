@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Service/SystemLoggingReportHandler.py,v 1.1 2008/02/15 17:45:07 mseco Exp $
-__RCSID__ = "$Id: SystemLoggingReportHandler.py,v 1.1 2008/02/15 17:45:07 mseco Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Service/SystemLoggingReportHandler.py,v 1.2 2008/03/05 11:26:32 mseco Exp $
+__RCSID__ = "$Id: SystemLoggingReportHandler.py,v 1.2 2008/03/05 11:26:32 mseco Exp $"
 """
 SystemLoggingReportHandler produce the number that match certain criteria
 
@@ -37,7 +37,8 @@ class SystemLoggingReportHandler( RequestHandler ):
 
     siteList = []
     for site in sites:
-      retval = LogDB.getCountMessages({'SiteName': site[0]},beginDate,endDate)
+      retval = LogDB.getCountMessages({'SiteName': site[0]},
+                                      beginDate, endDate )
       if not retval['OK']: return retval
 
       siteList.append( [ site[0], int( retval['Value'] ) ] )
