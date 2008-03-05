@@ -1,6 +1,7 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.31 2008/03/05 10:54:42 acasajus Exp $
-__RCSID__ = "$Id: RequestHandler.py,v 1.31 2008/03/05 10:54:42 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.32 2008/03/05 14:44:46 acasajus Exp $
+__RCSID__ = "$Id: RequestHandler.py,v 1.32 2008/03/05 14:44:46 acasajus Exp $"
 
+import os
 import types
 from DIRAC.Core.DISET.private.FileHelper import FileHelper
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
@@ -277,7 +278,7 @@ class RequestHandler:
   types_ping = []
   def export_ping( self ):
     dInfo = {}
-    dInfo[ 'time' ] = Time.toString()
+    dInfo[ 'time' ] = Time.dateTime()
     #Uptime
     try:
       oFD = file( "/proc/uptime" )
@@ -299,6 +300,13 @@ class RequestHandler:
     except:
       pass
     dInfo[ 'name' ] = self.serviceInfoDict[ 'serviceName' ]
+    stTimes = os.times()
+    dInfo[ 'cpu times' ] = { 'user time' : stTimes[0],
+                             'system time' : stTimes[1],
+                             'children user time' : stTimes[2],
+                             'children system time' : stTimes[3],
+                             'elapsed real time' : stTimes[4]
+                           }
 
     return S_OK( dInfo )
 
