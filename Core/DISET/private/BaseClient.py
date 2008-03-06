@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.31 2008/03/05 10:53:59 acasajus Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.31 2008/03/05 10:53:59 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.32 2008/03/06 12:02:55 acasajus Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.32 2008/03/06 12:02:55 acasajus Exp $"
 
 import sys
 import DIRAC
@@ -67,6 +67,7 @@ class BaseClient:
       self.useCertificates = self.kwargs[ self.KW_USE_CERTIFICATES ]
     else:
       self.useCertificates = gConfig._useServerCertificate()
+      self.kwargs[ self.KW_USE_CERTIFICATES ] = self.useCertificates
 
   def __discoverGroup( self ):
     #Wich group to use?
