@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.11 2008/02/13 09:55:49 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.12 2008/03/06 09:46:02 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -24,7 +24,7 @@ The initial instance just exposes job submission via the WMS client.
 
 """
 
-__RCSID__ = "$Id: Dirac.py,v 1.11 2008/02/13 09:55:49 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.12 2008/03/06 09:46:02 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -37,6 +37,7 @@ from DIRAC.Core.Utilities.Subprocess                     import shellCall
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.WorkloadManagementSystem.Client.WMSClient     import WMSClient
 from DIRAC.WorkloadManagementSystem.Client.SandboxClient import SandboxClient
+from DIRAC.DataManagementSystem.Client.ReplicaManager    import ReplicaManager
 from DIRAC.Core.DISET.RPCClient                          import RPCClient
 from DIRAC.Core.Utilities.GridCert                       import getGridProxy
 from DIRAC                                               import gConfig, gLogger, S_OK, S_ERROR
@@ -53,14 +54,10 @@ class Dirac:
     self.log = gLogger.getSubLogger(COMPONENT_NAME)
     self.site       = gConfig.getValue('/LocalSite/Site','Unknown')
     self.setup      = gConfig.getValue('/DIRAC/Setup','Unknown')
-    self.section    = COMPONENT_NAME
+    self.section    = 'Interfaces/API/Dirac'
     self.cvsVersion = 'CVS version '+__RCSID__
     self.diracInfo  = 'DIRAC version v%dr%d build %d' \
                        %(DIRAC.majorVersion,DIRAC.minorVersion,DIRAC.patchLevel)
-
-    self.dbg = False
-    if gConfig.getValue(self.section+'/LogLevel','DEBUG') == 'DEBUG':
-      self.dbg = True
 
     self.scratchDir = gConfig.getValue(self.section+'/LocalSite/ScratchDir','/tmp')
     self.outputSandboxClient = SandboxClient('Output')
@@ -76,6 +73,7 @@ class Dirac:
       self.log.verbose(msg)
       self.log.debug(str(x))
       self.fileCatalog=False
+    self.rm = ReplicaManager()
 
   #############################################################################
   def submit(self,job,mode=None):
@@ -378,6 +376,14 @@ class Dirac:
     return repsResult
 
   #############################################################################
+  def replicate(self,lfn,destinationSE,sourceSE):
+    """Under development.
+    """
+    result = self.rm.replicateAndRegister(lfn,destinationSE,sourceSE)
+    self.log.verbose(result)
+    return result
+
+  #############################################################################
   def _sendJob(self,jdl):
     """Internal function.
        Still to check proxy timeleft and VO eligibility etc.
@@ -595,7 +601,7 @@ class Dirac:
        Example Usage:
 
        >>> print dirac.status(79241)
-       {79241: {'status': 'outputready', 'site': 'LCG.CERN.ch'}}
+       {79241: {'status': 'Done', 'site': 'LCG.CERN.ch'}}
 
        @param jobID: JobID
        @type jobID: int, string or list
@@ -603,7 +609,7 @@ class Dirac:
     """
     if type(jobID)==type(" "):
       try:
-        jobID = int(jobID).split()
+        jobID = [int(jobID)]
       except Exception,x:
         return self.__errorReport(str(x),'Expected integer or string for existing jobID')
     elif type(jobID)==type([]):
@@ -616,9 +622,13 @@ class Dirac:
 
     statusDict = self.monitoring.getJobsStatus(jobID)
     siteDict = self.monitoring.getJobsSites(jobID)
-    if not statusDict['OK'] or not siteDict['OK']:
+
+    if not statusDict['OK']:
       self.log.warn('Could not obtain job status information')
       return statusDict
+    if not siteDict['OK']:
+      self.log.warn('Could not obtain job site information')
+      return siteDict
 
     result = {}
     for job,vals in statusDict['Value'].items():
@@ -630,6 +640,168 @@ class Dirac:
         del result[job]['JobID']
 
     return S_OK(result)
+
+  #############################################################################
+  def selectJobs(self,Status=None,MinorStatus=None,ApplicationStatus=None,Site=None,Owner=None,JobGroup=None,Date=None):
+    """Under development: all options correspond to the web-page table columns.
+       Date must be specified as yyyy-mm-dd.  By default, the date is today.
+       JobGroup corresponds to the name associated to a group of jobs, e.g. productionID.
+       Site is the DIRAC site name.
+       Owner is the immutable nickname.
+    """
+    options = {'Status':Status,'MinorStatus':MinorStatus,'ApplicationStatus':ApplicationStatus,
+               'Site':Site,'JobGroup':JobGroup}
+    conditions = {}
+    for n,v in options.items():
+      if v:
+        try:
+          conditions[n] = str(v)
+        except Exception,x:
+          return self.__errorReport(str(x),'Expected string for %s field' %n)
+
+    if not type(Date)==type(" "):
+      try:
+        if Date:
+          Date = str(Date)
+      except Exception,x:
+        return self.__errorReport(str(x),'Expected yyyy-mm-dd string for Date')
+
+    if not Date:
+      now = time.gmtime()
+      Date = '%s-%s-%s' %(now[0],str(now[1]).zfill(2),str(now[2]).zfill(2))
+      print Date
+
+    self.log.verbose('Will select jobs with last update %s and following conditions' %Date)
+    self.log.verbose(self.pPrint.pformat(conditions))
+    result = self.monitoring.getJobs(conditions,Date)
+    if not result['OK']:
+      self.log.warn(result['Message'])
+      return result
+
+    jobIDs = result['Value']
+    self.log.verbose('%s job(s) selected' %(len(jobIDs)))
+    if not jobIDs:
+      return S_ERROR('No jobs selected for conditions: %s' %conditions)
+    else:
+      return result
+
+  #############################################################################
+  def getJobSummary(self,jobID,outputFile=None,printOutput=False):
+    """Under Development.  Output similar to the web page can be printed to the screen
+       or stored as a file or just returned as a dictionary for further usage.
+
+       Jobs can be specified individually or as a list.
+    """
+    if type(jobID)==type(" "):
+      try:
+        jobID = [int(jobID)]
+      except Exception,x:
+        return self.__errorReport(str(x),'Expected integer or string for existing jobID')
+    elif type(jobID)==type([]):
+      try:
+        jobID = [int(job) for job in jobID]
+      except Exception,x:
+        return self.__errorReport(str(x),'Expected integer or string for existing jobID')
+
+    headers = ['Status','MinorStatus','ApplicationStatus','Site','JobGroup','LastUpdateTime',
+               'HeartBeatTime','SubmissionTime','Owner']
+
+    if type(jobID)==type(1):
+      jobID = [jobID]
+
+    result = self.monitoring.getJobsSummary(jobID)
+    if not result['OK']:
+      self.log.warn(result['Message'])
+      return result
+    try:
+      jobSummary = eval(result['Value'])
+      #self.log.info(self.pPrint.pformat(jobSummary))
+    except Exception,x:
+      self.log.warn('Problem interpreting result from job monitoring service')
+      return S_ERROR('Problem while converting result from job monitoring')
+
+    summary = {}
+    for job in jobID:
+      summary[job] = {}
+      for key in headers:
+        if not jobSummary.has_key(job):
+          self.log.warn('No records for JobID %s' %job)
+          value = 'None'
+        elif jobSummary[job].has_key(key):
+          value = jobSummary[job][key]
+        else:
+          value = 'None'
+        summary[job][key] = value
+
+    if outputFile:
+      if os.path.exists(outputFile):
+        return self.__errorReport('Output file %s already exists' %(outputFile))
+      dirPath = os.path.basename(outputFile)
+      if re.search('/',dirPath) and not os.path.exists(dirPath):
+        try:
+          os.mkdir(dirPath)
+        except Exception,x:
+          return self.__errorReport(str(x),'Could not create directory %s' %(dirPath))
+
+      fopen = open(outputFile,'w')
+      line = 'JobID'.ljust(12)
+      for i in headers:
+        line += i.ljust(35)
+      fopen.write(line+'\n')
+      for jobID,params in summary.items():
+        line = str(jobID).ljust(12)
+        for header in headers:
+          for key,value in params.items():
+            if header==key:
+              line += value.ljust(35)
+        fopen.write(line+'\n')
+      fopen.close()
+      self.log.verbose('Output written to %s' %outputFile)
+
+    if printOutput:
+      self.log.info(self.pPrint.pformat(summary))
+
+    return S_OK(summary)
+
+  #############################################################################
+  def getJobCPUTime(self,jobID,printOutput=False):
+    """Under development.  Retrieve job CPU consumed heartbeat data from job monitoring
+       service.  Jobs can be specified individually or as a list.
+
+       The time stamps and raw CPU consumed (s) are returned.
+    """
+    if type(jobID)==type(" "):
+      try:
+        jobID = [int(jobID)]
+      except Exception,x:
+        return self.__errorReport(str(x),'Expected integer or string for existing jobID')
+    elif type(jobID)==type([]):
+      try:
+        jobID = [int(job) for job in jobID]
+      except Exception,x:
+        return self.__errorReport(str(x),'Expected integer or string for existing jobID')
+
+    if type(jobID)==type(1):
+      jobID = [jobID]
+
+    summary = {}
+    for job in jobID:
+      result = self.monitoring.getJobHeartBeatData(job)
+      summary[job]={}
+      if not result['OK']:
+        return self.__errorReport(result['Message'],'Could not get heartbeat data for job %s' %job)
+      if result['Value']:
+        tupleList = result['Value']
+        for tup in tupleList:
+          if tup[0]=='CPUConsumed':
+            summary[job][tup[2]]=tup[1]
+      else:
+        self.log.warn('No heartbeat data for job %s' %job)
+
+    if printOutput:
+      self.log.info(self.pPrint.pformat(summary))
+
+    return S_OK(summary)
 
   #############################################################################
   def parameters(self,jobID):
@@ -648,7 +820,7 @@ class Dirac:
     """
     if type(jobID)==type(" "):
       try:
-        jobID = int(jobID).split()
+        jobID = [int(jobID)]
       except Exception,x:
         return self.__errorReport(str(x),'Expected integer or string for existing jobID')
     elif type(jobID)==type([]):
@@ -798,8 +970,7 @@ class Dirac:
     """Internal function to print the DIRAC API version and related information.
     """
     self.log.info('<=====%s=====>' % (self.diracInfo))
-    if self.dbg:
-      self.log.verbose(self.cvsVersion)
-      self.log.verbose('DIRAC is running at %s in setup %s' % (self.site,self.setup))
+    self.log.verbose(self.cvsVersion)
+    self.log.verbose('DIRAC is running at %s in setup %s' % (self.site,self.setup))
 
   #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
