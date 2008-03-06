@@ -1,8 +1,8 @@
-# $Id: Parameter.py,v 1.22 2008/03/04 15:21:52 gkuznets Exp $
+# $Id: Parameter.py,v 1.23 2008/03/06 15:49:05 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.22 $"
+__RCSID__ = "$Revision: 1.23 $"
 
 # unbinded method, returns indentation string
 def indent(indent=0):
@@ -478,9 +478,9 @@ class ParameterCollection(list):
         """This function resolves global parameters of type @{value} within the ParameterCollection
         """
         recurrency_max=12
-        recurrency=0
         # let us find the
         for v in self:
+            recurrency=0
             if v.isTypeString():
                 start=v.value.find('@{')
                 stop=-1
@@ -506,12 +506,12 @@ class ParameterCollection(list):
                         # we replaced part of the string so we need to reset indexes
                         start=0
                     else: # if nothing helped tough!
-                        print "can not resolve ", v.value[start:stop+1]
+                        print "can not resolve ", v.value[start:stop+1], str(v)
                         return
                     recurrency=recurrency+1
                     if recurrency > recurrency_max:
                         # mast be an exception
-                        print "ERROR! reached maximum recurrency level", recurrency, "within the parameter ", v.value
+                        print "ERROR! reached maximum recurrency level", recurrency, "within the parameter ", str(v)
                         if step_parameters == None:
                             if wf_parameters == None:
                                 print "on the level of Workflow"
