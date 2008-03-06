@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.24 2008/03/05 20:36:43 acasajus Exp $
-__RCSID__ = "$Id: Server.py,v 1.24 2008/03/05 20:36:43 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.25 2008/03/06 11:29:15 acasajus Exp $
+__RCSID__ = "$Id: Server.py,v 1.25 2008/03/06 11:29:15 acasajus Exp $"
 
 import socket
 import sys
@@ -164,6 +164,7 @@ class Server:
     """
     try:
       gMonitor.addMark( "Queries" )
+      gLogger.verbose( "Incoming connection from %s" % clientTransport.getRemoteAddress()[0] )
       clientTransport.handshake()
       retVal = clientTransport.receiveData( 1024 )
       if not retVal[ 'OK' ]:
