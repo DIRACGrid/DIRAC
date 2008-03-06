@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.45 2008/03/05 19:59:11 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.46 2008/03/06 11:24:54 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.45 2008/03/05 19:59:11 paterson Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.46 2008/03/06 11:24:54 atsareg Exp $"
 
 import re, os, sys, string
 import time
@@ -588,8 +588,13 @@ class JobDB(DB):
     """ Set status of the job specified by its jobID
     """
 
+    # Do not update the LastUpdate time stamp if setting the Stalled status
+    update_flag = True
+    if status == "Stalled":
+      update_flag = False
+
     if status:
-      result = self.setJobAttribute(jobID,'Status',status,update=True)
+      result = self.setJobAttribute(jobID,'Status',status,update=update_flag)
       if not result['OK']:
         return result
     if minor:
@@ -1509,7 +1514,7 @@ class JobDB(DB):
     res = self._query( cmd )
     if not res['OK']:
       return res
-      
+
     if len(res['Value']) == 0:
       return S_OK ([])
 
