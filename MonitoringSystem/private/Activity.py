@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/Activity.py,v 1.6 2008/02/19 19:13:26 acasajus Exp $
-__RCSID__ = "$Id: Activity.py,v 1.6 2008/02/19 19:13:26 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/Activity.py,v 1.7 2008/03/06 17:44:07 acasajus Exp $
+__RCSID__ = "$Id: Activity.py,v 1.7 2008/03/06 17:44:07 acasajus Exp $"
 
 import types
 from string import Template
@@ -56,6 +56,8 @@ class Activity:
         unit = "%s/min" % unit
       else:
         unit = "%s/%s mins" % ( unit, sF )
+    if self.getType() in ( "rate" ):
+      unit = "%s/seconds" % unit
     self.dataList[ self.dbMapping[ 'activities.unit' ] ] = unit
     self.templateMap[ 'UNIT' ] = unit
 
