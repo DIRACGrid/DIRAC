@@ -40,6 +40,8 @@ CREATE TABLE PilotAgents (
     OwnerDN VARCHAR(255) NOT NULL,
     OwnerGroup VARCHAR(128) NOT NULL,
     GridType VARCHAR(32) NOT NULL DEFAULT 'LCG',
+    GridRequirements BLOB,
+    BenchMark DOUBLE NOT NULL DEFAULT 0.0,
     SubmissionTime DATETIME,
     LastUpdateTime DATETIME,
     Status VARCHAR(32) NOT NULL DEFAULT 'Unknown',
