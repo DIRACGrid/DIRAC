@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.13 2008/03/07 10:50:15 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.14 2008/03/07 12:00:41 atsareg Exp $
 ########################################################################
 """ PilotAgentsDB class is a front-end to the Pilot Agent Database.
     This database keeps track of all the submitted grid pilot jobs.
@@ -23,7 +23,7 @@
 
 """
 
-__RCSID__ = "$Id: PilotAgentsDB.py,v 1.13 2008/03/07 10:50:15 atsareg Exp $"
+__RCSID__ = "$Id: PilotAgentsDB.py,v 1.14 2008/03/07 12:00:41 atsareg Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
@@ -43,13 +43,19 @@ class PilotAgentsDB(DB):
      print "Initializing PilotAgentsDB - done"
 
 ##########################################################################################
-  def addPilotReference(self,pilotRef,jobID,ownerDN,ownerGroup,broker='Unknown',gridType='DIRAC'):
+  def addPilotReference(self,pilotRef,jobID,ownerDN,ownerGroup,broker='Unknown',
+                        gridType='DIRAC',requirements='Unknown'):
     """ Add a new pilot job reference """
 
+    result = self._escapeString(requirements)
+    if not result['OK']:
+      gLogger.warn('Failed to escape requirements string')
+      e_requirements = "Failed to escape requirements string"
+    e_requirements = result['Value']
     req = "INSERT INTO PilotAgents( PilotJobReference, InitialJobID, OwnerDN, " + \
-          "OwnerGroup, Broker, GridType, SubmissionTime, LastUpdateTime, Status ) " + \
-          "VALUES ('%s',%d,'%s','%s','%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),'Submitted')" % \
-          (pilotRef,int(jobID),ownerDN,ownerGroup,broker,gridType)
+          "OwnerGroup, Broker, GridType, SubmissionTime, LastUpdateTime, Status, GridRequirements ) " + \
+          "VALUES ('%s',%d,'%s','%s','%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),'Submitted','%s')" % \
+          (pilotRef,int(jobID),ownerDN,ownerGroup,broker,gridType,e_requirements)
     return self._update(req)
 
 ##########################################################################################
