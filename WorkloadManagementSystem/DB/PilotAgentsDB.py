@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.11 2008/02/28 18:34:58 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.12 2008/03/07 10:31:24 atsareg Exp $
 ########################################################################
 """ PilotAgentsDB class is a front-end to the Pilot Agent Database.
     This database keeps track of all the submitted grid pilot jobs.
@@ -23,7 +23,7 @@
 
 """
 
-__RCSID__ = "$Id: PilotAgentsDB.py,v 1.11 2008/02/28 18:34:58 atsareg Exp $"
+__RCSID__ = "$Id: PilotAgentsDB.py,v 1.12 2008/03/07 10:31:24 atsareg Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
@@ -165,7 +165,20 @@ class PilotAgentsDB(DB):
     """ Set the pilot agent destination site
     """
 
-    req = "UPDATE PilotAgents SET DestinationSite='%s' WHERE PilotJobReference='%s'" % pilotRef
+    req = "UPDATE PilotAgents SET DestinationSite='%s' WHERE PilotJobReference='%s'" % (destination,pilotRef)
+    result = self._update(req)
+    return result
+
+##########################################################################################
+  def setPilotRequirements(self,pilotRef,requirements):
+    """ Set the pilot agent grid requirements
+    """
+
+    result = self._escapeString(requirements)
+    if not result['OK']:
+      return S_ERROR('Failed to escape requirements string')
+    e_requirements = result['Value']
+    req = "UPDATE PilotAgents SET GridRequirements='%s' WHERE PilotJobReference='%s'" % (e_requirements,pilotRef)
     result = self._update(req)
     return result
 
@@ -270,6 +283,22 @@ class PilotAgentsDB(DB):
         return S_OK(pilotList)
       else:
         return S_ERROR('PilotJobReferences for job %d not found' % jobID)
+
+##########################################################################################
+  def getPilotCurrentJob(self,pilotRef):
+    """ The the job ID currently executed by the pilot
+    """
+    req = "SELECT CurrentJobID FROM PilotAgents WHERE PilotJobReference='%s' " % pilotRef
+
+    result = self._query(req)
+    if not result['OK']:
+      return result
+    else:
+      if result['Value']:
+        jobID = int(result['Value'][0][0])
+        return S_OK(jobID)
+      else:
+        return S_ERROR('Current job ID for pilot %s is not known' % pilotRef)
 
 ##########################################################################################
   def getPilotOwner(self,pilotRef):
