@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSAdministratorHandler.py,v 1.18 2008/03/03 14:38:55 atsareg Exp $
+# $Id: WMSAdministratorHandler.py,v 1.19 2008/03/07 10:51:37 atsareg Exp $
 ########################################################################
 """
 This is a DIRAC WMS administrator interface.
@@ -17,7 +17,7 @@ Access to the pilot data:
 
 """
 
-__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.18 2008/03/03 14:38:55 atsareg Exp $"
+__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.19 2008/03/07 10:51:37 atsareg Exp $"
 
 import os, sys, string, uu, shutil, datetime
 from types import *
@@ -352,4 +352,13 @@ class WMSAdministratorHandler(RequestHandler):
 
     pilots = result['Value']
     result = pilotDB.getPilotInfo(pilots)
+    return result
+
+  ##############################################################################
+  types_setJobForPilot = [IntType, StringType]
+  def export_setJobForPilot(self,jobID,pilotRef):
+    """ Report the DIRAC job ID which is executed by the given pilot job
+    """
+
+    result = pilotDB.setJobForPilot(jobID,pilotRef)
     return result
