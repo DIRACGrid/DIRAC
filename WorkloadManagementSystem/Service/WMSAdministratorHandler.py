@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSAdministratorHandler.py,v 1.19 2008/03/07 10:51:37 atsareg Exp $
+# $Id: WMSAdministratorHandler.py,v 1.20 2008/03/07 11:14:22 atsareg Exp $
 ########################################################################
 """
 This is a DIRAC WMS administrator interface.
@@ -17,7 +17,7 @@ Access to the pilot data:
 
 """
 
-__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.19 2008/03/07 10:51:37 atsareg Exp $"
+__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.20 2008/03/07 11:14:22 atsareg Exp $"
 
 import os, sys, string, uu, shutil, datetime
 from types import *
@@ -362,3 +362,12 @@ class WMSAdministratorHandler(RequestHandler):
 
     result = pilotDB.setJobForPilot(jobID,pilotRef)
     return result
+
+  ##########################################################################################
+  types_setPilotBenchmark = [StringType, FloatType]
+  def setPilotBenchmark(self,pilotRef,mark):
+    """ Set the pilot agent benchmark
+    """
+    result = pilotDB.setPilotBenchmark(pilotRef,mark)
+    return result
+
