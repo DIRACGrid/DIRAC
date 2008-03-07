@@ -1,11 +1,11 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/WMSUtilities.py,v 1.4 2008/02/06 18:19:05 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/WMSUtilities.py,v 1.5 2008/03/07 11:08:30 atsareg Exp $
 ########################################################################
 
 """ A set of utilities used in the WMS services
 """
 
-__RCSID__ = "$Id: WMSUtilities.py,v 1.4 2008/02/06 18:19:05 atsareg Exp $"
+__RCSID__ = "$Id: WMSUtilities.py,v 1.5 2008/03/07 11:08:30 atsareg Exp $"
 
 from tempfile import mkdtemp
 import shutil, os
@@ -70,6 +70,12 @@ def getgLitePilotOutput(jRef):
   if error.find('already retrieved') != -1:
     shutil.rmtree(tmp_dir)
     return S_ERROR('Pilot job output already retrieved')  
+  if error.find('Output not yet Ready') != -1:  
+    shutil.rmtree(tmp_dir)
+    return S_ERROR(error)  
+  if status != 0:
+    shutil.rmtree(tmp_dir)
+    return S_ERROR(error)    
     
   # Get the list of files
   fileList = os.listdir(tmp_dir)
