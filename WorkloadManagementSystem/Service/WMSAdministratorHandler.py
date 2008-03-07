@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSAdministratorHandler.py,v 1.20 2008/03/07 11:14:22 atsareg Exp $
+# $Id: WMSAdministratorHandler.py,v 1.21 2008/03/07 17:17:03 atsareg Exp $
 ########################################################################
 """
 This is a DIRAC WMS administrator interface.
@@ -17,7 +17,7 @@ Access to the pilot data:
 
 """
 
-__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.20 2008/03/07 11:14:22 atsareg Exp $"
+__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.21 2008/03/07 17:17:03 atsareg Exp $"
 
 import os, sys, string, uu, shutil, datetime
 from types import *
@@ -136,10 +136,12 @@ class WMSAdministratorHandler(RequestHandler):
 
     global proxyStore
     key = ownerDN+':::'+ownerGroup
+    gLogger.verbose('Getting proxy for %s for %d hours' % (key,validity))
     if proxyStore.has_key(key):
       expirationTime = proxyStore[key]['ExpirationTime']
       exTime = Time.fromString(expirationTime)
       validityDelta = datetime.timedelta(0,3600*validity)
+      print "============= getProxy: deltas",exTime - datetime.datetime.now(),validityDelta
       if (exTime - datetime.datetime.now()) > validityDelta:
         proxy = proxyStore[key]["Proxy"]
         gLogger.info('Proxy for %s served from memory' % key)
@@ -289,9 +291,6 @@ class WMSAdministratorHandler(RequestHandler):
     if result['OK']:
       stdout = result['Value']['StdOut']
       error = result['Value']['StdError']
-      print "Pilot Output from DB"
-      print stdout
-      print error
       if stdout or error:
         resultDict = {}
         resultDict['StdOut'] = stdout
@@ -361,7 +360,10 @@ class WMSAdministratorHandler(RequestHandler):
     """
 
     result = pilotDB.setJobForPilot(jobID,pilotRef)
-    return result
+    if not result['OK']:
+      return result
+    result = pilotDB.setCurrentJobID(pilotRef,jobID)
+    return result  
 
   ##########################################################################################
   types_setPilotBenchmark = [StringType, FloatType]

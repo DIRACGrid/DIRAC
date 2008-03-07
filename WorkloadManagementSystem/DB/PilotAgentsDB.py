@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.14 2008/03/07 12:00:41 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.15 2008/03/07 17:17:03 atsareg Exp $
 ########################################################################
 """ PilotAgentsDB class is a front-end to the Pilot Agent Database.
     This database keeps track of all the submitted grid pilot jobs.
@@ -23,7 +23,7 @@
 
 """
 
-__RCSID__ = "$Id: PilotAgentsDB.py,v 1.14 2008/03/07 12:00:41 atsareg Exp $"
+__RCSID__ = "$Id: PilotAgentsDB.py,v 1.15 2008/03/07 17:17:03 atsareg Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
@@ -263,6 +263,15 @@ class PilotAgentsDB(DB):
       return result
     else:
       return S_ERROR('PilotJobReference '+pilotRef+' not found')
+      
+##########################################################################################
+  def setPilotCurrentJob(self,pilotRef,jobID):
+    """ Set the pilot agent current DIRAC job ID
+    """
+
+    req = "UPDATE PilotAgents SET CurrentJobID=%d WHERE PilotJobReference='%s'" % (jobID,pilotRef)
+    result = self._update(req)
+    return result      
 
 ##########################################################################################
   def getExePilotsForJob(self,jobID):
@@ -338,8 +347,10 @@ class PilotAgentsDB(DB):
     st_list = ['Aborted','Running','Done','Submitted','Ready','Scheduled','Waiting']
 
     summary_dict = {}
+    summary_dict['Total'] = {}
 
     for st in st_list:
+      summary_dict['Total'][st] = 0
       req = "SELECT DestinationSite,count(DestinationSite) FROM PilotAgents " + \
             "WHERE Status='%s' " % st
       if startdate:
@@ -360,5 +371,6 @@ class PilotAgentsDB(DB):
               if not summary_dict.has_key(site):
                 summary_dict[site] = {}
               summary_dict[site][st] = int(count)
+              summary_dict['Total'][st] += int(count)
 
     return S_OK(summary_dict)
