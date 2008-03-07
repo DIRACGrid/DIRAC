@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.12 2008/03/07 10:31:24 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.13 2008/03/07 10:50:15 atsareg Exp $
 ########################################################################
 """ PilotAgentsDB class is a front-end to the Pilot Agent Database.
     This database keeps track of all the submitted grid pilot jobs.
@@ -23,7 +23,7 @@
 
 """
 
-__RCSID__ = "$Id: PilotAgentsDB.py,v 1.12 2008/03/07 10:31:24 atsareg Exp $"
+__RCSID__ = "$Id: PilotAgentsDB.py,v 1.13 2008/03/07 10:50:15 atsareg Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
@@ -123,7 +123,7 @@ class PilotAgentsDB(DB):
     """
 
     parameters = ['PilotJobReference','OwnerDN','OwnerGroup','GridType','Broker',
-                  'Status','DestinationSite']
+                  'Status','DestinationSite','BenchMark']
     param_string = ','.join(parameters)
 
     list_type = False
@@ -166,6 +166,15 @@ class PilotAgentsDB(DB):
     """
 
     req = "UPDATE PilotAgents SET DestinationSite='%s' WHERE PilotJobReference='%s'" % (destination,pilotRef)
+    result = self._update(req)
+    return result
+
+ ##########################################################################################
+  def setPilotBenchmark(self,pilotRef,mark):
+    """ Set the pilot agent benchmark
+    """
+
+    req = "UPDATE PilotAgents SET BenchMark='%f' WHERE PilotJobReference='%s'" % (mark,pilotRef)
     result = self._update(req)
     return result
 
