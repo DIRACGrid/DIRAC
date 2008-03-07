@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/LCGPilotDirector.py,v 1.9 2008/02/07 19:02:01 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/LCGPilotDirector.py,v 1.10 2008/03/07 16:51:02 atsareg Exp $
 # File :   LCGPilotDirector.py
 # Author : Stuart Paterson
 ########################################################################
@@ -11,7 +11,7 @@
      the invokation of the Pilot Director instance is performed here.
 """
 
-__RCSID__ = "$Id: LCGPilotDirector.py,v 1.9 2008/02/07 19:02:01 paterson Exp $"
+__RCSID__ = "$Id: LCGPilotDirector.py,v 1.10 2008/03/07 16:51:02 atsareg Exp $"
 
 from DIRACEnvironment                                        import DIRAC
 from DIRAC.Core.Utilities                                    import List
@@ -93,7 +93,8 @@ class LCGPilotDirector(PilotDirector):
       return lcgJDL
 
     self.__checkProxy() # debuggging tool
-    lcgJDLFile = lcgJDL['Value']
+    lcgJDLFile = lcgJDL['Value']['JDLFile']
+    lcgJDLRequirements = lcgJDL['Value']['JDLRequirements']
 
     #list-match before each submission
     listMatchResult = self.__checkCEsForJob(job,lcgJDLFile)
@@ -133,6 +134,9 @@ class LCGPilotDirector(PilotDirector):
       self.log.warn( stderr )
       return S_ERROR('>>> LCG Submission Failed for job %s with status %s' %(job,status))
 
+    resultDict = {}
+    resultDict['PilotReference'] = submittedPilot
+    resultDict['PilotRequirements'] = lcgJDLRequirements 
     return S_OK(submittedPilot)
 
   #############################################################################
@@ -175,7 +179,8 @@ class LCGPilotDirector(PilotDirector):
         requirements = []
         requirements.append(gridRequirements)
 
-      lcgJDL.write( 'Requirements = '+string.join(requirements,"\n && ")+';\n')
+      reqString = string.join(requirements,"\n && ")
+      lcgJDL.write( 'Requirements = '+reqString+';\n')
 
       #Ranking of LCG jobs
       rank = '( other.GlueCEStateWaitingJobs == 0 ? other.GlueCEStateFreeCPUs * 10 / other.GlueCEInfoTotalCPUs : -other.GlueCEStateWaitingJobs * 4 / (other.GlueCEStateRunningJobs + 1 ) - 1 )'
@@ -211,7 +216,10 @@ class LCGPilotDirector(PilotDirector):
       self.log.warn( str(x) )
       return S_ERROR(x)
 
-    return S_OK(lcgJDLFile)
+    resultDict = {}
+    resultDict['JDLFile'] = lcgJDLFile
+    resultDict['JDLRequirements'] = reqString
+    return S_OK(resultDict)
 
   #############################################################################
   def __writeConfFiles(self,job,workingDirectory):

@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/PilotDirector.py,v 1.10 2008/02/09 13:26:20 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/PilotDirector.py,v 1.11 2008/03/07 16:51:02 atsareg Exp $
 # File :   PilotDirector.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
      are overridden in Grid specific subclasses.
 """
 
-__RCSID__ = "$Id: PilotDirector.py,v 1.10 2008/02/09 13:26:20 atsareg Exp $"
+__RCSID__ = "$Id: PilotDirector.py,v 1.11 2008/03/07 16:51:02 atsareg Exp $"
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
 from DIRAC.Core.Utilities.Subprocess                       import shellCall
@@ -46,6 +46,7 @@ class PilotDirector(Thread):
     self.genericPilotDN = gConfig.getValue(self.configSection+'/GenericPilotDN','/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=paterson/CN=607602/CN=Stuart Paterson')
     self.genericPilotGroup = gConfig.getValue(self.configSection+'/GenericPilotGroup','lhcb_pilot')
     self.defaultPilotType = gConfig.getValue(self.configSection+'/DefaultPilotType','generic')
+    self.log.info('Generic Pilot DN is: %s Group: %s' %(self.genericPilotDN,self.genericPilotGroup))
     self.workingDirectory = '%s/%s' %(self.scratchDir,self.name)
     self.diracSetup = gConfig.getValue('/DIRAC/Setup','LHCb-Development')
     Thread.__init__(self)
@@ -248,14 +249,16 @@ class PilotDirector(Thread):
     result = self.submitJob(job,self.workingDirectory,
                             siteList,jdlCPU,ownerGroup,inputSandbox,
                             gridRequirements,executable,softwareTag)
-    self.__cleanUp(workingDirectory)
+    if self.enable:
+      self.__cleanUp(workingDirectory)
     if not result['OK']:
       self.log.warn('Pilot submission failed for job %s with message:' %(job))
       self.log.warn(result['Message'])
       return result
 
-    submittedPilot = result['Value']
-    report = self.__reportSubmittedPilot(job,submittedPilot,ownerDN,ownerGroup)
+    submittedPilot = result['Value']['PilotReference']
+    pilotRequirements = result['Value']['PilotRequirements']
+    report = self.__reportSubmittedPilot(job,submittedPilot,ownerDN,ownerGroup,pilotRequirements)
     if not report['OK']:
       self.log.warn(report['Message'])
 
@@ -286,7 +289,8 @@ class PilotDirector(Thread):
     return setupResult
 
   #############################################################################
-  def __reportSubmittedPilot(self,job,submittedPilot,ownerDN,ownerGroup):
+  def __reportSubmittedPilot(self,job,submittedPilot,ownerDN,ownerGroup,
+                             jdl_requirements):
     """The pilot reference is added to the JobDB and appended to the
         SubmittedAgents job parameter.
     """
@@ -309,8 +313,10 @@ class PilotDirector(Thread):
 #        self.__setJobParam(job,'SubmittedAgents',submittedPilot)
 
     if self.enable:
-      result = self.pilotDB.addPilotReference(submittedPilot,job,ownerDN,ownerGroup,
-                                              self.resourceBroker,self.type)
+      result = self.pilotDB.addPilotReference(submittedPilot,job,ownerDN,
+                                              ownerGroup,
+                                              self.resourceBroker,self.type,
+                                              jdl_requirements)
       if not result['OK']:
         self.log.warn('Problem reporting to PilotAgentsDB:')
         self.log.warn(result['Message'])

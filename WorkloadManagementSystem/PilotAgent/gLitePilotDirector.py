@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/gLitePilotDirector.py,v 1.9 2008/02/25 13:19:57 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/gLitePilotDirector.py,v 1.10 2008/03/07 16:51:02 atsareg Exp $
 # File :   gLitePilotDirector.py
 # Author : Stuart Paterson
 ########################################################################
@@ -11,7 +11,7 @@
      the invokation of the Pilot Director instance is performed here.
 """
 
-__RCSID__ = "$Id: gLitePilotDirector.py,v 1.9 2008/02/25 13:19:57 paterson Exp $"
+__RCSID__ = "$Id: gLitePilotDirector.py,v 1.10 2008/03/07 16:51:02 atsareg Exp $"
 
 from DIRACEnvironment                                        import DIRAC
 from DIRAC.Core.Utilities                                    import List
@@ -93,7 +93,8 @@ class gLitePilotDirector(PilotDirector):
       return gLiteJDL
 
     self.__checkProxy() # debuggging tool
-    gLiteJDLFile = gLiteJDL['Value']
+    gLiteJDLFile = gLiteJDL['Value']['JDLFile']
+    gLiteJDLRequirements = gLiteJDL['Value']['JDLRequirements']
 
     #list-match before each submission
     listMatchResult = self.__checkCEsForJob(job,gLiteJDLFile)
@@ -133,10 +134,14 @@ class gLitePilotDirector(PilotDirector):
       self.log.warn( stderr )
       return S_ERROR('>>> gLite Submission Failed for job %s with status %s' %(job,status))
 
-    return S_OK(submittedPilot)
+    resultDict = {}
+    resultDict['PilotReference'] = submittedPilot
+    resultDict['PilotRequirements'] = gLiteJDLRequirements
+    return S_OK(resultDict)
 
   #############################################################################
-  def __writeJDL(self,job,workingDirectory,siteList,cpuRequirement,ownerGroup,inputSandbox,gridRequirements=None,executable=None,softwareTag=None):
+  def __writeJDL(self,job,workingDirectory,siteList,cpuRequirement,ownerGroup,
+                 inputSandbox,gridRequirements=None,executable=None,softwareTag=None):
     """ Implementation of the writeJdl() method for the gLite Resource Broker
         case. Prepares the gLite job JDL file.
     """
@@ -175,7 +180,8 @@ class gLitePilotDirector(PilotDirector):
         requirements = []
         requirements.append(gridRequirements)
 
-      gLiteJDL.write( 'Requirements = '+string.join(requirements,"\n && ")+';\n')
+      reqString = string.join(requirements,"\n && ")
+      gLiteJDL.write( 'Requirements = '+reqString+';\n')
 
       #Ranking of gLite jobs
       rank = '( other.GlueCEStateWaitingJobs == 0 ? other.GlueCEStateFreeCPUs * 10 / other.GlueCEInfoTotalCPUs : -other.GlueCEStateWaitingJobs * 4 / (other.GlueCEStateRunningJobs + 1 ) - 1 )'
@@ -211,7 +217,10 @@ class gLitePilotDirector(PilotDirector):
       self.log.warn( str(x) )
       return S_ERROR(x)
 
-    return S_OK(gLiteJDLFile)
+    resultDict = {}
+    resultDict['JDLFile'] = gLiteJDLFile
+    resultDict['JDLRequirements'] = reqString
+    return S_OK(resultDict)
 
   #############################################################################
   def __writeConfFiles(self,job,workingDirectory):
