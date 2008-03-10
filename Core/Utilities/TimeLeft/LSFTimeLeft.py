@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: LSFTimeLeft.py,v 1.2 2008/03/10 15:15:50 paterson Exp $
+# $Id: LSFTimeLeft.py,v 1.3 2008/03/10 16:47:57 paterson Exp $
 ########################################################################
 
 """ The LSF TimeLeft utility interrogates the LSF batch system for the
@@ -9,7 +9,7 @@
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.Subprocess import shellCall
 
-__RCSID__ = "$Id: LSFTimeLeft.py,v 1.2 2008/03/10 15:15:50 paterson Exp $"
+__RCSID__ = "$Id: LSFTimeLeft.py,v 1.3 2008/03/10 16:47:57 paterson Exp $"
 
 import os, string, re, time
 
@@ -42,25 +42,21 @@ class LSFTimeLeft:
     if not self.bin:
       return S_ERROR('Could not determine bin directory for LSF')
 
-    cmd = '%s/bjobs -l %s' %(self.bin,self.jobID)
-    result = self.__runCommand(cmd)
-    if not result['OK']:
-      return result
-
     cpu = None
     cpuLimit = None
     wallClock = None
     wallClockLimit = None
 
+    cmd = '%s/bjobs -l %s' %(self.bin,self.jobID)
+    result = self.__runCommand(cmd)
+    if not result['OK']:
+      return result
+
+    self.log.debug(result['Value'])
     lines = result['Value'].split('\n')
     for line in lines:
-      info = line.split()
-      if re.search('.*The CPU time used is.*',line):
-        if len(info)>=5:
-          cpu = float(info[5])
-        else:
-          self.log.warn('Poblem parsing "%s" for CPU consumed' %line)
       if re.search('.*Started on.*',line):
+        info = line.split(': ')
         if len(info)>=1:
           timeStr = '%s %s' %(info[0],self.year)
           timeTup=time.strptime(timeStr, '%a %b %d %H:%M:%S %Y')
@@ -68,15 +64,32 @@ class LSFTimeLeft:
           if time.daylight==1:
             self.wallClock += 3600
         else:
-          self.log.warn('Poblem parsing "%s" for elapsed wall clock time' %line)
-      if re.search('.*CPULIMIT.*',line):
+          self.log.warn('Problem parsing "%s" for elapsed wall clock time' %line)
+      if re.search('.*The CPU time used is.*',line):
+        info = line.split()
+        if len(info)>=5:
+          cpu = float(info[5])
+        else:
+          self.log.warn('Problem parsing "%s" for CPU consumed' %line)
+
+    cmd = '%s/bqueues -l %s' %(self.bin,self.queue)
+    result = self.__runCommand(cmd)
+    if not result['OK']:
+      return result
+
+    self.log.debug(result['Value'])
+    lines = result['Value'].split('\n')
+    for i in xrange(len(lines)):
+      if re.search('.*CPULIMIT.*',lines[i]):
+        info = lines[i+1].split()
         if len(info)>=1:
-          cpuLimit = float(info[0])
+          cpuLimit = float(info[0])*60
         else:
           self.log.warn('Problem parsing "%s" for CPU limit' %line)
-      if re.search('.*RUNLIMIT.*',line):
+      if re.search('.*RUNLIMIT.*',lines[i]):
+        info = lines[i+1].split()
         if len(info)>=1:
-          wallClockLimit = float(info[0])
+          wallClockLimit = float(info[0])*60
         else:
           self.log.warn('Problem parsing "%s" for wall clock limit' %line)
 
