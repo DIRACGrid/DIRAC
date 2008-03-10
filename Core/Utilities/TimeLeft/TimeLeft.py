@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TimeLeft.py,v 1.2 2008/03/10 11:27:02 paterson Exp $
+# $Id: TimeLeft.py,v 1.3 2008/03/10 12:48:06 paterson Exp $
 ########################################################################
 
 """ The TimeLeft utility allows to calculate the amount of CPU time
@@ -16,9 +16,9 @@
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 
-__RCSID__ = "$Id: TimeLeft.py,v 1.2 2008/03/10 11:27:02 paterson Exp $"
+__RCSID__ = "$Id: TimeLeft.py,v 1.3 2008/03/10 12:48:06 paterson Exp $"
 
-import os
+import os,re
 
 class TimeLeft:
 
@@ -26,6 +26,7 @@ class TimeLeft:
   def __init__(self):
     """ Standard constructor
     """
+    self.__loadLocalCFGFiles()
     self.log = gLogger.getSubLogger('TimeLeft')
     self.site = gConfig.getValue('/LocalSite/Site','Unknown')
     self.scaleFactor = gConfig.getValue('/LocalSite/CPUScalingFactor',0.0)
@@ -74,6 +75,16 @@ class TimeLeft:
 
     self.log.verbose('Remaining CPU in normalized units is: %.02f' %remainingCPU)
     return S_OK(remainingCPU)
+
+  #############################################################################
+  def __loadLocalCFGFiles(self):
+    """Loads any extra CFG files residing in the local DIRAC site root.
+    """
+    localRoot=gConfig.getValue('/LocalSite/Root',os.getcwd())
+    files = os.listdir(localRoot)
+    for i in files:
+      if re.search('.cfg$',i):
+        gConfig.loadFile(i)
 
   #############################################################################
   def __getBatchSystemPlugin(self,name):
