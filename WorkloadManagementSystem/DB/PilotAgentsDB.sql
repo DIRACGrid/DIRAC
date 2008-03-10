@@ -45,8 +45,8 @@ CREATE TABLE PilotAgents (
     SubmissionTime DATETIME,
     LastUpdateTime DATETIME,
     Status VARCHAR(32) NOT NULL DEFAULT 'Unknown',
-    StdOutput BLOB,
-    StdError BLOB,
+    StdOutput MEDIUMBLOB,
+    StdError MEDIUMBLOB,
     PRIMARY KEY (PilotID),
     INDEX (PilotJobReference)
 );
