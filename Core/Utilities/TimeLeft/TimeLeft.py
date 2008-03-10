@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TimeLeft.py,v 1.4 2008/03/10 14:12:10 paterson Exp $
+# $Id: TimeLeft.py,v 1.5 2008/03/10 17:42:27 paterson Exp $
 ########################################################################
 
 """ The TimeLeft utility allows to calculate the amount of CPU time
@@ -16,7 +16,7 @@
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 
-__RCSID__ = "$Id: TimeLeft.py,v 1.4 2008/03/10 14:12:10 paterson Exp $"
+__RCSID__ = "$Id: TimeLeft.py,v 1.5 2008/03/10 17:42:27 paterson Exp $"
 
 import os,re
 
@@ -61,6 +61,9 @@ class TimeLeft:
 
     resources = resourceDict['Value']
     self.log.verbose(resources)
+    if not resources['CPULimit'] or not resources['WallClockLimit']:
+      return S_ERROR('No CPU / WallClock limits obtained')
+
     cpuFactor = float(resources['CPU'])/float(resources['CPULimit'])
     cpuRemaining = 1.0-cpuFactor
     wcFactor = float(resources['WallClock'])/float(resources['WallClockLimit'])
@@ -69,9 +72,9 @@ class TimeLeft:
 
     if wcRemaining > cpuRemaining+self.cpuMargin:
       remainingCPU = float(cpuConsumed*self.scaleFactor*cpuRemaining/cpuFactor)
-      self.log.verbose('Remaining WallClock %s > Remaining CPU %s + margin %s' %(wcFactor,cpuFactor,cpuMargin))
+      self.log.verbose('Remaining WallClock %s > Remaining CPU %s + margin %s' %(wcFactor,cpuFactor,self.cpuMargin))
     else:
-      self.log.verbose('Remaining WallClock %s < Remaining CPU %s + margin %s' %(wcFactor,cpuFactor,cpuMargin))
+      self.log.verbose('Remaining WallClock %s < Remaining CPU %s + margin %s' %(wcFactor,cpuFactor,self.cpuMargin))
       remainingCPU = float(cpuConsumed*self.scaleFactor*(wcRemaining-(wcRemaining-cpuRemaining)-self.cpuMargin)/wcFactor)
 
     self.log.verbose('Remaining CPU in normalized units is: %.02f' %remainingCPU)
