@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: PBSTimeLeft.py,v 1.2 2008/03/10 15:15:19 paterson Exp $
+# $Id: PBSTimeLeft.py,v 1.3 2008/03/10 17:31:02 paterson Exp $
 ########################################################################
 
 """ The PBS TimeLeft utility interrogates the PBS batch system for the
@@ -9,7 +9,7 @@
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.Subprocess import shellCall
 
-__RCSID__ = "$Id: PBSTimeLeft.py,v 1.2 2008/03/10 15:15:19 paterson Exp $"
+__RCSID__ = "$Id: PBSTimeLeft.py,v 1.3 2008/03/10 17:31:02 paterson Exp $"
 
 import os, string, re, time
 
@@ -57,13 +57,13 @@ class PBSTimeLeft:
           cpuList = info[2].split(':')
           cpu = (float(cpuList[0])*60+float(cpuList[1]))*60+float(cpuList[2])
         else:
-          self.log.warn('Poblem parsing "%s" for CPU consumed' %line)
+          self.log.warn('Problem parsing "%s" for CPU consumed' %line)
       if re.search('.*resources_used.walltime.*',line):
         if len(info)>=3:
           wcList = info[2].split(':')
-          wallClock = float(wcList[0])*60+float(wcList[1])*60+float(wcList[2])*60
+          wallClock = (float(wcList[0])*60+float(wcList[1]))*60+float(wcList[2])
         else:
-          self.log.warn('Poblem parsing "%s" for elapsed wall clock time' %line)
+          self.log.warn('Problem parsing "%s" for elapsed wall clock time' %line)
       if re.search('.*Resource_List.cput.*',line):
         if len(info)>=3:
           cpuList = info[2].split(':')
@@ -73,7 +73,7 @@ class PBSTimeLeft:
       if re.search('.*Resource_List.walltime.*',line):
         if len(info)>=3:
           wcList = info[2].split(':')
-          wallClockLimit = float(wcList[0])*60+float(wcList[1])*60+float(wcList[2])*60
+          wallClockLimit = (float(wcList[0])*60+float(wcList[1]))*60+float(wcList[2])
         else:
           self.log.warn('Problem parsing "%s" for wall clock limit' %line)
 
@@ -81,7 +81,7 @@ class PBSTimeLeft:
     self.log.debug(consumed)
     failed = False
     for k,v in consumed.items():
-      if not v:
+      if v==None:
         failed = True
         self.log.warn('Could not determine %s' %k)
 
