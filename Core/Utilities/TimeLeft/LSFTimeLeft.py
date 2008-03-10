@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: LSFTimeLeft.py,v 1.4 2008/03/10 17:21:48 paterson Exp $
+# $Id: LSFTimeLeft.py,v 1.5 2008/03/10 17:43:23 paterson Exp $
 ########################################################################
 
 """ The LSF TimeLeft utility interrogates the LSF batch system for the
@@ -9,7 +9,7 @@
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.Subprocess import shellCall
 
-__RCSID__ = "$Id: LSFTimeLeft.py,v 1.4 2008/03/10 17:21:48 paterson Exp $"
+__RCSID__ = "$Id: LSFTimeLeft.py,v 1.5 2008/03/10 17:43:23 paterson Exp $"
 
 import os, string, re, time
 
@@ -60,7 +60,7 @@ class LSFTimeLeft:
           timeTup=time.strptime(timeStr, '%a %b %d %H:%M:%S %Y')
           wallClock=time.mktime(timeTup)
           if time.daylight==1:
-            wallClock += 3600
+            wallClock -= 3600
           wallClock = time.time()-wallClock
         else:
           self.log.warn('Problem parsing "%s" for elapsed wall clock time' %line)
