@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: LSFTimeLeft.py,v 1.3 2008/03/10 16:47:57 paterson Exp $
+# $Id: LSFTimeLeft.py,v 1.4 2008/03/10 17:21:48 paterson Exp $
 ########################################################################
 
 """ The LSF TimeLeft utility interrogates the LSF batch system for the
@@ -9,7 +9,7 @@
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.Subprocess import shellCall
 
-__RCSID__ = "$Id: LSFTimeLeft.py,v 1.3 2008/03/10 16:47:57 paterson Exp $"
+__RCSID__ = "$Id: LSFTimeLeft.py,v 1.4 2008/03/10 17:21:48 paterson Exp $"
 
 import os, string, re, time
 
@@ -29,8 +29,6 @@ class LSFTimeLeft:
     self.bin = None
     if os.environ.has_key('LSF_BINDIR'):
       self.bin = os.environ['LSF_BINDIR']
-    self.cpuLimit = None
-    self.wallClockLimit = None
     self.year = time.strftime('%Y',time.gmtime())
     self.log.verbose('LSB_JOBID=%s, LSB_QUEUE=%s, LSF_BINDIR=%s' %(self.jobID,self.queue,self.bin))
 
@@ -60,9 +58,10 @@ class LSFTimeLeft:
         if len(info)>=1:
           timeStr = '%s %s' %(info[0],self.year)
           timeTup=time.strptime(timeStr, '%a %b %d %H:%M:%S %Y')
-          self.wallClock=time.mktime(timeTup)
+          wallClock=time.mktime(timeTup)
           if time.daylight==1:
-            self.wallClock += 3600
+            wallClock += 3600
+          wallClock = time.time()-wallClock
         else:
           self.log.warn('Problem parsing "%s" for elapsed wall clock time' %line)
       if re.search('.*The CPU time used is.*',line):
