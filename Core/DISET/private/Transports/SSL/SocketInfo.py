@@ -1,18 +1,19 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfo.py,v 1.16 2008/02/20 18:52:39 acasajus Exp $
-__RCSID__ = "$Id: SocketInfo.py,v 1.16 2008/02/20 18:52:39 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfo.py,v 1.17 2008/03/10 13:42:38 acasajus Exp $
+__RCSID__ = "$Id: SocketInfo.py,v 1.17 2008/03/10 13:42:38 acasajus Exp $"
 
 import time
 import copy
-import OpenSSL
+import os.path
+import GSI
 import DIRAC
 from DIRAC.Core.Utilities import GridCredentials
 from DIRAC.LoggingSystem.Client.Logger import gLogger
 
-requiredOpenSSLVersion = "0.7"
-if OpenSSL.version.__version__ < requiredOpenSSLVersion:
-  raise Exception( "pyOpenSSL is not the latest version (installed %s required %s)" % ( OpenSSL.version.__version__, requiredOpenSSLVersion ) )
+requiredGSIVersion = "0.1"
+if GSI.version.__version__ < requiredGSIVersion:
+  raise Exception( "pyGSI is not the latest version (installed %s required %s)" % ( GSI.version.__version__, requiredGSIVersion ) )
 
-OpenSSL.SSL.set_thread_safe()
+GSI.SSL.set_thread_safe()
 
 class SocketInfo:
 
@@ -63,7 +64,7 @@ class SocketInfo:
     return self.sslContext
 
   def clone( self ):
-    return SocketInfo( copy.deepcopy( self.infoDict ), self.sslContext )
+    return SocketInfo( dict( self.infoDict ), self.sslContext )
 
   def verifyCallback( self, *args, **kwargs ):
     #gLogger.debug( "verify Callback %s" % str( args ) )
@@ -87,31 +88,39 @@ class SocketInfo:
   def _serverCallback( self, conn, cert, errnum, depth, ok):
     return ok
 
-  def __createContext( self ):
+  def __createContext( self, serverContext = False ):
     # Initialize context
-    self.sslContext = OpenSSL.SSL.Context( OpenSSL.SSL.SSLv23_METHOD )
+    if serverContext:
+      self.sslContext = GSI.SSL.Context( GSI.SSL.TLSv1_SERVER_METHOD )
+    else:
+      self.sslContext = GSI.SSL.Context( GSI.SSL.TLSv1_CLIENT_METHOD )
     #self.sslContext.set_verify( SSL.VERIFY_PEER|SSL.VERIFY_FAIL_IF_NO_PEER_CERT, self.verifyCallback ) # Demand a certificate
-    self.sslContext.set_verify( OpenSSL.SSL.VERIFY_PEER|OpenSSL.SSL.VERIFY_FAIL_IF_NO_PEER_CERT, None ) # Demand a certificate
+    self.sslContext.set_verify( GSI.SSL.VERIFY_PEER|GSI.SSL.VERIFY_FAIL_IF_NO_PEER_CERT, None, serverContext ) # Demand a certificate
     casPath = GridCredentials.getCAsLocation()
     if not casPath:
       DIRAC.abort( 10, "No valid CAs location found" )
     gLogger.debug( "CAs location is %s" % casPath )
     self.sslContext.load_verify_locations_path( casPath )
 
-  def __generateContextWithCerts( self ):
+  def __generateContextWithCerts( self, serverContext = False ):
     certKeyTuple = GridCredentials.getHostCertificateAndKey()
     if not certKeyTuple:
       DIRAC.abort( 10, "No valid certificate or key found" )
     self.setLocalCredentialsLocation( certKeyTuple )
     gLogger.debug("Using certificate %s\nUsing key %s" % certKeyTuple )
-    self.__createContext()
+    self.__createContext( serverContext )
     self.sslContext.use_certificate_chain_file( certKeyTuple[0] )
     self.sslContext.use_privatekey_file(  certKeyTuple[1] )
 
   def __generateContextWithProxy( self ):
-    proxyPath = GridCredentials.getGridProxy()
-    if not proxyPath:
-      DIRAC.abort( 10, "No valid proxy found" )
+    if 'proxyLocation' in self.infoDict:
+      proxyPath = self.infoDict[ 'proxyLocation' ]
+      if not os.path.isfile( proxyPath ):
+        DIRAC.abort( 10, "Defined proxy is not a file" )
+    else:
+      proxyPath = GridCredentials.getGridProxy()
+      if not proxyPath:
+        DIRAC.abort( 10, "No valid proxy found" )
     self.setLocalCredentialsLocation( ( proxyPath, proxyPath ) )
     gLogger.debug( "Using proxy %s" % proxyPath )
     self.__createContext()
@@ -119,10 +128,13 @@ class SocketInfo:
     self.sslContext.use_privatekey_file( proxyPath )
 
   def __generateServerContext( self ):
-      self.__generateContextWithCerts()
+      self.__generateContextWithCerts( serverContext = True )
       self.sslContext.set_session_id( "DISETConnection%s" % str( time.time() ) )
-      self.sslContext.get_cert_store().set_flags( OpenSSL.crypto.X509_CRL_CHECK )
-      self.sslContext.set_GSI_verify()
+      #self.sslContext.get_cert_store().set_flags( GSI.crypto.X509_CRL_CHECK )
+      if 'SSLSessionTimeout' in self.infoDict:
+        timeout = int( self.infoDict['SSLSessionTimeout'] )
+        gLogger.debug( "Setting session timeout to %s" % timeout )
+        self.sslContext.set_session_timeout( timeout )
 
   def doClientHandshake( self ):
     self.sslSocket.set_connect_state()
@@ -136,7 +148,7 @@ class SocketInfo:
   def __sslHandshake( self ):
     try:
       self.sslSocket.do_handshake()
-    except OpenSSL.SSL.Error, v:
+    except GSI.SSL.Error, v:
       #FIXME: S_ERROR?
       #gLogger.warn( "Error while handshaking", "\n".join( [ stError[2] for stError in v.args[0] ] ) )
       gLogger.warn( "Error while handshaking", v )

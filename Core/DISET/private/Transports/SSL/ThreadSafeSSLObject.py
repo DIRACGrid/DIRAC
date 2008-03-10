@@ -1,7 +1,7 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/ThreadSafeSSLObject.py,v 1.2 2007/05/10 18:44:58 acasajus Exp $
-__RCSID__ = "$Id: ThreadSafeSSLObject.py,v 1.2 2007/05/10 18:44:58 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/ThreadSafeSSLObject.py,v 1.3 2008/03/10 13:42:38 acasajus Exp $
+__RCSID__ = "$Id: ThreadSafeSSLObject.py,v 1.3 2008/03/10 13:42:38 acasajus Exp $"
 
-import OpenSSL
+import GSI
 import threading
 from DIRAC.LoggingSystem.Client.Logger import gLogger
 
@@ -46,7 +46,7 @@ class _MagicMethod:
     try:
       try:
         returnValue = apply( self.cMethod , args )
-      except OpenSSL.SSL.ZeroReturnError:
+      except GSI.SSL.ZeroReturnError:
         returnValue = 0
       except Exception, v:
         if v[0] == -1:

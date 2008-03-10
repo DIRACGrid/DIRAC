@@ -1,7 +1,7 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SessionManager.py,v 1.5 2007/11/23 10:35:46 acasajus Exp $
-__RCSID__ = "$Id: SessionManager.py,v 1.5 2007/11/23 10:35:46 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SessionManager.py,v 1.6 2008/03/10 13:42:38 acasajus Exp $
+__RCSID__ = "$Id: SessionManager.py,v 1.6 2008/03/10 13:42:38 acasajus Exp $"
 
-import OpenSSL
+import GSI
 
 class SessionManager:
 
@@ -9,7 +9,7 @@ class SessionManager:
     self.sessionsDict = {}
 
   def __generateSession( self ):
-    return OpenSSL.SSL.Session()
+    return GSI.SSL.Session()
 
   def get( self, sessionId ):
     if sessionId not in self.sessionsDict:

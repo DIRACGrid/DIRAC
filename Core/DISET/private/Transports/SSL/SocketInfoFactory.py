@@ -1,8 +1,8 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfoFactory.py,v 1.6 2007/11/23 10:35:46 acasajus Exp $
-__RCSID__ = "$Id: SocketInfoFactory.py,v 1.6 2007/11/23 10:35:46 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfoFactory.py,v 1.7 2008/03/10 13:42:37 acasajus Exp $
+__RCSID__ = "$Id: SocketInfoFactory.py,v 1.7 2008/03/10 13:42:37 acasajus Exp $"
 
 import socket
-from OpenSSL import SSL
+from GSI import SSL
 from DIRAC.Core.DISET.private.Transports.SSL.SocketInfo import SocketInfo
 from DIRAC.Core.DISET.private.Transports.SSL.SessionManager import gSessionManager
 from DIRAC.Core.DISET.private.Transports.SSL.FakeSocket import FakeSocket
