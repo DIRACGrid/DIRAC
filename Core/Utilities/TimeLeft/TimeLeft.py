@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TimeLeft.py,v 1.3 2008/03/10 12:48:06 paterson Exp $
+# $Id: TimeLeft.py,v 1.4 2008/03/10 14:12:10 paterson Exp $
 ########################################################################
 
 """ The TimeLeft utility allows to calculate the amount of CPU time
@@ -16,7 +16,7 @@
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 
-__RCSID__ = "$Id: TimeLeft.py,v 1.3 2008/03/10 12:48:06 paterson Exp $"
+__RCSID__ = "$Id: TimeLeft.py,v 1.4 2008/03/10 14:12:10 paterson Exp $"
 
 import os,re
 
@@ -26,8 +26,9 @@ class TimeLeft:
   def __init__(self):
     """ Standard constructor
     """
-    self.__loadLocalCFGFiles()
+    gLogger.setLevel('debug')
     self.log = gLogger.getSubLogger('TimeLeft')
+    self.__loadLocalCFGFiles()
     self.site = gConfig.getValue('/LocalSite/Site','Unknown')
     self.scaleFactor = gConfig.getValue('/LocalSite/CPUScalingFactor',0.0)
     self.cpuMargin = 10 #percent
@@ -82,9 +83,11 @@ class TimeLeft:
     """
     localRoot=gConfig.getValue('/LocalSite/Root',os.getcwd())
     files = os.listdir(localRoot)
+    self.log.debug('Checking directory %s' %localRoot)
     for i in files:
       if re.search('.cfg$',i):
-        gConfig.loadFile(i)
+        gConfig.loadFile('%s/%s' %(localRoot,i))
+        self.log.debug('Found local .cfg file %s' %i)
 
   #############################################################################
   def __getBatchSystemPlugin(self,name):
