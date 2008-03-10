@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TimeLeft.py,v 1.1 2008/03/10 09:34:29 paterson Exp $
+# $Id: TimeLeft.py,v 1.2 2008/03/10 11:27:02 paterson Exp $
 ########################################################################
 
 """ The TimeLeft utility allows to calculate the amount of CPU time
@@ -16,7 +16,7 @@
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 
-__RCSID__ = "$Id: TimeLeft.py,v 1.1 2008/03/10 09:34:29 paterson Exp $"
+__RCSID__ = "$Id: TimeLeft.py,v 1.2 2008/03/10 11:27:02 paterson Exp $"
 
 import os
 
@@ -28,7 +28,7 @@ class TimeLeft:
     """
     self.log = gLogger.getSubLogger('TimeLeft')
     self.site = gConfig.getValue('/LocalSite/Site','Unknown')
-    self.scaleFactor = gConfig.getValue('/LocalSite/CPUScalingFactor',0)
+    self.scaleFactor = gConfig.getValue('/LocalSite/CPUScalingFactor',0.0)
     self.cpuMargin = 10 #percent
 
   #############################################################################
@@ -51,8 +51,7 @@ class TimeLeft:
     if not batchInstance['OK']:
       return batchInstance
 
-    batchSystem = result['Value']
-
+    batchSystem = batchInstance['Value']
     resourceDict = batchSystem.getResourceUsage()
     if not resourceDict['OK']:
       self.log.warn('Could not determine timeleft for batch system %s at site %s' %(name,self.site))
@@ -117,6 +116,6 @@ class TimeLeft:
       return S_OK(current)
     else:
       self.log.warn('Batch system type for site %s is not currently supported' %self.site)
-      return S_ERROR('Not supported')
+      return S_ERROR('Currrent batch system is not supported')
 
   #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
