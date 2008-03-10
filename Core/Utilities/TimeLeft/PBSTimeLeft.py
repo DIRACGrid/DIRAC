@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: PBSTimeLeft.py,v 1.1 2008/03/10 09:32:25 paterson Exp $
+# $Id: PBSTimeLeft.py,v 1.2 2008/03/10 15:15:19 paterson Exp $
 ########################################################################
 
 """ The PBS TimeLeft utility interrogates the PBS batch system for the
@@ -9,7 +9,7 @@
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.Subprocess import shellCall
 
-__RCSID__ = "$Id: PBSTimeLeft.py,v 1.1 2008/03/10 09:32:25 paterson Exp $"
+__RCSID__ = "$Id: PBSTimeLeft.py,v 1.2 2008/03/10 15:15:19 paterson Exp $"
 
 import os, string, re, time
 
@@ -39,7 +39,7 @@ class PBSTimeLeft:
     """Returns a dictionary containing CPUConsumed, CPULimit, WallClockConsumed
        and WallClockLimit for current slot.  All values returned in seconds.
     """
-    cmd = 'qstat -f %s' %(self.jobid)
+    cmd = 'qstat -f %s' %(self.jobID)
     result = self.__runCommand(cmd)
     if not result['OK']:
       return result

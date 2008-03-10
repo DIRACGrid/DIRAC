@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: LSFTimeLeft.py,v 1.1 2008/03/10 09:32:02 paterson Exp $
+# $Id: LSFTimeLeft.py,v 1.2 2008/03/10 15:15:50 paterson Exp $
 ########################################################################
 
 """ The LSF TimeLeft utility interrogates the LSF batch system for the
@@ -9,7 +9,7 @@
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.Subprocess import shellCall
 
-__RCSID__ = "$Id: LSFTimeLeft.py,v 1.1 2008/03/10 09:32:02 paterson Exp $"
+__RCSID__ = "$Id: LSFTimeLeft.py,v 1.2 2008/03/10 15:15:50 paterson Exp $"
 
 import os, string, re, time
 
@@ -42,7 +42,7 @@ class LSFTimeLeft:
     if not self.bin:
       return S_ERROR('Could not determine bin directory for LSF')
 
-    cmd = '%s/bjobs -l %s' %(self.bin,self.jobid)
+    cmd = '%s/bjobs -l %s' %(self.bin,self.jobID)
     result = self.__runCommand(cmd)
     if not result['OK']:
       return result
