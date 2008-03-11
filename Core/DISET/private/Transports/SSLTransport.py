@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSLTransport.py,v 1.10 2008/03/11 14:20:16 acasajus Exp $
-__RCSID__ = "$Id: SSLTransport.py,v 1.10 2008/03/11 14:20:16 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSLTransport.py,v 1.11 2008/03/11 14:24:24 acasajus Exp $
+__RCSID__ = "$Id: SSLTransport.py,v 1.11 2008/03/11 14:24:24 acasajus Exp $"
 
 from DIRAC.Core.DISET.private.Transports.BaseTransport import BaseTransport
 from DIRAC.LoggingSystem.Client.Logger import gLogger
@@ -11,7 +11,7 @@ class SSLTransport( BaseTransport ):
   def initAsClient( self ):
     self.oSocketInfo = gSocketInfoFactory.getSocket( self.stServerAddress, **self.extraArgsDict )
     self.oSocket = self.oSocketInfo.getSSLSocket()
-    if self.oSocket.session_reused():
+    if not self.oSocket.session_reused():
       gLogger.debug( "New session connecting to server at %s" % str( self.stServerAddress ) )
 
   def initAsServer( self ):
@@ -30,7 +30,7 @@ class SSLTransport( BaseTransport ):
 
   def handshake( self ):
     creds = self.oSocketInfo.doServerHandshake()
-    if self.oSocket.session_reused():
+    if not self.oSocket.session_reused():
       gLogger.debug( "New session connecting to server at %s" % str( self.stServerAddress ) )
     for key in creds.keys():
       self.peerCredentials[ key ] = creds[ key ]
