@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TimeLeft.py,v 1.6 2008/03/11 12:04:24 paterson Exp $
+# $Id: TimeLeft.py,v 1.7 2008/03/11 12:41:16 paterson Exp $
 ########################################################################
 
 """ The TimeLeft utility allows to calculate the amount of CPU time
@@ -16,7 +16,7 @@
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 
-__RCSID__ = "$Id: TimeLeft.py,v 1.6 2008/03/11 12:04:24 paterson Exp $"
+__RCSID__ = "$Id: TimeLeft.py,v 1.7 2008/03/11 12:41:16 paterson Exp $"
 
 import os,re
 
@@ -64,23 +64,23 @@ class TimeLeft:
     if not resources['CPULimit'] or not resources['WallClockLimit']:
       return S_ERROR('No CPU / WallClock limits obtained')
 
-    cpuFactor = float(resources['CPU'])/float(resources['CPULimit'])
-    cpuRemaining = 1.0-cpuFactor
-    wcFactor = float(resources['WallClock'])/float(resources['WallClockLimit'])
-    wcRemaining = 1.0-wcFactor
-    self.log.verbose('Used CPU factor is %.02f, Used WallClock factor is %.02f.' %(cpuFactor,wcFactor))
-    self.log.verbose('Remaining WallClock %s, Remaining CPU %s, margin %s' %(wcRemaining,cpuRemaining,self.cpuMargin))
+    cpuFactor = 100*float(resources['CPU'])/float(resources['CPULimit'])
+    cpuRemaining = 100-cpuFactor
+    wcFactor = 100*float(resources['WallClock'])/float(resources['WallClockLimit'])
+    wcRemaining = 100-wcFactor
+    self.log.verbose('Used CPU is %.02f, Used WallClock is %.02f.' %(cpuFactor,wcFactor))
+    self.log.verbose('Remaining WallClock %.02f, Remaining CPU %.02f, margin %s' %(wcRemaining,cpuRemaining,self.cpuMargin))
 
     timeLeft = None
     if wcRemaining>cpuRemaining and (wcRemaining-cpuRemaining)>self.cpuMargin:
       timeLeft = float(cpuConsumed*self.scaleFactor*cpuRemaining/cpuFactor)
-      self.log.verbose('Remaining WallClock %s > Remaining CPU %s and difference > margin %s' %(wcRemaining,cpuRemaining,self.cpuMargin))
+      self.log.verbose('Remaining WallClock %.02f > Remaining CPU %.02f and difference > margin %s' %(wcRemaining,cpuRemaining,self.cpuMargin))
     else:
       if cpuRemaining > self.cpuMargin and wcRemaining > self.cpuMargin:
-        self.log.verbose('Remaining WallClock %s and Remaining CPU %s both > margin %s' %(wcRemaining,cpuRemaining,self.cpuMargin))
+        self.log.verbose('Remaining WallClock %.02f and Remaining CPU %.02f both > margin %s' %(wcRemaining,cpuRemaining,self.cpuMargin))
         timeLeft = float(cpuConsumed*self.scaleFactor*(wcRemaining-self.cpuMargin)/cpuFactor)
       else:
-        self.log.verbose('Remaining CPU %s < margin %s so no time left')
+        self.log.verbose('Remaining CPU %.02f < margin %s and WallClock %.02f < margin %s so no time left' %(cpuRemaining,margin,wcRemaining,margin))
 
     if timeLeft:
       self.log.verbose('Remaining CPU in normalized units is: %.02f' %timeLeft)
