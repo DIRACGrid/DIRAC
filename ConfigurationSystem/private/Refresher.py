@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Refresher.py,v 1.24 2008/03/05 15:53:33 acasajus Exp $
-__RCSID__ = "$Id: Refresher.py,v 1.24 2008/03/05 15:53:33 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Refresher.py,v 1.25 2008/03/11 16:22:30 acasajus Exp $
+__RCSID__ = "$Id: Refresher.py,v 1.25 2008/03/11 16:22:30 acasajus Exp $"
 
 import threading
 import time
@@ -106,7 +106,8 @@ class Refresher( threading.Thread ):
 
     for sServer in lRandomListOfServers:
         from DIRAC.Core.DISET.RPCClient import RPCClient
-        oClient = RPCClient( sServer, timeout = self.timeout, useCertificates = gConfigurationData.useServerCertificate() )
+        #oClient = RPCClient( sServer, timeout = self.timeout, useCertificates = gConfigurationData.useServerCertificate() )
+        oClient = RPCClient( sServer, useCertificates = gConfigurationData.useServerCertificate() )
         dRetVal = self.__updateFromRemoteLocation( oClient )
         if dRetVal[ 'OK' ]:
           return dRetVal
