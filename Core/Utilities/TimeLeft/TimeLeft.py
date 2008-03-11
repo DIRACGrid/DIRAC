@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TimeLeft.py,v 1.5 2008/03/10 17:42:27 paterson Exp $
+# $Id: TimeLeft.py,v 1.6 2008/03/11 12:04:24 paterson Exp $
 ########################################################################
 
 """ The TimeLeft utility allows to calculate the amount of CPU time
@@ -16,7 +16,7 @@
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 
-__RCSID__ = "$Id: TimeLeft.py,v 1.5 2008/03/10 17:42:27 paterson Exp $"
+__RCSID__ = "$Id: TimeLeft.py,v 1.6 2008/03/11 12:04:24 paterson Exp $"
 
 import os,re
 
@@ -31,7 +31,7 @@ class TimeLeft:
     self.__loadLocalCFGFiles()
     self.site = gConfig.getValue('/LocalSite/Site','Unknown')
     self.scaleFactor = gConfig.getValue('/LocalSite/CPUScalingFactor',0.0)
-    self.cpuMargin = 10 #percent
+    self.cpuMargin = gConfig.getValue('/LocalSite/CPUMargin',10) #percent
 
   #############################################################################
   def getTimeLeft(self,cpuConsumed):
@@ -69,16 +69,24 @@ class TimeLeft:
     wcFactor = float(resources['WallClock'])/float(resources['WallClockLimit'])
     wcRemaining = 1.0-wcFactor
     self.log.verbose('Used CPU factor is %.02f, Used WallClock factor is %.02f.' %(cpuFactor,wcFactor))
+    self.log.verbose('Remaining WallClock %s, Remaining CPU %s, margin %s' %(wcRemaining,cpuRemaining,self.cpuMargin))
 
-    if wcRemaining > cpuRemaining+self.cpuMargin:
-      remainingCPU = float(cpuConsumed*self.scaleFactor*cpuRemaining/cpuFactor)
-      self.log.verbose('Remaining WallClock %s > Remaining CPU %s + margin %s' %(wcFactor,cpuFactor,self.cpuMargin))
+    timeLeft = None
+    if wcRemaining>cpuRemaining and (wcRemaining-cpuRemaining)>self.cpuMargin:
+      timeLeft = float(cpuConsumed*self.scaleFactor*cpuRemaining/cpuFactor)
+      self.log.verbose('Remaining WallClock %s > Remaining CPU %s and difference > margin %s' %(wcRemaining,cpuRemaining,self.cpuMargin))
     else:
-      self.log.verbose('Remaining WallClock %s < Remaining CPU %s + margin %s' %(wcFactor,cpuFactor,self.cpuMargin))
-      remainingCPU = float(cpuConsumed*self.scaleFactor*(wcRemaining-(wcRemaining-cpuRemaining)-self.cpuMargin)/wcFactor)
+      if cpuRemaining > self.cpuMargin and wcRemaining > self.cpuMargin:
+        self.log.verbose('Remaining WallClock %s and Remaining CPU %s both > margin %s' %(wcRemaining,cpuRemaining,self.cpuMargin))
+        timeLeft = float(cpuConsumed*self.scaleFactor*(wcRemaining-self.cpuMargin)/cpuFactor)
+      else:
+        self.log.verbose('Remaining CPU %s < margin %s so no time left')
 
-    self.log.verbose('Remaining CPU in normalized units is: %.02f' %remainingCPU)
-    return S_OK(remainingCPU)
+    if timeLeft:
+      self.log.verbose('Remaining CPU in normalized units is: %.02f' %timeLeft)
+      return S_OK(timeLeft)
+    else:
+      return S_ERROR('No time left for slot')
 
   #############################################################################
   def __loadLocalCFGFiles(self):
