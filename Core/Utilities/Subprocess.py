@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Subprocess.py,v 1.12 2008/02/01 09:47:02 acasajus Exp $
-__RCSID__ = "$Id: Subprocess.py,v 1.12 2008/02/01 09:47:02 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Subprocess.py,v 1.13 2008/03/11 16:24:53 acasajus Exp $
+__RCSID__ = "$Id: Subprocess.py,v 1.13 2008/03/11 16:24:53 acasajus Exp $"
 """
    DIRAC Wrapper to execute python and system commands with a wrapper, that might
    set a timeout.
@@ -88,6 +88,8 @@ class Subprocess:
     except Exception, v:
       gLogger.exception( 'Exception while executing', function.__name__ )
       os.write( writePipe, DEncode.encode( S_ERROR( str( v ) ) ) )
+      #HACK: Allow some time to flush logs
+      time.sleep(1)
     try:
       os.close( writePipe )
     finally:
