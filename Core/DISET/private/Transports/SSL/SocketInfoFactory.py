@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfoFactory.py,v 1.7 2008/03/10 13:42:37 acasajus Exp $
-__RCSID__ = "$Id: SocketInfoFactory.py,v 1.7 2008/03/10 13:42:37 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfoFactory.py,v 1.8 2008/03/11 14:20:16 acasajus Exp $
+__RCSID__ = "$Id: SocketInfoFactory.py,v 1.8 2008/03/11 14:20:16 acasajus Exp $"
 
 import socket
 from GSI import SSL
@@ -28,7 +28,7 @@ class SocketInfoFactory:
     sslSocket = SSL.Connection( socketInfo.getSSLContext(), osSocket )
     #sslSocket = ThreadSafeSSLObject( sslSocket )
     #sslSocket = FakeSocket( sslSocket )
-    sessionId = str( hash(  ":".join( socketInfo.getLocalCredentialsLocation() )  ) )
+    sessionId = str( hash( str( hostAddress ) + ":".join( socketInfo.getLocalCredentialsLocation() )  ) )
     socketInfo.sslContext.set_session_id( str( hash( sessionId ) ) )
     socketInfo.setSSLSocket( sslSocket )
     if gSessionManager.isValid( sessionId ):
