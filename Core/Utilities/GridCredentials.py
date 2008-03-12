@@ -1,4 +1,4 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.24 2008/03/12 20:24:28 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.25 2008/03/12 20:26:04 acasajus Exp $
 
 """ Grid Credentials module contains utilities to manage user and host
     certificates and proxies.
@@ -33,7 +33,7 @@
     getVOMSProxyInfo()
 """
 
-__RCSID__ = "$Id: GridCredentials.py,v 1.24 2008/03/12 20:24:28 acasajus Exp $"
+__RCSID__ = "$Id: GridCredentials.py,v 1.25 2008/03/12 20:26:04 acasajus Exp $"
 
 import os
 import os.path
@@ -1079,7 +1079,7 @@ def getVOMSProxyInfo(proxy_file,option=None):
 
 class X509Certificate:
 
-  def ___init__( self ):
+  def __init__( self ):
     self.valid = False
 
   def loadFromFile( self, certLocation ):
