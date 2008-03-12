@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfo.py,v 1.17 2008/03/10 13:42:38 acasajus Exp $
-__RCSID__ = "$Id: SocketInfo.py,v 1.17 2008/03/10 13:42:38 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfo.py,v 1.18 2008/03/12 20:18:25 acasajus Exp $
+__RCSID__ = "$Id: SocketInfo.py,v 1.18 2008/03/12 20:18:25 acasajus Exp $"
 
 import time
 import copy
@@ -8,12 +8,6 @@ import GSI
 import DIRAC
 from DIRAC.Core.Utilities import GridCredentials
 from DIRAC.LoggingSystem.Client.Logger import gLogger
-
-requiredGSIVersion = "0.1"
-if GSI.version.__version__ < requiredGSIVersion:
-  raise Exception( "pyGSI is not the latest version (installed %s required %s)" % ( GSI.version.__version__, requiredGSIVersion ) )
-
-GSI.SSL.set_thread_safe()
 
 class SocketInfo:
 
@@ -44,9 +38,10 @@ class SocketInfo:
     self.infoDict[ 'peerCredentials' ] = credDict
     return credDict
 
-  def __cleanDN( self, dn ):
-    dn = str( dn )
-    dn = dn[ 18:-2]
+  def __cleanDN( self, certName ):
+    dn = certName.one_line()
+    #dn = str( certName )
+    #dn = dn[ 18:-2]
     for proxyRubbish in ( "/CN=proxy", "/CN=limitedproxy" ):
       position = dn.find( proxyRubbish )
       while position > -1:

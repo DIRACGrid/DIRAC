@@ -1,12 +1,18 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfoFactory.py,v 1.8 2008/03/11 14:20:16 acasajus Exp $
-__RCSID__ = "$Id: SocketInfoFactory.py,v 1.8 2008/03/11 14:20:16 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfoFactory.py,v 1.9 2008/03/12 20:18:25 acasajus Exp $
+__RCSID__ = "$Id: SocketInfoFactory.py,v 1.9 2008/03/12 20:18:25 acasajus Exp $"
 
 import socket
-from GSI import SSL
+import GSI
 from DIRAC.Core.DISET.private.Transports.SSL.SocketInfo import SocketInfo
 from DIRAC.Core.DISET.private.Transports.SSL.SessionManager import gSessionManager
 from DIRAC.Core.DISET.private.Transports.SSL.FakeSocket import FakeSocket
 from DIRAC.Core.DISET.private.Transports.SSL.ThreadSafeSSLObject import ThreadSafeSSLObject
+
+requiredGSIVersion = "0.2"
+if GSI.version.__version__ < requiredGSIVersion:
+  raise Exception( "pyGSI is not the latest version (installed %s required %s)" % ( GSI.version.__version__, requiredGSIVersion ) )
+
+GSI.SSL.set_thread_safe()
 
 class SocketInfoFactory:
 
@@ -25,7 +31,7 @@ class SocketInfoFactory:
   def getSocket( self, hostAddress, **kwargs ):
     osSocket = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
     socketInfo = self.generateClientInfo( hostAddress[0], kwargs )
-    sslSocket = SSL.Connection( socketInfo.getSSLContext(), osSocket )
+    sslSocket = GSI.SSL.Connection( socketInfo.getSSLContext(), osSocket )
     #sslSocket = ThreadSafeSSLObject( sslSocket )
     #sslSocket = FakeSocket( sslSocket )
     sessionId = str( hash( str( hostAddress ) + ":".join( socketInfo.getLocalCredentialsLocation() )  ) )
@@ -44,7 +50,7 @@ class SocketInfoFactory:
     if reuseAddress:
       osSocket.setsockopt( socket.SOL_SOCKET, socket.SO_REUSEADDR, 1 )
     socketInfo = self.generateServerInfo( kwargs )
-    sslSocket = SSL.Connection( socketInfo.getSSLContext(), osSocket )
+    sslSocket = GSI.SSL.Connection( socketInfo.getSSLContext(), osSocket )
     sslSocket.bind( hostAddress )
     sslSocket.listen( listeningQueueSize )
     socketInfo.setSSLSocket( sslSocket )

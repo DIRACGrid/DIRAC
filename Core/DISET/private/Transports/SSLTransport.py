@@ -1,6 +1,7 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSLTransport.py,v 1.12 2008/03/11 14:29:37 acasajus Exp $
-__RCSID__ = "$Id: SSLTransport.py,v 1.12 2008/03/11 14:29:37 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSLTransport.py,v 1.13 2008/03/12 20:18:25 acasajus Exp $
+__RCSID__ = "$Id: SSLTransport.py,v 1.13 2008/03/12 20:18:25 acasajus Exp $"
 
+import os
 from DIRAC.Core.DISET.private.Transports.BaseTransport import BaseTransport
 from DIRAC.LoggingSystem.Client.Logger import gLogger
 from DIRAC.Core.DISET.private.Transports.SSL.SocketInfoFactory import gSocketInfoFactory
@@ -48,22 +49,42 @@ class SSLTransport( BaseTransport ):
     oClientTransport.setClientSocket( oClientSocket )
     return oClientTransport
 
+
 def checkSanity( *args, **kwargs ):
-    saneEnv = True
-    if not GridCredentials.getCAsLocation():
-      gLogger.fatal( "No CAs found!" )
+  """
+  Check that all ssl environment is ok
+  """
+  saneEnv = True
+  if not GridCredentials.getCAsLocation():
+    gLogger.fatal( "No CAs found!" )
+    saneEnv = False
+  if "useCertificates" in kwargs and kwargs[ 'useCertificates' ]:
+    certTuple = GridCredentials.getHostCertificateAndKey()
+    if not certTuple:
+      gLogger.fatal( "No cert/key found! " )
       saneEnv = False
-    if "useCertificates" in kwargs and kwargs[ 'useCertificates' ]:
-      if not GridCredentials.getHostCertificateAndKey():
-        gLogger.fatal( "No cert/key found! " )
-        saneEnv = False
     else:
-      if "proxyLocation" in kwargs:
-        if not os.path.isfile( kwargs[ "proxyLocation" ] ):
-          gLogger.fatal( "Defined proxy file does not exist" )
-          saneEnv = False
-      elif not GridCredentials.getGridProxy():
-          gLogger.fatal( "No proxy found!" )
-          saneEnv = False
-    return saneEnv
+      certFile = certTuple[0]
+  else:
+    if "proxyLocation" in kwargs:
+      certFile = kwargs[ "proxyLocation" ]
+    else:
+      certFile = GridCredentials.getGridProxy()
+    if not os.path.isfile( certFile ):
+      gLogger.fatal( "%s proxy file does not exist" % certFile )
+      saneEnv = False
+
+  if saneEnv:
+    certObj = GridCredentials.X509Certificate()
+    certObj.loadFromFile( certFile )
+    retVal = certObj.isExpired()
+    if not retVal[ 'OK' ]:
+      gLogger.fatal( "Can't verify file %s:%s" % ( certFile, retVal[ 'Message' ] ) )
+      saneEnv = False
+    else:
+      if retVal[ 'Value' ]:
+        gLogger.fatal( "PEM file %s has expired" % certFile )
+        saneEnv = False
+
+  return saneEnv
 
