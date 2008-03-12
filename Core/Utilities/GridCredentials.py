@@ -1,4 +1,4 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.23 2008/03/12 20:20:28 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.24 2008/03/12 20:24:28 acasajus Exp $
 
 """ Grid Credentials module contains utilities to manage user and host
     certificates and proxies.
@@ -33,7 +33,7 @@
     getVOMSProxyInfo()
 """
 
-__RCSID__ = "$Id: GridCredentials.py,v 1.23 2008/03/12 20:20:28 acasajus Exp $"
+__RCSID__ = "$Id: GridCredentials.py,v 1.24 2008/03/12 20:24:28 acasajus Exp $"
 
 import os
 import os.path
@@ -46,6 +46,7 @@ import stat
 import getpass
 import re
 
+import GSI
 import DIRAC
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.Subprocess import shellCall
@@ -577,9 +578,9 @@ def createProxy(certfile='',keyfile='',hours=0,bits=512,password=''):
   comm = comm + "-extfile %s -extensions ext_section -days %s " % (configfile,days)
   comm = comm + "-CA %s -CAcreateserial -CAserial %s" % (certfile,serialfile)
 
-  passwd = None 
+  passwd = None
   if not password:
-    if password != "NoPassword":   
+    if password != "NoPassword":
       passwd = getpass.getpass("Enter GRID pass phrase:")
   else:
     passwd = password
@@ -679,13 +680,13 @@ def renewProxy(proxy,lifetime=72,
     voms_attr = result["Value"]
   else:
     voms_attr = ""
-  
-  # Get extended plain proxy from the MyProxy server  
+
+  # Get extended plain proxy from the MyProxy server
   result = getMyProxyDelegation(proxy,lifetime,server,server_key,server_cert)
   if not result['OK']:
     return result
-    
-  proxy_string = result['Value']  
+
+  proxy_string = result['Value']
 
   if len(voms_attr) > 0:
     result = createVOMSProxy(proxy_string,voms_attr)
@@ -693,17 +694,17 @@ def renewProxy(proxy,lifetime=72,
       proxy_string = result["Value"]
     else:
       return S_ERROR('Failed to create VOMS proxy')
-      
+
   return S_OK(proxy_string)
-  
-#######################################################################################  
+
+#######################################################################################
 def getMyProxyDelegation(proxy,lifetime=72,
                          server="myproxy.cern.ch",
                          server_key="/opt/dirac/etc/grid-security/serverkey.pem",
                          server_cert="/opt/dirac/etc/grid-security/servercert.pem"):
   """ Get delegated proxy from MyProxy server
-  """  
-                        
+  """
+
   rm_proxy = 0
   try:
     if not os.path.exists(proxy):
@@ -717,7 +718,7 @@ def getMyProxyDelegation(proxy,lifetime=72,
       new_proxy = proxy
   except ValueError:
     return S_ERROR('Failed to setup given proxy. Proxy is: %s' % (proxy))
-    
+
   try:
     f_descriptor,my_proxy = tempfile.mkstemp()
     os.close(f_descriptor)
@@ -752,7 +753,7 @@ def getMyProxyDelegation(proxy,lifetime=72,
       os.remove(new_proxy)
       restoreProxy(new_proxy,old_proxy)
     return S_ERROR('Call to myproxy-get-delegation failed')
-    
+
   status,output,error = result['Value']
 
   # Clean-up files
@@ -773,15 +774,15 @@ def getMyProxyDelegation(proxy,lifetime=72,
     if os.path.exists(my_proxy):
       os.remove(my_proxy)
     return S_ERROR('Failed to read proxy received from MyProxy service')
-    
+
   if os.path.exists(new_proxy) and rm_proxy == 1:
     restoreProxy(new_proxy,old_proxy)
   if os.path.exists(my_proxy):
     os.remove(my_proxy)
-    
-  return S_OK(proxy_string)  
 
-###################################################################################    
+  return S_OK(proxy_string)
+
+###################################################################################
 def createVOMSProxy(proxy,attributes="",vo=""):
   """ This function takes a proxy (grid or voms) as a string and returns
       the voms proxy as a string with disaired attributes (second argument)
@@ -836,11 +837,11 @@ def createVOMSProxy(proxy,attributes="",vo=""):
     cmd = "voms-proxy-init --voms %s " % vo
   cmd += "-cert %s -key %s -out %s " % (new_proxy,new_proxy,voms_proxy)
   cmd += "-valid %s:%s -vomslife %s:%s" % (hours,minutes,hours,minutes)
-  
+
   print "##################################################"
   print cmd
   print "##################################################"
-  
+
   result = shellCall(PROXY_COMMAND_TIMEOUT,cmd)
 
   print "voms-proxy-init output",result
@@ -848,7 +849,7 @@ def createVOMSProxy(proxy,attributes="",vo=""):
   for key,value in os.environ.items():
     if key.find('509') != -1:
       print key,":",value
-  print "++++++++++++++++++++++++++++++++++++++++++++"    
+  print "++++++++++++++++++++++++++++++++++++++++++++"
 
   if not result['OK']:
     return S_ERROR('Failed to call voms-proxy-init')
@@ -1102,7 +1103,7 @@ class X509Certificate:
     try:
       self.certObj = GSI.crypto.load_certificate( GSI.crypto.FILETYPE_PEM, pemData )
     except Exception, e:
-      return S_ERROR( "Can't load pem data from %s:%s" % ( certFileLocation, str(e) ) )
+      return S_ERROR( "Can't load pem data: %s" % str(e) )
     self.valid = True
     return S_OK()
 
