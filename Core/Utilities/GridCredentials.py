@@ -1,4 +1,4 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.22 2008/02/25 23:43:18 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.23 2008/03/12 20:20:28 acasajus Exp $
 
 """ Grid Credentials module contains utilities to manage user and host
     certificates and proxies.
@@ -33,7 +33,7 @@
     getVOMSProxyInfo()
 """
 
-__RCSID__ = "$Id: GridCredentials.py,v 1.22 2008/02/25 23:43:18 atsareg Exp $"
+__RCSID__ = "$Id: GridCredentials.py,v 1.23 2008/03/12 20:20:28 acasajus Exp $"
 
 import os
 import os.path
@@ -1074,3 +1074,79 @@ def getVOMSProxyInfo(proxy_file,option=None):
     return S_ERROR('Failed to get delegations. Command: %s; StdOut: %s; StdErr: %s' % (cmd,output,error))
   else:
     return S_OK(output)
+
+
+class X509Certificate:
+
+  def ___init__( self ):
+    self.valid = False
+
+  def loadFromFile( self, certLocation ):
+    """
+    Load a x509 cert from a pem file
+    Return : S_OK / S_ERROR
+    """
+    try:
+      fd = file( certLocation )
+      pemData = fd.read()
+      fd.close()
+    except IOError:
+      return S_ERROR( "Can't open %s file" % certLocation )
+    return self.loadFromString( pemData )
+
+  def loadFromString( self, pemData ):
+    """
+    Load a x509 cert from a string containing the pem data
+    Return : S_OK / S_ERROR
+    """
+    try:
+      self.certObj = GSI.crypto.load_certificate( GSI.crypto.FILETYPE_PEM, pemData )
+    except Exception, e:
+      return S_ERROR( "Can't load pem data from %s:%s" % ( certFileLocation, str(e) ) )
+    self.valid = True
+    return S_OK()
+
+  def isExpired( self ):
+    """
+    Check if a certificate file/proxy is still valid
+    Return: S_OK( True/False )/S_ERROR
+    """
+    if not self.valid:
+      return S_ERROR( "No certificate loaded" )
+    return S_OK( self.certObj.has_expired() )
+
+  def getNotAfterDate( self ):
+    """
+    Get not after date of a certificate
+    Return: S_OK( datetime )/S_ERROR
+    """
+    if not self.valid:
+      return S_ERROR( "No certificate loaded" )
+    return S_OK( self.certObj.get_not_after() )
+
+  def getNotBeforeDate( self ):
+    """
+    Get not before date of a certificate
+    Return: S_OK( datetime )/S_ERROR
+    """
+    if not self.valid:
+      return S_ERROR( "No certificate loaded" )
+    return S_OK( self.certObj.get_not_before() )
+
+  def getSubjectDN( self ):
+    """
+    Get subject DN
+    Return: S_OK( string )/S_ERROR
+    """
+    if not self.valid:
+      return S_ERROR( "No certificate loaded" )
+    return S_OK( self.certObj.get_subject().one_line() )
+
+  def getIssuerDN( self ):
+    """
+    Get issuer DN
+    Return: S_OK( string )/S_ERROR
+    """
+    if not self.valid:
+      return S_ERROR( "No certificate loaded" )
+    return S_OK( self.certObj.get_issuer().one_line() )
