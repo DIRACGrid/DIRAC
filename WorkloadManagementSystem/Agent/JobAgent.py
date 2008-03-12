@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.25 2008/03/04 20:50:16 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.26 2008/03/12 11:46:37 paterson Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.25 2008/03/04 20:50:16 paterson Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.26 2008/03/12 11:46:37 paterson Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -59,6 +59,8 @@ class JobAgent(Agent):
     self.computingElement = ceInstance['Value']
     self.siteRoot = gConfig.getValue('LocalSite/Root',os.getcwd())
     self.siteName = gConfig.getValue('LocalSite/Site','Unknown')
+    self.pilotReference = gConfig.getValue('LocalSite/PilotReference','Unknown')
+    self.cpuFactor = gConfig.getValue('LocalSite/CPUScalingFactor','Unknown')
     self.jobWrapperTemplate = self.siteRoot+gConfig.getValue(self.section+'/JobWrapperTemplate','/DIRAC/WorkloadManagementSystem/JobWrapper/JobWrapperTemplate')
     self.jobSubmissionDelay = gConfig.getValue(self.section+'/SubmissionDelay',10)
     self.defaultProxyLength = gConfig.getValue(self.section+'/DefaultProxyLength',12)
@@ -153,6 +155,7 @@ class JobAgent(Agent):
       self.__setJobParam(jobID,'MatcherServiceTime',str(matchTime))
       self.__report(jobID,'Matched','Job Received by Agent')
       self.__setJobSite(jobID,self.siteName)
+      self.__reportPilotInfo(jobID)
       proxyResult = self.__setupProxy(jobID,ownerDN,jobGroup,self.siteRoot,jobCPUReqt)
       if not proxyResult['OK']:
         self.log.warn('Problem while setting up proxy')
@@ -227,7 +230,7 @@ class JobAgent(Agent):
     if hours < self.defaultProxyLength:
       hours = self.defaultProxyLength
 
-    #TODO: tidy this debugging information once proxy issue solved
+    #TODO: tidy debugging information once proxy issue solved
     currentGroup =  getDIRACGroup('None')
     if currentGroup == 'None':
       self.log.warn('Current DIRAC group is not found, setting to %s explicitly' %(self.defaultProxyGroup))
@@ -247,6 +250,9 @@ class JobAgent(Agent):
       self.__report(job,'Failed','Proxy Retrieval')
       return S_ERROR('Error retrieving proxy')
 
+    self.log.info('VOMS proxy info temporarily printed for debugging purposes')
+    os.system('voms-proxy-info -all')
+    sys.stdout.flush()
 
     if result.has_key('Message'):
       self.log.warn('WMSAdministrator Message: %s' %(result['Message']))
@@ -275,7 +281,6 @@ class JobAgent(Agent):
     """Checks software requirement of job and whether this is already present
        before installing software locally.
     """
-
     if not jobParams.has_key('SoftwareDistModule'):
       msg = 'Job has no software installation requirement'
       self.log.verbose(msg)
@@ -474,6 +479,21 @@ class JobAgent(Agent):
       self.log.warn(jobStatus['Message'])
 
     return jobStatus
+
+  #############################################################################
+  def __reportPilotInfo(self,jobID):
+    """Sends back useful information for the pilotAgentsDB via the WMSAdministrator
+       service.
+    """
+    result = self.wmsAdmin.setJobForPilot(int(jobID),str(self.pilotReference))
+    if not result['OK']:
+      self.log.warn(result['Message'])
+
+    result = self.wmsAdmin.setPilotBenchmark(str(self.pilotReference),float(self.cpuFactor))
+    if not result['OK']:
+      self.log.warn(result['Message'])
+
+    return S_OK()
 
   #############################################################################
   def __setJobSite(self,jobID,site):
