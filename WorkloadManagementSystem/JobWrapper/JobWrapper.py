@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.22 2008/02/28 11:57:51 paterson Exp $
+# $Id: JobWrapper.py,v 1.23 2008/03/12 16:41:19 paterson Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.22 2008/02/28 11:57:51 paterson Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.23 2008/03/12 16:41:19 paterson Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -23,7 +23,7 @@ from DIRAC.Core.Utilities.Subprocess                                import Subpr
 from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger
 import DIRAC
 
-import os, re, sys, string, time, shutil, threading, tarfile
+import os, re, sys, string, time, shutil, threading, tarfile, glob
 
 EXECUTION_RESULT = {}
 
@@ -37,6 +37,8 @@ class JobWrapper:
     self.log = gLogger
     self.jobID = jobID
     self.root = os.getcwd()
+    self.localSiteRoot = gConfig.getValue('/LocalSite/Root',self.root)
+    self.__loadLocalCFGFiles(self.localSiteRoot)
     self.jobReport  = RPCClient('WorkloadManagement/JobStateUpdate')
     self.inputSandboxClient = SandboxClient()
     self.outputSandboxClient = SandboxClient('Output')
@@ -52,9 +54,10 @@ class JobWrapper:
     if type(self.tapeSE) == type(' '):
       self.tapeSE = self.tapeSE.split(',')
     self.cleanUpFlag  = gConfig.getValue(self.section+'/CleanUpFlag',False)
-    self.localSiteRoot = gConfig.getValue('/LocalSite/Root',self.root)
-    self.__loadLocalCFGFiles(self.localSiteRoot)
+    self.localSite = gConfig.getValue('/LocalSite/Site','Unknown')
+    self.pilotRef = gConfig.getValue('/LocalSite/PilotReference','Unknown')
     self.vo = gConfig.getValue('/DIRAC/VirtualOrganization','lhcb')
+    self.defaultOutputSE = gConfig.getValue(self.section+'/DefaultOutputSE','CERN-FAILOVER')
     self.rm = ReplicaManager()
     self.log.verbose('===========================================================================')
     self.log.verbose('CVS version %s' %(__RCSID__))
@@ -113,9 +116,11 @@ class JobWrapper:
     """Loads any extra CFG files residing in the local DIRAC site root.
     """
     files = os.listdir(localRoot)
+    self.log.debug('Checking directory %s for *.cfg files' %localRoot)
     for i in files:
       if re.search('.cfg$',i):
-        gConfig.loadFile(i)
+        gConfig.loadFile('%s/%s' %(localRoot,i))
+        self.log.debug('Found local .cfg file %s' %i)
 
   #############################################################################
   def execute(self, arguments):
@@ -126,6 +131,8 @@ class JobWrapper:
     self.log.verbose('DIRACROOT = %s' %(self.localSiteRoot))
     os.environ['DIRACPYTHON'] = sys.executable
     self.log.verbose('DIRACPYTHON = %s' %(sys.executable))
+    os.environ['DIRACSITE'] = self.localSite
+    self.log.verbose('DIRACSITE = %s' %(self.localSite))
 
     jobArgs = arguments['Job']
     ceArgs = arguments ['CE']
@@ -237,7 +244,7 @@ class JobWrapper:
     """
     cpuConsumed = self.__getCPU()['Value']
     self.log.info('Total CPU Consumed is: %s' %(cpuConsumed))
-    #TODO:
+    #TODO: add cpu units after normalization
     splitRes = stdout.split('\n')
     appStdOut = ''
     if len(splitRes)>self.maxPeekLines:
@@ -268,6 +275,7 @@ class JobWrapper:
   def __getCPU(self):
     """Uses os.times() to get CPU time and returns HH:MM:SS after conversion.
     """
+    #TODO: normalize CPU consumed via scale factor
     utime, stime, cutime, cstime, elapsed = os.times()
     cpuTime = utime + stime + cutime
     self.log.verbose("Total CPU time consumed = %s" % (cpuTime))
@@ -378,6 +386,7 @@ class JobWrapper:
     result = module.execute()
     if not result['OK']:
       self.log.warn('Input data resolution failed')
+      self.__report('Failed','Input Data Resolution')
       return result
 
     return S_OK()
@@ -504,22 +513,24 @@ class JobWrapper:
       outputData = jobArgs['OutputData']
       self.log.verbose('OutputData files are: %s' %(string.join(outputData,', ')))
 
-    fileList = []
-    missingFiles = []
-    for local in outputSandbox:
-      if os.path.exists(local):
-        fileList.append(local)
-      else:
-        missingFiles.append(local)
+    #First resolve any wildcards for output files and work out if any files are missing
+    resolvedSandbox = self.__resolveOutputSandboxFiles(outputSandbox)
+    if not resolvedSandbox['OK']:
+      self.log.warn('Output sandbox file resolution failed:')
+      self.log.warn(result['Message'])
+      self.__report('Failed','Resolving Output Sandbox')
 
+    fileList = resolvedSandbox['Value']['Files']
+    missingFiles = resolvedSandbox['Value']['Missing']
     if missingFiles:
       self.__setJobParam('OutputSandbox','MissingFiles: %s' %(string.join(missingFiles,', ')))
 
     self.__report('Completed','Uploading Output Sandbox')
-    result = self.outputSandboxClient.sendFiles(self.jobID, fileList)
-    if not result['OK']:
-      self.log.warn('Output sandbox upload failed:')
-      self.log.warn(result['Message'])
+    if fileList:
+      result = self.outputSandboxClient.sendFiles(self.jobID, fileList)
+      if not result['OK']:
+        self.log.warn('Output sandbox upload failed:')
+        self.log.warn(result['Message'])
 
     if jobArgs.has_key('Owner'):
       owner = jobArgs['Owner']
@@ -531,12 +542,51 @@ class JobWrapper:
     if jobArgs.has_key('OutputSE'):
       outputSE = jobArgs['OutputSE']
     else:
-      outputSE = 'CERN-USER' # should move to a default CS location
+      outputSE = self.defaultOutputSE
 
     if outputData:
-      self.__transferOutputDataFiles(owner,outputData,outputSE)
+      result = self.__transferOutputDataFiles(owner,outputData,outputSE)
+      if not result['OK']:
+        return result
 
-    return S_OK()
+    return S_OK('Job outputs processed')
+
+  #############################################################################
+  def __resolveOutputSandboxFiles(self,outputSandbox):
+    """Checks the output sandbox file list and resolves any specified wildcards.
+       Also tars any specified directories.
+    """
+    missing = []
+    okFiles = []
+    for i in outputSandbox:
+      self.log.verbose('Looking at OutputSandbox file/directory/wildcard: %s' %i)
+      globList = glob.glob(i)
+      for check in globList:
+        if os.path.isfile(check):
+          self.log.verbose('Found locally existing OutputSandbox file: %s' %check)
+          okFiles.append(check)
+        if os.path.isdir(check):
+          self.log.verbose('Found locally existing OutputSandbox directory: %s' %check)
+          cmd = 'tar cf %s.tar %s' %(check,check)
+          result = shellCall(60,cmd)
+          if not result['OK']:
+            self.log.warn(result)
+          if os.path.isfile('%s.tar' %(check)):
+            self.log.verbose('Appending %s.tar to OutputSandbox' %check)
+            okFiles.append('%s.tar' %(check))
+          else:
+            self.log.warn('Could not tar OutputSandbox directory: %s' %check)
+            missing.append(check)
+
+    for i in outputSandbox:
+      if not i in okFiles:
+        if not '%s.tar' %i in okFiles:
+          if not re.search('\*',i):
+            if not i in missing:
+              missing.append(i)
+
+    result = {'Missing':missing,'Files':okFiles}
+    return S_OK(result)
 
   #############################################################################
   def __transferOutputDataFiles(self,owner,outputData,outputSE):
@@ -545,15 +595,31 @@ class JobWrapper:
     self.log.verbose('Uploading output data files')
     self.__report('Completed','Uploading Output Data')
     self.log.verbose('Output data files %s to be uploaded to %s SE' %(string.join(outputData,', '),outputSE))
+    missing = []
     for outputFile in outputData:
       if os.path.exists(outputFile):
         lfn = self.__getLFNfromOutputFile(owner,outputFile)
+        self.log.verbose('Attempting putAndRegister("%s","%s","%s")' %(lfn,outputFile,outputSE))
         upload = self.rm.putAndRegister(lfn, outputFile, outputSE)
         self.log.info(upload)
+        if not upload['OK']:
+          self.log.warn(upload['Message'])
+          missing.append(outputFile)
+        else:
+          failed = upload['Value']['Failed']
+          if failed:
+            self.log.warn('Could not putAndRegister file %s with LFN %s to %s' %(outputFile,lfn,outputSE))
+            self.log.warn(failed)
+            missing.append(outputFile)
       else:
         self.log.warn('Output data file: %s is missing after execution' %(outputFile))
 
-    return S_OK()
+    if missing:
+      self.__setJobParam('OutputData','MissingFiles: %s' %(string.join(missing,', ')))
+      self.__report('Failed','Uploading Job OutputData')
+      return S_ERROR('Failed to upload OutputData')
+
+    return S_OK('OutputData uploaded successfully')
 
   #############################################################################
   def __getLFNfromOutputFile(self, owner, outputFile):
@@ -602,7 +668,25 @@ class JobWrapper:
           self.log.verbose('Unpacking input sandbox file %s' %(sandboxFile))
           os.system('tar -zxf %s' %sandboxFile)
 
-    return result
+    lfns = []
+    for i in inputSandbox:
+      if re.search('^lfn:',i) or re.search('^LFN:',i):
+        lfns.append(i)
+
+    if lfns:
+      self.__report('Running','Downloading InputSandbox LFN(s)')
+      download = self.rm.getFile(lfns)
+      if not download['OK']:
+        self.log.warn(result)
+        self.__report('Running','Failed Downloading InputSandbox LFN(s)')
+        return S_ERROR(result['Message'])
+      failed = download['Value']['Failed']
+      if failed:
+        self.log.warn('Could not download InputSandbox LFN(s)')
+        self.log.warn(failed)
+        return S_ERROR(str(failed))
+
+    return S_OK('InputSandbox downloaded')
 
   #############################################################################
   def finalize(self,arguments):
@@ -633,16 +717,15 @@ class JobWrapper:
     """Sets some initial job parameters
     """
     parameters = []
-    if os.environ.has_key('EDG_WL_JOBID'):
-      parameters.append(('Pilot_Reference', os.environ['EDG_WL_JOBID']))
-    if os.environ.has_key('GLITE_WMS_JOBID'):
-      parameters.append(('Pilot_Reference', os.environ['GLITE_WMS_JOBID']))
-
     ceArgs = arguments['CE']
     if ceArgs.has_key('LocalSE'):
       parameters.append(('AgentLocalSE',string.join(ceArgs['LocalSE'],',')))
     if ceArgs.has_key('CompatiblePlatforms'):
       parameters.append(('AgentCompatiblePlatforms',string.join(ceArgs['CompatiblePlatforms'],',')))
+    if ceArgs.has_key('PilotReference'):
+      parameters.append(('Pilot_Reference', ceArgs['PilotReference']))
+    if ceArgs.has_key('CPUScalingFactor'):
+      parameters.append(('CPUScalingFactor', ceArgs['CPUScalingFactor']))
 
     parameters.append (('PilotAgent',self.diracVersion))
     result = self.__setJobParamList(parameters)
