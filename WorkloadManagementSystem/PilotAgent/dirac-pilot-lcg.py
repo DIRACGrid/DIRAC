@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/dirac-pilot-lcg.py,v 1.16 2008/02/19 17:48:24 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/dirac-pilot-lcg.py,v 1.17 2008/03/13 14:52:47 paterson Exp $
 # File :   dirac-pilot-lcg.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,24 +13,27 @@ import os,sys,string,re
     for the VO.
 """
 
-__RCSID__ = "$Id: dirac-pilot-lcg.py,v 1.16 2008/02/19 17:48:24 paterson Exp $"
+__RCSID__ = "$Id: dirac-pilot-lcg.py,v 1.17 2008/03/13 14:52:47 paterson Exp $"
 
-
-DEBUG = 1
+#Some constants (can envisage this information being shipped in a pilot input sandbox config file)
+DEBUG = 0
 DIRAC_URL = 'http://cern.ch/lhcbproject/dist/DIRAC3'
 SW_PATH ='lib'
 DIRAC_PYTHON_VERSION ='2.4'
 INSTALL_RETRIES = 5
 MIN_DISK_SPACE = 2560 #MB
-CLEANUP = 0
-LOCAL = 0
-DISABLE_INSTALL = 0
 JOB_AGENT_CE = 'InProcess'
+
+#The following are testing flags
+CLEANUP = 0           #Prevents cleaning up of jobs via the DO_NOT_DO_JOB_CLEANUP variable
+LOCAL = 0             #Sets the site to CERN
+DISABLE_INSTALL = 0   #Don't re-install DIRAC+externals during local testing
+DISABLE_JOBAGENT = 0  #To test the preamble without running the job agent
+DISABLE_BENCHMARK = 0 #Disables the CPU benchmark utility
 
 start = os.getcwd()
 os.system('chmod 750 . 1> /dev/null 2>&1')
 os.system('chmod 750 .. 1> /dev/null 2>&1')
-
 outputFile = '%s/pilotOutput.log' % start
 pilotOutput = open(outputFile,'w')
 
@@ -199,6 +202,38 @@ def setupDIRAC(cmd):
     else:
       printPilot('etc/dirac.cfg file does not exist','ERROR')
       pilotExit(1)
+
+#############################################################################
+def benchmarkCPU():
+  """This method attempts to use the benchmarking utility (if present in contrib/).
+     In case of any failures the scale factor is reported as 0.0 meaning that
+     any filling mode is automatically disabled.
+  """
+  ITERATIONS=3 #e.g. 3*9s for utility
+  printPilot('>>>>>>>>>>Attempting to benchmark local CPU','INFO')
+  utilPath = '%s/%s/bin/measure' %(start,CMTCONFIG)
+  scaleFactor = 0.0
+  if not DISABLE_BENCHMARK:
+    if os.path.exists(utilPath):
+      printPilot('CPU Scale Factor utility path: %s' %(utilPath),'DEBUG')
+      cpuScaling = runCommand('%s %s' %(utilPath,ITERATIONS),1)
+      if re.search(':',cpuScaling):
+        lines = cpuScaling.split('\n')
+        for line in lines:
+          if re.search('factor',line):
+            scaleFactor = float(line.split(':')[1].strip())
+            printPilot('Found CPU Scaling factor of %s' %(scaleFactor),'INFO')
+      if not scaleFactor:
+        printPilot(cpuScaling,'WARN')
+    else:
+      printPilot('Could not find CPU benchmark utility in %s' %(utilPath),'WARN')
+
+  if not scaleFactor:
+    printPilot('Problem obtaining CPU Scaling factor, filling mode disabled','WARN')
+  else:
+    printPilot('CPU benchmark utility is disabled via test flag','INFO')
+
+  writeConfigFile('CPUScaling.cfg','LocalSite',{'CPUScalingFactor':scaleFactor})
 
 #############################################################################
 def pilotExit(code):
@@ -387,7 +422,7 @@ if not LOCALSE:
 extraArchitectures = getDictFromCS(diracPython,'/Resources/Computing/OSCompatibility')
 newArch = []
 if extraArchitectures.has_key(CMTCONFIG):
-  newArch = extraArchitectures[CMTCONFIG]
+  newArch = extraArchitectures[CMTCONFIG].replace(' ','')
   printPilot('Compatible OS Architectures are: %s' %(newArch))
 else:
   printPilot('Compatible OS Architectures for %s undefined in /Resources/Computing/OSCompatibility' %(CMTCONFIG),'ERROR')
@@ -408,13 +443,17 @@ fullSetup = '%s scripts/dirac-setup -m %s -s %s -a %s -p %s ' %(diracPython,dira
 setupDIRAC(fullSetup)
 
 #############################################################################
+#Determine local CPU scaling factor before running JobAgent
+benchmarkCPU()
+
+#############################################################################
 #Start DIRAC Job Agent after creating some cfg files
 
 runJobAgent = '%s scripts/dirac-agent WorkloadManagement/JobAgent -o LogLevel=debug ' %(diracPython)
 
 inProcessSection = 'Resources/Computing/InProcess'
 inProcessDict = {'WorkingDirectory':start,'LocalAccountString':whoami,'TotalCPUs':1,'MaxCPUTime':int(jobCPUReqt)+1,'MaxRunningJobs':1}
-inProcessDict['CPUScalingFactor']=1
+#inProcessDict['CPUScalingFactor']=1
 inProcessDict['MaxTotalJobs']=1
 writeConfigFile('InProcess.cfg',inProcessSection,inProcessDict)
 #writeConfigFile('Setup.cfg','DIRAC',{'Setup':'LHCb-Development'})
@@ -427,7 +466,8 @@ if not setupDict.has_key('WorkloadManagement'):
 
 wmsSetup = setupDict['WorkloadManagement']
 jobAgentSection = 'Systems/WorkloadManagement/%s/Agents/JobAgent' %(wmsSetup)
-writeConfigFile('JobAgent.cfg',jobAgentSection,{'CEUniqueID':JOB_AGENT_CE,'MaxCycles':1})
+#writeConfigFile('JobAgent.cfg',jobAgentSection,{'CEUniqueID':JOB_AGENT_CE,'MaxCycles':1})
+writeConfigFile('JobAgent.cfg',jobAgentSection,{'CEUniqueID':JOB_AGENT_CE,'ControlDirectory':start,'MaxCycles':1})
 writeConfigFile('Security.cfg','DIRAC/Security',{'UseServerCertificate':'no'})
 
 #need to define watchdog control directory
@@ -435,9 +475,16 @@ watchdogSection = 'Systems/WorkloadManagement/%s/Agents/Watchdog' %(wmsSetup)
 #writeConfigFile('Watchdog.cfg',watchdogSection,{'PollingTime':20,'ControlDirectory':start})
 writeConfigFile('Watchdog.cfg',watchdogSection,{'ControlDirectory':start})
 
-#setup local site SE to be automatically picked up in Job Wrapper arguments
+#setup local site SE and other parameters to be automatically picked up in Job Agent and Wrapper arguments
+pilotRef = 'Unknown'
+if os.environ.has_key('EDG_WL_JOBID'):
+  pilotRef=os.environ['EDG_WL_JOBID']
+if os.environ.has_key('GLITE_WMS_JOBID'):
+  pilotRef = os.environ['GLITE_WMS_JOBID']
 localSESection = 'LocalSite'
-writeConfigFile('LocalSE.cfg',localSESection,{'LocalSE':LOCALSE})
+writeConfigFile('LocalSE.cfg',localSESection,{'LocalSE':LOCALSE,'PilotReference':pilotRef})
+#Temporary to debug TimeLeft Utility - SKP
+#writeConfigFile('SiteScalingFactor.cfg',localSESection,{'CPUScalingFactor':1.0})
 
 #find any .cfg files and append to script to run job agent, all files created in '.'
 for i in os.listdir(start):
@@ -449,10 +496,13 @@ diracGroup = """ "from DIRAC.Core.Base import Script; Script.parseCommandLine();
 diracGroupResult = runCommand('%s -c %s' %(diracPython,diracGroup),1)
 printPilot('Setting DIRAC Group Result: \n%s' %(diracGroupResult),'DEBUG')
 
-printPilot('Running DIRAC Job Agent:\n%s' %(runJobAgent),'DEBUG')
-sys.stdout.flush()
-os.system(runJobAgent)
-sys.stdout.flush()
+if DISABLE_JOBAGENT:
+  printPilot('JobAgent is disabled via testing flag...','INFO')
+else:
+  printPilot('Running DIRAC Job Agent:\n%s' %(runJobAgent),'INFO')
+  sys.stdout.flush()
+  os.system(runJobAgent)
+  sys.stdout.flush()
 
 #############################################################################
 #Perform any post-execution tasks / debugging and exit gracefully
@@ -465,6 +515,9 @@ if os.path.exists('%s/job/Wrapper' %(start)):
   os.system('tar cfz wrappers.tar.gz job/Wrapper')
 else:
   printPilot('job/Wrapper directory does not exist','WARN')
+
+printPilot('Looking at automatically generated cfg files')
+os.system('cat *.cfg')
 
 printPilot('Execution of %s complete.' %(scriptName))
 printPilot('========================================================================')
