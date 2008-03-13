@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSLTransport.py,v 1.13 2008/03/12 20:18:25 acasajus Exp $
-__RCSID__ = "$Id: SSLTransport.py,v 1.13 2008/03/12 20:18:25 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSLTransport.py,v 1.14 2008/03/13 10:02:32 acasajus Exp $
+__RCSID__ = "$Id: SSLTransport.py,v 1.14 2008/03/13 10:02:32 acasajus Exp $"
 
 import os
 from DIRAC.Core.DISET.private.Transports.BaseTransport import BaseTransport
@@ -70,7 +70,10 @@ def checkSanity( *args, **kwargs ):
       certFile = kwargs[ "proxyLocation" ]
     else:
       certFile = GridCredentials.getGridProxy()
-    if not os.path.isfile( certFile ):
+    if not certFile:
+      gLogger.fatal( "No proxy found" )
+      saneEnv = False
+    elif not os.path.isfile( certFile ):
       gLogger.fatal( "%s proxy file does not exist" % certFile )
       saneEnv = False
 
@@ -83,7 +86,7 @@ def checkSanity( *args, **kwargs ):
       saneEnv = False
     else:
       if retVal[ 'Value' ]:
-        gLogger.fatal( "PEM file %s has expired" % certFile )
+        gLogger.fatal( "PEM file %s has expired, not valid after %s" % ( certFile, certObj.getNotAfterDate() ) )
         saneEnv = False
 
   return saneEnv
