@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSAdministratorHandler.py,v 1.22 2008/03/12 11:42:27 paterson Exp $
+# $Id: WMSAdministratorHandler.py,v 1.23 2008/03/13 17:21:09 atsareg Exp $
 ########################################################################
 """
 This is a DIRAC WMS administrator interface.
@@ -17,7 +17,7 @@ Access to the pilot data:
 
 """
 
-__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.22 2008/03/12 11:42:27 paterson Exp $"
+__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.23 2008/03/13 17:21:09 atsareg Exp $"
 
 import os, sys, string, uu, shutil, datetime
 from types import *
@@ -31,10 +31,13 @@ from DIRAC.Core.Utilities.GridCredentials import restoreProxy, setupProxy, renew
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import *
 import DIRAC.Core.Utilities.Time as Time
 
+import threading
+
 # This is a global instance of the database classes
 jobDB = False
 proxyRepository = False
 pilotDB = False
+proxyLock = threading.Lock()
 
 # In memory proxy store
 proxyStore = {}
@@ -135,6 +138,8 @@ class WMSAdministratorHandler(RequestHandler):
     """
 
     global proxyStore
+    global proxyLock
+    
     key = ownerDN+':::'+ownerGroup
     gLogger.verbose('Getting proxy for %s for %d hours' % (key,validity))
     if proxyStore.has_key(key):
@@ -153,18 +158,19 @@ class WMSAdministratorHandler(RequestHandler):
     new_proxy = None
     user_proxy = result['Value']
 
-    d_validity = validity*0.1
-    if d_validity < 1.:
-      d_validity = 1.
+    # Renew proxy with some margin
+    new_validity = int(validity*1.1)+1
 
-    result = renewProxy(user_proxy,validity+d_validity,
+    result = renewProxy(user_proxy,new_validity,
                         server_cert=self.servercert,
                         server_key=self.serverkey)
 
     if result["OK"]:
       new_proxy = result["Value"]
-      new_exTime = (datetime.datetime.now()+datetime.timedelta(0,3600*(validity+d_validity))).strftime('%Y-%m-%d %H:%M:%S')
+      new_exTime = (datetime.datetime.now()+datetime.timedelta(0,3600*(new_validity))).strftime('%Y-%m-%d %H:%M:%S')
+      proxyLock.acquire()
       proxyStore[key] = {'Proxy':new_proxy,'ExpirationTime':new_exTime}
+      proxyLock.release()
       gLogger.info('Updated proxy for %s saved in memory' % key)
       return S_OK(new_proxy)
     else:
