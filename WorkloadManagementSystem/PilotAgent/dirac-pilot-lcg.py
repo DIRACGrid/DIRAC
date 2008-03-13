@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/dirac-pilot-lcg.py,v 1.17 2008/03/13 14:52:47 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/dirac-pilot-lcg.py,v 1.18 2008/03/13 17:33:23 paterson Exp $
 # File :   dirac-pilot-lcg.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,7 +13,7 @@ import os,sys,string,re
     for the VO.
 """
 
-__RCSID__ = "$Id: dirac-pilot-lcg.py,v 1.17 2008/03/13 14:52:47 paterson Exp $"
+__RCSID__ = "$Id: dirac-pilot-lcg.py,v 1.18 2008/03/13 17:33:23 paterson Exp $"
 
 #Some constants (can envisage this information being shipped in a pilot input sandbox config file)
 DEBUG = 0
@@ -230,7 +230,8 @@ def benchmarkCPU():
 
   if not scaleFactor:
     printPilot('Problem obtaining CPU Scaling factor, filling mode disabled','WARN')
-  else:
+
+  if DISABLE_BENCHMARK:
     printPilot('CPU benchmark utility is disabled via test flag','INFO')
 
   writeConfigFile('CPUScaling.cfg','LocalSite',{'CPUScalingFactor':scaleFactor})
@@ -450,11 +451,10 @@ benchmarkCPU()
 #Start DIRAC Job Agent after creating some cfg files
 
 runJobAgent = '%s scripts/dirac-agent WorkloadManagement/JobAgent -o LogLevel=debug ' %(diracPython)
-
 inProcessSection = 'Resources/Computing/InProcess'
 inProcessDict = {'WorkingDirectory':start,'LocalAccountString':whoami,'TotalCPUs':1,'MaxCPUTime':int(jobCPUReqt)+1,'MaxRunningJobs':1}
 #inProcessDict['CPUScalingFactor']=1
-inProcessDict['MaxTotalJobs']=1
+inProcessDict['MaxTotalJobs']=10 #To prevent a wayward agent picking up and failing many jobs.
 writeConfigFile('InProcess.cfg',inProcessSection,inProcessDict)
 #writeConfigFile('Setup.cfg','DIRAC',{'Setup':'LHCb-Development'})
 
@@ -467,13 +467,34 @@ if not setupDict.has_key('WorkloadManagement'):
 wmsSetup = setupDict['WorkloadManagement']
 jobAgentSection = 'Systems/WorkloadManagement/%s/Agents/JobAgent' %(wmsSetup)
 #writeConfigFile('JobAgent.cfg',jobAgentSection,{'CEUniqueID':JOB_AGENT_CE,'MaxCycles':1})
-writeConfigFile('JobAgent.cfg',jobAgentSection,{'CEUniqueID':JOB_AGENT_CE,'ControlDirectory':start,'MaxCycles':1})
+if not os.path.exists('%s/agentFlags' %start):
+  try:
+    os.mkdir('%s/agentFlags' %start)
+  except Exception,x:
+      printPilot('Could not create directory %s/agentFlags' %start,'WARN')
+      pilotExit(1)
+
+jobAgentControl = '%s/agentFlags/JobAgent' %(start)
+if not os.path.exists(jobAgentControl):
+  try:
+    os.mkdir(jobAgentControl)
+  except Exception,x:
+    printPilot('Could not create directory %s' %jobAgentControl,'WARN')
+    pilotExit(1)
+writeConfigFile('JobAgent.cfg',jobAgentSection,{'CEUniqueID':JOB_AGENT_CE,'ControlDirectory':jobAgentControl,'MaxCycles':2})
 writeConfigFile('Security.cfg','DIRAC/Security',{'UseServerCertificate':'no'})
 
 #need to define watchdog control directory
+watchdogControl = '%s/agentFlags/Watchdog' %(start)
+if not os.path.exists(watchdogControl):
+  try:
+    os.mkdir(watchdogControl)
+  except Exception,x:
+    printPilot('Could not create directory %s' %watchdogControl,'WARN')
+    pilotExit(1)
 watchdogSection = 'Systems/WorkloadManagement/%s/Agents/Watchdog' %(wmsSetup)
 #writeConfigFile('Watchdog.cfg',watchdogSection,{'PollingTime':20,'ControlDirectory':start})
-writeConfigFile('Watchdog.cfg',watchdogSection,{'ControlDirectory':start})
+writeConfigFile('Watchdog.cfg',watchdogSection,{'ControlDirectory':watchdogControl})
 
 #setup local site SE and other parameters to be automatically picked up in Job Agent and Wrapper arguments
 pilotRef = 'Unknown'
