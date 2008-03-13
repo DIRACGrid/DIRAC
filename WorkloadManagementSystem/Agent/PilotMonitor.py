@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotMonitor.py,v 1.3 2008/02/04 00:03:16 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotMonitor.py,v 1.4 2008/03/13 17:16:40 atsareg Exp $
 # File :   PilotMonitor.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
      of the AgentMonitor instance for all Grids.
 """
 
-__RCSID__ = "$Id: PilotMonitor.py,v 1.3 2008/02/04 00:03:16 atsareg Exp $"
+__RCSID__ = "$Id: PilotMonitor.py,v 1.4 2008/03/13 17:16:40 atsareg Exp $"
 
 from DIRAC.Core.Base.Agent    import Agent
 from DIRAC                    import S_OK, S_ERROR, gConfig, gLogger
@@ -37,7 +37,8 @@ class PilotMonitor(Agent):
     self.selectJobLimit = gConfig.getValue(self.section+'/JobSelectLimit',100)
     self.maxWaitingTime = gConfig.getValue(self.section+'/MaxJobWaitingTime',5*60)
     self.maxPilotAgents = gConfig.getValue(self.section+'/MaxPilotsPerJob',4)
-    self.clearPilotsDelay = gConfig.getValue(self.section+'/ClearPilotsDelay',7)
+    self.clearPilotsDelay = gConfig.getValue(self.section+'/ClearPilotsDelay',30)
+    self.clearAbortedDelay = gConfig.getValue(self.section+'/ClearAbortedPilotsDelay',7)
     
     self.pilotDB = PilotAgentsDB()
     self.jobDB = JobDB()
@@ -94,7 +95,7 @@ class PilotMonitor(Agent):
                                               "Pilot Agent Submission",
                                               update=True)       
           
-    result = self.pilotDB.clearPilots(self.clearPilotsDelay)
+    result = self.pilotDB.clearPilots(self.clearPilotsDelay,self.clearAbortedDelay)
     if not result['OK']:
       self.log.warn('Failed to clear old pilots in the PilotAgentsDB')  
     
