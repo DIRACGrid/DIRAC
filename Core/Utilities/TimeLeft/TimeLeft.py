@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TimeLeft.py,v 1.7 2008/03/11 12:41:16 paterson Exp $
+# $Id: TimeLeft.py,v 1.8 2008/03/13 16:25:10 paterson Exp $
 ########################################################################
 
 """ The TimeLeft utility allows to calculate the amount of CPU time
@@ -16,7 +16,7 @@
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 
-__RCSID__ = "$Id: TimeLeft.py,v 1.7 2008/03/11 12:41:16 paterson Exp $"
+__RCSID__ = "$Id: TimeLeft.py,v 1.8 2008/03/13 16:25:10 paterson Exp $"
 
 import os,re
 
@@ -131,7 +131,7 @@ class TimeLeft:
     """Based on the current environment, this utility will return the
        current batch system name.
     """
-    batchSystems = {'LSF':'LSB_JOBID','PBS':'PBS_JOBID'} #more to be added later
+    batchSystems = {'LSF':'LSB_JOBID','PBS':'PBS_JOBID', 'BQS':'QSUB_REQNAME'} #more to be added later
     current = None
     for batchSystem,envVar in batchSystems.items():
       if os.environ.has_key(envVar):
