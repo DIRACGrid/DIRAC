@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.15 2008/03/07 17:17:03 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.16 2008/03/13 17:18:51 atsareg Exp $
 ########################################################################
 """ PilotAgentsDB class is a front-end to the Pilot Agent Database.
     This database keeps track of all the submitted grid pilot jobs.
@@ -23,7 +23,7 @@
 
 """
 
-__RCSID__ = "$Id: PilotAgentsDB.py,v 1.15 2008/03/07 17:17:03 atsareg Exp $"
+__RCSID__ = "$Id: PilotAgentsDB.py,v 1.16 2008/03/13 17:18:51 atsareg Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
@@ -117,11 +117,20 @@ class PilotAgentsDB(DB):
     return self._update(req)
 
 ##########################################################################################
-  def clearPilots(self,interval=20):
+  def clearPilots(self,interval=30,aborted_interval=7):
     """ Delete all the pilot references submitted before <interval> days """
 
     req = "DELETE FROM PilotAgents WHERE SubmissionTime < DATE_SUB(CURDATE(),INTERVAL %d DAY)" % interval
-    return self._update(req)
+    result = self._update(req)
+    if not result['OK']:
+      gLogger.warn('Error while clearing up pilots')
+    req = "DELETE FROM PilotAgents WHERE Status='Aborted' AND"
+    req += " SubmissionTime < DATE_SUB(CURDATE(),INTERVAL %d DAY)" % aborted_interval
+    result = self._update(req)
+    if not result['OK']:
+      gLogger.warn('Error while clearing up aborted pilots')  
+      
+    return S_OK()  
 
 ##########################################################################################
   def getPilotInfo(self,pilotRef):
