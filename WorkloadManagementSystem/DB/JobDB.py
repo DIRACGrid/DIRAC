@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.46 2008/03/06 11:24:54 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.47 2008/03/13 17:17:44 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.46 2008/03/06 11:24:54 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.47 2008/03/13 17:17:44 atsareg Exp $"
 
 import re, os, sys, string
 import time
@@ -240,7 +240,7 @@ class JobDB(DB):
   def getDistinctJobAttributes(self,attribute, condDict = {}, older = None, newer=None):
     """ Get distinct values of the job attribute under specified conditions
     """
-    cmd = 'SELECT  DISTINCT(%s) FROM Jobs' % attribute
+    cmd = 'SELECT  DISTINCT(%s) FROM Jobs ORDER BY %s' % (attribute,attribute)
 
     cond = self.__buildCondition( condDict, older=older, newer=newer )
 
