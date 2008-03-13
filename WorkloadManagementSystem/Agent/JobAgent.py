@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.26 2008/03/12 11:46:37 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.27 2008/03/13 17:38:46 paterson Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,10 +10,11 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.26 2008/03/12 11:46:37 paterson Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.27 2008/03/13 17:38:46 paterson Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
+from DIRAC.Core.Utilities.TimeLeft.TimeLeft              import TimeLeft
 from DIRAC.Core.Base.Agent                               import Agent
 from DIRAC.Core.DISET.RPCClient                          import RPCClient
 from DIRAC.Resources.Computing.ComputingElementFactory   import ComputingElementFactory
@@ -65,20 +66,37 @@ class JobAgent(Agent):
     self.jobSubmissionDelay = gConfig.getValue(self.section+'/SubmissionDelay',10)
     self.defaultProxyLength = gConfig.getValue(self.section+'/DefaultProxyLength',12)
     self.maxProxyLength =  gConfig.getValue(self.section+'/MaxProxyLength',72)
-    #TODO: added default in case pilot role was stripped somehow
+    #Added default in case pilot role was stripped somehow during proxy delegation
     self.defaultProxyGroup = gConfig.getValue(self.section+'/DefaultProxyGroup','lhcb_pilot')
+    self.fillingMode = gConfig.getValue(self.section+'/FillingModeFlag',1)
+    self.jobCount=0
     return result
 
   #############################################################################
   def execute(self):
     """The JobAgent execution method.
     """
+    #TODO: Initially adding timeleft utility for information, not yet instrumented
+    #      to perform scheduling based on the output.
+    if self.jobCount:
+      #Only call timeLeft utility after a job has been picked up
+      self.log.info('Attempting to check CPU time left for filling mode')
+      if self.fillingMode:
+        result = self.__getCPUTimeLeft()
+        self.log.info('Result from TimeLeft utility:')
+        if not result['OK']:
+          self.log.warn(result['Message'])
+          return self.__finish(result['Message'])
+        timeLeft = result['Value']
+        self.log.info('%s normalized CPU units remaining in slot' %(timeLeft))
+        return self.__finish('Filling Mode is Disabled')
+
     self.log.verbose('Job Agent execution loop')
     available = self.computingElement.available()
     if not available['OK']:
       self.log.info('Resource is not available')
       self.log.info(available['Message'])
-      return available
+      return self.__finish('CE Not Available')
 
     self.log.info(available['Value'])
 
@@ -96,15 +114,17 @@ class JobAgent(Agent):
         return S_OK(jobRequest['Message'])
       else:
         self.log.info('Failed to get jobs: %s'  %(jobRequest['Message']))
-        return S_ERROR(jobRequest['Message'])
+        return S_OK(jobRequest['Message'])
 
     matcherInfo = jobRequest['Value']
     matcherParams = ['JDL','DN','Group']
     for p in matcherParams:
       if not matcherInfo.has_key(p):
         self.__report(jobID,'Failed','Matcher did not return %s' %(p))
+        return self.__finish('Matcher Failed')
       elif not matcherInfo[p]:
         self.__report(jobID,'Failed','Matcher returned null %s' %(p))
+        return self.__finish('Matcher Failed')
       else:
         self.log.verbose('Matcher returned %s = %s ' %(p,matcherInfo[p]))
 
@@ -120,13 +140,15 @@ class JobAgent(Agent):
 
     parameters = self.__getJDLParameters(jobJDL)
     if not parameters['OK']:
-      return parameters
+      self.__report(jobID,'Failed','Could Not Extract JDL Parameters')
+      self.log.warn(parameters['Message'])
+      return self.__finish('JDL Problem')
 
     params = parameters['Value']
     if not params.has_key('JobID'):
       msg = 'Job has not JobID defined in JDL parameters'
       self.log.warn(msg)
-      return S_ERROR(msg)
+      return S_OK(msg)
     else:
       jobID = params['JobID']
 
@@ -151,6 +173,7 @@ class JobAgent(Agent):
     self.log.verbose('Job request successful: \n %s' %(jobRequest['Value']))
     self.log.info('Received JobID=%s, JobType=%s, SystemConfig=%s' %(jobID,jobType,systemConfig))
     self.log.info('OwnerDN: %s JobGroup: %s' %(ownerDN,jobGroup) )
+    self.jobCount+=1
     try:
       self.__setJobParam(jobID,'MatcherServiceTime',str(matchTime))
       self.__report(jobID,'Matched','Job Received by Agent')
@@ -158,8 +181,9 @@ class JobAgent(Agent):
       self.__reportPilotInfo(jobID)
       proxyResult = self.__setupProxy(jobID,ownerDN,jobGroup,self.siteRoot,jobCPUReqt)
       if not proxyResult['OK']:
-        self.log.warn('Problem while setting up proxy')
-        return proxyResult
+        self.log.warn('Problem while setting up proxy for job %s' %(jobID))
+        self.__report(jobID,'Failed','Invalid Proxy')
+        return self.__finish('Invalid Proxy')
 
       proxyTuple = proxyResult['Value']
       proxyLogging = self.__changeProxy(proxyTuple[1],proxyTuple[0])
@@ -182,7 +206,7 @@ class JobAgent(Agent):
         result = self.jobManager.rescheduleJob(jobID)
         if not result['OK']:
           self.log.warn(result['Message'])
-          return result
+          return self.__finish('Problem Rescheduling Job')
         else:
           self.log.info('Rescheduled job after software installation failure %s' %(jobID))
 
@@ -190,26 +214,40 @@ class JobAgent(Agent):
       submission = self.__submitJob(jobID,params,resourceParams,optimizerParams,jobJDL)
       if not submission['OK']:
         self.log.warn('Job submission failed during creation of the Job Wrapper')
-        return submission
+        self.__report(jobID,'Failed','Job Wrapper Creation')
+        return self.__finish('Problem Creating Job Wrapper')
 
       self.log.verbose('After %sCE submitJob()' %(self.ceName))
       self.log.info('Restoring original proxy %s' %(proxyTuple[1]))
       restoreProxy(proxyTuple[0],proxyTuple[1])
       proxyLogging = self.__changeProxy(proxyTuple[1],proxyTuple[0])
       if not proxyLogging['OK']:
-        self.log.warn('Problem while changing the proxy for job %s' %jobID)
-        return proxyLogging
+        self.log.warn('Problem while changing back the proxy from job %s' %jobID)
+        self.__finish('Job processing failed with exception')
     except Exception, x:
       self.log.exception(x)
       result = self.jobManager.rescheduleJob(jobID)
       if not result['OK']:
-        self.log.error(result['Message'])
+        self.log.warn(result['Message'])
       else:
         self.log.info('Rescheduled job %s' %(jobID))
 
-      return S_ERROR('Job processing failed with exception')
+      return self.__finish('Job processing failed with exception')
 
     return S_OK('Job Agent cycle complete')
+
+  #############################################################################
+  def __getCPUTimeLeft(self):
+    """Wrapper around TimeLeft utility. Returns CPU time left in DIRAC normalized
+       units. This value is subsequently used for scheduling further jobs in the
+       same slot.
+    """
+    utime, stime, cutime, cstime, elapsed = os.times()
+    cpuTime = utime + stime + cutime
+    self.log.info('Current raw CPU time consumed is %s' %cpuTime)
+    tl = TimeLeft()
+    result = tl.getTimeLeft(cpuTime)
+    return result
 
   #############################################################################
   def __changeProxy(self,oldProxy,newProxy):
@@ -230,7 +268,6 @@ class JobAgent(Agent):
     if hours < self.defaultProxyLength:
       hours = self.defaultProxyLength
 
-    #TODO: tidy debugging information once proxy issue solved
     currentGroup =  getDIRACGroup('None')
     if currentGroup == 'None':
       self.log.warn('Current DIRAC group is not found, setting to %s explicitly' %(self.defaultProxyGroup))
@@ -250,10 +287,6 @@ class JobAgent(Agent):
       self.__report(job,'Failed','Proxy Retrieval')
       return S_ERROR('Error retrieving proxy')
 
-    self.log.info('VOMS proxy info temporarily printed for debugging purposes')
-    os.system('voms-proxy-info -all')
-    sys.stdout.flush()
-
     if result.has_key('Message'):
       self.log.warn('WMSAdministrator Message: %s' %(result['Message']))
       self.__setJobParam(job,'ProxyWarning',result['Message'])
@@ -264,6 +297,10 @@ class JobAgent(Agent):
 
     proxyFile = '%s/proxy/proxy%s' %(workingDir,job)
     setupResult = setupProxy(proxyStr,proxyFile)
+    #TODO: remove this temporary debugging output when proxy issue solved
+    self.log.info('VOMS proxy info temporarily printed for debugging purposes')
+    os.system('voms-proxy-info -all')
+    sys.stdout.flush()
     if not setupResult['OK']:
       self.log.warn('Could not create environment for proxy')
       self.log.verbose(setupResult)
@@ -516,5 +553,15 @@ class JobAgent(Agent):
         self.log.warn(jobParam['Message'])
 
     return jobParam
+
+  #############################################################################
+  def __finish(self,message):
+    """Force the JobAgent to complete gracefully.
+    """
+    self.log.info('JobAgent will stop with message "%s", execution complete.' %message)
+    fd = open(self.controlDir+'/stop_agent','w')
+    fd.write('JobAgent Stopped at %s [UTC]' % (time.asctime(time.gmtime())))
+    fd.close()
+    return S_OK(message)
 
   #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
