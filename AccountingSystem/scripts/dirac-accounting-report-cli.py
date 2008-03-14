@@ -1,12 +1,13 @@
 #!/usr/bin/env python
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/scripts/dirac-accounting-report-cli.py,v 1.1 2008/03/05 21:02:28 acasajus Exp $
-__RCSID__ = "$Id: dirac-accounting-report-cli.py,v 1.1 2008/03/05 21:02:28 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/scripts/dirac-accounting-report-cli.py,v 1.2 2008/03/14 19:10:55 acasajus Exp $
+__RCSID__ = "$Id: dirac-accounting-report-cli.py,v 1.2 2008/03/14 19:10:55 acasajus Exp $"
 
 import cmd
 import sys
 import signal
 import datetime
 import dirac
+import pprint
 from DIRAC import gLogger
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities import ExitCallback, ColorCLI, List
@@ -125,6 +126,22 @@ class ReportCLI( cmd.Cmd ):
     except:
       self.showTraceback()
 
+  def do_showViewsList( self, args ):
+    """
+    Get a list of available views
+      Usage : do_showViewsList
+    """
+    try:
+      retVal = self.repClient.listViews()
+      if not retVal[ 'OK' ]:
+        gLogger.error( "Error: %s" % retVal[ 'Message' ] )
+        return
+      print "Available summaries:"
+      for summary in retVal[ 'Value' ]:
+        print  " %s" % summary
+    except:
+      self.showTraceback()
+
   def __getDatetimeFromArg( self, dtString ):
     if len( dtString ) != 12:
       return False
@@ -164,7 +181,43 @@ class ReportCLI( cmd.Cmd ):
       if not retVal[ 'OK' ]:
         gLogger.error( "Error: %s" % retVal[ 'Message' ] )
         return
-      print retVal[ 'Value' ]
+      printer = pprint.PrettyPrinter(indent=4)
+      printer.pprint( retVal[ 'Value' ][0] )
+      for data in retVal[ 'Value' ][1]:
+        printer.pprint( data )
+    except:
+      self.showTraceback()
+
+  def do_plotView( self, args ):
+    """
+    Gets a summary
+      Usage : getSummary <Summary name> <startdate YYYYMMDDHHMM> <enddate YYYYMMDDHHMM> <destLocation> (<field name> <field value>)*
+    """
+    try:
+      argList = List.fromChar( args, " " )
+      if len( argList ) < 4:
+        gLogger.error( "Missing arguments!" )
+        return
+      startDT = self.__getDatetimeFromArg( argList[1] )
+      if not startDT:
+        gLogger.error( "Start time has invalid format" )
+      endDT = self.__getDatetimeFromArg( argList[2] )
+      if not endDT:
+        gLogger.error( "End time has invalid format" )
+      gLogger.info( "Start time is %s" % startDT )
+      gLogger.info( "End time is %s" % endDT )
+      sumArgs = {}
+      for iP in range( 4, len( argList ), 2 ):
+        key = argList[ iP ]
+        if key in sumArgs:
+          sumArgs[ key ].append( argList[ iP + 1 ] )
+        else:
+          sumArgs[ key ] = [ argList[ iP + 1 ] ]
+      retVal = self.repClient.plotView( argList[ 0 ], startDT, endDT, sumArgs )
+      if not retVal[ 'OK' ]:
+        gLogger.error( "Error: %s" % retVal[ 'Message' ] )
+        return
+      print retVal
     except:
       self.showTraceback()
 

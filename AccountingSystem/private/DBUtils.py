@@ -1,3 +1,6 @@
+import types
+import datetime
+from DIRAC.Core.Utilities import Time
 
 class DBUtils:
 
@@ -50,6 +53,7 @@ class DBUtils:
       if type( row ) == types.TupleType:
         rowL = list( row[ :fieldIndex ] )
         rowL.extend( row[ fieldIndex+1: ] )
+        row = rowL
       else:
         del( row[ fieldIndex ] )
       groupDict[ groupingField ].append( row )
@@ -79,16 +83,16 @@ class DBUtils:
         for iP in range( len( data ) ):
           normData[ bucketDate ][iP] += data[iP] * proportion
       else:
-        normData[ bucketDate ] = data * proportion
+        normData[ bucketDate ] = [ value * proportion for value in  data ]
 
     for bucketData in bucketsData:
-      originalBucketLength = bucketsData[1]
+      originalBucketLength = bucketData[1]
       bucketDate = bucketData[0]
       bucketValues = bucketData[2:]
       if originalBucketLength == granularity:
         addToNormData( bucketDate, bucketValues )
       else:
-        startEpoch = Time.toEpoch( bucketStart )
+        startEpoch = Time.toEpoch( bucketDate )
         endEpoch = Time.toEpoch( bucketDate + datetime.timedelta( seconds = originalBucketLength ) )
         newBucketEpoch = startEpoch - startEpoch % granularity
         if startEpoch == endEpoch:
@@ -110,14 +114,13 @@ class DBUtils:
     startEpoch = Time.toEpoch( startTime )
     startBucketEpoch = startEpoch - startEpoch % granularity
     endEpoch = Time.toEpoch( endTime )
-    filled = []
-    zeroList = [ 0 for field in bucketsData[0][1:] ]
+    filled = {}
+    zeroList = [ 0 for field in bucketsData[ bucketsData.keys()[0] ][1:] ]
     for bucketEpoch in range( startBucketEpoch, endEpoch, granularity ):
       bucketTime = Time.fromEpoch( bucketEpoch )
-      if bucketsData[0] == bucketTime:
-        filled.append( bucketsData.pop(0) )
+      if bucketTime in bucketsData:
+        filled[ bucketTime ] =  bucketsData[ bucketTime ]
       else:
-        filled.append( [ bucketTime ] )
-        filled[-1].extend( zeroList )
+        filled[ bucketTime ] = zeroList
     return filled
 
