@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobPathAgent.py,v 1.4 2008/01/20 15:55:29 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobPathAgent.py,v 1.5 2008/03/14 15:21:11 paterson Exp $
 # File :   JobPathAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -12,11 +12,12 @@
       path through the optimizers.
 
 """
-__RCSID__ = "$Id: JobPathAgent.py,v 1.4 2008/01/20 15:55:29 paterson Exp $"
+__RCSID__ = "$Id: JobPathAgent.py,v 1.5 2008/03/14 15:21:11 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
+from DIRAC.Core.Utilities.ModuleFactory                    import ModuleFactory
 from DIRAC                                                 import S_OK, S_ERROR
 import string,re
 
@@ -35,11 +36,10 @@ class JobPathAgent(Optimizer):
     """Initialize specific parameters for JobPathAgent.
     """
     result = Optimizer.initialize(self)
-    self.basePath  = gConfig.getValue(self.section+'/BasePath','JobPath,JobSanity,JobPolicy,')
-    self.ancestors = gConfig.getValue(self.section+'/Ancestors','AncestorFiles')
-    self.inputData = gConfig.getValue(self.section+'/InputData','InputData')
-    self.procDB    = gConfig.getValue(self.section+'/ProcDB','ProcessingDB')
-    self.endPath   = gConfig.getValue(self.section+'/EndPath','JobScheduling,TaskQueue')
+    self.basePath     = gConfig.getValue(self.section+'/BasePath','JobPath,JobSanity,JobPolicy,')
+    self.inputData    = gConfig.getValue(self.section+'/InputData','InputData')
+    self.endPath      = gConfig.getValue(self.section+'/EndPath','JobScheduling,TaskQueue')
+    self.voPlugin     = gConfig.getValue(self.section+'/VOPlugin','WorkflowLib.Utilities.JobPathResolution')
     return result
 
   #############################################################################
@@ -52,7 +52,7 @@ class JobPathAgent(Optimizer):
       jdl = jdl['Value']
       result = self.setJobPath(job,jdl)
     else:
-      self.log.error('Could not obtain original JDL for job %s' %(job))
+      self.log.warn('Could not obtain original JDL for job %s' %(job))
       return S_ERROR('JDL not found in JobDB')
 
     return result
@@ -63,7 +63,7 @@ class JobPathAgent(Optimizer):
     """
     classadJob = ClassAd('['+jdl+']')
     if not classadJob.isOK():
-      self.log.debug("Warning: illegal JDL for job %s, will be marked problematic" % (job))
+      self.log.warn('Illegal JDL for job %s, will be marked problematic' % (job))
       result = S_ERROR('Problematic JDL')
 
     #Check if job defines a path itself
@@ -71,30 +71,38 @@ class JobPathAgent(Optimizer):
     if jobPath:
       self.log.info('Job %s defines its own optimizer chain %s' %(job,jobPath))
       result = self.processJob(job,string.split(jobPath,','))
-      return S_OK('Job defines own path') #in this case next job will be checked before returning
+      return S_OK('Job defines own path') #overrides all VO specific policies
 
-    #If no path, construct based on JDL
+    #If no path, construct based on JDL and VO path module if present
     path = self.basePath
+    if self.voPlugin:
+      argumentsDict = {'JobID':job,'ClassAd':classadJob,'ConfigPath':self.section}
+      moduleFactory = ModuleFactory()
+      moduleInstance = moduleFactory.getModule(self.voPlugin,argumentsDict)
+      if not moduleInstance['OK']:
+        self.log.warn('Could not instantiate module %s, holding pending jobs' %(self.voPlugin))
+        return S_OK('Holding pending jobs')
+      module = moduleInstance['Value']
+      result = module.execute()
+      if not result['OK']:
+        self.log.warn('Execution of %s failed' %(self.voPlugin))
+        return result
+      extraPath = result['Value']
+      if extraPath:
+        path += extraPath
+        self.log.verbose('Adding extra VO specific optimizers to path: %s' %(extraPath))
+    else:
+      self.log.verbose('No VO specific plugin module specified')
 
     result = self.jobDB.getInputData(job)
     if not result['OK']:
-      self.log.error('Failed to get input data from JobdB for %s' % (job) )
-      self.log.error(result['Message'])
+      self.log.warn('Failed to get input data from JobDB for %s' % (job) )
+      self.log.warn(result['Message'])
       return S_OK()
 
-    if len(result['Value']):
+    if result['Value']:
       self.log.info('Job %s has an input data requirement' % (job))
-      ancestorDepth = classadJob.get_expression('AncestorDepth').replace('"','').replace('Unknown','')
-      if ancestorDepth:
-        self.log.info('Job %s has specified ancestor depth' % (job))
-        path += self.ancestors+','+self.inputData+','
-      else:
-        path += self.inputData+','
-
-      jobType = classadJob.get_expression('JobType').replace('"','').replace('Unknown','')
-      if jobType=='processing':
-        self.log.info('Job %s is of processing type' % (job))
-        #path += self.procDB+','
+      path += self.inputData+','
     else:
       self.log.info('Job %s has no input data requirement' % (job))
 
@@ -103,20 +111,19 @@ class JobPathAgent(Optimizer):
     result = self.processJob(job,string.split(path,','))
     return S_OK('Job path constructed')
 
-
   #############################################################################
   def processJob(self,job,chain):
     """Set job path and send to next optimizer
     """
     result = self.setOptimizerChain(job,chain)
     if not result['OK']:
-      self.log.error(result['Message'])
+      self.log.warn(result['Message'])
     result = self.setNextOptimizer(job)
     if not result['OK']:
-      self.log.error(result['Message'])
+      self.log.warn(result['Message'])
     result = self.setJobParam(job,'JobPath',string.join(chain,','))
     if not result['OK']:
-      self.log.error(result['Message'])
+      self.log.warn(result['Message'])
     return result
 
   #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
