@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.47 2008/03/13 17:17:44 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.48 2008/03/18 19:52:28 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.47 2008/03/13 17:17:44 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.48 2008/03/18 19:52:28 atsareg Exp $"
 
 import re, os, sys, string
 import time
@@ -1078,7 +1078,7 @@ class JobDB(DB):
                  "Author='%s', Comment='%s' WHERE Site='%s'"
           req = req % (status,author,comment,site)
       else:
-        req = "INSERT INTO SiteMask VALUES ('%s','%s',UTC_TIMESTAMP(),'%s')" % (site,status,author)
+        req = "INSERT INTO SiteMask VALUES ('%s','%s',UTC_TIMESTAMP(),'%s','%s')" % (site,status,author,comment)
       result = self._update(req)
       if not result['OK']:
         return S_ERROR('Failed to update the Site Mask')
