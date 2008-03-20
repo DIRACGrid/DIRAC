@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/LocalConfiguration.py,v 1.18 2008/03/20 11:26:57 acasajus Exp $
-__RCSID__ = "$Id: LocalConfiguration.py,v 1.18 2008/03/20 11:26:57 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/LocalConfiguration.py,v 1.19 2008/03/20 11:41:00 acasajus Exp $
+__RCSID__ = "$Id: LocalConfiguration.py,v 1.19 2008/03/20 11:41:00 acasajus Exp $"
 
 import sys
 import os
@@ -109,11 +109,11 @@ class LocalConfiguration:
       if shortOption.find( optionTuple[0] ) < 0:
         shortOption += "%s" % optionTuple[0]
       else:
-        gLog.warn( "Short option -%s has been already defined" % optionTuple[0] )
+        gLogger.warn( "Short option -%s has been already defined" % optionTuple[0] )
       if not optionTuple[1] in longOptionList:
         longOptionList.append( "%s" % optionTuple[1] )
       else:
-        gLog.warn( "Long option --%s has been already defined" % optionTuple[1] )
+        gLogger.warn( "Long option --%s has been already defined" % optionTuple[1] )
 
     try:
       opts, args = getopt.gnu_getopt( sys.argv[1:], shortOption, longOptionList )
