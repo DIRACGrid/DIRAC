@@ -1,11 +1,12 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/LocalConfiguration.py,v 1.17 2008/03/05 14:47:27 acasajus Exp $
-__RCSID__ = "$Id: LocalConfiguration.py,v 1.17 2008/03/05 14:47:27 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/LocalConfiguration.py,v 1.18 2008/03/20 11:26:57 acasajus Exp $
+__RCSID__ = "$Id: LocalConfiguration.py,v 1.18 2008/03/20 11:26:57 acasajus Exp $"
 
 import sys
 import os
 import getopt
 import types
 
+import DIRAC
 from DIRAC import gLogger
 from DIRAC import S_OK, S_ERROR
 
@@ -246,5 +247,5 @@ class LocalConfiguration:
     gLogger.info( "Options:" )
     for optionTuple in self.commandOptionList:
       gLogger.info( "  -%s  --%s  :  %s" % optionTuple[:3] )
-    posix._exit( 0 )
+    DIRAC.exit( 0 )
 
