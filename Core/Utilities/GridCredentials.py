@@ -1,4 +1,4 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.25 2008/03/12 20:26:04 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.26 2008/03/26 16:02:58 rgracian Exp $
 
 """ Grid Credentials module contains utilities to manage user and host
     certificates and proxies.
@@ -33,7 +33,7 @@
     getVOMSProxyInfo()
 """
 
-__RCSID__ = "$Id: GridCredentials.py,v 1.25 2008/03/12 20:26:04 acasajus Exp $"
+__RCSID__ = "$Id: GridCredentials.py,v 1.26 2008/03/26 16:02:58 rgracian Exp $"
 
 import os
 import os.path
@@ -188,6 +188,8 @@ def setDIRACGroup( userGroup ):
   """ Define the user group in the DIRAC framework
   """
   proxyLocation = getGridProxy()
+  if not proxyLocation:
+    return False
   fd = file( proxyLocation, "r" )
   proxy = fd.read()
   fd.close()
@@ -200,6 +202,7 @@ def setDIRACGroup( userGroup ):
   fd.close()
   # Restore the initial mode
   os.chmod(proxyLocation,mode)
+  return True
 
 def setDIRACGroupInProxy( proxyData, group ):
   """ Add the DIRAC group string to the proxy. If the group value is None, strip the group
