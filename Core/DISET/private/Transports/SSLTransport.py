@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSLTransport.py,v 1.14 2008/03/13 10:02:32 acasajus Exp $
-__RCSID__ = "$Id: SSLTransport.py,v 1.14 2008/03/13 10:02:32 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSLTransport.py,v 1.15 2008/03/26 10:56:42 acasajus Exp $
+__RCSID__ = "$Id: SSLTransport.py,v 1.15 2008/03/26 10:56:42 acasajus Exp $"
 
 import os
 from DIRAC.Core.DISET.private.Transports.BaseTransport import BaseTransport
@@ -86,7 +86,12 @@ def checkSanity( *args, **kwargs ):
       saneEnv = False
     else:
       if retVal[ 'Value' ]:
-        gLogger.fatal( "PEM file %s has expired, not valid after %s" % ( certFile, certObj.getNotAfterDate() ) )
+        notAfter = certObj.getNotAfterDate()
+        if notAfter[ 'OK' ]:
+          notAfter = notAfter[ 'Value' ]
+        else:
+          notAfter = "unknown"
+        gLogger.fatal( "PEM file %s has expired, not valid after %s" % ( certFile, notAfter ) )
         saneEnv = False
 
   return saneEnv
