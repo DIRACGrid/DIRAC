@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.15 2008/03/27 19:03:50 acasajus Exp $
-__RCSID__ = "$Id: AccountingDB.py,v 1.15 2008/03/27 19:03:50 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.16 2008/03/27 19:45:07 acasajus Exp $
+__RCSID__ = "$Id: AccountingDB.py,v 1.16 2008/03/27 19:45:07 acasajus Exp $"
 
 import datetime
 import threading
@@ -19,7 +19,6 @@ class AccountingDB(DB):
     DB.__init__( self, 'AccountingDB','Accounting/AccountingDB', maxQueueSize )
     self.maxBucketTime = 604800 #1 w
     self.dbCatalog = {}
-    self.dbKeys = {}
     self.dbLocks = {}
     self.dbBucketsLength = {}
     self.catalogTableName = self.__getTableName( "catalog", "Types" )
@@ -81,22 +80,22 @@ class AccountingDB(DB):
       bucketsLength = DEncode.decode( typesEntry[3] )[0]
       self.__addToCatalog( typeName, keyFields, valueFields, bucketsLength )
 
-  def __getTableName( self, tableType, name ):
+  def __getTableName( self, tableType, typeName, keyName = None ):
     """
     Generate table name
     """
-    return "ac_%s_%s" % ( tableType, name )
+    if not keyName:
+      return "ac_%s_%s" % ( tableType, typeName )
+    elif tableType == "key" :
+      return "ac_%s_%s_%s" % ( tableType, typeName, keyName )
+    else:
+      raise Exception( "Call to __getTableName with tableType as key but with no keyName" )
 
   def __addToCatalog( self, typeName, keyFields, valueFields, bucketsLength ):
     """
     Add type to catalog
     """
     gLogger.verbose( "Adding to catalog type %s" % typeName, "with length %s" % str( bucketsLength ) )
-    for key in keyFields:
-      if key in self.dbKeys:
-        self.dbKeys[ key ] += 1
-      else:
-        self.dbKeys[ key ] = 1
     self.dbCatalog[ typeName ] = { 'keys' : keyFields , 'values' : valueFields, 'typeFields' : [], 'bucketFields' : [] }
     self.dbCatalog[ typeName ][ 'typeFields' ].extend( keyFields )
     self.dbCatalog[ typeName ][ 'typeFields' ].extend( valueFields )
@@ -108,8 +107,9 @@ class AccountingDB(DB):
     #ADRI: TEST COMPACT BUCKETS
     #self.dbBucketsLength[ typeName ] = [ ( 86400, 3600 ), ( 15552000, 86400 ), ( 31104000, 604800 ) ]
     for key in keyFields:
-      if not key in self.dbLocks:
-        self.dbLocks[ self.__getTableName( "key", key ) ] = threading.Lock()
+      lockName = self.__getTableName( "key", typeName, key )
+      if not lockName in self.dbLocks:
+        self.dbLocks[ lockName ] = threading.Lock()
 
   @gSynchro
   def registerType( self, name, definitionKeyFields, definitionAccountingFields, bucketsLength ):
@@ -138,14 +138,13 @@ class AccountingDB(DB):
       return S_ERROR( "Type %s already exists in db" % name )
     tables = {}
     for key in definitionKeyFields:
-      if key[0] not in self.dbKeys:
-        gLogger.info( "Table for key %s has to be created" % key[0] )
-        tables[ self.__getTableName( "key", key[0] )  ] = { 'Fields' : { 'id' : 'INTEGER NOT NULL AUTO_INCREMENT',
-                                                    'value' : '%s UNIQUE' % key[1]
-                                                  },
-                                       'Indexes' : { 'valueindex' : [ 'value' ] },
-                                       'PrimaryKey' : 'id'
-                                     }
+      gLogger.info( "Table for key %s has to be created" % key[0] )
+      tables[ self.__getTableName( "key", name, key[0] )  ] = { 'Fields' : { 'id' : 'INTEGER NOT NULL AUTO_INCREMENT',
+                                                  'value' : '%s UNIQUE' % key[1]
+                                                },
+                                     'Indexes' : { 'valueindex' : [ 'value' ] },
+                                     'PrimaryKey' : 'id'
+                                   }
     #Registering type
     fieldsDict = {}
     bucketFieldsDict = {}
@@ -208,12 +207,7 @@ class AccountingDB(DB):
       return S_ERROR( "Type %s does not exist" % typeName )
     gLogger.info( "Deleting type", typeName )
     tablesToDelete = []
-    for keyField in self.dbCatalog[ typeName ][ 'keys' ]:
-      self.dbKeys[ keyField ] -= 1
-      if self.dbKeys[ keyField ] == 0:
-        tablesToDelete.append( "`%s`" % self.__getTableName( "key", keyField ) )
-        gLogger.info( "Deleting key table", keyField )
-        del( self.dbKeys[ keyField ] )
+    tablesToDelete.append( "`%s`" % self.__getTableName( "key", typeName, keyField ) )
     tablesToDelete.insert( 0, "`%s`" % self.__getTableName( "type", typeName ) )
     tablesToDelete.insert( 0, "`%s`" % self.__getTableName( "bucket", typeName ) )
     retVal = self._query( "DROP TABLE %s" % ", ".join( tablesToDelete ) )
@@ -223,11 +217,11 @@ class AccountingDB(DB):
     del( self.dbCatalog[ typeName ] )
     return S_OK()
 
-  def __getIdForKeyValue( self, keyName, keyValue, conn = False ):
+  def __getIdForKeyValue( self, typeName, keyName, keyValue, conn = False ):
     """
       Finds id number for value in a key table
     """
-    retVal = self._query( "SELECT `id` FROM `%s` WHERE `value`='%s'" % ( self.__getTableName( "key", keyName ),
+    retVal = self._query( "SELECT `id` FROM `%s` WHERE `value`='%s'" % ( self.__getTableName( "key", typeName, keyName ),
                                                                          keyValue ), conn = conn )
     if not retVal[ 'OK' ]:
       return retVal
@@ -235,16 +229,16 @@ class AccountingDB(DB):
       return S_OK( retVal[ 'Value' ][0][0] )
     return S_ERROR( "Key id %s for value %s does not exist although it shoud" % ( keyName, keyValue ) )
 
-  def __addKeyValue( self, keyName, keyValue ):
+  def __addKeyValue( self, typeName, keyName, keyValue ):
     """
       Adds a key value to a key table if not existant
     """
-    keyTable = self.__getTableName( "key", keyName )
+    keyTable = self.__getTableName( "key", typeName, keyName )
     self.dbLocks[ keyTable ].acquire()
     try:
       if type( keyValue ) != types.StringType:
         keyValue = str( keyValue )
-      retVal = self.__getIdForKeyValue( keyName, keyValue )
+      retVal = self.__getIdForKeyValue( typeName, keyName, keyValue )
       if retVal[ 'OK' ]:
         return retVal
       else:
@@ -256,7 +250,7 @@ class AccountingDB(DB):
         retVal = self._insert( keyTable, [ 'id', 'value' ], [ 0, keyValue ], connection )
         if not retVal[ 'OK' ]:
           return retVal
-        return self.__getIdForKeyValue( keyName, keyValue, connection )
+        return self.__getIdForKeyValue( typeName, keyName, keyValue, connection )
     finally:
       self.dbLocks[ keyTable ].release()
     return S_OK( keyId )
@@ -307,7 +301,7 @@ class AccountingDB(DB):
     for keyPos in range( len( self.dbCatalog[ typeName ][ 'keys' ] ) ):
       keyName = self.dbCatalog[ typeName ][ 'keys' ][ keyPos ]
       keyValue = valuesList[ keyPos ]
-      retVal = self.__addKeyValue( keyName, keyValue )
+      retVal = self.__addKeyValue( typeName, keyName, keyValue )
       if not retVal[ 'OK' ]:
         return retVal
       gLogger.info( "Value %s for key %s has id %s" % ( keyValue, keyName, retVal[ 'Value' ] ) )
@@ -517,7 +511,7 @@ class AccountingDB(DB):
     #Calculate fields to retrieve
     realFieldList = []
     for rawFieldName in selectFields[1]:
-      keyTable = self.__getTableName( "key", rawFieldName )
+      keyTable = self.__getTableName( "key", typeName, rawFieldName )
       if rawFieldName in self.dbCatalog[ typeName ][ 'keys' ]:
         realFieldList.append( "`%s`.`value`" % keyTable )
         List.appendUnique( sqlLinkList, "`%s`.`%s` = `%s`.`id`" % ( tableName,
@@ -533,7 +527,7 @@ class AccountingDB(DB):
     sqlFromList = [ "`%s`" % tableName ]
     for key in self.dbCatalog[ typeName ][ 'keys' ]:
       if key in condDict or key in groupFields or key in selectFields[1]:
-        sqlFromList.append( "`%s`" % self.__getTableName( "key", key ) )
+        sqlFromList.append( "`%s`" % self.__getTableName( "key", typeName, key ) )
     cmd += " FROM %s" % ", ".join( sqlFromList )
     #Calculate time conditions
     sqlTimeCond = []
@@ -553,7 +547,7 @@ class AccountingDB(DB):
       if keyName in self.dbCatalog[ typeName ][ 'keys' ]:
         List.appendUnique( sqlLinkList, "`%s`.`%s` = `%s`.`id`" % ( tableName,
                                                                     keyName,
-                                                                    self.__getTableName( "key", keyName )
+                                                                    self.__getTableName( "key", typeName, keyName )
                                                                     ) )
       if type( condDict[ keyName ] ) not in ( types.ListType, types.TupleType ):
         condDict[ keyName ] = [ condDict[ keyName ] ]
@@ -563,7 +557,7 @@ class AccountingDB(DB):
           return retVal
         keyValue = retVal[ 'Value' ]
         if keyName in self.dbCatalog[ typeName ][ 'keys' ]:
-          sqlORList.append( "`%s`.`value` = %s" % ( self.__getTableName( "key", keyName ), keyValue ) )
+          sqlORList.append( "`%s`.`value` = %s" % ( self.__getTableName( "key", typeName, keyName ), keyValue ) )
         else:
           sqlORList.append( "`%s`.`%s` = %s" % ( tableName, keyName, keyValue ) )
       sqlCondList.append( "( %s )" % " OR ".join( sqlORList ) )
@@ -576,9 +570,9 @@ class AccountingDB(DB):
         if field in self.dbCatalog[ typeName ][ 'keys' ]:
           List.appendUnique( sqlLinkList, "`%s`.`%s` = `%s`.`id`" % ( tableName,
                                                                       field,
-                                                                      self.__getTableName( "key", field )
+                                                                      self.__getTableName( "key", typeName, field )
                                                                     ) )
-          sqlGroupList.append( "`%s`.`value`" % self.__getTableName( "key", field ) )
+          sqlGroupList.append( "`%s`.`value`" % self.__getTableName( "key", typeName, field ) )
         else:
           sqlGroupList.append( "`%s`.`%s`" % ( tableName, field ) )
     #Calculate ordering
@@ -588,9 +582,9 @@ class AccountingDB(DB):
         if field in self.dbCatalog[ typeName ][ 'keys' ]:
           List.appendUnique( sqlLinkList, "`%s`.`%s` = `%s`.`id`" % ( tableName,
                                                                       field,
-                                                                      self.__getTableName( "key", field )
+                                                                      self.__getTableName( "key", typeName, field )
                                                                     ) )
-          sqlOrderList.append( "`%s`.`value`" % self.__getTableName( "key", field ) )
+          sqlOrderList.append( "`%s`.`value`" % self.__getTableName( "key", typeName, field ) )
         else:
           sqlOrderList.append( "`%s`.`%s`" % ( tableName, field ) )
     if sqlLinkList:
