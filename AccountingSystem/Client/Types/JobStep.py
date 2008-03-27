@@ -1,9 +1,9 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Types/JobStep.py,v 1.1 2008/01/29 15:34:03 acasajus Exp $
-__RCSID__ = "$Id: JobStep.py,v 1.1 2008/01/29 15:34:03 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Types/JobStep.py,v 1.2 2008/03/27 19:02:06 acasajus Exp $
+__RCSID__ = "$Id: JobStep.py,v 1.2 2008/03/27 19:02:06 acasajus Exp $"
 
 from DIRAC.AccountingSystem.Client.Types.BaseAccountingType import BaseAccountingType
 
-class UserJob( BaseAccountingType ):
+class JobStep( BaseAccountingType ):
 
   def __init__( self ):
     BaseAccountingType.__init__( self )
