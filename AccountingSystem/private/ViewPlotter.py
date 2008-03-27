@@ -1,6 +1,8 @@
-from DIRAC import S_OK, S_ERROR
+import md5
+from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 from DIRAC.AccountingSystem.private.DBUtils import DBUtils
+from DIRAC.Core.Utilities.Plots.StackedBarPlot import StackedBarPlot
 
 class ViewPlotter(DBUtils):
 
@@ -21,7 +23,15 @@ class ViewPlotter(DBUtils):
       funcObj = getattr( self, funcName )
     except Exception, e:
       return S_ERROR( "View  %s is not defined" % viewName )
-    return funcObj( startTime, endTime, argsDict )
+    filehash = md5.new()
+    filehash.update( "%s:%s:%s:%s" % ( viewName, startTime, endTime, argsDict ) )
+    #TODO: fix this /tmp
+    fileName = "/tmp/%s.png" % filehash.hexdigest()
+    try:
+      return funcObj( startTime, endTime, argsDict, fileName )
+    except Exception, e:
+      gLogger.exception( "Exception while generating %s view" % viewName )
+      return S_ERROR( "Exception while generating %s view: %s" % ( viewName, str(e) ) )
 
   def viewsList( self ):
     viewList = []
@@ -31,19 +41,28 @@ class ViewPlotter(DBUtils):
     viewList.sort()
     return viewList
 
-  def _viewQualityBySource( self, startTime, endTime, argsDict ):
-    sourceDataDict, granularity = self.__getDataOperationBySource( startTime, endTime, argsDict )
-    for keyField in sourceDataDict:
-      sourceDataDict[ keyField ] = self._fillWithZero( granularity, startTime, endTime, sourceDataDict[ keyField ] )
-    #TODO: I'm here
+  def _viewBandwidthBySource( self, startTime, endTime, argsDict, filename ):
+    retVal = self.__getDataOperationBandwidthBySource( startTime, endTime, argsDict )
+    if not retVal[ 'OK' ]:
+      return retVal
+    dataDict, granularity = retVal[ 'Value' ]
+    dataDict[ 'Failed' ] = self.stripDataField( dataDict, 0 )[0]
+    plot = StackedBarPlot( filename )
+    plot.plot( dataDict )
 
-  def __getDataOperationBySource( self, startTime, endTime, argsDict ):
+  def __getDataOperationBandwidthBySource( self, startTime, endTime, argsDict ):
     typeName = "DataOperation"
-    if 'Source' not in argsDict:
-      condDict = {}
-    else:
-      condDict = { "Source" : argsDict[ 'Source' ] }
-    selectFields = ( "%s, %s, %s, SUM(%s), SUM(%s)", ( 'Source', 'startTime', 'bucketLength', 'TransferOK', 'TransferTotal' ) )
+    keyFields = ( 'Source' )
+    condDict = {}
+    for keyword in keyFields:
+      if keyword in argsDict:
+        condDict[ keyword ] = argsDict[ keyword ]
+    selectFields = ( "%s, %s, %s, SUM(%s)*(SUM(%s)/SUM(%s)), SUM(%s)*(1-(SUM(%s)/SUM(%s)))",
+                     ( 'Source', 'startTime', 'bucketLength',
+                       'TransferSize', 'TransferOK', 'TransferTotal',
+                       'TransferSize', 'TransferOK', 'TransferTotal'
+                      )
+                   )
     retVal = self._retrieveBucketedData( "DataOperation",
                                           startTime,
                                           endTime,
@@ -54,9 +73,10 @@ class ViewPlotter(DBUtils):
                                           )
     if not retVal[ 'OK' ]:
       return retVal
-    sourceDataDict = self._groupByField( 0, retVal[ 'Value' ] )
+    dataDict = self._groupByField( 0, retVal[ 'Value' ] )
     coarsestGranularity = self._getBucketLengthForTime( typeName, startTime )
-    print coarsestGranularity
-    for keyField in sourceDataDict:
-      sourceDataDict[ keyField ] = self._normalizeToGranularity( coarsestGranularity, sourceDataDict[ keyField ] )
-    return( sourceDataDict, coarsestGranularity )
+    for keyField in dataDict:
+      keyData = self._normalizeToGranularity( coarsestGranularity, dataDict[ keyField ] )
+      dataDict[ keyField ] = keyData
+      dataDict[ keyField ] = self._fillWithZero( coarsestGranularity, startTime, endTime, keyData )
+    return S_OK( ( dataDict, coarsestGranularity ) )

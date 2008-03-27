@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/ReportGeneratorHandler.py,v 1.3 2008/03/14 19:10:55 acasajus Exp $
-__RCSID__ = "$Id: ReportGeneratorHandler.py,v 1.3 2008/03/14 19:10:55 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/ReportGeneratorHandler.py,v 1.4 2008/03/27 19:03:50 acasajus Exp $
+__RCSID__ = "$Id: ReportGeneratorHandler.py,v 1.4 2008/03/27 19:03:50 acasajus Exp $"
 import types
 from DIRAC import S_OK, S_ERROR
 from DIRAC.AccountingSystem.private.AccountingDB import AccountingDB
@@ -28,6 +28,8 @@ class ReportGeneratorHandler( RequestHandler ):
         - argsDict : Arguments to the summary.
     """
     summariesGeneator = Summaries( gAccountingDB, self.serviceInfoDict[ 'clientSetup' ] )
+    startTime = int( Time.toEpoch( startTime ) )
+    endTime = int( Time.toEpoch( endTime ) )
     return summariesGeneator.generate( summaryName, startTime, endTime, argsDict )
 
   types_listSummaries = []
@@ -51,6 +53,8 @@ class ReportGeneratorHandler( RequestHandler ):
         - argsDict : Arguments to the view.
     """
     plotter = ViewPlotter( gAccountingDB, self.serviceInfoDict[ 'clientSetup' ] )
+    startTime = int( Time.toEpoch( startTime ) )
+    endTime = int( Time.toEpoch( endTime ) )
     return plotter.generate( viewName, startTime, endTime, argsDict )
 
   types_listViews = []

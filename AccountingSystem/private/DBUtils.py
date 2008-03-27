@@ -29,7 +29,7 @@ class DBUtils:
         groupFields -> list of fields to group by
         orderFields -> list of fields to order by
     """
-    typeName = "%s_%s" % ( typeName, self._setup )
+    typeName = "%s_%s" % ( self._setup, typeName )
     return self._acDB.retrieveBucketedData( typeName, startTime, endTime, selectFields, condDict, groupFields, orderFields )
 
   def _getUniqueValues( self, typeName, startTime, endTime, condDict, fieldList ):
@@ -60,12 +60,12 @@ class DBUtils:
     return groupDict
 
   def _getBins( self, typeName, startTime, endTime ):
-    typeName = "%s_%s" % ( typeName, self._setup )
+    typeName = "%s_%s" % ( self._setup, typeName )
     return self._acDB.calculateBuckets( typeName )
 
   def _getBucketLengthForTime( self, typeName, momentTime ):
     nowEpoch = Time.toEpoch()
-    typeName = "%s_%s" % ( typeName, self._setup )
+    typeName = "%s_%s" % ( self._setup, typeName )
     momentEpoch = Time.toEpoch( momentTime )
     return self._acDB.calculateBucketLengthForTime( typeName, nowEpoch, momentEpoch )
 
@@ -111,16 +111,52 @@ class DBUtils:
     Fill with zeros missing buckets
     First field must be bucketTime in bucketsData list
     """
-    startEpoch = Time.toEpoch( startTime )
+    startEpoch = long( Time.toEpoch( startTime ) )
     startBucketEpoch = startEpoch - startEpoch % granularity
-    endEpoch = Time.toEpoch( endTime )
+    endEpoch = long( Time.toEpoch( endTime ) )
     filled = {}
-    zeroList = [ 0 for field in bucketsData[ bucketsData.keys()[0] ][1:] ]
+    zeroList = [ 0 for field in bucketsData[ bucketsData.keys()[0] ] ]
+    print ( startBucketEpoch, endEpoch, granularity )
     for bucketEpoch in range( startBucketEpoch, endEpoch, granularity ):
       bucketTime = Time.fromEpoch( bucketEpoch )
       if bucketTime in bucketsData:
         filled[ bucketTime ] =  bucketsData[ bucketTime ]
       else:
-        filled[ bucketTime ] = zeroList
+        filled[ bucketTime ] = list( zeroList )
     return filled
 
+  def stripDataField( self, dataDict, fieldId ):
+    """
+    Strip <fieldId> data and sum the rest as it was data from one key
+    In:
+      dataDict : { 'key' : { datetime.datetime(2008, 1, 2, 1, 0): [1, 2, 3],
+                             datetime.datetime(2008, 1, 3, 1, 0): [3, 4, 5]..
+      fieldId : 0
+    Out
+      dataDict : { 'key' : { datetime.datetime(2008, 1, 2, 1, 0): 1,
+                             datetime.datetime(2008, 1, 3, 1, 0): 3..
+      return : [ { datetime.datetime(2008, 1, 2, 1, 0): [2],
+                   datetime.datetime(2008, 1, 3, 1, 0): [4]... }
+                 { datetime.datetime(2008, 1, 2, 1, 0): [3],
+                   datetime.datetime(2008, 1, 3, 1, 0): [5]...
+    """
+    remainingData = []
+    for key in dataDict:
+      for timestamp in dataDict[ key ]:
+        for iPos in dataDict[ key ][ timestamp ]:
+          print key, timestamp, iPos
+          remainingData.append( {} )
+        break
+      break
+    for key in dataDict:
+      for timestamp in dataDict[ key ]:
+        strippedField = dataDict[ key ][ timestamp ][ fieldId ]
+        del( dataDict[ key ][ timestamp ][ fieldId ] )
+        for iPos in range( len( dataDict[ key ][ timestamp ] ) ):
+          if timestamp in remainingData[ iPos ]:
+            remainingData[ iPos ][ timestamp ] += dataDict[ key ][ timestamp ][ fieldId ]
+          else:
+            remainingData[ iPos ][ timestamp ] = dataDict[ key ][ timestamp ][ fieldId ]
+        dataDict[ key ][ timestamp ] = strippedField
+
+    return remainingData

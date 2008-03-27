@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/DataStoreHandler.py,v 1.2 2008/03/05 21:02:27 acasajus Exp $
-__RCSID__ = "$Id: DataStoreHandler.py,v 1.2 2008/03/05 21:02:27 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/DataStoreHandler.py,v 1.3 2008/03/27 19:03:50 acasajus Exp $
+__RCSID__ = "$Id: DataStoreHandler.py,v 1.3 2008/03/27 19:03:50 acasajus Exp $"
 import types
 from DIRAC import S_OK, S_ERROR
 from DIRAC.AccountingSystem.private.AccountingDB import AccountingDB
@@ -22,7 +22,7 @@ class DataStoreHandler( RequestHandler ):
       (Bow before me for I am admin! :)
     """
     setup = self.serviceInfoDict[ 'clientSetup' ]
-    typeName = "%s_%s" % ( typeName, setup )
+    typeName = "%s_%s" % ( setup, typeName )
     return gAccountingDB.registerType( typeName, definitionKeyFields, definitionAccountingFields, bucketsLength )
 
   types_getRegisteredTypes = []
@@ -40,7 +40,7 @@ class DataStoreHandler( RequestHandler ):
       (Bow before me for I am admin! :)
     """
     setup = self.serviceInfoDict[ 'clientSetup' ]
-    typeName = "%s_%s" % ( typeName, setup )
+    typeName = "%s_%s" % ( setup, typeName )
     return gAccountingDB.deleteType( typeName )
 
   types_commit = [ types.StringType, Time._dateTimeType, Time._dateTimeType, types.ListType ]
@@ -49,7 +49,9 @@ class DataStoreHandler( RequestHandler ):
       Add a record for a type
     """
     setup = self.serviceInfoDict[ 'clientSetup' ]
-    typeName = "%s_%s" % ( typeName, setup )
+    typeName = "%s_%s" % ( setup, typeName )
+    startTime = int( Time.toEpoch( startTime ) )
+    endTime = int( Time.toEpoch( endTime ) )
     return gAccountingDB.addEntry( typeName, startTime, endTime, valuesList )
 
   types_commitRegisters = [ types.ListType ]
@@ -66,8 +68,10 @@ class DataStoreHandler( RequestHandler ):
         if type( entry[i] ) != expectedTypes[i]:
           return S_ERROR( "%s field in the records should be %s" % ( i, expectedType[i] ) )
     for entry in entriesList:
-      typeName = "%s_%s" % ( entry[0], setup )
-      retVal = gAccountingDB.addEntry( typeName, entry[1], entry[2], entry[3] )
+      typeName = "%s_%s" % ( setup, entry[0] )
+      startTime = int( Time.toEpoch( entry[1] ) )
+      endTime = int( Time.toEpoch( entry[2] ) )
+      retVal = gAccountingDB.addEntry( typeName, startTime, endTime, entry[3] )
       if not retVal[ 'OK' ]:
         return retVal
     return S_OK()

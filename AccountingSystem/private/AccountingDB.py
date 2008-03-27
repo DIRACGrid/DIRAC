@@ -1,11 +1,14 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.14 2008/03/05 21:02:27 acasajus Exp $
-__RCSID__ = "$Id: AccountingDB.py,v 1.14 2008/03/05 21:02:27 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.15 2008/03/27 19:03:50 acasajus Exp $
+__RCSID__ = "$Id: AccountingDB.py,v 1.15 2008/03/27 19:03:50 acasajus Exp $"
 
 import datetime
 import threading
 import types
+import os, os.path
+import re
+import DIRAC
 from DIRAC.Core.Base.DB import DB
-from DIRAC import S_OK, S_ERROR, gLogger, gMonitor
+from DIRAC import S_OK, S_ERROR, gLogger, gMonitor, gConfig
 from DIRAC.Core.Utilities import List, ThreadSafe, Time, DEncode
 
 gSynchro = ThreadSafe.Synchronizer()
@@ -35,6 +38,37 @@ class AccountingDB(DB):
                                "Accounting",
                                "entries",
                                gMonitor.OP_ACUM )
+    self.__registerTypes()
+
+  def __registerTypes( self ):
+    """
+    Register all types
+    """
+    retVal = gConfig.getSections( "/DIRAC/Setups" )
+    if not retVal[ 'OK' ]:
+      return S_ERROR( "Can't get a list of setups: %s" % retVal[ 'Message' ] )
+    setupsList = retVal[ 'Value' ]
+    typeRE = re.compile( ".*[a-z1-9]\.py$" )
+    for typeFile in os.listdir( os.path.join( DIRAC.rootPath, "DIRAC", "AccountingSystem", "Client", "Types" ) ):
+      if typeRE.match( typeFile ):
+        for setup in setupsList:
+          typeName = typeFile.replace( ".py", "" )
+          if typeName not in self.dbCatalog and typeName != "BaseAccountingType":
+            gLogger.info( "Trying to register %s type for setup %s" % ( typeName, setup ) )
+            try:
+              typeModule = __import__( "DIRAC.AccountingSystem.Client.Types.%s" % typeName,
+                                       globals(),
+                                       locals(), typeName )
+              typeClass  = getattr( typeModule, typeName )
+            except Exception, e:
+              gLogger.error( "Can't load type %s: %s" % ( typeName, str(e) ) )
+              continue
+            typeDef = typeClass().getDefinition()
+            dbTypeName = "%s_%s" % ( setup, typeName )
+            retVal = self.registerType( dbTypeName, *typeDef[1:] )
+            if not retVal[ 'OK' ]:
+              gLogger.error( "Can't register type %s:%s" % ( typeName, retVal[ 'Message' ] ) )
+    return S_OK()
 
   def __loadCatalogFromDB(self):
     retVal = self._query( "SELECT `name`, `keyFields`, `valueFields`, `bucketsLength` FROM `%s`" % self.catalogTableName )
@@ -123,11 +157,11 @@ class AccountingDB(DB):
     for field in definitionAccountingFields:
       fieldsDict[ field[0] ] = field[1]
       bucketFieldsDict[ field[0] ] = "FLOAT"
-    fieldsDict[ 'startTime' ] = "DATETIME"
-    fieldsDict[ 'endTime' ] = "DATETIME"
+    fieldsDict[ 'startTime' ] = "INT UNSIGNED"
+    fieldsDict[ 'endTime' ] = "INT UNSIGNED"
     bucketFieldsDict[ 'entriesInBucket' ] = "FLOAT"
-    bucketFieldsDict[ 'startTime' ] = "DATETIME"
-    bucketFieldsDict[ 'bucketLength' ] = "INT"
+    bucketFieldsDict[ 'startTime' ] = "INT UNSIGNED"
+    bucketFieldsDict[ 'bucketLength' ] = "MEDIUMINT UNSIGNED"
     tables[ self.__getTableName( "bucket", name ) ] = { 'Fields' : bucketFieldsDict,
                                     'Indexes' : indexesDict,
                                   }
@@ -243,21 +277,19 @@ class AccountingDB(DB):
     the proportional part for each bucket
     """
     nowEpoch = int( Time.toEpoch( Time.dateTime() ) )
-    startEpoch = int( Time.toEpoch( startTime ) )
-    endEpoch = int( Time.toEpoch( endTime ) )
-    bucketTimeLength = self.calculateBucketLengthForTime( typeName, nowEpoch, startEpoch )
-    currentBucketStart = startEpoch - startEpoch % bucketTimeLength
-    if startEpoch == endEpoch:
-      return [ ( Time.fromEpoch( currentBucketStart ),
+    bucketTimeLength = self.calculateBucketLengthForTime( typeName, nowEpoch, startTime )
+    currentBucketStart = startTime - startTime % bucketTimeLength
+    if startTime == endTime:
+      return [ ( currentBucketStart,
                  1,
                  bucketTimeLength ) ]
     buckets = []
-    totalLength = endEpoch - startEpoch
-    while currentBucketStart < endEpoch:
-      start = max( currentBucketStart, startEpoch )
-      end = min( currentBucketStart + bucketTimeLength, endEpoch )
+    totalLength = endTime - startTime
+    while currentBucketStart < endTime:
+      start = max( currentBucketStart, startTime )
+      end = min( currentBucketStart + bucketTimeLength, endTime )
       proportion = float( end - start ) / totalLength
-      buckets.append( ( Time.fromEpoch( currentBucketStart ),
+      buckets.append( ( currentBucketStart,
                         proportion,
                         bucketTimeLength ) )
       currentBucketStart += bucketTimeLength
@@ -281,15 +313,15 @@ class AccountingDB(DB):
       gLogger.info( "Value %s for key %s has id %s" % ( keyValue, keyName, retVal[ 'Value' ] ) )
       valuesList[ keyPos ] = retVal[ 'Value' ]
     insertList = list( valuesList )
-    insertList.append( startTime.strftime( "%Y-%m-%d %H:%M:%S" ) )
-    insertList.append( endTime.strftime( "%Y-%m-%d %H:%M:%S" ) )
+    insertList.append( startTime )
+    insertList.append( endTime )
     retVal = self._insert( self.__getTableName( "type", typeName ),
                            self.dbCatalog[ typeName ][ 'typeFields' ],
                            insertList
                          )
     if not retVal[ 'OK' ]:
       return retVal
-    #HACK: One more record to split in the buckets
+    #HACK: One more record to split in the buckets to be able to count total entries
     valuesList.append(1)
     return self.__splitInBuckets( typeName, startTime, endTime, valuesList )
 
@@ -303,6 +335,7 @@ class AccountingDB(DB):
     numKeys = len( self.dbCatalog[ typeName ][ 'keys' ] )
     keyValues = valuesList[ :numKeys ]
     valuesList = valuesList[ numKeys: ]
+    print "Splitting entry in %s buckets" % len( buckets )
     for bucketInfo in buckets:
       self.dbLocks[ self.__getTableName( "bucket", typeName ) ].acquire()
       try:
@@ -406,7 +439,7 @@ class AccountingDB(DB):
     Insert a bucket when coming from the raw insert
     """
     sqlFields = [ 'startTime', 'bucketLength', 'entriesInBucket' ]
-    sqlValues = [ startTime.strftime( "%Y-%m-%d %H:%M:%S" ), bucketLength, bucketValues[-1] ]
+    sqlValues = [ startTime, bucketLength, bucketValues[-1] ]
     for keyPos in range( len( self.dbCatalog[ typeName ][ 'keys' ] ) ):
       sqlFields.append( self.dbCatalog[ typeName ][ 'keys' ][ keyPos ] )
       sqlValues.append( keyValues[ keyPos ] )
@@ -447,7 +480,7 @@ class AccountingDB(DB):
     Get data from the DB
       Parameters:
         typeName -> typeName
-        startTime & endTime -> datetime objects. Do I need to explain the meaning?
+        startTime & endTime -> int epoch objects. Do I need to explain the meaning?
         selectFields -> tuple containing a string and a list of fields:
                         ( "SUM(%s), %s/%s", ( "field1name", "field2name", "field3name" ) )
         condDict -> conditions for the query
@@ -463,10 +496,8 @@ class AccountingDB(DB):
     if not retVal[ 'OK' ]:
       return retVal
     nowEpoch = Time.toEpoch( Time.dateTime () )
-    startEpoch = Time.toEpoch( startTime )
-    bucketTimeLength = self.calculateBucketLengthForTime( typeName, nowEpoch , startEpoch )
-    startEpoch = int( startEpoch / bucketTimeLength ) * bucketTimeLength
-    startTime = Time.fromEpoch( startEpoch )
+    bucketTimeLength = self.calculateBucketLengthForTime( typeName, nowEpoch , startTime )
+    startTime = startTime - startTime % bucketTimeLength
     return self.__queryType( typeName,
                              startTime,
                              endTime,
@@ -507,20 +538,13 @@ class AccountingDB(DB):
     #Calculate time conditions
     sqlTimeCond = []
     if startTime:
-      sqlTimeCond.append( "`%s`.`startTime` >= '%s'" % ( tableName,
-                                               startTime.strftime( "%Y-%m-%d %H:%M:%S" )
-                                               )
-                                            )
+      sqlTimeCond.append( "`%s`.`startTime` >= '%s'" % ( tableName, startTime ) )
     if endTime:
       if tableType == "bucket":
         endTimeSQLVar = "startTime"
       else:
         endTimeSQLVar = "endTime"
-      sqlTimeCond.append( "`%s`.`%s` <= '%s'" % ( tableName,
-                                               endTimeSQLVar,
-                                               endTime.strftime( "%Y-%m-%d %H:%M:%S" )
-                                               )
-                                            )
+      sqlTimeCond.append( "`%s`.`%s` <= '%s'" % ( tableName, endTimeSQLVar, endTime ) )
     cmd += " WHERE %s" % " AND ".join( sqlTimeCond )
     #Calculate conditions
     sqlCondList = []
@@ -602,11 +626,11 @@ class AccountingDB(DB):
     sqlSelectList.append( "MAX( `%s`.`startTime` )" % tableName )
     selectSQL += ", ".join( sqlSelectList )
     selectSQL += " FROM `%s`" % tableName
-    selectSQL += " WHERE `%s`.`startTime` <= '%s' AND" % ( tableName, timeLimit.strftime( "%Y-%m-%d %H:%M:%S" ) )
+    selectSQL += " WHERE `%s`.`startTime` <= '%s' AND" % ( tableName, timeLimit )
     selectSQL += " `%s`.`bucketLength` = %s" % ( tableName, bucketLength )
     #HACK: Horrible constant to overcome the fact that MySQL defines epoch 0 as 13:00 and *nix define epoch as 01:00
     #43200 is half a day
-    sqlGroupList = [ "CONVERT( ( UNIX_TIMESTAMP( `%s`.`startTime` ) - 43200 )/%s, SIGNED )" % ( tableName, nextBucketLength ) ]
+    sqlGroupList = [ "CONVERT( `%s`.`startTime` / %s, INT UNSIGNED )" % ( tableName, nextBucketLength ) ]
     for field in self.dbCatalog[ typeName ][ 'keys' ]:
       sqlGroupList.append( "`%s`.`%s`" % ( tableName, field ) )
     selectSQL += " GROUP BY %s" % ", ".join( sqlGroupList )
@@ -618,7 +642,7 @@ class AccountingDB(DB):
     """
     tableName = self.__getTableName( "bucket", typeName )
     deleteSQL = "DELETE FROM `%s` WHERE " % tableName
-    deleteSQL += "`%s`.`startTime` <= '%s' AND " % ( tableName, timeLimit.strftime( "%Y-%m-%d %H:%M:%S" ) )
+    deleteSQL += "`%s`.`startTime` <= '%s' AND " % ( tableName, timeLimit )
     deleteSQL += "`%s`.`bucketLength` = %s" % ( tableName, bucketLength )
     return self._update( deleteSQL, conn = connObj )
 
@@ -635,9 +659,8 @@ class AccountingDB(DB):
     for bPos in range( len( self.dbBucketsLength[ typeName ] ) - 1 ):
       secondsLimit = self.dbBucketsLength[ typeName ][ bPos ][0]
       bucketLength = self.dbBucketsLength[ typeName ][ bPos ][1]
+      timeLimit = ( nowEpoch - nowEpoch % bucketLength ) - secondsLimit
       nextBucketLength = self.dbBucketsLength[ typeName ][ bPos + 1 ][1]
-      endEpoch = int( nowEpoch / bucketLength ) * bucketLength - secondsLimit
-      timeLimit = Time.fromEpoch( endEpoch )
       #Retrieve the data
       self.dbLocks[ tableName ].acquire()
       try:
