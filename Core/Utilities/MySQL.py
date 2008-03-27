@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: MySQL.py,v 1.6 2007/06/28 11:03:07 rgracian Exp $
+# $Id: MySQL.py,v 1.7 2008/03/27 17:31:02 acasajus Exp $
 ########################################################################
 """ DIRAC Basic MySQL Class
     It provides access to the basic MySQL methods in a multithread-safe mode
@@ -75,7 +75,7 @@
 
 """
 
-__RCSID__ = "$Id: MySQL.py,v 1.6 2007/06/28 11:03:07 rgracian Exp $"
+__RCSID__ = "$Id: MySQL.py,v 1.7 2008/03/27 17:31:02 acasajus Exp $"
 
 
 from DIRAC                                  import gLogger
@@ -450,7 +450,7 @@ class MySQL:
           indexDict = thisTable['Indexes']
           for index in indexDict:
             indexedFields = string.join(indexDict[index], ', ' )
-            cmdList.append( 'INDEX `%s` ( %s )' % ( index, indexedFields ) )
+            cmdList.append( 'INDEX `%s` ( `%s` )' % ( index, indexedFields ) )
 
         if thisTable.has_key('Engine'):
           engine = thisTable['Engine']
