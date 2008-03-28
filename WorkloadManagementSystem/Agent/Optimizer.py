@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Optimizer.py,v 1.9 2008/02/29 17:36:43 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Optimizer.py,v 1.10 2008/03/28 15:14:22 paterson Exp $
 # File :   Optimizer.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
      optimizer instances and associated actions are performed there.
 """
 
-__RCSID__ = "$Id: Optimizer.py,v 1.9 2008/02/29 17:36:43 paterson Exp $"
+__RCSID__ = "$Id: Optimizer.py,v 1.10 2008/03/28 15:14:22 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.DB.JobDB        import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
@@ -24,11 +24,13 @@ import os, re, time, string
 class Optimizer(Agent):
 
   #############################################################################
-  def __init__(self, name, initialStatus=None,enableFlag=True):
+  def __init__(self, name, initialStatus=None, enableFlag=True, system=None):
     self.optimizerName = name
     self.initialStatus = initialStatus
     self.enableFlag    = enableFlag
-    Agent.__init__(self,'WorkloadManagement/%s' %(self.optimizerName))
+    if not system:
+      system='WorkloadManagement'
+    Agent.__init__(self,'%s/%s' %(system,self.optimizerName))
 
   #############################################################################
   def initialize(self):
@@ -82,7 +84,7 @@ class Optimizer(Agent):
 
     result = self.jobDB.selectJobs(condition)
     if not result['OK']:
-      self.log.error('Failed to get a job list from the JobDB')
+      self.log.warn('Failed to get a job list from the JobDB')
       return S_ERROR('Failed to get a job list from the JobDB')
 
     if not len(result['Value']):
@@ -107,7 +109,7 @@ class Optimizer(Agent):
     if result['OK']:
       value = result['Value']
       if not value:
-        self.log.error('JobDB returned null value for %s %s' %(job,reportName))
+        self.log.warn('JobDB returned null value for %s %s' %(job,reportName))
         return S_ERROR('No optimizer info returned')
       else:
         pyValue = eval(value)
@@ -203,7 +205,7 @@ class Optimizer(Agent):
   def checkJob(self,job):
     """This method controls the checking of the job, should be overridden in a subclass
     """
-    self.log.error('Optimizer: checkJob method should be implemented in a subclass')
+    self.log.warn('Optimizer: checkJob method should be implemented in a subclass')
     return S_ERROR('Optimizer: checkJob method should be implemented in a subclass')
 
   #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
