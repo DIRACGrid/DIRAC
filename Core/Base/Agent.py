@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Agent.py,v 1.8 2008/01/15 16:01:24 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Agent.py,v 1.9 2008/03/28 15:15:58 paterson Exp $
 ########################################################################
 """ Base class for all the Agents.
 
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: Agent.py,v 1.8 2008/01/15 16:01:24 acasajus Exp $"
+__RCSID__ = "$Id: Agent.py,v 1.9 2008/03/28 15:15:58 paterson Exp $"
 
 import os
 import threading
@@ -250,8 +250,20 @@ def createAgent(agentName):
     print "Invalid agent name",agentName
     return None
 
-  print "Importing",'DIRAC.'+system+'System.Agent'
-  module = __import__('DIRAC.'+system+'System.Agent',globals(),locals(),[name])
-  agent = eval("module."+name+'.'+name+"()")
-  return agent
+  try:
+    print "Importing",'DIRAC.'+system+'System.Agent'
+    module = __import__('DIRAC.'+system+'System.Agent',globals(),locals(),[name])
+    agent = eval("module."+name+'.'+name+"()")    
+  except Exception,x:
+    try:
+      print 'Importing',system+'System.Agent' 
+      module = __import__(system+'System.Agent',globals(),locals(),[name])
+      agent = eval("module."+name+'.'+name+"()")    
+    except Exception,y:
+      print 'Importing DIRAC.'+system+'System Agent failed with exception:'
+      print x
+      print 'Importing '+system+'System Agent failed with exception:'
+      print y
+      return None 
 
+  return agent
