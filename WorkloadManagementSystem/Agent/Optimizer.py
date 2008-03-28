@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Optimizer.py,v 1.10 2008/03/28 15:14:22 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Optimizer.py,v 1.11 2008/03/28 15:42:23 paterson Exp $
 # File :   Optimizer.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
      optimizer instances and associated actions are performed there.
 """
 
-__RCSID__ = "$Id: Optimizer.py,v 1.10 2008/03/28 15:14:22 paterson Exp $"
+__RCSID__ = "$Id: Optimizer.py,v 1.11 2008/03/28 15:42:23 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.DB.JobDB        import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
@@ -88,7 +88,7 @@ class Optimizer(Agent):
       return S_ERROR('Failed to get a job list from the JobDB')
 
     if not len(result['Value']):
-      self.log.debug('No pending jobs to process')
+      self.log.verbose('No pending jobs to process')
       return S_OK('No work to do')
 
     jobList = result['Value']
@@ -104,7 +104,7 @@ class Optimizer(Agent):
     """This method gets job optimizer information that will
        be used for
     """
-    self.log.debug("self.jobDB.getJobOptParameter(%s,'%s')" %(job,reportName))
+    self.log.verbose("self.jobDB.getJobOptParameter(%s,'%s')" %(job,reportName))
     result = self.jobDB.getJobOptParameter(job,reportName)
     if result['OK']:
       value = result['Value']
@@ -122,7 +122,7 @@ class Optimizer(Agent):
     """This method sets the job optimizer information that will subsequently
        be used for job scheduling and TURL queries on the WN.
     """
-    self.log.debug("self.jobDB.setJobOptParameter(%s,'%s','%s')" %(job,reportName,value))
+    self.log.verbose("self.jobDB.setJobOptParameter(%s,'%s','%s')" %(job,reportName,value))
     if self.enable:
       result = self.jobDB.setJobOptParameter(job,reportName,str(value))
     else:
@@ -135,7 +135,7 @@ class Optimizer(Agent):
     """This method sets the job optimizer chain, in principle only needed by
        one of the optimizers.
     """
-    self.log.debug("self.jobDB.setOptimizerChain(%s,%s)" %(job,value))
+    self.log.verbose("self.jobDB.setOptimizerChain(%s,%s)" %(job,value))
     if self.enable:
       result = self.jobDB.setOptimizerChain(job,value)
     else:
@@ -149,7 +149,7 @@ class Optimizer(Agent):
        processed the job.  The next optimizer in the chain will subsequently
        start to work on the job.
     """
-    self.log.debug("self.jobDB.setNextOptimizer(%s,'%s')" %(job,self.optimizerName))
+    self.log.verbose("self.jobDB.setNextOptimizer(%s,'%s')" %(job,self.optimizerName))
     if self.enable:
       result = self.jobDB.setNextOptimizer(job,self.optimizerName)
     else:
@@ -167,7 +167,7 @@ class Optimizer(Agent):
     """This method updates the job status in the JobDB, this should only be
        used to fail jobs due to the optimizer chain.
     """
-    self.log.debug("self.jobDB.setJobAttribute(%s,'Status','%s',update=True)" %(job,status))
+    self.log.verbose("self.jobDB.setJobAttribute(%s,'Status','%s',update=True)" %(job,status))
     if self.enable:
       result = self.jobDB.setJobAttribute(job,'Status',status, update=True)
     else:
@@ -175,7 +175,7 @@ class Optimizer(Agent):
 
     if result['OK']:
       if minorstatus:
-        self.log.debug("self.jobDB.setJobAttribute(%s,'MinorStatus','%s',update=True)" %(job,minorstatus))
+        self.log.verbose("self.jobDB.setJobAttribute(%s,'MinorStatus','%s',update=True)" %(job,minorstatus))
         if self.enable:
           result = self.jobDB.setJobAttribute(job,'MinorStatus',minorstatus,update=True)
         else:
@@ -193,7 +193,7 @@ class Optimizer(Agent):
   def setJobParam(self,job,reportName,value):
     """This method updates a job parameter in the JobDB.
     """
-    self.log.debug("self.jobDB.setJobParameter(%s,'%s','%s')" %(job,reportName,value))
+    self.log.verbose("self.jobDB.setJobParameter(%s,'%s','%s')" %(job,reportName,value))
     if self.enable:
       result = self.jobDB.setJobParameter(job,reportName,value)
     else:
