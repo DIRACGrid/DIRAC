@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.18 2008/02/15 14:02:10 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.19 2008/03/28 16:17:18 paterson Exp $
 # File :   InputDataAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,11 +10,12 @@
 
 """
 
-__RCSID__ = "$Id: InputDataAgent.py,v 1.18 2008/02/15 14:02:10 paterson Exp $"
+__RCSID__ = "$Id: InputDataAgent.py,v 1.19 2008/03/28 16:17:18 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
-from DIRAC.ConfigurationSystem.Client.Config               import gConfig
-from DIRAC                                                 import S_OK, S_ERROR
+from DIRAC.Core.DISET.RPCClient                            import RPCClient
+from DIRAC.Core.Utilities.GridCredentials                  import setupProxy,restoreProxy,setDIRACGroup, getProxyTimeLeft
+from DIRAC                                                 import gConfig, S_OK, S_ERROR
 
 import os, re, time, string
 
@@ -33,7 +34,9 @@ class InputDataAgent(Optimizer):
     """Initialize specific parameters for JobSanityAgent.
     """
     result = Optimizer.initialize(self)
-
+    self.proxyLength = gConfig.getValue(self.section+'/DefaultProxyLength',24) # hours
+    self.minProxyValidity = gConfig.getValue(self.section+'/MinimumProxyValidity',30*60) # seconds
+    self.proxyLocation = gConfig.getValue(self.section+'/ProxyLocation','/opt/dirac/work/InputDataAgent/shiftProdProxy')
     self.failedMinorStatus = gConfig.getValue(self.section+'/FailedJobStatus','Input Data Not Available')
     #this will ignore failover SE files
     self.diskSE            = gConfig.getValue(self.section+'/DiskSE','-disk,-DST,-USER')
@@ -59,19 +62,30 @@ class InputDataAgent(Optimizer):
       self.log.fatal(str(x))
       result = S_ERROR(msg)
 
+    self.wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
     return result
 
   #############################################################################
   def checkJob(self,job):
     """This method controls the checking of the job.
     """
+    prodDN = gConfig.getValue('Operations/Production/ShiftManager','')
+    if not prodDN:
+      self.log.warn('Production shift manager DN not defined (/Operations/Production/ShiftManager)')
+      return S_OK('Production shift manager DN is not defined')
+
+    self.log.verbose('Checking proxy for %s' %(prodDN))
+    result = self.__getProdProxy(prodDN)
+    if not result['OK']:
+      self.log.warn('Could not set up proxy for shift manager %s %s' %(prodDN))
+      return S_OK('Production shift manager proxy could not be set up')
 
     result = self.jobDB.getInputData(job)
     if result['OK']:
       if result['Value']:
         self.log.verbose('Job %s has an input data requirement and will be processed' % (job))
         inputData = result['Value']
-        result = self.resolveInputData(job,inputData)
+        result = self.__resolveInputData(job,inputData)
         if not result['OK']:
           self.log.warn(result['Message'])
           return result
@@ -96,7 +110,7 @@ class InputDataAgent(Optimizer):
       return result
 
   #############################################################################
-  def resolveInputData(self,job,inputData):
+  def __resolveInputData(self,job,inputData):
     """This method checks the file catalogue for replica information.
     """
     lfns = [string.replace(fname,'LFN:','') for fname in inputData]
@@ -133,7 +147,7 @@ class InputDataAgent(Optimizer):
       return S_ERROR('Input Data Not Available')
 
     inputData = catalogResult['Successful']
-    siteCandidates = self.getSiteCandidates(inputData)
+    siteCandidates = self.__getSiteCandidates(inputData)
     if not siteCandidates['OK']:
       self.log.warn(siteCandidates['Message'])
       return siteCandidates
@@ -162,7 +176,7 @@ class InputDataAgent(Optimizer):
     return S_OK(result)
 
   #############################################################################
-  def getSiteCandidates(self,inputData):
+  def __getSiteCandidates(self,inputData):
     """This method returns a list of possible site candidates based on the
        job input data requirement.  For each site candidate, the number of files
        on disk and tape is resolved.
@@ -172,7 +186,7 @@ class InputDataAgent(Optimizer):
     for lfn,replicas in inputData.items():
       siteList = []
       for se in replicas.keys():
-        sites = self._getSitesForSE(se)
+        sites = self.__getSitesForSE(se)
         if sites:
           siteList += sites
       fileSEs[lfn] = siteList
@@ -200,7 +214,7 @@ class InputDataAgent(Optimizer):
 
     for lfn,replicas in inputData.items():
       for se,surl in replicas.items():
-        sites = self._getSitesForSE(se)
+        sites = self.__getSitesForSE(se)
         for site in sites:
           if site in siteCandidates:
             for disk in self.diskSE:
@@ -213,7 +227,7 @@ class InputDataAgent(Optimizer):
     return S_OK(siteResult)
 
   #############################################################################
-  def _getSitesForSE(self,se):
+  def __getSitesForSE(self,se):
     """Returns a list of sites via the site SE mapping for a given SE.
     """
     sites = []
@@ -222,5 +236,50 @@ class InputDataAgent(Optimizer):
         sites.append(site)
 
     return sites
+
+  #############################################################################
+  def __getProdProxy(self,prodDN):
+    """This method sets up the proxy for immediate use if not available, and checks the existing
+       proxy if this is available.
+    """
+    prodGroup = gConfig.getValue(self.section+'/ProductionGroup','lhcb_prod')
+    self.log.info("Determining the length of proxy for DN %s" %prodDN)
+    obtainProxy = False
+    if not os.path.exists(self.proxyLocation):
+      self.log.info("No proxy found")
+      obtainProxy = True
+    else:
+      currentProxy = open(self.proxyLocation,'r')
+      oldProxyStr = currentProxy.read()
+      res = getProxyTimeLeft(oldProxyStr)
+      if not res["OK"]:
+        self.log.error("Could not determine the time left for proxy", res['Message'])
+        res = S_OK(0) # force update of proxy
+
+      proxyValidity = int(res['Value'])
+      self.log.debug('Current proxy found to be valid for %s seconds' %proxyValidity)
+      self.log.info('%s proxy found to be valid for %s seconds' %(prodDN,proxyValidity))
+      if proxyValidity <= self.minProxyValidity:
+        obtainProxy = True
+
+    if obtainProxy:
+      self.log.info('Attempting to renew %s proxy' %prodDN)
+      res = self.wmsAdmin.getProxy(prodDN,prodGroup,self.proxyLength)
+      if not res['OK']:
+        self.log.error('Could not retrieve proxy from WMS Administrator', res['Message'])
+        return S_OK()
+      proxyStr = res['Value']
+      if not os.path.exists(os.path.dirname(self.proxyLocation)):
+        os.makedirs(os.path.dirname(self.proxyLocation))
+      res = setupProxy(proxyStr,self.proxyLocation)
+      if not res['OK']:
+        self.log.error('Could not create environment for proxy.', res['Message'])
+        return S_OK()
+
+      setDIRACGroup(prodGroup)
+      self.log.info('Successfully renewed %s proxy' %prodDN)
+
+    #os.system('voms-proxy-info -all')
+    return S_OK('Active proxy available')
 
   #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
