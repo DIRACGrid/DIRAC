@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Service/StagerHandler.py,v 1.1 2008/03/31 08:28:11 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Service/StagerHandler.py,v 1.2 2008/03/31 16:14:24 paterson Exp $
 ########################################################################
 
 """ StagerHandler is the implementation of the StagerDB in the DISET framework
     A.Smith (17/05/07)
 """
 
-__RCSID__ = "$Id: StagerHandler.py,v 1.1 2008/03/31 08:28:11 paterson Exp $"
+__RCSID__ = "$Id: StagerHandler.py,v 1.2 2008/03/31 16:14:24 paterson Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -154,28 +154,24 @@ class StagerHandler(RequestHandler):
       print errorStr
       return S_ERROR(errorStr)
 
-  types_stageFiles = [StringType,ListType,DictType]
-  def export_stageFiles(self,jobid,sites,replicas):
+  types_stageFiles = [StringType,StringType,DictType,StringType]
+  def export_stageFiles(self,jobid,site,replicas,source):
     """
        This method does the population of the files to the StagerDB
     """
     try:
-      if not jobid or not sites or not replicas:
+      if not jobid or not site or not replicas or not source:
         err = 'Missing required parameters'
         print err
         return S_ERROR(err)
 
       files = {}
-      for site in sites:
-        files[site] = []
-      lfns = replicas.keys()
-      for lfn in lfns:
-        replicaSites = replicas[lfn].keys()
-        for site in sites:
-          if site in replicaSites:
-            files[site].append((lfn,replicas[lfn][site]))
+      files[site] = []
+      for lfn,reps in replicas.items():
+        for se,surl in reps.items():
+          files[site].append((lfn,surl,se))
 
-      result = stagerDB.populateStageDB(jobid,files)
+      result = stagerDB.populateStageDB(jobid,files,source)
       return result
     except Exception,x:
       errorStr = "StagerDBHandler.stageFiles failed "+str(x)
