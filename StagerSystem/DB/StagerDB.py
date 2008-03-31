@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/DB/StagerDB.py,v 1.1 2008/03/31 08:10:14 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/DB/StagerDB.py,v 1.2 2008/03/31 08:14:59 paterson Exp $
 ########################################################################
 
 """ StagerDB is a front end to the Stager Database.
@@ -8,7 +8,7 @@
     A.Smith (17/05/07)
 """
 
-__RCSID__ = "$Id: StagerDB.py,v 1.1 2008/03/31 08:10:14 paterson Exp $"
+__RCSID__ = "$Id: StagerDB.py,v 1.2 2008/03/31 08:14:59 paterson Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
@@ -23,7 +23,7 @@ class StagerDB(DB):
       Insert timing information for staging commands into the StagerDB SiteTiming table.
     """
     req = "INSERT INTO SiteTiming (Site,Command,CommTime,Files,Time) " + \
-          "VALUES ('%s','%s',%f,%d,NOW());" % (site,cmd,time,files)
+          "VALUES ('%s','%s',%f,%d,UTC_TIMESTAMP());" % (site,cmd,time,files)
     return self._update(req)
 
   def getAllJobs(self,site):
@@ -82,7 +82,7 @@ class StagerDB(DB):
     """
       Resets file status in the SiteFiles table for files in 'Submitted' state for timeout
     """
-    req = "SELECT DATE_SUB(NOW(), INTERVAL %d SECOND);" % timeout
+    req = "SELECT DATE_SUB(UTC_TIMESTAMP(), INTERVAL %d SECOND);" % timeout
     result = self._query(req)
     if not result['OK']:
       return result
@@ -159,17 +159,17 @@ class StagerDB(DB):
     str_lfn = string.join(str_lfns,",")
 
     if state == 'Submitted':
-      req = "UPDATE SiteFiles SET Status = '%s', StageSubmit = NOW() WHERE " + \
+      req = "UPDATE SiteFiles SET Status = '%s', StageSubmit = UTC_TIMESTAMP() WHERE " + \
             "Site LIKE '%s%' AND LFN IN (%s);" % (state,site,str_lfn)
       result = self._update(req)
     elif state == 'Staged':
-      req = "UPDATE SiteFiles SET Status = '%s', StageComplete = NOW(), StageSubmit = NOW() WHERE " + \
+      req = "UPDATE SiteFiles SET Status = '%s', StageComplete = UTC_TIMESTAMP(), StageSubmit = UTC_TIMESTAMP() WHERE " + \
             "StageSubmit = '0000-00-00 00:00:00' AND Site LIKE '%s%' AND LFN IN (%s);" % (state,site,str_lfn)
       result = self._update(req)
       if not result['OK']:
         return result
       else:
-        req = "UPDATE SiteFiles SET Status = '%s', StageComplete = NOW() WHERE " + \
+        req = "UPDATE SiteFiles SET Status = '%s', StageComplete = UTC_TIMESTAMP() WHERE " + \
               "StageSubmit != '0000-00-00 00:00:00' AND Site LIKE '%s%' AND LFN IN (%s);" % (state,site,str_lfn)
         result = self._update(req)
     else:
@@ -215,4 +215,3 @@ class StagerDB(DB):
               return result
     result = S_OK()
     return result
-
