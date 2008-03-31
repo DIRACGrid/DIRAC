@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: StagerClient.py,v 1.1 2008/03/31 08:31:57 paterson Exp $
+# $Id: StagerClient.py,v 1.2 2008/03/31 12:44:26 paterson Exp $
 ########################################################################
 
 """Set of utilities and classes to handle Stager Database"""
@@ -10,10 +10,10 @@ from DIRAC.Core.DISET.RPCClient import RPCClient
 
 class StagerClient:
 
-  def __init__(self,useCertificates = False):
+  def __init__(self,useCerts=True):
     """ Constructor of the StagerDBClient class
     """
-    self.server = RPCClient('/Stager/StagerClient',useCertificates)
+    self.server = RPCClient('Stager/Stager',useCertificates=useCerts)
 
   def stageFiles(self,jobid,sites,replicas):
     try:
