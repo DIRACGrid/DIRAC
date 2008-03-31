@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/DB/StagerDB.py,v 1.2 2008/03/31 08:14:59 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/DB/StagerDB.py,v 1.3 2008/03/31 16:07:57 paterson Exp $
 ########################################################################
 
 """ StagerDB is a front end to the Stager Database.
@@ -8,7 +8,7 @@
     A.Smith (17/05/07)
 """
 
-__RCSID__ = "$Id: StagerDB.py,v 1.2 2008/03/31 08:14:59 paterson Exp $"
+__RCSID__ = "$Id: StagerDB.py,v 1.3 2008/03/31 16:07:57 paterson Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
@@ -182,34 +182,34 @@ class StagerDB(DB):
       Gets the LFNs for a given state and returns them in order of their associated JobIDs.
     """
     if limit:
-      req = "SELECT LFN,SURL,JobID from SiteFiles WHERE Status = '%s' " + \
-            "AND Site LIKE '%%s%' ORDER BY JobID LIMIT %d;" % (state,site,limit)
+      req = "SELECT LFN,SURL,SE,JobID from SiteFiles WHERE Status = '%s' AND Site LIKE '%%s%' ORDER BY JobID LIMIT %d;" % (state,site,limit)
     else:
-      req = "SELECT LFN,SURL,JobID from SiteFiles WHERE Status = '%s' " + \
-            "AND Site LIKE '%%s%' ORDER BY JobID;" % (state,site)
+      req = "SELECT LFN,SURL,SE,JobID from SiteFiles WHERE Status = '%s' AND Site LIKE '%%s%' ORDER BY JobID;" % (state,site)   
     result = self._query(req)
     if not result['OK']:
+      result['Query']=req
       return result
     lfnsDict = {}
-    for lfn,surl,jobid in result['Value']:
-      lfnsDict[lfn] = surl
+    for lfn,surl,se,jobid in result['Value']:
+      lfnsDict[lfn]={}
+      lfnsDict[lfn].update({se:surl})
     result = S_OK()
     result['Files'] = lfnsDict
     return result
 
-  def populateStageDB(self,jobid,files):
+  def populateStageDB(self,jobid,files,source):
     """
        This method populates the SiteFiles table with file metadata for staging.
     """
     for site in files.keys():
       tuples = files[site]
-      for lfn,surl in tuples:
-        req = "SELECT * FROM SiteFiles WHERE LFN ='"+lfn+"' AND Site = '"+site+"' AND SURL = '"+surl+"';"
+      for lfn,surl,se in tuples:
+        req = "SELECT * FROM SiteFiles WHERE LFN ='"+lfn+"' AND Site = '"+site+"' AND SURL = '"+surl+"' AND SE = '"+se+"' AND Source = '"+source+  "';"
         result = self._query(req)
         if result['OK']:
           existFlag = result['Value']
           if not existFlag:
-            req = "INSERT INTO SiteFiles (LFN,Site,SURL,JobID) VALUES ('"+lfn+"','"+site+"','"+surl+"','"+jobid+"');"
+            req = "INSERT INTO SiteFiles (LFN,Site,SURL,SE,JobID,Source) VALUES ('"+lfn+"','"+site+"','"+surl+"','"+se+"','"+jobid+"','"+source+"');"
             result = self._update(req)
             if not result['OK']:
               return result
