@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueAgent.py,v 1.4 2008/03/31 12:43:19 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueAgent.py,v 1.5 2008/03/31 16:16:46 paterson Exp $
 # File :   TaskQueueAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
      into a Task Queue.
 """
 
-__RCSID__ = "$Id: TaskQueueAgent.py,v 1.4 2008/03/31 12:43:19 paterson Exp $"
+__RCSID__ = "$Id: TaskQueueAgent.py,v 1.5 2008/03/31 16:16:46 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
@@ -37,7 +37,7 @@ class TaskQueueAgent(Optimizer):
     self.stagingMinorStatus = gConfig.getValue(self.section+'/StagingMinorStatus','Request Sent')
     self.waitingStatus      = gConfig.getValue(self.section+'/WaitingStatus','Waiting')
     self.waitingMinorStatus = gConfig.getValue(self.section+'/WaitingMinorStatus','Pilot Agent Submission')
-    self.stagerClient = StagerClient()
+    self.stagerClient = StagerClient(True)
     return result
 
   #############################################################################
@@ -56,7 +56,7 @@ class TaskQueueAgent(Optimizer):
       files = result['Value']['Files']
       self.log.verbose('Files: %s' %files)
       if self.enable:
-        request = self.stagerClient.stageFiles(str(job),[site],files)
+        request = self.stagerClient.stageFiles(str(job),str(site),files,'WorkloadManagement')
         if not request['OK']:
           self.log.warn('Problem sending Staging request:')
           self.log.warn(request)
