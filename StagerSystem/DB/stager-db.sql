@@ -24,14 +24,15 @@ CREATE TABLE SiteFiles(
    LFN VARCHAR(255) NOT NULL,
    Site varchar(32) NOT NULL,
    SURL varchar(255) NOT NULL,
+   SE varchar(32) NOT NULL,
    StageSubmit DATETIME NOT NULL,
    StageComplete DATETIME NOT NULL,
    Status varchar(32) DEFAULT 'New',
    JobID varchar(32) NOT NULL,
    Retry integer DEFAULT 0,
-   Setup varchar(32) NOT NULL,
+   Source varchar(32) NOT NULL,
    PRIMARY KEY (LFN, Site,JobID),
-   INDEX (Status,Setup)
+   INDEX (Status,Source)
 );
 
 DROP TABLE IF EXISTS SiteTiming;
