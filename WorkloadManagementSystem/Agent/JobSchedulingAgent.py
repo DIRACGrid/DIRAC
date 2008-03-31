@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.15 2008/03/31 12:43:42 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.16 2008/03/31 16:17:42 paterson Exp $
 # File :   JobSchedulingAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@
       meaningfully.
 
 """
-__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.15 2008/03/31 12:43:42 paterson Exp $"
+__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.16 2008/03/31 16:17:42 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
@@ -257,7 +257,7 @@ class JobSchedulingAgent(Optimizer):
           if se==destSE:
             if not lfn in stageSURLs.keys():
               stageSURLs[lfn]={}
-              stageSURLs[lfn].update({destination:surl})
+              stageSURLs[lfn].update({se:surl})
 
     stagingRequest = {'Sites':destination,'Files':stageSURLs}
     self.log.verbose('Staging Request: %s' %stagingRequest)
