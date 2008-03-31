@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.16 2008/03/27 19:45:07 acasajus Exp $
-__RCSID__ = "$Id: AccountingDB.py,v 1.16 2008/03/27 19:45:07 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.17 2008/03/31 16:38:17 acasajus Exp $
+__RCSID__ = "$Id: AccountingDB.py,v 1.17 2008/03/31 16:38:17 acasajus Exp $"
 
 import datetime
 import threading
@@ -51,20 +51,21 @@ class AccountingDB(DB):
     for typeFile in os.listdir( os.path.join( DIRAC.rootPath, "DIRAC", "AccountingSystem", "Client", "Types" ) ):
       if typeRE.match( typeFile ):
         for setup in setupsList:
-          typeName = typeFile.replace( ".py", "" )
-          if typeName not in self.dbCatalog and typeName != "BaseAccountingType":
+          pythonName = typeFile.replace( ".py", "" )
+          typeName = "%s_%s" % ( setup, pythonName )
+          if typeName not in self.dbCatalog and pythonName != "BaseAccountingType":
             gLogger.info( "Trying to register %s type for setup %s" % ( typeName, setup ) )
             try:
               typeModule = __import__( "DIRAC.AccountingSystem.Client.Types.%s" % typeName,
                                        globals(),
-                                       locals(), typeName )
-              typeClass  = getattr( typeModule, typeName )
+                                       locals(), pythonName )
+              typeClass  = getattr( typeModule, pythonName )
             except Exception, e:
               gLogger.error( "Can't load type %s: %s" % ( typeName, str(e) ) )
               continue
             typeDef = typeClass().getDefinition()
             dbTypeName = "%s_%s" % ( setup, typeName )
-            retVal = self.registerType( dbTypeName, *typeDef[1:] )
+            retVal = self.registerType( typeName, *typeDef[1:] )
             if not retVal[ 'OK' ]:
               gLogger.error( "Can't register type %s:%s" % ( typeName, retVal[ 'Message' ] ) )
     return S_OK()
@@ -207,13 +208,14 @@ class AccountingDB(DB):
       return S_ERROR( "Type %s does not exist" % typeName )
     gLogger.info( "Deleting type", typeName )
     tablesToDelete = []
-    tablesToDelete.append( "`%s`" % self.__getTableName( "key", typeName, keyField ) )
+    for keyField in self.dbCatalog[ typeName ][ 'keys' ]:
+      tablesToDelete.append( "`%s`" % self.__getTableName( "key", typeName, keyField ) )
     tablesToDelete.insert( 0, "`%s`" % self.__getTableName( "type", typeName ) )
     tablesToDelete.insert( 0, "`%s`" % self.__getTableName( "bucket", typeName ) )
     retVal = self._query( "DROP TABLE %s" % ", ".join( tablesToDelete ) )
     if not retVal[ 'OK' ]:
       return retVal
-    retVal = self._update( "DELETE FROM catalogTypes WHERE name='%s'" % typeName )
+    retVal = self._update( "DELETE FROM `%s` WHERE name='%s'" % ( self.__getTableName( "catalog", "Types" ), typeName ) )
     del( self.dbCatalog[ typeName ] )
     return S_OK()
 
@@ -601,6 +603,7 @@ class AccountingDB(DB):
     Compact buckets for all defined types
     """
     for typeName in self.dbCatalog:
+      gLogger.info( "Compacting %s" % typeName )
       self.__compactBucketsForType( typeName )
     return S_OK()
 
@@ -624,7 +627,7 @@ class AccountingDB(DB):
     selectSQL += " `%s`.`bucketLength` = %s" % ( tableName, bucketLength )
     #HACK: Horrible constant to overcome the fact that MySQL defines epoch 0 as 13:00 and *nix define epoch as 01:00
     #43200 is half a day
-    sqlGroupList = [ "CONVERT( `%s`.`startTime` / %s, INT UNSIGNED )" % ( tableName, nextBucketLength ) ]
+    sqlGroupList = [ "CONVERT( `%s`.`startTime` / %s, UNSIGNED )" % ( tableName, nextBucketLength ) ]
     for field in self.dbCatalog[ typeName ][ 'keys' ]:
       sqlGroupList.append( "`%s`.`%s`" % ( tableName, field ) )
     selectSQL += " GROUP BY %s" % ", ".join( sqlGroupList )
@@ -655,6 +658,7 @@ class AccountingDB(DB):
       bucketLength = self.dbBucketsLength[ typeName ][ bPos ][1]
       timeLimit = ( nowEpoch - nowEpoch % bucketLength ) - secondsLimit
       nextBucketLength = self.dbBucketsLength[ typeName ][ bPos + 1 ][1]
+      gLogger.verbose( "Compacting data newer that %s with bucket size %s" % ( Time.fromEpoch( timeLimit ), bucketLength ) )
       #Retrieve the data
       self.dbLocks[ tableName ].acquire()
       try:
