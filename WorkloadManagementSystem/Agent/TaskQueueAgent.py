@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueAgent.py,v 1.3 2007/11/22 11:39:47 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueAgent.py,v 1.4 2008/03/31 12:43:19 paterson Exp $
 # File :   TaskQueueAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,11 +8,12 @@
      into a Task Queue.
 """
 
-__RCSID__ = "$Id: TaskQueueAgent.py,v 1.3 2007/11/22 11:39:47 paterson Exp $"
+__RCSID__ = "$Id: TaskQueueAgent.py,v 1.4 2008/03/31 12:43:19 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
+from DIRAC.StagerSystem.Client.StagerClient                import StagerClient
 from DIRAC                                                 import S_OK, S_ERROR
 import string,re
 
@@ -36,6 +37,7 @@ class TaskQueueAgent(Optimizer):
     self.stagingMinorStatus = gConfig.getValue(self.section+'/StagingMinorStatus','Request Sent')
     self.waitingStatus      = gConfig.getValue(self.section+'/WaitingStatus','Waiting')
     self.waitingMinorStatus = gConfig.getValue(self.section+'/WaitingMinorStatus','Pilot Agent Submission')
+    self.stagerClient = StagerClient()
     return result
 
   #############################################################################
@@ -46,10 +48,23 @@ class TaskQueueAgent(Optimizer):
     minorStatus   = None
     result = self.getOptimizerJobInfo(job,'StagingRequest')
     if result['OK']:
+      self.log.info('Attempting to send staging request for job %s' %job)
       primaryStatus  = self.stagingStatus
       minorStatus    = self.stagingMinorStatus
-      stagingRequest = result['Value']
-      self.log.debug('StagingRequest is: %s' %s)
+      site = result['Value']['Sites']
+      self.log.verbose('Site: %s' %site)
+      files = result['Value']['Files']
+      self.log.verbose('Files: %s' %files)
+      if self.enable:
+        request = self.stagerClient.stageFiles(str(job),[site],files)
+        if not request['OK']:
+          self.log.warn('Problem sending Staging request:')
+          self.log.warn(request)
+          return S_ERROR('Sending Staging Request')
+        else:
+          self.log.info('Staging request successfully sent')
+      else:
+        self.log.info('TaskQueue agent disabled via enable flag')
     else:
       primaryStatus = self.waitingStatus
       minorStatus   = self.waitingMinorStatus
@@ -86,9 +101,9 @@ class TaskQueueAgent(Optimizer):
 
     classadJob = ClassAd(jdl)
     if not classadJob.isOK():
-      self.log.error("Illegal JDL for job %d " % int(job))
-      self.log.error("The job will be marked problematic")
-      return S_ERROR("Warning: illegal JDL for job %d " % int(job))
+      self.log.warn("Illegal JDL for job %d " % int(job))
+      self.log.warn("The job will be marked problematic")
+      return S_ERROR('Illegal JDL')
 
     requirements = classadJob.get_expression("Requirements")
     jobType = classadJob.get_expression("JobType")
@@ -97,14 +112,17 @@ class TaskQueueAgent(Optimizer):
     if result['OK']:
       queueID = result['Value']
     else:
-      self.log.error("Failed to obtain a task queue with the following requirements")
-      self.log.error(requirements)
+      self.log.warn("Failed to obtain a task queue with the following requirements")
+      self.log.warn(requirements)
       return S_ERROR("Failed to obtain a task queue")
 
     rank = priority
-    result = self.jobDB.addJobToQueue(job,queueID,rank)
-    if not result['OK']:
-      return result
+    if self.enable:
+      result = self.jobDB.addJobToQueue(job,queueID,rank)
+      if not result['OK']:
+        return result
+    else:
+      self.log.info('TaskQueue agent disabled via enable flag')
 
     return S_OK('Job Added to Task Queue')
 
