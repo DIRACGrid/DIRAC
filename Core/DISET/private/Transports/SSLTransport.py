@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSLTransport.py,v 1.15 2008/03/26 10:56:42 acasajus Exp $
-__RCSID__ = "$Id: SSLTransport.py,v 1.15 2008/03/26 10:56:42 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSLTransport.py,v 1.16 2008/04/01 17:01:56 acasajus Exp $
+__RCSID__ = "$Id: SSLTransport.py,v 1.16 2008/04/01 17:01:56 acasajus Exp $"
 
 import os
 from DIRAC.Core.DISET.private.Transports.BaseTransport import BaseTransport
@@ -56,12 +56,12 @@ def checkSanity( *args, **kwargs ):
   """
   saneEnv = True
   if not GridCredentials.getCAsLocation():
-    gLogger.fatal( "No CAs found!" )
+    gLogger.error( "No CAs found!" )
     saneEnv = False
   if "useCertificates" in kwargs and kwargs[ 'useCertificates' ]:
     certTuple = GridCredentials.getHostCertificateAndKey()
     if not certTuple:
-      gLogger.fatal( "No cert/key found! " )
+      gLogger.error( "No cert/key found! " )
       saneEnv = False
     else:
       certFile = certTuple[0]
@@ -71,10 +71,10 @@ def checkSanity( *args, **kwargs ):
     else:
       certFile = GridCredentials.getGridProxy()
     if not certFile:
-      gLogger.fatal( "No proxy found" )
+      gLogger.error( "No proxy found" )
       saneEnv = False
     elif not os.path.isfile( certFile ):
-      gLogger.fatal( "%s proxy file does not exist" % certFile )
+      gLogger.error( "%s proxy file does not exist" % certFile )
       saneEnv = False
 
   if saneEnv:
@@ -82,7 +82,7 @@ def checkSanity( *args, **kwargs ):
     certObj.loadFromFile( certFile )
     retVal = certObj.isExpired()
     if not retVal[ 'OK' ]:
-      gLogger.fatal( "Can't verify file %s:%s" % ( certFile, retVal[ 'Message' ] ) )
+      gLogger.error( "Can't verify file %s:%s" % ( certFile, retVal[ 'Message' ] ) )
       saneEnv = False
     else:
       if retVal[ 'Value' ]:
@@ -91,7 +91,7 @@ def checkSanity( *args, **kwargs ):
           notAfter = notAfter[ 'Value' ]
         else:
           notAfter = "unknown"
-        gLogger.fatal( "PEM file %s has expired, not valid after %s" % ( certFile, notAfter ) )
+        gLogger.error( "PEM file %s has expired, not valid after %s" % ( certFile, notAfter ) )
         saneEnv = False
 
   return saneEnv

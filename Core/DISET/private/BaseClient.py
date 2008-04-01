@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.32 2008/03/06 12:02:55 acasajus Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.32 2008/03/06 12:02:55 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.33 2008/04/01 17:01:56 acasajus Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.33 2008/04/01 17:01:56 acasajus Exp $"
 
 import sys
 import DIRAC
@@ -29,11 +29,13 @@ class BaseClient:
     self.serviceName = serviceName
     self.kwargs = kwargs
     self.__discoverSetup()
-    self.__discoverURL()
+    self.__initStatus = self.__discoverURL()
+    if not self.__initStatus[ 'OK' ]:
+      return
     self.__discoverTimeout()
     self.__discoverCredentialsToUse()
     self.__discoverGroup()
-    self.__checkTransportSanity()
+    self.__initStatus = self.__checkTransportSanity()
 
   def __discoverSetup(self):
     #Which setup to use?
@@ -46,11 +48,10 @@ class BaseClient:
     #Calculate final URL
     self.serviceURL = self.__findServiceURL()
     retVal = Network.splitURL( self.serviceURL )
-    if retVal[ 'OK' ]:
-      self.URLTuple = retVal[ 'Value' ]
-    else:
-      gLogger.error( "URL is malformed", retVal[ 'Message' ] )
-      raise Exception( retVal[ 'Message' ] )
+    if not retVal[ 'OK' ]:
+      return S_ERROR( "URL is malformed: %s" % retVal[ 'Message' ] )
+    self.URLTuple = retVal[ 'Value' ]
+    return S_OK()
 
   def __discoverTimeout( self ):
     if self.KW_TIMEOUT in self.kwargs:
@@ -110,6 +111,8 @@ class BaseClient:
 
   def _connect( self ):
     gLogger.debug( "Connecting to: %s" % self.serviceURL )
+    if not self.__initStatus[ 'OK' ]:
+      return self.__initStatus
     try:
       self.transport = gProtocolDict[ self.URLTuple[0] ][0]( self.URLTuple[1:3], **self.kwargs )
       self.transport.initAsClient()
@@ -123,9 +126,10 @@ class BaseClient:
     return self.transport.receiveData()
 
   def __checkTransportSanity( self ):
-    retVal = gProtocolDict[ self.URLTuple[0] ][1]( self.URLTuple[1:3], **self.kwargs )
-    if not retVal:
-      DIRAC.abort( 10, "Insane environment for protocol" )
+    saneEnv = gProtocolDict[ self.URLTuple[0] ][1]( self.URLTuple[1:3], **self.kwargs )
+    if not saneEnv:
+      return S_ERROR( "Insane environment for protocol" )
+    return S_OK()
 
   def __nonzero__( self ):
     return True
