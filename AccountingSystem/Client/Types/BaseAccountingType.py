@@ -1,14 +1,16 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Types/BaseAccountingType.py,v 1.6 2008/02/15 17:17:16 acasajus Exp $
-__RCSID__ = "$Id: BaseAccountingType.py,v 1.6 2008/02/15 17:17:16 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Types/BaseAccountingType.py,v 1.7 2008/04/01 17:40:34 acasajus Exp $
+__RCSID__ = "$Id: BaseAccountingType.py,v 1.7 2008/04/01 17:40:34 acasajus Exp $"
 
 import types
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.AccountingSystem.Client.AccountingClient import AccountingClient
 
 class BaseAccountingType:
 
-  validDataValues = ( types.IntType, types.LongType, types.FloatType, types.LongType )
+  __validDataValues = ( types.IntType, types.LongType, types.FloatType, types.LongType )
+  __acClient = AccountingClient()
 
   def __init__( self ):
     self.keyFieldsList = []
@@ -104,7 +106,7 @@ class BaseAccountingType:
       key = self.fieldsList[i]
       if self.valuesList[i] == None:
         errorList.append( "no value for %s" % key )
-      if key in self.valueFieldsList and type( self.valuesList[i] ) not in self.validDataValues:
+      if key in self.valueFieldsList and type( self.valuesList[i] ) not in self.__validDataValues:
         errorList.append( "value for key %s is not numerical type" % key )
     if errorList:
       return S_ERROR( "Invalid values: %s" % ", ".join( errorList ) )
@@ -149,8 +151,7 @@ class BaseAccountingType:
     """
     Commit register to server
     """
-    retVal = self.checkValues()
+    retVal = self.__acClient.addRegister( self )
     if not retVal[ 'OK' ]:
       return retVal
-    rpcClient = RPCClient( "Accounting/DataStore" )
-    return rpcClient.commit( *self.getValues() )
+    return self.__acClient.commit()

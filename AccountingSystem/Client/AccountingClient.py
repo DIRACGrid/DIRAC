@@ -1,13 +1,15 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Attic/AccountingClient.py,v 1.2 2008/01/29 19:11:06 acasajus Exp $
-__RCSID__ = "$Id: AccountingClient.py,v 1.2 2008/01/29 19:11:06 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Attic/AccountingClient.py,v 1.3 2008/04/01 17:40:34 acasajus Exp $
+__RCSID__ = "$Id: AccountingClient.py,v 1.3 2008/04/01 17:40:34 acasajus Exp $"
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.Core.Utilities.ThreadSafe import Synchronizer
+
+gAccountingSynchro = Synchronizer()
 
 class AccountingClient:
 
-  def __init__( self ):
-    self.registersList = []
+  __registersList = []
 
   def __checkBaseType( self, obj ):
     """
@@ -20,6 +22,7 @@ class AccountingClient:
         return True
     return False
 
+  @gAccountingSynchro
   def addRegister( self, register ):
     """
     Add a register to the list to be sent
@@ -29,19 +32,20 @@ class AccountingClient:
     retVal = register.checkValues()
     if not retVal[ 'OK' ]:
       return retVal
-    self.registersList.append( register.getValues() )
+    self.__registersList.append( register.getValues() )
     return S_OK()
 
+  @gAccountingSynchro
   def commit( self ):
     """
     Send the registers in a bundle mode
     """
-    rpcClient = RPCClient( "Accounting/Server" )
-    while len( self.registersList ) > 0:
-      retVal = rpcClient.commitRegisters( self.registersList[ :50 ] )
+    rpcClient = RPCClient( "Accounting/DataStore" )
+    while len( self.__registersList ) > 0:
+      retVal = rpcClient.commitRegisters( self.__registersList[ :50 ] )
       if not retVal[ 'OK' ]:
         return retVal
-      del( self.registersList[ :50 ] )
+      del( self.__registersList[ :50 ] )
     return S_OK()
 
 gAccounting = AccountingClient()
