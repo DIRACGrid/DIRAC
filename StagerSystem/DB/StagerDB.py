@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/DB/StagerDB.py,v 1.3 2008/03/31 16:07:57 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/DB/StagerDB.py,v 1.4 2008/04/01 17:18:58 paterson Exp $
 ########################################################################
 
 """ StagerDB is a front end to the Stager Database.
@@ -8,10 +8,12 @@
     A.Smith (17/05/07)
 """
 
-__RCSID__ = "$Id: StagerDB.py,v 1.3 2008/03/31 16:07:57 paterson Exp $"
+__RCSID__ = "$Id: StagerDB.py,v 1.4 2008/04/01 17:18:58 paterson Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
+
+import string
 
 class StagerDB(DB):
 
@@ -30,7 +32,7 @@ class StagerDB(DB):
     """
       Selects the unique JobIDs from the SiteFiles table for given site
     """
-    req = "SELECT DISTINCT JobID FROM SiteFiles WHERE Site LIKE '%s%';" % site
+    req = "SELECT DISTINCT JobID FROM SiteFiles WHERE Site = '%s';" % site
     result = self._query(req)
     if not result['OK']:
       return result
@@ -46,7 +48,7 @@ class StagerDB(DB):
     """
       Selects the unique JobIDs from the SiteFiles table where files have supplied retry count
     """
-    req = "SELECT JobID,LFN FROM SiteFiles WHERE Site LIKE '%%s%' AND Retry >= %d;" % (site,retry)
+    req = "SELECT JobID,LFN FROM SiteFiles WHERE Site = '%s' AND Retry >= %d;" % (site,retry)
     result = self._query(req)
     if not result['OK']:
       return result
@@ -90,7 +92,7 @@ class StagerDB(DB):
       if result['Value']:
         datetime = str(result['Value'][0][0])
         req = "UPDATE SiteFiles SET Status = 'New', Retry = Retry +1 WHERE " + \
-              "Site LIKE '%%s%' AND Status = 'Submitted' AND StageSubmit < '%s';" \
+              "Site = '%s' AND Status = 'Submitted' AND StageSubmit < '%s';" \
               % (site,datetime)
         return self._update(req)
       else:
@@ -117,7 +119,7 @@ class StagerDB(DB):
       str_lfns.append("'"+lfn+"'")
     str_lfn = string.join(str_lfns,",")
     req = "SELECT JobID,LFN,SEC_TO_TIME(StageComplete-StageSubmit) FROM SiteFiles " + \
-          "WHERE Site LIKE '%%s%' AND LFN IN (%s);" % (site,str_lfn)
+          "WHERE Site = '%s' AND LFN IN (%s);" % (site,str_lfn)
     result = self._query(req)
     if not result['OK']:
       return result
@@ -135,8 +137,7 @@ class StagerDB(DB):
     """
       Gets the JobIDs where all the associated files are in the state supplied.
     """
-    req = "SELECT JobID,SUM(Status!='%s'),SUM(Status='%s') FROM SiteFiles WHERE " + \
-          "Site LIKE '%s%' GROUP BY JobID ORDER BY JobID LIMIT %d;" % (state,state,site,limit)
+    req = "SELECT JobID,SUM(Status!='%s'),SUM(Status='%s') FROM SiteFiles WHERE Site = '%s' GROUP BY JobID ORDER BY JobID LIMIT %d;" % (state,state,site,limit)
     result = self._query(req)
     if not result['OK']:
       return result
@@ -160,20 +161,20 @@ class StagerDB(DB):
 
     if state == 'Submitted':
       req = "UPDATE SiteFiles SET Status = '%s', StageSubmit = UTC_TIMESTAMP() WHERE " + \
-            "Site LIKE '%s%' AND LFN IN (%s);" % (state,site,str_lfn)
+            "Site = '%s' AND LFN IN (%s);" % (state,site,str_lfn)
       result = self._update(req)
     elif state == 'Staged':
       req = "UPDATE SiteFiles SET Status = '%s', StageComplete = UTC_TIMESTAMP(), StageSubmit = UTC_TIMESTAMP() WHERE " + \
-            "StageSubmit = '0000-00-00 00:00:00' AND Site LIKE '%s%' AND LFN IN (%s);" % (state,site,str_lfn)
+            "StageSubmit = '0000-00-00 00:00:00' AND Site = '%s' AND LFN IN (%s);" % (state,site,str_lfn)
       result = self._update(req)
       if not result['OK']:
         return result
       else:
         req = "UPDATE SiteFiles SET Status = '%s', StageComplete = UTC_TIMESTAMP() WHERE " + \
-              "StageSubmit != '0000-00-00 00:00:00' AND Site LIKE '%s%' AND LFN IN (%s);" % (state,site,str_lfn)
+              "StageSubmit != '0000-00-00 00:00:00' AND Site = '%s' AND LFN IN (%s);" % (state,site,str_lfn)
         result = self._update(req)
     else:
-      req = "UPDATE SiteFiles SET Status = '%s' WHERE Site LIKE '%s%' AND LFN IN (%s);" % (state,site)
+      req = "UPDATE SiteFiles SET Status = '%s' WHERE Site = '%s' AND LFN IN (%s);" % (state,site)
       result = self._update(req)
     return result
 
@@ -182,12 +183,11 @@ class StagerDB(DB):
       Gets the LFNs for a given state and returns them in order of their associated JobIDs.
     """
     if limit:
-      req = "SELECT LFN,SURL,SE,JobID from SiteFiles WHERE Status = '%s' AND Site LIKE '%%s%' ORDER BY JobID LIMIT %d;" % (state,site,limit)
+      req = "SELECT LFN,SURL,SE,JobID from SiteFiles WHERE Status = '%s' AND Site = '%s' ORDER BY JobID LIMIT %d;" % (state,site,limit)
     else:
-      req = "SELECT LFN,SURL,SE,JobID from SiteFiles WHERE Status = '%s' AND Site LIKE '%%s%' ORDER BY JobID;" % (state,site)   
+      req = "SELECT LFN,SURL,SE,JobID from SiteFiles WHERE Status = '%s' AND Site = '%s' ORDER BY JobID;" % (state,site)   
     result = self._query(req)
     if not result['OK']:
-      result['Query']=req
       return result
     lfnsDict = {}
     for lfn,surl,se,jobid in result['Value']:
