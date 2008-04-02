@@ -12,12 +12,22 @@ class TimeBarGraph( TimeGraph, BarGraph ):
 class TimeStackedBarGraph( TimeGraph, StackedBarGraph ):
   pass
 
-def generateTimedStackedBar( fileName, data, metadata ):
+def generateTimedStackedBarPlot( fileName, data, metadata ):
   try:
     fn = file( fileName, "wb" )
   except:
     return S_ERROR( "Can't open %s" % filename )
-  TSBG = TimeStackedBarGraph()
-  TSBG( data, fn, metadata )
+  plotter = TimeStackedBarGraph()
+  plotter( data, fn, metadata )
+  fn.close()
+  return S_OK()
+
+def generateQualityPlot( fileName, data, metadata ):
+  try:
+    fn = file( fileName, "wb" )
+  except:
+    return S_ERROR( "Can't open %s" % filename )
+  plotter = QualityMap()
+  plotter( data, fn, metadata )
   fn.close()
   return S_OK()
