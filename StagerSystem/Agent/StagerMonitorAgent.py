@@ -1,16 +1,15 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/StagerMonitorAgent.py,v 1.1 2008/04/02 10:57:09 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/StagerMonitorAgent.py,v 1.2 2008/04/02 14:28:39 paterson Exp $
 # File :   StagerMonitorAgent.py
 # Author : Stuart Paterson
 ########################################################################
 
 """  The StagerMonitorAgent controls the monitoring of staging requests via
-     the SiteMonitor base class.  The SiteMonitor is overridden by system-specific
-     sub-classes and is a simple wrapper that performs the instantiation and monitoring
+     the SiteMonitor. This is a simple wrapper that performs the instantiation and monitoring
      of the SiteMonitor instances. The StagerMonitorAgent also manages the proxy environment.
 """
 
-__RCSID__ = "$Id: StagerMonitorAgent.py,v 1.1 2008/04/02 10:57:09 paterson Exp $"
+__RCSID__ = "$Id: StagerMonitorAgent.py,v 1.2 2008/04/02 14:28:39 paterson Exp $"
 
 from DIRAC.Core.Base.Agent                                 import Agent
 from DIRAC.Core.DISET.RPCClient                            import RPCClient
@@ -40,8 +39,15 @@ class StagerMonitorAgent(Agent):
     self.wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
     self.pollingTime = gConfig.getValue(self.section+'/PollingTime',120)
     self.threadStartDelay = gConfig.getValue(self.section+'/ThreadStartDelay',5)
-    self.modulePath = gConfig.getValue(self.section+'/ModulePath','DIRAC.StagerSystem.Agent')
+    self.siteMonitor = gConfig.getValue(self.section+'/ModulePath','DIRAC.StagerSystem.Agent.SiteMonitor')
     self.started = False
+    try:
+      self.importModule = __import__(self.siteMonitor,globals(),locals(),['SiteMonitor'])
+    except Exception, x:
+      msg = 'Could not import %s' %(self.siteMonitor)
+      self.log.warn(x)
+      self.log.warn(msg)
+      return S_ERROR(msg)
     return result
 
   #############################################################################
@@ -61,53 +67,35 @@ class StagerMonitorAgent(Agent):
 
     agent = {}
     if not self.started:
-      systemMonitors = gConfig.getValue(self.section+'/SystemMonitors','WMSMonitor')
-      if re.search(',',systemMonitors):
-        systemMonitors = [ x.strip() for x in string.split(systemMonitors,',')]
-      elif type(systemMonitors)==type(' '):
-        systemMonitors = [systemMonitors]
-
-      self.log.verbose('Starting Stager Monitoring Modules: %s' %(string.join(systemMonitors,', ')))
       sites = gConfig.getValue(self.section+'/Sites','LCG.CERN.ch')
       if not type(sites)==type([]):
         sites = [x.strip() for x in string.split(sites,',')]
 
-      for system in systemMonitors:
-        agent[system]={}
-        siteMonitor = '%s.%s' %(self.modulePath,system)
-        for site in sites:
-          try:
-            self.importModule = __import__(siteMonitor,globals(),locals(),[system])
-          except Exception, x:
-            msg = 'Could not import %s' %(siteMonitor)
-            self.log.warn(x)
-            self.log.warn(msg)
-            return S_ERROR(msg)
-          csPath = '%s/%s' %(self.section,site)
-          gLogger.info('Starting SiteMonitor thread for site %s and %s' %(site,system))
-          gLogger.verbose('%s %s CS path: %s' %(site,system,csPath))
-          try:
-            moduleStr = 'self.importModule.SiteMonitor(csPath,site)'
-            agent[system][site] = eval(moduleStr)
-          except Exception, x:
-            msg = 'Could not instantiate %s() for %s' %(system,site)
-            self.log.warn(x)
-            self.log.warn(msg)
-            return S_ERROR(msg)
+      for site in sites:
+        csPath = '%s/%s' %(self.section,site)
+        gLogger.info('Starting SiteMonitor thread for site %s' %(site))
+        gLogger.verbose('SiteMonitor CS path: %s' %(csPath))
+        try:
+          moduleStr = 'self.importModule.SiteMonitor(csPath,site)'
+          agent[site] = eval(moduleStr)
+        except Exception, x:
+          msg = 'Could not instantiate SiteMonitor()'
+          self.log.warn(x)
+          self.log.warn(msg)
+          return S_ERROR(msg)
 
-          agent[system][site].start()
-          time.sleep(self.threadStartDelay)
+        agent[site].start()
+        time.sleep(self.threadStartDelay)
 
       self.started=True
 
-    for system,sites in agent.items():
-      for site,th in sites.items():
-        if th.isAlive():
-          gLogger.verbose('%s thread for %s is alive' %(system,site))
-        else:
-          gLogger.verbose('%s thread for %s isAlive() = %s' %(system,site,th.isAlive()))
-          gLogger.warn('%s thread for %s is dead, restarting ...' %(system,site))
-          th.start()
+    for site,th in agent.items():
+      if th.isAlive():
+        gLogger.verbose('SiteMonitor thread for %s is alive' %(site))
+      else:
+        gLogger.verbose('%s SiteMonitor thread isAlive() = %s' %(site,th.isAlive()))
+        gLogger.warn('SiteMonitor thread for %s is dead, restarting ...' %(site))
+        th.start()
 
     return S_OK()
 
