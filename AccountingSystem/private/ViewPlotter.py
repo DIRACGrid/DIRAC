@@ -2,11 +2,9 @@ import md5
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 from DIRAC.AccountingSystem.private.DBUtils import DBUtils
-from DIRAC.Core.Utilities.Plots.StackedBarPlot import StackedBarPlot
+from DIRAC.AccountingSystem.private.Plots import generateTimedStackedBar
 
 class ViewPlotter(DBUtils):
-
-  requiredParams = ( "PlotSize", )
 
   def __init__( self, db, setup ):
     DBUtils.__init__( self, db, setup )
@@ -42,33 +40,50 @@ class ViewPlotter(DBUtils):
     return viewList
 
   def _viewBandwidthBySource( self, startTime, endTime, argsDict, filename ):
-    retVal = self.__getDataOperationBandwidthBySource( startTime, endTime, argsDict )
+    return self.__generateDataOperationBandwidthPlot(startTime, endTime, [ 'Source' ], argsDict, filename)
+
+  def _viewBandwidthByDestination( self, startTime, endTime, argsDict, filename ):
+    return self.__generateDataOperationBandwidthPlot(startTime, endTime, [ 'Destination' ], argsDict, filename)
+
+  def _viewBandwidthByChannel( self, startTime, endTime, argsDict, filename ):
+    return self.__generateDataOperationBandwidthPlot(startTime, endTime, [ 'Source', 'Destination' ], argsDict, filename)
+
+  def __generateDataOperationBandwidthPlot( self, startTime, endTime, keyNameList, argsDict, filename ):
+    retVal = self.__getDataOperationBandwidth( startTime, endTime, keyNameList, argsDict )
     if not retVal[ 'OK' ]:
       return retVal
     dataDict, granularity = retVal[ 'Value' ]
     dataDict[ 'Failed' ] = self.stripDataField( dataDict, 0 )[0]
-    plot = StackedBarPlot( filename )
-    plot.plot( dataDict )
+    gLogger.info( "Generating plot", "%s with granularity of %s" % ( filename, granularity ) )
+    metadata = { 'title' : 'Transfer bandwidth by %s' % " -> ".join( keyNameList ) ,
+                 'ylabel' : 'bytes',
+                 'starttime' : startTime,
+                 'endtime' : endTime,
+                 'span' : granularity }
+    return generateTimedStackedBar( filename, dataDict, metadata )
 
-  def __getDataOperationBandwidthBySource( self, startTime, endTime, argsDict ):
+  def __getDataOperationBandwidth( self, startTime, endTime, keyNameList, argsDict ):
     typeName = "DataOperation"
-    keyFields = ( 'Source' )
     condDict = {}
-    for keyword in keyFields:
+    for keyword in keyNameList:
       if keyword in argsDict:
         condDict[ keyword ] = argsDict[ keyword ]
-    selectFields = ( "%s, %s, %s, SUM(%s)*(SUM(%s)/SUM(%s)), SUM(%s)*(1-(SUM(%s)/SUM(%s)))",
-                     ( 'Source', 'startTime', 'bucketLength',
+    if len( keyNameList ) == 1:
+      keySQLString = "%s"
+    else:
+      keySQLString = "CONCAT( %s, ' -> ', %s )"
+    selectFields = ( keySQLString + ", %s, %s, SUM(%s)*(SUM(%s)/SUM(%s)), SUM(%s)*(1-(SUM(%s)/SUM(%s)))",
+                     keyNameList + [ 'startTime', 'bucketLength',
                        'TransferSize', 'TransferOK', 'TransferTotal',
                        'TransferSize', 'TransferOK', 'TransferTotal'
-                      )
+                      ]
                    )
     retVal = self._retrieveBucketedData( "DataOperation",
                                           startTime,
                                           endTime,
                                           selectFields,
                                           condDict,
-                                          [ 'startTime', "Source" ],
+                                          [ 'startTime' ] + keyNameList,
                                           [ 'startTime' ]
                                           )
     if not retVal[ 'OK' ]:

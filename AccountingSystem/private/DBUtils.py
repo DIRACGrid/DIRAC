@@ -63,10 +63,9 @@ class DBUtils:
     typeName = "%s_%s" % ( self._setup, typeName )
     return self._acDB.calculateBuckets( typeName )
 
-  def _getBucketLengthForTime( self, typeName, momentTime ):
+  def _getBucketLengthForTime( self, typeName, momentEpoch ):
     nowEpoch = Time.toEpoch()
     typeName = "%s_%s" % ( self._setup, typeName )
-    momentEpoch = Time.toEpoch( momentTime )
     return self._acDB.calculateBucketLengthForTime( typeName, nowEpoch, momentEpoch )
 
   def _normalizeToGranularity( self, granularity, bucketsData ):
@@ -78,7 +77,7 @@ class DBUtils:
     """
     normData = {}
 
-    def addToNormData( bucketDate, data, porportion = 1.0 ):
+    def addToNormData( bucketDate, data, proportion = 1.0 ):
       if bucketDate in normData:
         for iP in range( len( data ) ):
           normData[ bucketDate ][iP] += data[iP] * proportion
@@ -92,53 +91,50 @@ class DBUtils:
       if originalBucketLength == granularity:
         addToNormData( bucketDate, bucketValues )
       else:
-        startEpoch = Time.toEpoch( bucketDate )
-        endEpoch = Time.toEpoch( bucketDate + datetime.timedelta( seconds = originalBucketLength ) )
+        startEpoch = bucketDate
+        endEpoch = bucketDate + originalBucketLength
         newBucketEpoch = startEpoch - startEpoch % granularity
         if startEpoch == endEpoch:
-          addToNormData( Time.fromEpoch( newBucketEpoch ), bucketValues )
+          addToNormData( newBucketEpoch, bucketValues )
         else:
           while newBucketEpoch < endEpoch:
             start = max( newBucketEpoch, startEpoch )
             end = min( newBucketEpoch + granularity, endEpoch )
             proportion = float( end - start ) / originalBucketLength
-            addToNormData( Time.fromEpoch( newBucketEpoch ), bucketValues, proportion )
+            addToNormData( newBucketEpoch, bucketValues, proportion )
             newBucketEpoch += granularity
     return normData
 
-  def _fillWithZero( self, granularity, startTime, endTime, bucketsData ):
+  def _fillWithZero( self, granularity, startEpoch, endEpoch, bucketsData ):
     """
     Fill with zeros missing buckets
     First field must be bucketTime in bucketsData list
     """
-    startEpoch = long( Time.toEpoch( startTime ) )
     startBucketEpoch = startEpoch - startEpoch % granularity
-    endEpoch = long( Time.toEpoch( endTime ) )
     filled = {}
     zeroList = [ 0 for field in bucketsData[ bucketsData.keys()[0] ] ]
     print ( startBucketEpoch, endEpoch, granularity )
     for bucketEpoch in range( startBucketEpoch, endEpoch, granularity ):
-      bucketTime = Time.fromEpoch( bucketEpoch )
-      if bucketTime in bucketsData:
-        filled[ bucketTime ] =  bucketsData[ bucketTime ]
+      if bucketEpoch in bucketsData:
+        filled[ bucketEpoch ] =  bucketsData[ bucketEpoch ]
       else:
-        filled[ bucketTime ] = list( zeroList )
+        filled[ bucketEpoch ] = list( zeroList )
     return filled
 
   def stripDataField( self, dataDict, fieldId ):
     """
     Strip <fieldId> data and sum the rest as it was data from one key
     In:
-      dataDict : { 'key' : { datetime.datetime(2008, 1, 2, 1, 0): [1, 2, 3],
-                             datetime.datetime(2008, 1, 3, 1, 0): [3, 4, 5]..
+      dataDict : { 'key' : { <timeEpoch1>: [1, 2, 3],
+                             <timeEpoch2>: [3, 4, 5]..
       fieldId : 0
     Out
-      dataDict : { 'key' : { datetime.datetime(2008, 1, 2, 1, 0): 1,
-                             datetime.datetime(2008, 1, 3, 1, 0): 3..
-      return : [ { datetime.datetime(2008, 1, 2, 1, 0): [2],
-                   datetime.datetime(2008, 1, 3, 1, 0): [4]... }
-                 { datetime.datetime(2008, 1, 2, 1, 0): [3],
-                   datetime.datetime(2008, 1, 3, 1, 0): [5]...
+      dataDict : { 'key' : { <timeEpoch1>: 1,
+                             <timeEpoch2>: 3..
+      return : [ { <timeEpoch1>: [2],
+                   <timeEpoch2>: [4]... }
+                 { <timeEpoch1>: [3],
+                   <timeEpoch2>): [5]...
     """
     remainingData = []
     for key in dataDict:

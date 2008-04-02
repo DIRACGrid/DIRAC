@@ -1,7 +1,7 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.17 2008/03/31 16:38:17 acasajus Exp $
-__RCSID__ = "$Id: AccountingDB.py,v 1.17 2008/03/31 16:38:17 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.18 2008/04/02 18:41:28 acasajus Exp $
+__RCSID__ = "$Id: AccountingDB.py,v 1.18 2008/04/02 18:41:28 acasajus Exp $"
 
-import datetime
+import datetime, time
 import threading
 import types
 import os, os.path
@@ -18,6 +18,7 @@ class AccountingDB(DB):
   def __init__( self, maxQueueSize = 10 ):
     DB.__init__( self, 'AccountingDB','Accounting/AccountingDB', maxQueueSize )
     self.maxBucketTime = 604800 #1 w
+    self.autoCompact = False
     self.dbCatalog = {}
     self.dbLocks = {}
     self.dbBucketsLength = {}
@@ -38,6 +39,24 @@ class AccountingDB(DB):
                                "entries",
                                gMonitor.OP_ACUM )
     self.__registerTypes()
+
+  def autoCompactDB( self ):
+    self.autoCompact = True
+    th = threading.Thread( target = self.__periodicAutoCompactDB )
+    th.setDaemon( 1 )
+    th.start()
+
+  def __periodicAutoCompactDB(self):
+    while self.autoCompact:
+      now = Time.dateTime()
+      nextCompactTime = now
+      if now.hour > 4:
+        nextCompactTime = nextCompactTime + datetime.timedelta( days = 1 )
+      nextCompactTime = nextCompactTime.replace( hour = 4, minute = 3, second = 15 )
+      sleepTime = Time.toEpoch( nextCompactTime ) - Time.toEpoch( now )
+      gLogger.info( "Next db compaction will be at %s" % nextCompactTime )
+      time.sleep( sleepTime )
+      self.compactBuckets()
 
   def __registerTypes( self ):
     """
