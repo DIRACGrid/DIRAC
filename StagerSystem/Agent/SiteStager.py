@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/SiteStager.py,v 1.1 2008/04/01 17:15:06 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/SiteStager.py,v 1.2 2008/04/02 08:14:03 paterson Exp $
 # File :   SiteStager.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
      resetting of stage requests as necessary.
 """
 
-__RCSID__ = "$Id: SiteStager.py,v 1.1 2008/04/01 17:15:06 paterson Exp $"
+__RCSID__ = "$Id: SiteStager.py,v 1.2 2008/04/02 08:14:03 paterson Exp $"
 
 from DIRAC.StagerSystem.Client.StagerClient                import StagerClient
 from DIRAC.DataManagementSystem.Client.StorageElement      import StorageElement
@@ -107,12 +107,14 @@ class SiteStager(Thread):
 
       start = time.time()
       stagingRequest = storageElement.prestageFile(pfnList)
-      timing = (time.time()-start)/60
-      self.log.info('Stage request for %s files took %.1f mins' %(len(pfnList),timing))
+      timing = time.time()-start
+      self.log.info('Stage request for %s files took %.1f secs' %(len(pfnList),timing))
 
       if not stagingRequest['OK']:
         self.log.warn('Staging request failed for %s %s' %(self.site,se))
         return stagingRequest
+      else:
+        stagingRequest = stagingRequest['Value']  
 
       if stagingRequest.has_key('Failed'):
         for pfn,cause in stagingRequest['Failed'].items():
