@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/SiteStager.py,v 1.2 2008/04/02 08:14:03 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/SiteStager.py,v 1.3 2008/04/02 08:25:43 paterson Exp $
 # File :   SiteStager.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
      resetting of stage requests as necessary.
 """
 
-__RCSID__ = "$Id: SiteStager.py,v 1.2 2008/04/02 08:14:03 paterson Exp $"
+__RCSID__ = "$Id: SiteStager.py,v 1.3 2008/04/02 08:25:43 paterson Exp $"
 
 from DIRAC.StagerSystem.Client.StagerClient                import StagerClient
 from DIRAC.DataManagementSystem.Client.StorageElement      import StorageElement
@@ -74,6 +74,7 @@ class SiteStager(Thread):
         siteSEs = [ x.strip() for x in string.split(seStr,',')]
 
     seFilesDict = {}
+    pfnLfnDict = {}
     for localSE in siteSEs:
       for lfn,reps in replicas.items():
         if reps.has_key(localSE):
@@ -82,11 +83,13 @@ class SiteStager(Thread):
             currentFiles = seFilesDict[localSE]
             currentFiles.append(pfn)
             seFilesDict[localSE] = currentFiles
+            pfnLfnDict[pfn]=lfn
           else:
             seFilesDict[localSE] = [pfn]
+            pfnLfnDict[pfn]=lfn
 
     self.log.verbose('Files grouped by LocalSE are: \n%s' %seFilesDict)
-    result = self.__prestageFiles(seFilesDict)
+    result = self.__prestageFiles(seFilesDict,pfnLfnDict)
     if not result['OK']:
       self.log.warn(result['Message'])
       self.log.debug(result)
@@ -96,7 +99,7 @@ class SiteStager(Thread):
     return S_OK()
 
   #############################################################################
-  def __prestageFiles(self,seFilesDict):
+  def __prestageFiles(self,seFilesDict,pfnLfnDict):
     """ This method instantiates the StorageElement class and prestages the SURLs.
     """
     submitted = [] #even if files fail, still report them as submitted since they will fail after several retries
@@ -119,12 +122,12 @@ class SiteStager(Thread):
       if stagingRequest.has_key('Failed'):
         for pfn,cause in stagingRequest['Failed'].items():
           self.log.warn('PFN %s failed to stage with message: %s' %(pfn,cause))
-          submitted.append(pfn)
+          submitted.append(pfnLfnDict[pfn])
 
       if stagingRequest.has_key('Successful'):
         for pfn,protPFN in stagingRequest['Successful'].items():
           self.log.verbose('Stage request made for PFN %s at SE %s' %(pfn,se))
-          submitted.append(pfn)
+          submitted.append(pfnLfnDict[pfn])
 
     result = self.stagerClient.setFilesState(submitted,self.site,'Submitted')
     return result
