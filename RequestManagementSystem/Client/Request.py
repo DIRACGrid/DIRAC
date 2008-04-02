@@ -1,14 +1,11 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/Request.py,v 1.8 2008/04/02 09:28:35 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/Request.py,v 1.9 2008/04/02 19:42:07 atsareg Exp $
 """
-   Request Base Class
-
-   This class provides generic Request submission functionality suitable for any VO.
-
-   Helper functions are documented with example usage for the DIRAC API.
+   Request Class encapsulates a request definition based on the Workflow
+   framework.
 
 """
 
-__RCSID__ = "$Id: Request.py,v 1.8 2008/04/02 09:28:35 atsareg Exp $"
+__RCSID__ = "$Id: Request.py,v 1.9 2008/04/02 19:42:07 atsareg Exp $"
 
 from DIRAC.Core.Workflow.Utility                    import *
 from DIRAC.RequestManagementSystem.Client.RequestBase import RequestBase
@@ -22,6 +19,7 @@ class Request(RequestBase):
     """
 
     RequestBase.__init__(self)
+    self.genParameters['RequestTechnology'] = 'Workflow'
 
     self.moduleType = None
 
@@ -29,26 +27,40 @@ class Request(RequestBase):
       self.workflow = Workflow()
     else:
       self.workflow = Workflow(script)
-      for pname in self.genParametersNames:
-        value = self.workflow.findParameter(pname).getValue()
-        if value:
-          self.genParameters[pname] = value
+      for p in self.workflow.parameters:
+        pname = p.getName()
+        if pname in self.genParametersNames:
+          self.genParameters[pname] = p.getValue()
+        else:
+          self.parametersNames.append(pname)
+          self.parameters[pname] = p.getValue()
 
   #############################################################################
   def define(self,moduleType,parameterDict):
-    """ Specify the module type of the request and setup the workflow
+    """ Define the new request giving the request module type and
+        all the necessary parameters
     """
 
+    # Fill in the standard RequestBase part
     for p,value in parameterDict.items():
       if p in self.genParametersNames:
         self.genParameters[p] = value
+      elif p in self.parametersNames:
+        self.parameters[p] = value
+      else:
+        self.parametersNames.append(p)
+        self.parameters[p] = value
 
+    # Create the requested workflow
     self.moduleType = moduleType
     module = ModuleDefinition(moduleType+'Module')
     for p,value in self.genParameters.items():
-      module.addParameter(Parameter(p,value,'string','','',True,False,'Request parameter description'))
+      module.addParameter(Parameter(p,value,'string','','',
+                                    True,False,'Request parameter description'))
     for p,value in parameterDict.items():
-      module.addParameter(Parameter(p,value,'string','','',True,False,'Request parameter description'))
+      if p not in self.genParametersNames:
+        module.addParameter(Parameter(p,value,'string','','',
+                                      True,False,'Request parameter description'))
 
     module.setDescription('Request Failover System item')
     #Below should be changed to a more dynamic approach
@@ -57,14 +69,6 @@ class Request(RequestBase):
     module.setBody(body)
 
     self.workflow = createSingleModuleWorkflow(module,moduleType)
-
-  #############################################################################
-  def dump(self):
-    """ Dump the request parameters
-    """
-
-    for p in self.workflow.parameters:
-      print (p.getName()+':').ljust(26),p.getValue()
 
   #############################################################################
   def execute(self):
