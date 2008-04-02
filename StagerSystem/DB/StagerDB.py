@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/DB/StagerDB.py,v 1.4 2008/04/01 17:18:58 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/DB/StagerDB.py,v 1.5 2008/04/02 17:13:39 paterson Exp $
 ########################################################################
 
 """ StagerDB is a front end to the Stager Database.
@@ -8,7 +8,7 @@
     A.Smith (17/05/07)
 """
 
-__RCSID__ = "$Id: StagerDB.py,v 1.4 2008/04/01 17:18:58 paterson Exp $"
+__RCSID__ = "$Id: StagerDB.py,v 1.5 2008/04/02 17:13:39 paterson Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
@@ -24,15 +24,14 @@ class StagerDB(DB):
     """
       Insert timing information for staging commands into the StagerDB SiteTiming table.
     """
-    req = "INSERT INTO SiteTiming (Site,Command,CommTime,Files,Time) " + \
-          "VALUES ('%s','%s',%f,%d,UTC_TIMESTAMP());" % (site,cmd,time,files)
+    req = "INSERT INTO SiteTiming (Site,Command,CommTime,Files,Time) VALUES ('%s','%s',%f,%d,UTC_TIMESTAMP());" % (site,cmd,time,files)
     return self._update(req)
 
-  def getAllJobs(self,site):
+  def getAllJobs(self,source):
     """
-      Selects the unique JobIDs from the SiteFiles table for given site
+      Selects the unique JobIDs from the SiteFiles table for given site and system source e.g. WMS, DMS.
     """
-    req = "SELECT DISTINCT JobID FROM SiteFiles WHERE Site = '%s';" % site
+    req = "SELECT DISTINCT JobID FROM SiteFiles WHERE Source = '%s';" %(source)
     result = self._query(req)
     if not result['OK']:
       return result
@@ -44,6 +43,22 @@ class StagerDB(DB):
       result['JobIDs'] = jobIDs
       return result
 
+  def getJobsForSystemAndState(self,state,source,limit):
+    """Retrieves jobs with files in a given status for a particular system. 
+    """
+    req = "SELECT JobID,SUM(Status!='%s'),SUM(Status='%s') FROM SiteFiles WHERE Source = '%s' GROUP BY JobID ORDER BY JobID LIMIT %d;" % (state,state,source,limit)
+    result = self._query(req)
+    if not result['OK']:
+      return result
+    else:
+      stateJobIDs = []
+      for jobID,stateNo,stateYes in result['Value']:
+        if stateNo == 0:
+          stateJobIDs.append(jobID)
+      result = S_OK()
+      result['JobIDs'] = stateJobIDs
+      return result
+  
   def getJobsForRetry(self,retry,site):
     """
       Selects the unique JobIDs from the SiteFiles table where files have supplied retry count
@@ -91,9 +106,7 @@ class StagerDB(DB):
     else:
       if result['Value']:
         datetime = str(result['Value'][0][0])
-        req = "UPDATE SiteFiles SET Status = 'New', Retry = Retry +1 WHERE " + \
-              "Site = '%s' AND Status = 'Submitted' AND StageSubmit < '%s';" \
-              % (site,datetime)
+        req = "UPDATE SiteFiles SET Status = 'New', Retry = Retry +1 WHERE Site = '%s' AND Status = 'Submitted' AND StageSubmit < '%s';" % (site,datetime)
         return self._update(req)
       else:
         errorStr = "resetStageRequest failed to obtain DATETIME"
@@ -110,7 +123,7 @@ class StagerDB(DB):
     req = "DELETE FROM SiteFiles WHERE JobID IN (%s);" % str_jobid
     return self._update(req)
 
-  def getStageTimeAtSite(self,lfns,site):
+  def getStageTimeForSystem(self,lfns,source):
     """
       This obtains the time taken to stage a file using the timestamps in the SiteFiles table.
     """
@@ -118,8 +131,7 @@ class StagerDB(DB):
     for lfn in lfns:
       str_lfns.append("'"+lfn+"'")
     str_lfn = string.join(str_lfns,",")
-    req = "SELECT JobID,LFN,SEC_TO_TIME(StageComplete-StageSubmit) FROM SiteFiles " + \
-          "WHERE Site = '%s' AND LFN IN (%s);" % (site,str_lfn)
+    req = "SELECT JobID,LFN,SEC_TO_TIME(StageComplete-StageSubmit) FROM SiteFiles WHERE Source = '%s' AND LFN IN (%s);" % (site,str_lfn)
     result = self._query(req)
     if not result['OK']:
       return result
@@ -160,21 +172,18 @@ class StagerDB(DB):
     str_lfn = string.join(str_lfns,",")
 
     if state == 'Submitted':
-      req = "UPDATE SiteFiles SET Status = '%s', StageSubmit = UTC_TIMESTAMP() WHERE " + \
-            "Site = '%s' AND LFN IN (%s);" % (state,site,str_lfn)
+      req = "UPDATE SiteFiles SET Status = '%s', StageSubmit = UTC_TIMESTAMP() WHERE Site = '%s' AND LFN IN (%s);" % (state,site,str_lfn)
       result = self._update(req)
-    elif state == 'Staged':
-      req = "UPDATE SiteFiles SET Status = '%s', StageComplete = UTC_TIMESTAMP(), StageSubmit = UTC_TIMESTAMP() WHERE " + \
-            "StageSubmit = '0000-00-00 00:00:00' AND Site = '%s' AND LFN IN (%s);" % (state,site,str_lfn)
+    elif state == 'ToUpdate':
+      req = "UPDATE SiteFiles SET Status = '%s', StageComplete = UTC_TIMESTAMP(), StageSubmit = UTC_TIMESTAMP() WHERE StageSubmit = '0000-00-00 00:00:00' AND Site = '%s' AND LFN IN (%s);" % (state,site,str_lfn)
       result = self._update(req)
       if not result['OK']:
         return result
       else:
-        req = "UPDATE SiteFiles SET Status = '%s', StageComplete = UTC_TIMESTAMP() WHERE " + \
-              "StageSubmit != '0000-00-00 00:00:00' AND Site = '%s' AND LFN IN (%s);" % (state,site,str_lfn)
+        req = "UPDATE SiteFiles SET Status = '%s', StageComplete = UTC_TIMESTAMP() WHERE StageSubmit != '0000-00-00 00:00:00' AND Site = '%s' AND LFN IN (%s);" % (state,site,str_lfn)
         result = self._update(req)
     else:
-      req = "UPDATE SiteFiles SET Status = '%s' WHERE Site = '%s' AND LFN IN (%s);" % (state,site)
+      req = "UPDATE SiteFiles SET Status = '%s' WHERE Site = '%s' AND LFN IN (%s);" % (state,site,str_lfn)
       result = self._update(req)
     return result
 
