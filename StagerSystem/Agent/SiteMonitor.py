@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/SiteMonitor.py,v 1.1 2008/04/02 14:32:18 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/SiteMonitor.py,v 1.2 2008/04/02 16:38:15 paterson Exp $
 # File :   SiteMonitor.py
 # Author : Stuart Paterson
 ########################################################################
@@ -7,7 +7,7 @@
 """  The SiteMonitor base-class monitors staging requests for a given site.
 """
 
-__RCSID__ = "$Id: SiteMonitor.py,v 1.1 2008/04/02 14:32:18 paterson Exp $"
+__RCSID__ = "$Id: SiteMonitor.py,v 1.2 2008/04/02 16:38:15 paterson Exp $"
 
 from DIRAC.StagerSystem.Client.StagerClient                import StagerClient
 from DIRAC.DataManagementSystem.Client.StorageElement      import StorageElement
@@ -153,7 +153,7 @@ class SiteMonitor(Thread):
             self.log.warn(metadata)
 
     if staged:
-      result = self.stagerClient.setFilesState(staged,self.site,'Staged')
+      result = self.stagerClient.setFilesState(staged,self.site,'ToUpdate')
       if not result['OK']:
         self.log.warn(result)
 
