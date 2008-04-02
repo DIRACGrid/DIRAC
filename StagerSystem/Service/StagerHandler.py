@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Service/StagerHandler.py,v 1.2 2008/03/31 16:14:24 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Service/StagerHandler.py,v 1.3 2008/04/02 17:14:27 paterson Exp $
 ########################################################################
 
 """ StagerHandler is the implementation of the StagerDB in the DISET framework
     A.Smith (17/05/07)
 """
 
-__RCSID__ = "$Id: StagerHandler.py,v 1.2 2008/03/31 16:14:24 paterson Exp $"
+__RCSID__ = "$Id: StagerHandler.py,v 1.3 2008/04/02 17:14:27 paterson Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -37,18 +37,30 @@ class StagerHandler(RequestHandler):
       return S_ERROR(errorStr)
 
   types_getAllJobs = [StringType]
-  def export_getAllJobs(self,site):
+  def export_getAllJobs(self,source):
     """
-       This method selects all the jobs for a given site
+       This method selects all the jobs for a given system source
     """
     try:
-      result = stagerDB.getAllJobs(site)
+      result = stagerDB.getAllJobs(source)
       return result
     except Exception,x:
       errorStr = "StagerDBHandler.getAllJobs failed "+str(x)
       print errorStr
       return S_ERROR(errorStr)
 
+  types_getJobsForSystemAndState = [StringType,StringType,IntType]
+  def export_getJobsForSystemAndState(self,state,source,limit):
+    """Allows to retrieve a list of jobs for a particular system and status.
+    """  
+    try:
+      result = stagerDB.getJobsForSystemAndState(state,source,limit)
+      return result
+    except Exception,x:
+      errorStr = "StagerDBHandler.getJobsForSystemAndState failed"+str(x)
+      print errorStr
+      return S_ERROR(errorStr)
+      
   types_getJobsForRetry = [IntType,StringType]
   def export_getJobsForRetry(self,retry,site):
     """
@@ -102,16 +114,16 @@ class StagerHandler(RequestHandler):
       print errorStr
       return S_ERROR(errorStr)
 
-  types_getStageTimeAtSite = [ListType,StringType]
-  def export_getStageTimeAtSite(self,lfns,site):
+  types_getStageTimeForSystem = [ListType,StringType]
+  def export_getStageTimeForSystem(self,lfns,source):
     """
-       This method returns the stage time for files at a site. It is assumed the file is staged
+       This method returns the stage time for files. It is assumed the file is staged
     """
     try:
-      result = stagerDB.getStageTimeAtSite(lfns,site)
+      result = stagerDB.getStageTimeForSystem(lfns,site)
       return result
     except Exception,x:
-      errorStr = "StagerDBHandler.getStageTimeAtSite failed "+str(x)
+      errorStr = "StagerDBHandler.getStageTimeForSystem failed "+str(x)
       print errorStr
       return S_ERROR(errorStr)
 
