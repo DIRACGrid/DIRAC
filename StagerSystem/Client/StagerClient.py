@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: StagerClient.py,v 1.3 2008/03/31 16:15:31 paterson Exp $
+# $Id: StagerClient.py,v 1.4 2008/04/02 17:15:16 paterson Exp $
 ########################################################################
 
 """Set of utilities and classes to handle Stager Database"""
@@ -21,6 +21,14 @@ class StagerClient:
       return result
     except Exception, x:
       errorStr = "StagerDBClient.stageFiles failed"
+      gLogger.exception(errorStr,x)
+      return S_ERROR(errorStr+": "+str(x))
+
+  def getJobsForSystemAndState(self,state,source,limit=0):
+    try:
+      result = self.server.getJobsForSystemAndState(state,source,limit)
+    except Exception,x:
+      errorStr = "StagerDBClient.getJobsForSystemAndState failed"
       gLogger.exception(errorStr,x)
       return S_ERROR(errorStr+": "+str(x))
 
@@ -51,12 +59,12 @@ class StagerClient:
       gLogger.exception(errorStr,x)
       return S_ERROR(errorStr+": "+str(x))
 
-  def getStageTimeAtSite(self,lfns,site):
+  def getStageTimeForSystem(self,lfns,source):
     try:
-      result = self.server.getStageTimeAtSite(lfns,site)
+      result = self.server.getStageTimeForSystem(lfns,source)
       return result
     except Exception, x:
-      errorStr = "StagerDBClient.getStageTimeAtSite failed"
+      errorStr = "StagerDBClient.getStageTimeForSystem failed"
       gLogger.exception(errorStr,x)
       return S_ERROR(errorStr+": "+str(x))
 
@@ -96,9 +104,9 @@ class StagerClient:
       gLogger.exception(errorStr,x)
       return S_ERROR(errorStr+": "+str(x))
 
-  def getAllJobs(self,site):
+  def getAllJobs(self,source):
     try:
-      result = self.server.getAllJobs(site)
+      result = self.server.getAllJobs(source)
       return result
     except Exception, x:
       errorStr = "StagerDBClient.getAllJobs failed"
