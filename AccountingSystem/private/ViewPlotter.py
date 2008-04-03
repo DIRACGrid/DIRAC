@@ -3,6 +3,7 @@ from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 from DIRAC.AccountingSystem.private.DBUtils import DBUtils
 from DIRAC.AccountingSystem.private.Plots import generateTimedStackedBarPlot, generateQualityPlot
+from DIRAC.AccountingSystem.private.ViewsCache import gViewsCache
 
 class ViewPlotter(DBUtils):
 
@@ -23,15 +24,7 @@ class ViewPlotter(DBUtils):
       funcObj = getattr( self, funcName )
     except Exception, e:
       return S_ERROR( "View  %s is not defined" % viewName )
-    filehash = md5.new()
-    filehash.update( "%s:%s:%s:%s" % ( viewName, startTime, endTime, argsDict ) )
-    #TODO: fix this /tmp
-    fileName = "/tmp/%s.png" % filehash.hexdigest()
-    try:
-      return funcObj( startTime, endTime, argsDict, fileName )
-    except Exception, e:
-      gLogger.exception( "Exception while generating %s view" % viewName )
-      return S_ERROR( "Exception while generating %s view: %s" % ( viewName, str(e) ) )
+    return gViewsCache.generateView( viewName, startTime, endTime, argsDict, funcObj )
 
   def viewsList( self ):
     viewList = []
@@ -56,6 +49,7 @@ class ViewPlotter(DBUtils):
       return retVal
     dataDict, granularity = retVal[ 'Value' ]
     dataDict[ 'Failed' ] = self.stripDataField( dataDict, 0 )[0]
+    dataDict = self._fillWithZero( granularity, startTime, endTime, dataDict )
     gLogger.info( "Generating plot", "%s with granularity of %s" % ( filename, granularity ) )
     metadata = { 'title' : 'Transfer bandwidth by %s' % " -> ".join( keyNameList ) ,
                  'ylabel' : 'bytes',
@@ -93,8 +87,7 @@ class ViewPlotter(DBUtils):
     dataDict = self._groupByField( 0, retVal[ 'Value' ] )
     coarsestGranularity = self._getBucketLengthForTime( typeName, startTime )
     for keyField in dataDict:
-      keyData = self._sumToGranularity( coarsestGranularity, dataDict[ keyField ] )
-      dataDict[ keyField ] = self._fillWithZero( coarsestGranularity, startTime, endTime, keyData )
+      dataDict[ keyField ] = self._sumToGranularity( coarsestGranularity, dataDict[ keyField ] )
     return S_OK( ( dataDict, coarsestGranularity ) )
 
   def _viewQualityBySource( self, startTime, endTime, argsDict, filename ):
@@ -146,7 +139,6 @@ class ViewPlotter(DBUtils):
     if not retVal[ 'OK' ]:
       return retVal
     dataDict = self._groupByField( 0, retVal[ 'Value' ] )
-    print dataDict
     coarsestGranularity = self._getBucketLengthForTime( typeName, startTime )
     for keyField in dataDict:
       dataDict[ keyField ] = self._averageToGranularity( coarsestGranularity, dataDict[ keyField ] )

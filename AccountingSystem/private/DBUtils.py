@@ -147,21 +147,18 @@ class DBUtils:
       del( normData[ bDate ][-1] )
     return normData
 
-  def _fillWithZero( self, granularity, startEpoch, endEpoch, bucketsData ):
+  def _fillWithZero( self, granularity, startEpoch, endEpoch, dataDict ):
     """
     Fill with zeros missing buckets
-    First field must be bucketTime in bucketsData list
+    dataDict = { 'key' : { time1 : value,  time2 : value... }, 'key2'.. }
     """
     startBucketEpoch = startEpoch - startEpoch % granularity
-    filled = {}
-    zeroList = [ 0 for field in bucketsData[ bucketsData.keys()[0] ] ]
-    print ( startBucketEpoch, endEpoch, granularity )
-    for bucketEpoch in range( startBucketEpoch, endEpoch, granularity ):
-      if bucketEpoch in bucketsData:
-        filled[ bucketEpoch ] =  bucketsData[ bucketEpoch ]
-      else:
-        filled[ bucketEpoch ] = list( zeroList )
-    return filled
+    for key in dataDict:
+      currentDict = dataDict[ key ]
+      for timeEpoch in range( startBucketEpoch, endEpoch, granularity ):
+        if timeEpoch not in currentDict:
+          currentDict[ timeEpoch ] = 0
+    return dataDict
 
   def stripDataField( self, dataDict, fieldId ):
     """
@@ -182,7 +179,6 @@ class DBUtils:
     for key in dataDict:
       for timestamp in dataDict[ key ]:
         for iPos in dataDict[ key ][ timestamp ]:
-          print key, timestamp, iPos
           remainingData.append( {} )
         break
       break

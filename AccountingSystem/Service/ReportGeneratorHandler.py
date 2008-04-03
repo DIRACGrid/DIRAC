@@ -1,10 +1,13 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/ReportGeneratorHandler.py,v 1.4 2008/03/27 19:03:50 acasajus Exp $
-__RCSID__ = "$Id: ReportGeneratorHandler.py,v 1.4 2008/03/27 19:03:50 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/ReportGeneratorHandler.py,v 1.5 2008/04/03 19:13:41 acasajus Exp $
+__RCSID__ = "$Id: ReportGeneratorHandler.py,v 1.5 2008/04/03 19:13:41 acasajus Exp $"
 import types
-from DIRAC import S_OK, S_ERROR
+import os
+from DIRAC import S_OK, S_ERROR, rootPath, gConfig, gLogger
 from DIRAC.AccountingSystem.private.AccountingDB import AccountingDB
 from DIRAC.AccountingSystem.private.Summaries import Summaries
+from DIRAC.AccountingSystem.private.ViewsCache import gViewsCache
 from DIRAC.AccountingSystem.private.ViewPlotter import ViewPlotter
+from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities import Time
 
@@ -13,6 +16,26 @@ gAccountingDB = False
 def initializeReportGeneratorHandler( serviceInfo ):
   global gAccountingDB
   gAccountingDB = AccountingDB()
+  #Get data location
+  reportSection = PathFinder.getServiceSection( "Accounting/ReportGenerator" )
+  dataPath = gConfig.getValue( "%s/DataLocation" % reportSection, "data/accountingGraphs" )
+  dataPath = dataPath.strip()
+  if "/" != dataPath[0]:
+    dataPath = os.path.realpath( "%s/%s" % ( rootPath, dataPath ) )
+  gLogger.info( "Data will be written into %s" % dataPath )
+  try:
+    os.makedirs( dataPath )
+  except:
+    pass
+  try:
+    testFile = "%s/acc.jarl.test" % dataPath
+    fd = file( testFile, "w" )
+    fd.close()
+    os.unlink( testFile )
+  except IOError:
+    gLogger.fatal( "Can't write to %s" % dataPath )
+    return S_ERROR( "Data location is not writable" )
+  gViewsCache.setGraphsLocation( dataPath )
   return S_OK()
 
 class ReportGeneratorHandler( RequestHandler ):
