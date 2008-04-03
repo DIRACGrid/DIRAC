@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: StagerClient.py,v 1.4 2008/04/02 17:15:16 paterson Exp $
+# $Id: StagerClient.py,v 1.5 2008/04/03 13:24:26 paterson Exp $
 ########################################################################
 
 """Set of utilities and classes to handle Stager Database"""
@@ -21,6 +21,14 @@ class StagerClient:
       return result
     except Exception, x:
       errorStr = "StagerDBClient.stageFiles failed"
+      gLogger.exception(errorStr,x)
+      return S_ERROR(errorStr+": "+str(x))
+
+  def getJobFilesStatus(self,jobID):
+    try:
+      result = self.server.getJobFilesStatus(jobID)
+    except Exception,x:
+      errorStr = "StagerDBClient.getJobFilesStatus failed"
       gLogger.exception(errorStr,x)
       return S_ERROR(errorStr+": "+str(x))
 

@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/DB/StagerDB.py,v 1.5 2008/04/02 17:13:39 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/DB/StagerDB.py,v 1.6 2008/04/03 13:24:16 paterson Exp $
 ########################################################################
 
 """ StagerDB is a front end to the Stager Database.
@@ -8,7 +8,7 @@
     A.Smith (17/05/07)
 """
 
-__RCSID__ = "$Id: StagerDB.py,v 1.5 2008/04/02 17:13:39 paterson Exp $"
+__RCSID__ = "$Id: StagerDB.py,v 1.6 2008/04/03 13:24:16 paterson Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
@@ -43,8 +43,26 @@ class StagerDB(DB):
       result['JobIDs'] = jobIDs
       return result
 
+  def getJobFilesStatus(self,jobID):
+    """Returns the surl, status and site information for a given jobID.
+    """
+    req = "SELECT LFN,SURL,Status,Site from SiteFiles WHERE JobID = '%s';" % (jobID)
+    result = self._query(req)
+    if not result['OK']:
+      return result
+    lfnsDict = {}
+    siteName = ''
+    for lfn,surl,status,site in result['Value']:
+      lfnsDict[lfn]={}
+      lfnsDict[lfn].update({surl:status})
+      siteName = site #always the same in the same job
+    result = S_OK()
+    result['Files'] = lfnsDict
+    result['Site'] = siteName
+    return result
+
   def getJobsForSystemAndState(self,state,source,limit):
-    """Retrieves jobs with files in a given status for a particular system. 
+    """Retrieves jobs with files in a given status for a particular system.
     """
     req = "SELECT JobID,SUM(Status!='%s'),SUM(Status='%s') FROM SiteFiles WHERE Source = '%s' GROUP BY JobID ORDER BY JobID LIMIT %d;" % (state,state,source,limit)
     result = self._query(req)
@@ -58,7 +76,7 @@ class StagerDB(DB):
       result = S_OK()
       result['JobIDs'] = stateJobIDs
       return result
-  
+
   def getJobsForRetry(self,retry,site):
     """
       Selects the unique JobIDs from the SiteFiles table where files have supplied retry count
@@ -194,7 +212,7 @@ class StagerDB(DB):
     if limit:
       req = "SELECT LFN,SURL,SE,JobID from SiteFiles WHERE Status = '%s' AND Site = '%s' ORDER BY JobID LIMIT %d;" % (state,site,limit)
     else:
-      req = "SELECT LFN,SURL,SE,JobID from SiteFiles WHERE Status = '%s' AND Site = '%s' ORDER BY JobID;" % (state,site)   
+      req = "SELECT LFN,SURL,SE,JobID from SiteFiles WHERE Status = '%s' AND Site = '%s' ORDER BY JobID;" % (state,site)
     result = self._query(req)
     if not result['OK']:
       return result
