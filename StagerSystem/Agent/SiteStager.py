@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/SiteStager.py,v 1.3 2008/04/02 08:25:43 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/SiteStager.py,v 1.4 2008/04/03 15:22:16 paterson Exp $
 # File :   SiteStager.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
      resetting of stage requests as necessary.
 """
 
-__RCSID__ = "$Id: SiteStager.py,v 1.3 2008/04/02 08:25:43 paterson Exp $"
+__RCSID__ = "$Id: SiteStager.py,v 1.4 2008/04/03 15:22:16 paterson Exp $"
 
 from DIRAC.StagerSystem.Client.StagerClient                import StagerClient
 from DIRAC.DataManagementSystem.Client.StorageElement      import StorageElement
@@ -96,6 +96,7 @@ class SiteStager(Thread):
 
     self.log.verbose('Checking for stage requests to repeat')
     self.__repeatStageRequests()
+    self.log.verbose('End of site stager loop')
     return S_OK()
 
   #############################################################################
@@ -117,7 +118,7 @@ class SiteStager(Thread):
         self.log.warn('Staging request failed for %s %s' %(self.site,se))
         return stagingRequest
       else:
-        stagingRequest = stagingRequest['Value']  
+        stagingRequest = stagingRequest['Value']
 
       if stagingRequest.has_key('Failed'):
         for pfn,cause in stagingRequest['Failed'].items():
@@ -129,8 +130,12 @@ class SiteStager(Thread):
           self.log.verbose('Stage request made for PFN %s at SE %s' %(pfn,se))
           submitted.append(pfnLfnDict[pfn])
 
-    result = self.stagerClient.setFilesState(submitted,self.site,'Submitted')
-    return result
+    if submitted:
+      result = self.stagerClient.setFilesState(submitted,self.site,'Submitted')
+      if not result['OK']:
+        self.log.warn('Setting file status failed with error:\n%s' %result)
+
+    return S_OK('Files prestaged')
 
   #############################################################################
   def __repeatStageRequests(self):
