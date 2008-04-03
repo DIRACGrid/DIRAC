@@ -1,16 +1,16 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Types/BaseAccountingType.py,v 1.7 2008/04/01 17:40:34 acasajus Exp $
-__RCSID__ = "$Id: BaseAccountingType.py,v 1.7 2008/04/01 17:40:34 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Types/BaseAccountingType.py,v 1.8 2008/04/03 19:17:01 acasajus Exp $
+__RCSID__ = "$Id: BaseAccountingType.py,v 1.8 2008/04/03 19:17:01 acasajus Exp $"
 
 import types
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC.AccountingSystem.Client.AccountingClient import AccountingClient
+from DIRAC.AccountingSystem.Client.DataStoreClient import DataStoreClient
 
 class BaseAccountingType:
 
   __validDataValues = ( types.IntType, types.LongType, types.FloatType, types.LongType )
-  __acClient = AccountingClient()
+  __acClient = DataStoreClient()
 
   def __init__( self ):
     self.keyFieldsList = []
