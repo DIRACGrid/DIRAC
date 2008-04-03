@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/DB/StagerDB.py,v 1.7 2008/04/03 13:49:10 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/DB/StagerDB.py,v 1.8 2008/04/03 15:00:42 paterson Exp $
 ########################################################################
 
 """ StagerDB is a front end to the Stager Database.
@@ -8,9 +8,10 @@
     A.Smith (17/05/07)
 """
 
-__RCSID__ = "$Id: StagerDB.py,v 1.7 2008/04/03 13:49:10 paterson Exp $"
+__RCSID__ = "$Id: StagerDB.py,v 1.8 2008/04/03 15:00:42 paterson Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC.Core.Utilities.Time import toString
 from DIRAC.Core.Base.DB import DB
 
 import string
@@ -158,7 +159,7 @@ class StagerDB(DB):
       for jobid,lfn,stageTime in result['Value']:
         if not timeDict.has_key(jobid):
           timeDict[jobid] = {}
-        timeDict[jobid][lfn] = stageTime
+        timeDict[jobid][lfn] = toString(stageTime)
       result = S_OK()
       result['TimingDict'] = timeDict
       return result
