@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/DB/StagerDB.py,v 1.6 2008/04/03 13:24:16 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/DB/StagerDB.py,v 1.7 2008/04/03 13:49:10 paterson Exp $
 ########################################################################
 
 """ StagerDB is a front end to the Stager Database.
@@ -8,7 +8,7 @@
     A.Smith (17/05/07)
 """
 
-__RCSID__ = "$Id: StagerDB.py,v 1.6 2008/04/03 13:24:16 paterson Exp $"
+__RCSID__ = "$Id: StagerDB.py,v 1.7 2008/04/03 13:49:10 paterson Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
@@ -149,7 +149,7 @@ class StagerDB(DB):
     for lfn in lfns:
       str_lfns.append("'"+lfn+"'")
     str_lfn = string.join(str_lfns,",")
-    req = "SELECT JobID,LFN,SEC_TO_TIME(StageComplete-StageSubmit) FROM SiteFiles WHERE Source = '%s' AND LFN IN (%s);" % (site,str_lfn)
+    req = "SELECT JobID,LFN,SEC_TO_TIME(StageComplete-StageSubmit) FROM SiteFiles WHERE Source = '%s' AND LFN IN (%s);" % (source,str_lfn)
     result = self._query(req)
     if not result['OK']:
       return result
