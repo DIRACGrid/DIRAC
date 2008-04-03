@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Service/StagerHandler.py,v 1.4 2008/04/03 13:24:36 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Service/StagerHandler.py,v 1.5 2008/04/03 13:43:21 paterson Exp $
 ########################################################################
 
 """ StagerHandler is the implementation of the StagerDB in the DISET framework
     A.Smith (17/05/07)
 """
 
-__RCSID__ = "$Id: StagerHandler.py,v 1.4 2008/04/03 13:24:36 paterson Exp $"
+__RCSID__ = "$Id: StagerHandler.py,v 1.5 2008/04/03 13:43:21 paterson Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -132,7 +132,7 @@ class StagerHandler(RequestHandler):
        This method returns the stage time for files. It is assumed the file is staged
     """
     try:
-      result = stagerDB.getStageTimeForSystem(lfns,site)
+      result = stagerDB.getStageTimeForSystem(lfns,source)
       return result
     except Exception,x:
       errorStr = "StagerDBHandler.getStageTimeForSystem failed "+str(x)

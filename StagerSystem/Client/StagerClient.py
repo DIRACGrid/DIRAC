@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: StagerClient.py,v 1.5 2008/04/03 13:24:26 paterson Exp $
+# $Id: StagerClient.py,v 1.6 2008/04/03 13:39:54 paterson Exp $
 ########################################################################
 
 """Set of utilities and classes to handle Stager Database"""
@@ -27,6 +27,7 @@ class StagerClient:
   def getJobFilesStatus(self,jobID):
     try:
       result = self.server.getJobFilesStatus(jobID)
+      return result
     except Exception,x:
       errorStr = "StagerDBClient.getJobFilesStatus failed"
       gLogger.exception(errorStr,x)
@@ -35,6 +36,7 @@ class StagerClient:
   def getJobsForSystemAndState(self,state,source,limit=0):
     try:
       result = self.server.getJobsForSystemAndState(state,source,limit)
+      return result
     except Exception,x:
       errorStr = "StagerDBClient.getJobsForSystemAndState failed"
       gLogger.exception(errorStr,x)
