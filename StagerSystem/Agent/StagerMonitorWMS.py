@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/Attic/StagerMonitorWMS.py,v 1.2 2008/04/04 10:03:36 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/Attic/StagerMonitorWMS.py,v 1.3 2008/04/04 10:59:37 paterson Exp $
 # File :   StagerMonitorWMS.py
 # Author : Stuart Paterson
 ########################################################################
@@ -20,7 +20,7 @@
      Successful -> purged with status change
 """
 
-__RCSID__ = "$Id: StagerMonitorWMS.py,v 1.2 2008/04/04 10:03:36 paterson Exp $"
+__RCSID__ = "$Id: StagerMonitorWMS.py,v 1.3 2008/04/04 10:59:37 paterson Exp $"
 
 from DIRAC.Core.Base.Agent                                 import Agent
 from DIRAC.Core.DISET.RPCClient                            import RPCClient
@@ -235,15 +235,15 @@ class StagerMonitorWMS(Agent):
     for surl,retry,status,timing in monitoringReport: #always same fields in the tuple
       if len(surl)+2>surlAdj:
         surlAdj = len(surl)+2
-      if len(retry)+2>retryAdj:
-        retryAdj = len(retry)+2
+      if len(str(retry))+2>retryAdj:
+        retryAdj = len(str(retry))+2
       if len(status)+2>statusAdj:
         statusAdj = len(status)+2
       if len(timing)+2>timingAdj:
         timingAdj = len(timing)+2
 
     for surl,retry,status,timing in monitoringReport:
-      body += surl.ljust(surlAdj)+retry.ljust(retryAdj)+status.ljust(statusAdj)+timing.ljust(timingAdj)+'\n'
+      body += surl.ljust(surlAdj)+str(retry).ljust(retryAdj)+status.ljust(statusAdj)+timing.ljust(timingAdj)+'\n'
 
     #Update job status and send staging report
     stagerReport = '%s\n%s' %(header,body)
