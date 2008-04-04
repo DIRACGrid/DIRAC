@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/LocalConfiguration.py,v 1.20 2008/03/26 16:57:07 acasajus Exp $
-__RCSID__ = "$Id: LocalConfiguration.py,v 1.20 2008/03/26 16:57:07 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/LocalConfiguration.py,v 1.21 2008/04/04 16:24:19 acasajus Exp $
+__RCSID__ = "$Id: LocalConfiguration.py,v 1.21 2008/04/04 16:24:19 acasajus Exp $"
 
 import sys
 import os
@@ -135,7 +135,7 @@ class LocalConfiguration:
 
     errorsList = []
 
-    gConfigurationData.loadFile( os.path.expanduser( "~/.diracrc" ) )
+    gConfigurationData.loadFile( os.path.expanduser( "~/.dirac.cfg" ) )
     for fileName in self.additionalCFGFiles:
       gLogger.debug( "Loading file %s" % fileName )
       retVal = gConfigurationData.loadFile( fileName )
