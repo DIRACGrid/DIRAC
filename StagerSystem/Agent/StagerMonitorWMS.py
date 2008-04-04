@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/Attic/StagerMonitorWMS.py,v 1.3 2008/04/04 10:59:37 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/Attic/StagerMonitorWMS.py,v 1.4 2008/04/04 11:35:56 paterson Exp $
 # File :   StagerMonitorWMS.py
 # Author : Stuart Paterson
 ########################################################################
@@ -20,7 +20,7 @@
      Successful -> purged with status change
 """
 
-__RCSID__ = "$Id: StagerMonitorWMS.py,v 1.3 2008/04/04 10:59:37 paterson Exp $"
+__RCSID__ = "$Id: StagerMonitorWMS.py,v 1.4 2008/04/04 11:35:56 paterson Exp $"
 
 from DIRAC.Core.Base.Agent                                 import Agent
 from DIRAC.Core.DISET.RPCClient                            import RPCClient
@@ -176,6 +176,7 @@ class StagerMonitorWMS(Agent):
     lfnPfnStatusDict = result['Files']
     site = result['Site']
     retries = result['Retries']
+    seDict = result['SE']
 
     #Get timing information for ToUpdate / Staged files
     result = self.stagerClient.getStageTimeForSystem(lfnsList,self.system)
@@ -185,13 +186,13 @@ class StagerMonitorWMS(Agent):
     lfnTimingDict = result['TimingDict'][jobID] #{LFN:time}
     stagedCount = 0
     updateLFNs = []
-    monitoringReport = [('SURL','Retries','Status','TimingInfo')] #these become headers in the report
+    monitoringReport = [('SURL','Retries','Status','TimingInfo','SE')] #these become headers in the report
     for lfn,reps in lfnPfnStatusDict.items():
       for surl,status in reps.items():
         lfnTime = lfnTimingDict[lfn].split('.')[0]
         if re.search('-',lfnTime):
           lfnTime = '00:00:00'
-        monitoringReport.append((surl,retries[lfn],self.monStatusDict[status],lfnTime)) #we don't need microsecond accuracy ;)
+        monitoringReport.append((surl,retries[lfn],self.monStatusDict[status],lfnTime,seDict[lfn])) #we don't need microsecond accuracy ;)
         if status==self.updateStatus or status=='Staged':
           stagedCount+=1
         if status==self.updateStatus:
@@ -232,7 +233,8 @@ class StagerMonitorWMS(Agent):
     retryAdj = 0
     statusAdj = 0
     timingAdj = 0
-    for surl,retry,status,timing in monitoringReport: #always same fields in the tuple
+    seAdj = 0
+    for surl,retry,status,timing,se in monitoringReport: #always same fields in the tuple
       if len(surl)+2>surlAdj:
         surlAdj = len(surl)+2
       if len(str(retry))+2>retryAdj:
@@ -241,9 +243,11 @@ class StagerMonitorWMS(Agent):
         statusAdj = len(status)+2
       if len(timing)+2>timingAdj:
         timingAdj = len(timing)+2
+      if len(se)+2>seAdj:
+        seAdj = len(se)+2
 
-    for surl,retry,status,timing in monitoringReport:
-      body += surl.ljust(surlAdj)+str(retry).ljust(retryAdj)+status.ljust(statusAdj)+timing.ljust(timingAdj)+'\n'
+    for surl,retry,status,timing,se in monitoringReport:
+      body += surl.ljust(surlAdj)+str(retry).ljust(retryAdj)+status.ljust(statusAdj)+timing.ljust(timingAdj)+se.ljust(seAdj)+'\n'
 
     #Update job status and send staging report
     stagerReport = '%s\n%s' %(header,body)
