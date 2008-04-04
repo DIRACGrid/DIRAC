@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/SiteMonitor.py,v 1.4 2008/04/04 10:56:22 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/SiteMonitor.py,v 1.5 2008/04/04 11:28:45 paterson Exp $
 # File :   SiteMonitor.py
 # Author : Stuart Paterson
 ########################################################################
@@ -7,7 +7,7 @@
 """  The SiteMonitor base-class monitors staging requests for a given site.
 """
 
-__RCSID__ = "$Id: SiteMonitor.py,v 1.4 2008/04/04 10:56:22 paterson Exp $"
+__RCSID__ = "$Id: SiteMonitor.py,v 1.5 2008/04/04 11:28:45 paterson Exp $"
 
 from DIRAC.StagerSystem.Client.StagerClient                import StagerClient
 from DIRAC.DataManagementSystem.Client.StorageElement      import StorageElement
@@ -134,7 +134,7 @@ class SiteMonitor(Thread):
         metadataRequest = metadataRequest['Value']
 
       self.log.verbose('Setting timing information for gfal.prestage at site %s for %s files' %(self.site,len(pfnList)))
-      result = self.stagerClient.setTiming(self.site,'gfal.prestage',float(timing),pfnList)
+      result = self.stagerClient.setTiming(self.site,'gfal.prestage',float(timing),len(pfnList))
       if not result['OK']:
         self.log.warn('Failed to enter timing information for site %s with error:\n%s' %(self.site,result))
 
