@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/DB/StagerDB.py,v 1.8 2008/04/03 15:00:42 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/DB/StagerDB.py,v 1.9 2008/04/04 10:03:03 paterson Exp $
 ########################################################################
 
 """ StagerDB is a front end to the Stager Database.
@@ -8,7 +8,7 @@
     A.Smith (17/05/07)
 """
 
-__RCSID__ = "$Id: StagerDB.py,v 1.8 2008/04/03 15:00:42 paterson Exp $"
+__RCSID__ = "$Id: StagerDB.py,v 1.9 2008/04/04 10:03:03 paterson Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.Time import toString
@@ -47,19 +47,22 @@ class StagerDB(DB):
   def getJobFilesStatus(self,jobID):
     """Returns the surl, status and site information for a given jobID.
     """
-    req = "SELECT LFN,SURL,Status,Site from SiteFiles WHERE JobID = '%s';" % (jobID)
+    req = "SELECT LFN,SURL,Status,Site,Retry from SiteFiles WHERE JobID = '%s';" % (jobID)
     result = self._query(req)
     if not result['OK']:
       return result
     lfnsDict = {}
+    retryDict = {}
     siteName = ''
-    for lfn,surl,status,site in result['Value']:
+    for lfn,surl,status,site,retry in result['Value']:
       lfnsDict[lfn]={}
       lfnsDict[lfn].update({surl:status})
       siteName = site #always the same in the same job
+      retryDict[lfn]=retry
     result = S_OK()
     result['Files'] = lfnsDict
     result['Site'] = siteName
+    result['Retries'] = retryDict
     return result
 
   def getJobsForSystemAndState(self,state,source,limit):
