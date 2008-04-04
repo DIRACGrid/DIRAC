@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/DataStoreClient.py,v 1.1 2008/04/03 19:17:01 acasajus Exp $
-__RCSID__ = "$Id: DataStoreClient.py,v 1.1 2008/04/03 19:17:01 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/DataStoreClient.py,v 1.2 2008/04/04 16:24:05 acasajus Exp $
+__RCSID__ = "$Id: DataStoreClient.py,v 1.2 2008/04/04 16:24:05 acasajus Exp $"
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -48,4 +48,4 @@ class DataStoreClient:
       del( self.__registersList[ :50 ] )
     return S_OK()
 
-gAccounting = AccountingClient()
+gDataStoreClient = DataStoreClient()

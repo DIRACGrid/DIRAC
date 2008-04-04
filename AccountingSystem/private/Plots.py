@@ -31,3 +31,15 @@ def generateQualityPlot( fileName, data, metadata ):
   plotter( data, fn, metadata )
   fn.close()
   return S_OK()
+
+def generateCumulativePlot( fileName, data, metadata ):
+  try:
+    fn = file( fileName, "wb" )
+  except:
+    return S_ERROR( "Can't open %s" % filename )
+  if 'is_cumulative' not in metadata:
+    metadata[ 'is_cumulative' ] = False
+  plotter = CumulativeGraph()
+  plotter( data, fn, metadata )
+  fn.close()
+  return S_OK()

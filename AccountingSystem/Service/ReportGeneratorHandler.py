@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/ReportGeneratorHandler.py,v 1.5 2008/04/03 19:13:41 acasajus Exp $
-__RCSID__ = "$Id: ReportGeneratorHandler.py,v 1.5 2008/04/03 19:13:41 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/ReportGeneratorHandler.py,v 1.6 2008/04/04 16:24:06 acasajus Exp $
+__RCSID__ = "$Id: ReportGeneratorHandler.py,v 1.6 2008/04/04 16:24:06 acasajus Exp $"
 import types
 import os
 from DIRAC import S_OK, S_ERROR, rootPath, gConfig, gLogger
@@ -89,3 +89,16 @@ class ReportGeneratorHandler( RequestHandler ):
     """
     plotter = ViewPlotter( gAccountingDB, self.serviceInfoDict[ 'clientSetup' ] )
     return S_OK( plotter.viewsList() )
+
+  def transfer_toClient( self, fileId, token, fileHelper ):
+    """
+    Get graphs data
+    """
+    retVal = gViewsCache.getGraphData( fileId )
+    if not retVal[ 'OK' ]:
+      return retVal
+    retVal = fileHelper.sendData( retVal[ 'Value' ] )
+    if not retVal[ 'OK' ]:
+      return retVal
+    fileHelper.sendEOF()
+    return S_OK()

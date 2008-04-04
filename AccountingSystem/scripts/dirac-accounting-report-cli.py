@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/scripts/dirac-accounting-report-cli.py,v 1.2 2008/03/14 19:10:55 acasajus Exp $
-__RCSID__ = "$Id: dirac-accounting-report-cli.py,v 1.2 2008/03/14 19:10:55 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/scripts/dirac-accounting-report-cli.py,v 1.3 2008/04/04 16:24:05 acasajus Exp $
+__RCSID__ = "$Id: dirac-accounting-report-cli.py,v 1.3 2008/04/04 16:24:05 acasajus Exp $"
 
 import cmd
 import sys
@@ -11,7 +11,7 @@ import pprint
 from DIRAC import gLogger
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities import ExitCallback, ColorCLI, List
-from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
 
 Script.localCfg.addDefaultEntry( "LogLevel", "info" )
 Script.parseCommandLine()
@@ -55,8 +55,7 @@ class ReportCLI( cmd.Cmd ):
     gLogger.info( "Trying to connect to server" )
     self.connected = False
     self.prompt = "(%s)> " % ColorCLI.colorize( "Not connected", "red" )
-    self.repClient = RPCClient( "Accounting/ReportGenerator" )
-    retVal = self.repClient.ping()
+    retVal = ReportsClient().pingService()
     if retVal[ 'OK' ]:
       self.prompt = "(%s)> " % ColorCLI.colorize( "Connected", "green" )
       self.connected = True
@@ -110,13 +109,13 @@ class ReportCLI( cmd.Cmd ):
         return
       self.printPair( command, obj.__doc__[1:] )
 
-  def do_showSummariesList( self, args ):
+  def do_listSummaries( self, args ):
     """
     Get a list of available summaries
-      Usage : showSummariesList
+      Usage : listSummaries
     """
     try:
-      retVal = self.repClient.listSummaries()
+      retVal = ReportsClient().listSummaries()
       if not retVal[ 'OK' ]:
         gLogger.error( "Error: %s" % retVal[ 'Message' ] )
         return
@@ -126,13 +125,13 @@ class ReportCLI( cmd.Cmd ):
     except:
       self.showTraceback()
 
-  def do_showViewsList( self, args ):
+  def do_listViews( self, args ):
     """
     Get a list of available views
-      Usage : do_showViewsList
+      Usage : listViews
     """
     try:
-      retVal = self.repClient.listViews()
+      retVal = ReportsClient().listViews()
       if not retVal[ 'OK' ]:
         gLogger.error( "Error: %s" % retVal[ 'Message' ] )
         return
@@ -177,7 +176,7 @@ class ReportCLI( cmd.Cmd ):
           sumArgs[ key ].append( argList[ iP + 1 ] )
         else:
           sumArgs[ key ] = [ argList[ iP + 1 ] ]
-      retVal = self.repClient.generateSummary( argList[ 0 ], startDT, endDT, sumArgs )
+      retVal = ReportsClient().generateSummary( argList[ 0 ], startDT, endDT, sumArgs )
       if not retVal[ 'OK' ]:
         gLogger.error( "Error: %s" % retVal[ 'Message' ] )
         return
@@ -213,11 +212,19 @@ class ReportCLI( cmd.Cmd ):
           sumArgs[ key ].append( argList[ iP + 1 ] )
         else:
           sumArgs[ key ] = [ argList[ iP + 1 ] ]
-      retVal = self.repClient.plotView( argList[ 0 ], startDT, endDT, sumArgs )
+      repClient = ReportsClient()
+      retVal = repClient.plotView( argList[ 0 ], startDT, endDT, sumArgs )
       if not retVal[ 'OK' ]:
         gLogger.error( "Error: %s" % retVal[ 'Message' ] )
         return
-      print retVal
+      destDir = argList[3]
+      plotImg = retVal[ 'Value' ]
+      print "Downloading %s plot to %s.." % ( plotImg, destDir )
+      retVal = repClient.getPlotToDirectory( plotImg, destDir )
+      if not retVal[ 'OK' ]:
+        print " Error: %s" % retVal[ 'Message' ]
+      else:
+        print " done (%s/%s)!" % ( destDir, plotImg )
     except:
       self.showTraceback()
 

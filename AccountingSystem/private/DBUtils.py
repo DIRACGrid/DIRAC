@@ -68,44 +68,7 @@ class DBUtils:
     typeName = "%s_%s" % ( self._setup, typeName )
     return self._acDB.calculateBucketLengthForTime( typeName, nowEpoch, momentEpoch )
 
-  def _sumToGranularity( self, granularity, bucketsData ):
-    """
-    bucketsData must be a list of lists where each list contains
-      - field 0: datetime
-      - field 1: bucketLength
-      - fields 2-n: numericalFields
-    """
-    normData = {}
-
-    def addToNormData( bucketDate, data, proportion = 1.0 ):
-      if bucketDate in normData:
-        for iP in range( len( data ) ):
-          normData[ bucketDate ][iP] += data[iP] * proportion
-      else:
-        normData[ bucketDate ] = [ value * proportion for value in  data ]
-
-    for bucketData in bucketsData:
-      originalBucketLength = bucketData[1]
-      bucketDate = bucketData[0]
-      bucketValues = bucketData[2:]
-      if originalBucketLength == granularity:
-        addToNormData( bucketDate, bucketValues )
-      else:
-        startEpoch = bucketDate
-        endEpoch = bucketDate + originalBucketLength
-        newBucketEpoch = startEpoch - startEpoch % granularity
-        if startEpoch == endEpoch:
-          addToNormData( newBucketEpoch, bucketValues )
-        else:
-          while newBucketEpoch < endEpoch:
-            start = max( newBucketEpoch, startEpoch )
-            end = min( newBucketEpoch + granularity, endEpoch )
-            proportion = float( end - start ) / originalBucketLength
-            addToNormData( newBucketEpoch, bucketValues, proportion )
-            newBucketEpoch += granularity
-    return normData
-
-  def _averageToGranularity( self, granularity, bucketsData ):
+  def _spanToGranularity( self, granularity, bucketsData ):
     """
     bucketsData must be a list of lists where each list contains
       - field 0: datetime
@@ -123,8 +86,8 @@ class DBUtils:
         normData[ bucketDate ] = data + [ proportion ]
 
     for bucketData in bucketsData:
-      originalBucketLength = bucketData[1]
       bucketDate = bucketData[0]
+      originalBucketLength = bucketData[1]
       bucketValues = bucketData[2:]
       if originalBucketLength == granularity:
         addToNormData( bucketDate, bucketValues )
@@ -135,17 +98,41 @@ class DBUtils:
         if startEpoch == endEpoch:
           addToNormData( newBucketEpoch, bucketValues )
         else:
+          print "SPLIT!"
           while newBucketEpoch < endEpoch:
             start = max( newBucketEpoch, startEpoch )
             end = min( newBucketEpoch + granularity, endEpoch )
             proportion = float( end - start ) / originalBucketLength
             addToNormData( newBucketEpoch, bucketValues, proportion )
             newBucketEpoch += granularity
+    return normData
+
+  def _sumToGranularity( self, granularity, bucketsData ):
+    """
+    bucketsData must be a list of lists where each list contains
+      - field 0: datetime
+      - field 1: bucketLength
+      - fields 2-n: numericalFields
+    """
+    normData = self._spanToGranularity( granularity, bucketsData )
+    for bDate in normData:
+      del( normData[ bDate ][-1] )
+    return normData
+
+  def _averageToGranularity( self, granularity, bucketsData ):
+    """
+    bucketsData must be a list of lists where each list contains
+      - field 0: datetime
+      - field 1: bucketLength
+      - fields 2-n: numericalFields
+    """
+    normData = self._spanToGranularity( granularity, bucketsData )
     for bDate in normData:
       for iP in range( len( normData[ bDate ] ) ):
         normData[ bDate ][iP] /= normData[ bDate ][-1]
       del( normData[ bDate ][-1] )
     return normData
+
 
   def _fillWithZero( self, granularity, startEpoch, endEpoch, dataDict ):
     """
@@ -188,9 +175,9 @@ class DBUtils:
         del( dataDict[ key ][ timestamp ][ fieldId ] )
         for iPos in range( len( dataDict[ key ][ timestamp ] ) ):
           if timestamp in remainingData[ iPos ]:
-            remainingData[ iPos ][ timestamp ] += dataDict[ key ][ timestamp ][ fieldId ]
+            remainingData[ iPos ][ timestamp ] += dataDict[ key ][ timestamp ][ iPos ]
           else:
-            remainingData[ iPos ][ timestamp ] = dataDict[ key ][ timestamp ][ fieldId ]
+            remainingData[ iPos ][ timestamp ] = dataDict[ key ][ timestamp ][ iPos ]
         dataDict[ key ][ timestamp ] = strippedField
 
     return remainingData

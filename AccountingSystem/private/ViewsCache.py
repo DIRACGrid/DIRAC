@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/ViewsCache.py,v 1.1 2008/04/03 19:13:41 acasajus Exp $
-__RCSID__ = "$Id: ViewsCache.py,v 1.1 2008/04/03 19:13:41 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/ViewsCache.py,v 1.2 2008/04/04 16:24:04 acasajus Exp $
+__RCSID__ = "$Id: ViewsCache.py,v 1.2 2008/04/04 16:24:04 acasajus Exp $"
 
 import os
 import os.path
@@ -69,18 +69,21 @@ class ViewsCache:
       graphName = graphsToDelete.pop()
       try:
         gLogger.verbose( "Purging %s" % graphName )
-        os.unlink( graphName )
+        os.unlink( "%s/%s" % ( self.graphsLocation, graphName ) )
       except Exception, e:
         gLogger.error( "Can't delete graph file %s: %s" % ( graphName, str(e) ) )
+      del( self.cachedGraphs[ graphName ] )
 
   @gSynchro
+  def __addToCache( self, graphName, graceTime ):
+    if graphName not in self.cachedGraphs:
+      self.cachedGraphs[ graphName ] = [ Time.toEpoch(), graceTime ]
+
   def generateView( self, viewName, startTime, endTime, argsDict, funcToGenerate ):
-    graphName = "%s/%s.png" % ( self.graphsLocation,
-                                self.__generateName( ( viewName, startTime, endTime, argsDict ) )
-                              )
+    graphName = "%s.png" % self.__generateName( ( viewName, startTime, endTime, argsDict ) )
     if graphName not in self.cachedGraphs:
       try:
-        retVal = funcToGenerate( startTime, endTime, argsDict, graphName )
+        retVal = funcToGenerate( startTime, endTime, argsDict, "%s/%s" % ( self.graphsLocation, graphName ) )
         if not retVal[ 'OK' ]:
           return retVal
       except Exception, e:
@@ -88,12 +91,22 @@ class ViewsCache:
         return S_ERROR( "Exception while generating %s view: %s" % ( viewName, str(e) ) )
       graceTime = self.__calculateGraceTime( startTime, endTime )
       gLogger.info( "Graph %s will be cached for %s seconds" % ( graphName, graceTime ) )
-      self.cachedGraphs[ graphName ] = [ Time.toEpoch(), graceTime ]
+      self.__addToCache( graphName, graceTime )
     return S_OK( graphName )
 
   @gSynchro
-  def requestGraph( self, graphName ):
+  def __downloadedGraph( self, graphName ):
     if graphName in self.cachedGraphs:
-      self.cachedPlots[ graphFile ][1] += 60
+      self.cachedGraphs[ graphName ][1] += 60
+
+  def getGraphData( self, graphName ):
+    try:
+      fd = file( "%s/%s" % ( self.graphsLocation, graphName ), "rb" )
+      graphData = fd.read()
+      fd.close()
+      self.__downloadedGraph( graphName )
+    except Exception, e:
+      return S_ERROR( "Can't get graph %s: %s" % ( graphName, str(e) ) )
+    return S_OK( graphData )
 
 gViewsCache = ViewsCache()
