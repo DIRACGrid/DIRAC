@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/DB/StagerDB.py,v 1.10 2008/04/04 11:31:45 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/DB/StagerDB.py,v 1.11 2008/04/07 14:37:37 paterson Exp $
 ########################################################################
 
 """ StagerDB is a front end to the Stager Database.
@@ -8,7 +8,7 @@
     A.Smith (17/05/07)
 """
 
-__RCSID__ = "$Id: StagerDB.py,v 1.10 2008/04/04 11:31:45 paterson Exp $"
+__RCSID__ = "$Id: StagerDB.py,v 1.11 2008/04/07 14:37:37 paterson Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.Time import toString
@@ -248,4 +248,17 @@ class StagerDB(DB):
             if not result['OK']:
               return result
     result = S_OK()
+    return result
+
+
+  def getPageSummary(self,pageNumber,numberPerPage):
+    """For reporting to the monitoring web page.
+    """
+    limit = pageNumber*numberPerPage
+    req = "SELECT * from SiteFiles ORDER BY JobID LIMIT %d" %(limit)
+    files = self._query(req)
+    if not files['OK']:
+      return files
+    result = S_OK()
+    result['Files'] = files['Value']
     return result
