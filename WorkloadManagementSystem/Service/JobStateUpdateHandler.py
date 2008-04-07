@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobStateUpdateHandler.py,v 1.16 2008/03/13 17:20:13 atsareg Exp $
+# $Id: JobStateUpdateHandler.py,v 1.17 2008/04/07 15:53:39 paterson Exp $
 ########################################################################
 
 """ JobStateUpdateHandler is the implementation of the Job State updating
@@ -11,7 +11,7 @@
 
 """
 
-__RCSID__ = "$Id: JobStateUpdateHandler.py,v 1.16 2008/03/13 17:20:13 atsareg Exp $"
+__RCSID__ = "$Id: JobStateUpdateHandler.py,v 1.17 2008/04/07 15:53:39 paterson Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -80,17 +80,17 @@ class JobStateUpdateHandler( RequestHandler ):
     result = jobDB.getJobAttributes(jobID, ['Status','MinorStatus'] )
     if not result['OK']:
       return result
-      
+
     status = result['Value']['Status']
     if status == "Stalled":
       new_status = 'Running'
     else:
-      new_status = status  
-    minorStatus = result['Value']['MinorStatus']  
-      
+      new_status = status
+    minorStatus = result['Value']['MinorStatus']
+
     result = jobDB.setJobStatus(jobID,new_status,application=appStatus)
     if not result['OK']:
-      return result  
+      return result
 
     result = logDB.addLoggingRecord(jobID,new_status,minorStatus,appStatus,source=source)
     return result
@@ -131,7 +131,7 @@ class JobStateUpdateHandler( RequestHandler ):
 
     result = jobDB.setHeartBeatData(jobID,staticData, dynamicData)
     if not result['OK']:
-      gLogger.error('Failed to set the heart beat data for job %d ' % jobID)
+      gLogger.warn('Failed to set the heart beat data for job %d ' % jobID)
 
     # Restore the Running status if necessary
     result = jobDB.getJobAttributes(jobID,['Status'])
@@ -142,16 +142,16 @@ class JobStateUpdateHandler( RequestHandler ):
     if status == "Stalled":
       result = jobDB.setJobAttribute(jobID,'Status','Running',True)
       if not result['OK']:
-        gLogger.error('Failed to restore the job status to Running')
+        gLogger.warn('Failed to restore the job status to Running')
 
     jobMessageDict = {}
     result = jobDB.getJobCommand(jobID)
     if result['OK']:
       jobMessageDict = result['Value']
-      
-    if jobMessageDict:  
+
+    if jobMessageDict:
       for key,value in jobMessageDict.items():
-        result = jobDB.setJobCommandStatus(jobID,key,'Sent')  
+        result = jobDB.setJobCommandStatus(jobID,key,'Sent')
 
     return S_OK(jobMessageDict)
 
