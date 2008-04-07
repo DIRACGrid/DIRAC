@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Service/StagerHandler.py,v 1.6 2008/04/07 14:38:45 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Service/StagerHandler.py,v 1.7 2008/04/07 15:12:03 paterson Exp $
 ########################################################################
 
 """ StagerHandler is the implementation of the StagerDB in the DISET framework
     A.Smith (17/05/07)
 """
 
-__RCSID__ = "$Id: StagerHandler.py,v 1.6 2008/04/07 14:38:45 paterson Exp $"
+__RCSID__ = "$Id: StagerHandler.py,v 1.7 2008/04/07 15:12:03 paterson Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -202,13 +202,13 @@ class StagerHandler(RequestHandler):
       print errorStr
       return S_ERROR(errorStr)
       
-  types_getPageSummary = [IntType, IntType]
-  def export_getPageSummary(self, pageNumber, numberPerPage):
+  types_getPageSummary = [IntType, IntType, StringType]
+  def export_getPageSummary(self, pageNumber, numberPerPage, site):
     """ Get the summary of the DB information for a given
         number of pages and items per page.
     """
     try:
-      result = stagerDB.getPageSummary(site,pageNumber,numberPerPage)
+      result = stagerDB.getPageSummary(pageNumber,numberPerPage,site)
       return result
     except Exception,x:
       errorStr = "StagerDBHandler.getPageSummary failed "+str(x)
