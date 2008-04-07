@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/DB/SystemLoggingDB.py,v 1.12 2008/02/18 19:20:21 mseco Exp $
-__RCSID__ = "$Id: SystemLoggingDB.py,v 1.12 2008/02/18 19:20:21 mseco Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/DB/SystemLoggingDB.py,v 1.13 2008/04/07 18:53:16 mseco Exp $
+__RCSID__ = "$Id: SystemLoggingDB.py,v 1.13 2008/04/07 18:53:16 mseco Exp $"
 """ SystemLoggingDB class is a front-end to the Message Logging Database.
     The following methods are provided
 
@@ -283,7 +283,7 @@ class SystemLoggingDB(DB):
     fieldsList.extend( outFields )
 
     if not messageSubSystemName:
-      messageSubSysName = 'Unknown'
+      messageSubSystemName = 'Unknown'
     inFields = [ 'SubSystemName' ]
     inValues = [ messageSubSystemName ]
     outFields = [ 'SubSystemID' ]

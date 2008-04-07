@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Agent/Attic/getErrorMessages.py,v 1.3 2008/02/18 19:20:20 mseco Exp $
-__RCSID__ = "$Id: getErrorMessages.py,v 1.3 2008/02/18 19:20:20 mseco Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Agent/Attic/getErrorMessages.py,v 1.4 2008/04/07 18:53:16 mseco Exp $
+__RCSID__ = "$Id: getErrorMessages.py,v 1.4 2008/04/07 18:53:16 mseco Exp $"
 """  getErrorNames get new errors that have been injected into the
      SystemLoggingDB and sends them by mail to the person(s) in charge
      of checking that they conform with DIRAC style. ReviewersMail option
@@ -62,12 +62,14 @@ class getErrorMessages(Agent):
       if not result['OK']:
         self.log.error('Failed to obtain the non reviewed Strings',
                        result['Message'])
-        self.runFlag = False
         return S_OK()
       messageList = result['Value']
 
-      print messageList
-      mailBody ='This new messages have arrived into the Logging Service\n'
+      if messageList == 'None' or messageList == ():
+        self.log.error('The DB query returned an empty result')
+        return S_OK()
+      
+      mailBody ='These new messages have arrived to the Logging Service\n'
       for message in messageList:
         mailBody = mailBody + "String: '" + message[1] + "'\tSystem: '" \
                    + message[2] + "'\tSubsystem: '" + message[3] + "'\n"
@@ -83,6 +85,8 @@ class getErrorMessages(Agent):
         cmd = "UPDATE LOW_PRIORITY FixedTextMessages SET ReviewedMessage=1"
         cond = " WHERE FixedTextID=%s" % message[0]
         result =  self.SystemLoggingDB._query( cmd + cond )
+        self.log.verbose('Message Status updated',
+                         '(%d, %s)' % (message[0], message[1]))
         if not result['OK']:
           self.log.error( 'Could not update status of Message', message[1] )
           return S_OK()
