@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Agent.py,v 1.9 2008/03/28 15:15:58 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Agent.py,v 1.10 2008/04/08 10:25:00 atsareg Exp $
 ########################################################################
 """ Base class for all the Agents.
 
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: Agent.py,v 1.9 2008/03/28 15:15:58 paterson Exp $"
+__RCSID__ = "$Id: Agent.py,v 1.10 2008/04/08 10:25:00 atsareg Exp $"
 
 import os
 import threading
@@ -66,24 +66,24 @@ class Agent:
     self.controlDir = gConfig.getValue(self.section+'/ControlDirectory','')
     self.maxcount = gConfig.getValue(self.section+'/MaxCycles',0)
 
-    gLogger.always('')
-    gLogger.always('==========================================================')
-    gLogger.always('Starting %s Agent' % self.fullname)
-    gLogger.always('At site '+ gConfig.getValue('/DIRAC/Site','Unknown'))
-    gLogger.always('Within the '+ gConfig.getValue('/DIRAC/Setup','Unknown') +' setup')
-    gLogger.always('CVS version '+__RCSID__)
-    gLogger.always('DIRAC version v%dr%d build %d' % \
+    gLogger.info('')
+    gLogger.info('==========================================================')
+    gLogger.info('Starting %s Agent' % self.fullname)
+    gLogger.info('At site '+ gConfig.getValue('/DIRAC/Site','Unknown'))
+    gLogger.info('Within the '+ gConfig.getValue('/DIRAC/Setup','Unknown') +' setup')
+    gLogger.info('CVS version '+__RCSID__)
+    gLogger.info('DIRAC version v%dr%d build %d' % \
                     (DIRAC.majorVersion,DIRAC.minorVersion,DIRAC.patchLevel) )
-    gLogger.always('Polling time %d' % self.pollingTime)
-    gLogger.always('Control directory %s' % self.controlDir)
+    gLogger.info('Polling time %d' % self.pollingTime)
+    gLogger.info('Control directory %s' % self.controlDir)
     if self.maxcount == 1:
-      gLogger.always('Single execution cycle')
+      gLogger.info('Single execution cycle')
     elif self.maxcount > 1:
-      gLogger.always('%d execution cycles requested' % self.maxcount)
+      gLogger.info('%d execution cycles requested' % self.maxcount)
     else:
-      gLogger.always('No cycle limit')
-    gLogger.always('==========================================================')
-    gLogger.always('')
+      gLogger.info('No cycle limit')
+    gLogger.info('==========================================================')
+    gLogger.info('')
 
     self.runFlag = True
     self.maxCountFlag = False

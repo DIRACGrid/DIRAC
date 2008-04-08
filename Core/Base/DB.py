@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/DB.py,v 1.3 2007/06/27 15:25:22 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/DB.py,v 1.4 2008/04/08 10:25:00 atsareg Exp $
 ########################################################################
 
 """ BaseDB is the base class for multiple DIRAC databases. It uniforms the
     way how the database objects are constructed
 """
 
-__RCSID__ = "$Id: DB.py,v 1.3 2007/06/27 15:25:22 atsareg Exp $"
+__RCSID__ = "$Id: DB.py,v 1.4 2008/04/08 10:25:00 atsareg Exp $"
 
 import sys
 from DIRAC                           import gLogger, S_OK, S_ERROR
@@ -64,11 +64,11 @@ class DB(MySQL):
       sys.exit(err)
 
 
-    self.log.always("==================================================")
-    #self.log.always("SystemInstance: "+self.system)
-    self.log.always("User:           "+self.dbUser)
-    self.log.always("Host:           "+self.dbHost)
-    #self.log.always("Password:       "+self.dbPass)
-    self.log.always("DBName:         "+self.dbName)
-    self.log.always("MaxQueue:       "+`self.maxQueueSize`)
-    self.log.always("==================================================")
+    self.log.info("==================================================")
+    #self.log.info("SystemInstance: "+self.system)
+    self.log.info("User:           "+self.dbUser)
+    self.log.info("Host:           "+self.dbHost)
+    #self.log.info("Password:       "+self.dbPass)
+    self.log.info("DBName:         "+self.dbName)
+    self.log.info("MaxQueue:       "+`self.maxQueueSize`)
+    self.log.info("==================================================")
