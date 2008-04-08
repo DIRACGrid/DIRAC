@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/DB/StagerDB.py,v 1.11 2008/04/07 14:37:37 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/DB/StagerDB.py,v 1.12 2008/04/08 10:57:58 paterson Exp $
 ########################################################################
 
 """ StagerDB is a front end to the Stager Database.
@@ -8,7 +8,7 @@
     A.Smith (17/05/07)
 """
 
-__RCSID__ = "$Id: StagerDB.py,v 1.11 2008/04/07 14:37:37 paterson Exp $"
+__RCSID__ = "$Id: StagerDB.py,v 1.12 2008/04/08 10:57:58 paterson Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.Time import toString
@@ -251,14 +251,25 @@ class StagerDB(DB):
     return result
 
 
-  def getPageSummary(self,pageNumber,numberPerPage):
+  def getPageSummary(self,pageNumber,numberPerPage,site):
     """For reporting to the monitoring web page.
     """
-    limit = pageNumber*numberPerPage
-    req = "SELECT * from SiteFiles ORDER BY JobID LIMIT %d" %(limit)
+    limit = (pageNumber+1)*numberPerPage
+    if not site:
+      req = "SELECT * from SiteFiles ORDER BY JobID LIMIT %d;" %(limit)
+    else:
+      req = "SELECT * FROM SiteFiles WHERE Site ='"+site+"' ORDER BY JobID LIMIT "+limit+";"          
     files = self._query(req)
     if not files['OK']:
       return files
-    result = S_OK()
-    result['Files'] = files['Value']
-    return result
+    result = []
+    for lfn,site,surl,se,stageSubmit,stageComplete,status,jobID,retry,source in files['Value']:
+      newSubmit = 'Pending'
+      newComplete = 'Pending'
+      if stageSubmit:
+        newSubmit = toString(stageSubmit)
+      if stageComplete:
+        newComplete = toString(stageComplete)
+        
+      result.append([lfn,site,surl,se,newSubmit,newComplete,status,jobID,str(retry),source])
+    return S_OK(result)
