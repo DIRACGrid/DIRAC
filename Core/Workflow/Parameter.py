@@ -1,8 +1,8 @@
-# $Id: Parameter.py,v 1.25 2008/04/08 11:40:54 gkuznets Exp $
+# $Id: Parameter.py,v 1.26 2008/04/08 12:51:35 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.25 $"
+__RCSID__ = "$Revision: 1.26 $"
 
 import traceback # to produce warning for the depreciated methods
 
@@ -491,47 +491,55 @@ class ParameterCollection(list):
         # let us find the
         for v in self:
             recurrency=0
-            if v.isTypeString():
-                start=v.value.find('@{')
-                stop=-1
-                while start > -1 :
-                    stop=v.value.find('}',start+1)
-                    parameterName=v.value[start+2:stop]
-                    #print v.value, start, stop, parameterName, v.value[start:stop+1]
+            type_conversion=False
 
-                    # looking in the currens scope
-                    v_other = self.findLinked(parameterName, False)
+            if not v.isTypeString():
+                type_conversion=True # we have complex object
+                v.value = str(v.value) # temporary replacement
 
-                    # looking in the scope of step instance
-                    if v_other == None and step_parameters != None :
-                        v_other = step_parameters.findLinked(parameterName, False)
+            start=v.value.find('@{')
+            stop=-1
+            while start > -1 :
+                stop=v.value.find('}',start+1)
+                parameterName=v.value[start+2:stop]
+                #print v.value, start, stop, parameterName, v.value[start:stop+1]
 
-                    # looking in the scope of workflow
-                    if v_other == None and wf_parameters != None :
-                        v_other = wf_parameters.findLinked(parameterName, False)
+                # looking in the currens scope
+                v_other = self.findLinked(parameterName, False)
 
-                    # finnaly the action itself
-                    if v_other != None:
-                        v.value = v.value[:start]+v_other.value+v.value[stop+1:]
-                        # we replaced part of the string so we need to reset indexes
-                        start=0
-                    else: # if nothing helped tough!
-                        print "can not resolve ", v.value[start:stop+1], str(v)
-                        return
-                    recurrency=recurrency+1
-                    if recurrency > recurrency_max:
-                        # mast be an exception
-                        print "ERROR! reached maximum recurrency level", recurrency, "within the parameter ", str(v)
-                        if step_parameters == None:
-                            if wf_parameters == None:
-                                print "on the level of Workflow"
-                            else:
-                                print "on the level of Step"
+                # looking in the scope of step instance
+                if v_other == None and step_parameters != None :
+                    v_other = step_parameters.findLinked(parameterName, False)
+
+                # looking in the scope of workflow
+                if v_other == None and wf_parameters != None :
+                    v_other = wf_parameters.findLinked(parameterName, False)
+
+                # finnaly the action itself
+                if v_other != None:
+                    v.value = v.value[:start]+v_other.value+v.value[stop+1:]
+                    # we replaced part of the string so we need to reset indexes
+                    start=0
+                else: # if nothing helped tough!
+                    print "can not resolve ", v.value[start:stop+1], str(v)
+                    return
+                recurrency=recurrency+1
+                if recurrency > recurrency_max:
+                    # mast be an exception
+                    print "ERROR! reached maximum recurrency level", recurrency, "within the parameter ", str(v)
+                    if step_parameters == None:
+                        if wf_parameters == None:
+                            print "on the level of Workflow"
                         else:
-                            if wf_parameters != None:
-                                print "on the level of Module"
-                        return
-                    start=v.value.find('@{', start)
+                            print "on the level of Step"
+                    else:
+                        if wf_parameters != None:
+                            print "on the level of Module"
+                    return
+                start=v.value.find('@{', start)
+
+            if type_conversion: # converting it back
+                v.value = eval(v.value)
 
 class AttributeCollection(dict):
 

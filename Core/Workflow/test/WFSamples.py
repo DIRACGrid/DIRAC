@@ -1,8 +1,8 @@
-# $Id: WFSamples.py,v 1.13 2008/04/08 11:33:17 gkuznets Exp $
+# $Id: WFSamples.py,v 1.14 2008/04/08 12:51:35 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.13 $"
+__RCSID__ = "$Revision: 1.14 $"
 
 # $Source: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Workflow/test/WFSamples.py,v $
 
@@ -140,6 +140,7 @@ mi9 = sd1.createModuleInstance('PrintOutput', 'mi9')
 mi10 = sd1.createModuleInstance('PrintOutput', 'mi10')
 mi11 = sd1.createModuleInstance('PrintOutput', 'mi11')
 mi12 = sd1.createModuleInstance('PrintOutput', 'mi12')
+mi13 = sd1.createModuleInstance('PrintOutput', 'mi13')
 
 mi1.findParameter('enable').link('self','enable_inst1')
 mi1.findParameter('debug').link('self','debug')
@@ -184,6 +185,8 @@ mbool = False
 mi11.findParameter('message').setValue(mbool, 'bool')
 mint = 12672
 mi12.findParameter('message').setValue(mint, 'int')
+mlistdict = [{'SORTIE_@{inparam4}': 4098, 'sape_@{inpar2}': 4139},{"@{inparam4}jj@{inpar2}":234}]
+mi12.findParameter('message').setValue(mlistdict, 'list')
 
 sd1.findParameter('result').link('mi5','result')
 #sd1.findParameter('message').link('self','inparam4') # taken from the level of step
@@ -214,11 +217,11 @@ w1.toXMLFile('/afs/cern.ch/user/g/gkuznets/test1.xml')
 w2 = fromXMLFile("/afs/cern.ch/user/g/gkuznets/test1.xml")
 w2.toXMLFile('/afs/cern.ch/user/g/gkuznets/test2.xml')
 w4 = fromXMLFile("/afs/cern.ch/user/g/gkuznets/test2.xml")
-#print w4.createCode()
-print w1.showCode()
+#print w1.createCode()
+print w4.showCode()
 eval(compile(w4.createCode(),'<string>','exec'))
 print "==================================================================="
-print w2.showCode()
+#print w2.showCode()
 w4.execute()
 
 
