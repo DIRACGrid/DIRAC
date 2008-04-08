@@ -1,8 +1,8 @@
-# $Id: WorkflowReader.py,v 1.12 2008/02/07 16:01:24 gkuznets Exp $
+# $Id: WorkflowReader.py,v 1.13 2008/04/08 11:33:16 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.12 $"
+__RCSID__ = "$Revision: 1.13 $"
 
 #try: # this part to inport as part of the DIRAC framework
 import xml.sax
@@ -97,7 +97,12 @@ class WorkflowXMLHandler(ContentHandler):
     elif name == "body":
       self.stack[len(self.stack)-1].setBody(self.getCharacters())
     elif name == "value":
-      self.stack[len(self.stack)-1].setValue(self.getCharacters())
+      #ch =   self.getCharacters()
+      #if self.stack[len(self.stack)-1].isTypeString():
+      #  self.stack[len(self.stack)-1].setValue(ch)
+      #else:
+      #  self.stack[len(self.stack)-1].setValue(eval(ch))
+      self.stack[len(self.stack)-1].setValue(eval(self.getCharacters()))
 
     #objects
     elif name=="Workflow":

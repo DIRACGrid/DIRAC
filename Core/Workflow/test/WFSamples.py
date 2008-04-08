@@ -1,8 +1,8 @@
-# $Id: WFSamples.py,v 1.12 2007/06/29 14:30:39 gkuznets Exp $
+# $Id: WFSamples.py,v 1.13 2008/04/08 11:33:17 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.12 $"
+__RCSID__ = "$Revision: 1.13 $"
 
 # $Source: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Workflow/test/WFSamples.py,v $
 
@@ -34,7 +34,7 @@ body1 = """class PrintOutput(object):
     if self.enable :
       if self.debug:
         print 'Executing Module = ',str(type(self))
-      print self.message
+      print str(type(self.message)), self.message
     else:
       print 'Type1 - pass'
 
@@ -116,6 +116,7 @@ sd1 = StepDefinition('TotalSumm')
 sd1.addModule(md3)
 sd1.addModule(md1)
 sd1.addModule(md2)
+
 sd1.appendParameter(Parameter("enable_inst1","True","bool","","",True, True, "enabling instance 1"))
 sd1.appendParameter(Parameter("enable_inst2","True","bool","","",True, True, "enabling instance 2"))
 sd1.appendParameter(Parameter("enable_inst3","True","bool","","",True, True, "enabling instance 3"))
@@ -133,6 +134,12 @@ mi3 = sd1.createModuleInstance('Summ', 'mi3')
 mi4 = sd1.createModuleInstance('PrintOutput', 'mi4')
 mi5 = sd1.createModuleInstance('Summ', 'mi5')
 mi6 = sd1.createModuleInstance('PrintOutput', 'mi6')
+mi7 = sd1.createModuleInstance('PrintOutput', 'mi7')
+mi8 = sd1.createModuleInstance('PrintOutput', 'mi8')
+mi9 = sd1.createModuleInstance('PrintOutput', 'mi9')
+mi10 = sd1.createModuleInstance('PrintOutput', 'mi10')
+mi11 = sd1.createModuleInstance('PrintOutput', 'mi11')
+mi12 = sd1.createModuleInstance('PrintOutput', 'mi12')
 
 mi1.findParameter('enable').link('self','enable_inst1')
 mi1.findParameter('debug').link('self','debug')
@@ -160,21 +167,38 @@ mi5.findParameter('input2').link('mi3','result')
 
 mi6.findParameter('enable').link('mi5','enable')
 mi6.findParameter('debug').link('self','debug')
-mi6.findParameter('message').link('mi5','result') # taken from the previouse instance (chain propagation)
+#mi6.findParameter('message').link('mi5','result') # taken from the previouse instance (chain propagation)
+
+mdouble = 2.3567
+mi6.findParameter('message').setValue(mdouble, 'float')
+mlist = ['file1', 'file2', 'file3']
+mi7.findParameter('message').setValue(mlist, 'list')
+mdict = {'jack': 4098, 'sape': 4139}
+mi8.findParameter('message').setValue(mdict, 'dict')
+mtuple = (1, 2, 3, 4, 5)
+mi9.findParameter('message').setValue(mtuple, 'tuple')
+mstring = """\"Clever string of mine; WR.Output = \"Collection=\'EVTTAGS/TagCreator/1\' ADDRESS=\'/Event\' DATAFILE=\"\" """
+#mstring = "Clever string of mine;"
+mi10.findParameter('message').setValue(mstring, 'string')
+mbool = False
+mi11.findParameter('message').setValue(mbool, 'bool')
+mint = 12672
+mi12.findParameter('message').setValue(mint, 'int')
+
 sd1.findParameter('result').link('mi5','result')
 #sd1.findParameter('message').link('self','inparam4') # taken from the level of step
 
-w1 = Workflow('main')
+w1 = Workflow(name='main')
 w1.setOrigin('/home/user/blablabla')
 w1.setDescription("Pretty long description\n several lines of text")
 w1.setDescrShort("Oooooo short description")
 w1.addStep(sd1)
 
-w1.appendParameter(Parameter("final","0","float","","",False, True, "Final result"))
-w1.appendParameter(Parameter("debug","True","bool","","",True, False, "Debug switch"))
+w1.appendParameter(Parameter("final","0.0","float","","",False, True, "Final result"))
+w1.appendParameter(Parameter("debug","False","bool","","",True, False, "Debug switch"))
 w1.appendParameter(Parameter("message","vv@{inparam4}jj@{inpar2}ge","string","","",True, False, ""))
 w1.appendParameter(Parameter("inparam4","VER","string","","",True, False, ""))
-w1.appendParameter(Parameter("inpar2","SORTIE@{inparam4}","PARAM","","",True, False, ""))
+w1.appendParameter(Parameter("inpar2","SORTIE@{inparam4}","string","","",True, False, ""))
 si1 = w1.createStepInstance('TotalSumm', 'si1')
 si2 = w1.createStepInstance('TotalSumm', 'si2')
 
@@ -186,40 +210,15 @@ w1.findParameter('final').link('si2','result')
 #============================================================================
 # test section
 #============================================================================
-#print w1
-#w1.resolveGlobalVars()
-#print "# ================ CODE ========================"
-#print w1.createCode()
-#print "------------------- result of the evaluation -------------"
-#eval(compile(w1.createCode(),'<string>','exec'))
-#print " ================== Interpretation ======================="
-#w1.execute()
-#print w1.toXMLString()
-w1.toXMLFile("c:/test.xml")
-#print s
-#w4 = fromXMLString(s)
-#print w4
-#import pickle
-#output = open('D:\gennady\workspace\Workflow\wf.pkl', 'wb')
-#pickle.dump(w1, output, 2)
-#output = open('D:\gennady\workspace\Workflow\wf.xml', 'wb')
-#output.write(w1.toXMLString())
-#output.close()
-
-#wf_file = open('D:\gennady\workspace\Workflow\wf.pkl', 'rb')
-#w2 = pickle.load(wf_file)
-#wf_file = open('D:\gennady\workspace\Workflow\wf.xml', 'rb')
-#s2 = wf_file.read()
-#print s2
-#w2.updateParents()
-#print w2.createCode()
-#eval(compile(w2.createCode(),'<string>','exec'))
-
-#from PyQt4 import QtCore, QtGui
-#from editors.ModuleEditor import *
-#app = QtGui.QApplication(sys.argv)
-#mainWin = ModuleEditor(md1)
-#mainWin.show()
-#sys.exit(app.exec_())
+w1.toXMLFile('/afs/cern.ch/user/g/gkuznets/test1.xml')
+w2 = fromXMLFile("/afs/cern.ch/user/g/gkuznets/test1.xml")
+w2.toXMLFile('/afs/cern.ch/user/g/gkuznets/test2.xml')
+w4 = fromXMLFile("/afs/cern.ch/user/g/gkuznets/test2.xml")
+#print w4.createCode()
+print w1.showCode()
+eval(compile(w4.createCode(),'<string>','exec'))
+print "==================================================================="
+print w2.showCode()
+w4.execute()
 
 

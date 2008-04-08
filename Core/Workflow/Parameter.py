@@ -1,8 +1,14 @@
-# $Id: Parameter.py,v 1.23 2008/03/06 15:49:05 gkuznets Exp $
+# $Id: Parameter.py,v 1.24 2008/04/08 11:33:16 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.23 $"
+__RCSID__ = "$Revision: 1.24 $"
+
+import traceback # to produce warning for the depreciated methods
+
+def printDepreciateWarning():
+    l = traceback.extract_stack()
+    print 'Warning Method',l[1][2],'is DEPRECIATED! Called from line=',l[0][1],'File',l[0][0]
 
 # unbinded method, returns indentation string
 def indent(indent=0):
@@ -63,7 +69,10 @@ class Parameter(object):
 
     def getValueTypeCorrected(self):
         if self.isTypeString():
-            return "'"+self.value+"'"
+            # " and ' backslushed
+            #return '"""'+self.value.replace("'","\'").replace('"','\"')+'"""'
+            return '"""'+self.value+'"""'
+            #return "'"+self.value+"'"
         return self.value
 
     def setValue(self, value, type_=None):
@@ -83,7 +92,7 @@ class Parameter(object):
             self.value = bool(value)
         else:
             #raise TypeError('Can not assing value '+value+' of unknown type '+ self.type + ' to the Parameter '+ str(self.name))
-            print 'WARNING: we do not have established conversion algorithm to assing value '+value+' of unknown type '+ self.type + ' to the Parameter '+ str(self.name)
+            print 'WARNING: we do not have established conversion algorithm to assing value ',value,' of unknown type ',self.type, ' to the Parameter ', str(self.name)
             self.value = value
 
     def getType(self):
@@ -175,7 +184,7 @@ class Parameter(object):
             return False
 
     def __str__(self):
-        return str(type(self))+": name="+self.name + " value="+str(self.value) +" type="+str(self.type)\
+        return str(type(self))+": name="+self.name + " value="+str(self.getValueTypeCorrected()) +" type="+str(self.type)\
         +" linked_module="+str(self.linked_module) + " linked_parameter="+str(self.linked_parameter)\
         +" in="+ str(self.typein)+ " out="+str(self.typeout)\
         +" description="+str(self.description)
@@ -187,7 +196,7 @@ class Parameter(object):
         +'" linked_module="'+str(self.linked_module) + '" linked_parameter="'+str(self.linked_parameter)\
         +'" in="'+ str(self.typein)+ '" out="'+str(self.typeout)\
         +'" description="'+ str(self.description)+'">'\
-        +'<value><![CDATA['+str(self.value)+']]></value>'\
+        +'<value><![CDATA['+str(self.getValueTypeCorrected())+']]></value>'\
         +'</Parameter>\n'
 
 # we got a problem with the index() function
@@ -558,20 +567,46 @@ class AttributeCollection(dict):
                 ret=ret+'<'+v+'>'+str(self[v])+'</'+v+'>\n'
         return ret
 
-
+    # DEPRECIETED method, scheduled for removal
     def appendParameter(self, opt):
+        printDepreciateWarning()
+        print "Shall be replaced with addParameter()"
         self.parameters.append(opt)
 
+    # DEPRECIETED method, scheduled for removal
     def appendParameterCopy(self, opt, prefix="", postfix=""):
+        printDepreciateWarning()
+        print "Shall be replaced with addParameter()"
         self.parameters.appendCopy(opt, prefix, postfix)
 
+    # DEPRECIETED method, scheduled for removal
     def appendParameterCopyLinked(self, opt, prefix="", postfix=""):
+        printDepreciateWarning()
+        print "Shall be replaced with addParameterLinked()"
         self.parameters.appendCopyLinked(opt, prefix, postfix)
 
+    def addParameter(self, opt, prefix="", postfix=""):
+        self.parameters.appendCopy(opt, prefix, postfix)
+
+    def addParameterLinked(self, opt, prefix="", postfix=""):
+        self.parameters.appendCopyLinked(opt, prefix, postfix)
+
+    # DEPRECIETED method, scheduled for removal
     def linkParameterUp(self, opt, prefix="", postfix="", objname="self"):
+        printDepreciateWarning()
+        print "Shall be replaced with linkUp()"
         self.parameters.linkUp(opt, prefix, postfix, objname)
 
+    def linkUp(self, opt, prefix="", postfix="", objname="self"):
+        self.parameters.linkUp(opt, prefix, postfix, objname)
+
+    # DEPRECIETED method, scheduled for removal
     def unlinkParameter(self, opt):
+        printDepreciateWarning()
+        print "Shall be replaced with unlink()"
+        self.parameters.unlink(opt)
+
+    def unlink(self, opt):
         self.parameters.unlink(opt)
 
     def removeParameter(self, name_or_ind):
