@@ -1,8 +1,8 @@
-# $Id: Parameter.py,v 1.24 2008/04/08 11:33:16 gkuznets Exp $
+# $Id: Parameter.py,v 1.25 2008/04/08 11:40:54 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.24 $"
+__RCSID__ = "$Revision: 1.25 $"
 
 import traceback # to produce warning for the depreciated methods
 
@@ -74,6 +74,7 @@ class Parameter(object):
             return '"""'+self.value+'"""'
             #return "'"+self.value+"'"
         return self.value
+
 
     def setValue(self, value, type_=None):
         if type_ != None:
