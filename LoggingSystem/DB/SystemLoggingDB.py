@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/DB/SystemLoggingDB.py,v 1.13 2008/04/07 18:53:16 mseco Exp $
-__RCSID__ = "$Id: SystemLoggingDB.py,v 1.13 2008/04/07 18:53:16 mseco Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/DB/SystemLoggingDB.py,v 1.14 2008/04/09 17:56:23 mseco Exp $
+__RCSID__ = "$Id: SystemLoggingDB.py,v 1.14 2008/04/09 17:56:23 mseco Exp $"
 """ SystemLoggingDB class is a front-end to the Message Logging Database.
     The following methods are provided
 
@@ -12,6 +12,7 @@ __RCSID__ = "$Id: SystemLoggingDB.py,v 1.13 2008/04/07 18:53:16 mseco Exp $"
 import re, os, sys, string
 import time
 import threading
+from types import ListType, StringTypes
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from types                                     import *
@@ -33,7 +34,6 @@ class SystemLoggingDB(DB):
     """ build SQL condition statement from provided condDict
         and other extra conditions
     """
-    from types import ListType, StringTypes
     condition = ''
     conjonction = ''
 
@@ -46,14 +46,12 @@ class SystemLoggingDB(DB):
         elif not type( attrValue ) is ListType:
           errorString = 'The values of conditions should be strings or lists'
           errorDesc = 'The type provided was: %s' % type ( attrValue )
-          gLogger.error( errorString, errorDesc )
+          gLogger.warn( errorString, errorDesc )
           return S_ERROR( '%s: %s' % ( errorString, errorDesc ) )
         
         for attrVal in attrValue:
-          preCondition = "%s%s %s='%s'" % ( preCondition,
-                                             conjonction,
-                                             str( attrName ),
-                                             str( attrVal ) )
+          preCondition = "%s%s %s='%s'" % ( preCondition, conjonction,
+                                            str( attrName ), str( attrVal ) )
           conjonction = " OR"
 
         if condition:
@@ -63,17 +61,17 @@ class SystemLoggingDB(DB):
       conjonction = " AND"
       
     if older:
-      condition = "%s%s MessageTime<'%s'" % ( condition,
-                                                conjonction,
-                                                str( older ) )
+      condition = "%s%s MessageTime<'%s'" % ( condition,  conjonction,
+                                              str( older ) )
       conjonction = " AND"
 
     if newer:
-      condition = "%s%s MessageTime>'%s'" % ( condition,
-                                                conjonction,
-                                                str( newer ) )
+      condition = "%s%s MessageTime>'%s'" % ( condition, conjonction,
+                                              str( newer ) )
 
     if condition:
+      gLogger.debug( '__buildcondition:',
+                     'condition string = "%s"' % condition )
       condition = " WHERE%s" % condition
       
     return S_OK(condition)
@@ -84,42 +82,6 @@ class SystemLoggingDB(DB):
     """
     return self.__buildCondition( condDict, older = olderDate,
                                   newer = newerDate )
-
-  def __removeVariables( self, fieldList ):
-    """ Auxiliar function of __buildTableList. It substitutes all the
-        variables that share the same table by just one of them.
-    """
-    addTimeKey = True
-    addOwnerKey = True
-    addIPkey = True
-
-    internalList = self.__uniq( list( set( fieldList ) ) )
-
-    if internalList.count( 'MessageTime' ): addTimeKey = False
-    if internalList.count( 'VariableText' ):
-      internalList.remove( 'VariableText' )
-      if addTimeKey:
-        internalList.append( 'MessageTime' )
-        addTimeKey = False
-
-    if internalList.count( 'LogLevel' ):
-      internalList.remove( 'LogLevel' )
-      if addTimeKey:
-        internalList.append( 'MessageTime' )
-
-    if internalList.count( 'OwnerDN' ): addOwnerKey = False
-    if internalList.count( 'OwnerGroup' ):
-      internalList.remove( 'OwnerGroup' )
-      if addOwnerKey:
-        internalList.append( 'OwnerDN' )
-
-    if internalList.count( 'ClientIPNumberString' ): addIPKey = False
-    if internalList.count( 'ClientFQDN' ):
-      internalList.remove( 'ClientFQDN' )
-      if addIPKey:
-        internalList.append( 'ClientIPNumberString' )
-
-    return internalList 
 
   def __uniq( self, array ):
     """http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/52560
@@ -143,44 +105,55 @@ class SystemLoggingDB(DB):
     import re
     iDpattern = re.compile( r'ID' )   
     tableDict = { 'MessageTime':'MessageRepository',
+                  'VariableText':'MessageRepository',
+                  'LogLevel':'MessageRepository',
                   'FixedTextString':'FixedTextMessages',
+                  'ReviewedMessage':'FixedTextMessages',
                   'SystemName':'Systems', 'SubSystemName':'SubSystems',
-                  'OwnerDN':'UserDNs',  
-                  'ClientIPNumberString':'ClientIPs', 'SiteName':'Sites'}
+                  'OwnerDN':'UserDNs', 'OwnerGroup':'UserDNs',
+                  'ClientIPNumberString':'ClientIPs',
+                  'ClientFQDN':'ClientIPs', 'SiteName':'Sites'}
+    tableList = []
 
     conjunction = ' NATURAL JOIN '
 
-    if len(showFieldList):
-      fieldList=self.__removeVariables( showFieldList )
+    gLogger.debug( '__buildTableList:', 'showFieldList = %s' % showFieldList )
 
-      if len(fieldList) == 1:
-        tableString = tableDict[fieldList[0]]
+    if len(showFieldList):
+      for field in showFieldList:
+        if not iDpattern.search( field ):
+          tableList.append( tableDict[field] )
+
+      tableList = self.__uniq(tableList)
+      if len( tableList ) == 1:
+        tableString = tableList[0]
       else:
-        if fieldList.count('MessageTime'):
-          fieldList.remove('MessageTime')
+        if tableList.count('MessageRepository'):
+          tableList.remove('MessageRepository')
         tableString = 'MessageRepository'
 
-        for field in fieldList:
-          if not iDpattern.search( field):
-            tableString = '%s%s%s' % ( tableString, conjunction,
-                                       tableDict[ field ] )
+        tableString = '%s%s%s' % ( tableString, conjunction,
+                                   conjunction.join( tableList ))
 
     else:
-      tableString = conjunction.join( tableDict.values() )
+      tableString = conjunction.join( self.__uniq( tableDict.values() ) )
 
+    gLogger.debug( '__buildTableList:', 'tableString = "%s"' % tableString )
+    
     return tableString
-
-  def __queryDB( self, showFieldList=None, condDict=None,
-                 older=None, newer=None, count=False ):
+  
+  def __queryDB( self, showFieldList=None, condDict=None, older=None,
+                 newer=None, count=False, groupColumn=None ):
     """ This function composes the SQL query from the conditions provided and
         the desired columns and queries the SystemLoggingDB.
         If no list is provided the default is to use all the meaninful
         variables of the DB
     """
+    grouping=''
     result = self.__buildCondition( condDict, older, newer )
     if not result['OK']: return result
     condition = result['Value']
-    
+
     if not showFieldList:
       showFieldList = ['MessageTime', 'LogLevel', 'FixedTextString',
                      'VariableText', 'SystemName', 
@@ -188,13 +161,23 @@ class SystemLoggingDB(DB):
                      'ClientIPNumberString','SiteName']
     elif type( showFieldList ) in StringTypes:
       showFieldList = [ showFieldList ]
-
+    elif not type( showFieldList ) is ListType:
+      errorString = 'The showFieldList variable should be a string or a list of strings'
+      errorDesc = 'The type provided was: %s' % type ( attrValue )
+      gLogger.warn( errorString, errorDesc )
+      return S_ERROR( '%s: %s' % ( errorString, errorDesc ) )
+       
     tableList = self.__buildTableList(showFieldList)
-    if count:
-      showFieldList = [ 'count(*)' ]
+
+    if count: 
+      if groupColumn:
+        grouping='GROUP BY %s' % groupColumn
+        showFieldList.append('count(*)')
+      else:
+        showFieldList = [ 'count(*)' ]
       
-    cmd = 'SELECT %s FROM %s %s' % (','.join(showFieldList),
-                                    tableList, condition)
+    cmd = 'SELECT %s FROM %s %s %s' % (','.join(showFieldList),
+                                    tableList, condition, grouping)
 
     return self._query(cmd)
 
@@ -373,8 +356,7 @@ class SystemLoggingDB(DB):
                            older = endDate, newer = initialDate )
 
 
-  def getCountMessages( self, conds = {}, initialDate = None, 
-                        endDate = None ):
+  def getCountMessages( self, conds = {}, initialDate = None, endDate = None ):
     """ Query the database for the number of messages that match 'conds' and
         were generated between initialDate and endDate. If no condition is
         provided it returns the total number of messages present in the
@@ -384,7 +366,7 @@ class SystemLoggingDB(DB):
       fieldList = conds.keys()
       fieldList.append( 'MessageTime' )
     else:
-      fieldList = {}
+      fieldList = None
 
     returnValue = self.__queryDB( showFieldList = fieldList, condDict = conds, 
                                   older = endDate, newer = initialDate, 
@@ -393,6 +375,20 @@ class SystemLoggingDB(DB):
       return returnValue
     
     return S_OK(returnValue['Value'][0][0])
+      
+  def getGroupedMessages( self, fieldList = [], conds = {}, groupField=None,
+                          initialDate = None, endDate = None ):
+    """ Query the database for the number of messages that match 'conds' and
+        were generated between initialDate and endDate. If no condition is
+        provided it returns the total number of messages present in the
+        database
+    """
+    if not fieldList:
+      fieldList = [ 'MessageTime' ]
+
+    return self.__queryDB( showFieldList = fieldList, condDict = conds, 
+                           older = endDate, newer = initialDate, 
+                           count = True, groupColumn = groupField )
 
   def getSites( self ):
     return self.__queryDB( showFieldList = [ 'SiteName' ] )
