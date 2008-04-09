@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.48 2008/03/18 19:52:28 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.49 2008/04/09 19:07:35 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.48 2008/03/18 19:52:28 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.49 2008/04/09 19:07:35 atsareg Exp $"
 
 import re, os, sys, string
 import time
@@ -661,11 +661,11 @@ class JobDB(DB):
 
     cmd = 'INSERT INTO AtticJobParameters VALUES(%d,%d,\'%s\',\'%s\')' % \
          (int(jobID),rescheduleCounter,key,value)
-    res = self._update( cmd )
-    if not res['OK']:
+    result = self._update( cmd )
+    if not result['OK']:
       result = S_ERROR('JobDB.setAtticJobParameter: operation failed.')
 
-    return res
+    return result
 
 #############################################################################
   def __setInitialSite( self, classadJob, jobID):
