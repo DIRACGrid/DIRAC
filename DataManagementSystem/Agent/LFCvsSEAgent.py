@@ -28,7 +28,7 @@ class LFCvsSEAgent(Agent):
     self.RequestDBClient = RequestClient()
     self.ReplicaManager = ReplicaManager()
     self.lfc = FileCatalog(['LFC'])
-
+                         
     self.IntegrityDB = RPCClient('DataManagement/DataIntegrity')
     self.useProxies = gConfig.getValue(self.section+'/UseProxies','True')
     if self.useProxies == 'True':
@@ -120,7 +120,7 @@ class LFCvsSEAgent(Agent):
           for subRequestFile in subRequestFiles:
             if subRequestFile['Status'] == 'Waiting':
               lfn = subRequestFile['LFN']
-              oNamespaceBrowser = NameSpaceBrowser(lfn)
+              oNamespaceBrowser = NamespaceBrowser(lfn)
 
               # Loop over all the directories and sub-directories
               while (oNamespaceBrowser.isActive()):
