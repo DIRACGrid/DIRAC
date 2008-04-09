@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Agent/Attic/getErrorMessages.py,v 1.4 2008/04/07 18:53:16 mseco Exp $
-__RCSID__ = "$Id: getErrorMessages.py,v 1.4 2008/04/07 18:53:16 mseco Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Agent/Attic/getErrorMessages.py,v 1.5 2008/04/09 17:54:56 mseco Exp $
+__RCSID__ = "$Id: getErrorMessages.py,v 1.5 2008/04/09 17:54:56 mseco Exp $"
 """  getErrorNames get new errors that have been injected into the
      SystemLoggingDB and sends them by mail to the person(s) in charge
      of checking that they conform with DIRAC style. ReviewersMail option
@@ -56,9 +56,10 @@ class getErrorMessages(Agent):
       return S_OK('No messages need review')
     else:
       conds = { 'ReviewedMessage': '0' }
-      returnFields = [ 'FixedTextID', 'FixedTextString', 'SystemName',
-                    'SubSystemName' ]
-      result =  self.SystemLoggingDB.getMessages( returnFields, conds )
+      returnFields = [ 'FixedTextID','FixedTextString', 'SystemName',
+                       'SubSystemName' ]
+      result = self.SystemLoggingDB.getGroupedMessages( returnFields, conds,
+                                                        'FixedTextString' )
       if not result['OK']:
         self.log.error('Failed to obtain the non reviewed Strings',
                        result['Message'])

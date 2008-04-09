@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Agent.py,v 1.10 2008/04/08 10:25:00 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Agent.py,v 1.11 2008/04/09 17:53:10 mseco Exp $
 ########################################################################
 """ Base class for all the Agents.
 
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: Agent.py,v 1.10 2008/04/08 10:25:00 atsareg Exp $"
+__RCSID__ = "$Id: Agent.py,v 1.11 2008/04/09 17:53:10 mseco Exp $"
 
 import os
 import threading
@@ -66,6 +66,7 @@ class Agent:
     self.controlDir = gConfig.getValue(self.section+'/ControlDirectory','')
     self.maxcount = gConfig.getValue(self.section+'/MaxCycles',0)
 
+    gLogger.always( 'Starting Agent', self.fullname )
     gLogger.info('')
     gLogger.info('==========================================================')
     gLogger.info('Starting %s Agent' % self.fullname)
