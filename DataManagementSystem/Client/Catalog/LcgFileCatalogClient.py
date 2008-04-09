@@ -779,7 +779,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     successful = {}
     for path in paths:
       resDict[path] = {}
-      res = self.__getDirectoryContents(path)
+      res = self.getDirectoryContents(path)
       if res['OK']:
         successful[path] = {}
         files = res['Value']['Files']
@@ -808,9 +808,10 @@ class LcgFileCatalogClient(FileCatalogueBase):
     failed = {}
     successful = {}
     for path in paths:
-      res = self.__getDirectoryContents(path)
+      res = self.getDirectoryContents(path)
       if res['OK']:
-        successful[path] = res['Value']['Files'].keys()
+        successful[path]['Files'] = res['Value']['Files'].keys()
+        successful[path]['SubDirs'] = res['Value']['SubDirs']
       else:
         failed[path] = res['Message']
     if self.session:
@@ -885,7 +886,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     failed = {}
     successful = {}
     for path in paths:
-      res = self.__getDirectoryContents(path)
+      res = self.getDirectoryContents(path)
       if res['OK']:
         pathDict = {'Files':0,'TotalSize':0,'SiteUsage':{},'SiteFiles':{}}
         files = res['Value']['Files']
@@ -909,7 +910,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
-  def __getDirectoryContents(self,path):
+  def getDirectoryContents(self,path):
     """ Returns a dictionary containing all of the contents of a directory.
         This includes the metadata associated to files (replicas, size, guid, status) and the subdirectories found.
     """
@@ -918,9 +919,9 @@ class LcgFileCatalogClient(FileCatalogueBase):
     if not res['OK']:
       return res
     if not res['Value']['Successful'].has_key(path):
-      return S_ERROR('__getDirectoryContents: There was an error accessing the supplied path')
+      return S_ERROR('getDirectoryContents: There was an error accessing the supplied path')
     if not res['Value']['Successful'][path]:
-      return S_ERROR('__getDirectoryContents: There supplied path does not exist')
+      return S_ERROR('getDirectoryContents: There supplied path does not exist')
 
     lfcPath = self.prefix+path
     fstat = lfc.lfc_filestatg()
