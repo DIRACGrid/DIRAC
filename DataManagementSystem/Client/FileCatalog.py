@@ -3,7 +3,6 @@
 """
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.Core.Utilities.Subprocess import pythonCall
 
 import types,re
 
@@ -11,7 +10,7 @@ class FileCatalog:
 
   ro_methods = ['exists','isLink','readLink','isFile','getFileMetadata','getReplicas',
                 'getReplicaStatus','getFileSize','isDirectory','getDirectoryReplicas',
-                'listDirectory','getDirectoryMetadata','getDirectorySize']
+                'listDirectory','getDirectoryMetadata','getDirectorySize','getDirectoryContents']
 
   write_methods = ['createLink','removeLink','addFile','addReplica','removeReplica',
                    'removeFile','setReplicaStatus','setReplicaHost','createDirectory',
@@ -83,6 +82,7 @@ class FileCatalog:
     for catalogName,oCatalog in self.readCatalogs.items():
       method = getattr(oCatalog,self.call)
       res = method(*parms,**kws)
+      print catalogName,res
       if res['OK']:
         for key,item in res['Value']['Successful'].items():
           if not successful.has_key(key):
