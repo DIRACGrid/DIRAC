@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/Attic/StagerMonitorWMS.py,v 1.4 2008/04/04 11:35:56 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/Attic/StagerMonitorWMS.py,v 1.5 2008/04/09 17:58:21 paterson Exp $
 # File :   StagerMonitorWMS.py
 # Author : Stuart Paterson
 ########################################################################
@@ -20,7 +20,7 @@
      Successful -> purged with status change
 """
 
-__RCSID__ = "$Id: StagerMonitorWMS.py,v 1.4 2008/04/04 11:35:56 paterson Exp $"
+__RCSID__ = "$Id: StagerMonitorWMS.py,v 1.5 2008/04/09 17:58:21 paterson Exp $"
 
 from DIRAC.Core.Base.Agent                                 import Agent
 from DIRAC.Core.DISET.RPCClient                            import RPCClient
@@ -126,7 +126,7 @@ class StagerMonitorWMS(Agent):
     if not deletedJobs:
       return S_OK('All jobs checked')
 
-    deletedJobs = [ str(x) for x in toPurge]
+    deletedJobs = [ str(x) for x in deletedJobs]
     result = self.stagerClient.setJobsDone(deletedJobs)
     if not result['OK']:
       self.log.warn('Failed to purge jobs from StagerDB with error:\n%s' %(result))
