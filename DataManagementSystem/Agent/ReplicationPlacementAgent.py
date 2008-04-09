@@ -36,7 +36,7 @@ class ReplicationPlacementAgent(Agent):
   def execute(self):
     gMonitor.addMark('Iteration',1)
 
-    transName = gConfig.getValue(self.section+'/Transformation')
+    transName = gConfig.getValue(self.section+'/Transformation','')
     if transName:
       self.singleTransformation = transName
       gLogger.info("Initializing Replication Agent for transformation %s." % transName)
@@ -129,7 +129,7 @@ class ReplicationPlacementAgent(Agent):
     if not seFiles:
       gLogger.info("ReplicationPlacementAgent.processTransformation: Sufficient number of files not found for %s." % transName)
       return S_OK()
-		
+
     res = self.submitRequest(sourceSE,seFiles,transName)
     if not res['OK']:
       errStr = "ReplicationPlacementAgent.processTransformation: Failed to process task for transformation."
