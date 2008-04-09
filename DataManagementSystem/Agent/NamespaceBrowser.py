@@ -1,10 +1,13 @@
-import random
+import random,types
 
 class NameSpaceBrowser:
 
   def __init__(self,baseDir):
-    self.activeDirs = [baseDir]
-    self.activeDir = baseDir
+    if type(baseDir) == types.ListType:
+      self.activeDirs = baseDir
+    else:
+      self.activeDirs = [baseDir]
+    self.activeDir = self.activeDirs[0]
     self.baseDir = baseDir
 
   def getBaseDir(self):
