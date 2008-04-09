@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobManagerHandler.py,v 1.7 2008/02/28 18:20:46 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobManagerHandler.py,v 1.8 2008/04/09 09:49:46 paterson Exp $
 ########################################################################
 
 """ JobManagerHandler is the implementation of the JobManager service
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: JobManagerHandler.py,v 1.7 2008/02/28 18:20:46 atsareg Exp $"
+__RCSID__ = "$Id: JobManagerHandler.py,v 1.8 2008/04/09 09:49:46 paterson Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -60,6 +60,12 @@ class JobManagerHandler( RequestHandler ):
     else:
       return S_ERROR('Failed to get job policies')
 
+    #Store proxy for user before adding job to DB (otherwise resulting job is added and fails)
+    resProxy = proxyRepository.storeProxy(proxy,userDN,userGroup)
+    if not resProxy['OK']:
+      gLogger.error("Failed to store the user proxy for job %s" % jobID)
+      return S_ERROR("Failed to store the user proxy for job %s" % jobID)
+
     # Get the new jobID first
     #gActivityClient.addMark( "getJobId" )
     result_jobID  = jobDB.getJobID()
@@ -87,11 +93,6 @@ class JobManagerHandler( RequestHandler ):
       return result
 
     gLogger.info('Job %s added to the JobDB for %s/%s' % (str(jobID),userDN,userGroup))
-
-    resProxy = proxyRepository.storeProxy(proxy,userDN,userGroup)
-    if not resProxy['OK']:
-      gLogger.error("Failed to store the user proxy for job %s" % jobID)
-      return S_ERROR("Failed to store the user proxy for job %s" % jobID)
 
     return S_OK(jobID)
 
@@ -249,7 +250,7 @@ class JobManagerHandler( RequestHandler ):
                                                                         userDN,
                                                                         userGroup,
                                                                         'Kill')
-        
+
     bad_ids = []
     good_ids = []
     for jobID in validJobList:
