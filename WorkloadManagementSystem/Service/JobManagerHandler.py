@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobManagerHandler.py,v 1.9 2008/04/09 11:02:27 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobManagerHandler.py,v 1.10 2008/04/09 21:47:36 atsareg Exp $
 ########################################################################
 
 """ JobManagerHandler is the implementation of the JobManager service
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: JobManagerHandler.py,v 1.9 2008/04/09 11:02:27 paterson Exp $"
+__RCSID__ = "$Id: JobManagerHandler.py,v 1.10 2008/04/09 21:47:36 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -294,7 +294,7 @@ class JobManagerHandler( RequestHandler ):
     validJobList,invalidJobList,nonauthJobList = self.__evaluate_rights(jobList,
                                                                         userDN,
                                                                         userGroup,
-                                                                        'Run')
+                                                                        'Reschedule')
 
     bad_ids = []
     good_ids = []
@@ -303,7 +303,11 @@ class JobManagerHandler( RequestHandler ):
       if not result['OK']:
         bad_ids.append(jobID)
       else:
-        good_ids.append(jobID)
+        result  = jobDB.rescheduleJob( jobID )
+        if not result['OK']:
+          bad_ids.append(jobID)
+        else:
+          good_ids.append(jobID)  
 
     if invalidJobList or nonauthJobList or bad_ids:
       result = S_ERROR('Some jobs failed resetting')
