@@ -15,7 +15,6 @@ class DataIntegrityDB(DB):
     """ Standard Constructor
     """
     DB.__init__(self,'DataIntegrityDB','DataManagement/DataIntegrityDB',maxQueueSize)
-    self.getIdLock = threading.Lock()
 
 #############################################################################
   def insertProblematic(self,source,fileMetadata):
