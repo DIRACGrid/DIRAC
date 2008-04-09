@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.25 2008/03/06 11:29:15 acasajus Exp $
-__RCSID__ = "$Id: Server.py,v 1.25 2008/03/06 11:29:15 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.26 2008/04/09 17:54:38 mseco Exp $
+__RCSID__ = "$Id: Server.py,v 1.26 2008/04/09 17:54:38 mseco Exp $"
 
 import socket
 import sys
@@ -26,7 +26,7 @@ class Server:
     @type serviceName: string
     @param serviceName: Name of the starting service
     """
-    gLogger.debug( "Starting service %s" % serviceName )
+    gLogger.always( "Starting service %s" % serviceName )
     while serviceName[0] == "/":
       serviceName = serviceName[1:]
     self.serviceName = serviceName
