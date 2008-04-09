@@ -1,6 +1,6 @@
 import random,types
 
-class NameSpaceBrowser:
+class NamespaceBrowser:
 
   def __init__(self,baseDir):
     if type(baseDir) == types.ListType:
