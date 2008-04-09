@@ -1,8 +1,8 @@
-# $Id: WFSamples.py,v 1.15 2008/04/09 16:01:06 gkuznets Exp $
+# $Id: WFSamples.py,v 1.16 2008/04/09 16:15:04 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.15 $"
+__RCSID__ = "$Revision: 1.16 $"
 
 # $Source: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Workflow/test/WFSamples.py,v $
 
@@ -178,7 +178,7 @@ mdict = {'jack': 4098, 'sape': 4139}
 mi8.findParameter('message').setValue(mdict, 'dict')
 mtuple = (1, 2, 3, 4, 5)
 mi9.findParameter('message').setValue(mtuple, 'tuple')
-mstring = """\"Clever string of mine; WR.Output = \"Collection=\'EVTTAGS/TagCreator/1\' ADDRESS=\'/Event\' DATAFILE=\"\""""
+mstring = """\"Clever string of mine; WR.Output = \"Collection=\'EVTTAGS/TagCreator/1\' ADDRESS=\'/Event\' DATAFILE=\""""
 #mstring = "Clever string of mine;"
 mi10.findParameter('message').setValue(mstring, 'string')
 mbool = False

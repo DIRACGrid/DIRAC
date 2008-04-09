@@ -1,8 +1,8 @@
-# $Id: Parameter.py,v 1.27 2008/04/09 16:01:06 gkuznets Exp $
+# $Id: Parameter.py,v 1.28 2008/04/09 16:15:04 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.27 $"
+__RCSID__ = "$Revision: 1.28 $"
 
 import traceback # to produce warning for the depreciated methods
 
@@ -71,7 +71,7 @@ class Parameter(object):
         # this method used to generate code for the workflow
         # it NOT used to geterate XML!!!
         if self.isTypeString():
-            return '"""'+str(self.value)+'"""'
+            return '"""'+str(self.value).replace('"',r'\"').replace("'",r"\'")+'"""'
         return self.value
 
 
