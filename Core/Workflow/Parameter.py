@@ -1,8 +1,8 @@
-# $Id: Parameter.py,v 1.26 2008/04/08 12:51:35 gkuznets Exp $
+# $Id: Parameter.py,v 1.27 2008/04/09 16:01:06 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.26 $"
+__RCSID__ = "$Revision: 1.27 $"
 
 import traceback # to produce warning for the depreciated methods
 
@@ -68,11 +68,10 @@ class Parameter(object):
         return self.value
 
     def getValueTypeCorrected(self):
+        # this method used to generate code for the workflow
+        # it NOT used to geterate XML!!!
         if self.isTypeString():
-            # " and ' backslushed
-            #return '"""'+self.value.replace("'","\'").replace('"','\"')+'"""'
-            return '"""'+self.value+'"""'
-            #return "'"+self.value+"'"
+            return '"""'+str(self.value)+'"""'
         return self.value
 
 
@@ -197,7 +196,7 @@ class Parameter(object):
         +'" linked_module="'+str(self.linked_module) + '" linked_parameter="'+str(self.linked_parameter)\
         +'" in="'+ str(self.typein)+ '" out="'+str(self.typeout)\
         +'" description="'+ str(self.description)+'">'\
-        +'<value><![CDATA['+str(self.getValueTypeCorrected())+']]></value>'\
+        +'<value><![CDATA['+str(self.getValue())+']]></value>'\
         +'</Parameter>\n'
 
 # we got a problem with the index() function
@@ -496,6 +495,7 @@ class ParameterCollection(list):
             if not v.isTypeString():
                 type_conversion=True # we have complex object
                 v.value = str(v.value) # temporary replacement
+
 
             start=v.value.find('@{')
             stop=-1

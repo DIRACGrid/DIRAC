@@ -1,8 +1,8 @@
-# $Id: WFSamples.py,v 1.14 2008/04/08 12:51:35 gkuznets Exp $
+# $Id: WFSamples.py,v 1.15 2008/04/09 16:01:06 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.14 $"
+__RCSID__ = "$Revision: 1.15 $"
 
 # $Source: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Workflow/test/WFSamples.py,v $
 
@@ -178,7 +178,7 @@ mdict = {'jack': 4098, 'sape': 4139}
 mi8.findParameter('message').setValue(mdict, 'dict')
 mtuple = (1, 2, 3, 4, 5)
 mi9.findParameter('message').setValue(mtuple, 'tuple')
-mstring = """\"Clever string of mine; WR.Output = \"Collection=\'EVTTAGS/TagCreator/1\' ADDRESS=\'/Event\' DATAFILE=\"\" """
+mstring = """\"Clever string of mine; WR.Output = \"Collection=\'EVTTAGS/TagCreator/1\' ADDRESS=\'/Event\' DATAFILE=\"\""""
 #mstring = "Clever string of mine;"
 mi10.findParameter('message').setValue(mstring, 'string')
 mbool = False
@@ -217,8 +217,8 @@ w1.toXMLFile('/afs/cern.ch/user/g/gkuznets/test1.xml')
 w2 = fromXMLFile("/afs/cern.ch/user/g/gkuznets/test1.xml")
 w2.toXMLFile('/afs/cern.ch/user/g/gkuznets/test2.xml')
 w4 = fromXMLFile("/afs/cern.ch/user/g/gkuznets/test2.xml")
-#print w1.createCode()
-print w4.showCode()
+print w4.createCode()
+#print w4.showCode()
 eval(compile(w4.createCode(),'<string>','exec'))
 print "==================================================================="
 #print w2.showCode()
