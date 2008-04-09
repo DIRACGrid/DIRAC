@@ -1,8 +1,8 @@
-# $Id: Parameter.py,v 1.28 2008/04/09 16:15:04 gkuznets Exp $
+# $Id: Parameter.py,v 1.29 2008/04/09 16:22:50 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.28 $"
+__RCSID__ = "$Revision: 1.29 $"
 
 import traceback # to produce warning for the depreciated methods
 
@@ -493,8 +493,14 @@ class ParameterCollection(list):
             type_conversion=False
 
             if not v.isTypeString():
-                type_conversion=True # we have complex object
-                v.value = str(v.value) # temporary replacement
+                # we have complex object
+                # let see if it has global variable inside
+                value = str(v.value)
+                if value.find('@{')<0:
+                  # no globals getting out of the loop
+                  continue
+                type_conversion=True
+                v.value = value # temporary replacement
 
 
             start=v.value.find('@{')
