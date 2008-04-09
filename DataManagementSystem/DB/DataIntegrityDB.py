@@ -90,3 +90,31 @@ class DataIntegrityDB(DB):
       for status,count in res['Value']:
         resDict[prognosis][status] = int(count)
     return S_OK(resDict)
+
+#############################################################################
+  def getDistinctPrognosis(self):
+    """ Get a list of all the current problematic types
+    """
+    req = "SELECT DISTINCT Prognosis from Problematics;"
+    res = self._query(req)
+    if not res['OK']:
+      return res
+    if not res['Value'][0]:
+      return S_OK()
+    prognosisList = []
+    for prognosis in res['Value'][0]:
+      prognosisList.append(prognosis)
+    return S_OK(prognosisList)
+
+#############################################################################
+  def getPrognosisProblematics(self,prognosis):
+    """ Get all the active files with the given problematic
+    """
+    req = "SELECT FileID,LFN,PFN,StorageElement from Problematics WHERE Prognosis = '%s' AND Status = 'New' ORDER BY Retries;" % prognosis
+    res = self._query(req)
+    if not res['OK']:
+      return res
+    problematics = []
+    for fileID,lfn,pfn,storageElement in res['Value']:
+      problematics.append((fileID,lfn,pfn,storageElement))
+    return S_OK(problematics)
