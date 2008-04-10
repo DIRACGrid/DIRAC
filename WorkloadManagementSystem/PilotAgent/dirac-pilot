@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot,v 1.1 2008/04/10 07:17:53 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot,v 1.2 2008/04/10 15:44:55 rgracian Exp $
 # File :   dirac-pilot
 # Author : Ricardo Graciani
 ########################################################################
@@ -9,7 +9,7 @@
  Job Agent to execute pending workload on WMS.
  It requires dirac-update script to be sitting in the same directory.
 """
-__RCSID__ = "$Id: dirac-pilot,v 1.1 2008/04/10 07:17:53 rgracian Exp $"
+__RCSID__ = "$Id: dirac-pilot,v 1.2 2008/04/10 15:44:55 rgracian Exp $"
 try:
   import os, sys, socket, re, stat, popen2
   
@@ -36,9 +36,9 @@ try:
   myFlavour   = 'Local'
   rootPath    = os.getcwd()
 except Exception, x:
-  import platform
   print sys.executable
-  print platform.python_version_tuple()[0]
+  print sys.version
+  print os.uname()
   print x
   raise x
   
@@ -185,13 +185,28 @@ cmd = '%s %s' % ( installScript,  installOpts )
 
 if debugFlag:
   print 'DEBUG Executing: %s' % cmd
+  sys.stdout.flush()
 ret = os.system( cmd )
 
 if ret != 0:
-  print
-  print 'ERROR could not make a proper DIRAC installation'
-  print
-  sys.exit(-1)
+  if ret == 256:
+    # The platfrom is not available, try to build it
+    installOpts += ' --build'
+    cmd = '%s %s' % ( installScript,  installOpts )
+    if debugFlag:
+      print 'DEBUG Executing: %s' % cmd
+      sys.stdout.flush()
+      ret = os.system( cmd )
+      if ret != 0:
+        print
+        print 'ERROR could not make a proper DIRAC installation'
+        print
+        sys.exit(-1)
+  else:
+    print
+    print 'ERROR could not make a proper DIRAC installation'
+    print
+    sys.exit(-1)
 
 # Add the scripts directory to the Python search path to import from it
 myPath     = os.path.join( rootPath, 'scripts' )
