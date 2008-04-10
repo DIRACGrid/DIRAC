@@ -42,7 +42,7 @@ class DataIntegrityDB(DB):
     res = self._query(req)
     if not res['OK']:
       return S_ERROR(err,res['Message'])
-    if res['Value'][0]:
+    if res['Value']:
       return S_OK(True)
     else:
       return S_OK(False)
@@ -51,7 +51,7 @@ class DataIntegrityDB(DB):
     fields = "(Source,InsertDate"
     values = "('%s',NOW()" % source
     for attrName,attrVal in fileMetadata.items():
-      fields = "%s,'%s'" % (fields,attrName)
+      fields = "%s,%s" % (fields,attrName)
       values = "%s,'%s'" % (values,attrVal)
     fields = "%s)" % fields
     values = "%s)" % values
