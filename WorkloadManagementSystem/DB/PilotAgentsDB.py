@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.16 2008/03/13 17:18:51 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.17 2008/04/10 15:06:01 atsareg Exp $
 ########################################################################
 """ PilotAgentsDB class is a front-end to the Pilot Agent Database.
     This database keeps track of all the submitted grid pilot jobs.
@@ -23,7 +23,7 @@
 
 """
 
-__RCSID__ = "$Id: PilotAgentsDB.py,v 1.16 2008/03/13 17:18:51 atsareg Exp $"
+__RCSID__ = "$Id: PilotAgentsDB.py,v 1.17 2008/04/10 15:06:01 atsareg Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
@@ -128,9 +128,9 @@ class PilotAgentsDB(DB):
     req += " SubmissionTime < DATE_SUB(CURDATE(),INTERVAL %d DAY)" % aborted_interval
     result = self._update(req)
     if not result['OK']:
-      gLogger.warn('Error while clearing up aborted pilots')  
-      
-    return S_OK()  
+      gLogger.warn('Error while clearing up aborted pilots')
+
+    return S_OK()
 
 ##########################################################################################
   def getPilotInfo(self,pilotRef):
@@ -272,15 +272,15 @@ class PilotAgentsDB(DB):
       return result
     else:
       return S_ERROR('PilotJobReference '+pilotRef+' not found')
-      
+
 ##########################################################################################
-  def setPilotCurrentJob(self,pilotRef,jobID):
+  def setCurrentJobID(self,pilotRef,jobID):
     """ Set the pilot agent current DIRAC job ID
     """
 
     req = "UPDATE PilotAgents SET CurrentJobID=%d WHERE PilotJobReference='%s'" % (jobID,pilotRef)
     result = self._update(req)
-    return result      
+    return result
 
 ##########################################################################################
   def getExePilotsForJob(self,jobID):
