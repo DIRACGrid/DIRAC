@@ -210,7 +210,7 @@ class StorageElement:
     for storage in self.storages:
       res = storage.getPFNBase()
       if res['OK']:
-        fullPath = "%s/%s" % (res['Value'],lfn)
+        fullPath = "%s%s" % (res['Value'],lfn)
         return S_OK(fullPath)
     # This should never happen. DANGER!!
     errStr = "StorageElement.getPfnForLfn: Failed to get the full pfn for any of the protocols!!"
