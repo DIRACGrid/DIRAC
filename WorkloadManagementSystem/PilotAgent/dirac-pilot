@@ -1,0 +1,346 @@
+#!/usr/bin/env python
+########################################################################
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot,v 1.1 2008/04/10 07:17:53 rgracian Exp $
+# File :   dirac-pilot
+# Author : Ricardo Graciani
+########################################################################
+"""
+ Perform initial sanity checks on WN, installs and configures DIRAC and runs
+ Job Agent to execute pending workload on WMS.
+ It requires dirac-update script to be sitting in the same directory.
+"""
+__RCSID__ = "$Id: dirac-pilot,v 1.1 2008/04/10 07:17:53 rgracian Exp $"
+try:
+  import os, sys, socket, re, stat, popen2
+  
+  debugFlag = False
+  localFlag = False
+  testFlag  = False
+  defaultSite = 'LCG.CERN.ch'
+  localPlatform = None
+  minDiskSpace  = 2560 # MB
+  jobCPUReqt    = 900  # s
+  
+  JOB_AGENT_CE = 'InProcess'
+  MAX_CYCLES   = 2
+  
+  installScript = 'dirac-update'
+  
+  try:
+    myFullName  = os.path.realpath( __file__ )
+    # in old python versions __file__ is not defined
+  except:
+    myFullName  = os.path.realpath( sys.argv[0] )
+  myShortName = os.path.basename( myFullName )
+  myPath      = os.path.dirname( myFullName )
+  myFlavour   = 'Local'
+  rootPath    = os.getcwd()
+except Exception, x:
+  import platform
+  print sys.executable
+  print platform.python_version_tuple()[0]
+  print x
+  raise x
+  
+installScript = os.path.join( myPath, installScript )
+
+if not os.path.exists( installScript ):
+  print '"%s" requires "%s" in the same directory' 
+  sys.exit(-1)
+os.chmod( installScript, stat.S_IRWXU )
+
+def parse_options():
+  """
+   parse command line options:
+  """
+  import getopt
+  global debugFlag, rootPath, localPlatform, minDiskSpace, testFlag
+  help = """
+   -b --build                  Force local compilation  
+   -d --debug                  Set debug flag
+   -e --external=<version>     DIRAC-external <version> to install (overwrites -v)
+   -h --help                   Print this
+   -i --python=<24|25>         Use python<24|25> interpreter
+   -n --name=<Site>            Set <Site> as Site Name
+   -p --platform=<platform>    Use <platform> instead of local one
+   -r --repository=<rep>       Use <rep> as cvs repository
+   -t --test                   Install test, do not run JobAgent
+   -u --url=<url>              Use <url> to download tarballs
+   -v --version=<version>      DIRAC <version> to install
+   -C --cvs                    Retrieve from CVS (implies -b)
+   -N --Name=<CEName>          Use <CEName> to determine Site Name
+   -D --disk=<space>           Require at least <space> MB available
+   -P --path=<root>            Install under <root>
+   -S --server                 Make a full server installation
+
+  from DIRAC framework:
+
+    -o --option=<Option=value> <Option=value> to add
+    -s --section=<section>     Set base <section> for relative parsed options
+    -c --cert=<cert>           Use server certificate <cert> to connect to Core Services
+
+  """
+  shortOptions = 'bde:hi:n:p:r:tu:v:o:s:CN:D:P:S'
+  longOptions  = ['build', 'debug', 'external=', 'help', 'python=', 'name=', 
+                  'platform=', 'repository', 'test', 'url=', 'version=', 
+                  'cvs', 'Name=', 'disk=', 'path=', 'server',
+                  'option=', 'section=']
+  try:
+    ( optionVals, extraOptions ) = getopt.getopt( sys.argv[1:], shortOptions, longOptions )
+  except getopt.GetoptError, x:
+    print 'ERROR Parsing command line: %s' % x
+    optionVals = [ ('-h','') ]
+
+  if ('-h','') in optionVals or ('--help','') in optionVals:
+    print 
+    print 'Usage: %s [options]' % myShortName
+    print help
+    sys.exit(-1)
+
+  installOpts = []
+    
+  for o,v in optionVals:
+    if o == '-b' or o == '--build':
+      installOpts.append('-b')
+    elif o == '-d' or o == '--debug':
+      debugFlag = True
+      installOpts.append('-d')
+    elif o == '-e' or o == '--external':
+      installOpts.append('-e')
+      installOpts.append(v)
+    elif o == '-i' or o == '--python':
+      installOpts.append('-i')
+      installOpts.append(v)
+    elif o == '-n' or o == '--name':
+      installOpts.append('-n')
+      installOpts.append(v)
+      defaultSite = v
+    elif o == '-p' or o == '--platform':
+      installOpts.append('-p')
+      installOpts.append(v)
+      localPlatform = v
+    elif o == '-r' or o == '--repository':
+      installOpts.append('-r')
+      installOpts.append(v)
+    elif o == '-t' or o == '--test':
+      testFlag = True
+    elif o == '-u' or o == '--url':
+      installOpts.append('-u')
+      installOpts.append(v)
+    elif o == '-v' or o == '--version':
+      installOpts.append('-u')
+      installOpts.append(v)
+    elif o == '-C' or o == '--cvs':
+      installOpts.append('-C')
+    elif o == '-N' or o == '--Name':
+      installOpts.append('-N')
+      installOpts.append(v)
+    elif o == '-D' or o == '--disk':
+      minDiskSpace = int(v)
+    elif o in ('-P', '--path'):
+      rootPath = v
+      installOpts.append('-P')
+      installOpts.append(v)
+    elif o == '-S' or o == '--server':
+      installOpts.append('-S')
+      installOpts.append(v)
+
+  return str.join( ' ', installOpts )
+
+def createDir( dir ):
+  """
+   Atempt to create directory
+  """
+  if not os.path.exists( dir ):
+    try:
+      os.makedirs( dir )
+    except Exception,x:
+      logERROR( 'Could not create directory %s' % dir )
+      sys.exit(-1)
+
+installOpts = parse_options()
+
+pilotRef = 'Unknown'
+if os.environ.has_key('EDG_WL_JOBID'):
+  myFlavour = 'LCG'
+  pilotRef=os.environ['EDG_WL_JOBID']
+  
+if os.environ.has_key('GLITE_WMS_JOBID'):
+  myFlavour = 'gLite'
+  pilotRef = os.environ['GLITE_WMS_JOBID']
+
+if pilotRef != 'Unknown':
+  (child_stdout, child_stdin, child_stderr) = popen2.popen3( 'edg-brokerinfo getCE || glite-brokerinfo getCE' )
+  CE = child_stdout.read().strip()
+  LCG_SITE_CE = CE.split(':')[0]
+  child_stdout.close()
+  child_stderr.close()
+  installOpts += ' -o /LocalSite/PilotReference=%s' % pilotRef
+  installOpts += ' -N %s' % LCG_SITE_CE
+else:
+  LCG_SITE_CE = 'Local'
+
+
+cmd = '%s %s' % ( installScript,  installOpts )
+
+if debugFlag:
+  print 'DEBUG Executing: %s' % cmd
+ret = os.system( cmd )
+
+if ret != 0:
+  print
+  print 'ERROR could not make a proper DIRAC installation'
+  print
+  sys.exit(-1)
+
+# Add the scripts directory to the Python search path to import from it
+myPath     = os.path.join( rootPath, 'scripts' )
+myFullName = os.path.join( myPath, myShortName )
+sys.path.insert( 0, myPath )
+os.environ['PATH'] = '%s:%s' % ( myPath, os.environ['PATH'] )
+try:
+  from dirac_functions import functions
+except:
+  print
+  print 'ERROR could not properly load dirac_functions'
+  print
+  sys.exit(-1)
+
+dirac = functions( myFullName )
+if localPlatform:
+  dirac.platform( localPlatform )
+# End of initialisation
+
+# Preamble
+dirac.logINFO( 'Starting %s' % __RCSID__ )
+ret = os.system('dirac-proxy-info')
+os.putenv('CMTCONFIG', dirac.localPlatform )
+dirac.logINFO( 'Setting CMTCONFIG=%s' % dirac.localPlatform )
+
+if localFlag:
+  os.system('dirac-update -o /LocalSite/Site=%s -p %s' % ( defaultSite, dirac.localPlatform ) )
+  pass
+else:
+  # Here the site discovery code should go.
+  pass
+
+localHost = socket.gethostname()
+localUid  = os.getuid()
+try:
+  import pwd
+  localUser = pwd.getpwuid(localUid)[0]
+except:
+  localUser = 'Unknown'
+localUname = os.uname()
+
+dirac.logINFO( str.join(' ', localUname) )
+dirac.logINFO( 'Host Name  = %s' % localHost )
+dirac.logINFO( 'User Name  = %s' % localUser )
+dirac.logINFO( 'User Id    = %s' % localUid )
+dirac.logINFO( 'CurrentDir = %s' % rootPath )
+
+fileName = '/etc/redhat-release'
+if os.path.exists( fileName ):
+  f = open( fileName, 'r' )
+  dirac.logINFO( 'RedHat Release = %s' % f.read().strip() )
+  f.close()
+
+fileName = '/proc/cpuinfo'
+if os.path.exists( fileName ):
+  f = open( fileName, 'r' )
+  cpu = f.readlines()
+  f.close()
+  nCPU = 0
+  for line in cpu:
+    if line.find( 'cpu MHz' ) == 0:
+      nCPU += 1
+      freq = line.split()[3]
+    elif line.find( 'model name' ) == 0:
+      CPUmodel = line.split(': ')[1].strip()
+  dirac.logINFO( 'CPU (model)    = %s' % CPUmodel )
+  dirac.logINFO( 'CPU (MHz)      = %s x %s' % ( nCPU, freq ) )
+
+fileName = '/proc/meminfo'
+if os.path.exists( fileName ):
+  f = open( fileName, 'r' )
+  mem = f.readlines()
+  f.close()
+  freeMem = 0
+  for line in mem:
+    if line.find( 'MemTotal:' ) == 0:
+      totalMem = int(line.split()[1])
+    if line.find( 'MemFree:' ) == 0:
+      freeMem += int(line.split()[1])
+    if line.find( 'Cached:' ) == 0:
+      freeMem += int(line.split()[1])
+  dirac.logINFO( 'Memory (kB)    = %s' % totalMem )
+  dirac.logINFO( 'FreeMem. (kB)  = %s' % freeMem )
+
+
+fs = os.statvfs(rootPath)
+# bsize;    /* file system block size */
+# frsize;   /* fragment size */
+# blocks;   /* size of fs in f_frsize units */
+# bfree;    /* # free blocks */
+# bavail;   /* # free blocks for non-root */
+# files;    /* # inodes */
+# ffree;    /* # free inodes */
+# favail;   /* # free inodes for non-root */
+# flag;     /* mount flags */
+# namemax;  /* maximum filename length */
+diskSpace = fs[4] * fs[0] / 1024 / 1024
+dirac.logINFO( 'DiskSpace (MB) = %s' % diskSpace )
+
+if diskSpace < minDiskSpace:
+  dirac.logERROR( '%s MB < %s MB, not enough local disk space available, exiting' 
+                  % (diskSpace, minDiskSpace) )
+  sys.exit(-1)
+
+if pilotRef != 'Unknown':
+  dirac.logINFO( 'CE = %s' % CE )
+  dirac.logINFO( 'LCG_SITE_CE = %s' % LCG_SITE_CE )
+
+# further local configuration
+inProcessOpts = ' -s /Resources/Computing/InProcess'
+inProcessOpts+= ' -o WorkingDirectory=%s' % rootPath
+inProcessOpts+= ' -o LocalAccountString=%s' % localUser
+inProcessOpts+= ' -o TotalCPUs=%s' % 1
+inProcessOpts+= ' -o MaxCPUTime=%s' % ( int(jobCPUReqt) + 1 )
+inProcessOpts+= ' -o MaxRunningJobs=%s' % 1
+# To prevent a wayward agent picking up and failing many jobs.
+inProcessOpts+= ' -o MaxTotalJobs=%s' % 10
+
+jobAgentControl = os.path.join( rootPath, 'agentFlags', 'JobAgent' )
+createDir( jobAgentControl )
+
+watchdogControl = os.path.join( rootPath, 'agentFlags', 'Watchdog' )
+createDir( watchdogControl )
+
+jobAgentOpts = ' -o CEUniqueID=%s' % JOB_AGENT_CE
+jobAgentOpts+= ' -o ControlDirectory=%s' % jobAgentControl
+jobAgentOpts+= ' -o MaxCycles=%s' % MAX_CYCLES
+if debugFlag:
+  jobAgentOpts+= ' -o LogLevel=DEBUG'
+jobAgentOpts+= ' -o LogLevel=DEBUG'
+
+watchdogOpts = ' -o ControlDirectory=%s' % watchdogControl
+if debugFlag:
+  watchdogOpts+= ' -o LogLevel=DEBUG'
+
+# Find any .cfg file uploaded with the sandbox
+extraCFG = ''
+for i in os.listdir( rootPath ):
+  cfg = os.path.join( rootPath, i )
+  if os.path.isfile( cfg ) and re.search( '.cfg&', cfg ):
+    extraCFG += ' %s' % cfg
+
+dirac.logINFO( 'Starting JobAgent' )
+
+jobAgent = 'dirac-agent WorkloadManagement/JobAgent %s %s %s' % ( 
+            jobAgentOpts, inProcessOpts,  extraCFG )
+dirac.logINFO( jobAgent )
+
+if not testFlag:
+  os.system( jobAgent )
+
+sys.exit(0)
