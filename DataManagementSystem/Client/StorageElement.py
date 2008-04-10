@@ -204,6 +204,19 @@ class StorageElement:
     gLogger.error(errStr)
     return S_ERROR(errStr)
 
+  def getPfnForLfn(self,lfn):
+    """ Get the full PFN constructed from the LFN.
+    """
+    for storage in self.storages:
+      res = storage.getPFNBase()
+      if res['OK']:
+        fullPath = "%s/%s" % (res['Value'],lfn)
+        return S_OK(fullPath)
+    # This should never happen. DANGER!!
+    errStr = "StorageElement.getPfnForLfn: Failed to get the full pfn for any of the protocols!!"
+    gLogger.error(errStr)
+    return S_ERROR(errStr)
+
   #################################################################################################
   #
   # These are the directory manipulation methods
@@ -399,7 +412,7 @@ class StorageElement:
   def listDirectory(self,directoryUrl):
     """ This method lists the contents of the supplied directories
 
-        'directoryUrl' is the directory on the storage to be removed
+        'directoryUrl' is the directory on the storage to be listed
     """
     if type(directoryUrl) == types.StringType:
       directoryUrls = [directoryUrl]
@@ -959,7 +972,7 @@ class StorageElement:
                 if not failed.has_key(pfn):
                   failed[pfn] = ''
                 if not res['Value']['Failed'].has_key(protocolPfn):
-                  res['Value']['Failed'][protocolPfn]='Another temporary hack unfortunately, apologies' 
+                  res['Value']['Failed'][protocolPfn]='Another temporary hack unfortunately, apologies'
                 failed[pfn] = "%s %s" % (failed[pfn],res['Value']['Failed'][protocolPfn])
 
               else:
@@ -1235,7 +1248,6 @@ class StorageElement:
   #
   # These are the methods for file replication (not supported directly in the storage plug-ins
   #
-
 
   def replicateFile(self,sourcePfn,sourceFileSize,directoryPath,alternativeFileName=None):
     """ This method will replicate a file to the Storage Element
