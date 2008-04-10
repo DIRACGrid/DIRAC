@@ -27,7 +27,7 @@ class LFCvsSEAgent(Agent):
     result = Agent.initialize(self)
     self.RequestDBClient = RequestClient()
     self.ReplicaManager = ReplicaManager()
-    self.lfc = FileCatalog(['LFC'])
+    self.lfc = FileCatalog(['LcgFileCatalogCombined'])
                          
     self.IntegrityDB = RPCClient('DataManagement/DataIntegrity')
     self.useProxies = gConfig.getValue(self.section+'/UseProxies','True')
@@ -125,12 +125,15 @@ class LFCvsSEAgent(Agent):
               # Loop over all the directories and sub-directories
               while (oNamespaceBrowser.isActive()):
                 currentDir = oNamespaceBrowser.getActiveDir()
+                gLogger.info("LFCvsSEAgent.execute: Attempting to get contents of %s." % currentDir)
                 res = self.lfc.getDirectoryContents(currentDir)
                 if not res['OK']:
                   subDirs = [currentDir]
+                elif res['Value']['Failed'].has_key(currentDir):
+                  subDirs = [currentDir]
                 else:
-                  subDirs = res['Value']['SubDirs']
-                  files = res['Value']['Files']
+                  subDirs = res['Value']['Successful'][currentDir]['SubDirs']
+                  files = res['Value']['Successful'][currentDir]['Files']
 
                   lfnSizeDict = {}
                   pfnLfnDict = {}
@@ -148,6 +151,7 @@ class LFCvsSEAgent(Agent):
                       sePfnDict[se].append(pfn)
 
                   for storageElementName,physicalFiles in sePfnDict.items():
+                    gLogger.info("LFCvsSEAgent.execute: Attempting to get metadata for files on %s." % storageElementName)
                     res = self.ReplicaManager.getPhysicalFileMetadata(physicalFiles, storageElementName)
                     if not res['OK']:
                       gLogger.error("LFCvsSEAgent.execute: Completely failed to get physical file metadata.",res['Message'])
