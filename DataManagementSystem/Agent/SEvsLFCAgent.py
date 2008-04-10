@@ -10,6 +10,7 @@ from DIRAC.RequestManagementSystem.Client.DataManagementRequest import DataManag
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 from DIRAC.DataManagementSystem.Agent.NamespaceBrowser import NamespaceBrowser
 from DIRAC.DataManagementSystem.Client.FileCatalog import FileCatalog
+from DIRAC.DataManagementSystem.Client.StorageElement import StorageElement
 
 import time,os
 from types import *
@@ -121,7 +122,6 @@ class SEvsLFCAgent(Agent):
           for subRequestFile in subRequestFiles:
             if subRequestFile['Status'] == 'Waiting':
               lfn = subRequestFile['LFN']
-
               storageElement = StorageElement(storageElementName)
               if not storageElement.isValid()['Value']:
                 errStr = "SEvsLFCAgent.execute: Failed to instantiate destination StorageElement."
@@ -131,20 +131,37 @@ class SEvsLFCAgent(Agent):
                 if not res['OK']:
                   gLogger.info('shit bugger do something.')
                 else:
-                  oNamespaceBrowser = NameSpaceBrowser(res['Value'])
+                  oNamespaceBrowser = NamespaceBrowser(res['Value'])
                   # Loop over all the directories and sub-directories
                   while (oNamespaceBrowser.isActive()):
                     currentDir = oNamespaceBrowser.getActiveDir()
 
+                    gLogger.info("SEvsLFCAgent.execute: Attempting to list the contents of %s." % currentDir)
                     res = storageElement.listDirectory(currentDir)
                     if not res['Value']['Successful'].has_key(currentDir):
+                      gLogger.error("SEvsLFCAgent.execute: Failed to list the directory contents.","%s %s" % (currentDir,res['Value']['Successful']['Failed'][currentDir]))
                       subDirs = [currentDir]
                     else:
-                      subDirs = res['Value']['Successful'][currentDir]['SubDirs']
-                      files = res['Value']['Successful'][currentDir]['Files']
+                      subDirs = []
+                      files = {}
+                      for surl,surlDict in res['Value']['Successful'][currentDir]['Files'].items():
+                        pfnRes = storageElement.getPfnForProtocol(surl,'SRM2',withPort=False)
+                        surl = pfnRes['Value']
+                        files[surl] = surlDict
+                      for surl,surlDict in res['Value']['Successful'][currentDir]['SubDirs'].items():
+                        pfnRes = storageElement.getPfnForProtocol(surl,'SRM2',withPort=False)
+                        surl = pfnRes['Value']
+                        subDirs.append(surl)
+
+                      #subDirs = res['Value']['Successful'][currentDir]['SubDirs']
+                      gLogger.info("SEvsLFCAgent.execute: Successfully obtained %s sub-directories." % len(subDirs))
+                      #files = res['Value']['Successful'][currentDir]['Files']
+                      gLogger.info("SEvsLFCAgent.execute: Successfully obtained %s files." % len(files))
+
                       selectedLfns = []
                       lfnPfnDict = {}
                       pfnSize = {}
+
                       for pfn,pfnDict in files.items():
                         res = storageElement.getPfnPath(pfn)
                         if not res['OK']:
@@ -162,14 +179,40 @@ class SEvsLFCAgent(Agent):
                           lfnPfnDict[lfn] = pfn
                           pfnSize[pfn] = pfnDict['Size']
 
-                        res = self.lfc.getFileMetadata(selectedLfns)
-                        if not res['OK']:
-                          subDirs = [currentDir]
-                        else:
-                          for lfn in res['Value']['Failed'].keys():
-                            gLogger.error("SEvsLFCAgent.execute: Failed to get metadata.","%s %s" % (lfn,res['Value']['Failed'][lfn]))
-                            pfn = lfnPfnDict[lfn]
-                            fileMetadata = {'Prognosis':'SEPfnNoLfn','LFN':lfn,'PFN':pfn,'StorageElement':storageElementName,'Size':pfnSize[pfn]}
+                      res = self.lfc.getFileMetadata(selectedLfns)
+                      if not res['OK']:
+                        subDirs = [currentDir]
+                      else:
+                        for lfn in res['Value']['Failed'].keys():
+                          gLogger.error("SEvsLFCAgent.execute: Failed to get metadata.","%s %s" % (lfn,res['Value']['Failed'][lfn]))
+                          pfn = lfnPfnDict[lfn]
+                          fileMetadata = {'Prognosis':'SEPfnNoLfn','LFN':lfn,'PFN':pfn,'StorageElement':storageElementName,'Size':pfnSize[pfn]}
+                          res = self.IntegrityDB.insertProblematic(AGENT_NAME,fileMetadata)
+                          if res['OK']:
+                            gLogger.info("SEvsLFCAgent.execute: Successfully added to IntegrityDB.")
+                            gLogger.error("Change the status in the LFC,ProcDB....")
+                          else:
+                            gLogger.error("Shit, fuck, bugger. Add the failover.")
+
+                        for lfn,lfnDict in res['Value']['Successful'].items():
+                          pfn = lfnPfnDict[lfn]
+                          storageSize = pfnSize[pfn]
+                          catalogSize = lfnDict['Size']
+                          if int(catalogSize) == int(storageSize):
+                            gLogger.info("SEvsLFCAgent.execute: Catalog and storage sizes match.","%s %s" % (pfn,storageElementName))
+                            gLogger.info("Change the status in the LFC")
+                          elif int(storageSize) == 0:
+                            gLogger.error("SEvsLFCAgent.execute: Physical file size is 0.", "%s %s" % (pfn,storageElementName))
+                            fileMetadata = {'Prognosis':'ZeroSizePfn','LFN':lfn,'PFN':pfn,'StorageElement':storageElementName}
+                            res = self.IntegrityDB.insertProblematic(AGENT_NAME,fileMetadata)
+                            if res['OK']:
+                              gLogger.info("SEvsLFCAgent.execute: Successfully added to IntegrityDB.")
+                              gLogger.error("Change the status in the LFC,ProcDB....")
+                            else:
+                              gLogger.error("Shit, fuck, bugger. Add the failover.")
+                          else:
+                            gLogger.error("SEvsLFCAgent.execute: Catalog and storage size mis-match.","%s %s" % (pfn,storageElementName))
+                            fileMetadata = {'Prognosis':'PfnSizeMismatch','LFN':lfn,'PFN':pfn,'StorageElement':storageElementName}
                             res = self.IntegrityDB.insertProblematic(AGENT_NAME,fileMetadata)
                             if res['OK']:
                               gLogger.info("SEvsLFCAgent.execute: Successfully added to IntegrityDB.")
@@ -177,16 +220,27 @@ class SEvsLFCAgent(Agent):
                             else:
                               gLogger.error("Shit, fuck, bugger. Add the failover.")
 
-                          for lfn,lfnDict in res['Value']['Successful'].items():
+                        res = self.lfc.getReplicas(selectedLfns)
+                        if not res['OK']:
+                          subDirs = [currentDir]
+                        else:
+                          for lfn in res['Value']['Failed'].keys():
+                            gLogger.error("SEvsLFCAgent.execute: Failed to get replica information.","%s %s" % (lfn,res['Value']['Failed'][lfn]))
                             pfn = lfnPfnDict[lfn]
-                            storageSize = pfnSize[pfn]
-                            catalogSize = lfnDict['Size']
-                            if int(catalogSize) == int(storageSize):
-                              gLogger.info("SEvsLFCAgent.execute: Catalog and storage sizes match.","%s %s" % (pfn,storageElementName))
-                              gLogger.info("Change the status in the LFC")
-                            elif int(storageSize) == 0:
-                              gLogger.error("SEvsLFCAgent.execute: Physical file size is 0.", "%s %s" % (pfn,storageElementName))
-                              fileMetadata = {'Prognosis':'ZeroSizePfn','LFN':lfn,'PFN':pfn,'StorageElement':storageElementName}
+                            fileMetadata = {'Prognosis':'PfnNoReplica','LFN':lfn,'PFN':pfn,'StorageElement':storageElementName,'Size':pfnSize[pfn]}
+                            res = self.IntegrityDB.insertProblematic(AGENT_NAME,fileMetadata)
+                            if res['OK']:
+                              gLogger.info("SEvsLFCAgent.execute: Successfully added to IntegrityDB.")
+                              gLogger.error("Change the status in the LFC,ProcDB....")
+                            else:
+                              gLogger.error("Shit, fuck, bugger. Add the failover.")
+
+                          for lfn,repDict in res['Value']['Successful'].items():
+                            pfn = lfnPfnDict[lfn]
+                            registeredPfns = repDict.values()
+                            if not pfn in registeredPfns:
+                              gLogger.error("SEvsLFCAgent.execute: SE PFN not registered.","%s %s" % (lfn,pfn))
+                              fileMetadata = {'Prognosis':'PfnNoReplica','LFN':lfn,'PFN':pfn,'StorageElement':storageElementName}
                               res = self.IntegrityDB.insertProblematic(AGENT_NAME,fileMetadata)
                               if res['OK']:
                                 gLogger.info("SEvsLFCAgent.execute: Successfully added to IntegrityDB.")
@@ -194,44 +248,7 @@ class SEvsLFCAgent(Agent):
                               else:
                                 gLogger.error("Shit, fuck, bugger. Add the failover.")
                             else:
-                              gLogger.error("SEvsLFCAgent.execute: Catalog and storage size mis-match.","%s %s" % (pfn,storageElementName))
-                              fileMetadata = {'Prognosis':'PfnSizeMismatch','LFN':lfn,'PFN':pfn,'StorageElement':storageElementName}
-                              res = self.IntegrityDB.insertProblematic(AGENT_NAME,fileMetadata)
-                              if res['OK']:
-                                gLogger.info("SEvsLFCAgent.execute: Successfully added to IntegrityDB.")
-                                gLogger.error("Change the status in the LFC,ProcDB....")
-                              else:
-                                gLogger.error("Shit, fuck, bugger. Add the failover.")
-
-                          res = self.lfc.getReplicas(lfns)
-                          if not res['OK']:
-                            subDirs = [currentDir]
-                          else:
-                            for lfn in res['Value']['Failed'].keys():
-                              gLogger.error("SEvsLFCAgent.execute: Failed to get replica information.","%s %s" % (lfn,res['Value']['Failed'][lfn]))
-                              pfn = lfnPfnDict[lfn]
-                              fileMetadata = {'Prognosis':'PfnNoReplica','LFN':lfn,'PFN':pfn,'StorageElement':storageElementName,'Size':pfnSize[pfn]}
-                              res = self.IntegrityDB.insertProblematic(AGENT_NAME,fileMetadata)
-                              if res['OK']:
-                                gLogger.info("SEvsLFCAgent.execute: Successfully added to IntegrityDB.")
-                                gLogger.error("Change the status in the LFC,ProcDB....")
-                              else:
-                                gLogger.error("Shit, fuck, bugger. Add the failover.")
-
-                            for lfn,repDict in res['Value']['Successful'].items():
-                              pfn = lfnPfnDict[lfn]
-                              registeredPfns = repDict.values()
-                              if not pfn in registeredPfns:
-                                gLogger.error("SEvsLFCAgent.execute: SE PFN not registered.","%s %s" % (lfn,pfn))
-                                fileMetadata = {'Prognosis':'PfnNoReplica','LFN':lfn,'PFN':pfn,'StorageElement':storageElementName}
-                                res = self.IntegrityDB.insertProblematic(AGENT_NAME,fileMetadata)
-                                if res['OK']:
-                                  gLogger.info("SEvsLFCAgent.execute: Successfully added to IntegrityDB.")
-                                  gLogger.error("Change the status in the LFC,ProcDB....")
-                                else:
-                                  gLogger.error("Shit, fuck, bugger. Add the failover.")
-                              else:
-                                gLogger.info("SEvsLFCAgent.execute: SE Pfn verified.", pfn)
+                              gLogger.info("SEvsLFCAgent.execute: SE Pfn verified.", pfn)
 
                     oNamespaceBrowser.updateDirs(subDirs)
                   oRequest.setSubRequestFileAttributeValue(ind,'integrity',lfn,'Status','Done')
