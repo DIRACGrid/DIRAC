@@ -958,7 +958,10 @@ class StorageElement:
               if not res['Value']['Successful'].has_key(protocolPfn):
                 if not failed.has_key(pfn):
                   failed[pfn] = ''
+                if not res['Value']['Failed'].has_key(protocolPfn):
+                  res['Value']['Failed'][protocolPfn]='Another temporary hack unfortunately, apologies' 
                 failed[pfn] = "%s %s" % (failed[pfn],res['Value']['Failed'][protocolPfn])
+
               else:
                 successful[pfn] = res['Value']['Successful'][protocolPfn]
                 if failed.has_key(pfn):
