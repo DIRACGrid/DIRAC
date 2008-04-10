@@ -1,4 +1,4 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.26 2008/03/26 16:02:58 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.27 2008/04/10 08:31:45 atsareg Exp $
 
 """ Grid Credentials module contains utilities to manage user and host
     certificates and proxies.
@@ -33,7 +33,7 @@
     getVOMSProxyInfo()
 """
 
-__RCSID__ = "$Id: GridCredentials.py,v 1.26 2008/03/26 16:02:58 rgracian Exp $"
+__RCSID__ = "$Id: GridCredentials.py,v 1.27 2008/04/10 08:31:45 atsareg Exp $"
 
 import os
 import os.path
@@ -365,7 +365,8 @@ def getProxyTimeLeft(proxy=None):
   actimeleft = 99999999
   if result['VOMS']:
     result = getVOMSProxyInfo(proxy,'actimeleft')
-    actimeleft = result['Value']
+    if result['OK']:
+      actimeleft = result['Value']
 
   return S_OK(min(timeleft,actimeleft))
 
