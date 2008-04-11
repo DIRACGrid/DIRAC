@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Resources/Computing/ComputingElement.py,v 1.3 2007/11/30 17:44:53 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Resources/Computing/ComputingElement.py,v 1.4 2008/04/11 09:48:41 paterson Exp $
 # File :   ComputingElement.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
      resource JDL for subsequent use during the matching process.
 """
 
-__RCSID__ = "$Id: ComputingElement.py,v 1.3 2007/11/30 17:44:53 paterson Exp $"
+__RCSID__ = "$Id: ComputingElement.py,v 1.4 2008/04/11 09:48:41 paterson Exp $"
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight      import *
 from DIRAC.ConfigurationSystem.Client.Config        import gConfig
@@ -69,6 +69,8 @@ class ComputingElement:
       if re.search('&&$',requirements):
         requirements = requirements[:-3]
       self.classAd.set_expression('Requirements',requirements)
+    else:
+      self.classAd.set_expression('Requirements','True')
 
     return S_OK('Added requirements')
 
