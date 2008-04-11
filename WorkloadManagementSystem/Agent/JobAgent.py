@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.27 2008/03/13 17:38:46 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.28 2008/04/11 08:01:28 rgracian Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.27 2008/03/13 17:38:46 paterson Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.28 2008/04/11 08:01:28 rgracian Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -35,7 +35,7 @@ class JobAgent(Agent):
     Agent.__init__(self,AGENT_NAME)
     #self.log.setLevel('verb')
     self.jobManager  = RPCClient('WorkloadManagement/JobManager')
-    self.matcher = RPCClient('WorkloadManagement/Matcher')
+    self.matcher = RPCClient('WorkloadManagement/Matcher', timeout = 600 )
     self.jobReport  = RPCClient('WorkloadManagement/JobStateUpdate')
     self.wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
 
@@ -111,6 +111,9 @@ class JobAgent(Agent):
     if not jobRequest['OK']:
       if re.search('No work available',jobRequest['Message']):
         self.log.info('Job request OK: %s' %(jobRequest['Message']))
+        return S_OK(jobRequest['Message'])
+      elif jobRequest['Message'].find( "seconds timeout" ):
+        self.log.error( jobRequest['Message'] )
         return S_OK(jobRequest['Message'])
       else:
         self.log.info('Failed to get jobs: %s'  %(jobRequest['Message']))
