@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Agent.py,v 1.11 2008/04/09 17:53:10 mseco Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Agent.py,v 1.12 2008/04/12 14:13:19 rgracian Exp $
 ########################################################################
 """ Base class for all the Agents.
 
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: Agent.py,v 1.11 2008/04/09 17:53:10 mseco Exp $"
+__RCSID__ = "$Id: Agent.py,v 1.12 2008/04/12 14:13:19 rgracian Exp $"
 
 import os
 import threading
@@ -63,7 +63,7 @@ class Agent:
       return S_ERROR('The agent is disactivated in its configuration')
 
     self.pollingTime = gConfig.getValue(self.section+'/PollingTime',60)
-    self.controlDir = gConfig.getValue(self.section+'/ControlDirectory','')
+    self.controlDir = gConfig.getValue(self.section+'/ControlDirectory','.')
     self.maxcount = gConfig.getValue(self.section+'/MaxCycles',0)
 
     gLogger.always( 'Starting Agent', self.fullname )
