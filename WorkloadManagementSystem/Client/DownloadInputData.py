@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: DownloadInputData.py,v 1.1 2008/04/13 14:16:19 paterson Exp $
+# $Id: DownloadInputData.py,v 1.2 2008/04/13 14:41:47 paterson Exp $
 # File :   DownloadInputData.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     defined in the CS for the VO.
 """
 
-__RCSID__ = "$Id: DownloadInputData.py,v 1.1 2008/04/13 14:16:19 paterson Exp $"
+__RCSID__ = "$Id: DownloadInputData.py,v 1.2 2008/04/13 14:41:47 paterson Exp $"
 
 from DIRAC.Core.DISET.RPCClient                                     import RPCClient
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
@@ -206,6 +206,12 @@ class DownloadInputData:
   def __getPFN(self,pfn,se,size,guid):
     """ Download a local copy of a single PFN from the specified Storage Element.
     """
+    fileName = os.path.basename(pfn)
+    if os.path.exists('%s/%s' %(os.getcwd(),fileName)):
+      self.log.verbose('File already %s exists in current directory' %(fileName))
+      fileDict = {'turl':'LocalData','protocol':'LocalData','se':se,'pfn':pfn,'guid':guid}
+      return S_OK(fileDict)
+
     storageElement = StorageElement(se)
     if not storageElement.isValid()['Value']:
       return S_ERROR('Failed to instantiate StorageElement for: %s' %(se))
@@ -215,7 +221,6 @@ class DownloadInputData:
       self.log.warn('Problem getting PFN %s with size %s bytes:\n%s' %(pfn,size,result))
       return result
 
-    fileName = os.path.basename(pfn)
     self.log.verbose(result)
     if os.path.exists('%s/%s' %(os.getcwd(),fileName)):
       self.log.verbose('File %s exists in current directory' %(fileName))
