@@ -1,8 +1,8 @@
-# $Id: WorkflowReader.py,v 1.14 2008/04/09 16:01:06 gkuznets Exp $
+# $Id: WorkflowReader.py,v 1.15 2008/04/13 20:35:33 paterson Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.14 $"
+__RCSID__ = "$Revision: 1.15 $"
 
 #try: # this part to inport as part of the DIRAC framework
 import xml.sax
@@ -119,7 +119,7 @@ class WorkflowXMLHandler(ContentHandler):
       self.stack[len(self.stack)-1].module_instances.append(obj)
     elif name == "Parameter":
       obj=self.stack.pop();
-      self.stack[len(self.stack)-1].appendParameter(obj)
+      self.stack[len(self.stack)-1].addParameter(obj)
     else:
       print "UNTREATED! endElement", name
 
