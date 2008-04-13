@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: InputDataByProtocol.py,v 1.4 2008/02/21 15:38:25 paterson Exp $
+# $Id: InputDataByProtocol.py,v 1.5 2008/04/13 14:13:23 paterson Exp $
 # File :   InputDataByProtocol.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     defined in the CS for the VO.
 """
 
-__RCSID__ = "$Id: InputDataByProtocol.py,v 1.4 2008/02/21 15:38:25 paterson Exp $"
+__RCSID__ = "$Id: InputDataByProtocol.py,v 1.5 2008/04/13 14:13:23 paterson Exp $"
 
 from DIRAC.Core.DISET.RPCClient                                     import RPCClient
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
@@ -55,6 +55,7 @@ class InputDataByProtocol:
       self.log.verbose('Data to resolve passed directly to InputDataByProtocol module')
       self.inputData = dataToResolve #e.g. list supplied by another module
 
+    self.inputData = [x.replace('LFN:','') for x in self.inputData]
     self.log.info('InputData requirement to be resolved by protocol is:')
     for i in self.inputData:
       self.log.verbose(i)
@@ -109,25 +110,27 @@ class InputDataByProtocol:
     #Need to group files by SE in order to stage optimally
     #we know from above that all remaining files have a replica
     #(preferring disk if >1) in the local storage.
+    #IMPORTANT, only add replicas for input data that is requested
+    #since this module could have been executed after another.
     seFilesDict = {}
     trackLFNs = {}
     for localSE in localSEList:
       for lfn,reps in replicas.items():
-        if reps.has_key(localSE):
-          pfn = reps[localSE]
-          if seFilesDict.has_key(localSE):
-            currentFiles = seFilesDict[localSE]
-            if not lfn in trackLFNs.keys():
-              currentFiles.append(pfn)
-            seFilesDict[localSE] = currentFiles
-            trackLFNs[lfn] = pfn
-          else:
-            seFilesDict[localSE] = [pfn]
-            trackLFNs[lfn] = pfn
+        if lfn in self.inputData:
+          if reps.has_key(localSE):
+            pfn = reps[localSE]
+            if seFilesDict.has_key(localSE):
+              currentFiles = seFilesDict[localSE]
+              if not lfn in trackLFNs.keys():
+                currentFiles.append(pfn)
+              seFilesDict[localSE] = currentFiles
+              trackLFNs[lfn] = pfn
+            else:
+              seFilesDict[localSE] = [pfn]
+              trackLFNs[lfn] = pfn
 
     self.log.verbose('Files grouped by LocalSE are:')
     self.log.verbose(seFilesDict)
-
     for se,pfnList in seFilesDict.items():
       seTotal = len(pfnList)
       self.log.info(' %s SURLs found from catalog for LocalSE %s' %(seTotal,se))
@@ -147,6 +150,7 @@ class InputDataByProtocol:
               resolvedData[lfn] = {'pfn':pfn,'se':se,'guid':guid}
 
     #Can now start to obtain TURLs for files grouped by localSE
+    #for requested input data
     for se,pfnList in seFilesDict.items():
       result = self.rm.getPhysicalFileAccessUrl(pfnList,se)
       self.log.debug(result)
@@ -169,7 +173,7 @@ class InputDataByProtocol:
                   failedReplicas.append(lfn)
 
       if badTURLCount:
-        self.log.warn('Job Wrapper found %s problematic TURL(s) for job %s' % (badTURLCount,self.jobID))
+        self.log.warn('Found %s problematic TURL(s) for job %s' % (badTURLCount,self.jobID))
         param = string.join(badTURLs,'\n')
         self.log.info(param)
         result = self.__setJobParam('ProblematicTURLs',param)
@@ -178,14 +182,15 @@ class InputDataByProtocol:
 
       pfnTurlDict = seResult['Successful']
       for lfn,reps in replicas.items():
-        for se,rep in reps.items():
-          for pfn in pfnTurlDict.keys():
-            if rep == pfn:
-              turl = pfnTurlDict[pfn].values()[0]
-              resolvedData[lfn]['turl'] = turl
-              protocol = pfnTurlDict[pfn].keys()[0]
-              resolvedData[lfn]['protocol'] = protocol
-              self.log.info('Resolved input data\n >>>> SE: %s\n>>>>LFN: %s\n>>>>PFN: %s\n>>>>TURL: %s\n>>>>PROTOCOL %s' %(se,lfn,pfn,turl,protocol))
+        if lfn in self.inputData:
+          for se,rep in reps.items():
+            for pfn in pfnTurlDict.keys():
+              if rep == pfn:
+                turl = pfnTurlDict[pfn].values()[0]
+                resolvedData[lfn]['turl'] = turl
+                protocol = pfnTurlDict[pfn].keys()[0]
+                resolvedData[lfn]['protocol'] = protocol
+                self.log.info('Resolved input data\n>>>> SE: %s\n>>>>LFN: %s\n>>>>PFN: %s\n>>>>TURL: %s\n>>>>PROTOCOL %s' %(se,lfn,pfn,turl,protocol))
 
     self.log.verbose(resolvedData)
     count = {}
