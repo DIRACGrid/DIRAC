@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.12 2008/03/06 09:46:02 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.13 2008/04/13 15:05:18 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -24,7 +24,7 @@ The initial instance just exposes job submission via the WMS client.
 
 """
 
-__RCSID__ = "$Id: Dirac.py,v 1.12 2008/03/06 09:46:02 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.13 2008/04/13 15:05:18 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -187,9 +187,10 @@ class Dirac:
     self.log.verbose(parameters)
     inputData = None
     if parameters['Value'].has_key('InputData'):
-      inputData = parameters['Value']['InputData']
-      if type(inputData) == type(" "):
-        inputData = [inputData]
+      if parameters['Value']['InputData']:
+        inputData = parameters['Value']['InputData']
+        if type(inputData) == type(" "):
+          inputData = [inputData]
 
     if inputData:
       localSEList = gConfig.getValue('/LocalSite/LocalSE','')
