@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.21 2008/02/22 11:41:15 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.22 2008/04/13 15:07:03 paterson Exp $
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,7 +13,7 @@
 
 """
 
-__RCSID__ = "$Id: Job.py,v 1.21 2008/02/22 11:41:15 paterson Exp $"
+__RCSID__ = "$Id: Job.py,v 1.22 2008/04/13 15:07:03 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -547,6 +547,7 @@ class Job:
     self._addParameter(self.workflow,'Origin','JDL',self.origin,'Origin of client')
     self._addParameter(self.workflow,'StdOutput','JDL',self.stdout,'Standard output file')
     self._addParameter(self.workflow,'StdError','JDL',self.stderr,'Standard error file')
+    self._addParameter(self.workflow,'InputData','JDL','','Default null input data value')
 
   #############################################################################
  # def _addStep(self,step):
