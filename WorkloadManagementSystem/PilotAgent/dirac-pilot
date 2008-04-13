@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot,v 1.4 2008/04/11 17:32:17 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot,v 1.5 2008/04/13 08:44:01 rgracian Exp $
 # File :   dirac-pilot
 # Author : Ricardo Graciani
 ########################################################################
@@ -9,7 +9,7 @@
  Job Agent to execute pending workload on WMS.
  It requires dirac-update script to be sitting in the same directory.
 """
-__RCSID__ = "$Id: dirac-pilot,v 1.4 2008/04/11 17:32:17 rgracian Exp $"
+__RCSID__ = "$Id: dirac-pilot,v 1.5 2008/04/13 08:44:01 rgracian Exp $"
 try:
   import os, sys, socket, re, stat, popen2
   
@@ -226,6 +226,9 @@ myPath     = os.path.join( rootPath, 'scripts' )
 myFullName = os.path.join( myPath, myShortName )
 sys.path.insert( 0, myPath )
 os.environ['PATH'] = '%s:%s' % ( myPath, os.environ['PATH'] )
+
+os.system ( 'dirac-group-init lhcb_prod' )
+
 try:
   from dirac_functions import functions
 except:
@@ -349,7 +352,6 @@ jobAgentOpts+= ' -o ControlDirectory=%s' % jobAgentControl
 jobAgentOpts+= ' -o MaxCycles=%s' % MAX_CYCLES
 if debugFlag:
   jobAgentOpts+= ' -o LogLevel=DEBUG'
-jobAgentOpts+= ' -o LogLevel=DEBUG'
 
 watchdogOpts = ' -o ControlDirectory=%s' % watchdogControl
 if debugFlag:
