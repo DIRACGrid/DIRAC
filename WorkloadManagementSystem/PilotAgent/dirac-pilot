@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot,v 1.5 2008/04/13 08:44:01 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot,v 1.6 2008/04/13 16:08:33 rgracian Exp $
 # File :   dirac-pilot
 # Author : Ricardo Graciani
 ########################################################################
@@ -9,7 +9,7 @@
  Job Agent to execute pending workload on WMS.
  It requires dirac-update script to be sitting in the same directory.
 """
-__RCSID__ = "$Id: dirac-pilot,v 1.5 2008/04/13 08:44:01 rgracian Exp $"
+__RCSID__ = "$Id: dirac-pilot,v 1.6 2008/04/13 16:08:33 rgracian Exp $"
 try:
   import os, sys, socket, re, stat, popen2
   
@@ -177,7 +177,7 @@ if os.environ.has_key('GLITE_WMS_JOBID'):
   myFlavour = 'gLite'
   pilotRef = os.environ['GLITE_WMS_JOBID']
 
-installOpts = ' -o /LocalSite/Platform=%s' % myFlavour
+installOpts = ' -o /LocalSite/Platform=%s ' % myFlavour
 
 installOpts+= parse_options()
 
@@ -202,6 +202,7 @@ if debugFlag:
 ret = os.system( cmd )
 
 if ret != 0:
+  print ret
   if ret == 256:
     # The platfrom is not available, try to build it
     installOpts += ' --build'
