@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.22 2008/04/13 15:07:03 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.23 2008/04/13 20:34:41 paterson Exp $
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,7 +13,7 @@
 
 """
 
-__RCSID__ = "$Id: Job.py,v 1.22 2008/04/13 15:07:03 paterson Exp $"
+__RCSID__ = "$Id: Job.py,v 1.23 2008/04/13 20:34:41 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -121,9 +121,9 @@ class Job:
 
     step = StepDefinition(stepDefn)
     step.addModule(module)
-    step.appendParameterCopy(module.findParameter('Executable'))
-    step.appendParameterCopy(module.findParameter('Name'))
-    step.appendParameterCopy(module.findParameter('LogFile'))
+    step.addParameter(module.findParameter('Executable'))
+    step.addParameter(module.findParameter('Name'))
+    step.addParameter(module.findParameter('LogFile'))
 
     moduleInstance = step.createModuleInstance('Script',moduleName)
     moduleInstance.setLink('Executable','self','Executable')
@@ -131,22 +131,22 @@ class Job:
     moduleInstance.findParameter('LogFile').link('self','LogFile')
 
     output = moduleInstance.findParameter('Output')
-    step.appendParameter(Parameter(parameter=output))
+    step.addParameter(Parameter(parameter=output))
     step.findParameter('Output').link(moduleName,'Output')
 
     self.workflow.addStep(step)
     stepPrefix = '%s_' % stepName
-    self.workflow.appendParameterCopy(step.findParameter('Executable'),stepPrefix)
-    self.workflow.appendParameterCopy(step.findParameter('Name'),stepPrefix)
-    self.workflow.appendParameterCopy(step.findParameter('LogFile'),stepPrefix)
-    self.workflow.appendParameterCopy(step.findParameter('Output'),stepPrefix)
+    self.workflow.addParameter(step.findParameter('Executable'),stepPrefix)
+    self.workflow.addParameter(step.findParameter('Name'),stepPrefix)
+    self.workflow.addParameter(step.findParameter('LogFile'),stepPrefix)
+    self.workflow.addParameter(step.findParameter('Output'),stepPrefix)
     stepInstance = self.workflow.createStepInstance(stepDefn,stepName)
 
     scriptParams = ParameterCollection()
     scriptParams.append(moduleInstance.findParameter('Executable'))
     scriptParams.append(moduleInstance.findParameter('Name'))
     scriptParams.append(moduleInstance.findParameter('LogFile'))
-    stepInstance.linkParameterUp(scriptParams,stepPrefix)
+    stepInstance.linkUp(scriptParams,stepPrefix)
     self.workflow.findParameter('%sOutput' %(stepPrefix)).link(stepInstance.getName(),'Output')
     self.workflow.setValue('%sExecutable' %(stepPrefix), executable)
     self.workflow.findParameter('%sName' %(stepPrefix)).setValue(moduleName)
@@ -578,7 +578,7 @@ class Job:
       raise TypeError,'I/O flag is either input or output'
 
     p = Parameter(name,value,ptype,"","",inBool,outBool,description)
-    object.appendParameter(Parameter(parameter=p))
+    object.addParameter(Parameter(parameter=p))
     return p
 
   ############################################################################
@@ -589,7 +589,6 @@ class Job:
         specific and should be modified.
     """
     resolvedIS = []
-
     for i in inputSandbox:
       if not re.search('\*',i):
         if not os.path.isdir(i):
