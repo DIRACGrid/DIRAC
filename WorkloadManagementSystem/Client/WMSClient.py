@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSClient.py,v 1.7 2008/02/22 14:49:33 paterson Exp $
+# $Id: WMSClient.py,v 1.8 2008/04/14 08:25:39 paterson Exp $
 ########################################################################
 
 """ DIRAC Workload Management System Client class encapsulates all the
@@ -19,8 +19,8 @@ class WMSClient:
   def __init__(self):
     """ WMS Client constructor
     """
-    self.jobManager = RPCClient('WorkloadManagement/JobManager',useCertificates=False)
-    self.sandbox = SandboxClient()
+    self.jobManager = None
+    self.sandbox = None
 
 ###############################################################################
   def __checkInputSandbox(self, classAdJob):
@@ -84,6 +84,8 @@ class WMSClient:
   def submitJob(self,jdl):
     """ Submit one job specified by its JDL to WMS
     """
+    self.jobManager = RPCClient('WorkloadManagement/JobManager',useCertificates=False)
+    self.sandbox = SandboxClient()
     if os.path.exists(jdl):
       fic = open (jdl, "r")
       jdlString = fic.read()
@@ -139,26 +141,26 @@ class WMSClient:
     """ Kill running job.
         jobID can be an integer representing a single DIRAC job ID or a list of IDs
     """
-
+    self.jobManager = RPCClient('WorkloadManagement/JobManager',useCertificates=False)
     return self.jobManager.killJob(jobID)
 
   def deleteJob(self,jobID):
     """ Delete job(s) from the WMS Job database.
         jobID can be an integer representing a single DIRAC job ID or a list of IDs
     """
-
+    self.jobManager = RPCClient('WorkloadManagement/JobManager',useCertificates=False)
     return self.jobManager.deleteJob(jobID)
 
   def rescheduleJob(self,jobID):
     """ Reschedule job(s) in WMS Job database.
         jobID can be an integer representing a single DIRAC job ID or a list of IDs
     """
-
+    self.jobManager = RPCClient('WorkloadManagement/JobManager',useCertificates=False)
     return self.jobManager.rescheduleJob(jobID)
 
   def resetJob(self,jobID):
     """ Reset job(s) in WMS Job database.
         jobID can be an integer representing a single DIRAC job ID or a list of IDs
     """
-
+    self.jobManager = RPCClient('WorkloadManagement/JobManager',useCertificates=False)
     return self.jobManager.resetJob(jobID)
