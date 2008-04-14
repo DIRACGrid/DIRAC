@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.13 2008/02/22 12:00:19 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.14 2008/04/14 08:26:04 paterson Exp $
 # File :   LHCbJob.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are documented with example usage for the DIRAC API.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.13 2008/02/22 12:00:19 paterson Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.14 2008/04/14 08:26:04 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -25,7 +25,7 @@ from DIRAC.Core.Workflow.Step                       import *
 from DIRAC.Core.Workflow.Workflow                   import *
 from DIRAC.Core.Workflow.WorkflowReader             import *
 from DIRAC.Interfaces.API.Job                       import Job
-#from DIRAC.Interfaces.API.Dirac                     import Dirac
+from DIRAC.Interfaces.API.Dirac                     import Dirac
 from DIRAC.Core.DISET.RPCClient                     import RPCClient
 from DIRAC.Core.Utilities.File                      import makeGuid
 from DIRAC.Core.Utilities.GridCredentials           import getGridProxy,getVOMSAttributes,getCurrentDN
@@ -51,7 +51,7 @@ class DiracProduction:
     self.prodClient = RPCClient('ProductionManagement/ProductionManager')
     self.toCleanUp = []
     self.proxy = None
-    #self.diracAPI = Dirac()
+    self.diracAPI = Dirac()
 
   #############################################################################
   def getActiveProductions(self):
@@ -231,10 +231,8 @@ class DiracProduction:
   def __submitJob(self,prodJob):
     """Wrapper to submit job to WMS.
     """
-    from DIRAC.Interfaces.API.Dirac import Dirac #to force the WMS Client to pick up the current proxy
-    diracAPI = Dirac()
     self.log.verbose('Attempting to submit job to WMS')
-    submitted = diracAPI.submit(prodJob)
+    submitted = self.diracAPI.submit(prodJob)
     if not submitted['OK']:
       self.log.warn('Problem during submission of job')
     return submitted
