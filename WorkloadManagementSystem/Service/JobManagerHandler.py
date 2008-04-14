@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobManagerHandler.py,v 1.10 2008/04/09 21:47:36 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobManagerHandler.py,v 1.11 2008/04/14 11:01:39 atsareg Exp $
 ########################################################################
 
 """ JobManagerHandler is the implementation of the JobManager service
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: JobManagerHandler.py,v 1.10 2008/04/09 21:47:36 atsareg Exp $"
+__RCSID__ = "$Id: JobManagerHandler.py,v 1.11 2008/04/14 11:01:39 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -63,8 +63,8 @@ class JobManagerHandler( RequestHandler ):
     #Store proxy for user before adding job to DB (otherwise resulting job is added and fails)
     resProxy = proxyRepository.storeProxy(proxy,userDN,userGroup)
     if not resProxy['OK']:
-      gLogger.error("Failed to store the user proxy for job")
-      return S_ERROR("Failed to store the user proxy for job")
+      gLogger.error("Failed to store the user proxy: "+resProxy['Message'])
+      return S_ERROR("Failed to store the user proxy: "+resProxy['Message'])
 
     # Get the new jobID first
     #gActivityClient.addMark( "getJobId" )
