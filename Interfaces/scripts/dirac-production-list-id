@@ -1,0 +1,31 @@
+#!/usr/bin/env python
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/Attic/dirac-production-list-id,v 1.1 2008/04/14 11:11:21 paterson Exp $
+__RCSID__ = "$Id: dirac-production-list-id,v 1.1 2008/04/14 11:11:21 paterson Exp $"
+import sys
+
+def usage(argv):
+  print 'Usage: %s <PRODUCTION_ID>' %(argv[0])
+  sys.exit(2)
+
+if len(sys.argv)!=2:
+  usage(sys.argv)
+
+from DIRAC.Interfaces.API.DiracProduction import DiracProduction
+diracProd=DiracProduction()
+prodID = sys.argv[1]
+if not type(prodID)==type(long(1)):
+  try:
+    prodID = str(prodID)
+  except Exception,x:
+    print 'Expected long, string or int type for production identifier'
+    sys.exit(2)
+
+result = diracProd.getProduction(prodID,printOutput=True)
+if result['OK']:
+  sys.exit(0)
+elif result.has_key('Message'):
+  print 'Listing active productions failed with message:\n%s' %(result['Message'])
+  sys.exit(2)
+else:
+  print 'Null result for getActiveProductions() call'
+  sys.exit(2)
