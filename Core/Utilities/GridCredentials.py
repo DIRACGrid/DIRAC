@@ -1,4 +1,4 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.28 2008/04/14 10:08:47 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.29 2008/04/14 14:31:33 atsareg Exp $
 
 """ Grid Credentials module contains utilities to manage user and host
     certificates and proxies.
@@ -33,7 +33,7 @@
     getVOMSProxyInfo()
 """
 
-__RCSID__ = "$Id: GridCredentials.py,v 1.28 2008/04/14 10:08:47 atsareg Exp $"
+__RCSID__ = "$Id: GridCredentials.py,v 1.29 2008/04/14 14:31:33 atsareg Exp $"
 
 import os
 import os.path
@@ -72,6 +72,18 @@ def getGridProxy():
   #No gridproxy found
   return False
 
+def getNewGridProxyFile():
+  """ Get the location of the newly created grid proxy file
+  """
+
+  for envVar in [ 'GRID_PROXY_FILE', 'X509_USER_PROXY' ]:
+    if os.environ.has_key( envVar ):
+      proxyPath = os.path.realpath( os.environ[ envVar ] )
+      return proxyPath
+
+  #/tmp/x509up_u<uid>
+  proxyName = "x509up_u%d" % os.getuid()
+  return "/tmp/%s" % proxyName
 
 #Retrieve CA's location
 def getCAsLocation():
@@ -951,7 +963,7 @@ def getVOMSAttributes(proxy,switch="all"):
     return S_ERROR('Failed to setup given proxy. Proxy is: %s' % (proxy))
 
   # Get all possible info from voms proxy
-  result = getVOMSProxyInfo(new_proxy,"all")  
+  result = getVOMSProxyInfo(new_proxy,"all")
   if result["OK"]:
     voms_info_output = result["Value"]
     voms_info_output = voms_info_output.split("\n")
@@ -1059,7 +1071,7 @@ def getVOMSProxyInfo(proxy_file,option=None):
     return S_ERROR('Failed to call voms-proxy-info')
 
   status, output, error = result['Value']
-  
+
   if status:
     if error.find('VOMS extension not found') == -1:
       return S_ERROR('Failed to get proxy info. Command: %s; StdOut: %s; StdErr: %s' % (cmd,output,error))
@@ -1069,7 +1081,7 @@ def getVOMSProxyInfo(proxy_file,option=None):
       output = output.split('/Role')[0]
     else:
       output = '/lhcb'
-      
+
   return S_OK(output)
 
 
@@ -1077,6 +1089,15 @@ class X509Certificate:
 
   def __init__( self ):
     self.valid = False
+
+  def load(self,certificate):
+    """ Load a x509 certificate either from a file or from a string
+    """
+
+    if os.path.exists(certificate):
+      return self.loadFromFile(certificate)
+    else:
+      return self.loadFromString(certificate)
 
   def loadFromFile( self, certLocation ):
     """
