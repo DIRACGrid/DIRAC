@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSanityAgent.py,v 1.7 2007/11/19 10:59:29 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSanityAgent.py,v 1.8 2008/04/14 07:54:34 paterson Exp $
 # File :   JobSanityAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,7 +13,7 @@
        - Input sandbox not correctly uploaded.
 """
 
-__RCSID__ = "$Id: JobSanityAgent.py,v 1.7 2007/11/19 10:59:29 paterson Exp $"
+__RCSID__ = "$Id: JobSanityAgent.py,v 1.8 2008/04/14 07:54:34 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
@@ -173,7 +173,7 @@ class JobSanityAgent(Optimizer):
     self.setJobParam(job,'JobSanityCheck',message)
     result = self.setNextOptimizer(job)
     if not result['OK']:
-      self.log.error(result['Message'])
+      self.log.warn(result['Message'])
 
     return S_OK('Job checking finished')
 
@@ -227,14 +227,23 @@ class JobSanityAgent(Optimizer):
     result = self.jobDB.getInputData(job)
 
     if not result['OK']:
-      self.log.error('Failed to get input data from JobdB for %s' %(job) )
-      self.log.error(result['Message'])
+      self.log.warn('Failed to get input data from JobDB for %s' %(job) )
+      self.log.warn(result['Message'])
+      result = S_ERROR()
+      result['Value']='Input Data Specification'
+      return result
 
     if not result['Value']:
+      return S_OK('No input LFNs')
+
+    data = result['Value'] # seems to be [''] when null, which isn't an empty list ;)
+    ok = False
+    for i in data:
+      if i:
+        ok = True
+    if not ok:
       self.log.debug('Job %s has no input data requirement' % (job))
-      if not result['OK']:
-        self.log.error(result['Message'])
-        return result
+      return S_OK('No input LFNs')
 
     self.log.debug('Job %s has an input data requirement and will be checked' % (job))
     data = result['Value']
