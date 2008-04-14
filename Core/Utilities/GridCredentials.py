@@ -1,4 +1,4 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.27 2008/04/10 08:31:45 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.28 2008/04/14 10:08:47 atsareg Exp $
 
 """ Grid Credentials module contains utilities to manage user and host
     certificates and proxies.
@@ -33,7 +33,7 @@
     getVOMSProxyInfo()
 """
 
-__RCSID__ = "$Id: GridCredentials.py,v 1.27 2008/04/10 08:31:45 atsareg Exp $"
+__RCSID__ = "$Id: GridCredentials.py,v 1.28 2008/04/14 10:08:47 atsareg Exp $"
 
 import os
 import os.path
@@ -951,7 +951,7 @@ def getVOMSAttributes(proxy,switch="all"):
     return S_ERROR('Failed to setup given proxy. Proxy is: %s' % (proxy))
 
   # Get all possible info from voms proxy
-  result = getVOMSProxyInfo(new_proxy,"all")
+  result = getVOMSProxyInfo(new_proxy,"all")  
   if result["OK"]:
     voms_info_output = result["Value"]
     voms_info_output = voms_info_output.split("\n")
@@ -1041,44 +1041,36 @@ def getVOMSProxyInfo(proxy_file,option=None):
   except ValueError:
     return S_ERROR('Failed to setup given proxy. Proxy is: %s' % (proxy))
 
-  #a = ''
-  b = ''
-  c = ''
-  #if os.environ.has_key('X509_CERT_DIR'):
-  #  a = os.environ['X509_CERT_DIR']
-  if os.environ.has_key('X509_USER_CERT'):
-    b = os.environ['X509_USER_CERT']
-  if os.environ.has_key('X509__USER_KEY'):
-    c = os.environ['X509__USER_KEY']
-  #os.putenv('X509_CERT_DIR','/etc/grid-security/certificates')
   servercert = gConfig.getValue('DIRAC/Security/CertFile','opt/dirac/etc/grid-security/servercert.pem')
-  os.putenv('X509_USER_CERT',servercert)
   serverkey = gConfig.getValue('DIRAC/Security/KeyFile','opt/dirac/etc/grid-security/serverkey.pem')
-  os.putenv('X509_USER_KEY',serverkey)
+
+  x509_env = {}
+  x509_env['X509_USER_CERT'] = servercert
+  x509_env['X509_USER_KEY'] = serverkey
+  x509_env['PATH'] = os.environ['PATH']
+  x509_env['LD_LIBRARY_PATH'] = os.environ['LD_LIBRARY_PATH']
 
   cmd = 'voms-proxy-info -file %s' % new_proxy
   if option:
     cmd += ' -%s' % option
 
-  result = shellCall(20,cmd)
+  result = shellCall(20,cmd,env=x509_env)
   if not result['OK']:
     return S_ERROR('Failed to call voms-proxy-info')
 
   status, output, error = result['Value']
-
-  #os.putenv('X509_CERT_DIR',a)
-  os.putenv('X509_USER_KEY',b)
-  os.putenv('X509_USER_CERT',c)
+  
+  if status:
+    if error.find('VOMS extension not found') == -1:
+      return S_ERROR('Failed to get proxy info. Command: %s; StdOut: %s; StdErr: %s' % (cmd,output,error))
 
   if option == 'fqan':
     if output:
       output = output.split('/Role')[0]
     else:
       output = '/lhcb'
-  if status:
-    return S_ERROR('Failed to get delegations. Command: %s; StdOut: %s; StdErr: %s' % (cmd,output,error))
-  else:
-    return S_OK(output)
+      
+  return S_OK(output)
 
 
 class X509Certificate:
