@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.16 2008/03/31 16:17:42 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.17 2008/04/14 07:48:22 paterson Exp $
 # File :   JobSchedulingAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@
       meaningfully.
 
 """
-__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.16 2008/03/31 16:17:42 paterson Exp $"
+__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.17 2008/04/14 07:48:22 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
@@ -51,7 +51,17 @@ class JobSchedulingAgent(Optimizer):
     if not result['OK']:
       self.log.warn('Failed to get input data from JobDB for %s' % (job))
       self.log.error(result['Message'])
+
     if not result['Value']:
+      result = self.__sendJobToTaskQueue(job)
+      return result     
+
+    hasInputData=False
+    for i in result['Value']:
+      if i:
+        hasInputData=True
+
+    if not hasInputData:
       #With no input data requirement, job can proceed directly to task queue
       self.log.verbose('Job %s has no input data requirement' % (job))
       result = self.__sendJobToTaskQueue(job)
