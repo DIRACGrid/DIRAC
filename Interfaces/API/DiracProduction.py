@@ -1,6 +1,6 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.14 2008/04/14 08:26:04 paterson Exp $
-# File :   LHCbJob.py
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.15 2008/04/14 16:59:06 paterson Exp $
+# File :   DiracProduction.py
 # Author : Stuart Paterson
 ########################################################################
 
@@ -12,12 +12,13 @@ Script.parseCommandLine()
    The DIRAC Production class allows to submit jobs using the
    Production Management System.
 
-   Helper functions are documented with example usage for the DIRAC API.
+   Helper functions are to be documented with example usage.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.14 2008/04/14 08:26:04 paterson Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.15 2008/04/14 16:59:06 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
+import pprint
 
 from DIRAC.Core.Workflow.Parameter                  import *
 from DIRAC.Core.Workflow.Module                     import *
@@ -29,6 +30,7 @@ from DIRAC.Interfaces.API.Dirac                     import Dirac
 from DIRAC.Core.DISET.RPCClient                     import RPCClient
 from DIRAC.Core.Utilities.File                      import makeGuid
 from DIRAC.Core.Utilities.GridCredentials           import getGridProxy,getVOMSAttributes,getCurrentDN
+from DIRAC.Core.Utilities.Time                      import toString
 from DIRAC                                          import gConfig, gLogger, S_OK, S_ERROR
 
 COMPONENT_NAME='DiracProduction'
@@ -36,7 +38,6 @@ COMPONENT_NAME='DiracProduction'
 class DiracProduction:
 
   #############################################################################
-
   def __init__(self):
     """Instantiates the Workflow object and some default parameters.
     """
@@ -49,13 +50,74 @@ class DiracProduction:
     self.createdStatus = gConfig.getValue(self.section+'/ProcDBCreatedStatus','Created')
     self.defaultOwnerGroup = gConfig.getValue(self.section+'/DefaultOwnerGroup','lhcb_prod')
     self.prodClient = RPCClient('ProductionManagement/ProductionManager')
-    self.toCleanUp = []
-    self.proxy = None
     self.diracAPI = Dirac()
+    self.pPrint = pprint.PrettyPrinter()
+    self.toCleanUp = []
+    self.prodHeaders = {'AgentType':'SubmissionMode','Status':'Status','CreationDate':'Created', \
+                        'TransformationName':'Name','Type':'Type'}
+    self.prodAdj = 22
+    self.proxy = None
 
   #############################################################################
-  def getActiveProductions(self):
-    """Returns a dictionary of production IDs and their status.
+  def getAllProductions(self,printOutput=False):
+    """Returns a dictionary of production IDs and metadata. If printOutput is
+       specified, a high-level summary of the productions is printed.
+    """
+    result = self.prodClient.getProductionSummary()
+    if not result['OK']:
+      return result
+
+    if not printOutput:
+      return result
+
+    adj=self.prodAdj
+    headers = self.prodHeaders.values()
+    prodDict=result['Value']
+    top = ''
+    for i in headers:
+      top+=i.ljust(adj)
+    message = ['ProductionID'.ljust(adj)+top+'\n']
+    for prodID,params in prodDict.items():
+      line = str(prodID).ljust(adj)
+      for key,name in self.prodHeaders.items():
+        for n,v in params.items():
+          if n==key:
+            line+=v.ljust(adj)
+      message.append(line)
+
+    print string.join(message,'\n')
+    return result
+
+  #############################################################################
+  def getProduction(self,productionID,printOutput=False):
+    """Returns the metadata associated with a given production ID.
+    """
+    if not type(productionID)==type(long(1)):
+      if not type(productionID) == type(" "):
+        return self.__errorReport('Expected string or long for production ID')
+
+    result = self.prodClient.getProductionInfo(long(productionID))
+    if not result['OK']:
+      return result
+
+    if printOutput:
+      adj = self.prodAdj
+      prodInfo = result['Value']['Value']
+      headers = self.prodHeaders.values()
+      prodDict=result['Value']
+      top = ''
+      for i in headers:
+        top+=i.ljust(adj)
+      message = ['ProductionID'.ljust(adj)+top+'\n']
+      #very painful to make this consistent, better improved first on the server side
+      message.append(productionID.ljust(adj)+prodInfo['Status'].ljust(adj)+prodInfo['Type'].ljust(adj)+prodInfo['AgentType'].ljust(adj)+toString(prodInfo['CreationDate']).ljust(adj)+prodInfo['Name'].ljust(adj))
+      print string.join(message,'\n')
+
+    return S_OK(result['Value']['Value'])
+
+  #############################################################################
+  def getActiveProductions(self,printOutput=False):
+    """Returns a dictionary of active production IDs and their status, e.g. automatic, manual.
     """
     result = self.prodClient.getAllProductions()
     if not result['OK']:
@@ -71,7 +133,59 @@ class DiracProduction:
         if status.lower() == 'automatic':
           self.log.verbose('Found active production %s eligible to submit jobs' %prodID)
 
+    if printOutput:
+      self.__prettyPrint(currentProductions)
+
     return S_OK(currentProductions)
+
+  #############################################################################
+  def getProductionSummary(self,productionID=None,printOutput=False):
+    """Returns a summary for the productions in the system. If production ID is
+       specified, the result is restricted to this value.
+    """
+    if productionID:
+      if not type(productionID)==type(long(1)):
+        if not type(productionID) == type(" "):
+          return self.__errorReport('Expected string or long for production ID')
+
+    result = self.prodClient.getProductionSummary()
+    if not result['OK']:
+      return result
+
+    if productionID:
+      if result['Value'].has_key(long(productionID)):
+        newResult = S_OK()
+        newResult['Value']={}
+        newResult['Value'][long(productionID)] = result['Value'][long(productionID)]
+        result=newResult
+      else:
+        prods = result['Value'].keys()
+        self.log.info('Specified productionID was not found, the list of active productions is:\n%s' %(prods))
+        return S_ERROR('Production ID %s was not found' %(productionID))
+
+    if printOutput:
+      self.__prettyPrint(result['Value'])
+
+    return result
+
+  #############################################################################
+  def getProductionJobSummary(self,productionID=None,printOutput=False):
+    """Returns a job summary for the productions in the system. If production ID is
+       specified, the result is restricted to this value.
+    """
+    return S_OK()
+
+  #############################################################################
+  def selectProductionJobs(self):
+    """Wraps around DIRAC API selectJobs and provides more limited options.
+    """
+    return S_OK()
+
+  #############################################################################
+  def getJobSummary(self):
+    """Wraps around DIRAC API getJobSummary and provides more limited options.
+    """
+    return S_OK()
 
   #############################################################################
   def submitProduction(self,productionID,numberOfJobs,site=''):
@@ -246,5 +360,11 @@ class DiracProduction:
 
     self.log.warn(error)
     return S_ERROR(message)
+
+  #############################################################################
+  def __prettyPrint(self,object):
+    """Internal function to pretty print an object.
+    """
+    print self.pPrint.pformat(object)
 
   #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
