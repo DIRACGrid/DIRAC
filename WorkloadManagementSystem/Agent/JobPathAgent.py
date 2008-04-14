@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobPathAgent.py,v 1.5 2008/03/14 15:21:11 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobPathAgent.py,v 1.6 2008/04/14 07:48:44 paterson Exp $
 # File :   JobPathAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -12,7 +12,7 @@
       path through the optimizers.
 
 """
-__RCSID__ = "$Id: JobPathAgent.py,v 1.5 2008/03/14 15:21:11 paterson Exp $"
+__RCSID__ = "$Id: JobPathAgent.py,v 1.6 2008/04/14 07:48:44 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
@@ -100,7 +100,13 @@ class JobPathAgent(Optimizer):
       self.log.warn(result['Message'])
       return S_OK()
 
+    ok = False
     if result['Value']:
+      for i in result['Value']:
+        if i:
+          ok = True
+
+    if result['Value'] and ok:
       self.log.info('Job %s has an input data requirement' % (job))
       path += self.inputData+','
     else:
