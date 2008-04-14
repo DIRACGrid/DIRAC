@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/SiteMonitor.py,v 1.5 2008/04/04 11:28:45 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/SiteMonitor.py,v 1.6 2008/04/14 09:06:09 paterson Exp $
 # File :   SiteMonitor.py
 # Author : Stuart Paterson
 ########################################################################
@@ -7,7 +7,7 @@
 """  The SiteMonitor base-class monitors staging requests for a given site.
 """
 
-__RCSID__ = "$Id: SiteMonitor.py,v 1.5 2008/04/04 11:28:45 paterson Exp $"
+__RCSID__ = "$Id: SiteMonitor.py,v 1.6 2008/04/14 09:06:09 paterson Exp $"
 
 from DIRAC.StagerSystem.Client.StagerClient                import StagerClient
 from DIRAC.DataManagementSystem.Client.StorageElement      import StorageElement
@@ -199,9 +199,8 @@ class SiteMonitor(Thread):
     result = self.stagerClient.getJobsForRetry(self.stageRetryMax,self.site)
     if not result['OK']:
       return result
-
-    for jobID,lfns in result['JobIDs']:
-      self.log.info('Updating %s LFNs to failed status for job %s' %(len(lfns,jobID)))
+    for jobID,lfns in result['JobIDs'].items():
+      self.log.info('Updating %s LFNs to failed status for job %s' %(len(lfns),jobID))
       result = self.stagerClient.setFilesState(lfns,self.site,'Failed')
       if not result['OK']:
         self.log.warn('Problem updating failed task with ID %s:\n%s' %(jobID,result))
