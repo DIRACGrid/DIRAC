@@ -1,12 +1,12 @@
 ########################################################################
-# $Id: ClassAdLight.py,v 1.2 2008/04/14 10:54:07 atsareg Exp $
+# $Id: ClassAdLight.py,v 1.3 2008/04/14 12:49:26 atsareg Exp $
 ########################################################################
 
 """ ClassAd Class - a light purely Python representation of the
     Condor ClassAd library.
 """
 
-__RCSID__ = "$Id: ClassAdLight.py,v 1.2 2008/04/14 10:54:07 atsareg Exp $"
+__RCSID__ = "$Id: ClassAdLight.py,v 1.3 2008/04/14 12:49:26 atsareg Exp $"
 
 import string
 
@@ -207,7 +207,7 @@ class ClassAd:
         result = result +  8*' '+'{\n'
         strings = value[1:-1].split(',')
         for st in strings:
-          result = result + 12*' '+st+',\n'
+          result = result + 12*' '+st.strip()+',\n'
         result = result[:-2] + '\n' +  8*' '+'};\n'
       elif value[0:1] == "[":
         tempad = ClassAd(value)
