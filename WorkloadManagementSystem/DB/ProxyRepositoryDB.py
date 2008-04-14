@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/Attic/ProxyRepositoryDB.py,v 1.16 2008/02/25 23:35:47 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/Attic/ProxyRepositoryDB.py,v 1.17 2008/04/14 10:00:36 atsareg Exp $
 ########################################################################
 """ ProxyRepository class is a front-end to the proxy repository Database
 """
 
-__RCSID__ = "$Id: ProxyRepositoryDB.py,v 1.16 2008/02/25 23:35:47 atsareg Exp $"
+__RCSID__ = "$Id: ProxyRepositoryDB.py,v 1.17 2008/04/14 10:00:36 atsareg Exp $"
 
 import time
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
@@ -48,7 +48,7 @@ class ProxyRepositoryDB(DB):
         The grid proxy will be converted into a VOMS proxy if possible
     """
 
-    result = getVOMSAttributes(proxy,'db')
+    result = getVOMSAttributes(proxy,'db')    
     if not result['OK']:
       return S_ERROR('Can not analyze proxy')
 
@@ -97,7 +97,10 @@ class ProxyRepositoryDB(DB):
         result = self.__convertProxyToVOMS(proxy,group,dn,proxyType)
         if not result['OK']:
           return S_ERROR('Failed to convert proxy to VOMS')
+          
         proxy_to_store = result['VOMS']
+        proxyType = "VOMS"
+        proxyAttr = result['ProxyAttributes']
         time_left = result['TimeLeft']
       else:
         proxy_to_store = proxy
@@ -125,6 +128,8 @@ class ProxyRepositoryDB(DB):
           if not result['OK']:
             return S_ERROR('Failed to convert proxy to VOMS')
           proxy_to_store = result['VOMS']
+          proxyType == "VOMS"
+          proxyAttr = result['ProxyAttributes']
           time_left = result['TimeLeft']
         else:
           proxy_to_store = proxy
@@ -134,6 +139,8 @@ class ProxyRepositoryDB(DB):
         cmd = cmd + ' ProxyType=\'%s\' ' % proxyType
         if proxyAttr:
           cmd = cmd + ', ProxyAttributes=\'%s\' ' % proxyAttr
+        else:
+          cmd = cmd + ', ProxyAttributes=\'\' '  
         cmd = cmd + 'WHERE UserDN=\'%s\' AND UserGroup=\'%s\'' % ( dn, group )
 
         result = self._update(cmd)
@@ -179,6 +186,7 @@ class ProxyRepositoryDB(DB):
       proxyAttr = self.VO+":"+self.vomsGroupMappingDict[group]
       result = createVOMSProxy(proxy_plain,attributes=proxyAttr)
     else:
+      proxyAttr = ''
       result = createVOMSProxy(proxy_plain,vo=self.VO)
 
     if result['OK']:
@@ -196,6 +204,7 @@ class ProxyRepositoryDB(DB):
     result = S_OK()
     result['VOMS'] = proxy_to_store
     result['TimeLeft'] = time_left
+    result['ProxyAttributes'] = proxyAttr.replace(self.VO+":",'')
     return result
 
 
