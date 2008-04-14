@@ -1,0 +1,32 @@
+#!/usr/bin/env python
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/Attic/dirac-production-summary,v 1.1 2008/04/14 15:06:19 paterson Exp $
+__RCSID__ = "$Id: dirac-production-summary,v 1.1 2008/04/14 15:06:19 paterson Exp $"
+import sys
+
+def usage(argv):
+  print 'Usage: %s |Optional| <PRODUCTION_ID>' %(argv[0])
+  sys.exit(2)
+
+if len(sys.argv)>2:
+  usage(sys.argv)
+
+from DIRAC.Interfaces.API.DiracProduction import DiracProduction
+diracProd=DiracProduction()
+
+productionID=None
+if len(sys.argv)>1:
+  try:
+    productionID = str(sys.argv[1])
+  except Exception,x:
+    print 'Expected string, int or long for productionID'
+    sys.exit(2)
+
+result = diracProd.getProductionSummary(productionID,printOutput=True)
+if result['OK']:
+  sys.exit(0)
+elif result.has_key('Message'):
+  print 'Listing productions failed with message:\n%s' %(result['Message'])
+  sys.exit(2)
+else:
+  print 'Null result for getProductionSummary() call'
+  sys.exit(2)
