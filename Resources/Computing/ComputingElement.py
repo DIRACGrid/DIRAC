@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Resources/Computing/ComputingElement.py,v 1.4 2008/04/11 09:48:41 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Resources/Computing/ComputingElement.py,v 1.5 2008/04/15 13:39:31 rgracian Exp $
 # File :   ComputingElement.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
      resource JDL for subsequent use during the matching process.
 """
 
-__RCSID__ = "$Id: ComputingElement.py,v 1.4 2008/04/11 09:48:41 paterson Exp $"
+__RCSID__ = "$Id: ComputingElement.py,v 1.5 2008/04/15 13:39:31 rgracian Exp $"
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight      import *
 from DIRAC.ConfigurationSystem.Client.Config        import gConfig
@@ -122,9 +122,9 @@ class ComputingElement:
       if option == 'Architecture':
         if value in platforms.keys():
           compatiblePlatforms = platforms[value]
-          self.classAd.insertAttributeVectorString('CompatiblePlatforms', compatiblePlatforms.split(','))
+          self.classAd.insertAttributeVectorString('CompatiblePlatforms', compatiblePlatforms.split(', '))
       elif option == 'LocalSE':
-        self.classAd.insertAttributeVectorString('LocalSE',value.split(','))
+        self.classAd.insertAttributeVectorString('LocalSE',value.split(', '))
       elif type(value) == type(' '):
         jdlInt = self.__getInt(value)
         if type(jdlInt) == type(1):
