@@ -1,8 +1,8 @@
-# $Id: Parameter.py,v 1.29 2008/04/09 16:22:50 gkuznets Exp $
+# $Id: Parameter.py,v 1.30 2008/04/15 15:31:08 gkuznets Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.29 $"
+__RCSID__ = "$Revision: 1.30 $"
 
 import traceback # to produce warning for the depreciated methods
 
@@ -92,7 +92,7 @@ class Parameter(object):
             self.value = bool(value)
         else:
             #raise TypeError('Can not assing value '+value+' of unknown type '+ self.type + ' to the Parameter '+ str(self.name))
-            print 'WARNING: we do not have established conversion algorithm to assing value ',value,' of unknown type ',self.type, ' to the Parameter ', str(self.name)
+            #print 'WARNING: we do not have established conversion algorithm to assing value ',value,' of unknown type ',self.type, ' to the Parameter ', str(self.name)
             self.value = value
 
     def getType(self):
