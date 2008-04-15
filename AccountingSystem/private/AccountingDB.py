@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.18 2008/04/02 18:41:28 acasajus Exp $
-__RCSID__ = "$Id: AccountingDB.py,v 1.18 2008/04/02 18:41:28 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.19 2008/04/15 13:47:41 acasajus Exp $
+__RCSID__ = "$Id: AccountingDB.py,v 1.19 2008/04/15 13:47:41 acasajus Exp $"
 
 import datetime, time
 import threading
@@ -316,6 +316,7 @@ class AccountingDB(DB):
     Add an entry to the type contents
     """
     gMonitor.addMark( "registeradded", 1 )
+    gLogger.info( "Adding record", "for type %s [%s -> %s]" % ( typeName, Time.fromEpoch( startTime ), Time.fromEpoch( endTime ) ) )
     if not typeName in self.dbCatalog:
       return S_ERROR( "Type %s has not been defined in the db" % typeName )
     #Discover key indexes
@@ -325,7 +326,7 @@ class AccountingDB(DB):
       retVal = self.__addKeyValue( typeName, keyName, keyValue )
       if not retVal[ 'OK' ]:
         return retVal
-      gLogger.info( "Value %s for key %s has id %s" % ( keyValue, keyName, retVal[ 'Value' ] ) )
+      gLogger.verbose( "Value %s for key %s has id %s" % ( keyValue, keyName, retVal[ 'Value' ] ) )
       valuesList[ keyPos ] = retVal[ 'Value' ]
     insertList = list( valuesList )
     insertList.append( startTime )
@@ -350,38 +351,28 @@ class AccountingDB(DB):
     numKeys = len( self.dbCatalog[ typeName ][ 'keys' ] )
     keyValues = valuesList[ :numKeys ]
     valuesList = valuesList[ numKeys: ]
-    print "Splitting entry in %s buckets" % len( buckets )
+    gLogger.verbose( "Splitting entry", " in %s buckets" % len( buckets ) )
     for bucketInfo in buckets:
       self.dbLocks[ self.__getTableName( "bucket", typeName ) ].acquire()
       try:
         bucketStartTime = bucketInfo[0]
         bucketLength = bucketInfo[2]
-        #Discover if bucket existed
-        retVal = self.__getBucketFromDB( typeName,
-                                         bucketStartTime,
-                                         bucketLength,
-                                         keyValues, connObj = connObj )
-        if not retVal[ 'OK' ]:
-          return retVal
         #Calculate proportional values
         proportionalValues = []
         for value in valuesList:
           proportionalValues.append( value * bucketInfo[1] )
-        #If no previous bucket, insert this
-        if len( retVal[ 'Value' ] ) == 0:
+        #Update!
+        retVal = self.__updateBucket( typeName,
+                                      bucketStartTime,
+                                      bucketLength,
+                                      keyValues,
+                                      proportionalValues, connObj = connObj )
+        if not retVal[ 'OK' ]:
+          return retVal
+        #Check if we didn't update any row. If that's the case..
+        #INSERT!
+        if retVal[ 'Value' ] == 0:
           retVal = self.__insertBucket( typeName,
-                                        bucketStartTime,
-                                        bucketLength,
-                                        keyValues,
-                                        proportionalValues, connObj = connObj )
-          if not retVal[ 'OK' ]:
-            return retVal
-        else:
-          bucketValues = retVal[ 'Value' ][0]
-          #Add previous bucket values to the new one and update
-          for pos in range( len( bucketValues ) ):
-            proportionalValues[ pos ] += bucketValues[ pos ]
-          retVal = self.__updateBucket( typeName,
                                         bucketStartTime,
                                         bucketLength,
                                         keyValues,
@@ -438,8 +429,9 @@ class AccountingDB(DB):
     for pos in range( len( self.dbCatalog[ typeName ][ 'values' ] ) ):
       valueField = self.dbCatalog[ typeName ][ 'values' ][ pos ]
       value = bucketValues[ pos ]
-      sqlValList.append( "`%s`.`%s`=%s" % ( tableName, valueField, value ) )
-    sqlValList.append( "`%s`.`entriesInBucket`=%s" % ( tableName, bucketValues[-1] ) )
+      fullFieldName = "`%s`.`%s`" % ( tableName, valueField )
+      sqlValList.append( "%s=%s+%s" % ( fullFieldName, fullFieldName, value ) )
+    sqlValList.append( "`%s`.`entriesInBucket`=`%s`.`entriesInBucket`+%s" % ( tableName, tableName, bucketValues[-1] ) )
     cmd += ", ".join( sqlValList )
     cmd += " WHERE `%s`.`startTime`='%s' AND `%s`.`bucketLength`='%s' AND " % (
                                                                             tableName,
