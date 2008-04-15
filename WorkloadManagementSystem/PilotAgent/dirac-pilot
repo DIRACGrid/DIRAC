@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot,v 1.6 2008/04/13 16:08:33 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot,v 1.7 2008/04/15 22:22:11 rgracian Exp $
 # File :   dirac-pilot
 # Author : Ricardo Graciani
 ########################################################################
@@ -9,8 +9,20 @@
  Job Agent to execute pending workload on WMS.
  It requires dirac-update script to be sitting in the same directory.
 """
-__RCSID__ = "$Id: dirac-pilot,v 1.6 2008/04/13 16:08:33 rgracian Exp $"
+__RCSID__ = "$Id: dirac-pilot,v 1.7 2008/04/15 22:22:11 rgracian Exp $"
 try:
+  import os
+  import sys
+  
+  pythonpath = os.getenv('PYTHONPATH','').split(':')
+  newpythonpath = []
+  for p in pythonpath:
+      if p == '': continue
+      while p[-1] == '/':
+        p = p[0:-1]
+      sys.path.remove(p)
+  os.environ['PYTHONPATH'] = ''
+
   import os, sys, socket, re, stat, popen2
   
   debugFlag = False
@@ -227,7 +239,6 @@ myPath     = os.path.join( rootPath, 'scripts' )
 myFullName = os.path.join( myPath, myShortName )
 sys.path.insert( 0, myPath )
 os.environ['PATH'] = '%s:%s' % ( myPath, os.environ['PATH'] )
-
 os.system ( 'dirac-group-init lhcb_prod' )
 
 try:
