@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Types/BaseAccountingType.py,v 1.8 2008/04/03 19:17:01 acasajus Exp $
-__RCSID__ = "$Id: BaseAccountingType.py,v 1.8 2008/04/03 19:17:01 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Types/BaseAccountingType.py,v 1.9 2008/04/16 14:23:47 acasajus Exp $
+__RCSID__ = "$Id: BaseAccountingType.py,v 1.9 2008/04/16 14:23:47 acasajus Exp $"
 
 import types
 from DIRAC import S_OK, S_ERROR
@@ -41,30 +41,25 @@ class BaseAccountingType:
     if len( self.valuesList ) != len( self.fieldsList ):
       self.valuesList = [ None for i in range( len( self.fieldsList ) ) ]
 
-  def setStartTime( self, startTime ):
+  def setStartTime( self, startTime = False ):
     """
     Give a start time for the report
+    By default use now
     """
-    self.startTime = startTime
+    if not startTime:
+      self.startTime = Time.dateTime()
+    else:
+      self.startTime = startTime
 
-  def setEndTime( self, endTime ):
+  def setEndTime( self, endTime = False ):
     """
     Give a end time for the report
+    By default use now
     """
-    self.endTime = endTime
-
-  def setNowAsStartTime( self ):
-    """
-    Set current time as start time of the report
-    """
-    self.startTime = Time.dateTime()
-
-  def setNowAsEndTime( self ):
-    """
-    Set current time as end time of the report
-    """
-    self.endTime = Time.dateTime()
-
+    if not endTime:
+      self.endTime = Time.dateTime()
+    else:
+      self.endTime = endTime
 
   def setNowAsStartAndEndTime( self ):
     """
