@@ -28,7 +28,7 @@ class LFCvsSEAgent(Agent):
     self.RequestDBClient = RequestClient()
     self.ReplicaManager = ReplicaManager()
     self.lfc = FileCatalog(['LcgFileCatalogCombined'])
-                         
+
     self.IntegrityDB = RPCClient('DataManagement/DataIntegrity')
     self.useProxies = gConfig.getValue(self.section+'/UseProxies','True')
     if self.useProxies == 'True':
@@ -194,7 +194,6 @@ class LFCvsSEAgent(Agent):
         #  Determine whether there are any active files
         if oRequest.isSubRequestEmpty(ind,'integrity')['Value']:
           oRequest.setSubRequestStatus(ind,'integrity','Done')
-          gMonitor.addMark( "Done", 1 )
 
       ################################################
       #  If the sub-request is already in terminal state
