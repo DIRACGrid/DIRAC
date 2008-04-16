@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: MySQL.py,v 1.7 2008/03/27 17:31:02 acasajus Exp $
+# $Id: MySQL.py,v 1.8 2008/04/16 15:05:32 acasajus Exp $
 ########################################################################
 """ DIRAC Basic MySQL Class
     It provides access to the basic MySQL methods in a multithread-safe mode
@@ -75,7 +75,7 @@
 
 """
 
-__RCSID__ = "$Id: MySQL.py,v 1.7 2008/03/27 17:31:02 acasajus Exp $"
+__RCSID__ = "$Id: MySQL.py,v 1.8 2008/04/16 15:05:32 acasajus Exp $"
 
 
 from DIRAC                                  import gLogger
@@ -115,7 +115,7 @@ class MySQL:
 
     # let the derived class decide what to do with if is not 1
     self._threadsafe = MySQLdb.thread_safe()
-    self.logger.verbose( 'thread_safe = %s' % self._threadsafe )
+    self.logger.debug( 'thread_safe = %s' % self._threadsafe )
 
     self.__checkQueueSize( maxQueueSize )
 
@@ -140,7 +140,7 @@ class MySQL:
         connection = self.__connectionQueue.get_nowait()
         connection.close()
       except Queue.Empty,x:
-        self.logger.verbose( 'No more connection in Queue' )
+        self.logger.debug( 'No more connection in Queue' )
         break
 
     MySQLdb.server_end()
@@ -164,11 +164,11 @@ class MySQL:
     try:
       raise v
     except MySQLdb.Error,e:
-      self.logger.error( '%s: %s' % ( methodName, err ),
+      self.logger.debug( '%s: %s' % ( methodName, err ),
                      '%d: %s' % ( e.args[0], e.args[1] ) )
       return S_ERROR( '%s: ( %d: %s )' % ( err, e.args[0], e.args[1] ) )
     except Exception,x:
-      self.logger.error( '%s: %s' % ( methodName, err ), str(x) )
+      self.logger.debug( '%s: %s' % ( methodName, err ), str(x) )
       return S_ERROR( '%s: (%s)' % ( err, str(x) ) )
 
 
@@ -191,7 +191,7 @@ class MySQL:
       self.logger.debug( '__scape_string: returns', '"%s"' % escape_string )
       return S_OK( '"%s"' % escape_string )
     except Exception,x:
-      self.logger.error( '__escape_string: Could not escape string', '"%s"' %s )
+      self.logger.debug( '__escape_string: Could not escape string', '"%s"' %s )
       return self._except( '__escape_string',x,'Could not escape string' )
 
   def __checkTable( self, tableName, force=False ):
@@ -214,7 +214,7 @@ class MySQL:
 
 
   def _escapeString( self, s, conn = False ):
-    self.logger.verbose( '_scapeString:', '"%s"' %s )
+    self.logger.debug( '_scapeString:', '"%s"' %s )
 
     retDict = self.__getConnection( conn )
     if not retDict['OK'] : return retDict
@@ -231,7 +231,7 @@ class MySQL:
     """
     Escapes all strings in the list of values provided
     """
-    self.logger.verbose( '_escapeValues:', '%s' % inValues )
+    self.logger.debug( '_escapeValues:', '%s' % inValues )
 
     retDict = self.__getConnection()
     if not retDict['OK'] : return retDict
@@ -258,7 +258,7 @@ class MySQL:
     set connected flag to True and return S_OK
     return S_ERROR upon failure
     """
-    self.logger.verbose( '_connect:', self._connected )
+    self.logger.debug( '_connect:', self._connected )
     if self._connected:
       return S_OK()
 
@@ -267,11 +267,10 @@ class MySQL:
                         ( self.__dbName, self.__hostName, self.__userName, self.__passwd ) )
     try:
       self.__newConnection()
-      self.logger.verbose( '_connect: Connected.' )
+      self.logger.debug( '_connect: Connected.' )
       self._connected = True
       return S_OK()
     except Exception, x:
-      self.logger.exception( '' )
       return self._except( '_connect', x, 'Could not connect to DB.' )
 
 
@@ -282,7 +281,7 @@ class MySQL:
     it returns an empty tuple if no matching rows are found
     return S_ERROR upon error
     """
-    self.logger.verbose( '_query:', cmd)
+    self.logger.debug( '_query:', cmd)
 
     retDict = self.__getConnection( conn = conn )
     if not retDict['OK'] : return retDict
@@ -294,10 +293,10 @@ class MySQL:
         res = cursor.fetchall()
       else:
         res = ()
-      self.logger.verbose( '_query:', res )
+      self.logger.debug( '_query:', res )
       retDict = S_OK( res )
     except Exception ,x:
-      self.logger.error( '_query:', cmd )
+      self.logger.debug( '_query:', cmd )
       retDict = self._except( '_query', x, 'Excution failed.' )
 
     try:
@@ -315,7 +314,7 @@ class MySQL:
         return S_OK with number of updated registers upon success
         return S_ERROR upon error
     """
-    self.logger.verbose( '_update:', cmd )
+    self.logger.debug( '_update:', cmd )
 
     retDict = self.__getConnection( conn = conn )
     if not retDict['OK'] : return retDict
@@ -325,10 +324,10 @@ class MySQL:
       cursor = connection.cursor()
       res = cursor.execute(cmd)
       connection.commit()
-      self.logger.verbose( '_update: %s.' % res )
+      self.logger.debug( '_update: %s.' % res )
       retDict =  S_OK(res)
     except Exception,x:
-      self.logger.error( '_update: "%s".' % cmd )
+      self.logger.debug( '_update: "%s".' % cmd )
       retDict = self._except( '_update', x, 'Execution failed.' )
 
     try:
@@ -348,6 +347,7 @@ class MySQL:
                    'ForeignKeys': {'Field': 'Table' },
                    'PrimaryKey': 'Id',
                    'Indexes': { 'Index': [] },
+                   'UniqueIndexes': { 'Index': [] },
                    'Engine': 'InnoDB' }
       only 'Fields' is a mandatory key.
 
@@ -366,6 +366,9 @@ class MySQL:
         "PrimaryKey": Name of PRIMARY KEY for the table (if exist).
         "Indexes": Dictionary with definition of indexes, the value for each
           index is the list of fields to be indexed.
+        "UniqueIndexes": Dictionary with definition of indexes, the value for each
+          index is the list of fields to be indexed. This indexes will declared
+          unique.
         "Engine": use the given DB engine, InnoDB is the default if not present.
       force:
         if True, requested tables are DROP if they exist.
@@ -449,8 +452,14 @@ class MySQL:
         if thisTable.has_key( 'Indexes' ):
           indexDict = thisTable['Indexes']
           for index in indexDict:
-            indexedFields = string.join(indexDict[index], ', ' )
+            indexedFields = string.join(indexDict[index], '`, `' )
             cmdList.append( 'INDEX `%s` ( `%s` )' % ( index, indexedFields ) )
+
+        if thisTable.has_key( 'UniqueIndexes' ):
+          indexDict = thisTable['UniqueIndexes']
+          for index in indexDict:
+            indexedFields = string.join(indexDict[index], '`, `' )
+            cmdList.append( 'UNIQUE INDEX `%s` ( `%s` )' % ( index, indexedFields ) )
 
         if thisTable.has_key('Engine'):
           engine = thisTable['Engine']
@@ -602,7 +611,7 @@ class MySQL:
       quotedInFields.append( '`%s`' % field )
     inFieldString = string.join( quotedInFields, ', ' )
 
-    self.logger.verbose( '_insert:', 'inserting ( %s ) into table `%s`'
+    self.logger.debug( '_insert:', 'inserting ( %s ) into table `%s`'
                           % ( inFieldString, tableName ) )
 
     retDict = self.__checkFields( inFields, inValues )
@@ -630,7 +639,7 @@ class MySQL:
     if limit is not 0, the given limit is set
     Strings inValues are properly scaped using the _escape_string method.
     """
-    self.logger.verbose( '_getFields:', 'selecting fields %s from table `%s`.' %
+    self.logger.debug( '_getFields:', 'selecting fields %s from table `%s`.' %
                           ( str(outFields), tableName ) )
 
     quotedOutFields = []
@@ -642,7 +651,7 @@ class MySQL:
 
     retDict = self.__checkFields( inFields, inValues )
     if not retDict['OK']:
-      self.logger.error( '_getFields: %s' % retDict['Message'] )
+      self.logger.debug( '_getFields: %s' % retDict['Message'] )
       return retDict
 
     retDict = self._escapeValues( inValues )
@@ -713,7 +722,7 @@ class MySQL:
     Return a new connection to the DB
     It uses the private method __getConnection
     """
-    self.logger.verbose( '_getConnection:' )
+    self.logger.debug( '_getConnection:' )
 
     retDict = self.__getConnection( trial = 0 )
     self.__connectionSemaphore.release()
@@ -754,7 +763,7 @@ class MySQL:
           self.__newConnection()
           return self.__getConnection( )
         except Exception, x:
-          self.logger.error( '__getConnection: Fails to get connection from Queue', x )
+          self.logger.debug( '__getConnection: Fails to get connection from Queue', x )
           time.sleep( trial * 5.0 )
           newtrial = trial + 1
           return self.__getConnection( trial = newtrial )
