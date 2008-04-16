@@ -889,6 +889,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
       res = self.__getDirectoryContents(path)
       if res['OK']:
         pathDict = {'Files':0,'TotalSize':0,'SiteUsage':{},'SiteFiles':{}}
+        pathDict['SubDirs'] = res['Value']['SubDirs']
         files = res['Value']['Files']
         for lfn in files.keys():
           fileSize = files[lfn]['MetaData']['Size']
