@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.19 2008/04/15 13:47:41 acasajus Exp $
-__RCSID__ = "$Id: AccountingDB.py,v 1.19 2008/04/15 13:47:41 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.20 2008/04/16 14:26:29 acasajus Exp $
+__RCSID__ = "$Id: AccountingDB.py,v 1.20 2008/04/16 14:26:29 acasajus Exp $"
 
 import datetime, time
 import threading
@@ -47,14 +47,16 @@ class AccountingDB(DB):
     th.start()
 
   def __periodicAutoCompactDB(self):
+    compactTime = datetime.time( hour = 4, minute = 3, second = 2 )
     while self.autoCompact:
-      now = Time.dateTime()
-      nextCompactTime = now
-      if now.hour > 4:
-        nextCompactTime = nextCompactTime + datetime.timedelta( days = 1 )
-      nextCompactTime = nextCompactTime.replace( hour = 4, minute = 3, second = 15 )
-      sleepTime = Time.toEpoch( nextCompactTime ) - Time.toEpoch( now )
-      gLogger.info( "Next db compaction will be at %s" % nextCompactTime )
+      nct = Time.dateTime()
+      if nct.hour > compactTime.hour:
+        nct = nct + datetime.timedelta( days = 1 )
+      nct = nct.replace( hour = compactTime.hour,
+                         minute = compactTime.minute,
+                         second = compactTime.second )
+      gLogger.info( "Next db compaction will be at %s" % nct )
+      sleepTime = Time.toEpoch( nct ) - Time.toEpoch()
       time.sleep( sleepTime )
       self.compactBuckets()
 
@@ -75,7 +77,7 @@ class AccountingDB(DB):
           if typeName not in self.dbCatalog and pythonName != "BaseAccountingType":
             gLogger.info( "Trying to register %s type for setup %s" % ( typeName, setup ) )
             try:
-              typeModule = __import__( "DIRAC.AccountingSystem.Client.Types.%s" % typeName,
+              typeModule = __import__( "DIRAC.AccountingSystem.Client.Types.%s" % pythonName,
                                        globals(),
                                        locals(), pythonName )
               typeClass  = getattr( typeModule, pythonName )
@@ -162,15 +164,17 @@ class AccountingDB(DB):
       tables[ self.__getTableName( "key", name, key[0] )  ] = { 'Fields' : { 'id' : 'INTEGER NOT NULL AUTO_INCREMENT',
                                                   'value' : '%s UNIQUE' % key[1]
                                                 },
-                                     'Indexes' : { 'valueindex' : [ 'value' ] },
+                                     'UniqueIndexes' : { 'valueindex' : [ 'value' ] },
                                      'PrimaryKey' : 'id'
                                    }
     #Registering type
     fieldsDict = {}
     bucketFieldsDict = {}
     indexesDict = {}
+    uniqueIndexFields = []
     for field in definitionKeyFields:
       indexesDict[ "%sIndex" % field[0] ] = [ field[0] ]
+      uniqueIndexFields.append( field[ 0 ] )
       fieldsDict[ field[0] ] = "INTEGER"
       bucketFieldsDict[ field[0] ] = "INTEGER"
     for field in definitionAccountingFields:
@@ -180,9 +184,12 @@ class AccountingDB(DB):
     fieldsDict[ 'endTime' ] = "INT UNSIGNED"
     bucketFieldsDict[ 'entriesInBucket' ] = "FLOAT"
     bucketFieldsDict[ 'startTime' ] = "INT UNSIGNED"
+    uniqueIndexFields.append( 'startTime' )
     bucketFieldsDict[ 'bucketLength' ] = "MEDIUMINT UNSIGNED"
+    uniqueIndexFields.append( 'bucketLength' )
     tables[ self.__getTableName( "bucket", name ) ] = { 'Fields' : bucketFieldsDict,
                                     'Indexes' : indexesDict,
+                                    'UniqueIndexes' : { 'UniqueConstraint' : uniqueIndexFields }
                                   }
     tables[ self.__getTableName( "type", name ) ] = { 'Fields' : fieldsDict,
                                   'Indexes' : indexesDict,
@@ -255,34 +262,31 @@ class AccountingDB(DB):
       Adds a key value to a key table if not existant
     """
     keyTable = self.__getTableName( "key", typeName, keyName )
-    self.dbLocks[ keyTable ].acquire()
-    try:
-      if type( keyValue ) != types.StringType:
-        keyValue = str( keyValue )
-      retVal = self.__getIdForKeyValue( typeName, keyName, keyValue )
-      if retVal[ 'OK' ]:
+    if type( keyValue ) != types.StringType:
+      keyValue = str( keyValue )
+    retVal = self.__getIdForKeyValue( typeName, keyName, keyValue )
+    if retVal[ 'OK' ]:
+      return retVal
+    else:
+      retVal = self._getConnection()
+      if not retVal[ 'OK' ]:
         return retVal
-      else:
-        retVal = self._getConnection()
-        if not retVal[ 'OK' ]:
-          return retVal
-        connection = retVal[ 'Value' ]
-        gLogger.info( "Value %s for key %s didn't exist, inserting" % ( keyValue, keyName ) )
-        retVal = self._insert( keyTable, [ 'id', 'value' ], [ 0, keyValue ], connection )
-        if not retVal[ 'OK' ]:
-          return retVal
-        return self.__getIdForKeyValue( typeName, keyName, keyValue, connection )
-    finally:
-      self.dbLocks[ keyTable ].release()
+      connection = retVal[ 'Value' ]
+      gLogger.info( "Value %s for key %s didn't exist, inserting" % ( keyValue, keyName ) )
+      retVal = self._insert( keyTable, [ 'id', 'value' ], [ 0, keyValue ], connection )
+      if not retVal[ 'OK' ] and retVal[ 'Message' ].find( "Duplicate key" ) == -1:
+        return retVal
+      return self.__getIdForKeyValue( typeName, keyName, keyValue, connection )
     return S_OK( keyId )
 
   def calculateBucketLengthForTime( self, typeName, now, when ):
     """
     Get the expected bucket time for a moment in time
     """
-    dif = abs( now - when )
     for granuT in self.dbBucketsLength[ typeName ]:
-      if dif < granuT[0]:
+      nowBucketed = now - now % granuT[1]
+      dif = max( 0,  nowBucketed - when )
+      if dif <= granuT[0]:
         return granuT[1]
     return self.maxBucketTime
 
@@ -353,34 +357,34 @@ class AccountingDB(DB):
     valuesList = valuesList[ numKeys: ]
     gLogger.verbose( "Splitting entry", " in %s buckets" % len( buckets ) )
     for bucketInfo in buckets:
-      self.dbLocks[ self.__getTableName( "bucket", typeName ) ].acquire()
-      try:
-        bucketStartTime = bucketInfo[0]
-        bucketLength = bucketInfo[2]
-        #Calculate proportional values
-        proportionalValues = []
-        for value in valuesList:
-          proportionalValues.append( value * bucketInfo[1] )
-        #Update!
-        retVal = self.__updateBucket( typeName,
-                                      bucketStartTime,
-                                      bucketLength,
-                                      keyValues,
-                                      proportionalValues, connObj = connObj )
-        if not retVal[ 'OK' ]:
-          return retVal
-        #Check if we didn't update any row. If that's the case..
-        #INSERT!
-        if retVal[ 'Value' ] == 0:
-          retVal = self.__insertBucket( typeName,
-                                        bucketStartTime,
-                                        bucketLength,
-                                        keyValues,
-                                        proportionalValues, connObj = connObj )
-          if not retVal[ 'OK' ]:
-            return retVal
-      finally:
-        self.dbLocks[ self.__getTableName( "bucket", typeName ) ].release()
+      bucketStartTime = bucketInfo[0]
+      bucketLength = bucketInfo[2]
+      #Calculate proportional values
+      proportionalValues = []
+      for value in valuesList:
+        proportionalValues.append( value * bucketInfo[1] )
+      #INSERT!
+      retVal = self.__insertBucket( typeName,
+                                    bucketStartTime,
+                                    bucketLength,
+                                    keyValues,
+                                    proportionalValues, connObj = connObj )
+      #If OK insert is successful
+
+      if retVal[ 'OK' ]:
+        continue
+      #if not OK and NOT duplicate keys error then real error
+      if retVal[ 'Message' ].find( 'Duplicate entry' ) == -1:
+        return retVal
+      #Duplicate keys!!. If that's the case..
+      #Update!
+      retVal = self.__updateBucket( typeName,
+                                    bucketStartTime,
+                                    bucketLength,
+                                    keyValues,
+                                    proportionalValues, connObj = connObj )
+      if not retVal[ 'OK' ]:
+        return retVal
     return S_OK()
 
   def getBucketsDef( self, typeName ):
@@ -634,7 +638,7 @@ class AccountingDB(DB):
     sqlSelectList.append( "MAX( `%s`.`startTime` )" % tableName )
     selectSQL += ", ".join( sqlSelectList )
     selectSQL += " FROM `%s`" % tableName
-    selectSQL += " WHERE `%s`.`startTime` <= '%s' AND" % ( tableName, timeLimit )
+    selectSQL += " WHERE `%s`.`startTime` < '%s' AND" % ( tableName, timeLimit )
     selectSQL += " `%s`.`bucketLength` = %s" % ( tableName, bucketLength )
     #HACK: Horrible constant to overcome the fact that MySQL defines epoch 0 as 13:00 and *nix define epoch as 01:00
     #43200 is half a day
@@ -650,7 +654,7 @@ class AccountingDB(DB):
     """
     tableName = self.__getTableName( "bucket", typeName )
     deleteSQL = "DELETE FROM `%s` WHERE " % tableName
-    deleteSQL += "`%s`.`startTime` <= '%s' AND " % ( tableName, timeLimit )
+    deleteSQL += "`%s`.`startTime` < '%s' AND " % ( tableName, timeLimit )
     deleteSQL += "`%s`.`bucketLength` = %s" % ( tableName, bucketLength )
     return self._update( deleteSQL, conn = connObj )
 
@@ -671,19 +675,15 @@ class AccountingDB(DB):
       nextBucketLength = self.dbBucketsLength[ typeName ][ bPos + 1 ][1]
       gLogger.verbose( "Compacting data newer that %s with bucket size %s" % ( Time.fromEpoch( timeLimit ), bucketLength ) )
       #Retrieve the data
-      self.dbLocks[ tableName ].acquire()
-      try:
-        retVal = self.__selectForCompactBuckets( typeName, timeLimit, bucketLength, nextBucketLength, connObj )
-        if not retVal[ 'OK' ]:
-          return retVal
-        bucketsData = retVal[ 'Value' ]
-        if len( bucketsData ) == 0:
-          continue
-        retVal = self.__deleteForCompactBuckets( typeName, timeLimit, bucketLength, connObj )
-        if not retVal[ 'OK' ]:
-          return retVal
-      finally:
-        self.dbLocks[ tableName ].release()
+      retVal = self.__selectForCompactBuckets( typeName, timeLimit, bucketLength, nextBucketLength, connObj )
+      if not retVal[ 'OK' ]:
+        return retVal
+      bucketsData = retVal[ 'Value' ]
+      if len( bucketsData ) == 0:
+        continue
+      retVal = self.__deleteForCompactBuckets( typeName, timeLimit, bucketLength, connObj )
+      if not retVal[ 'OK' ]:
+        return retVal
       gLogger.info( "Compacting %s records %s seconds size for %s" % ( len( bucketsData ), bucketLength, typeName ) )
       #Add data
       for record in bucketsData:
