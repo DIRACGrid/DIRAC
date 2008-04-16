@@ -1,11 +1,16 @@
 #!/usr/bin/env python
-################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/Attic/dirac-fix-ld-library-path,v 1.2 2007/12/03 13:46:00 joel Exp $
-################################################################
+########################################################################
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/Attic/dirac-fix-ld-library-path,v 1.3 2008/04/16 19:39:36 rgracian Exp $
+# File :   dirac-fix-ld-lib
+# Author : Joel Closier
+########################################################################
+__RCSID__   = "$Id: dirac-fix-ld-library-path,v 1.3 2008/04/16 19:39:36 rgracian Exp $"
+__VERSION__ = "$Revision: 1.3 $"
 
 """  This is a script to fix oversized LD_LIBRARY_PATH variables.
 """
 import sys,os,shutil,string,re
+from DIRACEnvironment import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.Os import uniquePath
 from DIRAC.Core.Utilities.Subprocess import shellCall

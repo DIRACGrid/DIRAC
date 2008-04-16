@@ -1,12 +1,14 @@
 #!/usr/bin/env python
-################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/Attic/dirac-agent,v 1.7 2007/06/28 12:43:38 atsareg Exp $
-################################################################
+########################################################################
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/Attic/dirac-agent,v 1.8 2008/04/16 19:39:36 rgracian Exp $
+# File :   dirac-agent
+# Author : Adria Casajus, Andrei Tsaregorodtsev, Stuart Paterson
+########################################################################
+__RCSID__   = "$Id: dirac-agent,v 1.8 2008/04/16 19:39:36 rgracian Exp $"
+__VERSION__ = "$Revision: 1.8 $"
 
 """  This is a script to launch DIRAC agents
 """
-
-__RCSID__ = "$Id: dirac-agent,v 1.7 2007/06/28 12:43:38 atsareg Exp $"
 
 import sys
 from DIRACEnvironment import DIRAC
