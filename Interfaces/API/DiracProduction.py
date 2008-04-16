@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.15 2008/04/14 16:59:06 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.16 2008/04/16 14:34:06 paterson Exp $
 # File :   DiracProduction.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are to be documented with example usage.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.15 2008/04/14 16:59:06 paterson Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.16 2008/04/16 14:34:06 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 import pprint
@@ -94,7 +94,7 @@ class DiracProduction:
     """
     if not type(productionID)==type(long(1)):
       if not type(productionID) == type(" "):
-        return self.__errorReport('Expected string or long for production ID')
+        return self.__errorReport('Expected string, long or int for production ID')
 
     result = self.prodClient.getProductionInfo(long(productionID))
     if not result['OK']:
@@ -140,8 +140,9 @@ class DiracProduction:
 
   #############################################################################
   def getProductionSummary(self,productionID=None,printOutput=False):
-    """Returns a summary for the productions in the system. If production ID is
-       specified, the result is restricted to this value.
+    """Returns a detailed summary for the productions in the system. If production ID is
+       specified, the result is restricted to this value. If printOutput is specified,
+       the result is printed to the screen.
     """
     if productionID:
       if not type(productionID)==type(long(1)):
@@ -169,23 +170,185 @@ class DiracProduction:
     return result
 
   #############################################################################
-  def getProductionJobSummary(self,productionID=None,printOutput=False):
-    """Returns a job summary for the productions in the system. If production ID is
-       specified, the result is restricted to this value.
+  def getProductionJobSummary(self,productionID,status=None,minorStatus=None,printOutput=False):
+    """Returns a job summary for the productions in the system. If printOutput is
+       specified, the result is printed to the screen.  This queries the WMS
+       for the given productionID and provides an up-to-date snapshot of the job status
+       combinations and associated WMS JobIDs.
+    """
+    if not type(productionID)==type(long(1)):
+      if not type(productionID) == type(" "):
+        return self.__errorReport('Expected string, long or int for production ID')
+
+    statusDict = self.__getProdJobMetadata(productionID,status,minorStatus)
+    if not statusDict['OK']:
+      return statusDict
+
+    #Now format the result.
+    summary = {}
+    for job,atts in statusDict['Value'].items():
+      for key,val in atts.items():
+        if key=='Status':
+          uniqueStatus = val.capitalize()
+          if not summary.has_key(uniqueStatus):
+            summary[uniqueStatus]={}
+          if not summary[uniqueStatus].has_key(atts['MinorStatus']):
+            summary[uniqueStatus][atts['MinorStatus']]={}
+            summary[uniqueStatus][atts['MinorStatus']]['Total'] = 1
+            summary[uniqueStatus][atts['MinorStatus']]['JobList'] = [job]
+          else:
+            current = summary[uniqueStatus][atts['MinorStatus']]['Total']
+            summary[uniqueStatus][atts['MinorStatus']]['Total'] = current+1
+            jobList = summary[uniqueStatus][atts['MinorStatus']]['JobList']
+            jobList.append(job)
+            summary[uniqueStatus][atts['MinorStatus']]['JobList'] = jobList
+
+    if not printOutput:
+      return S_OK(summary)
+
+    #If a printed summary is requested
+    statAdj = int(0.5*self.prodAdj)
+    mStatAdj = int(2.0*self.prodAdj)
+    totalAdj = int(0.5*self.prodAdj)
+    exAdj = int(0.5*self.prodAdj)
+    message = '\nJob Summary for ProductionID %s considering' %(productionID)
+    if status:
+      message+=' Status = %s' %(status)
+    if minorStatus:
+      message+=' MinorStatus = %s' %(minorStatus)
+    if not status and not minorStatus:
+      message+=' all status combinations'
+
+    message += ':\n\n'
+    message += 'Status'.ljust(statAdj)+'MinorStatus'.ljust(mStatAdj)+'Total'.ljust(totalAdj)+'Example'.ljust(exAdj)+'\n'
+    for stat,metadata in summary.items():
+      message += '\n'
+      for minor,jobInfo in metadata.items():
+        message += stat.ljust(statAdj)+minor.ljust(mStatAdj)+str(jobInfo['Total']).ljust(totalAdj)+str(jobInfo['JobList'][0]).ljust(exAdj)+'\n'
+
+    print message
+    #self.__prettyPrint(summary)
+    return S_OK(summary)
+
+  #############################################################################
+  def getProductionSiteSummary(self,productionID,site=None,printOutput=False):
+    """Returns a site summary for the productions in the system. If printOutput is
+       specified, the result is printed to the screen.  This queries the WMS
+       for the given productionID and provides an up-to-date snapshot of the sites
+       that jobs were submitted to.
+    """
+    if not type(productionID)==type(long(1)):
+      if not type(productionID) == type(" "):
+        return self.__errorReport('Expected string, long or int for production ID')
+
+    statusDict = self.__getProdJobMetadata(productionID,None,None,site)
+    if not printOutput:
+      return statusDict
+
+    summary = {}
+    for job,atts in statusDict['Value'].items():
+      for key,val in atts.items():
+        if key=='Site':
+          uniqueSite = val
+          currentStatus = atts['Status'].capitalize()
+          if not summary.has_key(uniqueSite):
+            summary[uniqueSite]={}
+          if not summary[uniqueSite].has_key(currentStatus):
+            summary[uniqueSite][currentStatus]={}
+            summary[uniqueSite][currentStatus]['Total'] = 1
+            summary[uniqueSite][currentStatus]['JobList'] = [job]
+          else:
+            current = summary[uniqueSite][currentStatus]['Total']
+            summary[uniqueSite][currentStatus]['Total'] = current+1
+            jobList = summary[uniqueSite][currentStatus]['JobList']
+            jobList.append(job)
+            summary[uniqueSite][currentStatus]['JobList'] = jobList
+
+    if not printOutput:
+      return S_OK(summary)
+
+    #If a printed summary is requested
+    siteAdj = int(1.0*self.prodAdj)
+    statAdj = int(0.5*self.prodAdj)
+    totalAdj = int(0.5*self.prodAdj)
+    exAdj = int(0.5*self.prodAdj)
+    message = '\nJob Summary for ProductionID %s' %(productionID)
+    if site:
+      message+=' at Site %s' %(site)
+    else:
+      message+=' at all Sites'
+    message += ':\n\n'
+    message += 'Site'.ljust(siteAdj)+'Status'.ljust(statAdj)+'Total'.ljust(totalAdj)+'Example'.ljust(exAdj)+'\n'
+    for site,metadata in summary.items():
+      message += '\n'
+      for stat,jobInfo in metadata.items():
+        message += site.ljust(siteAdj)+stat.ljust(statAdj)+str(jobInfo['Total']).ljust(totalAdj)+str(jobInfo['JobList'][0]).ljust(exAdj)+'\n'
+
+    print message
+    #self.__prettyPrint(summary)
+    return S_OK(summary)
+
+  #############################################################################
+  def getProdJobOutputSandbox(self,productionID,jobID):
+    """Wraps around DIRAC API getOutputSandbox(), takes single jobID or list of jobIDs.
     """
     return S_OK()
 
   #############################################################################
-  def selectProductionJobs(self):
-    """Wraps around DIRAC API selectJobs and provides more limited options.
+  def getProdJobInputSandbox(self,productionID,jobID):
+    """Wraps around DIRAC API getInputSandbox(), takes single jobID or list of jobIDs.
     """
     return S_OK()
 
   #############################################################################
-  def getJobSummary(self):
-    """Wraps around DIRAC API getJobSummary and provides more limited options.
+  def getProductionFileMask(self,productionID=None,printOutput=False):
+    """Returns the regular expressions used to define data for productions.
     """
     return S_OK()
+
+  #############################################################################
+  def setProductionFileMask(self,productionID,printOutput=False):
+    """Returns the regular expressions used to define data for productions.
+    """
+    return S_OK()
+
+  #############################################################################
+  def rescheduleProdJobs(self,jobID):
+    """Wraps around DIRAC API reschedule(), takes single jobID or list of jobIDs.
+    """
+    return self.diracAPI.reschedule(jobID)
+
+  #############################################################################
+  def deleteProdJobs(self,jobID):
+    """Wraps around DIRAC API delete(), takes single jobID or list of jobIDs.
+    """
+    return self.diracAPI.delete(jobID)
+
+  #############################################################################
+  def getProdJobSummary(self,jobID,outputFile=None,printOutput=False):
+    """Wraps around DIRAC API getJobSummary to provide more detailed information.
+    """
+    return self.diracAPI.getJobSummary(jobID,outputFile,printOutput)
+
+  #############################################################################
+  def getProdJobLoggingInfo(self,jobID):
+    """Wraps around DIRAC API getJobLoggingInfo to provide more detailed information.
+       Takes single WMS JobID.
+    """
+    return self.diracAPI.loggingInfo(jobID)
+
+  #############################################################################
+  def getProdJobParameters(self,jobID):
+    """Wraps around DIRAC API parameters(), takes single jobID or list of jobIDs.
+    """
+    return self.diracAPI.parameters(jobID)
+
+  #############################################################################
+  def selectProductionJobs(self,ProductionID,Status=None,MinorStatus=None,ApplicationStatus=None,Site=None,Owner=None,Date=None):
+    """Wraps around DIRAC API selectJobs(). Arguments correspond to the web page
+       selections. By default, the date is today.
+    """
+    return self.diracAPI.selectJobs(Status,MinorStatus,ApplicationStatus,Site,Owner,ProductionID,Date)
 
   #############################################################################
   def submitProduction(self,productionID,numberOfJobs,site=''):
@@ -350,6 +513,27 @@ class DiracProduction:
     if not submitted['OK']:
       self.log.warn('Problem during submission of job')
     return submitted
+
+  #############################################################################
+  def __getProdJobMetadata(self,productionID,status=None,minorStatus=None,site=None):
+    """Internal function to get the job metadata for selected fields.
+    """
+    result = self.getProduction(long(productionID))
+    if not result['OK']:
+      self.log.warn('Problem getting production metadata for ID %s:\n%s' %(productionID,result))
+      return result
+
+    if not result['Value'].has_key('CreationDate'):
+      self.log.warn('Could not establish creation date for production %s with metadata:\n%s' %(productionID,result))
+      return result
+    creationDate = toString(result['Value']['CreationDate']).split()[0]
+    result = self.selectProductionJobs(str(productionID).zfill(8),Status=status,MinorStatus=minorStatus,Site=site,Date=creationDate)
+    if not result['OK']:
+      self.log.warn('Problem selecting production jobs for ID %s:\n%s' %(productionID,result))
+      return result
+
+    jobsList = result['Value']
+    return self.diracAPI.status(jobsList)
 
   #############################################################################
   def __errorReport(self,error,message=None):
