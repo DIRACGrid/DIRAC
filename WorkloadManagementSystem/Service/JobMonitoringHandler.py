@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobMonitoringHandler.py,v 1.14 2008/03/05 20:10:26 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobMonitoringHandler.py,v 1.15 2008/04/16 11:25:40 paterson Exp $
 ########################################################################
 
 """ JobMonitoringHandler is the implementation of the JobMonitoring service
@@ -11,7 +11,7 @@
 
 """
 
-__RCSID__ = "$Id: JobMonitoringHandler.py,v 1.14 2008/03/05 20:10:26 paterson Exp $"
+__RCSID__ = "$Id: JobMonitoringHandler.py,v 1.15 2008/04/16 11:25:40 paterson Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -183,6 +183,12 @@ class JobMonitoringHandler( RequestHandler ):
     return jobDB.getAttributesForJobList( jobIDs, ['Status'] )
 
 ##############################################################################
+  types_getJobsMinorStatus = [ ListType ]
+  def export_getJobsMinorStatus (self, jobIDs):
+
+    return jobDB.getAttributesForJobList( jobIDs, ['MinorStatus'] )
+
+##############################################################################
   types_getJobsSites = [ ListType ]
   def export_getJobsSites (self, jobIDs):
 
@@ -245,19 +251,19 @@ class JobMonitoringHandler( RequestHandler ):
       return S_ERROR('Failed to get job summary: '+result['Message'])
 
     summaryDict = result['Value']
-    
+
     # Evaluate last sign of life time
     for jobID, jobDict in summaryDict.items():
       if jobDict['HeartBeatTime'] == 'None':
         jobDict['LastSignOfLife'] = jobDict['LastUpdateTime']
       else:
         lastTime = Time.fromString(jobDict['LastUpdateTime'])
-        hbTime = Time.fromString(jobDict['HeartBeatTime'])  
+        hbTime = Time.fromString(jobDict['HeartBeatTime'])
         if (hbTime-lastTime) > (lastTime-lastTime):
           jobDict['LastSignOfLife'] = jobDict['HeartBeatTime']
         else:
-          jobDict['LastSignOfLife'] = jobDict['LastUpdateTime'] 
-                    
+          jobDict['LastSignOfLife'] = jobDict['LastUpdateTime']
+
     statusDict = {}
     statusAttrDict = attrDict
     for status in ['Running','Waiting','Outputready']:
