@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationClient.py,v 1.12 2008/04/15 14:29:32 acasajus Exp $
-__RCSID__ = "$Id: ConfigurationClient.py,v 1.12 2008/04/15 14:29:32 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationClient.py,v 1.13 2008/04/16 12:17:51 atsareg Exp $
+__RCSID__ = "$Id: ConfigurationClient.py,v 1.13 2008/04/16 12:17:51 atsareg Exp $"
 
 import types
 from DIRAC.Core.Utilities import List
@@ -35,7 +35,7 @@ class ConfigurationClient:
     if retVal[ 'OK' ]:
       return retVal[ 'Value' ]
     else:
-      gLogger.warning( "gConfig.getValue for invalid value", retVal[ 'Message' ] )
+      gLogger.warn( "gConfig.getValue for invalid value", retVal[ 'Message' ] )
       return None
 
   def getOption( self, optionPath, defaultValue = None ):
