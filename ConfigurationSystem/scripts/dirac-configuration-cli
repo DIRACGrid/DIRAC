@@ -1,0 +1,17 @@
+#!/usr/bin/env python
+########################################################################
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/scripts/Attic/dirac-configuration-cli,v 1.1 2008/04/16 19:09:02 rgracian Exp $
+# File :   dirac-configuration-cli
+# Author : Adria Casajus
+########################################################################
+__RCSID__   = "$Id: dirac-configuration-cli,v 1.1 2008/04/16 19:09:02 rgracian Exp $"
+__VERSION__ = "$Revision: 1.1 $"
+
+from DIRACEnvironment import DIRAC
+from DIRAC.Core.Base import Script
+from DIRAC.ConfigurationSystem.Client.CSCLI import CSCLI
+
+Script.localCfg.addDefaultEntry( "LogLevel", "fatal" )
+Script.parseCommandLine()
+
+CSCLI().start()

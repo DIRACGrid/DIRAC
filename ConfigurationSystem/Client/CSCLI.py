@@ -1,19 +1,18 @@
-#!/usr/bin/env python
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/scripts/dirac-configuration-cli.py,v 1.2 2007/11/07 16:08:37 acasajus Exp $
-__RCSID__ = "$Id: dirac-configuration-cli.py,v 1.2 2007/11/07 16:08:37 acasajus Exp $"
+########################################################################
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/CSCLI.py,v 1.1 2008/04/16 19:09:02 rgracian Exp $
+# File :   CSCLI.py
+# Author : Adria Casajus
+########################################################################
+__RCSID__   = "$Id: CSCLI.py,v 1.1 2008/04/16 19:09:02 rgracian Exp $"
+__VERSION__ = "$Revision: 1.1 $"
 
 import cmd
 import sys
 import signal
-import dirac
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.ColorCLI import colorize
 from DIRAC.ConfigurationSystem.private.Modificator import Modificator
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.Core.DISET.RPCClient import RPCClient
-
-Script.localCfg.addDefaultEntry( "LogLevel", "fatal" )
-Script.parseCommandLine()
 
 class CSCLI( cmd.Cmd ):
 
@@ -159,7 +158,7 @@ class CSCLI( cmd.Cmd ):
     """
     if not args:
       self.masterURL = gConfigurationData.getMasterServer()
-      if self.masterURL != "unknown":
+      if self.masterURL != "unknown" and self.masterURL:
         self.tryConnection()
       else:
         self.masterURL = "unset"
@@ -547,6 +546,3 @@ class CSCLI( cmd.Cmd ):
     except Exception, v:
       self.showTraceback()
 
-if __name__=="__main__":
-    cscli = CSCLI()
-    cscli.start()
