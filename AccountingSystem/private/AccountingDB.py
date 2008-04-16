@@ -1,9 +1,9 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.20 2008/04/16 14:26:29 acasajus Exp $
-__RCSID__ = "$Id: AccountingDB.py,v 1.20 2008/04/16 14:26:29 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.21 2008/04/16 14:28:18 acasajus Exp $
+__RCSID__ = "$Id: AccountingDB.py,v 1.21 2008/04/16 14:28:18 acasajus Exp $"
 
 import datetime, time
-import threading
 import types
+import threading
 import os, os.path
 import re
 import DIRAC
@@ -20,7 +20,6 @@ class AccountingDB(DB):
     self.maxBucketTime = 604800 #1 w
     self.autoCompact = False
     self.dbCatalog = {}
-    self.dbLocks = {}
     self.dbBucketsLength = {}
     self.catalogTableName = self.__getTableName( "catalog", "Types" )
     self._createTables( { self.catalogTableName : { 'Fields' : { 'name' : "VARCHAR(64) UNIQUE",
@@ -124,14 +123,9 @@ class AccountingDB(DB):
     self.dbCatalog[ typeName ][ 'bucketFields' ] = list( self.dbCatalog[ typeName ][ 'typeFields' ] )
     self.dbCatalog[ typeName ][ 'typeFields' ].extend( [ 'startTime', 'endTime' ] )
     self.dbCatalog[ typeName ][ 'bucketFields' ].extend( [  'entriesInBucket', 'startTime', 'bucketLength' ] )
-    self.dbLocks[ self.__getTableName( "bucket", typeName ) ] = threading.Lock()
     self.dbBucketsLength[ typeName ] = bucketsLength
     #ADRI: TEST COMPACT BUCKETS
     #self.dbBucketsLength[ typeName ] = [ ( 86400, 3600 ), ( 15552000, 86400 ), ( 31104000, 604800 ) ]
-    for key in keyFields:
-      lockName = self.__getTableName( "key", typeName, key )
-      if not lockName in self.dbLocks:
-        self.dbLocks[ lockName ] = threading.Lock()
 
   @gSynchro
   def registerType( self, name, definitionKeyFields, definitionAccountingFields, bucketsLength ):
