@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.13 2008/04/13 15:05:18 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.14 2008/04/16 11:52:23 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -24,7 +24,7 @@ The initial instance just exposes job submission via the WMS client.
 
 """
 
-__RCSID__ = "$Id: Dirac.py,v 1.13 2008/04/13 15:05:18 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.14 2008/04/16 11:52:23 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -622,6 +622,7 @@ class Dirac:
       jobID = [jobID]
 
     statusDict = self.monitoring.getJobsStatus(jobID)
+    minorStatusDict = self.monitoring.getJobsMinorStatus(jobID)
     siteDict = self.monitoring.getJobsSites(jobID)
 
     if not statusDict['OK']:
@@ -630,11 +631,16 @@ class Dirac:
     if not siteDict['OK']:
       self.log.warn('Could not obtain job site information')
       return siteDict
+    if not minorStatusDict['OK']:
+      self.log.warn('Could not obtain job minor status information')
+      return minorStatusDict
 
     result = {}
     for job,vals in statusDict['Value'].items():
       result[job]=vals
     for job,vals in siteDict['Value'].items():
+      result[job].update(vals)
+    for job,vals in minorStatusDict['Value'].items():
       result[job].update(vals)
     for job,vals in result.items():
       if result[job].has_key('JobID'):
