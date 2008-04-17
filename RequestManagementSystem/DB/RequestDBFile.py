@@ -60,15 +60,15 @@ class RequestDBFile:
     """ Set request to the database (including all sub-requests)
     """
     gLogger.info("RequestDBFile._setRequest: Attempting to set %s." % requestName)
-    oRequest = DataManagementRequest(request=requestString)
-    requestTypes = ['transfer','register','removal','stage']
+    request = Request(request=requestString)
+    requestTypes = request.getSubRequestTypes()
     try:
       for requestType in requestTypes:
-        subRequestString = oRequest.toXML(requestType)['Value']
+        subRequestString = request.toXML(requestType)['Value']
         if subRequestString:
           if desiredStatus:
             status = desiredStatus
-          elif not oRequest.isRequestTypeEmpty(requestType)['Value']:
+          elif not request.isRequestTypeEmpty(requestType)['Value']:
             status = 'ToDo'
           else:
             status = 'Done'
