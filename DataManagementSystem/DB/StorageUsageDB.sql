@@ -12,11 +12,11 @@ use StorageUsageDB;
 
 DROP TABLE IF EXISTS Directory;
 CREATE TABLE Directory(
-  Directory VARCHAR(255) NOT NULL,
+  DirectoryPath VARCHAR(255) NOT NULL,
   DirectoryID INTEGER NOT NULL AUTO_INCREMENT,
   DirectoryFiles INTEGER NOT NULL,
   DirectorySize BIGINT NOT NULL,
-  PRIMARY KEY(Directory,DirectoryID)
+  PRIMARY KEY(DirectoryID,DirectoryPath)
 );
 
 DROP TABLE IF EXISTS DirectoryUsage;
