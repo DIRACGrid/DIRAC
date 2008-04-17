@@ -87,7 +87,7 @@ class StorageUsageDB(DB):
   def __insertDirectory(self,directory,directoryFiles,directorySize):
     """ Inserts the directory into the Directory table
     """
-    req = "INSERT INTO Directory (Directory,DirectoryFiles,DirectorySize) VALUES ('%s',%s,%s);" % (directory,directoryFiles,directorySize)
+    req = "INSERT INTO Directory (DirectoryPath,DirectoryFiles,DirectorySize) VALUES ('%s',%s,%s);" % (directory,directoryFiles,directorySize)
     err = "StorageUsageDB.__insertDirectory: Failed to insert directory."
     self.getIdLock.acquire()
     res = self._update(req)
@@ -109,7 +109,7 @@ class StorageUsageDB(DB):
   def __getDirectoryID(self,directory):
     """ Obtain the directoryID from the Directory table
     """
-    req = "SELECT DirectoryID from Directory WHERE Directory = '%s';" % directory
+    req = "SELECT DirectoryID from Directory WHERE DirectoryPath = '%s';" % directory
     err = "StorageUsageDB.__getDirectoryID: Failed to determine directoryID."
     res = self._query(req)
     if not res['OK']:
