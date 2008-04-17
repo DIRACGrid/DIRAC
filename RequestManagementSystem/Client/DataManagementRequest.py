@@ -23,35 +23,6 @@ class DataManagementRequest(Request):
 
 ###############################################################
 
-  def setSubRequestStatus(self,ind,type,status):
-    """ Set the operation to Done status
-    """
-    self.subrequests[type][ind]['Attributes']['Status'] = status
-
-  def getSubRequestAttributes(self,ind,type):
-    """ Get the sub-request attributes
-    """
-    return self.subrequests[type][ind]['Attributes']
-
-  def setSubRequestAttributes(self,ind,type,attributeDict):
-    """ Set the sub-request attributes
-    """
-    self.subrequests[type][ind]['Attributes'] = attributeDict
-
-  def getSubRequestAttributeValue(self,ind,type,attribute):
-    """ Get the attribute value associated to a sub-request
-    """
-    return self.subrequests[type][ind]['Attributes'][attribute]
-
-  def setSubRequestAttributeValue(self,ind,type,attribute,value):
-    """ Set the attribute value associated to a sub-request
-    """
-    if not self.subrequests[type][ind].has_key('Attributes'):
-      self.subrequests[type][ind]['Attributes'] = {}
-    self.subrequests[type][ind]['Attributes'][attribute] = value
-
-###############################################################
-
   def getSubRequestNumFiles(self,ind,type):
     """ Get the number of files in the sub-request
     """
@@ -213,39 +184,6 @@ class DataManagementRequest(Request):
       datasets = {}
     self.setSubRequestDatasets(ind,type,datasets.values())
 
-
-###############################################################
-
-#  def dump(self):
-#    """ Sent to the logger all the sub-requests in this DM request.
-#    """
-#    for type in ['Transfer','Register','Removal','Stage']:
-#      if type == 'Transfer':
-#        reqs = self.transfers
-#      if type == 'Register':
-#        reqs = self.registers
-#      if type == 'Removal':
-#        reqs = self.removals
-#      if type == 'Stage':
-#        reqs = self.stages
-#
-#      ind = 1
-#      for rdic in reqs:
-#        gLogger.info( '\n======',type,'=======',ind,'====================' )
-#        for key in rdic.keys():
-#          if key == 'Attributes':
-#            for att,attValue in rdic[key].items():
-#              gLogger.info( (att+':').ljust(15),attValue)
-#          elif key == 'Files':
-#            gLogger.info('Files:'.ljust(15))
-#            for file in rdic[key]:
-#              gLogger.info(file['LFN'].ljust(15))
-#          elif key == 'Datasets':
-#            gLogger.info('Datasets:'.ljust(15))
-#            datasets = rdic[key]
-#            for dataset in datasets:
-#              gLogger.info(dataset.ljust(15))
-#        ind = ind+1
 
 ###############################################################
 
