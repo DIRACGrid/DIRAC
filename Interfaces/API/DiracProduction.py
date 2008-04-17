@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.17 2008/04/17 14:38:27 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.18 2008/04/17 17:02:10 paterson Exp $
 # File :   DiracProduction.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are to be documented with example usage.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.17 2008/04/17 14:38:27 paterson Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.18 2008/04/17 17:02:10 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 import pprint
@@ -383,15 +383,43 @@ class DiracProduction:
 #    return S_OK()
 
   #############################################################################
-  def production(self,productionID,command):
+  def production(self,productionID,command,printOutput=False,disableCheck=True):
     """Allows basic production management by supporting the following commands:
        - start : set production status to Active, job submission possible
        - stop : set production status to Stopped, no job submissions
        - automatic: set production submission mode to Automatic, e.g. submission via Agent
        - manual: set produciton submission mode to manual, e.g. dirac-production-submit
     """
-    #TODO: write with prompt for each action defined above
-    return S_OK()
+    commands = {'start':['Active','Manual'],'stop':['Stopped','Manual'],'automatic':['Active','Automatic'],'manual':['Active','Manual']}
+    if not type(productionID)==type(long(1)):
+      if not type(productionID) == type(" "):
+        return self.__errorReport('Expected string, long or int for production ID')
+
+    if not type(command)==type(" "):
+      return self.__errorReport('Expected string, for command')
+    if not command.lower() in commands.keys():
+      return self.__errorReport('Expected one of: %s for command string' %(string.join(commands.keys(),', ')))
+
+    self.log.verbose('Requested to change production %s with command "%s"' %(productionID,command.lower().capitalize()))
+    if not disableCheck:
+      result = self.__promptUser('Do you wish to change production %s with command "%s"? ' %(productionID,command.lower().capitalize()))
+      if not result['OK']:
+        self.log.info('Action cancelled')
+        return S_OK('Action cancelled')
+
+    actions = commands[command]
+    self.log.info('Setting production status to %s and submission mode to %s for productionID %s' %(actions[0],actions[1],productionID))
+    result = self.prodClient.setTransformationStatus(long(productionID), actions[0])
+    if not result['OK']:
+      self.log.warn('Problem updating transformation status with result:\n%s' %result)
+      return result
+    self.log.verbose('Setting transformation status to %s successful' %(actions[0]))
+    result = self.prodClient.setTransformationAgentType(long(productionID), actions[1])
+    if not result['OK']:
+      self.log.warn('Problem updating transformation agent type with result:\n%s' %result)
+      return result
+    self.log.verbose('Setting transformation agent type to %s successful' %(actions[1]))
+    return S_OK('Production %s status updated' %productionID)
 
   #############################################################################
   def getProdJobOutputSandbox(self,jobID):
@@ -646,5 +674,25 @@ class DiracProduction:
     """Internal function to pretty print an object.
     """
     print self.pPrint.pformat(object)
+
+  #############################################################################
+  def __promptUser(self,message):
+    """Internal function to pretty print an object.
+    """
+    self.log.info('%s %s' %(message,'[yes/no] : '))
+    response = raw_input('%s %s' %(message,'[yes/no] : '))
+    responses = ['yes','y','n','no']
+    if not response.strip() or response=='\n':
+      self.log.info('Possible responses are: %s' %(string.join(responses,', ')))
+      response = raw_input('%s %s' %(message,'[yes/no] : '))
+
+    if not response.strip().lower() in responses:
+      self.log.info('Problem interpreting input "%s", assuming negative response.' %(response))
+      return S_ERROR(response)
+
+    if response.strip().lower()=='y' or response.strip().lower()=='yes':
+      return S_OK(response)
+    else:
+      return S_ERROR(response)
 
   #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
