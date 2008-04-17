@@ -888,7 +888,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     for path in paths:
       res = self.__getDirectoryContents(path)
       if res['OK']:
-        pathDict = {'Files':0,'TotalSize':0,'SiteUsage':{},'SiteFiles':{}}
+        pathDict = {'Files':0,'TotalSize':0,'SiteUsage':{}}
         pathDict['SubDirs'] = res['Value']['SubDirs']
         files = res['Value']['Files']
         for lfn in files.keys():
@@ -898,11 +898,9 @@ class LcgFileCatalogClient(FileCatalogueBase):
           repDict = files[lfn]['Replicas']
           for se in repDict.keys():
             if not pathDict['SiteUsage'].has_key(se):
-              pathDict['SiteUsage'][se] = 0
-            if not pathDict['SiteFiles'].has_key(se):
-              pathDict['SiteFiles'][se] = 0
-            pathDict['SiteUsage'][se] += fileSize
-            pathDict['SiteFiles'][se] += 1
+              pathDict['SiteUsage'][se] = {'Files':0,'Size':0}
+            pathDict['SiteUsage'][se]['Size'] += fileSize
+            pathDict['SiteUsage'][se]['Files'] += 1
         successful[path] = pathDict
       else:
         failed[path] = res['Message']
