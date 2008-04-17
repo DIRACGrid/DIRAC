@@ -17,7 +17,7 @@ def initializeStorageUsageHandler(serviceInfo):
 
 class StorageUsageHandler(RequestHandler):
 
-  types_insertDirectory = [StringType,IntType,IntType]
+  types_insertDirectory = [StringType,IntType,LongType]
   def export_insertDirectory(self,directory,directoryFiles,directorySize):
     """ Insert the directory and parameters in the database
     """
@@ -32,15 +32,15 @@ class StorageUsageHandler(RequestHandler):
     except Exception, x:
       errStr = "StorageUsageHandler.insertDirectory: Exception while inserting directory."
       gLogger.exception(errStr,str(x))
-      return S_ERROR(errorStr)
+      return S_ERROR(errStr)
 
-  types_publishDirectoryUsage = [StringType,StringType,IntType,IntType]
+  types_publishDirectoryUsage = [StringType,StringType,LongType,IntType]
   def export_publishDirectoryUsage(self,directory,storageElement,storageElementSize,storageElementFiles):
     """ Publish the storage usage for for a particular directory and storage element
     """
     try:
-      gLogger.info("StorageUsageHandler.publishDirectoryUsage: Attempting to insert usage at %." % storageElement)
-      res = storageUsageDB.storageUsageDB.publishDirectoryUsage(directory,storageElement,storageElementSize,storageElementFiles)
+      gLogger.info("StorageUsageHandler.publishDirectoryUsage: Attempting to insert usage at %s." % storageElement)
+      res = storageUsageDB.publishDirectoryUsage(directory,storageElement,storageElementSize,storageElementFiles)
       if res['OK']:
         gLogger.info("StorageUsageHandler.publishDirectoryUsage: Successfully added usage.")
       else:
@@ -49,4 +49,4 @@ class StorageUsageHandler(RequestHandler):
     except Exception, x:
       errStr = "StorageUsageHandler.publishDirectoryUsage: Exception while inserting usage."
       gLogger.exception(errStr,str(x))
-      return S_ERROR(errorStr)
+      return S_ERROR(errStr)
