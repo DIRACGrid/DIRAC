@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.21 2008/04/16 14:28:18 acasajus Exp $
-__RCSID__ = "$Id: AccountingDB.py,v 1.21 2008/04/16 14:28:18 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.22 2008/04/17 10:32:09 acasajus Exp $
+__RCSID__ = "$Id: AccountingDB.py,v 1.22 2008/04/17 10:32:09 acasajus Exp $"
 
 import datetime, time
 import types
@@ -46,10 +46,10 @@ class AccountingDB(DB):
     th.start()
 
   def __periodicAutoCompactDB(self):
-    compactTime = datetime.time( hour = 4, minute = 3, second = 2 )
+    compactTime = datetime.time( hour = 4, minute = 30, second = 2 )
     while self.autoCompact:
       nct = Time.dateTime()
-      if nct.hour > compactTime.hour:
+      if nct.hour >= compactTime.hour:
         nct = nct + datetime.timedelta( days = 1 )
       nct = nct.replace( hour = compactTime.hour,
                          minute = compactTime.minute,
