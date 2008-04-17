@@ -1,32 +1,37 @@
 #!/usr/bin/env python
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/Attic/dirac-production-summary,v 1.1 2008/04/14 15:06:19 paterson Exp $
-__RCSID__ = "$Id: dirac-production-summary,v 1.1 2008/04/14 15:06:19 paterson Exp $"
-import sys
+########################################################################
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/Attic/dirac-production-summary,v 1.2 2008/04/17 08:27:16 rgracian Exp $
+# File :   dirac-production-summary
+# Author : Stuart Paterson
+########################################################################
+__RCSID__   = "$Id: dirac-production-summary,v 1.2 2008/04/17 08:27:16 rgracian Exp $"
+__VERSION__ = "$Revision: 1.2 $"
+from DIRACEnvironment import DIRAC
+from DIRAC.Core.Base import Script
+from DIRAC.Interfaces.API.DiracProduction                    import DiracProduction
 
-def usage(argv):
-  print 'Usage: %s |Optional| <PRODUCTION_ID>' %(argv[0])
-  sys.exit(2)
+Script.parseCommandLine( ignoreErrors = True )
+args = Script.getPositionalArgs()
 
-if len(sys.argv)>2:
-  usage(sys.argv)
+def usage():
+  print 'Usage: %s [<Production ID>]' %(Script.scriptName)
+  DIRAC.exit(2)
 
-from DIRAC.Interfaces.API.DiracProduction import DiracProduction
-diracProd=DiracProduction()
+if len(args) < 1:
+  usage()
+  
+diracProd = DiracProduction()
 
-productionID=None
-if len(sys.argv)>1:
-  try:
-    productionID = str(sys.argv[1])
-  except Exception,x:
-    print 'Expected string, int or long for productionID'
-    sys.exit(2)
+prodID = None
+if len(args) > 0:
+  prodID = args[0]
 
-result = diracProd.getProductionSummary(productionID,printOutput=True)
+result = diracProd.getProductionSummary(prodID,printOutput=True)
 if result['OK']:
-  sys.exit(0)
+  DIRAC.exit(0)
 elif result.has_key('Message'):
-  print 'Listing productions failed with message:\n%s' %(result['Message'])
-  sys.exit(2)
+  print 'Listing production summary failed with message:\n%s' %(result['Message'])
+  DIRAC.exit(2)
 else:
   print 'Null result for getProductionSummary() call'
-  sys.exit(2)
+  DIRAC.exit(2)

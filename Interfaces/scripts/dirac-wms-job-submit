@@ -1,27 +1,35 @@
 #!/usr/bin/env python
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/Attic/dirac-wms-job-submit,v 1.1 2008/02/08 16:36:04 paterson Exp $
-__RCSID__ = "$Id: dirac-wms-job-submit,v 1.1 2008/02/08 16:36:04 paterson Exp $"
-import sys
+########################################################################
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/Attic/dirac-wms-job-submit,v 1.2 2008/04/17 08:27:17 rgracian Exp $
+# File :   dirac-production-job-submit
+# Author : Stuart Paterson
+########################################################################
+__RCSID__   = "$Id: dirac-wms-job-submit,v 1.2 2008/04/17 08:27:17 rgracian Exp $"
+__VERSION__ = "$Revision: 1.2 $"
+from DIRACEnvironment import DIRAC
+from DIRAC.Core.Base import Script
+from DIRAC.Interfaces.API.Dirac                              import Dirac
 
-def usage(argv):
-  print 'Usage: %s <Path to JDL file>' %(argv[0])
-  sys.exit(2)
+Script.parseCommandLine( ignoreErrors = True )
+args = Script.getPositionalArgs()
 
-if len(sys.argv)!=2:
-  usage(sys.argv)
+def usage():
+  print 'Usage: %s <Path to JDL file> |[<Path to JDL file>]' %(Script.scriptName)
+  DIRAC.exit(2)
 
-from DIRAC.Interfaces.API.Dirac                          import Dirac
+if len(args) < 1:
+  usage()
+  
 dirac=Dirac()
-try:
-  job = str(sys.argv[1])
-except Exception,x:
-  print 'Expected string for JDL file'
-  sys.exit(2)
+exitCode = 0
 
-result = dirac.submit(job)
-if result['OK']:
-  print 'JobID = %s' %(result['Value'])
-  sys.exit(0)
-else:
-  print result['Message']
-  sys.exit(2)
+for jdl in args:
+
+  result = dirac.submit(jdl)
+  if result['OK']:
+    print 'JobID = %s' %(result['Value'])
+  else:
+    print result['Message']
+    exitCode = 2
+
+DIRAC.exit(exitCode)
