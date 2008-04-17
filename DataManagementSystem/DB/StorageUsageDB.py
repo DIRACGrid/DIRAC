@@ -87,13 +87,13 @@ class StorageUsageDB(DB):
   def __insertDirectory(self,directory,directoryFiles,directorySize):
     """ Inserts the directory into the Directory table
     """
-    req = "INSERT INTO Directory VALUES (Directory,DirectoryFiles,DirectorySize) VALUES ('%s',%s,%s);" % (directory,directoryFiles,directorySize)
+    req = "INSERT INTO Directory (Directory,DirectoryFiles,DirectorySize) VALUES ('%s',%s,%s);" % (directory,directoryFiles,directorySize)
     err = "StorageUsageDB.__insertDirectory: Failed to insert directory."
     self.getIdLock.acquire()
     res = self._update(req)
     if not res['OK']:
       self.getIdLock.release()
-      return S_ERROR("%s %s" % err,res['Message'])
+      return S_ERROR("%s %s" % (err,res['Message']))
     req = "SELECT MAX(DirectoryID) FROM Directory;"
     res = self._query(req)
     self.getIdLock.release()
@@ -113,9 +113,9 @@ class StorageUsageDB(DB):
     err = "StorageUsageDB.__getDirectoryID: Failed to determine directoryID."
     res = self._query(req)
     if not res['OK']:
-      return S_ERROR(err,res['Message'])
+      return S_ERROR("%s %s" % (err, res['Message']))
     elif res['Value']:
-      return S_OK(res['Value'][0])
+      return S_OK(res['Value'][0][0])
     else:
       return S_OK(False)
 
@@ -143,7 +143,7 @@ class StorageUsageDB(DB):
     err = "StorageUsageDB.__checkDirectoryUsage: Failed to determine existence."
     res = self._query(req)
     if not res['OK']:
-      return S_ERROR(err,res['Message'])
+      return S_ERROR("%s %s" % (err,res['Message']))
     if res['Value']:
       return S_OK(True)
     else:
@@ -160,7 +160,7 @@ class StorageUsageDB(DB):
   def __updateDirectoryUsage(self,directoryID,storageElement,storageElementSize,storageElementFiles):
     """ Updates an existing entry in the site usage
     """
-    req = "UPDATE DirectoryUsage SET StorageElementSize = %s, StorageElementFiles = %s WHERE DirectoryID = %s and StorageElement = '%s';" % (storageElementSize,storageElementFiles,directoryID,storageElement)
+    req = "UPDATE DirectoryUsage SET StorageElementSize = %s, StorageElementFiles = %s, Updated=NOW() WHERE DirectoryID = %s and StorageElement = '%s';" % (storageElementSize,storageElementFiles,directoryID,storageElement)
     res = self._update(req)
     return res
 
