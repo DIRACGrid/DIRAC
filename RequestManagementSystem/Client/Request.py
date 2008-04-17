@@ -1,13 +1,14 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/Request.py,v 1.12 2008/04/17 09:25:32 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/Request.py,v 1.13 2008/04/17 14:53:41 atsareg Exp $
 
 """ Request base class. Defines the common general parameters that should be present in any
     request
 """
 
-__RCSID__ = "$Id: Request.py,v 1.12 2008/04/17 09:25:32 atsareg Exp $"
+__RCSID__ = "$Id: Request.py,v 1.13 2008/04/17 14:53:41 atsareg Exp $"
 
-import commands, os, xml.dom.minidom, types, time, copy
-import DIRAC.Core.Utilities.Time as Time
+import commands, os, xml.dom.minidom, types, time, copy, datetime
+from DIRAC import gConfig
+from DIRAC.Core.Utilities.GridCredentials import *
 
 def getCharacterData(node):
 
@@ -25,7 +26,7 @@ class Request:
   def __init__(self,request=None):
 
     # This is a list of attributes - mandatory parameters
-    self.attributeNames = ['RequestName','RequestType','RequestID','DIRACSetup','OwnerDN',
+    self.attributeNames = ['RequestName','RequestID','DIRACSetup','OwnerDN',
                            'OwnerGroup','SourceComponent','CreationTime','ExecutionTime','JobID',
                            'Status']
 
@@ -35,7 +36,7 @@ class Request:
     # The dictionary named Attributes must be present and must have
     # the following mandatory names
 
-    self.subAttributeNames = ['Status','SubrequestID','Method','Type','CreationTime','ExecutionTime']
+    self.subAttributeNames = ['Status','SubRequestID','Method','Type','CreationTime','ExecutionTime']
     self.subrequests = {}
 
     self.initialize(request)
@@ -49,10 +50,15 @@ class Request:
         self.attributes[name] = 'Unknown'
 
       # Set some defaults
-      self.attributes['DIRACSetup'] = "LHCb-Development"
       status,self.attributes['RequestID'] = commands.getstatusoutput('uuidgen')
-      self.attributes['CreationTime'] = Time.toString(Time.dateTime())
+      self.attributes['CreationTime'] = str(datetime.datetime.utcnow())
       self.attributes['Status'] = "New"
+      result = getCurrentDN()
+      if result['OK']:
+        self.attributes['OwnerDN'] = result['Value']
+      self.attributes['OwnerGroup'] = getDIRACGroup()
+      self.attributes['DIRACSetup'] = gConfig.getValue('/DIRAC/Setup','LHCb-Development')
+
     elif type(request) == types.InstanceType:
       for attr in self.attributeNames:
         self.attributes[attr] = script.attributes[attr]
@@ -153,7 +159,7 @@ class Request:
      self.subrequests[ind]['Attributes'][self.item_called] = value
 
 #####################################################################
-  def setCreationTime(self,time):
+  def setCreationTime(self,time='now'):
     """ Set the creation time to the current data and time
     """
 
@@ -163,7 +169,7 @@ class Request:
       self.attributes['CreationTime'] = time
 
 #####################################################################
-  def setExecutionTime(self,time):
+  def setExecutionTime(self,time='now'):
     """ Set the execution time to the current data and time
     """
 
@@ -198,9 +204,12 @@ class Request:
 
     if stype not in self.subrequests.keys():
       self.subrequests[stype] = []
-    new_subrequest = copy.deepcopy(subRequest)
+    if type(subRequest) == types.DictType:
+      new_subrequest = copy.deepcopy(subRequest)
+    elif type(subRequest) == types.InstanceType:
+      new_subrequest = copy.deepcopy(subRequest.getDictionary())
     new_subrequest['Attributes']['Type'] = stype
-    status,new_subrequest['Attributes']['SubrequestID'] = commands.getstatusoutput('uuidgen')
+    status,new_subrequest['Attributes']['SubRequestID'] = commands.getstatusoutput('uuidgen')
     self.subrequests[stype].append(new_subrequest)
 
 ###############################################################
@@ -317,8 +326,7 @@ class Request:
       for i in range(len(self.subrequests[stype])):
         sub = self.subrequests[stype][i]
         self.__dumpDictionary(stype+' subrequest',sub,0)
-        if i != len(self.subrequests[stype])-1:
-          print "--------------------------------------------------------"
+        print "--------------------------------------------------------"
 
     print "=============================================================="
 
@@ -334,9 +342,6 @@ class Request:
   def toXML(self,requestType = ''):
     """ Output the request (including all sub-requests) to XML.
     """
-
-    reqType = self.attributes['RequestType']
-
     out =  '<?xml version="1.0" encoding="UTF-8" ?>\n\n'
     out += '<DIRAC_REQUEST>\n\n'
 
@@ -347,10 +352,16 @@ class Request:
     out += '<Header \n%s/>\n\n' % xml_attributes
 
     for rtype in self.subrequests.keys():
-      if rtype == requestType:
+      if requestType:
+        if rtype == requestType:
+          nReq = self.getNumSubRequests(rtype)
+          for i in range(nReq):
+            out += self.createSubRequestXML(i,rtype)
+      else:
         nReq = self.getNumSubRequests(rtype)
         for i in range(nReq):
           out += self.createSubRequestXML(i,rtype)
+
 
     out += '</DIRAC_REQUEST>\n'
     return out
