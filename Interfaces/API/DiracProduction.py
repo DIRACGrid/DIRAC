@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.16 2008/04/16 14:34:06 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.17 2008/04/17 14:38:27 paterson Exp $
 # File :   DiracProduction.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are to be documented with example usage.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.16 2008/04/16 14:34:06 paterson Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.17 2008/04/17 14:38:27 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 import pprint
@@ -42,7 +42,7 @@ class DiracProduction:
     """Instantiates the Workflow object and some default parameters.
     """
     self.log = gLogger.getSubLogger(COMPONENT_NAME)
-    gLogger.setLevel('verbose')
+    #gLogger.setLevel('verbose')
     self.section    = COMPONENT_NAME
     self.scratchDir = gConfig.getValue('/LocalSite/ScratchDir','/tmp')
     self.scratchDir = gConfig.getValue('/LocalSite/ScratchDir','/tmp')
@@ -176,6 +176,7 @@ class DiracProduction:
        for the given productionID and provides an up-to-date snapshot of the job status
        combinations and associated WMS JobIDs.
     """
+    #TODO: add percentage completed
     if not type(productionID)==type(long(1)):
       if not type(productionID) == type(" "):
         return self.__errorReport('Expected string, long or int for production ID')
@@ -186,6 +187,8 @@ class DiracProduction:
 
     #Now format the result.
     summary = {}
+    submittedJobs=0
+    doneJobs = 0
     for job,atts in statusDict['Value'].items():
       for key,val in atts.items():
         if key=='Status':
@@ -195,10 +198,16 @@ class DiracProduction:
           if not summary[uniqueStatus].has_key(atts['MinorStatus']):
             summary[uniqueStatus][atts['MinorStatus']]={}
             summary[uniqueStatus][atts['MinorStatus']]['Total'] = 1
+            submittedJobs+=1
+            if uniqueStatus=='Done':
+              doneJobs+=1
             summary[uniqueStatus][atts['MinorStatus']]['JobList'] = [job]
           else:
             current = summary[uniqueStatus][atts['MinorStatus']]['Total']
             summary[uniqueStatus][atts['MinorStatus']]['Total'] = current+1
+            submittedJobs+=1
+            if uniqueStatus=='Done':
+              doneJobs+=1
             jobList = summary[uniqueStatus][atts['MinorStatus']]['JobList']
             jobList.append(job)
             summary[uniqueStatus][atts['MinorStatus']]['JobList'] = jobList
@@ -228,7 +237,20 @@ class DiracProduction:
 
     print message
     #self.__prettyPrint(summary)
-    return S_OK(summary)
+    result = self.getProductionProgress(productionID)
+    if not result['OK']:
+      return result
+
+    createdJobs = result['Value']['Created']
+    percSub = int(100*submittedJobs/createdJobs)
+    percDone = int(100*doneJobs/createdJobs)
+    print '\nCurrent status of production %s:\n' %productionID
+    print 'Submitted'.ljust(12)+str(percSub).ljust(3)+'%  ( '+str(submittedJobs).ljust(7)+'Submitted / '.ljust(15)+str(createdJobs).ljust(7)+' Created jobs )'
+    print 'Done'.ljust(12)+str(percDone).ljust(3)+'%  ( '+str(doneJobs).ljust(7)+'Done / '.ljust(15)+str(createdJobs).ljust(7)+' Created jobs )'
+    result = S_OK()
+    result['Totals'] = {'Submitted':int(submittedJobs),'Created':int(createdJobs)}
+    result['Value'] = summary
+    return result
 
   #############################################################################
   def getProductionSiteSummary(self,productionID,site=None,printOutput=False):
@@ -237,6 +259,7 @@ class DiracProduction:
        for the given productionID and provides an up-to-date snapshot of the sites
        that jobs were submitted to.
     """
+    #TODO: add percentage completed
     if not type(productionID)==type(long(1)):
       if not type(productionID) == type(" "):
         return self.__errorReport('Expected string, long or int for production ID')
@@ -246,6 +269,8 @@ class DiracProduction:
       return statusDict
 
     summary = {}
+    submittedJobs=0
+    doneJobs = 0
     for job,atts in statusDict['Value'].items():
       for key,val in atts.items():
         if key=='Site':
@@ -256,16 +281,25 @@ class DiracProduction:
           if not summary[uniqueSite].has_key(currentStatus):
             summary[uniqueSite][currentStatus]={}
             summary[uniqueSite][currentStatus]['Total'] = 1
+            submittedJobs+=1
+            if currentStatus=='Done':
+              doneJobs+=1
             summary[uniqueSite][currentStatus]['JobList'] = [job]
           else:
             current = summary[uniqueSite][currentStatus]['Total']
             summary[uniqueSite][currentStatus]['Total'] = current+1
+            submittedJobs+=1
+            if currentStatus=='Done':
+              doneJobs+=1
             jobList = summary[uniqueSite][currentStatus]['JobList']
             jobList.append(job)
             summary[uniqueSite][currentStatus]['JobList'] = jobList
 
     if not printOutput:
-      return S_OK(summary)
+      result = S_OK()
+      result['Totals'] = {'Submitted':submittedJobs,'Created':createdJobs}
+      result['Value'] = summary
+      return result
 
     #If a printed summary is requested
     siteAdj = int(1.0*self.prodAdj)
@@ -286,31 +320,92 @@ class DiracProduction:
 
     print message
     #self.__prettyPrint(summary)
-    return S_OK(summary)
+    result = self.getProductionProgress(productionID)
+    if not result['OK']:
+      return result
+
+    createdJobs = result['Value']['Created']
+    percSub = int(100*submittedJobs/createdJobs)
+    percDone = int(100*doneJobs/createdJobs)
+    print '\nCurrent status of production %s:\n' %productionID
+    print 'Submitted'.ljust(12)+str(percSub).ljust(3)+'%  ( '+str(submittedJobs).ljust(7)+'Submitted / '.ljust(15)+str(createdJobs).ljust(7)+' Created jobs )'
+    print 'Done'.ljust(12)+str(percDone).ljust(3)+'%  ( '+str(doneJobs).ljust(7)+'Done / '.ljust(15)+str(createdJobs).ljust(7)+' Created jobs )'
+    result = S_OK()
+    result['Totals'] = {'Submitted':int(submittedJobs),'Created':int(createdJobs)}
+    result['Value'] = summary
+    return result
 
   #############################################################################
-  def getProdJobOutputSandbox(self,productionID,jobID):
+  def getProductionProgress(self,productionID=None,printOutput=False):
+    """Returns the status of jobs as seen by the production management infrastructure.
+    """
+    if productionID:
+      if not type(productionID)==type(long(1)):
+        if not type(productionID) == type(" "):
+          return self.__errorReport('Expected string, long or int for production ID')
+
+    if not productionID:
+      result = self.getActiveProductions()
+      if not result['OK']:
+        return result
+      productionID = result['Value'].keys()
+    else:
+      productionID = [productionID]
+
+    productionID = [ str(x) for x in productionID ]
+    self.log.verbose('Will check progress for production(s):\n%s' %(string.join(productionID,', ')))
+    progress = {}
+    for prod in productionID:
+      #result = self.prodClient.getJobStats(int(prod))
+      #self.__prettyPrint(result)
+      result = self.prodClient.getJobWmsStats(int(prod))
+      progress[int(prod)] = result['Value']
+
+    if not printOutput:
+      return result
+    idAdj = int(self.prodAdj)
+    statAdj = int(self.prodAdj)
+    countAdj = int(self.prodAdj)
+    message = 'ProductionID'.ljust(idAdj)+'Status'.ljust(statAdj)+'Count'.ljust(countAdj)+'\n\n'
+    for prod,info in progress.items():
+      for status,count in info.items():
+        message += str(prod).ljust(idAdj)+status.ljust(statAdj)+str(count).ljust(countAdj)+'\n'
+      message+='\n'
+
+    print message
+    return result
+
+  #############################################################################
+#  def getProductionFileMask(self,productionID=None,printOutput=False):
+#    """Returns the regular expressions used to define data for productions.
+#    """
+#    #TODO: write
+#    return S_OK()
+
+  #############################################################################
+  def production(self,productionID,command):
+    """Allows basic production management by supporting the following commands:
+       - start : set production status to Active, job submission possible
+       - stop : set production status to Stopped, no job submissions
+       - automatic: set production submission mode to Automatic, e.g. submission via Agent
+       - manual: set produciton submission mode to manual, e.g. dirac-production-submit
+    """
+    #TODO: write with prompt for each action defined above
+    return S_OK()
+
+  #############################################################################
+  def getProdJobOutputSandbox(self,jobID):
     """Wraps around DIRAC API getOutputSandbox(), takes single jobID or list of jobIDs.
     """
-    return S_OK()
+    #TODO: write with wrapper zfilled prod directory
+    return self.diracAPI.getOutputSandbox(jobID)
 
   #############################################################################
-  def getProdJobInputSandbox(self,productionID,jobID):
+  def getProdJobInputSandbox(self,jobID):
     """Wraps around DIRAC API getInputSandbox(), takes single jobID or list of jobIDs.
     """
-    return S_OK()
-
-  #############################################################################
-  def getProductionFileMask(self,productionID=None,printOutput=False):
-    """Returns the regular expressions used to define data for productions.
-    """
-    return S_OK()
-
-  #############################################################################
-  def setProductionFileMask(self,productionID,printOutput=False):
-    """Returns the regular expressions used to define data for productions.
-    """
-    return S_OK()
+    #TODO: write with wrapper zfilled prod directory
+    return self.diracAPI.getInputSandbox(jobID)
 
   #############################################################################
   def rescheduleProdJobs(self,jobID):
@@ -322,6 +417,7 @@ class DiracProduction:
   def deleteProdJobs(self,jobID):
     """Wraps around DIRAC API delete(), takes single jobID or list of jobIDs.
     """
+    #Notification of the production management infrastructure to be added
     return self.diracAPI.delete(jobID)
 
   #############################################################################
