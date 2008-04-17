@@ -84,6 +84,9 @@ class DataManagementRequest(Request):
        self.subrequests[type][ind]['Datasets']['Dataset%d' % i] = dataset
 
 ###############################################################
+#
+#  Request readiness checks specific to the DataManagement request
+#  overrides the methods in the Request base class
 
   def isEmpty(self):
     """ Check if the request contains more operations to be performed
@@ -94,28 +97,6 @@ class DataManagementRequest(Request):
         for file in tdic['Files'].values():
           if file['Status'] != "Done":
             return 0
-    return 1
-
-  def isRequestEmpty(self):
-    """ Check whether all sub-requests are complete
-    """
-    for type in self.subrequests.keys():
-      numSubRequests = self.getNumSubRequests(type)
-      for ind in range(numSubRequests):
-        status = self.getSubRequestAttributeValue(ind,type,'Status')['Value']
-        if status != 'Done':
-          return 0
-    return 1
-
-  def isRequestTypeEmpty(self,type):
-    """ Check whether the requests of given type are complete
-    """
-    if type:
-      numSubRequests = self.getNumSubRequests(type)
-      for ind in range(numSubRequests):
-        status = self.getSubRequestAttributeValue(ind,type,'Status')['Value']
-        if status != 'Done':
-          return 0
     return 1
 
   def isSubRequestEmpty(self,ind,type):
@@ -129,7 +110,7 @@ class DataManagementRequest(Request):
 
 ###############################################################
 
-  def initiateSubRequest(self,type):
+  def __initiateSubRequest(self,type):
     """ Add dictionary to list of requests and return the list index
     """
     defaultDict = {'Attributes':{},'Files':{},'Datasets':{}}
@@ -140,10 +121,11 @@ class DataManagementRequest(Request):
     return (length-1)
 
   def addSubRequest(self,type,requestDict):
-    """  Add a new sub-requests of specified type
+    """  Add a new sub-requests of specified type. Overrides the corresponding
+         method of the base class
     """
     # Initialise the sub-request
-    ind = self.initiateSubRequest(type)
+    ind = self.__initiateSubRequest(type)
 
     # Stuff the sub-request with the attributes
     attributeDict = {}
@@ -183,58 +165,3 @@ class DataManagementRequest(Request):
     else:
       datasets = {}
     self.setSubRequestDatasets(ind,type,datasets.values())
-
-
-###############################################################
-
-  def dumpShortToString(self):
-    """ Generate summary string for all the sub-requests in this request.
-    """
-    out = ''
-    for rdic in self.subrequests['transfer']:
-      out = out + '\nTransfer: %s %s LFNs, % Datasets from %s to %s:\n' % (rdic['Attributes']['Operation'],len(rdic['Files']),len(rdic['Datasets']),rdic['SourceSE'],rdic['Attributes']['TargetSE'])
-      statusDict = {}
-      for file in rdic['Files'].values():
-        status = file['Status']
-        if not statusDict.has_key(status):
-          statusDict[status]= 0
-        statusDict[status] += 1
-      for status in statusDict.keys():
-        out = out + status +':'+str(statusDict[status])+'\t'
-
-    for rdic in self.subrequests['register']:
-      out = out + '\nRegister: %s %s LFNs, % Datasets:\n' % (rdic['Attributes']['Operation'],len(rdic['Files']),len(rdic['Datasets']))
-      statusDict = {}
-      for file in rdic['Files'].values():
-        status = file['Status']
-        if not statusDict.has_key(status):
-          statusDict[status]= 0
-        statusDict[status] += 1
-      for status in statusDict.keys():
-        out = out + status +':'+str(statusDict[status])+'\t'
-
-    for rdic in self.subrequests['removal']:
-      out = out + '\nRemoval: %s %s LFNs, % Datasets from %s:\n' % (rdic['Attributes']['Operation'],len(rdic['Files']),len(rdic['Datasets']),rdic['Attributes']['TargetSE'])
-      statusDict = {}
-      for file in rdic['Files'].values():
-        status = file['Status']
-        if not statusDict.has_key(status):
-          statusDict[status]= 0
-        statusDict[status] += 1
-      for status in statusDict.keys():
-        out = out + status +':'+str(statusDict[status])+'\t'
-
-    for rdic in self.subrequests['stage']:
-      out = out + '\nStage: %s %s LFNs, % Datasets at %s:\n' % (rdic['Attributes']['Operation'],len(rdic['Files']),len(rdic['Datasets']),rdic['Attributes']['TargetSE'])
-      statusDict = {}
-      for file in rdic['Files'].values():
-        status = file['Status']
-        if not statusDict.has_key(status):
-          statusDict[status]= 0
-        statusDict[status] += 1
-      for status in statusDict.keys():
-        out = out + status +':'+str(statusDict[status])+'\t'
-
-    return S_OK(out)
-
-
