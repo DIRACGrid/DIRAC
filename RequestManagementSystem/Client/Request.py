@@ -1,10 +1,10 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/Request.py,v 1.11 2008/04/17 08:07:30 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/Request.py,v 1.12 2008/04/17 09:25:32 atsareg Exp $
 
 """ Request base class. Defines the common general parameters that should be present in any
     request
 """
 
-__RCSID__ = "$Id: Request.py,v 1.11 2008/04/17 08:07:30 atsareg Exp $"
+__RCSID__ = "$Id: Request.py,v 1.12 2008/04/17 09:25:32 atsareg Exp $"
 
 import commands, os, xml.dom.minidom, types, time, copy
 import DIRAC.Core.Utilities.Time as Time
@@ -22,7 +22,7 @@ def getCharacterData(node):
 
 class Request:
 
-  def __init__(self,script=None):
+  def __init__(self,request=None):
 
     # This is a list of attributes - mandatory parameters
     self.attributeNames = ['RequestName','RequestType','RequestID','DIRACSetup','OwnerDN',
@@ -38,13 +38,13 @@ class Request:
     self.subAttributeNames = ['Status','SubrequestID','Method','Type','CreationTime','ExecutionTime']
     self.subrequests = {}
 
-    self.initialize(script)
+    self.initialize(request)
 
-  def initialize(self,script):
+  def initialize(self,request):
     """ Set default values to attributes,parameters
     """
 
-    if type(script) in types.StringTypes or type(script) == types.NoneType:
+    if type(request) in types.StringTypes or type(request) == types.NoneType:
       for name in self.attributeNames:
         self.attributes[name] = 'Unknown'
 
@@ -53,17 +53,17 @@ class Request:
       status,self.attributes['RequestID'] = commands.getstatusoutput('uuidgen')
       self.attributes['CreationTime'] = Time.toString(Time.dateTime())
       self.attributes['Status'] = "New"
-    elif type(script) == types.InstanceType:
+    elif type(request) == types.InstanceType:
       for attr in self.attributeNames:
         self.attributes[attr] = script.attributes[attr]
 
     # initialize request from an XML string
-    if type(script) in types.StringTypes:
-      self.parseRequest(script)
+    if type(request) in types.StringTypes:
+      self.parseRequest(request)
 
     # Initialize request from another request
-    elif type(script) == types.InstanceType:
-      self.subrequests = copy.deepcopy(script.subrequests)
+    elif type(request) == types.InstanceType:
+      self.subrequests = copy.deepcopy(request.subrequests)
 
 #####################################################################
   def __getattr__(self,name):
@@ -256,14 +256,31 @@ class Request:
     self.subrequests[type][ind]['Attributes'][attribute] = value
 
 ###############################################################
-  def isEmpty(self):
-    """ Check if the request contains more operations to be performed
+  def isEmpty(self,requestType=None):
+    """ Check if the request has all the subrequests done
     """
 
     for stype,slist in self.subrequests.items():
-      for tdic in slist:
-        if tdic['Attributes']['Status'] != "Done":
-          return 0
+      if requestType:
+        if stype == requestType:
+          for tdic in slist:
+            if tdic['Attributes']['Status'] != "Done":
+              return 0
+      else:
+        for tdic in slist:
+          if tdic['Attributes']['Status'] != "Done":
+            return 0
+    return 1
+
+  def isSubRequestEmpty(self,ind,type):
+    """ Check if the specified subrequest is done
+    """
+
+    if not self.subrequests.has_key(type):
+      return 1
+    if ind < len(self.subrequests[type]):
+      if self.subrequests[type][ind]['Attributes']['Status'] != "Done":
+        return 0
     return 1
 
  #####################################################################
@@ -330,9 +347,10 @@ class Request:
     out += '<Header \n%s/>\n\n' % xml_attributes
 
     for rtype in self.subrequests.keys():
-      nReq = self.getNumSubRequests(rtype)
-      for i in range(nReq):
-        out += self.createSubRequestXML(i,rtype)
+      if rtype == requestType:
+        nReq = self.getNumSubRequests(rtype)
+        for i in range(nReq):
+          out += self.createSubRequestXML(i,rtype)
 
     out += '</DIRAC_REQUEST>\n'
     return out
@@ -426,3 +444,70 @@ class Request:
 
     return subType,subDict
 
+###############################################################
+#
+#  Short string representation of the request to store as a job parameter
+#  All the possible subrequest types should be present here
+
+  def dumpShortToString(self):
+    """ Generate summary string for all the sub-requests in this request.
+    """
+    out = ''
+    requestTypes = self.subrequests.keys()
+
+    for rtype in requestTypes:
+      if rtype == 'transfer' and self.subrequests.has_key(rtype):
+        for rdic in self.subrequests['transfer']:
+          out = out + '\nTransfer: %s %s LFNs, % Datasets from %s to %s:\n' % (rdic['Attributes']['Operation'],len(rdic['Files']),len(rdic['Datasets']),rdic['SourceSE'],rdic['Attributes']['TargetSE'])
+          statusDict = {}
+          for file in rdic['Files'].values():
+            status = file['Status']
+            if not statusDict.has_key(status):
+              statusDict[status]= 0
+            statusDict[status] += 1
+          for status in statusDict.keys():
+            out = out + status +':'+str(statusDict[status])+'\t'
+
+      if rtype == 'register' and self.subrequests.has_key(rtype):
+        for rdic in self.subrequests['register']:
+          out = out + '\nRegister: %s %s LFNs, % Datasets:\n' % (rdic['Attributes']['Operation'],len(rdic['Files']),len(rdic['Datasets']))
+          statusDict = {}
+          for file in rdic['Files'].values():
+            status = file['Status']
+            if not statusDict.has_key(status):
+              statusDict[status]= 0
+            statusDict[status] += 1
+          for status in statusDict.keys():
+            out = out + status +':'+str(statusDict[status])+'\t'
+
+      if rtype == 'removal' and self.subrequests.has_key(rtype):
+        for rdic in self.subrequests['removal']:
+          out = out + '\nRemoval: %s %s LFNs, % Datasets from %s:\n' % (rdic['Attributes']['Operation'],len(rdic['Files']),len(rdic['Datasets']),rdic['Attributes']['TargetSE'])
+          statusDict = {}
+          for file in rdic['Files'].values():
+            status = file['Status']
+            if not statusDict.has_key(status):
+              statusDict[status]= 0
+            statusDict[status] += 1
+          for status in statusDict.keys():
+            out = out + status +':'+str(statusDict[status])+'\t'
+
+      if rtype == 'stage' and self.subrequests.has_key(rtype):
+        for rdic in self.subrequests['stage']:
+          out = out + '\nStage: %s %s LFNs, % Datasets at %s:\n' % (rdic['Attributes']['Operation'],len(rdic['Files']),len(rdic['Datasets']),rdic['Attributes']['TargetSE'])
+          statusDict = {}
+          for file in rdic['Files'].values():
+            status = file['Status']
+            if not statusDict.has_key(status):
+              statusDict[status]= 0
+            statusDict[status] += 1
+          for status in statusDict.keys():
+            out = out + status +':'+str(statusDict[status])+'\t'
+
+      if rtype == 'jobstate' and self.subrequests.has_key(rtype):
+        pass
+      if rtype == 'bookkeeping' and self.subrequests.has_key(rtype):
+        pass
+
+
+    return S_OK(out)
