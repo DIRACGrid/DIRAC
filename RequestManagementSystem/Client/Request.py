@@ -1,12 +1,12 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/Request.py,v 1.10 2008/04/09 20:55:48 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/Request.py,v 1.11 2008/04/17 08:07:30 atsareg Exp $
 
 """ Request base class. Defines the common general parameters that should be present in any
     request
 """
 
-__RCSID__ = "$Id: Request.py,v 1.10 2008/04/09 20:55:48 atsareg Exp $"
+__RCSID__ = "$Id: Request.py,v 1.11 2008/04/17 08:07:30 atsareg Exp $"
 
-import commands, os, xml.dom.minidom, types, time
+import commands, os, xml.dom.minidom, types, time, copy
 import DIRAC.Core.Utilities.Time as Time
 
 def getCharacterData(node):
@@ -25,17 +25,17 @@ class Request:
   def __init__(self,script=None):
 
     # This is a list of attributes - mandatory parameters
-    self.attributeNames = ['RequestName','RequestType','RequestMethod',
-                           'RequestID','DIRACSetup','OwnerDN','OwnerGroup',
-                           'SourceComponent','TargetComponent','CurrentDate',
-                           'CreationTime','ExecutionTime','JobID','Status']
+    self.attributeNames = ['RequestName','RequestType','RequestID','DIRACSetup','OwnerDN',
+                           'OwnerGroup','SourceComponent','CreationTime','ExecutionTime','JobID',
+                           'Status']
 
     self.attributes = {}
 
     # Subrequests are dictionaries of arbitrary number of levels
-    # The upper level must have the following attributes:
+    # The dictionary named Attributes must be present and must have
+    # the following mandatory names
 
-    self.subAttributeNames = ['Status','ExecutionTime']
+    self.subAttributeNames = ['Status','SubrequestID','Method','Type','CreationTime','ExecutionTime']
     self.subrequests = {}
 
     self.initialize(script)
@@ -44,23 +44,46 @@ class Request:
     """ Set default values to attributes,parameters
     """
 
-    for name in self.attributeNames:
-      self.attributes[name] = 'Unknown'
+    if type(script) in types.StringTypes or type(script) == types.NoneType:
+      for name in self.attributeNames:
+        self.attributes[name] = 'Unknown'
 
-    # Set some defaults
-    self.attributes['DIRACSetup'] = "LHCb-Development"
-    status,self.attributes['RequestID'] = commands.getstatusoutput('uuidgen')
-    self.attributes['CreationTime'] = Time.toString(Time.dateTime())
-    self.attributes['Status'] = "New"
+      # Set some defaults
+      self.attributes['DIRACSetup'] = "LHCb-Development"
+      status,self.attributes['RequestID'] = commands.getstatusoutput('uuidgen')
+      self.attributes['CreationTime'] = Time.toString(Time.dateTime())
+      self.attributes['Status'] = "New"
+    elif type(script) == types.InstanceType:
+      for attr in self.attributeNames:
+        self.attributes[attr] = script.attributes[attr]
 
-    if script:
+    # initialize request from an XML string
+    if type(script) in types.StringTypes:
       self.parseRequest(script)
+
+    # Initialize request from another request
+    elif type(script) == types.InstanceType:
+      self.subrequests = copy.deepcopy(script.subrequests)
 
 #####################################################################
   def __getattr__(self,name):
     """ Generic method to access request attributes or parameters
     """
 
+    if name.find('getSubrequest') ==0:
+      item = name[13:]
+      self.item_called = item
+      if item in self.subAttributeNames:
+        return self.__get_subattribute
+      else:
+        raise AttributeError, name
+    if name.find('setSubrequest') ==0:
+      item = name[13:]
+      self.item_called = item
+      if item in self.subAttributeNames:
+        return self.__set_subattribute
+      else:
+        raise AttributeError, name
     if name.find('get') ==0:
       item = name[3:]
       self.item_called = item
@@ -104,6 +127,11 @@ class Request:
     """
     return self.attributes[aname]
 
+  def setAttribute(self,aname,value):
+    """ Set the attribute specified by its name aname
+    """
+    self.attributes[aname] =  value
+
   def __get_attribute(self):
      """ Generic method to get attributes
      """
@@ -114,6 +142,16 @@ class Request:
      """
      self.attributes[self.item_called] = value
 
+  def __get_subattribute(self,ind):
+     """ Generic method to get attributes
+     """
+     return self.subrequests[ind]['Attributes'][self.item_called]
+
+  def __set_subattribute(self,ind,value):
+     """ Generic method to set attribute value
+     """
+     self.subrequests[ind]['Attributes'][self.item_called] = value
+
 #####################################################################
   def setCreationTime(self,time):
     """ Set the creation time to the current data and time
@@ -123,13 +161,6 @@ class Request:
       self.attributes['CreationTime'] = time.strftime('%Y-%m-%d %H:%M:%S')
     else:
       self.attributes['CreationTime'] = time
-
-  #####################################################################
-  def setCurrentDate(self):
-    """ Set the creation time to the current data and time
-    """
-
-    self.attributes['CurrentDate'] = time.strftime('%Y-%m-%d %H:%M:%S')
 
 #####################################################################
   def setExecutionTime(self,time):
@@ -157,7 +188,8 @@ class Request:
     """
     if stype not in self.subrequests.keys():
       self.subrequests[stype] = []
-    self.subrequests[stype].extend(subRequests)
+    for sub in subRequests:
+      self.addSubRequest(stype,sub)
 
  #####################################################################
   def addSubRequest(self,stype,subRequest):
@@ -166,7 +198,10 @@ class Request:
 
     if stype not in self.subrequests.keys():
       self.subrequests[stype] = []
-    self.subrequests[stype].append(subRequest)
+    new_subrequest = copy.deepcopy(subRequest)
+    new_subrequest['Attributes']['Type'] = stype
+    status,new_subrequest['Attributes']['SubrequestID'] = commands.getstatusoutput('uuidgen')
+    self.subrequests[stype].append(new_subrequest)
 
 ###############################################################
 
@@ -192,13 +227,42 @@ class Request:
       return 0
 
 ###############################################################
+
+  def setSubRequestStatus(self,ind,type,status):
+    """ Set the operation to Done status
+    """
+    self.subrequests[type][ind]['Attributes']['Status'] = status
+
+  def getSubRequestAttributes(self,ind,type):
+    """ Get the sub-request attributes
+    """
+    return self.subrequests[type][ind]['Attributes']
+
+  def setSubRequestAttributes(self,ind,type,attributeDict):
+    """ Set the sub-request attributes
+    """
+    self.subrequests[type][ind]['Attributes'] = attributeDict
+
+  def getSubRequestAttributeValue(self,ind,type,attribute):
+    """ Get the attribute value associated to a sub-request
+    """
+    return self.subrequests[type][ind]['Attributes'][attribute]
+
+  def setSubRequestAttributeValue(self,ind,type,attribute,value):
+    """ Set the attribute value associated to a sub-request
+    """
+    if not self.subrequests[type][ind].has_key('Attributes'):
+      self.subrequests[type][ind]['Attributes'] = {}
+    self.subrequests[type][ind]['Attributes'][attribute] = value
+
+###############################################################
   def isEmpty(self):
     """ Check if the request contains more operations to be performed
     """
 
     for stype,slist in self.subrequests.items():
       for tdic in slist:
-        if tdic['Status'] != "Done":
+        if tdic['Attributes']['Status'] != "Done":
           return 0
     return 1
 
@@ -211,7 +275,13 @@ class Request:
       print ' '*indent*8,name+':'
     else:
       print name+':'
-    for name,value in dict.items():
+
+    # print dictionaries in the alphabetic order
+    names = dict.keys()
+    names.sort()
+
+    for name in names:
+      value = dict[name]
       if type(value) is not types.DictType:
         print ' '*(indent+1)*8,(name+':').ljust(26),value
       else:
@@ -227,11 +297,20 @@ class Request:
     print "=============================================================="
 
     for stype in self.subrequests.keys():
-      for sub in self.subrequests[stype]:
+      for i in range(len(self.subrequests[stype])):
+        sub = self.subrequests[stype][i]
         self.__dumpDictionary(stype+' subrequest',sub,0)
-        print "--------------------------------------------------------"
+        if i != len(self.subrequests[stype])-1:
+          print "--------------------------------------------------------"
 
     print "=============================================================="
+
+  def dumpSubrequest(self,ind,stype):
+    """ Print out the subrequest contents
+    """
+
+    sub = self.subrequests[stype][ind]
+    self.__dumpDictionary(stype+' subrequest',sub,0)
 
 ###############################################################
 
@@ -263,8 +342,7 @@ class Request:
         a dictionary of subrequest attributes
     """
     rname = rtype.upper()+'_SUBREQUEST'
-    out = self.__dictionaryToXML(rname,self.subrequests[rtype][ind],
-                                 attributes={'SubrequestType':rtype})
+    out = self.__dictionaryToXML(rname,self.subrequests[rtype][ind])
     return out
 
   def __dictionaryToXML(self,name,dict,indent = 0,attributes={}):
@@ -275,17 +353,17 @@ class Request:
     xml_elements = []
     for attr,value in dict.items():
       if type(value) is not types.DictType:
-        xml_attributes += '             %s="%s"\n' % (attr,str(value))
+        xml_attributes += ' '*(indent+1)*8+'<%s element_type="leaf"><![CDATA[%s]]></%s>\n' % (attr,str(value),attr)
       else:
         xml_elements.append(self.__dictionaryToXML(attr,value,indent+1))
 
     for attr,value in attributes.items():
-      xml_attributes += '             %s="%s"\n' % (attr,str(value))
+      xml_attributes += ' '*(indent+1)*8+'<%s element_type="leaf">![CDATA[%s]]</%s>\n' % (attr,str(value),attr)
 
-    out = ' '*indent*8+'<%s \n%s>\n' % (name,xml_attributes[:-1])
+    out = ' '*indent*8+'<%s element_type="dictionary">\n%s\n' % (name,xml_attributes[:-1])
     for el in xml_elements:
       out += ' '*indent*8+el
-    out += ' '*indent*8+'</%s>\n\n' % name
+    out += ' '*indent*8+'</%s>\n' % name
     return out
 
 ###############################################################
@@ -324,14 +402,17 @@ class Request:
     """
 
     resultDict = {}
-    for name,value in dom.attributes.items():
-      resultDict[name] = value
 
     for child in dom.childNodes:
       if child.nodeType == child.ELEMENT_NODE:
         dname = child.nodeName
-        ddict = self.__dictionaryFromXML(child)
-        resultDict[dname] = ddict
+        dom_dict = dom.getElementsByTagName(dname)[0]
+        if dom_dict.getAttribute('element_type') == 'dictionary':
+          ddict = self.__dictionaryFromXML(child)
+          resultDict[dname] = ddict
+        elif dom_dict.getAttribute('element_type') == 'leaf':
+          value = getCharacterData(child)
+          resultDict[dname] = value
 
     return resultDict
 
@@ -341,7 +422,7 @@ class Request:
     """
 
     subDict = self.__dictionaryFromXML(dom)
-    subType = subDict['SubrequestType']
+    subType = subDict['Attributes']['Type']
 
     return subType,subDict
 
