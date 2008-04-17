@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.14 2008/04/16 11:52:23 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.15 2008/04/17 16:07:35 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -24,7 +24,7 @@ The initial instance just exposes job submission via the WMS client.
 
 """
 
-__RCSID__ = "$Id: Dirac.py,v 1.14 2008/04/16 11:52:23 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.15 2008/04/17 16:07:35 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -66,8 +66,10 @@ class Dirac:
     self.monitoring = RPCClient('WorkloadManagement/JobMonitoring')
     self.pPrint = pprint.PrettyPrinter()
     try:
-      from DIRAC.DataManagementSystem.Client.Catalog.LcgFileCatalogCombinedClient import LcgFileCatalogCombinedClient
-      self.fileCatalog = LcgFileCatalogCombinedClient()
+#      from DIRAC.DataManagementSystem.Client.Catalog.LcgFileCatalogCombinedClient import LcgFileCatalogCombinedClient
+#      self.fileCatalog = LcgFileCatalogCombinedClient()
+      from DIRAC.DataManagementSystem.Client.FileCatalog import FileCatalog
+      self.fileCatalog=FileCatalog()
     except Exception,x:
       msg = 'Failed to create LcgFileCatalogClient with exception:'
       self.log.verbose(msg)
