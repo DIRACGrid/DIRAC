@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.50 2008/04/14 10:57:44 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.51 2008/04/17 10:54:52 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.50 2008/04/14 10:57:44 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.51 2008/04/17 10:54:52 atsareg Exp $"
 
 import re, os, sys, string
 import time
@@ -459,7 +459,8 @@ class JobDB(DB):
     """Inserts input data for the given job
     """
     cmd = 'DELETE FROM InputData WHERE JobID=\'%s\'' % (jobID)
-    if not self._update( cmd )['OK']:
+    result = self._update( cmd )
+    if not result['OK']:
       result = S_ERROR('JobDB.setInputData: operation failed.')
 
     for lfn in inputData:
@@ -567,7 +568,7 @@ class JobDB(DB):
     return self.selectJobs({'Status':status})
 
 #############################################################################
-  def setJobAttribute(self, jobID, attrName, attrValue, update=False ):
+  def setJobAttribute(self, jobID, attrName, attrValue, update=False, datetime=None ):
     """ Set an attribute value for job specified by jobID.
         The LastUpdate time stamp is refreshed if explicitely requested
     """
@@ -576,6 +577,9 @@ class JobDB(DB):
       cmd = 'UPDATE Jobs SET %s=\'%s\',LastUpdateTime=UTC_TIMESTAMP() WHERE JobID=\'%s\'' % ( attrName, attrValue, jobID )
     else:
       cmd = 'UPDATE Jobs SET %s=\'%s\' WHERE JobID=\'%s\'' % ( attrName, attrValue, jobID )
+
+    if datetime:
+      cmd += ' AND LastUpdateTime < %s' % datetime
 
     res = self._update( cmd )
     if res['OK']:
