@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/Attic/dirac-production-list-id,v 1.2 2008/04/17 08:27:16 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/Attic/dirac-production-list-id,v 1.3 2008/04/17 09:24:54 paterson Exp $
 # File :   dirac-production-job-list-id
 # Author : Stuart Paterson
 ########################################################################
-__RCSID__   = "$Id: dirac-production-list-id,v 1.2 2008/04/17 08:27:16 rgracian Exp $"
-__VERSION__ = "$Revision: 1.2 $"
+__RCSID__   = "$Id: dirac-production-list-id,v 1.3 2008/04/17 09:24:54 paterson Exp $"
+__VERSION__ = "$Revision: 1.3 $"
 from DIRACEnvironment import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.Interfaces.API.DiracProduction                    import DiracProduction
@@ -19,7 +19,7 @@ def usage():
 
 if len(args) < 1:
   usage()
-  
+
 diracProd = DiracProduction()
 
 exitCode = 0
@@ -31,6 +31,6 @@ for prodID in args:
     exitCode = 2
   else:
     print 'Null result for getProduction() call', prodID
-    exitCode 2
+    exitCode = 2
 
 DIRAC.exit(exitCode)
