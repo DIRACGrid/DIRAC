@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/LocalConfiguration.py,v 1.21 2008/04/04 16:24:19 acasajus Exp $
-__RCSID__ = "$Id: LocalConfiguration.py,v 1.21 2008/04/04 16:24:19 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/LocalConfiguration.py,v 1.22 2008/04/17 07:01:52 rgracian Exp $
+__RCSID__ = "$Id: LocalConfiguration.py,v 1.22 2008/04/17 07:01:52 rgracian Exp $"
 
 import sys
 import os
@@ -118,7 +118,8 @@ class LocalConfiguration:
     try:
       opts, args = getopt.gnu_getopt( sys.argv[1:], shortOption, longOptionList )
     except getopt.GetoptError, v:
-      # print help information and exit:
+      # v = option "-k" not recognized
+      # print help information and exit
       gLogger.fatal( "Error when parsing command line arguments: %s" % str( v ) )
       self.__showHelp()
       sys.exit(2)
