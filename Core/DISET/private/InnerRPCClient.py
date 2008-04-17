@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/InnerRPCClient.py,v 1.4 2008/01/31 15:55:56 acasajus Exp $
-__RCSID__ = "$Id: InnerRPCClient.py,v 1.4 2008/01/31 15:55:56 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/InnerRPCClient.py,v 1.5 2008/04/17 13:51:09 acasajus Exp $
+__RCSID__ = "$Id: InnerRPCClient.py,v 1.5 2008/04/17 13:51:09 acasajus Exp $"
 
 import types
 from DIRAC.Core.Utilities import Subprocess
@@ -32,6 +32,6 @@ class InnerRPCClient( BaseClient ):
     receivedData = self.transport.receiveData()
     self.transport.close()
     if type( receivedData ) == types.DictType:
-      retVal[ 'rpcStub' ] = rpcStub
+      receivedData[ 'rpcStub' ] = rpcStub
     return receivedData
 
