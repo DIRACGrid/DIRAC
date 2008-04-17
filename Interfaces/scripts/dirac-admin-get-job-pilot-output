@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/Attic/dirac-admin-get-job-pilot-output,v 1.3 2008/04/17 08:27:16 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/Attic/dirac-admin-get-job-pilot-output,v 1.4 2008/04/17 13:10:03 rgracian Exp $
 # File :   dirac-admin-get-job-pilot-output
 # Author : Stuart Paterson
 ########################################################################
-__RCSID__   = "$Id: dirac-admin-get-job-pilot-output,v 1.3 2008/04/17 08:27:16 rgracian Exp $"
-__VERSION__ = "$Revision: 1.3 $"
+__RCSID__   = "$Id: dirac-admin-get-job-pilot-output,v 1.4 2008/04/17 13:10:03 rgracian Exp $"
+__VERSION__ = "$Revision: 1.4 $"
 from DIRACEnvironment import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
@@ -21,18 +21,24 @@ if len(args) < 1:
   usage()
   
 diracAdmin = DiracAdmin()
-exitCode = 2
+exitCode = 0
+errorList = []
+
 for job in args:
+
   try:
     job = int(job)
   except Exception,x:
-    print 'Expected integer for JobID', job
+    errorList.append( ('Expected integer for JobID', job ) )
     exitCode = 2
     continue
 
   result = diracAdmin.getJobPilotOutput(job)
   if not result['OK']:
-    print result['Message']
+    errorList.append( (job, result['Message']) )
     exitCode = 2
+
+for error in errorList:
+  print "ERROR %s: %s" % error
 
 DIRAC.exit(exitCode)

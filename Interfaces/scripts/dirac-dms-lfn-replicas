@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/Attic/dirac-dms-lfn-replicas,v 1.2 2008/04/17 08:27:17 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/Attic/dirac-dms-lfn-replicas,v 1.3 2008/04/17 13:10:03 rgracian Exp $
 # File :   dirac-admin-lfn-replicas
 # Author : Stuart Paterson
 ########################################################################
-__RCSID__   = "$Id: dirac-dms-lfn-replicas,v 1.2 2008/04/17 08:27:17 rgracian Exp $"
-__VERSION__ = "$Revision: 1.2 $"
+__RCSID__   = "$Id: dirac-dms-lfn-replicas,v 1.3 2008/04/17 13:10:03 rgracian Exp $"
+__VERSION__ = "$Revision: 1.3 $"
 from DIRACEnvironment import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
@@ -22,17 +22,16 @@ if len(args) < 1:
   
 diracAdmin = DiracAdmin()
 exitCode = 0
+errorList = []
 
 for lfn in args:
-  try:
-    lfn = str(lfn)
-  except Exception,x:
-    print 'Expected string for LFN', lfn
-    exitCode = 2
 
   result = dirac.getReplicas(lfn)
   if not result['OK']:
-    print result['Message']
+    errorList.append( (lfn, result['Message']) )
     exitCode = 2
+
+for error in errorList:
+  print "ERROR %s: %s" % error
 
 DIRAC.exit(exitCode)

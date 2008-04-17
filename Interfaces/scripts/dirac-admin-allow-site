@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/Attic/dirac-admin-allow-site,v 1.3 2008/04/17 08:27:16 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/Attic/dirac-admin-allow-site,v 1.4 2008/04/17 13:10:03 rgracian Exp $
 # File :   dirac-admin-allow-site
 # Author : Stuart Paterson
 ########################################################################
-__RCSID__   = "$Id: dirac-admin-allow-site,v 1.3 2008/04/17 08:27:16 rgracian Exp $"
-__VERSION__ = "$Revision: 1.3 $"
+__RCSID__   = "$Id: dirac-admin-allow-site,v 1.4 2008/04/17 13:10:03 rgracian Exp $"
+__VERSION__ = "$Revision: 1.4 $"
 from DIRACEnvironment import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
@@ -22,17 +22,16 @@ if len(args) < 1:
   
 diracAdmin = DiracAdmin()
 exitCode = 0
+errorList = []
+
 for site in args:
-  try:
-    site = str(site)
-  except Exception,x:
-    print 'Expected string for DIRAC site name', site
-    exitCode = 2
-    continue
 
   result = diracAdmin.addSiteInMask(site)
   if not result['OK']:
-    print result['Message']
+    errorList.append( (site, result['Message']) )
     exitCode = 2
+
+for error in errorList:
+  print "ERROR %s: %s" % error
 
 DIRAC.exit(exitCode)

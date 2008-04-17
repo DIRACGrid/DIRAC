@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/Attic/dirac-production-list-id,v 1.4 2008/04/17 09:27:07 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/Attic/dirac-production-list-id,v 1.5 2008/04/17 13:10:03 rgracian Exp $
 # File :   dirac-production-job-list-id
 # Author : Stuart Paterson
 ########################################################################
-__RCSID__   = "$Id: dirac-production-list-id,v 1.4 2008/04/17 09:27:07 paterson Exp $"
-__VERSION__ = "$Revision: 1.4 $"
+__RCSID__   = "$Id: dirac-production-list-id,v 1.5 2008/04/17 13:10:03 rgracian Exp $"
+__VERSION__ = "$Revision: 1.5 $"
 from DIRACEnvironment import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.Interfaces.API.DiracProduction                    import DiracProduction
@@ -21,19 +21,22 @@ if len(args) < 1:
   usage()
 
 diracProd = DiracProduction()
-
 exitCode = 0
+errorList = []
+
 for prodID in args:
+
   result = diracProd.getProduction(prodID,printOutput=True)
   if result.has_key('Message'):
-    print 'Listing production summary failed with message:\n%s' %(result['Message'])
+    errorList.append( (prodID, result['Message']) )
     exitCode = 2
-    DIRAC.exit(exitCode)
   elif not result:
-    print 'Null result for getProduction() call', prodID
+    errorList.append( (prodID, 'Null result for getProduction() call' )
     exitCode = 2
-    DIRAC.exit(exitCode)
   else:
     exitCode = 0
+
+for error in errorList:
+  print "ERROR %s: %s" % error
 
 DIRAC.exit(exitCode)

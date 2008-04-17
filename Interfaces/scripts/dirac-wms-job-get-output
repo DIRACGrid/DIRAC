@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/Attic/dirac-wms-job-get-output,v 1.2 2008/04/17 08:27:16 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/Attic/dirac-wms-job-get-output,v 1.3 2008/04/17 13:10:03 rgracian Exp $
 # File :   dirac-production-job-get-output
 # Author : Stuart Paterson
 ########################################################################
-__RCSID__   = "$Id: dirac-wms-job-get-output,v 1.2 2008/04/17 08:27:16 rgracian Exp $"
-__VERSION__ = "$Revision: 1.2 $"
+__RCSID__   = "$Id: dirac-wms-job-get-output,v 1.3 2008/04/17 13:10:03 rgracian Exp $"
+__VERSION__ = "$Revision: 1.3 $"
 from DIRACEnvironment import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.Interfaces.API.Dirac                              import Dirac
@@ -23,12 +23,14 @@ if len(args) < 1:
   
 dirac=Dirac()
 exitCode = 0
+errorList = []
 
 for job in args:
+
   try:
     job = int(job)
   except Exception,x:
-    print 'Expected integer for jobID', job
+    errorList.append( ('Expected integer for jobID', job) )
     exitCode = 2
     continue
 
@@ -37,7 +39,10 @@ for job in args:
     if os.path.exists('%s' %job):
       print 'Job output sandbox retrieved in %s/' %(job)
   else:
-    print result['Message']
+    errorList.append( (job, result['Message']) )
     exitCode = 2
+
+for error in errorList:
+  print "ERROR %s: %s" % error
 
 DIRAC.exit(exitCode)
