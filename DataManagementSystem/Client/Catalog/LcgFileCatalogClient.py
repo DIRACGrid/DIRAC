@@ -959,17 +959,18 @@ class LcgFileCatalogClient(FileCatalogueBase):
     subDirs = []
     for i in  range(nbfiles):
       entry,fileInfo = lfc.lfc_readdirxr(direc,"")
-      if fileInfo:
+      if S_ISREG(entry.filemode):
         lfn = '%s/%s' % (path,entry.d_name)
         resDict[lfn] = {'Replicas':{}}
-        for replica in fileInfo:
-          resDict[lfn]['Replicas'][replica.host] = {'PFN':replica.sfn,'Status':replica.status}
+        if fileInfo:
+          for replica in fileInfo:
+            resDict[lfn]['Replicas'][replica.host] = {'PFN':replica.sfn,'Status':replica.status}
         resDict[lfn]['MetaData'] = {'Size':entry.filesize,'GUID':entry.guid}
-      else:
+      elif S_ISDIR(entry.filemode):
         subDir = '%s/%s' % (path,entry.d_name)
         subDirs.append(subDir)
     lfc.lfc_closedir(direc)
-
+	
     pathDict = {}
     pathDict = {'Files': resDict,'SubDirs':subDirs}
     return S_OK(pathDict)
