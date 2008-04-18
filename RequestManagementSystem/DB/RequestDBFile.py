@@ -2,7 +2,7 @@
 """
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.RequestManagementSystem.Client.DataManagementRequest import DataManagementRequest
+from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.ConfigurationSystem.Client import PathFinder
 
 import os
@@ -32,12 +32,12 @@ class RequestDBFile:
   #
   # These are the methods that expose the common functionality
   #
-
+  
   def getDBSummary(self):
     """ Obtain a summary of the contents of the requestDB
     """
     gLogger.info("RequestDBFile._getDBSummary: Attempting to get database summary.")
-    requestTypes = ['transfer','register','removal','stage']
+    requestTypes = os.listdir(self.root)
     try:
       summaryDict = {}
       for requestType in requestTypes:
@@ -60,15 +60,15 @@ class RequestDBFile:
     """ Set request to the database (including all sub-requests)
     """
     gLogger.info("RequestDBFile._setRequest: Attempting to set %s." % requestName)
-    request = Request(request=requestString)
+    request = Request(requestString)
     requestTypes = request.getSubRequestTypes()
     try:
       for requestType in requestTypes:
-        subRequestString = request.toXML(requestType)['Value']
+        subRequestString = request.toXML(requestType)
         if subRequestString:
           if desiredStatus:
             status = desiredStatus
-          elif not request.isRequestTypeEmpty(requestType)['Value']:
+          elif not request.isEmpty(requestType=requestType):
             status = 'ToDo'
           else:
             status = 'Done'
@@ -91,7 +91,7 @@ class RequestDBFile:
     """ Delete all sub requests associated to a request
     """
     gLogger.info("RequestDBFile._deleteRequest: Attempting to delete %s." % requestName)
-    res = self.__locateRequest(requestName)
+    res = self.__locateRequest(requestName,assigned=True)
     if not res['OK']:
       gLogger.info("RequestDBFile._deleteRequest: Failed to delete %s." % requestName)
       return res
@@ -255,17 +255,19 @@ class RequestDBFile:
   # These are the internal methods
   #
 
-  def __locateRequest(self,requestName):
+  def __locateRequest(self,requestName,assigned=False):
     """ Locate the sub requests associated with a requestName
     """
     gLogger.info("RequestDBFile.__locateRequest: Attempting to locate %s." % requestName)
-    requestTypes = ['transfer','register','removal','stage']
+    requestTypes = os.listdir(self.root)
     subRequests = []
     try:
       for requestType in requestTypes:
         reqDir = "%s/%s" % (self.root,requestType)
         if os.path.isdir(reqDir):
           statusList = os.listdir(reqDir)
+          if not assigned and 'Assigned' in statusList:
+            statusList.remove('Assigned')
           for status in statusList:
             statusDir = '%s/%s' % (reqDir,status)
             if os.path.isdir(statusDir):
@@ -284,22 +286,20 @@ class RequestDBFile:
     """ Obtain the string for request (including all sub-requests)
     """
     gLogger.info("RequestDBFile.__getRequestString: Attempting to get string for %s." % requestName)
-    requestTypes = ['transfer','register','removal','stage']
     res = self.__locateRequest(requestName)
     if not res['OK']:
       return res
     subRequestPaths = res['Value']
     try:
-      oRequest = DataManagementRequest()
+      oRequest = Request(init=False)
       for subRequestPath in subRequestPaths:
         res = self.__readSubRequestString(subRequestPath)
         if not res['OK']:
           return res
-        tempRequest = DataManagementRequest(request=res['Value'])
+        tempRequest = Request(res['Value'])
         oRequest.setRequestAttributes(tempRequest.getRequestAttributes())
-        for requestType in requestTypes:
-          oRequest.setSubRequests(requestType,tempRequest.getSubRequests(requestType))
-      requestString = oRequest.toXML()['Value']
+        oRequest.update(tempRequest)
+      requestString = oRequest.toXML()
       gLogger.info("RequestDBFile.__getRequestString: Successfully obtained string for %s." % requestName)
       return S_OK(requestString)
     except Exception, x:
