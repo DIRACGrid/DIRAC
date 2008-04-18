@@ -56,7 +56,7 @@ class RequestManagerHandler(RequestHandler):
       gLogger.exception(errStr,"%s %s" % (requestName,str(x)))
       return S_ERROR(errStr)
 
-  types_updateRequest = [StringType,StringType]
+  types_updateRequest = [StringType,StringTypes]
   def export_updateRequest(self,requestName,requestString):
     """ Update the request with the supplied string
     """
