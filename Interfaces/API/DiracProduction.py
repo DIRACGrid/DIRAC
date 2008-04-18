@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.18 2008/04/17 17:02:10 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.19 2008/04/18 11:42:24 paterson Exp $
 # File :   DiracProduction.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are to be documented with example usage.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.18 2008/04/17 17:02:10 paterson Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.19 2008/04/18 11:42:24 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 import pprint
@@ -134,7 +134,7 @@ class DiracProduction:
           self.log.verbose('Found active production %s eligible to submit jobs' %prodID)
 
     if printOutput:
-      self.__prettyPrint(currentProductions)
+      self._prettyPrint(currentProductions)
 
     return S_OK(currentProductions)
 
@@ -165,7 +165,7 @@ class DiracProduction:
         return S_ERROR('Production ID %s was not found' %(productionID))
 
     if printOutput:
-      self.__prettyPrint(result['Value'])
+      self._prettyPrint(result['Value'])
 
     return result
 
@@ -236,7 +236,7 @@ class DiracProduction:
         message += stat.ljust(statAdj)+minor.ljust(mStatAdj)+str(jobInfo['Total']).ljust(totalAdj)+str(jobInfo['JobList'][0]).ljust(exAdj)+'\n'
 
     print message
-    #self.__prettyPrint(summary)
+    #self._prettyPrint(summary)
     result = self.getProductionProgress(productionID)
     if not result['OK']:
       return result
@@ -319,7 +319,7 @@ class DiracProduction:
         message += site.ljust(siteAdj)+stat.ljust(statAdj)+str(jobInfo['Total']).ljust(totalAdj)+str(jobInfo['JobList'][0]).ljust(exAdj)+'\n'
 
     print message
-    #self.__prettyPrint(summary)
+    #self._prettyPrint(summary)
     result = self.getProductionProgress(productionID)
     if not result['OK']:
       return result
@@ -357,7 +357,7 @@ class DiracProduction:
     progress = {}
     for prod in productionID:
       #result = self.prodClient.getJobStats(int(prod))
-      #self.__prettyPrint(result)
+      #self._prettyPrint(result)
       result = self.prodClient.getJobWmsStats(int(prod))
       progress[int(prod)] = result['Value']
 
@@ -670,8 +670,8 @@ class DiracProduction:
     return S_ERROR(message)
 
   #############################################################################
-  def __prettyPrint(self,object):
-    """Internal function to pretty print an object.
+  def _prettyPrint(self,object):
+    """Helper function to pretty print an object.
     """
     print self.pPrint.pformat(object)
 
