@@ -1,10 +1,10 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/Request.py,v 1.13 2008/04/17 14:53:41 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/Request.py,v 1.14 2008/04/18 06:52:52 atsareg Exp $
 
 """ Request base class. Defines the common general parameters that should be present in any
     request
 """
 
-__RCSID__ = "$Id: Request.py,v 1.13 2008/04/17 14:53:41 atsareg Exp $"
+__RCSID__ = "$Id: Request.py,v 1.14 2008/04/18 06:52:52 atsareg Exp $"
 
 import commands, os, xml.dom.minidom, types, time, copy, datetime
 from DIRAC import gConfig
@@ -23,7 +23,7 @@ def getCharacterData(node):
 
 class Request:
 
-  def __init__(self,request=None):
+  def __init__(self,request=None,init=True):
 
     # This is a list of attributes - mandatory parameters
     self.attributeNames = ['RequestName','RequestID','DIRACSetup','OwnerDN',
@@ -39,16 +39,14 @@ class Request:
     self.subAttributeNames = ['Status','SubRequestID','Method','Type','CreationTime','ExecutionTime']
     self.subrequests = {}
 
-    self.initialize(request)
+    if init:
+      self.initialize(request)
 
   def initialize(self,request):
     """ Set default values to attributes,parameters
     """
 
-    if type(request) in types.StringTypes or type(request) == types.NoneType:
-      for name in self.attributeNames:
-        self.attributes[name] = 'Unknown'
-
+    if type(request) == types.NoneType:
       # Set some defaults
       status,self.attributes['RequestID'] = commands.getstatusoutput('uuidgen')
       self.attributes['CreationTime'] = str(datetime.datetime.utcnow())
@@ -65,6 +63,8 @@ class Request:
 
     # initialize request from an XML string
     if type(request) in types.StringTypes:
+      for name in self.attributeNames:
+        self.attributes[name] = 'Unknown'
       self.parseRequest(request)
 
     # Initialize request from another request
@@ -197,7 +197,17 @@ class Request:
     for sub in subRequests:
       self.addSubRequest(stype,sub)
 
- #####################################################################
+#####################################################################
+  def update(self,request):
+    """ Add subrequests from another request
+    """
+    
+    subTypes = request.getSubRequestTypes()
+    for stype in subTypes:
+      subRequests = request.getSubRequests(stype)
+      self.setSubRequests(stype,subRequests)
+
+#####################################################################
   def addSubRequest(self,stype,subRequest):
     """ Set the sub-requests of a particular type associated to this request
     """
