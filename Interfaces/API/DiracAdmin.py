@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.7 2008/02/08 18:51:14 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.8 2008/04/18 11:38:00 paterson Exp $
 # File :   DiracAdmin.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@ site banning and unbanning, WMS proxy uploading etc.
 
 """
 
-__RCSID__ = "$Id: DiracAdmin.py,v 1.7 2008/02/08 18:51:14 paterson Exp $"
+__RCSID__ = "$Id: DiracAdmin.py,v 1.8 2008/04/18 11:38:00 paterson Exp $"
 
 import DIRAC
 from DIRAC.Core.DISET.RPCClient                          import RPCClient
@@ -47,9 +47,9 @@ class DiracAdmin:
 
     self.scratchDir = gConfig.getValue(self.section+'/ScratchDir','/tmp')
     self.wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
-    diracAdmin = 'diracAdmin'
-    self.log.verbose('Setting DIRAC role for current proxy to %s' %diracAdmin)
-    setDIRACGroup(diracAdmin)
+#    diracAdmin = 'diracAdmin'
+#    self.log.verbose('Setting DIRAC role for current proxy to %s' %diracAdmin)
+#    setDIRACGroup(diracAdmin)
     self.currentDir = os.getcwd()
     self.pPrint = pprint.PrettyPrinter()
 
