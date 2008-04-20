@@ -188,6 +188,24 @@ class StorageUsageDB(DB):
   # Methods for retreiving storage usage (still to be developed)
   #
 
+  def getUserStorageUsage(self):
+    """ Retrieves the storage usage for each of the known users
+    """
+    req = "SELECT d.DirectoryID,d.DirectoryPath,SUM(du.StorageElementSize) FROM Directory AS d, DirectoryUsage AS du\
+ WHERE d.DirectoryPath LIKE '/lhcb/user/%' AND d.DirectoryID = du.DirectoryID GROUP BY d.DirectoryID;" 
+    err = "StorageUsageDB.__getUserStorageUsage: Failed to obtain user storage usage."
+    res = self._query(req)
+    if not res['OK']:
+      return S_ERROR("%s %s" % (err, res['Message']))
+    else:
+      userDict = {}
+      for directoryID,directoryPath,directorySize in res['Value']:
+        userName = directoryPath.split('/')[4]
+        if not userDict.has_key(userName):
+          userDict[userName] = 0
+        userDict[userName] += int(directorySize)
+      return S_OK(userDict)
+ 
   def __getLFNDirSiteDict(self,dirs,sites):
     """ Performs sql query to get site usage for provided directories and sites
     """
