@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/Attic/dirac-production-list-id,v 1.5 2008/04/17 13:10:03 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/Attic/dirac-production-list-id,v 1.6 2008/04/21 16:27:51 paterson Exp $
 # File :   dirac-production-job-list-id
 # Author : Stuart Paterson
 ########################################################################
-__RCSID__   = "$Id: dirac-production-list-id,v 1.5 2008/04/17 13:10:03 rgracian Exp $"
-__VERSION__ = "$Revision: 1.5 $"
+__RCSID__   = "$Id: dirac-production-list-id,v 1.6 2008/04/21 16:27:51 paterson Exp $"
+__VERSION__ = "$Revision: 1.6 $"
 from DIRACEnvironment import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.Interfaces.API.DiracProduction                    import DiracProduction
@@ -25,13 +25,12 @@ exitCode = 0
 errorList = []
 
 for prodID in args:
-
   result = diracProd.getProduction(prodID,printOutput=True)
   if result.has_key('Message'):
     errorList.append( (prodID, result['Message']) )
     exitCode = 2
   elif not result:
-    errorList.append( (prodID, 'Null result for getProduction() call' )
+    errorList.append( (prodID, 'Null result for getProduction() call' ) )
     exitCode = 2
   else:
     exitCode = 0
