@@ -28,21 +28,21 @@ class LcgFileCatalogCombinedClient:
       self.site = result['Value']
 
     if not infosys:
-      configPath = '/Resources/FileCatalogs/LFC/LcgGfalInfosys'
+      configPath = '/Resources/FileCatalogs/LcgFileCatalogCombined/LcgGfalInfosys'
       infosys = gConfig.getValue(configPath)
 
     if not master_host:
-      configPath = '/Resources/FileCatalogs/LFC/LFCMaster'
+      configPath = '/Resources/FileCatalogs/LcgFileCatalogCombined/MasterHost'
       master_host = gConfig.getValue(configPath)
     # Create the master LFC client first
     self.lfc = LcgFileCatalogClient(infosys,master_host)
-    
+
     self.valid = False
     if self.lfc.isOK():
-      self.valid = True 
+      self.valid = True
 
     if not mirrors:
-      configPath = '/Resources/FileCatalogs/LFC/LFCReadOnlyMirrors'
+      configPath = '/Resources/FileCatalogs/LcgFileCatalogCombined/ReadOnlyHosts'
       mirrors = gConfig.getValue(configPath,[])
     # Create the mirror LFC instances
     self.mirrors = []
