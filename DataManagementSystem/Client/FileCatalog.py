@@ -82,7 +82,6 @@ class FileCatalog:
     for catalogName,oCatalog in self.readCatalogs.items():
       method = getattr(oCatalog,self.call)
       res = method(*parms,**kws)
-      print catalogName,res
       if res['OK']:
         for key,item in res['Value']['Successful'].items():
           if not successful.has_key(key):
