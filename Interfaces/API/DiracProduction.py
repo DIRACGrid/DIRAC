@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.19 2008/04/18 11:42:24 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.20 2008/04/21 17:55:37 paterson Exp $
 # File :   DiracProduction.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are to be documented with example usage.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.19 2008/04/18 11:42:24 paterson Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.20 2008/04/21 17:55:37 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 import pprint
@@ -213,7 +213,11 @@ class DiracProduction:
             summary[uniqueStatus][atts['MinorStatus']]['JobList'] = jobList
 
     if not printOutput:
-      return S_OK(summary)
+      result = S_OK()
+      if not status and not minorStatus:
+        result['Totals'] = {'Submitted':int(submittedJobs),'Created':int(createdJobs),'Done':int(doneJobs)}
+      result['Value'] = summary
+      return result
 
     #If a printed summary is requested
     statAdj = int(0.5*self.prodAdj)
@@ -237,6 +241,9 @@ class DiracProduction:
 
     print message
     #self._prettyPrint(summary)
+    if status or minorStatus:
+      return S_OK(summary)
+
     result = self.getProductionProgress(productionID)
     if not result['OK']:
       return result
@@ -248,7 +255,7 @@ class DiracProduction:
     print 'Submitted'.ljust(12)+str(percSub).ljust(3)+'%  ( '+str(submittedJobs).ljust(7)+'Submitted / '.ljust(15)+str(createdJobs).ljust(7)+' Created jobs )'
     print 'Done'.ljust(12)+str(percDone).ljust(3)+'%  ( '+str(doneJobs).ljust(7)+'Done / '.ljust(15)+str(createdJobs).ljust(7)+' Created jobs )'
     result = S_OK()
-    result['Totals'] = {'Submitted':int(submittedJobs),'Created':int(createdJobs)}
+    result['Totals'] = {'Submitted':int(submittedJobs),'Created':int(createdJobs),'Done':int(doneJobs)}
     result['Value'] = summary
     return result
 
@@ -297,7 +304,12 @@ class DiracProduction:
 
     if not printOutput:
       result = S_OK()
-      result['Totals'] = {'Submitted':submittedJobs,'Created':createdJobs}
+      if not site:
+        result = self.getProductionProgress(productionID)
+        if not result['OK']:
+          return result
+        createdJobs = result['Value']['Created']
+        result['Totals'] = {'Submitted':int(submittedJobs),'Created':int(createdJobs),'Done':int(doneJobs)}
       result['Value'] = summary
       return result
 
@@ -306,17 +318,17 @@ class DiracProduction:
     statAdj = int(0.5*self.prodAdj)
     totalAdj = int(0.5*self.prodAdj)
     exAdj = int(0.5*self.prodAdj)
-    message = '\nJob Summary for ProductionID %s' %(productionID)
+    message = '\nSummary for ProductionID %s' %(productionID)
     if site:
       message+=' at Site %s' %(site)
     else:
       message+=' at all Sites'
     message += ':\n\n'
     message += 'Site'.ljust(siteAdj)+'Status'.ljust(statAdj)+'Total'.ljust(totalAdj)+'Example'.ljust(exAdj)+'\n'
-    for site,metadata in summary.items():
+    for siteStr,metadata in summary.items():
       message += '\n'
       for stat,jobInfo in metadata.items():
-        message += site.ljust(siteAdj)+stat.ljust(statAdj)+str(jobInfo['Total']).ljust(totalAdj)+str(jobInfo['JobList'][0]).ljust(exAdj)+'\n'
+        message += siteStr.ljust(siteAdj)+stat.ljust(statAdj)+str(jobInfo['Total']).ljust(totalAdj)+str(jobInfo['JobList'][0]).ljust(exAdj)+'\n'
 
     print message
     #self._prettyPrint(summary)
@@ -327,11 +339,12 @@ class DiracProduction:
     createdJobs = result['Value']['Created']
     percSub = int(100*submittedJobs/createdJobs)
     percDone = int(100*doneJobs/createdJobs)
-    print '\nCurrent status of production %s:\n' %productionID
-    print 'Submitted'.ljust(12)+str(percSub).ljust(3)+'%  ( '+str(submittedJobs).ljust(7)+'Submitted / '.ljust(15)+str(createdJobs).ljust(7)+' Created jobs )'
-    print 'Done'.ljust(12)+str(percDone).ljust(3)+'%  ( '+str(doneJobs).ljust(7)+'Done / '.ljust(15)+str(createdJobs).ljust(7)+' Created jobs )'
+    if not site:
+      print '\nCurrent status of production %s:\n' %productionID
+      print 'Submitted'.ljust(12)+str(percSub).ljust(3)+'%  ( '+str(submittedJobs).ljust(7)+'Submitted / '.ljust(15)+str(createdJobs).ljust(7)+' Created jobs )'
+      print 'Done'.ljust(12)+str(percDone).ljust(3)+'%  ( '+str(doneJobs).ljust(7)+'Done / '.ljust(15)+str(createdJobs).ljust(7)+' Created jobs )'
     result = S_OK()
-    result['Totals'] = {'Submitted':int(submittedJobs),'Created':int(createdJobs)}
+    result['Totals'] = {'Submitted':int(submittedJobs),'Created':int(createdJobs),'Done':int(doneJobs)}
     result['Value'] = summary
     return result
 
