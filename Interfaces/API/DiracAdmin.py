@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.9 2008/04/21 18:35:54 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.10 2008/04/21 23:13:43 acasajus Exp $
 # File :   DiracAdmin.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@ site banning and unbanning, WMS proxy uploading etc.
 
 """
 
-__RCSID__ = "$Id: DiracAdmin.py,v 1.9 2008/04/21 18:35:54 acasajus Exp $"
+__RCSID__ = "$Id: DiracAdmin.py,v 1.10 2008/04/21 23:13:43 acasajus Exp $"
 
 import DIRAC
 from DIRAC.ConfigurationSystem.Client.CSAPI              import CSAPI
@@ -496,16 +496,22 @@ class DiracAdmin:
       return S_ERROR( "Can't register user %s" % username )
 
   #############################################################################
-  def listUsersInCS( self ):
-    """Lists the users in the CS
+  def listUsersInCS( self, group = False ):
+    """Lists the users in the CS. If no group is specified return all users.
     """
-    return S_OK( self.csAPI.listUsers() )
+    return S_OK( self.csAPI.listUsers( group ) )
 
   #############################################################################
   def listHostsInCS( self ):
     """Lists the hosts in the CS
     """
     return S_OK( self.csAPI.listHosts() )
+
+  #############################################################################
+  def describeHostsInCS( self ):
+    """Gets extended info for the hosts in the CS
+    """
+    return S_OK( self.csAPI.describeHosts() )
 
   #############################################################################
   def listGroupsInCS( self ):

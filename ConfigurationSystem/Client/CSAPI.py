@@ -36,8 +36,15 @@ class CSAPI:
       gLogger.fatal( "Cnn not download the remote cfg. Is everything initialized?" )
       raise Exception( "Can not download the remote cfg" )
 
-  def listUsers(self):
-    return [ user for user in self.__csMod.getSections( "/Users" ) if user.find( "host-" ) == -1 ]
+  def listUsers(self , group = False ):
+    if not group:
+      return [ user for user in self.__csMod.getSections( "/Users" ) if user.find( "host-" ) == -1 ]
+    else:
+      users = self.__csMod.getValue( "/Groups/%s/users" % group )
+      if not users:
+        return []
+      else:
+        return List.fromChar( users )
 
   def listHosts(self):
     return [ host for host in self.__csMod.getSections( "/Users" ) if host.find( "host-" ) == 0 ]
@@ -46,7 +53,7 @@ class CSAPI:
     return self.__describeEntity( users )
 
   def describeHosts( self, hosts = False ):
-    return self.__describeEntity( hosts )
+    return self.__describeEntity( hosts, True )
 
   def __describeEntity( self, mask, hosts = False ):
     if hosts:
@@ -97,15 +104,16 @@ class CSAPI:
       users = [ users ]
     usersData = self.describeUsers( users )
     for username in users:
+      if not username in usersData:
+        gLogger.warn( "User %s does not exist" )
+        continue
       userGroups = usersData[ username ][ 'groups' ]
       for group in userGroups:
         self.__removeUserFromGroup( group, username )
         gLogger.info( "Deleted user %s from group %s" % ( username, group ) )
-      if not username in usersData:
-        gLogger.warning( "User %s does not exist" )
-        continue
       self.__csMod.removeSection( "/Users/%s" % username )
       gLogger.info( "Deleted user %s" % username )
+    return True
 
   def __removeUserFromGroup( self, group, username ):
     """
@@ -164,8 +172,9 @@ class CSAPI:
         continue
       self.__csMod.setOptionValue( "/Users/%s/%s" % ( username, prop ), properties[ prop ] )
     for userGroup in properties[ 'groups' ]:
+      gLogger.info( "Added user %s to group %s" % ( username, userGroup ) )
       self.__addUserToGroup( userGroup, username )
-    gLogger.info( "Added user %s" % username )
+    gLogger.info( "Registered user %s" % username )
     return True
 
   def modifyUser( self, username, properties ):
