@@ -99,7 +99,7 @@ class CSAPI:
     for username in users:
       userGroups = usersData[ username ][ 'groups' ]
       for group in userGroups:
-        self.removeUserFromGroup( group, username )
+        self.__removeUserFromGroup( group, username )
         gLogger.info( "Deleted user %s from group %s" % ( username, group ) )
       if not username in usersData:
         gLogger.warning( "User %s does not exist" )
@@ -107,7 +107,7 @@ class CSAPI:
       self.__csMod.removeSection( "/Users/%s" % username )
       gLogger.info( "Deleted user %s" % username )
 
-  def removeUserFromGroup( self, group, username ):
+  def __removeUserFromGroup( self, group, username ):
     """
     Remove user from a group
     """
@@ -117,6 +117,21 @@ class CSAPI:
       userPos = userList.index( username )
       userList.pop( userPos )
       self.__csMod.setOptionValue( "/Groups/%s/users" % group, ",".join( userList ) )
+
+  def __addUserToGroup( self, group, username ):
+    """
+    Add user to a group
+    """
+    usersInGroup = self.__csMod.getValue( "/Groups/%s/users" % group )
+    if usersInGroup:
+      userList = List.fromChar( usersInGroup )
+      try:
+        userPos = userList.index( username )
+      except ValueError:
+        userList.append( username )
+        self.__csMod.setOptionValue( "/Groups/%s/users" % group, ",".join( userList ) )
+      else:
+        gLogger.warning( "User %s is already in group %s" % ( username, group ) )
 
   def addUser( self, username, properties ):
     """
@@ -149,24 +164,9 @@ class CSAPI:
         continue
       self.__csMod.setOptionValue( "/Users/%s/%s" % ( username, prop ), properties[ prop ] )
     for userGroup in properties[ 'groups' ]:
-      self.addUserToGroup( userGroup, username )
+      self.__addUserToGroup( userGroup, username )
     gLogger.info( "Added user %s" % username )
     return True
-
-  def addUserToGroup( self, group, username ):
-    """
-    Add user to a group
-    """
-    usersInGroup = self.__csMod.getValue( "/Groups/%s/users" % group )
-    if usersInGroup:
-      userList = List.fromChar( usersInGroup )
-      try:
-        userPos = userList.index( username )
-      except ValueError:
-        userList.append( username )
-        self.__csMod.setOptionValue( "/Groups/%s/users" % group, ",".join( userList ) )
-      else:
-        gLogger.warning( "User %s is already in group %s" % ( username, group ) )
 
   def modifyUser( self, username, properties ):
     """
@@ -204,10 +204,10 @@ class CSAPI:
       if newGroup not in userData[ username ][ 'groups' ]:
         groupsToBeAddedTo.append( newGroup )
     for group in groupsToBeDeletedFrom:
-      self.removeUserFromGroup( group, username )
+      self.__removeUserFromGroup( group, username )
       gLogger.info( "Removed user %s from group %s" % ( username, group ) )
     for group in groupsToBeAddedTo:
-      self.addUserToGroup( group, username )
+      self.__addUserToGroup( group, username )
       gLogger.info( "Added user %s to group %s" % ( username, group ) )
     gLogger.info( "Modified user %s" % username )
     return True
