@@ -9,17 +9,18 @@ from DIRAC.RequestManagementSystem.Client.DataManagementRequest import DataManag
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 from DIRAC.DataManagementSystem.Agent.NamespaceBrowser import NamespaceBrowser
 from DIRAC.DataManagementSystem.Client.FileCatalog import FileCatalog
+from DIRAC.Core.Utilities.List import sortList
 
 import time,os
 from types import *
 
-AGENT_NAME = 'DataManagement/StorageUsageAgent'
 
 class StorageUsageAgent(Agent):
 
   def __init__(self):
     """ Standard constructor
     """
+    AGENT_NAME = gConfig.getValue('/AgentName','DataManagement/StorageUsageAgent')
     Agent.__init__(self,AGENT_NAME)
 
   def initialize(self):
@@ -60,7 +61,7 @@ class StorageUsageAgent(Agent):
         proxyValidity = int(res['Value'])
         gLogger.debug("StorageUsageAgent: Current proxy found to be valid for %s seconds." % proxyValidity)
         self.log.info("StorageUsageAgent: %s proxy found to be valid for %s seconds."% (self.proxyDN,proxyValidity))
-        if proxyValidity <= 60:
+        if proxyValidity <= 6000:
           obtainProxy = True
 
       if obtainProxy:
@@ -80,6 +81,8 @@ class StorageUsageAgent(Agent):
         self.log.info("StorageUsageAgent: Successfully renewed %s proxy." %self.proxyDN)
 
     baseDir = gConfig.getValue(self.section+'/BaseDirectory','/lhcb')
+    ignoreDirectories = gConfig.getValue(self.section+'/Ignore',[])
+
     oNamespaceBrowser = NamespaceBrowser(baseDir)
     gLogger.info("StorageUsageAgent: Initiating with %s as base directory." % baseDir)
 
@@ -109,16 +112,24 @@ class StorageUsageAgent(Agent):
             gLogger.error("StorageUsageAgent: Failed to insert the directory.", "%s %s" % (currentDir,res['Message']))
             subDirs = [currentDir] 
           else:
-            gLogger.info("StorageUsageAgent: Successfully inserted directory.")
-            for storageElement,usageDict in siteUsage.items():
+            gLogger.info("StorageUsageAgent: Successfully inserted directory.\n")
+            gLogger.info("StorageUsageAgent: %s %s %s" % ('Storage Element'.ljust(40),'Number of files'.rjust(20),'Total size'.rjust(20)))
+            for storageElement in sortList(siteUsage.keys()):
+              usageDict = siteUsage[storageElement]
               res = self.StorageUsageDB.publishDirectoryUsage(currentDir,storageElement,long(usageDict['Size']),usageDict['Files'])
               if not res['OK']:
-                gLogger.error("StorageUsageAgent: Failed to update the Storage Usage database.", "%s %s" % (currentDir,res['Message']))
+                gLogger.error("StorageUsageAgent: Failed to update the Storage Usage database.", "%s %s" % (storageElement,res['Message']))
                 subDirs = [currentDir]
               else:
-                gLogger.info("StorageUsageAgent: Successfully updated site files.")
+                gLogger.info("StorageUsageAgent: %s %s %s" % (storageElement.ljust(40),str(usageDict['Files']).rjust(20),str(usageDict['Size']).rjust(20)))
 
-      oNamespaceBrowser.updateDirs(subDirs)
+      
+      chosenDirs = []
+      for subDir in subDirs:
+        if subDir not in ignoreDirectories:
+          chosenDirs.append(subDir)
+      oNamespaceBrowser.updateDirs(chosenDirs)
+      gLogger.info("StorageUsageAgent: There are %s active directories to be searched." % oNamespaceBrowser.getNumberActiveDirs())
 
     gLogger.info("StorageUsageAgent: Finished recursive directory search.") 
     return S_OK()
