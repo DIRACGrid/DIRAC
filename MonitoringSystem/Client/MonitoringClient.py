@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.25 2008/03/05 16:27:30 acasajus Exp $
-__RCSID__ = "$Id: MonitoringClient.py,v 1.25 2008/03/05 16:27:30 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.26 2008/04/21 13:34:38 acasajus Exp $
+__RCSID__ = "$Id: MonitoringClient.py,v 1.26 2008/04/21 13:34:38 acasajus Exp $"
 
 import threading
 import time
@@ -79,7 +79,7 @@ class MonitoringClient:
 
   def __periodicFlush( self ):
     while self.sendingMode == "periodic":
-      self.logger.debug( "Waiting %s seconds to send data" % self.sendingPeriod )
+      self.logger.debug( "Waiting %s seconds to send data (%d threads running)" % ( self.sendingPeriod, threading.activeCount() ) )
       time.sleep( self.sendingPeriod )
       try:
         self.flush()
@@ -233,6 +233,7 @@ class MonitoringClient:
       self.flushingLock.release()
 
   def __disabled( self ):
+    return True
     return gConfig.getValue( "%s/DisableMonitoring" % self.cfgSection, "false" ).lower() in \
         ( "yes", "y", "true", "1" )
 
