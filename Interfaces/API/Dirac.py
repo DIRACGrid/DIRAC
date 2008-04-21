@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.15 2008/04/17 16:07:35 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.16 2008/04/21 17:20:27 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -24,7 +24,7 @@ The initial instance just exposes job submission via the WMS client.
 
 """
 
-__RCSID__ = "$Id: Dirac.py,v 1.15 2008/04/17 16:07:35 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.16 2008/04/21 17:20:27 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -338,7 +338,7 @@ class Dirac:
       if repsResult['OK']:
         if repsResult['Value'].has_key('Successful'):
           if repsResult['Value']['Successful'].has_key(lfns):
-             self.log.info(self.pPrint.pformat(repsResult['Value']['Successful'][lfns]))
+            print self.pPrint.pformat(repsResult['Value']['Successful'][lfns])
 
     return repsResult
 
@@ -374,7 +374,7 @@ class Dirac:
       if repsResult['OK']:
         if repsResult['Value'].has_key('Successful'):
           if repsResult['Value']['Successful'].has_key(lfns):
-            self.log.info(self.pPrint.pformat(repsResult['Value']['Successful'][lfns]))
+            print self.pPrint.pformat(repsResult['Value']['Successful'][lfns])
 
     return repsResult
 
