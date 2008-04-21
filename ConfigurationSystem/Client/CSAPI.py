@@ -168,6 +168,50 @@ class CSAPI:
       else:
         gLogger.warning( "User %s is already in group %s" % ( username, group ) )
 
+  def modifyUser( self, username, properties ):
+    """
+    Modify a user
+      -username
+      -properties is a dict with keys:
+        DN
+        groups
+        <extra params>
+      Returns True/False
+    """
+    userData = self.describeUsers( [ username ] )
+    if username not in userData:
+      gLogger.error( "User %s is not registered" % username )
+      return False
+    groups = self.listGroups()
+    if type( properties[ 'groups' ] ) not in ( types.ListType, types.TupleType ):
+      gLogger.error( "Groups for user %s have to be a list or a tuple" % username )
+      return False
+    for userGroup in properties[ 'groups' ]:
+      if not userGroup in groups:
+        gLogger.error( "User %s group %s is not a valid group" % ( username, userGroup ) )
+        return False
+    for prop in properties:
+      if prop == "groups":
+        continue
+      gLogger.info( "Setting %s property for user %s to %s" % ( prop, username, properties[ prop ] ) )
+      self.__csMod.setOptionValue( "/Users/%s/%s" % ( username, prop ), properties[ prop ] )
+    groupsToBeDeletedFrom = []
+    groupsToBeAddedTo = []
+    for prevGroup in userData[ username ][ 'groups' ]:
+      if prevGroup not in properties[ 'groups' ]:
+        groupsToBeDeletedFrom.append( prevGroup )
+    for newGroup in properties[ 'groups' ]:
+      if newGroup not in userData[ username ][ 'groups' ]:
+        groupsToBeAddedTo.append( newGroup )
+    for group in groupsToBeDeletedFrom:
+      self.removeUserFromGroup( group, username )
+      gLogger.info( "Removed user %s from group %s" % ( username, group ) )
+    for group in groupsToBeAddedTo:
+      self.addUserToGroup( group, username )
+      gLogger.info( "Added user %s to group %s" % ( username, group ) )
+    gLogger.info( "Modified user %s" % username )
+    return True
+
   def commitChanges(self):
     retVal = self.__csMod.commit()
     if not retVal[ 'OK' ]:
