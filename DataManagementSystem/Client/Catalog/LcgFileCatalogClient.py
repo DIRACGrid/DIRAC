@@ -11,7 +11,7 @@ global importCorrectly
 try:
   import lfc
   importCorrectly = True
-  gLogger.info("LcgFileCatalogClient.__init__: Successfully imported lfc module.")
+  gLogger.debug("LcgFileCatalogClient.__init__: Successfully imported lfc module.")
 except ImportError, x:
   gLogger.exception("LcgFileCatalogClient.__init__: Failed to import lfc module.",str(x))
   importCorrectly = False
@@ -920,7 +920,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
       return S_ERROR('LFCClient.getDirectoryContents: Must supply a path or list of paths')
     # If we have less than three lfns to query a session doesn't make sense
     if len(paths) > 2:
-      self.__openSession() 
+      self.__openSession()
     failed = {}
     successful = {}
     for path in paths:
@@ -968,7 +968,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
         subDir = '%s/%s' % (path,entry.d_name)
         subDirs.append(subDir)
     lfc.lfc_closedir(direc)
-	
+
     pathDict = {}
     pathDict = {'Files': resDict,'SubDirs':subDirs}
     return S_OK(pathDict)
