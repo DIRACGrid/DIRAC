@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.33 2008/04/01 17:01:56 acasajus Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.33 2008/04/01 17:01:56 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.34 2008/04/21 18:04:49 acasajus Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.34 2008/04/21 18:04:49 acasajus Exp $"
 
 import sys
 import DIRAC
@@ -133,3 +133,6 @@ class BaseClient:
 
   def __nonzero__( self ):
     return True
+
+  def __str__( self ):
+    return "<DISET Client %s %s>" % ( self.serviceURL, self.groupToUse)
