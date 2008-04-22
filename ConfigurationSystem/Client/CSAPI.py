@@ -238,6 +238,24 @@ class CSAPI:
       gLogger.info( "Nothing to modify for user %s" % username )
     return True
 
+  def syncUsersWithCFG( self, usersCFG ):
+    """
+    Sync users with the cfg contents. Usernames have to be sections containing
+    DN, groups, and extra properties as parameters
+    """
+    done = True
+    for user in usersCFG.listSections():
+      properties = {}
+      propList = usersCFG[ user ].listOptions()
+      for prop in propList:
+        if prop == "groups":
+          properties[ prop ] = List.fromChar( usersCFG[ user ][ prop ] )
+        else:
+          properties[ prop ] = usersCFG[ user ][ prop ]
+      if not self.modifyUser( user, properties, createIfNonExistant = True ):
+        done = False
+    return done
+
   def commitChanges(self):
     if self.__csModified:
       retVal = self.__csMod.commit()

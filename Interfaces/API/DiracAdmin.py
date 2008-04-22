@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.11 2008/04/22 11:28:30 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.12 2008/04/22 12:50:51 acasajus Exp $
 # File :   DiracAdmin.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@ site banning and unbanning, WMS proxy uploading etc.
 
 """
 
-__RCSID__ = "$Id: DiracAdmin.py,v 1.11 2008/04/22 11:28:30 acasajus Exp $"
+__RCSID__ = "$Id: DiracAdmin.py,v 1.12 2008/04/22 12:50:51 acasajus Exp $"
 
 import DIRAC
 from DIRAC.ConfigurationSystem.Client.CSAPI              import CSAPI
@@ -527,11 +527,17 @@ class DiracAdmin:
     return S_OK( self.csAPI.listGroups() )
 
   #############################################################################
-  def cdDescribeGroups( self, mask = False ):
+  def csDescribeGroups( self, mask = False ):
     """List groups and their properties in the CS.
         If a mask is given, only groups in the mask will be returned
     """
     return S_OK( self.csAPI.describeGroups( mask ) )
+
+  #############################################################################
+  def csSyncUsersWithCFG( self, usersCFG ):
+    """Synchronize users in cfg with its contents
+    """
+    return S_OK( self.csAPI.syncUsersWithCFG( usersCFG ) )
 
   #############################################################################
   def csCommitChanges( self ):
