@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.23 2008/03/12 16:41:19 paterson Exp $
+# $Id: JobWrapper.py,v 1.24 2008/04/22 00:22:14 rgracian Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.23 2008/03/12 16:41:19 paterson Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.24 2008/04/22 00:22:14 rgracian Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -33,23 +33,32 @@ class JobWrapper:
   def __init__(self, jobID=None):
     """ Standard constructor
     """
+    # FIXME: replace by getSystemSection( "WorkloadManagement/JobWrapper" )
     self.section = "%s/JobWrapper" % ( getSystemSection( "WorkloadManagement/" ))
     self.log = gLogger
     self.jobID = jobID
+    # FIXME: this info is in DIRAC.rootPath
     self.root = os.getcwd()
     self.localSiteRoot = gConfig.getValue('/LocalSite/Root',self.root)
+    # FIXME: Why? this is done by dirac-pilot
     self.__loadLocalCFGFiles(self.localSiteRoot)
+    # FIXME: RPCClients should be created just before using them os that the 
+    # resolution is than at the last moment. Other wise the RPCClient should 
+    # delay the resolution.
     self.jobReport  = RPCClient('WorkloadManagement/JobStateUpdate')
     self.inputSandboxClient = SandboxClient()
     self.outputSandboxClient = SandboxClient('Output')
+    # FIXME why not use DIRAC.version
     self.diracVersion = 'DIRAC version v%dr%d build %d' %(DIRAC.majorVersion,DIRAC.minorVersion,DIRAC.patchLevel)
     self.maxPeekLines = gConfig.getValue(self.section+'/MaxJobPeekLines',20)
     self.defaultCPUTime = gConfig.getValue(self.section+'/DefaultCPUTime',600)
     self.defaultOutputFile = gConfig.getValue(self.section+'/DefaultOutputFile','std.out')
     self.defaultErrorFile = gConfig.getValue(self.section+'/DefaultErrorFile','std.err')
+    # FIXME: should use gConfig.getValue(self.section+'/DiskSE',['-disk','-DST','-USER'] )
     self.diskSE            = gConfig.getValue(self.section+'/DiskSE','-disk,-DST,-USER')
     if type(self.diskSE) == type(' '):
       self.diskSE = self.diskSE.split(',')
+    # FIXME: see above
     self.tapeSE            = gConfig.getValue(self.section+'/TapeSE','-tape,-RDST,-RAW')
     if type(self.tapeSE) == type(' '):
       self.tapeSE = self.tapeSE.split(',')
@@ -91,6 +100,7 @@ class JobWrapper:
       msg = 'Failed to create LcgFileCatalogClient with exception:'
       self.log.fatal(msg)
       self.log.fatal(str(x))
+    # FIXME flush is not needed it is taken care of by the logger
     sys.stdout.flush()
 
   #############################################################################
@@ -278,6 +288,8 @@ class JobWrapper:
     #TODO: normalize CPU consumed via scale factor
     utime, stime, cutime, cstime, elapsed = os.times()
     cpuTime = utime + stime + cutime
+    utime, stime, cutime, cstime, elapsed = EXECUTION_RESULT['CPU']
+    cpuTime = utime + stime + cutime + cstime
     self.log.verbose("Total CPU time consumed = %s" % (cpuTime))
     result = self.__getCPUHMS(cpuTime)
     return result
@@ -786,6 +798,7 @@ class ExecutionThread(threading.Thread):
     EXECUTION_RESULT['Thread'] = output
     timing = time.time() - start
     EXECUTION_RESULT['Timing']=timing
+    EXECUTION_RESULT['CPU'] = os.times()
 
   #############################################################################
   def getCurrentPID(self):
