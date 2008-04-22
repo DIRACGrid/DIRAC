@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/Attic/dirac-admin-list-hosts,v 1.1 2008/04/21 23:14:17 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/Attic/dirac-admin-list-hosts,v 1.2 2008/04/22 11:29:08 acasajus Exp $
 # File :   dirac-admin-list-users
 # Author : Adrian Casajus
 ########################################################################
-__RCSID__   = "$Id: dirac-admin-list-hosts,v 1.1 2008/04/21 23:14:17 acasajus Exp $"
-__VERSION__ = "$Revision: 1.1 $"
+__RCSID__   = "$Id: dirac-admin-list-hosts,v 1.2 2008/04/22 11:29:08 acasajus Exp $"
+__VERSION__ = "$Revision: 1.2 $"
 from DIRACEnvironment import DIRAC
 from DIRAC.Core.Base import Script
 
@@ -26,11 +26,11 @@ for unprocSw in Script.getUnprocessedSwitches():
     extendedInfo = True
 
 if not extendedInfo:
-  result = diracAdmin.listHostsInCS()
+  result = diracAdmin.csListHosts()
   for host in result[ 'Value' ]:
     print " %s" % host
 else:
-  result = diracAdmin.describeHostsInCS()
+  result = diracAdmin.csDescribeHosts()
   print diracAdmin.pPrint.pformat( result[ 'Value' ] )
 
 for error in errorList:

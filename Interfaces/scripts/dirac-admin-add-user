@@ -1,15 +1,15 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/Attic/dirac-admin-add-user,v 1.1 2008/04/21 23:14:17 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/Attic/dirac-admin-add-user,v 1.2 2008/04/22 11:29:08 acasajus Exp $
 # File :   dirac-admin-add-user
 # Author : Adrian Casajus
 ########################################################################
-__RCSID__   = "$Id: dirac-admin-add-user,v 1.1 2008/04/21 23:14:17 acasajus Exp $"
-__VERSION__ = "$Revision: 1.1 $"
+__RCSID__   = "$Id: dirac-admin-add-user,v 1.2 2008/04/22 11:29:08 acasajus Exp $"
+__VERSION__ = "$Revision: 1.2 $"
 from DIRACEnvironment import DIRAC
 from DIRAC.Core.Base import Script
 
-Script.registerSwitch( "P:", "property=", "Add property to the user <name>=<value>" )
+Script.registerSwitch( "p:", "property=", "Add property to the user <name>=<value>" )
 
 from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
 
@@ -29,7 +29,7 @@ if len(args) < 3:
 
 userProps = {}
 for unprocSw in Script.getUnprocessedSwitches():
-  if unprocSw[0] in ( "P", "property" ):
+  if unprocSw[0] in ( "p", "property" ):
     prop = unprocSw[1]
     pl = prop.split( "=" )
     if len( pl ) < 2:
@@ -44,11 +44,11 @@ for unprocSw in Script.getUnprocessedSwitches():
 userProps[ 'DN' ] = args[1]
 userProps[ 'groups' ] = args[2:]
 
-if not diracAdmin.registerUserInCS( args[0], userProps ):
+if not diracAdmin.csRegisterUser( args[0], userProps ):
   errorList.append( ( "add user", "Cannot register user %s" % args[0] ) )
   exitCode = 255
 else:
-  result = diracAdmin.commitCSChanges()
+  result = diracAdmin.csCommitChanges()
   if not result[ 'OK' ]:
     errorList.append( ( "commit", result[ 'Message' ] ) )
     exitCode = 255

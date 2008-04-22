@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/Attic/dirac-admin-delete-user,v 1.1 2008/04/21 23:14:17 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/Attic/dirac-admin-delete-user,v 1.2 2008/04/22 11:29:08 acasajus Exp $
 # File :   dirac-admin-modify-user
 # Author : Adrian Casajus
 ########################################################################
-__RCSID__   = "$Id: dirac-admin-delete-user,v 1.1 2008/04/21 23:14:17 acasajus Exp $"
-__VERSION__ = "$Revision: 1.1 $"
+__RCSID__   = "$Id: dirac-admin-delete-user,v 1.2 2008/04/22 11:29:08 acasajus Exp $"
+__VERSION__ = "$Revision: 1.2 $"
 from DIRACEnvironment import DIRAC
 from DIRAC.Core.Base import Script
 
@@ -34,14 +34,15 @@ if choice not in ( "yes", "y" ):
   DIRAC.exit(0)
 
 for user in args:
-  if not diracAdmin.removeUserFromCS( user ):
+  if not diracAdmin.csDeleteUser( user ):
     errorList.append( ( "delete user", "Cannot delete user %s" % user ) )
     exitCode = 255
 
-result = diracAdmin.commitCSChanges()
-if not result[ 'OK' ]:
-  errorList.append( ( "commit", result[ 'Message' ] ) )
-  exitCode = 255
+if not exitCode:
+  result = diracAdmin.csCommitChanges()
+  if not result[ 'OK' ]:
+    errorList.append( ( "commit", result[ 'Message' ] ) )
+    exitCode = 255
 
 for error in errorList:
   print "ERROR %s: %s" % error
