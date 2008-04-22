@@ -35,6 +35,8 @@ class CSAPI:
     if not retVal[ 'OK' ]:
       gLogger.fatal( "Cnn not download the remote cfg. Is everything initialized?" )
       raise Exception( "Can not download the remote cfg" )
+    self.__csModified = False
+
 
   def listUsers(self , group = False ):
     if not group:
@@ -113,6 +115,7 @@ class CSAPI:
         gLogger.info( "Deleted user %s from group %s" % ( username, group ) )
       self.__csMod.removeSection( "/Users/%s" % username )
       gLogger.info( "Deleted user %s" % username )
+      self.__csModified = True
     return True
 
   def __removeUserFromGroup( self, group, username ):
@@ -175,9 +178,10 @@ class CSAPI:
       gLogger.info( "Added user %s to group %s" % ( username, userGroup ) )
       self.__addUserToGroup( userGroup, username )
     gLogger.info( "Registered user %s" % username )
+    self.__csModified = True
     return True
 
-  def modifyUser( self, username, properties ):
+  def modifyUser( self, username, properties, createIfNonExistant = False ):
     """
     Modify a user
       -username
@@ -187,8 +191,12 @@ class CSAPI:
         <extra params>
       Returns True/False
     """
+    modifiedUser = False
     userData = self.describeUsers( [ username ] )
     if username not in userData:
+      if createIfNonExistant:
+        gLogger.info( "Registering user %s" % username )
+        return self.addUser( username, properties )
       gLogger.error( "User %s is not registered" % username )
       return False
     groups = self.listGroups()
@@ -202,28 +210,39 @@ class CSAPI:
     for prop in properties:
       if prop == "groups":
         continue
-      gLogger.info( "Setting %s property for user %s to %s" % ( prop, username, properties[ prop ] ) )
-      self.__csMod.setOptionValue( "/Users/%s/%s" % ( username, prop ), properties[ prop ] )
+      prevVal = self.__csMod.getValue( "/Users/%s/%s" % ( username, prop ) )
+      if not prevVal or prevVal != properties[ prop ]:
+        gLogger.info( "Setting %s property for user %s to %s" % ( prop, username, properties[ prop ] ) )
+        self.__csMod.setOptionValue( "/Users/%s/%s" % ( username, prop ), properties[ prop ] )
+        modifiedUser = True
     groupsToBeDeletedFrom = []
     groupsToBeAddedTo = []
     for prevGroup in userData[ username ][ 'groups' ]:
       if prevGroup not in properties[ 'groups' ]:
         groupsToBeDeletedFrom.append( prevGroup )
+        modifiedUser = True
     for newGroup in properties[ 'groups' ]:
       if newGroup not in userData[ username ][ 'groups' ]:
         groupsToBeAddedTo.append( newGroup )
+        modifiedUser = True
     for group in groupsToBeDeletedFrom:
       self.__removeUserFromGroup( group, username )
       gLogger.info( "Removed user %s from group %s" % ( username, group ) )
     for group in groupsToBeAddedTo:
       self.__addUserToGroup( group, username )
       gLogger.info( "Added user %s to group %s" % ( username, group ) )
-    gLogger.info( "Modified user %s" % username )
+    if modifiedUser:
+      gLogger.info( "Modified user %s" % username )
+      self.__csModified = True
+    else:
+      gLogger.info( "Nothing to modify for user %s" % username )
     return True
 
   def commitChanges(self):
-    retVal = self.__csMod.commit()
-    if not retVal[ 'OK' ]:
-      gLogger.error( "Can't commit new data: %s" % retVal[ 'Message' ] )
-      return False
+    if self.__csModified:
+      retVal = self.__csMod.commit()
+      if not retVal[ 'OK' ]:
+        gLogger.error( "Can't commit new data: %s" % retVal[ 'Message' ] )
+        return False
+      self.__csModified = False
     return True

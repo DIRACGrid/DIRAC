@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.10 2008/04/21 23:13:43 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.11 2008/04/22 11:28:30 acasajus Exp $
 # File :   DiracAdmin.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@ site banning and unbanning, WMS proxy uploading etc.
 
 """
 
-__RCSID__ = "$Id: DiracAdmin.py,v 1.10 2008/04/21 23:13:43 acasajus Exp $"
+__RCSID__ = "$Id: DiracAdmin.py,v 1.11 2008/04/22 11:28:30 acasajus Exp $"
 
 import DIRAC
 from DIRAC.ConfigurationSystem.Client.CSAPI              import CSAPI
@@ -463,7 +463,7 @@ class DiracAdmin:
 
 
   #############################################################################
-  def registerUserInCS( self, username, properties ):
+  def csRegisterUser( self, username, properties ):
     """Registers a user in the CS.
         - username: Username of the user (easy;)
         - properties: Dict containing:
@@ -477,7 +477,7 @@ class DiracAdmin:
       return S_ERROR( "Can't register user %s" % username )
 
   #############################################################################
-  def removeUserFromCS( self, user ):
+  def csDeleteUser( self, user ):
     """Deletes a user from the CS. Can take a list of users
     """
     if self.csAPI.deleteUsers( user ):
@@ -486,66 +486,60 @@ class DiracAdmin:
       return S_ERROR( "Can't delete user %s" % user )
 
   #############################################################################
-  def modifyUserInCS( self, username, properties ):
+  def csModifyUser( self, username, properties, createIfNonExistant = False ):
     """Modify a user in the CS. Takes the same params as in addUser and applies
       the changes
     """
-    if self.csAPI.modifyUser( username, properties ):
+    if self.csAPI.modifyUser( username, properties, createIfNonExistant ):
       return S_OK()
     else:
       return S_ERROR( "Can't register user %s" % username )
 
   #############################################################################
-  def listUsersInCS( self, group = False ):
+  def csListUsers( self, group = False ):
     """Lists the users in the CS. If no group is specified return all users.
     """
     return S_OK( self.csAPI.listUsers( group ) )
 
   #############################################################################
-  def listHostsInCS( self ):
-    """Lists the hosts in the CS
-    """
-    return S_OK( self.csAPI.listHosts() )
-
-  #############################################################################
-  def describeHostsInCS( self ):
-    """Gets extended info for the hosts in the CS
-    """
-    return S_OK( self.csAPI.describeHosts() )
-
-  #############################################################################
-  def listGroupsInCS( self ):
-    """Lists groups in the CS
-    """
-    return S_OK( self.csAPI.listGroups() )
-
-  #############################################################################
-  def describeUsersInCS( self, mask = False ):
+  def csDescribeUsers( self, mask = False ):
     """List users and their properties in the CS.
         If a mask is given, only users in the mask will be returned
     """
     return S_OK( self.csAPI.describeUsers( mask ) )
 
   #############################################################################
-  def describeHostsInCS( self, mask = False ):
-    """List hosts and their properties in the CS.
-        If a mask is given, only hosts in the mask will be returned
+  def csListHosts( self ):
+    """Lists the hosts in the CS
     """
-    return S_OK( self.csAPI.describeHosts( mask ) )
+    return S_OK( self.csAPI.listHosts() )
 
   #############################################################################
-  def describeGroupsInCS( self, mask = False ):
+  def csDescribeHosts( self ):
+    """Gets extended info for the hosts in the CS
+    """
+    return S_OK( self.csAPI.describeHosts() )
+
+  #############################################################################
+  def csListGroups( self ):
+    """Lists groups in the CS
+    """
+    return S_OK( self.csAPI.listGroups() )
+
+  #############################################################################
+  def cdDescribeGroups( self, mask = False ):
     """List groups and their properties in the CS.
         If a mask is given, only groups in the mask will be returned
     """
     return S_OK( self.csAPI.describeGroups( mask ) )
 
   #############################################################################
-  def commitCSChanges( self ):
+  def csCommitChanges( self ):
     """Commit the changes in the CS
     """
     if self.csAPI.commitChanges():
       return S_OK()
     else:
       return S_ERROR( "Can't commit changes to the CS, are you admin?" )
+
   #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
