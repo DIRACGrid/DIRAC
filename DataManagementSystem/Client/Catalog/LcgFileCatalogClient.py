@@ -864,7 +864,11 @@ class LcgFileCatalogClient(FileCatalogueBase):
       fstat = lfc.lfc_filestatg()
       value = lfc.lfc_statg(fullLfn,'',fstat)
       if value == 0:
-        successful[path] = {'CreationTime':time.ctime(fstat.ctime),'NumberOfSubPaths':fstat.nlink}
+        res = self.__getDNFromUID(fstat.uid)
+        if res['OK']:
+          successful[path] = {'CreationTime':time.ctime(fstat.ctime),'NumberOfSubPaths':fstat.nlink,'Status':fstat.status,'CreatorDN':res['Value']}
+        else:
+          successful[path] = {'CreationTime':time.ctime(fstat.ctime),'NumberOfSubPaths':fstat.nlink,'Status':fstat.status,'CreatorDN':None}
       else:
         errno = lfc.cvar.serrno
         failed[path] = lfc.sstrerror(errno)
@@ -872,6 +876,17 @@ class LcgFileCatalogClient(FileCatalogueBase):
       self.__closeSession()
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
+
+  def __getDNFromUID(self,userID):
+    buffer = ""
+    for i in range(0,lfc.CA_MAXNAMELEN+1):
+      buffer = buffer+" "
+    res = lfc.lfc_getusrbyuid(userID,buffer)
+    if res == 0:
+      dn = buffer[:buffer.find('\x00')]
+      return S_OK(dn)
+    else:
+      return S_ERROR()
 
   def getDirectorySize(self, path):
     if type(path) == types.StringType:
@@ -955,9 +970,13 @@ class LcgFileCatalogClient(FileCatalogueBase):
 
     resDict = {}
     subDirs = []
+    links = []
     for i in  range(nbfiles):
       entry,fileInfo = lfc.lfc_readdirxr(direc,"")
-      if S_ISREG(entry.filemode):
+      if S_ISLNK(entry.filemode):
+        link = '%s/%s' % (path,entry.d_name)
+        links.append(link)
+      elif S_ISREG(entry.filemode):
         lfn = '%s/%s' % (path,entry.d_name)
         resDict[lfn] = {'Replicas':{}}
         if fileInfo:
@@ -970,7 +989,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     lfc.lfc_closedir(direc)
 
     pathDict = {}
-    pathDict = {'Files': resDict,'SubDirs':subDirs}
+    pathDict = {'Files': resDict,'SubDirs':subDirs,'Links':links}
     return S_OK(pathDict)
 
   def __makeDir(self, path):
