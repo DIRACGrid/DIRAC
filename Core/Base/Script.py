@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Script.py,v 1.8 2008/04/17 07:04:15 rgracian Exp $
-__RCSID__ = "$Id: Script.py,v 1.8 2008/04/17 07:04:15 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Script.py,v 1.9 2008/04/22 12:50:11 acasajus Exp $
+__RCSID__ = "$Id: Script.py,v 1.9 2008/04/22 12:50:11 acasajus Exp $"
 
 import sys
 import os.path
@@ -37,6 +37,10 @@ def registerSwitch( showKey, longKey, helpString, callback = False ):
 def getPositionalArgs():
   global localCfg
   return localCfg.getPositionalArguments()
+
+def getExtraCLICFGFiles():
+  global localCfg
+  return localCfg.getExtraCLICFGFiles()
 
 def getUnprocessedSwitches():
   global localCfg

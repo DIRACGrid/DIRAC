@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/LocalConfiguration.py,v 1.22 2008/04/17 07:01:52 rgracian Exp $
-__RCSID__ = "$Id: LocalConfiguration.py,v 1.22 2008/04/17 07:01:52 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/LocalConfiguration.py,v 1.23 2008/04/22 12:50:10 acasajus Exp $
+__RCSID__ = "$Id: LocalConfiguration.py,v 1.23 2008/04/22 12:50:10 acasajus Exp $"
 
 import sys
 import os
@@ -64,6 +64,11 @@ class LocalConfiguration:
   def registerCmdOpt( self, shortOption, longOption, helpString, function = False):
     #TODO: Can't overwrite switches (FATAL)
     self.commandOptionList.append( ( shortOption, longOption, helpString, function ) )
+
+  def getExtraCLICFGFiles( self ):
+    if not self.isParsed:
+      self.__parseCommandLine()
+    return self.cliAdditionalCFGFiles
 
   def getPositionalArguments( self ):
     if not self.isParsed:
