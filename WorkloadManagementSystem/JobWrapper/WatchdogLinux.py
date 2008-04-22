@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/WatchdogLinux.py,v 1.7 2008/02/29 10:16:41 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/WatchdogLinux.py,v 1.8 2008/04/22 09:23:31 rgracian Exp $
 # Author: Stuart Paterson
 # eMail : Stuart.Paterson@cern.ch
 ########################################################################
@@ -11,7 +11,7 @@
      This is the Unix / Linux compatible Watchdog subclass.
 """
 
-__RCSID__ = "$Id: WatchdogLinux.py,v 1.7 2008/02/29 10:16:41 paterson Exp $"
+__RCSID__ = "$Id: WatchdogLinux.py,v 1.8 2008/04/22 09:23:31 rgracian Exp $"
 
 from DIRAC.Core.Base.Agent                               import Agent
 from DIRAC.WorkloadManagementSystem.JobWrapper.Watchdog  import Watchdog
@@ -74,6 +74,8 @@ class WatchdogLinux(Watchdog):
       result['Value'] = la
     else:
       result = S_ERROR('Could not obtain load average')
+      self.log.warn('Could not obtain load average')
+      result['Value'] = 0
 
     return result
 
@@ -89,7 +91,8 @@ class WatchdogLinux(Watchdog):
       result['Value'] = float(mem)
     else:
       result = S_ERROR('Could not obtain memory used')
-
+      self.log.warn('Could not obtain memory used')
+      result['Value'] = 0
     return result
 
  #############################################################################
@@ -104,6 +107,8 @@ class WatchdogLinux(Watchdog):
       result['Value'] = float(space)
     else:
       result = S_ERROR('Could not obtain disk usage')
+      self.log.warn('Could not obtain disk usage')
+      result['Value'] = 0
 
     return result
 
