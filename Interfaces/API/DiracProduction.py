@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.20 2008/04/21 17:55:37 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.21 2008/04/22 13:21:19 paterson Exp $
 # File :   DiracProduction.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are to be documented with example usage.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.20 2008/04/21 17:55:37 paterson Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.21 2008/04/22 13:21:19 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 import pprint
@@ -92,6 +92,8 @@ class DiracProduction:
   def getProduction(self,productionID,printOutput=False):
     """Returns the metadata associated with a given production ID.
     """
+    if type(productionID)==type(2):
+      productionID=long(productionID)
     if not type(productionID)==type(long(1)):
       if not type(productionID) == type(" "):
         return self.__errorReport('Expected string, long or int for production ID')
@@ -144,6 +146,8 @@ class DiracProduction:
        specified, the result is restricted to this value. If printOutput is specified,
        the result is printed to the screen.
     """
+    if type(productionID)==type(2):
+      productionID=long(productionID)
     if productionID:
       if not type(productionID)==type(long(1)):
         if not type(productionID) == type(" "):
@@ -177,6 +181,8 @@ class DiracProduction:
        combinations and associated WMS JobIDs.
     """
     #TODO: add percentage completed
+    if type(productionID)==type(2):
+      productionID=long(productionID)
     if not type(productionID)==type(long(1)):
       if not type(productionID) == type(" "):
         return self.__errorReport('Expected string, long or int for production ID')
@@ -267,6 +273,8 @@ class DiracProduction:
        that jobs were submitted to.
     """
     #TODO: add percentage completed
+    if type(productionID)==type(2):
+      productionID=long(productionID)
     if not type(productionID)==type(long(1)):
       if not type(productionID) == type(" "):
         return self.__errorReport('Expected string, long or int for production ID')
@@ -352,6 +360,8 @@ class DiracProduction:
   def getProductionProgress(self,productionID=None,printOutput=False):
     """Returns the status of jobs as seen by the production management infrastructure.
     """
+    if type(productionID)==type(2):
+      productionID=long(productionID)
     if productionID:
       if not type(productionID)==type(long(1)):
         if not type(productionID) == type(" "):
@@ -404,6 +414,8 @@ class DiracProduction:
        - manual: set produciton submission mode to manual, e.g. dirac-production-submit
     """
     commands = {'start':['Active','Manual'],'stop':['Stopped','Manual'],'automatic':['Active','Automatic'],'manual':['Active','Manual']}
+    if type(productionID)==type(2):
+      productionID=long(productionID)
     if not type(productionID)==type(long(1)):
       if not type(productionID) == type(" "):
         return self.__errorReport('Expected string, long or int for production ID')
@@ -492,6 +504,8 @@ class DiracProduction:
     """Calls the production manager service to retrieve the necessary information
        to construct jobs, these are then submitted via the API.
     """
+    if type(productionID)==type(2):
+      productionID=long(productionID)
     if not type(productionID)==type(long(1)):
       if not type(productionID) == type(" "):
         return self.__errorReport('Expected string or long for production ID')
