@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.17 2008/04/24 09:42:45 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.18 2008/04/24 10:06:14 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -24,7 +24,7 @@ The initial instance just exposes job submission via the WMS client.
 
 """
 
-__RCSID__ = "$Id: Dirac.py,v 1.17 2008/04/24 09:42:45 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.18 2008/04/24 10:06:14 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -194,7 +194,7 @@ class Dirac:
         if type(inputData) == type(" "):
           inputData = [inputData]
 
-    jobParamsDict = {'JobParameters':parameters}
+    jobParamsDict = {'Job':parameters['Value']}
 
     if inputData:
       localSEList = gConfig.getValue('/LocalSite/LocalSE','')
@@ -254,7 +254,7 @@ class Dirac:
     module = moduleInstance['Value']
     result = module.execute()
     if not result['OK']:
-      self.log.warn('Software installation failed')
+      self.log.warn('Software installation failed with result:\n%s' %(result))
       return result
 
     self.log.info('Attempting to submit job to local site: %s' %self.site)
