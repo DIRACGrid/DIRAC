@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.16 2008/04/21 17:20:27 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.17 2008/04/24 09:42:45 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -24,7 +24,7 @@ The initial instance just exposes job submission via the WMS client.
 
 """
 
-__RCSID__ = "$Id: Dirac.py,v 1.16 2008/04/21 17:20:27 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.17 2008/04/24 09:42:45 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -194,6 +194,8 @@ class Dirac:
         if type(inputData) == type(" "):
           inputData = [inputData]
 
+    jobParamsDict = {'JobParameters':parameters}
+
     if inputData:
       localSEList = gConfig.getValue('/LocalSite/LocalSE','')
       if not localSEList:
@@ -240,20 +242,20 @@ class Dirac:
         self.log.warn('Input data resolution failed')
         return result
 
-      softwarePolicy = gConfig.getValue('DIRAC/VOPolicy/SoftwareDistModule','')
-      if not softwarePolicy:
-        return self.__errorReport('Could not retrieve DIRAC/VOPolicy/SoftwareDistModule for VO')
-      moduleFactory = ModuleFactory()
-      moduleInstance = moduleFactory.getModule(softwarePolicy,argumentsDict)
-      if not moduleInstance['OK']:
-        self.log.warn('Could not create SoftwareDistModule')
-        return moduleInstance
+    softwarePolicy = gConfig.getValue('DIRAC/VOPolicy/SoftwareDistModule','')
+    if not softwarePolicy:
+      return self.__errorReport('Could not retrieve DIRAC/VOPolicy/SoftwareDistModule for VO')
+    moduleFactory = ModuleFactory()
+    moduleInstance = moduleFactory.getModule(softwarePolicy,jobParamsDict)
+    if not moduleInstance['OK']:
+      self.log.warn('Could not create SoftwareDistModule')
+      return moduleInstance
 
-      module = moduleInstance['Value']
-      result = module.execute()
-      if not result['OK']:
-        self.log.warn('Software installation failed')
-        return result
+    module = moduleInstance['Value']
+    result = module.execute()
+    if not result['OK']:
+      self.log.warn('Software installation failed')
+      return result
 
     self.log.info('Attempting to submit job to local site: %s' %self.site)
     if parameters['Value'].has_key('Executable') and parameters['Value'].has_key('Arguments'):
