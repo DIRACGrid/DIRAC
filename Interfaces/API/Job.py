@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.23 2008/04/13 20:34:41 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.24 2008/04/24 08:49:19 paterson Exp $
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,7 +13,7 @@
 
 """
 
-__RCSID__ = "$Id: Job.py,v 1.23 2008/04/13 20:34:41 paterson Exp $"
+__RCSID__ = "$Id: Job.py,v 1.24 2008/04/24 08:49:19 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -770,6 +770,13 @@ class Job:
 
        Sets a parameter value, used for production.
     """
+    return self.workflow.setValue(name,value)
+
+  #############################################################################
+  def _addJDLParameter(self,name,value):
+    """Developer function, add an arbitrary parameter.
+    """
+    self._addParameter(self.workflow,name,'JDL',value,'Optional JDL parameter added')
     return self.workflow.setValue(name,value)
 
   #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
