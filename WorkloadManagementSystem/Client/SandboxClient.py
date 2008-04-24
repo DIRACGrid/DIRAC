@@ -15,6 +15,8 @@ class SandboxClient:
     self.sandbox_status = RPCClient('WorkloadManagement/%sSandbox' % sandbox_type)
 
 ########################################################################
+  # FIXME: all over the place jobID is considered either int or string 
+  # this module does no check
   def sendFiles(self,jobID,fileList):
     """ Send files in the fileList to a Sandbox service for the given jobID.
         This is the preferable method to upload sandboxes. fileList can contain
