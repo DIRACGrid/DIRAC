@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.24 2008/04/22 00:22:14 rgracian Exp $
+# $Id: JobWrapper.py,v 1.25 2008/04/24 08:10:53 rgracian Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.24 2008/04/22 00:22:14 rgracian Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.25 2008/04/24 08:10:53 rgracian Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -36,6 +36,8 @@ class JobWrapper:
     # FIXME: replace by getSystemSection( "WorkloadManagement/JobWrapper" )
     self.section = "%s/JobWrapper" % ( getSystemSection( "WorkloadManagement/" ))
     self.log = gLogger
+    # FIXME: if no jobID is provided many things will fail later on with this default, make it 0
+    # FIXME: it should be cast to int here and not 10 times later on
     self.jobID = jobID
     # FIXME: this info is in DIRAC.rootPath
     self.root = os.getcwd()
@@ -116,6 +118,7 @@ class JobWrapper:
     self.__setInitialJobParameters(arguments)
 
     # Prepare the working directory and cd to there
+    #FIXME: what should be done in jobID = 0 (see above)
     if os.path.exists(self.jobID):
       shutil.rmtree(str(self.jobID))
     os.mkdir(str(self.jobID))
@@ -274,6 +277,7 @@ class JobWrapper:
     self.log.info(appStdOut)
     heartBeatDict = {}
     staticParamDict = {'StandardOutput':appStdOut}
+    # FIXME: no report to be sent if jobID == 0
     result = self.jobReport.sendHeartBeat(int(self.jobID),heartBeatDict,staticParamDict)
     if not result['OK']:
       self.log.warn('Problem sending final heartbeat standard output from JobWrapper')
@@ -539,6 +543,7 @@ class JobWrapper:
 
     self.__report('Completed','Uploading Output Sandbox')
     if fileList:
+      # FIXME: no report to be sent if jobID == 0
       result = self.outputSandboxClient.sendFiles(self.jobID, fileList)
       if not result['OK']:
         self.log.warn('Output sandbox upload failed:')
@@ -667,6 +672,7 @@ class JobWrapper:
           shutil.copy(self.root+'/inputsandbox/'+inputFile,inputFile)
       result = S_OK(sandboxFiles)
     else:
+      # FIXME: no sandbox to be retrieved if jobID == 0
       result =  self.inputSandboxClient.getSandbox(int(self.jobID))
       if not result['OK']:
         self.log.warn(result)
@@ -674,6 +680,7 @@ class JobWrapper:
         return S_ERROR('InputSandbox download failed for job %s and sandbox %s' %(self.jobID,sandboxFiles))
 
     self.log.verbose('Sandbox download result: %s' %(result))
+    # FIXME: should make use os tarfile module to make the code more portable
     for sandboxFile in sandboxFiles:
       if re.search('.tar.gz$',sandboxFile) or re.search('.tgz$',sandboxFile):
         if os.path.exists(sandboxFile):
@@ -713,6 +720,7 @@ class JobWrapper:
     """Cleans up after job processing. Can be switched off via environment
        variable DO_NOT_DO_JOB_CLEANUP or by JobWrapper configuration option.
     """
+    # FIXME: why still use environment?
     if os.environ.has_key('DO_NOT_DO_JOB_CLEANUP') or not self.cleanUpFlag:
       cleanUp = False
     else:
@@ -747,6 +755,7 @@ class JobWrapper:
   def __report(self,status,minorStatus):
     """Wraps around setJobStatus of state update client
     """
+    # FIXME: shoudl not report in jobID == 0
     jobStatus = self.jobReport.setJobStatus(int(self.jobID),status,minorStatus,'JobWrapper')
     self.log.verbose('setJobStatus(%s,%s,%s,%s)' %(self.jobID,status,minorStatus,'JobWrapper'))
     if not jobStatus['OK']:
@@ -769,6 +778,7 @@ class JobWrapper:
   def __setJobParamList(self,value):
     """Wraps around setJobParameters of state update client
     """
+    # FIXME: like the Watchdog, 
     jobParam = self.jobReport.setJobParameters(int(self.jobID),value)
     self.log.verbose('setJobParameters(%s,%s)' %(self.jobID,value))
     if not jobParam['OK']:
@@ -791,6 +801,8 @@ class ExecutionThread(threading.Thread):
 
   #############################################################################
   def run(self):
+    # FIXME: why local intances of object variables are created?
+    # FIXME: for better CPU estimation one shoulc substract some initial value.
     cmd = self.cmd
     spObject = self.spObject
     start = time.time()
@@ -813,11 +825,13 @@ class ExecutionThread(threading.Thread):
     if self.outputLines:
       size = len(self.outputLines)
       #reduce max size of output peeking
+      # FIXME: this should be done in the receiving method (sendOutput)
       if size > self.maxPeekLines:
         cut = size - self.maxPeekLines
         self.outputLines = self.outputLines[cut:]
       #restrict to smaller number of lines for regular
       #peeking by the watchdog
+      # FIXME: this is multithread, thus single line would be better
       if lines:
         size = len(self.outputLines)
         cut  = size - lines
