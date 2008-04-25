@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot,v 1.9 2008/04/24 08:11:58 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot,v 1.10 2008/04/25 10:42:24 rgracian Exp $
 # File :   dirac-pilot
 # Author : Ricardo Graciani
 ########################################################################
@@ -9,7 +9,7 @@
  Job Agent to execute pending workload on WMS.
  It requires dirac-update script to be sitting in the same directory.
 """
-__RCSID__ = "$Id: dirac-pilot,v 1.9 2008/04/24 08:11:58 rgracian Exp $"
+__RCSID__ = "$Id: dirac-pilot,v 1.10 2008/04/25 10:42:24 rgracian Exp $"
 try:
   import os
   import sys
@@ -382,6 +382,8 @@ for i in os.listdir( rootPath ):
     extraCFG += ' %s' % cfg
 
 dirac.logINFO( 'Starting JobAgent' )
+
+os.environ['PYTHONUNBUFFERED'] = 'yes'
 
 jobAgent = 'dirac-agent WorkloadManagement/JobAgent %s %s %s' % ( 
             jobAgentOpts, inProcessOpts,  extraCFG )
