@@ -1,15 +1,15 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot,v 1.11 2008/04/25 13:20:38 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot,v 1.12 2008/04/25 13:25:57 rgracian Exp $
 # File :   dirac-pilot
 # Author : Ricardo Graciani
 ########################################################################
 """
  Perform initial sanity checks on WN, installs and configures DIRAC and runs
  Job Agent to execute pending workload on WMS.
- It requires dirac-update script to be sitting in the same directory.
+ It requires dirac-install script to be sitting in the same directory.
 """
-__RCSID__ = "$Id: dirac-pilot,v 1.11 2008/04/25 13:20:38 rgracian Exp $"
+__RCSID__ = "$Id: dirac-pilot,v 1.12 2008/04/25 13:25:57 rgracian Exp $"
 try:
   import os
   import sys
@@ -29,7 +29,7 @@ try:
   localFlag = False
   testFlag  = False
   defaultSite = 'LCG.CERN.ch'
-  localPlatform = None
+  localPlatform = 'slc4_ia32_gcc34'
   minDiskSpace  = 2560 # MB
   jobCPUReqt    = 900  # s
   diracGroup    = None
@@ -37,7 +37,7 @@ try:
   JOB_AGENT_CE = 'InProcess'
   MAX_CYCLES   = 2
   
-  installScript = 'dirac-update'
+  installScript = 'dirac-install'
   
   try:
     myFullName  = os.path.realpath( __file__ )
@@ -274,7 +274,7 @@ os.environ['CMTCONFIG'] = dirac.localPlatform
 dirac.logINFO( 'Setting CMTCONFIG=%s' % dirac.localPlatform )
 
 if localFlag:
-  os.system('dirac-update -o /LocalSite/Site=%s -p %s' % ( defaultSite, dirac.localPlatform ) )
+  os.system('%s -o /LocalSite/Site=%s -p %s' % (installScript, defaultSite, dirac.localPlatform ) )
   pass
 else:
   # Here the site discovery code should go.
