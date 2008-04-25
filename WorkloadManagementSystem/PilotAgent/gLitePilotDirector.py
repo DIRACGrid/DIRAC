@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/gLitePilotDirector.py,v 1.10 2008/03/07 16:51:02 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/gLitePilotDirector.py,v 1.11 2008/04/25 13:12:28 paterson Exp $
 # File :   gLitePilotDirector.py
 # Author : Stuart Paterson
 ########################################################################
@@ -11,7 +11,7 @@
      the invokation of the Pilot Director instance is performed here.
 """
 
-__RCSID__ = "$Id: gLitePilotDirector.py,v 1.10 2008/03/07 16:51:02 atsareg Exp $"
+__RCSID__ = "$Id: gLitePilotDirector.py,v 1.11 2008/04/25 13:12:28 paterson Exp $"
 
 from DIRACEnvironment                                        import DIRAC
 from DIRAC.Core.Utilities                                    import List
@@ -32,7 +32,7 @@ class gLitePilotDirector(PilotDirector):
     self.log.info('Starting %s for RB %s' %(self.name,self.resourceBroker))
     self.sectionPath = configPath
     self.diracRoot = gConfig.getValue(self.sectionPath+'/DIRACRoot','/opt/dirac')
-    self.pilotScript = gConfig.getValue(self.sectionPath+'/PilotScript','%s/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot-lcg.py' %(self.diracRoot))
+    self.pilotScript = gConfig.getValue(self.sectionPath+'/PilotScript','%s/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot' %(self.diracRoot))
     self.diracInstallScript = gConfig.getValue(self.sectionPath+'/DIRACInstallScript','%s/scripts/dirac-install' %(self.diracRoot))
     self.archScript = gConfig.getValue(self.sectionPath+'/ArchitectureScript','%s/scripts/dirac-architecture' %(self.diracRoot))
     self.voSoftwareDir = gConfig.getValue(self.sectionPath+'/VOSoftware','VO_LHCB_SW_DIR')
@@ -161,7 +161,7 @@ class gLitePilotDirector(PilotDirector):
       else:
         gLiteJDL.write( 'Executable = "%s";\n'     % os.path.basename(self.pilotScript))
 
-      gLiteJDL.write( 'Arguments  = "%s %s %s %s %s";\n'  % (self.diracSetup,cpuRequirement,self.voSoftwareDir,ownerGroup,self.type) )
+      gLiteJDL.write( 'Arguments  = "-o /DIRAC/Setup=%s -T %s -G %s";\n'  % (self.diracSetup,cpuRequirement,ownerGroup) )
       gLiteJDL.write( 'gLiteTimeRef = %s ;\n'      % cpuRequirement )
       gLiteJDL.write( 'MyPolicyTime = ( %s );\n' % myPolicyTime )
 
@@ -279,7 +279,7 @@ LBEndPoints = {"https://%s:9000"};
       for line in string.split(stdout):
         m = re.search("(.*\/\S+)",line)
         if (m):
-          ce = m.group(1)        
+          ce = m.group(1)
           if not re.search('^https',ce):
             availableCEs.append(ce)
 
@@ -333,7 +333,7 @@ LBEndPoints = {"https://%s:9000"};
               getCEs = self.__listMatchJob(job,jdlFile)
               if not getCEs['OK']:
                 return getCEs
-              self.log.verbose(getCEs['Value'])  
+              self.log.verbose(getCEs['Value'])
               newCEs = len(getCEs['Value'])
               if newCEs < minimumCEs:
                 noCEsAvailable[job] = time.time()
