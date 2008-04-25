@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot,v 1.14 2008/04/25 13:52:56 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot,v 1.15 2008/04/25 14:25:09 rgracian Exp $
 # File :   dirac-pilot
 # Author : Ricardo Graciani
 ########################################################################
@@ -9,7 +9,7 @@
  Job Agent to execute pending workload on WMS.
  It requires dirac-install script to be sitting in the same directory.
 """
-__RCSID__ = "$Id: dirac-pilot,v 1.14 2008/04/25 13:52:56 rgracian Exp $"
+__RCSID__ = "$Id: dirac-pilot,v 1.15 2008/04/25 14:25:09 rgracian Exp $"
 try:
   import os
   import sys
@@ -67,7 +67,7 @@ def parse_options():
    parse command line options:
   """
   import getopt
-  global debugFlag, rootPath, localPlatform, minDiskSpace, testFlag
+  global debugFlag, rootPath, localPlatform, minDiskSpace, testFlag, jobCPUReqt, diracGroup
   help = """
    -b --build                  Force local compilation  
    -d --debug                  Set debug flag
