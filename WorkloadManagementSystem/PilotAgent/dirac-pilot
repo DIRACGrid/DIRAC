@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot,v 1.15 2008/04/25 14:25:09 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot,v 1.16 2008/04/25 14:45:03 rgracian Exp $
 # File :   dirac-pilot
 # Author : Ricardo Graciani
 ########################################################################
@@ -9,7 +9,7 @@
  Job Agent to execute pending workload on WMS.
  It requires dirac-install script to be sitting in the same directory.
 """
-__RCSID__ = "$Id: dirac-pilot,v 1.15 2008/04/25 14:25:09 rgracian Exp $"
+__RCSID__ = "$Id: dirac-pilot,v 1.16 2008/04/25 14:45:03 rgracian Exp $"
 try:
   import os
   import sys
@@ -265,7 +265,7 @@ if localPlatform:
   os.environ['PATH'] = '%s:%s' % (myBin,os.getenv('PATH'))
 
 if diracGroup:
-  os.system ( 'dirac-group-init %' % diracGroup )
+  os.system ( 'dirac-group-init %s' % diracGroup )
 # End of initialisation
 
 # Preamble
@@ -400,5 +400,22 @@ dirac.logINFO( jobAgent )
 
 if not testFlag:
   os.system( jobAgent )
+
+fs = os.statvfs(rootPath)
+# bsize;    /* file system block size */
+# frsize;   /* fragment size */
+# blocks;   /* size of fs in f_frsize units */
+# bfree;    /* # free blocks */
+# bavail;   /* # free blocks for non-root */
+# files;    /* # inodes */
+# ffree;    /* # free inodes */
+# favail;   /* # free inodes for non-root */
+# flag;     /* mount flags */
+# namemax;  /* maximum filename length */
+diskSpace = fs[4] * fs[0] / 1024 / 1024
+dirac.logINFO( 'DiskSpace (MB) = %s' % diskSpace )
+ret = os.system('dirac-proxy-info')
+
+# ls work/*
 
 sys.exit(0)
