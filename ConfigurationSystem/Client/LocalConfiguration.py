@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/LocalConfiguration.py,v 1.23 2008/04/22 12:50:10 acasajus Exp $
-__RCSID__ = "$Id: LocalConfiguration.py,v 1.23 2008/04/22 12:50:10 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/LocalConfiguration.py,v 1.24 2008/04/25 10:52:16 acasajus Exp $
+__RCSID__ = "$Id: LocalConfiguration.py,v 1.24 2008/04/25 10:52:16 acasajus Exp $"
 
 import sys
 import os
@@ -23,10 +23,13 @@ class LocalConfiguration:
     self.commandOptionList = []
     self.unprocessedSwitches = []
     self.additionalCFGFiles = []
+    self.parsedOptionList = []
     self.__registerBasicOptions()
     self.isParsed = False
     self.componentName = "Unknown"
+    self.componentType = False
     self.loggingSection = "/DIRAC"
+    self.initialized = False
 
   def __getAbsolutePath( self, optionPath ):
     if optionPath[0] == "/":
@@ -80,7 +83,47 @@ class LocalConfiguration:
       self.__parseCommandLine()
     return self.unprocessedSwitches
 
+  def __checkMandatoryOptions( self ):
+    try:
+      isMandatoryMissing = False
+      for optionPath in self.mandatoryEntryList:
+        optionPath = self.__getAbsolutePath( optionPath )
+        if not gConfigurationData.extractOptionFromCFG( optionPath ):
+          gLogger.fatal( "Missing mandatory option in the configuration", optionPath )
+          isMandatoryMissing = True
+      if isMandatoryMissing:
+        return S_ERROR()
+      return S_OK()
+    except Exception, e:
+      gLogger.exception()
+      return S_ERROR( str( e ) )
+
+  #TODO: Initialize if not previously initialized
+  def initialize( self, componentName ):
+    if self.initialized:
+      return
+    self.initialized = True
+    #Set that the command line has already been parsed
+    self.isParsed = True
+    if not self.componentType:
+      self.setConfigurationForScript( componentName )
+    try:
+      retVal = self.__addUserDataToConfiguration()
+      gLogger.initialize( self.componentName, self.loggingSection )
+      if not retVal[ 'OK' ]:
+        return retVal
+      retVal = self.__checkMandatoryOptions()
+      if not retVal[ 'OK' ]:
+        return retVal
+    except Exception, e:
+      gLogger.exception()
+      return S_ERROR( str( e ) )
+    return S_OK()
+
   def loadUserData(self):
+    if self.initialized:
+      return
+    self.initialized = True
     try:
       retVal = self.__addUserDataToConfiguration()
 
@@ -93,14 +136,10 @@ class LocalConfiguration:
       if not retVal[ 'OK' ]:
         return retVal
 
-      isMandatoryMissing = False
-      for optionPath in self.mandatoryEntryList:
-        optionPath = self.__getAbsolutePath( optionPath )
-        if not gConfigurationData.extractOptionFromCFG( optionPath ):
-          gLogger.fatal( "Missing mandatory option in the configuration", optionPath )
-          isMandatoryMissing = True
-      if isMandatoryMissing:
-        return S_ERROR()
+      retVal = self.__checkMandatoryOptions()
+      if not retVal[ 'OK' ]:
+        return retVal
+
     except Exception, e:
       gLogger.exception()
       return S_ERROR( str( e ) )
@@ -134,13 +173,13 @@ class LocalConfiguration:
     self.parsedOptionList = opts
     self.isParsed = True
 
-
-  def __addUserDataToConfiguration( self ):
-    if not self.isParsed:
-      self.__parseCommandLine()
-
+  def __loadCFGFiles(self):
+    """
+    Load ~/.dirac.cfg
+    Load cfg files specified in addCFGFile calls
+    Load cfg files with come from the command line
+    """
     errorsList = []
-
     gConfigurationData.loadFile( os.path.expanduser( "~/.dirac.cfg" ) )
     for fileName in self.additionalCFGFiles:
       gLogger.debug( "Loading file %s" % fileName )
@@ -154,6 +193,13 @@ class LocalConfiguration:
       if not retVal[ 'OK' ]:
         gLogger.debug( "Could not load file %s: %s" % ( fileName, retVal[ 'Message' ] ) )
         errorsList.append( retVal[ 'Message' ] )
+    return errorsList
+
+  def __addUserDataToConfiguration( self ):
+    if not self.isParsed:
+      self.__parseCommandLine()
+
+    errorsList = self.__loadCFGFiles()
 
     if gConfigurationData.getServers():
       retVal = self.__getRemoteConfiguration()
