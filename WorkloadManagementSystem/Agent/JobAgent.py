@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.32 2008/04/26 17:56:25 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.33 2008/04/26 18:00:55 rgracian Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.32 2008/04/26 17:56:25 rgracian Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.33 2008/04/26 18:00:55 rgracian Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -430,7 +430,7 @@ class JobAgent(Agent):
     self.log.debug('SiteRootPythonDir is:\n%s' %siteRootPython)
     print >> wrapper, wrapperTemplate % (siteRootPython,signature,jobID,date_time)
     libDir = '%s/%s/lib' %(self.siteRoot,systemConfig)
-    compatDir = '%s/%s/compat' %(self.siteRoot,systemConfig)
+    compatDir = '%s/%s/compat' %(self.siteRoot,gConfig.getValue('/LocalSite/Architecture',''))
     scriptsDir = '%s/scripts' %(self.siteRoot)
     #contribDir = '%s/contrib' %(self.siteRoot)
     #archLibDir = '%s/%s/lib/python' %(self.siteRoot,systemConfig)
@@ -445,14 +445,14 @@ class JobAgent(Agent):
     #wrapper.write("os.environ['PYTHONPATH'] = '%s:%s:%s:%s:'+os.environ['PYTHONPATH']\n" %(contribDir,scriptsDir,libDir,self.siteRoot))
     #wrapper.write("os.environ['PYTHONPATH'] = '%s:%s:%s:%s:%s:'+os.environ['PYTHONPATH']\n" %(archLibDir,archLib64Dir,scriptsDir,libDir,self.siteRoot))
     #wrapper.write("os.environ['LD_LIBRARY_PATH'] = '%s:%s:%s'+os.environ['LD_LIBRARY_PATH']\n" %(libDir,lib64Dir,usrlibDir))
-    wrapper.write("os.environ['LD_LIBRARY_PATH'] = '%s:%s'\n" %(os.environ['LD_LIBRARY_PATH'],compatDir,))
+    wrapper.write("os.environ['LD_LIBRARY_PATH'] = '%s'\n" %(compatDir,))
     jobArgs = "execute("+str(arguments)+")\n"
     wrapper.write(jobArgs)
     wrapper.close ()
     os.chmod(jobWrapperFile,0755)
     jobExeFile = '%s/job/Wrapper/Job%s' %(self.siteRoot,jobID)
     #jobFileContents = '#!/bin/sh\nexport LD_LIBRARY_PATH=%s:%s:%s:$LD_LIBRARY_PATH\n%s %s -o LogLevel=debug' %(libDir,lib64Dir,usrlibDir,dPython,jobWrapperFile)
-    jobFileContents = '#!/bin/sh\nexport LD_LIBRARY_PATH=%s:%s\n%s %s -o LogLevel=debug' %(os.environ['LD_LIBRARY_PATH'],compatDir,dPython,jobWrapperFile)
+    jobFileContents = '#!/bin/sh\nexport LD_LIBRARY_PATH=%s\n%s %s -o LogLevel=debug' %(compatDir,dPython,jobWrapperFile)
     jobFile = open(jobExeFile,'w')
     jobFile.write(jobFileContents)
     jobFile.close()
