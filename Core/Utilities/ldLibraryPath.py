@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/ldLibraryPath.py,v 1.1 2008/04/25 09:03:27 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/ldLibraryPath.py,v 1.2 2008/04/26 07:58:25 rgracian Exp $
 # File :   ldLibraryPath
 # Author : Ricardo Graciani
 ########################################################################
-__RCSID__   = "$Id: ldLibraryPath.py,v 1.1 2008/04/25 09:03:27 rgracian Exp $"
-__VERSION__ = "$Revision: 1.1 $"
+__RCSID__   = "$Id: ldLibraryPath.py,v 1.2 2008/04/26 07:58:25 rgracian Exp $"
+__VERSION__ = "$Revision: 1.2 $"
 """
   Utilities to handle issues with LD_LIBRARY_PATH
 """
@@ -46,7 +46,7 @@ def unify( path, newpath ):
             else:
               os.remove( newF )
           # 4. Create the link
-          os.symlink( ldF, newldF )
+          os.symlink( ldF, newF )
     return newpath
   else:
     # Windows does nothing for the moment
