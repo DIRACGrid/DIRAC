@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.30 2008/04/26 05:41:51 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.31 2008/04/26 17:47:40 rgracian Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.30 2008/04/26 05:41:51 rgracian Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.31 2008/04/26 17:47:40 rgracian Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -445,7 +445,7 @@ class JobAgent(Agent):
     #wrapper.write("os.environ['PYTHONPATH'] = '%s:%s:%s:%s:'+os.environ['PYTHONPATH']\n" %(contribDir,scriptsDir,libDir,self.siteRoot))
     #wrapper.write("os.environ['PYTHONPATH'] = '%s:%s:%s:%s:%s:'+os.environ['PYTHONPATH']\n" %(archLibDir,archLib64Dir,scriptsDir,libDir,self.siteRoot))
     #wrapper.write("os.environ['LD_LIBRARY_PATH'] = '%s:%s:%s'+os.environ['LD_LIBRARY_PATH']\n" %(libDir,lib64Dir,usrlibDir))
-    wrapper.write("os.environ['LD_LIBRARY_PATH'] = '%s'\n" %(compatDir))
+    wrapper.write("os.environ['LD_LIBRARY_PATH'] = '%s:%s'\n" %(os.environ['LD_LIBRARY_PATH'],compatDir,))
     jobArgs = "execute("+str(arguments)+")\n"
     wrapper.write(jobArgs)
     wrapper.close ()
