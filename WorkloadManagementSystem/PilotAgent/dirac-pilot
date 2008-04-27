@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot,v 1.20 2008/04/27 18:11:20 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot,v 1.21 2008/04/27 18:59:00 rgracian Exp $
 # File :   dirac-pilot
 # Author : Ricardo Graciani
 ########################################################################
@@ -9,7 +9,7 @@
  Job Agent to execute pending workload on WMS.
  It requires dirac-install script to be sitting in the same directory.
 """
-__RCSID__ = "$Id: dirac-pilot,v 1.20 2008/04/27 18:11:20 rgracian Exp $"
+__RCSID__ = "$Id: dirac-pilot,v 1.21 2008/04/27 18:59:00 rgracian Exp $"
 try:
   import os
   import sys
@@ -229,7 +229,7 @@ if ret != 0:
   print ret
   if ret == 256:
     # The platfrom is not available, try to build it
-    installOpts += ' --build -U'
+    installOpts += ' -U'
     cmd = '%s %s' % ( installScript,  installOpts )
     if debugFlag:
       print 'DEBUG Executing: %s' % cmd
@@ -261,7 +261,7 @@ except:
   sys.exit(0)
 
 dirac = functions( myFullName )
-dirac.platform(localPlatform)
+localPlatform = dirac.platform(localPlatform)
 if localPlatform:
   myLib = os.path.join( rootPath, localPlatform, 'lib' )
   myBin = os.path.join( rootPath, localPlatform, 'bin' )
