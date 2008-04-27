@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot,v 1.19 2008/04/27 18:10:19 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot,v 1.20 2008/04/27 18:11:20 rgracian Exp $
 # File :   dirac-pilot
 # Author : Ricardo Graciani
 ########################################################################
@@ -9,7 +9,7 @@
  Job Agent to execute pending workload on WMS.
  It requires dirac-install script to be sitting in the same directory.
 """
-__RCSID__ = "$Id: dirac-pilot,v 1.19 2008/04/27 18:10:19 rgracian Exp $"
+__RCSID__ = "$Id: dirac-pilot,v 1.20 2008/04/27 18:11:20 rgracian Exp $"
 try:
   import os
   import sys
@@ -280,7 +280,7 @@ os.environ['CMTCONFIG'] = dirac.architecture
 dirac.logINFO( 'Setting CMTCONFIG=%s' % dirac.architecture )
 
 if localFlag:
-  os.system('%s -o /LocalSite/Site=%s -p %s' % (installScript, defaultSite, dirac.architecture ) )
+  os.system('%s -o /LocalSite/Site=%s' % (installScript, defaultSite ) )
   pass
 else:
   # Here the site discovery code should go.
