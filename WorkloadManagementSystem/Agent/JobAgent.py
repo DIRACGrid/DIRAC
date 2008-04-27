@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.33 2008/04/26 18:00:55 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.34 2008/04/27 21:17:03 rgracian Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.33 2008/04/26 18:00:55 rgracian Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.34 2008/04/27 21:17:03 rgracian Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -20,7 +20,7 @@ from DIRAC.Core.DISET.RPCClient                          import RPCClient
 from DIRAC.Resources.Computing.ComputingElementFactory   import ComputingElementFactory
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Core.Utilities.GridCredentials                import setupProxy,restoreProxy,setDIRACGroup,getDIRACGroup
-from DIRAC                                               import S_OK, S_ERROR, gConfig
+from DIRAC                                               import S_OK, S_ERROR, gConfig, platform
 
 import os, sys, re, string, time
 
@@ -429,8 +429,7 @@ class JobAgent(Agent):
     self.log.debug('DIRACPython is:\n%s' %dPython)
     self.log.debug('SiteRootPythonDir is:\n%s' %siteRootPython)
     print >> wrapper, wrapperTemplate % (siteRootPython,signature,jobID,date_time)
-    libDir = '%s/%s/lib' %(self.siteRoot,systemConfig)
-    compatDir = '%s/%s/compat' %(self.siteRoot,gConfig.getValue('/LocalSite/Architecture',''))
+    libDir = '%s/%s/lib' %(self.siteRoot,platform)
     scriptsDir = '%s/scripts' %(self.siteRoot)
     #contribDir = '%s/contrib' %(self.siteRoot)
     #archLibDir = '%s/%s/lib/python' %(self.siteRoot,systemConfig)
@@ -445,14 +444,14 @@ class JobAgent(Agent):
     #wrapper.write("os.environ['PYTHONPATH'] = '%s:%s:%s:%s:'+os.environ['PYTHONPATH']\n" %(contribDir,scriptsDir,libDir,self.siteRoot))
     #wrapper.write("os.environ['PYTHONPATH'] = '%s:%s:%s:%s:%s:'+os.environ['PYTHONPATH']\n" %(archLibDir,archLib64Dir,scriptsDir,libDir,self.siteRoot))
     #wrapper.write("os.environ['LD_LIBRARY_PATH'] = '%s:%s:%s'+os.environ['LD_LIBRARY_PATH']\n" %(libDir,lib64Dir,usrlibDir))
-    wrapper.write("os.environ['LD_LIBRARY_PATH'] = '%s'\n" %(compatDir,))
+    wrapper.write("os.environ['LD_LIBRARY_PATH'] = '%s'\n" %(libDir))
     jobArgs = "execute("+str(arguments)+")\n"
     wrapper.write(jobArgs)
     wrapper.close ()
     os.chmod(jobWrapperFile,0755)
     jobExeFile = '%s/job/Wrapper/Job%s' %(self.siteRoot,jobID)
     #jobFileContents = '#!/bin/sh\nexport LD_LIBRARY_PATH=%s:%s:%s:$LD_LIBRARY_PATH\n%s %s -o LogLevel=debug' %(libDir,lib64Dir,usrlibDir,dPython,jobWrapperFile)
-    jobFileContents = '#!/bin/sh\nexport LD_LIBRARY_PATH=%s\n%s %s -o LogLevel=debug' %(compatDir,dPython,jobWrapperFile)
+    jobFileContents = '#!/bin/sh\nexport LD_LIBRARY_PATH=%s\n%s %s -o LogLevel=debug' %(libDir,dPython,jobWrapperFile)
     jobFile = open(jobExeFile,'w')
     jobFile.write(jobFileContents)
     jobFile.close()
