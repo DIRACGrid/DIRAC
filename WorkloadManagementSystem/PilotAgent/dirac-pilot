@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot,v 1.18 2008/04/26 06:42:41 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot,v 1.19 2008/04/27 18:10:19 rgracian Exp $
 # File :   dirac-pilot
 # Author : Ricardo Graciani
 ########################################################################
@@ -9,7 +9,7 @@
  Job Agent to execute pending workload on WMS.
  It requires dirac-install script to be sitting in the same directory.
 """
-__RCSID__ = "$Id: dirac-pilot,v 1.18 2008/04/26 06:42:41 rgracian Exp $"
+__RCSID__ = "$Id: dirac-pilot,v 1.19 2008/04/27 18:10:19 rgracian Exp $"
 try:
   import os
   import sys
@@ -29,7 +29,7 @@ try:
   localFlag = False
   testFlag  = False
   defaultSite = 'LCG.CERN.ch'
-  localPlatform = 'slc4_ia32_gcc34'
+  localPlatform = False
   minDiskSpace  = 2560 # MB
   jobCPUReqt    = 900  # s
   diracGroup    = None
@@ -87,6 +87,7 @@ def parse_options():
    -S --server                 Make a full server installation
    -T --CPUTime=<Time>         Requested CPU Time
    -G --Group=<group>          DIRAC group to be setup
+   -U --Upload                 Upload compiled distribution to lhcbweb (if -b)
 
   from DIRAC framework:
 
@@ -95,10 +96,11 @@ def parse_options():
     -c --cert=<cert>           Use server certificate <cert> to connect to Core Services
 
   """
-  shortOptions = 'bde:hi:n:p:r:tu:v:o:s:CN:D:P:ST:G:'
+  shortOptions = 'bde:hi:n:p:r:tu:v:o:s:CN:D:P:ST:G:U'
   longOptions  = ['build', 'debug', 'external=', 'help', 'python=', 'name=', 
                   'platform=', 'repository', 'test', 'url=', 'version=', 
                   'cvs', 'Name=', 'disk=', 'path=', 'server', 'CPUTime=', 'Group=',
+                  'Upload',
                   'option=', 'section=', 'cert=']
   try:
     ( optionVals, extraOptions ) = getopt.getopt( sys.argv[1:], shortOptions, longOptions )
@@ -160,6 +162,8 @@ def parse_options():
       jobCPUReqt = v
     elif o in ('-G', '--Group'):
       diracGroup = v
+    elif o in ('-U', '--Upload'):
+      installOpts.append('-U')
     elif o == '-S' or o == '--server':
       installOpts.append('-S')
       installOpts.append(v)
@@ -225,7 +229,7 @@ if ret != 0:
   print ret
   if ret == 256:
     # The platfrom is not available, try to build it
-    installOpts += ' --build'
+    installOpts += ' --build -U'
     cmd = '%s %s' % ( installScript,  installOpts )
     if debugFlag:
       print 'DEBUG Executing: %s' % cmd
@@ -260,9 +264,8 @@ dirac = functions( myFullName )
 dirac.platform(localPlatform)
 if localPlatform:
   myLib = os.path.join( rootPath, localPlatform, 'lib' )
-  myCompat = os.path.join( rootPath, dirac.localPlatform, 'compat' )
   myBin = os.path.join( rootPath, localPlatform, 'bin' )
-  os.environ['LD_LIBRARY_PATH'] = "%s:%s" % (myLib,myCompat)
+  os.environ['LD_LIBRARY_PATH'] = "%s:%s" % (myLib)
   os.environ['PATH'] = '%s:%s' % (myBin,os.getenv('PATH'))
 
 if diracGroup:
@@ -273,11 +276,11 @@ if diracGroup:
 # Preamble
 dirac.logINFO( 'Starting %s' % __RCSID__ )
 ret = os.system('dirac-proxy-info')
-os.environ['CMTCONFIG'] = dirac.localPlatform
-dirac.logINFO( 'Setting CMTCONFIG=%s' % dirac.localPlatform )
+os.environ['CMTCONFIG'] = dirac.architecture
+dirac.logINFO( 'Setting CMTCONFIG=%s' % dirac.architecture )
 
 if localFlag:
-  os.system('%s -o /LocalSite/Site=%s -p %s' % (installScript, defaultSite, dirac.localPlatform ) )
+  os.system('%s -o /LocalSite/Site=%s -p %s' % (installScript, defaultSite, dirac.architecture ) )
   pass
 else:
   # Here the site discovery code should go.
