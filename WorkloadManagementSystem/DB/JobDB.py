@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.51 2008/04/17 10:54:52 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.52 2008/04/28 09:15:11 paterson Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.51 2008/04/17 10:54:52 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.52 2008/04/28 09:15:11 paterson Exp $"
 
 import re, os, sys, string
 import time
@@ -1563,6 +1563,6 @@ class JobDB(DB):
     """ Set the command status
     """
 
-    req = "UPDATE JobCommands SET Status='%s' WHERE JobID=%d AND Command='%s'" % (jobID,command)
+    req = "UPDATE JobCommands SET Status='%s' WHERE JobID=%d AND Command='%s'" % (status,jobID,command)
     result = self._update(req)
     return result
