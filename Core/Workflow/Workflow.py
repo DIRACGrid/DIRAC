@@ -1,8 +1,8 @@
-# $Id: Workflow.py,v 1.26 2008/02/19 14:44:33 gkuznets Exp $
+# $Id: Workflow.py,v 1.27 2008/04/28 14:36:36 atsareg Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.26 $"
+__RCSID__ = "$Revision: 1.27 $"
 
 import os
 import xml.sax
@@ -47,6 +47,7 @@ class Workflow(AttributeCollection):
 
     if name :
         self.setName(name)
+    self.workflow_commons = {}
 
   def fromWorkflow(self, obj):
     self.setName(obj.getName())
@@ -90,21 +91,27 @@ class Workflow(AttributeCollection):
     xmlfile.write(self.toXML())
     xmlfile.close()
 
+  def addTool(self,name,tool):
+    """ Add an object that will be available in all the modules to perform some operations.
+        For example, a state reporting facility.
+    """
+    self.workflow_commons[name] = tool
+
   def addStep(self, step):
-    # this is WERY importatnt piece of code
-    # we have to joing all Modules definition from all added steps in the single dictionary
-    # and we have to share whis dictionary between all included steps
+    # this is a VERY important piece of code
+    # we have to join all Modules definition from all added steps in the single dictionary
+    # and we have to share this dictionary between all included steps
     # we also have to check versions of the modules and instances
     for type in step.module_definitions.keys():
       if self.module_definitions.has_key(type):
-        #we have the same ModuleDefinition in 2 places
+        # we have the same ModuleDefinition in 2 places
         # we need to find way to synchronise it
         print "Workflow:addStep - we need to write ModuleDefinitions synchronisation code"
       else:
         # new module - just append it
         self.module_definitions.append(step.module_definitions[type])
     self.step_definitions.append(step)
-    del step.module_definitions # we need to clean all unwanted definitions
+    del step.module_definitions # we need to clean up all unwanted definitions
     step.module_definitions=None
     return step
 
@@ -245,6 +252,7 @@ class Workflow(AttributeCollection):
           else:
             wf_exec_steps[step_inst_name][parameter.getName()]=parameter.getValue()
             #print "StepInstance", step_inst_name+'.'+parameter.getName(),'=',parameter.getValue()
+      step_inst.setParent(self)
       step_inst.execute(wf_exec_steps[step_inst_name], self.step_definitions)
 
     # now we need to copy output values to the STEP!!! parameters
