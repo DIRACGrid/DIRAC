@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/LocalConfiguration.py,v 1.24 2008/04/25 10:52:16 acasajus Exp $
-__RCSID__ = "$Id: LocalConfiguration.py,v 1.24 2008/04/25 10:52:16 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/LocalConfiguration.py,v 1.25 2008/04/28 10:12:00 acasajus Exp $
+__RCSID__ = "$Id: LocalConfiguration.py,v 1.25 2008/04/28 10:12:00 acasajus Exp $"
 
 import sys
 import os
@@ -101,7 +101,7 @@ class LocalConfiguration:
   #TODO: Initialize if not previously initialized
   def initialize( self, componentName ):
     if self.initialized:
-      return
+      return S_OK()
     self.initialized = True
     #Set that the command line has already been parsed
     self.isParsed = True
@@ -122,7 +122,7 @@ class LocalConfiguration:
 
   def loadUserData(self):
     if self.initialized:
-      return
+      return S_OK()
     self.initialized = True
     try:
       retVal = self.__addUserDataToConfiguration()
