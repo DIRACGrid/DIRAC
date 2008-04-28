@@ -1,8 +1,8 @@
-# $Id: Parameter.py,v 1.30 2008/04/15 15:31:08 gkuznets Exp $
+# $Id: Parameter.py,v 1.31 2008/04/28 14:32:24 atsareg Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.30 $"
+__RCSID__ = "$Revision: 1.31 $"
 
 import traceback # to produce warning for the depreciated methods
 
@@ -306,6 +306,44 @@ class ParameterCollection(list):
         else:
             par.setValue(value, type_)
             return True
+
+    def getInput(self):
+      """ Get input linked parameters
+      """
+
+      return self.get(input=True)
+
+    def getOutput(self):
+      """ Get output linked parameters
+      """
+
+      return self.get(output=True)
+
+    def getLinked(self):
+      """ Get linked parameters
+      """
+
+      return self.get(input=True,output=True)
+
+    def get(self,input=False,output=False):
+      """ Get a copy of parameters. If input or output is True, get corresponding
+          io type parameters only. Otherwise, get all the parameters
+      """
+      all = not input and not output
+
+      params = ParameterCollection()
+      for p in self:
+        OK = False
+        if all:
+          OK = True
+        elif input and p.isInput():
+          OK = True
+        elif output and p.isOutput():
+          OK = True
+        if OK:
+          params.append(Parameter(parameter=p))
+
+      return params
 
     def setLink(self, name, module_name, parameter_name):
         """ Method finds parameter with the name "name" and if exists its set value
