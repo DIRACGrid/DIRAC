@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.24 2008/04/24 08:49:19 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.25 2008/04/28 12:49:20 paterson Exp $
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,7 +13,7 @@
 
 """
 
-__RCSID__ = "$Id: Job.py,v 1.24 2008/04/24 08:49:19 paterson Exp $"
+__RCSID__ = "$Id: Job.py,v 1.25 2008/04/28 12:49:20 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -409,8 +409,9 @@ class Job:
 
   #############################################################################
   def setOwner(self, ownerProvided):
-    """Currently a developer function but could eventually extract the VOMS GA
-       nickname and be an internal function to the Job object.
+    """Developer function.
+
+       Normally users should always specify their immutable DIRAC nickname.
     """
     if type(ownerProvided)==type("  "):
      # self._removeParameter(self.workflow,'Owner')
@@ -437,7 +438,7 @@ class Job:
   def setSoftwareTags(self, tags):
     """Helper function.
 
-       Choose any software tags if desired.  These are not compulsary but will ensure jobs only
+       Choose any software tags if desired.  These are not compulsory but will ensure jobs only
        arrive at an LCG site where the software is preinstalled.  Without the tags, missing software is
        installed automatically by the Job Agent.
 
@@ -466,7 +467,7 @@ class Job:
        Example usage:
 
        >>> job = Job()
-       >>> job.setJobGroup('0000090')
+       >>> job.setJobGroup('Bs2JPsiPhi')
 
        @param optsLine: site string
        @param optsLine: string
@@ -476,26 +477,21 @@ class Job:
       description = 'User specified job group'
       self._addParameter(self.workflow,'JobGroup','JDL',jobGroup,description)
     else:
-      raise TypeError,'Expected string for destination site'
+      raise TypeError,'Expected string for job group'
 
   #############################################################################
   def createCode(self):
-    """Developer function.
-       Wrapper method to create the code.
+    """Developer function. Wrapper method to create the code.
     """
     return self.workflow.createCode()
 
   #############################################################################
   def execute(self):
-    """Executes the job locally.
+    """Developer function. Executes the job locally.
     """
     code = self.createCode()
     #eval(compile(code,'<string>','exec'))
     self.workflow.execute()
-
-  #############################################################################
-  def printObj(self):
-    return self.workflow
 
   #############################################################################
 
@@ -643,9 +639,7 @@ class Job:
 
   #############################################################################
   def __getScriptModule(self):
-    """Internal function.
-
-      This method controls the definition for a script module.
+    """Internal function. This method controls the definition for a script module.
     """
     moduleName = 'Script'
     module = ModuleDefinition(moduleName)
@@ -660,16 +654,13 @@ class Job:
 
   #############################################################################
   def _toXML(self):
-    """Internal Function.
-
-       Creates an XML representation of itself as a Job,
-       wraps around workflow toXML().
+    """Creates an XML representation of itself as a Job.
     """
     return self.workflow.toXML()
 
   #############################################################################
   def _toJDL(self,xmlFile=''): #messy but need to account for xml file being in /tmp/guid dir
-    """Creates a JDL representation of itself as a Job
+    """Creates a JDL representation of itself as a Job.
     """
     #Check if we have to do old bootstrap...
     classadJob = ClassAd('[]')
@@ -766,15 +757,13 @@ class Job:
 
   #############################################################################
   def _setParamValue(self,name,value):
-    """Internal Function.
-
-       Sets a parameter value, used for production.
+    """Internal Function. Sets a parameter value, used for production.
     """
     return self.workflow.setValue(name,value)
 
   #############################################################################
   def _addJDLParameter(self,name,value):
-    """Developer function, add an arbitrary parameter.
+    """Developer function, add an arbitrary JDL parameter.
     """
     self._addParameter(self.workflow,name,'JDL',value,'Optional JDL parameter added')
     return self.workflow.setValue(name,value)
