@@ -1,8 +1,8 @@
-# $Id: Module.py,v 1.18 2008/01/23 15:07:50 gkuznets Exp $
+# $Id: Module.py,v 1.19 2008/04/28 14:31:10 atsareg Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.18 $"
+__RCSID__ = "$Revision: 1.19 $"
 
 # $Source: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Workflow/Module.py,v $
 
@@ -21,7 +21,7 @@ class ModuleDefinition(AttributeCollection):
         # or from the ParameterCollection
         AttributeCollection.__init__(self)
         self.main_class_obj = None # used for the interpretation only
-        self.module_obj = None     # used for the interpretation only
+        #self.module_obj = None     # used for the interpretation only
         self.parent=parent
 
         if (obj == None) or isinstance(obj, ParameterCollection):
@@ -80,12 +80,20 @@ class ModuleDefinition(AttributeCollection):
         #
         if len(self.getBody()): # checking the size of the string
             # version 2 - we assume that each self.body is a module oblect
-            module = new.module(self.getType())    # create empty module object
-            sys.modules[self.getType()] = module   # add reference for the import operator
-            exec self.getBody() in module.__dict__ # execute code itself
-            self.module_obj = module               # save pointer to this module
-            if module.__dict__.has_key(self.getType()):
-                self.main_class_obj = module.__dict__[self.getType()] # save class object
+            #module = new.module(self.getType())    # create empty module object
+            #sys.modules[self.getType()] = module   # add reference for the import operator
+            #exec self.getBody() in module.__dict__ # execute code itself
+            #self.module_obj = module               # save pointer to this module
+            #if module.__dict__.has_key(self.getType()):
+            #    self.main_class_obj = module.__dict__[self.getType()] # save class object
+
+            # version 3
+            # A.T.  Use vars() function to inspect local objects instead of playing with
+            #       fake modules. We assume that after the body execution there will be
+            #       a class with name "self.getType()" defined in the local scope.
+            exec self.getBody()
+            if vars().has_key(self.getType()):
+                self.main_class_obj = vars()[self.getType()] # save class object
             else:
                 # it is possible to have this class in another module, we have to check for this
                 # but it is advisible to use 'from module import class' operator
