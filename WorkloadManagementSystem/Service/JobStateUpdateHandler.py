@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobStateUpdateHandler.py,v 1.17 2008/04/07 15:53:39 paterson Exp $
+# $Id: JobStateUpdateHandler.py,v 1.18 2008/04/28 17:04:46 atsareg Exp $
 ########################################################################
 
 """ JobStateUpdateHandler is the implementation of the Job State updating
@@ -11,7 +11,7 @@
 
 """
 
-__RCSID__ = "$Id: JobStateUpdateHandler.py,v 1.17 2008/04/07 15:53:39 paterson Exp $"
+__RCSID__ = "$Id: JobStateUpdateHandler.py,v 1.18 2008/04/28 17:04:46 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -62,6 +62,52 @@ class JobStateUpdateHandler( RequestHandler ):
       result = logDB.addLoggingRecord(jobID,status,minorStatus,source=source)
 
     return result
+
+  ###########################################################################
+  types_setJobStatus = [IntType,DictType]
+  def export_setJobStatusBulk(self,jobID,statusDict):
+    """ Set various status fields for job specified by its JobId.
+        Set only the last status in the JobDB, updating all the status
+        logging information in the JobLoggingDB. The statusDict has datetime
+        as a key and status information dictionary as values
+    """
+
+    dates = statusDict.keys()
+    dates.sort()
+    status = "Unknown"
+    minor = "Unknown"
+    application = "Unknown"
+
+    # Get the last status values
+    for date in dates:
+      status = statusDict[date]['Status']
+      minor = statusDict[date]['MinorStatus']
+      application = statusDict[date]['ApplicationStatus']
+
+    if status != "Unknown":
+      result = jobDB.setJobAttribute(jobID,'Status',status,True)
+      if not result['OK']:
+        return result
+    if minor != "Unknown":
+      result = jobDB.setJobAttribute(jobID,'MinorStatus',status,True)
+      if not result['OK']:
+        return result
+    if application != "Unknown":
+      result = jobDB.setJobAttribute(jobID,'ApplicationStatus',status,True)
+      if not result['OK']:
+        return result
+
+    # Update the JobLoggingDB records
+    for date, sDict in statusDict.items:
+      status = sDict['Status']
+      minor = sDict['MinorStatus']
+      application = sDict['ApplicationStatus']
+      source = sDict['Source']
+      result = logDB.addLoggingRecord(jobID,status,minor,application,datetime,source)
+      if not result['OK']:
+        return result
+
+    return S_OK()
 
   ###########################################################################
   types_setJobSite = [IntType,StringType]
