@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.18 2008/04/24 10:06:14 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.19 2008/04/28 12:39:08 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -17,14 +17,14 @@ The DIRAC API provides the following functionality:
    to submit jobs to the Grid, monitor them and
    retrieve outputs
  - Interaction with Grid storage and file catalogues
-   via the DataManagement public interfaces
- ...
+   via the DataManagement public interfaces (more to be added)
+ - Local execution of workflows for testing purposes
 
-The initial instance just exposes job submission via the WMS client.
+This is currently under development and will evolve with feedback.
 
 """
 
-__RCSID__ = "$Id: Dirac.py,v 1.18 2008/04/24 10:06:14 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.19 2008/04/28 12:39:08 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -159,7 +159,7 @@ class Dirac:
 
   #############################################################################
   def runLocal(self,jobJDL,jobXML):
-    """Under development.  This method is equivalent to submit(job,mode='Local').
+    """Internal Function.  This method is equivalent to submit(job,mode='Local').
        All output files are written to the local directory.
     """
     if not self.site or self.site == 'Unknown':
@@ -311,7 +311,19 @@ class Dirac:
 
   #############################################################################
   def getReplicas(self,lfns):
-    """ Under development. Obtain replica information from file catalogue client.
+    """Obtain replica information from file catalogue client. Input LFN(s) can be string or list.
+
+       Example usage:
+
+       >>> print dirac.getReplicas('/lhcb/data/CCRC08/RDST/00000106/0000/00000106_00006321_1.rdst')
+       {'OK': True, 'Value': {'Successful': {'/lhcb/data/CCRC08/RDST/00000106/0000/00000106_00006321_1.rdst':
+       {'CERN-RDST':
+       'srm://srm-lhcb.cern.ch/castor/cern.ch/grid/lhcb/data/CCRC08/RDST/00000106/0000/00000106_00006321_1.rdst'}},
+       'Failed': {}}}
+
+       @param lfns: Logical File Name(s) to query
+       @type lfns: LFN string or list []
+       @return: S_OK,S_ERROR
     """
     if not self.fileCatalog:
       return self.__errorReport('File catalog client was not successfully imported')
@@ -346,7 +358,18 @@ class Dirac:
 
   #############################################################################
   def getMetadata(self,lfns):
-    """ Under development. Obtain replica information from file catalogue client.
+    """Obtain replica metadata from file catalogue client. Input LFN(s) can be string or list.
+
+       Example usage:
+
+       >>> print dirac.getMetadata('/lhcb/data/CCRC08/RDST/00000106/0000/00000106_00006321_1.rdst')
+       {'OK': True, 'Value': {'Successful': {'/lhcb/data/CCRC08/RDST/00000106/0000/00000106_00006321_1.rdst':
+       {'Status': '-', 'Size': 619475828L, 'GUID': 'E871FBA6-71EA-DC11-8F0C-000E0C4DEB4B', 'CheckSumType': 'AD',
+       'CheckSumValue': ''}}, 'Failed': {}}}
+
+       @param lfns: Logical File Name(s) to query
+       @type lfns: LFN string or list []
+       @return: S_OK,S_ERROR
     """
     if not self.fileCatalog:
       return self.__errorReport('File catalog client was not successfully imported')
@@ -391,7 +414,6 @@ class Dirac:
   #############################################################################
   def _sendJob(self,jdl):
     """Internal function.
-       Still to check proxy timeleft and VO eligibility etc.
 
        This is an internal wrapper for submit() in order to
        catch whether a user is authorized to submit to DIRAC or
@@ -654,11 +676,15 @@ class Dirac:
 
   #############################################################################
   def selectJobs(self,Status=None,MinorStatus=None,ApplicationStatus=None,Site=None,Owner=None,JobGroup=None,Date=None):
-    """Under development: all options correspond to the web-page table columns.
-       Date must be specified as yyyy-mm-dd.  By default, the date is today.
-       JobGroup corresponds to the name associated to a group of jobs, e.g. productionID.
-       Site is the DIRAC site name.
-       Owner is the immutable nickname.
+    """Options correspond to the web-page table columns. Returns the list of JobIDs for
+       the specified conditions.  A few notes on the formatting:
+       - Date must be specified as yyyy-mm-dd.  By default, the date is today.
+       - JobGroup corresponds to the name associated to a group of jobs, e.g. productionID / job names.
+       - Site is the DIRAC site name, e.g. LCG.CERN.ch
+       - Owner is the immutable nickname, e.g. paterson
+
+       >>> dirac.selectJobs(Status='Failed',Owner='paterson',Site='LCG.CERN.ch')
+       {'OK': True, 'Value': ['25020', '25023', '25026', '25027', '25040']}
     """
     options = {'Status':Status,'MinorStatus':MinorStatus,'ApplicationStatus':ApplicationStatus,
                'Site':Site,'JobGroup':JobGroup}
@@ -680,7 +706,7 @@ class Dirac:
     if not Date:
       now = time.gmtime()
       Date = '%s-%s-%s' %(now[0],str(now[1]).zfill(2),str(now[2]).zfill(2))
-      print Date
+      self.log.verbose('Setting date to %s' %(Date))
 
     self.log.verbose('Will select jobs with last update %s and following conditions' %Date)
     self.log.verbose(self.pPrint.pformat(conditions))
