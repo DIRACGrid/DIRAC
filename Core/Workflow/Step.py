@@ -1,8 +1,8 @@
-# $Id: Step.py,v 1.18 2008/01/30 16:59:57 gkuznets Exp $
+# $Id: Step.py,v 1.19 2008/04/28 14:34:46 atsareg Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.18 $"
+__RCSID__ = "$Revision: 1.19 $"
 
 import os
 #try: # this part to inport as part of the DIRAC framework
@@ -87,6 +87,7 @@ class StepDefinition(AttributeCollection):
     def createModuleInstance(self, type, name):
         """ Creates module instance of type 'type' with the name 'name'
         """
+
         if self.module_definitions[type]:
             mi = ModuleInstance(name, self.module_definitions[type])
             self.module_instances.append(mi)
@@ -145,7 +146,6 @@ class StepInstance(AttributeCollection):
         elif coll != None:
             raise TypeError('Can not create object type '+ str(type(self)) + ' from the '+ str(type(opt)))
 
-
     def resolveGlobalVars(self, step_definitions, wf_parameters):
         self.parameters.resolveGlobalVars(wf_parameters)
         module_instance_number=0
@@ -181,14 +181,20 @@ class StepInstance(AttributeCollection):
         ret = ret + '</StepInstance>\n'
         return ret
 
+    def setWorkflowCommons(self,wf):
+      """ Add reference to the collection of the common tools
+      """
+
+      self.workflow_commons = wf
+
     def execute(self, step_exec_attr, definitions):
         """step_exec_attr is array to hold parameters belong to this Step, filled above """
-        #print 'Executing StepInstance',self.getName(),'of type',self.getType(), definitions.keys()
+        print 'Executing StepInstance',self.getName(),'of type',self.getType(), definitions.keys()
         step_def = definitions[self.getType()]
         step_exec_modules={}
         for mod_inst in step_def.module_instances:
             mod_inst_name = mod_inst.getName()
-            print "StepInstance creating module instance ",mod_inst_name," of type", mod_inst.getType()
+            #print "StepInstance creating module instance ",mod_inst_name," of type", mod_inst.getType()
             # since during execution Step is inside Workflow the  step_def.module_definitions == None
             #step_exec_modules[mod_inst_name] = step_def.module_definitions[mod_inst.getType()].main_class_obj() # creating instance
             step_exec_modules[mod_inst_name] = step_def.parent.module_definitions[mod_inst.getType()].main_class_obj() # creating instance
@@ -207,8 +213,17 @@ class StepInstance(AttributeCollection):
                     else:
                         setattr(step_exec_modules[mod_inst_name], parameter.getName(), parameter.getValue())
                         #print "ModuleInstance", mod_inst_name+'.'+parameter.getName(),'=',parameter.getValue()
+            # Set reference to the workflow common tools
+            if self.parent.workflow_commons:
+              setattr(step_exec_modules[mod_inst_name], 'workflow_commons', self.parent.workflow_commons)
+            else:
+              setattr(step_exec_modules[mod_inst_name], 'workflow_commons', None)
             # Execution
-            step_exec_modules[mod_inst_name].execute()
+            try:
+              result = step_exec_modules[mod_inst_name].execute()
+            except Exception, x:
+              print "Exception while module execution"
+              print str(x)
 
         # now we need to copy output values to the STEP!!! parameters
         #print "output assignment"
