@@ -110,7 +110,7 @@ class DataManagementRequest(Request):
 
 ###############################################################
 
-  def __initiateSubRequest(self,type):
+  def initiateSubRequest(self,type):
     """ Add dictionary to list of requests and return the list index
     """
     defaultDict = {'Attributes':{},'Files':{},'Datasets':{}}
@@ -125,7 +125,7 @@ class DataManagementRequest(Request):
          method of the base class
     """
     # Initialise the sub-request
-    ind = self.__initiateSubRequest(type)
+    ind = self.initiateSubRequest(type)
 
     # Stuff the sub-request with the attributes
     attributeDict = {}
