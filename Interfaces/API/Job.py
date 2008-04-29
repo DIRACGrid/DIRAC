@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.25 2008/04/28 12:49:20 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.26 2008/04/29 17:18:53 paterson Exp $
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -7,13 +7,30 @@
 """
    Job Base Class
 
-   This class provides generic job submission functionality suitable for any VO.
+   This class provides generic job definition functionality suitable for any VO.
 
-   Helper functions are documented with example usage for the DIRAC API.
+   Helper functions are documented with example usage for the DIRAC API.  An example
+   script (for a simple executable) would be::
 
+     from DIRAC.Interfaces.API.Dirac import Dirac
+     from DIRAC.Interfaces.API.Job import Job
+
+     j = Job()
+     j.setCPUTime(500)
+     j.setSystemConfig('slc4_ia32_gcc34')
+     j.setExecutable('/bin/echo hello')
+     j.setExecutable('yourPythonScript.py')
+     j.setExecutable('/bin/echo hello again')
+     j.setName('MyJobName')
+
+     dirac = Dirac()
+     jobID = dirac.submit(j)
+     print 'Submission Result: ',jobID
+
+   Note that several executables can be provided and wil be executed sequentially.
 """
 
-__RCSID__ = "$Id: Job.py,v 1.25 2008/04/28 12:49:20 paterson Exp $"
+__RCSID__ = "$Id: Job.py,v 1.26 2008/04/29 17:18:53 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -91,6 +108,8 @@ class Job:
 
        @param executable: Executable, can include path to file
        @type executable: string
+       @param logFile: Optional log file name
+       @type logFile: string
     """
 
     if os.path.exists(executable):
@@ -166,7 +185,7 @@ class Job:
        >>> job.setName("myJobName")
 
        @param jobname: Name of job
-       @param type: string
+       @type jobname: string
     """
     if type(jobname)==type(" "):
       self.workflow.setName(jobname)
@@ -277,8 +296,8 @@ class Job:
        >>> job = Job()
        >>> job.setOutputData(['DVNtuple.root'])
 
-       @param files: Output data file or files
-       @type files: Single string or list of strings ['','']
+       @param lfns: Output data file or files
+       @type lfns: Single string or list of strings ['','']
        @param OutputSE: Optional parameter to specify the Storage
        Element to store data or files, e.g. CERN-tape
        @type OutputSE: string
@@ -328,7 +347,7 @@ class Job:
        >>> job.setSystemConfig("slc4_ia32_gcc34")
 
        @param config: architecture, CMTCONFIG value
-       @param type: string
+       @type config: string
     """
     if type(config) == type(" "):
       description = 'User specified system configuration for job'
@@ -349,7 +368,7 @@ class Job:
        >>> job.setCPUTime(5000)
 
        @param timeInSecs: CPU time
-       @param timeInSecs: Int
+       @type timeInSecs: Int
     """
     if type(timeInSecs) == int:
       if timeInSecs:
@@ -371,8 +390,8 @@ class Job:
        >>> job = Job()
        >>> job.setDestination('LCG.CERN.ch')
 
-       @param optsLine: site string
-       @param optsLine: string
+       @param destination: site string
+       @type destination: string
     """
 
     if type(destination) == type("  "):
@@ -394,8 +413,8 @@ class Job:
        >>> job = Job()
        >>> job.setBannedSites(['LCG.GRIDKA.de','LCG.CNAF.it'])
 
-       @param optsLine: site string
-       @param optsLine: string
+       @param sites: single site string or list
+       @type sites: string or list
     """
     if type(sites)==list and len(sites):
       bannedSites = string.join(lfns,';')
@@ -448,7 +467,7 @@ class Job:
        >>> job.setSoftwareTags(['VO-lhcb-Brunel-v30r17','VO-lhcb-Boole-v12r10','VO-lhcb-Gauss-v25r12'])
 
        @param tags: software tags
-       @param type: string or list
+       @type tags: string or list
     """
     if type(tags) == type(" "):
       self._addParameter(self.workflow,'SoftwareTag','JDL',tags,'VO software tag')
@@ -469,8 +488,8 @@ class Job:
        >>> job = Job()
        >>> job.setJobGroup('Bs2JPsiPhi')
 
-       @param optsLine: site string
-       @param optsLine: string
+       @param jobGroup: JobGroup name
+       @type jobGroup: string
     """
 
     if type(jobGroup) == type("  "):
