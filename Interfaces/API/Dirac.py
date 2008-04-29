@@ -1,30 +1,29 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.19 2008/04/28 12:39:08 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.20 2008/04/29 16:59:29 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
 
-from DIRAC.Core.Base import Script
-Script.parseCommandLine()
+"""
+   DIRAC API Class
 
-"""DIRAC API Class
+   All DIRAC functionality is exposed through the DIRAC API and this
+   serves as a source of documentation for the project via EpyDoc.
 
-All DIRAC functionality is exposed through the DIRAC API and this
-serves as a source of documentation for the project via EpyDoc.
-
-The DIRAC API provides the following functionality:
- - A transparent and secure way for users
-   to submit jobs to the Grid, monitor them and
-   retrieve outputs
- - Interaction with Grid storage and file catalogues
-   via the DataManagement public interfaces (more to be added)
- - Local execution of workflows for testing purposes
-
-This is currently under development and will evolve with feedback.
+   The DIRAC API provides the following functionality:
+    - A transparent and secure way for users
+      to submit jobs to the Grid, monitor them and
+      retrieve outputs
+    - Interaction with Grid storage and file catalogues
+      via the DataManagement public interfaces (more to be added)
+    - Local execution of workflows for testing purposes.
 
 """
 
-__RCSID__ = "$Id: Dirac.py,v 1.19 2008/04/28 12:39:08 paterson Exp $"
+from DIRAC.Core.Base import Script
+Script.parseCommandLine()
+
+__RCSID__ = "$Id: Dirac.py,v 1.20 2008/04/29 16:59:29 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -447,8 +446,8 @@ class Dirac:
        >>> print dirac.getInputSandbox(12345)
        {'OK': True, 'Value': ['Job__Sandbox__.tar.bz2']}
 
-       @param job: JobID
-       @type job: integer or string
+       @param jobID: JobID
+       @type jobID: integer or string
        @return: S_OK,S_ERROR
 
        @param outputDir: Optional directory for files
@@ -496,8 +495,8 @@ class Dirac:
        >>> print dirac.getOutputSandbox(12345)
        {'OK': True, 'Value': ['Job__Sandbox__.tar.bz2']}
 
-       @param job: JobID
-       @type job: integer or string
+       @param jobID: JobID
+       @type jobID: integer or string
        @return: S_OK,S_ERROR
 
        @param outputDir: Optional directory path
@@ -541,8 +540,8 @@ class Dirac:
        >>> print dirac.delete(12345)
        {'OK': True, 'Value': [12345]}
 
-       @param job: JobID
-       @type job: int, string or list
+       @param jobID: JobID
+       @type jobID: int, string or list
        @return: S_OK,S_ERROR
 
     """
@@ -572,8 +571,8 @@ class Dirac:
        >>> print dirac.reschedule(12345)
        {'OK': True, 'Value': [12345]}
 
-       @param job: JobID
-       @type job: int, string or list
+       @param jobID: JobID
+       @type jobID: int, string or list
        @return: S_OK,S_ERROR
 
     """
@@ -600,10 +599,10 @@ class Dirac:
        Example Usage:
 
         >>> print dirac.kill(12345)
-       {'OK': True, 'Value': [12345]}
+        {'OK': True, 'Value': [12345]}
 
-       @param job: JobID
-       @type job: int, string or list
+       @param jobID: JobID
+       @type jobID: int, string or list
        @return: S_OK,S_ERROR
 
     """
@@ -678,10 +677,10 @@ class Dirac:
   def selectJobs(self,Status=None,MinorStatus=None,ApplicationStatus=None,Site=None,Owner=None,JobGroup=None,Date=None):
     """Options correspond to the web-page table columns. Returns the list of JobIDs for
        the specified conditions.  A few notes on the formatting:
-       - Date must be specified as yyyy-mm-dd.  By default, the date is today.
-       - JobGroup corresponds to the name associated to a group of jobs, e.g. productionID / job names.
-       - Site is the DIRAC site name, e.g. LCG.CERN.ch
-       - Owner is the immutable nickname, e.g. paterson
+        - Date must be specified as yyyy-mm-dd.  By default, the date is today.
+        - JobGroup corresponds to the name associated to a group of jobs, e.g. productionID / job names.
+        - Site is the DIRAC site name, e.g. LCG.CERN.ch
+        - Owner is the immutable nickname, e.g. paterson
 
        >>> dirac.selectJobs(Status='Failed',Owner='paterson',Site='LCG.CERN.ch')
        {'OK': True, 'Value': ['25020', '25023', '25026', '25027', '25040']}
