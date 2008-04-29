@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.31 2008/04/22 09:23:31 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.32 2008/04/29 16:06:38 paterson Exp $
 # File  : Watchdog.py
 # Author: Stuart Paterson
 ########################################################################
@@ -18,7 +18,7 @@
           - CPU normalization for correct comparison with job limit
 """
 
-__RCSID__ = "$Id: Watchdog.py,v 1.31 2008/04/22 09:23:31 rgracian Exp $"
+__RCSID__ = "$Id: Watchdog.py,v 1.32 2008/04/29 16:06:38 paterson Exp $"
 
 from DIRAC.Core.Base.Agent                          import Agent
 from DIRAC.Core.DISET.RPCClient                     import RPCClient
@@ -68,7 +68,7 @@ class Watchdog(Agent):
     self.testCPUConsumed = gConfig.getValue(self.section+'/CheckCPUConsumedFlag',0)
     self.testCPULimit    = gConfig.getValue(self.section+'/CheckCPULimitFlag',0)
     #Other parameters
-    self.pollingTime      = gConfig.getValue(self.section+'/PollingTime',60) # 60 seconds
+    self.pollingTime      = gConfig.getValue(self.section+'/PollingTime',10) # 10 seconds
     self.checkingTime     = gConfig.getValue(self.section+'/CheckingTime',30*60) #10 minute period
     self.minCheckingTime   = gConfig.getValue(self.section+'/MinCheckingTime',20*60) # 20 mins
     self.maxWallClockTime = gConfig.getValue(self.section+'/MaxWallClockTime',4*24*60*60) # e.g. 4 days
@@ -233,15 +233,15 @@ class Watchdog(Agent):
        sending a sign of life.
     """
     self.log.info('Received control signal')
-    if type(signal) == type({}):
-      if signal.has_key('kill'):
+    if type(signalDict) == type({}):
+      if signalDict.has_key('kill'):
         self.log.info('Killing job via control signal')
         self.__killRunningThread(self.spObject)
         self.__getUsageSummary()
         self.__finish()
       else:
         self.log.info('The following control signal was sent but not understood by watchdog:')
-        self.log.info(signal)
+        self.log.info(signalDict)
     else:
       self.log.info('Expected dictionary for control signal, not:')
       self.log.info(signalDict)
