@@ -10,7 +10,7 @@ from DIRAC.RequestManagementSystem.Client.Request import Request
 
 class DataManagementRequest(Request):
 
-  def __init__(self,request=None):
+  def __init__(self,request=None,init=True):
 
     # A common set of attributes that define requests.
     self.requestAttributes = ['SubRequestID','TargetSE','Status','Operation','SourceSE','Catalogue','SpaceToken']
@@ -19,7 +19,7 @@ class DataManagementRequest(Request):
     # Possible keys to define the dataset in the request.
     self.datasetAttributes = ['Handle']
 
-    Request.__init__(self,request)
+    Request.__init__(self,request,init)
 
 ###############################################################
 
@@ -118,7 +118,6 @@ class DataManagementRequest(Request):
       self.subrequests[type] = []
     self.subrequests[type].append(defaultDict)
     length = len(self.subrequests[type])
-    self.subrequests[type][length-1]['Attributes']['Type'] = type
     return (length-1)
 
   def addSubRequest(self,type,requestDict):
@@ -135,6 +134,9 @@ class DataManagementRequest(Request):
         attributeDict[key] = requestDict['Attributes'][key]
       else:
         attributeDict[key] = ''
+
+    if not attributeDict['Type']:
+      attributeDict['Type'] = type
     if not attributeDict['Status']:
       attributeDict['Status'] = 'Waiting'
     if not attributeDict['SubRequestID']:
