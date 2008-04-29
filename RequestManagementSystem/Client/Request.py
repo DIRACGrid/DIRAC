@@ -1,10 +1,10 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/Request.py,v 1.16 2008/04/29 20:06:33 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/Request.py,v 1.17 2008/04/29 20:08:46 acsmith Exp $
 
 """ Request base class. Defines the common general parameters that should be present in any
     request
 """
 
-__RCSID__ = "$Id: Request.py,v 1.16 2008/04/29 20:06:33 acsmith Exp $"
+__RCSID__ = "$Id: Request.py,v 1.17 2008/04/29 20:08:46 acsmith Exp $"
 
 import commands, os, xml.dom.minidom, types, time, copy, datetime
 from DIRAC import gConfig
@@ -374,11 +374,11 @@ class Request:
     for rtype in self.subrequests.keys():
       if requestType:
         if rtype == requestType:
-          nReq = self.getNumSubRequests(rtype)
+          nReq = self.getNumSubRequests(rtype)['Value']
           for i in range(nReq):
             out += self.createSubRequestXML(i,rtype)['Value']
       else:
-        nReq = self.getNumSubRequests(rtype)
+        nReq = self.getNumSubRequests(rtype)['Value']
         for i in range(nReq):
           out += self.createSubRequestXML(i,rtype)['Value']
     out += '</DIRAC_REQUEST>\n'
