@@ -118,6 +118,7 @@ class DataManagementRequest(Request):
       self.subrequests[type] = []
     self.subrequests[type].append(defaultDict)
     length = len(self.subrequests[type])
+    self.subrequests[type][length-1]['Attributes']['Type'] = type
     return (length-1)
 
   def addSubRequest(self,type,requestDict):
