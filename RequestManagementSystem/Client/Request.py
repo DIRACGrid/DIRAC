@@ -1,10 +1,10 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/Request.py,v 1.14 2008/04/18 06:52:52 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/Request.py,v 1.15 2008/04/29 15:31:39 atsareg Exp $
 
 """ Request base class. Defines the common general parameters that should be present in any
     request
 """
 
-__RCSID__ = "$Id: Request.py,v 1.14 2008/04/18 06:52:52 atsareg Exp $"
+__RCSID__ = "$Id: Request.py,v 1.15 2008/04/29 15:31:39 atsareg Exp $"
 
 import commands, os, xml.dom.minidom, types, time, copy, datetime
 from DIRAC import gConfig
@@ -48,6 +48,8 @@ class Request:
 
     if type(request) == types.NoneType:
       # Set some defaults
+      for name in self.attributeNames:
+        self.attributes[name] = 'Unknown'
       status,self.attributes['RequestID'] = commands.getstatusoutput('uuidgen')
       self.attributes['CreationTime'] = str(datetime.datetime.utcnow())
       self.attributes['Status'] = "New"
@@ -201,7 +203,7 @@ class Request:
   def update(self,request):
     """ Add subrequests from another request
     """
-    
+
     subTypes = request.getSubRequestTypes()
     for stype in subTypes:
       subRequests = request.getSubRequests(stype)
