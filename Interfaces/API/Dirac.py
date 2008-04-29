@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.20 2008/04/29 16:59:29 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.21 2008/04/29 18:17:54 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.20 2008/04/29 16:59:29 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.21 2008/04/29 18:17:54 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -931,7 +931,7 @@ class Dirac:
        Example Usage:
 
        >>> print dirac.peek(1484)
-       {'OK': True, 'Value': 'Job peek result printed at DIRAC INFO level'}
+       {'OK': True, 'Value': 'Job peek result'}
 
        @param jobID: JobID
        @type jobID: int or string
@@ -949,13 +949,14 @@ class Dirac:
     if not result['OK']:
       return self.__errorReport(result,'Could not retrieve job attributes')
 
+    stdout = 'Not available yet.'
     if result['Value'].has_key('StandardOutput'):
       self.log.info(result['Value']['StandardOutput'])
+      stdout = result['Value']['StandardOutput']
     else:
-      self.log.info('No standard output to print')
+      self.log.info('No standard output available to print.')
 
-    #deliberately don't return result as this is strictly for visual inspection only
-    return S_OK('Job peek result printed at DIRAC INFO level')
+    return S_OK(stdout)
 
   #############################################################################
   def __getJDLParameters(self,jdl):
