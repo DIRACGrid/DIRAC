@@ -56,7 +56,7 @@ class RequestDBMySQL(DB):
     # STILL TO DO: return the request string
 
   def getRequest(self,requestType):
-    dmRequest = DataManagementRequest()
+    dmRequest = DataManagementRequest(init=False)
     self.getIdLock.acquire()
     req = "SELECT RequestID,SubRequestID FROM SubRequests WHERE Status = 'Waiting' AND RequestType = '%s' ORDER BY RequestID LIMIT 1;" % requestType
     res = self._query(req)
@@ -85,8 +85,8 @@ class RequestDBMySQL(DB):
 
     for subRequestID,operation,sourceSE,targetSE,spaceToken,catalogue in res['Value']:
       subRequestIDs.append(subRequestID)
-      res = dmRequest.initiateSubRequest(requestType)
-      ind = res['Value']
+      ind = dmRequest.initiateSubRequest(requestType)
+      #ind = res['Value']
       subRequestDict = {'Operation':operation,'SourceSE':sourceSE,'TargetSE':targetSE,'Catalogue':catalogue,'SpaceToken':spaceToken,'Status':'Waiting','SubRequestID':subRequestID}
       res = dmRequest.setSubRequestAttributes(ind,requestType,subRequestDict)
       if not res['OK']:
@@ -157,7 +157,7 @@ class RequestDBMySQL(DB):
 
   def setRequest(self,requestName,requestString):
     request = DataManagementRequest(request=requestString)
-    requestTypes = ['transfer','register','removal','stage']
+    requestTypes = request.getSubRequestTypes()['Value']
     failed = False
     res = self._getRequestID(requestName)
     if not res['OK']:
@@ -168,28 +168,25 @@ class RequestDBMySQL(DB):
     if res['OK']:
       for requestType in requestTypes:
         res = request.getNumSubRequests(requestType)
-        if res['OK']:
-          numRequests = res['Value']
-          for ind in range(numRequests):
-            res = self._getSubRequestID(requestID,requestType)
+        numRequests = res['Value']
+        for ind in range(numRequests):
+          res = self._getSubRequestID(requestID,requestType)
+          if res['OK']:
+            subRequestID = res['Value']
+            res = self.__setSubRequestAttributes(ind,requestType,subRequestID,request)
             if res['OK']:
-              subRequestID = res['Value']
-              res = self.__setSubRequestAttributes(ind,requestType,subRequestID,request)
+              subRequestIDs[subRequestID] = res['Value']
+              res = self.__setSubRequestFiles(ind,requestType,subRequestID,request)
               if res['OK']:
-                subRequestIDs[subRequestID] = res['Value']
-                res = self.__setSubRequestFiles(ind,requestType,subRequestID,request)
-                if res['OK']:
-                  res = self.__setSubRequestDatasets(ind,requestType,subRequestID,request)
-                  if not res['OK']:
-                    failed = True
-                else:
+                res = self.__setSubRequestDatasets(ind,requestType,subRequestID,request)
+                if not res['OK']:
                   failed = True
               else:
                 failed = True
             else:
               failed = True
-        else:
-          failed = True
+          else:
+            failed = True
     else:
       failed = True
     for subRequestID,status in subRequestIDs.items():
@@ -298,6 +295,7 @@ class RequestDBMySQL(DB):
     if not res['OK']:
       return S_ERROR('Failed to get request datasets')
     datasets = res['Value']
+    res = S_OK()
     for dataset in datasets:
       res = self._setDataset(subRequestID,dataset)
       if not res['OK']:
@@ -366,7 +364,8 @@ class RequestDBMySQL(DB):
   def __setRequestAttributes(self,requestID,request):
     """ Insert into the DB the request attributes
     """
-    res = self._setRequestAttribute(requestID,'CreationTime', request.getCurrentDate())
+    print request.getCreationTime()
+    res = self._setRequestAttribute(requestID,'CreationTime', request.getCreationTime())
     if not res['OK']:
       return res
     res = self._setRequestAttribute(requestID,'JobID',request.getJobID())
@@ -375,7 +374,7 @@ class RequestDBMySQL(DB):
     res = self._setRequestAttribute(requestID,'OwnerDN',request.getOwnerDN())
     if not res['OK']:
       return res
-    res = self._setRequestAttribute(requestID,'DIRACInstance',request.getDiracInstance())
+    res = self._setRequestAttribute(requestID,'DIRACInstance',request.getDIRACSetup())
     return res
 
   def _setRequestAttribute(self,requestID, attrName, attrValue):
