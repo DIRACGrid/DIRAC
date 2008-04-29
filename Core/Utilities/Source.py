@@ -1,11 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Source.py,v 1.2 2008/04/29 08:08:35 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Source.py,v 1.3 2008/04/29 21:02:00 rgracian Exp $
 # File :   Source.py
 # Author : Ricardo Graciani
 ########################################################################
 
 from DIRAC.Core.Utilities import S_OK, S_ERROR
 from DIRAC.Core.Utilities import shellCall, systemCall
+from DIRAC                import platformTuple
 
 def Source( timeout, cmdTuple, inputEnv=None ):
   """
