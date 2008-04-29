@@ -1,10 +1,10 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/Request.py,v 1.15 2008/04/29 15:31:39 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/Request.py,v 1.16 2008/04/29 20:06:33 acsmith Exp $
 
 """ Request base class. Defines the common general parameters that should be present in any
     request
 """
 
-__RCSID__ = "$Id: Request.py,v 1.15 2008/04/29 15:31:39 atsareg Exp $"
+__RCSID__ = "$Id: Request.py,v 1.16 2008/04/29 20:06:33 acsmith Exp $"
 
 import commands, os, xml.dom.minidom, types, time, copy, datetime
 from DIRAC import gConfig
@@ -113,8 +113,8 @@ class Request:
   def getSubRequestTypes(self):
     """ Get the list of subrequest types
     """
-
-    return self.subrequests.keys()
+    subRequestTypes = self.subrequests.keys()
+    return S_OK(subRequestTypes)
 
 #####################################################################
 #
@@ -123,22 +123,25 @@ class Request:
   def getRequestAttributes(self):
     """ Get the dictionary of the request attributes
     """
-    return self.attributes
+    return S_OK(self.attributes)
 
   def setRequestAttributes(self,attributeDict):
     """ Set the attributes associated to this request
     """
     self.attributes.update(attributeDict)
+    return S_OK()
 
   def getAttribute(self,aname):
     """ Get the attribute specified by its name aname
     """
-    return self.attributes[aname]
+    attributeValue = self.attributes[aname]
+    return S_OK(attributeValue)
 
   def setAttribute(self,aname,value):
     """ Set the attribute specified by its name aname
     """
     self.attributes[aname] =  value
+    return S_OK()
 
   def __get_attribute(self):
      """ Generic method to get attributes
@@ -169,6 +172,7 @@ class Request:
       self.attributes['CreationTime'] = time.strftime('%Y-%m-%d %H:%M:%S')
     else:
       self.attributes['CreationTime'] = time
+    return S_OK()
 
 #####################################################################
   def setExecutionTime(self,time='now'):
@@ -179,6 +183,7 @@ class Request:
       self.attributes['ExecutionTime'] = time.strftime('%Y-%m-%d %H:%M:%S')
     else:
       self.attributes['ExecutionTime'] = time
+    return S_OK()
 
 #####################################################################
   def getSubRequests(self,type):
@@ -186,9 +191,10 @@ class Request:
     """
 
     if type in self.subrequests.keys():
-      return self.subrequests[type]
+      subRequests = self.subrequests[type]
     else:
-      return []
+      subRequests = []
+    return S_OK(subRequests)
 
 #####################################################################
   def setSubRequests(self,stype,subRequests):
@@ -198,6 +204,7 @@ class Request:
       self.subrequests[stype] = []
     for sub in subRequests:
       self.addSubRequest(stype,sub)
+    return S_OK()
 
 #####################################################################
   def update(self,request):
@@ -229,23 +236,22 @@ class Request:
   def getSubRequest(self,ind,type):
     """ Get the sub-request as specified by its index
     """
-
     try:
       subrequest = self.subrequests[type][ind]
-      return subrequest
+      return S_OK(subrequest)
     except:
-      return None
+      return S_ERROR(subrequest)
 
 ###############################################################
 
   def getNumSubRequests(self,type):
     """ Get the number of sub-requests for a given request type
     """
-
     if type in self.subrequests.keys():
-      return len(self.subrequests[type])
+      numSubRequests =  len(self.subrequests[type])
+      return S_OK(numSubRequests)
     else:
-      return 0
+      return S_ERROR()
 
 ###############################################################
 
@@ -253,21 +259,25 @@ class Request:
     """ Set the operation to Done status
     """
     self.subrequests[type][ind]['Attributes']['Status'] = status
+    return S_OK()
 
   def getSubRequestAttributes(self,ind,type):
     """ Get the sub-request attributes
     """
-    return self.subrequests[type][ind]['Attributes']
+    attributes = self.subrequests[type][ind]['Attributes']
+    return S_OK(attributes)
 
   def setSubRequestAttributes(self,ind,type,attributeDict):
     """ Set the sub-request attributes
     """
     self.subrequests[type][ind]['Attributes'] = attributeDict
+    return S_OK()
 
   def getSubRequestAttributeValue(self,ind,type,attribute):
     """ Get the attribute value associated to a sub-request
     """
-    return self.subrequests[type][ind]['Attributes'][attribute]
+    requestAttrValue = self.subrequests[type][ind]['Attributes'][attribute]
+    return S_OK(requestAttrValue)
 
   def setSubRequestAttributeValue(self,ind,type,attribute,value):
     """ Set the attribute value associated to a sub-request
@@ -275,34 +285,33 @@ class Request:
     if not self.subrequests[type][ind].has_key('Attributes'):
       self.subrequests[type][ind]['Attributes'] = {}
     self.subrequests[type][ind]['Attributes'][attribute] = value
+    return S_OK()
 
 ###############################################################
   def isEmpty(self,requestType=None):
     """ Check if the request has all the subrequests done
     """
-
     for stype,slist in self.subrequests.items():
       if requestType:
         if stype == requestType:
           for tdic in slist:
             if tdic['Attributes']['Status'] != "Done":
-              return 0
+              return S_OK(0)
       else:
         for tdic in slist:
           if tdic['Attributes']['Status'] != "Done":
-            return 0
-    return 1
+            return S_OK(0)
+    return S_OK(1)
 
   def isSubRequestEmpty(self,ind,type):
     """ Check if the specified subrequest is done
     """
-
     if not self.subrequests.has_key(type):
-      return 1
+      return S_OK(1)
     if ind < len(self.subrequests[type]):
       if self.subrequests[type][ind]['Attributes']['Status'] != "Done":
-        return 0
-    return 1
+        return S_OK(0)
+    return S_OK(1)
 
  #####################################################################
   def __dumpDictionary(self,name,dict,indent=0):
@@ -362,21 +371,18 @@ class Request:
       xml_attributes += '             %s="%s"\n' % (attr,str(self.attributes[attr]))
 
     out += '<Header \n%s/>\n\n' % xml_attributes
-
     for rtype in self.subrequests.keys():
       if requestType:
         if rtype == requestType:
           nReq = self.getNumSubRequests(rtype)
           for i in range(nReq):
-            out += self.createSubRequestXML(i,rtype)
+            out += self.createSubRequestXML(i,rtype)['Value']
       else:
         nReq = self.getNumSubRequests(rtype)
         for i in range(nReq):
-          out += self.createSubRequestXML(i,rtype)
-
-
+          out += self.createSubRequestXML(i,rtype)['Value']
     out += '</DIRAC_REQUEST>\n'
-    return out
+    return S_OK(str(out))
 
   def createSubRequestXML(self,ind,rtype):
     """ A simple subrequest representation assuming the subrequest is just
@@ -384,7 +390,7 @@ class Request:
     """
     rname = rtype.upper()+'_SUBREQUEST'
     out = self.__dictionaryToXML(rname,self.subrequests[rtype][ind])
-    return out
+    return S_OK(out)
 
   def __dictionaryToXML(self,name,dict,indent = 0,attributes={}):
     """ Utility to convert a dictionary to XML
