@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobMonitoringHandler.py,v 1.16 2008/04/29 14:15:52 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobMonitoringHandler.py,v 1.17 2008/04/29 15:06:33 atsareg Exp $
 ########################################################################
 
 """ JobMonitoringHandler is the implementation of the JobMonitoring service
@@ -11,7 +11,7 @@
 
 """
 
-__RCSID__ = "$Id: JobMonitoringHandler.py,v 1.16 2008/04/29 14:15:52 atsareg Exp $"
+__RCSID__ = "$Id: JobMonitoringHandler.py,v 1.17 2008/04/29 15:06:33 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -338,17 +338,21 @@ class JobMonitoringHandler( RequestHandler ):
           jobDict['LastSignOfLife'] = jobDict['LastUpdateTime']
 
     # prepare the standard structure now
-    paramNames = ['JobID'] + summaryDict[0].keys()
+    key = summaryDict.keys()[0]
+    paramNames = summaryDict[key].keys()
+    
+    records = []
     for jobID, jobDict in summaryDict.items():
-      jParList = [jobID]
-      for pname in paramNames[1:]:
+      jParList = []
+      for pname in paramNames:
         jParList.append(jobDict[pname])
+      records.append(jParList)
 
     resultDict['ParameterNames'] = paramNames
-    resultDict['Records'] = jParList
+    resultDict['Records'] = records
 
     statusDict = {}
-    statusAttrDict = attrDict
+    statusAttrDict = selectDict
     for status in ['Running','Waiting','Outputready']:
       statusAttrDict['Status'] = status
       result = jobDB.countJobs(statusAttrDict)
