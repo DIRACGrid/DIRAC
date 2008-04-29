@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: DownloadInputData.py,v 1.3 2008/04/29 14:01:08 paterson Exp $
+# $Id: DownloadInputData.py,v 1.4 2008/04/29 14:38:44 paterson Exp $
 # File :   DownloadInputData.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     defined in the CS for the VO.
 """
 
-__RCSID__ = "$Id: DownloadInputData.py,v 1.3 2008/04/29 14:01:08 paterson Exp $"
+__RCSID__ = "$Id: DownloadInputData.py,v 1.4 2008/04/29 14:38:44 paterson Exp $"
 
 from DIRAC.Core.DISET.RPCClient                                     import RPCClient
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
@@ -172,7 +172,7 @@ class DownloadInputData:
        result.
     """
     diskSpace = getDiskSpace() #MB
-    availableBytes = diskSpace*1024 #bytes
+    availableBytes = diskSpace*1024*1024 #bytes
     #below can be a configuration option sent via the job wrapper in the future
     buffer = 3*1024*1024*1024 # 3GB in bytes
     if (buffer+totalSize) < availableBytes:
