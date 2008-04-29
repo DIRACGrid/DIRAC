@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobMonitoringHandler.py,v 1.15 2008/04/16 11:25:40 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobMonitoringHandler.py,v 1.16 2008/04/29 14:15:52 atsareg Exp $
 ########################################################################
 
 """ JobMonitoringHandler is the implementation of the JobMonitoring service
@@ -11,7 +11,7 @@
 
 """
 
-__RCSID__ = "$Id: JobMonitoringHandler.py,v 1.15 2008/04/16 11:25:40 paterson Exp $"
+__RCSID__ = "$Id: JobMonitoringHandler.py,v 1.16 2008/04/29 14:15:52 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -280,6 +280,87 @@ class JobMonitoringHandler( RequestHandler ):
     resultDict['SummaryStatus'] = statusDict
 
     return S_OK(resultDict)
+
+##############################################################################
+  types_getJobPageSummaryWeb = [DictType, ListType, IntType, IntType]
+  def export_getJobPageSummaryWeb(self, selectDict, sortList, startItem, maxItems):
+    """ Get the summary of the job information for a given page in the
+        job monitor in a generic format
+    """
+
+    resultDict = {}
+    last_update = None
+    if selectDict.has_key('LastUpdate'):
+      last_update = selectDict['LastUpdate']
+      del selectDict['LastUpdate']
+
+    # Sorting instructions. Only one for the moment.
+    if sortList:
+      orderAttribute = sortList[0][0]+":"+sortList[0][1]
+    else:
+      orderAttribute = None
+
+    result = jobDB.selectJobs(selectDict, orderAttribute=orderAttribute, newer=last_update)
+    if not result['OK']:
+      return S_ERROR('Failed to select jobs: '+result['Message'])
+
+    jobList = result['Value']
+    nJobs = len(jobList)
+    resultDict['TotalRecords'] = nJobs
+    if nJobs == 0:
+      return S_OK(resultDict)
+
+    iniJob = startItem
+    lastJob = iniJob + maxItems
+    if iniJob >= nJobs:
+      return S_ERROR('Item number out of range')
+
+    if lastJob > nJobs:
+      lastJob = nJobs
+
+    summaryJobList = jobList[iniJob:lastJob]
+    result = jobDB.getAttributesForJobList(summaryJobList,SUMMARY)
+    if not result['OK']:
+      return S_ERROR('Failed to get job summary: '+result['Message'])
+
+    summaryDict = result['Value']
+
+    # Evaluate last sign of life time
+    for jobID, jobDict in summaryDict.items():
+      if jobDict['HeartBeatTime'] == 'None':
+        jobDict['LastSignOfLife'] = jobDict['LastUpdateTime']
+      else:
+        lastTime = Time.fromString(jobDict['LastUpdateTime'])
+        hbTime = Time.fromString(jobDict['HeartBeatTime'])
+        if (hbTime-lastTime) > (lastTime-lastTime):
+          jobDict['LastSignOfLife'] = jobDict['HeartBeatTime']
+        else:
+          jobDict['LastSignOfLife'] = jobDict['LastUpdateTime']
+
+    # prepare the standard structure now
+    paramNames = ['JobID'] + summaryDict[0].keys()
+    for jobID, jobDict in summaryDict.items():
+      jParList = [jobID]
+      for pname in paramNames[1:]:
+        jParList.append(jobDict[pname])
+
+    resultDict['ParameterNames'] = paramNames
+    resultDict['Records'] = jParList
+
+    statusDict = {}
+    statusAttrDict = attrDict
+    for status in ['Running','Waiting','Outputready']:
+      statusAttrDict['Status'] = status
+      result = jobDB.countJobs(statusAttrDict)
+      if result['OK']:
+        statusDict[status] = result['Value']
+      else:
+        break
+
+    resultDict['Extras'] = statusDict
+
+    return S_OK(resultDict)
+
 
 ##############################################################################
   types_getJobsPrimarySummary = [ ListType ]
