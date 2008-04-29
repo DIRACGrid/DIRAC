@@ -144,8 +144,6 @@ class DataManagementRequest(Request):
       else:
         attributeDict[key] = ''
 
-    if not attributeDict['Type']:
-      attributeDict['Type'] = type
     if not attributeDict['Status']:
       attributeDict['Status'] = 'Waiting'
     if not attributeDict['SubRequestID']:
