@@ -26,21 +26,23 @@ class DataManagementRequest(Request):
   def getSubRequestNumFiles(self,ind,type):
     """ Get the number of files in the sub-request
     """
-    return len(self.subrequests[type][ind]['Files'])
+    numFiles = len(self.subrequests[type][ind]['Files'])
+    return S_OK(numFiles)
 
   def getSubRequestFiles(self,ind,type):
     """ Get the files associated to a sub-request
     """
-    return self.subrequests[type][ind]['Files'].values()
+    files = self.subrequests[type][ind]['Files'].values()
+    return S_OK(files)
 
   def setSubRequestFiles(self,ind,type,files):
     """ Set the files associated to a sub-request
     """
-
     i = 1
     for file in files:
       self.subrequests[type][ind]['Files']['File%d' % i] = file
       i += 1
+    return S_OK()
 
   def setSubRequestFileAttributeValue(self,ind,type,lfn,attribute,value):
     """ Set the operation to Done status
@@ -49,6 +51,7 @@ class DataManagementRequest(Request):
     for file in self.subrequests[type][ind]['Files'].keys():
       if self.subrequests[type][ind]['Files'][file]['LFN'] == lfn:
         self.subrequests[type][ind]['Files'][file][attribute] = value
+    return S_OK()
 
   def getSubRequestFileAttributeValue(self,ind,type,lfn,attribute):
     """ Get the file attribute value associated to a LFN and sub-request
@@ -56,7 +59,9 @@ class DataManagementRequest(Request):
     numFiles = self.getSubRequestNumFiles(ind,type)
     for file in self.subrequests[type][ind]['Files'].keys():
       if self.subrequests[type][ind]['Files'][file]['LFN'] == lfn:
-        return self.subrequests[type][ind]['Files'][file][attribute]
+        value = self.subrequests[type][ind]['Files'][file][attribute]
+        return S_OK(value)
+    return S_OK()
 
   def getSubRequestFileAttributes(self,ind,type,lfn):
     """ Get the file attributes associated to a LFN and sub-request
@@ -64,14 +69,17 @@ class DataManagementRequest(Request):
     numFiles = self.getSubRequestNumFiles(ind,type)
     for file in self.subrequests[type][ind]['Files'].keys():
       if self.subrequests[type][ind]['Files'][file]['LFN'] == lfn:
-        return self.subrequests[type][ind]['Files'][file]
+        attributes = self.subrequests[type][ind]['Files'][file]
+        return S_OK(attributes)
+    return S_OK()
 
 ###############################################################
 
   def getSubRequestDatasets(self,ind,type):
     """ Get the datasets associated to a sub-request
     """
-    return self.subrequests[type][ind]['Datasets'].values()
+    datasets = self.subrequests[type][ind]['Datasets'].values()
+    return S_OK(datasets)
 
   def setSubRequestDatasets(self,ind,type,datasets):
     """ Set the datasets associated to a sub-request
@@ -81,7 +89,8 @@ class DataManagementRequest(Request):
 
     i = len(self.subrequests[type][ind]['Datasets'])  + 1
     for dataset in datasets:
-       self.subrequests[type][ind]['Datasets']['Dataset%d' % i] = dataset
+      self.subrequests[type][ind]['Datasets']['Dataset%d' % i] = dataset
+    return S_OK()
 
 ###############################################################
 #
@@ -96,8 +105,8 @@ class DataManagementRequest(Request):
       for tdic in slist:
         for file in tdic['Files'].values():
           if file['Status'] != "Done":
-            return 0
-    return 1
+            return S_OK(0)
+    return S_OK(1)
 
   def isSubRequestEmpty(self,ind,type):
     """ Check if the request contains more operations to be performed
@@ -105,8 +114,8 @@ class DataManagementRequest(Request):
     if type:
       for file in self.subrequests[type][ind]['Files'].values():
         if file['Status'] != "Done":
-          return 0
-    return 1
+          return S_OK(0)
+    return S_OK(1)
 
 ###############################################################
 
@@ -118,14 +127,14 @@ class DataManagementRequest(Request):
       self.subrequests[type] = []
     self.subrequests[type].append(defaultDict)
     length = len(self.subrequests[type])
-    return (length-1)
+    return S_OK(length-1)
 
   def addSubRequest(self,type,requestDict):
     """  Add a new sub-requests of specified type. Overrides the corresponding
          method of the base class
     """
     # Initialise the sub-request
-    ind = self.initiateSubRequest(type)
+    ind = self.initiateSubRequest(type)['Value']
 
     # Stuff the sub-request with the attributes
     attributeDict = {}
