@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobStateUpdateHandler.py,v 1.18 2008/04/28 17:04:46 atsareg Exp $
+# $Id: JobStateUpdateHandler.py,v 1.19 2008/04/30 09:29:01 atsareg Exp $
 ########################################################################
 
 """ JobStateUpdateHandler is the implementation of the Job State updating
@@ -11,7 +11,7 @@
 
 """
 
-__RCSID__ = "$Id: JobStateUpdateHandler.py,v 1.18 2008/04/28 17:04:46 atsareg Exp $"
+__RCSID__ = "$Id: JobStateUpdateHandler.py,v 1.19 2008/04/30 09:29:01 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -64,7 +64,7 @@ class JobStateUpdateHandler( RequestHandler ):
     return result
 
   ###########################################################################
-  types_setJobStatus = [IntType,DictType]
+  types_setJobStatusBulk = [IntType,DictType]
   def export_setJobStatusBulk(self,jobID,statusDict):
     """ Set various status fields for job specified by its JobId.
         Set only the last status in the JobDB, updating all the status
@@ -74,36 +74,46 @@ class JobStateUpdateHandler( RequestHandler ):
 
     dates = statusDict.keys()
     dates.sort()
-    status = "Unknown"
-    minor = "Unknown"
-    application = "Unknown"
+    status = ""
+    minor = ""
+    application = ""
 
     # Get the last status values
     for date in dates:
-      status = statusDict[date]['Status']
-      minor = statusDict[date]['MinorStatus']
-      application = statusDict[date]['ApplicationStatus']
+      if statusDict[date]['Status']:
+        status = statusDict[date]['Status']
+      if statusDict[date]['MinorStatus']:          
+        minor = statusDict[date]['MinorStatus']
+      if statusDict[date]['ApplicationStatus']:  
+        application = statusDict[date]['ApplicationStatus']
 
-    if status != "Unknown":
+    if status:
       result = jobDB.setJobAttribute(jobID,'Status',status,True)
       if not result['OK']:
         return result
-    if minor != "Unknown":
-      result = jobDB.setJobAttribute(jobID,'MinorStatus',status,True)
+    if minor:
+      result = jobDB.setJobAttribute(jobID,'MinorStatus',minor,True)
       if not result['OK']:
         return result
-    if application != "Unknown":
-      result = jobDB.setJobAttribute(jobID,'ApplicationStatus',status,True)
+    if application:
+      result = jobDB.setJobAttribute(jobID,'ApplicationStatus',application,True)
       if not result['OK']:
         return result
 
     # Update the JobLoggingDB records
-    for date, sDict in statusDict.items:
+    for date, sDict in statusDict.items():
+    
       status = sDict['Status']
+      if not status:
+        status = 'idem'
       minor = sDict['MinorStatus']
+      if not minor:
+        minor = 'idem'
       application = sDict['ApplicationStatus']
+      if not application:
+        application = 'idem' 
       source = sDict['Source']
-      result = logDB.addLoggingRecord(jobID,status,minor,application,datetime,source)
+      result = logDB.addLoggingRecord(jobID,status,minor,application,date,source)
       if not result['OK']:
         return result
 
