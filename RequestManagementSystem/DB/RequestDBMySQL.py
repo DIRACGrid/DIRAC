@@ -85,8 +85,8 @@ class RequestDBMySQL(DB):
 
     for subRequestID,operation,sourceSE,targetSE,spaceToken,catalogue in res['Value']:
       subRequestIDs.append(subRequestID)
-      ind = dmRequest.initiateSubRequest(requestType)
-      #ind = res['Value']
+      res = dmRequest.initiateSubRequest(requestType)
+      ind = res['Value']
       subRequestDict = {'Operation':operation,'SourceSE':sourceSE,'TargetSE':targetSE,'Catalogue':catalogue,'SpaceToken':spaceToken,'Status':'Waiting','SubRequestID':subRequestID}
       res = dmRequest.setSubRequestAttributes(ind,requestType,subRequestDict)
       if not res['OK']:
@@ -136,8 +136,8 @@ class RequestDBMySQL(DB):
     dmRequest.setRequestName(requestName)
     dmRequest.setJobID(jobID)
     dmRequest.setOwnerDN(ownerDN)
-    dmRequest.setDiracInstance(diracInstance)
-    dmRequest.setCreationTime(creationTime)
+    dmRequest.setDIRACSetup(diracInstance)
+    dmRequest.setCreationTime(str(creationTime))
 
     res = dmRequest.toXML()
     if not res['OK']:
