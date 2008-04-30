@@ -1,10 +1,10 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/Request.py,v 1.18 2008/04/30 06:58:13 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/Request.py,v 1.19 2008/04/30 09:06:05 acsmith Exp $
 
 """ Request base class. Defines the common general parameters that should be present in any
     request
 """
 
-__RCSID__ = "$Id: Request.py,v 1.18 2008/04/30 06:58:13 acsmith Exp $"
+__RCSID__ = "$Id: Request.py,v 1.19 2008/04/30 09:06:05 acsmith Exp $"
 
 import commands, os, xml.dom.minidom, types, time, copy, datetime
 from DIRAC import gConfig
@@ -36,7 +36,7 @@ class Request:
     # The dictionary named Attributes must be present and must have
     # the following mandatory names
 
-    self.subAttributeNames = ['Status','SubRequestID','Method','Type','CreationTime','ExecutionTime']
+    self.subAttributeNames = ['Status','SubRequestID','Method','RequestType','CreationTime','ExecutionTime']
     self.subrequests = {}
 
     if init:
@@ -227,7 +227,7 @@ class Request:
       new_subrequest = copy.deepcopy(subRequest)
     elif type(subRequest) == types.InstanceType:
       new_subrequest = copy.deepcopy(subRequest.getDictionary())
-    new_subrequest['Attributes']['Type'] = stype
+    new_subrequest['Attributes']['RequestType'] = stype
     status,new_subrequest['Attributes']['SubRequestID'] = commands.getstatusoutput('uuidgen')
     self.subrequests[stype].append(new_subrequest)
 
@@ -270,7 +270,7 @@ class Request:
   def setSubRequestAttributes(self,ind,type,attributeDict):
     """ Set the sub-request attributes
     """
-    self.subrequests[type][ind]['Attributes'] = attributeDict
+    self.subrequests[type][ind]['Attributes'].update(attributeDict)
     return S_OK()
 
   def getSubRequestAttributeValue(self,ind,type,attribute):
@@ -468,7 +468,7 @@ class Request:
         in more complex request types
     """
     subDict = self.__dictionaryFromXML(dom)
-    subType = subDict['Attributes']['Type']
+    subType = subDict['Attributes']['RequestType']
     return subType,subDict
 
 ###############################################################
