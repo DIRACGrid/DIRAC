@@ -1,4 +1,4 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.29 2008/04/14 14:31:33 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.30 2008/04/30 12:06:48 atsareg Exp $
 
 """ Grid Credentials module contains utilities to manage user and host
     certificates and proxies.
@@ -33,7 +33,7 @@
     getVOMSProxyInfo()
 """
 
-__RCSID__ = "$Id: GridCredentials.py,v 1.29 2008/04/14 14:31:33 atsareg Exp $"
+__RCSID__ = "$Id: GridCredentials.py,v 1.30 2008/04/30 12:06:48 atsareg Exp $"
 
 import os
 import os.path
@@ -245,6 +245,27 @@ def getDIRACGroup( defaultGroup = "none" ):
     return groupLine.split( "=" )[1].strip()
   else:
     return defaultGroup
+
+def getNicknameForDN(DN):
+  """ Get user nickname as defined in the Configuration Service for the
+      given user DN
+  """
+
+  # Get usernames
+  result = gConfig.getSections("/Users")
+  if result["OK"]:
+    users = result["Value"]
+    dndb = {}
+    for j in users:
+      dndb[gConfig.getValue("/Users/%s/DN" % j)] = j
+  else:
+    dndb = {}
+
+  # Select username by DN
+  if dndb.has_key(DN):
+    return S_OK(dndb[DN])
+  else:
+    return S_ERROR('Unknown DN')
 
 def __makeProxyFile(proxy_string):
   """ Create a random file containing the proxy
