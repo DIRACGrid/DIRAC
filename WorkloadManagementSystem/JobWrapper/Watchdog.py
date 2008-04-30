@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.32 2008/04/29 16:06:38 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.33 2008/04/30 12:48:26 paterson Exp $
 # File  : Watchdog.py
 # Author: Stuart Paterson
 ########################################################################
@@ -18,7 +18,7 @@
           - CPU normalization for correct comparison with job limit
 """
 
-__RCSID__ = "$Id: Watchdog.py,v 1.32 2008/04/29 16:06:38 paterson Exp $"
+__RCSID__ = "$Id: Watchdog.py,v 1.33 2008/04/30 12:48:26 paterson Exp $"
 
 from DIRAC.Core.Base.Agent                          import Agent
 from DIRAC.Core.DISET.RPCClient                     import RPCClient
@@ -69,7 +69,7 @@ class Watchdog(Agent):
     self.testCPULimit    = gConfig.getValue(self.section+'/CheckCPULimitFlag',0)
     #Other parameters
     self.pollingTime      = gConfig.getValue(self.section+'/PollingTime',10) # 10 seconds
-    self.checkingTime     = gConfig.getValue(self.section+'/CheckingTime',30*60) #10 minute period
+    self.checkingTime     = gConfig.getValue(self.section+'/CheckingTime',30*60) #30 minute period
     self.minCheckingTime   = gConfig.getValue(self.section+'/MinCheckingTime',20*60) # 20 mins
     self.maxWallClockTime = gConfig.getValue(self.section+'/MaxWallClockTime',4*24*60*60) # e.g. 4 days
     self.jobPeekFlag      = gConfig.getValue(self.section+'/JobPeekFlag',1) # on / off
@@ -234,7 +234,7 @@ class Watchdog(Agent):
     """
     self.log.info('Received control signal')
     if type(signalDict) == type({}):
-      if signalDict.has_key('kill'):
+      if signalDict['Value'].has_key('Kill'):
         self.log.info('Killing job via control signal')
         self.__killRunningThread(self.spObject)
         self.__getUsageSummary()
