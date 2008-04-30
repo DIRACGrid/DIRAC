@@ -132,13 +132,19 @@ class FTSRequest:
        OPERATION: Determine from the target and source SE which server to use.
                   Obtain the URL for the server from the CS.
     """
-    if re.search('CERN',self.sourceSE) or re.search('CERN',self.targetSE):
-      ep = 'CERN'
+    t1Sites = ['CNAF','GRIDKA','IN2P3','NIKHEF','PIC','RAL']
+    sourceSite = self.sourceSE.split('-')[0].split('_')[0]
+    targetSite = self.targetSE.split('-')[0].split('_')[0]
+    if (sourceSite == 'CERN') or (targetSite == 'CERN'):
+      if (sourceSite in t1Sites) or (targetSite in t1Sites):
+        ep = 'CERNT1'
+      else:
+        ep = 'CERNT2'
     else:
-      ep = self.targetSE.split('-')[0]
+      ep = targetSite
 
     try:
-      configPath = 'Systems/DataManagement/Development/URLs/FTSEndpoints/%s' % ep
+      configPath = '/Resources/FTSEndpoints/%s' % ep
       endpointURL = gConfig.getValue(configPath)
       if not endpointURL:
         errStr = "FTSRequest.__resolveFTSEndpoint: Failed to find FTS endpoint, check CS entry for '%s'." % ep
@@ -274,16 +280,17 @@ class FTSRequest:
     self.activeFiles = []
     if res['OK']:
       for lfn in self.lfns:
-        if self.fileDict[lfn]['State'] in self.successfulStates:
-          if lfn not in self.completedFiles:
-            self.newlyCompletedFiles.append(lfn)
-            self.completedFiles.append(lfn)
-        elif self.fileDict[lfn]['State'] in self.failedStates:
-          if lfn not in self.failedFiles:
-            self.newlyFailedFiles.append(lfn)
-            self.failedFiles.append(lfn)
-        else:
-          self.activeFiles.append(lfn)
+        if self.fileDict[lfn].has_key('State'):
+          if self.fileDict[lfn]['State'] in self.successfulStates:
+            if lfn not in self.completedFiles:
+              self.newlyCompletedFiles.append(lfn)
+              self.completedFiles.append(lfn)
+          elif self.fileDict[lfn]['State'] in self.failedStates:
+            if lfn not in self.failedFiles:
+              self.newlyFailedFiles.append(lfn)
+              self.failedFiles.append(lfn)
+          else:
+            self.activeFiles.append(lfn)
     self.percentageComplete = 100*(len(self.completedFiles)/float(len(self.lfns)))
     return res
 
