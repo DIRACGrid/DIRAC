@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/Attic/StagerMonitorWMS.py,v 1.5 2008/04/09 17:58:21 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/Attic/StagerMonitorWMS.py,v 1.6 2008/04/30 09:51:41 paterson Exp $
 # File :   StagerMonitorWMS.py
 # Author : Stuart Paterson
 ########################################################################
@@ -20,7 +20,7 @@
      Successful -> purged with status change
 """
 
-__RCSID__ = "$Id: StagerMonitorWMS.py,v 1.5 2008/04/09 17:58:21 paterson Exp $"
+__RCSID__ = "$Id: StagerMonitorWMS.py,v 1.6 2008/04/30 09:51:41 paterson Exp $"
 
 from DIRAC.Core.Base.Agent                                 import Agent
 from DIRAC.Core.DISET.RPCClient                            import RPCClient
@@ -45,7 +45,7 @@ class StagerMonitorWMS(Agent):
     """Sets defaults
     """
     result = Agent.initialize(self)
-    self.pollingTime = gConfig.getValue(self.section+'/PollingTime',30)
+    self.pollingTime = gConfig.getValue(self.section+'/PollingTime',10)
     self.proxyLength = gConfig.getValue(self.section+'/DefaultProxyLength',24) # hours
     self.minProxyValidity = gConfig.getValue(self.section+'/MinimumProxyValidity',30*60) # seconds
     self.proxyLocation = gConfig.getValue(self.section+'/ProxyLocation','/opt/dirac/work/StagerMonitorWMS/shiftProdProxy')
