@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Source.py,v 1.4 2008/04/29 22:16:54 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Source.py,v 1.5 2008/04/30 06:40:01 rgracian Exp $
 # File :   Source.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -12,7 +12,7 @@ def Source( timeout, cmdTuple, inputEnv=None ):
   import os
   import DIRAC
   # add appropiated extension to first element of the tuple (the command)
-  envAsDict = '; python -c "import os,sys ; print >> sys.stderr, os.environ"'
+  envAsDict = '&& python -c "import os,sys ; print >> sys.stderr, os.environ"'
 
   # 1.- Choose the right version of the configuration file
   if DIRAC.platformTuple[0] == 'Windows':
