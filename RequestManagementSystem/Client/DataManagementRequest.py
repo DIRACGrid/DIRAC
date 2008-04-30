@@ -13,7 +13,7 @@ class DataManagementRequest(Request):
   def __init__(self,request=None,init=True):
 
     # A common set of attributes that define requests.
-    self.requestAttributes = ['SubRequestID','TargetSE','Status','Operation','SourceSE','Catalogue','SpaceToken']
+    self.requestAttributes = ['SubRequestID','TargetSE','Status','Operation','SourceSE','Catalogue','SpaceToken','Type']
     # Possible keys to define the files in the request.
     self.fileAttributes = ['LFN','Size','PFN','GUID','Md5','Addler','Status','Attempt','FileID']
     # Possible keys to define the dataset in the request.
@@ -122,7 +122,7 @@ class DataManagementRequest(Request):
   def initiateSubRequest(self,type):
     """ Add dictionary to list of requests and return the list index
     """
-    defaultDict = {'Attributes':{},'Files':{},'Datasets':{}}
+    defaultDict = {'Attributes':{'Type':type},'Files':{},'Datasets':{}}
     if not self.subrequests.has_key(type):
       self.subrequests[type] = []
     self.subrequests[type].append(defaultDict)
@@ -144,6 +144,8 @@ class DataManagementRequest(Request):
       else:
         attributeDict[key] = ''
 
+    if not attributeDict['Type']:
+      attributeDict['Type'] = type  
     if not attributeDict['Status']:
       attributeDict['Status'] = 'Waiting'
     if not attributeDict['SubRequestID']:
