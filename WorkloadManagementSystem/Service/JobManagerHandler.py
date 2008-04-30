@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobManagerHandler.py,v 1.11 2008/04/14 11:01:39 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobManagerHandler.py,v 1.12 2008/04/30 13:07:18 atsareg Exp $
 ########################################################################
 
 """ JobManagerHandler is the implementation of the JobManager service
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: JobManagerHandler.py,v 1.11 2008/04/14 11:01:39 atsareg Exp $"
+__RCSID__ = "$Id: JobManagerHandler.py,v 1.12 2008/04/30 13:07:18 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -24,6 +24,7 @@ from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.ProxyRepositoryDB import ProxyRepositoryDB
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import JobPolicy
+from DIRAC.Core.Utilities.GridCredentials import getNicknameForDN
 
 # This is a global instance of the JobDB class
 jobDB = False
@@ -79,6 +80,13 @@ class JobManagerHandler( RequestHandler ):
 
     classAdJob = ClassAd('['+JDL+']')
     classAdJob.insertAttributeInt('JobID',jobID)
+    
+    # Force the owner name to be the nickname defined in the CS
+    result = getNicknameForDN(ownerDN)
+    if result['OK']:
+      owner = result['Value']
+      classAdJob.insertAttributeString('Owner',owner)
+        
     newJDL = classAdJob.asJDL()
     result  = jobDB.insertJobIntoDB(jobID,newJDL)
     if not result['OK']:
