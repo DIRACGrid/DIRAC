@@ -1,10 +1,10 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/Request.py,v 1.17 2008/04/29 20:08:46 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/Request.py,v 1.18 2008/04/30 06:58:13 acsmith Exp $
 
 """ Request base class. Defines the common general parameters that should be present in any
     request
 """
 
-__RCSID__ = "$Id: Request.py,v 1.17 2008/04/29 20:08:46 acsmith Exp $"
+__RCSID__ = "$Id: Request.py,v 1.18 2008/04/30 06:58:13 acsmith Exp $"
 
 import commands, os, xml.dom.minidom, types, time, copy, datetime
 from DIRAC import gConfig
@@ -367,8 +367,8 @@ class Request:
     out += '<DIRAC_REQUEST>\n\n'
 
     xml_attributes = ''
-    for attr in self.attributeNames:
-      xml_attributes += '             %s="%s"\n' % (attr,str(self.attributes[attr]))
+    for attr,value in self.attributes.items():
+      xml_attributes += '             %s="%s"\n' % (attr,str(value))
 
     out += '<Header \n%s/>\n\n' % xml_attributes
     for rtype in self.subrequests.keys():
@@ -467,10 +467,8 @@ class Request:
     """ A simple subrequest parser from the dom object. This is to be overloaded
         in more complex request types
     """
-
     subDict = self.__dictionaryFromXML(dom)
     subType = subDict['Attributes']['Type']
-
     return subType,subDict
 
 ###############################################################
