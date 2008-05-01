@@ -135,7 +135,9 @@ class ReplicationScheduler(Agent):
       """----------------------------------------------------- """
 
       operation = attributes['Operation']
-      spaceToken = attributes['SpaceToken']
+      reqRepStrategy = None
+      if operation in self.strategyHandler.getSupportedStrategies():
+        reqRepStrategy = operation
 
       ######################################################################################
       #
@@ -206,7 +208,7 @@ class ReplicationScheduler(Agent):
         if not targets:
           gLogger.info("ReplicationScheduler.execute: %s present at all targets." % lfn)
         else:
-          res = self.strategyHandler.determineReplicationTree(sourceSE,targets,lfnReps,fileSize)
+          res = self.strategyHandler.determineReplicationTree(sourceSE,targets,lfnReps,fileSize,strategy=reqRepStrategy)
           if not res['OK']:
             errStr = res['Message']
             gLogger.error(errStr)
@@ -303,6 +305,7 @@ class StrategyHandler:
   def __init__(self,bandwidths,channels,configSection):
     """ Standard constructor
     """
+    self.supportedStrategies = ['Simple','DynamicThroughput','Swarm']
     self.sigma = gConfig.getValue(configSection+'/HopSigma',1)
     self.schedulingType = gConfig.getValue(configSection+'/SchedulingType','File')
     self.activeStrategies = gConfig.getValue(configSection+'/ActiveStrategies',['Simple'])
@@ -311,6 +314,10 @@ class StrategyHandler:
     self.bandwidths = bandwidths
     self.channels = channels
     self.chosenStrategy = 0
+
+
+  def getSupportedStrategies(self):
+    return self.supportedStrategies
 
   def determineReplicationTree(self,sourceSE,targetSEs,replicas,size,strategy=None):
     """
@@ -321,8 +328,13 @@ class StrategyHandler:
     # For each strategy implemented an 'if' must be placed here
     if strategy == 'Simple':
       tree = self.__simple(sourceSE,targetSEs)
+
     elif strategy == 'DynamicThroughput':
-      tree = self.__dynamicThroughput(sourceSE,targetSEs)
+      if sourceSE:
+        tree = self.__dynamicThroughput([sourceSE],targetSEs)
+      else:
+        tree = self.__dynamicThroughput(replica.keys(),targetSEs)
+
     elif strategy == 'Swarm':
       tree = self.__swarm(targetSEs[0],replicas)
 
@@ -394,7 +406,7 @@ class StrategyHandler:
     tree[selectedChannelID]['Strategy'] = 'Swarm'
     return tree
 
-  def __dynamicThroughput(self,sourceSE,targetSEs):
+  def __dynamicThroughput(self,sourceSEs,destSEs):
     """ This creates a replication tree based on observed throughput on the channels
     """
     res = self.__getTimeToStart()
@@ -406,8 +418,6 @@ class StrategyHandler:
     timeToSite = {}                # Maintains time to site including previous hops
     siteAncestor = {}              # Maintains the ancestor channel for a site
     tree = {}                      # Maintains replication tree
-    sourceSEs = [sourceSE]
-    destSEs = targetSEs
 
     while len(destSEs) > 0:
       minTotalTimeToStart = float("inf")
