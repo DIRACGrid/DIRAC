@@ -195,62 +195,73 @@ class ReplicationScheduler(Agent):
         fileSize = metadata[lfn]['Size']
         lfnReps = replicas[lfn]
         fileID = filesDict[lfn]
-        res = self.strategyHandler.determineReplicationTree(sourceSE,targetSEs,lfnReps,fileSize)
-        if not res['OK']:
-          errStr = res['Message']
-          gLogger.error(errStr)
-          return S_ERROR(errStr)
-        tree = res['Value']
 
-        ######################################################################################
-        #
-        # For each item in the replication tree obtain the source and target SURLS
-        #
-
-        for channelID,dict in tree.items():
-          sourceSE = dict['SourceSE']
-          destSE = dict['DestSE']
-          ancestor = dict['Ancestor']
-          if ancestor:
-            status = 'Waiting%s' % (ancestor)
-            res = self.obtainLFNSURL(sourceSE,lfn)
-            if not res['OK']:
-              errStr = res['Message']
-              gLogger.error(errStr)
-              return S_ERROR(errStr)
-            sourceSURL = res['Value']['SURL']
+        targets = []
+        for targetSE in targetSEs:
+          if targetSE in lfnReps.keys():
+            gLogger.info("ReplicationScheduler.execute: %s already present at %s." % (lfn,targetSE))
           else:
-            status = 'Waiting'
-            res  = self.resolvePFNSURL(sourceSE,lfnReps[sourceSE])
-            if not res['OK']:
-              sourceSURL = lfnReps[sourceSE]
-            else:
-              sourceSURL = res['Value']
-          res = self.obtainLFNSURL(destSE,lfn)
+            targets.append(targetSE)
+
+        if not targets:
+          gLogger.info("ReplicationScheduler.execute: %s present at all targets." % lfn)
+        else:
+          res = self.strategyHandler.determineReplicationTree(sourceSE,targets,lfnReps,fileSize)
           if not res['OK']:
             errStr = res['Message']
             gLogger.error(errStr)
             return S_ERROR(errStr)
-          targetSURL = res['Value']['SURL']
-          spaceToken = res['Value']['SpaceToken']
+          tree = res['Value']
 
           ######################################################################################
           #
-          # For each item in the replication tree add the file to the channel
+          # For each item in the replication tree obtain the source and target SURLS
           #
-          channelName = '%s-%s' % (sourceSE,destSE)
-          self.DataLog.addFileRecord(str(lfn),'ReplicationScheduled',channelName,'','ReplicationScheduler')
-          res = self.TransferDB.addFileToChannel(channelID, fileID, sourceSURL, targetSURL,fileSize,spaceToken,fileStatus=status)
-          if not res['OK']:
-            errStr = "ReplicationScheduler._execute: Failed to add File %s to Channel %s." % (fileID,channelID)
-            gLogger.error(errStr)
-            return S_ERROR(errStr)
-          res = self.TransferDB.addFileRegistration(channelID,fileID,lfn,targetSURL,destSE)
-          if not res['OK']:
-            errStr = "ReplicationScheduler._execute: Failed to add registration entry %s to %s." % (fileID,destSE)
-            gLogger.error(errStr)
-            return S_ERROR(errStr)
-        res = self.TransferDB.addReplicationTree(fileID,tree)
+
+          for channelID,dict in tree.items():
+            sourceSE = dict['SourceSE']
+            destSE = dict['DestSE']
+            ancestor = dict['Ancestor']
+            if ancestor:
+              status = 'Waiting%s' % (ancestor)
+              res = self.obtainLFNSURL(sourceSE,lfn)
+              if not res['OK']:
+                errStr = res['Message']
+                gLogger.error(errStr)
+                return S_ERROR(errStr)
+              sourceSURL = res['Value']['SURL']
+            else:
+              status = 'Waiting'
+              res  = self.resolvePFNSURL(sourceSE,lfnReps[sourceSE])
+              if not res['OK']:
+                sourceSURL = lfnReps[sourceSE]
+              else:
+                sourceSURL = res['Value']
+            res = self.obtainLFNSURL(destSE,lfn)
+            if not res['OK']:
+              errStr = res['Message']
+              gLogger.error(errStr)
+              return S_ERROR(errStr)
+            targetSURL = res['Value']['SURL']
+            spaceToken = res['Value']['SpaceToken']
+
+            ######################################################################################
+            #
+            # For each item in the replication tree add the file to the channel
+            #
+            channelName = '%s-%s' % (sourceSE,destSE)
+            self.DataLog.addFileRecord(str(lfn),'ReplicationScheduled',channelName,'','ReplicationScheduler')
+            res = self.TransferDB.addFileToChannel(channelID, fileID, sourceSURL, targetSURL,fileSize,spaceToken,fileStatus=status)
+            if not res['OK']:
+              errStr = "ReplicationScheduler._execute: Failed to add File %s to Channel %s." % (fileID,channelID)
+              gLogger.error(errStr)
+              return S_ERROR(errStr)
+            res = self.TransferDB.addFileRegistration(channelID,fileID,lfn,targetSURL,destSE)
+            if not res['OK']:
+              errStr = "ReplicationScheduler._execute: Failed to add registration entry %s to %s." % (fileID,destSE)
+              gLogger.error(errStr)
+              return S_ERROR(errStr)
+          res = self.TransferDB.addReplicationTree(fileID,tree)
     return res
 
 
@@ -296,11 +307,10 @@ class StrategyHandler:
     self.schedulingType = gConfig.getValue(configSection+'/SchedulingType','File')
     self.activeStrategies = gConfig.getValue(configSection+'/ActiveStrategies',['Simple'])
     self.numberOfStrategies = len(self.activeStrategies)
-    self.chosenStrategy = 0
-
     self.acceptableFailureRate = gConfig.getValue(configSection+'/AcceptableFailureRate',75)
     self.bandwidths = bandwidths
     self.channels = channels
+    self.chosenStrategy = 0
 
   def determineReplicationTree(self,sourceSE,targetSEs,replicas,size,strategy=None):
     """
@@ -313,6 +323,8 @@ class StrategyHandler:
       tree = self.__simple(sourceSE,targetSEs)
     elif strategy == 'DynamicThroughput':
       tree = self.__dynamicThroughput(sourceSE,targetSEs)
+    elif strategy == 'Swarm':
+      tree = self.__swarm(targetSEs[0],replicas)
 
     # Now update the queues to reflect the chosen strategies
     for channelID,ancestor in tree.items():
@@ -348,63 +360,48 @@ class StrategyHandler:
           tree[channelID]['Strategy'] = 'Simple'
     return tree
 
+  def __swarm(self,destSE,replicas):
+    """ This strategy is to be used to the data the the target site as quickly as possible from any source
+    """
+    res = self.__getTimeToStart()
+    if not res['OK']:
+      gLogger.error(res['Message'])
+      return {}
+    channelInfo = res['Value']
+    minTimeToStart = float("inf")
+    destSite = destSE.split('-')[0].split('_')[0]
+    for sourceSE in replicas.keys():
+      sourceSite = sourceSE.split('-')[0].split('_')[0]
+      channelName = '%s-%s' % (sourceSite,destSite)
+      if channelInfo.has_key(channelName):
+        channelID = channelInfo[channelName]['ChannelID']
+        channelTimeToStart = channelInfo[channelName]['TimeToStart']
+        if channelTimeToStart <= minTimeToStart:
+          minTimeToStart = channelTimeToStart
+          selectedSourceSE = sourceSE
+          selectedDestSE = destSE
+          selectedChannelID = channelID
+      else:
+        errStr = 'StrategyHandler.__dynamicThroughput: Channel not defined'
+        gLogger.error(errStr,channelName)
+        waitingChannel = False
+
+    tree = {}
+    tree[selectedChannelID] = {}
+    tree[selectedChannelID]['Ancestor'] = False
+    tree[selectedChannelID]['SourceSE'] = selectedSourceSE
+    tree[selectedChannelID]['DestSE'] = selectedDestSE
+    tree[selectedChannelID]['Strategy'] = 'Swarm'
+    return tree
+
   def __dynamicThroughput(self,sourceSE,targetSEs):
     """ This creates a replication tree based on observed throughput on the channels
     """
-    ############################################################################
-    #
-    # First generate the matrix of times to start based on task queue contents and observed throughput
-    #
-
-    channelIDs = {}
-    channelsTimeToStart = {}
-    for channelID,value in self.bandwidths.items():
-      channelDict = self.channels[channelID]
-      channelFiles = channelDict['Files']
-      channelSize = channelDict['Size']
-      status = channelDict['Status']
-      channelName = channelDict['ChannelName']
-      channelIDs[channelName] = channelID
-
-      if status == 'Disabled':
-        throughputTimeToStart = 1e10 # Make the channel extremely unattractive but still available
-        fileTimeToStart = 1e10 #Make the channel extremely unattractive but still available
-      else:
-        channelThroughput = value['Throughput']
-        channelFileput = value['Fileput']
-        channelFileSuccess = value['SuccessfulFiles']
-        channelFileFailed = value['FailedFiles']
-        attempted = channelFileSuccess+channelFileFailed
-        if attempted != 0:
-          successRate = 100.0*(channelFileSuccess/float(attempted))
-        else:
-          successRate = 100.0
-        if successRate < self.acceptableFailureRate:
-          throughputTimeToStart = 1e10 # Make the channel extremely unattractive but still available
-          fileTimeToStart = 1e10 # Make the channel extremely unattractive but still available
-        else:
-          if channelFiles > 0:
-            fileTimeToStart = channelFiles/channelFileput
-          else:
-            fileTimeToStart = 0.0
-          if channelSize > 0:
-            throughputTimeToStart = channelSize/channelThroughput
-          else:
-            throughputTimeToStart = 0.0
-
-      if self.schedulingType == 'File':
-        channelsTimeToStart[channelID] = fileTimeToStart
-      elif self.schedulingType == 'Throughput':
-        channelsTimeToStart[channelID] = throughputTimeToStart
-      else:
-        errStr = 'StrategyHandler.__dynamicThroughput: CS SchedulingType entry must be either File or Throughput'
-        gLogger.error(errStr)
-        return S_ERROR(errStr)
-
-    ############################################################################
-    #
-    # Use the matrix of time to start to create scheduling tree
-    #
+    res = self.__getTimeToStart()
+    if not res['OK']:
+      gLogger.error(res['Message'])
+      return {}
+    channelInfo = res['Value']
 
     timeToSite = {}                # Maintains time to site including previous hops
     siteAncestor = {}              # Maintains the ancestor channel for a site
@@ -419,9 +416,9 @@ class StrategyHandler:
         for sourceSE in sourceSEs:
           sourceSite = sourceSE.split('-')[0].split('_')[0]
           channelName = '%s-%s' % (sourceSite,destSite)
-          if channelIDs.has_key(channelName):
-            channelID = channelIDs[channelName]
-            channelTimeToStart = channelsTimeToStart[channelID]
+          if channelInfo.has_key(channelName):
+            channelID = channelInfo[channelName]['ChannelID']
+            channelTimeToStart = channelInfo[channelName]['TimeToStart']
             if timeToSite.has_key(sourceSE):
               totalTimeToStart = timeToSite[sourceSE]+channelTimeToStart+self.sigma
             else:
@@ -450,3 +447,53 @@ class StrategyHandler:
       sourceSEs.append(selectedDestSE)
       destSEs.remove(selectedDestSE)
     return tree
+
+  def __getTimeToStart(self):
+    """ Generate the matrix of times to start based on task queue contents and observed throughput
+    """
+    channelInfo = {}
+    for channelID,value in self.bandwidths.items():
+      channelDict = self.channels[channelID]
+      channelFiles = channelDict['Files']
+      channelSize = channelDict['Size']
+      status = channelDict['Status']
+      channelName = channelDict['ChannelName']
+      channelInfo[channelName]['ChannelID'] = channelID
+
+      if status == 'Disabled':
+        throughputTimeToStart = 1e10 # Make the channel extremely unattractive but still available
+        fileTimeToStart = 1e10 #Make the channel extremely unattractive but still available
+      else:
+        channelThroughput = value['Throughput']
+        channelFileput = value['Fileput']
+        channelFileSuccess = value['SuccessfulFiles']
+        channelFileFailed = value['FailedFiles']
+        attempted = channelFileSuccess+channelFileFailed
+        if attempted != 0:
+          successRate = 100.0*(channelFileSuccess/float(attempted))
+        else:
+          successRate = 100.0
+        if successRate < self.acceptableFailureRate:
+          throughputTimeToStart = 1e10 # Make the channel extremely unattractive but still available
+          fileTimeToStart = 1e10 # Make the channel extremely unattractive but still available
+        else:
+          if channelFiles > 0:
+            fileTimeToStart = channelFiles/channelFileput
+          else:
+            fileTimeToStart = 0.0
+          if channelSize > 0:
+            throughputTimeToStart = channelSize/channelThroughput
+          else:
+            throughputTimeToStart = 0.0
+
+      if self.schedulingType == 'File':
+        channelInfo[channelName]['TimeToStart'] = fileTimeToStart
+      elif self.schedulingType == 'Throughput':
+        channelInfo[channelName]['TimeToStart'] = throughputTimeToStart
+      else:
+        errStr = 'StrategyHandler.__dynamicThroughput: CS SchedulingType entry must be either File or Throughput'
+        gLogger.error(errStr)
+        return S_ERROR(errStr)
+    return S_OK(channelInfo)
+
+
