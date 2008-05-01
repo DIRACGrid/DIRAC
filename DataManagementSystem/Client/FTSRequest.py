@@ -136,13 +136,25 @@ class FTSRequest:
     sourceSite = self.sourceSE.split('-')[0].split('_')[0]
     targetSite = self.targetSE.split('-')[0].split('_')[0]
     if (sourceSite == 'CERN') or (targetSite == 'CERN'):
+      # one of the two CERN fts servers should be used 
       if (sourceSite in t1Sites) or (targetSite in t1Sites):
+	# the transfer is either two or from a tier1			
         ep = 'CERNT1'
       else:
+	# the transfer is either two or from a tier2			
         ep = 'CERNT2'
     else:
-      ep = targetSite
-
+      # a tier1 fts server should be used
+      if (sourceSite in t1Sites) and (targetSite in t1Sites):
+        # this is an t1-t1 transfer and should be managed by the target
+        ep = targetSite
+      elif sourceSite in t1Sites:
+        # this is a t1->t2 transfer
+        ep = sourceSite 
+      else:
+        # this is a t2->t1 transfer
+        ep = targetSite
+ 
     try:
       configPath = '/Resources/FTSEndpoints/%s' % ep
       endpointURL = gConfig.getValue(configPath)
