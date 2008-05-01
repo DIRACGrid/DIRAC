@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Source.py,v 1.6 2008/04/30 22:16:04 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Source.py,v 1.7 2008/05/01 01:01:35 rgracian Exp $
 # File :   Source.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -50,8 +50,8 @@ def Source( timeout, cmdTuple, inputEnv=None ):
     if ret['Value'][0] == 0:
       # execution was OK
       try:
-        result['outputEnv'] = eval( stderr.split('\n')[-1] )
-        stderr = '\n'.join(stderr.split('\n')[:-1])
+        result['outputEnv'] = eval( stderr.split('\n')[-2]+'\n' )
+        stderr = '\n'.join(stderr.split('\n')[:-2])
       except:
         stdout = cmd + '\n' + stdout
         result = DIRAC.S_ERROR('Could not parse Environment dictionary from stderr')
