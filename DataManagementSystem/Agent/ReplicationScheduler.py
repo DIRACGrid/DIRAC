@@ -468,7 +468,7 @@ class StrategyHandler:
       channelSize = channelDict['Size']
       status = channelDict['Status']
       channelName = channelDict['ChannelName']
-      channelInfo[channelName]['ChannelID'] = channelID
+      channelInfo[channelName] = {'ChannelID': channelID}
 
       if status == 'Disabled':
         throughputTimeToStart = 1e10 # Make the channel extremely unattractive but still available
@@ -488,11 +488,11 @@ class StrategyHandler:
           fileTimeToStart = 1e10 # Make the channel extremely unattractive but still available
         else:
           if channelFiles > 0:
-            fileTimeToStart = channelFiles/channelFileput
+            fileTimeToStart = channelFiles/(channelFileput+(1/1e10))
           else:
             fileTimeToStart = 0.0
           if channelSize > 0:
-            throughputTimeToStart = channelSize/channelThroughput
+            throughputTimeToStart = channelSize/(channelThroughput+(1/1e10))
           else:
             throughputTimeToStart = 0.0
 
