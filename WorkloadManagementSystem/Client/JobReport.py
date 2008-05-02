@@ -1,15 +1,16 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Client/JobReport.py,v 1.2 2008/05/01 16:14:47 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Client/JobReport.py,v 1.3 2008/05/02 11:02:47 atsareg Exp $
 
 """
   JobReport class encapsulates various
   methods of the job status reporting
 """
 
-__RCSID__ = "$Id: JobReport.py,v 1.2 2008/05/01 16:14:47 atsareg Exp $"
+__RCSID__ = "$Id: JobReport.py,v 1.3 2008/05/02 11:02:47 atsareg Exp $"
 
 import datetime
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC import S_OK, S_ERROR
+from DIRAC.RequestManagementSystem.Client.Request import Request
 
 class JobReport:
 
@@ -157,11 +158,11 @@ class JobReport:
         # Empty the internal status containers
         self.jobStatusInfo = []
         self.appStatusInfo = []
-        return result
 
-      return S_ERROR('Failed to send bulk job status info')
+      return result
+
     else:
-      return S_OK()
+      return S_OK('Empty')
 
   def sendStoredJobParameters(self):
     """ Send the job parameters stored in the interna cache
@@ -176,11 +177,10 @@ class JobReport:
       if result['OK']:
         # Empty the internal parameter container
         self.jobParameters = []
-        return result
 
-      return S_ERROR('Failed to send job parameters')
+      return result
     else:
-      return S_OK()
+      return S_OK('Empty')
 
   def dump(self):
     """ Print out the contents of the internal cached information
@@ -203,4 +203,12 @@ class JobReport:
     """ Generate failover requests for the operations in the internal cache
     """
 
-    pass
+    request = Request()
+    result = self.sendStoredStatusInfo()
+    if not result['OK']:
+      requests.addSubRequest('jobstate',DISETSubRequest(result['rpcStub']))
+    result = self.sendStoredJobParameters()
+    if not result['OK']:
+      requests.addSubRequest('jobparameters',DISETSubRequest(result['rpcStub']))
+
+    return S_OK(request)
