@@ -26,17 +26,26 @@ class ReplicationPlacementHandler(TransformationHandler):
   def export_publishTransformation(self, transName, desciption,longDesription, type, plugin, fileMask):
     """ Publish new transformation in the TransformationDB
     """
-    authorDN = self.transport.peerCredentials['DN']
-    authorGroup = self.transport.peerCredentials['group']
+    authorDN = self._clientTransport.peerCredentials['DN']
+    #authorName = self._clientTransport.peerCredentials['user']
+    authorGroup = self._clientTransport.peerCredentials['group']
     try:
       res = placementDB.addTransformation(transName,desciption,longDesription,authorDN,authorGroup,type,plugin,'ReplicationPlacementAgent',fileMask)
       if res['OK']:
         message = 'Transformation created'
-        res = self.database.updateTransformationLogging(transformationName,message,authorDN)
+        res = self.database.updateTransformationLogging(transName,message,authorDN)
       return res
     except Exception,x:
       errStr = "ReplicationPlacementHandler.publishTransformation: Exception while adding transformation."
       gLogger.exception(errStr,str(x))
       return S_ERROR(errStr)
 
-
+  types_addTransformationParameters = []
+  def export_addTransformationParameters(self,transNameOrID,parameterDict):
+    authorDN = self._clientTransport.peerCredentials['DN']
+    for paramName,paramValue in parameterDict.items():
+      result = self.database.addTransformationParameter(transNameOrID,paramName,paramValue)
+      if result['OK']:
+        message = 'Added parameter %s' % paramName
+        result = self.database.updateTransformationLogging(transNameOrID,message,authorDN)
+    return result
