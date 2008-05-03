@@ -210,7 +210,7 @@ class TransferDB(DB):
     return res
 
   def resetFileChannelStatus(self,channelID,fileID):
-    req = "UPDATE Channel SET Status = 'Waiting',ExecutionTime=NULL WHERE FileID=%s AND ChannelID=%s;" % (fileID,channelID)
+    req = "UPDATE Channel SET Status = 'Waiting',ExecutionTime=NULL,SubmitTime=NOW() WHERE FileID=%s AND ChannelID=%s;" % (fileID,channelID)
     res = self._update(req)
     if not res['OK']:
       err = 'TransferDB._resetFileChannelStatus: Failed to reset File %s from Channel %s.' % (fileID,channelID)
