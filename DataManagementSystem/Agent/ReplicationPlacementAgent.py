@@ -3,7 +3,7 @@
 
 from DIRAC  import gLogger,gMonitor, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.Agent import Agent
-from DIRAC.RequestManagementSystem.Client.Request import RequestClient
+from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
 from DIRAC.RequestManagementSystem.Client.DataManagementRequest import DataManagementRequest
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 from DIRAC.DataManagementSystem.Client.FileCatalog import FileCatalog
@@ -36,13 +36,13 @@ class ReplicationPlacementAgent(Agent):
   def execute(self):
     gMonitor.addMark('Iteration',1)
 
-    transName = gConfig.getValue(self.section+'/Transformation','')
-    if transName:
-      self.singleTransformation = transName
-      gLogger.info("Initializing Replication Agent for transformation %s." % transName)
-    else:
+    transName = gConfig.getValue(self.section+'/Transformation','All')
+    if transName == 'All':
       self.singleTransformation = False
       gLogger.info("ReplicationPlacementAgent.execute: Initializing general purpose agent.")
+    else:
+      self.singleTransformation = transName
+      gLogger.info("Initializing Replication Agent for transformation %s." % transName)
 
     res = self.server.getAllTransformations()
     activeTransforms = []
@@ -113,11 +113,8 @@ class ReplicationPlacementAgent(Agent):
       return S_ERROR(errStr)
     oPlugin = res['Value']
 
-    sourceSE = ''
     if transDict.has_key('Additional'):
       oPlugin.setParameters(transDict['Additional'])
-      if transDict['Additional'].has_key('SourceSE'):
-        sourceSE = transDict['Additional']['SourceSE']
     oPlugin.setInputData(data)
 
     res = oPlugin.generateTask()
@@ -129,35 +126,37 @@ class ReplicationPlacementAgent(Agent):
     if not seFiles:
       gLogger.info("ReplicationPlacementAgent.processTransformation: Sufficient number of files not found for %s." % transName)
       return S_OK()
-
-    res = self.submitRequest(sourceSE,seFiles,transName)
+		
+    res = self.submitRequest(seFiles,transName)
     if not res['OK']:
       errStr = "ReplicationPlacementAgent.processTransformation: Failed to process task for transformation."
       gLogger.error(errStr,res['Message'])
     else:
-      for targetSE,lfns in seFiles.items():
-        for lfn in lfns:
-          self.DataLog.addFileRecord(lfn,'Tier1Assigned',targetSE,'','ReplicationPlacementAgent')
-        res = self.server.setFileStatusForTransformation(transName,'Assigned',lfns)
-        if not res['OK']:
-          errStr = "ReplicationPlacementAgent.processTransformation: Failed to update file status."
-          gLogger.error(errStr,res['Message'])
-        res = self.server.setFileSEForTransformation(transName,targetSE,lfns)
-        if not res['OK']:
-          errStr = "ReplicationPlacementAgent.processTransformation: Failed to update file status."
-          gLogger.error(errStr,res['Message'])
+      for sourceSE,targetSEDict in seFiles.items():
+        for targetSE,lfns in targetSEDict.items():
+          for lfn in lfns:
+            self.DataLog.addFileRecord(lfn,'ReplicationAssigned',targetSE,'','ReplicationPlacementAgent')
+          res = self.server.setFileStatusForTransformation(transName,'Assigned',lfns)
+          if not res['OK']:
+            errStr = "ReplicationPlacementAgent.processTransformation: Failed to update file status."
+            gLogger.error(errStr,res['Message'])
+          res = self.server.setFileSEForTransformation(transName,targetSE,lfns)
+          if not res['OK']:
+            errStr = "ReplicationPlacementAgent.processTransformation: Failed to update file status."
+            gLogger.error(errStr,res['Message'])
     return S_OK()
 
-  def submitRequest(self,sourceSE,targetSEFiles,transName):
-    oRequest = DataManagementRequest()
-    for targetSE,lfns in targetSEFiles.items():
-      subRequestIndex = oRequest.initiateSubRequest('transfer')['Value']
-      attributeDict = {'Operation':'replicateAndRegister','TargetSE':targetSE,'SourceSE':sourceSE}
-      oRequest.setSubRequestAttributes(subRequestIndex,'transfer',attributeDict)
-      files = []
-      for lfn in lfns:
-        files.append({'LFN':lfn})
-      oRequest.setSubRequestFiles(subRequestIndex,'transfer',files)
+  def submitRequest(self,seFiles,transName):
+    oRequest = DataManagementRequest(init=False)
+    for sourceSE,targetSEDict in seFiles.items():
+      for targetSE,lfns in targetSEDict.items():
+        subRequestIndex = oRequest.initiateSubRequest('transfer')['Value']
+        attributeDict = {'Operation':'replicateAndRegister','TargetSE':targetSE,'SourceSE':sourceSE}
+        oRequest.setSubRequestAttributes(subRequestIndex,'transfer',attributeDict)
+        files = []
+        for lfn in lfns:
+          files.append({'LFN':lfn})
+        oRequest.setSubRequestFiles(subRequestIndex,'transfer',files)
     requestString = oRequest.toXML()['Value']
     requestName = '%s_transfer_%s.xml' % (transName,time.time())
     res = self.TransferDB.setRequest(requestName,requestString,self.transferDBUrl)
