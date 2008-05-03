@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.46 2008/02/29 16:19:41 gkuznets Exp $
+# $Id: TransformationDB.py,v 1.47 2008/05/03 18:13:19 acsmith Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -162,6 +162,14 @@ class TransformationDB(DB):
     req = "UPDATE Transformations SET Status='%s' WHERE TransformationID=%s;" % (status,transID)
     res = self._update(req)
     return res
+
+  def addTransformationParameter(self,transName,paramName,paramValue):
+    """ Add a parameter for the supplied transformations
+    """
+    transID = self.getTransformationID(transName)
+    req = "INSERT INTO TransformationParameters (TransformationID,ParameterName,ParameterValue) VALUES (%s,'%s','%s');" % (transID,paramName,paramValue)
+    res = self._update(req)
+    return res      
 
   def setTransformationAgentType(self,transName,status):
     """ Set the submission status of the transformation specified by transID
