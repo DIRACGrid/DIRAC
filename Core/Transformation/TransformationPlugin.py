@@ -9,7 +9,7 @@ class TransformationPlugin:
     self.valid = True
     self.params = False
     self.data = False
-    supportedPlugins = ['LoadBalance','Automatic']
+    supportedPlugins = ['LoadBalance','Automatic','Broadcast']
     if not plugin in supportedPlugins:
       self.valid = False
     else:
@@ -27,6 +27,30 @@ class TransformationPlugin:
   def generateTask(self):
     evalString = "self._%s()" % self.plugin
     return eval(evalString)
+
+  def _Broadcast(self):
+    """ This plug-in takes files found at the sourceSE and broadcasts to all targetSEs.
+    """
+    if not self.params:
+      return S_ERROR("TransformationPlugin._Broadcast: The 'Broadcast' plugin requires additional parameters.")
+
+    sourceSEs = self.params['SourceSE'].split(',')
+    targetSEs = self.params['TargetSE'].split(',')
+
+    seFiles = {}
+    for lfn,se in self.data:
+      if se in sourceSEs:
+        sourceSite = se.split('_')[0].split('-')[0]
+        targets = []
+        for targetSE in targetSEs:
+          if not targetSE.startswith(sourceSite):
+            targets.append(targetSE)
+        if not seFiles.has_key(se):
+          seFiles[se] = {}
+        if not seFiles[se].has_key(strListToString(targets)):
+          seFiles[se][strListToString(targets)] = []
+        seFiles[se][strListToString(targets)].append(lfn)        
+    return S_OK(seFiles) 
 
   def _LoadBalance(self):
     """ This plug-in will load balances the input files across the selected target SEs.
