@@ -45,11 +45,12 @@ class TransformationPlugin:
         for targetSE in targetSEs:
           if not targetSE.startswith(sourceSite):
             targets.append(targetSE)
+        strTargetSE = ','.join(targets)
         if not seFiles.has_key(se):
           seFiles[se] = {}
-        if not seFiles[se].has_key(strListToString(targets)):
+        if not seFiles[se].has_key(strTargetSE):
           seFiles[se][strListToString(targets)] = []
-        seFiles[se][strListToString(targets)].append(lfn)        
+        seFiles[se][strTargetSE].append(lfn)        
     return S_OK(seFiles) 
 
   def _LoadBalance(self):
@@ -60,15 +61,17 @@ class TransformationPlugin:
 
     targetSEs = {}
     totalRatio = 0
+
     ses = self.params['TargetSE'].split(',')
     for targetSE in ses:
       targetSEs[targetSE] = int(self.params[targetSE])
       totalRatio += int(self.params[targetSE])
 
-    sourceSE = False
+    sourceSE = ''
     if self.params.has_key('SourceSE'):
       sourceSE = self.params['SourceSE']
-
+    seFiles = {}
+    
     selectedFiles = []
     for lfn,se in self.data:
       useFile = False
@@ -79,13 +82,13 @@ class TransformationPlugin:
       if useFile:
         selectedFiles.append(lfn)
 
-    seFiles = {}
     multiplier = int(len(selectedFiles)/float(totalRatio))
     if multiplier > 0:
       currIndex = 0
+      seFiles[sourceSE] = {}
       for targetSE,load in targetSEs.items():
         offset = (load*multiplier)
-        seFiles[targetSE] = selectedFiles[currIndex:currIndex+offset]
+        seFiles[sourceSE][targetSE] = selectedFiles[currIndex:currIndex+offset]
         currIndex += offset
     return S_OK(seFiles)
 
