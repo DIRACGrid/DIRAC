@@ -620,7 +620,7 @@ class TransferDB(DB):
         The result is ordered by FTSReqID if requested, the result is limited to a given
         number of jobs if requested.
     """
-    condition = self.__buildCondition(condDict, older, newer)
+    condition = self.__OLDbuildCondition(condDict, older, newer)
 
     if orderAttribute:
       orderType = None
@@ -644,7 +644,7 @@ class TransferDB(DB):
       return S_OK([])
     return S_OK( map( self._to_value, res['Value'] ) )
 
-  def __buildCondition(self, condDict, older=None, newer=None ):
+  def __OLDbuildCondition(self, condDict, older=None, newer=None ):
     """ build SQL condition statement from provided condDict
         and other extra conditions
     """
@@ -671,3 +671,99 @@ class TransferDB(DB):
                                                  str(newer) )
 
     return condition
+
+
+  #############################################################################
+  #
+  # These are the methods for monitoring the Reuqests,SubRequests and Files table
+  #
+
+  def selectRequests(self, condDict, older=None, newer=None, orderAttribute=None, limit=None ):
+    """ Select requests matching the following conditions:
+        - condDict dictionary of required Key = Value pairs;
+        - with the last update date older and/or newer than given dates;
+
+        The result is ordered by RequestID if requested, the result is limited to a given
+        number of requests if requested.
+    """
+    return self.__selectFromTable('Requests','RequestID',condDict,older,newer,orderAttribute,limit)
+
+  def selectSubRequests(self, condDict, older=None, newer=None, orderAttribute=None, limit=None ):
+    """ Select sub-requests matching the following conditions:
+        - condDict dictionary of required Key = Value pairs;
+        - with the last update date older and/or newer than given dates;
+
+        The result is ordered by SubRequestID if requested, the result is limited to a given
+        number of sub-requests if requested.
+    """
+    return self.__selectFromTable('SubRequests','SubRequestID',condDict,older,newer,orderAttribute,limit)
+
+  def selectFiles(self, condDict, older=None, newer=None, orderAttribute=None, limit=None ):
+    """ Select files matching the following conditions:
+        - condDict dictionary of required Key = Value pairs;
+        - with the last update date older and/or newer than given dates;
+
+        The result is ordered by FileID if requested, the result is limited to a given
+        number of files if requested.
+    """
+    return self.__selectFromTable('Files','FileID',condDict,older,newer,orderAttribute,limit)
+
+  def selectDatasets(self, condDict, older=None, newer=None, orderAttribute=None, limit=None ):
+    """ Select datasets matching the following conditions:
+        - condDict dictionary of required Key = Value pairs;
+        - with the last update date older and/or newer than given dates;
+
+        The result is ordered by DatasetID if requested, the result is limited to a given
+        number of datasets if requested.
+    """
+    return self.__selectFromTable('Datasets','DatasetID',condDict,older,newer,orderAttribute,limit)
+
+  def __selectFromTable(self,table,tableID,condDict,older,newer,orderAttribute,limit):
+    condition = self.__buildCondition(condDict, older, newer)
+
+    if orderAttribute:
+      orderType = None
+      orderField = orderAttribute
+      if orderAttribute.find(':') != -1:
+        orderType = orderAttribute.split(':')[1].upper()
+        orderField = orderAttribute.split(':')[0]
+      condition = condition + ' ORDER BY ' + orderField
+      if orderType:
+        condition = condition + ' ' + orderType
+
+    if limit:
+      condition = condition + ' LIMIT ' + str(limit)
+
+    cmd = 'SELECT %s from %s %s' % (tableID,table,condition)
+    res = self._query(cmd)
+    if not res['OK']:
+      return res
+    if not len(res['Value']):
+      return S_OK([])
+    return S_OK( map( self._to_value, res['Value'] ) )
+
+  def __buildCondition(self, condDict, older=None, newer=None ):
+    """ build SQL condition statement from provided condDict
+        and other extra conditions
+    """
+    condition = ''
+    conjunction = "WHERE"
+    if condDict != None:
+      for attrName, attrValue in condDict.items():
+        condition = ' %s %s %s=\'%s\'' % ( condition,
+                                           conjunction,
+                                           str(attrName),
+                                           str(attrValue)  )
+        conjunction = "AND"
+    if older:
+      condition = ' %s %s LastUpdateTime < \'%s\'' % ( condition,
+                                                 conjunction,
+                                                 str(older) )
+      conjunction = "AND"
+
+    if newer:
+      condition = ' %s %s LastUpdateTime >= \'%s\'' % ( condition,
+                                                 conjunction,
+                                                 str(newer) )
+    return condition
+
