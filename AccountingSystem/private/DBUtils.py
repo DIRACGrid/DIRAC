@@ -1,6 +1,7 @@
 import types
 import datetime
 from DIRAC.Core.Utilities import Time
+from DIRAC import S_OK, S_ERROR
 
 class DBUtils:
 
@@ -181,3 +182,19 @@ class DBUtils:
         dataDict[ key ][ timestamp ] = strippedField
 
     return remainingData
+
+  def getKeyValues( self, typeName ):
+    """
+    Get all valid key values in a type
+    """
+    typeName = "%s_%s" % ( self._setup, typeName )
+    retVal = self._acDB.getKeyFieldsForType( typeName )
+    if not retVal[ 'OK' ]:
+      return retVal
+    valuesDict = {}
+    for keyName in retVal[ 'Value' ]:
+      retVal = self._acDB.getValuesForKeyField( typeName, keyName )
+      if not retVal[ 'OK' ]:
+        return retVal
+      valuesDict[ keyName ] = retVal[ 'Value' ]
+    return S_OK( valuesDict )

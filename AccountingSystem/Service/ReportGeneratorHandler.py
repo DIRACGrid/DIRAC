@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/ReportGeneratorHandler.py,v 1.6 2008/04/04 16:24:06 acasajus Exp $
-__RCSID__ = "$Id: ReportGeneratorHandler.py,v 1.6 2008/04/04 16:24:06 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/ReportGeneratorHandler.py,v 1.7 2008/05/05 15:31:14 acasajus Exp $
+__RCSID__ = "$Id: ReportGeneratorHandler.py,v 1.7 2008/05/05 15:31:14 acasajus Exp $"
 import types
 import os
 from DIRAC import S_OK, S_ERROR, rootPath, gConfig, gLogger
@@ -7,6 +7,7 @@ from DIRAC.AccountingSystem.private.AccountingDB import AccountingDB
 from DIRAC.AccountingSystem.private.Summaries import Summaries
 from DIRAC.AccountingSystem.private.ViewsCache import gViewsCache
 from DIRAC.AccountingSystem.private.ViewPlotter import ViewPlotter
+from DIRAC.AccountingSystem.private.DBUtils import DBUtils
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities import Time
@@ -89,6 +90,16 @@ class ReportGeneratorHandler( RequestHandler ):
     """
     plotter = ViewPlotter( gAccountingDB, self.serviceInfoDict[ 'clientSetup' ] )
     return S_OK( plotter.viewsList() )
+
+  types_listUniqueKeyValues = [ types.StringType ]
+  def export_listUniqueKeyValues( self, typeName ):
+    """
+    List all values for all keys in a type
+      Arguments:
+        none
+    """
+    dbUtils = DBUtils( gAccountingDB, self.serviceInfoDict[ 'clientSetup' ] )
+    return dbUtils.getKeyValues( typeName )
 
   def transfer_toClient( self, fileId, token, fileHelper ):
     """

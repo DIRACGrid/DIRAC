@@ -1,7 +1,7 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/DataStoreHandler.py,v 1.4 2008/04/02 18:41:28 acasajus Exp $
-__RCSID__ = "$Id: DataStoreHandler.py,v 1.4 2008/04/02 18:41:28 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/DataStoreHandler.py,v 1.5 2008/05/05 15:31:14 acasajus Exp $
+__RCSID__ = "$Id: DataStoreHandler.py,v 1.5 2008/05/05 15:31:14 acasajus Exp $"
 import types
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.AccountingSystem.private.AccountingDB import AccountingDB
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities import Time
@@ -22,9 +22,18 @@ class DataStoreHandler( RequestHandler ):
       Register a new type. (Only for all powerful admins)
       (Bow before me for I am admin! :)
     """
-    setup = self.serviceInfoDict[ 'clientSetup' ]
-    typeName = "%s_%s" % ( setup, typeName )
-    return gAccountingDB.registerType( typeName, definitionKeyFields, definitionAccountingFields, bucketsLength )
+    retVal = gConfig.getSections( "/DIRAC/Setups" )
+    if not retVal[ 'OK' ]:
+      return retVal
+    errorsList = []
+    for setup in retVal[ 'Value' ]:
+      setupTypeName = "%s_%s" % ( setup, typeName )
+      retVal = gAccountingDB.registerType( setupTypeName, definitionKeyFields, definitionAccountingFields, bucketsLength )
+      if not retVal[ 'OK' ]:
+        errorsList.append( retVal[ 'Message' ] )
+    if errorsList:
+      return S_ERROR( "Error while registering type:\n %s" % "\n ".join( errorsList ) )
+    return S_OK()
 
   types_getRegisteredTypes = []
   def export_getRegisteredTypes( self ):
@@ -40,9 +49,18 @@ class DataStoreHandler( RequestHandler ):
       Delete accounting type and ALL its contents. VERY DANGEROUS! (Only for all powerful admins)
       (Bow before me for I am admin! :)
     """
-    setup = self.serviceInfoDict[ 'clientSetup' ]
-    typeName = "%s_%s" % ( setup, typeName )
-    return gAccountingDB.deleteType( typeName )
+    retVal = gConfig.getSections( "/DIRAC/Setups" )
+    if not retVal[ 'OK' ]:
+      return retVal
+    errorsList = []
+    for setup in retVal[ 'Value' ]:
+      setupTypeName = "%s_%s" % ( setup, typeName )
+      retVal = gAccountingDB.deleteType( setupTypeName )
+      if not retVal[ 'OK' ]:
+        errorsList.append( retVal[ 'Message' ] )
+    if errorsList:
+      return S_ERROR( "Error while deleting type:\n %s" % "\n ".join( errorsList ) )
+    return S_OK()
 
   types_commit = [ types.StringType, Time._dateTimeType, Time._dateTimeType, types.ListType ]
   def export_commit( self, typeName, startTime, endTime, valuesList ):

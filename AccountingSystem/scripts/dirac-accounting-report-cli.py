@@ -1,13 +1,13 @@
 #!/usr/bin/env python
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/scripts/dirac-accounting-report-cli.py,v 1.3 2008/04/04 16:24:05 acasajus Exp $
-__RCSID__ = "$Id: dirac-accounting-report-cli.py,v 1.3 2008/04/04 16:24:05 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/scripts/dirac-accounting-report-cli.py,v 1.4 2008/05/05 15:31:14 acasajus Exp $
+__RCSID__ = "$Id: dirac-accounting-report-cli.py,v 1.4 2008/05/05 15:31:14 acasajus Exp $"
 
 import cmd
 import sys
 import signal
 import datetime
-import dirac
 import pprint
+import DIRACEnvironment
 from DIRAC import gLogger
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities import ExitCallback, ColorCLI, List

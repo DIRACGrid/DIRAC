@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.22 2008/04/17 10:32:09 acasajus Exp $
-__RCSID__ = "$Id: AccountingDB.py,v 1.22 2008/04/17 10:32:09 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.23 2008/05/05 15:31:14 acasajus Exp $
+__RCSID__ = "$Id: AccountingDB.py,v 1.23 2008/05/05 15:31:14 acasajus Exp $"
 
 import datetime, time
 import types
@@ -173,10 +173,10 @@ class AccountingDB(DB):
       bucketFieldsDict[ field[0] ] = "INTEGER"
     for field in definitionAccountingFields:
       fieldsDict[ field[0] ] = field[1]
-      bucketFieldsDict[ field[0] ] = "FLOAT"
+      bucketFieldsDict[ field[0] ] = "DECIMAL"
     fieldsDict[ 'startTime' ] = "INT UNSIGNED"
     fieldsDict[ 'endTime' ] = "INT UNSIGNED"
-    bucketFieldsDict[ 'entriesInBucket' ] = "FLOAT"
+    bucketFieldsDict[ 'entriesInBucket' ] = "DECIMAL"
     bucketFieldsDict[ 'startTime' ] = "INT UNSIGNED"
     uniqueIndexFields.append( 'startTime' )
     bucketFieldsDict[ 'bucketLength' ] = "MEDIUMINT UNSIGNED"
@@ -206,7 +206,7 @@ class AccountingDB(DB):
     """
     Get list of registered types
     """
-    retVal = self._query( "SELECT `name`, `keyFields`, `valueFields`, `bucketLength` FROM `%s`" % self.catalogTableName )
+    retVal = self._query( "SELECT `name`, `keyFields`, `valueFields`, `bucketsLength` FROM `%s`" % self.catalogTableName )
     if not retVal[ 'OK' ]:
       return retVal
     typesList = []
@@ -218,6 +218,21 @@ class AccountingDB(DB):
                         ]
                       )
     return S_OK( typesList )
+
+  def getKeyFieldsForType( self, typeName ):
+    """
+    List key fields for a type
+    """
+    if not typeName in self.dbCatalog:
+      return S_ERROR( "%s is not a valid type name" % typeName )
+    return S_OK( self.dbCatalog[ typeName ][ 'keys' ] )
+
+  def getValuesForKeyField( self, typeName, keyName ):
+    """
+    Get all values for a given key field in a type
+    """
+    keyTable = self.__getTableName( "key", typeName, keyName )
+    return self._query( "SELECT `value` from `%s`"  % keyTable )
 
   @gSynchro
   def deleteType( self, typeName ):
