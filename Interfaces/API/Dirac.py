@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.21 2008/04/29 18:17:54 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.22 2008/05/05 07:32:47 rgracian Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.21 2008/04/29 18:17:54 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.22 2008/05/05 07:32:47 rgracian Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -474,7 +474,7 @@ class Dirac:
     except Exception,x:
       return self.__errorReport(str(x),'Could not create directory in %s' %(dirPath))
 
-    result = self.inputSandboxClient.getSandbox(int(sys.argv[1]),dirPath)
+    result = self.inputSandboxClient.getSandbox(jobID,dirPath)
     if not result['OK']:
       self.log.warn(result['Message'])
     else:
@@ -523,7 +523,7 @@ class Dirac:
     except Exception,x:
       return self.__errorReport(str(x),'Could not create directory in %s' %(dirPath))
 
-    result = self.outputSandboxClient.getSandbox(int(sys.argv[1]),dirPath)
+    result = self.outputSandboxClient.getSandbox(jobID,dirPath)
     if not result['OK']:
       self.log.warn(result['Message'])
     else:
