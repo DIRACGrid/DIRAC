@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Subprocess.py,v 1.13 2008/03/11 16:24:53 acasajus Exp $
-__RCSID__ = "$Id: Subprocess.py,v 1.13 2008/03/11 16:24:53 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Subprocess.py,v 1.14 2008/05/05 21:32:54 rgracian Exp $
+__RCSID__ = "$Id: Subprocess.py,v 1.14 2008/05/05 21:32:54 rgracian Exp $"
 """
    DIRAC Wrapper to execute python and system commands with a wrapper, that might
    set a timeout.
@@ -195,7 +195,7 @@ class Subprocess:
       return S_OK()
     else: # buffer size limit reached killing process (see comment on __readFromFile)
       self.bufferList[ bufferIndex ][0] += retDict[ 'Value' ]
-      exitStatus = self.__killChild( self.child.pid )
+      exitStatus = self.__killChild()
 
       return self.__generateSystemCommandError(
                   exitStatus,
