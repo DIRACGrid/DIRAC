@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/ServiceInterface.py,v 1.12 2008/05/05 18:13:55 acasajus Exp $
-__RCSID__ = "$Id: ServiceInterface.py,v 1.12 2008/05/05 18:13:55 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/ServiceInterface.py,v 1.13 2008/05/05 18:48:01 acasajus Exp $
+__RCSID__ = "$Id: ServiceInterface.py,v 1.13 2008/05/05 18:48:01 acasajus Exp $"
 import DIRAC
 from DIRAC import gLogger
 from DIRAC.MonitoringSystem.private.MonitoringCatalog import MonitoringCatalog
@@ -73,7 +73,7 @@ class ServiceInterface:
     """
     Check that the dictionary is a valid activity one
     """
-    validKeys = ( 'category', 'description', 'sourceId', 'bucketLength', 'type', 'unit', 'name' )
+    validKeys = ( 'category', 'description', 'bucketLength', 'type', 'unit' )
     for key in validKeys:
       if key not in acDict:
         return False
