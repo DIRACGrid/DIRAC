@@ -1,7 +1,9 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Types/Attic/WMSJob.py,v 1.5 2008/01/29 15:34:03 acasajus Exp $
-__RCSID__ = "$Id: WMSJob.py,v 1.5 2008/01/29 15:34:03 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Types/Attic/WMSJob.py,v 1.6 2008/05/05 13:57:53 acasajus Exp $
+__RCSID__ = "$Id: WMSJob.py,v 1.6 2008/05/05 13:57:53 acasajus Exp $"
 
 from DIRAC.AccountingSystem.Client.Types.BaseAccountingType import BaseAccountingType
+
+from DIRAC                                                  import gConfig
 
 class WMSJob( BaseAccountingType ):
 
@@ -13,8 +15,8 @@ class WMSJob( BaseAccountingType ):
                                  ( 'JobClass', 'VARCHAR(32)' ),
                                  ( 'Site', 'VARCHAR(32)' ),
                                  ( 'ProcType', 'VARCHAR(32)' ),
-                                 ( 'FinalDIRACState', 'VARCHAR(32)' ),
-                                 ( 'FinalApplicationState', 'VARCHAR(64)' )
+                                 ( 'FinalMajorStatus', 'VARCHAR(32)' ),
+                                 ( 'FinalMinorStatus', 'VARCHAR(64)' )
                                ]
     self.definitionAccountingFields = [ ( 'CPUTime', "INT" ),
                                         ( 'NormCPUTime', "INT" ),
@@ -28,3 +30,7 @@ class WMSJob( BaseAccountingType ):
                                         ( 'WMSMatchingTime', 'INT' )
                                       ]
     self.checkType()
+    #Fill the setup
+    self.setValueByKey( "Setup", gConfig.getValue( "/DIRAC/Setup", "unknown" ) )
+    #Fill the site
+    self.setValueByKey( "Site", gConfig.getValue( "/LocalSite/Site", "DIRAC.unknown.no" ) )

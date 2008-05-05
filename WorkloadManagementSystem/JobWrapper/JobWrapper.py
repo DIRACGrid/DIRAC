@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.25 2008/04/24 08:10:53 rgracian Exp $
+# $Id: JobWrapper.py,v 1.26 2008/05/05 13:57:25 acasajus Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,12 +9,13 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.25 2008/04/24 08:10:53 rgracian Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.26 2008/05/05 13:57:25 acasajus Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
 from DIRAC.WorkloadManagementSystem.Client.SandboxClient            import SandboxClient
 from DIRAC.WorkloadManagementSystem.JobWrapper.WatchdogFactory      import WatchdogFactory
+from DIRAC.AccountingSystem.Client.Types.WMSJob                     import WMSJob
 from DIRAC.ConfigurationSystem.Client.PathFinder                    import getSystemSection
 from DIRAC.Core.DISET.RPCClient                                     import RPCClient
 from DIRAC.Core.Utilities.ModuleFactory                             import ModuleFactory
@@ -36,6 +37,13 @@ class JobWrapper:
     # FIXME: replace by getSystemSection( "WorkloadManagement/JobWrapper" )
     self.section = "%s/JobWrapper" % ( getSystemSection( "WorkloadManagement/" ))
     self.log = gLogger
+    #Create the acctounting report
+    self.accountingReport = WMSJob()
+    # Initialize for accounting
+    self.wmsMajorStatus = "unknown"
+    self.wmsMinorStatus = "unknown"
+    #Set now as start time
+    self.accountingReport.setStartTime()
     # FIXME: if no jobID is provided many things will fail later on with this default, make it 0
     # FIXME: it should be cast to int here and not 10 times later on
     self.jobID = jobID
@@ -44,8 +52,8 @@ class JobWrapper:
     self.localSiteRoot = gConfig.getValue('/LocalSite/Root',self.root)
     # FIXME: Why? this is done by dirac-pilot
     self.__loadLocalCFGFiles(self.localSiteRoot)
-    # FIXME: RPCClients should be created just before using them os that the 
-    # resolution is than at the last moment. Other wise the RPCClient should 
+    # FIXME: RPCClients should be created just before using them os that the
+    # resolution is than at the last moment. Other wise the RPCClient should
     # delay the resolution.
     self.jobReport  = RPCClient('WorkloadManagement/JobStateUpdate')
     self.inputSandboxClient = SandboxClient()
@@ -149,6 +157,13 @@ class JobWrapper:
 
     jobArgs = arguments['Job']
     ceArgs = arguments ['CE']
+
+    #Fill the accounting report
+    for key in ( 'JobGroup', 'JobType', 'JobClass', 'ProcType' ):
+      if key in jobArgs:
+        self.accountingReport.setValueByKey( key, jobArgs[key] )
+      else:
+        self.accountingReport.setValueByKey( key, 'unknown' )
 
     if jobArgs.has_key('MaxCPUTime'):
       jobCPUTime = int(jobArgs['MaxCPUTime'])
@@ -712,8 +727,41 @@ class JobWrapper:
     """Perform any final actions to clean up after job execution.
     """
     self.__report('Done','Execution Complete')
+    self.sendWMSAccounting()
     self.__cleanUp()
     return S_OK()
+
+  #############################################################################
+  def sendWMSAccounting(self,arguments):
+    """Send WMS accounting data.
+    """
+    self.accountingReport.setEndTime()
+    #CPUTime and ExecTime
+    if 'CPU' in EXECUTION_RESULT:
+      utime, stime, cutime, cstime, elapsed = EXECUTION_RESULT['CPU']
+    else:
+      utime, stime, cutime, cstime, elapsed = os.times()
+    cpuTime = utime + stime + cutime + cstime
+    execTime = elapsed
+    #Fill the data
+    acData = { 'FinalMajorStatus' : self.wmsMajorStatus,
+               'FinalMinorStatus' : self.wmsMinorStatus,
+               #La "chicha"
+               'CPUTime' : cpuTime,
+               'NormCPUTime' : cpuTime * gConfig.getValue ( "/LocalSite/CPUScalingFactor", 0.0 ),
+               'ExecTime' : execTime,
+               #FIXME: Fill all that data
+               'InputData' : 0,
+               'OutputData' : 0,
+               'DiskSpace' : 0,
+               'InputSandBox' : 0,
+               'OutputSandBox' : 0,
+               #FIXME: Pass this info as parameter of the JobWrapper
+               'WMSStagingTime' : 0,
+               'WMSMatchingTime' : 0
+             }
+    self.accountingReport.setValuesFromDict( acData )
+    self.accountingReport.commit()
 
   #############################################################################
   def __cleanUp(self):
@@ -755,6 +803,8 @@ class JobWrapper:
   def __report(self,status,minorStatus):
     """Wraps around setJobStatus of state update client
     """
+    self.wmsMajorStatus = status
+    self.wmsMinorStatus = minorStatus
     # FIXME: shoudl not report in jobID == 0
     jobStatus = self.jobReport.setJobStatus(int(self.jobID),status,minorStatus,'JobWrapper')
     self.log.verbose('setJobStatus(%s,%s,%s,%s)' %(self.jobID,status,minorStatus,'JobWrapper'))
@@ -778,7 +828,7 @@ class JobWrapper:
   def __setJobParamList(self,value):
     """Wraps around setJobParameters of state update client
     """
-    # FIXME: like the Watchdog, 
+    # FIXME: like the Watchdog,
     jobParam = self.jobReport.setJobParameters(int(self.jobID),value)
     self.log.verbose('setJobParameters(%s,%s)' %(self.jobID,value))
     if not jobParam['OK']:
