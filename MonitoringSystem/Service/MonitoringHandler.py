@@ -1,10 +1,10 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Service/MonitoringHandler.py,v 1.5 2008/02/18 17:38:09 acasajus Exp $
-__RCSID__ = "$Id: MonitoringHandler.py,v 1.5 2008/02/18 17:38:09 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Service/MonitoringHandler.py,v 1.6 2008/05/05 18:13:47 acasajus Exp $
+__RCSID__ = "$Id: MonitoringHandler.py,v 1.6 2008/05/05 18:13:47 acasajus Exp $"
 import types
 import os
 from DIRAC import gLogger, gConfig, rootPath, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC.Core.Utilities import DEncode
+from DIRAC.Core.Utilities import DEncode, Time
 from DIRAC.MonitoringSystem.Client.MonitoringClient import gMonitor
 from DIRAC.ConfigurationSystem.Client import PathFinder
 
@@ -48,13 +48,26 @@ class MonitoringHandler( RequestHandler ):
     """
     Registers new activities
     """
-    return gServiceInterface.registerActivities( sourceDict, activitiesDict)
+    return gServiceInterface.registerActivities( sourceDict, activitiesDict )
 
   types_commitMarks = [ types.IntType, types.DictType ]
   def export_commitMarks( self, sourceId, activitiesDict ):
     """
     Adds marks for activities
     """
+    nowEpoch = Time.toEpoch()
+    maxEpoch = nowEpoch + 7200
+    minEpoch = nowEpoch - 86400
+    invalidActivities = []
+    for acName in activitiesDict:
+      for time in activitiesDict[ acName ]:
+        if time > maxEpoch or time < minEpoch:
+          gLogger.info( "Time %s  ( [%s,%s] ) is invalid for activity %s" % ( time, minEpoch, maxEpoch, acName ) )
+          invalidActivities.append( acName )
+          break
+    for acName in invalidActivities:
+      gLogger.info( "Not commiting activity %s" % acName )
+      del( activitiesDict[ acName ] )
     return gServiceInterface.commitMarks( sourceId, activitiesDict )
 
   types_queryField = [ types.StringType, types.DictType ]

@@ -9,6 +9,7 @@ import md5
 import DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.MonitoringSystem.private.Activity import Activity
+from DIRAC.Core.Utilities import Time
 
 class MonitoringCatalog:
 
@@ -154,6 +155,42 @@ class MonitoringCatalog:
     c = self.__dbExecute( query, values = valuesList )
     return c.rowcount
 
+  def __update( self, newValues, table, dataDict, extraCond = "" ):
+    """
+    Execute a sql update
+    """
+    valuesList = []
+    keysList = []
+    updateFields = []
+    for key in newValues:
+      updateFields.append( "%s = ?" % key )
+      valuesList.append( newValues[ key ] )
+    for key in dataDict:
+      if type( dataDict[ key ] ) == types.ListType:
+        orList = []
+        for keyValue in dataDict[ key ]:
+          valuesList.append( keyValue )
+          orList.append( "%s = ?" % key )
+        keysList.append( "( %s )" % " OR ".join( orList ) )
+      else:
+        valuesList.append( dataDict[ key ] )
+        keysList.append( "%s = ?" % key )
+    if len( keysList ) > 0:
+      whereCond = "WHERE %s" % ( " AND ".join( keysList ) )
+    else:
+      whereCond = ""
+    if extraCond:
+      if whereCond:
+        whereCond += " AND %s" % extraCond
+      else:
+        whereCond = "WHERE %s" % extraCond
+    query = "UPDATE %s SET %s %s;" % ( table,
+                                       ",".join( updateFields ),
+                                       whereCond
+                                           )
+    c = self.__dbExecute( query, values = valuesList )
+    return c.rowcount
+
   def registerSource( self, sourceDict ):
     """
     Register an activity source
@@ -179,12 +216,13 @@ class MonitoringCatalog:
     if len( retList ) > 0:
       return retList[0][0]
     else:
+      acDict[ 'lastUpdate' ] = int( Time.toEpoch() - 86000 )
       filePath = m.hexdigest()
       filePath = "%s/%s.rrd" % ( filePath[:2], filePath )
       gLogger.info( "Registering activity", str( acDict ) )
       if self.__insert( "activities", {
                                'id' : 'NULL',
-                               'filename' : "'%s'" % filePath
+                               'filename' : "'%s'" % filePath,
                                },
                                acDict ) == 0:
         return -1
@@ -206,7 +244,19 @@ class MonitoringCatalog:
     Find activity
     """
     queryDict = { 'sourceId' : sourceId, "name" : acName }
-    retList = self.__select( "id, name, category, unit, type, description, filename, bucketLength", "activities", queryDict )
+    retList = self.__select( "id, name, category, unit, type, description, filename, bucketLength, lastUpdate", "activities", queryDict )
+    if len( retList ) == 0:
+      return False
+    else:
+      return retList[0]
+
+  def setLastUpdate( self, sourceId, acName, lastUpdateTime ):
+    queryDict = { 'sourceId' : sourceId, "name" : acName }
+    return self.__update( { 'lastUpdate' : lastUpdateTime }, "activities", queryDict )
+
+  def getLastUpdate( self, sourceId, acName ):
+    queryDict = { 'sourceId' : sourceId, "name" : acName }
+    retList = self._update( 'lastUpdate', "activities", queryDict )
     if len( retList ) == 0:
       return False
     else:

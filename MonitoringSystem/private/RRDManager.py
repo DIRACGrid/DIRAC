@@ -1,8 +1,7 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/RRDManager.py,v 1.24 2008/02/22 10:19:27 acasajus Exp $
-__RCSID__ = "$Id: RRDManager.py,v 1.24 2008/02/22 10:19:27 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/RRDManager.py,v 1.25 2008/05/05 18:13:55 acasajus Exp $
+__RCSID__ = "$Id: RRDManager.py,v 1.25 2008/05/05 18:13:55 acasajus Exp $"
 import os
 import os.path
-import time
 import md5
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection
@@ -64,7 +63,7 @@ class RRDManager:
     """
     Get current time "bucketized"
     """
-    return self.bucketize( time.mktime( time.gmtime() ), bucketLength )
+    return self.bucketize( Time.toEpoch(), bucketLength )
 
   def bucketize( self, secs, bucketLength ):
     """
@@ -79,7 +78,7 @@ class RRDManager:
     """
     rrdFilePath = "%s/%s" % ( self.rrdLocation, rrdFile )
     if os.path.isfile( rrdFilePath ):
-      return True
+      return S_OK()
     try:
       os.makedirs( os.path.dirname( rrdFilePath ) )
     except:
@@ -100,7 +99,7 @@ class RRDManager:
     #cmd += " RRA:%s:0.9:1:43200" % cf
     # 1m red for 1 year
     cmd += " RRA:%s:0.9:1:525600" % cf
-    return self.__exec( cmd, rrdFilePath ) == 0
+    return self.__exec( cmd, rrdFilePath )
 
   def __getLastUpdateTime( self, rrdFile ):
     """
@@ -126,16 +125,19 @@ class RRDManager:
       expectedUpdateTime = valueTuple[0] + bucketLength
     return filledList
 
-  def update( self, type, rrdFile, bucketLength, valuesList ):
+  def update( self, type, rrdFile, bucketLength, valuesList, lastUpdate = 0 ):
     """
     Add marks to an rrd
     """
     rrdFilePath = "%s/%s" % ( self.rrdLocation, rrdFile )
     gLogger.info( "Updating rrd file", rrdFilePath )
-    retVal = self.__getLastUpdateTime( rrdFilePath )
-    if retVal[ 'OK' ]:
-      lastUpdateTime = retVal[ 'Value' ]
-      gLogger.verbose( "Last update time is %s" % lastUpdateTime )
+    if lastUpdate == 0:
+      retVal = self.__getLastUpdateTime( rrdFilePath )
+      if retVal[ 'OK' ]:
+        lastUpdateTime = retVal[ 'Value' ]
+        gLogger.verbose( "Last update time is %s" % lastUpdateTime )
+    else:
+      lastUpdateTime = lastUpdate
     cmd = "%s update %s" % ( self.rrdExec, rrdFilePath )
     #we have to fill with 0 the db to ensure the mean is valid
     valuesList = self.__fillWithZeros( lastUpdateTime, bucketLength, valuesList )
@@ -148,7 +150,7 @@ class RRDManager:
       retVal = self.__exec( finalCmd, rrdFilePath )
       if not retVal[ 'OK' ]:
         gLogger.error( "Error updating rrd file", "%s rrd: %s" % ( rrdFile, retVal[ 'Message' ] ) )
-    return S_OK()
+    return S_OK( valuesList[-1][0] )
 
   def __generateName( self, *args, **kwargs ):
     """

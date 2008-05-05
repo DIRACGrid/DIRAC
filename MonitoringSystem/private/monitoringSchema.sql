@@ -7,7 +7,8 @@ CREATE table activities (
     type TEXT,
 	description TEXT,
 	bucketLength INTEGER,
-    filename TEXT
+    filename TEXT,
+    lastUpdate TEXT
 );
 CREATE table sources (
     id INTEGER  PRIMARY KEY,

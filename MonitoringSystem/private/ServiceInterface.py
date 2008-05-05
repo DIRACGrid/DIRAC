@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/ServiceInterface.py,v 1.11 2008/04/17 10:59:25 acasajus Exp $
-__RCSID__ = "$Id: ServiceInterface.py,v 1.11 2008/04/17 10:59:25 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/ServiceInterface.py,v 1.12 2008/05/05 18:13:55 acasajus Exp $
+__RCSID__ = "$Id: ServiceInterface.py,v 1.12 2008/05/05 18:13:55 acasajus Exp $"
 import DIRAC
 from DIRAC import gLogger
 from DIRAC.MonitoringSystem.private.MonitoringCatalog import MonitoringCatalog
@@ -64,8 +64,18 @@ class ServiceInterface:
     Check that the dictionary is a valid source one
     """
     validKeys = ( "setup", "site", "componentType", "componentLocation", "componentName" )
-    for key in sourceDict:
-      if key not in validKeys:
+    for key in validKeys:
+      if key not in sourceDict:
+        return False
+    return True
+
+  def __checkActivityDict( self, acDict ):
+    """
+    Check that the dictionary is a valid activity one
+    """
+    validKeys = ( 'category', 'description', 'sourceId', 'bucketLength', 'type', 'unit', 'name' )
+    for key in validKeys:
+      if key not in acDict:
         return False
     return True
 
@@ -81,6 +91,8 @@ class ServiceInterface:
     sourceId = acCatalog.registerSource( sourceDict )
     #Register activities
     for name in activitiesDict:
+      if not self.__checkActivityDict( activitiesDict[ name ] ):
+        return S_ERROR( "Definition for activity %s is not valid" % name )
       activitiesDict[ name ][ 'name' ] = name
       if not 'bucketLength' in activitiesDict[ name ]:
         activitiesDict[ name ][ 'bucketLength' ] = 60
@@ -90,7 +102,9 @@ class ServiceInterface:
       rrdFile = acCatalog.registerActivity( sourceId, name, activitiesDict[ name ] )
       if not rrdFile:
         return S_ERROR( "Could not register activity %s" % name )
-      rrdManager.create( activitiesDict[ name ][ 'type' ], rrdFile, activitiesDict[ name ][ 'bucketLength' ] )
+      retVal = rrdManager.create( activitiesDict[ name ][ 'type' ], rrdFile, activitiesDict[ name ][ 'bucketLength' ] )
+      if not retVal[ 'OK' ]:
+        return retVal
     return S_OK( sourceId )
 
   def commitMarks( self, sourceId, activitiesDict ):
@@ -110,7 +124,7 @@ class ServiceInterface:
         continue
       rrdFile = acInfo[6]
       if not rrdManager.existsRRDFile( rrdFile ):
-        gLogger.error( "RRD file does not exist", "%s:%s activity" % ( sourceId, acName ) )
+        gLogger.error( "RRD file does not exist", "%s:%s activity (%s)" % ( sourceId, acName, rrdFile ) )
         unregisteredActivities.append( acName )
         continue
       gLogger.info( "Updating activity", "%s -> %s" % ( acName, rrdFile ) )
@@ -121,9 +135,11 @@ class ServiceInterface:
         entries.append( ( instant , acData[ instant ] ) )
       if len( entries ) > 0:
         gLogger.verbose( "There are %s entries for %s" % ( len( entries ), acName ) )
-        retDict = rrdManager.update( acInfo[4], rrdFile, acInfo[7], entries )
+        retDict = rrdManager.update( acInfo[4], rrdFile, acInfo[7], entries, long( acInfo[8] ) )
         if not retDict[ 'OK' ]:
           gLogger.error( "There was an error updating", "%s:%s activity [%s]" % ( sourceId, acName, rrdFile ) )
+        else:
+          acCatalog.setLastUpdate( sourceId, acName, retDict[ 'Value' ] )
     return S_OK( unregisteredActivities )
 
   def fieldValue( self, field, definedFields ):

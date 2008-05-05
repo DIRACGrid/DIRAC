@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.27 2008/05/05 12:33:39 acasajus Exp $
-__RCSID__ = "$Id: MonitoringClient.py,v 1.27 2008/05/05 12:33:39 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.28 2008/05/05 18:13:55 acasajus Exp $
+__RCSID__ = "$Id: MonitoringClient.py,v 1.28 2008/05/05 18:13:55 acasajus Exp $"
 
 import threading
 import time
@@ -153,7 +153,7 @@ class MonitoringClient:
 
   def __UTCStepTime( self, acName ):
     stepLength = self.activitiesDefinitions[ acName ][ 'bucketLength' ]
-    nowEpoch = int( time.mktime( time.gmtime() ) )
+    nowEpoch = int( Time.toEpoch() )
     return nowEpoch - nowEpoch % stepLength
 
   def addMark( self, name, value = 1 ):
@@ -187,7 +187,7 @@ class MonitoringClient:
     remainderMarks = {}
     for key in self.activitiesMarks:
       if allData:
-        lastStepToSend = int( time.mktime( time.gmtime() ) )
+        lastStepToSend = int( Time.toEpoch() )
       else:
         lastStepToSend = self.__UTCStepTime( key )
       consolidatedMarks[ key ] = {}
