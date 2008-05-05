@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.22 2008/05/05 07:32:47 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.23 2008/05/05 07:40:26 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.22 2008/05/05 07:32:47 rgracian Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.23 2008/05/05 07:40:26 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -39,6 +39,7 @@ from DIRAC.WorkloadManagementSystem.Client.SandboxClient import SandboxClient
 from DIRAC.DataManagementSystem.Client.ReplicaManager    import ReplicaManager
 from DIRAC.Core.DISET.RPCClient                          import RPCClient
 from DIRAC.Core.Utilities.GridCert                       import getGridProxy
+from DIRAC.ConfigurationSystem.Client.PathFinder         import getSystemSection
 from DIRAC                                               import gConfig, gLogger, S_OK, S_ERROR
 
 COMPONENT_NAME='DiracAPI'
@@ -957,6 +958,41 @@ class Dirac:
       self.log.info('No standard output available to print.')
 
     return S_OK(stdout)
+
+  #############################################################################
+  def ping(self,system,service,printOutput=False):
+    """The ping function will attempt to return standard information from a system
+       service if this is available.  If the ping() command is unsuccessful it could
+       indicate a period of service unavailability.
+
+       Example Usage:
+
+       >>> print dirac.ping('WorkloadManagement','JobManager')
+       {'OK': True, 'Value': 'Job ping result'}
+
+       @param system: system
+       @type system: string
+       @param service: service name
+       @type service: string
+       @return: S_OK,S_ERROR
+    """
+    if not type(system)==type(" ") and type(service)==type(" "):
+      return self.__errorReport('Expected string for system and service to ping()')
+    result = S_ERROR()
+    try:
+      systemSection = getSystemSection(system+'/')
+      self.log.verbose('System section is: %s' %(systemSection))
+      section = '%s/%s' % (systemSection,service)
+      self.log.verbose('Requested service should have CS path: %s' %(section))
+      client = RPCClient('%s/%s' %(system,service))
+      result = client.ping()
+    except Exception,x:
+      self.log.warn('ping for %s/%s failed with exception:\n%s' %(system,service,str(x)))
+      result['Message'] = str(x)
+
+    if printOutput:
+      print self.pPrint.pformat(result)
+    return result
 
   #############################################################################
   def __getJDLParameters(self,jdl):
