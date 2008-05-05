@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.27 2008/05/05 14:48:50 acasajus Exp $
+# $Id: JobWrapper.py,v 1.28 2008/05/05 15:32:32 acasajus Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.27 2008/05/05 14:48:50 acasajus Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.28 2008/05/05 15:32:32 acasajus Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -852,15 +852,18 @@ class ExecutionThread(threading.Thread):
   #############################################################################
   def run(self):
     # FIXME: why local intances of object variables are created?
-    # FIXME: for better CPU estimation one shoulc substract some initial value.
     cmd = self.cmd
     spObject = self.spObject
     start = time.time()
+    initialStat = os.times()
     output = spObject.systemCall( cmd, callbackFunction = self.sendOutput, shell = True )
     EXECUTION_RESULT['Thread'] = output
     timing = time.time() - start
     EXECUTION_RESULT['Timing']=timing
-    EXECUTION_RESULT['CPU'] = os.times()
+    finalStat = os.times()
+    EXECUTION_RESULT['CPU'] = []
+    for i in range( len( finalStat ) ):
+      EXECUTION_RESULT['CPU'].append( finalStat[i] - initialStat[i] )
 
   #############################################################################
   def getCurrentPID(self):
