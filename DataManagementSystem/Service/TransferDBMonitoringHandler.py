@@ -9,7 +9,12 @@ from DIRAC.DataManagementSystem.DB.TransferDB import TransferDB
 # These are global instances of the DB classes
 transferDB = False
 #this should also select the SourceSite,DestinationSite
-SUMMARY = ['Status','NumberOfFiles','PercentageComplete','TotalSize','SubmitTime','LastMonitor'] 
+SUMMARY = ['Status','NumberOfFiles','PercentageComplete','TotalSize','SubmitTime','LastMonitor']
+
+
+RequestsColumns = ['RequestID','RequestName','JobID','OwnerDN','DIRACInstance','Status','CreationTime','SubmissionTime']
+SubRequestsColumns = ['RequestID','SubRequestID','RequestType','Status','Operation','SourceSE','TargetSE','Catalogue','SubmissionTime']
+FilesColums = ['SubRequestID','FileID','LFN','Size','PFN','GUID','Md5','Addler','Attempt','Status']
 
 def initializeTransferDBMonitoringHandler(serviceInfo):
 
@@ -21,15 +26,15 @@ class TransferDBMonitoringHandler(RequestHandler):
 
   types_getSites = []
   def export_getSites(self):
-    """ Get the details of the sites 
-    """ 
+    """ Get the details of the sites
+    """
     return transferDB.getSites()
 
   types_getFTSInfo = [IntType]
   def export_getFTSInfo(self,ftsReqID):
    """ Get the details of a particular FTS job
    """
-   return transferDB.getFTSJobDetail(ftsReqID) 
+   return transferDB.getFTSJobDetail(ftsReqID)
 
   types_getFTSJobs = []
   def export_getFTSJobs(self):
@@ -42,14 +47,14 @@ class TransferDBMonitoringHandler(RequestHandler):
   def export_getReqPageSummary(self, attrDict, orderAttribute, pageNumber, numberPerPage):
     """ Get the summary of the fts req information for a given page in the fts monitor
     """
-    last_update = None  
+    last_update = None
     if attrDict.has_key('LastUpdate'):
       last_update = attrDict['LastUpdate']
-      del attrDict['LastUpdate'] 
+      del attrDict['LastUpdate']
     res = transferDB.selectFTSReqs(attrDict, orderAttribute=orderAttribute, newer=last_update)
     if not res['OK']:
       return S_ERROR('Failed to select FTS requests: '+res['Message'])
-    
+
     ftsReqList = res['Value']
     nFTSReqs = len(ftsReqList)
     if nFTSReqs == 0:
@@ -70,6 +75,65 @@ class TransferDBMonitoringHandler(RequestHandler):
 
     resDict = {}
     resDict['TotalFTSReq'] = nFTSReqs
-    resDict['SummaryDict'] = summaryDict      
+    resDict['SummaryDict'] = summaryDict
     return S_OK(resDict)
 
+
+######################################################################################
+######################################################################################
+
+  types_getRequestPageSummaryWeb = [DictType, ListType, IntType, IntType]
+  def export_getRequestPageSummaryWeb(self, selectDict, sortList, startItem, maxItems):
+    """ Get the summary of the request information for a given page in the
+        request monitor in a generic format
+    """
+    resultDict = {}
+    last_update = None
+    if selectDict.has_key('LastUpdate'):
+      last_update = selectDict['LastUpdate']
+      del selectDict['LastUpdate']
+    # Sorting instructions. Only one for the moment.
+    if sortList:
+      orderAttribute = sortList[0][0]+":"+sortList[0][1]
+    else:
+      orderAttribute = None
+
+    result = transferDB.selectRequests(selectDict, orderAttribute=orderAttribute, newer=last_update)
+    if not result['OK']:
+      return S_ERROR('Failed to select jobs: '+result['Message'])
+
+    requestList = result['Value']
+    nRequests = len(requestList)
+    resultDict['TotalRecords'] = nRequests
+    if nRequests == 0:
+      return S_OK(resultDict)
+
+    iniRequest = startItem
+    lastRequest = iniRequest + maxItems
+    if iniRequet >= nRequests:
+      return S_ERROR('Item number out of range')
+
+    if lastRequest > nRequests:
+      lastRequests = nRequests
+
+    summaryRequestList = requestList[iniRequest:lastRequest]
+    result = transferDB.getAttributesForRequestList(summaryRequestList,RequestsColumns)
+    if not result['OK']:
+      return S_ERROR('Failed to get request summary: '+result['Message'])
+
+    summaryDict = result['Value']
+
+    # prepare the standard structure now
+    key = summaryDict.keys()[0]
+    paramNames = summaryDict[key].keys()
+
+    records = []
+    for requestID, requestDict in summaryDict.items():
+      rParList = []
+      for pname in paramNames:
+        rParList.append(requestDict[pname])
+      records.append(rParList)
+
+    resultDict['ParameterNames'] = paramNames
+    resultDict['Records'] = records
+    return S_OK(resultDict)
