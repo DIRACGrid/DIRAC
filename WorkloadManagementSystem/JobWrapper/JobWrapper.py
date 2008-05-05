@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.26 2008/05/05 13:57:25 acasajus Exp $
+# $Id: JobWrapper.py,v 1.27 2008/05/05 14:48:50 acasajus Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.26 2008/05/05 13:57:25 acasajus Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.27 2008/05/05 14:48:50 acasajus Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -732,7 +732,7 @@ class JobWrapper:
     return S_OK()
 
   #############################################################################
-  def sendWMSAccounting(self,arguments):
+  def sendWMSAccounting(self):
     """Send WMS accounting data.
     """
     self.accountingReport.setEndTime()
