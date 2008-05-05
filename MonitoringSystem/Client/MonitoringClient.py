@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.26 2008/04/21 13:34:38 acasajus Exp $
-__RCSID__ = "$Id: MonitoringClient.py,v 1.26 2008/04/21 13:34:38 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.27 2008/05/05 12:33:39 acasajus Exp $
+__RCSID__ = "$Id: MonitoringClient.py,v 1.27 2008/05/05 12:33:39 acasajus Exp $"
 
 import threading
 import time
@@ -233,7 +233,6 @@ class MonitoringClient:
       self.flushingLock.release()
 
   def __disabled( self ):
-    return True
     return gConfig.getValue( "%s/DisableMonitoring" % self.cfgSection, "false" ).lower() in \
         ( "yes", "y", "true", "1" )
 
@@ -252,8 +251,10 @@ class MonitoringClient:
 
   def __sendData( self, secsTimeout = 60 ):
     if gServiceInterface.serviceRunning():
+      self.logger.debug( "Using internal interface to send data")
       rpcClient = gServiceInterface
     else:
+      self.logger.debug( "Creating RPC client" )
       rpcClient = RPCClient( "Monitoring/Server", timeout = secsTimeout )
     #Send registrations
     if not self.__sendRegistration( rpcClient ):
