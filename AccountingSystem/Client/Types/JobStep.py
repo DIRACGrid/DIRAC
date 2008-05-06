@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Types/JobStep.py,v 1.2 2008/03/27 19:02:06 acasajus Exp $
-__RCSID__ = "$Id: JobStep.py,v 1.2 2008/03/27 19:02:06 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Types/JobStep.py,v 1.3 2008/05/06 20:51:38 acasajus Exp $
+__RCSID__ = "$Id: JobStep.py,v 1.3 2008/05/06 20:51:38 acasajus Exp $"
 
 from DIRAC.AccountingSystem.Client.Types.BaseAccountingType import BaseAccountingType
 
@@ -7,10 +7,12 @@ class JobStep( BaseAccountingType ):
 
   def __init__( self ):
     BaseAccountingType.__init__( self )
-    self.definitionKeyFields = [ ( 'Setup', "VARCHAR(32)" ),
-                                 ( 'User', "VARCHAR(32)" ),
+    self.definitionKeyFields = [ ( 'User', "VARCHAR(32)" ),
                                  ( 'Group', 'VARCHAR(32)' ),
                                  ( 'JobGroup', 'VARCHAR(32)' ),
+                                 ( 'EventType', 'VARCHAR(32)' ),
+                                 ( 'ApplicationName', 'VARCHAR(32)' ),
+                                 ( 'ApplicationVersion', 'VARCHAR(32)' ),
                                  ( 'Site', 'VARCHAR(32)' ),
                                  ( 'FinalState', 'VARCHAR(32)' )
                                ]
