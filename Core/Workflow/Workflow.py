@@ -1,8 +1,8 @@
-# $Id: Workflow.py,v 1.27 2008/04/28 14:36:36 atsareg Exp $
+# $Id: Workflow.py,v 1.28 2008/05/06 14:35:24 atsareg Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.27 $"
+__RCSID__ = "$Revision: 1.28 $"
 
 import os
 import xml.sax
@@ -229,6 +229,9 @@ class Workflow(AttributeCollection):
         else:
           #print "Workflow self[",wf_parameter.getName(),']=',wf_parameter.getValue()
           wf_exec_attr[wf_parameter.getName()] = wf_parameter.getValue()
+
+      # Put all the workflow parameters into the workflow_commons dictionary
+      self.workflow_commons[wf_parameter.getName()] = wf_parameter.getValue()
 
     self.module_definitions.loadCode() # loading Module classes into current python scope
 
