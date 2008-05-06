@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.28 2008/05/05 15:32:32 acasajus Exp $
+# $Id: JobWrapper.py,v 1.29 2008/05/06 08:27:46 rgracian Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.28 2008/05/05 15:32:32 acasajus Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.29 2008/05/06 08:27:46 rgracian Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -93,6 +93,12 @@ class JobWrapper:
       pypath = os.environ['PYTHONPATH']
       self.log.verbose('PYTHONPATH is: \n%s' %(string.join(string.split(pypath,':'),'\n')))
       self.log.verbose('==========================================================================')
+    if os.environ.has_key('LD_LIBRARY_PATH_SAVE'):
+      if os.environ.has_key('LD_LIBRARY_PATH'):
+        os.environ['LD_LIBRARY_PATH'] = os.environ['LD_LIBRARY_PATH']+':'+os.environ['LD_LIBRARY_PATH_SAVE']
+      else:
+        os.environ['LD_LIBRARY_PATH'] = os.environ['LD_LIBRARY_PATH_SAVE']
+
     if not os.environ.has_key('LD_LIBRARY_PATH'):
       self.log.verbose('LD_LIBRARY_PATH is: null')
     else:
