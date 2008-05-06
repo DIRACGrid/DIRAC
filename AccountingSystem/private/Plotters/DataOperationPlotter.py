@@ -1,47 +1,19 @@
-import md5
+
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
-from DIRAC.AccountingSystem.private.DBUtils import DBUtils
+from DIRAC.AccountingSystem.private.Plotters.BasePlotter import BasePlotter
 from DIRAC.AccountingSystem.private.Plots import *
-from DIRAC.AccountingSystem.private.ViewsCache import gViewsCache
 from DIRAC.Core.Utilities import Time
 
-class ViewPlotter(DBUtils):
+class DataOperationPlotter(BasePlotter):
 
-  requiredParams = ()
-
-  def __init__( self, db, setup ):
-    DBUtils.__init__( self, db, setup )
-
-  def generate( self, viewName, startTime, endTime, argsDict ):
-    missing = []
-    for param in self.requiredParams:
-      if param not in argsDict:
-        missing.append( param )
-    if missing:
-      return S_ERROR( "Argument(s) %s missing" % ", ".join( missing ) )
-    funcName = "_view%s" % viewName
-    try:
-      funcObj = getattr( self, funcName )
-    except Exception, e:
-      return S_ERROR( "View  %s is not defined" % viewName )
-    return gViewsCache.generateView( viewName, startTime, endTime, argsDict, funcObj )
-
-  def viewsList( self ):
-    viewList = []
-    for attr in dir( self ):
-      if attr.find( "_view" ) == 0:
-        viewList.append( attr.replace( "_view", "" ) )
-    viewList.sort()
-    return viewList
-
-  def _viewSuceededTransfersBySource( self, startTime, endTime, argsDict, filename ):
+  def _plotSuceededTransfersBySource( self, startTime, endTime, argsDict, filename ):
     return self.__generateDataOperationSuceededTransfersPlot(startTime, endTime, [ 'Source' ], argsDict, filename)
 
-  def _viewSuceededTransfersByDestination( self, startTime, endTime, argsDict, filename ):
+  def _plotSuceededTransfersByDestination( self, startTime, endTime, argsDict, filename ):
     return self.__generateDataOperationSuceededTransfersPlot(startTime, endTime, [ 'Destination' ], argsDict, filename)
 
-  def _viewSuceededTransfersByChannel( self, startTime, endTime, argsDict, filename ):
+  def _plotSuceededTransfersByChannel( self, startTime, endTime, argsDict, filename ):
     return self.__generateDataOperationSuceededTransfersPlot(startTime, endTime, [ 'Source', 'Destination' ], argsDict, filename)
 
   def __generateDataOperationSuceededTransfersPlot( self, startTime, endTime, keyNameList, argsDict, filename ):
@@ -49,7 +21,9 @@ class ViewPlotter(DBUtils):
     if not retVal[ 'OK' ]:
       return retVal
     dataDict, granularity = retVal[ 'Value' ]
-    dataDict[ 'Failed' ] = self.stripDataField( dataDict, 0 )[0]
+    strippedData = self.stripDataField( dataDict, 0 )
+    if strippedData:
+      dataDict[ 'Failed' ] = strippedData[0]
     dataDict = self._fillWithZero( granularity, startTime, endTime, dataDict )
     gLogger.info( "Generating plot", "%s with granularity of %s" % ( filename, granularity ) )
     metadata = { 'title' : 'Suceeded Transfers by %s' % " -> ".join( keyNameList ) ,
@@ -59,13 +33,13 @@ class ViewPlotter(DBUtils):
                  'span' : granularity }
     return generateTimedStackedBarPlot( filename, dataDict, metadata )
 
-  def _viewFailedTransfersBySource( self, startTime, endTime, argsDict, filename ):
+  def _plotFailedTransfersBySource( self, startTime, endTime, argsDict, filename ):
     return self.__generateDataOperationFailedTransfersPlot(startTime, endTime, [ 'Source' ], argsDict, filename)
 
-  def _viewFailedTransfersByDestination( self, startTime, endTime, argsDict, filename ):
+  def _plotFailedTransfersByDestination( self, startTime, endTime, argsDict, filename ):
     return self.__generateDataOperationFailedTransfersPlot(startTime, endTime, [ 'Destination' ], argsDict, filename)
 
-  def _viewFailedTransfersByChannel( self, startTime, endTime, argsDict, filename ):
+  def _plotFailedTransfersByChannel( self, startTime, endTime, argsDict, filename ):
     return self.__generateDataOperationFailedTransfersPlot(startTime, endTime, [ 'Source', 'Destination' ], argsDict, filename)
 
   def __generateDataOperationFailedTransfersPlot( self, startTime, endTime, keyNameList, argsDict, filename ):
@@ -73,7 +47,9 @@ class ViewPlotter(DBUtils):
     if not retVal[ 'OK' ]:
       return retVal
     dataDict, granularity = retVal[ 'Value' ]
-    dataDict[ 'Suceeded' ] = self.stripDataField( dataDict, 1 )[0]
+    strippedData = self.stripDataField( dataDict, 1 )
+    if strippedData:
+      dataDict[ 'Suceeded' ] = strippedData[0]
     dataDict = self._fillWithZero( granularity, startTime, endTime, dataDict )
     gLogger.info( "Generating plot", "%s with granularity of %s" % ( filename, granularity ) )
     metadata = { 'title' : 'Failed Transfers by %s' % " -> ".join( keyNameList ) ,
@@ -114,13 +90,13 @@ class ViewPlotter(DBUtils):
       dataDict[ keyField ] = self._sumToGranularity( coarsestGranularity, dataDict[ keyField ] )
     return S_OK( ( dataDict, coarsestGranularity ) )
 
-  def _viewQualityBySource( self, startTime, endTime, argsDict, filename ):
+  def _plotQualityBySource( self, startTime, endTime, argsDict, filename ):
     return self.__generateDataOperationQualityPlot(startTime, endTime, [ 'Source' ], argsDict, filename)
 
-  def _viewQualityByDestination( self, startTime, endTime, argsDict, filename ):
+  def _plotQualityByDestination( self, startTime, endTime, argsDict, filename ):
     return self.__generateDataOperationQualityPlot(startTime, endTime, [ 'Destination' ], argsDict, filename)
 
-  def _viewQualityByChannel( self, startTime, endTime, argsDict, filename ):
+  def _plotQualityByChannel( self, startTime, endTime, argsDict, filename ):
     return self.__generateDataOperationQualityPlot(startTime, endTime, [ 'Source', 'Destination' ], argsDict, filename)
 
 
@@ -169,13 +145,13 @@ class ViewPlotter(DBUtils):
     return S_OK( ( dataDict, coarsestGranularity ) )
 
 
-  def _viewTransferedDataBySource( self, startTime, endTime, argsDict, filename ):
+  def _plotTransferedDataBySource( self, startTime, endTime, argsDict, filename ):
     return self.__generateDataOperationTransferedDataPlot(startTime, endTime, [ 'Source' ], argsDict, filename)
 
-  def _viewTransferedDataByDestination( self, startTime, endTime, argsDict, filename ):
+  def _plotTransferedDataByDestination( self, startTime, endTime, argsDict, filename ):
     return self.__generateDataOperationTransferedDataPlot(startTime, endTime, [ 'Destination' ], argsDict, filename)
 
-  def _viewTransferedDataByChannel( self, startTime, endTime, argsDict, filename ):
+  def _plotTransferedDataByChannel( self, startTime, endTime, argsDict, filename ):
     return self.__generateDataOperationTransferedDataPlot(startTime, endTime, [ 'Source', 'Destination' ], argsDict, filename)
 
 

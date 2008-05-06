@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/ViewsCache.py,v 1.2 2008/04/04 16:24:04 acasajus Exp $
-__RCSID__ = "$Id: ViewsCache.py,v 1.2 2008/04/04 16:24:04 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/PlotsCache.py,v 1.1 2008/05/06 18:33:19 acasajus Exp $
+__RCSID__ = "$Id: PlotsCache.py,v 1.1 2008/05/06 18:33:19 acasajus Exp $"
 
 import os
 import os.path
@@ -13,10 +13,10 @@ from DIRAC.Core.Utilities import Time
 
 gSynchro = Synchronizer()
 
-class ViewsCache:
+class PlotsCache:
 
   def __init__( self ):
-    self.graphsLocation = "%s/data/accountingViews" % rootPath
+    self.graphsLocation = "%s/data/accountingPlots" % rootPath
     self.cachedGraphs = {}
     self.alive = True
     self.purgeThread = threading.Thread( target = self.purgeCached )
@@ -79,7 +79,7 @@ class ViewsCache:
     if graphName not in self.cachedGraphs:
       self.cachedGraphs[ graphName ] = [ Time.toEpoch(), graceTime ]
 
-  def generateView( self, viewName, startTime, endTime, argsDict, funcToGenerate ):
+  def generatePlot( self, viewName, startTime, endTime, argsDict, funcToGenerate ):
     graphName = "%s.png" % self.__generateName( ( viewName, startTime, endTime, argsDict ) )
     if graphName not in self.cachedGraphs:
       try:
@@ -109,4 +109,4 @@ class ViewsCache:
       return S_ERROR( "Can't get graph %s: %s" % ( graphName, str(e) ) )
     return S_OK( graphData )
 
-gViewsCache = ViewsCache()
+gPlotsCache = PlotsCache()

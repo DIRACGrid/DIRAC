@@ -1,12 +1,12 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/ReportGeneratorHandler.py,v 1.7 2008/05/05 15:31:14 acasajus Exp $
-__RCSID__ = "$Id: ReportGeneratorHandler.py,v 1.7 2008/05/05 15:31:14 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/ReportGeneratorHandler.py,v 1.8 2008/05/06 18:33:20 acasajus Exp $
+__RCSID__ = "$Id: ReportGeneratorHandler.py,v 1.8 2008/05/06 18:33:20 acasajus Exp $"
 import types
 import os
 from DIRAC import S_OK, S_ERROR, rootPath, gConfig, gLogger
 from DIRAC.AccountingSystem.private.AccountingDB import AccountingDB
 from DIRAC.AccountingSystem.private.Summaries import Summaries
-from DIRAC.AccountingSystem.private.ViewsCache import gViewsCache
-from DIRAC.AccountingSystem.private.ViewPlotter import ViewPlotter
+from DIRAC.AccountingSystem.private.PlotsCache import gPlotsCache
+from DIRAC.AccountingSystem.private.MainPlotter import MainPlotter
 from DIRAC.AccountingSystem.private.DBUtils import DBUtils
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -36,7 +36,7 @@ def initializeReportGeneratorHandler( serviceInfo ):
   except IOError:
     gLogger.fatal( "Can't write to %s" % dataPath )
     return S_ERROR( "Data location is not writable" )
-  gViewsCache.setGraphsLocation( dataPath )
+  gPlotsCache.setGraphsLocation( dataPath )
   return S_OK()
 
 class ReportGeneratorHandler( RequestHandler ):
@@ -66,30 +66,30 @@ class ReportGeneratorHandler( RequestHandler ):
     summariesGeneator = Summaries( gAccountingDB, self.serviceInfoDict[ 'clientSetup' ] )
     return S_OK( summariesGeneator.summariesList() )
 
-  types_plotView = [ types.StringType, Time._dateTimeType, Time._dateTimeType, types.DictType ]
-  def export_plotView( self, viewName, startTime, endTime, argsDict ):
+  types_generatePlot = [ types.StringType, types.StringType, Time._dateTimeType, Time._dateTimeType, types.DictType ]
+  def export_generatePlot( self, typeName, plotName, startTime, endTime, argsDict ):
     """
-    Plot a accounting view
+    Plot a accounting
       Arguments:
         - viewName : Name of view (easy!)
         - startTime
         - endTime
         - argsDict : Arguments to the view.
     """
-    plotter = ViewPlotter( gAccountingDB, self.serviceInfoDict[ 'clientSetup' ] )
+    plotter = MainPlotter( gAccountingDB, self.serviceInfoDict[ 'clientSetup' ] )
     startTime = int( Time.toEpoch( startTime ) )
     endTime = int( Time.toEpoch( endTime ) )
-    return plotter.generate( viewName, startTime, endTime, argsDict )
+    return plotter.generate( typeName, plotName, startTime, endTime, argsDict )
 
-  types_listViews = []
-  def export_listViews( self ):
+  types_listPlots = [ types.StringType ]
+  def export_listPlots( self, typeName ):
     """
-    List all available views
+    List all available plots
       Arguments:
         none
     """
-    plotter = ViewPlotter( gAccountingDB, self.serviceInfoDict[ 'clientSetup' ] )
-    return S_OK( plotter.viewsList() )
+    plotter = MainPlotter( gAccountingDB, self.serviceInfoDict[ 'clientSetup' ] )
+    return plotter.plotsList( typeName )
 
   types_listUniqueKeyValues = [ types.StringType ]
   def export_listUniqueKeyValues( self, typeName ):
@@ -105,7 +105,7 @@ class ReportGeneratorHandler( RequestHandler ):
     """
     Get graphs data
     """
-    retVal = gViewsCache.getGraphData( fileId )
+    retVal = gPlotsCache.getGraphData( fileId )
     if not retVal[ 'OK' ]:
       return retVal
     retVal = fileHelper.sendData( retVal[ 'Value' ] )

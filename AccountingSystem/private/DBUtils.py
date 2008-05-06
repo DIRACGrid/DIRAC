@@ -99,7 +99,6 @@ class DBUtils:
         if startEpoch == endEpoch:
           addToNormData( newBucketEpoch, bucketValues )
         else:
-          print "SPLIT!"
           while newBucketEpoch < endEpoch:
             start = max( newBucketEpoch, startEpoch )
             end = min( newBucketEpoch + granularity, endEpoch )
@@ -130,7 +129,7 @@ class DBUtils:
     normData = self._spanToGranularity( granularity, bucketsData )
     for bDate in normData:
       for iP in range( len( normData[ bDate ] ) ):
-        normData[ bDate ][iP] /= normData[ bDate ][-1]
+        normData[ bDate ][iP] =  float( normData[ bDate ][iP] ) / normData[ bDate ][-1]
       del( normData[ bDate ][-1] )
     return normData
 
@@ -158,12 +157,12 @@ class DBUtils:
     Out
       dataDict : { 'key' : { <timeEpoch1>: 1,
                              <timeEpoch2>: 3..
-      return : [ { <timeEpoch1>: [2],
-                   <timeEpoch2>: [4]... }
-                 { <timeEpoch1>: [3],
-                   <timeEpoch2>): [5]...
+      return : [ { <timeEpoch1>: 2,
+                   <timeEpoch2>: 4... }
+                 { <timeEpoch1>: 3,
+                   <timeEpoch2>): 5...
     """
-    remainingData = []
+    remainingData = [{}] #Hack for empty data
     for key in dataDict:
       for timestamp in dataDict[ key ]:
         for iPos in dataDict[ key ][ timestamp ]:
@@ -172,13 +171,13 @@ class DBUtils:
       break
     for key in dataDict:
       for timestamp in dataDict[ key ]:
-        strippedField = dataDict[ key ][ timestamp ][ fieldId ]
+        strippedField = float( dataDict[ key ][ timestamp ][ fieldId ] )
         del( dataDict[ key ][ timestamp ][ fieldId ] )
         for iPos in range( len( dataDict[ key ][ timestamp ] ) ):
           if timestamp in remainingData[ iPos ]:
-            remainingData[ iPos ][ timestamp ] += dataDict[ key ][ timestamp ][ iPos ]
+            remainingData[ iPos ][ timestamp ] += float( dataDict[ key ][ timestamp ][ iPos ] )
           else:
-            remainingData[ iPos ][ timestamp ] = dataDict[ key ][ timestamp ][ iPos ]
+            remainingData[ iPos ][ timestamp ] = float( dataDict[ key ][ timestamp ][ iPos ] )
         dataDict[ key ][ timestamp ] = strippedField
 
     return remainingData
