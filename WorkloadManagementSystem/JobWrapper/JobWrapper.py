@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.29 2008/05/06 08:27:46 rgracian Exp $
+# $Id: JobWrapper.py,v 1.30 2008/05/06 20:53:24 acasajus Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.29 2008/05/06 08:27:46 rgracian Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.30 2008/05/06 20:53:24 acasajus Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -761,10 +761,7 @@ class JobWrapper:
                'OutputData' : 0,
                'DiskSpace' : 0,
                'InputSandBox' : 0,
-               'OutputSandBox' : 0,
-               #FIXME: Pass this info as parameter of the JobWrapper
-               'WMSStagingTime' : 0,
-               'WMSMatchingTime' : 0
+               'OutputSandBox' : 0
              }
     self.accountingReport.setValuesFromDict( acData )
     self.accountingReport.commit()
