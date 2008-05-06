@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/DEncode.py,v 1.1 2007/12/19 18:01:49 acasajus Exp $
-__RCSID__ = "$Id: DEncode.py,v 1.1 2007/12/19 18:01:49 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/DEncode.py,v 1.2 2008/05/06 21:18:10 acasajus Exp $
+__RCSID__ = "$Id: DEncode.py,v 1.2 2008/05/06 21:18:10 acasajus Exp $"
 
 # Encoding and decoding for dirac
 #
@@ -145,7 +145,7 @@ def decodeDateTime( buffer, i ):
   tupleObject, i = g_dDecodeFunctions[ buffer[ i+1 ] ]( buffer, i+1 )
   if type == 'a':
     dtObject = datetime.datetime( *tupleObject )
-  elif stype == 'd':
+  elif type == 'd':
     dtObject = datetime.date( *tupleObject )
   elif type == 't':
     dtObject = datetime.time( *tupleObject )
