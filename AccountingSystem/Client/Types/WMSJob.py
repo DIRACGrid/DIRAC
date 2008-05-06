@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Types/Attic/WMSJob.py,v 1.7 2008/05/06 20:51:38 acasajus Exp $
-__RCSID__ = "$Id: WMSJob.py,v 1.7 2008/05/06 20:51:38 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Types/Attic/WMSJob.py,v 1.8 2008/05/06 20:52:28 acasajus Exp $
+__RCSID__ = "$Id: WMSJob.py,v 1.8 2008/05/06 20:52:28 acasajus Exp $"
 
 from DIRAC.AccountingSystem.Client.Types.BaseAccountingType import BaseAccountingType
 
@@ -27,7 +27,5 @@ class WMSJob( BaseAccountingType ):
                                         ( 'OutputSandBox', 'INT' )
                                       ]
     self.checkType()
-    #Fill the setup
-    self.setValueByKey( "Setup", gConfig.getValue( "/DIRAC/Setup", "unknown" ) )
     #Fill the site
     self.setValueByKey( "Site", gConfig.getValue( "/LocalSite/Site", "DIRAC.unknown.no" ) )
