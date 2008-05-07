@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/File.py,v 1.20 2008/02/13 14:14:38 joel Exp $
-__RCSID__ = "$Id: File.py,v 1.20 2008/02/13 14:14:38 joel Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/File.py,v 1.21 2008/05/07 10:33:45 acasajus Exp $
+__RCSID__ = "$Id: File.py,v 1.21 2008/05/07 10:33:45 acasajus Exp $"
 
 """
    Collection of DIRAC useful file related modules
@@ -9,6 +9,8 @@ __RCSID__ = "$Id: File.py,v 1.20 2008/02/13 14:14:38 joel Exp $"
 import os
 import md5
 import random
+import glob
+import types
 
 def makeGuid( fileName=None ):
   """
@@ -61,9 +63,39 @@ def checkGuid(guid):
       return False
 
 def getSize( fileName ):
+  """
+  Get size of a file
+  """
   try:
     return os.stat( fileName )[6]
   except Exception, v:
     return -1
 
+def getGlobbedTotalSize( files ):
+  """
+  Get total size of a list of files or a single file.
+  Globs the parameter to allow regular expressions
+  """
+  totalSize = 0
+  if type( files ) in ( types.ListType, types.TupleType ):
+    for entry in files:
+      size = getSize( entry )
+      if size == -1:
+        size = 0
+      totalSize += size
+  else:
+    for path in glob.glob( files ):
+      if os.path.isdir( path ):
+        for content in os.listdir( path ):
+          totalSize += getGlobbedTotalSize( os.path.join( path, content ) )
+      if os.path.isfile( path ):
+        size = getSize( path )
+        if size == -1:
+          size = 0
+        totalSize += size
+  return totalSize
 
+if __name__=="__main__":
+  import sys
+  for p in sys.argv[1:]:
+    print "%s : %s bytes" % ( p, getGlobbedTotalSize( p ) )
