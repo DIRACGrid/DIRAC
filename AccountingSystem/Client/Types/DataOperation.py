@@ -1,8 +1,8 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Types/DataOperation.py,v 1.2 2008/05/07 17:31:22 acasajus Exp $
-__RCSID__ = "$Id: DataOperation.py,v 1.2 2008/05/07 17:31:22 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Types/DataOperation.py,v 1.3 2008/05/07 20:24:53 acasajus Exp $
+__RCSID__ = "$Id: DataOperation.py,v 1.3 2008/05/07 20:24:53 acasajus Exp $"
 
 from DIRAC.AccountingSystem.Client.Types.BaseAccountingType import BaseAccountingType
-from DIRAC.Core.Utilities import Network
+from DIRAC import gConfig
 
 class DataOperation( BaseAccountingType ):
 
@@ -29,4 +29,4 @@ class DataOperation( BaseAccountingType ):
                        ( 31104000, 604800 ), #>6m = 1w
                      ]
     self.checkType()
-    self.setValueByKey( 'ExecutionSite', Network.getFQDN() )
+    self.setValueByKey( 'ExecutionSite', gConfig.getValue( "/LocalSite/Site", "DIRAC.unknown.no" ) )
