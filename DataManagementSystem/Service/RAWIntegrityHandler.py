@@ -15,7 +15,7 @@ def initializeRAWIntegrityHandler(serviceInfo):
 class RAWIntegrityHandler(RequestHandler):
 
   types_addFile = [StringType,StringType,IntType,StringType,StringType,StringType]
-  def export_addFile(self,lfn,pfn,size,se,guid,checksum=''):
+  def export_addFile(self,lfn,pfn,size,se,guid,checksum):
     """ Add a file to the RAW integrity DB
     """
     try:
