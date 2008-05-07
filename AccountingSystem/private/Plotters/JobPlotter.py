@@ -1,0 +1,200 @@
+
+from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
+from DIRAC.AccountingSystem.private.Plotters.BasePlotter import BasePlotter
+from DIRAC.AccountingSystem.private.Plots import *
+from DIRAC.Core.Utilities import Time
+
+class JobPlotter(BasePlotter):
+
+  __typeName = "Job"
+
+  def _plotEfficiencyBySite( self, startTime, endTime, argsDict, filename ):
+    return self.__generateEfficiencyJobPlot(startTime, endTime, [ 'Site' ], argsDict, filename)
+
+  def _plotEfficiencyByMajorStatus( self, startTime, endTime, argsDict, filename ):
+    return self.__generateEfficiencyJobPlot(startTime, endTime, [ 'FinalMajorStatus' ], argsDict, filename)
+
+  def _plotEfficiencyByMinorStatus( self, startTime, endTime, argsDict, filename ):
+    return self.__generateEfficiencyJobPlot(startTime, endTime, [ 'FinalMinorStatus' ], argsDict, filename)
+
+  def __generateEfficiencyJobPlot( self, startTime, endTime, keyNameList, argsDict, filename ):
+    retVal = self.__getEfficiencyJob( startTime, endTime, keyNameList, argsDict )
+    if not retVal[ 'OK' ]:
+      return retVal
+    dataDict, granularity = retVal[ 'Value' ]
+    self.stripDataField( dataDict, 0 )
+    gLogger.info( "Generating plot", "%s with granularity of %s" % ( filename, granularity ) )
+    metadata = { 'title' : 'Job efficiency by %s' % " -> ".join( keyNameList ) ,
+                 'starttime' : startTime,
+                 'endtime' : endTime,
+                 'span' : granularity }
+    return generateQualityPlot( filename, dataDict, metadata )
+
+  def __getEfficiencyJob( self, startTime, endTime, keyNameList, argsDict ):
+    condDict = {}
+    for keyword in keyNameList:
+      if keyword in argsDict:
+        condDict[ keyword ] = argsDict[ keyword ]
+    if len( keyNameList ) == 1:
+      keySQLString = "%s"
+    else:
+      keySQLString = "CONCAT( %s, ' -> ', %s )"
+    selectFields = ( keySQLString + ", %s, %s, SUM(%s)/SUM(%s)",
+                     keyNameList + [ 'startTime', 'bucketLength',
+                                    'CPUTime', 'ExecTime'
+                                   ]
+                   )
+    retVal = self._retrieveBucketedData( self.__typeName,
+                                          startTime,
+                                          endTime,
+                                          selectFields,
+                                          condDict,
+                                          [ 'startTime' ] + keyNameList,
+                                          [ 'startTime' ]
+                                          )
+    if not retVal[ 'OK' ]:
+      return retVal
+    dataDict = self._groupByField( 0, retVal[ 'Value' ] )
+    coarsestGranularity = self._getBucketLengthForTime( self.__typeName, startTime )
+    for keyField in dataDict:
+      dataDict[ keyField ] = self._convertNoneToZero( dataDict[ keyField ] )
+      dataDict[ keyField ] = self._averageToGranularity( coarsestGranularity, dataDict[ keyField ] )
+    return S_OK( ( dataDict, coarsestGranularity ) )
+
+  def _plotCPUUsedBySite( self, startTime, endTime, argsDict, filename ):
+    return self.__generateJobCPUUsedPlot(startTime, endTime, [ 'Site' ], argsDict, filename)
+
+  def _plotCPUUsedByMajorStatus( self, startTime, endTime, argsDict, filename ):
+    return self.__generateJobCPUUsedPlot(startTime, endTime, [ 'FinalMajorStatus' ], argsDict, filename)
+
+  def _plotCPUUsedByMinorStatus( self, startTime, endTime, argsDict, filename ):
+    return self.__generateJobCPUUsedPlot(startTime, endTime, [ 'FinalMinorStatus' ], argsDict, filename)
+
+  def __generateJobCPUUsedPlot( self, startTime, endTime, keyNameList, argsDict, filename ):
+    retVal = self.__getJobCPUUsedData( startTime, endTime, keyNameList, argsDict )
+    if not retVal[ 'OK' ]:
+      return retVal
+    dataDict, granularity = retVal[ 'Value' ]
+    startTime = startTime - startTime % granularity
+    self.stripDataField( dataDict, 0 )
+    dataDict = self._fillWithZero( granularity, startTime, endTime, dataDict )
+    gLogger.info( "Generating plot", "%s with granularity of %s" % ( filename, granularity ) )
+    metadata = { 'title' : 'CPU used by %s' % " -> ".join( keyNameList ) ,
+                 'starttime' : startTime,
+                 'endtime' : endTime,
+                 'span' : granularity,
+                 'ylabel' : "secs",
+                 'is_cumulative' : False }
+    return generateCumulativePlot( filename, dataDict, metadata )
+
+  def __getJobCPUUsedData( self, startTime, endTime, keyNameList, argsDict ):
+    condDict = {}
+    for keyword in keyNameList:
+      if keyword in argsDict:
+        condDict[ keyword ] = argsDict[ keyword ]
+    if len( keyNameList ) == 1:
+      keySQLString = "%s"
+    else:
+      keySQLString = "CONCAT( %s, ' -> ', %s )"
+    selectFields = ( keySQLString + ", %s, %s, %s",
+                     keyNameList + [ 'startTime', 'bucketLength',
+                                    'CPUTime'
+                                   ]
+                   )
+    retVal = self._retrieveBucketedData( self.__typeName,
+                                          startTime,
+                                          endTime,
+                                          selectFields,
+                                          condDict,
+                                          [ 'startTime' ] + keyNameList,
+                                          [ 'startTime' ]
+                                          )
+    if not retVal[ 'OK' ]:
+      return retVal
+    dataDict = self._groupByField( 0, retVal[ 'Value' ] )
+    coarsestGranularity = self._getBucketLengthForTime( self.__typeName, startTime )
+    for keyField in dataDict:
+      dataDict[ keyField ] = self._sumToGranularity( coarsestGranularity, dataDict[ keyField ] )
+    return S_OK( ( dataDict, coarsestGranularity ) )
+
+  def _plotCPUUsageBySite( self, startTime, endTime, argsDict, filename ):
+    return self.__generateCPUUsageJobPlot(startTime, endTime, [ 'Site' ], argsDict, filename)
+
+  def _plotCPUUsageByMajorStatus( self, startTime, endTime, argsDict, filename ):
+    return self.__generateCPUUsageJobPlot(startTime, endTime, [ 'FinalMajorStatus' ], argsDict, filename)
+
+  def _plotCPUUsageByMinorStatus( self, startTime, endTime, argsDict, filename ):
+    return self.__generateCPUUsageJobPlot(startTime, endTime, [ 'FinalMinorStatus' ], argsDict, filename)
+
+  def __generateCPUUsageJobPlot( self, startTime, endTime, keyNameList, argsDict, filename ):
+    retVal = self.__getJobCPUUsedData( startTime, endTime, keyNameList, argsDict )
+    if not retVal[ 'OK' ]:
+      return retVal
+    dataDict, granularity = retVal[ 'Value' ]
+    self.stripDataField( dataDict, 0 )
+    dataDict = self._fillWithZero( granularity, startTime, endTime, dataDict )
+    gLogger.info( "Generating plot", "%s with granularity of %s" % ( filename, granularity ) )
+    metadata = { 'title' : 'CPU usage by %s' % " -> ".join( keyNameList ) ,
+                 'ylabel' : 'secs',
+                 'starttime' : startTime,
+                 'endtime' : endTime,
+                 'span' : granularity }
+    return generateTimedStackedBarPlot( filename, dataDict, metadata )
+
+
+  def _plotNumberOfJobsBySite( self, startTime, endTime, argsDict, filename ):
+    return self.__generateJobNumberJobsPlot(startTime, endTime, [ 'Site' ], argsDict, filename)
+
+  def _plotNumberOfJobsByMajorStatus( self, startTime, endTime, argsDict, filename ):
+    return self.__generateJobNumberJobsPlot(startTime, endTime, [ 'FinalMajorStatus' ], argsDict, filename)
+
+  def _plotNumberOfJobsByMinorStatus( self, startTime, endTime, argsDict, filename ):
+    return self.__generateJobNumberJobsPlot(startTime, endTime, [ 'FinalMinorStatus' ], argsDict, filename)
+
+  def __generateJobNumberJobsPlot( self, startTime, endTime, keyNameList, argsDict, filename ):
+    retVal = self.__getJobNumJobsData( startTime, endTime, keyNameList, argsDict )
+    if not retVal[ 'OK' ]:
+      return retVal
+    dataDict, granularity = retVal[ 'Value' ]
+    startTime = startTime - startTime % granularity
+    self.stripDataField( dataDict, 0 )
+    dataDict = self._fillWithZero( granularity, startTime, endTime, dataDict )
+    gLogger.info( "Generating plot", "%s with granularity of %s" % ( filename, granularity ) )
+    metadata = { 'title' : 'Jobs by %s' % " -> ".join( keyNameList ) ,
+                 'starttime' : startTime,
+                 'endtime' : endTime,
+                 'span' : granularity,
+                 'ylabel' : "jobs",
+                 'is_cumulative' : False }
+    return generateCumulativePlot( filename, dataDict, metadata )
+
+  def __getJobNumJobsData( self, startTime, endTime, keyNameList, argsDict ):
+    condDict = {}
+    for keyword in keyNameList:
+      if keyword in argsDict:
+        condDict[ keyword ] = argsDict[ keyword ]
+    if len( keyNameList ) == 1:
+      keySQLString = "%s"
+    else:
+      keySQLString = "CONCAT( %s, ' -> ', %s )"
+    selectFields = ( keySQLString + ", %s, %s, %s",
+                     keyNameList + [ 'startTime', 'bucketLength',
+                                    'entriesInBucket'
+                                   ]
+                   )
+    retVal = self._retrieveBucketedData( self.__typeName,
+                                          startTime,
+                                          endTime,
+                                          selectFields,
+                                          condDict,
+                                          [ 'startTime' ] + keyNameList,
+                                          [ 'startTime' ]
+                                          )
+    if not retVal[ 'OK' ]:
+      return retVal
+    dataDict = self._groupByField( 0, retVal[ 'Value' ] )
+    coarsestGranularity = self._getBucketLengthForTime( self.__typeName, startTime )
+    for keyField in dataDict:
+      dataDict[ keyField ] = self._sumToGranularity( coarsestGranularity, dataDict[ keyField ] )
+    return S_OK( ( dataDict, coarsestGranularity ) )

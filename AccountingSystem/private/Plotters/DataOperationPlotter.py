@@ -141,6 +141,7 @@ class DataOperationPlotter(BasePlotter):
     dataDict = self._groupByField( 0, retVal[ 'Value' ] )
     coarsestGranularity = self._getBucketLengthForTime( typeName, startTime )
     for keyField in dataDict:
+      dataDict[ keyField ] = self._convertNoneToZero( dataDict[ keyField ] )
       dataDict[ keyField ] = self._averageToGranularity( coarsestGranularity, dataDict[ keyField ] )
     return S_OK( ( dataDict, coarsestGranularity ) )
 
@@ -162,11 +163,6 @@ class DataOperationPlotter(BasePlotter):
     dataDict, granularity = retVal[ 'Value' ]
     startTime = startTime - startTime % granularity
     self.stripDataField( dataDict, 0 )
-    timeRange = range( startTime, endTime, granularity )
-    for key in dataDict:
-      for timeEntry in dataDict[ key ]:
-        if timeEntry not in timeRange:
-          print key, timeEntry, "JARL", Time.fromEpoch( timeEntry )
     gLogger.info( "Generating plot", "%s with granularity of %s" % ( filename, granularity ) )
     metadata = { 'title' : 'Transfered data by %s' % " -> ".join( keyNameList ) ,
                  'starttime' : startTime,

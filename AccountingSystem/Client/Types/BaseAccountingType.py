@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Types/BaseAccountingType.py,v 1.9 2008/04/16 14:23:47 acasajus Exp $
-__RCSID__ = "$Id: BaseAccountingType.py,v 1.9 2008/04/16 14:23:47 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Types/BaseAccountingType.py,v 1.10 2008/05/07 18:20:57 acasajus Exp $
+__RCSID__ = "$Id: BaseAccountingType.py,v 1.10 2008/05/07 18:20:57 acasajus Exp $"
 
 import types
 from DIRAC import S_OK, S_ERROR
@@ -134,6 +134,20 @@ class BaseAccountingType:
              self.endTime,
              self.valuesList
            )
+
+  def getContents( self ):
+    """
+    Get the contents
+    """
+    cD = {}
+    if self.startTime:
+      cD[ 'starTime' ] = self.startTime
+    if self.endTime:
+      cD[ 'endTime' ] = self.endTime
+    for iPos in range( len( self.fieldsList ) ):
+      if self.valuesList[ iPos ]:
+        cD[ self.fieldsList[ iPos ] ] = self.valuesList[ iPos ]
+    return cD
 
   def registerToServer( self ):
     """

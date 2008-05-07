@@ -133,6 +133,20 @@ class DBUtils:
       del( normData[ bDate ][-1] )
     return normData
 
+  def _convertNoneToZero( self, bucketsData ):
+    """
+    Convert None to 0
+    bucketsData must be a list of lists where each list contains
+      - field 0: datetime
+      - field 1: bucketLength
+      - fields 2-n: numericalFields
+    """
+    for iPos in range( len( bucketsData ) ):
+      data = bucketsData[iPos]
+      for iVal in range( 2, len( data ) ):
+        if data[ iVal ] == None:
+          data[ iVal ] = 0
+    return bucketsData
 
   def _fillWithZero( self, granularity, startEpoch, endEpoch, dataDict ):
     """
