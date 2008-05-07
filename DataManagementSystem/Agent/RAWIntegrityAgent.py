@@ -4,7 +4,7 @@
 from DIRAC  import gLogger, gConfig, gMonitor,S_OK, S_ERROR
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
-from DIRAC.RequestManagementSystem.Client.Request import RequestClient
+from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
 from DIRAC.RequestManagementSystem.Client.DataManagementRequest import DataManagementRequest
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 from DIRAC.DataManagementSystem.DB.RAWIntegrityDB import RAWIntegrityDB
