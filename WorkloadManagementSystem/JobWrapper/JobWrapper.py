@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.30 2008/05/06 20:53:24 acasajus Exp $
+# $Id: JobWrapper.py,v 1.31 2008/05/07 09:56:11 acasajus Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,13 +9,13 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.30 2008/05/06 20:53:24 acasajus Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.31 2008/05/07 09:56:11 acasajus Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
 from DIRAC.WorkloadManagementSystem.Client.SandboxClient            import SandboxClient
 from DIRAC.WorkloadManagementSystem.JobWrapper.WatchdogFactory      import WatchdogFactory
-from DIRAC.AccountingSystem.Client.Types.WMSJob                     import WMSJob
+from DIRAC.AccountingSystem.Client.Types.Job                        import Job as AccountingJob
 from DIRAC.ConfigurationSystem.Client.PathFinder                    import getSystemSection
 from DIRAC.Core.DISET.RPCClient                                     import RPCClient
 from DIRAC.Core.Utilities.ModuleFactory                             import ModuleFactory
@@ -38,7 +38,7 @@ class JobWrapper:
     self.section = "%s/JobWrapper" % ( getSystemSection( "WorkloadManagement/" ))
     self.log = gLogger
     #Create the acctounting report
-    self.accountingReport = WMSJob()
+    self.accountingReport = AccountingJob()
     # Initialize for accounting
     self.wmsMajorStatus = "unknown"
     self.wmsMinorStatus = "unknown"
@@ -163,13 +163,6 @@ class JobWrapper:
 
     jobArgs = arguments['Job']
     ceArgs = arguments ['CE']
-
-    #Fill the accounting report
-    for key in ( 'JobGroup', 'JobType', 'JobClass', 'ProcType' ):
-      if key in jobArgs:
-        self.accountingReport.setValueByKey( key, jobArgs[key] )
-      else:
-        self.accountingReport.setValueByKey( key, 'unknown' )
 
     if jobArgs.has_key('MaxCPUTime'):
       jobCPUTime = int(jobArgs['MaxCPUTime'])
@@ -742,6 +735,7 @@ class JobWrapper:
     """Send WMS accounting data.
     """
     self.accountingReport.setEndTime()
+    return
     #CPUTime and ExecTime
     if 'CPU' in EXECUTION_RESULT:
       utime, stime, cutime, cstime, elapsed = EXECUTION_RESULT['CPU']
@@ -750,7 +744,8 @@ class JobWrapper:
     cpuTime = utime + stime + cutime + cstime
     execTime = elapsed
     #Fill the data
-    acData = { 'FinalMajorStatus' : self.wmsMajorStatus,
+    acData = {
+               'FinalMajorStatus' : self.wmsMajorStatus,
                'FinalMinorStatus' : self.wmsMinorStatus,
                #La "chicha"
                'CPUTime' : cpuTime,
