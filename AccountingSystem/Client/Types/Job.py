@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Types/Job.py,v 1.2 2008/05/07 09:45:12 acasajus Exp $
-__RCSID__ = "$Id: Job.py,v 1.2 2008/05/07 09:45:12 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Types/Job.py,v 1.3 2008/05/07 09:58:21 acasajus Exp $
+__RCSID__ = "$Id: Job.py,v 1.3 2008/05/07 09:58:21 acasajus Exp $"
 
 from DIRAC.AccountingSystem.Client.Types.BaseAccountingType import BaseAccountingType
 from DIRAC                                                  import gConfig
@@ -13,21 +13,21 @@ class Job( BaseAccountingType ):
                                  ( 'JobGroup', "VARCHAR(64)" ),
                                  ( 'JobType', 'VARCHAR(32)' ),
                                  ( 'JobClass', 'VARCHAR(32)' ),
+                                 ( 'ProcessingType', 'VARCHAR(32)' ),
                                  ( 'Site', 'VARCHAR(32)' ),
-                                 ( 'ProccessingType', 'VARCHAR(32)' ),
                                  ( 'FinalMajorStatus', 'VARCHAR(32)' ),
                                  ( 'FinalMinorStatus', 'VARCHAR(64)' )
                                ]
     self.definitionAccountingFields = [ ( 'CPUTime', "INT" ),
                                         ( 'NormCPUTime', "INT" ),
                                         ( 'ExecTime', "INT" ),
-                                        ( 'InputDataVolume', 'INT' ),
-                                        ( 'OutputDataVolume', 'INT' ),
+                                        ( 'InputDataSize', 'INT' ),
+                                        ( 'OutputDataSize', 'INT' ),
                                         ( 'InputDataFiles', 'INT' ),
                                         ( 'OutputDataFiles', 'INT' ),
                                         ( 'DiskSpace', 'INT' ),
-                                        ( 'InputSandBoxVolume', 'INT' ),
-                                        ( 'OutputSandBoxVolume', 'INT' ),
+                                        ( 'InputSandBoxSize', 'INT' ),
+                                        ( 'OutputSandBoxSize', 'INT' ),
                                         ( 'ProcessedEvents', 'INT' )
                                       ]
     self.checkType()
