@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.33 2008/03/05 20:36:43 acasajus Exp $
-__RCSID__ = "$Id: RequestHandler.py,v 1.33 2008/03/05 20:36:43 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.34 2008/05/07 16:28:20 acasajus Exp $
+__RCSID__ = "$Id: RequestHandler.py,v 1.34 2008/05/07 16:28:20 acasajus Exp $"
 
 import os
 import types
@@ -252,7 +252,11 @@ class RequestHandler:
       argsString = ", ".join( [ str( arg )[:20] for arg in args ] )
     else:
       argsString = "<masked>"
-    gLogger.info( "Executing action", "%s %s( %s )" % ( peerId, method, argsString ) )
+    gLogger.info( "Executing action", "(%s:%s)%s %s( %s )" % ( self.serviceInfoDict[ 'clientAddress' ][0],
+                                                        self.serviceInfoDict[ 'clientAddress' ][1],
+                                                        peerId,
+                                                        method,
+                                                        argsString ) )
 
   def __logRemoteQueryResponse( self, retVal ):
     """
@@ -267,7 +271,10 @@ class RequestHandler:
     else:
       peerId = ""
     argsSring = str( retVal )[:100]
-    gLogger.info( "Returning response", "(%s)%s %s" % ( self.serviceInfoDict[ 'clientAddress' ][0], peerId, argsSring ) )
+    gLogger.info( "Returning response", "(%s:%s)%s %s" % ( self.serviceInfoDict[ 'clientAddress' ][0],
+                                                           self.serviceInfoDict[ 'clientAddress' ][1],
+                                                           peerId,
+                                                           argsSring ) )
 
 ####
 #
