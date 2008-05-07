@@ -11,7 +11,7 @@ from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
 from DIRAC.RequestManagementSystem.Client.DataManagementRequest import DataManagementRequest
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 
-import time,os
+import time,os,re
 from types import *
 
 AGENT_NAME = 'DataManagement/RemovalAgent'
@@ -54,7 +54,6 @@ class RemovalAgent(Agent):
       self.wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
       self.proxyDN = gConfig.getValue(self.section+'/ProxyDN','')
       self.proxyGroup = gConfig.getValue(self.section+'/ProxyGroup','')
-      self.proxyGroup = 'lhcb_prod'
       self.proxyLength = gConfig.getValue(self.section+'/DefaultProxyLength',12)
       self.proxyLocation = gConfig.getValue(self.section+'/ProxyLocation','')
       if os.path.exists(self.proxyLocation):
@@ -191,7 +190,11 @@ class RemovalAgent(Agent):
               oRequest.setSubRequestFileAttributeValue(ind,'removal',lfn,'Status','Done')
             gMonitor.addMark('RemoveFileFail',len(res['Value']['Failed'].keys()))
             for lfn in res['Value']['Failed'].keys():
-              gLogger.info("RemovalAgent.execute: Failed to remove file.", "%s %s" % (lfn,res['Value']['Failed'][lfn]))
+              if re.search('no such file or directory',res['Value']['Failed'][lfn].lower()):
+                gLogger.info("RemovalAgent.execute: File did not exist.",lfn)
+                oRequest.setSubRequestFileAttributeValue(ind,'removal',lfn,'Status','Done')
+              else:
+                gLogger.info("RemovalAgent.execute: Failed to remove file.", "%s %s" % (lfn,res['Value']['Failed'][lfn]))
           else:
             gMonitor.addMark('RemoveFileFail',len(lfns))
             errStr = "RemovalAgent.execute: Completely failed to remove files files."
