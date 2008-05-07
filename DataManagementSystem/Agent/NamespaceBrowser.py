@@ -16,11 +16,14 @@ class NamespaceBrowser:
     else:
       return False
 
+  def getNumberActiveDirs(self):
+    return len(self.activeDirs)
+
   def getBaseDir(self):
     return self.baseDir
 
   def getActiveDir(self):
-    random.shuffle(self.activeDirs)
+    #random.shuffle(self.activeDirs)
     self.activeDir = self.activeDirs[0]
     return self.activeDir
 
