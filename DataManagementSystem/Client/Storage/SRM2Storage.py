@@ -346,7 +346,7 @@ class SRM2Storage(StorageBase):
     allResults = []
     successful = {}
     failed = {}
-    listOfLists = breakListIntoChunks(urls,100)
+    listOfLists = breakListIntoChunks(urls,20)
     for urls in listOfLists:
       gfalDict = {}
       gfalDict['surls'] = urls
