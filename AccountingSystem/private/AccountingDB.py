@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.23 2008/05/05 15:31:14 acasajus Exp $
-__RCSID__ = "$Id: AccountingDB.py,v 1.23 2008/05/05 15:31:14 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.24 2008/05/07 13:14:02 acasajus Exp $
+__RCSID__ = "$Id: AccountingDB.py,v 1.24 2008/05/07 13:14:02 acasajus Exp $"
 
 import datetime, time
 import types
@@ -22,10 +22,10 @@ class AccountingDB(DB):
     self.dbCatalog = {}
     self.dbBucketsLength = {}
     self.catalogTableName = self.__getTableName( "catalog", "Types" )
-    self._createTables( { self.catalogTableName : { 'Fields' : { 'name' : "VARCHAR(64) UNIQUE",
-                                                          'keyFields' : "VARCHAR(256)",
-                                                          'valueFields' : "VARCHAR(256)",
-                                                          'bucketsLength' : "VARCHAR(256)",
+    self._createTables( { self.catalogTableName : { 'Fields' : { 'name' : "VARCHAR(64) UNIQUE NOT NULL",
+                                                          'keyFields' : "VARCHAR(256) NOT NULL",
+                                                          'valueFields' : "VARCHAR(256) NOT NULL",
+                                                          'bucketsLength' : "VARCHAR(256) NOT NULL",
                                                        },
                                              'PrimaryKey' : 'name'
                                            }
@@ -156,7 +156,7 @@ class AccountingDB(DB):
     for key in definitionKeyFields:
       gLogger.info( "Table for key %s has to be created" % key[0] )
       tables[ self.__getTableName( "key", name, key[0] )  ] = { 'Fields' : { 'id' : 'INTEGER NOT NULL AUTO_INCREMENT',
-                                                  'value' : '%s UNIQUE' % key[1]
+                                                  'value' : '%s UNIQUE NOT NULL' % key[1]
                                                 },
                                      'UniqueIndexes' : { 'valueindex' : [ 'value' ] },
                                      'PrimaryKey' : 'id'
@@ -169,17 +169,17 @@ class AccountingDB(DB):
     for field in definitionKeyFields:
       indexesDict[ "%sIndex" % field[0] ] = [ field[0] ]
       uniqueIndexFields.append( field[ 0 ] )
-      fieldsDict[ field[0] ] = "INTEGER"
-      bucketFieldsDict[ field[0] ] = "INTEGER"
+      fieldsDict[ field[0] ] = "INTEGER NOT NULL"
+      bucketFieldsDict[ field[0] ] = "INTEGER NOT NULL"
     for field in definitionAccountingFields:
-      fieldsDict[ field[0] ] = field[1]
-      bucketFieldsDict[ field[0] ] = "DECIMAL"
-    fieldsDict[ 'startTime' ] = "INT UNSIGNED"
-    fieldsDict[ 'endTime' ] = "INT UNSIGNED"
-    bucketFieldsDict[ 'entriesInBucket' ] = "DECIMAL"
-    bucketFieldsDict[ 'startTime' ] = "INT UNSIGNED"
+      fieldsDict[ field[0] ] = field[1] + " NOT NULL"
+      bucketFieldsDict[ field[0] ] = "DECIMAL NOT NULL"
+    fieldsDict[ 'startTime' ] = "INT UNSIGNED NOT NULL"
+    fieldsDict[ 'endTime' ] = "INT UNSIGNED NOT NULL"
+    bucketFieldsDict[ 'entriesInBucket' ] = "DECIMAL NOT NULL"
+    bucketFieldsDict[ 'startTime' ] = "INT UNSIGNED NOT NULL"
     uniqueIndexFields.append( 'startTime' )
-    bucketFieldsDict[ 'bucketLength' ] = "MEDIUMINT UNSIGNED"
+    bucketFieldsDict[ 'bucketLength' ] = "MEDIUMINT UNSIGNED NOT NULL"
     uniqueIndexFields.append( 'bucketLength' )
     tables[ self.__getTableName( "bucket", name ) ] = { 'Fields' : bucketFieldsDict,
                                     'Indexes' : indexesDict,
