@@ -9,12 +9,11 @@ class FTSRequest:
 
   def __init__(self):
 
-    self.finalStates = ['Done','Canceled','Failed','Hold','Finished','FinishedDirty']
+    self.finalStates = ['Canceled','Failed','Hold','Finished','FinishedDirty']
     self.failedStates = ['Canceled','Failed','Hold','Finished','FinishedDirty']
     self.successfulStates = ['Finished','Done']
     self.fileStates = ['Done','Canceled','Failed','Hold','Active','Finishing','Pending','Ready','Submitted','Waiting','Finished']
 
-    self.fts_pwd = 'lhcbftstest'
     self.isOK = False
 
     self.completedFiles = []
@@ -178,9 +177,9 @@ class FTSRequest:
                   Check that the returned string is a GUID.
     """
     if self.spaceToken:
-      comm = 'glite-transfer-submit -s %s -p %s -f %s -m myproxy-fts.cern.ch -t %s' % (self.ftsServer,self.fts_pwd,self.surlFile,self.spaceToken)
+      comm = 'glite-transfer-submit -s %s -f %s -t %s' % (self.ftsServer,self.surlFile,self.spaceToken)
     else:
-      comm = 'glite-transfer-submit -s %s -p %s -f %s -m myproxy-fts.cern.ch' % (self.ftsServer,self.fts_pwd,self.surlFile)
+      comm = 'glite-transfer-submit -s %s -f %s' % (self.ftsServer,self.surlFile)
     res = shellCall(120,comm)
     if not res['OK']:
       return res
