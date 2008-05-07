@@ -7,6 +7,8 @@ from DIRAC.DataManagementSystem.DB.TransferDB import TransferDB
 from DIRAC.DataManagementSystem.Client.FTSRequest import FTSRequest
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.GridCredentials import setupProxy,setDIRACGroup, getProxyTimeLeft
+from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
+from DIRAC.Core.Utilities import Time
 import os,time
 from types import *
 
@@ -107,6 +109,11 @@ class FTSMonitor(Agent):
     ftsGUID = ftsReqDict['FTSGuid']
     ftsServer = ftsReqDict['FTSServer']
     channelID = ftsReqDict['ChannelID']
+    submitTime = ftsReqDict['SubmitTime']
+    numberOfFiles = ftsReqDict['NumberOfFiles']
+    totalSize = ftsReqDict['TotalSize']
+    sourceSite = ftsReqDict['Source']
+    targetSite = ftsReqDict['Target']
     ftsReq.setFTSGUID(ftsGUID)
     ftsReq.setFTSServer(ftsServer)
 
@@ -167,6 +174,11 @@ class FTSMonitor(Agent):
           errStr = "FTSAgent.%s" % res['Message']
           gLogger.error(errStr)
           failed = True
+        failReason = ftsReq.getFailReason(lfn)
+        if failReason == 'DESTINATION error during PREPARATION phase: [FILE_EXISTS]' or failReason == 'DESTINATION error during PREPARATION phase: [GENERAL_FAILURE] CastorStagerInterface.c:2507 Device or resource busy (errno=0, serrno=0)':
+          print ftsReq.getDestinationSURL(lfn)
+          #gLogger.error('Need to put logic to remove this file.',ftsReq.getDestinationSURL(lfn))
+          res = self.removeTargetSURL(ftsReq.getDestinationSURL(lfn))
         res = self.TransferDB.setFileToFTSFileAttribute(ftsReqID,files[lfn],'Reason',ftsReq.getFailReason(lfn))
         if not res['OK']:
           errStr = "FTSAgent.%s" % res['Message']
@@ -235,7 +247,59 @@ class FTSMonitor(Agent):
           errStr = "FTSAgent.%s" % res['Message']
           gLogger.error(errStr)
         res = self.TransferDB.setFTSReqStatus(ftsReqID,'Finished')
+        if not res['OK']:
+          errStr = "FTSAgent.%s" % res['Message']
+          gLogger.error(errStr)
+        else:
+          gLogger.info("FTSAgent. preparing accounting message.")
+          oAccounting = self.initialiseAccountingObject(submitTime)
+          oAccounting.setValueByKey('TransferOK',len(ftsReq.getCompleted()))
+          oAccounting.setValueByKey('TransferTotal',numberOfFiles)
+          oAccounting.setValueByKey('TransferSize',totalSize)
+          oAccounting.setValueByKey('FinalStatus',ftsReq.getRequestStatus())
+          oAccounting.setValueByKey('Source',sourceSite)
+          oAccounting.setValueByKey('Destination',targetSite)
+          startTime = submitTime.utcnow()
+          endTime = Time.dateTime()
+          c = endTime-startTime
+          transferTime = c.days * 86400 + c.seconds
+          oAccounting.setValueByKey('TransferTime',transferTime)
+          oAccounting.commit()
+          gLogger.info("FTSAgent. Accounting sent.")
       else:
         infoStr = "FTSAgent.monitor: Updating attributes in FileToFTS table failed for some files. Will monitor again."
         gLogger.info(infoStr)
     return S_OK()
+
+  def removeTargetSURL(self,surl):
+    import gfal
+    gfalDict = {}
+    gfalDict['surls'] = [surl]
+    gfalDict['nbfiles'] =  len(gfalDict['surls'])
+    #gfalDict['defaultsetype'] = 'srmv2'
+    #gfalDict['no_bdii_check'] = 1
+    errCode,gfalObject,errMessage = gfal.gfal_init(gfalDict)
+    if errCode == 0:
+      errCode,gfalObject,errMessage = gfal.gfal_deletesurls(gfalObject)
+      if errCode == 0:
+        numberOfResults,gfalObject,listOfResults = gfal.gfal_get_results(gfalObject)
+        print listOfResults
+      else:
+        print errMessage
+    else:
+      print errMessage     
+
+  def initialiseAccountingObject(self,submitTime):
+    oAccounting = DataOperation()
+    oAccounting.setEndTime()
+    oAccounting.setStartTime(submitTime)
+    accountingDict = {}
+    accountingDict['OperationType'] = 'Replicate'
+    accountingDict['User'] = 'acsmith'
+    accountingDict['Protocol'] = 'FTS'
+    accountingDict['RegistrationTime'] = 0.0
+    accountingDict['RegistrationOK'] = 0   
+    accountingDict['RegistrationTotal'] = 0
+    oAccounting.setValuesFromDict(accountingDict)
+    return oAccounting
+
