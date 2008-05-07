@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalogue. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.24 2008/02/13 17:24:44 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.25 2008/05/07 21:38:33 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -8,7 +8,6 @@ import types
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig
 from DIRAC.DataManagementSystem.Client.StorageElement import StorageElement
 from DIRAC.DataManagementSystem.Client.FileCatalog import FileCatalog
-#from DIRAC.DataManagementSystem.Client.Catalog.LcgFileCatalogCombinedClient import LcgFileCatalogCombinedClient
 from DIRAC.Core.Utilities.File import makeGuid
 from DIRAC.Core.Utilities.File import getSize
 
@@ -832,6 +831,7 @@ class ReplicaManager:
     for pfn in res['Value']['Successful'].keys():
       replicaTuple = (pfnDict[pfn],pfn,storageElementName)
       replicaTuples.append(replicaTuple)
+    successful = {}
     res = self.__removeCatalogReplica(replicaTuples)
     if not res['OK']:
       errStr = "ReplicaManager.__removeReplica: Completely failed to remove physical files."
@@ -839,8 +839,9 @@ class ReplicaManager:
       for lfn in pfnDict.values():
         if not failed.has_key(lfn):
           failed[lfn] = errStr
-    failed.update(res['Value']['Failed'])
-    successful = res['Value']['Successful']
+    else:
+      failed.update(res['Value']['Failed'])
+      successful = res['Value']['Successful']
     resDict = {'Successful':successful,'Failed':failed}
     return S_OK(resDict)
 
