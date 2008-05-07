@@ -7,6 +7,8 @@ from DIRAC.Core.Utilities import Time
 
 class DataOperationPlotter(BasePlotter):
 
+  __typeName = "DataOperation"
+
   def _plotSuceededTransfersBySource( self, startTime, endTime, argsDict, filename ):
     return self.__generateDataOperationSuceededTransfersPlot(startTime, endTime, [ 'Source' ], argsDict, filename)
 
@@ -168,7 +170,7 @@ class DataOperationPlotter(BasePlotter):
                  'starttime' : startTime,
                  'endtime' : endTime,
                  'span' : granularity,
-                 'ylabel' : "bytes",
+                 'ylabel' : "Gbyte",
                  'is_cumulative' : False }
     return generateCumulativePlot( filename, dataDict, metadata )
 
@@ -182,7 +184,7 @@ class DataOperationPlotter(BasePlotter):
       keySQLString = "%s"
     else:
       keySQLString = "CONCAT( %s, ' -> ', %s )"
-    selectFields = ( keySQLString + ", %s, %s, %s",
+    selectFields = ( keySQLString + ", %s, %s, %s/1000000000",
                      keyNameList + [ 'startTime', 'bucketLength',
                                     'TransferSize'
                                    ]
@@ -201,4 +203,57 @@ class DataOperationPlotter(BasePlotter):
     coarsestGranularity = self._getBucketLengthForTime( typeName, startTime )
     for keyField in dataDict:
       dataDict[ keyField ] = self._sumToGranularity( coarsestGranularity, dataDict[ keyField ] )
+    return S_OK( ( dataDict, coarsestGranularity ) )
+
+  def _plotThroughputBySource( self, startTime, endTime, argsDict, filename ):
+    return self.__generateDataOperationThroughputPlot(startTime, endTime, [ 'Source' ], argsDict, filename)
+
+  def _plotThroughputByDestination( self, startTime, endTime, argsDict, filename ):
+    return self.__generateDataOperationThroughputPlot(startTime, endTime, [ 'Destination' ], argsDict, filename)
+
+  def _plotThroughputByChannel( self, startTime, endTime, argsDict, filename ):
+    return self.__generateDataOperationThroughputPlot(startTime, endTime, [ 'Source', 'Destination' ], argsDict, filename)
+
+  def __generateDataOperationThroughputPlot( self, startTime, endTime, keyNameList, argsDict, filename ):
+    retVal = self.__getDataOperationThroughput( startTime, endTime, keyNameList, argsDict )
+    if not retVal[ 'OK' ]:
+      return retVal
+    dataDict, granularity = retVal[ 'Value' ]
+    self.stripDataField( dataDict, 0 )
+    gLogger.info( "Generating plot", "%s with granularity of %s" % ( filename, granularity ) )
+    metadata = { 'title' : 'Throughput by %s' % " -> ".join( keyNameList ) ,
+                 'ylabel' : 'Mbyte/s',
+                 'starttime' : startTime,
+                 'endtime' : endTime,
+                 'span' : granularity }
+    return generateTimedStackedBarPlot( filename, dataDict, metadata )
+
+  def __getDataOperationThroughput( self, startTime, endTime, keyNameList, argsDict ):
+    condDict = {}
+    for keyword in keyNameList:
+      if keyword in argsDict:
+        condDict[ keyword ] = argsDict[ keyword ]
+    if len( keyNameList ) == 1:
+      keySQLString = "%s"
+    else:
+      keySQLString = "CONCAT( %s, ' -> ', %s )"
+    selectFields = ( keySQLString + ", %s, %s, SUM(%s)/SUM(%s)",
+                     keyNameList + [ 'startTime', 'bucketLength',
+                       'TransferSize', 'bucketLength',
+                      ]
+                   )
+    retVal = self._retrieveBucketedData( self.__typeName,
+                                          startTime,
+                                          endTime,
+                                          selectFields,
+                                          condDict,
+                                          [ 'startTime' ] + keyNameList,
+                                          [ 'startTime' ]
+                                          )
+    if not retVal[ 'OK' ]:
+      return retVal
+    dataDict = self._groupByField( 0, retVal[ 'Value' ] )
+    coarsestGranularity = self._getBucketLengthForTime( self.__typeName, startTime )
+    for keyField in dataDict:
+      dataDict[ keyField ] = self._averageToGranularity( coarsestGranularity, dataDict[ keyField ] )
     return S_OK( ( dataDict, coarsestGranularity ) )
