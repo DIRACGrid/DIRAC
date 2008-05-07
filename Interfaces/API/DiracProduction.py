@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.21 2008/04/22 13:21:19 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.22 2008/05/07 11:18:42 paterson Exp $
 # File :   DiracProduction.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are to be documented with example usage.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.21 2008/04/22 13:21:19 paterson Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.22 2008/05/07 11:18:42 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 import pprint
@@ -141,6 +141,37 @@ class DiracProduction:
     return S_OK(currentProductions)
 
   #############################################################################
+  def getProductionLoggingInfo(self,productionID,printOutput=False):
+    """The logging information for the given production is returned.  This includes
+       the operation performed, any messages associated with the operation and the
+       DN of the production manager performing it.
+    """
+    if type(productionID)==type(2):
+      productionID=long(productionID)
+    if not type(productionID)==type(long(1)):
+      if not type(productionID) == type(" "):
+        return self.__errorReport('Expected string, long or int for production ID')
+
+    result = self.prodClient.getTransformationLogging(long(productionID))
+    if not result['OK']:
+      self.log.warn('Could not get transformation logging information for productionID %s' %(productionID))
+      return result
+    if not result['Value']:
+      self.log.warn('No logging information found for productionID %s' %(productionID))
+      return S_ERROR('No logging info found')
+
+    if not printOutput:
+      return result
+
+    message = ['ProdID'.ljust(int(0.5*self.prodAdj))+'Message'.ljust(3*self.prodAdj)+'DateTime [UTC]'.ljust(self.prodAdj)+'AuthorCN'.ljust(2*self.prodAdj)]
+    for line in result['Value']:
+      message.append(str(line['TransID']).ljust(int(0.5*self.prodAdj))+line['Message'].ljust(3*self.prodAdj)+toString(line['MessageDate']).ljust(self.prodAdj)+line['AuthorDN'].split('/')[-1].ljust(2*self.prodAdj))
+
+    print '\nLogging summary for productionID '+str(productionID)+'\n\n'+string.join(message,'\n')
+
+    return result
+
+  #############################################################################
   def getProductionSummary(self,productionID=None,printOutput=False):
     """Returns a detailed summary for the productions in the system. If production ID is
        specified, the result is restricted to this value. If printOutput is specified,
@@ -189,6 +220,7 @@ class DiracProduction:
 
     statusDict = self.__getProdJobMetadata(productionID,status,minorStatus)
     if not statusDict['OK']:
+      self.log.warn('Could not get production metadata information')
       return statusDict
 
     #Now format the result.
@@ -280,12 +312,14 @@ class DiracProduction:
         return self.__errorReport('Expected string, long or int for production ID')
 
     statusDict = self.__getProdJobMetadata(productionID,None,None,site)
-    if not printOutput:
+    if not statusDict['OK']:
+      self.log.warn('Could not get production metadata information')
       return statusDict
 
     summary = {}
     submittedJobs=0
     doneJobs = 0
+
     for job,atts in statusDict['Value'].items():
       for key,val in atts.items():
         if key=='Site':
