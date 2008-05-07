@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.25 2008/05/07 18:20:57 acasajus Exp $
-__RCSID__ = "$Id: AccountingDB.py,v 1.25 2008/05/07 18:20:57 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.26 2008/05/07 18:46:35 acasajus Exp $
+__RCSID__ = "$Id: AccountingDB.py,v 1.26 2008/05/07 18:46:35 acasajus Exp $"
 
 import datetime, time
 import types
@@ -173,10 +173,10 @@ class AccountingDB(DB):
       bucketFieldsDict[ field[0] ] = "INTEGER NOT NULL"
     for field in definitionAccountingFields:
       fieldsDict[ field[0] ] = field[1] + " NOT NULL"
-      bucketFieldsDict[ field[0] ] = "DECIMAL(20,10) NOT NULL"
+      bucketFieldsDict[ field[0] ] = "DECIMAL(30,10) NOT NULL"
     fieldsDict[ 'startTime' ] = "INT UNSIGNED NOT NULL"
     fieldsDict[ 'endTime' ] = "INT UNSIGNED NOT NULL"
-    bucketFieldsDict[ 'entriesInBucket' ] = "DECIMAL(20,10) NOT NULL"
+    bucketFieldsDict[ 'entriesInBucket' ] = "DECIMAL(30,10) NOT NULL"
     bucketFieldsDict[ 'startTime' ] = "INT UNSIGNED NOT NULL"
     uniqueIndexFields.append( 'startTime' )
     bucketFieldsDict[ 'bucketLength' ] = "MEDIUMINT UNSIGNED NOT NULL"
