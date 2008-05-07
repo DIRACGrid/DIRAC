@@ -1,11 +1,10 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Types/Job.py,v 1.1 2008/05/07 09:34:15 acasajus Exp $
-__RCSID__ = "$Id: Job.py,v 1.1 2008/05/07 09:34:15 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Types/Job.py,v 1.2 2008/05/07 09:45:12 acasajus Exp $
+__RCSID__ = "$Id: Job.py,v 1.2 2008/05/07 09:45:12 acasajus Exp $"
 
 from DIRAC.AccountingSystem.Client.Types.BaseAccountingType import BaseAccountingType
-
 from DIRAC                                                  import gConfig
 
-class WMSJob( BaseAccountingType ):
+class Job( BaseAccountingType ):
 
   def __init__( self ):
     BaseAccountingType.__init__( self )
