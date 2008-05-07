@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Time.py,v 1.3 2008/02/25 22:23:16 atsareg Exp $
-__RCSID__ = "$Id: Time.py,v 1.3 2008/02/25 22:23:16 atsareg Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Time.py,v 1.4 2008/05/07 21:07:15 acasajus Exp $
+__RCSID__ = "$Id: Time.py,v 1.4 2008/05/07 21:07:15 acasajus Exp $"
 """
 DIRAC Times module
 Support for basic Date and Time operations
@@ -199,5 +199,9 @@ class timeInterval:
 _dateTimeType = type( dateTime() )
 _dateType     = type( date() )
 _timeType     = type( time() )
+
+_allTimeTypes = ( _dateTimeType, _timeType )
+_allDateTypes = ( _dateTimeType, _dateType )
+_allTypes = ( _dateTimeType, _dateType, _timeType )
 
 
