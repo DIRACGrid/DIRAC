@@ -331,7 +331,9 @@ class TransferDB(DB):
     return res
 
   def getFTSReq(self):
-    req = "SELECT FTSReqID,FTSGUID,FTSServer,ChannelID FROM FTSReq WHERE Status = 'Submitted' ORDER BY LastMonitor LIMIT 1;"
+    req = "SELECT f.FTSReqID,f.FTSGUID,f.FTSServer,f.ChannelID,f.SubmitTime,f.NumberOfFiles,f.TotalSize,c.SourceSite,c.DestinationSite FROM FTSReq as f,Channels as c WHERE f.Status = 'Submitted' and f.ChannelID=c.ChannelID ORDER BY f.LastMonitor LIMIT 1;"
+
+    # SELECT FTSReqID,FTSGUID,FTSServer,ChannelID,SubmitTime,NumberOfFiles,TotalSize FROM FTSReq WHERE Status = 'Submitted' ORDER BY LastMonitor LIMIT 1;"
     res = self._query(req)
     if not res['OK']:
       err = "TransferDB._getFTSReq: Failed to get entry from FTSReq table."
@@ -340,11 +342,16 @@ class TransferDB(DB):
       # It is not an error that there are not requests
       return S_OK()
     resDict = {}
-    ftsReqID,ftsGUID,ftsServer,channelID = res['Value'][0]
+    ftsReqID,ftsGUID,ftsServer,channelID,submitTime,numberOfFiles,totalSize,sourceSite,destSite = res['Value'][0]
     resDict['FTSReqID'] = ftsReqID
     resDict['FTSGuid'] = ftsGUID
     resDict['FTSServer'] = ftsServer
     resDict['ChannelID'] = channelID
+    resDict['SubmitTime'] = submitTime
+    resDict['NumberOfFiles'] = numberOfFiles
+    resDict['TotalSize'] = totalSize
+    resDict['Source'] = sourceSite
+    resDict['Target'] = destSite
     return S_OK(resDict)
 
   def setFTSReqAttribute(self,ftsReqID,attribute,attrValue):
@@ -717,6 +724,60 @@ class TransferDB(DB):
         number of datasets if requested.
     """
     return self.__selectFromTable('Datasets','DatasetID',condDict,older,newer,orderAttribute,limit)
+
+  def getAttributesForRequestList(self,reqIDList,attrList=[]):
+    """ Get attributes for the requests in the the reqIDList.
+        Returns an S_OK structure with a dictionary of dictionaries as its Value:
+        ValueDict[reqID][attribute_name] = attribute_value 
+    """
+    return self.__getAttributesForList('Requests','RequestID',reqIDList,attrList)
+
+  def getAttributesForSubRequestList(self,subReqIDList,attrList=[]):
+    """ Get attributes for the subrequests in the the reqIDList.
+        Returns an S_OK structure with a dictionary of dictionaries as its Value:
+        ValueDict[subReqID][attribute_name] = attribute_value
+    """
+    return self.__getAttributesForList('SubRequests','SubRequestID',subReqIDList,attrList)
+
+  def getAttributesForFilesList(self,fileIDList,attrList=[]):
+    """ Get attributes for the files in the the fileIDlist.
+        Returns an S_OK structure with a dictionary of dictionaries as its Value:
+        ValueDict[fileID][attribute_name] = attribute_value
+    """
+    return self.__getAttributesForList('Files','FileID',fileIDList,attrList)
+
+  def getAttributesForDatasetList(self,datasetIDList,attrList=[]):
+    """ Get attributes for the datasets in the the datasetIDlist. 
+        Returns an S_OK structure with a dictionary of dictionaries as its Value:
+        ValueDict[datasetID][attribute_name] = attribute_value
+    """
+    return self.__getAttributesForList('Datasets','DatasetID',datasetIDList,attrList)
+
+    
+  def __getAttributesForList(self,table,tableID,idList,attrList):
+    attrNames = string.join(map(lambda x: str(x),attrList ),',')
+    attr_tmp_list = attrList
+    intIDList = string.join(map(lambda x: str(x),idList),',')
+    cmd = "SELECT %s,%s from %s where %s in (%s);" % (tableID,attrNames,table,tableID,intIDList)
+    res = self._query( cmd )
+    if not res['OK']:
+      return res
+    try:
+      retDict = {}
+      for retValues in res['Value']:
+        rowID = retValues[0]
+        reqDict = {}
+        reqDict[tableID ] = rowID
+        attrValues = retValues[1:]
+        for i in range(len(attr_tmp_list)):
+          try:
+            reqDict[attr_tmp_list[i]] = attrValues[i].tostring()
+          except:
+            reqDict[attr_tmp_list[i]] = str(attrValues[i])
+        retDict[int(rowID)] = reqDict
+      return S_OK( retDict )
+    except Exception,x:
+      return S_ERROR( 'TransferDB.__getAttributesForList: Failed\n%s'  % str(x) )    
 
   def __selectFromTable(self,table,tableID,condDict,older,newer,orderAttribute,limit):
     condition = self.__buildCondition(condDict, older, newer)
