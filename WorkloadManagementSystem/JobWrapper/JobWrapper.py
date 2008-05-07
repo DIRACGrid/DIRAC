@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.31 2008/05/07 09:56:11 acasajus Exp $
+# $Id: JobWrapper.py,v 1.32 2008/05/07 13:07:00 acasajus Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.31 2008/05/07 09:56:11 acasajus Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.32 2008/05/07 13:07:00 acasajus Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -735,7 +735,6 @@ class JobWrapper:
     """Send WMS accounting data.
     """
     self.accountingReport.setEndTime()
-    return
     #CPUTime and ExecTime
     if 'CPU' in EXECUTION_RESULT:
       utime, stime, cutime, cstime, elapsed = EXECUTION_RESULT['CPU']
@@ -745,6 +744,12 @@ class JobWrapper:
     execTime = elapsed
     #Fill the data
     acData = {
+               'User' : 'unknown',
+               'UserGroup' : 'unknown',
+               'JobGroup' : 'unknown',
+               'JobType' : 'unknown',
+               'JobClass' : 'unknown',
+               'ProcessingType' : 'unknown',
                'FinalMajorStatus' : self.wmsMajorStatus,
                'FinalMinorStatus' : self.wmsMinorStatus,
                #La "chicha"
@@ -752,11 +757,14 @@ class JobWrapper:
                'NormCPUTime' : cpuTime * gConfig.getValue ( "/LocalSite/CPUScalingFactor", 0.0 ),
                'ExecTime' : execTime,
                #FIXME: Fill all that data
-               'InputData' : 0,
-               'OutputData' : 0,
+               'InputDataSize' : 0,
+               'OutputDataSize' : 0,
+               'InputDataFiles' : 0,
+               'OutputDataFiles' : 0,
                'DiskSpace' : 0,
-               'InputSandBox' : 0,
-               'OutputSandBox' : 0
+               'InputSandBoxSize' : 0,
+               'OutputSandBoxSize' : 0,
+               'ProcessedEvents' : 0,
              }
     self.accountingReport.setValuesFromDict( acData )
     self.accountingReport.commit()
