@@ -9,23 +9,23 @@ class JobPlotter(BasePlotter):
 
   __typeName = "Job"
 
-  def _plotEfficiency( self, startTime, endTime, argsDict, grouping, filename ):
-    return self.__generateEfficiencyJobPlot(startTime, endTime, grouping, argsDict, filename)
+  def _plotCPUEfficiency( self, startTime, endTime, argsDict, grouping, filename ):
+    return self.__generateCPUEfficiencyJobPlot(startTime, endTime, grouping, argsDict, filename)
 
-  def __generateEfficiencyJobPlot( self, startTime, endTime, keyNameList, argsDict, filename ):
-    retVal = self.__getEfficiencyJob( startTime, endTime, keyNameList, argsDict )
+  def __generateCPUEfficiencyJobPlot( self, startTime, endTime, keyNameList, argsDict, filename ):
+    retVal = self.__getCPUEfficiencyJob( startTime, endTime, keyNameList, argsDict )
     if not retVal[ 'OK' ]:
       return retVal
     dataDict, granularity = retVal[ 'Value' ]
     self.stripDataField( dataDict, 0 )
     gLogger.info( "Generating plot", "%s with granularity of %s" % ( filename, granularity ) )
-    metadata = { 'title' : 'Job efficiency by %s' % " -> ".join( keyNameList ) ,
+    metadata = { 'title' : 'Job CPU efficiency by %s' % " -> ".join( keyNameList ) ,
                  'starttime' : startTime,
                  'endtime' : endTime,
                  'span' : granularity }
     return generateQualityPlot( filename, dataDict, metadata )
 
-  def __getEfficiencyJob( self, startTime, endTime, keyNameList, argsDict ):
+  def __getCPUEfficiencyJob( self, startTime, endTime, keyNameList, argsDict ):
     condDict = {}
     for keyword in keyNameList:
       if keyword in argsDict:
