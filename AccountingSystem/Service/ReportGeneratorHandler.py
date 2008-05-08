@@ -1,8 +1,8 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/ReportGeneratorHandler.py,v 1.10 2008/05/08 14:06:32 acasajus Exp $
-__RCSID__ = "$Id: ReportGeneratorHandler.py,v 1.10 2008/05/08 14:06:32 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/ReportGeneratorHandler.py,v 1.11 2008/05/08 14:56:03 acasajus Exp $
+__RCSID__ = "$Id: ReportGeneratorHandler.py,v 1.11 2008/05/08 14:56:03 acasajus Exp $"
 import types
 import os
-from DIRAC import S_OK, S_ERROR, rootPath, gConfig, gLogger
+from DIRAC import S_OK, S_ERROR, rootPath, gConfig, gLogger, gMonitor
 from DIRAC.AccountingSystem.private.AccountingDB import AccountingDB
 from DIRAC.AccountingSystem.private.Summaries import Summaries
 from DIRAC.AccountingSystem.private.PlotsCache import gPlotsCache
@@ -37,6 +37,8 @@ def initializeReportGeneratorHandler( serviceInfo ):
     gLogger.fatal( "Can't write to %s" % dataPath )
     return S_ERROR( "Data location is not writable" )
   gPlotsCache.setGraphsLocation( dataPath )
+  gMonitor.registerActivity( "drawnplots", "Drawn plot images", "Accounting reports", "plots", gMonitor.OP_SUM )
+  gMonitor.registerActivity( "generatedsummaries", "Generated summaries", "Accounting reports", "summaries", gMonitor.OP_SUM )
   return S_OK()
 
 class ReportGeneratorHandler( RequestHandler ):
@@ -54,6 +56,7 @@ class ReportGeneratorHandler( RequestHandler ):
     summariesGeneator = Summaries( gAccountingDB, self.serviceInfoDict[ 'clientSetup' ] )
     startTime = int( Time.toEpoch( startTime ) )
     endTime = int( Time.toEpoch( endTime ) )
+    gMonitor.addMark( "generatedsummaries" )
     return summariesGeneator.generate( summaryName, startTime, endTime, argsDict )
 
   types_listSummaries = []
@@ -79,6 +82,7 @@ class ReportGeneratorHandler( RequestHandler ):
     plotter = MainPlotter( gAccountingDB, self.serviceInfoDict[ 'clientSetup' ] )
     startTime = int( Time.toEpoch( startTime ) )
     endTime = int( Time.toEpoch( endTime ) )
+    gMonitor.addMark( "drawnplots" )
     return plotter.generate( typeName, plotName, startTime, endTime, argsDict, grouping )
 
   types_listPlots = [ types.StringType ]
