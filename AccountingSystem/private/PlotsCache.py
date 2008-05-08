@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/PlotsCache.py,v 1.1 2008/05/06 18:33:19 acasajus Exp $
-__RCSID__ = "$Id: PlotsCache.py,v 1.1 2008/05/06 18:33:19 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/PlotsCache.py,v 1.2 2008/05/08 14:06:32 acasajus Exp $
+__RCSID__ = "$Id: PlotsCache.py,v 1.2 2008/05/08 14:06:32 acasajus Exp $"
 
 import os
 import os.path
@@ -79,11 +79,11 @@ class PlotsCache:
     if graphName not in self.cachedGraphs:
       self.cachedGraphs[ graphName ] = [ Time.toEpoch(), graceTime ]
 
-  def generatePlot( self, viewName, startTime, endTime, argsDict, funcToGenerate ):
-    graphName = "%s.png" % self.__generateName( ( viewName, startTime, endTime, argsDict ) )
+  def generatePlot( self, viewName, startTime, endTime, argsDict, grouping, funcToGenerate ):
+    graphName = "%s.png" % self.__generateName( ( viewName, startTime, endTime, argsDict, grouping ) )
     if graphName not in self.cachedGraphs:
       try:
-        retVal = funcToGenerate( startTime, endTime, argsDict, "%s/%s" % ( self.graphsLocation, graphName ) )
+        retVal = funcToGenerate( startTime, endTime, argsDict, grouping, "%s/%s" % ( self.graphsLocation, graphName ) )
         if not retVal[ 'OK' ]:
           return retVal
       except Exception, e:

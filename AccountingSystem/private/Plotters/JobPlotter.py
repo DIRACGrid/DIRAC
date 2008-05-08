@@ -9,14 +9,8 @@ class JobPlotter(BasePlotter):
 
   __typeName = "Job"
 
-  def _plotEfficiencyBySite( self, startTime, endTime, argsDict, filename ):
-    return self.__generateEfficiencyJobPlot(startTime, endTime, [ 'Site' ], argsDict, filename)
-
-  def _plotEfficiencyByMajorStatus( self, startTime, endTime, argsDict, filename ):
-    return self.__generateEfficiencyJobPlot(startTime, endTime, [ 'FinalMajorStatus' ], argsDict, filename)
-
-  def _plotEfficiencyByMinorStatus( self, startTime, endTime, argsDict, filename ):
-    return self.__generateEfficiencyJobPlot(startTime, endTime, [ 'FinalMinorStatus' ], argsDict, filename)
+  def _plotEfficiency( self, startTime, endTime, argsDict, grouping, filename ):
+    return self.__generateEfficiencyJobPlot(startTime, endTime, grouping, argsDict, filename)
 
   def __generateEfficiencyJobPlot( self, startTime, endTime, keyNameList, argsDict, filename ):
     retVal = self.__getEfficiencyJob( startTime, endTime, keyNameList, argsDict )
@@ -62,14 +56,8 @@ class JobPlotter(BasePlotter):
       dataDict[ keyField ] = self._averageToGranularity( coarsestGranularity, dataDict[ keyField ] )
     return S_OK( ( dataDict, coarsestGranularity ) )
 
-  def _plotCPUUsedBySite( self, startTime, endTime, argsDict, filename ):
-    return self.__generateJobCPUUsedPlot(startTime, endTime, [ 'Site' ], argsDict, filename)
-
-  def _plotCPUUsedByMajorStatus( self, startTime, endTime, argsDict, filename ):
-    return self.__generateJobCPUUsedPlot(startTime, endTime, [ 'FinalMajorStatus' ], argsDict, filename)
-
-  def _plotCPUUsedByMinorStatus( self, startTime, endTime, argsDict, filename ):
-    return self.__generateJobCPUUsedPlot(startTime, endTime, [ 'FinalMinorStatus' ], argsDict, filename)
+  def _plotCPUUsed( self, startTime, endTime, argsDict, grouping, filename ):
+    return self.__generateJobCPUUsedPlot(startTime, endTime, grouping, argsDict, filename)
 
   def __generateJobCPUUsedPlot( self, startTime, endTime, keyNameList, argsDict, filename ):
     retVal = self.__getJobCPUUsedData( startTime, endTime, keyNameList, argsDict )
@@ -118,14 +106,8 @@ class JobPlotter(BasePlotter):
       dataDict[ keyField ] = self._sumToGranularity( coarsestGranularity, dataDict[ keyField ] )
     return S_OK( ( dataDict, coarsestGranularity ) )
 
-  def _plotCPUUsageBySite( self, startTime, endTime, argsDict, filename ):
-    return self.__generateCPUUsageJobPlot(startTime, endTime, [ 'Site' ], argsDict, filename)
-
-  def _plotCPUUsageByMajorStatus( self, startTime, endTime, argsDict, filename ):
-    return self.__generateCPUUsageJobPlot(startTime, endTime, [ 'FinalMajorStatus' ], argsDict, filename)
-
-  def _plotCPUUsageByMinorStatus( self, startTime, endTime, argsDict, filename ):
-    return self.__generateCPUUsageJobPlot(startTime, endTime, [ 'FinalMinorStatus' ], argsDict, filename)
+  def _plotCPUUsage( self, startTime, endTime, argsDict, grouping, filename ):
+    return self.__generateCPUUsageJobPlot(startTime, endTime, grouping, argsDict, filename)
 
   def __generateCPUUsageJobPlot( self, startTime, endTime, keyNameList, argsDict, filename ):
     retVal = self.__getJobCPUUsedData( startTime, endTime, keyNameList, argsDict )
@@ -143,14 +125,8 @@ class JobPlotter(BasePlotter):
     return generateTimedStackedBarPlot( filename, dataDict, metadata )
 
 
-  def _plotNumberOfJobsBySite( self, startTime, endTime, argsDict, filename ):
-    return self.__generateJobNumberJobsPlot(startTime, endTime, [ 'Site' ], argsDict, filename)
-
-  def _plotNumberOfJobsByMajorStatus( self, startTime, endTime, argsDict, filename ):
-    return self.__generateJobNumberJobsPlot(startTime, endTime, [ 'FinalMajorStatus' ], argsDict, filename)
-
-  def _plotNumberOfJobsByMinorStatus( self, startTime, endTime, argsDict, filename ):
-    return self.__generateJobNumberJobsPlot(startTime, endTime, [ 'FinalMinorStatus' ], argsDict, filename)
+  def _plotNumberOfJobs( self, startTime, endTime, argsDict, grouping, filename ):
+    return self.__generateJobNumberJobsPlot(startTime, endTime, grouping, argsDict, filename)
 
   def __generateJobNumberJobsPlot( self, startTime, endTime, keyNameList, argsDict, filename ):
     retVal = self.__getJobNumJobsData( startTime, endTime, keyNameList, argsDict )

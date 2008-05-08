@@ -10,7 +10,10 @@ class BasePlotter(DBUtils):
   def __init__( self, db, setup ):
     DBUtils.__init__( self, db, setup )
 
-  def generate( self, plotName, startTime, endTime, argsDict ):
+  def _translateGrouping( self, grouping ):
+    return [ grouping ]
+
+  def generate( self, plotName, startTime, endTime, argsDict, grouping ):
     missing = []
     for param in self.requiredParams:
       if param not in argsDict:
@@ -22,7 +25,12 @@ class BasePlotter(DBUtils):
       funcObj = getattr( self, funcName )
     except Exception, e:
       return S_ERROR( "Plot  %s is not defined" % plotName )
-    return gPlotsCache.generatePlot( plotName, startTime, endTime, argsDict, funcObj )
+    return gPlotsCache.generatePlot( plotName,
+                                     startTime,
+                                     endTime,
+                                     argsDict,
+                                     self._translateGrouping( grouping ),
+                                     funcObj )
 
   def plotsList( self ):
     viewList = []

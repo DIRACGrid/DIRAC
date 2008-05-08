@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/ReportGeneratorHandler.py,v 1.9 2008/05/07 18:20:57 acasajus Exp $
-__RCSID__ = "$Id: ReportGeneratorHandler.py,v 1.9 2008/05/07 18:20:57 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/ReportGeneratorHandler.py,v 1.10 2008/05/08 14:06:32 acasajus Exp $
+__RCSID__ = "$Id: ReportGeneratorHandler.py,v 1.10 2008/05/08 14:06:32 acasajus Exp $"
 import types
 import os
 from DIRAC import S_OK, S_ERROR, rootPath, gConfig, gLogger
@@ -66,8 +66,8 @@ class ReportGeneratorHandler( RequestHandler ):
     summariesGeneator = Summaries( gAccountingDB, self.serviceInfoDict[ 'clientSetup' ] )
     return S_OK( summariesGeneator.summariesList() )
 
-  types_generatePlot = [ types.StringType, types.StringType, Time._allDateTypes, Time._allDateTypes, types.DictType ]
-  def export_generatePlot( self, typeName, plotName, startTime, endTime, argsDict ):
+  types_generatePlot = [ types.StringType, types.StringType, Time._allDateTypes, Time._allDateTypes, types.DictType, types.StringType ]
+  def export_generatePlot( self, typeName, plotName, startTime, endTime, argsDict, grouping ):
     """
     Plot a accounting
       Arguments:
@@ -79,7 +79,7 @@ class ReportGeneratorHandler( RequestHandler ):
     plotter = MainPlotter( gAccountingDB, self.serviceInfoDict[ 'clientSetup' ] )
     startTime = int( Time.toEpoch( startTime ) )
     endTime = int( Time.toEpoch( endTime ) )
-    return plotter.generate( typeName, plotName, startTime, endTime, argsDict )
+    return plotter.generate( typeName, plotName, startTime, endTime, argsDict, grouping )
 
   types_listPlots = [ types.StringType ]
   def export_listPlots( self, typeName ):

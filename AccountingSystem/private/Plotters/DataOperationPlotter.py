@@ -9,14 +9,14 @@ class DataOperationPlotter(BasePlotter):
 
   __typeName = "DataOperation"
 
-  def _plotSuceededTransfersBySource( self, startTime, endTime, argsDict, filename ):
-    return self.__generateDataOperationSuceededTransfersPlot(startTime, endTime, [ 'Source' ], argsDict, filename)
+  def _translateGrouping( self, grouping ):
+    if grouping == "Channel":
+      return [ 'Source', 'Destination' ]
+    else:
+      return [ grouping ]
 
-  def _plotSuceededTransfersByDestination( self, startTime, endTime, argsDict, filename ):
-    return self.__generateDataOperationSuceededTransfersPlot(startTime, endTime, [ 'Destination' ], argsDict, filename)
-
-  def _plotSuceededTransfersByChannel( self, startTime, endTime, argsDict, filename ):
-    return self.__generateDataOperationSuceededTransfersPlot(startTime, endTime, [ 'Source', 'Destination' ], argsDict, filename)
+  def _plotSuceededTransfers( self, startTime, endTime, argsDict, grouping, filename ):
+    return self.__generateDataOperationSuceededTransfersPlot(startTime, endTime, grouping, argsDict, filename)
 
   def __generateDataOperationSuceededTransfersPlot( self, startTime, endTime, keyNameList, argsDict, filename ):
     retVal = self.__getDataOperationTransfers( startTime, endTime, keyNameList, argsDict )
@@ -35,14 +35,8 @@ class DataOperationPlotter(BasePlotter):
                  'span' : granularity }
     return generateTimedStackedBarPlot( filename, dataDict, metadata )
 
-  def _plotFailedTransfersBySource( self, startTime, endTime, argsDict, filename ):
-    return self.__generateDataOperationFailedTransfersPlot(startTime, endTime, [ 'Source' ], argsDict, filename)
-
-  def _plotFailedTransfersByDestination( self, startTime, endTime, argsDict, filename ):
-    return self.__generateDataOperationFailedTransfersPlot(startTime, endTime, [ 'Destination' ], argsDict, filename)
-
-  def _plotFailedTransfersByChannel( self, startTime, endTime, argsDict, filename ):
-    return self.__generateDataOperationFailedTransfersPlot(startTime, endTime, [ 'Source', 'Destination' ], argsDict, filename)
+  def _plotFailedTransfers( self, startTime, endTime, argsDict, grouping, filename ):
+    return self.__generateDataOperationFailedTransfersPlot(startTime, endTime, grouping, argsDict, filename)
 
   def __generateDataOperationFailedTransfersPlot( self, startTime, endTime, keyNameList, argsDict, filename ):
     retVal = self.__getDataOperationTransfers( startTime, endTime, keyNameList, argsDict )
@@ -92,15 +86,8 @@ class DataOperationPlotter(BasePlotter):
       dataDict[ keyField ] = self._sumToGranularity( coarsestGranularity, dataDict[ keyField ] )
     return S_OK( ( dataDict, coarsestGranularity ) )
 
-  def _plotQualityBySource( self, startTime, endTime, argsDict, filename ):
-    return self.__generateDataOperationQualityPlot(startTime, endTime, [ 'Source' ], argsDict, filename)
-
-  def _plotQualityByDestination( self, startTime, endTime, argsDict, filename ):
-    return self.__generateDataOperationQualityPlot(startTime, endTime, [ 'Destination' ], argsDict, filename)
-
-  def _plotQualityByChannel( self, startTime, endTime, argsDict, filename ):
-    return self.__generateDataOperationQualityPlot(startTime, endTime, [ 'Source', 'Destination' ], argsDict, filename)
-
+  def _plotQuality( self, startTime, endTime, argsDict, grouping, filename ):
+    return self.__generateDataOperationQualityPlot(startTime, endTime, grouping, argsDict, filename)
 
   def __generateDataOperationQualityPlot( self, startTime, endTime, keyNameList, argsDict, filename ):
     retVal = self.__getDataOperationQuality( startTime, endTime, keyNameList, argsDict )
@@ -148,15 +135,8 @@ class DataOperationPlotter(BasePlotter):
     return S_OK( ( dataDict, coarsestGranularity ) )
 
 
-  def _plotTransferedDataBySource( self, startTime, endTime, argsDict, filename ):
-    return self.__generateDataOperationTransferedDataPlot(startTime, endTime, [ 'Source' ], argsDict, filename)
-
-  def _plotTransferedDataByDestination( self, startTime, endTime, argsDict, filename ):
-    return self.__generateDataOperationTransferedDataPlot(startTime, endTime, [ 'Destination' ], argsDict, filename)
-
-  def _plotTransferedDataByChannel( self, startTime, endTime, argsDict, filename ):
-    return self.__generateDataOperationTransferedDataPlot(startTime, endTime, [ 'Source', 'Destination' ], argsDict, filename)
-
+  def _plotTransferedData( self, startTime, endTime, argsDict, grouping, filename ):
+    return self.__generateDataOperationTransferedDataPlot(startTime, endTime, grouping, argsDict, filename)
 
   def __generateDataOperationTransferedDataPlot( self, startTime, endTime, keyNameList, argsDict, filename ):
     retVal = self.__getDataOperationTransferedData( startTime, endTime, keyNameList, argsDict )
@@ -205,14 +185,8 @@ class DataOperationPlotter(BasePlotter):
       dataDict[ keyField ] = self._sumToGranularity( coarsestGranularity, dataDict[ keyField ] )
     return S_OK( ( dataDict, coarsestGranularity ) )
 
-  def _plotThroughputBySource( self, startTime, endTime, argsDict, filename ):
-    return self.__generateDataOperationThroughputPlot(startTime, endTime, [ 'Source' ], argsDict, filename)
-
-  def _plotThroughputByDestination( self, startTime, endTime, argsDict, filename ):
-    return self.__generateDataOperationThroughputPlot(startTime, endTime, [ 'Destination' ], argsDict, filename)
-
-  def _plotThroughputByChannel( self, startTime, endTime, argsDict, filename ):
-    return self.__generateDataOperationThroughputPlot(startTime, endTime, [ 'Source', 'Destination' ], argsDict, filename)
+  def _plotThroughput( self, startTime, endTime, argsDict, grouping, filename ):
+    return self.__generateDataOperationThroughputPlot(startTime, endTime, grouping, argsDict, filename)
 
   def __generateDataOperationThroughputPlot( self, startTime, endTime, keyNameList, argsDict, filename ):
     retVal = self.__getDataOperationThroughput( startTime, endTime, keyNameList, argsDict )
