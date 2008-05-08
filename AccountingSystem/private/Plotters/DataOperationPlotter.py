@@ -237,7 +237,7 @@ class DataOperationPlotter(BasePlotter):
       keySQLString = "%s"
     else:
       keySQLString = "CONCAT( %s, ' -> ', %s )"
-    selectFields = ( keySQLString + ", %s, %s, SUM(%s)/SUM(%s)",
+    selectFields = ( keySQLString + ", %s, %s, (SUM(%s)/SUM(%s))/1000000",
                      keyNameList + [ 'startTime', 'bucketLength',
                        'TransferSize', 'bucketLength',
                       ]
