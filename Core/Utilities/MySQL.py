@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: MySQL.py,v 1.8 2008/04/16 15:05:32 acasajus Exp $
+# $Id: MySQL.py,v 1.9 2008/05/08 12:32:58 atsareg Exp $
 ########################################################################
 """ DIRAC Basic MySQL Class
     It provides access to the basic MySQL methods in a multithread-safe mode
@@ -75,7 +75,7 @@
 
 """
 
-__RCSID__ = "$Id: MySQL.py,v 1.8 2008/04/16 15:05:32 acasajus Exp $"
+__RCSID__ = "$Id: MySQL.py,v 1.9 2008/05/08 12:32:58 atsareg Exp $"
 
 
 from DIRAC                                  import gLogger
@@ -293,7 +293,14 @@ class MySQL:
         res = cursor.fetchall()
       else:
         res = ()
-      self.logger.debug( '_query:', res )
+        
+      # Log the result limiting it to just 10 records  
+      if len(res) < 10:  
+        self.logger.debug( '_query:', res )
+      else:
+        self.logger.debug( '_query: Total %d records returned' % len(res))
+        self.logger.debug( '_query: %s ...' % str(res[:10]) )
+          
       retDict = S_OK( res )
     except Exception ,x:
       self.logger.debug( '_query:', cmd )
