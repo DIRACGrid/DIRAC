@@ -67,6 +67,24 @@ class DataOperationPlotter(BasePlotter):
     dataDict, granularity = retVal[ 'Value' ]
     startTime = startTime - startTime % granularity
     self.stripDataField( dataDict, 0 )
+    #Get the total for the plot
+    selectFields = ( "'Total', %s, %s, SUM(%s)/SUM(%s)",
+                     [ 'startTime', 'bucketLength',
+                       'TransferOK', 'TransferTotal'
+                     ]
+                   )
+    retVal = self._getTypeData( startTime,
+                                endTime,
+                                selectFields,
+                                condDict,
+                                groupingFields,
+                                { 'checkNone' : True, 'convertToGranularity' : 'average' } )
+    if not retVal[ 'OK' ]:
+      return retVal
+    totalDict = retVal[ 'Value' ][0]
+    self.stripDataField( totalDict, 0 )
+    for key in totalDict:
+      dataDict[ key ] = totalDict[ key ]
     gLogger.info( "Generating plot", "%s with granularity of %s" % ( filename, granularity ) )
     metadata = { 'title' : 'Transfer quality by %s' % " -> ".join( groupingFields ) ,
                  'starttime' : startTime,
