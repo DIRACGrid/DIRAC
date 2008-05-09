@@ -75,7 +75,7 @@ class DataOperationPlotter(BasePlotter):
     return generateQualityPlot( filename, dataDict, metadata )
 
   def _plotTransferedData( self, startTime, endTime, condDict, groupingFields, filename ):
-    selectFields = ( self._getSQLStringForGrouping( groupingFields) + ", %s, %s, %s/1000000000",
+    selectFields = ( self._getSQLStringForGrouping( groupingFields) + ", %s, %s, SUM(%s)/1000000000",
                      groupingFields + [ 'startTime', 'bucketLength',
                                     'TransferSize'
                                    ]
@@ -112,7 +112,7 @@ class DataOperationPlotter(BasePlotter):
                                 selectFields,
                                 condDict,
                                 groupingFields,
-                                {} )
+                                { 'convertToGranularity' : 'average' } )
     if not retVal[ 'OK' ]:
       return retVal
     dataDict, granularity = retVal[ 'Value' ]
