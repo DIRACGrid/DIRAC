@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.24 2008/05/09 10:34:14 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.25 2008/05/09 17:49:10 paterson Exp $
 # File :   DiracProduction.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are to be documented with example usage.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.24 2008/05/09 10:34:14 paterson Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.25 2008/05/09 17:49:10 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 import pprint
@@ -49,6 +49,7 @@ class DiracProduction:
     self.submittedStatus = gConfig.getValue(self.section+'/ProcDBSubStatus','Submitted')
     self.createdStatus = gConfig.getValue(self.section+'/ProcDBCreatedStatus','Created')
     self.defaultOwnerGroup = gConfig.getValue(self.section+'/DefaultOwnerGroup','lhcb_prod')
+    self.monClient = RPCClient('WorkloadManagement/JobMonitoring')
     self.prodClient = RPCClient('ProductionManagement/ProductionManager')
     self.diracAPI = Dirac()
     self.pPrint = pprint.PrettyPrinter()
@@ -205,13 +206,133 @@ class DiracProduction:
     return result
 
   #############################################################################
+  def getProductionApplicationSummary(self,productionID,status=None,minorStatus=None,printOutput=False):
+    """Returns an application status summary for the productions in the system. If printOutput is
+       specified, the result is printed to the screen.  This queries the WMS
+       for the given productionID and provides an up-to-date snapshot of the application status
+       combinations and associated WMS JobIDs.
+    """
+    if type(productionID)==type(2):
+      productionID=long(productionID)
+    if not type(productionID)==type(long(1)):
+      if not type(productionID) == type(" "):
+        return self.__errorReport('Expected string, long or int for production ID')
+
+    statusDict = self.__getProdJobMetadata(productionID,status,minorStatus)
+    if not statusDict['OK']:
+      self.log.warn('Could not get production metadata information')
+      return statusDict
+
+    jobIDs = statusDict['Value'].keys()
+    if not jobIDs:
+      return S_ERROR('No JobIDs with matching conditions found')
+
+    self.log.verbose('Considering %s jobs with selected conditions' %(len(jobIDs)))
+    #now need to get the application status information
+    result = self.monClient.getJobsApplicationStatus(jobIDs)
+    if not result['OK']:
+      self.log.warn('Could not get application status for jobs list')
+      return result
+
+    appStatus = result['Value']
+#    self._prettyPrint(appStatus)
+#    self._prettyPrint(statusDict['Value'])
+    #Now format the result.
+    summary = {}
+    submittedJobs=0
+    doneJobs = 0
+    for job,atts in statusDict['Value'].items():
+      for key,val in atts.items():
+        if key=='Status':
+          uniqueStatus = val.capitalize()
+          if not summary.has_key(uniqueStatus):
+            summary[uniqueStatus]={}
+          if not summary[uniqueStatus].has_key(atts['MinorStatus']):
+            summary[uniqueStatus][atts['MinorStatus']]={}
+          if not summary[uniqueStatus][atts['MinorStatus']].has_key(appStatus[job]['ApplicationStatus']):
+            summary[uniqueStatus][atts['MinorStatus']][appStatus[job]['ApplicationStatus']]={}
+            summary[uniqueStatus][atts['MinorStatus']][appStatus[job]['ApplicationStatus']]['Total']=1
+            submittedJobs+=1
+            if uniqueStatus=='Done':
+              doneJobs+=1
+            summary[uniqueStatus][atts['MinorStatus']][appStatus[job]['ApplicationStatus']]['JobList'] = [job]
+          else:
+            if not summary[uniqueStatus][atts['MinorStatus']].has_key(appStatus[job]['ApplicationStatus']):
+              summary[uniqueStatus][atts['MinorStatus']]={}
+              summary[uniqueStatus][atts['MinorStatus']][appStatus[job]['ApplicationStatus']]={}
+              summary[uniqueStatus][atts['MinorStatus']][appStatus[job]['ApplicationStatus']]['Total']=1
+              submittedJobs+=1
+              if uniqueStatus=='Done':
+                doneJobs+=1
+              summary[uniqueStatus][atts['MinorStatus']][appStatus[job]['ApplicationStatus']]['JobList'] = [job]
+            else:
+              current = summary[uniqueStatus][atts['MinorStatus']][appStatus[job]['ApplicationStatus']]['Total']
+              summary[uniqueStatus][atts['MinorStatus']][appStatus[job]['ApplicationStatus']]['Total'] = current+1
+              submittedJobs+=1
+              if uniqueStatus=='Done':
+                doneJobs+=1
+              jobList = summary[uniqueStatus][atts['MinorStatus']][appStatus[job]['ApplicationStatus']]['JobList']
+              jobList.append(job)
+              summary[uniqueStatus][atts['MinorStatus']][appStatus[job]['ApplicationStatus']]['JobList'] = jobList
+
+    if not printOutput:
+      result = S_OK()
+      if not status and not minorStatus:
+        result['Totals'] = {'Submitted':int(submittedJobs),'Done':int(doneJobs)}
+      result['Value'] = summary
+      return result
+
+    #If a printed summary is requested
+    statAdj = int(0.5*self.prodAdj)
+    mStatAdj = int(2.0*self.prodAdj)
+    totalAdj = int(0.5*self.prodAdj)
+    exAdj = int(0.5*self.prodAdj)
+    message = '\nJob Summary for ProductionID %s considering status %s' %(productionID,status)
+    if minorStatus:
+      message+='and MinorStatus = %s' %(minorStatus)
+
+    message += ':\n\n'
+    message += 'Status'.ljust(statAdj)+'MinorStatus'.ljust(mStatAdj)+'ApplicationStatus'.ljust(mStatAdj)+'Total'.ljust(totalAdj)+'Example'.ljust(exAdj)+'\n'
+    for stat,metadata in summary.items():
+      message += '\n'
+      for minor,appInfo in metadata.items():
+        message += '\n'
+        for appStat,jobInfo in appInfo.items():
+          message += stat.ljust(statAdj)+minor.ljust(mStatAdj)+appStat.ljust(mStatAdj)+str(jobInfo['Total']).ljust(totalAdj)+str(jobInfo['JobList'][0]).ljust(exAdj)+'\n'
+
+    print message
+    #self._prettyPrint(summary)
+    if status or minorStatus:
+      return S_OK(summary)
+
+    result = self.getProductionProgress(productionID)
+    if not result['OK']:
+      self.log.warn('Could not get production progress information')
+      return result
+
+    if result['Value'].has_key('Created'):
+      createdJobs = int(result['Value']['Created'])+submittedJobs
+    else:
+      createdJobs=submittedJobs
+
+    percSub = int(100*submittedJobs/createdJobs)
+    percDone = int(100*doneJobs/createdJobs)
+    print '\nCurrent status of production %s:\n' %productionID
+    print 'Submitted'.ljust(12)+str(percSub).ljust(3)+'%  ( '+str(submittedJobs).ljust(7)+'Submitted / '.ljust(15)+str(createdJobs).ljust(7)+' Created jobs )'
+    print 'Done'.ljust(12)+str(percDone).ljust(3)+'%  ( '+str(doneJobs).ljust(7)+'Done / '.ljust(15)+str(createdJobs).ljust(7)+' Created jobs )'
+    result = S_OK()
+    result['Totals'] = {'Submitted':int(submittedJobs),'Created':int(createdJobs),'Done':int(doneJobs)}
+    result['Value'] = summary
+    #self.pPrint(result)
+    return result
+
+  #############################################################################
   def getProductionJobSummary(self,productionID,status=None,minorStatus=None,printOutput=False):
     """Returns a job summary for the productions in the system. If printOutput is
        specified, the result is printed to the screen.  This queries the WMS
        for the given productionID and provides an up-to-date snapshot of the job status
        combinations and associated WMS JobIDs.
     """
-    #TODO: add percentage completed
     if type(productionID)==type(2):
       productionID=long(productionID)
     if not type(productionID)==type(long(1)):
@@ -253,7 +374,7 @@ class DiracProduction:
     if not printOutput:
       result = S_OK()
       if not status and not minorStatus:
-        result['Totals'] = {'Submitted':int(submittedJobs),'Created':int(createdJobs),'Done':int(doneJobs)}
+        result['Totals'] = {'Submitted':int(submittedJobs),'Done':int(doneJobs)}
       result['Value'] = summary
       return result
 
@@ -308,7 +429,6 @@ class DiracProduction:
        for the given productionID and provides an up-to-date snapshot of the sites
        that jobs were submitted to.
     """
-    #TODO: add percentage completed
     if type(productionID)==type(2):
       productionID=long(productionID)
     if not type(productionID)==type(long(1)):
@@ -355,7 +475,7 @@ class DiracProduction:
         if not result['OK']:
           return result
         createdJobs = result['Value']['Created']
-        result['Totals'] = {'Submitted':int(submittedJobs),'Created':int(createdJobs),'Done':int(doneJobs)}
+        result['Totals'] = {'Submitted':int(submittedJobs),'Done':int(doneJobs)}
       result['Value'] = summary
       return result
 
