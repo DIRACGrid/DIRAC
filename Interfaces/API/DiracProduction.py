@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.22 2008/05/07 11:18:42 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.23 2008/05/09 08:20:44 paterson Exp $
 # File :   DiracProduction.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are to be documented with example usage.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.22 2008/05/07 11:18:42 paterson Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.23 2008/05/09 08:20:44 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 import pprint
@@ -286,7 +286,11 @@ class DiracProduction:
     if not result['OK']:
       return result
 
-    createdJobs = result['Value']['Created']
+    if result['Value'].has_key('Created'):
+      createdJobs = int(result['Value']['Created'])+submittedJobs
+    else:
+      createdJobs=submittedJobs
+
     percSub = int(100*submittedJobs/createdJobs)
     percDone = int(100*doneJobs/createdJobs)
     print '\nCurrent status of production %s:\n' %productionID
@@ -375,10 +379,15 @@ class DiracProduction:
     print message
     #self._prettyPrint(summary)
     result = self.getProductionProgress(productionID)
+    print result
     if not result['OK']:
       return result
 
-    createdJobs = result['Value']['Created']
+    if result['Value'].has_key('Created'):
+      createdJobs = int(result['Value']['Created'])+submittedJobs
+    else:
+      createdJobs=submittedJobs
+
     percSub = int(100*submittedJobs/createdJobs)
     percDone = int(100*doneJobs/createdJobs)
     if not site:
