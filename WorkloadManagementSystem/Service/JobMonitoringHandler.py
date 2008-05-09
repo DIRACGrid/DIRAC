@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobMonitoringHandler.py,v 1.17 2008/04/29 15:06:33 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobMonitoringHandler.py,v 1.18 2008/05/09 13:27:49 paterson Exp $
 ########################################################################
 
 """ JobMonitoringHandler is the implementation of the JobMonitoring service
@@ -11,7 +11,7 @@
 
 """
 
-__RCSID__ = "$Id: JobMonitoringHandler.py,v 1.17 2008/04/29 15:06:33 atsareg Exp $"
+__RCSID__ = "$Id: JobMonitoringHandler.py,v 1.18 2008/05/09 13:27:49 paterson Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -187,6 +187,12 @@ class JobMonitoringHandler( RequestHandler ):
   def export_getJobsMinorStatus (self, jobIDs):
 
     return jobDB.getAttributesForJobList( jobIDs, ['MinorStatus'] )
+
+##############################################################################
+  types_getJobsApplicationStatus = [ ListType ]
+  def export_getJobsApplicationStatus (self, jobIDs):
+    
+    return jobDB.getAttributesForJobList( jobIDs, ['ApplicationStatus'] )
 
 ##############################################################################
   types_getJobsSites = [ ListType ]
