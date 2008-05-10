@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.33 2008/05/10 20:50:25 rgracian Exp $
+# $Id: JobWrapper.py,v 1.34 2008/05/10 20:56:59 rgracian Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.33 2008/05/10 20:50:25 rgracian Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.34 2008/05/10 20:56:59 rgracian Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -675,7 +675,7 @@ class JobWrapper:
     self.__report('Running','Downloading InputSandbox')
     for i in inputSandbox: sandboxFiles.append(os.path.basename(i))
     self.log.info('Downloading InputSandbox for job %s: %s' %(self.jobID,string.join(sandboxFiles)))
-    if type( transferInputSandbox ) != type([]):
+    if type( inputSandbox ) != type([]):
       sandboxFiles = [inputSandbox]
 
     if os.path.exists('%s/inputsandbox' %(self.root)):
