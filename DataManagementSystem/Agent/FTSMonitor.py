@@ -9,7 +9,7 @@ from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.GridCredentials import setupProxy,setDIRACGroup, getProxyTimeLeft
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 from DIRAC.Core.Utilities import Time
-import os,time
+import os,time,re
 from types import *
 
 
@@ -133,6 +133,10 @@ class FTSMonitor(Agent):
     if not res['OK']:
       errStr = "FTSAgent.%s" % res['Message']
       gLogger.error(errStr)
+      res = self.TransferDB.setFTSReqLastMonitor(ftsReqID)
+      if not res['OK']:
+        errStr = "FTSAgent.%s" % res['Message']
+        gLogger.error(errStr)
       return S_ERROR(errStr)
     infoStr = "Monitoring FTS Job:\n\n"
     infoStr = "%s%s%s\n" % (infoStr,'FTS GUID:'.ljust(20),ftsGUID)
@@ -175,9 +179,8 @@ class FTSMonitor(Agent):
           gLogger.error(errStr)
           failed = True
         failReason = ftsReq.getFailReason(lfn)
-        if failReason == 'DESTINATION error during PREPARATION phase: [FILE_EXISTS]' or failReason == 'DESTINATION error during PREPARATION phase: [GENERAL_FAILURE] CastorStagerInterface.c:2507 Device or resource busy (errno=0, serrno=0)':
-          print ftsReq.getDestinationSURL(lfn)
-          #gLogger.error('Need to put logic to remove this file.',ftsReq.getDestinationSURL(lfn))
+        if self.corruptedTarget(failReason):
+          gLogger.info('Removing target file with a hack.',ftsReq.getDestinationSURL(lfn))
           res = self.removeTargetSURL(ftsReq.getDestinationSURL(lfn))
         res = self.TransferDB.setFileToFTSFileAttribute(ftsReqID,files[lfn],'Reason',ftsReq.getFailReason(lfn))
         if not res['OK']:
@@ -194,7 +197,7 @@ class FTSMonitor(Agent):
           errStr = "FTSAgent.%s" % res['Message']
           gLogger.error(errStr)
           failed = True
-        print self.DataLog.addFileRecord(lfn,'FTSFailed',str(ftsReqID),'','FTSMonitorAgent')
+        self.DataLog.addFileRecord(lfn,'FTSFailed',str(ftsReqID),'','FTSMonitorAgent')
       # Update the successful files status and transfer time
       completedFileIDs = []
       for lfn in ftsReq.getCompleted():
@@ -231,7 +234,7 @@ class FTSMonitor(Agent):
             errStr = "FTSAgent.%s" % res['Message']
             gLogger.error(errStr)
             failed = True
-        print self.DataLog.addFileRecord(lfn,'FTSDone',str(ftsReqID),'','FTSMonitorAgent')
+        self.DataLog.addFileRecord(lfn,'FTSDone',str(ftsReqID),'','FTSMonitorAgent')
 
       # Update the status of the files waiting for the completion of this transfer
       res = self.TransferDB.updateAncestorChannelStatus(channelID,completedFileIDs)
@@ -302,4 +305,11 @@ class FTSMonitor(Agent):
     accountingDict['RegistrationTotal'] = 0
     oAccounting.setValuesFromDict(accountingDict)
     return oAccounting
+
+  def corruptedTarget(self,failReason):
+    corruptionErrors = ['FILE_EXISTS','Device or resource busy','TRANSFER error during TRANSFER phase']
+    for error in corruptionErrors:
+      if re.search(error,failReason):
+        return 1
+    return 0    
 
