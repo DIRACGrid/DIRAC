@@ -6,6 +6,7 @@ import commands, os, xml.dom.minidom, types, time, copy, datetime
 from DIRAC.Core.Utilities.File import makeGuid
 from DIRAC import gConfig,gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.GridCredentials import getCurrentDN,getDIRACGroup
+from DIRAC.Core.Utilities import DEncode
 
 class RequestContainer:
 
@@ -21,9 +22,6 @@ class RequestContainer:
     # The dictionary named Attributes must be present and must have the following mandatory names
     self.subAttributeNames = ['Status','SubRequestID','Operation','CreationTime','ExecutionTime']
     self.subRequests = {}
-
-    self.fileAttributeNames = ['Status','LFN']
-    self.datasetAttributeNames = ['Status','Handle']
 
     if init:
       self.initialize(request)
@@ -223,7 +221,7 @@ class RequestContainer:
         for attr,value in file.items():
           fileDict[attr] = value
         files.append(fileDict)
-    self.setSubRequestFiles(index,type,files)
+      self.setSubRequestFiles(index,type,files)
 
     if requestDict.has_key('Datasets'):
       datasets = []
@@ -232,7 +230,7 @@ class RequestContainer:
         for attr,value in file.items():
           fileDict[attr] = value
         datasets.append(datasetDict)
-    self.setSubRequestDatasets(index,type,datasets)
+      self.setSubRequestDatasets(index,type,datasets)
     return S_OK(index)
 
   def getSubRequest(self,ind,type):
@@ -581,8 +579,7 @@ class RequestContainer:
       if type(value) is types.DictType:
         xml_elements.append(self.__dictionaryToXML(attr,value,indent+1))
       elif type(value) is types.ListType:
-        for element in value:
-          xml_elements.append(self.__dictionaryToXML(attr,element,indent+1))
+        xml_elements.append(self.__listToXML(attr,value,indent+1))
       else:
         xml_attributes += ' '*(indent+1)*8+'<%s element_type="leaf"><![CDATA[%s]]></%s>\n' % (attr,str(value),attr)
 
@@ -593,6 +590,36 @@ class RequestContainer:
     for el in xml_elements:
       out += ' '*indent*8+el
     out += ' '*indent*8+'</%s>\n' % name
+    return out
+
+  def __listToXML(self,name,list,indent = 0,attributes={}):
+    """ Utility to convert a list to XML
+    """
+    """
+    xml_attributes = ''
+    xml_elements = []
+    for element in list:
+      if type(element) is types.DictType:
+        xml_elements.append(self.__dictionaryToXML(name[:-1],element,indent+1))
+      elif type(value) is types.ListType:
+        xml_elements.append(self.__listToXML(name[:-1],element,indent+1))
+      else:
+        xml_attributes += ' '*(indent+1)*8+'<%s element_type="leaf"><![CDATA[%s]]></%s>\n' % (name[:-1],str(element),name[:-1])
+
+    for attr,value in attributes.items():
+      xml_attributes += ' '*(indent+1)*8+'<%s element_type="leaf"><![CDATA[%s]]></%s>\n' % (attr,str(value),attr)
+
+    out = ' '*indent*8+'<%s element_type="list">\n%s\n' % (name,xml_attributes[:-1])
+    for el in xml_elements:
+      out += ' '*indent*8+el
+    out += ' '*indent*8+'</%s>\n' % name
+    """
+    out = ''
+    if list:
+      den = DEncode.encode(list)
+      out += ' '*indent*8+'<%s element_type="list">\n' % (name)
+      out += ' '*(indent+1)*8+'<EncodedString element_type="leaf"><![CDATA[%s]]></EncodedString>\n' % (den)
+      out += ' '*indent*8+'</%s>\n' % name
     return out
 
   def parseRequest(self,request):
@@ -612,15 +639,23 @@ class RequestContainer:
     dom_subrequests = request.childNodes
     for dom_subrequest in dom_subrequests:
       if dom_subrequest.nodeName.find('_SUBREQUEST') != -1:
-        stype,subrequest = self.parseSubRequest(dom_subrequest)
-        self.addSubRequest(stype,subrequest)
+        startTime = time.time()
+        subrequest = self.parseSubRequest(dom_subrequest)
+        middleTime = time.time()
+        requestType = dom_subrequest.nodeName.split('_')[0].lower()
+        self.addSubRequest(subrequest,requestType)
+
+  def parseSubRequest(self,dom):
+    """ A simple subrequest parser from the dom object. This is to be overloaded
+        in more complex request types
+    """
+    subDict = self.__dictionaryFromXML(dom)
+    return subDict
 
   def __dictionaryFromXML(self,dom):
     """ Utility to get a dictionary from the XML element
     """
-
     resultDict = {}
-
     for child in dom.childNodes:
       if child.nodeType == child.ELEMENT_NODE:
         dname = child.nodeName
@@ -628,16 +663,43 @@ class RequestContainer:
         if dom_dict.getAttribute('element_type') == 'dictionary':
           ddict = self.__dictionaryFromXML(child)
           resultDict[dname] = ddict
+        elif dom_dict.getAttribute('element_type') == 'list':
+          resultDict[dname] = self.__listFromXML(child)
         elif dom_dict.getAttribute('element_type') == 'leaf':
-          value = getCharacterData(child)
+          value = self.__getCharacterData(child)
           resultDict[dname] = value
-
     return resultDict
 
-  def parseSubRequest(self,dom):
-    """ A simple subrequest parser from the dom object. This is to be overloaded
-        in more complex request types
+  def __listFromXML(self,dom):
+    resultList = []
     """
-    subDict = self.__dictionaryFromXML(dom)
-    subType = subDict['Attributes']['RequestType']
-    return subType,subDict
+    for child in dom.childNodes:
+      if child.nodeType == child.ELEMENT_NODE:
+        dname = child.nodeName
+        dom_dict = dom.getElementsByTagName(dname)[0]
+        if dom_dict.getAttribute('element_type') == 'dictionary':
+          ddict = self.__dictionaryFromXML(child)
+          resultList.append(ddict)
+        elif dom_dict.getAttribute('element_type') == 'list':
+          resultList = self.__listFromXML(child)
+        elif dom_dict.getAttribute('element_type') == 'leaf':
+          value = self.__getCharacterData(child)
+          resultList.append(value)
+    """
+    for child in dom.childNodes:
+      if child.nodeType == child.ELEMENT_NODE:
+        dname = child.nodeName
+        dom_dict = dom.getElementsByTagName(dname)[0]
+        if dom_dict.getAttribute('element_type') == 'leaf':
+          value = self.__getCharacterData(child)
+          resultList,ignored = DEncode.decode(value)
+    return resultList
+
+  def __getCharacterData(self,node):
+    out = ''
+    for child in node.childNodes:
+      if child.nodeType == child.TEXT_NODE or \
+         child.nodeType == child.CDATA_SECTION_NODE:
+        out = out + child.data
+    return out.strip()
+
