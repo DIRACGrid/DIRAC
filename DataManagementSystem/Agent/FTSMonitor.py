@@ -255,10 +255,15 @@ class FTSMonitor(Agent):
           gLogger.error(errStr)
         else:
           gLogger.info("FTSAgent. preparing accounting message.")
+          transferSize = 0
+          if completedFileIDs:
+            res = self.TransferDB.getSizeOfCompletedFiles(ftsReqID,completedFileIDs)
+            if res['OK']:
+              transferSize = res['Value']
           oAccounting = self.initialiseAccountingObject(submitTime)
-          oAccounting.setValueByKey('TransferOK',len(ftsReq.getCompleted()))
+          oAccounting.setValueByKey('TransferOK',len(completedFileIDs))
           oAccounting.setValueByKey('TransferTotal',numberOfFiles)
-          oAccounting.setValueByKey('TransferSize',totalSize)
+          oAccounting.setValueByKey('TransferSize',transferSize)
           oAccounting.setValueByKey('FinalStatus',ftsReq.getRequestStatus())
           oAccounting.setValueByKey('Source',sourceSite)
           oAccounting.setValueByKey('Destination',targetSite)
@@ -290,7 +295,7 @@ class FTSMonitor(Agent):
       else:
         print errMessage
     else:
-      print errMessage     
+      print errMessage
 
   def initialiseAccountingObject(self,submitTime):
     oAccounting = DataOperation()
@@ -301,7 +306,7 @@ class FTSMonitor(Agent):
     accountingDict['User'] = 'acsmith'
     accountingDict['Protocol'] = 'FTS'
     accountingDict['RegistrationTime'] = 0.0
-    accountingDict['RegistrationOK'] = 0   
+    accountingDict['RegistrationOK'] = 0
     accountingDict['RegistrationTotal'] = 0
     oAccounting.setValuesFromDict(accountingDict)
     return oAccounting
@@ -311,5 +316,5 @@ class FTSMonitor(Agent):
     for error in corruptionErrors:
       if re.search(error,failReason):
         return 1
-    return 0    
+    return 0
 
