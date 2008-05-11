@@ -1,7 +1,7 @@
 """  TransferAgent takes transfer requests from the RequestDB and replicates them
 """
 
-from DIRAC  import gLogger, gConfig, gMonitor, S_OK, S_ERROR
+from DIRAC  import gLogger, gConfig, gMonitor, S_OK, S_ERROR, rootPath
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
 from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -61,7 +61,8 @@ class TransferAgent(Agent):
       self.proxyDN = gConfig.getValue(self.section+'/ProxyDN','')
       self.proxyGroup = gConfig.getValue(self.section+'/ProxyGroup','')
       self.proxyLength = gConfig.getValue(self.section+'/DefaultProxyLength',12)
-      self.proxyLocation = gConfig.getValue(self.section+'/ProxyLocation','')
+      self.proxyLocation = gConfig.getValue(self.section+'/ProxyLocation',
+                                             os.path.join(rootPath,'.proxy'))
       if os.path.exists(self.proxyLocation):
         os.remove(self.proxyLocation)
 
