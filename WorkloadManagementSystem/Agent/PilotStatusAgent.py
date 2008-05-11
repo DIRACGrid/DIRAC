@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.3 2008/02/25 22:48:30 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.4 2008/05/11 09:31:31 rgracian Exp $
 ########################################################################
 
 """  The Pilot Status Agent updates the status of the pilot jobs if the 
      PilotAgents database.
 """
 
-__RCSID__ = "$Id: PilotStatusAgent.py,v 1.3 2008/02/25 22:48:30 atsareg Exp $"
+__RCSID__ = "$Id: PilotStatusAgent.py,v 1.4 2008/05/11 09:31:31 rgracian Exp $"
 
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
@@ -19,7 +19,7 @@ import os, sys, re, string, time
 from types import *
 
 AGENT_NAME = 'WorkloadManagement/PilotStatusAgent'
-MAX_JOBS_QUERY = 100
+MAX_JOBS_QUERY = 10
 
 class PilotStatusAgent(Agent):
 
