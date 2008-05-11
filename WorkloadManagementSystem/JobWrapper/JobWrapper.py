@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.34 2008/05/10 20:56:59 rgracian Exp $
+# $Id: JobWrapper.py,v 1.35 2008/05/11 09:39:38 rgracian Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.34 2008/05/10 20:56:59 rgracian Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.35 2008/05/11 09:39:38 rgracian Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -727,6 +727,7 @@ class JobWrapper:
   def finalize(self,arguments):
     """Perform any final actions to clean up after job execution.
     """
+    self.log.info('Running JobWrapper finalization')
     self.__report('Done','Execution Complete')
     self.sendWMSAccounting()
     self.__cleanUp()
