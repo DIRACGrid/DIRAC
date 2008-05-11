@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/SiteMonitor.py,v 1.7 2008/04/30 10:17:03 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/SiteMonitor.py,v 1.8 2008/05/11 23:30:14 rgracian Exp $
 # File :   SiteMonitor.py
 # Author : Stuart Paterson
 ########################################################################
@@ -7,7 +7,7 @@
 """  The SiteMonitor base-class monitors staging requests for a given site.
 """
 
-__RCSID__ = "$Id: SiteMonitor.py,v 1.7 2008/04/30 10:17:03 paterson Exp $"
+__RCSID__ = "$Id: SiteMonitor.py,v 1.8 2008/05/11 23:30:14 rgracian Exp $"
 
 from DIRAC.StagerSystem.Client.StagerClient                import StagerClient
 from DIRAC.DataManagementSystem.Client.StorageElement      import StorageElement
@@ -26,7 +26,7 @@ class SiteMonitor(Thread):
     self.log = gLogger.getSubLogger(logSiteName)
     self.site = siteName
     self.configSection = configPath
-    self.pollingTime = gConfig.getValue(self.configSection+'/PollingTime',10) #Seconds
+    self.pollingTime = gConfig.getValue(self.configSection+'/PollingTime',60) #Seconds
     self.fileSelectLimit = gConfig.getValue(self.configSection+'/FileSelectLimit',1000)
     self.stageRepeatTime = gConfig.getValue(self.configSection+'/StageRepeatTime',21600) # e.g. 6hrs
     self.stageRetryMax = gConfig.getValue(self.configSection+'/StageRetryMax',4) # e.g. after 4 * 6 hrs
@@ -39,6 +39,7 @@ class SiteMonitor(Thread):
     """ The run method of the SiteMonitor thread
     """
     while True:
+      self.pollingTime = gConfig.getValue(self.configSection+'/PollingTime',60) #Seconds
       self.log.info( 'Waking up SiteMonitor thread for %s' %(self.site))
       try:
         result = self.__pollSite()

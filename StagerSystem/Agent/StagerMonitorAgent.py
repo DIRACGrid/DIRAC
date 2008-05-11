@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/StagerMonitorAgent.py,v 1.3 2008/04/30 09:50:48 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/StagerMonitorAgent.py,v 1.4 2008/05/11 23:29:33 rgracian Exp $
 # File :   StagerMonitorAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
      of the SiteMonitor instances. The StagerMonitorAgent also manages the proxy environment.
 """
 
-__RCSID__ = "$Id: StagerMonitorAgent.py,v 1.3 2008/04/30 09:50:48 paterson Exp $"
+__RCSID__ = "$Id: StagerMonitorAgent.py,v 1.4 2008/05/11 23:29:33 rgracian Exp $"
 
 from DIRAC.Core.Base.Agent                                 import Agent
 from DIRAC.Core.DISET.RPCClient                            import RPCClient
@@ -37,7 +37,7 @@ class StagerMonitorAgent(Agent):
     self.minProxyValidity = gConfig.getValue(self.section+'/MinimumProxyValidity',30*60) # seconds
     self.proxyLocation = gConfig.getValue(self.section+'/ProxyLocation','/opt/dirac/work/StagerMonitorAgent/shiftProdProxy')
     self.wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
-    self.pollingTime = gConfig.getValue(self.section+'/PollingTime',10)
+    self.pollingTime = gConfig.getValue(self.section+'/PollingTime',60)
     self.threadStartDelay = gConfig.getValue(self.section+'/ThreadStartDelay',5)
     self.siteMonitor = gConfig.getValue(self.section+'/ModulePath','DIRAC.StagerSystem.Agent.SiteMonitor')
     self.started = False
@@ -54,6 +54,7 @@ class StagerMonitorAgent(Agent):
   def execute(self):
     """The StagerMonitorAgent execution method.
     """
+    self.pollingTime = gConfig.getValue(self.section+'/PollingTime',60)
     prodDN = gConfig.getValue('Operations/Production/ShiftManager','')
     if not prodDN:
       self.log.warn('Production shift manager DN not defined (/Operations/Production/ShiftManager)')

@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/Attic/StagerMonitorWMS.py,v 1.6 2008/04/30 09:51:41 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/Attic/StagerMonitorWMS.py,v 1.7 2008/05/11 23:33:18 rgracian Exp $
 # File :   StagerMonitorWMS.py
 # Author : Stuart Paterson
 ########################################################################
@@ -20,7 +20,7 @@
      Successful -> purged with status change
 """
 
-__RCSID__ = "$Id: StagerMonitorWMS.py,v 1.6 2008/04/30 09:51:41 paterson Exp $"
+__RCSID__ = "$Id: StagerMonitorWMS.py,v 1.7 2008/05/11 23:33:18 rgracian Exp $"
 
 from DIRAC.Core.Base.Agent                                 import Agent
 from DIRAC.Core.DISET.RPCClient                            import RPCClient
@@ -45,7 +45,7 @@ class StagerMonitorWMS(Agent):
     """Sets defaults
     """
     result = Agent.initialize(self)
-    self.pollingTime = gConfig.getValue(self.section+'/PollingTime',10)
+    self.pollingTime = gConfig.getValue(self.section+'/PollingTime',60)
     self.proxyLength = gConfig.getValue(self.section+'/DefaultProxyLength',24) # hours
     self.minProxyValidity = gConfig.getValue(self.section+'/MinimumProxyValidity',30*60) # seconds
     self.proxyLocation = gConfig.getValue(self.section+'/ProxyLocation','/opt/dirac/work/StagerMonitorWMS/shiftProdProxy')
@@ -64,6 +64,7 @@ class StagerMonitorWMS(Agent):
   def execute(self):
     """The StagerMonitorWMS execution method.
     """
+    self.pollingTime = gConfig.getValue(self.section+'/PollingTime',60)
     prodDN = gConfig.getValue('Operations/Production/ShiftManager','')
     if not prodDN:
       self.log.warn('Production shift manager DN not defined (/Operations/Production/ShiftManager)')
