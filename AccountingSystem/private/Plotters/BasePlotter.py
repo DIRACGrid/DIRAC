@@ -71,10 +71,6 @@ class BasePlotter(DBUtils):
       return retVal
     dataDict = self._groupByField( 0, retVal[ 'Value' ] )
     coarsestGranularity = self._getBucketLengthForTime( self._typeName, startTime )
-    print "JARL================================"
-    print startTime, endTime, coarsestGranularity
-    print dataDict[ dataDict.keys()[0] ]
-    print "JARL================================"
     #Transform!
     for keyField in dataDict:
       if metadataDict[ self._PARAM_CHECK_FOR_NONE ]:
