@@ -240,7 +240,7 @@ class SRM2Storage(StorageBase):
     successful = {}
     for urlDict in allResults:
       if urlDict.has_key('surl'):
-        pathSURL = self.getUrl(urlDict['surl'])['Value']
+        pathSURL = urlDict['surl']
         if urlDict['status'] == 0:
           infoStr = 'SRM2Storage.removeFile: Successfully removed file: %s' % pathSURL
           gLogger.debug(infoStr)
@@ -272,7 +272,7 @@ class SRM2Storage(StorageBase):
     if not protocols:
       infoStr = "SRM2Storage.getTransportURL: No protocols provided, using defaults."
       gLogger.debug(infoStr)
-      protocols = self.defaultLocalProtocols
+      listProtocols = self.defaultLocalProtocols
     if type(protocols) == types.StringType:
       listProtocols = [protocols]
     elif type(protocols) == types.ListType:
@@ -287,7 +287,7 @@ class SRM2Storage(StorageBase):
     successful = {}
     for urlDict in allResults:
       if urlDict.has_key('surl'):
-        pathSURL = self.getUrl(urlDict['surl'])['Value']
+        pathSURL = urlDict['surl']
         if urlDict['status'] == 0:
           gLogger.debug("SRM2Storage.getTransportURL: Obtained tURL for file. %s" % pathSURL)
           successful[pathSURL] = urlDict['turl']
@@ -320,7 +320,7 @@ class SRM2Storage(StorageBase):
     successful = {}
     for urlDict in allResults:
       if urlDict.has_key('surl'):
-        pathSURL = self.getUrl(urlDict['surl'])['Value']
+        pathSURL = urlDict['surl']
         if urlDict['status'] == 0:
           gLogger.debug("SRM2Storage.prestageFile: Issued stage request for file %s." % pathSURL)
           successful[pathSURL] = True
@@ -1123,7 +1123,6 @@ class SRM2Storage(StorageBase):
     gfalDict = {}
     gfalDict['defaultsetype'] = 'srmv2'
     gfalDict['no_bdii_check'] = 1
-    gfalDict['protocols'] = listProtocols
     gfalDict['srmv2_spacetokendesc'] = self.spaceToken
 
     oAccounting = DataStoreClient()
