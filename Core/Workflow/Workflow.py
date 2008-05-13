@@ -1,8 +1,8 @@
-# $Id: Workflow.py,v 1.28 2008/05/06 14:35:24 atsareg Exp $
+# $Id: Workflow.py,v 1.29 2008/05/13 21:06:50 atsareg Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.28 $"
+__RCSID__ = "$Revision: 1.29 $"
 
 import os
 import xml.sax
@@ -256,7 +256,21 @@ class Workflow(AttributeCollection):
             wf_exec_steps[step_inst_name][parameter.getName()]=parameter.getValue()
             #print "StepInstance", step_inst_name+'.'+parameter.getName(),'=',parameter.getValue()
       step_inst.setParent(self)
-      step_inst.execute(wf_exec_steps[step_inst_name], self.step_definitions)
+      result = step_inst.execute(wf_exec_steps[step_inst_name], self.step_definitions)
+      if not result['OK']:
+        # Check that there is StepFinalization module and execute it
+        
+        return result
+      else:
+        # Get output values to the step_commons dictionary
+        for key in result.keys():
+          if key != "OK":
+            if key != "Value":
+              step_inst.step_commons[key] = result[key]
+            elif type(result['Value']) == types.DictType:
+              for vkey in result['Value'].keys():
+                step_inst.step_commons[key] = result['Value'][key]
+                
 
     # now we need to copy output values to the STEP!!! parameters
     #print "WorkflowInstance output assignment"
@@ -276,6 +290,8 @@ class Workflow(AttributeCollection):
           wf_exec_attr[wf_parameter.getName()] = wf_parameter.getValue()
           #print "WorkflowInstance  self."+ wf_parameter.getName(),'=',wf_parameter.getValue()
 
+    # Return the result of the last step
+    return result
 
 from DIRAC.Core.Workflow.WorkflowReader import WorkflowXMLHandler
 
