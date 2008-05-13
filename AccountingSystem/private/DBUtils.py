@@ -31,11 +31,10 @@ class DBUtils:
         orderFields -> list of fields to order by
     """
     typeName = "%s_%s" % ( self._setup, typeName )
-#    retVal = self._acDB._getConnection()
-#    if not retVal[ 'OK' ]:
-#      return retVal
-#    connObj = retVal[ 'Value' ]
-    connObj = False
+    retVal = self._acDB._getConnection()
+    if not retVal[ 'OK' ]:
+      return retVal
+    connObj = retVal[ 'Value' ]
     return self._acDB.retrieveBucketedData( typeName, startTime, endTime, selectFields, condDict, groupFields, orderFields, connObj = connObj )
 
   def _getUniqueValues( self, typeName, startTime, endTime, condDict, fieldList ):
@@ -205,13 +204,17 @@ class DBUtils:
     """
     Get all valid key values in a type
     """
+    retVal = self._acDB._getConnection()
+    if not retVal[ 'OK' ]:
+      return retVal
+    connObj = retVal[ 'Value' ]
     typeName = "%s_%s" % ( self._setup, typeName )
     retVal = self._acDB.getKeyFieldsForType( typeName )
     if not retVal[ 'OK' ]:
       return retVal
     valuesDict = {}
     for keyName in retVal[ 'Value' ]:
-      retVal = self._acDB.getValuesForKeyField( typeName, keyName )
+      retVal = self._acDB.getValuesForKeyField( typeName, keyName, connObj )
       if not retVal[ 'OK' ]:
         return retVal
       valuesDict[ keyName ] = retVal[ 'Value' ]

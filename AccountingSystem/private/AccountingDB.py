@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.27 2008/05/13 17:37:23 acasajus Exp $
-__RCSID__ = "$Id: AccountingDB.py,v 1.27 2008/05/13 17:37:23 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.28 2008/05/13 18:17:36 acasajus Exp $
+__RCSID__ = "$Id: AccountingDB.py,v 1.28 2008/05/13 18:17:36 acasajus Exp $"
 
 import datetime, time
 import types
@@ -241,12 +241,12 @@ class AccountingDB(DB):
       return S_ERROR( "%s is not a valid type name" % typeName )
     return S_OK( self.dbCatalog[ typeName ][ 'keys' ] )
 
-  def getValuesForKeyField( self, typeName, keyName ):
+  def getValuesForKeyField( self, typeName, keyName, connObj = False ):
     """
     Get all values for a given key field in a type
     """
     keyTable = self.__getTableName( "key", typeName, keyName )
-    return self._query( "SELECT `value` from `%s`"  % keyTable )
+    return self._query( "SELECT `value` from `%s`"  % keyTable, conn = connObj )
 
   @gSynchro
   def deleteType( self, typeName ):
