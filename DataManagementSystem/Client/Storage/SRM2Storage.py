@@ -11,7 +11,7 @@ from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 from DIRAC.AccountingSystem.Client.DataStoreClient import DataStoreClient
 
 from stat import *
-import types, re,os
+import types, re,os,time
 
 ISOK = True
 
@@ -410,7 +410,7 @@ class SRM2Storage(StorageBase):
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
-  def getFileMetadata(self,path):
+  def old_getFileMetadata(self,path):
     """  Get metadata associated to the file
     """
     if type(path) in types.StringTypes:
@@ -1409,7 +1409,7 @@ class SRM2Storage(StorageBase):
   # This is test code
   #
 
-  def new_getFileMetadata(self,path):
+  def getFileMetadata(self,path):
     """  Get metadata associated to the file
     """
     if type(path) in types.StringTypes:
@@ -1420,7 +1420,7 @@ class SRM2Storage(StorageBase):
       return S_ERROR("SRM2Storage.getFileMetadata: Supplied path must be string or list of strings")
 
     gLogger.debug("SRM2Storage.getFileMetadata: Obtaining metadata for %s file(s)." % len(urls))
-    resDict = self.__gfalls_wrapper(self,urls,0)['Value']
+    resDict = self.__gfalls_wrapper(urls,0)['Value']
     failed = resDict['Failed']
     listOfResults = resDict['AllResults']
     successful = {}
@@ -1490,6 +1490,7 @@ class SRM2Storage(StorageBase):
         end = time.time()
         oDataOperation.setEndTime()
         oDataOperation.setValueByKey('TransferTime',end-start)
+        print end-start,'!!!!!!!!'
         if not res['OK']:
           failedLoop = True
         else:
