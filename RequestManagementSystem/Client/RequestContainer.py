@@ -517,7 +517,7 @@ class RequestContainer:
   def isEmpty(self):
     """ Included for compatibility not sure if it is used
     """
-    return isRequestEmpty()
+    return self.isRequestEmpty()
 
   ###########################################################
   #
