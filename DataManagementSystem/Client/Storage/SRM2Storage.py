@@ -6,6 +6,10 @@ from DIRAC.Core.Utilities.Subprocess import pythonCall
 from DIRAC.Core.Utilities.Pfn import pfnparse,pfnunparse
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Core.Utilities.File import getSize
+
+from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
+from DIRAC.AccountingSystem.Client.DataStoreClient import DataStoreClient
+
 from stat import *
 import types, re,os
 
@@ -51,6 +55,8 @@ class SRM2Storage(StorageBase):
 
     self.timeout = 100
     self.long_timeout = 1200
+    self.fileTimeout = 10
+    self.filesPerCall = 20
 
     # setting some variables for use with lcg_utils
     self.nobdii = 1
@@ -60,7 +66,7 @@ class SRM2Storage(StorageBase):
     self.verbose = 0
     self.conf_file = 'ignored'
     self.insecure = 0
-    self.defaultLocalProtocols = gConfig.getValue('/Resources/StorageElemens/DefaultProtocols',['dcap','gsidcap','root','rfio'])
+    self.defaultLocalProtocols = gConfig.getValue('/Resources/StorageElemens/DefaultProtocols',['dcap','gsidcap','root','rfio','file'])
 
   def isOK(self):
     return self.isok
@@ -1396,3 +1402,175 @@ class SRM2Storage(StorageBase):
     parameterDict['SpaceToken'] = self.spaceToken
     parameterDict['WSUrl'] = self.wspath
     return S_OK(parameterDict)
+
+
+  ################################################################################
+  #
+  # This is test code
+  #
+
+  def new_getFileMetadata(self,path):
+    """  Get metadata associated to the file
+    """
+    if type(path) in types.StringTypes:
+      urls = [path]
+    elif type(path) == types.ListType:
+      urls = path
+    else:
+      return S_ERROR("SRM2Storage.getFileMetadata: Supplied path must be string or list of strings")
+
+    gLogger.debug("SRM2Storage.getFileMetadata: Obtaining metadata for %s file(s)." % len(urls))
+    resDict = self.__gfalls_wrapper(self,urls,0)['Value']
+    failed = resDict['Failed']
+    listOfResults = resDict['AllResults']
+    successful = {}
+    for urlDict in listOfResults:
+      if urlDict.has_key('surl'):
+        pathSURL = self.getUrl(urlDict['surl'])['Value']
+        if urlDict['status'] == 0:
+          statDict = self.__parse_stat(urlDict['stat'])
+          if statDict['File']:
+            urlLocality = urlDict['locality']
+            if re.search('ONLINE',urlLocality):
+              statDict['Cached'] = 1
+            else:
+              statDict['Cached'] = 0
+            if re.search('NEARLINE',urlLocality):
+              statDict['Migrated'] = 1
+            else:
+              statDict['Migrated'] = 0
+            gLogger.debug("SRM2Storage.getFileMetadata: Obtained file metadata: %s" % pathSURL)
+            successful[pathSURL] = statDict
+          else:
+            errStr = "SRM2Storage.getFileMetadata: Supplied path is not a file."
+            gLogger.error(errStr,pathSURL)
+            failed[pathSURL] = errStr
+        elif urlDict['status'] == 2:
+          errMessage = "SRM2Storage.getFileMetadata: File does not exist."
+          gLogger.error(errMessage,pathSURL)
+          failed[pathSURL] = errMessage
+        else:
+          errStr = "SRM2Storage.getFileMetadata: Failed to get file metadata."
+          errMessage = os.strerror(urlDict['status'])
+          gLogger.error(errStr,"%s: %s" % (pathSURL,errMessage))
+          failed[pathSURL] = "%s %s" % (errStr,errMessage)
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+  def __gfalls_wrapper(self,urls,depth):
+    """ This is a function that can be reused everywhere to perform the gfal_ls
+    """
+    gfalDict = {}
+    gfalDict['defaultsetype'] = 'srmv2'
+    gfalDict['no_bdii_check'] = 1
+    gfalDict['srmv2_lslevels'] = depth
+
+    oAccounting = DataStoreClient()
+
+    allResults = []
+    failed = {}
+    listOfLists = breakListIntoChunks(urls,self.filesPerCall)
+    for urls in listOfLists:
+      gfalDict['surls'] = urls
+      gfalDict['nbfiles'] =  len(urls)
+      gfalDict['timeout'] = self.fileTimeout*len(urls)
+
+      # Create a single DataOperation record for each
+      oDataOperation = self.__initialiseAccountingObject('gfal_ls',self.name,len(urls))
+
+      failedLoop = False
+      res = self.__create_gfal_object(gfalDict)
+      if not res['OK']:
+        failedLoop = True
+      else:
+        gfalObject = res['Value']
+        oDataOperation.setStartTime()
+        start = time.time()
+        res = self.__gfal_ls(gfalObject)
+        end = time.time()
+        oDataOperation.setEndTime()
+        oDataOperation.setValueByKey('TransferTime',end-start)
+        if not res['OK']:
+          failedLoop = True
+        else:
+          gfalObject = res['Value']
+          res = self.__get_results(gfalObject)
+          if not res['OK']:
+            failedLoop = True
+          else:
+            allResults.extend(res['Value'])
+
+      if failedLoop:
+        oDataOperation.setValueByKey('TransferOK',0)
+        oDataOperation.setValueByKey('FinalStatus','Failed')
+        for url in urls:
+          failed[url] = res['Message']
+
+      oAccounting.addRegister(oDataOperation)
+    oAccounting.commit()
+    resDict = {}
+    resDict['AllResults'] = allResults
+    resDict['Failed'] = failed
+    return S_OK(resDict)
+
+  def __create_gfal_object(self,gfalDict):
+    gLogger.debug("SRM2Storage.__create_gfal_object: Performing gfal_init.")
+    errCode,gfalObject,errMessage = gfal.gfal_init(gfalDict)
+    if not errCode == 0:
+      errStr = "SRM2Storage.__create_gfal_object: Failed to perform gfal_init:"
+      gLogger.error(errStr,"%s %s" % (errMessage,os.strerror(errCode)))
+      return S_ERROR()
+    else:
+      gLogger.debug("SRM2Storage.__create_gfal_object: Successfully performed gfal_init.")
+      return S_OK(gfalObject)
+
+  def __gfal_ls(self,gfalObject):
+    gLogger.debug("SRM2Storage.__gfal_ls: Performing gfal_ls")
+    errCode,gfalObject,errMessage = gfal.gfal_ls(gfalObject)
+    if not errCode == 0:
+      errStr = "SRM2Storage.__gfal_ls: Failed to perform gfal_ls:"
+      gLogger.error(errStr,"%s %s" % (errMessage,os.strerror(errCode)))
+      return S_ERROR("%s%s" % (errStr,errMessage))
+    else:
+      gLogger.debug("SRM2Storage.__gfal_ls: Successfully performed gfal_ls.")
+      return S_OK(gfalObject)
+
+  def __get_results(self,gfalObject):
+    gLogger.debug("SRM2Storage.__get_results: Performing gfal_get_results")
+    numberOfResults,gfalObject,listOfResults = gfal.gfal_get_results(gfalObject)
+    if numberOfResults <= 0:
+      errStr = "SRM2Storage.__get_results: Did not obtain results with gfal_get_results."
+      gLogger.error(errStr)
+      return S_ERROR(errStr)
+    else:
+      gLogger.debug("SRM2Storage.__get_results: Retrieved %s results from gfal_get_results." % numberOfResults)
+      return S_OK(listOfResults)
+
+  def __parse_stat(self,stat):
+    statDict = {'File':False,'Directory':False}
+    if S_ISREG(stat[ST_MODE]):
+      statDict['File'] = True
+      statDict['Size'] = stat[ST_SIZE]
+    if S_ISDIR(stat[ST_MODE]):
+      statDict['Directory'] = True
+    statDict['Permissions'] = S_IMODE(stat[ST_MODE])
+    return statDict
+
+  def __initialiseAccountingObject(self,operation,se,files):
+    accountingDict = {}
+    accountingDict['OperationType'] = operation
+    accountingDict['User'] = 'acsmith'
+    accountingDict['Protocol'] = 'gfal'
+    accountingDict['RegistrationTime'] = 0.0
+    accountingDict['RegistrationOK'] = 0
+    accountingDict['RegistrationTotal'] = 0
+    accountingDict['Destination'] = se
+    accountingDict['TransferTotal'] = files
+    accountingDict['TransferOK'] = files
+    accountingDict['TransferSize'] = files
+    accountingDict['TransferTime'] = 0.0
+    accountingDict['FinalStatus'] = 'Successful'
+    accountingDict['Source'] =''
+    oDataOperation = DataOperation()
+    oDataOperation.setValuesFromDict(accountingDict)
+    return oDataOperation
