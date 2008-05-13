@@ -1,10 +1,10 @@
-# $Id: Step.py,v 1.19 2008/04/28 14:34:46 atsareg Exp $
+# $Id: Step.py,v 1.20 2008/05/13 21:09:32 atsareg Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.19 $"
+__RCSID__ = "$Revision: 1.20 $"
 
-import os
+import os, time
 #try: # this part to inport as part of the DIRAC framework
 from DIRAC.Core.Workflow.Parameter import *
 from DIRAC.Core.Workflow.Module import *
@@ -146,6 +146,8 @@ class StepInstance(AttributeCollection):
         elif coll != None:
             raise TypeError('Can not create object type '+ str(type(self)) + ' from the '+ str(type(opt)))
 
+        self.step_commons = {}
+
     def resolveGlobalVars(self, step_definitions, wf_parameters):
         self.parameters.resolveGlobalVars(wf_parameters)
         module_instance_number=0
@@ -190,6 +192,8 @@ class StepInstance(AttributeCollection):
     def execute(self, step_exec_attr, definitions):
         """step_exec_attr is array to hold parameters belong to this Step, filled above """
         print 'Executing StepInstance',self.getName(),'of type',self.getType(), definitions.keys()
+        self.step_commons['StartTime'] = time.time()
+        self.step_commons['StartStats'] = os.times()
         step_def = definitions[self.getType()]
         step_exec_modules={}
         for mod_inst in step_def.module_instances:
@@ -214,16 +218,19 @@ class StepInstance(AttributeCollection):
                         setattr(step_exec_modules[mod_inst_name], parameter.getName(), parameter.getValue())
                         #print "ModuleInstance", mod_inst_name+'.'+parameter.getName(),'=',parameter.getValue()
             # Set reference to the workflow common tools
-            if self.parent.workflow_commons:
-              setattr(step_exec_modules[mod_inst_name], 'workflow_commons', self.parent.workflow_commons)
-            else:
-              setattr(step_exec_modules[mod_inst_name], 'workflow_commons', None)
+
+            setattr(step_exec_modules[mod_inst_name], 'workflow_commons', self.parent.workflow_commons)
+            setattr(step_exec_modules[mod_inst_name], 'step_commons', self.step_commons)
+
             # Execution
             try:
               result = step_exec_modules[mod_inst_name].execute()
+              if not result['OK']:
+                return result
             except Exception, x:
               print "Exception while module execution"
               print str(x)
+              return S_ERROR("Exception while module execution: "+str(x))
 
         # now we need to copy output values to the STEP!!! parameters
         #print "output assignment"
@@ -243,3 +250,5 @@ class StepInstance(AttributeCollection):
                     step_exec_attr[st_parameter.getName()] = st_parameter.getValue()
                     #print "StepInstance this."+ st_parameter.getName(),'=',st_parameter.getValue()
 
+        # return the result of the last module
+        return result
