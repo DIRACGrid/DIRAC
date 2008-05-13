@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 ########################################################################
-# $Id: dirac-jobexec,v 1.5 2008/04/17 07:02:55 rgracian Exp $
+# $Id: dirac-jobexec,v 1.6 2008/05/13 21:17:20 atsareg Exp $
 # File :   dirac-jobexec
 # Author : Stuart Paterson
 ########################################################################
-__RCSID__   = "$Id: dirac-jobexec,v 1.5 2008/04/17 07:02:55 rgracian Exp $"
-__VERSION__ = "$Revision: 1.5 $"
+__RCSID__   = "$Id: dirac-jobexec,v 1.6 2008/05/13 21:17:20 atsareg Exp $"
+__VERSION__ = "$Revision: 1.6 $"
 
 """ The dirac-jobexec script is equipped to execute workflows that
     are specified via their XML description.  The main client of
@@ -21,7 +21,8 @@ from DIRAC.Core.Workflow.Module import *
 from DIRAC.Core.Workflow.Step import *
 from DIRAC.Core.Workflow.Workflow import *
 from DIRAC.Core.Workflow.WorkflowReader import *
-from DIRAC                                          import S_OK, S_ERROR, gLogger
+from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport
 
 import os,os.path,sys
 
@@ -32,12 +33,14 @@ def jobexec(jobxml):
     sys.exit(1)
   workflow = fromXMLFile(jobfile)
   gLogger.verbose(workflow)
-  #workflow.resolveGlobalVars()
   code = workflow.createCode()
   gLogger.verbose(code)
-  #eval(compile(code,'<string>','exec'))
-  workflow.execute()
-  return S_OK() #workflow.execute() currently returns nothing...
+  jobID = 0
+  if os.environ.has_key('JOBID'):
+    jobID = os.environ['JOBID']
+  workflow.addTool('JobReport',JobReport(jobID))  
+  result = workflow.execute()
+  return result
 
 positionalArgs = Script.getPositionalArgs()
 if len( positionalArgs ) != 1:
