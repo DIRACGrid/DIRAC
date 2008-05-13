@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Types/DataOperation.py,v 1.3 2008/05/07 20:24:53 acasajus Exp $
-__RCSID__ = "$Id: DataOperation.py,v 1.3 2008/05/07 20:24:53 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Types/DataOperation.py,v 1.4 2008/05/13 14:30:01 acasajus Exp $
+__RCSID__ = "$Id: DataOperation.py,v 1.4 2008/05/13 14:30:01 acasajus Exp $"
 
 from DIRAC.AccountingSystem.Client.Types.BaseAccountingType import BaseAccountingType
 from DIRAC import gConfig
@@ -25,8 +25,9 @@ class DataOperation( BaseAccountingType ):
                                         ( 'RegistrationTotal', 'INT' )
                                       ]
     self.bucketsLength = [ ( 172800, 900 ), #<2d = 15m
-                       ( 15552000, 86400 ), #>2d <6m = 1d
-                       ( 31104000, 604800 ), #>6m = 1w
-                     ]
+                           ( 604800, 3600 ), #<1w = 1h
+                           ( 15552000, 86400 ), #>1w <6m = 1d
+                           ( 31104000, 604800 ), #>6m = 1w
+                         ]
     self.checkType()
     self.setValueByKey( 'ExecutionSite', gConfig.getValue( "/LocalSite/Site", "DIRAC.unknown.no" ) )
