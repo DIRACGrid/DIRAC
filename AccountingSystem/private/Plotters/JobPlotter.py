@@ -26,27 +26,27 @@ class JobPlotter(BasePlotter):
     if not retVal[ 'OK' ]:
       return retVal
     dataDict, granularity = retVal[ 'Value' ]
-    startTime = startTime - startTime % granularity
     self.stripDataField( dataDict, 0 )
-    #Get the total for the plot
-    selectFields = ( "'Total', %s, %s, SUM(%s)/SUM(%s)",
-                      [ 'startTime', 'bucketLength',
-                        'CPUTime', 'ExecTime'
-                      ]
-                   )
+    if len( dataDict ) > 1:
+      #Get the total for the plot
+      selectFields = ( "'Total', %s, %s, SUM(%s)/SUM(%s)",
+                        [ 'startTime', 'bucketLength',
+                          'CPUTime', 'ExecTime'
+                        ]
+                     )
 
-    retVal = self._getTypeData( startTime,
-                                endTime,
-                                selectFields,
-                                condDict,
-                                groupingFields,
-                                { 'checkNone' : True, 'convertToGranularity' : 'average' } )
-    if not retVal[ 'OK' ]:
-      return retVal
-    totalDict = retVal[ 'Value' ][0]
-    self.stripDataField( totalDict, 0 )
-    for key in totalDict:
-      dataDict[ key ] = totalDict[ key ]
+      retVal = self._getTypeData( startTime,
+                                  endTime,
+                                  selectFields,
+                                  condDict,
+                                  groupingFields,
+                                  { 'checkNone' : True, 'convertToGranularity' : 'average' } )
+      if not retVal[ 'OK' ]:
+        return retVal
+      totalDict = retVal[ 'Value' ][0]
+      self.stripDataField( totalDict, 0 )
+      for key in totalDict:
+        dataDict[ key ] = totalDict[ key ]
     gLogger.info( "Generating plot", "%s with granularity of %s" % ( filename, granularity ) )
     metadata = { 'title' : 'Job CPU efficiency by %s' % " -> ".join( groupingFields ) ,
                  'starttime' : startTime,
@@ -69,7 +69,6 @@ class JobPlotter(BasePlotter):
     if not retVal[ 'OK' ]:
       return retVal
     dataDict, granularity = retVal[ 'Value' ]
-    startTime = startTime - startTime % granularity
     self.stripDataField( dataDict, 0 )
     dataDict = self._fillWithZero( granularity, startTime, endTime, dataDict )
     gLogger.info( "Generating plot", "%s with granularity of %s" % ( filename, granularity ) )
@@ -96,7 +95,6 @@ class JobPlotter(BasePlotter):
     if not retVal[ 'OK' ]:
       return retVal
     dataDict, granularity = retVal[ 'Value' ]
-    startTime = startTime - startTime % granularity
     self.stripDataField( dataDict, 0 )
     dataDict = self._fillWithZero( granularity, startTime, endTime, dataDict )
     gLogger.info( "Generating plot", "%s with granularity of %s" % ( filename, granularity ) )
@@ -122,7 +120,6 @@ class JobPlotter(BasePlotter):
     if not retVal[ 'OK' ]:
       return retVal
     dataDict, granularity = retVal[ 'Value' ]
-    startTime = startTime - startTime % granularity
     self.stripDataField( dataDict, 0 )
     dataDict = self._fillWithZero( granularity, startTime, endTime, dataDict )
     gLogger.info( "Generating plot", "%s with granularity of %s" % ( filename, granularity ) )

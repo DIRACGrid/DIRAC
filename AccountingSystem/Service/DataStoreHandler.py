@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/DataStoreHandler.py,v 1.5 2008/05/05 15:31:14 acasajus Exp $
-__RCSID__ = "$Id: DataStoreHandler.py,v 1.5 2008/05/05 15:31:14 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/DataStoreHandler.py,v 1.6 2008/05/13 17:37:23 acasajus Exp $
+__RCSID__ = "$Id: DataStoreHandler.py,v 1.6 2008/05/13 17:37:23 acasajus Exp $"
 import types
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.AccountingSystem.private.AccountingDB import AccountingDB
@@ -33,6 +33,44 @@ class DataStoreHandler( RequestHandler ):
         errorsList.append( retVal[ 'Message' ] )
     if errorsList:
       return S_ERROR( "Error while registering type:\n %s" % "\n ".join( errorsList ) )
+    return S_OK()
+
+  types_setBucketsLength = [ types.StringType, types.ListType ]
+  def export_setBucketsLength( self, typeName, bucketsLength ):
+    """
+      Change the buckets Length. (Only for all powerful admins)
+      (Bow before me for I am admin! :)
+    """
+    retVal = gConfig.getSections( "/DIRAC/Setups" )
+    if not retVal[ 'OK' ]:
+      return retVal
+    errorsList = []
+    for setup in retVal[ 'Value' ]:
+      setupTypeName = "%s_%s" % ( setup, typeName )
+      retVal = gAccountingDB.changeBucketsLength( setupTypeName, bucketsLength )
+      if not retVal[ 'OK' ]:
+        errorsList.append( retVal[ 'Message' ] )
+    if errorsList:
+      return S_ERROR( "Error while changing bucketsLength type:\n %s" % "\n ".join( errorsList ) )
+    return S_OK()
+
+  types_regenerateBuckets = [ types.StringType ]
+  def export_regenerateBuckets( self, typeName ):
+    """
+      Recalculate buckets. (Only for all powerful admins)
+      (Bow before me for I am admin! :)
+    """
+    retVal = gConfig.getSections( "/DIRAC/Setups" )
+    if not retVal[ 'OK' ]:
+      return retVal
+    errorsList = []
+    for setup in retVal[ 'Value' ]:
+      setupTypeName = "%s_%s" % ( setup, typeName )
+      retVal = gAccountingDB.regenerateBuckets( setupTypeName )
+      if not retVal[ 'OK' ]:
+        errorsList.append( retVal[ 'Message' ] )
+    if errorsList:
+      return S_ERROR( "Error while recalculating buckets for type:\n %s" % "\n ".join( errorsList ) )
     return S_OK()
 
   types_getRegisteredTypes = []

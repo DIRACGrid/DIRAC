@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/scripts/dirac-admin-accounting-cli.py,v 1.2 2008/05/05 15:31:14 acasajus Exp $
-__RCSID__ = "$Id: dirac-admin-accounting-cli.py,v 1.2 2008/05/05 15:31:14 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/scripts/dirac-admin-accounting-cli.py,v 1.3 2008/05/13 17:37:23 acasajus Exp $
+__RCSID__ = "$Id: dirac-admin-accounting-cli.py,v 1.3 2008/05/13 17:37:23 acasajus Exp $"
 
 import cmd
 import sys
@@ -124,6 +124,72 @@ class AccountingCLI( cmd.Cmd ):
       retVal = self.acClient.registerType( *typeDef )
       if retVal[ 'OK' ]:
         gLogger.info( "Type registered successfully" )
+      else:
+        gLogger.error( "Error: %s" % retVal[ 'Message' ] )
+    except:
+      self.showTraceback()
+
+  def do_resetBucketLength( self, args ):
+    """
+    Set the bucket Length. Will trigger a recalculation of buckets. Can take a while.
+      Usage : resetBucketLength <typeName>
+      <DIRACRoot>/DIRAC/AccountingSystem/Client/Types/<typeName>
+       should exist and inherit the base type
+    """
+    try:
+      argList = args.split()
+      if argList:
+        typeName = argList[0].strip()
+      else:
+        gLogger.error( "No type name specified" )
+        return
+      #Try to import the type
+      try:
+        typeModule = __import__( "DIRAC.AccountingSystem.Client.Types.%s" % typeName,
+                                  globals(),
+                                  locals(), typeName )
+        typeClass  = getattr( typeModule, typeName )
+      except Exception, e:
+        gLogger.error( "Can't load type %s: %s" % ( typeName, str(e) ) )
+        return
+      gLogger.info( "Loaded type %s"  % typeClass.__name__ )
+      typeDef = typeClass().getDefinition()
+      retVal = self.acClient.setBucketsLength( typeDef[0], typeDef[3] )
+      if retVal[ 'OK' ]:
+        gLogger.info( "Type registered successfully" )
+      else:
+        gLogger.error( "Error: %s" % retVal[ 'Message' ] )
+    except:
+      self.showTraceback()
+
+  def do_regenerateBuckets( self, args ):
+    """
+    Regenerate buckets for type. Can take a while.
+      Usage : regenerateBuckets <typeName>
+      <DIRACRoot>/DIRAC/AccountingSystem/Client/Types/<typeName>
+       should exist and inherit the base type
+    """
+    try:
+      argList = args.split()
+      if argList:
+        typeName = argList[0].strip()
+      else:
+        gLogger.error( "No type name specified" )
+        return
+      #Try to import the type
+      try:
+        typeModule = __import__( "DIRAC.AccountingSystem.Client.Types.%s" % typeName,
+                                  globals(),
+                                  locals(), typeName )
+        typeClass  = getattr( typeModule, typeName )
+      except Exception, e:
+        gLogger.error( "Can't load type %s: %s" % ( typeName, str(e) ) )
+        return
+      gLogger.info( "Loaded type %s"  % typeClass.__name__ )
+      typeDef = typeClass().getDefinition()
+      retVal = self.acClient.regenerateBuckets( typeDef[0] )
+      if retVal[ 'OK' ]:
+        gLogger.info( "Buckets recalculated!" )
       else:
         gLogger.error( "Error: %s" % retVal[ 'Message' ] )
     except:

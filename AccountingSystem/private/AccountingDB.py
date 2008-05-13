@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.26 2008/05/07 18:46:35 acasajus Exp $
-__RCSID__ = "$Id: AccountingDB.py,v 1.26 2008/05/07 18:46:35 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.27 2008/05/13 17:37:23 acasajus Exp $
+__RCSID__ = "$Id: AccountingDB.py,v 1.27 2008/05/13 17:37:23 acasajus Exp $"
 
 import datetime, time
 import types
@@ -126,6 +126,20 @@ class AccountingDB(DB):
     self.dbBucketsLength[ typeName ] = bucketsLength
     #ADRI: TEST COMPACT BUCKETS
     #self.dbBucketsLength[ typeName ] = [ ( 86400, 3600 ), ( 15552000, 86400 ), ( 31104000, 604800 ) ]
+
+  @gSynchro
+  def changeBucketsLength( self, typeName, bucketsLength ):
+    if not typeName in self.dbCatalog:
+      return S_ERROR( "%s is not a valid type name" % typeName )
+    bucketsLength.sort()
+    bucketsEncoding = DEncode.encode( bucketsLength )
+    retVal = self._update( "UPDATE `%s` set bucketsLength = '%s' where name = '%s'" % ( self.catalogTableName,
+                                                                              bucketsEncoding,
+                                                                              typeName ) )
+    if not retVal[ 'OK' ]:
+      return retVal
+    self.dbBucketsLength[ typeName ] = bucketsLength
+    return self.regenerateBuckets( typeName )
 
   @gSynchro
   def registerType( self, name, definitionKeyFields, definitionAccountingFields, bucketsLength ):
@@ -495,7 +509,7 @@ class AccountingDB(DB):
     return S_OK()
 
 
-  def retrieveBucketedData( self, typeName, startTime, endTime, selectFields, condDict, groupFields, orderFields ):
+  def retrieveBucketedData( self, typeName, startTime, endTime, selectFields, condDict, groupFields, orderFields, connObj = False ):
     """
     Get data from the DB
       Parameters:
@@ -527,7 +541,7 @@ class AccountingDB(DB):
                              orderFields,
                              "bucket" )
 
-  def __queryType( self, typeName, startTime, endTime, selectFields, condDict, groupFields, orderFields, tableType ):
+  def __queryType( self, typeName, startTime, endTime, selectFields, condDict, groupFields, orderFields, tableType, connObj = False ):
     """
     Execute a query over a main table
     """
@@ -558,13 +572,13 @@ class AccountingDB(DB):
     #Calculate time conditions
     sqlTimeCond = []
     if startTime:
-      sqlTimeCond.append( "`%s`.`startTime` >= '%s'" % ( tableName, startTime ) )
+      sqlTimeCond.append( "`%s`.`startTime` >= %s" % ( tableName, startTime ) )
     if endTime:
       if tableType == "bucket":
         endTimeSQLVar = "startTime"
       else:
         endTimeSQLVar = "endTime"
-      sqlTimeCond.append( "`%s`.`%s` <= '%s'" % ( tableName, endTimeSQLVar, endTime ) )
+      sqlTimeCond.append( "`%s`.`%s` <= %s" % ( tableName, endTimeSQLVar, endTime ) )
     cmd += " WHERE %s" % " AND ".join( sqlTimeCond )
     #Calculate conditions
     sqlCondList = []
@@ -619,7 +633,7 @@ class AccountingDB(DB):
       cmd += " GROUP BY %s" % ", ".join( sqlGroupList )
     if sqlOrderList:
       cmd += " ORDER BY %s" % ", ".join( sqlOrderList )
-    return self._query( cmd )
+    return self._query( cmd, conn = connObj )
 
   @gSynchro
   def compactBuckets( self ):
@@ -703,4 +717,30 @@ class AccountingDB(DB):
         if not retVal[ 'OK' ]:
           gLogger.error( "Error while compacting data for record in %s: %s" % ( typeName, retVal[ 'Value' ] ) )
 
+  def regenerateBuckets( self, typeName ):
+    retVal = self._getConnection()
+    if not retVal[ 'OK' ]:
+      return retVal
+    connObj = retVal[ 'Value' ]
+    bucketTableName = self.__getTableName( "bucket", typeName )
+    rawTableName = self.__getTableName( "type", typeName )
+    retVal = self._update( "DELETE FROM `%s`" % bucketTableName, conn = connObj )
+    if not retVal[ 'OK' ]:
+      return retVal
+    sqlSelectList = [ "`%s`.startTime" % rawTableName, "`%s`.endTime" % rawTableName ]
+    for field in self.dbCatalog[ typeName ][ 'keys' ]:
+      sqlSelectList.append( "`%s`.`%s`" % ( rawTableName, field ) )
+    for field in self.dbCatalog[ typeName ][ 'values' ]:
+      sqlSelectList.append( "`%s`.`%s`" % ( rawTableName, field ) )
+    retVal = self._query( "SELECT %s FROM `%s`" %( ", ".join( sqlSelectList ), rawTableName ), conn = connObj )
+    if not retVal[ 'OK' ]:
+      return retVal
+    for entry in retVal[ 'Value' ]:
+      startT = entry[0]
+      endT = entry[1]
+      values = entry[2:]
+      retVal = self.__splitInBuckets( typeName, startT, endT, values, connObj = connObj )
+      if not retVal[ 'OK' ]:
+        return retVal
+    return S_OK()
 

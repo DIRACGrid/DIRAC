@@ -24,6 +24,14 @@ def convertUTCToLocal( metadata, data ):
     data[kF] = convertedData
   return metadata, data
 
+def alignToGranularity( metadata ):
+  if 'span' in metadata:
+    granularity = metadata[ 'span' ]
+    if 'starttime' in metadata:
+      metadata[ 'starttime' ] = metadata[ 'starttime' ] - metadata[ 'starttime' ] % granularity
+    if 'endtime' in metadata:
+      metadata[ 'endtime' ] = metadata[ 'endtime' ] - metadata[ 'endtime' ] % granularity + granularity
+
 class TimeBarGraph( TimeGraph, BarGraph ):
   pass
 
@@ -38,6 +46,7 @@ def generateTimedStackedBarPlot( fileName, data, metadata ):
   if not data:
     return S_ERROR( "No data for that selection" )
   metadata, data = convertUTCToLocal( metadata, data )
+  alignToGranularity( metadata )
   plotter = TimeStackedBarGraph()
   plotter( data, fn, metadata )
   fn.close()
@@ -52,6 +61,7 @@ def generateQualityPlot( fileName, data, metadata ):
     return S_ERROR( "No data for that selection" )
   plotter = QualityMap()
   metadata, data = convertUTCToLocal( metadata, data )
+  alignToGranularity( metadata )
   plotter( data, fn, metadata )
   fn.close()
   return S_OK()
@@ -67,6 +77,7 @@ def generateCumulativePlot( fileName, data, metadata ):
     return S_ERROR( "No data for that selection" )
   plotter = CumulativeGraph()
   metadata, data = convertUTCToLocal( metadata, data )
+  alignToGranularity( metadata )
   plotter( data, fn, metadata )
   fn.close()
   return S_OK()

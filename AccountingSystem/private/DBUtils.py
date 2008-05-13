@@ -31,7 +31,12 @@ class DBUtils:
         orderFields -> list of fields to order by
     """
     typeName = "%s_%s" % ( self._setup, typeName )
-    return self._acDB.retrieveBucketedData( typeName, startTime, endTime, selectFields, condDict, groupFields, orderFields )
+#    retVal = self._acDB._getConnection()
+#    if not retVal[ 'OK' ]:
+#      return retVal
+#    connObj = retVal[ 'Value' ]
+    connObj = False
+    return self._acDB.retrieveBucketedData( typeName, startTime, endTime, selectFields, condDict, groupFields, orderFields, connObj = connObj )
 
   def _getUniqueValues( self, typeName, startTime, endTime, condDict, fieldList ):
     stringList = [ "%s" for field in fieldList ]
