@@ -1,16 +1,16 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Client/JobReport.py,v 1.3 2008/05/02 11:02:47 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Client/JobReport.py,v 1.4 2008/05/13 22:59:53 atsareg Exp $
 
 """
   JobReport class encapsulates various
   methods of the job status reporting
 """
 
-__RCSID__ = "$Id: JobReport.py,v 1.3 2008/05/02 11:02:47 atsareg Exp $"
+__RCSID__ = "$Id: JobReport.py,v 1.4 2008/05/13 22:59:53 atsareg Exp $"
 
 import datetime
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC import S_OK, S_ERROR
-from DIRAC.RequestManagementSystem.Client.Request import Request
+from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
 
 class JobReport:
 
@@ -165,7 +165,7 @@ class JobReport:
       return S_OK('Empty')
 
   def sendStoredJobParameters(self):
-    """ Send the job parameters stored in the interna cache
+    """ Send the job parameters stored in the internal cache
     """
 
     parameters = []
@@ -203,7 +203,7 @@ class JobReport:
     """ Generate failover requests for the operations in the internal cache
     """
 
-    request = Request()
+    request = RequestContainer()
     result = self.sendStoredStatusInfo()
     if not result['OK']:
       requests.addSubRequest('jobstate',DISETSubRequest(result['rpcStub']))
