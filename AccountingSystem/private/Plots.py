@@ -14,7 +14,7 @@ def convertUTCToLocal( metadata, data ):
     - field 1: bucketLength
     - fields 2-n: numericalFields
   """
-  for mF in ( 'startime', 'endtime' ):
+  for mF in ( 'starttime', 'endtime' ):
     if mF in metadata:
       metadata[ mF ] = metadata[ mF ] - time.altzone
   for kF in data:
