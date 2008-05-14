@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/gLitePilotDirector.py,v 1.11 2008/04/25 13:12:28 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/gLitePilotDirector.py,v 1.12 2008/05/14 15:33:14 rgracian Exp $
 # File :   gLitePilotDirector.py
 # Author : Stuart Paterson
 ########################################################################
@@ -11,7 +11,7 @@
      the invokation of the Pilot Director instance is performed here.
 """
 
-__RCSID__ = "$Id: gLitePilotDirector.py,v 1.11 2008/04/25 13:12:28 paterson Exp $"
+__RCSID__ = "$Id: gLitePilotDirector.py,v 1.12 2008/05/14 15:33:14 rgracian Exp $"
 
 from DIRACEnvironment                                        import DIRAC
 from DIRAC.Core.Utilities                                    import List
@@ -31,7 +31,7 @@ class gLitePilotDirector(PilotDirector):
     self.log = gLogger.getSubLogger(self.name)
     self.log.info('Starting %s for RB %s' %(self.name,self.resourceBroker))
     self.sectionPath = configPath
-    self.diracRoot = gConfig.getValue(self.sectionPath+'/DIRACRoot','/opt/dirac')
+    self.diracRoot = gConfig.getValue( '/LocalSite','Root')
     self.pilotScript = gConfig.getValue(self.sectionPath+'/PilotScript','%s/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot' %(self.diracRoot))
     self.diracInstallScript = gConfig.getValue(self.sectionPath+'/DIRACInstallScript','%s/scripts/dirac-install' %(self.diracRoot))
     self.archScript = gConfig.getValue(self.sectionPath+'/ArchitectureScript','%s/scripts/dirac-architecture' %(self.diracRoot))
@@ -161,7 +161,7 @@ class gLitePilotDirector(PilotDirector):
       else:
         gLiteJDL.write( 'Executable = "%s";\n'     % os.path.basename(self.pilotScript))
 
-      gLiteJDL.write( 'Arguments  = "-o /DIRAC/Setup=%s -T %s -G %s";\n'  % (self.diracSetup,cpuRequirement,ownerGroup) )
+      gLiteJDL.write( 'Arguments  = "-o /DIRAC/Setup=%s -T %s -G %s -v CCRC08-v3";\n'  % (self.diracSetup,cpuRequirement,ownerGroup) )
       gLiteJDL.write( 'gLiteTimeRef = %s ;\n'      % cpuRequirement )
       gLiteJDL.write( 'MyPolicyTime = ( %s );\n' % myPolicyTime )
 
@@ -200,7 +200,7 @@ class gLitePilotDirector(PilotDirector):
       if executable:
         executablePath   = self.diracRoot+'/DIRAC/WorkloadManagementSystem/PilotAgent/'+executable
 
-      inputSandboxList = [diracinstallPath, executablePath, guessplatformPath]
+      inputSandboxList = [diracinstallPath, executablePath ]
 
       for inFile in inputSandbox: inputSandboxList.append(inFile)
 
