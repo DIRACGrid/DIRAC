@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/gLitePilotDirector.py,v 1.12 2008/05/14 15:33:14 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/gLitePilotDirector.py,v 1.13 2008/05/14 15:43:40 rgracian Exp $
 # File :   gLitePilotDirector.py
 # Author : Stuart Paterson
 ########################################################################
@@ -11,7 +11,7 @@
      the invokation of the Pilot Director instance is performed here.
 """
 
-__RCSID__ = "$Id: gLitePilotDirector.py,v 1.12 2008/05/14 15:33:14 rgracian Exp $"
+__RCSID__ = "$Id: gLitePilotDirector.py,v 1.13 2008/05/14 15:43:40 rgracian Exp $"
 
 from DIRACEnvironment                                        import DIRAC
 from DIRAC.Core.Utilities                                    import List
@@ -31,7 +31,7 @@ class gLitePilotDirector(PilotDirector):
     self.log = gLogger.getSubLogger(self.name)
     self.log.info('Starting %s for RB %s' %(self.name,self.resourceBroker))
     self.sectionPath = configPath
-    self.diracRoot = gConfig.getValue( '/LocalSite','Root')
+    self.diracRoot = gConfig.getValue( '/LocalSite/Root')
     self.pilotScript = gConfig.getValue(self.sectionPath+'/PilotScript','%s/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot' %(self.diracRoot))
     self.diracInstallScript = gConfig.getValue(self.sectionPath+'/DIRACInstallScript','%s/scripts/dirac-install' %(self.diracRoot))
     self.archScript = gConfig.getValue(self.sectionPath+'/ArchitectureScript','%s/scripts/dirac-architecture' %(self.diracRoot))
