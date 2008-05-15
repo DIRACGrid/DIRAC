@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.54 2008/04/30 13:06:52 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.55 2008/05/15 12:28:36 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,9 +52,9 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.54 2008/04/30 13:06:52 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.55 2008/05/15 12:28:36 atsareg Exp $"
 
-import re, os, sys, string
+import re, os, sys, string, types
 import time
 import threading
 
@@ -63,6 +63,7 @@ from types                                     import *
 from DIRAC                                     import gLogger, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Config   import gConfig
 from DIRAC.Core.Base.DB                        import DB
+from DIRAC.Core.Utilities.GridCredentials      import getNicknameForDN
 
 DEBUG = 0
 
@@ -143,10 +144,17 @@ class JobDB(DB):
 
     if condDict != None:
       for attrName, attrValue in condDict.items():
-        condition = ' %s %s %s=\'%s\'' % ( condition,
-                                           conjunction,
-                                           str(attrName),
-                                           str(attrValue)  )
+        if type(attrValue) == types.ListType:
+          multiValue = ','.join(['"'+x.strip()+'"' for x in attrValue])
+          condition = ' %s %s %s in (%s)' % ( condition,
+                                             conjunction,
+                                             str(attrName),
+                                             multiValue  )
+        else:
+          condition = ' %s %s %s=\'%s\'' % ( condition,
+                                             conjunction,
+                                             str(attrName),
+                                             str(attrValue)  )
         conjunction = "AND"
 
     if older:
@@ -159,7 +167,7 @@ class JobDB(DB):
       condition = ' %s %s LastUpdateTime >= \'%s\'' % ( condition,
                                                  conjunction,
                                                  str(newer) )
-
+    
     return condition
 
 
