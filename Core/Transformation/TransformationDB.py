@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.48 2008/05/15 12:42:56 acsmith Exp $
+# $Id: TransformationDB.py,v 1.49 2008/05/15 13:54:14 rgracian Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -36,7 +36,6 @@ class TransformationDB(DB):
     self.dbname = dbname
     self.filters = self.__getFilters()
     self.catalog = None
-    self.dataLog = RPCClient('DataManagement/DataLogging')
 
   def getTransformationID(self, name):
     """ Method returns ID of transformation with the name=<name>
@@ -715,6 +714,7 @@ PRIMARY KEY (FileID)
     gLogger.info("TransformationDB.addFile: Attempting to add %s files." % len(fileTuples))
     successful = {}
     failed = {}
+    dataLog = RPCClient('DataManagement/DataLogging')
     for lfn,pfn,size,se,guid,checksum in fileTuples:
 
       passFilter = False
@@ -746,7 +746,7 @@ PRIMARY KEY (FileID)
               if res['Value']:
                 addedToTransformation = True
                 for transID in res['Value']:
-                  ret = self.dataLog.addFileRecord(lfn,'AddedToTransformation','Transformation %s' % transID,'',self.dbname)
+                  ret = dataLog.addFileRecord(lfn,'AddedToTransformation','Transformation %s' % transID,'',self.dbname)
 		  if not ret['OK']:
  	            gLogger.warning('Unable to add dataLogging record for Transformation %s FileID %s' % (transID, fileID))
 
