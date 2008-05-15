@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/PilotDirector.py,v 1.11 2008/03/07 16:51:02 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/PilotDirector.py,v 1.12 2008/05/15 08:04:51 rgracian Exp $
 # File :   PilotDirector.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
      are overridden in Grid specific subclasses.
 """
 
-__RCSID__ = "$Id: PilotDirector.py,v 1.11 2008/03/07 16:51:02 atsareg Exp $"
+__RCSID__ = "$Id: PilotDirector.py,v 1.12 2008/05/15 08:04:51 rgracian Exp $"
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
 from DIRAC.Core.Utilities.Subprocess                       import shellCall
@@ -41,7 +41,7 @@ class PilotDirector(Thread):
     self.name = '%sPilotDirector' %(self.type)
     self.configSection = configPath
     self.pollingTime = gConfig.getValue(self.configSection+'/PollingTime',120)
-    self.selectJobLimit = gConfig.getValue(self.configSection+'/JobSelectLimit',500)
+    self.selectJobLimit = gConfig.getValue(self.configSection+'/JobSelectLimit',100)
     self.scratchDir = gConfig.getValue(self.configSection+'/ScratchDir','/opt/dirac/work')
     self.genericPilotDN = gConfig.getValue(self.configSection+'/GenericPilotDN','/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=paterson/CN=607602/CN=Stuart Paterson')
     self.genericPilotGroup = gConfig.getValue(self.configSection+'/GenericPilotGroup','lhcb_pilot')
@@ -443,7 +443,7 @@ class PilotDirector(Thread):
     """Returns the list of waiting jobs for which pilots should be submitted
     """
     selection = {'Status':'Waiting','MinorStatus':'Pilot Agent Submission'}
-    result = self.jobDB.selectJobs(selection, limit=self.selectJobLimit)
+    result = self.jobDB.selectJobs(selection, limit=self.selectJobLimit, orderAttribute='LastUpdateTime')
     if not result['OK']:
       return result
 
