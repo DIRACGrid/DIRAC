@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.35 2008/05/11 09:39:38 rgracian Exp $
+# $Id: JobWrapper.py,v 1.36 2008/05/15 13:58:53 rgracian Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.35 2008/05/11 09:39:38 rgracian Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.36 2008/05/15 13:58:53 rgracian Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -304,8 +304,6 @@ class JobWrapper:
     """Uses os.times() to get CPU time and returns HH:MM:SS after conversion.
     """
     #TODO: normalize CPU consumed via scale factor
-    utime, stime, cutime, cstime, elapsed = os.times()
-    cpuTime = utime + stime + cutime
     utime, stime, cutime, cstime, elapsed = EXECUTION_RESULT['CPU']
     cpuTime = utime + stime + cutime + cstime
     self.log.verbose("Total CPU time consumed = %s" % (cpuTime))
