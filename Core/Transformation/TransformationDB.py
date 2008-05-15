@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.47 2008/05/03 18:13:19 acsmith Exp $
+# $Id: TransformationDB.py,v 1.48 2008/05/15 12:42:56 acsmith Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -303,6 +303,7 @@ class TransformationDB(DB):
           for parameterName,parameterValue in res['Value']:
             transdict['Additional'][parameterName] = parameterValue
       translist.append(transdict)
+      gLogger.debug('Transformation dictionary',transdict)
     return S_OK(translist)
 
   def setTransformationMask(self,transName,fileMask):
@@ -458,6 +459,7 @@ class TransformationDB(DB):
     """ Add files that already exist in the DataFiles table to the
         transformation specified by the transID
     """
+    dataLog = RPCClient('DataManagement/DataLogging')
     # Add already existing files to this transformation if any
     filters = self.__getFilters(transID)
     req = "SELECT LFN,FileID FROM DataFiles;"
@@ -471,11 +473,9 @@ class TransformationDB(DB):
         if res['OK']:
           if res['Value']:
             for transID in res['Value']:
-              ret = self.dataLog.addFileRecord(lfn,'AddedToTransformation','Transformation %s' % transID,'',self.dbname)
+              ret = dataLog.addFileRecord(lfn,'AddedToTransformation','Transformation %s' % transID,'',self.dbname)
 	      if not ret['OK']:
 	            gLogger.warning('Unable to add dataLogging record for Transformation %s FileID %s' % (transID, fileID))
-
-
     return S_OK()
 
   def __addTransformationTable(self,transID):
