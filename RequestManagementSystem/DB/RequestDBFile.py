@@ -2,7 +2,7 @@
 """
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.RequestManagementSystem.Client.Request import Request
+from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
 from DIRAC.ConfigurationSystem.Client import PathFinder
 
 import os
@@ -32,7 +32,7 @@ class RequestDBFile:
   #
   # These are the methods that expose the common functionality
   #
-  
+
   def getDBSummary(self):
     """ Obtain a summary of the contents of the requestDB
     """
@@ -60,15 +60,15 @@ class RequestDBFile:
     """ Set request to the database (including all sub-requests)
     """
     gLogger.info("RequestDBFile._setRequest: Attempting to set %s." % requestName)
-    request = Request(requestString)
-    requestTypes = request.getSubRequestTypes()
+    request = RequestContainer(requestString)
+    requestTypes = request.getSubRequestTypes()['Value']
     try:
       for requestType in requestTypes:
-        subRequestString = request.toXML(requestType)
+        subRequestString = request.toXML(desiredType=requestType)['Value']
         if subRequestString:
           if desiredStatus:
             status = desiredStatus
-          elif not request.isEmpty(requestType=requestType):
+          elif not request.isRequestTypeEmpty(requestType)['Value']:
             status = 'ToDo'
           else:
             status = 'Done'
@@ -291,15 +291,16 @@ class RequestDBFile:
       return res
     subRequestPaths = res['Value']
     try:
-      oRequest = Request(init=False)
+      oRequest = RequestContainer(init=False)
       for subRequestPath in subRequestPaths:
         res = self.__readSubRequestString(subRequestPath)
         if not res['OK']:
           return res
-        tempRequest = Request(res['Value'])
-        oRequest.setRequestAttributes(tempRequest.getRequestAttributes())
+        subRequestString = res['Value']
+        tempRequest = RequestContainer(subRequestString)#,init=False)
+        oRequest.setRequestAttributes(tempRequest.getRequestAttributes()['Value'])
         oRequest.update(tempRequest)
-      requestString = oRequest.toXML()
+      requestString = oRequest.toXML()['Value']
       gLogger.info("RequestDBFile.__getRequestString: Successfully obtained string for %s." % requestName)
       return S_OK(requestString)
     except Exception, x:
@@ -315,7 +316,7 @@ class RequestDBFile:
       subRequestFile = open(subRequestPath,'r')
       requestString = subRequestFile.read()
       gLogger.info("RequestDBFile.__readSubRequestString: Successfully read contents of %s." % subRequestPath)
-      return S_OK(requestString)
+      return S_OK(str(requestString))
     except Exception, x:
       errStr = "RequestDBFile.__readSubRequestString: Exception while reading sub-request."
       gLogger.exception(errStr,"%s %s" % (subRequestPath,str(x)))
