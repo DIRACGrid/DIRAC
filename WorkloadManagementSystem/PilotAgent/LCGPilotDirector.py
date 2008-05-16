@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/LCGPilotDirector.py,v 1.10 2008/03/07 16:51:02 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/LCGPilotDirector.py,v 1.11 2008/05/16 11:00:32 rgracian Exp $
 # File :   LCGPilotDirector.py
 # Author : Stuart Paterson
 ########################################################################
@@ -11,7 +11,7 @@
      the invokation of the Pilot Director instance is performed here.
 """
 
-__RCSID__ = "$Id: LCGPilotDirector.py,v 1.10 2008/03/07 16:51:02 atsareg Exp $"
+__RCSID__ = "$Id: LCGPilotDirector.py,v 1.11 2008/05/16 11:00:32 rgracian Exp $"
 
 from DIRACEnvironment                                        import DIRAC
 from DIRAC.Core.Utilities                                    import List
@@ -31,8 +31,8 @@ class LCGPilotDirector(PilotDirector):
     self.log = gLogger.getSubLogger(self.name)
     self.log.info('Starting %s for RB %s' %(self.name,self.resourceBroker))
     self.sectionPath = configPath
-    self.diracRoot = gConfig.getValue(self.sectionPath+'/DIRACRoot','/opt/dirac')
-    self.pilotScript = gConfig.getValue(self.sectionPath+'/PilotScript','%s/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot-lcg.py' %(self.diracRoot))
+    self.diracRoot = gConfig.getValue( '/LocalSite/Root')
+    self.pilotScript = gConfig.getValue(self.sectionPath+'/PilotScript','%s/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot' %(self.diracRoot))
     self.diracInstallScript = gConfig.getValue(self.sectionPath+'/DIRACInstallScript','%s/scripts/dirac-install' %(self.diracRoot))
     self.archScript = gConfig.getValue(self.sectionPath+'/ArchitectureScript','%s/scripts/dirac-architecture' %(self.diracRoot))
     self.voSoftwareDir = gConfig.getValue(self.sectionPath+'VOSoftware','VO_LHCB_SW_DIR')
@@ -160,7 +160,7 @@ class LCGPilotDirector(PilotDirector):
       else:
         lcgJDL.write( 'Executable = "%s";\n'     % self.pilotScript )
 
-      lcgJDL.write( 'Arguments  = "%s %s %s %s %s";\n'  % (self.diracSetup,cpuRequirement,self.voSoftwareDir,ownerGroup,self.type) )
+      lcgJDL.write( 'Arguments  = "-o /DIRAC/Setup=%s -T %s -G %s -v HEAD";\n'  % (self.diracSetup,cpuRequirement,ownerGroup) )
       lcgJDL.write( 'LCGTimeRef = %s ;\n'      % cpuRequirement )
       lcgJDL.write( 'MyPolicyTime = ( %s );\n' % myPolicyTime )
 
@@ -199,7 +199,7 @@ class LCGPilotDirector(PilotDirector):
       if executable:
         executablePath   = self.diracRoot+'/DIRAC/WorkloadManagementSystem/PilotAgent/'+executable
 
-      inputSandboxList = [diracinstallPath, executablePath, guessplatformPath]
+      inputSandboxList = [diracinstallPath, executablePath]
 
       for inFile in inputSandbox: inputSandboxList.append(inFile)
 
