@@ -1,13 +1,14 @@
-# $Id: Step.py,v 1.20 2008/05/13 21:09:32 atsareg Exp $
+# $Id: Step.py,v 1.21 2008/05/16 10:18:07 atsareg Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.20 $"
+__RCSID__ = "$Revision: 1.21 $"
 
 import os, time
 #try: # this part to inport as part of the DIRAC framework
 from DIRAC.Core.Workflow.Parameter import *
 from DIRAC.Core.Workflow.Module import *
+from DIRAC import S_OK, S_ERROR
 #except: # this part is to import code without DIRAC
 #  from Parameter import *
 #  from Module import *
@@ -47,7 +48,7 @@ class StepDefinition(AttributeCollection):
         else:
             raise TypeError('Can not create object type '+ str(type(self)) + ' from the '+ str(type(obj)))
         if type :
-          self.setType(type)
+          self.setType(type) 
 
     def __str__(self):
         ret =  str(type(self))+':\n'+ AttributeCollection.__str__(self) + self.parameters.__str__()
@@ -192,16 +193,24 @@ class StepInstance(AttributeCollection):
     def execute(self, step_exec_attr, definitions):
         """step_exec_attr is array to hold parameters belong to this Step, filled above """
         print 'Executing StepInstance',self.getName(),'of type',self.getType(), definitions.keys()
+        if self.workflow_commons.has_key('JobReport'):
+          result = self.workflow_commons['JobReport'].setApplicationStatus('Executing '+self.getName())
         self.step_commons['StartTime'] = time.time()
         self.step_commons['StartStats'] = os.times()
         step_def = definitions[self.getType()]
         step_exec_modules={}
+        step_finalization_done = False
+        job_finalization_done = False
+        loop_OK = True
+        error_message = ''
         for mod_inst in step_def.module_instances:
             mod_inst_name = mod_inst.getName()
-            #print "StepInstance creating module instance ",mod_inst_name," of type", mod_inst.getType()
+            mod_inst_type = mod_inst.getType()
+ 
+            print "StepInstance creating module instance ",mod_inst_name," of type", mod_inst.getType()
             # since during execution Step is inside Workflow the  step_def.module_definitions == None
-            #step_exec_modules[mod_inst_name] = step_def.module_definitions[mod_inst.getType()].main_class_obj() # creating instance
-            step_exec_modules[mod_inst_name] = step_def.parent.module_definitions[mod_inst.getType()].main_class_obj() # creating instance
+            #step_exec_modules[mod_inst_name] = step_def.module_definitions[mod_inst_type].main_class_obj() # creating instance
+            step_exec_modules[mod_inst_name] = step_def.parent.module_definitions[mod_inst_type].main_class_obj() # creating instance
 
             # add some mandatory attributes to the instance
             # moved to the resolveGlobalVars
@@ -217,20 +226,42 @@ class StepInstance(AttributeCollection):
                     else:
                         setattr(step_exec_modules[mod_inst_name], parameter.getName(), parameter.getValue())
                         #print "ModuleInstance", mod_inst_name+'.'+parameter.getName(),'=',parameter.getValue()
-            # Set reference to the workflow common tools
 
+            # Set reference to the workflow and step common tools           
             setattr(step_exec_modules[mod_inst_name], 'workflow_commons', self.parent.workflow_commons)
-            setattr(step_exec_modules[mod_inst_name], 'step_commons', self.step_commons)
+            setattr(step_exec_modules[mod_inst_name], 'step_commons', self.step_commons)           
 
-            # Execution
-            try:
-              result = step_exec_modules[mod_inst_name].execute()
-              if not result['OK']:
-                return result
-            except Exception, x:
-              print "Exception while module execution"
-              print str(x)
-              return S_ERROR("Exception while module execution: "+str(x))
+            if loop_OK or (not loop_OK and (mod_inst_type == "StepFinalization" or mod_inst_type == "JobFinalization") ):
+              # Execution only if previous modules are OK or
+              # module type is StepFinalization or JobFinalization
+              try:
+                result = step_exec_modules[mod_inst_name].execute()
+                if not result['OK']:
+                  if loop_OK:
+                    error_message = result['Message']
+                    # This is the error that caused the workflow disruption
+                    # report it to the WMS
+                    if self.workflow_commons.has_key('JobReport'):
+                      result = self.workflow_commons['JobReport'].setApplicationStatus(error_message)
+                  loop_OK = False
+                  self.step_commons['Status'] = "Error"
+              except Exception, x:
+                print "Exception while module execution"
+                print "Module",mod_inst_name,mod_inst.getType()
+                print str(x)
+                if loop_OK:
+                  # This is the error that caused the workflow disruption
+                  # report it to the WMS
+                  error_message = 'Exception while module execution: '+str(x)
+                  if self.workflow_commons.has_key('JobReport'):
+                    result = self.workflow_commons['JobReport'].setApplicationStatus(error_message)
+                
+                loop_OK = False                
+                self.step_commons['Status'] = "Error"
+            
+        # Stop execution here in case of errors
+        if not loop_OK:
+          return S_ERROR(error_message)
 
         # now we need to copy output values to the STEP!!! parameters
         #print "output assignment"
@@ -239,7 +270,7 @@ class StepInstance(AttributeCollection):
                 if st_parameter.isLinked():
                     #print "StepInstance this."+ st_parameter.getName(),'=',st_parameter.getLinkedModule()+'.'+st_parameter.getLinkedParameter()
                     if st_parameter.getLinkedModule() == 'self':
-                        # this is not supose to happen
+                        # this is not supposed to happen
                         print "Warning! Step OUTPUT attribute", st_parameter.getName(), "refer on the attribute of the same step", st_parameter.getLinkedParameter()
                         step_exec_attr[st_parameter.getName()] = step_exec_attr[st_parameter.getLinkedParameter()]
                     else:
