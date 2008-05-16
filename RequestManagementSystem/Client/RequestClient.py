@@ -1,10 +1,10 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/RequestClient.py,v 1.1 2008/04/17 10:44:33 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/RequestClient.py,v 1.2 2008/05/16 20:10:50 acsmith Exp $
 
 """
   This is the client implementation for the RequestDB using the DISET framework.
 """
 
-__RCSID__ = "$Id: RequestClient.py,v 1.1 2008/04/17 10:44:33 atsareg Exp $"
+__RCSID__ = "$Id: RequestClient.py,v 1.2 2008/05/16 20:10:50 acsmith Exp $"
 
 from types import *
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
@@ -18,15 +18,15 @@ class RequestClient:
     """ Constructor of the RequestClient class
     """
     voBoxUrls = fromChar( PathFinder.getServiceURL( "RequestManagement/voBoxURLs" ) )
-    self.voBoxUrls = [] 
+    self.voBoxUrls = []
     if voBoxUrls:
       self.voBoxUrls = randomize(voBoxUrls)
-      
+
     self.local = False
     local = PathFinder.getServiceURL("RequestManagement/localURL")
     if local:
       self.local = local
-      if local in self.voBoxUrls:   
+      if local in self.voBoxUrls:
         self.voBoxUrls.remove(self.local)
 
     self.central = False
@@ -111,12 +111,13 @@ class RequestClient:
       gLogger.exception(errKey,errExpl)
       return S_ERROR(errKey)
 
-  def getRequest(self,requestType):
+  def getRequest(self,requestType,url=''):
     """ Get request from RequestDB.
         First try the local repository then if none available or error try random repository
     """
     try:
-      url = self.local
+      if not url:
+        url = self.local
       urls = [url]
       for url in urls:
         gLogger.info("RequestDBClient.getRequest: Attempting to get request.", "%s %s" % (url,requestType))
@@ -141,11 +142,12 @@ class RequestClient:
       return S_ERROR(errKey+errExpl)
 
 
-  def serveRequest(self,requestType):
+  def serveRequest(self,requestType,url=''):
     """ Get a request from RequestDB.
     """
     try:
-      url = self.local
+      if not url:
+        url = self.local
       urls = [url]
       for url in urls:
         gLogger.info("RequestDBClient.serveRequest: Attempting to obtain request.", "%s %s" % (url,requestType))
