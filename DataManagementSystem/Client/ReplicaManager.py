@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalogue. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.25 2008/05/07 21:38:33 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.26 2008/05/16 09:41:26 paterson Exp $"
 
 import re, time, commands, random,os
 import types
@@ -1160,7 +1160,7 @@ class ReplicaManager:
     """
     if type(physicalFile) == types.ListType:
       pfns = physicalFile
-    elif type(lfn) == types.StringType:
+    elif type(physicalFile) == types.StringType:
       pfns = [physicalFile]
     else:
       errStr = "ReplicaManager.getPhysicalFileAccessUrl: Supplied physical file must be string or list of strings."

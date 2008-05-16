@@ -273,7 +273,7 @@ class SRM2Storage(StorageBase):
       infoStr = "SRM2Storage.getTransportURL: No protocols provided, using defaults."
       gLogger.debug(infoStr)
       listProtocols = self.defaultLocalProtocols
-    if type(protocols) == types.StringType:
+    elif type(protocols) == types.StringType:
       listProtocols = [protocols]
     elif type(protocols) == types.ListType:
       listProtocols = protocols
