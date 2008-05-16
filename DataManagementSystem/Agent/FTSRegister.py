@@ -7,6 +7,7 @@ from DIRAC.DataManagementSystem.DB.TransferDB import TransferDB
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.GridCredentials import setupProxy,setDIRACGroup,getProxyTimeLeft
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
+from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClient
 import os,time
 from types import *
 
@@ -23,7 +24,7 @@ class FTSRegister(Agent):
     result = Agent.initialize(self)
     self.TransferDB = TransferDB()
     self.ReplicaManager = ReplicaManager()
-    self.DataLog = RPCClient('DataManagement/DataLogging')
+    self.DataLog = DataLoggingClient()
 
     self.useProxies = gConfig.getValue(self.section+'/UseProxies','True')
     if self.useProxies == 'True':

@@ -8,6 +8,7 @@ from DIRAC.RequestManagementSystem.Client.DataManagementRequest import DataManag
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 from DIRAC.DataManagementSystem.Client.FileCatalog import FileCatalog
 from DIRAC.DataManagementSystem.Client.Catalog.PlacementDBClient import PlacementDBClient
+from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClient
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.DISET.RPCClient import RPCClient
 
@@ -29,7 +30,7 @@ class ReplicationPlacementAgent(Agent):
     self.TransferDB = RequestClient()
     self.PlacementDB = PlacementDBClient()
     self.server = RPCClient("DataManagement/PlacementDB")
-    self.DataLog = RPCClient('DataManagement/DataLogging')
+    self.DataLog = DataLoggingClient()
     gMonitor.registerActivity("Iteration","Agent Loops","ReplicationPlacementAgent","Loops/min",gMonitor.OP_SUM)
     return result
 
@@ -126,7 +127,7 @@ class ReplicationPlacementAgent(Agent):
     if not seFiles:
       gLogger.info("ReplicationPlacementAgent.processTransformation: Sufficient number of files not found for %s." % transName)
       return S_OK()
-		
+
     res = self.submitRequest(seFiles,transName)
     if not res['OK']:
       errStr = "ReplicationPlacementAgent.processTransformation: Failed to process task for transformation."

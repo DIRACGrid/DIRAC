@@ -6,6 +6,7 @@ from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 from DIRAC.DataManagementSystem.DB.TransferDB import TransferDB
 from DIRAC.DataManagementSystem.Client.FTSRequest import FTSRequest
 from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClient
 from DIRAC.Core.Utilities.GridCredentials import setupProxy,setDIRACGroup,getProxyTimeLeft
 import os,time
 from types import *
@@ -25,7 +26,7 @@ class FTSSubmit(Agent):
     self.filesPerJob = gConfig.getValue(self.section+'/MaxFilesPerJob',50)
     self.maxJobsPerChannel = gConfig.getValue(self.section+'/MaxJobsPerChannel',2)
     self.submissionsPerLoop = gConfig.getValue(self.section+'/SubmissionsPerLoop',1)
-    self.DataLog = RPCClient('DataManagement/DataLogging')
+    self.DataLog = DataLoggingClient()
 
     self.useProxies = gConfig.getValue(self.section+'/UseProxies','True')
     if self.useProxies == 'True':
