@@ -10,6 +10,7 @@ from DIRAC.Core.Utilities.ThreadPool import ThreadPool,ThreadedJob
 from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
 from DIRAC.RequestManagementSystem.Client.DataManagementRequest import DataManagementRequest
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
+from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClient
 from DIRAC.Core.DISET.RPCClient import RPCClient
 
 import time,os
@@ -28,7 +29,7 @@ class TransferAgent(Agent):
     result = Agent.initialize(self)
     self.RequestDBClient = RequestClient()
     self.ReplicaManager = ReplicaManager()
-    self.DataLog = RPCClient('DataManagement/DataLogging')
+    self.DataLog = DataLoggingClient()
 
     gMonitor.registerActivity( "Iteration", "Agent Loops",          "TransferAgent", "Loops/min", gMonitor.OP_SUM )
     gMonitor.registerActivity( "Execute",   "Request Processed",    "TransferAgent", "Requests/min", gMonitor.OP_SUM )

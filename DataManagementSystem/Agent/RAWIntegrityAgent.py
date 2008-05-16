@@ -12,6 +12,8 @@ from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.GridCredentials import setupProxy,restoreProxy,setDIRACGroup, getProxyTimeLeft
 from DIRAC.Core.Utilities.Subprocess import shellCall
 from DIRAC.ConfigurationSystem.Client import PathFinder
+from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClient
+
 
 import time,os
 from types import *
@@ -30,7 +32,7 @@ class RAWIntegrityAgent(Agent):
     self.RequestDBClient = RequestClient()
     self.ReplicaManager = ReplicaManager()
     self.RAWIntegrityDB = RAWIntegrityDB()
-    self.DataLog = RPCClient('DataManagement/DataLogging')
+    self.DataLog = DataLoggingClient()
 
     self.wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
     self.proxyDN = gConfig.getValue(self.section+'/ProxyDN')

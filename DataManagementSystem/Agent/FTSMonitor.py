@@ -8,6 +8,7 @@ from DIRAC.DataManagementSystem.Client.FTSRequest import FTSRequest
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.GridCredentials import setupProxy,setDIRACGroup, getProxyTimeLeft
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
+from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClient
 from DIRAC.Core.Utilities import Time
 import os,time,re
 from types import *
@@ -26,7 +27,7 @@ class FTSMonitor(Agent):
     result = Agent.initialize(self)
     self.TransferDB = TransferDB()
     self.monitorsPerLoop = gConfig.getValue(self.section+'/MonitorsPerLoop',1)
-    self.DataLog = RPCClient('DataManagement/DataLogging')
+    self.DataLog = DataLoggingClient()
 
     self.useProxies = gConfig.getValue(self.section+'/UseProxies','True')
     if self.useProxies == 'True':
