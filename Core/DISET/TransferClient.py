@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/TransferClient.py,v 1.12 2007/11/20 15:51:44 acasajus Exp $
-__RCSID__ = "$Id: TransferClient.py,v 1.12 2007/11/20 15:51:44 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/TransferClient.py,v 1.13 2008/05/16 10:13:24 acasajus Exp $
+__RCSID__ = "$Id: TransferClient.py,v 1.13 2008/05/16 10:13:24 acasajus Exp $"
 
 import tarfile
 import threading
@@ -24,15 +24,16 @@ class TransferClient( BaseClient ):
     retVal = self._connect()
     if not retVal[ 'OK' ]:
       return retVal
+    transport = retVal[ 'Value' ]
     #FFC -> File from Client
-    retVal = self._proposeAction( ( "FileTransfer", actionName ) )
+    retVal = self._proposeAction( transport, ( "FileTransfer", actionName ) )
     if not retVal[ 'OK' ]:
       return retVal
-    self.transport.sendData( S_OK( fileInfo ) )
-    retVal = self.transport.receiveData()
+    transport.sendData( S_OK( fileInfo ) )
+    retVal = transport.receiveData()
     if not retVal[ 'OK' ]:
       return retVal
-    return S_OK()
+    return S_OK( transport )
 
   def sendFile( self, filename, fileId, token = "" ):
     """
@@ -54,12 +55,13 @@ class TransferClient( BaseClient ):
     retVal = self.__sendTransferHeader( "FromClient", ( fileId, token, File.getSize( filename ) ) )
     if not retVal[ 'OK' ]:
       return retVal
-    fileHelper.setTransport( self.transport )
+    transport = retVal[ 'Value' ]
+    fileHelper.setTransport( transport )
     retVal = fileHelper.FDToNetwork( fd )
     if not retVal[ 'OK' ]:
       return retVal
-    retVal = self.transport.receiveData()
-    self.transport.close()
+    retVal = transport.receiveData()
+    transport.close()
     return retVal
 
   def receiveFile( self, filename, fileId, token = ""):
@@ -82,12 +84,13 @@ class TransferClient( BaseClient ):
     retVal = self.__sendTransferHeader( "ToClient", ( fileId, token ) )
     if not retVal[ 'OK' ]:
       return retVal
-    fileHelper.setTransport( self.transport )
+    transport = retVal[ 'Value' ]
+    fileHelper.setTransport( transport )
     retVal = fileHelper.networkToFD( fd )
     if not retVal[ 'OK' ]:
       return retVal
-    retVal = self.transport.receiveData()
-    self.transport.close()
+    retVal = transport.receiveData()
+    transport.close()
     return retVal
 
   def __checkFileList( self, fileList ):
@@ -123,12 +126,13 @@ class TransferClient( BaseClient ):
     retVal = self.__sendTransferHeader( "BulkFromClient", ( bulkId, token, bulkSize ) )
     if not retVal[ 'OK' ]:
       return retVal
-    fileHelper = FileHelper( self.transport )
+    transport = retVal[ 'Value' ]
+    fileHelper = FileHelper( transport )
     retVal = fileHelper.bulkToNetwork( fileList, compress )
     if not retVal[ 'OK' ]:
       return retVal
-    retVal = self.transport.receiveData()
-    self.transport.close()
+    retVal = transport.receiveData()
+    transport.close()
     return retVal
 
   def receiveBulk( self, destDir, bulkId, token = "", compress = True ):
@@ -154,12 +158,13 @@ class TransferClient( BaseClient ):
     retVal = self.__sendTransferHeader( "BulkToClient", ( bulkId, token ) )
     if not retVal[ 'OK' ]:
       return retVal
-    fileHelper = FileHelper( self.transport )
+    transport = retVal[ 'Value' ]
+    fileHelper = FileHelper( transport )
     retVal = fileHelper.networkToBulk( destDir, compress )
     if not retVal[ 'OK' ]:
       return retVal
-    retVal = self.transport.receiveData()
-    self.transport.close()
+    retVal = transport.receiveData()
+    transport.close()
     return retVal
 
   def listBulk( self, bulkId, token = "", compress = True ):
@@ -181,6 +186,7 @@ class TransferClient( BaseClient ):
     retVal = self.__sendTransferHeader( "ListBulk", ( bulkId, token ) )
     if not retVal[ 'OK' ]:
       return retVal
-    response = self.transport.receiveData( 1048576 )
-    self.transport.close()
+    transport = retVal[ 'Value' ]
+    response = transport.receiveData( 1048576 )
+    transport.close()
     return response
