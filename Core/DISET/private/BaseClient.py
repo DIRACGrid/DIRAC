@@ -1,7 +1,9 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.34 2008/04/21 18:04:49 acasajus Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.34 2008/04/21 18:04:49 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.35 2008/05/16 10:13:50 acasajus Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.35 2008/05/16 10:13:50 acasajus Exp $"
 
 import sys
+import types
+import thread
 import DIRAC
 from DIRAC.Core.DISET.private.Protocols import gProtocolDict
 from DIRAC.LoggingSystem.Client.Logger import gLogger
@@ -25,8 +27,10 @@ class BaseClient:
   KW_PROXY_LOCATION = "proxyLocation"
 
   def __init__( self, serviceName, **kwargs ):
-    self.defaultUserGroup = gConfig.getValue( '/DIRAC/DefaultGroup', 'lhcb_user' )
+    if type( serviceName ) != types.StringType:
+      raise TypeError( "Service name expected to be a string. Received %s type %s" % ( str(serviceName), type(serviceName) ) )
     self.serviceName = serviceName
+    self.defaultUserGroup = gConfig.getValue( '/DIRAC/DefaultGroup', 'lhcb_user' )
     self.kwargs = kwargs
     self.__discoverSetup()
     self.__initStatus = self.__discoverURL()
@@ -36,6 +40,8 @@ class BaseClient:
     self.__discoverCredentialsToUse()
     self.__discoverGroup()
     self.__initStatus = self.__checkTransportSanity()
+    #HACK for thread-safety:
+    self.__allowedThreadID = False
 
   def __discoverSetup(self):
     #Which setup to use?
@@ -109,21 +115,39 @@ class BaseClient:
     gLogger.debug( "Discovering URL for service", "%s -> %s" % ( self.serviceName, sURL ) )
     return sURL
 
+  def __checkThreadID( self ):
+    cThID = thread.get_ident()
+    if not self.__allowedThreadID:
+      self.__allowedThreadID = cThID
+    elif cThID != self.__allowedThreadID :
+      msgTxt = """
+=======DISET client thread safety error========================
+Client %s
+can only run on thread %s
+and this is thread %s
+===============================================================""" % ( str( self ),
+                                                                         self.__allowedThreadID,
+                                                                         cThID  )
+      gLogger.error( msgTxt )
+      #raise Exception( msgTxt )
+
+
   def _connect( self ):
+    self.__checkThreadID()
     gLogger.debug( "Connecting to: %s" % self.serviceURL )
     if not self.__initStatus[ 'OK' ]:
       return self.__initStatus
     try:
-      self.transport = gProtocolDict[ self.URLTuple[0] ][0]( self.URLTuple[1:3], **self.kwargs )
-      self.transport.initAsClient()
+      transport = gProtocolDict[ self.URLTuple[0] ][0]( self.URLTuple[1:3], **self.kwargs )
+      transport.initAsClient()
     except Exception, e:
       return S_ERROR( "Can't connect: %s" % str( e ) )
-    return S_OK()
+    return S_OK( transport )
 
-  def _proposeAction( self, sAction ):
+  def _proposeAction( self, transport, sAction ):
     stConnectionInfo = ( ( self.URLTuple[3], self.setup ), sAction, self.groupToUse )
-    self.transport.sendData( S_OK( stConnectionInfo ) )
-    return self.transport.receiveData()
+    transport.sendData( S_OK( stConnectionInfo ) )
+    return transport.receiveData()
 
   def __checkTransportSanity( self ):
     saneEnv = gProtocolDict[ self.URLTuple[0] ][1]( self.URLTuple[1:3], **self.kwargs )
@@ -135,4 +159,4 @@ class BaseClient:
     return True
 
   def __str__( self ):
-    return "<DISET Client %s %s>" % ( self.serviceURL, self.groupToUse)
+    return "<DISET Client %s %s>" % ( self.serviceURL, self.groupToUse )
