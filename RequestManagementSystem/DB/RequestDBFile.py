@@ -159,7 +159,7 @@ class RequestDBFile:
       self.lastRequest[requestType] = (selectedRequestName,selectedRequestIndex)
       self.getIdLock.release()
       gLogger.info("RequestDBFile._getRequest: Successfully obtained %s request." % selectedRequestName)
-      resDict = {'requestString':selectedRequestString,'requestName':selectedRequestName}
+      resDict = {'RequestString':selectedRequestString,'RequestName':selectedRequestName}
       return S_OK(resDict)
     except Exception, x:
       errStr = "RequestDBFile._getRequest: Exception while getting request."
