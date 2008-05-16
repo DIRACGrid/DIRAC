@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 ########################################################################
-# $Id: dirac-jobexec,v 1.6 2008/05/13 21:17:20 atsareg Exp $
+# $Id: dirac-jobexec,v 1.7 2008/05/16 11:21:38 atsareg Exp $
 # File :   dirac-jobexec
 # Author : Stuart Paterson
 ########################################################################
-__RCSID__   = "$Id: dirac-jobexec,v 1.6 2008/05/13 21:17:20 atsareg Exp $"
-__VERSION__ = "$Revision: 1.6 $"
+__RCSID__   = "$Id: dirac-jobexec,v 1.7 2008/05/16 11:21:38 atsareg Exp $"
+__VERSION__ = "$Revision: 1.7 $"
 
 """ The dirac-jobexec script is equipped to execute workflows that
     are specified via their XML description.  The main client of
@@ -22,7 +22,8 @@ from DIRAC.Core.Workflow.Step import *
 from DIRAC.Core.Workflow.Workflow import *
 from DIRAC.Core.Workflow.WorkflowReader import *
 from DIRAC import S_OK, S_ERROR, gLogger
-from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport
+#from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport
+#from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
 
 import os,os.path,sys
 
@@ -38,7 +39,8 @@ def jobexec(jobxml):
   jobID = 0
   if os.environ.has_key('JOBID'):
     jobID = os.environ['JOBID']
-  workflow.addTool('JobReport',JobReport(jobID))  
+#  workflow.addTool('JobReport',JobReport(jobID)) 
+#  workflow.addTool('Request',RequestContainer())  
   result = workflow.execute()
   return result
 
