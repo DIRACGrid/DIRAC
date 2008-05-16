@@ -166,7 +166,7 @@ class RequestContainer:
     """
     requestTypes = request.getSubRequestTypes()['Value']
     for requestType in requestTypes:
-      subRequests = request.getSubRequests(requestType)
+      subRequests = request.getSubRequests(requestType)['Value']
       self.setSubRequests(requestType,subRequests)
     return S_OK()
 
@@ -550,7 +550,7 @@ class RequestContainer:
       if not desiredType:
         useType = True
       elif desiredType == requestType:
-        if not self.getNumSubRequests(type)['Value']:
+        if not self.getNumSubRequests(desiredType)['Value']:
           # You have requested a request type and there are no sub requests of this type
           return S_OK()
         else:
@@ -625,7 +625,6 @@ class RequestContainer:
   def parseRequest(self,request):
     """ Create request from the XML string or file
     """
-
     if os.path.exists(request):
       dom = xml.dom.minidom.parse(request)
     else:
@@ -701,5 +700,5 @@ class RequestContainer:
       if child.nodeType == child.TEXT_NODE or \
          child.nodeType == child.CDATA_SECTION_NODE:
         out = out + child.data
-    return out.strip()
+    return str(out.strip())
 
