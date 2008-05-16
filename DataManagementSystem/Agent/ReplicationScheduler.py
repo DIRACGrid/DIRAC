@@ -11,6 +11,7 @@ from DIRAC.DataManagementSystem.Client.FileCatalog import FileCatalog
 from DIRAC.DataManagementSystem.Client.Storage.StorageFactory import StorageFactory
 from DIRAC.DataManagementSystem.Client.StorageElement import StorageElement
 from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClient
 
 import types,re
 
@@ -28,7 +29,7 @@ class ReplicationScheduler(Agent):
     result = Agent.initialize(self)
     self.RequestDB = RequestDBMySQL()
     self.TransferDB = TransferDB()
-    self.DataLog = RPCClient('DataManagement/DataLogging')
+    self.DataLog = DataLoggingClient()
     self.factory = StorageFactory()
     try:
       self.lfc = FileCatalog()
