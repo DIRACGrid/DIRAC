@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: DIPStorage.py,v 1.5 2008/02/26 12:10:46 acsmith Exp $
+# $Id: DIPStorage.py,v 1.6 2008/05/16 11:49:38 acsmith Exp $
 ########################################################################
 
 """ DIPStorage class is the client of the DIRAC Storage Element.
@@ -15,7 +15,7 @@
 
 """
 
-__RCSID__ = "$Id: DIPStorage.py,v 1.5 2008/02/26 12:10:46 acsmith Exp $"
+__RCSID__ = "$Id: DIPStorage.py,v 1.6 2008/05/16 11:49:38 acsmith Exp $"
 
 from DIRAC.DataManagementSystem.Client.Storage.StorageBase import StorageBase
 from DIRAC.Core.Utilities.Pfn import pfnparse,pfnunparse
@@ -40,9 +40,7 @@ class DIPStorage(StorageBase):
     self.wspath = wspath
     self.spaceToken = spaceToken
 
-    url = protocol+"://"+host+":"+port+path
-    self.transferClient = TransferClient(url)
-    self.serviceClient = RPCClient(url)
+    self.url = protocol+"://"+host+":"+port+path
 
     self.cwd = ''
     self.isok = True
@@ -58,9 +56,10 @@ class DIPStorage(StorageBase):
       return S_ERROR("DIPStorage.exists: Supplied path must be string or list of strings")
     successful = {}
     failed = {}
+    serviceClient = RPCClient(self.url)
     for url in urls:
       gLogger.debug("DIPStorage.exists: Determining existence of %s." % url)
-      res = self.serviceClient.exists(url)
+      res = serviceClient.exists(url)
       if res['OK']:
         successful[url] = True
       else:
@@ -84,9 +83,10 @@ class DIPStorage(StorageBase):
       return S_ERROR("DIPStorage.putFile: Supplied file info must be tuple of list of tuples.")
     successful = {}
     failed = {}
+    transferClient = TransferClient(self.url)
     for src_file,dest_url,size in urls:
       gLogger.debug("DIPStorage.putFile: Executing transfer of %s to %s" % (src_file, dest_url))
-      res = self.transferClient.sendFile(src_file,dest_url)
+      res = transferClient.sendFile(src_file,dest_url)
       print res
       if res['OK']:
         successful[dest_url] = True
@@ -106,9 +106,10 @@ class DIPStorage(StorageBase):
       return S_ERROR("DIPStorage.getFile: Supplied file information must be tuple of list of tuples")
     successful = {}
     failed = {}
+    transferClient = TransferClient(self.url)
     for src_url,dest_file,size in urls:
       gLogger.debug("DIPStorage.putFile: Executing transfer of %s to %s" % (src_url, dest_file))
-      res = self.transferClient.receiveFile(src_url,dest_file)
+      res = transferClient.receiveFile(src_url,dest_file)
       if res['OK']:
         successful[src_url] = True
       else:
@@ -129,9 +130,10 @@ class DIPStorage(StorageBase):
       return S_ERROR("DIPStorage.removeFile: No surls supplied.")
     successful = {}
     failed = {}
+    serviceClient = RPCClient(self.url)
     for url in urls:
       gLogger.debug("DIPStorage.removeFile: Attempting to remove %s." % url)
-      res = self.serviceClient.remove(url,'')
+      res = serviceClient.remove(url,'')
       if res['OK']:
         successful[url] = True
       else:
@@ -151,8 +153,9 @@ class DIPStorage(StorageBase):
     successful = {}
     failed = {}
     gLogger.debug("DIPStorage.getFileMetadata: Attempting to obtain metadata for %s files." % len(urls))
+    serviceClient = RPCClient(self.url)
     for url in urls:
-      res = self.serviceClient.getMetadata(url)
+      res = serviceClient.getMetadata(url)
       if res['OK']:
         gLogger.debug("DIPStorage.getFileMetadata: Successfully obtained metadata for %s." % url)
         successful[url] = res['Value']
@@ -180,9 +183,10 @@ class DIPStorage(StorageBase):
     failed = {}
 
     gLogger.debug("DIPStorage.createDirectory: Attempting to create %s directories." % len(urls))
+    serviceClient = RPCClient(self.url)
     for url in urls:
       strippedUrl = url.rstrip('/')
-      res = self.serviceClient.createDirectory(url)
+      res = serviceClient.createDirectory(url)
       if res['OK']:
         gLogger.debug("DIPStorage.createDirectory: Successfully created directory on storage: %s" % url)
         successful[url] = True
@@ -204,8 +208,9 @@ class DIPStorage(StorageBase):
     successful = {}
     failed = {}
     gLogger.debug("DIPStorage.putDirectory: Attemping to put %s directories to remote storage." % len(urls))
+    transferClient = TransferClient(self.url)
     for sourceDir,destDir in urls:
-      res = self.transferClient.sendBulk([sourceDir],destDir)
+      res = transferClient.sendBulk([sourceDir],destDir)
       if res['OK']:
         successful[destDir] = True
       else:
