@@ -1,16 +1,18 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Client/JobReport.py,v 1.4 2008/05/13 22:59:53 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Client/JobReport.py,v 1.5 2008/05/16 10:53:46 atsareg Exp $
 
 """
   JobReport class encapsulates various
   methods of the job status reporting
 """
 
-__RCSID__ = "$Id: JobReport.py,v 1.4 2008/05/13 22:59:53 atsareg Exp $"
+__RCSID__ = "$Id: JobReport.py,v 1.5 2008/05/16 10:53:46 atsareg Exp $"
 
 import datetime
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC import S_OK, S_ERROR
 from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
+from DIRAC.RequestManagementSystem.Client.DISETSubRequest import DISETSubRequest
+
 
 class JobReport:
 
@@ -20,8 +22,7 @@ class JobReport:
     self.jobStatusInfo = []
     self.appStatusInfo = []
     self.jobParameters = []
-    self.jobID = 0
-    self.jobID = jobid
+    self.jobID = int(jobid)
 
   def setJob(self,jobID):
     """ Set the job ID for which to send reports
@@ -29,7 +30,7 @@ class JobReport:
 
     self.jobID = jobID
 
-  def setJobStatus(self, status='', minor='', sendFlag=True):
+  def setJobStatus(self, status='', minor='', sendFlag=False):
     """ Send job status information to the JobState service for jobID
     """
 
@@ -60,6 +61,8 @@ class JobReport:
     """ Send application status information to the JobState service for jobID
     """
 
+    print "AT: >>>>>>>>>>>>> setApplicationStatus", appStatus
+
     if not sendFlag:
       # add job status record
       timeStamp = datetime.datetime.utcnow()
@@ -70,7 +73,7 @@ class JobReport:
       # add new application status record and try to send them all
       timeStamp = datetime.datetime.utcnow()
       self.appStatusInfo.append((appStatus,timeStamp))
-      result = self.sendStoredJobStatusInfo()
+      result = self.sendStoredStatusInfo()
       return result
     else:
       result = self.jobMonitor.setJobApplicationStatus(self.jobID,appStatus,'Job_%d' % self.jobID)
@@ -153,6 +156,13 @@ class JobReport:
 
     if statusDict:
       result = self.jobMonitor.setJobStatusBulk(self.jobID,statusDict)
+      
+      print "AT >>>>>>>>>>>>", statusDict
+      print "AT >>>>>>>>>>>>", result
+      
+      result['OK'] =  False
+      result['Message'] = ''
+      
       print result
       if result['OK']:
         # Empty the internal status containers
@@ -205,10 +215,20 @@ class JobReport:
 
     request = RequestContainer()
     result = self.sendStoredStatusInfo()
+    print "AT >>>>>>>>>> 00000000000000000000000000000000000000000000",result
     if not result['OK']:
-      requests.addSubRequest('jobstate',DISETSubRequest(result['rpcStub']))
+      print "AT >>>>>>>>>>> DISETSubRequest:   8989898"
+      print "AT >>>>>>>>>>> DISETSubRequest", DISETSubRequest(result['rpcStub'])
+      print "AT >>>>>>>>>>> DISETSubRequest", DISETSubRequest(result['rpcStub']).getDictionary()
+
+      request.addSubRequest(DISETSubRequest(result['rpcStub']).getDictionary(),'jobstate')
+      print "AT >>>>>>>>>>> DISETSubRequest",request,request.isEmpty()
+      
     result = self.sendStoredJobParameters()
     if not result['OK']:
-      requests.addSubRequest('jobparameters',DISETSubRequest(result['rpcStub']))
+      request.addSubRequest(DISETSubRequest(result['rpcStub']).getDictionary(),'jobparameters')
+
+    if request.isEmpty()['Value']:
+      request = None
 
     return S_OK(request)
