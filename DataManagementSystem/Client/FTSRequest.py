@@ -168,8 +168,8 @@ class FTSRequest:
       comm = 'glite-transfer-submit -s %s -f %s -t %s' % (self.ftsServer,self.surlFile,self.spaceToken)
     else:
       comm = 'glite-transfer-submit -s %s -f %s' % (self.ftsServer,self.surlFile)
-    os.remove(self.surlFile)
     res = shellCall(120,comm)
+    os.remove(self.surlFile)
     if not res['OK']:
       return res
     returnCode,output,errStr = res['Value']
