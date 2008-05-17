@@ -8,8 +8,9 @@ from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.GridCredentials import setupProxy,restoreProxy,setDIRACGroup, getProxyTimeLeft
 from DIRAC.Core.Utilities.ThreadPool import ThreadPool,ThreadedJob
 from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
-from DIRAC.RequestManagementSystem.Client.DataManagementRequest import DataManagementRequest
+from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
+from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClient
 
 import time,os,re
 from types import *
@@ -41,8 +42,8 @@ class RemovalAgent(Agent):
     gMonitor.registerActivity("ReplicaRemovalDone", "Successful replica removals",  "RemovalAgent",       "Removal/min",     gMonitor.OP_SUM)
     gMonitor.registerActivity("ReplicaRemovalFail", "Failed replica removals",      "RemovalAgent",       "Removal/min",     gMonitor.OP_SUM)
 
-    gMonitor.registerActivity("RemoveFileAtt",      "File removal attempted",       "RemovalAgent",       "Removal/min",     gMonitor.OP_SUM) 
-    gMonitor.registerActivity("RemoveFileDone",     "File removal done",            "RemovalAgent",       "Removal/min",     gMonitor.OP_SUM)   
+    gMonitor.registerActivity("RemoveFileAtt",      "File removal attempted",       "RemovalAgent",       "Removal/min",     gMonitor.OP_SUM)
+    gMonitor.registerActivity("RemoveFileDone",     "File removal done",            "RemovalAgent",       "Removal/min",     gMonitor.OP_SUM)
     gMonitor.registerActivity("RemoveFileFail",     "File removal failed",          "RemovalAgent",       "Removal/min",     gMonitor.OP_SUM)
 
     self.maxNumberOfThreads = gConfig.getValue(self.section+'/NumberOfThreads',0)
@@ -123,7 +124,7 @@ class RemovalAgent(Agent):
     requestName = res['Value']['RequestName']
     sourceServer= res['Value']['Server']
     gLogger.info("RemovalAgent.execute: Obtained request %s" % requestName)
-    oRequest = DataManagementRequest(request=requestString)
+    oRequest = RequestContainer(request=requestString)
 
     ################################################
     # Find the number of sub-requests from the request

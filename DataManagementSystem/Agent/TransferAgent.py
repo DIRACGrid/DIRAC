@@ -8,7 +8,7 @@ from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.GridCredentials import setupProxy,restoreProxy,setDIRACGroup, getProxyTimeLeft
 from DIRAC.Core.Utilities.ThreadPool import ThreadPool,ThreadedJob
 from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
-from DIRAC.RequestManagementSystem.Client.DataManagementRequest import DataManagementRequest
+from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClient
 from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -127,11 +127,11 @@ class TransferAgent(Agent):
     elif not res['Value']:
       gLogger.info("TransferAgent.execute: No requests to be executed found.")
       return S_OK()
-    requestString = res['Value']['requestString']
-    requestName = res['Value']['requestName']
+    requestString = res['Value']['RequestString']
+    requestName = res['Value']['RequestName']
     sourceServer= res['Value']['Server']
     gLogger.info("TransferAgent.execute: Obtained request %s" % requestName)
-    oRequest = DataManagementRequest(request=requestString)
+    oRequest = RequestContainer(request=requestString)
 
     ################################################
     # Find the number of sub-requests from the request
