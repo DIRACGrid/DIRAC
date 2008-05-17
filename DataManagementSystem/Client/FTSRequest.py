@@ -103,19 +103,7 @@ class FTSRequest:
 
     for lfn in self.fileDict.keys():
       sourceSURL = self.fileDict[lfn]['Source']
-      res = pfnparse(sourceSURL)
-      surlDict = res['Value']
-      surlDict['port']='8443/srm/managerv2?SFN='
-      res = pfnunparse(surlDict)
-      sourceSURL = res['Value']
-
       targetSURL = self.fileDict[lfn]['Destination']
-      res = pfnparse(targetSURL)
-      surlDict = res['Value']
-      surlDict['port']='8443/srm/managerv2?SFN='
-      res = pfnunparse(surlDict)
-      targetSURL = res['Value']
-
       surlString = '%s %s\n' % (sourceSURL,targetSURL)
       surlFile.write(surlString)
     surlFile.close()
@@ -180,6 +168,7 @@ class FTSRequest:
       comm = 'glite-transfer-submit -s %s -f %s -t %s' % (self.ftsServer,self.surlFile,self.spaceToken)
     else:
       comm = 'glite-transfer-submit -s %s -f %s' % (self.ftsServer,self.surlFile)
+    os.remove(self.surlFile)
     res = shellCall(120,comm)
     if not res['OK']:
       return res
@@ -349,10 +338,6 @@ class FTSRequest:
         key = line.split(':',1)[0].strip()
         if key in requiredKeys:
           value = line.split(':',1)[1].strip()
-          if key == 'Source':
-            value = value.replace(':8443/srm/managerv2?SFN=','')
-          if key == 'Destination':
-            value = value.replace(':8443/srm/managerv2?SFN=','')
           dict[key] = value
         else:
           if dict.has_key('Reason'):
