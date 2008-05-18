@@ -8,7 +8,7 @@ from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.GridCredentials import setupProxy,setDIRACGroup,getProxyTimeLeft
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClient
-import os,time
+import os,time,re
 from types import *
 
 AGENT_NAME = 'DataManagement/FTSRegister'
@@ -78,6 +78,49 @@ class FTSRegister(Agent):
           return S_OK()
         setDIRACGroup(self.proxyGroup)
         self.log.info("TransferAgent.execute: Successfully renewed %s proxy." %self.proxyDN)
+
+
+    res = self.TransferDB.getCompletedReplications()
+    if not res['OK']:
+      gLogger.error("FTSRegister.execute: Failed to get the completed replications from TransferDB.",res['Message'])
+      return S_OK()
+    filesToRemove = {}
+    for operation,sourceSE,lfn in res['Value']:
+      # This should get us the files that were supposed to be moved
+      if re.search('ralmigration',operation.lower()):
+        if not filesToRemove.has_key(sourceSE):
+          filesToRemove[sourceSE] = []
+        filesToRemove[sourceSE].append(lfn)
+
+    for sourceSE,lfns in filesToRemove.items():
+      #tmp hack until the ral people sort it out!!
+      from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
+      from DIRAC.RequestManagementSystem.Client.DataManagementRequest import DataManagementRequest
+      import time
+      client = RequestClient()
+      oRequest = DataManagementRequest()
+      subRequestIndex = oRequest.initiateSubRequest('removal')['Value']
+      attributeDict = {'Operation':'replicaRemoval','TargetSE':sourceSE}
+      oRequest.setSubRequestAttributes(subRequestIndex,'removal',attributeDict)
+      filesList = []
+      for lfn in lfns:
+        filesList.append({'LFN':lfn})
+      oRequest.setSubRequestFiles(subRequestIndex,'removal',filesList)
+      requestString = oRequest.toXML()['Value']
+      requestName = 'RAL-removal-FTSRegister.%s' % time.time()
+      res = client.setRequest(requestName,requestString,'dips://volhcb03.cern.ch:9143/RequestManagement/RequestManager')
+      print res['OK']
+      """
+      gLogger.info("FTSRegister.execute:  Attemping to remove %s file(s) from %s." % (len(lfns),sourceSE))
+      print lfns[0]
+      res = self.ReplicaManager.removeReplica(sourceSE,lfns)
+      if not res['OK']:
+        gLogger.error("FTSRegister.execute: Completely failed to remove replicas.",res['Message'])
+        return S_OK()
+      for lfn in res['Value']['Successful'].keys():
+        print 'successful'
+        self.DataLog.addFileRecord(lfn,'RemoveReplica',sourceSE,'','FTSRegisterAgent')              
+      """
 
     res = self.TransferDB.getWaitingRegistrations()
     if not res['OK']:
