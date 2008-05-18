@@ -1,4 +1,4 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.30 2008/04/30 12:06:48 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.31 2008/05/18 18:14:42 atsareg Exp $
 
 """ Grid Credentials module contains utilities to manage user and host
     certificates and proxies.
@@ -33,7 +33,7 @@
     getVOMSProxyInfo()
 """
 
-__RCSID__ = "$Id: GridCredentials.py,v 1.30 2008/04/30 12:06:48 atsareg Exp $"
+__RCSID__ = "$Id: GridCredentials.py,v 1.31 2008/05/18 18:14:42 atsareg Exp $"
 
 import os
 import os.path
@@ -1088,6 +1088,10 @@ def getVOMSProxyInfo(proxy_file,option=None):
     cmd += ' -%s' % option
 
   result = shellCall(20,cmd,env=x509_env)
+
+  if rm_proxy:
+    os.remove(new_proxy)
+
   if not result['OK']:
     return S_ERROR('Failed to call voms-proxy-info')
 
