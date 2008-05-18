@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotMonitor.py,v 1.6 2008/05/18 06:50:52 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotMonitor.py,v 1.7 2008/05/18 06:56:36 rgracian Exp $
 # File :   PilotMonitor.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
      of the AgentMonitor instance for all Grids.
 """
 
-__RCSID__ = "$Id: PilotMonitor.py,v 1.6 2008/05/18 06:50:52 rgracian Exp $"
+__RCSID__ = "$Id: PilotMonitor.py,v 1.7 2008/05/18 06:56:36 rgracian Exp $"
 
 from DIRAC.Core.Base.Agent    import Agent
 from DIRAC                    import S_OK, S_ERROR, gConfig, gLogger
@@ -74,6 +74,9 @@ class PilotMonitor(Agent):
       result = self.pilotDB.getPilotInfo(pilotList)
       if not result['OK']:
         self.log.warn('Failed to get pilots info for job %d' % int(jobID))
+        result = self.jobDB.setJobAttribute(jobID,"MinorStatus",
+                                                  "Pilot Agent Submission",
+                                                  update=True)
         continue
         
       resultDict = result['Value']
