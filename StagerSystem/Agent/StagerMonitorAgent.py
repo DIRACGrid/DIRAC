@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/StagerMonitorAgent.py,v 1.4 2008/05/11 23:29:33 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/StagerMonitorAgent.py,v 1.5 2008/05/18 22:13:33 atsareg Exp $
 # File :   StagerMonitorAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
      of the SiteMonitor instances. The StagerMonitorAgent also manages the proxy environment.
 """
 
-__RCSID__ = "$Id: StagerMonitorAgent.py,v 1.4 2008/05/11 23:29:33 rgracian Exp $"
+__RCSID__ = "$Id: StagerMonitorAgent.py,v 1.5 2008/05/18 22:13:33 atsareg Exp $"
 
 from DIRAC.Core.Base.Agent                                 import Agent
 from DIRAC.Core.DISET.RPCClient                            import RPCClient
@@ -54,6 +54,7 @@ class StagerMonitorAgent(Agent):
   def execute(self):
     """The StagerMonitorAgent execution method.
     """
+    # Update polling time
     self.pollingTime = gConfig.getValue(self.section+'/PollingTime',60)
     prodDN = gConfig.getValue('Operations/Production/ShiftManager','')
     if not prodDN:
@@ -112,9 +113,11 @@ class StagerMonitorAgent(Agent):
       self.log.info("No proxy found")
       obtainProxy = True
     else:
-      currentProxy = open(self.proxyLocation,'r')
-      oldProxyStr = currentProxy.read()
-      res = getProxyTimeLeft(oldProxyStr)
+      #currentProxy = open(self.proxyLocation,'r')
+      #oldProxyStr = currentProxy.read()
+      #res = getProxyTimeLeft(oldProxyStr)
+      # AT - enough to give just the file name
+      res = getProxyTimeLeft(self.proxyLocation)
       if not res["OK"]:
         self.log.error("Could not determine the time left for proxy", res['Message'])
         res = S_OK(0) # force update of proxy
@@ -141,6 +144,9 @@ class StagerMonitorAgent(Agent):
 
       setDIRACGroup(prodGroup)
       self.log.info('Successfully renewed %s proxy' %prodDN)
+    else:
+      # The proxy is OK, force it to the environment
+      os.environ['X509_USER_PROXY'] = os.path.realpath(self.proxyLocation)  
 
     #os.system('voms-proxy-info -all')
     return S_OK('Active proxy available')
