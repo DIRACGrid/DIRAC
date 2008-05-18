@@ -94,8 +94,8 @@ class FileCatalog:
         if len(failed) == 0:
           resDict = {'Failed':failed,'Successful':successful}
           return S_OK(resDict)
-    if len(successful) == 0:
-      return S_ERROR('FileCatalog.%s: Completely failed for all catalogs.' % self.call)
+    #if len(successful) == 0:
+    #  return S_ERROR('FileCatalog.%s: Completely failed for all catalogs.' % self.call)
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
