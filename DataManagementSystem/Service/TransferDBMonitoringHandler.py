@@ -255,3 +255,44 @@ class TransferDBMonitoringHandler(RequestHandler):
     resultDict['Records'] = records
     return S_OK(resultDict)
 
+  ########################################################################
+  #
+  # Sub Request monitor methods
+  #
+  types_getSubRequestStatuses = []
+  def export_getSubRequestStatuses(self):
+    return transferDB.getDistinctSubRequestAttributes('Status')
+
+  types_getSubRequestTypes = []
+  def export_getSubRequestTypes(self):
+    return transferDB.getDistinctSubRequestAttributes('RequestType')
+      
+  types_getSubRequestOperations = []
+  def export_getSubRequestOperations(self):
+    return transferDB.getDistinctSubRequestAttributes('Operation')
+      
+  types_getSubRequestSourceSEs = []
+  def export_getSubRequestSourceSEs(self):
+    return transferDB.getDistinctSubRequestAttributes('SourceSE')
+      
+  types_getSubRequestTargetSEs = []
+  def export_getSubRequestTargetSEs(self):
+    return transferDB.getDistinctSubRequestAttributes('TargetSE')
+
+  ########################################################################
+  #
+  # Request monitor methods
+  #
+  types_getRequestStatuses = []
+  def export_getRequestStatuses(self):
+    return transferDB.getDistinctRequestAttributes('Status')
+
+  ########################################################################
+  #
+  # File monitor methods
+  #
+  types_getFilesStatuses = []
+  def export_getFilesStatuses(self):
+    return transferDB.getDistinctFilesAttributes('Status')
+
+  
