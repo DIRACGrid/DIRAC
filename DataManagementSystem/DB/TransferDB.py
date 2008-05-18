@@ -412,6 +412,14 @@ class TransferDB(DB):
     for fileID in res['Value']:
       fileIDs.append(fileID[0])
     return S_OK(fileIDs)
+  
+  def getSizeOfCompletedFiles(self,ftsReqID,completedFileIDs):
+    req = "SELECT SUM(FileSize) FROM FileToFTS where FTSReqID = %s AND FileID IN (%s);" % (ftsReqID,intListToString(completedFileIDs))
+    res = self._query(req)
+    if not res['OK']:
+      err = "TransferDB._getSizeOfCompletedFiles: Failed to get successful transfer size for FTSReq %s." % ftsReqID
+      return S_ERROR('%s\n%s' % (err,res['Message']))
+    return S_OK(res['Value'][0][0]) 
 
   def removeFilesFromFTSReq(self,ftsReqID):
     req = "DELETE FROM FileToFTS WHERE FTSReqID = %s;" % ftsReqID
@@ -509,6 +517,17 @@ class TransferDB(DB):
       err = "TransferDB._addFileRegistration: Failed to add registration entry for file %s" % fileID
       return S_ERROR(err)
     return S_OK()
+
+  def getCompletedReplications(self):
+    req = "SELECT sR.Operation,sR.SourceSE,fc.LFN FROM SubRequests AS sR, Files AS f, FileToCat AS fc WHERE fc.Status = 'Waiting' AND fc.FileID=f.FileID AND sR.SubRequestID=f.SubRequestID;"
+    res = self._query(req)
+    if not res['OK']:
+      err = "TransferDB._getCompletedReplications: Failed to get completed replications."
+      return S_ERROR(err)
+    tuples = []
+    for tuple in res['Value']:
+      tuples.append(tuple)
+    return S_OK(tuples)
 
   def getWaitingRegistrations(self):
     req = "SELECT FileID,ChannelID,LFN,PFN,SE FROM FileToCat WHERE Status='Waiting';"
@@ -827,4 +846,25 @@ class TransferDB(DB):
                                                  conjunction,
                                                  str(newer) )
     return condition
+
+
+  def getDistinctRequestAttributes(self,attribute, condDict = {}, older = None, newer=None):
+    return self.__getDistinctTableAttributes('Requests',attribute, condDict,older,newer)
+
+  def getDistinctSubRequestAttributes(self,attribute, condDict = {}, older = None, newer=None):
+    return self.__getDistinctTableAttributes('SubRequests',attribute, condDict,older,newer)      
+
+  def getDistinctFilesAttributes(self,attribute, condDict = {}, older = None, newer=None):
+    return self.__getDistinctTableAttributes('Files',attribute, condDict,older,newer)
+  
+  def __getDistinctTableAttributes(self,table,attribute, condDict = {}, older = None, newer=None):
+    """ Get distinct values of the table attribute under specified conditions
+    """
+    cmd = 'SELECT  DISTINCT(%s) FROM %s ORDER BY %s' % (attribute,table,attribute)
+    cond = self.__buildCondition( condDict, older=older, newer=newer )
+    result = self._query( cmd + cond )
+    if not result['OK']:
+      return result
+    attr_list = [ x[0] for x in result['Value'] ]
+    return S_OK(attr_list)
 
