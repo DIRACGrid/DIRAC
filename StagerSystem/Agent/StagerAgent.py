@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/StagerAgent.py,v 1.1 2008/03/31 16:30:21 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/StagerAgent.py,v 1.2 2008/05/18 22:38:04 atsareg Exp $
 # File :   StagerAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -11,11 +11,11 @@
      also manages the proxy environment for the SiteStager instances.
 """
 
-__RCSID__ = "$Id: StagerAgent.py,v 1.1 2008/03/31 16:30:21 paterson Exp $"
+__RCSID__ = "$Id: StagerAgent.py,v 1.2 2008/05/18 22:38:04 atsareg Exp $"
 
 from DIRAC.Core.Base.Agent                                 import Agent
 from DIRAC.Core.DISET.RPCClient                            import RPCClient
-from DIRAC.Core.Utilities.GridCredentials                  import setupProxy,restoreProxy,setDIRACGroup, getProxyTimeLeft
+from DIRAC.Core.Utilities.GridCredentials                  import setupProxyFile,setupProxy,restoreProxy,setDIRACGroup, getProxyTimeLeft
 from DIRAC                                                 import S_OK, S_ERROR, gConfig, gLogger
 
 import os, sys, re, string, time
@@ -113,15 +113,12 @@ class StagerAgent(Agent):
       self.log.info("No proxy found")
       obtainProxy = True
     else:
-      currentProxy = open(self.proxyLocation,'r')
-      oldProxyStr = currentProxy.read()
-      res = getProxyTimeLeft(oldProxyStr)
+      res = setupProxyFile(self.proxyLocation)
       if not res["OK"]:
-        self.log.error("Could not determine the time left for proxy", res['Message'])
+        self.log.error("Failed to set up proxy in the standard location", res['Message'])
         res = S_OK(0) # force update of proxy
 
       proxyValidity = int(res['Value'])
-      self.log.debug('Current proxy found to be valid for %s seconds' %proxyValidity)
       self.log.info('%s proxy found to be valid for %s seconds' %(prodDN,proxyValidity))
       if proxyValidity <= self.minProxyValidity:
         obtainProxy = True
