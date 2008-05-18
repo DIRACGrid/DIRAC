@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalogue. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.26 2008/05/16 09:41:26 paterson Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.27 2008/05/18 21:52:55 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -811,7 +811,7 @@ class ReplicaManager:
         replicaTuples.append(replicaTuple)
     res = self.__removeReplica(storageElementName,replicaTuples)
     failed.update(res['Value']['Failed'])
-    successful = res['Value']['Successful']
+    successful.update(res['Value']['Successful'])
     resDict = {'Successful':successful,'Failed':failed}
     return S_OK(resDict)
 
