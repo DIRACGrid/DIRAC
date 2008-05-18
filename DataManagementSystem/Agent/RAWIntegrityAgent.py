@@ -5,7 +5,7 @@ from DIRAC  import gLogger, gConfig, gMonitor,S_OK, S_ERROR
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
 from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
-from DIRAC.RequestManagementSystem.Client.DataManagementRequest import DataManagementRequest
+from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 from DIRAC.DataManagementSystem.DB.RAWIntegrityDB import RAWIntegrityDB
 from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -13,7 +13,7 @@ from DIRAC.Core.Utilities.GridCredentials import setupProxy,restoreProxy,setDIRA
 from DIRAC.Core.Utilities.Subprocess import shellCall
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClient
-
+from DIRAC.DataManagementSystem.Client.FileCatalog import FileCatalog
 
 import time,os
 from types import *
@@ -33,6 +33,7 @@ class RAWIntegrityAgent(Agent):
     self.ReplicaManager = ReplicaManager()
     self.RAWIntegrityDB = RAWIntegrityDB()
     self.DataLog = DataLoggingClient()
+    self.ProdDB = FileCatalog(['ProductionDB'])
 
     self.wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
     self.proxyDN = gConfig.getValue(self.section+'/ProxyDN')
@@ -227,7 +228,7 @@ class RAWIntegrityAgent(Agent):
         guid = activeFiles[lfn]['GUID']
         checksum = activeFiles[lfn]['Checksum']
         fileTuple = (lfn,pfn,size,se,guid,checksum)
-        res = self.ReplicaManager.registerFile(fileTuple)
+        res = self.ProdDB.addFile(fileTuple)
         print res
         if not res['OK']:
           self.DataLog.addFileRecord(lfn,'RegisterFailed',se,'','RAWIntegrityAgent')
@@ -243,7 +244,7 @@ class RAWIntegrityAgent(Agent):
           # Create a removal request and set it to the gateway request DB
           #
           gLogger.info("RAWIntegrityAgent.execute: Creating removal request for correctly migrated files.")
-          oRequest = DataManagementRequest()
+          oRequest = RequestContainer()
           subRequestIndex = oRequest.initiateSubRequest('removal')['Value']
           attributeDict = {'Operation':'physicalRemoval','TargetSE':'OnlineRunDB'}
           oRequest.setSubRequestAttributes(subRequestIndex,'removal',attributeDict)
@@ -281,11 +282,11 @@ class RAWIntegrityAgent(Agent):
         size = activeFiles[lfn]['Size']
         se = activeFiles[lfn]['SE']
         guid = activeFiles[lfn]['GUID']
-        res = self.ReplicaManager.removePhysicalFile(se,pfn)
+        res = self.ReplicaManager.removeFile(lfn)
         if not res['OK']:
           self.DataLog.addFileRecord(lfn,'RemoveReplicaFailed',se,'','RAWIntegrityAgent')
           gLogger.error("RAWIntegrityAgent.execute: Completely failed to remove pfn from the storage element.", res['Message'])
-        elif not res['Value']['Successful'].has_key(pfn):
+        elif not res['Value']['Successful'].has_key(lfn):
           self.DataLog.addFileRecord(lfn,'RemoveReplicaFailed',se,'','RAWIntegrityAgent')
           gLogger.error("RAWIntegrityAgent.execute: Failed to remove pfn from the storage element.", res['Value']['Failed'][pfn])
         else:
@@ -296,7 +297,7 @@ class RAWIntegrityAgent(Agent):
           # Create a transfer request for the files incorrectly migrated
           #
           gLogger.info("RAWIntegrityAgent.execute: Creating (re)transfer request for incorrectly migrated files.")
-          oRequest = DataManagementRequest()
+          oRequest = RequestContainer()
           subRequestIndex = oRequest.initiateSubRequest('removal')['Value']
           attributeDict = {'Operation':'reTransfer','TargetSE':'OnlineRunDB'}
           oRequest.setSubRequestAttributes(subRequestIndex,'removal',attributeDict)
