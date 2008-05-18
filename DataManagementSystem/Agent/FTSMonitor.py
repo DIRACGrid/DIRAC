@@ -260,7 +260,7 @@ class FTSMonitor(Agent):
           if completedFileIDs:
             res = self.TransferDB.getSizeOfCompletedFiles(ftsReqID,completedFileIDs)
             if res['OK']:
-              transferSize = res['Value']
+              transferSize = int(res['Value'])
           oAccounting = self.initialiseAccountingObject(submitTime)
           oAccounting.setValueByKey('TransferOK',len(completedFileIDs))
           oAccounting.setValueByKey('TransferTotal',numberOfFiles)
@@ -313,7 +313,7 @@ class FTSMonitor(Agent):
     return oAccounting
 
   def corruptedTarget(self,failReason):
-    corruptionErrors = ['FILE_EXISTS','Device or resource busy','TRANSFER error during TRANSFER phase']
+    corruptionErrors = ['FILE_EXISTS','Device or resource busy']#,'TRANSFER error during TRANSFER phase']
     for error in corruptionErrors:
       if re.search(error,failReason):
         return 1
