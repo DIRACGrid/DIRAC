@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotMonitor.py,v 1.4 2008/03/13 17:16:40 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotMonitor.py,v 1.5 2008/05/18 06:34:51 rgracian Exp $
 # File :   PilotMonitor.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
      of the AgentMonitor instance for all Grids.
 """
 
-__RCSID__ = "$Id: PilotMonitor.py,v 1.4 2008/03/13 17:16:40 atsareg Exp $"
+__RCSID__ = "$Id: PilotMonitor.py,v 1.5 2008/05/18 06:34:51 rgracian Exp $"
 
 from DIRAC.Core.Base.Agent    import Agent
 from DIRAC                    import S_OK, S_ERROR, gConfig, gLogger
@@ -52,7 +52,7 @@ class PilotMonitor(Agent):
     selection = {'Status':'Waiting','MinorStatus':'Pilot Agent Response'}
     delay  = time.localtime( time.time() - self.maxWaitingTime )
     delay = time.strftime( "%Y-%m-%d %H:%M:%S", delay )
-    result = self.jobDB.selectJobs(selection, older=delay, limit=self.selectJobLimit)
+    result = self.jobDB.selectJobs(selection, older=delay, limit=self.selectJobLimit, orderAttribute='LastUpdateTime')
     if not result['OK']:
       return result
       
