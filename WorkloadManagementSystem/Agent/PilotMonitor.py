@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotMonitor.py,v 1.5 2008/05/18 06:34:51 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotMonitor.py,v 1.6 2008/05/18 06:50:52 rgracian Exp $
 # File :   PilotMonitor.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
      of the AgentMonitor instance for all Grids.
 """
 
-__RCSID__ = "$Id: PilotMonitor.py,v 1.5 2008/05/18 06:34:51 rgracian Exp $"
+__RCSID__ = "$Id: PilotMonitor.py,v 1.6 2008/05/18 06:50:52 rgracian Exp $"
 
 from DIRAC.Core.Base.Agent    import Agent
 from DIRAC                    import S_OK, S_ERROR, gConfig, gLogger
@@ -89,12 +89,15 @@ class PilotMonitor(Agent):
            pilotDict['Status'] == "Scheduled":
           submitted_pilots.append(pRef)
           
-      if not submitted_pilots:
-        if len(submitted_pilots) < self.maxPilotAgents:
-          result = self.jobDB.setJobAttribute(jobID,"MinorStatus",
-                                              "Pilot Agent Submission",
-                                              update=True)       
-          
+      if len(submitted_pilots) < self.maxPilotAgents:
+        result = self.jobDB.setJobAttribute(jobID,"MinorStatus",
+                                            "Pilot Agent Submission",
+                                            update=True)
+      else:
+        result = self.jobDB.setJobAttribute(jobID,"MinorStatus",
+                                             "Pilot Agent Response",
+                                             update=True)
+      
     result = self.pilotDB.clearPilots(self.clearPilotsDelay,self.clearAbortedDelay)
     if not result['OK']:
       self.log.warn('Failed to clear old pilots in the PilotAgentsDB')  
