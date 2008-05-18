@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/StagerMonitorAgent.py,v 1.5 2008/05/18 22:13:33 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/StagerMonitorAgent.py,v 1.6 2008/05/18 22:24:30 atsareg Exp $
 # File :   StagerMonitorAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,11 +9,11 @@
      of the SiteMonitor instances. The StagerMonitorAgent also manages the proxy environment.
 """
 
-__RCSID__ = "$Id: StagerMonitorAgent.py,v 1.5 2008/05/18 22:13:33 atsareg Exp $"
+__RCSID__ = "$Id: StagerMonitorAgent.py,v 1.6 2008/05/18 22:24:30 atsareg Exp $"
 
 from DIRAC.Core.Base.Agent                                 import Agent
 from DIRAC.Core.DISET.RPCClient                            import RPCClient
-from DIRAC.Core.Utilities.GridCredentials                  import setupProxy,restoreProxy,setDIRACGroup, getProxyTimeLeft
+from DIRAC.Core.Utilities.GridCredentials                  import setupProxyFile,setupProxy,restoreProxy,setDIRACGroup, getProxyTimeLeft
 from DIRAC                                                 import S_OK, S_ERROR, gConfig, gLogger
 
 import os, sys, re, string, time
@@ -113,17 +113,11 @@ class StagerMonitorAgent(Agent):
       self.log.info("No proxy found")
       obtainProxy = True
     else:
-      #currentProxy = open(self.proxyLocation,'r')
-      #oldProxyStr = currentProxy.read()
-      #res = getProxyTimeLeft(oldProxyStr)
-      # AT - enough to give just the file name
-      res = getProxyTimeLeft(self.proxyLocation)
+      res = setupProxyFile(self.proxyLocation)
       if not res["OK"]:
-        self.log.error("Could not determine the time left for proxy", res['Message'])
-        res = S_OK(0) # force update of proxy
+        self.log.error("Failed to set up proxy in the standard location", res['Message'])
 
       proxyValidity = int(res['Value'])
-      self.log.debug('Current proxy found to be valid for %s seconds' %proxyValidity)
       self.log.info('%s proxy found to be valid for %s seconds' %(prodDN,proxyValidity))
       if proxyValidity <= self.minProxyValidity:
         obtainProxy = True
@@ -143,10 +137,7 @@ class StagerMonitorAgent(Agent):
         return S_OK()
 
       setDIRACGroup(prodGroup)
-      self.log.info('Successfully renewed %s proxy' %prodDN)
-    else:
-      # The proxy is OK, force it to the environment
-      os.environ['X509_USER_PROXY'] = os.path.realpath(self.proxyLocation)  
+      self.log.info('Successfully renewed %s proxy' %prodDN)  
 
     #os.system('voms-proxy-info -all')
     return S_OK('Active proxy available')
