@@ -7,8 +7,8 @@ import types
 class TransformationDBClient(FileCatalogueBase):
   """ Exposing the functionality of the replica tables for the TransformationDB
   """
-  def setServer(self,oServer):
-    self.server = oServer
+  def setServer(self,url):
+    self.server = url
 
   def isOK(self):
     return self.valid
@@ -29,7 +29,8 @@ class TransformationDBClient(FileCatalogueBase):
       errStr = "TransformationDBClient.addReplica: Supplied file info must be tuple or list of tuples."
       gLogger.error(errStr)
       return S_ERROR(errStr)
-    return self.server.addReplica(tuples,force)
+    server = RPCClient(self.server)
+    return server.addReplica(tuples,force)
 
   def removeReplica(self,tuple):
     """ Remove replica from database
@@ -42,7 +43,8 @@ class TransformationDBClient(FileCatalogueBase):
       errStr = "TransformationDBClient.removeReplica: Supplied file info must be tuple or list of tuples."
       gLogger.error(errStr)
       return S_ERROR(errStr)
-    return self.server.removeReplica(tuples)
+    server = RPCClient(self.server)
+    return server.removeReplica(tuples)
 
   def addFile(self,tuple,force=False):
     """ Add a file to the database
@@ -55,7 +57,8 @@ class TransformationDBClient(FileCatalogueBase):
       errStr = "TransformationDBClient.addFile: Supplied file info must be tuple or list of tuples."
       gLogger.error(errStr)
       return S_ERROR(errStr)
-    return self.server.addFile(tuples,force)
+    server = RPCClient(self.server)
+    return server.addFile(tuples,force)
 
   def removeFile(self,lfn):
     """ Remove file from the database
@@ -68,7 +71,8 @@ class TransformationDBClient(FileCatalogueBase):
       errStr = "TransformationDBClient.removeFile: Supplied lfn must be string or list of strings."
       gLogger.error(errStr)
       return S_ERROR(errStr)
-    return self.server.removeFile(lfns)
+    server = RPCClient(self.server)
+    return server.removeFile(lfns)
 
   def getReplicas(self,lfn):
     """ Remove file from the database
@@ -81,7 +85,8 @@ class TransformationDBClient(FileCatalogueBase):
       errStr = "TransformationDBClient.getReplicas: Supplied lfn must be string or list of strings."
       gLogger.error(errStr)
       return S_ERROR(errStr)
-    return self.server.getReplicas(lfns)
+    server = RPCClient(self.server)
+    return server.getReplicas(lfns)
 
   def getReplicaStatus(self,tuple):
     if type(tuple) == types.TupleType:
@@ -92,7 +97,8 @@ class TransformationDBClient(FileCatalogueBase):
       errStr = "TransformationDBClient.getReplicasStatus: Supplied file info must be tuple or list of tuples."
       gLogger.error(errStr)
       return S_ERROR(errStr)
-    return self.server.getReplicaStatus(tuples)
+    server = RPCClient(self.server)
+    return server.getReplicaStatus(tuples)
 
   def setReplicaStatus(self,tuple):
     if type(tuple) == types.TupleType:
@@ -103,7 +109,8 @@ class TransformationDBClient(FileCatalogueBase):
       errStr = "TransformationDBClient.setReplicasStatus: Supplied file info must be tuple or list of tuples."
       gLogger.error(errStr)
       return S_ERROR(errStr)
-    return self.server.setReplicaStatus(tuples)
+    server = RPCClient(self.server)
+    return server.setReplicaStatus(tuples)
 
   def setReplicaHost(self,tuple):
     if type(tuple) == types.TupleType:
@@ -114,4 +121,5 @@ class TransformationDBClient(FileCatalogueBase):
       errStr = "TransformationDBClient.setReplicaHost: Supplied file info must be tuple or list of tuples."
       gLogger.error(errStr)
       return S_ERROR(errStr)
-    return self.server.setReplicaHost(tuples)
+    server = RPCClient(self.server)
+    return server.setReplicaHost(tuples)
