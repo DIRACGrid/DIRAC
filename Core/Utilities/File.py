@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/File.py,v 1.21 2008/05/07 10:33:45 acasajus Exp $
-__RCSID__ = "$Id: File.py,v 1.21 2008/05/07 10:33:45 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/File.py,v 1.22 2008/05/19 16:47:54 acasajus Exp $
+__RCSID__ = "$Id: File.py,v 1.22 2008/05/19 16:47:54 acasajus Exp $"
 
 """
    Collection of DIRAC useful file related modules
@@ -79,7 +79,7 @@ def getGlobbedTotalSize( files ):
   totalSize = 0
   if type( files ) in ( types.ListType, types.TupleType ):
     for entry in files:
-      size = getSize( entry )
+      size = getGlobbedTotalSize( entry )
       if size == -1:
         size = 0
       totalSize += size
