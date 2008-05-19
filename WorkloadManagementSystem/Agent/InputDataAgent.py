@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.19 2008/03/28 16:17:18 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.20 2008/05/19 09:11:32 paterson Exp $
 # File :   InputDataAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,11 +10,11 @@
 
 """
 
-__RCSID__ = "$Id: InputDataAgent.py,v 1.19 2008/03/28 16:17:18 paterson Exp $"
+__RCSID__ = "$Id: InputDataAgent.py,v 1.20 2008/05/19 09:11:32 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.Core.DISET.RPCClient                            import RPCClient
-from DIRAC.Core.Utilities.GridCredentials                  import setupProxy,restoreProxy,setDIRACGroup, getProxyTimeLeft
+from DIRAC.Core.Utilities.GridCredentials                  import setupProxy,restoreProxy,setDIRACGroup,getProxyTimeLeft,setupProxyFile
 from DIRAC                                                 import gConfig, S_OK, S_ERROR
 
 import os, re, time, string
@@ -249,15 +249,12 @@ class InputDataAgent(Optimizer):
       self.log.info("No proxy found")
       obtainProxy = True
     else:
-      currentProxy = open(self.proxyLocation,'r')
-      oldProxyStr = currentProxy.read()
-      res = getProxyTimeLeft(oldProxyStr)
+      res = setupProxyFile(self.proxyLocation)
       if not res["OK"]:
         self.log.error("Could not determine the time left for proxy", res['Message'])
         res = S_OK(0) # force update of proxy
 
       proxyValidity = int(res['Value'])
-      self.log.debug('Current proxy found to be valid for %s seconds' %proxyValidity)
       self.log.info('%s proxy found to be valid for %s seconds' %(prodDN,proxyValidity))
       if proxyValidity <= self.minProxyValidity:
         obtainProxy = True
