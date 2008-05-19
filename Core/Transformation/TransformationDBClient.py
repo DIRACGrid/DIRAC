@@ -2,6 +2,7 @@
 """
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.DataManagementSystem.Client.Catalog.FileCatalogueBase import FileCatalogueBase
+from DIRAC.Core.DISET.RPCClient import RPCClient
 import types
 
 class TransformationDBClient(FileCatalogueBase):
