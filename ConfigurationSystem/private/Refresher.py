@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Refresher.py,v 1.25 2008/03/11 16:22:30 acasajus Exp $
-__RCSID__ = "$Id: Refresher.py,v 1.25 2008/03/11 16:22:30 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Refresher.py,v 1.26 2008/05/19 15:42:48 acasajus Exp $
+__RCSID__ = "$Id: Refresher.py,v 1.26 2008/05/19 15:42:48 acasajus Exp $"
 
 import threading
 import time
@@ -32,7 +32,7 @@ class Refresher( threading.Thread ):
       gLogger.error( "Error while updating the configuration", retVal[ 'Message' ] )
 
   def refreshConfigurationIfNeeded( self ):
-    if not self.bEnabled or self.bAutomaticUpdate:
+    if not self.bEnabled or self.bAutomaticUpdate or not gConfigurationData.getServers():
       return
     self.oTriggeredRefreshLock.acquire()
     try:
