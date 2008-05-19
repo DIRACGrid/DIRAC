@@ -11,10 +11,10 @@ class RAWIntegrityClient(FileCatalogueBase):
 
   def __init__(self):
     try:
-      self.server = RPCClient('DataManagement/RAWIntegrity')
+      self.url = PathFinder.getServiceURL('DataManagement/RAWIntegrity')
       self.valid = True
     except Exception,x:
-      errStr = "RAWIntegrityClient.__init__: Exception while generating server connection."
+      errStr = "RAWIntegrityClient.__init__: Exception while generating server url."
       gLogger.exception(errStr,str(x))
       self.valid = False
 
@@ -50,7 +50,8 @@ class RAWIntegrityClient(FileCatalogueBase):
     failed = {}
     successful = {}
     for lfn,pfn,size,se,guid,checksum in files:
-      res = self.server.addFile(str(lfn),str(pfn),int(size),str(se),str(guid),str(checksum))
+      server = RPCClient(self.url)
+      res = server.addFile(str(lfn),str(pfn),int(size),str(se),str(guid),str(checksum))
       if not res['OK']:
         failed[lfn] = res['Message']
       else:
