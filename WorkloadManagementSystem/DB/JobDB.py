@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.55 2008/05/15 12:28:36 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.56 2008/05/19 12:59:35 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.55 2008/05/15 12:28:36 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.56 2008/05/19 12:59:35 atsareg Exp $"
 
 import re, os, sys, string, types
 import time
@@ -167,7 +167,7 @@ class JobDB(DB):
       condition = ' %s %s LastUpdateTime >= \'%s\'' % ( condition,
                                                  conjunction,
                                                  str(newer) )
-    
+
     return condition
 
 
@@ -994,7 +994,7 @@ class JobDB(DB):
     # Exit if the limit of the reschedulings is reached
     if rescheduleCounter >= self.maxRescheduling:
       self.log.error('Maximum number of reschedulings is reached for job %s' % jobID)
-      res = self.setJobStatus(jobID, status='failed', minor='Maximum of reschedulings reached')
+      res = self.setJobStatus(jobID, status='Failed', minor='Maximum of reschedulings reached')
       return S_ERROR('Maximum number of reschedulings is reached: %s' % self.maxRescheduling)
 
     req = "UPDATE Jobs set RescheduleCounter=RescheduleCounter+1 WHERE JobID=%s" % jobID
