@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.36 2008/05/15 13:58:53 rgracian Exp $
+# $Id: JobWrapper.py,v 1.37 2008/05/19 18:19:46 paterson Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.36 2008/05/15 13:58:53 rgracian Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.37 2008/05/19 18:19:46 paterson Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -21,6 +21,7 @@ from DIRAC.Core.DISET.RPCClient                                     import RPCCl
 from DIRAC.Core.Utilities.ModuleFactory                             import ModuleFactory
 from DIRAC.Core.Utilities.Subprocess                                import shellCall
 from DIRAC.Core.Utilities.Subprocess                                import Subprocess
+from DIRAC.Core.Utilities.File                                      import getGlobbedTotalSize
 from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger
 import DIRAC
 
@@ -34,8 +35,7 @@ class JobWrapper:
   def __init__(self, jobID=None):
     """ Standard constructor
     """
-    # FIXME: replace by getSystemSection( "WorkloadManagement/JobWrapper" )
-    self.section = "%s/JobWrapper" % ( getSystemSection( "WorkloadManagement/" ))
+    self.section = getSystemSection('WorkloadManagement/JobWrapper')
     self.log = gLogger
     #Create the acctounting report
     self.accountingReport = AccountingJob()
@@ -44,20 +44,15 @@ class JobWrapper:
     self.wmsMinorStatus = "unknown"
     #Set now as start time
     self.accountingReport.setStartTime()
-    # FIXME: if no jobID is provided many things will fail later on with this default, make it 0
-    # FIXME: it should be cast to int here and not 10 times later on
-    self.jobID = jobID
+    if not jobID:
+      self.jobID=0
+    else:
+      self.jobID = jobID
+
     # FIXME: this info is in DIRAC.rootPath
     self.root = os.getcwd()
     self.localSiteRoot = gConfig.getValue('/LocalSite/Root',self.root)
-    # FIXME: Why? this is done by dirac-pilot
     self.__loadLocalCFGFiles(self.localSiteRoot)
-    # FIXME: RPCClients should be created just before using them os that the
-    # resolution is than at the last moment. Other wise the RPCClient should
-    # delay the resolution.
-    self.jobReport  = RPCClient('WorkloadManagement/JobStateUpdate')
-    self.inputSandboxClient = SandboxClient()
-    self.outputSandboxClient = SandboxClient('Output')
     # FIXME why not use DIRAC.version
     self.diracVersion = 'DIRAC version v%dr%d build %d' %(DIRAC.majorVersion,DIRAC.minorVersion,DIRAC.patchLevel)
     self.maxPeekLines = gConfig.getValue(self.section+'/MaxJobPeekLines',20)
@@ -76,12 +71,13 @@ class JobWrapper:
     self.localSite = gConfig.getValue('/LocalSite/Site','Unknown')
     self.pilotRef = gConfig.getValue('/LocalSite/PilotReference','Unknown')
     self.vo = gConfig.getValue('/DIRAC/VirtualOrganization','lhcb')
+    self.bufferLimit = gConfig.getValue(self.section+'/BufferLimit',10485760)
     self.defaultOutputSE = gConfig.getValue(self.section+'/DefaultOutputSE','CERN-FAILOVER')
     self.rm = ReplicaManager()
     self.log.verbose('===========================================================================')
     self.log.verbose('CVS version %s' %(__RCSID__))
     self.log.verbose(self.diracVersion)
-    self.log.verbose('Developer tag: 1')
+    self.log.verbose('Developer tag: 2')
     self.currentPID = os.getpid()
     self.log.verbose('Job Wrapper started under PID: %s' % self.currentPID )
     self.log.verbose('==========================================================================')
@@ -116,8 +112,21 @@ class JobWrapper:
       msg = 'Failed to create LcgFileCatalogClient with exception:'
       self.log.fatal(msg)
       self.log.fatal(str(x))
-    # FIXME flush is not needed it is taken care of by the logger
-    sys.stdout.flush()
+    #Set defaults for some global parameters to be defined for the accounting report
+    self.owner='unknown'
+    self.jobGroup='unknown'
+    self.jobType='unknown'
+    self.processingType='uknown'
+    self.userGroup='unknown'
+    self.jobClass='unknown'
+    self.inputDataFiles=0
+    self.outputDataFiles=0
+    self.inputDataSize=0
+    self.inputSandboxSize=0
+    self.outputSandboxSize=0
+    self.outputDataSize=0
+    self.diskSpaceConsumed=0
+    self.processedEvents = 0
 
   #############################################################################
   def initialize(self, arguments):
@@ -131,12 +140,38 @@ class JobWrapper:
     self.log.verbose(ceArgs)
     self.__setInitialJobParameters(arguments)
 
+    #Fill some parameters for the accounting report
+    if jobArgs.has_key('Owner'):
+      self.owner=jobArgs['Owner']
+    if jobArgs.has_key('JobGroup'):
+      self.jobGroup=jobArgs['JobGroup']
+    if jobArgs.has_key('JobType'):
+      self.jobType=jobArgs['JobType']
+    if jobArgs.has_key('InputData'):
+      dataParam=jobArgs['InputData']
+      if dataParam and not type(dataParam)==type([]):
+        dataParam=[dataParam]
+      self.inputDataFiles=len(dataParam)
+    if jobArgs.has_key('OutputData'):
+      dataParam=jobArgs['OutputData']
+      if dataParam and not type(dataParam)==type([]):
+        dataParam=[dataParam]
+      self.outputDataFiles=len(dataParam)
+    if jobArgs.has_key('ProcessingType'):
+      self.processingType=jobArgs['ProcessingType']
+    if jobArgs.has_key('OwnerGroup'):
+      self.userGroup=jobArgs['OwnerGroup']
+    if jobArgs.has_key('JobSplitType'):
+      self.jobClass=jobArgs['JobSplitType']
+
     # Prepare the working directory and cd to there
-    #FIXME: what should be done in jobID = 0 (see above)
-    if os.path.exists(self.jobID):
-      shutil.rmtree(str(self.jobID))
-    os.mkdir(str(self.jobID))
-    os.chdir(str(self.jobID))
+    if self.jobID:
+      if os.path.exists(self.jobID):
+        shutil.rmtree(str(self.jobID))
+      os.mkdir(str(self.jobID))
+      os.chdir(str(self.jobID))
+    else:
+      self.log.info('JobID is not defined, running in current directory')
 
   #############################################################################
   def __loadLocalCFGFiles(self,localRoot):
@@ -191,7 +226,7 @@ class JobWrapper:
 
     if os.path.exists(executable):
       self.__report('Running','Application')
-      spObject = Subprocess( 0 )
+      spObject = Subprocess(timeout=False,bufferLimit=int(self.bufferLimit))
       command = '%s %s' % (executable,os.path.basename(jobArguments))
       self.log.verbose('Execution command: %s' %(command))
       maxPeekLines = self.maxPeekLines
@@ -291,11 +326,12 @@ class JobWrapper:
     self.log.info(appStdOut)
     heartBeatDict = {}
     staticParamDict = {'StandardOutput':appStdOut}
-    # FIXME: no report to be sent if jobID == 0
-    result = self.jobReport.sendHeartBeat(int(self.jobID),heartBeatDict,staticParamDict)
-    if not result['OK']:
-      self.log.warn('Problem sending final heartbeat standard output from JobWrapper')
-      self.log.warn(result)
+    if self.jobID:
+      jobReport  = RPCClient('WorkloadManagement/JobStateUpdate')
+      result = jobReport.sendHeartBeat(int(self.jobID),heartBeatDict,staticParamDict)
+      if not result['OK']:
+        self.log.warn('Problem sending final heartbeat standard output from JobWrapper')
+        self.log.warn(result)
 
     return result
 
@@ -400,6 +436,18 @@ class JobWrapper:
         resolvedData = result
     else:
       resolvedData = result
+
+    #add input data size to accounting report (since resolution successful)
+    for lfn,mdata in resolvedData['Value']['Successful'].items():
+      if mdata.has_key('Size'):
+        lfnSize = mdata['Size']
+        if not type(lfnSize)==type(long(1)):
+          try:
+            lfnSize = long(lfnSize)
+          except Exception,x:
+            lfnSize = 0
+            self.log.info('File size for LFN:%s was not a long integer, setting size to 0' %(lfn))
+        self.inputDataSize+=lfnSize
 
     configDict = {'JobID':self.jobID,'LocalSEList':localSEList,'DiskSEList':self.diskSE,'TapeSEList':self.tapeSE}
     self.log.info(configDict)
@@ -554,9 +602,10 @@ class JobWrapper:
       self.__setJobParam('OutputSandbox','MissingFiles: %s' %(string.join(missingFiles,', ')))
 
     self.__report('Completed','Uploading Output Sandbox')
-    if fileList:
-      # FIXME: no report to be sent if jobID == 0
-      result = self.outputSandboxClient.sendFiles(self.jobID, fileList)
+    if fileList and self.jobID:
+      self.outputSandboxSize = getGlobbedTotalSize(fileList)
+      outputSandboxClient = SandboxClient('Output')
+      result = outputSandboxClient.sendFiles(self.jobID, fileList)
       if not result['OK']:
         self.log.warn('Output sandbox upload failed:')
         self.log.warn(result['Message'])
@@ -627,6 +676,7 @@ class JobWrapper:
     missing = []
     for outputFile in outputData:
       if os.path.exists(outputFile):
+        self.outputDataSize+=getGlobbedTotalSize(outputFile)
         lfn = self.__getLFNfromOutputFile(owner,outputFile)
         self.log.verbose('Attempting putAndRegister("%s","%s","%s")' %(lfn,outputFile,outputSE))
         upload = self.rm.putAndRegister(lfn, outputFile, outputSE)
@@ -672,28 +722,35 @@ class JobWrapper:
     sandboxFiles = []
     self.__report('Running','Downloading InputSandbox')
     for i in inputSandbox: sandboxFiles.append(os.path.basename(i))
-    self.log.info('Downloading InputSandbox for job %s: %s' %(self.jobID,string.join(sandboxFiles)))
     if type( inputSandbox ) != type([]):
       sandboxFiles = [inputSandbox]
 
+    self.log.info('Downloading InputSandbox for job %s: %s' %(self.jobID,string.join(sandboxFiles)))
     if os.path.exists('%s/inputsandbox' %(self.root)):
-      # This is a debugging tool
-      # Get the file from local storage to debug Job Wrapper
+      # This is a debugging tool, get the file from local storage to debug Job Wrapper
       sandboxFiles.append('jobDescription.xml')
       for inputFile in sandboxFiles:
         if os.path.exists('%s/inputsandbox/%s' %(self.root,inputFile)):
           self.log.info('Getting InputSandbox file %s from local directory for testing' %(inputFile))
           shutil.copy(self.root+'/inputsandbox/'+inputFile,inputFile)
       result = S_OK(sandboxFiles)
+    elif not self.jobID:
+      self.log.info('No JobID defined, no sandbox to download')
     else:
-      # FIXME: no sandbox to be retrieved if jobID == 0
-      result =  self.inputSandboxClient.getSandbox(int(self.jobID))
+      inputSandboxClient = SandboxClient()
+      result = inputSandboxClient.getSandbox(int(self.jobID))
       if not result['OK']:
         self.log.warn(result)
         self.__report('Running','Failed Downloading InputSandbox')
-        return S_ERROR('InputSandbox download failed for job %s and sandbox %s' %(self.jobID,sandboxFiles))
+        return S_ERROR('InputSandbox download failed for job %s and sandbox %s' %(self.jobID,string.join(sandboxFiles)))
 
     self.log.verbose('Sandbox download result: %s' %(result))
+    #for accounting report
+    checkFileSize = []
+    for sandboxFile in sandboxFiles:
+      if not re.search('^lfn:',i) and not re.search('^LFN:',i):
+        checkFileSize.append(sandboxFile)
+
     # FIXME: should make use os tarfile module to make the code more portable
     for sandboxFile in sandboxFiles:
       if re.search('.tar.gz$',sandboxFile) or re.search('.tgz$',sandboxFile):
@@ -718,6 +775,12 @@ class JobWrapper:
         self.log.warn('Could not download InputSandbox LFN(s)')
         self.log.warn(failed)
         return S_ERROR(str(failed))
+      for lfn in lfns:
+        if os.path.exists('%s/%s' %(self.root,os.path.basename(lfn))):
+          checkFileSize.append(os.path.basename(lfn))
+
+    if checkFileSize:
+      self.inputSandboxSize = getGlobbedTotalSize(checkFileSize)
 
     return S_OK('InputSandbox downloaded')
 
@@ -727,7 +790,13 @@ class JobWrapper:
     """
     self.log.info('Running JobWrapper finalization')
     self.__report('Done','Execution Complete')
-    self.sendWMSAccounting()
+
+    if not self.jobID:
+      self.log.verbose('No accounting to be sent since running locally')
+    else:
+      self.diskSpaceConsumed = getGlobbedTotalSize('%s/%s' %(self.root,self.jobID))
+      self.sendWMSAccounting()
+
     self.__cleanUp()
     return S_OK()
 
@@ -745,28 +814,28 @@ class JobWrapper:
     execTime = elapsed
     #Fill the data
     acData = {
-               'User' : 'unknown',
-               'UserGroup' : 'unknown',
-               'JobGroup' : 'unknown',
-               'JobType' : 'unknown',
-               'JobClass' : 'unknown',
-               'ProcessingType' : 'unknown',
+               'User' : self.owner,
+               'UserGroup' : self.userGroup,
+               'JobGroup' : self.jobGroup,
+               'JobType' : self.jobType,
+               'JobClass' : self.jobClass,
+               'ProcessingType' : self.processingType,
                'FinalMajorStatus' : self.wmsMajorStatus,
                'FinalMinorStatus' : self.wmsMinorStatus,
-               #La "chicha"
                'CPUTime' : cpuTime,
                'NormCPUTime' : cpuTime * gConfig.getValue ( "/LocalSite/CPUScalingFactor", 0.0 ),
                'ExecTime' : execTime,
-               #FIXME: Fill all that data
-               'InputDataSize' : 0,
-               'OutputDataSize' : 0,
-               'InputDataFiles' : 0,
-               'OutputDataFiles' : 0,
-               'DiskSpace' : 0,
-               'InputSandBoxSize' : 0,
-               'OutputSandBoxSize' : 0,
-               'ProcessedEvents' : 0,
+               'InputDataSize' : self.inputDataSize,
+               'OutputDataSize' : self.outputDataSize,
+               'InputDataFiles' : self.inputDataFiles,
+               'OutputDataFiles' : self.outputDataFiles,
+               'DiskSpace' : self.diskSpaceConsumed,
+               'InputSandBoxSize' : self.inputSandboxSize,
+               'OutputSandBoxSize' : self.outputSandboxSize,
+               'ProcessedEvents' : self.processedEvents
              }
+    self.log.verbose('Accounting Report is:')
+    self.log.verbose(acData)
     self.accountingReport.setValuesFromDict( acData )
     self.accountingReport.commit()
 
@@ -775,7 +844,7 @@ class JobWrapper:
     """Cleans up after job processing. Can be switched off via environment
        variable DO_NOT_DO_JOB_CLEANUP or by JobWrapper configuration option.
     """
-    # FIXME: why still use environment?
+    #Environment variable is a feature for DIRAC (helps local debugging).
     if os.environ.has_key('DO_NOT_DO_JOB_CLEANUP') or not self.cleanUpFlag:
       cleanUp = False
     else:
@@ -812,11 +881,15 @@ class JobWrapper:
     """
     self.wmsMajorStatus = status
     self.wmsMinorStatus = minorStatus
-    # FIXME: shoudl not report in jobID == 0
-    jobStatus = self.jobReport.setJobStatus(int(self.jobID),status,minorStatus,'JobWrapper')
-    self.log.verbose('setJobStatus(%s,%s,%s,%s)' %(self.jobID,status,minorStatus,'JobWrapper'))
-    if not jobStatus['OK']:
-      self.log.warn(jobStatus['Message'])
+    jobStatus = S_OK()
+    if self.jobID:
+      jobReport  = RPCClient('WorkloadManagement/JobStateUpdate')
+      jobStatus = jobReport.setJobStatus(int(self.jobID),status,minorStatus,'JobWrapper')
+      self.log.verbose('setJobStatus(%s,%s,%s,%s)' %(self.jobID,status,minorStatus,'JobWrapper'))
+      if not jobStatus['OK']:
+        self.log.warn(jobStatus['Message'])
+    else:
+      self.log.verbose('JobID not defined, no status updates will be sent')
 
     return jobStatus
 
@@ -824,10 +897,15 @@ class JobWrapper:
   def __setJobParam(self,name,value):
     """Wraps around setJobParameter of state update client
     """
-    jobParam = self.jobReport.setJobParameter(int(self.jobID),str(name),str(value))
-    self.log.verbose('setJobParameter(%s,%s,%s)' %(self.jobID,name,value))
-    if not jobParam['OK']:
-      self.log.warn(jobParam['Message'])
+    jobParam = S_OK()
+    if self.jobID:
+      jobReport  = RPCClient('WorkloadManagement/JobStateUpdate')
+      jobParam = jobReport.setJobParameter(int(self.jobID),str(name),str(value))
+      self.log.verbose('setJobParameter(%s,%s,%s)' %(self.jobID,name,value))
+      if not jobParam['OK']:
+        self.log.warn(jobParam['Message'])
+    else:
+      self.log.verbose('JobID not defined, no parameter information will be reported')
 
     return jobParam
 
@@ -835,11 +913,15 @@ class JobWrapper:
   def __setJobParamList(self,value):
     """Wraps around setJobParameters of state update client
     """
-    # FIXME: like the Watchdog,
-    jobParam = self.jobReport.setJobParameters(int(self.jobID),value)
-    self.log.verbose('setJobParameters(%s,%s)' %(self.jobID,value))
-    if not jobParam['OK']:
-      self.log.warn(jobParam['Message'])
+    jobParam = S_OK()
+    if not self.jobID:
+      jobReport  = RPCClient('WorkloadManagement/JobStateUpdate')
+      jobParam = jobReport.setJobParameters(int(self.jobID),value)
+      self.log.verbose('setJobParameters(%s,%s)' %(self.jobID,value))
+      if not jobParam['OK']:
+        self.log.warn(jobParam['Message'])
+    else:
+      self.log.verbose('JobID not defined, no parameter information will be reported')
 
     return jobParam
 
