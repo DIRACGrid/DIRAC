@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/Attic/StagerMonitorWMS.py,v 1.7 2008/05/11 23:33:18 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/Attic/StagerMonitorWMS.py,v 1.8 2008/05/19 09:04:56 paterson Exp $
 # File :   StagerMonitorWMS.py
 # Author : Stuart Paterson
 ########################################################################
@@ -20,12 +20,12 @@
      Successful -> purged with status change
 """
 
-__RCSID__ = "$Id: StagerMonitorWMS.py,v 1.7 2008/05/11 23:33:18 rgracian Exp $"
+__RCSID__ = "$Id: StagerMonitorWMS.py,v 1.8 2008/05/19 09:04:56 paterson Exp $"
 
 from DIRAC.Core.Base.Agent                                 import Agent
 from DIRAC.Core.DISET.RPCClient                            import RPCClient
 from DIRAC.StagerSystem.Client.StagerClient                import StagerClient
-from DIRAC.Core.Utilities.GridCredentials                  import setupProxy,restoreProxy,setDIRACGroup, getProxyTimeLeft
+from DIRAC.Core.Utilities.GridCredentials                  import setupProxyFile,setupProxy,restoreProxy,setDIRACGroup, getProxyTimeLeft
 from DIRAC                                                 import S_OK, S_ERROR, gConfig, gLogger
 
 import os, sys, re, string, time
@@ -52,7 +52,7 @@ class StagerMonitorWMS(Agent):
     self.system = gConfig.getValue(self.section+'/SystemID','WorkloadManagement')
     self.stagingStatus = gConfig.getValue(self.section+'/StagingStatus','Staging')
     self.updateStatus = gConfig.getValue(self.section+'/UpdateStatus','ToUpdate')
-    self.jobSelectLimit = gConfig.getValue(self.section+'/JobSelectLimit',500)
+    self.jobSelectLimit = gConfig.getValue(self.section+'/JobSelectLimit',5000)
     self.monStatusDict = {self.updateStatus:'Staged','New':'Pending','Submitted':'Pending','Staged':'Staged','Successful':'Staged','Failed':'Failed'}
     self.wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
     self.jobReport = None #Initialized after proxy
@@ -119,6 +119,7 @@ class StagerMonitorWMS(Agent):
     deletedJobs = []
     jobsDict = statusDict['Value']
     for jobID,valDict in jobsDict.items():
+
       for key,val in valDict.items():
         if key=='Status' and val!=self.stagingStatus:
           self.log.verbose('Job %s no longer in %s status' %(jobID,self.stagingStatus))
@@ -141,11 +142,13 @@ class StagerMonitorWMS(Agent):
        to the job state service via job parameters.  The file status is then
        changed to Staged.
     """
-    result = self.stagerClient.getJobsForSystemAndState(self.updateStatus,self.system,self.jobSelectLimit)
+#    result = self.stagerClient.getJobsForSystemAndState(self.updateStatus,self.system,self.jobSelectLimit)
+    result = self.stagerClient.getJobsForSystemAndState('ToUpdate',self.system,self.jobSelectLimit)
     if not result['OK']:
       self.log.warn('Failed to get jobs for %s status with error:\n%s' %(self.updateStatus,result))
       return result
 
+    print result
     if not result['JobIDs']:
       self.log.verbose('No jobs available to update')
       return result
@@ -269,7 +272,7 @@ class StagerMonitorWMS(Agent):
     for state,status,minorStatus in statusList:
       result = self.stagerClient.getJobsForSystemAndState(state,self.system,self.jobSelectLimit)
       if not result['OK']:
-        self.log.warn('Failed to get jobs for %s status with error:\n%s' %(result))
+        self.log.warn('Failed to get jobs for %s status with error:\n%s' %(state,result))
         return result
       if result['JobIDs']:
         self.log.verbose('%s %s jobs available to update' %(len(result['JobIDs']),state))
@@ -333,15 +336,11 @@ class StagerMonitorWMS(Agent):
       self.log.info("No proxy found")
       obtainProxy = True
     else:
-      currentProxy = open(self.proxyLocation,'r')
-      oldProxyStr = currentProxy.read()
-      res = getProxyTimeLeft(oldProxyStr)
+      res = setupProxyFile(self.proxyLocation)
       if not res["OK"]:
-        self.log.error("Could not determine the time left for proxy", res['Message'])
-        res = S_OK(0) # force update of proxy
+        self.log.error("Failed to set up proxy in the standard location", res['Message'])
 
       proxyValidity = int(res['Value'])
-      self.log.debug('Current proxy found to be valid for %s seconds' %proxyValidity)
       self.log.info('%s proxy found to be valid for %s seconds' %(prodDN,proxyValidity))
       if proxyValidity <= self.minProxyValidity:
         obtainProxy = True
