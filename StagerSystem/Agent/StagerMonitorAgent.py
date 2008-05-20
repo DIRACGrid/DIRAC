@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/StagerMonitorAgent.py,v 1.6 2008/05/18 22:24:30 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/StagerMonitorAgent.py,v 1.7 2008/05/20 20:38:44 rgracian Exp $
 # File :   StagerMonitorAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
      of the SiteMonitor instances. The StagerMonitorAgent also manages the proxy environment.
 """
 
-__RCSID__ = "$Id: StagerMonitorAgent.py,v 1.6 2008/05/18 22:24:30 atsareg Exp $"
+__RCSID__ = "$Id: StagerMonitorAgent.py,v 1.7 2008/05/20 20:38:44 rgracian Exp $"
 
 from DIRAC.Core.Base.Agent                                 import Agent
 from DIRAC.Core.DISET.RPCClient                            import RPCClient
@@ -116,6 +116,7 @@ class StagerMonitorAgent(Agent):
       res = setupProxyFile(self.proxyLocation)
       if not res["OK"]:
         self.log.error("Failed to set up proxy in the standard location", res['Message'])
+        res = S_OK(0) # force update of proxy
 
       proxyValidity = int(res['Value'])
       self.log.info('%s proxy found to be valid for %s seconds' %(prodDN,proxyValidity))
