@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.33 2008/04/30 12:48:26 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.34 2008/05/20 18:21:49 paterson Exp $
 # File  : Watchdog.py
 # Author: Stuart Paterson
 ########################################################################
@@ -18,7 +18,7 @@
           - CPU normalization for correct comparison with job limit
 """
 
-__RCSID__ = "$Id: Watchdog.py,v 1.33 2008/04/30 12:48:26 paterson Exp $"
+__RCSID__ = "$Id: Watchdog.py,v 1.34 2008/05/20 18:21:49 paterson Exp $"
 
 from DIRAC.Core.Base.Agent                          import Agent
 from DIRAC.Core.DISET.RPCClient                     import RPCClient
@@ -37,7 +37,6 @@ class Watchdog(Agent):
     """ Constructor, takes system flag as argument.
     """
     Agent.__init__(self,AGENT_NAME)
-    self.jobReport  = RPCClient('WorkloadManagement/JobStateUpdate')
     self.systemFlag = systemFlag
     self.exeThread = exeThread
     self.wrapperPID = pid
@@ -234,17 +233,16 @@ class Watchdog(Agent):
     """
     self.log.info('Received control signal')
     if type(signalDict) == type({}):
-      if signalDict['Value'].has_key('Kill'):
-        self.log.info('Killing job via control signal')
+      if signalDict.has_key('Kill'):
+        self.log.info('Received Kill signal, stopping job via control signal')
         self.__killRunningThread(self.spObject)
         self.__getUsageSummary()
         self.__finish()
       else:
-        self.log.info('The following control signal was sent but not understood by watchdog:')
+        self.log.info('The following control signal was sent but not understood by the watchdog:')
         self.log.info(signalDict)
     else:
-      self.log.info('Expected dictionary for control signal, not:')
-      self.log.info(signalDict)
+      self.log.info('Expected dictionary for control signal, received:\n%s' %(signalDict))
 
     return S_OK()
 
@@ -666,9 +664,10 @@ class Watchdog(Agent):
 
   #############################################################################
   def __killRunningThread(self,spObject):
-    """ Will kill the running thread process"""
-    os.kill( spObject.child.pid, 9 )
-    self.log.info('Sent kill signal to application PID %s' %(spObject.child.pid))
+    """ Will kill the running thread process and any child processes."""
+    self.log.info('Sending kill signal to application PID %s' %(spObject.child.pid))
+    result = spObject.killChild()
+    self.log.info('Subprocess.killChild() returned:%s ' %(result))
     return S_OK('Thread killed')
 
   #############################################################################
@@ -676,7 +675,8 @@ class Watchdog(Agent):
     """ Sends sign of life 'heartbeat' signal and triggers control signal
         interpretation.
     """
-    result = self.jobReport.sendHeartBeat(jobID,heartBeatDict,staticParamDict)
+    jobReport  = RPCClient('WorkloadManagement/JobStateUpdate')
+    result = jobReport.sendHeartBeat(jobID,heartBeatDict,staticParamDict)
     if not result['OK']:
       self.log.warn('Problem sending sign of life')
       self.log.warn(result)
@@ -695,7 +695,8 @@ class Watchdog(Agent):
       self.log.info('Running without JOBID so parameters will not be reported')
       return S_OK()
     jobID = os.environ['JOBID']
-    jobParam = self.jobReport.setJobParameters(int(jobID),value)
+    jobReport  = RPCClient('WorkloadManagement/JobStateUpdate')
+    jobParam = jobReport.setJobParameters(int(jobID),value)
     self.log.verbose('setJobParameters(%s,%s)' %(jobID,value))
     if not jobParam['OK']:
       self.log.warn(jobParam['Message'])
