@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Subprocess.py,v 1.15 2008/05/16 19:34:12 paterson Exp $
-__RCSID__ = "$Id: Subprocess.py,v 1.15 2008/05/16 19:34:12 paterson Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Subprocess.py,v 1.16 2008/05/20 14:47:08 acasajus Exp $
+__RCSID__ = "$Id: Subprocess.py,v 1.16 2008/05/20 14:47:08 acasajus Exp $"
 """
    DIRAC Wrapper to execute python and system commands with a wrapper, that might
    set a timeout.
@@ -41,6 +41,7 @@ import select
 import os
 import sys
 import subprocess
+import signal
 
 gLogger = gLogger.getSubLogger( 'Subprocess' )
 
@@ -111,15 +112,33 @@ class Subprocess:
         gLogger.exeption( 'Exception while killing timed out process' )
         raise v
 
-  def __killChild( self ):
-    self.__killPid( self.child.pid )
+  def __poll( self, pid ):
+    try:
+      pid, sts = os.waitpid( pid, os.WNOHANG )
+    except os.error:
+      return None
+    return sts
+
+  def killChild( self, recursive = True ):
+    os.kill( self.childPID, signal.SIGSTOP )
+    if recursive:
+      for gcpid in Os.getAllChildrenPIDs( self.childPID, lambda cpid: os.kill( cpid, signal.SIGSTOP ) ):
+        try:
+          os.kill( gcpid, os.SIGKILL )
+        except:
+          pass
+    self.__killPid( self.childPID )
 
     #HACK to avoid python bug
     # self.child.wait()
-    exitStatus = self.child.poll()
+    exitStatus = self.__poll( self.childPID )
     while exitStatus == None:
       time.sleep( 0.000001 )
-      exitStatus = self.child.poll()
+      exitStatus = self.__poll( self.childPID )
+    try:
+      pid, exitStatus = os.waitpid( self.childPID, 0 )
+    except os.error:
+      pass
     return exitStatus
 
   def pythonCall( self, function, *stArgs, **stKeyArgs ):
@@ -195,7 +214,7 @@ class Subprocess:
       return S_OK()
     else: # buffer size limit reached killing process (see comment on __readFromFile)
       self.bufferList[ bufferIndex ][0] += retDict[ 'Value' ]
-      exitStatus = self.__killChild()
+      exitStatus = self.killChild()
 
       return self.__generateSystemCommandError(
                   exitStatus,
@@ -242,7 +261,7 @@ class Subprocess:
           return retDict
 
         if self.timeout and time.time() - initialTime > self.timeout:
-          exitStatus = self.__killChild()
+          exitStatus = self.killChild()
           self.__readFromCommand( True )
           return self.__generateSystemCommandError(
                       exitStatus,
@@ -330,3 +349,30 @@ def pythonCall( timeout, function, *stArgs, **stKeyArgs ):
   """
   spObject = Subprocess( timeout )
   return spObject.pythonCall( function, *stArgs, **stKeyArgs )
+
+def getChildrenPIDs( ppid ):
+  """
+  Get a list of children pids for ppid
+  """
+  magicCmd = "ps --no-headers --ppid %d -o pid" % ppid
+  exc = subprocess.Popen( magicCmd,
+                          stdout = subprocess.PIPE,
+                          shell = True,
+                          close_fds = True )
+  exc.wait()
+  return [ int( pid.strip() ) for pid in exc.stdout.readlines() if pid.strip() ]
+
+
+def getChildrenPIDs( ppid, foreachFunc = None ):
+  """
+  Get all children recursively for a given ppid.
+   Optional foreachFunc will be executed for each children pid
+  """
+  cpids = __getChildrenForPID( ppid )
+  pids = []
+  for pid in cpids:
+    pids.append( pid )
+    if foreachFunc:
+      foreachFunc( pid )
+    pids.extend( getChildrenPIDs( pid, foreachFunc ) )
+  return pids
