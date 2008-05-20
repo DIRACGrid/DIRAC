@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotMonitor.py,v 1.8 2008/05/18 06:58:19 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotMonitor.py,v 1.9 2008/05/20 09:43:45 rgracian Exp $
 # File :   PilotMonitor.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
      of the AgentMonitor instance for all Grids.
 """
 
-__RCSID__ = "$Id: PilotMonitor.py,v 1.8 2008/05/18 06:58:19 rgracian Exp $"
+__RCSID__ = "$Id: PilotMonitor.py,v 1.9 2008/05/20 09:43:45 rgracian Exp $"
 
 from DIRAC.Core.Base.Agent    import Agent
 from DIRAC                    import S_OK, S_ERROR, gConfig, gLogger
@@ -59,7 +59,7 @@ class PilotMonitor(Agent):
     jobList = result['Value']  
     for jobID in jobList:
     
-      print "Processing job",jobID
+      self.log.info( "Processing job", jobID )
     
       result = self.pilotDB.getPilotsForJob(int(jobID))
       if not result['OK']:
@@ -78,7 +78,7 @@ class PilotMonitor(Agent):
         
       resultDict = result['Value']
       
-      print "Pilot info",resultDict
+      self.log.debug( "Pilot info", resultDict )
       
       aborted_pilots = []
       submitted_pilots = []
