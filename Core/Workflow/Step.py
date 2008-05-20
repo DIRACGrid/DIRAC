@@ -1,10 +1,10 @@
-# $Id: Step.py,v 1.21 2008/05/16 10:18:07 atsareg Exp $
+# $Id: Step.py,v 1.22 2008/05/20 15:37:48 atsareg Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.21 $"
+__RCSID__ = "$Revision: 1.22 $"
 
-import os, time
+import os, time, types
 #try: # this part to inport as part of the DIRAC framework
 from DIRAC.Core.Workflow.Parameter import *
 from DIRAC.Core.Workflow.Module import *
@@ -148,6 +148,7 @@ class StepInstance(AttributeCollection):
             raise TypeError('Can not create object type '+ str(type(self)) + ' from the '+ str(type(opt)))
 
         self.step_commons = {}
+        self.stepStatus = S_OK()
 
     def resolveGlobalVars(self, step_definitions, wf_parameters):
         self.parameters.resolveGlobalVars(wf_parameters)
@@ -199,9 +200,6 @@ class StepInstance(AttributeCollection):
         self.step_commons['StartStats'] = os.times()
         step_def = definitions[self.getType()]
         step_exec_modules={}
-        step_finalization_done = False
-        job_finalization_done = False
-        loop_OK = True
         error_message = ''
         for mod_inst in step_def.module_instances:
             mod_inst_name = mod_inst.getName()
@@ -229,39 +227,40 @@ class StepInstance(AttributeCollection):
 
             # Set reference to the workflow and step common tools           
             setattr(step_exec_modules[mod_inst_name], 'workflow_commons', self.parent.workflow_commons)
-            setattr(step_exec_modules[mod_inst_name], 'step_commons', self.step_commons)           
+            setattr(step_exec_modules[mod_inst_name], 'step_commons', self.step_commons)    
+            setattr(step_exec_modules[mod_inst_name], 'stepStatus', self.stepStatus)
+            setattr(step_exec_modules[mod_inst_name], 'workflowStatus', self.parent.workflowStatus)           
 
-            if loop_OK or (not loop_OK and (mod_inst_type == "StepFinalization" or mod_inst_type == "JobFinalization") ):
-              # Execution only if previous modules are OK or
-              # module type is StepFinalization or JobFinalization
-              try:
-                result = step_exec_modules[mod_inst_name].execute()
-                if not result['OK']:
-                  if loop_OK:
-                    error_message = result['Message']
-                    # This is the error that caused the workflow disruption
-                    # report it to the WMS
-                    if self.workflow_commons.has_key('JobReport'):
-                      result = self.workflow_commons['JobReport'].setApplicationStatus(error_message)
-                  loop_OK = False
-                  self.step_commons['Status'] = "Error"
-              except Exception, x:
-                print "Exception while module execution"
-                print "Module",mod_inst_name,mod_inst.getType()
-                print str(x)
-                if loop_OK:
-                  # This is the error that caused the workflow disruption
-                  # report it to the WMS
-                  error_message = 'Exception while module execution: '+str(x)
+            try:
+              result = step_exec_modules[mod_inst_name].execute()
+              if not result['OK']:
+                if self.stepStatus['OK']:
+                  error_message = result['Message']
                   if self.workflow_commons.has_key('JobReport'):
                     result = self.workflow_commons['JobReport'].setApplicationStatus(error_message)
-                
-                loop_OK = False                
-                self.step_commons['Status'] = "Error"
-            
-        # Stop execution here in case of errors
-        if not loop_OK:
-          return S_ERROR(error_message)
+                self.stepStatus = S_ERROR(result['Message']) 
+              else:  
+                # Get output values to the step_commons dictionary
+                for key in result.keys():
+                  if key != "OK":
+                    if key != "Value":
+                      self.step_commons[key] = result[key]
+                    elif type(result['Value']) == types.DictType:
+                      for vkey in result['Value'].keys():
+                        self.step_commons[key] = result['Value'][key] 
+                    
+            except Exception, x:
+              print "Exception while module execution"
+              print "Module",mod_inst_name,mod_inst.getType()
+              print str(x)
+              if self.stepStatus['OK']:
+                # This is the error that caused the workflow disruption
+                # report it to the WMS
+                error_message = 'Exception while %s module execution: %s' % (mod_inst_name,str(x))
+                if self.workflow_commons.has_key('JobReport'):
+                  result = self.workflow_commons['JobReport'].setApplicationStatus(error_message)
+
+              self.stepStatus = S_ERROR(error_message)
 
         # now we need to copy output values to the STEP!!! parameters
         #print "output assignment"
@@ -281,5 +280,8 @@ class StepInstance(AttributeCollection):
                     step_exec_attr[st_parameter.getName()] = st_parameter.getValue()
                     #print "StepInstance this."+ st_parameter.getName(),'=',st_parameter.getValue()
 
-        # return the result of the last module
-        return result
+        # Return the result of the first failed module or S_OK
+        if not self.stepStatus['OK']:
+          return S_ERROR(error_message)
+        else:  
+          return S_OK(result['Value'])

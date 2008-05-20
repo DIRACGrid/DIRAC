@@ -1,12 +1,11 @@
-# $Id: Workflow.py,v 1.30 2008/05/16 10:08:57 atsareg Exp $
+# $Id: Workflow.py,v 1.31 2008/05/20 15:37:48 atsareg Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.30 $"
+__RCSID__ = "$Revision: 1.31 $"
 
 import os
 import xml.sax
-import types
 from DIRAC.Core.Workflow.Parameter import *
 from DIRAC.Core.Workflow.Module import *
 from DIRAC.Core.Workflow.Step import *
@@ -50,6 +49,7 @@ class Workflow(AttributeCollection):
     if name :
         self.setName(name)
     self.workflow_commons = {}
+    self.workflowStatus = S_OK()
 
   def fromWorkflow(self, obj):
     self.setName(obj.getName())
@@ -241,16 +241,12 @@ class Workflow(AttributeCollection):
     # used as dictionary of step instances to carry parameters
     wf_exec_steps={}
     #print 'Executing Workflow',self.getType()
-    job_finalization_done = False
-    loop_OK = True
     error_message = ''
     for step_inst in self.step_instances:
       step_inst_name = step_inst.getName()
       step_inst_type = step_inst.getType()
-      if step_inst_type == "JobFinalization":
-        job_finalization_done = True
       wf_exec_steps[step_inst_name] = {}
-      #print "WorkflowInstance creating Step instance ",step_inst_name," of type", step_inst.getType()
+      #print "WorkflowInstance creating Step instance ",step_inst_name," of type", step_inst_type
       for parameter in step_inst.parameters:
         if parameter.preExecute():
           if parameter.isLinked():
@@ -266,25 +262,11 @@ class Workflow(AttributeCollection):
       step_inst.setParent(self)
       step_inst.setWorkflowCommons(self.workflow_commons)
       
-      if loop_OK or (not loop_OK and step_inst_type == "JobFinalization" ):
-        result = step_inst.execute(wf_exec_steps[step_inst_name], self.step_definitions)
-        if not result['OK']:
-          # Check that there is JobFinalization step and execute it
-          loop_OK = False
+      result = step_inst.execute(wf_exec_steps[step_inst_name], self.step_definitions)
+      if not result['OK']:
+        if self.workflowStatus['OK']:
           error_message = result['Message']
-        else:
-          # Get output values to the step_commons dictionary
-          for key in result.keys():
-            if key != "OK":
-              if key != "Value":
-                step_inst.step_commons[key] = result[key]
-              elif type(result['Value']) == types.DictType:
-                for vkey in result['Value'].keys():
-                  step_inst.step_commons[key] = result['Value'][key]
-                  
-      # Stop execution here in case of errors
-      if not loop_OK:
-        return S_ERROR(error_message)         
+        self.workflowStatus = S_ERROR(result['Message']) 
                   
                 
     # now we need to copy output values to the STEP!!! parameters
@@ -305,8 +287,11 @@ class Workflow(AttributeCollection):
           wf_exec_attr[wf_parameter.getName()] = wf_parameter.getValue()
           #print "WorkflowInstance  self."+ wf_parameter.getName(),'=',wf_parameter.getValue()
 
-    # Return the result of the last step
-    return result
+    # Return the result of the first failed step or S_OK
+    if not self.workflowStatus['OK']:
+      return S_ERROR(error_message)
+    else:  
+      return S_OK(result['Value'])
 
 from DIRAC.Core.Workflow.WorkflowReader import WorkflowXMLHandler
 
