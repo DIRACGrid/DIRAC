@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.24 2008/05/20 16:40:03 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.25 2008/05/20 17:37:24 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.24 2008/05/20 16:40:03 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.25 2008/05/20 17:37:24 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -432,8 +432,43 @@ class Dirac:
     return result
 
   #############################################################################
+  def getAccessURL(self,lfn,storageElement,printOutput=False):
+    """Allows to retrieve an access URL for an LFN replica given a valid DIRAC SE
+       name.  Contacts the file catalog and contacts the site SRM endpoint behind
+       the scenes.
+
+       Example Usage:
+
+       >>> print dirac.getAccessURL('/lhcb/data/CCRC08/DST/00000151/0000/00000151_00004848_2.dst','CERN-RAW')
+      {'OK': True, 'Value': {'Successful': {'srm://...': {'SRM2': 'rfio://...'}}, 'Failed': {}}}
+
+       @param lfn: Logical File Name (LFN)
+       @type lfn: string
+       @param storageElement: DIRAC SE name e.g. CERN-RAW
+       @type storageElement: string
+       @return: S_OK,S_ERROR
+
+       @param printOutput: Optional flag to print result
+       @type printOutput: boolean
+
+    """
+    if type(lfn)==type(" "):
+      lfn = lfn.replace('LFN:','')
+    else:
+      return self.__errorReport('Expected single string for LFN')
+
+    result = self.rm.getReplicaAccessUrl([lfn],storageElement)
+    if not result['OK']:
+      return self.__errorReport('Problem during getAccessURL call',result['Message'])
+    if not printOutput:
+      return result
+
+    print self.pPrint.pformat(result['Value'])
+    return result
+
+  #############################################################################
   def dataLoggingInfo(self,lfn,printOutput=False):
-    """ Retrieve logging information for a given dataset.
+    """Retrieve logging information for a given dataset.
 
        Example Usage:
 
@@ -456,7 +491,7 @@ class Dirac:
     dataLogging = RPCClient('DataManagement/DataLogging')
     result = dataLogging.getFileLoggingInfo(lfn)
     if not result['OK']:
-      return self.__errorReport('Problem during getFileLoggingInfo',result['Message'])
+      return self.__errorReport('Problem during getFileLoggingInfo call',result['Message'])
     if not printOutput:
       return result
 
