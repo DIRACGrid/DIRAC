@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.23 2008/05/05 07:40:26 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.24 2008/05/20 16:40:03 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.23 2008/05/05 07:40:26 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.24 2008/05/20 16:40:03 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -40,6 +40,7 @@ from DIRAC.DataManagementSystem.Client.ReplicaManager    import ReplicaManager
 from DIRAC.Core.DISET.RPCClient                          import RPCClient
 from DIRAC.Core.Utilities.GridCert                       import getGridProxy
 from DIRAC.ConfigurationSystem.Client.PathFinder         import getSystemSection
+from DIRAC.Core.Utilities.Time                           import toString
 from DIRAC                                               import gConfig, gLogger, S_OK, S_ERROR
 
 COMPONENT_NAME='DiracAPI'
@@ -404,11 +405,83 @@ class Dirac:
     return repsResult
 
   #############################################################################
-  def replicate(self,lfn,destinationSE,sourceSE):
+  def addFile(self,lfn,fullPath,diracSE,fileGuid=None):
     """Under development.
+       Add a file to a Grid SE.
+    """
+    result = self.rm.putAndRegister(lfn,fullPath,diracSE,guid=fileGuid)
+    self.log.verbose(result)
+    return result
+
+  #############################################################################
+  def getFile(self,lfn):
+    """Under development.
+       LFN string / list, file brought to the local directory
+    """
+    result = self.rm.getFile(lfn)
+    self.log.verbose(result)
+    return result
+
+  #############################################################################
+  def replicateFile(self,lfn,destinationSE,sourceSE):
+    """Under development.
+       Replicate a file to another SE.
     """
     result = self.rm.replicateAndRegister(lfn,destinationSE,sourceSE)
     self.log.verbose(result)
+    return result
+
+  #############################################################################
+  def dataLoggingInfo(self,lfn,printOutput=False):
+    """ Retrieve logging information for a given dataset.
+
+       Example Usage:
+
+       >>> print dirac.dataLoggingInfo('/lhcb/data/CCRC08/RAW/LHCb/CCRC/22808/022808_0000018443.raw')
+       {'OK': True, 'Value': [('AddedToTransformation', 'Transformation 3', datetime.datetime(2008, 5, 18, 13, 54, 15)]}
+
+       @param lfn: Logical File Name (LFN)
+       @type lfn: string
+       @return: S_OK,S_ERROR
+
+       @param printOutput: Optional flag to print result
+       @type printOutput: boolean
+
+    """
+    if type(lfn)==type(" "):
+      lfn = lfn.replace('LFN:','')
+    else:
+      return self.__errorReport('Expected single string for LFN')
+
+    dataLogging = RPCClient('DataManagement/DataLogging')
+    result = dataLogging.getFileLoggingInfo(lfn)
+    if not result['OK']:
+      return self.__errorReport('Problem during getFileLoggingInfo',result['Message'])
+    if not printOutput:
+      return result
+
+    loggingTupleList = result['Value']
+    headers = ('Status','MinorStatus','DateTime','Source')
+    line = ''
+
+    statAdj = 0
+    mStatAdj = 0
+    dtAdj = 25
+    sourceAdj = 0
+
+    for i in loggingTupleList:
+      if len(str(i[0])) > statAdj:
+        statAdj = len(str(i[0]))+4
+      if len(str(i[1])) > mStatAdj:
+        mStatAdj = len(str(i[1]))+4
+      if len(str(i[3])) > sourceAdj:
+        sourceAdj = len(str(i[3]))+4
+
+    print '\n'+headers[0].ljust(statAdj)+headers[1].ljust(mStatAdj)+headers[2].ljust(dtAdj)+headers[3].ljust(sourceAdj)+'\n'
+    for i in loggingTupleList:
+      line = i[0].ljust(statAdj)+i[1].ljust(mStatAdj)+toString(i[2]).ljust(dtAdj)+i[3].ljust(sourceAdj)
+      print line
+
     return result
 
   #############################################################################
@@ -912,13 +985,13 @@ class Dirac:
     line = ''
     for i in headers:
       line += i.ljust(25)
-    self.log.info(line)
+    print line
 
     for i in loggingTupleList:
       line = ''
       for j in xrange(len(i)-1):
         line += i[j].ljust(25)
-      self.log.info(line)
+      print line
 
     return result
 
