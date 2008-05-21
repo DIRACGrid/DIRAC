@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.17 2008/04/10 15:06:01 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.18 2008/05/21 15:31:06 atsareg Exp $
 ########################################################################
 """ PilotAgentsDB class is a front-end to the Pilot Agent Database.
     This database keeps track of all the submitted grid pilot jobs.
@@ -23,11 +23,12 @@
 
 """
 
-__RCSID__ = "$Id: PilotAgentsDB.py,v 1.17 2008/04/10 15:06:01 atsareg Exp $"
+__RCSID__ = "$Id: PilotAgentsDB.py,v 1.18 2008/05/21 15:31:06 atsareg Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
 from types import *
+import threading
 
 DEBUG = 1
 
@@ -36,26 +37,44 @@ class PilotAgentsDB(DB):
 
   def __init__(self, maxQueueSize=10 ):
 
-     print "Initializing PilotAgentsDB"
-
      DB.__init__(self,'PilotAgentsDB','WorkloadManagement/PilotAgentsDB',maxQueueSize)
-
-     print "Initializing PilotAgentsDB - done"
+     self.lock = threading.Lock()
 
 ##########################################################################################
   def addPilotReference(self,pilotRef,jobID,ownerDN,ownerGroup,broker='Unknown',
                         gridType='DIRAC',requirements='Unknown'):
     """ Add a new pilot job reference """
 
+    result = self._getConnection()
+    if result['OK']:
+      connection = result['Value']
+    else:
+      return S_ERROR('Failed to get connection to MySQL: '+result['Message'])
+
     result = self._escapeString(requirements)
     if not result['OK']:
       gLogger.warn('Failed to escape requirements string')
       e_requirements = "Failed to escape requirements string"
     e_requirements = result['Value']
+    
     req = "INSERT INTO PilotAgents( PilotJobReference, InitialJobID, OwnerDN, " + \
-          "OwnerGroup, Broker, GridType, SubmissionTime, LastUpdateTime, Status, GridRequirements ) " + \
+          "OwnerGroup, Broker, GridType, SubmissionTime, LastUpdateTime, Status ) " + \
           "VALUES ('%s',%d,'%s','%s','%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),'Submitted','%s')" % \
-          (pilotRef,int(jobID),ownerDN,ownerGroup,broker,gridType,e_requirements)
+          (pilotRef,int(jobID),ownerDN,ownerGroup,broker,gridType)
+          
+    self.lock.acquire()      
+    result = self._update(req,connection)
+    if not result['OK']:
+      return result
+      
+    req = "SELECT LAST_INSERT_ID();"
+    res = self._query(req,connection)
+    self.lock.release()
+    if not res['OK']:
+      return res
+    pilotID = int(res['Value'][0][0])
+      
+    req = "INSERT INTO PilotRequirements (PilotID,Requirements) VALUES (%d,'%s')" % (pilotID,e_requirements)  
     return self._update(req)
 
 ##########################################################################################
@@ -77,7 +96,7 @@ class PilotAgentsDB(DB):
     return self._update(req)
 
 ##########################################################################################
-  def selectPilots(self,statusList=[],owner=None,ownerGroup=None):
+  def selectPilots(self,statusList=[],owner=None,ownerGroup=None,newer=None,older=None):
     """ Select pilot references according to the provided criteria
     """
 
@@ -93,6 +112,8 @@ class PilotAgentsDB(DB):
       condList.append("OwnerDN = '%s'" % owner)
     if ownerGroup:
       condList.append("OwnerGroup = '%s'" % ownerGroup)
+    if newer:
+      condList.append("SubmissionTime > '%s'" % newer)  
 
     if condList:
       conditions = " AND ".join(condList)
@@ -113,8 +134,13 @@ class PilotAgentsDB(DB):
   def deletePilot(self,pilotRef):
     """ Delete Pilot reference from the LCGPilots table """
 
+    
+
     req = "DELETE FROM PilotAgents WHERE PilotJobReference='%s'" % pilotRef
-    return self._update(req)
+    result = self._update(req)
+    if not result['OK']:
+      return result
+      
 
 ##########################################################################################
   def clearPilots(self,interval=30,aborted_interval=7):
@@ -152,7 +178,7 @@ class PilotAgentsDB(DB):
     else:
       req = "SELECT "+param_string+" FROM PilotAgents WHERE PilotJobReference='%s'" % pilotRef
 
-    print req
+    # print req
 
     result = self._query(req)
     if not result['OK']:
@@ -174,6 +200,7 @@ class PilotAgentsDB(DB):
           return S_OK(pilotDict)
       else:
         return S_ERROR('PilotJobReference(s) not found: '+str(pilotRef))
+           
 
 ##########################################################################################
   def setPilotDestinationSite(self,pilotRef,destination):
@@ -198,11 +225,15 @@ class PilotAgentsDB(DB):
     """ Set the pilot agent grid requirements
     """
 
+    pilotID = self.__getPilotID(pilotRef)
+    if not pilotID:
+      return S_ERROR('Pilot reference not found %s' % pilotRef)
+
     result = self._escapeString(requirements)
     if not result['OK']:
       return S_ERROR('Failed to escape requirements string')
     e_requirements = result['Value']
-    req = "UPDATE PilotAgents SET GridRequirements='%s' WHERE PilotJobReference='%s'" % (e_requirements,pilotRef)
+    req = "UPDATE PilotRequirements SET Requirements='%s' WHERE PilotID=%d" % (e_requirements,pilotID)
     result = self._update(req)
     return result
 
@@ -210,6 +241,10 @@ class PilotAgentsDB(DB):
   def storePilotOutput(self,pilotRef,output,error):
     """ Store standard output and error for a pilot with pilotRef
     """
+
+    pilotID = self.__getPilotID(pilotRef)
+    if not pilotID:
+      return S_ERROR('Pilot reference not found %s' % pilotRef)
 
     result = self._escapeString(output)
     if not result['OK']:
@@ -219,17 +254,18 @@ class PilotAgentsDB(DB):
     if not result['OK']:
       return S_ERROR('Failed to escape error string')
     e_error = result['Value']
-    req = "UPDATE PilotAgents SET StdOutput='%s', StdError='%s' WHERE PilotJobReference='%s'"
-    req = req % (e_output,e_error,pilotRef)
+    req = "UPDATE PilotOutput SET StdOutput='%s', StdError='%s' WHERE PilotID=%d"
+    req = req % (e_output,e_error,pilotID)
     result = self._update(req)
     return result
 
- ##########################################################################################
+##########################################################################################
   def getPilotOutput(self,pilotRef):
     """ Retrieve standard output and error for pilot with pilotRef
     """
 
-    req = "SELECT StdOutput, StdError FROM PilotAgents WHERE PilotJobReference='%s'" % pilotRef
+    req = "SELECT StdOutput, StdError FROM PilotOutput,PilotAgents WHERE "
+    req += "PilotOutput.PilotID = PilotAgents.PilotID AND PilotAgents.PilotJobReference='%s'" % pilotRef
     result = self._query(req)
     if not result['OK']:
       return result
