@@ -58,7 +58,7 @@ class RequestDBMySQL(DB):
   def getRequest(self,requestType):
     dmRequest = DataManagementRequest(init=False)
     self.getIdLock.acquire()
-    req = "SELECT RequestID,SubRequestID FROM SubRequests WHERE Status = 'Waiting' AND RequestType = '%s' ORDER BY RequestID LIMIT 1;" % requestType
+    req = "SELECT RequestID,SubRequestID FROM SubRequests WHERE Status = 'Waiting' AND RequestType = '%s' ORDER BY LastUpdate ASC LIMIT 1;" % requestType
     res = self._query(req)
     if not res['OK']:
       err = 'RequestDB._getRequest: Failed to retrieve max RequestID'
@@ -179,7 +179,9 @@ class RequestDBMySQL(DB):
               res = self.__setSubRequestFiles(ind,requestType,subRequestID,request)
               if res['OK']:
                 res = self.__setSubRequestDatasets(ind,requestType,subRequestID,request)
-                if not res['OK']:
+                if res['OK']:
+                  res = self._setSubRequestLastUpdate(subRequestID)
+                else:
                   failed = True
               else:
                 failed = True
@@ -209,6 +211,7 @@ class RequestDBMySQL(DB):
     updateRequestFailed = False
     for requestType in requestTypes:
       res = request.getNumSubRequests(requestType)
+      print res,'!!!!!'
       if res['OK']:
         numRequests = res['Value']
         for ind in range(numRequests):
@@ -222,15 +225,22 @@ class RequestDBMySQL(DB):
                   res = self._setSubRequestAttribute(subRequestID,'Status','Done')
                 else:
                   res = self._setSubRequestAttribute(subRequestID,'Status','Waiting')
-                if not res['OK']:
+                if res['OK']:
+                  res = self._setSubRequestLastUpdate(subRequestID)
+                else:
+                  print 1
                   updateRequestFailed = True
               else:
+                print 2
                 updateRequestFailed = True
             else:
+              print 3
               updateRequestFailed = True
           else:
+            print 4
             updateRequestFailed = True
       else:
+        print 5
         updateRequestFailed = True
     if updateRequestFailed:
       errStr = 'Failed to update request %s.' % requestID
@@ -409,6 +419,14 @@ class RequestDBMySQL(DB):
       return res
     else:
       return S_ERROR('RequestDB.setRequestAttribute: failed to set attribute')
+
+  def _setSubRequestLastUpdate(self,subRequestID):
+    req = "UPDATE SubRequests SET LastUpdate=NOW() WHERE SubRequestID='%s';" % (subRequestID)
+    res = self._update(req)
+    if res['OK']:
+      return res  
+    else:
+      return S_ERROR('RequestDB.setSubRequestLastUpdate: failed to set LastUpdate')
 
   def _setFileAttribute(self,subRequestID, fileID, attrName, attrValue):
     req = "UPDATE Files SET %s='%s' WHERE SubRequestID='%s' AND FileID='%s';" % (attrName,attrValue,subRequestID,fileID)
