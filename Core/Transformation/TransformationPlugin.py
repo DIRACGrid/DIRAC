@@ -49,7 +49,7 @@ class TransformationPlugin:
         if not seFiles.has_key(se):
           seFiles[se] = {}
         if not seFiles[se].has_key(strTargetSE):
-          seFiles[se][strListToString(targets)] = []
+          seFiles[se][strTargetSE] = []
         seFiles[se][strTargetSE].append(lfn)        
     return S_OK(seFiles) 
 
