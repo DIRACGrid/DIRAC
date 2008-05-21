@@ -1,4 +1,4 @@
--- $Header $
+-- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.sql,v 1.10 2008/05/21 09:36:04 atsareg Exp $
 
 --------------------------------------------------------------------------------
 --
