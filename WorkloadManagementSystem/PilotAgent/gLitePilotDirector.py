@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/gLitePilotDirector.py,v 1.13 2008/05/14 15:43:40 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/gLitePilotDirector.py,v 1.14 2008/05/21 15:34:02 paterson Exp $
 # File :   gLitePilotDirector.py
 # Author : Stuart Paterson
 ########################################################################
@@ -11,7 +11,7 @@
      the invokation of the Pilot Director instance is performed here.
 """
 
-__RCSID__ = "$Id: gLitePilotDirector.py,v 1.13 2008/05/14 15:43:40 rgracian Exp $"
+__RCSID__ = "$Id: gLitePilotDirector.py,v 1.14 2008/05/21 15:34:02 paterson Exp $"
 
 from DIRACEnvironment                                        import DIRAC
 from DIRAC.Core.Utilities                                    import List
@@ -40,6 +40,7 @@ class gLitePilotDirector(PilotDirector):
     self.diracSetup = gConfig.getValue(self.sectionPath+'/Setup','LHCb-Development')
     self.enableListMatch = gConfig.getValue(self.sectionPath+'/EnableListMatch',1)
     self.listMatchDelay = gConfig.getValue(self.sectionPath+'/ListMatchDelay',15*60)
+    self.diracTag = gConfig.getValue(self.sectionPath+'/DIRACDistributionTag','CCRC08-v4')
     self.confFile1 = None
     self.pilotDirConfig = '/%s/%s' % ( '/'.join( List.fromChar(configPath, '/' )[:-1] ), 'PilotDirector')
     self.jobsWithoutCEs = {}
@@ -161,7 +162,7 @@ class gLitePilotDirector(PilotDirector):
       else:
         gLiteJDL.write( 'Executable = "%s";\n'     % os.path.basename(self.pilotScript))
 
-      gLiteJDL.write( 'Arguments  = "-o /DIRAC/Setup=%s -T %s -G %s -v CCRC08-v3";\n'  % (self.diracSetup,cpuRequirement,ownerGroup) )
+      gLiteJDL.write( 'Arguments  = "-o /DIRAC/Setup=%s -T %s -G %s -v %s";\n'  % (self.diracSetup,cpuRequirement,ownerGroup,self.diracTag) )
       gLiteJDL.write( 'gLiteTimeRef = %s ;\n'      % cpuRequirement )
       gLiteJDL.write( 'MyPolicyTime = ( %s );\n' % myPolicyTime )
 
