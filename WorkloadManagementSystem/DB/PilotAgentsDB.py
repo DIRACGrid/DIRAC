@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.18 2008/05/21 15:31:06 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.19 2008/05/21 16:21:55 atsareg Exp $
 ########################################################################
 """ PilotAgentsDB class is a front-end to the Pilot Agent Database.
     This database keeps track of all the submitted grid pilot jobs.
@@ -23,7 +23,7 @@
 
 """
 
-__RCSID__ = "$Id: PilotAgentsDB.py,v 1.18 2008/05/21 15:31:06 atsareg Exp $"
+__RCSID__ = "$Id: PilotAgentsDB.py,v 1.19 2008/05/21 16:21:55 atsareg Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
@@ -59,7 +59,7 @@ class PilotAgentsDB(DB):
     
     req = "INSERT INTO PilotAgents( PilotJobReference, InitialJobID, OwnerDN, " + \
           "OwnerGroup, Broker, GridType, SubmissionTime, LastUpdateTime, Status ) " + \
-          "VALUES ('%s',%d,'%s','%s','%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),'Submitted','%s')" % \
+          "VALUES ('%s',%d,'%s','%s','%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),'Submitted')" % \
           (pilotRef,int(jobID),ownerDN,ownerGroup,broker,gridType)
           
     self.lock.acquire()      
@@ -97,7 +97,8 @@ class PilotAgentsDB(DB):
 
 ##########################################################################################
   def selectPilots(self,statusList=[],owner=None,ownerGroup=None,newer=None,older=None):
-    """ Select pilot references according to the provided criteria
+    """ Select pilot references according to the provided criteria. "newer" and "older"
+        specify the time interval in minutes
     """
 
     req = "SELECT PilotJobReference from PilotAgents"
@@ -113,7 +114,9 @@ class PilotAgentsDB(DB):
     if ownerGroup:
       condList.append("OwnerGroup = '%s'" % ownerGroup)
     if newer:
-      condList.append("SubmissionTime > '%s'" % newer)  
+      condList.append("SubmissionTime > DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d MINUTE)" % newer)  
+    if older:
+      condList.append("SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d MINUTE)" % older)    
 
     if condList:
       conditions = " AND ".join(condList)
