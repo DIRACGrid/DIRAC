@@ -57,3 +57,16 @@ CREATE TABLE JobToPilotMapping (
     JobID INTEGER NOT NULL,
     StartTime DATETIME NOT NULL
 );
+
+DROP TABLE IF EXISTS PilotOutput;
+CREATE TABLE PilotOutput (
+    PilotID INTEGER NOT NULL,
+    StdOutput MEDIUMBLOB,
+    StdError MEDIUMBLOB
+);
+
+DROP TABLE IF EXISTS PilotRequirements;
+CREATE TABLE PilotRequirements (
+    PilotID INTEGER NOT NULL,
+    Requirements BLOB
+);
