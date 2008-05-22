@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.37 2008/05/19 18:19:46 paterson Exp $
+# $Id: JobWrapper.py,v 1.38 2008/05/22 17:59:03 paterson Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.37 2008/05/19 18:19:46 paterson Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.38 2008/05/22 17:59:03 paterson Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -914,7 +914,7 @@ class JobWrapper:
     """Wraps around setJobParameters of state update client
     """
     jobParam = S_OK()
-    if not self.jobID:
+    if self.jobID:
       jobReport  = RPCClient('WorkloadManagement/JobStateUpdate')
       jobParam = jobReport.setJobParameters(int(self.jobID),value)
       self.log.verbose('setJobParameters(%s,%s)' %(self.jobID,value))
