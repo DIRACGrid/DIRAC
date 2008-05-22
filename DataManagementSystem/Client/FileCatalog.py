@@ -3,7 +3,7 @@
 """
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
-
+from DIRAC.Core.Utilities.List import uniqueElements
 import types,re
 
 class FileCatalog:
@@ -21,8 +21,8 @@ class FileCatalog:
     """
     self.valid = True
     self.timeout = 180
-    self.readCatalogs = {}
-    self.writeCatalogs = {}
+    self.readCatalogs = []
+    self.writeCatalogs = []
     self.rootConfigPath = '/Resources/FileCatalogs'
 
     if type(catalogs) in types.StringTypes:
@@ -57,11 +57,17 @@ class FileCatalog:
     """
     successful = {}
     failed = {}
-    for catalogName,oCatalog in self.writeCatalogs.items():
+    failedCatalogs = []
+    for catalogName,oCatalog,master in self.writeCatalogs:
       method = getattr(oCatalog,self.call)
       res = method(*parms,**kws)
       if not res['OK']:
-        return res
+        # If this is the master catalog and it fails we dont want to continue with the other catalogs
+        if master:
+          return res
+        # Otherwise we keep the failed catalogs so we can update their state later
+        else:
+          failedCatalogs.append((catalogName,res['Message']))
       else:
         for key,item in res['Value']['Successful'].items():
           if not successful.has_key(key):
@@ -71,6 +77,12 @@ class FileCatalog:
           if not failed.has_key(key):
             failed[key] = {}
           failed[key][catalogName] = item
+    # This recovers the states of the files that completely failed
+    for file in uniqueElements(failed.keys()+successful.keys()):
+      if not failed.has_key(file):
+        failed[file] = {}
+      for catalogName,errorMessage in failedCatalogs:
+        failed[file][catalogName] = errorMessage
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
@@ -79,7 +91,7 @@ class FileCatalog:
     """
     successful = {}
     failed = {}
-    for catalogName,oCatalog in self.readCatalogs.items():
+    for catalogName,oCatalog,master in self.readCatalogs:
       method = getattr(oCatalog,self.call)
       res = method(*parms,**kws)
       if res['OK']:
@@ -94,8 +106,6 @@ class FileCatalog:
         if len(failed) == 0:
           resDict = {'Failed':failed,'Successful':successful}
           return S_OK(resDict)
-    #if len(successful) == 0:
-    #  return S_ERROR('FileCatalog.%s: Completely failed for all catalogs.' % self.call)
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
@@ -110,8 +120,8 @@ class FileCatalog:
       if not res['OK']:
         return res
       oCatalog = res['Value']
-      self.readCatalogs[catalogName] = oCatalog
-      self.writeCatalogs[catalogName] = oCatalog
+      self.readCatalogs.append((catalogName,oCatalog,True))
+      self.writeCatalogs.append((catalogName,oCatalog,True))
     return S_OK()
 
   def _getCatalogs(self):
@@ -131,12 +141,19 @@ class FileCatalog:
         if not res['OK']:
           return res
         oCatalog = res['Value']
+        master = catalogConfig['Master']
         # If the catalog is read type
         if re.search('Read',catalogConfig['AccessType']):
-          self.readCatalogs[catalogName] = oCatalog
+          if master:
+            self.readCatalogs.insert(0,(catalogName,oCatalog,master))
+          else:
+            self.readCatalogs.append((catalogName,oCatalog,master))
         # If the catalog is write type
         if re.search('Write',catalogConfig['AccessType']):
-          self.writeCatalogs[catalogName] = oCatalog
+          if master:
+            self.writeCatalogs.insert(0,(catalogName,oCatalog,master))
+          else:
+            self.writeCatalogs.append((catalogName,oCatalog,master))
     return S_OK()
 
   def _getCatalogConfigDetails(self,catalogName):
@@ -162,6 +179,13 @@ class FileCatalog:
       errStr = "FileCatalog._getCatalogConfigDetails: Required option 'AccessType' not defined."
       gLogger.error(errStr,catalogName)
       return S_ERROR(errStr)
+    # Anything other than 'True' in the 'Master' option means it is not
+    if not catalogConfig.has_key('Master'):
+      catalogConfig['Master'] = False
+    elif catalogConfig['Master'] == 'True':
+      catalogConfig['Master'] = True
+    else:
+      catalogConfig['Master'] = False
     return S_OK(catalogConfig)
 
   def _generateCatalogObject(self,catalogName):
