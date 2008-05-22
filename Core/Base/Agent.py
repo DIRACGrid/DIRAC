@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Agent.py,v 1.14 2008/05/22 18:39:56 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Agent.py,v 1.15 2008/05/22 22:14:04 atsareg Exp $
 ########################################################################
 """ Base class for all the Agents.
 
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: Agent.py,v 1.14 2008/05/22 18:39:56 atsareg Exp $"
+__RCSID__ = "$Id: Agent.py,v 1.15 2008/05/22 22:14:04 atsareg Exp $"
 
 import os
 import threading
@@ -27,6 +27,7 @@ from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.ConfigurationSystem.Client.PathFinder import getAgentSection
 from DIRAC.Core.Utilities.Subprocess import pythonCall
 from DIRAC.MonitoringSystem.Client.MonitoringClient import gMonitor
+from DIRAC.Core.Utilities.Subprocess import shellCall
 
 class Agent:
 
@@ -93,19 +94,22 @@ class Agent:
     self.count = 0   # Counter of the number of cycles
     self.start = time.time()
     self.startStats = os.times()
-    self.lastStats[0] = os.times()
-    self.lastWallClock = time.times()
+    self.lastStats = os.times()
+    self.lastWallClock = time.time()
     self.exit_status = 'OK'
 
     # Set the signal handler
     signal.signal(signal.SIGINT, self.__signal_handler)
 
-    self.monitorName = "%s-%s" % (self.fullname,self.diracSetup)
+    self.monitorName = "%s/%s" % (self.name,self.diracSetup)
     if self.monitorFlag:
       gLogger.verbose("Registering CPU consumption activity")
-      gMonitor.registerActivity(self.monitorName,
-                                "Percentage CPU consumed by %s in %s setup" % (self.name,self.diracSetup),
-                                self.name,"CPU,%",gMonitor.OP_RATE)
+      gMonitor.registerActivity('%CPU '+self.monitorName ,
+                                "%CPU "+self.name+'/'+self.diracSetup,
+                                'Percentage CPU',"CPU,%",gMonitor.OP_MEAN)
+      gMonitor.registerActivity('Memory '+self.monitorName ,
+                                "Memory "+self.name+'/'+self.diracSetup,
+                                'Memory consumption',"Memory,MB",gMonitor.OP_MEAN)                          
 
     return S_OK()
 
@@ -237,11 +241,22 @@ class Agent:
           # Send CPU consumption mark
           stats = os.times()
           cpuTime = stats[0]+stats[2]-self.lastStats[0]-self.lastStats[2]
-          wallClock = time.times() - self.lastWallClock
+          wallClock = time.time() - self.lastWallClock
           percentage = cpuTime/wallClock*100.
-          gMonitor.addMark(self.monitorName,percentage)
-          self.lastStats[0] = os.times()
-          self.lastWallClock = time.times()
+          gLogger.verbose("Sending CPU consumption %.2f" % percentage)
+          gMonitor.addMark('%CPU '+self.monitorName,percentage)
+          self.lastStats = os.times()
+          self.lastWallClock = time.time()
+          # Send Memory consumption mark
+          pid = os.getpid()
+          result = shellCall(0,'ps -p %d -o rsz=' % pid)
+          if result['OK']:
+            returnCode,stdOut,stdErr = result['Value']
+            mem = float(stdOut)
+            gLogger.verbose("Sending Memory consumption %.2f" % (mem/1024.,))
+            gMonitor.addMark('Memory '+self.monitorName,mem/1024.)
+          else:
+            gLogger.warn('Failed to get memory consumption')  
     except Exception,x:
       gLogger.exception(str(x))
       self.runFlag = False
