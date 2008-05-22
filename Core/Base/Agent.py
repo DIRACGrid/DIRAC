@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Agent.py,v 1.13 2008/05/10 09:16:43 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Agent.py,v 1.14 2008/05/22 18:39:56 atsareg Exp $
 ########################################################################
 """ Base class for all the Agents.
 
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: Agent.py,v 1.13 2008/05/10 09:16:43 rgracian Exp $"
+__RCSID__ = "$Id: Agent.py,v 1.14 2008/05/22 18:39:56 atsareg Exp $"
 
 import os
 import threading
@@ -65,13 +65,14 @@ class Agent:
     self.pollingTime = gConfig.getValue(self.section+'/PollingTime',60)
     self.controlDir = gConfig.getValue(self.section+'/ControlDirectory','.')
     self.maxcount = gConfig.getValue(self.section+'/MaxCycles',0)
+    self.diracSetup = gConfig.getValue('/DIRAC/Setup','Unknown')
 
     gLogger.always( 'Starting Agent', self.fullname )
     gLogger.info('')
     gLogger.info('==========================================================')
     gLogger.info('Starting %s Agent' % self.fullname)
     gLogger.info('At site '+ gConfig.getValue('/LocalSite/Site','Unknown'))
-    gLogger.info('Within the '+ gConfig.getValue('/DIRAC/Setup','Unknown') +' setup')
+    gLogger.info('Within the '+ self.diracSetup +' setup')
     gLogger.info('CVS version '+__RCSID__)
     gLogger.info('DIRAC version v%dr%d build %d' % \
                     (DIRAC.majorVersion,DIRAC.minorVersion,DIRAC.patchLevel) )
@@ -91,10 +92,20 @@ class Agent:
     self.signalFlag = 0
     self.count = 0   # Counter of the number of cycles
     self.start = time.time()
+    self.startStats = os.times()
+    self.lastStats[0] = os.times()
+    self.lastWallClock = time.times()
     self.exit_status = 'OK'
 
     # Set the signal handler
     signal.signal(signal.SIGINT, self.__signal_handler)
+
+    self.monitorName = "%s-%s" % (self.fullname,self.diracSetup)
+    if self.monitorFlag:
+      gLogger.verbose("Registering CPU consumption activity")
+      gMonitor.registerActivity(self.monitorName,
+                                "Percentage CPU consumed by %s in %s setup" % (self.name,self.diracSetup),
+                                self.name,"CPU,%",gMonitor.OP_RATE)
 
     return S_OK()
 
@@ -222,6 +233,15 @@ class Agent:
           gLogger.error(result['Message'])
           status = 'Error'
           break
+        if self.monitorFlag:
+          # Send CPU consumption mark
+          stats = os.times()
+          cpuTime = stats[0]+stats[2]-self.lastStats[0]-self.lastStats[2]
+          wallClock = time.times() - self.lastWallClock
+          percentage = cpuTime/wallClock*100.
+          gMonitor.addMark(self.monitorName,percentage)
+          self.lastStats[0] = os.times()
+          self.lastWallClock = time.times()
     except Exception,x:
       gLogger.exception(str(x))
       self.runFlag = False
@@ -254,17 +274,17 @@ def createAgent(agentName):
   try:
     print "Importing",'DIRAC.'+system+'System.Agent'
     module = __import__('DIRAC.'+system+'System.Agent',globals(),locals(),[name])
-    agent = eval("module."+name+'.'+name+"()")    
+    agent = eval("module."+name+'.'+name+"()")
   except Exception,x:
     try:
-      print 'Importing',system+'System.Agent' 
+      print 'Importing',system+'System.Agent'
       module = __import__(system+'System.Agent',globals(),locals(),[name])
-      agent = eval("module."+name+'.'+name+"()")    
+      agent = eval("module."+name+'.'+name+"()")
     except Exception,y:
       print 'Importing DIRAC.'+system+'System Agent failed with exception:'
       print x
       print 'Importing '+system+'System Agent failed with exception:'
       print y
-      return None 
+      return None
 
   return agent
