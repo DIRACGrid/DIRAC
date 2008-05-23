@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Agent.py,v 1.17 2008/05/23 13:30:59 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Agent.py,v 1.18 2008/05/23 13:32:50 acasajus Exp $
 ########################################################################
 """ Base class for all the Agents.
 
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: Agent.py,v 1.17 2008/05/23 13:30:59 acasajus Exp $"
+__RCSID__ = "$Id: Agent.py,v 1.18 2008/05/23 13:32:50 acasajus Exp $"
 
 import os
 import threading
@@ -40,6 +40,9 @@ class Agent:
     self.system,self.name = name.split('/')
     self.monitorFlag = initializeMonitor
     self.log = gLogger
+
+    if not self.monitorFlag and gConfig.getValue( "/LocalSite/EnableAgentMonitoring", "yes" ).lower() in ( 'y', 'yes', '1' ):
+      self.monitorFlag = True
 
     if self.monitorFlag:
       self.__initializeMonitor()
