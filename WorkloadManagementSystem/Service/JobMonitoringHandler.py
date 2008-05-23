@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobMonitoringHandler.py,v 1.18 2008/05/09 13:27:49 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobMonitoringHandler.py,v 1.19 2008/05/23 22:42:10 atsareg Exp $
 ########################################################################
 
 """ JobMonitoringHandler is the implementation of the JobMonitoring service
@@ -11,7 +11,7 @@
 
 """
 
-__RCSID__ = "$Id: JobMonitoringHandler.py,v 1.18 2008/05/09 13:27:49 paterson Exp $"
+__RCSID__ = "$Id: JobMonitoringHandler.py,v 1.19 2008/05/23 22:42:10 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -69,6 +69,14 @@ class JobMonitoringHandler( RequestHandler ):
     Return Distict Values of ProductionId job Attribute in WMS
     """
     return jobDB.getDistinctJobAttributes( 'JobGroup' )
+    
+##############################################################################
+  types_getJobGroups = []
+  def export_getJobGroups(self):
+    """
+    Return Distict Values of ProductionId job Attribute in WMS
+    """
+    return jobDB.getDistinctJobAttributes( 'JobGroup' )    
 
 ##############################################################################
   types_getSites = []
@@ -90,7 +98,7 @@ class JobMonitoringHandler( RequestHandler ):
   types_getMinorStates = []
   def export_getMinorStates (self):
     """
-    Return Distict Values of Status job Attribute in WMS
+    Return Distinct Values of Minor Status job Attribute in WMS
     """
     return jobDB.getDistinctJobAttributes( 'MinorStatus' )
 
