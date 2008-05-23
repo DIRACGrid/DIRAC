@@ -1,7 +1,7 @@
 
 from GSI import crypto
 
-nid = crypto.create_oid( "1.42.6.5", "diracGroup", "DIRAC group" )
+nid = crypto.create_oid( "1.2.42.42", "diracGroup", "DIRAC group" )
 crypto.add_x509_extension_alias( nid, 78 ) #Alias to netscape comment, text based extension
 nid = crypto.create_oid( "1.3.6.1.4.1.8005.100.100.5", "voms", "VOMS extension" )
 crypto.add_x509_extension_alias( nid, 78 ) #Alias to netscape comment, text based extension

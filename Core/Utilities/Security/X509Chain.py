@@ -1,7 +1,10 @@
 
 import types
+import os
+import stat
 from GSI import crypto
 from DIRAC.Core.Utilities.Security.X509Certificate import X509Certificate
+from DIRAC import S_OK, S_ERROR
 
 class X509Chain:
 
@@ -33,7 +36,7 @@ class X509Chain:
     except Exception, e:
       return S_ERROR( "Can't load pem data: %s" % str(e) )
     try:
-      self.__keyObj = crypto.load_privatekey( GSI.crypto.FILETYPE_PEM, pemData, password )
+      self.__keyObj = crypto.load_privatekey( crypto.FILETYPE_PEM, pemData, password )
     except Exception, e:
       return S_ERROR( "Can't load key file: %s" % str(e) )
     self.__valid = True
@@ -88,32 +91,32 @@ class X509Chain:
     proxyCert.set_serial_number( issuerCert.get_serial_number() )
     proxyCert.set_issuer( issuerCert.get_subject() )
     proxyCert.set_version( issuerCert.get_version() )
-    proxyCert.set_pubkey( pKey )
+    proxyCert.set_pubkey( proxyKey )
     proxyCert.add_extensions( self.__getProxyExtensionList( diracGroup ) )
     proxyCert.gmtime_adj_notBefore( -10 )
     proxyCert.gmtime_adj_notAfter( lifeTime )
     proxyCert.sign( self.__keyObj, 'md5' )
 
-    proxyString = "%s%s" % ( crypto.dump_certificate( crypto.FILETYPE_PEM, pCert ),
-                               crypto.dump_privatekey( crypto.FILETYPE_PEM, pKey ) )
+    proxyString = "%s%s" % ( crypto.dump_certificate( crypto.FILETYPE_PEM, proxyCert ),
+                               crypto.dump_privatekey( crypto.FILETYPE_PEM, proxyKey ) )
     for i in range( len( self.__certList ) ):
       proxyString += crypto.dump_certificate( crypto.FILETYPE_PEM, self.__certList[i] )
 
     return S_OK( proxyString )
 
-  def generateProxyToFile( self, lifeTime, filePath, diracGroup = False, bitsStrength = 1024 ):
+  def generateProxyToFile( self, filePath, lifeTime, diracGroup = False, bitsStrength = 1024 ):
     """
     Generate a proxy and put it into a file
       Args:
-        - lifeTime : expected lifetime of proxy
         - filePath : file to write
+        - lifeTime : expected lifetime of proxy
         - diracGroup : diracGroup to add to the certificate
         - bitStrength : length in bits of the pair
     """
     if not self.__valid:
       return S_ERROR( "No chain loaded" )
     retVal = self.generateProxyToString( lifeTime, diracGroup, bitsStrength )
-    if not retVa[ 'OK' ]:
+    if not retVal[ 'OK' ]:
       return retVal
     try:
       fd = open( filePath, 'w' )
@@ -138,7 +141,8 @@ class X509Chain:
       ret[ 'Message' ] = "At least two certificates are required"
       return ret
     for i in range( len( self.__certList )-1, 0, -1 ):
-      retVal = self.__checkProxyness( i, i+1 )
+      print i
+      retVal = self.__checkProxyness( i, i-1 )
       if not retVal[ 'OK' ] or not retVal[ 'Value' ]:
         return retVal
     return S_OK()
@@ -155,7 +159,7 @@ class X509Chain:
       ret[ 'Message' ] = "Signature mismatch\n Issuer %s Proxy %s" % ( issuerSubject.one_line(),
                                                                        proxySubject.one_line() )
       return ret
-    issuerModifiedSubject = issuer.get_subject().clone()
+    issuerModifiedSubject = issuerSubject.clone()
     proxySubject = proxyCert.get_subject()
     setattr( issuerModifiedSubject, 'CN', 'proxy' )
     if not issuerModifiedSubject == proxySubject:
