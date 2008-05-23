@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Agent.py,v 1.15 2008/05/22 22:14:04 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Agent.py,v 1.16 2008/05/23 11:05:13 atsareg Exp $
 ########################################################################
 """ Base class for all the Agents.
 
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: Agent.py,v 1.15 2008/05/22 22:14:04 atsareg Exp $"
+__RCSID__ = "$Id: Agent.py,v 1.16 2008/05/23 11:05:13 atsareg Exp $"
 
 import os
 import threading
@@ -103,13 +103,9 @@ class Agent:
 
     self.monitorName = "%s/%s" % (self.name,self.diracSetup)
     if self.monitorFlag:
-      gLogger.verbose("Registering CPU consumption activity")
-      gMonitor.registerActivity('%CPU '+self.monitorName ,
-                                "%CPU "+self.name+'/'+self.diracSetup,
-                                'Percentage CPU',"CPU,%",gMonitor.OP_MEAN)
-      gMonitor.registerActivity('Memory '+self.monitorName ,
-                                "Memory "+self.name+'/'+self.diracSetup,
-                                'Memory consumption',"Memory,MB",gMonitor.OP_MEAN)                          
+      gLogger.verbose("Registering CPU & Memory consumption activity")
+      gMonitor.registerActivity('CPU',"CPU Usage",'Framework',"CPU,%",gMonitor.OP_MEAN,600)
+      gMonitor.registerActivity('MEM',"Memory Usage",'Framework','Memory,MB',gMonitor.OP_MEAN,600)                          
 
     return S_OK()
 
@@ -244,7 +240,7 @@ class Agent:
           wallClock = time.time() - self.lastWallClock
           percentage = cpuTime/wallClock*100.
           gLogger.verbose("Sending CPU consumption %.2f" % percentage)
-          gMonitor.addMark('%CPU '+self.monitorName,percentage)
+          gMonitor.addMark('CPU',percentage)
           self.lastStats = os.times()
           self.lastWallClock = time.time()
           # Send Memory consumption mark
@@ -253,8 +249,8 @@ class Agent:
           if result['OK']:
             returnCode,stdOut,stdErr = result['Value']
             mem = float(stdOut)
-            gLogger.verbose("Sending Memory consumption %.2f" % (mem/1024.,))
-            gMonitor.addMark('Memory '+self.monitorName,mem/1024.)
+            gLogger.verbose("Sending Memory consumption %.2f MB" % (mem/1024.,))
+            gMonitor.addMark('MEM',mem/1024.)
           else:
             gLogger.warn('Failed to get memory consumption')  
     except Exception,x:
