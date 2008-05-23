@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Agent.py,v 1.18 2008/05/23 13:32:50 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Agent.py,v 1.19 2008/05/23 22:37:58 atsareg Exp $
 ########################################################################
 """ Base class for all the Agents.
 
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: Agent.py,v 1.18 2008/05/23 13:32:50 acasajus Exp $"
+__RCSID__ = "$Id: Agent.py,v 1.19 2008/05/23 22:37:58 atsareg Exp $"
 
 import os
 import threading
@@ -41,7 +41,8 @@ class Agent:
     self.monitorFlag = initializeMonitor
     self.log = gLogger
 
-    if not self.monitorFlag and gConfig.getValue( "/LocalSite/EnableAgentMonitoring", "yes" ).lower() in ( 'y', 'yes', '1' ):
+    self.section = getAgentSection(self.fullname)
+    if not self.monitorFlag and gConfig.getValue(self.section+'/ActivityMonitorFlag',"no").lower() in ( 'y', 'yes', '1' ):
       self.monitorFlag = True
 
     if self.monitorFlag:
@@ -58,9 +59,6 @@ class Agent:
   def initialize(self):
     """ Default common agent initialization
     """
-
-    self.section = getAgentSection(self.fullname)
-    print self.name,self.section
 
     status = gConfig.getValue(self.section+'/Status','Active')
     if status == "Stopped":
