@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Agent.py,v 1.16 2008/05/23 11:05:13 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Agent.py,v 1.17 2008/05/23 13:30:59 acasajus Exp $
 ########################################################################
 """ Base class for all the Agents.
 
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: Agent.py,v 1.16 2008/05/23 11:05:13 atsareg Exp $"
+__RCSID__ = "$Id: Agent.py,v 1.17 2008/05/23 13:30:59 acasajus Exp $"
 
 import os
 import threading
@@ -31,7 +31,7 @@ from DIRAC.Core.Utilities.Subprocess import shellCall
 
 class Agent:
 
-  def __init__( self, name, initializeMonitor = True ):
+  def __init__( self, name, initializeMonitor = False ):
     """ Standard constructor takes the full name of the agent as its argument.
         The full name consists of the system name and the Agent name separated
         by /, e.g. WorkloadManagement/Optimizer
@@ -105,7 +105,7 @@ class Agent:
     if self.monitorFlag:
       gLogger.verbose("Registering CPU & Memory consumption activity")
       gMonitor.registerActivity('CPU',"CPU Usage",'Framework',"CPU,%",gMonitor.OP_MEAN,600)
-      gMonitor.registerActivity('MEM',"Memory Usage",'Framework','Memory,MB',gMonitor.OP_MEAN,600)                          
+      gMonitor.registerActivity('MEM',"Memory Usage",'Framework','Memory,MB',gMonitor.OP_MEAN,600)
 
     return S_OK()
 
@@ -252,7 +252,7 @@ class Agent:
             gLogger.verbose("Sending Memory consumption %.2f MB" % (mem/1024.,))
             gMonitor.addMark('MEM',mem/1024.)
           else:
-            gLogger.warn('Failed to get memory consumption')  
+            gLogger.warn('Failed to get memory consumption')
     except Exception,x:
       gLogger.exception(str(x))
       self.runFlag = False
