@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Agent.py,v 1.19 2008/05/23 22:37:58 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Agent.py,v 1.20 2008/05/23 22:48:43 atsareg Exp $
 ########################################################################
 """ Base class for all the Agents.
 
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: Agent.py,v 1.19 2008/05/23 22:37:58 atsareg Exp $"
+__RCSID__ = "$Id: Agent.py,v 1.20 2008/05/23 22:48:43 atsareg Exp $"
 
 import os
 import threading
@@ -86,6 +86,8 @@ class Agent:
       gLogger.info('%d execution cycles requested' % self.maxcount)
     else:
       gLogger.info('No cycle limit')
+    if self.monitorFlag:
+      gLogger.info('Activity monitoring enabled')
     gLogger.info('==========================================================')
     gLogger.info('')
 
