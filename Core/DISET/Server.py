@@ -1,8 +1,10 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.26 2008/04/09 17:54:38 mseco Exp $
-__RCSID__ = "$Id: Server.py,v 1.26 2008/04/09 17:54:38 mseco Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.27 2008/05/23 13:33:04 acasajus Exp $
+__RCSID__ = "$Id: Server.py,v 1.27 2008/05/23 13:33:04 acasajus Exp $"
 
 import socket
 import sys
+import os
+import time
 import select
 from DIRAC.Core.DISET.private.Protocols import gProtocolDict
 from DIRAC.Core.DISET.private.Dispatcher import Dispatcher
@@ -10,6 +12,7 @@ from DIRAC.Core.DISET.private.GatewayDispatcher import GatewayDispatcher
 from DIRAC.Core.DISET.private.ServiceConfiguration import ServiceConfiguration
 from DIRAC.Core.Utilities.ThreadPool import ThreadPool
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
+from DIRAC.Core.Utilities.Subprocess import shellCall
 from DIRAC.Core.Utilities import Network, Time
 from DIRAC.LoggingSystem.Client.Logger import gLogger
 from DIRAC.MonitoringSystem.Client.MonitoringClient import gMonitor
@@ -18,6 +21,7 @@ class Server:
 
   bAllowReuseAddress = True
   iListenQueueSize = 5
+  __memScale = {'kB': 1024.0, 'mB': 1024.0*1024.0, 'KB': 1024.0, 'MB': 1024.0*1024.0}
 
   def __init__( self, serviceName ):
     """
@@ -50,6 +54,7 @@ class Server:
       maxThreads = max( maxThreads, serviceCfg.getMaxThreads() )
     self.threadPool = ThreadPool( 1, maxThreads )
     self.threadPool.daemonize()
+    self.__monitorLastStatsUpdate = time.time()
 
   def __initializeMonitor( self, serviceCfg ):
     gMonitor.setComponentType( gMonitor.COMPONENT_SERVICE )
@@ -57,6 +62,52 @@ class Server:
     gMonitor.setComponentLocation( serviceCfg.getURL() )
     gMonitor.initialize()
     gMonitor.registerActivity( "Queries", "Queries served", "Framework", "queries", gMonitor.OP_RATE )
+    gMonitor.registerActivity('CPU',"CPU Usage",'Framework',"CPU,%",gMonitor.OP_MEAN,600)
+    gMonitor.registerActivity('MEM',"Memory Usage",'Framework','Memory,MB',gMonitor.OP_MEAN,600)
+
+  def __VmB(self, VmKey):
+      '''Private.
+      '''
+      procFile = '/proc/%d/status' % os.getpid()
+       # get pseudo file  /proc/<pid>/status
+      try:
+          t = open( procFile )
+          v = t.read()
+          t.close()
+      except:
+          return 0.0  # non-Linux?
+       # get VmKey line e.g. 'VmRSS:  9999  kB\n ...'
+      i = v.index( VmKey )
+      v = v[i:].split(None, 3)  # whitespace
+      if len(v) < 3:
+          return 0.0  # invalid format?
+       # convert Vm value to bytes
+      return float(v[1]) * self.__memScale[v[2]]
+
+  def __startReportToMonitoring(self):
+    gMonitor.addMark( "Queries" )
+    now = time.time()
+    stats = os.times()
+    cpuTime = stats[0] + stats[2]
+    if now - self.__monitorLastStatsUpdate < 10:
+      return ( now, cpuTime )
+    # Send CPU consumption mark
+    wallClock = now - self.__monitorLastStatsUpdate
+    self.__monitorLastStatsUpdate = now
+    # Send Memory consumption mark
+    membytes = self.__VmB('VmRSS:')
+    if membytes:
+      mem = membytes / ( 1024. * 1024. )
+      gMonitor.addMark('MEM', mem )
+    return( now, cpuTime )
+
+  def __endReportToMonitoring( self, initialWallTime, initialCPUTime ):
+    wallTime = time.time() - initialWallTime
+    stats = os.times()
+    cpuTime = stats[0] + stats[2] - initialCPUTime
+    percentage = cpuTime / wallTime * 100.
+    if percentage > 0:
+      gMonitor.addMark( 'CPU', percentage )
 
   def __buildURL( self, serviceCfg ):
     """
@@ -163,7 +214,10 @@ class Server:
     Receive an action petition and process it from the client
     """
     try:
-      gMonitor.addMark( "Queries" )
+      cpuStats = self.__startReportToMonitoring()
+    except:
+      cpuStats = False
+    try:
       gLogger.verbose( "Incoming connection from %s" % clientTransport.getRemoteAddress()[0] )
       clientTransport.handshake()
       retVal = clientTransport.receiveData( 1024 )
@@ -185,6 +239,8 @@ class Server:
         pass
     finally:
       clientTransport.close()
+      if cpuStats:
+        self.__endReportToMonitoring( *cpuStats )
 
 
   def __executeAction( self, proposalTuple, clientTransport ):
