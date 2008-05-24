@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Agent.py,v 1.20 2008/05/23 22:48:43 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Agent.py,v 1.21 2008/05/24 11:46:54 atsareg Exp $
 ########################################################################
 """ Base class for all the Agents.
 
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: Agent.py,v 1.20 2008/05/23 22:48:43 atsareg Exp $"
+__RCSID__ = "$Id: Agent.py,v 1.21 2008/05/24 11:46:54 atsareg Exp $"
 
 import os
 import threading
@@ -38,12 +38,20 @@ class Agent:
     """
     self.fullname = name
     self.system,self.name = name.split('/')
-    self.monitorFlag = initializeMonitor
     self.log = gLogger
+    self.monitorFlag = False
 
     self.section = getAgentSection(self.fullname)
-    if not self.monitorFlag and gConfig.getValue(self.section+'/ActivityMonitorFlag',"no").lower() in ( 'y', 'yes', '1' ):
+    
+    if gConfig.getValue('/LocalSite/EnableAgentMonitoring',"no").lower() in ( 'y', 'yes', '1' ):
       self.monitorFlag = True
+    
+    agentFlag = gConfig.getValue(self.section+'/EnableAgentMonitoring',"notSet").lower()
+    if agentFlag in ( 'y', 'yes', '1' ):
+      self.monitorFlag = True
+    elif agentFlag in ( 'n', 'no', '0' ):
+      self.monitorFlag = False  
+      
 
     if self.monitorFlag:
       self.__initializeMonitor()
