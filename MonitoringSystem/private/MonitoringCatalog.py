@@ -72,7 +72,7 @@ class MonitoringCatalog:
       tablesList = c.fetchall()
       if len( tablesList ) < 2:
         self.__createTables()
-    except Except, e:
+    except Exception, e:
       gLogger.fatal( "Failed to startup db engine", str( e ) )
       return False
     return True
