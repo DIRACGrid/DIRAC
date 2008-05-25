@@ -6,6 +6,7 @@ except:
 import os
 import types
 import md5
+import time
 import DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.MonitoringSystem.private.Activity import Activity
@@ -35,10 +36,16 @@ class MonitoringCatalog:
     """
     cursor = self.dbConn.cursor()
     gLogger.debug( "Executing %s" % query )
-    if values:
-      cursor.execute( query, values )
-    else:
-      cursor.execute( query )
+    executed = False
+    while not executed:
+      try:
+        if values:
+          cursor.execute( query, values )
+        else:
+          cursor.execute( query )
+        executed = True
+      except:
+        time.sleep( 0.01 )
     return cursor
 
   def __createTables( self ):
@@ -68,7 +75,8 @@ class MonitoringCatalog:
     """
     self.__connect()
     try:
-      c = self.dbConn.execute( "SELECT name FROM sqlite_master WHERE type='table';" )
+      sqlQuery = "SELECT name FROM sqlite_master WHERE type='table';"
+      c = self.__dbExecute( sqlQuery )
       tablesList = c.fetchall()
       if len( tablesList ) < 2:
         self.__createTables()
