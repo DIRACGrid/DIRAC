@@ -13,17 +13,36 @@ class X509Chain:
   def __init__(self):
     self.__valid = False
 
-  def loadChainFromFile( self, keyLocation ):
+  def loadChainFromFile( self, chainLocation ):
     """
     Load a x509 chain from a pem file
     Return : S_OK / S_ERROR
     """
     try:
-      fd = file( keyLocation )
+      fd = file( chainLocation )
       pemData = fd.read()
       fd.close()
     except IOError:
-      return S_ERROR( "Can't open %s file" % keyLocation )
+      return S_ERROR( "Can't open %s file" % chainLocation )
+    return self.loadChainFromString( pemData )
+
+  def loadChainFromFiles( self, certChainLocation, keyChainLocation ):
+    """
+    Load a x509 chain from a two pem files
+    Return : S_OK / S_ERROR
+    """
+    try:
+      fd = file( certChainLocation )
+      pemData = fd.read()
+      fd.close()
+    except IOError:
+      return S_ERROR( "Can't open %s file" % certChainLocation )
+    try:
+      fd = file( keyChainLocation )
+      pemData += fd.read()
+      fd.close()
+    except IOError:
+      return S_ERROR( "Can't open %s file" % keyChainLocation )
     return self.loadChainFromString( pemData )
 
   def loadChainFromString( self, pemData, password = False ):
