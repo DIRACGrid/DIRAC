@@ -109,7 +109,7 @@ class LcgFileCatalogCombinedClient:
           method = getattr(self.lfc,self.call)
           resMeth = method(*parms,**kws)
           if not resMeth['OK']:
-            result = S_ERROR('Timeout calling '+self.call+" method")
+            return resMeth					
           else:
             result = resMeth
       except Exception,x:
@@ -151,7 +151,7 @@ class LcgFileCatalogCombinedClient:
             method = getattr(self.mirrors[i],self.call)
             resMeth = method(*parms,**kws)
             if not resMeth['OK']:
-              result = S_ERROR('Timout calling '+self.call+" method")
+              return resMeth
             else:
               result = resMeth
         except Exception,x:
