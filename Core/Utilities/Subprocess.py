@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Subprocess.py,v 1.17 2008/05/26 15:29:16 acasajus Exp $
-__RCSID__ = "$Id: Subprocess.py,v 1.17 2008/05/26 15:29:16 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Subprocess.py,v 1.18 2008/05/26 15:38:03 acasajus Exp $
+__RCSID__ = "$Id: Subprocess.py,v 1.18 2008/05/26 15:38:03 acasajus Exp $"
 """
    DIRAC Wrapper to execute python and system commands with a wrapper, that might
    set a timeout.
@@ -34,7 +34,7 @@ __RCSID__ = "$Id: Subprocess.py,v 1.17 2008/05/26 15:29:16 acasajus Exp $"
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 # from DIRAC import gLogger
 from DIRAC.LoggingSystem.Client.Logger import gLogger
-from DIRAC.Core.Utilities import DEncode, Os
+from DIRAC.Core.Utilities import DEncode
 
 import time
 import select
@@ -122,7 +122,7 @@ class Subprocess:
   def killChild( self, recursive = True ):
     os.kill( self.childPID, signal.SIGSTOP )
     if recursive:
-      for gcpid in Os.getAllChildrenPIDs( self.childPID, lambda cpid: os.kill( cpid, signal.SIGSTOP ) ):
+      for gcpid in getAllChildrenPIDs( self.childPID, lambda cpid: os.kill( cpid, signal.SIGSTOP ) ):
         try:
           os.kill( gcpid, os.SIGKILL )
         except:
