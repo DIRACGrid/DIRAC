@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/ThreadSafe.py,v 1.2 2008/05/26 18:37:50 acasajus Exp $
-__RCSID__ = "$Id: ThreadSafe.py,v 1.2 2008/05/26 18:37:50 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/ThreadSafe.py,v 1.3 2008/05/26 18:38:12 acasajus Exp $
+__RCSID__ = "$Id: ThreadSafe.py,v 1.3 2008/05/26 18:38:12 acasajus Exp $"
 
 import threading
 
@@ -39,6 +39,9 @@ class WORM:
     self.__semaphore = threading.Semaphore( maxReads )
 
   def write( self, funcToCall ):
+    """
+    Write decorator
+    """
     def __doWriteLock( *args, **kwargs ):
       try:
           self.__startWriteZone()
@@ -48,6 +51,9 @@ class WORM:
     return __doWriteLock
 
   def read( self, funcToCall ):
+    """
+    Read decorator
+    """
     def __doReadLock( *args, **kwargs ):
       try:
         self.__startReadZone()
