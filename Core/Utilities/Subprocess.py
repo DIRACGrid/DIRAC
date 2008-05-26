@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Subprocess.py,v 1.18 2008/05/26 15:38:03 acasajus Exp $
-__RCSID__ = "$Id: Subprocess.py,v 1.18 2008/05/26 15:38:03 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Subprocess.py,v 1.19 2008/05/26 15:39:58 acasajus Exp $
+__RCSID__ = "$Id: Subprocess.py,v 1.19 2008/05/26 15:39:58 acasajus Exp $"
 """
    DIRAC Wrapper to execute python and system commands with a wrapper, that might
    set a timeout.
@@ -122,7 +122,7 @@ class Subprocess:
   def killChild( self, recursive = True ):
     os.kill( self.childPID, signal.SIGSTOP )
     if recursive:
-      for gcpid in getAllChildrenPIDs( self.childPID, lambda cpid: os.kill( cpid, signal.SIGSTOP ) ):
+      for gcpid in getChildrenPIDs( self.childPID, lambda cpid: os.kill( cpid, signal.SIGSTOP ) ):
         try:
           os.kill( gcpid, os.SIGKILL )
         except:
@@ -350,7 +350,7 @@ def pythonCall( timeout, function, *stArgs, **stKeyArgs ):
   spObject = Subprocess( timeout )
   return spObject.pythonCall( function, *stArgs, **stKeyArgs )
 
-def getChildrenPIDs( ppid ):
+def __getChildrenForPID( ppid ):
   """
   Get a list of children pids for ppid
   """
