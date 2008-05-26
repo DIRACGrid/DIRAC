@@ -11,13 +11,12 @@ from DIRAC.Core.DISET.RPCClient import RPCClient
 
 class DatasetDB(DB):
 
-  def __init__(self, dbname, dbconfig, maxQueueSize=10 ):
+  def __init__(self, maxQueueSize=10 ):
     """ The standard constructor takes the database name (dbname) and the name of the
         configuration section (dbconfig)
     """
-    DB.__init__(self,dbname, dbconfig, maxQueueSize)
+    DB.__init__(self,'DatasetDB','DataManagement/DatasetDB', maxQueueSize)
     self.lock = threading.Lock()
-    self.dbname = dbname
 
 
   #############################################################################
@@ -27,7 +26,7 @@ class DatasetDB(DB):
 
   def publishDataset(self,handle,description,longDescription,authorDN,authorGroup,type):
     self.lock.acquire()
-    req = "INSERT INTO Datasets (Handle,Description,LongDescription,CreationDate,AuthorDN,AuthorGroup,Type,Status) VALUES \
+    req = "INSERT INTO Datasets (DatasetHandle,Description,LongDescription,CreationDate,AuthorDN,AuthorGroup,Type,Status) VALUES \
     ('%s','%s','%s',UTC_TIMESTAMP(),'%s','%s','%s','New');" % (handle, description, longDescription,authorDN, authorGroup, type)
     res = self._update(req)
     if not res['OK']:
@@ -43,7 +42,7 @@ class DatasetDB(DB):
 
 
   def setDatasetStatus(self,handle,status):
-    res = self.getDatasetID(handle)
+    res = self.__getDatasetID(handle)
     if not res['OK']:
       return res
     elif not res['Value']:
@@ -64,14 +63,14 @@ class DatasetDB(DB):
     if not res['OK']:
       gLogger.error("DatasetDB.__getDatasetID: Failed to obtain DatasetID.",res['Message'])
       return res
-    elif result['Value'] == ():
+    elif res['Value'] == ():
       gLogger.info("DatasetDB.__getDatasetID: Dataset %s doesnt exists." % handle)
       return S_OK()
     else:
-      return S_OK(result['Value'][0][0])
+      return S_OK(res['Value'][0][0])
 
   def datasetExists(self,handle):
-    res = self.getDatasetID(handle)
+    res = self.__getDatasetID(handle)
     if not res['OK']:
       return res
     elif not res['Value']:
@@ -80,7 +79,7 @@ class DatasetDB(DB):
       return S_OK(True)
 
   def removeDataset(self,handle):
-    res = self.getDatasetID(handle)
+    res = self.__getDatasetID(handle)
     if not res['OK']:
       return res
     elif not res['Value']:
@@ -103,7 +102,7 @@ class DatasetDB(DB):
 
   def getAllDatasets(self):
     datasetList = []
-    req = "SELECT DatasetID,DatasetHandle,Description,LongDescription,CreationDate,AuthorDN,AuthorGroup,Type,Status FROM Transformations;"
+    req = "SELECT DatasetID,DatasetHandle,Description,LongDescription,CreationDate,AuthorDN,AuthorGroup,Type,Status FROM Datasets;"
     res = self._query(req)
     if not res['OK']:
       return res
@@ -132,9 +131,9 @@ class DatasetDB(DB):
   #
 
   def addDatasetParameter(self,handle,paramName,paramValue):
-    """ Add a parameter for the supplied transformations
+    """ Add a parameter for the supplied dataset
     """
-    res = self.getDatasetID(handle)
+    res = self.__getDatasetID(handle)
     if not res['OK']:
       return res
     elif not res['Value']:
@@ -146,9 +145,9 @@ class DatasetDB(DB):
       return self.__addDatasetParameter(datasetID,paramName,paramValue)
 
   def addDatasetParameters(self,handle,paramDict):
-    """ Add all parameters for the supplied transformations
+    """ Add all parameters for the supplied dataset
     """
-    res = self.getDatasetID(handle)
+    res = self.__getDatasetID(handle)
     if not res['OK']:
       return res
     elif not res['Value']:
@@ -169,7 +168,7 @@ class DatasetDB(DB):
     return res
 
   def getDatasetParameters(self,handle):
-    res = self.getDatasetID(handle)
+    res = self.__getDatasetID(handle)
     if not res['OK']:
       return res
     elif not res['Value']:
@@ -196,7 +195,7 @@ class DatasetDB(DB):
   #
 
   def getDatasetHistory(self,handle):
-    res = self.getDatasetID(handle)
+    res = self.__getDatasetID(handle)
     if not res['OK']:
       return res
     elif not res['Value']:
@@ -219,7 +218,7 @@ class DatasetDB(DB):
     return S_OK(historyList)
 
   def updateDatasetLogging(self,handle,message,authorDN):
-    res = self.getDatasetID(handle)
+    res = self.__getDatasetID(handle)
     if not res['OK']:
       return res
     elif not res['Value']:

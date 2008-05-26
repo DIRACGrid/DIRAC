@@ -18,22 +18,29 @@ def initializeDatasetHandler(serviceInfo):
 class DatasetHandler(RequestHandler):
 
   types_publishDataset = [StringType,StringType,StringType,ListType,DictType]
-  def export_publishDatset(self,handle,description,longDescription,lfns,metadataTags):
+  def export_publishDataset(self,handle,description,longDescription,lfns,metadataTags):
     """ This method will create the data set in the LFC the datasetDB
     """
     authorDN = self._clientTransport.peerCredentials['DN']
-    authorGroup = self._clientTransport.peerCredentials['Group']
-    type = 'User'
+    authorGroup = self._clientTransport.peerCredentials['group']
+    authorName = self._clientTransport.peerCredentials['username']
+    type = 'user'
     if authorGroup == 'lhcb_prod':
-      type = 'Production'
+      type = 'production'
+   
+    res = datasetDB.datasetExists(handle)
+    if not res['OK']:
+      return res
+    elif res['Value']:
+      return S_ERROR("DatasetHandler.publishDataset: A dataset with this handle already exists.")
 
     oDataset = Dataset()
     oDataset.setHandle(handle)
     oDataset.setLfns(lfns)
     # First create the links in the LFC
-    res = oDataset.createLinks()
+    res = oDataset.createDataset()
     if not res['OK']:
-      oDataset.removeDataset()
+      result = oDataset.removeDataset()
       return res
     # Publish the dataset in the Datasets table
     res = datasetDB.publishDataset(handle,description,longDescription,authorDN,authorGroup,type)
@@ -52,22 +59,14 @@ class DatasetHandler(RequestHandler):
     return res
 
   types_deleteDataset = [StringType]
-  def export_deleteDatset(self,handle):
+  def export_deleteDataset(self,handle):
     """ This method will remove the supplied dataset from the catalog and the LFC
     """
     res = datasetDB.removeDataset(handle)
-    if not res['OK']:
-      return res
-    else:
-      authorDN = self._clientTransport.peerCredentials['DN']
-      message = 'Deleted'
-      res = datasetDB.updateDatasetLogging(handle,message,authorDN)
-      if not res['OK']:
-        return res
-      else:
-        oDataset = Dataset()
-        oDataset.setHandle(handle)
-        res = oDataset.removeDataset()
+    if res['OK']:
+      oDataset = Dataset()
+      oDataset.setHandle(handle)
+      res = oDataset.removeDataset()
     return res
 
   types_removeFileFromDataset = [StringType,StringType]

@@ -71,7 +71,6 @@ class Dataset:
     if not res['OK']:
       return res
     elif not len(res['Value']['Failed'].keys()) == 0:
-      self.removeDataset()
       return S_ERROR("Failed to create dataset")
     else:
       return S_OK()
@@ -80,7 +79,7 @@ class Dataset:
     if not self.handle:
       return S_ERROR("No handle defined")
     lfcDir = "%s%s" % (self.lfcPath,self.handle)
-    res = self.lfc.removeDataset(lfcDir)
+    res = self.lfc.deleteDataset(lfcDir)
     if not res['OK']:
       return res
     elif not len(res['Value']['Failed'].keys()) == 0:
