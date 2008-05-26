@@ -164,8 +164,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     failed = {}
     successful = {}
     # If we have less than three lfns to query a session doesn't make sense
-    if len(links) > 2:
-      self.__openSession()
+    self.__openSession()
     for link in links:
       fullLink = '%s%s' % (self.prefix,link)
       fstat = lfc.lfc_filestat()
@@ -178,8 +177,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
       else:
         errno = lfc.cvar.serrno
         failed[link] = lfc.sstrerror(errno)
-    if self.session:
-      self.__closeSession()
+    self.__closeSession()
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
@@ -191,21 +189,19 @@ class LcgFileCatalogClient(FileCatalogueBase):
     else:
       return S_ERROR('LFCClient.createLink: Must supply a link tuple of list of tuples')
     # If we have less than three lfns to query a session doesn't make sense
-    if len(links) > 2:
-      self.__openSession()
+    self.__openSession()
     failed = {}
     successful = {}
-    for linkName,lfn in links:
-      fullLink = '%s%s' % (self.prefix,linkName)
+    for link,lfn in links:
+      fullLink = '%s%s' % (self.prefix,link)
       fullLfn = '%s%s' % (self.prefix,lfn)
       value = lfc.lfc_symlink(fullLfn,fullLink)
       if value == 0:
-        successful[linkName] = True
+        successful[lfn] = True
       else:
         errno = lfc.cvar.serrno
-        failed[linkName] = lfc.sstrerror(errno)
-    if self.session:
-      self.__closeSession()
+        failed[lfn] = lfc.sstrerror(errno)
+    self.__closeSession()
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
@@ -970,24 +966,32 @@ class LcgFileCatalogClient(FileCatalogueBase):
 
     resDict = {}
     subDirs = []
-    links = []
+    links = {}
     for i in  range(nbfiles):
       entry,fileInfo = lfc.lfc_readdirxr(direc,"")
-      if S_ISLNK(entry.filemode):
-        link = '%s/%s' % (path,entry.d_name)
-        links.append(link)
-      elif S_ISREG(entry.filemode):
-        lfn = '%s/%s' % (path,entry.d_name)
-        resDict[lfn] = {'Replicas':{}}
-        if fileInfo:
-          for replica in fileInfo:
-            resDict[lfn]['Replicas'][replica.host] = {'PFN':replica.sfn,'Status':replica.status}
-        resDict[lfn]['MetaData'] = {'Size':entry.filesize,'GUID':entry.guid}
-      elif S_ISDIR(entry.filemode):
+      if S_ISDIR(entry.filemode):
         subDir = '%s/%s' % (path,entry.d_name)
         subDirs.append(subDir)
+      else:
+        path = '%s/%s' % (path,entry.d_name)
+        replicaDict = {}
+        if fileInfo:
+          for replica in fileInfo:
+            replicaDict[replica.host] = {'PFN':replica.sfn,'Status':replica.status}
+        metadataDict = {'Size':entry.filesize,'GUID':entry.guid}
+        if S_ISLINK(entry.filemode):
+          link = '%s/%s' % (path,entry.d_name)
+          links[link]['Replicas'] = replicaDict
+          links[link]['MetaData'] = metadataDict
+          links[link]['MetaData']['Target'] = ''
+          res = self.readLink(link)
+          if link in res['Value']['Successful'].keys():
+            links[link]['MetaData']['Target'] = res['Value']['Successful'][link]
+        elif S_ISREG(entry.filemode):
+          resDict[lfn] = {}
+          resDict[lfn]['Replicas'] = replicaDict
+          resDict[lfn]['MetaData'] = metadataDict
     lfc.lfc_closedir(direc)
-
     pathDict = {}
     pathDict = {'Files': resDict,'SubDirs':subDirs,'Links':links}
     return S_OK(pathDict)
@@ -1021,3 +1025,101 @@ class LcgFileCatalogClient(FileCatalogueBase):
               res = self.__makeDirs(dir)
               res = self.__makeDir(path)
     return res
+
+  ####################################################################
+  #
+  # These are the methods for dataset manipulation
+  #
+
+  def deleteDataset(self,datasetDirectory):
+    res = self.__getDirectoryContents(datasetDirectory)
+    if not res['OK']:
+      return res
+    links = res['Value']['Links'].keys()
+    res = removeLink(links)
+    if not res['OK']:
+      return res
+    elif len(res['Value']['Failed'].keys()):
+      return S_ERROR("Failed to remove all links")
+    else:
+      return self.removeDirectory(datasetDirectory)
+
+  def resolveDataset(self,datasetDirectory):
+    res = self.__getDirectoryContents(datasetDirectory)
+    if not res['OK']:
+      return res
+    linkDict = res['Value']['Links']
+    replicas = {}
+    for link in linkDict.keys():
+      target = linkDict[link]['MetaData']['Target']
+      replicas[target] = inkDict[link]['Replicas']
+    return S_OK(replicas)
+
+  def removeFileFromDataset(self,datasetDirectory,lfn):
+    if type(lfn) == types.StringType:
+      lfns = [lfn]
+    elif type(lfn) == types.ListType:
+      lfns = lfn
+    else:
+      return S_ERROR('LFCClient.removeFileFromDataset: Must supply a LFN of list of LFNs')
+    failed = {}
+    successful = {}
+    self.__openSession()
+    for lfn in lfns:
+      res = self.__getLFNGuid(lfn)
+      if not res['OK']:
+        failed[lfn] = res['Message']
+      else:
+        guid = res['Value']
+        linkPath = "%s/%s" % (datasetDirectory,guid)
+        res = self.removeLink(linkPath)
+        if not res['OK']:
+          failed[lfn] = res['Message']
+        elif lfn in res['Value']['Failed'].keys():
+          failed[lfn] = res['Value']['Failed'][lfn]
+        else:
+          successful[lfn] = True
+    self.__closeSession()
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+  def createDataset(self,datasetDirectory,lfn):
+    if type(lfn) == types.StringType:
+      lfns = [lfn]
+    elif type(lfn) == types.ListType:
+      lfns = lfn
+    else:
+      return S_ERROR('LFCClient.removeFileFromDataset: Must supply a LFN of list of LFNs')
+
+    if not self.session:
+      self.__openSession()
+    res = self.exists(datasetDirectory)
+    if not res['OK']:
+      return res
+    elif datasetDirectory in res['Value']['Failed'].keys():
+      return S_ERROR(res['Value']['Failed'][datasetDirectory])
+    elif res['Value']['Successful'][datasetDirectory]:
+      return S_ERROR("createDataset: This dataset already exists.")
+
+    linkTuples = []
+    successful = {}
+    failed = {}
+    for lfn in self.lfns:
+      res = self.__getLFNGuid(lfn)
+      if not res['OK']:
+        failed[lfn] = res['Message']
+      else:
+        guid = res['Value']
+        link = "%s/%s" % (datasetDirectory,guid)
+        linkTuples.append((link,lfn))
+    if linkTuples:
+      res = self.createLink(linkTuples)
+      if not res['OK']:
+        return res
+      successful.update(res['Value']['Successful'])
+      failed.update(res['Value']['Failed'])
+    if self.session:
+      self.__closeSession()
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
