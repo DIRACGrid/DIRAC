@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.56 2008/05/19 12:59:35 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.57 2008/05/26 15:34:07 paterson Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.56 2008/05/19 12:59:35 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.57 2008/05/26 15:34:07 paterson Exp $"
 
 import re, os, sys, string, types
 import time
@@ -80,7 +80,7 @@ class JobDB(DB):
     result = gConfig.getOption( self.cs_path+'/MaxRescheduling')
     if not result['OK']:
       self.log.error('Failed to get the MaxRescheduling limit')
-      self.log.error('Using default value '+str(self.maxRescheduling))
+      self.log.info('Using default value for rescheduling limit: '+str(self.maxRescheduling))
     else:
       self.maxRescheduling = int(result['Value'])
 
@@ -96,8 +96,8 @@ class JobDB(DB):
       sys.exit( error )
       return
 
-    self.log.always("MaxReschedule:  "+`self.maxRescheduling`)
-    self.log.always("==================================================")
+    self.log.info("MaxReschedule:  "+`self.maxRescheduling`)
+    self.log.info("==================================================")
 
     if DEBUG:
       result = self.dumpParameters()
@@ -917,7 +917,7 @@ class JobDB(DB):
               result = self.removeJobFromDB(job)
               if not result['OK']:
                 failedSubjobList.append(job)
-                self.log.error("Failed to delete job "+str(job)+" from JobDB")
+                self.log.error("Failed to delete job from JobDB",str(jobID))
 
     failedTablesList = []
     for table in ( 'Jobs',
@@ -993,7 +993,7 @@ class JobDB(DB):
 
     # Exit if the limit of the reschedulings is reached
     if rescheduleCounter >= self.maxRescheduling:
-      self.log.error('Maximum number of reschedulings is reached for job %s' % jobID)
+      self.log.error('Maximum number of reschedulings is reached for job',str(jobID))
       res = self.setJobStatus(jobID, status='Failed', minor='Maximum of reschedulings reached')
       return S_ERROR('Maximum number of reschedulings is reached: %s' % self.maxRescheduling)
 
@@ -1223,20 +1223,20 @@ class JobDB(DB):
 
     result = self._update( cmd )
     if not result['OK']:
-      self.log.error("Failed to add job "+str(jobID)+" to the Task Queue")
+      self.log.error("Failed to add job to the Task Queue",str(jobID))
       return result
 
     cmd = "UPDATE TaskQueues SET NumberOfJobs = NumberOfJobs + 1 WHERE TaskQueueId=%d" % queueID
     result = self._update( cmd )
     if not result['OK']:
-      self.log.error("Failed to increment the job counter for the Task Queue %d" % queueID)
+      self.log.error("Failed to increment the job counter for the Task Queue",str(queueID))
       return result
 
     # Check the Task Queue priority and adjust if necessary
     cmd = "SELECT Priority FROM TaskQueues WHERE TaskQueueId=%s" % queueID
     result = self._query(cmd)
     if not result['OK']:
-      self.log.error("Failed to get priority of the TaskQueue "+str(queueID))
+      self.log.error("Failed to get priority of the TaskQueue ",str(queueID))
       return result
 
     old_priority = int(result['Value'][0][0])
@@ -1244,7 +1244,7 @@ class JobDB(DB):
       cmd = "UPDATE TaskQueues SET Priority=%s WHERE TaskQueueId=%s" % (rank,queueID)
       result = self._update(cmd)
       if not result['OK']:
-        self.log.error("Failed to update priority of the TaskQueue "+str(queueID))
+        self.log.error("Failed to update priority of the TaskQueue ",str(queueID))
         return result
 
     return S_OK()
@@ -1321,7 +1321,7 @@ class JobDB(DB):
     cmd = "UPDATE TaskQueues SET NumberOfJobs = NumberOfJobs - 1 WHERE TaskQueueId=%d" % queueID
     result = self._update( cmd )
     if not result['OK']:
-      self.log.error("Failed to decrement the job counter for the Task Queue %d" % queueID)
+      self.log.error("Failed to decrement the job counter for the Task Queue",str(queueID))
       return result
 
     # Check that the queue is empty and remove it eventually
