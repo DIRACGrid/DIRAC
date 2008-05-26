@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Subprocess.py,v 1.16 2008/05/20 14:47:08 acasajus Exp $
-__RCSID__ = "$Id: Subprocess.py,v 1.16 2008/05/20 14:47:08 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Subprocess.py,v 1.17 2008/05/26 15:29:16 acasajus Exp $
+__RCSID__ = "$Id: Subprocess.py,v 1.17 2008/05/26 15:29:16 acasajus Exp $"
 """
    DIRAC Wrapper to execute python and system commands with a wrapper, that might
    set a timeout.
@@ -34,7 +34,7 @@ __RCSID__ = "$Id: Subprocess.py,v 1.16 2008/05/20 14:47:08 acasajus Exp $"
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 # from DIRAC import gLogger
 from DIRAC.LoggingSystem.Client.Logger import gLogger
-from DIRAC.Core.Utilities import DEncode
+from DIRAC.Core.Utilities import DEncode, Os
 
 import time
 import select
