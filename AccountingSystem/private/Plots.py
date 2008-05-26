@@ -72,7 +72,7 @@ def generateCumulativePlot( fileName, data, metadata ):
   except:
     return S_ERROR( "Can't open %s" % filename )
   if 'is_cumulative' not in metadata:
-    metadata[ 'is_cumulative' ] = False
+    metadata[ 'is_cumulative' ] = True
   if not data:
     return S_ERROR( "No data for that selection" )
   plotter = CumulativeGraph()
