@@ -87,13 +87,14 @@ class X509Chain:
       return S_ERROR( "No chain loaded" )
     return len( self.__certList )
 
-  def generateProxyToString( self, lifeTime, diracGroup = False, bitsStrength = 1024 ):
+  def generateProxyToString( self, lifeTime, diracGroup = False, bitsStrength = 1024, limited = False ):
     """
     Generate a proxy and get it as a string
       Args:
         - lifeTime : expected lifetime of proxy
         - diracGroup : diracGroup to add to the certificate
         - bitStrength : length in bits of the pair
+        - limited : Create a limited proxy
     """
     if not self.__valid:
       return S_ERROR( "No chain loaded" )
@@ -104,7 +105,10 @@ class X509Chain:
 
     proxyCert = crypto.X509()
     cloneSubject = issuerCert.get_subject().clone()
-    setattr( cloneSubject, 'CN', 'proxy' )
+    if limited:
+      setattr( cloneSubject, 'CN', 'limitedproxy' )
+    else:
+      setattr( cloneSubject, 'CN', 'proxy' )
     proxyCert.set_subject( cloneSubject )
 
     proxyCert.set_serial_number( issuerCert.get_serial_number() )
@@ -123,7 +127,7 @@ class X509Chain:
 
     return S_OK( proxyString )
 
-  def generateProxyToFile( self, filePath, lifeTime, diracGroup = False, bitsStrength = 1024 ):
+  def generateProxyToFile( self, filePath, lifeTime, diracGroup = False, bitsStrength = 1024, limited = False ):
     """
     Generate a proxy and put it into a file
       Args:
@@ -131,10 +135,11 @@ class X509Chain:
         - lifeTime : expected lifetime of proxy
         - diracGroup : diracGroup to add to the certificate
         - bitStrength : length in bits of the pair
+        - limited : Create a limited proxy
     """
     if not self.__valid:
       return S_ERROR( "No chain loaded" )
-    retVal = self.generateProxyToString( lifeTime, diracGroup, bitsStrength )
+    retVal = self.generateProxyToString( lifeTime, diracGroup, bitsStrength, limited )
     if not retVal[ 'OK' ]:
       return retVal
     try:
