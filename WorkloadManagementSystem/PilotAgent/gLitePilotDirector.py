@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/gLitePilotDirector.py,v 1.15 2008/05/26 10:04:16 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/gLitePilotDirector.py,v 1.16 2008/05/26 10:25:47 paterson Exp $
 # File :   gLitePilotDirector.py
 # Author : Stuart Paterson
 ########################################################################
@@ -11,7 +11,7 @@
      the invokation of the Pilot Director instance is performed here.
 """
 
-__RCSID__ = "$Id: gLitePilotDirector.py,v 1.15 2008/05/26 10:04:16 paterson Exp $"
+__RCSID__ = "$Id: gLitePilotDirector.py,v 1.16 2008/05/26 10:25:47 paterson Exp $"
 
 from DIRACEnvironment                                        import DIRAC
 from DIRAC.Core.Utilities                                    import List
@@ -83,7 +83,6 @@ class gLitePilotDirector(PilotDirector):
   def submitJob(self,job,workingDirectory,siteList,cpuRequirement,ownerGroup,inputSandbox=None,gridRequirements=None,executable=None,softwareTag=None):
     """ Submit Pilot Job to the gLite Resource Broker
     """
-    diracTag = gConfig.getValue(self.sectionPath+'/DIRACDistributionTag','CCRC08-v4')
     self.log.verbose('Preparing %s pilot for job %s in %s' %(self.type,job,workingDirectory))
     confFiles = self.__writeConfFiles(job,workingDirectory)
     if not confFiles['OK']:
@@ -145,6 +144,7 @@ class gLitePilotDirector(PilotDirector):
     """ Implementation of the writeJdl() method for the gLite Resource Broker
         case. Prepares the gLite job JDL file.
     """
+    diracTag = gConfig.getValue(self.sectionPath+'/DIRACDistributionTag','CCRC08-v7')
     gLiteJDLFile = '%s/%s/%s.jdl' % (workingDirectory,job,job)
     self.log.verbose( 'Writing gLite JDL file %s ' %gLiteJDLFile)
 
