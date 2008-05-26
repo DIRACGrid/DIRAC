@@ -79,10 +79,10 @@ class FileCatalog:
             failed[key] = {}
           failed[key][catalogName] = item
     # This recovers the states of the files that completely failed
-    for file in uniqueElements(failed.keys()+successful.keys()):
-      if not failed.has_key(file):
-        failed[file] = {}
-      for catalogName,errorMessage in failedCatalogs:
+    for catalogName,errorMessage in failedCatalogs:
+      for file in uniqueElements(failed.keys()+successful.keys()):
+        if not failed.has_key(file):
+          failed[file] = {}
         failed[file][catalogName] = errorMessage
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
