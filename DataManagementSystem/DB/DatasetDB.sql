@@ -10,7 +10,7 @@ CREATE TABLE Datasets(
     CreationDate DATETIME,
     AuthorDN VARCHAR(255) NOT NULL,
     AuthorGroup VARCHAR(255) NOT NULL,
-    Type CHAR(16) DEFAULT 'Simulation',
+    Type CHAR(16) DEFAULT 'Production',
     Status  CHAR(16) DEFAULT 'New',
     PRIMARY KEY(DatasetID)
 ) ENGINE=InnoDB;
