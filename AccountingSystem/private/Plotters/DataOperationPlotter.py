@@ -107,14 +107,14 @@ class DataOperationPlotter(BasePlotter):
       return retVal
     dataDict, granularity = retVal[ 'Value' ]
     self.stripDataField( dataDict, 0 )
-    dataDict = self._fillWithZero( granularity, startTime, endTime, dataDict )
+    dataDict = self._acumulate( granularity, startTime, endTime, dataDict )
     gLogger.info( "Generating plot", "%s with granularity of %s" % ( filename, granularity ) )
     metadata = { 'title' : 'Transfered data by %s' % " -> ".join( groupingFields ) ,
                  'starttime' : startTime,
                  'endtime' : endTime,
                  'span' : granularity,
                  'ylabel' : "Gbyte",
-                 'is_cumulative' : False }
+                 'is_cumulative' : True }
     return generateCumulativePlot( filename, dataDict, metadata )
 
   def _plotThroughput( self, startTime, endTime, condDict, groupingFields, filename ):
