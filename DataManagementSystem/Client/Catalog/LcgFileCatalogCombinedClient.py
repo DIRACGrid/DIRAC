@@ -107,11 +107,11 @@ class LcgFileCatalogCombinedClient:
             result = S_ERROR('Failed to set user authorization')
         if result['OK']:
           method = getattr(self.lfc,self.call)
-          resMeth = pythonCall(self.timeout,method,*parms,**kws)
+          resMeth = method(*parms,**kws)
           if not resMeth['OK']:
             result = S_ERROR('Timeout calling '+self.call+" method")
           else:
-            result = resMeth['Value']
+            result = resMeth
       except Exception,x:
         result = S_ERROR('Exception while calling LFC Master service '+str(x))
       count += 1
@@ -149,11 +149,11 @@ class LcgFileCatalogCombinedClient:
               result = S_ERROR('Failed to set user authorization')
           if result['OK']:
             method = getattr(self.mirrors[i],self.call)
-            resMeth = pythonCall(self.timeout,method,*parms,**kws)
+            resMeth = method(*parms,**kws)
             if not resMeth['OK']:
               result = S_ERROR('Timout calling '+self.call+" method")
             else:
-              result = resMeth['Value']
+              result = resMeth
         except Exception,x:
           result = S_ERROR('Exception while calling LFC mirror service '+str(x))
         i += 1
@@ -172,11 +172,11 @@ class LcgFileCatalogCombinedClient:
             result = S_ERROR('Failed to set user authorization')
         if result['OK']:
           method = getattr(self.lfc,self.call)
-          resMeth = pythonCall(self.timeout,method,*parms,**kws)
+          resMeth = method(*parms,**kws)
           if not resMeth['OK']:
             result = S_ERROR('Timout calling '+self.call+" method")
           else:
-            result = resMeth['Value']
+            result = resMeth
       except Exception,x:
         result = S_ERROR('Exception while calling LFC Master service '+str(x))
 
