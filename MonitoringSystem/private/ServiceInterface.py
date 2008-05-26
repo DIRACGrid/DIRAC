@@ -1,8 +1,7 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/ServiceInterface.py,v 1.13 2008/05/05 18:48:01 acasajus Exp $
-__RCSID__ = "$Id: ServiceInterface.py,v 1.13 2008/05/05 18:48:01 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/ServiceInterface.py,v 1.14 2008/05/26 13:26:36 rgracian Exp $
+__RCSID__ = "$Id: ServiceInterface.py,v 1.14 2008/05/26 13:26:36 rgracian Exp $"
 import DIRAC
 from DIRAC import gLogger
-from DIRAC.MonitoringSystem.private.MonitoringCatalog import MonitoringCatalog
 from DIRAC.MonitoringSystem.private.RRDManager import RRDManager
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DEncode, List
@@ -25,6 +24,7 @@ class ServiceInterface:
     """
     Creates a Monitoring catalog connector
     """
+    from DIRAC.MonitoringSystem.private.MonitoringCatalog import MonitoringCatalog
     return MonitoringCatalog( self.dataPath )
 
   def serviceRunning( self ):
