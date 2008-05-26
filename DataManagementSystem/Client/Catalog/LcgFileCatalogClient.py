@@ -833,6 +833,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
       if value == 0:
         successful[path] = True
       else:
+        errno = lfc.cvar.serrno
         errStr = lfc.sstrerror(errno).lower()
         if (errStr.find("no such file or directory") >= 0):
           successful[path] = True
@@ -979,18 +980,17 @@ class LcgFileCatalogClient(FileCatalogueBase):
           for replica in fileInfo:
             replicaDict[replica.host] = {'PFN':replica.sfn,'Status':replica.status}
         metadataDict = {'Size':entry.filesize,'GUID':entry.guid}
-        if S_ISLINK(entry.filemode):
-          link = '%s/%s' % (path,entry.d_name)
-          links[link]['Replicas'] = replicaDict
-          links[link]['MetaData'] = metadataDict
-          links[link]['MetaData']['Target'] = ''
-          res = self.readLink(link)
-          if link in res['Value']['Successful'].keys():
-            links[link]['MetaData']['Target'] = res['Value']['Successful'][link]
+        if S_ISLNK(entry.filemode):
+          links[path]['Replicas'] = replicaDict
+          links[path]['MetaData'] = metadataDict
+          links[path]['MetaData']['Target'] = ''
+          res = self.readLink(path)
+          if path in res['Value']['Successful'].keys():
+            links[path]['MetaData']['Target'] = res['Value']['Successful'][path]
         elif S_ISREG(entry.filemode):
-          resDict[lfn] = {}
-          resDict[lfn]['Replicas'] = replicaDict
-          resDict[lfn]['MetaData'] = metadataDict
+          resDict[path] = {}
+          resDict[path]['Replicas'] = replicaDict
+          resDict[path]['MetaData'] = metadataDict
     lfc.lfc_closedir(direc)
     pathDict = {}
     pathDict = {'Files': resDict,'SubDirs':subDirs,'Links':links}
@@ -1035,14 +1035,16 @@ class LcgFileCatalogClient(FileCatalogueBase):
     res = self.__getDirectoryContents(datasetDirectory)
     if not res['OK']:
       return res
-    links = res['Value']['Links'].keys()
-    res = removeLink(links)
+    #links = res['Value']['Links'].keys()
+    links = res['Value']['Files'].keys()
+    res = self.removeLink(links)
     if not res['OK']:
       return res
     elif len(res['Value']['Failed'].keys()):
       return S_ERROR("Failed to remove all links")
     else:
-      return self.removeDirectory(datasetDirectory)
+      result = self.removeDirectory(datasetDirectory)
+      return result
 
   def resolveDataset(self,datasetDirectory):
     res = self.__getDirectoryContents(datasetDirectory)
@@ -1100,11 +1102,13 @@ class LcgFileCatalogClient(FileCatalogueBase):
       return S_ERROR(res['Value']['Failed'][datasetDirectory])
     elif res['Value']['Successful'][datasetDirectory]:
       return S_ERROR("createDataset: This dataset already exists.")
+    else:
+      res = self.__makeDirs(datasetDirectory)
 
     linkTuples = []
     successful = {}
     failed = {}
-    for lfn in self.lfns:
+    for lfn in lfns:
       res = self.__getLFNGuid(lfn)
       if not res['OK']:
         failed[lfn] = res['Message']
