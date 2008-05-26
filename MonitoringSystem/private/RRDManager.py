@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/RRDManager.py,v 1.25 2008/05/05 18:13:55 acasajus Exp $
-__RCSID__ = "$Id: RRDManager.py,v 1.25 2008/05/05 18:13:55 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/RRDManager.py,v 1.26 2008/05/26 08:50:12 rgracian Exp $
+__RCSID__ = "$Id: RRDManager.py,v 1.26 2008/05/26 08:50:12 rgracian Exp $"
 import os
 import os.path
 import md5
@@ -149,7 +149,7 @@ class RRDManager:
       finalCmd = "%s %s" % ( cmd, " ".join( rrdUpdates[ i: i + maxRRDArgs ] ) )
       retVal = self.__exec( finalCmd, rrdFilePath )
       if not retVal[ 'OK' ]:
-        gLogger.error( "Error updating rrd file", "%s rrd: %s" % ( rrdFile, retVal[ 'Message' ] ) )
+        gLogger.warn( "Error updating rrd file", "%s rrd: %s" % ( rrdFile, retVal[ 'Message' ] ) )
     return S_OK( valuesList[-1][0] )
 
   def __generateName( self, *args, **kwargs ):
