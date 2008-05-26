@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.30 2008/05/26 07:47:03 rgracian Exp $
-__RCSID__ = "$Id: MonitoringClient.py,v 1.30 2008/05/26 07:47:03 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.31 2008/05/26 18:53:35 acasajus Exp $
+__RCSID__ = "$Id: MonitoringClient.py,v 1.31 2008/05/26 18:53:35 acasajus Exp $"
 
 import threading
 import time
@@ -223,11 +223,7 @@ class MonitoringClient:
       #Commit new activities
       if self.__dataToSend():
         if not self.__disabled():
-          if allData:
-            timeout = False
-          else:
-            timeout = 0
-          self.__sendData( timeout )
+          self.__sendData()
       self.__pruneMarksData()
     finally:
       self.flushingLock.release()
@@ -249,7 +245,7 @@ class MonitoringClient:
       else:
         self.marksToSend[ acName ] = acMarks[ acName ]
 
-  def __sendData( self, secsTimeout = 60 ):
+  def __sendData( self, secsTimeout = False ):
     if gServiceInterface.serviceRunning():
       self.logger.debug( "Using internal interface to send data")
       rpcClient = gServiceInterface
