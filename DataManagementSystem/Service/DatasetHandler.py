@@ -17,25 +17,38 @@ def initializeDatasetHandler(serviceInfo):
 
 class DatasetHandler(RequestHandler):
 
-  types_publishDataset = [StringType,ListType]
-  def export_publishDatset(self,handle,lfns,metadataTags):
+  types_publishDataset = [StringType,StringType,StringType,ListType,DictType]
+  def export_publishDatset(self,handle,description,longDescription,lfns,metadataTags):
     """ This method will create the data set in the LFC the datasetDB
     """
+    authorDN = self._clientTransport.peerCredentials['DN']
+    authorGroup = self._clientTransport.peerCredentials['Group']
+    type = 'User'
+    if authorGroup == 'lhcb_prod':
+      type = 'Production'
+
     oDataset = Dataset()
     oDataset.setHandle(handle)
     oDataset.setLfns(lfns)
+    # First create the links in the LFC
     res = oDataset.createLinks()
     if not res['OK']:
       oDataset.removeDataset()
       return res
-    else:
-      res = datasetDB.publishDataset(handle,metadataTags)
-      if not res['OK']:
-        oDataset.removeDataset()
-      else:
-        authorDN = self._clientTransport.peerCredentials['DN']
-        message = 'Created'
-        res = datasetDB.updateDatasetLogging(handle,message,authorDN)
+    # Publish the dataset in the Datasets table
+    res = datasetDB.publishDataset(handle,description,longDescription,authorDN,authorGroup,type)
+    if not res['OK']:
+      oDataset.removeDataset()
+      return res
+    # Add the metadata for the dataset to the DatasetParameters table
+    res = datasetDB.addDatasetParameters(handle,metadataTags)
+    if not res['OK']:
+      oDataset.removeDataset()
+      datasetDB.removeDataset(handle)
+      return res
+    # Add the logging message
+    message = 'Created'
+    datasetDB.updateDatasetLogging(handle,message,authorDN)
     return res
 
   types_deleteDataset = [StringType]
