@@ -165,6 +165,21 @@ class DBUtils:
           currentDict[ timeEpoch ] = 0
     return dataDict
 
+  def _acumulate( self, granularity, startEpoch, endEpoch, dataDict ):
+    """
+    Acumulate all the values.
+    dataDict = { 'key' : { time1 : value,  time2 : value... }, 'key2'.. }
+    """
+    startBucketEpoch = startEpoch - startEpoch % granularity
+    for key in dataDict:
+      currentDict = dataDict[ key ]
+      lastValue = 0
+      for timeEpoch in range( startBucketEpoch, endEpoch, granularity ):
+        if timeEpoch in currentDict:
+          lastValue += currentDict[ timeEpoch ]
+        currentDict[ timeEpoch ] = lastValue
+    return dataDict
+
   def stripDataField( self, dataDict, fieldId ):
     """
     Strip <fieldId> data and sum the rest as it was data from one key
