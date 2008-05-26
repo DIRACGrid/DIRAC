@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.29 2008/05/07 18:40:08 acasajus Exp $
-__RCSID__ = "$Id: MonitoringClient.py,v 1.29 2008/05/07 18:40:08 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.30 2008/05/26 07:47:03 rgracian Exp $
+__RCSID__ = "$Id: MonitoringClient.py,v 1.30 2008/05/26 07:47:03 rgracian Exp $"
 
 import threading
 import time
@@ -226,7 +226,7 @@ class MonitoringClient:
           if allData:
             timeout = False
           else:
-            timeout = 60
+            timeout = 0
           self.__sendData( timeout )
       self.__pruneMarksData()
     finally:
