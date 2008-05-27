@@ -66,7 +66,7 @@ class SRM2Storage(StorageBase):
     self.verbose = 0
     self.conf_file = 'ignored'
     self.insecure = 0
-    self.defaultLocalProtocols = gConfig.getValue('/Resources/StorageElemens/DefaultProtocols',['dcap','gsidcap','root','rfio','file'])
+    self.defaultLocalProtocols = gConfig.getValue('/Resources/StorageElements/DefaultProtocols',['dcap','gsidcap','root','rfio','file'])
 
   def isOK(self):
     return self.isok
