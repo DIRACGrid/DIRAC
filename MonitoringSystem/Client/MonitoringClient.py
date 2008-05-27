@@ -1,8 +1,9 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.31 2008/05/26 18:53:35 acasajus Exp $
-__RCSID__ = "$Id: MonitoringClient.py,v 1.31 2008/05/26 18:53:35 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.32 2008/05/27 12:01:18 acasajus Exp $
+__RCSID__ = "$Id: MonitoringClient.py,v 1.32 2008/05/27 12:01:18 acasajus Exp $"
 
 import threading
 import time
+import types
 from DIRAC import gConfig, gLogger
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Utilities import Time, ExitCallback, Network
@@ -22,6 +23,8 @@ class MonitoringClient:
   COMPONENT_AGENT   = "agent"
   COMPONENT_WEB     = "web"
   COMPONENT_SCRIPT  = "script"
+
+  __validMonitoringValues = ( types.IntType, types.LongType, types.FloatType )
 
   def __init__( self ):
     self.sourceId = 0
@@ -167,6 +170,8 @@ class MonitoringClient:
     """
     if name not in self.activitiesDefinitions:
       raise Exception( "You must register activity %s before adding marks to it" % name)
+    if type( value ) not in self.__validMonitoringValues:
+      raise Exception( "Value %s is not valid" % value )
     self.activitiesLock.acquire()
     try:
       self.logger.debug( "Adding mark to %s" % name )
