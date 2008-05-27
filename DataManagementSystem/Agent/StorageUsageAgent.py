@@ -89,10 +89,11 @@ class StorageUsageAgent(Agent):
       for se,dict in res['Value'].items():
         usage = dict['Size']
         files = dict['Files']
+        site = se.split('_')[0].split('-')[0]
         gLogger.info("StorageUsageAgent: %s %s %s" % (se.ljust(40),str(files).rjust(20),str(usage).rjust(20)))
-        gMonitor.registerActivity("%s-used" % se, "%s usage" % se,"StorageUsageAgent","", gMonitor.OP_ACUM)
+        gMonitor.registerActivity("%s-used" % se, "%s usage" % se,"StorageUsage/%s usage" % site,"",gMonitor.OP_MEAN)
         gMonitor.addMark("%s-used" % se, usage )
-        gMonitor.registerActivity("%s-files" % se, "%s files" % se,"StorageUsageAgent","Files", gMonitor.OP_ACUM)
+        gMonitor.registerActivity("%s-files" % se, "%s files" % se,"StorageUsage/%s files" % site,"Files",gMonitor.OP_MEAN)
         gMonitor.addMark("%s-files" % se, files )
 
 
