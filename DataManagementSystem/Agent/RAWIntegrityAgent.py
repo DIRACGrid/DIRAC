@@ -1,6 +1,5 @@
 """  RAWIntegrityAgent determines whether RAW files in Castor were migrated correctly
 """
-
 from DIRAC  import gLogger, gConfig, gMonitor,S_OK, S_ERROR
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
@@ -13,7 +12,6 @@ from DIRAC.Core.Utilities.GridCredentials import setupProxy,restoreProxy,setDIRA
 from DIRAC.Core.Utilities.Subprocess import shellCall
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClient
-from DIRAC.DataManagementSystem.Client.FileCatalog import FileCatalog
 
 import time,os
 from types import *
@@ -33,7 +31,6 @@ class RAWIntegrityAgent(Agent):
     self.ReplicaManager = ReplicaManager()
     self.RAWIntegrityDB = RAWIntegrityDB()
     self.DataLog = DataLoggingClient()
-    self.ProdDB = FileCatalog(['ProductionDB'])
 
     self.wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
     self.proxyDN = gConfig.getValue(self.section+'/ProxyDN')
@@ -228,8 +225,7 @@ class RAWIntegrityAgent(Agent):
         guid = activeFiles[lfn]['GUID']
         checksum = activeFiles[lfn]['Checksum']
         fileTuple = (lfn,pfn,size,se,guid,checksum)
-        res = self.ProdDB.addFile(fileTuple)
-        print res
+        res = self.ReplicaManager.registerFile(fileTuple)
         if not res['OK']:
           self.DataLog.addFileRecord(lfn,'RegisterFailed',se,'','RAWIntegrityAgent')
           gLogger.error("RAWIntegrityAgent.execute: Completely failed to register successfully migrated file.", res['Message'])
@@ -282,11 +278,11 @@ class RAWIntegrityAgent(Agent):
         size = activeFiles[lfn]['Size']
         se = activeFiles[lfn]['SE']
         guid = activeFiles[lfn]['GUID']
-        res = self.ReplicaManager.removeFile(lfn)
+        res = self.ReplicaManager.removePhysicalFile(se,pfn)
         if not res['OK']:
           self.DataLog.addFileRecord(lfn,'RemoveReplicaFailed',se,'','RAWIntegrityAgent')
           gLogger.error("RAWIntegrityAgent.execute: Completely failed to remove pfn from the storage element.", res['Message'])
-        elif not res['Value']['Successful'].has_key(lfn):
+        elif not res['Value']['Successful'].has_key(pfn):
           self.DataLog.addFileRecord(lfn,'RemoveReplicaFailed',se,'','RAWIntegrityAgent')
           gLogger.error("RAWIntegrityAgent.execute: Failed to remove pfn from the storage element.", res['Value']['Failed'][pfn])
         else:
