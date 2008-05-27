@@ -1,10 +1,10 @@
-# $Id: Step.py,v 1.22 2008/05/20 15:37:48 atsareg Exp $
+# $Id: Step.py,v 1.23 2008/05/27 07:28:44 atsareg Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.22 $"
+__RCSID__ = "$Revision: 1.23 $"
 
-import os, time, types
+import os, time, types, traceback
 #try: # this part to inport as part of the DIRAC framework
 from DIRAC.Core.Workflow.Parameter import *
 from DIRAC.Core.Workflow.Module import *
@@ -253,6 +253,8 @@ class StepInstance(AttributeCollection):
               print "Exception while module execution"
               print "Module",mod_inst_name,mod_inst.getType()
               print str(x)
+              stack_list = traceback.extract_stack()
+              print ''.join( traceback.format_list( stack_list[3:0] ))
               if self.stepStatus['OK']:
                 # This is the error that caused the workflow disruption
                 # report it to the WMS
