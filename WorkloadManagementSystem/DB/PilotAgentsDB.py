@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.19 2008/05/21 16:21:55 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.20 2008/05/27 10:59:59 atsareg Exp $
 ########################################################################
 """ PilotAgentsDB class is a front-end to the Pilot Agent Database.
     This database keeps track of all the submitted grid pilot jobs.
@@ -23,7 +23,7 @@
 
 """
 
-__RCSID__ = "$Id: PilotAgentsDB.py,v 1.19 2008/05/21 16:21:55 atsareg Exp $"
+__RCSID__ = "$Id: PilotAgentsDB.py,v 1.20 2008/05/27 10:59:59 atsareg Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
@@ -244,7 +244,7 @@ class PilotAgentsDB(DB):
   def storePilotOutput(self,pilotRef,output,error):
     """ Store standard output and error for a pilot with pilotRef
     """
-
+    
     pilotID = self.__getPilotID(pilotRef)
     if not pilotID:
       return S_ERROR('Pilot reference not found %s' % pilotRef)
@@ -257,8 +257,7 @@ class PilotAgentsDB(DB):
     if not result['OK']:
       return S_ERROR('Failed to escape error string')
     e_error = result['Value']
-    req = "UPDATE PilotOutput SET StdOutput='%s', StdError='%s' WHERE PilotID=%d"
-    req = req % (e_output,e_error,pilotID)
+    req = "INSERT INTO PilotOutput VALUES (%d,'%s','%s')" % (pilotID,e_output,e_error)
     result = self._update(req)
     return result
 
