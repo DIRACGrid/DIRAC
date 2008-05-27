@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.25 2008/05/09 17:49:10 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.26 2008/05/27 16:55:29 paterson Exp $
 # File :   DiracProduction.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are to be documented with example usage.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.25 2008/05/09 17:49:10 paterson Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.26 2008/05/27 16:55:29 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 import pprint
@@ -622,6 +622,12 @@ class DiracProduction:
     """
     #TODO: write with wrapper zfilled prod directory
     return self.diracAPI.getInputSandbox(jobID)
+
+  #############################################################################
+  def getProdJobStatus(self,jobID):
+    """Wraps around DIRAC API status(), takes single jobID or list of jobIDs.
+    """
+    return self.diracAPI.status(jobID)
 
   #############################################################################
   def rescheduleProdJobs(self,jobID):
