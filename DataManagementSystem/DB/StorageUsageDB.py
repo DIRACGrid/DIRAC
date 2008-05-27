@@ -188,6 +188,19 @@ class StorageUsageDB(DB):
   # Methods for retreiving storage usage (still to be developed)
   #
 
+  def getStorageSummary(self):
+    """ Retrieves the storage summary for all of the known directories
+    """
+    req = "SELECT StorageElement,SUM(StorageElementSize),SUM(StorageElementFiles) FROM DirectoryUsage GROUP BY StorageElement;" 
+    err = "StorageUsageDB.getStorageSummary: Failed to get storage summary."
+    res = self._query(req)
+    if not res['OK']:
+      return S_ERROR("%s %s" % (err, res['Message']))
+    usageDict = {}
+    for storageElement,size,files in res['Value']:
+      usageDict[storageElement] = {'Size':int(size), 'Files':int(files)}
+    return S_OK(usageDict)
+
   def getUserStorageUsage(self):
     """ Retrieves the storage usage for each of the known users
     """
