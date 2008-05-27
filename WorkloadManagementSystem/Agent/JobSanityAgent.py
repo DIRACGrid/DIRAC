@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSanityAgent.py,v 1.8 2008/04/14 07:54:34 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSanityAgent.py,v 1.9 2008/05/27 14:12:24 paterson Exp $
 # File :   JobSanityAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,7 +13,7 @@
        - Input sandbox not correctly uploaded.
 """
 
-__RCSID__ = "$Id: JobSanityAgent.py,v 1.8 2008/04/14 07:54:34 paterson Exp $"
+__RCSID__ = "$Id: JobSanityAgent.py,v 1.9 2008/05/27 14:12:24 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
@@ -113,11 +113,10 @@ class JobSanityAgent(Optimizer):
         number = inputData['Value']
         message += 'InputData: '+number+', '
       else:
-        res = 'Job: '+str(job)+' Failed input data check.'
         minorStatus = inputData['Value']
         self.log.info(message)
-        self.log.info(res)
-        return S_ERROR(message)
+        self.log.info('Job: '+str(job)+' Failed input data check.')
+        return S_ERROR(minorStatus)
 
     #Platform check # disabled
     if self.platformCheck:
