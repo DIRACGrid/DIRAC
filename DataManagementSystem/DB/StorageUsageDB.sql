@@ -32,6 +32,5 @@ CREATE TABLE DirectoryUsage(
 DROP TABLE IF EXISTS DirectoryParameters;
 CREATE TABLE DirectoryParameters(
   DirectoryID INTEGER NOT NULL,
-  Parameter VARCHAR(255) NOT NULL,
-  PRIMARY KEY (DirectoryID,Parameter)
+  Parameter VARCHAR(255) NOT NULL
 );
