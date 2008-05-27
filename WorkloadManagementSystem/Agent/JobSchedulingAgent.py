@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.17 2008/04/14 07:48:22 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.18 2008/05/27 15:55:55 paterson Exp $
 # File :   JobSchedulingAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@
       meaningfully.
 
 """
-__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.17 2008/04/14 07:48:22 paterson Exp $"
+__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.18 2008/05/27 15:55:55 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
@@ -54,7 +54,7 @@ class JobSchedulingAgent(Optimizer):
 
     if not result['Value']:
       result = self.__sendJobToTaskQueue(job)
-      return result     
+      return result
 
     hasInputData=False
     for i in result['Value']:
@@ -291,7 +291,10 @@ class JobSchedulingAgent(Optimizer):
     if chosenSite:
       chosen = chosenSite[0]
       if not chosen in siteCandidates:
-        self.log.info('%s is not a possible site candidate for %s' %(chosenSite,siteCandidates))
+        self.log.info('%s is not a possible site candidate for %s' %(chosen,siteCandidates))
+        result = self.jobDB.setJobAttribute(job,'Site',chosen)
+        if not result['OK']:
+          self.log.warn('Problem setting job site parameter:\n%s' %result)
         return S_ERROR('Chosen site is not eligible')
       else:
         siteCandidates = chosenSite
@@ -336,7 +339,7 @@ class JobSchedulingAgent(Optimizer):
 
     result = S_OK()
     site = classadJob.get_expression('Site').replace('"','').replace('Unknown','')
-    bannedSites = classadJob.get_expression('BannedSites').replace('"','').replace('Unknown','')
+    bannedSites = classadJob.get_expression('BannedSites').replace('{','').replace('}','').replace('"','').replace('Unknown','').split()
     if site and site!='ANY':
       self.log.info('Job %s has chosen site %s specified in JDL' %(job,site))
       result['ChosenSite']=[site]
@@ -345,7 +348,7 @@ class JobSchedulingAgent(Optimizer):
 
     if bannedSites:
       self.log.info('Job %s has JDL requirement to ban %s' %(job,bannedSites))
-      result['BannedSites']='todo'
+      result['BannedSites']=bannedSites
     else:
       result['BannedSites']=[]
 
