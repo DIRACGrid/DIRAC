@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSAdministratorHandler.py,v 1.23 2008/03/13 17:21:09 atsareg Exp $
+# $Id: WMSAdministratorHandler.py,v 1.24 2008/05/27 11:00:52 atsareg Exp $
 ########################################################################
 """
 This is a DIRAC WMS administrator interface.
@@ -17,7 +17,7 @@ Access to the pilot data:
 
 """
 
-__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.23 2008/03/13 17:21:09 atsareg Exp $"
+__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.24 2008/05/27 11:00:52 atsareg Exp $"
 
 import os, sys, string, uu, shutil, datetime
 from types import *
@@ -327,6 +327,8 @@ class WMSAdministratorHandler(RequestHandler):
     error = result['StdError']
     fileList = result['FileList']
     result = pilotDB.storePilotOutput(pilotReference,stdout,error)
+    if not result['OK']:
+      gLogger.error('Failed to store pilot output:',result['Message'])
 
     resultDict = {}
     resultDict['StdOut'] = stdout
