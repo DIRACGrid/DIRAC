@@ -80,9 +80,24 @@ class StorageUsageAgent(Agent):
         setDIRACGroup(self.proxyGroup)
         self.log.info("StorageUsageAgent: Successfully renewed %s proxy." %self.proxyDN)
 
+
+    res = self.StorageUsageDB.getStorageSummary()  
+    if res['OK']:
+      gLogger.info("StorageUsageAgent: Storage Usage Summary")
+      gLogger.info("============================================================")
+      gLogger.info("StorageUsageAgent: %s %s %s" % ('Storage Element'.ljust(40),'Number of files'.rjust(20),'Total size'.rjust(20)))
+      for se,dict in res['Value'].items():
+        usage = dict['Size']
+        files = dict['Files']
+        gLogger.info("StorageUsageAgent: %s %s %s" % (se.ljust(40),str(files).rjust(20),str(usage).rjust(20)))
+        gMonitor.registerActivity("%s-used" % se, "%s usage" % se,"StorageUsageAgent","", gMonitor.OP_ACUM)
+        gMonitor.addMark("%s-used" % se, usage )
+        gMonitor.registerActivity("%s-files" % se, "%s files" % se,"StorageUsageAgent","Files", gMonitor.OP_ACUM)
+        gMonitor.addMark("%s-files" % se, files )
+
+
     baseDir = gConfig.getValue(self.section+'/BaseDirectory','/lhcb')
     ignoreDirectories = gConfig.getValue(self.section+'/Ignore',[])
-
     oNamespaceBrowser = NamespaceBrowser(baseDir)
     gLogger.info("StorageUsageAgent: Initiating with %s as base directory." % baseDir)
 
