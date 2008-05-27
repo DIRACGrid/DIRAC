@@ -50,3 +50,21 @@ class StorageUsageHandler(RequestHandler):
       errStr = "StorageUsageHandler.publishDirectoryUsage: Exception while inserting usage."
       gLogger.exception(errStr,str(x))
       return S_ERROR(errStr)
+
+  types_getStorageSummary = []
+  def export_getStorageSummary(self):
+    """ Retieve a summary for the storage usage
+    """
+    try:
+      gLogger.info("StorageUsageHandler.getStorageSummary: Attempting to get usage summary.")
+      res = storageUsageDB.getStorageSummary()
+      if res['OK']:
+        gLogger.info("StorageUsageHandler.getStorageSummary: Successfully obtained usage.")
+      else:
+        gLogger.error("StorageUsageHandler.getStorageSummary: Failed obtain usage.")
+      return res
+    except Exception, x:
+      errStr = "StorageUsageHandler.getStorageSummary: Exception while obtaining usage."
+      gLogger.exception(errStr,str(x))
+      return S_ERROR(errStr)
+    
