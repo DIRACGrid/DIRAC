@@ -181,7 +181,7 @@ class TransferAgent(Agent):
                     gLogger.info("TransferAgent.execute: Failed to register %s to %s." % (lfn,diracSE))
                     oRequest.setSubRequestFileAttributeValue(ind,'transfer',lfn,'Status','Done')
                     fileDict = res['Value']['Failed'][lfn]['register']
-                    registerRequestDict = {'Attributes':{'TargetSE': fileDict['TargetSE'],'Operation':'registerFile'},'Files':[{'LFN': fileDict['LFN'],'PFN':fileDict['PFN'], 'Size':fileDict['Size'], 'GUID':fileDict['GUID']}]}
+                    registerRequestDict = {'Attributes':{'TargetSE': fileDict['TargetSE'],'Operation':'registerFile'},'Files':[{'LFN': fileDict['LFN'],'PFN':fileDict['PFN'], 'Size':fileDict['Size'], 'Addler':fileDict['Addler'], 'GUID':fileDict['GUID']}]}
                     gLogger.info("TransferAgent.execute: Setting registration request for failed file.")
                     oRequest.addSubRequest(registerRequestDict,'register')
                   else:
