@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/RRDManager.py,v 1.26 2008/05/26 08:50:12 rgracian Exp $
-__RCSID__ = "$Id: RRDManager.py,v 1.26 2008/05/26 08:50:12 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/RRDManager.py,v 1.27 2008/05/27 12:10:28 acasajus Exp $
+__RCSID__ = "$Id: RRDManager.py,v 1.27 2008/05/27 12:10:28 acasajus Exp $"
 import os
 import os.path
 import md5
@@ -11,7 +11,7 @@ from DIRAC.Core.Utilities import Subprocess, Time
 class RRDManager:
 
   __sizesList = [ [ 200, 50 ], [ 400, 100 ], [ 600, 150 ], [ 800, 200 ] ]
-  __logRRDCommands = True
+  __logRRDCommands = False
 
   def __init__( self, rrdLocation, graphLocation ):
     """
