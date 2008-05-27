@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.25 2008/05/20 17:37:24 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.26 2008/05/27 19:14:56 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.25 2008/05/20 17:37:24 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.26 2008/05/27 19:14:56 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -443,7 +443,7 @@ class Dirac:
       {'OK': True, 'Value': {'Successful': {'srm://...': {'SRM2': 'rfio://...'}}, 'Failed': {}}}
 
        @param lfn: Logical File Name (LFN)
-       @type lfn: string
+       @type lfn: string or list
        @param storageElement: DIRAC SE name e.g. CERN-RAW
        @type storageElement: string
        @return: S_OK,S_ERROR
@@ -460,6 +460,51 @@ class Dirac:
     result = self.rm.getReplicaAccessUrl([lfn],storageElement)
     if not result['OK']:
       return self.__errorReport('Problem during getAccessURL call',result['Message'])
+    if not printOutput:
+      return result
+
+    print self.pPrint.pformat(result['Value'])
+    return result
+
+  #############################################################################
+  def getPhysicalFileMetadata(self,pfn,storageElement,printOutput=False):
+    """Allows to retrieve metadata for physical file(s) on a supplied storage
+       element.  Contacts the site SRM endpoint and performs a gfal_ls behind
+       the scenes.
+
+       Example Usage:
+
+       >>> print dirac.getPhysicalFileMetadata('srm://srm.grid.sara.nl/pnfs/grid.sara.nl/data
+       /lhcb/data/CCRC08/RAW/LHCb/CCRC/23341/023341_0000039571.raw','NIKHEF-RAW')
+      {'OK': True, 'Value': {'Successful': {'srm://...': {'SRM2': 'rfio://...'}}, 'Failed': {}}}
+
+       @param lfn: Physical File Name (PFN / SURL)
+       @type lfn: string or list
+       @param storageElement: DIRAC SE name e.g. CERN-RAW
+       @type storageElement: string
+       @return: S_OK,S_ERROR
+
+       @param printOutput: Optional flag to print result
+       @type printOutput: boolean
+
+    """
+    if re.search('LFN:',pfn):
+      return self.__errorReport('Expected PFN not LFN')
+
+    if type(pfn)==type(" "):
+      pfn = pfn.replace('PFN:','')
+      pfn = [pfn]
+    elif type(pfn)==type([]):
+      try:
+        pfn = [str(pfile.replace('PFN:','')) for pfile in pfn]
+      except Exception,x:
+        return self.__errorReport(str(x),'Expected list of strings for PFNs')
+    else:
+      return self.__errorReport('Expected single string or list of strings for PFN(s)')
+
+    result = self.rm.getPhysicalFileMetadata(pfn,storageElement)
+    if not result['OK']:
+      return self.__errorReport('Problem during getPhysicalFileMetadata call',result['Message'])
     if not printOutput:
       return result
 
