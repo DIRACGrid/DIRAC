@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.18 2008/05/27 15:55:55 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.19 2008/05/28 12:22:14 paterson Exp $
 # File :   JobSchedulingAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@
       meaningfully.
 
 """
-__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.18 2008/05/27 15:55:55 paterson Exp $"
+__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.19 2008/05/28 12:22:14 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
@@ -88,7 +88,16 @@ class JobSchedulingAgent(Optimizer):
 
     siteCandidates = maskSiteCandidates['Value']
     if not siteCandidates:
-      msg = 'No site candidates in mask'
+      msg = 'No Candidate Sites in Mask'  
+      result = self.__getJobSiteRequirement(job)
+      if not result['OK']:
+        self.log.warn('Could not determine site candidates for job, will leave as ANY')
+      else:
+        chosenSite = result['ChosenSite']              
+        if len(chosenSite)==1:
+          result = self.jobDB.setJobAttribute(job,'Site',chosenSite[0])
+          if not result['OK']:
+            self.log.warn('Problem setting job site parameter:\n%s' %result)         
       self.log.info(msg)
       self.updateJobStatus(job,self.failedStatus,msg)
       return S_OK(msg)
