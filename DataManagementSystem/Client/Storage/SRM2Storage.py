@@ -352,7 +352,7 @@ class SRM2Storage(StorageBase):
       return S_ERROR("SRM2Storage.getFile: Supplied file information must be tuple of list of tuples")
 
     MAX_SINGLE_STREAM_SIZE = 1024*1024*10 # 10 MB
-    MIN_BANDWIDTH = 1024*100 # 100 KB/s
+    MIN_BANDWIDTH = 5 * (1024*1024) # 5 MB/s
 
     srctype = self.defaulttype
     src_spacetokendesc = self.spaceToken
