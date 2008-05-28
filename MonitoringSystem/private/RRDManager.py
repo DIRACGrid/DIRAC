@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/RRDManager.py,v 1.31 2008/05/28 12:48:40 acasajus Exp $
-__RCSID__ = "$Id: RRDManager.py,v 1.31 2008/05/28 12:48:40 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/RRDManager.py,v 1.32 2008/05/28 12:53:44 acasajus Exp $
+__RCSID__ = "$Id: RRDManager.py,v 1.32 2008/05/28 12:53:44 acasajus Exp $"
 import os
 import os.path
 import md5
@@ -211,6 +211,7 @@ class RRDManager:
     rrdCmd += " -h %s" % self.__sizesList[ size ][1]
     rrdCmd += " --title '%s'" % activitiesList[ 0 ].getGroupLabel()
     colorGen = ColorGenerator()
+    activitiesList.sort()
     for idActivity in range( len( activitiesList ) ):
       activity = activitiesList[ idActivity ]
       rrdCmd += " %s" % self.__generateRRDGraphVar( idActivity, activity, plotTimeSpan, self.__sizesList[ size ][0] )
