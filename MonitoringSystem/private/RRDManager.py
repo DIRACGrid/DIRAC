@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/RRDManager.py,v 1.27 2008/05/27 12:10:28 acasajus Exp $
-__RCSID__ = "$Id: RRDManager.py,v 1.27 2008/05/27 12:10:28 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/RRDManager.py,v 1.28 2008/05/28 10:58:20 acasajus Exp $
+__RCSID__ = "$Id: RRDManager.py,v 1.28 2008/05/28 10:58:20 acasajus Exp $"
 import os
 import os.path
 import md5
@@ -44,14 +44,15 @@ class RRDManager:
     retVal = Subprocess.shellCall( 0, cmd )
     if self.__logRRDCommands and rrdFile:
       try:
-        fd = file( "%s.log" % rrdFile, "a" )
+        logFile = "%s.log" % rrdFile
+        fd = file( logFile, "a" )
         if not retVal[ 'OK' ] or retVal[ 'OK' ][0]:
           fd.write( "ERROR %s\n" % cmd )
         else:
           fd.write( "OK    %s\n" % cmd )
         fd.close()
-      except:
-        pass
+      except Exception, e:
+        gLogger.warn( "Cannot write log %s: %s" % ( logFile, str(e) ) )
     if not retVal[ 'OK' ]:
       return retVal
     retTuple = retVal[ 'Value' ]
