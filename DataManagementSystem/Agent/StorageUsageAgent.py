@@ -86,16 +86,15 @@ class StorageUsageAgent(Agent):
       gLogger.info("StorageUsageAgent: Storage Usage Summary")
       gLogger.info("============================================================")
       gLogger.info("StorageUsageAgent: %s %s %s" % ('Storage Element'.ljust(40),'Number of files'.rjust(20),'Total size'.rjust(20)))
-      for se,dict in res['Value'].items():
-        usage = dict['Size']
-        files = dict['Files']
+      for se in sortList(res['Value'].keys()):
+        usage = res['Value'][se]['Size']
+        files = res['Value'][se]['Files']
         site = se.split('_')[0].split('-')[0]
         gLogger.info("StorageUsageAgent: %s %s %s" % (se.ljust(40),str(files).rjust(20),str(usage).rjust(20)))
         gMonitor.registerActivity("%s-used" % se, "%s usage" % se,"StorageUsage/%s usage" % site,"",gMonitor.OP_MEAN,bucketLength = 600)
         gMonitor.addMark("%s-used" % se, usage )
         gMonitor.registerActivity("%s-files" % se, "%s files" % se,"StorageUsage/%s files" % site,"Files",gMonitor.OP_MEAN, bucketLength = 600)
         gMonitor.addMark("%s-files" % se, files )
-
 
     baseDir = gConfig.getValue(self.section+'/BaseDirectory','/lhcb')
     ignoreDirectories = gConfig.getValue(self.section+'/Ignore',[])
