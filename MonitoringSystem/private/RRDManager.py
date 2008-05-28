@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/RRDManager.py,v 1.30 2008/05/28 11:24:09 acasajus Exp $
-__RCSID__ = "$Id: RRDManager.py,v 1.30 2008/05/28 11:24:09 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/RRDManager.py,v 1.31 2008/05/28 12:48:40 acasajus Exp $
+__RCSID__ = "$Id: RRDManager.py,v 1.31 2008/05/28 12:48:40 acasajus Exp $"
 import os
 import os.path
 import md5
@@ -95,7 +95,7 @@ class RRDManager:
     elif type in ( 'sum', 'acum', 'rate' ):
       dst = "ABSOLUTE"
       cf = "AVERAGE"
-    cmd += " DS:value:%s:%s:U:U" % ( dst, bucketLength * 2 )
+    cmd += " DS:value:%s:%s:U:U" % ( dst, bucketLength * 10 )
     # 1m res for 1 month
     #cmd += " RRA:%s:0.9:1:43200" % cf
     # 1m red for 1 year
