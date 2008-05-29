@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.12 2008/04/22 12:50:51 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.13 2008/05/29 18:30:10 paterson Exp $
 # File :   DiracAdmin.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@ site banning and unbanning, WMS proxy uploading etc.
 
 """
 
-__RCSID__ = "$Id: DiracAdmin.py,v 1.12 2008/04/22 12:50:51 acasajus Exp $"
+__RCSID__ = "$Id: DiracAdmin.py,v 1.13 2008/05/29 18:30:10 paterson Exp $"
 
 import DIRAC
 from DIRAC.ConfigurationSystem.Client.CSAPI              import CSAPI
@@ -252,7 +252,8 @@ class DiracAdmin:
       except Exception,x:
         return self.__errorReport(str(x),'Expected integer or convertible integer for existing jobIDs')
 
-    result = self.wmsAdmin.resetJob(jobID)
+    jobManager = RPCClient('WorkloadManagement/JobManager',useCertificates=False)
+    result = jobManager.resetJob(jobID)
     return result
 
   #############################################################################
