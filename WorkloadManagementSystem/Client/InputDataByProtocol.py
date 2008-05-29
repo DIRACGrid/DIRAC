@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: InputDataByProtocol.py,v 1.5 2008/04/13 14:13:23 paterson Exp $
+# $Id: InputDataByProtocol.py,v 1.6 2008/05/29 16:58:40 paterson Exp $
 # File :   InputDataByProtocol.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     defined in the CS for the VO.
 """
 
-__RCSID__ = "$Id: InputDataByProtocol.py,v 1.5 2008/04/13 14:13:23 paterson Exp $"
+__RCSID__ = "$Id: InputDataByProtocol.py,v 1.6 2008/05/29 16:58:40 paterson Exp $"
 
 from DIRAC.Core.DISET.RPCClient                                     import RPCClient
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
@@ -195,11 +195,20 @@ class InputDataByProtocol:
     self.log.verbose(resolvedData)
     count = {}
     for lfn,mdata in resolvedData.items():
-      if count.has_key(mdata['protocol']):
-        tmp = count[mdata['protocol']]
-        count[mdata['protocol']] = tmp+1
+      if mdata.has_key('protocol'):
+        if count.has_key(mdata['protocol']):
+          tmp = count[mdata['protocol']]
+          count[mdata['protocol']] = tmp+1
+        else:
+          count[mdata['protocol']] = 1
       else:
-        count[mdata['protocol']] = 1
+        self.log.verbose('%s: No TURL resolved for %s' %(COMPONENT_NAME,lfn))
+
+    #Remove any failed replicas from the resolvedData dictionary
+    self.log.verbose('The following LFN(s) were not resolved:\n%s' %(string.join(failedReplicas,'\n')))
+    for lfn in failedReplicas:
+      if resolvedData.has_key(lfn):
+        del resolvedData[lfn]
 
     if count:
       report = ''
