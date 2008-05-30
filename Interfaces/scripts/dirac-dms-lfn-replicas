@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/Attic/dirac-dms-lfn-replicas,v 1.4 2008/04/21 17:08:44 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/Attic/dirac-dms-lfn-replicas,v 1.5 2008/05/30 16:52:42 paterson Exp $
 # File :   dirac-admin-lfn-replicas
 # Author : Stuart Paterson
 ########################################################################
-__RCSID__   = "$Id: dirac-dms-lfn-replicas,v 1.4 2008/04/21 17:08:44 paterson Exp $"
-__VERSION__ = "$Revision: 1.4 $"
+__RCSID__   = "$Id: dirac-dms-lfn-replicas,v 1.5 2008/05/30 16:52:42 paterson Exp $"
+__VERSION__ = "$Revision: 1.5 $"
 from DIRACEnvironment import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.Interfaces.API.Dirac                         import Dirac
@@ -26,7 +26,7 @@ errorList = []
 
 for lfn in args:
 
-  result = dirac.getReplicas(lfn)
+  result = dirac.getReplicas(args,printOutput=True)
   if not result['OK']:
     errorList.append( (lfn, result['Message']) )
     exitCode = 2
