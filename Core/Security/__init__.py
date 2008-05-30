@@ -18,7 +18,6 @@ from DIRAC import gConfig, gLogger
 
 g_SecurityConfPath = "/DIRAC/Security"
 
-
 def getProxyLocation():
   """ Get the path of the currently active grid proxy file
   """
@@ -145,5 +144,6 @@ def getCertificateAndKeyLocation():
 
   return (certfile,keyfile)
 
-from DIRAC.Core.Utilities.Security.X509Certificate import X509Certificate
-from DIRAC.Core.Utilities.Security.X509Chain import X509Chain
+from DIRAC.Core.Security.X509Certificate import X509Certificate
+from DIRAC.Core.Security.X509Chain import X509Chain
+g_X509ChainType = type( X509Chain)

@@ -3,7 +3,7 @@ import types
 import os
 import stat
 from GSI import crypto
-from DIRAC.Core.Utilities.Security.X509Certificate import X509Certificate
+from DIRAC.Core.Security.X509Certificate import X509Certificate
 from DIRAC import S_OK, S_ERROR
 
 class X509Chain:
@@ -197,10 +197,34 @@ class X509Chain:
     """
     Get the dirac group if present
     """
+    if not self.__valid:
+      return S_ERROR( "No chain loaded" )
     retVal = self.isProxy()
     if not retVal['OK'] or not retVal[ 'Value' ]:
       return retVal
     return self.__certList[-2].getDIRACGroup()
+
+  def isExpired( self ):
+    """
+    Is any of the elements in the chain expired?
+    """
+    if not self.__valid:
+      return S_ERROR( "No chain loaded" )
+    for iC in range( len( self.__certList )-1, -1, -1 ):
+      if self.__certList[iC].has_expired():
+        return S_OK( True )
+    return S_OK( False )
+
+  def getNotAfterDate( self ):
+    """
+    Get the smallest not after date
+    """
+    if not self.__valid:
+      return S_ERROR( "No chain loaded" )
+    for iC in range( len( self.__certList )-1, -1, -1 ):
+      if self.__certList[iC].has_expired():
+        return S_OK( self.__certList[iC].get_not_after() )
+    return S_OK( self.__certList[-1].get_not_after() )
 
 
 
