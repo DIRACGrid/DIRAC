@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.28 2008/05/13 18:17:36 acasajus Exp $
-__RCSID__ = "$Id: AccountingDB.py,v 1.28 2008/05/13 18:17:36 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.29 2008/05/30 10:46:11 acasajus Exp $
+__RCSID__ = "$Id: AccountingDB.py,v 1.29 2008/05/30 10:46:11 acasajus Exp $"
 
 import datetime, time
 import types
@@ -358,15 +358,26 @@ class AccountingDB(DB):
     insertList = list( valuesList )
     insertList.append( startTime )
     insertList.append( endTime )
+    retVal = self._getConnection()
+    if not retVal[ 'OK' ]:
+      return retVal
+    connObj = retVal[ 'Value' ]
+    retVal = self.__startTransaction( connObj )
+    if not retVal[ 'OK' ]:
+      return retVal
     retVal = self._insert( self.__getTableName( "type", typeName ),
                            self.dbCatalog[ typeName ][ 'typeFields' ],
-                           insertList
-                         )
+                           insertList,
+                           conn = connObj )
     if not retVal[ 'OK' ]:
       return retVal
     #HACK: One more record to split in the buckets to be able to count total entries
     valuesList.append(1)
-    return self.__splitInBuckets( typeName, startTime, endTime, valuesList )
+    retVal =self.__splitInBuckets( typeName, startTime, endTime, valuesList, connObj = connObj )
+    if not retVal[ 'OK' ]:
+      self.__rollbackTransaction( connObj )
+      return retVal
+    return self.__commitTransaction( connObj )
 
   def __splitInBuckets( self, typeName, startTime, endTime, valuesList, connObj = False ):
     """
@@ -382,18 +393,18 @@ class AccountingDB(DB):
     for bucketInfo in buckets:
       bucketStartTime = bucketInfo[0]
       bucketLength = bucketInfo[2]
+      bucketProportion = bucketInfo[1]
       #Calculate proportional values
       proportionalValues = []
       for value in valuesList:
-        proportionalValues.append( value * bucketInfo[1] )
+        proportionalValues.append( float(value) * bucketInfo[1] )
       #INSERT!
       retVal = self.__insertBucket( typeName,
                                     bucketStartTime,
                                     bucketLength,
                                     keyValues,
-                                    proportionalValues, connObj = connObj )
+                                    valuesList, bucketProportion, connObj = connObj )
       #If OK insert is successful
-
       if retVal[ 'OK' ]:
         continue
       #if not OK and NOT duplicate keys error then real error
@@ -405,7 +416,7 @@ class AccountingDB(DB):
                                     bucketStartTime,
                                     bucketLength,
                                     keyValues,
-                                    proportionalValues, connObj = connObj )
+                                    valuesList, bucketProportion, connObj = connObj )
       if not retVal[ 'OK' ]:
         return retVal
     return S_OK()
@@ -446,7 +457,7 @@ class AccountingDB(DB):
     cmd += self.__generateSQLConditionForKeys( typeName, keyValues )
     return self._query( cmd, conn = connObj )
 
-  def __updateBucket( self, typeName, startTime, bucketLength, keyValues, bucketValues, connObj = False ):
+  def __updateBucket( self, typeName, startTime, bucketLength, keyValues, bucketValues, proportion, connObj = False ):
     """
     Update a bucket when coming from the raw insert
     """
@@ -457,7 +468,7 @@ class AccountingDB(DB):
       valueField = self.dbCatalog[ typeName ][ 'values' ][ pos ]
       value = bucketValues[ pos ]
       fullFieldName = "`%s`.`%s`" % ( tableName, valueField )
-      sqlValList.append( "%s=%s+%s" % ( fullFieldName, fullFieldName, value ) )
+      sqlValList.append( "%s=%s+(%s*%s)" % ( fullFieldName, fullFieldName, value, proportion ) )
     sqlValList.append( "`%s`.`entriesInBucket`=`%s`.`entriesInBucket`+%s" % ( tableName, tableName, bucketValues[-1] ) )
     cmd += ", ".join( sqlValList )
     cmd += " WHERE `%s`.`startTime`='%s' AND `%s`.`bucketLength`='%s' AND " % (
@@ -468,7 +479,7 @@ class AccountingDB(DB):
     cmd += self.__generateSQLConditionForKeys( typeName, keyValues )
     return self._update( cmd, conn = connObj )
 
-  def __insertBucket( self, typeName, startTime, bucketLength, keyValues, bucketValues, connObj = False ):
+  def __insertBucket( self, typeName, startTime, bucketLength, keyValues, bucketValues, proportion, connObj = False ):
     """
     Insert a bucket when coming from the raw insert
     """
@@ -479,7 +490,7 @@ class AccountingDB(DB):
       sqlValues.append( keyValues[ keyPos ] )
     for valPos in range( len( self.dbCatalog[ typeName ][ 'values' ] ) ):
       sqlFields.append( self.dbCatalog[ typeName ][ 'values' ][ valPos ] )
-      sqlValues.append( bucketValues[ valPos ] )
+      sqlValues.append( "%s * %s" % ( bucketValues[ valPos ], proportion ) )
     return self._insert( self.__getTableName( "bucket", typeName ), sqlFields, sqlValues, conn = connObj )
 
   def __checkFieldsExistsInType( self, typeName, fields, tableType ):
@@ -663,9 +674,8 @@ class AccountingDB(DB):
     selectSQL += " FROM `%s`" % tableName
     selectSQL += " WHERE `%s`.`startTime` < '%s' AND" % ( tableName, timeLimit )
     selectSQL += " `%s`.`bucketLength` = %s" % ( tableName, bucketLength )
-    #HACK: Horrible constant to overcome the fact that MySQL defines epoch 0 as 13:00 and *nix define epoch as 01:00
-    #43200 is half a day
-    sqlGroupList = [ "CONVERT( `%s`.`startTime` / %s, UNSIGNED )" % ( tableName, nextBucketLength ) ]
+    #MAGIC bucketing
+    sqlGroupList = [ self.__bucketizeDataField( "`%s`.`startTime`" % tableName, nextBucketLength ) ]
     for field in self.dbCatalog[ typeName ][ 'keys' ]:
       sqlGroupList.append( "`%s`.`%s`" % ( tableName, field ) )
     selectSQL += " GROUP BY %s" % ", ".join( sqlGroupList )
@@ -691,6 +701,9 @@ class AccountingDB(DB):
     if not retVal[ 'OK' ]:
       return retVal
     connObj = retVal[ 'Value' ]
+    retVal = self.__startTransaction( connObj )
+    if not retVal[ 'OK' ]:
+      return retVal
     for bPos in range( len( self.dbBucketsLength[ typeName ] ) - 1 ):
       secondsLimit = self.dbBucketsLength[ typeName ][ bPos ][0]
       bucketLength = self.dbBucketsLength[ typeName ][ bPos ][1]
@@ -700,12 +713,14 @@ class AccountingDB(DB):
       #Retrieve the data
       retVal = self.__selectForCompactBuckets( typeName, timeLimit, bucketLength, nextBucketLength, connObj )
       if not retVal[ 'OK' ]:
+        self.__rollbackTransaction( connObj )
         return retVal
       bucketsData = retVal[ 'Value' ]
       if len( bucketsData ) == 0:
         continue
       retVal = self.__deleteForCompactBuckets( typeName, timeLimit, bucketLength, connObj )
       if not retVal[ 'OK' ]:
+        self.__rollbackTransaction( connObj )
         return retVal
       gLogger.info( "Compacting %s records %s seconds size for %s" % ( len( bucketsData ), bucketLength, typeName ) )
       #Add data
@@ -715,7 +730,9 @@ class AccountingDB(DB):
         valuesList = record[:-2]
         retVal = self.__splitInBuckets( typeName, startTime, endTime, valuesList, connObj )
         if not retVal[ 'OK' ]:
+          self.__rollbackTransaction( connObj )
           gLogger.error( "Error while compacting data for record in %s: %s" % ( typeName, retVal[ 'Value' ] ) )
+    return self.__commitTransaction( connObj )
 
   def regenerateBuckets( self, typeName ):
     retVal = self._getConnection()
@@ -724,23 +741,103 @@ class AccountingDB(DB):
     connObj = retVal[ 'Value' ]
     bucketTableName = self.__getTableName( "bucket", typeName )
     rawTableName = self.__getTableName( "type", typeName )
+    retVal = self.__startTransaction( connObj )
+    if not retVal[ 'OK' ]:
+      return retVal
+    gLogger.info( "Deleting buckets for %s" % typeName )
     retVal = self._update( "DELETE FROM `%s`" % bucketTableName, conn = connObj )
     if not retVal[ 'OK' ]:
       return retVal
-    sqlSelectList = [ "`%s`.startTime" % rawTableName, "`%s`.endTime" % rawTableName ]
+    #Generate the common part of the query
+    #SELECT fields
+    startTimeTableField = "`%s`.startTime" % rawTableName
+    endTimeTableField = "`%s`.endTime" % rawTableName
+    sqlSUMSelectList = []
+    sqlSelectList = []
     for field in self.dbCatalog[ typeName ][ 'keys' ]:
+      sqlSUMSelectList.append( "`%s`.`%s`" % ( rawTableName, field ) )
       sqlSelectList.append( "`%s`.`%s`" % ( rawTableName, field ) )
     for field in self.dbCatalog[ typeName ][ 'values' ]:
+      sqlSUMSelectList.append( "SUM( `%s`.`%s` )" % ( rawTableName, field ) )
       sqlSelectList.append( "`%s`.`%s`" % ( rawTableName, field ) )
-    retVal = self._query( "SELECT %s FROM `%s`" %( ", ".join( sqlSelectList ), rawTableName ), conn = connObj )
-    if not retVal[ 'OK' ]:
-      return retVal
-    for entry in retVal[ 'Value' ]:
-      startT = entry[0]
-      endT = entry[1]
-      values = entry[2:]
-      retVal = self.__splitInBuckets( typeName, startT, endT, values, connObj = connObj )
-      if not retVal[ 'OK' ]:
-        return retVal
-    return S_OK()
+    sumSelectString = ", ".join( sqlSUMSelectList )
+    selectString = ", ".join( sqlSelectList )
+    #Grouping fields
+    sqlGroupList = []
+    for field in self.dbCatalog[ typeName ][ 'keys' ]:
+      sqlGroupList.append( "`%s`.`%s`" % ( rawTableName, field ) )
+    groupingString = ", ".join( sqlGroupList )
+    #List to contain all queries
+    sqlQueries = []
+    dateInclusiveConditions = []
+    countedField = "`%s`.`%s`" % ( rawTableName, self.dbCatalog[ typeName ][ 'keys' ][0] )
+    lastTime = Time.toEpoch()
+    for iRange in range( len( self.dbBucketsLength[ typeName ] ) ):
+      bucketTimeSpan = self.dbBucketsLength[ typeName ][iRange][0]
+      bucketLength = self.dbBucketsLength[ typeName ][iRange][1]
+      startT = lastTime - bucketTimeSpan
+      endT = lastTime
+      lastTime -= bucketTimeSpan
+      bucketizedStart = self.__bucketizeDataField( startTimeTableField, bucketLength )
+      bucketizedEnd = self.__bucketizeDataField( endTimeTableField, bucketLength )
+      timeSelectString = "%s, %s" % ( bucketizedStart,
+                                      bucketizedEnd )
+      #Is the last bucket?
+      if iRange == len( self.dbBucketsLength[ typeName ] ) -1:
+        whereString = "%s <= %d" % ( endTimeTableField,
+                                     endT )
+      else:
+        whereString = "%s > %d AND %s <= %d" % ( startTimeTableField,
+                                                  startT,
+                                                  endTimeTableField,
+                                                  endT )
+      dateInclusiveConditions.append( "( %s )" % whereString )
+      groupString = "%s, %s, %s" % ( groupingString, bucketizedStart, bucketizedEnd )
+      sqlQuery = "SELECT %s, %s, COUNT(%s) FROM `%s` WHERE %s GROUP BY %s" % ( timeSelectString,
+                                                                               sumSelectString,
+                                                                               countedField,
+                                                                               rawTableName,
+                                                                               whereString,
+                                                                               groupString )
 
+      sqlQueries.append( sqlQuery )
+    #Query for records that are in between two ranges
+    sqlQuery = "SELECT %s, %s, %s, 1 FROM `%s` WHERE NOT %s" % ( startTimeTableField,
+                                                       endTimeTableField,
+                                                       selectString,
+                                                       rawTableName,
+                                                       " AND NOT ".join( dateInclusiveConditions ) )
+    sqlQueries.append( sqlQuery )
+    gLogger.info( "Retrieving data for rebuilding buckets for type %s..." % ( typeName ) )
+    queryNum = 0
+    for sqlQuery in sqlQueries:
+      gLogger.info( "Executing query #%s..." % queryNum )
+      queryNum += 1
+      retVal = self._query( sqlQuery, conn = connObj )
+      if not retVal[ 'OK' ]:
+        gLogger.error( "Can't retrieve data for rebucketing", retVal[ 'Message' ] )
+        self.__rollbackTransaction( connObj )
+        return retVal
+      rawData = retVal[ 'Value' ]
+      gLogger.info( "Retrieved %s records" % len( rawData ) )
+      for entry in rawData:
+        startT = entry[0]
+        endT = entry[1]
+        values = entry[2:]
+        retVal = self.__splitInBuckets( typeName, startT, endT, values, connObj = connObj )
+        if not retVal[ 'OK' ]:
+          self.__rollbackTransaction( connObj )
+          return retVal
+    return self.__commitTransaction( connObj )
+
+  def __startTransaction( self, connObj ):
+    return self._query( "START TRANSACTION", conn = connObj)
+
+  def __commitTransaction( self, connObj ):
+    return self._query( "COMMIT", conn = connObj)
+
+  def __rollbackTransaction( self, connObj ):
+    return self._query( "ROLLBACK", conn = connObj)
+
+  def __bucketizeDataField( self, dataField, bucketLength ):
+    return "%s - ( %s %% %s )" % ( dataField, dataField, bucketLength )
