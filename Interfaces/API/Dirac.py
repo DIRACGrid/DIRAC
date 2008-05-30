@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.27 2008/05/30 16:24:08 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.28 2008/05/30 16:51:27 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.27 2008/05/30 16:24:08 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.28 2008/05/30 16:51:27 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -311,7 +311,7 @@ class Dirac:
     print message
 
   #############################################################################
-  def getReplicas(self,lfns):
+  def getReplicas(self,lfns,printOutput=False):
     """Obtain replica information from file catalogue client. Input LFN(s) can be string or list.
 
        Example usage:
@@ -348,17 +348,15 @@ class Dirac:
     self.log.verbose(repsResult)
     if not repsResult['OK']:
       self.log.warn(repsResult['Message'])
+      return repsResult
 
-    if not bulkQuery:
-      if repsResult['OK']:
-        if repsResult['Value'].has_key('Successful'):
-          if repsResult['Value']['Successful'].has_key(lfns):
-            print self.pPrint.pformat(repsResult['Value']['Successful'][lfns])
+    if printOutput:
+      print self.pPrint.pformat(repsResult['Value'])
 
     return repsResult
 
   #############################################################################
-  def getMetadata(self,lfns):
+  def getMetadata(self,lfns,printOutput=False):
     """Obtain replica metadata from file catalogue client. Input LFN(s) can be string or list.
 
        Example usage:
@@ -375,7 +373,6 @@ class Dirac:
     if not self.fileCatalog:
       return self.__errorReport('File catalog client was not successfully imported')
 
-    bulkQuery = False
     if type(lfns)==type(" "):
       lfns = lfns.replace('LFN:','')
     elif type(lfns)==type([]):
@@ -395,12 +392,10 @@ class Dirac:
     if not repsResult['OK']:
       self.log.warn('Failed to retrieve file metadata from the catalogue')
       self.log.warn(repsResult['Message'])
+      return repsResult
 
-    if not bulkQuery:
-      if repsResult['OK']:
-        if repsResult['Value'].has_key('Successful'):
-          if repsResult['Value']['Successful'].has_key(lfns):
-            print self.pPrint.pformat(repsResult['Value']['Successful'][lfns])
+    if printOutput:
+      print self.pPrint.pformat(repsResult['Value'])
 
     return repsResult
 
@@ -575,6 +570,48 @@ class Dirac:
     return result
 
   #############################################################################
+  def getPhysicalFileAccessURL(self,pfn,storageElement,printOutput=False):
+    """Allows to retrieve an access URL for an PFN  given a valid DIRAC SE
+       name.  The SE is contacted directly for this information.
+
+       Example Usage:
+
+       >>> print dirac.getPhysicalFileAccessURL('srm://srm-lhcb.cern.ch/castor/cern.ch/grid/lhcb/data/CCRC08/DST/00000151/0000/00000151_00004848_2.dst','CERN_M-DST')
+      {'OK': True, 'Value':{'Failed': {},
+      'Successful': {'srm://srm-lhcb.cern.ch/castor/cern.ch/grid/lhcb/data/CCRC08/DST/00000151/0000/00000151_00004848_2.dst': {'RFIO': 'castor://...'}}}}
+
+       @param pfn: Physical File Name (PFN)
+       @type pfn: string or list
+       @param storageElement: DIRAC SE name e.g. CERN-RAW
+       @type storageElement: string
+       @return: S_OK,S_ERROR
+
+       @param printOutput: Optional flag to print result
+       @type printOutput: boolean
+
+    """
+    if type(pfn)==type(" "):
+      if re.search('LFN:',pfn):
+        return self.__errorReport('Expected PFN not LFN')
+      pfn = pfn.replace('PFN:','')
+    elif type(pfn)==type([]):
+      try:
+        pfn= [str(pfnName.replace('PFN:','')) for pfnName in pfn]
+      except Exception,x:
+        return self.__errorReport(str(x),'Expected strings for PFN(s)')
+    else:
+      return self.__errorReport('Expected single string for PFN')
+
+    result = self.rm.getPhysicalFileAccessUrl([pfn],storageElement)
+    if not result['OK']:
+      return self.__errorReport('Problem during getAccessURL call',result['Message'])
+    if not printOutput:
+      return result
+
+    print self.pPrint.pformat(result['Value'])
+    return result
+
+  #############################################################################
   def getPhysicalFileMetadata(self,pfn,storageElement,printOutput=False):
     """Allows to retrieve metadata for physical file(s) on a supplied storage
        element.  Contacts the site SRM endpoint and performs a gfal_ls behind
@@ -586,7 +623,7 @@ class Dirac:
        /lhcb/data/CCRC08/RAW/LHCb/CCRC/23341/023341_0000039571.raw','NIKHEF-RAW')
       {'OK': True, 'Value': {'Successful': {'srm://...': {'SRM2': 'rfio://...'}}, 'Failed': {}}}
 
-       @param lfn: Physical File Name (PFN / SURL)
+       @param lfn: Physical File Name (PFN)
        @type lfn: string or list
        @param storageElement: DIRAC SE name e.g. CERN-RAW
        @type storageElement: string
@@ -596,10 +633,9 @@ class Dirac:
        @type printOutput: boolean
 
     """
-    if re.search('LFN:',pfn):
-      return self.__errorReport('Expected PFN not LFN')
-
     if type(pfn)==type(" "):
+      if re.search('LFN:',pfn):
+        return self.__errorReport('Expected PFN not LFN')
       pfn = pfn.replace('PFN:','')
       pfn = [pfn]
     elif type(pfn)==type([]):
