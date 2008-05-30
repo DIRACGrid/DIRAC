@@ -1,10 +1,22 @@
 
-from GSI import crypto
+import os
+import GSI
 
-nid = crypto.create_oid( "1.2.42.42", "diracGroup", "DIRAC group" )
-crypto.add_x509_extension_alias( nid, 78 ) #Alias to netscape comment, text based extension
-nid = crypto.create_oid( "1.3.6.1.4.1.8005.100.100.5", "voms", "VOMS extension" )
-crypto.add_x509_extension_alias( nid, 78 ) #Alias to netscape comment, text based extension
+requiredGSIVersion = "0.3.1"
+if GSI.version.__version__ < requiredGSIVersion:
+  raise Exception( "pyGSI is not the latest version (installed %s required %s)" % ( GSI.version.__version__, requiredGSIVersion ) )
+
+GSI.SSL.set_thread_safe()
+
+nid = GSI.crypto.create_oid( "1.2.42.42", "diracGroup", "DIRAC group" )
+GSI.crypto.add_x509_extension_alias( nid, 78 ) #Alias to netscape comment, text based extension
+nid = GSI.crypto.create_oid( "1.3.6.1.4.1.8005.100.100.5", "voms", "VOMS extension" )
+GSI.crypto.add_x509_extension_alias( nid, 78 ) #Alias to netscape comment, text based extension
+
+import DIRAC
+from DIRAC import gConfig, gLogger
+
+g_SecurityConfPath = "/DIRAC/Security"
 
 
 def getProxyLocation():
@@ -31,20 +43,20 @@ def getCAsLocation():
   """
 
   #Grid-Security
-  retVal = gConfig.getOption( '%s/Grid-Security' % securityConfPath )
+  retVal = gConfig.getOption( '%s/Grid-Security' % g_SecurityConfPath )
   if retVal[ 'OK' ]:
     casPath = "%s/certificates" % retVal[ 'Value' ]
     gLogger.debug( "Trying %s for CAs" % casPath )
     if os.path.isdir( casPath ):
-      gLogger.debug( "Using %s/Grid-Security + /certificates as location for CA's" % securityConfPath )
+      gLogger.debug( "Using %s/Grid-Security + /certificates as location for CA's" % g_SecurityConfPath )
       return casPath
   #CAPath
-  retVal = gConfig.getOption( '%s/CALocation' % securityConfPath )
+  retVal = gConfig.getOption( '%s/CALocation' % g_SecurityConfPath )
   if retVal[ 'OK' ]:
     casPath = retVal[ 'Value' ]
     gLogger.debug( "Trying %s for CAs" % casPath )
     if os.path.isdir( casPath ):
-      gLogger.debug( "Using %s/CALocation as location for CA's" % securityConfPath )
+      gLogger.debug( "Using %s/CALocation as location for CA's" % g_SecurityConfPath )
       return casPath
   # Look up the X509_CERT_DIR environment variable
   if os.environ.has_key( 'X509_CERT_DIR' ):
@@ -68,25 +80,25 @@ def getCAsLocation():
 
 #TODO: Static depending on files specified on CS
 #Retrieve certificate
-def getHostCertificateAndKey():
+def getHostCertificateAndKeyLocation():
   """ Retrieve the host certificate files location
   """
 
   fileDict = {}
   for fileType in ( "cert", "key" ):
     #Direct file in config
-    retVal = gConfig.getOption( '%s/%sFile' % ( securityConfPath, fileType.capitalize() ) )
+    retVal = gConfig.getOption( '%s/%sFile' % ( g_SecurityConfPath, fileType.capitalize() ) )
     if retVal[ 'OK' ]:
-      gLogger.debug( 'Using %s/%sFile' % ( securityConfPath, fileType.capitalize() ) )
+      gLogger.debug( 'Using %s/%sFile' % ( g_SecurityConfPath, fileType.capitalize() ) )
       fileDict[ fileType ] = retVal[ 'Value' ]
       continue
     else:
-      gLogger.debug( '%s/%sFile is not defined' % ( securityConfPath, fileType.capitalize() ) )
+      gLogger.debug( '%s/%sFile is not defined' % ( g_SecurityConfPath, fileType.capitalize() ) )
     fileFound = False
     for filePrefix in ( "server", "host", "dirac", "service" ):
       #Possible grid-security's
       paths = []
-      retVal = gConfig.getOption( '%s/Grid-Security' % securityConfPath )
+      retVal = gConfig.getOption( '%s/Grid-Security' % g_SecurityConfPath )
       if retVal[ 'OK' ]:
         paths.append( retVal[ 'Value' ] )
       paths.append( "%s/etc/grid-security/" % DIRAC.rootPath )
@@ -105,7 +117,7 @@ def getHostCertificateAndKey():
     return False
   return ( fileDict[ "cert" ], fileDict[ "key" ] )
 
-def getCertificateAndKey():
+def getCertificateAndKeyLocation():
   """ Get the locations of the user X509 certificate and key pem files
   """
 
@@ -132,3 +144,6 @@ def getCertificateAndKey():
      return False
 
   return (certfile,keyfile)
+
+from DIRAC.Core.Utilities.Security.X509Certificate import X509Certificate
+from DIRAC.Core.Utilities.Security.X509Chain import X509Chain

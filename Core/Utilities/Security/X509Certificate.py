@@ -1,4 +1,7 @@
 
+import GSI
+from DIRAC import S_OK, S_ERROR
+
 class X509Certificate:
 
   def __init__( self, x509Obj = False ):
@@ -38,6 +41,13 @@ class X509Certificate:
       self.__certObj = GSI.crypto.load_certificate( GSI.crypto.FILETYPE_PEM, pemData )
     except Exception, e:
       return S_ERROR( "Can't load pem data: %s" % str(e) )
+    self.__valid = True
+    return S_OK()
+
+  def setCertificate( self, x509Obj ):
+    if type( x509Obj ) != GSI.crypto.X509Type:
+      return S_ERROR( "Object %s has to be of type X509" % str( X509Obj ) )
+    self.__certObj = x509Obj
     self.__valid = True
     return S_OK()
 
@@ -85,3 +95,55 @@ class X509Certificate:
     if not self.__valid:
       return S_ERROR( "No certificate loaded" )
     return S_OK( self.__certObj.get_issuer().one_line() )
+
+  def getSubjectNameObject(self):
+    """
+    Get subject name object
+    Return: S_OK( X509Name )/S_ERROR
+    """
+    if not self.__valid:
+      return S_ERROR( "No certificate loaded" )
+    return S_OK( self.__certObj.get_subject() )
+
+  def getIssuerNameObject(self):
+    """
+    Get issuer name object
+    Return: S_OK( X509Name )/S_ERROR
+    """
+    if not self.__valid:
+      return S_ERROR( "No certificate loaded" )
+    return S_OK( self.__certObj.get_issuer() )
+
+  def getDIRACGroup(self):
+    """
+    Get the dirac group if present
+    """
+    if not self.__valid:
+      return S_ERROR( "No certificate loaded" )
+    extList = self.__certObj.get_extensions()
+    for ext in extList:
+      if ext.get_sn() == "diracGroup":
+        return S_OK( ext.get_value() )
+    return S_OK()
+
+  def generateProxyRequest( self, bitStrength = 1024, limited = False ):
+    """
+    Generate a proxy request
+    Return S_OK( ( request, pkey ) ) / S_ERROR
+    """
+    if not self.__valid:
+      return S_ERROR( "No certificate loaded" )
+
+    request = GSI.crypto.X509Req()
+    certSubj = self.__certObj.get_subject().clone()
+    if limited:
+      certSubj.add_entry( "CN", "limited" )
+    else:
+      certSubj.add_entry( "CN", "proxy" )
+    request.set_subject( certSubj )
+
+    requestKey = GSI.crypto.PKey()
+    requestKey.generate_key( GSI.crypto.TYPE_RSA, bitsStrength )
+
+    request.set_pubkey( requestKey )
+    return S_OK( ( request, requestKey ) )

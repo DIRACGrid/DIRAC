@@ -106,9 +106,9 @@ class X509Chain:
     proxyCert = crypto.X509()
     cloneSubject = issuerCert.get_subject().clone()
     if limited:
-      setattr( cloneSubject, 'CN', 'limitedproxy' )
+      cloneSubject.add_entry( "CN", "limitedproxy" )
     else:
-      setattr( cloneSubject, 'CN', 'proxy' )
+      cloneSubject.add_entry( "CN", "proxy" )
     proxyCert.set_subject( cloneSubject )
 
     proxyCert.set_serial_number( issuerCert.get_serial_number() )
@@ -200,12 +200,7 @@ class X509Chain:
     retVal = self.isProxy()
     if not retVal['OK'] or not retVal[ 'Value' ]:
       return retVal
-    proxyCert = self.__certList[-2]
-    extList = proxyCert.get_extensions()
-    for ext in extList:
-      if ext.get_sn() == "diracGroup":
-        return S_OK( ext.get_value() )
-    return S_OK()
+    return self.__certList[-2].getDIRACGroup()
 
 
 
