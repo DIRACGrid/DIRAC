@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.29 2008/05/30 10:46:11 acasajus Exp $
-__RCSID__ = "$Id: AccountingDB.py,v 1.29 2008/05/30 10:46:11 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.30 2008/05/30 15:21:34 acasajus Exp $
+__RCSID__ = "$Id: AccountingDB.py,v 1.30 2008/05/30 15:21:34 acasajus Exp $"
 
 import datetime, time
 import types
@@ -394,10 +394,6 @@ class AccountingDB(DB):
       bucketStartTime = bucketInfo[0]
       bucketLength = bucketInfo[2]
       bucketProportion = bucketInfo[1]
-      #Calculate proportional values
-      proportionalValues = []
-      for value in valuesList:
-        proportionalValues.append( float(value) * bucketInfo[1] )
       #INSERT!
       retVal = self.__insertBucket( typeName,
                                     bucketStartTime,
@@ -469,7 +465,10 @@ class AccountingDB(DB):
       value = bucketValues[ pos ]
       fullFieldName = "`%s`.`%s`" % ( tableName, valueField )
       sqlValList.append( "%s=%s+(%s*%s)" % ( fullFieldName, fullFieldName, value, proportion ) )
-    sqlValList.append( "`%s`.`entriesInBucket`=`%s`.`entriesInBucket`+%s" % ( tableName, tableName, bucketValues[-1] ) )
+    sqlValList.append( "`%s`.`entriesInBucket`=`%s`.`entriesInBucket`+(%s*%s)" % ( tableName,
+                                                                                    tableName,
+                                                                                    bucketValues[-1],
+                                                                                    proportion ) )
     cmd += ", ".join( sqlValList )
     cmd += " WHERE `%s`.`startTime`='%s' AND `%s`.`bucketLength`='%s' AND " % (
                                                                             tableName,
@@ -484,7 +483,7 @@ class AccountingDB(DB):
     Insert a bucket when coming from the raw insert
     """
     sqlFields = [ 'startTime', 'bucketLength', 'entriesInBucket' ]
-    sqlValues = [ startTime, bucketLength, bucketValues[-1] ]
+    sqlValues = [ startTime, bucketLength, bucketValues[-1] * proportion ]
     for keyPos in range( len( self.dbCatalog[ typeName ][ 'keys' ] ) ):
       sqlFields.append( self.dbCatalog[ typeName ][ 'keys' ][ keyPos ] )
       sqlValues.append( keyValues[ keyPos ] )
@@ -739,19 +738,20 @@ class AccountingDB(DB):
     if not retVal[ 'OK' ]:
       return retVal
     connObj = retVal[ 'Value' ]
-    bucketTableName = self.__getTableName( "bucket", typeName )
     rawTableName = self.__getTableName( "type", typeName )
     retVal = self.__startTransaction( connObj )
     if not retVal[ 'OK' ]:
       return retVal
     gLogger.info( "Deleting buckets for %s" % typeName )
-    retVal = self._update( "DELETE FROM `%s`" % bucketTableName, conn = connObj )
+    retVal = self._update( "DELETE FROM `%s`" % self.__getTableName( "bucket", typeName ),
+                           conn = connObj )
     if not retVal[ 'OK' ]:
       return retVal
     #Generate the common part of the query
     #SELECT fields
     startTimeTableField = "`%s`.startTime" % rawTableName
     endTimeTableField = "`%s`.endTime" % rawTableName
+    #Select strings and sum select strings
     sqlSUMSelectList = []
     sqlSelectList = []
     for field in self.dbCatalog[ typeName ][ 'keys' ]:
@@ -772,35 +772,48 @@ class AccountingDB(DB):
     dateInclusiveConditions = []
     countedField = "`%s`.`%s`" % ( rawTableName, self.dbCatalog[ typeName ][ 'keys' ][0] )
     lastTime = Time.toEpoch()
+    #Iterate for all ranges
     for iRange in range( len( self.dbBucketsLength[ typeName ] ) ):
       bucketTimeSpan = self.dbBucketsLength[ typeName ][iRange][0]
       bucketLength = self.dbBucketsLength[ typeName ][iRange][1]
-      startT = lastTime - bucketTimeSpan
-      endT = lastTime
+      startRangeTime = lastTime - bucketTimeSpan
+      endRangeTime = lastTime
       lastTime -= bucketTimeSpan
       bucketizedStart = self.__bucketizeDataField( startTimeTableField, bucketLength )
       bucketizedEnd = self.__bucketizeDataField( endTimeTableField, bucketLength )
-      timeSelectString = "%s, %s" % ( bucketizedStart,
-                                      bucketizedEnd )
+
+      timeSelectString = "MIN(%s), MAX(%s)" % ( startTimeTableField,
+                                                endTimeTableField )
       #Is the last bucket?
       if iRange == len( self.dbBucketsLength[ typeName ] ) -1:
         whereString = "%s <= %d" % ( endTimeTableField,
-                                     endT )
+                                     endRangeTime )
       else:
         whereString = "%s > %d AND %s <= %d" % ( startTimeTableField,
-                                                  startT,
+                                                  startRangeTime,
                                                   endTimeTableField,
-                                                  endT )
-      dateInclusiveConditions.append( "( %s )" % whereString )
-      groupString = "%s, %s, %s" % ( groupingString, bucketizedStart, bucketizedEnd )
-      sqlQuery = "SELECT %s, %s, COUNT(%s) FROM `%s` WHERE %s GROUP BY %s" % ( timeSelectString,
+                                                  endRangeTime )
+      sameBucketCondition = "(%s) = (%s)" % ( bucketizedStart, bucketizedEnd )
+      #Records that fit in a bucket
+      sqlQuery = "SELECT %s, %s, COUNT(%s) FROM `%s` WHERE %s AND %s GROUP BY %s, %s" % ( timeSelectString,
                                                                                sumSelectString,
                                                                                countedField,
                                                                                rawTableName,
                                                                                whereString,
-                                                                               groupString )
-
+                                                                               sameBucketCondition,
+                                                                               groupingString,
+                                                                               bucketizedStart )
       sqlQueries.append( sqlQuery )
+      #Records that fit in more than one bucket
+      sqlQuery = "SELECT %s, %s, %s, 1 FROM `%s` WHERE %s AND NOT %s" % ( startTimeTableField,
+                                                                          endTimeTableField,
+                                                                          selectString,
+                                                                          rawTableName,
+                                                                          whereString,
+                                                                          sameBucketCondition
+                                                                        )
+      sqlQueries.append( sqlQuery )
+      dateInclusiveConditions.append( "( %s )" % whereString )
     #Query for records that are in between two ranges
     sqlQuery = "SELECT %s, %s, %s, 1 FROM `%s` WHERE NOT %s" % ( startTimeTableField,
                                                        endTimeTableField,
@@ -811,6 +824,7 @@ class AccountingDB(DB):
     gLogger.info( "Retrieving data for rebuilding buckets for type %s..." % ( typeName ) )
     queryNum = 0
     for sqlQuery in sqlQueries:
+      print sqlQuery
       gLogger.info( "Executing query #%s..." % queryNum )
       queryNum += 1
       retVal = self._query( sqlQuery, conn = connObj )
@@ -829,6 +843,7 @@ class AccountingDB(DB):
           self.__rollbackTransaction( connObj )
           return retVal
     return self.__commitTransaction( connObj )
+
 
   def __startTransaction( self, connObj ):
     return self._query( "START TRANSACTION", conn = connObj)
