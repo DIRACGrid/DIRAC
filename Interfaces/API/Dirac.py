@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.26 2008/05/27 19:14:56 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.27 2008/05/30 16:24:08 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.26 2008/05/27 19:14:56 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.27 2008/05/30 16:24:08 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -405,30 +405,138 @@ class Dirac:
     return repsResult
 
   #############################################################################
-  def addFile(self,lfn,fullPath,diracSE,fileGuid=None):
-    """Under development.
-       Add a file to a Grid SE.
+  def addFile(self,lfn,fullPath,diracSE,fileGuid=None,printOutput=False):
+    """Add a single file to Grid storage. lfn is the desired logical file name
+       for the file, fullPath is the local path to the file and diracSE is the
+       Storage Element name for the upload.  The fileGuid is optional, if not
+       specified a GUID will be generated on the fly.  If subsequent access
+       depends on the file GUID the correct one should
+
+       Example Usage:
+
+       >>> print dirac.addFile('/lhcb/user/p/paterson/myFile.tar.gz','myFile.tar.gz','CERN-USER')
+       {'OK': True, 'Value':{'Failed': {},
+        'Successful': {'/lhcb/user/p/paterson/test/myFile.tar.gz': {'put': 64.246301889419556,
+                                                                    'register': 1.1102778911590576}}}}
+
+       @param lfn: Logical File Name (LFN)
+       @type lfn: string
+       @param storageElement: DIRAC SE name e.g. CERN-USER
+       @type storageElement: string
+       @return: S_OK,S_ERROR
+
+       @param printOutput: Optional file GUID
+       @type printOutput: string
+       @param printOutput: Optional flag to print result
+       @type printOutput: boolean
     """
+    if type(lfn)==type(" "):
+      lfn= lfn.replace('LFN:','')
+    else:
+      return self.__errorReport('Expected single string or list of strings for LFN(s)')
+
+    if not os.path.exists(fullPath):
+      return self.__errorReport('File path %s must exist' %(fullPath))
+
+    if not os.path.isfile(fullPath):
+      return self.__errorReport('Expected path to file not %s' %(fullPath))
+
     result = self.rm.putAndRegister(lfn,fullPath,diracSE,guid=fileGuid)
-    self.log.verbose(result)
+    if not result['OK']:
+      return self.__errorReport('Problem during putAndRegister call',result['Message'])
+    if not printOutput:
+      return result
+
+    print self.pPrint.pformat(result['Value'])
     return result
 
   #############################################################################
-  def getFile(self,lfn):
-    """Under development.
-       LFN string / list, file brought to the local directory
+  def getFile(self,lfn,printOutput=False):
+    """Retrieve a single file or list of files from Grid storage to the current directory. lfn is the
+       desired logical file name for the file, fullPath is the local path to the file and diracSE is the
+       Storage Element name for the upload.  The fileGuid is optional, if not specified a GUID will be
+       generated on the fly.
+
+       Example Usage:
+
+       >>> print dirac.getFile('/lhcb/user/p/paterson/myFile.tar.gz')
+      {'OK': True, 'Value':{'Failed': {},
+      'Successful': {'/lhcb/user/p/paterson/test/myFile.tar.gz': '/afs/cern.ch/user/p/paterson/w1/DIRAC3/myFile.tar.gz'}}}
+
+       @param lfn: Logical File Name (LFN)
+       @type lfn: string
+       @return: S_OK,S_ERROR
+
+       @param printOutput: Optional flag to print result
+       @type printOutput: boolean
     """
+    if type(lfn)==type(" "):
+      lfn= lfn.replace('LFN:','')
+    elif type(lfn)==type([]):
+      try:
+        lfn= [str(lfnName.replace('LFN:','')) for lfnName in lfn]
+      except Exception,x:
+        return self.__errorReport(str(x),'Expected strings for LFN(s)')
+    else:
+      return self.__errorReport('Expected single string or list of strings for LFN(s)')
+
     result = self.rm.getFile(lfn)
-    self.log.verbose(result)
+    if not result['OK']:
+      return self.__errorReport('Problem during getFile call',result['Message'])
+    if not printOutput:
+      return result
+
+    print self.pPrint.pformat(result['Value'])
     return result
 
   #############################################################################
-  def replicateFile(self,lfn,destinationSE,sourceSE):
-    """Under development.
-       Replicate a file to another SE.
+  def replicateFile(self,lfn,destinationSE,sourceSE='',localCache='',printOutput=False):
+    """Replicate an existing file to another Grid SE. lfn is the desired logical file name
+       for the file to be replicated, destinationSE is the DIRAC Storage Element to create a
+       replica of the file at.  Optionally the source storage element and local cache for storing
+       the retrieved file for the new upload can be specified.
+
+       Example Usage:
+
+       >>> print dirac.replicateFile('/lhcb/user/p/paterson/myFile.tar.gz','CNAF-USER')
+      {'OK': True, 'Value':{'Failed': {},
+      'Successful': {'/lhcb/user/p/paterson/test/myFile.tar.gz': {'register': 0.44766902923583984,
+                                                                  'replicate': 56.42345404624939}}}}
+
+       @param lfn: Logical File Name (LFN)
+       @type lfn: string
+       @param storageElement: DIRAC SE name e.g. CERN-USER
+       @type storageElement: string
+       @return: S_OK,S_ERROR
+
+       @param printOutput: Optional source SE
+       @type printOutput: string
+       @param printOutput: Local cache
+       @type printOutput: string
+       @param printOutput: Optional flag to print result
+       @type printOutput: boolean
     """
-    result = self.rm.replicateAndRegister(lfn,destinationSE,sourceSE)
-    self.log.verbose(result)
+    if type(lfn)==type(" "):
+      lfn= lfn.replace('LFN:','')
+    else:
+      return self.__errorReport('Expected single string or list of strings for LFN(s)')
+
+    if not sourceSE:
+      sourceSE=''
+    if not localCache:
+      localCache=''
+    if not type(sourceSE)==type(" "):
+      return self.__errorReport('Expected string for source SE name')
+    if not type(localCache)==type(" "):
+      return self.__errorReport('Expected string for path to local cache')
+
+    result = self.rm.replicateAndRegister(lfn,destinationSE,sourceSE,'',localCache)
+    if not result['OK']:
+      return self.__errorReport('Problem during replicateFile call',result['Message'])
+    if not printOutput:
+      return result
+
+    print self.pPrint.pformat(result['Value'])
     return result
 
   #############################################################################
