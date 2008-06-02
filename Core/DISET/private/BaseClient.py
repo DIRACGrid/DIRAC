@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.37 2008/06/02 13:54:34 acasajus Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.37 2008/06/02 13:54:34 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.38 2008/06/02 16:13:33 acasajus Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.38 2008/06/02 16:13:33 acasajus Exp $"
 
 import sys
 import types
@@ -33,7 +33,8 @@ class BaseClient:
     self.serviceName = serviceName
     self.kwargs = kwargs
     #HACK: Should be False to allow group to travel in the proxy
-    self.__extraCredentials = gConfig.getValue( "/DIRAC/DefaultGroup", "lhcb_user" )
+    self.defaultUserGroup = gConfig.getValue( "/DIRAC/DefaultGroup", "lhcb_user" )
+    #HACK END
     self.__discoverSetup()
     self.__initStatus = self.__discoverURL()
     if not self.__initStatus[ 'OK' ]:
@@ -84,6 +85,10 @@ class BaseClient:
       self.__extraCredentials = self.kwargs[ self.KW_EXTRA_CREDENTIALS ]
     elif self.useCertificates:
         self.__extraCredentials = self.__defaultHostExtraCredentials
+    #HACK: This has to be deleted to group traveling in the proxy
+    else:
+        self.__extraCredentials = GridCredentials.getDIRACGroup( self.defaultUserGroup )
+    #HACK END
     #Are we delegating something?
     if self.KW_DELEGATED_DN in self.kwargs:
       if self.KW_DELEGATED_GROUP in self.kwargs:

@@ -1,14 +1,14 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/AuthManager.py,v 1.13 2008/06/02 13:28:38 acasajus Exp $
-__RCSID__ = "$Id: AuthManager.py,v 1.13 2008/06/02 13:28:38 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/AuthManager.py,v 1.14 2008/06/02 16:13:32 acasajus Exp $
+__RCSID__ = "$Id: AuthManager.py,v 1.14 2008/06/02 16:13:32 acasajus Exp $"
 
 import types
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.LoggingSystem.Client.Logger import gLogger
 
-gAuthLogger = gLogger.getSubLogger( "Authorization" )
-
 class AuthManager:
+
+  __authLogger = gLogger.getSubLogger( "Authorization" )
 
   def __init__( self, authSection ):
     """
@@ -32,24 +32,28 @@ class AuthManager:
     """
     #Check if query comes though a gateway/web server
     if self.forwardedCredentials( credDict ):
-      gAuthLogger.warn( "Query comes from a gateway" )
+      self.__authLogger.warn( "Query comes from a gateway" )
       self.unpackForwardedCredentials( credDict )
       return self.authQuery( methodQuery, credDict )
     else:
       if 'extraCredentials' in credDict :
         #Invalid forwarding?
         if type( credDict[ 'extraCredentials' ] ) not in  ( types.StringType, types.UnicodeType ):
-          gAuthLogger.warn( "The credentials seem to be forwarded by a host, but it is not a trusted one" )
+          self.__authLogger.warn( "The credentials seem to be forwarded by a host, but it is not a trusted one" )
           return False
         #Is it a host?
         elif credDict[ 'extraCredentials' ] == 'host':
           credDict[ 'group' ] = credDict[ 'extraCredentials' ]
           del( credDict[ 'extraCredentials' ] )
           return self.getHostNickName( credDict )
+    #HACK TO MAINTAIN COMPATIBILITY
+    if 'extraCredentials' in credDict and not 'group' in credDict:
+      credDict[ 'group' ]  = credDict[ 'extraCredentials' ]
+    #END OF HACK
     if 'DN' in credDict:
       #Get the username
       if not self.getUsername( credDict ):
-        gAuthLogger.warn( "User is invalid or does not belong to the group it's saying" )
+        self.__authLogger.warn( "User is invalid or does not belong to the group it's saying" )
         return False
     #Check everyone is authorized
     authGroups = self.getValidGroupsForMethod( methodQuery )
@@ -57,11 +61,11 @@ class AuthManager:
       return True
     #Check user is authenticated
     if not 'DN' in credDict:
-      gAuthLogger.warn( "User has no DN" )
+      self.__authLogger.warn( "User has no DN" )
       return False
     #Check authorized groups
     if not credDict[ 'group' ] in authGroups and not "authenticated" in authGroups:
-      gAuthLogger.warn( "User group is not authorized" )
+      self.__authLogger.warn( "User group is not authorized" )
       return False
     return True
 
@@ -80,14 +84,14 @@ class AuthManager:
       return False
     retVal = gConfig.getOptions( "/Hosts/" )
     if not retVal[ 'OK' ]:
-      gAuthLogger.warn( "Can't get list of host nicknames, rejecting" )
+      self.__authLogger.warn( "Can't get list of host nicknames, rejecting" )
       return False
     for nickname in retVal[ 'Value' ]:
       hostDN = gConfig.getValue( "/Hosts/%s" % nickname, "" )
       if hostDN == credDict[ 'DN' ]:
         credDict[ 'username' ] = nickname
         return True
-    gAuthLogger.warn( "Host DN is unknown %d" % credDict[ 'DN' ] )
+    self.__authLogger.warn( "Host DN is unknown %d" % credDict[ 'DN' ] )
     return False
 
   def getValidGroupsForMethod( self, method ):
@@ -101,7 +105,7 @@ class AuthManager:
     authGroups = gConfig.getValue( "%s/%s" % ( self.authSection, method ), [] )
     if not authGroups:
       defaultPath = "%s/Default" % "/".join( method.split( "/" )[:-1] )
-      gAuthLogger.warn( "Method %s has no groups defined, trying %s" % ( method, defaultPath ) )
+      self.__authLogger.warn( "Method %s has no groups defined, trying %s" % ( method, defaultPath ) )
       authGroups = gConfig.getValue( "%s/%s" % ( self.authSection, defaultPath ), [] )
     return authGroups
 
