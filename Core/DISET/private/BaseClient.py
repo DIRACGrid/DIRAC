@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.36 2008/06/02 13:28:38 acasajus Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.36 2008/06/02 13:28:38 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.37 2008/06/02 13:54:34 acasajus Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.37 2008/06/02 13:54:34 acasajus Exp $"
 
 import sys
 import types
@@ -32,7 +32,8 @@ class BaseClient:
       raise TypeError( "Service name expected to be a string. Received %s type %s" % ( str(serviceName), type(serviceName) ) )
     self.serviceName = serviceName
     self.kwargs = kwargs
-    self.__extraCredentials = False
+    #HACK: Should be False to allow group to travel in the proxy
+    self.__extraCredentials = gConfig.getValue( "/DIRAC/DefaultGroup", "lhcb_user" )
     self.__discoverSetup()
     self.__initStatus = self.__discoverURL()
     if not self.__initStatus[ 'OK' ]:
