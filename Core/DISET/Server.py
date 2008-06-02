@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.27 2008/05/23 13:33:04 acasajus Exp $
-__RCSID__ = "$Id: Server.py,v 1.27 2008/05/23 13:33:04 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.28 2008/06/02 13:28:38 acasajus Exp $
+__RCSID__ = "$Id: Server.py,v 1.28 2008/06/02 13:28:38 acasajus Exp $"
 
 import socket
 import sys
@@ -226,7 +226,8 @@ class Server:
         return
       proposalTuple = retVal[ 'Value' ]
       gLogger.debug( "Received action from client", str( proposalTuple ) )
-      clientTransport.setDisetGroup( proposalTuple[2] )
+      if proposalTuple[2]:
+        clientTransport.setExtraCredentials( proposalTuple[2] )
       requestedService = proposalTuple[0][0]
       #self.handlerManager.addMark( requestedService )
       if not self.__authorizeProposal( requestedService, proposalTuple[1], clientTransport ):

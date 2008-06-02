@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfoFactory.py,v 1.9 2008/03/12 20:18:25 acasajus Exp $
-__RCSID__ = "$Id: SocketInfoFactory.py,v 1.9 2008/03/12 20:18:25 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfoFactory.py,v 1.10 2008/06/02 13:28:37 acasajus Exp $
+__RCSID__ = "$Id: SocketInfoFactory.py,v 1.10 2008/06/02 13:28:37 acasajus Exp $"
 
 import socket
 import GSI
@@ -7,12 +7,6 @@ from DIRAC.Core.DISET.private.Transports.SSL.SocketInfo import SocketInfo
 from DIRAC.Core.DISET.private.Transports.SSL.SessionManager import gSessionManager
 from DIRAC.Core.DISET.private.Transports.SSL.FakeSocket import FakeSocket
 from DIRAC.Core.DISET.private.Transports.SSL.ThreadSafeSSLObject import ThreadSafeSSLObject
-
-requiredGSIVersion = "0.2"
-if GSI.version.__version__ < requiredGSIVersion:
-  raise Exception( "pyGSI is not the latest version (installed %s required %s)" % ( GSI.version.__version__, requiredGSIVersion ) )
-
-GSI.SSL.set_thread_safe()
 
 class SocketInfoFactory:
 

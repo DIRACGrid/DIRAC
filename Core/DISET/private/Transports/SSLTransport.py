@@ -1,11 +1,11 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSLTransport.py,v 1.16 2008/04/01 17:01:56 acasajus Exp $
-__RCSID__ = "$Id: SSLTransport.py,v 1.16 2008/04/01 17:01:56 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSLTransport.py,v 1.17 2008/06/02 13:28:37 acasajus Exp $
+__RCSID__ = "$Id: SSLTransport.py,v 1.17 2008/06/02 13:28:37 acasajus Exp $"
 
 import os
 from DIRAC.Core.DISET.private.Transports.BaseTransport import BaseTransport
 from DIRAC.LoggingSystem.Client.Logger import gLogger
 from DIRAC.Core.DISET.private.Transports.SSL.SocketInfoFactory import gSocketInfoFactory
-from DIRAC.Core.Utilities import GridCredentials
+from DIRAC.Core import Security
 
 class SSLTransport( BaseTransport ):
 
@@ -55,21 +55,27 @@ def checkSanity( *args, **kwargs ):
   Check that all ssl environment is ok
   """
   saneEnv = True
-  if not GridCredentials.getCAsLocation():
+  useCerts = False
+  if not Security.getCAsLocation():
     gLogger.error( "No CAs found!" )
     saneEnv = False
   if "useCertificates" in kwargs and kwargs[ 'useCertificates' ]:
-    certTuple = GridCredentials.getHostCertificateAndKey()
+    certTuple = Security.getHostCertificateAndKeyLocation()
     if not certTuple:
       gLogger.error( "No cert/key found! " )
       saneEnv = False
     else:
       certFile = certTuple[0]
+      useCerts = True
+  elif "proxyObject" in kwargs:
+    if not type( kwargs[ 'proxyObject' ] ) == Security.g_X509ChainType:
+      gLogger.error( "proxyObject parameter is not a valid type" )
+      saneEnv = False
   else:
     if "proxyLocation" in kwargs:
       certFile = kwargs[ "proxyLocation" ]
     else:
-      certFile = GridCredentials.getGridProxy()
+      certFile = Security.getGridProxy()
     if not certFile:
       gLogger.error( "No proxy found" )
       saneEnv = False
@@ -78,8 +84,16 @@ def checkSanity( *args, **kwargs ):
       saneEnv = False
 
   if saneEnv:
-    certObj = GridCredentials.X509Certificate()
-    certObj.loadFromFile( certFile )
+    if "proxyObject" in kwargs:
+      certObj = kwargs[ 'proxyObject' ]
+    else:
+      if useCerts:
+        certObj = Security.X509Certificate()
+        certObj.loadFromFile( certFile )
+      else:
+        certObj = Security.X509Chain()
+        certObj.loadChainFromFile( certFile )
+
     retVal = certObj.isExpired()
     if not retVal[ 'OK' ]:
       gLogger.error( "Can't verify file %s:%s" % ( certFile, retVal[ 'Message' ] ) )

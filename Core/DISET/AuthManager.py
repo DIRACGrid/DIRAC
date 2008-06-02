@@ -1,11 +1,12 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/AuthManager.py,v 1.12 2008/01/16 16:33:31 acasajus Exp $
-__RCSID__ = "$Id: AuthManager.py,v 1.12 2008/01/16 16:33:31 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/AuthManager.py,v 1.13 2008/06/02 13:28:38 acasajus Exp $
+__RCSID__ = "$Id: AuthManager.py,v 1.13 2008/06/02 13:28:38 acasajus Exp $"
 
 import types
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.LoggingSystem.Client.Logger import gLogger
 
+gAuthLogger = gLogger.getSubLogger( "Authorization" )
 
 class AuthManager:
 
@@ -31,17 +32,24 @@ class AuthManager:
     """
     #Check if query comes though a gateway/web server
     if self.forwardedCredentials( credDict ):
-      gLogger.debug( "Query comes from a gateway" )
+      gAuthLogger.warn( "Query comes from a gateway" )
       self.unpackForwardedCredentials( credDict )
       return self.authQuery( methodQuery, credDict )
     else:
-      if 'group' in credDict and type( credDict[ 'group' ] ) not in  ( types.StringType, types.UnicodeType ):
-        gLogger.warn( "The credentials seem to be forwarded by a host, but it is not a trusted one" )
-        return False
+      if 'extraCredentials' in credDict :
+        #Invalid forwarding?
+        if type( credDict[ 'extraCredentials' ] ) not in  ( types.StringType, types.UnicodeType ):
+          gAuthLogger.warn( "The credentials seem to be forwarded by a host, but it is not a trusted one" )
+          return False
+        #Is it a host?
+        elif credDict[ 'extraCredentials' ] == 'host':
+          credDict[ 'group' ] = credDict[ 'extraCredentials' ]
+          del( credDict[ 'extraCredentials' ] )
+          return self.getHostNickName( credDict )
     if 'DN' in credDict:
       #Get the username
       if not self.getUsername( credDict ):
-        gLogger.debug( "User is invalid or does not belong to the group it's saying" )
+        gAuthLogger.warn( "User is invalid or does not belong to the group it's saying" )
         return False
     #Check everyone is authorized
     authGroups = self.getValidGroupsForMethod( methodQuery )
@@ -49,13 +57,38 @@ class AuthManager:
       return True
     #Check user is authenticated
     if not 'DN' in credDict:
-      gLogger.debug( "User has no DN" )
+      gAuthLogger.warn( "User has no DN" )
       return False
     #Check authorized groups
     if not credDict[ 'group' ] in authGroups and not "authenticated" in authGroups:
-      gLogger.debug( "User group is not authorized" )
+      gAuthLogger.warn( "User group is not authorized" )
       return False
     return True
+
+  def getHostNickName( self, credDict ):
+    """
+    Discover the host nickname associated to the DN.
+    The nickname will be included in the credentials dictionary.
+
+    @type  credDict: dictionary
+    @param credDict: Credentials to ckeck
+    @return: Boolean specifying whether the nickname was found
+    """
+    if not "DN" in credDict:
+      return True
+    if not 'group' in credDict:
+      return False
+    retVal = gConfig.getOptions( "/Hosts/" )
+    if not retVal[ 'OK' ]:
+      gAuthLogger.warn( "Can't get list of host nicknames, rejecting" )
+      return False
+    for nickname in retVal[ 'Value' ]:
+      hostDN = gConfig.getValue( "/Hosts/%s" % nickname, "" )
+      if hostDN == credDict[ 'DN' ]:
+        credDict[ 'username' ] = nickname
+        return True
+    gAuthLogger.warn( "Host DN is unknown %d" % credDict[ 'DN' ] )
+    return False
 
   def getValidGroupsForMethod( self, method ):
     """
@@ -68,7 +101,7 @@ class AuthManager:
     authGroups = gConfig.getValue( "%s/%s" % ( self.authSection, method ), [] )
     if not authGroups:
       defaultPath = "%s/Default" % "/".join( method.split( "/" )[:-1] )
-      gLogger.debug( "Method %s has no groups defined, trying %s" % ( method, defaultPath ) )
+      gAuthLogger.warn( "Method %s has no groups defined, trying %s" % ( method, defaultPath ) )
       authGroups = gConfig.getValue( "%s/%s" % ( self.authSection, defaultPath ), [] )
     return authGroups
 
@@ -81,7 +114,7 @@ class AuthManager:
     @return: Boolean with the result
     """
     trustedHostsList = gConfig.getValue( "/DIRAC/Security/TrustedHosts", [] )
-    return 'group' in credDict and type( credDict[ 'group' ] ) == types.TupleType and \
+    return 'extraCredentials' in credDict and type( credDict[ 'extraCredentials' ] ) == types.TupleType and \
             'DN' in credDict and \
             credDict[ 'DN' ] in trustedHostsList
 
@@ -92,8 +125,10 @@ class AuthManager:
     @type  credDict: dictionary
     @param credDict: Credentials to unpack
     """
-    credDict[ 'DN' ] = credDict[ 'group' ][0]
-    credDict[ 'group' ] = credDict[ 'group' ][1]
+    credDict[ 'DN' ] = credDict[ 'extraCredentials' ][0]
+    credDict[ 'group' ] = credDict[ 'extraCredentials' ][1]
+    del( credDict[ 'extraCredentials' ] )
+
 
   def getUsername( self, credDict ):
     """
@@ -107,7 +142,7 @@ class AuthManager:
     if not "DN" in credDict:
       return True
     if not 'group' in credDict:
-      return False
+      credDict[ 'group' ] = gConfig.getValue( '/DIRAC/DefaultGroup', 'lhcb_user' )
     usersInGroup = gConfig.getValue( "/Groups/%s/users" % credDict[ 'group' ], [] )
     if not usersInGroup:
       return False

@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/GatewayDispatcher.py,v 1.1 2008/02/22 10:18:49 acasajus Exp $
-__RCSID__ = "$Id: GatewayDispatcher.py,v 1.1 2008/02/22 10:18:49 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/GatewayDispatcher.py,v 1.2 2008/06/02 13:28:38 acasajus Exp $
+__RCSID__ = "$Id: GatewayDispatcher.py,v 1.2 2008/06/02 13:28:38 acasajus Exp $"
 
 import DIRAC
 from DIRAC.LoggingSystem.Client.Logger import gLogger
@@ -42,6 +42,7 @@ class GatewayDispatcher( Dispatcher ):
         username = 'unauthenticated'
       gLogger.info( "Unauthorized query", "%s by %s" % ( action, username ) )
       return S_ERROR( "Unauthorized query to %s:%s" % ( service, action ) )
+    #TODO: ASK FOR A DELEGATION PROXY
     return S_OK()
 
   def instantiateHandler( self, serviceName, clientSetup, clientTransport ):

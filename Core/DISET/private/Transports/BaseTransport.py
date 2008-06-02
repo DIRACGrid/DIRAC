@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/BaseTransport.py,v 1.14 2007/12/19 18:01:51 acasajus Exp $
-__RCSID__ = "$Id: BaseTransport.py,v 1.14 2007/12/19 18:01:51 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/BaseTransport.py,v 1.15 2008/06/02 13:28:37 acasajus Exp $
+__RCSID__ = "$Id: BaseTransport.py,v 1.15 2008/06/02 13:28:37 acasajus Exp $"
 
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR
 from DIRAC.Core.Utilities import DEncode
@@ -25,8 +25,8 @@ class BaseTransport:
   def getConnectingCredentials( self ):
     return self.peerCredentials
 
-  def setDisetGroup( self, group ):
-    self.peerCredentials[ 'group' ] = group
+  def setExtraCredentials( self, group ):
+    self.peerCredentials[ 'extraCredentials' ] = group
 
   def serverMode( self ):
     return self.bServerMode

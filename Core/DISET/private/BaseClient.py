@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.35 2008/05/16 10:13:50 acasajus Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.35 2008/05/16 10:13:50 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.36 2008/06/02 13:28:38 acasajus Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.36 2008/06/02 13:28:38 acasajus Exp $"
 
 import sys
 import types
@@ -15,30 +15,31 @@ from DIRAC.Core.Utilities import GridCredentials
 
 class BaseClient:
 
-  defaultHostGroup = "hosts"
+  __defaultHostExtraCredentials = "hosts"
 
   KW_USE_CERTIFICATES = "useCertificates"
-  KW_GROUP_TO_USE = "groupToUse"
+  KW_EXTRA_CREDENTIALS = "extraCredentials"
   KW_TIMEOUT = "timeout"
   KW_SETUP = "setup"
   KW_DELEGATED_DN = "delegatedDN"
   KW_DELEGATED_GROUP = "delegatedGroup"
   KW_IGNORE_GATEWAYS = "ignoreGateways"
   KW_PROXY_LOCATION = "proxyLocation"
+  KW_PROXY_OBJECT = "proxyObject"
 
   def __init__( self, serviceName, **kwargs ):
     if type( serviceName ) != types.StringType:
       raise TypeError( "Service name expected to be a string. Received %s type %s" % ( str(serviceName), type(serviceName) ) )
     self.serviceName = serviceName
-    self.defaultUserGroup = gConfig.getValue( '/DIRAC/DefaultGroup', 'lhcb_user' )
     self.kwargs = kwargs
+    self.__extraCredentials = False
     self.__discoverSetup()
     self.__initStatus = self.__discoverURL()
     if not self.__initStatus[ 'OK' ]:
       return
     self.__discoverTimeout()
     self.__discoverCredentialsToUse()
-    self.__discoverGroup()
+    self.__discoverExtraCredentials()
     self.__initStatus = self.__checkTransportSanity()
     #HACK for thread-safety:
     self.__allowedThreadID = False
@@ -76,20 +77,17 @@ class BaseClient:
       self.useCertificates = gConfig._useServerCertificate()
       self.kwargs[ self.KW_USE_CERTIFICATES ] = self.useCertificates
 
-  def __discoverGroup( self ):
-    #Wich group to use?
-    if self.KW_GROUP_TO_USE in self.kwargs:
-      self.groupToUse = self.kwargs[ self.KW_GROUP_TO_USE ]
-    else:
-      if self.useCertificates:
-        self.groupToUse = self.defaultHostGroup
-      else:
-        self.groupToUse = GridCredentials.getDIRACGroup( self.defaultUserGroup )
+  def __discoverExtraCredentials( self ):
+    #Wich extra credentials to use?
+    if self.KW_EXTRA_CREDENTIALS in self.kwargs:
+      self.__extraCredentials = self.kwargs[ self.KW_EXTRA_CREDENTIALS ]
+    elif self.useCertificates:
+        self.__extraCredentials = self.__defaultHostExtraCredentials
     #Are we delegating something?
     if self.KW_DELEGATED_DN in self.kwargs:
       if self.KW_DELEGATED_GROUP in self.kwargs:
-        self.groupToUse = self.kwargs[ self.KW_DELEGATED_GROUP ]
-      self.groupToUse = ( self.kwargs[ self.KW_DELEGATED_DN ], self.groupToUse )
+        self.__extraCredentials = self.kwargs[ self.KW_DELEGATED_GROUP ]
+      self.__extraCredentials = ( self.kwargs[ self.KW_DELEGATED_DN ], self.__extraCredentials )
 
   def __findServiceURL( self ):
     for protocol in gProtocolDict.keys():
@@ -145,9 +143,11 @@ and this is thread %s
     return S_OK( transport )
 
   def _proposeAction( self, transport, sAction ):
-    stConnectionInfo = ( ( self.URLTuple[3], self.setup ), sAction, self.groupToUse )
+    stConnectionInfo = ( ( self.URLTuple[3], self.setup ), sAction, self.__extraCredentials )
     transport.sendData( S_OK( stConnectionInfo ) )
-    return transport.receiveData()
+    serverReturn = transport.receiveData()
+    #TODO: Check if delegation is required
+    return serverReturn
 
   def __checkTransportSanity( self ):
     saneEnv = gProtocolDict[ self.URLTuple[0] ][1]( self.URLTuple[1:3], **self.kwargs )
@@ -159,4 +159,4 @@ and this is thread %s
     return True
 
   def __str__( self ):
-    return "<DISET Client %s %s>" % ( self.serviceURL, self.groupToUse )
+    return "<DISET Client %s %s>" % ( self.serviceURL, self.__extraCredentials )

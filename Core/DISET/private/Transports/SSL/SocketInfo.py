@@ -1,12 +1,12 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfo.py,v 1.18 2008/03/12 20:18:25 acasajus Exp $
-__RCSID__ = "$Id: SocketInfo.py,v 1.18 2008/03/12 20:18:25 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfo.py,v 1.19 2008/06/02 13:28:37 acasajus Exp $
+__RCSID__ = "$Id: SocketInfo.py,v 1.19 2008/06/02 13:28:37 acasajus Exp $"
 
 import time
 import copy
 import os.path
 import GSI
 import DIRAC
-from DIRAC.Core.Utilities import GridCredentials
+from DIRAC.Core import Security
 from DIRAC.LoggingSystem.Client.Logger import gLogger
 
 class SocketInfo:
@@ -31,15 +31,17 @@ class SocketInfo:
     return self.infoDict[ 'localCredentialsLocation' ]
 
   def gatherPeerCredentials( self ):
-    peerCert = self.sslSocket.get_peer_certificate()
-    certSubject = peerCert.get_subject()
-    peerDN = self.__cleanDN( certSubject )
-    credDict = { 'DN' : peerDN, 'CN' : certSubject.commonName }
+    peerCert = Security.X509Certificate( self.sslSocket.get_peer_certificate() )
+    credDict = { 'DN' : self.__cleanDN( peerCert.getSubjectDN()[ 'Value' ] ),
+                 'CN' : peerCert.getSubjectNameObject()[ 'Value' ].commonName,
+                 'x509' : peerCert }
+    diracGroup = peerCert.getDIRACGroup()
+    if diracGroup[ 'OK' ] and diracGroup[ 'Value' ]:
+      credDict[ 'group' ] = diracGroup[ 'Value' ]
     self.infoDict[ 'peerCredentials' ] = credDict
     return credDict
 
-  def __cleanDN( self, certName ):
-    dn = certName.one_line()
+  def __cleanDN( self, dn ):
     #dn = str( certName )
     #dn = dn[ 18:-2]
     for proxyRubbish in ( "/CN=proxy", "/CN=limitedproxy" ):
@@ -91,14 +93,14 @@ class SocketInfo:
       self.sslContext = GSI.SSL.Context( GSI.SSL.TLSv1_CLIENT_METHOD )
     #self.sslContext.set_verify( SSL.VERIFY_PEER|SSL.VERIFY_FAIL_IF_NO_PEER_CERT, self.verifyCallback ) # Demand a certificate
     self.sslContext.set_verify( GSI.SSL.VERIFY_PEER|GSI.SSL.VERIFY_FAIL_IF_NO_PEER_CERT, None, serverContext ) # Demand a certificate
-    casPath = GridCredentials.getCAsLocation()
+    casPath = Security.getCAsLocation()
     if not casPath:
       DIRAC.abort( 10, "No valid CAs location found" )
     gLogger.debug( "CAs location is %s" % casPath )
     self.sslContext.load_verify_locations_path( casPath )
 
   def __generateContextWithCerts( self, serverContext = False ):
-    certKeyTuple = GridCredentials.getHostCertificateAndKey()
+    certKeyTuple = Security.getHostCertificateAndKeyLocation()
     if not certKeyTuple:
       DIRAC.abort( 10, "No valid certificate or key found" )
     self.setLocalCredentialsLocation( certKeyTuple )
@@ -113,7 +115,7 @@ class SocketInfo:
       if not os.path.isfile( proxyPath ):
         DIRAC.abort( 10, "Defined proxy is not a file" )
     else:
-      proxyPath = GridCredentials.getGridProxy()
+      proxyPath = Security.getProxyLocation()
       if not proxyPath:
         DIRAC.abort( 10, "No valid proxy found" )
     self.setLocalCredentialsLocation( ( proxyPath, proxyPath ) )
