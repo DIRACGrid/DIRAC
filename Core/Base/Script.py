@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Script.py,v 1.9 2008/04/22 12:50:11 acasajus Exp $
-__RCSID__ = "$Id: Script.py,v 1.9 2008/04/22 12:50:11 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Script.py,v 1.10 2008/06/02 18:04:13 acasajus Exp $
+__RCSID__ = "$Id: Script.py,v 1.10 2008/06/02 18:04:13 acasajus Exp $"
 
 import sys
 import os.path
@@ -45,3 +45,6 @@ def getExtraCLICFGFiles():
 def getUnprocessedSwitches():
   global localCfg
   return localCfg.getUnprocessedSwitches()
+
+def disableCS():
+  localCfg.disableCS()

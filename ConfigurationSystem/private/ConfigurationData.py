@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationData.py,v 1.14 2008/02/22 12:05:14 acasajus Exp $
-__RCSID__ = "$Id: ConfigurationData.py,v 1.14 2008/02/22 12:05:14 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationData.py,v 1.15 2008/06/02 18:04:13 acasajus Exp $
+__RCSID__ = "$Id: ConfigurationData.py,v 1.15 2008/06/02 18:04:13 acasajus Exp $"
 
 import os.path
 import zlib
@@ -125,7 +125,6 @@ class ConfigurationData:
       pass
     return self.dangerZoneEnd( None )
 
-
   def extractOptionFromCFG( self, path, cfg = False ):
     if not cfg:
       cfg = self.mergedCFG
@@ -151,6 +150,21 @@ class ConfigurationData:
           cfg.createNewSection( section )
         cfg = cfg[ section ]
       cfg.setOption( levelList[ -1 ], value )
+    finally:
+      self.dangerZoneEnd()
+    self.sync()
+
+  def deleteOptionInCFG( self, path, value, cfg = False ):
+    if not cfg:
+      cfg = self.localCFG
+    self.dangerZoneStart()
+    try:
+      levelList = [ level.strip() for level in path.split( "/" ) if level.strip() != "" ]
+      for section in levelList[:-1]:
+        if section not in cfg.listSections():
+          return
+        cfg = cfg[ section ]
+      cfg.deleteKey( levelList[ -1 ] )
     finally:
       self.dangerZoneEnd()
     self.sync()
@@ -227,6 +241,10 @@ class ConfigurationData:
                                   sServers,
                                   self.remoteCFG )
     self.sync()
+
+  def deleteLocalOption( self, optionPath ):
+    self.deleteOptionInCFG( optionPath,
+                                        self.localCFG )
 
   def getMasterServer( self ):
     return self.extractOptionFromCFG( "%s/MasterServer" % self.configurationPath,

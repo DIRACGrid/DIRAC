@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/LocalConfiguration.py,v 1.25 2008/04/28 10:12:00 acasajus Exp $
-__RCSID__ = "$Id: LocalConfiguration.py,v 1.25 2008/04/28 10:12:00 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/LocalConfiguration.py,v 1.26 2008/06/02 18:04:13 acasajus Exp $
+__RCSID__ = "$Id: LocalConfiguration.py,v 1.26 2008/06/02 18:04:13 acasajus Exp $"
 
 import sys
 import os
@@ -30,6 +30,7 @@ class LocalConfiguration:
     self.componentType = False
     self.loggingSection = "/DIRAC"
     self.initialized = False
+    self.csDisabled = False
 
   def __getAbsolutePath( self, optionPath ):
     if optionPath[0] == "/":
@@ -201,12 +202,15 @@ class LocalConfiguration:
 
     errorsList = self.__loadCFGFiles()
 
+    if self.csDisabled:
+      gConfigurationData.deleteLocalOption( "/DIRAC/Configuration/Servers" )
+
     if gConfigurationData.getServers():
       retVal = self.__getRemoteConfiguration()
       if not retVal[ 'OK' ]:
         return retVal
     else:
-      gLogger.info( "Running without remote configuration" )
+      gLogger.warn( "Running without remote configuration" )
 
     try:
       if self.componentType == "service":
@@ -243,6 +247,9 @@ class LocalConfiguration:
     if len( errorsList ) > 0:
       return S_ERROR( "\n%s" % "\n".join( errorsList ) )
     return S_OK()
+
+  def disableCS(self):
+    self.csDisabled = True
 
   def __getRemoteConfiguration( self ):
     if self.componentName == "Configuration/Server" :
