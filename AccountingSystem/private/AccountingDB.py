@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.30 2008/05/30 15:21:34 acasajus Exp $
-__RCSID__ = "$Id: AccountingDB.py,v 1.30 2008/05/30 15:21:34 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.31 2008/06/02 16:11:09 acasajus Exp $
+__RCSID__ = "$Id: AccountingDB.py,v 1.31 2008/06/02 16:11:09 acasajus Exp $"
 
 import datetime, time
 import types
@@ -483,7 +483,7 @@ class AccountingDB(DB):
     Insert a bucket when coming from the raw insert
     """
     sqlFields = [ 'startTime', 'bucketLength', 'entriesInBucket' ]
-    sqlValues = [ startTime, bucketLength, bucketValues[-1] * proportion ]
+    sqlValues = [ startTime, bucketLength, "%s * %s" % ( bucketValues[-1], proportion )]
     for keyPos in range( len( self.dbCatalog[ typeName ][ 'keys' ] ) ):
       sqlFields.append( self.dbCatalog[ typeName ][ 'keys' ][ keyPos ] )
       sqlValues.append( keyValues[ keyPos ] )
