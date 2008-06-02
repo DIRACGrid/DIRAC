@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSLTransport.py,v 1.17 2008/06/02 13:28:37 acasajus Exp $
-__RCSID__ = "$Id: SSLTransport.py,v 1.17 2008/06/02 13:28:37 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSLTransport.py,v 1.18 2008/06/02 13:53:29 acasajus Exp $
+__RCSID__ = "$Id: SSLTransport.py,v 1.18 2008/06/02 13:53:29 acasajus Exp $"
 
 import os
 from DIRAC.Core.DISET.private.Transports.BaseTransport import BaseTransport
@@ -75,7 +75,7 @@ def checkSanity( *args, **kwargs ):
     if "proxyLocation" in kwargs:
       certFile = kwargs[ "proxyLocation" ]
     else:
-      certFile = Security.getGridProxy()
+      certFile = Security.getProxyLocation()
     if not certFile:
       gLogger.error( "No proxy found" )
       saneEnv = False
