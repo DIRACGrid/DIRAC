@@ -144,6 +144,21 @@ def getCertificateAndKeyLocation():
 
   return (certfile,keyfile)
 
+def getDefaultProxyLocation():
+  """ Get the location of a possible new grid proxy file
+  """
+
+  for envVar in [ 'GRID_PROXY_FILE', 'X509_USER_PROXY' ]:
+    if os.environ.has_key( envVar ):
+      proxyPath = os.path.realpath( os.environ[ envVar ] )
+      return proxyPath
+
+  #/tmp/x509up_u<uid>
+  proxyName = "x509up_u%d" % os.getuid()
+  return "/tmp/%s" % proxyName
+
 from DIRAC.Core.Security.X509Certificate import X509Certificate
 from DIRAC.Core.Security.X509Chain import X509Chain
-g_X509ChainType = type( X509Chain)
+from DIRAC.Core.Security.X509Request import X509Request
+
+g_X509ChainType = type( X509Chain )

@@ -1,6 +1,7 @@
 
 import GSI
 from DIRAC import S_OK, S_ERROR
+from DIRAC.Core.Utilities import Time
 
 class X509Certificate:
 
@@ -129,21 +130,33 @@ class X509Certificate:
   def generateProxyRequest( self, bitStrength = 1024, limited = False ):
     """
     Generate a proxy request
-    Return S_OK( ( request, pkey ) ) / S_ERROR
+    Return S_OK( X509Request ) / S_ERROR
     """
     if not self.__valid:
       return S_ERROR( "No certificate loaded" )
 
+    from DIRAC.Core.Security.X509Request import X509Request
+
     request = GSI.crypto.X509Req()
     certSubj = self.__certObj.get_subject().clone()
     if limited:
-      certSubj.add_entry( "CN", "limited" )
+      certSubj.insert_entry( "CN", "limited" )
     else:
-      certSubj.add_entry( "CN", "proxy" )
+      certSubj.insert_entry( "CN", "proxy" )
     request.set_subject( certSubj )
 
     requestKey = GSI.crypto.PKey()
-    requestKey.generate_key( GSI.crypto.TYPE_RSA, bitsStrength )
+    requestKey.generate_key( GSI.crypto.TYPE_RSA, bitStrength )
 
     request.set_pubkey( requestKey )
-    return S_OK( ( request, requestKey ) )
+    return S_OK( X509Request( request, requestKey )  )
+
+  def getRemainingSecs( self ):
+    """
+    Get remaining lifetime in secs
+    """
+    if not self.__valid:
+      return S_ERROR( "No certificate loaded" )
+    notAfter = self.__certObj.get_not_after()
+    remaining = notAfter - Time.dateTime()
+    return S_OK( remaining.days * 86400 + remaining.seconds )
