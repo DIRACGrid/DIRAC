@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/AuthManager.py,v 1.14 2008/06/02 16:13:32 acasajus Exp $
-__RCSID__ = "$Id: AuthManager.py,v 1.14 2008/06/02 16:13:32 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/AuthManager.py,v 1.15 2008/06/03 14:32:16 acasajus Exp $
+__RCSID__ = "$Id: AuthManager.py,v 1.15 2008/06/03 14:32:16 acasajus Exp $"
 
 import types
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
@@ -9,6 +9,7 @@ from DIRAC.LoggingSystem.Client.Logger import gLogger
 class AuthManager:
 
   __authLogger = gLogger.getSubLogger( "Authorization" )
+  __hostsGroup = "hosts"
 
   def __init__( self, authSection ):
     """
@@ -35,26 +36,33 @@ class AuthManager:
       self.__authLogger.warn( "Query comes from a gateway" )
       self.unpackForwardedCredentials( credDict )
       return self.authQuery( methodQuery, credDict )
-    else:
-      if 'extraCredentials' in credDict :
-        #Invalid forwarding?
-        if type( credDict[ 'extraCredentials' ] ) not in  ( types.StringType, types.UnicodeType ):
-          self.__authLogger.warn( "The credentials seem to be forwarded by a host, but it is not a trusted one" )
-          return False
-        #Is it a host?
-        elif credDict[ 'extraCredentials' ] == 'host':
-          credDict[ 'group' ] = credDict[ 'extraCredentials' ]
-          del( credDict[ 'extraCredentials' ] )
-          return self.getHostNickName( credDict )
-    #HACK TO MAINTAIN COMPATIBILITY
-    if 'extraCredentials' in credDict and not 'group' in credDict:
-      credDict[ 'group' ]  = credDict[ 'extraCredentials' ]
-    #END OF HACK
-    if 'DN' in credDict:
-      #Get the username
-      if not self.getUsername( credDict ):
-        self.__authLogger.warn( "User is invalid or does not belong to the group it's saying" )
+    #Check for invalid forwarding
+    if 'extraCredentials' in credDict:
+      #Invalid forwarding?
+      if type( credDict[ 'extraCredentials' ] ) not in  ( types.StringType, types.UnicodeType ):
+        self.__authLogger.warn( "The credentials seem to be forwarded by a host, but it is not a trusted one" )
         return False
+    #Is it a host?
+    if 'extraCredentials' in credDict and credDict[ 'extraCredentials' ] == self.__hostsGroup:
+      #Get the nickname of the host
+      credDict[ 'group' ] = credDict[ 'extraCredentials' ]
+    #HACK TO MAINTAIN COMPATIBILITY
+    else:
+      if 'extraCredentials' in credDict and not 'group' in credDict:
+        credDict[ 'group' ]  = credDict[ 'extraCredentials' ]
+    #END OF HACK
+    #Get the username
+    if 'DN' in credDict:
+      #For host
+      if credDict[ 'group' ] == self.__hostsGroup:
+        if not self.getHostNickName( credDict ):
+          self.__authLogger.warn( "Host is invalid" )
+          return False
+      else:
+      #For users
+        if not self.getUsername( credDict ):
+          self.__authLogger.warn( "User is invalid or does not belong to the group it's saying" )
+          return False
     #Check everyone is authorized
     authGroups = self.getValidGroupsForMethod( methodQuery )
     if "any" in authGroups or "all" in authGroups:
@@ -65,7 +73,7 @@ class AuthManager:
       return False
     #Check authorized groups
     if not credDict[ 'group' ] in authGroups and not "authenticated" in authGroups:
-      self.__authLogger.warn( "User group is not authorized" )
+      self.__authLogger.warn( "Peer group is not authorized" )
       return False
     return True
 
