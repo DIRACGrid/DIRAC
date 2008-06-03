@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/Attic/dirac-proxy-init.py,v 1.1 2008/06/03 10:27:52 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/Attic/dirac-proxy-init.py,v 1.2 2008/06/03 12:04:05 acasajus Exp $
 # File :   dirac-proxy-init.py
 # Author : Adrian Casajus
 ########################################################################
-__RCSID__   = "$Id: dirac-proxy-init.py,v 1.1 2008/06/03 10:27:52 acasajus Exp $"
-__VERSION__ = "$Revision: 1.1 $"
+__RCSID__   = "$Id: dirac-proxy-init.py,v 1.2 2008/06/03 12:04:05 acasajus Exp $"
+__VERSION__ = "$Revision: 1.2 $"
 
 import sys
 from DIRACEnvironment import DIRAC
@@ -64,6 +64,13 @@ class Params:
     self.proxyLoc = arg
     return DIRAC.S_OK()
 
+  def showVersion( self, arg ):
+    print "Version:"
+    print " ", __RCSID__
+    print " ", __VERSION__
+    sys.exit(0)
+    return DIRAC.S_OK()
+
 params = Params()
 
 Script.registerSwitch( "v:", "valid=", "Valid HH:MM for the proxy. By default is 24 hours", params.setProxyLifeTime )
@@ -74,6 +81,7 @@ Script.registerSwitch( "d", "debug", "Enable debug output", params.setDebug )
 Script.registerSwitch( "c:", "cert=", "File to use as user certificate", params.setCertLocation )
 Script.registerSwitch( "k:", "key=", "File to use as user key", params.setKeyLocation )
 Script.registerSwitch( "u:", "out=", "File to write as proxy", params.setProxyLocation )
+Script.registerSwitch( "i", "version", "Print version", params.showVersion )
 
 Script.disableCS()
 Script.parseCommandLine()
