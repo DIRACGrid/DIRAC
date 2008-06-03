@@ -159,4 +159,4 @@ class X509Certificate:
       return S_ERROR( "No certificate loaded" )
     notAfter = self.__certObj.get_not_after()
     remaining = notAfter - Time.dateTime()
-    return S_OK( remaining.days * 86400 + remaining.seconds )
+    return S_OK( max( 0, remaining.days * 86400 + remaining.seconds ) )
