@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/Attic/dirac-proxy-init.py,v 1.2 2008/06/03 12:04:05 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/Attic/dirac-proxy-init.py,v 1.3 2008/06/03 14:34:00 acasajus Exp $
 # File :   dirac-proxy-init.py
 # Author : Adrian Casajus
 ########################################################################
-__RCSID__   = "$Id: dirac-proxy-init.py,v 1.2 2008/06/03 12:04:05 acasajus Exp $"
-__VERSION__ = "$Revision: 1.2 $"
+__RCSID__   = "$Id: dirac-proxy-init.py,v 1.3 2008/06/03 14:34:00 acasajus Exp $"
+__VERSION__ = "$Revision: 1.3 $"
 
 import sys
 from DIRACEnvironment import DIRAC
@@ -25,7 +25,7 @@ class Params:
   def setProxyLifeTime( self, arg ):
     try:
       fields = [ f.strip() for f in arg.split(":") ]
-      self.proxyLifeTime = fields[0] * 3600 + fields[1] * 60
+      self.proxyLifeTime = int( fields[0] ) * 3600 + int( fields[1] ) * 60
     except:
       print "Can't parse %s time! Is it a HH:MM?" % arg
       return DIRAC.S_ERROR( "Can't parse time argument" )
