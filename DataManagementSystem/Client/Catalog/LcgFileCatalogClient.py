@@ -96,6 +96,11 @@ class LcgFileCatalogClient(FileCatalogueBase):
     lfc.lfc_endtrans()
     self.transaction = False
 
+  def setAuthorizationId(self,dn):
+    """ Set authorization id for the proxy-less LFC communication """
+    lfc.lfc_client_setAuthorizationId(0,0,'GSI',dn)
+
+
   ####################################################################
   #
   # These are the methods for determining whether paths exist
