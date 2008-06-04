@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Subprocess.py,v 1.19 2008/05/26 15:39:58 acasajus Exp $
-__RCSID__ = "$Id: Subprocess.py,v 1.19 2008/05/26 15:39:58 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Subprocess.py,v 1.20 2008/06/04 05:36:56 rgracian Exp $
+__RCSID__ = "$Id: Subprocess.py,v 1.20 2008/06/04 05:36:56 rgracian Exp $"
 """
    DIRAC Wrapper to execute python and system commands with a wrapper, that might
    set a timeout.
@@ -47,7 +47,7 @@ gLogger = gLogger.getSubLogger( 'Subprocess' )
 
 class Subprocess:
 
-  def __init__( self, timeout = False, bufferLimit = 10485760 ):
+  def __init__( self, timeout = False, bufferLimit = 5242880 ):
     try:
       self.changeTimeout( timeout )
       self.bufferLimit = int( bufferLimit) # 5MB limit for data
