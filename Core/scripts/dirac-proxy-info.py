@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/Attic/dirac-proxy-info.py,v 1.1 2008/06/03 12:56:30 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/Attic/dirac-proxy-info.py,v 1.2 2008/06/04 16:24:48 acasajus Exp $
 # File :   dirac-proxy-init.py
 # Author : Adrian Casajus
 ########################################################################
-__RCSID__   = "$Id: dirac-proxy-info.py,v 1.1 2008/06/03 12:56:30 acasajus Exp $"
-__VERSION__ = "$Revision: 1.1 $"
+__RCSID__   = "$Id: dirac-proxy-info.py,v 1.2 2008/06/04 16:24:48 acasajus Exp $"
+__VERSION__ = "$Revision: 1.2 $"
 
 import sys
 import os.path
@@ -72,9 +72,11 @@ if not retVal[ 'OK' ]:
   print "Can't load %s: %s" % ( proxyLoc, retVal[ 'Message' ] )
   sys.exit(1)
 
-print "subject     : %s" % chain.getCertInChain().getSubjectDN()[ 'Value' ]
-print "issuer      : %s" % chain.getCertInChain().getIssuerDN()[ 'Value' ]
-print "identity    : %s" % chain.getCertInChain(-1).getSubjectDN()[ 'Value' ]
+lastCert = chain.getCertInChain()['Value']
+mainCert = chain.getCertInChain(-1)['Value']
+print "subject     : %s" % lastCert.getSubjectDN()[ 'Value' ]
+print "issuer      : %s" % lastCert.getIssuerDN()[ 'Value' ]
+print "identity    : %s" % mainCert.getSubjectDN()[ 'Value' ]
 group = chain.getDIRACGroup()[ 'Value' ]
 if not group:
   group = '<not set>'
