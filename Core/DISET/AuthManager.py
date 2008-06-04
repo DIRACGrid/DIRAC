@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/AuthManager.py,v 1.15 2008/06/03 14:32:16 acasajus Exp $
-__RCSID__ = "$Id: AuthManager.py,v 1.15 2008/06/03 14:32:16 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/AuthManager.py,v 1.16 2008/06/04 16:25:10 acasajus Exp $
+__RCSID__ = "$Id: AuthManager.py,v 1.16 2008/06/04 16:25:10 acasajus Exp $"
 
 import types
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
@@ -99,7 +99,7 @@ class AuthManager:
       if hostDN == credDict[ 'DN' ]:
         credDict[ 'username' ] = nickname
         return True
-    self.__authLogger.warn( "Host DN is unknown %d" % credDict[ 'DN' ] )
+    self.__authLogger.warn( "Host DN is unknown %s" % credDict[ 'DN' ] )
     return False
 
   def getValidGroupsForMethod( self, method ):
