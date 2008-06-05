@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/RRDManager.py,v 1.32 2008/05/28 12:53:44 acasajus Exp $
-__RCSID__ = "$Id: RRDManager.py,v 1.32 2008/05/28 12:53:44 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/RRDManager.py,v 1.33 2008/06/05 11:15:28 acasajus Exp $
+__RCSID__ = "$Id: RRDManager.py,v 1.33 2008/06/05 11:15:28 acasajus Exp $"
 import os
 import os.path
 import md5
@@ -183,8 +183,9 @@ class RRDManager:
       varStr += " 'CDEF:%s=PREV,UN,ac%sNOTUN,PREV,ac%sNOTUN,+,IF'" % ( entryName, entryName, entryName )
     return varStr
 
-  def __graphTimeComment( self ):
-    return " 'COMMENT:Generated on %s GMT'" % Time.toString().replace( ":", "\:" ).split( "." )[0]
+  def __graphTimeComment( self, fromEpoch, toEpoch ):
+    comStr =  " 'COMMENT:Generated on %s UTC'" % Time.toString().replace( ":", "\:" ).split( "." )[0]
+    comStr += " 'COMMENT:From %s to %s'" % ( Time.fromEpoch( fromEpoch ), Time.fromEpoch( toEpoch ) )
 
   def __getYScalingFactor( self, timeSpan, bucketLength, plotWidth ):
     expectedTimeSpan = plotWidth * bucketLength
@@ -219,7 +220,7 @@ class RRDManager:
         rrdCmd += " 'AREA:%s#%s:%s:STACK'" % ( idActivity, colorGen.getHexColor(), activity.getLabel().replace( ":", "\:" ) )
       else:
         rrdCmd += " 'LINE1:%s#%s:%s'" % ( idActivity, colorGen.getHexColor(), activity.getLabel().replace( ":", "\:" ) )
-    rrdCmd += self.__graphTimeComment()
+    rrdCmd += self.__graphTimeComment( fromSecs, toSecs )
     retVal = self.__exec( rrdCmd )
     if not retVal[ 'OK' ]:
       return retVal
@@ -249,7 +250,7 @@ class RRDManager:
       rrdCmd += " 'AREA:0#0000FF::STACK'"
     else:
       rrdCmd += " 'LINE1:0#0000FF'"
-    rrdCmd += self.__graphTimeComment()
+    rrdCmd += self.__graphTimeComment( fromSecs, toSecs )
     retVal = self.__exec( rrdCmd )
     if not retVal[ 'OK' ]:
       return retVal
