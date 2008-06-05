@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/AuthManager.py,v 1.18 2008/06/05 13:24:37 acasajus Exp $
-__RCSID__ = "$Id: AuthManager.py,v 1.18 2008/06/05 13:24:37 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/AuthManager.py,v 1.19 2008/06/05 17:30:33 acasajus Exp $
+__RCSID__ = "$Id: AuthManager.py,v 1.19 2008/06/05 17:30:33 acasajus Exp $"
 
 import types
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
@@ -98,12 +98,12 @@ class AuthManager:
       return True
     if not 'group' in credDict:
       return False
-    retVal = gConfig.getOptions( "/Hosts/" )
+    retVal = gConfig.getSections( "/Hosts/" )
     if not retVal[ 'OK' ]:
       self.__authLogger.warn( "Can't get list of host nicknames, rejecting" )
       return False
     for nickname in retVal[ 'Value' ]:
-      hostDN = gConfig.getValue( "/Hosts/%s" % nickname, "" )
+      hostDN = gConfig.getValue( "/Hosts/%s/DN" % nickname, "" )
       if hostDN == credDict[ 'DN' ]:
         credDict[ 'username' ] = nickname
         return True
