@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/AuthManager.py,v 1.17 2008/06/05 10:20:16 acasajus Exp $
-__RCSID__ = "$Id: AuthManager.py,v 1.17 2008/06/05 10:20:16 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/AuthManager.py,v 1.18 2008/06/05 13:24:37 acasajus Exp $
+__RCSID__ = "$Id: AuthManager.py,v 1.18 2008/06/05 13:24:37 acasajus Exp $"
 
 import types
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
@@ -37,7 +37,7 @@ class AuthManager:
     if 'group' in credDict:
       userString += " group=%s" % credDict[ 'group' ]
     if 'extraCredentials' in credDict:
-      userString += " extraCredentials=%s" % credDict[ 'extraCredentials' ]
+      userString += " extraCredentials=%s" % str( credDict[ 'extraCredentials' ] )
     self.__authLogger.warn( "Trying to authenticate %s" % userString )
     #Check if query comes though a gateway/web server
     if self.forwardedCredentials( credDict ):
