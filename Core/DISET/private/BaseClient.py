@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.39 2008/06/05 10:20:16 acasajus Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.39 2008/06/05 10:20:16 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.40 2008/06/05 15:20:45 acasajus Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.40 2008/06/05 15:20:45 acasajus Exp $"
 
 import sys
 import types
@@ -49,7 +49,7 @@ class BaseClient:
 
   def __discoverSetup(self):
     #Which setup to use?
-    if self.KW_SETUP in self.kwargs:
+    if self.KW_SETUP in self.kwargs and self.kwargs[ self.KW_SETUP ]:
       self.setup = str( self.kwargs[ self.KW_SETUP ] )
     else:
       self.setup = gConfig.getValue( "/DIRAC/Setup", "LHCb-Development" )
