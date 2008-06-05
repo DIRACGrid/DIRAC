@@ -412,14 +412,14 @@ class TransferDB(DB):
     for fileID in res['Value']:
       fileIDs.append(fileID[0])
     return S_OK(fileIDs)
-  
+
   def getSizeOfCompletedFiles(self,ftsReqID,completedFileIDs):
     req = "SELECT SUM(FileSize) FROM FileToFTS where FTSReqID = %s AND FileID IN (%s);" % (ftsReqID,intListToString(completedFileIDs))
     res = self._query(req)
     if not res['OK']:
       err = "TransferDB._getSizeOfCompletedFiles: Failed to get successful transfer size for FTSReq %s." % ftsReqID
       return S_ERROR('%s\n%s' % (err,res['Message']))
-    return S_OK(res['Value'][0][0]) 
+    return S_OK(res['Value'][0][0])
 
   def removeFilesFromFTSReq(self,ftsReqID):
     req = "DELETE FROM FileToFTS WHERE FTSReqID = %s;" % ftsReqID
@@ -479,6 +479,23 @@ class TransferDB(DB):
         channelDict[channelID]['SuccessfulFiles'] = 0
         channelDict[channelID]['FailedFiles'] = 0
     return S_OK(channelDict)
+
+  def getTransferDurations(self,channelID,startTime=None,endTime=None):
+    """ This obtains the duration of the successful transfers on the supplied channel
+    """
+    req = "SELECT Duration FROM FileToFTS WHERE ChannelID = %s and Duration > 0" % channelID
+    if startTime:
+      req = "%s AND SubmissionTime > '%s'" % req
+    if endTime:
+      req = "%s AND SubmissionTime < '%s'" % req
+    res = self._query(req)
+    if not res['OK']:
+      err = "TransferDB.getTransferDurations: Failed to obtain durations from FileToFTS"
+      return S_ERROR(err)
+    durations = []
+    for value in res['Value']:
+      durations.append(int(value[0]))
+    return S_OK(durations)
 
   #################################################################################
   # These are the methods for managing the FTSReqLogging table
@@ -747,7 +764,7 @@ class TransferDB(DB):
   def getAttributesForRequestList(self,reqIDList,attrList=[]):
     """ Get attributes for the requests in the the reqIDList.
         Returns an S_OK structure with a dictionary of dictionaries as its Value:
-        ValueDict[reqID][attribute_name] = attribute_value 
+        ValueDict[reqID][attribute_name] = attribute_value
     """
     return self.__getAttributesForList('Requests','RequestID',reqIDList,attrList)
 
@@ -766,13 +783,13 @@ class TransferDB(DB):
     return self.__getAttributesForList('Files','FileID',fileIDList,attrList)
 
   def getAttributesForDatasetList(self,datasetIDList,attrList=[]):
-    """ Get attributes for the datasets in the the datasetIDlist. 
+    """ Get attributes for the datasets in the the datasetIDlist.
         Returns an S_OK structure with a dictionary of dictionaries as its Value:
         ValueDict[datasetID][attribute_name] = attribute_value
     """
     return self.__getAttributesForList('Datasets','DatasetID',datasetIDList,attrList)
 
-    
+
   def __getAttributesForList(self,table,tableID,idList,attrList):
     attrNames = string.join(map(lambda x: str(x),attrList ),',')
     attr_tmp_list = attrList
@@ -796,7 +813,7 @@ class TransferDB(DB):
         retDict[int(rowID)] = reqDict
       return S_OK( retDict )
     except Exception,x:
-      return S_ERROR( 'TransferDB.__getAttributesForList: Failed\n%s'  % str(x) )    
+      return S_ERROR( 'TransferDB.__getAttributesForList: Failed\n%s'  % str(x) )
 
   def __selectFromTable(self,table,tableID,condDict,older,newer,orderAttribute,limit):
     condition = self.__buildCondition(condDict, older, newer)
@@ -852,11 +869,14 @@ class TransferDB(DB):
     return self.__getDistinctTableAttributes('Requests',attribute, condDict,older,newer)
 
   def getDistinctSubRequestAttributes(self,attribute, condDict = {}, older = None, newer=None):
-    return self.__getDistinctTableAttributes('SubRequests',attribute, condDict,older,newer)      
+    return self.__getDistinctTableAttributes('SubRequests',attribute, condDict,older,newer)
 
   def getDistinctFilesAttributes(self,attribute, condDict = {}, older = None, newer=None):
     return self.__getDistinctTableAttributes('Files',attribute, condDict,older,newer)
-  
+
+  def getDistinctChannelsAttributes(self,attribute,condDict = {}):
+    return self.__getDistinctTableAttributes('Channels', attribute, condDict)
+
   def __getDistinctTableAttributes(self,table,attribute, condDict = {}, older = None, newer=None):
     """ Get distinct values of the table attribute under specified conditions
     """
@@ -867,4 +887,5 @@ class TransferDB(DB):
       return result
     attr_list = [ x[0] for x in result['Value'] ]
     return S_OK(attr_list)
+
 
