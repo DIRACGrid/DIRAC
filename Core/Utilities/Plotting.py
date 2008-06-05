@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Plotting.py,v 1.1 2008/03/07 11:31:08 paterson Exp $
-__RCSID__ = "$Id: Plotting.py,v 1.1 2008/03/07 11:31:08 paterson Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Plotting.py,v 1.2 2008/06/05 16:47:48 acsmith Exp $
+__RCSID__ = "$Id: Plotting.py,v 1.2 2008/06/05 16:47:48 acsmith Exp $"
 """
    A simple set of wrapper functions for creating plots (based on the examples
    from the graph tool).
@@ -9,8 +9,61 @@ from graphs.common_graphs import PieGraph
 from graphs.common_graphs import BarGraph
 from graphs.common_graphs import CumulativeGraph
 from tools.common import expand_string
+from pylab import *
 
 import os,time
+
+class HistogramGraph(BarGraph):
+
+  def make_bottom_text(self):
+    """
+    Attempt to calculate the maximum, minimum, average, and current values
+    for the graph.  These statistics will be printed on the bottom of the
+    graph.
+    """
+    units = str(self.metadata.get('column_units','')).strip()
+    results = dict(self.parsed_data)
+    values = results.values()
+
+    try:
+      data_max = max(values)
+    except:
+      data_max = None
+    try:
+      data_min = min(values)
+    except:
+      data_min = None
+    try:
+      data_mean = mean(values)
+    except:
+      data_mean = None
+    try:
+      data_std = std(values)
+    except:
+      data_std = None
+
+    retval = ''
+    if data_max != None:
+      try:
+        retval += "Maximum: " + pretty_float( data_max ) + " " + units
+      except Exception, e:
+        pass
+    if data_min != None:
+      try:
+        retval += ", Minimum: " + pretty_float( data_min ) + " " + units
+      except Exception, e:
+        pass
+    if data_mean != None:
+      try:
+        retval += ", Mean: " + pretty_float( data_mean ) + " " + units
+      except Exception, e:
+        pass
+    if data_std != None:
+      try:
+        retval += ", Standard deviation: " + pretty_float( data_std )
+      except Exception, e:
+        pass
+    return retval
 
 #############################################################################
 def pieChart(data,metadata,path):
@@ -58,6 +111,23 @@ def cumulativePlot(data,metadata,path):
   if not os.path.exists(path):
     return S_ERROR('Requested file was not created')
 
+  return S_OK(path)
+
+#############################################################################
+def historgram(data,metadata,path):
+  """ Plot a histogram of the supplied data
+  """
+  try:
+    count, bins, patches = hist(data,100)
+    histData = {}
+    for i in range(len(bins)):
+      histData[bins[i]] = count[i]
+    hist = HistogramGraph()
+    hist(histData, path, metadata)
+  except Exception,x:
+    return errorReport(str(x),'Could not create histogram')
+  if not os.path.exists(path):
+    return S_ERROR('Requested file was not created')
   return S_OK(path)
 
 #############################################################################
