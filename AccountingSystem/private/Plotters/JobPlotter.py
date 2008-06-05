@@ -55,7 +55,7 @@ class JobPlotter(BasePlotter):
     return generateQualityPlot( filename, dataDict, metadata )
 
   def _plotCPUUsed( self, startTime, endTime, condDict, groupingFields, filename ):
-    selectFields = ( self._getSQLStringForGrouping( groupingFields) + ", %s, %s, SUM(%s)",
+    selectFields = ( self._getSQLStringForGrouping( groupingFields) + ", %s, %s, SUM(%s)/86400",
                      groupingFields + [ 'startTime', 'bucketLength',
                                     'CPUTime'
                                    ]
@@ -76,12 +76,12 @@ class JobPlotter(BasePlotter):
                  'starttime' : startTime,
                  'endtime' : endTime,
                  'span' : granularity,
-                 'ylabel' : "secs",
+                 'ylabel' : "days",
                  'is_cumulative' : True }
     return generateCumulativePlot( filename, dataDict, metadata )
 
   def _plotCPUUsage( self, startTime, endTime, condDict, groupingFields, filename ):
-    selectFields = ( self._getSQLStringForGrouping( groupingFields) + ", %s, %s, SUM(%s)",
+    selectFields = ( self._getSQLStringForGrouping( groupingFields) + ", %s, %s, SUM(%s)/86400",
                      groupingFields + [ 'startTime', 'bucketLength',
                                     'CPUTime'
                                    ]
@@ -102,7 +102,7 @@ class JobPlotter(BasePlotter):
                  'starttime' : startTime,
                  'endtime' : endTime,
                  'span' : granularity,
-                 'ylabel' : "secs" }
+                 'ylabel' : "days" }
     return generateTimedStackedBarPlot( filename, dataDict, metadata )
 
   def _plotTotalNumberOfJobs( self, startTime, endTime, condDict, groupingFields, filename ):
