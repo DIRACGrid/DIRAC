@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobManagerHandler.py,v 1.13 2008/04/30 13:11:17 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobManagerHandler.py,v 1.14 2008/06/05 09:04:51 atsareg Exp $
 ########################################################################
 
 """ JobManagerHandler is the implementation of the JobManager service
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: JobManagerHandler.py,v 1.13 2008/04/30 13:11:17 atsareg Exp $"
+__RCSID__ = "$Id: JobManagerHandler.py,v 1.14 2008/06/05 09:04:51 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -51,6 +51,7 @@ class JobManagerHandler( RequestHandler ):
     result = self.getRemoteCredentials()
     userDN = result['DN']
     userGroup = result['group']
+    clientSetup = self.serviceInfoDict['clientSetup']
 
     # Check job submission permission
     result = self.policy.getJobPolicy(userDN,userGroup)
@@ -80,6 +81,7 @@ class JobManagerHandler( RequestHandler ):
 
     classAdJob = ClassAd('['+JDL+']')
     classAdJob.insertAttributeInt('JobID',jobID)
+    classAdJob.insertAttributeString('DIRACSetup',clientSetup)
     
     # Force the owner name to be the nickname defined in the CS
     result = getNicknameForDN(userDN)
