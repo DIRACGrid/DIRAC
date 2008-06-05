@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/DataStoreClient.py,v 1.2 2008/04/04 16:24:05 acasajus Exp $
-__RCSID__ = "$Id: DataStoreClient.py,v 1.2 2008/04/04 16:24:05 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/DataStoreClient.py,v 1.3 2008/06/05 15:21:46 acasajus Exp $
+__RCSID__ = "$Id: DataStoreClient.py,v 1.3 2008/06/05 15:21:46 acasajus Exp $"
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -10,6 +10,9 @@ gAccountingSynchro = Synchronizer()
 class DataStoreClient:
 
   __registersList = []
+
+  def __init__( self, setup = False ):
+    self.__setup = setup
 
   def __checkBaseType( self, obj ):
     """
@@ -40,7 +43,10 @@ class DataStoreClient:
     """
     Send the registers in a bundle mode
     """
-    rpcClient = RPCClient( "Accounting/DataStore" )
+    if self.__setup:
+      rpcClient = RPCClient( "Accounting/DataStore", setup = self.__setup )
+    else:
+      rpcClient = RPCClient( "Accounting/DataStore" )
     while len( self.__registersList ) > 0:
       retVal = rpcClient.commitRegisters( self.__registersList[ :50 ] )
       if not retVal[ 'OK' ]:
