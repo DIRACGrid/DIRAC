@@ -105,7 +105,7 @@ class JobPlotter(BasePlotter):
                  'ylabel' : "secs" }
     return generateTimedStackedBarPlot( filename, dataDict, metadata )
 
-  def _plotNumberOfJobs( self, startTime, endTime, condDict, groupingFields, filename ):
+  def _plotTotalNumberOfJobs( self, startTime, endTime, condDict, groupingFields, filename ):
     selectFields = ( self._getSQLStringForGrouping( groupingFields) + ", %s, %s, SUM(%s)",
                      groupingFields + [ 'startTime', 'bucketLength',
                                     'entriesInBucket'
@@ -123,13 +123,38 @@ class JobPlotter(BasePlotter):
     self.stripDataField( dataDict, 0 )
     dataDict = self._acumulate( granularity, startTime, endTime, dataDict )
     gLogger.info( "Generating plot", "%s with granularity of %s" % ( filename, granularity ) )
-    metadata = { 'title' : 'Jobs by %s' % " -> ".join( groupingFields ) ,
+    metadata = { 'title' : 'Total Jobs by %s' % " -> ".join( groupingFields ) ,
                  'starttime' : startTime,
                  'endtime' : endTime,
                  'span' : granularity,
                  'ylabel' : "jobs",
                  'is_cumulative' : True }
     return generateCumulativePlot( filename, dataDict, metadata )
+
+  def _plotNumberOfJobs( self, startTime, endTime, condDict, groupingFields, filename ):
+    selectFields = ( self._getSQLStringForGrouping( groupingFields) + ", %s, %s, SUM(%s)",
+                     groupingFields + [ 'startTime', 'bucketLength',
+                                    'entriesInBucket'
+                                   ]
+                   )
+    retVal = self._getTypeData( startTime,
+                                endTime,
+                                selectFields,
+                                condDict,
+                                groupingFields,
+                                {} )
+    if not retVal[ 'OK' ]:
+      return retVal
+    dataDict, granularity = retVal[ 'Value' ]
+    self.stripDataField( dataDict, 0 )
+    dataDict = self._fillWithZero( granularity, startTime, endTime, dataDict )
+    gLogger.info( "Generating plot", "%s with granularity of %s" % ( filename, granularity ) )
+    metadata = { 'title' : 'Jobs by %s' % " -> ".join( groupingFields ) ,
+                 'starttime' : startTime,
+                 'endtime' : endTime,
+                 'span' : granularity,
+                 'ylabel' : "jobs"  }
+    return generateTimedStackedBarPlot( filename, dataDict, metadata )
 
   def _plotInputSandboxSize( self, startTime, endTime, condDict, groupingFields, filename ):
     return self.__plotFieldSizeinMB( startTime, endTime,
