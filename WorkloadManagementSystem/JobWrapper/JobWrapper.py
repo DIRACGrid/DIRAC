@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.38 2008/05/22 17:59:03 paterson Exp $
+# $Id: JobWrapper.py,v 1.39 2008/06/05 14:08:42 paterson Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.38 2008/05/22 17:59:03 paterson Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.39 2008/06/05 14:08:42 paterson Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -801,9 +801,14 @@ class JobWrapper:
     return S_OK()
 
   #############################################################################
-  def sendWMSAccounting(self):
+  def sendWMSAccounting(self,status='',minorStatus=''):
     """Send WMS accounting data.
     """
+    if status:
+      self.wmsMajorStatus = status
+    if minorStatus:
+      self.wmsMinorStatus = minorStatus
+
     self.accountingReport.setEndTime()
     #CPUTime and ExecTime
     if 'CPU' in EXECUTION_RESULT:
