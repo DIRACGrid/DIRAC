@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Plotting.py,v 1.2 2008/06/05 16:47:48 acsmith Exp $
-__RCSID__ = "$Id: Plotting.py,v 1.2 2008/06/05 16:47:48 acsmith Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Plotting.py,v 1.3 2008/06/05 17:07:36 acsmith Exp $
+__RCSID__ = "$Id: Plotting.py,v 1.3 2008/06/05 17:07:36 acsmith Exp $"
 """
    A simple set of wrapper functions for creating plots (based on the examples
    from the graph tool).
@@ -22,26 +22,10 @@ class HistogramGraph(BarGraph):
     graph.
     """
     units = str(self.metadata.get('column_units','')).strip()
-    results = dict(self.parsed_data)
-    values = results.values()
-
-    try:
-      data_max = max(values)
-    except:
-      data_max = None
-    try:
-      data_min = min(values)
-    except:
-      data_min = None
-    try:
-      data_mean = mean(values)
-    except:
-      data_mean = None
-    try:
-      data_std = std(values)
-    except:
-      data_std = None
-
+    data_max = float(self.metadata.get('max_value',None))
+    data_min = float(self.metadata.get('min_value',None))
+    data_mean = float(self.metadata.get('mean_value',None))
+    data_std = float(self.metadata.get('std_value',None))
     retval = ''
     if data_max != None:
       try:
@@ -119,11 +103,29 @@ def historgram(data,metadata,path):
   """
   try:
     count, bins, patches = hist(data,100)
+    try:
+      metadata['max_value'] = max(values)
+    except:
+      pass
+    try:
+      metadata['min_value'] = min(values)
+    except:
+      pass
+    try:
+      metadata['mean_value'] = mean(values)
+    except:
+      pass
+    try:
+      metadata['std_value'] = std(values)
+    except:
+      pass
+
     histData = {}
     for i in range(len(bins)):
       histData[bins[i]] = count[i]
     hist = HistogramGraph()
     hist(histData, path, metadata)
+
   except Exception,x:
     return errorReport(str(x),'Could not create histogram')
   if not os.path.exists(path):
