@@ -10,9 +10,17 @@ class X509Chain:
 
   __validExtensionValueTypes = ( types.StringType, types.UnicodeType )
 
-  def __init__(self):
-    self.__loadedChain = False
-    self.__loadedPKey = False
+  def __init__( self, certList = False, keyObj = False ):
+    if certList:
+      self.__loadedChain = True
+      self.__certList = certList
+    else:
+      self.__loadedChain = False
+    if keyObj:
+      self.__loadedPKey = True
+      self.__keyObj = keyObj
+    else:
+      self.__loadedPKey = False
 
   def loadChainFromFile( self, chainLocation ):
     """
@@ -116,7 +124,23 @@ class X509Chain:
     """
     if not self.__loadedChain:
       return S_ERROR( "No chain loaded" )
-    return X509Certificate( self.__certList[ certPos ] )
+    return S_OK( X509Certificate( self.__certList[ certPos ] ) )
+
+  def getPKeyObj( self ):
+    """
+    Get the pkey obj
+    """
+    if not self.__loadedPKey:
+      return S_ERROR( "No pkey loaded" )
+    return S_OK( self.__keyObj )
+
+  def getCertList( self ):
+    """
+    Get the cert list
+    """
+    if not self.__loadedChain:
+      return S_ERROR( "No chain loaded" )
+    return S_OK( self.__certList )
 
   def getNumCertsInChain( self ):
     """
@@ -124,7 +148,7 @@ class X509Chain:
     """
     if not self.__loadedChain:
       return S_ERROR( "No chain loaded" )
-    return len( self.__certList )
+    return S_OK( len( self.__certList ) )
 
   def generateProxyToString( self, lifeTime, diracGroup = False, strength = 1024, limited = False ):
     """
@@ -219,6 +243,7 @@ class X509Chain:
     proxyCert = self.__certList[ certId ]
     proxySubject = proxyCert.get_subject()
     if not proxyCert.verify( issuerCert.get_pubkey() ):
+      ret = S_OK( False )
       ret[ 'Message' ] = "Signature mismatch\n Issuer %s Proxy %s" % ( issuerSubject.one_line(),
                                                                        proxySubject.one_line() )
       return ret
@@ -246,7 +271,7 @@ class X509Chain:
     retVal = self.isProxy()
     if not retVal['OK'] or not retVal[ 'Value' ]:
       return retVal
-    return self.getCertInChain( -2 ).getDIRACGroup()
+    return self.getCertInChain( -2 )[ 'Value' ].getDIRACGroup()
 
   def isExpired( self ):
     """
@@ -277,7 +302,7 @@ class X509Chain:
     """
     if not self.__loadedChain:
       return S_ERROR( "No chain loaded" )
-    x509 = self.getCertInChain(0)
+    x509 = self.getCertInChain(0)[ 'Value' ]
     return x509.generateProxyRequest( bitStrength, limited )
 
   def generateChainFromRequestString( self, pemData, lifeTime = 86400 ):
@@ -320,7 +345,7 @@ class X509Chain:
     """
     if not self.__loadedChain:
       return S_ERROR( "No chain loaded" )
-    return self.getCertInChain(0).getRemainingSecs()
+    return self.getCertInChain(0)[ 'Value' ].getRemainingSecs()
 
   def dumpAllToString( self ):
     """
@@ -330,9 +355,9 @@ class X509Chain:
       return S_ERROR( "No chain loaded" )
     buffer = crypto.dump_certificate( crypto.FILETYPE_PEM, self.__certList[0] )
     if self.__loadedPKey:
-      buffer += crypto.dump_pkey( crypto.FILETYPE_PEM, self.__keyObj )
+      buffer += crypto.dump_privatekey( crypto.FILETYPE_PEM, self.__keyObj )
     for i in range( 1, len( self.__certList ) ):
-      buffer += crypto.dump_certificate( crypto.FILETYPE_PEM, self.__certList[1] )
+      buffer += crypto.dump_certificate( crypto.FILETYPE_PEM, self.__certList[i] )
     return S_OK( buffer )
 
   def dumpChainToString( self ):
@@ -351,4 +376,18 @@ class X509Chain:
     """
     if not self.__loadedPKey:
       return S_ERROR( "No chain loaded" )
-    return S_OK( crypto.dump_pkey( crypto.FILETYPE_PEM, self.__keyObj ) )
+    return S_OK( crypto.dump_privatekey( crypto.FILETYPE_PEM, self.__keyObj ) )
+
+  def __str__(self):
+    repStr = "<X509Chain"
+    if self.__loadedChain:
+      repStr += " %s certs " % len( self.__certList )
+      for cert in self.__certList:
+        repStr += "[%s]" % cert.get_subject().one_line()
+    if self.__loadedPKey:
+      repStr += " with key"
+    repStr += ">"
+    return repStr
+
+  def __repr__(self):
+    return self.__str__()

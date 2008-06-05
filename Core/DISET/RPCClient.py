@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RPCClient.py,v 1.5 2008/05/16 10:13:24 acasajus Exp $
-__RCSID__ = "$Id: RPCClient.py,v 1.5 2008/05/16 10:13:24 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RPCClient.py,v 1.6 2008/06/05 10:20:16 acasajus Exp $
+__RCSID__ = "$Id: RPCClient.py,v 1.6 2008/06/05 10:20:16 acasajus Exp $"
 
 from DIRAC.Core.DISET.private.InnerRPCClient import InnerRPCClient
 
@@ -14,6 +14,9 @@ class _MagicMethod:
 
   def __call__(self, *args ):
       return self.__doRPCFunc( self.__remoteFuncName, args )
+
+  def __str__( self ):
+    return "<RPCClient method %s>" % self.__remoteFuncName
 
 class RPCClient:
 

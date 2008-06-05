@@ -127,7 +127,10 @@ class X509Certificate:
         return S_OK( ext.get_value() )
     return S_OK()
 
-  def generateProxyRequest( self, bitStrength = 1024, limited = False ):
+  def __proxyExtensionList(self):
+    return [ GSI.crypto.X509Extension( 'keyUsage', 'critical, digitalSignature, keyEncipherment, dataEncipherment' ) ]
+
+  def generateProxyRequest( self, bitStrength = 1024, forceLimited = False ):
     """
     Generate a proxy request
     Return S_OK( X509Request ) / S_ERROR
@@ -139,11 +142,13 @@ class X509Certificate:
 
     request = GSI.crypto.X509Req()
     certSubj = self.__certObj.get_subject().clone()
-    if limited:
-      certSubj.insert_entry( "CN", "limited" )
+    lastEntry = certSubj.get_entry( certSubj.num_entries() -1 )
+    if forceLimited or ( lastEntry[0] == 'CN' and lastEntry[1] == 'limitedproxy' ):
+      certSubj.insert_entry( "CN", "limitedproxy" )
     else:
       certSubj.insert_entry( "CN", "proxy" )
     request.set_subject( certSubj )
+    request.add_extensions( self.__proxyExtensionList() )
 
     requestKey = GSI.crypto.PKey()
     requestKey.generate_key( GSI.crypto.TYPE_RSA, bitStrength )

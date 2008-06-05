@@ -1,35 +1,57 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/GatewayDispatcher.py,v 1.2 2008/06/02 13:28:38 acasajus Exp $
-__RCSID__ = "$Id: GatewayDispatcher.py,v 1.2 2008/06/02 13:28:38 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/GatewayDispatcher.py,v 1.3 2008/06/05 10:20:16 acasajus Exp $
+__RCSID__ = "$Id: GatewayDispatcher.py,v 1.3 2008/06/05 10:20:16 acasajus Exp $"
 
 import DIRAC
-from DIRAC.LoggingSystem.Client.Logger import gLogger
-from DIRAC.Core.DISET.AuthManager import AuthManager
-from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
-from DIRAC.Core.DISET.private.Dispatcher import Dispatcher
+from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection
+from DIRAC.Core import Security
+
+from DIRAC.Core.DISET.AuthManager import AuthManager
+from DIRAC.Core.DISET.private.Dispatcher import Dispatcher
+from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.Core.DISET.private.BaseClient import BaseClient
 
 class GatewayDispatcher( Dispatcher ):
 
   gatewayServiceName = "Framework/Gateway"
 
   def __init__( self, serviceCfgList ):
-    self.servicesDict = {}
-    for serviceCfg in serviceCfgList:
-      self.servicesDict[ serviceCfg.getName() ] = { 'cfg' : serviceCfg }
+    Dispatcher.__init__( self, serviceCfgList )
 
-  def getHandlerInfo( self, serviceName ):
-    return self.servicesDict[ self.gatewayServiceName ][ 'handlerInfo' ]
+  def loadHandlers( self ):
+    """
+    No handler to load for the gateway
+    """
+    return S_OK()
 
-  def getServiceInfo( self, serviceName ):
-    return dict( self.servicesDict[ self.gatewayServiceName ][ 'serviceInfo' ] )
+  def initializeHandlers( self ):
+    """
+    No static initialization
+    """
+    return S_OK()
 
-  def lock( self, serviceName ):
-    self.servicesDict[ self.gatewayServiceName ][ 'lockManager' ].lockGlobal()
+  def _lock( self, svcName ):
+    pass
 
-  def unlock( self, serviceName ):
-    self.servicesDict[ self.gatewayServiceName ][ 'lockManager' ].unlockGlobal()
+  def _unlock( self, svcName ):
+    pass
 
-  def authorizeAction( self, serviceName, action, credDict ):
+  def _authorizeClientProposal( self, service, actionTuple, clientTransport ):
+    """
+    Authorize the action being proposed by the client
+    """
+    if actionTuple[0] == 'RPC':
+      action = actionTuple[1]
+    else:
+      action = "%s/%s" % actionTuple
+    credDict = clientTransport.getConnectingCredentials()
+    retVal = self._authorizeAction( service, action, credDict )
+    if not retVal[ 'OK' ]:
+      clientTransport.sendData( retVal )
+      return False
+    return True
+
+  def _authorizeAction( self, serviceName, action, credDict ):
     try:
       authManager = AuthManager( "%s/Authorization" % getServiceSection( serviceName ) )
     except:
@@ -40,21 +62,87 @@ class GatewayDispatcher( Dispatcher ):
         username = credDict[ 'username' ]
       else:
         username = 'unauthenticated'
-      gLogger.info( "Unauthorized query", "%s by %s" % ( action, username ) )
-      return S_ERROR( "Unauthorized query to %s:%s" % ( service, action ) )
-    #TODO: ASK FOR A DELEGATION PROXY
+      gLogger.info( "Unauthorized query", "to %s" % action )
+      return S_ERROR( "Unauthorized query to %s:%s" % ( serviceName, action ) )
     return S_OK()
 
-  def instantiateHandler( self, serviceName, clientSetup, clientTransport ):
+  def _executeAction( self, proposalTuple, clientTransport ):
     """
     Execute an action
     """
-    serviceInfoDict = self.getServiceInfo( serviceName )
-    handlerDict = self.getHandlerInfo( serviceName )
-    serviceInfoDict[ 'clientSetup' ] = clientSetup
-    serviceInfoDict[ 'serviceName' ] = serviceName
-    handlerInstance = handlerDict[ "handlerClass" ]( serviceInfoDict,
-                    clientTransport,
-                    handlerDict[ "lockManager" ] )
-    handlerInstance.initialize()
-    return handlerInstance
+    credDict = clientTransport.getConnectingCredentials()
+    retVal = self.__checkDelegation( clientTransport )
+    if not retVal[ 'OK' ]:
+      return retVal
+    delegatedChain = retVal[ 'Value' ]
+    #Generate basic init args
+    targetService = proposalTuple[0][0]
+    clientInitArgs = {
+                        BaseClient.KW_SETUP : proposalTuple[0][1],
+                        BaseClient.KW_TIMEOUT : 600,
+                        BaseClient.KW_IGNORE_GATEWAYS : True,
+                        BaseClient.KW_USE_CERTIFICATES : False,
+                        BaseClient.KW_PROXY_STRING : delegatedChain
+                        }
+    #OOkay! Lets do the magic!
+    retVal = clientTransport.receiveData()
+    if not retVal[ 'OK' ]:
+      gLogger.error( "Error while receiving file description", retVal[ 'Message' ] )
+      self._clientTransport.sendData(  S_ERROR( "Error while receiving file description: %s" % retVal[ 'Message' ] ) )
+      return
+    actionType = proposalTuple[1][0]
+    actionMethod = proposalTuple[1][1]
+    userDesc = self.__getUserDescription( credDict )
+    #Filetransfer not here yet :P
+    if actionType == "FileTransfer":
+      gLogger.warn( "Received a file transfer action from %s" % userDesc )
+      retVal =  S_ERROR( "File transfer can't be forwarded" )
+    elif actionType == "RPC":
+      gLogger.info( "Forwarding %s action from %s" % ( actionType, userDesc ) )
+      retVal = self.__forwardRPCCall( targetService, clientInitArgs, actionMethod, retVal[ 'Value' ] )
+    else:
+      gLogger.warn( "Received an unknown %s action from %s" % ( actionType, userDesc ) )
+      retVal =  S_ERROR( "Unknown type of action (%s)" % actionType )
+    clientTransport.sendData( retVal )
+
+  def __checkDelegation( self, clientTransport ):
+    """
+    Check the delegation
+    """
+    #Ask for delegation
+    credDict = clientTransport.getConnectingCredentials()
+    #If it's not secure don't ask for delegation
+    if 'x509Chain' not in credDict:
+      return S_OK()
+    peerChain = credDict[ 'x509Chain' ]
+    retVal = peerChain.getCertInChain()[ 'Value' ].generateProxyRequest()
+    if not retVal[ 'OK' ]:
+      return retVal
+    delegationRequest = retVal[ 'Value' ]
+    retVal = delegationRequest.dumpRequest()
+    if not retVal[ 'OK' ]:
+      retVal = S_ERROR( "Server Error: Can't generate delegation request" )
+      clientTransport.sendData( retVal )
+      return retVal
+    gLogger.info( "Sending delegation request for %s" % delegationRequest.getSubjectDN()[ 'Value' ] )
+    clientTransport.sendData( S_OK( { 'delegate' : retVal[ 'Value' ] } ) )
+    delegatedCertChain = clientTransport.receiveData()
+    delegatedChain = Security.X509Chain( keyObj = delegationRequest.getPKey() )
+    retVal = delegatedChain.loadChainFromString( delegatedCertChain )
+    if not retVal[ 'OK' ]:
+      retVal = S_ERROR( "Error in receiving delegated proxy: %s" % retVal[ 'Message' ] )
+      clientTransport.sendData( retVal )
+      return retVal
+    clientTransport.sendData( S_OK() )
+    return delegatedChain.dumpAllToString()
+
+  def __getUserDescription( self, credDict ):
+    if 'DN' not in credDict:
+      return "anonymous@noGroup"
+    else:
+      return "%s@%s" % ( credDict[ 'DN' ], credDict[ 'group' ] )
+
+  def __forwardRPCCall( self, targetService, clientInitArgs, method, params ):
+    rpcClient = RPCClient( targetService, **clientInitArgs )
+    methodObj = getattr( rpcClient, method )
+    return methodObj( *params )

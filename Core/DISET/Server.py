@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.28 2008/06/02 13:28:38 acasajus Exp $
-__RCSID__ = "$Id: Server.py,v 1.28 2008/06/02 13:28:38 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.29 2008/06/05 10:20:16 acasajus Exp $
+__RCSID__ = "$Id: Server.py,v 1.29 2008/06/05 10:20:16 acasajus Exp $"
 
 import socket
 import sys
@@ -146,7 +146,7 @@ class Server:
     if protocol in gProtocolDict.keys():
       gLogger.verbose( "Initializing %s transport" % protocol, serviceCfg.getURL() )
       from DIRAC.Core.DISET.private.Transports.PlainTransport import PlainTransport
-      self.transport = gProtocolDict[ protocol ][0]( ( "", serviceCfg.getPort() ),
+      self.transport = gProtocolDict[ protocol ][ 'transport' ]( ( "", serviceCfg.getPort() ),
                             bServerMode = True, **transportArgs )
       self.transport.initAsServer()
     else:
@@ -192,23 +192,6 @@ class Server:
     """
     gLogger.exception( "Exception in thread", lException = exceptionInfo )
 
-
-  def __authorizeProposal( self, service, actionTuple, clientTransport ):
-    """
-    Authorize the action being proposed by the client
-    """
-    serviceInfoDict = self.handlerManager.getServiceInfo( service )
-    if actionTuple[0] == 'RPC':
-      action = actionTuple[1]
-    else:
-      action = "%s/%s" % actionTuple
-    credDict = clientTransport.getConnectingCredentials()
-    retVal = self.handlerManager.authorizeAction( service, action, credDict )
-    if not retVal[ 'OK' ]:
-      clientTransport.sendData( retVal )
-      return False
-    return True
-
   def processClient( self, clientTransport ):
     """
     Receive an action petition and process it from the client
@@ -220,52 +203,8 @@ class Server:
     try:
       gLogger.verbose( "Incoming connection from %s" % clientTransport.getRemoteAddress()[0] )
       clientTransport.handshake()
-      retVal = clientTransport.receiveData( 1024 )
-      if not retVal[ 'OK' ]:
-        gLogger.error( "Invalid action proposal", retVal[ 'Message' ] )
-        return
-      proposalTuple = retVal[ 'Value' ]
-      gLogger.debug( "Received action from client", str( proposalTuple ) )
-      if proposalTuple[2]:
-        clientTransport.setExtraCredentials( proposalTuple[2] )
-      requestedService = proposalTuple[0][0]
-      #self.handlerManager.addMark( requestedService )
-      if not self.__authorizeProposal( requestedService, proposalTuple[1], clientTransport ):
-        return
-      try:
-        self.handlerManager.lock( requestedService )
-        self.__executeAction( proposalTuple, clientTransport )
-      finally:
-        self.handlerManager.unlock( requestedService )
-        pass
+      self.handlerManager.processClient( clientTransport )
     finally:
       clientTransport.close()
       if cpuStats:
         self.__endReportToMonitoring( *cpuStats )
-
-
-  def __executeAction( self, proposalTuple, clientTransport ):
-    """
-    Execute an action
-    """
-    clientParams = { 'clientSetup' : proposalTuple[0][1],
-                     'serviceStartTime' : self.startTime,
-                     'clientAddress' : clientTransport.getRemoteAddress() }
-    try:
-      handlerInstance = self.handlerManager.instantiateHandler( proposalTuple[0][0],
-                                                                clientParams,
-                                                                clientTransport )
-    except Exception, e:
-      clientTransport.sendData( S_ERROR( "Server error while initializing handler: %s" % str(e) ) )
-      raise
-    clientTransport.sendData( S_OK() )
-    try:
-      handlerInstance.executeAction( proposalTuple[1] )
-    except Exception, e:
-      gLogger.exception( "Exception while executing handler action" )
-      clientTransport.sendData( S_ERROR( "Server error while executing action: %s" % str( e ) ) )
-
-
-if __name__=="__main__":
-  oServer = Server( "Configuration")
-  oServer.serve()

@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/PlainTransport.py,v 1.8 2007/06/26 14:35:19 acasajus Exp $
-__RCSID__ = "$Id: PlainTransport.py,v 1.8 2007/06/26 14:35:19 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/PlainTransport.py,v 1.9 2008/06/05 10:20:17 acasajus Exp $
+__RCSID__ = "$Id: PlainTransport.py,v 1.9 2008/06/05 10:20:17 acasajus Exp $"
 
 import socket
 from DIRAC.Core.DISET.private.Transports.BaseTransport import BaseTransport
@@ -44,3 +44,9 @@ class PlainTransport( BaseTransport ):
 
 def checkSanity( *args, **kwargs ):
   return True
+
+def delegate( delegationRequest, kwargs ):
+  """
+  Check delegate!
+  """
+  return S_OK()

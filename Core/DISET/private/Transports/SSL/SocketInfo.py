@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfo.py,v 1.19 2008/06/02 13:28:37 acasajus Exp $
-__RCSID__ = "$Id: SocketInfo.py,v 1.19 2008/06/02 13:28:37 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfo.py,v 1.20 2008/06/05 10:20:17 acasajus Exp $
+__RCSID__ = "$Id: SocketInfo.py,v 1.20 2008/06/05 10:20:17 acasajus Exp $"
 
 import time
 import copy
@@ -16,13 +16,19 @@ class SocketInfo:
     if sslContext:
       self.sslContext = sslContext
     else:
-      if self.infoDict[ 'clientMode' ]:
-        if self.infoDict.has_key( 'useCertificates' ) and self.infoDict[ 'useCertificates' ]:
-          self.__generateContextWithCerts()
+      try:
+        if self.infoDict[ 'clientMode' ]:
+          if self.infoDict.has_key( 'useCertificates' ) and self.infoDict[ 'useCertificates' ]:
+            self.__generateContextWithCerts()
+          elif 'proxyString' in self.infoDict:
+            self.__generateContextWithProxyString()
+          else:
+            self.__generateContextWithProxy()
         else:
-          self.__generateContextWithProxy()
-      else:
-        self.__generateServerContext()
+          self.__generateServerContext()
+      except Exception, e:
+        gLogger.exception()
+        raise
 
   def setLocalCredentialsLocation( self, credTuple ):
     self.infoDict[ 'localCredentialsLocation' ] = credTuple
@@ -31,25 +37,23 @@ class SocketInfo:
     return self.infoDict[ 'localCredentialsLocation' ]
 
   def gatherPeerCredentials( self ):
-    peerCert = Security.X509Certificate( self.sslSocket.get_peer_certificate() )
-    credDict = { 'DN' : self.__cleanDN( peerCert.getSubjectDN()[ 'Value' ] ),
-                 'CN' : peerCert.getSubjectNameObject()[ 'Value' ].commonName,
-                 'x509' : peerCert }
-    diracGroup = peerCert.getDIRACGroup()
+    certList = self.sslSocket.get_peer_certificate_chain()
+    #Servers don't receive the whole chain, the last cert comes alone
+    if not self.infoDict[ 'clientMode' ]:
+      certList.insert( 0, self.sslSocket.get_peer_certificate() )
+    peerChain = Security.X509Chain( certList = certList )
+    if peerChain.isProxy()['Value']:
+      identitySubject = peerChain.getCertInChain( -1 )['Value'].getSubjectNameObject()[ 'Value' ]
+    else:
+      identitySubject = peerChain.getCertInChain( 0 )['Value'].getSubjectNameObject()[ 'Value' ]
+    credDict = { 'DN' : identitySubject.one_line(),
+                 'CN' : identitySubject.commonName,
+                 'x509Chain' : peerChain }
+    diracGroup = peerChain.getDIRACGroup()
     if diracGroup[ 'OK' ] and diracGroup[ 'Value' ]:
       credDict[ 'group' ] = diracGroup[ 'Value' ]
     self.infoDict[ 'peerCredentials' ] = credDict
     return credDict
-
-  def __cleanDN( self, dn ):
-    #dn = str( certName )
-    #dn = dn[ 18:-2]
-    for proxyRubbish in ( "/CN=proxy", "/CN=limitedproxy" ):
-      position = dn.find( proxyRubbish )
-      while position > -1:
-        dn = dn[ :position ]
-        position = dn.find( proxyRubbish )
-    return dn
 
   def setSSLSocket( self, sslSocket ):
     self.sslSocket = sslSocket
@@ -123,6 +127,23 @@ class SocketInfo:
     self.__createContext()
     self.sslContext.use_certificate_chain_file( proxyPath )
     self.sslContext.use_privatekey_file( proxyPath )
+
+  def __generateContextWithProxyString( self ):
+    proxyString = self.infoDict[ 'proxyString' ]
+    chain = Security.X509Chain()
+    retVal = chain.loadChainFromString( proxyString )
+    if not retVal[ 'OK' ]:
+      DIRAC.abort( 10, "proxy string is invalid. Cert chain can't be loaded" )
+    retVal = chain.loadKeyFromString( proxyString )
+    if not retVal[ 'OK' ]:
+      DIRAC.abort( 10, "proxy string is invalid. key can't be loaded" )
+    cert = chain.getCertInChain(-1)['Value']
+    subj = cert.getSubjectDN()['Value']
+    self.setLocalCredentialsLocation( ( subj, subj ) )
+    gLogger.debug( "Using string proxy with id %s" % subj )
+    self.__createContext()
+    self.sslContext.use_certificate_chain( chain.getCertList()['Value'] )
+    self.sslContext.use_privatekey( chain.getPKeyObj()['Value'] )
 
   def __generateServerContext( self ):
       self.__generateContextWithCerts( serverContext = True )

@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.38 2008/06/02 16:13:33 acasajus Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.38 2008/06/02 16:13:33 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.39 2008/06/05 10:20:16 acasajus Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.39 2008/06/05 10:20:16 acasajus Exp $"
 
 import sys
 import types
@@ -25,7 +25,7 @@ class BaseClient:
   KW_DELEGATED_GROUP = "delegatedGroup"
   KW_IGNORE_GATEWAYS = "ignoreGateways"
   KW_PROXY_LOCATION = "proxyLocation"
-  KW_PROXY_OBJECT = "proxyObject"
+  KW_PROXY_STRING = "proxyString"
 
   def __init__( self, serviceName, **kwargs ):
     if type( serviceName ) != types.StringType:
@@ -45,6 +45,7 @@ class BaseClient:
     self.__initStatus = self.__checkTransportSanity()
     #HACK for thread-safety:
     self.__allowedThreadID = False
+
 
   def __discoverSetup(self):
     #Which setup to use?
@@ -142,7 +143,7 @@ and this is thread %s
     if not self.__initStatus[ 'OK' ]:
       return self.__initStatus
     try:
-      transport = gProtocolDict[ self.URLTuple[0] ][0]( self.URLTuple[1:3], **self.kwargs )
+      transport = gProtocolDict[ self.URLTuple[0] ][ 'transport' ]( self.URLTuple[1:3], **self.kwargs )
       transport.initAsClient()
     except Exception, e:
       return S_ERROR( "Can't connect: %s" % str( e ) )
@@ -153,10 +154,23 @@ and this is thread %s
     transport.sendData( S_OK( stConnectionInfo ) )
     serverReturn = transport.receiveData()
     #TODO: Check if delegation is required
+    if serverReturn[ 'OK' ] and 'Value' in serverReturn and type( serverReturn[ 'Value' ] ) == types.DictType:
+      gLogger.debug( "There is a server requirement" )
+      serverRequirements = serverReturn[ 'Value' ]
+      if 'delegate' in serverRequirements:
+        gLogger.debug( "A delegation is requested" )
+        serverReturn = self.__delegateCredentials( transport, serverRequirements[ 'delegate' ] )
     return serverReturn
 
+  def __delegateCredentials( self, transport, delegationRequest ):
+    retVal = gProtocolDict[ self.URLTuple[0] ][ 'delegation' ]( delegationRequest, self.kwargs )
+    if not retVal[ 'OK' ]:
+      return retVal
+    transport.sendData( retVal[ 'Value' ] )
+    return transport.receiveData()
+
   def __checkTransportSanity( self ):
-    saneEnv = gProtocolDict[ self.URLTuple[0] ][1]( self.URLTuple[1:3], **self.kwargs )
+    saneEnv = gProtocolDict[ self.URLTuple[0] ][ 'sanity' ]( self.URLTuple[1:3], self.kwargs )
     if not saneEnv:
       return S_ERROR( "Insane environment for protocol" )
     return S_OK()

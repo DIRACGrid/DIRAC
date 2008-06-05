@@ -22,6 +22,12 @@ class X509Request:
       return S_ERROR( "Can't serialize request: %s" % str( e ) )
     return S_OK( reqStr )
 
+  def getPKey( self ):
+    """
+    Get PKey Internal
+    """
+    return self.__pkeyObj
+
   def generateChainFromResponse( self, pemData ):
     """
     Generate a X509 Chain from the pkey and the pem data passed as the argument
@@ -35,3 +41,17 @@ class X509Request:
     chain.setChain( certList )
     chain.setPKey( self.__pkeyObj )
     return chain
+
+  def getSubjectDN( self ):
+    """
+    Get subject DN
+    Return: S_OK( string )/S_ERROR
+    """
+    return S_OK( self.__reqObj.get_subject().one_line() )
+
+  def getIssuerDN( self ):
+    """
+    Get issuer DN
+    Return: S_OK( string )/S_ERROR
+    """
+    return S_OK( self.__reqObj.get_issuer().one_line() )

@@ -1,7 +1,8 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSLTransport.py,v 1.18 2008/06/02 13:53:29 acasajus Exp $
-__RCSID__ = "$Id: SSLTransport.py,v 1.18 2008/06/02 13:53:29 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSLTransport.py,v 1.19 2008/06/05 10:20:17 acasajus Exp $
+__RCSID__ = "$Id: SSLTransport.py,v 1.19 2008/06/05 10:20:17 acasajus Exp $"
 
 import os
+import types
 from DIRAC.Core.DISET.private.Transports.BaseTransport import BaseTransport
 from DIRAC.LoggingSystem.Client.Logger import gLogger
 from DIRAC.Core.DISET.private.Transports.SSL.SocketInfoFactory import gSocketInfoFactory
@@ -50,27 +51,25 @@ class SSLTransport( BaseTransport ):
     return oClientTransport
 
 
-def checkSanity( *args, **kwargs ):
+def checkSanity( urlTuple, kwargs ):
   """
   Check that all ssl environment is ok
   """
-  saneEnv = True
   useCerts = False
   if not Security.getCAsLocation():
     gLogger.error( "No CAs found!" )
-    saneEnv = False
+    return False
   if "useCertificates" in kwargs and kwargs[ 'useCertificates' ]:
     certTuple = Security.getHostCertificateAndKeyLocation()
     if not certTuple:
       gLogger.error( "No cert/key found! " )
-      saneEnv = False
-    else:
-      certFile = certTuple[0]
-      useCerts = True
-  elif "proxyObject" in kwargs:
-    if not type( kwargs[ 'proxyObject' ] ) == Security.g_X509ChainType:
-      gLogger.error( "proxyObject parameter is not a valid type" )
-      saneEnv = False
+      return False
+    certFile = certTuple[0]
+    useCerts = True
+  elif "proxyString" in kwargs:
+    if type( kwargs[ 'proxyString' ] ) != types.StringType:
+      gLogger.error( "proxyString parameter is not a valid type" )
+      return False
   else:
     if "proxyLocation" in kwargs:
       certFile = kwargs[ "proxyLocation" ]
@@ -78,35 +77,58 @@ def checkSanity( *args, **kwargs ):
       certFile = Security.getProxyLocation()
     if not certFile:
       gLogger.error( "No proxy found" )
-      saneEnv = False
+      return False
     elif not os.path.isfile( certFile ):
       gLogger.error( "%s proxy file does not exist" % certFile )
-      saneEnv = False
+      return False
 
-  if saneEnv:
-    if "proxyObject" in kwargs:
-      certObj = kwargs[ 'proxyObject' ]
-    else:
-      if useCerts:
-        certObj = Security.X509Certificate()
-        certObj.loadFromFile( certFile )
-      else:
-        certObj = Security.X509Chain()
-        certObj.loadChainFromFile( certFile )
-
-    retVal = certObj.isExpired()
+  if "proxyString" in kwargs:
+    certObj = Security.X509Chain()
+    retVal = certObj.loadChainFromString( kwargs[ 'proxyString' ] )
     if not retVal[ 'OK' ]:
-      gLogger.error( "Can't verify file %s:%s" % ( certFile, retVal[ 'Message' ] ) )
-      saneEnv = False
+      gLogger.error( "Can't load proxy string" )
+      return False
+  else:
+    if useCerts:
+      certObj = Security.X509Certificate()
+      certObj.loadFromFile( certFile )
     else:
-      if retVal[ 'Value' ]:
-        notAfter = certObj.getNotAfterDate()
-        if notAfter[ 'OK' ]:
-          notAfter = notAfter[ 'Value' ]
-        else:
-          notAfter = "unknown"
-        gLogger.error( "PEM file %s has expired, not valid after %s" % ( certFile, notAfter ) )
-        saneEnv = False
+      certObj = Security.X509Chain()
+      certObj.loadChainFromFile( certFile )
 
-  return saneEnv
+  retVal = certObj.isExpired()
+  if not retVal[ 'OK' ]:
+    gLogger.error( "Can't verify file %s:%s" % ( certFile, retVal[ 'Message' ] ) )
+    return False
+  else:
+    if retVal[ 'Value' ]:
+      notAfter = certObj.getNotAfterDate()
+      if notAfter[ 'OK' ]:
+        notAfter = notAfter[ 'Value' ]
+      else:
+        notAfter = "unknown"
+      gLogger.error( "PEM file %s has expired, not valid after %s" % ( certFile, notAfter ) )
+      return False
 
+  return True
+
+def delegate( delegationRequest, kwargs ):
+  """
+  Check delegate!
+  """
+  if "useCertificates" in kwargs and kwargs[ 'useCertificates' ]:
+    chain = Security.X509Chain()
+    certTuple = Security.getHostCertificateAndKeyLocation()
+    chain.loadChainFromFile( certTuple[0] )
+    chain.loadKeyFromFile( certTuple[1] )
+  elif "proxyObject" in kwargs:
+    chain = kwargs[ 'proxyObject' ]
+  else:
+    if "proxyLocation" in kwargs:
+      procLoc = kwargs[ "proxyLocation" ]
+    else:
+      procLoc = Security.getProxyLocation()
+    chain = Security.X509Chain()
+    chain.loadChainFromFile( procLoc )
+    chain.loadKeyFromFile( procLoc )
+  return chain.generateChainFromRequestString( delegationRequest )
