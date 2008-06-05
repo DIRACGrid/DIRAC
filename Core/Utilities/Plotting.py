@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Plotting.py,v 1.3 2008/06/05 17:07:36 acsmith Exp $
-__RCSID__ = "$Id: Plotting.py,v 1.3 2008/06/05 17:07:36 acsmith Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Plotting.py,v 1.4 2008/06/05 18:01:00 acsmith Exp $
+__RCSID__ = "$Id: Plotting.py,v 1.4 2008/06/05 18:01:00 acsmith Exp $"
 """
    A simple set of wrapper functions for creating plots (based on the examples
    from the graph tool).
@@ -50,7 +50,7 @@ class HistogramGraph(BarGraph):
     return retval
 
 #############################################################################
-def pieChart(data,metadata,path):
+def pieChart(path,data,metadata):
   """Plot a pie chart with
      Data {'Name':'Value'}
      Metadata {'title':'Name'}
@@ -68,7 +68,7 @@ def pieChart(data,metadata,path):
   return S_OK(path)
 
 #############################################################################
-def barChart(data,metadata,path):
+def barChart(path,data,metadata):
   """Plot a bar chart (see example commented below).
   """
   try:
@@ -83,7 +83,7 @@ def barChart(data,metadata,path):
   return S_OK(path)
 
 #############################################################################
-def cumulativePlot(data,metadata,path):
+def cumulativePlot(path,data,metadata):
   """Make a cumulative plot (see example commented below).
   """
   try:
@@ -98,7 +98,7 @@ def cumulativePlot(data,metadata,path):
   return S_OK(path)
 
 #############################################################################
-def historgram(data,metadata,path):
+def histogram(path,data,metadata):
   """ Plot a histogram of the supplied data
   """
   try:
