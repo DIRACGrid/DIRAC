@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/RRDManager.py,v 1.33 2008/06/05 11:15:28 acasajus Exp $
-__RCSID__ = "$Id: RRDManager.py,v 1.33 2008/06/05 11:15:28 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/RRDManager.py,v 1.34 2008/06/05 11:17:15 acasajus Exp $
+__RCSID__ = "$Id: RRDManager.py,v 1.34 2008/06/05 11:17:15 acasajus Exp $"
 import os
 import os.path
 import md5
@@ -186,6 +186,7 @@ class RRDManager:
   def __graphTimeComment( self, fromEpoch, toEpoch ):
     comStr =  " 'COMMENT:Generated on %s UTC'" % Time.toString().replace( ":", "\:" ).split( "." )[0]
     comStr += " 'COMMENT:From %s to %s'" % ( Time.fromEpoch( fromEpoch ), Time.fromEpoch( toEpoch ) )
+    return comStr
 
   def __getYScalingFactor( self, timeSpan, bucketLength, plotWidth ):
     expectedTimeSpan = plotWidth * bucketLength
