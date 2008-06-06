@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: InputDataByProtocol.py,v 1.6 2008/05/29 16:58:40 paterson Exp $
+# $Id: InputDataByProtocol.py,v 1.7 2008/06/06 17:33:45 paterson Exp $
 # File :   InputDataByProtocol.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     defined in the CS for the VO.
 """
 
-__RCSID__ = "$Id: InputDataByProtocol.py,v 1.6 2008/05/29 16:58:40 paterson Exp $"
+__RCSID__ = "$Id: InputDataByProtocol.py,v 1.7 2008/06/06 17:33:45 paterson Exp $"
 
 from DIRAC.Core.DISET.RPCClient                                     import RPCClient
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
@@ -205,10 +205,11 @@ class InputDataByProtocol:
         self.log.verbose('%s: No TURL resolved for %s' %(COMPONENT_NAME,lfn))
 
     #Remove any failed replicas from the resolvedData dictionary
-    self.log.verbose('The following LFN(s) were not resolved:\n%s' %(string.join(failedReplicas,'\n')))
-    for lfn in failedReplicas:
-      if resolvedData.has_key(lfn):
-        del resolvedData[lfn]
+    if failedReplicas:
+      self.log.verbose('The following LFN(s) were not resolved by protocol:\n%s' %(string.join(failedReplicas,'\n')))
+      for lfn in failedReplicas:
+        if resolvedData.has_key(lfn):
+          del resolvedData[lfn]
 
     if count:
       report = ''
