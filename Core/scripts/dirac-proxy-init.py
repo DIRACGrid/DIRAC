@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/Attic/dirac-proxy-init.py,v 1.4 2008/06/06 09:34:20 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/Attic/dirac-proxy-init.py,v 1.5 2008/06/06 12:32:03 acasajus Exp $
 # File :   dirac-proxy-init.py
 # Author : Adrian Casajus
 ########################################################################
-__RCSID__   = "$Id: dirac-proxy-init.py,v 1.4 2008/06/06 09:34:20 acasajus Exp $"
-__VERSION__ = "$Revision: 1.4 $"
+__RCSID__   = "$Id: dirac-proxy-init.py,v 1.5 2008/06/06 12:32:03 acasajus Exp $"
+__VERSION__ = "$Revision: 1.5 $"
 
 import sys
 from DIRACEnvironment import DIRAC
@@ -91,7 +91,7 @@ from DIRAC.Core import Security
 certLoc = params.certLoc
 keyLoc = params.keyLoc
 if not certLoc or not keyLoc:
-  cakLoc = Security.getCertificateAndKeyLocation()
+  cakLoc = Security.Locations.getCertificateAndKeyLocation()
   if not cakLoc:
     print "Can't find user certificate and key"
     sys.exit(1)
@@ -102,7 +102,7 @@ if not certLoc or not keyLoc:
 
 proxyLoc = params.proxyLoc
 if not proxyLoc:
-  proxyLoc = Security.getDefaultProxyLocation()
+  proxyLoc = Security.Locations.getDefaultProxyLocation()
 
 if params.debug:
   h = int( params.proxyLifeTime / 3600 )

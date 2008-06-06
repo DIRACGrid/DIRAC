@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSLTransport.py,v 1.19 2008/06/05 10:20:17 acasajus Exp $
-__RCSID__ = "$Id: SSLTransport.py,v 1.19 2008/06/05 10:20:17 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSLTransport.py,v 1.20 2008/06/06 12:32:04 acasajus Exp $
+__RCSID__ = "$Id: SSLTransport.py,v 1.20 2008/06/06 12:32:04 acasajus Exp $"
 
 import os
 import types
@@ -56,11 +56,11 @@ def checkSanity( urlTuple, kwargs ):
   Check that all ssl environment is ok
   """
   useCerts = False
-  if not Security.getCAsLocation():
+  if not Security.Locations.getCAsLocation():
     gLogger.error( "No CAs found!" )
     return False
   if "useCertificates" in kwargs and kwargs[ 'useCertificates' ]:
-    certTuple = Security.getHostCertificateAndKeyLocation()
+    certTuple = Security.Locations.getHostCertificateAndKeyLocation()
     if not certTuple:
       gLogger.error( "No cert/key found! " )
       return False
@@ -74,7 +74,7 @@ def checkSanity( urlTuple, kwargs ):
     if "proxyLocation" in kwargs:
       certFile = kwargs[ "proxyLocation" ]
     else:
-      certFile = Security.getProxyLocation()
+      certFile = Security.Locations.getProxyLocation()
     if not certFile:
       gLogger.error( "No proxy found" )
       return False
