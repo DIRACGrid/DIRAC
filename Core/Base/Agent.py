@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Agent.py,v 1.21 2008/05/24 11:46:54 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Agent.py,v 1.22 2008/06/06 09:35:36 acasajus Exp $
 ########################################################################
 """ Base class for all the Agents.
 
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: Agent.py,v 1.21 2008/05/24 11:46:54 atsareg Exp $"
+__RCSID__ = "$Id: Agent.py,v 1.22 2008/06/06 09:35:36 acasajus Exp $"
 
 import os
 import threading
@@ -42,16 +42,18 @@ class Agent:
     self.monitorFlag = False
 
     self.section = getAgentSection(self.fullname)
-    
+
+    if initializeMonitor:
+      self.monitorFlag = True
+
     if gConfig.getValue('/LocalSite/EnableAgentMonitoring',"no").lower() in ( 'y', 'yes', '1' ):
       self.monitorFlag = True
-    
+
     agentFlag = gConfig.getValue(self.section+'/EnableAgentMonitoring',"notSet").lower()
     if agentFlag in ( 'y', 'yes', '1' ):
       self.monitorFlag = True
     elif agentFlag in ( 'n', 'no', '0' ):
-      self.monitorFlag = False  
-      
+      self.monitorFlag = False
 
     if self.monitorFlag:
       self.__initializeMonitor()
