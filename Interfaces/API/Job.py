@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.26 2008/04/29 17:18:53 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.27 2008/06/06 16:55:01 paterson Exp $
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -30,7 +30,7 @@
    Note that several executables can be provided and wil be executed sequentially.
 """
 
-__RCSID__ = "$Id: Job.py,v 1.26 2008/04/29 17:18:53 paterson Exp $"
+__RCSID__ = "$Id: Job.py,v 1.27 2008/06/06 16:55:01 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -72,6 +72,7 @@ class Job:
     self.origin = 'DIRAC'
     self.stdout = 'std.out'
     self.stderr = 'std.err'
+    self.logLevel = 'info'
     self.executable = '$DIRACROOT/scripts/jobexec' # to be clarified
     self.addToInputSandbox = []
     self.addToOutputSandbox = []
@@ -447,11 +448,9 @@ class Job:
     if type(jobType)==type("  "):
       #self._removeParameter(self.workflow,'JobType')
       self._addParameter(self.workflow,'JobType','JDL',jobType,'User specified type')
+      self.type = jobType
     else:
       raise TypeError,'Expected string for Job type'
-
-    if type(jobType) == type(" "):
-      self.type = jobType
 
   #############################################################################
   def setSoftwareTags(self, tags):
@@ -497,6 +496,31 @@ class Job:
       self._addParameter(self.workflow,'JobGroup','JDL',jobGroup,description)
     else:
       raise TypeError,'Expected string for job group'
+
+  #############################################################################
+  def setLogLevel(self,logLevel):
+    """Helper function.
+
+       Optionally specify a DIRAC logging level for the job, e.g.
+       ALWAYS, INFO, VERBOSE, WARN, DEBUG
+       by default this is set to the info level.
+
+       Example usage:
+
+       >>> job = Job()
+       >>> job.setLogLevel('debug')
+
+       @param jobGroup: JobGroup name
+       @type jobGroup: string
+    """
+    #TODO: put protection for allowed logging levels...
+    if type(logLevel) == type("  "):
+      description = 'User specified logging level'
+      self.logLevel = logLevel
+      self._addParameter(self.workflow,'LogLevel','JDL',logLevel,description)
+    else:
+      raise TypeError,'Expected string for logging level'
+
 
   #############################################################################
   def createCode(self):
@@ -563,6 +587,7 @@ class Job:
     self._addParameter(self.workflow,'StdOutput','JDL',self.stdout,'Standard output file')
     self._addParameter(self.workflow,'StdError','JDL',self.stderr,'Standard error file')
     self._addParameter(self.workflow,'InputData','JDL','','Default null input data value')
+    self._addParameter(self.workflow,'LogLevel','JDL',self.logLevel,'Job Logging Level')
 
   #############################################################################
  # def _addStep(self,step):
@@ -692,6 +717,7 @@ class Job:
       paramsDict[param.getName()]= {'type':param.getType(),'value':param.getValue()}
 
     scriptname = 'jobDescription.xml'
+    arguments = []
     if self.script:
       if os.path.exists(self.script):
         scriptname = os.path.abspath(self.script)
@@ -701,8 +727,10 @@ class Job:
         self.log.verbose('Found XML File %s' %xmlFile)
         scriptname = xmlFile
 
+    arguments.append(os.path.basename(scriptname))
     self.addToInputSandbox.append(scriptname)
-    classadJob.insertAttributeString('Arguments',scriptname)
+    arguments.append('-o LogLevel=%s' %(self.logLevel))
+    classadJob.insertAttributeString('Arguments',string.join(arguments,' '))
     classadJob.insertAttributeString('Executable',self.executable)
     self.addToOutputSandbox.append(self.stderr)
     self.addToOutputSandbox.append(self.stdout)
