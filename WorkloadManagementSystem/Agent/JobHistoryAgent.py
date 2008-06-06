@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobHistoryAgent.py,v 1.4 2008/02/18 17:25:46 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobHistoryAgent.py,v 1.5 2008/06/06 10:52:40 acasajus Exp $
 
 
 """  JobHistoryAgent sends periodically numbers of jobs in various states for various
@@ -9,6 +9,9 @@
 from DIRAC  import gLogger, gConfig, gMonitor,S_OK, S_ERROR
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
+from DIRAC.AccountingSystem.Client.Types.WMSHistory import WMSHistory
+from DIRAC.AccountingSystem.Client.DataStoreClient import DataStoreClient
+from DIRAC.Core.Utilities import Time
 
 import time,os
 
@@ -19,10 +22,23 @@ MONITOR_STATUS = ['Running','Stalled','Done','Failed']
 
 class JobHistoryAgent(Agent):
 
+  __summaryKeyFieldsMapping = [ 'Status',
+                                'MinorStatus',
+                                'ApplicationStatus',
+                                'Site',
+                                'User',
+                                'UserGroup',
+                                'JobGroup',
+                                'JobSplitType',
+                              ]
+  __summaryValueFieldsMapping = [ 'Jobs',
+                                  'Reschedules',
+                                ]
+
   def __init__(self):
     """ Standard constructor
     """
-    Agent.__init__(self,AGENT_NAME)
+    Agent.__init__( self, AGENT_NAME, initializeMonitor = True )
 
   def initialize(self):
     result = Agent.initialize(self)
@@ -30,8 +46,8 @@ class JobHistoryAgent(Agent):
 
     for status in MONITOR_STATUS:
       for site in MONITOR_SITES:
-        gLogger.verbose("Registering activity %s-%s" % (status,site)) 
-        gLogger.verbose("Jobs in %s state at %s" % (status,site)) 
+        gLogger.verbose("Registering activity %s-%s" % (status,site))
+        gLogger.verbose("Jobs in %s state at %s" % (status,site))
         gMonitor.registerActivity("%s-%s" % (status,site),"Jobs in %s state at %s" % (status,site),
                                   "JobHistoryAgent","Jobs/minute",gMonitor.OP_MEAN)
 
@@ -46,11 +62,11 @@ class JobHistoryAgent(Agent):
 
     delta = time.time() - self.last_update
     if delta > self.reportPeriod:
-      result = self.jobDB.getCounters(['Status','Site'],{},'')    
+      result = self.jobDB.getCounters(['Status','Site'],{},'')
       if not result['OK']:
         return S_ERROR('Failed to get data from the Job Database')
-      self.resultDB = result['Value'] 
-      self.last_update = time.time() 
+      self.resultDB = result['Value']
+      self.last_update = time.time()
 
     totalDict = {}
     for status in MONITOR_STATUS:
@@ -69,5 +85,47 @@ class JobHistoryAgent(Agent):
     for status in MONITOR_STATUS:
       gLogger.verbose("Adding mark %s-All sites: " % status + str(totalDict[status]))
       gMonitor.addMark("%s-All sites" % status,totalDict[status])
+
+    #Get the WMS Snapshot!
+    result = self.jobDB.getSummarySnapshot()
+    dsClients = {}
+    now = Time.dateTime()
+    if not result[ 'OK' ]:
+      gLogger.error( "Can't the the jobdb summary", result[ 'Message' ] )
+    else:
+      fields = list( result[ 'Value' ][0] )
+      values = result[ 'Value' ][1]
+      for record in values:
+        recordSetup = record[0]
+        if recordSetup not in dsClients:
+          dsClients[ recordSetup ] = DataStoreClient( setup = recordSetup )
+        record = record[1:]
+        rD = {}
+        for iP in range( len( self.__summaryKeyFieldsMapping ) ):
+          fieldName = self.__summaryKeyFieldsMapping[iP]
+          rD[ fieldName ] = record[iP]
+          if not rD[ fieldName ]:
+            rD[ fieldName ] = 'unset'
+        record = record[len( self.__summaryKeyFieldsMapping ):]
+        for iP in range( len( self.__summaryValueFieldsMapping ) ):
+          rD[ self.__summaryValueFieldsMapping[iP] ] = int( record[iP] )
+        acWMS = WMSHistory()
+        acWMS.setStartTime( now )
+        acWMS.setEndTime( now )
+        acWMS.setValuesFromDict( rD )
+        retVal =  acWMS.checkValues()
+        if not retVal[ 'OK' ]:
+          print retVal[ 'Message' ]
+          print rD
+        dsClients[ recordSetup ].addRegister( acWMS )
+      for setup in dsClients:
+        result = dsClients[ setup ].commit()
+        if not result[ 'OK' ]:
+          gLogger.error( "Couldn't commit wms history for setup %s"  % setup, result[ 'Message' ] )
+
+
+
+
+
 
     return S_OK()
