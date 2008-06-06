@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.28 2008/05/30 16:51:27 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.29 2008/06/06 16:55:54 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.28 2008/05/30 16:51:27 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.29 2008/06/06 16:55:54 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -262,8 +262,10 @@ class Dirac:
     if parameters['Value'].has_key('Executable') and parameters['Value'].has_key('Arguments'):
       executable = os.path.expandvars(parameters['Value']['Executable'])
       arguments = parameters['Value']['Arguments']
-      command = '%s %s' % (executable,arguments)
-      self.log.verbose(command)
+      args = arguments.split(' ')
+      args[0] = jobXML #in order to retain the full path to the /tmp directory for the XML file
+      command = '%s %s' % (executable,string.join(args,' '))
+      self.log.info('Executing: %s' %command)
       result = shellCall(0,command,callbackFunction=self.__printOutput)
       if not result['OK']:
         return result
