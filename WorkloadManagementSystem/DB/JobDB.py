@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.57 2008/05/26 15:34:07 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.58 2008/06/06 10:52:21 acasajus Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.57 2008/05/26 15:34:07 paterson Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.58 2008/06/06 10:52:21 acasajus Exp $"
 
 import re, os, sys, string, types
 import time
@@ -60,7 +60,7 @@ import threading
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from types                                     import *
-from DIRAC                                     import gLogger, S_OK, S_ERROR
+from DIRAC                                     import gLogger, S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client.Config   import gConfig
 from DIRAC.Core.Base.DB                        import DB
 from DIRAC.Core.Utilities.GridCredentials      import getNicknameForDN
@@ -606,6 +606,19 @@ class JobDB(DB):
       update_flag = False
 
     if status:
+      #Monitor the WMS major status transitions in monitoring
+      try:
+        result = self.getJobAttribute(jobID,'Status')
+        if result[ 'OK' ]:
+          prevStatus = result['OK']
+          if not prevStatus == status:
+            acName = "%s-%s" % ( prevStatus, staus )
+            gMonitor.registerActivity( acName, "Status transition from %s to %s" % ( prevStatus, status ),
+                                       "WMS transitions", "transitions", gMonitor.OP_SUM )
+            gMonitor.addMark( acName, 1 )
+      except:
+        gLogger.error( "Error while generating monitoring transition report" )
+        gLogger.exception()
       result = self.setJobAttribute(jobID,'Status',status,update=update_flag)
       if not result['OK']:
         return result
@@ -1580,3 +1593,18 @@ class JobDB(DB):
     req = "UPDATE JobCommands SET Status='%s' WHERE JobID=%d AND Command='%s'" % (status,jobID,command)
     result = self._update(req)
     return result
+
+#####################################################################################
+  def getSummarySnapshot( self ):
+    """ Get the summary snapshot for a given combination
+    """
+    defFields = [ 'DIRACSetup', 'Status', 'MinorStatus', 'ApplicationStatus',
+                  'Site', 'Owner', 'OwnerGroup', 'JobGroup', 'JobSplitType' ]
+    valueFields = [ 'COUNT(JobID)', 'SUM(RescheduleCounter)' ]
+    defString = ", ".join( defFields )
+    valueString = ", ".join( valueFields )
+    sqlCmd = "SELECT %s, %s From Jobs GROUP BY %s" % ( defString, valueString, defString )
+    result = self._query( sqlCmd )
+    if not result[ 'OK' ]:
+      return result
+    return S_OK( ( ( defFields + valueFields ), result[ 'Value' ] ) )
