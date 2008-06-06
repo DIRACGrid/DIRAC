@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/DataStoreClient.py,v 1.3 2008/06/05 15:21:46 acasajus Exp $
-__RCSID__ = "$Id: DataStoreClient.py,v 1.3 2008/06/05 15:21:46 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/DataStoreClient.py,v 1.4 2008/06/06 10:51:51 acasajus Exp $
+__RCSID__ = "$Id: DataStoreClient.py,v 1.4 2008/06/06 10:51:51 acasajus Exp $"
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -9,10 +9,10 @@ gAccountingSynchro = Synchronizer()
 
 class DataStoreClient:
 
-  __registersList = []
 
   def __init__( self, setup = False ):
     self.__setup = setup
+    self.__registersList = []
 
   def __checkBaseType( self, obj ):
     """

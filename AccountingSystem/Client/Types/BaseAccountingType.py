@@ -1,16 +1,15 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Types/BaseAccountingType.py,v 1.10 2008/05/07 18:20:57 acasajus Exp $
-__RCSID__ = "$Id: BaseAccountingType.py,v 1.10 2008/05/07 18:20:57 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Types/BaseAccountingType.py,v 1.11 2008/06/06 10:51:51 acasajus Exp $
+__RCSID__ = "$Id: BaseAccountingType.py,v 1.11 2008/06/06 10:51:51 acasajus Exp $"
 
 import types
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC.AccountingSystem.Client.DataStoreClient import DataStoreClient
+from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 
 class BaseAccountingType:
 
   __validDataValues = ( types.IntType, types.LongType, types.FloatType, types.LongType )
-  __acClient = DataStoreClient()
 
   def __init__( self ):
     self.keyFieldsList = []
@@ -160,7 +159,7 @@ class BaseAccountingType:
     """
     Commit register to server
     """
-    retVal = self.__acClient.addRegister( self )
+    retVal = gDataStoreClient.addRegister( self )
     if not retVal[ 'OK' ]:
       return retVal
-    return self.__acClient.commit()
+    return gDataStoreClient.commit()
