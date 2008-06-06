@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.32 2008/05/27 12:01:18 acasajus Exp $
-__RCSID__ = "$Id: MonitoringClient.py,v 1.32 2008/05/27 12:01:18 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.33 2008/06/06 09:35:56 acasajus Exp $
+__RCSID__ = "$Id: MonitoringClient.py,v 1.33 2008/06/06 09:35:56 acasajus Exp $"
 
 import threading
 import time
@@ -39,6 +39,7 @@ class MonitoringClient:
     self.activitiesLock = threading.Lock()
     self.flushingLock = threading.Lock()
     self.timeStep = 60
+    self.__initialized = False
 
   def initialize( self ):
     self.logger = gLogger.getSubLogger( "Monitoring" )
@@ -60,6 +61,7 @@ class MonitoringClient:
       raise Exception( "Component type has not been defined" )
     self.__initializeSendMode()
     #ExitCallback.registerExitCallback( self.forceFlush )
+    self.__initialized = True
 
   def __initializeSendMode( self ):
     """
@@ -139,6 +141,8 @@ class MonitoringClient:
     @type  bucketLength: int
     @param bucketLength: Bucket length in seconds
     """
+    if not self.__initialized:
+      return S_ERROR( "Monitoring is not initialized" )
     self.activitiesLock.acquire()
     try:
       self.logger.debug( "Registering activity %s" % name )
@@ -168,6 +172,8 @@ class MonitoringClient:
     @type  value: number
     @param value: Weight of the mark. By default it's one.
     """
+    if not self.__initialized:
+      return S_ERROR( "Monitoring is not initialized" )
     if name not in self.activitiesDefinitions:
       raise Exception( "You must register activity %s before adding marks to it" % name)
     if type( value ) not in self.__validMonitoringValues:
