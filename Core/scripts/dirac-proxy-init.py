@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/Attic/dirac-proxy-init.py,v 1.3 2008/06/03 14:34:00 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/Attic/dirac-proxy-init.py,v 1.4 2008/06/06 09:34:20 acasajus Exp $
 # File :   dirac-proxy-init.py
 # Author : Adrian Casajus
 ########################################################################
-__RCSID__   = "$Id: dirac-proxy-init.py,v 1.3 2008/06/03 14:34:00 acasajus Exp $"
-__VERSION__ = "$Revision: 1.3 $"
+__RCSID__   = "$Id: dirac-proxy-init.py,v 1.4 2008/06/06 09:34:20 acasajus Exp $"
+__VERSION__ = "$Revision: 1.4 $"
 
 import sys
 from DIRACEnvironment import DIRAC
@@ -105,6 +105,9 @@ if not proxyLoc:
   proxyLoc = Security.getDefaultProxyLocation()
 
 if params.debug:
+  h = int( params.proxyLifeTime / 3600 )
+  m = int( params.proxyLifeTime / 60 )- h * 60
+  print "Proxy lifetime will be %02d:%02d" % ( h, m )
   print "User cert is %s" % certLoc
   print "User key  is %s" % keyLoc
   print "Proxy will be written to %s" % proxyLoc
