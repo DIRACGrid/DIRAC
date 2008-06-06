@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfo.py,v 1.20 2008/06/05 10:20:17 acasajus Exp $
-__RCSID__ = "$Id: SocketInfo.py,v 1.20 2008/06/05 10:20:17 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfo.py,v 1.21 2008/06/06 09:49:25 acasajus Exp $
+__RCSID__ = "$Id: SocketInfo.py,v 1.21 2008/06/06 09:49:25 acasajus Exp $"
 
 import time
 import copy
@@ -110,6 +110,8 @@ class SocketInfo:
     self.setLocalCredentialsLocation( certKeyTuple )
     gLogger.debug("Using certificate %s\nUsing key %s" % certKeyTuple )
     self.__createContext( serverContext )
+    #Verify depth to 20 to ensure accepting proxies of proxies of proxies....
+    self.sslContext.set_verify_depth( 20 )
     self.sslContext.use_certificate_chain_file( certKeyTuple[0] )
     self.sslContext.use_privatekey_file(  certKeyTuple[1] )
 
