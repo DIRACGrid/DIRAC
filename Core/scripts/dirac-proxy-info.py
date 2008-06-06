@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/Attic/dirac-proxy-info.py,v 1.2 2008/06/04 16:24:48 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/Attic/dirac-proxy-info.py,v 1.3 2008/06/06 09:34:38 acasajus Exp $
 # File :   dirac-proxy-init.py
 # Author : Adrian Casajus
 ########################################################################
-__RCSID__   = "$Id: dirac-proxy-info.py,v 1.2 2008/06/04 16:24:48 acasajus Exp $"
-__VERSION__ = "$Revision: 1.2 $"
+__RCSID__   = "$Id: dirac-proxy-info.py,v 1.3 2008/06/06 09:34:38 acasajus Exp $"
+__VERSION__ = "$Revision: 1.3 $"
 
 import sys
 import os.path
@@ -77,6 +77,7 @@ mainCert = chain.getCertInChain(-1)['Value']
 print "subject     : %s" % lastCert.getSubjectDN()[ 'Value' ]
 print "issuer      : %s" % lastCert.getIssuerDN()[ 'Value' ]
 print "identity    : %s" % mainCert.getSubjectDN()[ 'Value' ]
+print "path        : %s" % proxyLoc
 group = chain.getDIRACGroup()[ 'Value' ]
 if not group:
   group = '<not set>'
