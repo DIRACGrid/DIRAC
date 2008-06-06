@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.33 2008/06/06 09:35:56 acasajus Exp $
-__RCSID__ = "$Id: MonitoringClient.py,v 1.33 2008/06/06 09:35:56 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.34 2008/06/06 14:04:07 acasajus Exp $
+__RCSID__ = "$Id: MonitoringClient.py,v 1.34 2008/06/06 14:04:07 acasajus Exp $"
 
 import threading
 import time
@@ -142,7 +142,7 @@ class MonitoringClient:
     @param bucketLength: Bucket length in seconds
     """
     if not self.__initialized:
-      return S_ERROR( "Monitoring is not initialized" )
+      return
     self.activitiesLock.acquire()
     try:
       self.logger.debug( "Registering activity %s" % name )
@@ -173,7 +173,7 @@ class MonitoringClient:
     @param value: Weight of the mark. By default it's one.
     """
     if not self.__initialized:
-      return S_ERROR( "Monitoring is not initialized" )
+      return
     if name not in self.activitiesDefinitions:
       raise Exception( "You must register activity %s before adding marks to it" % name)
     if type( value ) not in self.__validMonitoringValues:
