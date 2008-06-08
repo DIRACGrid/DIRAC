@@ -1,8 +1,8 @@
-# $Id: Workflow.py,v 1.31 2008/05/20 15:37:48 atsareg Exp $
+# $Id: Workflow.py,v 1.32 2008/06/08 21:42:16 atsareg Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.31 $"
+__RCSID__ = "$Revision: 1.32 $"
 
 import os
 import xml.sax
@@ -259,6 +259,8 @@ class Workflow(AttributeCollection):
           else:
             wf_exec_steps[step_inst_name][parameter.getName()]=parameter.getValue()
             #print "StepInstance", step_inst_name+'.'+parameter.getName(),'=',parameter.getValue()
+        step_inst.step_commons[parameter.getName()] = parameter.getValue()
+      
       step_inst.setParent(self)
       step_inst.setWorkflowCommons(self.workflow_commons)
       
