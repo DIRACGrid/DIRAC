@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.29 2008/06/06 16:55:54 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.30 2008/06/09 13:04:03 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.29 2008/06/06 16:55:54 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.30 2008/06/09 13:04:03 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -1095,7 +1095,7 @@ class Dirac:
       self.log.verbose('Output written to %s' %outputFile)
 
     if printOutput:
-      self.log.info(self.pPrint.pformat(summary))
+      print self.pPrint.pformat(summary)
 
     return S_OK(summary)
 
@@ -1135,12 +1135,12 @@ class Dirac:
         self.log.warn('No heartbeat data for job %s' %job)
 
     if printOutput:
-      self.log.info(self.pPrint.pformat(summary))
+      print self.pPrint.pformat(summary)
 
     return S_OK(summary)
 
   #############################################################################
-  def parameters(self,jobID):
+  def parameters(self,jobID,printOutput=False):
     """Return DIRAC parameters associated with the given job.
 
        DIRAC keeps track of several job parameters which are kept in the job monitoring
@@ -1172,11 +1172,13 @@ class Dirac:
     if result['Value'].has_key('StandardOutput'):
       del result['Value']['StandardOutput']
 
-    self.log.info(self.pPrint.pformat(result['Value']))
+    if printOutput:
+      print self.pPrint.pformat(result['Value'])
+
     return result
 
   #############################################################################
-  def loggingInfo(self,jobID):
+  def loggingInfo(self,jobID,printOutput=False):
     """DIRAC keeps track of job transitions which are kept in the job monitoring
        service, see example below.  Logging summary also printed to screen at the
        INFO level.
@@ -1205,19 +1207,20 @@ class Dirac:
       self.log.warn(result)
       return result
 
-    loggingTupleList = result['Value']
-    #source is removed for printing to control width
-    headers = ('Status','MinorStatus','ApplicationStatus','DateTime')
-    line = ''
-    for i in headers:
-      line += i.ljust(25)
-    print line
-
-    for i in loggingTupleList:
+    if printOutput:
+      loggingTupleList = result['Value']
+      #source is removed for printing to control width
+      headers = ('Status','MinorStatus','ApplicationStatus','DateTime')
       line = ''
-      for j in xrange(len(i)-1):
-        line += i[j].ljust(25)
+      for i in headers:
+        line += i.ljust(30)
       print line
+
+      for i in loggingTupleList:
+        line = ''
+        for j in xrange(len(i)-1):
+          line += i[j].ljust(30)
+        print line
 
     return result
 
