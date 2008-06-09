@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/Attic/dirac-wms-job-logging-info,v 1.3 2008/04/17 13:10:03 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/Attic/dirac-wms-job-logging-info,v 1.4 2008/06/09 13:04:17 paterson Exp $
 # File :   dirac-production-job-logging-ingo
 # Author : Stuart Paterson
 ########################################################################
-__RCSID__   = "$Id: dirac-wms-job-logging-info,v 1.3 2008/04/17 13:10:03 rgracian Exp $"
-__VERSION__ = "$Revision: 1.3 $"
+__RCSID__   = "$Id: dirac-wms-job-logging-info,v 1.4 2008/06/09 13:04:17 paterson Exp $"
+__VERSION__ = "$Revision: 1.4 $"
 from DIRACEnvironment import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.Interfaces.API.Dirac                              import Dirac
@@ -19,7 +19,7 @@ def usage():
 
 if len(args) < 1:
   usage()
-  
+
 dirac=Dirac()
 exitCode = 0
 errorList = []
@@ -33,7 +33,7 @@ for job in args:
     exitCode = 2
     continue
 
-  result = dirac.loggingInfo(job)
+  result = dirac.loggingInfo(job,printOutput=True)
   if not result['OK']:
     errorList.append( (job, result['Message']) )
     exitCode = 2
