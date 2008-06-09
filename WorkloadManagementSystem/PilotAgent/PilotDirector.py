@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/PilotDirector.py,v 1.12 2008/05/15 08:04:51 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/PilotDirector.py,v 1.13 2008/06/09 17:33:40 paterson Exp $
 # File :   PilotDirector.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
      are overridden in Grid specific subclasses.
 """
 
-__RCSID__ = "$Id: PilotDirector.py,v 1.12 2008/05/15 08:04:51 rgracian Exp $"
+__RCSID__ = "$Id: PilotDirector.py,v 1.13 2008/06/09 17:33:40 paterson Exp $"
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
 from DIRAC.Core.Utilities.Subprocess                       import shellCall
@@ -372,6 +372,9 @@ class PilotDirector(Thread):
           tmpSites.remove(site)
           self.log.verbose('Removing banned site %s from site candidate list for job %s' %(site,job))
       candidates = tmpSites
+
+    if candidateSites==['ANY']:
+      candidateSites=candidates
 
     tmpSites = []
     if candidateSites:
