@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.34 2008/04/27 21:17:03 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.35 2008/06/09 09:28:57 paterson Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.34 2008/04/27 21:17:03 rgracian Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.35 2008/06/09 09:28:57 paterson Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -68,6 +68,7 @@ class JobAgent(Agent):
     self.maxProxyLength =  gConfig.getValue(self.section+'/MaxProxyLength',72)
     #Added default in case pilot role was stripped somehow during proxy delegation
     self.defaultProxyGroup = gConfig.getValue(self.section+'/DefaultProxyGroup','lhcb_pilot')
+    self.defaultLogLevel = gConfig.getValue(self.section+'/DefaultLogLevel','debug')
     self.fillingMode = gConfig.getValue(self.section+'/FillingModeFlag',1)
     self.jobCount=0
     return result
@@ -419,6 +420,13 @@ class JobAgent(Agent):
       if not systemConfig:
         return S_ERROR('Could not establish system configuration from Job requirements or LocalSite/Architecture section')
 
+    logLevel=self.defaultLogLevel
+    if jobParams.has_key('LogLevel'):
+      logLevel = jobParams['LogLevel']
+      self.log.info('Found Job LogLevel JDL parameter with value: %s' %(logLevel))
+    else:
+      self.log.info('Applying default LogLevel JDL parameter with value: %s' %(logLevel))
+
     realPythonPath = os.path.realpath(dPython)
 #    if dPython != realPythonPath:
     self.log.debug('Real python path after resolving links is:')
@@ -451,7 +459,7 @@ class JobAgent(Agent):
     os.chmod(jobWrapperFile,0755)
     jobExeFile = '%s/job/Wrapper/Job%s' %(self.siteRoot,jobID)
     #jobFileContents = '#!/bin/sh\nexport LD_LIBRARY_PATH=%s:%s:%s:$LD_LIBRARY_PATH\n%s %s -o LogLevel=debug' %(libDir,lib64Dir,usrlibDir,dPython,jobWrapperFile)
-    jobFileContents = '#!/bin/sh\nexport LD_LIBRARY_PATH=%s\n%s %s -o LogLevel=debug' %(libDir,dPython,jobWrapperFile)
+    jobFileContents = '#!/bin/sh\nexport LD_LIBRARY_PATH=%s\n%s %s -o LogLevel=%s' %(libDir,dPython,jobWrapperFile,logLevel)
     jobFile = open(jobExeFile,'w')
     jobFile.write(jobFileContents)
     jobFile.close()
