@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: DownloadInputData.py,v 1.4 2008/04/29 14:38:44 paterson Exp $
+# $Id: DownloadInputData.py,v 1.5 2008/06/09 10:20:31 paterson Exp $
 # File :   DownloadInputData.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     defined in the CS for the VO.
 """
 
-__RCSID__ = "$Id: DownloadInputData.py,v 1.4 2008/04/29 14:38:44 paterson Exp $"
+__RCSID__ = "$Id: DownloadInputData.py,v 1.5 2008/06/09 10:20:31 paterson Exp $"
 
 from DIRAC.Core.DISET.RPCClient                                     import RPCClient
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
@@ -133,6 +133,7 @@ class DownloadInputData:
       return result
 
     resolvedData = {}
+    localSECount = 0
     for lfn in downloadReplicas.keys():
       result = self.__getPFN(downloadReplicas[lfn]['PFN'], downloadReplicas[lfn]['SE'],downloadReplicas[lfn]['Size'],downloadReplicas[lfn]['GUID'])
       if not result['OK']:
@@ -145,6 +146,7 @@ class DownloadInputData:
           resolvedData[lfn] = result['Value']
       else:
         resolvedData[lfn] = result['Value']
+        localSECount+=1
 
     #Report datasets that could not be downloaded
     report = ''
@@ -158,7 +160,8 @@ class DownloadInputData:
       report = 'Successfully downloaded LFN(s):\n'
       for lfn,reps in resolvedData.items():
         report+='%s\n' %(lfn)
-
+      totalLFNs = len(resolvedData.keys())
+      report+='\nDownloaded %s / %s files from local Storage Elements on first attempt.' %(localSECount,totalLFNs)
       self.__setJobParam(COMPONENT_NAME,report)
 
     result = S_OK()
