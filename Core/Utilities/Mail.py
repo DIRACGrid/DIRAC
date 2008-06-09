@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Mail.py,v 1.1 2008/02/18 17:26:21 mseco Exp $
-__RCSID__ = "$Id: Mail.py,v 1.1 2008/02/18 17:26:21 mseco Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Mail.py,v 1.2 2008/06/09 17:52:55 paterson Exp $
+__RCSID__ = "$Id: Mail.py,v 1.2 2008/06/09 17:52:55 paterson Exp $"
 """
     Extremely simple utility class to send mails
 """
@@ -25,7 +25,7 @@ class Mail( SMTP ):
     except socket.error:
       gLogger.info( 'Could not connect to mail server' )
       return S_ERROR( 'Could not connect to mail server' )
-    
+
 
     self.set_debuglevel( None )
 
@@ -40,9 +40,13 @@ class Mail( SMTP ):
         return S_ERROR ( "Subject and body empty. Mail not sent" )
 
     mailString = "From: %s\nTo: %s\nSubject: %s\n%s\n"
-    text = mailString % ( self._fromAddress, ', '.join( self._mailAddress ),
+    addresses = self._mailAddress
+    if not type(self._mailAddress)==type([]):
+      addresses = [self._mailAddress]
+
+    text = mailString % ( self._fromAddress, ', '.join( addresses ),
                           self._subject, self._message )
-    
+
     try:
       self.sendmail( self._fromAddress, self._mailAddress, text )
     except Exception, v:
@@ -50,6 +54,6 @@ class Mail( SMTP ):
       return S_ERROR("Sending mail failed %s" % str( v ) )
 
     print self.quit()
-    gLogger.info( "The mail was succesfully sent", "to user(s) %s" \
-                  % ', '.join( self._mailAddress ) )
+    gLogger.info( "The mail was succesfully sent", "to %s" \
+                  % ', '.join( addresses ) )
     return S_OK( "The mail was succesfully sent" )
