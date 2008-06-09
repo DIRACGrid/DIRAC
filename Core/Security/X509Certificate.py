@@ -127,6 +127,18 @@ class X509Certificate:
         return S_OK( ext.get_value() )
     return S_OK()
 
+  def hasVOMSExtensions(self):
+    """
+    Has voms extensions
+    """
+    if not self.__valid:
+      return S_ERROR( "No certificate loaded" )
+    extList = self.__certObj.get_extensions()
+    for ext in extList:
+      if ext.get_sn() == "vomsExtensions":
+        return S_OK( True )
+    return S_OK( False )
+
   def __proxyExtensionList(self):
     return [ GSI.crypto.X509Extension( 'keyUsage', 'critical, digitalSignature, keyEncipherment, dataEncipherment' ) ]
 

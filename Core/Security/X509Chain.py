@@ -4,6 +4,7 @@ import os
 import stat
 from GSI import crypto
 from DIRAC.Core.Security.X509Certificate import X509Certificate
+from DIRAC.Core.Security import File, CS
 from DIRAC import S_OK, S_ERROR
 
 class X509Chain:
@@ -103,6 +104,13 @@ class X509Chain:
       fd.close()
     except IOError:
       return S_ERROR( "Can't open %s file" % chainLocation )
+    return self.loadProxyFromString( pemData )
+
+  def loadProxyFromString( self, pemData ):
+    """
+    Load a Proxy from a pem buffer
+    Return : S_OK / S_ERROR
+    """
     retVal = self.loadChainFromString( pemData )
     if not retVal[ 'OK' ]:
       return retVal
@@ -234,6 +242,19 @@ class X509Chain:
         return retVal
     return S_OK( True )
 
+  def isVOMS(self):
+    """
+    Check wether this chain is a proxy
+    """
+    retVal = self.isProxy()
+    if not retVal[ 'OK' ] or not retVal[ 'Value' ]:
+      return retVal
+    for i in range( len( self.__certList ) ):
+      cert = self.getCertInChain( i )[ 'Value' ]
+      if cert.hasVOMS()[ 'Value' ]:
+        return S_OK( True )
+    return S_OK( False )
+
   def __checkProxyness( self, issuerId, certId ):
     """
     Check proxyness between two certs in the chain
@@ -268,10 +289,11 @@ class X509Chain:
     """
     if not self.__loadedChain:
       return S_ERROR( "No chain loaded" )
-    retVal = self.isProxy()
-    if not retVal['OK'] or not retVal[ 'Value' ]:
-      return retVal
-    return self.getCertInChain( -2 )[ 'Value' ].getDIRACGroup()
+    for i in range( len( self.__certList ) -1, -1, -1 ):
+      retVal = self.getCertInChain( i )[ 'Value' ].getDIRACGroup()
+      if 'Value' in retVal:
+        return retVal
+    return S_OK()
 
   def isExpired( self ):
     """
@@ -391,3 +413,39 @@ class X509Chain:
 
   def __repr__(self):
     return self.__str__()
+
+  def getCredentials(self):
+    retVal = self.isProxy()
+    if not retVal[ 'OK' ]:
+      return retVal
+    isProxy = retVal[ 'Value' ]
+    credDict = { 'subject' : self.__certList[0].get_subject().one_line(),
+                 'isProxy' : isProxy,
+                 'validDN' : False,
+                 'validGroup' : False }
+    if isProxy:
+      retVal = self.getDIRACGroup()
+      if not retVal[ 'OK' ]:
+        return retVal
+      diracGroup = retVal[ 'Value' ]
+      if not diracGroup:
+        diracGroup = gConfig.getValue( "/DIRAC/DefaultGroup", "user" )
+      credDict[ 'group' ] = diracGroup
+      credDict[ 'identity'] = self.__certList[-1].get_subject().one_line()
+      retVal = CS.getUsernameForDN( credDict[ 'identity' ] )
+      if retVal[ 'OK' ]:
+        credDict[ 'username' ] = retVal[ 'Value' ]
+        credDict[ 'validDN' ] = True
+        retVal = CS.getGroupsForUser( credDict[ 'username' ] )
+        if retVal[ 'OK' ] and diracGroup in retVal[ 'Value']:
+          credDict[ 'validGroup' ] = True
+    else:
+      retVal = CS.getHostNameForDN( credDict['subject'] )
+      retVal[ 'group' ] = 'hosts'
+      if retVal[ 'OK' ]:
+        credDict[ 'hostname' ] = retVal[ 'Value' ]
+        credDict[ 'validDN' ] = True
+        credDict[ 'validGroup' ] = True
+    return S_OK( credDict )
+
+
