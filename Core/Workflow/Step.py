@@ -1,8 +1,8 @@
-# $Id: Step.py,v 1.24 2008/06/08 21:31:17 atsareg Exp $
+# $Id: Step.py,v 1.25 2008/06/09 13:36:43 atsareg Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.24 $"
+__RCSID__ = "$Revision: 1.25 $"
 
 import os, time, types, traceback, sys
 #try: # this part to inport as part of the DIRAC framework
@@ -15,7 +15,7 @@ from DIRAC import S_OK, S_ERROR
 
 class StepDefinition(AttributeCollection):
 
-    def __init__(self, type=None, obj=None, parent=None):
+    def __init__(self, step_type=None, obj=None, parent=None):
         AttributeCollection.__init__(self)
         self.module_instances = None
         # this object can be shared with the workflow
@@ -47,8 +47,8 @@ class StepDefinition(AttributeCollection):
                 self.module_definitions = DefinitionsPool(self. obj.module_definitions)
         else:
             raise TypeError('Can not create object type '+ str(type(self)) + ' from the '+ str(type(obj)))
-        if type :
-          self.setType(type) 
+        if step_type :
+          self.setType(step_type)
 
     def __str__(self):
         ret =  str(type(self))+':\n'+ AttributeCollection.__str__(self) + self.parameters.__str__()
@@ -85,16 +85,16 @@ class StepDefinition(AttributeCollection):
             self.module_definitions.append(module)
         return module
 
-    def createModuleInstance(self, type, name):
+    def createModuleInstance(self, module_type, name):
         """ Creates module instance of type 'type' with the name 'name'
         """
 
-        if self.module_definitions[type]:
-            mi = ModuleInstance(name, self.module_definitions[type])
+        if self.module_definitions[module_type]:
+            mi = ModuleInstance(name, self.module_definitions[module_type])
             self.module_instances.append(mi)
             return mi
         else:
-            raise KeyError('Can not find ModuleDefinition '+ type+' to create ModuleInstrance '+name)
+            raise KeyError('Can not find ModuleDefinition '+ module_type+' to create ModuleInstrance '+name)
 
     def removeModuleInstance(self, name):
         self.module_instances.delete(name)
@@ -204,7 +204,7 @@ class StepInstance(AttributeCollection):
         for mod_inst in step_def.module_instances:
             mod_inst_name = mod_inst.getName()
             mod_inst_type = mod_inst.getType()
- 
+
             print "StepInstance creating module instance ",mod_inst_name," of type", mod_inst.getType()
             # since during execution Step is inside Workflow the  step_def.module_definitions == None
             #step_exec_modules[mod_inst_name] = step_def.module_definitions[mod_inst_type].main_class_obj() # creating instance
@@ -225,11 +225,11 @@ class StepInstance(AttributeCollection):
                         setattr(step_exec_modules[mod_inst_name], parameter.getName(), parameter.getValue())
                         #print "ModuleInstance", mod_inst_name+'.'+parameter.getName(),'=',parameter.getValue()
 
-            # Set reference to the workflow and step common tools           
+            # Set reference to the workflow and step common tools
             setattr(step_exec_modules[mod_inst_name], 'workflow_commons', self.parent.workflow_commons)
-            setattr(step_exec_modules[mod_inst_name], 'step_commons', self.step_commons)    
+            setattr(step_exec_modules[mod_inst_name], 'step_commons', self.step_commons)
             setattr(step_exec_modules[mod_inst_name], 'stepStatus', self.stepStatus)
-            setattr(step_exec_modules[mod_inst_name], 'workflowStatus', self.parent.workflowStatus)           
+            setattr(step_exec_modules[mod_inst_name], 'workflowStatus', self.parent.workflowStatus)
 
             try:
               result = step_exec_modules[mod_inst_name].execute()
@@ -238,8 +238,8 @@ class StepInstance(AttributeCollection):
                   error_message = result['Message']
                   if self.workflow_commons.has_key('JobReport'):
                     result = self.workflow_commons['JobReport'].setApplicationStatus(error_message)
-                self.stepStatus = S_ERROR(result['Message']) 
-              else:  
+                self.stepStatus = S_ERROR(result['Message'])
+              else:
                 # Get output values to the step_commons dictionary
                 for key in result.keys():
                   if key != "OK":
@@ -247,20 +247,20 @@ class StepInstance(AttributeCollection):
                       self.step_commons[key] = result[key]
                     elif type(result['Value']) == types.DictType:
                       for vkey in result['Value'].keys():
-                        self.step_commons[key] = result['Value'][key] 
-                    
+                        self.step_commons[key] = result['Value'][key]
+
             except Exception, x:
               print "Exception while module execution"
               print "Module",mod_inst_name,mod_inst.getType()
               print str(x)
               exc = sys.exc_info()
-              type = exc[0]
+              exc_type = exc[0]
               value = exc[1]
               print "== EXCEPTION ==\n%s: %s\n\n%s===============" % (
-                         type,
+                         exc_type,
                          value,
                          "\n".join(traceback.format_tb(exc[2])))
-                         
+
               if self.stepStatus['OK']:
                 # This is the error that caused the workflow disruption
                 # report it to the WMS
@@ -291,5 +291,5 @@ class StepInstance(AttributeCollection):
         # Return the result of the first failed module or S_OK
         if not self.stepStatus['OK']:
           return S_ERROR(error_message)
-        else:  
+        else:
           return S_OK(result['Value'])
