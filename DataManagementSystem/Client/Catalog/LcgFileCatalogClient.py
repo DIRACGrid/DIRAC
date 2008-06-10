@@ -460,7 +460,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
           failed[lfn] = lfc.sstrerror(errno)
     lfnRemoved = successful.keys()
     if len(lfnRemoved) > 0:
-      res = self.getReplicas(lfnRemoved)
+      res = self.getReplicas(lfnRemoved,True)
       zeroReplicaFiles = []
       if not res['OK']:
         return res
@@ -573,7 +573,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
-  def getReplicas(self,path):
+  def getReplicas(self,path,allStatus=False):
     """ Returns replicas for an LFN or list of LFNs
     """
     if type(path) in types.StringTypes:
@@ -596,9 +596,11 @@ class LcgFileCatalogClient(FileCatalogueBase):
       else:
         successful[lfn] = {}
         for replica in replicaObjects:
-          se = replica.host
-          pfn = replica.sfn.strip()
-          successful[lfn][se] = pfn
+          status = replica.status
+          if not (status == 'P') or allStatus:
+            se = replica.host
+            pfn = replica.sfn.strip()
+            successful[lfn][se] = pfn
     if self.session:
       self.__closeSession()
     resDict = {'Failed':failed,'Successful':successful}
@@ -644,7 +646,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
       self.__openSession()
     for replicaTuple in replicas:
       lfn,pfn,se,status = replicaTuple
-      value = lfc.lfc_setrstatus(pfn,status)
+      value = lfc.lfc_setrstatus(pfn,status[0])
       if not value == 0:
         errno = lfc.cvar.serrno
         failed[lfn] = lfc.sstrerror(errno)
