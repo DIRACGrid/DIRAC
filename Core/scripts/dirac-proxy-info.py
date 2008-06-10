@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/Attic/dirac-proxy-info.py,v 1.9 2008/06/10 16:46:50 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/Attic/dirac-proxy-info.py,v 1.10 2008/06/10 16:47:27 acasajus Exp $
 # File :   dirac-proxy-init.py
 # Author : Adrian Casajus
 ########################################################################
-__RCSID__   = "$Id: dirac-proxy-info.py,v 1.9 2008/06/10 16:46:50 acasajus Exp $"
-__VERSION__ = "$Revision: 1.9 $"
+__RCSID__   = "$Id: dirac-proxy-info.py,v 1.10 2008/06/10 16:47:27 acasajus Exp $"
+__VERSION__ = "$Revision: 1.10 $"
 
 import sys
 import os.path
@@ -92,7 +92,6 @@ secs -= mins * 60
 print "time left   : %02d:%02d:%02d" % ( hours, mins, secs )
 if chain.isVOMS()['Value']:
   print "extra       : Contains voms extensions"
-  print " voms data  : %s" % entry
   voms = VOMS()
   retVal = voms.getVOMSAttributes( proxyLoc )
   if retVal[ 'OK' ]:
