@@ -22,6 +22,12 @@ class StorageUsageHandler(RequestHandler):
     """ Insert the directory and parameters in the database
     """
     try:
+      res = storageUsageDB.removeDirectory(directory)
+      if res['OK']:
+        gLogger.info("StorageUsageHandler.insertDirectory: Successfully removed existing directory.")
+      else:
+        gLogger.error("StorageUsageHandler.insertDirectory: Failed to remove existing directory.")
+
       gLogger.info("StorageUsageHandler.insertDirectory: Attempting to insert %s into database." % directory)
       res = storageUsageDB.insertDirectory(directory,directoryFiles,directorySize)
       if res['OK']:
@@ -51,6 +57,23 @@ class StorageUsageHandler(RequestHandler):
       gLogger.exception(errStr,str(x))
       return S_ERROR(errStr)
 
+  types_publishEmptyDirectory = [StringType]
+  def export_publishEmptyDirectory(self,directory):
+    """ Publish that the supplied directory is empty
+    """
+    try:
+      gLogger.info("StorageUsageHandler.publishEmptyDirectory: Attempting to remove usage for %s." % directory)
+      res = storageUsageDB.recursiveRemoveDirectory(directory)
+      if res['OK']:
+        gLogger.info("StorageUsageHandler.publishEmptyDirectory: Successfully removed directory.")
+      else:
+        gLogger.error("StorageUsageHandler.publishDirectoryUsage: Failed to remove directory.")
+      return res
+    except Exception, x:
+      errStr = "StorageUsageHandler.publishEmptyDirectory: Exception removing directory."
+      gLogger.exception(errStr,str(x))
+      return S_ERROR(errStr)
+
   types_getStorageSummary = []
   def export_getStorageSummary(self):
     """ Retieve a summary for the storage usage
@@ -67,4 +90,4 @@ class StorageUsageHandler(RequestHandler):
       errStr = "StorageUsageHandler.getStorageSummary: Exception while obtaining usage."
       gLogger.exception(errStr,str(x))
       return S_ERROR(errStr)
-    
+
