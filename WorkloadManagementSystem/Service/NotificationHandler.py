@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: NotificationHandler.py,v 1.2 2008/06/10 14:12:37 paterson Exp $
+# $Id: NotificationHandler.py,v 1.3 2008/06/10 14:56:14 paterson Exp $
 ########################################################################
 
 """ The Notification service provides a toolkit to contact people via email
@@ -14,7 +14,7 @@
     Grid, an email could be sent by default with the metadata of the file.
 """
 
-__RCSID__ = "$Id: NotificationHandler.py,v 1.2 2008/06/10 14:12:37 paterson Exp $"
+__RCSID__ = "$Id: NotificationHandler.py,v 1.3 2008/06/10 14:56:14 paterson Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -28,8 +28,8 @@ def initializeNotificationHandler( serviceInfo ):
 class NotificationHandler( RequestHandler ):
 
   ###########################################################################
-  types_sendMail = [StringType,StringType,StringType]
-  def export_sendMail(self,address,subject,body):
+  types_sendMail = [StringType,StringType,StringType,StringType]
+  def export_sendMail(self,address,subject,body,fromAddress):
     """ Send an email with supplied body to the specified address using the Mail utility.
     """
     gLogger.verbose('Received signal to send the following mail to %s:\nSubject = %s\n%s' %(address,subject,body))
@@ -37,6 +37,8 @@ class NotificationHandler( RequestHandler ):
     m._subject = subject
     m._message = body
     m._mailAddress = address
+    if not fromAddress=='None':
+      m._fromAddress = fromAddress
     result = m._send()
     if not result['OK']:
       gLogger.warn('Could not send mail with the following message:\n%s' %result['Message'])
