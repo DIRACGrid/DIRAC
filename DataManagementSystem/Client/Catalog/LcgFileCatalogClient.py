@@ -940,10 +940,11 @@ class LcgFileCatalogClient(FileCatalogueBase):
         pathDict['SubDirs'].append(subDir)
       else:
         replicaDict = {}
-        if fileInfo:
+        if entry:
           fileSize = entry.filesize
           pathDict['TotalSize'] += fileSize
           pathDict['Files'] += 1
+        if fileInfo:
           for replica in fileInfo:
             if not pathDict['SiteUsage'].has_key(replica.host):
               pathDict['SiteUsage'][replica.host] = {'Files':0,'Size':0}
