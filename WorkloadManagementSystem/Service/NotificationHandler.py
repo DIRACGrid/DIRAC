@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: NotificationHandler.py,v 1.1 2008/06/10 10:30:16 paterson Exp $
+# $Id: NotificationHandler.py,v 1.2 2008/06/10 14:12:37 paterson Exp $
 ########################################################################
 
 """ The Notification service provides a toolkit to contact people via email
@@ -14,7 +14,7 @@
     Grid, an email could be sent by default with the metadata of the file.
 """
 
-__RCSID__ = "$Id: NotificationHandler.py,v 1.1 2008/06/10 10:30:16 paterson Exp $"
+__RCSID__ = "$Id: NotificationHandler.py,v 1.2 2008/06/10 14:12:37 paterson Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -32,17 +32,17 @@ class NotificationHandler( RequestHandler ):
   def export_sendMail(self,address,subject,body):
     """ Send an email with supplied body to the specified address using the Mail utility.
     """
-    self.log.verbose('Received signal to send the following mail to %s:\nSubject = %s\n%s' %(address,subject,body))
+    gLogger.verbose('Received signal to send the following mail to %s:\nSubject = %s\n%s' %(address,subject,body))
     m = Mail()
     m._subject = subject
     m._message = body
     m._mailAddress = address
     result = m._send()
     if not result['OK']:
-      self.log.warn('Could not send mail with the following message:\n%s' %result['Message'])
+      gLogger.warn('Could not send mail with the following message:\n%s' %result['Message'])
     else:
-      self.log.verbose('Mail sent successfully to %s with subject %s' %(address,subject))
-      self.log.debug(result['Value'])
+      gLogger.verbose('Mail sent successfully to %s with subject %s' %(address,subject))
+      gLogger.debug(result['Value'])
 
     return result
 
