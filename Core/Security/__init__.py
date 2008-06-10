@@ -13,7 +13,9 @@ GSI.crypto.add_x509_extension_alias( nid, 78 ) #Alias to netscape comment, text 
 nid = GSI.crypto.create_oid( "1.3.6.1.4.1.8005.100.100.5", "vomsExtensions", "VOMS extension" )
 GSI.crypto.add_x509_extension_alias( nid, 78 ) #Alias to netscape comment, text based extension
 
-from DIRAC.Core.Security import Locations
+import DIRAC.Core.Security.Locations
+import DIRAC.Core.Security.CS
+import DIRAC.Core.Security.File
 from DIRAC.Core.Security.X509Certificate import X509Certificate
 from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.Core.Security.X509Request import X509Request
