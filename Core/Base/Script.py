@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Script.py,v 1.10 2008/06/02 18:04:13 acasajus Exp $
-__RCSID__ = "$Id: Script.py,v 1.10 2008/06/02 18:04:13 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Script.py,v 1.11 2008/06/10 12:37:07 acasajus Exp $
+__RCSID__ = "$Id: Script.py,v 1.11 2008/06/10 12:37:07 acasajus Exp $"
 
 import sys
 import os.path
@@ -46,5 +46,12 @@ def getUnprocessedSwitches():
   global localCfg
   return localCfg.getUnprocessedSwitches()
 
+def addDefaultOptionValue( option, value ):
+  global localCfg
+  localCfg.addDefaultEntry( option, value )
+
 def disableCS():
   localCfg.disableCS()
+
+def enableCS():
+  return localCfg.enableCS()
