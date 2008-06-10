@@ -1,5 +1,5 @@
 
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR, gConfig
 import DIRAC.Core.Security.Locations as Locations
 import DIRAC.Core.Security.File as File
 from DIRAC.Core.Security.BaseSecurity import BaseSecurity
@@ -95,7 +95,7 @@ class VOMS( BaseSecurity ):
     chain = proxyDict[ 'chain' ]
     proxyLocation = proxyDict[ 'file' ]
 
-    vomsEnv = self._getExternalCmdEnvironment()
+    vomsEnv = self._getExternalCmdEnvironment( noX509 = True )
 
     cmd = 'voms-proxy-info -file %s' % proxyLocation
     if option:
@@ -104,7 +104,7 @@ class VOMS( BaseSecurity ):
     result = shellCall( self._secCmdTimeout, cmd, env = vomsEnv )
 
     if proxyDict[ 'tempFile' ]:
-        self._unlinkFiles( proxyLocation )
+      self._unlinkFiles( proxyLocation )
 
     if not result['OK']:
       return S_ERROR('Failed to call voms-proxy-info')
@@ -122,3 +122,58 @@ class VOMS( BaseSecurity ):
         output = '/lhcb'
 
     return S_OK( output )
+
+  def setVOMSAttributes( self, proxy, attribute, vo = False ):
+    """ Sets voms attributes to a proxy
+    """
+    if not vo:
+      vo = gConfig.getValue( "/DIRAC/VirtualOrganization", "" )
+      if not vo:
+        return S_ERROR( "No vo specified, and can't get default in the configuration" )
+
+    retVal = self._loadProxy( proxy )
+    if not retVal[ 'OK' ]:
+      return retVal
+    proxyDict = retVal[ 'Value' ]
+    chain = proxyDict[ 'chain' ]
+    proxyLocation = proxyDict[ 'file' ]
+
+    try:
+      fd,newProxyLocation = tempfile.mkstemp()
+      os.close(fd)
+    except IOError:
+      if proxyDict[ 'tempFile' ]:
+        self._unlinkFiles( proxyLocation )
+      return S_ERROR('Failed to create temporary file for store proxy from MyProxy service')
+
+    vomsEnv = self._getExternalCmdEnvironment( noX509 = True )
+
+    cmdArgs = []
+    cmdArgs.append( '-cert "%s"' % proxyLocation )
+    cmdArgs.append( '-key "%s"' % proxyLocation )
+    cmdArgs.append( '-out "%s"' % newProxyLocation )
+    cmdArgs.append( '-voms "%s"' % ( vo, attribute ) )
+    cmd = 'voms-proxy-init %s' % " ".join( cmdArgs )
+
+    result = shellCall( self._secCmdTimeout, cmd, env = vomsEnv )
+
+    if proxyDict[ 'tempFile' ]:
+      self._unlinkFiles( proxyLocation )
+
+    if not result['OK']:
+      self._unlinkFiles( newProxyLocation )
+      return S_ERROR('Failed to call voms-proxy-info')
+
+    status, output, error = result['Value']
+
+    if status:
+      self._unlinkFiles( newProxyLocation )
+      return S_ERROR('Failed to set VOMS attributes. Command: %s; StdOut: %s; StdErr: %s' % (cmd,output,error))
+
+    newChain = x509Chain()
+    retVal = newChain.loadProxyFromFile( newProxyLocation )
+    self._unlinkFiles( newProxyLocation )
+    if not retVal[ 'OK' ]:
+      return S_ERROR( "Can't load new proxy: %s" % retVal[ 'Message' ] )
+
+    return S_OK( newChain )
