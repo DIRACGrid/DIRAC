@@ -944,12 +944,12 @@ class LcgFileCatalogClient(FileCatalogueBase):
           fileSize = entry.filesize
           pathDict['TotalSize'] += fileSize
           pathDict['Files'] += 1
-        if fileInfo:
-          for replica in fileInfo:
-            if not pathDict['SiteUsage'].has_key(replica.host):
-              pathDict['SiteUsage'][replica.host] = {'Files':0,'Size':0}
-            pathDict['SiteUsage'][replica.host]['Size'] += fileSize
-            pathDict['SiteUsage'][replica.host]['Files'] += 1
+          if fileInfo:
+            for replica in fileInfo:
+              if not pathDict['SiteUsage'].has_key(replica.host):
+                pathDict['SiteUsage'][replica.host] = {'Files':0,'Size':0}
+              pathDict['SiteUsage'][replica.host]['Size'] += fileSize
+              pathDict['SiteUsage'][replica.host]['Files'] += 1
     lfc.lfc_closedir(direc)
     return S_OK(pathDict)
 
