@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/Attic/dirac-proxy-info.py,v 1.11 2008/06/10 17:02:18 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/Attic/dirac-proxy-info.py,v 1.12 2008/06/10 18:49:29 acasajus Exp $
 # File :   dirac-proxy-init.py
 # Author : Adrian Casajus
 ########################################################################
-__RCSID__   = "$Id: dirac-proxy-info.py,v 1.11 2008/06/10 17:02:18 acasajus Exp $"
-__VERSION__ = "$Revision: 1.11 $"
+__RCSID__   = "$Id: dirac-proxy-info.py,v 1.12 2008/06/10 18:49:29 acasajus Exp $"
+__VERSION__ = "$Revision: 1.12 $"
 
 import sys
 import os.path
@@ -74,7 +74,7 @@ if not retVal[ 'OK' ]:
   sys.exit(1)
 
 lastCert = chain.getCertInChain()['Value']
-mainCert = chain.getCertInChain(-1)['Value']
+mainCert = chain.getIssuerCert()['Value']
 print "subject     : %s" % lastCert.getSubjectDN()[ 'Value' ]
 print "issuer      : %s" % lastCert.getIssuerDN()[ 'Value' ]
 print "identity    : %s" % mainCert.getSubjectDN()[ 'Value' ]
