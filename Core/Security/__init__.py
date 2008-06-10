@@ -2,7 +2,7 @@
 
 import GSI
 
-requiredGSIVersion = "0.3.4"
+requiredGSIVersion = "0.3.6"
 if GSI.version.__version__ < requiredGSIVersion:
   raise Exception( "pyGSI is not the latest version (installed %s required %s)" % ( GSI.version.__version__, requiredGSIVersion ) )
 
