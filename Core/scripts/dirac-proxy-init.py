@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/Attic/dirac-proxy-init.py,v 1.8 2008/06/10 17:00:31 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/Attic/dirac-proxy-init.py,v 1.9 2008/06/10 17:02:34 acasajus Exp $
 # File :   dirac-proxy-init.py
 # Author : Adrian Casajus
 ########################################################################
-__RCSID__   = "$Id: dirac-proxy-init.py,v 1.8 2008/06/10 17:00:31 acasajus Exp $"
-__VERSION__ = "$Revision: 1.8 $"
+__RCSID__   = "$Id: dirac-proxy-init.py,v 1.9 2008/06/10 17:02:34 acasajus Exp $"
+__VERSION__ = "$Revision: 1.9 $"
 
 import sys
 import getpass
@@ -107,7 +107,7 @@ Script.parseCommandLine()
 passwdPrompt = "Enter Certificate password:"
 if params.stdinPasswd:
   print passwdPrompt,
-  userPasswd = sys.stdin.readline().strip()
+  userPasswd = sys.stdin.readline().strip("\n")
 else:
   userPasswd = getpass.getpass( passwdPrompt )
 
