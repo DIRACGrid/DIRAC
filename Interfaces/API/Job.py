@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.27 2008/06/06 16:55:01 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.28 2008/06/10 16:13:49 paterson Exp $
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -30,7 +30,7 @@
    Note that several executables can be provided and wil be executed sequentially.
 """
 
-__RCSID__ = "$Id: Job.py,v 1.27 2008/06/06 16:55:01 paterson Exp $"
+__RCSID__ = "$Id: Job.py,v 1.28 2008/06/10 16:13:49 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -521,6 +521,22 @@ class Job:
     else:
       raise TypeError,'Expected string for logging level'
 
+  #############################################################################
+  def selectSetup(self,setup):
+    """Under development.
+    """
+    if type(setup) == type("  "):
+      description = 'Choose a different DIRAC setup in which to execute the job'
+      self._addParameter(self.workflow,'DIRACSetup','JDL',setup,description)
+    else:
+      raise TypeError,'Expected string for DIRAC setup'
+
+  #############################################################################
+  def sendMail(self):
+    """Under development.
+    """
+    description = 'Optional flag to send email when jobs complete'
+    self._addParameter(self.workflow,'SendMail','JDL','True',description)
 
   #############################################################################
   def createCode(self):
@@ -602,7 +618,6 @@ class Job:
  #   self.workflow.addModule(module)
 
   #############################################################################
-
   def _addParameter(self,object,name,ptype,value,description,io='input'):
     """ Internal Function
 
@@ -729,7 +744,13 @@ class Job:
 
     arguments.append(os.path.basename(scriptname))
     self.addToInputSandbox.append(scriptname)
-    arguments.append('-o LogLevel=%s' %(self.logLevel))
+    if paramsDict.has_key('LogLevel'):
+      if paramsDict['LogLevel']['value']:
+        arguments.append('-o LogLevel=%s' %(paramsDict['LogLevel']['value']))
+    if paramsDict.has_key('DIRACSetup'):
+      if paramsDict['DIRACSetup']['value']:
+        arguments.append('-o DIRAC/Setup=%s' %(paramsDict['DIRACSetup']['value']))
+
     classadJob.insertAttributeString('Arguments',string.join(arguments,' '))
     classadJob.insertAttributeString('Executable',self.executable)
     self.addToOutputSandbox.append(self.stderr)
