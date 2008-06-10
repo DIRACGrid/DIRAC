@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/Attic/dirac-proxy-info.py,v 1.5 2008/06/10 12:38:18 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/Attic/dirac-proxy-info.py,v 1.6 2008/06/10 13:23:42 acasajus Exp $
 # File :   dirac-proxy-init.py
 # Author : Adrian Casajus
 ########################################################################
-__RCSID__   = "$Id: dirac-proxy-info.py,v 1.5 2008/06/10 12:38:18 acasajus Exp $"
-__VERSION__ = "$Revision: 1.5 $"
+__RCSID__   = "$Id: dirac-proxy-info.py,v 1.6 2008/06/10 13:23:42 acasajus Exp $"
+__VERSION__ = "$Revision: 1.6 $"
 
 import sys
 import os.path
@@ -88,6 +88,6 @@ secs -= hours * 3600
 mins = int( secs / 60 )
 secs -= mins * 60
 print "time left   : %02d:%02d:%02d" % ( hours, mins, secs )
-if chain.isVOMS():
-  print "extra        : Contains voms extensions"
+if chain.isVOMS()['Value']:
+  print "extra       : Contains voms extensions"
 sys.exit(0)

@@ -251,7 +251,7 @@ class X509Chain:
       return retVal
     for i in range( len( self.__certList ) ):
       cert = self.getCertInChain( i )[ 'Value' ]
-      if cert.hasVOMS()[ 'Value' ]:
+      if cert.hasVOMSExtensions()[ 'Value' ]:
         return S_OK( True )
     return S_OK( False )
 
