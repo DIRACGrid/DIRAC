@@ -7,6 +7,7 @@ from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.DataManagementSystem.DB.TransferDB import TransferDB
 from DIRAC.Core.Utilities.Plotting import historgram
 from DIRAC.Core.Utilities.FileCache import FileCache
+from DIRAC.ConfigurationSystem.Client import PathFinder
 
 # These are global instances of the DB classes
 transferDB = False
