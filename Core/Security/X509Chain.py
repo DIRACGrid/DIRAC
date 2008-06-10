@@ -449,3 +449,4 @@ class X509Chain:
     return S_OK( credDict )
 
 
+g_X509ChainType = type( X509Chain() )

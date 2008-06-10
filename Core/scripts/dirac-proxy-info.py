@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/Attic/dirac-proxy-info.py,v 1.6 2008/06/10 13:23:42 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/Attic/dirac-proxy-info.py,v 1.7 2008/06/10 13:51:08 acasajus Exp $
 # File :   dirac-proxy-init.py
 # Author : Adrian Casajus
 ########################################################################
-__RCSID__   = "$Id: dirac-proxy-info.py,v 1.6 2008/06/10 13:23:42 acasajus Exp $"
-__VERSION__ = "$Revision: 1.6 $"
+__RCSID__   = "$Id: dirac-proxy-info.py,v 1.7 2008/06/10 13:51:08 acasajus Exp $"
+__VERSION__ = "$Revision: 1.7 $"
 
 import sys
 import os.path
@@ -49,11 +49,12 @@ Script.registerSwitch( "i", "version", "Print version", params.showVersion )
 Script.disableCS()
 Script.parseCommandLine()
 
-from DIRAC.Core import Security
+from DIRAC.Core.Security.X509Chain import X509Chain
+from DIRAC.Core.Security import Locations
 
 proxyLoc = params.proxyLoc
 if not proxyLoc:
-  proxyLoc = Security.Locations.getProxyLocation()
+  proxyLoc = Locations.getProxyLocation()
 
 if params.debug:
   print "Proxy file: %s" % proxyLoc
@@ -61,7 +62,7 @@ if not proxyLoc:
   print "Can't find any valid proxy"
   sys.exit(1)
 
-chain = Security.X509Chain()
+chain = X509Chain()
 retVal = chain.loadChainFromFile( proxyLoc )
 if not retVal[ 'OK' ]:
   print "Can't load %s: %s" % ( proxyLoc, retVal[ 'Message' ] )

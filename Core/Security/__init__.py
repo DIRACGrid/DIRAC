@@ -16,8 +16,3 @@ GSI.crypto.add_x509_extension_alias( nid, 78 ) #Alias to netscape comment, text 
 import DIRAC.Core.Security.Locations
 import DIRAC.Core.Security.CS
 import DIRAC.Core.Security.File
-from DIRAC.Core.Security.X509Certificate import X509Certificate
-from DIRAC.Core.Security.X509Chain import X509Chain
-from DIRAC.Core.Security.X509Request import X509Request
-
-g_X509ChainType = type( X509Chain )

@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/Attic/dirac-proxy-init.py,v 1.6 2008/06/10 12:38:09 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/Attic/dirac-proxy-init.py,v 1.7 2008/06/10 13:51:08 acasajus Exp $
 # File :   dirac-proxy-init.py
 # Author : Adrian Casajus
 ########################################################################
-__RCSID__   = "$Id: dirac-proxy-init.py,v 1.6 2008/06/10 12:38:09 acasajus Exp $"
-__VERSION__ = "$Revision: 1.6 $"
+__RCSID__   = "$Id: dirac-proxy-init.py,v 1.7 2008/06/10 13:51:08 acasajus Exp $"
+__VERSION__ = "$Revision: 1.7 $"
 
 import sys
 import getpass
@@ -100,12 +100,13 @@ Script.parseCommandLine()
 
 userPasswd = getpass.getpass( "Enter Certificate password:" )
 
-from DIRAC.Core import Security
+from DIRAC.Core.Security.X509Chain import X509Chain
+from DIRAC.Core.Security import Locations, CS
 
 certLoc = params.certLoc
 keyLoc = params.keyLoc
 if not certLoc or not keyLoc:
-  cakLoc = Security.Locations.getCertificateAndKeyLocation()
+  cakLoc = Locations.getCertificateAndKeyLocation()
   if not cakLoc:
     print "Can't find user certificate and key"
     sys.exit(1)
@@ -116,7 +117,7 @@ if not certLoc or not keyLoc:
 
 proxyLoc = params.proxyLoc
 if not proxyLoc:
-  proxyLoc = Security.Locations.getDefaultProxyLocation()
+  proxyLoc = Locations.getDefaultProxyLocation()
 
 if params.debug:
   h = int( params.proxyLifeTime / 3600 )
@@ -133,7 +134,7 @@ if params.debug:
   if params.limitedProxy:
     print "Proxy will be limited"
 
-chain = Security.X509Chain()
+chain = X509Chain()
 #Load user cert and key
 retVal = chain.loadChainFromFile( certLoc )
 if not retVal[ 'OK' ]:
@@ -158,16 +159,16 @@ if params.checkWithCS:
     print "Aborting..."
     sys.exit(1)
   if not params.diracGroup:
-    params.diracGroup = Security.CS.getDefaultUserGroup()
+    params.diracGroup = CS.getDefaultUserGroup()
   userDN = chain.getCertInChain( -1 )['Value'].getSubjectDN()['Value']
   params.debugMsg( "Checking DN %s" % userDN )
-  retVal = Security.CS.getUsernameForDN( userDN )
+  retVal = CS.getUsernameForDN( userDN )
   if not retVal[ 'OK' ]:
     print "DN %s is not registered" % userDN
     sys.exit(1)
   username = retVal[ 'Value' ]
   params.debugMsg( "Username is %s" % username )
-  retVal = Security.CS.getGroupsForUser( username )
+  retVal = CS.getGroupsForUser( username )
   if not retVal[ 'OK' ]:
     print "User %s has no groups defined" % username
     sys.exit(1)

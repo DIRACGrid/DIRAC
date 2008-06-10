@@ -2,7 +2,8 @@
 import types
 import os
 import DIRAC
-from DIRAC.Core.Security import Locations, g_X509ChainType
+import DIRAC.Core.Security.Locations
+from DIRAC.Core.Security.X509Chain import g_X509ChainType
 
 class BaseSecurity:
 

@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.40 2008/06/05 15:20:45 acasajus Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.40 2008/06/05 15:20:45 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.41 2008/06/10 13:50:59 acasajus Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.41 2008/06/10 13:50:59 acasajus Exp $"
 
 import sys
 import types
@@ -89,6 +89,8 @@ class BaseClient:
     #HACK: This has to be deleted to group traveling in the proxy
     else:
         self.__extraCredentials = GridCredentials.getDIRACGroup( self.defaultUserGroup )
+    #else:
+    #  self.__extraCredentials = ""
     #HACK END
     #Are we delegating something?
     if self.KW_DELEGATED_DN in self.kwargs:

@@ -1,12 +1,14 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSLTransport.py,v 1.20 2008/06/06 12:32:04 acasajus Exp $
-__RCSID__ = "$Id: SSLTransport.py,v 1.20 2008/06/06 12:32:04 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSLTransport.py,v 1.21 2008/06/10 13:51:00 acasajus Exp $
+__RCSID__ = "$Id: SSLTransport.py,v 1.21 2008/06/10 13:51:00 acasajus Exp $"
 
 import os
 import types
 from DIRAC.Core.DISET.private.Transports.BaseTransport import BaseTransport
 from DIRAC.LoggingSystem.Client.Logger import gLogger
 from DIRAC.Core.DISET.private.Transports.SSL.SocketInfoFactory import gSocketInfoFactory
-from DIRAC.Core import Security
+from DIRAC.Core.Security import Locations
+from DIRAC.Core.Security.X509Chain import X509Chain
+from DIRAC.Core.Security.X509Certificate import X509Certificate
 
 class SSLTransport( BaseTransport ):
 
@@ -56,11 +58,11 @@ def checkSanity( urlTuple, kwargs ):
   Check that all ssl environment is ok
   """
   useCerts = False
-  if not Security.Locations.getCAsLocation():
+  if not Locations.getCAsLocation():
     gLogger.error( "No CAs found!" )
     return False
   if "useCertificates" in kwargs and kwargs[ 'useCertificates' ]:
-    certTuple = Security.Locations.getHostCertificateAndKeyLocation()
+    certTuple = Locations.getHostCertificateAndKeyLocation()
     if not certTuple:
       gLogger.error( "No cert/key found! " )
       return False
@@ -74,7 +76,7 @@ def checkSanity( urlTuple, kwargs ):
     if "proxyLocation" in kwargs:
       certFile = kwargs[ "proxyLocation" ]
     else:
-      certFile = Security.Locations.getProxyLocation()
+      certFile = Locations.getProxyLocation()
     if not certFile:
       gLogger.error( "No proxy found" )
       return False
@@ -83,17 +85,17 @@ def checkSanity( urlTuple, kwargs ):
       return False
 
   if "proxyString" in kwargs:
-    certObj = Security.X509Chain()
+    certObj = X509Chain()
     retVal = certObj.loadChainFromString( kwargs[ 'proxyString' ] )
     if not retVal[ 'OK' ]:
       gLogger.error( "Can't load proxy string" )
       return False
   else:
     if useCerts:
-      certObj = Security.X509Certificate()
+      certObj = X509Certificate()
       certObj.loadFromFile( certFile )
     else:
-      certObj = Security.X509Chain()
+      certObj = X509Chain()
       certObj.loadChainFromFile( certFile )
 
   retVal = certObj.isExpired()
@@ -117,8 +119,8 @@ def delegate( delegationRequest, kwargs ):
   Check delegate!
   """
   if "useCertificates" in kwargs and kwargs[ 'useCertificates' ]:
-    chain = Security.X509Chain()
-    certTuple = Security.getHostCertificateAndKeyLocation()
+    chain = X509Chain()
+    certTuple = Locations.getHostCertificateAndKeyLocation()
     chain.loadChainFromFile( certTuple[0] )
     chain.loadKeyFromFile( certTuple[1] )
   elif "proxyObject" in kwargs:
@@ -127,8 +129,8 @@ def delegate( delegationRequest, kwargs ):
     if "proxyLocation" in kwargs:
       procLoc = kwargs[ "proxyLocation" ]
     else:
-      procLoc = Security.getProxyLocation()
-    chain = Security.X509Chain()
+      procLoc = Locations.getProxyLocation()
+    chain = X509Chain()
     chain.loadChainFromFile( procLoc )
     chain.loadKeyFromFile( procLoc )
   return chain.generateChainFromRequestString( delegationRequest )

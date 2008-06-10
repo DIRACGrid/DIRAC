@@ -4,9 +4,11 @@ import tempfile
 import os
 import DIRAC
 from DIRAC import gLogger
-from DIRAC.Core.Security import Locations, File, g_X509ChainType
+import DIRAC.Core.Security.Locations as Locations
+import DIRAC.Core.Security.File as File
 from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.Core.Security.BaseSecurity import BaseSecurity
+from DIRAC.Core.Security.X509Chain import g_X509ChainType
 
 class MyProxy( BaseSecurity ):
 

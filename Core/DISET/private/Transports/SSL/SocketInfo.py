@@ -1,12 +1,13 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfo.py,v 1.22 2008/06/06 12:32:03 acasajus Exp $
-__RCSID__ = "$Id: SocketInfo.py,v 1.22 2008/06/06 12:32:03 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfo.py,v 1.23 2008/06/10 13:50:59 acasajus Exp $
+__RCSID__ = "$Id: SocketInfo.py,v 1.23 2008/06/10 13:50:59 acasajus Exp $"
 
 import time
 import copy
 import os.path
 import GSI
 import DIRAC
-from DIRAC.Core import Security
+from DIRAC.Core.Security import Locations
+from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.LoggingSystem.Client.Logger import gLogger
 
 class SocketInfo:
@@ -41,7 +42,7 @@ class SocketInfo:
     #Servers don't receive the whole chain, the last cert comes alone
     if not self.infoDict[ 'clientMode' ]:
       certList.insert( 0, self.sslSocket.get_peer_certificate() )
-    peerChain = Security.X509Chain( certList = certList )
+    peerChain = X509Chain( certList = certList )
     if peerChain.isProxy()['Value']:
       identitySubject = peerChain.getCertInChain( -1 )['Value'].getSubjectNameObject()[ 'Value' ]
     else:
@@ -97,14 +98,14 @@ class SocketInfo:
       self.sslContext = GSI.SSL.Context( GSI.SSL.TLSv1_CLIENT_METHOD )
     #self.sslContext.set_verify( SSL.VERIFY_PEER|SSL.VERIFY_FAIL_IF_NO_PEER_CERT, self.verifyCallback ) # Demand a certificate
     self.sslContext.set_verify( GSI.SSL.VERIFY_PEER|GSI.SSL.VERIFY_FAIL_IF_NO_PEER_CERT, None, serverContext ) # Demand a certificate
-    casPath = Security.Locations.getCAsLocation()
+    casPath = Locations.getCAsLocation()
     if not casPath:
       DIRAC.abort( 10, "No valid CAs location found" )
     gLogger.debug( "CAs location is %s" % casPath )
     self.sslContext.load_verify_locations_path( casPath )
 
   def __generateContextWithCerts( self, serverContext = False ):
-    certKeyTuple = Security.Locations.getHostCertificateAndKeyLocation()
+    certKeyTuple = Locations.getHostCertificateAndKeyLocation()
     if not certKeyTuple:
       DIRAC.abort( 10, "No valid certificate or key found" )
     self.setLocalCredentialsLocation( certKeyTuple )
@@ -121,7 +122,7 @@ class SocketInfo:
       if not os.path.isfile( proxyPath ):
         DIRAC.abort( 10, "Defined proxy is not a file" )
     else:
-      proxyPath = Security.Locations.getProxyLocation()
+      proxyPath = Locations.getProxyLocation()
       if not proxyPath:
         DIRAC.abort( 10, "No valid proxy found" )
     self.setLocalCredentialsLocation( ( proxyPath, proxyPath ) )
@@ -132,7 +133,7 @@ class SocketInfo:
 
   def __generateContextWithProxyString( self ):
     proxyString = self.infoDict[ 'proxyString' ]
-    chain = Security.X509Chain()
+    chain = Locations.X509Chain()
     retVal = chain.loadChainFromString( proxyString )
     if not retVal[ 'OK' ]:
       DIRAC.abort( 10, "proxy string is invalid. Cert chain can't be loaded" )

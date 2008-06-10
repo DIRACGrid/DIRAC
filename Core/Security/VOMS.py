@@ -1,5 +1,6 @@
 
-from DIRAC.Core.Security import File
+import DIRAC.Core.Security.Locations as Locations
+import DIRAC.Core.Security.File as File
 from DIRAC.Core.Security.BaseSecurity import BaseSecurity
 
 class VOMS( BaseSecurity ):
