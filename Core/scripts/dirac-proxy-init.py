@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/Attic/dirac-proxy-init.py,v 1.7 2008/06/10 13:51:08 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/Attic/dirac-proxy-init.py,v 1.8 2008/06/10 17:00:31 acasajus Exp $
 # File :   dirac-proxy-init.py
 # Author : Adrian Casajus
 ########################################################################
-__RCSID__   = "$Id: dirac-proxy-init.py,v 1.7 2008/06/10 13:51:08 acasajus Exp $"
-__VERSION__ = "$Revision: 1.7 $"
+__RCSID__   = "$Id: dirac-proxy-init.py,v 1.8 2008/06/10 17:00:31 acasajus Exp $"
+__VERSION__ = "$Revision: 1.8 $"
 
 import sys
 import getpass
@@ -23,6 +23,7 @@ class Params:
   keyLoc = False
   proxyLoc = False
   checkWithCS = True
+  stdinPasswd = False
 
   def setProxyLifeTime( self, arg ):
     try:
@@ -70,6 +71,10 @@ class Params:
     self.checkWithCS = False
     return DIRAC.S_OK()
 
+  def setStdinPasswd( self, arg ):
+    self.stdinPasswd = True
+    return DIRAC.S_OK()
+
   def showVersion( self, arg ):
     print "Version:"
     print " ", __RCSID__
@@ -92,13 +97,19 @@ Script.registerSwitch( "c:", "cert=", "File to use as user certificate", params.
 Script.registerSwitch( "k:", "key=", "File to use as user key", params.setKeyLocation )
 Script.registerSwitch( "u:", "out=", "File to write as proxy", params.setProxyLocation )
 Script.registerSwitch( "x", "nocs", "Disable CS check", params.setDisableCSCheck )
+Script.registerSwitch( "p", "pwstdin", "Get passwd from stdin", params.setStdinPasswd )
 Script.registerSwitch( "i", "version", "Print version", params.showVersion )
 Script.addDefaultOptionValue( "LogLevel", "always" )
 
 Script.disableCS()
 Script.parseCommandLine()
 
-userPasswd = getpass.getpass( "Enter Certificate password:" )
+passwdPrompt = "Enter Certificate password:"
+if params.stdinPasswd:
+  print passwdPrompt,
+  userPasswd = sys.stdin.readline().strip()
+else:
+  userPasswd = getpass.getpass( passwdPrompt )
 
 from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.Core.Security import Locations, CS
