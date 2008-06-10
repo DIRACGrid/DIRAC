@@ -13,7 +13,7 @@ from DIRAC.Core.Security.X509Chain import g_X509ChainType
 
 class MyProxy( BaseSecurity ):
 
-  def uploadProxy( self, proxy = False ):
+  def uploadProxy( self, proxy = False, useDNAsUserName = False ):
     """
     Upload a proxy to myproxy service.
       proxy param can be:
@@ -47,7 +47,10 @@ class MyProxy( BaseSecurity ):
     cmdArgs.append( '-c "%s"' % ( timeLeft - 5 ) )
     cmdArgs.append( '-C "%s"' % proxyLocation )
     cmdArgs.append( '-y "%s"' % proxyLocation )
-    cmdArgs.append( '-l "%s"' % mpUsername )
+    if useDNAsUserName:
+      cmdArgs.append( '-d' )
+    else:
+      cmdArgs.append( '-l "%s"' % mpUsername )
 
     cmd = "myproxy-init %s" % " ".join( cmdArgs )
     result = shellCall( self._secCmdTimeout, cmd, env = { 'PATH' : os.environ[ 'PATH' ] } )
@@ -69,7 +72,7 @@ class MyProxy( BaseSecurity ):
 
     return S_OK()
 
-  def getDelegatedProxy( self, proxyChain, lifeTime = 72 ):
+  def getDelegatedProxy( self, proxyChain, lifeTime = 72, useDNAsUserName = False ):
     """
       Get delegated proxy from MyProxy server
       return S_OK( X509Chain ) / S_ERROR
@@ -119,7 +122,10 @@ class MyProxy( BaseSecurity ):
     cmdArgs.append( "-t '%s'" % ( lifeTime + 1 ) )
     cmdArgs.append( "-a '%s'" % proxyLocation )
     cmdArgs.append( "-o '%s'" % newProxyLocation )
-    cmdArgs.append( "-l '%s'" % mpUsername )
+    if useDNAsUserName:
+      cmdArgs.append( '-d' )
+    else:
+      cmdArgs.append( '-l "%s"' % mpUsername )
 
     cmd = "myproxy-get-delegation %s" % " ".join( cmdArgs )
     gLogger.verbose( "myproxy-get-delegation command:\n%s" % cmd )

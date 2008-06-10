@@ -1,11 +1,13 @@
 
+from DIRAC import S_OK, S_ERROR
 import DIRAC.Core.Security.Locations as Locations
 import DIRAC.Core.Security.File as File
 from DIRAC.Core.Security.BaseSecurity import BaseSecurity
+from DIRAC.Core.Utilities.Subprocess import shellCall
 
 class VOMS( BaseSecurity ):
 
-  def getVOMSAttributes( self, proxyChain, switch="all" ):
+  def getVOMSAttributes( self, proxy, switch="all" ):
     """
     Return VOMS proxy attributes as list elements if switch="all" (default) OR
     return the string prepared to be stored in DB if switch="db" OR
@@ -15,7 +17,7 @@ class VOMS( BaseSecurity ):
     """
 
     # Get all possible info from voms proxy
-    result = self.getVOMSProxyInfo( proxyChain, "all" )
+    result = self.getVOMSProxyInfo( proxy, "all" )
     if not result["OK"]:
       return S_ERROR( 'Failed to extract info from proxy' )
 
@@ -56,12 +58,12 @@ class VOMS( BaseSecurity ):
 
     return S_OK(returnValue)
 
-  def getVOMSProxyFQAN( proxyChain ):
+  def getVOMSProxyFQAN( proxy ):
     """ Get the VOMS proxy fqan attributes
     """
-    return self.getVOMSProxyInfo( proxyChain, "fqan" )
+    return self.getVOMSProxyInfo( proxy, "fqan" )
 
-  def getVOMSProxyInfo( self, proxyChain, option = False ):
+  def getVOMSProxyInfo( self, proxy, option = False ):
     """ Returns information about a proxy certificate (both grid and voms).
         Available information is:
           1. Full (grid)voms-proxy-info output
@@ -86,10 +88,12 @@ class VOMS( BaseSecurity ):
       if option not in validOptions:
         S_ERROR('Non valid option %s' % option)
 
-    retVal = File.writeChainToTemporaryFile( proxyChain )
+    retVal = self._loadProxy( proxy )
     if not retVal[ 'OK' ]:
       return retVal
-    proxyLocation = retVal[ 'Value' ]
+    proxyDict = retVal[ 'Value' ]
+    chain = proxyDict[ 'chain' ]
+    proxyLocation = proxyDict[ 'file' ]
 
     vomsEnv = self._getExternalCmdEnvironment()
 
@@ -99,7 +103,8 @@ class VOMS( BaseSecurity ):
 
     result = shellCall( self._secCmdTimeout, cmd, env = vomsEnv )
 
-    self._unlinkFiles( proxyLocation )
+    if proxyDict[ 'tempFile' ]:
+        self._unlinkFiles( proxyLocation )
 
     if not result['OK']:
       return S_ERROR('Failed to call voms-proxy-info')

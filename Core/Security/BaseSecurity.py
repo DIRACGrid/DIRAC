@@ -50,10 +50,9 @@ class BaseSecurity:
 
   def _getExternalCmdEnvironment(self):
     cmdEnv = {}
-    cmdEnv["PATH"] = os.environ['PATH']
-    cmdEnv["LD_LIBRARY_PATH"] = os.environ['LD_LIBRARY_PATH']
-    cmdEnv["X509_USER_KEY"]   = self._secKeyLoc
-    cmdEnv["X509_USER_CERT"]  = self._secCertLoc
+    for key in ( 'PATH', 'LD_LIBRARY_PATH', 'X509_USER_KEY', 'X509_USER_CERT' ):
+      if key in os.environ:
+        cmdEnv[ key ] = os.environ[ key ]
     return cmdEnv
 
   def _unlinkFiles( files ):
@@ -94,7 +93,7 @@ class BaseSecurity:
         if not proxyLoc:
           return S_ERROR( "Can't find proxy" )
       if type( proxy ) == types.StringType:
-        proxyLoc = proxyChain
+        proxyLoc = proxy
       #Load proxy
       proxy = X509Chain()
       retVal = proxy.loadProxyFromFile( proxyLoc)
