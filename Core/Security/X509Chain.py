@@ -12,6 +12,7 @@ class X509Chain:
   __validExtensionValueTypes = ( types.StringType, types.UnicodeType )
 
   def __init__( self, certList = False, keyObj = False ):
+    self.__isProxy = False
     if certList:
       self.__loadedChain = True
       self.__certList = certList
@@ -47,6 +48,8 @@ class X509Chain:
     except Exception, e:
       return S_ERROR( "Can't load pem data: %s" % str(e) )
     self.__loadedChain = True
+    #Update internals
+    self.__checkProxyness()
     return S_OK()
 
   def setChain( self, certList ):
@@ -133,6 +136,17 @@ class X509Chain:
     if not self.__loadedChain:
       return S_ERROR( "No chain loaded" )
     return S_OK( X509Certificate( self.__certList[ certPos ] ) )
+
+  def getIssuerCert( self ):
+    """
+    Get a issuer cert in the chain
+    """
+    if not self.__loadedChain:
+      return S_ERROR( "No chain loaded" )
+    if self.__isProxy:
+      return S_OK( X509Certificate( self.__certList[ self.__firstProxyStep + 1 ] ) )
+    else:
+      return S_OK( X509Certificate( self.__certList[ -1 ] ) )
 
   def getPKeyObj( self ):
     """
@@ -232,15 +246,7 @@ class X509Chain:
     """
     if not self.__loadedChain:
       return S_ERROR( "No chain loaded" )
-    if len( self.__certList ) < 2:
-      ret = S_OK( False )
-      ret[ 'Message' ] = "At least two certificates are required"
-      return ret
-    for i in range( len( self.__certList )-1, 0, -1 ):
-      retVal = self.__checkProxyness( i, i-1 )
-      if not retVal[ 'OK' ] or not retVal[ 'Value' ]:
-        return retVal
-    return S_OK( True )
+    return S_OK( self.__isProxy )
 
   def isVOMS(self):
     """
@@ -255,33 +261,48 @@ class X509Chain:
         return S_OK( True )
     return S_OK( False )
 
-  def __checkProxyness( self, issuerId, certId ):
+  def __checkProxyness( self ):
+    self.__firstProxyStep = len( self.__certList )-2 # -1 is user cert by default, -2 is first proxy step
+    self.__isProxy = True
+    checkProxyPart = True
+    #If less than 2 steps in the chain is no proxy
+    if len( self.__certList ) < 2:
+      self.__isProxy = False
+      return
+    #Check proxyness in steps
+    for step in range( len( self.__certList ) - 1 ):
+      issuerMatch = self.__checkIssuer( step, step + 1 )
+      if not issuerMatch:
+        self.__isProxy = False
+        return
+      if checkProxyPart:
+        dnMatch = self.__checkProxyDN( step, step + 1 )
+        if not dnMatch and step > 0:
+          self.__firstProxyStep = step
+          checkProxyParth = False
+
+  def __checkProxyDN( self, certStep, issuerStep ):
     """
-    Check proxyness between two certs in the chain
+    Check the proxy DN in a step in the chain
     """
-    issuerCert = self.__certList[ issuerId ]
-    issuerSubject = issuerCert.get_subject()
-    proxyCert = self.__certList[ certId ]
-    proxySubject = proxyCert.get_subject()
-    if not proxyCert.verify( issuerCert.get_pubkey() ):
-      ret = S_OK( False )
-      ret[ 'Message' ] = "Signature mismatch\n Issuer %s Proxy %s" % ( issuerSubject.one_line(),
-                                                                       proxySubject.one_line() )
-      return ret
-    proxySubject = proxyCert.get_subject().clone()
+    issuerSubject = self.__certList[ issuerStep ].get_subject()
+    proxySubject = self.__certList[ certStep ].get_subject().clone()
     psEntries =  proxySubject.num_entries()
     lastEntry = proxySubject.get_entry( psEntries - 1 )
     if lastEntry[0] != 'CN' or lastEntry[1] not in ( 'proxy', 'limitedproxy' ):
-      ret = S_OK( False )
-      ret[ 'Message' ] = "Last entry in the proxy DN is not CN=proxy or CN=limitedproxy"
-      return ret
+      return False
     proxySubject.remove_entry( psEntries - 1 )
     if not issuerSubject.one_line() == proxySubject.one_line():
-      ret = S_OK( False )
-      ret[ 'Message' ] = "Proxy DN is not Issuer DN + CN=proxy\n Issuer %s Proxy %s" % ( issuerSubject.one_line(),
-                                                                       proxySubject.one_line() )
-      return ret
-    return S_OK( True )
+      return False
+    return True
+
+  def __checkIssuer( self, certStep, issuerStep ):
+    """
+    Check the issuer is really the issuer
+    """
+    issuerCert = self.__certList[ issuerStep ]
+    cert = self.__certList[ certStep ]
+    return cert.verify_pkey_is_issuer( issuerCert.get_pubkey() )
 
   def getDIRACGroup(self):
     """
@@ -289,11 +310,14 @@ class X509Chain:
     """
     if not self.__loadedChain:
       return S_ERROR( "No chain loaded" )
-    for i in range( len( self.__certList ) -1, -1, -1 ):
-      retVal = self.getCertInChain( i )[ 'Value' ].getDIRACGroup()
-      if 'Value' in retVal:
-        return retVal
-    return S_OK()
+    if not self.__isProxy:
+      return S_ERROR( "Chain does not contain a valid proxy" )
+    #ADRI: Below will find first match of dirac group
+    #for i in range( len( self.__certList ) -1, -1, -1 ):
+    #  retVal = self.getCertInChain( i )[ 'Value' ].getDIRACGroup()
+    #  if retVal[ 'OK' ] and 'Value' in retVal and retVal[ 'Value' ]:
+    #    return retVal
+    return self.getCertInChain( self.__firstProxyStep )[ 'Value' ].getDIRACGroup()
 
   def isExpired( self ):
     """

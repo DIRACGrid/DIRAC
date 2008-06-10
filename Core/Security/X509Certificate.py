@@ -125,7 +125,7 @@ class X509Certificate:
     for ext in extList:
       if ext.get_sn() == "diracGroup":
         return S_OK( ext.get_value() )
-    return S_OK()
+    return S_OK( False )
 
   def hasVOMSExtensions(self):
     """
