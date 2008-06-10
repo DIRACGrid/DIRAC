@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: NotificationClient.py,v 1.1 2008/06/10 14:21:57 paterson Exp $
+# $Id: NotificationClient.py,v 1.2 2008/06/10 14:58:35 paterson Exp $
 ########################################################################
 
 """ DIRAC WMS Notification Client class encapsulates the methods exposed
@@ -22,7 +22,7 @@ class NotificationClient:
     self.log = gLogger.getSubLogger('NotificationClient')
 
   #############################################################################
-  def sendMail(self,address,subject,body,localAttempt=True):
+  def sendMail(self,address,subject,body,fromAddress=None,localAttempt=True):
     """ Send an e-mail with subject and body to the specified address. Try to send
         from local area before central service by default.
     """
@@ -34,6 +34,8 @@ class NotificationClient:
         m._subject = subject
         m._message = body
         m._mailAddress = address
+        if fromAddress:
+          m._fromAddress = fromAddress
         result = m._send()
       except Exception,x:
         self.log.warn('Sending mail failed with exception:\n%s' %(str(x)))
@@ -46,7 +48,7 @@ class NotificationClient:
       self.log.warn('Could not send mail with the following message:\n%s\n will attempt to send via NotificationService' %result['Message'])
 
     notify = RPCClient('WorkloadManagement/Notification',useCertificates=False)
-    result = notify.sendMail(address,subject,body)
+    result = notify.sendMail(address,subject,body,str(fromAddress))
     if not result['OK']:
       self.log.error('Could not send mail via central Notification service',result['Message'])
     else:
