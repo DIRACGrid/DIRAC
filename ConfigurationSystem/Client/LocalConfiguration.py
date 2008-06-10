@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/LocalConfiguration.py,v 1.26 2008/06/02 18:04:13 acasajus Exp $
-__RCSID__ = "$Id: LocalConfiguration.py,v 1.26 2008/06/02 18:04:13 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/LocalConfiguration.py,v 1.27 2008/06/10 12:36:55 acasajus Exp $
+__RCSID__ = "$Id: LocalConfiguration.py,v 1.27 2008/06/10 12:36:55 acasajus Exp $"
 
 import sys
 import os
@@ -31,6 +31,7 @@ class LocalConfiguration:
     self.loggingSection = "/DIRAC"
     self.initialized = False
     self.csDisabled = False
+    self.csDisabledServers = False
 
   def __getAbsolutePath( self, optionPath ):
     if optionPath[0] == "/":
@@ -203,10 +204,11 @@ class LocalConfiguration:
     errorsList = self.__loadCFGFiles()
 
     if self.csDisabled:
+      self.csDisabledServers = gConfigurationData.extractOptionFromCFG( "/DIRAC/Configuration/Servers" )
       gConfigurationData.deleteLocalOption( "/DIRAC/Configuration/Servers" )
 
     if gConfigurationData.getServers():
-      retVal = self.__getRemoteConfiguration()
+      retVal = self.syncRemoteConfiguration()
       if not retVal[ 'OK' ]:
         return retVal
     else:
@@ -251,7 +253,15 @@ class LocalConfiguration:
   def disableCS(self):
     self.csDisabled = True
 
-  def __getRemoteConfiguration( self ):
+  def enableCS(self):
+    self.csDisabled = False
+    if self.csDisabledServers:
+      gConfigurationData.setOptionInCFG( "/DIRAC/Configuration/Servers", self.csDisabledServers )
+      return self.syncRemoteConfiguration( strict = True )
+    return S_OK()
+
+
+  def syncRemoteConfiguration( self, strict = False ):
     if self.componentName == "Configuration/Server" :
       if gConfigurationData.isMaster():
         gLogger.info( "Starting Master Configuration Server" )
@@ -260,6 +270,8 @@ class LocalConfiguration:
     retDict = gRefresher.forceRefresh()
     if not retDict['OK']:
       gLogger.error( "Can't update from any server", retDict[ 'Message' ] )
+      if strict:
+        return retDict
     return S_OK()
 
   def __setDefaultSection( self, sectionPath ):
