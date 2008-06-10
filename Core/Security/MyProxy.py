@@ -1,6 +1,5 @@
 
 import time
-import tempfile
 import os
 import DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
