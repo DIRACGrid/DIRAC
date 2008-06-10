@@ -28,17 +28,12 @@ class MyProxy( BaseSecurity ):
     chain = proxyDict[ 'chain' ]
     proxyLocation = proxyDict[ 'file' ]
 
-    retVal = chain.getCredentials()
+    retVal = self._getUsername( chain )
     if not retVal[ 'OK' ]:
+      if proxyDict[ 'tempFile' ]:
+        self._unlinkFiles( proxyLocation )
       return retVal
-    credDict = retVal[ 'Value' ]
-    if not credDict[ 'isProxy' ]:
-      return S_ERROR( "chain does not contain a proxy" )
-    if not credDict[ 'validDN' ]:
-      return S_ERROR( "DN %s is not known in dirac" % credDict[ 'subject' ] )
-    if not credDict[ 'validGroup' ]:
-      return S_ERROR( "Group %s is invalid for DN %s" % ( credDict[ 'group' ], credDict[ 'subject' ] ) )
-    mpUsername = "%s:%s" % ( credDict[ 'group' ], credDict[ 'username' ] )
+    mpUsername = retVal[ 'Value' ]
 
     timeLeft = int( chain.getRemainingSecs()[ 'Value' ] / 3600 )
 
@@ -53,7 +48,7 @@ class MyProxy( BaseSecurity ):
       cmdArgs.append( '-l "%s"' % mpUsername )
 
     cmd = "myproxy-init %s" % " ".join( cmdArgs )
-    result = shellCall( self._secCmdTimeout, cmd, env = { 'PATH' : os.environ[ 'PATH' ] } )
+    result = shellCall( self._secCmdTimeout, cmd, env = self._getExternalCmdEnvironment( noX509 = True ) )
 
     if proxyDict[ 'tempFile' ]:
         self._unlinkFiles( proxyLocation )
@@ -87,25 +82,12 @@ class MyProxy( BaseSecurity ):
     chain = proxyDict[ 'chain' ]
     proxyLocation = proxyDict[ 'file' ]
 
-    retVal = proxyChain.getCredentials()
+    retVal = self._getUsername( chain )
     if not retVal[ 'OK' ]:
       if proxyDict[ 'tempFile' ]:
-          self._unlinkFiles( proxyLocation )
+        self._unlinkFiles( proxyLocation )
       return retVal
-    credDict = retVal[ 'Value' ]
-    if not credDict[ 'isProxy' ]:
-      if proxyDict[ 'tempFile' ]:
-          self._unlinkFiles( proxyLocation )
-      return S_ERROR( "chain does not contain a proxy" )
-    if not credDict[ 'validDN' ]:
-      if proxyDict[ 'tempFile' ]:
-          self._unlinkFiles( proxyLocation )
-      return S_ERROR( "DN %s is not known in dirac" % credDict[ 'subject' ] )
-    if not credDict[ 'validGroup' ]:
-      if proxyDict[ 'tempFile' ]:
-          self._unlinkFiles( proxyLocation )
-      return S_ERROR( "Group %s is invalid for DN %s" % ( credDict[ 'group' ], credDict[ 'subject' ] ) )
-    mpUsername = "%s:%s" % ( credDict[ 'group' ], credDict[ 'username' ] )
+    mpUsername = retVal[ 'Value' ]
 
     try:
       fd,newProxyLocation = tempfile.mkstemp()

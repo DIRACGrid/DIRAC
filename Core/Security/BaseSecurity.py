@@ -48,9 +48,12 @@ class BaseSecurity:
       else:
         self._secKeyLoc = "%s/etc/grid-security/serverkey.pem" % DIRAC.rootPath
 
-  def _getExternalCmdEnvironment(self):
+  def _getExternalCmdEnvironment( self, noX509 = False ):
     cmdEnv = {}
-    for key in ( 'PATH', 'LD_LIBRARY_PATH', 'X509_USER_KEY', 'X509_USER_CERT' ):
+    keys = ['PATH', 'LD_LIBRARY_PATH']
+    if not noX509:
+      keys.extend( [ 'X509_USER_KEY', 'X509_USER_CERT' ] )
+    for key in keys:
       if key in os.environ:
         cmdEnv[ key ] = os.environ[ key ]
     return cmdEnv
@@ -102,3 +105,17 @@ class BaseSecurity:
     return S_OK( { 'file' : proxyLoc,
                    'chain' : proxy,
                    'tempFile' : tempFile } )
+
+  def _getUsername( self, proxyChain ):
+    retVal = proxyChain.getCredentials()
+    if not retVal[ 'OK' ]:
+      return retVal
+    credDict = retVal[ 'Value' ]
+    if not credDict[ 'isProxy' ]:
+      return S_ERROR( "chain does not contain a proxy" )
+    if not credDict[ 'validDN' ]:
+      return S_ERROR( "DN %s is not known in dirac" % credDict[ 'subject' ] )
+    if not credDict[ 'validGroup' ]:
+      return S_ERROR( "Group %s is invalid for DN %s" % ( credDict[ 'group' ], credDict[ 'subject' ] ) )
+    mpUsername = "%s:%s" % ( credDict[ 'group' ], credDict[ 'username' ] )
+    return S_OK( mpUsername )
