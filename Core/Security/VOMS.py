@@ -138,7 +138,7 @@ class VOMS( BaseSecurity ):
     chain = proxyDict[ 'chain' ]
     proxyLocation = proxyDict[ 'file' ]
 
-    retVal = self.__generateTemporalFile()
+    retVal = self._generateTemporalFile()
     if not retVal[ 'OK' ]:
       if proxyDict[ 'tempFile' ]:
         self._unlinkFiles( proxyLocation )

@@ -69,7 +69,7 @@ class BaseSecurity:
       except:
         pass
 
-  def __generateTemporalFile(self):
+  def _generateTemporalFile(self):
     try:
       fd, filename = tempfile.mkstemp()
       os.close(fd)

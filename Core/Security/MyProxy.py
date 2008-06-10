@@ -88,7 +88,7 @@ class MyProxy( BaseSecurity ):
       return retVal
     mpUsername = retVal[ 'Value' ]
 
-    retVal = self.__generateTemporalFile()
+    retVal = self._generateTemporalFile()
     if not retVal[ 'OK' ]:
       if proxyDict[ 'tempFile' ]:
         self._unlinkFiles( proxyLocation )
