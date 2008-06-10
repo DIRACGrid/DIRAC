@@ -927,6 +927,8 @@ class LcgFileCatalogClient(FileCatalogueBase):
     lfcPath = self.prefix+path
     fstat = lfc.lfc_filestatg()
     value = lfc.lfc_statg(lfcPath,'',fstat)
+    if not value == 0:
+      return S_ERROR(lfc.sstrerror(lfc.cvar.serrno))
     nbfiles = fstat.nlink
     direc = lfc.lfc_opendirg(lfcPath,'')
 
