@@ -8,6 +8,7 @@ from DIRAC.DataManagementSystem.DB.TransferDB import TransferDB
 from DIRAC.Core.Utilities.Plotting import historgram
 from DIRAC.Core.Utilities.FileCache import FileCache
 from DIRAC.ConfigurationSystem.Client import PathFinder
+import os
 
 # These are global instances of the DB classes
 transferDB = False
