@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.28 2008/06/10 16:13:49 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.29 2008/06/10 17:08:55 paterson Exp $
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -30,7 +30,7 @@
    Note that several executables can be provided and wil be executed sequentially.
 """
 
-__RCSID__ = "$Id: Job.py,v 1.28 2008/06/10 16:13:49 paterson Exp $"
+__RCSID__ = "$Id: Job.py,v 1.29 2008/06/10 17:08:55 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -418,7 +418,7 @@ class Job:
        @type sites: string or list
     """
     if type(sites)==list and len(sites):
-      bannedSites = string.join(lfns,';')
+      bannedSites = string.join(sites,';')
       description = 'List of sites excluded by user'
       self._addParameter(self.workflow,'BannedSites','JDL',bannedSites,description)
     elif type(lfns)==type(" "):
