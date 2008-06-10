@@ -1,10 +1,11 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/AuthManager.py,v 1.19 2008/06/05 17:30:33 acasajus Exp $
-__RCSID__ = "$Id: AuthManager.py,v 1.19 2008/06/05 17:30:33 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/AuthManager.py,v 1.20 2008/06/10 12:37:46 acasajus Exp $
+__RCSID__ = "$Id: AuthManager.py,v 1.20 2008/06/10 12:37:46 acasajus Exp $"
 
 import types
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.LoggingSystem.Client.Logger import gLogger
+from DIRAC.Core.Security import CS
 
 class AuthManager:
 
@@ -55,9 +56,9 @@ class AuthManager:
       #Get the nickname of the host
       credDict[ 'group' ] = credDict[ 'extraCredentials' ]
     #HACK TO MAINTAIN COMPATIBILITY
-    else:
-      if 'extraCredentials' in credDict and not 'group' in credDict:
-        credDict[ 'group' ]  = credDict[ 'extraCredentials' ]
+    #else:
+    #  if 'extraCredentials' in credDict and not 'group' in credDict:
+    #    credDict[ 'group' ]  = credDict[ 'extraCredentials' ]
     #END OF HACK
     #Get the username
     if 'DN' in credDict:
@@ -72,15 +73,17 @@ class AuthManager:
           self.__authLogger.warn( "User is invalid or does not belong to the group it's saying" )
           return False
     #Check everyone is authorized
-    authGroups = self.getValidGroupsForMethod( methodQuery )
-    if "any" in authGroups or "all" in authGroups:
+    requiredProperties = self.getValidPropertiesForMethod( methodQuery )
+    if "any" in requiredProperties or "all" in requiredProperties:
       return True
     #Check user is authenticated
     if not 'DN' in credDict:
       self.__authLogger.warn( "User has no DN" )
       return False
     #Check authorized groups
-    if not credDict[ 'group' ] in authGroups and not "authenticated" in authGroups:
+    if "authenticated" in requiredProperties:
+      return True
+    if not self.matchProperties( credDict[ 'groupProperties' ], requiredProperties ):
       self.__authLogger.warn( "Peer group is not authorized" )
       return False
     return True
@@ -98,19 +101,14 @@ class AuthManager:
       return True
     if not 'group' in credDict:
       return False
-    retVal = gConfig.getSections( "/Hosts/" )
+    retVal = CS.getHostnameForDN( credDict[ 'DN' ] )
     if not retVal[ 'OK' ]:
-      self.__authLogger.warn( "Can't get list of host nicknames, rejecting" )
+      gLogger.warn( "Cannot find hostname for DN %s: %s" % ( credDict[ 'DN' ], retVal[ 'Message' ] ) )
       return False
-    for nickname in retVal[ 'Value' ]:
-      hostDN = gConfig.getValue( "/Hosts/%s/DN" % nickname, "" )
-      if hostDN == credDict[ 'DN' ]:
-        credDict[ 'username' ] = nickname
-        return True
-    self.__authLogger.warn( "Host DN is unknown %s" % credDict[ 'DN' ] )
-    return False
+    credDict[ 'username' ] = retVal[ 'Value' ]
+    return True
 
-  def getValidGroupsForMethod( self, method ):
+  def getValidPropertiesForMethod( self, method ):
     """
     Get all authorized groups for calling a method
 
@@ -121,7 +119,7 @@ class AuthManager:
     authGroups = gConfig.getValue( "%s/%s" % ( self.authSection, method ), [] )
     if not authGroups:
       defaultPath = "%s/Default" % "/".join( method.split( "/" )[:-1] )
-      self.__authLogger.warn( "Method %s has no groups defined, trying %s" % ( method, defaultPath ) )
+      self.__authLogger.warn( "Method %s has no properties defined, trying %s" % ( method, defaultPath ) )
       authGroups = gConfig.getValue( "%s/%s" % ( self.authSection, defaultPath ), [] )
     return authGroups
 
@@ -133,7 +131,7 @@ class AuthManager:
     @param credDict: Credentials to ckeck
     @return: Boolean with the result
     """
-    trustedHostsList = gConfig.getValue( "/DIRAC/Security/TrustedHosts", [] )
+    trustedHostsList = CS.getTrustedHostList()
     return 'extraCredentials' in credDict and type( credDict[ 'extraCredentials' ] ) == types.TupleType and \
             'DN' in credDict and \
             credDict[ 'DN' ] in trustedHostsList
@@ -162,53 +160,27 @@ class AuthManager:
     if not "DN" in credDict:
       return True
     if not 'group' in credDict:
-      credDict[ 'group' ] = gConfig.getValue( '/DIRAC/DefaultGroup', 'lhcb_user' )
-    usersInGroup = gConfig.getValue( "/Groups/%s/users" % credDict[ 'group' ], [] )
+      credDict[ 'group' ] = CS.getDefaultUserGroup()
+    credDict[ 'groupProperties' ] = CS.getPropertiesInGroup( credDict[ 'group' ], [])
+    usersInGroup = CS.getUsersInGroup( credDict[ 'group' ], [] )
     if not usersInGroup:
       return False
-    userName = self.findUsername( credDict[ 'DN' ], usersInGroup )
-    if userName:
-      credDict[ 'username' ] = userName
+    retVal = CS.getUsernameForDN( credDict[ 'DN' ], usersInGroup )
+    if retVal[ 'OK' ]:
+      credDict[ 'username' ] = retVal[ 'Value' ]
       return True
     return False
 
-  def findUsername( self, DN, users = False ):
+  def matchProperties( self, props, validProps ):
     """
-    Discover the username associated to the DN.
-
-    @type  DN: string
-    @param DN: DN of the username
-    @type users : list
-    @param users : Optional list of usernames to check. If its not specified all
-                    usernames will be checked
-    @return: Boolean specifying whether the username was found
+    Return True if one or more properties are in the valid list of properties
+    @type  props: list
+    @param props: List of properties to match
+    @type  validProps: list
+    @param validProps: List of valid properties
+    @return: Boolean specifying whether any property has matched the valid ones
     """
-    if not users:
-      retVal = gConfig.getSections( "/Users" )
-      if retVal[ 'OK' ]:
-        users = retVal[ 'Value' ]
-      else:
-        users = []
-    for user in users:
-      if DN == gConfig.getValue( "/Users/%s/DN" % user, "" ):
-        return user
+    for prop in props:
+      if prop in validProps:
+        return True
     return False
-
-  def getGroupsForUsername( self, username ):
-    """
-    Get the groups witch a username is member of.
-
-    @type  username: string
-    @param username: Username to check
-    @return: List of groups
-    """
-    userGroups = []
-    retVal = gConfig.getSections( "/Groups" )
-    if retVal[ 'OK' ]:
-      groups = retVal[ 'Value' ]
-    else:
-      groups = []
-    for group in groups:
-      if username in gConfig.getValue( "/Groups/%s/users" % group, [] ):
-        userGroups.append( group )
-    return userGroups
