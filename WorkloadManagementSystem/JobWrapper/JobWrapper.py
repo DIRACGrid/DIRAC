@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.40 2008/06/06 16:55:19 paterson Exp $
+# $Id: JobWrapper.py,v 1.41 2008/06/10 17:05:10 paterson Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.40 2008/06/06 16:55:19 paterson Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.41 2008/06/10 17:05:10 paterson Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -587,6 +587,8 @@ class JobWrapper:
     outputData = []
     if jobArgs.has_key('OutputData'):
       outputData = jobArgs['OutputData']
+      if not type(outputData) == type([]):
+        outputData = string.split(outputData,';')
       self.log.verbose('OutputData files are: %s' %(string.join(outputData,', ')))
 
     #First resolve any wildcards for output files and work out if any files are missing
