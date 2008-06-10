@@ -89,11 +89,12 @@ class MyProxy( BaseSecurity ):
       return retVal
     mpUsername = retVal[ 'Value' ]
 
-    try:
-      fd,newProxyLocation = tempfile.mkstemp()
-      os.close(fd)
-    except IOError:
-      return S_ERROR('Failed to create temporary file for store proxy from MyProxy service')
+    retVal = self.__generateTemporalFile()
+    if not retVal[ 'OK' ]:
+      if proxyDict[ 'tempFile' ]:
+        self._unlinkFiles( proxyLocation )
+      return retVal
+    newProxyLocation = retVal[ 'Value' ]
 
     # myproxy-get-delegation works only with environment variables
     cmdEnv = self._getExternalCmdEnvironment()

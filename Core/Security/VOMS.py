@@ -138,13 +138,12 @@ class VOMS( BaseSecurity ):
     chain = proxyDict[ 'chain' ]
     proxyLocation = proxyDict[ 'file' ]
 
-    try:
-      fd,newProxyLocation = tempfile.mkstemp()
-      os.close(fd)
-    except IOError:
+    retVal = self.__generateTemporalFile()
+    if not retVal[ 'OK' ]:
       if proxyDict[ 'tempFile' ]:
         self._unlinkFiles( proxyLocation )
-      return S_ERROR('Failed to create temporary file for store proxy from MyProxy service')
+      return retVal
+    newProxyLocation = retVal[ 'Value' ]
 
     vomsEnv = self._getExternalCmdEnvironment( noX509 = True )
 

@@ -1,6 +1,7 @@
 
 import types
 import os
+import tempfile
 import DIRAC
 import DIRAC.Core.Security.Locations
 from DIRAC.Core.Security.X509Chain import X509Chain,g_X509ChainType
@@ -67,6 +68,14 @@ class BaseSecurity:
         os.unlink( files )
       except:
         pass
+
+  def __generateTemporalFile(self):
+    try:
+      fd, filename = tempfile.mkstemp()
+      os.close(fd)
+    except IOError:
+      return S_ERROR('Failed to create temporary file')
+    return S_OK( filename )
 
   def _loadProxy( self, proxy = False ):
     """
