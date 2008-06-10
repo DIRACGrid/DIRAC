@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/Attic/dirac-proxy-info.py,v 1.7 2008/06/10 13:51:08 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/Attic/dirac-proxy-info.py,v 1.8 2008/06/10 16:45:26 acasajus Exp $
 # File :   dirac-proxy-init.py
 # Author : Adrian Casajus
 ########################################################################
-__RCSID__   = "$Id: dirac-proxy-info.py,v 1.7 2008/06/10 13:51:08 acasajus Exp $"
-__VERSION__ = "$Revision: 1.7 $"
+__RCSID__   = "$Id: dirac-proxy-info.py,v 1.8 2008/06/10 16:45:26 acasajus Exp $"
+__VERSION__ = "$Revision: 1.8 $"
 
 import sys
 import os.path
@@ -50,6 +50,7 @@ Script.disableCS()
 Script.parseCommandLine()
 
 from DIRAC.Core.Security.X509Chain import X509Chain
+from DIRAC.Core.Security.VOMS import VOMS
 from DIRAC.Core.Security import Locations
 
 proxyLoc = params.proxyLoc
@@ -91,4 +92,11 @@ secs -= mins * 60
 print "time left   : %02d:%02d:%02d" % ( hours, mins, secs )
 if chain.isVOMS()['Value']:
   print "extra       : Contains voms extensions"
+  voms = VOMS()
+  retVal = voms.getVOMSAttributes( proxyLoc )
+  if retVal[ 'OK' ]:
+    for entry in retVal[ 'Value' ]:
+      print "voms data      : %s" % entry
+  else:
+    print " Can't decode voms data"
 sys.exit(0)
