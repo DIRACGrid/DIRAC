@@ -429,7 +429,7 @@ class X509Chain:
         return retVal
       diracGroup = retVal[ 'Value' ]
       if not diracGroup:
-        diracGroup = gConfig.getValue( "/DIRAC/DefaultGroup", "user" )
+        diracGroup = CS.getDefaultUserGroup()
       credDict[ 'group' ] = diracGroup
       credDict[ 'identity'] = self.__certList[-1].get_subject().one_line()
       retVal = CS.getUsernameForDN( credDict[ 'identity' ] )

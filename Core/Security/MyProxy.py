@@ -3,7 +3,8 @@ import time
 import tempfile
 import os
 import DIRAC
-from DIRAC import gLogger
+from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC.Core.Utilities.Subprocess import shellCall
 import DIRAC.Core.Security.Locations as Locations
 import DIRAC.Core.Security.File as File
 from DIRAC.Core.Security.X509Chain import X509Chain
@@ -39,20 +40,17 @@ class MyProxy( BaseSecurity ):
       return S_ERROR( "Group %s is invalid for DN %s" % ( credDict[ 'group' ], credDict[ 'subject' ] ) )
     mpUsername = "%s:%s" % ( credDict[ 'group' ], credDict[ 'username' ] )
 
-    timeLeft = chain.getRemainingSecs()[ 'Value' ]
-
-    cmdEnv = self._getExternalCmdEnvironment()
-    cmdEnv['X509_USER_PROXY'] = proxyLocation
+    timeLeft = int( chain.getRemainingSecs()[ 'Value' ] / 3600 )
 
     cmdArgs = []
-    cmdArgs.append( "-s '%s'" % self._secServer )
-    cmdArgs.append( "-t '%s'" % ( timeLeft - 5 ) )
-    cmdArgs.append( "-C '%s'" % proxyLocation )
-    cmdArgs.append( "-y '%s'" % proxyLocation )
-    cmdArgs.append( "-l '%s'" % mpUsername )
+    cmdArgs.append( '-s "%s"' % self._secServer )
+    cmdArgs.append( '-c "%s"' % ( timeLeft - 5 ) )
+    cmdArgs.append( '-C "%s"' % proxyLocation )
+    cmdArgs.append( '-y "%s"' % proxyLocation )
+    cmdArgs.append( '-l "%s"' % mpUsername )
 
     cmd = "myproxy-init %s" % " ".join( cmdArgs )
-    result = shellCall( self._secCmdTimeout, cmd, env = environment )
+    result = shellCall( self._secCmdTimeout, cmd, env = { 'PATH' : os.environ[ 'PATH' ] } )
 
     if proxyDict[ 'tempFile' ]:
         self._unlinkFiles( proxyLocation )

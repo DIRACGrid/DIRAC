@@ -3,7 +3,9 @@ import types
 import os
 import DIRAC
 import DIRAC.Core.Security.Locations
-from DIRAC.Core.Security.X509Chain import g_X509ChainType
+from DIRAC.Core.Security.X509Chain import X509Chain,g_X509ChainType
+from DIRAC.Core.Security import Locations
+from DIRAC import gConfig, S_OK, S_ERROR
 
 class BaseSecurity:
 
@@ -18,7 +20,7 @@ class BaseSecurity:
       self._secCmdTimeout = timeout
     else:
       self._secCmdTimeout = 0
-    if not maxProxyDaysLifeTime:
+    if not maxProxyHoursLifeTime:
       self.__maxProxyLifeTime = 7 * 24
     else:
       self.__maxProxyLifeTime = maxProxyHoursLifeTime
