@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/Attic/dirac-proxy-init.py,v 1.9 2008/06/10 17:02:34 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/Attic/dirac-proxy-init.py,v 1.10 2008/06/10 18:49:40 acasajus Exp $
 # File :   dirac-proxy-init.py
 # Author : Adrian Casajus
 ########################################################################
-__RCSID__   = "$Id: dirac-proxy-init.py,v 1.9 2008/06/10 17:02:34 acasajus Exp $"
-__VERSION__ = "$Revision: 1.9 $"
+__RCSID__   = "$Id: dirac-proxy-init.py,v 1.10 2008/06/10 18:49:40 acasajus Exp $"
+__VERSION__ = "$Revision: 1.10 $"
 
 import sys
 import getpass
@@ -104,13 +104,6 @@ Script.addDefaultOptionValue( "LogLevel", "always" )
 Script.disableCS()
 Script.parseCommandLine()
 
-passwdPrompt = "Enter Certificate password:"
-if params.stdinPasswd:
-  print passwdPrompt,
-  userPasswd = sys.stdin.readline().strip("\n")
-else:
-  userPasswd = getpass.getpass( passwdPrompt )
-
 from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.Core.Security import Locations, CS
 
@@ -125,6 +118,17 @@ if not certLoc or not keyLoc:
     certLoc = cakLoc[0]
   if not keyLoc:
     keyLoc = cakLoc[1]
+
+userPasswd = ""
+testChain = X509Chain()
+retVal = testChain.loadKeyFromFile(keyLoc, password = userPasswd )
+if not retVal[ 'OK' ]:
+  passwdPrompt = "Enter Certificate password:"
+  if params.stdinPasswd:
+    print passwdPrompt,
+    userPasswd = sys.stdin.readline().strip("\n")
+  else:
+    userPasswd = getpass.getpass( passwdPrompt )
 
 proxyLoc = params.proxyLoc
 if not proxyLoc:
@@ -156,7 +160,7 @@ if not retVal[ 'OK' ]:
   print "Can't load %s" % keyLoc
   sys.exit(1)
 
-if params.checkWithCS:
+if params.checkWithCS and params.diracGroup:
   retVal = chain.generateProxyToFile( proxyLoc,
                                       params.proxyLifeTime,
                                       strength =params.proxyStrength,
