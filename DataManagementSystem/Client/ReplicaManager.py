@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalogue. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.28 2008/06/10 10:55:20 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.29 2008/06/10 10:57:07 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -711,7 +711,7 @@ class ReplicaManager:
     resDict = {'Successful':successful,'Failed':failed}
     return S_OK(resDict)
 
-  def setReplicaProblematic(self,replicaTuple):
+  def setReplicaProblematic(self,replicaTuple,sourceComponent=''):
     """ This method updates the status of the replica in the FileCatalog and the IntegrityDB
         The supplied replicaTuple should be of the form (lfn,pfn,se,prognosis)
 
@@ -719,6 +719,8 @@ class ReplicaManager:
         pfn - the pfn if available (otherwise '')
         se - the storage element of the problematic replica (otherwise '')
         prognosis - this is given to the integrity DB and should reflect the problem observed with the file
+
+        sourceComponent is the component issuing the request.
     """
     if type(replicaTuple) == types.ListType:
       replicaTuples = replicaTuple
@@ -735,7 +737,7 @@ class ReplicaManager:
     integrityDB = RPCClient('DataManagement/DataIntegrity')
     for lfn,pfn,se,reason in replicaTuples:
       fileMetadata = {'Prognosis':reason,'LFN':lfn,'PFN':pfn,'StorageElement':se}
-      res = integrityDB.insertProblematic('',fileMetadata)
+      res = integrityDB.insertProblematic(sourceComponent,fileMetadata)
       if res['OK']:
         statusTuples.append((lfn,pfn,se,'Problematic'))
       else:
