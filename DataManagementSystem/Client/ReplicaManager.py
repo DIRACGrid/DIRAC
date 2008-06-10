@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalogue. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.27 2008/05/18 21:52:55 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.28 2008/06/10 10:55:20 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -8,6 +8,7 @@ import types
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig
 from DIRAC.DataManagementSystem.Client.StorageElement import StorageElement
 from DIRAC.DataManagementSystem.Client.FileCatalog import FileCatalog
+from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.File import makeGuid
 from DIRAC.Core.Utilities.File import getSize
 
@@ -705,6 +706,44 @@ class ReplicaManager:
       errStr = "ReplicaManager.__registerReplica: Completely failed to register replicas."
       gLogger.error(errStr,res['Message'])
       return S_ERROR(errStr)
+    failed.update(res['Value']['Failed'])
+    successful = res['Value']['Successful']
+    resDict = {'Successful':successful,'Failed':failed}
+    return S_OK(resDict)
+
+  def setReplicaProblematic(self,replicaTuple):
+    """ This method updates the status of the replica in the FileCatalog and the IntegrityDB
+        The supplied replicaTuple should be of the form (lfn,pfn,se,prognosis)
+
+        lfn - the lfn of the file
+        pfn - the pfn if available (otherwise '')
+        se - the storage element of the problematic replica (otherwise '')
+        prognosis - this is given to the integrity DB and should reflect the problem observed with the file
+    """
+    if type(replicaTuple) == types.ListType:
+      replicaTuples = replicaTuple
+    elif type(replicaTuple) == types.TupleType:
+      replicaTuples = [replicaTuple]
+    else:
+      errStr = "ReplicaManager.setReplicaProblematic: Supplied replica info must be tuple of list of tuples."
+      gLogger.error(errStr)
+      return S_ERROR(errStr)
+    gLogger.info("ReplicaManager.registerReplica: Attempting to update %s replicas." % len(replicaTuples))
+    statusTuples = []
+    successful = {}
+    failed = {}
+    integrityDB = RPCClient('DataManagement/DataIntegrity')
+    for lfn,pfn,se,reason in replicaTuples:
+      fileMetadata = {'Prognosis':reason,'LFN':lfn,'PFN':pfn,'StorageElement':se}
+      res = integrityDB.insertProblematic('',fileMetadata)
+      if res['OK']:
+        statusTuples.append((lfn,pfn,se,'Problematic'))
+      else:
+        failed[lfn] = res['Message']
+    res = self.fileCatalog.setReplicaStatus(statusTuples)
+    if not res['OK']:
+      errStr = "ReplicaManager.setReplicaProblematic: Completely failed to update replicas."
+      gLogger.error(errStr,res['Message'])
     failed.update(res['Value']['Failed'])
     successful = res['Value']['Successful']
     resDict = {'Successful':successful,'Failed':failed}
