@@ -58,26 +58,43 @@ class StorageUsageDB(DB):
       return S_OK()
     else:
       directoryID = res['Value']
-      failed = False
-      req = "DELETE FROM DirectoryUsage WHERE DirectoryID = %s;" % directoryID
-      res = self._update(req)
-      if not res['OK']:
-        failed = True
-        err = res['Message']
-      req = "DELETE FROM DirectoryParameters WHERE DirectoryID = %s;" % directoryID
-      res = self._update(req)
-      if not res['OK']:
-        failed = True
-        err = res['Message']
-      req = "DELETE FROM Directory WHERE DirectoryID = %s;" % directoryID
-      res = self._update(req)
-      if not res['OK']:
-        failed = True
-        err = res['Message']
-      if failed:
-        return S_ERROR(errStr)
-      else:
-        return S_OK()
+      return self.__removeDirectory([directoryID])
+
+  def recursiveRemoveDirectory(self,directory):
+    """ Remove recursively directory from all tables in the database
+    """
+    res = self.__getDirectoryIDs(directory)
+    if not res['OK']:
+      return res
+    elif not res['Value']:
+      return S_OK()
+    else:
+      directoryIDs = res['Value']
+      return self.__removeDirectory(directoryIDs)
+
+  def __removeDirectory(self,directoryIDs):
+    """ Remove all the directory ids from all tables
+    """
+    failed = False
+    req = "DELETE FROM DirectoryUsage WHERE DirectoryID IN (%s);" % intListToString(directoryIDs)
+    res = self._update(req)
+    if not res['OK']:
+      failed = True
+      err = res['Message']
+    req = "DELETE FROM DirectoryParameters WHERE DirectoryID IN (%s);" % intListToString(directoryIDs)
+    res = self._update(req)
+    if not res['OK']:
+      failed = True
+      err = res['Message']
+    req = "DELETE FROM Directory WHERE DirectoryID IN (%s);" % intListToString(directoryIDs)
+    res = self._update(req)
+    if not res['OK']:
+      failed = True
+      err = res['Message']
+    if failed:
+      return S_ERROR(errStr)
+    else:
+      return S_OK()
 
   #############################################################################
   #
@@ -116,6 +133,22 @@ class StorageUsageDB(DB):
       return S_ERROR("%s %s" % (err, res['Message']))
     elif res['Value']:
       return S_OK(res['Value'][0][0])
+    else:
+      return S_OK(False)
+
+  def __getDirectoryIDs(self,directory):
+    """ Obtain the directoryID from the Directory table
+    """
+    req = "SELECT DISTINCT DirectoryID from Directory WHERE DirectoryPath like '%s%s';" % (directory,'%')
+    err = "StorageUsageDB.__getDirectoryIDs: Failed to determine directoryID."
+    res = self._query(req)
+    if not res['OK']:
+      return S_ERROR("%s %s" % (err, res['Message']))
+    elif res['Value']:
+      directoryIDs = []
+      for tuple in res['Value']:
+        directoryIDs.append(tuple[0])
+      return S_OK(directoryIDs)
     else:
       return S_OK(False)
 
@@ -191,7 +224,7 @@ class StorageUsageDB(DB):
   def getStorageSummary(self):
     """ Retrieves the storage summary for all of the known directories
     """
-    req = "SELECT StorageElement,SUM(StorageElementSize),SUM(StorageElementFiles) FROM DirectoryUsage GROUP BY StorageElement;" 
+    req = "SELECT StorageElement,SUM(StorageElementSize),SUM(StorageElementFiles) FROM DirectoryUsage GROUP BY StorageElement;"
     err = "StorageUsageDB.getStorageSummary: Failed to get storage summary."
     res = self._query(req)
     if not res['OK']:
@@ -205,7 +238,7 @@ class StorageUsageDB(DB):
     """ Retrieves the storage usage for each of the known users
     """
     req = "SELECT d.DirectoryID,d.DirectoryPath,SUM(du.StorageElementSize) FROM Directory AS d, DirectoryUsage AS du\
- WHERE d.DirectoryPath LIKE '/lhcb/user/%' AND d.DirectoryID = du.DirectoryID GROUP BY d.DirectoryID;" 
+ WHERE d.DirectoryPath LIKE '/lhcb/user/%' AND d.DirectoryID = du.DirectoryID GROUP BY d.DirectoryID;"
     err = "StorageUsageDB.__getUserStorageUsage: Failed to obtain user storage usage."
     res = self._query(req)
     if not res['OK']:
@@ -218,7 +251,7 @@ class StorageUsageDB(DB):
           userDict[userName] = 0
         userDict[userName] += int(directorySize)
       return S_OK(userDict)
- 
+
   def __getLFNDirSiteDict(self,dirs,sites):
     """ Performs sql query to get site usage for provided directories and sites
     """
