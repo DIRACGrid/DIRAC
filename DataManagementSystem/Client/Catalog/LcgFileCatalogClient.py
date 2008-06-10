@@ -903,28 +903,50 @@ class LcgFileCatalogClient(FileCatalogueBase):
     failed = {}
     successful = {}
     for path in paths:
-      res = self.__getDirectoryContents(path)
+      res = self.__getDirectorySize(path)
       if res['OK']:
-        pathDict = {'Files':0,'TotalSize':0,'SiteUsage':{}}
-        pathDict['SubDirs'] = res['Value']['SubDirs']
-        files = res['Value']['Files']
-        for lfn in files.keys():
-          fileSize = files[lfn]['MetaData']['Size']
-          pathDict['Files'] += 1
-          pathDict['TotalSize'] += fileSize
-          repDict = files[lfn]['Replicas']
-          for se in repDict.keys():
-            if not pathDict['SiteUsage'].has_key(se):
-              pathDict['SiteUsage'][se] = {'Files':0,'Size':0}
-            pathDict['SiteUsage'][se]['Size'] += fileSize
-            pathDict['SiteUsage'][se]['Files'] += 1
-        successful[path] = pathDict
+        successful[path] = res['Value']
       else:
         failed[path] = res['Message']
     if self.session:
       self.__closeSession()
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
+
+  def __getDirectorySize(self,path):
+    res = self.exists(path)
+    if not res['OK']:
+      return res
+    if not res['Value']['Successful'].has_key(path):
+      return S_ERROR('__getDirectoryContents: There was an error accessing the supplied path')
+    if not res['Value']['Successful'][path]:
+      return S_ERROR('__getDirectoryContents: There supplied path does not exist')
+
+    lfcPath = self.prefix+path
+    fstat = lfc.lfc_filestatg()
+    value = lfc.lfc_statg(lfcPath,'',fstat)
+    nbfiles = fstat.nlink
+    direc = lfc.lfc_opendirg(lfcPath,'')
+
+    pathDict = {'SubDirs':[],'Files':0,'TotalSize':0,'SiteUsage':{}}
+    for i in  range(nbfiles):
+      entry,fileInfo = lfc.lfc_readdirxr(direc,"")
+      if S_ISDIR(entry.filemode):
+        subDir = '%s/%s' % (path,entry.d_name)
+        pathDict['SubDirs'].append(subDir)
+      else:
+        replicaDict = {}
+        if fileInfo:
+          fileSize = entry.filesize
+          pathDict['TotalSize'] += fileSize
+          pathDict['Files'] += 1
+          for replica in fileInfo:
+            if not pathDict['SiteUsage'].has_key(replica.host):
+              pathDict['SiteUsage'][replica.host] = {'Files':0,'Size':0}
+            pathDict['SiteUsage'][replica.host]['Size'] += fileSize
+            pathDict['SiteUsage'][replica.host]['Files'] += 1
+    lfc.lfc_closedir(direc)
+    return S_OK(pathDict)
 
   def getDirectoryContents(self,path):
     """ Returns the result of __getDirectoryContents for multiple supplied paths
