@@ -81,7 +81,7 @@ class StorageUsageAgent(Agent):
         self.log.info("StorageUsageAgent: Successfully renewed %s proxy." %self.proxyDN)
 
 
-    res = self.StorageUsageDB.getStorageSummary()  
+    res = self.StorageUsageDB.getStorageSummary()
     if res['OK']:
       gLogger.info("StorageUsageAgent: Storage Usage Summary")
       gLogger.info("============================================================")
@@ -105,6 +105,7 @@ class StorageUsageAgent(Agent):
     while (oNamespaceBrowser.isActive()):
       currentDir = oNamespaceBrowser.getActiveDir()
       gLogger.info("StorageUsageAgent: Getting usage for %s." % currentDir)
+      numberOfFiles = 0
       res = self.lfc.getDirectorySize(currentDir)
       if not res['OK']:
         gLogger.error("StorageUsageAgent: Completely failed to get usage.", "%s %s" % (currentDir,res['Message']))
@@ -123,9 +124,9 @@ class StorageUsageAgent(Agent):
 
         if numberOfFiles > 0:
           res = self.StorageUsageDB.insertDirectory(currentDir,numberOfFiles,totalSize)
-	  if not res['OK']:
+          if not res['OK']:
             gLogger.error("StorageUsageAgent: Failed to insert the directory.", "%s %s" % (currentDir,res['Message']))
-            subDirs = [currentDir] 
+            subDirs = [currentDir]
           else:
             gLogger.info("StorageUsageAgent: Successfully inserted directory.\n")
             gLogger.info("StorageUsageAgent: %s %s %s" % ('Storage Element'.ljust(40),'Number of files'.rjust(20),'Total size'.rjust(20)))
@@ -138,7 +139,21 @@ class StorageUsageAgent(Agent):
               else:
                 gLogger.info("StorageUsageAgent: %s %s %s" % (storageElement.ljust(40),str(usageDict['Files']).rjust(20),str(usageDict['Size']).rjust(20)))
 
-      
+      # If there are no subdirs
+      if (len(subDirs) ==  0) and (numberOfFiles == 0):
+        gLogger.info("StorageUsageAgent: Attempting to remove empty directory from Storage Usage database")
+        res = self.StorageUsageDB.publishEmptyDirectory(currentDir)
+        if not res['OK']:
+          gLogger.error("StorageUsageAgent: Failed to remove empty directory from Storage Usage database.",res['Message'])
+        else:
+          res = self.lfc.removeDirectory(currentDir)
+          if not res['OK']:
+            gLogger.error("StorageUsageAgent: Failed to remove empty directory from File Catalog.",res['Message'])
+          elif res['Value']['Failed'].has_key(currentDir):
+            gLogger.error("StorageUsageAgent: Failed to remove empty directory from File Catalog.",res['Value']['Failed'][currentDir])
+          else:
+            gLogger.info("StorageUsageAgent: Successfully removed empty directory from File Catalog.")
+
       chosenDirs = []
       for subDir in subDirs:
         if subDir not in ignoreDirectories:
@@ -146,7 +161,7 @@ class StorageUsageAgent(Agent):
       oNamespaceBrowser.updateDirs(chosenDirs)
       gLogger.info("StorageUsageAgent: There are %s active directories to be searched." % oNamespaceBrowser.getNumberActiveDirs())
 
-    gLogger.info("StorageUsageAgent: Finished recursive directory search.") 
+    gLogger.info("StorageUsageAgent: Finished recursive directory search.")
     return S_OK()
 
 
