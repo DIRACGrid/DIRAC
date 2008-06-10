@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/Attic/dirac-proxy-info.py,v 1.10 2008/06/10 16:47:27 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/Attic/dirac-proxy-info.py,v 1.11 2008/06/10 17:02:18 acasajus Exp $
 # File :   dirac-proxy-init.py
 # Author : Adrian Casajus
 ########################################################################
-__RCSID__   = "$Id: dirac-proxy-info.py,v 1.10 2008/06/10 16:47:27 acasajus Exp $"
-__VERSION__ = "$Revision: 1.10 $"
+__RCSID__   = "$Id: dirac-proxy-info.py,v 1.11 2008/06/10 17:02:18 acasajus Exp $"
+__VERSION__ = "$Revision: 1.11 $"
 
 import sys
 import os.path
@@ -69,7 +69,6 @@ if not retVal[ 'OK' ]:
   print "Can't load %s: %s" % ( proxyLoc, retVal[ 'Message' ] )
   sys.exit(1)
 retVal = chain.loadKeyFromFile( proxyLoc )
-print retVal
 if not retVal[ 'OK' ]:
   print "Can't load %s: %s" % ( proxyLoc, retVal[ 'Message' ] )
   sys.exit(1)
