@@ -59,7 +59,7 @@ class BaseSecurity:
         cmdEnv[ key ] = os.environ[ key ]
     return cmdEnv
 
-  def _unlinkFiles( files ):
+  def _unlinkFiles( self, files ):
     if type( files ) in ( types.ListType, types.TupleType ):
       for file in files:
         self._unlinkFiles( file )

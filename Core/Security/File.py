@@ -1,6 +1,7 @@
 import os
 import stat
 import tempfile
+from DIRAC import S_OK, S_ERROR
 
 def writeToProxyFile( proxyContents, fileName ):
   """

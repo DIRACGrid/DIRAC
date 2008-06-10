@@ -3,6 +3,7 @@ from DIRAC import S_OK, S_ERROR, gConfig
 import DIRAC.Core.Security.Locations as Locations
 import DIRAC.Core.Security.File as File
 from DIRAC.Core.Security.BaseSecurity import BaseSecurity
+from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.Core.Utilities.Subprocess import shellCall
 
 class VOMS( BaseSecurity ):
@@ -151,7 +152,7 @@ class VOMS( BaseSecurity ):
     cmdArgs.append( '-cert "%s"' % proxyLocation )
     cmdArgs.append( '-key "%s"' % proxyLocation )
     cmdArgs.append( '-out "%s"' % newProxyLocation )
-    cmdArgs.append( '-voms "%s"' % ( vo, attribute ) )
+    cmdArgs.append( '-voms "%s:%s"' % ( vo, attribute ) )
     cmd = 'voms-proxy-init %s' % " ".join( cmdArgs )
 
     result = shellCall( self._secCmdTimeout, cmd, env = vomsEnv )
@@ -169,7 +170,7 @@ class VOMS( BaseSecurity ):
       self._unlinkFiles( newProxyLocation )
       return S_ERROR('Failed to set VOMS attributes. Command: %s; StdOut: %s; StdErr: %s' % (cmd,output,error))
 
-    newChain = x509Chain()
+    newChain = X509Chain()
     retVal = newChain.loadProxyFromFile( newProxyLocation )
     self._unlinkFiles( newProxyLocation )
     if not retVal[ 'OK' ]:
