@@ -46,8 +46,12 @@ class MyProxy( BaseSecurity ):
     else:
       cmdArgs.append( '-l "%s"' % mpUsername )
 
+    mpEnv = self._getExternalCmdEnvironment( noX509 = True )
+    #Hack to upload properly
+    mpEnv[ 'GT_PROXY_MODE' ] = 'old'
+
     cmd = "myproxy-init %s" % " ".join( cmdArgs )
-    result = shellCall( self._secCmdTimeout, cmd, env = self._getExternalCmdEnvironment( noX509 = True ) )
+    result = shellCall( self._secCmdTimeout, cmd, env = mpEnv )
 
     if proxyDict[ 'tempFile' ]:
         self._unlinkFiles( proxyLocation )
