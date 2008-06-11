@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.29 2008/06/10 17:08:55 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.30 2008/06/11 08:52:17 paterson Exp $
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -30,7 +30,7 @@
    Note that several executables can be provided and wil be executed sequentially.
 """
 
-__RCSID__ = "$Id: Job.py,v 1.29 2008/06/10 17:08:55 paterson Exp $"
+__RCSID__ = "$Id: Job.py,v 1.30 2008/06/11 08:52:17 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -522,8 +522,28 @@ class Job:
       raise TypeError,'Expected string for logging level'
 
   #############################################################################
+  def setMode(self,mode):
+    """Developer function. Under development.
+    """
+    if type(mode) == type("  "):
+      description = 'Choose a different DIRAC job mode'
+      self._addParameter(self.workflow,'JobMode','JDL',mode,description)
+    else:
+      raise TypeError,'Expected string for DIRAC Job Mode'
+
+  #############################################################################
+  def setWorkflowTag(self,packageName,packageVersion):
+    """Developer function. Under development.
+    """
+    if type(packageName) == type("  ") and type(packageVersion) == type("  "):
+      description = 'Explicitly choose the workflow module distribution tag if applicable'
+      self._addParameter(self.workflow,'WorkflowTag','JDL',string.join([packageName,packageVersion],'.'),description)
+    else:
+      raise TypeError,'Expected strings for Workflow tag name and version'
+
+  #############################################################################
   def selectSetup(self,setup):
-    """Under development.
+    """Developer function. Under development.
     """
     if type(setup) == type("  "):
       description = 'Choose a different DIRAC setup in which to execute the job'
@@ -747,9 +767,26 @@ class Job:
     if paramsDict.has_key('LogLevel'):
       if paramsDict['LogLevel']['value']:
         arguments.append('-o LogLevel=%s' %(paramsDict['LogLevel']['value']))
+      else:
+        self.log.warn('Job LogLevel defined with null value')
     if paramsDict.has_key('DIRACSetup'):
       if paramsDict['DIRACSetup']['value']:
         arguments.append('-o DIRAC/Setup=%s' %(paramsDict['DIRACSetup']['value']))
+      else:
+        self.log.warn('Job DIRACSetup defined with null value')
+    if paramsDict.has_key('JobMode'):
+      if paramsDict['JobMode']['value']:
+        arguments.append('-o JobMode=%s' %(paramsDict['JobMode']['value']))
+      else:
+        self.log.warn('Job Mode defined with null value')
+    if paramsDict.has_key('WorkflowTag'):
+      paramList = string.split(paramsDict['WorkflowTag']['value'],'.')
+      if len(paramList)==2:
+        name = paramList[0]
+        version = paramList[1]
+        arguments.append('-o %s=%s' %(name,version))
+      else:
+        self.log.warn('Job Mode defined with null value')
 
     classadJob.insertAttributeString('Arguments',string.join(arguments,' '))
     classadJob.insertAttributeString('Executable',self.executable)
