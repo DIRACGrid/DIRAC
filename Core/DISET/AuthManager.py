@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/AuthManager.py,v 1.20 2008/06/10 12:37:46 acasajus Exp $
-__RCSID__ = "$Id: AuthManager.py,v 1.20 2008/06/10 12:37:46 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/AuthManager.py,v 1.21 2008/06/11 10:25:38 acasajus Exp $
+__RCSID__ = "$Id: AuthManager.py,v 1.21 2008/06/11 10:25:38 acasajus Exp $"
 
 import types
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
@@ -56,9 +56,9 @@ class AuthManager:
       #Get the nickname of the host
       credDict[ 'group' ] = credDict[ 'extraCredentials' ]
     #HACK TO MAINTAIN COMPATIBILITY
-    #else:
-    #  if 'extraCredentials' in credDict and not 'group' in credDict:
-    #    credDict[ 'group' ]  = credDict[ 'extraCredentials' ]
+    else:
+      if 'extraCredentials' in credDict and not 'group' in credDict:
+        credDict[ 'group' ]  = credDict[ 'extraCredentials' ]
     #END OF HACK
     #Get the username
     if 'DN' in credDict:
