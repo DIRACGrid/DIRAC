@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/PilotDirector.py,v 1.13 2008/06/09 17:33:40 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/PilotDirector.py,v 1.14 2008/06/12 17:22:01 paterson Exp $
 # File :   PilotDirector.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
      are overridden in Grid specific subclasses.
 """
 
-__RCSID__ = "$Id: PilotDirector.py,v 1.13 2008/06/09 17:33:40 paterson Exp $"
+__RCSID__ = "$Id: PilotDirector.py,v 1.14 2008/06/12 17:22:01 paterson Exp $"
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
 from DIRAC.Core.Utilities.Subprocess                       import shellCall
@@ -208,8 +208,8 @@ class PilotDirector(Thread):
 
     candidateSites = None  #although only one site candidate is normally specified, can imagine having >1 ;)
     if classadJob.lookupAttribute("Site"):
-      candidateSites = classadJob.get_expression("Site").replace('{','').replace('}','').replace('"','').split()
-      self.log.verbose('Single candidate site for job %s is %s' %(job,string.join(candidateSites,',')))
+      candidateSites = classadJob.get_expression("Site").replace('{','').replace('}','').replace('"','').split(',')
+      self.log.verbose('Candidate sites for job %s is %s' %(job,string.join(candidateSites,',')))
 
     bannedSites = None
     if classadJob.lookupAttribute("BannedSites"):
@@ -221,7 +221,7 @@ class PilotDirector(Thread):
       return sites
 
     siteList = sites['Value']
-    self.log.verbose('Candidate %s Sites for job %s: %s' %(self.type,job,string.join(siteList,', ')))
+    self.log.info('Resolved candidate %s Sites for job %s: %s' %(self.type,job,string.join(siteList,', ')))
     workingDirectory = '%s/%s' %(self.workingDirectory,job)
 
     if os.path.exists(workingDirectory):
