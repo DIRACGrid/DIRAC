@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/AuthManager.py,v 1.22 2008/06/12 16:04:52 acasajus Exp $
-__RCSID__ = "$Id: AuthManager.py,v 1.22 2008/06/12 16:04:52 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/AuthManager.py,v 1.23 2008/06/12 16:24:23 acasajus Exp $
+__RCSID__ = "$Id: AuthManager.py,v 1.23 2008/06/12 16:24:23 acasajus Exp $"
 
 import types
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
@@ -178,7 +178,6 @@ class AuthManager:
     if not usersInGroup:
       return False
     retVal = CS.getUsernameForDN( credDict[ self.KW_DN ], usersInGroup )
-    print retVal
     if retVal[ 'OK' ]:
       credDict[ self.KW_USERNAME ] = retVal[ 'Value' ]
       return True
