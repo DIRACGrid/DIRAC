@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: NotificationClient.py,v 1.3 2008/06/12 17:54:27 paterson Exp $
+# $Id: NotificationClient.py,v 1.4 2008/06/12 17:59:17 paterson Exp $
 ########################################################################
 
 """ DIRAC WMS Notification Client class encapsulates the methods exposed
@@ -60,7 +60,7 @@ class NotificationClient:
   def sendSMS(self,userName,body,fromAddress=None):
     """ Send an SMS with body to the specified DIRAC user name.
     """
-    self.log.verbose('Received signal to send the following SMS to %s:\nSubject = %s\n%s' %(userName,subject,body))
+    self.log.verbose('Received signal to send the following SMS to %s:\n%s' %(userName,body))
     notify = RPCClient('WorkloadManagement/Notification',useCertificates=False)
     result = notify.sendSMS(userName,body,str(fromAddress))
     if not result['OK']:
