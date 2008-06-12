@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: NotificationHandler.py,v 1.5 2008/06/12 17:58:27 paterson Exp $
+# $Id: NotificationHandler.py,v 1.6 2008/06/12 17:59:59 paterson Exp $
 ########################################################################
 
 """ The Notification service provides a toolkit to contact people via email
@@ -14,7 +14,7 @@
     Grid, an email could be sent by default with the metadata of the file.
 """
 
-__RCSID__ = "$Id: NotificationHandler.py,v 1.5 2008/06/12 17:58:27 paterson Exp $"
+__RCSID__ = "$Id: NotificationHandler.py,v 1.6 2008/06/12 17:59:59 paterson Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -50,7 +50,7 @@ class NotificationHandler( RequestHandler ):
     return result
 
   ###########################################################################
-  types_sendMail = [StringType,StringType,StringType]
+  types_sendSMS = [StringType,StringType,StringType]
   def export_sendSMS(self,userName,body,fromAddress):
     """ Send an SMS with supplied body to the specified DIRAC user using the Mail utility via an SMS switch.
     """
