@@ -1,8 +1,8 @@
-# $Id: Workflow.py,v 1.32 2008/06/08 21:42:16 atsareg Exp $
+# $Id: Workflow.py,v 1.33 2008/06/12 13:41:22 joel Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.32 $"
+__RCSID__ = "$Revision: 1.33 $"
 
 import os
 import xml.sax
@@ -260,17 +260,20 @@ class Workflow(AttributeCollection):
             wf_exec_steps[step_inst_name][parameter.getName()]=parameter.getValue()
             #print "StepInstance", step_inst_name+'.'+parameter.getName(),'=',parameter.getValue()
         step_inst.step_commons[parameter.getName()] = parameter.getValue()
-      
+
+      for key,value in wf_exec_steps[step_inst_name].items():
+        step_inst.step_commons[key] = value
+
       step_inst.setParent(self)
       step_inst.setWorkflowCommons(self.workflow_commons)
-      
+
       result = step_inst.execute(wf_exec_steps[step_inst_name], self.step_definitions)
       if not result['OK']:
         if self.workflowStatus['OK']:
           error_message = result['Message']
-        self.workflowStatus = S_ERROR(result['Message']) 
-                  
-                
+        self.workflowStatus = S_ERROR(result['Message'])
+
+
     # now we need to copy output values to the STEP!!! parameters
     #print "WorkflowInstance output assignment"
     for wf_parameter in self.parameters:
@@ -292,7 +295,7 @@ class Workflow(AttributeCollection):
     # Return the result of the first failed step or S_OK
     if not self.workflowStatus['OK']:
       return S_ERROR(error_message)
-    else:  
+    else:
       return S_OK(result['Value'])
 
 from DIRAC.Core.Workflow.WorkflowReader import WorkflowXMLHandler
