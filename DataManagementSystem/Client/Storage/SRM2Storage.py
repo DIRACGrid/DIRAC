@@ -27,15 +27,24 @@ except Exception,x:
   ISOK = False
 
 try:
-  import gfal
-  infoStr = "Using gfal from: %s" % gfal.__file__
+  import gfalthr as gfal
+  infoStr = "Using gfalthr from: %s" % gfal.__file__
   gLogger.info(infoStr)
-  infoStr = "The version of gfal is %s" % gfal.gfal_version()
+  infoStr = "The version of gfalthr is %s" % gfal.gfal_version()
   gLogger.info(infoStr)
 except Exception,x:
-  errStr = "SRM2Storage.__init__: Failed to import gfal: %s" % (x)
+  errStr = "SRM2Storage.__init__: Failed to import gfalthr: %s" % (x)
   gLogger.exception(errStr)
-  ISOK = False
+  try:
+    import gfal
+    infoStr = "Using gfal from: %s" % gfal.__file__
+    gLogger.info(infoStr)
+    infoStr = "The version of gfal is %s" % gfal.gfal_version()
+    gLogger.info(infoStr)
+  except Exception,x:
+    errStr = "SRM2Storage.__init__: Failed to import gfal: %s" % (x)
+    gLogger.exception(errStr)
+    ISOK = False
 
 class SRM2Storage(StorageBase):
 
