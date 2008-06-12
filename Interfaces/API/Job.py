@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.30 2008/06/11 08:52:17 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.31 2008/06/12 08:06:52 paterson Exp $
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -30,7 +30,7 @@
    Note that several executables can be provided and wil be executed sequentially.
 """
 
-__RCSID__ = "$Id: Job.py,v 1.30 2008/06/11 08:52:17 paterson Exp $"
+__RCSID__ = "$Id: Job.py,v 1.31 2008/06/12 08:06:52 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -532,16 +532,6 @@ class Job:
       raise TypeError,'Expected string for DIRAC Job Mode'
 
   #############################################################################
-  def setWorkflowTag(self,packageName,packageVersion):
-    """Developer function. Under development.
-    """
-    if type(packageName) == type("  ") and type(packageVersion) == type("  "):
-      description = 'Explicitly choose the workflow module distribution tag if applicable'
-      self._addParameter(self.workflow,'WorkflowTag','JDL',string.join([packageName,packageVersion],'.'),description)
-    else:
-      raise TypeError,'Expected strings for Workflow tag name and version'
-
-  #############################################################################
   def selectSetup(self,setup):
     """Developer function. Under development.
     """
@@ -777,14 +767,6 @@ class Job:
     if paramsDict.has_key('JobMode'):
       if paramsDict['JobMode']['value']:
         arguments.append('-o JobMode=%s' %(paramsDict['JobMode']['value']))
-      else:
-        self.log.warn('Job Mode defined with null value')
-    if paramsDict.has_key('WorkflowTag'):
-      paramList = string.split(paramsDict['WorkflowTag']['value'],'.')
-      if len(paramList)==2:
-        name = paramList[0]
-        version = paramList[1]
-        arguments.append('-o %s=%s' %(name,version))
       else:
         self.log.warn('Job Mode defined with null value')
 
