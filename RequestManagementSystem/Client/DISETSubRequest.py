@@ -1,13 +1,14 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/DISETSubRequest.py,v 1.2 2008/04/17 14:53:57 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/DISETSubRequest.py,v 1.3 2008/06/12 15:09:51 atsareg Exp $
 """
    DISETSubRequest Class encapsulates a request definition to accomplish a DISET
    RPC call
 
 """
 
-__RCSID__ = "$Id: DISETSubRequest.py,v 1.2 2008/04/17 14:53:57 atsareg Exp $"
+__RCSID__ = "$Id: DISETSubRequest.py,v 1.3 2008/06/12 15:09:51 atsareg Exp $"
 
 import commands, datetime
+from DIRAC.Core.Utilities import DEncode
 
 class DISETSubRequest:
 
@@ -27,21 +28,21 @@ class DISETSubRequest:
     # Some initial values
     self.subAttributes['Status'] = "New"
     status,self.subAttributes['SubRequestID'] = commands.getstatusoutput('uuidgen')
-    self.subAttributes['Method'] = "Workflow"
+    self.subAttributes['Method'] = "DISET"
     self.subAttributes['CreationTime'] = str(datetime.datetime.utcnow())
     self.subAttributes['Type'] = 'Unknown'
 
     if rpcStub:
       self.subAttributes['TargetComponent'] = rpcStub[0]
       self.subAttributes['Call'] = rpcStub[2]
-      self.subAttributes['Arguments'] = ':::'.join(rpcStub[3])
+      self.subAttributes['Arguments'] = DEncode.encode(rpcStub[3])
 
   def setRPCCall(self,rpcStub):
     """ Define the  RPC call details
     """
     self.subAttributes['TargetComponent'] = rpcStub[0]
     self.subAttributes['Call'] = rpcStub[2]
-    self.subAttributes['Arguments'] = ':::'.join(rpcStub[3])
+    self.subAttributes['Arguments'] = DEncode.encode(rpcStub[3])
 
   def getDictionary(self):
     """ Get the request representation as a dictionary
@@ -63,6 +64,6 @@ class DISETSubRequest:
   def setArguments(self,arguments):
     """ Set the RPC call arguments
     """
-    self.subAttributes['Arguments'] = ":::".join(arguments)
+    self.subAttributes['Arguments'] = DEncode.encode(arguments)
 
 
