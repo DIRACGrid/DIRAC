@@ -23,6 +23,8 @@ class X509Chain:
       self.__keyObj = keyObj
     else:
       self.__loadedPKey = False
+    if self.__loadedChain:
+      self.__checkProxyness()
 
   def loadChainFromFile( self, chainLocation ):
     """
