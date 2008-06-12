@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfo.py,v 1.23 2008/06/10 13:50:59 acasajus Exp $
-__RCSID__ = "$Id: SocketInfo.py,v 1.23 2008/06/10 13:50:59 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfo.py,v 1.24 2008/06/12 16:05:00 acasajus Exp $
+__RCSID__ = "$Id: SocketInfo.py,v 1.24 2008/06/12 16:05:00 acasajus Exp $"
 
 import time
 import copy
@@ -44,7 +44,7 @@ class SocketInfo:
       certList.insert( 0, self.sslSocket.get_peer_certificate() )
     peerChain = X509Chain( certList = certList )
     if peerChain.isProxy()['Value']:
-      identitySubject = peerChain.getCertInChain( -1 )['Value'].getSubjectNameObject()[ 'Value' ]
+      identitySubject = peerChain.getIssuerCert()['Value'].getSubjectNameObject()[ 'Value' ]
     else:
       identitySubject = peerChain.getCertInChain( 0 )['Value'].getSubjectNameObject()[ 'Value' ]
     credDict = { 'DN' : identitySubject.one_line(),
