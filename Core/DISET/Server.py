@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.29 2008/06/05 10:20:16 acasajus Exp $
-__RCSID__ = "$Id: Server.py,v 1.29 2008/06/05 10:20:16 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.30 2008/06/12 17:38:01 acasajus Exp $
+__RCSID__ = "$Id: Server.py,v 1.30 2008/06/12 17:38:01 acasajus Exp $"
 
 import socket
 import sys
@@ -16,6 +16,7 @@ from DIRAC.Core.Utilities.Subprocess import shellCall
 from DIRAC.Core.Utilities import Network, Time
 from DIRAC.LoggingSystem.Client.Logger import gLogger
 from DIRAC.MonitoringSystem.Client.MonitoringClient import gMonitor
+from DIRAC.Core.Security import CS
 
 class Server:
 
@@ -176,15 +177,13 @@ class Server:
         return
     except socket.error:
       return
-    if self.__checkClientAddress( clientTransport ):
+    clientIP = clientTransport.getRemoteAddress()[0]
+    if clientTransport.getRemoteAddress()[0] in CS.getBannedIPs():
+      gLogger.warn( "Client connected from banned ip %s" % clientIP )
+    else:
       self.threadPool.generateJobAndQueueIt( self.processClient,
                                       args = ( clientTransport, ),
                                       oExceptionCallback = self.processClientException )
-
-
-  def __checkClientAddress( self, clientTransport ):
-    #TODO: Check that the IP is not banned
-    return True
 
   def processClientException( self, threadedJob, exceptionInfo ):
     """
