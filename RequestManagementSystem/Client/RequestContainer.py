@@ -1,3 +1,5 @@
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/RequestContainer.py,v 1.5 2008/06/12 15:21:30 atsareg Exp $
+
 """
 The Data Management Request contains all the necessary information for
 a data management operation
@@ -7,6 +9,8 @@ from DIRAC.Core.Utilities.File import makeGuid
 from DIRAC import gConfig,gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.GridCredentials import getCurrentDN,getDIRACGroup
 from DIRAC.Core.Utilities import DEncode
+
+__RCSID__ = "$Id: RequestContainer.py,v 1.5 2008/06/12 15:21:30 atsareg Exp $"
 
 class RequestContainer:
 
@@ -482,19 +486,25 @@ class RequestContainer:
     """
     if not self.subRequests.has_key(type):
       return S_ERROR("No requests of type specified found.")
-    elif len(self.subRequests[type]) < ind:
+    elif len(self.subRequests[type]) <= ind:
       return S_ERROR("Subrequest index is out of range.")
     else:
       status = self.getSubRequestAttributeValue(ind,type,"Status")['Value']
       if status == 'Done':
         return S_OK(1)
-      for file in self.getSubRequestFiles(ind,type)['Value']:
+      files = self.getSubRequestFiles(ind,type)['Value']  
+      for file in files:
         if not file['Status'] == 'Done':
           return S_OK(0)
-      for dataset in self.getSubRequestDatasets(ind, type)['Value']:
+      datasets = self.getSubRequestDatasets(ind, type)['Value']    
+      for dataset in datasets:
         if not dataset['Status'] == 'Done':
           return S_OK(0)
-    return S_OK(1)
+          
+    if files or datasets:
+      return S_OK(1)
+    else:      
+      return S_OK(0)
 
   def isRequestTypeEmpty(self,type):
     """ Check whether the requests of given type are complete
@@ -510,7 +520,7 @@ class RequestContainer:
     """
     requestTypes = self.getSubRequestTypes()['Value']
     for requestType in requestTypes:
-      if not isRequestTypeEmpty(requestType)['Value']:
+      if not self.isRequestTypeEmpty(requestType)['Value']:
         return S_OK(0)
     return S_OK(1)
 
