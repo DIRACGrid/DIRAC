@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: NotificationClient.py,v 1.2 2008/06/10 14:58:35 paterson Exp $
+# $Id: NotificationClient.py,v 1.3 2008/06/12 17:54:27 paterson Exp $
 ########################################################################
 
 """ DIRAC WMS Notification Client class encapsulates the methods exposed
@@ -51,6 +51,20 @@ class NotificationClient:
     result = notify.sendMail(address,subject,body,str(fromAddress))
     if not result['OK']:
       self.log.error('Could not send mail via central Notification service',result['Message'])
+    else:
+      self.log.info(result['Value'])
+
+    return result
+
+  #############################################################################
+  def sendSMS(self,userName,body,fromAddress=None):
+    """ Send an SMS with body to the specified DIRAC user name.
+    """
+    self.log.verbose('Received signal to send the following SMS to %s:\nSubject = %s\n%s' %(userName,subject,body))
+    notify = RPCClient('WorkloadManagement/Notification',useCertificates=False)
+    result = notify.sendSMS(userName,body,str(fromAddress))
+    if not result['OK']:
+      self.log.error('Could not send SMS via central Notification service',result['Message'])
     else:
       self.log.info(result['Value'])
 
