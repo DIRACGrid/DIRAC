@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.41 2008/06/10 13:50:59 acasajus Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.41 2008/06/10 13:50:59 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.42 2008/06/12 16:23:46 acasajus Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.42 2008/06/12 16:23:46 acasajus Exp $"
 
 import sys
 import types
@@ -12,6 +12,7 @@ from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.ConfigurationSystem.Client.PathFinder import *
 from DIRAC.Core.Utilities import GridCredentials
+from DIRAC.Core.Security import CS
 
 class BaseClient:
 
@@ -33,7 +34,7 @@ class BaseClient:
     self.serviceName = serviceName
     self.kwargs = kwargs
     #HACK: Should be False to allow group to travel in the proxy
-    self.defaultUserGroup = gConfig.getValue( "/DIRAC/DefaultGroup", "lhcb_user" )
+    self.defaultUserGroup = CS.getDefaultUserGroup()
     #HACK END
     self.__discoverSetup()
     self.__initStatus = self.__discoverURL()
