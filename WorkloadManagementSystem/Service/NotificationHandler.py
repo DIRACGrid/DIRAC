@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: NotificationHandler.py,v 1.3 2008/06/10 14:56:14 paterson Exp $
+# $Id: NotificationHandler.py,v 1.4 2008/06/12 17:54:00 paterson Exp $
 ########################################################################
 
 """ The Notification service provides a toolkit to contact people via email
@@ -14,11 +14,12 @@
     Grid, an email could be sent by default with the metadata of the file.
 """
 
-__RCSID__ = "$Id: NotificationHandler.py,v 1.3 2008/06/10 14:56:14 paterson Exp $"
+__RCSID__ = "$Id: NotificationHandler.py,v 1.4 2008/06/12 17:54:00 paterson Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.Mail import Mail
+from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 
 def initializeNotificationHandler( serviceInfo ):
@@ -43,7 +44,39 @@ class NotificationHandler( RequestHandler ):
     if not result['OK']:
       gLogger.warn('Could not send mail with the following message:\n%s' %result['Message'])
     else:
-      gLogger.verbose('Mail sent successfully to %s with subject %s' %(address,subject))
+      gLogger.info('Mail sent successfully to %s with subject %s' %(address,subject))
+      gLogger.debug(result['Value'])
+
+    return result
+
+  ###########################################################################
+  types_sendMail = [StringType,StringType,StringType]
+  def export_sendSMS(self,userName,body,fromAddress):
+    """ Send an SMS with supplied body to the specified DIRAC user using the Mail utility via an SMS switch.
+    """
+    gLogger.verbose('Received signal to send the following SMS to %s:\nSubject = %s\n%s' %(userName,body))
+    mobile = gConfig.getValue('/Users/%s/mobile' %userName,'')
+    if not mobile:
+      return S_ERROR('No registered mobile number for %s' %userName)
+
+    csSection = PathFinder.getServiceSection( 'WorkloadManagement/Notification' )
+    smsSwitch = gConfig.getValue('%s/SMSSwitch' %csSection,'')
+    if not smsSwitch:
+      return S_ERROR('No SMS switch is defined in CS path %s/SMSSwitch' %csSection)
+
+    address = '%s@%s' %(mobile,smsSwitch)
+    subject = 'DIRAC SMS'
+    m = Mail()
+    m._subject = subject
+    m._message = body
+    m._mailAddress = address
+    if not fromAddress=='None':
+      m._fromAddress = fromAddress
+    result = m._send()
+    if not result['OK']:
+      gLogger.warn('Could not send SMS to %s with the following message:\n%s' %(userName,result['Message']))
+    else:
+      gLogger.info('SMS sent successfully to %s ' %(userName))
       gLogger.debug(result['Value'])
 
     return result
