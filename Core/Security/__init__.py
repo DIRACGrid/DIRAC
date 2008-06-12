@@ -16,3 +16,4 @@ GSI.crypto.add_x509_extension_alias( nid, 78 ) #Alias to netscape comment, text 
 import DIRAC.Core.Security.Locations
 import DIRAC.Core.Security.CS
 import DIRAC.Core.Security.File
+import DIRAC.Core.Security.Properties
