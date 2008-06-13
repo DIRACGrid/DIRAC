@@ -279,9 +279,13 @@ class X509Chain:
         return
       if checkProxyPart:
         dnMatch = self.__checkProxyDN( step, step + 1 )
-        if not dnMatch and step > 0:
-          self.__firstProxyStep = step
-          checkProxyParth = False
+        if not dnMatch:
+          if step > 0:
+            self.__firstProxyStep = step
+            checkProxyParth = False
+          else:
+            self.__isProxy = False
+            return
 
   def __checkProxyDN( self, certStep, issuerStep ):
     """
@@ -291,6 +295,7 @@ class X509Chain:
     proxySubject = self.__certList[ certStep ].get_subject().clone()
     psEntries =  proxySubject.num_entries()
     lastEntry = proxySubject.get_entry( psEntries - 1 )
+    print lastEntry, lastEntry[0] != 'CN', lastEntry[1] not in ( 'proxy', 'limitedproxy' )
     if lastEntry[0] != 'CN' or lastEntry[1] not in ( 'proxy', 'limitedproxy' ):
       return False
     proxySubject.remove_entry( psEntries - 1 )
