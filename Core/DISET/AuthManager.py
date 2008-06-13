@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/AuthManager.py,v 1.23 2008/06/12 16:24:23 acasajus Exp $
-__RCSID__ = "$Id: AuthManager.py,v 1.23 2008/06/12 16:24:23 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/AuthManager.py,v 1.24 2008/06/13 11:07:24 acasajus Exp $
+__RCSID__ = "$Id: AuthManager.py,v 1.24 2008/06/13 11:07:24 acasajus Exp $"
 
 import types
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
@@ -183,7 +183,7 @@ class AuthManager:
       return True
     return False
 
-  def matchProperties( self, props, validProps ):
+  def matchProperties( self, credDict, validProps ):
     """
     Return True if one or more properties are in the valid list of properties
     @type  props: list
