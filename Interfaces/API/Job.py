@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.31 2008/06/12 08:06:52 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.32 2008/06/13 08:30:57 paterson Exp $
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -30,7 +30,7 @@
    Note that several executables can be provided and wil be executed sequentially.
 """
 
-__RCSID__ = "$Id: Job.py,v 1.31 2008/06/12 08:06:52 paterson Exp $"
+__RCSID__ = "$Id: Job.py,v 1.32 2008/06/13 08:30:57 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -68,7 +68,7 @@ class Job:
     self.priority = 0
     self.group = 'lhcb'
     self.site = 'ANY'
-    self.setup = 'Development'
+    #self.setup = 'Development'
     self.origin = 'DIRAC'
     self.stdout = 'std.out'
     self.stderr = 'std.err'
@@ -607,7 +607,7 @@ class Job:
     self._addParameter(self.workflow,'Priority','JDL',self.priority,'User Job Priority')
     self._addParameter(self.workflow,'JobGroup','JDL',self.group,'Corresponding VOMS role')
     self._addParameter(self.workflow,'JobName','JDL',self.name,'Name of Job')
-    self._addParameter(self.workflow,'DIRACSetup','JDL',self.setup,'DIRAC Setup')
+    #self._addParameter(self.workflow,'DIRACSetup','JDL',self.setup,'DIRAC Setup')
     self._addParameter(self.workflow,'Site','JDL',self.site,'Site Requirement')
     self._addParameter(self.workflow,'Origin','JDL',self.origin,'Origin of client')
     self._addParameter(self.workflow,'StdOutput','JDL',self.stdout,'Standard output file')
