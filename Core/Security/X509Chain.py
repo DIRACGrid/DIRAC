@@ -295,7 +295,6 @@ class X509Chain:
     proxySubject = self.__certList[ certStep ].get_subject().clone()
     psEntries =  proxySubject.num_entries()
     lastEntry = proxySubject.get_entry( psEntries - 1 )
-    print lastEntry, lastEntry[0] != 'CN', lastEntry[1] not in ( 'proxy', 'limitedproxy' )
     if lastEntry[0] != 'CN' or lastEntry[1] not in ( 'proxy', 'limitedproxy' ):
       return False
     proxySubject.remove_entry( psEntries - 1 )
