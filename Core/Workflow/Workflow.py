@@ -1,14 +1,15 @@
-# $Id: Workflow.py,v 1.33 2008/06/12 13:41:22 joel Exp $
+# $Id: Workflow.py,v 1.34 2008/06/14 17:18:16 atsareg Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.33 $"
+__RCSID__ = "$Revision: 1.34 $"
 
-import os
+import os, re
 import xml.sax
 from DIRAC.Core.Workflow.Parameter import *
 from DIRAC.Core.Workflow.Module import *
 from DIRAC.Core.Workflow.Step import *
+#from DIRAC.Core.Workflow.Utility import *
 from DIRAC import S_OK, S_ERROR
 
 class Workflow(AttributeCollection):
@@ -261,6 +262,7 @@ class Workflow(AttributeCollection):
             #print "StepInstance", step_inst_name+'.'+parameter.getName(),'=',parameter.getValue()
         step_inst.step_commons[parameter.getName()] = parameter.getValue()
 
+      resolveVariables(wf_exec_steps[step_inst_name])
       for key,value in wf_exec_steps[step_inst_name].items():
         step_inst.step_commons[key] = value
 
@@ -311,3 +313,32 @@ def fromXMLFile(xml_file, obj=None):
     handler = WorkflowXMLHandler(obj)
     xml.sax.parse(xml_file, handler)
     return handler.root
+
+def getSubstitute(param):
+
+  result = ''
+  sres = re.search("@{([][\w,.:$()]+)}",param)
+  if sres:
+    result = sres.group(1)
+
+  return result
+
+def resolveVariables(varDict):
+  """ Resolve variables defined in terms of others within the same dictionary
+  """
+  max_tries = 10
+  variables = varDict.keys()
+  ntry = 0
+  while ntry < max_tries:
+    substFlag = False
+    for var,value in varDict.items():
+      if type(value) == type('  '):
+        substitute_var = getSubstitute(value)
+        if substitute_var in variables:
+          varDict[var] = varDict[var].replace('@{'+substitute_var+'}',varDict[substitute_var])
+          substFlag = True
+    if not substFlag:
+      break
+    ntry += 1
+  else:
+    print "Failed to resolve referencies in %d attempts" % max_tries
