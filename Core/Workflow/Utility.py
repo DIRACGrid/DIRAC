@@ -1,21 +1,23 @@
-# $Id: Utility.py,v 1.2 2008/06/15 11:31:06 atsareg Exp $
+# $Id: Utility.py,v 1.3 2008/06/15 13:55:39 atsareg Exp $
 
 """
     Workflow Utility module contains a number of functions useful for various
     workflow operations
 """
 
-__RCSID__ = "$Revision: 1.2 $"
+__RCSID__ = "$Revision: 1.3 $"
 
 import types, re
 
-def getSubstitute(param):
+def getSubstitute(param,skip_list=[]):
   """ Get the variable name to which the given parameter is referring
   """
-  result = ''
-  sres = re.search("@{([][\w,.:$()]+)}",str(param))
-  if sres:
-    result = sres.group(1)
+  result = []
+  resList = re.findall("@{([][\w,.:$()]+)}",str(param))
+  if resList:
+    for match in resList:
+      if match not in skip_list:
+        result.append(match)
 
   return result
 
@@ -39,10 +41,11 @@ def resolveVariables(varDict):
     substFlag = False
     for var,value in varDict.items():
       if type(value) in types.StringTypes:
-        substitute_var = getSubstitute(value)
-        if substitute_var in variables:
-          varDict[var] = substitute(varDict[var],substitute_var,varDict[substitute_var])
-          substFlag = True
+        substitute_vars = getSubstitute(value)
+        for substitute_var in substitute_vars:
+          if substitute_var in variables:
+            varDict[var] = substitute(varDict[var],substitute_var,varDict[substitute_var])
+            substFlag = True
     if not substFlag:
       break
     ntry += 1
