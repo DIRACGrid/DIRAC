@@ -1,15 +1,15 @@
-# $Id: Workflow.py,v 1.34 2008/06/14 17:18:16 atsareg Exp $
+# $Id: Workflow.py,v 1.35 2008/06/15 11:35:17 atsareg Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.34 $"
+__RCSID__ = "$Revision: 1.35 $"
 
-import os, re
+import os, re, types
 import xml.sax
 from DIRAC.Core.Workflow.Parameter import *
 from DIRAC.Core.Workflow.Module import *
 from DIRAC.Core.Workflow.Step import *
-#from DIRAC.Core.Workflow.Utility import *
+from DIRAC.Core.Workflow.Utility import *
 from DIRAC import S_OK, S_ERROR
 
 class Workflow(AttributeCollection):
@@ -164,6 +164,10 @@ class Workflow(AttributeCollection):
       step_instance_number=step_instance_number+1
       if not inst.parameters.find("STEP_NUMBER"):
         inst.parameters.append(Parameter("STEP_NUMBER","%s"%step_instance_number,"string","","",True,False,"Number of the StepInstance within the Workflow"))
+      if not inst.parameters.find("STEP_ID"):
+        prod_ID = self.parameters.find("PRODUCTION_ID").getValue()
+        job_ID = self.parameters.find("JOB_ID").getValue()
+        inst.parameters.append(Parameter("STEP_ID","%s_%s_%d" % (prod_ID,job_ID,step_instance_number),"string","","",True,False,"Step instance ID"))
       if not inst.parameters.find("STEP_INSTANCE_NAME"):
         inst.parameters.append(Parameter("STEP_INSTANCE_NAME",inst.getName(),"string","","",True,False,"Name of the StepInstance within the Workflow"))
       if not inst.parameters.find("STEP_DEFINITION_NAME"):
@@ -314,31 +318,3 @@ def fromXMLFile(xml_file, obj=None):
     xml.sax.parse(xml_file, handler)
     return handler.root
 
-def getSubstitute(param):
-
-  result = ''
-  sres = re.search("@{([][\w,.:$()]+)}",param)
-  if sres:
-    result = sres.group(1)
-
-  return result
-
-def resolveVariables(varDict):
-  """ Resolve variables defined in terms of others within the same dictionary
-  """
-  max_tries = 10
-  variables = varDict.keys()
-  ntry = 0
-  while ntry < max_tries:
-    substFlag = False
-    for var,value in varDict.items():
-      if type(value) == type('  '):
-        substitute_var = getSubstitute(value)
-        if substitute_var in variables:
-          varDict[var] = varDict[var].replace('@{'+substitute_var+'}',varDict[substitute_var])
-          substFlag = True
-    if not substFlag:
-      break
-    ntry += 1
-  else:
-    print "Failed to resolve referencies in %d attempts" % max_tries
