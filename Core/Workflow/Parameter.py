@@ -1,16 +1,14 @@
-# $Id: Parameter.py,v 1.31 2008/04/28 14:32:24 atsareg Exp $
+# $Id: Parameter.py,v 1.32 2008/06/15 11:33:16 atsareg Exp $
 """
-    This is a comment
+    This module defines a classs for a generic Workflow Parameter. It also defines
+    a ParameterCollection class as a list of parameters as well as an AttributeCollection
+    class which is the base class for the main Workflow classes.
 """
-__RCSID__ = "$Revision: 1.31 $"
+__RCSID__ = "$Revision: 1.32 $"
 
-import traceback # to produce warning for the depreciated methods
+from DIRAC.Core.Workflow.Utility import *
 
-def printDepreciateWarning():
-    l = traceback.extract_stack()
-    print 'Warning Method',l[1][2],'is DEPRECIATED! Called from line=',l[0][1],'File',l[0][0]
-
-# unbinded method, returns indentation string
+# unbound method, returns indentated string
 def indent(indent=0):
     return indent*2*' '
 
@@ -133,14 +131,14 @@ class Parameter(object):
     def getLink(self):
         # we have 4 possibilities
         # two fields can be filled independently
-        # it is possible to fill one fiels with the valid information
+        # it is possible to fill one field with the valid information
         # spaces shall be ignored ( using strip() function)
         if (self.linked_module==None) or (self.linked_module.strip()==''):
             if (self.linked_parameter==None) or (self.linked_parameter.strip()==''):
                 # both empty
                 return ""
             else:
-                # parameter fielled
+                # parameter filled
                 return self.linked_parameter
         else:
             if (self.linked_parameter==None) or (self.linked_parameter.strip()==''):
@@ -148,7 +146,7 @@ class Parameter(object):
         return self.linked_module+'.'+self.linked_parameter
 
     def isLinked(self):
-        if (self.linked_module.strip()==None) or (self.linked_module.strip()==''):
+        if (self.linked_module==None) or (self.linked_module.strip()==''):
             if (self.linked_parameter==None) or (self.linked_parameter.strip()==''):
                 return False
         return True
@@ -247,6 +245,8 @@ class Parameter(object):
         return ret+'  # type='+self.getType()+' in='+str(self.isInput())+' out='+str(self.isOutput())+' ' +self.getDescription()+'\n'
 
 class ParameterCollection(list):
+    """ Parameter collection class representing a list of Parameters
+    """
 
     def __init__(self, coll=None):
         list.__init__(self)
@@ -257,7 +257,7 @@ class ParameterCollection(list):
         elif coll != None:
             raise TypeError('Can not create object type '+str(type(self))+' from the '+ str(type(coll)))
 
-    def appendOrOwerrite(self, opt):
+    def appendOrOverwrite(self, opt):
         index = self.findIndex(opt.getName())
         if index > -1:
             #print "Warning: Overriting Parameter %s = \"%s\" with the value \"%s\""%(self[index].getName(), self[index].getValue(), opt.getValue())
@@ -268,9 +268,9 @@ class ParameterCollection(list):
     def append(self, opt):
         if isinstance(opt, ParameterCollection):
             for p in opt:
-                self.appendOrOwerrite(p)
+                self.appendOrOverwrite(p)
         elif isinstance(opt, Parameter):
-            self.appendOrOwerrite(opt)
+            self.appendOrOverwrite(opt)
             return opt
         else:
             raise TypeError('Can not append object type '+ str(type(opt))+' to the '+str(type(self))+'. Parameter type appendable only')
@@ -278,9 +278,9 @@ class ParameterCollection(list):
     def appendCopy(self, opt, prefix="", postfix=""):
         if isinstance(opt, ParameterCollection):
             for p in opt:
-                self.appendOrOwerrite(Parameter(name=prefix+p.getName()+postfix, parameter=p))
+                self.appendOrOverwrite(Parameter(name=prefix+p.getName()+postfix, parameter=p))
         elif isinstance(opt, Parameter):
-            self.appendOrOwerrite(Parameter(name=prefix+opt.getName()+postfix, parameter=opt))
+            self.appendOrOverwrite(Parameter(name=prefix+opt.getName()+postfix, parameter=opt))
         else:
             raise TypeError('Can not append object type '+ str(type(opt))+' to the '+str(type(self))+'. Parameter type appendable only')
 
@@ -288,14 +288,14 @@ class ParameterCollection(list):
         if isinstance(opt, ParameterCollection):
             for p in opt:
                 if p.isLinked():
-                    self.appendOrOwerrite(Parameter(name=prefix+p.getName()+postfix, parameter=p))
+                    self.appendOrOverwrite(Parameter(name=prefix+p.getName()+postfix, parameter=p))
         elif isinstance(opt, Parameter):
             if opt.isLinked():
-                self.appendOrOwerrite(Parameter(name=prefix+opt.getName()+postfix, parameter=opt))
+                self.appendOrOverwrite(Parameter(name=prefix+opt.getName()+postfix, parameter=opt))
         else:
             raise TypeError('Can not append object type '+ str(type(opt))+' to the '+str(type(self))+'. Parameter type appendable only')
 
-    def setValue(self, name, value, type_=None):
+    def setValue(self, name, value, vtype=None):
         """ Method finds parameter with the name "name" and if exists its set value
         Returns True if sucsessfull
         """
@@ -304,7 +304,7 @@ class ParameterCollection(list):
             print "ERROR ParameterCollection.setValue() can not find parameter with the name=%s to set Value=%s"% (name, value)
             return False
         else:
-            par.setValue(value, type_)
+            par.setValue(value, vtype)
             return True
 
     def getInput(self):
@@ -522,70 +522,52 @@ class ParameterCollection(list):
         return str
 
     def resolveGlobalVars(self, wf_parameters=None, step_parameters=None):
-        """This function resolves global parameters of type @{value} within the ParameterCollection
-        """
-        recurrency_max=12
-        # let us find the
-        for v in self:
-            recurrency=0
-            type_conversion=False
+      """This function resolves global parameters of type @{value} within the ParameterCollection
+      """
 
-            if not v.isTypeString():
-                # we have complex object
-                # let see if it has global variable inside
-                value = str(v.value)
-                if value.find('@{')<0:
-                  # no globals getting out of the loop
-                  continue
-                type_conversion=True
-                v.value = value # temporary replacement
+      recurrency_max=12
+      for v in self:
+        recurrency=0
 
+        substitute_var = getSubstitute(v.value)
+        while substitute_var:
 
-            start=v.value.find('@{')
-            stop=-1
-            while start > -1 :
-                stop=v.value.find('}',start+1)
-                parameterName=v.value[start+2:stop]
-                #print v.value, start, stop, parameterName, v.value[start:stop+1]
+          # looking in the current scope
+          v_other = self.findLinked(substitute_var, False)
 
-                # looking in the currens scope
-                v_other = self.findLinked(parameterName, False)
+          # looking in the scope of step instance
+          if v_other == None and step_parameters != None :
+              v_other = step_parameters.findLinked(substitute_var, False)
 
-                # looking in the scope of step instance
-                if v_other == None and step_parameters != None :
-                    v_other = step_parameters.findLinked(parameterName, False)
+          # looking in the scope of workflow
+          if v_other == None and wf_parameters != None :
+              v_other = wf_parameters.findLinked(substitute_var, False)
 
-                # looking in the scope of workflow
-                if v_other == None and wf_parameters != None :
-                    v_other = wf_parameters.findLinked(parameterName, False)
-
-                # finnaly the action itself
-                if v_other != None:
-                    v.value = v.value[:start]+v_other.value+v.value[stop+1:]
-                    # we replaced part of the string so we need to reset indexes
-                    start=0
-                else: # if nothing helped tough!
-                    print "can not resolve ", v.value[start:stop+1], str(v)
-                    return
-                recurrency=recurrency+1
-                if recurrency > recurrency_max:
-                    # mast be an exception
-                    print "ERROR! reached maximum recurrency level", recurrency, "within the parameter ", str(v)
-                    if step_parameters == None:
-                        if wf_parameters == None:
-                            print "on the level of Workflow"
-                        else:
-                            print "on the level of Step"
-                    else:
-                        if wf_parameters != None:
-                            print "on the level of Module"
-                    return
-                start=v.value.find('@{', start)
-
-            if type_conversion: # converting it back
-                v.value = eval(v.value)
+          # finaly the action itself
+          if v_other != None:
+              v.value = substitute(v.value,substitute_var,v_other.value)
+          else: # if nothing helped tough!
+              print "can not resolve ", substitute_var, str(v)
+              return
+          recurrency=recurrency+1
+          if recurrency > recurrency_max:
+            # must be an exception
+            print "ERROR! reached maximum recurrency level", recurrency, "within the parameter ", str(v)
+            if step_parameters == None:
+                if wf_parameters == None:
+                    print "on the level of Workflow"
+                else:
+                    print "on the level of Step"
+            else:
+                if wf_parameters != None:
+                    print "on the level of Module"
+            return
+          else:
+            substitute_var = getSubstitute(v.value)
 
 class AttributeCollection(dict):
+    """ Attribute Collection class contains Parameter Collection as a data member
+    """
 
     def __init__(self):
         dict.__init__(self)
@@ -620,44 +602,14 @@ class AttributeCollection(dict):
                 ret=ret+'<'+v+'>'+str(self[v])+'</'+v+'>\n'
         return ret
 
-    # DEPRECIETED method, scheduled for removal
-    def appendParameter(self, opt):
-        printDepreciateWarning()
-        print "Shall be replaced with addParameter()"
-        self.parameters.append(opt)
-
-    # DEPRECIETED method, scheduled for removal
-    def appendParameterCopy(self, opt, prefix="", postfix=""):
-        printDepreciateWarning()
-        print "Shall be replaced with addParameter()"
-        self.parameters.appendCopy(opt, prefix, postfix)
-
-    # DEPRECIETED method, scheduled for removal
-    def appendParameterCopyLinked(self, opt, prefix="", postfix=""):
-        printDepreciateWarning()
-        print "Shall be replaced with addParameterLinked()"
-        self.parameters.appendCopyLinked(opt, prefix, postfix)
-
     def addParameter(self, opt, prefix="", postfix=""):
         self.parameters.appendCopy(opt, prefix, postfix)
 
     def addParameterLinked(self, opt, prefix="", postfix=""):
         self.parameters.appendCopyLinked(opt, prefix, postfix)
 
-    # DEPRECIETED method, scheduled for removal
-    def linkParameterUp(self, opt, prefix="", postfix="", objname="self"):
-        printDepreciateWarning()
-        print "Shall be replaced with linkUp()"
-        self.parameters.linkUp(opt, prefix, postfix, objname)
-
     def linkUp(self, opt, prefix="", postfix="", objname="self"):
         self.parameters.linkUp(opt, prefix, postfix, objname)
-
-    # DEPRECIETED method, scheduled for removal
-    def unlinkParameter(self, opt):
-        printDepreciateWarning()
-        print "Shall be replaced with unlink()"
-        self.parameters.unlink(opt)
 
     def unlink(self, opt):
         self.parameters.unlink(opt)
@@ -697,27 +649,15 @@ class AttributeCollection(dict):
 
     # ------------- common functions -----------
     def setName(self, name):
-        # we have to replace _ with the printable character
-        # for that we create temporary string
-        #if name:
-        #    nametmp = name.replace('_', '0')
-        #    if not nametmp.isalnum( ):
-        #        raise AttributeError('Can not have NOT alphnumeric name for the object'+ str(type(self))+' requested name='+name)
-        self['name'] = name
+      self['name'] = name
 
     def getName(self):
-        if self.has_key('name'):
-            return self['name']
-        return ''
+      if self.has_key('name'):
+        return self['name']
+      return ''
 
-    def setType(self, type_):
-        # we have to replace _ with the printable character
-        # for that we create temporary string
-        #if type_:
-        #    typetmp = type_.replace('_', '0')
-        #    if not typetmp.isalnum():
-        #        raise AttributeError('We can have alphnumeric characters only as type for the object'+ str(type(self))+' type='+type_)
-        self['type'] = type_
+    def setType(self, att_type):
+      self['type'] = att_type
 
     def getType(self):
         if self.has_key('type'):
