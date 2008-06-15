@@ -1,10 +1,10 @@
-# $Id: Parameter.py,v 1.32 2008/06/15 11:33:16 atsareg Exp $
+# $Id: Parameter.py,v 1.33 2008/06/15 13:54:49 atsareg Exp $
 """
     This module defines a classs for a generic Workflow Parameter. It also defines
     a ParameterCollection class as a list of parameters as well as an AttributeCollection
     class which is the base class for the main Workflow classes.
 """
-__RCSID__ = "$Revision: 1.32 $"
+__RCSID__ = "$Revision: 1.33 $"
 
 from DIRAC.Core.Workflow.Utility import *
 
@@ -528,28 +528,32 @@ class ParameterCollection(list):
       recurrency_max=12
       for v in self:
         recurrency=0
+        skip_list = []
+        substitute_vars = getSubstitute(v.value)
+        while True:
+          for substitute_var in substitute_vars:
 
-        substitute_var = getSubstitute(v.value)
-        while substitute_var:
+            # looking in the current scope
+            v_other = self.find(substitute_var)
 
-          # looking in the current scope
-          v_other = self.findLinked(substitute_var, False)
+            # looking in the scope of step instance
+            if v_other == None and step_parameters != None :
+                v_other = step_parameters.findLinked(substitute_var, False)
 
-          # looking in the scope of step instance
-          if v_other == None and step_parameters != None :
-              v_other = step_parameters.findLinked(substitute_var, False)
+            # looking in the scope of workflow
+            if v_other == None and wf_parameters != None :
+                v_other = wf_parameters.findLinked(substitute_var, False)
 
-          # looking in the scope of workflow
-          if v_other == None and wf_parameters != None :
-              v_other = wf_parameters.findLinked(substitute_var, False)
+            # finaly the action itself
+            if v_other != None and not v_other.isLinked():
+                v.value = substitute(v.value,substitute_var,v_other.value)
+            elif v_other != None:
+                print "Leaving %s variable for dynamic resolution" % substitute_var
+                skip_list.append(substitute_var)
+            else: # if nothing helped tough!
+                print "Can not resolve ", substitute_var, str(v)
 
-          # finaly the action itself
-          if v_other != None:
-              v.value = substitute(v.value,substitute_var,v_other.value)
-          else: # if nothing helped tough!
-              print "can not resolve ", substitute_var, str(v)
-              return
-          recurrency=recurrency+1
+          recurrency += 1
           if recurrency > recurrency_max:
             # must be an exception
             print "ERROR! reached maximum recurrency level", recurrency, "within the parameter ", str(v)
@@ -561,9 +565,11 @@ class ParameterCollection(list):
             else:
                 if wf_parameters != None:
                     print "on the level of Module"
-            return
+            break
           else:
-            substitute_var = getSubstitute(v.value)
+            substitute_vars = getSubstitute(v.value,skip_list)
+            if not substitute_vars:
+              break
 
 class AttributeCollection(dict):
     """ Attribute Collection class contains Parameter Collection as a data member
