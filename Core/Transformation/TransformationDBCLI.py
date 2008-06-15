@@ -88,18 +88,18 @@ class TransformationDBCLI(cmd.Cmd):
   # These are the methods to transformation manipulation
   #
 
-#  def do_getStatus(self,args):
-#    """Get transformation details
-#
-#       usage: getStatus <transName>
-#    """
-#    argss = string.split(args)
-#    transName = argss[0]
-#    res = self.server.getTransformation(transName)
-#    if not res['OK']:
-#      print "Getting status of %s failed" % transName
-#    else:
-#      print "%s: %s" % (transName,res['Value'])
+  def do_getStatus(self,args):
+    """Get transformation details
+
+       usage: getStatus <transName>
+    """
+    argss = string.split(args)
+    transName = argss[0]
+    res = self.server.getTransformation(transName)
+    if not res['OK']:
+      print "Getting status of %s failed" % transName
+    else:
+      print "%s: %s" % (transName,res['Value'])
 #
 #  def do_setStatus(self,args):
 #    """Set transformation status
@@ -114,38 +114,41 @@ class TransformationDBCLI(cmd.Cmd):
 #    if not res['OK']:
 #      print "Setting status of %s to %s failed" % (transName,status)
 #
-#  def do_start(self,args):
-#    """Start transformation
-#
-#       usage: start <transName>
-#    """
-#    argss = string.split(args)
-#    transName = argss[0]
-#    res = self.server.setTransformationStatus(transName,'Active')
-#    if not res['OK']:
-#      print "Starting %s failed" % transName
-#
-#  def do_stop(self,args):
-#    """Stop transformation
-#
-#       usage: stop <transName>
-#    """
-#    argss = string.split(args)
-#    transName = argss[0]
-#    res = self.server.setTransformationStatus(transName,'Stopped')
-#    if not res['OK']:
-#      print "Stopping %s failed" % transName
-#
-#  def do_flush(self,args):
-#    """Flush transformation
-#
-#       usage: flush <transName>
-#    """
-#    argss = string.split(args)
-#    transName = argss[0]
-#    res = self.server.setTransformationStatus(transName,'Flush')
-#    if not res['OK']:
-#      print "Flushing %s failed" % transName
+  def do_start(self,args):
+    """Start transformation
+
+       usage: start <transID>
+    """
+    argss = string.split(args)
+    transName = argss[0]
+    transID = self.check_id_or_name(transName)
+    res = self.server.setTransformationStatus(transID,'Active')
+    if not res['OK']:
+      print "Starting %s failed" % transName
+
+  def do_stop(self,args):
+    """Stop transformation
+
+       usage: stop <transID>
+    """
+    argss = string.split(args)
+    transName = argss[0]
+    transID = self.check_id_or_name(transName)
+    res = self.server.setTransformationStatus(transID,'Stopped')
+    if not res['OK']:
+      print "Stopping %s failed" % transName
+
+  def do_flush(self,args):
+    """Flush transformation
+
+       usage: flush <transName>
+    """
+    argss = string.split(args)
+    transName = argss[0]
+    transID = self.check_id_or_name(transName)
+    res = self.server.setTransformationStatus(transID,'Flush')
+    if not res['OK']:
+      print "Flushing %s failed" % transName
 #
 #  def do_get(self,args):
 #    """Get transformation definition
@@ -193,18 +196,18 @@ class TransformationDBCLI(cmd.Cmd):
 #    """
 #    res = self.server.getAllTransformations()
 #
-#  def do_shell(self,args):
-#    """Execute a shell command
-#
-#       usage !<shell_command>
-#    """
-#    comm = args
-#    res = shellCall(0,comm)
-#    if res['OK']:
-#      returnCode,stdOut,stdErr = res['Value']
-#      print "%s\n%s" % (stdOut,stdErr)
-#    else:
-#      print res['Message']
+  def do_shell(self,args):
+    """Execute a shell command
+
+       usage !<shell_command>
+    """
+    comm = args
+    res = shellCall(0,comm)
+    if res['OK']:
+      returnCode,stdOut,stdErr = res['Value']
+      print "%s\n%s" % (stdOut,stdErr)
+    else:
+      print res['Message']
 #
 #  def do_exit(self,args):
 #    """ Exit the shell.
@@ -355,70 +358,69 @@ class TransformationDBCLI(cmd.Cmd):
 #    elif not res['Value']['Successful'].has_key(lfn):
 #      print "Failed to add %s" %lfn
 #
-#  def do_getFiles(self,args):
-#    """Get files for the given production
-#
-#    usage: getFiles <production> [-j] [> <file_name>]
-#
-#    Flags:
-#
-#      -j  order output by job ID ( default order by file LFN )
-#    """
-#
-#    argss = string.split(args)
-#    prod = argss[0]
-#    order_by_job = False
-#    if len(argss) >= 2:
-#      if argss[1] == '-j':
-#        order_by_job = True
-#
-#    ofname = ''
-#    if len(argss) >= 2:
-#      if argss[-2] == '>':
-#        ofname = argss[-1]
-#        ofile = open(ofname,'w')
-#
-#    result = self.procdb.getFilesForTransformation(prod,order_by_job)
-#    if result['Status'] == "OK":
-#      files = result['Files']
-#      if files:
-#        #print "          LFN                                         ", \
-#        #      "Status        Stream     JobID                  Used SE"
-#        for f in files:
-#          lfn = f['LFN']
-#          status = f['Status']
-#          stream = f['Stream']
-#          jobid = f['JobID']
-#          usedse = f['UsedSE']
-#          if ofname:
-#            ofile.write(lfn.ljust(50)+' '+status.rjust(10)+' '+stream.rjust(12)+' '+ \
-#                        jobid.rjust(19)+' '+usedse.rjust(16)+'\n')
-#          else:
-#            print lfn.ljust(50),status.rjust(10),stream.rjust(12), \
-#                jobid.rjust(19),usedse.rjust(16)
-#
-#    if ofname:
-#      print "Output is written to file",ofname
-#      ofile.close()
-#
-#  def do_setFileStatus(self,args):
-#    """Set file status for the given production
-#
-#    usage: setFileStatus <production> <lfn> <status>
-#    """
-#
-#    argss = string.split(args)
-#    if len(argss) != 3:
-#      print "usage: setFileStatus <production> <lfn> <status>"
-#      return
-#
-#    prod = argss[0]
-#    lfn = argss[1]
-#    status = argss[2]
-#
-#    result = self.procdb.setFileStatus(prod,lfn,status)
-#    if result['Status'] != "OK":
-#      print "Failed to update status for file",lfn
+  def do_getFiles(self,args):
+    """Get files for the given production
+
+    usage: getFiles <production> [-j] [> <file_name>]
+
+    Flags:
+
+      -j  order output by job ID ( default order by file LFN )
+    """
+
+    argss = string.split(args)
+    prod = argss[0]
+    order_by_job = False
+    if len(argss) >= 2:
+      if argss[1] == '-j':
+        order_by_job = True
+
+    ofname = ''
+    if len(argss) >= 2:
+      if argss[-2] == '>':
+        ofname = argss[-1]
+        ofile = open(ofname,'w')
+
+    result = self.server.getFilesForTransformation(int(prod),order_by_job)
+    if result['OK']:
+      files = result['Value']
+      if files:
+        #print "          LFN                                         ", \
+        #      "Status        Stream     JobID                  Used SE"
+        for f in files:
+          lfn = f['LFN']
+          status = f['Status']
+          jobid = f['JobID']
+          usedse = f['TargetSE']
+          if ofname:
+            ofile.write(lfn.ljust(50)+' '+status.rjust(10)+' '+ \
+                        jobid.rjust(19)+' '+usedse.rjust(16)+'\n')
+          else:
+            print lfn.ljust(50),status.rjust(10), \
+                jobid.rjust(19),usedse.rjust(16)
+
+    if ofname:
+      print "Output is written to file",ofname
+      ofile.close()
+
+  def do_setFileStatus(self,args):
+    """Set file status for the given production
+
+    usage: setFileStatus <production> <lfn> <status>
+    """
+
+    argss = string.split(args)
+    if len(argss) != 3:
+      print "usage: setFileStatus <production> <lfn> <status>"
+      return
+
+    prod = argss[0]
+    lfn = argss[1]
+    status = argss[2]
+
+    result = self.server.setFileStatus(int(prod),[(status)[lfn]])
+    if result['Status'] != "OK":
+      print "Failed to update status for file",lfn
 
 if __name__ == "__main__":
 
