@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.49 2008/05/15 13:54:14 rgracian Exp $
+# $Id: TransformationDB.py,v 1.50 2008/06/16 06:52:32 atsareg Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -102,10 +102,13 @@ class TransformationDB(DB):
     if not res['OK']:
       return res
     transID = int(res['Value'][0][0])
-    self.filters.append((transID,re.compile(fileMask)))
-    result = self.__addTransformationTable(transID)
-    # Add already existing files to this transformation if any
-    result = self.__addExistingFiles(transID)
+
+    # For the PROCESSING type transformation add data processing table
+    if fileMask:
+      self.filters.append((transID,re.compile(fileMask)))
+      result = self.__addTransformationTable(transID)
+      # Add already existing files to this transformation if any
+      result = self.__addExistingFiles(transID)
     return S_OK(transID)
 
   def modifyTransformation(self, transID, name, description, longDescription, authorDN, authorGroup, type_, plugin, agentType,fileMask):
@@ -168,7 +171,7 @@ class TransformationDB(DB):
     transID = self.getTransformationID(transName)
     req = "INSERT INTO TransformationParameters (TransformationID,ParameterName,ParameterValue) VALUES (%s,'%s','%s');" % (transID,paramName,paramValue)
     res = self._update(req)
-    return res      
+    return res
 
   def setTransformationAgentType(self,transName,status):
     """ Set the submission status of the transformation specified by transID
@@ -473,8 +476,8 @@ class TransformationDB(DB):
           if res['Value']:
             for transID in res['Value']:
               ret = dataLog.addFileRecord(lfn,'AddedToTransformation','Transformation %s' % transID,'',self.dbname)
-	      if not ret['OK']:
-	            gLogger.warning('Unable to add dataLogging record for Transformation %s FileID %s' % (transID, fileID))
+        if not ret['OK']:
+              gLogger.warning('Unable to add dataLogging record for Transformation %s FileID %s' % (transID, fileID))
     return S_OK()
 
   def __addTransformationTable(self,transID):
@@ -747,8 +750,8 @@ PRIMARY KEY (FileID)
                 addedToTransformation = True
                 for transID in res['Value']:
                   ret = dataLog.addFileRecord(lfn,'AddedToTransformation','Transformation %s' % transID,'',self.dbname)
-		  if not ret['OK']:
- 	            gLogger.warning('Unable to add dataLogging record for Transformation %s FileID %s' % (transID, fileID))
+      if not ret['OK']:
+               gLogger.warning('Unable to add dataLogging record for Transformation %s FileID %s' % (transID, fileID))
 
           successful[lfn] = {'PassFilter':passFilter,'Retained':retained,'Forced':forced,'AddedToCatalog':addedToCatalog,'AddedToTransformation':addedToTransformation,'FileExists':fileExists,'ReplicaExists':replicaExists}
       else:
