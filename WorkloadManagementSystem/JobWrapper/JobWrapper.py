@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.42 2008/06/16 14:02:07 atsareg Exp $
+# $Id: JobWrapper.py,v 1.43 2008/06/16 16:34:28 atsareg Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,12 +9,13 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.42 2008/06/16 14:02:07 atsareg Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.43 2008/06/16 16:34:28 atsareg Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
 from DIRAC.RequestManagementSystem.Client.RequestContainer          import RequestContainer
 from DIRAC.RequestManagementSystem.Client.RequestClient             import RequestClient
+from DIRAC.RequestManagementSystem.Client.DISETSubRequest           import DISETSubRequest
 from DIRAC.WorkloadManagementSystem.Client.SandboxClient            import SandboxClient
 from DIRAC.WorkloadManagementSystem.JobWrapper.WatchdogFactory      import WatchdogFactory
 from DIRAC.AccountingSystem.Client.Types.Job                        import Job as AccountingJob
