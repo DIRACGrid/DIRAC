@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/PilotDirector.py,v 1.14 2008/06/12 17:22:01 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/PilotDirector.py,v 1.15 2008/06/16 15:19:34 paterson Exp $
 # File :   PilotDirector.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
      are overridden in Grid specific subclasses.
 """
 
-__RCSID__ = "$Id: PilotDirector.py,v 1.14 2008/06/12 17:22:01 paterson Exp $"
+__RCSID__ = "$Id: PilotDirector.py,v 1.15 2008/06/16 15:19:34 paterson Exp $"
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
 from DIRAC.Core.Utilities.Subprocess                       import shellCall
@@ -117,7 +117,8 @@ class PilotDirector(Thread):
       platform = string.replace(classadJob.get_expression("Platform"),'"','')
       if not platform:
         self.log.warn('Job %s has no platform defined' % job)
-        self.__updateJobStatus(job,'Failed','No Platform Specified',logRecord=True)
+        #self.__updateJobStatus(job,'Failed','No Platform Specified',logRecord=True)
+        platform = 'ANY'
         lock.release()
         continue
 
