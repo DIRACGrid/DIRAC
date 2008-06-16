@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.41 2008/06/10 17:05:10 paterson Exp $
+# $Id: JobWrapper.py,v 1.42 2008/06/16 14:02:07 atsareg Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,14 +9,17 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.41 2008/06/10 17:05:10 paterson Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.42 2008/06/16 14:02:07 atsareg Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
+from DIRAC.RequestManagementSystem.Client.RequestContainer          import RequestContainer
+from DIRAC.RequestManagementSystem.Client.RequestClient             import RequestClient
 from DIRAC.WorkloadManagementSystem.Client.SandboxClient            import SandboxClient
 from DIRAC.WorkloadManagementSystem.JobWrapper.WatchdogFactory      import WatchdogFactory
 from DIRAC.AccountingSystem.Client.Types.Job                        import Job as AccountingJob
 from DIRAC.ConfigurationSystem.Client.PathFinder                    import getSystemSection
+from DIRAC.WorkloadManagementSystem.Client.JobReport                import JobReport
 from DIRAC.Core.DISET.RPCClient                                     import RPCClient
 from DIRAC.Core.Utilities.ModuleFactory                             import ModuleFactory
 from DIRAC.Core.Utilities.Subprocess                                import shellCall
@@ -32,7 +35,7 @@ EXECUTION_RESULT = {}
 class JobWrapper:
 
   #############################################################################
-  def __init__(self, jobID=None):
+  def __init__(self, jobID=None, jobReport=None):
     """ Standard constructor
     """
     self.section = getSystemSection('WorkloadManagement/JobWrapper')
@@ -48,6 +51,10 @@ class JobWrapper:
       self.jobID=0
     else:
       self.jobID = jobID
+    if jobReport:
+      self.jobReport = jobReport
+    else:
+      self.jobReport = JobReport(self.jobID,'JobWrapper')
 
     # FIXME: this info is in DIRAC.rootPath
     self.root = os.getcwd()
@@ -799,6 +806,7 @@ class JobWrapper:
       self.diskSpaceConsumed = getGlobbedTotalSize('%s/%s' %(self.root,self.jobID))
       self.sendWMSAccounting()
 
+    self.sendFailoverRequest()
     self.__cleanUp()
     return S_OK()
 
@@ -844,7 +852,49 @@ class JobWrapper:
     self.log.verbose('Accounting Report is:')
     self.log.verbose(acData)
     self.accountingReport.setValuesFromDict( acData )
-    self.accountingReport.commit()
+    result = self.accountingReport.commit()
+    return result
+
+  #############################################################################
+  def sendFailoverRequest(self):
+    """ Create and send a combined job failover reauest if any
+    """
+    request = RequestContainer()
+    requestName = 'job_%s_combined_request.xml' % self.jobID
+    request.setRequestName(requestName)
+    request.setJobID(self.jobID)
+    request.setSourceComponent("Job_%s" % self.jobID)
+
+    # JobReport part first
+    result = self.jobReport.generateRequest()
+    if result['OK']:
+      reportRequest = result['Value']
+      if reportRequest:
+        request.update(reportRequest)
+
+    # Accounting part
+    result = self.accountingReport.commit()
+    if not result['OK']:
+      subrequest = DISETSubRequest(result['rpcStub']).getDictionary()
+      request.addSubRequest(subrequest,'accounting')
+
+    # Any other requests in the current directory
+    rfiles = glob.glob('*_request.xml')
+    for rfname in rfiles:
+      rfile = open(rfname,'r')
+      reqString = rfile.read()
+      rfile.close()
+      requestStored = RequestContainer(reqString)
+      request.update(requestStored)
+
+    # The request is ready, send it now
+    if not request.isEmpty():
+      requestClient = RequestClient()
+      requestString = request.toXML()
+      result = requestClient.setRequest(requestName, requestString)
+      return result
+    else:
+      return S_OK()
 
   #############################################################################
   def __cleanUp(self):
@@ -890,8 +940,8 @@ class JobWrapper:
     self.wmsMinorStatus = minorStatus
     jobStatus = S_OK()
     if self.jobID:
-      jobReport  = RPCClient('WorkloadManagement/JobStateUpdate')
-      jobStatus = jobReport.setJobStatus(int(self.jobID),status,minorStatus,'JobWrapper')
+      #jobReport  = RPCClient('WorkloadManagement/JobStateUpdate')
+      jobStatus = self.jobReport.setJobStatus(int(self.jobID),status,minorStatus)
       self.log.verbose('setJobStatus(%s,%s,%s,%s)' %(self.jobID,status,minorStatus,'JobWrapper'))
       if not jobStatus['OK']:
         self.log.warn(jobStatus['Message'])
@@ -906,8 +956,8 @@ class JobWrapper:
     """
     jobParam = S_OK()
     if self.jobID:
-      jobReport  = RPCClient('WorkloadManagement/JobStateUpdate')
-      jobParam = jobReport.setJobParameter(int(self.jobID),str(name),str(value))
+      #jobReport  = RPCClient('WorkloadManagement/JobStateUpdate')
+      jobParam = self.jobReport.setJobParameter(str(name),str(value))
       self.log.verbose('setJobParameter(%s,%s,%s)' %(self.jobID,name,value))
       if not jobParam['OK']:
         self.log.warn(jobParam['Message'])
@@ -922,8 +972,8 @@ class JobWrapper:
     """
     jobParam = S_OK()
     if self.jobID:
-      jobReport  = RPCClient('WorkloadManagement/JobStateUpdate')
-      jobParam = jobReport.setJobParameters(int(self.jobID),value)
+      #jobReport  = RPCClient('WorkloadManagement/JobStateUpdate')
+      jobParam = self.jobReport.setJobParameters(value)
       self.log.verbose('setJobParameters(%s,%s)' %(self.jobID,value))
       if not jobParam['OK']:
         self.log.warn(jobParam['Message'])
