@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.30 2008/06/09 13:04:03 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.31 2008/06/16 12:34:03 acsmith Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.30 2008/06/09 13:04:03 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.31 2008/06/16 12:34:03 acsmith Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -41,6 +41,7 @@ from DIRAC.Core.DISET.RPCClient                          import RPCClient
 from DIRAC.Core.Utilities.GridCert                       import getGridProxy
 from DIRAC.ConfigurationSystem.Client.PathFinder         import getSystemSection
 from DIRAC.Core.Utilities.Time                           import toString
+from DIRAC.Core.Utilities.List                           import breakListIntoChunks, sortList
 from DIRAC                                               import gConfig, gLogger, S_OK, S_ERROR
 
 COMPONENT_NAME='DiracAPI'
@@ -356,6 +357,41 @@ class Dirac:
       print self.pPrint.pformat(repsResult['Value'])
 
     return repsResult
+
+  #############################################################################
+  def splitInputData(self,lfns,maxFilesPerJob=20,printOutput=False):
+    """Split the supplied lfn list by the replicas present.
+
+       Example usage:
+
+
+       @param lfns: Logical File Name(s) to split
+       @type lfns: LFN list []
+       @return: S_OK,S_ERROR
+    """
+    replicaDict = self.getReplicas(lfns)
+    if not replicaDict['OK']:
+      return replicaDict
+    siteLfns = {}
+    for lfn,reps in replicaDict['Value']['Successful'].items():
+      possibleSites = []
+      for storageElement in sortList(reps.keys()):
+        site = storageElement.split('_')[0].split('-')[0]
+        if not site in possibleSites:
+          possibleSites.append(site)
+      sitesStr = ''.join(possibleSites)
+      if not siteLfns.has_key(sitesStr):
+        siteLfns[sitesStr] = []
+      siteLfns[sitesStr].append(lfn)
+
+    lfnGroups = []
+    for sites,files in siteLfns.items():
+      lists = breakListIntoChunks(files,maxFilesPerJob)
+      lfnGroups.extend(lists)
+
+    if printOutput:
+      print self.pPrint.pformat(lfnGroups)
+    return S_OK(lfnGroups)
 
   #############################################################################
   def getMetadata(self,lfns,printOutput=False):
