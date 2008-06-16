@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.26 2008/05/27 16:55:29 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.27 2008/06/16 08:58:44 atsareg Exp $
 # File :   DiracProduction.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are to be documented with example usage.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.26 2008/05/27 16:55:29 paterson Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.27 2008/06/16 08:58:44 atsareg Exp $"
 
 import string, re, os, time, shutil, types, copy
 import pprint
@@ -716,8 +716,9 @@ class DiracProduction:
       for paramName,paramValue in paramsDict.items():
         self.log.verbose('ProdID: %s, JobID: %s, ParamName: %s, ParamValue: %s' %(prodID,jobNumber,paramName,paramValue))
         if paramName=='InputData':
-          self.log.verbose('Setting input data to %s' %paramValue)
-          prodJob.setInputData(paramValue)
+          if paramValue:
+            self.log.verbose('Setting input data to %s' %paramValue)
+            prodJob.setInputData(paramValue)
         if paramName=='Site':
           if site and not site==paramValue:
             return self.__errorReport('Specified destination site %s does not match allocated site %s' %(site,paramName))
