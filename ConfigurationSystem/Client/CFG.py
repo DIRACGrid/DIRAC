@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/Attic/CFG.py,v 1.4 2008/01/31 19:13:40 acasajus Exp $
-__RCSID__ = "$Id: CFG.py,v 1.4 2008/01/31 19:13:40 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/Attic/CFG.py,v 1.5 2008/06/17 15:43:38 acasajus Exp $
+__RCSID__ = "$Id: CFG.py,v 1.5 2008/06/17 15:43:38 acasajus Exp $"
 
 import types
 import copy
@@ -134,6 +134,8 @@ class CFG:
     @return: Boolean with the result
     """
     if originalKey == newKey:
+      return False
+    if newKey in self.__orderedList:
       return False
     if originalKey in self.__orderedList:
       self.__dataDict[ newKey ] = copy.copy( self.__dataDict[ originalKey ] )
@@ -280,7 +282,8 @@ class CFG:
       self.__orderedList.append( key )
     else:
       refKeyPos = self.__orderedList.index( beforeKey )
-      self.__orderedList.insert( refKeyPos + 1, key )
+      print "RefKeyPos", refKeyPos
+      self.__orderedList.insert( refKeyPos, key )
 
   @gCFGSynchro
   def renameKey( self, oldName, newName ):
@@ -293,6 +296,8 @@ class CFG:
     @param newName: New name of the option/section
     @return: Boolean with the result of the rename
     """
+    if oldName == newName:
+      return True
     if oldName in self.__dataDict:
       self.__dataDict[ newName ] = self.__dataDict[ oldName ]
       self.__commentDict[ newName ] = self.__commentDict[ oldName ]
@@ -344,6 +349,19 @@ class CFG:
     """
     CFGs are not zeroes! ;)
     """
+    return True
+
+  def __eq__( self, cfg ):
+    """
+    Check CFGs
+    """
+    if not self.__orderedList == cfg.__orderedList:
+      return False
+    for key in self.__orderedList:
+      if not self.__commentDict[ key ] == cfg.__commentDict[ key ]:
+        return False
+      if not self.__dataDict[ key ] == cfg.__dataDict[ key ]:
+        return False
     return True
 
   @gCFGSynchro
