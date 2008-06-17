@@ -2,11 +2,13 @@ DROP DATABASE IF EXISTS TransferDB;
 
 CREATE DATABASE TransferDB;
 
-
+--
+-- Must set passwords for database user by replacing "must_be_set".
+--
 --Create user DIRAC
 --use mysql;
---GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON TransferDB.* TO 'Dirac'@'localhost' IDENTIFIED BY 'lhcbMySQL';
---GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON TransferDB.* TO 'Dirac'@'%' IDENTIFIED BY 'lhcbMySQL';
+--GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON TransferDB.* TO 'Dirac'@'localhost' IDENTIFIED BY 'must_be_set';
+--GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON TransferDB.* TO 'Dirac'@'%' IDENTIFIED BY 'must_be_set';
 --FLUSH PRIVILEGES;
 
 -------------------------------------------------------------
@@ -28,7 +30,7 @@ CREATE TABLE Requests (
    DIRACInstance varchar(32) DEFAULT NULL,
    CreationTime DATETIME,
    SubmissionTime DATETIME,
-   LastUpdate DATETIME, 
+   LastUpdate DATETIME,
    PRIMARY KEY (RequestID,RequestName)
 );
 
@@ -44,7 +46,7 @@ CREATE TABLE SubRequests (
    Catalogue varchar(32),
    SubmissionTime datetime,
    LastUpdate datetime,
-   PRIMARY KEY (RequestID,SubRequestID) 
+   PRIMARY KEY (RequestID,SubRequestID)
 );
 
 DROP TABLE IF EXISTS Files;
@@ -59,7 +61,7 @@ CREATE TABLE Files (
    Md5 varchar(32),
    Addler varchar(32),
    Attempt varchar(32),
-   PRIMARY KEY (SubRequestID, FileID)  
+   PRIMARY KEY (SubRequestID, FileID)
 );
 
 DROP TABLE IF EXISTS Datasets;
@@ -78,8 +80,8 @@ CREATE TABLE Channels (
    ChannelID INTEGER NOT NULL AUTO_INCREMENT,
    SourceSite  varchar(32)  NOT NULL,
    DestinationSite varchar(32) NOT NULL,
-   Status varchar(32) NOT NULL,   
-   ChannelName  varchar(32),  
+   Status varchar(32) NOT NULL,
+   ChannelName  varchar(32),
    PRIMARY KEY (ChannelID,SourceSite,DestinationSite)
 );
 
@@ -94,8 +96,8 @@ CREATE TABLE Channel (
   FileSize INTEGER NOT NULL,
   SubmitTime DATETIME NOT NULL,
   ExecutionTime DATETIME,
-  PRIMARY KEY (ChannelID,FileID)  
-); 
+  PRIMARY KEY (ChannelID,FileID)
+);
 
 DROP TABLE IF EXISTS FTSReq;
 CREATE TABLE FTSReq (
