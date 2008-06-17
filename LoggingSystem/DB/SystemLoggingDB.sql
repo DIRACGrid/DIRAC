@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/DB/SystemLoggingDB.sql,v 1.8 2008/02/18 16:28:01 mseco Exp $
-__RCSID__ = "$Id: SystemLoggingDB.sql,v 1.8 2008/02/18 16:28:01 mseco Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/DB/SystemLoggingDB.sql,v 1.9 2008/06/17 22:28:27 atsareg Exp $
+__RCSID__ = "$Id: SystemLoggingDB.sql,v 1.9 2008/06/17 22:28:27 atsareg Exp $"
 
 --------------------------------------------------------------------------------
 --
@@ -23,12 +23,11 @@ DELETE FROM user WHERE user='Dirac';
 --
 
 GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON SystemLoggingDB.* TO Dirac@localhost IDENTIFIED BY 'must_be_set';
-GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON SystemLoggingDB.* TO Dirac@volhcb03.cern.ch IDENTIFIED BY 'must_be_set';
 GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON SystemLoggingDB.* TO Dirac@'%' IDENTIFIED BY 'must_be_set';
 
 FLUSH PRIVILEGES;
 
-------------------------------------------------------------------------------- 
+-------------------------------------------------------------------------------
 USE SystemLoggingDB;
 
 --------------------------------------------------------------------------------
@@ -109,8 +108,8 @@ CREATE TABLE Sites (
 
 DROP TABLE IF EXISTS AgentPersistentData;
 CREATE TABLE AgentPersistentData (
-	AgentID INTEGER NOT NULL AUTO_INCREMENT,
-	AgentName VARCHAR(64) NOT NULL DEFAULT 'unkwown',
-	AgentData VARCHAR(512), 
-	PRIMARY KEY ( AgentID )
+  AgentID INTEGER NOT NULL AUTO_INCREMENT,
+  AgentName VARCHAR(64) NOT NULL DEFAULT 'unkwown',
+  AgentData VARCHAR(512),
+  PRIMARY KEY ( AgentID )
 );
