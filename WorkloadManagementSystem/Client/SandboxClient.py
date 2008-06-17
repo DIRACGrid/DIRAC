@@ -15,7 +15,7 @@ class SandboxClient:
     self.sandbox_status = RPCClient('WorkloadManagement/%sSandbox' % sandbox_type)
 
 ########################################################################
-  # FIXME: all over the place jobID is considered either int or string 
+  # FIXME: all over the place jobID is considered either int or string
   # this module does no check
   def sendFiles(self,jobID,fileList):
     """ Send files in the fileList to a Sandbox service for the given jobID.
@@ -36,7 +36,7 @@ class SandboxClient:
           error_files(file)
 
     if error_files:
-      return S_ERROR('Failed to locate files: \n'+string.join(error_file,','))
+      return S_ERROR('Failed to locate files: \n'+string.join(error_files,','))
 
     sendName = str(jobID)+"::Job__Sandbox__"
     result = self.sandbox.sendBulk(files_to_send,sendName)
