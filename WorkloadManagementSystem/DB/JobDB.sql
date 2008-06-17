@@ -1,4 +1,4 @@
--- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.sql,v 1.9 2008/06/13 09:24:45 rgracian Exp $
+-- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.sql,v 1.10 2008/06/17 21:52:22 atsareg Exp $
 
 --------------------------------------------------------------------------------
 --
@@ -153,7 +153,7 @@ CREATE TABLE SiteMask (
     Status VARCHAR(64) NOT NULL,
     LastUpdateTime DATETIME NOT NULL,
     Author VARCHAR(255) NOT NULL,
-    Comment BLOB NOT NULL DEFAULT 'No comment',
+    Comment BLOB NOT NULL,
     PRIMARY KEY (Site)
 );
 
