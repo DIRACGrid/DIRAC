@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/MySQL.py,v 1.12 2008/05/08 12:40:41 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/MySQL.py,v 1.13 2008/06/17 16:59:08 acasajus Exp $
 ########################################################################
 """ DIRAC Basic MySQL Class
     It provides access to the basic MySQL methods in a multithread-safe mode
@@ -75,7 +75,7 @@
 
 """
 
-__RCSID__ = "$Id: MySQL.py,v 1.12 2008/05/08 12:40:41 atsareg Exp $"
+__RCSID__ = "$Id: MySQL.py,v 1.13 2008/06/17 16:59:08 acasajus Exp $"
 
 
 from DIRAC                                  import gLogger
@@ -86,6 +86,7 @@ import MySQLdb
 MySQLdb.server_init(['--defaults-file=/opt/dirac/etc/my.cnf','--datadir=/opt/mysql/db'],['mysqld'])
 
 import Queue
+import types
 import time
 import string
 import threading
@@ -293,14 +294,14 @@ class MySQL:
         res = cursor.fetchall()
       else:
         res = ()
-        
-      # Log the result limiting it to just 10 records  
-      if len(res) < 10:  
+
+      # Log the result limiting it to just 10 records
+      if len(res) < 10:
         self.logger.debug( '_query:', res )
       else:
         self.logger.debug( '_query: Total %d records returned' % len(res))
         self.logger.debug( '_query: %s ...' % str(res[:10]) )
-          
+
       retDict = S_OK( res )
     except Exception ,x:
       self.logger.debug( '_query:', cmd )
@@ -451,7 +452,10 @@ class MySQL:
           cmdList.append( 'PRIMARY KEY ( `Key` )' )
           cmdList.append( 'CONSTRAINT UNIQUE INDEX `Id` (`%s`)' % string.join(thisTable['Fields'],'`, `') )
         elif thisTable.has_key( 'PrimaryKey' ):
-          cmdList.append( 'PRIMARY KEY ( `%s` )' % thisTable['PrimaryKey'])
+          if type( thisTable['PrimaryKey'] ) == types.StringType:
+            cmdList.append( 'PRIMARY KEY ( `%s` )' % thisTable['PrimaryKey'])
+          else:
+            cmdList.append( 'PRIMARY KEY ( %s )' % ", ".join( [ "`%s`" % str(f) for f in thisTable['PrimaryKey'] ] ) )
 
         for field in thisTable['Fields'].keys():
           cmdList.append('`%s` %s' % ( field, thisTable['Fields'][field]))
