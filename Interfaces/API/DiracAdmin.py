@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.14 2008/06/18 13:52:30 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.15 2008/06/18 16:15:13 acasajus Exp $
 # File :   DiracAdmin.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@ site banning and unbanning, WMS proxy uploading etc.
 
 """
 
-__RCSID__ = "$Id: DiracAdmin.py,v 1.14 2008/06/18 13:52:30 acasajus Exp $"
+__RCSID__ = "$Id: DiracAdmin.py,v 1.15 2008/06/18 16:15:13 acasajus Exp $"
 
 import DIRAC
 from DIRAC.ConfigurationSystem.Client.CSAPI              import CSAPI
@@ -48,7 +48,7 @@ class DiracAdmin:
       self.dbg = True
 
     self.scratchDir = gConfig.getValue(self.section+'/ScratchDir','/tmp')
-    self.wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
+    #self.wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
 #    diracAdmin = 'diracAdmin'
 #    self.log.verbose('Setting DIRAC role for current proxy to %s' %diracAdmin)
 #    setDIRACGroup(diracAdmin)
@@ -507,10 +507,10 @@ class DiracAdmin:
     return self.csAPI.listHosts()
 
   #############################################################################
-  def csDescribeHosts( self ):
+  def csDescribeHosts( self, mask = False ):
     """Gets extended info for the hosts in the CS
     """
-    return self.csAPI.describeHosts()
+    return self.csAPI.describeHosts( mask )
 
   #############################################################################
   def csListGroups( self ):
