@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/MySQL.py,v 1.13 2008/06/17 16:59:08 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/MySQL.py,v 1.14 2008/06/18 19:57:45 acasajus Exp $
 ########################################################################
 """ DIRAC Basic MySQL Class
     It provides access to the basic MySQL methods in a multithread-safe mode
@@ -75,7 +75,7 @@
 
 """
 
-__RCSID__ = "$Id: MySQL.py,v 1.13 2008/06/17 16:59:08 acasajus Exp $"
+__RCSID__ = "$Id: MySQL.py,v 1.14 2008/06/18 19:57:45 acasajus Exp $"
 
 
 from DIRAC                                  import gLogger
@@ -334,6 +334,8 @@ class MySQL:
       connection.commit()
       self.logger.debug( '_update: %s.' % res )
       retDict =  S_OK(res)
+      if cursor.lastrowid:
+        retDict[ 'lastRowId' ] = cursor.lastrowid
     except Exception,x:
       self.logger.debug( '_update: "%s".' % cmd )
       retDict = self._except( '_update', x, 'Execution failed.' )
