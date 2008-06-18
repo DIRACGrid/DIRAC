@@ -1,4 +1,9 @@
-
+########################################################################
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/X509Request.py,v 1.4 2008/06/18 19:57:07 acasajus Exp $
+########################################################################
+""" X509Request is a class for managing X509 requests with their Pkeys
+"""
+__RCSID__ = "$Id: X509Request.py,v 1.4 2008/06/18 19:57:07 acasajus Exp $"
 import GSI
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Security.X509Chain import X509Chain
@@ -15,12 +20,23 @@ class X509Request:
   def setParentCerts( self, certList ):
     self.__cerList = certList
 
+  def generateProxyRequest( self, bitStrength = 1024, limited = False ) :
+    self.__pkeyObj = GSI.crypto.PKey()
+    self.__pkeyObj.generate_key( GSI.crypto.TYPE_RSA, bitStrength )
+    self.__reqObj = GSI.crypto.X509Req()
+    self.__reqObj.set_pubkey( self.__pkeyObj )
+    if limited:
+      self.__reqObj.get_subject().insert_entry( "CN", "limitedproxy" )
+    else:
+      self.__reqObj.get_subject().insert_entry( "CN", "proxy" )
+    self.__valid = True
+
   def dumpRequest( self ):
-    if not self.__valid:
-      return S_ERROR( "No request loaded" )
     """
     Get the request as a string
     """
+    if not self.__valid:
+      return S_ERROR( "No request loaded" )
     try:
       reqStr = GSI.crypto.dump_certificate_request( GSI.crypto.FILETYPE_PEM, self.__reqObj  )
     except Exception, e:
@@ -34,11 +50,11 @@ class X509Request:
     return self.__pkeyObj
 
   def dumpPKey( self ):
-    if not self.__valid:
-      return S_ERROR( "No request loaded" )
     """
     Get the pkey as a string
     """
+    if not self.__valid:
+      return S_ERROR( "No request loaded" )
     try:
       pkeyStr = GSI.crypto.dump_privatekey( GSI.crypto.FILETYPE_PEM, self.__pkeyObj  )
     except Exception, e:
@@ -46,6 +62,9 @@ class X509Request:
     return S_OK( pkeyStr )
 
   def dumpAll( self ):
+    """
+    Dump the contents into a string
+    """
     if not self.__valid:
       return S_ERROR( "No request loaded" )
 
@@ -72,12 +91,12 @@ class X509Request:
     return S_OK()
 
   def generateChainFromResponse( self, pemData ):
-    if not self.__valid:
-      return S_ERROR( "No request loaded" )
     """
     Generate a X509 Chain from the pkey and the pem data passed as the argument
     Return : S_OK( X509Chain ) / S_ERROR
     """
+    if not self.__valid:
+      return S_ERROR( "No request loaded" )
     try:
       certList = crypto.load_certificate_chain( crypto.FILETYPE_PEM, pemData )
     except Exception, e:
@@ -88,19 +107,46 @@ class X509Request:
     return chain
 
   def getSubjectDN( self ):
-    if not self.__valid:
-      return S_ERROR( "No request loaded" )
     """
     Get subject DN
     Return: S_OK( string )/S_ERROR
     """
+    if not self.__valid:
+      return S_ERROR( "No request loaded" )
     return S_OK( self.__reqObj.get_subject().one_line() )
 
   def getIssuerDN( self ):
-    if not self.__valid:
-      return S_ERROR( "No request loaded" )
     """
     Get issuer DN
     Return: S_OK( string )/S_ERROR
     """
+    if not self.__valid:
+      return S_ERROR( "No request loaded" )
     return S_OK( self.__reqObj.get_issuer().one_line() )
+
+  def checkChain( self, chain ):
+    """
+    Check that the chain matches the request
+    """
+    if not self.__valid:
+      return S_ERROR( "No request loaded" )
+    retVal = chain.getCertInChain()
+    if not retVal[ 'OK' ]:
+      return retVal
+    lastCert = retVal[ 'Value' ]
+    chainDN = lastCert.getSubjectDN()[ 'Value' ]
+    reqDN = self.__reqObj.get_subject().one_line()
+    if not chainDN == reqDN:
+      retVal = S_OK( False )
+      retVal[ 'Message' ] = "Subjects do not match (received %s expected %s)" % ( chainDN,
+                                                                                  reqDN )
+      return retVal
+    chainPubKey = GSI.crypto.dump_publickey( GSI.crypto.FILETYPE_PEM, lastCert.getPublicKey()[ 'Value' ] )
+    reqPubKey = GSI.crypto.dump_publickey( GSI.crypto.FILETYPE_PEM, self.__pkeyObj )
+    if not chainPubKey == reqPubKey:
+      retVal = S_OK( False )
+      retVal[ 'Message' ] = "Public keys do not match"
+      return retVal
+    return S_OK( True )
+
+

@@ -1,3 +1,9 @@
+########################################################################
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/X509Certificate.py,v 1.7 2008/06/18 19:57:07 acasajus Exp $
+########################################################################
+""" X509Certificate is a class for managing X509 certificates alone
+"""
+__RCSID__ = "$Id: X509Certificate.py,v 1.7 2008/06/18 19:57:07 acasajus Exp $"
 
 import GSI
 from DIRAC import S_OK, S_ERROR
@@ -52,7 +58,7 @@ class X509Certificate:
     self.__valid = True
     return S_OK()
 
-  def isExpired( self ):
+  def hasExpired( self ):
     """
     Check if a certificate file/proxy is still valid
     Return: S_OK( True/False )/S_ERROR
@@ -115,6 +121,14 @@ class X509Certificate:
       return S_ERROR( "No certificate loaded" )
     return S_OK( self.__certObj.get_issuer() )
 
+  def getPublicKey(self):
+    """
+    Get the public key of the certificate
+    """
+    if not self.__valid:
+      return S_ERROR( "No certificate loaded" )
+    return S_OK( self.__certObj.get_pubkey() )
+
   def getDIRACGroup(self):
     """
     Get the dirac group if present
@@ -142,7 +156,7 @@ class X509Certificate:
   def __proxyExtensionList(self):
     return [ GSI.crypto.X509Extension( 'keyUsage', 'critical, digitalSignature, keyEncipherment, dataEncipherment' ) ]
 
-  def generateProxyRequest( self, bitStrength = 1024, forceLimited = False ):
+  def generateProxyRequest( self, bitStrength = 1024, limited = False ):
     """
     Generate a proxy request
     Return S_OK( X509Request ) / S_ERROR
@@ -150,23 +164,17 @@ class X509Certificate:
     if not self.__valid:
       return S_ERROR( "No certificate loaded" )
 
+    if not limited:
+      subj = self.__certObj.get_subject()
+      lastEntry = subj.get_entry( subj.num_entries() -1 )
+      if lastEntry[0] == 'CN' and lastEntry[1] == "limitedproxy":
+        limited = True
+
     from DIRAC.Core.Security.X509Request import X509Request
 
-    request = GSI.crypto.X509Req()
-    certSubj = self.__certObj.get_subject().clone()
-    lastEntry = certSubj.get_entry( certSubj.num_entries() -1 )
-    if forceLimited or ( lastEntry[0] == 'CN' and lastEntry[1] == 'limitedproxy' ):
-      certSubj.insert_entry( "CN", "limitedproxy" )
-    else:
-      certSubj.insert_entry( "CN", "proxy" )
-    request.set_subject( certSubj )
-    request.add_extensions( self.__proxyExtensionList() )
-
-    requestKey = GSI.crypto.PKey()
-    requestKey.generate_key( GSI.crypto.TYPE_RSA, bitStrength )
-
-    request.set_pubkey( requestKey )
-    return S_OK( X509Request( request, requestKey )  )
+    req = X509Request()
+    req.generateProxyRequest( bitStrength = bitStrength, limited = limited )
+    return S_OK( req )
 
   def getRemainingSecs( self ):
     """

@@ -1,7 +1,14 @@
+########################################################################
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/X509Chain.py,v 1.13 2008/06/18 19:57:07 acasajus Exp $
+########################################################################
+""" X509Chain is a class for managing X509 chains with their Pkeys
+"""
+__RCSID__ = "$Id: X509Chain.py,v 1.13 2008/06/18 19:57:07 acasajus Exp $"
 
 import types
 import os
 import stat
+import tempfile
 from GSI import crypto
 from DIRAC.Core.Security.X509Certificate import X509Certificate
 from DIRAC.Core.Security import File, CS
@@ -250,6 +257,23 @@ class X509Chain:
       return S_ERROR( "No chain loaded" )
     return S_OK( self.__isProxy )
 
+  def isValidProxy( self ):
+    """
+    Check wether this chain is a valid proxy
+      checks if its a proxy
+      checks if its expired
+    """
+    if not self.__loadedChain:
+      return S_ERROR( "No chain loaded" )
+    retVal = S_OK( False )
+    if not self.__isProxy:
+      retVal[ 'Message' ] = "Chain is not a proxy"
+    elif self.hasExpired()['Value']:
+      retVal[ 'Message' ] = "Chain has expired"
+    if 'Message' in retVal:
+      return retVal
+    return S_OK( True )
+
   def isVOMS(self):
     """
     Check wether this chain is a proxy
@@ -325,7 +349,7 @@ class X509Chain:
     #    return retVal
     return self.getCertInChain( self.__firstProxyStep )[ 'Value' ].getDIRACGroup()
 
-  def isExpired( self ):
+  def hasExpired( self ):
     """
     Is any of the elements in the chain expired?
     """
@@ -354,10 +378,12 @@ class X509Chain:
     """
     if not self.__loadedChain:
       return S_ERROR( "No chain loaded" )
+    if not bitStrength:
+      return S_ERROR( "bitStrength has to be greater than 1024 (%s)" % bitStrength )
     x509 = self.getCertInChain(0)[ 'Value' ]
     return x509.generateProxyRequest( bitStrength, limited )
 
-  def generateChainFromRequestString( self, pemData, lifeTime = 86400 ):
+  def generateChainFromRequestString( self, pemData, lifetime = 86400, requireLimited = False ):
     """
     Generate a x509 chain from a request
     return S_OK( string ) / S_ERROR
@@ -373,19 +399,37 @@ class X509Chain:
 
     issuerCert = self.__certList[0]
 
-    childCert = crypto.X509()
-    childCert.set_subject( req.get_subject() )
+    reqSubj = req.get_subject()
+    newSubj = issuerCert.get_subject().clone()
 
-    childCert.set_serial_number( issuerCert.get_serial_number() )
+    isLimited = False
+    lastEntry = newSubj.get_entry( newSubj.num_entries() -1 )
+    if lastEntry[0] == "CN" and lastEntry[1] == "limitedproxy":
+      isLimited = True
+    for entryTuple in reqSubj.get_components():
+      if isLimited  and entryTuple[0]== "CN" and lastEntry[1] == "proxy":
+        return S_ERROR( "Request name is not valid" )
+      if entryTuple[0]== "CN" and lastEntry[1] == "limitedproxy":
+        isLimited = True
+      newSubj.insert_entry( entryTuple[0], entryTuple[1] )
+
+    if requireLimited and not limited:
+      return S_ERROR( "Limited proxy was required but request wasn't limited" )
+
+
+    childCert = crypto.X509()
+    childCert.set_subject( newSubj )
     childCert.set_issuer( issuerCert.get_subject() )
+    childCert.set_serial_number( issuerCert.get_serial_number() )
     childCert.set_version( issuerCert.get_version() )
     childCert.set_pubkey( req.get_pubkey() )
     childCert.add_extensions( req.get_extensions() )
     childCert.gmtime_adj_notBefore( 0 )
-    childCert.gmtime_adj_notAfter( lifeTime )
+    childCert.gmtime_adj_notAfter( lifetime )
     childCert.sign( self.__keyObj, 'md5' )
 
     childString = crypto.dump_certificate( crypto.FILETYPE_PEM, childCert )
+    print childString
     for i in range( len( self.__certList ) ):
       childString += crypto.dump_certificate( crypto.FILETYPE_PEM, self.__certList[i] )
 
@@ -411,6 +455,31 @@ class X509Chain:
     for i in range( 1, len( self.__certList ) ):
       buffer += crypto.dump_certificate( crypto.FILETYPE_PEM, self.__certList[i] )
     return S_OK( buffer )
+
+  def dumpAllToFile( self, filename = False ):
+    """
+    Dump all to file. If no filename specified a temporal one will be created
+    """
+    retVal = self.dumpAllToString()
+    if not retVal[ 'OK' ]:
+      return retVal
+    pemData = retVal['Value']
+    try:
+      if not filename:
+        fd, filename = tempfile.mkstemp()
+        os.write(fd, pemData )
+        os.close(fd)
+      else:
+        fd = file( filename, "w" )
+        fd.write( pemData )
+        fd.close()
+    except Exception, e:
+      return S_ERROR( "Cannot write to file %s :%s" % ( filePath, str(e) ) )
+    try:
+      os.chmod( filename, stat.S_IRUSR | stat.S_IWUSR )
+    except Exception, e:
+      return S_ERROR( "Cannot set permissions to file %s :%s" % ( filename, str(e) ) )
+    return S_OK( filename )
 
   def dumpChainToString( self ):
     """
@@ -445,9 +514,9 @@ class X509Chain:
     return self.__str__()
 
   def getCredentials(self):
+    if not self.__loadedChain:
+      return S_ERROR( "No chain loaded" )
     retVal = self.isProxy()
-    if not retVal[ 'OK' ]:
-      return retVal
     isProxy = retVal[ 'Value' ]
     credDict = { 'subject' : self.__certList[0].get_subject().one_line(),
                  'isProxy' : isProxy,
