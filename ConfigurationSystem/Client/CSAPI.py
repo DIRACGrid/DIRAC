@@ -11,41 +11,44 @@ class CSAPI:
     """
     Initialization function
     """
-    self.__initialized = False
     self.__csModified = False
+    self.__baseSecurity = "/Security"
+    self.__initialized = self.initialize()
+
+  def initialize( self ):
     proxyLocation = GridCredentials.getGridProxy()
     if not proxyLocation:
       gLogger.error( "No proxy found!" )
-      return
+      return False
     proxy = GridCredentials.X509Certificate()
     if not proxy.loadFromFile( proxyLocation ):
       gLogger.error( "Can't read proxy!", proxyLocation )
-      return
+      return False
     retVal = proxy.getIssuerDN()
     if not retVal[ 'OK' ]:
       gLogger.error( "Can't parse proxy!", retVal[ 'Message' ] )
-      return
+      return False
     self.__userDN = retVal[ 'Value' ]
     self.__userGroup = GridCredentials.getDIRACGroup()
     retVal = gConfig.getOption( "/DIRAC/Configuration/MasterServer")
     if not retVal[ 'OK' ]:
       gLogger.error( "Master server is not known. Is everything initialized?" )
-      return
+      return False
     self.__rpcClient = RPCClient( gConfig.getValue( "/DIRAC/Configuration/MasterServer", "" ) )
     self.__csMod = Modificator( self.__rpcClient, "%s - %s" % ( self.__userGroup, self.__userDN ) )
     retVal = self.__csMod.loadFromRemote()
     if not retVal[ 'OK' ]:
       gLogger.error( "Can not download the remote cfg. Is everything initialized?" )
-    else:
-      self.__initialized = True
+      return False
+    return True
 
   def listUsers(self , group = False ):
     if not self.__initialized:
       return S_ERROR( "CSAPI didn't initialize properly" )
     if not group:
-      return [ user for user in self.__csMod.getSections( "/Users" ) if user.find( "host-" ) == -1 ]
+      return S_OK( self.__csMod.getSections( "%s/Users" % self.__baseSecurity ) )
     else:
-      users = self.__csMod.getValue( "/Groups/%s/users" % group )
+      users = self.__csMod.getValue( "%s/Groups/%s/Users" % ( self.__baseSecurity, group ) )
       if not users:
         return S_OK( [] )
       else:
@@ -54,7 +57,7 @@ class CSAPI:
   def listHosts(self):
     if not self.__initialized:
       return S_ERROR( "CSAPI didn't initialize properly" )
-    return S_OK( [ host for host in self.__csMod.getSections( "/Users" ) if host.find( "host-" ) == 0 ] )
+    return S_OK( self.__csMod.getSections( "%s/Hosts" % self.__baseSecurity ) )
 
   def describeUsers( self, users = False ):
     if not self.__initialized:
@@ -68,23 +71,25 @@ class CSAPI:
 
   def __describeEntity( self, mask, hosts = False ):
     if hosts:
-      hostFindIndex = 0
+      csSection = "%s/Hosts" % self.__baseSecurity
     else:
-      hostFindIndex = -1
+      csSection = "%s/Users" % self.__baseSecurity
     if mask:
-      entities = [ entity for entity in self.__csMod.getSections( "/Users" ) if entity.find( "host-" ) == hostFindIndex and entity in mask ]
+      entities = [ entity for entity in self.__csMod.getSections( csSection ) if entity in mask ]
     else:
-      entities = [ entity for entity in self.__csMod.getSections( "/Users" ) if entity.find( "host-" ) == hostFindIndex ]
+      entities = self.__csMod.getSections( csSection )
     entitiesDict = {}
-    groupsDict = self.describeGroups()
     for entity in entities:
-      entitiesDict[ entity ] = { 'groups' : [] }
-      for option in self.__csMod.getOptions( "/Users/%s" % entity ):
-        entitiesDict[ entity ][ option ] = self.__csMod.getValue( "/Users/%s/%s" % ( entity, option ) )
-      for group in groupsDict:
-        if 'users' in groupsDict[ group ] and entity in groupsDict[ group ][ 'users' ]:
-          entitiesDict[ entity ][ 'groups' ].append( group )
-      entitiesDict[ entity ][ 'groups' ].sort()
+      entitiesDict[ entity ] = {}
+      for option in self.__csMod.getOptions( "%s/%s" % ( csSection, entity ) ):
+        entitiesDict[ entity ][ option ] = self.__csMod.getValue( "%s/%s/%s" % ( csSection, entity, option ) )
+      if not hosts:
+        groupsDict = self.describeGroups()[ 'Value' ]
+        entitiesDict[ entity ][ 'Groups' ] = []
+        for group in groupsDict:
+          if 'Users' in groupsDict[ group ] and entity in groupsDict[ group ][ 'Users' ]:
+            entitiesDict[ entity ][ 'Groups' ].append( group )
+        entitiesDict[ entity ][ 'Groups' ].sort()
     return entitiesDict
 
   def listGroups( self ):
@@ -93,7 +98,7 @@ class CSAPI:
     """
     if not self.__initialized:
       return S_ERROR( "CSAPI didn't initialize properly" )
-    return S_OK( self.__csMod.getSections( "/Groups" ) )
+    return S_OK( self.__csMod.getSections( "%s/Groups" % self.__baseSecurity ) )
 
   def describeGroups( self, mask = False ):
     """
@@ -101,13 +106,13 @@ class CSAPI:
     """
     if not self.__initialized:
       return S_ERROR( "CSAPI didn't initialize properly" )
-    groups = [ group for group in self.__csMod.getSections( "/Groups" ) if not mask or ( mask and group in mask ) ]
+    groups = [ group for group in self.__csMod.getSections( "%s/Groups" % self.__baseSecurity ) if not mask or ( mask and group in mask ) ]
     groupsDict = {}
     for group in groups:
       groupsDict[ group ] = {}
-      for option in self.__csMod.getOptions( "/Groups/%s" % group ):
-        groupsDict[ group ][ option ] = self.__csMod.getValue( "/Groups/%s/%s" % ( group, option ) )
-        if option in ( "users", "Properties" ):
+      for option in self.__csMod.getOptions( "%s/Groups/%s" % ( self.__baseSecurity, group ) ):
+        groupsDict[ group ][ option ] = self.__csMod.getValue( "%s/Groups/%s/%s" % ( self.__baseSecurity, group, option ) )
+        if option in ( "Users", "Properties" ):
           groupsDict[ group ][ option ] = List.fromChar( groupsDict[ group ][ option ] )
     return S_OK( groupsDict )
 
@@ -119,16 +124,16 @@ class CSAPI:
       return S_ERROR( "CSAPI didn't initialize properly" )
     if type( users ) == types.StringType:
       users = [ users ]
-    usersData = self.describeUsers( users )
+    usersData = self.describeUsers( users )['Value']
     for username in users:
       if not username in usersData:
         gLogger.warn( "User %s does not exist" )
         continue
-      userGroups = usersData[ username ][ 'groups' ]
+      userGroups = usersData[ username ][ 'Groups' ]
       for group in userGroups:
         self.__removeUserFromGroup( group, username )
         gLogger.info( "Deleted user %s from group %s" % ( username, group ) )
-      self.__csMod.removeSection( "/Users/%s" % username )
+      self.__csMod.removeSection( "%s/Users/%s" % ( self.__baseSecurity, username ) )
       gLogger.info( "Deleted user %s" % username )
       self.__csModified = True
     return S_OK( True )
@@ -137,25 +142,25 @@ class CSAPI:
     """
     Remove user from a group
     """
-    usersInGroup = self.__csMod.getValue( "/Groups/%s/users" % group )
+    usersInGroup = self.__csMod.getValue( "%s/Groups/%s/Users" % ( self.__baseSecurity, group ) )
     if usersInGroup:
       userList = List.fromChar( usersInGroup, "," )
       userPos = userList.index( username )
       userList.pop( userPos )
-      self.__csMod.setOptionValue( "/Groups/%s/users" % group, ",".join( userList ) )
+      self.__csMod.setOptionValue( "%s/Groups/%s/Users" % ( self.__baseSecurity, group ), ",".join( userList ) )
 
   def __addUserToGroup( self, group, username ):
     """
     Add user to a group
     """
-    usersInGroup = self.__csMod.getValue( "/Groups/%s/users" % group )
+    usersInGroup = self.__csMod.getValue( "%s/Groups/%s/Users" % ( self.__baseSecurity, group ) )
     if usersInGroup:
       userList = List.fromChar( usersInGroup )
       try:
         userPos = userList.index( username )
       except ValueError:
         userList.append( username )
-        self.__csMod.setOptionValue( "/Groups/%s/users" % group, ",".join( userList ) )
+        self.__csMod.setOptionValue( "%s/Groups/%s/Users" % ( self.__baseSecurity, group ), ",".join( userList ) )
       else:
         gLogger.warning( "User %s is already in group %s" % ( username, group ) )
 
@@ -171,27 +176,27 @@ class CSAPI:
     """
     if not self.__initialized:
       return S_ERROR( "CSAPI didn't initialize properly" )
-    for prop in ( "DN", "groups" ):
+    for prop in ( "DN", "Groups" ):
       if prop not in properties:
         gLogger.error( "Missing %s property for user %s" % ( prop, username ) )
         return S_OK( False )
-    if username in self.listUsers():
+    if username in self.listUsers()['Value']:
       gLogger.error( "User %s is already registered" % username )
       return S_OK( False )
-    groups = self.listGroups()
-    if type( properties[ 'groups' ] ) not in ( types.ListType, types.TupleType ):
+    groups = self.listGroups()['Value']
+    if type( properties[ 'Groups' ] ) not in ( types.ListType, types.TupleType ):
       gLogger.error( "Groups for user %s have to be a list or a tuple" % username )
       return S_OK( False )
-    for userGroup in properties[ 'groups' ]:
+    for userGroup in properties[ 'Groups' ]:
       if not userGroup in groups:
         gLogger.error( "User %s group %s is not a valid group" % ( username, userGroup ) )
         return S_OK( False )
-    self.__csMod.createSection( "/Users/%s" % username )
+    self.__csMod.createSection( "%s/Users/%s" % ( self.__baseSecurity, username ) )
     for prop in properties:
-      if prop == "groups":
+      if prop == "Groups":
         continue
-      self.__csMod.setOptionValue( "/Users/%s/%s" % ( username, prop ), properties[ prop ] )
-    for userGroup in properties[ 'groups' ]:
+      self.__csMod.setOptionValue( "%s/Users/%s/%s" % ( self.__baseSecurity, username, prop ), properties[ prop ] )
+    for userGroup in properties[ 'Groups' ]:
       gLogger.info( "Added user %s to group %s" % ( username, userGroup ) )
       self.__addUserToGroup( userGroup, username )
     gLogger.info( "Registered user %s" % username )
@@ -204,44 +209,44 @@ class CSAPI:
       -username
       -properties is a dict with keys:
         DN
-        groups
+        Groups
         <extra params>
       Returns True/False
     """
     if not self.__initialized:
       return S_ERROR( "CSAPI didn't initialize properly" )
     modifiedUser = False
-    userData = self.describeUsers( [ username ] )
+    userData = self.describeUsers( [ username ] )['Value']
     if username not in userData:
       if createIfNonExistant:
         gLogger.info( "Registering user %s" % username )
         return self.addUser( username, properties )
       gLogger.error( "User %s is not registered" % username )
       return S_OK( False )
-    groups = self.listGroups()
-    if type( properties[ 'groups' ] ) not in ( types.ListType, types.TupleType ):
+    groups = self.listGroups()['Value']
+    if type( properties[ 'Groups' ] ) not in ( types.ListType, types.TupleType ):
       gLogger.error( "Groups for user %s have to be a list or a tuple" % username )
       return S_OK( False )
-    for userGroup in properties[ 'groups' ]:
+    for userGroup in properties[ 'Groups' ]:
       if not userGroup in groups:
         gLogger.error( "User %s group %s is not a valid group" % ( username, userGroup ) )
         return S_OK( False )
     for prop in properties:
-      if prop == "groups":
+      if prop == "Groups":
         continue
-      prevVal = self.__csMod.getValue( "/Users/%s/%s" % ( username, prop ) )
+      prevVal = self.__csMod.getValue( "%s/Users/%s/%s" % ( self.__baseSecurity, username, prop ) )
       if not prevVal or prevVal != properties[ prop ]:
         gLogger.info( "Setting %s property for user %s to %s" % ( prop, username, properties[ prop ] ) )
-        self.__csMod.setOptionValue( "/Users/%s/%s" % ( username, prop ), properties[ prop ] )
+        self.__csMod.setOptionValue( "%s/Users/%s/%s" % ( self.__baseSecurity, username, prop ), properties[ prop ] )
         modifiedUser = True
     groupsToBeDeletedFrom = []
     groupsToBeAddedTo = []
-    for prevGroup in userData[ username ][ 'groups' ]:
-      if prevGroup not in properties[ 'groups' ]:
+    for prevGroup in userData[ username ][ 'Groups' ]:
+      if prevGroup not in properties[ 'Groups' ]:
         groupsToBeDeletedFrom.append( prevGroup )
         modifiedUser = True
-    for newGroup in properties[ 'groups' ]:
-      if newGroup not in userData[ username ][ 'groups' ]:
+    for newGroup in properties[ 'Groups' ]:
+      if newGroup not in userData[ username ][ 'Groups' ]:
         groupsToBeAddedTo.append( newGroup )
         modifiedUser = True
     for group in groupsToBeDeletedFrom:
@@ -269,7 +274,7 @@ class CSAPI:
       properties = {}
       propList = usersCFG[ user ].listOptions()
       for prop in propList:
-        if prop == "groups":
+        if prop == "Groups":
           properties[ prop ] = List.fromChar( usersCFG[ user ][ prop ] )
         else:
           properties[ prop ] = usersCFG[ user ][ prop ]
