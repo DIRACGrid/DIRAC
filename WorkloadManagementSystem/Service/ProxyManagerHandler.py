@@ -1,17 +1,17 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/Attic/ProxyManagerHandler.py,v 1.1 2008/06/18 19:59:06 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/Attic/ProxyManagerHandler.py,v 1.2 2008/06/18 20:02:21 acasajus Exp $
 ########################################################################
 
 """ ProxyManager is the implementation of the ProxyManagement service
     in the DISET framework
 """
 
-__RCSID__ = "$Id: ProxyManagerHandler.py,v 1.1 2008/06/18 19:59:06 acasajus Exp $"
+__RCSID__ = "$Id: ProxyManagerHandler.py,v 1.2 2008/06/18 20:02:21 acasajus Exp $"
 
 import types
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gLogger, S_OK, S_ERROR
-from DIRAC.WorkloadManagementSystem.DB.ProxyRepositoryDB import ProxyRepositoryDB
+from DIRAC.WorkloadManagementSystem.DB.ProxyDB import ProxyDB
 from DIRAC.Core.Security import Properties
 
 # This is a global instance of the JobDB class
@@ -20,7 +20,7 @@ gProxyDB = False
 def initializeProxyManagerHandler( serviceInfo ):
   global gProxyDB
 
-  gProxyDB = ProxyRepositoryDB()
+  gProxyDB = ProxyDB()
   return S_OK()
 
 class ProxyManagerHandler( RequestHandler ):

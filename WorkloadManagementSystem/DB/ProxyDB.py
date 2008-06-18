@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/Attic/ProxyDB.py,v 1.1 2008/06/18 20:01:36 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/Attic/ProxyDB.py,v 1.2 2008/06/18 20:02:21 acasajus Exp $
 ########################################################################
 """ ProxyRepository class is a front-end to the proxy repository Database
 """
 
-__RCSID__ = "$Id: ProxyDB.py,v 1.1 2008/06/18 20:01:36 acasajus Exp $"
+__RCSID__ = "$Id: ProxyDB.py,v 1.2 2008/06/18 20:02:21 acasajus Exp $"
 
 import time
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
@@ -14,7 +14,7 @@ from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.Core.Security import CS
 
 #############################################################################
-class ProxyRepositoryDB(DB):
+class ProxyDB(DB):
 
   def __init__(self, systemInstance='Default',maxQueueSize=10):
     DB.__init__(self,'ProxyRepositoryDB','WorkloadManagement/ProxyRepositoryDB',maxQueueSize)
