@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/CS.py,v 1.4 2008/06/13 11:04:24 acasajus Exp $
-__RCSID__ = "$Id: CS.py,v 1.4 2008/06/13 11:04:24 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/CS.py,v 1.5 2008/06/18 19:56:44 acasajus Exp $
+__RCSID__ = "$Id: CS.py,v 1.5 2008/06/18 19:56:44 acasajus Exp $"
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import List
@@ -65,3 +65,6 @@ def getPropertiesForHost( hostName, defaultValue = [] ):
 
 def getBannedIPs():
   return gConfig.getValue( "%s/BannedIPs" % g_BaseSecuritySection, [] )
+
+def getVOMSAttributeForGroup( group ):
+  return gConfig.getValue( "%s/VOMSMapping/%s" % ( g_BaseSecuritySection, group ), [] )
