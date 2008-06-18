@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.50 2008/06/16 06:52:32 atsareg Exp $
+# $Id: TransformationDB.py,v 1.51 2008/06/18 16:37:14 atsareg Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -337,7 +337,10 @@ class TransformationDB(DB):
     transID = self.getTransformationID(transName)
     req = "SELECT FileID from T_%s WHERE Status='Unused';" % (transID)
     res = self._query(req)
+    
     if not res['OK']:
+      if res['Message'].find('Table') != -1 and res['Message'].find("doesn't exist") != -1:
+        return S_OK([])
       return res
     if not res['Value']:
       return res
@@ -750,8 +753,8 @@ PRIMARY KEY (FileID)
                 addedToTransformation = True
                 for transID in res['Value']:
                   ret = dataLog.addFileRecord(lfn,'AddedToTransformation','Transformation %s' % transID,'',self.dbname)
-      if not ret['OK']:
-               gLogger.warning('Unable to add dataLogging record for Transformation %s FileID %s' % (transID, fileID))
+                  if not ret['OK']:
+                    gLogger.warning('Unable to add dataLogging record for Transformation %s FileID %s' % (transID, fileID))
 
           successful[lfn] = {'PassFilter':passFilter,'Retained':retained,'Forced':forced,'AddedToCatalog':addedToCatalog,'AddedToTransformation':addedToTransformation,'FileExists':fileExists,'ReplicaExists':replicaExists}
       else:
