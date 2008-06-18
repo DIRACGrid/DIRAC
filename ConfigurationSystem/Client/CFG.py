@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/Attic/CFG.py,v 1.5 2008/06/17 15:43:38 acasajus Exp $
-__RCSID__ = "$Id: CFG.py,v 1.5 2008/06/17 15:43:38 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/Attic/CFG.py,v 1.6 2008/06/18 19:56:24 acasajus Exp $
+__RCSID__ = "$Id: CFG.py,v 1.6 2008/06/18 19:56:24 acasajus Exp $"
 
 import types
 import copy
@@ -210,7 +210,6 @@ class CFG:
     @param pathList: List containing the path to explore
     @return: Dictionary with the contents { key, value, comment }
     """
-    print "Exploring", pathList
     if pathList[0] in self.__dataDict:
       if len( pathList ) == 1:
         return { 'key' : pathList[0], 'value' : self.__dataDict[ pathList[0] ], 'comment' : self.__commentDict[ pathList[0] ] }
