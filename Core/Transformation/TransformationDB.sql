@@ -1,4 +1,4 @@
--- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Transformation/TransformationDB.sql,v 1.10 2008/02/22 15:25:22 gkuznets Exp $
+-- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Transformation/TransformationDB.sql,v 1.11 2008/06/18 19:46:59 atsareg Exp $
 --------------------------------------------------------------------------------
 --
 --  Schema definition for the TransformationDB database -
@@ -43,17 +43,17 @@ DROP TABLE IF EXISTS Transformations;
 --   Terminated - stopped, extension impossible
 -- FileMask - filter mask
 ------- Explanation about status field ------
-We have execute three types of action for each transformation
-1 - Publish files in the Transformation table
-2 - Create jobs
-3 - Submit jobs
-     STATUS | Avalible actions
-New           1
-Stopped       1
-Active        1 2 3
-Flush           2 3
-Error         x
-Terminated    x
+-- We have execute three types of action for each transformation
+-- 1 - Publish files in the Transformation table
+-- 2 - Create jobs
+-- 3 - Submit jobs
+--      STATUS | Avalible actions
+-- New           1
+-- Stopped       1
+-- Active        1 2 3
+-- Flush           2 3
+-- Error         x
+-- Terminated    x
 --------------------------------------------------------------------------------
 
 CREATE TABLE Transformations (
