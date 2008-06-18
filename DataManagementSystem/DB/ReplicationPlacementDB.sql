@@ -19,4 +19,4 @@ FLUSH PRIVILEGES;
 USE ReplicationPlacementDB;
 -------------------------------------------------------------------------------
 
-SOURCE TransformationDB.sql
+SOURCE DIRAC/Core/Transformation/TransformationDB.sql
