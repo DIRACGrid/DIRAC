@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.44 2008/06/16 23:17:30 atsareg Exp $
+# $Id: JobWrapper.py,v 1.45 2008/06/19 18:19:00 paterson Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.44 2008/06/16 23:17:30 atsareg Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.45 2008/06/19 18:19:00 paterson Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -60,9 +60,9 @@ class JobWrapper:
     # FIXME: this info is in DIRAC.rootPath
     self.root = os.getcwd()
     self.localSiteRoot = gConfig.getValue('/LocalSite/Root',self.root)
-    
+
     print "AT >>>>>>> self.localSiteRoot",self.localSiteRoot
-    
+
     self.__loadLocalCFGFiles(self.localSiteRoot)
     # FIXME why not use DIRAC.version
     self.diracVersion = 'DIRAC version v%dr%d build %d' %(DIRAC.majorVersion,DIRAC.minorVersion,DIRAC.patchLevel)
@@ -778,6 +778,7 @@ class JobWrapper:
 
     if lfns:
       self.__report('Running','Downloading InputSandbox LFN(s)')
+      lfns = [fname.replace('LFN:','').replace('lfn:','') for fname in lfns]
       download = self.rm.getFile(lfns)
       if not download['OK']:
         self.log.warn(result)
