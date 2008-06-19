@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/MySQL.py,v 1.14 2008/06/18 19:57:45 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/MySQL.py,v 1.15 2008/06/19 14:59:51 rgracian Exp $
 ########################################################################
 """ DIRAC Basic MySQL Class
     It provides access to the basic MySQL methods in a multithread-safe mode
@@ -75,7 +75,7 @@
 
 """
 
-__RCSID__ = "$Id: MySQL.py,v 1.14 2008/06/18 19:57:45 acasajus Exp $"
+__RCSID__ = "$Id: MySQL.py,v 1.15 2008/06/19 14:59:51 rgracian Exp $"
 
 
 from DIRAC                                  import gLogger
@@ -84,6 +84,7 @@ from DIRAC                                  import S_OK, S_ERROR
 import MySQLdb
 # This is for proper initialization of embeded server, it should only be called once
 MySQLdb.server_init(['--defaults-file=/opt/dirac/etc/my.cnf','--datadir=/opt/mysql/db'],['mysqld'])
+instances = 0
 
 import Queue
 import types
@@ -103,6 +104,8 @@ class MySQL:
     """
     set MySQL connection parameters and try to connect
     """
+    global instances
+    instances += 1
 
     self.__initialized = False
     self._connected = False
@@ -134,6 +137,7 @@ class MySQL:
 
 
   def __del__( self ):
+    global instances
 
     while 1 and self.__initialized:
       self.__connectionSemaphore.release()
@@ -143,8 +147,11 @@ class MySQL:
       except Queue.Empty,x:
         self.logger.debug( 'No more connection in Queue' )
         break
-
-    MySQLdb.server_end()
+    if instances == 1:
+      # only when the last instance of a MySQL object is deleted, the server
+      # can be ended
+      MySQLdb.server_end()
+    instances -= 1
 
   def __checkQueueSize( self, maxQueueSize ):
 
