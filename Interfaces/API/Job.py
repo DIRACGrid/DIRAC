@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.32 2008/06/13 08:30:57 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.33 2008/06/19 09:00:35 paterson Exp $
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -30,7 +30,7 @@
    Note that several executables can be provided and wil be executed sequentially.
 """
 
-__RCSID__ = "$Id: Job.py,v 1.32 2008/06/13 08:30:57 paterson Exp $"
+__RCSID__ = "$Id: Job.py,v 1.33 2008/06/19 09:00:35 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -67,7 +67,7 @@ class Job:
     self.type = 'user'
     self.priority = 0
     self.group = 'lhcb'
-    self.site = 'ANY'
+    self.site = '' #ANY
     #self.setup = 'Development'
     self.origin = 'DIRAC'
     self.stdout = 'std.out'
@@ -330,7 +330,8 @@ class Job:
     #should add protection here for list of supported platforms
     if type(backend) == type(" "):
       description = 'Platform type'
-      self._addParameter(self.workflow,'Platform','JDLReqt',backend,description)
+      if not backend.lower()=='any':
+        self._addParameter(self.workflow,'Platform','JDLReqt',backend,description)
     else:
       raise TypeError,'Expected string for platform'
 
@@ -823,9 +824,10 @@ class Job:
       for name,props in paramsDict.items():
         ptype = paramsDict[name]['type']
         value = paramsDict[name]['value']
-        if ptype=='JDLReqt':
-          plus = ' && '
-          exprn += reqtsDict[name].replace('NAME',name).replace('VALUE',str(value))+plus
+        if value and not value.lower()=='any':
+          if ptype=='JDLReqt':
+            plus = ' && '
+            exprn += reqtsDict[name].replace('NAME',name).replace('VALUE',str(value))+plus
 
       if len(plus):
         exprn = exprn[:-len(plus)]
