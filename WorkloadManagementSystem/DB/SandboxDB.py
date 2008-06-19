@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/SandboxDB.py,v 1.8 2008/06/19 15:08:13 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/SandboxDB.py,v 1.9 2008/06/19 15:12:21 rgracian Exp $
 ########################################################################
 """ SandboxDB class is a simple storage using MySQL as a container for
     relatively small sandbox files. The file size is limited to 16MB.
@@ -10,7 +10,7 @@
     getWMSTimeStamps()
 """
 
-__RCSID__ = "$Id: SandboxDB.py,v 1.8 2008/06/19 15:08:13 rgracian Exp $"
+__RCSID__ = "$Id: SandboxDB.py,v 1.9 2008/06/19 15:12:21 rgracian Exp $"
 
 import re, os, sys
 import time, datetime
@@ -28,7 +28,7 @@ class SandboxDB(DB):
 
     DB.__init__(self,sandbox_type,'WorkloadManagement/SandboxDB',maxQueueSize)
 
-    self.maxSize = gConfig.getOption( self.cs_path+'/MaxSize', 16 )
+    self.maxSize = gConfig.getValue( self.cs_path+'/MaxSize', 16 )
 
 #############################################################################
   def storeFile(self,jobID,filename,fileString,sandbox):

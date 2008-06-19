@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.58 2008/06/06 10:52:21 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.59 2008/06/19 15:13:18 rgracian Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,15 +52,14 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.58 2008/06/06 10:52:21 acasajus Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.59 2008/06/19 15:13:18 rgracian Exp $"
 
 import re, os, sys, string, types
 import time
-import threading
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from types                                     import *
-from DIRAC                                     import gLogger, S_OK, S_ERROR, gConfig
+from DIRAC                                     import gLogger, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Config   import gConfig
 from DIRAC.Core.Base.DB                        import DB
 from DIRAC.Core.Utilities.GridCredentials      import getNicknameForDN
@@ -76,17 +75,9 @@ class JobDB(DB):
 
     DB.__init__(self,'JobDB','WorkloadManagement/JobDB',maxQueueSize)
 
-    self.maxRescheduling = 30
-    result = gConfig.getOption( self.cs_path+'/MaxRescheduling')
-    if not result['OK']:
-      self.log.error('Failed to get the MaxRescheduling limit')
-      self.log.info('Using default value for rescheduling limit: '+str(self.maxRescheduling))
-    else:
-      self.maxRescheduling = int(result['Value'])
-
+    self.maxRescheduling = gConfig.getValue( self.cs_path+'/MaxRescheduling', 30)
 
     self.jobAttributeNames = []
-    self.getIDLock = threading.Lock()
 
     result = self.__getAttributeNames()
 
@@ -96,8 +87,8 @@ class JobDB(DB):
       sys.exit( error )
       return
 
-    self.log.info("MaxReschedule:  "+`self.maxRescheduling`)
-    self.log.info("==================================================")
+    self.log.always("MaxReschedule:  "+`self.maxRescheduling`)
+    self.log.always("==================================================")
 
     if DEBUG:
       result = self.dumpParameters()
@@ -175,35 +166,32 @@ class JobDB(DB):
   def getJobID(self):
     """Get the next unique JobID and prepare the new job insertion
     """
-    # if jobid it is put not in the JDL by the client this would be an internal method
-    # the id is unique per connection, thus to assure teh uniqueness in a multithreaded
-    # server a new connection should be established here or in the client. or the server
-    # should make sure that only 1 thread is allowed to call this method at any time.
-    # for the moment I put a lock here.
-
+    
     cmd = 'INSERT INTO Jobs (SubmissionTime) VALUES (UTC_TIMESTAMP())'
     err = 'JobDB.getJobID: Failed to retrieve a new Id.'
 
-    self.getIDLock.acquire()
-    res = self._update( cmd )
+    res = self._getConnection()
     if not res['OK']:
-      self.getIDLock.release()
+      return S_ERROR( '0 %s\n%s' % (err, res['Message'] ) )
+    
+    connection = res['Value']
+    res = self._update( cmd, connection )
+    if not res['OK']:
+      connection.close()
       return S_ERROR( '1 %s\n%s' % (err, res['Message'] ) )
-
-    cmd = 'SELECT MAX(JobID) FROM Jobs'
-    res = self._query( cmd )
+    
+    cmd = 'SELECT LAST_INSERT_ID()'
+    res = self._query( cmd, connection )
     if not res['OK']:
-      self.getIDLock.release()
+      connection.close()
       return S_ERROR( '2 %s\n%s' % (err, res['Message'] ) )
 
     try:
+      connection.close()
       jobID = int(res['Value'][0][0])
       self.log.info( 'JobDB: New JobID served "%s"' % jobID )
     except Exception, x:
-      self.getIDLock.release()
       return S_ERROR( '3 %s\n%s' % (err, str(x) ) )
-
-    self.getIDLock.release()
 
     return S_OK( jobID )
 
@@ -606,19 +594,6 @@ class JobDB(DB):
       update_flag = False
 
     if status:
-      #Monitor the WMS major status transitions in monitoring
-      try:
-        result = self.getJobAttribute(jobID,'Status')
-        if result[ 'OK' ]:
-          prevStatus = result['OK']
-          if not prevStatus == status:
-            acName = "%s-%s" % ( prevStatus, staus )
-            gMonitor.registerActivity( acName, "Status transition from %s to %s" % ( prevStatus, status ),
-                                       "WMS transitions", "transitions", gMonitor.OP_SUM )
-            gMonitor.addMark( acName, 1 )
-      except:
-        gLogger.error( "Error while generating monitoring transition report" )
-        gLogger.exception()
       result = self.setJobAttribute(jobID,'Status',status,update=update_flag)
       if not result['OK']:
         return result
@@ -930,7 +905,7 @@ class JobDB(DB):
               result = self.removeJobFromDB(job)
               if not result['OK']:
                 failedSubjobList.append(job)
-                self.log.error("Failed to delete job from JobDB",str(jobID))
+                self.log.error("Failed to delete job "+str(job)+" from JobDB")
 
     failedTablesList = []
     for table in ( 'Jobs',
@@ -1006,7 +981,7 @@ class JobDB(DB):
 
     # Exit if the limit of the reschedulings is reached
     if rescheduleCounter >= self.maxRescheduling:
-      self.log.error('Maximum number of reschedulings is reached for job',str(jobID))
+      self.log.error('Maximum number of reschedulings is reached for job %s' % jobID)
       res = self.setJobStatus(jobID, status='Failed', minor='Maximum of reschedulings reached')
       return S_ERROR('Maximum number of reschedulings is reached: %s' % self.maxRescheduling)
 
@@ -1157,23 +1132,27 @@ class JobDB(DB):
     classAdQueue = ClassAd(requirements)
     if classAdQueue.isOK():
       reqJDL = classAdQueue.asJDL()
-      self.getIDLock.acquire()
+      res = self._getConnection()
+      if not res['OK']:
+        return res
+      connection = res['Value']
+      
       cmd = 'INSERT INTO TaskQueues (Requirements, Priority) '\
             ' VALUES (\'%s\', \'%s\' )' \
             % ( reqJDL, priority )
-      result = self._update( cmd )
+      result = self._update( cmd, connection )
       if not result['OK']:
-        self.getIDLock.release()
+        connection.close()
         return result
-      result = self._query( 'SELECT LAST_INSERT_ID()' )
-      self.getIDLock.release()
+      result = self._query( 'SELECT LAST_INSERT_ID()', connection )
+      connection.close()
       if not result['OK']:
         return result
 
       queueID = int(result['Value'][0][0])
       return S_OK(queueID)
     else:
-      return S_ERROR('JobDB.addQueue: Invalid requirements JDL')
+      return S_ERROR('JobDB.__addQueue: Invalid requirements JDL')
 
 #############################################################################
   def deleteQueue(self,queueID):
@@ -1193,6 +1172,8 @@ class JobDB(DB):
     res = self._getFields('TaskQueues',['Requirements','TaskQueueId'],[],[])
     if not res['OK']:
       return res
+    classAdJob = ClassAd('[ Requirements = '+requirements+' ]')
+    jobRequirement = classAdJob.get_expression("Requirements")
     for row in res['Value']:
       classAdQueue = ClassAd(row[0])
       queueID = row[1]
@@ -1201,8 +1182,6 @@ class JobDB(DB):
         self._update( cmd )
       else:
         queueRequirement = classAdQueue.get_expression("Requirements")
-        classAdJob = ClassAd('[ Requirements = '+requirements+' ]')
-        jobRequirement = classAdJob.get_expression("Requirements")
         if queueRequirement.upper() == jobRequirement.upper():
           return S_OK( queueID )
 
@@ -1236,20 +1215,20 @@ class JobDB(DB):
 
     result = self._update( cmd )
     if not result['OK']:
-      self.log.error("Failed to add job to the Task Queue",str(jobID))
+      self.log.error("Failed to add job "+str(jobID)+" to the Task Queue")
       return result
 
     cmd = "UPDATE TaskQueues SET NumberOfJobs = NumberOfJobs + 1 WHERE TaskQueueId=%d" % queueID
     result = self._update( cmd )
     if not result['OK']:
-      self.log.error("Failed to increment the job counter for the Task Queue",str(queueID))
+      self.log.error("Failed to increment the job counter for the Task Queue %d" % queueID)
       return result
 
     # Check the Task Queue priority and adjust if necessary
     cmd = "SELECT Priority FROM TaskQueues WHERE TaskQueueId=%s" % queueID
     result = self._query(cmd)
     if not result['OK']:
-      self.log.error("Failed to get priority of the TaskQueue ",str(queueID))
+      self.log.error("Failed to get priority of the TaskQueue "+str(queueID))
       return result
 
     old_priority = int(result['Value'][0][0])
@@ -1257,7 +1236,7 @@ class JobDB(DB):
       cmd = "UPDATE TaskQueues SET Priority=%s WHERE TaskQueueId=%s" % (rank,queueID)
       result = self._update(cmd)
       if not result['OK']:
-        self.log.error("Failed to update priority of the TaskQueue ",str(queueID))
+        self.log.error("Failed to update priority of the TaskQueue "+str(queueID))
         return result
 
     return S_OK()
@@ -1334,7 +1313,7 @@ class JobDB(DB):
     cmd = "UPDATE TaskQueues SET NumberOfJobs = NumberOfJobs - 1 WHERE TaskQueueId=%d" % queueID
     result = self._update( cmd )
     if not result['OK']:
-      self.log.error("Failed to decrement the job counter for the Task Queue",str(queueID))
+      self.log.error("Failed to decrement the job counter for the Task Queue %d" % queueID)
       return result
 
     # Check that the queue is empty and remove it eventually
@@ -1593,18 +1572,3 @@ class JobDB(DB):
     req = "UPDATE JobCommands SET Status='%s' WHERE JobID=%d AND Command='%s'" % (status,jobID,command)
     result = self._update(req)
     return result
-
-#####################################################################################
-  def getSummarySnapshot( self ):
-    """ Get the summary snapshot for a given combination
-    """
-    defFields = [ 'DIRACSetup', 'Status', 'MinorStatus', 'ApplicationStatus',
-                  'Site', 'Owner', 'OwnerGroup', 'JobGroup', 'JobSplitType' ]
-    valueFields = [ 'COUNT(JobID)', 'SUM(RescheduleCounter)' ]
-    defString = ", ".join( defFields )
-    valueString = ", ".join( valueFields )
-    sqlCmd = "SELECT %s, %s From Jobs GROUP BY %s" % ( defString, valueString, defString )
-    result = self._query( sqlCmd )
-    if not result[ 'OK' ]:
-      return result
-    return S_OK( ( ( defFields + valueFields ), result[ 'Value' ] ) )
