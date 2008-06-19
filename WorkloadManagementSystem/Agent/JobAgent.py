@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.35 2008/06/09 09:28:57 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.36 2008/06/19 16:41:50 paterson Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.35 2008/06/09 09:28:57 paterson Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.36 2008/06/19 16:41:50 paterson Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -505,7 +505,7 @@ class JobAgent(Agent):
       for param,value in paramsDict.items():
         if re.search('{',value):
           self.log.debug('Found list type parameter %s' %(param))
-          rawValues = value.replace('{','').replace('}','').replace('"','').replace('LFN:','').split()
+          rawValues = value.replace('{','').replace('}','').replace('"','').split()
           valueList = []
           for val in rawValues:
             if re.search(',$',val):
