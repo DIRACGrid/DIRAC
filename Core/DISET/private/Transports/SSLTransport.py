@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSLTransport.py,v 1.21 2008/06/10 13:51:00 acasajus Exp $
-__RCSID__ = "$Id: SSLTransport.py,v 1.21 2008/06/10 13:51:00 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSLTransport.py,v 1.22 2008/06/19 14:02:04 acasajus Exp $
+__RCSID__ = "$Id: SSLTransport.py,v 1.22 2008/06/19 14:02:04 acasajus Exp $"
 
 import os
 import types
@@ -98,7 +98,7 @@ def checkSanity( urlTuple, kwargs ):
       certObj = X509Chain()
       certObj.loadChainFromFile( certFile )
 
-  retVal = certObj.isExpired()
+  retVal = certObj.hasExpired()
   if not retVal[ 'OK' ]:
     gLogger.error( "Can't verify file %s:%s" % ( certFile, retVal[ 'Message' ] ) )
     return False
