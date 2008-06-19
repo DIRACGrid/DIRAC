@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Agent.py,v 1.22 2008/06/06 09:35:36 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Agent.py,v 1.23 2008/06/19 15:02:16 rgracian Exp $
 ########################################################################
 """ Base class for all the Agents.
 
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: Agent.py,v 1.22 2008/06/06 09:35:36 acasajus Exp $"
+__RCSID__ = "$Id: Agent.py,v 1.23 2008/06/19 15:02:16 rgracian Exp $"
 
 import os
 import threading
@@ -74,9 +74,13 @@ class Agent:
     if status == "Stopped":
       return S_ERROR('The agent is disactivated in its configuration')
 
-    self.pollingTime = gConfig.getValue(self.section+'/PollingTime',60)
-    self.controlDir = gConfig.getValue(self.section+'/ControlDirectory','.')
+    self.pollingTime = gConfig.getValue(self.section+'/PollingTime',120 )
+    controlDir = os.path.join( DIRAC.rootPath, 'control', self.fullname )
+    self.controlDir = gConfig.getValue(self.section+'/ControlDirectory', controlDir )
     self.maxcount = gConfig.getValue(self.section+'/MaxCycles',0)
+    workDir = os.path.join( DIRAC.rootPath, 'work' )
+    workDir = gConfig.getValue(self.section+'/WorkDir', workDir )
+    self.workDir = os.path.join( workDir, self.fullname )
     self.diracSetup = gConfig.getValue('/DIRAC/Setup','Unknown')
 
     gLogger.always( 'Starting Agent', self.fullname )
@@ -90,6 +94,7 @@ class Agent:
                     (DIRAC.majorVersion,DIRAC.minorVersion,DIRAC.patchLevel) )
     gLogger.info('Polling time %d' % self.pollingTime)
     gLogger.info('Control directory %s' % self.controlDir)
+    gLogger.info('Working directory %s' % self.workDir)
     if self.maxcount == 1:
       gLogger.info('Single execution cycle')
     elif self.maxcount > 1:
@@ -296,12 +301,12 @@ def createAgent(agentName):
     return None
 
   try:
-    print "Importing",'DIRAC.'+system+'System.Agent'
+    # print "Importing",'DIRAC.'+system+'System.Agent'
     module = __import__('DIRAC.'+system+'System.Agent',globals(),locals(),[name])
     agent = eval("module."+name+'.'+name+"()")
   except Exception,x:
     try:
-      print 'Importing',system+'System.Agent'
+      # print 'Importing',system+'System.Agent'
       module = __import__(system+'System.Agent',globals(),locals(),[name])
       agent = eval("module."+name+'.'+name+"()")
     except Exception,y:
