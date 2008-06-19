@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.52 2008/06/19 08:04:55 atsareg Exp $
+# $Id: TransformationDB.py,v 1.53 2008/06/19 16:15:31 atsareg Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -460,13 +460,24 @@ class TransformationDB(DB):
 #
 ####################################################################################
 
-  def __addExistingFiles(self,transID):
+  def __addExistingFiles(self,transID=0):
     """ Add files that already exist in the DataFiles table to the
         transformation specified by the transID
     """
+        
     dataLog = RPCClient('DataManagement/DataLogging')
     # Add already existing files to this transformation if any
     filters = self.__getFilters(transID)
+    
+    if transID:
+      for tid,filter in filters:
+        if tid == transID:
+          filters = [(tid,filter)]
+          break
+
+      if not filters:
+        return S_ERROR('No filters defined for transformation %d' % transID)   
+          
     req = "SELECT LFN,FileID FROM DataFiles;"
     res = self._query(req)
     if not res['OK']:
@@ -538,7 +549,7 @@ PRIMARY KEY (FileID)
             gLogger.info("TransformationDB.__addFileToTransformation: File %s added to transformation %s." % (fileID,transID))
             addedTransforms.append(transID)
         else:
-          gLogger.info("TransformationDB.__addFileToTransformation: File %s already present in transformation %s." % (fileID,transID))
+          gLogger.verbose("TransformationDB.__addFileToTransformation: File %s already present in transformation %s." % (fileID,transID))
     return S_OK(addedTransforms)
 
   def __getFileIDsForLfns(self,lfns):
