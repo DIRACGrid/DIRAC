@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/File.py,v 1.22 2008/05/19 16:47:54 acasajus Exp $
-__RCSID__ = "$Id: File.py,v 1.22 2008/05/19 16:47:54 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/File.py,v 1.23 2008/06/20 17:38:39 acsmith Exp $
+__RCSID__ = "$Id: File.py,v 1.23 2008/06/20 17:38:39 acsmith Exp $"
 
 """
    Collection of DIRAC useful file related modules
@@ -94,6 +94,37 @@ def getGlobbedTotalSize( files ):
           size = 0
         totalSize += size
   return totalSize
+
+def stringAdler(string):
+  """ Calculate adler32 of the supplied string
+  """
+  try:
+    intAdler = adler32(string)
+    return hex(intAdler)[-8:]
+  except Exception,x:
+    return False
+
+def fileAdler(fileName):
+  """ Calculate alder32 of the supplied file
+  """
+  try:
+    inputFile = open(fileName)
+    inputFileSize = os.stat(fileName)[6]
+    increment = 1024*1024
+    fullBlocks = inputFileSize/increment
+    remainder = inputFileSize%increment
+
+    mbString = inputFile.read(increment)
+    myAdler = adler32(mbString)
+    for i in range(fullBlocks-1):
+      mbString = inputFile.read(increment)
+      myAdler = adler32(mbString,myAdler)
+    mbString = inputFile.read(remainder)
+    myAdler = adler32(mbString,myAdler)
+    inputFile.close()
+    return hex(myAdler)[-8:]
+  except Exception,x:
+    return False
 
 if __name__=="__main__":
   import sys
