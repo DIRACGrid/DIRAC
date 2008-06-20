@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.33 2008/06/19 09:00:35 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.34 2008/06/20 09:24:52 paterson Exp $
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -30,7 +30,7 @@
    Note that several executables can be provided and wil be executed sequentially.
 """
 
-__RCSID__ = "$Id: Job.py,v 1.33 2008/06/19 09:00:35 paterson Exp $"
+__RCSID__ = "$Id: Job.py,v 1.34 2008/06/20 09:24:52 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -42,6 +42,7 @@ from DIRAC.Core.Workflow.WorkflowReader             import *
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight      import ClassAd
 from DIRAC.ConfigurationSystem.Client.Config        import gConfig
 from DIRAC.Core.Utilities.Subprocess                import shellCall
+from DIRAC.Core.Utilities.List                      import uniqueElements
 from DIRAC                                          import gLogger
 
 COMPONENT_NAME='/Interfaces/API/Job'
@@ -76,6 +77,7 @@ class Job:
     self.executable = '$DIRACROOT/scripts/jobexec' # to be clarified
     self.addToInputSandbox = []
     self.addToOutputSandbox = []
+    self.addToInputData = []
     self.systemConfig = ''
     self.reqParams = {'MaxCPUTime':   'other.NAME>=VALUE',
                       'MinCPUTime':   'other.NAME<=VALUE',
@@ -784,8 +786,10 @@ class Job:
       extraFiles = string.join(self.addToInputSandbox,';')
       if paramsDict.has_key('InputSandbox'):
         currentFiles = paramsDict['InputSandbox']['value']
-        paramsDict['InputSandbox']['value'] = currentFiles+';'+extraFiles
-        self.log.verbose('Final Input Sandbox %s' %(currentFiles+';'+extraFiles))
+        finalInputSandbox = currentFiles+';'+extraFiles
+        uniqueInputSandbox = uniqueElements(finalInputSandbox.split(';'))
+        paramsDict['InputSandbox']['value'] = string.join(uniqueInputSandbox,';')
+        self.log.verbose('Final unique Input Sandbox %s' %(string.join(uniqueInputSandbox,';')))
       else:
         paramsDict['InputSandbox'] = {}
         paramsDict['InputSandbox']['value']=extraFiles
@@ -795,12 +799,27 @@ class Job:
       extraFiles = string.join(self.addToOutputSandbox,';')
       if paramsDict.has_key('OutputSandbox'):
         currentFiles = paramsDict['OutputSandbox']['value']
-        paramsDict['OutputSandbox']['value'] = currentFiles+';'+extraFiles
-        self.log.verbose('Final Output Sandbox %s' %(currentFiles+';'+extraFiles))
+        finalOutputSandbox = currentFiles+';'+extraFiles
+        uniqueOutputSandbox = uniqueElements(finalOutputSandbox.split(';'))
+        paramsDict['OutputSandbox']['value'] = string.join(uniqueOutputSandbox,';')
+        self.log.verbose('Final unique Output Sandbox %s' %(string.join(uniqueOutputSandbox,';')))
       else:
         paramsDict['OutputSandbox'] = {}
         paramsDict['OutputSandbox']['value']=extraFiles
         paramsDict['OutputSandbox']['type']='JDL'
+
+    if self.addToInputData:
+      extraFiles = string.join(self.addToInputData,';')
+      if paramsDict.has_key('InputData'):
+        currentFiles = paramsDict['InputData']['value']
+        finalInputData = currentFiles+';'+extraFiles
+        uniqueInputData = uniqueElements(finalInputData.split(';'))
+        paramsDict['InputData']['value'] = string.join(uniqueInputData,';')
+        self.log.verbose('Final unique Input Data %s' %(string.join(uniqueInputData,';')))
+      else:
+        paramsDict['InputData'] = {}
+        paramsDict['InputData']['value']=extraFiles
+        paramsDict['InputData']['type']='JDL'
 
     #Add any JDL parameters to classad obeying lists with ';' rule
     requirements = False
