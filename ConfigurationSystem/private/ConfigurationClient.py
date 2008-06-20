@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationClient.py,v 1.13 2008/04/16 12:17:51 atsareg Exp $
-__RCSID__ = "$Id: ConfigurationClient.py,v 1.13 2008/04/16 12:17:51 atsareg Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationClient.py,v 1.14 2008/06/20 14:51:40 acasajus Exp $
+__RCSID__ = "$Id: ConfigurationClient.py,v 1.14 2008/06/20 14:51:40 acasajus Exp $"
 
 import types
 from DIRAC.Core.Utilities import List
@@ -91,7 +91,7 @@ class ConfigurationClient:
     gRefresher.refreshConfigurationIfNeeded()
     optionsDict ={}
     optionList = gConfigurationData.getOptionsFromCFG( sectionPath )
-    if optionList:
+    if type( optionList ) == types.ListType:
       for option in optionList:
         optionsDict[ option ] = gConfigurationData.extractOptionFromCFG( "%s/%s" %
                                                               ( sectionPath, option ) )
