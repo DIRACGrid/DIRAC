@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.28 2008/06/23 12:40:22 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.29 2008/06/23 14:18:27 atsareg Exp $
 # File :   DiracProduction.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are to be documented with example usage.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.28 2008/06/23 12:40:22 atsareg Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.29 2008/06/23 14:18:27 atsareg Exp $"
 
 import string, re, os, time, shutil, types, copy
 import pprint
@@ -712,6 +712,7 @@ class DiracProduction:
     prodJob = Job(jfilename)
     jobDict = prodDict['JobDictionary']
     self.log.verbose(jobDict)
+    jobs_available = len(jobDict)
     for jobNumber,paramsDict in jobDict.items():
       for paramName,paramValue in paramsDict.items():
         self.log.verbose('ProdID: %s, JobID: %s, ParamName: %s, ParamValue: %s' %(prodID,jobNumber,paramName,paramValue))
@@ -763,7 +764,7 @@ class DiracProduction:
 
     self.__cleanUp()
     result = S_OK()
-    self.log.info('Job Submission Summary: ProdID=%s, Requested=%s, Submitted=%s, Failed=%s' %(prodID,number,len(submitted),len(failed)))
+    self.log.info('Job Submission Summary: ProdID=%s, Requested=%s, Available=%s, Submitted=%s, Failed=%s' %(prodID,number,jobs_available,len(submitted),len(failed)))
     result['Value'] = {'Successful':submitted,'Failed':failed}
     return result
 
