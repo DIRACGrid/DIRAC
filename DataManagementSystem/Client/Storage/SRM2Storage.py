@@ -513,18 +513,21 @@ class SRM2Storage(StorageBase):
     for urlDict in listOfResults:
       if urlDict.has_key('surl'):
         pathSURL = self.getUrl(urlDict['surl'])['Value']
-        dirSURL = files[pathSURL]
-        if urlDict['status'] == 0:
-          gLogger.debug("SRM2Storage.isDirectory: Supplied path is a DIRAC directory: %s" % dirSURL)
-          successful[dirSURL] = True
-        elif urlDict['status'] == 2:
-          gLogger.debug("SRM2Storage.isDirectory: Supplied path is not a DIRAC directory: %s" % dirSURL)
-          successful[dirSURL] = False
+        if files.has_key(pathSURL):
+          dirSURL = files[pathSURL]
+          if urlDict['status'] == 0:
+            gLogger.debug("SRM2Storage.isDirectory: Supplied path is a DIRAC directory: %s" % dirSURL)
+            successful[dirSURL] = True
+          elif urlDict['status'] == 2:
+            gLogger.debug("SRM2Storage.isDirectory: Supplied path is not a DIRAC directory: %s" % dirSURL)
+            successful[dirSURL] = False
+          else:
+            errStr = "SRM2Storage.isDirectory: Failed to get file metadata."
+            errMessage = os.strerror(urlDict['status'])
+            gLogger.error(errStr,"%s: %s" % (dirSURL,errMessage))
+            failed[dirSURL] = "%s %s" % (errStr,errMessage)
         else:
-          errStr = "SRM2Storage.isDirectory: Failed to get file metadata."
-          errMessage = os.strerror(urlDict['status'])
-          gLogger.error(errStr,"%s: %s" % (dirSURL,errMessage))
-          failed[dirSURL] = "%s %s" % (errStr,errMessage)
+          gLogger.warn("SRM2Storage.isDirectory: faulty path URL %s from getUrl()" % pathSURL)
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
