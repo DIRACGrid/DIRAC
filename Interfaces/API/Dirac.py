@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.31 2008/06/16 12:34:03 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.32 2008/06/23 11:14:29 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.31 2008/06/16 12:34:03 acsmith Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.32 2008/06/23 11:14:29 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -258,6 +258,13 @@ class Dirac:
     if not result['OK']:
       self.log.warn('Software installation failed with result:\n%s' %(result))
       return result
+
+    if parameters['Value'].has_key('InputSandbox'):
+      for isFile in parameters['Value']['InputSandbox']:
+        if not os.path.exists('%s/%s' %(os.getcwd(),os.path.basename(isFile))):
+          if os.path.exists(isFile):
+            self.log.verbose('Input sandbox file %s will be copied present working directory' %(isFile))
+            shutil.copy(isFile,os.getcwd())
 
     self.log.info('Attempting to submit job to local site: %s' %self.site)
     if parameters['Value'].has_key('Executable') and parameters['Value'].has_key('Arguments'):
