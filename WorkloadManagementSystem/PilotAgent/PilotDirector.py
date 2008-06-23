@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/PilotDirector.py,v 1.15 2008/06/16 15:19:34 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/PilotDirector.py,v 1.16 2008/06/23 21:39:30 atsareg Exp $
 # File :   PilotDirector.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
      are overridden in Grid specific subclasses.
 """
 
-__RCSID__ = "$Id: PilotDirector.py,v 1.15 2008/06/16 15:19:34 paterson Exp $"
+__RCSID__ = "$Id: PilotDirector.py,v 1.16 2008/06/23 21:39:30 atsareg Exp $"
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
 from DIRAC.Core.Utilities.Subprocess                       import shellCall
@@ -403,34 +403,53 @@ class PilotDirector(Thread):
     """Converts candidates sites from canonical DIRAC site names into those
        of the Grid.
     """
-    section = '/Resources/GridSites/%s' % (self.type)
-    sites = gConfig.getOptionsDict(section)
-    if not sites['OK']:
-      #To avoid duplicating sites listed in LCG for gLite for example.  This could be passed as a parameter from
-      #the sub class to avoid below...
-      section = '/Resources/GridSites/LCG'
-      sites = gConfig.getOptionsDict(section)
 
-    if not sites['OK']:
-      self.log.warn(sites['Message'])
-      return S_ERROR('Could not obtain %s section from CS' %(section))
+    ceCandidateList = []
 
-    if not sites['Value']:
-      return S_ERROR('Empty CS section %s' %(section))
+    for site in candidates:
+      gridType = site.split('.')[0]
+      siteName = site.replace(gridType+'.','')
+      ceList = gConfig.getValue('/Resources/Sites/%s/%s/CE' % (gridType,siteName),[])
+      ceCandidateList += ceList
 
-    gridSites = sites['Value']
-    self.log.verbose('%s Grid Sites are: %s' %(self.type,string.join(gridSites,', ')))
-
-    candidateList = []
-
-    for ce,siteName in gridSites.items():
-      if siteName in candidates:
-        candidateList.append(ce)
-
-    if not candidateList:
+    if not ceCandidateList:
       return S_ERROR('No Grid site names found for DIRAC sites %s' %(string.join(candidates,', ')))
 
-    return S_OK(candidateList)
+    return S_OK(ceCandidateList)
+
+  #############################################################################
+#  def __getGridSites(self,candidates):
+#    """Converts candidates sites from canonical DIRAC site names into those
+#       of the Grid.
+#    """
+#    section = '/Resources/GridSites/%s' % (self.type)
+#    sites = gConfig.getOptionsDict(section)
+#    if not sites['OK']:
+#      #To avoid duplicating sites listed in LCG for gLite for example.  This could be passed as a parameter from
+#      #the sub class to avoid below...
+#      section = '/Resources/GridSites/LCG'
+#      sites = gConfig.getOptionsDict(section)
+#
+#    if not sites['OK']:
+#      self.log.warn(sites['Message'])
+#      return S_ERROR('Could not obtain %s section from CS' %(section))
+#
+#    if not sites['Value']:
+#      return S_ERROR('Empty CS section %s' %(section))
+#
+#    gridSites = sites['Value']
+#    self.log.verbose('%s Grid Sites are: %s' %(self.type,string.join(gridSites,', ')))
+#
+#    candidateList = []
+#
+#    for ce,siteName in gridSites.items():
+#      if siteName in candidates:
+#        candidateList.append(ce)
+#
+#    if not candidateList:
+#      return S_ERROR('No Grid site names found for DIRAC sites %s' %(string.join(candidates,', ')))
+#
+#    return S_OK(candidateList)
 
   #############################################################################
   def __cleanUp(self,jobDirectory):
