@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.27 2008/06/16 08:58:44 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.28 2008/06/23 12:40:22 atsareg Exp $
 # File :   DiracProduction.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are to be documented with example usage.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.27 2008/06/16 08:58:44 atsareg Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.28 2008/06/23 12:40:22 atsareg Exp $"
 
 import string, re, os, time, shutil, types, copy
 import pprint
@@ -720,10 +720,14 @@ class DiracProduction:
             self.log.verbose('Setting input data to %s' %paramValue)
             prodJob.setInputData(paramValue)
         if paramName=='Site':
-          if site and not site==paramValue:
+          if site and not site==paramValue and paramValue.lower()!='any':
             return self.__errorReport('Specified destination site %s does not match allocated site %s' %(site,paramName))
-          self.log.verbose('Setting destination site to %s' %(paramValue))
-          prodJob.setDestination(paramValue)
+          if paramValue.lower()=='any' and site:
+            destsite = site
+          else:
+            destsite = paramValue
+          self.log.verbose('Setting destination site to %s' %(destsite))
+          prodJob.setDestination(destsite)
         if paramName=='TargetSE':
           self.log.verbose('Job is targeted to SE: %s' %(paramValue))
       self.log.verbose('Setting job owner to %s' %(userID))
