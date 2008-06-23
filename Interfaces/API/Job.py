@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.34 2008/06/20 09:24:52 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.35 2008/06/23 14:34:39 paterson Exp $
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -30,7 +30,7 @@
    Note that several executables can be provided and wil be executed sequentially.
 """
 
-__RCSID__ = "$Id: Job.py,v 1.34 2008/06/20 09:24:52 paterson Exp $"
+__RCSID__ = "$Id: Job.py,v 1.35 2008/06/23 14:34:39 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -93,10 +93,11 @@ class Job:
       self.workflow = Workflow(script)
 
   #############################################################################
-  def setExecutable(self,executable,logFile=''):
+  def setExecutable(self,executable,arguments='',logFile=''):
     """Helper function.
 
-       Specify executable for DIRAC jobs.
+       Specify executable script to run with optional arguments and log file
+       for standard output.
 
        These can be either:
 
@@ -109,11 +110,15 @@ class Job:
        >>> job = Job()
        >>> job.setExecutable('myScript.py')
 
-       @param executable: Executable, can include path to file
+       @param executable: Executable
        @type executable: string
+       @param arguments: Optional arguments to executable
+       @type arguments: string
        @param logFile: Optional log file name
        @type logFile: string
     """
+    if not type(executable) == type(' ') or not type(arguments) == type(' '):
+      raise TypeError,'Expected strings for executable and arguments'
 
     if os.path.exists(executable):
       self.log.verbose('Found script executable file %s' % (executable))
@@ -130,49 +135,24 @@ class Job:
         logName = logFile
 
     self.stepCount +=1
-    module =  self.__getScriptModule()
 
     moduleName = moduleName.replace('.','')
     stepNumber = self.stepCount
     stepDefn = 'ScriptStep%s' %(stepNumber)
+    step =  self.__getScriptStep(stepDefn)
     stepName = 'RunScriptStep%s' %(stepNumber)
-
     logPrefix = 'Script%s_' %(stepNumber)
     logName = '%s%s' %(logPrefix,logName)
     self.addToOutputSandbox.append(logName)
-
-    step = StepDefinition(stepDefn)
-    step.addModule(module)
-    step.addParameter(module.findParameter('Executable'))
-    step.addParameter(module.findParameter('Name'))
-    step.addParameter(module.findParameter('LogFile'))
-
-    moduleInstance = step.createModuleInstance('Script',moduleName)
-    moduleInstance.setLink('Executable','self','Executable')
-    moduleInstance.findParameter('Name').link('self','Name')
-    moduleInstance.findParameter('LogFile').link('self','LogFile')
-
-    output = moduleInstance.findParameter('Output')
-    step.addParameter(Parameter(parameter=output))
-    step.findParameter('Output').link(moduleName,'Output')
-
     self.workflow.addStep(step)
-    stepPrefix = '%s_' % stepName
-    self.workflow.addParameter(step.findParameter('Executable'),stepPrefix)
-    self.workflow.addParameter(step.findParameter('Name'),stepPrefix)
-    self.workflow.addParameter(step.findParameter('LogFile'),stepPrefix)
-    self.workflow.addParameter(step.findParameter('Output'),stepPrefix)
-    stepInstance = self.workflow.createStepInstance(stepDefn,stepName)
 
-    scriptParams = ParameterCollection()
-    scriptParams.append(moduleInstance.findParameter('Executable'))
-    scriptParams.append(moduleInstance.findParameter('Name'))
-    scriptParams.append(moduleInstance.findParameter('LogFile'))
-    stepInstance.linkUp(scriptParams,stepPrefix)
-    self.workflow.findParameter('%sOutput' %(stepPrefix)).link(stepInstance.getName(),'Output')
-    self.workflow.setValue('%sExecutable' %(stepPrefix), executable)
-    self.workflow.findParameter('%sName' %(stepPrefix)).setValue(moduleName)
-    self.workflow.findParameter('%sLogFile' %(stepPrefix)).setValue(logName)
+    # Define Step and its variables
+    stepInstance = self.workflow.createStepInstance(stepDefn,stepName)
+    stepInstance.setValue("name",moduleName)
+    stepInstance.setValue("logFile",logName)
+    stepInstance.setValue("executable",executable)
+    if arguments:
+      stepInstance.setValue("arguments",arguments)
 
   #############################################################################
   def setName(self,jobname):
@@ -327,7 +307,7 @@ class Job:
     """Developer function.
 
        Choose platform (system) on which job is executed e.g. DIRAC, LCG.
-       Default of LCG in place for users.
+       Default in place for users.
     """
     #should add protection here for list of supported platforms
     if type(backend) == type(" "):
@@ -710,19 +690,25 @@ class Job:
     return resolvedIS
 
   #############################################################################
-  def __getScriptModule(self):
+  def __getScriptStep(self,name='Script'):
     """Internal function. This method controls the definition for a script module.
     """
+    # Create the script module first
     moduleName = 'Script'
     module = ModuleDefinition(moduleName)
-    self._addParameter(module,'Name','Parameter','string','Name of executable')
-    self._addParameter(module,'Executable','Parameter','string','Executable Script')
-    self._addParameter(module,'LogFile','Parameter','string','Log file name')
-    self._addParameter(module,'Output','Parameter','string','Script output string',io='output')
-    module.setDescription('A module that can execute any provided code segment or script.')
-    body = 'from WorkflowLib.Module.Script import Script\n'
+    module.setDescription('A  script module that can execute any provided script.')
+    body = 'from DIRAC.Core.Workflow.Modules.Script import Script\n'
     module.setBody(body)
-    return module
+    # Create Step definition
+    step = StepDefinition(name)
+    step.addModule(module)
+    moduleInstance = step.createModuleInstance('Script',name)
+    # Define step parameters
+    step.addParameter(Parameter("name","","string","","",False, False,'Name of executable'))
+    step.addParameter(Parameter("executable","","string","","",False, False, 'Executable Script'))
+    step.addParameter(Parameter("arguments","","string","","",False, False, 'Arguments for executable Script'))
+    step.addParameter(Parameter("logFile","","string","","",False,False,'Log file name'))
+    return step
 
   #############################################################################
   def _toXML(self):
@@ -812,7 +798,9 @@ class Job:
       extraFiles = string.join(self.addToInputData,';')
       if paramsDict.has_key('InputData'):
         currentFiles = paramsDict['InputData']['value']
-        finalInputData = currentFiles+';'+extraFiles
+        finalInputData = extraFiles
+        if currentFiles:
+          finalInputData = currentFiles+';'+extraFiles
         uniqueInputData = uniqueElements(finalInputData.split(';'))
         paramsDict['InputData']['value'] = string.join(uniqueInputData,';')
         self.log.verbose('Final unique Input Data %s' %(string.join(uniqueInputData,';')))
