@@ -1,8 +1,8 @@
-# $Id: Step.py,v 1.26 2008/06/15 11:34:47 atsareg Exp $
+# $Id: Step.py,v 1.27 2008/06/23 11:22:50 atsareg Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.26 $"
+__RCSID__ = "$Revision: 1.27 $"
 
 import os, time, types, traceback, sys
 #try: # this part to inport as part of the DIRAC framework
@@ -274,7 +274,7 @@ class StepInstance(AttributeCollection):
           if self.stepStatus['OK']:
             error_message = result['Message']
             if self.workflow_commons.has_key('JobReport'):
-              result = self.workflow_commons['JobReport'].setApplicationStatus(error_message)
+              resultStatus = self.workflow_commons['JobReport'].setApplicationStatus(error_message)
           self.stepStatus = S_ERROR(result['Message'])
         else:
           # Get output values to the step_commons dictionary
