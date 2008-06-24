@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalogue. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.29 2008/06/10 10:57:07 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.30 2008/06/24 12:46:37 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -9,7 +9,7 @@ from DIRAC import S_OK, S_ERROR, gLogger, gConfig
 from DIRAC.DataManagementSystem.Client.StorageElement import StorageElement
 from DIRAC.DataManagementSystem.Client.FileCatalog import FileCatalog
 from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC.Core.Utilities.File import makeGuid
+from DIRAC.Core.Utilities.File import makeGuid,fileAdler
 from DIRAC.Core.Utilities.File import getSize
 
 class ReplicaManager:
@@ -148,6 +148,8 @@ class ReplicaManager:
     # If the GUID is not given, generate it here
     if not guid:
       guid = makeGuid(file)
+    if not checksum:
+      checksum = fileAdler(file)
     res = self.fileCatalogue.exists(lfn) #checkFileExistence(lfn,guid)
     if not res['OK']:
       return res
