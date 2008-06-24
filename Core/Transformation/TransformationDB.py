@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.53 2008/06/19 16:15:31 atsareg Exp $
+# $Id: TransformationDB.py,v 1.54 2008/06/24 13:14:44 atsareg Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -250,6 +250,8 @@ class TransformationDB(DB):
       res = self._query(req)
       if not res['OK']:
         return res
+      if not res['Value']:
+        return S_ERROR('Transformation %s not found' %str(transName))
       tr=res['Value'][0]
       transdict = {}
       transdict['TransID'] = tr[0]
@@ -464,11 +466,11 @@ class TransformationDB(DB):
     """ Add files that already exist in the DataFiles table to the
         transformation specified by the transID
     """
-        
+
     dataLog = RPCClient('DataManagement/DataLogging')
     # Add already existing files to this transformation if any
     filters = self.__getFilters(transID)
-    
+
     if transID:
       for tid,filter in filters:
         if tid == transID:
@@ -476,8 +478,8 @@ class TransformationDB(DB):
           break
 
       if not filters:
-        return S_ERROR('No filters defined for transformation %d' % transID)   
-          
+        return S_ERROR('No filters defined for transformation %d' % transID)
+
     req = "SELECT LFN,FileID FROM DataFiles;"
     res = self._query(req)
     if not res['OK']:
