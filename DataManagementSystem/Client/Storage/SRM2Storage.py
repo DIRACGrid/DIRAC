@@ -818,6 +818,8 @@ class SRM2Storage(StorageBase):
             if res['Value']['Successful'].has_key(dir):
               if res['Value']['Successful'][dir]:
                 res = self.__makeDir(path)
+              elif path.endswith(self.path):
+                res = self.__makeDir(path)
               else:
                 res = self.__makeDirs(dir)
                 res = self.__makeDir(path)
