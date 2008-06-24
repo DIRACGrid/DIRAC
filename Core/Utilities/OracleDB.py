@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/OracleDB.py,v 1.1 2008/06/24 11:29:58 zmathe Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/OracleDB.py,v 1.2 2008/06/24 14:53:32 zmathe Exp $
 ########################################################################
 """ DIRAC Basic Oracle Class
     It provides access to the basic MySQL methods in a multithread-safe mode
@@ -50,7 +50,7 @@
 
 """
 
-__RCSID__ = "$Id: OracleDB.py,v 1.1 2008/06/24 11:29:58 zmathe Exp $"
+__RCSID__ = "$Id: OracleDB.py,v 1.2 2008/06/24 14:53:32 zmathe Exp $"
 
 
 from DIRAC                                  import gLogger
@@ -71,7 +71,7 @@ maxConnectRetry = 10
 
 class OracleDB:
   """
-  Basic multithreaded DIRAC MySQL Client Class
+  Basic multithreaded DIRAC Oracle Client Class
   """
 
   def __init__( self, elf, userName, password = '', tnsEntry='', maxQueueSize=10 ):
@@ -120,11 +120,6 @@ class OracleDB:
       except Queue.Empty,x:
         self.logger.debug( 'No more connection in Queue' )
         break
-    if instances == 1:
-      # only when the last instance of a MySQL object is deleted, the server
-      # can be ended
-      MySQLdb.server_end()
-    instances -= 1
 
   def __checkQueueSize( self, maxQueueSize ):
 
@@ -138,7 +133,7 @@ class OracleDB:
 
   def _except( self, methodName, v, err ):
     """
-    print MySQL error or exeption
+    print Oracle error or exeption
     return S_ERROR with Exception
     """
 
@@ -162,7 +157,7 @@ class OracleDB:
 
   def _connect( self ):
     """
-    open connection to MySQL DB and put Connection into Queue
+    open connection to Oracle DB and put Connection into Queue
     set connected flag to True and return S_OK
     return S_ERROR upon failure
     """
