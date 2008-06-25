@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/SiteStager.py,v 1.4 2008/04/03 15:22:16 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/SiteStager.py,v 1.5 2008/06/25 17:01:55 atsareg Exp $
 # File :   SiteStager.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
      resetting of stage requests as necessary.
 """
 
-__RCSID__ = "$Id: SiteStager.py,v 1.4 2008/04/03 15:22:16 paterson Exp $"
+__RCSID__ = "$Id: SiteStager.py,v 1.5 2008/06/25 17:01:55 atsareg Exp $"
 
 from DIRAC.StagerSystem.Client.StagerClient                import StagerClient
 from DIRAC.DataManagementSystem.Client.StorageElement      import StorageElement
@@ -51,6 +51,30 @@ class SiteStager(Thread):
 
       time.sleep(self.pollingTime)
 
+
+  def __get_site_se_mapping(self):
+    """ Helper function to prepare a dictionary of local SEs per site defined
+        in the Configuration Service
+    """
+
+    mappingDict = {}
+
+    result = gConfig.getSections('/Resources/Sites')
+    if not result['OK']:
+      return result
+    gridTypes = result['Value']
+    for gridType in gridTypes:
+      result = gConfig.getSections('/Resources/Sites/'+gridType)
+      if not result['OK']:
+        continue
+      siteList = result['Value']
+      for site in siteList:
+        ses = gConfig.getValue('/Resources/Sites/%s/%s/SE' % (gridType,site),[])
+        if ses:
+          mappingDict[site] = ses
+
+    return S_OK(mappingDict)
+
   #############################################################################
   def __pollSite(self):
     """ This method starts the staging loop for a given site thread.  The initial
@@ -66,12 +90,15 @@ class SiteStager(Thread):
 
     replicas = result['Files']
     siteSEs = []
-    mappingKeys = gConfig.getOptions('/Resources/SiteLocalSEMapping')
-    for possible in mappingKeys['Value']:
-      if possible==self.site:
-        seStr = gConfig.getValue('/Resources/SiteLocalSEMapping/%s' %(self.site))
-        self.log.verbose('Site: %s, SEs: %s' %(self.site,seStr))
-        siteSEs = [ x.strip() for x in string.split(seStr,',')]
+    # Prepare Site-SE resolution mapping
+    result = self.__get_site_se_mapping()
+    site_se_mapping = {}
+    if result['OK']:
+      site_se_mapping = result['Value']
+
+    mappingKeys = site_se_mapping.keys()
+    if self.site in mappingKeys:
+      siteSEs = site_se_mapping[self.site]
 
     seFilesDict = {}
     pfnLfnDict = {}
