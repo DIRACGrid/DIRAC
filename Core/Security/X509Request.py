@@ -1,9 +1,9 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/X509Request.py,v 1.4 2008/06/18 19:57:07 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/X509Request.py,v 1.5 2008/06/25 10:59:40 acasajus Exp $
 ########################################################################
 """ X509Request is a class for managing X509 requests with their Pkeys
 """
-__RCSID__ = "$Id: X509Request.py,v 1.4 2008/06/18 19:57:07 acasajus Exp $"
+__RCSID__ = "$Id: X509Request.py,v 1.5 2008/06/25 10:59:40 acasajus Exp $"
 import GSI
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Security.X509Chain import X509Chain
@@ -26,7 +26,7 @@ class X509Request:
     self.__reqObj = GSI.crypto.X509Req()
     self.__reqObj.set_pubkey( self.__pkeyObj )
     if limited:
-      self.__reqObj.get_subject().insert_entry( "CN", "limitedproxy" )
+      self.__reqObj.get_subject().insert_entry( "CN", "limited proxy" )
     else:
       self.__reqObj.get_subject().insert_entry( "CN", "proxy" )
     self.__valid = True
@@ -134,13 +134,6 @@ class X509Request:
     if not retVal[ 'OK' ]:
       return retVal
     lastCert = retVal[ 'Value' ]
-    chainDN = lastCert.getSubjectDN()[ 'Value' ]
-    reqDN = self.__reqObj.get_subject().one_line()
-    if not chainDN == reqDN:
-      retVal = S_OK( False )
-      retVal[ 'Message' ] = "Subjects do not match (received %s expected %s)" % ( chainDN,
-                                                                                  reqDN )
-      return retVal
     chainPubKey = GSI.crypto.dump_publickey( GSI.crypto.FILETYPE_PEM, lastCert.getPublicKey()[ 'Value' ] )
     reqPubKey = GSI.crypto.dump_publickey( GSI.crypto.FILETYPE_PEM, self.__pkeyObj )
     if not chainPubKey == reqPubKey:

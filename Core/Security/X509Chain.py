@@ -1,9 +1,9 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/X509Chain.py,v 1.13 2008/06/18 19:57:07 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/X509Chain.py,v 1.14 2008/06/25 10:59:40 acasajus Exp $
 ########################################################################
 """ X509Chain is a class for managing X509 chains with their Pkeys
 """
-__RCSID__ = "$Id: X509Chain.py,v 1.13 2008/06/18 19:57:07 acasajus Exp $"
+__RCSID__ = "$Id: X509Chain.py,v 1.14 2008/06/25 10:59:40 acasajus Exp $"
 
 import types
 import os
@@ -203,7 +203,7 @@ class X509Chain:
     proxyCert = crypto.X509()
     cloneSubject = issuerCert.get_subject().clone()
     if limited:
-      cloneSubject.insert_entry( "CN", "limitedproxy" )
+      cloneSubject.insert_entry( "CN", "limited proxy" )
     else:
       cloneSubject.insert_entry( "CN", "proxy" )
     proxyCert.set_subject( cloneSubject )
@@ -319,7 +319,7 @@ class X509Chain:
     proxySubject = self.__certList[ certStep ].get_subject().clone()
     psEntries =  proxySubject.num_entries()
     lastEntry = proxySubject.get_entry( psEntries - 1 )
-    if lastEntry[0] != 'CN' or lastEntry[1] not in ( 'proxy', 'limitedproxy' ):
+    if lastEntry[0] != 'CN' or lastEntry[1] not in ( 'proxy', 'limited proxy' ):
       return False
     proxySubject.remove_entry( psEntries - 1 )
     if not issuerSubject.one_line() == proxySubject.one_line():
@@ -404,12 +404,12 @@ class X509Chain:
 
     isLimited = False
     lastEntry = newSubj.get_entry( newSubj.num_entries() -1 )
-    if lastEntry[0] == "CN" and lastEntry[1] == "limitedproxy":
+    if lastEntry[0] == "CN" and lastEntry[1] == "limited proxy":
       isLimited = True
     for entryTuple in reqSubj.get_components():
       if isLimited  and entryTuple[0]== "CN" and lastEntry[1] == "proxy":
         return S_ERROR( "Request name is not valid" )
-      if entryTuple[0]== "CN" and lastEntry[1] == "limitedproxy":
+      if entryTuple[0]== "CN" and lastEntry[1] == "limited proxy":
         isLimited = True
       newSubj.insert_entry( entryTuple[0], entryTuple[1] )
 

@@ -1,9 +1,9 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/X509Certificate.py,v 1.7 2008/06/18 19:57:07 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/X509Certificate.py,v 1.8 2008/06/25 10:59:40 acasajus Exp $
 ########################################################################
 """ X509Certificate is a class for managing X509 certificates alone
 """
-__RCSID__ = "$Id: X509Certificate.py,v 1.7 2008/06/18 19:57:07 acasajus Exp $"
+__RCSID__ = "$Id: X509Certificate.py,v 1.8 2008/06/25 10:59:40 acasajus Exp $"
 
 import GSI
 from DIRAC import S_OK, S_ERROR
@@ -167,7 +167,7 @@ class X509Certificate:
     if not limited:
       subj = self.__certObj.get_subject()
       lastEntry = subj.get_entry( subj.num_entries() -1 )
-      if lastEntry[0] == 'CN' and lastEntry[1] == "limitedproxy":
+      if lastEntry[0] == 'CN' and lastEntry[1] == "limited proxy":
         limited = True
 
     from DIRAC.Core.Security.X509Request import X509Request
