@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/OracleDB.py,v 1.2 2008/06/24 14:53:32 zmathe Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/OracleDB.py,v 1.3 2008/06/25 16:05:36 zmathe Exp $
 ########################################################################
 """ DIRAC Basic Oracle Class
     It provides access to the basic MySQL methods in a multithread-safe mode
@@ -50,7 +50,7 @@
 
 """
 
-__RCSID__ = "$Id: OracleDB.py,v 1.2 2008/06/24 14:53:32 zmathe Exp $"
+__RCSID__ = "$Id: OracleDB.py,v 1.3 2008/06/25 16:05:36 zmathe Exp $"
 
 
 from DIRAC                                  import gLogger
@@ -74,7 +74,7 @@ class OracleDB:
   Basic multithreaded DIRAC Oracle Client Class
   """
 
-  def __init__( self, elf, userName, password = '', tnsEntry='', maxQueueSize=10 ):
+  def __init__( self, userName, password = '', tnsEntry='', maxQueueSize=10 ):
     """
     set Oracle connection parameters and try to connect
     """
@@ -98,7 +98,7 @@ class OracleDB:
     self.__checkQueueSize( maxQueueSize )
 
     self.__userName   = str( userName )
-    self.__passwd     = str( passwd )
+    self.__passwd     = str( password )
     self.__tnsName     = str( tnsEntry )
     # Create the connection Queue to reuse connections
     self.__connectionQueue     = Queue.Queue( maxQueueSize )
@@ -108,7 +108,7 @@ class OracleDB:
     self.__initialized = True
     self._connect()
 
-
+  """
   def __del__( self ):
     global instances
 
@@ -120,7 +120,7 @@ class OracleDB:
       except Queue.Empty,x:
         self.logger.debug( 'No more connection in Queue' )
         break
-
+   """
   def __checkQueueSize( self, maxQueueSize ):
 
     if maxQueueSize <= 0:
@@ -141,8 +141,8 @@ class OracleDB:
       raise v
     except cx_Oracle.Error,e:
       self.logger.debug( '%s: %s' % ( methodName, err ),
-                     '%d: %s' % ( e.args[0], e.args[1] ) )
-      return S_ERROR( '%s: ( %d: %s )' % ( err, e.args[0], e.args[1] ) )
+                     '%s' % ( e ) )
+      return S_ERROR( '%s: ( %s )' % ( err, e ) )
     except Exception,x:
       self.logger.debug( '%s: %s' % ( methodName, err ), str(x) )
       return S_ERROR( '%s: (%s)' % ( err, str(x) ) )
@@ -252,7 +252,7 @@ class OracleDB:
     """
     self.logger.debug( '__newConnection:' )
 
-    connection = cx_Oracle.connect(self.__userName, self.__passwd, self.__tnsName )
+    connection = cx_Oracle.Connection(self.__userName, self.__passwd, self.__tnsName )
     self.__putConnection( connection )
 
 
