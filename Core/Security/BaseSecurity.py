@@ -3,15 +3,14 @@ import types
 import os
 import tempfile
 import DIRAC
-import DIRAC.Core.Security.Locations
 from DIRAC.Core.Security.X509Chain import X509Chain,g_X509ChainType
-from DIRAC.Core.Security import Locations
+from DIRAC.Core.Security import Locations, File
 from DIRAC import gConfig, S_OK, S_ERROR
 
 class BaseSecurity:
 
   def __init__( self,
-                maxProxyHoursLifeTime = False,
+                maxProxyLifeTime = False,
                 server = False,
                 serverCert = False,
                 serverKey = False,
@@ -21,10 +20,10 @@ class BaseSecurity:
       self._secCmdTimeout = timeout
     else:
       self._secCmdTimeout = 0
-    if not maxProxyHoursLifeTime:
-      self.__maxProxyLifeTime = 7 * 24
+    if not maxProxyLifeTime:
+      self.__maxProxyLifeTime = 604800 # 1week
     else:
-      self.__maxProxyLifeTime = maxProxyHoursLifeTime
+      self.__maxProxyLifeTime = maxProxyLifeTime
     if not server:
       self._secServer = "myproxy.cern.ch"
     else:

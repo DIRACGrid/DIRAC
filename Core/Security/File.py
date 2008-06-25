@@ -44,7 +44,7 @@ def writeChainToTemporaryFile( proxyChain ):
     os.close(fd)
   except IOError:
     return S_ERROR('Failed to create temporary file')
-  retVal = writeChainToProxyFile( proxyLocation )
+  retVal = writeChainToProxyFile( proxyChain, proxyLocation )
   if not retVal[ 'OK' ]:
     try:
       os.unlink( proxyLocation )
