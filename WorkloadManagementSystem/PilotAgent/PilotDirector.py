@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/PilotDirector.py,v 1.16 2008/06/23 21:39:30 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/PilotDirector.py,v 1.17 2008/06/25 10:22:26 paterson Exp $
 # File :   PilotDirector.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
      are overridden in Grid specific subclasses.
 """
 
-__RCSID__ = "$Id: PilotDirector.py,v 1.16 2008/06/23 21:39:30 atsareg Exp $"
+__RCSID__ = "$Id: PilotDirector.py,v 1.17 2008/06/25 10:22:26 paterson Exp $"
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
 from DIRAC.Core.Utilities.Subprocess                       import shellCall
@@ -408,7 +408,7 @@ class PilotDirector(Thread):
 
     for site in candidates:
       gridType = site.split('.')[0]
-      siteName = site.replace(gridType+'.','')
+      #siteName = site.replace(gridType+'.','')
       ceList = gConfig.getValue('/Resources/Sites/%s/%s/CE' % (gridType,siteName),[])
       ceCandidateList += ceList
 
