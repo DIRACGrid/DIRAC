@@ -177,3 +177,17 @@ class VOMS( BaseSecurity ):
       return S_ERROR( "Can't load new proxy: %s" % retVal[ 'Message' ] )
 
     return S_OK( newChain )
+
+  def vomsInfoAvailable( self ):
+    """
+    Is voms info available?
+    """
+    vomsEnv = self._getExternalCmdEnvironment( noX509 = True )
+    cmd = 'voms-proxy-info'
+    result = shellCall( self._secCmdTimeout, cmd, env = vomsEnv )
+    if not result['OK']:
+      return False
+    status, output, error = result['Value']
+    if status:
+      return False
+    return True

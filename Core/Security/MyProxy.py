@@ -36,9 +36,9 @@ class MyProxy( BaseSecurity ):
 
     timeLeft = int( chain.getRemainingSecs()[ 'Value' ] / 3600 )
 
-    cmdArgs = []
+    cmdArgs = [ '-n' ]
     cmdArgs.append( '-s "%s"' % self._secServer )
-    cmdArgs.append( '-c "%s"' % ( timeLeft - 5 ) )
+    cmdArgs.append( '-c "%s"' % ( timeLeft - 1 ) )
     cmdArgs.append( '-C "%s"' % proxyLocation )
     cmdArgs.append( '-y "%s"' % proxyLocation )
     if useDNAsUserName:
@@ -70,7 +70,7 @@ class MyProxy( BaseSecurity ):
 
     return S_OK()
 
-  def getDelegatedProxy( self, proxyChain, lifeTime = 72, useDNAsUserName = False ):
+  def getDelegatedProxy( self, proxyChain, lifeTime = 604800, useDNAsUserName = False ):
     """
       Get delegated proxy from MyProxy server
       return S_OK( X509Chain ) / S_ERROR
@@ -78,7 +78,7 @@ class MyProxy( BaseSecurity ):
     #TODO: Set the proxy coming in proxyString to be the proxy to use
 
     #Get myproxy username diracgroup:diracuser
-    retVal = self._loadProxy( proxy )
+    retVal = self._loadProxy( proxyChain )
     if not retVal[ 'OK' ]:
       return retVal
     proxyDict = retVal[ 'Value' ]
@@ -101,11 +101,11 @@ class MyProxy( BaseSecurity ):
 
     # myproxy-get-delegation works only with environment variables
     cmdEnv = self._getExternalCmdEnvironment()
-    cmdEnv['X509_USER_PROXY'] = baseProxyLocation
+    cmdEnv['X509_USER_PROXY'] = proxyLocation
 
     cmdArgs = []
     cmdArgs.append( "-s '%s'" % self._secServer )
-    cmdArgs.append( "-t '%s'" % ( lifeTime + 1 ) )
+    cmdArgs.append( "-t '%s'" % ( int( lifeTime / 3600 ) ) )
     cmdArgs.append( "-a '%s'" % proxyLocation )
     cmdArgs.append( "-o '%s'" % newProxyLocation )
     if useDNAsUserName:
@@ -114,15 +114,15 @@ class MyProxy( BaseSecurity ):
       cmdArgs.append( '-l "%s"' % mpUsername )
 
     cmd = "myproxy-get-delegation %s" % " ".join( cmdArgs )
-    gLogger.verbose( "myproxy-get-delegation command:\n%s" % cmd )
+    gLogger.verbose( "myproxy-logon command:\n%s" % cmd )
 
-    result = shellCall( self._secCmdTimeout, cmd, env = environment )
+    result = shellCall( self._secCmdTimeout, cmd, env = cmdEnv )
 
     if proxyDict[ 'tempFile' ]:
         self._unlinkFiles( proxyLocation )
 
     if not result['OK']:
-      errMsg = "Call to myproxy-get-delegation failed: %s" % retVal[ 'Message' ]
+      errMsg = "Call to myproxy-logon failed: %s" % retVal[ 'Message' ]
       self._unlinkFiles( newProxyLocation )
       return S_ERROR( errMsg )
 
@@ -130,7 +130,7 @@ class MyProxy( BaseSecurity ):
 
     # Clean-up files
     if status:
-      errMsg = "Call to myproxy-get-delegation failed"
+      errMsg = "Call to myproxy-logon failed"
       extErrMsg = 'Command: %s; StdOut: %s; StdErr: %s' % ( cmd, result, error )
       self._unlinkFiles( newProxyLocation )
       return S_ERROR( "%s %s" % ( errMsg, extErrMsg ) )
@@ -138,6 +138,6 @@ class MyProxy( BaseSecurity ):
     chain = X509Chain()
     retVal = chain.loadProxyFromFile( newProxyLocation )
     if not retVal[ 'OK' ]:
-      return S_ERROR( "myproxy-get-delegation failed when reading delegated file: %s" % retVal[ 'Message' ] )
+      return S_ERROR( "myproxy-logon failed when reading delegated file: %s" % retVal[ 'Message' ] )
 
     return S_OK( chain )
