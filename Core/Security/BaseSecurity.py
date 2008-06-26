@@ -25,11 +25,11 @@ class BaseSecurity:
     else:
       self.__maxProxyLifeTime = maxProxyLifeTime
     if not server:
-      self._secServer = "myproxy.cern.ch"
+      self._secServer = gConfig.getValue( "/DIRAC/VOPolicy/MyProxyServer", "myproxy.cern.ch" )
     else:
       self._secServer = server
     if not voName:
-      self._secVO = gConfig.getValue( "/DIRAC/VirtualOrganization", "" )
+      self._secVO = gConfig.getValue( "/DIRAC/VirtualOrganization", "unknown" )
     else:
       self._secVO = voName
     ckLoc = Locations.getHostCertificateAndKeyLocation()
