@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.15 2008/06/18 16:15:13 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.16 2008/06/26 06:36:12 atsareg Exp $
 # File :   DiracAdmin.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@ site banning and unbanning, WMS proxy uploading etc.
 
 """
 
-__RCSID__ = "$Id: DiracAdmin.py,v 1.15 2008/06/18 16:15:13 acasajus Exp $"
+__RCSID__ = "$Id: DiracAdmin.py,v 1.16 2008/06/26 06:36:12 atsareg Exp $"
 
 import DIRAC
 from DIRAC.ConfigurationSystem.Client.CSAPI              import CSAPI
@@ -48,7 +48,6 @@ class DiracAdmin:
       self.dbg = True
 
     self.scratchDir = gConfig.getValue(self.section+'/ScratchDir','/tmp')
-    #self.wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
 #    diracAdmin = 'diracAdmin'
 #    self.log.verbose('Setting DIRAC role for current proxy to %s' %diracAdmin)
 #    setDIRACGroup(diracAdmin)
@@ -76,13 +75,14 @@ class DiracAdmin:
     proxy = open(proxy,'r').read()
     activeDN = getCurrentDN()
     dn = activeDN['Value']
-    result = self.wmsAdmin.uploadProxy(proxy,dn,group)
+    wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
+    result = wmsAdmin.uploadProxy(proxy,dn,group)
     if not result['OK']:
       self.log.warn('Uploading proxy failed')
       self.log.warn(result)
       return result
 
-    result = self.wmsAdmin.setProxyPersistencyFlag(permanent,dn,group)
+    result = wmsAdmin.setProxyPersistencyFlag(permanent,dn,group)
     if not result['OK']:
       self.log.warn('Setting proxy update flag failed')
       self.log.warn(result)
@@ -100,7 +100,8 @@ class DiracAdmin:
        @return: S_OK,S_ERROR
 
     """
-    result = self.wmsAdmin.getSiteMask()
+    wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
+    result = wmsAdmin.getSiteMask()
     if result['OK']:
       print self.pPrint.pformat(result['Value'])
     return result
@@ -133,7 +134,8 @@ class DiracAdmin:
 
     """
     self.log.info('Allowing %s in site mask' % site)
-    result = self.wmsAdmin.allowSite(site)
+    wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
+    result = wmsAdmin.allowSite(site)
     return result
 
   #############################################################################
@@ -149,7 +151,8 @@ class DiracAdmin:
 
     """
     self.log.info('Removing %s from site mask' % site)
-    result = self.wmsAdmin.banSite(site)
+    wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
+    result = wmsAdmin.banSite(site)
     return result
 
   #############################################################################
@@ -164,7 +167,8 @@ class DiracAdmin:
        @return: S_OK,S_ERROR
 
     """
-    result = self.wmsAdmin.clearMask()
+    wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
+    result = wmsAdmin.clearMask()
     return result
 
   #############################################################################
@@ -187,7 +191,8 @@ class DiracAdmin:
     if not os.path.exists(directory):
       self.__report('Directory %s does not exist' % directory)
 
-    result = self.wmsAdmin.getProxy(ownerDN,ownerGroup,validity)
+    wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
+    result = wmsAdmin.getProxy(ownerDN,ownerGroup,validity)
     if not result['OK']:
       self.log.warn('Problem retrieving proxy from WMS')
       self.log.warn(result['Message'])
@@ -295,7 +300,8 @@ class DiracAdmin:
     if not os.path.exists(directory):
       self.__report('Directory %s does not exist' % directory)
 
-    result = self.wmsAdmin.getJobPilotOutput(jobID)
+    wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
+    result = wmsAdmin.getJobPilotOutput(jobID)
     if not result['OK']:
       return result
 
@@ -350,7 +356,8 @@ class DiracAdmin:
     if not os.path.exists(directory):
       self.__report('Directory %s does not exist' % directory)
 
-    result = self.wmsAdmin.getPilotOutput(gridReference)
+    wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
+    result = wmsAdmin.getPilotOutput(gridReference)
     if not result['OK']:
       return result
 
@@ -408,7 +415,8 @@ class DiracAdmin:
       except Exception,x:
         return self.__errorReport(str(x),'Expected integer or string for existing jobID')
 
-    result = self.wmsAdmin.getPilots(jobID)
+    wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
+    result = wmsAdmin.getPilots(jobID)
     if result['OK']:
       print self.pPrint.pformat(result['Value'])
     return result
@@ -425,7 +433,8 @@ class DiracAdmin:
        @type job: integer or string
        @return: S_OK,S_ERROR
     """
-    result = self.wmsAdmin.getPilotSummary(startDate,endDate)
+    wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
+    result = wmsAdmin.getPilotSummary(startDate,endDate)
     if not result['OK']:
       return result
 
