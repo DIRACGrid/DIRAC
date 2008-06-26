@@ -1,9 +1,9 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/X509Chain.py,v 1.15 2008/06/26 14:39:47 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/X509Chain.py,v 1.16 2008/06/26 17:47:20 acasajus Exp $
 ########################################################################
 """ X509Chain is a class for managing X509 chains with their Pkeys
 """
-__RCSID__ = "$Id: X509Chain.py,v 1.15 2008/06/26 14:39:47 acasajus Exp $"
+__RCSID__ = "$Id: X509Chain.py,v 1.16 2008/06/26 17:47:20 acasajus Exp $"
 
 import types
 import os
@@ -305,8 +305,8 @@ class X509Chain:
         dnMatch = self.__checkProxyDN( step, step + 1 )
         if not dnMatch:
           if step > 0:
-            self.__firstProxyStep = step
-            checkProxyParth = False
+            self.__firstProxyStep = step-1
+            checkProxyPart = False
           else:
             self.__isProxy = False
             return
@@ -366,10 +366,14 @@ class X509Chain:
     """
     if not self.__loadedChain:
       return S_ERROR( "No chain loaded" )
+    notAfter = self.__certList[0].get_not_after()
     for iC in range( len( self.__certList )-1, -1, -1 ):
+      stepNotAfter = self.__certList[iC].get_not_after()
       if self.__certList[iC].has_expired():
-        return S_OK( self.__certList[iC].get_not_after() )
-    return S_OK( self.__certList[-1].get_not_after() )
+        return S_OK( stepNotAfter )
+      if notAfter > stepNotAfter:
+        notAfter = stepNotAfter
+    return S_OK( notAfter )
 
   def generateProxyRequest( self, bitStrength = 1024, limited = False ):
     """
@@ -441,7 +445,11 @@ class X509Chain:
     """
     if not self.__loadedChain:
       return S_ERROR( "No chain loaded" )
-    return self.getCertInChain(0)[ 'Value' ].getRemainingSecs()
+    remainingSecs = self.getCertInChain(0)[ 'Value' ].getRemainingSecs()[ 'Value' ]
+    for i in range( 1, len( self.__certList ) ):
+      stepRS = self.getCertInChain(i)[ 'Value' ].getRemainingSecs()[ 'Value' ]
+      remainingSecs = min( remainingSecs, stepRS )
+    return S_OK( remainingSecs )
 
   def dumpAllToString( self ):
     """
