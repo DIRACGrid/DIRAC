@@ -1,9 +1,9 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/X509Chain.py,v 1.14 2008/06/25 10:59:40 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/X509Chain.py,v 1.15 2008/06/26 14:39:47 acasajus Exp $
 ########################################################################
 """ X509Chain is a class for managing X509 chains with their Pkeys
 """
-__RCSID__ = "$Id: X509Chain.py,v 1.14 2008/06/25 10:59:40 acasajus Exp $"
+__RCSID__ = "$Id: X509Chain.py,v 1.15 2008/06/26 14:39:47 acasajus Exp $"
 
 import types
 import os
@@ -407,13 +407,13 @@ class X509Chain:
     if lastEntry[0] == "CN" and lastEntry[1] == "limited proxy":
       isLimited = True
     for entryTuple in reqSubj.get_components():
-      if isLimited  and entryTuple[0]== "CN" and lastEntry[1] == "proxy":
+      if isLimited  and entryTuple[0]== "CN" and entryTuple[1] == "proxy":
         return S_ERROR( "Request name is not valid" )
-      if entryTuple[0]== "CN" and lastEntry[1] == "limited proxy":
+      if entryTuple[0]== "CN" and entryTuple[1] == "limited proxy":
         isLimited = True
       newSubj.insert_entry( entryTuple[0], entryTuple[1] )
 
-    if requireLimited and not limited:
+    if requireLimited and not isLimited:
       return S_ERROR( "Limited proxy was required but request wasn't limited" )
 
 

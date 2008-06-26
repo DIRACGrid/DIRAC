@@ -183,7 +183,7 @@ class VOMS( BaseSecurity ):
     Is voms info available?
     """
     vomsEnv = self._getExternalCmdEnvironment( noX509 = True )
-    cmd = 'voms-proxy-info'
+    cmd = 'voms-proxy-info -h'
     result = shellCall( self._secCmdTimeout, cmd, env = vomsEnv )
     if not result['OK']:
       return False
