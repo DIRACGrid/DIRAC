@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/OracleDB.py,v 1.3 2008/06/25 16:05:36 zmathe Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/OracleDB.py,v 1.4 2008/06/26 11:21:31 zmathe Exp $
 ########################################################################
 """ DIRAC Basic Oracle Class
     It provides access to the basic MySQL methods in a multithread-safe mode
@@ -50,7 +50,7 @@
 
 """
 
-__RCSID__ = "$Id: OracleDB.py,v 1.3 2008/06/25 16:05:36 zmathe Exp $"
+__RCSID__ = "$Id: OracleDB.py,v 1.4 2008/06/26 11:21:31 zmathe Exp $"
 
 
 from DIRAC                                  import gLogger
@@ -92,7 +92,7 @@ class OracleDB:
       self.logger = gLogger.getSubLogger( 'Oracle' )
 
     # let the derived class decide what to do with if is not 1
-    self._threadsafe = cx_Oracle.threadsafety()
+    self._threadsafe = cx_Oracle.threadsafety
     self.logger.debug( 'thread_safe = %s' % self._threadsafe )
 
     self.__checkQueueSize( maxQueueSize )
