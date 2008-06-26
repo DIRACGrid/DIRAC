@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/OracleDB.py,v 1.4 2008/06/26 11:21:31 zmathe Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/OracleDB.py,v 1.5 2008/06/26 13:37:47 zmathe Exp $
 ########################################################################
 """ DIRAC Basic Oracle Class
     It provides access to the basic MySQL methods in a multithread-safe mode
@@ -50,7 +50,7 @@
 
 """
 
-__RCSID__ = "$Id: OracleDB.py,v 1.4 2008/06/26 11:21:31 zmathe Exp $"
+__RCSID__ = "$Id: OracleDB.py,v 1.5 2008/06/26 13:37:47 zmathe Exp $"
 
 
 from DIRAC                                  import gLogger
@@ -220,7 +220,7 @@ class OracleDB:
 
   def executeStoredProcedure(self, packageName, parameters, conn = False):
     
-    self.logger.debug( '_query:', cmd)
+    self.logger.debug( '_query:',packageName+"("+str(parameters)+")")
 
     retDict = self.__getConnection( conn = conn )
     if not retDict['OK'] : return retDict
@@ -232,9 +232,9 @@ class OracleDB:
       parameters +=[result]
       cursor.callproc(packageName, parameters)
       results = result.fetchall()
-      retDict = S_OK( res )
+      retDict = S_OK( results )
     except Exception ,x:
-      self.logger.debug( '_query:', cmd )
+      self.logger.debug( '_query:', packageName+"("+str(parameters)+")" )
       retDict = self._except( '_query', x, 'Excution failed.' )
 
     try:
