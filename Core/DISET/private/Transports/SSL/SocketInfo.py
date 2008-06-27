@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfo.py,v 1.24 2008/06/12 16:05:00 acasajus Exp $
-__RCSID__ = "$Id: SocketInfo.py,v 1.24 2008/06/12 16:05:00 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfo.py,v 1.25 2008/06/27 15:51:13 acasajus Exp $
+__RCSID__ = "$Id: SocketInfo.py,v 1.25 2008/06/27 15:51:13 acasajus Exp $"
 
 import time
 import copy
@@ -43,13 +43,17 @@ class SocketInfo:
     if not self.infoDict[ 'clientMode' ]:
       certList.insert( 0, self.sslSocket.get_peer_certificate() )
     peerChain = X509Chain( certList = certList )
-    if peerChain.isProxy()['Value']:
+    isProxyChain = peerChain.isProxy()['Value']
+    isLimitedProxyChain = peerChain.isLimitedProxy()['Value']
+    if isProxyChain:
       identitySubject = peerChain.getIssuerCert()['Value'].getSubjectNameObject()[ 'Value' ]
     else:
       identitySubject = peerChain.getCertInChain( 0 )['Value'].getSubjectNameObject()[ 'Value' ]
     credDict = { 'DN' : identitySubject.one_line(),
                  'CN' : identitySubject.commonName,
-                 'x509Chain' : peerChain }
+                 'x509Chain' : peerChain,
+                 'isProxy' : isProxyChain,
+                 'isLimitedProxy' : isLimitedProxyChain }
     diracGroup = peerChain.getDIRACGroup()
     if diracGroup[ 'OK' ] and diracGroup[ 'Value' ]:
       credDict[ 'group' ] = diracGroup[ 'Value' ]
@@ -133,7 +137,7 @@ class SocketInfo:
 
   def __generateContextWithProxyString( self ):
     proxyString = self.infoDict[ 'proxyString' ]
-    chain = Locations.X509Chain()
+    chain = X509Chain()
     retVal = chain.loadChainFromString( proxyString )
     if not retVal[ 'OK' ]:
       DIRAC.abort( 10, "proxy string is invalid. Cert chain can't be loaded" )
