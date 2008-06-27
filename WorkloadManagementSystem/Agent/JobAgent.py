@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.37 2008/06/27 08:26:23 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.38 2008/06/27 11:38:15 paterson Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.37 2008/06/27 08:26:23 paterson Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.38 2008/06/27 11:38:15 paterson Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -184,7 +184,7 @@ class JobAgent(Agent):
       self.__setJobSite(jobID,self.siteName)
       self.__reportPilotInfo(jobID)
       getProxy = True
-      if params.has_key['PilotType']:
+      if params.has_key('PilotType'):
         if params['PilotType'].lower()=='private':
           getProxy=False
 
