@@ -19,7 +19,7 @@ class BaseSecurity:
     if timeout:
       self._secCmdTimeout = timeout
     else:
-      self._secCmdTimeout = 0
+      self._secCmdTimeout = 600
     if not maxProxyLifeTime:
       self.__maxProxyLifeTime = 604800 # 1week
     else:
