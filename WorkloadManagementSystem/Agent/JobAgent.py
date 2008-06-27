@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.36 2008/06/19 16:41:50 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.37 2008/06/27 08:26:23 paterson Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.36 2008/06/19 16:41:50 paterson Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.37 2008/06/27 08:26:23 paterson Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -183,17 +183,23 @@ class JobAgent(Agent):
       self.__report(jobID,'Matched','Job Received by Agent')
       self.__setJobSite(jobID,self.siteName)
       self.__reportPilotInfo(jobID)
-      proxyResult = self.__setupProxy(jobID,ownerDN,jobGroup,self.siteRoot,jobCPUReqt)
-      if not proxyResult['OK']:
-        self.log.warn('Problem while setting up proxy for job %s' %(jobID))
-        self.__report(jobID,'Failed','Invalid Proxy')
-        return self.__finish('Invalid Proxy')
+      getProxy = True
+      if params.has_key['PilotType']:
+        if params['PilotType'].lower()=='private':
+          getProxy=False
 
-      proxyTuple = proxyResult['Value']
-      proxyLogging = self.__changeProxy(proxyTuple[1],proxyTuple[0])
-      if not proxyLogging['OK']:
-        self.log.warn('Problem while changing the proxy for job %s' %jobID)
-        return proxyLogging
+      if getProxy:
+        proxyResult = self.__setupProxy(jobID,ownerDN,jobGroup,self.siteRoot,jobCPUReqt)
+        if not proxyResult['OK']:
+          self.log.warn('Problem while setting up proxy for job %s' %(jobID))
+          self.__report(jobID,'Failed','Invalid Proxy')
+          return self.__finish('Invalid Proxy')
+
+        proxyTuple = proxyResult['Value']
+        proxyLogging = self.__changeProxy(proxyTuple[1],proxyTuple[0])
+        if not proxyLogging['OK']:
+          self.log.warn('Problem while changing the proxy for job %s' %jobID)
+          return proxyLogging
 
       saveJDL = self.__saveJobJDLRequest(jobID,jobJDL)
       self.__report(jobID,'Matched','Job Prepared to Submit')
@@ -223,12 +229,13 @@ class JobAgent(Agent):
         return self.__finish('Problem Creating Job Wrapper')
 
       self.log.verbose('After %sCE submitJob()' %(self.ceName))
-      self.log.info('Restoring original proxy %s' %(proxyTuple[1]))
-      restoreProxy(proxyTuple[0],proxyTuple[1])
-      proxyLogging = self.__changeProxy(proxyTuple[1],proxyTuple[0])
-      if not proxyLogging['OK']:
-        self.log.warn('Problem while changing back the proxy from job %s' %jobID)
-        self.__finish('Job processing failed with exception')
+      if getProxy:
+        self.log.info('Restoring original proxy %s' %(proxyTuple[1]))
+        restoreProxy(proxyTuple[0],proxyTuple[1])
+        proxyLogging = self.__changeProxy(proxyTuple[1],proxyTuple[0])
+        if not proxyLogging['OK']:
+          self.log.warn('Problem while changing back the proxy from job %s' %jobID)
+          self.__finish('Job processing failed with exception')
     except Exception, x:
       self.log.exception(x)
       result = self.jobManager.rescheduleJob(jobID)
