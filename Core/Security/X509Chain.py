@@ -1,9 +1,9 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/X509Chain.py,v 1.16 2008/06/26 17:47:20 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/X509Chain.py,v 1.17 2008/06/27 10:39:56 acasajus Exp $
 ########################################################################
 """ X509Chain is a class for managing X509 chains with their Pkeys
 """
-__RCSID__ = "$Id: X509Chain.py,v 1.16 2008/06/26 17:47:20 acasajus Exp $"
+__RCSID__ = "$Id: X509Chain.py,v 1.17 2008/06/27 10:39:56 acasajus Exp $"
 
 import types
 import os
@@ -433,7 +433,6 @@ class X509Chain:
     childCert.sign( self.__keyObj, 'md5' )
 
     childString = crypto.dump_certificate( crypto.FILETYPE_PEM, childCert )
-    print childString
     for i in range( len( self.__certList ) ):
       childString += crypto.dump_certificate( crypto.FILETYPE_PEM, self.__certList[i] )
 
