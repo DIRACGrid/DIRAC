@@ -1,14 +1,14 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Plotting.py,v 1.4 2008/06/05 18:01:00 acsmith Exp $
-__RCSID__ = "$Id: Plotting.py,v 1.4 2008/06/05 18:01:00 acsmith Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Plotting.py,v 1.5 2008/06/27 10:38:08 rgracian Exp $
+__RCSID__ = "$Id: Plotting.py,v 1.5 2008/06/27 10:38:08 rgracian Exp $"
 """
    A simple set of wrapper functions for creating plots (based on the examples
    from the graph tool).
 """
 from DIRAC import S_OK, S_ERROR, gLogger
-from graphs.common_graphs import PieGraph
-from graphs.common_graphs import BarGraph
-from graphs.common_graphs import CumulativeGraph
-from tools.common import expand_string
+from graphtool.graphs.common_graphs import PieGraph
+from graphtool.graphs.common_graphs import BarGraph
+from graphtool.graphs.common_graphs import CumulativeGraph
+from graphtool.tools.common import expand_string
 from pylab import *
 
 import os,time
