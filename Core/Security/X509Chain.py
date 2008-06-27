@@ -1,9 +1,9 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/X509Chain.py,v 1.17 2008/06/27 10:39:56 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/X509Chain.py,v 1.18 2008/06/27 15:50:48 acasajus Exp $
 ########################################################################
 """ X509Chain is a class for managing X509 chains with their Pkeys
 """
-__RCSID__ = "$Id: X509Chain.py,v 1.17 2008/06/27 10:39:56 acasajus Exp $"
+__RCSID__ = "$Id: X509Chain.py,v 1.18 2008/06/27 15:50:48 acasajus Exp $"
 
 import types
 import os
@@ -257,6 +257,14 @@ class X509Chain:
       return S_ERROR( "No chain loaded" )
     return S_OK( self.__isProxy )
 
+  def isLimitedProxy(self):
+    """
+    Check wether this chain is a proxy
+    """
+    if not self.__loadedChain:
+      return S_ERROR( "No chain loaded" )
+    return S_OK( self.__isProxy and self.__isLimitedProxy )
+
   def isValidProxy( self ):
     """
     Check wether this chain is a valid proxy
@@ -290,7 +298,8 @@ class X509Chain:
   def __checkProxyness( self ):
     self.__firstProxyStep = len( self.__certList )-2 # -1 is user cert by default, -2 is first proxy step
     self.__isProxy = True
-    checkProxyPart = True
+    self.__isLimitedProxy = False
+    prevDNMatch = 2
     #If less than 2 steps in the chain is no proxy
     if len( self.__certList ) < 2:
       self.__isProxy = False
@@ -301,30 +310,47 @@ class X509Chain:
       if not issuerMatch:
         self.__isProxy = False
         return
-      if checkProxyPart:
+      #Do we need to check the proxy DN?
+      if prevDNMatch:
         dnMatch = self.__checkProxyDN( step, step + 1 )
-        if not dnMatch:
+        #No DN match
+        if dnMatch == 0:
+          #If we are not in the first step we've found the entity cert
           if step > 0:
             self.__firstProxyStep = step-1
             checkProxyPart = False
+          #If we are in the first step this is not a proxy
           else:
             self.__isProxy = False
             return
+        #Limited proxy DN match
+        elif dnMatch == 2:
+          self.__isLimitedProxy = True
+          if prevDNMatch != 2:
+            self.__isProxy = False
+            self.__isLimitedProxy = False
+            return
+        prevDNMatch = dnMatch
 
   def __checkProxyDN( self, certStep, issuerStep ):
     """
     Check the proxy DN in a step in the chain
+     0 = no match
+     1 = proxy match
+     2 = limited proxy match
     """
     issuerSubject = self.__certList[ issuerStep ].get_subject()
     proxySubject = self.__certList[ certStep ].get_subject().clone()
     psEntries =  proxySubject.num_entries()
     lastEntry = proxySubject.get_entry( psEntries - 1 )
     if lastEntry[0] != 'CN' or lastEntry[1] not in ( 'proxy', 'limited proxy' ):
-      return False
+      return 0
     proxySubject.remove_entry( psEntries - 1 )
     if not issuerSubject.one_line() == proxySubject.one_line():
-      return False
-    return True
+      return 0
+    if lastEntry[1] == "limited proxy":
+      return 2
+    return 1
 
   def __checkIssuer( self, certStep, issuerStep ):
     """
@@ -523,13 +549,12 @@ class X509Chain:
   def getCredentials(self):
     if not self.__loadedChain:
       return S_ERROR( "No chain loaded" )
-    retVal = self.isProxy()
-    isProxy = retVal[ 'Value' ]
     credDict = { 'subject' : self.__certList[0].get_subject().one_line(),
-                 'isProxy' : isProxy,
+                 'isProxy' : self.__isProxy,
+                 'isLimitedProxy' : self.__isProxy and self.__isLimitedProxy,
                  'validDN' : False,
                  'validGroup' : False }
-    if isProxy:
+    if self.__isProxy:
       retVal = self.getDIRACGroup()
       if not retVal[ 'OK' ]:
         return retVal
