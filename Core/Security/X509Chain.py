@@ -1,9 +1,9 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/X509Chain.py,v 1.18 2008/06/27 15:50:48 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/X509Chain.py,v 1.19 2008/06/27 16:44:38 acasajus Exp $
 ########################################################################
 """ X509Chain is a class for managing X509 chains with their Pkeys
 """
-__RCSID__ = "$Id: X509Chain.py,v 1.18 2008/06/27 15:50:48 acasajus Exp $"
+__RCSID__ = "$Id: X509Chain.py,v 1.19 2008/06/27 16:44:38 acasajus Exp $"
 
 import types
 import os
@@ -438,7 +438,7 @@ class X509Chain:
       isLimited = True
     for entryTuple in reqSubj.get_components():
       if isLimited  and entryTuple[0]== "CN" and entryTuple[1] == "proxy":
-        return S_ERROR( "Request name is not valid" )
+        return S_ERROR( "Request is for a full proxy and chain is a limited one" )
       if entryTuple[0]== "CN" and entryTuple[1] == "limited proxy":
         isLimited = True
       newSubj.insert_entry( entryTuple[0], entryTuple[1] )
