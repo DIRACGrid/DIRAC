@@ -1,15 +1,16 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyManagerClient.py,v 1.1 2008/06/25 20:00:50 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyManagerClient.py,v 1.2 2008/06/27 15:50:21 acasajus Exp $
 ########################################################################
 """ ProxyManagementAPI has the functions to "talk" to the ProxyManagement service
 """
-__RCSID__ = "$Id: ProxyManagerClient.py,v 1.1 2008/06/25 20:00:50 acasajus Exp $"
+__RCSID__ = "$Id: ProxyManagerClient.py,v 1.2 2008/06/27 15:50:21 acasajus Exp $"
 
 import os
 import datetime
+import types
 from DIRAC.Core.Utilities import Time, ThreadSafe
 from DIRAC.Core.Security import Locations, CS
-from DIRAC.Core.Security.X509Chain import X509Chain
+from DIRAC.Core.Security.X509Chain import X509Chain, g_X509ChainType
 from DIRAC.Core.Security.X509Request import X509Request
 from DIRAC.Core.Security.VOMS import VOMS
 from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -33,6 +34,18 @@ class ProxyManagerClient:
     except:
       pass
 
+  def __refreshUserCache( self, validSeconds = 0 ):
+    rpcClient = RPCClient( "Framework/ProxyManager" )
+    retVal = rpcClient.getRegisteredUsers( validSeconds )
+    if not retVal[ 'OK' ]:
+      return retVal
+    data = retVal[ 'Value' ]
+    #Update the cache
+    for record in data:
+      cacheKey = ( record[ 'DN' ], record[ 'group' ] )
+      self.__usersCache.add( cacheKey, record[ 'expirationtime' ], record )
+    return S_OK()
+
   @gUsersSync
   def userHasProxy( self, userDN, userGroup, validSeconds = 0 ):
     """
@@ -43,43 +56,91 @@ class ProxyManagerClient:
     cacheKey = ( userDN, userGroup )
     if self.__usersCache.exists( cacheKey, validSeconds ):
       return S_OK( True )
-    rpcClient = RPCClient( "Framework/ProxyManager" )
     #Get list of users from the DB with proxys at least 300 seconds
     gLogger.verbose( "Updating list of users in proxy management" )
-    retVal = rpcClient.getRegisteredUsers( validSeconds )
+    retVal = self.__refreshUserCache( validSeconds )
     if not retVal[ 'OK' ]:
       return retVal
-    data = retVal[ 'Value' ]
-    #Update the cache
-    for record in data:
-      self.__usersCache.add( cacheKey, record[ 'expirationtime' ] )
     return S_OK( self.__usersCache.exists( cacheKey, validSeconds ) )
 
-  def uploadProxy( self, proxyLocation = False ):
+  @gUsersSync
+  def getUserPersistence( self, userDN, userGroup, validSeconds = 0 ):
+    """
+    Check if a user(DN-group) has a proxy in the proxy management
+      - Updates internal cache if needed to minimize queries to the
+          service
+    """
+    cacheKey = ( userDN, userGroup )
+    userData = self.__usersCache.get( cacheKey, validSeconds )
+    if userData:
+      if userData[ 'persistent' ]:
+        return S_OK( True )
+    #Get list of users from the DB with proxys at least 300 seconds
+    gLogger.verbose( "Updating list of users in proxy management" )
+    retVal = self.__refreshUserCache( validSeconds )
+    if not retVal[ 'OK' ]:
+      return retVal
+    userData = self.__usersCache.get( cacheKey, validSeconds )
+    if userData:
+      return S_OK( userData[ 'persistent' ] )
+    return S_OK( False )
+
+  def setPersistency( self, userDN, userGroup, persistent ):
+    """
+    Set the persistency for user/group
+    """
+    #Hack to ensure bool in the rpc call
+    persistentFlag = True
+    if not persistent:
+      persistentFlag = False
+    rpcClient = RPCClient( "Framework/ProxyManager" )
+    retVal = rpcClient.setPersistency( userDN, userGroup, persistentFlag )
+    if not retVal[ 'OK' ]:
+      return retVal
+    #Update internal persistency cache
+    cacheKey = ( userDN, userGroup )
+    record = self.__usersCache.get( cacheKey, 0 )
+    if record:
+      record[ 'persistent' ] = persistentFlag
+      self.__usersCache.add( cacheKey, record[ 'expirationtime' ], record )
+    return retVal
+
+  def uploadProxy( self, proxy = False ):
     """
     Upload a proxy to the proxy management service using delgation
     """
     #Discover proxy location
-    if not proxyLocation:
-      proxyLocation = Locations.getProxyLocation()
-    if not proxyLocation:
-      return S_ERROR( "Can't find a valid proxy" )
+    if type( proxy ) == g_X509ChainType:
+      chain = proxy
+    else:
+      if not proxy:
+        proxyLocation = Locations.getProxyLocation()
+      elif type( proxy ) in ( types.StringType, types.UnicodeType ):
+        proxyLocation = proxy
+      else:
+        return S_ERROR( "Can't find a valid proxy" )
+      chain = X509Chain()
+      retVal = chain.loadProxyFromFile( proxyLocation )
+      if not retVal[ 'OK' ]:
+        return S_ERROR( "Can't load %s: %s " % ( proxyLocation, retVal[ 'Message' ] ) )
 
-    #Load proxy and make sure it's valid
-    chain = X509Chain()
-    retVal = chain.loadProxyFromFile( proxyLocation )
-    if not retVal[ 'OK' ]:
-      return retVal
+    #Make sure it's valid
     if chain.hasExpired()[ 'Value' ]:
       return S_ERROR( "Proxy %s has expired" % proxyLocation )
+    retVal = chain.dumpAllToString()
+    if not retVal[ 'OK' ]:
+      return retVal
+    chainPem = retVal[ 'Value' ]
 
-    rpcClient = RPCClient( "Framework/ProxyManager", proxyLocation = proxyLocation )
+    rpcClient = RPCClient( "Framework/ProxyManager", proxyString = chainPem )
     #Get a delegation request
     retVal = rpcClient.requestDelegation()
     if not retVal[ 'OK' ]:
       return retVal
+    #Check if the delegation has been granted
+    if 'Value' not in retVal or not retVal[ 'Value' ]:
+      return S_OK()
     reqDict = retVal[ 'Value' ]
-    print reqDict['id']
     #Generate delegated chain
     retVal = chain.generateChainFromRequestString( reqDict[ 'request' ] )
     if not retVal[ 'OK' ]:

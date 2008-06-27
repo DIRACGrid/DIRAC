@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Agent/Attic/ProxyRenewalAgent.py,v 1.1 2008/06/25 20:00:52 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Agent/MyProxyRenewalAgent.py,v 1.1 2008/06/27 15:50:20 acasajus Exp $
 ########################################################################
 
 """  Proxy Renewal agent is the key element of the Proxy Repository
@@ -11,9 +11,9 @@ from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.FrameworkSystem.DB.ProxyDB import ProxyDB
 from DIRAC.Core.Utilities.ThreadPool import ThreadPool
 
-AGENT_NAME = 'Framework/ProxyRenewalAgent'
+AGENT_NAME = 'Framework/MyProxyRenewalAgent'
 
-class ProxyRenewalAgent(Agent):
+class MyProxyRenewalAgent(Agent):
 
   def __init__(self):
     """ Standard constructor
@@ -25,7 +25,7 @@ class ProxyRenewalAgent(Agent):
 
     requiredLifeTime = gConfig.getValue( "%s/MinimumLifeTime" % self.section, 3600 )
     renewedLifeTime = gConfig.getValue( "%s/RenewedLifeTime" % self.section, 54000 )
-    myProxyServer = gConfig.getValue( "%s/MyProxyServer" % self.section, "myproxy.cern.ch" )
+    myProxyServer = gConfig.getValue( "/DIRAC/VOPolicy/MyProxyServer" , "myproxy.cern.ch" )
     self.proxyDB = ProxyDB( requireVoms = True,
                             useMyProxy = True,
                             MyProxyServer = myProxyServer )
@@ -60,9 +60,9 @@ class ProxyRenewalAgent(Agent):
     if retVal[ 'OK' ]:
       gLogger.info( " purged %s requests" % retVal[ 'Value' ] )
     gLogger.info( "Purging expired proxies" )
+    retVal = self.proxyDB.purgeExpiredProxies()
     if retVal[ 'OK' ]:
       gLogger.info( " purged %s proxies" % retVal[ 'Value' ] )
-    self.proxyDB.purgeExpiredProxies()
     retVal = self.proxyDB.getCredentialsAboutToExpire( gConfig.getValue( "%s/MinimumLifeTime" % self.section, 3600 ) )
     if not retVal[ 'OK' ]:
       return retVal

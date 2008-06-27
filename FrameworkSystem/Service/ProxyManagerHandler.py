@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/ProxyManagerHandler.py,v 1.1 2008/06/25 20:00:51 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/ProxyManagerHandler.py,v 1.2 2008/06/27 15:50:21 acasajus Exp $
 ########################################################################
 
 """ ProxyManager is the implementation of the ProxyManagement service
     in the DISET framework
 """
 
-__RCSID__ = "$Id: ProxyManagerHandler.py,v 1.1 2008/06/25 20:00:51 acasajus Exp $"
+__RCSID__ = "$Id: ProxyManagerHandler.py,v 1.2 2008/06/27 15:50:21 acasajus Exp $"
 
 import types
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -23,7 +23,7 @@ def initializeProxyManagerHandler( serviceInfo ):
   serviceCS = serviceInfo [ 'serviceSectionPath' ]
   requireVoms = gConfig.getValue( "%s/requireVOMS" % serviceCS, "yes" ).lower() in ( "yes", "y", "1" )
   useMyProxy = gConfig.getValue( "%s/UseMyProxy" % serviceCS, "yes" ).lower() in ( "yes", "y", "1" )
-  MyProxyServer = gConfig.getValue( "%s/MyProxyServer" % serviceCS, "myproxy.cern.ch" )
+  MyProxyServer = gConfig.getValue( "/DIRAC/VOPolicy/MyProxyServer", "myproxy.cern.ch" )
   gLogger.info( "VOMS: %s\nMyProxy: %s\n MyProxy Server: %s" % ( requireVoms, useMyProxy, MyProxyServer ) )
   try:
     gProxyDB = ProxyDB( requireVoms = requireVoms,
@@ -40,7 +40,17 @@ class ProxyManagerHandler( RequestHandler ):
     """ Request a delegation. Send a delegation request to client
     """
     credDict = self.getRemoteCredentials()
-    return gProxyDB.generateDelegationRequest( credDict[ 'x509Chain' ], credDict[ 'DN' ], credDict[ 'group' ] )
+    userDN = credDict[ 'DN' ]
+    userGroup = credDict[ 'group' ]
+    retVal = gProxyDB.getRemainingTime( userDN, userGroup )
+    if not retVal[ 'OK' ]:
+      return retVal
+    remainingSecs = retVal[ 'Value' ]
+    csOption = "%s/SkipUploadLifeTime" % self.serviceInfoDict[ 'serviceSectionPath' ]
+    #If we have a proxy longer than 12h it's not needed
+    if remainingSecs > gConfig.getValue( csOption, 43200 ):
+      return S_OK()
+    return gProxyDB.generateDelegationRequest( credDict[ 'x509Chain' ], userDN, userGroup )
 
   types_completeDelegation = [ ( types.IntType, types.LongType ), types.StringType ]
   def export_completeDelegation( self, requestId, pemChain ):
@@ -81,3 +91,10 @@ class ProxyManagerHandler( RequestHandler ):
     if not retVal[ 'OK' ]:
       return retVal
     return S_OK( retVal[ 'Value' ] )
+
+  types_setPersistency = [ types.StringType, types.StringType, types.BooleanType ]
+  def export_setPersistency( self, userDN, userGroup, persistentFlag ):
+    """
+    Set the persistency for a given dn/group
+    """
+    return gProxyDB.setPersistencyFlag( userDN, userGroup, persistentFlag )

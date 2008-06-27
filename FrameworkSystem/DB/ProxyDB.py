@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.1 2008/06/25 20:00:50 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.2 2008/06/27 15:50:20 acasajus Exp $
 ########################################################################
 """ ProxyRepository class is a front-end to the proxy repository Database
 """
 
-__RCSID__ = "$Id: ProxyDB.py,v 1.1 2008/06/25 20:00:50 acasajus Exp $"
+__RCSID__ = "$Id: ProxyDB.py,v 1.2 2008/06/27 15:50:20 acasajus Exp $"
 
 import time
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
@@ -187,10 +187,12 @@ class ProxyDB(DB):
     """ Store user proxy into the Proxy repository for a user specified by his
         DN and group.
     """
+    #Get remaining secs
     retVal = chain.getRemainingSecs()
     if not retVal[ 'OK' ]:
       return retVal
     remainingSecs = retVal[ 'Value' ]
+    #Compare the DNs
     retVal = chain.getIssuerCert()
     if not retVal[ 'OK' ]:
       return retVal
@@ -200,6 +202,7 @@ class ProxyDB(DB):
       vMsg = "Proxy says %s and credentials are %s" % ( proxyIdentityDN, userDN )
       gLogger.error( msg, vMsg )
       return S_ERROR(  "%s. %s" % ( msg, vMsg ) )
+    #Check the groups
     retVal = chain.getDIRACGroup()
     if not retVal[ 'OK' ]:
       return retVal
@@ -211,26 +214,31 @@ class ProxyDB(DB):
       vMsg = "Proxy says %s and credentials are %s" % ( proxyGroup, userGroup )
       gLogger.error( msg, vMsg )
       return S_ERROR(  "%s. %s" % ( msg, vMsg ) )
+    #Check if its limited
+    if chain.isLimitedProxy()['Value']:
+      return S_ERROR( "Limited proxies are not allowed to be stored" )
     gLogger.info( "Storing proxy for credentials %s (%s secs)" %( proxyIdentityDN,remainingSecs ) )
 
     # Check what we have already got in the repository
-    cmd = "SELECT TIMESTAMPDIFF( SECOND, NOW(), ExpirationTime ) FROM `ProxyDB_Proxies` WHERE UserDN='%s' AND UserGroup='%s'" % ( userDN,
+    cmd = "SELECT TIMESTAMPDIFF( SECOND, NOW(), ExpirationTime ), Pem FROM `ProxyDB_Proxies` WHERE UserDN='%s' AND UserGroup='%s'" % ( userDN,
                                                                                                                userGroup)
     result = self._query( cmd )
     if not result['OK']:
       return result
     # check if there is a previous ticket for the DN
     data = result[ 'Value' ]
-    insert = True
-    if data:
-      insert = False
-      remainingSecsInDB = result['Value'][0][0]
-      if remainingSecs <= remainingSecsInDB:
-        gLogger.info( "Proxy stored is longer than uploaded, omitting.", "%s in uploaded, %s in db" % (remainingSecs, remainingSecsInDB ) )
-        return S_OK()
+    sqlInsert = True
+    if len( data ) > 0:
+      sqlInsert = False
+      pem = data[0][1]
+      if pem:
+        remainingSecsInDB = data[0][0]
+        if remainingSecs <= remainingSecsInDB:
+          gLogger.info( "Proxy stored is longer than uploaded, omitting.", "%s in uploaded, %s in db" % (remainingSecs, remainingSecsInDB ) )
+          return S_OK()
 
     pemChain = chain.dumpAllToString()['Value']
-    if insert:
+    if sqlInsert:
       cmd = "INSERT INTO `ProxyDB_Proxies` ( UserDN, UserGroup, Pem, ExpirationTime, PersistentFlag ) VALUES "
       cmd += "( '%s', '%s', '%s', TIMESTAMPADD( SECOND, %s, NOW() ), 'False' )" % ( userDN,
                                                                                   userGroup,
@@ -266,7 +274,7 @@ class ProxyDB(DB):
     if not retVal['OK']:
       return retVal
     data = retVal[ 'Value' ]
-    if len( data ) == 0:
+    if len( data ) == 0 or not data[0][0]:
       return S_ERROR( "%s@%s has no proxy registered" % ( userDN, userGroup ) )
     return S_OK( ( data[0][0], data[0][1] ) )
 
@@ -291,10 +299,14 @@ class ProxyDB(DB):
     if not retVal[ 'OK' ]:
       return retVal
     chain = retVal[ 'Value' ]
+    retVal = chain.getDIRACGroup()
+    if not retVal[ 'OK' ]:
+      return S_ERROR( "Can't retrieve DIRAC Group from renewed proxy: %s" % retVal[ 'Message' ] )
+    chainGroup = retVal['Value']
+    if chainGroup != userGroup:
+      return S_ERROR( "Mismatch between renewed proxy group and expected: %s vs %s" % ( userGroup, chainGroup ) )
     self.storeProxy( userDN, userGroup, chain )
     return S_OK( chain )
-
-
 
   def getProxy( self, userDN, userGroup, requiredLifeTime = False ):
     """ Get proxy string from the Proxy Repository for use with userDN
@@ -322,6 +334,19 @@ class ProxyDB(DB):
       return S_ERROR( "%s@%s has no proxy registered" % ( userDN, userGroup ) )
     return S_OK( chain )
 
+  def getRemainingTime( self, userDN, userGroup ):
+    """
+    Returns the remaining time the proxy is valid
+    """
+    cmd = "SELECT TIMESTAMPDIFF( SECOND, NOW(), ExpirationTime ) FROM `ProxyDB_Proxies`"
+    retVal = self._query( "%s WHERE UserDN = '%s' AND UserGroup = '%s'" % ( cmd, userDN, userGroup ) )
+    if not retVal[ 'OK' ]:
+      return retVal
+    data = retVal[ 'Value' ]
+    if not data:
+      return S_OK( 0 )
+    return S_OK( int( data[0][0] ) )
+
   def getUsers( self, validSecondsLeft = 0 ):
     """ Get all the distinct users from the Proxy Repository. Optionally, only users
         with valid proxies within the given validity period expressed in seconds
@@ -335,7 +360,10 @@ class ProxyDB(DB):
       return retVal
     data = []
     for record in retVal[ 'Value' ]:
-      data.append( { 'DN' : record[0], 'group' : record[1], 'expirationtime' : record[2] } )
+      data.append( { 'DN' : record[0],
+                     'group' : record[1],
+                     'expirationtime' : record[2],
+                     'persistent' : record[3] == 'True' } )
     return S_OK( data )
 
   def getCredentialsAboutToExpire( self, requiredSecondsLeft, onlyPersistent = True ):
@@ -345,16 +373,33 @@ class ProxyDB(DB):
       cmd += " AND PersistentFlag = 'True'"
     return self._query( cmd )
 
-  def setPersistencyFlag( self, userDN, userGroup, flag = True ):
+  def setPersistencyFlag( self, userDN, userGroup, persistent = True ):
     """ Set the proxy PersistentFlag to the flag value
     """
-
-    if flag:
+    if persistent:
       sqlFlag="True"
     else:
       sqlFlag="False"
-    cmd = "UPDATE `ProxyDB_Proxies` SET PersistentFlag='%s' WHERE UserDN='%s' AND UserGroup='%s'" % ( sqlFlag,
+    retVal = self._query( "SELECT PersistentFlag FROM `ProxyDB_Proxies` WHERE UserDN='%s' AND UserGroup='%s'" % ( userDN, userGroup ) )
+    sqlInsert = True
+    if retVal[ 'OK' ]:
+      data = retVal[ 'Value' ]
+      if len( data ) > 0:
+        sqlInsert = False
+        if data[0][0] == sqlFlag:
+          return S_OK()
+    if sqlInsert:
+      #If it's not in the db and we're removing the persistency then do nothing
+      if not persistent:
+        return S_OK()
+      cmd = "INSERT INTO `ProxyDB_Proxies` ( UserDN, UserGroup, Pem, ExpirationTime, PersistentFlag ) VALUES "
+      cmd += "( '%s', '%s', '', NOW(), 'True' )" % ( userDN, userGroup )
+    else:
+      cmd = "UPDATE `ProxyDB_Proxies` SET PersistentFlag='%s' WHERE UserDN='%s' AND UserGroup='%s'" % ( sqlFlag,
                                                                                             userDN,
                                                                                             userGroup )
 
-    return self._update(cmd)
+    retVal = self._update(cmd)
+    if not retVal[ 'OK' ]:
+      return retVal
+    return S_OK()
