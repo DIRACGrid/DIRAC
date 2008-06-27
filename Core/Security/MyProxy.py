@@ -113,7 +113,7 @@ class MyProxy( BaseSecurity ):
     else:
       cmdArgs.append( '-l "%s"' % mpUsername )
 
-    cmd = "myproxy-get-delegation %s" % " ".join( cmdArgs )
+    cmd = "myproxy-logon %s" % " ".join( cmdArgs )
     gLogger.verbose( "myproxy-logon command:\n%s" % cmd )
 
     result = shellCall( self._secCmdTimeout, cmd, env = cmdEnv )
