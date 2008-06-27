@@ -1,15 +1,15 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.4 2008/05/11 09:31:31 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.5 2008/06/27 11:03:55 rgracian Exp $
 ########################################################################
 
 """  The Pilot Status Agent updates the status of the pilot jobs if the 
      PilotAgents database.
 """
 
-__RCSID__ = "$Id: PilotStatusAgent.py,v 1.4 2008/05/11 09:31:31 rgracian Exp $"
+__RCSID__ = "$Id: PilotStatusAgent.py,v 1.5 2008/06/27 11:03:55 rgracian Exp $"
 
 from DIRAC.Core.Base.Agent import Agent
-from DIRAC import S_OK, S_ERROR, gConfig, gLogger
+from DIRAC import S_OK, S_ERROR, gConfig, gLogger, Source
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC.WorkloadManagementSystem.DB.ProxyRepositoryDB import ProxyRepositoryDB
 from DIRAC.Core.Utilities.GridCredentials import setupProxy
@@ -272,9 +272,19 @@ class PilotStatusAgent(Agent):
   def __exeCommand(self,cmd):
     """Runs a submit / list-match command and prints debugging information.
     """
+    gridEnv = "/afs/cern.ch/lhcb/scripts/GridEnv"
+    ret = Source( 60, [gridEnv] )
+    if not ret['OK']:
+      DIRAC.gLogger.info( ret['Message'])
+      if ret['stdout']:
+        DIRAC.gLogger.info( ret['stdout'] )
+      if ret['stderr']:
+        DIRAC.gLogger.warn( ret['stderr'] )
+      return False
+
     start = time.time()
     self.log.verbose( cmd )
-    result = shellCall(60,cmd)
+    result = shellCall(60,cmd,env=ret['outputEnv'])
 
     status = result['Value'][0]
     stdout = result['Value'][1]
