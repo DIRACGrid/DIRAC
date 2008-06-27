@@ -49,6 +49,7 @@ class ReplicationPlacementAgent(Agent):
     activeTransforms = []
     if not res['OK']:
       gLogger.error("ReplicationPlacementAgent.execute: Failed to get transformations.", res['Message'])
+      return S_OK()
 
     for transDict in res['Value']:
       transName = transDict['Name']
