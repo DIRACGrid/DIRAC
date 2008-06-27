@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.2 2008/06/27 15:50:20 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.3 2008/06/27 16:46:03 acasajus Exp $
 ########################################################################
 """ ProxyRepository class is a front-end to the proxy repository Database
 """
 
-__RCSID__ = "$Id: ProxyDB.py,v 1.2 2008/06/27 15:50:20 acasajus Exp $"
+__RCSID__ = "$Id: ProxyDB.py,v 1.3 2008/06/27 16:46:03 acasajus Exp $"
 
 import time
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
@@ -73,14 +73,18 @@ class ProxyDB(DB):
     if not retVal[ 'OK' ]:
       return retVal
     request = retVal[ 'Value' ]
-    retVal = request.dumpAll()
+    retVal = request.dumpRequest()
     if not retVal[ 'OK' ]:
       return retVal
     reqStr = retVal[ 'Value' ]
+    retVal = request.dumpPKey()
+    if not retVal[ 'OK' ]:
+      return retVal
+    allStr = reqStr + retVal[ 'Value' ]
     cmd = "INSERT INTO `ProxyDB_Requests` ( Id, UserDN, UserGroup, Pem, ExpirationTime )"
     cmd += " VALUES ( 0, '%s', '%s', '%s', TIMESTAMPADD( SECOND, %s, NOW() ) )" % ( userDN,
                                                                               userGroup,
-                                                                              reqStr,
+                                                                              allStr,
                                                                               self.__defaultRequestLifetime )
     retVal = self._update( cmd, conn = connObj )
     if not retVal[ 'OK' ]:

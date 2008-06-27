@@ -1,9 +1,9 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyManagerClient.py,v 1.2 2008/06/27 15:50:21 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyManagerClient.py,v 1.3 2008/06/27 16:47:17 acasajus Exp $
 ########################################################################
 """ ProxyManagementAPI has the functions to "talk" to the ProxyManagement service
 """
-__RCSID__ = "$Id: ProxyManagerClient.py,v 1.2 2008/06/27 15:50:21 acasajus Exp $"
+__RCSID__ = "$Id: ProxyManagerClient.py,v 1.3 2008/06/27 16:47:17 acasajus Exp $"
 
 import os
 import datetime
@@ -159,7 +159,7 @@ class ProxyManagerClient:
     req = X509Request()
     req.generateProxyRequest( limited = limited )
     rpcClient = RPCClient( "Framework/ProxyManager" )
-    retVal = rpcClient.getDelegatedProxy( userDN, userGroup, req.dumpAll()['Value'], requiredTimeLeft )
+    retVal = rpcClient.getDelegatedProxy( userDN, userGroup, req.dumpRequest()['Value'], requiredTimeLeft )
     if not retVal[ 'OK' ]:
       return retVal
     chain = X509Chain( keyObj = req.getPKey() )
