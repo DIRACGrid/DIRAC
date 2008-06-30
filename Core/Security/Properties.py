@@ -1,7 +1,5 @@
 #
 TRUSTED_HOST = "TrustedHost"
-# Allow getting full delegated proxies
-FULL_DELEGATION = "FullDelegation"
 # Normal user operations
 NORMAL_USER = "NormalUser"
 # CS Administrator - possibility to edit the Configuration Service
@@ -16,5 +14,9 @@ JOB_ADMINISTRATOR = "JobAdministrator"
 JOB_PILOT = "JobPilot"
 # Site Manager
 SITE_MANAGER = "SiteManager"
-# Visitor of the DIRAC Web portal
-VISITOR = "Visitor"
+#Allow getting full delegated proxies
+FULL_DELEGATION = "FullDelegation"
+#Allow getting only limited proxies (ie. pilots)
+LIMITED_DELEGATION = "LimitedDelegation"
+#Allow managing proxies
+PROXY_MANAGEMENT = "ProxyManagement"
