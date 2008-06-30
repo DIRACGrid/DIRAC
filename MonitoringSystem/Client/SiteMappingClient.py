@@ -6,7 +6,7 @@ from DIRAC import S_ERROR, S_OK
 
 enumerationFile = 'enum.tmp'
 
-class SiteMappingClient:
+class MappingTransfer:
 
   ###########################################################################
   def __init__(self):
