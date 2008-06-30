@@ -1,9 +1,9 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/X509Chain.py,v 1.19 2008/06/27 16:44:38 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/X509Chain.py,v 1.20 2008/06/30 15:11:19 acasajus Exp $
 ########################################################################
 """ X509Chain is a class for managing X509 chains with their Pkeys
 """
-__RCSID__ = "$Id: X509Chain.py,v 1.19 2008/06/27 16:44:38 acasajus Exp $"
+__RCSID__ = "$Id: X509Chain.py,v 1.20 2008/06/30 15:11:19 acasajus Exp $"
 
 import types
 import os
@@ -545,6 +545,27 @@ class X509Chain:
 
   def __repr__(self):
     return self.__str__()
+
+  def getInfoAsString(self):
+    if not self.__loadedChain:
+      return S_ERROR( "No chain loaded" )
+    info = ""
+    lastCert = self.getCertInChain()['Value']
+    mainCert = self.getIssuerCert()['Value']
+    info += "subject     : %s\n" % lastCert.getSubjectDN()[ 'Value' ]
+    info += "issuer      : %s\n" % lastCert.getIssuerDN()[ 'Value' ]
+    info += "identity    : %s\n" % mainCert.getSubjectDN()[ 'Value' ]
+    group = self.getDIRACGroup()[ 'Value' ]
+    if not group:
+      group = '<not set>'
+    info +=  "DIRAC Group : %s\n" % group
+    secs = self.getRemainingSecs()[ 'Value' ]
+    hours = int( secs /  3600 )
+    secs -= hours * 3600
+    mins = int( secs / 60 )
+    secs -= mins * 60
+    info += "time left   : %02d:%02d:%02d" % ( hours, mins, secs )
+    return S_OK( info )
 
   def getCredentials(self):
     if not self.__loadedChain:

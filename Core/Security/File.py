@@ -3,13 +3,20 @@ import stat
 import tempfile
 from DIRAC import S_OK, S_ERROR
 
-def writeToProxyFile( proxyContents, fileName ):
+def writeToProxyFile( proxyContents, fileName = False):
   """
   Write an proxy string to file
   arguments:
     - proxyContents : string object to dump to file
     - fileName : filename to dump to
   """
+  if not fileName:
+    try:
+      fd, proxyLocation = tempfile.mkstemp()
+      os.close(fd)
+    except IOError:
+      return S_ERROR('Failed to create temporary file')
+    fileName = proxyLocation
   try:
     fd = open( fileName, 'w' )
     fd.write( proxyContents )
@@ -20,7 +27,7 @@ def writeToProxyFile( proxyContents, fileName ):
     os.chmod( fileName, stat.S_IRUSR | stat.S_IWUSR )
   except Exception, e:
     return S_ERROR( "Cannot set permissions to file %s :%s" % ( filePath, str(e) ) )
-  return S_OK()
+  return S_OK( fileName )
 
 def writeChainToProxyFile( proxyChain, fileName ):
   """
