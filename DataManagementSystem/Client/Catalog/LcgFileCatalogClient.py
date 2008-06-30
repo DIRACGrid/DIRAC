@@ -1006,23 +1006,23 @@ class LcgFileCatalogClient(FileCatalogueBase):
         subDir = '%s/%s' % (path,entry.d_name)
         subDirs.append(subDir)
       else:
-        path = '%s/%s' % (path,entry.d_name)
+        subPath = '%s/%s' % (path,entry.d_name)
         replicaDict = {}
         if fileInfo:
           for replica in fileInfo:
             replicaDict[replica.host] = {'PFN':replica.sfn,'Status':replica.status}
         metadataDict = {'Size':entry.filesize,'GUID':entry.guid}
         if S_ISLNK(entry.filemode):
-          links[path]['Replicas'] = replicaDict
-          links[path]['MetaData'] = metadataDict
-          links[path]['MetaData']['Target'] = ''
-          res = self.readLink(path)
-          if path in res['Value']['Successful'].keys():
-            links[path]['MetaData']['Target'] = res['Value']['Successful'][path]
+          links[subPath]['Replicas'] = replicaDict
+          links[subPath]['MetaData'] = metadataDict
+          links[subPath]['MetaData']['Target'] = ''
+          res = self.readLink(subPath)
+          if subPath in res['Value']['Successful'].keys():
+            links[subPath]['MetaData']['Target'] = res['Value']['Successful'][subPath]
         elif S_ISREG(entry.filemode):
-          resDict[path] = {}
-          resDict[path]['Replicas'] = replicaDict
-          resDict[path]['MetaData'] = metadataDict
+          resDict[subPath] = {}
+          resDict[subPath]['Replicas'] = replicaDict
+          resDict[subPath]['MetaData'] = metadataDict
     lfc.lfc_closedir(direc)
     pathDict = {}
     pathDict = {'Files': resDict,'SubDirs':subDirs,'Links':links}
