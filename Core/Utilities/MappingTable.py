@@ -1,15 +1,15 @@
-class myMapTable:
+class MappingTable:
 
   #############################################################################
   def __init__(self):
-    """ myTable constructor
+    """ MappingTable constructor
     """
     self.tableData = list()
     self.columns = list()
   
   #############################################################################  
   def __del__(self):
-    """ myTable destructor
+    """ MappingTable destructor
     """
     pass
   
