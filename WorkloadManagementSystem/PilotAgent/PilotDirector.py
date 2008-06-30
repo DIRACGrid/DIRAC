@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/PilotDirector.py,v 1.20 2008/06/25 16:18:45 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/PilotDirector.py,v 1.21 2008/06/30 14:26:56 paterson Exp $
 # File :   PilotDirector.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
      are overridden in Grid specific subclasses.
 """
 
-__RCSID__ = "$Id: PilotDirector.py,v 1.20 2008/06/25 16:18:45 atsareg Exp $"
+__RCSID__ = "$Id: PilotDirector.py,v 1.21 2008/06/30 14:26:56 paterson Exp $"
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
 from DIRAC.Core.Utilities.Subprocess                       import shellCall
@@ -214,7 +214,7 @@ class PilotDirector(Thread):
 
     bannedSites = None
     if classadJob.lookupAttribute("BannedSites"):
-      bannedSites = classadJob.get_expression("BannedSites").replace('{','').replace('}','').replace('"','').split()
+      bannedSites = classadJob.get_expression("BannedSites").replace('{','').replace('}','').replace('"','').replace(' ','').split(',')
       self.log.verbose('Banned sites for job %s are %s' %(job,string.join(bannedSites,',')))
 
     sites = self.__resolveSiteCandidates(job,candidateSites,bannedSites,gridRequirements)
