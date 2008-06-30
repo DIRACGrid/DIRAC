@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.29 2008/06/23 14:18:27 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.30 2008/06/30 12:46:35 paterson Exp $
 # File :   DiracProduction.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are to be documented with example usage.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.29 2008/06/23 14:18:27 atsareg Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.30 2008/06/30 12:46:35 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 import pprint
@@ -704,13 +704,17 @@ class DiracProduction:
     if not prodDict.has_key('Body') or not prodDict.has_key('JobDictionary'):
       return self.__errorReport(prodDict,'Unexpected result from ProductionManager service')
 
+    jobDict = prodDict['JobDictionary']
+    if not jobDict:
+      self.log.warn('Null job dictionary returned:\n %s' %prodDict)
+      return S_ERROR('Null job dictionary returned from ProductionManager service')
+
     submitted =  []
     failed = []
     xmlString = prodDict['Body']
     #creating a /tmp/guid/ directory for job submission files
     jfilename = self.__createJobDescriptionFile(xmlString)
     prodJob = Job(jfilename)
-    jobDict = prodDict['JobDictionary']
     self.log.verbose(jobDict)
     jobs_available = len(jobDict)
     for jobNumber,paramsDict in jobDict.items():
