@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/AuthManager.py,v 1.24 2008/06/13 11:07:24 acasajus Exp $
-__RCSID__ = "$Id: AuthManager.py,v 1.24 2008/06/13 11:07:24 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/AuthManager.py,v 1.25 2008/06/30 14:30:08 acasajus Exp $
+__RCSID__ = "$Id: AuthManager.py,v 1.25 2008/06/30 14:30:08 acasajus Exp $"
 
 import types
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
@@ -92,7 +92,7 @@ class AuthManager:
     if "authenticated" in requiredProperties:
       return True
     if not self.matchProperties( credDict, requiredProperties ):
-      self.__authLogger.warn( "Peer group is not authorized" )
+      self.__authLogger.warn( "Peer is not authorized\nValid properties: %s\nPeer: %s" % ( requiredProperties,credDict ) )
       return False
     return True
 
