@@ -1,15 +1,15 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyManagerClient.py,v 1.3 2008/06/27 16:47:17 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyManagerClient.py,v 1.4 2008/07/01 17:25:18 acasajus Exp $
 ########################################################################
 """ ProxyManagementAPI has the functions to "talk" to the ProxyManagement service
 """
-__RCSID__ = "$Id: ProxyManagerClient.py,v 1.3 2008/06/27 16:47:17 acasajus Exp $"
+__RCSID__ = "$Id: ProxyManagerClient.py,v 1.4 2008/07/01 17:25:18 acasajus Exp $"
 
 import os
 import datetime
 import types
-from DIRAC.Core.Utilities import Time, ThreadSafe
-from DIRAC.Core.Security import Locations, CS
+from DIRAC.Core.Utilities import Time, ThreadSafe, DictCache
+from DIRAC.Core.Security import Locations, CS, File
 from DIRAC.Core.Security.X509Chain import X509Chain, g_X509ChainType
 from DIRAC.Core.Security.X509Request import X509Request
 from DIRAC.Core.Security.VOMS import VOMS
@@ -34,6 +34,13 @@ class ProxyManagerClient:
     except:
       pass
 
+  def __getSecondsLeftToExpiration( self, expiration, utc = True ):
+    if utc:
+      td = expiration - datetime.datetime.utcnow()
+    else:
+      td = expiration - datetime.datetime.now()
+    return td.days * 86400 + td.seconds
+
   def __refreshUserCache( self, validSeconds = 0 ):
     rpcClient = RPCClient( "Framework/ProxyManager" )
     retVal = rpcClient.getRegisteredUsers( validSeconds )
@@ -43,7 +50,9 @@ class ProxyManagerClient:
     #Update the cache
     for record in data:
       cacheKey = ( record[ 'DN' ], record[ 'group' ] )
-      self.__usersCache.add( cacheKey, record[ 'expirationtime' ], record )
+      self.__usersCache.add( cacheKey,
+                             self.__getSecondsLeftToExpiration( record[ 'expirationtime' ] ),
+                             record )
     return S_OK()
 
   @gUsersSync
@@ -102,7 +111,9 @@ class ProxyManagerClient:
     record = self.__usersCache.get( cacheKey, 0 )
     if record:
       record[ 'persistent' ] = persistentFlag
-      self.__usersCache.add( cacheKey, record[ 'expirationtime' ], record )
+      self.__usersCache.add( cacheKey,
+                             self.__getSecondsLeftToExpiration( record[ 'expirationtime' ] ),
+                             record )
     return retVal
 
   def uploadProxy( self, proxy = False ):
@@ -149,7 +160,7 @@ class ProxyManagerClient:
     return rpcClient.completeDelegation( reqDict[ 'id' ], retVal[ 'Value' ] )
 
   @gProxiesSync
-  def downloadProxy( self, userDN, userGroup, limited = False, requiredTimeLeft = 43200 ):
+  def downloadProxy( self, userDN, userGroup, limited = False, requiredTimeLeft = 43200, proxyToConnect = False ):
     """
     Get a proxy Chain from the proxy management
     """
@@ -158,15 +169,18 @@ class ProxyManagerClient:
       return S_OK( self.__proxiesCache.get( cacheKey ) )
     req = X509Request()
     req.generateProxyRequest( limited = limited )
-    rpcClient = RPCClient( "Framework/ProxyManager" )
-    retVal = rpcClient.getDelegatedProxy( userDN, userGroup, req.dumpRequest()['Value'], requiredTimeLeft )
+    if proxyToConnect:
+      rpcClient = RPCClient( "Framework/ProxyManager", proxyChain = proxyToConnect )
+    else:
+      rpcClient = RPCClient( "Framework/ProxyManager" )
+    retVal = rpcClient.getProxy( userDN, userGroup, req.dumpRequest()['Value'], requiredTimeLeft )
     if not retVal[ 'OK' ]:
       return retVal
     chain = X509Chain( keyObj = req.getPKey() )
     retVal = chain.loadChainFromString( retVal[ 'Value' ] )
     if not retVal[ 'OK' ]:
       return retVal
-    self.__proxiesCache.add( cacheKey, chain.getNotAfterDate()['Value'], chain )
+    self.__proxiesCache.add( cacheKey, chain.getRemainingSecs()['Value'], chain )
     return S_OK( chain )
 
   def downloadProxyToFile( self, userDN, userGroup, limited = False, requiredTimeLeft = 43200 ):
@@ -183,48 +197,31 @@ class ProxyManagerClient:
     retVal[ 'chain' ] = chain
     return retVal
 
-  def __getVOMSAttribute( self, userGroup, requiredVOMSAttribute = False ):
-    csVOMSMappings = CS.getVOMSAttributeForGroup( userGroup )
-    if not csVOMSMappings:
-      return S_ERROR( "No mapping defined for group %s in the CS" )
-    if requiredVOMSAttribute not in csVOMSMappings:
-      return S_ERROR( "Required attribute %s is not allowed for group %s" % ( requiredVOMSAttribute, userGroup ) )
-    if len( csVOMSMappings ) > 1 and not requiredVOMSAttribute:
-      return S_ERROR( "More than one VOMS attribute defined for group %s and none required" % userGroup )
-    vomsAttribute = requiredVOMSAttribute
-    if not vomsAttribute:
-      vomsAttribute = csVOMSMappings[0]
-    return S_OK( vomsAttribute )
-
   @gVOMSProxiesSync
-  def downloadVOMSProxy( self, userDN, userGroup, limited = False, requiredTimeLeft = 43200, requiredVOMSAttribute = False ):
+  def downloadVOMSProxy( self, userDN, userGroup, limited = False, requiredTimeLeft = 43200, requiredVOMSAttribute = False, proxyToConnect = False ):
     """
     Download a proxy if needed and transform it into a VOMS one
     """
-    retVal = self.__getVOMSAttribute( userGroup, requiredVOMSAttribute )
-    if not retVal[ 'OK' ]:
-      return retVal
-    vomsAttribute = retVal[ 'Value' ]
 
-    cacheKey = ( userDN, userGroup, vomsAttribute )
+    cacheKey = ( userDN, userGroup, requiredVOMSAttribute )
     if self.__vomsProxiesCache.exists( cacheKey, requiredTimeLeft ):
       return S_OK( self.__vomsProxiesCache.get( cacheKey ) )
-
-    retVal = self.downloadProxy( userDN, userGroup, limited, requiredTimeLeft )
+    req = X509Request()
+    req.generateProxyRequest( limited = limited )
+    if proxyToConnect:
+      rpcClient = RPCClient( "Framework/ProxyManager", proxyChain = proxyToConnect )
+    else:
+      rpcClient = RPCClient( "Framework/ProxyManager" )
+    retVal = rpcClient.getVOMSProxy( userDN, userGroup, req.dumpRequest()['Value'], requiredTimeLeft, requiredVOMSAttribute )
     if not retVal[ 'OK' ]:
       return retVal
-    chain = retVal[ 'Value' ]
-    vomsMgr = VOMS()
-    retVal = vomsMgr.getVOMSAttributes( chain )
+    chain = X509Chain( keyObj = req.getPKey() )
+    retVal = chain.loadChainFromString( retVal[ 'Value' ] )
     if not retVal[ 'OK' ]:
       return retVal
-    if vomsAttribute not in retVal[ 'Value' ]:
-      retVal = vomsMgr.setVOMSAttributes( chain, vomsAttribute )
-      if not retVal[ 'OK' ]:
-        return retVal
-      chain = retVal[ 'Value' ]
-    self.__proxyCache.add( cacheKey, chain.getNotAfterDate()['Value'], chain )
+    self.__vomsProxiesCache.add( cacheKey, chain.getRemainingSecs()['Value'], chain )
     return S_OK( chain )
+
 
   def downloadVOMSProxyToFile( self, userDN, userGroup, limited = False, requiredTimeLeft = 43200, requiredVOMSAttribute = False ):
     """
@@ -240,7 +237,7 @@ class ProxyManagerClient:
     retVal[ 'chain' ] = chain
     return retVal
 
-  def dumpProxyToFile( self, chain, requiredTimeLeft = 600 ):
+  def dumpProxyToFile( self, chain, destinationFile = False, requiredTimeLeft = 600 ):
     """
     Dump a proxy to a file. It's cached so multiple calls won't generate extra files
     """
@@ -249,11 +246,11 @@ class ProxyManagerClient:
       if os.path.isfile( filepath ):
         return S_OK( filepath )
       self.__filesCache.delete( filepath )
-    retVal = chain.dumpAllToFile()
+    retVal = chain.dumpAllToFile( destinationFile )
     if not retVal[ 'Value' ]:
       return retVal
     filename = retVal[ 'Value' ]
-    self.__filesCache.add( chain, chain.getNotAfterDate()['Value'], filename )
+    self.__filesCache.add( chain, chain.getRemainingSecs()['Value'], filename )
     return S_OK( filename )
 
   def deleteGeneratedProxyFile( self, chain ):
@@ -262,49 +259,81 @@ class ProxyManagerClient:
     """
     self.__filesCache.delete( chain )
     return S_OK()
-#
-# Helper class to handle the dict caches
-#
 
-class DictCache:
+  def renewProxy( self, proxyToBeRenewed = False, minLifeTime = 3600, newProxyLifeTime = 43200, proxyToConnect = False ):
+    """
+    Renew a proxy using the ProxyManager
+    Arguments:
+      proxyToBeRenewed : proxy to renew
+      minLifeTime : if proxy life time is less than this, renew. Skip otherwise
+      newProxyLifeTime : life time of new proxy
+      proxyToConnect : proxy to use for connecting to the service
+    """
+    retVal = File.multiProxyArgument( proxyToBeRenewed )
+    if not retVal[ 'Value' ]:
+      return retVal
+    proxyToRenewDict = retVal[ 'Value' ]
 
-  def __init__(self, deleteFunction = False ):
-    self.__cache = {}
-    self.__deleteFunction = deleteFunction
+    secs = proxyToRenewDict[ 'chain' ].getRemainingSecs()[ 'Value' ]
+    if secs > minLifeTime:
+      File.deleteMultiProxy( proxyToRenewDict )
+      return S_OK()
 
-  def exists( self, cKey, validSeconds = 0 ):
-    #Is the key in the cache?
-    if cKey in self.__cache:
-      expTime = self.__cache[ cKey ][ 'expirationTime' ]
-      #If it's valid return True!
-      if expTime > Time.dateTime() + datetime.timedelta( seconds = validSeconds ):
-        return True
-      else:
-        #Delete expired
-        self.delete( cKey )
-    return False
+    if not proxyToConnect:
+      proxyToConnectDict = proxyToRenewDict
+    else:
+      retVal = File.multiProxyArgument( proxyToConnect )
+      if not retVal[ 'Value' ]:
+        File.deleteMultiProxy( proxyToRenewDict )
+        return retVal
+      proxyToConnectDict = retVal[ 'Value' ]
 
-  def delete( self, cKey ):
-    if cKey not in self.__cache:
-      return
-    if self.__deleteFunction:
-      self.__deleteFunction( self.__cache[ cKey ][ 'value' ] )
-    del( self.__cache[ cKey ] )
+    userDN = proxyToRenewDict[ 'chain' ].getIssuerCert()[ 'Value' ].getSubjectDN()[ 'Value' ]
+    retVal = proxyToRenewDict[ 'chain' ].getDIRACGroup()
+    if not retVal[ 'OK' ]:
+      File.deleteMultiProxy( proxyToRenewDict )
+      File.deleteMultiProxy( proxyToConnectDict )
+      return retVal
+    userGroup = retVal[ 'Value' ]
+    limited = proxyToRenewDict[ 'chain' ].isLimitedProxy()[ 'Value' ]
 
-  def add( self, cKey, expirationTime, value = None ):
-    vD = { 'expirationTime' : expirationTime, 'value' : value }
-    self.__cache[ cKey ] = vD
+    voms = VOMS()
+    retVal = voms.getVOMSAttributes( proxyToRenewDict[ 'chain' ] )
+    if not retVal[ 'OK' ]:
+      File.deleteMultiProxy( proxyToRenewDict )
+      File.deleteMultiProxy( proxyToConnectDict )
+      return retVal
+    vomsAttrs = retVal[ 'Value' ]
+    if vomsAttrs:
+      retVal = self.downloadVOMSProxy( userDN,
+                                       userGroup,
+                                       limited = limited,
+                                       requiredTimeLeft = newProxyLifeTime,
+                                       requiredVOMSAttribute = vomsAttrs[0],
+                                       proxyToConnect =  proxyToConnectDict[ 'chain' ] )
+    else:
+      retVal = self.downloadProxy( userDN,
+                                   userGroup,
+                                   limited = limited,
+                                   requiredTimeLeft = newProxyLifeTime,
+                                   proxyToConnect =  proxyToConnectDict[ 'chain' ] )
 
-  def get( self, cKey, validSeconds = 0 ):
-    #Is the key in the cache?
-    if cKey in self.__cache:
-      expTime = self.__cache[ cKey ][ 'expirationTime' ]
-      #If it's valid return True!
-      if expTime > Time.dateTime() + datetime.timedelta( seconds = validSeconds ):
-        return self.__cache[ cKey ][ 'value' ]
-      else:
-        #Delete expired
-        self.delete( cKey )
-    return False
+    File.deleteMultiProxy( proxyToRenewDict )
+    File.deleteMultiProxy( proxyToConnectDict )
+
+    if not retVal[ 'OK' ]:
+      return retVal
+
+    if not proxyToRenewDict[ 'tempFile' ]:
+      return proxyToRenewDict[ 'chain' ].dumpAllToFile( proxyToRenewDict[ 'file' ] )
+
+    return S_OK( proxyToRenewDict[ 'chain' ] )
+
+  def getDBContents(self):
+    """
+    Get the contents of the db
+    """
+    rpcClient = RPCClient( "Framework/ProxyManager" )
+    return rpcClient.getContents()
 
 gProxyManager = ProxyManagerClient()

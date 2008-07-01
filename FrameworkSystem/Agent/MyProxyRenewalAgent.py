@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Agent/MyProxyRenewalAgent.py,v 1.1 2008/06/27 15:50:20 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Agent/MyProxyRenewalAgent.py,v 1.2 2008/07/01 17:25:18 acasajus Exp $
 ########################################################################
 
 """  Proxy Renewal agent is the key element of the Proxy Repository
@@ -49,7 +49,7 @@ class MyProxyRenewalAgent(Agent):
     else:
       gLogger.info( "Renewed proxy for %s@%s" % ( userDN, userGroup ) )
 
-  def __treatRenewalCallback( self, exceptionList ):
+  def __treatRenewalCallback( self, oTJ, exceptionList ):
     gLogger.exception( lException = exceptionList )
 
   def execute(self):

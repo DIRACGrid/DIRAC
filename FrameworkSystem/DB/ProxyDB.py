@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.3 2008/06/27 16:46:03 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.4 2008/07/01 17:25:18 acasajus Exp $
 ########################################################################
 """ ProxyRepository class is a front-end to the proxy repository Database
 """
 
-__RCSID__ = "$Id: ProxyDB.py,v 1.3 2008/06/27 16:46:03 acasajus Exp $"
+__RCSID__ = "$Id: ProxyDB.py,v 1.4 2008/07/01 17:25:18 acasajus Exp $"
 
 import time
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
@@ -338,6 +338,37 @@ class ProxyDB(DB):
       return S_ERROR( "%s@%s has no proxy registered" % ( userDN, userGroup ) )
     return S_OK( chain )
 
+  def __getVOMSAttribute( self, userGroup, requiredVOMSAttribute = False ):
+    csVOMSMappings = CS.getVOMSAttributeForGroup( userGroup )
+    if not csVOMSMappings:
+      return S_ERROR( "No mapping defined for group %s in the CS" )
+    if requiredVOMSAttribute and requiredVOMSAttribute not in csVOMSMappings:
+      return S_ERROR( "Required attribute %s is not allowed for group %s" % ( requiredVOMSAttribute, userGroup ) )
+    if len( csVOMSMappings ) > 1 and not requiredVOMSAttribute:
+      return S_ERROR( "More than one VOMS attribute defined for group %s and none required" % userGroup )
+    vomsAttribute = requiredVOMSAttribute
+    if not vomsAttribute:
+      vomsAttribute = csVOMSMappings[0]
+    return S_OK( vomsAttribute )
+
+  def getVOMSProxy( self, userDN, userGroup, requiredLifeTime = False, requestedVOMSAttr = False ):
+    """ Get proxy string from the Proxy Repository for use with userDN
+        in the userGroup and VOMS attr
+    """
+    retVal = self.__getVOMSAttribute( userGroup, requestedVOMSAttr )
+    if not retVal[ 'OK' ]:
+      return retVal
+    vomsAttr = retVal[ 'Value' ]
+
+    retVal = self.getProxy( userDN, userGroup, requiredLifeTime )
+    if not retVal[ 'OK' ]:
+      return retVal
+    chain = retVal[ 'Value' ]
+    print "SECS", chain.getRemainingSecs()
+
+    vomsMgr = VOMS()
+    return vomsMgr.setVOMSAttributes( chain , vomsAttr )
+
   def getRemainingTime( self, userDN, userGroup ):
     """
     Returns the remaining time the proxy is valid
@@ -407,3 +438,30 @@ class ProxyDB(DB):
     if not retVal[ 'OK' ]:
       return retVal
     return S_OK()
+
+  def getProxiesFor( self, dnFilter = [], groupFilter = [] ):
+    """
+    Function to get the contents of the db
+      parameters are a filter to the db
+    """
+    fields = ( "UserDN", "UserGroup", "ExpirationTime", "PersistentFlag" )
+    condList = []
+    if dnFilter:
+      condList.append( " OR ".join( [ "UserDN='%s'" % dn for dn in dnFilter ] ) )
+    if groupFilter:
+      condList.append( " OR ".join( [ "UserGroup='%s'" % gr for gr in groupFilter ] ) )
+    cmd = "SELECT %s FROM `ProxyDB_Proxies` WHERE Pem is not NULL" % ", ".join( fields )
+    if condList:
+      cmd += " AND (%s)" % ") AND (".join( condList )
+    retVal = self._query( cmd )
+    if not retVal[ 'OK' ]:
+      return retVal
+    data = []
+    for record in retVal[ 'Value' ]:
+      record = list( record )
+      if record[3] == 'True':
+        record[3] = True
+      else:
+        record[3] = False
+      data.append( record )
+    return S_OK( ( fields, data ) )

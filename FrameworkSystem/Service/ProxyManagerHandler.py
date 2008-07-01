@@ -1,18 +1,19 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/ProxyManagerHandler.py,v 1.2 2008/06/27 15:50:21 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/ProxyManagerHandler.py,v 1.3 2008/07/01 17:25:18 acasajus Exp $
 ########################################################################
 
 """ ProxyManager is the implementation of the ProxyManagement service
     in the DISET framework
 """
 
-__RCSID__ = "$Id: ProxyManagerHandler.py,v 1.2 2008/06/27 15:50:21 acasajus Exp $"
+__RCSID__ = "$Id: ProxyManagerHandler.py,v 1.3 2008/07/01 17:25:18 acasajus Exp $"
 
 import types
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gLogger, S_OK, S_ERROR, gConfig
 from DIRAC.FrameworkSystem.DB.ProxyDB import ProxyDB
-from DIRAC.Core.Security import Properties
+from DIRAC.Core.Security import Properties, CS
+from DIRAC.Core.Security.VOMS import VOMS
 
 gProxyDB = False
 
@@ -68,8 +69,8 @@ class ProxyManagerHandler( RequestHandler ):
     """
     return gProxyDB.getUsers( validSecondsRequired )
 
-  types_getDelegatedProxy = [ types.StringType, types.StringType, types.StringType, ( types.IntType, types.LongType ) ]
-  def export_getDelegatedProxy( self, userDN, userGroup, requestPem, requiredLifetime ):
+  types_getProxy = [ types.StringType, types.StringType, types.StringType, ( types.IntType, types.LongType ) ]
+  def export_getProxy( self, userDN, userGroup, requestPem, requiredLifetime ):
     """
     Get the list of users who have a valid proxy in the system
       - validSecondsRequired is an optional argument to specify the required
@@ -92,9 +93,50 @@ class ProxyManagerHandler( RequestHandler ):
       return retVal
     return S_OK( retVal[ 'Value' ] )
 
+  types_getVOMSProxy = [ types.StringType, types.StringType, types.StringType, ( types.IntType, types.LongType ) ]
+  def export_getVOMSProxy( self, userDN, userGroup, requestPem, requiredLifetime, vomsAttribute = False ):
+    """
+    Get the list of users who have a valid proxy in the system
+      - validSecondsRequired is an optional argument to specify the required
+          seconds the proxy is valid for
+      * Properties :
+        FullDelegation <- permits full delegation of proxies
+    """
+    credDict = self.getRemoteCredentials()
+    forceLimited = True
+    if Properties.FULL_DELEGATION in credDict[ 'properties' ]:
+      forceLimited = False
+    retVal = gProxyDB.getVOMSProxy( userDN,
+                                    userGroup,
+                                    requiredLifeTime = requiredLifetime,
+                                    requestedVOMSAttr = vomsAttribute )
+    if not retVal[ 'OK' ]:
+      return retVal
+    chain = retVal[ 'Value' ]
+    retVal = chain.generateChainFromRequestString( requestPem,
+                                                   lifetime = requiredLifetime,
+                                                   requireLimited = forceLimited )
+    if not retVal[ 'OK' ]:
+      return retVal
+    return S_OK( retVal[ 'Value' ] )
+
   types_setPersistency = [ types.StringType, types.StringType, types.BooleanType ]
   def export_setPersistency( self, userDN, userGroup, persistentFlag ):
     """
     Set the persistency for a given dn/group
     """
     return gProxyDB.setPersistencyFlag( userDN, userGroup, persistentFlag )
+
+  types_getContents = []
+  def export_getContents( self ):
+    """
+    Retrieve the contents of the DB
+    """
+    dnFilter = []
+    credDict = self.getRemoteCredentials()
+    if not Properties.PROXY_MANAGEMENT in credDict[ 'properties' ]:
+      result = CS.getDNForUsername( credDict[ 'username' ] )
+      if not result[ 'OK' ]:
+        return S_ERROR( "You are not a valid user!" )
+      dnFilter = result[ 'Value' ]
+    return gProxyDB.getProxiesFor( dnFilter = dnFilter )
