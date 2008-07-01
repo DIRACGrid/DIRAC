@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/Cache.py,v 1.1 2008/07/01 15:02:33 acasajus Exp $
-__RCSID__ = "$Id: Cache.py,v 1.1 2008/07/01 15:02:33 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/DictCache.py,v 1.1 2008/07/01 15:04:01 acasajus Exp $
+__RCSID__ = "$Id: DictCache.py,v 1.1 2008/07/01 15:04:01 acasajus Exp $"
 
 import threading
 import datetime
