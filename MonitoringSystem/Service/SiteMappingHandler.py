@@ -1,11 +1,11 @@
 ########################################################################
-# $Id: SiteMappingHandler.py,v 1.1 2008/06/30 16:46:20 asypniew Exp $
+# $Id: SiteMappingHandler.py,v 1.2 2008/07/01 10:05:13 asypniew Exp $
 ########################################################################
 
 """ The SiteMappingHandler...
 """
 
-__RCSID__ = "$Id: SiteMappingHandler.py,v 1.1 2008/06/30 16:46:20 asypniew Exp $"
+__RCSID__ = "$Id: SiteMappingHandler.py,v 1.2 2008/07/01 10:05:13 asypniew Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -59,12 +59,18 @@ class SiteMappingHandler( RequestHandler ):
   def updateData(self, section): 
     """ Update site data
     """ 
+    
+    # First, update the list of sites.
+    # If you ONLY want to update this, set section=False
     result = siteData.updateData('SiteData')
     if not result['OK']:
       return result
       
-    gLogger.verbose('Site data updated. Section: %s' % section)
-    return siteData.updateData(section)
+    if section:
+      gLogger.verbose('Site data updated. Section: %s' % section)
+      return siteData.updateData(section)
+    else:
+      return result
           
   ###########################################################################
   def getFile(self, fileName):
