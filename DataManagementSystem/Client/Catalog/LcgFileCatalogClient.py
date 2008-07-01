@@ -13,7 +13,7 @@ try:
   importCorrectly = True
   gLogger.debug("LcgFileCatalogClient.__init__: Successfully imported lfc module.")
 except ImportError, x:
-  gLogger.error("LcgFileCatalogClient.__init__: Failed to import lfc module.",str(x))
+  gLogger.exception("LcgFileCatalogClient.__init__: Failed to import lfc module.",str(x))
   importCorrectly = False
 
 class LcgFileCatalogClient(FileCatalogueBase):
