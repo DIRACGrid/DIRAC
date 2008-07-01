@@ -33,8 +33,8 @@ try:
   infoStr = "The version of gfalthr is %s" % gfal.gfal_version()
   gLogger.info(infoStr)
 except Exception,x:
-  errStr = "SRM2Storage.__init__: Failed to import gfalthr: %s" % (x)
-  gLogger.exception(errStr)
+  errStr = "SRM2Storage.__init__: Failed to import gfalthr: %s." % (x)
+  gLogger.warning(errStr)
   try:
     import gfal
     infoStr = "Using gfal from: %s" % gfal.__file__
