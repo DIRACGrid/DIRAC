@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: MatcherHandler.py,v 1.7 2008/01/21 17:42:38 atsareg Exp $
+# $Id: MatcherHandler.py,v 1.8 2008/07/01 16:17:56 paterson Exp $
 ########################################################################
 """
 Matcher class. It matches Agent Site capabilities to job requirements.
@@ -7,7 +7,7 @@ It also provides an XMLRPC interface to the Matcher
 
 """
 
-__RCSID__ = "$Id: MatcherHandler.py,v 1.7 2008/01/21 17:42:38 atsareg Exp $"
+__RCSID__ = "$Id: MatcherHandler.py,v 1.8 2008/07/01 16:17:56 paterson Exp $"
 
 import re, os, sys, time
 import string
@@ -216,7 +216,7 @@ class MatcherHandler(RequestHandler):
     # Clean up the Task Queue if it is empty
     # This is done just in case as this should never happen
     if not jobList:
-      result = self.jobDB.deleteQueue(queueID)
+      result = jobDB.deleteQueue(queueID)
       if not result['OK']:
         gLogger.warn('Failed to delete Task Queue %d' % queueID)
       gMutex.release()
