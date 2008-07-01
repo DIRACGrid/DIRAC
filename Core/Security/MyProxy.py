@@ -20,7 +20,7 @@ class MyProxy( BaseSecurity ):
         : string -> upload file specified as proxy
         : X509Chain -> use chain
     """
-    retVal = self._loadProxy( proxy )
+    retVal = File.multiProxyArgument( proxy )
     if not retVal[ 'OK' ]:
       return retVal
     proxyDict = retVal[ 'Value' ]
@@ -78,7 +78,7 @@ class MyProxy( BaseSecurity ):
     #TODO: Set the proxy coming in proxyString to be the proxy to use
 
     #Get myproxy username diracgroup:diracuser
-    retVal = self._loadProxy( proxyChain )
+    retVal = File.multiProxyArgument( proxyChain )
     if not retVal[ 'OK' ]:
       return retVal
     proxyDict = retVal[ 'Value' ]
@@ -122,7 +122,7 @@ class MyProxy( BaseSecurity ):
         self._unlinkFiles( proxyLocation )
 
     if not result['OK']:
-      errMsg = "Call to myproxy-logon failed: %s" % retVal[ 'Message' ]
+      errMsg = "Call to myproxy-logon failed: %s" % result[ 'Message' ]
       self._unlinkFiles( newProxyLocation )
       return S_ERROR( errMsg )
 

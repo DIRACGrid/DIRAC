@@ -20,7 +20,7 @@ class VOMS( BaseSecurity ):
     # Get all possible info from voms proxy
     result = self.getVOMSProxyInfo( proxy, "all" )
     if not result["OK"]:
-      return S_ERROR( 'Failed to extract info from proxy' )
+      return S_ERROR( 'Failed to extract info from proxy: %s' % result[ 'Message' ] )
 
     voms_info_output = result["Value"]
     voms_info_output = voms_info_output.split("\n")
@@ -89,7 +89,7 @@ class VOMS( BaseSecurity ):
       if option not in validOptions:
         S_ERROR('Non valid option %s' % option)
 
-    retVal = self._loadProxy( proxy )
+    retVal = File.multiProxyArgument( proxy )
     if not retVal[ 'OK' ]:
       return retVal
     proxyDict = retVal[ 'Value' ]
@@ -132,12 +132,18 @@ class VOMS( BaseSecurity ):
       if not vo:
         return S_ERROR( "No vo specified, and can't get default in the configuration" )
 
-    retVal = self._loadProxy( proxy )
+    retVal = File.multiProxyArgument( proxy )
     if not retVal[ 'OK' ]:
       return retVal
     proxyDict = retVal[ 'Value' ]
     chain = proxyDict[ 'chain' ]
     proxyLocation = proxyDict[ 'file' ]
+
+    secs = chain.getRemainingSecs()[ 'Value' ] - 300
+    if secs < 0:
+      return S_ERROR( "Proxy length is less that 300 secs" )
+    hours = int( secs / 3600 )
+    mins = int( ( secs - hours * 3600 ) / 60 )
 
     retVal = self._generateTemporalFile()
     if not retVal[ 'OK' ]:
@@ -153,6 +159,7 @@ class VOMS( BaseSecurity ):
     cmdArgs.append( '-key "%s"' % proxyLocation )
     cmdArgs.append( '-out "%s"' % newProxyLocation )
     cmdArgs.append( '-voms "%s:%s"' % ( vo, attribute ) )
+    cmdArgs.append( '-valid "%s:%s"' % ( hours, mins ) )
     cmd = 'voms-proxy-init %s' % " ".join( cmdArgs )
 
     result = shellCall( self._secCmdTimeout, cmd, env = vomsEnv )

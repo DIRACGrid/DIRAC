@@ -19,7 +19,7 @@ class BaseSecurity:
     if timeout:
       self._secCmdTimeout = timeout
     else:
-      self._secCmdTimeout = 60
+      self._secCmdTimeout = 30
     if not maxProxyLifeTime:
       self.__maxProxyLifeTime = 604800 # 1week
     else:
@@ -75,44 +75,6 @@ class BaseSecurity:
     except IOError:
       return S_ERROR('Failed to create temporary file')
     return S_OK( filename )
-
-  def _loadProxy( self, proxy = False ):
-    """
-    Load a proxy:
-      proxyChain param can be:
-        : Default -> use current proxy
-        : string -> upload file specified as proxy
-        : X509Chain -> use chain
-      returns:
-        S_OK( { 'file' : <string with file location>,
-                'chain' : X509Chain object,
-                'tempFile' : <True if file is temporal>
-              }
-        S_ERROR
-    """
-    tempFile = False
-    #Set env
-    if type( proxy ) == g_X509ChainType:
-      tempFile = True
-      retVal = File.writeChainToTemporaryFile( proxy )
-      if not retVal[ 'OK' ]:
-        return retVal
-      proxyLoc = retVal[ 'Value' ]
-    else:
-      if not proxy:
-        proxyLoc = Locations.getProxyLocation()
-        if not proxyLoc:
-          return S_ERROR( "Can't find proxy" )
-      if type( proxy ) == types.StringType:
-        proxyLoc = proxy
-      #Load proxy
-      proxy = X509Chain()
-      retVal = proxy.loadProxyFromFile( proxyLoc)
-      if not retVal[ 'OK' ]:
-        return S_ERROR( "Can't load proxy at %s" % proxyLoc )
-    return S_OK( { 'file' : proxyLoc,
-                   'chain' : proxy,
-                   'tempFile' : tempFile } )
 
   def _getUsername( self, proxyChain ):
     retVal = proxyChain.getCredentials()
