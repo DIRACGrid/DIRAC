@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/CS.py,v 1.6 2008/07/01 16:20:16 acasajus Exp $
-__RCSID__ = "$Id: CS.py,v 1.6 2008/07/01 16:20:16 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/CS.py,v 1.7 2008/07/01 16:35:57 acasajus Exp $
+__RCSID__ = "$Id: CS.py,v 1.7 2008/07/01 16:35:57 acasajus Exp $"
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import List
@@ -18,7 +18,7 @@ def getUsernameForDN( dn, usersList = False ):
       return S_OK( username )
   return S_ERROR( "No username found for dn %s" % dn )
 
-def getDNForUsername( dn, username ):
+def getDNForUsername( username ):
   dnList = gConfig.getValue( "%s/Users/%s/DN" % ( g_BaseSecuritySection, username ), [] )
   if dnList:
     return S_OK( dnList )
