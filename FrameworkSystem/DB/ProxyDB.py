@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.4 2008/07/01 17:25:18 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.5 2008/07/01 19:31:47 acasajus Exp $
 ########################################################################
 """ ProxyRepository class is a front-end to the proxy repository Database
 """
 
-__RCSID__ = "$Id: ProxyDB.py,v 1.4 2008/07/01 17:25:18 acasajus Exp $"
+__RCSID__ = "$Id: ProxyDB.py,v 1.5 2008/07/01 19:31:47 acasajus Exp $"
 
 import time
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
@@ -439,20 +439,17 @@ class ProxyDB(DB):
       return retVal
     return S_OK()
 
-  def getProxiesFor( self, dnFilter = [], groupFilter = [] ):
+  def getProxiesFor( self, condDict, start = 0, limit = 0 ):
     """
     Function to get the contents of the db
       parameters are a filter to the db
     """
     fields = ( "UserDN", "UserGroup", "ExpirationTime", "PersistentFlag" )
-    condList = []
-    if dnFilter:
-      condList.append( " OR ".join( [ "UserDN='%s'" % dn for dn in dnFilter ] ) )
-    if groupFilter:
-      condList.append( " OR ".join( [ "UserGroup='%s'" % gr for gr in groupFilter ] ) )
     cmd = "SELECT %s FROM `ProxyDB_Proxies` WHERE Pem is not NULL" % ", ".join( fields )
-    if condList:
-      cmd += " AND (%s)" % ") AND (".join( condList )
+    for field in condDict:
+      cmd += " AND (%s)" % " OR ".join( [ "%s='%s'" % (field,str(value)) for value in condDict ] )
+    if limit:
+      cmd += " LIMIT %d,%d" % ( start, limit )
     retVal = self._query( cmd )
     if not retVal[ 'OK' ]:
       return retVal

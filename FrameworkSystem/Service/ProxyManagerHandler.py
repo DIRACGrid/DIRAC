@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/ProxyManagerHandler.py,v 1.3 2008/07/01 17:25:18 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/ProxyManagerHandler.py,v 1.4 2008/07/01 19:31:47 acasajus Exp $
 ########################################################################
 
 """ ProxyManager is the implementation of the ProxyManagement service
     in the DISET framework
 """
 
-__RCSID__ = "$Id: ProxyManagerHandler.py,v 1.3 2008/07/01 17:25:18 acasajus Exp $"
+__RCSID__ = "$Id: ProxyManagerHandler.py,v 1.4 2008/07/01 19:31:47 acasajus Exp $"
 
 import types
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -128,15 +128,20 @@ class ProxyManagerHandler( RequestHandler ):
     return gProxyDB.setPersistencyFlag( userDN, userGroup, persistentFlag )
 
   types_getContents = []
-  def export_getContents( self ):
+  def export_getContents( self, condDict, start = 0, limit = 0 ):
     """
     Retrieve the contents of the DB
     """
-    dnFilter = []
+    if type( condDict ) != types.DictType:
+      return S_ERROR( "Type mismatch in first parameter" )
+    if type( start ) not in ( types.IntType, types.LongType ):
+      return S_ERROR( "Type mismatch in second parameter" )
+    if type( limit ) not in ( types.IntType, types.LongType ):
+      return S_ERROR( "Type mismatch in third parameter" )
     credDict = self.getRemoteCredentials()
     if not Properties.PROXY_MANAGEMENT in credDict[ 'properties' ]:
       result = CS.getDNForUsername( credDict[ 'username' ] )
       if not result[ 'OK' ]:
         return S_ERROR( "You are not a valid user!" )
-      dnFilter = result[ 'Value' ]
-    return gProxyDB.getProxiesFor( dnFilter = dnFilter )
+      condDict[ 'UserDN' ] = result[ 'Value' ]
+    return gProxyDB.getProxiesFor( condDict, start, limit )
