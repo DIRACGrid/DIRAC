@@ -1,3 +1,4 @@
+import os
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.Core.Security.VOMS import VOMS
@@ -26,5 +27,5 @@ def getProxyInfo( proxyLoc = False ):
       for entry in retVal[ 'Value' ]:
         info += " voms data  : %s\n" % entry
     else:
-      info += " Can't decode voms data\n"
+      info += " Can't decode voms data (%s)\n" % retVal[ 'Message' ]
   return S_OK( info )
