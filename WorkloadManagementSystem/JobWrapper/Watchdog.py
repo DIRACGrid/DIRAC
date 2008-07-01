@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.34 2008/05/20 18:21:49 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.35 2008/07/01 12:48:48 paterson Exp $
 # File  : Watchdog.py
 # Author: Stuart Paterson
 ########################################################################
@@ -18,7 +18,7 @@
           - CPU normalization for correct comparison with job limit
 """
 
-__RCSID__ = "$Id: Watchdog.py,v 1.34 2008/05/20 18:21:49 paterson Exp $"
+__RCSID__ = "$Id: Watchdog.py,v 1.35 2008/07/01 12:48:48 paterson Exp $"
 
 from DIRAC.Core.Base.Agent                          import Agent
 from DIRAC.Core.DISET.RPCClient                     import RPCClient
@@ -568,6 +568,11 @@ class Watchdog(Agent):
     """Force the Watchdog to complete gracefully.
     """
     self.log.info('Watchdog has completed monitoring of the task')
+    if not os.path.exists(self.controlDir):
+      try:
+        os.makedirs(self.controlDir)
+      except Exception,x:
+        self.log.error('Watchdog could not create control directory',self.controlDir)
     fd = open(self.controlDir+'/stop_agent','w')
     fd.write('Watchdog Agent Stopped at %s [UTC]' % (time.asctime(time.gmtime())))
     fd.close()
