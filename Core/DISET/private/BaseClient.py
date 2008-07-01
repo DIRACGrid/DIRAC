@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.42 2008/06/12 16:23:46 acasajus Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.42 2008/06/12 16:23:46 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.43 2008/07/01 16:21:46 acasajus Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.43 2008/07/01 16:21:46 acasajus Exp $"
 
 import sys
 import types
@@ -27,6 +27,7 @@ class BaseClient:
   KW_IGNORE_GATEWAYS = "ignoreGateways"
   KW_PROXY_LOCATION = "proxyLocation"
   KW_PROXY_STRING = "proxyString"
+  KW_PROXY_CHAIN = "proxyChain"
 
   def __init__( self, serviceName, **kwargs ):
     if type( serviceName ) != types.StringType:
@@ -80,6 +81,12 @@ class BaseClient:
     else:
       self.useCertificates = gConfig._useServerCertificate()
       self.kwargs[ self.KW_USE_CERTIFICATES ] = self.useCertificates
+    if self.KW_PROXY_CHAIN in self.kwargs:
+      try:
+         self.kwargs[ self.KW_PROXY_STRING ] = self.kwargs[ self.KW_PROXY_CHAIN ].dumpAllToString()[ 'Value' ]
+         del( self.kwargs[ self.KW_PROXY_CHAIN ] )
+      except:
+        raise Exception( "Invalid proxy chain" )
 
   def __discoverExtraCredentials( self ):
     #Wich extra credentials to use?
