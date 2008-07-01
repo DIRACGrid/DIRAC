@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Subprocess.py,v 1.20 2008/06/04 05:36:56 rgracian Exp $
-__RCSID__ = "$Id: Subprocess.py,v 1.20 2008/06/04 05:36:56 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Subprocess.py,v 1.21 2008/07/01 14:24:12 acasajus Exp $
+__RCSID__ = "$Id: Subprocess.py,v 1.21 2008/07/01 14:24:12 acasajus Exp $"
 """
    DIRAC Wrapper to execute python and system commands with a wrapper, that might
    set a timeout.
@@ -97,12 +97,21 @@ class Subprocess:
       os._exit(0)
 
   def __selectFD( self, readSeq, timeout = False ):
+    validList = []
+    for fd in readSeq:
+      try:
+        os.fstat( fd )
+        validList.append( fd )
+      except OSError, e:
+        pass
+    if not validList:
+      return False
     if self.timeout and not timeout:
       timeout = self.timeout
     if not timeout:
-      return select.select( readSeq , [], [] )[0]
+      return select.select( validList , [], [] )[0]
     else:
-      return select.select( readSeq , [], [], timeout )[0]
+      return select.select( validList , [], [], timeout )[0]
 
   def __killPid( self, pid, signal = 9 ):
     try:
@@ -124,8 +133,10 @@ class Subprocess:
     if recursive:
       for gcpid in getChildrenPIDs( self.childPID, lambda cpid: os.kill( cpid, signal.SIGSTOP ) ):
         try:
-          os.kill( gcpid, os.SIGKILL )
-        except:
+          print gcpid
+          os.kill( gcpid, signal.SIGKILL )
+          self.__poll( gcpid )
+        except Exception, e:
           pass
     self.__killPid( self.childPID )
 
@@ -153,6 +164,8 @@ class Subprocess:
     else:
       os.close( writeFD )
       readSeq = self.__selectFD( [ readFD ] )
+      if readSeq == False:
+        return S_ERROR( "Can't read from call %s" % ( function.__name__ ) )
       try:
         if len( readSeq ) == 0:
           gLogger.debug( 'Timeout limit reached for pythonCall', function.__name__)
@@ -188,11 +201,16 @@ class Subprocess:
   def __readFromFile( self, file, baseLength, doAll ):
     try:
       if doAll:
-        dataString = "".join( file.readlines() )
+        dataString = ""
+        while file in select.select( [ file ], [], [], 1 )[0]:
+          nB = file.read()
+          if not nB:
+            break
+          dataString += nB
       else:
         dataString = file.readline()
     except Exception, v:
-      pass
+      gLogger.exception( "SUPROCESS: readFromFile exception" )
     if len( dataString ) + baseLength > self.bufferLimit:
       gLogger.error( 'Maximum output buffer length reached' )
       retDict = S_ERROR( 'Reached maximum allowed length (%d bytes) for called '
@@ -292,7 +310,16 @@ class Subprocess:
         retDict = self.__readFromSystemCommandOutput( self.child.stderr, 1, True )
       return retDict
     else:
-      readSeq = self.__selectFD( [ self.child.stdout, self.child.stderr ], True )
+      fdList = []
+      for i in ( self.child.stdout, self.child.stderr ):
+        try:
+          if not i.closed:
+            fdList.append( i.fileno() )
+        except Exception, e:
+          gLogger.exception( "SUBPROCESS: readFromCommand exception" )
+      readSeq = self.__selectFD( fdList, True )
+      if readSeq == False:
+        return S_OK()
       if self.child.stdout in readSeq:
         retDict = self.__readFromSystemCommandOutput( self.child.stdout, 0 )
         if not retDict[ 'OK' ]:
