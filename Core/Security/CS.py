@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/CS.py,v 1.5 2008/06/18 19:56:44 acasajus Exp $
-__RCSID__ = "$Id: CS.py,v 1.5 2008/06/18 19:56:44 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/CS.py,v 1.6 2008/07/01 16:20:16 acasajus Exp $
+__RCSID__ = "$Id: CS.py,v 1.6 2008/07/01 16:20:16 acasajus Exp $"
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import List
@@ -14,9 +14,15 @@ def getUsernameForDN( dn, usersList = False ):
       return retVal
     usersList = retVal[ 'Value' ]
   for username in usersList:
-    if dn == gConfig.getValue( "%s/Users/%s/DN" % ( g_BaseSecuritySection, username ), "" ):
+    if dn in gConfig.getValue( "%s/Users/%s/DN" % ( g_BaseSecuritySection, username ), [] ):
       return S_OK( username )
   return S_ERROR( "No username found for dn %s" % dn )
+
+def getDNForUsername( dn, username ):
+  dnList = gConfig.getValue( "%s/Users/%s/DN" % ( g_BaseSecuritySection, username ), [] )
+  if dnList:
+    return S_OK( dnList )
+  return S_ERROR( "No DN found for user %s" % username )
 
 def getGroupsForUser( username ):
   retVal = gConfig.getSections( "%s/Groups" % g_BaseSecuritySection )
@@ -44,7 +50,7 @@ def getHostnameForDN( dn ):
     return retVal
   hostList = retVal[ 'Value' ]
   for hostname in hostList:
-    if dn == gConfig.getValue( "%s/Hosts/%s/DN" % ( g_BaseSecuritySection, hostname ), "" ):
+    if dn in gConfig.getValue( "%s/Hosts/%s/DN" % ( g_BaseSecuritySection, hostname ), [] ):
       return S_OK( hostname )
   return S_ERROR( "No hostname found for dn %s" % dn )
 
