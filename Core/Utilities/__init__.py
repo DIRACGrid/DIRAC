@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/__init__.py,v 1.5 2008/04/29 07:38:33 rgracian Exp $
-__RCSID__ = "$Id: __init__.py,v 1.5 2008/04/29 07:38:33 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/__init__.py,v 1.6 2008/07/01 15:02:33 acasajus Exp $
+__RCSID__ = "$Id: __init__.py,v 1.6 2008/07/01 15:02:33 acasajus Exp $"
 """
    DIRAC.Core.Utils package
 """
@@ -15,3 +15,4 @@ from DIRAC.Core.Utilities.ExitCallback       import *
 from DIRAC.Core.Utilities.Source             import *
 from DIRAC.Core.Utilities.ThreadSafe         import *
 from DIRAC.Core.Utilities.DEncode            import encode, decode
+from DIRAC.Core.Utilities.Cache              import *

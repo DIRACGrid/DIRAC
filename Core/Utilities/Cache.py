@@ -1,0 +1,108 @@
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/Cache.py,v 1.1 2008/07/01 15:02:33 acasajus Exp $
+__RCSID__ = "$Id: Cache.py,v 1.1 2008/07/01 15:02:33 acasajus Exp $"
+
+import threading
+import datetime
+
+class DictCache:
+
+  def __init__(self, deleteFunction = False ):
+    """
+    Initialize the dict cache.
+      If a delete function is specified it will be invoked when deleting a cached object
+    """
+    self.__lock = threading.RLock()
+    self.__cache = {}
+    self.__deleteFunction = deleteFunction
+
+  def exists( self, cKey, validSeconds = 0 ):
+    """
+    Returns True/False if the key exists for the given number of seconds
+      Arguments:
+        - cKey : identification key of the record
+        - validSeconds : The amount of seconds the key has to be valid for
+    """
+    self.__lock.acquire()
+    try:
+      #Is the key in the cache?
+      if cKey in self.__cache:
+        expTime = self.__cache[ cKey ][ 'expirationTime' ]
+        #If it's valid return True!
+        if expTime > datetime.datetime.now() + datetime.timedelta( seconds = validSeconds ):
+          return True
+        else:
+          #Delete expired
+          self.delete( cKey )
+      return False
+    finally:
+      self.__lock.release()
+
+  def delete( self, cKey ):
+    """
+    Delete a key from the cache
+      Arguments:
+        - cKey : identification key of the record
+    """
+    self.__lock.acquire()
+    try:
+      if cKey not in self.__cache:
+        return
+      if self.__deleteFunction:
+        self.__deleteFunction( self.__cache[ cKey ][ 'value' ] )
+      del( self.__cache[ cKey ] )
+    finally:
+      self.__lock.release()
+
+  def add( self, cKey, validSeconds, value = None ):
+    """
+    Add a record to the cache
+      Arguments:
+        - cKey : identification key of the record
+        - validSeconds : valid seconds of this record
+        - value : value of the record
+    """
+    self.__lock.acquire()
+    try:
+      vD = { 'expirationTime' : datetime.datetime.now() + datetime.timedelta( seconds = validSeconds ),
+             'value' : value }
+      self.__cache[ cKey ] = vD
+    finally:
+      self.__lock.release()
+
+  def get( self, cKey, validSeconds = 0 ):
+    """
+    Get a record from the cache
+      Arguments:
+        - cKey : identification key of the record
+        - validSeconds : The amount of seconds the key has to be valid for
+    """
+    self.__lock.acquire()
+    try:
+      #Is the key in the cache?
+      if cKey in self.__cache:
+        expTime = self.__cache[ cKey ][ 'expirationTime' ]
+        #If it's valid return True!
+        if expTime > datetime.datetime.now() + datetime.timedelta( seconds = validSeconds ):
+          return self.__cache[ cKey ][ 'value' ]
+        else:
+          #Delete expired
+          self.delete( cKey )
+      return False
+    finally:
+      self.__lock.release()
+
+  def showContentsInString(self):
+    """
+    Return a human readable string to represent the contents
+    """
+    self.__lock.acquire()
+    try:
+      data = []
+      for cKey in self.__cache:
+        data.append( "%s:" % str( cKey ) )
+        data.append( "\tExp: %s" % self.__cache[ cKey ][ 'expirationTime' ] )
+        if self.__cache[ cKey ][ 'value' ]:
+          data.append( "\tVal: %s" % self.__cache[ cKey ][ 'value' ] )
+      return "\n".join( data )
+    finally:
+      self.__lock.release()
