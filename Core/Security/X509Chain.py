@@ -1,9 +1,9 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/X509Chain.py,v 1.20 2008/06/30 15:11:19 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/X509Chain.py,v 1.21 2008/07/01 16:20:51 acasajus Exp $
 ########################################################################
 """ X509Chain is a class for managing X509 chains with their Pkeys
 """
-__RCSID__ = "$Id: X509Chain.py,v 1.20 2008/06/30 15:11:19 acasajus Exp $"
+__RCSID__ = "$Id: X509Chain.py,v 1.21 2008/07/01 16:20:51 acasajus Exp $"
 
 import types
 import os
@@ -11,7 +11,7 @@ import stat
 import tempfile
 from GSI import crypto
 from DIRAC.Core.Security.X509Certificate import X509Certificate
-from DIRAC.Core.Security import File, CS
+from DIRAC.Core.Security import CS
 from DIRAC import S_OK, S_ERROR
 
 class X509Chain:
