@@ -1,4 +1,4 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.32 2008/05/18 22:41:46 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.33 2008/07/01 18:16:25 acasajus Exp $
 
 """ Grid Credentials module contains utilities to manage user and host
     certificates and proxies.
@@ -33,7 +33,7 @@
     getVOMSProxyInfo()
 """
 
-__RCSID__ = "$Id: GridCredentials.py,v 1.32 2008/05/18 22:41:46 atsareg Exp $"
+__RCSID__ = "$Id: GridCredentials.py,v 1.33 2008/07/01 18:16:25 acasajus Exp $"
 
 import os
 import os.path
@@ -392,6 +392,8 @@ def getProxyTimeLeft(proxy=None):
   """ Get proxy time left, returns S_OK structure
   """
   result = parseProxy(proxy,option="TimeLeft")
+  if not result[ 'OK' ]:
+    return result
   timeleft = result['Value']
   if int(timeleft) <= 0:
     return S_OK(0)
@@ -427,11 +429,11 @@ def getProxySerial(proxy = None):
   """ Get proxy issuer, returns S_OK structure
   """
   return parseProxy(proxy,option="Serial")
-  
+
 def setupProxyFile(proxy_file):
   """ Setup the given file as a current proxy
   """
-  
+
   if os.path.exists(proxy_file):
     result = getProxyTimeLeft(proxy_file)
     if not result['OK']:
@@ -439,12 +441,12 @@ def setupProxyFile(proxy_file):
     else:
       time_left = int(result["Value"])
       if time_left <= 0:
-        return S_ERROR('Proxy expired')  
-    proxy_file_name = os.path.realpath(proxy_file) 
+        return S_ERROR('Proxy expired')
+    proxy_file_name = os.path.realpath(proxy_file)
     os.environ['X509_USER_PROXY'] = proxy_file_name
     return S_OK(time_left)
   else:
-    return S_ERROR('File not found %s' % proxy_file)     
+    return S_ERROR('File not found %s' % proxy_file)
 
 def setupProxy(proxy, fname=None):
   """ Setup the given proxy to be the current proxy
