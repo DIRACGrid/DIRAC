@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: Mapping.py,v 1.1 2008/06/30 16:56:32 asypniew Exp $
+# $Id: Mapping.py,v 1.2 2008/07/01 10:17:55 asypniew Exp $
 ########################################################################
 
 """ All of the data collection and handling procedures for the SiteMappingHandler
@@ -14,6 +14,9 @@ from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.MonitoringSystem.Agent.pychart import *
 
 jobDB = JobDB()
+
+tier0 = ['LCG.CERN.ch']
+tier1 = ['LCG.GRIDKA.de', 'LCG.CNAF.it', 'LCG.PIC.es', 'LCG.RAL.uk', 'LCG.IN2P3.fr', 'LCG.NIKHEF.nl']
 
 class Mapping:
 
@@ -35,12 +38,34 @@ class Mapping:
     
     ##############################
     if section == 'SiteData':
-      # Update the 'static' site data
-      siteFile = '/afs/cern.ch/user/a/asypniew/public/site/site'
-      result = self.loadSiteData(siteFile)
+      siteListPath = 'Resources/Sites/LCG'
+      result = gConfig.getSections(siteListPath)
       if not result['OK']:
-        gLogger.verbose('Site data could not be established. Error: %s' % result['Value'])
-        return S_ERROR('Site data could not be established.')
+        gLogger.verbose('Site list could not be retrieved.')
+        return S_ERROR('Site list could not be retrieved.')
+        
+      siteList = result['Value']
+      for site in siteList:
+        result = gConfig.getOptions(siteListPath + '/' + site)
+        if not result['OK']:
+          gLogger.verbose('Site section could not be retrieved.')
+          return S_ERROR('Site section could not be retrieved.')
+        siteSection = result['Value']
+        if 'Name' in siteSection:
+          if 'Coordinates' in siteSection:
+            result = gConfig.getValue(siteListPath + '/' + site + '/Coordinates')
+            if not result:
+              continue
+            coord = result.split(':')
+            if site in tier0:
+              cat = 'T0'
+            elif site in tier1:
+              cat = 'T1'
+            else:
+              cat = 'T2'
+            self.siteData[site] = {'Coord' : (float(coord[0]), float(coord[1])), 'Cat' : cat}
+            
+            self.siteData[site]['Mask'] = 'Unknown'
           
     ##############################
     elif section == 'SiteMask':
@@ -86,8 +111,9 @@ class Mapping:
     ##############################
     elif section == 'PilotSummary':
       # Begin by initializing every site (so we don't get dictionary key exceptions)
-      for node in self.siteData:
-        self.siteData[node]['PilotSummary'] = {}
+      #for node in self.siteData:
+      #  self.siteData[node]['PilotSummary'] = {}
+      # MOVED: It is now located jsut before the key is accessed
       
       # Retrieve data on the pilots, and compare them to each sites' computing elements ('children')
       # so that we can categorize the data  
@@ -111,6 +137,7 @@ class Mapping:
           continue
                 
         # Yes, it is. Add it to the site database
+        self.siteData[parent]['PilotSummary'] = {}
         self.siteData[parent]['PilotSummary'][child] = {'Done' : 0, 'Aborted' : 0, 'Submitted' : 0, 'Cleared' : 0, 'Ready' : 0, 'Scheduled' : 0, 'Running' : 0}
         for key in pilotSummary['Value'][child]:
           self.siteData[parent]['PilotSummary'][child][key] = int(pilotSummary['Value'][child][key])
@@ -127,7 +154,7 @@ class Mapping:
   
     gLogger.verbose('KML generation request received. Section: %s' % section)
      
-    scaleData = {'T0' : 1, 'T1' : 0.9}
+    scaleData = {'T0' : 1, 'T1' : 0.9, 'T2' : 0.6}
     KML = KMLData()
     #fileName = ''
     
@@ -137,18 +164,24 @@ class Mapping:
     ##############################
     if section == 'SiteMask':
       #fileName = 'sitemask.kml'
-      KML.addMultipleScaledStyles(('%s-green' % sectionTag[section], '%s-red' % sectionTag[section]), scaleData, '.png')	
+      KML.addMultipleScaledStyles(('%s-green' % sectionTag[section], '%s-red' % sectionTag[section], '%s-gray' % sectionTag[section]), scaleData, '.png')	
       for node in self.siteData:
+        if 'Mask' not in self.siteData[node]:
+          continue
         if self.siteData[node]['Mask'] == 'Good':
           icon = '%s-green%s' % (sectionTag[section], self.siteData[node]['Cat'])
         elif self.siteData[node]['Mask'] == 'Banned':
           icon = '%s-red%s' % (sectionTag[section], self.siteData[node]['Cat'])
+        else:
+          icon = '%s-gray%s' % (sectionTag[section], self.siteData[node]['Cat'])
         KML.addNode(node, 'More info', icon, self.siteData[node]['Coord'])
     
     ##############################    
     elif section == 'JobSummary':
       #fileName = 'jobsummary.kml'
-      for node in self.siteData:      
+      for node in self.siteData:
+        if 'JobSummary' not in self.siteData[node]:
+          continue
         # Generate node style
         KML.addNodeStyle('%s-%s' % (sectionTag[section],node), '%s-%s.png' % (sectionTag[section],node), scaleData[self.siteData[node]['Cat']])
         # Generate description
@@ -161,7 +194,9 @@ class Mapping:
     ##############################
     elif section == 'PilotSummary':
       #fileName = 'pilotsummary.kml'
-      for node in self.siteData:      
+      for node in self.siteData:
+        if 'PilotSummary' not in self.siteData[node]:
+          continue
         # Generate node style
         KML.addNodeStyle('%s-%s' % (sectionTag[section],node), '%s-%s.png' % (sectionTag[section],node), scaleData[self.siteData[node]['Cat']])
         # Generate description
@@ -214,10 +249,11 @@ class Mapping:
     orangeFill = fill_style.Plain(bgcolor=color.T(r=1,g=0.5,b=0))
     yellowFill = fill_style.Plain(bgcolor=color.T(r=1,g=1,b=0))
     blueFill = fill_style.Plain(bgcolor=color.T(r=0,g=0,b=1))
+    grayFill = fill_style.Plain(bgcolor=color.T(r=0.7,g=0.7,b=0.7))
     
     ##############################
     if section == 'SiteMask':
-      maskDict = {'green' : greenFill, 'red' : redFill}
+      maskDict = {'green' : greenFill, 'red' : redFill, 'gray' : grayFill}
       for mask in maskDict:
         fileName = '%s/%s-%s.png' % (filePath, sectionTag[section], mask)
         imgFile = open(fileName, 'wb')
@@ -238,16 +274,24 @@ class Mapping:
       plotFills = [greenFill, orangeFill, blueFill, yellowFill, redFill]
       
       for node in self.siteData:
-        fileName = '%s/%s-%s.png' % (filePath,sectionTag[section],node)
-        imgFile = open(fileName, 'wb')
-        can = canvas.init(imgFile)
-  
+        if 'JobSummary' not in self.siteData[node]:
+          continue
+          
         total = 0
         for state in self.siteData[node]['JobSummary']:
           total += self.siteData[node]['JobSummary'][state]
+          
+        # I don't really know how this could happen, but why risk it?
+        if not total:
+          continue
+          
         percent = {}
         for state in self.siteData[node]['JobSummary']:
           percent[state] = int((100 * self.siteData[node]['JobSummary'][state]) // total)
+          
+        fileName = '%s/%s-%s.png' % (filePath,sectionTag[section],node)
+        imgFile = open(fileName, 'wb')
+        can = canvas.init(imgFile)
         
         data = [('', percent['Done']), ('', percent['Running']),\
                 ('', percent['Stalled']), ('', percent['Waiting']), ('', percent['Failed'])]
@@ -265,20 +309,27 @@ class Mapping:
       plotFills = [greenFill, redFill]
       
       for node in self.siteData:
-        # Generate plot icon for node
-        fileName = '%s/%s-%s.png' % (filePath,sectionTag[section],node)
-        imgFile = open(fileName, 'wb')
-        can = canvas.init(imgFile)
-      
+        if 'PilotSummary' not in self.siteData[node]:
+          continue
+          
         doneCleared = 0
         aborted = 0
         for child in self.siteData[node]['PilotSummary']:
           doneCleared += self.siteData[node]['PilotSummary'][child]['Done'] + self.siteData[node]['PilotSummary'][child]['Cleared']
           aborted += self.siteData[node]['PilotSummary'][child]['Aborted']
         total = doneCleared + aborted
+        
+        # I don't really know how this could happen, but why risk it?
+        if not total:
+          continue
   
         percent = {'DoneCleared' : int((100 * doneCleared) // total),\
                    'Aborted' : int((100 * aborted) // total)}
+                   
+        # Generate plot icon for node
+        fileName = '%s/%s-%s.png' % (filePath,sectionTag[section],node)
+        imgFile = open(fileName, 'wb')
+        can = canvas.init(imgFile)
         
         data = [('', percent['DoneCleared']), ('', percent['Aborted'])]
               
@@ -298,41 +349,10 @@ class Mapping:
     return S_OK('%s icons generated in %s.' % (section, filePath))
     
   #############################################################################
-  def loadSiteData(self,dataFile):
-    """Loads the site coordinates and category from a file and returns a dictionary of data
-    """
-    
-    fin = open(dataFile, 'r')
-    
-    # This would reset the entire data dictionary. Bad.
-    #self.siteData = {}
-    
-    count = 0
-		
-    pieces = 4
-    
-    for l in fin:
-      l = l.strip('\n')
-      if (count % pieces) == 0:
-        siteName = l
-      elif (count % pieces) == 1:
-        lat = float(l)
-      elif (count % pieces) == 2:
-        lon = float(l)
-      elif (count % pieces) == 3:
-        cat = l
-        self.siteData[siteName] = {'Coord' : (lat,lon), 'Cat' : cat}
-      count += 1
-			
-    fin.close()
-	
-    return S_OK(self.siteData)
-    
   def getSiteMask(self):
+    """ Return the site mask
+    """
     return jobDB.getSiteMask('Active')
-    
-  def fileCacheCallback(self, fileName, data):
-    return S_OK('File cache callback.')
 
 
   #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
