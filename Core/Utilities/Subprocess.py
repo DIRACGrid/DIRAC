@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Subprocess.py,v 1.21 2008/07/01 14:24:12 acasajus Exp $
-__RCSID__ = "$Id: Subprocess.py,v 1.21 2008/07/01 14:24:12 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Subprocess.py,v 1.22 2008/07/02 10:18:35 acasajus Exp $
+__RCSID__ = "$Id: Subprocess.py,v 1.22 2008/07/02 10:18:35 acasajus Exp $"
 """
    DIRAC Wrapper to execute python and system commands with a wrapper, that might
    set a timeout.
@@ -133,7 +133,6 @@ class Subprocess:
     if recursive:
       for gcpid in getChildrenPIDs( self.childPID, lambda cpid: os.kill( cpid, signal.SIGSTOP ) ):
         try:
-          print gcpid
           os.kill( gcpid, signal.SIGKILL )
           self.__poll( gcpid )
         except Exception, e:
@@ -198,17 +197,14 @@ class Subprocess:
                            self.bufferList[1][0] )
     return retDict
 
-  def __readFromFile( self, file, baseLength, doAll ):
+  def __readFromFile( self, file, baseLength, doAll = True ):
     try:
-      if doAll:
-        dataString = ""
-        while file in select.select( [ file ], [], [], 1 )[0]:
-          nB = file.read()
-          if not nB:
-            break
-          dataString += nB
-      else:
-        dataString = file.readline()
+      dataString = ""
+      while file in select.select( [ file ], [], [], 1 )[0]:
+        nB = file.read()
+        if not nB:
+          break
+        dataString += nB
     except Exception, v:
       gLogger.exception( "SUPROCESS: readFromFile exception" )
     if len( dataString ) + baseLength > self.bufferLimit:
@@ -220,10 +216,9 @@ class Subprocess:
 
     return S_OK( dataString )
 
-  def __readFromSystemCommandOutput( self, file, bufferIndex, doAll = False ):
+  def __readFromSystemCommandOutput( self, file, bufferIndex ):
     retDict = self.__readFromFile( file,
-                                   len( self.bufferList[ bufferIndex ][0] ),
-                                   doAll )
+                                   len( self.bufferList[ bufferIndex ][0] ) )
     if retDict[ 'OK' ]:
       self.bufferList[ bufferIndex ][0] += retDict[ 'Value' ]
       if not self.callback == None:
@@ -280,7 +275,7 @@ class Subprocess:
 
         if self.timeout and time.time() - initialTime > self.timeout:
           exitStatus = self.killChild()
-          self.__readFromCommand( True )
+          self.__readFromCommand()
           return self.__generateSystemCommandError(
                       exitStatus,
                       "Timeout (%d seconds) for '%s' call" %
@@ -288,7 +283,7 @@ class Subprocess:
 
         exitStatus = self.child.poll()
 
-      self.__readFromCommand( True )
+      self.__readFromCommand()
 
       if exitStatus >= 256:
         exitStatus /= 256
@@ -304,32 +299,25 @@ class Subprocess:
     return self.childPID
 
   def __readFromCommand( self, isLast = False ):
-    if isLast:
-      retDict = self.__readFromSystemCommandOutput( self.child.stdout, 0, True )
-      if retDict[ 'OK' ]:
-        retDict = self.__readFromSystemCommandOutput( self.child.stderr, 1, True )
-      return retDict
-    else:
-      fdList = []
-      for i in ( self.child.stdout, self.child.stderr ):
-        try:
-          if not i.closed:
-            fdList.append( i.fileno() )
-        except Exception, e:
-          gLogger.exception( "SUBPROCESS: readFromCommand exception" )
-      readSeq = self.__selectFD( fdList, True )
-      if readSeq == False:
-        return S_OK()
-      if self.child.stdout in readSeq:
-        retDict = self.__readFromSystemCommandOutput( self.child.stdout, 0 )
-        if not retDict[ 'OK' ]:
-          return retDict
-      if self.child.stderr in readSeq:
-        retDict = self.__readFromSystemCommandOutput( self.child.stderr, 1 )
-        if not retDict[ 'OK' ]:
-          return retDict
+    fdList = []
+    for i in ( self.child.stdout, self.child.stderr ):
+      try:
+        if not i.closed:
+          fdList.append( i.fileno() )
+      except Exception, e:
+        gLogger.exception( "SUBPROCESS: readFromCommand exception" )
+    readSeq = self.__selectFD( fdList, True )
+    if readSeq == False:
       return S_OK()
-
+    if self.child.stdout.fileno() in readSeq:
+      retDict = self.__readFromSystemCommandOutput( self.child.stdout, 0 )
+      if not retDict[ 'OK' ]:
+        return retDict
+    if self.child.stderr.fileno() in readSeq:
+      retDict = self.__readFromSystemCommandOutput( self.child.stderr, 1 )
+      if not retDict[ 'OK' ]:
+        return retDict
+    return S_OK()
 
   def __callLineCallback( self, bufferIndex ):
     nextLineIndex = self.bufferList[ bufferIndex ][0][ self.bufferList[ bufferIndex ][1]: ].find( "\n" )
