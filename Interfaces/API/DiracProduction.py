@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.30 2008/06/30 12:46:35 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.31 2008/07/02 08:30:49 paterson Exp $
 # File :   DiracProduction.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are to be documented with example usage.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.30 2008/06/30 12:46:35 paterson Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.31 2008/07/02 08:30:49 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 import pprint
@@ -791,17 +791,18 @@ class DiracProduction:
         self.log.verbose('Could not get nickname from current proxy credential, trying CS')
 
     activeDN = getCurrentDN()
+    print activeDN
     if not activeDN['OK']:
-      return self.__errorReport(result,'Could not get current DN from proxy')
+      return self.__errorReport(activeDN,'Could not get current DN from proxy')
 
     dn = activeDN['Value']
-    userKeys = gConfig.getSections('/Users')
+    userKeys = gConfig.getSections('/Security/Users')
     if not userKeys['OK']:
-      return self.__errorReport(result,'Could not get current list of DIRAC users')
+      return self.__errorReport(userKeys,'Could not get current list of DIRAC users')
 
     currentUser = None
     for user in userKeys['Value']:
-      dnDict = gConfig.getOptionsDict('/Users/%s' %(user))
+      dnDict = gConfig.getOptionsDict('/Security/Users/%s' %(user))
       if dnDict['OK']:
         if dn == dnDict['Value']['DN']:
           currentUser = user
