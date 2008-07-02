@@ -34,7 +34,7 @@ try:
   gLogger.info(infoStr)
 except Exception,x:
   errStr = "SRM2Storage.__init__: Failed to import gfalthr: %s." % (x)
-  gLogger.warning(errStr)
+  gLogger.warn(errStr)
   try:
     import gfal
     infoStr = "Using gfal from: %s" % gfal.__file__
