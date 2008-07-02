@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Optimizer.py,v 1.12 2008/05/14 18:55:54 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Optimizer.py,v 1.13 2008/07/02 12:21:35 paterson Exp $
 # File :   Optimizer.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
      optimizer instances and associated actions are performed there.
 """
 
-__RCSID__ = "$Id: Optimizer.py,v 1.12 2008/05/14 18:55:54 rgracian Exp $"
+__RCSID__ = "$Id: Optimizer.py,v 1.13 2008/07/02 12:21:35 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.DB.JobDB        import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
@@ -25,7 +25,7 @@ class Optimizer(Agent):
 
   #############################################################################
   def __init__(self, name, initialStatus=None, enableFlag=True, system=None):
-    self.optimizerName = name
+    self.optimizerName = name+'Agent'
     self.initialStatus = initialStatus
     self.enableFlag    = enableFlag
     if not system:
