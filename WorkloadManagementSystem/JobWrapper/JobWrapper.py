@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.45 2008/06/19 18:19:00 paterson Exp $
+# $Id: JobWrapper.py,v 1.46 2008/07/02 13:09:32 paterson Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.45 2008/06/19 18:19:00 paterson Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.46 2008/07/02 13:09:32 paterson Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -758,18 +758,11 @@ class JobWrapper:
         return S_ERROR('InputSandbox download failed for job %s and sandbox %s' %(self.jobID,string.join(sandboxFiles)))
 
     self.log.verbose('Sandbox download result: %s' %(result))
-    #for accounting report
+    #for accounting report exclude input sandbox LFNs not passing through sandbox mechanism
     checkFileSize = []
     for sandboxFile in sandboxFiles:
       if not re.search('^lfn:',i) and not re.search('^LFN:',i):
         checkFileSize.append(sandboxFile)
-
-    # FIXME: should make use os tarfile module to make the code more portable
-    for sandboxFile in sandboxFiles:
-      if re.search('.tar.gz$',sandboxFile) or re.search('.tgz$',sandboxFile):
-        if os.path.exists(sandboxFile):
-          self.log.verbose('Unpacking input sandbox file %s' %(sandboxFile))
-          os.system('tar -zxf %s' %sandboxFile)
 
     lfns = []
     for i in inputSandbox:
@@ -792,6 +785,13 @@ class JobWrapper:
       for lfn in lfns:
         if os.path.exists('%s/%s' %(self.root,os.path.basename(lfn))):
           checkFileSize.append(os.path.basename(lfn))
+
+    # FIXME: should make use os tarfile module to make the code more portable
+    for sandboxFile in sandboxFiles:
+      if re.search('.tar.gz$',sandboxFile) or re.search('.tgz$',sandboxFile):
+        if os.path.exists(sandboxFile):
+          self.log.verbose('Unpacking input sandbox file %s' %(sandboxFile))
+          os.system('tar -zxf %s' %sandboxFile)
 
     if checkFileSize:
       self.inputSandboxSize = getGlobbedTotalSize(checkFileSize)
