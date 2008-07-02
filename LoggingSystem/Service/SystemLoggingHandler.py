@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Service/SystemLoggingHandler.py,v 1.6 2008/03/05 11:26:32 mseco Exp $
-__RCSID__ = "$Id: SystemLoggingHandler.py,v 1.6 2008/03/05 11:26:32 mseco Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Service/SystemLoggingHandler.py,v 1.7 2008/07/02 17:33:23 mseco Exp $
+__RCSID__ = "$Id: SystemLoggingHandler.py,v 1.7 2008/07/02 17:33:23 mseco Exp $"
 """
 SystemLoggingHandler is the implementation of the Logging service
     in the DISET framework
@@ -54,7 +54,10 @@ class SystemLoggingHandler( RequestHandler ):
     for messageTuple in messagesList:
       messageObject = tupleToMessage( messageTuple )
       try:
-        self.__addMessage( messageObject, site, nodeFQDN )
+        result = self.__addMessage( messageObject, site, nodeFQDN )
+        if not result['OK']:
+          gLogger.error('The Log Message could not be inserted into the DB',
+                        'because: "%s"' % result['Message'])
       except Exception, v:
         errorString = 'Message was not added because of exception: '
         exceptionString = str(v)

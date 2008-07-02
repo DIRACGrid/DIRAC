@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/DB/SystemLoggingDB.py,v 1.14 2008/04/09 17:56:23 mseco Exp $
-__RCSID__ = "$Id: SystemLoggingDB.py,v 1.14 2008/04/09 17:56:23 mseco Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/DB/SystemLoggingDB.py,v 1.15 2008/07/02 17:33:24 mseco Exp $
+__RCSID__ = "$Id: SystemLoggingDB.py,v 1.15 2008/07/02 17:33:24 mseco Exp $"
 """ SystemLoggingDB class is a front-end to the Message Logging Database.
     The following methods are provided
 
@@ -297,7 +297,7 @@ class SystemLoggingDB(DB):
     escapeData = self._escapeString( data )
     cmd = "UPDATE LOW PRIORITY AgentPersitentData SET AgentData='%s' WHERE AgentID=%s" % \
           ( agentName, result['Value'] )
-    return self._query(update)
+    return self._update(update)
     
     
   def getMessagesByDate(self, initialDate = None, endDate = None):

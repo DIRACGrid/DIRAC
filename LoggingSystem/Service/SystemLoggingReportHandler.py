@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Service/SystemLoggingReportHandler.py,v 1.2 2008/03/05 11:26:32 mseco Exp $
-__RCSID__ = "$Id: SystemLoggingReportHandler.py,v 1.2 2008/03/05 11:26:32 mseco Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Service/SystemLoggingReportHandler.py,v 1.3 2008/07/02 17:33:23 mseco Exp $
+__RCSID__ = "$Id: SystemLoggingReportHandler.py,v 1.3 2008/07/02 17:33:23 mseco Exp $"
 """
 SystemLoggingReportHandler produce the number that match certain criteria
 
@@ -106,6 +106,23 @@ class SystemLoggingReportHandler( RequestHandler ):
 
     return S_OK( fixedTextStringList )
   
+  def __getTopErrorsReport( self, beginDate=None, endDate=None,
+                            records=None ):
+    fieldList = [ 'SystemName', 'SubSystemName', 'FixedTextString' ]
+    retval = LogDB.getGroupedMessages( fieldList, {}, 'FixedTextString',
+                                       beginDate, endDate )
+    if not retval['OK']: return retval
+
+    tmpOrderedFields=[ ( s[3], s ) for s in retval['Value'] ]
+    tmpOrderedFields.sort()
+    orderedFields = [ t[1] for t in tmpOrderedFields ]
+    orderedFields.reverse()
+    
+    if records:
+      return S_OK( orderedFields[ :records ] )
+    else:
+      return S_OK( orderedFields )
+    
   #A normal exported function (begins with export_)
 
   types_getMessagesReport = []
@@ -155,3 +172,12 @@ class SystemLoggingReportHandler( RequestHandler ):
         between beginDate and endDate 
     """ 
     return self.__getFixedTextStringsReport( beginDate, endDate )
+
+  types_getTopErrorsReport = []
+
+  def export_getTopErrorsReport( self, beginDate=None, endDate=None,
+                                 records=None ):
+    """ reports the number of messages per fixed text string and
+        the system and subsystem that generated them.
+    """
+    return self.__getTopErrorsReport( beginDate, endDate, records )
