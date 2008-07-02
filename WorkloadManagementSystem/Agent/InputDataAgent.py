@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.20 2008/05/19 09:11:32 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.21 2008/07/02 11:38:02 paterson Exp $
 # File :   InputDataAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
 
 """
 
-__RCSID__ = "$Id: InputDataAgent.py,v 1.20 2008/05/19 09:11:32 paterson Exp $"
+__RCSID__ = "$Id: InputDataAgent.py,v 1.21 2008/07/02 11:38:02 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.Core.DISET.RPCClient                            import RPCClient
@@ -264,14 +264,14 @@ class InputDataAgent(Optimizer):
       res = self.wmsAdmin.getProxy(prodDN,prodGroup,self.proxyLength)
       if not res['OK']:
         self.log.error('Could not retrieve proxy from WMS Administrator', res['Message'])
-        return S_OK()
+        return S_ERROR('Could not retrieve proxy from WMS Administrator')
       proxyStr = res['Value']
       if not os.path.exists(os.path.dirname(self.proxyLocation)):
         os.makedirs(os.path.dirname(self.proxyLocation))
       res = setupProxy(proxyStr,self.proxyLocation)
       if not res['OK']:
-        self.log.error('Could not create environment for proxy.', res['Message'])
-        return S_OK()
+        self.log.error('Could not create environment for proxy', res['Message'])
+        return S_ERROR('Could not create environment for proxy')
 
       setDIRACGroup(prodGroup)
       self.log.info('Successfully renewed %s proxy' %prodDN)

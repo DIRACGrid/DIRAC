@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/StagerMonitorAgent.py,v 1.7 2008/05/20 20:38:44 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/StagerMonitorAgent.py,v 1.8 2008/07/02 11:36:03 paterson Exp $
 # File :   StagerMonitorAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
      of the SiteMonitor instances. The StagerMonitorAgent also manages the proxy environment.
 """
 
-__RCSID__ = "$Id: StagerMonitorAgent.py,v 1.7 2008/05/20 20:38:44 rgracian Exp $"
+__RCSID__ = "$Id: StagerMonitorAgent.py,v 1.8 2008/07/02 11:36:03 paterson Exp $"
 
 from DIRAC.Core.Base.Agent                                 import Agent
 from DIRAC.Core.DISET.RPCClient                            import RPCClient
@@ -128,17 +128,17 @@ class StagerMonitorAgent(Agent):
       res = self.wmsAdmin.getProxy(prodDN,prodGroup,self.proxyLength)
       if not res['OK']:
         self.log.error('Could not retrieve proxy from WMS Administrator', res['Message'])
-        return S_OK()
+        return S_ERROR('Could not retrieve proxy from WMS Administrator')
       proxyStr = res['Value']
       if not os.path.exists(os.path.dirname(self.proxyLocation)):
         os.makedirs(os.path.dirname(self.proxyLocation))
       res = setupProxy(proxyStr,self.proxyLocation)
       if not res['OK']:
-        self.log.error('Could not create environment for proxy.', res['Message'])
-        return S_OK()
+        self.log.error('Could not create environment for proxy', res['Message'])
+        return S_ERROR('Could not create environment for proxy')
 
       setDIRACGroup(prodGroup)
-      self.log.info('Successfully renewed %s proxy' %prodDN)  
+      self.log.info('Successfully renewed %s proxy' %prodDN)
 
     #os.system('voms-proxy-info -all')
     return S_OK('Active proxy available')
