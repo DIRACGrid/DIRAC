@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.36 2008/06/27 10:25:07 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.37 2008/07/02 15:14:49 paterson Exp $
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -30,7 +30,7 @@
    Note that several executables can be provided and wil be executed sequentially.
 """
 
-__RCSID__ = "$Id: Job.py,v 1.36 2008/06/27 10:25:07 paterson Exp $"
+__RCSID__ = "$Id: Job.py,v 1.37 2008/07/02 15:14:49 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -83,6 +83,8 @@ class Job:
                       'MinCPUTime':   'other.NAME<=VALUE',
                       'Site':         'other.NAME=="VALUE"',
                       'Platform':     'other.NAME=="VALUE"',
+                      #'BannedSites':  '!Member(other.Site,BannedSites)', #doesn't work unfortunately
+                      'BannedSites':  'other.Site!="VALUE"',
                       'SystemConfig': 'Member("VALUE",other.CompatiblePlatforms)'}
 
     self.script = script
@@ -403,10 +405,10 @@ class Job:
     if type(sites)==list and len(sites):
       bannedSites = string.join(sites,';')
       description = 'List of sites excluded by user'
-      self._addParameter(self.workflow,'BannedSites','JDL',bannedSites,description)
-    elif type(lfns)==type(" "):
+      self._addParameter(self.workflow,'BannedSites','JDLReqt',bannedSites,description)
+    elif type(sites)==type(" "):
       description = 'Site excluded by user'
-      self._addParameter(self.workflow,'BannedSites','JDL',sites,description)
+      self._addParameter(self.workflow,'BannedSites','JDLReqt',sites,description)
     else:
       raise TypeError,'Expected string or list of output data files'
 
@@ -834,7 +836,11 @@ class Job:
         if value and not value.lower()=='any':
           if ptype=='JDLReqt':
             plus = ' && '
-            exprn += reqtsDict[name].replace('NAME',name).replace('VALUE',str(value))+plus
+            if re.search(';',value):
+              for val in value.split(';'):
+                exprn += reqtsDict[name].replace('NAME',name).replace('VALUE',str(val))+plus
+            else:
+              exprn += reqtsDict[name].replace('NAME',name).replace('VALUE',str(value))+plus
 
       if len(plus):
         exprn = exprn[:-len(plus)]
