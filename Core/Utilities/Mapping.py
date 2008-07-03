@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: Mapping.py,v 1.2 2008/07/01 10:17:55 asypniew Exp $
+# $Id: Mapping.py,v 1.3 2008/07/03 13:37:37 asypniew Exp $
 ########################################################################
 
 """ All of the data collection and handling procedures for the SiteMappingHandler
@@ -150,7 +150,7 @@ class Mapping:
     return S_OK(self.siteData)
   
   ###########################################################################
-  def generateKML(self, section, filePath, fileCache, sectionDict):
+  def generateKML(self, section, filePath, fileCache, dataDict):
   
     gLogger.verbose('KML generation request received. Section: %s' % section)
      
@@ -158,13 +158,18 @@ class Mapping:
     KML = KMLData()
     #fileName = ''
     
-    sectionFile = sectionDict['kml']
-    sectionTag = sectionDict['png']
+    sectionFile = dataDict['kml']
+    sectionTag = dataDict['png']
+    
+    iconPath = dataDict['IconPath']
+    if iconPath:
+      iconPath = iconPath.rstrip('/')
+      iconPath += '/'
     
     ##############################
     if section == 'SiteMask':
       #fileName = 'sitemask.kml'
-      KML.addMultipleScaledStyles(('%s-green' % sectionTag[section], '%s-red' % sectionTag[section], '%s-gray' % sectionTag[section]), scaleData, '.png')	
+      KML.addMultipleScaledStyles(iconPath, ('%s-green' % sectionTag[section], '%s-red' % sectionTag[section], '%s-gray' % sectionTag[section]), scaleData, '.png')	
       for node in self.siteData:
         if 'Mask' not in self.siteData[node]:
           continue
@@ -179,11 +184,51 @@ class Mapping:
     ##############################    
     elif section == 'JobSummary':
       #fileName = 'jobsummary.kml'
+      
+      # This algorithm computes the relative sizes for each node
+      # First, collect a data set
+      numJobs = []
       for node in self.siteData:
         if 'JobSummary' not in self.siteData[node]:
           continue
+        num = 0
+        for state in self.siteData[node]['JobSummary']:
+          num += self.siteData[node]['JobSummary'][state]
+        numJobs.append(num)  
+      # Now sort the data into percentile categories
+      numJobs.sort()
+      dataSize = len(numJobs)
+      numCat = False # For continuous scaling, set to False
+      if numCat:
+        if not dataSize:  # Just to be safe
+          dataSize = 1
+        sectionSize = dataSize // numCat
+        if dataSize % numCat != 0:  # This avoids over-scaling later on (scaling greater than maxScale)
+          sectionSize += 1
+      scaleDict = {}
+      maxScale = 1
+      minScale = 0.2
+      for i in range(0, dataSize):
+        if numCat:
+          scaleValue = (float(i) // sectionSize) + 1
+          gLogger.verbose('debug: %.2f' % scaleValue)
+          scaleValue /= numCat
+        else:
+          scaleValue = float(i + 1) / dataSize
+        scaleDict[str(numJobs[i])] = (float(scaleValue) * (maxScale - minScale)) + minScale
+        gLogger.verbose('i=%d, scaleValue=%.2f, scaleDict=%.2f' % (i, scaleValue, scaleDict[str(numJobs[i])]))
+        
+      # Now actually generate the KML  
+      for node in self.siteData:
+        if 'JobSummary' not in self.siteData[node]:
+          continue
+          
+        total = 0
+        for state in self.siteData[node]['JobSummary']:
+          total += self.siteData[node]['JobSummary'][state]
+          
         # Generate node style
-        KML.addNodeStyle('%s-%s' % (sectionTag[section],node), '%s-%s.png' % (sectionTag[section],node), scaleData[self.siteData[node]['Cat']])
+        KML.addNodeStyle('%s-%s' % (sectionTag[section],node), '%s%s-%s.png' % (iconPath,sectionTag[section],node), scaleDict[str(total)])#1)#scaleData[self.siteData[node]['Cat']])
         # Generate description
         description = "Done: %d<br/>Running: %d<br/>Stalled: %d<br/>Waiting: %d<br/>Failed: %d" %\
                       (self.siteData[node]['JobSummary']['Done'], self.siteData[node]['JobSummary']['Running'], self.siteData[node]['JobSummary']['Stalled'],\
@@ -198,7 +243,7 @@ class Mapping:
         if 'PilotSummary' not in self.siteData[node]:
           continue
         # Generate node style
-        KML.addNodeStyle('%s-%s' % (sectionTag[section],node), '%s-%s.png' % (sectionTag[section],node), scaleData[self.siteData[node]['Cat']])
+        KML.addNodeStyle('%s-%s' % (sectionTag[section],node), '%s%s-%s.png' % (iconPath,sectionTag[section],node), scaleData[self.siteData[node]['Cat']])
         # Generate description
       
         table = MappingTable()
@@ -230,14 +275,13 @@ class Mapping:
     return S_OK(data)       
     
   #############################################################################
-  def generateIcons(self, section, filePath, fileCache, sectionDict):
+  def generateIcons(self, section, filePath, fileCache, dataDict):
   
-    sectionFile = sectionDict['kml']
-    sectionTag = sectionDict['png']
+    sectionFile = dataDict['kml']
+    sectionTag = dataDict['png']
   
     gLogger.verbose('Icon generation request received. Section: %s' % section)
-      
-    plotSize = (60,60)
+    
     plotRadius = 30
         
     # Initialize PyChart plotting methods
@@ -261,7 +305,7 @@ class Mapping:
         
         data = [('', 100)]
         
-        ar = area.T(size=plotSize,legend=None,x_grid_style=None,y_grid_style=None)
+        ar = area.T(size=(plotRadius*2, plotRadius*2),legend=None,x_grid_style=None,y_grid_style=None)
         ar.add_plot(pie_plot.T(fill_styles=[maskDict[mask]],radius=plotRadius,arc_offsets=[0],data=data,label_offset=25))
         ar.draw(can)
         can.close()
@@ -273,6 +317,7 @@ class Mapping:
       # Done, Running, Stalled, Waiting, Failed, respectively
       plotFills = [greenFill, orangeFill, blueFill, yellowFill, redFill]
       
+      # Generate icons
       for node in self.siteData:
         if 'JobSummary' not in self.siteData[node]:
           continue
@@ -288,15 +333,16 @@ class Mapping:
         percent = {}
         for state in self.siteData[node]['JobSummary']:
           percent[state] = int((100 * self.siteData[node]['JobSummary'][state]) // total)
-          
+        
         fileName = '%s/%s-%s.png' % (filePath,sectionTag[section],node)
         imgFile = open(fileName, 'wb')
         can = canvas.init(imgFile)
         
         data = [('', percent['Done']), ('', percent['Running']),\
                 ('', percent['Stalled']), ('', percent['Waiting']), ('', percent['Failed'])]
-              
-        ar = area.T(size=plotSize,legend=None,x_grid_style=None,y_grid_style=None)
+        
+        #radius = radiusDict[str(total)]      
+        ar = area.T(size=(plotRadius*2, plotRadius*2),legend=None,x_grid_style=None,y_grid_style=None)
         ar.add_plot(pie_plot.T(fill_styles=plotFills,radius=plotRadius,arc_offsets=[0,0,0,0,0],data=data,label_offset=25))
         ar.draw(can)
         can.close()
@@ -333,7 +379,7 @@ class Mapping:
         
         data = [('', percent['DoneCleared']), ('', percent['Aborted'])]
               
-        ar = area.T(size=plotSize,legend=None,x_grid_style=None,y_grid_style=None)
+        ar = area.T(size=(plotRadius*2, plotRadius*2),legend=None,x_grid_style=None,y_grid_style=None)
         ar.add_plot(pie_plot.T(fill_styles=plotFills,radius=plotRadius,arc_offsets=[0,0],data=data,label_offset=25))
         ar.draw(can)
         can.close()
