@@ -48,6 +48,13 @@ class BaseSecurity:
       else:
         self._secKeyLoc = "%s/etc/grid-security/serverkey.pem" % DIRAC.rootPath
 
+  def getServiceDN( self ):
+    chain = X509Chain()
+    retVal = chain.loadChainFromFile( self._secCertLoc )
+    if not retVal[ 'OK' ]:
+      return retVal
+    return chain.getCertInChain(0)['Value'].getSubjectDN()
+
   def _getExternalCmdEnvironment( self, noX509 = False ):
     cmdEnv = {}
     keys = ['PATH', 'LD_LIBRARY_PATH']
