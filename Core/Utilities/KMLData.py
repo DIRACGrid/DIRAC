@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: KMLData.py,v 1.1 2008/06/30 16:51:53 asypniew Exp $
+# $Id: KMLData.py,v 1.2 2008/07/03 13:36:23 asypniew Exp $
 ########################################################################
 
 """ Handles KML generation
@@ -58,6 +58,7 @@ class KMLData:
     self.data += '\t<Style id="%s">\n' % name
     self.data += '\t\t<IconStyle>\n'
     self.data += '\t\t\t<Icon>\n'
+    #self.data += '\t\t\t\t<href>http://lhcbtest.pic.es/DIRAC/images/maps/%s</href>\n' % icon
     self.data += '\t\t\t\t<href>%s</href>\n' % icon
     self.data += '\t\t\t</Icon>\n'
     self.data += '\t\t\t<scale>%.1f</scale>\n' % scale
@@ -76,10 +77,10 @@ class KMLData:
     self.data += '\t</Style>\n'
 
   #############################################################################	
-  def addMultipleScaledStyles(self, prefix, data, suffix):
+  def addMultipleScaledStyles(self, pathPrefix, prefix, data, suffix):
     for p in prefix:
       for d in data:
-          self.addNodeStyle('%s%s' % (p, d), '%s%s' % (p, suffix), data[d])
+          self.addNodeStyle('%s%s' % (p, d), '%s%s%s' % (pathPrefix, p, suffix), data[d])
 
   #############################################################################	
   def addNode(self, name, description, style, coord):
