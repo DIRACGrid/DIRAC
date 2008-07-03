@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalogue. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.30 2008/06/24 12:46:37 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.31 2008/07/03 17:59:17 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -152,7 +152,17 @@ class ReplicaManager:
       checksum = fileAdler(file)
     res = self.fileCatalogue.exists(lfn) #checkFileExistence(lfn,guid)
     if not res['OK']:
+      errStr = "ReplicaManager.putAndRegister: Completey failed to determine existence of destination LFN."
+      gLogger.error(errStr,lfn)
       return res
+    if not res['Value']['Successful'].has_key(lfn):
+      errStr = "ReplicaManager.putAndRegister: Failed to determine existence of destination LFN."
+      gLogger.error(errStr,lfn)
+      return S_ERROR(errStr)
+    if res['Value']['Successful'][lfn]:
+      errStr = "ReplicaManager.putAndRegister: The supplied LFN already exists in the File Catalog."
+      gLogger.error(errStr,lfn)
+      return S_ERROR(errStr)
     # If the local file name is not the same as the LFN filename then use the LFN file name
     alternativeFile = None
     lfnFileName = os.path.basename(lfn)
