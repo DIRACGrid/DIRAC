@@ -1,11 +1,11 @@
 ########################################################################
-# $Id: SiteMappingHandler.py,v 1.2 2008/07/01 10:05:13 asypniew Exp $
+# $Id: SiteMappingHandler.py,v 1.3 2008/07/03 13:35:15 asypniew Exp $
 ########################################################################
 
 """ The SiteMappingHandler...
 """
 
-__RCSID__ = "$Id: SiteMappingHandler.py,v 1.2 2008/07/01 10:05:13 asypniew Exp $"
+__RCSID__ = "$Id: SiteMappingHandler.py,v 1.3 2008/07/03 13:35:15 asypniew Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -19,30 +19,33 @@ import os
 siteData = Mapping()
 fileCache = False
 
-sectionFiles = {}#'SiteMask' : 'sitemask.kml', 'JobSummary' : 'jobsummary.kml', 'PilotSummary' : 'pilotsummary.kml'}
-sectionTag = {}#'SiteMask' : 'SM', 'JobSummary' : 'JS', 'PilotSummary' : 'PS'}
-sectionDict = {}#'kml' : sectionFiles, 'png' : sectionTag}
+dataDict = {}
 
-# Be prepared for ALL files to possible be deleted from this directory
+# Be prepared for ALL files from this directory to possibly be deleted
 baseFilePath = ''
 
 def initializeSiteMappingHandler( serviceInfo ):
 
-  csSection = PathFinder.getServiceSection( 'Monitoring/SiteMapping' )
+  csSection = PathFinder.getServiceSection('Monitoring/SiteMapping')
+  
   global siteData
   global fileCache
-  global sectionFiles, sectionTag, sectionDict
+  global dataDict
   global baseFilePath
+  
   sectionFiles = gConfig.getOptionsDict(csSection+'/PlotViews')['Value']
   sectionTag = gConfig.getOptionsDict(csSection+'/PlotTags')['Value']
-  sectionDict = {'kml' : sectionFiles, 'png' : sectionTag}
+  iconPath = gConfig.getValue(csSection+'/IconPath', '')
+  dataDict = {'kml' : sectionFiles, 'png' : sectionTag, 'IconPath' : iconPath}
+  
   cacheDir = gConfig.getValue(csSection+'/CacheDir','')
   baseFilePath = cacheDir + '/SiteMapping'
   if not os.path.exists(baseFilePath):
     os.mkdir(baseFilePath)
+    
   cacheTimeToLive = gConfig.getValue(csSection+'/CacheTime', 60)
   fileCache = MappingFileCache(int(cacheTimeToLive))
-
+  
   return S_OK()
 
 class SiteMappingHandler( RequestHandler ):
@@ -106,7 +109,7 @@ class SiteMappingHandler( RequestHandler ):
       
       # Then generate the relevant data  
       gLogger.verbose('...Data updated. Generating files...')
-      result = self.generateSection(section, ext, baseFilePath, fileCache, sectionDict)
+      result = self.generateSection(section, ext, baseFilePath, fileCache, dataDict)
       if not result['OK']:
         return S_ERROR('Failed to generate data.')
       
@@ -121,7 +124,7 @@ class SiteMappingHandler( RequestHandler ):
     return result
   
   ###########################################################################  
-  def generateSection(self, section, sectionType, baseFilePath, fileCache, sectionDict):
+  def generateSection(self, section, sectionType, baseFilePath, fileCache, dataDict):
     """ Generates data for one or all section types (KML/PNG) for a given section
     """
     generatorFunction = {'kml' : siteData.generateKML, 'png' : siteData.generateIcons}
@@ -133,7 +136,7 @@ class SiteMappingHandler( RequestHandler ):
       funcDict = {sectionType : generatorFunction[sectionType]}
       
     for func in funcDict:
-      result = funcDict[func](section, baseFilePath, fileCache, sectionDict)
+      result = funcDict[func](section, baseFilePath, fileCache, dataDict)
       if not result:
         return S_ERROR('Failed to generate data of type %s in section %s' % (func, section))
         
@@ -164,28 +167,28 @@ class SiteMappingHandler( RequestHandler ):
         return S_ERROR('Failed to update section data.')
         
       # Next, generate KML/PNG data
-      result = self.generateSection(fileId['Data'], False, baseFilePath, fileCache, sectionDict)
+      result = self.generateSection(fileId['Data'], False, baseFilePath, fileCache, dataDict)
       if not result['OK']:
         return S_ERROR('Failed to generate sections. Error: %s' % result)
       
       # Now enumerate the relevant files
-      dataToWrite = sectionFiles[fileId['Data']] + '\n'
+      dataToWrite = dataDict['kml'][fileId['Data']] + '\n'
       fileList = os.listdir(baseFilePath)
       for f in fileList:
         ext = self.getExt(f)
         if ext == 'kml':
           continue
         elif ext == 'png':
-          if f.find(sectionTag[fileId['Data']]) == 0:
+          if f.find(dataDict['png'][fileId['Data']]) == 0:
             dataToWrite += f + '\n'
     elif fileId['Type'] == 'All':
-      for s in sectionTag:
+      for s in dataDict['png']:
         # Update each section's data
         result = self.updateData(s)
         if not result['OK']:
           return S_ERROR('Failed to update data for section %s' % s)
         # Generate each section's files
-        result = self.generateSection(s, False, baseFilePath, fileCache, sectionDict)
+        result = self.generateSection(s, False, baseFilePath, fileCache, dataDict)
         if not result['OK']:
           return S_ERROR('Failed to generate section files for section %s' % s)
       
@@ -203,8 +206,8 @@ class SiteMappingHandler( RequestHandler ):
   def translateFile(self, fileName, ext):
     """ Returns the section related to the given file name
     """
-    for section in sectionDict[ext]:
-      if fileName.find(sectionDict[ext][section]) == 0:
+    for section in dataDict[ext]:
+      if fileName.find(dataDict[ext][section]) == 0:
         break
     else:
       return False
