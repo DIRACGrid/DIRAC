@@ -1,4 +1,4 @@
--- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.sql,v 1.10 2008/06/17 21:52:22 atsareg Exp $
+-- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.sql,v 1.11 2008/07/03 13:27:01 paterson Exp $
 
 --------------------------------------------------------------------------------
 --
@@ -134,6 +134,7 @@ CREATE TABLE TaskQueues (
     TaskQueueID INTEGER NOT NULL AUTO_INCREMENT,
     Priority INTEGER NOT NULL DEFAULT 0,
     Requirements BLOB NOT NULL,
+    NumberOfJobs INTEGER NOT NULL DEFAULT 0,
     PRIMARY KEY (TaskQueueID)
 );
 
