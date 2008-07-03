@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Agent/MyProxyRenewalAgent.py,v 1.2 2008/07/01 17:25:18 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Agent/MyProxyRenewalAgent.py,v 1.3 2008/07/03 12:48:29 acasajus Exp $
 ########################################################################
 
 """  Proxy Renewal agent is the key element of the Proxy Repository
@@ -55,6 +55,7 @@ class MyProxyRenewalAgent(Agent):
   def execute(self):
     """ The main agent execution method
     """
+    self.proxyDB.purgeLogs()
     gLogger.info( "Purging expired requests" )
     retVal = self.proxyDB.purgeExpiredRequests()
     if retVal[ 'OK' ]:

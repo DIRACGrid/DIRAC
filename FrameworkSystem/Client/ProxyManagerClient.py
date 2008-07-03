@@ -1,9 +1,9 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyManagerClient.py,v 1.4 2008/07/01 17:25:18 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyManagerClient.py,v 1.5 2008/07/03 12:48:30 acasajus Exp $
 ########################################################################
 """ ProxyManagementAPI has the functions to "talk" to the ProxyManagement service
 """
-__RCSID__ = "$Id: ProxyManagerClient.py,v 1.4 2008/07/01 17:25:18 acasajus Exp $"
+__RCSID__ = "$Id: ProxyManagerClient.py,v 1.5 2008/07/03 12:48:30 acasajus Exp $"
 
 import os
 import datetime
@@ -334,6 +334,6 @@ class ProxyManagerClient:
     Get the contents of the db
     """
     rpcClient = RPCClient( "Framework/ProxyManager" )
-    return rpcClient.getContents()
+    return rpcClient.getContents( {}, [ [ 'UserDN', 'DESC' ] ], 0, 0 )
 
 gProxyManager = ProxyManagerClient()

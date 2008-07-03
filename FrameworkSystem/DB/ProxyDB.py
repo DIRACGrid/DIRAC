@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.5 2008/07/01 19:31:47 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.6 2008/07/03 12:48:30 acasajus Exp $
 ########################################################################
 """ ProxyRepository class is a front-end to the proxy repository Database
 """
 
-__RCSID__ = "$Id: ProxyDB.py,v 1.5 2008/07/01 19:31:47 acasajus Exp $"
+__RCSID__ = "$Id: ProxyDB.py,v 1.6 2008/07/03 12:48:30 acasajus Exp $"
 
 import time
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
@@ -59,6 +59,15 @@ class ProxyDB(DB):
                                                   },
                                       'PrimaryKey' : [ 'UserDN', 'UserGroup' ]
                                      }
+    if 'ProxyDB_Log' not in tablesInDB:
+      tablesD[ 'ProxyDB_Log' ] = { 'Fields' : { 'IssuerDN' : 'VARCHAR(255) NOT NULL',
+                                                'IssuerGroup' : 'VARCHAR(255) NOT NULL',
+                                                'TargetDN' : 'VARCHAR(255) NOT NULL',
+                                                'TargetGroup' : 'VARCHAR(255) NOT NULL',
+                                                'Action' : 'VARCHAR(128) NOT NULL',
+                                                'Timestamp' : 'DATETIME',
+                                              }
+                                  }
     return self._createTables( tablesD )
 
   def generateDelegationRequest( self, proxyChain, userDN, userGroup ):
@@ -82,7 +91,7 @@ class ProxyDB(DB):
       return retVal
     allStr = reqStr + retVal[ 'Value' ]
     cmd = "INSERT INTO `ProxyDB_Requests` ( Id, UserDN, UserGroup, Pem, ExpirationTime )"
-    cmd += " VALUES ( 0, '%s', '%s', '%s', TIMESTAMPADD( SECOND, %s, NOW() ) )" % ( userDN,
+    cmd += " VALUES ( 0, '%s', '%s', '%s', TIMESTAMPADD( SECOND, %s, UTC_TIMESTAMP() ) )" % ( userDN,
                                                                               userGroup,
                                                                               allStr,
                                                                               self.__defaultRequestLifetime )
@@ -125,7 +134,7 @@ class ProxyDB(DB):
     """
     Purge expired requests from the db
     """
-    cmd = "DELETE FROM `ProxyDB_Requests` WHERE ExpirationTime < NOW()"
+    cmd = "DELETE FROM `ProxyDB_Requests` WHERE ExpirationTime < UTC_TIMESTAMP()"
     return self._update( cmd )
 
   def deleteRequest( self, requestId ):
@@ -181,11 +190,14 @@ class ProxyDB(DB):
     if not retVal[ 'OK' ]:
       return retVal
 
-    #TODO:Check for VOMS and make sure it's aligned
     retVal = self.storeProxy( userDN, userGroup, chain )
     if not retVal[ 'OK' ]:
       return retVal
-    return self.deleteRequest( requestId )
+    retVal = self.deleteRequest( requestId )
+    if not retVal[ 'OK' ]:
+      return retVal
+    self.logAction( "upload proxy", userDN, userGroup, userDN, userGroup )
+    return S_OK()
 
   def storeProxy(self, userDN, userGroup, chain ):
     """ Store user proxy into the Proxy repository for a user specified by his
@@ -224,7 +236,7 @@ class ProxyDB(DB):
     gLogger.info( "Storing proxy for credentials %s (%s secs)" %( proxyIdentityDN,remainingSecs ) )
 
     # Check what we have already got in the repository
-    cmd = "SELECT TIMESTAMPDIFF( SECOND, NOW(), ExpirationTime ), Pem FROM `ProxyDB_Proxies` WHERE UserDN='%s' AND UserGroup='%s'" % ( userDN,
+    cmd = "SELECT TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime ), Pem FROM `ProxyDB_Proxies` WHERE UserDN='%s' AND UserGroup='%s'" % ( userDN,
                                                                                                                userGroup)
     result = self._query( cmd )
     if not result['OK']:
@@ -244,12 +256,12 @@ class ProxyDB(DB):
     pemChain = chain.dumpAllToString()['Value']
     if sqlInsert:
       cmd = "INSERT INTO `ProxyDB_Proxies` ( UserDN, UserGroup, Pem, ExpirationTime, PersistentFlag ) VALUES "
-      cmd += "( '%s', '%s', '%s', TIMESTAMPADD( SECOND, %s, NOW() ), 'False' )" % ( userDN,
+      cmd += "( '%s', '%s', '%s', TIMESTAMPADD( SECOND, %s, UTC_TIMESTAMP() ), 'False' )" % ( userDN,
                                                                                   userGroup,
                                                                                   pemChain,
                                                                                   remainingSecs )
     else:
-      cmd = "UPDATE `ProxyDB_Proxies` set Pem='%s', ExpirationTime = TIMESTAMPADD( SECOND, %s, NOW() ) WHERE UserDN='%s' AND UserGroup='%s'" % ( pemChain,
+      cmd = "UPDATE `ProxyDB_Proxies` set Pem='%s', ExpirationTime = TIMESTAMPADD( SECOND, %s, UTC_TIMESTAMP() ) WHERE UserDN='%s' AND UserGroup='%s'" % ( pemChain,
                                                                                                                                                 remainingSecs,
                                                                                                                                                 userDN,
                                                                                                                                                 userGroup)
@@ -260,7 +272,7 @@ class ProxyDB(DB):
     """
     Purge expired requests from the db
     """
-    cmd = "DELETE FROM `ProxyDB_Proxies` WHERE ExpirationTime < NOW() and PersistentFlag = 'False'"
+    cmd = "DELETE FROM `ProxyDB_Proxies` WHERE ExpirationTime < UTC_TIMESTAMP() and PersistentFlag = 'False'"
     return self._update( cmd )
 
   def deleteProxy( self, userDN, userGroup ):
@@ -272,8 +284,8 @@ class ProxyDB(DB):
     return self._update(req)
 
   def __getPemAndTimeLeft( self, userDN, userGroup ):
-    cmd = "SELECT Pem, TIMESTAMPDIFF( SECOND, NOW(), ExpirationTime ) from `ProxyDB_Proxies`"
-    cmd += "WHERE UserDN='%s' AND UserGroup = '%s' AND TIMESTAMPDIFF( SECOND, NOW(), ExpirationTime ) > 0" % ( userDN, userGroup )
+    cmd = "SELECT Pem, TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime ) from `ProxyDB_Proxies`"
+    cmd += "WHERE UserDN='%s' AND UserGroup = '%s' AND TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime ) > 0" % ( userDN, userGroup )
     retVal = self._query(cmd)
     if not retVal['OK']:
       return retVal
@@ -310,6 +322,12 @@ class ProxyDB(DB):
     if chainGroup != userGroup:
       return S_ERROR( "Mismatch between renewed proxy group and expected: %s vs %s" % ( userGroup, chainGroup ) )
     self.storeProxy( userDN, userGroup, chain )
+    retVal = myProxy.getServiceDN()
+    if not retVal[ 'OK' ]:
+      hostDN = userDN
+    else:
+      hostDN = retVal[ 'Value' ]
+    self.logAction( "myproxy renewal", hostDN, "host", userDN, userGroup )
     return S_OK( chain )
 
   def getProxy( self, userDN, userGroup, requiredLifeTime = False ):
@@ -373,7 +391,7 @@ class ProxyDB(DB):
     """
     Returns the remaining time the proxy is valid
     """
-    cmd = "SELECT TIMESTAMPDIFF( SECOND, NOW(), ExpirationTime ) FROM `ProxyDB_Proxies`"
+    cmd = "SELECT TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime ) FROM `ProxyDB_Proxies`"
     retVal = self._query( "%s WHERE UserDN = '%s' AND UserGroup = '%s'" % ( cmd, userDN, userGroup ) )
     if not retVal[ 'OK' ]:
       return retVal
@@ -389,12 +407,13 @@ class ProxyDB(DB):
 
     cmd = "SELECT UserDN, UserGroup, ExpirationTime, PersistentFlag FROM `ProxyDB_Proxies`"
     if validSecondsLeft:
-      cmd += " WHERE ( NOW() + INTERVAL %d SECOND ) < ExpirationTime" % validSecondsLeft
+      cmd += " WHERE ( UTC_TIMESTAMP() + INTERVAL %d SECOND ) < ExpirationTime" % validSecondsLeft
     retVal = self._query( cmd )
     if not retVal[ 'OK' ]:
       return retVal
     data = []
     for record in retVal[ 'Value' ]:
+      print record, "<<<<<<<<<<<<"
       data.append( { 'DN' : record[0],
                      'group' : record[1],
                      'expirationtime' : record[2],
@@ -403,7 +422,7 @@ class ProxyDB(DB):
 
   def getCredentialsAboutToExpire( self, requiredSecondsLeft, onlyPersistent = True ):
     cmd = "SELECT UserDN, UserGroup, ExpirationTime, PersistentFlag FROM `ProxyDB_Proxies`"
-    cmd += " WHERE TIMESTAMPDIFF( SECOND, NOW(), ExpirationTime ) < %s" % requiredSecondsLeft
+    cmd += " WHERE TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime ) < %s" % requiredSecondsLeft
     if onlyPersistent:
       cmd += " AND PersistentFlag = 'True'"
     return self._query( cmd )
@@ -428,7 +447,7 @@ class ProxyDB(DB):
       if not persistent:
         return S_OK()
       cmd = "INSERT INTO `ProxyDB_Proxies` ( UserDN, UserGroup, Pem, ExpirationTime, PersistentFlag ) VALUES "
-      cmd += "( '%s', '%s', '', NOW(), 'True' )" % ( userDN, userGroup )
+      cmd += "( '%s', '%s', '', UTC_TIMESTAMP(), 'True' )" % ( userDN, userGroup )
     else:
       cmd = "UPDATE `ProxyDB_Proxies` SET PersistentFlag='%s' WHERE UserDN='%s' AND UserGroup='%s'" % ( sqlFlag,
                                                                                             userDN,
@@ -439,15 +458,17 @@ class ProxyDB(DB):
       return retVal
     return S_OK()
 
-  def getProxiesFor( self, condDict, start = 0, limit = 0 ):
+  def getProxiesContent( self, selDict, sortList, start = 0, limit = 0 ):
     """
     Function to get the contents of the db
       parameters are a filter to the db
     """
     fields = ( "UserDN", "UserGroup", "ExpirationTime", "PersistentFlag" )
     cmd = "SELECT %s FROM `ProxyDB_Proxies` WHERE Pem is not NULL" % ", ".join( fields )
-    for field in condDict:
-      cmd += " AND (%s)" % " OR ".join( [ "%s='%s'" % (field,str(value)) for value in condDict ] )
+    for field in selDict:
+      cmd += " AND (%s)" % " OR ".join( [ "%s=%s" % ( field, self._escapeString( str( value ) )[ 'Value' ] ) for value in selDict[field] ] )
+    if sortList:
+      cmd += " ORDER BY %s" % ", ".join( [ "%s %s" % ( sort[0], sort[1] ) for sort in sortList ] )
     if limit:
       cmd += " LIMIT %d,%d" % ( start, limit )
     retVal = self._query( cmd )
@@ -461,4 +482,72 @@ class ProxyDB(DB):
       else:
         record[3] = False
       data.append( record )
-    return S_OK( ( fields, data ) )
+    totalRecords = len( data )
+    cmd = "SELECT COUNT( UserGroup ) FROM `ProxyDB_Proxies`"
+    if selDict:
+      qr = []
+      for field in selDict:
+        qr.append( "(%s)" % " OR ".join( [ "%s=%s" % ( field, self._escapeString( str( value ) )[ 'Value' ] ) for value in selDict[field] ] ) )
+      cmd += " WHERE %s" % " AND ".join( qr )
+    retVal = self._query( cmd )
+    if retVal[ 'OK' ]:
+      totalRecords = retVal[ 'Value' ][0][0]
+    return S_OK( { 'ParameterNames' : fields, 'Records' : data, 'TotalRecords' : totalRecords } )
+
+  def logAction( self, action, issuerDN, issuerGroup, targetDN, targetGroup ):
+    """
+      Add an action to the log
+    """
+    cmd = "INSERT INTO `ProxyDB_Log` ( Action, IssuerDN, IssuerGroup, TargetDN, TargetGroup, Timestamp ) VALUES "
+    cmd += "( '%s', '%s', '%s', '%s', '%s', UTC_TIMESTAMP() )" % ( action,
+                                                                   issuerDN,
+                                                                   issuerGroup,
+                                                                   targetDN,
+                                                                   targetGroup )
+    retVal = self._update( cmd )
+    if not retVal[ 'OK' ]:
+      gLogger.error( "Can't add a log: %s" % retVal[ 'Message' ] )
+
+  def purgeLogs( self ):
+    """
+    Purge expired requests from the db
+    """
+    cmd = "DELETE FROM `ProxyDB_Log` WHERE TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime ) > 63936000"
+    return self._update( cmd )
+
+  def getLogsContent( self, selDict, sortList, start = 0, limit = 0 ):
+    """
+    Function to get the contents of the logs table
+      parameters are a filter to the db
+    """
+    fields = ( "Action", "IssuerDN", "IssuerGroup", "TargetDN", "TargetGroup", "Timestamp" )
+    cmd = "SELECT %s FROM `ProxyDB_Log`" % ", ".join( fields )
+    if selDict:
+      qr = []
+      if 'beforeDate' in selDict:
+        qr.append( "Timestamp < %s" % self._escapeString( selDict[ 'beforeDate' ] )[ 'Value' ] )
+        del( selDict[ 'beforeDate' ] )
+      if 'afterDate' in selDict:
+        qr.append( "Timestamp > %s" % self._escapeString( selDict[ 'afterDate' ] )[ 'Value' ] )
+        del( selDict[ 'afterDate' ] )
+      for field in selDict:
+        qr.append( "(%s)" % " OR ".join( [ "%s=%s" % ( field, self._escapeString( str( value ) )[ 'Value' ] ) for value in selDict[field] ] ) )
+      whereStr = " WHERE %s" % " AND ".join( qr )
+      cmd += whereStr
+    else:
+      whereStr = ""
+    if sortList:
+      cmd += " ORDER BY %s" % ", ".join( [ "%s %s" % ( sort[0], sort[1] ) for sort in sortList ] )
+    if limit:
+      cmd += " LIMIT %d,%d" % ( start, limit )
+    retVal = self._query( cmd )
+    if not retVal[ 'OK' ]:
+      return retVal
+    data = retVal[ 'Value' ]
+    totalRecords = len( data )
+    cmd = "SELECT COUNT( Timestamp ) FROM `ProxyDB_Log`"
+    cmd += whereStr
+    retVal = self._query( cmd )
+    if retVal[ 'OK' ]:
+      totalRecords = retVal[ 'Value' ][0][0]
+    return S_OK( { 'ParameterNames' : fields, 'Records' : data, 'TotalRecords' : totalRecords } )

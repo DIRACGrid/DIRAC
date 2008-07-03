@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/ProxyManagerHandler.py,v 1.4 2008/07/01 19:31:47 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/ProxyManagerHandler.py,v 1.5 2008/07/03 12:48:30 acasajus Exp $
 ########################################################################
 
 """ ProxyManager is the implementation of the ProxyManagement service
     in the DISET framework
 """
 
-__RCSID__ = "$Id: ProxyManagerHandler.py,v 1.4 2008/07/01 19:31:47 acasajus Exp $"
+__RCSID__ = "$Id: ProxyManagerHandler.py,v 1.5 2008/07/03 12:48:30 acasajus Exp $"
 
 import types
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -58,7 +58,10 @@ class ProxyManagerHandler( RequestHandler ):
     """ Upload result of delegation
     """
     credDict = self.getRemoteCredentials()
-    return gProxyDB.completeDelegation( requestId, credDict[ 'DN' ], credDict[ 'group' ], pemChain )
+    retVal = gProxyDB.completeDelegation( requestId, credDict[ 'DN' ], credDict[ 'group' ], pemChain )
+    if not retVal[ 'OK' ]:
+      return retVal
+    return S_OK()
 
   types_getRegisteredUsers = []
   def export_getRegisteredUsers( self, validSecondsRequired = 0 ):
@@ -91,6 +94,7 @@ class ProxyManagerHandler( RequestHandler ):
                                                    requireLimited = forceLimited )
     if not retVal[ 'OK' ]:
       return retVal
+    gProxyDB.logAction( "download proxy", credDict[ 'DN' ], credDict[ 'group' ], userDN, userGroup )
     return S_OK( retVal[ 'Value' ] )
 
   types_getVOMSProxy = [ types.StringType, types.StringType, types.StringType, ( types.IntType, types.LongType ) ]
@@ -118,6 +122,7 @@ class ProxyManagerHandler( RequestHandler ):
                                                    requireLimited = forceLimited )
     if not retVal[ 'OK' ]:
       return retVal
+    gProxyDB.logAction( "download voms proxy", credDict[ 'DN' ], credDict[ 'group' ], userDN, userGroup )
     return S_OK( retVal[ 'Value' ] )
 
   types_setPersistency = [ types.StringType, types.StringType, types.BooleanType ]
@@ -125,23 +130,69 @@ class ProxyManagerHandler( RequestHandler ):
     """
     Set the persistency for a given dn/group
     """
-    return gProxyDB.setPersistencyFlag( userDN, userGroup, persistentFlag )
+    retVal = gProxyDB.setPersistencyFlag( userDN, userGroup, persistentFlag )
+    if not retVal[ 'OK' ]:
+      return retVal
+    gProxyDB.logAction( "set persistency to %s" % bool( persistentFlag ),
+                                                  credDict[ 'DN' ],
+                                                  credDict[ 'group' ],
+                                                  userDN,
+                                                  userGroup )
+    return S_OK()
 
-  types_getContents = []
-  def export_getContents( self, condDict, start = 0, limit = 0 ):
+  types_deleteProxyBundle = [ ( types.ListType, types.TupleType ) ]
+  def export_deleteProxyBundle( self, idList ):
+    """
+    delete a list of id's
+    """
+    errorInDelete = []
+    deleted = 0
+    for id in idList:
+      if len( id ) != 2:
+        errorInDelete.append( "%s doesn't have two fields" % str(id) )
+      retVal = self.export_deleteProxy( id[0], id[1] )
+      if not retVal[ 'OK' ]:
+        errorInDelete.append( "%s : %s" %( str(id), retVal[ 'Message' ] ) )
+      else:
+        deleted += 1
+    if errorInDelete:
+      return S_ERROR( "Could not delete some proxies: %s" % ",".join( errorInDelete ) )
+    return S_OK( deleted )
+
+  types_deleteProxy = [ ( types.ListType, types.TupleType ) ]
+  def export_deleteProxy( self, userDN, userGroup ):
+    """
+    Delete a proxy from the DB
+    """
+    credDict = self.getRemoteCredentials()
+    if not Properties.PROXY_MANAGEMENT in credDict[ 'properties' ]:
+      if userDN != credDict[ 'DN' ]:
+        return S_ERROR( "You aren't allowed! Bad boy!" )
+    retVal =  gProxyDB.deleteProxy( userDN, userGroup )
+    if not retVal[ 'OK' ]:
+      return retVal
+    gProxyDB.logAction( "delete proxy", credDict[ 'DN' ], credDict[ 'group' ],
+                                        userDN, userGroup )
+    return S_OK()
+
+  types_getContents = [ types.DictType, ( types.ListType, types.TupleType ),
+                       ( types.IntType, types.LongType ), ( types.IntType, types.LongType ) ]
+  def export_getContents( self, selDict, sortDict, start, limit ):
     """
     Retrieve the contents of the DB
     """
-    if type( condDict ) != types.DictType:
-      return S_ERROR( "Type mismatch in first parameter" )
-    if type( start ) not in ( types.IntType, types.LongType ):
-      return S_ERROR( "Type mismatch in second parameter" )
-    if type( limit ) not in ( types.IntType, types.LongType ):
-      return S_ERROR( "Type mismatch in third parameter" )
     credDict = self.getRemoteCredentials()
     if not Properties.PROXY_MANAGEMENT in credDict[ 'properties' ]:
       result = CS.getDNForUsername( credDict[ 'username' ] )
       if not result[ 'OK' ]:
         return S_ERROR( "You are not a valid user!" )
-      condDict[ 'UserDN' ] = result[ 'Value' ]
-    return gProxyDB.getProxiesFor( condDict, start, limit )
+      selDict[ 'UserDN' ] = result[ 'Value' ]
+    return gProxyDB.getProxiesContent( selDict, sortDict, start, limit )
+
+  types_getLogContents = [ types.DictType, ( types.ListType, types.TupleType ),
+                       ( types.IntType, types.LongType ), ( types.IntType, types.LongType ) ]
+  def export_getLogContents( self, selDict, sortDict, start, limit ):
+    """
+    Retrieve the contents of the DB
+    """
+    return gProxyDB.getLogsContent( selDict, sortDict, start, limit )
