@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: Mapping.py,v 1.3 2008/07/03 13:37:37 asypniew Exp $
+# $Id: Mapping.py,v 1.4 2008/07/04 14:38:08 asypniew Exp $
 ########################################################################
 
 """ All of the data collection and handling procedures for the SiteMappingHandler
@@ -9,11 +9,11 @@ from DIRAC.Core.Utilities.KMLData import KMLData
 from DIRAC.Core.Utilities.MappingTable import MappingTable
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
+#from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 
-from DIRAC.MonitoringSystem.Agent.pychart import *
+import pylab
 
-jobDB = JobDB()
+#jobDB = JobDB()
 
 tier0 = ['LCG.CERN.ch']
 tier1 = ['LCG.GRIDKA.de', 'LCG.CNAF.it', 'LCG.PIC.es', 'LCG.RAL.uk', 'LCG.IN2P3.fr', 'LCG.NIKHEF.nl']
@@ -23,6 +23,8 @@ class Mapping:
   ###########################################################################
   def __init__(self):
     self.siteData = {}
+    self.plotFigure = pylab.figure(figsize=(1,1))
+    self.plotFigure.figurePatch.set_alpha(0.0)
     
   ###########################################################################
   def getDict(self):
@@ -70,8 +72,9 @@ class Mapping:
     ##############################
     elif section == 'SiteMask':
       # Update site mask data
-      mask = self.getSiteMask()
-      #mask = wmsAdmin.getSiteMask()
+      #mask = self.getSiteMask()
+      mask = wmsAdmin.getSiteMask()
+      gLogger.verbose('Mask: %s' % mask)
       if not mask['OK']:
         gLogger.verbose('Failed to retrieve site mask. Error: %s' % mask['Value'])
         return S_ERROR('Failed to retrieve site mask.')
@@ -153,8 +156,22 @@ class Mapping:
   def generateKML(self, section, filePath, fileCache, dataDict):
   
     gLogger.verbose('KML generation request received. Section: %s' % section)
-     
-    scaleData = {'T0' : 1, 'T1' : 0.9, 'T2' : 0.6}
+    
+    # scaleData is for scaling done on a tier basis
+    scaleData = {'T0' : 1.0, 'T1' : 0.9, 'T2' : 0.6}
+    # maxScale, minScale are for scaling done on a site data basis (e.g., number of jobs)
+    maxScale = 1
+    minScale = 0.2
+    
+    # I want these scaling variables to range from 0 to 1.
+    # So, if the browser or plot generation files generate files which are displaying
+    #   too small, adjust this scaleAdjust rather than fooling around with all the other values.
+    scaleAdjust = 0.3
+    for x in scaleData:
+      scaleData[x] += scaleAdjust
+    maxScale += scaleAdjust
+    minScale += scaleAdjust
+    
     KML = KMLData()
     #fileName = ''
     
@@ -206,8 +223,6 @@ class Mapping:
         if dataSize % numCat != 0:  # This avoids over-scaling later on (scaling greater than maxScale)
           sectionSize += 1
       scaleDict = {}
-      maxScale = 1
-      minScale = 0.2
       for i in range(0, dataSize):
         if numCat:
           scaleValue = (float(i) // sectionSize) + 1
@@ -276,83 +291,51 @@ class Mapping:
     
   #############################################################################
   def generateIcons(self, section, filePath, fileCache, dataDict):
-  
+ 
     sectionFile = dataDict['kml']
     sectionTag = dataDict['png']
   
     gLogger.verbose('Icon generation request received. Section: %s' % section)
     
-    plotRadius = 30
-        
-    # Initialize PyChart plotting methods
-    theme.output_format = 'png'
-    theme.use_color = True
-    theme.reinitialize()
-    greenFill = fill_style.Plain(bgcolor=color.T(r=0,g=1,b=0))
-    redFill = fill_style.Plain(bgcolor=color.T(r=1,g=0,b=0))
-    orangeFill = fill_style.Plain(bgcolor=color.T(r=1,g=0.5,b=0))
-    yellowFill = fill_style.Plain(bgcolor=color.T(r=1,g=1,b=0))
-    blueFill = fill_style.Plain(bgcolor=color.T(r=0,g=0,b=1))
-    grayFill = fill_style.Plain(bgcolor=color.T(r=0.7,g=0.7,b=0.7))
-    
     ##############################
     if section == 'SiteMask':
-      maskDict = {'green' : greenFill, 'red' : redFill, 'gray' : grayFill}
-      for mask in maskDict:
-        fileName = '%s/%s-%s.png' % (filePath, sectionTag[section], mask)
-        imgFile = open(fileName, 'wb')
-        can = canvas.init(imgFile)
+      colorDict = {'green' : '#00ff00', 'red' : '#ff0000', 'gray' : '#666666'}
+      for color in colorDict:
         
-        data = [('', 100)]
+        fileName = '%s/%s-%s.png' % (filePath, sectionTag[section], color)
         
-        ar = area.T(size=(plotRadius*2, plotRadius*2),legend=None,x_grid_style=None,y_grid_style=None)
-        ar.add_plot(pie_plot.T(fill_styles=[maskDict[mask]],radius=plotRadius,arc_offsets=[0],data=data,label_offset=25))
-        ar.draw(can)
-        can.close()
-        imgFile.close()
+        data = (100,)
+        
+        pylab.pie(data, colors=(colorDict[color],))
+        pylab.savefig(fileName)
+        
         fileCache.addToCache(fileName)
     
     ##############################  
     elif section == 'JobSummary':
       # Done, Running, Stalled, Waiting, Failed, respectively
-      plotFills = [greenFill, orangeFill, blueFill, yellowFill, redFill]
+      colorList = ('#00ff00', '#ff7f00', '#0000ff', '#ffff00', '#ff0000')
       
       # Generate icons
       for node in self.siteData:
         if 'JobSummary' not in self.siteData[node]:
           continue
-          
-        total = 0
-        for state in self.siteData[node]['JobSummary']:
-          total += self.siteData[node]['JobSummary'][state]
-          
-        # I don't really know how this could happen, but why risk it?
-        if not total:
-          continue
-          
-        percent = {}
-        for state in self.siteData[node]['JobSummary']:
-          percent[state] = int((100 * self.siteData[node]['JobSummary'][state]) // total)
         
         fileName = '%s/%s-%s.png' % (filePath,sectionTag[section],node)
-        imgFile = open(fileName, 'wb')
-        can = canvas.init(imgFile)
         
-        data = [('', percent['Done']), ('', percent['Running']),\
-                ('', percent['Stalled']), ('', percent['Waiting']), ('', percent['Failed'])]
+        data = (self.siteData[node]['JobSummary']['Done'], self.siteData[node]['JobSummary']['Running'],\
+                self.siteData[node]['JobSummary']['Stalled'], self.siteData[node]['JobSummary']['Waiting'],\
+                self.siteData[node]['JobSummary']['Failed'])
+                
+        pylab.pie(data, colors=colorList)
+        pylab.savefig(fileName)
         
-        #radius = radiusDict[str(total)]      
-        ar = area.T(size=(plotRadius*2, plotRadius*2),legend=None,x_grid_style=None,y_grid_style=None)
-        ar.add_plot(pie_plot.T(fill_styles=plotFills,radius=plotRadius,arc_offsets=[0,0,0,0,0],data=data,label_offset=25))
-        ar.draw(can)
-        can.close()
-        imgFile.close()
         fileCache.addToCache(fileName)
     
     ##############################    
     elif section == 'PilotSummary':
       # Done + Cleared, Aborted
-      plotFills = [greenFill, redFill]
+      colorList = ('#00ff00', '#ff0000')
       
       for node in self.siteData:
         if 'PilotSummary' not in self.siteData[node]:
@@ -363,27 +346,12 @@ class Mapping:
         for child in self.siteData[node]['PilotSummary']:
           doneCleared += self.siteData[node]['PilotSummary'][child]['Done'] + self.siteData[node]['PilotSummary'][child]['Cleared']
           aborted += self.siteData[node]['PilotSummary'][child]['Aborted']
-        total = doneCleared + aborted
-        
-        # I don't really know how this could happen, but why risk it?
-        if not total:
-          continue
-  
-        percent = {'DoneCleared' : int((100 * doneCleared) // total),\
-                   'Aborted' : int((100 * aborted) // total)}
                    
         # Generate plot icon for node
         fileName = '%s/%s-%s.png' % (filePath,sectionTag[section],node)
-        imgFile = open(fileName, 'wb')
-        can = canvas.init(imgFile)
-        
-        data = [('', percent['DoneCleared']), ('', percent['Aborted'])]
-              
-        ar = area.T(size=(plotRadius*2, plotRadius*2),legend=None,x_grid_style=None,y_grid_style=None)
-        ar.add_plot(pie_plot.T(fill_styles=plotFills,radius=plotRadius,arc_offsets=[0,0],data=data,label_offset=25))
-        ar.draw(can)
-        can.close()
-        imgFile.close()
+        data = (doneCleared, aborted)
+        pylab.pie(data, colors=colorList)
+        pylab.savefig(fileName)
         fileCache.addToCache(fileName)
       
     ##############################  
@@ -395,10 +363,10 @@ class Mapping:
     return S_OK('%s icons generated in %s.' % (section, filePath))
     
   #############################################################################
-  def getSiteMask(self):
-    """ Return the site mask
-    """
-    return jobDB.getSiteMask('Active')
+#  def getSiteMask(self):
+#    """ Return the site mask
+#    """
+#    return jobDB.getSiteMask('Active')
 
 
   #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
