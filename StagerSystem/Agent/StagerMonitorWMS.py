@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/Attic/StagerMonitorWMS.py,v 1.9 2008/07/02 11:36:39 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/Attic/StagerMonitorWMS.py,v 1.10 2008/07/04 08:18:20 rgracian Exp $
 # File :   StagerMonitorWMS.py
 # Author : Stuart Paterson
 ########################################################################
@@ -20,7 +20,7 @@
      Successful -> purged with status change
 """
 
-__RCSID__ = "$Id: StagerMonitorWMS.py,v 1.9 2008/07/02 11:36:39 paterson Exp $"
+__RCSID__ = "$Id: StagerMonitorWMS.py,v 1.10 2008/07/04 08:18:20 rgracian Exp $"
 
 from DIRAC.Core.Base.Agent                                 import Agent
 from DIRAC.Core.DISET.RPCClient                            import RPCClient
@@ -54,10 +54,7 @@ class StagerMonitorWMS(Agent):
     self.updateStatus = gConfig.getValue(self.section+'/UpdateStatus','ToUpdate')
     self.jobSelectLimit = gConfig.getValue(self.section+'/JobSelectLimit',5000)
     self.monStatusDict = {self.updateStatus:'Staged','New':'Pending','Submitted':'Pending','Staged':'Staged','Successful':'Staged','Failed':'Failed'}
-    self.wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
-    self.jobReport = None #Initialized after proxy
     self.stagerClient = None #Initialized after proxy
-    self.monitoring = None #Initialized after proxy
     return result
 
   #############################################################################
@@ -76,8 +73,6 @@ class StagerMonitorWMS(Agent):
       self.log.warn('Could not set up proxy for shift manager %s %s' %(prodDN))
       return S_OK('Production shift manager proxy could not be set up')
 
-    self.monitoring = RPCClient('WorkloadManagement/JobMonitoring')
-    self.jobReport  = RPCClient('WorkloadManagement/JobStateUpdate')
     self.stagerClient = StagerClient()
 
     self.log.verbose('Checking submitted jobs for status changes')
@@ -296,7 +291,8 @@ class StagerMonitorWMS(Agent):
   def __getJobsStatus(self,jobList):
     """Wraps around getJobsStatus of monitoring client.
     """
-    result = self.monitoring.getJobsStatus(jobList)
+    monitoring = RPCClient('WorkloadManagement/JobMonitoring')
+    result = monitoring.getJobsStatus(jobList)
     if not result['OK']:
       self.log.warn('JobMonitoring client responded with error:\n%s' %result)
 
@@ -306,7 +302,8 @@ class StagerMonitorWMS(Agent):
   def __setJobParam(self,jobID,name,value):
     """Wraps around setJobParameter of state update client
     """
-    jobParam = self.jobReport.setJobParameter(int(jobID),str(name),str(value))
+    jobReport  = RPCClient('WorkloadManagement/JobStateUpdate')
+    jobParam = jobReport.setJobParameter(int(jobID),str(name),str(value))
     self.log.verbose('setJobParameter(%s,%s,%s)' %(jobID,name,value))
     if not jobParam['OK']:
       self.log.warn(jobParam['Message'])
@@ -317,7 +314,8 @@ class StagerMonitorWMS(Agent):
   def __setJobStatus(self,jobID,status,minorStatus):
     """Wraps around setJobStatus of state update client
     """
-    jobStatus = self.jobReport.setJobStatus(int(jobID),status,minorStatus,'StagerSystem')
+    jobReport  = RPCClient('WorkloadManagement/JobStateUpdate')
+    jobStatus = jobReport.setJobStatus(int(jobID),status,minorStatus,'StagerSystem')
     self.log.verbose('setJobStatus(%s,%s,%s,%s)' %(jobID,status,minorStatus,'StagerSystem'))
     if not jobStatus['OK']:
       self.log.warn(jobStatus['Message'])

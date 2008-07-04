@@ -28,8 +28,6 @@ class ReplicationPlacementAgent(Agent):
     result = Agent.initialize(self)
     self.transferDBUrl = PathFinder.getServiceURL('RequestManagement/centralURL')
     self.TransferDB = RequestClient()
-    self.PlacementDB = PlacementDBClient()
-    self.server = RPCClient("DataManagement/PlacementDB")
     self.DataLog = DataLoggingClient()
     gMonitor.registerActivity("Iteration","Agent Loops","ReplicationPlacementAgent","Loops/min",gMonitor.OP_SUM)
     return result
@@ -45,7 +43,8 @@ class ReplicationPlacementAgent(Agent):
       self.singleTransformation = transName
       gLogger.info("Initializing Replication Agent for transformation %s." % transName)
 
-    res = self.server.getAllTransformations()
+    PlacementDB = RPCClient("DataManagement/PlacementDB")
+    res = PlacementDB.getAllTransformations()
     activeTransforms = []
     if not res['OK']:
       gLogger.error("ReplicationPlacementAgent.execute: Failed to get transformations.", res['Message'])
@@ -77,7 +76,8 @@ class ReplicationPlacementAgent(Agent):
             gLogger.error("ReplicationPlacementAgent.execute: Failed to flush transformation '%s'." % transName, res['Message'])
           else:
             gLogger.info("ReplicationPlacementAgent.execute: Transformation '%s' flushed in %s seconds." % (transName,time.time()-startTime))
-            res = self.server.setTransformationStatus(transName, 'Stopped')
+            PlacementDB = RPCClient("DataManagement/PlacementDB")
+            res = PlacementDB.setTransformationStatus(transName, 'Stopped')
             if not res['OK']:
               gLogger.error("ReplicationPlacementAgent.execute: Failed to update transformation status to 'Stopped'.", res['Message'])
             else:
@@ -93,7 +93,8 @@ class ReplicationPlacementAgent(Agent):
     """ Process a single transformation
     """
     transName = transDict['Name']
-    res = self.server.getInputData(transName,'AprioriGood')
+    PlacementDB = RPCClient("DataManagement/PlacementDB")
+    res = PlacementDB.getInputData(transName,'AprioriGood')
     if not res['OK']:
       errStr = "ReplicationPlacementAgent.processTransformation: Failed to obtain input data."
       gLogger.error(errStr,res['Message'])
@@ -138,11 +139,11 @@ class ReplicationPlacementAgent(Agent):
         for targetSE,lfns in targetSEDict.items():
           for lfn in lfns:
             self.DataLog.addFileRecord(lfn,'ReplicationAssigned',targetSE,'','ReplicationPlacementAgent')
-          res = self.server.setFileStatusForTransformation(transName,'Assigned',lfns)
+          res = PlacementDB.setFileStatusForTransformation(transName,'Assigned',lfns)
           if not res['OK']:
             errStr = "ReplicationPlacementAgent.processTransformation: Failed to update file status."
             gLogger.error(errStr,res['Message'])
-          res = self.server.setFileSEForTransformation(transName,targetSE,lfns)
+          res = PlacementDB.setFileSEForTransformation(transName,targetSE,lfns)
           if not res['OK']:
             errStr = "ReplicationPlacementAgent.processTransformation: Failed to update file status."
             gLogger.error(errStr,res['Message'])

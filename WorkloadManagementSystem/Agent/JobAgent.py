@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.38 2008/06/27 11:38:15 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.39 2008/07/04 08:24:46 rgracian Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.38 2008/06/27 11:38:15 paterson Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.39 2008/07/04 08:24:46 rgracian Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -34,10 +34,6 @@ class JobAgent(Agent):
     """
     Agent.__init__(self,AGENT_NAME)
     #self.log.setLevel('verb')
-    self.jobManager  = RPCClient('WorkloadManagement/JobManager')
-    self.matcher = RPCClient('WorkloadManagement/Matcher', timeout = 600 )
-    self.jobReport  = RPCClient('WorkloadManagement/JobStateUpdate')
-    self.wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
 
   #############################################################################
   def initialize(self,loops=0):
@@ -77,6 +73,7 @@ class JobAgent(Agent):
   def execute(self):
     """The JobAgent execution method.
     """
+    jobManager  = RPCClient('WorkloadManagement/JobManager')
     #TODO: Initially adding timeleft utility for information, not yet instrumented
     #      to perform scheduling based on the output.
     if self.jobCount:
@@ -213,7 +210,7 @@ class JobAgent(Agent):
       if not software['OK']:
         self.log.error('Failed to install software for job %s' %(jobID))
         self.log.error(software['Message'])
-        result = self.jobManager.rescheduleJob(jobID)
+        result = jobManager.rescheduleJob(jobID)
         if not result['OK']:
           self.log.warn(result['Message'])
           return self.__finish('Problem Rescheduling Job')
@@ -238,7 +235,7 @@ class JobAgent(Agent):
           self.__finish('Job processing failed with exception')
     except Exception, x:
       self.log.exception(x)
-      result = self.jobManager.rescheduleJob(jobID)
+      result = jobManager.rescheduleJob(jobID)
       if not result['OK']:
         self.log.warn(result['Message'])
       else:
@@ -288,7 +285,8 @@ class JobAgent(Agent):
     currentGroup =  getDIRACGroup('None')
     self.log.info('Current DIRAC Group is: %s' %(currentGroup))
     self.log.info('Attempting to obtain proxy with length %s hours for DN\n %s' %(hours,ownerDN))
-    result = self.wmsAdmin.getProxy(ownerDN,jobGroup,hours)
+    wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
+    result = wmsAdmin.getProxy(ownerDN,jobGroup,hours)
     if not result['OK']:
       self.log.warn('Could not retrieve proxy from WMS Administrator')
       self.log.verbose(result)
@@ -492,7 +490,8 @@ class JobAgent(Agent):
     """Request a single job from the matcher service.
     """
     try:
-      result = self.matcher.requestJob(resourceJDL)
+      matcher = RPCClient('WorkloadManagement/Matcher', timeout = 600 )
+      result = matcher.requestJob(resourceJDL)
       return result
     except Exception, x:
       self.log.exception(x)
@@ -532,7 +531,8 @@ class JobAgent(Agent):
   def __report(self,jobID,status,minorStatus):
     """Wraps around setJobStatus of state update client
     """
-    jobStatus = self.jobReport.setJobStatus(int(jobID),status,minorStatus,'JobAgent')
+    jobReport = RPCClient('WorkloadManagement/JobStateUpdate')
+    jobStatus = jobReport.setJobStatus(int(jobID),status,minorStatus,'JobAgent')
     self.log.verbose('setJobStatus(%s,%s,%s,%s)' %(jobID,status,minorStatus,'JobAgent'))
     if not jobStatus['OK']:
       self.log.warn(jobStatus['Message'])
@@ -544,11 +544,12 @@ class JobAgent(Agent):
     """Sends back useful information for the pilotAgentsDB via the WMSAdministrator
        service.
     """
-    result = self.wmsAdmin.setJobForPilot(int(jobID),str(self.pilotReference))
+    wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
+    result = wmsAdmin.setJobForPilot(int(jobID),str(self.pilotReference))
     if not result['OK']:
       self.log.warn(result['Message'])
 
-    result = self.wmsAdmin.setPilotBenchmark(str(self.pilotReference),float(self.cpuFactor))
+    result = wmsAdmin.setPilotBenchmark(str(self.pilotReference),float(self.cpuFactor))
     if not result['OK']:
       self.log.warn(result['Message'])
 
@@ -558,7 +559,8 @@ class JobAgent(Agent):
   def __setJobSite(self,jobID,site):
     """Wraps around setJobSite of state update client
     """
-    jobSite = self.jobReport.setJobSite(int(jobID),site)
+    jobReport = RPCClient('WorkloadManagement/JobStateUpdate')
+    jobSite = jobReport.setJobSite(int(jobID),site)
     self.log.verbose('setJobSite(%s,%s)' %(jobID,site))
     if not jobSite['OK']:
       self.log.warn(jobSite['Message'])
@@ -569,7 +571,8 @@ class JobAgent(Agent):
   def __setJobParam(self,jobID,name,value):
     """Wraps around setJobParameter of state update client
     """
-    jobParam = self.jobReport.setJobParameter(int(jobID),str(name),str(value))
+    jobReport = RPCClient('WorkloadManagement/JobStateUpdate')
+    jobParam = jobReport.setJobParameter(int(jobID),str(name),str(value))
     self.log.verbose('setJobParameter(%s,%s,%s)' %(jobID,name,value))
     if not jobParam['OK']:
         self.log.warn(jobParam['Message'])

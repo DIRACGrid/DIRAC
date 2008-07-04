@@ -11,8 +11,6 @@ class SandboxClient:
     """
 
     self.sandbox_type = sandbox_type
-    self.sandbox = TransferClient('WorkloadManagement/%sSandbox' % sandbox_type)
-    self.sandbox_status = RPCClient('WorkloadManagement/%sSandbox' % sandbox_type)
 
 ########################################################################
   # FIXME: all over the place jobID is considered either int or string
@@ -39,7 +37,8 @@ class SandboxClient:
       return S_ERROR('Failed to locate files: \n'+string.join(error_files,','))
 
     sendName = str(jobID)+"::Job__Sandbox__"
-    result = self.sandbox.sendBulk(files_to_send,sendName)
+    sandbox = TransferClient('WorkloadManagement/%sSandbox' % sandbox_type)
+    result = sandbox.sendBulk(files_to_send,sendName)
     return result
 
 ########################################################################
@@ -61,7 +60,8 @@ class SandboxClient:
           return S_ERROR('Failed to send directory '+fname)
 
         sendName = `jobID`+"::"+bzname
-        result = self.sandbox.sendFile(sendName,bzname)
+        sandbox = TransferClient('WorkloadManagement/%sSandbox' % sandbox_type)
+        result = sandbox.sendFile(sendName,bzname)
 
         if not result['OK']:
           gLogger.error('Failed to send directory '+bzname+' to Sandbox service for job '+`jobID`)
@@ -71,7 +71,8 @@ class SandboxClient:
       else:  # This is a file
         bname = os.path.basename(fname)
         sendName = `jobID`+":"+bname
-        result = self.sandbox.sendFile(bname, sendName)
+        sandbox = TransferClient('WorkloadManagement/%sSandbox' % sandbox_type)
+        result = sandbox.sendFile(bname, sendName)
         print "0000",result
         if not result['OK']:
           gLogger.error('Failed to send file '+bname+' to Sandbox service for job '+`jobID`)
@@ -90,7 +91,8 @@ class SandboxClient:
     """
 
     # Get the list of files in the sandbox
-    result = self.sandbox_status.getFileNames(jobID)
+    sandbox_status = RPCClient('WorkloadManagement/%sSandbox' % sandbox_type)
+    result = sandbox_status.getFileNames(jobID)
     if not result['OK']:
       return S_ERROR('Failed to get the list of file names')
 
@@ -103,7 +105,8 @@ class SandboxClient:
     error_files = []
     for f in fileList:
       sname = `jobID`+"::"+f
-      result = self.sandbox.receiveFile(f,sname)
+      sandbox = TransferClient('WorkloadManagement/%sSandbox' % sandbox_type)
+      result = sandbox.receiveFile(f,sname)
       if not result['OK']:
         error_files.append(f)
       else:
@@ -131,5 +134,5 @@ class SandboxClient:
   def setSandboxReady(self,jobID):
     """ Set sandbox status to ready for the given job
     """
-
-    return self.sandbox_status.setSandboxReady(jobID)
+    sandbox_status = RPCClient('WorkloadManagement/%sSandbox' % sandbox_type)
+    return sandbox_status.setSandboxReady(jobID)

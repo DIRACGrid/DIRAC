@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/StagerMonitorAgent.py,v 1.8 2008/07/02 11:36:03 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/StagerMonitorAgent.py,v 1.9 2008/07/04 08:18:19 rgracian Exp $
 # File :   StagerMonitorAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
      of the SiteMonitor instances. The StagerMonitorAgent also manages the proxy environment.
 """
 
-__RCSID__ = "$Id: StagerMonitorAgent.py,v 1.8 2008/07/02 11:36:03 paterson Exp $"
+__RCSID__ = "$Id: StagerMonitorAgent.py,v 1.9 2008/07/04 08:18:19 rgracian Exp $"
 
 from DIRAC.Core.Base.Agent                                 import Agent
 from DIRAC.Core.DISET.RPCClient                            import RPCClient
@@ -36,7 +36,6 @@ class StagerMonitorAgent(Agent):
     self.proxyLength = gConfig.getValue(self.section+'/DefaultProxyLength',24) # hours
     self.minProxyValidity = gConfig.getValue(self.section+'/MinimumProxyValidity',30*60) # seconds
     self.proxyLocation = gConfig.getValue(self.section+'/ProxyLocation','/opt/dirac/work/StagerMonitorAgent/shiftProdProxy')
-    self.wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
     self.pollingTime = gConfig.getValue(self.section+'/PollingTime',60)
     self.threadStartDelay = gConfig.getValue(self.section+'/ThreadStartDelay',5)
     self.siteMonitor = gConfig.getValue(self.section+'/ModulePath','DIRAC.StagerSystem.Agent.SiteMonitor')
@@ -125,7 +124,8 @@ class StagerMonitorAgent(Agent):
 
     if obtainProxy:
       self.log.info('Attempting to renew %s proxy' %prodDN)
-      res = self.wmsAdmin.getProxy(prodDN,prodGroup,self.proxyLength)
+      wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
+      res = wmsAdmin.getProxy(prodDN,prodGroup,self.proxyLength)
       if not res['OK']:
         self.log.error('Could not retrieve proxy from WMS Administrator', res['Message'])
         return S_ERROR('Could not retrieve proxy from WMS Administrator')

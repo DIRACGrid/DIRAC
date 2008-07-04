@@ -27,10 +27,8 @@ class StorageUsageAgent(Agent):
     result = Agent.initialize(self)
     self.lfc = FileCatalog(['LcgFileCatalogCombined'])
 
-    self.StorageUsageDB = RPCClient('DataManagement/StorageUsage')
     self.useProxies = gConfig.getValue(self.section+'/UseProxies','True')
     if self.useProxies == 'True':
-      self.wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
       self.proxyDN = gConfig.getValue(self.section+'/ProxyDN','')
       self.proxyGroup = gConfig.getValue(self.section+'/ProxyGroup','')
       self.proxyLength = gConfig.getValue(self.section+'/DefaultProxyLength',12)
@@ -41,6 +39,7 @@ class StorageUsageAgent(Agent):
 
   def execute(self):
 
+    StorageUsageDB = RPCClient('DataManagement/StorageUsage')
     if self.useProxies == 'True':
       ############################################################
       #
@@ -66,7 +65,8 @@ class StorageUsageAgent(Agent):
 
       if obtainProxy:
         self.log.info("StorageUsageAgent: Attempting to renew %s proxy." %self.proxyDN)
-        res = self.wmsAdmin.getProxy(self.proxyDN,self.proxyGroup,self.proxyLength)
+        wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
+        res = wmsAdmin.getProxy(self.proxyDN,self.proxyGroup,self.proxyLength)
         if not res['OK']:
           gLogger.error("StorageUsageAgent: Could not retrieve proxy from WMS Administrator", res['Message'])
           return S_OK()
@@ -81,7 +81,7 @@ class StorageUsageAgent(Agent):
         self.log.info("StorageUsageAgent: Successfully renewed %s proxy." %self.proxyDN)
 
 
-    res = self.StorageUsageDB.getStorageSummary()
+    res = StorageUsageDB.getStorageSummary()
     if res['OK']:
       gLogger.info("StorageUsageAgent: Storage Usage Summary")
       gLogger.info("============================================================")
@@ -123,7 +123,7 @@ class StorageUsageAgent(Agent):
         siteUsage = res['Value']['Successful'][currentDir]['SiteUsage']
 
         if numberOfFiles > 0:
-          res = self.StorageUsageDB.insertDirectory(currentDir,numberOfFiles,totalSize)
+          res = StorageUsageDB.insertDirectory(currentDir,numberOfFiles,totalSize)
           if not res['OK']:
             gLogger.error("StorageUsageAgent: Failed to insert the directory.", "%s %s" % (currentDir,res['Message']))
             subDirs = [currentDir]
@@ -132,7 +132,7 @@ class StorageUsageAgent(Agent):
             gLogger.info("StorageUsageAgent: %s %s %s" % ('Storage Element'.ljust(40),'Number of files'.rjust(20),'Total size'.rjust(20)))
             for storageElement in sortList(siteUsage.keys()):
               usageDict = siteUsage[storageElement]
-              res = self.StorageUsageDB.publishDirectoryUsage(currentDir,storageElement,long(usageDict['Size']),usageDict['Files'])
+              res = StorageUsageDB.publishDirectoryUsage(currentDir,storageElement,long(usageDict['Size']),usageDict['Files'])
               if not res['OK']:
                 gLogger.error("StorageUsageAgent: Failed to update the Storage Usage database.", "%s %s" % (storageElement,res['Message']))
                 subDirs = [currentDir]
@@ -142,7 +142,7 @@ class StorageUsageAgent(Agent):
       # If there are no subdirs
       if (len(subDirs) ==  0) and (numberOfFiles == 0):
         gLogger.info("StorageUsageAgent: Attempting to remove empty directory from Storage Usage database")
-        res = self.StorageUsageDB.publishEmptyDirectory(currentDir)
+        res = StorageUsageDB.publishEmptyDirectory(currentDir)
         if not res['OK']:
           gLogger.error("StorageUsageAgent: Failed to remove empty directory from Storage Usage database.",res['Message'])
         else:

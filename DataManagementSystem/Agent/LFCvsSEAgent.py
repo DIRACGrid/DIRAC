@@ -29,10 +29,8 @@ class LFCvsSEAgent(Agent):
     self.ReplicaManager = ReplicaManager()
     self.lfc = FileCatalog(['LcgFileCatalogCombined'])
 
-    self.IntegrityDB = RPCClient('DataManagement/DataIntegrity')
     self.useProxies = gConfig.getValue(self.section+'/UseProxies','True')
     if self.useProxies == 'True':
-      self.wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
       self.proxyDN = gConfig.getValue(self.section+'/ProxyDN','')
       self.proxyGroup = gConfig.getValue(self.section+'/ProxyGroup','')
       self.proxyLength = gConfig.getValue(self.section+'/DefaultProxyLength',12)
@@ -68,7 +66,8 @@ class LFCvsSEAgent(Agent):
 
       if obtainProxy:
         self.log.info("LFCvsSEAgent: Attempting to renew %s proxy." %self.proxyDN)
-        res = self.wmsAdmin.getProxy(self.proxyDN,self.proxyGroup,self.proxyLength)
+        wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
+        res = wmsAdmin.getProxy(self.proxyDN,self.proxyGroup,self.proxyLength)
         if not res['OK']:
           gLogger.error("LFCvsSEAgent: Could not retrieve proxy from WMS Administrator", res['Message'])
           return S_OK()
@@ -160,7 +159,8 @@ class LFCvsSEAgent(Agent):
                         gLogger.error("LFCvsSEAgent.execute: Failed to get metadata.","%s %s" % (pfn,res['Value']['Failed'][pfn]))
                         lfn = pfnLfnDict[pfn]
                         fileMetadata = {'Prognosis':'MissingSEPfn','LFN':lfn,'PFN':pfn,'StorageElement':storageElementName,'Size':lfnSizeDict[lfn]}
-                        res = self.IntegrityDB.insertProblematic(AGENT_NAME,fileMetadata)
+                        IntegrityDB = RPCClient('DataManagement/DataIntegrity')
+                        res = IntegrityDB.insertProblematic(AGENT_NAME,fileMetadata)
                         if res['OK']:
                           gLogger.info("LFCvsSEAgent.execute: Successfully added to IntegrityDB.")
                           gLogger.error("Change the status in the LFC,ProcDB....")
@@ -176,7 +176,8 @@ class LFCvsSEAgent(Agent):
                         else:
                           gLogger.error("LFCvsSEAgent.execute: Catalog and storage size mis-match.","%s %s" % (pfn,storageElementName))
                           fileMetadata = {'Prognosis':'PfnSizeMismatch','LFN':lfn,'PFN':pfn,'StorageElement':storageElementName}
-                          res = self.IntegrityDB.insertProblematic(AGENT_NAME,fileMetadata)
+                          IntegrityDB = RPCClient('DataManagement/DataIntegrity')
+                          res = IntegrityDB.insertProblematic(AGENT_NAME,fileMetadata)
                           if res['OK']:
                             gLogger.info("LFCvsSEAgent.execute: Successfully added to IntegrityDB.")
                             gLogger.error("Change the status in the LFC,ProcDB....")

@@ -30,7 +30,6 @@ class FTSSubmit(Agent):
 
     self.useProxies = gConfig.getValue(self.section+'/UseProxies','True')
     if self.useProxies == 'True':
-      self.wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
       self.proxyDN = gConfig.getValue(self.section+'/ProxyDN','')
       self.proxyGroup = gConfig.getValue(self.section+'/ProxyGroup','')
       self.proxyLength = gConfig.getValue(self.section+'/DefaultProxyLength',12)
@@ -67,7 +66,8 @@ class FTSSubmit(Agent):
 
       if obtainProxy:
         self.log.info("TransferAgent.execute: Attempting to renew %s proxy." %self.proxyDN)
-        res = self.wmsAdmin.getProxy(self.proxyDN,self.proxyGroup,self.proxyLength)
+        wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
+        res = wmsAdmin.getProxy(self.proxyDN,self.proxyGroup,self.proxyLength)
         if not res['OK']:
           gLogger.error("TransferAgent.execute: Could not retrieve proxy from WMS Administrator", res['Message'])
           return S_OK()

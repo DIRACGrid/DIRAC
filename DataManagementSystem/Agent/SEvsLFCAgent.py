@@ -30,10 +30,8 @@ class SEvsLFCAgent(Agent):
     self.ReplicaManager = ReplicaManager()
     self.lfc = FileCatalog(['LcgFileCatalogCombined'])
 
-    self.IntegrityDB = RPCClient('DataManagement/DataIntegrity')
     self.useProxies = gConfig.getValue(self.section+'/UseProxies','True')
     if self.useProxies == 'True':
-      self.wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
       self.proxyDN = gConfig.getValue(self.section+'/ProxyDN','')
       self.proxyGroup = gConfig.getValue(self.section+'/ProxyGroup','')
       self.proxyLength = gConfig.getValue(self.section+'/DefaultProxyLength',12)
@@ -44,6 +42,7 @@ class SEvsLFCAgent(Agent):
 
   def execute(self):
 
+    IntegrityDB = RPCClient('DataManagement/DataIntegrity')
     if self.useProxies == 'True':
       ############################################################
       #
@@ -69,7 +68,8 @@ class SEvsLFCAgent(Agent):
 
       if obtainProxy:
         self.log.info("SEvsLFCAgent: Attempting to renew %s proxy." %self.proxyDN)
-        res = self.wmsAdmin.getProxy(self.proxyDN,self.proxyGroup,self.proxyLength)
+        wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
+        res = wmsAdmin.getProxy(self.proxyDN,self.proxyGroup,self.proxyLength)
         if not res['OK']:
           gLogger.error("SEvsLFCAgent: Could not retrieve proxy from WMS Administrator", res['Message'])
           return S_OK()
@@ -167,7 +167,7 @@ class SEvsLFCAgent(Agent):
                         if not res['OK']:
                           gLogger.error("SEvsLFCAgent.execute: Failed to get determine LFN from pfn.", "%s %s" % (pfn,res['Message']))
                           fileMetadata = {'Prognosis':'NonConventionPfn','LFN':'','PFN':pfn,'StorageElement':storageElementName,'Size':pfnDict['Size']}
-                          res = self.IntegrityDB.insertProblematic(AGENT_NAME,fileMetadata)
+                          res = IntegrityDB.insertProblematic(AGENT_NAME,fileMetadata)
                           if res['OK']:
                             gLogger.info("SEvsLFCAgent.execute: Successfully added to IntegrityDB.")
                             gLogger.error("Change the status in the LFC,ProcDB....")
@@ -187,7 +187,7 @@ class SEvsLFCAgent(Agent):
                           gLogger.error("SEvsLFCAgent.execute: Failed to get metadata.","%s %s" % (lfn,res['Value']['Failed'][lfn]))
                           pfn = lfnPfnDict[lfn]
                           fileMetadata = {'Prognosis':'SEPfnNoLfn','LFN':lfn,'PFN':pfn,'StorageElement':storageElementName,'Size':pfnSize[pfn]}
-                          res = self.IntegrityDB.insertProblematic(AGENT_NAME,fileMetadata)
+                          res = IntegrityDB.insertProblematic(AGENT_NAME,fileMetadata)
                           if res['OK']:
                             gLogger.info("SEvsLFCAgent.execute: Successfully added to IntegrityDB.")
                             gLogger.error("Change the status in the LFC,ProcDB....")
@@ -204,7 +204,7 @@ class SEvsLFCAgent(Agent):
                           elif int(storageSize) == 0:
                             gLogger.error("SEvsLFCAgent.execute: Physical file size is 0.", "%s %s" % (pfn,storageElementName))
                             fileMetadata = {'Prognosis':'ZeroSizePfn','LFN':lfn,'PFN':pfn,'StorageElement':storageElementName}
-                            res = self.IntegrityDB.insertProblematic(AGENT_NAME,fileMetadata)
+                            res = IntegrityDB.insertProblematic(AGENT_NAME,fileMetadata)
                             if res['OK']:
                               gLogger.info("SEvsLFCAgent.execute: Successfully added to IntegrityDB.")
                               gLogger.error("Change the status in the LFC,ProcDB....")
@@ -213,7 +213,7 @@ class SEvsLFCAgent(Agent):
                           else:
                             gLogger.error("SEvsLFCAgent.execute: Catalog and storage size mis-match.","%s %s" % (pfn,storageElementName))
                             fileMetadata = {'Prognosis':'PfnSizeMismatch','LFN':lfn,'PFN':pfn,'StorageElement':storageElementName}
-                            res = self.IntegrityDB.insertProblematic(AGENT_NAME,fileMetadata)
+                            res = IntegrityDB.insertProblematic(AGENT_NAME,fileMetadata)
                             if res['OK']:
                               gLogger.info("SEvsLFCAgent.execute: Successfully added to IntegrityDB.")
                               gLogger.error("Change the status in the LFC,ProcDB....")
@@ -228,7 +228,7 @@ class SEvsLFCAgent(Agent):
                             gLogger.error("SEvsLFCAgent.execute: Failed to get replica information.","%s %s" % (lfn,res['Value']['Failed'][lfn]))
                             pfn = lfnPfnDict[lfn]
                             fileMetadata = {'Prognosis':'PfnNoReplica','LFN':lfn,'PFN':pfn,'StorageElement':storageElementName,'Size':pfnSize[pfn]}
-                            res = self.IntegrityDB.insertProblematic(AGENT_NAME,fileMetadata)
+                            res = IntegrityDB.insertProblematic(AGENT_NAME,fileMetadata)
                             if res['OK']:
                               gLogger.info("SEvsLFCAgent.execute: Successfully added to IntegrityDB.")
                               gLogger.error("Change the status in the LFC,ProcDB....")
@@ -241,7 +241,7 @@ class SEvsLFCAgent(Agent):
                             if not pfn in registeredPfns:
                               gLogger.error("SEvsLFCAgent.execute: SE PFN not registered.","%s %s" % (lfn,pfn))
                               fileMetadata = {'Prognosis':'PfnNoReplica','LFN':lfn,'PFN':pfn,'StorageElement':storageElementName}
-                              res = self.IntegrityDB.insertProblematic(AGENT_NAME,fileMetadata)
+                              res = IntegrityDB.insertProblematic(AGENT_NAME,fileMetadata)
                               if res['OK']:
                                 gLogger.info("SEvsLFCAgent.execute: Successfully added to IntegrityDB.")
                                 gLogger.error("Change the status in the LFC,ProcDB....")

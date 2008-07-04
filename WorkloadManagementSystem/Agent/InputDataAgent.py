@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.21 2008/07/02 11:38:02 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.22 2008/07/04 08:24:46 rgracian Exp $
 # File :   InputDataAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
 
 """
 
-__RCSID__ = "$Id: InputDataAgent.py,v 1.21 2008/07/02 11:38:02 paterson Exp $"
+__RCSID__ = "$Id: InputDataAgent.py,v 1.22 2008/07/04 08:24:46 rgracian Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.Core.DISET.RPCClient                            import RPCClient
@@ -62,7 +62,6 @@ class InputDataAgent(Optimizer):
       self.log.fatal(str(x))
       result = S_ERROR(msg)
 
-    self.wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
     return result
 
   #############################################################################
@@ -261,7 +260,8 @@ class InputDataAgent(Optimizer):
 
     if obtainProxy:
       self.log.info('Attempting to renew %s proxy' %prodDN)
-      res = self.wmsAdmin.getProxy(prodDN,prodGroup,self.proxyLength)
+      wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
+      res = wmsAdmin.getProxy(prodDN,prodGroup,self.proxyLength)
       if not res['OK']:
         self.log.error('Could not retrieve proxy from WMS Administrator', res['Message'])
         return S_ERROR('Could not retrieve proxy from WMS Administrator')

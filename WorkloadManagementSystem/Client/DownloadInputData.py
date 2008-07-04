@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: DownloadInputData.py,v 1.5 2008/06/09 10:20:31 paterson Exp $
+# $Id: DownloadInputData.py,v 1.6 2008/07/04 08:28:50 rgracian Exp $
 # File :   DownloadInputData.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     defined in the CS for the VO.
 """
 
-__RCSID__ = "$Id: DownloadInputData.py,v 1.5 2008/06/09 10:20:31 paterson Exp $"
+__RCSID__ = "$Id: DownloadInputData.py,v 1.6 2008/07/04 08:28:50 rgracian Exp $"
 
 from DIRAC.Core.DISET.RPCClient                                     import RPCClient
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
@@ -34,7 +34,6 @@ class DownloadInputData:
     self.fileCatalogResult = argumentsDict['FileCatalog']
     self.jobID = None
     self.rm = ReplicaManager()
-    self.jobReport  = RPCClient('WorkloadManagement/JobStateUpdate')
 
   #############################################################################
   def execute(self,dataToResolve=None):
@@ -240,7 +239,8 @@ class DownloadInputData:
     if not self.jobID:
       return S_ERROR('JobID not defined')
 
-    jobParam = self.jobReport.setJobParameter(int(self.jobID),str(name),str(value))
+    jobReport = RPCClient('WorkloadManagement/JobStateUpdate')
+    jobParam = jobReport.setJobParameter(int(self.jobID),str(name),str(value))
     self.log.verbose('setJobParameter(%s,%s,%s)' %(self.jobID,name,value))
     if not jobParam['OK']:
       self.log.warn(jobParam['Message'])

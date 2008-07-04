@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.32 2008/06/23 11:14:29 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.33 2008/07/04 08:11:37 rgracian Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.32 2008/06/23 11:14:29 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.33 2008/07/04 08:11:37 rgracian Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -65,7 +65,6 @@ class Dirac:
     self.outputSandboxClient = SandboxClient('Output')
     self.inputSandboxClient = SandboxClient('Input')
     self.client = WMSClient()
-    self.monitoring = RPCClient('WorkloadManagement/JobMonitoring')
     self.pPrint = pprint.PrettyPrinter()
     try:
 #      from DIRAC.DataManagementSystem.Client.Catalog.LcgFileCatalogCombinedClient import LcgFileCatalogCombinedClient
@@ -989,9 +988,10 @@ class Dirac:
     elif type(jobID)==type(1):
       jobID = [jobID]
 
-    statusDict = self.monitoring.getJobsStatus(jobID)
-    minorStatusDict = self.monitoring.getJobsMinorStatus(jobID)
-    siteDict = self.monitoring.getJobsSites(jobID)
+    monitoring = RPCClient('WorkloadManagement/JobMonitoring')
+    statusDict = monitoring.getJobsStatus(jobID)
+    minorStatusDict = monitoring.getJobsMinorStatus(jobID)
+    siteDict = monitoring.getJobsSites(jobID)
 
     if not statusDict['OK']:
       self.log.warn('Could not obtain job status information')
@@ -1052,7 +1052,8 @@ class Dirac:
 
     self.log.verbose('Will select jobs with last update %s and following conditions' %Date)
     self.log.verbose(self.pPrint.pformat(conditions))
-    result = self.monitoring.getJobs(conditions,Date)
+    monitoring = RPCClient('WorkloadManagement/JobMonitoring')
+    result = monitoring.getJobs(conditions,Date)
     if not result['OK']:
       self.log.warn(result['Message'])
       return result
@@ -1088,7 +1089,8 @@ class Dirac:
     if type(jobID)==type(1):
       jobID = [jobID]
 
-    result = self.monitoring.getJobsSummary(jobID)
+    monitoring = RPCClient('WorkloadManagement/JobMonitoring')
+    result = monitoring.getJobsSummary(jobID)
     if not result['OK']:
       self.log.warn(result['Message'])
       return result
@@ -1165,7 +1167,8 @@ class Dirac:
 
     summary = {}
     for job in jobID:
-      result = self.monitoring.getJobHeartBeatData(job)
+      monitoring = RPCClient('WorkloadManagement/JobMonitoring')
+      result = monitoring.getJobHeartBeatData(job)
       summary[job]={}
       if not result['OK']:
         return self.__errorReport(result['Message'],'Could not get heartbeat data for job %s' %job)
@@ -1208,7 +1211,8 @@ class Dirac:
       except Exception,x:
         return self.__errorReport(str(x),'Expected integer or string for existing jobID')
 
-    result = self.monitoring.getJobParameters(jobID)
+    monitoring = RPCClient('WorkloadManagement/JobMonitoring')
+    result = monitoring.getJobParameters(jobID)
     if not result['OK']:
       return result
 
@@ -1244,7 +1248,8 @@ class Dirac:
     elif type(jobID)==type([]):
       return self.__errorReport('Expected int or string, not list')
 
-    result = self.monitoring.getJobLoggingInfo(jobID)
+    monitoring = RPCClient('WorkloadManagement/JobMonitoring')
+    result = monitoring.getJobLoggingInfo(jobID)
     if not result['OK']:
       self.log.warn('Could not retrieve logging information for job %s' %jobID)
       self.log.warn(result)
@@ -1291,7 +1296,8 @@ class Dirac:
     elif type(jobID)==type([]):
       return self.__errorReport('Expected int or string, not list')
 
-    result = self.monitoring.getJobParameter(jobID,'StandardOutput')
+    monitoring = RPCClient('WorkloadManagement/JobMonitoring')
+    result = monitoring.getJobParameter(jobID,'StandardOutput')
     if not result['OK']:
       return self.__errorReport(result,'Could not retrieve job attributes')
 

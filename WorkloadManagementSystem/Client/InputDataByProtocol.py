@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: InputDataByProtocol.py,v 1.7 2008/06/06 17:33:45 paterson Exp $
+# $Id: InputDataByProtocol.py,v 1.8 2008/07/04 08:28:50 rgracian Exp $
 # File :   InputDataByProtocol.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     defined in the CS for the VO.
 """
 
-__RCSID__ = "$Id: InputDataByProtocol.py,v 1.7 2008/06/06 17:33:45 paterson Exp $"
+__RCSID__ = "$Id: InputDataByProtocol.py,v 1.8 2008/07/04 08:28:50 rgracian Exp $"
 
 from DIRAC.Core.DISET.RPCClient                                     import RPCClient
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
@@ -32,7 +32,6 @@ class InputDataByProtocol:
     self.fileCatalogResult = argumentsDict['FileCatalog']
     self.jobID = None
     self.rm = ReplicaManager()
-    self.jobReport  = RPCClient('WorkloadManagement/JobStateUpdate')
 
   #############################################################################
   def execute(self,dataToResolve=None):
@@ -230,7 +229,8 @@ class InputDataByProtocol:
     if not self.jobID:
       return S_ERROR('JobID not defined')
 
-    jobParam = self.jobReport.setJobParameter(int(self.jobID),str(name),str(value))
+    jobReport = RPCClient('WorkloadManagement/JobStateUpdate')
+    jobParam = jobReport.setJobParameter(int(self.jobID),str(name),str(value))
     self.log.verbose('setJobParameter(%s,%s,%s)' %(self.jobID,name,value))
     if not jobParam['OK']:
       self.log.warn(jobParam['Message'])
