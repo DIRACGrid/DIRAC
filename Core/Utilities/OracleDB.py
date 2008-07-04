@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/OracleDB.py,v 1.5 2008/06/26 13:37:47 zmathe Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/OracleDB.py,v 1.6 2008/07/04 18:30:43 zmathe Exp $
 ########################################################################
 """ DIRAC Basic Oracle Class
     It provides access to the basic MySQL methods in a multithread-safe mode
@@ -50,7 +50,7 @@
 
 """
 
-__RCSID__ = "$Id: OracleDB.py,v 1.5 2008/06/26 13:37:47 zmathe Exp $"
+__RCSID__ = "$Id: OracleDB.py,v 1.6 2008/07/04 18:30:43 zmathe Exp $"
 
 
 from DIRAC                                  import gLogger
@@ -218,8 +218,8 @@ class OracleDB:
 
     return retDict
 
-  def executeStoredProcedure(self, packageName, parameters, conn = False):
-    
+  def executeStoredProcedure(self, packageName, parameters, output = True, conn = False):
+
     self.logger.debug( '_query:',packageName+"("+str(parameters)+")")
 
     retDict = self.__getConnection( conn = conn )
@@ -228,10 +228,15 @@ class OracleDB:
 
     try:
       cursor = connection.cursor()
-      result = connection.cursor()
-      parameters +=[result]
-      cursor.callproc(packageName, parameters)
-      results = result.fetchall()
+      result = None
+      results = None
+      if output == True:
+        result = connection.cursor()
+        parameters +=[result]
+        cursor.callproc(packageName, parameters)
+        results = result.fetchall()
+      else:
+        cursor.callproc(packageName, parameters)
       retDict = S_OK( results )
     except Exception ,x:
       self.logger.debug( '_query:', packageName+"("+str(parameters)+")" )
@@ -245,7 +250,27 @@ class OracleDB:
       self.__putConnection(connection)
 
     return retDict
-    
+
+  def executeStoredFunctions(self, packageName, returnType, parameters = [], conn = False):
+    retDict = self.__getConnection( conn = conn )
+    if not retDict['OK'] : return retDict
+    connection = retDict['Value']
+    try:
+      cursor = connection.cursor()
+      result = cursor.callfunc(packageName, returnType, parameters)
+      retDict = S_OK( result )
+    except Exception ,x:
+      self.logger.debug( '_query:', packageName+"("+str(parameters)+")" )
+      retDict = self._except( '_query', x, 'Excution failed.' )
+
+    try:
+      cursor.close()
+    except Exception, v:
+      pass
+    if not conn:
+      self.__putConnection(connection)
+    return retDict
+  
   def __newConnection(self):
     """
     Create a New connection and put it in the Queue
