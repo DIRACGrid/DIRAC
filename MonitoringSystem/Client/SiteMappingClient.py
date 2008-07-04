@@ -10,14 +10,15 @@ class SiteMappingClient:
 
   ###########################################################################
   def __init__(self):
-    self.transferClient = TransferClient('Monitoring/SiteMapping')
+    pass
   
   ###########################################################################  
   def getFile(self, fileName, outputDir):
     """ Retrieves a single file and puts it in the output directory
     """
     outputFile = '%s/%s' % (outputDir, fileName)
-    result = self.transferClient.receiveFile(outputFile, {'Type' : 'File', 'Data' : fileName})
+    transferClient = TransferClient('Monitoring/SiteMapping')
+    result = transferClient.receiveFile(outputFile, {'Type' : 'File', 'Data' : fileName})
     return result
 
   ###########################################################################    
@@ -40,7 +41,8 @@ class SiteMappingClient:
         Note: this will force a section update
     """
     tmpFile = '%s/%s' % (outputDir, enumerationFile)
-    result = self.transferClient.receiveFile(tmpFile, {'Type' : 'Section', 'Data': section})
+    transferClient = TransferClient('Monitoring/SiteMapping')
+    result = transferClient.receiveFile(tmpFile, {'Type' : 'Section', 'Data': section})
     if not result['OK']:
       return S_ERROR('Failed to enumerate section file list. Error: %s' % result)
     fileList = self.readFileList(tmpFile)
@@ -52,7 +54,8 @@ class SiteMappingClient:
     """ Forces a global update and retrieves all files
     """
     tmpFile = '%s/%s' % (outputDir, enumerationFile)
-    result = self.transferClient.receiveFile(tmpFile, {'Type': 'All', 'Data' : False})
+    transferClient = TransferClient('Monitoring/SiteMapping')
+    result = transferClient.receiveFile(tmpFile, {'Type': 'All', 'Data' : False})
     if not result['OK']:
       return S_ERROR('Failed to enumerate file list.')
     fileList = self.readFileList(tmpFile)
