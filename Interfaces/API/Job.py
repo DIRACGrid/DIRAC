@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.37 2008/07/02 15:14:49 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.38 2008/07/04 14:34:13 paterson Exp $
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -30,7 +30,7 @@
    Note that several executables can be provided and wil be executed sequentially.
 """
 
-__RCSID__ = "$Id: Job.py,v 1.37 2008/07/02 15:14:49 paterson Exp $"
+__RCSID__ = "$Id: Job.py,v 1.38 2008/07/04 14:34:13 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -225,7 +225,7 @@ class Job:
        Example usage:
 
        >>> job = Job()
-       >>> job.setOutputSandbox(['DaVinci_v17r6.log','DVNTuples.root'])
+       >>> job.setOutputSandbox(['DaVinci_v19r12.log','DVNTuples.root'])
 
        @param files: Output sandbox files
        @type files: Single string or list of strings ['','']
@@ -237,7 +237,7 @@ class Job:
       self._addParameter(self.workflow,'OutputSandbox','JDL',fileList,description)
     elif type(files) == type(" "):
       description = 'Output sandbox file'
-      self._addParameter(self.workflow,'OutputSandbox','JDL',[files],description)
+      self._addParameter(self.workflow,'OutputSandbox','JDL',files,description)
     else:
       raise TypeError,'Expected string or list for OutputSandbox'
 
