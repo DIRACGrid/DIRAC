@@ -1,11 +1,11 @@
 ########################################################################
-# $Id: SiteMappingHandler.py,v 1.3 2008/07/03 13:35:15 asypniew Exp $
+# $Id: SiteMappingHandler.py,v 1.4 2008/07/04 14:40:20 asypniew Exp $
 ########################################################################
 
 """ The SiteMappingHandler...
 """
 
-__RCSID__ = "$Id: SiteMappingHandler.py,v 1.3 2008/07/03 13:35:15 asypniew Exp $"
+__RCSID__ = "$Id: SiteMappingHandler.py,v 1.4 2008/07/04 14:40:20 asypniew Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -59,15 +59,21 @@ class SiteMappingHandler( RequestHandler ):
     return S_OK('File cache manually purged.')
   
   ########################################################################### 
-  def updateData(self, section): 
+  def updateData(self, section, updateData=True): 
     """ Update site data
+        To update the site data AND THEN update the given section, set 'section' and updateData=True
+        To update the given section BUT NOT the site data, set 'section' and updateData=False
+        To update ONLY the site data, set section=False (updateData is ignored)
     """ 
+    
+    result = S_OK()
     
     # First, update the list of sites.
     # If you ONLY want to update this, set section=False
-    result = siteData.updateData('SiteData')
-    if not result['OK']:
-      return result
+    if not section or updateData:
+      result = siteData.updateData('SiteData')
+      if not result['OK']:
+        return result
       
     if section:
       gLogger.verbose('Site data updated. Section: %s' % section)
@@ -103,7 +109,7 @@ class SiteMappingHandler( RequestHandler ):
       gLogger.verbose('Section detected as: %s' % section)
       
       # Now update the appropriate section
-      result = self.updateData(section)
+      result = self.updateData(section, True)
       if not result['OK']:
         return S_ERROR('Failed to update site data.')
       
@@ -162,7 +168,7 @@ class SiteMappingHandler( RequestHandler ):
     elif fileId['Type'] == 'Section':
     
       # First, update site data
-      result = self.updateData(fileId['Data'])
+      result = self.updateData(fileId['Data'], True)
       if not result['OK']:
         return S_ERROR('Failed to update section data.')
         
@@ -182,9 +188,11 @@ class SiteMappingHandler( RequestHandler ):
           if f.find(dataDict['png'][fileId['Data']]) == 0:
             dataToWrite += f + '\n'
     elif fileId['Type'] == 'All':
+      # Update site data only once
+      result = self.updateData(False, False)
       for s in dataDict['png']:
         # Update each section's data
-        result = self.updateData(s)
+        result = self.updateData(s, False)
         if not result['OK']:
           return S_ERROR('Failed to update data for section %s' % s)
         # Generate each section's files
