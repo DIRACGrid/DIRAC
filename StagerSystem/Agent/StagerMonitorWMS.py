@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/Attic/StagerMonitorWMS.py,v 1.10 2008/07/04 08:18:20 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/Attic/StagerMonitorWMS.py,v 1.11 2008/07/04 09:06:12 rgracian Exp $
 # File :   StagerMonitorWMS.py
 # Author : Stuart Paterson
 ########################################################################
@@ -20,7 +20,7 @@
      Successful -> purged with status change
 """
 
-__RCSID__ = "$Id: StagerMonitorWMS.py,v 1.10 2008/07/04 08:18:20 rgracian Exp $"
+__RCSID__ = "$Id: StagerMonitorWMS.py,v 1.11 2008/07/04 09:06:12 rgracian Exp $"
 
 from DIRAC.Core.Base.Agent                                 import Agent
 from DIRAC.Core.DISET.RPCClient                            import RPCClient
@@ -337,6 +337,7 @@ class StagerMonitorWMS(Agent):
       res = setupProxyFile(self.proxyLocation)
       if not res["OK"]:
         self.log.error("Failed to set up proxy in the standard location", res['Message'])
+        return S_ERROR( "Failed to set up proxy in the standard location" )
 
       proxyValidity = int(res['Value'])
       self.log.info('%s proxy found to be valid for %s seconds' %(prodDN,proxyValidity))
