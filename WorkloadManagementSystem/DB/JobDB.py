@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.59 2008/06/19 15:13:18 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.60 2008/07/04 14:48:12 paterson Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.59 2008/06/19 15:13:18 rgracian Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.60 2008/07/04 14:48:12 paterson Exp $"
 
 import re, os, sys, string, types
 import time
@@ -166,20 +166,20 @@ class JobDB(DB):
   def getJobID(self):
     """Get the next unique JobID and prepare the new job insertion
     """
-    
+
     cmd = 'INSERT INTO Jobs (SubmissionTime) VALUES (UTC_TIMESTAMP())'
     err = 'JobDB.getJobID: Failed to retrieve a new Id.'
 
     res = self._getConnection()
     if not res['OK']:
       return S_ERROR( '0 %s\n%s' % (err, res['Message'] ) )
-    
+
     connection = res['Value']
     res = self._update( cmd, connection )
     if not res['OK']:
       connection.close()
       return S_ERROR( '1 %s\n%s' % (err, res['Message'] ) )
-    
+
     cmd = 'SELECT LAST_INSERT_ID()'
     res = self._query( cmd, connection )
     if not res['OK']:
@@ -1032,6 +1032,11 @@ class JobDB(DB):
     if not res['OK']:
       return S_ERROR("Failed to delete job from the Task Queue")
 
+    # Reset site field to ANY after reschedule operation.
+    res = self.setJobAttribute(jobID,'Site','ANY')
+    if not res['OK']:
+      return res
+
     result = S_OK()
     result['InputData']  = classadJob.lookupAttribute("InputData")
     result['JobID']  = jobID
@@ -1136,7 +1141,7 @@ class JobDB(DB):
       if not res['OK']:
         return res
       connection = res['Value']
-      
+
       cmd = 'INSERT INTO TaskQueues (Requirements, Priority) '\
             ' VALUES (\'%s\', \'%s\' )' \
             % ( reqJDL, priority )
