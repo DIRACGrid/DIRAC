@@ -37,7 +37,7 @@ class SandboxClient:
       return S_ERROR('Failed to locate files: \n'+string.join(error_files,','))
 
     sendName = str(jobID)+"::Job__Sandbox__"
-    sandbox = TransferClient('WorkloadManagement/%sSandbox' % sandbox_type)
+    sandbox = TransferClient('WorkloadManagement/%sSandbox' % self.sandbox_type)
     result = sandbox.sendBulk(files_to_send,sendName)
     return result
 
@@ -60,7 +60,7 @@ class SandboxClient:
           return S_ERROR('Failed to send directory '+fname)
 
         sendName = `jobID`+"::"+bzname
-        sandbox = TransferClient('WorkloadManagement/%sSandbox' % sandbox_type)
+        sandbox = TransferClient('WorkloadManagement/%sSandbox' % self.sandbox_type)
         result = sandbox.sendFile(sendName,bzname)
 
         if not result['OK']:
@@ -71,7 +71,7 @@ class SandboxClient:
       else:  # This is a file
         bname = os.path.basename(fname)
         sendName = `jobID`+":"+bname
-        sandbox = TransferClient('WorkloadManagement/%sSandbox' % sandbox_type)
+        sandbox = TransferClient('WorkloadManagement/%sSandbox' % self.sandbox_type)
         result = sandbox.sendFile(bname, sendName)
         print "0000",result
         if not result['OK']:
@@ -91,7 +91,7 @@ class SandboxClient:
     """
 
     # Get the list of files in the sandbox
-    sandbox_status = RPCClient('WorkloadManagement/%sSandbox' % sandbox_type)
+    sandbox_status = RPCClient('WorkloadManagement/%sSandbox' % self.sandbox_type)
     result = sandbox_status.getFileNames(jobID)
     if not result['OK']:
       return S_ERROR('Failed to get the list of file names')
@@ -105,7 +105,7 @@ class SandboxClient:
     error_files = []
     for f in fileList:
       sname = `jobID`+"::"+f
-      sandbox = TransferClient('WorkloadManagement/%sSandbox' % sandbox_type)
+      sandbox = TransferClient('WorkloadManagement/%sSandbox' % self.sandbox_type)
       result = sandbox.receiveFile(f,sname)
       if not result['OK']:
         error_files.append(f)
@@ -134,5 +134,5 @@ class SandboxClient:
   def setSandboxReady(self,jobID):
     """ Set sandbox status to ready for the given job
     """
-    sandbox_status = RPCClient('WorkloadManagement/%sSandbox' % sandbox_type)
+    sandbox_status = RPCClient('WorkloadManagement/%sSandbox' % self.sandbox_type)
     return sandbox_status.setSandboxReady(jobID)
