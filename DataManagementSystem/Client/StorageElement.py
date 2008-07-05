@@ -1166,6 +1166,7 @@ class StorageElement:
           gLogger.info("StorageElement.getAccessUrl: No pfns generated for protocol %s." % protocolName)
         else:
           gLogger.info("StorageElement.getAccessUrl: Attempting to get access urls for %s physical files." % len(pfnDict.keys()))
+          gLogger.verbose( '%s, protocols=%s' %( pfnDict.keys(), self.turlProtocols ) )
           res = storage.getTransportURL(pfnDict.keys(),protocols=self.turlProtocols)
           if not res['OK']:
             infoStr = "StorageElement.getAccessUrl: Completely failed to get access urls."
