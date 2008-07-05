@@ -1206,6 +1206,12 @@ class SRM2Storage(StorageBase):
       gfalDict['timeout'] = self.fileTimeout*len(urls)
       # Create a single DataOperation record for each
       oDataOperation = self.__initialiseAccountingObject('gfal_turlsfromsurls',self.name,len(urls))
+      try:
+        print 1,oDataOperation.getContents()
+      except Exception, x:
+        print 'getContents Exception 1'
+        print x
+        gLogger.exception('getConntent'+str(x))
       failedLoop = False
       res = self.__create_gfal_object(gfalDict)
       if not res['OK']:
@@ -1213,11 +1219,23 @@ class SRM2Storage(StorageBase):
       else:
         gfalObject = res['Value']
         oDataOperation.setStartTime()
+        try:
+          print 2,oDataOperation.getContents()
+        except Exception, x:
+          print 'getContents Exception 2'
+          print x
+          gLogger.exception('getConntent'+str(x))
         start = time.time()
         res = self.__gfal_turlsfromsurls(gfalObject)
         end = time.time()
         oDataOperation.setEndTime()
         oDataOperation.setValueByKey('TransferTime',end-start)
+        try:
+          print 3,oDataOperation.getContents()
+        except Exception, x:
+          print 'getContents Exception 3'
+          print x
+          gLogger.exception('getConntent'+str(x))
         if not res['OK']:
           failedLoop = True
         else:
