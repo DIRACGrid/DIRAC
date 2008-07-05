@@ -76,6 +76,7 @@ class SRM2Storage(StorageBase):
     self.conf_file = 'ignored'
     self.insecure = 0
     self.defaultLocalProtocols = gConfig.getValue('/Resources/StorageElements/DefaultProtocols',[])
+    print 'defaultLocalProtocols', self.defaultLocalProtocols
 
   def isOK(self):
     return self.isok
