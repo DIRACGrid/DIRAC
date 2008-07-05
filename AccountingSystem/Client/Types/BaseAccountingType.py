@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Types/BaseAccountingType.py,v 1.12 2008/07/05 06:14:04 rgracian Exp $
-__RCSID__ = "$Id: BaseAccountingType.py,v 1.12 2008/07/05 06:14:04 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Types/BaseAccountingType.py,v 1.13 2008/07/05 06:21:00 rgracian Exp $
+__RCSID__ = "$Id: BaseAccountingType.py,v 1.13 2008/07/05 06:21:00 rgracian Exp $"
 
 import types
 from DIRAC import S_OK, S_ERROR
@@ -98,6 +98,8 @@ class BaseAccountingType:
     errorList = []
     for i in range( len( self.valuesList ) ):
       print 'checkValues',self.fieldsList[i], self.valuesList[i]
+      print 'checkValues', self.valueFieldsList
+      print 'checkValues', self.__validDataValues
       key = self.fieldsList[i]
       if self.valuesList[i] == None:
         errorList.append( "no value for %s" % key )
