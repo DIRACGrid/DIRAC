@@ -1398,6 +1398,7 @@ class SRM2Storage(StorageBase):
     errCode,gfalObject,errMessage = gfal.gfal_turlsfromsurls(gfalObject)
     if not errCode == 0:
       errStr = "SRM2Storage.__gfal_turlsfromsurls: Failed to perform gfal_turlsfromsurls:"
+      print 'errMessage',errMessage,type(errMessage)
       gLogger.error(errStr,"%s %s" % (errMessage,os.strerror(errCode)))
       return S_ERROR("%s%s" % (errStr,errMessage))
     else:
