@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Types/BaseAccountingType.py,v 1.16 2008/07/05 11:11:34 rgracian Exp $
-__RCSID__ = "$Id: BaseAccountingType.py,v 1.16 2008/07/05 11:11:34 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Types/BaseAccountingType.py,v 1.17 2008/07/05 11:15:09 rgracian Exp $
+__RCSID__ = "$Id: BaseAccountingType.py,v 1.17 2008/07/05 11:15:09 rgracian Exp $"
 
 import types
 from DIRAC import S_OK, S_ERROR
@@ -96,30 +96,34 @@ class BaseAccountingType:
     Check that all values are defined and valid
     """
     errorList = []
-    for i in range( len( self.valuesList ) ):
-      print 'checkValues fields, values',self.fieldsList[i], self.valuesList[i]
-    for i in range( len( self.valuesList ) ):
-      key = self.fieldsList[i]
-      print 'checkValues',self.fieldsList[i], self.valuesList[i]
-      print 'checkValues', self.valueFieldsList
-      print 'checkValues', self.__validDataValues
-      print 'key in self.valueFieldsList', key in self.valueFieldsList
-      print 'type( self.valuesList[i] )', type( self.valuesList[i] )
-      print 'type( self.valuesList[i] ) not in self.__validDataValues', str(type( self.valuesList[i] ) not in self.__validDataValues)
-      if self.valuesList[i] == None:
-        errorList.append( "no value for %s" % key )
-      if key in self.valueFieldsList and type( self.valuesList[i] ) not in self.__validDataValues:
-        errorList.append( "value for key %s is not numerical type" % key )
-    if errorList:
-      return S_ERROR( "Invalid values: %s" % ", ".join( errorList ) )
-    if not self.startTime:
-      return S_ERROR( "Start time has not been defined" )
-    if type( self.startTime ) != Time._dateTimeType:
-      return S_ERROR( "Start time is not a datetime object" )
-    if not self.endTime:
-      return S_ERROR( "End time has not been defined" )
-    if type( self.endTime ) != Time._dateTimeType:
-      return S_ERROR( "End time is not a datetime object" )
+    try:
+      for i in range( len( self.valuesList ) ):
+        print 'checkValues fields, values',self.fieldsList[i], self.valuesList[i]
+      for i in range( len( self.valuesList ) ):
+        key = self.fieldsList[i]
+        print 'checkValues',self.fieldsList[i], self.valuesList[i]
+        print 'checkValues', self.valueFieldsList
+        print 'checkValues', self.__validDataValues
+        print 'key in self.valueFieldsList', key in self.valueFieldsList
+        print 'type( self.valuesList[i] )', type( self.valuesList[i] )
+        print 'type( self.valuesList[i] ) not in self.__validDataValues', str(type( self.valuesList[i] ) not in self.__validDataValues)
+        if self.valuesList[i] == None:
+          errorList.append( "no value for %s" % key )
+        if key in self.valueFieldsList and type( self.valuesList[i] ) not in self.__validDataValues:
+          errorList.append( "value for key %s is not numerical type" % key )
+      if errorList:
+        return S_ERROR( "Invalid values: %s" % ", ".join( errorList ) )
+      if not self.startTime:
+        return S_ERROR( "Start time has not been defined" )
+      if type( self.startTime ) != Time._dateTimeType:
+        return S_ERROR( "Start time is not a datetime object" )
+      if not self.endTime:
+        return S_ERROR( "End time has not been defined" )
+      if type( self.endTime ) != Time._dateTimeType:
+        return S_ERROR( "End time is not a datetime object" )
+    except Exception, x:
+      print 'checkValues Exception', x
+      return S_ERROR('Exception')
     return S_OK()
 
   def getDefinition( self ):
