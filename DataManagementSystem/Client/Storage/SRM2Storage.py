@@ -282,7 +282,9 @@ class SRM2Storage(StorageBase):
     if not protocols:
       infoStr = "SRM2Storage.getTransportURL: No protocols provided, using defaults."
       gLogger.debug(infoStr)
-      listProtocols = self.defaultLocalProtocols
+      listProtocols = gConfig.getValue('/Resources/StorageElements/DefaultProtocols',[])
+      if not listProtocols:
+        return S_ERROR("SRM2Storage.getTransportURL: No local protocols defined and no defaults found")
     elif type(protocols) == types.StringType:
       listProtocols = [protocols]
     elif type(protocols) == types.ListType:
