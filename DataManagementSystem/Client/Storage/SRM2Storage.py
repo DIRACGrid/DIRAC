@@ -1237,7 +1237,9 @@ class SRM2Storage(StorageBase):
       try:
         print oDataOperation.getContents()
       except Exception, x:
-        gLogger.exception(x)
+        print 'getContents Exception'
+        print x
+        gLogger.exception('getConntent'+str(x))
       oAccounting.addRegister(oDataOperation)
     oAccounting.commit()
     resDict = {}
