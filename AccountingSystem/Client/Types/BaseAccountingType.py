@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Types/BaseAccountingType.py,v 1.14 2008/07/05 07:54:28 rgracian Exp $
-__RCSID__ = "$Id: BaseAccountingType.py,v 1.14 2008/07/05 07:54:28 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Types/BaseAccountingType.py,v 1.15 2008/07/05 08:18:01 rgracian Exp $
+__RCSID__ = "$Id: BaseAccountingType.py,v 1.15 2008/07/05 08:18:01 rgracian Exp $"
 
 import types
 from DIRAC import S_OK, S_ERROR
@@ -103,7 +103,7 @@ class BaseAccountingType:
       print 'checkValues', self.__validDataValues
       print 'key in self.valueFieldsList', key in self.valueFieldsList
       print 'type( self.valuesList[i] )', type( self.valuesList[i] )
-      print 'type( self.valuesList[i] ) not in self.__validDataValues'
+      print 'type( self.valuesList[i] ) not in self.__validDataValues', type( self.valuesList[i] ) not in self.__validDataValues
       if self.valuesList[i] == None:
         errorList.append( "no value for %s" % key )
       if key in self.valueFieldsList and type( self.valuesList[i] ) not in self.__validDataValues:
