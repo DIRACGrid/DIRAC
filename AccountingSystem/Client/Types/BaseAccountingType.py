@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Types/BaseAccountingType.py,v 1.15 2008/07/05 08:18:01 rgracian Exp $
-__RCSID__ = "$Id: BaseAccountingType.py,v 1.15 2008/07/05 08:18:01 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Types/BaseAccountingType.py,v 1.16 2008/07/05 11:11:34 rgracian Exp $
+__RCSID__ = "$Id: BaseAccountingType.py,v 1.16 2008/07/05 11:11:34 rgracian Exp $"
 
 import types
 from DIRAC import S_OK, S_ERROR
@@ -97,13 +97,15 @@ class BaseAccountingType:
     """
     errorList = []
     for i in range( len( self.valuesList ) ):
+      print 'checkValues fields, values',self.fieldsList[i], self.valuesList[i]
+    for i in range( len( self.valuesList ) ):
       key = self.fieldsList[i]
       print 'checkValues',self.fieldsList[i], self.valuesList[i]
       print 'checkValues', self.valueFieldsList
       print 'checkValues', self.__validDataValues
       print 'key in self.valueFieldsList', key in self.valueFieldsList
       print 'type( self.valuesList[i] )', type( self.valuesList[i] )
-      print 'type( self.valuesList[i] ) not in self.__validDataValues', type( self.valuesList[i] ) not in self.__validDataValues
+      print 'type( self.valuesList[i] ) not in self.__validDataValues', str(type( self.valuesList[i] ) not in self.__validDataValues)
       if self.valuesList[i] == None:
         errorList.append( "no value for %s" % key )
       if key in self.valueFieldsList and type( self.valuesList[i] ) not in self.__validDataValues:
