@@ -1234,6 +1234,7 @@ class SRM2Storage(StorageBase):
         for url in urls:
           failed[url] = res['Message']
 
+      print oDataOperation.getContents()
       oAccounting.addRegister(oDataOperation)
     oAccounting.commit()
     resDict = {}
