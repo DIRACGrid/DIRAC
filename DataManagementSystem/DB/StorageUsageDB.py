@@ -6,6 +6,7 @@ from types import *
 
 from DIRAC import gConfig,gLogger,S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
+from DIRAC.Core.Utilities.List import intListToString
 
 #############################################################################
 
