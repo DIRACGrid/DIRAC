@@ -11,7 +11,7 @@ from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 from DIRAC.AccountingSystem.Client.DataStoreClient import DataStoreClient
 
 from stat import *
-import types, re,os,time
+import types, re,os,time,sys
 
 ISOK = True
 
