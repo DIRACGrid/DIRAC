@@ -1220,6 +1220,11 @@ class SRM2Storage(StorageBase):
         gfalObject = res['Value']
         oDataOperation.setStartTime()
         try:
+          print 2,'oDataOperation.keyFieldsList', type(oDataOperation.keyFieldsList)
+          print 2,'oDataOperation.valueFieldsList', type(oDataOperation.valueFieldsList)
+          print 2,'oDataOperation.valuesList', type(oDataOperation.valuesList)
+          print 2,'oDataOperation.definitionKeyFields', type(oDataOperation.definitionKeyFields)
+          print 2,'oDataOperation.definitionAccountingFields', type(oDataOperation.definitionAccountingFields)
           print 2,oDataOperation.getContents()
         except Exception, x:
           print 'getContents Exception 2'
