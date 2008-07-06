@@ -1208,12 +1208,23 @@ class SRM2Storage(StorageBase):
       oDataOperation = self.__initialiseAccountingObject('gfal_turlsfromsurls',self.name,len(urls))
       try:
         print 1,oDataOperation.getContents()
+        sys.stdout.flush()
       except Exception, x:
         print 'getContents Exception 1'
+        sys.stdout.flush()
         print x
+        sys.stdout.flush()
         gLogger.exception('getConntent'+str(x))
+      print 'Here I am'
+      sys.stdout.flush()
       failedLoop = False
+      print 'Calling __create_gfal_object',gfalDict
+      sys.stdout.flush()
       res = self.__create_gfal_object(gfalDict)
+      print 'Done __create_gfal_object',gfalDict
+      sys.stdout.flush()
+      print 'Return',res
+      sys.stdout.flush()
       if not res['OK']:
         failedLoop = True
       else:
@@ -1221,14 +1232,24 @@ class SRM2Storage(StorageBase):
         oDataOperation.setStartTime()
         try:
           print 2,'oDataOperation.keyFieldsList', type(oDataOperation.keyFieldsList)
+          sys.stdout.flush()
           print 2,'oDataOperation.valueFieldsList', type(oDataOperation.valueFieldsList)
+          sys.stdout.flush()
+          print 2,'oDataOperation.fieldsList', type(oDataOperation.fieldsList)
+          sys.stdout.flush()
           print 2,'oDataOperation.valuesList', type(oDataOperation.valuesList)
+          sys.stdout.flush()
           print 2,'oDataOperation.definitionKeyFields', type(oDataOperation.definitionKeyFields)
+          sys.stdout.flush()
           print 2,'oDataOperation.definitionAccountingFields', type(oDataOperation.definitionAccountingFields)
+          sys.stdout.flush()
           print 2,oDataOperation.getContents()
+          sys.stdout.flush()
         except Exception, x:
           print 'getContents Exception 2'
+          sys.stdout.flush()
           print x
+          sys.stdout.flush()
           gLogger.exception('getConntent'+str(x))
         start = time.time()
         res = self.__gfal_turlsfromsurls(gfalObject)
@@ -1382,14 +1403,17 @@ class SRM2Storage(StorageBase):
     return S_OK(resDict)
 
   def __create_gfal_object(self,gfalDict):
-    gLogger.debug("SRM2Storage.__create_gfal_object: Performing gfal_init.")
+    gLogger.verbose("SRM2Storage.__create_gfal_object: Performing gfal_init.")
     errCode,gfalObject,errMessage = gfal.gfal_init(gfalDict)
     if not errCode == 0:
       errStr = "SRM2Storage.__create_gfal_object: Failed to perform gfal_init:"
       gLogger.error(errStr,"%s %s" % (errMessage,os.strerror(errCode)))
       return S_ERROR()
     else:
-      gLogger.debug("SRM2Storage.__create_gfal_object: Successfully performed gfal_init.")
+      gLogger.verbose("SRM2Storage.__create_gfal_object: Successfully performed gfal_init.")
+      gLogger.verbose("SRM2Storage.__create_gfal_object:",str(errCode))
+      gLogger.verbose("SRM2Storage.__create_gfal_object:",str(gfalObject))
+      gLogger.verbose("SRM2Storage.__create_gfal_object:",str(errMessage))
       return S_OK(gfalObject)
 
   def __gfal_deletesurls(self,gfalObject):
