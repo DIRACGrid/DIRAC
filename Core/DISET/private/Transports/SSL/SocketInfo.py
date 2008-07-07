@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfo.py,v 1.26 2008/07/07 16:37:19 acasajus Exp $
-__RCSID__ = "$Id: SocketInfo.py,v 1.26 2008/07/07 16:37:19 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfo.py,v 1.27 2008/07/07 17:28:28 acasajus Exp $
+__RCSID__ = "$Id: SocketInfo.py,v 1.27 2008/07/07 17:28:28 acasajus Exp $"
 
 import time
 import copy
@@ -161,6 +161,7 @@ class SocketInfo:
       return retVal
     self.sslContext.use_certificate_chain( chain.getCertList()['Value'] )
     self.sslContext.use_privatekey( chain.getPKeyObj()['Value'] )
+    return S_OK()
 
   def __generateServerContext( self ):
     retVal = self.__generateContextWithCerts( serverContext = True )
