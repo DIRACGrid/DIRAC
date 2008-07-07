@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/ReportGeneratorHandler.py,v 1.11 2008/05/08 14:56:03 acasajus Exp $
-__RCSID__ = "$Id: ReportGeneratorHandler.py,v 1.11 2008/05/08 14:56:03 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/ReportGeneratorHandler.py,v 1.12 2008/07/07 16:56:14 acasajus Exp $
+__RCSID__ = "$Id: ReportGeneratorHandler.py,v 1.12 2008/07/07 16:56:14 acasajus Exp $"
 import types
 import os
 from DIRAC import S_OK, S_ERROR, rootPath, gConfig, gLogger, gMonitor
@@ -8,6 +8,7 @@ from DIRAC.AccountingSystem.private.Summaries import Summaries
 from DIRAC.AccountingSystem.private.PlotsCache import gPlotsCache
 from DIRAC.AccountingSystem.private.MainPlotter import MainPlotter
 from DIRAC.AccountingSystem.private.DBUtils import DBUtils
+from DIRAC.AccountingSystem.private.Policies import gPoliciesList
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities import Time
@@ -83,7 +84,7 @@ class ReportGeneratorHandler( RequestHandler ):
     startTime = int( Time.toEpoch( startTime ) )
     endTime = int( Time.toEpoch( endTime ) )
     gMonitor.addMark( "drawnplots" )
-    return plotter.generate( typeName, plotName, startTime, endTime, argsDict, grouping )
+    return plotter.generate( typeName, plotName, self.getRemoteCredentials(), startTime, endTime, argsDict, grouping )
 
   types_listPlots = [ types.StringType ]
   def export_listPlots( self, typeName ):
@@ -103,7 +104,11 @@ class ReportGeneratorHandler( RequestHandler ):
         none
     """
     dbUtils = DBUtils( gAccountingDB, self.serviceInfoDict[ 'clientSetup' ] )
-    return dbUtils.getKeyValues( typeName )
+    if typeName in gPoliciesList:
+      condDict = gPoliciesList[ typeName ].getListingConditions( self.getRemoteCredentials() )
+    else:
+      condDict = {}
+    return dbUtils.getKeyValues( typeName, condDict )
 
   def transfer_toClient( self, fileId, token, fileHelper ):
     """

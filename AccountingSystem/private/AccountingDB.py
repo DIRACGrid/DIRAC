@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.31 2008/06/02 16:11:09 acasajus Exp $
-__RCSID__ = "$Id: AccountingDB.py,v 1.31 2008/06/02 16:11:09 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.32 2008/07/07 16:56:13 acasajus Exp $
+__RCSID__ = "$Id: AccountingDB.py,v 1.32 2008/07/07 16:56:13 acasajus Exp $"
 
 import datetime, time
 import types
@@ -233,20 +233,42 @@ class AccountingDB(DB):
                       )
     return S_OK( typesList )
 
-  def getKeyFieldsForType( self, typeName ):
-    """
-    List key fields for a type
-    """
-    if not typeName in self.dbCatalog:
-      return S_ERROR( "%s is not a valid type name" % typeName )
-    return S_OK( self.dbCatalog[ typeName ][ 'keys' ] )
-
-  def getValuesForKeyField( self, typeName, keyName, connObj = False ):
+  def getKeyValues( self, typeName, condDict, connObj = False ):
     """
     Get all values for a given key field in a type
     """
-    keyTable = self.__getTableName( "key", typeName, keyName )
-    return self._query( "SELECT `value` from `%s`"  % keyTable, conn = connObj )
+    keyValuesDict = {}
+
+    keyTables = []
+    sqlCond = []
+    mainTable = "`%s`" % self.__getTableName( "bucket", typeName )
+    typeKeysList = self.dbCatalog[ typeName ][ 'keys' ]
+
+    for keyName in condDict:
+      if keyName in typeKeysList:
+        keyTable = "`%s`" % self.__getTableName( "key", typeName, keyName )
+        if not keyTable in keyTables:
+          keyTables.append( keyTable )
+        sqlCond.append( "%s.id = %s.`%s`" % ( keyTable, mainTable, keyName ) )
+        for value in condDict[ keyName ]:
+          sqlCond.append( "%s.value = %s" % ( keyTable, self._escapeString( value )[ 'Value' ] ) )
+
+    for keyName in typeKeysList:
+      keyTable = "`%s`" % self.__getTableName( "key", typeName, keyName )
+      allKeyTables = keyTables
+      if not keyTable in allKeyTables:
+        allKeyTables = list( keyTables )
+        allKeyTables.append( keyTable )
+      cmd = "SELECT DISTINCT %s.value FROM %s" % ( keyTable, ", ".join( allKeyTables ) )
+      if sqlCond:
+        sqlValueLink = "%s.id = %s.`%s`" % ( keyTable, mainTable, keyName )
+        cmd += ", %s WHERE %s AND %s" % ( mainTable, sqlValueLink, " AND ".join( sqlCond ) )
+      retVal = self._query( cmd, conn = connObj )
+      if not retVal[ 'OK' ]:
+        return retVal
+      keyValuesDict[ keyName ] = [ r[0] for r in retVal[ 'Value' ] ]
+
+    return S_OK( keyValuesDict )
 
   @gSynchro
   def deleteType( self, typeName ):
@@ -422,7 +444,7 @@ class AccountingDB(DB):
 
   def __generateSQLConditionForKeys( self, typeName, keyValues ):
     """
-    Generate sql condition for buckets when coming from the raw insert
+    Generate sql condition for buckets, values are indexes to real values
     """
     realCondList = []
     for keyPos in range( len( self.dbCatalog[ typeName ][ 'keys' ] ) ):

@@ -215,7 +215,7 @@ class DBUtils:
 
     return remainingData
 
-  def getKeyValues( self, typeName ):
+  def getKeyValues( self, typeName, condDict ):
     """
     Get all valid key values in a type
     """
@@ -224,13 +224,4 @@ class DBUtils:
       return retVal
     connObj = retVal[ 'Value' ]
     typeName = "%s_%s" % ( self._setup, typeName )
-    retVal = self._acDB.getKeyFieldsForType( typeName )
-    if not retVal[ 'OK' ]:
-      return retVal
-    valuesDict = {}
-    for keyName in retVal[ 'Value' ]:
-      retVal = self._acDB.getValuesForKeyField( typeName, keyName, connObj )
-      if not retVal[ 'OK' ]:
-        return retVal
-      valuesDict[ keyName ] = retVal[ 'Value' ]
-    return S_OK( valuesDict )
+    return self._acDB.getKeyValues( typeName, condDict, connObj )
