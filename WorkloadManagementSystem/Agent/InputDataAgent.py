@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.22 2008/07/04 08:24:46 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.23 2008/07/07 21:44:27 paterson Exp $
 # File :   InputDataAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,10 +10,11 @@
 
 """
 
-__RCSID__ = "$Id: InputDataAgent.py,v 1.22 2008/07/04 08:24:46 rgracian Exp $"
+__RCSID__ = "$Id: InputDataAgent.py,v 1.23 2008/07/07 21:44:27 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.Core.DISET.RPCClient                            import RPCClient
+from DIRAC.Core.Utilities.SiteSEMapping                    import getSitesForSE
 from DIRAC.Core.Utilities.GridCredentials                  import setupProxy,restoreProxy,setDIRACGroup,getProxyTimeLeft,setupProxyFile
 from DIRAC                                                 import gConfig, S_OK, S_ERROR
 
@@ -45,13 +46,6 @@ class InputDataAgent(Optimizer):
       self.diskSE = self.diskSE.split(',')
     if type(self.tapeSE) == type(' '):
       self.tapeSE = self.tapeSE.split(',')
-
-    self.site_se_mapping = {}
-    mappingKeys = gConfig.getOptions('/Resources/SiteLocalSEMapping')
-    for site in mappingKeys['Value']:
-      seStr = gConfig.getValue('/Resources/SiteLocalSEMapping/%s' %(site))
-      self.log.verbose('Site: %s, SEs: %s' %(site,seStr))
-      self.site_se_mapping[site] = [ x.strip() for x in string.split(seStr,',')]
 
     try:
       from DIRAC.DataManagementSystem.Client.Catalog.LcgFileCatalogCombinedClient import LcgFileCatalogCombinedClient
@@ -181,13 +175,12 @@ class InputDataAgent(Optimizer):
        on disk and tape is resolved.
     """
     fileSEs = {}
-    siteSEMapping = self.site_se_mapping
     for lfn,replicas in inputData.items():
       siteList = []
       for se in replicas.keys():
-        sites = self.__getSitesForSE(se)
-        if sites:
-          siteList += sites
+        sites = getSitesForSE(se)
+        if sites['OK']:
+          siteList += sites['Value']
       fileSEs[lfn] = siteList
 
     siteCandidates = []
@@ -213,28 +206,18 @@ class InputDataAgent(Optimizer):
 
     for lfn,replicas in inputData.items():
       for se,surl in replicas.items():
-        sites = self.__getSitesForSE(se)
-        for site in sites:
-          if site in siteCandidates:
-            for disk in self.diskSE:
-              if re.search(disk+'$',se):
-                siteResult[site]['disk'] = siteResult[site]['disk']+1
-            for tape in self.tapeSE:
-              if re.search(tape+'$',se):
-                siteResult[site]['tape'] = siteResult[site]['tape']+1
+        sites = getSitesForSE(se)
+        if sites['OK']:
+          for site in sites['Value']:
+            if site in siteCandidates:
+              for disk in self.diskSE:
+                if re.search(disk+'$',se):
+                  siteResult[site]['disk'] = siteResult[site]['disk']+1
+              for tape in self.tapeSE:
+                if re.search(tape+'$',se):
+                  siteResult[site]['tape'] = siteResult[site]['tape']+1
 
     return S_OK(siteResult)
-
-  #############################################################################
-  def __getSitesForSE(self,se):
-    """Returns a list of sites via the site SE mapping for a given SE.
-    """
-    sites = []
-    for site,ses in self.site_se_mapping.items():
-      if se in ses:
-        sites.append(site)
-
-    return sites
 
   #############################################################################
   def __getProdProxy(self,prodDN):
