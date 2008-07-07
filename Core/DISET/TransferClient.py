@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/TransferClient.py,v 1.13 2008/05/16 10:13:24 acasajus Exp $
-__RCSID__ = "$Id: TransferClient.py,v 1.13 2008/05/16 10:13:24 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/TransferClient.py,v 1.14 2008/07/07 16:37:20 acasajus Exp $
+__RCSID__ = "$Id: TransferClient.py,v 1.14 2008/07/07 16:37:20 acasajus Exp $"
 
 import tarfile
 import threading
@@ -29,7 +29,9 @@ class TransferClient( BaseClient ):
     retVal = self._proposeAction( transport, ( "FileTransfer", actionName ) )
     if not retVal[ 'OK' ]:
       return retVal
-    transport.sendData( S_OK( fileInfo ) )
+    retVal = transport.sendData( S_OK( fileInfo ) )
+    if not retVal[ 'OK' ]:
+      return retVal
     retVal = transport.receiveData()
     if not retVal[ 'OK' ]:
       return retVal

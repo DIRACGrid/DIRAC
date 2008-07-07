@@ -1,10 +1,10 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/InnerRPCClient.py,v 1.6 2008/05/16 10:13:22 acasajus Exp $
-__RCSID__ = "$Id: InnerRPCClient.py,v 1.6 2008/05/16 10:13:22 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/InnerRPCClient.py,v 1.7 2008/07/07 16:37:20 acasajus Exp $
+__RCSID__ = "$Id: InnerRPCClient.py,v 1.7 2008/07/07 16:37:20 acasajus Exp $"
 
 import types
 from DIRAC.Core.Utilities import Subprocess
 from DIRAC.Core.DISET.private.BaseClient import BaseClient
-from DIRAC.Core.Utilities.ReturnValues import S_OK
+from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 
 
 class InnerRPCClient( BaseClient ):
@@ -29,7 +29,9 @@ class InnerRPCClient( BaseClient ):
     if not retVal[ 'OK' ]:
       retVal[ 'rpcStub' ] = rpcStub
       return retVal
-    transport.sendData( S_OK( args ) )
+    retVal = transport.sendData( S_OK( args ) )
+    if not retVal[ 'OK' ]:
+      return retVal
     receivedData = transport.receiveData()
     transport.close()
     if type( receivedData ) == types.DictType:

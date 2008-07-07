@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.30 2008/06/12 17:38:01 acasajus Exp $
-__RCSID__ = "$Id: Server.py,v 1.30 2008/06/12 17:38:01 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.31 2008/07/07 16:37:20 acasajus Exp $
+__RCSID__ = "$Id: Server.py,v 1.31 2008/07/07 16:37:20 acasajus Exp $"
 
 import socket
 import sys
@@ -149,7 +149,10 @@ class Server:
       from DIRAC.Core.DISET.private.Transports.PlainTransport import PlainTransport
       self.transport = gProtocolDict[ protocol ][ 'transport' ]( ( "", serviceCfg.getPort() ),
                             bServerMode = True, **transportArgs )
-      self.transport.initAsServer()
+      retVal = self.transport.initAsServer()
+      if not retVal[ 'OK' ]:
+        gLogger.fatal( "Cannot start listening connection", retVal[ 'Message' ] )
+        sys.exit(1)
     else:
       gLogger.fatal( "No valid protocol specified for the service", "%s is not a valid protocol" % sProtocol )
       sys.exit(1)
@@ -171,10 +174,13 @@ class Server:
     try:
       inList = [ self.transport.getSocket() ]
       inList, outList, exList = select.select( inList, [], [], 10 )
-      if len( inList ) == 1:
-        clientTransport = self.transport.acceptConnection()
-      else:
+      if len( inList ) != 1:
         return
+      retVal = self.transport.acceptConnection()
+      if not retVal[ 'OK' ]:
+        gLogger.warn( "Error while accepting a connection: ", retVal[ 'Message' ])
+        return
+      clientTransport = retVal[ 'Value' ]
     except socket.error:
       return
     clientIP = clientTransport.getRemoteAddress()[0]

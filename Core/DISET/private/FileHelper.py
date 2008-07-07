@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/FileHelper.py,v 1.13 2008/01/10 15:38:07 atsareg Exp $
-__RCSID__ = "$Id: FileHelper.py,v 1.13 2008/01/10 15:38:07 atsareg Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/FileHelper.py,v 1.14 2008/07/07 16:37:20 acasajus Exp $
+__RCSID__ = "$Id: FileHelper.py,v 1.14 2008/07/07 16:37:20 acasajus Exp $"
 
 import os
 import md5
@@ -26,13 +26,18 @@ class FileHelper:
 
   def sendData( self, sBuffer ):
     self.oMD5.update( sBuffer )
-    self.oTransport.sendData( S_OK( ( True, sBuffer ) ) )
-    dRetVal = self.oTransport.receiveData()
-    return dRetVal
+    retVal = self.oTransport.sendData( S_OK( ( True, sBuffer ) ) )
+    if not retVal[ 'OK' ]:
+      return retVal
+    retVal = self.oTransport.receiveData()
+    return retVal
 
   def sendEOF( self ):
-    self.oTransport.sendData( S_OK( ( False, self.oMD5.hexdigest() ) ) )
+    retVal = self.oTransport.sendData( S_OK( ( False, self.oMD5.hexdigest() ) ) )
+    if not retVal[ 'OK' ]:
+      return retVal
     self.markAsTransferred()
+    return S_OK()
 
   def receiveData( self ):
     retVal = self.oTransport.receiveData()
@@ -80,7 +85,6 @@ class FileHelper:
           stringIO.write( strBuffer )
           strBuffer = self.receiveData()
     except Exception, e:
-      gLogger.exception()
       return S_ERROR( "Error while receiving file, %s" % str( e ) )
     if self.errorInTransmission():
       return S_ERROR( "Error in the file CRC" )
@@ -98,7 +102,6 @@ class FileHelper:
         os.write( iFD, strBuffer )
         strBuffer = self.receiveData()
     except Exception, e:
-      gLogger.exception()
       return S_ERROR( "Error while receiving file, %s" % str( e ) )
     if self.errorInTransmission():
       return S_ERROR( "Error in the file CRC" )
@@ -124,7 +127,6 @@ class FileHelper:
         ioffset += iPacketSize
       self.sendEOF()
     except Exception, e:
-      gLogger.exception()
       return S_ERROR( "Error while sending string: %s" % str( e ) )
     stringIO.close()
     return S_OK()

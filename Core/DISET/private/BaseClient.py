@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.43 2008/07/01 16:21:46 acasajus Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.43 2008/07/01 16:21:46 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.44 2008/07/07 16:37:20 acasajus Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.44 2008/07/07 16:37:20 acasajus Exp $"
 
 import sys
 import types
@@ -154,14 +154,18 @@ and this is thread %s
       return self.__initStatus
     try:
       transport = gProtocolDict[ self.URLTuple[0] ][ 'transport' ]( self.URLTuple[1:3], **self.kwargs )
-      transport.initAsClient()
+      retVal = transport.initAsClient()
+      if not retVal[ 'OK' ]:
+        return S_ERROR( "Can't connect to %s: %s" % ( self.serviceURL, retVal ) )
     except Exception, e:
-      return S_ERROR( "Can't connect: %s" % str( e ) )
+      return S_ERROR( "Can't connect to %s: %s" % ( self.serviceURL, e ) )
     return S_OK( transport )
 
   def _proposeAction( self, transport, sAction ):
     stConnectionInfo = ( ( self.URLTuple[3], self.setup ), sAction, self.__extraCredentials )
-    transport.sendData( S_OK( stConnectionInfo ) )
+    retVal = transport.sendData( S_OK( stConnectionInfo ) )
+    if not retVal[ 'OK' ]:
+        return retVal
     serverReturn = transport.receiveData()
     #TODO: Check if delegation is required
     if serverReturn[ 'OK' ] and 'Value' in serverReturn and type( serverReturn[ 'Value' ] ) == types.DictType:
@@ -176,7 +180,9 @@ and this is thread %s
     retVal = gProtocolDict[ self.URLTuple[0] ][ 'delegation' ]( delegationRequest, self.kwargs )
     if not retVal[ 'OK' ]:
       return retVal
-    transport.sendData( retVal[ 'Value' ] )
+    retVal = transport.sendData( retVal[ 'Value' ] )
+    if not retVal[ 'OK' ]:
+      return retVal
     return transport.receiveData()
 
   def __checkTransportSanity( self ):

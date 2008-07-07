@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Dispatcher.py,v 1.10 2008/06/05 10:20:16 acasajus Exp $
-__RCSID__ = "$Id: Dispatcher.py,v 1.10 2008/06/05 10:20:16 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Dispatcher.py,v 1.11 2008/07/07 16:37:20 acasajus Exp $
+__RCSID__ = "$Id: Dispatcher.py,v 1.11 2008/07/07 16:37:20 acasajus Exp $"
 
 import DIRAC
 from DIRAC.LoggingSystem.Client.Logger import gLogger
@@ -227,9 +227,14 @@ class Dispatcher:
     except Exception, e:
       clientTransport.sendData( S_ERROR( "Server error while initializing handler: %s" % str(e) ) )
       raise
-    clientTransport.sendData( S_OK() )
+    retVal = clientTransport.sendData( S_OK() )
+    if not retVal[ 'OK' ]:
+      return retVal
     try:
       handlerInstance.executeAction( proposalTuple[1] )
     except Exception, e:
       gLogger.exception( "Exception while executing handler action" )
-      clientTransport.sendData( S_ERROR( "Server error while executing action: %s" % str( e ) ) )
+      retVal = clientTransport.sendData( S_ERROR( "Server error while executing action: %s" % str( e ) ) )
+      if not retVal[ 'OK' ]:
+        return retVal
+    return S_OK()

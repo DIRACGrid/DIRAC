@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.34 2008/05/07 16:28:20 acasajus Exp $
-__RCSID__ = "$Id: RequestHandler.py,v 1.34 2008/05/07 16:28:20 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.35 2008/07/07 16:37:20 acasajus Exp $
+__RCSID__ = "$Id: RequestHandler.py,v 1.35 2008/07/07 16:37:20 acasajus Exp $"
 
 import os
 import types
@@ -71,8 +71,8 @@ class RequestHandler:
       message = "Method %s for action %s does not have a return value!" % ( actionTuple[1], actionTuple[0] )
       gLogger.error( message )
       retVal = S_ERROR( message )
-    self.__logRemoteQueryResponse(  retVal )
-    self._clientTransport.sendData( retVal )
+    self.__logRemoteQueryResponse( retVal )
+    return self._clientTransport.sendData( retVal )
 
 #####
 #
@@ -97,7 +97,9 @@ class RequestHandler:
     if "transfer_%s" % sDirection not in dir( self ):
       self._clientTransport.sendData( S_ERROR( "Service can't transfer files %s" % sDirection ) )
       return
-    self._clientTransport.sendData( S_OK( "Accepted" ) )
+    retVal = self._clientTransport.sendData( S_OK( "Accepted" ) )
+    if not retVal[ 'OK' ]:
+      return retVal
     self.__logRemoteQuery( "FileTransfer/%s" % sDirection, fileInfo )
     fileHelper = FileHelper( self._clientTransport )
     if sDirection == "fromClient":

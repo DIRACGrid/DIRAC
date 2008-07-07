@@ -1,7 +1,7 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/BaseTransport.py,v 1.15 2008/06/02 13:28:37 acasajus Exp $
-__RCSID__ = "$Id: BaseTransport.py,v 1.15 2008/06/02 13:28:37 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/BaseTransport.py,v 1.16 2008/07/07 16:37:16 acasajus Exp $
+__RCSID__ = "$Id: BaseTransport.py,v 1.16 2008/07/07 16:37:16 acasajus Exp $"
 
-from DIRAC.Core.Utilities.ReturnValues import S_ERROR
+from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
 from DIRAC.Core.Utilities import DEncode
 from DIRAC.LoggingSystem.Client.Logger import gLogger
 import socket
@@ -49,7 +49,7 @@ class BaseTransport:
   def _read( self, bufSize = 4096 ):
     try:
       return self.oSocket.recv( bufSize )
-    except socket.error:
+    except Exception, e:
       return ""
 
   def sendData( self, uData ):
@@ -59,10 +59,14 @@ class BaseTransport:
       bytesToSend = len( dataToSend[ index : index + self.packetSize ] )
       packSentBytes = 0
       while packSentBytes < bytesToSend:
-        sentBytes = self.oSocket.send( dataToSend[ index + packSentBytes : index + bytesToSend ] )
+        try:
+          sentBytes = self.oSocket.send( dataToSend[ index + packSentBytes : index + bytesToSend ] )
+        except Exception, e:
+          return S_ERROR( "Exception while sending data: %s" % e)
         if sentBytes == 0:
-          raise Exception( "Connection closed by peer" )
+          return S_ERROR( "Connection closed by peer" )
         packSentBytes += sentBytes
+    return S_OK()
 
 
   def receiveData( self, iMaxLength = 0 ):

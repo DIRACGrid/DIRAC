@@ -1,8 +1,9 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSLTransport.py,v 1.22 2008/06/19 14:02:04 acasajus Exp $
-__RCSID__ = "$Id: SSLTransport.py,v 1.22 2008/06/19 14:02:04 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSLTransport.py,v 1.23 2008/07/07 16:37:19 acasajus Exp $
+__RCSID__ = "$Id: SSLTransport.py,v 1.23 2008/07/07 16:37:19 acasajus Exp $"
 
 import os
 import types
+from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
 from DIRAC.Core.DISET.private.Transports.BaseTransport import BaseTransport
 from DIRAC.LoggingSystem.Client.Logger import gLogger
 from DIRAC.Core.DISET.private.Transports.SSL.SocketInfoFactory import gSocketInfoFactory
@@ -13,19 +14,27 @@ from DIRAC.Core.Security.X509Certificate import X509Certificate
 class SSLTransport( BaseTransport ):
 
   def initAsClient( self ):
-    self.oSocketInfo = gSocketInfoFactory.getSocket( self.stServerAddress, **self.extraArgsDict )
+    retVal = gSocketInfoFactory.getSocket( self.stServerAddress, **self.extraArgsDict )
+    if not retVal[ 'OK' ]:
+      return retVal
+    self.oSocketInfo = retVal[ 'Value' ]
     self.oSocket = self.oSocketInfo.getSSLSocket()
     if not self.oSocket.session_reused():
       gLogger.debug( "New session connecting to server at %s" % str( self.stServerAddress ) )
+    return S_OK()
 
   def initAsServer( self ):
     if not self.serverMode():
       raise RuntimeError( "Must be initialized as server mode" )
-    self.oSocketInfo = gSocketInfoFactory.getListeningSocket( self.stServerAddress,
+    retVal = gSocketInfoFactory.getListeningSocket( self.stServerAddress,
                                                       self.iListenQueueSize,
                                                       self.bAllowReuseAddress,
                                                       **self.extraArgsDict )
+    if not retVal[ 'OK' ]:
+      return retVal
+    self.oSocketInfo = retVal[ 'Value' ]
     self.oSocket = self.oSocketInfo.getSSLSocket()
+    return S_OK()
 
   def close( self ):
     gLogger.debug( "Closing socket" )
@@ -33,7 +42,10 @@ class SSLTransport( BaseTransport ):
     self.oSocket.close()
 
   def handshake( self ):
-    creds = self.oSocketInfo.doServerHandshake()
+    retVal = self.oSocketInfo.doServerHandshake()
+    if not retVal[ 'OK' ]:
+      return retVal
+    creds = retVal[ 'Value' ]
     if not self.oSocket.session_reused():
       gLogger.debug( "New session connecting from client at %s" % str( self.getRemoteAddress() ) )
     for key in creds.keys():
@@ -48,9 +60,12 @@ class SSLTransport( BaseTransport ):
   def acceptConnection( self ):
     oClientTransport = SSLTransport( self.stServerAddress )
     oClientSocket, stClientAddress = self.oSocket.accept()
-    oClientTransport.oSocketInfo = self.oSocketInfo.clone()
+    retVal = self.oSocketInfo.clone()
+    if not retVal[ 'OK' ]:
+      return retVal
+    oClientTransport.oSocketInfo = retVal[ 'Value' ]
     oClientTransport.setClientSocket( oClientSocket )
-    return oClientTransport
+    return S_OK( oClientTransport )
 
 
 def checkSanity( urlTuple, kwargs ):
