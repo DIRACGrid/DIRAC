@@ -939,6 +939,7 @@ class SRM2Storage(StorageBase):
     gfalDict['timeout'] = self.long_timeout
 
     errCode,gfalObject,errMessage = gfal.gfal_init(gfalDict)
+    time.sleep(1)
     if not errCode == 0:
       errStr = "SRM2Storage.listDirectory: Failed to initialise gfal_init: %s" % errMessage
       gLogger.error(errStr)
@@ -946,6 +947,7 @@ class SRM2Storage(StorageBase):
     gLogger.debug("SRM2Storage.listDirectory: Initialised gfal_init.")
 
     errCode,gfalObject,errMessage = gfal.gfal_ls(gfalObject)
+    time.sleep(1)
     if not errCode == 0:
       errStr = "SRM2Storage.listDirectory: Failed to perform gfal_ls: %s" % errMessage
       gLogger.error(errStr)
@@ -953,6 +955,7 @@ class SRM2Storage(StorageBase):
     gLogger.debug("SRM2Storage.listDirectory: Performed gfal_ls.")
 
     numberOfResults,gfalObject,listOfResults = gfal.gfal_get_results(gfalObject)
+    time.sleep(1)
     if numberOfResults <= 0:
       errStr = "SRM2Storage.listDirectory: Did not obtain results with gfal_get_results."
       gLogger.error(errStr)
@@ -1220,7 +1223,11 @@ class SRM2Storage(StorageBase):
       failedLoop = False
       print 'Calling __create_gfal_object',gfalDict
       sys.stdout.flush()
-      res = self.__create_gfal_object(gfalDict)
+      try:
+        res = self.__create_gfal_object(gfalDict)
+      except Exception, x:
+        print 'Exception in __create_gfal_object', x
+        raise x
       print 'Done __create_gfal_object',gfalDict
       sys.stdout.flush()
       print 'Return',res
@@ -1406,6 +1413,7 @@ class SRM2Storage(StorageBase):
     gLogger.verbose("SRM2Storage.__create_gfal_object: Performing gfal_init.")
     try:
       errCode,gfalObject,errMessage = gfal.gfal_init(gfalDict)
+      time.sleep(1)
     except Exception, x:
       print "Exception __create_gfal_object", x
     if not errCode == 0:
@@ -1423,6 +1431,7 @@ class SRM2Storage(StorageBase):
     gLogger.debug("SRM2Storage.__gfal_deletesurls: Performing gfal_deletesurls")
     try:
       errCode,gfalObject,errMessage = gfal.gfal_deletesurls(gfalObject)
+      time.sleep(1)
     except Exception, x:
       print "Exception __gfal_deletesurls", x
     if not errCode == 0:
@@ -1436,6 +1445,7 @@ class SRM2Storage(StorageBase):
   def __gfal_ls(self,gfalObject):
     gLogger.debug("SRM2Storage.__gfal_ls: Performing gfal_ls")
     errCode,gfalObject,errMessage = gfal.gfal_ls(gfalObject)
+    time.sleep(1)
     if not errCode == 0:
       errStr = "SRM2Storage.__gfal_ls: Failed to perform gfal_ls:"
       gLogger.error(errStr,"%s %s" % (errMessage,os.strerror(errCode)))
@@ -1447,6 +1457,7 @@ class SRM2Storage(StorageBase):
   def __gfal_prestage(self,gfalObject):
     gLogger.debug("SRM2Storage.__gfal_prestage: Performing gfal_prestage")
     errCode,gfalObject,errMessage = gfal.gfal_prestage(gfalObject)
+    time.sleep(1)
     if not errCode == 0:
       errStr = "SRM2Storage.__gfal_prestage: Failed to perform gfal_prestage:"
       gLogger.error(errStr,"%s %s" % (errMessage,os.strerror(errCode)))
@@ -1459,6 +1470,7 @@ class SRM2Storage(StorageBase):
     gLogger.debug("SRM2Storage.__gfal_turlsfromsurls: Performing gfal_turlsfromsurls")
     try:
       errCode,gfalObject,errMessage = gfal.gfal_turlsfromsurls(gfalObject)
+      time.sleep(1)
     except Exception, x:
       print "Exception __gfal_turlsfromsurls", x
     if not errCode == 0:
@@ -1473,6 +1485,7 @@ class SRM2Storage(StorageBase):
   def __get_results(self,gfalObject):
     gLogger.debug("SRM2Storage.__get_results: Performing gfal_get_results")
     numberOfResults,gfalObject,listOfResults = gfal.gfal_get_results(gfalObject)
+    time.sleep(1)
     if numberOfResults <= 0:
       errStr = "SRM2Storage.__get_results: Did not obtain results with gfal_get_results."
       gLogger.error(errStr)
