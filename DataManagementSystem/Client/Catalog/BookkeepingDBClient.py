@@ -22,6 +22,9 @@ class BookkeepingDBClient(FileCatalogueBase):
       print x
       self.valid = False
 
+  def isOK(self):
+    return self.valid
+
   def __addReplica(self,lfn,pfn,se):
     """ Add replica info to the Bookkeeping database"
     """
