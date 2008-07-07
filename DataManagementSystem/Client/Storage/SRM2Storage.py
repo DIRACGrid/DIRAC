@@ -1404,7 +1404,10 @@ class SRM2Storage(StorageBase):
 
   def __create_gfal_object(self,gfalDict):
     gLogger.verbose("SRM2Storage.__create_gfal_object: Performing gfal_init.")
-    errCode,gfalObject,errMessage = gfal.gfal_init(gfalDict)
+    try:
+      errCode,gfalObject,errMessage = gfal.gfal_init(gfalDict)
+    except Exception, x:
+      print "Exception __create_gfal_object", x
     if not errCode == 0:
       errStr = "SRM2Storage.__create_gfal_object: Failed to perform gfal_init:"
       gLogger.error(errStr,"%s %s" % (errMessage,os.strerror(errCode)))
@@ -1418,7 +1421,10 @@ class SRM2Storage(StorageBase):
 
   def __gfal_deletesurls(self,gfalObject):
     gLogger.debug("SRM2Storage.__gfal_deletesurls: Performing gfal_deletesurls")
-    errCode,gfalObject,errMessage = gfal.gfal_deletesurls(gfalObject)
+    try:
+      errCode,gfalObject,errMessage = gfal.gfal_deletesurls(gfalObject)
+    except Exception, x:
+      print "Exception __gfal_deletesurls", x
     if not errCode == 0:
       errStr = "SRM2Storage.__gfal_deletesurls: Failed to perform gfal_deletesurls:"
       gLogger.error(errStr,"%s %s" % (errMessage,os.strerror(errCode)))
@@ -1451,7 +1457,10 @@ class SRM2Storage(StorageBase):
 
   def __gfal_turlsfromsurls(self,gfalObject):
     gLogger.debug("SRM2Storage.__gfal_turlsfromsurls: Performing gfal_turlsfromsurls")
-    errCode,gfalObject,errMessage = gfal.gfal_turlsfromsurls(gfalObject)
+    try:
+      errCode,gfalObject,errMessage = gfal.gfal_turlsfromsurls(gfalObject)
+    except Exception, x:
+      print "Exception __gfal_turlsfromsurls", x
     if not errCode == 0:
       errStr = "SRM2Storage.__gfal_turlsfromsurls: Failed to perform gfal_turlsfromsurls:"
       print 'errMessage',errMessage,type(errMessage)
