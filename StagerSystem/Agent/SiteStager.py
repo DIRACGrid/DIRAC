@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/SiteStager.py,v 1.5 2008/06/25 17:01:55 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/SiteStager.py,v 1.6 2008/07/07 22:06:16 paterson Exp $
 # File :   SiteStager.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,10 +8,11 @@
      resetting of stage requests as necessary.
 """
 
-__RCSID__ = "$Id: SiteStager.py,v 1.5 2008/06/25 17:01:55 atsareg Exp $"
+__RCSID__ = "$Id: SiteStager.py,v 1.6 2008/07/07 22:06:16 paterson Exp $"
 
 from DIRAC.StagerSystem.Client.StagerClient                import StagerClient
 from DIRAC.DataManagementSystem.Client.StorageElement      import StorageElement
+from DIRAC.Core.Utilities.SiteSEMapping                    import getSEsForSite
 from DIRAC                                                 import S_OK, S_ERROR, gConfig, gLogger
 
 import os, sys, re, string, time, shutil
@@ -89,16 +90,10 @@ class SiteStager(Thread):
       return result
 
     replicas = result['Files']
-    siteSEs = []
-    # Prepare Site-SE resolution mapping
-    result = self.__get_site_se_mapping()
-    site_se_mapping = {}
-    if result['OK']:
-      site_se_mapping = result['Value']
-
-    mappingKeys = site_se_mapping.keys()
-    if self.site in mappingKeys:
-      siteSEs = site_se_mapping[self.site]
+    siteSEs = getSEsForSite(self.site)
+    if not siteSEs['OK']:
+      return S_ERROR('Could not determine SEs for site %s' %self.site)
+    siteSEs = siteSEs['Value']
 
     seFilesDict = {}
     pfnLfnDict = {}

@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/SiteMonitor.py,v 1.8 2008/05/11 23:30:14 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/SiteMonitor.py,v 1.9 2008/07/07 22:06:54 paterson Exp $
 # File :   SiteMonitor.py
 # Author : Stuart Paterson
 ########################################################################
@@ -7,10 +7,11 @@
 """  The SiteMonitor base-class monitors staging requests for a given site.
 """
 
-__RCSID__ = "$Id: SiteMonitor.py,v 1.8 2008/05/11 23:30:14 rgracian Exp $"
+__RCSID__ = "$Id: SiteMonitor.py,v 1.9 2008/07/07 22:06:54 paterson Exp $"
 
 from DIRAC.StagerSystem.Client.StagerClient                import StagerClient
 from DIRAC.DataManagementSystem.Client.StorageElement      import StorageElement
+from DIRAC.Core.Utilities.SiteSEMapping                    import getSEsForSite
 from DIRAC                                                 import S_OK, S_ERROR, gConfig, gLogger
 
 import os, sys, re, string, time
@@ -78,13 +79,10 @@ class SiteMonitor(Thread):
       return result
 
     replicas = result['Files']
-    siteSEs = []
-    mappingKeys = gConfig.getOptions('/Resources/SiteLocalSEMapping')
-    for possible in mappingKeys['Value']:
-      if possible==self.site:
-        seStr = gConfig.getValue('/Resources/SiteLocalSEMapping/%s' %(self.site))
-        self.log.verbose('Site: %s, SEs: %s' %(self.site,seStr))
-        siteSEs = [ x.strip() for x in string.split(seStr,',')]
+    siteSEs = getSEsForSite(self.site)
+    if not siteSEs['OK']:
+      return S_ERROR('Could not determine SEs for site %s' %self.site)
+    siteSEs = siteSEs['Value']
 
     seFilesDict = {}
     pfnLfnDict = {}
