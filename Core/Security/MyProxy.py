@@ -87,15 +87,13 @@ class MyProxy( BaseSecurity ):
 
     retVal = self._getUsername( chain )
     if not retVal[ 'OK' ]:
-      if proxyDict[ 'tempFile' ]:
-        self._unlinkFiles( proxyLocation )
+      File.deleteMultiProxy( proxyDict )
       return retVal
     mpUsername = retVal[ 'Value' ]
 
     retVal = self._generateTemporalFile()
     if not retVal[ 'OK' ]:
-      if proxyDict[ 'tempFile' ]:
-        self._unlinkFiles( proxyLocation )
+      File.deleteMultiProxy( proxyDict )
       return retVal
     newProxyLocation = retVal[ 'Value' ]
 
@@ -118,8 +116,7 @@ class MyProxy( BaseSecurity ):
 
     result = shellCall( self._secCmdTimeout, cmd, env = cmdEnv )
 
-    if proxyDict[ 'tempFile' ]:
-        self._unlinkFiles( proxyLocation )
+    File.deleteMultiProxy( proxyDict )
 
     if not result['OK']:
       errMsg = "Call to myproxy-logon failed: %s" % result[ 'Message' ]
@@ -138,6 +135,8 @@ class MyProxy( BaseSecurity ):
     chain = X509Chain()
     retVal = chain.loadProxyFromFile( newProxyLocation )
     if not retVal[ 'OK' ]:
+      self._unlinkFiles( newProxyLocation )
       return S_ERROR( "myproxy-logon failed when reading delegated file: %s" % retVal[ 'Message' ] )
 
+    self._unlinkFiles( newProxyLocation )
     return S_OK( chain )
