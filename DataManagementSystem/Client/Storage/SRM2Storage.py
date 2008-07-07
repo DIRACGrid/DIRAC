@@ -1416,6 +1416,7 @@ class SRM2Storage(StorageBase):
       time.sleep(1)
     except Exception, x:
       print "Exception __create_gfal_object", x
+      gLogger.exception(x)
     if not errCode == 0:
       errStr = "SRM2Storage.__create_gfal_object: Failed to perform gfal_init:"
       gLogger.error(errStr,"%s %s" % (errMessage,os.strerror(errCode)))
