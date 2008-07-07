@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.20 2008/06/12 17:03:39 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.21 2008/07/07 21:57:02 paterson Exp $
 # File :   JobSchedulingAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,12 +14,12 @@
       meaningfully.
 
 """
-__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.20 2008/06/12 17:03:39 paterson Exp $"
+__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.21 2008/07/07 21:57:02 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
-from DIRAC.ConfigurationSystem.Client.Config               import gConfig
-from DIRAC                                                 import S_OK, S_ERROR
+from DIRAC.Core.Utilities.SiteSEMapping                    import getSEsForSite
+from DIRAC                                                 import gConfig,S_OK,S_ERROR
 
 import random,string,re
 
@@ -241,16 +241,14 @@ class JobSchedulingAgent(Optimizer):
   def __setStagingRequest(self,job,destination,inputDataDict):
     """A Staging request is formulated and saved as a job optimizer parameter.
     """
-    destinationSEs = []
+
     self.log.verbose('Destination site %s' % (destination))
     self.log.verbose('Input Data: %s' % (inputDataDict))
 
-    mappingKeys = gConfig.getOptions('/Resources/SiteLocalSEMapping')
-    for site in mappingKeys['Value']:
-      if site==destination:
-        seStr = gConfig.getValue('/Resources/SiteLocalSEMapping/%s' %(site))
-        self.log.verbose('Site: %s, SEs: %s' %(site,seStr))
-        destinationSEs = [ x.strip() for x in string.split(seStr,',')]
+    destinationSEs = getSEsForSite(destination)
+    if not destinationSEs['OK']:
+      return S_ERROR('Could not determine SEs for site %s' %destination)
+    destinationSEs = destinationSEs['Value']
 
     #Ensure only tape SE files are staged
     tapeSEs = gConfig.getValue(self.section+'/TapeSE','-tape,-RDST,-RAW')
@@ -348,7 +346,7 @@ class JobSchedulingAgent(Optimizer):
 
     result = S_OK()
     site = classadJob.get_expression('Site').replace('"','').replace('Unknown','')
-    bannedSites = classadJob.get_expression('BannedSites').replace('{','').replace('}','').replace('"','').replace('Unknown','').split()
+    bannedSites = classadJob.get_expression("BannedSites").replace('{','').replace('}','').replace('"','').replace(' ','').split(',')
     if site and site!='ANY' and len(string.split(site,','))==1:
       self.log.info('Job %s has single chosen site %s specified in JDL' %(job,site))
       result['ChosenSite']=[site]
