@@ -102,7 +102,7 @@ class FileTestCases(StorageElementTestCase):
     # Check that the get was done correctly
     self.assert_(getFileRes['OK'])   
     self.assert_(getFileRes['Value'])
-    self.assertEqual(getFileRes['Value'],self.alternativeLocal)		    
+    self.assertEqual(getFileRes['Value'],self.alternativeLocal)    
     # Check that the removal was done correctly
     self.assert_(removeFileRes['OK'])   
     self.assert_(removeFileRes['Value'])    

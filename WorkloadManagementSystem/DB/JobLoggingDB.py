@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobLoggingDB.py,v 1.4 2007/11/29 11:37:03 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobLoggingDB.py,v 1.5 2008/07/07 08:24:20 rgracian Exp $
 ########################################################################
 """ JobLoggingDB class is a front-end to the Job Logging Database.
     The following methods are provided
@@ -9,7 +9,7 @@
     getWMSTimeStamps()    
 """    
 
-__RCSID__ = "$Id: JobLoggingDB.py,v 1.4 2007/11/29 11:37:03 atsareg Exp $"
+__RCSID__ = "$Id: JobLoggingDB.py,v 1.5 2008/07/07 08:24:20 rgracian Exp $"
 
 import re, os, sys
 import time, datetime
@@ -110,9 +110,9 @@ class JobLoggingDB(DB):
       if row[0] != "idem":
         status = row[0];
       if row[1] != "idem":
-        minor = row[1];	
+        minor = row[1];
       if row[2] != "idem":
-        app = row[2];		
+        app = row[2];
       return_value.append((status,minor,app,str(row[3]),row[4]))
       
     return S_OK(return_value)    

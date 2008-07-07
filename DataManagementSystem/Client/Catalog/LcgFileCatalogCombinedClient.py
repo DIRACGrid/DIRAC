@@ -109,7 +109,7 @@ class LcgFileCatalogCombinedClient:
           method = getattr(self.lfc,self.call)
           resMeth = method(*parms,**kws)
           if not resMeth['OK']:
-            return resMeth					
+            return resMeth
           else:
             result = resMeth
       except Exception,x:

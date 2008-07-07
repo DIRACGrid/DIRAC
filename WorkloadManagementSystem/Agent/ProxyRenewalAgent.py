@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/ProxyRenewalAgent.py,v 1.8 2008/02/25 22:52:58 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/ProxyRenewalAgent.py,v 1.9 2008/07/07 08:23:21 rgracian Exp $
 ########################################################################
 
 """  Proxy Renewal agent is the key element of the Proxy Repository
@@ -58,7 +58,7 @@ class ProxyRenewalAgent(Agent):
       for dn in ticket_dn_list:
         self.log.verbose(dn)
     else:
-      return S_OK()	
+      return S_OK()
 
     result = self.jobDB.getDistinctJobAttributes("OwnerDN")
     if not result["OK"]:
@@ -119,5 +119,5 @@ class ProxyRenewalAgent(Agent):
           else:
             self.log.warn(result["Message"])
             self.log.warn('Failed to remove proxy for '+dn)
-	    
+
     return S_OK()

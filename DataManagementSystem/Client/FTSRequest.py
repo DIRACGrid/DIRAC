@@ -125,10 +125,10 @@ class FTSRequest:
     if (sourceSite == 'CERN') or (targetSite == 'CERN'):
       # one of the two CERN fts servers should be used 
       if (sourceSite in t1Sites) or (targetSite in t1Sites):
-	# the transfer is either two or from a tier1			
+        # the transfer is either two or from a tier1
         ep = 'CERNT1'
       else:
-	# the transfer is either two or from a tier2			
+        # the transfer is either two or from a tier2
         ep = 'CERNT2'
     else:
       # a tier1 fts server should be used

@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: Mapping.py,v 1.4 2008/07/04 14:38:08 asypniew Exp $
+# $Id: Mapping.py,v 1.5 2008/07/07 08:13:08 rgracian Exp $
 ########################################################################
 
 """ All of the data collection and handling procedures for the SiteMappingHandler
@@ -186,7 +186,7 @@ class Mapping:
     ##############################
     if section == 'SiteMask':
       #fileName = 'sitemask.kml'
-      KML.addMultipleScaledStyles(iconPath, ('%s-green' % sectionTag[section], '%s-red' % sectionTag[section], '%s-gray' % sectionTag[section]), scaleData, '.png')	
+      KML.addMultipleScaledStyles(iconPath, ('%s-green' % sectionTag[section], '%s-red' % sectionTag[section], '%s-gray' % sectionTag[section]), scaleData, '.png')
       for node in self.siteData:
         if 'Mask' not in self.siteData[node]:
           continue

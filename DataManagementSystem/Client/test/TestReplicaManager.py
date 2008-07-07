@@ -18,7 +18,7 @@ class ReplicaManagerTestCase(unittest.TestCase):
     diracSE = 'GRIDKA-RAW'
     putRes = self.replicaManager.putAndRegister(lfn, self.fileName, diracSE)
     removeRes = self.replicaManager.removeFile(lfn)
-   	
+
     # Check that the put was successful
     self.assert_(putRes['OK'])
     self.assert_(putRes['Value'].has_key('Successful'))
