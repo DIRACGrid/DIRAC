@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.46 2008/07/02 13:09:32 paterson Exp $
+# $Id: JobWrapper.py,v 1.47 2008/07/08 13:40:59 acasajus Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.46 2008/07/02 13:09:32 paterson Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.47 2008/07/08 13:40:59 acasajus Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -36,11 +36,12 @@ EXECUTION_RESULT = {}
 class JobWrapper:
 
   #############################################################################
-  def __init__(self, jobID=None, jobReport=None):
+  def __init__( self, jobID=None, jobReport=None, pilotProxyLocation = None ):
     """ Standard constructor
     """
     self.section = getSystemSection('WorkloadManagement/JobWrapper')
     self.log = gLogger
+    self.pilotProxyLocation = pilotProxyLocation
     #Create the acctounting report
     self.accountingReport = AccountingJob()
     # Initialize for accounting
@@ -247,13 +248,14 @@ class JobWrapper:
       return S_ERROR('Path to executable %s not found' %(executable))
 
     watchdogFactory = WatchdogFactory()
-    watchdogInstance = watchdogFactory.getWatchdog(self.currentPID, exeThread, spObject, jobCPUTime)
+    watchdogInstance = watchdogFactory.getWatchdog(self.currentPID, exeThread, spObject, jobCPUTime )
     if not watchdogInstance['OK']:
       self.log.warn(watchdogInstance['Message'])
       return S_ERROR('Could not create Watchdog instance')
 
     self.log.verbose('WatchdogInstance %s' %(watchdogInstance))
     watchdog = watchdogInstance['Value']
+    watchdog.setPilotProxyLocation( self.pilotProxyLocation )
     self.log.verbose('Calibrating Watchdog instance')
     watchdog.calibrate()
     if exeThread.isAlive():

@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.35 2008/07/01 12:48:48 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.36 2008/07/08 13:37:45 acasajus Exp $
 # File  : Watchdog.py
 # Author: Stuart Paterson
 ########################################################################
@@ -18,14 +18,15 @@
           - CPU normalization for correct comparison with job limit
 """
 
-__RCSID__ = "$Id: Watchdog.py,v 1.35 2008/07/01 12:48:48 paterson Exp $"
+__RCSID__ = "$Id: Watchdog.py,v 1.36 2008/07/08 13:37:45 acasajus Exp $"
 
-from DIRAC.Core.Base.Agent                          import Agent
-from DIRAC.Core.DISET.RPCClient                     import RPCClient
-from DIRAC.ConfigurationSystem.Client.Config        import gConfig
-from DIRAC.Core.Utilities.Subprocess                import shellCall
-from DIRAC.Core.Utilities.ProcessMonitor            import ProcessMonitor
-from DIRAC                                          import S_OK, S_ERROR
+from DIRAC.Core.Base.Agent                              import Agent
+from DIRAC.Core.DISET.RPCClient                         import RPCClient
+from DIRAC.ConfigurationSystem.Client.Config            import gConfig
+from DIRAC.Core.Utilities.Subprocess                    import shellCall
+from DIRAC.Core.Utilities.ProcessMonitor                import ProcessMonitor
+from DIRAC                                              import S_OK, S_ERROR
+from DIRAC.FrameworkSystem.Client.ProxyManagerClient    import gProxyManager
 
 import os,thread,time,shutil
 
@@ -49,6 +50,10 @@ class Watchdog(Agent):
     self.peekFailCount = 0
     self.peekRetry = 5
     self.processMonitor = ProcessMonitor()
+    self.pilotProxyLocation = False
+
+  def setPilotProxyLocation( self, pilotProxyLocation ):
+    self.pilotProxyLocation = pilotProxyLocation
 
   #############################################################################
   def initialize(self,loops=0):
@@ -100,6 +105,11 @@ class Watchdog(Agent):
     #      but only perform checks with a certain frequency
     if (time.time() - self.initialValues['StartTime']) > self.checkingTime*self.checkCount:
       self.checkCount += 1
+      if self.pilotProxyLocation:
+        self.log.verbose( "Checking proxy...")
+        gProxyManager.renewProxy( minLifeTime = gConfig.getValue( '/Security/MinProxyLifeTime', 10800 ),
+                                  newProxyLifeTime = gConfig.getValue( '/Security/DefaultProxyLifeTime', 86400 ),
+                                  proxyToConnect = self.pilotProxyLocation )
       result = self.__performChecks()
       if not result['OK']:
         self.log.warn('Problem during recent checks')
@@ -108,6 +118,7 @@ class Watchdog(Agent):
     else:
       #self.log.debug('Application thread is alive: checking count is %s' %(self.checkCount))
       return S_OK()
+
 
   #############################################################################
   def __performChecks(self):
