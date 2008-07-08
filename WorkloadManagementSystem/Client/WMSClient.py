@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSClient.py,v 1.9 2008/07/04 08:28:50 rgracian Exp $
+# $Id: WMSClient.py,v 1.10 2008/07/08 13:45:01 acasajus Exp $
 ########################################################################
 
 """ DIRAC Workload Management System Client class encapsulates all the
@@ -11,6 +11,7 @@ from DIRAC.Core.Utilities.GridCert import getGridProxy
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC import S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.Client.SandboxClient import SandboxClient
+from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
 
 import os
 
@@ -19,7 +20,7 @@ class WMSClient:
   def __init__(self):
     """ WMS Client constructor
     """
-    self.sandbox = None
+    gProxyManager.uploadProxy()
 
 ###############################################################################
   def __checkInputSandbox(self, classAdJob):
@@ -83,7 +84,8 @@ class WMSClient:
   def submitJob(self,jdl):
     """ Submit one job specified by its JDL to WMS
     """
-    self.sandbox = SandboxClient()
+    jobManager = RPCClient('WorkloadManagement/JobManager',useCertificates=False)
+    sandbox = SandboxClient()
     if os.path.exists(jdl):
       fic = open (jdl, "r")
       jdlString = fic.read()
@@ -107,30 +109,28 @@ class WMSClient:
     insize = result['TotalSize']
 
     # Submit the job now and get the new job ID
-    proxyfile = getGridProxy()
-    proxy = open(proxyfile,'r').read()
-    jobManager = RPCClient('WorkloadManagement/JobManager',useCertificates=False)
-    result = jobManager.submitJob(jdlString, proxy)
+    result = jobManager.submitJob(jdlString)
 
     if not result['OK']:
       return result
-    else:
-      jobID = result['Value']
+    jobID = result['Value']
+    if result[ 'requireProxyUpload' ]:
+      gProxyManager.uploadProxy()
 
     #print "Sandbox uploading"
 
     # Upload input sandbox if any
     if insize > 0:
-      result = self.sandbox.sendFiles(jobID,inputs)
+      result = sandbox.sendFiles(jobID,inputs)
       #print result
       if result['OK']:
-        result = self.sandbox.setSandboxReady(jobID)
+        result = sandbox.setSandboxReady(jobID)
         if not result['OK']:
           return S_ERROR('Failed to set the Input Sandbox flag to ready')
       else:
         return S_ERROR('Failed to upload the Input Sandbox')
     else:
-      result = self.sandbox.setSandboxReady(jobID)
+      result = sandbox.setSandboxReady(jobID)
       if not result['OK']:
         return S_ERROR('Failed to set the Input Sandbox flag to ready')
 
@@ -141,25 +141,37 @@ class WMSClient:
         jobID can be an integer representing a single DIRAC job ID or a list of IDs
     """
     jobManager = RPCClient('WorkloadManagement/JobManager',useCertificates=False)
-    return jobManager.killJob(jobID)
+    result = jobManager.killJob(jobID)
+    if result[ 'requireProxyUpload' ]:
+      gProxyManager.uploadProxy()
+    return result
 
   def deleteJob(self,jobID):
     """ Delete job(s) from the WMS Job database.
         jobID can be an integer representing a single DIRAC job ID or a list of IDs
     """
     jobManager = RPCClient('WorkloadManagement/JobManager',useCertificates=False)
-    return jobManager.deleteJob(jobID)
+    result = jobManager.deleteJob(jobID)
+    if result[ 'requireProxyUpload' ]:
+      gProxyManager.uploadProxy()
+    return result
 
   def rescheduleJob(self,jobID):
     """ Reschedule job(s) in WMS Job database.
         jobID can be an integer representing a single DIRAC job ID or a list of IDs
     """
     jobManager = RPCClient('WorkloadManagement/JobManager',useCertificates=False)
-    return jobManager.rescheduleJob(jobID)
+    result = jobManager.rescheduleJob(jobID)
+    if result[ 'requireProxyUpload' ]:
+      gProxyManager.uploadProxy()
+    return result
 
   def resetJob(self,jobID):
     """ Reset job(s) in WMS Job database.
         jobID can be an integer representing a single DIRAC job ID or a list of IDs
     """
     jobManager = RPCClient('WorkloadManagement/JobManager',useCertificates=False)
-    return jobManager.resetJob(jobID)
+    result = jobManager.resetJob(jobID)
+    if result[ 'requireProxyUpload' ]:
+      gProxyManager.uploadProxy()
+    return result
