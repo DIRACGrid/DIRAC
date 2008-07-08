@@ -44,7 +44,7 @@ class ZuziaAgent(Agent):
     """
     gMonitor.addMark("Iteration",1)
 
-    res = self.RequestDBClient.serveRequest(requestType='',url=self.local)
+    res = self.RequestDBClient.serveRequest(url=self.local)
     if not res['OK']:
       gLogger.error("ZuziaAgent.execute: Failed to get request from database.",self.local)
       return S_OK()
