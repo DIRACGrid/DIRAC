@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: Mapping.py,v 1.5 2008/07/07 08:13:08 rgracian Exp $
+# $Id: Mapping.py,v 1.6 2008/07/08 14:09:39 asypniew Exp $
 ########################################################################
 
 """ All of the data collection and handling procedures for the SiteMappingHandler
@@ -23,8 +23,8 @@ class Mapping:
   ###########################################################################
   def __init__(self):
     self.siteData = {}
-    self.plotFigure = pylab.figure(figsize=(1,1))
-    self.plotFigure.figurePatch.set_alpha(0.0)
+    #self.plotFigure = pylab.figure(figsize=(1,1), frameon=False)
+    #self.plotFigure.figurePatch.set_alpha(0.0)
     
   ###########################################################################
   def getDict(self):
@@ -37,6 +37,7 @@ class Mapping:
   
     wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator',useCertificates=True)
     jobMon = RPCClient('WorkloadManagement/JobMonitoring',useCertificates=True)
+    storUse = RPCClient('DataManagement/StorageUsage',useCertificates=True)
     
     ##############################
     if section == 'SiteData':
@@ -74,25 +75,25 @@ class Mapping:
       # Update site mask data
       #mask = self.getSiteMask()
       mask = wmsAdmin.getSiteMask()
-      gLogger.verbose('Mask: %s' % mask)
+#      gLogger.verbose('Mask: %s' % mask)
       if not mask['OK']:
         gLogger.verbose('Failed to retrieve site mask. Error: %s' % mask['Value'])
         return S_ERROR('Failed to retrieve site mask.')
-      gLogger.verbose('Site mask: %s' % mask['Value'])
+#      gLogger.verbose('Site mask: %s' % mask['Value'])
 
       #Get the overall list of sites from the Monitoring
       distinctSites = jobMon.getSites()
       if not distinctSites['OK']:
         gLogger.verbose('Failed to retrieve site mask. Error: %s' % distinctSites['Value'])
         return S_ERROR('Failed to retrieve site listing.')
-      gLogger.verbose('Site listing: %s' % distinctSites['Value'])
+#      gLogger.verbose('Site listing: %s' % distinctSites['Value'])
     
       # Generate a dictionary of valid sites
       for node in distinctSites['Value']:
         if node not in self.siteData:
           continue
         if node in mask['Value']:
-          self.siteData[node]['Mask'] = 'Good'
+          self.siteData[node]['Mask'] = 'Allowed'
         else:
           self.siteData[node]['Mask'] = 'Banned'
     
@@ -144,11 +145,32 @@ class Mapping:
         self.siteData[parent]['PilotSummary'][child] = {'Done' : 0, 'Aborted' : 0, 'Submitted' : 0, 'Cleared' : 0, 'Ready' : 0, 'Scheduled' : 0, 'Running' : 0}
         for key in pilotSummary['Value'][child]:
           self.siteData[parent]['PilotSummary'][child][key] = int(pilotSummary['Value'][child][key])
-          
+    
+    ##############################
+    elif section == 'DataStorage':
+      storageSummary = storUse.getStorageSummary()
+      if not storageSummary['OK']:
+        return S_ERROR('Failed to retrieve data storage summary.')
+                      
+      for element in storageSummary['Value']:
+        # Sort each storage element into a list of the form [name, type]
+        if element.find('_') != -1:
+          se = element.split('_')
+        else:
+          se = element.split('-')
+                    
+        for node in self.siteData:
+          if node.find(se[0]) != -1:
+            if 'DataStorage' not in self.siteData[node]:
+              self.siteData[node]['DataStorage'] = {}
+            self.siteData[node]['DataStorage'][se[1].upper()] = storageSummary['Value'][element]
+            break
+    
+    ##############################    
     else:
       return S_ERROR('Invalid update section %s' % section)
       
-    gLogger.verbose('Update complete. Current site data: %s' % self.siteData)
+#    gLogger.verbose('Update complete. Current site data: %s' % self.siteData)
     
     return S_OK(self.siteData)
   
@@ -186,17 +208,31 @@ class Mapping:
     ##############################
     if section == 'SiteMask':
       #fileName = 'sitemask.kml'
-      KML.addMultipleScaledStyles(iconPath, ('%s-green' % sectionTag[section], '%s-red' % sectionTag[section], '%s-gray' % sectionTag[section]), scaleData, '.png')
+      KML.addMultipleScaledStyles(iconPath, ('%s-green' % sectionTag[section], '%s-red' % sectionTag[section], '%s-gray' % sectionTag[section]), scaleData, '.png')	
       for node in self.siteData:
         if 'Mask' not in self.siteData[node]:
           continue
-        if self.siteData[node]['Mask'] == 'Good':
+        if self.siteData[node]['Mask'] == 'Allowed':
           icon = '%s-green%s' % (sectionTag[section], self.siteData[node]['Cat'])
         elif self.siteData[node]['Mask'] == 'Banned':
           icon = '%s-red%s' % (sectionTag[section], self.siteData[node]['Cat'])
         else:
           icon = '%s-gray%s' % (sectionTag[section], self.siteData[node]['Cat'])
-        KML.addNode(node, 'More info', icon, self.siteData[node]['Coord'])
+        
+        west_east = '%.4f&deg; ' % abs(self.siteData[node]['Coord'][0])
+        if self.siteData[node]['Coord'][0] < 0:
+          west_east += 'W'
+        else:
+          west_east += 'E'
+        
+        north_south = '%.4f&deg; ' % abs(self.siteData[node]['Coord'][1])  
+        if self.siteData[node]['Coord'][1] < 0:
+          north_south += 'S'
+        else:
+          north_south += 'N'
+          
+        description = 'Status: %s<br/>Location: %s, %s<br/>Category: %s' % (self.siteData[node]['Mask'], west_east, north_south, self.siteData[node]['Cat'])
+        KML.addNode(node, description, icon, self.siteData[node]['Coord'])
     
     ##############################    
     elif section == 'JobSummary':
@@ -223,15 +259,13 @@ class Mapping:
         if dataSize % numCat != 0:  # This avoids over-scaling later on (scaling greater than maxScale)
           sectionSize += 1
       scaleDict = {}
-      for i in range(0, dataSize):
+      for i in range(dataSize):
         if numCat:
           scaleValue = (float(i) // sectionSize) + 1
-          gLogger.verbose('debug: %.2f' % scaleValue)
           scaleValue /= numCat
         else:
           scaleValue = float(i + 1) / dataSize
         scaleDict[str(numJobs[i])] = (float(scaleValue) * (maxScale - minScale)) + minScale
-        gLogger.verbose('i=%d, scaleValue=%.2f, scaleDict=%.2f' % (i, scaleValue, scaleDict[str(numJobs[i])]))
         
       # Now actually generate the KML  
       for node in self.siteData:
@@ -245,7 +279,7 @@ class Mapping:
         # Generate node style
         KML.addNodeStyle('%s-%s' % (sectionTag[section],node), '%s%s-%s.png' % (iconPath,sectionTag[section],node), scaleDict[str(total)])#1)#scaleData[self.siteData[node]['Cat']])
         # Generate description
-        description = "Done: %d<br/>Running: %d<br/>Stalled: %d<br/>Waiting: %d<br/>Failed: %d" %\
+        description = 'Done: %d<br/>Running: %d<br/>Stalled: %d<br/>Waiting: %d<br/>Failed: %d' %\
                       (self.siteData[node]['JobSummary']['Done'], self.siteData[node]['JobSummary']['Running'], self.siteData[node]['JobSummary']['Stalled'],\
                       self.siteData[node]['JobSummary']['Waiting'], self.siteData[node]['JobSummary']['Failed'])
         # Add the node
@@ -274,13 +308,29 @@ class Mapping:
         
         # Write the node
         KML.addNode(node, table.tableToHTML(), '%s-%s' % (sectionTag[section],node), self.siteData[node]['Coord'])
+        
+    ##############################
+    elif section == 'DataStorage':
+      for node in self.siteData:
+        if 'DataStorage' not in self.siteData[node]:
+          continue
+          
+        KML.addNodeStyle('%s-%s' % (sectionTag[section],node), '%s%s-%s.png' % (iconPath,sectionTag[section],node), 2.0)
+        
+        # Yeah, I know this is a hack (since 'style' is deprecated), but for now it makes life easier...
+        description = '<span style="float: left; margin-top: -20px; margin-left: -20px;" height=250><img src="%s%s-%s-large.png"/></span>' % (iconPath,sectionTag[section],node)
+        for se in self.siteData[node]['DataStorage']:
+          description += '%s: %.3f GB (%s files)<br/>' % (se, float(self.siteData[node]['DataStorage'][se]['Size']) / 1024**3, self.siteData[node]['DataStorage'][se]['Files'])
+        description += '<div style="clear: both"></div>'
+        
+        KML.addNode(node, description, '%s-%s' % (sectionTag[section],node), self.siteData[node]['Coord'])
       
     ##############################
     else:
       return S_ERROR('Invalid generation section %s' % section)
       
     data = KML.getKML()
-    gLogger.verbose('KML generation complete. Data: %s' % data)
+#    gLogger.verbose('KML generation complete. Data: %s' % data)
     
     KML.writeFile('%s/%s' % (filePath, sectionFile[section]))
     gLogger.verbose('KML data stored to: %s/%s' % (filePath, sectionFile[section]))
@@ -306,6 +356,9 @@ class Mapping:
         
         data = (100,)
         
+        pylab.close()
+        pylab.figure(figsize=(0.6,0.6))
+        pylab.gcf().figurePatch.set_alpha(0)
         pylab.pie(data, colors=(colorDict[color],))
         pylab.savefig(fileName)
         
@@ -326,7 +379,10 @@ class Mapping:
         data = (self.siteData[node]['JobSummary']['Done'], self.siteData[node]['JobSummary']['Running'],\
                 self.siteData[node]['JobSummary']['Stalled'], self.siteData[node]['JobSummary']['Waiting'],\
                 self.siteData[node]['JobSummary']['Failed'])
-                
+        
+        pylab.close()
+        pylab.figure(figsize=(0.6,0.6))
+        pylab.gcf().figurePatch.set_alpha(0)   
         pylab.pie(data, colors=colorList)
         pylab.savefig(fileName)
         
@@ -350,7 +406,89 @@ class Mapping:
         # Generate plot icon for node
         fileName = '%s/%s-%s.png' % (filePath,sectionTag[section],node)
         data = (doneCleared, aborted)
+        pylab.close()
+        pylab.figure(figsize=(0.6,0.6))
+        pylab.gcf().figurePatch.set_alpha(0)
         pylab.pie(data, colors=colorList)
+        pylab.savefig(fileName)
+        fileCache.addToCache(fileName)
+        
+    ##############################    
+    elif section == 'DataStorage':
+      # Elements here are [name, nickname, color], and order matters
+      masterList = [['RAW', 'RAW', '#0000ff'],\
+                    ['RDST', 'RDST', '#7fff7f'],\
+                    ['M-DST', 'MDST', '#007f00'],\
+                    ['DST', 'DST', '#00ff00'],\
+                    ['FAILOVER', 'FAIL', '#ffff00'],\
+                    ['USER', 'USER', '#ffffff'],\
+                    ['LOG', 'LOG', '#ff7f00'],\
+                    ['DISK', 'DISK', '#ff0000'],\
+                    ['TAPE', 'TAPE', '#7f0000']]
+                    
+      typeList = []
+      labelList = []
+      for element in masterList:
+        typeList.append(element[0])
+        labelList.append(element[1])
+        
+      #colorDict = {'M-DST' : '#007f00', 'DST' : '#00ff00', 'RDST' : '#7fff7f', 'RAW' : '#0000ff', 'DISK' : '#ff0000', 'TAPE' : '#7f0000', 'FAILOVER' : '#ffff00'}
+      #seList = colorDict.keys()
+      #seList.sort()
+      
+      #seNickname = seList[:]
+      #for i in range(len(seNickname)):
+      #  if seNickname[i] == 'FAILOVER':
+      #    seNickname[i] = 'FAIL'
+      #    break
+      
+      # Produce a data dictionary of processed (percentage) data
+      processedSize = self.processDataStorage(typeList)
+      
+      # This is to eliminate tick marks and labels in the thumbnail version
+      zeroList1 = [0 for i in range(len(masterList))]
+      zeroList2 = ['' for i in range(len(masterList))]
+      
+      # These are the parameters for aligning the tick marks / labels in the large version
+      largeTickX = [(x*1.5 + 0.5 + 0.45) for x in range(len(masterList))]
+      largeTickY = [(x*10) for x in range(0,11,2)]
+      largeLabelY = [('%d%%' % (x*10)) for x in range(0,11,2)]
+      
+      for node in self.siteData:
+        if 'DataStorage' not in self.siteData[node]:
+          continue
+          
+        fileName = '%s/%s-%s.png' % (filePath,sectionTag[section],node) 
+        
+        # First generate the small plot  
+        pylab.close()
+        pylab.figure(figsize=(0.6,0.6))
+        pylab.gcf().figurePatch.set_alpha(0)
+        pylab.gca().axesPatch.set_alpha(0.2)
+          
+        for i in range(len(masterList)):
+          pylab.bar(i+0.25, processedSize[node][masterList[i][0]], color=masterList[i][2], alpha=0.8)
+        
+        pylab.xticks(zeroList1, zeroList2)
+        pylab.yticks(zeroList1, zeroList2)
+        
+        pylab.savefig(fileName)
+        fileCache.addToCache(fileName)
+        
+        # Now generate the enlarged plot
+        fileName = '%s/%s-%s-large.png' % (filePath,sectionTag[section],node) 
+          
+        pylab.close()
+        pylab.figure(figsize=(3,1.5))
+        pylab.gcf().figurePatch.set_alpha(0)
+        pylab.gca().axesPatch.set_alpha(0)
+          
+        for i in range(len(masterList)):
+          pylab.bar(i*1.5 + 0.4, processedSize[node][masterList[i][0]], width=1.1, color=masterList[i][2], alpha=1)
+        
+        pylab.xticks(largeTickX, labelList, size='xx-small')
+        pylab.yticks(largeTickY, largeLabelY, size='xx-small')
+        
         pylab.savefig(fileName)
         fileCache.addToCache(fileName)
       
@@ -368,5 +506,59 @@ class Mapping:
 #    """
 #    return jobDB.getSiteMask('Active')
 
+  #############################################################################
+#  def multiSplit(self, strIn, tokens):
+#    """ Like split(), but recurses over a tuple of tokens)
+#    """
+#      
+#    final = [strIn]
+#        
+#    for token in tokens:
+#      temp = []
+#      for s in final:
+#        temp += s.split(token)
+#      final = temp
+#      
+#    return final
 
+  #############################################################################
+  def processDataStorage(self, typeList):
+    """ Process data storage sizes in order to produce
+        percentages which are relative within a given
+        storage element type. typeList should be a list of
+        storage types to process.
+    """
+    data = {}
+    for node in self.siteData:
+      if 'DataStorage' not in self.siteData[node]:
+        continue
+        
+      data[node] = {}
+      
+      # Extract sizes for each type of storage device in each SE
+      for se in typeList:
+        if se not in self.siteData[node]['DataStorage']:
+          data[node][se] = 0
+        else:
+          data[node][se] = self.siteData[node]['DataStorage'][se]['Size']
+          
+    # Now that we have the sizes, we can go through each type and calculate maximum sizes
+    for se in typeList:
+      maxSize = 0
+      # Compute maximum
+      for node in data:
+        if data[node][se] > maxSize and node != 'LCG.CERN.ch':
+          maxSize = data[node][se]
+      # Just in case...
+      if maxSize == 0:
+        maxSize = 1
+      # Store value as an integer percentage
+      for node in data:
+        if node == 'LCG.CERN.ch':
+          data[node][se] = 100
+        else:
+          data[node][se] = int(float(data[node][se] * 100) / maxSize)
+                  
+    return data
+    
   #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
