@@ -6,7 +6,7 @@ from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContain
 from DIRAC.ConfigurationSystem.Client import PathFinder
 
 import os
-import threading
+import threading,random
 from types import *
 
 class RequestDBFile:
@@ -203,6 +203,20 @@ class RequestDBFile:
     """
     gLogger.info("RequestDBFile.serveRequest: Attempting to serve request of type %s." % requestType)
     try:
+      # get a request type if one is not specified
+      if not requestType:
+        res = getDBSummary()
+        if not res['OK']:
+          errStr = "RequestDBFile.serveRequest: Failed to get DB summary."
+          gLogger.error(errStr,res['Message'])
+          return S_ERROR(errStr)
+        requestTypes = res['Value'].keys()
+        if not requestTypes:
+          # There are absolutely no requests in the db
+          return S_OK()
+        random.shuffle(requestTypes)
+        requestType = requestTypes[0]
+
       # First get a request
       res = self.getRequest(requestType)
       if not res['OK']:
