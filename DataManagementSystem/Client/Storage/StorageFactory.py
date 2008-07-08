@@ -201,7 +201,7 @@ class StorageFactory:
     optionsDict = {}
     for option in options:
       optionConfigPath = '%s/%s' % (storageConfigPath,option)
-      optionsDict[option] = gConfig.getValue(optionConfigPath)
+      optionsDict[option] = gConfig.getValue(optionConfigPath,'')
     return S_OK(optionsDict)
 
   def _getConfigStorageProtocols(self,storageName):
@@ -241,7 +241,7 @@ class StorageFactory:
     protocolDict = {'Access':'','Host':'','Path':'','Port':'','Protocol':'','ProtocolName':'','SpaceToken':'','WSUrl':''}
     for option in options:
       configPath = '%s/%s' % (protocolConfigPath,option)
-      optionValue = gConfig.getValue(configPath)
+      optionValue = gConfig.getValue(configPath,'')
       protocolDict[option] = optionValue
 
     # Now update the local and remote protocol lists.
