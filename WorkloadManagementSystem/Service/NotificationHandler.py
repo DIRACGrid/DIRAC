@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: NotificationHandler.py,v 1.6 2008/06/12 17:59:59 paterson Exp $
+# $Id: NotificationHandler.py,v 1.7 2008/07/08 10:35:27 paterson Exp $
 ########################################################################
 
 """ The Notification service provides a toolkit to contact people via email
@@ -14,7 +14,7 @@
     Grid, an email could be sent by default with the metadata of the file.
 """
 
-__RCSID__ = "$Id: NotificationHandler.py,v 1.6 2008/06/12 17:59:59 paterson Exp $"
+__RCSID__ = "$Id: NotificationHandler.py,v 1.7 2008/07/08 10:35:27 paterson Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -55,7 +55,7 @@ class NotificationHandler( RequestHandler ):
     """ Send an SMS with supplied body to the specified DIRAC user using the Mail utility via an SMS switch.
     """
     gLogger.verbose('Received signal to send the following SMS to %s:\n%s' %(userName,body))
-    mobile = gConfig.getValue('/Users/%s/mobile' %userName,'')
+    mobile = gConfig.getValue('/Security/Users/%s/mobile' %userName,'')
     if not mobile:
       return S_ERROR('No registered mobile number for %s' %userName)
 
