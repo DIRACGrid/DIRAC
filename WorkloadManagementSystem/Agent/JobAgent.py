@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.39 2008/07/04 08:24:46 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.40 2008/07/08 13:56:23 acasajus Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.39 2008/07/04 08:24:46 rgracian Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.40 2008/07/08 13:56:23 acasajus Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -19,8 +19,9 @@ from DIRAC.Core.Base.Agent                               import Agent
 from DIRAC.Core.DISET.RPCClient                          import RPCClient
 from DIRAC.Resources.Computing.ComputingElementFactory   import ComputingElementFactory
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
-from DIRAC.Core.Utilities.GridCredentials                import setupProxy,restoreProxy,setDIRACGroup,getDIRACGroup
 from DIRAC                                               import S_OK, S_ERROR, gConfig, platform
+from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
+from DIRAC.Core.Security                                 import Locations
 
 import os, sys, re, string, time
 
@@ -60,8 +61,7 @@ class JobAgent(Agent):
     self.cpuFactor = gConfig.getValue('LocalSite/CPUScalingFactor','Unknown')
     self.jobWrapperTemplate = self.siteRoot+gConfig.getValue(self.section+'/JobWrapperTemplate','/DIRAC/WorkloadManagementSystem/JobWrapper/JobWrapperTemplate')
     self.jobSubmissionDelay = gConfig.getValue(self.section+'/SubmissionDelay',10)
-    self.defaultProxyLength = gConfig.getValue(self.section+'/DefaultProxyLength',12)
-    self.maxProxyLength =  gConfig.getValue(self.section+'/MaxProxyLength',72)
+    self.defaultProxyLength = gConfig.getValue( '/Security/DefaultProxyLifeTime', 86400 )
     #Added default in case pilot role was stripped somehow during proxy delegation
     self.defaultProxyGroup = gConfig.getValue(self.section+'/DefaultProxyGroup','lhcb_pilot')
     self.defaultLogLevel = gConfig.getValue(self.section+'/DefaultLogLevel','debug')
@@ -180,23 +180,12 @@ class JobAgent(Agent):
       self.__report(jobID,'Matched','Job Received by Agent')
       self.__setJobSite(jobID,self.siteName)
       self.__reportPilotInfo(jobID)
-      getProxy = True
-      if params.has_key('PilotType'):
-        if params['PilotType'].lower()=='private':
-          getProxy=False
-
-      if getProxy:
-        proxyResult = self.__setupProxy(jobID,ownerDN,jobGroup,self.siteRoot,jobCPUReqt)
-        if not proxyResult['OK']:
-          self.log.warn('Problem while setting up proxy for job %s' %(jobID))
-          self.__report(jobID,'Failed','Invalid Proxy')
-          return self.__finish('Invalid Proxy')
-
-        proxyTuple = proxyResult['Value']
-        proxyLogging = self.__changeProxy(proxyTuple[1],proxyTuple[0])
-        if not proxyLogging['OK']:
-          self.log.warn('Problem while changing the proxy for job %s' %jobID)
-          return proxyLogging
+      proxyResult = self.__setupProxy(jobID,ownerDN,jobGroup,self.siteRoot)
+      if not proxyResult['OK']:
+        self.log.warn('Problem while setting up proxy for job %s' %(jobID))
+        self.__report(jobID,'Failed','Invalid Proxy')
+        return self.__finish('Invalid Proxy')
+      proxyChain = proxyResult['Value']
 
       saveJDL = self.__saveJobJDLRequest(jobID,jobJDL)
       self.__report(jobID,'Matched','Job Prepared to Submit')
@@ -219,20 +208,13 @@ class JobAgent(Agent):
           return self.__finish('Job Rescheduled')
 
       self.log.verbose('Before %sCE submitJob()' %(self.ceName))
-      submission = self.__submitJob(jobID,params,resourceParams,optimizerParams,jobJDL)
+      submission = self.__submitJob(jobID,params,resourceParams,optimizerParams,jobJDL,proxyChain)
       if not submission['OK']:
         self.log.warn('Job submission failed during creation of the Job Wrapper')
         self.__report(jobID,'Failed','Job Wrapper Creation')
         return self.__finish('Problem Creating Job Wrapper')
 
       self.log.verbose('After %sCE submitJob()' %(self.ceName))
-      if getProxy:
-        self.log.info('Restoring original proxy %s' %(proxyTuple[1]))
-        restoreProxy(proxyTuple[0],proxyTuple[1])
-        proxyLogging = self.__changeProxy(proxyTuple[1],proxyTuple[0])
-        if not proxyLogging['OK']:
-          self.log.warn('Problem while changing back the proxy from job %s' %jobID)
-          self.__finish('Job processing failed with exception')
     except Exception, x:
       self.log.exception(x)
       result = jobManager.rescheduleJob(jobID)
@@ -267,61 +249,27 @@ class JobAgent(Agent):
     return S_OK()
 
   #############################################################################
-  def __setupProxy(self,job,ownerDN,jobGroup,workingDir,jobCPUTime):
+  def __setupProxy(self,job,ownerDN,jobGroup,workingDir):
     """Retrieves user proxy with correct role for job and sets up environment to
        run job locally.
     """
-    hours = int(round(int(jobCPUTime)/60))
-    if hours > self.maxProxyLength:
-      hours = self.maxProxyLength
-    if hours < self.defaultProxyLength:
-      hours = self.defaultProxyLength
-
-    currentGroup =  getDIRACGroup('None')
-    if currentGroup == 'None':
-      self.log.warn('Current DIRAC group is not found, setting to %s explicitly' %(self.defaultProxyGroup))
-      setDIRACGroup(self.defaultProxyGroup)
-
-    currentGroup =  getDIRACGroup('None')
-    self.log.info('Current DIRAC Group is: %s' %(currentGroup))
-    self.log.info('Attempting to obtain proxy with length %s hours for DN\n %s' %(hours,ownerDN))
-    wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
-    result = wmsAdmin.getProxy(ownerDN,jobGroup,hours)
-    if not result['OK']:
-      self.log.warn('Could not retrieve proxy from WMS Administrator')
-      self.log.verbose(result)
-      self.__setJobParam(job,'ProxyError',str(result))
-      self.log.info('Checking current proxy info:')
-      os.system('voms-proxy-info -all')
+    self.log.info( "Requesting proxy for %s@%s" % ( ownerDN, jobGroup ) )
+    retVal = gProxyManager.downloadVOMSProxy( ownerDN,
+                                          jobGroup,
+                                          limited = True,
+                                          requiredTimeLeft = self.defaultProxyLength )
+    if not retVal[ 'OK' ]:
+      self.log.error('Could not retrieve proxy')
+      self.log.verbose(retVal)
+      self.__setJobParam( job, 'ProxyError', retVal[ 'Message' ] )
+      os.system('dirac-proxy-info')
       sys.stdout.flush()
       self.__report(job,'Failed','Proxy Retrieval')
-      return S_ERROR('Error retrieving proxy')
+      return S_ERROR( 'Error retrieving proxy' )
 
-    if result.has_key('Message'):
-      self.log.warn('WMSAdministrator Message: %s' %(result['Message']))
-      self.__setJobParam(job,'ProxyWarning',result['Message'])
+    chain = retVal[ 'Value' ]
 
-    proxyStr = result['Value']
-    if not os.path.exists('%s/proxy' %(workingDir)):
-      os.mkdir('%s/proxy' %(workingDir))
-
-    proxyFile = '%s/proxy/proxy%s' %(workingDir,job)
-    setupResult = setupProxy(proxyStr,proxyFile)
-    #TODO: remove this temporary debugging output when proxy issue solved
-    self.log.info('VOMS proxy info temporarily printed for debugging purposes')
-    os.system('voms-proxy-info -all')
-    sys.stdout.flush()
-    if not setupResult['OK']:
-      self.log.warn('Could not create environment for proxy')
-      self.log.verbose(setupResult)
-      self.__report(job,'Failed','Proxy Environment')
-      return S_ERROR('Error setting up proxy')
-
-    self.log.info('Setting DIRAC group to %s' %jobGroup)
-    setDIRACGroup(jobGroup)
-
-    self.log.verbose(setupResult)
-    return setupResult
+    return S_OK( chain )
 
   #############################################################################
   def __checkInstallSoftware(self,jobID,jobParams,resourceParams):
@@ -347,11 +295,11 @@ class JobAgent(Agent):
     return result
 
   #############################################################################
-  def __submitJob(self,jobID,jobParams,resourceParams,optimizerParams,jobJDL):
+  def __submitJob(self,jobID,jobParams,resourceParams,optimizerParams,jobJDL,proxyChain):
     """Submit job to the Computing Element instance after creating a custom
        Job Wrapper with the available job parameters.
     """
-    result = self.__createJobWrapper(jobID,jobParams,resourceParams,optimizerParams)
+    result = self.__createJobWrapper(jobID,jobParams,resourceParams,optimizerParams,proxyChain)
 
     if not result['OK']:
       return result
@@ -379,12 +327,19 @@ class JobAgent(Agent):
     return S_OK('Job submitted')
 
   #############################################################################
-  def __createJobWrapper(self,jobID,jobParams,resourceParams,optimizerParams):
+  def __createJobWrapper(self,jobID,jobParams,resourceParams,optimizerParams,proxyChain):
     """This method creates a job wrapper filled with the CE and Job parameters
        to executed the job.
     """
-    arguments = {'Job':jobParams,'CE':resourceParams,'Optimizer':optimizerParams}
+    arguments = {'Job':jobParams,
+                 'CE':resourceParams,
+                 'Optimizer':optimizerParams}
     self.log.verbose('Job arguments are: \n %s' %(arguments))
+
+    result = proxyChain.dumpAllToString()
+    if not result[ 'OK' ]:
+      return result
+    proxyString = result[ 'Value' ]
 
     if not os.path.exists(self.siteRoot+'/job/Wrapper'):
       os.makedirs(self.siteRoot+'/job/Wrapper')
@@ -393,8 +348,10 @@ class JobAgent(Agent):
     if os.path.exists(jobWrapperFile):
       self.log.verbose('Removing existing Job Wrapper for %s' %(jobID))
       os.remove(jobWrapperFile)
-    wrapperTemplate = open(self.jobWrapperTemplate,'r').read()
-    wrapper = open (jobWrapperFile,"w")
+    fd = open(self.jobWrapperTemplate,'r')
+    wrapperTemplate = fd.read()
+    fd.close()
+
     dateStr = time.strftime("%Y-%m-%d",time.localtime(time.time()))
     timeStr = time.strftime("%H:%M",time.localtime(time.time()))
     date_time = '%s %s' %(dateStr,timeStr)
@@ -416,7 +373,7 @@ class JobAgent(Agent):
           else:
             self.log.warn('Job requested python \n%s\n but this is not available locally' %(jobPython))
       else:
-        self.log.warn('Job requested python \n%s\n but no LocalSite/Root defined' %(jobPython))
+        self.log.warn( 'No LocalSite/Root defined' )
     else:
       self.log.warn('Job has no system configuration requirement')
 
@@ -441,7 +398,7 @@ class JobAgent(Agent):
     siteRootPython = 'sys.path.insert(0,"%s")' %(self.siteRoot)
     self.log.debug('DIRACPython is:\n%s' %dPython)
     self.log.debug('SiteRootPythonDir is:\n%s' %siteRootPython)
-    print >> wrapper, wrapperTemplate % (siteRootPython,signature,jobID,date_time)
+    #print >> wrapper, wrapperTemplate % ( siteRootPython, signature, jobID, date_time )
     libDir = '%s/%s/lib' %(self.siteRoot,platform)
     scriptsDir = '%s/scripts' %(self.siteRoot)
     #contribDir = '%s/contrib' %(self.siteRoot)
@@ -457,14 +414,20 @@ class JobAgent(Agent):
     #wrapper.write("os.environ['PYTHONPATH'] = '%s:%s:%s:%s:'+os.environ['PYTHONPATH']\n" %(contribDir,scriptsDir,libDir,self.siteRoot))
     #wrapper.write("os.environ['PYTHONPATH'] = '%s:%s:%s:%s:%s:'+os.environ['PYTHONPATH']\n" %(archLibDir,archLib64Dir,scriptsDir,libDir,self.siteRoot))
     #wrapper.write("os.environ['LD_LIBRARY_PATH'] = '%s:%s:%s'+os.environ['LD_LIBRARY_PATH']\n" %(libDir,lib64Dir,usrlibDir))
-    wrapper.write("os.environ['LD_LIBRARY_PATH'] = '%s'\n" %(libDir))
-    jobArgs = "execute("+str(arguments)+")\n"
-    wrapper.write(jobArgs)
+    #wrapper.write("os.environ['LD_LIBRARY_PATH'] = '%s'\n" %(libDir))
+    #Substitute vars
+    wrapperTemplate = wrapperTemplate.replace( "@PILOTPROXYLOCATION@", Locations.getProxyLocation() )
+    wrapperTemplate = wrapperTemplate.replace( "@JOBPROXYDATA@", proxyString )
+    wrapperTemplate = wrapperTemplate % ( siteRootPython, signature, jobID, date_time )
+    wrapperTemplate = wrapperTemplate.replace( "@JOBARGS@", str(arguments) )
+    wrapper = open (jobWrapperFile,"w")
+    wrapper.write( wrapperTemplate )
     wrapper.close ()
-    os.chmod(jobWrapperFile,0755)
+    os.chmod(jobWrapperFile,0700)
     jobExeFile = '%s/job/Wrapper/Job%s' %(self.siteRoot,jobID)
     #jobFileContents = '#!/bin/sh\nexport LD_LIBRARY_PATH=%s:%s:%s:$LD_LIBRARY_PATH\n%s %s -o LogLevel=debug' %(libDir,lib64Dir,usrlibDir,dPython,jobWrapperFile)
-    jobFileContents = '#!/bin/sh\nexport LD_LIBRARY_PATH=%s\n%s %s -o LogLevel=%s' %(libDir,dPython,jobWrapperFile,logLevel)
+    #jobFileContents = '#!/bin/sh\nexport LD_LIBRARY_PATH=%s\n%s %s -o LogLevel=%s' %(libDir,dPython,jobWrapperFile,logLevel)
+    jobFileContents = '#!/bin/sh\n%s %s -o LogLevel=%s' %(dPython,jobWrapperFile,logLevel)
     jobFile = open(jobExeFile,'w')
     jobFile.write(jobFileContents)
     jobFile.close()
