@@ -1,11 +1,11 @@
 ########################################################################
-# $Id: SiteMappingHandler.py,v 1.4 2008/07/04 14:40:20 asypniew Exp $
+# $Id: SiteMappingHandler.py,v 1.5 2008/07/08 14:14:55 asypniew Exp $
 ########################################################################
 
 """ The SiteMappingHandler...
 """
 
-__RCSID__ = "$Id: SiteMappingHandler.py,v 1.4 2008/07/04 14:40:20 asypniew Exp $"
+__RCSID__ = "$Id: SiteMappingHandler.py,v 1.5 2008/07/08 14:14:55 asypniew Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -72,14 +72,15 @@ class SiteMappingHandler( RequestHandler ):
     # If you ONLY want to update this, set section=False
     if not section or updateData:
       result = siteData.updateData('SiteData')
+      gLogger.verbose('Site data updated.')
       if not result['OK']:
         return result
       
     if section:
+      result = siteData.updateData(section)
       gLogger.verbose('Site data updated. Section: %s' % section)
-      return siteData.updateData(section)
-    else:
-      return result
+
+    return result
           
   ###########################################################################
   def getFile(self, fileName):
@@ -125,7 +126,7 @@ class SiteMappingHandler( RequestHandler ):
       if not result['OK']:
         return S_ERROR('File does not exist: %s/%s' % (baseFilePath, baseName))
         
-    gLogger.verbose('File found: %s' % result['Value'])
+#    gLogger.verbose('File found: %s' % result['Value'])
       
     return result
   
@@ -158,7 +159,6 @@ class SiteMappingHandler( RequestHandler ):
         You should therefore use fileId, which is also the 2nd argument of receiveFile, as a means
           of identifying the remote file you want.
     """
-    gLogger.verbose('fileId: %s' % fileId)
     dataToWrite = False
     if fileId['Type'] == 'File':
       result = self.getFile(fileId['Data'])
