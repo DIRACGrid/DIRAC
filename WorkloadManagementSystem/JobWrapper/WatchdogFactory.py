@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/WatchdogFactory.py,v 1.1 2007/11/28 15:56:52 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/WatchdogFactory.py,v 1.2 2008/07/08 13:36:44 acasajus Exp $
 # File :   WatchdogFactory.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
 
 from DIRAC                                               import S_OK, S_ERROR, gLogger
 
-__RCSID__ = "$Id: WatchdogFactory.py,v 1.1 2007/11/28 15:56:52 paterson Exp $"
+__RCSID__ = "$Id: WatchdogFactory.py,v 1.2 2008/07/08 13:36:44 acasajus Exp $"
 
 import re,sys,types,platform
 
@@ -45,8 +45,7 @@ class WatchdogFactory:
       ceSubClass = __import__('DIRAC.WorkloadManagementSystem.JobWrapper.%s' % subClassName,globals(),locals(),[subClassName])
     except Exception, x:
       msg = 'WatchdogFactory could not import DIRAC.WorkloadManagementSystem.JobWrapper.%s' %(subClassName)
-      self.log.warn(x)
-      self.log.warn(msg)
+      self.log.error(msg,x)
       return S_ERROR(msg)
 
     try:
@@ -54,8 +53,7 @@ class WatchdogFactory:
       watchdogInstance = eval(ceStr)
     except Exception, x:
       msg = 'WatchdogFactory could not instantiate %s()' %(subClassName)
-      self.log.warn(x)
-      self.log.warn(msg)
+      self.log.error(msg,x)
       return S_ERROR(msg)
 
     return S_OK(watchdogInstance)
