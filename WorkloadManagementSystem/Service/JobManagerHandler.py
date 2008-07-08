@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobManagerHandler.py,v 1.14 2008/06/05 09:04:51 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobManagerHandler.py,v 1.15 2008/07/08 13:04:35 acasajus Exp $
 ########################################################################
 
 """ JobManagerHandler is the implementation of the JobManager service
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: JobManagerHandler.py,v 1.14 2008/06/05 09:04:51 atsareg Exp $"
+__RCSID__ = "$Id: JobManagerHandler.py,v 1.15 2008/07/08 13:04:35 acasajus Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -22,89 +22,93 @@ from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
-from DIRAC.WorkloadManagementSystem.DB.ProxyRepositoryDB import ProxyRepositoryDB
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import JobPolicy
-from DIRAC.Core.Utilities.GridCredentials import getNicknameForDN
+from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 
 # This is a global instance of the JobDB class
-jobDB = False
-proxyRepository = False
+gJobDB = False
 
 def initializeJobManagerHandler( serviceInfo ):
 
-  global jobDB
-  global proxyRepository
-
-  jobDB = JobDB()
-  proxyRepository = ProxyRepositoryDB()
+  global gJobDB
+  gJobDB = JobDB()
   return S_OK()
 
 class JobManagerHandler( RequestHandler ):
 
+  def initialize(self):
+    credDict = self.getRemoteCredentials()
+    self.userDN = credDict['DN']
+    self.userGroup = credDict['group']
+    self.userProperties = credDict[ 'properties' ]
+    self.userName = credDict[ 'username' ]
+    self.jobPolicy = JobPolicy( self.userDN, self.userGroup, self.userProperties )
+
   ###########################################################################
-  types_submitJob = [ StringType, StringType ]
-  def export_submitJob( self, JDL, proxy ):
+  types_submitJob = [ StringType ]
+  def export_submitJob( self, JDL ):
     """ Submit a single job to DIRAC WMS
     """
 
-    self.policy = JobPolicy()
-    result = self.getRemoteCredentials()
-    userDN = result['DN']
-    userGroup = result['group']
-    clientSetup = self.serviceInfoDict['clientSetup']
-
     # Check job submission permission
-    result = self.policy.getJobPolicy(userDN,userGroup)
-    if result['OK']:
-      policyDict = result['Value']
-      if not policyDict['Submit']:
-        return S_ERROR('Job submission not authorized')
-    else:
-      return S_ERROR('Failed to get job policies')
-
-    #Store proxy for user before adding job to DB (otherwise resulting job is added and fails)
-    resProxy = proxyRepository.storeProxy(proxy,userDN,userGroup)
-    if not resProxy['OK']:
-      gLogger.error("Failed to store the user proxy: "+resProxy['Message'])
-      return S_ERROR("Failed to store the user proxy: "+resProxy['Message'])
+    result = self.jobPolicy.getJobPolicy()
+    if not result['OK']:
+      return S_ERROR( 'Failed to get job policies' )
+    policyDict = result['Value']
+    if not policyDict['Submit']:
+      return S_ERROR('Job submission not authorized')
 
     # Get the new jobID first
-    #gActivityClient.addMark( "getJobId" )
-    result_jobID  = jobDB.getJobID()
+    result_jobID  = gJobDB.getJobID()
     if not result_jobID['OK']:
       return S_ERROR('Failed to acquire a new JobID')
 
-    jobID = int(result_jobID['Value'])
+    jobID = int( result_jobID['Value'] )
     gLogger.verbose( "Served jobID %s" % jobID )
     # Now add a new job
     #gActivityClient.addMark( "submitJob" )
 
-    classAdJob = ClassAd('['+JDL+']')
-    classAdJob.insertAttributeInt('JobID',jobID)
-    classAdJob.insertAttributeString('DIRACSetup',clientSetup)
-    
+    classAdJob = ClassAd( "[%s]" % JDL )
+    classAdJob.insertAttributeInt( 'JobID', jobID )
+    classAdJob.insertAttributeString( 'DIRACSetup', self.serviceInfoDict['clientSetup'] )
+
     # Force the owner name to be the nickname defined in the CS
-    result = getNicknameForDN(userDN)
-    if result['OK']:
-      owner = result['Value']
-      classAdJob.insertAttributeString('Owner',owner)
-        
+    classAdJob.insertAttributeString( 'Owner', self.userName )
+
     newJDL = classAdJob.asJDL()
-    result  = jobDB.insertJobIntoDB(jobID,newJDL)
+    result  = gJobDB.insertJobIntoDB( jobID, newJDL )
     if not result['OK']:
       return result
-    result  = jobDB.addJobToDB( jobID, JDL=newJDL, ownerDN=userDN,
-                                ownerGroup=userGroup)
+    result  = gJobDB.addJobToDB( jobID,
+                                JDL = newJDL,
+                                ownerDN = self.userDN,
+                                ownerGroup = self.userGroup )
     if not result['OK']:
       return result
 
-    result = jobDB.setJobJDL(jobID,newJDL)
+    result = gJobDB.setJobJDL( jobID, newJDL )
     if not result['OK']:
       return result
 
-    gLogger.info('Job %s added to the JobDB for %s/%s' % (str(jobID),userDN,userGroup))
+    gLogger.info( 'Job %s added to the JobDB for %s/%s' % ( str(jobID), self.userDN, self.userGroup ) )
 
-    return S_OK(jobID)
+    #Set persistency flag
+    retVal = gProxyManager.getUserPersistence( self.userDN, self.userGroup )
+    if 'Value' not in retVal or not retVal[ 'Value' ]:
+      gProxyManager.setPersistency( self.userDN, self.userGroup, True )
+
+    result = S_OK( jobID )
+    result[ 'requireProxyUpload' ] = self.__checkIfProxyUploadIsRequired()
+    return result
+
+###########################################################################
+  def __checkIfProxyUploadIsRequired( self ):
+    result = gProxyManager.userHasProxy( self.userDN, self.userGroup, validSeconds = 18000 )
+    if not result[ 'OK' ]:
+      gLogger.error( "Can't check if the user has proxy uploaded: %s" % result[ 'Message' ] )
+      return True
+    #Check if an upload is required
+    return result[ 'Value' ] == False
 
 ###########################################################################
   types_invalidateJob = [ IntType ]
@@ -116,7 +120,7 @@ class JobManagerHandler( RequestHandler ):
     pass
 
 ###########################################################################
-  def __get_job_list(self,jobInput):
+  def __get_job_list( self, jobInput ):
     """ Evaluate the jobInput into a list of ints
     """
 
@@ -138,17 +142,15 @@ class JobManagerHandler( RequestHandler ):
     return []
 
 ###########################################################################
-  def __evaluate_rights(self,jobList,userDN,userGroup,right):
+  def __evaluate_rights( self, jobList, right):
     """ Get access rights to jobID for the user userDN/userGroup
     """
-
-    self.policy = JobPolicy()
-    self.policy.setJobDB(jobDB)
+    self.jobPolicy.setJobDB( gJobDB )
     validJobList = []
     invalidJobList = []
     nonauthJobList = []
     for jobID in jobList:
-      result = self.policy.getUserRightsForJob(jobID,userDN,userGroup)
+      result = self.jobPolicy.getUserRightsForJob( jobID )
       if result['OK']:
         if result['Value'][right]:
           validJobList.append(jobID)
@@ -161,7 +163,7 @@ class JobManagerHandler( RequestHandler ):
 
 ###########################################################################
   types_rescheduleJob = [ ]
-  def export_rescheduleJob(self, jobIDs, proxy = None):
+  def export_rescheduleJob(self, jobIDs ):
     """  Reschedule a single job. If the optional proxy parameter is given
          it will be used to refresh the proxy in the Proxy Repository
     """
@@ -170,35 +172,24 @@ class JobManagerHandler( RequestHandler ):
     if not jobList:
       return S_ERROR('Invalid job specification: '+str(jobIDs))
 
-    result = self.getRemoteCredentials()
-    userDN = result['DN']
-    userGroup = result['group']
-
     validJobList,invalidJobList,nonauthJobList = self.__evaluate_rights(jobList,
-                                                                        userDN,
-                                                                        userGroup,
-                                                                        'Reschedule')
-
-    if validJobList:
-      if proxy:
-        resProxy = proxyRepository.storeProxy(proxy,userDN,userGroup)
-        if not resProxy['OK']:
-          gLogger.error("Failed to store the user proxy for job %s" % jobID)
-
+                                                                        'Reschedule' )
     for jobID in validJobList:
-      result  = jobDB.rescheduleJob( jobID )
+      result  = gJobDB.rescheduleJob( jobID )
       gLogger.debug( str( result ) )
       if not result['OK']:
           return result
 
-    result = S_OK(validJobList)
     if invalidJobList or nonauthJobList:
       result = S_ERROR('Some jobs failed deletion')
       if invalidJobList:
         result['InvalidJobIDs'] = invalidJobList
       if nonauthJobList:
         result['NonauthorizedJobIDs'] = nonauthJobList
+      return result
 
+    result = S_OK( validJobList )
+    result[ 'requireProxyUpload' ] = self.__checkIfProxyUploadIsRequired()
     return result
 
 
@@ -212,25 +203,18 @@ class JobManagerHandler( RequestHandler ):
     if not jobList:
       return S_ERROR('Invalid job specification: '+str(jobIDs))
 
-    result = self.getRemoteCredentials()
-    userDN = result['DN']
-    userGroup = result['group']
-
     validJobList,invalidJobList,nonauthJobList = self.__evaluate_rights(jobList,
-                                                                        userDN,
-                                                                        userGroup,
                                                                         'Delete')
 
     bad_ids = []
     good_ids = []
     for jobID in validJobList:
-      result = jobDB.setJobStatus(jobID,'Deleted','Checking accounting')
+      result = gJobDB.setJobStatus(jobID,'Deleted','Checking accounting')
       if not result['OK']:
         bad_ids.append(jobID)
       else:
         good_ids.append(jobID)
 
-    result = S_OK(validJobList)
     if invalidJobList or nonauthJobList:
       result = S_ERROR('Some jobs failed deletion')
       if invalidJobList:
@@ -239,7 +223,10 @@ class JobManagerHandler( RequestHandler ):
         result['NonauthorizedJobIDs'] = nonauthJobList
       if bad_ids:
         result['FailedJobIDs'] = bad_ids
+      return result
 
+    result = S_OK( validJobList )
+    result[ 'requireProxyUpload' ] = self.__checkIfProxyUploadIsRequired()
     return result
 
 ###########################################################################
@@ -252,30 +239,23 @@ class JobManagerHandler( RequestHandler ):
     if not jobList:
       return S_ERROR('Invalid job specification: '+str(jobIDs))
 
-    result = self.getRemoteCredentials()
-    userDN = result['DN']
-    userGroup = result['group']
-
     validJobList,invalidJobList,nonauthJobList = self.__evaluate_rights(jobList,
-                                                                        userDN,
-                                                                        userGroup,
                                                                         'Kill')
 
     bad_ids = []
     good_ids = []
     for jobID in validJobList:
       # kill jobID
-      result = jobDB.setJobCommand(jobID,'Kill','')
+      result = gJobDB.setJobCommand(jobID,'Kill','')
       if not result['OK']:
         bad_ids.append(jobID)
       else:
         gLogger.info('Job %d is marked for termination' % jobID)
         good_ids.append(jobID)
-        result = jobDB.setJobStatus(jobID,'Killed','Marked for termination')
+        result = gJobDB.setJobStatus(jobID,'Killed','Marked for termination')
         if not result['OK']:
           gLogger.warn('Failed to set job status')
 
-    result = S_OK(validJobList)
     if invalidJobList or nonauthJobList or bad_ids:
       result = S_ERROR('Some jobs failed deletion')
       if invalidJobList:
@@ -284,7 +264,10 @@ class JobManagerHandler( RequestHandler ):
         result['NonauthorizedJobIDs'] = nonauthJobList
       if bad_ids:
         result['FailedJobIDs'] = bad_ids
+      return result
 
+    result = S_OK( validJobList )
+    result[ 'requireProxyUpload' ] = self.__checkIfProxyUploadIsRequired()
     return result
 
 ###########################################################################
@@ -297,27 +280,21 @@ class JobManagerHandler( RequestHandler ):
     if not jobList:
       return S_ERROR('Invalid job specification: '+str(jobIDs))
 
-    result = self.getRemoteCredentials()
-    userDN = result['DN']
-    userGroup = result['group']
-
     validJobList,invalidJobList,nonauthJobList = self.__evaluate_rights(jobList,
-                                                                        userDN,
-                                                                        userGroup,
                                                                         'Reschedule')
 
     bad_ids = []
     good_ids = []
     for jobID in validJobList:
-      result = jobDB.setJobAttribute(jobID,'RescheduleCounter',1)
+      result = gJobDB.setJobAttribute(jobID,'RescheduleCounter',1)
       if not result['OK']:
         bad_ids.append(jobID)
       else:
-        result  = jobDB.rescheduleJob( jobID )
+        result  = gJobDB.rescheduleJob( jobID )
         if not result['OK']:
           bad_ids.append(jobID)
         else:
-          good_ids.append(jobID)  
+          good_ids.append(jobID)
 
     if invalidJobList or nonauthJobList or bad_ids:
       result = S_ERROR('Some jobs failed resetting')
@@ -327,7 +304,8 @@ class JobManagerHandler( RequestHandler ):
         result['NonauthorizedJobIDs'] = nonauthJobList
       if bad_ids:
         result['FailedJobIDs'] = bad_ids
-    else:
-      result = S_OK()
+      return result
 
+    result = S_OK()
+    result[ 'requireProxyUpload' ] = self.__checkIfProxyUploadIsRequired()
     return result

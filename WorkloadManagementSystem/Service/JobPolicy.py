@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobPolicy.py,v 1.5 2008/01/31 19:03:53 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobPolicy.py,v 1.6 2008/07/08 13:04:35 acasajus Exp $
 ########################################################################
 
 """ JobPolicy encapsulates authorization rules for different groups
@@ -7,7 +7,7 @@
 
 """
 
-__RCSID__ = "$Id: JobPolicy.py,v 1.5 2008/01/31 19:03:53 atsareg Exp $"
+__RCSID__ = "$Id: JobPolicy.py,v 1.6 2008/07/08 13:04:35 acasajus Exp $"
 
 from DIRAC import gConfig, S_OK, S_ERROR
 
@@ -28,71 +28,67 @@ JOB_OWNER_RIGHTS = ['GetInfo','GetInput','GetOutput','ChangeStatus',
 
 class JobPolicy:
 
-  def __init__(self):
+  def __init__( self, userDN, userGroup, userProperties ):
 
+    self.userDN = userDN
+    self.userGroup = userGroup
+    self.userProperties = userProperties
     self.jobDB = None
 
-  def setJobDB(self,jobDB):
+  def setJobDB( self, jobDB ):
     """ Supply a JobDB client object
     """
 
     self.jobDB = jobDB
 
 ###########################################################################
-  def getUserRightsForJob(self,jobID,userDN,userGroup):
+  def getUserRightsForJob( self, jobID ):
     """ Get access rights to job with jobID for the user specified by
         userDN/userGroup
     """
 
-    result = self.jobDB.getJobAttributes(jobID,['OwnerDN','OwnerGroup'])
-        
+    result = self.jobDB.getJobAttributes( jobID, [ 'OwnerDN', 'OwnerGroup' ] )
+
     if not result['OK']:
       return result
     elif result['Value']:
       owner = result['Value']['OwnerDN']
       group = result['Value']['OwnerGroup']
-      result = self.getJobPolicy(userDN,userGroup,owner,group)
+      result = self.getJobPolicy( owner, group )
       return result
     else:
-      return S_ERROR('Job not found')  
+      return S_ERROR('Job not found')
 
 ###########################################################################
-  def getJobPolicy(self,userDN,userGroup,jobOwnerDN='',jobOwnerGroup=''):
+  def getJobPolicy( self, jobOwnerDN = '', jobOwnerGroup = '' ):
     """ Get the job operations rights for a job owned by jobOwnerDN/jobOwnerGroup
         for a user with userDN/userGroup.
         Returns a dictionary of various operations rights
     """
 
     # Can not do anything by default
-    jobDict = {}
+    permDict = {}
     for r in JOB_RIGHTS:
-      jobDict[r] = False
+      permDict[r] = False
 
     # Anybody can get info about the jobs
-    jobDict['GetInfo'] = True
+    permDict['GetInfo'] = True
 
     # Job Owner can do everything with his jobs
-    if jobOwnerDN == userDN:
+    if permDict == self.userDN:
       for r in JOB_OWNER_RIGHTS:
-        jobDict[r] = True
-
-    result = gConfig.getOption('/Groups/'+userGroup+'/Properties')
-
-    if result['OK']:
-      propertyList = result['Value']
-    else:
-      return S_ERROR('Failed to get properties for group '+userGroup)
+        permDict[r] = True
 
     # Visitors, NormalUsers and JobAdministrators
     for groupProperty in ['Visitor','NormalUser','JobAdministrator','JobAgent']:
-      if groupProperty in propertyList:
-        for right in GROUP_RIGHTS[groupProperty]:
-          jobDict[right] = True
+      if groupProperty in self.userProperties:
+        for right in GROUP_RIGHTS[ groupProperty ]:
+          permDict[ right ] = True
 
     # Members of the same group sharing their jobs can do everything
-    if jobOwnerGroup == userGroup:
-      if 'JobSharing' in propertyList:
+    if jobOwnerGroup == self.userGroup:
+      if 'JobSharing' in self.userProperties:
         for right in GROUP_RIGHTS['JobSharing']:
-          jobDict[right] = True
+          permDict[right] = True
 
-    return S_OK(jobDict)
+    return S_OK( permDict )
