@@ -2,6 +2,7 @@ import unittest,types,time
 from DIRAC.DataManagementSystem.DB.TransferDB import TransferDB
 from DIRAC.RequestManagementSystem.DB.RequestDB import RequestDB
 from DIRAC.RequestManagementSystem.Client.DataManagementRequest import DataManagementRequest
+import time
 
 class FullChainTestCase(unittest.TestCase):
   """ Base class for the TransferDB test cases
@@ -25,14 +26,14 @@ class CreateInsertScheduleSubmitRemoveCase(FullChainTestCase):
     requestType = 'transfer'
     res = dmRequest.initiateSubRequest(requestType)
     ind = res['Value']
-    subRequestDict = {'Operation':'Replicate','SourceSE':'Source','TargetSE':'Destination','Catalogue':'LFC','Status':'Waiting','SubRequestID':0}
+    subRequestDict = {'Operation':'Replicate','SourceSE':'CERN-disk','TargetSE':'SARA-SRM2','Catalogue':'LFC','Status':'Waiting','SubRequestID':0,'SpaceToken':'LHCb_RAW'}
     res = dmRequest.setSubRequestAttributes(ind,requestType,subRequestDict)
-    lfn = '/lhcb/made/up/lfn/for/test.test'
+    lfn = '/lhcb/production/DC06/phys-v2-lumi5/00001925/DST/0000/00001925_00000090_5.dst'
     files = []
     fileDict = {'FileID':9999,'LFN':lfn,'Size':10000,'PFN':'','GUID':'','Md5':'','Addler':'','Attempt':0,'Status':'Waiting'}
     files.append(fileDict)
     res = dmRequest.setSubRequestFiles(ind,requestType,files)
-    requestName = 'Made up request name'
+    requestName = 'test-Request-%s' % time.time()
     dmRequest.setRequestName(requestName)
     jobID = 0
     dmRequest.setJobID(jobID)
@@ -50,6 +51,7 @@ class CreateInsertScheduleSubmitRemoveCase(FullChainTestCase):
     self.assertEqual(type(res['Value']),types.IntType)
     requestID = res['Value']
 
+    """
     ##########################################################
     # This is the section to be done by the replication scheduler
 
@@ -135,10 +137,11 @@ class CreateInsertScheduleSubmitRemoveCase(FullChainTestCase):
 
     # Need something to work out the last throughput business
     # This should be finished.
+    """
 
 if __name__ == '__main__':
 
-  suite = unittest.defaultTestLoader.loadTestsFromTestCase(InsertScheduleSubmitRemoveCase)
+  suite = unittest.defaultTestLoader.loadTestsFromTestCase(CreateInsertScheduleSubmitRemoveCase)
   #suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(CreateFTSReqCase))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)
 
