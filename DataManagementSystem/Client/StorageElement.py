@@ -14,6 +14,7 @@ from DIRAC.Core.Utilities.Pfn import pfnparse,pfnunparse
 from DIRAC.Core.Utilities.List import sortList
 from DIRAC.Core.Utilities.File import getSize
 import re, time,os,types
+from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
 
 class StorageElement:
 
@@ -124,8 +125,7 @@ class StorageElement:
     gLogger.info("StorageElement.isLocalSE: Determining whether %s is a local SE." % self.name)
     configStr = '/LocalSite/Site'
     localSite = gConfig.getValue(configStr)
-    configStr = '/Resources/SiteLocalSEMapping/%s' % localSite
-    localSEs = gConfig.getValue(configStr,[])
+    localSEs = getSEsForSite(localSite)['Value']
     if self.name in localSEs:
       return S_OK(True)
     else:
