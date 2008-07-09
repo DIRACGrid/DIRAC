@@ -55,15 +55,8 @@ class BaseSecurity:
       return retVal
     return chain.getCertInChain(0)['Value'].getSubjectDN()
 
-  def _getExternalCmdEnvironment( self, noX509 = False ):
-    cmdEnv = {}
-    keys = ['PATH', 'LD_LIBRARY_PATH']
-    if not noX509:
-      keys.extend( [ 'X509_USER_KEY', 'X509_USER_CERT' ] )
-    for key in keys:
-      if key in os.environ:
-        cmdEnv[ key ] = os.environ[ key ]
-    return cmdEnv
+  def _getExternalCmdEnvironment( self ):
+    return list( os.environ )
 
   def _unlinkFiles( self, files ):
     if type( files ) in ( types.ListType, types.TupleType ):
