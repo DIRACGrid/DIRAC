@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.6 2008/07/09 16:23:50 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.7 2008/07/09 16:27:32 rgracian Exp $
 # File :   Director.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -48,7 +48,7 @@
 
 """
 
-__RCSID__ = "$Id: Director.py,v 1.6 2008/07/09 16:23:50 rgracian Exp $"
+__RCSID__ = "$Id: Director.py,v 1.7 2008/07/09 16:27:32 rgracian Exp $"
 
 import types, time
 
@@ -88,7 +88,7 @@ class Director(Agent):
     # some default values:
     self.threadStartDelay = 5
     self.jobDicts = {}
-    self.log   = gLogger.getSubLogger('Director')
+    self.log   = gLogger
     # self.jobDB = JobDB()
 
   #############################################################################
