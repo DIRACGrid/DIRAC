@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/OracleDB.py,v 1.6 2008/07/04 18:30:43 zmathe Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/OracleDB.py,v 1.7 2008/07/09 12:21:34 zmathe Exp $
 ########################################################################
 """ DIRAC Basic Oracle Class
     It provides access to the basic MySQL methods in a multithread-safe mode
@@ -50,7 +50,7 @@
 
 """
 
-__RCSID__ = "$Id: OracleDB.py,v 1.6 2008/07/04 18:30:43 zmathe Exp $"
+__RCSID__ = "$Id: OracleDB.py,v 1.7 2008/07/09 12:21:34 zmathe Exp $"
 
 
 from DIRAC                                  import gLogger
@@ -232,6 +232,7 @@ class OracleDB:
       results = None
       if output == True:
         result = connection.cursor()
+        result.arraysize=500 # 500x faster!!
         parameters +=[result]
         cursor.callproc(packageName, parameters)
         results = result.fetchall()
