@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Agent.py,v 1.23 2008/06/19 15:02:16 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Agent.py,v 1.24 2008/07/09 12:54:58 rgracian Exp $
 ########################################################################
 """ Base class for all the Agents.
 
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: Agent.py,v 1.23 2008/06/19 15:02:16 rgracian Exp $"
+__RCSID__ = "$Id: Agent.py,v 1.24 2008/07/09 12:54:58 rgracian Exp $"
 
 import os
 import threading
@@ -77,6 +77,13 @@ class Agent:
     self.pollingTime = gConfig.getValue(self.section+'/PollingTime',120 )
     controlDir = os.path.join( DIRAC.rootPath, 'control', self.fullname )
     self.controlDir = gConfig.getValue(self.section+'/ControlDirectory', controlDir )
+    try:
+      os.makedirs( self.controlDir )
+    except:
+      pass
+    if not os.path.isdir( self.controlDir ):
+      return S_ERROR('Can not create control directory: %s' % self.controlDir )
+    
     self.maxcount = gConfig.getValue(self.section+'/MaxCycles',0)
     workDir = os.path.join( DIRAC.rootPath, 'work' )
     workDir = gConfig.getValue(self.section+'/WorkDir', workDir )
