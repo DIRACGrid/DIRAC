@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.1 2008/07/09 16:01:46 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.2 2008/07/09 16:06:17 rgracian Exp $
 # File :   Director.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -48,7 +48,7 @@
 
 """
 
-__RCSID__ = "$Id: Director.py,v 1.1 2008/07/09 16:01:46 rgracian Exp $"
+__RCSID__ = "$Id: Director.py,v 1.2 2008/07/09 16:06:17 rgracian Exp $"
 
 import types, time
 
@@ -505,7 +505,7 @@ def updateJobStatus( logger, name, jobID, majorStatus, minorStatus=None, logReco
   result = jobDB.setJobAttribute( jobID, 'Status', majorStatus, update=True )
 
   if result['OK']:
-    if minorstatus:
+    if minorStatus:
       # FIXME: this log entry should go into JobDB
       logger.verbose("jobDB.setJobAttribute( %s, 'MinorStatus', '%s', update=True)" % ( jobID, minorstatus) )
       result = jobDB.setJobAttribute( jobID, 'MinorStatus', minorStatus, update=True )
