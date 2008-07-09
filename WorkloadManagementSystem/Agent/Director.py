@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.4 2008/07/09 16:19:34 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.5 2008/07/09 16:21:24 rgracian Exp $
 # File :   Director.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -48,7 +48,7 @@
 
 """
 
-__RCSID__ = "$Id: Director.py,v 1.4 2008/07/09 16:19:34 rgracian Exp $"
+__RCSID__ = "$Id: Director.py,v 1.5 2008/07/09 16:21:24 rgracian Exp $"
 
 import types, time
 
@@ -270,12 +270,12 @@ class Director(Agent):
     self.log.verbose('Requirements: %s' % jobDict['Requirements'])
 
     
-    currentStatus = attributes['Value']['Status']
+    currentStatus = attributes['Status']
     if not currentStatus == MAJOR_WAIT:
       self.log.verbose('Job has changed status to %s and will be ignored:' % currentStatus, job )
       return False
 
-    currentMinorStatus = attributes['Value']['MinorStatus']
+    currentMinorStatus = attributes['MinorStatus']
     if not currentMinorStatus == MINOR_SUBMIT:
       self.log.verbose('Job has changed minor status to %s and will be ignored:' % currentMinorStatus, job )
       return False
