@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.3 2008/07/09 16:16:07 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.4 2008/07/09 16:19:34 rgracian Exp $
 # File :   Director.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -48,7 +48,7 @@
 
 """
 
-__RCSID__ = "$Id: Director.py,v 1.3 2008/07/09 16:16:07 rgracian Exp $"
+__RCSID__ = "$Id: Director.py,v 1.4 2008/07/09 16:19:34 rgracian Exp $"
 
 import types, time
 
@@ -245,10 +245,11 @@ class Director(Agent):
 
 
     # Check now Job Attributes
-    attributes = jobDB.getJobAttributes(job)
-    if not attributes['OK']:
+    ret = jobDB.getJobAttributes(job)
+    if not ret['OK']:
       self.log.warn(result['Message'])
       return False
+    attributes = ret['Value']
 
     # FIXME: this should be checked by the JobManager and the Optimizers
     for attr in ['Owner','OwnerDN','JobType','OwnerGroup']:
