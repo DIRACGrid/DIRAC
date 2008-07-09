@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.7 2008/07/07 17:19:01 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.8 2008/07/09 16:36:09 acasajus Exp $
 ########################################################################
 """ ProxyRepository class is a front-end to the proxy repository Database
 """
 
-__RCSID__ = "$Id: ProxyDB.py,v 1.7 2008/07/07 17:19:01 acasajus Exp $"
+__RCSID__ = "$Id: ProxyDB.py,v 1.8 2008/07/09 16:36:09 acasajus Exp $"
 
 import time
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
@@ -297,6 +297,8 @@ class ProxyDB(DB):
   def renewFromMyProxy( self, userDN, userGroup, lifeTime = False, chain = False ):
     if not lifeTime:
       lifeTime = 43200
+    #Hack to minimize queries to myproxy
+    lifeTime *= 1.5
     if not self.__useMyProxy:
       return S_ERROR( "myproxy is disabled" )
     #Get the chain
