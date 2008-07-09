@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: MatcherHandler.py,v 1.9 2008/07/09 15:50:29 acasajus Exp $
+# $Id: MatcherHandler.py,v 1.10 2008/07/09 16:00:11 acasajus Exp $
 ########################################################################
 """
 Matcher class. It matches Agent Site capabilities to job requirements.
@@ -7,7 +7,7 @@ It also provides an XMLRPC interface to the Matcher
 
 """
 
-__RCSID__ = "$Id: MatcherHandler.py,v 1.9 2008/07/09 15:50:29 acasajus Exp $"
+__RCSID__ = "$Id: MatcherHandler.py,v 1.10 2008/07/09 16:00:11 acasajus Exp $"
 
 import re, os, sys, time
 import string
@@ -103,7 +103,7 @@ class MatcherHandler(RequestHandler):
             if tqReqs.find( 'other.Site', iP1 + 1 ) > -1:
               #More than one site, tq not valid for this
               continue
-            tqSite = re.sub( r'(.*)(other.Site\s*==\s*["\']*)([\w.-]*)(["\']*)(.*)', r'\2', tqReqs )
+            tqSite = re.sub( r'([\S\s]*)(other.Site\s*==\s*["\']*)([\w.-]*)(["\']*)([\S\s]*)', r'\3', tqReqs )
             if tqSite != agentSite:
               #One site but different than requested tq not valid ffor this
               continue
