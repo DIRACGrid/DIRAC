@@ -1,11 +1,11 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Client/JobReport.py,v 1.8 2008/07/04 08:28:50 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Client/JobReport.py,v 1.9 2008/07/09 09:10:03 paterson Exp $
 
 """
   JobReport class encapsulates various
   methods of the job status reporting
 """
 
-__RCSID__ = "$Id: JobReport.py,v 1.8 2008/07/04 08:28:50 rgracian Exp $"
+__RCSID__ = "$Id: JobReport.py,v 1.9 2008/07/09 09:10:03 paterson Exp $"
 
 import datetime
 from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -161,10 +161,12 @@ class JobReport:
     if statusDict:
       jobMonitor = RPCClient('WorkloadManagement/JobStateUpdate',timeout=10)
       result = jobMonitor.setJobStatusBulk(self.jobID,statusDict)
-      result['OK'] =  False
-      result['Message'] = ''
+#      result['OK'] =  False
+#      result['Message'] = ''
+#      print result
+      if not result:
+        return S_ERROR('Null result from JobState service')
 
-      print result
       if result['OK']:
         # Empty the internal status containers
         self.jobStatusInfo = []
@@ -185,6 +187,8 @@ class JobReport:
 
     if parameters:
       jobMonitor = RPCClient('WorkloadManagement/JobStateUpdate',timeout=10)
+      if not result:
+        return S_ERROR('Null result from JobState service')
       result = jobMonitor.setJobParameters(self.jobID,parameters)
       if result['OK']:
         # Empty the internal parameter container
