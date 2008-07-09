@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: MatcherHandler.py,v 1.8 2008/07/01 16:17:56 paterson Exp $
+# $Id: MatcherHandler.py,v 1.9 2008/07/09 15:50:29 acasajus Exp $
 ########################################################################
 """
 Matcher class. It matches Agent Site capabilities to job requirements.
@@ -7,7 +7,7 @@ It also provides an XMLRPC interface to the Matcher
 
 """
 
-__RCSID__ = "$Id: MatcherHandler.py,v 1.8 2008/07/01 16:17:56 paterson Exp $"
+__RCSID__ = "$Id: MatcherHandler.py,v 1.9 2008/07/09 15:50:29 acasajus Exp $"
 
 import re, os, sys, time
 import string
@@ -90,28 +90,23 @@ class MatcherHandler(RequestHandler):
       for tqID, tqReqs, priority in taskQueues:
         gLogger.verbose(tqReqs)
 
-        if siteIsBanned:
-          # Check if the task queue is devoted to one site
-          siteInTheMask = ''
-          ind1 = tqReqs.find('other.Site ==')
-          if ind1 != -1:
-            ind2 = tqReqs[ind1+13:].find('other.Site ==')
-            if ind2 == -1:
-              # There is only one site in the requirements, get it
-              siteInTheMask = tqReqs[ind1+13:].split()[0]
-
-          if siteInTheMask and siteInTheMask == agentSite:
-            # We can continue
-            pass
-          else:
-            return S_ERROR('Site is banned and no dedicated jobs available')
-
         # Find the matching job now
         classAdQueue = ClassAd(tqReqs)
         if not classAdQueue.isOK():
           gLogger.warn("Illegal requirements for Task Queue %d" % tqID)
           gLogger.warn(tqReqs)
           continue
+
+        if siteIsBanned:
+          iP1 = tqReqs.find( 'other.Site' )
+          if iP1 > -1:
+            if tqReqs.find( 'other.Site', iP1 + 1 ) > -1:
+              #More than one site, tq not valid for this
+              continue
+            tqSite = re.sub( r'(.*)(other.Site\s*==\s*["\']*)([\w.-]*)(["\']*)(.*)', r'\2', tqReqs )
+            if tqSite != agentSite:
+              #One site but different than requested tq not valid ffor this
+              continue
 
         result = matchClassAd(classAdAgent,classAdQueue)
         symmetricMatch, leftToRightMatch, rightToLeftMatch = result['Value']
@@ -126,18 +121,18 @@ class MatcherHandler(RequestHandler):
         else:
           gLogger.warn('Error while matching the JDLs')
 
-    if jobID > 0:
-      result = jobDB.setJobStatus(jobID,status='Matched',minor='Assigned')
-      result = jobLoggingDB.addLoggingRecord(jobID,
-                                             status='Matched',
-                                             minor='Assigned',
-                                             source='Matcher')
-      result = jobDB.getJobJDL(jobID)
-      if not result['OK']:
-        return S_ERROR('Failed to get the job JDL')
-    else:
+    if jobID == 0:
       gLogger.verbose("No match found for site: %s" % agentSite)
       return S_ERROR("No match found for site: %s" % agentSite)
+
+    result = jobDB.setJobStatus(jobID,status='Matched',minor='Assigned')
+    result = jobLoggingDB.addLoggingRecord(jobID,
+                                           status='Matched',
+                                           minor='Assigned',
+                                           source='Matcher')
+    result = jobDB.getJobJDL(jobID)
+    if not result['OK']:
+      return S_ERROR('Failed to get the job JDL')
 
     resultDict = {}
     resultDict['JDL'] = result['Value']
