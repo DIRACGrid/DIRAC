@@ -96,13 +96,11 @@ class VOMS( BaseSecurity ):
     chain = proxyDict[ 'chain' ]
     proxyLocation = proxyDict[ 'file' ]
 
-    vomsEnv = self._getExternalCmdEnvironment( noX509 = True )
-
     cmd = 'voms-proxy-info -file %s' % proxyLocation
     if option:
       cmd += ' -%s' % option
 
-    result = shellCall( self._secCmdTimeout, cmd, env = vomsEnv )
+    result = shellCall( self._secCmdTimeout, cmd )
 
     if proxyDict[ 'tempFile' ]:
       self._unlinkFiles( proxyLocation )
@@ -152,8 +150,6 @@ class VOMS( BaseSecurity ):
       return retVal
     newProxyLocation = retVal[ 'Value' ]
 
-    vomsEnv = self._getExternalCmdEnvironment( noX509 = True )
-
     cmdArgs = []
     cmdArgs.append( '-cert "%s"' % proxyLocation )
     cmdArgs.append( '-key "%s"' % proxyLocation )
@@ -162,14 +158,14 @@ class VOMS( BaseSecurity ):
     cmdArgs.append( '-valid "%s:%s"' % ( hours, mins ) )
     cmd = 'voms-proxy-init %s' % " ".join( cmdArgs )
 
-    result = shellCall( self._secCmdTimeout, cmd, env = vomsEnv )
+    result = shellCall( self._secCmdTimeout, cmd )
 
     if proxyDict[ 'tempFile' ]:
       self._unlinkFiles( proxyLocation )
 
     if not result['OK']:
       self._unlinkFiles( newProxyLocation )
-      return S_ERROR('Failed to call voms-proxy-info')
+      return S_ERROR('Failed to call voms-proxy-init')
 
     status, output, error = result['Value']
 
@@ -189,9 +185,8 @@ class VOMS( BaseSecurity ):
     """
     Is voms info available?
     """
-    vomsEnv = self._getExternalCmdEnvironment( noX509 = True )
     cmd = 'voms-proxy-info -h'
-    result = shellCall( self._secCmdTimeout, cmd, env = vomsEnv )
+    result = shellCall( self._secCmdTimeout, cmd )
     if not result['OK']:
       return False
     status, output, error = result['Value']
