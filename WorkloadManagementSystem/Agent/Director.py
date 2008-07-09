@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.7 2008/07/09 16:27:32 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.8 2008/07/09 16:31:45 rgracian Exp $
 # File :   Director.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -48,7 +48,7 @@
 
 """
 
-__RCSID__ = "$Id: Director.py,v 1.7 2008/07/09 16:27:32 rgracian Exp $"
+__RCSID__ = "$Id: Director.py,v 1.8 2008/07/09 16:31:45 rgracian Exp $"
 
 import types, time
 
@@ -138,6 +138,7 @@ class Director(Agent):
         pass
 
       # Now try to process the job
+      self.log.verbose( 'Try to submit pilot for Job:', job )
       self.__submitPilot(job)
 
     return S_OK()
