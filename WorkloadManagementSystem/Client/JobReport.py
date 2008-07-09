@@ -1,11 +1,11 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Client/JobReport.py,v 1.9 2008/07/09 09:10:03 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Client/JobReport.py,v 1.10 2008/07/09 11:50:23 paterson Exp $
 
 """
   JobReport class encapsulates various
   methods of the job status reporting
 """
 
-__RCSID__ = "$Id: JobReport.py,v 1.9 2008/07/09 09:10:03 paterson Exp $"
+__RCSID__ = "$Id: JobReport.py,v 1.10 2008/07/09 11:50:23 paterson Exp $"
 
 import datetime
 from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -35,6 +35,8 @@ class JobReport:
   def setJobStatus(self, status='', minor='', sendFlag=True):
     """ Send job status information to the JobState service for jobID
     """
+    if not self.jobID:
+      return S_OK('Local execution, jobID is null.')
 
     if not sendFlag:
       # add job status record
@@ -63,6 +65,8 @@ class JobReport:
   def setApplicationStatus(self, appStatus, sendFlag=True):
     """ Send application status information to the JobState service for jobID
     """
+    if not self.jobID:
+      return S_OK('Local execution, jobID is null.')
 
     if not sendFlag:
       # add job status record
@@ -90,6 +94,8 @@ class JobReport:
   def setJobParameter(self,par_name,par_value, sendFlag = True):
     """ Send job parameter for jobID
     """
+    if not self.jobID:
+      return S_OK('Local execution, jobID is null.')
 
     if not sendFlag:
       # add job status record
@@ -116,6 +122,8 @@ class JobReport:
   def setJobParameters(self, parameters, sendFlag = True):
     """ Send job parameters for jobID
     """
+    if not self.jobID:
+      return S_OK('Local execution, jobID is null.')
 
     if not sendFlag:
       # add job status record
