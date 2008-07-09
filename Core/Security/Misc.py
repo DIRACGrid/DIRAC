@@ -2,9 +2,9 @@ import os
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.Core.Security.VOMS import VOMS
-from DIRAC.Core.Security import Locations
+from DIRAC.Core.Security import Locations, CS
 
-def getProxyInfo( proxyLoc = False ):
+def getProxyInfo( proxyLoc = False, showUsername = False ):
 
   if not proxyLoc:
     proxyLoc = Locations.getProxyLocation()
@@ -19,6 +19,17 @@ def getProxyInfo( proxyLoc = False ):
 
   info = chain.getInfoAsString()['Value']
   info += "\npath        : %s\n" % proxyLoc
+  if showUsername:
+    retVal = chain.getIssuerCert()
+    if not retVal[ 'OK' ]:
+      dn = ""
+    else:
+      dn = retVal[ 'Value' ].getSubjectDN()[ 'Value' ]
+    retVal = CS.getUsernameForDN( dn )
+    if not retVal[ 'OK' ]:
+      info += "username    : <unknown>\n"
+    else:
+      info += "username    : %s\n" % retVal[ 'Value' ]
   if chain.isVOMS()['Value']:
     info += "extra       : Contains voms extensions\n"
     voms = VOMS()
