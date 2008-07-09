@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.5 2008/07/09 16:21:24 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.6 2008/07/09 16:23:50 rgracian Exp $
 # File :   Director.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -48,7 +48,7 @@
 
 """
 
-__RCSID__ = "$Id: Director.py,v 1.5 2008/07/09 16:21:24 rgracian Exp $"
+__RCSID__ = "$Id: Director.py,v 1.6 2008/07/09 16:23:50 rgracian Exp $"
 
 import types, time
 
@@ -67,8 +67,8 @@ from DIRAC                                        import S_OK, S_ERROR, gConfig,
 import DIRAC
 
 MAJOR_WAIT     = 'Waiting'
-MINOR_SUBMIT   = 'Pilot Submission'
-MINOR_RESPONSE = 'Pilot Response'
+MINOR_SUBMIT   = 'Pilot Agent Submission'
+MINOR_RESPONSE = 'Pilot Agent Response'
 
 import os, sys, re, string, time, shutil
 
