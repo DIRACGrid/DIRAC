@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.2 2008/07/09 16:06:17 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.3 2008/07/09 16:16:07 rgracian Exp $
 # File :   Director.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -48,7 +48,7 @@
 
 """
 
-__RCSID__ = "$Id: Director.py,v 1.2 2008/07/09 16:06:17 rgracian Exp $"
+__RCSID__ = "$Id: Director.py,v 1.3 2008/07/09 16:16:07 rgracian Exp $"
 
 import types, time
 
@@ -215,7 +215,7 @@ class Director(Agent):
     jobDict = {'JobID': job}
     jobDict['JDL'] = jdl
 
-    JobJDLStringMandatoryAttributes = [ 'Platfom', 'Requirements' ]
+    JobJDLStringMandatoryAttributes = [ 'Platform', 'Requirements' ]
     
     JobJDLStringAttributes = [ 'PilotType', 'GridExecutable' ]
 
@@ -507,7 +507,7 @@ def updateJobStatus( logger, name, jobID, majorStatus, minorStatus=None, logReco
   if result['OK']:
     if minorStatus:
       # FIXME: this log entry should go into JobDB
-      logger.verbose("jobDB.setJobAttribute( %s, 'MinorStatus', '%s', update=True)" % ( jobID, minorstatus) )
+      logger.verbose("jobDB.setJobAttribute( %s, 'MinorStatus', '%s', update=True)" % ( jobID, minorStatus) )
       result = jobDB.setJobAttribute( jobID, 'MinorStatus', minorStatus, update=True )
 
   if logRecord and result['OK']:
