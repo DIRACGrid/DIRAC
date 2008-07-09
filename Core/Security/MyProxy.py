@@ -99,7 +99,11 @@ class MyProxy( BaseSecurity ):
 
     # myproxy-get-delegation works only with environment variables
     cmdEnv = self._getExternalCmdEnvironment()
-    cmdEnv['X509_USER_PROXY'] = proxyLocation
+    # cmdEnv['X509_USER_PROXY'] = proxyLocation
+    cmdEnv['X509_USER_CERT'] = self._secCertLoc
+    cmdEnv['X509_USER_KEY']  = self._secKeyLoc
+    if 'X509_USER_PROXY' in cmdEnv:
+      del cmdEnv['X509_USER_PROXY']
 
     cmdArgs = []
     cmdArgs.append( "-s '%s'" % self._secServer )
