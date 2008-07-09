@@ -56,7 +56,7 @@ class BaseSecurity:
     return chain.getCertInChain(0)['Value'].getSubjectDN()
 
   def _getExternalCmdEnvironment( self ):
-    return list( os.environ )
+    return dict( os.environ )
 
   def _unlinkFiles( self, files ):
     if type( files ) in ( types.ListType, types.TupleType ):
