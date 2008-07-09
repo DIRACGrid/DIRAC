@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/ProxyManagerHandler.py,v 1.5 2008/07/03 12:48:30 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/ProxyManagerHandler.py,v 1.6 2008/07/09 16:50:44 acasajus Exp $
 ########################################################################
 
 """ ProxyManager is the implementation of the ProxyManagement service
     in the DISET framework
 """
 
-__RCSID__ = "$Id: ProxyManagerHandler.py,v 1.5 2008/07/03 12:48:30 acasajus Exp $"
+__RCSID__ = "$Id: ProxyManagerHandler.py,v 1.6 2008/07/09 16:50:44 acasajus Exp $"
 
 import types
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -70,6 +70,9 @@ class ProxyManagerHandler( RequestHandler ):
       - validSecondsRequired is an optional argument to specify the required
           seconds the proxy is valid for
     """
+    credDict = self.getRemoteCredentials()
+    if not Properties.PROXY_MANAGEMENT in credDict[ 'properties' ]:
+      gProxyDB.getUsers( validSecondsRequired, dnMask = [ credDict[ 'DN' ] ] )
     return gProxyDB.getUsers( validSecondsRequired )
 
   types_getProxy = [ types.StringType, types.StringType, types.StringType, ( types.IntType, types.LongType ) ]

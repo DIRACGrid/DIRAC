@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.8 2008/07/09 16:36:09 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.9 2008/07/09 16:50:42 acasajus Exp $
 ########################################################################
 """ ProxyRepository class is a front-end to the proxy repository Database
 """
 
-__RCSID__ = "$Id: ProxyDB.py,v 1.8 2008/07/09 16:36:09 acasajus Exp $"
+__RCSID__ = "$Id: ProxyDB.py,v 1.9 2008/07/09 16:50:42 acasajus Exp $"
 
 import time
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
@@ -402,14 +402,28 @@ class ProxyDB(DB):
       return S_OK( 0 )
     return S_OK( int( data[0][0] ) )
 
-  def getUsers( self, validSecondsLeft = 0 ):
+  def getUsers( self, validSecondsLeft = 0, dnMask = False, groupMask = False ):
     """ Get all the distinct users from the Proxy Repository. Optionally, only users
         with valid proxies within the given validity period expressed in seconds
     """
 
     cmd = "SELECT UserDN, UserGroup, ExpirationTime, PersistentFlag FROM `ProxyDB_Proxies`"
+    sqlCond = []
     if validSecondsLeft:
-      cmd += " WHERE ( UTC_TIMESTAMP() + INTERVAL %d SECOND ) < ExpirationTime" % validSecondsLeft
+      sqlCond.append( "( UTC_TIMESTAMP() + INTERVAL %d SECOND ) < ExpirationTime" % validSecondsLeft )
+    if dnMask:
+      maskCond = []
+      for dn in dnMask:
+        maskCond.append( "UserDN = '%s'" % dn )
+      sqlCond.append( "( %s )" % " OR ".join( maskCond ) )
+    if groupMask:
+      maskCond = []
+      for group in groupMask:
+        maskCond.append( "UserGroup = '%s'" % group )
+      sqlCond.append( "( %s )" % " OR ".join( maskCond ) )
+    if sqlCond:
+      cmd += " WHERE %s" % " AND ".join( sqlCond )
+
     retVal = self._query( cmd )
     if not retVal[ 'OK' ]:
       return retVal
