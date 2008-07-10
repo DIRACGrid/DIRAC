@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/LocalConfiguration.py,v 1.27 2008/06/10 12:36:55 acasajus Exp $
-__RCSID__ = "$Id: LocalConfiguration.py,v 1.27 2008/06/10 12:36:55 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/LocalConfiguration.py,v 1.28 2008/07/10 13:56:38 acasajus Exp $
+__RCSID__ = "$Id: LocalConfiguration.py,v 1.28 2008/07/10 13:56:38 acasajus Exp $"
 
 import sys
 import os
@@ -297,11 +297,11 @@ class LocalConfiguration:
     return S_OK()
 
   def __setOptionByCmd( self, value ):
-    valueList = [ sD.strip() for sD in value.split("=") if len( sD ) > 0]
+    valueList = value.split("=")
     if len( valueList ) <  2:
       # FIXME: in the method above an exception is raised, check consitency
       return S_ERROR( "-o expects a option=value argument.\nFor example %s -o Port=1234" % sys.argv[0] )
-    self.__setOptionValue( valueList[0] , valueList[1] )
+    self.__setOptionValue( valueList[0] , "=".join( valueList[1:] ) )
     return S_OK()
 
   def __setUseCertByCmd( self, value ):
