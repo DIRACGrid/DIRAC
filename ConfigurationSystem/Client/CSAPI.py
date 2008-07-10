@@ -34,9 +34,9 @@ class CSAPI:
     if not retVal[ 'OK' ]:
       gLogger.error( "Master server is not known. Is everything initialized?" )
       return False
-    rpcClient = RPCClient( gConfig.getValue( "/DIRAC/Configuration/MasterServer", "" ) )
-    self.__csMod = Modificator( "%s - %s" % ( self.__userGroup, self.__userDN ) )
-    retVal = self.__csMod.loadFromRemote( rpcClient )
+    self.__rpcClient = RPCClient( gConfig.getValue( "/DIRAC/Configuration/MasterServer", "" ) )
+    self.__csMod = Modificator( self.__rpcClient, "%s - %s" % ( self.__userGroup, self.__userDN ) )
+    retVal = self.__csMod.loadFromRemote()
     if not retVal[ 'OK' ]:
       gLogger.error( "Can not download the remote cfg. Is everything initialized?" )
       return False
@@ -170,7 +170,7 @@ class CSAPI:
       -username
       -properties is a dict with keys:
         DN
-        Groups
+        groups
         <extra params>
       Returns True/False
     """
@@ -286,8 +286,7 @@ class CSAPI:
     if not self.__initialized:
       return S_ERROR( "CSAPI didn't initialize properly" )
     if self.__csModified:
-      rpcClient = RPCClient( gConfig.getValue( "/DIRAC/Configuration/MasterServer", "" ) )
-      retVal = self.__csMod.commit( rpcClient )
+      retVal = self.__csMod.commit()
       if not retVal[ 'OK' ]:
         gLogger.error( "Can't commit new data: %s" % retVal[ 'Message' ] )
         return S_OK( False )

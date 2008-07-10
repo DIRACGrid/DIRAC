@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/CSCLI.py,v 1.2 2008/07/04 08:01:27 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/CSCLI.py,v 1.3 2008/07/10 13:31:27 acasajus Exp $
 # File :   CSCLI.py
 # Author : Adria Casajus
 ########################################################################
-__RCSID__   = "$Id: CSCLI.py,v 1.2 2008/07/04 08:01:27 rgracian Exp $"
-__VERSION__ = "$Revision: 1.2 $"
+__RCSID__   = "$Id: CSCLI.py,v 1.3 2008/07/10 13:31:27 acasajus Exp $"
+__VERSION__ = "$Revision: 1.3 $"
 
 import cmd
 import sys
@@ -20,7 +20,7 @@ class CSCLI( cmd.Cmd ):
     cmd.Cmd.__init__( self )
     self.do_connect()
     if self.connected:
-      self.modificator =  Modificator()
+      self.modificator =  Modificator ( self.rpcClient )
     else:
       self.modificator = Modificator()
     self.identSpace = 20
@@ -32,9 +32,8 @@ class CSCLI( cmd.Cmd ):
 
   def start( self ):
     if self.connected:
-      rpcClient = RPCClient( self.masterURL )
-      self.modificator.loadFromRemote( rpcClient )
-      retVal = self.modificator.getCredentials( rpcClient )
+      self.modificator.loadFromRemote()
+      retVal = self.modificator.getCredentials()
       if not retVal[ 'OK' ]:
         print "There was an error gathering your credentials"
         print retVal[ 'Message' ]
@@ -124,8 +123,7 @@ class CSCLI( cmd.Cmd ):
   def retrieveData( self ):
     if not self.connected:
       return False
-    rpcClient = RPCClient( self.masterURL )
-    response = rpcClient.dumpCompressed()
+    response = self.rpcClient.dumpCompressed()
     if response[ 'Status' ] == 'OK':
       self.cDataHolder.loadFromCompressedSource( response[ 'Value' ] )
       gLogger.info( "Data retrieved from server." )
@@ -138,8 +136,7 @@ class CSCLI( cmd.Cmd ):
     if not connected:
       self.connected( False, False )
     else:
-      rpcClient = RPCClient( self.masterURL )
-      retVal = rpcClient.writeEnabled()
+      retVal = self.rpcClient.writeEnabled()
       if retVal[ 'OK' ]:
         if retVal[ 'Value' ] == True:
           self.connected( True, True )
@@ -151,6 +148,7 @@ class CSCLI( cmd.Cmd ):
 
   def tryConnection( self ):
     print "Trying connection to %s" % self.masterURL
+    self.rpcClient = RPCClient( self.masterURL )
     self.setStatus()
 
   def do_connect( self, args = False ):
@@ -275,12 +273,11 @@ class CSCLI( cmd.Cmd ):
       choice = choice.lower()
       if choice in ( "yes", "y" ):
         print "Uploading changes to %s (It may take some seconds)..." % self.masterURL
-        rpcClient = RPCClient( self.masterURL )
-        response = self.modificator.commit( rcpClient )
+        response = self.modificator.commit()
         if response[ 'OK' ]:
           self.modifiedData = False
           print "Data sent to server."
-          self.modificator.loadFromRemote( rcpClient )
+          self.modificator.loadFromRemote()
         else:
           print "Error sending data, server said: %s" % response['Message']
         return
@@ -452,8 +449,7 @@ class CSCLI( cmd.Cmd ):
       limit = 100
       if len( argsList ) > 0:
         limit = int( argsList[0] )
-      rpcClient = RPCClient( self.masterURL )
-      history = self.modificator.getHistory( rpcClient, limit )
+      history = self.modificator.getHistory( limit )
       print "%s recent commits:" % limit
       for entry in history:
         self.printPair( entry[0], entry[1], "@" )
@@ -466,8 +462,7 @@ class CSCLI( cmd.Cmd ):
     Usage: showDiffWithServer
     """
     try:
-      rpcClient = RPCClient( self.masterURL )
-      diffData = self.modificator.showCurrentDiff( rcpClient )
+      diffData = self.modificator.showCurrentDiff()
       print "Diff with latest from server ( + local - remote )"
       for line in diffData:
         if line[0] in ( '-' ):
@@ -494,8 +489,7 @@ class CSCLI( cmd.Cmd ):
       v1 = " ".join ( argsList[0:2] )
       v2 = " ".join ( argsList[2:4] )
       print "Comparing '%s' with '%s' " % ( v1, v2 )
-      rpcClient = RPCClient( self.masterURL )
-      diffData = self.modificator.getVersionDiff( rcpClient, v1, v2 )
+      diffData = self.modificator.getVersionDiff( v1, v2 )
       print "Diff with latest from server ( + %s - %s )" % ( v2, v1 )
       for line in diffData:
         if line[0] in ( '-' ):
@@ -523,12 +517,11 @@ class CSCLI( cmd.Cmd ):
       choice = raw_input( "Do you really want to rollback to version %s? yes/no [no]: " % version)
       choice = choice.lower()
       if choice in ( "yes", "y" ):
-        rpcClient = RPCClient( self.masterURL )
-        response = self.modificator.rollbackToVersion( rpcClient, version )
+        response = self.modificator.rollbackToVersion( version )
         if response[ 'OK' ]:
           self.modifiedData = False
           print "Rolled back."
-          self.modificator.loadFromRemote( rpcClient )
+          self.modificator.loadFromRemote()
         else:
           print "Error sending data, server said: %s" % response['Message']
     except Exception, v:
@@ -543,8 +536,7 @@ class CSCLI( cmd.Cmd ):
       choice = raw_input( "Do you want to merge with server configuration? yes/no [no]: ")
       choice = choice.lower()
       if choice in ( "yes", "y" ):
-        rpcClient = RPCClient( self.masterURL )
-        retVal = self.modificator.mergeWithServer( rpcClient )
+        retVal = self.modificator.mergeWithServer()
         if retVal[ 'OK' ]:
           print "Merged"
         else:

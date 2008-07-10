@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Modificator.py,v 1.8 2008/07/04 08:02:19 rgracian Exp $
-__RCSID__ = "$Id: Modificator.py,v 1.8 2008/07/04 08:02:19 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Modificator.py,v 1.9 2008/07/10 13:31:27 acasajus Exp $
+__RCSID__ = "$Id: Modificator.py,v 1.9 2008/07/10 13:31:27 acasajus Exp $"
 
 import zlib
 import difflib
@@ -9,20 +9,25 @@ from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationDat
 
 class Modificator:
 
-  def __init__( self, commiterId = "unknown" ):
+  def __init__( self, rpcClient = False, commiterId = "unknown" ):
     self.commiterTag = "@@-"
     self.commiterId = commiterId
+    if rpcClient:
+      self.setRPCClient( rpcClient )
 
-  def getCredentials(self, rpcClient):
-    retVal = rpcClient.getCredentials()
+  def getCredentials(self):
+    retVal = self.rpcClient.getCredentials()
     if retVal[ 'OK' ]:
       credDict = retVal[ 'Value' ]
       self.commiterId = "%s@%s - %s" % ( credDict[ 'username' ], credDict[ 'group' ], credDict[ 'DN' ] )
       return retVal
     return retVal
 
-  def loadFromRemote( self, rpcClient ):
-    retVal = rpcClient.getCompressedData()
+  def setRPCClient( self, rpcClient ):
+    self.rpcClient = rpcClient
+
+  def loadFromRemote( self ):
+    retVal = self.rpcClient.getCompressedData()
     if retVal[ 'OK' ]:
       self.cfgData = CFG()
       self.cfgData.loadFromBuffer( zlib.decompress( retVal[ 'Value' ] ) )
@@ -163,34 +168,34 @@ class Modificator:
   def __str__( self ):
     return str( self.cfgData )
 
-  def commit( self, rpcClient ):
+  def commit( self ):
     compressedData = zlib.compress( str( self.cfgData ), 9 )
-    return rpcClient.commitNewData( compressedData )
+    return self.rpcClient.commitNewData( compressedData )
 
-  def getHistory( self, rpcClient, limit = 0 ):
-    retVal = rpcClient.getCommitHistory( limit )
+  def getHistory( self, limit = 0 ):
+    retVal = self.rpcClient.getCommitHistory( limit )
     if retVal[ 'OK' ]:
       return retVal[ 'Value' ]
     return []
 
-  def showCurrentDiff( self, rpcClient ):
-    retVal = rpcClient.getCompressedData()
+  def showCurrentDiff( self ):
+    retVal = self.rpcClient.getCompressedData()
     if retVal[ 'OK' ]:
       remoteData = zlib.decompress( retVal[ 'Value' ] ).splitlines()
       localData = str( self.cfgData ).splitlines()
       return difflib.ndiff( remoteData, localData )
     return []
 
-  def getVersionDiff( self, rpcClient, fromDate, toDate ):
-    retVal = rpcClient.getVersionContents( [ fromDate, toDate ] )
+  def getVersionDiff( self, fromDate, toDate ):
+    retVal = self.rpcClient.getVersionContents( [ fromDate, toDate ] )
     if retVal[ 'OK' ]:
       fromData = zlib.decompress( retVal[ 'Value' ][0] )
       toData = zlib.decompress( retVal[ 'Value' ][1] )
       return difflib.ndiff( fromData.split( "\n" ), toData.split( "\n" ) )
     return []
 
-  def mergeWithServer( self, rpcClient ):
-    retVal = rpcClient.getCompressedData()
+  def mergeWithServer( self ):
+    retVal = self.rpcClient.getCompressedData()
     if retVal[ 'OK' ]:
       remoteCFG = CFG()
       remoteCFG.loadFromBuffer( zlib.decompress( retVal[ 'Value' ] ) )
@@ -199,5 +204,5 @@ class Modificator:
       gConfigurationData.setVersion( serverVersion, self.cfgData )
     return retVal
 
-  def rollbackToVersion( self, rpcClient, version ):
-    return rpcClient.rollbackToVersion( version )
+  def rollbackToVersion( self, version ):
+    return self.rpcClient.rollbackToVersion( version )
