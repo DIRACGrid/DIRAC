@@ -1,9 +1,9 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyManagerClient.py,v 1.8 2008/07/10 15:36:42 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyManagerClient.py,v 1.9 2008/07/10 15:37:03 acasajus Exp $
 ########################################################################
 """ ProxyManagementAPI has the functions to "talk" to the ProxyManagement service
 """
-__RCSID__ = "$Id: ProxyManagerClient.py,v 1.8 2008/07/10 15:36:42 acasajus Exp $"
+__RCSID__ = "$Id: ProxyManagerClient.py,v 1.9 2008/07/10 15:37:03 acasajus Exp $"
 
 import os
 import datetime
@@ -259,7 +259,7 @@ class ProxyManagerClient:
     return vomsMgr.setVOMSAttributes( mpChain , vomsAttr )
 
   @gPilotProxiesSync
-  def downloadPilotProxy( self, userDN, userGroup, requiredTimeLeft = 43200, proxyToConnect = False ):
+  def downloadPilotProxyFromMyProxy( self, userDN, userGroup, requiredTimeLeft = 43200, proxyToConnect = False ):
     """
     Download a pilot proxy with VOMS extensions depending on the group
     """
