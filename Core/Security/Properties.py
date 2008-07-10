@@ -12,6 +12,10 @@ SERVICE_ADMINISTRATOR = "ServiceAdministrator"
 JOB_ADMINISTRATOR = "JobAdministrator"
 # Job Pilot
 JOB_PILOT = "JobPilot"
+# Private pilot
+PILOT = "Pilot"
+# Generic pilot
+GENERIC_PILOT = "GenericPilot"
 # Site Manager
 SITE_MANAGER = "SiteManager"
 #Allow getting full delegated proxies
