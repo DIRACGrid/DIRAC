@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: MatcherHandler.py,v 1.10 2008/07/09 16:00:11 acasajus Exp $
+# $Id: MatcherHandler.py,v 1.11 2008/07/10 15:09:58 rgracian Exp $
 ########################################################################
 """
 Matcher class. It matches Agent Site capabilities to job requirements.
@@ -7,7 +7,7 @@ It also provides an XMLRPC interface to the Matcher
 
 """
 
-__RCSID__ = "$Id: MatcherHandler.py,v 1.10 2008/07/09 16:00:11 acasajus Exp $"
+__RCSID__ = "$Id: MatcherHandler.py,v 1.11 2008/07/10 15:09:58 rgracian Exp $"
 
 import re, os, sys, time
 import string
@@ -252,6 +252,9 @@ class MatcherHandler(RequestHandler):
               gLogger.debug("Job JDL:\n"+classAdJob.asJDL())
           else:
             gLogger.warn("Job %d in the Task Queue but the status is %s" % (job,status))
+            result = jobDB.deleteJobFromQueue(job)
+            if not result['OK']:
+              gLogger.warn("Failed to delete job %d from Task Queue" % job)
         else:
           gLogger.warn("Job %d ot found in the JobDB, will be deleted from the Task Queue" % job)
           result = jobDB.deleteJobFromQueue(job)
