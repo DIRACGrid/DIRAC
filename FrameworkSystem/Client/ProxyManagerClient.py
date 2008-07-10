@@ -1,9 +1,9 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyManagerClient.py,v 1.7 2008/07/10 12:55:43 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyManagerClient.py,v 1.8 2008/07/10 15:36:42 acasajus Exp $
 ########################################################################
 """ ProxyManagementAPI has the functions to "talk" to the ProxyManagement service
 """
-__RCSID__ = "$Id: ProxyManagerClient.py,v 1.7 2008/07/10 12:55:43 acasajus Exp $"
+__RCSID__ = "$Id: ProxyManagerClient.py,v 1.8 2008/07/10 15:36:42 acasajus Exp $"
 
 import os
 import datetime
@@ -13,8 +13,9 @@ from DIRAC.Core.Security import Locations, CS, File
 from DIRAC.Core.Security.X509Chain import X509Chain, g_X509ChainType
 from DIRAC.Core.Security.X509Request import X509Request
 from DIRAC.Core.Security.VOMS import VOMS
+from DIRAC.Core.Security.MyProxy import MyProxy
 from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC import S_OK, S_ERROR, gLogger, gConfig
 
 gUsersSync = ThreadSafe.Synchronizer()
 gProxiesSync = ThreadSafe.Synchronizer()
@@ -234,8 +235,46 @@ class ProxyManagerClient:
     retVal[ 'chain' ] = chain
     return retVal
 
-  @gVOMSProxiesSync
+  def __createPilotProxyFromMyProxy( self, userDN, userGroup, requiredTimeLeft = 43200, proxyToConnect = False ):
+    retVal = self.downloadVOMSProxy( userDN, userGroup, requiredTimeLeft = 600, proxyToConnect = proxyToConnect )
+    if not retVal[ 'OK' ]:
+      return retVal
+    originChain = retVal[ 'Value' ]
+    myProxy = MyProxy( server = gConfig.getValue( "/DIRAC/VOPolicy/MyProxyServer", "myproxy.cern.ch" ) )
+    retVal = myProxy.getDelegatedProxy( originChain, requiredTimeLeft * 1.5, useDNAsUserName = True )
+    if not retVal[ 'OK' ]:
+      return retVal
+    mpChain = retVal[ 'Value' ]
+    retVal = mpChain.getDIRACGroup()
+    if not retVal[ 'OK' ]:
+      return S_ERROR( "Can't retrieve DIRAC Group from downloaded proxy: %s" % retVal[ 'Message' ] )
+    group = retVal[ 'Value' ]
+    vomsGroups = CS.getVOMSAttributeForGroup( userGroup )
+    if not vomsGroups:
+      return S_ERROR( "No voms attributes assigned to group %s" % userGroup )
+    if len( vomsGroups ) > 1:
+      return S_ERROR( "More than one voms attribute defined for group %s: %s" % ( userGroup, vomsGroups ) )
+    vomsAttr = vomsGroups[0]
+    vomsMgr = VOMS()
+    return vomsMgr.setVOMSAttributes( mpChain , vomsAttr )
+
+  @gPilotProxiesSync
   def downloadPilotProxy( self, userDN, userGroup, requiredTimeLeft = 43200, proxyToConnect = False ):
+    """
+    Download a pilot proxy with VOMS extensions depending on the group
+    """
+    cacheKey = ( userDN, userGroup )
+    if self.__pilotProxiesCache.exists( cacheKey, requiredTimeLeft ):
+      return S_OK( self.__pilotProxiesCache.get( cacheKey ) )
+    retVal = self.__createPilotProxyFromMyProxy( userDN, userGroup, requiredTimeLeft, proxyToConnect )
+    if not retVal[ 'OK' ]:
+      return retVal
+    chain = retVal[ 'Value' ]
+    self.__pilotProxiesCache.add( cacheKey, chain.getRemainingSecs()['Value'], chain )
+    return S_OK( chain )
+
+  @gPilotProxiesSync
+  def downloadPilotProxyFromServer( self, userDN, userGroup, requiredTimeLeft = 43200, proxyToConnect = False ):
     """
     Download a pilot proxy with VOMS extensions depending on the group
     """
