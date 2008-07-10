@@ -1,9 +1,9 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyManagerClient.py,v 1.14 2008/07/10 17:28:13 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyManagerClient.py,v 1.15 2008/07/10 17:44:22 acasajus Exp $
 ########################################################################
 """ ProxyManagementAPI has the functions to "talk" to the ProxyManagement service
 """
-__RCSID__ = "$Id: ProxyManagerClient.py,v 1.14 2008/07/10 17:28:13 acasajus Exp $"
+__RCSID__ = "$Id: ProxyManagerClient.py,v 1.15 2008/07/10 17:44:22 acasajus Exp $"
 
 import os
 import datetime
@@ -236,10 +236,22 @@ class ProxyManagerClient:
     return retVal
 
   def __createPilotProxyFromMyProxy( self, userDN, userGroup, requiredTimeLeft = 43200, proxyToConnect = False ):
-    retVal = self.downloadVOMSProxy( userDN, userGroup, requiredTimeLeft = 600, proxyToConnect = proxyToConnect )
+    keys = self.__pilotProxiesCache.getKeys( requiredTimeLeft )
+    originChain = False
+    retVal = CS.getGroupsForDN( userDN )
     if not retVal[ 'OK' ]:
       return retVal
-    originChain = retVal[ 'Value' ]
+    userValidGroups = retVal[ 'Value' ]
+    for testGroup in userValidGroups:
+      retVal = self.userHasProxy( userDN, testGroup )
+      if retVal[ 'OK' ] and retVal[ 'Value' ]:
+        retVal = self.downloadVOMSProxy( userDN, testGroup, requiredTimeLeft = 600, proxyToConnect = proxyToConnect )
+        if not retVal[ 'OK' ]:
+          return retVal
+        originChain = retVal[ 'Value' ]
+        break
+    if not originChain:
+      return S_ERROR( "Cannot get a proxy for %s to use to get a pilot proxy" % userDN )
     myProxy = MyProxy( server = gConfig.getValue( "/DIRAC/VOPolicy/MyProxyServer", "myproxy.cern.ch" ) )
     retVal = myProxy.getDelegatedProxy( originChain, requiredTimeLeft * 1.5, useDNAsUserName = True )
     if not retVal[ 'OK' ]:
