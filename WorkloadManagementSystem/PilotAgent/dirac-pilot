@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot,v 1.25 2008/05/06 08:28:40 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot,v 1.26 2008/07/10 10:40:29 rgracian Exp $
 # File :   dirac-pilot
 # Author : Ricardo Graciani
 ########################################################################
@@ -9,7 +9,7 @@
  Job Agent to execute pending workload on WMS.
  It requires dirac-install script to be sitting in the same directory.
 """
-__RCSID__ = "$Id: dirac-pilot,v 1.25 2008/05/06 08:28:40 rgracian Exp $"
+__RCSID__ = "$Id: dirac-pilot,v 1.26 2008/07/10 10:40:29 rgracian Exp $"
 try:
   import os
   import sys
@@ -33,6 +33,7 @@ try:
   minDiskSpace  = 2560 # MB
   jobCPUReqt    = 900  # s
   diracGroup    = None
+  ownerDN       = None
   
   JOB_AGENT_CE = 'InProcess'
   MAX_CYCLES   = 2
@@ -87,6 +88,7 @@ def parse_options():
    -S --server                 Make a full server installation
    -T --CPUTime=<Time>         Requested CPU Time
    -G --Group=<group>          DIRAC group to be setup
+   -O --OwnerDN=<ownerDN>      Pilot OwnerDN (for private pilots)
    -U --Upload                 Upload compiled distribution to lhcbweb (if -b)
 
   from DIRAC framework:
@@ -96,11 +98,11 @@ def parse_options():
     -c --cert=<cert>           Use server certificate <cert> to connect to Core Services
 
   """
-  shortOptions = 'bde:hi:n:p:r:tu:v:o:s:CN:D:P:ST:G:U'
+  shortOptions = 'bde:hi:n:p:r:tu:v:o:s:CN:D:P:ST:G:O:U'
   longOptions  = ['build', 'debug', 'external=', 'help', 'python=', 'name=', 
                   'platform=', 'repository', 'test', 'url=', 'version=', 
                   'cvs', 'Name=', 'disk=', 'path=', 'server', 'CPUTime=', 'Group=',
-                  'Upload',
+                  'OwnerDN=','Upload',
                   'option=', 'section=', 'cert=']
   try:
     ( optionVals, extraOptions ) = getopt.getopt( sys.argv[1:], shortOptions, longOptions )
@@ -162,6 +164,8 @@ def parse_options():
       jobCPUReqt = v
     elif o in ('-G', '--Group'):
       diracGroup = v
+    elif o in ('-O', '--OwnerDN'):
+      ownerDN = v
     elif o in ('-U', '--Upload'):
       installOpts.append('-U')
     elif o == '-S' or o == '--server':
@@ -278,9 +282,6 @@ os.environ['LD_LIBRARY_PATH_SAVE'] = os.environ['LD_LIBRARY_PATH']
 os.environ['LD_LIBRARY_PATH'] = "%s" % (myLib)
 os.environ['PATH'] = '%s:%s' % (myBin,os.getenv('PATH'))
 
-if diracGroup:
-  dirac.logINFO( 'Setting DIRAC Group to %s' % diracGroup )
-  os.system ( 'dirac-group-init %s' % diracGroup )
 # End of initialisation
 
 # Preamble
@@ -381,6 +382,17 @@ inProcessOpts+= ' -o MaxCPUTime=%s' % ( int(jobCPUReqt) )
 inProcessOpts+= ' -o MaxRunningJobs=%s' % 1
 # To prevent a wayward agent picking up and failing many jobs.
 inProcessOpts+= ' -o MaxTotalJobs=%s' % 10
+requirements = []
+if diracGroup:
+  dirac.logINFO( 'Setting DIRAC Group to "%s"' % diracGroup )
+  requirements.append( 'other.OwnerGroup == "%s";' % diracGroup )
+
+if ownerDN:
+  dirac.logINFO( 'Setting Owner DN to "%s"' % ownerDN )
+  requirements.append( 'other.OwnerDN == "%s";' % ownerDN )
+
+if requirements:
+  inProcessOpts+= ' -o Requirements=%s' % ' && '.join(requirements)
 
 jobAgentControl = os.path.join( rootPath, 'agentFlags', 'JobAgent' )
 createDir( jobAgentControl )
