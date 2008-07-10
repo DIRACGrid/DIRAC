@@ -1,9 +1,9 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyManagerClient.py,v 1.10 2008/07/10 15:43:11 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyManagerClient.py,v 1.11 2008/07/10 16:04:47 acasajus Exp $
 ########################################################################
 """ ProxyManagementAPI has the functions to "talk" to the ProxyManagement service
 """
-__RCSID__ = "$Id: ProxyManagerClient.py,v 1.10 2008/07/10 15:43:11 acasajus Exp $"
+__RCSID__ = "$Id: ProxyManagerClient.py,v 1.11 2008/07/10 16:04:47 acasajus Exp $"
 
 import os
 import datetime
@@ -270,30 +270,6 @@ class ProxyManagerClient:
     if not retVal[ 'OK' ]:
       return retVal
     chain = retVal[ 'Value' ]
-    self.__pilotProxiesCache.add( cacheKey, chain.getRemainingSecs()['Value'], chain )
-    return S_OK( chain )
-
-  @gPilotProxiesSync
-  def downloadPilotProxyFromServer( self, userDN, userGroup, requiredTimeLeft = 43200, proxyToConnect = False ):
-    """
-    Download a pilot proxy with VOMS extensions depending on the group
-    """
-    cacheKey = ( userDN, userGroup )
-    if self.__pilotProxiesCache.exists( cacheKey, requiredTimeLeft ):
-      return S_OK( self.__pilotProxiesCache.get( cacheKey ) )
-    req = X509Request()
-    req.generateProxyRequest()
-    if proxyToConnect:
-      rpcClient = RPCClient( "Framework/ProxyManager", proxyChain = proxyToConnect )
-    else:
-      rpcClient = RPCClient( "Framework/ProxyManager" )
-    retVal = rpcClient.getPilotProxy( userDN, userGroup, req.dumpRequest()['Value'], long( requiredTimeLeft * 1.5 ) )
-    if not retVal[ 'OK' ]:
-      return retVal
-    chain = X509Chain( keyObj = req.getPKey() )
-    retVal = chain.loadChainFromString( retVal[ 'Value' ] )
-    if not retVal[ 'OK' ]:
-      return retVal
     self.__pilotProxiesCache.add( cacheKey, chain.getRemainingSecs()['Value'], chain )
     return S_OK( chain )
 
