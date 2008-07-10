@@ -1,7 +1,6 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Message.py,v 1.9 2008/01/24 19:04:32 mseco Exp $
-__RCSID__ = "$Id: Message.py,v 1.9 2008/01/24 19:04:32 mseco Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Message.py,v 1.10 2008/07/10 07:47:36 rgracian Exp $
+__RCSID__ = "$Id: Message.py,v 1.10 2008/07/10 07:47:36 rgracian Exp $"
 
-import thread
 from DIRAC.Core.Utilities import Time
 
 def tupleToMessage( varTuple ):
@@ -12,6 +11,7 @@ def tupleToMessage( varTuple ):
 class Message:
 
   def __init__( self, systemName, level, time, msgText, variableText, frameInfo, subSystemName = '' ):
+    import thread
     self.systemName = systemName
     self.level = level
     self.time = time

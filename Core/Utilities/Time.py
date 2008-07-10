@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Time.py,v 1.4 2008/05/07 21:07:15 acasajus Exp $
-__RCSID__ = "$Id: Time.py,v 1.4 2008/05/07 21:07:15 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Time.py,v 1.5 2008/07/10 07:47:54 rgracian Exp $
+__RCSID__ = "$Id: Time.py,v 1.5 2008/07/10 07:47:54 rgracian Exp $"
 """
 DIRAC Times module
 Support for basic Date and Time operations
@@ -38,11 +38,13 @@ hour = datetime.timedelta( hours = 1 )
 day  = datetime.timedelta( days = 1 )
 week = datetime.timedelta( days = 7 )
 
+dt = datetime.datetime(1,1,1)
+
 def dateTime( ):
   """
   Return current UTC datetime, as datetime.datetime object
   """
-  return datetime.datetime.utcnow( )
+  return dt.utcnow( )
 
 def date( myDateTime = None ):
   """
@@ -74,7 +76,7 @@ def fromEpoch( epoch ):
   """
   Get datetime object from epoch
   """
-  return datetime.datetime.fromtimestamp( epoch )
+  return dt.fromtimestamp( epoch )
 
 def toString( myDate = None ):
   """
@@ -122,14 +124,14 @@ def fromString( myDate = None ):
                                     month = dateTuple[1],
                                     day   = dateTuple[2] ) +
                fromString( dateTimeTuple[1] ) )
-        return datetime.datetime.combine( fromString( dateTimeTuple[0] ),
+        return dt.combine( fromString( dateTimeTuple[0] ),
                                           fromString( dateTimeTuple[1] ) )
       except:
         return ( datetime.datetime( year  = int(dateTuple[0]),
                                     month = int(dateTuple[1]),
                                     day   = int(dateTuple[2]) ) +
                fromString( dateTimeTuple[1] ) )
-        return datetime.datetime.combine( fromString( dateTimeTuple[0] ),
+        return dt.combine( fromString( dateTimeTuple[0] ),
                                           fromString( dateTimeTuple[1] ) )
         return None
     elif myDate.find( ':' ) > 0:
