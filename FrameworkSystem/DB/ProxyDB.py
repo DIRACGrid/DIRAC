@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.10 2008/07/10 12:55:43 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.11 2008/07/10 16:04:33 acasajus Exp $
 ########################################################################
 """ ProxyRepository class is a front-end to the proxy repository Database
 """
 
-__RCSID__ = "$Id: ProxyDB.py,v 1.10 2008/07/10 12:55:43 acasajus Exp $"
+__RCSID__ = "$Id: ProxyDB.py,v 1.11 2008/07/10 16:04:33 acasajus Exp $"
 
 import time
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
@@ -395,42 +395,6 @@ class ProxyDB(DB):
 
     vomsMgr = VOMS()
     return vomsMgr.setVOMSAttributes( chain , vomsAttr )
-
-
-  def getPilotProxy( self, userDN, userGroup, requiredLifeTime = False ):
-    """ Get a pilot proxy
-    """
-    retVal = self.__getPemAndTimeLeft( userDN )
-    if not retVal[ 'OK' ]:
-      return retVal
-    dbPem = retVal[ 'Value' ][0]
-    dbChain = X509Chain()
-    retVal = dbChain.loadProxyFromString( dbPem )
-    if not retVal[ 'OK' ]:
-      return retVal
-    if not self.__useMyProxy:
-      return S_ERROR( "myproxy is disabled" )
-    if not requiredLifeTime:
-      requiredLifeTime = 42300
-    myProxy = MyProxy( server = self.__MyProxyServer )
-    gLogger.info( "Pilot proxy gen: getting proxy from myproxy" )
-    retVal = myProxy.getDelegatedProxy( dbChain, requiredLifeTime, useDNAsUserName = True )
-    if not retVal[ 'OK' ]:
-      return retVal
-    mpChain = retVal[ 'Value' ]
-    retVal = mpChain.getDIRACGroup()
-    if not retVal[ 'OK' ]:
-      return S_ERROR( "Can't retrieve DIRAC Group from downloaded proxy: %s" % retVal[ 'Message' ] )
-    group = retVal[ 'Value' ]
-    gLogger.info( "Pilot proxy gen: Downloaded proxy group is %s" % group )
-    retVal = self.__getVOMSAttribute( userGroup )
-    if not retVal[ 'OK' ]:
-      return retVal
-    vomsAttr = retVal[ 'Value' ]
-    vomsMgr = VOMS()
-    gLogger.info( "Pilot proxy gen: Setting voms attribute %s (%s)" % ( vomsAttr, userGroup ) )
-    return vomsMgr.setVOMSAttributes( mpChain , vomsAttr )
-
 
   def getRemainingTime( self, userDN, userGroup ):
     """

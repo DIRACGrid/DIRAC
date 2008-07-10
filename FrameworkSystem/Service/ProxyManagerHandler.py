@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/ProxyManagerHandler.py,v 1.7 2008/07/10 12:55:43 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/ProxyManagerHandler.py,v 1.8 2008/07/10 16:04:33 acasajus Exp $
 ########################################################################
 
 """ ProxyManager is the implementation of the ProxyManagement service
     in the DISET framework
 """
 
-__RCSID__ = "$Id: ProxyManagerHandler.py,v 1.7 2008/07/10 12:55:43 acasajus Exp $"
+__RCSID__ = "$Id: ProxyManagerHandler.py,v 1.8 2008/07/10 16:04:33 acasajus Exp $"
 
 import types
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -143,29 +143,6 @@ class ProxyManagerHandler( RequestHandler ):
     if not retVal[ 'OK' ]:
       return retVal
     gProxyDB.logAction( "download voms proxy", credDict[ 'DN' ], credDict[ 'group' ], userDN, userGroup )
-    return S_OK( retVal[ 'Value' ] )
-
-  types_getPilotProxy = [ types.StringType, types.StringType, types.StringType, ( types.IntType, types.LongType ) ]
-  def export_getPilotProxy( self, userDN, userGroup, requestPem, requiredLifetime ):
-    """
-    Get a proxy for a userDN/userGroup
-      - requestPem : PEM encoded request object for delegation
-      - requiredLifetime: Argument for length of proxy
-      * Properties :
-        ProxyManagement -> Allows downloading pilot proxies
-    """
-    credDict = self.getRemoteCredentials()
-    retVal = gProxyDB.getPilotProxy( userDN,
-                                    userGroup,
-                                    requiredLifetime )
-    if not retVal[ 'OK' ]:
-      return retVal
-    chain = retVal[ 'Value' ]
-    retVal = chain.generateChainFromRequestString( requestPem,
-                                                   lifetime = requiredLifetime )
-    if not retVal[ 'OK' ]:
-      return retVal
-    gProxyDB.logAction( "download pilot proxy", credDict[ 'DN' ], credDict[ 'group' ], userDN, userGroup )
     return S_OK( retVal[ 'Value' ] )
 
   types_setPersistency = [ types.StringType, types.StringType, types.BooleanType ]
