@@ -47,6 +47,7 @@ class BaseSecurity:
         self._secKeyLoc = ckLoc[1]
       else:
         self._secKeyLoc = "%s/etc/grid-security/serverkey.pem" % DIRAC.rootPath
+    self._secRunningFromTrustedHost = True
 
   def getServiceDN( self ):
     chain = X509Chain()
