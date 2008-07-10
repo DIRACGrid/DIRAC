@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.9 2008/07/09 16:50:42 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.10 2008/07/10 12:55:43 acasajus Exp $
 ########################################################################
 """ ProxyRepository class is a front-end to the proxy repository Database
 """
 
-__RCSID__ = "$Id: ProxyDB.py,v 1.9 2008/07/09 16:50:42 acasajus Exp $"
+__RCSID__ = "$Id: ProxyDB.py,v 1.10 2008/07/10 12:55:43 acasajus Exp $"
 
 import time
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
@@ -283,16 +283,23 @@ class ProxyDB(DB):
                                                                                    userGroup )
     return self._update(req)
 
-  def __getPemAndTimeLeft( self, userDN, userGroup ):
+  def __getPemAndTimeLeft( self, userDN, userGroup = False ):
     cmd = "SELECT Pem, TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime ) from `ProxyDB_Proxies`"
-    cmd += "WHERE UserDN='%s' AND UserGroup = '%s' AND TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime ) > 0" % ( userDN, userGroup )
+    cmd += "WHERE UserDN='%s' AND TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime ) > 0" % ( userDN )
+    if userGroup:
+      cmd += " AND UserGroup='%s'" % userGroup
     retVal = self._query(cmd)
     if not retVal['OK']:
       return retVal
     data = retVal[ 'Value' ]
-    if len( data ) == 0 or not data[0][0]:
-      return S_ERROR( "%s@%s has no proxy registered" % ( userDN, userGroup ) )
-    return S_OK( ( data[0][0], data[0][1] ) )
+    for record in data:
+      if record[0]:
+        return S_OK( ( record[0], record[1] ) )
+    if userGroup:
+      userMask = "%s@%s" % ( userDN, userGroup )
+    else:
+      userMask = userDN
+    return S_ERROR( "%s has no proxy registered" % userMask )
 
   def renewFromMyProxy( self, userDN, userGroup, lifeTime = False, chain = False ):
     if not lifeTime:
@@ -388,6 +395,42 @@ class ProxyDB(DB):
 
     vomsMgr = VOMS()
     return vomsMgr.setVOMSAttributes( chain , vomsAttr )
+
+
+  def getPilotProxy( self, userDN, userGroup, requiredLifeTime = False ):
+    """ Get a pilot proxy
+    """
+    retVal = self.__getPemAndTimeLeft( userDN )
+    if not retVal[ 'OK' ]:
+      return retVal
+    dbPem = retVal[ 'Value' ][0]
+    dbChain = X509Chain()
+    retVal = dbChain.loadProxyFromString( dbPem )
+    if not retVal[ 'OK' ]:
+      return retVal
+    if not self.__useMyProxy:
+      return S_ERROR( "myproxy is disabled" )
+    if not requiredLifeTime:
+      requiredLifeTime = 42300
+    myProxy = MyProxy( server = self.__MyProxyServer )
+    gLogger.info( "Pilot proxy gen: getting proxy from myproxy" )
+    retVal = myProxy.getDelegatedProxy( dbChain, requiredLifeTime, useDNAsUserName = True )
+    if not retVal[ 'OK' ]:
+      return retVal
+    mpChain = retVal[ 'Value' ]
+    retVal = mpChain.getDIRACGroup()
+    if not retVal[ 'OK' ]:
+      return S_ERROR( "Can't retrieve DIRAC Group from downloaded proxy: %s" % retVal[ 'Message' ] )
+    group = retVal[ 'Value' ]
+    gLogger.info( "Pilot proxy gen: Downloaded proxy group is %s" % group )
+    retVal = self.__getVOMSAttribute( userGroup )
+    if not retVal[ 'OK' ]:
+      return retVal
+    vomsAttr = retVal[ 'Value' ]
+    vomsMgr = VOMS()
+    gLogger.info( "Pilot proxy gen: Setting voms attribute %s (%s)" % ( vomsAttr, userGroup ) )
+    return vomsMgr.setVOMSAttributes( mpChain , vomsAttr )
+
 
   def getRemainingTime( self, userDN, userGroup ):
     """

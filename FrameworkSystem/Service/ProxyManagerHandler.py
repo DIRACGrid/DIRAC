@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/ProxyManagerHandler.py,v 1.6 2008/07/09 16:50:44 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/ProxyManagerHandler.py,v 1.7 2008/07/10 12:55:43 acasajus Exp $
 ########################################################################
 
 """ ProxyManager is the implementation of the ProxyManagement service
     in the DISET framework
 """
 
-__RCSID__ = "$Id: ProxyManagerHandler.py,v 1.6 2008/07/09 16:50:44 acasajus Exp $"
+__RCSID__ = "$Id: ProxyManagerHandler.py,v 1.7 2008/07/10 12:55:43 acasajus Exp $"
 
 import types
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -78,16 +78,24 @@ class ProxyManagerHandler( RequestHandler ):
   types_getProxy = [ types.StringType, types.StringType, types.StringType, ( types.IntType, types.LongType ) ]
   def export_getProxy( self, userDN, userGroup, requestPem, requiredLifetime ):
     """
-    Get the list of users who have a valid proxy in the system
-      - validSecondsRequired is an optional argument to specify the required
-          seconds the proxy is valid for
+    Get a proxy for a userDN/userGroup
+      - requestPem : PEM encoded request object for delegation
+      - requiredLifetime: Argument for length of proxy
       * Properties :
         FullDelegation <- permits full delegation of proxies
+        LimitedDelegation <- permits downloading only limited proxies
+        PrivateLimitedDelegation <- permits downloading only limited proxies for one self
     """
     credDict = self.getRemoteCredentials()
-    forceLimited = True
+
     if Properties.FULL_DELEGATION in credDict[ 'properties' ]:
       forceLimited = False
+    else:
+      forceLimited = True
+      if Properties.PRIVATE_LIMITED_DELEGATION in credDict[ 'properties' ]:
+        if credDict[ 'DN' ] != userDN:
+          return S_ERROR( "You are not allowed to download any proxy" )
+
     retVal = gProxyDB.getProxy( userDN, userGroup, requiredLifeTime = requiredLifetime )
     if not retVal[ 'OK' ]:
       return retVal
@@ -103,16 +111,25 @@ class ProxyManagerHandler( RequestHandler ):
   types_getVOMSProxy = [ types.StringType, types.StringType, types.StringType, ( types.IntType, types.LongType ) ]
   def export_getVOMSProxy( self, userDN, userGroup, requestPem, requiredLifetime, vomsAttribute = False ):
     """
-    Get the list of users who have a valid proxy in the system
-      - validSecondsRequired is an optional argument to specify the required
-          seconds the proxy is valid for
+    Get a proxy for a userDN/userGroup
+      - requestPem : PEM encoded request object for delegation
+      - requiredLifetime: Argument for length of proxy
+      - vomsAttribute : VOMS attr to add to the proxy
       * Properties :
         FullDelegation <- permits full delegation of proxies
+        LimitedDelegation <- permits downloading only limited proxies
+        PrivateLimitedDelegation <- permits downloading only limited proxies for one self
     """
     credDict = self.getRemoteCredentials()
-    forceLimited = True
+
     if Properties.FULL_DELEGATION in credDict[ 'properties' ]:
       forceLimited = False
+    else:
+      forceLimited = True
+      if Properties.PRIVATE_LIMITED_DELEGATION in credDict[ 'properties' ]:
+        if credDict[ 'DN' ] != userDN:
+          return S_ERROR( "You are not allowed to download any proxy" )
+
     retVal = gProxyDB.getVOMSProxy( userDN,
                                     userGroup,
                                     requiredLifeTime = requiredLifetime,
@@ -126,6 +143,29 @@ class ProxyManagerHandler( RequestHandler ):
     if not retVal[ 'OK' ]:
       return retVal
     gProxyDB.logAction( "download voms proxy", credDict[ 'DN' ], credDict[ 'group' ], userDN, userGroup )
+    return S_OK( retVal[ 'Value' ] )
+
+  types_getPilotProxy = [ types.StringType, types.StringType, types.StringType, ( types.IntType, types.LongType ) ]
+  def export_getPilotProxy( self, userDN, userGroup, requestPem, requiredLifetime ):
+    """
+    Get a proxy for a userDN/userGroup
+      - requestPem : PEM encoded request object for delegation
+      - requiredLifetime: Argument for length of proxy
+      * Properties :
+        ProxyManagement -> Allows downloading pilot proxies
+    """
+    credDict = self.getRemoteCredentials()
+    retVal = gProxyDB.getPilotProxy( userDN,
+                                    userGroup,
+                                    requiredLifetime )
+    if not retVal[ 'OK' ]:
+      return retVal
+    chain = retVal[ 'Value' ]
+    retVal = chain.generateChainFromRequestString( requestPem,
+                                                   lifetime = requiredLifetime )
+    if not retVal[ 'OK' ]:
+      return retVal
+    gProxyDB.logAction( "download pilot proxy", credDict[ 'DN' ], credDict[ 'group' ], userDN, userGroup )
     return S_OK( retVal[ 'Value' ] )
 
   types_setPersistency = [ types.StringType, types.StringType, types.BooleanType ]
