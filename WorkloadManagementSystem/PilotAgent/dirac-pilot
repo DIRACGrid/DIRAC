@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot,v 1.28 2008/07/10 13:05:21 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot,v 1.29 2008/07/10 14:12:58 rgracian Exp $
 # File :   dirac-pilot
 # Author : Ricardo Graciani
 ########################################################################
@@ -9,7 +9,7 @@
  Job Agent to execute pending workload on WMS.
  It requires dirac-install script to be sitting in the same directory.
 """
-__RCSID__ = "$Id: dirac-pilot,v 1.28 2008/07/10 13:05:21 rgracian Exp $"
+__RCSID__ = "$Id: dirac-pilot,v 1.29 2008/07/10 14:12:58 rgracian Exp $"
 try:
   import os
   import sys
@@ -68,7 +68,7 @@ def parse_options():
    parse command line options:
   """
   import getopt
-  global debugFlag, rootPath, localPlatform, minDiskSpace, testFlag, jobCPUReqt, diracGroup
+  global debugFlag, rootPath, localPlatform, minDiskSpace, testFlag, jobCPUReqt, diracGroup, ownerDN
   help = """
    -b --build                  Force local compilation  
    -d --debug                  Set debug flag
@@ -383,14 +383,19 @@ inProcessOpts+= ' -o MaxRunningJobs=%s' % 1
 # To prevent a wayward agent picking up and failing many jobs.
 inProcessOpts+= ' -o MaxTotalJobs=%s' % 10
 
+AgentJobRequirements = ''
 if diracGroup:
   dirac.logINFO( 'Setting DIRAC Group to "%s"' % diracGroup )
-  inProcessOpts+= ' -o /AgentJobRequirements/OwnerGroup="%s"' % diracGroup
+  inProcessOpts       += ' -o OwnerGroup="%s"' % diracGroup
+  AgentJobRequirements+= ' -o /AgentJobRequirements/OwnerGroup="%s"' % diracGroup
 
 if ownerDN:
   dirac.logINFO( 'Setting Owner DN to "%s"' % ownerDN )
-  inProcessOpts+= ' -o /AgentJobRequirements/OwnerDN="%s"' % ownerDN
+  inProcessOpts       += ' -o OwnerDN="%s"' % ownerDN
+  AgentJobRequirements+= ' -o /AgentJobRequirements/OwnerDN="%s"' % ownerDN
   
+inProcessOpts+= AgentJobRequirements
+
 jobAgentControl = os.path.join( rootPath, 'agentFlags', 'JobAgent' )
 createDir( jobAgentControl )
 
