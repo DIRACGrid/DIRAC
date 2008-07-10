@@ -18,5 +18,7 @@ SITE_MANAGER = "SiteManager"
 FULL_DELEGATION = "FullDelegation"
 #Allow getting only limited proxies (ie. pilots)
 LIMITED_DELEGATION = "LimitedDelegation"
+#Allow getting only limited proxies for one self
+PRIVATE_LIMITED_DELEGATION = "PrivateLimitedDelegation"
 #Allow managing proxies
 PROXY_MANAGEMENT = "ProxyManagement"
