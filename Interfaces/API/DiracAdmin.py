@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.16 2008/06/26 06:36:12 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.17 2008/07/10 09:26:27 paterson Exp $
 # File :   DiracAdmin.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@ site banning and unbanning, WMS proxy uploading etc.
 
 """
 
-__RCSID__ = "$Id: DiracAdmin.py,v 1.16 2008/06/26 06:36:12 atsareg Exp $"
+__RCSID__ = "$Id: DiracAdmin.py,v 1.17 2008/07/10 09:26:27 paterson Exp $"
 
 import DIRAC
 from DIRAC.ConfigurationSystem.Client.CSAPI              import CSAPI
@@ -48,9 +48,6 @@ class DiracAdmin:
       self.dbg = True
 
     self.scratchDir = gConfig.getValue(self.section+'/ScratchDir','/tmp')
-#    diracAdmin = 'diracAdmin'
-#    self.log.verbose('Setting DIRAC role for current proxy to %s' %diracAdmin)
-#    setDIRACGroup(diracAdmin)
     self.currentDir = os.getcwd()
     self.pPrint = pprint.PrettyPrinter()
 
@@ -112,7 +109,7 @@ class DiracAdmin:
 
        Example usage:
 
-       >>> print diracAdmin.getCSPathDict('Resources/Computing/OSCompatibility')
+       >>> print diracAdmin.getCSDict('Resources/Computing/OSCompatibility')
        {'OK': True, 'Value': {'slc4_amd64_gcc34': 'slc4_ia32_gcc34,slc4_amd64_gcc34', 'slc4_ia32_gcc34': 'slc4_ia32_gcc34'}}
 
        @return: S_OK,S_ERROR
@@ -170,6 +167,64 @@ class DiracAdmin:
     wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
     result = wmsAdmin.clearMask()
     return result
+
+  #############################################################################
+  def getServicePorts(self,setup='',printOutput=False):
+    """Checks the service ports for the specified setup.  If not given this is
+       taken from the current installation (/DIRAC/Setup)
+
+       Example usage:
+
+       >>> print diracAdmin.getServicePorts()
+       {'OK': True, 'Value':''}
+
+       @return: S_OK,S_ERROR
+
+    """
+    if not setup:
+      setup = gConfig.getValue('/DIRAC/Setup','')
+
+    setupList = gConfig.getSections('/DIRAC/Setups',[])
+    if not setupList['OK']:
+      return S_ERROR('Could not get /DIRAC/Setups sections')
+    setupList = setupList['Value']
+    if not setup in setupList:
+      return S_ERROR('Setup %s is not in allowed list: %s' %(setup,string.join(setupList,', ')))
+
+    serviceSetups = gConfig.getOptionsDict('/DIRAC/Setups/%s' %setup)
+    if not serviceSetups['OK']:
+      return S_ERROR('Could not get /DIRAC/Setups/%s options' %setup)
+    serviceSetups = serviceSetups['Value'] #dict
+    systemList = gConfig.getSections('/Systems')
+    if not systemList['OK']:
+      return S_ERROR('Could not get Systems sections')
+    systemList = systemList['Value']
+    result = {}
+    for system in systemList:
+      if serviceSetups.has_key(system):
+        path = '/Systems/%s/%s/Services' %(system,serviceSetups[system])
+        servicesList = gConfig.getSections(path)
+        if not servicesList['OK']:
+          return S_ERROR('Could not get sections in %s' %path)
+        servicesList = servicesList['Value']
+        if not servicesList:
+          servicesList=[]
+        self.log.verbose('System: %s ServicesList: %s' %(system,string.join(servicesList,', ')))
+        for service in servicesList:
+          spath = '%s/%s/Port' %(path,service)
+          servicePort = gConfig.getValue(spath,0)
+          if servicePort:
+            self.log.verbose('Found port for %s/%s = %s' %(system,service,servicePort))
+            result['%s/%s' %(system,service)] = servicePort
+          else:
+            self.log.warn('No port found for %s' %spath)
+      else:
+        self.log.warn('%s is not defined in /DIRAC/Setups/%s' %(system,setup))
+
+    if printOutput:
+      print self.pPrint.pformat(result)
+
+    return S_OK(result)
 
   #############################################################################
   def getProxy(self,ownerDN,ownerGroup,directory='',validity=12):
