@@ -1,15 +1,15 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyManagerClient.py,v 1.12 2008/07/10 17:14:49 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyManagerClient.py,v 1.13 2008/07/10 17:15:21 acasajus Exp $
 ########################################################################
 """ ProxyManagementAPI has the functions to "talk" to the ProxyManagement service
 """
-__RCSID__ = "$Id: ProxyManagerClient.py,v 1.12 2008/07/10 17:14:49 acasajus Exp $"
+__RCSID__ = "$Id: ProxyManagerClient.py,v 1.13 2008/07/10 17:15:21 acasajus Exp $"
 
 import os
 import datetime
 import types
 from DIRAC.Core.Utilities import Time, ThreadSafe, DictCache
-from DIRAC.Core.Security import Locations, CS, File
+from DIRAC.Core.Security import Locations, CS, File, Properties
 from DIRAC.Core.Security.X509Chain import X509Chain, g_X509ChainType
 from DIRAC.Core.Security.X509Request import X509Request
 from DIRAC.Core.Security.VOMS import VOMS
