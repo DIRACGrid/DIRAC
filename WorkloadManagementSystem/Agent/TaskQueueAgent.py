@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueAgent.py,v 1.8 2008/07/11 17:37:10 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueAgent.py,v 1.9 2008/07/11 17:41:17 rgracian Exp $
 # File :   TaskQueueAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
      into a Task Queue.
 """
 
-__RCSID__ = "$Id: TaskQueueAgent.py,v 1.8 2008/07/11 17:37:10 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueAgent.py,v 1.9 2008/07/11 17:41:17 rgracian Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
@@ -115,7 +115,7 @@ class TaskQueueAgent(Optimizer):
       ownerGroup = classadJob.get_expression( "OwnerGroup" )
       ownerGroupProperties = getPropertiesForGroup( ownerGroup )
       if not 'JobSharing' in ownerGroupProperties:
-        requirements += '&& other.OwnerGroup = %s' % ownerGroup
+        requirements += ' && other.OwnerGroup = %s' % ownerGroup
       requirements += ' && other.OwnerDN = %s ' % ownerDN
     requirements += ' && other.PilotType = %s' % pilotType
 
