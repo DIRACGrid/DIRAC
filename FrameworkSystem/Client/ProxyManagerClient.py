@@ -1,9 +1,9 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyManagerClient.py,v 1.15 2008/07/10 17:44:22 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyManagerClient.py,v 1.16 2008/07/11 10:17:10 acasajus Exp $
 ########################################################################
 """ ProxyManagementAPI has the functions to "talk" to the ProxyManagement service
 """
-__RCSID__ = "$Id: ProxyManagerClient.py,v 1.15 2008/07/10 17:44:22 acasajus Exp $"
+__RCSID__ = "$Id: ProxyManagerClient.py,v 1.16 2008/07/11 10:17:10 acasajus Exp $"
 
 import os
 import datetime
@@ -235,9 +235,11 @@ class ProxyManagerClient:
     retVal[ 'chain' ] = chain
     return retVal
 
-  def __createPilotProxyFromMyProxy( self, userDN, userGroup, requiredTimeLeft = 43200, proxyToConnect = False ):
+  def __createPilotProxyFromMyProxy( self, userDN, requestedGroup, requiredTimeLeft = 43200, proxyToConnect = False ):
     keys = self.__pilotProxiesCache.getKeys( requiredTimeLeft )
     originChain = False
+
+    #Download initial proxy
     retVal = CS.getGroupsForDN( userDN )
     if not retVal[ 'OK' ]:
       return retVal
@@ -252,24 +254,33 @@ class ProxyManagerClient:
         break
     if not originChain:
       return S_ERROR( "Cannot get a proxy for %s to use to get a pilot proxy" % userDN )
+
+    #Get pilot proxy from myproxy
     myProxy = MyProxy( server = gConfig.getValue( "/DIRAC/VOPolicy/MyProxyServer", "myproxy.cern.ch" ) )
     retVal = myProxy.getDelegatedProxy( originChain, requiredTimeLeft * 1.5, useDNAsUserName = True )
     if not retVal[ 'OK' ]:
       return retVal
     mpChain = retVal[ 'Value' ]
+
+    #Check groups
     retVal = mpChain.getDIRACGroup()
     if not retVal[ 'OK' ]:
       return S_ERROR( "Can't retrieve DIRAC Group from downloaded proxy: %s" % retVal[ 'Message' ] )
-    group = retVal[ 'Value' ]
-    props = CS.getPropertiesForGroup( userGroup )
-    if Properties.GENERIC_PILOT in props:
-      if userGroup != group:
-        return S_ERROR( "Stored proxy in MyProxy has generic pilot group (%s) and requested group for a non generic one (%s)" % ( group, userGroup ) )
-    vomsGroups = CS.getVOMSAttributeForGroup( userGroup )
+    proxyGroup = retVal[ 'Value' ]
+    proxyProps = CS.getPropertiesForGroup( proxyGroup )
+    if Properties.GENERIC_PILOT not in proxyProps and not Properties.PILOT not in proxyProps:
+      return S_ERROR( "Downloaded proxy from my proxy does not contain a pilot group, has %s" % proxyGroup )
+    requestedProps = CS.getPropertiesForGroup( requestedGroup )
+    if Properties.GENERIC_PILOT in requestedProps:
+      if Properties.GENERIC_PILOT not in proxyProps:
+        return S_ERROR( "Requested a generic group for the pilot (%s) and proxy stored in myproxy is private (%s)" % ( requestedGroup, proxyGroup ) )
+
+    #Assign VOMS attribute
+    vomsGroups = CS.getVOMSAttributeForGroup( requestedGroup )
     if not vomsGroups:
-      return S_ERROR( "No voms attributes assigned to group %s" % userGroup )
+      return S_ERROR( "No voms attributes assigned to group %s" % requestedGroup )
     if len( vomsGroups ) > 1:
-      return S_ERROR( "More than one voms attribute defined for group %s: %s" % ( userGroup, vomsGroups ) )
+      return S_ERROR( "More than one voms attribute defined for group %s: %s" % ( requestedGroup, vomsGroups ) )
     vomsAttr = vomsGroups[0]
     vomsMgr = VOMS()
     return vomsMgr.setVOMSAttributes( mpChain , vomsAttr )
