@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueAgent.py,v 1.7 2008/07/11 16:09:39 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueAgent.py,v 1.8 2008/07/11 17:37:10 rgracian Exp $
 # File :   TaskQueueAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,11 +8,12 @@
      into a Task Queue.
 """
 
-__RCSID__ = "$Id: TaskQueueAgent.py,v 1.7 2008/07/11 16:09:39 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueAgent.py,v 1.8 2008/07/11 17:37:10 rgracian Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
+from DIRAC.Core.Security.CS                                import getPropertiesForGroup
 from DIRAC.StagerSystem.Client.StagerClient                import StagerClient
 from DIRAC                                                 import S_OK, S_ERROR
 import string,re
@@ -109,11 +110,14 @@ class TaskQueueAgent(Optimizer):
     jobType = classadJob.get_expression("JobType")
     pilotType = classadJob.get_expression( "PilotType" )
 
-    if pilotType == "private":
+    if pilotType == '"private"':
       ownerDN = classadJob.get_expression( "OwnerDN" )
       ownerGroup = classadJob.get_expression( "OwnerGroup" )
-      requirements += ' && other.OwnerDN = "%s" && other.OwnerGroup = "%s"' % ( ownerDN , ownerGroup )
-    requirements += ' && other.PilotType = "%s"' % pilotType
+      ownerGroupProperties = getPropertiesForGroup( ownerGroup )
+      if not 'JobSharing' in ownerGroupProperties:
+        requirements += '&& other.OwnerGroup = %s' % ownerGroup
+      requirements += ' && other.OwnerDN = %s ' % ownerDN
+    requirements += ' && other.PilotType = %s' % pilotType
 
     result = self.jobDB.selectQueue(requirements)
     if result['OK']:
