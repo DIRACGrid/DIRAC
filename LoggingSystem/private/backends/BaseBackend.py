@@ -1,8 +1,7 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/backends/BaseBackend.py,v 1.8 2008/02/27 09:20:22 mseco Exp $
-__RCSID__ = "$Id: BaseBackend.py,v 1.8 2008/02/27 09:20:22 mseco Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/backends/BaseBackend.py,v 1.9 2008/07/11 17:23:03 rgracian Exp $
+__RCSID__ = "$Id: BaseBackend.py,v 1.9 2008/07/11 17:23:03 rgracian Exp $"
 """  This constitues the base class for the backends of the logger
 """
-from DIRAC.Core.Utilities import Time
 
 class BaseBackend:
 
@@ -18,6 +17,7 @@ class BaseBackend:
     raise Exception( "This function MUST be overloaded!!" )
 
   def composeString( self, messageObject ):
+    from DIRAC.Core.Utilities import Time
     messageName = "%s" % messageObject.getName()
     if messageObject.getSubSystemName():
       messageName += "/%s" % messageObject.getSubSystemName()
