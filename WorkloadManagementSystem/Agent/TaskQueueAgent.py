@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueAgent.py,v 1.6 2008/07/10 14:50:48 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueAgent.py,v 1.7 2008/07/11 16:09:39 acasajus Exp $
 # File :   TaskQueueAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
      into a Task Queue.
 """
 
-__RCSID__ = "$Id: TaskQueueAgent.py,v 1.6 2008/07/10 14:50:48 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueAgent.py,v 1.7 2008/07/11 16:09:39 acasajus Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
@@ -113,6 +113,7 @@ class TaskQueueAgent(Optimizer):
       ownerDN = classadJob.get_expression( "OwnerDN" )
       ownerGroup = classadJob.get_expression( "OwnerGroup" )
       requirements += ' && other.OwnerDN = "%s" && other.OwnerGroup = "%s"' % ( ownerDN , ownerGroup )
+    requirements += ' && other.PilotType = "%s"' % pilotType
 
     result = self.jobDB.selectQueue(requirements)
     if result['OK']:
