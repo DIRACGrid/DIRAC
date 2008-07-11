@@ -1,9 +1,9 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyManagerClient.py,v 1.19 2008/07/11 14:04:45 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyManagerClient.py,v 1.20 2008/07/11 15:44:08 acasajus Exp $
 ########################################################################
 """ ProxyManagementAPI has the functions to "talk" to the ProxyManagement service
 """
-__RCSID__ = "$Id: ProxyManagerClient.py,v 1.19 2008/07/11 14:04:45 acasajus Exp $"
+__RCSID__ = "$Id: ProxyManagerClient.py,v 1.20 2008/07/11 15:44:08 acasajus Exp $"
 
 import os
 import datetime
@@ -235,7 +235,7 @@ class ProxyManagerClient:
     retVal[ 'chain' ] = chain
     return retVal
 
-  def __createPilotProxyFromMyProxy( self, userDN, requestedGroup, requiredTimeLeft = 43200, proxyToConnect = False ):
+  def __createPilotProxyFromMyProxy( self, userDN, requestedGroup, vomsAttr, requiredTimeLeft = 43200, proxyToConnect = False ):
     originChain = False
 
     #Download initial proxy
@@ -245,8 +245,9 @@ class ProxyManagerClient:
     userValidGroups = retVal[ 'Value' ]
     for testGroup in userValidGroups:
       retVal = self.userHasProxy( userDN, testGroup )
+      print retVal, testGroup
       if retVal[ 'OK' ] and retVal[ 'Value' ]:
-        retVal = self.downloadVOMSProxy( userDN, testGroup, requiredTimeLeft = 600, proxyToConnect = proxyToConnect )
+        retVal = self.downloadProxy( userDN, testGroup, requiredTimeLeft = 600, proxyToConnect = proxyToConnect )
         if retVal[ 'OK' ]:
           originChain = retVal[ 'Value' ]
           break
@@ -273,44 +274,56 @@ class ProxyManagerClient:
       if Properties.GENERIC_PILOT not in proxyProps:
         return S_ERROR( "Requested a generic group for the pilot (%s) and proxy stored in myproxy is private (%s)" % ( requestedGroup, proxyGroup ) )
 
-    #Assign VOMS attribute
-    vomsGroups = CS.getVOMSAttributeForGroup( requestedGroup )
-    if not vomsGroups:
-      return S_ERROR( "No voms attributes assigned to group %s" % requestedGroup )
-    if len( vomsGroups ) > 1:
-      return S_ERROR( "More than one voms attribute defined for group %s: %s" % ( requestedGroup, vomsGroups ) )
-    vomsAttr = vomsGroups[0]
     vomsMgr = VOMS()
     return vomsMgr.setVOMSAttributes( mpChain , vomsAttr )
 
   @gPilotProxiesSync
-  def downloadPilotProxy( self, userDN, userGroup, requiredTimeLeft = 43200, proxyToConnect = False ):
+  def getPilotProxyFromDIRACGroup( self, userDN, userGroup, requiredTimeLeft = 43200, proxyToConnect = False ):
     """
     Download a pilot proxy with VOMS extensions depending on the group
     """
-    cacheKey = ( userDN, userGroup )
+
+    #Assign VOMS attribute
+    vomsGroups = CS.getVOMSAttributeForGroup( userGroup )
+    if not vomsGroups:
+      return S_ERROR( "No voms attributes assigned to group %s" % userGroup )
+    if len( vomsGroups ) > 1:
+      return S_ERROR( "More than one voms attribute defined for group %s: %s" % ( userGroup, vomsGroups ) )
+    vomsAttr = vomsGroups[0]
+
+    cacheKey = ( userDN, vomsAttr )
     if self.__pilotProxiesCache.exists( cacheKey, requiredTimeLeft ):
       return S_OK( self.__pilotProxiesCache.get( cacheKey ) )
-    retVal = self.__createPilotProxyFromMyProxy( userDN, userGroup, requiredTimeLeft, proxyToConnect )
+    retVal = self.__createPilotProxyFromMyProxy( userDN, userGroup, vomsAttr, requiredTimeLeft, proxyToConnect )
     if not retVal[ 'OK' ]:
       return retVal
     chain = retVal[ 'Value' ]
     self.__pilotProxiesCache.add( cacheKey, chain.getRemainingSecs()['Value'], chain )
     return S_OK( chain )
 
-  def downloadPilotProxyToFile( self, userDN, userGroup, requiredTimeLeft = 43200, proxyToConnect = False ):
+  @gPilotProxiesSync
+  def getPilotProxyFromVOMSGroup( self, userDN, vomsAttr, requiredTimeLeft = 43200, proxyToConnect = False ):
     """
-    Download a proxy if needed, transform it into a VOMS one and write it to file
+    Download a pilot proxy with VOMS extensions depending on the group
     """
-    retVal = self.downloadPilotProxy( userDN, userGroup, limited, requiredTimeLeft, proxyToConnect )
+    #Assign VOMS attribute
+
+    groups = CS.getGroupsWithVOMSAttribute( vomsAttr )
+    if not groups:
+      return S_ERROR( "No groups map to voms attribute %s" % vomsAttr )
+    if len( groups ) > 1:
+      return S_ERROR( "More than one group map to voms attr %s: %s" % ( vomsAttr, groups ) )
+    userGroup = groups[0]
+
+    cacheKey = ( userDN, vomsAttr )
+    if self.__pilotProxiesCache.exists( cacheKey, requiredTimeLeft ):
+      return S_OK( self.__pilotProxiesCache.get( cacheKey ) )
+    retVal = self.__createPilotProxyFromMyProxy( userDN, userGroup, vomsAttr, requiredTimeLeft, proxyToConnect )
     if not retVal[ 'OK' ]:
       return retVal
     chain = retVal[ 'Value' ]
-    retVal = self.dumpProxyToFile( chain )
-    if not retVal[ 'OK' ]:
-      return retVal
-    retVal[ 'chain' ] = chain
-    return retVal
+    self.__pilotProxiesCache.add( cacheKey, chain.getRemainingSecs()['Value'], chain )
+    return S_OK( chain )
 
   def dumpProxyToFile( self, chain, destinationFile = False, requiredTimeLeft = 600 ):
     """
