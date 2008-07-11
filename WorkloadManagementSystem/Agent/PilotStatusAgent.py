@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.6 2008/07/11 03:15:16 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.7 2008/07/11 18:33:17 rgracian Exp $
 ########################################################################
 
 """  The Pilot Status Agent updates the status of the pilot jobs if the
      PilotAgents database.
 """
 
-__RCSID__ = "$Id: PilotStatusAgent.py,v 1.6 2008/07/11 03:15:16 rgracian Exp $"
+__RCSID__ = "$Id: PilotStatusAgent.py,v 1.7 2008/07/11 18:33:17 rgracian Exp $"
 
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, List
@@ -86,7 +86,7 @@ class PilotStatusAgent(Agent):
 
       for owner_group,pList in workDict[grid].items():
         owner,group = owner_group.split(":")
-        ret = gProxyManager.downloadVOMSProxy( owner, group )
+        ret = gProxyManager.getPilotProxyFromVOMSGroup( owner, group )
         if not ret['OK']:
           self.log.error( ret['Message'] )
           self.log.error( 'Could not get proxy:', 'User "%s", Group "%s"' % ( owner, group ) )
