@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.10 2008/07/11 06:39:25 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.11 2008/07/11 13:52:52 rgracian Exp $
 # File :   Director.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -48,7 +48,7 @@
 
 """
 
-__RCSID__ = "$Id: Director.py,v 1.10 2008/07/11 06:39:25 rgracian Exp $"
+__RCSID__ = "$Id: Director.py,v 1.11 2008/07/11 13:52:52 rgracian Exp $"
 
 import types, time
 
@@ -56,7 +56,6 @@ from DIRAC.Core.Base.Agent                        import Agent
 from DIRAC.Core.Utilities                         import List
 from DIRAC.WorkloadManagementSystem.DB.JobDB      import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB        import JobLoggingDB
-from DIRAC.WorkloadManagementSystem.DB.ProxyRepositoryDB   import ProxyRepositoryDB
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB       import PilotAgentsDB
 
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
@@ -729,7 +728,11 @@ class PilotDirector:
 
     # Now, update the job Minor Status
     pilotAgentsDB.addPilotReference( pilotReference, job, ownerDN, ownerGroup, gridType=self.flavour, requirements=jobRequirements )
-    updateJobStatus( self.log, AGENT_NAME, job, MAJOR_WAIT, MINOR_RESPONSE, logRecord=True )
+    ret = jobDB.getJobAttribute(jobID, 'Status')
+    if ret['OK'] and ret['Value']['Status'] == MAJOR_WAIT:
+      updateJobStatus( self.log, AGENT_NAME, job, MAJOR_WAIT, MINOR_RESPONSE, logRecord=True )
+    else:
+      self.log.warn( 'Job is no longer in %s Status:' % MAJOR_WAIT, job )
 
     return S_OK(jobDict)
 
