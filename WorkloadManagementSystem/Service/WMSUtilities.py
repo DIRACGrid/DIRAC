@@ -1,11 +1,11 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/WMSUtilities.py,v 1.10 2008/07/11 07:24:02 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/WMSUtilities.py,v 1.11 2008/07/11 07:54:16 rgracian Exp $
 ########################################################################
 
 """ A set of utilities used in the WMS services
 """
 
-__RCSID__ = "$Id: WMSUtilities.py,v 1.10 2008/07/11 07:24:02 rgracian Exp $"
+__RCSID__ = "$Id: WMSUtilities.py,v 1.11 2008/07/11 07:54:16 rgracian Exp $"
 
 from tempfile import mkdtemp
 import shutil, os
@@ -36,43 +36,6 @@ def getPilotOutput( proxy, grid, pilotRef ):
     return ret
 
   status,output,error = ret['Value']
-  if error.find('already retrieved') != -1:
-    shutil.rmtree(tmp_dir)
-    return S_ERROR('Pilot job output already retrieved')    
-    
-  # Get the list of files
-  fileList = os.listdir(tmp_dir)
-  result = S_OK()
-  result['FileList'] = fileList
-  
-  if os.path.exists(tmp_dir+'/std.out'):
-    f = file(tmp_dir+'/std.out','r').read()
-  else:
-    f = ''  
-  result['StdOut'] = f
-  if os.path.exists(tmp_dir+'/std.err'):
-    f = file(tmp_dir+'/std.err','r').read()
-  else:
-    f = ''    
-  result['StdError'] = f
-  
-  shutil.rmtree(tmp_dir)
-  return result
-
-
-def getLCGPilotOutput(jRef):
-  """ Get output of an LCG job
-  """
-
-  tmp_dir = mkdtemp()
-  cmd = "edg-job-get-output --dir %s %s" % (tmp_dir,jRef)  
-  result = shellCall(COMMAND_TIMEOUT,cmd)
-  
-  if not result['OK']:
-    shutil.rmtree(tmp_dir)
-    return result
-    
-  status,output,error = result['Value']
   if error.find('already retrieved') != -1:
     shutil.rmtree(tmp_dir)
     return S_ERROR('Pilot job output already retrieved')    
