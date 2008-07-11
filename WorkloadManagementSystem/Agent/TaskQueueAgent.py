@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueAgent.py,v 1.10 2008/07/11 17:45:00 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueAgent.py,v 1.11 2008/07/11 17:57:05 rgracian Exp $
 # File :   TaskQueueAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
      into a Task Queue.
 """
 
-__RCSID__ = "$Id: TaskQueueAgent.py,v 1.10 2008/07/11 17:45:00 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueAgent.py,v 1.11 2008/07/11 17:57:05 rgracian Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
@@ -106,18 +106,18 @@ class TaskQueueAgent(Optimizer):
       self.log.warn("The job will be marked problematic")
       return S_ERROR('Illegal JDL')
 
-    requirements = classadJob.get_expression("Requirements")
-    jobType = classadJob.get_expression("JobType")
-    pilotType = classadJob.get_expression( "PilotType" )
+    requirements = classadJob.get_expression("Requirements").replace('"','')
+    jobType = classadJob.get_expression("JobType").replace('"','')
+    pilotType = classadJob.get_expression( "PilotType" ).replace('"','')
 
-    if pilotType == '"private"':
-      ownerDN = classadJob.get_expression( "OwnerDN" )
-      ownerGroup = classadJob.get_expression( "OwnerGroup" )
+    if pilotType == 'private':
+      ownerDN = classadJob.get_expression( "OwnerDN" ).replace('"','')
+      ownerGroup = classadJob.get_expression( "OwnerGroup" ).replace('"','')
       ownerGroupProperties = getPropertiesForGroup( ownerGroup )
       if not 'JobSharing' in ownerGroupProperties:
-        requirements += ' && other.OwnerGroup == %s' % ownerGroup
-      requirements += ' && other.OwnerDN == %s ' % ownerDN
-    requirements += ' && other.PilotType == %s' % pilotType
+        requirements += ' && other.OwnerGroup == "%s"' % ownerGroup
+      requirements += ' && other.OwnerDN == "%s"' % ownerDN
+    requirements += ' && other.PilotType == "%s"' % pilotType
 
     result = self.jobDB.selectQueue(requirements)
     if result['OK']:
