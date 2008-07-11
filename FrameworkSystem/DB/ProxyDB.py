@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.11 2008/07/10 16:04:33 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.12 2008/07/11 14:02:54 acasajus Exp $
 ########################################################################
 """ ProxyRepository class is a front-end to the proxy repository Database
 """
 
-__RCSID__ = "$Id: ProxyDB.py,v 1.11 2008/07/10 16:04:33 acasajus Exp $"
+__RCSID__ = "$Id: ProxyDB.py,v 1.12 2008/07/11 14:02:54 acasajus Exp $"
 
 import time
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
@@ -368,7 +368,7 @@ class ProxyDB(DB):
   def __getVOMSAttribute( self, userGroup, requiredVOMSAttribute = False ):
     csVOMSMappings = CS.getVOMSAttributeForGroup( userGroup )
     if not csVOMSMappings:
-      return S_ERROR( "No mapping defined for group %s in the CS" )
+      return S_ERROR( "No mapping defined for group %s in the CS" % userGroup )
     if requiredVOMSAttribute and requiredVOMSAttribute not in csVOMSMappings:
       return S_ERROR( "Required attribute %s is not allowed for group %s" % ( requiredVOMSAttribute, userGroup ) )
     if len( csVOMSMappings ) > 1 and not requiredVOMSAttribute:
