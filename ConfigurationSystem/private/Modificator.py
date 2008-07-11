@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Modificator.py,v 1.9 2008/07/10 13:31:27 acasajus Exp $
-__RCSID__ = "$Id: Modificator.py,v 1.9 2008/07/10 13:31:27 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Modificator.py,v 1.10 2008/07/11 14:39:27 acasajus Exp $
+__RCSID__ = "$Id: Modificator.py,v 1.10 2008/07/11 14:39:27 acasajus Exp $"
 
 import zlib
 import difflib
@@ -55,8 +55,9 @@ class Modificator:
     except:
       return False
 
-  def __setCommiter( self, entryPath ):
-    cfg = self.__getSubCFG( entryPath )
+  def __setCommiter( self, entryPath, cfg = False ):
+    if not cfg:
+      cfg = self.__getSubCFG( entryPath )
     entry = List.fromChar( entryPath, "/" )[-1]
     comment = cfg.getComment( entry )
     filteredComment = [ line.strip() for line in comment.split( "\n" ) if line.find( self.commiterTag ) != 0 ]
@@ -64,8 +65,12 @@ class Modificator:
     cfg.setComment( entry, "\n".join( filteredComment ) )
 
   def setOptionValue( self, optionPath, value ):
-    gConfigurationData.setOptionInCFG( optionPath, value, self.cfgData )
-    self.__setCommiter( optionPath )
+    levelList = [ level.strip() for level in optionPath.split( "/" ) if level.strip() != "" ]
+    parentPath = "/%s" % "/".join( levelList[:-1] )
+    self.createSection( parentPath )
+    cfg = self.__getSubCFG( parentPath )
+    cfg.setOption( levelList[-1], value )
+    self.__setCommiter( optionPath, cfg )
 
   def createSection( self, sectionPath ):
     levelList = [ level.strip() for level in sectionPath.split( "/" ) if level.strip() != "" ]
