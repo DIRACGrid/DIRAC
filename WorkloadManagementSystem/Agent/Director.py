@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.14 2008/07/11 16:27:38 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.15 2008/07/11 17:01:04 rgracian Exp $
 # File :   Director.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -48,7 +48,7 @@
 
 """
 
-__RCSID__ = "$Id: Director.py,v 1.14 2008/07/11 16:27:38 rgracian Exp $"
+__RCSID__ = "$Id: Director.py,v 1.15 2008/07/11 17:01:04 rgracian Exp $"
 
 import types, time
 
@@ -657,6 +657,8 @@ class PilotDirector:
       self.log.verbose('Job %s will be submitted with a privat pilot' % job)
       ownerDN    = jobDict['OwnerDN']
       ownerGroup = jobDict['OwnerGroup']
+      # User Group requirement
+      pilotOptions.append( '-G %s' % jobDict['OwnerGroup'] )
       # check if group allows jobsharing
       ownerGroupProperties = getPropertiesForGroup( ownerGroup )
       if not 'JobSharing' in ownerGroupProperties:
@@ -671,8 +673,6 @@ class PilotDirector:
       pilotOptions.append( '-o /AgentJobRequirements/PilotType=generic' )
       pilotOptions.append( '-o /Resources/Computing/InProcess/PilotType=generic' )
 
-    # User Group requirement
-    pilotOptions.append( '-G %s' % jobDict['OwnerGroup'] )
     # Requested version of DIRAC
     pilotOptions.append( '-v %s' % self.diracVersion )
     # Requested CPU time
