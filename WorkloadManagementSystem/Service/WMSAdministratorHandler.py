@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSAdministratorHandler.py,v 1.29 2008/07/11 15:01:10 rgracian Exp $
+# $Id: WMSAdministratorHandler.py,v 1.30 2008/07/11 16:37:18 rgracian Exp $
 ########################################################################
 """
 This is a DIRAC WMS administrator interface.
@@ -14,7 +14,7 @@ Access to the pilot data:
 
 """
 
-__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.29 2008/07/11 15:01:10 rgracian Exp $"
+__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.30 2008/07/11 16:37:18 rgracian Exp $"
 
 import os, sys, string, uu, shutil, datetime
 from types import *
@@ -175,7 +175,7 @@ class WMSAdministratorHandler(RequestHandler):
         resultDict['FileList'] = []
         return S_OK(resultDict)
 
-    ret = gProxyManager.downloadPilotProxy( owner, group )
+    ret = gProxyManager.getPilotProxyFromVOMSGroup( owner, group )
     if not ret['OK']:
       gLogger.error( ret['Message'] )
       gLogger.error( 'Could not get proxy:', 'User "%s", Group "%s"' % ( owner, group ) )
