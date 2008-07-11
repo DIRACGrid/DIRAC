@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.13 2008/07/11 13:58:50 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.14 2008/07/11 16:27:38 rgracian Exp $
 # File :   Director.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -48,7 +48,7 @@
 
 """
 
-__RCSID__ = "$Id: Director.py,v 1.13 2008/07/11 13:58:50 rgracian Exp $"
+__RCSID__ = "$Id: Director.py,v 1.14 2008/07/11 16:27:38 rgracian Exp $"
 
 import types, time
 
@@ -662,10 +662,14 @@ class PilotDirector:
       if not 'JobSharing' in ownerGroupProperties:
         # Add Owner requirement to pilot
         pilotOptions.append( "-O '%s'" % ownerDN )
+      pilotOptions.append( '-o /AgentJobRequirements/PilotType=private' )
+      pilotOptions.append( '-o /Resources/Computing/InProcess/PilotType=private' )
     else:
       self.log.verbose('Job %s will be submitted with a generic pilot' % job)
       ownerDN    = self.genericPilotDN
       ownerGroup = self.genericPilotGroup
+      pilotOptions.append( '-o /AgentJobRequirements/PilotType=generic' )
+      pilotOptions.append( '-o /Resources/Computing/InProcess/PilotType=generic' )
 
     # User Group requirement
     pilotOptions.append( '-G %s' % jobDict['OwnerGroup'] )
@@ -683,13 +687,20 @@ class PilotDirector:
       return S_ERROR( 'Could not create JDL:', job )
 
     # get a valid proxy
-    ret = gProxyManager.downloadPilotProxy( ownerDN, ownerGroup )
+    ret = gProxyManager.getPilotProxyFromDIRACGroup( ownerDN, ownerGroup )
     if not ret['OK']:
       self.log.error( ret['Message'] )
       self.log.error( 'Could not get proxy:', 'User "%s", Group "%s"' % ( ownerDN, ownerGroup ) )
       shutil.rmtree( workingDirectory )
       return S_ERROR( 'Could not get proxy' )
     proxy = ret['Value']
+    # Need to get VOMS extension for the later interctions with WMS
+    ret = gProxyManager.getVOMSAttributes(proxy)
+    if not ret['OK']:
+      return ret
+    if not ret['Value']:
+      return S_ERROR( 'getPilotProxyFromDIRACGroup returns a proxy without VOMS Extensions' )
+    vomsGroup = ret['Value'][0]
 
     # Check that there are available queues for the Job:
     if self.enableListMatch:
@@ -727,7 +738,7 @@ class PilotDirector:
     shutil.rmtree( workingDirectory )
 
     # Now, update the job Minor Status
-    pilotAgentsDB.addPilotReference( pilotReference, job, ownerDN, ownerGroup, gridType=self.flavour, requirements=jobRequirements )
+    pilotAgentsDB.addPilotReference( pilotReference, job, ownerDN, vomsGroup, gridType=self.flavour, requirements=jobRequirements )
     ret = jobDB.getJobAttribute(job, 'Status')
     if ret['OK'] and ret['Value'] == MAJOR_WAIT:
       updateJobStatus( self.log, AGENT_NAME, job, MAJOR_WAIT, MINOR_RESPONSE, logRecord=True )
