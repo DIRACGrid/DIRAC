@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/CS.py,v 1.7 2008/07/01 16:35:57 acasajus Exp $
-__RCSID__ = "$Id: CS.py,v 1.7 2008/07/01 16:35:57 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/CS.py,v 1.8 2008/07/11 16:08:03 acasajus Exp $
+__RCSID__ = "$Id: CS.py,v 1.8 2008/07/11 16:08:03 acasajus Exp $"
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import List
@@ -74,3 +74,13 @@ def getBannedIPs():
 
 def getVOMSAttributeForGroup( group ):
   return gConfig.getValue( "%s/VOMSMapping/%s" % ( g_BaseSecuritySection, group ), [] )
+
+def getGroupsWithVOMSAttribute( vomsAttr ):
+  retVal = gConfig.getOptions( "%s/VOMSMapping" % ( g_BaseSecuritySection ) )
+  if not retVal[ 'OK' ]:
+    return []
+  groups = []
+  for group in retVal[ 'Value' ]:
+    if vomsAttr in gConfig.getValue( "%s/VOMSMapping/%s" % ( g_BaseSecuritySection, group ), [] ):
+      groups.append( group )
+  return groups
