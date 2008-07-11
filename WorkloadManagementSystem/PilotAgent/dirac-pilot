@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot,v 1.30 2008/07/11 02:57:38 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot,v 1.31 2008/07/11 07:39:24 rgracian Exp $
 # File :   dirac-pilot
 # Author : Ricardo Graciani
 ########################################################################
@@ -9,7 +9,7 @@
  Job Agent to execute pending workload on WMS.
  It requires dirac-install script to be sitting in the same directory.
 """
-__RCSID__ = "$Id: dirac-pilot,v 1.30 2008/07/11 02:57:38 rgracian Exp $"
+__RCSID__ = "$Id: dirac-pilot,v 1.31 2008/07/11 07:39:24 rgracian Exp $"
 try:
   import os
   import sys
@@ -227,8 +227,6 @@ if diracGroup:
 
 if ownerDN:
   installOpts+= ' -o /AgentJobRequirements/OwnerDN="%s"' % ownerDN
-  
-inProcessOpts+= AgentJobRequirements
 
 
 cmd = '%s %s' % ( installScript,  installOpts )
