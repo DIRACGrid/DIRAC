@@ -1,9 +1,9 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyManagerClient.py,v 1.18 2008/07/11 10:48:48 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyManagerClient.py,v 1.19 2008/07/11 14:04:45 acasajus Exp $
 ########################################################################
 """ ProxyManagementAPI has the functions to "talk" to the ProxyManagement service
 """
-__RCSID__ = "$Id: ProxyManagerClient.py,v 1.18 2008/07/11 10:48:48 acasajus Exp $"
+__RCSID__ = "$Id: ProxyManagerClient.py,v 1.19 2008/07/11 14:04:45 acasajus Exp $"
 
 import os
 import datetime
@@ -247,10 +247,9 @@ class ProxyManagerClient:
       retVal = self.userHasProxy( userDN, testGroup )
       if retVal[ 'OK' ] and retVal[ 'Value' ]:
         retVal = self.downloadVOMSProxy( userDN, testGroup, requiredTimeLeft = 600, proxyToConnect = proxyToConnect )
-        if not retVal[ 'OK' ]:
-          return retVal
-        originChain = retVal[ 'Value' ]
-        break
+        if retVal[ 'OK' ]:
+          originChain = retVal[ 'Value' ]
+          break
     if not originChain:
       return S_ERROR( "Cannot get a proxy for %s to use to get a pilot proxy" % userDN )
 
