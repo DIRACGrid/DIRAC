@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSAdministratorHandler.py,v 1.26 2008/07/11 07:11:10 rgracian Exp $
+# $Id: WMSAdministratorHandler.py,v 1.27 2008/07/11 07:25:58 rgracian Exp $
 ########################################################################
 """
 This is a DIRAC WMS administrator interface.
@@ -14,7 +14,7 @@ Access to the pilot data:
 
 """
 
-__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.26 2008/07/11 07:11:10 rgracian Exp $"
+__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.27 2008/07/11 07:25:58 rgracian Exp $"
 
 import os, sys, string, uu, shutil, datetime
 from types import *
@@ -186,9 +186,6 @@ class WMSAdministratorHandler(RequestHandler):
 
     result = getPilotOutput( proxy, gridType, pilotReference )
 
-
-    result = eval('get'+gridType+'PilotOutput("'+pilotReference+'")')
-    resProxy = restoreProxy(new_proxy,old_proxy)
     if not result['OK']:
       return S_ERROR('Failed to get pilot output: '+result['Message'])
 

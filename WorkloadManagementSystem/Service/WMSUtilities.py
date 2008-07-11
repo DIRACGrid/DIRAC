@@ -1,11 +1,11 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/WMSUtilities.py,v 1.9 2008/07/11 07:15:54 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/WMSUtilities.py,v 1.10 2008/07/11 07:24:02 rgracian Exp $
 ########################################################################
 
 """ A set of utilities used in the WMS services
 """
 
-__RCSID__ = "$Id: WMSUtilities.py,v 1.9 2008/07/11 07:15:54 rgracian Exp $"
+__RCSID__ = "$Id: WMSUtilities.py,v 1.10 2008/07/11 07:24:02 rgracian Exp $"
 
 from tempfile import mkdtemp
 import shutil, os
@@ -28,7 +28,7 @@ def getPilotOutput( proxy, grid, pilotRef ):
   else:
     return S_ERROR( 'Unknnown GRID %s' % grid  )
 
-  cmd.extend( ['--dir', tmp_dir, pilotRef] )
+  cmd.extend( ['--noint','--vo','lhcb','--dir', tmp_dir, pilotRef] )
 
   ret = _gridCommand( proxy, cmd )
   if not ret['OK']:
