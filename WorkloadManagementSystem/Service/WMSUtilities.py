@@ -1,11 +1,11 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/WMSUtilities.py,v 1.11 2008/07/11 07:54:16 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/WMSUtilities.py,v 1.12 2008/07/11 07:56:59 rgracian Exp $
 ########################################################################
 
 """ A set of utilities used in the WMS services
 """
 
-__RCSID__ = "$Id: WMSUtilities.py,v 1.11 2008/07/11 07:54:16 rgracian Exp $"
+__RCSID__ = "$Id: WMSUtilities.py,v 1.12 2008/07/11 07:56:59 rgracian Exp $"
 
 from tempfile import mkdtemp
 import shutil, os
@@ -47,6 +47,10 @@ def getPilotOutput( proxy, grid, pilotRef ):
   if output.find('not yet ready') != -1 :  
     shutil.rmtree(tmp_dir)
     return S_ERROR(output)  
+
+  if status:
+    shutil.rmtree(tmp_dir)
+    return S_ERROR(error)
 
   # Get the list of files
   # FIXME: the name of standard Error and Output are set on the JDL
