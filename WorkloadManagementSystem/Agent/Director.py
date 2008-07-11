@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.12 2008/07/11 13:55:43 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.13 2008/07/11 13:58:50 rgracian Exp $
 # File :   Director.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -48,7 +48,7 @@
 
 """
 
-__RCSID__ = "$Id: Director.py,v 1.12 2008/07/11 13:55:43 rgracian Exp $"
+__RCSID__ = "$Id: Director.py,v 1.13 2008/07/11 13:58:50 rgracian Exp $"
 
 import types, time
 
@@ -729,7 +729,7 @@ class PilotDirector:
     # Now, update the job Minor Status
     pilotAgentsDB.addPilotReference( pilotReference, job, ownerDN, ownerGroup, gridType=self.flavour, requirements=jobRequirements )
     ret = jobDB.getJobAttribute(job, 'Status')
-    if ret['OK'] and ret['Value']['Status'] == MAJOR_WAIT:
+    if ret['OK'] and ret['Value'] == MAJOR_WAIT:
       updateJobStatus( self.log, AGENT_NAME, job, MAJOR_WAIT, MINOR_RESPONSE, logRecord=True )
     else:
       self.log.warn( 'Job is no longer in %s Status:' % MAJOR_WAIT, job )
