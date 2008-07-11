@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.9 2008/07/11 03:08:10 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.10 2008/07/11 06:39:25 rgracian Exp $
 # File :   Director.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -48,7 +48,7 @@
 
 """
 
-__RCSID__ = "$Id: Director.py,v 1.9 2008/07/11 03:08:10 rgracian Exp $"
+__RCSID__ = "$Id: Director.py,v 1.10 2008/07/11 06:39:25 rgracian Exp $"
 
 import types, time
 
@@ -435,7 +435,6 @@ class Director(Agent):
     pool.daemonize()
     self.pools[poolName] = pool
     return poolName
-
 
   #############################################################################
   def oldexecute(self):
