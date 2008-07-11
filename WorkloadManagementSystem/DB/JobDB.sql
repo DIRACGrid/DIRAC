@@ -1,4 +1,4 @@
--- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.sql,v 1.11 2008/07/03 13:27:01 paterson Exp $
+-- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.sql,v 1.12 2008/07/11 17:23:55 rgracian Exp $
 
 --------------------------------------------------------------------------------
 --
@@ -38,7 +38,7 @@ CREATE TABLE Jobs (
     JobGroup VARCHAR(32) NOT NULL DEFAULT '00000000',
     JobSplitType ENUM ('Single','Master','Subjob','DAGNode') NOT NULL DEFAULT 'Single',
     MasterJobID INTEGER NOT NULL DEFAULT 0,
-    Site VARCHAR(100),
+    Site VARCHAR(100) NOT NULL DEFAULT 'Unknown',
     JobName VARCHAR(128) NOT NULL DEFAULT 'noname',
     Owner VARCHAR(32) NOT NULL DEFAULT 'unknown',
     OwnerDN VARCHAR(255) NOT NULL DEFAULT 'unknown',
@@ -72,8 +72,8 @@ DROP TABLE IF EXISTS JobJDLs;
 CREATE TABLE JobJDLs (
     JobID INTEGER NOT NULL,
     JDL BLOB NOT NULL DEFAULT '',
-    JobRequirements BLOB,
-    OriginalJDL BLOB,
+    JobRequirements BLOB NOT NULL DEFAULT '',
+    OriginalJDL BLOB NOT NULL DEFAULT '',
     PRIMARY KEY (JobID)
 );
 
