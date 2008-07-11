@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.17 2008/07/10 09:26:27 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.18 2008/07/11 08:12:41 paterson Exp $
 # File :   DiracAdmin.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@ site banning and unbanning, WMS proxy uploading etc.
 
 """
 
-__RCSID__ = "$Id: DiracAdmin.py,v 1.17 2008/07/10 09:26:27 paterson Exp $"
+__RCSID__ = "$Id: DiracAdmin.py,v 1.18 2008/07/11 08:12:41 paterson Exp $"
 
 import DIRAC
 from DIRAC.ConfigurationSystem.Client.CSAPI              import CSAPI
@@ -205,19 +205,20 @@ class DiracAdmin:
         path = '/Systems/%s/%s/Services' %(system,serviceSetups[system])
         servicesList = gConfig.getSections(path)
         if not servicesList['OK']:
-          return S_ERROR('Could not get sections in %s' %path)
-        servicesList = servicesList['Value']
-        if not servicesList:
-          servicesList=[]
-        self.log.verbose('System: %s ServicesList: %s' %(system,string.join(servicesList,', ')))
-        for service in servicesList:
-          spath = '%s/%s/Port' %(path,service)
-          servicePort = gConfig.getValue(spath,0)
-          if servicePort:
-            self.log.verbose('Found port for %s/%s = %s' %(system,service,servicePort))
-            result['%s/%s' %(system,service)] = servicePort
-          else:
-            self.log.warn('No port found for %s' %spath)
+          self.log.warn('Could not get sections in %s' %path)
+        else:
+          servicesList = servicesList['Value']
+          if not servicesList:
+            servicesList=[]
+          self.log.verbose('System: %s ServicesList: %s' %(system,string.join(servicesList,', ')))
+          for service in servicesList:
+            spath = '%s/%s/Port' %(path,service)
+            servicePort = gConfig.getValue(spath,0)
+            if servicePort:
+              self.log.verbose('Found port for %s/%s = %s' %(system,service,servicePort))
+              result['%s/%s' %(system,service)] = servicePort
+            else:
+              self.log.warn('No port found for %s' %spath)
       else:
         self.log.warn('%s is not defined in /DIRAC/Setups/%s' %(system,setup))
 
