@@ -1,9 +1,9 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyManagerClient.py,v 1.17 2008/07/11 10:30:04 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyManagerClient.py,v 1.18 2008/07/11 10:48:48 acasajus Exp $
 ########################################################################
 """ ProxyManagementAPI has the functions to "talk" to the ProxyManagement service
 """
-__RCSID__ = "$Id: ProxyManagerClient.py,v 1.17 2008/07/11 10:30:04 acasajus Exp $"
+__RCSID__ = "$Id: ProxyManagerClient.py,v 1.18 2008/07/11 10:48:48 acasajus Exp $"
 
 import os
 import datetime
@@ -267,7 +267,7 @@ class ProxyManagerClient:
       return S_ERROR( "Can't retrieve DIRAC Group from downloaded proxy: %s" % retVal[ 'Message' ] )
     proxyGroup = retVal[ 'Value' ]
     proxyProps = CS.getPropertiesForGroup( proxyGroup )
-    if Properties.GENERIC_PILOT not in proxyProps and not Properties.PILOT not in proxyProps:
+    if Properties.GENERIC_PILOT not in proxyProps and Properties.PILOT not in proxyProps:
       return S_ERROR( "Downloaded proxy from my proxy does not contain a pilot group, has %s" % proxyGroup )
     requestedProps = CS.getPropertiesForGroup( requestedGroup )
     if Properties.GENERIC_PILOT in requestedProps:
