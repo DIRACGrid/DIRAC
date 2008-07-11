@@ -1,11 +1,11 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/WMSUtilities.py,v 1.7 2008/07/11 07:12:21 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/WMSUtilities.py,v 1.8 2008/07/11 07:14:28 rgracian Exp $
 ########################################################################
 
 """ A set of utilities used in the WMS services
 """
 
-__RCSID__ = "$Id: WMSUtilities.py,v 1.7 2008/07/11 07:12:21 rgracian Exp $"
+__RCSID__ = "$Id: WMSUtilities.py,v 1.8 2008/07/11 07:14:28 rgracian Exp $"
 
 from tempfile import mkdtemp
 import shutil, os
@@ -105,7 +105,7 @@ def getLCGPilotOutput(jRef):
   shutil.rmtree(tmp_dir)
   return result
 
-def _gridCommand(self, proxy, cmd):
+def _gridCommand( proxy, cmd):
   """
    Execute cmd tuple
   """
@@ -113,7 +113,6 @@ def _gridCommand(self, proxy, cmd):
 
   ret = gProxyManager.dumpProxyToFile( proxy )
   if not ret['OK']:
-    self.log.error( 'Failed to dump Proxy to file' )
     return ret
   gridEnv[ 'X509_USER_PROXY' ] = ret['Value']
   self.log.verbose( 'Executing', ' '.join(cmd) )
