@@ -184,9 +184,6 @@ class CSAPI:
       gLogger.error( "User %s is already registered" % username )
       return S_OK( False )
     groups = self.listGroups()['Value']
-    if type( properties[ 'Groups' ] ) not in ( types.ListType, types.TupleType ):
-      gLogger.error( "Groups for user %s have to be a list or a tuple" % username )
-      return S_OK( False )
     for userGroup in properties[ 'Groups' ]:
       if not userGroup in groups:
         gLogger.error( "User %s group %s is not a valid group" % ( username, userGroup ) )
@@ -224,9 +221,6 @@ class CSAPI:
       gLogger.error( "User %s is not registered" % username )
       return S_OK( False )
     groups = self.listGroups()['Value']
-    if type( properties[ 'Groups' ] ) not in ( types.ListType, types.TupleType ):
-      gLogger.error( "Groups for user %s have to be a list or a tuple" % username )
-      return S_OK( False )
     for userGroup in properties[ 'Groups' ]:
       if not userGroup in groups:
         gLogger.error( "User %s group %s is not a valid group" % ( username, userGroup ) )
