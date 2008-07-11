@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSAdministratorHandler.py,v 1.24 2008/05/27 11:00:52 atsareg Exp $
+# $Id: WMSAdministratorHandler.py,v 1.25 2008/07/11 07:07:31 rgracian Exp $
 ########################################################################
 """
 This is a DIRAC WMS administrator interface.
@@ -9,15 +9,12 @@ Site mask related methods:
     setMask(<site mask>)
     getMask()
 
-User proxy related methods:
-    getProxy(DN)
-
 Access to the pilot data:
     getWMSStats()
 
 """
 
-__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.24 2008/05/27 11:00:52 atsareg Exp $"
+__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.25 2008/07/11 07:07:31 rgracian Exp $"
 
 import os, sys, string, uu, shutil, datetime
 from types import *
@@ -25,9 +22,8 @@ from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
-from DIRAC.WorkloadManagementSystem.DB.ProxyRepositoryDB import ProxyRepositoryDB
+from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
-from DIRAC.Core.Utilities.GridCredentials import restoreProxy, setupProxy, renewProxy, getProxyTimeLeft, setDIRACGroupInProxy
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import *
 import DIRAC.Core.Utilities.Time as Time
 
@@ -35,23 +31,17 @@ import threading
 
 # This is a global instance of the database classes
 jobDB = False
-proxyRepository = False
 pilotDB = False
-proxyLock = threading.Lock()
 
-# In memory proxy store
-proxyStore = {}
 
 def initializeWMSAdministratorHandler( serviceInfo ):
   """  WMS AdministratorService initialization
   """
 
   global jobDB
-  global proxyRepository
   global pilotDB
 
   jobDB = JobDB()
-  proxyRepository = ProxyRepositoryDB()
   pilotDB = PilotAgentsDB()
   return S_OK()
 
@@ -59,6 +49,7 @@ class WMSAdministratorHandler(RequestHandler):
 
   def __init__(self,*args,**kargs):
 
+    # FIXME: this should be done properly
     self.servercert = gConfig.getValue('/DIRAC/Security/CertFile',
                               '/opt/dirac/etc/grid-security/hostcert.pem')
     self.serverkey = gConfig.getValue('/DIRAC/Security/KeyFile',
@@ -131,128 +122,6 @@ class WMSAdministratorHandler(RequestHandler):
     return jobDB.removeSiteFromMask("All")
 
 ##############################################################################
-  types_getProxy = [StringType,StringType,IntType]
-  def export_getProxy(self,ownerDN,ownerGroup,validity=1):
-    """ Get a short user proxy from the central WMS repository for the user
-        with DN ownerDN with the validity period of <validity> hours
-    """
-
-    global proxyStore
-    global proxyLock
-    
-    key = ownerDN+':::'+ownerGroup
-    gLogger.verbose('Getting proxy for %s for %d hours' % (key,validity))
-    if proxyStore.has_key(key):
-      expirationTime = proxyStore[key]['ExpirationTime']
-      exTime = Time.fromString(expirationTime)
-      validityDelta = datetime.timedelta(0,3600*validity)
-      print "============= getProxy: deltas",exTime - datetime.datetime.now(),validityDelta
-      if (exTime - datetime.datetime.now()) > validityDelta:
-        proxy = proxyStore[key]["Proxy"]
-        gLogger.info('Proxy for %s served from memory' % key)
-        return S_OK(proxy)
-
-    result = proxyRepository.getProxy(ownerDN,ownerGroup)
-    if not result['OK']:
-      return result
-    new_proxy = None
-    user_proxy = result['Value']
-
-    # Renew proxy with some margin
-    new_validity = int(validity*1.1)+1
-
-    result = renewProxy(user_proxy,new_validity,
-                        server_cert=self.servercert,
-                        server_key=self.serverkey)
-
-    if result["OK"]:
-      new_proxy = result["Value"]
-      new_exTime = (datetime.datetime.now()+datetime.timedelta(0,3600*(new_validity))).strftime('%Y-%m-%d %H:%M:%S')
-      proxyLock.acquire()
-      proxyStore[key] = {'Proxy':new_proxy,'ExpirationTime':new_exTime}
-      proxyLock.release()
-      gLogger.info('Updated proxy for %s saved in memory' % key)
-      return S_OK(new_proxy)
-    else:
-      resTime = getProxyTimeLeft(user_proxy)
-
-      if resTime['OK']:
-        timeLeft = resTime['Value']
-        if timeLeft/3600. > validity:
-          result = S_OK(user_proxy)
-          result['Message'] = 'Could not get myproxy delegation'
-          result['TimeLeft'] = timeLeft
-          return result
-        else:
-          result = S_OK(user_proxy)
-          result['Message'] = 'WARNING: a shorter than requested proxy is returned'
-          result['TimeLeft'] = timeLeft
-          return result
-          #return S_ERROR('Could not get proxy delegation and the stored proxy is not sufficient')
-      else:
-        return S_ERROR("Could not get proxy delegation and the stored proxy is not valid")
-
-##############################################################################
-  types_uploadProxy = [StringType]
-  def export_uploadProxy(self,proxy,DN=None,group=None):
-    """ Upload a proxy to the WMS Proxy Repository
-    """
-
-    # If the group is given, then replace it in the proxy
-    if group:
-      tmp_proxy = setDIRACGroupInProxy(proxy,None)
-      proxy_to_send = setDIRACGroupInProxy(tmp_proxy,group)
-    else:
-      proxy_to_send = proxy
-
-    result = self.getRemoteCredentials()
-    userDN = DN
-    if not DN:
-      userDN = result['DN']
-    userGroup = group
-    if not group:
-      userGroup = result['group']
-
-    gLogger.info('Uploading proxy of %s, group %s' %(userDN,userGroup))
-
-    result = proxyRepository.storeProxy(proxy_to_send,userDN,userGroup)
-    return result
-
- ##############################################################################
-  types_destroyProxy = [StringType]
-  def export_destroyProxy(self,DN=None,group=None):
-    """ Destroy proxy in the proxy repository
-    """
-    userDN = DN
-    if not DN:
-      userDN = result['DN']
-    userGroup = group
-    if not group:
-      userGroup = result['group']
-
-    gLogger.info('Destroying proxy of %s, group %s' %(userDN,userGroup))
-
-    result = proxyRepository.destroyProxy(userDN,userGroup)
-    return result
-
-##############################################################################
-  types_setProxyPersistencyFlag = [BooleanType]
-  def export_setProxyPersistencyFlag(self,flag,DN=None,group=None):
-    """ Upload a proxy to the WMS Proxy Repository
-    """
-
-    result = self.getRemoteCredentials()
-    userDN = DN
-    if not DN:
-      userDN = result['DN']
-    userGroup = group
-    if not group:
-      userGroup = result['group']
-
-    result = proxyRepository.setProxyPersistencyFlag(userDN,userGroup,flag)
-    return result
-
-##############################################################################
   types_getPilotOutput = [StringType]
   def export_getPilotOutput(self,pilotReference):
     """ Get the pilot job standard output and standard error files for the Grid
@@ -306,18 +175,18 @@ class WMSAdministratorHandler(RequestHandler):
         resultDict['FileList'] = []
         return S_OK(resultDict)
 
-    result = proxyRepository.getProxy(owner,group)
-    if not result['OK']:
+    ret = gProxyManager.downloadVOMSProxy( owner, group )
+    if not ret['OK']:
+      self.log.error( ret['Message'] )
+      self.log.error( 'Could not get proxy:', 'User "%s", Group "%s"' % ( owner, group ) )
       return S_ERROR("Failed to get the pilot's owner proxy")
-
-    proxy = result['Value']
-    result = setupProxy(proxy)
-    if not result['OK']:
-      return S_ERROR("Failed to setup the pilot's owner proxy")
-
-    new_proxy,old_proxy = result['Value']
-
+    proxy = ret['Value']
+    
     gridType = pilotDict['GridType']
+
+    result = getPilotOutout( proxy, gridType, pilotReference )
+
+
     result = eval('get'+gridType+'PilotOutput("'+pilotReference+'")')
     resProxy = restoreProxy(new_proxy,old_proxy)
     if not result['OK']:
