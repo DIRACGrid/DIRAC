@@ -1,11 +1,11 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/WMSUtilities.py,v 1.8 2008/07/11 07:14:28 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/WMSUtilities.py,v 1.9 2008/07/11 07:15:54 rgracian Exp $
 ########################################################################
 
 """ A set of utilities used in the WMS services
 """
 
-__RCSID__ = "$Id: WMSUtilities.py,v 1.8 2008/07/11 07:14:28 rgracian Exp $"
+__RCSID__ = "$Id: WMSUtilities.py,v 1.9 2008/07/11 07:15:54 rgracian Exp $"
 
 from tempfile import mkdtemp
 import shutil, os
@@ -115,7 +115,7 @@ def _gridCommand( proxy, cmd):
   if not ret['OK']:
     return ret
   gridEnv[ 'X509_USER_PROXY' ] = ret['Value']
-  self.log.verbose( 'Executing', ' '.join(cmd) )
+
   return systemCall( COMMAND_TIMEOUT, cmd, env = gridEnv )
   
   
