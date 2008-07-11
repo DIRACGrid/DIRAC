@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSAdministratorHandler.py,v 1.25 2008/07/11 07:07:31 rgracian Exp $
+# $Id: WMSAdministratorHandler.py,v 1.26 2008/07/11 07:11:10 rgracian Exp $
 ########################################################################
 """
 This is a DIRAC WMS administrator interface.
@@ -14,7 +14,7 @@ Access to the pilot data:
 
 """
 
-__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.25 2008/07/11 07:07:31 rgracian Exp $"
+__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.26 2008/07/11 07:11:10 rgracian Exp $"
 
 import os, sys, string, uu, shutil, datetime
 from types import *
@@ -184,7 +184,7 @@ class WMSAdministratorHandler(RequestHandler):
     
     gridType = pilotDict['GridType']
 
-    result = getPilotOutout( proxy, gridType, pilotReference )
+    result = getPilotOutput( proxy, gridType, pilotReference )
 
 
     result = eval('get'+gridType+'PilotOutput("'+pilotReference+'")')
