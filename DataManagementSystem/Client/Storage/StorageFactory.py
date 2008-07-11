@@ -181,6 +181,10 @@ class StorageFactory:
       errStr = "StorageFactory._getConfigStorageName: Failed to get storage options"
       gLogger.error(errStr,res['Message'])
       return S_ERROR(errStr)
+    if not res['Value']:
+      errStr = "StorageFactory._getConfigStorageName: Supplied storage doesn't exist."
+      gLogger.error(errStr,storageName)
+      return S_ERROR(errStr)
     if 'Alias' in res['Value']:
       configPath = '%s/%s/Alias' % (self.rootConfigPath,storageName)
       resolvedName = gConfig.getValue(configPath)
