@@ -1,9 +1,9 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyManagerClient.py,v 1.20 2008/07/11 15:44:08 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyManagerClient.py,v 1.21 2008/07/11 15:52:38 acasajus Exp $
 ########################################################################
 """ ProxyManagementAPI has the functions to "talk" to the ProxyManagement service
 """
-__RCSID__ = "$Id: ProxyManagerClient.py,v 1.20 2008/07/11 15:44:08 acasajus Exp $"
+__RCSID__ = "$Id: ProxyManagerClient.py,v 1.21 2008/07/11 15:52:38 acasajus Exp $"
 
 import os
 import datetime
@@ -423,5 +423,11 @@ class ProxyManagerClient:
     """
     rpcClient = RPCClient( "Framework/ProxyManager" )
     return rpcClient.getContents( {}, [ [ 'UserDN', 'DESC' ] ], 0, 0 )
+
+  def getVOMSAttributes( self, chain ):
+    """
+    Get the voms attributes for a chain
+    """
+    return VOMS().getVOMSAttributes( chain )
 
 gProxyManager = ProxyManagerClient()
