@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/ReportsClient.py,v 1.1 2008/04/04 16:24:05 acasajus Exp $
-__RCSID__ = "$Id: ReportsClient.py,v 1.1 2008/04/04 16:24:05 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/ReportsClient.py,v 1.2 2008/07/11 09:50:16 acasajus Exp $
+__RCSID__ = "$Id: ReportsClient.py,v 1.2 2008/07/11 09:50:16 acasajus Exp $"
 
 import tempfile
 from DIRAC import S_OK, S_ERROR
@@ -9,31 +9,45 @@ from DIRAC.Core.DISET.TransferClient import TransferClient
 
 class ReportsClient:
 
-  def __init__(self):
+  def __init__( self, rpcClient = None, transferClient = None ):
     self.serviceName = "Accounting/ReportGenerator"
+    self.rpcClient = rpcClient
+    self.transferClient = transferClient
+
+  def __getRPCClient(self):
+    if not self.rpcClient:
+      return RPCClient( self.serviceName )
+    else:
+      return self.rpcClient
+
+  def __getTransferClient(self):
+    if not self.transferClient:
+      return TransferClient( self.serviceName )
+    else:
+      return self.transferClient
 
   def pingService(self):
-    rpcClient = RPCClient( self.serviceName )
+    rpcClient = self.__getRPCClient()
     return rpcClient.ping()
 
   def listSummaries(self):
-    rpcClient = RPCClient( self.serviceName )
+    rpcClient = self.__getRPCClient()
     return rpcClient.listSummaries()
 
-  def listViews(self):
-    rpcClient = RPCClient( self.serviceName )
-    return rpcClient.listViews()
+  def listPlots( self, typeName ):
+    rpcClient = self.__getRPCClient()
+    return rpcClient.listPlots( typeName )
 
   def getSummary( self, summaryName, startTime, endTime, argsDict ):
-    rpcClient = RPCClient( self.serviceName )
+    rpcClient = self.__getRPCClient()
     return rpcClient.generateSummary( summaryName, startTime, endTime, argsDict )
 
-  def plotView( self, viewName, startTime, endTime, argsDict ):
-    rpcClient = RPCClient( self.serviceName )
-    return rpcClient.plotView( viewName, startTime, endTime, argsDict )
+  def generatePlot( self, typeName, plotName, startTime, endTime, argsDict, grouping ):
+    rpcClient = self.__getRPCClient()
+    return rpcClient.generatePlot( typeName, plotName, startTime, endTime, argsDict, grouping )
 
   def getPlotToMem( self, plotName ):
-    transferClient = TransferClient( self.serviceName )
+    transferClient = self.__getTransferClient()
     tmpFile = tempfile.TemporaryFile()
     retVal = transferClient.receiveFile( tmpFile, plotName )
     if not retVal[ 'OK' ]:
@@ -44,7 +58,7 @@ class ReportsClient:
     return S_OK( data )
 
   def getPlotToDirectory( self, plotName, dirDestination ):
-    transferClient = TransferClient( self.serviceName )
+    transferClient = self.__getTransferClient()
     try:
       destFilename = "%s/%s" % ( dirDestination, plotName )
       destFile = file( destFilename, "wb" )
