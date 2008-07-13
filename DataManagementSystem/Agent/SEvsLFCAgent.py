@@ -5,8 +5,8 @@ from DIRAC.Core.Base.Agent import Agent
 from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.GridCredentials import setupProxy,restoreProxy,setDIRACGroup, getProxyTimeLeft
-from DIRAC.RequestManagementSystem.Client.Request import RequestClient
-from DIRAC.RequestManagementSystem.Client.DataManagementRequest import DataManagementRequest
+from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
+from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 from DIRAC.DataManagementSystem.Agent.NamespaceBrowser import NamespaceBrowser
 from DIRAC.DataManagementSystem.Client.FileCatalog import FileCatalog
@@ -94,7 +94,7 @@ class SEvsLFCAgent(Agent):
     requestName = res['Value']['requestName']
     sourceServer= res['Value']['Server']
     gLogger.info("SEvsLFCAgent.execute: Obtained request %s" % requestName)
-    oRequest = DataManagementRequest(request=requestString)
+    oRequest = RequestContainer(request=requestString)
 
     ################################################
     # Find the number of sub-requests from the request
