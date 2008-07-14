@@ -282,10 +282,24 @@ class CSAPI:
         done = False
     return S_OK( done )
 
-  def commitChanges(self):
+  def sortUsersAndGroups( self ):
+    self.__csMod.sortAlphabetically( "%s/Users" % self.__baseSecurity )
+    self.__csMod.sortAlphabetically( "%s/Hosts" % self.__baseSecurity )
+    for group in self.__csMod.getSections( "%s/Groups" % self.__baseSecurity ):
+      usersOptionPath = "%s/Groups/%s/Users" % ( self.__baseSecurity, group )
+      users = self.__csMod.getValue( usersOptionPath )
+      usersList = List.fromChar( users )
+      usersList.sort()
+      sortedUsers = ", ".join( usersList )
+      if users != sortedUsers:
+        self.__csMod.setOptionValue( usersOptionPath, sortedUsers )
+
+  def commitChanges( self, sortUsers = True ):
     if not self.__initialized:
       return S_ERROR( "CSAPI didn't initialize properly" )
     if self.__csModified:
+      if sortUsers:
+        self.sortUsersAndGroups()
       retVal = self.__csMod.commit()
       if not retVal[ 'OK' ]:
         gLogger.error( "Can't commit new data: %s" % retVal[ 'Message' ] )

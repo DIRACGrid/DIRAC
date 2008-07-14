@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Modificator.py,v 1.11 2008/07/14 10:50:09 acasajus Exp $
-__RCSID__ = "$Id: Modificator.py,v 1.11 2008/07/14 10:50:09 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Modificator.py,v 1.12 2008/07/14 17:54:54 acasajus Exp $
+__RCSID__ = "$Id: Modificator.py,v 1.12 2008/07/14 17:54:54 acasajus Exp $"
 
 import zlib
 import difflib
@@ -45,11 +45,19 @@ class Modificator:
   def getValue( self, optionPath ):
     return gConfigurationData.extractOptionFromCFG( optionPath, self.cfgData )
 
-  def __getParentCFG( self, path ):
+  def sortAlphabetically( self, path, ascending = True ):
+    cfg = self.__getParentCFG( path, parentLevel = 0 )
+    if cfg:
+      if cfg.sortAlphabetically( ascending ):
+        self.__setCommiter( path )
+
+  def __getParentCFG( self, path, parentLevel = 1 ):
     sectionList = List.fromChar( path, "/" )
     cfg = self.cfgData
     try:
-      for section in sectionList[:-1]:
+      if parentLevel > 0:
+        sectionList = sectionList[:-parentLevel]
+      for section in sectionList:
         cfg = cfg[ section ]
       return cfg
     except:

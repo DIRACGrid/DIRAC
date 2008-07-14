@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/Attic/CFG.py,v 1.6 2008/06/18 19:56:24 acasajus Exp $
-__RCSID__ = "$Id: CFG.py,v 1.6 2008/06/18 19:56:24 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/Attic/CFG.py,v 1.7 2008/07/14 17:54:54 acasajus Exp $
+__RCSID__ = "$Id: CFG.py,v 1.7 2008/07/14 17:54:54 acasajus Exp $"
 
 import types
 import copy
@@ -104,6 +104,18 @@ class CFG:
     @return: Boolean with the result
     """
     return key in self.__orderedList
+
+  def sortAlphabetically( self, ascending = True ):
+    """
+    Order this cfg alphabetically
+    returns true if modified
+    """
+    unordered = list( self.__orderedList )
+    if ascending:
+      self.__orderedList.sort()
+    else:
+      self.__orderedList.reverse()
+    return unordered != self.__orderedList
 
   @gCFGSynchro
   def deleteKey( self, key ):
