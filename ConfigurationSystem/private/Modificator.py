@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Modificator.py,v 1.10 2008/07/11 14:39:27 acasajus Exp $
-__RCSID__ = "$Id: Modificator.py,v 1.10 2008/07/11 14:39:27 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Modificator.py,v 1.11 2008/07/14 10:50:09 acasajus Exp $
+__RCSID__ = "$Id: Modificator.py,v 1.11 2008/07/14 10:50:09 acasajus Exp $"
 
 import zlib
 import difflib
@@ -45,7 +45,7 @@ class Modificator:
   def getValue( self, optionPath ):
     return gConfigurationData.extractOptionFromCFG( optionPath, self.cfgData )
 
-  def __getSubCFG( self, path ):
+  def __getParentCFG( self, path ):
     sectionList = List.fromChar( path, "/" )
     cfg = self.cfgData
     try:
@@ -57,7 +57,7 @@ class Modificator:
 
   def __setCommiter( self, entryPath, cfg = False ):
     if not cfg:
-      cfg = self.__getSubCFG( entryPath )
+      cfg = self.__getParentCFG( entryPath )
     entry = List.fromChar( entryPath, "/" )[-1]
     comment = cfg.getComment( entry )
     filteredComment = [ line.strip() for line in comment.split( "\n" ) if line.find( self.commiterTag ) != 0 ]
@@ -67,9 +67,12 @@ class Modificator:
   def setOptionValue( self, optionPath, value ):
     levelList = [ level.strip() for level in optionPath.split( "/" ) if level.strip() != "" ]
     parentPath = "/%s" % "/".join( levelList[:-1] )
+    optionName = List.fromChar( optionPath, "/" )[-1]
     self.createSection( parentPath )
-    cfg = self.__getSubCFG( parentPath )
-    cfg.setOption( levelList[-1], value )
+    cfg = self.__getParentCFG( optionPath )
+    if not cfg:
+      return
+    cfg.setOption( optionName, value )
     self.__setCommiter( optionPath, cfg )
 
   def createSection( self, sectionPath ):
@@ -87,7 +90,7 @@ class Modificator:
     return createdSection
 
   def setComment( self, entryPath, value ):
-    cfg = self.__getSubCFG( entryPath )
+    cfg = self.__getParentCFG( entryPath )
     entry = List.fromChar( entryPath, "/" )[-1]
     if cfg.setComment( entry, value ):
       self.__setCommiter( entryPath )
@@ -141,14 +144,14 @@ class Modificator:
   def removeOption( self, optionPath ):
     if not self.existsOption( optionPath ):
       return False
-    cfg = self.__getSubCFG( optionPath )
+    cfg = self.__getParentCFG( optionPath )
     optionName = List.fromChar( optionPath, "/" )[-1]
     return cfg.deleteKey( optionName )
 
   def removeSection( self, sectionPath ):
     if not self.existsSection( sectionPath ):
       return False
-    cfg = self.__getSubCFG( sectionPath )
+    cfg = self.__getParentCFG( sectionPath )
     sectionName = List.fromChar( sectionPath, "/" )[-1]
     return cfg.deleteKey( sectionName )
 
