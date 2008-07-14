@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/Attic/StagerMonitorWMS.py,v 1.11 2008/07/04 09:06:12 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/Attic/StagerMonitorWMS.py,v 1.12 2008/07/14 16:22:00 acasajus Exp $
 # File :   StagerMonitorWMS.py
 # Author : Stuart Paterson
 ########################################################################
@@ -20,12 +20,12 @@
      Successful -> purged with status change
 """
 
-__RCSID__ = "$Id: StagerMonitorWMS.py,v 1.11 2008/07/04 09:06:12 rgracian Exp $"
+__RCSID__ = "$Id: StagerMonitorWMS.py,v 1.12 2008/07/14 16:22:00 acasajus Exp $"
 
 from DIRAC.Core.Base.Agent                                 import Agent
 from DIRAC.Core.DISET.RPCClient                            import RPCClient
 from DIRAC.StagerSystem.Client.StagerClient                import StagerClient
-from DIRAC.Core.Utilities.GridCredentials                  import setupProxyFile,setupProxy,restoreProxy,setDIRACGroup, getProxyTimeLeft
+from DIRAC.Core.Utilities.Shifter                          import setupShifterProxyInEnv
 from DIRAC                                                 import S_OK, S_ERROR, gConfig, gLogger
 
 import os, sys, re, string, time
@@ -46,9 +46,6 @@ class StagerMonitorWMS(Agent):
     """
     result = Agent.initialize(self)
     self.pollingTime = gConfig.getValue(self.section+'/PollingTime',60)
-    self.proxyLength = gConfig.getValue(self.section+'/DefaultProxyLength',24) # hours
-    self.minProxyValidity = gConfig.getValue(self.section+'/MinimumProxyValidity',30*60) # seconds
-    self.proxyLocation = gConfig.getValue(self.section+'/ProxyLocation','/opt/dirac/work/StagerMonitorWMS/shiftProdProxy')
     self.system = gConfig.getValue(self.section+'/SystemID','WorkloadManagement')
     self.stagingStatus = gConfig.getValue(self.section+'/StagingStatus','Staging')
     self.updateStatus = gConfig.getValue(self.section+'/UpdateStatus','ToUpdate')
@@ -62,16 +59,10 @@ class StagerMonitorWMS(Agent):
     """The StagerMonitorWMS execution method.
     """
     self.pollingTime = gConfig.getValue(self.section+'/PollingTime',60)
-    prodDN = gConfig.getValue('Operations/Production/ShiftManager','')
-    if not prodDN:
-      self.log.warn('Production shift manager DN not defined (/Operations/Production/ShiftManager)')
-      return S_OK('Production shift manager DN is not defined')
 
-    self.log.verbose('Checking proxy for %s' %(prodDN))
-    result = self.__getProdProxy(prodDN)
-    if not result['OK']:
-      self.log.warn('Could not set up proxy for shift manager %s %s' %(prodDN))
-      return S_OK('Production shift manager proxy could not be set up')
+    result = setupShifterProxyInEnv( "ProductionManager" )
+    if not result[ 'OK' ]:
+      return S_ERROR( "Can't get shifter's proxy: %s" % result[ 'Message' ] )
 
     self.stagerClient = StagerClient()
 
@@ -321,47 +312,5 @@ class StagerMonitorWMS(Agent):
       self.log.warn(jobStatus['Message'])
 
     return jobStatus
-
-  #############################################################################
-  def __getProdProxy(self,prodDN):
-    """This method sets up the proxy for immediate use if not available, and checks the existing
-       proxy if this is available.
-    """
-    prodGroup = gConfig.getValue(self.section+'/ProductionGroup','lhcb_prod')
-    self.log.info("Determining the length of proxy for DN %s" %prodDN)
-    obtainProxy = False
-    if not os.path.exists(self.proxyLocation):
-      self.log.info("No proxy found")
-      obtainProxy = True
-    else:
-      res = setupProxyFile(self.proxyLocation)
-      if not res["OK"]:
-        self.log.error("Failed to set up proxy in the standard location", res['Message'])
-        return S_ERROR( "Failed to set up proxy in the standard location" )
-
-      proxyValidity = int(res['Value'])
-      self.log.info('%s proxy found to be valid for %s seconds' %(prodDN,proxyValidity))
-      if proxyValidity <= self.minProxyValidity:
-        obtainProxy = True
-
-    if obtainProxy:
-      self.log.info('Attempting to renew %s proxy' %prodDN)
-      res = self.wmsAdmin.getProxy(prodDN,prodGroup,self.proxyLength)
-      if not res['OK']:
-        self.log.error('Could not retrieve proxy from WMS Administrator', res['Message'])
-        return S_ERROR('Could not retrieve proxy from WMS Administrator')
-      proxyStr = res['Value']
-      if not os.path.exists(os.path.dirname(self.proxyLocation)):
-        os.makedirs(os.path.dirname(self.proxyLocation))
-      res = setupProxy(proxyStr,self.proxyLocation)
-      if not res['OK']:
-        self.log.error('Could not create environment for proxy', res['Message'])
-        return S_ERROR('Could not create environment for proxy')
-
-      setDIRACGroup(prodGroup)
-      self.log.info('Successfully renewed %s proxy' %prodDN)
-
-    #os.system('voms-proxy-info -all')
-    return S_OK('Active proxy available')
 
   #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

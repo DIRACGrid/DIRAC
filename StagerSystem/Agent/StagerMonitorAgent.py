@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/StagerMonitorAgent.py,v 1.9 2008/07/04 08:18:19 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/StagerMonitorAgent.py,v 1.10 2008/07/14 16:23:54 acasajus Exp $
 # File :   StagerMonitorAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,11 +9,11 @@
      of the SiteMonitor instances. The StagerMonitorAgent also manages the proxy environment.
 """
 
-__RCSID__ = "$Id: StagerMonitorAgent.py,v 1.9 2008/07/04 08:18:19 rgracian Exp $"
+__RCSID__ = "$Id: StagerMonitorAgent.py,v 1.10 2008/07/14 16:23:54 acasajus Exp $"
 
 from DIRAC.Core.Base.Agent                                 import Agent
 from DIRAC.Core.DISET.RPCClient                            import RPCClient
-from DIRAC.Core.Utilities.GridCredentials                  import setupProxyFile,setupProxy,restoreProxy,setDIRACGroup, getProxyTimeLeft
+from DIRAC.Core.Utilities.Shifter                          import setupShifterProxyInEnv
 from DIRAC                                                 import S_OK, S_ERROR, gConfig, gLogger
 
 import os, sys, re, string, time
@@ -55,16 +55,10 @@ class StagerMonitorAgent(Agent):
     """
     # Update polling time
     self.pollingTime = gConfig.getValue(self.section+'/PollingTime',60)
-    prodDN = gConfig.getValue('Operations/Production/ShiftManager','')
-    if not prodDN:
-      self.log.warn('Production shift manager DN not defined (/Operations/Production/ShiftManager)')
-      return S_OK('Production shift manager DN is not defined')
 
-    self.log.verbose('Checking proxy for %s' %(prodDN))
-    result = self.__getProdProxy(prodDN)
-    if not result['OK']:
-      self.log.warn('Could not set up proxy for shift manager %s %s' %(prodDN))
-      return S_OK('Production shift manager proxy could not be set up')
+    result = setupShifterProxyInEnv( "ProductionManager" )
+    if not result[ 'OK' ]:
+      return S_ERROR( "Can't get shifter's proxy: %s" % result[ 'Message' ] )
 
     agent = {}
     if not self.started:
@@ -99,48 +93,5 @@ class StagerMonitorAgent(Agent):
         th.start()
 
     return S_OK()
-
-  #############################################################################
-  def __getProdProxy(self,prodDN):
-    """This method sets up the proxy for immediate use if not available, and checks the existing
-       proxy if this is available.
-    """
-    prodGroup = gConfig.getValue(self.section+'/ProductionGroup','lhcb_prod')
-    self.log.info("Determining the length of proxy for DN %s" %prodDN)
-    obtainProxy = False
-    if not os.path.exists(self.proxyLocation):
-      self.log.info("No proxy found")
-      obtainProxy = True
-    else:
-      res = setupProxyFile(self.proxyLocation)
-      if not res["OK"]:
-        self.log.error("Failed to set up proxy in the standard location", res['Message'])
-        res = S_OK(0) # force update of proxy
-
-      proxyValidity = int(res['Value'])
-      self.log.info('%s proxy found to be valid for %s seconds' %(prodDN,proxyValidity))
-      if proxyValidity <= self.minProxyValidity:
-        obtainProxy = True
-
-    if obtainProxy:
-      self.log.info('Attempting to renew %s proxy' %prodDN)
-      wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
-      res = wmsAdmin.getProxy(prodDN,prodGroup,self.proxyLength)
-      if not res['OK']:
-        self.log.error('Could not retrieve proxy from WMS Administrator', res['Message'])
-        return S_ERROR('Could not retrieve proxy from WMS Administrator')
-      proxyStr = res['Value']
-      if not os.path.exists(os.path.dirname(self.proxyLocation)):
-        os.makedirs(os.path.dirname(self.proxyLocation))
-      res = setupProxy(proxyStr,self.proxyLocation)
-      if not res['OK']:
-        self.log.error('Could not create environment for proxy', res['Message'])
-        return S_ERROR('Could not create environment for proxy')
-
-      setDIRACGroup(prodGroup)
-      self.log.info('Successfully renewed %s proxy' %prodDN)
-
-    #os.system('voms-proxy-info -all')
-    return S_OK('Active proxy available')
 
   #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
