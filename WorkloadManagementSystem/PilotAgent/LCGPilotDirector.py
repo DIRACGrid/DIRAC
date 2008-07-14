@@ -1,9 +1,9 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/LCGPilotDirector.py,v 1.11 2008/05/16 11:00:32 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/LCGPilotDirector.py,v 1.12 2008/07/14 18:06:27 acasajus Exp $
 # File :   LCGPilotDirector.py
 # Author : Stuart Paterson
 ########################################################################
-
+#TODO: Delete after complete migration to new proxy style
 """  The Pilot Director for LCG provides implementations for the submitJob()
      method called in the parent Pilot Director class.
 
@@ -11,7 +11,7 @@
      the invokation of the Pilot Director instance is performed here.
 """
 
-__RCSID__ = "$Id: LCGPilotDirector.py,v 1.11 2008/05/16 11:00:32 rgracian Exp $"
+__RCSID__ = "$Id: LCGPilotDirector.py,v 1.12 2008/07/14 18:06:27 acasajus Exp $"
 
 from DIRACEnvironment                                        import DIRAC
 from DIRAC.Core.Utilities                                    import List
@@ -136,7 +136,7 @@ class LCGPilotDirector(PilotDirector):
 
     resultDict = {}
     resultDict['PilotReference'] = submittedPilot
-    resultDict['PilotRequirements'] = lcgJDLRequirements 
+    resultDict['PilotRequirements'] = lcgJDLRequirements
     return S_OK(submittedPilot)
 
   #############################################################################

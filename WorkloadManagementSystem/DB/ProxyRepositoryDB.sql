@@ -13,7 +13,7 @@ CREATE DATABASE ProxyRepositoryDB;
 
 --------------------------------------------------------------------------------
 -- Database owner definition
-
+--#TODO: Delete after complete migration to new proxy style
 USE mysql;
 DELETE FROM user WHERE user='Dirac';
 

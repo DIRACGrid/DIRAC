@@ -1,7 +1,7 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/ProxyRenewalAgent.py,v 1.9 2008/07/07 08:23:21 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/ProxyRenewalAgent.py,v 1.10 2008/07/14 18:06:27 acasajus Exp $
 ########################################################################
-
+#TODO: Delete after complete migration to new proxy style
 """  Proxy Renewal agent is the key element of the Proxy Repository
      which maintains the user proxies alive
 """
@@ -47,7 +47,7 @@ class ProxyRenewalAgent(Agent):
     """ The main agent execution method
     """
 
-    result = self.proxyDB.getUsers(validity=self.minValidity)    
+    result = self.proxyDB.getUsers(validity=self.minValidity)
     if not result["OK"]:
       self.log.error("Failed to acces Proxy Repository Database",result['Message'])
       return S_ERROR("Failed to acces Proxy Repository Database")
@@ -65,9 +65,9 @@ class ProxyRenewalAgent(Agent):
       return S_ERROR("Can not get existing job owner DNs")
 
     job_dn_list = result['Value']
-        
+
     for dn,group,ptype,pflag in ticket_dn_list:
-    
+
       if dn in job_dn_list or pflag=="True":
         self.log.verbose("Renewing proxy for "+dn)
         result = self.proxyDB.getProxy(dn,group)
@@ -93,8 +93,8 @@ class ProxyRenewalAgent(Agent):
                                 self.validity_period,
                                 server_key=self.server_key,
                                 server_cert=self.server_cert
-                                )                        
-                                    
+                                )
+
             if result["OK"]:
               new_proxy = result['Value']
               resTime = getProxyTimeLeft(new_proxy)

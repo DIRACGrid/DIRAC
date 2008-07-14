@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/Attic/ProxyRepositoryDB.py,v 1.17 2008/04/14 10:00:36 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/Attic/ProxyRepositoryDB.py,v 1.18 2008/07/14 18:06:27 acasajus Exp $
 ########################################################################
 """ ProxyRepository class is a front-end to the proxy repository Database
 """
-
-__RCSID__ = "$Id: ProxyRepositoryDB.py,v 1.17 2008/04/14 10:00:36 atsareg Exp $"
+#TODO: Delete after complete migration to new proxy style
+__RCSID__ = "$Id: ProxyRepositoryDB.py,v 1.18 2008/07/14 18:06:27 acasajus Exp $"
 
 import time
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
@@ -48,7 +48,7 @@ class ProxyRepositoryDB(DB):
         The grid proxy will be converted into a VOMS proxy if possible
     """
 
-    result = getVOMSAttributes(proxy,'db')    
+    result = getVOMSAttributes(proxy,'db')
     if not result['OK']:
       return S_ERROR('Can not analyze proxy')
 
@@ -97,7 +97,7 @@ class ProxyRepositoryDB(DB):
         result = self.__convertProxyToVOMS(proxy,group,dn,proxyType)
         if not result['OK']:
           return S_ERROR('Failed to convert proxy to VOMS')
-          
+
         proxy_to_store = result['VOMS']
         proxyType = "VOMS"
         proxyAttr = result['ProxyAttributes']
@@ -140,7 +140,7 @@ class ProxyRepositoryDB(DB):
         if proxyAttr:
           cmd = cmd + ', ProxyAttributes=\'%s\' ' % proxyAttr
         else:
-          cmd = cmd + ', ProxyAttributes=\'\' '  
+          cmd = cmd + ', ProxyAttributes=\'\' '
         cmd = cmd + 'WHERE UserDN=\'%s\' AND UserGroup=\'%s\'' % ( dn, group )
 
         result = self._update(cmd)

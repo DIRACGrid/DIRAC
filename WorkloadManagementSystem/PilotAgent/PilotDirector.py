@@ -1,15 +1,15 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/PilotDirector.py,v 1.21 2008/06/30 14:26:56 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/PilotDirector.py,v 1.22 2008/07/14 18:06:27 acasajus Exp $
 # File :   PilotDirector.py
 # Author : Stuart Paterson
 ########################################################################
-
+#TODO: Delete after complete migration to new proxy style
 """  The Pilot Director base class provides the infrastructure to submit pilots
      to various compute resources (Grids).  The specific submission commands
      are overridden in Grid specific subclasses.
 """
 
-__RCSID__ = "$Id: PilotDirector.py,v 1.21 2008/06/30 14:26:56 paterson Exp $"
+__RCSID__ = "$Id: PilotDirector.py,v 1.22 2008/07/14 18:06:27 acasajus Exp $"
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
 from DIRAC.Core.Utilities.Subprocess                       import shellCall

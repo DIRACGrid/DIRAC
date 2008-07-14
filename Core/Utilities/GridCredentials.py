@@ -1,4 +1,4 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.33 2008/07/01 18:16:25 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.34 2008/07/14 18:06:27 acasajus Exp $
 
 """ Grid Credentials module contains utilities to manage user and host
     certificates and proxies.
@@ -33,7 +33,7 @@
     getVOMSProxyInfo()
 """
 
-__RCSID__ = "$Id: GridCredentials.py,v 1.33 2008/07/01 18:16:25 acasajus Exp $"
+__RCSID__ = "$Id: GridCredentials.py,v 1.34 2008/07/14 18:06:27 acasajus Exp $"
 
 import os
 import os.path
@@ -50,7 +50,7 @@ import GSI
 import DIRAC
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.Subprocess import shellCall
-
+#TODO: Delete after complete migration to new proxy style
 securityConfPath = "/DIRAC/Security"
 PROXY_COMMAND_TIMEOUT = 30
 MAX_PROXY_VALIDITY_DAYS = 7

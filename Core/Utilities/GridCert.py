@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCert.py,v 1.10 2007/06/05 14:30:38 acasajus Exp $
-__RCSID__ = "$Id: GridCert.py,v 1.10 2007/06/05 14:30:38 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCert.py,v 1.11 2008/07/14 18:06:27 acasajus Exp $
+__RCSID__ = "$Id: GridCert.py,v 1.11 2008/07/14 18:06:27 acasajus Exp $"
 
 import os
 import os.path
@@ -12,7 +12,7 @@ from DIRAC.LoggingSystem.Client.Logger import gLogger
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 
 securityConfPath = "/DIRAC/Security"
-
+#TODO: Delete after complete migration to new proxy style
 # Retrieve grid proxy location
 def getGridProxy():
   #UserProxy

@@ -1,9 +1,9 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/gLitePilotDirector.py,v 1.16 2008/05/26 10:25:47 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/gLitePilotDirector.py,v 1.17 2008/07/14 18:06:27 acasajus Exp $
 # File :   gLitePilotDirector.py
 # Author : Stuart Paterson
 ########################################################################
-
+#TODO: Delete after complete migration to new proxy style
 """  The Pilot Director for gLite provides implementations for the submitJob()
      method called in the parent Pilot Director class.
 
@@ -11,7 +11,7 @@
      the invokation of the Pilot Director instance is performed here.
 """
 
-__RCSID__ = "$Id: gLitePilotDirector.py,v 1.16 2008/05/26 10:25:47 paterson Exp $"
+__RCSID__ = "$Id: gLitePilotDirector.py,v 1.17 2008/07/14 18:06:27 acasajus Exp $"
 
 from DIRACEnvironment                                        import DIRAC
 from DIRAC.Core.Utilities                                    import List

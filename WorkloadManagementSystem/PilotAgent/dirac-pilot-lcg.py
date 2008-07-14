@@ -1,19 +1,19 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/dirac-pilot-lcg.py,v 1.18 2008/03/13 17:33:23 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/Attic/dirac-pilot-lcg.py,v 1.19 2008/07/14 18:06:27 acasajus Exp $
 # File :   dirac-pilot-lcg.py
 # Author : Stuart Paterson
 ########################################################################
 
 import os,sys,string,re
-
+#TODO: Delete after complete migration to new proxy style
 """ The DIRAC Pilot script for LCG performs initial checks on the sanity of the WN
     environment then installs and configures DIRAC.  The Pilot script then runs
     a DIRAC JobAgent that can make requests to the central WMS for pending jobs
     for the VO.
 """
 
-__RCSID__ = "$Id: dirac-pilot-lcg.py,v 1.18 2008/03/13 17:33:23 paterson Exp $"
+__RCSID__ = "$Id: dirac-pilot-lcg.py,v 1.19 2008/07/14 18:06:27 acasajus Exp $"
 
 #Some constants (can envisage this information being shipped in a pilot input sandbox config file)
 DEBUG = 0

@@ -1,4 +1,4 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/VOMS.py,v 1.3 2008/01/06 19:13:10 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/VOMS.py,v 1.4 2008/07/14 18:06:27 acasajus Exp $
 
 """ VOMS module contains utilities to manage VOMS proxies
 
@@ -9,7 +9,7 @@
     createVOMSProxy()
 """
 
-__RCSID__ = "$Id: VOMS.py,v 1.3 2008/01/06 19:13:10 atsareg Exp $"
+__RCSID__ = "$Id: VOMS.py,v 1.4 2008/07/14 18:06:27 acasajus Exp $"
 
 import os
 import time
@@ -22,7 +22,7 @@ from DIRAC.Core.Utilities.Subprocess import shellCall
 from DIRAC.Core.Utilities.GridCredentials import *
 
 TIMEOUT = 10
-
+#TODO: Delete after complete migration to new proxy style
 def renewProxy(proxy,lifetime=72,
                 server="myproxy.cern.ch",
                 server_key="/opt/dirac/etc/grid-security/serverkey.pem",
