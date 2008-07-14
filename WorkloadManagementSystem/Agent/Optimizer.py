@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Optimizer.py,v 1.14 2008/07/02 12:28:52 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Optimizer.py,v 1.15 2008/07/14 14:15:26 acasajus Exp $
 # File :   Optimizer.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,15 +9,16 @@
      optimizer instances and associated actions are performed there.
 """
 
-__RCSID__ = "$Id: Optimizer.py,v 1.14 2008/07/02 12:28:52 paterson Exp $"
+__RCSID__ = "$Id: Optimizer.py,v 1.15 2008/07/14 14:15:26 acasajus Exp $"
 
-from DIRAC.WorkloadManagementSystem.DB.JobDB        import JobDB
-from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
-from DIRAC.Core.Utilities.ClassAd.ClassAdLight      import ClassAd
-from DIRAC.Core.Base.Agent                          import Agent
-from DIRAC.ConfigurationSystem.Client.Config        import gConfig
-from DIRAC.Core.Utilities.Subprocess                import shellCall
-from DIRAC                                          import S_OK, S_ERROR
+from DIRAC.WorkloadManagementSystem.DB.JobDB         import JobDB
+from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB  import JobLoggingDB
+from DIRAC.Core.Utilities.ClassAd.ClassAdLight       import ClassAd
+from DIRAC.Core.Base.Agent                           import Agent
+from DIRAC.ConfigurationSystem.Client.Config         import gConfig
+from DIRAC.Core.Utilities.Subprocess                 import shellCall
+from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
+from DIRAC                                           import S_OK, S_ERROR
 
 import os, re, time, string
 
@@ -75,8 +76,13 @@ class Optimizer(Agent):
   def execute(self):
     """ The main agent execution method
     """
-    condition = {}
 
+    result = self.initExecution()
+    if not result[ 'OK' ]:
+      return result
+    self._initResult = result[ 'Value' ]
+
+    condition = {}
     if not self.initialStatus:
       condition = {'Status':self.jobStatus,'MinorStatus':self.minorStatus}
     else:
@@ -202,10 +208,50 @@ class Optimizer(Agent):
     return result
 
   #############################################################################
+  def getShifterProxy(self):
+    """
+    This method returns a shifter's proxy
+    """
+    userName = gConfig.getValue('/Operations/Production/ShiftManagerUsername','')
+    if not userName:
+      return S_ERROR( "No shifter defined in /Operations/Production/ShiftManager" )
+    result = CS.getDNForUsername( userName )
+    if not result[ 'OK' ]:
+      return result
+    userDN = result[ 'Value' ][0]
+    userGroup = gConfig.getValue( '/Operations/Production/ShiftManagerGroup', 'lhcb_prod' )
+    self.log.info( "Getting proxy for shifter %s@%s (%s)" % ( userName, userGroup, userDN ) )
+    result = gProxyManager.downloadVOMSProxy( userDN, userGroup )
+    if not result[ 'OK' ]:
+      return result
+    chain = result[ 'Value' ]
+    result = gProxyManager.dumpProxyToFile( chain )
+    if not result[ 'OK' ]:
+      return result
+    fileName = result[ 'Value' ]
+    return S_OK( { 'DN' : userDN,
+                   'username' : userName,
+                   'group' : userGroup,
+                   'chain' : result[ 'Value' ],
+                   'proxyFile' : fileName } )
+
+  #############################################################################
   def checkJob(self,job):
     """This method controls the checking of the job, should be overridden in a subclass
     """
     self.log.warn('Optimizer: checkJob method should be implemented in a subclass')
     return S_ERROR('Optimizer: checkJob method should be implemented in a subclass')
+
+  #############################################################################
+  def initExecution(self):
+    """This method serves as an iteration inicialization, can be overriden in a subclass
+    """
+    return S_OK()
+
+  #############################################################################
+  def getExecutionInitData(self):
+    """ Get the result of the initExection method
+    """
+    return self._initResult
 
   #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
