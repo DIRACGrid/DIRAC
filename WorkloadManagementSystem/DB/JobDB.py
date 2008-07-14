@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.61 2008/07/10 14:49:26 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.62 2008/07/14 14:23:18 acasajus Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.61 2008/07/10 14:49:26 acasajus Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.62 2008/07/14 14:23:18 acasajus Exp $"
 
 import re, os, sys, string, types
 import time
@@ -62,7 +62,6 @@ from types                                     import *
 from DIRAC                                     import gLogger, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Config   import gConfig
 from DIRAC.Core.Base.DB                        import DB
-from DIRAC.Core.Utilities.GridCredentials      import getNicknameForDN
 
 DEBUG = 0
 
@@ -808,12 +807,6 @@ class JobDB(DB):
       owner = classadJob.get_expression("Owner").replace('"','')
     else:
       owner = "Unknown"
-
-    # Force the owner name to be the nickname defined in the CS
-    #if ownerDN != "Unknown":
-    #  result = getNicknameForDN(ownerDN)
-    #  if result['OK']:
-    #    owner = result['Value']
 
     if classadJob.lookupAttribute("JobGroup"):
       jobGroup = classadJob.get_expression("JobGroup").replace('"','')
