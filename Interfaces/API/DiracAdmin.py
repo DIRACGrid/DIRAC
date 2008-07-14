@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.18 2008/07/11 08:12:41 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.19 2008/07/14 18:16:48 acasajus Exp $
 # File :   DiracAdmin.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,12 +14,12 @@ site banning and unbanning, WMS proxy uploading etc.
 
 """
 
-__RCSID__ = "$Id: DiracAdmin.py,v 1.18 2008/07/11 08:12:41 paterson Exp $"
+__RCSID__ = "$Id: DiracAdmin.py,v 1.19 2008/07/14 18:16:48 acasajus Exp $"
 
 import DIRAC
 from DIRAC.ConfigurationSystem.Client.CSAPI              import CSAPI
 from DIRAC.Core.DISET.RPCClient                          import RPCClient
-from DIRAC.Core.Utilities.GridCredentials                import getGridProxy,getCurrentDN,setDIRACGroup
+from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
 from DIRAC                                               import gConfig, gLogger, S_OK, S_ERROR
 
 import re, os, sys, string, time, shutil, types
@@ -52,38 +52,43 @@ class DiracAdmin:
     self.pPrint = pprint.PrettyPrinter()
 
   #############################################################################
-  def uploadProxy(self,group,permanent=True):
-    """Upload a proxy to the DIRAC WMS.  This method
+  def setProxyPersistency( self, userDN, userGroup, persistent = True ):
+    """Set the persistence of a proxy in the Proxy Manager
 
        Example usage:
 
-       >>> print diracAdmin.uploadProxy('lhcb_pilot')
-       {'OK': True, 'Value': 0L}
+       >>> print diracAdmin.setProxyPersistency( 'some DN', 'dirac group', True )
+       {'OK': True }
 
-       @param group: DIRAC Group
-       @type job: string
+       @param userDN: User DN
+       @type userDN: string
+       @param userGroup: DIRAC Group
+       @type userGroup: string
+       @param persistent: Persistent flag
+       @type persistent: boolean
        @return: S_OK,S_ERROR
-
-       @param permanent: Indefinitely update proxy
-       @type permanent: boolean
-
     """
-    proxy  = getGridProxy()
-    proxy = open(proxy,'r').read()
-    activeDN = getCurrentDN()
-    dn = activeDN['Value']
-    wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
-    result = wmsAdmin.uploadProxy(proxy,dn,group)
-    if not result['OK']:
-      self.log.warn('Uploading proxy failed')
-      self.log.warn(result)
-      return result
+    return gProxyManager.setPersistency( userDN, userGroup, persistent )
 
-    result = wmsAdmin.setProxyPersistencyFlag(permanent,dn,group)
-    if not result['OK']:
-      self.log.warn('Setting proxy update flag failed')
-      self.log.warn(result)
-    return result
+  #############################################################################
+  def checkProxyUploaded( self, userDN, userGroup, requiredTime ):
+    """Set the persistence of a proxy in the Proxy Manager
+
+       Example usage:
+
+       >>> print diracAdmin.setProxyPersistency( 'some DN', 'dirac group', True )
+       {'OK': True, 'Value' : True/False }
+
+       @param userDN: User DN
+       @type userDN: string
+       @param userGroup: DIRAC Group
+       @type userGroup: string
+       @param requiredTime: Required life time of the uploaded proxy
+       @type requiredTime: boolean
+       @return: S_OK,S_ERROR
+    """
+    return gProxyManager.userHasProxy( userDN, userGroup, requiredTime )
+
 
   #############################################################################
   def getSiteMask(self):
