@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Optimizer.py,v 1.15 2008/07/14 14:15:26 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Optimizer.py,v 1.16 2008/07/14 15:09:16 acasajus Exp $
 # File :   Optimizer.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
      optimizer instances and associated actions are performed there.
 """
 
-__RCSID__ = "$Id: Optimizer.py,v 1.15 2008/07/14 14:15:26 acasajus Exp $"
+__RCSID__ = "$Id: Optimizer.py,v 1.16 2008/07/14 15:09:16 acasajus Exp $"
 
 from DIRAC.WorkloadManagementSystem.DB.JobDB         import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB  import JobLoggingDB
@@ -17,7 +17,6 @@ from DIRAC.Core.Utilities.ClassAd.ClassAdLight       import ClassAd
 from DIRAC.Core.Base.Agent                           import Agent
 from DIRAC.ConfigurationSystem.Client.Config         import gConfig
 from DIRAC.Core.Utilities.Subprocess                 import shellCall
-from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC                                           import S_OK, S_ERROR
 
 import os, re, time, string
@@ -206,34 +205,6 @@ class Optimizer(Agent):
       result = S_OK('DisabledMode')
 
     return result
-
-  #############################################################################
-  def getShifterProxy(self):
-    """
-    This method returns a shifter's proxy
-    """
-    userName = gConfig.getValue('/Operations/Production/ShiftManagerUsername','')
-    if not userName:
-      return S_ERROR( "No shifter defined in /Operations/Production/ShiftManager" )
-    result = CS.getDNForUsername( userName )
-    if not result[ 'OK' ]:
-      return result
-    userDN = result[ 'Value' ][0]
-    userGroup = gConfig.getValue( '/Operations/Production/ShiftManagerGroup', 'lhcb_prod' )
-    self.log.info( "Getting proxy for shifter %s@%s (%s)" % ( userName, userGroup, userDN ) )
-    result = gProxyManager.downloadVOMSProxy( userDN, userGroup )
-    if not result[ 'OK' ]:
-      return result
-    chain = result[ 'Value' ]
-    result = gProxyManager.dumpProxyToFile( chain )
-    if not result[ 'OK' ]:
-      return result
-    fileName = result[ 'Value' ]
-    return S_OK( { 'DN' : userDN,
-                   'username' : userName,
-                   'group' : userGroup,
-                   'chain' : result[ 'Value' ],
-                   'proxyFile' : fileName } )
 
   #############################################################################
   def checkJob(self,job):

@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.24 2008/07/14 14:15:26 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.25 2008/07/14 15:09:16 acasajus Exp $
 # File :   InputDataAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,12 +10,12 @@
 
 """
 
-__RCSID__ = "$Id: InputDataAgent.py,v 1.24 2008/07/14 14:15:26 acasajus Exp $"
+__RCSID__ = "$Id: InputDataAgent.py,v 1.25 2008/07/14 15:09:16 acasajus Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.Core.DISET.RPCClient                            import RPCClient
 from DIRAC.Core.Utilities.SiteSEMapping                    import getSitesForSE
-from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
+from DIRAC.Core.Utilities.Shifter                          import setupShifterProxyInEnv
 from DIRAC                                                 import gConfig, S_OK, S_ERROR
 
 
@@ -60,7 +60,7 @@ class InputDataAgent(Optimizer):
   def initExecution(self):
     """ Try to get the sifter's proxy
     """
-    result = self.getShifterProxy()
+    result = setupShifterProxyInEnv()
     if not result[ 'OK' ]:
       self.log.error( "Can't get shifter's proxy: %s" % result[ 'Message' ] )
     return result
@@ -70,7 +70,6 @@ class InputDataAgent(Optimizer):
     """This method controls the checking of the job.
     """
     proxyDict = self.getExecutionInitData()
-    os.environ[ 'X509_USER_PROXY' ] = proxyDict[ 'proxyFile' ]
 
     result = self.jobDB.getInputData(job)
     if result['OK']:
