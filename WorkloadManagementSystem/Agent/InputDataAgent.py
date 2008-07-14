@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.25 2008/07/14 15:09:16 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.26 2008/07/14 16:14:33 acasajus Exp $
 # File :   InputDataAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
 
 """
 
-__RCSID__ = "$Id: InputDataAgent.py,v 1.25 2008/07/14 15:09:16 acasajus Exp $"
+__RCSID__ = "$Id: InputDataAgent.py,v 1.26 2008/07/14 16:14:33 acasajus Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.Core.DISET.RPCClient                            import RPCClient
@@ -60,7 +60,7 @@ class InputDataAgent(Optimizer):
   def initExecution(self):
     """ Try to get the sifter's proxy
     """
-    result = setupShifterProxyInEnv()
+    result = setupShifterProxyInEnv( "ProductionManager" )
     if not result[ 'OK' ]:
       self.log.error( "Can't get shifter's proxy: %s" % result[ 'Message' ] )
     return result
