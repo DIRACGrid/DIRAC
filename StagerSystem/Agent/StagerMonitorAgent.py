@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/StagerMonitorAgent.py,v 1.10 2008/07/14 16:23:54 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/StagerMonitorAgent.py,v 1.11 2008/07/14 16:25:20 acasajus Exp $
 # File :   StagerMonitorAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
      of the SiteMonitor instances. The StagerMonitorAgent also manages the proxy environment.
 """
 
-__RCSID__ = "$Id: StagerMonitorAgent.py,v 1.10 2008/07/14 16:23:54 acasajus Exp $"
+__RCSID__ = "$Id: StagerMonitorAgent.py,v 1.11 2008/07/14 16:25:20 acasajus Exp $"
 
 from DIRAC.Core.Base.Agent                                 import Agent
 from DIRAC.Core.DISET.RPCClient                            import RPCClient
@@ -33,9 +33,6 @@ class StagerMonitorAgent(Agent):
     """Sets defaults
     """
     result = Agent.initialize(self)
-    self.proxyLength = gConfig.getValue(self.section+'/DefaultProxyLength',24) # hours
-    self.minProxyValidity = gConfig.getValue(self.section+'/MinimumProxyValidity',30*60) # seconds
-    self.proxyLocation = gConfig.getValue(self.section+'/ProxyLocation','/opt/dirac/work/StagerMonitorAgent/shiftProdProxy')
     self.pollingTime = gConfig.getValue(self.section+'/PollingTime',60)
     self.threadStartDelay = gConfig.getValue(self.section+'/ThreadStartDelay',5)
     self.siteMonitor = gConfig.getValue(self.section+'/ModulePath','DIRAC.StagerSystem.Agent.SiteMonitor')
