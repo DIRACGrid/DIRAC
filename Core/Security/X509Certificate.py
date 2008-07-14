@@ -1,13 +1,14 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/X509Certificate.py,v 1.8 2008/06/25 10:59:40 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/X509Certificate.py,v 1.9 2008/07/14 15:54:18 acasajus Exp $
 ########################################################################
 """ X509Certificate is a class for managing X509 certificates alone
 """
-__RCSID__ = "$Id: X509Certificate.py,v 1.8 2008/06/25 10:59:40 acasajus Exp $"
+__RCSID__ = "$Id: X509Certificate.py,v 1.9 2008/07/14 15:54:18 acasajus Exp $"
 
 import GSI
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import Time
+from DIRAC.Core.Security import CS
 
 class X509Certificate:
 
@@ -139,7 +140,7 @@ class X509Certificate:
     for ext in extList:
       if ext.get_sn() == "diracGroup":
         return S_OK( ext.get_value() )
-    return S_OK( False )
+    return S_OK( CS.getDefaultUserGroup() )
 
   def hasVOMSExtensions(self):
     """
