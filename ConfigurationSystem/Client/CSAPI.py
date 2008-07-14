@@ -305,4 +305,4 @@ class CSAPI:
         gLogger.error( "Can't commit new data: %s" % retVal[ 'Message' ] )
         return retVal
       self.__csModified = False
-    return S_OK( True )
+    return S_OK()
