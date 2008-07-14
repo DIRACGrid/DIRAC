@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobManagerHandler.py,v 1.16 2008/07/09 12:34:29 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobManagerHandler.py,v 1.17 2008/07/14 13:15:59 acasajus Exp $
 ########################################################################
 
 """ JobManagerHandler is the implementation of the JobManager service
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: JobManagerHandler.py,v 1.16 2008/07/09 12:34:29 rgracian Exp $"
+__RCSID__ = "$Id: JobManagerHandler.py,v 1.17 2008/07/14 13:15:59 acasajus Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -42,6 +42,7 @@ class JobManagerHandler( RequestHandler ):
     self.userGroup = credDict['group']
     self.userProperties = credDict[ 'properties' ]
     self.userName = credDict[ 'username' ]
+    self.peerUsesLimitedProxy = credDict[ 'isLimitedProxy' ]
     self.jobPolicy = JobPolicy( self.userDN, self.userGroup, self.userProperties )
 
   ###########################################################################
@@ -49,6 +50,9 @@ class JobManagerHandler( RequestHandler ):
   def export_submitJob( self, JDL ):
     """ Submit a single job to DIRAC WMS
     """
+
+    if self.peerUsesLimitedProxy:
+      return S_ERROR( "Can't submit using a limited proxy! (bad boy!)" )
 
     # Check job submission permission
     result = self.jobPolicy.getJobPolicy()
@@ -151,6 +155,7 @@ class JobManagerHandler( RequestHandler ):
     validJobList = []
     invalidJobList = []
     nonauthJobList = []
+    ownerJobList = []
     for jobID in jobList:
       result = self.jobPolicy.getUserRightsForJob( jobID )
       if result['OK']:
@@ -158,6 +163,8 @@ class JobManagerHandler( RequestHandler ):
           validJobList.append(jobID)
         else:
           nonauthJobList.append(jobID)
+        if result[ 'UserIsOwner' ]:
+          ownerJobList.append(jobID)
       else:
         invalidJobList.append(jobID)
 
@@ -174,7 +181,7 @@ class JobManagerHandler( RequestHandler ):
     if not jobList:
       return S_ERROR('Invalid job specification: '+str(jobIDs))
 
-    validJobList,invalidJobList,nonauthJobList = self.__evaluate_rights(jobList,
+    validJobList,invalidJobList,nonauthJobList,ownerJobList = self.__evaluate_rights(jobList,
                                                                         'Reschedule' )
     for jobID in validJobList:
       result  = gJobDB.rescheduleJob( jobID )
@@ -191,7 +198,7 @@ class JobManagerHandler( RequestHandler ):
       return result
 
     result = S_OK( validJobList )
-    result[ 'requireProxyUpload' ] = self.__checkIfProxyUploadIsRequired()
+    result[ 'requireProxyUpload' ] = len( ownerJobList ) > 0 and self.__checkIfProxyUploadIsRequired()
     return result
 
 
@@ -205,7 +212,7 @@ class JobManagerHandler( RequestHandler ):
     if not jobList:
       return S_ERROR('Invalid job specification: '+str(jobIDs))
 
-    validJobList,invalidJobList,nonauthJobList = self.__evaluate_rights(jobList,
+    validJobList,invalidJobList,nonauthJobList,ownerJobList = self.__evaluate_rights(jobList,
                                                                         'Delete')
 
     bad_ids = []
@@ -228,7 +235,7 @@ class JobManagerHandler( RequestHandler ):
       return result
 
     result = S_OK( validJobList )
-    result[ 'requireProxyUpload' ] = self.__checkIfProxyUploadIsRequired()
+    result[ 'requireProxyUpload' ] = len( ownerJobList ) > 0 and self.__checkIfProxyUploadIsRequired()
     return result
 
 ###########################################################################
@@ -241,7 +248,7 @@ class JobManagerHandler( RequestHandler ):
     if not jobList:
       return S_ERROR('Invalid job specification: '+str(jobIDs))
 
-    validJobList,invalidJobList,nonauthJobList = self.__evaluate_rights(jobList,
+    validJobList,invalidJobList,nonauthJobList,ownerJobList = self.__evaluate_rights(jobList,
                                                                         'Kill')
 
     bad_ids = []
@@ -269,7 +276,7 @@ class JobManagerHandler( RequestHandler ):
       return result
 
     result = S_OK( validJobList )
-    result[ 'requireProxyUpload' ] = self.__checkIfProxyUploadIsRequired()
+    result[ 'requireProxyUpload' ] = len( ownerJobList ) > 0 and self.__checkIfProxyUploadIsRequired()
     return result
 
 ###########################################################################
@@ -282,7 +289,7 @@ class JobManagerHandler( RequestHandler ):
     if not jobList:
       return S_ERROR('Invalid job specification: '+str(jobIDs))
 
-    validJobList,invalidJobList,nonauthJobList = self.__evaluate_rights(jobList,
+    validJobList,invalidJobList,nonauthJobList,ownerJobList = self.__evaluate_rights(jobList,
                                                                         'Reschedule')
 
     bad_ids = []
@@ -309,5 +316,5 @@ class JobManagerHandler( RequestHandler ):
       return result
 
     result = S_OK()
-    result[ 'requireProxyUpload' ] = self.__checkIfProxyUploadIsRequired()
+    result[ 'requireProxyUpload' ] = len( ownerJobList ) > 0 and self.__checkIfProxyUploadIsRequired()
     return result

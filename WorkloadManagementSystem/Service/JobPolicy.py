@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobPolicy.py,v 1.6 2008/07/08 13:04:35 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobPolicy.py,v 1.7 2008/07/14 13:15:59 acasajus Exp $
 ########################################################################
 
 """ JobPolicy encapsulates authorization rules for different groups
@@ -7,7 +7,7 @@
 
 """
 
-__RCSID__ = "$Id: JobPolicy.py,v 1.6 2008/07/08 13:04:35 acasajus Exp $"
+__RCSID__ = "$Id: JobPolicy.py,v 1.7 2008/07/14 13:15:59 acasajus Exp $"
 
 from DIRAC import gConfig, S_OK, S_ERROR
 
@@ -55,6 +55,8 @@ class JobPolicy:
       owner = result['Value']['OwnerDN']
       group = result['Value']['OwnerGroup']
       result = self.getJobPolicy( owner, group )
+      if self.userDN == owner and self.userGroup == group:
+        result[ 'UserIsOwner' ] = True
       return result
     else:
       return S_ERROR('Job not found')
@@ -75,7 +77,7 @@ class JobPolicy:
     permDict['GetInfo'] = True
 
     # Job Owner can do everything with his jobs
-    if permDict == self.userDN:
+    if jobOwnerDN == self.userDN:
       for r in JOB_OWNER_RIGHTS:
         permDict[r] = True
 
