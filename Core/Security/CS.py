@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/CS.py,v 1.8 2008/07/11 16:08:03 acasajus Exp $
-__RCSID__ = "$Id: CS.py,v 1.8 2008/07/11 16:08:03 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/CS.py,v 1.9 2008/07/14 18:23:03 acasajus Exp $
+__RCSID__ = "$Id: CS.py,v 1.9 2008/07/14 18:23:03 acasajus Exp $"
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import List
@@ -55,7 +55,7 @@ def getHostnameForDN( dn ):
   return S_ERROR( "No hostname found for dn %s" % dn )
 
 def getDefaultUserGroup():
-  return gConfig.getValue( "/%s/DefaultGroup" % g_BaseSecuritySection, "user" )
+  return gConfig.getValue( "/%s/DefaultGroup" % g_BaseSecuritySection, "lhcb_user" )
 
 def getUsersInGroup( groupName, defaultValue = [] ):
   option = "%s/Groups/%s/Users" %( g_BaseSecuritySection, groupName )
