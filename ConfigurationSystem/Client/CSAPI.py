@@ -149,7 +149,7 @@ class CSAPI:
     Remove user from a group
     """
     usersInGroup = self.__csMod.getValue( "%s/Groups/%s/Users" % ( self.__baseSecurity, group ) )
-    if usersInGroup:
+    if usersInGroup != None:
       userList = List.fromChar( usersInGroup, "," )
       userPos = userList.index( username )
       userList.pop( userPos )
@@ -160,7 +160,7 @@ class CSAPI:
     Add user to a group
     """
     usersInGroup = self.__csMod.getValue( "%s/Groups/%s/Users" % ( self.__baseSecurity, group ) )
-    if usersInGroup:
+    if usersInGroup != None:
       userList = List.fromChar( usersInGroup )
       try:
         userPos = userList.index( username )
