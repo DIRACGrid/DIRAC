@@ -7,14 +7,14 @@ def getShifterProxy():
   """
   This method returns a shifter's proxy
   """
-  userName = gConfig.getValue('/Operations/Production/ShiftManagerUsername','')
+  userName = gConfig.getValue('/Operations/Production/ShifterUsername','')
   if not userName:
-    return S_ERROR( "No shifter defined in /Operations/Production/ShiftManager" )
+    return S_ERROR( "No shifter defined in /Operations/Production/ShifterUsername" )
   result = CS.getDNForUsername( userName )
   if not result[ 'OK' ]:
     return result
   userDN = result[ 'Value' ][0]
-  userGroup = gConfig.getValue( '/Operations/Production/ShiftManagerGroup', 'lhcb_prod' )
+  userGroup = gConfig.getValue( '/Operations/Production/ShifterGroup', 'lhcb_prod' )
   gLogger.info( "Getting proxy for shifter %s@%s (%s)" % ( userName, userGroup, userDN ) )
   result = gProxyManager.downloadVOMSProxy( userDN, userGroup )
   if not result[ 'OK' ]:
