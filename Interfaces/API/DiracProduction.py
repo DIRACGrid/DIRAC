@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.32 2008/07/04 08:11:37 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.33 2008/07/14 15:58:07 acasajus Exp $
 # File :   DiracProduction.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are to be documented with example usage.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.32 2008/07/04 08:11:37 rgracian Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.33 2008/07/14 15:58:07 acasajus Exp $"
 
 import string, re, os, time, shutil, types, copy
 import pprint
@@ -29,8 +29,9 @@ from DIRAC.Interfaces.API.Job                       import Job
 from DIRAC.Interfaces.API.Dirac                     import Dirac
 from DIRAC.Core.DISET.RPCClient                     import RPCClient
 from DIRAC.Core.Utilities.File                      import makeGuid
-from DIRAC.Core.Utilities.GridCredentials           import getGridProxy,getVOMSAttributes,getCurrentDN
 from DIRAC.Core.Utilities.Time                      import toString
+from DIRAC.Core.Security.X509Chain                  import X509Chain
+from DIRAC.Core.Security                            import Locations, CS
 from DIRAC                                          import gConfig, gLogger, S_OK, S_ERROR
 
 COMPONENT_NAME='DiracProduction'
@@ -782,44 +783,26 @@ class DiracProduction:
 
   #############################################################################
   def __getCurrentUser(self):
-    self.proxy = getGridProxy()
+    self.proxy = Locations.getProxyLocation()
     if not self.proxy:
       return self.__errorReport('No proxy found in local environment')
     else:
       self.log.verbose('Current proxy is %s' %self.proxy)
 
-    nickname = getVOMSAttributes(self.proxy,'nickname')
-    if nickname['OK']:
-      owner = nickname['Value']
-      self.log.verbose('Established user nickname from current proxy ( %s )' %(owner))
-      if owner:
-        self.log.verbose('Obtained nickname from VOMS proxy => %s' %owner)
-        return S_OK(owner)
-      else:
-        self.log.verbose('Could not get nickname from current proxy credential, trying CS')
+    chain = X509Chain()
+    result = chain.loadProxyFromFile( self.proxy )
+    if not result[ 'OK' ]:
+      return self.__errorReport("Can't load user proxy %s" % self.proxy, result[ 'Message' ] )
 
-    activeDN = getCurrentDN()
-    print activeDN
-    if not activeDN['OK']:
-      return self.__errorReport(activeDN,'Could not get current DN from proxy')
-
-    dn = activeDN['Value']
-    userKeys = gConfig.getSections('/Security/Users')
-    if not userKeys['OK']:
-      return self.__errorReport(userKeys,'Could not get current list of DIRAC users')
-
-    currentUser = None
-    for user in userKeys['Value']:
-      dnDict = gConfig.getOptionsDict('/Security/Users/%s' %(user))
-      if dnDict['OK']:
-        if dn == dnDict['Value']['DN']:
-          currentUser = user
-          self.log.verbose('Found user nickname from CS: %s => %s' %(dn,user))
-
-    if not currentUser:
-      return self.__errorReport('Could not get nickname for user DN = %s from CS' %(dn))
-    else:
-      return S_OK(currentUser)
+    result = chain.getIssuerCert()
+    if not result[ 'OK' ]:
+      return self.__errorReport( "Can't load user proxy %s" % self.proxy, result[ 'Message' ] )
+    issuerCert = result[ 'Value' ]
+    dn = issuerCert.getSubjectDN()[ 'Value' ]
+    result = CS.getUsernameForDN( dn )
+    if not result[ 'OK' ]:
+      return self.__errorReport( "Can't get username for dn %s" % dn, result[ 'Message' ] )
+    return result
 
   #############################################################################
   def __createJobDescriptionFile(self,xmlString):
