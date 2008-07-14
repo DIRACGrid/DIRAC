@@ -39,11 +39,14 @@ class CSAPI:
       return False
     self.__rpcClient = RPCClient( gConfig.getValue( "/DIRAC/Configuration/MasterServer", "" ) )
     self.__csMod = Modificator( self.__rpcClient, "%s - %s" % ( self.__userGroup, self.__userDN ) )
-    retVal = self.__csMod.loadFromRemote()
+    retVal = self.downloadCSData()
     if not retVal[ 'OK' ]:
       gLogger.error( "Can not download the remote cfg. Is everything initialized?" )
       return False
     return True
+
+  def downloadCSData( self ):
+    return self.__csMod.loadFromRemote()
 
   def listUsers(self , group = False ):
     if not self.__initialized:
