@@ -303,6 +303,6 @@ class CSAPI:
       retVal = self.__csMod.commit()
       if not retVal[ 'OK' ]:
         gLogger.error( "Can't commit new data: %s" % retVal[ 'Message' ] )
-        return S_OK( False )
+        return retVal
       self.__csModified = False
     return S_OK( True )
