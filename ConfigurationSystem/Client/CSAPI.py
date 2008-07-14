@@ -2,7 +2,9 @@
 import types
 from DIRAC.ConfigurationSystem.private.Modificator import Modificator
 from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC.Core.Utilities import GridCredentials, List
+from DIRAC.Core.Utilities import List
+from DIRAC.Core.Security.X509Chain import X509Chain
+from DIRAC.Core.Security import Locations
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 
 class CSAPI:
@@ -16,20 +18,21 @@ class CSAPI:
     self.__initialized = self.initialize()
 
   def initialize( self ):
-    proxyLocation = GridCredentials.getGridProxy()
+    proxyLocation = Locations.getProxyLocation()
     if not proxyLocation:
       gLogger.error( "No proxy found!" )
       return False
-    proxy = GridCredentials.X509Certificate()
-    if not proxy.loadFromFile( proxyLocation ):
+    chain = X509Chain()
+    if not chain.loadProxyFromFile( proxyLocation ):
       gLogger.error( "Can't read proxy!", proxyLocation )
       return False
-    retVal = proxy.getIssuerDN()
+    retVal = chain.getIssuerCert()
     if not retVal[ 'OK' ]:
       gLogger.error( "Can't parse proxy!", retVal[ 'Message' ] )
       return False
-    self.__userDN = retVal[ 'Value' ]
-    self.__userGroup = GridCredentials.getDIRACGroup()
+    issuerCert = retVal[ 'Value' ]
+    self.__userDN = issuerCert.getSubjectDN()[ 'Value' ]
+    self.__userGroup = issuerCert.getDIRACGroup()[ 'Value' ]
     retVal = gConfig.getOption( "/DIRAC/Configuration/MasterServer")
     if not retVal[ 'OK' ]:
       gLogger.error( "Master server is not known. Is everything initialized?" )
