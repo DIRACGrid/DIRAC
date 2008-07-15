@@ -6,7 +6,7 @@ from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 
 from DIRAC.RequestManagementSystem.DB.RequestDBMySQL import RequestDBMySQL
 from DIRAC.DataManagementSystem.DB.TransferDB import TransferDB
-from DIRAC.RequestManagementSystem.Client.DataManagementRequest import DataManagementRequest
+from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
 from DIRAC.DataManagementSystem.Client.FileCatalog import FileCatalog
 from DIRAC.DataManagementSystem.Client.Storage.StorageFactory import StorageFactory
 from DIRAC.DataManagementSystem.Client.StorageElement import StorageElement
@@ -52,22 +52,22 @@ class ReplicationScheduler(Agent):
     res = self.TransferDB.getChannelQueues()
     if not res['OK']:
       errStr = 'ReplicationScheduler._execute: Failed to get channel queues from TransferDB: %s.' % res['Message']
-      self.log.error(errStr)
+      gLogger.error(errStr)
       return S_ERROR(errStr)
     if not res['Value']:
       infoStr = 'ReplicationScheduler._execute: No active channels found for replication.'
-      self.log.info(infoStr)
+      gLogger.info(infoStr)
       return S_OK()
     channels = res['Value']
 
     res = self.TransferDB.getChannelObservedThroughput(self.throughputTimescale)
     if not res['OK']:
       errStr = 'ReplicationScheduler._execute: Failed to get observed throughput from TransferDB: %s.' % res['Message']
-      self.log.error(errStr)
+      gLogger.error(errStr)
       return S_ERROR(errStr)
     if not res['Value']:
       infoStr = 'ReplicationScheduler._execute: No active channels found for replication.'
-      self.log.info(infoStr)
+      gLogger.info(infoStr)
       return S_OK()
     bandwidths = res['Value']
 
@@ -79,20 +79,20 @@ class ReplicationScheduler(Agent):
     #
 
     logStr = 'ReplicationScheduler._execute: Contacting RequestDB for suitable requests.'
-    self.log.info(logStr)
+    gLogger.info(logStr)
     res = self.RequestDB.getRequest('transfer')
     if not res['OK']:
       errStr = 'ReplicationScheduler._execute: Failed to get a request list from RequestDB: %s.' % res['Message']
-      self.log.error(errStr)
+      gLogger.error(errStr)
       return S_ERROR(errStr)
     if not res['Value']:
       logStr = 'ReplicationScheduler._execute: No requests found in RequestDB.'
-      self.log.info(logStr)
+      gLogger.info(logStr)
       return S_OK()
     requestString = res['Value']['RequestString']
     requestName = res['Value']['RequestName']
     logStr = 'ReplicationScheduler._execute: Obtained Request %s from RequestDB.' % (requestName)
-    self.log.info(logStr)
+    gLogger.info(logStr)
 
     ######################################################################################
     #
@@ -100,16 +100,16 @@ class ReplicationScheduler(Agent):
     #
 
     logStr = 'ReplicationScheduler._execute: Parsing Request %s.' % (requestName)
-    self.log.info(logStr)
-    dmRequest = DataManagementRequest(requestString)
-    res = dmRequest.getNumSubRequests('transfer')
+    gLogger.info(logStr)
+    oRequest = RequestContainer(requestString)
+    res = oRequest.getNumSubRequests('transfer')
     if not res['OK']:
       errStr = 'ReplicationScheduler._execute: Failed to get number of sub-requests: %s.' % res['Message']
-      self.log.error(errStr)
+      gLogger.error(errStr)
       return S_ERROR(errStr)
     numberRequests = res['Value']
     logStr = "ReplicationScheduler._execute: '%s' found with %s sub-requests." % (requestName,numberRequests)
-    self.log.info(logStr)
+    gLogger.info(logStr)
 
     ######################################################################################
     #
@@ -117,14 +117,12 @@ class ReplicationScheduler(Agent):
     #
 
     for ind in range(numberRequests):
-      logStr = "ReplicationScheduler._execute: Treating sub-request %s from '%s'." % (ind,requestName)
-      self.log.info(logStr)
-      res = dmRequest.getSubRequestAttributes(ind,'transfer')
-      if not res['OK']:
-        errStr = 'ReplicationScheduler._execute: Failed to obtain sub-request attributes: %s.' % res['Message']
-        self.log.error(errStr)
-        return S_ERROR(errStr)
-      attributes = res['Value']
+     gLogger.info("ReplicationScheduler._execute: Treating sub-request %s from '%s'." % (ind,requestName))
+     attributes = oRequest.getSubRequestAttributes(ind,'transfer')['Value']
+     if attributes['Status'] != 'Waiting':
+      #  If the sub-request is already in terminal state
+      gLogger.info("ReplicationScheduler._execute: Sub-request %s is status '%s' and  not to be executed." % (ind,attributes['Status']))
+     else:     
       sourceSE = attributes['SourceSE']
       targetSE = attributes['TargetSE']
       """ This section should go in the transfer request class """
@@ -145,14 +143,14 @@ class ReplicationScheduler(Agent):
       # Then obtain the file attribute of interest are the  LFN and FileID
       #
 
-      res = dmRequest.getSubRequestFiles(ind,'transfer')
+      res = oRequest.getSubRequestFiles(ind,'transfer')
       if not res['OK']:
         errStr = 'ReplicationScheduler._execute: Failed to obtain sub-request files: %s.' % res['Message']
-        self.log.error(errStr)
+        gLogger.error(errStr)
         return S_ERROR(errStr)
       files = res['Value']
       logStr = 'ReplicationScheduler._execute: Sub-request %s found with %s files.' % (ind,len(files))
-      self.log.info(logStr)
+      gLogger.info(logStr)
       filesDict = {}
       for file in files:
         lfn = file['LFN']
@@ -164,37 +162,44 @@ class ReplicationScheduler(Agent):
       #  Now obtain replica information for the files associated to the sub-request.
       #
 
-      logStr = 'ReplicationScheduler._execute: Obtaining replica information for sub-request files.'
-      self.log.info(logStr)
+      gLogger.info("ReplicationScheduler._execute: Obtaining replica information for sub-request files.")
       lfns = filesDict.keys()
       res = self.lfc.getReplicas(lfns)
       if not res['OK']:
-        errStr = 'ReplicationScheduler._execute: Failed to get replica infomation: %s.' % res['Message']
-        self.log.error(errStr)
+        errStr = "ReplicationScheduler._execute: Failed to get replica infomation."
+        gLogger.error(errStr,res['Message'])
         return S_ERROR(errStr)
+      for lfn,failure in res['Value']['Failed'].items(): 
+        gLogger.error("ReplicationScheduler._execute: Failed to get replicas.",'%s: %s' % (lfn,failure))
       replicas = res['Value']['Successful']
+      if not replicas.keys():
+        gLogger.error("ReplicationScheduler._execute: Failed to get replica information for all files.")
 
       ######################################################################################
       #
       #  Now obtain the file sizes for the files associated to the sub-request.
       #
 
-      logStr = 'ReplicationScheduler._execute: Obtaining file sizes for sub-request files.'
-      self.log.info(logStr)
-      lfns = filesDict.keys()
+      gLogger.info("ReplicationScheduler._execute: Obtaining file sizes for sub-request files.")
+      lfns = replicas.keys()
       res = self.lfc.getFileMetadata(lfns)
       if not res['OK']:
-        errStr = 'ReplicationScheduler._execute: Failed to get file size infomation: %s.' % res['Message']
-        self.log.error(errStr)
+        errStr = "ReplicationScheduler._execute: Failed to get file size information."
+        gLogger.error(errStr,res['Message'])
         return S_ERROR(errStr)
+      for lfn,failure in res['Value']['Failed'].items():
+        gLogger.error('ReplicationScheduler._execute: Failed to get file size.','%s: %s' % (lfn,failure))
       metadata = res['Value']['Successful']
+      if not metadata.keys():
+        gLogger.error("ReplicationScheduler._execute: Failed to get metadata for all files.")
+
 
       ######################################################################################
       #
       # For each lfn determine the replication tree
       #
 
-      for lfn in filesDict.keys():
+      for lfn in metadata.keys():
         fileSize = metadata[lfn]['Size']
         lfnReps = replicas[lfn]
         fileID = filesDict[lfn]
@@ -235,6 +240,7 @@ class ReplicationScheduler(Agent):
               sourceSURL = res['Value']['SURL']
             else:
               status = 'Waiting'
+              print lfnReps,sourceSE
               res  = self.resolvePFNSURL(sourceSE,lfnReps[sourceSE])
               if not res['OK']:
                 sourceSURL = lfnReps[sourceSE]
@@ -260,13 +266,21 @@ class ReplicationScheduler(Agent):
               gLogger.error(errStr)
               return S_ERROR(errStr)
             res = self.TransferDB.addFileRegistration(channelID,fileID,lfn,targetSURL,destSE)
-            if not res['OK']:
-              errStr = "ReplicationScheduler._execute: Failed to add registration entry %s to %s." % (fileID,destSE)
-              gLogger.error(errStr)
-              return S_ERROR(errStr)
+            if res['OK']:
+              oRequest.setSubRequestFileAttributeValue(ind,'transfer',lfn,'Status','Scheduled')               
+            else:
+              errStr = "ReplicationScheduler._execute: Failed to add registration entry."  
+              gLogger.error(errStr, "%s to %s." % (fileID,destSE))
           res = self.TransferDB.addReplicationTree(fileID,tree)
-    return res
 
+        if oRequest.isSubRequestEmpty(ind,'transfer')['Value']:
+          oRequest.setSubRequestStatus(ind,'transfer','Scheduled')
+
+    ################################################
+    #  Generate the new request string after operation
+    requestString = oRequest.toXML()['Value']
+    res = self.RequestDB.updateRequest(requestName,requestString)
+    return res
 
   def obtainLFNSURL(self,targetSE,lfn):
     """ Creates the targetSURL for the storage and LFN supplied
@@ -274,7 +288,7 @@ class ReplicationScheduler(Agent):
     res = self.factory.getStorages(targetSE,protocolList=['SRM2'])
     if not res['OK']:
       errStr = 'ReplicationScheduler._execute: Failed to create SRM2 storage for %s: %s. ' % (targetSE,res['Message'])
-      self.log.error(errStr)
+      gLogger.error(errStr)
       return S_ERROR(errStr)
     storageObjects = res['Value']['StorageObjects']
     for storageObject in storageObjects:
@@ -286,7 +300,7 @@ class ReplicationScheduler(Agent):
            resDict['SpaceToken'] = res['Value']['SpaceToken']
            return S_OK(resDict)
     errStr = 'ReplicationScheduler._execute: Failed to get SRM compliant storage for %s.' % targetSE
-    self.log.error(errStr)
+    gLogger.error(errStr)
     return S_ERROR(errStr)
 
   def resolvePFNSURL(self,sourceSE,pfn):
@@ -298,7 +312,7 @@ class ReplicationScheduler(Agent):
       return res
     else:
       errStr = "ReplicationScheduler._execute: Failed to get source PFN for %s." % sourceSE
-      self.log.error(errStr)
+      gLogger.error(errStr)
       return S_ERROR(errStr)
 
 class StrategyHandler:
