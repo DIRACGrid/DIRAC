@@ -5,7 +5,7 @@ from DIRAC  import gLogger, gConfig, gMonitor, S_OK, S_ERROR, rootPath
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
 from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC.Core.Utilities.GridCredentials import setupProxy,restoreProxy,setDIRACGroup, getProxyTimeLeft
+from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
 from DIRAC.Core.Utilities.ThreadPool import ThreadPool,ThreadedJob
 from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
 from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
@@ -35,59 +35,20 @@ class RegistrationAgent(Agent):
     self.threadPoolDepth = gConfig.getValue(self.section+'/ThreadPoolDepth',1)
     self.threadPool = ThreadPool(1,self.maxNumberOfThreads)
 
-    self.useProxies = gConfig.getValue(self.section+'/UseProxies','True')
-    if self.useProxies == 'True':
-      self.proxyDN = gConfig.getValue(self.section+'/ProxyDN','')
-      self.proxyGroup = gConfig.getValue(self.section+'/ProxyGroup','')
-      self.proxyLength = gConfig.getValue(self.section+'/DefaultProxyLength',12)
-      self.proxyLocation = gConfig.getValue(self.section+'/ProxyLocation',
-                                             os.path.join(rootPath,'.proxy'))
-      if os.path.exists(self.proxyLocation):
-        os.remove(self.proxyLocation)
+    self.useProxies = gConfig.getValue(self.section+'/UseProxies','True').lower() in ( "y", "yes", "true" )
+    self.proxyLocation = gConfig.getValue( self.section+'/ProxyLocation', '' )
+    if not self.proxyLocation:
+      self.proxyLocation = False
 
     return result
 
   def execute(self):
 
-    if self.useProxies == 'True':
-      ############################################################
-      #
-      # Get a valid proxy for the current activity
-      #
-      self.log.info("RegistrationAgent.execute: Determining the length of the %s proxy." %self.proxyDN)
-      obtainProxy = False
-      if not os.path.exists(self.proxyLocation):
-        self.log.info("RegistrationAgent.execute: No proxy found.")
-        obtainProxy = True
-      else:
-        currentProxy = open(self.proxyLocation,'r')
-        oldProxyStr = currentProxy.read()
-        res = getProxyTimeLeft(oldProxyStr)
-        if not res["OK"]:
-          gLogger.error("RegistrationAgent.execute: Could not determine the time left for proxy.", res['Message'])
-          return S_OK()
-        proxyValidity = int(res['Value'])
-        gLogger.debug("RegistrationAgent.execute: Current proxy found to be valid for %s seconds." % proxyValidity)
-        self.log.info("RegistrationAgent.execute: %s proxy found to be valid for %s seconds."% (self.proxyDN,proxyValidity))
-        if proxyValidity <= 60:
-          obtainProxy = True
-
-      if obtainProxy:
-        self.log.info("RegistrationAgent.execute: Attempting to renew %s proxy." %self.proxyDN)
-        wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
-        res = wmsAdmin.getProxy(self.proxyDN,self.proxyGroup,self.proxyLength)
-        if not res['OK']:
-          gLogger.error("RegistrationAgent.execute: Could not retrieve proxy from WMS Administrator", res['Message'])
-          return S_OK()
-        proxyStr = res['Value']
-        if not os.path.exists(os.path.dirname(self.proxyLocation)):
-          os.makedirs(os.path.dirname(self.proxyLocation))
-        res = setupProxy(proxyStr,self.proxyLocation)
-        if not res['OK']:
-          gLogger.error("RegistrationAgent.execute: Could not create environment for proxy.", res['Message'])
-          return S_OK()
-        setDIRACGroup(self.proxyGroup)
-        self.log.info("RegistrationAgent.execute: Successfully renewed %s proxy." %self.proxyDN)
+    if self.useProxies:
+      result = setupShifterProxyInEnv( "DataManager", self.proxyLocation )
+      if not result[ 'OK' ]:
+        self.log.error( "Can't get shifter's proxy: %s" % result[ 'Message' ] )
+      return result
 
     for i in range(self.threadPoolDepth):
       requestExecutor = ThreadedJob(self.executeRequest)

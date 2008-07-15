@@ -8,7 +8,7 @@ from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContain
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 from DIRAC.DataManagementSystem.DB.RAWIntegrityDB import RAWIntegrityDB
 from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC.Core.Utilities.GridCredentials import setupProxy,restoreProxy,setDIRACGroup, getProxyTimeLeft
+from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
 from DIRAC.Core.Utilities.Subprocess import shellCall
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClient
@@ -32,12 +32,9 @@ class RAWIntegrityAgent(Agent):
     self.RAWIntegrityDB = RAWIntegrityDB()
     self.DataLog = DataLoggingClient()
 
-    self.proxyDN = gConfig.getValue(self.section+'/ProxyDN')
-    self.proxyGroup = gConfig.getValue(self.section+'/ProxyGroup')
-    self.proxyLength = gConfig.getValue(self.section+'/DefaultProxyLength',12)
-    self.proxyLocation = gConfig.getValue(self.section+'/ProxyLocation')
-    if os.path.exists(self.proxyLocation):
-      os.remove(self.proxyLocation)
+    self.proxyLocation = gConfig.getValue( self.section+'/ProxyLocation', '' )
+    if not self.proxyLocation:
+      self.proxyLocation = False
 
     self.gatewayUrl = PathFinder.getServiceURL( 'RequestManagement/onlineGateway')
 
@@ -62,44 +59,10 @@ class RAWIntegrityAgent(Agent):
   def execute(self):
     gMonitor.addMark("Iteration",1)
 
-    ############################################################
-    #
-    # Get a valid proxy for the current activity
-    #
-    self.log.info("RAWIntegrityAgent.execute: Determining the length of the %s proxy." %self.proxyDN)
-    obtainProxy = False
-    if not os.path.exists(self.proxyLocation):
-      self.log.info("RAWIntegrityAgent.execute: No proxy found.")
-      obtainProxy = True
-    else:
-      currentProxy = open(self.proxyLocation,'r')
-      oldProxyStr = currentProxy.read()
-      res = getProxyTimeLeft(oldProxyStr)
-      if not res["OK"]:
-        gLogger.error("RAWIntegrityAgent.execute: Could not determine the time left for proxy.", res['Message'])
-        return S_OK()
-      proxyValidity = int(res['Value'])
-      gLogger.info("RAWIntegrityAgent.execute: Current proxy found to be valid for %s seconds." % proxyValidity)
-      self.log.info("RAWIntegrityAgent.execute: %s proxy found to be valid for %s seconds."% (self.proxyDN,proxyValidity))
-      if proxyValidity <= 60:
-        obtainProxy = True
-
-    if obtainProxy:
-      self.log.info("RAWIntegrityAgent.execute: Attempting to renew %s proxy." %self.proxyDN)
-      wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
-      res = wmsAdmin.getProxy(self.proxyDN,self.proxyGroup,self.proxyLength)
-      if not res['OK']:
-        gLogger.error("RAWIntegrityAgent.execute: Could not retrieve proxy from WMS Administrator", res['Message'])
-        return S_OK()
-      proxyStr = res['Value']
-      if not os.path.exists(os.path.dirname(self.proxyLocation)):
-        os.makedirs(os.path.dirname(self.proxyLocation))
-      res = setupProxy(proxyStr,self.proxyLocation)
-      if not res['OK']:
-        gLogger.error("RAWIntegrityAgent.execute: Could not create environment for proxy.", res['Message'])
-        return S_OK()
-      setDIRACGroup(self.proxyGroup)
-      self.log.info("RAWIntegrityAgent.execute: Successfully renewed %s proxy." %self.proxyDN)
+    result = setupShifterProxyInEnv( "DataManager", self.proxyLocation )
+    if not result[ 'OK' ]:
+      self.log.error( "Can't get shifter's proxy: %s" % result[ 'Message' ] )
+    return result
 
 
     ############################################################

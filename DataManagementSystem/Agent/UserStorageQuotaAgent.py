@@ -4,7 +4,7 @@ from DIRAC  import gLogger, gConfig, gMonitor, S_OK, S_ERROR
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
 from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC.Core.Utilities.GridCredentials import setupProxy,restoreProxy,setDIRACGroup, getProxyTimeLeft
+from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
 from DIRAC.RequestManagementSystem.Client.DataManagementRequest import DataManagementRequest
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 from DIRAC.DataManagementSystem.Agent.NamespaceBrowser import NamespaceBrowser
@@ -28,60 +28,24 @@ class UserStorageQuotaAgent(Agent):
 
   def initialize(self):
     result = Agent.initialize(self)
-    self.lfc = FileCatalog(['LcgFileCatalogCombined'])    
+    self.lfc = FileCatalog(['LcgFileCatalogCombined'])
     self.StorageUsageDB = StorageUsageDB()
     self.defaultQuota = float(gConfig.getValue('/Groups/lhcb/Quota'))
-    self.useProxies = gConfig.getValue(self.section+'/UseProxies','True')
-    if self.useProxies == 'True':
-      self.proxyDN = gConfig.getValue(self.section+'/ProxyDN','')
-      self.proxyGroup = gConfig.getValue(self.section+'/ProxyGroup','')
-      self.proxyLength = gConfig.getValue(self.section+'/DefaultProxyLength',12)
-      self.proxyLocation = gConfig.getValue(self.section+'/ProxyLocation','')
-      if os.path.exists(self.proxyLocation):
-        os.remove(self.proxyLocation)
+
+    self.useProxies = gConfig.getValue(self.section+'/UseProxies','True').lower() in ( "y", "yes", "true" )
+    self.proxyLocation = gConfig.getValue( self.section+'/ProxyLocation', '' )
+    if not self.proxyLocation:
+      self.proxyLocation = False
+
     return result
 
   def execute(self):
 
-    if self.useProxies == 'True':
-      ############################################################
-      #
-      # Get a valid proxy for the current activity
-      #
-      self.log.info("StorageUsageAgent.execute: Determining the length of the %s proxy." %self.proxyDN)
-      obtainProxy = False
-      if not os.path.exists(self.proxyLocation):
-        self.log.info("StorageUsageAgent: No proxy found.")
-        obtainProxy = True
-      else:
-        currentProxy = open(self.proxyLocation,'r')
-        oldProxyStr = currentProxy.read()
-        res = getProxyTimeLeft(oldProxyStr)
-        if not res["OK"]:
-          gLogger.error("StorageUsageAgent: Could not determine the time left for proxy.", res['Message'])
-          return S_OK()
-        proxyValidity = int(res['Value'])
-        gLogger.debug("StorageUsageAgent: Current proxy found to be valid for %s seconds." % proxyValidity)
-        self.log.info("StorageUsageAgent: %s proxy found to be valid for %s seconds."% (self.proxyDN,proxyValidity))
-        if proxyValidity <= 6000:
-          obtainProxy = True
-
-      if obtainProxy:
-        self.log.info("StorageUsageAgent: Attempting to renew %s proxy." %self.proxyDN)
-        wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
-        res = wmsAdmin.getProxy(self.proxyDN,self.proxyGroup,self.proxyLength)
-        if not res['OK']:
-          gLogger.error("StorageUsageAgent: Could not retrieve proxy from WMS Administrator", res['Message'])
-          return S_OK()
-        proxyStr = res['Value']
-        if not os.path.exists(os.path.dirname(self.proxyLocation)):
-          os.makedirs(os.path.dirname(self.proxyLocation))
-        res = setupProxy(proxyStr,self.proxyLocation)
-        if not res['OK']:
-          gLogger.error("StorageUsageAgent: Could not create environment for proxy.", res['Message'])
-          return S_OK()
-        setDIRACGroup(self.proxyGroup)
-        self.log.info("StorageUsageAgent: Successfully renewed %s proxy." %self.proxyDN)
+    if self.useProxies:
+      result = setupShifterProxyInEnv( "DataManager", self.proxyLocation )
+      if not result[ 'OK' ]:
+        self.log.error( "Can't get shifter's proxy: %s" % result[ 'Message' ] )
+      return result
 
     res = self.StorageUsageDB.getUserStorageUsage()
     usageDict = res['Value']
@@ -95,7 +59,7 @@ class UserStorageQuotaAgent(Agent):
       res = gConfig.getOptionsDict('/Users/%s' % userName)
       if not res['OK']:
         gLogger.error("UserStorageQuotaAgent: Username not found in the CS.",userName)
-        userQuota = 0        
+        userQuota = 0
       else:
         if not res['Value'].has_key('Quota'):
           userQuota = self.defaultQuota
@@ -132,7 +96,7 @@ class UserStorageQuotaAgent(Agent):
       msgbody = "This mail has been generated automatically.\n\n"
       msgbody += "You have received this mail because your Grid storage usage has exceeded your quota of %sMB.\n\n" % int(quota)
       msgbody += "You are currently using %sMB.\n\n" % int(usage)
-      msgbody += "Please reduce you usage by removing some files. If you have reduced your usage in the last 24 hours please ignore this message."    
+      msgbody += "Please reduce you usage by removing some files. If you have reduced your usage in the last 24 hours please ignore this message."
       msg = MIMEText(msgbody)
       msg['From'] = 'Andrew C. Smith <a.smith@cern.ch>'
       msg['To'] = userMail
@@ -143,7 +107,7 @@ class UserStorageQuotaAgent(Agent):
       return S_OK()
     except Exception,x:
       return S_ERROR(str(x))
- 
+
   def sendBlockedMail(self,userMail,quota,usage):
     try:
       import smtplib
@@ -168,7 +132,7 @@ class UserStorageQuotaAgent(Agent):
     """
     gLogger.info("%s %s" % ('User'.ljust(30),'Total usage'.ljust(30)))
     lfnBase = '/lhcb/user'
-    for userName in sortList(usageDict.keys()): 
+    for userName in sortList(usageDict.keys()):
       lfn = "%s/%s/%s" % (lfnBase,userName[0],userName)
       res = self.lfc.getDirectoryMetadata(lfn)
       if not res['OK']:
@@ -181,7 +145,7 @@ class UserStorageQuotaAgent(Agent):
         lfnMetadata = res['Value']['Successful'][lfn]
         creatorDN = lfnMetadata['CreatorDN']
         userNameDNDict[userName] = creatorDN
-             
+
       #gLogger.info("%s %s" % (userName.ljust(30),str(usageDict[userName]/byteToGB).ljust(30)))
       gLogger.info("%s %s %s" % (creatorDN.ljust(90),userName.ljust(30),str(usageDict[userName]/byteToGB).ljust(30)))
       usageToUserDict[usageDict[userName]] = userName
