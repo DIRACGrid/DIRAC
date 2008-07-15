@@ -41,6 +41,7 @@ class ReplicationScheduler(Agent):
   def execute(self):
     """ The main agent execution method
     """
+
     # This allows dynamic changing of the throughput timescale
     self.throughputTimescale = gConfig.getValue(self.section+'/ThroughputTimescale',3600)
 
@@ -51,23 +52,21 @@ class ReplicationScheduler(Agent):
 
     res = self.TransferDB.getChannelQueues()
     if not res['OK']:
-      errStr = 'ReplicationScheduler._execute: Failed to get channel queues from TransferDB: %s.' % res['Message']
-      gLogger.error(errStr)
-      return S_ERROR(errStr)
+      errStr = "ReplicationScheduler._execute: Failed to get channel queues from TransferDB."
+      gLogger.error(errStr, res['Message'])
+      return S_OK()
     if not res['Value']:
-      infoStr = 'ReplicationScheduler._execute: No active channels found for replication.'
-      gLogger.info(infoStr)
+      gLogger.info("ReplicationScheduler._execute: No active channels found for replication.")
       return S_OK()
     channels = res['Value']
 
     res = self.TransferDB.getChannelObservedThroughput(self.throughputTimescale)
     if not res['OK']:
-      errStr = 'ReplicationScheduler._execute: Failed to get observed throughput from TransferDB: %s.' % res['Message']
-      gLogger.error(errStr)
-      return S_ERROR(errStr)
+      errStr = "ReplicationScheduler._execute: Failed to get observed throughput from TransferDB."
+      gLogger.error(errStr,res['Message'])
+      return S_OK()
     if not res['Value']:
-      infoStr = 'ReplicationScheduler._execute: No active channels found for replication.'
-      gLogger.info(infoStr)
+      gLogger.info("ReplicationScheduler._execute: No active channels found for replication.")
       return S_OK()
     bandwidths = res['Value']
 
@@ -78,8 +77,7 @@ class ReplicationScheduler(Agent):
     #  The first step is to obtain a transfer request from the RequestDB which should be scheduled.
     #
 
-    logStr = 'ReplicationScheduler._execute: Contacting RequestDB for suitable requests.'
-    gLogger.info(logStr)
+    gLogger.info("ReplicationScheduler._execute: Contacting RequestDB for suitable requests.")
     res = self.RequestDB.getRequest('transfer')
     if not res['OK']:
       errStr = 'ReplicationScheduler._execute: Failed to get a request list from RequestDB: %s.' % res['Message']
@@ -323,7 +321,7 @@ class StrategyHandler:
     self.supportedStrategies = ['Simple','DynamicThroughput','Swarm']
     self.sigma = gConfig.getValue(configSection+'/HopSigma',1)
     self.schedulingType = gConfig.getValue(configSection+'/SchedulingType','File')
-    self.activeStrategies = gConfig.getValue(configSection+'/ActiveStrategies',['Simple'])
+    self.activeStrategies = gConfig.getValue(configSection+'/ActiveStrategies',['Simple','DynamicThroughput'])
     self.numberOfStrategies = len(self.activeStrategies)
     self.acceptableFailureRate = gConfig.getValue(configSection+'/AcceptableFailureRate',75)
     self.bandwidths = bandwidths
