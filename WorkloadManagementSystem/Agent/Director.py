@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.16 2008/07/15 06:27:58 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.17 2008/07/15 16:30:20 rgracian Exp $
 # File :   Director.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -48,7 +48,7 @@
 
 """
 
-__RCSID__ = "$Id: Director.py,v 1.16 2008/07/15 06:27:58 rgracian Exp $"
+__RCSID__ = "$Id: Director.py,v 1.17 2008/07/15 16:30:20 rgracian Exp $"
 
 import types, time, threading
 
@@ -264,7 +264,7 @@ class Director(Agent):
       jobDict[attr] = attributes[attr]
 
 
-    self.jobDicts[job] = jobDict
+    self.jobDicts[job] = dict(jobDict)
 
     self.log.verbose('JobID: %s' % job)
     self.log.verbose('Owner: %s' % jobDict['Owner'])
@@ -719,7 +719,6 @@ class PilotDirector:
           self.log.verbose( 'LastListMatch', jobDict['LastListMatch'] )
           self.log.verbose( 'AvailableCEs ', jobDict['AvailableCEs'] )
       jobDict['AvailableCEs']  = list(availableCEs)
-      print type(availableCEs)
       if type(availableCEs) == types.ListType :
         jobDB.setJobParameter( job, 'Available_CEs' , '%s CEs returned from list-match on %s' %
                                ( len(availableCEs), Time.toString() ) )
@@ -852,12 +851,8 @@ class PilotDirector:
         siteMask.remove(site)
         self.log.verbose('Removing banned site %s from site Mask' % site )
 
-
-    for site in siteMask:
-      # remove from the mask if a Site is given
-      if jobDict['Site'] and not site in jobDict['Site']:
-        siteMask.remove(site)
-        self.log.verbose('Removing site %s from the Mask' % site )
+    # remove from the mask if a Site is given
+    siteMask = [ site for site in siteMask if not jobDict['Site'] or site in jobDict['Site'] ]
 
     if not siteMask:
       # job can not be submitted
