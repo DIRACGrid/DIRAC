@@ -22,8 +22,10 @@ CREATE TABLE Channel (
   TargetSURL varchar(256)  NOT NULL,
   SpaceToken varchar(32)  NOT NULL,
   FileSize INTEGER NOT NULL,
-  SubmitTime DATETIME NOT NULL,
-  ExecutionTime DATETIME,
+  Retries INTEGER DEFAULT 0,
+  SchedulingTime DATETIME NOT NULL,
+  LastUpdate DATETIME NOT NULL,
+  CompletionTime DATETIME,
   PRIMARY KEY (ChannelID,FileID)
 );
 
