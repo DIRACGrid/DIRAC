@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.33 2008/07/04 08:11:37 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.34 2008/07/15 16:38:58 acasajus Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.33 2008/07/04 08:11:37 rgracian Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.34 2008/07/15 16:38:58 acasajus Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -42,6 +42,7 @@ from DIRAC.Core.Utilities.GridCert                       import getGridProxy
 from DIRAC.ConfigurationSystem.Client.PathFinder         import getSystemSection
 from DIRAC.Core.Utilities.Time                           import toString
 from DIRAC.Core.Utilities.List                           import breakListIntoChunks, sortList
+from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
 from DIRAC                                               import gConfig, gLogger, S_OK, S_ERROR
 
 COMPONENT_NAME='DiracAPI'
@@ -1344,6 +1345,19 @@ class Dirac:
     if printOutput:
       print self.pPrint.pformat(result)
     return result
+
+  #############################################################################
+  def uploadProxy(self,proxy=False):
+    """The uploadProxy will try to upload a proxy to the proxy manager service.
+
+       Example Usage:
+
+       >>> print dirac.uploadProxy()
+       {'OK': True}
+
+       @return: S_OK,S_ERROR
+    """
+    return gProxyManager.uploadProxy( proxy )
 
   #############################################################################
   def __getJDLParameters(self,jdl):
