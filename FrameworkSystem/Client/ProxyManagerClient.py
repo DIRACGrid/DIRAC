@@ -1,9 +1,9 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyManagerClient.py,v 1.21 2008/07/11 15:52:38 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyManagerClient.py,v 1.22 2008/07/15 15:51:20 acasajus Exp $
 ########################################################################
 """ ProxyManagementAPI has the functions to "talk" to the ProxyManagement service
 """
-__RCSID__ = "$Id: ProxyManagerClient.py,v 1.21 2008/07/11 15:52:38 acasajus Exp $"
+__RCSID__ = "$Id: ProxyManagerClient.py,v 1.22 2008/07/15 15:51:20 acasajus Exp $"
 
 import os
 import datetime
@@ -245,7 +245,6 @@ class ProxyManagerClient:
     userValidGroups = retVal[ 'Value' ]
     for testGroup in userValidGroups:
       retVal = self.userHasProxy( userDN, testGroup )
-      print retVal, testGroup
       if retVal[ 'OK' ] and retVal[ 'Value' ]:
         retVal = self.downloadProxy( userDN, testGroup, requiredTimeLeft = 600, proxyToConnect = proxyToConnect )
         if retVal[ 'OK' ]:
