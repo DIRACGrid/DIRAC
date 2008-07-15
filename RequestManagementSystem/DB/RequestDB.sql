@@ -20,7 +20,9 @@ CREATE TABLE Requests (
    RequestName varchar(128) NOT NULL,
    JobID int(11) DEFAULT NULL,
    OwnerDN varchar(255) DEFAULT NULL,
-   DIRACInstance varchar(32) DEFAULT NULL,
+   OwnerGroup varchar(32) DEFAULT NULL,
+   DIRACSetup varchar(32) DEFAULT NULL,
+   SourceComponent varchar(32) DEFAULT NULL,
    CreationTime DATETIME,
    SubmissionTime DATETIME,
    LastUpdate DATETIME,
@@ -37,8 +39,9 @@ CREATE TABLE SubRequests (
    SourceSE varchar(32),
    TargetSE varchar(255),
    Catalogue varchar(32),
-   SubmissionTime datetime,
-   LastUpdate datetime,
+   CreationTime DATETIME,
+   SubmissionTime DATETIME,
+   LastUpdate DATETIME,
    PRIMARY KEY (RequestID,SubRequestID)
 );
 
