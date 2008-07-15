@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSClient.py,v 1.10 2008/07/08 13:45:01 acasajus Exp $
+# $Id: WMSClient.py,v 1.11 2008/07/15 15:24:13 acasajus Exp $
 ########################################################################
 
 """ DIRAC Workload Management System Client class encapsulates all the
@@ -114,7 +114,7 @@ class WMSClient:
     if not result['OK']:
       return result
     jobID = result['Value']
-    if result[ 'requireProxyUpload' ]:
+    if 'requireProxyUpload' in result and result[ 'requireProxyUpload' ]:
       gProxyManager.uploadProxy()
 
     #print "Sandbox uploading"
@@ -142,8 +142,6 @@ class WMSClient:
     """
     jobManager = RPCClient('WorkloadManagement/JobManager',useCertificates=False)
     result = jobManager.killJob(jobID)
-    if result[ 'requireProxyUpload' ]:
-      gProxyManager.uploadProxy()
     return result
 
   def deleteJob(self,jobID):
@@ -152,8 +150,6 @@ class WMSClient:
     """
     jobManager = RPCClient('WorkloadManagement/JobManager',useCertificates=False)
     result = jobManager.deleteJob(jobID)
-    if result[ 'requireProxyUpload' ]:
-      gProxyManager.uploadProxy()
     return result
 
   def rescheduleJob(self,jobID):
@@ -162,8 +158,6 @@ class WMSClient:
     """
     jobManager = RPCClient('WorkloadManagement/JobManager',useCertificates=False)
     result = jobManager.rescheduleJob(jobID)
-    if result[ 'requireProxyUpload' ]:
-      gProxyManager.uploadProxy()
     return result
 
   def resetJob(self,jobID):
@@ -172,6 +166,4 @@ class WMSClient:
     """
     jobManager = RPCClient('WorkloadManagement/JobManager',useCertificates=False)
     result = jobManager.resetJob(jobID)
-    if result[ 'requireProxyUpload' ]:
-      gProxyManager.uploadProxy()
     return result
