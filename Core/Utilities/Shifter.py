@@ -2,6 +2,7 @@
 import os
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
+from DIRAC.Core.Security import CS
 
 def getShifterProxy( type ):
   """
