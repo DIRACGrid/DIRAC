@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.15 2008/07/11 17:01:04 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.16 2008/07/15 06:27:58 rgracian Exp $
 # File :   Director.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -48,9 +48,9 @@
 
 """
 
-__RCSID__ = "$Id: Director.py,v 1.15 2008/07/11 17:01:04 rgracian Exp $"
+__RCSID__ = "$Id: Director.py,v 1.16 2008/07/15 06:27:58 rgracian Exp $"
 
-import types, time
+import types, time, threading
 
 from DIRAC.Core.Base.Agent                        import Agent
 from DIRAC.Core.Utilities                         import List
@@ -982,6 +982,7 @@ class PilotDirector:
 
 class gLitePilotDirector(PilotDirector):
   def __init__(self):
+    self.lock = threading.Lock()
     self.flavour = 'gLite'
     self.resourceBrokers    = ['wms101.cern.ch']
     PilotDirector.__init__(self)
@@ -1050,8 +1051,11 @@ MyProxyServer = "myproxy.cern.ch";
     """
      Submit pilot and get back the reference
     """
+    self.lock.acquire()
     cmd = [ 'glite-wms-job-submit', '-a', '-c', '%s' % jdl, '%s' % jdl ]
-    return self.parseJobSubmitStdout( proxy, cmd, job )
+    result = self.parseJobSubmitStdout( proxy, cmd, job )
+    self.lock.release()
+    return result
 
 class LCGPilotDirector(PilotDirector):
   def __init__(self):
