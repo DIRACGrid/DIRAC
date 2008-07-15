@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobManagerHandler.py,v 1.17 2008/07/14 13:15:59 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobManagerHandler.py,v 1.18 2008/07/15 15:25:10 acasajus Exp $
 ########################################################################
 
 """ JobManagerHandler is the implementation of the JobManager service
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: JobManagerHandler.py,v 1.17 2008/07/14 13:15:59 acasajus Exp $"
+__RCSID__ = "$Id: JobManagerHandler.py,v 1.18 2008/07/15 15:25:10 acasajus Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -168,7 +168,7 @@ class JobManagerHandler( RequestHandler ):
       else:
         invalidJobList.append(jobID)
 
-    return validJobList,invalidJobList,nonauthJobList
+    return validJobList,invalidJobList,nonauthJobList,ownerJobList
 
 ###########################################################################
   types_rescheduleJob = [ ]
