@@ -1,4 +1,4 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/RequestContainer.py,v 1.5 2008/06/12 15:21:30 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/RequestContainer.py,v 1.6 2008/07/15 10:10:25 acsmith Exp $
 
 """
 The Data Management Request contains all the necessary information for
@@ -10,21 +10,21 @@ from DIRAC import gConfig,gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.GridCredentials import getCurrentDN,getDIRACGroup
 from DIRAC.Core.Utilities import DEncode
 
-__RCSID__ = "$Id: RequestContainer.py,v 1.5 2008/06/12 15:21:30 atsareg Exp $"
+__RCSID__ = "$Id: RequestContainer.py,v 1.6 2008/07/15 10:10:25 acsmith Exp $"
 
 class RequestContainer:
 
   def __init__(self,request=None,init=True):
 
     # This is a list of attributes - mandatory parameters
-    self.attributeNames = ['Status','RequestName','RequestID','DIRACSetup','OwnerDN','OwnerGroup','SourceComponent','CreationTime','ExecutionTime','JobID']
+    self.attributeNames = ['Status','RequestName','RequestID','DIRACSetup','OwnerDN','OwnerGroup','SourceComponent','CreationTime','LastUpdate','JobID']
 
     # This dictionary contains all the request attributes
     self.attributes = {}
 
     # Subrequests are represented as a dictionary. The subrequests of similar types are stored together in a list.
     # The dictionary named Attributes must be present and must have the following mandatory names
-    self.subAttributeNames = ['Status','SubRequestID','Operation','CreationTime','ExecutionTime']
+    self.subAttributeNames = ['Status','SubRequestID','Operation','CreationTime','LastUpdate']
     self.subRequests = {}
 
     if init:
@@ -118,13 +118,13 @@ class RequestContainer:
       self.attributes['CreationTime'] = time
     return S_OK()
 
-  def setExecutionTime(self,time='now'):
-    """ Set the execution time to the current data and time
+  def setLastUpdate(self,time='now'):
+    """ Set the last update to the current data and time
     """
     if time.lower() == "now":
-      self.attributes['ExecutionTime'] = time.strftime('%Y-%m-%d %H:%M:%S')
+      self.attributes['LastUpdate'] = time.strftime('%Y-%m-%d %H:%M:%S')
     else:
-      self.attributes['ExecutionTime'] = time
+      self.attributes['LastUpdate'] = time
     return S_OK()
 
   def getAttribute(self,aname):
@@ -494,11 +494,11 @@ class RequestContainer:
         return S_OK(1)
       files = self.getSubRequestFiles(ind,type)['Value']  
       for file in files:
-        if not file['Status'] == 'Done':
+        if file['Status'] == 'Waiting':
           return S_OK(0)
       datasets = self.getSubRequestDatasets(ind, type)['Value']    
       for dataset in datasets:
-        if not dataset['Status'] == 'Done':
+        if dataset['Status'] == 'Waiting':
           return S_OK(0)
           
     if files or datasets:
