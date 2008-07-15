@@ -5,8 +5,8 @@ CREATE DATABASE RequestDB;
 -- Must set passwords for database user by replacing "must_be_set".
 --
 use mysql;
-GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON RequestDB.* TO 'Dirac'@'localhost' IDENTIFIED BY 'must_be_set';
-GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON RequestDB.* TO 'Dirac'@'%' IDENTIFIED BY 'must_be_set';
+GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON RequestDB.* TO 'Dirac'@'localhost' IDENTIFIED BY '';
+GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON RequestDB.* TO 'Dirac'@'%' IDENTIFIED BY '';
 
 use RequestDB;
 
@@ -26,7 +26,7 @@ CREATE TABLE Requests (
    CreationTime DATETIME,
    SubmissionTime DATETIME,
    LastUpdate DATETIME,
-   PRIMARY KEY (RequestID,RequestName)
+   PRIMARY KEY (RequestID,RequestName,Status)
 );
 
 DROP TABLE IF EXISTS SubRequests;
@@ -42,7 +42,7 @@ CREATE TABLE SubRequests (
    CreationTime DATETIME,
    SubmissionTime DATETIME,
    LastUpdate DATETIME,
-   PRIMARY KEY (RequestID,SubRequestID)
+   PRIMARY KEY (SubRequestID,Status,RequestType)
 );
 
 DROP TABLE IF EXISTS Files;
@@ -57,7 +57,7 @@ CREATE TABLE Files (
    Md5 varchar(32),
    Addler varchar(32),
    Attempt varchar(32),
-   PRIMARY KEY (SubRequestID, FileID)
+   PRIMARY KEY (FileID,Status)
 );
 
 DROP TABLE IF EXISTS Datasets;
@@ -65,5 +65,5 @@ CREATE TABLE Datasets(
    SubRequestID INTEGER NOT NULL,
    Dataset varchar(255) NOT NULL,
    Status varchar(32) DEFAULT 'NEW',
-   PRIMARY KEY (SubRequestID,Dataset)
+   PRIMARY KEY (Dataset,Status)
 );
