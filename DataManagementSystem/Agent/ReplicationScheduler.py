@@ -80,17 +80,15 @@ class ReplicationScheduler(Agent):
     gLogger.info("ReplicationScheduler._execute: Contacting RequestDB for suitable requests.")
     res = self.RequestDB.getRequest('transfer')
     if not res['OK']:
-      errStr = 'ReplicationScheduler._execute: Failed to get a request list from RequestDB: %s.' % res['Message']
-      gLogger.error(errStr)
-      return S_ERROR(errStr)
+      errStr = "ReplicationScheduler._execute: Failed to get a request list from RequestDB."
+      gLogger.error(errStr, res['Message'])
+      return S_OK()
     if not res['Value']:
-      logStr = 'ReplicationScheduler._execute: No requests found in RequestDB.'
-      gLogger.info(logStr)
+      gLogger.info("ReplicationScheduler._execute: No requests found in RequestDB.")
       return S_OK()
     requestString = res['Value']['RequestString']
     requestName = res['Value']['RequestName']
-    logStr = 'ReplicationScheduler._execute: Obtained Request %s from RequestDB.' % (requestName)
-    gLogger.info(logStr)
+    gLogger.info("ReplicationScheduler._execute: Obtained Request %s from RequestDB.' % (requestName)")
 
     ######################################################################################
     #
