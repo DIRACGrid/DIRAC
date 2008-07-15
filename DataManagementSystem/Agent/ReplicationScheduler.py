@@ -223,12 +223,12 @@ class ReplicationScheduler(Agent):
           #
 
           for channelID,dict in tree.items():
-            sourceSE = dict['SourceSE']
-            destSE = dict['DestSE']
-            ancestor = dict['Ancestor']
-            if ancestor:
-              status = 'Waiting%s' % (ancestor)
-              res = self.obtainLFNSURL(sourceSE,lfn)
+            hopSourceSE = dict['SourceSE']
+            hopDestSE = dict['DestSE']
+            hopAncestor = dict['Ancestor']
+            if hopAncestor:
+              status = 'Waiting%s' % (hopAncestor)
+              res = self.obtainLFNSURL(hopSourceSE,lfn)
               if not res['OK']:
                 errStr = res['Message']
                 gLogger.error(errStr)
@@ -236,13 +236,12 @@ class ReplicationScheduler(Agent):
               sourceSURL = res['Value']['SURL']
             else:
               status = 'Waiting'
-              print lfnReps,sourceSE
-              res  = self.resolvePFNSURL(sourceSE,lfnReps[sourceSE])
+              res  = self.resolvePFNSURL(hopSourceSE,lfnReps[hopSourceSE])
               if not res['OK']:
-                sourceSURL = lfnReps[sourceSE]
+                sourceSURL = lfnReps[hopSourceSE]
               else:
                 sourceSURL = res['Value']
-            res = self.obtainLFNSURL(destSE,lfn)
+            res = self.obtainLFNSURL(hopDestSE,lfn)
             if not res['OK']:
               errStr = res['Message']
               gLogger.error(errStr)
@@ -254,19 +253,19 @@ class ReplicationScheduler(Agent):
             #
             # For each item in the replication tree add the file to the channel
             #
-            channelName = '%s-%s' % (sourceSE,destSE)
+            channelName = '%s-%s' % (hopSourceSE,hopDestSE)
             self.DataLog.addFileRecord(str(lfn),'ReplicationScheduled',channelName,'','ReplicationScheduler')
             res = self.TransferDB.addFileToChannel(channelID, fileID, sourceSURL, targetSURL,fileSize,spaceToken,fileStatus=status)
             if not res['OK']:
               errStr = "ReplicationScheduler._execute: Failed to add File %s to Channel %s." % (fileID,channelID)
               gLogger.error(errStr)
               return S_ERROR(errStr)
-            res = self.TransferDB.addFileRegistration(channelID,fileID,lfn,targetSURL,destSE)
+            res = self.TransferDB.addFileRegistration(channelID,fileID,lfn,targetSURL,hopDestSE)
             if res['OK']:
               oRequest.setSubRequestFileAttributeValue(ind,'transfer',lfn,'Status','Scheduled')               
             else:
               errStr = "ReplicationScheduler._execute: Failed to add registration entry."  
-              gLogger.error(errStr, "%s to %s." % (fileID,destSE))
+              gLogger.error(errStr, "%s to %s." % (fileID,hopDestSE))
           res = self.TransferDB.addReplicationTree(fileID,tree)
 
         if oRequest.isSubRequestEmpty(ind,'transfer')['Value']:
@@ -405,7 +404,7 @@ class StrategyHandler:
           selectedDestSE = destSE
           selectedChannelID = channelID
       else:
-        errStr = 'StrategyHandler.__dynamicThroughput: Channel not defined'
+        errStr = 'StrategyHandler.__swarm: Channel not defined'
         gLogger.error(errStr,channelName)
         waitingChannel = False
 
@@ -480,10 +479,10 @@ class StrategyHandler:
       status = channelDict['Status']
       channelName = channelDict['ChannelName']
       channelInfo[channelName] = {'ChannelID': channelID}
-
-      if status == 'Disabled':
-        throughputTimeToStart = 1e10 # Make the channel extremely unattractive but still available
-        fileTimeToStart = 1e10 #Make the channel extremely unattractive but still available
+  
+      if status != 'Active':
+        throughputTimeToStart = float('inf') # Make the channel extremely unattractive but still available
+        fileTimeToStart = float('inf') #Make the channel extremely unattractive but still available
       else:
         channelThroughput = value['Throughput']
         channelFileput = value['Fileput']
@@ -495,15 +494,15 @@ class StrategyHandler:
         else:
           successRate = 100.0
         if successRate < self.acceptableFailureRate:
-          throughputTimeToStart = 1e10 # Make the channel extremely unattractive but still available
-          fileTimeToStart = 1e10 # Make the channel extremely unattractive but still available
+          throughputTimeToStart = foat('inf') # Make the channel extremely unattractive but still available
+          fileTimeToStart = float('inf') # Make the channel extremely unattractive but still available
         else:
           if channelFiles > 0:
-            fileTimeToStart = channelFiles/(channelFileput+(1/1e10))
+            fileTimeToStart = channelFiles/(channelFileput+(1/1e100))
           else:
             fileTimeToStart = 0.0
           if channelSize > 0:
-            throughputTimeToStart = channelSize/(channelThroughput+(1/1e10))
+            throughputTimeToStart = channelSize/(channelThroughput+(1/1e100))
           else:
             throughputTimeToStart = 0.0
 
