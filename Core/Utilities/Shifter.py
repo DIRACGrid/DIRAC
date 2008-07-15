@@ -39,7 +39,7 @@ def setupShifterProxyInEnv( type ):
   This method returns a shifter's proxy
     - type : ProductionManager / DataManager...
   """
-  result = getShifterProxy()
+  result = getShifterProxy(type)
   if not result[ 'OK' ]:
     return result
   proxyDict = result[ 'Value' ]
