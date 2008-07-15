@@ -4,11 +4,16 @@ from DIRAC import S_OK, S_ERROR, gLogger, gConfig
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.Core.Security import CS
 
-def getShifterProxy( type ):
+def getShifterProxy( type, file = False ):
   """
   This method returns a shifter's proxy
     - type : ProductionManager / DataManager...
   """
+  if file:
+    try:
+      os.makedirs( os.dirname( file ) )
+    except:
+      pass
   shifterSection = "/Operations/Shifter/%s" % type
   userName = gConfig.getValue( '%s/User' % shifterSection, '' )
   if not userName:
@@ -23,7 +28,7 @@ def getShifterProxy( type ):
   if not result[ 'OK' ]:
     return result
   chain = result[ 'Value' ]
-  result = gProxyManager.dumpProxyToFile( chain )
+  result = gProxyManager.dumpProxyToFile( chain, destinationFile = file )
   if not result[ 'OK' ]:
     return result
   fileName = result[ 'Value' ]
@@ -33,14 +38,14 @@ def getShifterProxy( type ):
                  'chain' : result[ 'Value' ],
                  'proxyFile' : fileName } )
 
-def setupShifterProxyInEnv( type ):
+def setupShifterProxyInEnv( type, file = False ):
   """
   Return the shifter's proxy and set it up as the default
   proxy via changing the environment
   This method returns a shifter's proxy
     - type : ProductionManager / DataManager...
   """
-  result = getShifterProxy(type)
+  result = getShifterProxy( type, file )
   if not result[ 'OK' ]:
     return result
   proxyDict = result[ 'Value' ]
