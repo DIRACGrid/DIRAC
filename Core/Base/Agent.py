@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Agent.py,v 1.25 2008/07/16 18:38:19 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Agent.py,v 1.26 2008/07/16 18:46:45 acasajus Exp $
 ########################################################################
 """ Base class for all the Agents.
 
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: Agent.py,v 1.25 2008/07/16 18:38:19 acasajus Exp $"
+__RCSID__ = "$Id: Agent.py,v 1.26 2008/07/16 18:46:45 acasajus Exp $"
 
 import os
 import threading
@@ -233,6 +233,10 @@ class Agent:
         gLogger.info('The working thread is stopped')
         self.finalize()
         return S_ERROR('The agent is stopped by the external control')
+
+      if not job.isAlive():
+        gLogger.info( "Execution thread stopped. Exiting" )
+        break
       time.sleep(1)
 
   def __run_thread(self):
