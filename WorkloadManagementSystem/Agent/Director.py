@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.18 2008/07/16 13:16:35 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.19 2008/07/16 17:35:50 rgracian Exp $
 # File :   Director.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -48,7 +48,7 @@
 
 """
 
-__RCSID__ = "$Id: Director.py,v 1.18 2008/07/16 13:16:35 rgracian Exp $"
+__RCSID__ = "$Id: Director.py,v 1.19 2008/07/16 17:35:50 rgracian Exp $"
 
 import types, time, threading
 
@@ -140,7 +140,6 @@ class Director(Agent):
       # Now try to process the job
       self.log.verbose( 'Try to submit pilot for Job:', job )
       self.__submitPilot(job)
-      time.sleep(.1)
 
     return S_OK()
 
@@ -154,7 +153,7 @@ class Director(Agent):
 
     if platform == 'ANY':
       # It is a special case, all platform should be considered
-      platforms = List.randomize( self.self.directors.keys() )
+      platforms = List.randomize( self.directors.keys() )
     else:
       platforms = [platform]
 
