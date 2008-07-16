@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.22 2008/07/15 15:00:12 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.23 2008/07/16 07:35:14 rgracian Exp $
 # File :   JobSchedulingAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@
       meaningfully.
 
 """
-__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.22 2008/07/15 15:00:12 acasajus Exp $"
+__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.23 2008/07/16 07:35:14 rgracian Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
@@ -406,7 +406,7 @@ class JobSchedulingAgent(Optimizer):
     requirements = classAdJob.get_expression('Requirements').replace('Unknown','')
     self.log.verbose('Existing job requirements: %s' % (requirements))
     if not requirements:
-      newRequirements = self.__resolveJobJDLRequirement('',siteCandidates)
+      newRequirements = self.__resolveJobJDLRequirement('True',siteCandidates)
     else:
       newRequirements = self.__resolveJobJDLRequirement(requirements,siteCandidates)
 
