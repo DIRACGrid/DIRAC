@@ -27,13 +27,6 @@ class MyProxy( BaseSecurity ):
     chain = proxyDict[ 'chain' ]
     proxyLocation = proxyDict[ 'file' ]
 
-    retVal = self._getUsername( chain )
-    if not retVal[ 'OK' ]:
-      if proxyDict[ 'tempFile' ]:
-        self._unlinkFiles( proxyLocation )
-      return retVal
-    mpUsername = retVal[ 'Value' ]
-
     timeLeft = int( chain.getRemainingSecs()[ 'Value' ] / 3600 )
 
     cmdArgs = [ '-n' ]
@@ -44,17 +37,21 @@ class MyProxy( BaseSecurity ):
     if useDNAsUserName:
       cmdArgs.append( '-d' )
     else:
+      retVal = self._getUsername( chain )
+      if not retVal[ 'OK' ]:
+        File.deleteMultiProxy( proxyDict )
+        return retVal
+      mpUsername = retVal[ 'Value' ]
       cmdArgs.append( '-l "%s"' % mpUsername )
 
-    mpEnv = self._getExternalCmdEnvironment( noX509 = True )
+    mpEnv = self._getExternalCmdEnvironment()
     #Hack to upload properly
     mpEnv[ 'GT_PROXY_MODE' ] = 'old'
 
     cmd = "myproxy-init %s" % " ".join( cmdArgs )
     result = shellCall( self._secCmdTimeout, cmd, env = mpEnv )
 
-    if proxyDict[ 'tempFile' ]:
-        self._unlinkFiles( proxyLocation )
+    File.deleteMultiProxy( proxyDict )
 
     if not result['OK']:
       errMsg = "Call to myproxy-init failed: %s" % retVal[ 'Message' ]
@@ -85,12 +82,6 @@ class MyProxy( BaseSecurity ):
     chain = proxyDict[ 'chain' ]
     proxyLocation = proxyDict[ 'file' ]
 
-    retVal = self._getUsername( chain )
-    if not retVal[ 'OK' ]:
-      File.deleteMultiProxy( proxyDict )
-      return retVal
-    mpUsername = retVal[ 'Value' ]
-
     retVal = self._generateTemporalFile()
     if not retVal[ 'OK' ]:
       File.deleteMultiProxy( proxyDict )
@@ -115,6 +106,10 @@ class MyProxy( BaseSecurity ):
     if useDNAsUserName:
       cmdArgs.append( '-d' )
     else:
+      retVal = self._getUsername( chain )
+      if not retVal[ 'OK' ]:
+        File.deleteMultiProxy( proxyDict )
+        return retVal
       cmdArgs.append( '-l "%s"' % mpUsername )
 
     cmd = "myproxy-logon %s" % " ".join( cmdArgs )
