@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/Activity.py,v 1.7 2008/03/06 17:44:07 acasajus Exp $
-__RCSID__ = "$Id: Activity.py,v 1.7 2008/03/06 17:44:07 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/Activity.py,v 1.8 2008/07/16 16:03:39 acasajus Exp $
+__RCSID__ = "$Id: Activity.py,v 1.8 2008/07/16 16:03:39 acasajus Exp $"
 
 import types
 from string import Template
@@ -123,3 +123,10 @@ class Activity:
 
   def __repr__( self ):
     return self.__str__()
+
+  def __lt__( self, act ):
+    label = self.getLabel()
+    try:
+      return label < act.getLabel()
+    except:
+      return label < act
