@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobHistoryAgent.py,v 1.5 2008/06/06 10:52:40 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobHistoryAgent.py,v 1.6 2008/07/16 16:46:13 acasajus Exp $
 
 
 """  JobHistoryAgent sends periodically numbers of jobs in various states for various
@@ -66,6 +66,7 @@ class JobHistoryAgent(Agent):
       if not result['OK']:
         return S_ERROR('Failed to get data from the Job Database')
       self.resultDB = result['Value']
+      self.sendAccountingRecords()
       self.last_update = time.time()
 
     totalDict = {}
@@ -86,6 +87,10 @@ class JobHistoryAgent(Agent):
       gLogger.verbose("Adding mark %s-All sites: " % status + str(totalDict[status]))
       gMonitor.addMark("%s-All sites" % status,totalDict[status])
 
+    return S_OK()
+
+
+  def sendAccountingRecords(self):
     #Get the WMS Snapshot!
     result = self.jobDB.getSummarySnapshot()
     dsClients = {}
@@ -128,4 +133,3 @@ class JobHistoryAgent(Agent):
 
 
 
-    return S_OK()
