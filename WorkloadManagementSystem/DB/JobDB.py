@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.62 2008/07/14 14:23:18 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.63 2008/07/16 16:37:15 acasajus Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.62 2008/07/14 14:23:18 acasajus Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.63 2008/07/16 16:37:15 acasajus Exp $"
 
 import re, os, sys, string, types
 import time
@@ -1570,3 +1570,18 @@ class JobDB(DB):
     req = "UPDATE JobCommands SET Status='%s' WHERE JobID=%d AND Command='%s'" % (status,jobID,command)
     result = self._update(req)
     return result
+
+#####################################################################################
+  def getSummarySnapshot( self ):
+    """ Get the summary snapshot for a given combination
+    """
+    defFields = [ 'DIRACSetup', 'Status', 'MinorStatus', 'ApplicationStatus',
+                  'Site', 'Owner', 'OwnerGroup', 'JobGroup', 'JobSplitType' ]
+    valueFields = [ 'COUNT(JobID)', 'SUM(RescheduleCounter)' ]
+    defString = ", ".join( defFields )
+    valueString = ", ".join( valueFields )
+    sqlCmd = "SELECT %s, %s From Jobs GROUP BY %s" % ( defString, valueString, defString )
+    result = self._query( sqlCmd )
+    if not result[ 'OK' ]:
+      return result
+    return S_OK( ( ( defFields + valueFields ), result[ 'Value' ] ) )
