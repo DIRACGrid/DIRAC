@@ -7,7 +7,7 @@ from DIRAC.Core.Utilities import Time
 
 class WMSHistoryPlotter(BasePlotter):
 
-  _typeName = "Job"
+  _typeName = "WMSHistory"
   _typeKeyFields = [ dF[0] for dF in Job().definitionKeyFields ]
 
   def _plotTotalNumberOfJobs( self, startTime, endTime, condDict, groupingFields, filename ):
