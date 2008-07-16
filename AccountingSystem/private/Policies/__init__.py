@@ -2,5 +2,6 @@
 from DIRAC.AccountingSystem.private.Policies.JobPolicy import JobPolicy
 
 gPoliciesList = {
-                 'Job' : JobPolicy()
+                 'Job' : JobPolicy(),
+                 'WMSHistory' : JobPolicy()
                  }
