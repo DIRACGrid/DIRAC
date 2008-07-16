@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/AuthManager.py,v 1.25 2008/06/30 14:30:08 acasajus Exp $
-__RCSID__ = "$Id: AuthManager.py,v 1.25 2008/06/30 14:30:08 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/AuthManager.py,v 1.26 2008/07/16 09:10:17 rgracian Exp $
+__RCSID__ = "$Id: AuthManager.py,v 1.26 2008/07/16 09:10:17 rgracian Exp $"
 
 import types
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
@@ -46,17 +46,17 @@ class AuthManager:
       userString += " group=%s" % credDict[ self.KW_GROUP ]
     if self.KW_EXTRA_CREDENTIALS in credDict:
       userString += " extraCredentials=%s" % str( credDict[ self.KW_EXTRA_CREDENTIALS ] )
-    self.__authLogger.warn( "Trying to authenticate %s" % userString )
+    self.__authLogger.verbose( "Trying to authenticate %s" % userString )
     #Check if query comes though a gateway/web server
     if self.forwardedCredentials( credDict ):
-      self.__authLogger.warn( "Query comes from a gateway" )
+      self.__authLogger.verbose( "Query comes from a gateway" )
       self.unpackForwardedCredentials( credDict )
       return self.authQuery( methodQuery, credDict )
     #Check for invalid forwarding
     if self.KW_EXTRA_CREDENTIALS in credDict:
       #Invalid forwarding?
       if type( credDict[ self.KW_EXTRA_CREDENTIALS ] ) not in  ( types.StringType, types.UnicodeType ):
-        self.__authLogger.warn( "The credentials seem to be forwarded by a host, but it is not a trusted one" )
+        self.__authLogger.verbose( "The credentials seem to be forwarded by a host, but it is not a trusted one" )
         return False
     #Is it a host?
     if self.KW_EXTRA_CREDENTIALS in credDict and credDict[ self.KW_EXTRA_CREDENTIALS ] == self.KW_HOSTS_GROUP:
@@ -127,7 +127,7 @@ class AuthManager:
     authGroups = gConfig.getValue( "%s/%s" % ( self.authSection, method ), [] )
     if not authGroups:
       defaultPath = "%s/Default" % "/".join( method.split( "/" )[:-1] )
-      self.__authLogger.warn( "Method %s has no properties defined, trying %s" % ( method, defaultPath ) )
+      self.__authLogger.verbose( "Method %s has no properties defined, trying %s" % ( method, defaultPath ) )
       authGroups = gConfig.getValue( "%s/%s" % ( self.authSection, defaultPath ), [] )
     return authGroups
 
