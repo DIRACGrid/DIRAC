@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.47 2008/07/08 13:40:59 acasajus Exp $
+# $Id: JobWrapper.py,v 1.48 2008/07/16 15:00:43 rgracian Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.47 2008/07/08 13:40:59 acasajus Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.48 2008/07/16 15:00:43 rgracian Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -137,7 +137,6 @@ class JobWrapper:
     self.inputSandboxSize=0
     self.outputSandboxSize=0
     self.outputDataSize=0
-    self.diskSpaceConsumed=0
     self.processedEvents = 0
 
   #############################################################################
@@ -807,12 +806,6 @@ class JobWrapper:
     self.log.info('Running JobWrapper finalization')
     self.__report('Done','Execution Complete')
 
-    if not self.jobID:
-      self.log.verbose('No accounting to be sent since running locally')
-    else:
-      self.diskSpaceConsumed = getGlobbedTotalSize('%s/%s' %(self.root,self.jobID))
-      self.sendWMSAccounting()
-
     self.sendFailoverRequest()
     self.__cleanUp()
     return S_OK()
@@ -834,6 +827,7 @@ class JobWrapper:
       utime, stime, cutime, cstime, elapsed = os.times()
     cpuTime = utime + stime + cutime + cstime
     execTime = elapsed
+    diskSpaceConsumed = getGlobbedTotalSize('%s/%s' %(self.root,self.jobID))
     #Fill the data
     acData = {
                'User' : self.owner,
@@ -851,7 +845,7 @@ class JobWrapper:
                'OutputDataSize' : self.outputDataSize,
                'InputDataFiles' : self.inputDataFiles,
                'OutputDataFiles' : self.outputDataFiles,
-               'DiskSpace' : self.diskSpaceConsumed,
+               'DiskSpace' : diskSpaceConsumed,
                'InputSandBoxSize' : self.inputSandboxSize,
                'OutputSandBoxSize' : self.outputSandboxSize,
                'ProcessedEvents' : self.processedEvents
@@ -880,10 +874,13 @@ class JobWrapper:
         request.update(reportRequest)
 
     # Accounting part
-    result = self.accountingReport.commit()
-    if not result['OK']:
-      subrequest = DISETSubRequest(result['rpcStub']).getDictionary()
-      request.addSubRequest(subrequest,'accounting')
+    if not self.jobID:
+      self.log.verbose('No accounting to be sent since running locally')
+    else:
+      result = self.sendWMSAccounting()
+      if not result['OK']:
+        subrequest = DISETSubRequest(result['rpcStub']).getDictionary()
+        request.addSubRequest(subrequest,'accounting')
 
     # Any other requests in the current directory
     rfiles = glob.glob('*_request.xml')
