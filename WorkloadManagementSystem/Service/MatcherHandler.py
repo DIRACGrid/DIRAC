@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: MatcherHandler.py,v 1.11 2008/07/10 15:09:58 rgracian Exp $
+# $Id: MatcherHandler.py,v 1.12 2008/07/16 15:34:54 acasajus Exp $
 ########################################################################
 """
 Matcher class. It matches Agent Site capabilities to job requirements.
@@ -7,7 +7,7 @@ It also provides an XMLRPC interface to the Matcher
 
 """
 
-__RCSID__ = "$Id: MatcherHandler.py,v 1.11 2008/07/10 15:09:58 rgracian Exp $"
+__RCSID__ = "$Id: MatcherHandler.py,v 1.12 2008/07/16 15:34:54 acasajus Exp $"
 
 import re, os, sys, time
 import string
@@ -21,6 +21,7 @@ from DIRAC.Core.Utilities.ClassAd.ClassAdCondor import ClassAd, matchClassAd
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
+from DIRAC import gMonitor
 
 gMutex = threading.Semaphore()
 jobDB = False
@@ -35,6 +36,9 @@ def initializeMatcherHandler( serviceInfo ):
 
   jobDB = JobDB()
   jobLoggingDB = JobLoggingDB()
+
+  gMonitor.registerActivity( 'matchTime', "Job matching time", 'Matching', "secs" ,gMonitor.OP_MEAN, 300 )
+  gMonitor.registerActivity( 'matchTaskQueues', "Task queues checked per job", 'Matching', "task queues" ,gMonitor.OP_MEAN, 300 )
   return S_OK()
 
 class MatcherHandler(RequestHandler):
@@ -87,8 +91,10 @@ class MatcherHandler(RequestHandler):
         return S_ERROR('Internal error: can not get the Task Queues')
 
       taskQueues = result['Value']
+      taskQueuesLooked = 0
       for tqID, tqReqs, priority in taskQueues:
         gLogger.verbose(tqReqs)
+        taskQueuesLooked += 1
 
         # Find the matching job now
         classAdQueue = ClassAd(tqReqs)
@@ -121,6 +127,8 @@ class MatcherHandler(RequestHandler):
         else:
           gLogger.warn('Error while matching the JDLs')
 
+      gMonitor.addMark( "matchTaskQueues", taskQueuesLooked )
+
     if jobID == 0:
       gLogger.verbose("No match found for site: %s" % agentSite)
       return S_ERROR("No match found for site: %s" % agentSite)
@@ -139,6 +147,7 @@ class MatcherHandler(RequestHandler):
 
     matchTime = time.time() - startTime
     gLogger.verbose("Match time: [%s]" % str(matchTime))
+    gMonitor.addMark( "matchingTime", matchTime )
 
     # Get some extra stuff into the response returned
     resOpt = jobDB.getJobOptParameters(jobID)
