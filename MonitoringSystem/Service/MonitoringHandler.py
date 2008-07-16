@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Service/MonitoringHandler.py,v 1.6 2008/05/05 18:13:47 acasajus Exp $
-__RCSID__ = "$Id: MonitoringHandler.py,v 1.6 2008/05/05 18:13:47 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Service/MonitoringHandler.py,v 1.7 2008/07/16 16:10:56 acasajus Exp $
+__RCSID__ = "$Id: MonitoringHandler.py,v 1.7 2008/07/16 16:10:56 acasajus Exp $"
 import types
 import os
 from DIRAC import gLogger, gConfig, rootPath, S_OK, S_ERROR
@@ -119,6 +119,8 @@ class MonitoringHandler( RequestHandler ):
     for required in ( "fromSecs", "toSecs", "id" ):
       if required not in viewRequest:
         return S_ERROR( "Missing %s field in request" % required )
+    for intFields in ( "fromSecs", "toSecs" ):
+      viewRequest[ intFields ] = int( viewRequest[ intFields ] )
     if not "size" in viewRequest:
       viewRequest[ 'size' ] = 1
     if viewRequest[ 'size' ] not in ( 0, 1, 2, 3 ):
