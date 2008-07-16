@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.17 2008/07/15 16:30:20 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.18 2008/07/16 13:16:35 rgracian Exp $
 # File :   Director.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -48,7 +48,7 @@
 
 """
 
-__RCSID__ = "$Id: Director.py,v 1.17 2008/07/15 16:30:20 rgracian Exp $"
+__RCSID__ = "$Id: Director.py,v 1.18 2008/07/16 13:16:35 rgracian Exp $"
 
 import types, time, threading
 
@@ -1010,6 +1010,12 @@ class gLitePilotDirector(PilotDirector):
       LBs.append('"https://%s:9000"' % LB)
 
     wmsClientJDL = """
+    
+JobType = "Parametric";
+Parameters= 10;
+ParameterStep =1;
+ParameterStart = 0;
+
 Requirements = jobRequirements;
 WmsClient = [
 Requirements = other.GlueCEStateStatus == "Production";
