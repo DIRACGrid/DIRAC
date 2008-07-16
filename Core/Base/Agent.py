@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Agent.py,v 1.24 2008/07/09 12:54:58 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Agent.py,v 1.25 2008/07/16 18:38:19 acasajus Exp $
 ########################################################################
 """ Base class for all the Agents.
 
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: Agent.py,v 1.24 2008/07/09 12:54:58 rgracian Exp $"
+__RCSID__ = "$Id: Agent.py,v 1.25 2008/07/16 18:38:19 acasajus Exp $"
 
 import os
 import threading
@@ -83,7 +83,7 @@ class Agent:
       pass
     if not os.path.isdir( self.controlDir ):
       return S_ERROR('Can not create control directory: %s' % self.controlDir )
-    
+
     self.maxcount = gConfig.getValue(self.section+'/MaxCycles',0)
     workDir = os.path.join( DIRAC.rootPath, 'work' )
     workDir = gConfig.getValue(self.section+'/WorkDir', workDir )
@@ -245,19 +245,16 @@ class Agent:
         start_cycle_time = time.time()
         result = self.execute()
         exec_cycle_time = time.time() - start_cycle_time
+        if not result[ 'OK' ]:
+          gLogger.error( "Agent error during execution", result[ 'Message' ] )
+          break
         self.count += 1
         if self.count >= self.maxcount and self.maxcount > 0:
           self.exit_status = 'Max # of cycles reached %d' % self.maxcount
           self.maxCountFlag = True
           break
-        if result['OK']:
-          status = 'OK'
-          if exec_cycle_time < self.pollingTime:
-            time.sleep(self.pollingTime)
-        else:
-          gLogger.error(result['Message'])
-          status = 'Error'
-          break
+        if exec_cycle_time < self.pollingTime:
+          time.sleep( self.pollingTime - exec_cycle_time )
         if self.monitorFlag:
           # Send CPU consumption mark
           stats = os.times()
