@@ -1,11 +1,11 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Client/JobReport.py,v 1.11 2008/07/10 07:51:41 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Client/JobReport.py,v 1.12 2008/07/16 15:42:56 rgracian Exp $
 
 """
   JobReport class encapsulates various
   methods of the job status reporting
 """
 
-__RCSID__ = "$Id: JobReport.py,v 1.11 2008/07/10 07:51:41 paterson Exp $"
+__RCSID__ = "$Id: JobReport.py,v 1.12 2008/07/16 15:42:56 rgracian Exp $"
 
 import datetime
 from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -52,7 +52,7 @@ class JobReport:
       return result
     else:
       # send the new status record
-      jobMonitor = RPCClient('WorkloadManagement/JobStateUpdate',timeout=10)
+      jobMonitor = RPCClient('WorkloadManagement/JobStateUpdate',timeout=60)
       result = jobMonitor.setJobStatus(self.jobID,status,minor,self.source)
       if result['OK']:
         return result
