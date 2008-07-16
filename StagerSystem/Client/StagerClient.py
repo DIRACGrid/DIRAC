@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: StagerClient.py,v 1.7 2008/07/04 08:20:27 rgracian Exp $
+# $Id: StagerClient.py,v 1.8 2008/07/16 17:16:18 rgracian Exp $
 ########################################################################
 
 """Set of utilities and classes to handle Stager Database"""
@@ -22,7 +22,7 @@ class StagerClient:
       return result
     except Exception, x:
       errorStr = "StagerDBClient.stageFiles failed"
-      gLogger.exception(errorStr,x)
+      gLogger.exception(errorStr,lException=x)
       return S_ERROR(errorStr+": "+str(x))
 
   def getJobFilesStatus(self,jobID):
