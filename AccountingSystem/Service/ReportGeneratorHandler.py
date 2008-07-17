@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/ReportGeneratorHandler.py,v 1.13 2008/07/17 09:08:07 acasajus Exp $
-__RCSID__ = "$Id: ReportGeneratorHandler.py,v 1.13 2008/07/17 09:08:07 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/ReportGeneratorHandler.py,v 1.14 2008/07/17 09:12:32 acasajus Exp $
+__RCSID__ = "$Id: ReportGeneratorHandler.py,v 1.14 2008/07/17 09:12:32 acasajus Exp $"
 import types
 import os
 from DIRAC import S_OK, S_ERROR, rootPath, gConfig, gLogger, gMonitor
@@ -114,7 +114,7 @@ class ReportGeneratorHandler( RequestHandler ):
     retVal = dbUtils.getKeyValues( typeName, condDict )
     if not policyFilter or not retVal[ 'OK' ]:
       return retVal
-    return S_OK( policyFilter.filterListingValues( credDict, retVal[ 'Value' ] ) )
+    return policyFilter.filterListingValues( credDict, retVal[ 'Value' ] )
 
 
   def transfer_toClient( self, fileId, token, fileHelper ):
