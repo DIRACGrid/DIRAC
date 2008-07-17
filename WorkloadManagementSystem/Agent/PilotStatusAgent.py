@@ -1,18 +1,21 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.7 2008/07/11 18:33:17 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.8 2008/07/17 18:51:36 acasajus Exp $
 ########################################################################
 
 """  The Pilot Status Agent updates the status of the pilot jobs if the
      PilotAgents database.
 """
 
-__RCSID__ = "$Id: PilotStatusAgent.py,v 1.7 2008/07/11 18:33:17 rgracian Exp $"
+__RCSID__ = "$Id: PilotStatusAgent.py,v 1.8 2008/07/17 18:51:36 acasajus Exp $"
 
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, List
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC.Core.Utilities import systemCall, List
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
+from DIRAC.AccountingSystem.Client.Types.Pilot import Pilot as PilotAccounting
+from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
+from DIRAC.Core.Security import CS
 
 import os, sys, re, string, time
 from types import *
@@ -45,6 +48,7 @@ class PilotStatusAgent(Agent):
     # Select pilots in non-final states
     #stateList = ['Ready','Aborted','Submitted','Running','Waiting','Scheduled']
     stateList = ['Ready','Submitted','Running','Waiting','Scheduled']
+    finalStateList = [ 'Done', 'Aborted' ]
 
     result = self.pilotDB.selectPilots(stateList)
     if not result['OK']:
@@ -53,17 +57,17 @@ class PilotStatusAgent(Agent):
     if not result['Value']:
       return S_OK()
 
-    pilotList = result['Value']
-    result = self.pilotDB.getPilotInfo(pilotList)
+    result = self.pilotDB.getPilotInfo( result['Value'] )
     if not result['OK']:
       self.log.warn('Failed to get the Pilot Agent information from DB')
       return result
 
-    resultDict = result['Value']
+    pilotsDict = result['Value']
     workDict = {}
 
     # Sort pilots by grid type, owners
-    for pRef,pilotDict in resultDict.items():
+    for pRef in pilotsDict:
+      pilotDict = pilotsDict[ pRef ]
       if not pRef or str(pRef) == 'False':
         continue
       owner_group = pilotDict['OwnerDN']+":"+pilotDict['OwnerGroup']
@@ -84,7 +88,7 @@ class PilotStatusAgent(Agent):
 
       #if grid != "LCG": continue
 
-      for owner_group,pList in workDict[grid].items():
+      for owner_group,refList in workDict[grid].items():
         owner,group = owner_group.split(":")
         ret = gProxyManager.getPilotProxyFromVOMSGroup( owner, group )
         if not ret['OK']:
@@ -96,12 +100,10 @@ class PilotStatusAgent(Agent):
         self.log.verbose("Getting status for pilots for owner %s, group %s" % (owner,group))
 
         # Do not call more than MAX_JOBS_QUERY pilots at a time
-        start_index = 0
-        resultDict = {}
-
-        while len(pList) > start_index + MAX_JOBS_QUERY:
-          self.log.verbose('Querying %d pilots starting from %d' % (MAX_JOBS_QUERY,start_index))
-          result = self.getPilotStatus( proxy, grid, pList[start_index:start_index+MAX_JOBS_QUERY])
+        for start_index in range( 0, len( pList ), MAX_JOBS_QUERY ):
+          refsToQuery = refList[ start_index : start_index+MAX_JOBS_QUERY ]
+          self.log.verbose( 'Querying %d pilots starting from %d' % ( len( refsToQuery ), start_index ) )
+          result = self.getPilotStatus( proxy, grid, refsToQuery )
           if not result['OK']:
             self.log.warn('Failed to get pilot status:')
             self.log.warn('%s/%s, grid: %s' % (owner,group,grid))
@@ -112,22 +114,21 @@ class PilotStatusAgent(Agent):
               result = self.pilotDB.setPilotStatus(pRef,pDict['Status'],
                                                     pDict['Destination'],
                                                     pDict['StatusDate'])
-          start_index += MAX_JOBS_QUERY
+              if pDict[ 'Status' ] in finalStateList:
+                if pList[ pRef ][ 'ParentID' ] == 0:
+                  pilotDict = pilotsDict[ pRef ]
+                  pilotDict[ 'Status' ] = pDict[ 'Status' ]
+                  pilotDict[ 'Destination' ] = pDict[ 'Destination' ]
 
-        self.log.verbose('Querying last %d pilots' % (len(pList)-start_index) )
-        result = self.getPilotStatus( proxy, grid, pList[start_index:])
+                  retVal = self.pilotDB.getPilotInfo( parentId = pilotDict[ 'PilotID' ] )
+                  if not retVal[ 'OK' ] or not retVal[ 'Value' ]:
+                    self.__addPilotAccountingReport( pilotDict )
+                  else:
+                    childDict = retVal[ 'Value' ]
+                    for childRef in childDict:
+                      self.__addPilotAccountingReport( childDict[ childRef ] )
 
-        if not result['OK']:
-          self.log.warn('Failed to get pilot status:')
-          self.log.warn('%s/%s, grid: %s' % (owner,group,grid))
-          continue
-
-        for pRef,pDict in result['Value'].items():
-          if pDict:
-            result = self.pilotDB.setPilotStatus(pRef,pDict['Status'],
-                                                  pDict['Destination'],
-                                                  pDict['StatusDate'])
-
+    gDataStoreClient.commit()
     return S_OK()
 
   #############################################################################
@@ -190,3 +191,37 @@ class PilotStatusAgent(Agent):
                            'StatusDate': statusDate }
 
     return S_OK(resultDict)
+
+  def __getSiteFromCE( self, ce ):
+    siteSections = DIRAC.gConfig.getSections('/Resources/Sites/LCG/')
+    if not siteSections['OK']:
+      self.log.error('Could not get LCG site list')
+      return "unknown"
+
+    sites = siteSections['Value']
+    for site in sites:
+      lcgCEs = DIRAC.gConfig.getValue('/Resources/Sites/LCG/%s/CE' %site,[])
+      if ceName in lcgCEs:
+        return site
+
+    self.log.error( 'Could not determine DIRAC site name for CE:', siteName )
+    return "unknown"
+
+  def __addPilotAccountingReport( self, pData ):
+    pA = PilotAccounting()
+    pA.setEndTime()
+    pA.setStartTime( pData[ 'SubmissionTime' ] )
+    retVal = getUsernameForDN( pData[ 'OwnerDN' ] )
+    if not retVal[ 'OK' ]:
+      userName = 'unknown'
+      self.log.error( "Can't determine username for dn:", pData[ 'OwnerDN' ] )
+    else:
+      userName = retVal[ 'Value' ]
+    pA.setValueByKey( 'User', userName )
+    pA.setValueByKey( 'UserGroup', pData[ 'OwnerGroup' ] )
+    pA.setValueByKey( 'Site', self.__getSiteFromCE( pData[ 'ce' ] ) )
+    pA.setValueByKey( 'GridCE', pData[ 'ce' ] )
+    pA.setValueByKey( 'GridMiddleware', pData[ 'GridType' ] )
+    pA.setValueByKey( 'GridResourceBroker', pData[ 'Broker' ] )
+    pA.setValueByKey( 'GridStatus', pData[ 'Status' ] )
+    return gDataStoreClient.addRegister( pA )
