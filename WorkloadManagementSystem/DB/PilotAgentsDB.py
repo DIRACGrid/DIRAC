@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.25 2008/07/17 19:12:03 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.26 2008/07/17 19:12:55 acasajus Exp $
 ########################################################################
 """ PilotAgentsDB class is a front-end to the Pilot Agent Database.
     This database keeps track of all the submitted grid pilot jobs.
@@ -23,7 +23,7 @@
 
 """
 
-__RCSID__ = "$Id: PilotAgentsDB.py,v 1.25 2008/07/17 19:12:03 acasajus Exp $"
+__RCSID__ = "$Id: PilotAgentsDB.py,v 1.26 2008/07/17 19:12:55 acasajus Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
@@ -177,11 +177,13 @@ class PilotAgentsDB(DB):
     condSQL = []
     if pilotRef:
       if type( pilotRef ) == ListType:
+        expectList = True
         condSQL.append( "PilotJobReference IN (%s)" % ",".join( [ '"%s"' % x for x in pilotRef ] ) )
       else:
         condSQL.append( "PilotJobReference = '%s'" % pilotRef )
     if parentId:
       if type( parentId ) == ListType:
+        expectList = True
         condSQL.append( "ParentID IN (%s)" % ",".join( [ '"%s"' % x for x in parentId ] ) )
       else:
         condSQL.append( "ParentID = '%s'" % parentId )
