@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/ReportGeneratorHandler.py,v 1.14 2008/07/17 09:12:32 acasajus Exp $
-__RCSID__ = "$Id: ReportGeneratorHandler.py,v 1.14 2008/07/17 09:12:32 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/ReportGeneratorHandler.py,v 1.15 2008/07/17 14:27:53 acasajus Exp $
+__RCSID__ = "$Id: ReportGeneratorHandler.py,v 1.15 2008/07/17 14:27:53 acasajus Exp $"
 import types
 import os
 from DIRAC import S_OK, S_ERROR, rootPath, gConfig, gLogger, gMonitor
@@ -107,11 +107,11 @@ class ReportGeneratorHandler( RequestHandler ):
     credDict = self.getRemoteCredentials()
     if typeName in gPoliciesList:
       policyFilter = gPoliciesList[ typeName ]
+      filterCond = policyFilter.getListingConditions( credDict )
     else:
       policyFilter = False
-    if policyFilter:
-      condDict = policyFilter.getListingConditions( credDict )
-    retVal = dbUtils.getKeyValues( typeName, condDict )
+      filterCond = {}
+    retVal = dbUtils.getKeyValues( typeName, filterCond )
     if not policyFilter or not retVal[ 'OK' ]:
       return retVal
     return policyFilter.filterListingValues( credDict, retVal[ 'Value' ] )
