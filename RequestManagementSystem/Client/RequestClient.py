@@ -1,10 +1,10 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/RequestClient.py,v 1.3 2008/07/17 08:54:58 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/RequestClient.py,v 1.4 2008/07/17 10:36:45 acsmith Exp $
 
 """
   This is the client implementation for the RequestDB using the DISET framework.
 """
 
-__RCSID__ = "$Id: RequestClient.py,v 1.3 2008/07/17 08:54:58 acsmith Exp $"
+__RCSID__ = "$Id: RequestClient.py,v 1.4 2008/07/17 10:36:45 acsmith Exp $"
 
 from types import *
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
@@ -49,7 +49,7 @@ class RequestClient:
       return res
     except Exception,x:
       errStr = "Request.updateRequest: Exception while updating request."
-      gLogger.exception(errStr,"%s %s" % (requestName,str(x)))
+      gLogger.exception(errStr,requestName,str(x))
       return S_ERROR(errStr)
 
   def deleteRequest(self,requestName,url):
@@ -62,7 +62,7 @@ class RequestClient:
       return res
     except Exception,x:
       errStr = "Request.deleteRequest: Exception while deleting request."
-      gLogger.exception(errStr,"%s %s" % (requestName,str(x)))
+      gLogger.exception(errStr,requestName,str(x))
       return S_ERROR(errStr)
 
   def setRequestStatus(self,requestName,requestStatus,url):
@@ -75,7 +75,7 @@ class RequestClient:
       return res
     except Exception,x:
       errStr = "Request.setRequestStatus: Exception while setting request status."
-      gLogger.exception(errStr,"%s %s" % (requestName,str(x)))
+      gLogger.exception(errStr,requestName,str(x))
       return S_ERROR(errStr)
 
   ##############################################################################
@@ -107,8 +107,7 @@ class RequestClient:
       return S_ERROR(errKey)
     except Exception,x:
       errKey = "Completely failed setting request"
-      errExpl = " : for %s with exception %s" % (requestName,str(x))
-      gLogger.exception(errKey,errExpl)
+      gLogger.exception(errKey,requestName,str(x))
       return S_ERROR(errKey)
 
   def getRequest(self,requestType,url=''):
@@ -137,10 +136,8 @@ class RequestClient:
       return res
     except Exception,x:
       errKey = "Failed to get request"
-      errExpl = " : %s" %str(x)
-      gLogger.exception(errKey,errExpl)
-      return S_ERROR(errKey+errExpl)
-
+      gLogger.exception(errKey,'',str(x))
+      return S_ERROR(errKey)
 
   def serveRequest(self,requestType='',url=''):
     """ Get a request from RequestDB.
@@ -167,9 +164,8 @@ class RequestClient:
       return res
     except Exception,x:
       errKey = "Failed to get request"
-      errExpl = " : %s" %str(x)
-      gLogger.exception(errKey,errExpl)
-      return S_ERROR(errKey+errExpl)
+      gLogger.exception(errKey,'',str(x))
+      return S_ERROR(errKey)
 
   def getDBSummary(self,url=''):
     """ Get the summary of requests in the RequestDBs. If a URL is not supplied will get status for all.
@@ -192,6 +188,5 @@ class RequestClient:
       return S_OK(urlDict)
     except Exception,x:
       errKey = "Failed getting request summary"
-      errExpl = " : with exception %s" % str(x)
-      gLogger.exception(errKey,errExpl)
-      return S_ERROR(errKey+errExpl)
+      gLogger.exception(errKey,'',str(x))
+      return S_ERROR(errKey)
