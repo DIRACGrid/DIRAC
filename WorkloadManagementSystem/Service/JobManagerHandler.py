@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobManagerHandler.py,v 1.18 2008/07/15 15:25:10 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobManagerHandler.py,v 1.19 2008/07/17 13:04:38 acasajus Exp $
 ########################################################################
 
 """ JobManagerHandler is the implementation of the JobManager service
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: JobManagerHandler.py,v 1.18 2008/07/15 15:25:10 acasajus Exp $"
+__RCSID__ = "$Id: JobManagerHandler.py,v 1.19 2008/07/17 13:04:38 acasajus Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -22,7 +22,7 @@ from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
-from DIRAC.WorkloadManagementSystem.Service.JobPolicy import JobPolicy
+from DIRAC.WorkloadManagementSystem.Service.JobPolicy import JobPolicy, RIGHT_SUBMIT, RIGHT_RESCHEDULE, RIGHT_DELETE, RIGHT_KILL
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 
 # This is a global instance of the JobDB class
@@ -59,7 +59,7 @@ class JobManagerHandler( RequestHandler ):
     if not result['OK']:
       return S_ERROR( 'Failed to get job policies' )
     policyDict = result['Value']
-    if not policyDict['Submit']:
+    if not policyDict[ RIGHT_SUBMIT ]:
       return S_ERROR('Job submission not authorized')
 
     # Get the new jobID first
@@ -182,7 +182,7 @@ class JobManagerHandler( RequestHandler ):
       return S_ERROR('Invalid job specification: '+str(jobIDs))
 
     validJobList,invalidJobList,nonauthJobList,ownerJobList = self.__evaluate_rights(jobList,
-                                                                        'Reschedule' )
+                                                                        RIGHT_RESCHEDULE )
     for jobID in validJobList:
       result  = gJobDB.rescheduleJob( jobID )
       gLogger.debug( str( result ) )
@@ -213,7 +213,7 @@ class JobManagerHandler( RequestHandler ):
       return S_ERROR('Invalid job specification: '+str(jobIDs))
 
     validJobList,invalidJobList,nonauthJobList,ownerJobList = self.__evaluate_rights(jobList,
-                                                                        'Delete')
+                                                                        RIGHT_DELETE)
 
     bad_ids = []
     good_ids = []
@@ -249,7 +249,7 @@ class JobManagerHandler( RequestHandler ):
       return S_ERROR('Invalid job specification: '+str(jobIDs))
 
     validJobList,invalidJobList,nonauthJobList,ownerJobList = self.__evaluate_rights(jobList,
-                                                                        'Kill')
+                                                                             RIGHT_KILL )
 
     bad_ids = []
     good_ids = []
@@ -290,7 +290,7 @@ class JobManagerHandler( RequestHandler ):
       return S_ERROR('Invalid job specification: '+str(jobIDs))
 
     validJobList,invalidJobList,nonauthJobList,ownerJobList = self.__evaluate_rights(jobList,
-                                                                        'Reschedule')
+                                                                        RIGHT_RESET)
 
     bad_ids = []
     good_ids = []

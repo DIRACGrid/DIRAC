@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobPolicy.py,v 1.7 2008/07/14 13:15:59 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobPolicy.py,v 1.8 2008/07/17 13:04:38 acasajus Exp $
 ########################################################################
 
 """ JobPolicy encapsulates authorization rules for different groups
@@ -7,23 +7,36 @@
 
 """
 
-__RCSID__ = "$Id: JobPolicy.py,v 1.7 2008/07/14 13:15:59 acasajus Exp $"
+__RCSID__ = "$Id: JobPolicy.py,v 1.8 2008/07/17 13:04:38 acasajus Exp $"
 
 from DIRAC import gConfig, S_OK, S_ERROR
+from DIRAC.Core.Security import Properties
 
-JOB_RIGHTS = ['GetJob','GetInfo','GetSandbox','PutSandbox','ChangeStatus',
-              'Delete','Kill','Submit','Reschedule','GetStats']
-GROUP_RIGHTS = {}
-GROUP_RIGHTS['Visitor'] = ['GetInfo']
-GROUP_RIGHTS['NormalUser'] = ['GetInfo','Submit']
-GROUP_RIGHTS['JobSharing'] = ['GetInfo','GetSandbox','PutSandbox','ChangeStatus',
-                              'Delete','Kill','Reschedule']
-GROUP_RIGHTS['JobAgent'] = ['GetJob','GetInfo','GetSandbox','PutSandbox','ChangeStatus',
-                            'Reschedule']
-GROUP_RIGHTS['JobAdministrator'] = JOB_RIGHTS
+RIGHT_GET_JOB = 'GetJob'
+RIGHT_GET_INFO = 'GetInfo'
+RIGHT_GET_SANDBOX = 'GetSandbox'
+RIGHT_PUT_SANDBOX = 'PutSandbox'
+RIGHT_CHANGE_STATUS = 'ChangeStatus'
+RIGHT_DELETE = 'Delete'
+RIGHT_KILL = 'Kill'
+RIGHT_SUBMIT = 'Submit'
+RIGHT_RESCHEDULE = 'Reschedule'
+RIGHT_GET_STATS = 'GetStats'
+RIGHT_RESET = 'Reset'
 
-JOB_OWNER_RIGHTS = ['GetInfo','GetInput','GetOutput','ChangeStatus',
-                    'Delete','Kill','Submit','Reschedule']
+ALL_RIGHTS = [ RIGHT_GET_JOB, RIGHT_GET_INFO, RIGHT_GET_SANDBOX, RIGHT_PUT_SANDBOX,
+               RIGHT_CHANGE_STATUS, RIGHT_DELETE, RIGHT_KILL, RIGHT_SUBMIT,
+               RIGHT_RESCHEDULE, RIGHT_GET_STATS, RIGHT_RESET ]
+
+OWNER_RIGHTS = [ RIGHT_GET_INFO, RIGHT_GET_SANDBOX, RIGHT_PUT_SANDBOX,
+                 RIGHT_CHANGE_STATUS, RIGHT_DELETE, RIGHT_KILL,
+                 RIGHT_RESCHEDULE ]
+
+GROUP_RIGHTS = OWNER_RIGHTS
+
+PROPERTY_RIGHTS = {}
+PROPERTY_RIGHTS[ Properties.JOB_ADMINISTRATOR ] = ALL_RIGHTS
+PROPERTY_RIGHTS[ Properties.NORMAL_USER ] = [ RIGHT_SUBMIT, RIGHT_GET_INFO ]
 
 
 class JobPolicy:
@@ -70,27 +83,31 @@ class JobPolicy:
 
     # Can not do anything by default
     permDict = {}
-    for r in JOB_RIGHTS:
+    for r in ALL_RIGHTS:
       permDict[r] = False
 
     # Anybody can get info about the jobs
-    permDict['GetInfo'] = True
+    permDict[ RIGHT_GET_INFO ] = True
+
+    #Give JobAdmin permission if needed
+    if Properties.JOB_ADMINISTRATOR in self.userProperties:
+      for r in PROPERTY_RIGHTS[ Properties.JOB_ADMINISTRATOR ]:
+        permDict[ r ] = True
+
+    #Give JobAdmin permission if needed
+    if Properties.NORMAL_USER in self.userProperties:
+      for r in PROPERTY_RIGHTS[ Properties.NORMAL_USER ]:
+        permDict[ r ] = True
 
     # Job Owner can do everything with his jobs
     if jobOwnerDN == self.userDN:
-      for r in JOB_OWNER_RIGHTS:
+      for r in OWNER_RIGHTS:
         permDict[r] = True
-
-    # Visitors, NormalUsers and JobAdministrators
-    for groupProperty in ['Visitor','NormalUser','JobAdministrator','JobAgent']:
-      if groupProperty in self.userProperties:
-        for right in GROUP_RIGHTS[ groupProperty ]:
-          permDict[ right ] = True
 
     # Members of the same group sharing their jobs can do everything
     if jobOwnerGroup == self.userGroup:
-      if 'JobSharing' in self.userProperties:
-        for right in GROUP_RIGHTS['JobSharing']:
+      if Properties.JOB_SHARING in self.userProperties:
+        for right in GROUP_RIGHTS:
           permDict[right] = True
 
     return S_OK( permDict )
