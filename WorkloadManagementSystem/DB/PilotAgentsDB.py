@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.22 2008/07/17 18:51:23 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.23 2008/07/17 18:56:32 acasajus Exp $
 ########################################################################
 """ PilotAgentsDB class is a front-end to the Pilot Agent Database.
     This database keeps track of all the submitted grid pilot jobs.
@@ -23,7 +23,7 @@
 
 """
 
-__RCSID__ = "$Id: PilotAgentsDB.py,v 1.22 2008/07/17 18:51:23 acasajus Exp $"
+__RCSID__ = "$Id: PilotAgentsDB.py,v 1.23 2008/07/17 18:56:32 acasajus Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
@@ -346,6 +346,21 @@ class PilotAgentsDB(DB):
         return S_OK(pilotList)
       else:
         return S_ERROR('PilotJobReference '+pilotRef+' not found'  )
+
+##########################################################################################
+  def getJobsForPilot( self, pilotID ):
+    """ Get IDs of Jobs that were executed by a pilot
+    """
+    req = "SELECT JobID FROM JobToPilotMapping WHERE pilotID=%d" % pilotID
+    result = self._query(req)
+    if not result['OK']:
+      return result
+    else:
+      if result['Value']:
+        pilotList = [ x[0] for x in result['Value'] ]
+        return S_OK(pilotList)
+      else:
+        return S_ERROR('JobID '+pilotRef+' not found'  )
 
 ##########################################################################################
   def getPilotsForJob(self,jobID,gridType=None):
