@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.26 2008/07/17 19:12:55 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.27 2008/07/17 19:46:40 acasajus Exp $
 ########################################################################
 """ PilotAgentsDB class is a front-end to the Pilot Agent Database.
     This database keeps track of all the submitted grid pilot jobs.
@@ -23,7 +23,7 @@
 
 """
 
-__RCSID__ = "$Id: PilotAgentsDB.py,v 1.26 2008/07/17 19:12:55 acasajus Exp $"
+__RCSID__ = "$Id: PilotAgentsDB.py,v 1.27 2008/07/17 19:46:40 acasajus Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
@@ -170,7 +170,7 @@ class PilotAgentsDB(DB):
     """
 
     parameters = ['PilotJobReference','OwnerDN','OwnerGroup','GridType','Broker',
-                  'Status','DestinationSite','BenchMark','ParentId','SubmissionTime', 'PilotID' ]
+                  'Status','DestinationSite','BenchMark','ParentID','SubmissionTime', 'PilotID' ]
 
     expectList = False
     cmd = "SELECT %s FROM PilotAgents" % ", ".join( parameters )
