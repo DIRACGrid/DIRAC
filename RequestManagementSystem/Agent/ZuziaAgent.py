@@ -4,6 +4,7 @@
 from DIRAC  import gLogger, gConfig, gMonitor, S_OK, S_ERROR
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
+from DIRAC.ConfigurationSystem.Client import PathFinder
 
 import time,os,re
 from types import *
