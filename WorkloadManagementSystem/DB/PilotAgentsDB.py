@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.21 2008/07/17 16:56:04 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.22 2008/07/17 18:51:23 acasajus Exp $
 ########################################################################
 """ PilotAgentsDB class is a front-end to the Pilot Agent Database.
     This database keeps track of all the submitted grid pilot jobs.
@@ -23,7 +23,7 @@
 
 """
 
-__RCSID__ = "$Id: PilotAgentsDB.py,v 1.21 2008/07/17 16:56:04 rgracian Exp $"
+__RCSID__ = "$Id: PilotAgentsDB.py,v 1.22 2008/07/17 18:51:23 acasajus Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
@@ -60,12 +60,12 @@ class PilotAgentsDB(DB):
     parentID = 0
 
     for ref in pilotRef:
-    
+
       req = "INSERT INTO PilotAgents( PilotJobReference, InitialJobID, OwnerDN, " + \
             "OwnerGroup, Broker, GridType, SubmissionTime, LastUpdateTime, Status, ParentID ) " + \
             "VALUES ('%s',%d,'%s','%s','%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),'Submitted', %s)" % \
             (ref,int(jobID),ownerDN,ownerGroup,broker,gridType, parentID)
-            
+
       result = self._update(req,connection)
       if not result['OK']:
         return result
@@ -76,8 +76,8 @@ class PilotAgentsDB(DB):
         if not res['OK']:
           return res
         parentID = int(res['Value'][0][0])
-      
-    req = "INSERT INTO PilotRequirements (PilotID,Requirements) VALUES (%d,'%s')" % (parentID,e_requirements)  
+
+    req = "INSERT INTO PilotRequirements (PilotID,Requirements) VALUES (%d,'%s')" % (parentID,e_requirements)
     return self._update(req)
 
 ##########################################################################################
@@ -117,9 +117,9 @@ class PilotAgentsDB(DB):
     if ownerGroup:
       condList.append("OwnerGroup = '%s'" % ownerGroup)
     if newer:
-      condList.append("SubmissionTime > DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d MINUTE)" % newer)  
+      condList.append("SubmissionTime > DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d MINUTE)" % newer)
     if older:
-      condList.append("SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d MINUTE)" % older)    
+      condList.append("SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d MINUTE)" % older)
 
     if condList:
       conditions = " AND ".join(condList)
@@ -140,13 +140,13 @@ class PilotAgentsDB(DB):
   def deletePilot(self,pilotRef):
     """ Delete Pilot reference from the LCGPilots table """
 
-    
+
 
     req = "DELETE FROM PilotAgents WHERE PilotJobReference='%s'" % pilotRef
     result = self._update(req)
     if not result['OK']:
       return result
-      
+
 
 ##########################################################################################
   def clearPilots(self,interval=30,aborted_interval=7):
@@ -165,48 +165,57 @@ class PilotAgentsDB(DB):
     return S_OK()
 
 ##########################################################################################
-  def getPilotInfo(self,pilotRef):
+  def getPilotInfo( self, pilotRef = False, parentId = False ):
     """ Get all the information for the pilot job reference or reference list
     """
 
     parameters = ['PilotJobReference','OwnerDN','OwnerGroup','GridType','Broker',
-                  'Status','DestinationSite','BenchMark']
-    param_string = ','.join(parameters)
+                  'Status','DestinationSite','BenchMark','ParentId','SubmissionTime', 'PilotID' ]
 
-    list_type = False
-    if type(pilotRef) == ListType:
-      list_type = True
-      if pilotRef:
-        refString = ",".join(["'"+x+"'" for x in pilotRef])
-        req = "SELECT "+param_string+" FROM PilotAgents WHERE PilotJobReference IN (%s)" % refString
+    expectList = False
+    cmd = "SELECT %s FROM PilotAgents" % ", ".join( parameters )
+    condSQL = []
+    if pilotRef:
+      if type( pilotRef ) == ListType:
+        condSQL.append( "PilotJobReference IN (%s)" % ",".join( [ '"%s"' % x for x in pilotRef ] ) )
       else:
-        req = "SELECT "+param_string+" FROM PilotAgents"
-    else:
-      req = "SELECT "+param_string+" FROM PilotAgents WHERE PilotJobReference='%s'" % pilotRef
-
-    # print req
+        condSQL.append( "PilotJobReference = '%s'" % pilotRef )
+    if parentId:
+      if type( parentId ) == ListType:
+        condSQL.append( "ParentID IN (%s)" % ",".join( [ '"%s"' % x for x in parentId ] ) )
+      else:
+        condSQL.append( "ParentID = '%s'" % parentId )
+    if condSQL:
+      cmd = "%s WHERE %s" ( cmd, " AND ".join( condSQL ) )
 
     result = self._query(req)
     if not result['OK']:
       return result
+
+    if not result['Value']:
+      msg = "No pilots found"
+      if pilotRef:
+        msg += " for PilotJobReference(s): %s" % pilotRef
+      if parentId:
+        msg += " with parent id: %s" % parentId
+      return S_ERROR( msg )
+
+    resDict = {}
+    for row in result['Value']:
+      pilotDict = {}
+      for i in range(len(parameters)-1):
+        pilotDict[parameters[i+1]] = row[i+1]
+      resDict[row[0]] = pilotDict
+
+    if expectList:
+      return S_OK( resDict )
     else:
-      if result['Value']:
-        if list_type:
-          resDict = {}
-          for row in result['Value']:
-            pilotDict = {}
-            for i in range(len(parameters)-1):
-              pilotDict[parameters[i+1]] = row[i+1]
-            resDict[row[0]] = pilotDict
-          return S_OK(resDict)
-        else:
-          pilotDict = {}
-          for i in range(len(parameters)-1):
-            pilotDict[parameters[i+1]] = result['Value'][0][i+1]
-          return S_OK(pilotDict)
+      if resDict:
+        return S_OK( resDict[0] )
       else:
-        return S_ERROR('PilotJobReference(s) not found: '+str(pilotRef))
-           
+        return S_ERROR( "No pilots found" )
+
+
 
 ##########################################################################################
   def setPilotDestinationSite(self,pilotRef,destination):
@@ -247,7 +256,7 @@ class PilotAgentsDB(DB):
   def storePilotOutput(self,pilotRef,output,error):
     """ Store standard output and error for a pilot with pilotRef
     """
-    
+
     pilotID = self.__getPilotID(pilotRef)
     if not pilotID:
       return S_ERROR('Pilot reference not found %s' % pilotRef)
@@ -424,3 +433,4 @@ class PilotAgentsDB(DB):
               summary_dict['Total'][st] += int(count)
 
     return S_OK(summary_dict)
+
