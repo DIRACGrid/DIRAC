@@ -72,6 +72,12 @@ class TransferDBMonitoringHandler(RequestHandler):
     """
     return transferDB.getFTSJobs()
 
+  types_getChannelObservedThroughput= [IntType]
+  def export_getChannelObservedThroughput(self,interval):
+    """ Get the observed throughput on the channels defined
+    """
+    return transferDB.getChannelObservedThroughput(interval)
+
 ##############################################################################
   types_getReqPageSummary = [DictType, StringType, IntType, IntType]
   def export_getReqPageSummary(self, attrDict, orderAttribute, pageNumber, numberPerPage):
