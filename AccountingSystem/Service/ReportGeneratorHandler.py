@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/ReportGeneratorHandler.py,v 1.12 2008/07/07 16:56:14 acasajus Exp $
-__RCSID__ = "$Id: ReportGeneratorHandler.py,v 1.12 2008/07/07 16:56:14 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/ReportGeneratorHandler.py,v 1.13 2008/07/17 09:08:07 acasajus Exp $
+__RCSID__ = "$Id: ReportGeneratorHandler.py,v 1.13 2008/07/17 09:08:07 acasajus Exp $"
 import types
 import os
 from DIRAC import S_OK, S_ERROR, rootPath, gConfig, gLogger, gMonitor
@@ -104,11 +104,18 @@ class ReportGeneratorHandler( RequestHandler ):
         none
     """
     dbUtils = DBUtils( gAccountingDB, self.serviceInfoDict[ 'clientSetup' ] )
+    credDict = self.getRemoteCredentials()
     if typeName in gPoliciesList:
-      condDict = gPoliciesList[ typeName ].getListingConditions( self.getRemoteCredentials() )
+      policyFilter = gPoliciesList[ typeName ]
     else:
-      condDict = {}
-    return dbUtils.getKeyValues( typeName, condDict )
+      policyFilter = False
+    if policyFilter:
+      condDict = policyFilter.getListingConditions( credDict )
+    retVal = dbUtils.getKeyValues( typeName, condDict )
+    if not policyFilter or not retVal[ 'OK' ]:
+      return retVal
+    return S_OK( policyFilter.filterListingValues( credDict, retVal[ 'Value' ] ) )
+
 
   def transfer_toClient( self, fileId, token, fileHelper ):
     """
