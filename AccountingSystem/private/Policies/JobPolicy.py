@@ -31,6 +31,10 @@ class JobPolicy:
     if Properties.JOB_ADMINISTRATOR in userProps:
       return S_OK()
     elif Properties.JOB_SHARING in userProps:
+      if 'User' in condDict:
+        condDict[ 'UserGroup' ] = credDict[ 'group' ]
+      if 'User' in groupingList:
+        condDict[ 'UserGroup' ] = credDict[ 'group' ]
       if 'UserGroup' in condDict:
         condDict[ 'UserGroup' ] = credDict[ 'group' ]
       if 'UserGroup' in groupingList:
@@ -46,7 +50,29 @@ class JobPolicy:
       if 'UserGroup' in groupingList:
         condDict[ 'User' ] = credDict[ 'username' ]
         condDict[ 'UserGroup' ] = credDict[ 'group' ]
-
-
+    else:
+      if 'User' in condDict:
+        del( condDict[ 'User' ] )
+      if 'UserGroup' in condDict:
+        del( condDict[ 'User' ] )
+      if 'User' in groupingList:
+        return S_ERROR( "You can't group plots by users! Bad boy!" )
+      if 'UserGroup' in groupingList:
+        return S_ERROR( "You can't group plots by user groups! Bad boy!" )
 
     return S_OK()
+
+  def filterListingValues( self, credDict, dataDict ):
+    userProps = credDict[ 'properties' ]
+
+    if Properties.JOB_ADMINISTRATOR in userProps:
+      return S_OK( dataDict )
+    elif Properties.JOB_SHARING in userProps:
+      return S_OK( dataDict )
+    elif Properties.NORMAL_USER in userProps:
+      return S_OK( dataDict )
+
+    dataDict[ 'User' ] = []
+    dataDict[ 'UserGroup' ] = []
+
+    return S_OK( dataDict )
