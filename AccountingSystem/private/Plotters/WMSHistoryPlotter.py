@@ -1,6 +1,6 @@
 
 from DIRAC import S_OK, S_ERROR, gLogger
-from DIRAC.AccountingSystem.Client.Types.Job import Job
+from DIRAC.AccountingSystem.Client.Types.WMSHistory import WMSHistory
 from DIRAC.AccountingSystem.private.Plotters.BasePlotter import BasePlotter
 from DIRAC.AccountingSystem.private.Plots import *
 from DIRAC.Core.Utilities import Time
@@ -8,7 +8,7 @@ from DIRAC.Core.Utilities import Time
 class WMSHistoryPlotter(BasePlotter):
 
   _typeName = "WMSHistory"
-  _typeKeyFields = [ dF[0] for dF in Job().definitionKeyFields ]
+  _typeKeyFields = [ dF[0] for dF in WMSHistory().definitionKeyFields ]
 
   def _plotNumberOfJobs( self, startTime, endTime, condDict, groupingFields, filename ):
     selectFields = ( self._getSQLStringForGrouping( groupingFields) + ", %s, %s, SUM(%s/%s)",
