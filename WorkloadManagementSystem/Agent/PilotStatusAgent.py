@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.9 2008/07/17 18:56:20 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.10 2008/07/17 19:15:29 acasajus Exp $
 ########################################################################
 
 """  The Pilot Status Agent updates the status of the pilot jobs if the
      PilotAgents database.
 """
 
-__RCSID__ = "$Id: PilotStatusAgent.py,v 1.9 2008/07/17 18:56:20 acasajus Exp $"
+__RCSID__ = "$Id: PilotStatusAgent.py,v 1.10 2008/07/17 19:15:29 acasajus Exp $"
 
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, List
@@ -100,7 +100,7 @@ class PilotStatusAgent(Agent):
         self.log.verbose("Getting status for pilots for owner %s, group %s" % (owner,group))
 
         # Do not call more than MAX_JOBS_QUERY pilots at a time
-        for start_index in range( 0, len( pList ), MAX_JOBS_QUERY ):
+        for start_index in range( 0, len( refList ), MAX_JOBS_QUERY ):
           refsToQuery = refList[ start_index : start_index+MAX_JOBS_QUERY ]
           self.log.verbose( 'Querying %d pilots starting from %d' % ( len( refsToQuery ), start_index ) )
           result = self.getPilotStatus( proxy, grid, refsToQuery )
@@ -128,6 +128,7 @@ class PilotStatusAgent(Agent):
                     for childRef in childDict:
                       self.__addPilotAccountingReport( childDict[ childRef ] )
 
+    self.log.info( "Sending accounting records" )
     gDataStoreClient.commit()
     return S_OK()
 
@@ -229,4 +230,5 @@ class PilotStatusAgent(Agent):
       pA.setValueByKey( 'Jobs', 0 )
     else:
       pA.setValueByKey( 'Jobs', len( retVal[ 'Value' ] ) )
+    self.log.info( "Added accounting record for pilot %s" % pData[ 'PilotID' ] )
     return gDataStoreClient.addRegister( pA )

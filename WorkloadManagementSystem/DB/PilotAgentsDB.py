@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.24 2008/07/17 19:05:55 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.25 2008/07/17 19:12:03 acasajus Exp $
 ########################################################################
 """ PilotAgentsDB class is a front-end to the Pilot Agent Database.
     This database keeps track of all the submitted grid pilot jobs.
@@ -23,7 +23,7 @@
 
 """
 
-__RCSID__ = "$Id: PilotAgentsDB.py,v 1.24 2008/07/17 19:05:55 acasajus Exp $"
+__RCSID__ = "$Id: PilotAgentsDB.py,v 1.25 2008/07/17 19:12:03 acasajus Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
@@ -188,7 +188,7 @@ class PilotAgentsDB(DB):
     if condSQL:
       cmd = "%s WHERE %s" % ( cmd, " AND ".join( condSQL ) )
 
-    result = self._query(req)
+    result = self._query( cmd )
     if not result['OK']:
       return result
 
@@ -211,7 +211,7 @@ class PilotAgentsDB(DB):
       return S_OK( resDict )
     else:
       if resDict:
-        return S_OK( resDict[0] )
+        return S_OK( resDict[resDict.keys()[0]])
       else:
         return S_ERROR( "No pilots found" )
 
