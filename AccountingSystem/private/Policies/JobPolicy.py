@@ -25,7 +25,7 @@ class JobPolicy:
   def checkPlot( self, id, credDict, condDict, groupingList ):
     return self.__executor.applyFilters( id, credDict, condDict, groupingList )
 
-  def __checkConditions( self, credDict, condDict, groupingList ):
+  def __checkConditions( self, credDict, condDict, groupingField ):
     userProps = credDict[ 'properties' ]
 
     if Properties.JOB_ADMINISTRATOR in userProps:
@@ -33,21 +33,21 @@ class JobPolicy:
     elif Properties.JOB_SHARING in userProps:
       if 'User' in condDict:
         condDict[ 'UserGroup' ] = credDict[ 'group' ]
-      if 'User' in groupingList:
+      if 'User' == groupingField:
         condDict[ 'UserGroup' ] = credDict[ 'group' ]
       if 'UserGroup' in condDict:
         condDict[ 'UserGroup' ] = credDict[ 'group' ]
-      if 'UserGroup' in groupingList:
+      if 'UserGroup' == groupingField:
         condDict[ 'UserGroup' ] = credDict[ 'group' ]
     elif Properties.NORMAL_USER in userProps:
       if 'User' in condDict:
         condDict[ 'User' ] = credDict[ 'username' ]
-      if 'User' in groupingList:
+      if 'User' == groupingField:
         condDict[ 'User' ] = credDict[ 'username' ]
       if 'UserGroup' in condDict:
         condDict[ 'User' ] = credDict[ 'username' ]
         condDict[ 'UserGroup' ] = credDict[ 'group' ]
-      if 'UserGroup' in groupingList:
+      if 'UserGroup' == groupingField:
         condDict[ 'User' ] = credDict[ 'username' ]
         condDict[ 'UserGroup' ] = credDict[ 'group' ]
     else:
@@ -55,9 +55,9 @@ class JobPolicy:
         del( condDict[ 'User' ] )
       if 'UserGroup' in condDict:
         del( condDict[ 'User' ] )
-      if 'User' in groupingList:
+      if 'User' == groupingField:
         return S_ERROR( "You can't group plots by users! Bad boy!" )
-      if 'UserGroup' in groupingList:
+      if 'UserGroup' == groupingField:
         return S_ERROR( "You can't group plots by user groups! Bad boy!" )
 
     return S_OK()
