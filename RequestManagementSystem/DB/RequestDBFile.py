@@ -226,7 +226,7 @@ class RequestDBFile:
       if not res['Value']:
         return res
       requestDict = res['Value']
-      requestName = requestDict['requestName']
+      requestName = requestDict['RequestName']
       # Delete the original request
       res = self.deleteRequest(requestName)
       if not res['OK']:
