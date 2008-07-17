@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalogue. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.32 2008/07/05 05:25:52 rgracian Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.33 2008/07/17 13:05:10 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -11,6 +11,10 @@ from DIRAC.DataManagementSystem.Client.FileCatalog import FileCatalog
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.File import makeGuid,fileAdler
 from DIRAC.Core.Utilities.File import getSize
+
+from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
+from DIRAC.AccountingSystem.Client.DataStoreClient import DataStoreClient
+from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 
 class ReplicaManager:
 
@@ -798,6 +802,7 @@ class ReplicaManager:
     failed.update(res['Value']['Failed'])
     successful = res['Value']['Successful']
     resDict = {'Successful':successful,'Failed':failed}
+    gDataStoreClient.commit()
     return S_OK(resDict)
 
   def __removeFile(self,lfnDict):
@@ -866,6 +871,7 @@ class ReplicaManager:
     failed.update(res['Value']['Failed'])
     successful.update(res['Value']['Successful'])
     resDict = {'Successful':successful,'Failed':failed}
+    gDataStoreClient.commit()
     return S_OK(resDict)
 
   def __removeReplica(self,storageElementName,fileTuple):
@@ -953,8 +959,16 @@ class ReplicaManager:
     return res
 
   def __removeCatalogReplica(self,replicaTuple):
+    oDataOperation = self.__initialiseAccountingObject('removeCatalogReplica','',len(replicaTuple))
+    oDataOperation.setStartTime()
+    start= time.time()
     res = self.fileCatalogue.removeReplica(replicaTuple)
+    oDataOperation.setEndTime()
+    oDataOperation.setValueByKey('RegistrationTime',time.time()-start)
     if not res['OK']:
+      oDataOperation.setValueByKey('RegistrationOK',0)
+      oDataOperation.setValueByKey('FinalStatus','Failed')
+      gDataStoreClient.addRegister(oDataOperation)
       errStr = "ReplicaManager.__removeCatalogReplica: Completely failed to remove replica."
       gLogger.error(errStr,res['Message'])
       return S_ERROR(errStr)
@@ -964,6 +978,8 @@ class ReplicaManager:
     for lfn,error in res['Value']['Failed'].items():
       errStr = "ReplicaManager.__removeCatalogReplica: Failed to remove replica."
       gLogger.error(errStr,"%s %s" % (lfn,error))
+    oDataOperation.setValueByKey('RegistrationOK',len(res['Value']['Successful'].keys()))
+    gDataStoreClient.addRegister(oDataOperation)
     return res
 
   def removePhysicalReplica(self,storageElementName,lfn):
@@ -1030,12 +1046,22 @@ class ReplicaManager:
       errStr = "ReplicaManager.__removePhysicalReplica: Failed to instantiate Storage Element for removal."
       gLogger.error(errStr,storageElement)
       return S_ERROR(errStr)
+    oDataOperation = self.__initialiseAccountingObject('removePhysicalReplica',storageElementName,len(pfnsToRemove))
+    oDataOperation.setStartTime()
+    start= time.time()
     res = storageElement.removeFile(pfnsToRemove)
+    oDataOperation.setEndTime()
+    oDataOperation.setValueByKey('TransferTime',time.time()-start)
     if not res['OK']:
+      oDataOperation.setValueByKey('TransferOK',0)
+      oDataOperation.setValueByKey('FinalStatus','Failed')
+      gDataStoreClient.addRegister(oDataOperation)
       errStr = "ReplicaManager.__removePhysicalReplica: Failed to remove replicas."
       gLogger.error(errStr,res['Message'])
       return S_ERROR(errStr)
     else:
+      oDataOperation.setValueByKey('TransferOK',len(res['Value']['Successful'].keys()))
+      gDataStoreClient.addRegister(oDataOperation)
       infoStr = "ReplicaManager.__removePhysicalReplica: Successfully issued removal request."
       gLogger.info(infoStr)
       return res
@@ -1243,3 +1269,22 @@ class ReplicaManager:
       gLogger.error(errStr,res['Message'])
       return S_ERROR(errStr)
     return res
+
+  def __initialiseAccountingObject(self,operation,se,files):
+    accountingDict = {}
+    accountingDict['OperationType'] = operation
+    accountingDict['User'] = 'acsmith'
+    accountingDict['Protocol'] = 'ReplicaManager'
+    accountingDict['RegistrationTime'] = 0.0
+    accountingDict['RegistrationOK'] = 0
+    accountingDict['RegistrationTotal'] = 0
+    accountingDict['Destination'] = se
+    accountingDict['TransferTotal'] = files
+    accountingDict['TransferOK'] = files
+    accountingDict['TransferSize'] = files
+    accountingDict['TransferTime'] = 0.0
+    accountingDict['FinalStatus'] = 'Successful'
+    accountingDict['Source'] = gConfig.getValue('/LocalSite/Site','Unknown')
+    oDataOperation = DataOperation()
+    oDataOperation.setValuesFromDict(accountingDict)
+    return oDataOperation
