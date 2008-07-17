@@ -137,7 +137,7 @@ class TransferDB(DB):
     for channelID,numberOfJobs in res['Value']:
       withJobs[channelID] = numberOfJobs
 
-        
+
     minJobs = maxJobsPerChannel
     maxFiles = 0
     possibleChannels = []
@@ -160,7 +160,7 @@ class TransferDB(DB):
             possibleChannels.append(channelID)
     if not possibleChannels:
       return S_OK()
-    
+
     resDict = {}
     selectedChannel = randomize(possibleChannels)[0]
     resDict = channels[selectedChannel]
@@ -233,7 +233,7 @@ class TransferDB(DB):
     if not res['OK']:
       err = 'TransferDB._updateCompletedChannelStatus: Failed to update File %s from Channel %s.' % (fileID,channelID)
       return S_ERROR('%s\n%s' % (err,res['Message']))
-    return res    
+    return res
 
   def resetFileChannelStatus(self,channelID,fileID):
     req = "UPDATE Channel SET Status = 'Waiting',LastUpdate=UTC_TIMESTAMP(),Retries=Retries+1 WHERE FileID=%s AND ChannelID=%s;" % (fileID,channelID)
@@ -486,7 +486,9 @@ class TransferDB(DB):
     channelIDs = channels.keys()
     #############################################
     # First get the throughput on the channels
-    req = "SELECT ChannelID,SUM(FileSize/%s),COUNT(*)/%s from FileToFTS WHERE SubmissionTime > (UTC_TIMESTAMP() - INTERVAL %s SECOND) AND Status = 'Completed' GROUP BY ChannelID;" % (interval,interval,interval)
+    #req = "SELECT ChannelID,SUM(FileSize/%s),COUNT(*)/%s from FileToFTS WHERE SubmissionTime > (UTC_TIMESTAMP() - INTERVAL %s SECOND) AND Status = 'Completed' GROUP BY ChannelID;" % (interval,interval,interval)
+    useFulString = "SUM(TIME_TO_SEC(TIMEDIFF(TerminalTime,SubmissionTime)))"
+    req = "SELECT ChannelID,SUM(FileSize)/%s,COUNT(*)/%s FROM FileToFTS WHERE SubmissionTime > (UTC_TIMESTAMP() - INTERVAL %s SECOND) AND Status = 'Completed' GROUP BY ChannelID;" % (useFulString,useFulString,interval)
     res = self._query(req)
     if not res['OK']:
       err = 'TransferDB._getFTSObservedThroughput: Failed to obtain observed throughput.'
