@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.23 2008/07/17 18:56:32 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.24 2008/07/17 19:05:55 acasajus Exp $
 ########################################################################
 """ PilotAgentsDB class is a front-end to the Pilot Agent Database.
     This database keeps track of all the submitted grid pilot jobs.
@@ -23,7 +23,7 @@
 
 """
 
-__RCSID__ = "$Id: PilotAgentsDB.py,v 1.23 2008/07/17 18:56:32 acasajus Exp $"
+__RCSID__ = "$Id: PilotAgentsDB.py,v 1.24 2008/07/17 19:05:55 acasajus Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
@@ -186,7 +186,7 @@ class PilotAgentsDB(DB):
       else:
         condSQL.append( "ParentID = '%s'" % parentId )
     if condSQL:
-      cmd = "%s WHERE %s" ( cmd, " AND ".join( condSQL ) )
+      cmd = "%s WHERE %s" % ( cmd, " AND ".join( condSQL ) )
 
     result = self._query(req)
     if not result['OK']:
