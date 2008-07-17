@@ -1,10 +1,10 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/RequestClient.py,v 1.2 2008/05/16 20:10:50 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/RequestClient.py,v 1.3 2008/07/17 08:54:58 acsmith Exp $
 
 """
   This is the client implementation for the RequestDB using the DISET framework.
 """
 
-__RCSID__ = "$Id: RequestClient.py,v 1.2 2008/05/16 20:10:50 acsmith Exp $"
+__RCSID__ = "$Id: RequestClient.py,v 1.3 2008/07/17 08:54:58 acsmith Exp $"
 
 from types import *
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
@@ -142,7 +142,7 @@ class RequestClient:
       return S_ERROR(errKey+errExpl)
 
 
-  def serveRequest(self,requestType,url=''):
+  def serveRequest(self,requestType='',url=''):
     """ Get a request from RequestDB.
     """
     try:
