@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.20 2008/07/17 16:56:34 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.21 2008/07/17 17:14:15 rgracian Exp $
 # File :   Director.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -48,7 +48,7 @@
 
 """
 
-__RCSID__ = "$Id: Director.py,v 1.20 2008/07/17 16:56:34 rgracian Exp $"
+__RCSID__ = "$Id: Director.py,v 1.21 2008/07/17 17:14:15 rgracian Exp $"
 
 import types, time
 
@@ -1089,17 +1089,19 @@ MyProxyServer = "myproxy.cern.ch";
     stdout = ret['Value'][1]
     stderr = ret['Value'][2]
 
-    references = [parentReference]
+    references = []
 
     failed = 1
     for line in List.fromChar(stdout,'\n'):
-      m = re.search("\s+Status info for the Job : (https:\S+)",line)
+      m = re.search("Status info for the Job : (https:\S+)",line)
       if (m):
         glite_id = m.group(1)
-        if glite_id not in references: references.append( glite_id )
+        if glite_id not in references: 
+          references.append( glite_id )
         failed = 0
     if failed:
       self.log.error( 'Job Status returns no Child Reference:', str(ret['Value'][0]) + '\n'.join( ret['Value'][1:3] ) )
+      return [parentReference]
 
     return references
     
