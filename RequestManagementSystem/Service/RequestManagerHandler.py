@@ -108,7 +108,7 @@ class RequestManagerHandler(RequestHandler):
       gLogger.exception(errStr,"%s %s" % (requestType,str(x)))
       return S_ERROR(errStr)
 
-  types_serveRequest = [StringType]
+  types_serveRequest = []
   def export_serveRequest(self,requestType):
     """ Serve a request of a given type from the database
     """
