@@ -1,11 +1,11 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Client/JobReport.py,v 1.12 2008/07/16 15:42:56 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Client/JobReport.py,v 1.13 2008/07/17 12:47:28 rgracian Exp $
 
 """
   JobReport class encapsulates various
   methods of the job status reporting
 """
 
-__RCSID__ = "$Id: JobReport.py,v 1.12 2008/07/16 15:42:56 rgracian Exp $"
+__RCSID__ = "$Id: JobReport.py,v 1.13 2008/07/17 12:47:28 rgracian Exp $"
 
 import datetime
 from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -81,7 +81,7 @@ class JobReport:
       result = self.sendStoredStatusInfo()
       return result
     else:
-      jobMonitor = RPCClient('WorkloadManagement/JobStateUpdate',timeout=10)
+      jobMonitor = RPCClient('WorkloadManagement/JobStateUpdate',timeout=60)
       result = jobMonitor.setJobApplicationStatus(self.jobID,appStatus,self.source)
       if result['OK']:
         return result
@@ -109,7 +109,7 @@ class JobReport:
       result = self.sendStoredJobParameters()
       return result
     else:
-      jobMonitor = RPCClient('WorkloadManagement/JobStateUpdate',timeout=10)
+      jobMonitor = RPCClient('WorkloadManagement/JobStateUpdate',timeout=60)
       result = jobMonitor.setJobParameter(self.jobID,par_name,par_value)
       if result['OK']:
         return result
@@ -139,7 +139,7 @@ class JobReport:
       result = self.sendStoredJobParameters()
       return result
     else:
-      jobMonitor = RPCClient('WorkloadManagement/JobStateUpdate',timeout=10)
+      jobMonitor = RPCClient('WorkloadManagement/JobStateUpdate',timeout=60)
       result = jobMonitor.setJobParameters(self.jobID,parameters)
       if result['OK']:
         return result
@@ -167,7 +167,7 @@ class JobReport:
                                                        'Source':"Job_%d" % self.jobID}
 
     if statusDict:
-      jobMonitor = RPCClient('WorkloadManagement/JobStateUpdate',timeout=10)
+      jobMonitor = RPCClient('WorkloadManagement/JobStateUpdate',timeout=60)
       result = jobMonitor.setJobStatusBulk(self.jobID,statusDict)
 #      result['OK'] =  False
 #      result['Message'] = ''
@@ -194,7 +194,7 @@ class JobReport:
       parameters.append((pname,pvalue))
 
     if parameters:
-      jobMonitor = RPCClient('WorkloadManagement/JobStateUpdate',timeout=10)
+      jobMonitor = RPCClient('WorkloadManagement/JobStateUpdate',timeout=60)
       result = jobMonitor.setJobParameters(self.jobID,parameters)
       if not result:
         return S_ERROR('Null result from JobState service')
