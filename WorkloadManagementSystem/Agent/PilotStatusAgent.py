@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.11 2008/07/17 19:17:09 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.12 2008/07/17 20:00:47 acasajus Exp $
 ########################################################################
 
 """  The Pilot Status Agent updates the status of the pilot jobs if the
      PilotAgents database.
 """
 
-__RCSID__ = "$Id: PilotStatusAgent.py,v 1.11 2008/07/17 19:17:09 acasajus Exp $"
+__RCSID__ = "$Id: PilotStatusAgent.py,v 1.12 2008/07/17 20:00:47 acasajus Exp $"
 
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, List
@@ -87,7 +87,6 @@ class PilotStatusAgent(Agent):
     for grid in workDict.keys():
 
       #if grid != "LCG": continue
-
       for owner_group,refList in workDict[grid].items():
         owner,group = owner_group.split(":")
         ret = gProxyManager.getPilotProxyFromVOMSGroup( owner, group )
@@ -115,7 +114,7 @@ class PilotStatusAgent(Agent):
                                                     pDict['Destination'],
                                                     pDict['StatusDate'])
               if pDict[ 'Status' ] in finalStateList:
-                if pilotsDict[ pRef ][ 'ParentID' ] == 0:
+                if pRef in pilotsDict and pilotsDict[ pRef ][ 'ParentID' ] == 0:
                   pilotDict = pilotsDict[ pRef ]
                   pilotDict[ 'Status' ] = pDict[ 'Status' ]
                   pilotDict[ 'Destination' ] = pDict[ 'Destination' ]
