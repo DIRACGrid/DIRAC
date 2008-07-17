@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.20 2008/05/27 10:59:59 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.21 2008/07/17 16:56:04 rgracian Exp $
 ########################################################################
 """ PilotAgentsDB class is a front-end to the Pilot Agent Database.
     This database keeps track of all the submitted grid pilot jobs.
@@ -23,7 +23,7 @@
 
 """
 
-__RCSID__ = "$Id: PilotAgentsDB.py,v 1.20 2008/05/27 10:59:59 atsareg Exp $"
+__RCSID__ = "$Id: PilotAgentsDB.py,v 1.21 2008/07/17 16:56:04 rgracian Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
@@ -56,25 +56,28 @@ class PilotAgentsDB(DB):
       gLogger.warn('Failed to escape requirements string')
       e_requirements = "Failed to escape requirements string"
     e_requirements = result['Value']
+
+    parentID = 0
+
+    for ref in pilotRef:
     
-    req = "INSERT INTO PilotAgents( PilotJobReference, InitialJobID, OwnerDN, " + \
-          "OwnerGroup, Broker, GridType, SubmissionTime, LastUpdateTime, Status ) " + \
-          "VALUES ('%s',%d,'%s','%s','%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),'Submitted')" % \
-          (pilotRef,int(jobID),ownerDN,ownerGroup,broker,gridType)
-          
-    self.lock.acquire()      
-    result = self._update(req,connection)
-    if not result['OK']:
-      return result
+      req = "INSERT INTO PilotAgents( PilotJobReference, InitialJobID, OwnerDN, " + \
+            "OwnerGroup, Broker, GridType, SubmissionTime, LastUpdateTime, Status, ParentID ) " + \
+            "VALUES ('%s',%d,'%s','%s','%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),'Submitted', %s)" % \
+            (ref,int(jobID),ownerDN,ownerGroup,broker,gridType, parentID)
+            
+      result = self._update(req,connection)
+      if not result['OK']:
+        return result
+
+      if not parentID:
+        req = "SELECT LAST_INSERT_ID();"
+        res = self._query(req,connection)
+        if not res['OK']:
+          return res
+        parentID = int(res['Value'][0][0])
       
-    req = "SELECT LAST_INSERT_ID();"
-    res = self._query(req,connection)
-    self.lock.release()
-    if not res['OK']:
-      return res
-    pilotID = int(res['Value'][0][0])
-      
-    req = "INSERT INTO PilotRequirements (PilotID,Requirements) VALUES (%d,'%s')" % (pilotID,e_requirements)  
+    req = "INSERT INTO PilotRequirements (PilotID,Requirements) VALUES (%d,'%s')" % (parentID,e_requirements)  
     return self._update(req)
 
 ##########################################################################################

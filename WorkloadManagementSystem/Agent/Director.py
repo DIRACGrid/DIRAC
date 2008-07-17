@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.19 2008/07/16 17:35:50 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.20 2008/07/17 16:56:34 rgracian Exp $
 # File :   Director.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -48,9 +48,9 @@
 
 """
 
-__RCSID__ = "$Id: Director.py,v 1.19 2008/07/16 17:35:50 rgracian Exp $"
+__RCSID__ = "$Id: Director.py,v 1.20 2008/07/17 16:56:34 rgracian Exp $"
 
-import types, time, threading
+import types, time
 
 from DIRAC.Core.Base.Agent                        import Agent
 from DIRAC.Core.Utilities                         import List
@@ -680,7 +680,10 @@ class PilotDirector:
     pilotOptions.append( '-o /DIRAC/Setup=%s' % self.diracSetup )
 
     # Write JDL
-    jdl, jobRequirements = self._prepareJDL( jobDict, pilotOptions, ceMask )
+    retDict = self._prepareJDL( jobDict, pilotOptions, ceMask )
+    jdl = retDict['JDL']
+    jobRequirements = retDict['Requirements']
+    pilots = retDict['Pilots']
     if not jdl:
       shutil.rmtree( workingDirectory )
       return S_ERROR( 'Could not create JDL:', job )
@@ -732,11 +735,18 @@ class PilotDirector:
     # Now we are ready for the actual submission, so
 
     self.log.verbose('Submitting Pilot Agent for job:', job )
-    pilotReference = self._submitPilot( proxy, job, jdl )
+    submitRet = self._submitPilot( proxy, job, jdl )
     shutil.rmtree( workingDirectory )
+    if not submitRet:
+      return S_ERROR( 'Pilot Submission Failed' )
+    pilotReference, resourceBroker = submitRet
 
     # Now, update the job Minor Status
-    pilotAgentsDB.addPilotReference( pilotReference, job, ownerDN, vomsGroup, gridType=self.flavour, requirements=jobRequirements )
+    if pilots > 1 :
+      pilotReference = self._getChildrenReferences( proxy, pilotReference, job )
+    else:
+      pilotReference = [pilotReference]
+    pilotAgentsDB.addPilotReference( pilotReference, job, ownerDN, vomsGroup, broker=resourceBroker, gridType=self.flavour, requirements=jobRequirements )
     ret = jobDB.getJobAttribute(job, 'Status')
     if ret['OK'] and ret['Value'] == MAJOR_WAIT:
       updateJobStatus( self.log, AGENT_NAME, job, MAJOR_WAIT, MINOR_RESPONSE, logRecord=True )
@@ -950,18 +960,22 @@ class PilotDirector:
     submittedPilot = None
 
     failed = 1
+    rb = ''
     for line in List.fromChar(stdout,'\n'):
       m = re.search("(https:\S+)",line)
       if (m):
         glite_id = m.group(1)
         submittedPilot = glite_id
+        if not rb:
+          m = re.search("https://(.+):.+",glite_id)
+          rb = m.group(1)
         self.log.info( 'Reference %s for job %s' % ( glite_id, job ) )
         failed = 0
     if failed:
       self.log.error( 'Job Submit returns no Reference:', str(ret['Value'][0]) + '\n'.join( ret['Value'][1:3] ) )
       return False
 
-    return glite_id
+    return glite_id,rb
 
   def _writeJDL(self, filename, jdlList):
     try:
@@ -976,7 +990,6 @@ class PilotDirector:
 
 class gLitePilotDirector(PilotDirector):
   def __init__(self):
-    self.lock = threading.Lock()
     self.flavour = 'gLite'
     self.resourceBrokers    = ['wms101.cern.ch']
     PilotDirector.__init__(self)
@@ -1037,7 +1050,7 @@ MyProxyServer = "myproxy.cern.ch";
     jdl = os.path.join( self.workDir, '%s.jdl' % jobDict['JobID'] )
     jdl = self._writeJDL( jdl, [jobJDL, wmsClientJDL] )
 
-    return (jdl, jobRequirements)
+    return {'JDL':jdl, 'Requirements':jobRequirements, 'Pilots':10 }
 
   def _listMatch(self, proxy, job, jdl):
     """
@@ -1051,11 +1064,45 @@ MyProxyServer = "myproxy.cern.ch";
     """
      Submit pilot and get back the reference
     """
-    self.lock.acquire()
     cmd = [ 'glite-wms-job-submit', '-a', '-c', '%s' % jdl, '%s' % jdl ]
-    result = self.parseJobSubmitStdout( proxy, cmd, job )
-    self.lock.release()
-    return result
+    return  self.parseJobSubmitStdout( proxy, cmd, job )
+  
+  def _getChildrenReferences(self, proxy, parentReference, job ):
+    """
+     Get reference for all Children
+    """
+    cmd = [ 'glite-wms-job-status', parentReference ]
+    
+    start = time.time()
+    self.log.verbose( 'Executing Job Status for job:', job )
+
+    ret = self._gridCommand( proxy, cmd )
+
+    if not ret['OK']:
+      self.log.error( 'Failed to execute Job Status', ret['Message'] )
+      return False
+    if ret['Value'][0] != 0:
+      self.log.error( 'Error executing Job Status:', str(ret['Value'][0]) + '\n'.join( ret['Value'][1:3] ) )
+      return False
+    self.log.info( 'Job Status Execution Time:', time.time()-start )
+
+    stdout = ret['Value'][1]
+    stderr = ret['Value'][2]
+
+    references = [parentReference]
+
+    failed = 1
+    for line in List.fromChar(stdout,'\n'):
+      m = re.search("\s+Status info for the Job : (https:\S+)",line)
+      if (m):
+        glite_id = m.group(1)
+        if glite_id not in references: references.append( glite_id )
+        failed = 0
+    if failed:
+      self.log.error( 'Job Status returns no Child Reference:', str(ret['Value'][0]) + '\n'.join( ret['Value'][1:3] ) )
+
+    return references
+    
 
 class LCGPilotDirector(PilotDirector):
   def __init__(self):
@@ -1114,7 +1161,7 @@ MyProxyServer = "myproxy.cern.ch";
     jdl = os.path.join( self.workDir, '%s.jdl' % jobDict['JobID'] )
     jdl = self._writeJDL( jdl, [jobJDL, rbJDL] )
 
-    return ( jdl, jobRequirements)
+    return {'JDL':jdl, 'Requirements':jobRequirements, 'Pilots': 1 }
 
   def _listMatch(self, proxy, job, jdl):
     """

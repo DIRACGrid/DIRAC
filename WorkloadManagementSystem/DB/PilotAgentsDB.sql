@@ -1,4 +1,4 @@
--- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.sql,v 1.11 2008/06/13 09:24:45 rgracian Exp $
+-- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.sql,v 1.12 2008/07/17 16:55:50 rgracian Exp $
 
 --------------------------------------------------------------------------------
 --
@@ -46,8 +46,7 @@ CREATE TABLE PilotAgents (
     SubmissionTime DATETIME,
     LastUpdateTime DATETIME,
     Status VARCHAR(32) NOT NULL DEFAULT 'Unknown',
-    StdOutput MEDIUMBLOB,
-    StdError MEDIUMBLOB,
+    ParentID INTEGER NOT NULL DEFAULT 0,
     PRIMARY KEY (PilotID),
     INDEX (PilotJobReference)
 );
