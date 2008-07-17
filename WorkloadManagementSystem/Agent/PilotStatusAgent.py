@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.8 2008/07/17 18:51:36 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.9 2008/07/17 18:56:20 acasajus Exp $
 ########################################################################
 
 """  The Pilot Status Agent updates the status of the pilot jobs if the
      PilotAgents database.
 """
 
-__RCSID__ = "$Id: PilotStatusAgent.py,v 1.8 2008/07/17 18:51:36 acasajus Exp $"
+__RCSID__ = "$Id: PilotStatusAgent.py,v 1.9 2008/07/17 18:56:20 acasajus Exp $"
 
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, List
@@ -224,4 +224,9 @@ class PilotStatusAgent(Agent):
     pA.setValueByKey( 'GridMiddleware', pData[ 'GridType' ] )
     pA.setValueByKey( 'GridResourceBroker', pData[ 'Broker' ] )
     pA.setValueByKey( 'GridStatus', pData[ 'Status' ] )
+    retVal = self.pilotDB.getJobsForPilot( pData[ 'PilotID' ] )
+    if not retVal[ 'OK' ]:
+      pA.setValueByKey( 'Jobs', 0 )
+    else:
+      pA.setValueByKey( 'Jobs', len( retVal[ 'Value' ] ) )
     return gDataStoreClient.addRegister( pA )
