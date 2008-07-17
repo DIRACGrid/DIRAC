@@ -1,10 +1,10 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/RequestClient.py,v 1.4 2008/07/17 10:36:45 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/RequestClient.py,v 1.5 2008/07/17 15:14:14 acsmith Exp $
 
 """
   This is the client implementation for the RequestDB using the DISET framework.
 """
 
-__RCSID__ = "$Id: RequestClient.py,v 1.4 2008/07/17 10:36:45 acsmith Exp $"
+__RCSID__ = "$Id: RequestClient.py,v 1.5 2008/07/17 15:14:14 acsmith Exp $"
 
 from types import *
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
@@ -17,20 +17,18 @@ class RequestClient:
   def __init__(self,useCertificates = False):
     """ Constructor of the RequestClient class
     """
-    voBoxUrls = fromChar( PathFinder.getServiceURL( "RequestManagement/voBoxURLs" ) )
+    voBoxUrls = fromChar(PathFinder.getServiceURL("RequestManagement/voBoxURLs"))
     self.voBoxUrls = []
     if voBoxUrls:
-      self.voBoxUrls = randomize(voBoxUrls)
+      self.voBoxUrls = randomize(voBoxUrls.split(','))
 
-    self.local = False
     local = PathFinder.getServiceURL("RequestManagement/localURL")
+    self.local = False
     if local:
       self.local = local
-      if local in self.voBoxUrls:
-        self.voBoxUrls.remove(self.local)
 
-    self.central = False
     central = PathFinder.getServiceURL("RequestManagement/centralURL")
+    self.central = False
     if central:
       self.central = central
 
@@ -88,8 +86,9 @@ class RequestClient:
     """
     try:
       if not url:
-        url = self.local
-      urls = [url]
+        urls = self.voBoxUrls
+      else:
+        urls = [url]
       for url in urls:
         requestRPCClient = RPCClient(url)
         res = requestRPCClient.setRequest(requestName,requestString)
@@ -116,8 +115,9 @@ class RequestClient:
     """
     try:
       if not url:
-        url = self.local
-      urls = [url]
+        urls = self.voBoxUrls
+      else:
+        urls = [url]
       for url in urls:
         gLogger.info("RequestDBClient.getRequest: Attempting to get request.", "%s %s" % (url,requestType))
         requestRPCClient = RPCClient(url)
@@ -144,8 +144,9 @@ class RequestClient:
     """
     try:
       if not url:
-        url = self.local
-      urls = [url]
+        urls = self.voBoxUrls
+      else:
+        urls = [url]
       for url in urls:
         gLogger.info("RequestDBClient.serveRequest: Attempting to obtain request.", "%s %s" % (url,requestType))
         requestRPCClient = RPCClient(url)
@@ -171,8 +172,10 @@ class RequestClient:
     """ Get the summary of requests in the RequestDBs. If a URL is not supplied will get status for all.
     """
     try:
-      url = self.local
-      urls = [url]
+      if not url:
+        urls = self.voBoxUrls
+      else:
+        urls = [url]
       urlDict = {}
       for url in urls:
         requestRPCClient = RPCClient(url)
