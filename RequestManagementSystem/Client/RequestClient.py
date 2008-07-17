@@ -1,10 +1,10 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/RequestClient.py,v 1.5 2008/07/17 15:14:14 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/RequestClient.py,v 1.6 2008/07/17 18:00:05 rgracian Exp $
 
 """
   This is the client implementation for the RequestDB using the DISET framework.
 """
 
-__RCSID__ = "$Id: RequestClient.py,v 1.5 2008/07/17 15:14:14 acsmith Exp $"
+__RCSID__ = "$Id: RequestClient.py,v 1.6 2008/07/17 18:00:05 rgracian Exp $"
 
 from types import *
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
@@ -20,7 +20,7 @@ class RequestClient:
     voBoxUrls = fromChar(PathFinder.getServiceURL("RequestManagement/voBoxURLs"))
     self.voBoxUrls = []
     if voBoxUrls:
-      self.voBoxUrls = randomize(voBoxUrls.split(','))
+      self.voBoxUrls = randomize(voBoxUrls)
 
     local = PathFinder.getServiceURL("RequestManagement/localURL")
     self.local = False
