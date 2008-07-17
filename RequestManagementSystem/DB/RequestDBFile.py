@@ -205,7 +205,7 @@ class RequestDBFile:
     try:
       # get a request type if one is not specified
       if not requestType:
-        res = getDBSummary()
+        res = self.getDBSummary()
         if not res['OK']:
           errStr = "RequestDBFile.serveRequest: Failed to get DB summary."
           gLogger.error(errStr,res['Message'])
@@ -237,7 +237,7 @@ class RequestDBFile:
       return S_OK(requestDict)
     except Exception, x:
       errStr = "RequestDBFile.serveRequest: Exception while serving request."
-      gLogger.exception(errStr,"%s %s" % (requestName,str(x)))
+      gLogger.exception(errStr,"%s %s" % (requestType,str(x)))
       return S_ERROR(errStr)
 
   def updateRequest(self,requestName,requestString):
