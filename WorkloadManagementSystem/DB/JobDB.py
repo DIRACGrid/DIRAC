@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.67 2008/07/18 09:03:56 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.68 2008/07/18 09:05:37 rgracian Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.67 2008/07/18 09:03:56 rgracian Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.68 2008/07/18 09:05:37 rgracian Exp $"
 
 import re, os, sys, string, types
 import time
@@ -678,8 +678,9 @@ class JobDB(DB):
 
     cmd = 'INSERT INTO JobParameters (JobID,Name,Value) VALUES %s' % ', '.join(insertValueList)
 
-    if not self._update( cmd )['OK']:
-      result = S_ERROR('JobDB.setJobParameters: operation failed.')
+    result = self._update( cmd )
+    if not result['OK']:
+      return S_ERROR('JobDB.setJobParameters: operation failed.')
 
     return result
 
