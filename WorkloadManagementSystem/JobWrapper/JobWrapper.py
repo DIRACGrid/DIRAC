@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.48 2008/07/16 15:00:43 rgracian Exp $
+# $Id: JobWrapper.py,v 1.49 2008/07/18 07:37:59 rgracian Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.48 2008/07/16 15:00:43 rgracian Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.49 2008/07/18 07:37:59 rgracian Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -71,14 +71,8 @@ class JobWrapper:
     self.defaultCPUTime = gConfig.getValue(self.section+'/DefaultCPUTime',600)
     self.defaultOutputFile = gConfig.getValue(self.section+'/DefaultOutputFile','std.out')
     self.defaultErrorFile = gConfig.getValue(self.section+'/DefaultErrorFile','std.err')
-    # FIXME: should use gConfig.getValue(self.section+'/DiskSE',['-disk','-DST','-USER'] )
-    self.diskSE            = gConfig.getValue(self.section+'/DiskSE','-disk,-DST,-USER')
-    if type(self.diskSE) == type(' '):
-      self.diskSE = self.diskSE.split(',')
-    # FIXME: see above
-    self.tapeSE            = gConfig.getValue(self.section+'/TapeSE','-tape,-RDST,-RAW')
-    if type(self.tapeSE) == type(' '):
-      self.tapeSE = self.tapeSE.split(',')
+    self.diskSE            = gConfig.getValue(self.section+'/DiskSE',['-disk','-DST','-USER'])
+    self.tapeSE            = gConfig.getValue(self.section+'/TapeSE',['-tape','-RDST','-RAW'])
     self.cleanUpFlag  = gConfig.getValue(self.section+'/CleanUpFlag',False)
     self.localSite = gConfig.getValue('/LocalSite/Site','Unknown')
     self.pilotRef = gConfig.getValue('/LocalSite/PilotReference','Unknown')

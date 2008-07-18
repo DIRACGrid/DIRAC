@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.34 2008/07/15 16:38:58 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.35 2008/07/18 07:32:40 rgracian Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.34 2008/07/15 16:38:58 acasajus Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.35 2008/07/18 07:32:40 rgracian Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -222,12 +222,8 @@ class Dirac:
       for lfn,reps in replicaDict['Value']['Successful'].items():
         guidDict['Value']['Successful'][lfn].update(reps)
       resolvedData = guidDict
-      diskSE = gConfig.getValue(self.section+'/DiskSE','-disk,-DST,-USER')
-      if re.search(',',diskSE):
-        diskSE = diskSE.split(',')
-      tapeSE = gConfig.getValue(self.section+'/TapeSE','-tape,-RDST,-RAW')
-      if re.search(',',tapeSE):
-        tapeSE = tapeSE.split(',')
+      diskSE = gConfig.getValue(self.section+'/DiskSE',['-disk','-DST','-USER'])
+      tapeSE = gConfig.getValue(self.section+'/TapeSE',['-tape','-RDST','-RAW'])
       configDict = {'JobID':None,'LocalSEList':localSEList,'DiskSEList':diskSE,'TapeSEList':tapeSE}
       self.log.verbose(configDict)
       argumentsDict = {'FileCatalog':resolvedData,'Configuration':configDict,'InputData':inputData}
