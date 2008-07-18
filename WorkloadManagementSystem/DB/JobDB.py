@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.65 2008/07/18 08:58:46 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.66 2008/07/18 09:01:35 rgracian Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.65 2008/07/18 08:58:46 rgracian Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.66 2008/07/18 09:01:35 rgracian Exp $"
 
 import re, os, sys, string, types
 import time
@@ -669,10 +669,10 @@ class JobDB(DB):
         if not ret['OK']:
           return ret
         value = ret['Value']
-      deleteTupleList.append( '(JobID=\'%s\' AND Name=\'%s\')' % (jobID, name))
+      deleteCondList.append( '(JobID=\'%s\' AND Name=\'%s\')' % (jobID, name))
       insertValueList.append( '(\'%s\',\'%s\',\'%s\')' % (jobID, name, value))
 
-    cmd = 'DELETE FROM JobParameters WHERE %s ' % ' OR '.join( deleteTupleList )
+    cmd = 'DELETE FROM JobParameters WHERE %s ' % ' OR '.join( deleteCondList )
     if not self._update( cmd )['OK']:
       result = S_ERROR('JobDB.setJobParameters: operation failed.')
 

@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobStateUpdateHandler.py,v 1.21 2008/07/18 07:38:24 rgracian Exp $
+# $Id: JobStateUpdateHandler.py,v 1.22 2008/07/18 08:58:58 rgracian Exp $
 ########################################################################
 
 """ JobStateUpdateHandler is the implementation of the Job State updating
@@ -11,7 +11,7 @@
 
 """
 
-__RCSID__ = "$Id: JobStateUpdateHandler.py,v 1.21 2008/07/18 07:38:24 rgracian Exp $"
+__RCSID__ = "$Id: JobStateUpdateHandler.py,v 1.22 2008/07/18 08:58:58 rgracian Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -45,10 +45,10 @@ class JobStateUpdateHandler( RequestHandler ):
     attrValues = []
     if status:
       attrNames.append('Status')
-      attrValue.append(status)
+      attrValues.append(status)
     if minorStatus:
       attrNames.append('MinorStatus')
-      attrValue.append(minor)
+      attrValues.append(minor)
 
     result = jobDB.setJobAttributes(jobID,attrNames,attrValues,True)
     if not result['OK']:
@@ -97,16 +97,16 @@ class JobStateUpdateHandler( RequestHandler ):
     attrValues = []
     if status:
       attrNames.append('Status')
-      attrValue.append(status)
+      attrValues.append(status)
     if minor:
       attrNames.append('MinorStatus')
-      attrValue.append(minor)
+      attrValues.append(minor)
     if application:
       attrNames.append('ApplicationStatus')
-      attrValue.append(application)
+      attrValues.append(application)
     if appCounter:
       attrNames.append('ApplicationCounter')
-      attrValue.append(appCounter)
+      attrValues.append(appCounter)
     result = self.setJobAttributes(jobID,attrNames,attrValues,update=True)
     if not result['OK']:
       return result
