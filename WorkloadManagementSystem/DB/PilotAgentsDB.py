@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.29 2008/07/18 07:46:23 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.30 2008/07/18 09:27:39 acasajus Exp $
 ########################################################################
 """ PilotAgentsDB class is a front-end to the Pilot Agent Database.
     This database keeps track of all the submitted grid pilot jobs.
@@ -23,7 +23,7 @@
 
 """
 
-__RCSID__ = "$Id: PilotAgentsDB.py,v 1.29 2008/07/18 07:46:23 rgracian Exp $"
+__RCSID__ = "$Id: PilotAgentsDB.py,v 1.30 2008/07/18 09:27:39 acasajus Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
@@ -172,21 +172,18 @@ class PilotAgentsDB(DB):
     parameters = ['PilotJobReference','OwnerDN','OwnerGroup','GridType','Broker',
                   'Status','DestinationSite','BenchMark','ParentID','SubmissionTime', 'PilotID' ]
 
-    expectList = False
     cmd = "SELECT %s FROM PilotAgents" % ", ".join( parameters )
     condSQL = []
     if pilotRef:
       if type( pilotRef ) == ListType:
-        expectList = True
         condSQL.append( "PilotJobReference IN (%s)" % ",".join( [ '"%s"' % x for x in pilotRef ] ) )
       else:
         condSQL.append( "PilotJobReference = '%s'" % pilotRef )
     if parentId:
       if type( parentId ) == ListType:
-        expectList = True
-        condSQL.append( "ParentID IN (%s)" % ",".join( [ '"%s"' % x for x in parentId ] ) )
+        condSQL.append( "ParentID IN (%s)" % ",".join( [ '%s' % x for x in parentId ] ) )
       else:
-        condSQL.append( "ParentID = '%s'" % parentId )
+        condSQL.append( "ParentID = %s" % parentId )
     if condSQL:
       cmd = "%s WHERE %s" % ( cmd, " AND ".join( condSQL ) )
 
@@ -209,13 +206,7 @@ class PilotAgentsDB(DB):
         pilotDict[parameters[i+1]] = row[i+1]
       resDict[row[0]] = pilotDict
 
-    if expectList:
-      return S_OK( resDict )
-    else:
-      if resDict:
-        return S_OK( resDict[resDict.keys()[0]])
-      else:
-        return S_ERROR( "No pilots found" )
+    return S_OK( resDict )
 
 
 

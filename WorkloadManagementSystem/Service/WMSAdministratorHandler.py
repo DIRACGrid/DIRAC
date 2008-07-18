@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSAdministratorHandler.py,v 1.30 2008/07/11 16:37:18 rgracian Exp $
+# $Id: WMSAdministratorHandler.py,v 1.31 2008/07/18 09:28:05 acasajus Exp $
 ########################################################################
 """
 This is a DIRAC WMS administrator interface.
@@ -14,7 +14,7 @@ Access to the pilot data:
 
 """
 
-__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.30 2008/07/11 16:37:18 rgracian Exp $"
+__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.31 2008/07/18 09:28:05 acasajus Exp $"
 
 import os, sys, string, uu, shutil, datetime
 from types import *
@@ -155,10 +155,10 @@ class WMSAdministratorHandler(RequestHandler):
     """
 
     result = pilotDB.getPilotInfo(pilotReference)
-    if not result['OK']:
+    if not result['OK'] or not result[ 'Value' ]:
       return S_ERROR('Failed to determine owner for pilot ' + pilotReference)
 
-    pilotDict = result['Value']
+    pilotDict = result['Value'][0]
     owner = pilotDict['OwnerDN']
     group = pilotDict['OwnerGroup']
 
@@ -181,7 +181,7 @@ class WMSAdministratorHandler(RequestHandler):
       gLogger.error( 'Could not get proxy:', 'User "%s", Group "%s"' % ( owner, group ) )
       return S_ERROR("Failed to get the pilot's owner proxy")
     proxy = ret['Value']
-    
+
     gridType = pilotDict['GridType']
 
     result = getPilotOutput( proxy, gridType, pilotReference )
