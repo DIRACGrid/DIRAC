@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.23 2008/07/18 13:31:13 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.24 2008/07/18 13:37:51 acasajus Exp $
 ########################################################################
 
 """  The Pilot Status Agent updates the status of the pilot jobs if the
      PilotAgents database.
 """
 
-__RCSID__ = "$Id: PilotStatusAgent.py,v 1.23 2008/07/18 13:31:13 acasajus Exp $"
+__RCSID__ = "$Id: PilotStatusAgent.py,v 1.24 2008/07/18 13:37:51 acasajus Exp $"
 
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, List
@@ -92,9 +92,9 @@ class PilotStatusAgent(Agent):
 
     # Now the pilot references are sorted, let's do the work
     for grid in workDict.keys():
-      pilotsToAccount = []
       #if grid != "LCG": continue
       for owner_group,refList in workDict[grid].items():
+        pilotsToAccount = []
         owner,group = owner_group.split(":")
         ret = gProxyManager.getPilotProxyFromVOMSGroup( owner, group )
         if not ret['OK']:
@@ -126,21 +126,21 @@ class PilotStatusAgent(Agent):
               if pDict[ 'Status' ] in finalStateList:
                 pilotsToAccount.append( pRef )
 
-    if pilotsToAccount:
-      retVal = self.pilotDB.getPilotInfo( pilotsToAccount, parentId = 0,
-                                                      conn = connection )
-      if retVal[ 'Value' ]:
-        pilotsData = retVal[ 'Value' ]
-        for parentRef in pilotsData:
-          pilotDict = pilotsData[ parentRef ]
-          retVal = self.pilotDB.getPilotInfo( parentId = pilotDict[ 'PilotID' ],
-                                                      conn = connection )
-          if not retVal[ 'OK' ] or not retVal[ 'Value' ]:
-            self.__addPilotAccountingReport( pilotDict )
-          else:
-            childDict = retVal[ 'Value' ]
-            for childRef in childDict:
-              self.__addPilotAccountingReport( childDict[ childRef ] )
+        if pilotsToAccount:
+          retVal = self.pilotDB.getPilotInfo( pilotsToAccount, parentId = 0,
+                                                          conn = connection )
+          if retVal[ 'Value' ]:
+            pilotsData = retVal[ 'Value' ]
+            for parentRef in pilotsData:
+              pilotDict = pilotsData[ parentRef ]
+              retVal = self.pilotDB.getPilotInfo( parentId = pilotDict[ 'PilotID' ],
+                                                          conn = connection )
+              if not retVal[ 'OK' ] or not retVal[ 'Value' ]:
+                self.__addPilotAccountingReport( pilotDict )
+              else:
+                childDict = retVal[ 'Value' ]
+                for childRef in childDict:
+                  self.__addPilotAccountingReport( childDict[ childRef ] )
 
     self.log.info( "Sending accounting records..." )
     retVal = gDataStoreClient.commit()
