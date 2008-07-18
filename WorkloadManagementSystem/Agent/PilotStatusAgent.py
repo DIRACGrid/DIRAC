@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.13 2008/07/18 09:30:35 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.14 2008/07/18 09:36:53 acasajus Exp $
 ########################################################################
 
 """  The Pilot Status Agent updates the status of the pilot jobs if the
      PilotAgents database.
 """
 
-__RCSID__ = "$Id: PilotStatusAgent.py,v 1.13 2008/07/18 09:30:35 acasajus Exp $"
+__RCSID__ = "$Id: PilotStatusAgent.py,v 1.14 2008/07/18 09:36:53 acasajus Exp $"
 
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, List
@@ -214,7 +214,6 @@ class PilotStatusAgent(Agent):
   def __addPilotAccountingReport( self, pData ):
     pA = PilotAccounting()
     pA.setEndTime()
-    print pData
     pA.setStartTime( pData[ 'SubmissionTime' ] )
     retVal = CS.getUsernameForDN( pData[ 'OwnerDN' ] )
     if not retVal[ 'OK' ]:
