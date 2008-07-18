@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.16 2008/07/18 10:42:09 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.17 2008/07/18 11:16:38 acasajus Exp $
 ########################################################################
 
 """  The Pilot Status Agent updates the status of the pilot jobs if the
      PilotAgents database.
 """
 
-__RCSID__ = "$Id: PilotStatusAgent.py,v 1.16 2008/07/18 10:42:09 acasajus Exp $"
+__RCSID__ = "$Id: PilotStatusAgent.py,v 1.17 2008/07/18 11:16:38 acasajus Exp $"
 
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, List
@@ -204,11 +204,11 @@ class PilotStatusAgent(Agent):
 
     sites = siteSections['Value']
     for site in sites:
-      lcgCEs = gConfig.getValue('/Resources/Sites/LCG/%s/CE' %site,[])
+      lcgCEs = gConfig.getValue('/Resources/Sites/LCG/%s/CE' % site,[])
       if ce in lcgCEs:
         return site
 
-    self.log.error( 'Could not determine DIRAC site name for CE:', siteName )
+    self.log.error( 'Could not determine DIRAC site name for CE:', ce )
     return "unknown"
 
   def __addPilotAccountingReport( self, pData ):
