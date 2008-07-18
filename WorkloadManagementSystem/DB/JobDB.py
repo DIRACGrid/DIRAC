@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.68 2008/07/18 09:05:37 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.69 2008/07/18 15:52:10 rgracian Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.68 2008/07/18 09:05:37 rgracian Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.69 2008/07/18 15:52:10 rgracian Exp $"
 
 import re, os, sys, string, types
 import time
@@ -660,6 +660,9 @@ class JobDB(DB):
   def setJobParameters(self,jobID,parameters):
     """ Set parameters specified by a list of name/value pairs for the job JobID
     """
+
+    if not parameters:
+      return S_OK()
 
     deleteCondList = []
     insertValueList = []
