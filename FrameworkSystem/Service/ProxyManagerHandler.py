@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/ProxyManagerHandler.py,v 1.8 2008/07/10 16:04:33 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/ProxyManagerHandler.py,v 1.9 2008/07/18 11:06:15 acasajus Exp $
 ########################################################################
 
 """ ProxyManager is the implementation of the ProxyManagement service
     in the DISET framework
 """
 
-__RCSID__ = "$Id: ProxyManagerHandler.py,v 1.8 2008/07/10 16:04:33 acasajus Exp $"
+__RCSID__ = "$Id: ProxyManagerHandler.py,v 1.9 2008/07/18 11:06:15 acasajus Exp $"
 
 import types
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -24,12 +24,10 @@ def initializeProxyManagerHandler( serviceInfo ):
   serviceCS = serviceInfo [ 'serviceSectionPath' ]
   requireVoms = gConfig.getValue( "%s/requireVOMS" % serviceCS, "yes" ).lower() in ( "yes", "y", "1" )
   useMyProxy = gConfig.getValue( "%s/UseMyProxy" % serviceCS, "yes" ).lower() in ( "yes", "y", "1" )
-  MyProxyServer = gConfig.getValue( "/DIRAC/VOPolicy/MyProxyServer", "myproxy.cern.ch" )
   gLogger.info( "VOMS: %s\nMyProxy: %s\n MyProxy Server: %s" % ( requireVoms, useMyProxy, MyProxyServer ) )
   try:
     gProxyDB = ProxyDB( requireVoms = requireVoms,
-                        useMyProxy = useMyProxy,
-                         MyProxyServer = MyProxyServer )
+                        useMyProxy = useMyProxy )
   except:
     return S_ERROR( "Can't initialize ProxyDB" )
   return S_OK()

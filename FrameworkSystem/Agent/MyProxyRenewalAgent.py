@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Agent/MyProxyRenewalAgent.py,v 1.3 2008/07/03 12:48:29 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Agent/MyProxyRenewalAgent.py,v 1.4 2008/07/18 11:06:15 acasajus Exp $
 ########################################################################
 
 """  Proxy Renewal agent is the key element of the Proxy Repository
@@ -27,12 +27,13 @@ class MyProxyRenewalAgent(Agent):
     renewedLifeTime = gConfig.getValue( "%s/RenewedLifeTime" % self.section, 54000 )
     myProxyServer = gConfig.getValue( "/DIRAC/VOPolicy/MyProxyServer" , "myproxy.cern.ch" )
     self.proxyDB = ProxyDB( requireVoms = True,
-                            useMyProxy = True,
-                            MyProxyServer = myProxyServer )
+                            useMyProxy = True
+                          )
 
-    gLogger.info( "Minimum Life time  : %s" % requiredLifeTime )
-    gLogger.info( "Life time on renew : %s" % renewedLifeTime )
-    gLogger.info( "MyProxy server     : %s" % myProxyServer )
+    gLogger.info( "Minimum Life time      : %s" % requiredLifeTime )
+    gLogger.info( "Life time on renew     : %s" % renewedLifeTime )
+    gLogger.info( "MyProxy server         : %s" % self.proxyDB.getMyProxyServer() )
+    gLogger.info( "MyProxy max proxy time : %s" % self.proxyDB.getMyProxyMaxLifeTime() )
 
     self.__threadPool = ThreadPool( 1, 10 )
     Agent.initialize( self )

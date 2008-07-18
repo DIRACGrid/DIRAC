@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.13 2008/07/15 15:51:20 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.14 2008/07/18 11:06:15 acasajus Exp $
 ########################################################################
 """ ProxyRepository class is a front-end to the proxy repository Database
 """
 
-__RCSID__ = "$Id: ProxyDB.py,v 1.13 2008/07/15 15:51:20 acasajus Exp $"
+__RCSID__ = "$Id: ProxyDB.py,v 1.14 2008/07/18 11:06:15 acasajus Exp $"
 
 import time
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
@@ -19,16 +19,20 @@ class ProxyDB(DB):
 
   def __init__(self, requireVoms = False,
                useMyProxy = False,
-               MyProxyServer = False,
                maxQueueSize = 10 ):
     DB.__init__(self,'ProxyDB','Framework/ProxyDB',maxQueueSize)
     self.__defaultRequestLifetime = 300 # 5min
     self.__vomsRequired = requireVoms
     self.__useMyProxy = useMyProxy
-    self.__MyProxyServer = MyProxyServer
     retVal = self.__initializeDB()
     if not retVal[ 'OK' ]:
       raise Exception( "Can't create tables: %s" % retVal[ 'Message' ])
+
+  def getMyProxyServer(self):
+    return gConfig.getValue( "/DIRAC/VOPolicy/MyProxyServer" , "myproxy.cern.ch" )
+
+  def getMyProxyMaxLifeTime(self):
+    return gConfig.getValue( "/DIRAC/VOPolicy/MyProxyMaxLifeTime", 86400 )
 
   def __initializeDB(self):
     """
@@ -304,8 +308,6 @@ class ProxyDB(DB):
   def renewFromMyProxy( self, userDN, userGroup, lifeTime = False, chain = False ):
     if not lifeTime:
       lifeTime = 43200
-    #Hack to minimize queries to myproxy
-    lifeTime *= 1.5
     if not self.__useMyProxy:
       return S_ERROR( "myproxy is disabled" )
     #Get the chain
@@ -319,7 +321,17 @@ class ProxyDB(DB):
       if not retVal[ 'OK' ]:
         return retVal
 
-    myProxy = MyProxy( server = self.__MyProxyServer )
+    originChainLifeTime = chain.getRemainingSecs()[ 'Value' ]
+    maxMyProxyLifeTime = self.getMyProxyMaxLifeTime()
+    #If we have a chain that's 0.8 of max mplifetime don't ask to mp
+    if originChainLifeTime > maxMyProxyLifeTime * 0.8:
+      return chain
+
+    lifeTime *= 1.3
+    if lifeTime > maxMyProxyLifeTime:
+      lifeTime = maxMyProxyLifeTime
+
+    myProxy = MyProxy( server = self.getMyProxyServer() )
     retVal = myProxy.getDelegatedProxy( chain, lifeTime )
     if not retVal[ 'OK' ]:
       return retVal
