@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.15 2008/07/18 10:40:48 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.16 2008/07/18 10:42:09 acasajus Exp $
 ########################################################################
 
 """  The Pilot Status Agent updates the status of the pilot jobs if the
      PilotAgents database.
 """
 
-__RCSID__ = "$Id: PilotStatusAgent.py,v 1.15 2008/07/18 10:40:48 acasajus Exp $"
+__RCSID__ = "$Id: PilotStatusAgent.py,v 1.16 2008/07/18 10:42:09 acasajus Exp $"
 
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, List
@@ -97,7 +97,8 @@ class PilotStatusAgent(Agent):
           continue
         proxy = ret['Value']
 
-        self.log.verbose("Getting status for pilots for owner %s, group %s" % (owner,group))
+        self.log.verbose("Getting status for %s pilots for owner %s and group %s" % ( len( refList ),
+                                                                                      owner,group))
 
         # Do not call more than MAX_JOBS_QUERY pilots at a time
         for start_index in range( 0, len( refList ), MAX_JOBS_QUERY ):
