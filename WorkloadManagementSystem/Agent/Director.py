@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.25 2008/07/18 16:22:50 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.26 2008/07/18 16:26:05 rgracian Exp $
 # File :   Director.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -48,7 +48,7 @@
 
 """
 
-__RCSID__ = "$Id: Director.py,v 1.25 2008/07/18 16:22:50 rgracian Exp $"
+__RCSID__ = "$Id: Director.py,v 1.26 2008/07/18 16:26:05 rgracian Exp $"
 
 import types, time
 
@@ -576,6 +576,9 @@ class PilotDirector:
       self.log.info( ' GridEnv:        ', self.gridEnv )
     if self.resourceBrokers:
       self.log.info( ' ResourceBrokers:', ', '.join(self.resourceBrokers) )
+    if self.loggingServers:
+      self.log.info( ' LoggingServers:', ', '.join(self.loggingServers) )
+
 
 
   def configureFromSection( self, mySection ):
@@ -595,6 +598,7 @@ class PilotDirector:
     self.requirements       = gConfig.getValue( mySection+'/Requirements'      , self.requirements )
     self.rank               = gConfig.getValue( mySection+'/Rank'              , self.rank )
     self.fuzzyRank          = gConfig.getValue( mySection+'/FuzzyRank'         , self.fuzzyRank )
+    self.loggingServers     = gConfig.getValue( mySection+'/LoggingServers'    , self.loggingServers )
 
   def submitPilot(self, jobDict, director):
     """
@@ -963,13 +967,6 @@ class gLitePilotDirector(PilotDirector):
      Here goes especific configuration for gLite PilotDirectors
     """
     PilotDirector.configure(self, csSection, platform )
-    self.loggingServers = gConfig.getValue( csSection+'/LoggingServers'   , self.loggingServers )
-    mySection = csSection+'/'+self.flavour
-    self.loggingServers = gConfig.getValue( mySection+'/LoggingServers'   , self.loggingServers )
-    mySection = csSection+'/'+platform
-    self.loggingServers = gConfig.getValue( mySection+'/LoggingServers'   , self.loggingServers )
-    if self.loggingServers:
-      self.log.info( ' LoggingServers:', ', '.join(self.loggingServers) )
     self.log.info( '' )
     self.log.info( '===============================================' )
 
