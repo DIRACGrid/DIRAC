@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.18 2008/07/18 11:21:21 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.19 2008/07/18 11:27:25 acasajus Exp $
 ########################################################################
 
 """  The Pilot Status Agent updates the status of the pilot jobs if the
      PilotAgents database.
 """
 
-__RCSID__ = "$Id: PilotStatusAgent.py,v 1.18 2008/07/18 11:21:21 acasajus Exp $"
+__RCSID__ = "$Id: PilotStatusAgent.py,v 1.19 2008/07/18 11:27:25 acasajus Exp $"
 
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, List
@@ -84,6 +84,12 @@ class PilotStatusAgent(Agent):
         workDict[grid][owner_group] = []
         workDict[grid][owner_group].append(pRef)
 
+    result = self._getConnection()
+    if result['OK']:
+      connection = result['Value']
+    else:
+      return result
+
     # Now the pilot references are sorted, let's do the work
     for grid in workDict.keys():
       pilotsToAccount = []
@@ -112,18 +118,23 @@ class PilotStatusAgent(Agent):
 
           for pRef,pDict in result['Value'].items():
             if pDict:
-              result = self.pilotDB.setPilotStatus(pRef,pDict['Status'],
+              result = self.pilotDB.setPilotStatus( pRef,
+                                                    pDict['Status'],
                                                     pDict['Destination'],
-                                                    pDict['StatusDate'])
+                                                    pDict['StatusDate'],
+                                                    conn = connection )
               if pDict[ 'Status' ] in finalStateList:
+                print pRef, pDict[ 'Status' ], pDict['Destination'], finalStatueList
                 pilotsToAccount.append( pRef )
 
-    retVal = self.pilotDB.getPilotInfo( pilotsToAccount, parentId = 0 )
+    retVal = self.pilotDB.getPilotInfo( pilotsToAccount, parentId = 0,
+                                                    conn = connection )
     if retVal[ 'Value' ]:
       pilotsData = retVal[ 'Value' ]
       for parentRef in pilotsData:
         pilotDict = pilotsData[ parentRef ]
-        retVal = self.pilotDB.getPilotInfo( parentId = pilotDict[ 'PilotID' ] )
+        retVal = self.pilotDB.getPilotInfo( parentId = pilotDict[ 'PilotID' ],
+                                                    conn = connection )
         if not retVal[ 'OK' ] or not retVal[ 'Value' ]:
           self.__addPilotAccountingReport( pilotDict )
         else:

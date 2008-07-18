@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.31 2008/07/18 11:21:21 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.32 2008/07/18 11:27:25 acasajus Exp $
 ########################################################################
 """ PilotAgentsDB class is a front-end to the Pilot Agent Database.
     This database keeps track of all the submitted grid pilot jobs.
@@ -23,7 +23,7 @@
 
 """
 
-__RCSID__ = "$Id: PilotAgentsDB.py,v 1.31 2008/07/18 11:21:21 acasajus Exp $"
+__RCSID__ = "$Id: PilotAgentsDB.py,v 1.32 2008/07/18 11:27:25 acasajus Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
@@ -81,7 +81,7 @@ class PilotAgentsDB(DB):
     return self._update(req)
 
 ##########################################################################################
-  def setPilotStatus(self,pilotRef,status,destination=None,updateTime=None):
+  def setPilotStatus( self, pilotRef, status, destination=None, updateTime=None, conn = False ):
     """ Set pilot job LCG status """
 
     setList = []
@@ -96,7 +96,7 @@ class PilotAgentsDB(DB):
     set_string = ','.join(setList)
     req = "UPDATE PilotAgents SET "+set_string+" WHERE PilotJobReference='%s'" % pilotRef
 
-    return self._update(req)
+    return self._update( req, conn = conn )
 
 ##########################################################################################
   def selectPilots(self,statusList=[],owner=None,ownerGroup=None,newer=None,older=None):
@@ -165,7 +165,7 @@ class PilotAgentsDB(DB):
     return S_OK()
 
 ##########################################################################################
-  def getPilotInfo( self, pilotRef = False, parentId = False ):
+  def getPilotInfo( self, pilotRef = False, parentId = False, conn = False ):
     """ Get all the information for the pilot job reference or reference list
     """
 
@@ -188,7 +188,7 @@ class PilotAgentsDB(DB):
     if condSQL:
       cmd = "%s WHERE %s" % ( cmd, " AND ".join( condSQL ) )
 
-    result = self._query( cmd )
+    result = self._query( cmd, conn = conn )
     if not result['OK']:
       return result
 
