@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.24 2008/07/18 16:05:46 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.25 2008/07/18 16:22:50 rgracian Exp $
 # File :   Director.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -48,7 +48,7 @@
 
 """
 
-__RCSID__ = "$Id: Director.py,v 1.24 2008/07/18 16:05:46 rgracian Exp $"
+__RCSID__ = "$Id: Director.py,v 1.25 2008/07/18 16:22:50 rgracian Exp $"
 
 import types, time
 
@@ -1094,8 +1094,10 @@ class LCGPilotDirector(PilotDirector):
     LBs = []
     for RB in self.resourceBrokers:
       LDs.append( '"%s:9002"' % RB )
-      NSs.append( '"%s:7772"' % RB )
-      LBs.append( '"%s:9000"' % RB )
+
+    for LB in self.loggingServers:
+      NSs.append( '"%s:7772"' % LB )
+      LBs.append( '"%s:9000"' % LB )
 
     LD = ', '.join(LDs)
     NS = ', '.join(NSs)
