@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.64 2008/07/18 07:37:15 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.65 2008/07/18 08:58:46 rgracian Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.64 2008/07/18 07:37:15 rgracian Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.65 2008/07/18 08:58:46 rgracian Exp $"
 
 import re, os, sys, string, types
 import time
@@ -624,16 +624,16 @@ class JobDB(DB):
     attrValues = []
     if status:
       attrNames.append('Status')
-      attrValue.append(status)
+      attrValues.append(status)
     if minor:
       attrNames.append('MinorStatus')
-      attrValue.append(minor)
+      attrValues.append(minor)
     if application:
       attrNames.append('ApplicationStatus')
-      attrValue.append(application)
+      attrValues.append(application)
     if appCounter:
       attrNames.append('ApplicationCounter')
-      attrValue.append(appCounter)
+      attrValues.append(appCounter)
 
     result = self.setJobAttributes(jobID,attrNames,attrValues,update=True)
     if not result['OK']:
