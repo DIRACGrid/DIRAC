@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.14 2008/07/18 09:36:53 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.15 2008/07/18 10:40:48 acasajus Exp $
 ########################################################################
 
 """  The Pilot Status Agent updates the status of the pilot jobs if the
      PilotAgents database.
 """
 
-__RCSID__ = "$Id: PilotStatusAgent.py,v 1.14 2008/07/18 09:36:53 acasajus Exp $"
+__RCSID__ = "$Id: PilotStatusAgent.py,v 1.15 2008/07/18 10:40:48 acasajus Exp $"
 
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, List
@@ -118,18 +118,17 @@ class PilotStatusAgent(Agent):
                 pilotsToAccount.append( pRef )
 
     retVal = self.pilotDB.getPilotInfo( pilotsToAccount, parentId = 0 )
-    if not retVal[ 'OK' ] or not retVal[ 'Value' ]:
-      continue
-    pilotsData = retVal[ 'Value' ]
-    for parentRef in pilotsData:
-      pilotDict = pilotsData[ parentRef ]
-      retVal = self.pilotDB.getPilotInfo( parentId = pilotDict[ 'PilotID' ] )
-      if not retVal[ 'OK' ] or not retVal[ 'Value' ]:
-        self.__addPilotAccountingReport( pilotDict )
-      else:
-        childDict = retVal[ 'Value' ]
-        for childRef in childDict:
-          self.__addPilotAccountingReport( childDict[ childRef ] )
+    if retVal[ 'Value' ]:
+      pilotsData = retVal[ 'Value' ]
+      for parentRef in pilotsData:
+        pilotDict = pilotsData[ parentRef ]
+        retVal = self.pilotDB.getPilotInfo( parentId = pilotDict[ 'PilotID' ] )
+        if not retVal[ 'OK' ] or not retVal[ 'Value' ]:
+          self.__addPilotAccountingReport( pilotDict )
+        else:
+          childDict = retVal[ 'Value' ]
+          for childRef in childDict:
+            self.__addPilotAccountingReport( childDict[ childRef ] )
 
     self.log.info( "Sending accounting records" )
     gDataStoreClient.commit()
