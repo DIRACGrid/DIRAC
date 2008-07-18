@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.21 2008/07/17 17:14:15 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.22 2008/07/18 07:34:16 rgracian Exp $
 # File :   Director.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -48,7 +48,7 @@
 
 """
 
-__RCSID__ = "$Id: Director.py,v 1.21 2008/07/17 17:14:15 rgracian Exp $"
+__RCSID__ = "$Id: Director.py,v 1.22 2008/07/18 07:34:16 rgracian Exp $"
 
 import types, time
 
@@ -422,7 +422,7 @@ class Director(Agent):
       self.directors[platform]['isEnabled'] = True
 
   def __addPool(self, poolName):
-    # create a new thread Pool, by default it has 1 executing thread and 5 requests
+    # create a new thread Pool, by default it has 4 executing threads and 40 requests
     # in the Queue
     # FIXME: get from CS
     if not poolName:
