@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.63 2008/07/16 16:37:15 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.64 2008/07/18 07:37:15 rgracian Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.63 2008/07/16 16:37:15 acasajus Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.64 2008/07/18 07:37:15 rgracian Exp $"
 
 import re, os, sys, string, types
 import time
@@ -583,6 +583,34 @@ class JobDB(DB):
       return S_ERROR( 'JobDB.setAttribute: failed to set attribute' )
 
 #############################################################################
+  def setJobAttributes(self, jobID, attrNames, attrValues, update=False, datetime=None ):
+    """ Set an attribute value for job specified by jobID.
+        The LastUpdate time stamp is refreshed if explicitely requested
+    """
+
+    if len(attrNames) != len(attrValues):
+      return S_ERROR( 'JobDB.setAttributes: incompatible Argument length' )
+
+    attr = []
+    for i in range(len(attrNames)):
+      attr.append( '%s=\'%s\'' % (attrNames[i],attrValues[i]))
+    if update:
+      attr.append( "LastUpdateTime=UTC_TIMESTAMP()" )
+    if len(attr) == 0:
+      return S_ERROR( 'JobDB.setAttributes: Nothing to do' )
+    
+    cmd = 'UPDATE Jobs SET %s WHERE JobID=\'%s\'' % ( ', '.join(attr), jobID )
+
+    if datetime:
+      cmd += ' AND LastUpdateTime < %s' % datetime
+
+    res = self._update( cmd )
+    if res['OK']:
+      return res
+    else:
+      return S_ERROR( 'JobDB.setAttributes: failed to set attribute' )
+
+#############################################################################
   def setJobStatus(self,jobID,status='',minor='',application='',appCounter=None):
     """ Set status of the job specified by its jobID
     """
@@ -592,22 +620,24 @@ class JobDB(DB):
     if status == "Stalled":
       update_flag = False
 
+    attrNames = []
+    attrValues = []
     if status:
-      result = self.setJobAttribute(jobID,'Status',status,update=update_flag)
-      if not result['OK']:
-        return result
+      attrNames.append('Status')
+      attrValue.append(status)
     if minor:
-      result = self.setJobAttribute(jobID,'MinorStatus',minor,update=True)
-      if not result['OK']:
-        return result
+      attrNames.append('MinorStatus')
+      attrValue.append(minor)
     if application:
-      result = self.setJobAttribute(jobID,'ApplicationStatus',application,update=True)
-      if not result['OK']:
-        return result
+      attrNames.append('ApplicationStatus')
+      attrValue.append(application)
     if appCounter:
-      result = self.setJobAttribute(jobID,'ApplicationCounter',appCounter,update=True)
-      if not result['OK']:
-        return result
+      attrNames.append('ApplicationCounter')
+      attrValue.append(appCounter)
+
+    result = self.setJobAttributes(jobID,attrNames,attrValues,update=True)
+    if not result['OK']:
+      return result
 
     return S_OK()
 
@@ -623,6 +653,32 @@ class JobDB(DB):
     result = self._insert('JobParameters',['JobID','Name','Value'],[jobID, key, value])
     if not result['OK']:
       result = S_ERROR('JobDB.setJobParameter: operation failed.')
+
+    return result
+
+#############################################################################
+  def setJobParameters(self,jobID,parameters):
+    """ Set parameters specified by a list of name/value pairs for the job JobID
+    """
+
+    deleteCondList = []
+    insertValueList = []
+    for name,value in parameters:
+      if type(value) in types.StringTypes:
+        ret = self._escapeString(value)
+        if not ret['OK']:
+          return ret
+        value = ret['Value']
+      deleteTupleList.append( '(JobID=\'%s\' AND Name=\'%s\')' % (jobID, name))
+      insertValueList.append( '(\'%s\',\'%s\',\'%s\')' % (jobID, name, value))
+
+    cmd = 'DELETE FROM JobParameters WHERE %s ' % ' OR '.join( deleteTupleList )
+    if not self._update( cmd )['OK']:
+      result = S_ERROR('JobDB.setJobParameters: operation failed.')
+
+    cmd = 'INSERT INTO JobParameters (JobID,Name,Value) VALUES %s' % ', '.join(insertValueList)
+    if not result['OK']:
+      result = S_ERROR('JobDB.setJobParameters: operation failed.')
 
     return result
 
@@ -704,12 +760,11 @@ class JobDB(DB):
     parameters= {}
     if classadJob.lookupAttribute("Parameters"):
       parameters= classadJob.getDictionaryFromSubJDL("Parameters")
-    for key,value in parameters.items():
-      res = self.setJobParameter( jobID, key, value )
-      if not res['OK']:
-        return res
+    res = self.setJobParameters(jobID, parameters.items())
 
-
+    if not res['OK']:
+      return res
+    
     return S_OK()
 
 #############################################################################
@@ -1479,7 +1534,7 @@ class JobDB(DB):
   def setHeartBeatData(self,jobID,staticDataDict, dynamicDataDict):
     """ Add the job's heart beat data to the database
     """
-
+    
     # Set the time stamp first
     req = "UPDATE Jobs SET HeartBeatTime=UTC_TIMESTAMP() WHERE JobID=%d" % jobID
     result = self._update(req)
@@ -1487,13 +1542,12 @@ class JobDB(DB):
       return S_ERROR('Failed to set the heart beat time: '+result['Message'])
 
     ok = True
-
+    # FIXME: It is rather not optimal to use parameters to store the heartbeat info, must find a proper solution
     # Add static data items as job parameters
-    for key,value in staticDataDict.items():
-      result = self.setJobParameter(jobID,key,value)
-      if not result['OK']:
-        ok = False
-        self.log.warn(result['Message'])
+    result = self.setJobParameters( jobID, staticDataDict.items() )
+    if not result['OK']:
+      ok = False
+      self.log.warn(result['Message'])
 
     # Add dynamic data to the job heart beat log
     for key,value in dynamicDataDict.items():

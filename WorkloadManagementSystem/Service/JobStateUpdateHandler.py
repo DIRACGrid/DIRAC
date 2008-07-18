@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobStateUpdateHandler.py,v 1.20 2008/07/04 09:15:21 rgracian Exp $
+# $Id: JobStateUpdateHandler.py,v 1.21 2008/07/18 07:38:24 rgracian Exp $
 ########################################################################
 
 """ JobStateUpdateHandler is the implementation of the Job State updating
@@ -11,7 +11,7 @@
 
 """
 
-__RCSID__ = "$Id: JobStateUpdateHandler.py,v 1.20 2008/07/04 09:15:21 rgracian Exp $"
+__RCSID__ = "$Id: JobStateUpdateHandler.py,v 1.21 2008/07/18 07:38:24 rgracian Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -41,14 +41,18 @@ class JobStateUpdateHandler( RequestHandler ):
         status information.
     """
 
+    attrNames = []
+    attrValues = []
     if status:
-      result = jobDB.setJobAttribute(jobID,'Status',status)
-      if not result['OK']:
-        return result
+      attrNames.append('Status')
+      attrValue.append(status)
     if minorStatus:
-      result = jobDB.setJobAttribute(jobID,'MinorStatus',minorStatus,True)
-      if not result['OK']:
-        return result
+      attrNames.append('MinorStatus')
+      attrValue.append(minor)
+
+    result = jobDB.setJobAttributes(jobID,attrNames,attrValues,True)
+    if not result['OK']:
+      return result
 
     result = jobDB.getJobAttributes(jobID, ['Status','MinorStatus'] )
     if not result['OK']:
@@ -77,6 +81,7 @@ class JobStateUpdateHandler( RequestHandler ):
     status = ""
     minor = ""
     application = ""
+    appCounter  = ""
 
     # Get the last status values
     for date in dates:
@@ -86,19 +91,26 @@ class JobStateUpdateHandler( RequestHandler ):
         minor = statusDict[date]['MinorStatus']
       if statusDict[date]['ApplicationStatus']:  
         application = statusDict[date]['ApplicationStatus']
-
+      if 'ApplicationCounter' in statusDict[date] and statusDict[date]['ApplicationCounter']:
+        appCounter = statusDict[date]['ApplicationCounter']
+    attrNames = []
+    attrValues = []
     if status:
-      result = jobDB.setJobAttribute(jobID,'Status',status,True)
-      if not result['OK']:
-        return result
+      attrNames.append('Status')
+      attrValue.append(status)
     if minor:
-      result = jobDB.setJobAttribute(jobID,'MinorStatus',minor,True)
-      if not result['OK']:
-        return result
+      attrNames.append('MinorStatus')
+      attrValue.append(minor)
     if application:
-      result = jobDB.setJobAttribute(jobID,'ApplicationStatus',application,True)
-      if not result['OK']:
-        return result
+      attrNames.append('ApplicationStatus')
+      attrValue.append(application)
+    if appCounter:
+      attrNames.append('ApplicationCounter')
+      attrValue.append(appCounter)
+    result = self.setJobAttributes(jobID,attrNames,attrValues,update=True)
+    if not result['OK']:
+      return result
+
 
     # Update the JobLoggingDB records
     for date, sDict in statusDict.items():
@@ -172,16 +184,11 @@ class JobStateUpdateHandler( RequestHandler ):
         for job specified by its JobId
     """
 
-    OK = True
-    for name,value in parameters:
-      result = jobDB.setJobParameter(jobID,name,value)
-      if not result['OK']:
-        OK = False
-
-    if OK:
-      return S_OK('All parameters stored for job')
-    else:
+    result = jobDB.setJobParameters(jobID,parameters)
+    if not result['OK']:
       return S_ERROR('Failed to store some of the parameters')
+
+    return S_OK('All parameters stored for job')
 
   ###########################################################################
   types_sendHeartBeat = [IntType, DictType, DictType]
