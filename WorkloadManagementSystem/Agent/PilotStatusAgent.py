@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.12 2008/07/17 20:00:47 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.13 2008/07/18 09:30:35 acasajus Exp $
 ########################################################################
 
 """  The Pilot Status Agent updates the status of the pilot jobs if the
      PilotAgents database.
 """
 
-__RCSID__ = "$Id: PilotStatusAgent.py,v 1.12 2008/07/17 20:00:47 acasajus Exp $"
+__RCSID__ = "$Id: PilotStatusAgent.py,v 1.13 2008/07/18 09:30:35 acasajus Exp $"
 
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, List
@@ -16,6 +16,7 @@ from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
 from DIRAC.AccountingSystem.Client.Types.Pilot import Pilot as PilotAccounting
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 from DIRAC.Core.Security import CS
+from DIRAC import gConfig
 
 import os, sys, re, string, time
 from types import *
@@ -85,7 +86,7 @@ class PilotStatusAgent(Agent):
 
     # Now the pilot references are sorted, let's do the work
     for grid in workDict.keys():
-
+      pilotsToAccount = []
       #if grid != "LCG": continue
       for owner_group,refList in workDict[grid].items():
         owner,group = owner_group.split(":")
@@ -114,18 +115,21 @@ class PilotStatusAgent(Agent):
                                                     pDict['Destination'],
                                                     pDict['StatusDate'])
               if pDict[ 'Status' ] in finalStateList:
-                if pRef in pilotsDict and pilotsDict[ pRef ][ 'ParentID' ] == 0:
-                  pilotDict = pilotsDict[ pRef ]
-                  pilotDict[ 'Status' ] = pDict[ 'Status' ]
-                  pilotDict[ 'Destination' ] = pDict[ 'Destination' ]
+                pilotsToAccount.append( pRef )
 
-                  retVal = self.pilotDB.getPilotInfo( parentId = pilotDict[ 'PilotID' ] )
-                  if not retVal[ 'OK' ] or not retVal[ 'Value' ]:
-                    self.__addPilotAccountingReport( pilotDict )
-                  else:
-                    childDict = retVal[ 'Value' ]
-                    for childRef in childDict:
-                      self.__addPilotAccountingReport( childDict[ childRef ] )
+    retVal = self.pilotDB.getPilotInfo( pilotsToAccount, parentId = 0 )
+    if not retVal[ 'OK' ] or not retVal[ 'Value' ]:
+      continue
+    pilotsData = retVal[ 'Value' ]
+    for parentRef in pilotsData:
+      pilotDict = pilotsData[ parentRef ]
+      retVal = self.pilotDB.getPilotInfo( parentId = pilotDict[ 'PilotID' ] )
+      if not retVal[ 'OK' ] or not retVal[ 'Value' ]:
+        self.__addPilotAccountingReport( pilotDict )
+      else:
+        childDict = retVal[ 'Value' ]
+        for childRef in childDict:
+          self.__addPilotAccountingReport( childDict[ childRef ] )
 
     self.log.info( "Sending accounting records" )
     gDataStoreClient.commit()
@@ -193,15 +197,15 @@ class PilotStatusAgent(Agent):
     return S_OK(resultDict)
 
   def __getSiteFromCE( self, ce ):
-    siteSections = DIRAC.gConfig.getSections('/Resources/Sites/LCG/')
+    siteSections = gConfig.getSections('/Resources/Sites/LCG/')
     if not siteSections['OK']:
       self.log.error('Could not get LCG site list')
       return "unknown"
 
     sites = siteSections['Value']
     for site in sites:
-      lcgCEs = DIRAC.gConfig.getValue('/Resources/Sites/LCG/%s/CE' %site,[])
-      if ceName in lcgCEs:
+      lcgCEs = gConfig.getValue('/Resources/Sites/LCG/%s/CE' %site,[])
+      if ce in lcgCEs:
         return site
 
     self.log.error( 'Could not determine DIRAC site name for CE:', siteName )
@@ -210,8 +214,9 @@ class PilotStatusAgent(Agent):
   def __addPilotAccountingReport( self, pData ):
     pA = PilotAccounting()
     pA.setEndTime()
+    print pData
     pA.setStartTime( pData[ 'SubmissionTime' ] )
-    retVal = getUsernameForDN( pData[ 'OwnerDN' ] )
+    retVal = CS.getUsernameForDN( pData[ 'OwnerDN' ] )
     if not retVal[ 'OK' ]:
       userName = 'unknown'
       self.log.error( "Can't determine username for dn:", pData[ 'OwnerDN' ] )
@@ -219,8 +224,8 @@ class PilotStatusAgent(Agent):
       userName = retVal[ 'Value' ]
     pA.setValueByKey( 'User', userName )
     pA.setValueByKey( 'UserGroup', pData[ 'OwnerGroup' ] )
-    pA.setValueByKey( 'Site', self.__getSiteFromCE( pData[ 'ce' ] ) )
-    pA.setValueByKey( 'GridCE', pData[ 'ce' ] )
+    pA.setValueByKey( 'Site', self.__getSiteFromCE( pData[ 'DestinationSite' ] ) )
+    pA.setValueByKey( 'GridCE', pData[ 'DestinationSite' ] )
     pA.setValueByKey( 'GridMiddleware', pData[ 'GridType' ] )
     pA.setValueByKey( 'GridResourceBroker', pData[ 'Broker' ] )
     pA.setValueByKey( 'GridStatus', pData[ 'Status' ] )
