@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.22 2008/07/18 11:32:29 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.23 2008/07/18 13:31:13 acasajus Exp $
 ########################################################################
 
 """  The Pilot Status Agent updates the status of the pilot jobs if the
      PilotAgents database.
 """
 
-__RCSID__ = "$Id: PilotStatusAgent.py,v 1.22 2008/07/18 11:32:29 acasajus Exp $"
+__RCSID__ = "$Id: PilotStatusAgent.py,v 1.23 2008/07/18 13:31:13 acasajus Exp $"
 
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, List
@@ -142,8 +142,12 @@ class PilotStatusAgent(Agent):
             for childRef in childDict:
               self.__addPilotAccountingReport( childDict[ childRef ] )
 
-    self.log.info( "Sending accounting records" )
-    gDataStoreClient.commit()
+    self.log.info( "Sending accounting records..." )
+    retVal = gDataStoreClient.commit()
+    if not retVal[ 'OK' ]:
+      self.log.error( "Can't send accounting repots", retVal[ 'Message' ] )
+    else:
+      self.log.info( "Accounting sent for %s pilots" % retVal[ 'Value' ] )
     return S_OK()
 
   #############################################################################
