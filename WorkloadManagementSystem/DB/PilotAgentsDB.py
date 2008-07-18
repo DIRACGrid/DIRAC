@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.28 2008/07/18 07:44:53 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.29 2008/07/18 07:46:23 rgracian Exp $
 ########################################################################
 """ PilotAgentsDB class is a front-end to the Pilot Agent Database.
     This database keeps track of all the submitted grid pilot jobs.
@@ -23,7 +23,7 @@
 
 """
 
-__RCSID__ = "$Id: PilotAgentsDB.py,v 1.28 2008/07/18 07:44:53 rgracian Exp $"
+__RCSID__ = "$Id: PilotAgentsDB.py,v 1.29 2008/07/18 07:46:23 rgracian Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
@@ -362,7 +362,7 @@ class PilotAgentsDB(DB):
         pilotList = [ x[0] for x in result['Value'] ]
         return S_OK(pilotList)
       else:
-        return S_ERROR('JobID '+pilotID+' not found'  )
+        return S_ERROR('JobID %s not found' % pilotID )
 
 ##########################################################################################
   def getPilotsForJob(self,jobID,gridType=None):
