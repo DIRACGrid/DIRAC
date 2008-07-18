@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.19 2008/07/18 11:27:25 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.20 2008/07/18 11:28:19 acasajus Exp $
 ########################################################################
 
 """  The Pilot Status Agent updates the status of the pilot jobs if the
      PilotAgents database.
 """
 
-__RCSID__ = "$Id: PilotStatusAgent.py,v 1.19 2008/07/18 11:27:25 acasajus Exp $"
+__RCSID__ = "$Id: PilotStatusAgent.py,v 1.20 2008/07/18 11:28:19 acasajus Exp $"
 
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, List
@@ -84,7 +84,7 @@ class PilotStatusAgent(Agent):
         workDict[grid][owner_group] = []
         workDict[grid][owner_group].append(pRef)
 
-    result = self._getConnection()
+    result = self.pilotDB._getConnection()
     if result['OK']:
       connection = result['Value']
     else:
