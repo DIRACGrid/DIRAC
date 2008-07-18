@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueAgent.py,v 1.12 2008/07/11 18:08:25 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueAgent.py,v 1.13 2008/07/18 16:52:21 rgracian Exp $
 # File :   TaskQueueAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
      into a Task Queue.
 """
 
-__RCSID__ = "$Id: TaskQueueAgent.py,v 1.12 2008/07/11 18:08:25 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueAgent.py,v 1.13 2008/07/18 16:52:21 rgracian Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
@@ -106,7 +106,7 @@ class TaskQueueAgent(Optimizer):
       self.log.warn("The job will be marked problematic")
       return S_ERROR('Illegal JDL')
 
-    requirements = classadJob.get_expression("Requirements").replace('"','')
+    requirements = classadJob.get_expression("Requirements")
     jobType = classadJob.get_expression("JobType").replace('"','')
     pilotType = classadJob.get_expression( "PilotType" ).replace('"','')
 
