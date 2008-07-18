@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.23 2008/07/18 15:30:41 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.24 2008/07/18 16:05:46 rgracian Exp $
 # File :   Director.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -48,7 +48,7 @@
 
 """
 
-__RCSID__ = "$Id: Director.py,v 1.23 2008/07/18 15:30:41 rgracian Exp $"
+__RCSID__ = "$Id: Director.py,v 1.24 2008/07/18 16:05:46 rgracian Exp $"
 
 import types, time
 
@@ -174,6 +174,8 @@ class Director(Agent):
       if not ret['OK']:
         # Disable submission until next iteration
         self.directors[platform]['isEnabled'] = False
+      else:
+        break
 
   def __getJobs(self):
     """
