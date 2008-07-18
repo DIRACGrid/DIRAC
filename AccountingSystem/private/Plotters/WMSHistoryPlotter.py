@@ -32,6 +32,7 @@ class WMSHistoryPlotter(BasePlotter):
                  'starttime' : startTime,
                  'endtime' : endTime,
                  'span' : granularity,
+                 'skipEdgeColor' : True,
                  'ylabel' : "jobs"  }
     return generateTimedStackedBarPlot( filename, dataDict, metadata )
 
@@ -57,5 +58,6 @@ class WMSHistoryPlotter(BasePlotter):
                  'starttime' : startTime,
                  'endtime' : endTime,
                  'span' : granularity,
+                 'skipEdgeColor' : True,
                  'ylabel' : "reschedules"  }
     return generateTimedStackedBarPlot( filename, dataDict, metadata )

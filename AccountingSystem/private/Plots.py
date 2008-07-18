@@ -36,7 +36,42 @@ class TimeBarGraph( TimeGraph, BarGraph ):
   pass
 
 class TimeStackedBarGraph( TimeGraph, StackedBarGraph ):
-  pass
+
+  def make_stacked_bar( self, points, bottom, color ):
+
+    if not 'skipEdgeColor' in self.metadata or not self.metadata[ 'skipEdgeColor' ]:
+      return super( TimeStackedBarGraph, self ).make_stacked_bar( points, bottom, color )
+    else:
+      if bottom == None:
+        bottom = {}
+      tmp_x = []; tmp_y = []; tmp_b = []
+
+      for key in points.keys():
+        if self.is_timestamps:
+          key_date = datetime.datetime.utcfromtimestamp( key )
+          key_val = date2num( key_date )
+        else:
+          key_val = key
+        tmp_x.append( key_val )
+        tmp_y.append( points[key] )
+        if not bottom.has_key( key ):
+          if self.log_yaxis:
+              bottom[key] = 0.001
+          else:
+              bottom[key] = 0
+        tmp_b.append( bottom[key] )
+        bottom[key] += points[key]
+      if len( tmp_x ) == 0:
+        return bottom, None
+      width = float(self.width)
+      if self.is_timestamps:
+          width = float(width) / 86400.0
+      elif self.string_mode:
+          tmp_x = [i + .1*width for i in tmp_x]
+          width = .8 * width
+      bars = self.ax.bar( tmp_x, tmp_y, bottom=tmp_b, width=width, color=color, edgecolor=color )
+      setp( bars, linewidth=0.5 )
+      return bottom, bars
 
 def generateTimedStackedBarPlot( fileName, data, metadata ):
   try:
