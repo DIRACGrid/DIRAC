@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.22 2008/07/18 07:34:16 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.23 2008/07/18 15:30:41 rgracian Exp $
 # File :   Director.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -48,7 +48,7 @@
 
 """
 
-__RCSID__ = "$Id: Director.py,v 1.22 2008/07/18 07:34:16 rgracian Exp $"
+__RCSID__ = "$Id: Director.py,v 1.23 2008/07/18 15:30:41 rgracian Exp $"
 
 import types, time
 
@@ -263,7 +263,7 @@ class Director(Agent):
       jobDict[attr] = attributes[attr]
 
 
-    self.jobDicts[job] = dict(jobDict)
+    self.jobDicts[job] = jobDict
 
     self.log.verbose('JobID: %s' % job)
     self.log.verbose('Owner: %s' % jobDict['Owner'])
@@ -326,8 +326,8 @@ class Director(Agent):
     for pool in self.pools:
       if pool != 'Default' and not pool in pools:
         pool = self.pools[pool]
-        del pool
-        del self.pools[pool]
+        # del pool
+        # del self.pools[pool]
 
 
   def __createDirector(self,platform):
@@ -434,44 +434,6 @@ class Director(Agent):
     self.pools[poolName] = pool
     return poolName
 
-  #############################################################################
-  def oldexecute(self):
-    """The PilotAgent execution method.
-    """
-    agent = {}
-    if not self.started:
-      resourceBrokers = gConfig.getValue(self.pdSection+'/ResourceBrokers','lhcb-lcg-rb04.cern.ch')
-  #  resourceBrokers = gConfig.getValue('LCGPilotDirector/ResourceBrokers','lcgrb03.gridpp.rl.ac.uk,lhcb-lcg-rb03.cern.ch')
-      if not type(resourceBrokers)==type([]):
-        resourceBrokers = resourceBrokers.split(',')
-
-      for rb in resourceBrokers:
-        gLogger.verbose('Starting thread for %s RB %s' %(self.type,rb))
-        try:
-          moduleStr = 'self.importModule.%s(self.pdSection,rb,self.type)' %(self.pdName)
-          agent[rb] = eval(moduleStr)
-        except Exception, x:
-          msg = 'Could not instantiate %s()' %(self.pdName)
-          self.log.warn(x)
-          self.log.warn(msg)
-          return S_ERROR(msg)
-
-        agent[rb].start()
-        time.sleep(self.threadStartDelay)
-
-      self.started=True
-
-    for rb,th in agent.items():
-      if th.isAlive():
-        gLogger.verbose('Thread for %s RB %s is alive' %(self.type,rb))
-      else:
-        gLogger.verbose('Thread isAlive() = %s' %(th.isAlive()))
-        gLogger.warn('Thread for %s RB %s is dead, restarting ...' %(self.type,rb))
-        th.start()
-
-    return S_OK()
-
-
   def __initializeDirectors(self):
     """
      Initialize one Director for each requested Flavour
@@ -492,7 +454,7 @@ class Director(Agent):
     if not submitResult['OK']:
       self.log.verbose( submitResult['Message'] )
     else:
-      self.jobDicts.update(submitResult['Value'])
+      self.jobDicts[submitResult['Value']['JobID']] = submitResult['Value']
 
 
 def stringFromClassAd( classAd, name ):
