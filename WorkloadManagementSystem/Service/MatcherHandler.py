@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: MatcherHandler.py,v 1.13 2008/07/16 15:53:10 acasajus Exp $
+# $Id: MatcherHandler.py,v 1.14 2008/07/18 08:33:27 rgracian Exp $
 ########################################################################
 """
 Matcher class. It matches Agent Site capabilities to job requirements.
@@ -7,7 +7,7 @@ It also provides an XMLRPC interface to the Matcher
 
 """
 
-__RCSID__ = "$Id: MatcherHandler.py,v 1.13 2008/07/16 15:53:10 acasajus Exp $"
+__RCSID__ = "$Id: MatcherHandler.py,v 1.14 2008/07/18 08:33:27 rgracian Exp $"
 
 import re, os, sys, time
 import string
@@ -118,14 +118,14 @@ class MatcherHandler(RequestHandler):
         symmetricMatch, leftToRightMatch, rightToLeftMatch = result['Value']
         if not result['OK']:
           if leftToRightMatch is None:
-            gLogger.warn("Error while matching the Queue to Agent requirements")
+            gLogger.verbose("Error while matching the Queue to Agent requirements")
             continue
         if leftToRightMatch:
           jobID = self.findMatchInQueue(classAdAgent, tqID)
           if jobID > 0:
             break
         else:
-          gLogger.warn('Error while matching the JDLs')
+          gLogger.verbose('Task Queue and Request do not match')
 
       gMonitor.addMark( "matchTaskQueues", taskQueuesLooked )
 
