@@ -104,7 +104,7 @@ class RequestDBMySQL(DB):
         return S_ERROR('%s\n%s' % (err,res['Message']))
 
       req = "SELECT FileID,LFN,Size,PFN,GUID,Md5,Addler,Attempt,Status \
-      from Files WHERE SubRequestID = %s;" % subRequestID
+      from Files WHERE SubRequestID = %s ORDER BY FileID;" % subRequestID
       res = self._query(req)
       if not res['OK']:
         err = 'RequestDB._getRequest: Failed to get File attributes for RequestID %s.%s' % (requestID,subRequestID)
@@ -384,7 +384,7 @@ class RequestDBMySQL(DB):
     if not res['OK']:
       return res
     jobID = request.getJobID()['Value']
-    if jobID:
+    if jobID and not jobID == 'Unknown':
       res = self._setRequestAttribute(requestID,'JobID',int(jobID))
       if not res['OK']:
         return res
