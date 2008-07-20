@@ -45,6 +45,7 @@ class ReplicationScheduler(Agent):
 
     # This allows dynamic changing of the throughput timescale
     self.throughputTimescale = gConfig.getValue(self.section+'/ThroughputTimescale',3600)
+    self.throughputTimescale = 60*60*24
 
     ######################################################################################
     #
@@ -117,8 +118,8 @@ class ReplicationScheduler(Agent):
      gLogger.info("ReplicationScheduler._execute: Treating sub-request %s from '%s'." % (ind,requestName))
      attributes = oRequest.getSubRequestAttributes(ind,'transfer')['Value']
      if attributes['Status'] != 'Waiting':
-      #  If the sub-request is already in terminal state
-      gLogger.info("ReplicationScheduler._execute: Sub-request %s is status '%s' and  not to be executed." % (ind,attributes['Status']))
+       #  If the sub-request is already in terminal state
+       gLogger.info("ReplicationScheduler._execute: Sub-request %s is status '%s' and  not to be executed." % (ind,attributes['Status']))
      else:     
       sourceSE = attributes['SourceSE']
       targetSE = attributes['TargetSE']
@@ -146,13 +147,15 @@ class ReplicationScheduler(Agent):
         gLogger.error(errStr)
         return S_ERROR(errStr)
       files = res['Value']
-      logStr = 'ReplicationScheduler._execute: Sub-request %s found with %s files.' % (ind,len(files))
-      gLogger.info(logStr)
+      gLogger.info("ReplicationScheduler._execute: Sub-request %s found with %s files." % (ind,len(files)))  
       filesDict = {}
       for file in files:
         lfn = file['LFN']
-        fileID = file['FileID']
-        filesDict[lfn] = fileID
+        if file['Status'] != 'Waiting':
+          gLogger.info("ReplicationScheduler._execute: %s will not be scheduled because it is %s." % (lfn,file['Status']))
+        else:   
+          fileID = file['FileID']
+          filesDict[lfn] = fileID
 
       ######################################################################################
       #
@@ -196,7 +199,9 @@ class ReplicationScheduler(Agent):
       # For each lfn determine the replication tree
       #
 
-      for lfn in metadata.keys():
+      for file in files:
+       lfn = file['LFN']
+       if lfn in metadata.keys():
         fileSize = metadata[lfn]['Size']
         lfnReps = replicas[lfn]
         fileID = filesDict[lfn]
@@ -210,6 +215,7 @@ class ReplicationScheduler(Agent):
 
         if not targets:
           gLogger.info("ReplicationScheduler.execute: %s present at all targets." % lfn)
+          oRequest.setSubRequestFileAttributeValue(ind,'transfer',lfn,'Status','Done')
         else:
           res = self.strategyHandler.determineReplicationTree(sourceSE,targets,lfnReps,fileSize,strategy=reqRepStrategy)
           if not res['OK']:
@@ -316,16 +322,20 @@ class StrategyHandler:
   def __init__(self,bandwidths,channels,configSection):
     """ Standard constructor
     """
-    self.supportedStrategies = ['Simple','DynamicThroughput','Swarm']
-    self.sigma = gConfig.getValue(configSection+'/HopSigma',1)
+    self.supportedStrategies = ['Simple','DynamicThroughput','Swarm','MinimiseTotalWait']
+    self.sigma = gConfig.getValue(configSection+'/HopSigma',0)
     self.schedulingType = gConfig.getValue(configSection+'/SchedulingType','File')
-    self.activeStrategies = gConfig.getValue(configSection+'/ActiveStrategies',['Simple','DynamicThroughput'])
+    self.activeStrategies = gConfig.getValue(configSection+'/ActiveStrategies',['Simple','MinimiseTotalWait','DynamicThroughput'])
     self.numberOfStrategies = len(self.activeStrategies)
-    self.acceptableFailureRate = gConfig.getValue(configSection+'/AcceptableFailureRate',75)
+    self.acceptableFailureRate = gConfig.getValue(configSection+'/AcceptableFailureRate',0)
     self.bandwidths = bandwidths
     self.channels = channels
     self.chosenStrategy = 0
 
+    print 'Scheduling Type',self.schedulingType
+    print 'Sigma',self.sigma 
+    print 'Acceptable failure rate',self.acceptableFailureRate
+   
 
   def getSupportedStrategies(self):
     return self.supportedStrategies
@@ -345,6 +355,12 @@ class StrategyHandler:
         tree = self.__dynamicThroughput([sourceSE],targetSEs)
       else:
         tree = self.__dynamicThroughput(replica.keys(),targetSEs)
+  
+    elif strategy == 'MinimiseTotalWait':
+      if sourceSE:
+        tree = self.__minimiseTotalWait([sourceSE],targetSEs)
+      else:
+        tree = self.__minimiseTotalWait(replica.keys(),targetSEs)
 
     elif strategy == 'Swarm':
       tree = self.__swarm(targetSEs[0],replicas)
@@ -429,7 +445,6 @@ class StrategyHandler:
     timeToSite = {}                # Maintains time to site including previous hops
     siteAncestor = {}              # Maintains the ancestor channel for a site
     tree = {}                      # Maintains replication tree
-
     while len(destSEs) > 0:
       minTotalTimeToStart = float("inf")
       for destSE in destSEs:
@@ -444,12 +459,14 @@ class StrategyHandler:
               totalTimeToStart = timeToSite[sourceSE]+channelTimeToStart+self.sigma
             else:
               totalTimeToStart = channelTimeToStart
+            selected = 'No'
             if totalTimeToStart <= minTotalTimeToStart:
               minTotalTimeToStart = totalTimeToStart
               selectedPathTimeToStart = totalTimeToStart
               selectedSourceSE = sourceSE
               selectedDestSE = destSE
               selectedChannelID = channelID
+              selected='Yes'
           else:
             errStr = 'StrategyHandler.__dynamicThroughput: Channel not defined'
             gLogger.error(errStr,channelName)
@@ -465,6 +482,53 @@ class StrategyHandler:
       tree[selectedChannelID]['SourceSE'] = selectedSourceSE
       tree[selectedChannelID]['DestSE'] = selectedDestSE
       tree[selectedChannelID]['Strategy'] = 'DynamicThroughput'
+      sourceSEs.append(selectedDestSE)
+      destSEs.remove(selectedDestSE)
+    return tree
+
+  def __minimiseTotalWait(self,sourceSEs,destSEs):
+    """ This creates a replication tree based on observed throughput on the channels
+    """
+    res = self.__getTimeToStart()
+    if not res['OK']:
+      gLogger.error(res['Message'])
+      return {}
+    channelInfo = res['Value']
+
+    timeToSite = {}                # Maintains time to site including previous hops
+    siteAncestor = {}              # Maintains the ancestor channel for a site
+    tree = {}                      # Maintains replication tree
+    while len(destSEs) > 0:
+      minTotalTimeToStart = float("inf")
+      for destSE in destSEs:
+        destSite = destSE.split('-')[0].split('_')[0]
+        for sourceSE in sourceSEs:
+          sourceSite = sourceSE.split('-')[0].split('_')[0]
+          channelName = '%s-%s' % (sourceSite,destSite)
+          if channelInfo.has_key(channelName):
+            channelID = channelInfo[channelName]['ChannelID']
+            channelTimeToStart = channelInfo[channelName]['TimeToStart']
+            if channelTimeToStart <= minTotalTimeToStart:
+              minTotalTimeToStart = channelTimeToStart
+              selectedPathTimeToStart = channelTimeToStart
+              selectedSourceSE = sourceSE
+              selectedDestSE = destSE
+              selectedChannelID = channelID
+          else:
+            errStr = 'StrategyHandler.__minimiseTotalWait: Channel not defined'
+            gLogger.error(errStr,channelName)
+      timeToSite[selectedDestSE] = selectedPathTimeToStart
+      siteAncestor[selectedDestSE] = selectedChannelID
+
+      if siteAncestor.has_key(selectedSourceSE):
+        waitingChannel = siteAncestor[selectedSourceSE]
+      else:
+        waitingChannel = False
+      tree[selectedChannelID] = {}
+      tree[selectedChannelID]['Ancestor'] = waitingChannel
+      tree[selectedChannelID]['SourceSE'] = selectedSourceSE
+      tree[selectedChannelID]['DestSE'] = selectedDestSE
+      tree[selectedChannelID]['Strategy'] = 'MinimiseTotalWait'
       sourceSEs.append(selectedDestSE)
       destSEs.remove(selectedDestSE)
     return tree
@@ -498,12 +562,13 @@ class StrategyHandler:
           throughputTimeToStart = foat('inf') # Make the channel extremely unattractive but still available
           fileTimeToStart = float('inf') # Make the channel extremely unattractive but still available
         else:
-          if channelFiles > 0:
-            fileTimeToStart = channelFiles/(channelFileput+(1/1e100))
+          if channelFileput > 0:
+            fileTimeToStart = channelFiles/float(channelFileput)
           else:
             fileTimeToStart = 0.0
-          if channelSize > 0:
-            throughputTimeToStart = channelSize/(channelThroughput+(1/1e100))
+
+          if channelThroughput > 0:
+            throughputTimeToStart = channelSize/float(channelThroughput)
           else:
             throughputTimeToStart = 0.0
 
@@ -515,6 +580,7 @@ class StrategyHandler:
         errStr = 'StrategyHandler.__dynamicThroughput: CS SchedulingType entry must be either File or Throughput'
         gLogger.error(errStr)
         return S_ERROR(errStr)
+
     return S_OK(channelInfo)
 
 
