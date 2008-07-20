@@ -24,7 +24,9 @@ CREATE TABLE Channel (
   FileSize INTEGER NOT NULL,
   Retries INTEGER DEFAULT 0,
   SchedulingTime DATETIME NOT NULL,
+  SchedulingTimeOrder DOUBLE(11,3) NOT NULL,
   LastUpdate DATETIME NOT NULL,
+  LastUpdateTimeOrder DOUBLE(11,3) NOT NULL,
   CompletionTime DATETIME,
   PRIMARY KEY (ChannelID,FileID)
 );
