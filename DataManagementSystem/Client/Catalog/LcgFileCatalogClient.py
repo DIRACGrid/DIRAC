@@ -1123,7 +1123,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     elif type(lfn) == types.ListType:
       lfns = lfn
     else:
-      return S_ERROR('LFCClient.removeFileFromDataset: Must supply a LFN of list of LFNs')
+      return S_ERROR('LFCClient.createDataset: Must supply a LFN of list of LFNs')
 
     if not self.session:
       self.__openSession()
