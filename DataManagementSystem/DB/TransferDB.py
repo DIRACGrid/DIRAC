@@ -3,7 +3,9 @@
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities.List import randomize,stringListToString,intListToString
-import threading,types,string
+import threading,types,string,time,datetime
+
+MAGIC_EPOC_NUMBER = 1270000000
 
 gLogger.initialize('DMS','/Databases/TransferDB/Test')
 
@@ -12,6 +14,12 @@ class TransferDB(DB):
   def __init__(self, systemInstance ='Default', maxQueueSize=10 ):
     DB.__init__(self,'TransferDB','RequestManagement/RequestDB',maxQueueSize)
     self.getIdLock = threading.Lock()
+
+  def __getFineTime(self):
+     _date = datetime.datetime.utcnow()
+     epoc = time.mktime(_date.timetuple()) - MAGIC_EPOC_NUMBER
+     time_order = round(epoc,3)
+     return time.time() - MAGIC_EPOC_NUMBER
 
   #################################################################################
   # These are the methods for managing the Channels table
@@ -125,6 +133,7 @@ class TransferDB(DB):
       if channels[channelID]['Status'] == 'Active':
         if channels[channelID]['Files'] > 0:
           candidateChannels[channelID] = channels[channelID]['Files']
+
     if not len(candidateChannels.keys()) >0:
       return S_OK()
     strChannelIDs = intListToString(candidateChannels.keys())
@@ -136,7 +145,6 @@ class TransferDB(DB):
     withJobs = {}
     for channelID,numberOfJobs in res['Value']:
       withJobs[channelID] = numberOfJobs
-
 
     minJobs = maxJobsPerChannel
     maxFiles = 0
@@ -175,7 +183,9 @@ class TransferDB(DB):
     if res['Value']:
       err = 'TransferDB._addFileToChannel: File %s already exists on Channel %s.' % (fileID,channelID)
       return S_ERROR(err)
-    req = "INSERT INTO Channel (ChannelID,FileID,SourceSURL,TargetSURL,SpaceToken,SchedulingTime,LastUpdate,FileSize,Status) VALUES (%s,%s,'%s','%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),%s,'%s');" % (channelID,fileID,sourceSURL,targetSURL,spaceToken,fileSize,fileStatus)
+    time_order = self.__getFineTime()
+    req = "INSERT INTO Channel (ChannelID,FileID,SourceSURL,TargetSURL,SpaceToken,SchedulingTime,SchedulingTimeOrder,LastUpdate,LastUpdateTimeOrder,FileSize,Status) VALUES \
+           (%s,%s,'%s','%s','%s',UTC_TIMESTAMP(),%s,UTC_TIMESTAMP(),%s,%s,'%s');"  % (channelID,fileID,sourceSURL,targetSURL,spaceToken,time_order,time_order,fileSize,fileStatus)
     res = self._update(req)
     if not res['OK']:
       err = 'TransferDB._addFileToChannel: Failed to insert File %s to Channel %s.' % (fileID,channelID)
@@ -194,7 +204,8 @@ class TransferDB(DB):
 
   def setChannelFilesExecuting(self,channelID,fileIDs):
     strFileIDs = intListToString(fileIDs)
-    req = "UPDATE Channel SET Status = 'Executing',  LastUpdate=UTC_TIMESTAMP() WHERE FileID IN (%s) AND ChannelID = %s;" % (strFileIDs,channelID)
+    time_order = self.__getFineTime()
+    req = "UPDATE Channel SET Status = 'Executing',  LastUpdate=UTC_TIMESTAMP(),LastUpdateTimeOrder = %s  WHERE FileID IN (%s) AND ChannelID = %s;" % (time_order,strFileIDs,channelID)
     res = self._update(req)
     if not res['OK']:
       err = 'TransferDB._setChannelFilesExecuting: Failed to set file executing.'
@@ -228,7 +239,8 @@ class TransferDB(DB):
     return res
 
   def updateCompletedChannelStatus(self,channelID,fileID):
-    req = "UPDATE Channel SET Status = 'Done',LastUpdate=UTC_TIMESTAMP(),CompletionTime=UTC_TIMESTAMP() WHERE FileID=%s AND ChannelID=%s;" % (fileID,channelID)
+    time_order = self.__getFineTime()
+    req = "UPDATE Channel SET Status = 'Done',LastUpdate=UTC_TIMESTAMP(),LastUpdateTimeOrder = %s, CompletionTime=UTC_TIMESTAMP() WHERE FileID=%s AND ChannelID=%s;" % (time_order,fileID,channelID)
     res = self._update(req)
     if not res['OK']:
       err = 'TransferDB._updateCompletedChannelStatus: Failed to update File %s from Channel %s.' % (fileID,channelID)
@@ -236,7 +248,8 @@ class TransferDB(DB):
     return res
 
   def resetFileChannelStatus(self,channelID,fileID):
-    req = "UPDATE Channel SET Status = 'Waiting',LastUpdate=UTC_TIMESTAMP(),Retries=Retries+1 WHERE FileID=%s AND ChannelID=%s;" % (fileID,channelID)
+    time_order = self.__getFineTime()
+    req = "UPDATE Channel SET Status = 'Waiting',LastUpdate=UTC_TIMESTAMP(),LastUpdateTimeOrder = %s,Retries=Retries+1 WHERE FileID=%s AND ChannelID=%s;" % (time_order,fileID,channelID)
     res = self._update(req)
     if not res['OK']:
       err = 'TransferDB._resetFileChannelStatus: Failed to reset File %s from Channel %s.' % (fileID,channelID)
@@ -268,7 +281,7 @@ class TransferDB(DB):
     return res
 
   def getFilesForChannel(self,channelID,numberOfFiles):
-    req = "SELECT SpaceToken FROM Channel WHERE ChannelID = %s AND Status = 'Waiting' ORDER BY LastUpdate LIMIT 1;" % (channelID)
+    req = "SELECT SpaceToken FROM Channel WHERE ChannelID = %s AND Status = 'Waiting' ORDER BY LastUpdateTimeOrder LIMIT 1;" % (channelID)
     res = self._query(req)
     if not res['OK']:
       err = "TransferDB.getFilesForChannel: Failed to get files for Channel %s." % channelID
@@ -276,7 +289,7 @@ class TransferDB(DB):
     if not res['Value']:
       return S_OK()
     spaceToken = res['Value'][0][0]
-    req = "SELECT FileID,SourceSURL,TargetSURL,FileSize FROM Channel WHERE ChannelID = %s AND Status = 'Waiting' AND SpaceToken = '%s' ORDER BY LastUpdate LIMIT %s;" % (channelID,spaceToken,numberOfFiles)
+    req = "SELECT FileID,SourceSURL,TargetSURL,FileSize FROM Channel WHERE ChannelID = %s AND Status = 'Waiting' AND SpaceToken = '%s' ORDER BY LastUpdateTimeOrder LIMIT %s;" % (channelID,spaceToken,numberOfFiles)
     res = self._query(req)
     if not res['OK']:
       err = "TransferDB.getFilesForChannel: Failed to get files for Channel %s." % channelID
@@ -484,21 +497,35 @@ class TransferDB(DB):
       return res
     channels = res['Value']
     channelIDs = channels.keys()
+
     #############################################
-    # First get the throughput on the channels
-    #req = "SELECT ChannelID,SUM(FileSize/%s),COUNT(*)/%s from FileToFTS WHERE SubmissionTime > (UTC_TIMESTAMP() - INTERVAL %s SECOND) AND Status = 'Completed' GROUP BY ChannelID;" % (interval,interval,interval)
-    useFulString = "SUM(TIME_TO_SEC(TIMEDIFF(TerminalTime,SubmissionTime)))"
-    req = "SELECT ChannelID,SUM(FileSize)/%s,COUNT(*)/%s FROM FileToFTS WHERE SubmissionTime > (UTC_TIMESTAMP() - INTERVAL %s SECOND) AND Status = 'Completed' GROUP BY ChannelID;" % (useFulString,useFulString,interval)
+    # First get the total time spend transferring files on the channels
+    req = "SELECT ChannelID,SUM(TIME_TO_SEC(TIMEDIFF(TerminalTime,SubmissionTime))) FROM FileToFTS WHERE SubmissionTime > (UTC_TIMESTAMP() - INTERVAL %s SECOND) GROUP BY ChannelID;" % interval
     res = self._query(req)
     if not res['OK']:
-      err = 'TransferDB._getFTSObservedThroughput: Failed to obtain observed throughput.'
+      err = 'TransferDB._getFTSObservedThroughput: Failed to obtain total time transferring.'
+      return S_ERROR('%s\n%s' % (err,res['Message']))
+    channelTimeDict = {}     
+    for channelID,totalTime in res['Value']:
+      channelTimeDict[channelID] = float(totalTime)
+
+    #############################################
+    # Now get the total size of the data transferred and the number of files that were successful 
+    req = "SELECT ChannelID,SUM(FileSize),COUNT(*) FROM FileToFTS WHERE Status = 'Completed' and SubmissionTime > (UTC_TIMESTAMP() - INTERVAL %s SECOND) GROUP BY ChannelID;" % interval
+    res = self._query(req)
+    if not res['OK']:
+      err = 'TransferDB._getFTSObservedThroughput: Failed to obtain total transferred data and files.'
       return S_ERROR('%s\n%s' % (err,res['Message']))
     channelDict = {}
-    for channelID,throughput,fileput in res['Value']:
-      channelDict[channelID] = {'Throughput': float(throughput),'Fileput': float(fileput)}
+    for channelID,data,files in res['Value']:
+      throughPut = float(data)/channelTimeDict[channelID]
+      filePut = float(files)/channelTimeDict[channelID]
+      channelDict[channelID] = {'Throughput': throughPut,'Fileput': filePut}
+
     for channelID in channelIDs:
       if not channelDict.has_key(channelID):
         channelDict[channelID] = {'Throughput': 0,'Fileput': 0}
+
     #############################################
     # Now get the success rate on the channels
     req = "SELECT ChannelID,SUM(Status='Completed'),SUM(Status='Failed') from FileToFTS WHERE SubmissionTime > (UTC_TIMESTAMP() - INTERVAL %s SECOND) GROUP BY ChannelID;" % (interval)
@@ -513,6 +540,7 @@ class TransferDB(DB):
       if not channelDict[channelID].has_key('SuccessfulFiles'):
         channelDict[channelID]['SuccessfulFiles'] = 0
         channelDict[channelID]['FailedFiles'] = 0
+
     return S_OK(channelDict)
 
   def getTransferDurations(self,channelID,startTime=None,endTime=None):
