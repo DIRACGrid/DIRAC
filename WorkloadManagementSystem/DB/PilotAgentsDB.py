@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.32 2008/07/18 11:27:25 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.33 2008/07/21 16:50:11 rgracian Exp $
 ########################################################################
 """ PilotAgentsDB class is a front-end to the Pilot Agent Database.
     This database keeps track of all the submitted grid pilot jobs.
@@ -23,7 +23,7 @@
 
 """
 
-__RCSID__ = "$Id: PilotAgentsDB.py,v 1.32 2008/07/18 11:27:25 acasajus Exp $"
+__RCSID__ = "$Id: PilotAgentsDB.py,v 1.33 2008/07/21 16:50:11 rgracian Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
@@ -57,7 +57,9 @@ class PilotAgentsDB(DB):
       e_requirements = "Failed to escape requirements string"
     e_requirements = result['Value']
 
-    parentID = 0
+    parentID = -1
+    if len(pilotRef) > 1:
+      parentID = 0
 
     for ref in pilotRef:
 
@@ -70,7 +72,7 @@ class PilotAgentsDB(DB):
       if not result['OK']:
         return result
 
-      if not parentID:
+      if parentID < 1 :
         req = "SELECT LAST_INSERT_ID();"
         res = self._query(req,connection)
         if not res['OK']:
@@ -99,7 +101,7 @@ class PilotAgentsDB(DB):
     return self._update( req, conn = conn )
 
 ##########################################################################################
-  def selectPilots(self,statusList=[],owner=None,ownerGroup=None,newer=None,older=None):
+  def selectPilots(self,statusList=[],owner=None,ownerGroup=None,newer=None,older=None,gridType=None,parentID=[]):
     """ Select pilot references according to the provided criteria. "newer" and "older"
         specify the time interval in minutes
     """
@@ -116,6 +118,11 @@ class PilotAgentsDB(DB):
       condList.append("OwnerDN = '%s'" % owner)
     if ownerGroup:
       condList.append("OwnerGroup = '%s'" % ownerGroup)
+    if gridType:
+      condList.append("GridType = '%s'" % gridType)
+    if parentID:
+      condList.append("parentID IN ( %s )" % ', '.join([str(y) for y in parentID]))
+
     if newer:
       condList.append("SubmissionTime > DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d MINUTE)" % newer)
     if older:
@@ -134,6 +141,26 @@ class PilotAgentsDB(DB):
       pilotList = [ x[0] for x in result['Value']]
 
     return S_OK(pilotList)
+
+
+##########################################################################################
+  def getPilotGroups( self, groupList=['Status', 'OwnerDN', 'OwnerGroup', 'GridType'], condDict={} ):
+    """
+     Get all exisiting combinations of groupList Values
+    """
+
+    cmd = 'SELECT %s from PilotAgents ' % ', '.join(groupList)
+
+    condList= []
+    for cond in condDict:
+      condList.append('%s in ( "%s" )' % ( cond, '", "'.join([ str(y) for y in condDict[cond]]  ) ) )
+
+    if condList:
+      cmd += ' WHERE %s ' % ' AND '.join(condList)
+
+    cmd += ' GROUP BY %s' % ', '.join(groupList)
+
+    return self._query(cmd)
 
 
 ##########################################################################################
@@ -191,7 +218,6 @@ class PilotAgentsDB(DB):
     result = self._query( cmd, conn = conn )
     if not result['OK']:
       return result
-
     if not result['Value']:
       msg = "No pilots found"
       if pilotRef:
@@ -201,11 +227,22 @@ class PilotAgentsDB(DB):
       return S_ERROR( msg )
 
     resDict = {}
+    pilotIDs = []
     for row in result['Value']:
       pilotDict = {}
       for i in range(len(parameters)-1):
         pilotDict[parameters[i+1]] = row[i+1]
+        if parameters[i+1] == 'PilotID':
+          pilotIDs.append(row[i+1])
       resDict[row[0]] = pilotDict
+
+    result = self.getJobsForPilot( pilotIDs )
+    if not result['OK']:
+      return S_OK( resDict )
+
+    for pilot in resDict:
+      if pilot['PilotID'] in result['Value']:
+        pilot['Jobs'] = result['Value'][pilot['PilotID']]
 
     return S_OK( resDict )
 
@@ -345,16 +382,27 @@ class PilotAgentsDB(DB):
   def getJobsForPilot( self, pilotID ):
     """ Get IDs of Jobs that were executed by a pilot
     """
-    req = "SELECT JobID FROM JobToPilotMapping WHERE pilotID=%d" % pilotID
-    result = self._query(req)
+    cmd = "SELECT pilotID,JobID FROM JobToPilotMapping "
+    if type( pilotID ) == ListType:
+      cmd = cmd + "pilotID IN (%s)" % ",".join( [ '%s' % x for x in pilotID ] )
+    else:
+      cmd = cmd + "pilotID = %s" % pilotID
+
+    result = self._query(cmd)
     if not result['OK']:
       return result
-    else:
-      if result['Value']:
-        pilotList = [ x[0] for x in result['Value'] ]
-        return S_OK(pilotList)
-      else:
-        return S_ERROR('JobID %s not found' % pilotID )
+
+    if not result['Value']:
+      return S_ERROR( 'No JobID found' )
+
+    resDict = {}
+    for row in result['Value']:
+      if not row[0] in resDict:
+        resDict[row[0]] = []
+      resDict[row[0]].append(row[1])
+    if type( pilotID ) == ListType:
+      return S_OK(resDict)
+    return S_OK(resDict[pilotID])
 
 ##########################################################################################
   def getPilotsForJob(self,jobID,gridType=None):
