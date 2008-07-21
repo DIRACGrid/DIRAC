@@ -345,7 +345,7 @@ class FTSRequest:
           else:
             self.requestStatus = line
       for lfn in self.lfns:
-        if re.search(lfn,dict['Source']):
+        if re.search(lfn,dict['Destination']):
           for key,value in dict.items():
             self.fileDict[lfn][key] = value
     return S_OK()
