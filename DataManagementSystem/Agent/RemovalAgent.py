@@ -63,8 +63,8 @@ class RemovalAgent(Agent):
       result = setupShifterProxyInEnv( "DataManager", self.proxyLocation )
       if not result[ 'OK' ]:
         self.log.error( "Can't get shifter's proxy: %s" % result[ 'Message' ] )
-      return result
-
+        return result
+ 
     for i in range(self.threadPoolDepth):
       requestExecutor = ThreadedJob(self.executeRequest)
       self.threadPool.queueJob(requestExecutor)
