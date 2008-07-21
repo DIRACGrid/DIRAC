@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.28 2008/07/21 10:17:42 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.29 2008/07/21 10:28:43 rgracian Exp $
 # File :   Director.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -48,7 +48,7 @@
 
 """
 
-__RCSID__ = "$Id: Director.py,v 1.28 2008/07/21 10:17:42 rgracian Exp $"
+__RCSID__ = "$Id: Director.py,v 1.29 2008/07/21 10:28:43 rgracian Exp $"
 
 import types, time
 
@@ -466,7 +466,7 @@ DIRAC_VERSION = 'HEAD'
 DIRAC_SETUP   = 'LHCb-Development'
 
 ENABLE_LISTMATCH = 1
-LISTMATCH_DELAY  = 15
+LISTMATCH_DELAY  = 5
 GRIDENV          = ''
 PILOT_DN         = '/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=paterson/CN=607602/CN=Stuart Paterson'
 PILOT_DN         = '/DC=es/DC=irisgrid/O=ecm-ub/CN=Ricardo-Graciani-Diaz'
@@ -655,15 +655,19 @@ class PilotDirector:
         now = Time.dateTime()
         if not jobRequirements in self.listMatch:
           availableCEs = self._listMatch( proxy, job, jdl )
-          self.listMatch[jobRequirements] = {'LastListMatch': now}
-          self.listMatch[jobRequirements]['AvailableCEs'] = availableCEs
+          if List != False:
+            self.listMatch[jobRequirements] = {'LastListMatch': now}
+            self.listMatch[jobRequirements]['AvailableCEs'] = availableCEs
         else:
           availableCEs = self.listMatch[jobRequirements]['AvailableCEs']
           if not Time.timeInterval( self.listMatch[jobRequirements]['LastListMatch'],
                                     self.listMatchDelay * Time.minute  ).includes( now ):
             availableCEs = self._listMatch( proxy, job, jdl )
-            self.listMatch[jobRequirements]['AvailableCEs'] = availableCEs
-            self.listMatch[jobRequirements] = {'LastListMatch': now}
+            if List != False:
+              self.listMatch[jobRequirements]['AvailableCEs'] = availableCEs
+              self.listMatch[jobRequirements] = {'LastListMatch': now}
+            else:
+              del self.listMatch[jobRequirements]
           else:
             self.log.verbose( 'LastListMatch', self.listMatch[jobRequirements]['LastListMatch'] )
             self.log.verbose( 'AvailableCEs ', availableCEs )
@@ -870,10 +874,10 @@ class PilotDirector:
 
     if not ret['OK']:
       self.log.error( 'Failed to execute List Match', ret['Message'] )
-      return []
+      return False
     if ret['Value'][0] != 0:
       self.log.error( 'Error executing List Match:', str(ret['Value'][0]) + '\n'.join( ret['Value'][1:3] ) )
-      return []
+      return False
     self.log.info( 'List Match Execution Time:', time.time()-start )
 
     stdout = ret['Value'][1]
