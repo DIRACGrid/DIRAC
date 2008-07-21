@@ -42,7 +42,7 @@ class FTSMonitor(Agent):
       result = setupShifterProxyInEnv( "DataManager", self.proxyLocation )
       if not result[ 'OK' ]:
         self.log.error( "Can't get shifter's proxy: %s" % result[ 'Message' ] )
-      return result
+        return result
 
     for i in range(self.monitorsPerLoop):
       infoStr = "\n\n##################################################################################\n\n"
@@ -166,6 +166,11 @@ class FTSMonitor(Agent):
       completedFileIDs = []
       for lfn in ftsReq.getCompleted():
         completedFileIDs.append(files[lfn])
+        res = self.TransferDB.updateCompletedChannelStatus(channelID,files[lfn])
+        if not res['OK']:
+          errStr = "FTSAgent.%s" % res['Message']
+          gLogger.error(errStr)
+          failed = True
         res = self.TransferDB.setRegistrationWaiting(channelID,files[lfn])
         if not res['OK']:
           errStr = "FTSAgent.%s" % res['Message']
