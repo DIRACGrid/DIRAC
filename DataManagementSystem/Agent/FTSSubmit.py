@@ -7,6 +7,7 @@ from DIRAC.DataManagementSystem.DB.TransferDB import TransferDB
 from DIRAC.DataManagementSystem.Client.FTSRequest import FTSRequest
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClient
+
 from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
 import os,time
 from types import *
@@ -32,7 +33,6 @@ class FTSSubmit(Agent):
     self.proxyLocation = gConfig.getValue( self.section+'/ProxyLocation', '' )
     if not self.proxyLocation:
       self.proxyLocation = False
-
     return result
 
   def execute(self):
@@ -41,8 +41,8 @@ class FTSSubmit(Agent):
       result = setupShifterProxyInEnv( "DataManager", self.proxyLocation )
       if not result[ 'OK' ]:
         self.log.error( "Can't get shifter's proxy: %s" % result[ 'Message' ] )
-      return result
-
+        return result
+       
     for i in range(self.submissionsPerLoop):
       infoStr = "\n\n##################################################################################\n\n"
       infoStr = "%sStarting submission loop %s of %s\n\n" % (infoStr,i+1, self.submissionsPerLoop)
