@@ -153,11 +153,12 @@ class RemovalAgent(Agent):
               oRequest.setSubRequestFileAttributeValue(ind,'removal',lfn,'Status','Done')
             gMonitor.addMark('RemoveFileFail',len(res['Value']['Failed'].keys()))
             for lfn in res['Value']['Failed'].keys():
-              if re.search('no such file or directory',res['Value']['Failed'][lfn].lower()):
-                gLogger.info("RemovalAgent.execute: File did not exist.",lfn)
-                oRequest.setSubRequestFileAttributeValue(ind,'removal',lfn,'Status','Done')
-              else:
-                gLogger.info("RemovalAgent.execute: Failed to remove file.", "%s %s" % (lfn,res['Value']['Failed'][lfn]))
+              if type(res['Value']['Failed'][lfn]) in StringTypes:
+                if re.search('no such file or directory',res['Value']['Failed'][lfn].lower()):
+                  gLogger.info("RemovalAgent.execute: File did not exist.",lfn)
+                  oRequest.setSubRequestFileAttributeValue(ind,'removal',lfn,'Status','Done')
+                else:
+                  gLogger.info("RemovalAgent.execute: Failed to remove file.", "%s %s" % (lfn,res['Value']['Failed'][lfn]))
           else:
             gMonitor.addMark('RemoveFileFail',len(lfns))
             errStr = "RemovalAgent.execute: Completely failed to remove files files."
