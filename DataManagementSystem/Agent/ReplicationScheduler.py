@@ -219,9 +219,9 @@ class ReplicationScheduler(Agent):
         else:
           res = self.strategyHandler.determineReplicationTree(sourceSE,targets,lfnReps,fileSize,strategy=reqRepStrategy)
           if not res['OK']:
-            errStr = res['Message']
-            gLogger.error(errStr)
-            return S_ERROR(errStr)
+            errStr = "ReplicationScheduler.execute: Failed to determine replication tree."
+            gLogger.error(errStr,res['Message'])
+            #oRequest.setSubRequestFileAttributeValue(ind,'transfer',lfn,'Status','Failed')
           tree = res['Value']
 
           ######################################################################################
@@ -348,7 +348,10 @@ class StrategyHandler:
 
     # For each strategy implemented an 'if' must be placed here
     if strategy == 'Simple':
-      tree = self.__simple(sourceSE,targetSEs)
+      if not sourceSE in replicas.keys():
+        return S_ERROR('File does not exist at specified source site.')
+      else:
+        tree = self.__simple(sourceSE,targetSEs)
 
     elif strategy == 'DynamicThroughput':
       if sourceSE:
@@ -370,7 +373,7 @@ class StrategyHandler:
       self.channels[channelID]['Files'] += 1
       self.channels[channelID]['Size'] += size
     return S_OK(tree)
-
+ 
   def __incrementChosenStrategy(self):
     """ This will increment the counter of the chosen strategy
     """
