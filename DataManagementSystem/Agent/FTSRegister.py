@@ -39,7 +39,7 @@ class FTSRegister(Agent):
       result = setupShifterProxyInEnv( "DataManager", self.proxyLocation )
       if not result[ 'OK' ]:
         self.log.error( "Can't get shifter's proxy: %s" % result[ 'Message' ] )
-      return result
+        return result
 
     res = self.TransferDB.getCompletedReplications()
     if not res['OK']:
