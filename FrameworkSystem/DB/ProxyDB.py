@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.14 2008/07/18 11:06:15 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.15 2008/07/21 18:07:50 acasajus Exp $
 ########################################################################
 """ ProxyRepository class is a front-end to the proxy repository Database
 """
 
-__RCSID__ = "$Id: ProxyDB.py,v 1.14 2008/07/18 11:06:15 acasajus Exp $"
+__RCSID__ = "$Id: ProxyDB.py,v 1.15 2008/07/21 18:07:50 acasajus Exp $"
 
 import time
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
@@ -24,6 +24,7 @@ class ProxyDB(DB):
     self.__defaultRequestLifetime = 300 # 5min
     self.__vomsRequired = requireVoms
     self.__useMyProxy = useMyProxy
+    self._minSecsToAllowStore = 3600
     retVal = self.__initializeDB()
     if not retVal[ 'OK' ]:
       raise Exception( "Can't create tables: %s" % retVal[ 'Message' ])
@@ -212,6 +213,9 @@ class ProxyDB(DB):
     if not retVal[ 'OK' ]:
       return retVal
     remainingSecs = retVal[ 'Value' ]
+    if remainingSecs < self._minSecsToAllowStore:
+      return S_ERROR( "Cannot store proxy, remaining secs %s is less than %s" %( remainingSecs, self._minSecsToAllowStore ) )
+
     #Compare the DNs
     retVal = chain.getIssuerCert()
     if not retVal[ 'OK' ]:
