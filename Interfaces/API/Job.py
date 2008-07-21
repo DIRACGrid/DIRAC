@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.38 2008/07/04 14:34:13 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.39 2008/07/21 18:21:11 paterson Exp $
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -30,7 +30,7 @@
    Note that several executables can be provided and wil be executed sequentially.
 """
 
-__RCSID__ = "$Id: Job.py,v 1.38 2008/07/04 14:34:13 paterson Exp $"
+__RCSID__ = "$Id: Job.py,v 1.39 2008/07/21 18:21:11 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -821,7 +821,7 @@ class Job:
         requirements = True
 
       if re.search('^JDL',ptype):
-        if not re.search(';',value):
+        if not re.search(';',value) or name=='GridRequirements': #not a nice fix...
           classadJob.insertAttributeString(name,value)
         else:
           classadJob.insertAttributeVectorString(name,string.split(value,';'))
