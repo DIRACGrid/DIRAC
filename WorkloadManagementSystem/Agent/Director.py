@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.26 2008/07/18 16:26:05 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.27 2008/07/21 07:09:29 rgracian Exp $
 # File :   Director.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -48,7 +48,7 @@
 
 """
 
-__RCSID__ = "$Id: Director.py,v 1.26 2008/07/18 16:26:05 rgracian Exp $"
+__RCSID__ = "$Id: Director.py,v 1.27 2008/07/21 07:09:29 rgracian Exp $"
 
 import types, time
 
@@ -69,6 +69,7 @@ import DIRAC
 MAJOR_WAIT     = 'Waiting'
 MINOR_SUBMIT   = 'Pilot Agent Submission'
 MINOR_RESPONSE = 'Pilot Agent Response'
+MINOR_SUBMITTING = 'Director Submitting'
 
 import os, sys, re, string, time, shutil
 
@@ -175,6 +176,8 @@ class Director(Agent):
         # Disable submission until next iteration
         self.directors[platform]['isEnabled'] = False
       else:
+        updateJobStatus( self.log, AGENT_NAME, job, MAJOR_WAIT, MINOR_SUBMITTING, logRecord=True )
+        time.sleep( 10 )
         break
 
   def __getJobs(self):
@@ -431,7 +434,7 @@ class Director(Agent):
       return None
     if poolName in self.pools:
       return None
-    pool = ThreadPool( 0,4,40 )
+    pool = ThreadPool( 0,2,40 )
     pool.daemonize()
     self.pools[poolName] = pool
     return poolName
@@ -525,6 +528,7 @@ class PilotDirector:
     if not  'log' in self.__dict__:
       self.log = gLogger.getSubLogger('PilotDirector')
     self.log.info('Initialized')
+    self.listMatch = {}
 
   def configure(self, csSection, platform ):
     """
@@ -604,10 +608,15 @@ class PilotDirector:
     """
       Submit pilot for the given job, this is done from the Thread Pool job
     """
+    job = jobDict['JobID']
+    ret = jobDB.getJobAttribute(job, 'Status')
+    if ret['OK'] and not ret['Value'] == MAJOR_WAIT:
+      self.log.warn( 'Job is no longer in %s Status:' % MAJOR_WAIT, job )
+      return S_ERROR( 'Job is no longer in %s Status:' % MAJOR_WAIT )
+
     self.log.verbose( 'Submitting Pilot' )
     ceMask = self.__resolveCECandidates( jobDict )
     if not ceMask: return S_ERROR( 'No CE available for job' )
-    job = jobDict['JobID']
     self.workDir = director.workDir
     workingDirectory = os.path.join( self.workDir, job)
 
@@ -653,7 +662,11 @@ class PilotDirector:
     jobRequirements = retDict['Requirements']
     pilots = retDict['Pilots']
     if not jdl:
-      shutil.rmtree( workingDirectory )
+      try:
+        shutil.rmtree( workingDirectory )
+      except:
+        pass
+      updateJobStatus( self.log, AGENT_NAME, job, MAJOR_WAIT, MINOR_SUBMIT, logRecord=True )
       return S_ERROR( 'Could not create JDL:', job )
 
     # get a valid proxy
@@ -661,14 +674,20 @@ class PilotDirector:
     if not ret['OK']:
       self.log.error( ret['Message'] )
       self.log.error( 'Could not get proxy:', 'User "%s", Group "%s"' % ( ownerDN, ownerGroup ) )
-      shutil.rmtree( workingDirectory )
+      try:
+        shutil.rmtree( workingDirectory )
+      except:
+        pass
+      updateJobStatus( self.log, AGENT_NAME, job, MAJOR_WAIT, MINOR_SUBMIT, logRecord=True )
       return S_ERROR( 'Could not get proxy' )
     proxy = ret['Value']
     # Need to get VOMS extension for the later interctions with WMS
     ret = gProxyManager.getVOMSAttributes(proxy)
     if not ret['OK']:
+      updateJobStatus( self.log, AGENT_NAME, job, MAJOR_WAIT, MINOR_SUBMIT, logRecord=True )
       return ret
     if not ret['Value']:
+      updateJobStatus( self.log, AGENT_NAME, job, MAJOR_WAIT, MINOR_SUBMIT, logRecord=True )
       return S_ERROR( 'getPilotProxyFromDIRACGroup returns a proxy without VOMS Extensions' )
     vomsGroup = ret['Value'][0]
 
@@ -676,19 +695,19 @@ class PilotDirector:
     if self.enableListMatch:
       availableCEs = []
       now = Time.dateTime()
-      if not 'AvailableCEs' in jobDict:
+      if not jobRequirements in self.listMatch:
         availableCEs = self._listMatch( proxy, job, jdl )
-        jobDict['LastListMatch'] = now
+        self.listMatch[jobRequirements] = {'LastListMatch': now}
       else:
-        avaliableCEs = jobDict['AvailableCEs']
-        if not Time.timeInterval( jobDict['LastListMatch'],
+        availableCEs = self.listMatch[jobRequirements]['AvailableCEs']
+        if not Time.timeInterval( self.listMatch[jobRequirements]['LastListMatch'],
                                   self.listMatchDelay * Time.minute  ).includes( now ):
           availableCEs = self._listMatch( proxy, job, jdl )
-          jobDict['LastListMatch'] = now
         else:
-          self.log.verbose( 'LastListMatch', jobDict['LastListMatch'] )
-          self.log.verbose( 'AvailableCEs ', jobDict['AvailableCEs'] )
-      jobDict['AvailableCEs']  = list(availableCEs)
+          self.log.verbose( 'LastListMatch', self.listMatch[jobRequirements]['LastListMatch'] )
+          self.log.verbose( 'AvailableCEs ', availableCEs )
+      self.listMatch[jobRequirements]['AvailableCEs'] = availableCEs
+
       if type(availableCEs) == types.ListType :
         jobDB.setJobParameter( job, 'Available_CEs' , '%s CEs returned from list-match on %s' %
                                ( len(availableCEs), Time.toString() ) )
@@ -698,14 +717,19 @@ class PilotDirector:
           shutil.rmtree( workingDirectory )
         except:
           pass
+        updateJobStatus( self.log, AGENT_NAME, job, MAJOR_WAIT, MINOR_SUBMIT, logRecord=True )
         return S_ERROR( 'No queue available for job' )
 
     # Now we are ready for the actual submission, so
 
     self.log.verbose('Submitting Pilot Agent for job:', job )
     submitRet = self._submitPilot( proxy, job, jdl )
-    shutil.rmtree( workingDirectory )
+    try:
+      shutil.rmtree( workingDirectory )
+    except:
+      pass
     if not submitRet:
+      updateJobStatus( self.log, AGENT_NAME, job, MAJOR_WAIT, MINOR_SUBMIT, logRecord=True )
       return S_ERROR( 'Pilot Submission Failed' )
     pilotReference, resourceBroker = submitRet
 
@@ -774,7 +798,7 @@ class PilotDirector:
     gridEnv = dict(os.environ)
     if self.gridEnv:
       self.log.verbose( 'Sourcing GridEnv script:', self.gridEnv )
-      ret = Source( 60, self.gridEnv )
+      ret = Source( 10, self.gridEnv )
       if not ret['OK']:
         self.log.error( 'Failed sourcing GridEnv:', ret['Message'] )
         return S_ERROR( 'Failed sourcing GridEnv' )
@@ -788,7 +812,7 @@ class PilotDirector:
       return ret
     gridEnv[ 'X509_USER_PROXY' ] = ret['Value']
     self.log.verbose( 'Executing', ' '.join(cmd) )
-    return systemCall( 60, cmd, env = gridEnv )
+    return systemCall( 120, cmd, env = gridEnv )
 
 
   def exceptionCallBack(self, threadedJob, exceptionInfo ):
@@ -983,9 +1007,9 @@ class gLitePilotDirector(PilotDirector):
       LBs.append('"https://%s:9000"' % LB)
 
     wmsClientJDL = """
-    
+
 JobType = "Parametric";
-Parameters= 10;
+Parameters= 20;
 ParameterStep =1;
 ParameterStart = 0;
 
@@ -1008,7 +1032,7 @@ MyProxyServer = "myproxy.cern.ch";
 
     (jobJDL , jobRequirements) = self._JobJDL( jobDict, pilotOptions, ceMask )
 
-    jdl = os.path.join( self.workDir, '%s.jdl' % jobDict['JobID'] )
+    jdl = os.path.join( self.workDir, '%s' % jobDict['JobID'], '%s.jdl' % jobDict['JobID'] )
     jdl = self._writeJDL( jdl, [jobJDL, wmsClientJDL] )
 
     return {'JDL':jdl, 'Requirements':jobRequirements, 'Pilots':10 }
@@ -1027,13 +1051,13 @@ MyProxyServer = "myproxy.cern.ch";
     """
     cmd = [ 'glite-wms-job-submit', '-a', '-c', '%s' % jdl, '%s' % jdl ]
     return  self.parseJobSubmitStdout( proxy, cmd, job )
-  
+
   def _getChildrenReferences(self, proxy, parentReference, job ):
     """
      Get reference for all Children
     """
     cmd = [ 'glite-wms-job-status', parentReference ]
-    
+
     start = time.time()
     self.log.verbose( 'Executing Job Status for job:', job )
 
@@ -1057,7 +1081,7 @@ MyProxyServer = "myproxy.cern.ch";
       m = re.search("Status info for the Job : (https:\S+)",line)
       if (m):
         glite_id = m.group(1)
-        if glite_id not in references: 
+        if glite_id not in references:
           references.append( glite_id )
         failed = 0
     if failed:
@@ -1065,7 +1089,7 @@ MyProxyServer = "myproxy.cern.ch";
       return [parentReference]
 
     return references
-    
+
 
 class LCGPilotDirector(PilotDirector):
   def __init__(self):
@@ -1091,10 +1115,10 @@ class LCGPilotDirector(PilotDirector):
     LBs = []
     for RB in self.resourceBrokers:
       LDs.append( '"%s:9002"' % RB )
+      LBs.append( '"%s:9000"' % RB )
 
     for LB in self.loggingServers:
       NSs.append( '"%s:7772"' % LB )
-      LBs.append( '"%s:9000"' % LB )
 
     LD = ', '.join(LDs)
     NS = ', '.join(NSs)
@@ -1123,7 +1147,7 @@ MyProxyServer = "myproxy.cern.ch";
 
     jobJDL,jobRequirements = self._JobJDL( jobDict, pilotOptions, ceMask )
 
-    jdl = os.path.join( self.workDir, '%s.jdl' % jobDict['JobID'] )
+    jdl = os.path.join( self.workDir, '%s' % jobDict['JobID'], '%s.jdl' % jobDict['JobID'] )
     jdl = self._writeJDL( jdl, [jobJDL, rbJDL] )
 
     return {'JDL':jdl, 'Requirements':jobRequirements, 'Pilots': 1 }
