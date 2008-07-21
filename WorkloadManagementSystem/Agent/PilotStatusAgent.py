@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.25 2008/07/21 16:51:42 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.26 2008/07/21 17:01:54 rgracian Exp $
 ########################################################################
 
 """  The Pilot Status Agent updates the status of the pilot jobs if the
      PilotAgents database.
 """
 
-__RCSID__ = "$Id: PilotStatusAgent.py,v 1.25 2008/07/21 16:51:42 rgracian Exp $"
+__RCSID__ = "$Id: PilotStatusAgent.py,v 1.26 2008/07/21 17:01:54 rgracian Exp $"
 
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, List
@@ -116,8 +116,8 @@ class PilotStatusAgent(Agent):
 
         if len( pilotsToAccount ) > 100:
           self.accountPilots( pilotsToAccount, parentsToUpdate, connection )
-          pilotsToAccount = []
-          parentsToUpdate = []
+          pilotsToAccount = {}
+          parentsToUpdate = {}
 
     self.accountPilots( pilotsToAccount, parentsToUpdate, connection )
 
