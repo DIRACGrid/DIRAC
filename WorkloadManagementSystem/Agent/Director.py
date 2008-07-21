@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.29 2008/07/21 10:28:43 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.30 2008/07/21 12:47:07 rgracian Exp $
 # File :   Director.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -48,7 +48,7 @@
 
 """
 
-__RCSID__ = "$Id: Director.py,v 1.29 2008/07/21 10:28:43 rgracian Exp $"
+__RCSID__ = "$Id: Director.py,v 1.30 2008/07/21 12:47:07 rgracian Exp $"
 
 import types, time
 
@@ -655,7 +655,7 @@ class PilotDirector:
         now = Time.dateTime()
         if not jobRequirements in self.listMatch:
           availableCEs = self._listMatch( proxy, job, jdl )
-          if List != False:
+          if availableCEs != False:
             self.listMatch[jobRequirements] = {'LastListMatch': now}
             self.listMatch[jobRequirements]['AvailableCEs'] = availableCEs
         else:
@@ -663,7 +663,7 @@ class PilotDirector:
           if not Time.timeInterval( self.listMatch[jobRequirements]['LastListMatch'],
                                     self.listMatchDelay * Time.minute  ).includes( now ):
             availableCEs = self._listMatch( proxy, job, jdl )
-            if List != False:
+            if availableCEs != False:
               self.listMatch[jobRequirements]['AvailableCEs'] = availableCEs
               self.listMatch[jobRequirements] = {'LastListMatch': now}
             else:
