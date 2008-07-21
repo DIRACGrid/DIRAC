@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: MatcherHandler.py,v 1.15 2008/07/18 15:36:29 rgracian Exp $
+# $Id: MatcherHandler.py,v 1.16 2008/07/21 16:41:05 rgracian Exp $
 ########################################################################
 """
 Matcher class. It matches Agent Site capabilities to job requirements.
@@ -7,7 +7,7 @@ It also provides an XMLRPC interface to the Matcher
 
 """
 
-__RCSID__ = "$Id: MatcherHandler.py,v 1.15 2008/07/18 15:36:29 rgracian Exp $"
+__RCSID__ = "$Id: MatcherHandler.py,v 1.16 2008/07/21 16:41:05 rgracian Exp $"
 
 import re, os, sys, time
 import string
@@ -24,6 +24,7 @@ from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC import gMonitor
 
 gMutex = threading.Semaphore()
+gTaskQueues = {}
 jobDB = False
 jobLoggingDB = False
 
@@ -93,26 +94,38 @@ class MatcherHandler(RequestHandler):
       taskQueues = result['Value']
       taskQueuesLooked = 0
       for tqID, tqReqs, priority in taskQueues:
+        if not tqID in gTaskQueues:
+          # Keep everything on a local dict
+          tqDict = {'OK':True}
+          classAdQueue = ClassAd(tqReqs)
+          if not classAdQueue.isOK():
+            gLogger.error("Illegal requirements for Task Queue:",  "%s\n%s" % (tqID, tqReqs ))
+            tqDict['OK'] = False
+            gTaskQueues[tqID] = tqDict
+            continue
+          tqSite = ''
+          iP1 = tqReqs.find( 'other.Site' )
+          # Determine if TaskQueue is directed to a Single site
+          if iP1 > -1:
+            if not tqReqs.find( 'other.Site', iP1 + 1 ) > -1:
+              # One single Site
+              tqSite = re.sub( r'([\S\s]*)(other.Site\s*==\s*["\']*)([\w.-]*)(["\']*)([\S\s]*)', r'\3', tqReqs )
+          tqDict['Requirements']  = tqReqs
+          tqDict['ClassAd']       = classAdQueue
+          tqDict['Site']          = tqSite
+          gTaskQueues[tqID] = dict(tqDict)
+
         gLogger.verbose(tqReqs)
         taskQueuesLooked += 1
 
         # Find the matching job now
-        classAdQueue = ClassAd(tqReqs)
-        if not classAdQueue.isOK():
-          gLogger.warn("Illegal requirements for Task Queue %d" % tqID)
-          gLogger.warn(tqReqs)
-          continue
+        classAdQueue = gTaskQueues[tqID]['ClassAd']
+        tqReqs       = gTaskQueues[tqID]['Requirements']
+        tqSite       = gTaskQueues[tqID]['Site']
 
         if siteIsBanned:
-          iP1 = tqReqs.find( 'other.Site' )
-          if iP1 > -1:
-            if tqReqs.find( 'other.Site', iP1 + 1 ) > -1:
-              #More than one site, tq not valid for this
-              continue
-            tqSite = re.sub( r'([\S\s]*)(other.Site\s*==\s*["\']*)([\w.-]*)(["\']*)([\S\s]*)', r'\3', tqReqs )
-            if tqSite != agentSite:
-              #One site but different than requested tq not valid ffor this
-              continue
+          if agentSite != tqSite:
+            continue
 
         result = matchClassAd(classAdAgent,classAdQueue)
         symmetricMatch, leftToRightMatch, rightToLeftMatch = result['Value']
@@ -207,6 +220,7 @@ class MatcherHandler(RequestHandler):
          matching the classAdAgent requirements
     """
 
+    startTime = time.time()
     jobID = 0
     gMutex.acquire()
     result = jobDB.getJobsInQueue(queueID)
@@ -237,13 +251,13 @@ class MatcherHandler(RequestHandler):
       result = jobDB.getJobAttributes(job,['SystemPriority','Status'])
       if result['OK']:
         if result['Value']:
-          resJDL = jobDB.getJobJDL(job)
-          jobJDL = resJDL['Value']
-          if not jobJDL:
-            continue
-          priority = result['Value']['SystemPriority']
-          status = result['Value']['Status']
           if status == "Waiting":
+            resJDL = jobDB.getJobJDL(job)
+            jobJDL = resJDL['Value']
+            if not jobJDL:
+              continue
+            priority = result['Value']['SystemPriority']
+            status = result['Value']['Status']
             classAdJob = ClassAd(jobJDL)
             if not classAdJob.isOK():
               gLogger.warn('Illegal job JDL for job %d' % job)
@@ -278,6 +292,8 @@ class MatcherHandler(RequestHandler):
       if not result['OK']:
         gLogger.warn("Failed to delete job %d from Task Queue" % job)
 
+    matchTime = time.time() - startTime
+    gLogger.verbose("Job Match time: [%s]" % str(matchTime))
     gMutex.release()
     return jobID
 
