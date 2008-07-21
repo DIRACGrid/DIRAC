@@ -500,13 +500,14 @@ class TransferDB(DB):
 
     #############################################
     # First get the total time spend transferring files on the channels
-    req = "SELECT ChannelID,SUM(TIME_TO_SEC(TIMEDIFF(TerminalTime,SubmissionTime))) FROM FileToFTS WHERE SubmissionTime > (UTC_TIMESTAMP() - INTERVAL %s SECOND) GROUP BY ChannelID;" % interval
+    req = "SELECT ChannelID,SUM(TIME_TO_SEC(TIMEDIFF(TerminalTime,SubmissionTime))) FROM FileToFTS WHERE Status IN ('Completed','Failed') AND SubmissionTime > (UTC_TIMESTAMP() - INTERVAL %s SECOND) GROUP BY ChannelID;" % interval
     res = self._query(req)
     if not res['OK']:
       err = 'TransferDB._getFTSObservedThroughput: Failed to obtain total time transferring.'
       return S_ERROR('%s\n%s' % (err,res['Message']))
     channelTimeDict = {}     
     for channelID,totalTime in res['Value']:
+      print channelID,totalTime
       channelTimeDict[channelID] = float(totalTime)
 
     #############################################
