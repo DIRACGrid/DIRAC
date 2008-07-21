@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.27 2008/07/21 07:09:29 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.28 2008/07/21 10:17:42 rgracian Exp $
 # File :   Director.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -17,23 +17,23 @@
        - MaxCycles:
 
      The following parameters are searched for in WorkloadManagement/Director:
-       - threadStartDelay:
+       - ThreadStartDelay:
        - JobSelectLimit:
 
      It looks in the WorkloadManagement/Director section for the
-     list of Directors to be instantiated (one for each defined Flavour)
-       - Flavours
+     list of Directors to be instantiated (one for each defined GridMiddleware)
+       - GridMiddlewares
 
      It will use those Directors to submit pilots for each of the Supported Platforms
        - Platforms
      For every Platform there must be a corresponding Section with the
      necessary paramenters:
 
-       - Flavour: <Flavour>PilotDirector module from the PilotAgent directory will
+       - GridMiddleware: <GridMiddleware>PilotDirector module from the PilotAgent directory will
                be used, currently LCG and gLite types are supported
        - Pool: if a dedicated Threadpool is desired for this Platform
 
-     For every Flavour there must be a corresponding Section with the
+     For every GridMiddleware there must be a corresponding Section with the
      necessary paramenters:
        gLite:
 
@@ -44,11 +44,11 @@
        present in the corresponding section
        - GenericPilotDN:
        - GenericPilotGroup:
-       - DefaultPilotFlavour:
+       - DefaultPilotGridMiddleware:
 
 """
 
-__RCSID__ = "$Id: Director.py,v 1.27 2008/07/21 07:09:29 rgracian Exp $"
+__RCSID__ = "$Id: Director.py,v 1.28 2008/07/21 10:17:42 rgracian Exp $"
 
 import types, time
 
@@ -87,7 +87,7 @@ class Director(Agent):
     """
     Agent.__init__(self,AGENT_NAME)
     # some default values:
-    self.threadStartDelay = 5
+    self.threadStartDelay = 10
     self.jobDicts = {}
     self.log   = gLogger
     # self.jobDB = JobDB()
@@ -177,7 +177,7 @@ class Director(Agent):
         self.directors[platform]['isEnabled'] = False
       else:
         updateJobStatus( self.log, AGENT_NAME, job, MAJOR_WAIT, MINOR_SUBMITTING, logRecord=True )
-        time.sleep( 10 )
+        time.sleep( self.threadStartDelay )
         break
 
   def __getJobs(self):
@@ -251,7 +251,6 @@ class Director(Agent):
     for attr in JobJDLIntAttributes:
       jobDict[attr] = intFromClassAd(classAdJob, attr)
 
-
     # Check now Job Attributes
     ret = jobDB.getJobAttributes(job)
     if not ret['OK']:
@@ -267,17 +266,6 @@ class Director(Agent):
         return False
       jobDict[attr] = attributes[attr]
 
-
-    self.jobDicts[job] = jobDict
-
-    self.log.verbose('JobID: %s' % job)
-    self.log.verbose('Owner: %s' % jobDict['Owner'])
-    self.log.verbose('OwnerDN: %s' % jobDict['OwnerDN'])
-    self.log.verbose('JobType: %s' % jobDict['JobType'])
-    self.log.verbose('MaxCPUTime: %s' % jobDict['MaxCPUTime'])
-    self.log.verbose('Requirements: %s' % jobDict['Requirements'])
-
-
     currentStatus = attributes['Status']
     if not currentStatus == MAJOR_WAIT:
       self.log.verbose('Job has changed status to %s and will be ignored:' % currentStatus, job )
@@ -288,8 +276,16 @@ class Director(Agent):
       self.log.verbose('Job has changed minor status to %s and will be ignored:' % currentMinorStatus, job )
       return False
 
-    return True
+    self.jobDicts[job] = jobDict
 
+    self.log.verbose('JobID: %s' % job)
+    self.log.verbose('Owner: %s' % jobDict['Owner'])
+    self.log.verbose('OwnerDN: %s' % jobDict['OwnerDN'])
+    self.log.verbose('JobType: %s' % jobDict['JobType'])
+    self.log.verbose('MaxCPUTime: %s' % jobDict['MaxCPUTime'])
+    self.log.verbose('Requirements: %s' % jobDict['Requirements'])
+
+    return True
 
   def __checkPlatforms(self):
     # this method is called at initalization and at the begining of each execution
@@ -334,18 +330,19 @@ class Director(Agent):
         # del pool
         # del self.pools[pool]
 
-
   def __createDirector(self,platform):
-    # instantiate a new PilotDirector for the given Platform
+    """
+     Instantiate a new PilotDirector for the given Platform
+    """
 
     self.log.info( 'Creating Director for Platform:', platform )
-    # 1. check the Flavour
-    directorFlavour = gConfig.getValue( self.section+'/'+platform+'/Flavour','' )
-    if not directorFlavour:
-      self.log.error( 'No Director Flavour defined for Platform:', platform )
+    # 1. check the GridMiddleware
+    directorGridMiddleware = gConfig.getValue( self.section+'/'+platform+'/GridMiddleware','' )
+    if not directorGridMiddleware:
+      self.log.error( 'No Director GridMiddleware defined for Platform:', platform )
       return
 
-    directorName = '%sPilotDirector' % directorFlavour
+    directorName = '%sPilotDirector' % directorGridMiddleware
 
     try:
       self.log.info( 'Instantiating Director Object:', directorName )
@@ -369,33 +366,11 @@ class Director(Agent):
     self.directors[ platform ] = { 'director': director,
                                    'pool': directorPool,
                                    'isEnabled': False,
-                                   }
+                                 }
 
     self.log.verbose( 'Created Director for Platform', platform )
 
     return
-
-
-    #Can be passed via a command line .cfg file for gLite
-    self.type = gConfig.getValue(self.section+'/Middleware','LCG')
-
-    self.threadStartDelay = gConfig.getValue(self.section+'/ThreadStartDelay',5)
-    self.pdName = '%sPilotDirector' %(self.type)
-    self.pdSection = '/%s/%s' % ( '/'.join( List.fromChar(self.section, '/' )[:-2] ), 'PilotAgent/%s' %(self.pdName))
-    self.log.debug('%sPilotDirector CS section is: %s' %(self.type,self.pdSection))
-    self.pdPath = gConfig.getValue(self.section+'/ModulePath','DIRAC.WorkloadManagementSystem.PilotAgent')
-    self.started = False
-    try:
-      self.importModule = __import__('%s.%s' %(self.pdPath,self.pdName),globals(),locals(),[self.pdName])
-    except Exception, x:
-      msg = 'Could not import %s.%s' %(self.pdPath,self.pdName)
-      self.log.warn(x)
-      self.log.warn(msg)
-      return S_ERROR(msg)
-
-
-
-    return result
 
   def __configureDirector( self, platform=None ):
     # Update Configuration from CS
@@ -413,7 +388,6 @@ class Director(Agent):
       self.threadStartDelay = gConfig.getValue(self.section+'/ThreadStartDelay', self.threadStartDelay )
 
       # By default disable all directors
-
       for director in self.directors:
         self.directors[director]['isEnabled'] = False
 
@@ -421,13 +395,15 @@ class Director(Agent):
       if platform not in self.directors:
         abort(-1)
       director = self.directors[platform]['director']
-      # pass reference to our CS section so that defaults can be taken from there
+      
+      # Pass reference to our CS section so that defaults can be taken from there
       director.configure( self.section, platform )
-      # enable director
+      
+      # Enable director for pilot submission
       self.directors[platform]['isEnabled'] = True
 
   def __addPool(self, poolName):
-    # create a new thread Pool, by default it has 4 executing threads and 40 requests
+    # create a new thread Pool, by default it has 2 executing threads and 40 requests
     # in the Queue
     # FIXME: get from CS
     if not poolName:
@@ -438,22 +414,6 @@ class Director(Agent):
     pool.daemonize()
     self.pools[poolName] = pool
     return poolName
-
-  def __initializeDirectors(self):
-    """
-     Initialize one Director for each requested Flavour
-     This is done only once in the livetime of the Director. In order to add
-     new Flavours the Agent needs to be rebooted (could be fixed in the future)
-    """
-
-    self.flavours = gConfig.getValue( self.section+'/Flavours', ['gLite','LCG'] )
-
-    for flavour in self.flavours:
-
-      director = eval('%sDirector()' % flavour)
-      self.directors[flavour] = director
-
-    return
 
   def callBack(self, threadedJob, submitResult):
     if not submitResult['OK']:
@@ -473,7 +433,6 @@ def intFromClassAd( classAd, name ):
   if classAd.lookupAttribute( name ):
     value = int(string.replace(classAd.get_expression( name ), '"', ''))
   return value
-
 
 
 def updateJobStatus( logger, name, jobID, majorStatus, minorStatus=None, logRecord=False ):
@@ -499,8 +458,6 @@ def updateJobStatus( logger, name, jobID, majorStatus, minorStatus=None, logReco
   return True
 
 
-
-
 # Some reasonable Defaults
 DIRAC_PILOT   = os.path.join( DIRAC.rootPath, 'DIRAC', 'WorkloadManagementSystem', 'PilotAgent', 'dirac-pilot' )
 DIRAC_INSTALL = os.path.join( DIRAC.rootPath, 'scripts', 'dirac-install' )
@@ -524,7 +481,7 @@ LOGGING_SERVER   = 'lb101.cern.ch'
 
 class PilotDirector:
   def __init__(self):
-    self.log = gLogger.getSubLogger('%sPilotDirector' % self.flavour)
+    self.log = gLogger.getSubLogger('%sPilotDirector' % self.gridMiddleware)
     if not  'log' in self.__dict__:
       self.log = gLogger.getSubLogger('PilotDirector')
     self.log.info('Initialized')
@@ -556,9 +513,9 @@ class PilotDirector:
 
     self.configureFromSection( csSection )
     """
-     Common Configuration can be overwriten for each Flavour
+     Common Configuration can be overwriten for each GridMiddleware
     """
-    mySection   = csSection+'/'+self.flavour
+    mySection   = csSection+'/'+self.gridMiddleware
     self.configureFromSection( mySection )
     """
      And Again for each Platform
@@ -608,143 +565,153 @@ class PilotDirector:
     """
       Submit pilot for the given job, this is done from the Thread Pool job
     """
-    job = jobDict['JobID']
-    ret = jobDB.getJobAttribute(job, 'Status')
-    if ret['OK'] and not ret['Value'] == MAJOR_WAIT:
-      self.log.warn( 'Job is no longer in %s Status:' % MAJOR_WAIT, job )
-      return S_ERROR( 'Job is no longer in %s Status:' % MAJOR_WAIT )
-
-    self.log.verbose( 'Submitting Pilot' )
-    ceMask = self.__resolveCECandidates( jobDict )
-    if not ceMask: return S_ERROR( 'No CE available for job' )
-    self.workDir = director.workDir
-    workingDirectory = os.path.join( self.workDir, job)
-
-    if os.path.isdir( workingDirectory ):
-      shutil.rmtree( workingDirectory )
-    elif os.path.lexists( workingDirectory ):
-      os.remove( workingDirectory )
-
-    os.makedirs(workingDirectory)
-
-    inputSandbox = []
-    pilotOptions = []
-    if jobDict['PilotType'].lower()=='private':
-      self.log.verbose('Job %s will be submitted with a privat pilot' % job)
-      ownerDN    = jobDict['OwnerDN']
-      ownerGroup = jobDict['OwnerGroup']
-      # User Group requirement
-      pilotOptions.append( '-G %s' % jobDict['OwnerGroup'] )
-      # check if group allows jobsharing
-      ownerGroupProperties = getPropertiesForGroup( ownerGroup )
-      if not 'JobSharing' in ownerGroupProperties:
-        # Add Owner requirement to pilot
-        pilotOptions.append( "-O '%s'" % ownerDN )
-      pilotOptions.append( '-o /AgentJobRequirements/PilotType=private' )
-      pilotOptions.append( '-o /Resources/Computing/InProcess/PilotType=private' )
-    else:
-      self.log.verbose('Job %s will be submitted with a generic pilot' % job)
-      ownerDN    = self.genericPilotDN
-      ownerGroup = self.genericPilotGroup
-      pilotOptions.append( '-o /AgentJobRequirements/PilotType=generic' )
-      pilotOptions.append( '-o /Resources/Computing/InProcess/PilotType=generic' )
-
-    # Requested version of DIRAC
-    pilotOptions.append( '-v %s' % self.diracVersion )
-    # Requested CPU time
-    pilotOptions.append( '-T %s' % jobDict['MaxCPUTime'] )
-    # Default Setup. It may be overwriten by the Arguments in the Job JDL
-    pilotOptions.append( '-o /DIRAC/Setup=%s' % self.diracSetup )
-
-    # Write JDL
-    retDict = self._prepareJDL( jobDict, pilotOptions, ceMask )
-    jdl = retDict['JDL']
-    jobRequirements = retDict['Requirements']
-    pilots = retDict['Pilots']
-    if not jdl:
-      try:
+    try:
+      job = jobDict['JobID']
+      ret = jobDB.getJobAttribute(job, 'Status')
+      if ret['OK'] and not ret['Value'] == MAJOR_WAIT:
+        self.log.warn( 'Job is no longer in %s Status:' % MAJOR_WAIT, job )
+        return S_ERROR( 'Job is no longer in %s Status:' % MAJOR_WAIT )
+  
+      self.log.verbose( 'Submitting Pilot' )
+      ceMask = self.__resolveCECandidates( jobDict )
+      if not ceMask: return S_ERROR( 'No CE available for job' )
+      self.workDir = director.workDir
+      workingDirectory = os.path.join( self.workDir, job)
+  
+      if os.path.isdir( workingDirectory ):
         shutil.rmtree( workingDirectory )
-      except:
-        pass
-      updateJobStatus( self.log, AGENT_NAME, job, MAJOR_WAIT, MINOR_SUBMIT, logRecord=True )
-      return S_ERROR( 'Could not create JDL:', job )
-
-    # get a valid proxy
-    ret = gProxyManager.getPilotProxyFromDIRACGroup( ownerDN, ownerGroup )
-    if not ret['OK']:
-      self.log.error( ret['Message'] )
-      self.log.error( 'Could not get proxy:', 'User "%s", Group "%s"' % ( ownerDN, ownerGroup ) )
-      try:
-        shutil.rmtree( workingDirectory )
-      except:
-        pass
-      updateJobStatus( self.log, AGENT_NAME, job, MAJOR_WAIT, MINOR_SUBMIT, logRecord=True )
-      return S_ERROR( 'Could not get proxy' )
-    proxy = ret['Value']
-    # Need to get VOMS extension for the later interctions with WMS
-    ret = gProxyManager.getVOMSAttributes(proxy)
-    if not ret['OK']:
-      updateJobStatus( self.log, AGENT_NAME, job, MAJOR_WAIT, MINOR_SUBMIT, logRecord=True )
-      return ret
-    if not ret['Value']:
-      updateJobStatus( self.log, AGENT_NAME, job, MAJOR_WAIT, MINOR_SUBMIT, logRecord=True )
-      return S_ERROR( 'getPilotProxyFromDIRACGroup returns a proxy without VOMS Extensions' )
-    vomsGroup = ret['Value'][0]
-
-    # Check that there are available queues for the Job:
-    if self.enableListMatch:
-      availableCEs = []
-      now = Time.dateTime()
-      if not jobRequirements in self.listMatch:
-        availableCEs = self._listMatch( proxy, job, jdl )
-        self.listMatch[jobRequirements] = {'LastListMatch': now}
+      elif os.path.lexists( workingDirectory ):
+        os.remove( workingDirectory )
+  
+      os.makedirs(workingDirectory)
+  
+      inputSandbox = []
+      pilotOptions = []
+      if jobDict['PilotType'].lower()=='private':
+        self.log.verbose('Job %s will be submitted with a privat pilot' % job)
+        ownerDN    = jobDict['OwnerDN']
+        ownerGroup = jobDict['OwnerGroup']
+        # User Group requirement
+        pilotOptions.append( '-G %s' % jobDict['OwnerGroup'] )
+        # check if group allows jobsharing
+        ownerGroupProperties = getPropertiesForGroup( ownerGroup )
+        if not 'JobSharing' in ownerGroupProperties:
+          # Add Owner requirement to pilot
+          pilotOptions.append( "-O '%s'" % ownerDN )
+        pilotOptions.append( '-o /AgentJobRequirements/PilotType=private' )
+        pilotOptions.append( '-o /Resources/Computing/InProcess/PilotType=private' )
       else:
-        availableCEs = self.listMatch[jobRequirements]['AvailableCEs']
-        if not Time.timeInterval( self.listMatch[jobRequirements]['LastListMatch'],
-                                  self.listMatchDelay * Time.minute  ).includes( now ):
-          availableCEs = self._listMatch( proxy, job, jdl )
-        else:
-          self.log.verbose( 'LastListMatch', self.listMatch[jobRequirements]['LastListMatch'] )
-          self.log.verbose( 'AvailableCEs ', availableCEs )
-      self.listMatch[jobRequirements]['AvailableCEs'] = availableCEs
-
-      if type(availableCEs) == types.ListType :
-        jobDB.setJobParameter( job, 'Available_CEs' , '%s CEs returned from list-match on %s' %
-                               ( len(availableCEs), Time.toString() ) )
-      if not availableCEs:
-        # FIXME: set Job Minor Status
+        self.log.verbose('Job %s will be submitted with a generic pilot' % job)
+        ownerDN    = self.genericPilotDN
+        ownerGroup = self.genericPilotGroup
+        pilotOptions.append( '-o /AgentJobRequirements/PilotType=generic' )
+        pilotOptions.append( '-o /Resources/Computing/InProcess/PilotType=generic' )
+  
+      # Requested version of DIRAC
+      pilotOptions.append( '-v %s' % self.diracVersion )
+      # Requested CPU time
+      pilotOptions.append( '-T %s' % jobDict['MaxCPUTime'] )
+      # Default Setup. It may be overwriten by the Arguments in the Job JDL
+      pilotOptions.append( '-o /DIRAC/Setup=%s' % self.diracSetup )
+  
+      # Write JDL
+      retDict = self._prepareJDL( jobDict, pilotOptions, ceMask )
+      jdl = retDict['JDL']
+      jobRequirements = retDict['Requirements']
+      pilots = retDict['Pilots']
+      if not jdl:
         try:
           shutil.rmtree( workingDirectory )
         except:
           pass
         updateJobStatus( self.log, AGENT_NAME, job, MAJOR_WAIT, MINOR_SUBMIT, logRecord=True )
-        return S_ERROR( 'No queue available for job' )
+        return S_ERROR( 'Could not create JDL:', job )
+  
+      # get a valid proxy
+      ret = gProxyManager.getPilotProxyFromDIRACGroup( ownerDN, ownerGroup )
+      if not ret['OK']:
+        self.log.error( ret['Message'] )
+        self.log.error( 'Could not get proxy:', 'User "%s", Group "%s"' % ( ownerDN, ownerGroup ) )
+        try:
+          shutil.rmtree( workingDirectory )
+        except:
+          pass
+        updateJobStatus( self.log, AGENT_NAME, job, MAJOR_WAIT, MINOR_SUBMIT, logRecord=True )
+        return S_ERROR( 'Could not get proxy' )
+      proxy = ret['Value']
+      # Need to get VOMS extension for the later interctions with WMS
+      ret = gProxyManager.getVOMSAttributes(proxy)
+      if not ret['OK']:
+        updateJobStatus( self.log, AGENT_NAME, job, MAJOR_WAIT, MINOR_SUBMIT, logRecord=True )
+        return ret
+      if not ret['Value']:
+        updateJobStatus( self.log, AGENT_NAME, job, MAJOR_WAIT, MINOR_SUBMIT, logRecord=True )
+        return S_ERROR( 'getPilotProxyFromDIRACGroup returns a proxy without VOMS Extensions' )
+      vomsGroup = ret['Value'][0]
+  
+      # Check that there are available queues for the Job:
+      if self.enableListMatch:
+        availableCEs = []
+        now = Time.dateTime()
+        if not jobRequirements in self.listMatch:
+          availableCEs = self._listMatch( proxy, job, jdl )
+          self.listMatch[jobRequirements] = {'LastListMatch': now}
+          self.listMatch[jobRequirements]['AvailableCEs'] = availableCEs
+        else:
+          availableCEs = self.listMatch[jobRequirements]['AvailableCEs']
+          if not Time.timeInterval( self.listMatch[jobRequirements]['LastListMatch'],
+                                    self.listMatchDelay * Time.minute  ).includes( now ):
+            availableCEs = self._listMatch( proxy, job, jdl )
+            self.listMatch[jobRequirements]['AvailableCEs'] = availableCEs
+            self.listMatch[jobRequirements] = {'LastListMatch': now}
+          else:
+            self.log.verbose( 'LastListMatch', self.listMatch[jobRequirements]['LastListMatch'] )
+            self.log.verbose( 'AvailableCEs ', availableCEs )
+  
+        if type(availableCEs) == types.ListType :
+          jobDB.setJobParameter( job, 'Available_CEs' , '%s CEs returned from list-match on %s' %
+                                 ( len(availableCEs), Time.toString() ) )
+        if not availableCEs:
+          # FIXME: set Job Minor Status
+          try:
+            shutil.rmtree( workingDirectory )
+          except:
+            pass
+          updateJobStatus( self.log, AGENT_NAME, job, MAJOR_WAIT, MINOR_SUBMIT, logRecord=True )
+          return S_ERROR( 'No queue available for job' )
+  
+      # Now we are ready for the actual submission, so
+  
+      self.log.verbose('Submitting Pilot Agent for job:', job )
+      submitRet = self._submitPilot( proxy, job, jdl )
+      try:
+        shutil.rmtree( workingDirectory )
+      except:
+        pass
+      if not submitRet:
+        updateJobStatus( self.log, AGENT_NAME, job, MAJOR_WAIT, MINOR_SUBMIT, logRecord=True )
+        return S_ERROR( 'Pilot Submission Failed' )
+      pilotReference, resourceBroker = submitRet
+  
+      # Now, update the job Minor Status
+      if pilots > 1 :
+        pilotReference = self._getChildrenReferences( proxy, pilotReference, job )
+      else:
+        pilotReference = [pilotReference]
+      pilotAgentsDB.addPilotReference( pilotReference, job, ownerDN, vomsGroup, broker=resourceBroker, gridType=self.gridMiddleware, requirements=jobRequirements )
+      ret = jobDB.getJobAttribute(job, 'Status')
+      if ret['OK'] and ret['Value'] == MAJOR_WAIT:
+        updateJobStatus( self.log, AGENT_NAME, job, MAJOR_WAIT, MINOR_RESPONSE, logRecord=True )
+      else:
+        self.log.warn( 'Job is no longer in %s Status:' % MAJOR_WAIT, job )
 
-    # Now we are ready for the actual submission, so
-
-    self.log.verbose('Submitting Pilot Agent for job:', job )
-    submitRet = self._submitPilot( proxy, job, jdl )
-    try:
-      shutil.rmtree( workingDirectory )
-    except:
-      pass
-    if not submitRet:
-      updateJobStatus( self.log, AGENT_NAME, job, MAJOR_WAIT, MINOR_SUBMIT, logRecord=True )
-      return S_ERROR( 'Pilot Submission Failed' )
-    pilotReference, resourceBroker = submitRet
-
-    # Now, update the job Minor Status
-    if pilots > 1 :
-      pilotReference = self._getChildrenReferences( proxy, pilotReference, job )
-    else:
-      pilotReference = [pilotReference]
-    pilotAgentsDB.addPilotReference( pilotReference, job, ownerDN, vomsGroup, broker=resourceBroker, gridType=self.flavour, requirements=jobRequirements )
-    ret = jobDB.getJobAttribute(job, 'Status')
-    if ret['OK'] and ret['Value'] == MAJOR_WAIT:
-      updateJobStatus( self.log, AGENT_NAME, job, MAJOR_WAIT, MINOR_RESPONSE, logRecord=True )
-    else:
-      self.log.warn( 'Job is no longer in %s Status:' % MAJOR_WAIT, job )
-
+    except Exception,x:
+      self.log.exception( 'Error during pilot submission',lException=x )
+      try:
+        updateJobStatus( self.log, AGENT_NAME, job, MAJOR_WAIT, MINOR_RESPONSE, logRecord=True )
+      except:
+        pass
+  
     return S_OK(jobDict)
 
   def _JobJDL(self, jobDict, pilotOptions, ceMask ):
@@ -867,7 +834,7 @@ class PilotDirector:
     # Get CE's associates to the given site Names
     ceMask = []
 
-    section = '/Resources/Sites/%s' % self.flavour
+    section = '/Resources/Sites/%s' % self.gridMiddleware
     ret = gConfig.getSections(section)
     if not ret['OK']:
       # To avoid duplicating sites listed in LCG for gLite for example.
@@ -982,7 +949,7 @@ class PilotDirector:
 
 class gLitePilotDirector(PilotDirector):
   def __init__(self):
-    self.flavour = 'gLite'
+    self.gridMiddleware = 'gLite'
     self.resourceBrokers    = ['wms101.cern.ch']
     PilotDirector.__init__(self)
 
@@ -1093,7 +1060,7 @@ MyProxyServer = "myproxy.cern.ch";
 
 class LCGPilotDirector(PilotDirector):
   def __init__(self):
-    self.flavour = 'LCG'
+    self.gridMiddleware = 'LCG'
     self.resourceBrokers    = ['rb123.cern.ch']
     PilotDirector.__init__(self)
 
