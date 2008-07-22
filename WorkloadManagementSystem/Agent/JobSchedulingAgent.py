@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.25 2008/07/22 10:57:34 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.26 2008/07/22 10:59:04 acasajus Exp $
 # File :   JobSchedulingAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@
       meaningfully.
 
 """
-__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.25 2008/07/22 10:57:34 acasajus Exp $"
+__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.26 2008/07/22 10:59:04 acasajus Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
@@ -422,7 +422,7 @@ class JobSchedulingAgent(Optimizer):
         if gridMiddleware:
           reqsToAdd[ 'other.GridMiddleware' ] = gridMiddleware
     #Required CE's requirements
-    gridCEs = classAdJob.getListFromExpression( 'GridRequiredCEs' )
+    gridCEs = [ ce for ce in classAdJob.getListFromExpression( 'GridRequiredCEs' ) if ce ]
     if gridCEs:
       reqsToAdd[ 'other.GridCE' ] = gridCEs
     #Add reqs
