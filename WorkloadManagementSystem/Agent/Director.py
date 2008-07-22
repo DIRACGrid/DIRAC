@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.34 2008/07/22 11:33:53 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.35 2008/07/22 11:45:13 rgracian Exp $
 # File :   Director.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -48,7 +48,7 @@
 
 """
 
-__RCSID__ = "$Id: Director.py,v 1.34 2008/07/22 11:33:53 rgracian Exp $"
+__RCSID__ = "$Id: Director.py,v 1.35 2008/07/22 11:45:13 rgracian Exp $"
 
 import types, time
 
@@ -154,7 +154,7 @@ class Director(Agent):
 
     if submitPool == 'ANY':
       # It is a special case, all submitPool should be considered
-      submitPools = List.randomize( self.directors.keys() )
+      submitPools = List.randomize( self.defaultSubmitPools )
     else:
       submitPools = [submitPool]
 
@@ -298,6 +298,7 @@ class Director(Agent):
     # Now we need to initialize one thread for each Director in the List,
     # and check its configuration:
     submitPools = gConfig.getValue( self.section+'/SubmitPools', [] )
+    self.defaultSubmitPools = gConfig.getValue( self.section+'/DefaultSubmitPools', [] )
 
     for submitPool in submitPools:
       # check if the Director is initialized, then reconfigure
