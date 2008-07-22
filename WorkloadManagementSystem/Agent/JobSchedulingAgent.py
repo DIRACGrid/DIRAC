@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.23 2008/07/16 07:35:14 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.24 2008/07/22 10:55:32 acasajus Exp $
 # File :   JobSchedulingAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,14 +14,15 @@
       meaningfully.
 
 """
-__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.23 2008/07/16 07:35:14 rgracian Exp $"
+__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.24 2008/07/22 10:55:32 acasajus Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
 from DIRAC.Core.Utilities.SiteSEMapping                    import getSEsForSite
+from DIRAC.ConfigurationSystem.PathFinder                  import getAgentSection
 from DIRAC                                                 import gConfig,S_OK,S_ERROR
 
-import random,string,re
+import random,string,re, types
 
 OPTIMIZER_NAME = 'JobScheduling'
 
@@ -405,10 +406,34 @@ class JobSchedulingAgent(Optimizer):
 
     requirements = classAdJob.get_expression('Requirements').replace('Unknown','')
     self.log.verbose('Existing job requirements: %s' % (requirements))
+    reqsToAdd = {}
     if not requirements:
       newRequirements = self.__resolveJobJDLRequirement('True',siteCandidates)
     else:
       newRequirements = self.__resolveJobJDLRequirement(requirements,siteCandidates)
+    #GridMiddleware requirements
+    if not classAdJob.lookupAttribute( "SubmitPool" ):
+      classAdJob.insertAttributeString( 'SubmitPool', 'ANY' )
+    else:
+      submitPool = classAdJob.getListFromExpression('SubmitPool')[0]
+      if submitPool != "ANY":
+        dictorSection = getAgentSection( "WorkloadManagement/Director" )
+        gridMiddleware = gConfig.getValue( "%s/%s/GridMiddleware" % ( directorSection, submitPool ), '' )
+        if gridMiddleware:
+          reqsToAdd[ 'other.GridMiddleware' ] = gridMiddleware
+    #Required CE's requirements
+    gridCEs = classAdJob.getListFromExpression( 'GridRequiredCEs' )
+    if gridCEs:
+      reqsToAdd[ 'other.GridCE' ] = gridCEs
+    #Add reqs
+    reqList = []
+    for reqField in reqsToAdd:
+      reqValue = reqsToAdd[ reqField ]
+      if type( reqValue ) in ( types.ListType, types.TupleType ):
+        reqList.append( "(%s)" % " || ".join( [ '%s=="%s"' %( reqField, val ) for val in reqValue ] ) )
+      else:
+        reqList.append( '%s=="%s"' % ( reqField, reqData ) )
+    newRequirements += "&& %s" % " && ".join( reqList )
 
     if newRequirements:
       self.log.verbose('Resolved requirements for job: %s' %(newRequirements))
