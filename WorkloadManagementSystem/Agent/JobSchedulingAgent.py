@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.29 2008/07/22 15:59:44 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.30 2008/07/22 16:00:58 acasajus Exp $
 # File :   JobSchedulingAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@
       meaningfully.
 
 """
-__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.29 2008/07/22 15:59:44 acasajus Exp $"
+__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.30 2008/07/22 16:00:58 acasajus Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
@@ -432,7 +432,7 @@ class JobSchedulingAgent(Optimizer):
       if type( reqValue ) in ( types.ListType, types.TupleType ):
         reqList.append( "(%s)" % " || ".join( [ '%s=="%s"' %( reqField, val ) for val in reqValue ] ) )
       else:
-        reqList.append( '%s=="%s"' % ( reqField, reqData ) )
+        reqList.append( '%s=="%s"' % ( reqField, reqValue ) )
     if reqList:
       newRequirements += " && %s" % " && ".join( reqList )
 
