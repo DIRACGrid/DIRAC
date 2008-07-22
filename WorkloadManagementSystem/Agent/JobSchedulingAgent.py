@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.27 2008/07/22 11:00:00 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.28 2008/07/22 15:43:06 acasajus Exp $
 # File :   JobSchedulingAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@
       meaningfully.
 
 """
-__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.27 2008/07/22 11:00:00 acasajus Exp $"
+__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.28 2008/07/22 15:43:06 acasajus Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
@@ -434,7 +434,7 @@ class JobSchedulingAgent(Optimizer):
       else:
         reqList.append( '%s=="%s"' % ( reqField, reqData ) )
     if reqList:
-      newRequirements += "&& %s" % " && ".join( reqList )
+      newRequirements += " && %s" % " && ".join( reqList )
 
     if newRequirements:
       self.log.verbose('Resolved requirements for job: %s' %(newRequirements))
