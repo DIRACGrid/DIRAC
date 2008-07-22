@@ -1,14 +1,15 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/Request.py,v 1.19 2008/04/30 09:06:05 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/Request.py,v 1.20 2008/07/22 14:25:42 acasajus Exp $
 
 """ Request base class. Defines the common general parameters that should be present in any
     request
 """
 
-__RCSID__ = "$Id: Request.py,v 1.19 2008/04/30 09:06:05 acsmith Exp $"
+__RCSID__ = "$Id: Request.py,v 1.20 2008/07/22 14:25:42 acasajus Exp $"
 
 import commands, os, xml.dom.minidom, types, time, copy, datetime
 from DIRAC import gConfig
-from DIRAC.Core.Utilities.GridCredentials import *
+
+from DIRAC.Core.Security.Misc import getProxyInfo
 
 def getCharacterData(node):
 
@@ -53,10 +54,12 @@ class Request:
       status,self.attributes['RequestID'] = commands.getstatusoutput('uuidgen')
       self.attributes['CreationTime'] = str(datetime.datetime.utcnow())
       self.attributes['Status'] = "New"
-      result = getCurrentDN()
+      result = getProxyInfo()
       if result['OK']:
-        self.attributes['OwnerDN'] = result['Value']
-      self.attributes['OwnerGroup'] = getDIRACGroup()
+        proxyDict = result[ 'Value' ]
+        self.attributes['OwnerDN'] = proxyDict[ 'identity' ]
+        if 'group' in proxyDict:
+          self.attributes['OwnerGroup'] = proxyDict[ 'group' ]
       self.attributes['DIRACSetup'] = gConfig.getValue('/DIRAC/Setup','LHCb-Development')
 
     elif type(request) == types.InstanceType:
