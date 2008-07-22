@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.33 2008/07/22 11:28:30 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.34 2008/07/22 11:33:53 rgracian Exp $
 # File :   Director.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -48,7 +48,7 @@
 
 """
 
-__RCSID__ = "$Id: Director.py,v 1.33 2008/07/22 11:28:30 rgracian Exp $"
+__RCSID__ = "$Id: Director.py,v 1.34 2008/07/22 11:33:53 rgracian Exp $"
 
 import types, time
 
@@ -664,8 +664,8 @@ class PilotDirector:
                                     self.listMatchDelay * Time.minute  ).includes( now ):
             availableCEs = self._listMatch( proxy, job, jdl )
             if availableCEs != False:
-              self.listMatch[jobRequirements]['AvailableCEs'] = availableCEs
               self.listMatch[jobRequirements] = {'LastListMatch': now}
+              self.listMatch[jobRequirements]['AvailableCEs'] = availableCEs
             else:
               del self.listMatch[jobRequirements]
           else:
