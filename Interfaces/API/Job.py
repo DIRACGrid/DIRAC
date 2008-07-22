@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.39 2008/07/21 18:21:11 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.40 2008/07/22 15:51:46 paterson Exp $
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -30,7 +30,7 @@
    Note that several executables can be provided and wil be executed sequentially.
 """
 
-__RCSID__ = "$Id: Job.py,v 1.39 2008/07/21 18:21:11 paterson Exp $"
+__RCSID__ = "$Id: Job.py,v 1.40 2008/07/22 15:51:46 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -308,14 +308,14 @@ class Job:
   def setPlatform(self, backend):
     """Developer function.
 
-       Choose platform (system) on which job is executed e.g. DIRAC, LCG.
+       Choose submission pool on which job is executed e.g. DIRAC, LCG.
        Default in place for users.
     """
     #should add protection here for list of supported platforms
     if type(backend) == type(" "):
       description = 'Platform type'
       if not backend.lower()=='any':
-        self._addParameter(self.workflow,'Platform','JDLReqt',backend,description)
+        self._addParameter(self.workflow,'SubmitPool','JDL',backend,description)
     else:
       raise TypeError,'Expected string for platform'
 
