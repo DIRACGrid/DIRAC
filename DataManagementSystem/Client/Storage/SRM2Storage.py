@@ -1175,7 +1175,7 @@ class SRM2Storage(StorageBase):
             failedLoop = True
           else:
             allResults.extend(res['Value'])
-
+        self.__destroy_gfal_object(gfalObject)
       if failedLoop:
         oDataOperation.setValueByKey('TransferOK',0)
         oDataOperation.setValueByKey('FinalStatus','Failed')
@@ -1229,6 +1229,7 @@ class SRM2Storage(StorageBase):
             failedLoop = True
           else:
             allResults.extend(res['Value'])
+        self.__destroy_gfal_object(gfalObject)
       if failedLoop:
         oDataOperation.setValueByKey('TransferOK',0)
         oDataOperation.setValueByKey('FinalStatus','Failed')
@@ -1283,7 +1284,7 @@ class SRM2Storage(StorageBase):
             failedLoop = True
           else:
             allResults.extend(res['Value'])
-          self.__destroy_gfal_object(gfalObject)
+        self.__destroy_gfal_object(gfalObject)
       if failedLoop:
         oDataOperation.setValueByKey('TransferOK',0)
         oDataOperation.setValueByKey('FinalStatus','Failed')
@@ -1339,7 +1340,7 @@ class SRM2Storage(StorageBase):
             failedLoop = True
           else:
             allResults.extend(res['Value'])
-
+        self.__destroy_gfal_object(gfalObject)
       if failedLoop:
         oDataOperation.setValueByKey('TransferOK',0)
         oDataOperation.setValueByKey('FinalStatus','Failed')
