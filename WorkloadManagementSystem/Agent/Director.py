@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.32 2008/07/22 10:03:43 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.33 2008/07/22 11:28:30 rgracian Exp $
 # File :   Director.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -24,14 +24,14 @@
      list of Directors to be instantiated (one for each defined GridMiddleware)
        - GridMiddlewares
 
-     It will use those Directors to submit pilots for each of the Supported Platforms
-       - Platforms
-     For every Platform there must be a corresponding Section with the
+     It will use those Directors to submit pilots for each of the Supported SubmitPools
+       - SubmitPools
+     For every SubmitPool there must be a corresponding Section with the
      necessary paramenters:
 
        - GridMiddleware: <GridMiddleware>PilotDirector module from the PilotAgent directory will
                be used, currently LCG and gLite types are supported
-       - Pool: if a dedicated Threadpool is desired for this Platform
+       - Pool: if a dedicated Threadpool is desired for this SubmitPool
 
      For every GridMiddleware there must be a corresponding Section with the
      necessary paramenters:
@@ -48,7 +48,7 @@
 
 """
 
-__RCSID__ = "$Id: Director.py,v 1.32 2008/07/22 10:03:43 rgracian Exp $"
+__RCSID__ = "$Id: Director.py,v 1.33 2008/07/22 11:28:30 rgracian Exp $"
 
 import types, time
 
@@ -102,7 +102,7 @@ class Director(Agent):
 
     self.directors = {}
     self.pools = {}
-    self.__checkPlatforms()
+    self.__checkSubmitPools()
 
     return S_OK()
 
@@ -115,11 +115,11 @@ class Director(Agent):
       jobs are retrieved on each execution cycle, but not all will be considered,
       sorted by their LastUpdate TimeStamp, older jobs will be handled first.
       2.- Loop over retrieved jobs.
-        2.1.- Determine the requested Platform for the Job. This is an expensive
+        2.1.- Determine the requested SubmitPool for the Job. This is an expensive
         operation and it is an inmutable Attribute of the Job, therefore it is
         kept to avoid further iteration with DB.
         2.2.- Attempt to insert the job into the corresponding Queue of the
-        TreadPool associated with the platform.
+        TreadPool associated with the SubmitPool.
         2.3.- Stop considering a given Queue when first job find the Queue full
         2.4.- Iterate until all Qeueus are full
       3.- Reconfigure and Sleep
@@ -127,7 +127,7 @@ class Director(Agent):
 
     jobDB._connect()
     jobLoggingDB._connect()
-    self.__checkPlatforms()
+    self.__checkSubmitPools()
 
     for job in self.__getJobs():
 
@@ -150,23 +150,23 @@ class Director(Agent):
       until next itration once it becomes full
     """
     jobdict = self.jobDicts[job]
-    platform = jobdict['Platform']
+    submitPool = jobdict['SubmitPool']
 
-    if platform == 'ANY':
-      # It is a special case, all platform should be considered
-      platforms = List.randomize( self.directors.keys() )
+    if submitPool == 'ANY':
+      # It is a special case, all submitPool should be considered
+      submitPools = List.randomize( self.directors.keys() )
     else:
-      platforms = [platform]
+      submitPools = [submitPool]
 
-    for platform in platforms:
-      self.log.verbose( 'Trying Platform:',platform )
+    for submitPool in submitPools:
+      self.log.verbose( 'Trying SubmitPool:',submitPool )
 
-      if not platform in self.directors or not self.directors[platform]['isEnabled']:
+      if not submitPool in self.directors or not self.directors[submitPool]['isEnabled']:
         self.log.verbose( 'Not Enabled' )
         continue
 
-      pool = self.pools[self.directors[platform]['pool']]
-      director = self.directors[platform]['director']
+      pool = self.pools[self.directors[submitPool]['pool']]
+      director = self.directors[submitPool]['director']
       ret = pool.generateJobAndQueueIt( director.submitPilot,
                                         args=(jobdict, self ),
                                         oCallback=self.callBack,
@@ -174,7 +174,7 @@ class Director(Agent):
                                         blocking=False )
       if not ret['OK']:
         # Disable submission until next iteration
-        self.directors[platform]['isEnabled'] = False
+        self.directors[submitPool]['isEnabled'] = False
       else:
         updateJobStatus( self.log, AGENT_NAME, job, MAJOR_WAIT, MINOR_SUBMITTING, logRecord=True )
         time.sleep( self.threadStartDelay )
@@ -223,7 +223,7 @@ class Director(Agent):
     jobDict = {'JobID': job}
     jobDict['JDL'] = jdl
 
-    JobJDLStringMandatoryAttributes = [ 'Platform', 'Requirements' ]
+    JobJDLStringMandatoryAttributes = [ 'SubmitPool', 'Requirements' ]
 
     JobJDLStringAttributes = [ 'PilotType', 'GridExecutable' ]
 
@@ -287,7 +287,7 @@ class Director(Agent):
 
     return True
 
-  def __checkPlatforms(self):
+  def __checkSubmitPools(self):
     # this method is called at initalization and at the begining of each execution
     # in this way running parameters can be dynamically changed via the remote
     # configuration.
@@ -297,31 +297,31 @@ class Director(Agent):
 
     # Now we need to initialize one thread for each Director in the List,
     # and check its configuration:
-    platforms = gConfig.getValue( self.section+'/Platforms', [] )
+    submitPools = gConfig.getValue( self.section+'/SubmitPools', [] )
 
-    for platform in platforms:
+    for submitPool in submitPools:
       # check if the Director is initialized, then reconfigure
-      if platform in self.directors:
-        self.__configureDirector(platform)
+      if submitPool in self.directors:
+        self.__configureDirector(submitPool)
       else:
         # instantiate a new Director
-        self.__createDirector(platform)
+        self.__createDirector(submitPool)
 
       # Now enable the director for this iteration, if any RB is defined
-      if platform in self.directors and self.directors[platform]['director'].resourceBrokers:
-        self.directors[platform]['isEnabled'] = True
+      if submitPool in self.directors and self.directors[submitPool]['director'].resourceBrokers:
+        self.directors[submitPool]['isEnabled'] = True
 
     # Now remove directors that are not Enable (they have been used but are no
     # longer required in the CS).
     pools = []
-    for platform in self.directors.keys():
-      if not self.directors[platform]['isEnabled']:
-        self.log.info( 'Deleting Director for Platform:', platform )
-        director = self.directors[platform]['director']
-        del self.directors[platform]
+    for submitPool in self.directors.keys():
+      if not self.directors[submitPool]['isEnabled']:
+        self.log.info( 'Deleting Director for SubmitPool:', submitPool )
+        director = self.directors[submitPool]['director']
+        del self.directors[submitPool]
         del director
       else:
-        pools.append( self.directors[platform]['pool'] )
+        pools.append( self.directors[submitPool]['pool'] )
 
     # Finally delete ThreadPools that are no longer in use
     for pool in self.pools:
@@ -330,16 +330,16 @@ class Director(Agent):
         # del pool
         # del self.pools[pool]
 
-  def __createDirector(self,platform):
+  def __createDirector(self,submitPool):
     """
-     Instantiate a new PilotDirector for the given Platform
+     Instantiate a new PilotDirector for the given SubmitPool
     """
 
-    self.log.info( 'Creating Director for Platform:', platform )
+    self.log.info( 'Creating Director for SubmitPool:', submitPool )
     # 1. check the GridMiddleware
-    directorGridMiddleware = gConfig.getValue( self.section+'/'+platform+'/GridMiddleware','' )
+    directorGridMiddleware = gConfig.getValue( self.section+'/'+submitPool+'/GridMiddleware','' )
     if not directorGridMiddleware:
-      self.log.error( 'No Director GridMiddleware defined for Platform:', platform )
+      self.log.error( 'No Director GridMiddleware defined for SubmitPool:', submitPool )
       return
 
     directorName = '%sPilotDirector' % directorGridMiddleware
@@ -354,7 +354,7 @@ class Director(Agent):
     self.log.info( 'Director Object instantiated:', directorName )
 
     # 2. check the requested ThreadPool (it not defined use the default one)
-    directorPool = gConfig.getValue( self.section+'/'+platform+'/Pool','Default' )
+    directorPool = gConfig.getValue( self.section+'/'+submitPool+'/Pool','Default' )
     if not directorPool in self.pools:
       self.log.info( 'Adding Thread Pool:', directorPool)
       poolName = self.__addPool( directorPool )
@@ -363,20 +363,20 @@ class Director(Agent):
         return
 
     # 3. add New director
-    self.directors[ platform ] = { 'director': director,
-                                   'pool': directorPool,
-                                   'isEnabled': False,
-                                 }
+    self.directors[ submitPool ] = { 'director': director,
+                                     'pool': directorPool,
+                                     'isEnabled': False,
+                                   }
 
-    self.log.verbose( 'Created Director for Platform', platform )
+    self.log.verbose( 'Created Director for SubmitPool', submitPool )
 
     return
 
-  def __configureDirector( self, platform=None ):
+  def __configureDirector( self, submitPool=None ):
     # Update Configuration from CS
-    # if platform == None then, only the do it for the Director
-    # else do it for the PilotDirector of that Platform
-    if not platform:
+    # if submitPool == None then, only the do it for the Director
+    # else do it for the PilotDirector of that SubmitPool
+    if not submitPool:
       # This are defined by the Base Class and thus will be available
       # on the first call
       self.workDir     = gConfig.getValue( self.section+'/WorkDir', self.workDir )
@@ -392,15 +392,15 @@ class Director(Agent):
         self.directors[director]['isEnabled'] = False
 
     else:
-      if platform not in self.directors:
+      if submitPool not in self.directors:
         abort(-1)
-      director = self.directors[platform]['director']
+      director = self.directors[submitPool]['director']
       
       # Pass reference to our CS section so that defaults can be taken from there
-      director.configure( self.section, platform )
+      director.configure( self.section, submitPool )
       
       # Enable director for pilot submission
-      self.directors[platform]['isEnabled'] = True
+      self.directors[submitPool]['isEnabled'] = True
 
   def __addPool(self, poolName):
     # create a new thread Pool, by default it has 2 executing threads and 40 requests
@@ -487,7 +487,7 @@ class PilotDirector:
     self.log.info('Initialized')
     self.listMatch = {}
 
-  def configure(self, csSection, platform ):
+  def configure(self, csSection, submitPool ):
     """
      Here goes common configuration for all PilotDirectors
     """
@@ -518,9 +518,9 @@ class PilotDirector:
     mySection   = csSection+'/'+self.gridMiddleware
     self.configureFromSection( mySection )
     """
-     And Again for each Platform
+     And Again for each SubmitPool
     """
-    mySection   = csSection+'/'+platform
+    mySection   = csSection+'/'+submitPool
     self.configureFromSection( mySection )
 
     self.log.info( '===============================================' )
@@ -957,11 +957,11 @@ class gLitePilotDirector(PilotDirector):
     self.resourceBrokers    = ['wms101.cern.ch']
     PilotDirector.__init__(self)
 
-  def configure(self, csSection, platform):
+  def configure(self, csSection, submitPool):
     """
      Here goes especific configuration for gLite PilotDirectors
     """
-    PilotDirector.configure(self, csSection, platform )
+    PilotDirector.configure(self, csSection, submitPool )
     self.log.info( '' )
     self.log.info( '===============================================' )
 
@@ -1068,11 +1068,11 @@ class LCGPilotDirector(PilotDirector):
     self.resourceBrokers    = ['rb123.cern.ch']
     PilotDirector.__init__(self)
 
-  def configure(self, csSection, platform):
+  def configure(self, csSection, submitPool):
     """
      Here goes especific configuration for LCG PilotDirectors
     """
-    PilotDirector.configure(self, csSection, platform )
+    PilotDirector.configure(self, csSection, submitPool )
     self.log.info( '' )
     self.log.info( '===============================================' )
 
