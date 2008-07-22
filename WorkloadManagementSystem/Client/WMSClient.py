@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSClient.py,v 1.11 2008/07/15 15:24:13 acasajus Exp $
+# $Id: WMSClient.py,v 1.12 2008/07/22 07:34:52 rgracian Exp $
 ########################################################################
 
 """ DIRAC Workload Management System Client class encapsulates all the
@@ -7,7 +7,6 @@
 """
 
 from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC.Core.Utilities.GridCert import getGridProxy
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC import S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.Client.SandboxClient import SandboxClient
