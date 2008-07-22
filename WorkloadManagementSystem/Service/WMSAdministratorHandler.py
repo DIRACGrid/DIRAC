@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSAdministratorHandler.py,v 1.31 2008/07/18 09:28:05 acasajus Exp $
+# $Id: WMSAdministratorHandler.py,v 1.32 2008/07/22 17:13:12 rgracian Exp $
 ########################################################################
 """
 This is a DIRAC WMS administrator interface.
@@ -14,7 +14,7 @@ Access to the pilot data:
 
 """
 
-__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.31 2008/07/18 09:28:05 acasajus Exp $"
+__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.32 2008/07/22 17:13:12 rgracian Exp $"
 
 import os, sys, string, uu, shutil, datetime
 from types import *
@@ -158,7 +158,7 @@ class WMSAdministratorHandler(RequestHandler):
     if not result['OK'] or not result[ 'Value' ]:
       return S_ERROR('Failed to determine owner for pilot ' + pilotReference)
 
-    pilotDict = result['Value'][0]
+    pilotDict = result['Value'][pilotReference]
     owner = pilotDict['OwnerDN']
     group = pilotDict['OwnerGroup']
 
