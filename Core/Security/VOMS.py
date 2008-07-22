@@ -145,8 +145,7 @@ class VOMS( BaseSecurity ):
 
     retVal = self._generateTemporalFile()
     if not retVal[ 'OK' ]:
-      if proxyDict[ 'tempFile' ]:
-        self._unlinkFiles( proxyLocation )
+      File.deleteMultiProxy( proxyDict )
       return retVal
     newProxyLocation = retVal[ 'Value' ]
 
@@ -160,8 +159,7 @@ class VOMS( BaseSecurity ):
 
     result = shellCall( self._secCmdTimeout, cmd )
 
-    if proxyDict[ 'tempFile' ]:
-      self._unlinkFiles( proxyLocation )
+    File.deleteMultiProxy( proxyDict )
 
     if not result['OK']:
       self._unlinkFiles( newProxyLocation )
