@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: MatcherHandler.py,v 1.17 2008/07/22 11:57:47 rgracian Exp $
+# $Id: MatcherHandler.py,v 1.18 2008/07/22 12:06:38 rgracian Exp $
 ########################################################################
 """
 Matcher class. It matches Agent Site capabilities to job requirements.
@@ -7,7 +7,7 @@ It also provides an XMLRPC interface to the Matcher
 
 """
 
-__RCSID__ = "$Id: MatcherHandler.py,v 1.17 2008/07/22 11:57:47 rgracian Exp $"
+__RCSID__ = "$Id: MatcherHandler.py,v 1.18 2008/07/22 12:06:38 rgracian Exp $"
 
 import re, os, sys, time
 import string
@@ -113,10 +113,13 @@ class MatcherHandler(RequestHandler):
           tqDict['Requirements']  = tqReqs
           tqDict['ClassAd']       = classAdQueue
           tqDict['Site']          = tqSite
-          gTaskQueues[tqID] = dict(dict(tqDict))
+          gTaskQueues[tqID] = dict(tqDict)
 
         gLogger.verbose(tqReqs)
         taskQueuesLooked += 1
+
+        if not gTaskQueues[tqID]['OK']:
+          continue
 
         # Find the matching job now
         classAdQueue = gTaskQueues[tqID]['ClassAd']
