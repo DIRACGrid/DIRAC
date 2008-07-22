@@ -1,9 +1,11 @@
 
 import time
 import os
+import re
 import DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.Subprocess import shellCall
+from DIRAC.Core.Utilities import List
 import DIRAC.Core.Security.Locations as Locations
 import DIRAC.Core.Security.File as File
 from DIRAC.Core.Security.X509Chain import X509Chain
@@ -110,6 +112,7 @@ class MyProxy( BaseSecurity ):
       if not retVal[ 'OK' ]:
         File.deleteMultiProxy( proxyDict )
         return retVal
+      mpUsername = retVal[ 'Value' ]
       cmdArgs.append( '-l "%s"' % mpUsername )
 
     cmd = "myproxy-logon %s" % " ".join( cmdArgs )
@@ -141,3 +144,92 @@ class MyProxy( BaseSecurity ):
 
     self._unlinkFiles( newProxyLocation )
     return S_OK( chain )
+
+  def getInfo( self, proxyChain, useDNAsUserName = False ):
+    """
+      Get info from myproxy server
+      return S_OK( { 'username' : myproxyusername,
+                     'owner' : owner DN,
+                     'timeLeft' : secs left } ) / S_ERROR
+    """
+    #TODO: Set the proxy coming in proxyString to be the proxy to use
+
+    #Get myproxy username diracgroup:diracuser
+    retVal = File.multiProxyArgument( proxyChain )
+    if not retVal[ 'OK' ]:
+      return retVal
+    proxyDict = retVal[ 'Value' ]
+    chain = proxyDict[ 'chain' ]
+    proxyLocation = proxyDict[ 'file' ]
+
+    # myproxy-get-delegation works only with environment variables
+    cmdEnv = self._getExternalCmdEnvironment()
+    if self._secRunningFromTrustedHost:
+      cmdEnv['X509_USER_CERT'] = self._secCertLoc
+      cmdEnv['X509_USER_KEY']  = self._secKeyLoc
+      if 'X509_USER_PROXY' in cmdEnv:
+        del cmdEnv['X509_USER_PROXY']
+    else:
+      cmdEnv['X509_USER_PROXY'] = proxyLocation
+
+    cmdArgs = []
+    cmdArgs.append( "-s '%s'" % self._secServer )
+    if useDNAsUserName:
+      cmdArgs.append( '-d' )
+    else:
+      retVal = self._getUsername( chain )
+      if not retVal[ 'OK' ]:
+        File.deleteMultiProxy( proxyDict )
+        return retVal
+      mpUsername = retVal[ 'Value' ]
+      cmdArgs.append( '-l "%s"' % mpUsername )
+
+    cmd = "myproxy-info %s" % " ".join( cmdArgs )
+    gLogger.verbose( "myproxy-info command:\n%s" % cmd )
+
+    result = shellCall( self._secCmdTimeout, cmd, env = cmdEnv )
+
+    File.deleteMultiProxy( proxyDict )
+
+    if not result['OK']:
+      errMsg = "Call to myproxy-info failed: %s" % result[ 'Message' ]
+      self._unlinkFiles( newProxyLocation )
+      return S_ERROR( errMsg )
+
+    status, output, error = result['Value']
+
+    # Clean-up files
+    if status:
+      errMsg = "Call to myproxy-info failed"
+      extErrMsg = 'Command: %s; StdOut: %s; StdErr: %s' % ( cmd, result, error )
+      return S_ERROR( "%s %s" % ( errMsg, extErrMsg ) )
+
+    infoDict = {}
+    usernameRE = re.compile( "username\s*:\s*(\S*)" )
+    ownerRE = re.compile( "owner\s*:\s*(\S*)" )
+    timeLeftRE = re.compile( "timeleft\s*:\s*(\S*)" )
+    for line in List.fromChar( output, "\n" ):
+      match = usernameRE.search( line )
+      if match:
+        infoDict[ 'username' ] = match.group(1)
+      match = ownerRE.search( line )
+      if match:
+        infoDict[ 'owner' ] = match.group(1)
+      match = timeLeftRE.search( line )
+      if match:
+        try:
+          fields = List.fromChar( match.group(1), ":" )
+          fields.reverse()
+          secsLeft = 0
+          for iP in range( len( fields ) ):
+            if iP == 0:
+              secsLeft += int( fields[ iP ] )
+            elif iP == 1:
+              secsLeft += int( fields[ iP ] ) * 60
+            elif iP == 2:
+              secsLeft += int( fields[ iP ] ) * 3600
+          infoDict[ 'timeLeft' ] = secsLeft
+        except Exception, x:
+          print x
+
+    return S_OK( infoDict )
