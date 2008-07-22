@@ -1,4 +1,4 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/RequestContainer.py,v 1.6 2008/07/15 10:10:25 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/RequestContainer.py,v 1.7 2008/07/22 14:04:19 acasajus Exp $
 
 """
 The Data Management Request contains all the necessary information for
@@ -7,10 +7,10 @@ a data management operation
 import commands, os, xml.dom.minidom, types, time, copy, datetime
 from DIRAC.Core.Utilities.File import makeGuid
 from DIRAC import gConfig,gLogger, S_OK, S_ERROR
-from DIRAC.Core.Utilities.GridCredentials import getCurrentDN,getDIRACGroup
+from DIRAC.Core.Security.Misc import getProxyInfo
 from DIRAC.Core.Utilities import DEncode
 
-__RCSID__ = "$Id: RequestContainer.py,v 1.6 2008/07/15 10:10:25 acsmith Exp $"
+__RCSID__ = "$Id: RequestContainer.py,v 1.7 2008/07/22 14:04:19 acasajus Exp $"
 
 class RequestContainer:
 
@@ -39,10 +39,12 @@ class RequestContainer:
         self.attributes[name] = 'Unknown'
       self.attributes['CreationTime'] = str(datetime.datetime.utcnow())
       self.attributes['Status'] = "New"
-      result = getCurrentDN()
+      result = getProxyInfo()
       if result['OK']:
-        self.attributes['OwnerDN'] = result['Value']
-      self.attributes['OwnerGroup'] = getDIRACGroup()
+        proxyDict = result[ 'Value' ]
+        self.attributes['OwnerDN'] = proxyDict[ 'identity' ]
+        if 'group' in proxyDict:
+          self.attributes['OwnerGroup'] = proxyDict[ 'group' ]
       self.attributes['DIRACSetup'] = gConfig.getValue('/DIRAC/Setup','LHCb-Development')
     elif type(request) == types.InstanceType:
       for attr in self.attributeNames:
@@ -492,18 +494,18 @@ class RequestContainer:
       status = self.getSubRequestAttributeValue(ind,type,"Status")['Value']
       if status == 'Done':
         return S_OK(1)
-      files = self.getSubRequestFiles(ind,type)['Value']  
+      files = self.getSubRequestFiles(ind,type)['Value']
       for file in files:
         if file['Status'] == 'Waiting':
           return S_OK(0)
-      datasets = self.getSubRequestDatasets(ind, type)['Value']    
+      datasets = self.getSubRequestDatasets(ind, type)['Value']
       for dataset in datasets:
         if dataset['Status'] == 'Waiting':
           return S_OK(0)
-          
+
     if files or datasets:
       return S_OK(1)
-    else:      
+    else:
       return S_OK(0)
 
   def isRequestTypeEmpty(self,type):
