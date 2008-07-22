@@ -1,4 +1,4 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/VOMS.py,v 1.4 2008/07/14 18:06:27 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/VOMS.py,v 1.5 2008/07/22 07:33:16 rgracian Exp $
 
 """ VOMS module contains utilities to manage VOMS proxies
 
@@ -9,7 +9,7 @@
     createVOMSProxy()
 """
 
-__RCSID__ = "$Id: VOMS.py,v 1.4 2008/07/14 18:06:27 acasajus Exp $"
+__RCSID__ = "$Id: VOMS.py,v 1.5 2008/07/22 07:33:16 rgracian Exp $"
 
 import os
 import time
@@ -37,6 +37,7 @@ def renewProxy(proxy,lifetime=72,
   rm_proxy = 0
   try:
     if not os.path.exists(proxy):
+      # FIXME: This should not come from GridCredentials (it will be removed)
       result = setupProxy(proxy)
       if result["OK"]:
         new_proxy,old_proxy = result["Value"]
@@ -62,6 +63,7 @@ def renewProxy(proxy,lifetime=72,
   except IOError:
     if os.path.exists(new_proxy) and rm_proxy == 1:
       os.remove(new_proxy)
+      # FIXME: This should not come from GridCredentials (it will be removed)
       restoreProxy(new_proxy,old_proxy)
     return S_ERROR('Failed to create temporary file for store proxy from MyProxy service')
 
@@ -85,6 +87,7 @@ def renewProxy(proxy,lifetime=72,
   # Clean-up files
   if status:
     if os.path.exists(new_proxy) and rm_proxy == 1:
+      # FIXME: This should not come from GridCredentials (it will be removed)
       restoreProxy(new_proxy,old_proxy)
     if os.path.exists(my_proxy):
       os.remove(my_proxy)
@@ -105,6 +108,7 @@ def renewProxy(proxy,lifetime=72,
     f.close()
   except IOError:
     if os.path.exists(new_proxy) and rm_proxy == 1:
+      # FIXME: This should not come from GridCredentials (it will be removed)
       restoreProxy(new_proxy,old_proxy)
     if os.path.exists(my_proxy):
       os.remove(my_proxy)
@@ -116,12 +120,14 @@ def renewProxy(proxy,lifetime=72,
       proxy_string = result["Value"]
     else:
       if os.path.exists(new_proxy) and rm_proxy == 1:
+        # FIXME: This should not come from GridCredentials (it will be removed)
         restoreProxy(new_proxy,old_proxy)
       if os.path.exists(my_proxy):
         os.remove(my_proxy)
       return S_ERROR('Failed to create VOMS proxy')
 
   if os.path.exists(new_proxy) and rm_proxy == 1:
+    # FIXME: This should not come from GridCredentials (it will be removed)
     restoreProxy(new_proxy,old_proxy)
   if os.path.exists(my_proxy):
     os.remove(my_proxy)
@@ -139,6 +145,7 @@ def createVOMSProxy(proxy,attributes="",vo=""):
   lifetime = 0
   try:
     if not os.path.exists(proxy):
+      # FIXME: This should not come from GridCredentials (it will be removed)
       result = setupProxy(proxy)
       if result["OK"]:
         new_proxy,old_proxy = result["Value"]
@@ -157,6 +164,7 @@ def createVOMSProxy(proxy,attributes="",vo=""):
     os.close(f_descriptor)
   except IOError:
     if os.path.exists(new_proxy) and rm_proxy == 1:
+      # FIXME: This should not come from GridCredentials (it will be removed)
       restoreProxy(new_proxy,old_proxy)
     return S_ERROR('Failed to create temporary file to store VOMS proxy')
 
@@ -182,6 +190,7 @@ def createVOMSProxy(proxy,attributes="",vo=""):
   # Clean-up files
   if status:
     if os.path.exists(new_proxy) and rm_proxy == 1:
+      # FIXME: This should not come from GridCredentials (it will be removed)
       restoreProxy(new_proxy,old_proxy)
     if os.path.exists(voms_proxy):
       os.remove(voms_proxy)
@@ -207,15 +216,18 @@ def createVOMSProxy(proxy,attributes="",vo=""):
     if i.count("-----END"):
       if i.count("CERTIFICATE"):
 # write proxy to file
+        # FIXME: This should not come from GridCredentials (it will be removed)
         result = setupProxy("\n".join(block))
         if result["OK"]:
           new_proxy,old_proxy = result["Value"]
         else:
           if os.path.exists(new_proxy):
             os.remove(new_proxy)
+          # FIXME: This should not come from GridCredentials (it will be removed)
           restoreProxy(new_proxy,old_proxy)
           return S_ERROR('Failed to setup given proxy. Proxy is: %s' % ("\n".join(block)) )
 # Create subject=proxy pair
+        # FIXME: This should not come from GridCredentials (it will be removed)
         result = getProxySubject(new_proxy)
         if result["OK"]:
           subject = result["Value"]
@@ -223,11 +235,13 @@ def createVOMSProxy(proxy,attributes="",vo=""):
         else:
           if os.path.exists(new_proxy):
             os.remove(new_proxy)
+          # FIXME: This should not come from GridCredentials (it will be removed)
           restoreProxy(new_proxy,old_proxy)
           return S_ERROR("Unable to process VOMS proxy. Failed during getDN() call")
 # Clean-up
         if os.path.exists(new_proxy):
           os.remove(new_proxy)
+        # FIXME: This should not come from GridCredentials (it will be removed)
         restoreProxy(new_proxy,old_proxy)
       else:
         someKey = "\n".join(block)
@@ -259,6 +273,7 @@ def getVOMSAttributes(proxy,switch="all"):
   switch=str(switch)
   try:
     if not os.path.exists(proxy):
+      # FIXME: This should not come from GridCredentials (it will be removed)
       result = setupProxy(proxy)
       if result["OK"]:
         new_proxy,old_proxy = result["Value"]
@@ -277,11 +292,13 @@ def getVOMSAttributes(proxy,switch="all"):
     voms_info_output = voms_info_output.split("\n")
   else:
     if os.path.exists(new_proxy) and rm_proxy == 1:
+      # FIXME: This should not come from GridCredentials (it will be removed)
       restoreProxy(new_proxy,old_proxy)
     return S_ERROR('Failed to extract info from the VOMS proxy: %s' % (new_proxy))
 
   # Clean-up files
   if os.path.exists(new_proxy) and rm_proxy == 1:
+    # FIXME: This should not come from GridCredentials (it will be removed)
     restoreProxy(new_proxy,old_proxy)
 
   # Parse output of voms-proxy-info command
@@ -339,6 +356,7 @@ def getVOMSProxyInfo(proxy_file,option=None):
   rm_proxy = 0
   try:
     if not os.path.exists(proxy_file):
+      # FIXME: This should not come from GridCredentials (it will be removed)
       result = setupProxy(proxy_file)
       if result["OK"]:
         new_proxy,old_proxy = result["Value"]
