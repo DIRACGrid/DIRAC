@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.31 2008/07/21 16:57:54 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.32 2008/07/22 10:03:43 rgracian Exp $
 # File :   Director.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -48,7 +48,7 @@
 
 """
 
-__RCSID__ = "$Id: Director.py,v 1.31 2008/07/21 16:57:54 rgracian Exp $"
+__RCSID__ = "$Id: Director.py,v 1.32 2008/07/22 10:03:43 rgracian Exp $"
 
 import types, time
 
@@ -227,7 +227,7 @@ class Director(Agent):
 
     JobJDLStringAttributes = [ 'PilotType', 'GridExecutable' ]
 
-    JobJDLListAttributes = [ 'SoftwareTag', 'Site', 'BannedSites', 'GridRequirements' ]
+    JobJDLListAttributes = [ 'SoftwareTag', 'Site', 'BannedSites', 'GridRequiredCEs' ]
 
     JobJDLIntAttributes = [ 'MaxCPUTime' ]
 
@@ -801,8 +801,8 @@ class PilotDirector:
       Return a list of CE's
     """
     # assume user knows what they're doing and avoid site mask e.g. sam jobs
-    if 'GridRequirements' in jobDict and jobDict['GridRequirements']:
-      return jobDict['GridRequirements']
+    if 'GridRequiredCEs' in jobDict and jobDict['GridRequiredCEs']:
+      return jobDict['GridRequiredCEs']
 
     # Get the mask
     ret = jobDB.getSiteMask()
