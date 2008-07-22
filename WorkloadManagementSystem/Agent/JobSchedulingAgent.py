@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.28 2008/07/22 15:43:06 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.29 2008/07/22 15:59:44 acasajus Exp $
 # File :   JobSchedulingAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@
       meaningfully.
 
 """
-__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.28 2008/07/22 15:43:06 acasajus Exp $"
+__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.29 2008/07/22 15:59:44 acasajus Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
@@ -417,7 +417,7 @@ class JobSchedulingAgent(Optimizer):
     else:
       submitPool = classAdJob.getListFromExpression('SubmitPool')[0]
       if submitPool != "ANY":
-        dictorSection = getAgentSection( "WorkloadManagement/Director" )
+        directorSection = getAgentSection( "WorkloadManagement/Director" )
         gridMiddleware = gConfig.getValue( "%s/%s/GridMiddleware" % ( directorSection, submitPool ), '' )
         if gridMiddleware:
           reqsToAdd[ 'other.GridMiddleware' ] = gridMiddleware
