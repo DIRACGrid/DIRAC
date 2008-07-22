@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.35 2008/07/18 07:32:40 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.36 2008/07/22 07:34:15 rgracian Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.35 2008/07/18 07:32:40 rgracian Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.36 2008/07/22 07:34:15 rgracian Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -38,7 +38,7 @@ from DIRAC.WorkloadManagementSystem.Client.WMSClient     import WMSClient
 from DIRAC.WorkloadManagementSystem.Client.SandboxClient import SandboxClient
 from DIRAC.DataManagementSystem.Client.ReplicaManager    import ReplicaManager
 from DIRAC.Core.DISET.RPCClient                          import RPCClient
-from DIRAC.Core.Utilities.GridCert                       import getGridProxy
+from DIRAC.Core.Security.Misc                            import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.PathFinder         import getSystemSection
 from DIRAC.Core.Utilities.Time                           import toString
 from DIRAC.Core.Utilities.List                           import breakListIntoChunks, sortList
@@ -765,9 +765,9 @@ class Dirac:
       jobID = self.client.submitJob(jdl)
       #raise 'problem'
     except Exception,x:
-      checkProxy = getGridProxy()
-      if not checkProxy:
-        return self.__errorReport(str(x),'No valid proxy found')
+      result = getProxyInfo()
+      if not result['OK']:
+        return self.__errorReport(str(x),result['Message'])
 
     return jobID
 
