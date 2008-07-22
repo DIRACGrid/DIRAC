@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: MatcherHandler.py,v 1.16 2008/07/21 16:41:05 rgracian Exp $
+# $Id: MatcherHandler.py,v 1.17 2008/07/22 11:57:47 rgracian Exp $
 ########################################################################
 """
 Matcher class. It matches Agent Site capabilities to job requirements.
@@ -7,7 +7,7 @@ It also provides an XMLRPC interface to the Matcher
 
 """
 
-__RCSID__ = "$Id: MatcherHandler.py,v 1.16 2008/07/21 16:41:05 rgracian Exp $"
+__RCSID__ = "$Id: MatcherHandler.py,v 1.17 2008/07/22 11:57:47 rgracian Exp $"
 
 import re, os, sys, time
 import string
@@ -113,7 +113,7 @@ class MatcherHandler(RequestHandler):
           tqDict['Requirements']  = tqReqs
           tqDict['ClassAd']       = classAdQueue
           tqDict['Site']          = tqSite
-          gTaskQueues[tqID] = dict(tqDict)
+          gTaskQueues[tqID] = dict(dict(tqDict))
 
         gLogger.verbose(tqReqs)
         taskQueuesLooked += 1
@@ -251,13 +251,13 @@ class MatcherHandler(RequestHandler):
       result = jobDB.getJobAttributes(job,['SystemPriority','Status'])
       if result['OK']:
         if result['Value']:
+          status = result['Value']['Status']
           if status == "Waiting":
             resJDL = jobDB.getJobJDL(job)
             jobJDL = resJDL['Value']
             if not jobJDL:
               continue
             priority = result['Value']['SystemPriority']
-            status = result['Value']['Status']
             classAdJob = ClassAd(jobJDL)
             if not classAdJob.isOK():
               gLogger.warn('Illegal job JDL for job %d' % job)
