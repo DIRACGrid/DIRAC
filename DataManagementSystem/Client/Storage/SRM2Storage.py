@@ -938,7 +938,6 @@ class SRM2Storage(StorageBase):
     gfalDict['timeout'] = self.long_timeout
 
     errCode,gfalObject,errMessage = gfal.gfal_init(gfalDict)
-    time.sleep(1)
     if not errCode == 0:
       errStr = "SRM2Storage.listDirectory: Failed to initialise gfal_init: %s" % errMessage
       gLogger.error(errStr)
@@ -946,7 +945,6 @@ class SRM2Storage(StorageBase):
     gLogger.debug("SRM2Storage.listDirectory: Initialised gfal_init.")
 
     errCode,gfalObject,errMessage = gfal.gfal_ls(gfalObject)
-    time.sleep(1)
     if not errCode == 0:
       errStr = "SRM2Storage.listDirectory: Failed to perform gfal_ls: %s" % errMessage
       gLogger.error(errStr)
@@ -954,7 +952,6 @@ class SRM2Storage(StorageBase):
     gLogger.debug("SRM2Storage.listDirectory: Performed gfal_ls.")
 
     numberOfResults,gfalObject,listOfResults = gfal.gfal_get_results(gfalObject)
-    time.sleep(1)
     if numberOfResults <= 0:
       errStr = "SRM2Storage.listDirectory: Did not obtain results with gfal_get_results."
       gLogger.error(errStr)
@@ -1143,6 +1140,7 @@ class SRM2Storage(StorageBase):
     gfalDict['defaultsetype'] = 'srmv2'
     gfalDict['no_bdii_check'] = 1
     gfalDict['srmv2_spacetokendesc'] = self.spaceToken
+    gfalDict['srmv2_desiredpintime'] = 60*60*24
 
     oAccounting = DataStoreClient()
     allResults = []
@@ -1393,7 +1391,6 @@ class SRM2Storage(StorageBase):
   def __gfal_ls(self,gfalObject):
     gLogger.debug("SRM2Storage.__gfal_ls: Performing gfal_ls")
     errCode,gfalObject,errMessage = gfal.gfal_ls(gfalObject)
-    time.sleep(1)
     if not errCode == 0:
       errStr = "SRM2Storage.__gfal_ls: Failed to perform gfal_ls:"
       gLogger.error(errStr,"%s %s" % (errMessage,os.strerror(errCode)))
@@ -1404,8 +1401,9 @@ class SRM2Storage(StorageBase):
 
   def __gfal_prestage(self,gfalObject):
     gLogger.debug("SRM2Storage.__gfal_prestage: Performing gfal_prestage")
-    errCode,gfalObject,errMessage = gfal.gfal_prestage(gfalObject)
-    time.sleep(1)
+    gLogger.info("SRM2Storage.__gfal_prestage: WE ARE DOING gfal_get() INSTEAD TEMPORARILY.")
+    #errCode,gfalObject,errMessage = gfal.gfal_prestage(gfalObject)
+    errCode,gfalObject,errMessage = gfal.gfal_get(gfalObject)
     if not errCode == 0:
       errStr = "SRM2Storage.__gfal_prestage: Failed to perform gfal_prestage:"
       gLogger.error(errStr,"%s %s" % (errMessage,os.strerror(errCode)))
@@ -1428,7 +1426,6 @@ class SRM2Storage(StorageBase):
   def __get_results(self,gfalObject):
     gLogger.debug("SRM2Storage.__get_results: Performing gfal_get_results")
     numberOfResults,gfalObject,listOfResults = gfal.gfal_get_results(gfalObject)
-    time.sleep(1)
     if numberOfResults <= 0:
       errStr = "SRM2Storage.__get_results: Did not obtain results with gfal_get_results."
       gLogger.error(errStr)
