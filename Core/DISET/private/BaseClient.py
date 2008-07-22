@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.45 2008/07/22 06:32:42 rgracian Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.45 2008/07/22 06:32:42 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.46 2008/07/22 09:04:38 acasajus Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.46 2008/07/22 09:04:38 acasajus Exp $"
 
 import sys
 import types
@@ -11,7 +11,6 @@ from DIRAC.Core.Utilities import List, Network
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.ConfigurationSystem.Client.PathFinder import *
-from DIRAC.Core.Utilities import GridCredentials
 from DIRAC.Core.Security import CS
 
 class BaseClient:
@@ -96,12 +95,8 @@ class BaseClient:
       self.__extraCredentials = self.kwargs[ self.KW_EXTRA_CREDENTIALS ]
     elif self.useCertificates:
         self.__extraCredentials = self.__defaultHostExtraCredentials
-    #HACK: This has to be deleted to group traveling in the proxy
     else:
-        self.__extraCredentials = GridCredentials.getDIRACGroup( self.defaultUserGroup )
-    #else:
-    #  self.__extraCredentials = ""
-    #HACK END
+      self.__extraCredentials = ""
     #Are we delegating something?
     if self.KW_DELEGATED_DN in self.kwargs:
       if self.KW_DELEGATED_GROUP in self.kwargs:
