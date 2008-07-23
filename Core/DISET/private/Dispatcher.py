@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Dispatcher.py,v 1.11 2008/07/07 16:37:20 acasajus Exp $
-__RCSID__ = "$Id: Dispatcher.py,v 1.11 2008/07/07 16:37:20 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Dispatcher.py,v 1.12 2008/07/23 14:09:01 acasajus Exp $
+__RCSID__ = "$Id: Dispatcher.py,v 1.12 2008/07/23 14:09:01 acasajus Exp $"
 
 import DIRAC
 from DIRAC.LoggingSystem.Client.Logger import gLogger
@@ -209,7 +209,15 @@ class Dispatcher:
         username = credDict[ 'username' ]
       else:
         username = 'unauthenticated'
-      gLogger.info( "Unauthorized query", "to %s" % action )
+      identity = "unknown"
+      if 'username' in credDict:
+        if 'group' in credDict:
+          identity = "[%s:%s]" % ( credDict[ 'username' ], credDict[ 'group' ]  )
+        else:
+          identity = "[%s:unknown]" % credDict[ 'username' ]
+      if 'DN' in credDict:
+        identity += "(%s)" % credDict[ 'DN' ]
+      gLogger.error( "Unauthorized query", "to %s:%s by %s" % ( serviceName, action, identity ) )
       return S_ERROR( "Unauthorized query to %s:%s" % ( serviceName, action ) )
     return S_OK()
 
