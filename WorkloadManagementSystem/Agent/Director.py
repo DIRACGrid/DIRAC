@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.35 2008/07/22 11:45:13 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.36 2008/07/23 12:53:59 rgracian Exp $
 # File :   Director.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -48,7 +48,7 @@
 
 """
 
-__RCSID__ = "$Id: Director.py,v 1.35 2008/07/22 11:45:13 rgracian Exp $"
+__RCSID__ = "$Id: Director.py,v 1.36 2008/07/23 12:53:59 rgracian Exp $"
 
 import types, time
 
@@ -984,6 +984,9 @@ JobType = "Parametric";
 Parameters= 20;
 ParameterStep =1;
 ParameterStart = 0;
+
+RetryCount = 0;
+ShallowRetryCount = 0;
 
 Requirements = jobRequirements;
 WmsClient = [
