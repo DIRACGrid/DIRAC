@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.37 2008/07/23 13:20:03 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.38 2008/07/23 13:30:20 rgracian Exp $
 # File :   Director.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -48,7 +48,7 @@
 
 """
 
-__RCSID__ = "$Id: Director.py,v 1.37 2008/07/23 13:20:03 rgracian Exp $"
+__RCSID__ = "$Id: Director.py,v 1.38 2008/07/23 13:30:20 rgracian Exp $"
 
 import types, time
 
@@ -1009,7 +1009,6 @@ ParameterStep =1;
 ParameterStart = 0;
 """
       nPilots = 20
-    endif
 
 
     (jobJDL , jobRequirements) = self._JobJDL( jobDict, pilotOptions, ceMask )
