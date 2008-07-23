@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.36 2008/07/23 12:53:59 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.37 2008/07/23 13:20:03 rgracian Exp $
 # File :   Director.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -48,7 +48,7 @@
 
 """
 
-__RCSID__ = "$Id: Director.py,v 1.36 2008/07/23 12:53:59 rgracian Exp $"
+__RCSID__ = "$Id: Director.py,v 1.37 2008/07/23 13:20:03 rgracian Exp $"
 
 import types, time
 
@@ -978,12 +978,9 @@ class gLitePilotDirector(PilotDirector):
     for LB in self.loggingServers:
       LBs.append('"https://%s:9000"' % LB)
 
-    wmsClientJDL = """
+    nPilots = 1
 
-JobType = "Parametric";
-Parameters= 20;
-ParameterStep =1;
-ParameterStart = 0;
+    wmsClientJDL = """
 
 RetryCount = 0;
 ShallowRetryCount = 0;
@@ -1004,13 +1001,23 @@ MyProxyServer = "myproxy.cern.ch";
 ];
 """ % ( self.workDir, self.workDir, self.workDir, ', '.join(RBs), ', '.join(LBs) )
 
+    if jobDict['OwnerGroup'] == 'lhcb_prod':
+      wmsClientJDL += """
+JobType = "Parametric";
+Parameters= 20;
+ParameterStep =1;
+ParameterStart = 0;
+"""
+      nPilots = 20
+    endif
+
 
     (jobJDL , jobRequirements) = self._JobJDL( jobDict, pilotOptions, ceMask )
 
     jdl = os.path.join( self.workDir, '%s' % jobDict['JobID'], '%s.jdl' % jobDict['JobID'] )
     jdl = self._writeJDL( jdl, [jobJDL, wmsClientJDL] )
 
-    return {'JDL':jdl, 'Requirements':jobRequirements, 'Pilots':10 }
+    return {'JDL':jdl, 'Requirements':jobRequirements, 'Pilots':nPilots }
 
   def _listMatch(self, proxy, job, jdl):
     """
