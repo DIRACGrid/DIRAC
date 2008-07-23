@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.20 2008/07/23 13:37:40 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.21 2008/07/23 15:15:52 paterson Exp $
 # File :   DiracAdmin.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,12 +14,13 @@ site banning and unbanning, WMS proxy uploading etc.
 
 """
 
-__RCSID__ = "$Id: DiracAdmin.py,v 1.20 2008/07/23 13:37:40 acasajus Exp $"
+__RCSID__ = "$Id: DiracAdmin.py,v 1.21 2008/07/23 15:15:52 paterson Exp $"
 
 import DIRAC
 from DIRAC.ConfigurationSystem.Client.CSAPI              import CSAPI
 from DIRAC.Core.DISET.RPCClient                          import RPCClient
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
+from DIRAC.Core.Utilities.SiteCEMapping                  import getCEsForSite
 from DIRAC                                               import gConfig, gLogger, S_OK, S_ERROR
 
 import re, os, sys, string, time, shutil, types
@@ -105,6 +106,26 @@ class DiracAdmin:
     wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
     result = wmsAdmin.getSiteMask()
     if result['OK']:
+      print self.pPrint.pformat(result['Value'])
+    return result
+
+  #############################################################################
+  def getSiteSection(self,site,printOutput=False):
+    """Simple utility to get the list of CEs for DIRAC site name.
+
+       Example usage:
+
+       >>> print diracAdmin.getSiteSection('LCG.CERN.ch')
+       {'OK': True, 'Value':}
+
+       @return: S_OK,S_ERROR
+    """
+    gridType = site.split('.')[0]
+    if not gConfig.getSections('/Resources/Sites/%s' %(gridType))['OK']:
+      return S_ERROR('/Resources/Sites/%s is not a valid site section' %(gridType))
+
+    result = self.getCSDict('/Resources/Sites/%s/%s' %(gridType,site))
+    if printOutput and result['OK']:
       print self.pPrint.pformat(result['Value'])
     return result
 
