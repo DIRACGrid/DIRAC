@@ -1,17 +1,17 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.31 2008/07/23 10:30:42 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.32 2008/07/23 10:34:23 acasajus Exp $
 ########################################################################
 
 """  The Pilot Status Agent updates the status of the pilot jobs if the
      PilotAgents database.
 """
 
-__RCSID__ = "$Id: PilotStatusAgent.py,v 1.31 2008/07/23 10:30:42 acasajus Exp $"
+__RCSID__ = "$Id: PilotStatusAgent.py,v 1.32 2008/07/23 10:34:23 acasajus Exp $"
 
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, List
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
-from DIRAC.Core.Utilities import systemCall, List
+from DIRAC.Core.Utilities import systemCall, List, Time
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
 from DIRAC.AccountingSystem.Client.Types.Pilot import Pilot as PilotAccounting
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
@@ -135,7 +135,9 @@ class PilotStatusAgent(Agent):
     for pref in dbData:
       if pref in pilotsToAccount:
         print "Updating\n\t%s\n\t%s" % ( dbData[pref], pilotsToAccount[pref] )
-        dbData[pref].update( pilotsToAccount[pref] )
+        dbData[pref][ 'Status' ] = pilotsToAccount[pref][ 'Status' ]
+        dbData[pref][ 'DestinationSite' ] = pilotsToAccount[pref][ 'DestinationSite' ]
+        dbData[pref][ 'LastUpdateTime' ] = Time.fromString( pilotsToAccount[pref][ 'StatusDate' ] )
 
     retVal = self.__addPilotsAccountingReport( dbData )
     if not retVal['OK']:
