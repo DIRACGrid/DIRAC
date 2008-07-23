@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.36 2008/07/22 07:34:15 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.37 2008/07/23 10:58:20 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.36 2008/07/22 07:34:15 rgracian Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.37 2008/07/23 10:58:20 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -695,6 +695,39 @@ class Dirac:
 
     print self.pPrint.pformat(result['Value'])
     return result
+
+  #############################################################################
+  def removeFile(self,lfn):
+    """Remove LFN and *all* associated replicas from Grid Storage Elements and
+       file catalogues.
+
+       Example Usage:
+
+       >>> print dirac.removeFile('LFN:/lhcb/data/CCRC08/RAW/LHCb/CCRC/22808/022808_0000018443.raw')
+       {'OK': True, 'Value':...}
+
+       @param lfn: Logical File Name (LFN)
+       @type lfn: string
+       @return: S_OK,S_ERROR
+
+    """
+    return self.rm.removeFile(lfn)
+
+  #############################################################################
+  def removeReplica(self,lfn,storageElement):
+    """Remove replica of LFN from specified Grid Storage Element and
+       file catalogues.
+
+       Example Usage:
+
+       >>> print dirac.removeReplica('LFN:/lhcb/user/p/paterson/myDST.dst','CERN-USER')
+       {'OK': True, 'Value':...}
+
+       @param lfn: Logical File Name (LFN)
+       @type lfn: string
+       @return: S_OK,S_ERROR
+    """
+    return self.rm.removeReplica(storageElement,lfn)
 
   #############################################################################
   def dataLoggingInfo(self,lfn,printOutput=False):
