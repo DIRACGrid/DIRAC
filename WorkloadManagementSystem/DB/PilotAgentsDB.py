@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.34 2008/07/23 14:40:10 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.35 2008/07/23 15:27:13 acasajus Exp $
 ########################################################################
 """ PilotAgentsDB class is a front-end to the Pilot Agent Database.
     This database keeps track of all the submitted grid pilot jobs.
@@ -23,7 +23,7 @@
 
 """
 
-__RCSID__ = "$Id: PilotAgentsDB.py,v 1.34 2008/07/23 14:40:10 acasajus Exp $"
+__RCSID__ = "$Id: PilotAgentsDB.py,v 1.35 2008/07/23 15:27:13 acasajus Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
@@ -387,9 +387,9 @@ class PilotAgentsDB(DB):
     """
     cmd = "SELECT pilotID,JobID FROM JobToPilotMapping "
     if type( pilotID ) == ListType:
-      cmd = cmd + "pilotID IN (%s)" % ",".join( [ '%s' % x for x in pilotID ] )
+      cmd = cmd + " WHERE pilotID IN (%s)" % ",".join( [ '%s' % x for x in pilotID ] )
     else:
-      cmd = cmd + "pilotID = %s" % pilotID
+      cmd = cmd + " WHERE pilotID = %s" % pilotID
 
     result = self._query(cmd)
     if not result['OK']:
