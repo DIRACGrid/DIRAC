@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.26 2008/07/21 17:01:54 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.27 2008/07/23 10:12:39 acasajus Exp $
 ########################################################################
 
 """  The Pilot Status Agent updates the status of the pilot jobs if the
      PilotAgents database.
 """
 
-__RCSID__ = "$Id: PilotStatusAgent.py,v 1.26 2008/07/21 17:01:54 rgracian Exp $"
+__RCSID__ = "$Id: PilotStatusAgent.py,v 1.27 2008/07/23 10:12:39 acasajus Exp $"
 
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, List
@@ -25,6 +25,10 @@ AGENT_NAME = 'WorkloadManagement/PilotStatusAgent'
 MAX_JOBS_QUERY = 10
 
 class PilotStatusAgent(Agent):
+
+  queryStateList = ['Ready','Submitted','Running','Waiting','Scheduled']
+  finalStateList = [ 'Done', 'Aborted' ]
+  identityFieldsList = [ 'OwnerDN', 'OwnerGroup', 'GridType' ]
 
   #############################################################################
   def __init__(self):
@@ -45,14 +49,6 @@ class PilotStatusAgent(Agent):
   def execute(self):
     """The PilotAgent execution method.
     """
-
-    # Select pilots in non-final states
-    #stateList = ['Ready','Aborted','Submitted','Running','Waiting','Scheduled']
-    stateList = ['Ready','Submitted','Running','Waiting','Scheduled']
-    finalStateList = [ 'Done', 'Aborted' ]
-
-    identityList = [ 'OwnerDN', 'OwnerGroup', 'GridType' ]
-
     parentIDList = [ 0 , -1 ]
 
     result = self.pilotDB._getConnection()
@@ -61,7 +57,7 @@ class PilotStatusAgent(Agent):
     else:
       return result
 
-    result = self.pilotDB.getPilotGroups( identityList, {'Status': stateList, 'ParentID': parentIDList } )
+    result = self.pilotDB.getPilotGroups( self.identityFieldsList, {'Status': self.queryStateList, 'ParentID': parentIDList } )
     if not result['OK']:
       self.log.error('Fail to get identities Groups', result['Message'])
       return result
@@ -73,7 +69,7 @@ class PilotStatusAgent(Agent):
 
     for ownerDN, ownerGroup, gridType in result['Value']:
       self.log.verbose( 'Getting pilots for %s:%s @ %s' % ( ownerDN, ownerGroup, gridType ) )
-      result = self.pilotDB.selectPilots( stateList, owner=ownerDN, ownerGroup=ownerGroup, gridType=gridType, parentID=parentIDList)
+      result = self.pilotDB.selectPilots( self.queryStateList, owner=ownerDN, ownerGroup=ownerGroup, gridType=gridType, parentID=parentIDList)
       if not result['OK']:
         self.log.warn('Failed to get the Pilot Agents')
         return result
@@ -100,19 +96,24 @@ class PilotStatusAgent(Agent):
           self.log.warn('%s:%s @ %s' % ( ownerDN, ownerGroup, gridType ))
           continue
 
-        for pRef,pDict in result['Value'].items():
+        statusDict = result[ 'Value' ]
+        for pRef,pDict in statusDict:
+          pDict = statusDict[ pRef ]
           if pDict:
-            if pDict[ 'ParentStatus' ] in finalStateList:
-              if not  pDict[ 'isParent' ]:
-                pilotsToAccount[pRef] = pDict
-              else:
-                parentsToUpdate[pRef] = pDict
+            if not pDict[ 'FinalStatus' ]:
+              #HACK to Avoid parents in real final status to fo through
+              if not ( pDict[ 'isParent' ] and pDict[ 'Status' ] in self.finalStatusList ):
+                #Update
+                self.pilotDB.setPilotStatus( pRef,
+                                             pDict['Status'],
+                                             pDict['Destination'],
+                                             pDict['StatusDate'],
+                                             conn = connection )
             else:
-              self.pilotDB.setPilotStatus( pRef,
-                                           pDict['Status'],
-                                           pDict['Destination'],
-                                           pDict['StatusDate'],
-                                           conn = connection )
+              if pDict[ 'isParent' ]:
+                parentsToUpdate[ pRef ] = pDict
+              else:
+                pilotsToUpdate[ pRef ] = pDict
 
         if len( pilotsToAccount ) > 100:
           self.accountPilots( pilotsToAccount, parentsToUpdate, connection )
@@ -133,7 +134,8 @@ class PilotStatusAgent(Agent):
     dbData = retVal[ 'Value' ]
     for pref in dbData:
       if pref in pilotsToAccount:
-         dbData[pref].update( pilotsToAccount[pref] )
+        print "Updating\n\t%s\n\t%s" % ( dbData[pref], pilotsToAccount[pref] )
+        dbData[pref].update( pilotsToAccount[pref] )
 
     retVal = self.__addPilotsAccountingReport( dbData )
     if not retVal['OK']:
@@ -202,7 +204,13 @@ class PilotStatusAgent(Agent):
         chRef = List.fromChar(subjob,'\n' )[0].strip()
         resultDict[chRef] = self.__parseJobStatus( subjob, gridType )
         resultDict[chRef]['isChild'] = True
-        resultDict[chRef]['ParentStatus'] = resultDict[pRef]['Status']
+        resultDict[chRef]['ParentRef'] = pRef
+        if not resultDict[chRef][ 'FinalStatus' ]:
+          resultDict[pRef][ 'FinalStatus' ] = False
+        resultDict[ pRef ][ 'ChildRefs' ].append( chRef )
+      if not resultDict[pRef][ 'FinalStatus' ]:
+        for chRef in resultDict[ pRef ][ 'ChildRefs' ]:
+          resultDict[chRef][ 'FinalStatus' ] = False
 
     return S_OK(resultDict)
 
@@ -224,7 +232,14 @@ class PilotStatusAgent(Agent):
         statusDate = time.strftime('%Y-%m-%d %H:%M:%S',time.strptime(statusDate,'%b %d %H:%M:%S %Y'))
     except Exception, x:
       self.log.error( 'Error parsing %s Job Status output:\n' % gridType, job )
-    return { 'Status': status, 'ParentStatus': status, 'Destination': destination, 'StatusDate': statusDate , 'isChild': False, 'isParent': False}
+    return { 'Status': status,
+             'Destination': destination,
+             'StatusDate': statusDate,
+             'isChild': False,
+             'isParent': False,
+             'ParentRef': False,
+             'FinalStatus' : status in self.finalStateList,
+             'ChildRefs' : [] }
 
   def __getSiteFromCE( self, ce ):
     siteSections = gConfig.getSections('/Resources/Sites/LCG/')
