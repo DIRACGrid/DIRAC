@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.36 2008/07/23 15:38:23 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.37 2008/07/23 18:27:56 acasajus Exp $
 ########################################################################
 
 """  The Pilot Status Agent updates the status of the pilot jobs if the
      PilotAgents database.
 """
 
-__RCSID__ = "$Id: PilotStatusAgent.py,v 1.36 2008/07/23 15:38:23 acasajus Exp $"
+__RCSID__ = "$Id: PilotStatusAgent.py,v 1.37 2008/07/23 18:27:56 acasajus Exp $"
 
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, List
@@ -27,7 +27,7 @@ MAX_JOBS_QUERY = 10
 class PilotStatusAgent(Agent):
 
   queryStateList = ['Ready','Submitted','Running','Waiting','Scheduled']
-  finalStateList = [ 'Done', 'Aborted' ]
+  finalStateList = [ 'Done', 'Aborted', 'Cleared' ]
   identityFieldsList = [ 'OwnerDN', 'OwnerGroup', 'GridType' ]
 
   #############################################################################
