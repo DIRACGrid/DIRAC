@@ -35,7 +35,7 @@ def getShifterProxy( type, file = False ):
   return S_OK( { 'DN' : userDN,
                  'username' : userName,
                  'group' : userGroup,
-                 'chain' : result[ 'Value' ],
+                 'chain' : chain,
                  'proxyFile' : fileName } )
 
 def setupShifterProxyInEnv( type, file = False ):

@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.33 2008/07/23 10:39:10 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.34 2008/07/23 10:44:49 acasajus Exp $
 ########################################################################
 
 """  The Pilot Status Agent updates the status of the pilot jobs if the
      PilotAgents database.
 """
 
-__RCSID__ = "$Id: PilotStatusAgent.py,v 1.33 2008/07/23 10:39:10 acasajus Exp $"
+__RCSID__ = "$Id: PilotStatusAgent.py,v 1.34 2008/07/23 10:44:49 acasajus Exp $"
 
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, List
@@ -155,7 +155,7 @@ class PilotStatusAgent(Agent):
         pDict = parentsToUpdate[pRef]
         self.pilotDB.setPilotStatus( pRef,
                                      pDict['Status'],
-                                     pDict['Destination'],
+                                     pDict['DestinationSite'],
                                      pDict['StatusDate'],
                                      conn = connection )
 
