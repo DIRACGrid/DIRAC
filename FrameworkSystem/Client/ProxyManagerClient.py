@@ -1,9 +1,9 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyManagerClient.py,v 1.22 2008/07/15 15:51:20 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyManagerClient.py,v 1.23 2008/07/23 13:37:00 acasajus Exp $
 ########################################################################
 """ ProxyManagementAPI has the functions to "talk" to the ProxyManagement service
 """
-__RCSID__ = "$Id: ProxyManagerClient.py,v 1.22 2008/07/15 15:51:20 acasajus Exp $"
+__RCSID__ = "$Id: ProxyManagerClient.py,v 1.23 2008/07/23 13:37:00 acasajus Exp $"
 
 import os
 import datetime
@@ -182,7 +182,7 @@ class ProxyManagerClient:
     self.__proxiesCache.add( cacheKey, chain.getRemainingSecs()['Value'], chain )
     return S_OK( chain )
 
-  def downloadProxyToFile( self, userDN, userGroup, limited = False, requiredTimeLeft = 43200, proxyToConnect = False ):
+  def downloadProxyToFile( self, userDN, userGroup, limited = False, requiredTimeLeft = 43200, filePath = False, proxyToConnect = False ):
     """
     Get a proxy Chain from the proxy management and write it to file
     """
@@ -190,7 +190,7 @@ class ProxyManagerClient:
     if not retVal[ 'OK' ]:
       return retVal
     chain = retVal[ 'Value' ]
-    retVal = self.dumpProxyToFile( chain )
+    retVal = self.dumpProxyToFile( chain, filePath )
     if not retVal[ 'OK' ]:
       return retVal
     retVal[ 'chain' ] = chain
@@ -221,7 +221,7 @@ class ProxyManagerClient:
     self.__vomsProxiesCache.add( cacheKey, chain.getRemainingSecs()['Value'], chain )
     return S_OK( chain )
 
-  def downloadVOMSProxyToFile( self, userDN, userGroup, limited = False, requiredTimeLeft = 43200, requiredVOMSAttribute = False, proxyToConnect = False ):
+  def downloadVOMSProxyToFile( self, userDN, userGroup, limited = False, requiredTimeLeft = 43200, requiredVOMSAttribute = False, filePath = False, proxyToConnect = False ):
     """
     Download a proxy if needed, transform it into a VOMS one and write it to file
     """
@@ -229,7 +229,7 @@ class ProxyManagerClient:
     if not retVal[ 'OK' ]:
       return retVal
     chain = retVal[ 'Value' ]
-    retVal = self.dumpProxyToFile( chain )
+    retVal = self.dumpProxyToFile( chain, filePath )
     if not retVal[ 'OK' ]:
       return retVal
     retVal[ 'chain' ] = chain
