@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.37 2008/07/23 10:58:20 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.38 2008/07/23 11:26:13 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.37 2008/07/23 10:58:20 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.38 2008/07/23 11:26:13 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -697,7 +697,7 @@ class Dirac:
     return result
 
   #############################################################################
-  def removeFile(self,lfn):
+  def removeFile(self,lfn,printOutput=False):
     """Remove LFN and *all* associated replicas from Grid Storage Elements and
        file catalogues.
 
@@ -711,7 +711,10 @@ class Dirac:
        @return: S_OK,S_ERROR
 
     """
-    return self.rm.removeFile(lfn)
+    result =  self.rm.removeFile(lfn)
+    if printOutput and result['OK']:
+      print self.pPrint.pformat(result['Value'])
+    return result
 
   #############################################################################
   def removeReplica(self,lfn,storageElement):
@@ -727,7 +730,10 @@ class Dirac:
        @type lfn: string
        @return: S_OK,S_ERROR
     """
-    return self.rm.removeReplica(storageElement,lfn)
+    result = self.rm.removeReplica(storageElement,lfn)
+    if printOutput and result['OK']:
+      print self.pPrint.pformat(result['Value'])
+    return result
 
   #############################################################################
   def dataLoggingInfo(self,lfn,printOutput=False):
