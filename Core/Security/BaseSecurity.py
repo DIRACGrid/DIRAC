@@ -49,6 +49,9 @@ class BaseSecurity:
         self._secKeyLoc = "%s/etc/grid-security/serverkey.pem" % DIRAC.rootPath
     self._secRunningFromTrustedHost = gConfig.getValue( "/DIRAC/VOPolicy/MyProxyTrustedHost", "True" ).lower() in ( "y", "yes", "true" )
 
+  def getMyProxyServer( self ):
+    return self._secServer
+
   def getServiceDN( self ):
     chain = X509Chain()
     retVal = chain.loadChainFromFile( self._secCertLoc )
