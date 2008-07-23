@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.19 2008/07/14 18:16:48 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.20 2008/07/23 13:37:40 acasajus Exp $
 # File :   DiracAdmin.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@ site banning and unbanning, WMS proxy uploading etc.
 
 """
 
-__RCSID__ = "$Id: DiracAdmin.py,v 1.19 2008/07/14 18:16:48 acasajus Exp $"
+__RCSID__ = "$Id: DiracAdmin.py,v 1.20 2008/07/23 13:37:40 acasajus Exp $"
 
 import DIRAC
 from DIRAC.ConfigurationSystem.Client.CSAPI              import CSAPI
@@ -233,10 +233,9 @@ class DiracAdmin:
     return S_OK(result)
 
   #############################################################################
-  def getProxy(self,ownerDN,ownerGroup,directory='',validity=12):
-    """Retrieves a proxy with default 12hr validity from the WMS and stores
-       this in a file in the local directory by default.  For scripting in python
-       with this function, the X509_USER_PROXY environment variable is also set up.
+  def getProxy( self, userDN, userGroup, validity=43200, limited = False ):
+    """Retrieves a proxy with default 12hr validity and stores
+       this in a file in the local directory by default.
 
        Example usage:
 
@@ -246,53 +245,42 @@ class DiracAdmin:
        @return: S_OK,S_ERROR
 
     """
-    if not directory:
-      directory = self.currentDir
+    return gProxyManager.downloadProxy( userDN, userGroup, limited = limited,
+                                        requiredTimeLeft = validity )
 
-    if not os.path.exists(directory):
-      self.__report('Directory %s does not exist' % directory)
+  #############################################################################
+  def getVOMSProxy( self, userDN, userGroup, vomsAttr = False, validity=43200, limited = False ):
+    """Retrieves a proxy with default 12hr validity and VOMS extensions and stores
+       this in a file in the local directory by default.
 
-    wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
-    result = wmsAdmin.getProxy(ownerDN,ownerGroup,validity)
-    if not result['OK']:
-      self.log.warn('Problem retrieving proxy from WMS')
-      self.log.warn(result['Message'])
-      return result
+       Example usage:
 
-    proxy = result['Value']
-    if not proxy:
-      self.log.warn('Null proxy returned from WMS Administrator')
-      return result
+       >>> print diracAdmin.getVOMSProxy()
+       {'OK': True, 'Value': }
 
-    name = string.split(ownerDN,'=')[-1].replace(' ','').replace('/','')
-    if not name:
-      name = 'tempProxy'
+       @return: S_OK,S_ERROR
 
-    proxyPath = '%s/proxy%s' %(directory,name)
-    if os.path.exists(proxyPath):
-      os.remove(proxyPath)
+    """
+    return gProxyManager.downloadVOMSProxy( userDN, userGroup, limited = limited,
+                                            requiredVOMSAttribute = vomsAttr,
+                                            requiredTimeLeft = validity )
 
-    fopen = open(proxyPath,'w')
-    fopen.write(proxy)
-    fopen.close()
+  #############################################################################
+  def getPilotProxy( self, userDN, userGroup, validity=43200 ):
+    """Retrieves a pilot proxy with default 12hr validity and stores
+       this in a file in the local directory by default.
 
-    os.putenv('X509_USER_PROXY',proxyPath)
-    self.log.info('Proxy written to %s' %(proxyPath))
-    self.log.info('Setting X509_USER_PROXY=%s' %(proxyPath))
-    self.log.info('Adding DIRAC role %s to downloaded proxy for later use' %(ownerGroup))
-    fd = file( proxyPath, "r" )
-    contents = fd.readlines()
-    fd.close()
-    groupLine = ":::diracgroup=%s\n" % ownerGroup
-    if contents[0].find( ":::diracgroup=" ) == 0:
-      contents[0] = groupLine
-    else:
-      contents.insert( 0, groupLine )
-    fd = file( proxyPath, "w" )
-    fd.write( "".join( contents ) )
-    fd.close()
-    result = S_OK(proxyPath)
-    return result
+       Example usage:
+
+       >>> print diracAdmin.getVOMSProxy()
+       {'OK': True, 'Value': }
+
+       @return: S_OK,S_ERROR
+
+    """
+
+    return gProxyManager.getPilotProxyFromDIRACGroup( userDN, userGroup, requiredTimeLeft = validity )
+
 
   #############################################################################
   def resetJob(self,jobID):
