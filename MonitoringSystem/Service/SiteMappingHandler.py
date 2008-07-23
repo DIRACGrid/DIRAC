@@ -1,11 +1,11 @@
 ########################################################################
-# $Id: SiteMappingHandler.py,v 1.6 2008/07/23 12:30:56 asypniew Exp $
+# $Id: SiteMappingHandler.py,v 1.7 2008/07/23 13:14:09 asypniew Exp $
 ########################################################################
 
 """ The SiteMappingHandler...
 """
 
-__RCSID__ = "$Id: SiteMappingHandler.py,v 1.6 2008/07/23 12:30:56 asypniew Exp $"
+__RCSID__ = "$Id: SiteMappingHandler.py,v 1.7 2008/07/23 13:14:09 asypniew Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -250,7 +250,23 @@ class SiteMappingHandler( RequestHandler ):
       if not result['OK']:
         return S_ERROR('Failed to get file data. Result: %s' % result)
       dataToWrite = result['Value']
-    elif fileId['Type'] == 'Section':
+    elif fileId['Type'] == 'Section' or fileId['Type'] == 'Association':
+    
+      # Since Association is so similar to section,
+      #   I've just shoved its code in here.
+      if fileId['Type'] == 'Association':
+        gLogger.verbose('Received association request.')
+        ext = self.getExt(fileId['Data'])
+        gLogger.verbose('File type detected as: %s' % ext)
+        dataType = self.translateType(ext)
+        gLogger.verbose('Data type detected as: %s' % dataType)
+        section = self.translateFile(fileId['Data'], dataType)
+        if not section:
+          return S_ERROR('Unable to determine section from file name.')
+        gLogger.verbose('Section detected as: %s' % section)
+        # Now just continue like a regular section update
+        fileId['Type'] = 'Section'
+        fileId['Data'] = section
     
       # First, update site data
       result = self.updateData(fileId['Data'], True)
