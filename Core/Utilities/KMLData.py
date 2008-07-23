@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: KMLData.py,v 1.3 2008/07/07 08:12:20 rgracian Exp $
+# $Id: KMLData.py,v 1.4 2008/07/23 11:36:47 asypniew Exp $
 ########################################################################
 
 """ Handles KML generation
@@ -21,13 +21,13 @@ class KMLData:
     """
     pass
 
-  #############################################################################
+  #############################################################################	
   def reset(self):
     """ Clears all KML data
     """
     self.data = ''
 
-  #############################################################################
+  #############################################################################	
   def getKML(self):
     """ Returns a string which contains full KML data
     """
@@ -43,7 +43,7 @@ class KMLData:
 
     return '%s%s%s' % (header, self.data, footer)
 
-  #############################################################################
+  #############################################################################	
   def writeFile(self, fileName):
     """ Writes the KML data to a file
     """
@@ -53,7 +53,7 @@ class KMLData:
     fout.write(dataOut)
     fout.close()
   
-  #############################################################################
+  #############################################################################	
   def addNodeStyle(self, name, icon, scale):
     self.data += '\t<Style id="%s">\n' % name
     self.data += '\t\t<IconStyle>\n'
@@ -66,7 +66,7 @@ class KMLData:
     self.data += '\t\t</IconStyle>\n'
     self.data += '\t</Style>\n'
     
-  #############################################################################
+  #############################################################################	
   def addLinkStyle(self, name, color, width):
     # Note: color is in the form AABBGGRR (hexadecimal)
     self.data += '\t<Style id="%s">\n' % name
@@ -76,13 +76,13 @@ class KMLData:
     self.data += '\t\t</LineStyle>\n'
     self.data += '\t</Style>\n'
 
-  #############################################################################
+  #############################################################################	
   def addMultipleScaledStyles(self, pathPrefix, prefix, data, suffix):
     for p in prefix:
       for d in data:
           self.addNodeStyle('%s%s' % (p, d), '%s%s%s' % (pathPrefix, p, suffix), data[d])
 
-  #############################################################################
+  #############################################################################	
   def addNode(self, name, description, style, coord):
     self.data += '\t<Placemark>\n'
     self.data += '\t\t<name>\n'
