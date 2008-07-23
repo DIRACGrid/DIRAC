@@ -1,6 +1,7 @@
 """ Client-side transfer class for monitoring system
 """
 
+from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.DISET.TransferClient import TransferClient
 from DIRAC import S_ERROR, S_OK
 
@@ -10,15 +11,22 @@ class SiteMappingClient:
 
   ###########################################################################
   def __init__(self):
-    pass
+    self.transferClient = TransferClient('Monitoring/SiteMapping')
+    
+  ###########################################################################
+  def updateTimeSeries(self):
+    """ Calls SiteMappingHandler.updateTimeSeries() to update any time series data.
+    """
+    siteRPC = RPCClient('Monitoring/SiteMapping')
+    result = siteRPC.updateTimeSeries()
+    return result
   
   ###########################################################################  
   def getFile(self, fileName, outputDir):
     """ Retrieves a single file and puts it in the output directory
     """
     outputFile = '%s/%s' % (outputDir, fileName)
-    transferClient = TransferClient('Monitoring/SiteMapping')
-    result = transferClient.receiveFile(outputFile, {'Type' : 'File', 'Data' : fileName})
+    result = self.transferClient.receiveFile(outputFile, {'Type' : 'File', 'Data' : fileName})
     return result
 
   ###########################################################################    
@@ -41,8 +49,20 @@ class SiteMappingClient:
         Note: this will force a section update
     """
     tmpFile = '%s/%s' % (outputDir, enumerationFile)
-    transferClient = TransferClient('Monitoring/SiteMapping')
-    result = transferClient.receiveFile(tmpFile, {'Type' : 'Section', 'Data': section})
+    result = self.transferClient.receiveFile(tmpFile, {'Type' : 'Section', 'Data': section})
+    if not result['OK']:
+      return S_ERROR('Failed to enumerate section file list. Error: %s' % result)
+    fileList = self.readFileList(tmpFile)
+    self.getFiles(fileList, outputDir)
+    return result
+
+  ###########################################################################  
+  def getAssociation(self, fileName, outputDir):
+    """ Retrieves all files from the same section as fileName
+        Note: this will force a section update
+    """
+    tmpFile = '%s/%s' % (outputDir, enumerationFile)
+    result = self.transferClient.receiveFile(tmpFile, {'Type' : 'Association', 'Data': fileName})
     if not result['OK']:
       return S_ERROR('Failed to enumerate section file list. Error: %s' % result)
     fileList = self.readFileList(tmpFile)
@@ -54,8 +74,7 @@ class SiteMappingClient:
     """ Forces a global update and retrieves all files
     """
     tmpFile = '%s/%s' % (outputDir, enumerationFile)
-    transferClient = TransferClient('Monitoring/SiteMapping')
-    result = transferClient.receiveFile(tmpFile, {'Type': 'All', 'Data' : False})
+    result = self.transferClient.receiveFile(tmpFile, {'Type': 'All', 'Data' : False})
     if not result['OK']:
       return S_ERROR('Failed to enumerate file list.')
     fileList = self.readFileList(tmpFile)
@@ -75,4 +94,5 @@ class SiteMappingClient:
     return fileList
 
   #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
+
 
