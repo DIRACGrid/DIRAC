@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.33 2008/07/21 16:50:11 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.34 2008/07/23 14:40:10 acasajus Exp $
 ########################################################################
 """ PilotAgentsDB class is a front-end to the Pilot Agent Database.
     This database keeps track of all the submitted grid pilot jobs.
@@ -23,7 +23,7 @@
 
 """
 
-__RCSID__ = "$Id: PilotAgentsDB.py,v 1.33 2008/07/21 16:50:11 rgracian Exp $"
+__RCSID__ = "$Id: PilotAgentsDB.py,v 1.34 2008/07/23 14:40:10 acasajus Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
@@ -230,19 +230,22 @@ class PilotAgentsDB(DB):
     pilotIDs = []
     for row in result['Value']:
       pilotDict = {}
-      for i in range(len(parameters)-1):
-        pilotDict[parameters[i+1]] = row[i+1]
-        if parameters[i+1] == 'PilotID':
-          pilotIDs.append(row[i+1])
-      resDict[row[0]] = pilotDict
+      for i in range( len( parameters ) ):
+        pilotDict[ parameters[i] ] = row[ i ]
+        if parameters[i] == 'PilotID':
+          pilotIDs.append( row[i] )
+      resDict[ row[0] ] = pilotDict
 
     result = self.getJobsForPilot( pilotIDs )
     if not result['OK']:
       return S_OK( resDict )
 
-    for pilot in resDict:
-      if pilot['PilotID'] in result['Value']:
-        pilot['Jobs'] = result['Value'][pilot['PilotID']]
+    jobsDict = result[ 'Value' ]
+    for pilotRef in resDict:
+      pilotInfo = resDict[ pilotRef ]
+      pilotID = pilotInfo[ 'PilotID' ]
+      if pilotID in jobsDict:
+        pilotInfo[ 'Jobs' ] = jobsDict[ pilotID ]
 
     return S_OK( resDict )
 
@@ -392,17 +395,12 @@ class PilotAgentsDB(DB):
     if not result['OK']:
       return result
 
-    if not result['Value']:
-      return S_ERROR( 'No JobID found' )
-
     resDict = {}
     for row in result['Value']:
       if not row[0] in resDict:
-        resDict[row[0]] = []
-      resDict[row[0]].append(row[1])
-    if type( pilotID ) == ListType:
-      return S_OK(resDict)
-    return S_OK(resDict[pilotID])
+        resDict[ row[0] ] = []
+      resDict[ row[0] ].append( row[1] )
+    return S_OK(resDict)
 
 ##########################################################################################
   def getPilotsForJob(self,jobID,gridType=None):
