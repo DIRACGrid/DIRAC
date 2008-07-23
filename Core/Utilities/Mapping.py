@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: Mapping.py,v 1.7 2008/07/23 11:36:00 asypniew Exp $
+# $Id: Mapping.py,v 1.8 2008/07/23 12:34:58 asypniew Exp $
 ########################################################################
 
 """ All of the data collection and handling procedures for the SiteMappingHandler
@@ -413,7 +413,7 @@ class Mapping:
             outFile[color] = f
             break
             
-      DEBUG_COUNT = {'green' : 0, 'yellow' : 0, 'gray' : 0}
+      #DEBUG_COUNT = {'green' : 0, 'yellow' : 0, 'gray' : 0}
       
       for node in self.siteData:
         # Double-check that the data is actually here
@@ -445,15 +445,15 @@ class Mapping:
         else:
           state = ''
           
-        DEBUG_COUNT[color] += 1
+        #DEBUG_COUNT[color] += 1
           
-        print '----------- DEBUG TAG: Animated'
-        print 'Node: %s\nAvg: %s\nTrend: %s\nLen: %s\nData: %s\n\n' % (node, avg, trend, len(self.timeSeries[node]['TotalJobs']), self.timeSeries[node]['TotalJobs'])
+        #print '----------- DEBUG TAG: Animated'
+        #print 'Node: %s\nAvg: %s\nTrend: %s\nLen: %s\nData: %s\n\n' % (node, avg, trend, len(self.timeSeries[node]['TotalJobs']), self.timeSeries[node]['TotalJobs'])
         
         KML[color].addNode(node, '', '%s-%s%s' % (sectionTag[section], color, state), self.siteData[node]['Coord'])
         
-      print '----------- DEBUG TAG: Animated Summary'
-      print 'Colors: %s' % DEBUG_COUNT
+      #print '----------- DEBUG TAG: Animated Summary'
+      #print 'Colors: %s' % DEBUG_COUNT
         
       # Write the KML file and reset it
       for color in KML:
