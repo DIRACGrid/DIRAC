@@ -1,12 +1,12 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/MappingFileCache.py,v 1.1 2008/06/30 16:51:53 asypniew Exp $
-__RCSID__ = "$Id: MappingFileCache.py,v 1.1 2008/06/30 16:51:53 asypniew Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/MappingFileCache.py,v 1.2 2008/07/23 11:35:15 asypniew Exp $
+__RCSID__ = "$Id: MappingFileCache.py,v 1.2 2008/07/23 11:35:15 asypniew Exp $"
 
 import os
 import os.path
 import time
 import threading
+import re
 
-import os
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.ThreadSafe import Synchronizer
 
@@ -14,11 +14,19 @@ gSynchro = Synchronizer()
 
 class MappingFileCache:
 
-  def __init__( self, defaultFileLifeTime = 600 ):
+  def __init__( self, defaultFileLifeTime = 600, doNotCache = None ):
     """
-    Init with a name
+    Init with a default lifetime.
+    doNotCache is a list of regular expressions--it will be consulted every time a file
+      is queued for caching; if the file matches on of the reg.ex., it will not be cached
     """
+    cacheExceptions = []
+    if doNotCache:
+      for pattern in doNotCache:
+        cacheExceptions.append(re.compile(pattern))
+    
     self.__defaultLifeTime = defaultFileLifeTime
+    self.__cacheExceptions = cacheExceptions
     self.__cachedFiles = {}
     self.__alive = True
     self.__purgeThread = threading.Thread( target = self.__purgeExpired )
@@ -53,6 +61,13 @@ class MappingFileCache:
     """
     Adds a new file to the cache. If the file is already there, its timer is reset
     """
+    
+    # Check to see if the file should be excluded.
+    for pattern in self.__cacheExceptions:
+      if re.match(pattern, fileName):
+        gLogger.verbose('File matches exclusion pattern. Ignoring: %s' % fileName)
+        return S_OK(fileName)
+        
     if not lifeTime:
       lifeTime = self.__defaultLifeTime
     now = time.time()
