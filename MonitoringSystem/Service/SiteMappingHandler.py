@@ -1,11 +1,11 @@
 ########################################################################
-# $Id: SiteMappingHandler.py,v 1.5 2008/07/08 14:14:55 asypniew Exp $
+# $Id: SiteMappingHandler.py,v 1.6 2008/07/23 12:30:56 asypniew Exp $
 ########################################################################
 
 """ The SiteMappingHandler...
 """
 
-__RCSID__ = "$Id: SiteMappingHandler.py,v 1.5 2008/07/08 14:14:55 asypniew Exp $"
+__RCSID__ = "$Id: SiteMappingHandler.py,v 1.6 2008/07/23 12:30:56 asypniew Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -14,41 +14,111 @@ from DIRAC.Core.Utilities.MappingFileCache import MappingFileCache
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Utilities.Mapping import Mapping
-import os
+import os, re
 
 siteData = Mapping()
 fileCache = False
 
 dataDict = {}
+gAnimationThread = False
 
 # Be prepared for ALL files from this directory to possibly be deleted
 baseFilePath = ''
 
 def initializeSiteMappingHandler( serviceInfo ):
 
+  gLogger.verbose('-----> Initializing handler...')
   csSection = PathFinder.getServiceSection('Monitoring/SiteMapping')
+  gLogger.verbose('csSection: %s' % csSection)
   
   global siteData
   global fileCache
   global dataDict
   global baseFilePath
   
+  # Parse the sectionFiles
   sectionFiles = gConfig.getOptionsDict(csSection+'/PlotViews')['Value']
+  for section in sectionFiles:
+      sectionFiles[section] = sectionFiles[section].split(':')
+      
   sectionTag = gConfig.getOptionsDict(csSection+'/PlotTags')['Value']
   iconPath = gConfig.getValue(csSection+'/IconPath', '')
-  dataDict = {'kml' : sectionFiles, 'png' : sectionTag, 'IconPath' : iconPath}
+  
+  animatedRanges = gConfig.getOptionsDict(csSection+'/AnimatedRanges')['Value']
+  for r in animatedRanges:
+    if r.find('.'):
+      animatedRanges[r] = float(animatedRanges[r])
+    else:
+      animatedRanges[r] = int(animatedRanges[r])
+      
+  updateExpiration = gConfig.getValue(csSection+'/UpdateExpiration', 10)
+  
+  # Do NOT interpret it, in case it is NOT a file path
+#  if iconPath:
+#    iconPath = iconPath.rstrip('/')
+#    iconPath += '/'
+
+  dataDict = {'kml' : sectionFiles, 'img' : sectionTag, 'IconPath' : iconPath, 'Animated' : animatedRanges, 'UpdateExpiration' : updateExpiration}
+
+  gLogger.verbose('dataDict: %s' % dataDict)
   
   cacheDir = gConfig.getValue(csSection+'/CacheDir','')
+  cacheDir = cacheDir.rstrip('/')
   baseFilePath = cacheDir + '/SiteMapping'
   if not os.path.exists(baseFilePath):
     os.mkdir(baseFilePath)
+  gLogger.verbose('baseFilePath: %s' % baseFilePath)
+  
+  try:
+    fileTest = open('%s/%s' % (baseFilePath, 'permission.tmp'), 'w')
+    fileTest.write('Z')
+    fileTest.close()
+    fileTest = open('%s/%s' % (baseFilePath, 'permission.tmp'), 'r')
+    inputTest = fileTest.read()
+    fileTest.close()
+    os.unlink('%s/%s' % (baseFilePath, 'permission.tmp'))
+    if inputTest != 'Z':
+      raise Exception
+  except:
+    gLogger.verbose('---- ERROR: File cache cannot access data in %s' % baseFilePath)
     
   cacheTimeToLive = gConfig.getValue(csSection+'/CacheTime', 60)
-  fileCache = MappingFileCache(int(cacheTimeToLive))
+  gLogger.verbose('cacheTimeToLive: %s' % cacheTimeToLive)
   
+  cacheExceptions = gConfig.getValue(csSection+'/CacheExceptions', '')
+  if cacheExceptions:
+    cacheExceptions = cacheExceptions.split(';')
+    # We are going to add on the baseFilePath so that the file cache will include the entire file in its exclusions
+    for i in range(len(cacheExceptions)):
+      cacheExceptions[i] = re.escape(baseFilePath + '/') + cacheExceptions[i]
+      
+  gLogger.verbose('cacheExceptions: %s' % cacheExceptions)
+  
+  fileCache = MappingFileCache(int(cacheTimeToLive), cacheExceptions)
+    
   return S_OK()
 
 class SiteMappingHandler( RequestHandler ):
+
+  ###########################################################################
+  types_updateTimeSeries = []
+  def export_updateTimeSeries(self):
+    """ Simple wrapper for updating time series data
+    """
+    gLogger.verbose('Time series update requested received.')
+    result = self.updateData('JobSummary', False)
+    if not result['OK']:
+      return result
+    return S_OK('Time series data updated.')
+
+  ###########################################################################
+  def isSiteDataLoaded(self):
+    """ Returns True or False depending on whether any site data is present
+    """
+    if 'LCG.CERN.ch' not in siteData.siteData:
+      return False
+    else:
+      return True
   
   ###########################################################################
   def purgeAll(self):
@@ -64,21 +134,23 @@ class SiteMappingHandler( RequestHandler ):
         To update the site data AND THEN update the given section, set 'section' and updateData=True
         To update the given section BUT NOT the site data, set 'section' and updateData=False
         To update ONLY the site data, set section=False (updateData is ignored)
+        HOWEVER, if no site data is loaded, then SiteData is ALWAYS called.
     """ 
     
     result = S_OK()
     
     # First, update the list of sites.
     # If you ONLY want to update this, set section=False
-    if not section or updateData:
-      result = siteData.updateData('SiteData')
+    if not section or updateData or not self.isSiteDataLoaded():
+      result = siteData.updateData('SiteData', dataDict)
       gLogger.verbose('Site data updated.')
       if not result['OK']:
         return result
       
     if section:
-      result = siteData.updateData(section)
-      gLogger.verbose('Site data updated. Section: %s' % section)
+      result = siteData.updateData(section, dataDict)
+      if result['OK']:
+        gLogger.verbose('Site data updated. Section: %s' % section)
 
     return result
           
@@ -104,7 +176,9 @@ class SiteMappingHandler( RequestHandler ):
       # First interpret the file name
       ext = self.getExt(baseName)
       gLogger.verbose('File type detected as: %s' % ext)
-      section = self.translateFile(baseName, ext)
+      dataType = self.translateType(ext)
+      gLogger.verbose('Data type detected as: %s' % dataType)
+      section = self.translateFile(baseName, dataType)
       if not section:
         return S_ERROR('Unable to determine section from file name.')
       gLogger.verbose('Section detected as: %s' % section)
@@ -116,7 +190,7 @@ class SiteMappingHandler( RequestHandler ):
       
       # Then generate the relevant data  
       gLogger.verbose('...Data updated. Generating files...')
-      result = self.generateSection(section, ext, baseFilePath, fileCache, dataDict)
+      result = self.generateSection(section, dataType, baseFilePath, fileCache, dataDict)
       if not result['OK']:
         return S_ERROR('Failed to generate data.')
       
@@ -126,25 +200,25 @@ class SiteMappingHandler( RequestHandler ):
       if not result['OK']:
         return S_ERROR('File does not exist: %s/%s' % (baseFilePath, baseName))
         
-#    gLogger.verbose('File found: %s' % result['Value'])
+    gLogger.verbose('File found: %s/%s' % (baseFilePath, baseName))
       
     return result
   
   ###########################################################################  
-  def generateSection(self, section, sectionType, baseFilePath, fileCache, dataDict):
-    """ Generates data for one or all section types (KML/PNG) for a given section
+  def generateSection(self, section, dataType, baseFilePath, fileCache, dataDict):
+    """ Generates data for one or all section types (KML/IMG) for a given section
     """
-    generatorFunction = {'kml' : siteData.generateKML, 'png' : siteData.generateIcons}
-    if not sectionType:
+    generatorFunction = {'kml' : siteData.generateKML, 'img' : siteData.generateIcons}
+    if not dataType:
       funcDict = generatorFunction
     else:
-      if not sectionType in generatorFunction:
-        return S_ERROR('Invalid generator type: %s' % sectionType)
-      funcDict = {sectionType : generatorFunction[sectionType]}
+      if not dataType in generatorFunction:
+        return S_ERROR('Invalid generator type: %s' % dataType)
+      funcDict = {dataType : generatorFunction[dataType]}
       
     for func in funcDict:
       result = funcDict[func](section, baseFilePath, fileCache, dataDict)
-      if not result:
+      if not result['OK']:
         return S_ERROR('Failed to generate data of type %s in section %s' % (func, section))
         
     return S_OK()
@@ -158,7 +232,18 @@ class SiteMappingHandler( RequestHandler ):
           anything sent via stringToNetwork is stored there
         You should therefore use fileId, which is also the 2nd argument of receiveFile, as a means
           of identifying the remote file you want.
+          
+        Anyway...
+        fileId should be a dictionary with keys 'Type' and 'Data'
+          The value for 'Type' should be 'File', 'Section', or 'All' depending on what you want
+          If 'Type' is 'File', then 'Data' should be the file name to retrieve
+          If 'Type' is 'Section', then 'Data' should be the section to enumerate
+          If 'Type' is 'All', then 'Data' is ignored.
+        If 'Type' is NOT 'File', then the returned file will be a '\n' separated list of file names
+          requested. You need to call the transfer client again with each of these file names to
+          actually retrieve the useful data.
     """
+    gLogger.verbose('Transfer requested received: %s' % fileId)
     dataToWrite = False
     if fileId['Type'] == 'File':
       result = self.getFile(fileId['Data'])
@@ -172,25 +257,31 @@ class SiteMappingHandler( RequestHandler ):
       if not result['OK']:
         return S_ERROR('Failed to update section data.')
         
-      # Next, generate KML/PNG data
+      # Next, generate KML/IMG data
       result = self.generateSection(fileId['Data'], False, baseFilePath, fileCache, dataDict)
       if not result['OK']:
         return S_ERROR('Failed to generate sections. Error: %s' % result)
       
       # Now enumerate the relevant files
-      dataToWrite = dataDict['kml'][fileId['Data']] + '\n'
+      dataToWrite = ''
+      for f in dataDict['kml'][fileId['Data']]:
+        dataToWrite += f + '\n'
       fileList = os.listdir(baseFilePath)
       for f in fileList:
         ext = self.getExt(f)
-        if ext == 'kml':
+        dataType = self.translateType(ext)
+        
+        if dataType == 'kml':
+          # We already listed this one
           continue
-        elif ext == 'png':
-          if f.find(dataDict['png'][fileId['Data']]) == 0:
+        elif dataType == 'img':
+          # Search for the tag which designates the appropriate section
+          if f.find(dataDict[dataType][fileId['Data']]) == 0:
             dataToWrite += f + '\n'
     elif fileId['Type'] == 'All':
       # Update site data only once
       result = self.updateData(False, False)
-      for s in dataDict['png']:
+      for s in dataDict['img']:
         # Update each section's data
         result = self.updateData(s, False)
         if not result['OK']:
@@ -207,20 +298,43 @@ class SiteMappingHandler( RequestHandler ):
     else:
       return S_ERROR('Invalid fileId.')
       
+#    print '--------- DEBUG -------'
+#    print 'dataToWrite: %s' % dataToWrite
     result = fileHelper.stringToNetwork(dataToWrite)
-    return S_OK('Transfer complete.')
+    if not result['OK']:
+      return S_ERROR('stringToNework failed.')
+    else:
+      return S_OK('Transfer complete.')
   
   ###########################################################################  
-  def translateFile(self, fileName, ext):
+  def translateFile(self, fileName, dataType):
     """ Returns the section related to the given file name
     """
-    for section in dataDict[ext]:
-      if fileName.find(dataDict[ext][section]) == 0:
-        break
-    else:
-      return False
+    for section in dataDict[dataType]:
+      # If it is KML, then there might be multiple associated files in search through
+      if dataType == 'kml':
+        for f in dataDict[dataType][section]:
+          if fileName.find(f) == 0:
+            return section
+      # If it is IMG, then there is only one associated file tag to look for
+      else:
+        if fileName.find(dataDict[dataType][section]) == 0:
+          return section
       
-    return section
+    return False
+  
+  ###########################################################################  
+  def translateType(self, ext):
+    """ Converts a file extension into a data type (KML or IMG)
+    """
+    if ext == 'gif' or ext == 'png':
+      dataType = 'img'
+    elif ext == 'kml':
+      dataType = 'kml'
+    else:
+      dataType = False
+      
+    return dataType
   
   ###########################################################################  
   def getExt(self, fileName):
