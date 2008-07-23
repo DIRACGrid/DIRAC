@@ -106,7 +106,7 @@ def pfnparse(pfn):
           pfn = pfn.replace('%s:'%host,'')
           port = pfn.split('/',1)[0]
           pfnDict['Port'] = port
-          pfn = pfn.replace(port,'')
+          pfn = pfn.replace(port,'',1)
           #pfn = '/fullPath'
           #pfn = '/wsurl/fullPath'
           if re.search('\?',pfn):
