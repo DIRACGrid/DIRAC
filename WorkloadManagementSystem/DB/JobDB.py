@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.69 2008/07/18 15:52:10 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.70 2008/07/23 09:50:24 rgracian Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.69 2008/07/18 15:52:10 rgracian Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.70 2008/07/23 09:50:24 rgracian Exp $"
 
 import re, os, sys, string, types
 import time
@@ -673,7 +673,7 @@ class JobDB(DB):
           return ret
         value = ret['Value']
       deleteCondList.append( '(JobID=\'%s\' AND Name=\'%s\')' % (jobID, name))
-      insertValueList.append( '(\'%s\',\'%s\',\'%s\')' % (jobID, name, value))
+      insertValueList.append( '(\'%s\',\'%s\',%s)' % (jobID, name, value))
 
     cmd = 'DELETE FROM JobParameters WHERE %s ' % ' OR '.join( deleteCondList )
     if not self._update( cmd )['OK']:
