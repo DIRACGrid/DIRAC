@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/GatewayDispatcher.py,v 1.3 2008/06/05 10:20:16 acasajus Exp $
-__RCSID__ = "$Id: GatewayDispatcher.py,v 1.3 2008/06/05 10:20:16 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/GatewayDispatcher.py,v 1.4 2008/07/23 14:21:42 acasajus Exp $
+__RCSID__ = "$Id: GatewayDispatcher.py,v 1.4 2008/07/23 14:21:42 acasajus Exp $"
 
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
@@ -58,11 +58,15 @@ class GatewayDispatcher( Dispatcher ):
       return S_ERROR( "Service %s is unknown" % serviceName )
     gLogger.debug( "Trying credentials %s" % credDict )
     if not authManager.authQuery( action, credDict ):
-      if 'username' in credDict.keys():
-        username = credDict[ 'username' ]
-      else:
-        username = 'unauthenticated'
-      gLogger.info( "Unauthorized query", "to %s" % action )
+      identity = "unknown"
+      if 'username' in credDict:
+        if 'group' in credDict:
+          identity = "[%s:%s]" % ( credDict[ 'username' ], credDict[ 'group' ]  )
+        else:
+          identity = "[%s:unknown]" % credDict[ 'username' ]
+      if 'DN' in credDict:
+        identity += "(%s)" % credDict[ 'DN' ]
+      gLogger.error( "Unauthorized query", "to %s:%s by %s" % ( serviceName, action, identity ) )
       return S_ERROR( "Unauthorized query to %s:%s" % ( serviceName, action ) )
     return S_OK()
 

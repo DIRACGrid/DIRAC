@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Dispatcher.py,v 1.12 2008/07/23 14:09:01 acasajus Exp $
-__RCSID__ = "$Id: Dispatcher.py,v 1.12 2008/07/23 14:09:01 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Dispatcher.py,v 1.13 2008/07/23 14:21:42 acasajus Exp $
+__RCSID__ = "$Id: Dispatcher.py,v 1.13 2008/07/23 14:21:42 acasajus Exp $"
 
 import DIRAC
 from DIRAC.LoggingSystem.Client.Logger import gLogger
@@ -205,10 +205,6 @@ class Dispatcher:
       return S_ERROR( "No handler registered for %s" % serviceName )
     gLogger.debug( "Trying credentials %s" % credDict )
     if not self.servicesDict[ serviceName ][ 'authManager' ].authQuery( action, credDict ):
-      if 'username' in credDict.keys():
-        username = credDict[ 'username' ]
-      else:
-        username = 'unauthenticated'
       identity = "unknown"
       if 'username' in credDict:
         if 'group' in credDict:
