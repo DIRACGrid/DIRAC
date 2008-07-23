@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.35 2008/07/23 10:53:14 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.36 2008/07/23 15:38:23 acasajus Exp $
 ########################################################################
 
 """  The Pilot Status Agent updates the status of the pilot jobs if the
      PilotAgents database.
 """
 
-__RCSID__ = "$Id: PilotStatusAgent.py,v 1.35 2008/07/23 10:53:14 acasajus Exp $"
+__RCSID__ = "$Id: PilotStatusAgent.py,v 1.36 2008/07/23 15:38:23 acasajus Exp $"
 
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, List
@@ -135,7 +135,6 @@ class PilotStatusAgent(Agent):
     for pref in dbData:
       if pref in pilotsToAccount:
         if dbData[pref][ 'Status' ] not in self.finalStateList:
-          print "Updating\n\t%s\n\t%s" % ( dbData[pref], pilotsToAccount[pref] )
           dbData[pref][ 'Status' ] = pilotsToAccount[pref][ 'Status' ]
           dbData[pref][ 'DestinationSite' ] = pilotsToAccount[pref][ 'DestinationSite' ]
           dbData[pref][ 'LastUpdateTime' ] = Time.fromString( pilotsToAccount[pref][ 'StatusDate' ] )
