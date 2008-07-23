@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.28 2008/07/23 10:14:27 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.29 2008/07/23 10:16:53 acasajus Exp $
 ########################################################################
 
 """  The Pilot Status Agent updates the status of the pilot jobs if the
      PilotAgents database.
 """
 
-__RCSID__ = "$Id: PilotStatusAgent.py,v 1.28 2008/07/23 10:14:27 acasajus Exp $"
+__RCSID__ = "$Id: PilotStatusAgent.py,v 1.29 2008/07/23 10:16:53 acasajus Exp $"
 
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, List
@@ -102,7 +102,7 @@ class PilotStatusAgent(Agent):
           if pDict:
             if not pDict[ 'FinalStatus' ]:
               #HACK to Avoid parents in real final status to fo through
-              if not ( pDict[ 'isParent' ] and pDict[ 'Status' ] in self.finalStatusList ):
+              if not ( pDict[ 'isParent' ] and pDict[ 'Status' ] in self.finalStateList ):
                 #Update
                 self.pilotDB.setPilotStatus( pRef,
                                              pDict['Status'],
