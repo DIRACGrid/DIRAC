@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/scripts/dirac-admin-users-with-proxy.py,v 1.1 2008/07/23 18:54:53 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/scripts/dirac-admin-users-with-proxy.py,v 1.2 2008/07/24 09:14:58 acasajus Exp $
 # File :   dirac-admin-get-proxy
 # Author : Stuart Paterson
 ########################################################################
-__RCSID__   = "$Id: dirac-admin-users-with-proxy.py,v 1.1 2008/07/23 18:54:53 acasajus Exp $"
-__VERSION__ = "$Revision: 1.1 $"
+__RCSID__   = "$Id: dirac-admin-users-with-proxy.py,v 1.2 2008/07/24 09:14:58 acasajus Exp $"
+__VERSION__ = "$Revision: 1.2 $"
 import os
 from DIRACEnvironment import DIRAC
 from DIRAC.Core.Base import Script
@@ -61,10 +61,16 @@ for record in records:
       dataDict[ userName ].append( ( userDN, userGroup, expirationDate, persistent ) )
 
 for userName in dataDict:
-  print userName
-  for data in dataDict[ userName ]:
-    print " %s %s" % ( data[1].ljust(10), data[0] )
-    print "  %s" %  data[2]
-    print "  persistent %s" %  data[3]
+  print "* %s" % userName
+  for iP in range( len( dataDict[ userName ]  ) ):
+    data = dataDict[ userName ][ iP ]
+    print " DN         : %s" % data[0]
+    print " group      : %s" % data[1]
+    print " not after  : %s" % Time.toString( data[2] )
+    print " persistent : %s" % data[3]
+    if iP < len( dataDict[ userName ] ) - 1:
+      print " -"
+
+
 
 DIRAC.exit(0)
