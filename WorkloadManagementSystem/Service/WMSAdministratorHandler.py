@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSAdministratorHandler.py,v 1.32 2008/07/22 17:13:12 rgracian Exp $
+# $Id: WMSAdministratorHandler.py,v 1.33 2008/07/24 06:17:50 rgracian Exp $
 ########################################################################
 """
 This is a DIRAC WMS administrator interface.
@@ -14,7 +14,7 @@ Access to the pilot data:
 
 """
 
-__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.32 2008/07/22 17:13:12 rgracian Exp $"
+__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.33 2008/07/24 06:17:50 rgracian Exp $"
 
 import os, sys, string, uu, shutil, datetime
 from types import *
@@ -47,29 +47,17 @@ def initializeWMSAdministratorHandler( serviceInfo ):
 
 class WMSAdministratorHandler(RequestHandler):
 
-  def __init__(self,*args,**kargs):
-
-    # FIXME: this should be done properly
-    self.servercert = gConfig.getValue('/DIRAC/Security/CertFile',
-                              '/opt/dirac/etc/grid-security/hostcert.pem')
-    self.serverkey = gConfig.getValue('/DIRAC/Security/KeyFile',
-                              '/opt/dirac/etc/grid-security/hostkey.pem')
-    if os.environ.has_key('X509_USER_CERT'):
-      self.servercert = os.environ['X509_USER_CERT']
-    if os.environ.has_key('X509_USER_KEY'):
-      self.serverkey = os.environ['X509_USER_KEY']
-
-    RequestHandler.__init__(self,*args,**kargs)
-
 ###########################################################################
   types_setMask = [StringType]
   def export_setSiteMask(self, siteList):
     """ Set the site mask for matching. The mask is given in a form of Classad
         string.
     """
+    result = self.getRemoteCredentials()
+    dn = result['DN']
 
     maskList = [ (site,'Active') for site in siteList ]
-    result = jobDB.setSiteMask(maskList)
+    result = jobDB.setSiteMask(maskList,dn)
     return result
 
 ##############################################################################
@@ -99,7 +87,7 @@ class WMSAdministratorHandler(RequestHandler):
 
     result = self.getRemoteCredentials()
     dn = result['DN']
-    result = jobDB.banSiteInMask(site,dn)
+    result = jobDB.banSiteInMask(site,dn,comment)
     return result
 
 ##############################################################################
@@ -110,7 +98,7 @@ class WMSAdministratorHandler(RequestHandler):
 
     result = self.getRemoteCredentials()
     dn = result['DN']
-    result = jobDB.allowSiteInMask(site,dn)
+    result = jobDB.allowSiteInMask(site,dn,comment)
     return result
 
 ##############################################################################
@@ -162,6 +150,7 @@ class WMSAdministratorHandler(RequestHandler):
     owner = pilotDict['OwnerDN']
     group = pilotDict['OwnerGroup']
 
+    # FIXME: What if the OutputSandBox is not StdOut and StdErr
     result = pilotDB.getPilotOutput(pilotReference)
     if result['OK']:
       stdout = result['Value']['StdOut']
@@ -188,7 +177,7 @@ class WMSAdministratorHandler(RequestHandler):
 
     if not result['OK']:
       return S_ERROR('Failed to get pilot output: '+result['Message'])
-
+    # FIXME: What if the OutputSandBox is not StdOut and StdErr
     stdout = result['StdOut']
     error = result['StdError']
     fileList = result['FileList']
