@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.40 2008/07/24 15:46:05 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.41 2008/07/24 17:42:40 rgracian Exp $
 # File :   Director.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -48,7 +48,7 @@
 
 """
 
-__RCSID__ = "$Id: Director.py,v 1.40 2008/07/24 15:46:05 rgracian Exp $"
+__RCSID__ = "$Id: Director.py,v 1.41 2008/07/24 17:42:40 rgracian Exp $"
 
 import types, time
 
@@ -476,7 +476,7 @@ PILOT_DN         = '/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=paterson/CN=6076
 PILOT_DN         = '/DC=es/DC=irisgrid/O=ecm-ub/CN=Ricardo-Graciani-Diaz'
 PILOT_GROUP      = 'lhcb_pilot'
 TIME_POLICY      = 'TimeRef * 500 / other.GlueHostBenchmarkSI00 / 60'
-REQUIREMENTS     = ['other.GlueCEPolicyMaxCPUTime > TimePolicy','Rank > -4']
+REQUIREMENTS     = ['Rank > -2']
 RANK             = '( other.GlueCEStateWaitingJobs == 0 ? other.GlueCEStateFreeCPUs * 10 / other.GlueCEInfoTotalCPUs : -other.GlueCEStateWaitingJobs * 4 / (other.GlueCEStateRunningJobs + 1 ) - 1 )'
 FUZZY_RANK       = 'true'
 
@@ -741,6 +741,7 @@ class PilotDirector:
     jobJDL += 'TimePolicy    = ( %s );\n' % self.timePolicy
 
     requirements = list(self.requirements)
+    requirements.append( 'other.GlueCEPolicyMaxCPUTime > TimePolicy' )
 
     siteRequirements = '\n || '.join( [ 'other.GlueCEInfoHostName == "%s"' % s for s in ceMask ] )
     requirements.append( "( %s\n )" %  siteRequirements )
