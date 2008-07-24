@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotMonitor.py,v 1.9 2008/05/20 09:43:45 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotMonitor.py,v 1.10 2008/07/24 06:17:08 rgracian Exp $
 # File :   PilotMonitor.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
      of the AgentMonitor instance for all Grids.
 """
 
-__RCSID__ = "$Id: PilotMonitor.py,v 1.9 2008/05/20 09:43:45 rgracian Exp $"
+__RCSID__ = "$Id: PilotMonitor.py,v 1.10 2008/07/24 06:17:08 rgracian Exp $"
 
 from DIRAC.Core.Base.Agent    import Agent
 from DIRAC                    import S_OK, S_ERROR, gConfig, gLogger
@@ -48,55 +48,57 @@ class PilotMonitor(Agent):
   def execute(self):
     """The PilotMonitor execution method.
     """
+
+    for minor in ['Pilot Agent Response', 'Director Submitting']:
     
-    selection = {'Status':'Waiting','MinorStatus':'Pilot Agent Response'}
-    delay  = time.localtime( time.time() - self.maxWaitingTime )
-    delay = time.strftime( "%Y-%m-%d %H:%M:%S", delay )
-    result = self.jobDB.selectJobs(selection, older=delay, limit=self.selectJobLimit, orderAttribute='LastUpdateTime')
-    if not result['OK']:
-      return result
-      
-    jobList = result['Value']  
-    for jobID in jobList:
-    
-      self.log.info( "Processing job", jobID )
-    
-      result = self.pilotDB.getPilotsForJob(int(jobID))
+      selection = {'Status':'Waiting','MinorStatus':minor}
+      delay  = time.localtime( time.time() - self.maxWaitingTime )
+      delay = time.strftime( "%Y-%m-%d %H:%M:%S", delay )
+      result = self.jobDB.selectJobs(selection, older=delay, limit=self.selectJobLimit, orderAttribute='LastUpdateTime')
       if not result['OK']:
-        self.log.warn('Failed to get pilots for job %d' % int(jobID))
-        # Assume no pilots were sent yet
-        result = self.jobDB.setJobAttribute(jobID,"MinorStatus",
-                                            "Pilot Agent Submission",
-                                            update=True) 
-        continue
+        return result
         
-      pilotList = result['Value']  
-      result = self.pilotDB.getPilotInfo(pilotList)
-      if not result['OK']:
-        self.log.warn('Failed to get pilots info for job %d' % int(jobID))
-        continue
-        
-      resultDict = result['Value']
+      jobList = result['Value']  
+      for jobID in jobList:
       
-      self.log.debug( "Pilot info", resultDict )
+        self.log.info( "Processing job", jobID )
       
-      aborted_pilots = []
-      submitted_pilots = []
-      for pRef,pilotDict in resultDict.items():
-        if pilotDict['Status'] == "Aborted":
-          aborted_pilots.append(pRef)
-        if pilotDict['Status'] == "Submitted" or \
-           pilotDict['Status'] == "Scheduled":
-          submitted_pilots.append(pRef)
+        result = self.pilotDB.getPilotsForJob(int(jobID))
+        if not result['OK']:
+          self.log.warn('Failed to get pilots for job %d' % int(jobID))
+          # Assume no pilots were sent yet
+          result = self.jobDB.setJobAttribute(jobID,"MinorStatus",
+                                              "Pilot Agent Submission",
+                                              update=True) 
+          continue
           
-      if len(submitted_pilots) < self.maxPilotAgents:
-        result = self.jobDB.setJobAttribute(jobID,"MinorStatus",
-                                            "Pilot Agent Submission",
-                                            update=True)
-      else:
-        result = self.jobDB.setJobAttribute(jobID,"MinorStatus",
-                                             "Pilot Agent Response",
-                                             update=True)
+        pilotList = result['Value']  
+        result = self.pilotDB.getPilotInfo(pilotList)
+        if not result['OK']:
+          self.log.warn('Failed to get pilots info for job %d' % int(jobID))
+          continue
+          
+        resultDict = result['Value']
+        
+        self.log.debug( "Pilot info", resultDict )
+        
+        aborted_pilots = []
+        submitted_pilots = []
+        for pRef,pilotDict in resultDict.items():
+          if pilotDict['Status'] == "Aborted":
+            aborted_pilots.append(pRef)
+          if pilotDict['Status'] == "Submitted" or \
+             pilotDict['Status'] == "Scheduled":
+            submitted_pilots.append(pRef)
+            
+        if len(submitted_pilots) < self.maxPilotAgents:
+          result = self.jobDB.setJobAttribute(jobID,"MinorStatus",
+                                              "Pilot Agent Submission",
+                                              update=True)
+        else:
+          result = self.jobDB.setJobAttribute(jobID,"MinorStatus",
+                                               minor,
+                                               update=True)
       
     result = self.pilotDB.clearPilots(self.clearPilotsDelay,self.clearAbortedDelay)
     if not result['OK']:
