@@ -2,7 +2,6 @@
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.AccountingSystem.Client.Types.Pilot import Pilot
 from DIRAC.AccountingSystem.private.Plotters.BasePlotter import BasePlotter
-from DIRAC.AccountingSystem.private.Plots import *
 from DIRAC.Core.Utilities import Time
 
 class PilotPlotter(BasePlotter):
@@ -34,7 +33,7 @@ class PilotPlotter(BasePlotter):
                  'span' : granularity,
                  'ylabel' : "jobs",
                  'is_cumulative' : True }
-    return generateCumulativePlot( filename, dataDict, metadata )
+    return self._generateCumulativePlot( filename, dataDict, metadata )
 
   def _plotNumberOfJobs( self, startTime, endTime, condDict, groupingFields, filename ):
     selectFields = ( self._getSQLStringForGrouping( groupingFields) + ", %s, %s, SUM(%s)",
@@ -59,7 +58,7 @@ class PilotPlotter(BasePlotter):
                  'endtime' : endTime,
                  'span' : granularity,
                  'ylabel' : "jobs"  }
-    return generateTimedStackedBarPlot( filename, dataDict, metadata )
+    return self._generateTimedStackedBarPlot( filename, dataDict, metadata )
 
   def _plotTotalNumberOfPilots( self, startTime, endTime, condDict, groupingFields, filename ):
     selectFields = ( self._getSQLStringForGrouping( groupingFields) + ", %s, %s, SUM(%s)",
@@ -85,7 +84,7 @@ class PilotPlotter(BasePlotter):
                  'span' : granularity,
                  'ylabel' : "pilots",
                  'is_cumulative' : True }
-    return generateCumulativePlot( filename, dataDict, metadata )
+    return self._generateCumulativePlot( filename, dataDict, metadata )
 
   def _plotNumberOfPilots( self, startTime, endTime, condDict, groupingFields, filename ):
     selectFields = ( self._getSQLStringForGrouping( groupingFields) + ", %s, %s, SUM(%s)",
@@ -110,4 +109,4 @@ class PilotPlotter(BasePlotter):
                  'endtime' : endTime,
                  'span' : granularity,
                  'ylabel' : "pilots"  }
-    return generateTimedStackedBarPlot( filename, dataDict, metadata )
+    return self._generateTimedStackedBarPlot( filename, dataDict, metadata )

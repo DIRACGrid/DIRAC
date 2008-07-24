@@ -2,7 +2,6 @@
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 from DIRAC.AccountingSystem.private.Plotters.BasePlotter import BasePlotter
-from DIRAC.AccountingSystem.private.Plots import *
 from DIRAC.Core.Utilities import Time
 
 class DataOperationPlotter(BasePlotter):
@@ -47,7 +46,7 @@ class DataOperationPlotter(BasePlotter):
                  'starttime' : startTime,
                  'endtime' : endTime,
                  'span' : granularity }
-    return generateTimedStackedBarPlot( filename, dataDict, metadata )
+    return self._generateTimedStackedBarPlot( filename, dataDict, metadata )
 
   def _plotQuality( self, startTime, endTime, condDict, groupingFields, filename ):
     selectFields = ( self._getSQLStringForGrouping( groupingFields) + ", %s, %s, SUM(%s)/SUM(%s)",
@@ -89,7 +88,7 @@ class DataOperationPlotter(BasePlotter):
                  'starttime' : startTime,
                  'endtime' : endTime,
                  'span' : granularity }
-    return generateQualityPlot( filename, dataDict, metadata )
+    return self._generateQualityPlot( filename, dataDict, metadata )
 
   def _plotTransferedData( self, startTime, endTime, condDict, groupingFields, filename ):
     selectFields = ( self._getSQLStringForGrouping( groupingFields) + ", %s, %s, SUM(%s)/1000000000",
@@ -115,7 +114,7 @@ class DataOperationPlotter(BasePlotter):
                  'span' : granularity,
                  'ylabel' : "Gbyte",
                  'is_cumulative' : True }
-    return generateCumulativePlot( filename, dataDict, metadata )
+    return self._generateCumulativePlot( filename, dataDict, metadata )
 
   def _plotThroughput( self, startTime, endTime, condDict, groupingFields, filename ):
     selectFields = ( self._getSQLStringForGrouping( groupingFields) + ", %s, %s, (SUM(%s)/SUM(%s))/1000000",
@@ -140,4 +139,4 @@ class DataOperationPlotter(BasePlotter):
                  'starttime' : startTime,
                  'endtime' : endTime,
                  'span' : granularity }
-    return generateTimedStackedBarPlot( filename, dataDict, metadata )
+    return self._generateTimedStackedBarPlot( filename, dataDict, metadata )

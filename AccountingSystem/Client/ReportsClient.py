@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/ReportsClient.py,v 1.2 2008/07/11 09:50:16 acasajus Exp $
-__RCSID__ = "$Id: ReportsClient.py,v 1.2 2008/07/11 09:50:16 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/ReportsClient.py,v 1.3 2008/07/24 17:41:31 acasajus Exp $
+__RCSID__ = "$Id: ReportsClient.py,v 1.3 2008/07/24 17:41:31 acasajus Exp $"
 
 import tempfile
 from DIRAC import S_OK, S_ERROR
@@ -42,9 +42,9 @@ class ReportsClient:
     rpcClient = self.__getRPCClient()
     return rpcClient.generateSummary( summaryName, startTime, endTime, argsDict )
 
-  def generatePlot( self, typeName, plotName, startTime, endTime, argsDict, grouping ):
+  def generatePlot( self, typeName, plotName, startTime, endTime, argsDict, grouping, extraArgs = {} ):
     rpcClient = self.__getRPCClient()
-    return rpcClient.generatePlot( typeName, plotName, startTime, endTime, argsDict, grouping )
+    return rpcClient.generatePlot( typeName, plotName, startTime, endTime, argsDict, grouping, extraArgs )
 
   def getPlotToMem( self, plotName ):
     transferClient = self.__getTransferClient()

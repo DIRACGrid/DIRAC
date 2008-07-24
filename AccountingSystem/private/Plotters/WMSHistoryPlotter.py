@@ -2,7 +2,6 @@
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.AccountingSystem.Client.Types.WMSHistory import WMSHistory
 from DIRAC.AccountingSystem.private.Plotters.BasePlotter import BasePlotter
-from DIRAC.AccountingSystem.private.Plots import *
 from DIRAC.Core.Utilities import Time
 
 class WMSHistoryPlotter(BasePlotter):
@@ -34,7 +33,7 @@ class WMSHistoryPlotter(BasePlotter):
                  'span' : granularity,
                  'skipEdgeColor' : True,
                  'ylabel' : "jobs"  }
-    return generateTimedStackedBarPlot( filename, dataDict, metadata )
+    return self._generateTimedStackedBarPlot( filename, dataDict, metadata )
 
   def _plotNumberOfReschedules( self, startTime, endTime, condDict, groupingFields, filename ):
     selectFields = ( self._getSQLStringForGrouping( groupingFields) + ", %s, %s, SUM(%s/%s)",
@@ -60,4 +59,4 @@ class WMSHistoryPlotter(BasePlotter):
                  'span' : granularity,
                  'skipEdgeColor' : True,
                  'ylabel' : "reschedules"  }
-    return generateTimedStackedBarPlot( filename, dataDict, metadata )
+    return self._generateTimedStackedBarPlot( filename, dataDict, metadata )

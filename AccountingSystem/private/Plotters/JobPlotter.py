@@ -2,7 +2,6 @@
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.AccountingSystem.Client.Types.Job import Job
 from DIRAC.AccountingSystem.private.Plotters.BasePlotter import BasePlotter
-from DIRAC.AccountingSystem.private.Plots import *
 from DIRAC.Core.Utilities import Time
 
 class JobPlotter(BasePlotter):
@@ -52,7 +51,7 @@ class JobPlotter(BasePlotter):
                  'starttime' : startTime,
                  'endtime' : endTime,
                  'span' : granularity }
-    return generateQualityPlot( filename, dataDict, metadata )
+    return self._generateQualityPlot( filename, dataDict, metadata )
 
   def _plotCPUUsed( self, startTime, endTime, condDict, groupingFields, filename ):
     selectFields = ( self._getSQLStringForGrouping( groupingFields) + ", %s, %s, SUM(%s)/86400",
@@ -78,7 +77,7 @@ class JobPlotter(BasePlotter):
                  'span' : granularity,
                  'ylabel' : "days",
                  'is_cumulative' : True }
-    return generateCumulativePlot( filename, dataDict, metadata )
+    return self._generateCumulativePlot( filename, dataDict, metadata )
 
   def _plotCPUUsage( self, startTime, endTime, condDict, groupingFields, filename ):
     selectFields = ( self._getSQLStringForGrouping( groupingFields) + ", %s, %s, SUM(%s)/86400",
@@ -103,7 +102,7 @@ class JobPlotter(BasePlotter):
                  'endtime' : endTime,
                  'span' : granularity,
                  'ylabel' : "days" }
-    return generateTimedStackedBarPlot( filename, dataDict, metadata )
+    return self._generateTimedStackedBarPlot( filename, dataDict, metadata )
 
   def _plotTotalNumberOfJobs( self, startTime, endTime, condDict, groupingFields, filename ):
     selectFields = ( self._getSQLStringForGrouping( groupingFields) + ", %s, %s, SUM(%s)",
@@ -129,7 +128,7 @@ class JobPlotter(BasePlotter):
                  'span' : granularity,
                  'ylabel' : "jobs",
                  'is_cumulative' : True }
-    return generateCumulativePlot( filename, dataDict, metadata )
+    return self._generateCumulativePlot( filename, dataDict, metadata )
 
   def _plotNumberOfJobs( self, startTime, endTime, condDict, groupingFields, filename ):
     selectFields = ( self._getSQLStringForGrouping( groupingFields) + ", %s, %s, SUM(%s)",
@@ -154,7 +153,7 @@ class JobPlotter(BasePlotter):
                  'endtime' : endTime,
                  'span' : granularity,
                  'ylabel' : "jobs"  }
-    return generateTimedStackedBarPlot( filename, dataDict, metadata )
+    return self._generateTimedStackedBarPlot( filename, dataDict, metadata )
 
   def _plotInputSandboxSize( self, startTime, endTime, condDict, groupingFields, filename ):
     return self.__plotFieldSizeinMB( startTime, endTime,
@@ -202,7 +201,7 @@ class JobPlotter(BasePlotter):
                  'endtime' : endTime,
                  'span' : granularity,
                  'ylabel' : "MB" }
-    return generateTimedStackedBarPlot( filename, dataDict, metadata )
+    return self._generateTimedStackedBarPlot( filename, dataDict, metadata )
 
   def _plotInputDataFiles( self, startTime, endTime, condDict, groupingFields, filename ):
     return self.__plotDataFiles( startTime, endTime,
@@ -235,4 +234,4 @@ class JobPlotter(BasePlotter):
                  'endtime' : endTime,
                  'span' : granularity,
                  'ylabel' : "files" }
-    return generateTimedStackedBarPlot( filename, dataDict, metadata )
+    return self._generateTimedStackedBarPlot( filename, dataDict, metadata )

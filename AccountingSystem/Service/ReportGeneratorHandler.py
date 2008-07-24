@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/ReportGeneratorHandler.py,v 1.15 2008/07/17 14:27:53 acasajus Exp $
-__RCSID__ = "$Id: ReportGeneratorHandler.py,v 1.15 2008/07/17 14:27:53 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/ReportGeneratorHandler.py,v 1.16 2008/07/24 17:41:17 acasajus Exp $
+__RCSID__ = "$Id: ReportGeneratorHandler.py,v 1.16 2008/07/24 17:41:17 acasajus Exp $"
 import types
 import os
 from DIRAC import S_OK, S_ERROR, rootPath, gConfig, gLogger, gMonitor
@@ -71,7 +71,7 @@ class ReportGeneratorHandler( RequestHandler ):
     return S_OK( summariesGeneator.summariesList() )
 
   types_generatePlot = [ types.StringType, types.StringType, Time._allDateTypes, Time._allDateTypes, types.DictType, types.StringType ]
-  def export_generatePlot( self, typeName, plotName, startTime, endTime, argsDict, grouping ):
+  def export_generatePlot( self, typeName, plotName, startTime, endTime, argsDict, grouping, extraArgs = {} ):
     """
     Plot a accounting
       Arguments:
@@ -79,12 +79,16 @@ class ReportGeneratorHandler( RequestHandler ):
         - startTime
         - endTime
         - argsDict : Arguments to the view.
+        - grouping
+        - extraArgs
     """
+    if extraArgs and type( extraArgs ) != types.DictType:
+      return S_ERROR( "Type mismatch for extraArgs. It has to be a dictionary" )
     plotter = MainPlotter( gAccountingDB, self.serviceInfoDict[ 'clientSetup' ] )
     startTime = int( Time.toEpoch( startTime ) )
     endTime = int( Time.toEpoch( endTime ) )
     gMonitor.addMark( "drawnplots" )
-    return plotter.generate( typeName, plotName, self.getRemoteCredentials(), startTime, endTime, argsDict, grouping )
+    return plotter.generate( typeName, plotName, self.getRemoteCredentials(), startTime, endTime, argsDict, grouping, extraArgs )
 
   types_listPlots = [ types.StringType ]
   def export_listPlots( self, typeName ):

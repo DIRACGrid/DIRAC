@@ -10,14 +10,14 @@ class MainPlotter:
     self.db = db
     self.setup = setup
 
-  def generate( self, typeName, plotName, credDict, startTime, endTime, argsDict, grouping ):
+  def generate( self, typeName, plotName, credDict, startTime, endTime, argsDict, grouping, extraArgs ):
     if typeName not in gPlottersList:
       return S_ERROR( "There's no plotter registered for type %s" % typeName )
     if typeName in gPoliciesList:
       retVal = gPoliciesList[ typeName ].checkPlot( plotName, credDict, argsDict, grouping )
       if not retVal[ 'OK' ]:
         return retVal
-    plotter = gPlottersList[ typeName ]( self.db, self.setup )
+    plotter = gPlottersList[ typeName ]( self.db, self.setup, extraArgs )
     return plotter.generate( plotName, startTime, endTime, argsDict, grouping )
 
   def plotsList( self, typeName ):

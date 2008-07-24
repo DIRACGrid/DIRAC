@@ -3,6 +3,7 @@ from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.AccountingSystem.private.DBUtils import DBUtils
 from DIRAC.AccountingSystem.private.PlotsCache import gPlotsCache
 from DIRAC.Core.Utilities import Time
+from DIRAC.AccountingSystem.private.Plots import *
 
 class BasePlotter(DBUtils):
 
@@ -11,8 +12,14 @@ class BasePlotter(DBUtils):
   _PARAM_CONVERT_TO_GRANULARITY = 'convertToGranularity'
   _VALID_PARAM_CONVERT_TO_GRANULARITY = ( 'sum', 'average' )
 
-  def __init__( self, db, setup ):
+  _EA_THUMBNAIL = 'thumbnail'
+  _EA_WIDTH = 'width'
+  _EA_HEIGHT = 'height'
+  _EA_PADDING = 'figure_padding'
+
+  def __init__( self, db, setup, extraArgs = {} ):
     DBUtils.__init__( self, db, setup )
+    self._extraArgs = extraArgs
 
   def _translateGrouping( self, grouping ):
     return [ grouping ]
@@ -87,3 +94,39 @@ class BasePlotter(DBUtils):
       return "%s"
     else:
       return "CONCAT( %s, ' -> ', %s )"
+
+  def __checkPlotMetadata( self, metadata ):
+    if self._EA_WIDTH in self._extraArgs and self._extraArgs[ self._EA_WIDTH ]:
+      try:
+        metadata[ self._EA_WIDTH ] = min( 1600, max( 200, int( self._extraArgs[ self._EA_WIDTH ] ) ) )
+      except:
+        pass
+    if self._EA_HEIGHT in self._extraArgs and self._extraArgs[ self._EA_HEIGHT ]:
+      try:
+        metadata[ self._EA_HEIGHT ] = min( 1600, max( 200, int( self._extraArgs[ self._EA_HEIGHT ] ) ) )
+      except:
+        pass
+    if self._EA_THUMBNAIL in self._extraArgs and self._extraArgs[ self._EA_THUMBNAIL ]:
+      metadata[ 'legend' ] = False
+      #metadata[ 'watermark' ] = False
+      if not self._EA_HEIGHT in metadata:
+        metadata[ self._EA_HEIGHT ] = 200
+      if not self._EA_WIDTH in metadata:
+        metadata[ self._EA_WIDTH ] = 300
+      if not self._EA_PADDING in metadata:
+        metadata[ self._EA_PADDING ] = 20
+      for key in ( 'title', 'ylabel', 'xlabel' ):
+        if key in metadata:
+          del( metadata[ key ] )
+
+  def _generateTimedStackedBarPlot( self, filename, dataDict, metadata ):
+    self.__checkPlotMetadata( metadata )
+    return generateTimedStackedBarPlot( filename, dataDict, metadata )
+
+  def _generateQualityPlot( self, filename, dataDict, metadata ):
+    self.__checkPlotMetadata( metadata )
+    return generateQualityPlot( filename, dataDict, metadata )
+
+  def _generateCumulativePlot( self, filename, dataDict, metadata ):
+    self.__checkPlotMetadata( metadata )
+    return generateCumulativePlot( filename, dataDict, metadata )
