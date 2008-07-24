@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.38 2008/07/23 13:30:20 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.39 2008/07/24 06:33:17 rgracian Exp $
 # File :   Director.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -48,7 +48,7 @@
 
 """
 
-__RCSID__ = "$Id: Director.py,v 1.38 2008/07/23 13:30:20 rgracian Exp $"
+__RCSID__ = "$Id: Director.py,v 1.39 2008/07/24 06:33:17 rgracian Exp $"
 
 import types, time
 
@@ -66,9 +66,9 @@ from DIRAC.Core.Utilities.ThreadPool              import ThreadPool
 from DIRAC                                        import S_OK, S_ERROR, gConfig, gLogger, abort, Source, systemCall, Time
 import DIRAC
 
-MAJOR_WAIT     = 'Waiting'
-MINOR_SUBMIT   = 'Pilot Agent Submission'
-MINOR_RESPONSE = 'Pilot Agent Response'
+MAJOR_WAIT       = 'Waiting'
+MINOR_SUBMIT     = 'Pilot Agent Submission'
+MINOR_RESPONSE   = 'Pilot Agent Response'
 MINOR_SUBMITTING = 'Director Submitting'
 
 import os, sys, re, string, time, shutil
@@ -87,7 +87,7 @@ class Director(Agent):
     """
     Agent.__init__(self,AGENT_NAME)
     # some default values:
-    self.threadStartDelay = 10
+    self.threadStartDelay = 5
     self.jobDicts = {}
     self.log   = gLogger
     # self.jobDB = JobDB()
