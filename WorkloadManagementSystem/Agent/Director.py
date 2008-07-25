@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.43 2008/07/25 06:56:44 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.44 2008/07/25 09:43:29 rgracian Exp $
 # File :   Director.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -48,7 +48,7 @@
 
 """
 
-__RCSID__ = "$Id: Director.py,v 1.43 2008/07/25 06:56:44 rgracian Exp $"
+__RCSID__ = "$Id: Director.py,v 1.44 2008/07/25 09:43:29 rgracian Exp $"
 
 import types, time
 
@@ -249,7 +249,7 @@ class Director(Agent):
       jobDict[attr] = List.fromChar( jobDict[attr] )
 
     if 'Site' in jobDict and jobDict['Site'] == [ 'ANY' ]:
-      del jobDict['Site']
+      jobDict['Site'] = []
 
     for attr in JobJDLIntAttributes:
       jobDict[attr] = intFromClassAd(classAdJob, attr)
