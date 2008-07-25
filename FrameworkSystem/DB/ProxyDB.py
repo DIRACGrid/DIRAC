@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.17 2008/07/25 14:30:59 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.18 2008/07/25 14:42:51 acasajus Exp $
 ########################################################################
 """ ProxyRepository class is a front-end to the proxy repository Database
 """
 
-__RCSID__ = "$Id: ProxyDB.py,v 1.17 2008/07/25 14:30:59 acasajus Exp $"
+__RCSID__ = "$Id: ProxyDB.py,v 1.18 2008/07/25 14:42:51 acasajus Exp $"
 
 import time
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
@@ -329,6 +329,11 @@ class ProxyDB(DB):
     maxMyProxyLifeTime = self.getMyProxyMaxLifeTime()
     #If we have a chain that's 0.8 of max mplifetime don't ask to mp
     if originChainLifeTime > maxMyProxyLifeTime * 0.8:
+      gLogger.error( "Skipping myproxy download",
+                     "user %s %s  chain has %s secs and requested %s secs" % ( userDN,
+                                                                               userGroup,
+                                                                               originChainLifeTime,
+                                                                               maxMyProxyLifeTime ) )
       return S_OK( chain )
 
     lifeTime *= 1.3
