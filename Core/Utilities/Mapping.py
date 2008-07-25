@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: Mapping.py,v 1.8 2008/07/23 12:34:58 asypniew Exp $
+# $Id: Mapping.py,v 1.9 2008/07/25 13:06:46 asypniew Exp $
 ########################################################################
 
 """ All of the data collection and handling procedures for the SiteMappingHandler
@@ -29,6 +29,7 @@ class Mapping:
     self.siteData = {}
     self.timeSeries = {}
     self.updateTimeStamp = {}
+    self.dependencies = {}
     #self.plotFigure = pylab.figure(figsize=(1,1), frameon=False)
     #self.plotFigure.figurePatch.set_alpha(0.0)
     
@@ -274,6 +275,7 @@ class Mapping:
       KML.writeFile('%s/%s' % (filePath, sectionFile[section][0]))
       gLogger.verbose('KML data stored to: %s/%s' % (filePath, sectionFile[section][0]))
       fileCache.addToCache('%s/%s' % (filePath, sectionFile[section][0]))
+      self.addDependency(section, sectionFile[section][0])
       
     ##############################    
     elif section == 'JobSummary':
@@ -333,6 +335,7 @@ class Mapping:
       KML.writeFile('%s/%s' % (filePath, sectionFile[section][0]))
       gLogger.verbose('KML data stored to: %s/%s' % (filePath, sectionFile[section][0]))
       fileCache.addToCache('%s/%s' % (filePath, sectionFile[section][0]))
+      self.addDependency(section, sectionFile[section][0])
       
     ##############################
     elif section == 'PilotSummary':
@@ -367,6 +370,7 @@ class Mapping:
       KML.writeFile('%s/%s' % (filePath, sectionFile[section][0]))
       gLogger.verbose('KML data stored to: %s/%s' % (filePath, sectionFile[section][0]))
       fileCache.addToCache('%s/%s' % (filePath, sectionFile[section][0]))
+      self.addDependency(section, sectionFile[section][0])
       
     ##############################
     elif section == 'DataStorage':
@@ -389,6 +393,7 @@ class Mapping:
       KML.writeFile('%s/%s' % (filePath, sectionFile[section][0]))
       gLogger.verbose('KML data stored to: %s/%s' % (filePath, sectionFile[section][0]))
       fileCache.addToCache('%s/%s' % (filePath, sectionFile[section][0]))
+      self.addDependency(section, sectionFile[section][0])
         
     ##############################
     elif section == 'Animated':
@@ -460,6 +465,7 @@ class Mapping:
         KML[color].writeFile('%s/%s' % (filePath, outFile[color]))
         fileCache.addToCache('%s/%s' % (filePath, outFile[color]))
         gLogger.verbose('Animated KML for color \'%s\' stored to: %s/%s' % (color, filePath, outFile[color]))
+        self.addDependency(section, outFile[color])
         
       # Obviously we need to generate links to, but that hasn't been implemented yet.
       
@@ -471,9 +477,11 @@ class Mapping:
     
   #############################################################################
   def generateIcons(self, section, filePath, fileCache, dataDict):
- 
+   
     sectionFile = dataDict['kml']
     sectionTag = dataDict['img']
+    
+    self.resetDependency(section, sectionFile[section])
   
     gLogger.verbose('Icon generation request received. Section: %s' % section)
     
@@ -513,6 +521,7 @@ class Mapping:
           continue
         
         fileName = '%s/%s-%s.png' % (filePath,sectionTag[section],node)
+        self.addDependency(section, '%s-%s.png' % (sectionTag[section], node))
         
         data = (self.siteData[node]['JobSummary']['Done'], self.siteData[node]['JobSummary']['Running'],\
                 self.siteData[node]['JobSummary']['Stalled'], self.siteData[node]['JobSummary']['Waiting'],\
@@ -550,6 +559,7 @@ class Mapping:
                    
         # Generate plot icon for node
         fileName = '%s/%s-%s.png' % (filePath,sectionTag[section],node)
+        self.addDependency(section, '%s-%s.png' % (sectionTag[section], node))
         data = (doneCleared, aborted)
         pylab.close()
         pylab.figure(figsize=(0.6,0.6))
@@ -604,6 +614,7 @@ class Mapping:
           continue
           
         fileName = '%s/%s-%s.png' % (filePath,sectionTag[section],node) 
+        self.addDependency(section, '%s-%s.png' % (sectionTag[section], node))
         
         # First generate the small plot  
         pylab.close()
@@ -622,6 +633,7 @@ class Mapping:
         
         # Now generate the enlarged plot
         fileName = '%s/%s-%s-large.png' % (filePath,sectionTag[section],node) 
+        self.addDependency(section, '%s-%s-large.png' % (sectionTag[section], node))
           
         pylab.close()
         pylab.figure(figsize=(3,1.5))
@@ -710,5 +722,24 @@ class Mapping:
           data[node][se] = int(float(data[node][se] * 100) / maxSize)
                   
     return data
+    
+  #############################################################################
+  def resetDependency(self, section, addFileList=False):
+    """ Resets a section's dependencies and optionally adds addFile
+    """
+    if addFileList:
+      self.dependencies[section] = addFileList
+    else:
+      self.dependencies[section] = []
+    
+  #############################################################################
+  def addDependency(self, section, fileName):
+    """ Adds a dependency to a section
+    """
+    if section not in self.dependencies:
+      self.dependencies[section] = []
+      
+    if fileName not in self.dependencies[section]:
+      self.dependencies[section].append(fileName)
     
   #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

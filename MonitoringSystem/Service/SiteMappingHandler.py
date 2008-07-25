@@ -1,11 +1,11 @@
 ########################################################################
-# $Id: SiteMappingHandler.py,v 1.7 2008/07/23 13:14:09 asypniew Exp $
+# $Id: SiteMappingHandler.py,v 1.8 2008/07/25 13:04:52 asypniew Exp $
 ########################################################################
 
 """ The SiteMappingHandler...
 """
 
-__RCSID__ = "$Id: SiteMappingHandler.py,v 1.7 2008/07/23 13:14:09 asypniew Exp $"
+__RCSID__ = "$Id: SiteMappingHandler.py,v 1.8 2008/07/25 13:04:52 asypniew Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -88,6 +88,7 @@ def initializeSiteMappingHandler( serviceInfo ):
   cacheExceptions = gConfig.getValue(csSection+'/CacheExceptions', '')
   if cacheExceptions:
     cacheExceptions = cacheExceptions.split(';')
+    dataDict['CacheExceptions'] = cacheExceptions
     # We are going to add on the baseFilePath so that the file cache will include the entire file in its exclusions
     for i in range(len(cacheExceptions)):
       cacheExceptions[i] = re.escape(baseFilePath + '/') + cacheExceptions[i]
@@ -153,23 +154,80 @@ class SiteMappingHandler( RequestHandler ):
         gLogger.verbose('Site data updated. Section: %s' % section)
 
     return result
+    
+  ###########################################################################
+  def checkDependencies(self, baseName):
+    """ Ensures that all dependencies for baseName are in the cache
+    """
+    
+    gLogger.verbose('Checking dependencies for: %s' % baseName)
+        
+    # If we don't even have a list, then obviously stuff isn't there
+    if not siteData.dependencies:
+      gLogger.verbose('Dependency list does not exist.')
+      return False
+      
+    # Found out which section we need to check
+    ext = self.getExt(baseName)
+    gLogger.verbose('File type detected as: %s' % ext)
+    dataType = self.translateType(ext)
+    gLogger.verbose('Data type detected as: %s' % dataType)
+    section = self.translateFile(baseName, dataType)
+    
+    # If the section isn't listed, then obviously it isn't updated.
+    if section not in siteData.dependencies:
+      gLogger.verbose('Section %s not found in dependency list.' % section)
+      return False
+          
+    gLogger.verbose('Dependencies are located in section: %s' % section)
+      
+    # Now generate a list of cached files
+    fileList = os.listdir(baseFilePath)
+    
+    # Now make sure everything is there
+    for fileName in siteData.dependencies[section]:
+      if fileName not in fileList:
+        for reg in dataDict['CacheExceptions']:
+          if re.match(reg, fileName):
+            # It's an exception: ignore it
+            break
+        else:
+          # It should have been there.
+          gLogger.verbose('Dependency check failed. File missing: %s' % fileName)
+          return False
+    else:
+      gLogger.verbose('All dependencies appear to be in order.')
+      return True
           
   ###########################################################################
-  def getFile(self, fileName):
+  def getFile(self, fileName, params=[]):
     """ Returns the contents of the given file, purging and reupdating if necessary
     """
         
     # This processing prevents exploits (such as arbitrary file concatenation or arbitrary file purging)
     baseName = self.getBaseFile(fileName)
     gLogger.verbose('Requested file: %s\nProcessed base name: %s' % (fileName, baseName))
-
     gLogger.verbose('File requested: %s/%s' % (baseFilePath, baseName))
     
     # Double-check that the cache is up-to-date
     fileCache.purge()
-        
-    result = fileCache.getFileData('%s/%s' % (baseFilePath, baseName))
-    if not result['OK']:
+    
+    # Contigent updating?
+    if 'DependencyUpdateAll' in params:
+      # If a dependency is missing, then force an update;
+      #   otherwise, don't do anything
+      if not self.checkDependencies(baseName):
+        gLogger.verbose('Dependency check failed. Forcing update.')
+        params.append('ForceUpdateAll')
+    
+    # If we want to force an update, just pretend the file doesn't exist
+    if 'ForceUpdateAll' in params:
+      gLogger.verbose('Forced update received for file: %s' % baseName)
+      result = {'OK' : False}
+    else:
+      result = fileCache.getFileData('%s/%s' % (baseFilePath, baseName))
+      
+    if not result['OK']:  
       gLogger.verbose('File not found. Let\'s try an update...')
       # The file was not found, so (hopefully) it just needs to be regenerated
       
@@ -190,6 +248,10 @@ class SiteMappingHandler( RequestHandler ):
       
       # Then generate the relevant data  
       gLogger.verbose('...Data updated. Generating files...')
+      
+      # If we want to update everything, set dataType = False so all types are generated
+      if 'ForceUpdateAll' in params:
+        dataType = False
       result = self.generateSection(section, dataType, baseFilePath, fileCache, dataDict)
       if not result['OK']:
         return S_ERROR('Failed to generate data.')
@@ -245,8 +307,14 @@ class SiteMappingHandler( RequestHandler ):
     """
     gLogger.verbose('Transfer requested received: %s' % fileId)
     dataToWrite = False
-    if fileId['Type'] == 'File':
-      result = self.getFile(fileId['Data'])
+    if fileId['Type'] == 'File' or fileId['Type'] == 'File_CheckDependencies' or fileId['Type'] == 'File_ForceAll':
+      if fileId['Type'] == 'File_CheckDependencies':
+        params = ['DependencyUpdateAll']
+      elif fileId['Type'] == 'File_ForceAll':
+        params = ['ForceUpdateAll']
+      else:
+        params = []
+      result = self.getFile(fileId['Data'], params)
       if not result['OK']:
         return S_ERROR('Failed to get file data. Result: %s' % result)
       dataToWrite = result['Value']
