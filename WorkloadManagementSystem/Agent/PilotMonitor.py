@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotMonitor.py,v 1.10 2008/07/24 06:17:08 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotMonitor.py,v 1.11 2008/07/25 17:56:32 rgracian Exp $
 # File :   PilotMonitor.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
      of the AgentMonitor instance for all Grids.
 """
 
-__RCSID__ = "$Id: PilotMonitor.py,v 1.10 2008/07/24 06:17:08 rgracian Exp $"
+__RCSID__ = "$Id: PilotMonitor.py,v 1.11 2008/07/25 17:56:32 rgracian Exp $"
 
 from DIRAC.Core.Base.Agent    import Agent
 from DIRAC                    import S_OK, S_ERROR, gConfig, gLogger
@@ -62,6 +62,12 @@ class PilotMonitor(Agent):
       for jobID in jobList:
       
         self.log.info( "Processing job", jobID )
+
+        result = jobDB.lookUpJobInQueue(jobID)
+        if not result:
+          self.jobDB.setJobAttribute(jobID,"MinorStatus", 'Job Not in TaskQueue' )
+          continue
+
       
         result = self.pilotDB.getPilotsForJob(int(jobID))
         if not result['OK']:
