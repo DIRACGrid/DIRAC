@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.44 2008/07/25 09:43:29 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.45 2008/07/25 17:28:12 rgracian Exp $
 # File :   Director.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -48,7 +48,7 @@
 
 """
 
-__RCSID__ = "$Id: Director.py,v 1.44 2008/07/25 09:43:29 rgracian Exp $"
+__RCSID__ = "$Id: Director.py,v 1.45 2008/07/25 17:28:12 rgracian Exp $"
 
 import types, time
 
@@ -70,6 +70,7 @@ MAJOR_WAIT       = 'Waiting'
 MINOR_SUBMIT     = 'Pilot Agent Submission'
 MINOR_RESPONSE   = 'Pilot Agent Response'
 MINOR_SUBMITTING = 'Director Submitting'
+MINOR_NOTINQUEUE = 'Job Not in TaskQueue'
 
 import os, sys, re, string, time, shutil
 
@@ -149,6 +150,13 @@ class Director(Agent):
       Try to insert the job in the corresponding Thread Pool, disable the Thread Pool
       until next itration once it becomes full
     """
+    result = jobDB.lookUpJobInQueue(job)
+    if not result['OK']:
+      # Job no longer in the Queues
+      del self.jobDicts[job]
+      updateJobStatus( self.log, AGENT_NAME, job, MAJOR_WAIT, MINOR_NOTINQUEUE )
+      return
+
     jobdict = self.jobDicts[job]
     submitPool = jobdict['SubmitPool']
 
@@ -443,6 +451,9 @@ def updateJobStatus( logger, name, jobID, majorStatus, minorStatus=None, logReco
   """This method updates the job status in the JobDB.
   """
   # FIXME: this log entry should go into JobDB
+  ret = jobDB.getJobAttribute(job, 'Status')
+  if not ret['OK'] or not ret['Value'] == MAJOR_WAIT:
+    return True
   logger.verbose("jobDB.setJobAttribute( %s, 'Status', '%s', update=True )" % ( jobID, majorStatus ) )
   result = jobDB.setJobAttribute( jobID, 'Status', majorStatus, update=True )
 
