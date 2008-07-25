@@ -30,7 +30,7 @@ def initializeRequestManagerHandler(serviceInfo):
 
 class RequestManagerHandler(RequestHandler):
 
-  types_setRequest = [StringType,StringType]
+  types_setRequest = [StringType,[StringType,UnicodeType]]
   def export_setRequest(self,requestName,requestString):
     """ Set a new request
     """
