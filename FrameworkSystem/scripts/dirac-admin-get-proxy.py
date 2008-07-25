@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/scripts/dirac-admin-get-proxy.py,v 1.2 2008/07/24 10:56:48 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/scripts/dirac-admin-get-proxy.py,v 1.3 2008/07/25 13:12:03 acasajus Exp $
 # File :   dirac-admin-get-proxy
 # Author : Stuart Paterson
 ########################################################################
-__RCSID__   = "$Id: dirac-admin-get-proxy.py,v 1.2 2008/07/24 10:56:48 acasajus Exp $"
-__VERSION__ = "$Revision: 1.2 $"
+__RCSID__   = "$Id: dirac-admin-get-proxy.py,v 1.3 2008/07/25 13:12:03 acasajus Exp $"
+__VERSION__ = "$Revision: 1.3 $"
 import os
 from DIRACEnvironment import DIRAC
 from DIRAC.Core.Base import Script
@@ -74,7 +74,7 @@ if userDN.find( "/" ) != 0:
   userName = userDN
   retVal = CS.getDNForUsername( userName )
   if not retVal[ 'OK' ]:
-    print "Cannot discover DN for username %s" % ( userName, retVal[ 'Value' ] )
+    print "Cannot discover DN for username %s\n\t%s" % ( userName, retVal[ 'Message' ] )
     DIRAC.exit(2)
   DNList = retVal[ 'Value' ]
   if len( DNList ) > 1:
