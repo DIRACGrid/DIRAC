@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.16 2008/07/23 13:13:57 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.17 2008/07/25 14:30:59 acasajus Exp $
 ########################################################################
 """ ProxyRepository class is a front-end to the proxy repository Database
 """
 
-__RCSID__ = "$Id: ProxyDB.py,v 1.16 2008/07/23 13:13:57 acasajus Exp $"
+__RCSID__ = "$Id: ProxyDB.py,v 1.17 2008/07/25 14:30:59 acasajus Exp $"
 
 import time
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
@@ -334,6 +334,7 @@ class ProxyDB(DB):
     lifeTime *= 1.3
     if lifeTime > maxMyProxyLifeTime:
       lifeTime = maxMyProxyLifeTime
+    gLogger.error( "Renewing proxy from myproxy", "user %s %s for %s secs" % ( userDN, userGroup, lifeTime ) )
 
     myProxy = MyProxy( server = self.getMyProxyServer() )
     retVal = myProxy.getDelegatedProxy( chain, lifeTime )
@@ -346,7 +347,9 @@ class ProxyDB(DB):
     chainGroup = retVal['Value']
     if chainGroup != userGroup:
       return S_ERROR( "Mismatch between renewed proxy group and expected: %s vs %s" % ( userGroup, chainGroup ) )
-    self.storeProxy( userDN, userGroup, chain )
+    retVal = self.storeProxy( userDN, userGroup, chain )
+    if not retVal[ 'OK' ]:
+      gLogger.error( "Cannot store proxy after renewal", retVal[ 'Message' ] )
     retVal = myProxy.getServiceDN()
     if not retVal[ 'OK' ]:
       hostDN = userDN
