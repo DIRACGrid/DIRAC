@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobLoggingDB.py,v 1.6 2008/07/25 09:19:16 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobLoggingDB.py,v 1.7 2008/07/25 12:41:54 rgracian Exp $
 ########################################################################
 """ JobLoggingDB class is a front-end to the Job Logging Database.
     The following methods are provided
@@ -9,7 +9,7 @@
     getWMSTimeStamps()    
 """    
 
-__RCSID__ = "$Id: JobLoggingDB.py,v 1.6 2008/07/25 09:19:16 rgracian Exp $"
+__RCSID__ = "$Id: JobLoggingDB.py,v 1.7 2008/07/25 12:41:54 rgracian Exp $"
 
 import re, os, sys
 import time
@@ -64,11 +64,10 @@ class JobLoggingDB(DB):
         if type(date) in StringTypes:
           # The date is provided as a string in UTC 
           _date = Time.fromString(date)
-          epoc = time.mktime(date.timetuple())+_date.microsecond/1000000. - MAGIC_EPOC_NUMBER
+          epoc = time.mktime(_date.timetuple())+_date.microsecond/1000000. - MAGIC_EPOC_NUMBER
           time_order = round(epoc,3)  
         elif type(date) == Time._dateTimeType:
-          _date = date
-          epoc = time.mktime(date.timetuple())+_date.microsecond/1000000. - MAGIC_EPOC_NUMBER
+          epoc = time.mktime(_date.timetuple())+_date.microsecond/1000000. - MAGIC_EPOC_NUMBER
           time_order = round(epoc,3)  
         else:
           self.gLogger.error('Incorrect date for the logging record')
