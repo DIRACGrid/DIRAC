@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobLoggingDB.py,v 1.5 2008/07/07 08:24:20 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobLoggingDB.py,v 1.6 2008/07/25 09:19:16 rgracian Exp $
 ########################################################################
 """ JobLoggingDB class is a front-end to the Job Logging Database.
     The following methods are provided
@@ -9,13 +9,13 @@
     getWMSTimeStamps()    
 """    
 
-__RCSID__ = "$Id: JobLoggingDB.py,v 1.5 2008/07/07 08:24:20 rgracian Exp $"
+__RCSID__ = "$Id: JobLoggingDB.py,v 1.6 2008/07/25 09:19:16 rgracian Exp $"
 
 import re, os, sys
-import time, datetime
+import time
 from types import *
 
-from DIRAC              import gLogger,S_OK, S_ERROR
+from DIRAC              import gLogger,S_OK, S_ERROR, Time
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.Core.Base.DB import DB
   
@@ -56,28 +56,28 @@ class JobLoggingDB(DB):
   
     if not date:
       # Make the UTC datetime string and float
-      _date = datetime.datetime.utcnow()
+      _date = Time.dateTime()
       epoc = time.mktime(_date.timetuple())+_date.microsecond/1000000. - MAGIC_EPOC_NUMBER
       time_order = round(epoc,3)      
     else:
       try:
         if type(date) in StringTypes:
           # The date is provided as a string in UTC 
-          epoc = time.mktime(time.strptime(date,'%Y-%m-%d %H:%M:%S'))
-          _date = datetime.datetime.fromtimestamp(epoc)
-          time_order = epoc - MAGIC_EPOC_NUMBER
-        elif type(date) == datetime.datetime:
+          _date = Time.fromString(date)
+          epoc = time.mktime(date.timetuple())+_date.microsecond/1000000. - MAGIC_EPOC_NUMBER
+          time_order = round(epoc,3)  
+        elif type(date) == Time._dateTimeType:
           _date = date
           epoc = time.mktime(date.timetuple())+_date.microsecond/1000000. - MAGIC_EPOC_NUMBER
           time_order = round(epoc,3)  
         else:
           self.gLogger.error('Incorrect date for the logging record')
-          _date = datetime.datetime.utcnow()
+          _date = Time.dateTime()
           epoc = time.mktime(_date.timetuple()) - MAGIC_EPOC_NUMBER
           time_order = round(epoc,3)  
       except:
         self.gLogger.exception('Exception while date evaluation')
-        _date = datetime.datetime.utcnow()
+        _date = Time.dateTime()
         epoc = time.mktime(_date.timetuple()) - MAGIC_EPOC_NUMBER
         time_order = round(epoc,3)     
 
