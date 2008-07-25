@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.35 2008/07/07 16:37:20 acasajus Exp $
-__RCSID__ = "$Id: RequestHandler.py,v 1.35 2008/07/07 16:37:20 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.36 2008/07/25 14:27:11 acasajus Exp $
+__RCSID__ = "$Id: RequestHandler.py,v 1.36 2008/07/25 14:27:11 acasajus Exp $"
 
 import os
 import types
@@ -250,11 +250,11 @@ class RequestHandler:
       peerId = "[%s:%s]" % ( peerCreds[ 'group' ], peerCreds[ 'username' ] )
     else:
       peerId = ""
-    if False:
-      argsString = ", ".join( [ str( arg )[:20] for arg in args ] )
-    else:
+    if gConfig.getValue( "%s/MaskRequestParams" %self.serviceInfoDict[ 'serviceSectionPath' ], "y" ).lower() in ( "y", "yes", "true" ):
       argsString = "<masked>"
-    gLogger.info( "Executing action", "(%s:%s)%s %s( %s )" % ( self.serviceInfoDict[ 'clientAddress' ][0],
+    else:
+      argsString = "\n\t%s\n" % ",\n\t".join( [ str( arg )[:50] for arg in args ] )
+    gLogger.info( "Executing action", "(%s:%s)%s %s(%s)" % ( self.serviceInfoDict[ 'clientAddress' ][0],
                                                         self.serviceInfoDict[ 'clientAddress' ][1],
                                                         peerId,
                                                         method,
