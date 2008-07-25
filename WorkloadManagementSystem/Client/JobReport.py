@@ -1,11 +1,11 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Client/JobReport.py,v 1.14 2008/07/25 08:54:21 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Client/JobReport.py,v 1.15 2008/07/25 09:07:35 rgracian Exp $
 
 """
   JobReport class encapsulates various
   methods of the job status reporting
 """
 
-__RCSID__ = "$Id: JobReport.py,v 1.14 2008/07/25 08:54:21 rgracian Exp $"
+__RCSID__ = "$Id: JobReport.py,v 1.15 2008/07/25 09:07:35 rgracian Exp $"
 
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC import S_OK, S_ERROR, Time
@@ -37,7 +37,7 @@ class JobReport:
     if not self.jobID:
       return S_OK('Local execution, jobID is null.')
 
-    timeStamp = Time.DateTime()
+    timeStamp = Time.toString()
     # add job status record
     self.jobStatusInfo.append((status,minor,timeStamp))
     if sendFlag:
@@ -52,7 +52,7 @@ class JobReport:
     if not self.jobID:
       return S_OK('Local execution, jobID is null.')
 
-    timeStamp = Time.DateTime()
+    timeStamp = Time.toString()
     # add Application status record
     self.appStatusInfo.append((appStatus,timeStamp))
     if sendFlag:
@@ -67,7 +67,7 @@ class JobReport:
     if not self.jobID:
       return S_OK('Local execution, jobID is null.')
 
-    timeStamp = Time.DateTime()
+    timeStamp = Time.toString()
     # add job paramenter record
     self.jobParameters.append((par_name,par_value,timeStamp))
     if sendFlag:
@@ -82,7 +82,7 @@ class JobReport:
     if not self.jobID:
       return S_OK('Local execution, jobID is null.')
 
-    timeStamp = Time.DateTime()
+    timeStamp = Time.toString()
     # add job paramenter record
     for pname,pvalue in parameters:
       self.jobParameters.append((pname,pvalue,timeStamp))
@@ -97,15 +97,15 @@ class JobReport:
 
     statusDict = {}
     for status,minor,dtime in self.jobStatusInfo:
-      statusDict[str(dtime.replace(microsecond=0))] = {'Status':status,
+      statusDict[dtime] = {'Status':status,
                                                        'MinorStatus':minor,
                                                        'ApplicationStatus':'',
-                                                       'Source':"Job_%d" % self.jobID}
+                                                       'Source': self.source}
     for appStatus,dtime in self.appStatusInfo:
-      statusDict[str(dtime.replace(microsecond=0))] = {'Status':'',
+      statusDict[dtime] = {'Status':'',
                                                        'MinorStatus':'',
                                                        'ApplicationStatus':appStatus,
-                                                       'Source':"Job_%d" % self.jobID}
+                                                       'Source': self.source}
 
     if statusDict:
       jobMonitor = RPCClient('WorkloadManagement/JobStateUpdate',timeout=60)
@@ -155,15 +155,15 @@ class JobReport:
 
     print "Job status info:"
     for status,minor,timeStamp in self.jobStatusInfo:
-      print status.ljust(20),minor.ljust(30),str(timeStamp)
+      print status.ljust(20),minor.ljust(30),timeStamp
 
     print "Application status info:"
     for status,timeStamp in self.appStatusInfo:
-      print status.ljust(20),str(timeStamp)
+      print status.ljust(20),timeStamp
 
     print "Job parameters:"
     for pname,pvalue,timeStamp in self.jobParameters:
-      print pname.ljust(20),pvalue.ljust(30),str(timeStamp)
+      print pname.ljust(20),pvalue.ljust(30),timeStamp
 
   def generateRequest(self):
     """ Generate failover requests for the operations in the internal cache
