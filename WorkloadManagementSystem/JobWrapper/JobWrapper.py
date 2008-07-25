@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.49 2008/07/18 07:37:59 rgracian Exp $
+# $Id: JobWrapper.py,v 1.50 2008/07/25 16:18:39 rgracian Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.49 2008/07/18 07:37:59 rgracian Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.50 2008/07/25 16:18:39 rgracian Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -886,7 +886,7 @@ class JobWrapper:
       request.update(requestStored)
 
     # The request is ready, send it now
-    if not request.isEmpty():
+    if not request.isEmpty()['Value']:
       requestClient = RequestClient()
       requestString = request.toXML()
       result = requestClient.setRequest(requestName, requestString)

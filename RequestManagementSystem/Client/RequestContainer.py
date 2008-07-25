@@ -1,4 +1,4 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/RequestContainer.py,v 1.7 2008/07/22 14:04:19 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/RequestContainer.py,v 1.8 2008/07/25 16:18:26 rgracian Exp $
 
 """
 The Data Management Request contains all the necessary information for
@@ -6,11 +6,11 @@ a data management operation
 """
 import commands, os, xml.dom.minidom, types, time, copy, datetime
 from DIRAC.Core.Utilities.File import makeGuid
-from DIRAC import gConfig,gLogger, S_OK, S_ERROR
+from DIRAC import gConfig,gLogger, S_OK, S_ERROR, Time
 from DIRAC.Core.Security.Misc import getProxyInfo
 from DIRAC.Core.Utilities import DEncode
 
-__RCSID__ = "$Id: RequestContainer.py,v 1.7 2008/07/22 14:04:19 acasajus Exp $"
+__RCSID__ = "$Id: RequestContainer.py,v 1.8 2008/07/25 16:18:26 rgracian Exp $"
 
 class RequestContainer:
 
@@ -37,7 +37,7 @@ class RequestContainer:
       # Set some defaults
       for name in self.attributeNames:
         self.attributes[name] = 'Unknown'
-      self.attributes['CreationTime'] = str(datetime.datetime.utcnow())
+      self.attributes['CreationTime'] = str(Time.dateTime())
       self.attributes['Status'] = "New"
       result = getProxyInfo()
       if result['OK']:
@@ -514,8 +514,8 @@ class RequestContainer:
     numSubRequests = self.getNumSubRequests(type)['Value']
     for subRequestInd in range(numSubRequests):
       if not self.isSubRequestEmpty(subRequestInd,type)['Value']:
-        return S_OK(0)
-    return S_OK(1)
+        return S_OK(False)
+    return S_OK(True)
 
   def isRequestEmpty(self):
     """ Check whether all sub-requests are complete
@@ -523,8 +523,8 @@ class RequestContainer:
     requestTypes = self.getSubRequestTypes()['Value']
     for requestType in requestTypes:
       if not self.isRequestTypeEmpty(requestType)['Value']:
-        return S_OK(0)
-    return S_OK(1)
+        return S_OK(False)
+    return S_OK(True)
 
   def isEmpty(self):
     """ Included for compatibility not sure if it is used
