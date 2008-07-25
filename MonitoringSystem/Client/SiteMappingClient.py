@@ -28,6 +28,22 @@ class SiteMappingClient:
     outputFile = '%s/%s' % (outputDir, fileName)
     result = self.transferClient.receiveFile(outputFile, {'Type' : 'File', 'Data' : fileName})
     return result
+    
+  ###########################################################################  
+  def getFileForceAll(self, fileName, outputDir):
+    """ Retrieves a single file and puts it in the output directory (forces full section update)
+    """
+    outputFile = '%s/%s' % (outputDir, fileName)
+    result = self.transferClient.receiveFile(outputFile, {'Type' : 'File_ForceAll', 'Data' : fileName})
+    return result
+    
+  ###########################################################################  
+  def getFileCheckDependencies(self, fileName, outputDir):
+    """ Retrieves a single file and puts it in the output directory (forces full section update if dependencies are missing)
+    """
+    outputFile = '%s/%s' % (outputDir, fileName)
+    result = self.transferClient.receiveFile(outputFile, {'Type' : 'File_CheckDependencies', 'Data' : fileName})
+    return result
 
   ###########################################################################    
   def getFiles(self, fileList, outputDir):
@@ -94,5 +110,6 @@ class SiteMappingClient:
     return fileList
 
   #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
+
 
 
