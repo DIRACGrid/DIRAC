@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.18 2008/07/25 14:42:51 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.19 2008/07/25 14:51:18 acasajus Exp $
 ########################################################################
 """ ProxyRepository class is a front-end to the proxy repository Database
 """
 
-__RCSID__ = "$Id: ProxyDB.py,v 1.18 2008/07/25 14:42:51 acasajus Exp $"
+__RCSID__ = "$Id: ProxyDB.py,v 1.19 2008/07/25 14:51:18 acasajus Exp $"
 
 import time
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
@@ -345,14 +345,22 @@ class ProxyDB(DB):
     retVal = myProxy.getDelegatedProxy( chain, lifeTime )
     if not retVal[ 'OK' ]:
       return retVal
-    chain = retVal[ 'Value' ]
-    retVal = chain.getDIRACGroup()
+    mpChain = retVal[ 'Value' ]
+    retVal = mpChain.getRemainingSecs()
+    if not retVal[ 'OK' ]:
+      return S_ERROR( "Can't retrieve remaining secs from renewed proxy: %s" % retVal[ 'Message' ] )
+    mpChainSecsLeft = retVal['Value']
+    if mpChainSecsLeft < originChainLifeTime:
+      gLogger.info( "Chain downloaded from myproxy has less lifetime than the one stored in the db",
+                    "\n Downloaded from myproxy: %s secs\n Stored in DB: %s secs" % ( mpChainSecsLeft, originChainLifeTime ) )
+      return S_OK( chain )
+    retVal = mpChain.getDIRACGroup()
     if not retVal[ 'OK' ]:
       return S_ERROR( "Can't retrieve DIRAC Group from renewed proxy: %s" % retVal[ 'Message' ] )
     chainGroup = retVal['Value']
     if chainGroup != userGroup:
       return S_ERROR( "Mismatch between renewed proxy group and expected: %s vs %s" % ( userGroup, chainGroup ) )
-    retVal = self.storeProxy( userDN, userGroup, chain )
+    retVal = self.storeProxy( userDN, userGroup, mpChain )
     if not retVal[ 'OK' ]:
       gLogger.error( "Cannot store proxy after renewal", retVal[ 'Message' ] )
     retVal = myProxy.getServiceDN()
@@ -361,7 +369,7 @@ class ProxyDB(DB):
     else:
       hostDN = retVal[ 'Value' ]
     self.logAction( "myproxy renewal", hostDN, "host", userDN, userGroup )
-    return S_OK( chain )
+    return S_OK( mpChain )
 
   def getProxy( self, userDN, userGroup, requiredLifeTime = False ):
     """ Get proxy string from the Proxy Repository for use with userDN
