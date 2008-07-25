@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.46 2008/07/25 17:31:09 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.47 2008/07/25 17:32:40 rgracian Exp $
 # File :   Director.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -48,7 +48,7 @@
 
 """
 
-__RCSID__ = "$Id: Director.py,v 1.46 2008/07/25 17:31:09 rgracian Exp $"
+__RCSID__ = "$Id: Director.py,v 1.47 2008/07/25 17:32:40 rgracian Exp $"
 
 import types, time
 
@@ -451,7 +451,7 @@ def updateJobStatus( logger, name, jobID, majorStatus, minorStatus=None, logReco
   """This method updates the job status in the JobDB.
   """
   # FIXME: this log entry should go into JobDB
-  ret = jobDB.getJobAttribute(job, 'Status')
+  ret = jobDB.getJobAttribute(jobID, 'Status')
   if not ret['OK'] or not ret['Value'] == MAJOR_WAIT:
     return True
   logger.verbose("jobDB.setJobAttribute( %s, 'Status', '%s', update=True )" % ( jobID, majorStatus ) )
