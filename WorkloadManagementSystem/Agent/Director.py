@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.42 2008/07/25 06:40:21 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.43 2008/07/25 06:56:44 rgracian Exp $
 # File :   Director.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -48,7 +48,7 @@
 
 """
 
-__RCSID__ = "$Id: Director.py,v 1.42 2008/07/25 06:40:21 rgracian Exp $"
+__RCSID__ = "$Id: Director.py,v 1.43 2008/07/25 06:56:44 rgracian Exp $"
 
 import types, time
 
@@ -632,7 +632,7 @@ class PilotDirector:
         return S_ERROR( 'Could not create JDL:', job )
   
       # get a valid proxy
-      ret = gProxyManager.getPilotProxyFromDIRACGroup( ownerDN, ownerGroup, getPilotProxyFromDIRACGroup = 86400 )
+      ret = gProxyManager.getPilotProxyFromDIRACGroup( ownerDN, ownerGroup, requiredTimeLeft = 86400 )
       if not ret['OK']:
         self.log.error( ret['Message'] )
         self.log.error( 'Could not get proxy:', 'User "%s", Group "%s"' % ( ownerDN, ownerGroup ) )
