@@ -1,15 +1,14 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Client/JobReport.py,v 1.13 2008/07/17 12:47:28 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Client/JobReport.py,v 1.14 2008/07/25 08:54:21 rgracian Exp $
 
 """
   JobReport class encapsulates various
   methods of the job status reporting
 """
 
-__RCSID__ = "$Id: JobReport.py,v 1.13 2008/07/17 12:47:28 rgracian Exp $"
+__RCSID__ = "$Id: JobReport.py,v 1.14 2008/07/25 08:54:21 rgracian Exp $"
 
-import datetime
 from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR, Time
 from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
 from DIRAC.RequestManagementSystem.Client.DISETSubRequest import DISETSubRequest
 
@@ -38,29 +37,14 @@ class JobReport:
     if not self.jobID:
       return S_OK('Local execution, jobID is null.')
 
-    if not sendFlag:
-      # add job status record
-      timeStamp = datetime.datetime.utcnow()
-      self.jobStatusInfo.append((status,minor,timeStamp))
-      return S_OK()
-
-    if self.jobStatusInfo or self.appStatusInfo:
-      # add new status record and try to send them all
-      timeStamp = datetime.datetime.utcnow()
-      self.jobStatusInfo.append((status,minor,timeStamp))
-      result = self.sendStoredJobStatusInfo()
-      return result
-    else:
-      # send the new status record
-      jobMonitor = RPCClient('WorkloadManagement/JobStateUpdate',timeout=60)
-      result = jobMonitor.setJobStatus(self.jobID,status,minor,self.source)
-      if result['OK']:
-        return result
-
-    # add new job status record
-    timeStamp = datetime.datetime.utcnow()
+    timeStamp = Time.DateTime()
+    # add job status record
     self.jobStatusInfo.append((status,minor,timeStamp))
-    return S_ERROR('Failed to update the job status')
+    if sendFlag:
+      # and send
+      return self.sendStoredStatusInfo()
+
+    return S_OK()
 
   def setApplicationStatus(self, appStatus, sendFlag=True):
     """ Send application status information to the JobState service for jobID
@@ -68,28 +52,14 @@ class JobReport:
     if not self.jobID:
       return S_OK('Local execution, jobID is null.')
 
-    if not sendFlag:
-      # add job status record
-      timeStamp = datetime.datetime.utcnow()
-      self.appStatusInfo.append((appStatus,timeStamp))
-      return S_OK()
-
-    if self.jobStatusInfo or self.appStatusInfo:
-      # add new application status record and try to send them all
-      timeStamp = datetime.datetime.utcnow()
-      self.appStatusInfo.append((appStatus,timeStamp))
-      result = self.sendStoredStatusInfo()
-      return result
-    else:
-      jobMonitor = RPCClient('WorkloadManagement/JobStateUpdate',timeout=60)
-      result = jobMonitor.setJobApplicationStatus(self.jobID,appStatus,self.source)
-      if result['OK']:
-        return result
-
-    # add job status record
-    timeStamp = datetime.datetime.utcnow()
+    timeStamp = Time.DateTime()
+    # add Application status record
     self.appStatusInfo.append((appStatus,timeStamp))
-    return S_ERROR('Failed to update the application status')
+    if sendFlag:
+      # and send
+      return self.sendStoredStatusInfo()
+
+    return S_OK()
 
   def setJobParameter(self,par_name,par_value, sendFlag = True):
     """ Send job parameter for jobID
@@ -97,27 +67,14 @@ class JobReport:
     if not self.jobID:
       return S_OK('Local execution, jobID is null.')
 
-    if not sendFlag:
-      # add job status record
-      timeStamp = datetime.datetime.utcnow()
-      self.jobParameters.append((par_name,par_value,timeStamp))
-      return S_OK()
-
-    if self.jobParameters:
-      timeStamp = datetime.datetime.utcnow()
-      self.jobParameters.append((par_name,par_value,timeStamp))
-      result = self.sendStoredJobParameters()
-      return result
-    else:
-      jobMonitor = RPCClient('WorkloadManagement/JobStateUpdate',timeout=60)
-      result = jobMonitor.setJobParameter(self.jobID,par_name,par_value)
-      if result['OK']:
-        return result
-
-    # add job status record
-    timeStamp = datetime.datetime.utcnow()
+    timeStamp = Time.DateTime()
+    # add job paramenter record
     self.jobParameters.append((par_name,par_value,timeStamp))
-    return S_ERROR('Failed to send parameters')
+    if sendFlag:
+      # and send
+      return self.sendStoredJobParameters()
+
+    return S_OK()
 
   def setJobParameters(self, parameters, sendFlag = True):
     """ Send job parameters for jobID
@@ -125,30 +82,14 @@ class JobReport:
     if not self.jobID:
       return S_OK('Local execution, jobID is null.')
 
-    if not sendFlag:
-      # add job status record
-      timeStamp = datetime.datetime.utcnow()
-      for pname,pvalue in parameters:
-        self.jobParameters.append((pname,pvalue,timeStamp))
-      return S_OK()
-
-    if self.jobParameters:
-      timeStamp = datetime.datetime.utcnow()
-      for pname,pvalue in parameters:
-        self.jobParameters.append((pname,pvalue,timeStamp))
-      result = self.sendStoredJobParameters()
-      return result
-    else:
-      jobMonitor = RPCClient('WorkloadManagement/JobStateUpdate',timeout=60)
-      result = jobMonitor.setJobParameters(self.jobID,parameters)
-      if result['OK']:
-        return result
-
-    # add job status record
-    timeStamp = datetime.datetime.utcnow()
+    timeStamp = Time.DateTime()
+    # add job paramenter record
     for pname,pvalue in parameters:
       self.jobParameters.append((pname,pvalue,timeStamp))
-    return S_ERROR('Failed to send parameters')
+
+    if sendFlag:
+      # and send
+      return self.sendStoredJobParameters()
 
   def sendStoredStatusInfo(self):
     """ Send the job status information stored in the internal cache
@@ -188,7 +129,7 @@ class JobReport:
   def sendStoredJobParameters(self):
     """ Send the job parameters stored in the internal cache
     """
-
+    # FIXME: What if the same paramenter is set twice?
     parameters = []
     for pname,pvalue,timeStamp in self.jobParameters:
       parameters.append((pname,pvalue))
