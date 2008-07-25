@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.45 2008/07/25 17:28:12 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.46 2008/07/25 17:31:09 rgracian Exp $
 # File :   Director.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -48,7 +48,7 @@
 
 """
 
-__RCSID__ = "$Id: Director.py,v 1.45 2008/07/25 17:28:12 rgracian Exp $"
+__RCSID__ = "$Id: Director.py,v 1.46 2008/07/25 17:31:09 rgracian Exp $"
 
 import types, time
 
@@ -151,7 +151,7 @@ class Director(Agent):
       until next itration once it becomes full
     """
     result = jobDB.lookUpJobInQueue(job)
-    if not result['OK']:
+    if not result:
       # Job no longer in the Queues
       del self.jobDicts[job]
       updateJobStatus( self.log, AGENT_NAME, job, MAJOR_WAIT, MINOR_NOTINQUEUE )
