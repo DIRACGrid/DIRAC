@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.47 2008/07/25 17:32:40 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.48 2008/07/26 04:49:32 rgracian Exp $
 # File :   Director.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -48,7 +48,7 @@
 
 """
 
-__RCSID__ = "$Id: Director.py,v 1.47 2008/07/25 17:32:40 rgracian Exp $"
+__RCSID__ = "$Id: Director.py,v 1.48 2008/07/26 04:49:32 rgracian Exp $"
 
 import types, time
 
@@ -67,10 +67,16 @@ from DIRAC                                        import S_OK, S_ERROR, gConfig,
 import DIRAC
 
 MAJOR_WAIT       = 'Waiting'
+MAJOR_FAILED     = 'Failed'
 MINOR_SUBMIT     = 'Pilot Agent Submission'
 MINOR_RESPONSE   = 'Pilot Agent Response'
 MINOR_SUBMITTING = 'Director Submitting'
 MINOR_NOTINQUEUE = 'Job Not in TaskQueue'
+
+ERROR_JDL        = 'Could not create GRID JDL'
+ERROR_NOJDL      = 'Job JDL not available'
+ERROR_ILEGALJDL  = 'Illegal Job JDL'
+ERROR_MISSPAR    = '"%s" not defined for Job'
 
 import os, sys, re, string, time, shutil
 
@@ -217,15 +223,15 @@ class Director(Agent):
     result = jobDB.getJobJDL(job)
     if not result['OK']:
       self.log.error(result['Message'])
-      updateJobStatus( self.log, AGENT_NAME, job, 'Failed', 'No Job JDL Available', logRecord=True)
+      updateJobStatus( self.log, AGENT_NAME, job, MAJOR_FAILED, ERROR_NOJDL, logRecord=True)
       return False
 
     # FIXME: this should be checked by the JobManager and the Optimizers
     jdl = result['Value']
     classAdJob = ClassAd(jdl)
     if not classAdJob.isOK():
-      self.log.error( 'Illegal JDL for job:', job )
-      updateJobStatus( self.log, AGENT_NAME, job, 'Failed', 'Job JDL Illegal', logRecord=True )
+      self.log.error( ERROR_ILEGALJDL, job )
+      updateJobStatus( self.log, AGENT_NAME, job, MAJOR_FAILED, ERROR_ILEGALJDL, logRecord=True )
       return False
 
     jobDict = {'JobID': job}
@@ -243,8 +249,8 @@ class Director(Agent):
       jobDict[attr] = stringFromClassAd(classAdJob, attr)
       # FIXME: this should be checked by the JobManager and the Optimizers
       if not jobDict[attr]:
-        self.log.error( '%s not defined for job:' % attr, job )
-        updateJobStatus( self.log, AGENT_NAME, job, 'Failed', 'No %s Specified' % attr, logRecord=True )
+        self.log.error( ERROR_MISSPAR % attr, job )
+        updateJobStatus( self.log, AGENT_NAME, job, MAJOR_FAILED, ERROR_MISSPAR % attr, logRecord=True )
         return False
 
     for attr in JobJDLStringAttributes:
@@ -272,8 +278,8 @@ class Director(Agent):
     # FIXME: this should be checked by the JobManager and the Optimizers
     for attr in ['Owner','OwnerDN','JobType','OwnerGroup']:
       if not attributes.has_key(attr):
-        updateJobStatus( self.log, AGENT_NAME, job, 'Failed', '%s Undefined' % attr, logRecord=True )
-        self.log.error( 'Missing Job Attribute "%s":' %attr, job )
+        updateJobStatus( self.log, AGENT_NAME, job, MAJOR_FAILED, ERROR_MISSPAR % attr, logRecord=True )
+        self.log.error( ERROR_MISSPAR %attr, job )
         return False
       jobDict[attr] = attributes[attr]
 
@@ -447,23 +453,19 @@ def intFromClassAd( classAd, name ):
   return value
 
 
-def updateJobStatus( logger, name, jobID, majorStatus, minorStatus=None, logRecord=False ):
+def updateJobStatus( logger, name, jobID, majorStatus, minorStatus=None, applicationStatus=None, logRecord=False ):
   """This method updates the job status in the JobDB.
   """
-  # FIXME: this log entry should go into JobDB
-  ret = jobDB.getJobAttribute(jobID, 'Status')
-  if not ret['OK'] or not ret['Value'] == MAJOR_WAIT:
-    return True
-  logger.verbose("jobDB.setJobAttribute( %s, 'Status', '%s', update=True )" % ( jobID, majorStatus ) )
-  result = jobDB.setJobAttribute( jobID, 'Status', majorStatus, update=True )
-
-  if result['OK']:
-    if minorStatus:
-      # FIXME: this log entry should go into JobDB
-      logger.verbose("jobDB.setJobAttribute( %s, 'MinorStatus', '%s', update=True)" % ( jobID, minorStatus) )
-      result = jobDB.setJobAttribute( jobID, 'MinorStatus', minorStatus, update=True )
+  # FIXME: this check should go into JobDB
+  if majorStatus == MAJOR_WAIT:
+    ret = jobDB.getJobAttribute(jobID, 'Status')
+    if not ret['OK'] or not ret['Value'] == majorStatus:
+      return True
+  logger.verbose("jobDB.setJobStatus( %s, minor=%s, application=%s )" % ( jobID, minorStatus, applicationStatus ) )
+  result = jobDB.setJobStatus( jobID,minor=minorStatus, application=applicationStatus )
 
   if logRecord and result['OK']:
+    # FIXME: this log entry should go into JobDB
     result = jobLoggingDB.addLoggingRecord( jobID, majorStatus, minorStatus, source=name )
 
   if not result['OK']:
@@ -639,8 +641,8 @@ class PilotDirector:
           shutil.rmtree( workingDirectory )
         except:
           pass
-        updateJobStatus( self.log, AGENT_NAME, job, MAJOR_WAIT, MINOR_SUBMIT, logRecord=True )
-        return S_ERROR( 'Could not create JDL:', job )
+        updateJobStatus( self.log, AGENT_NAME, job, MAJOR_WAIT, MINOR_SUBMIT, ERROR_JDL, logRecord=True )
+        return S_ERROR( ERROR_JDL, job )
   
       # get a valid proxy
       ret = gProxyManager.getPilotProxyFromDIRACGroup( ownerDN, ownerGroup, requiredTimeLeft = 86400 )
