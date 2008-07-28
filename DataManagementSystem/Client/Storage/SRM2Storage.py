@@ -1141,7 +1141,7 @@ class SRM2Storage(StorageBase):
     gfalDict['no_bdii_check'] = 1
     gfalDict['srmv2_spacetokendesc'] = self.spaceToken
     gfalDict['srmv2_desiredpintime'] = 60*60*24
-    gfalDict['protocols'] = ['gsiftp']
+    gfalDict['protocols'] = self.defaultLocalProtocols
 
     oAccounting = DataStoreClient()
     allResults = []
@@ -1403,8 +1403,8 @@ class SRM2Storage(StorageBase):
   def __gfal_prestage(self,gfalObject):
     gLogger.debug("SRM2Storage.__gfal_prestage: Performing gfal_prestage")
     gLogger.info("SRM2Storage.__gfal_prestage: WE ARE DOING gfal_get() INSTEAD TEMPORARILY.")
-    #errCode,gfalObject,errMessage = gfal.gfal_prestage(gfalObject)
-    errCode,gfalObject,errMessage = gfal.gfal_get(gfalObject)
+    errCode,gfalObject,errMessage = gfal.gfal_prestage(gfalObject)
+    #errCode,gfalObject,errMessage = gfal.gfal_get(gfalObject)
     if not errCode == 0:
       errStr = "SRM2Storage.__gfal_prestage: Failed to perform gfal_prestage:"
       gLogger.error(errStr,"%s %s" % (errMessage,os.strerror(errCode)))
