@@ -1141,6 +1141,7 @@ class SRM2Storage(StorageBase):
     gfalDict['no_bdii_check'] = 1
     gfalDict['srmv2_spacetokendesc'] = self.spaceToken
     gfalDict['srmv2_desiredpintime'] = 60*60*24
+    gfalDict['protocols'] = ['gsiftp']
 
     oAccounting = DataStoreClient()
     allResults = []
