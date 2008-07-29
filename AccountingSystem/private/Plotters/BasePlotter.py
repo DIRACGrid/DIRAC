@@ -15,6 +15,8 @@ class BasePlotter(DBUtils):
   _EA_THUMBNAIL = 'thumbnail'
   _EA_WIDTH = 'width'
   _EA_HEIGHT = 'height'
+  _EA_THB_WIDTH = 'thb_width'
+  _EA_THB_HEIGHT = 'thb_height'
   _EA_PADDING = 'figure_padding'
 
   def __init__( self, db, setup, extraArgs = {} ):
@@ -106,27 +108,45 @@ class BasePlotter(DBUtils):
         metadata[ self._EA_HEIGHT ] = min( 1600, max( 200, int( self._extraArgs[ self._EA_HEIGHT ] ) ) )
       except:
         pass
+
+  def __checkThumbnailMetadata( self, metadata ):
     if self._EA_THUMBNAIL in self._extraArgs and self._extraArgs[ self._EA_THUMBNAIL ]:
-      metadata[ 'legend' ] = False
-      #metadata[ 'watermark' ] = False
-      if not self._EA_HEIGHT in metadata:
-        metadata[ self._EA_HEIGHT ] = 200
-      if not self._EA_WIDTH in metadata:
-        metadata[ self._EA_WIDTH ] = 300
-      if not self._EA_PADDING in metadata:
-        metadata[ self._EA_PADDING ] = 20
+      thbMD = dict( metadata )
+      thbMD[ 'legend' ] = False
+      if self._EA_THB_HEIGHT in self._extraArgs:
+        thbMD[ self._EA_HEIGHT ] = self._extraArgs[ self._EA_THB_HEIGHT ]
+      else:
+        thbMD[ self._EA_HEIGHT ] = 125
+      if self._EA_THB_WIDTH in self._extraArgs:
+        thbMD[ self._EA_WIDTH ] = self._extraArgs[ self._EA_THB_WIDTH ]
+      else:
+        thbMD[ self._EA_WIDTH ] = 200
+      thbMD[ self._EA_PADDING ] = 0
       for key in ( 'title', 'ylabel', 'xlabel' ):
-        if key in metadata:
-          del( metadata[ key ] )
+        if key in thbMD:
+          del( thbMD[ key ] )
+      return thbMD
+    return False
+
+  def __plotData( self, filename, dataDict, metadata, funcToPlot ):
+    self.__checkPlotMetadata( metadata )
+    finalResult = funcToPlot( filename, dataDict, metadata )
+    if not finalResult[ 'OK' ]:
+      return finalResult
+    thbMD = self.__checkThumbnailMetadata( metadata )
+    if thbMD:
+      thbFilename = "thb-%s" % filename
+      result = funcToPlot( thbFilename, dataDict, thbMD )
+      if not retVal[ 'OK' ]:
+        return retVal
+      finalResult[ 'thumbnail' ] = thbFilename
+    return finalResult
 
   def _generateTimedStackedBarPlot( self, filename, dataDict, metadata ):
-    self.__checkPlotMetadata( metadata )
-    return generateTimedStackedBarPlot( filename, dataDict, metadata )
+    return self.__plotData( filename, dataDict, metadata, generateTimedStackedBarPlot )
 
   def _generateQualityPlot( self, filename, dataDict, metadata ):
-    self.__checkPlotMetadata( metadata )
-    return generateQualityPlot( filename, dataDict, metadata )
+    return self.__plotData( filename, dataDict, metadata, generateQualityPlot )
 
   def _generateCumulativePlot( self, filename, dataDict, metadata ):
-    self.__checkPlotMetadata( metadata )
-    return generateCumulativePlot( filename, dataDict, metadata )
+    return self.__plotData( filename, dataDict, metadata, generateCumulativePlot )
