@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/PlotsCache.py,v 1.2 2008/05/08 14:06:32 acasajus Exp $
-__RCSID__ = "$Id: PlotsCache.py,v 1.2 2008/05/08 14:06:32 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/PlotsCache.py,v 1.3 2008/07/29 09:56:11 acasajus Exp $
+__RCSID__ = "$Id: PlotsCache.py,v 1.3 2008/07/29 09:56:11 acasajus Exp $"
 
 import os
 import os.path
@@ -91,6 +91,8 @@ class PlotsCache:
         return S_ERROR( "Exception while generating %s view: %s" % ( viewName, str(e) ) )
       graceTime = self.__calculateGraceTime( startTime, endTime )
       gLogger.info( "Graph %s will be cached for %s seconds" % ( graphName, graceTime ) )
+      if 'thumbnail' in retVal:
+        self.addToCache( retVal[ 'thumbnail' ], graceTime )
       self.__addToCache( graphName, graceTime )
     return S_OK( graphName )
 
