@@ -1,16 +1,15 @@
 import os
 import types
 from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Security.X509Chain import X509Chain
+from DIRAC.Core.Security.X509Chain import X509Chain, g_X509ChainType
 from DIRAC.Core.Security.VOMS import VOMS
 from DIRAC.Core.Security import Locations, CS
 
 
-def getProxyInfo( proxyLoc = False, disableVOMS = False ):
+def getProxyInfo( proxy = False, disableVOMS = False ):
   """
   Returns a dict with all the proxy info
   * values that will be there always
-   'path' : path to the file,
    'chain' : chain object containing the proxy
    'subject' : subject of the proxy
    'issuer' : issuer of the proxy
@@ -20,33 +19,40 @@ def getProxyInfo( proxyLoc = False, disableVOMS = False ):
    'validGroup' : Valid Group in DIRAC
    'secondsLeft' : Seconds left
   * values that can be there
+   'path' : path to the file,
    'group' : DIRAC group
    'username' : DIRAC username
    'identity' : DN that generated the proxy
    'hostname' : DIRAC host nickname
    'VOMS'
   """
-  if not proxyLoc:
-    proxyLoc = Locations.getProxyLocation()
-
-  if not proxyLoc:
-    return S_ERROR( "Can't find valid proxy" )
-
-  chain = X509Chain()
-  retVal = chain.loadProxyFromFile( proxyLoc )
-  if not retVal[ 'OK' ]:
-    return S_ERROR( "Can't load %s: %s" % ( proxyLoc, retVal[ 'Message' ] ) )
+  #Discover proxy location
+  if type( proxy ) == g_X509ChainType:
+    chain = proxy
+    proxyLocation = False
+  else:
+    if not proxy:
+      proxyLocation = Locations.getProxyLocation()
+    elif type( proxy ) in ( types.StringType, types.UnicodeType ):
+      proxyLocation = proxy
+    else:
+      return S_ERROR( "Can't find a valid proxy" )
+    chain = X509Chain()
+    retVal = chain.loadProxyFromFile( proxyLocation )
+    if not retVal[ 'OK' ]:
+      return S_ERROR( "Can't load %s: %s " % ( proxyLocation, retVal[ 'Message' ] ) )
 
   retVal = chain.getCredentials()
   if not retVal[ 'OK' ]:
     return retVal
 
   infoDict = retVal[ 'Value' ]
-  infoDict[ 'path' ] = proxyLoc
   infoDict[ 'chain' ] = chain
+  if proxyLocation:
+    infoDict[ 'path' ] = proxyLoc
 
   if not disableVOMS and chain.isVOMS()['Value']:
-    retVal = VOMS().getVOMSAttributes( proxyLoc )
+    retVal = VOMS().getVOMSAttributes( chain )
     if retVal[ 'OK' ]:
       infoDict[ 'VOMS' ] = retVal[ 'Value' ]
 
