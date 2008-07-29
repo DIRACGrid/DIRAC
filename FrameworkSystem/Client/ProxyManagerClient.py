@@ -1,9 +1,9 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyManagerClient.py,v 1.25 2008/07/29 14:43:54 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyManagerClient.py,v 1.26 2008/07/29 15:29:28 acasajus Exp $
 ########################################################################
 """ ProxyManagementAPI has the functions to "talk" to the ProxyManagement service
 """
-__RCSID__ = "$Id: ProxyManagerClient.py,v 1.25 2008/07/29 14:43:54 acasajus Exp $"
+__RCSID__ = "$Id: ProxyManagerClient.py,v 1.26 2008/07/29 15:29:28 acasajus Exp $"
 
 import os
 import datetime
@@ -251,7 +251,7 @@ class ProxyManagerClient:
     retVal = CS.getGroupsForDN( userDN )
     if not retVal[ 'OK' ]:
       return "DN %s is not valid: %s" % ( userDN, retVal[ 'Message' ] )
-    for group in retVal[ 'Values' ]:
+    for group in retVal[ 'Value' ]:
       props = CS.getPropertiesForGroup( group )
       if Properties.PRIVATE_PILOT in props:
         pilotGroup = group
@@ -279,7 +279,7 @@ class ProxyManagerClient:
     retVal = CS.getGroupsForDN( userDN )
     if not retVal[ 'OK' ]:
       return "DN %s is not valid: %s" % ( userDN, retVal[ 'Message' ] )
-    for group in retVal[ 'Values' ]:
+    for group in retVal[ 'Value' ]:
       props = CS.getPropertiesForGroup( group )
       if Properties.PRIVATE_PILOT in props:
         pilotGroup = group
