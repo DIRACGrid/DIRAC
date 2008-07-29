@@ -121,7 +121,7 @@ class BasePlotter(DBUtils):
         thbMD[ self._EA_WIDTH ] = self._extraArgs[ self._EA_THB_WIDTH ]
       else:
         thbMD[ self._EA_WIDTH ] = 200
-      thbMD[ self._EA_PADDING ] = 0
+      thbMD[ self._EA_PADDING ] = 10
       for key in ( 'title', 'ylabel', 'xlabel' ):
         if key in thbMD:
           del( thbMD[ key ] )

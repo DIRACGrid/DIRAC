@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/PlotsCache.py,v 1.4 2008/07/29 10:01:02 acasajus Exp $
-__RCSID__ = "$Id: PlotsCache.py,v 1.4 2008/07/29 10:01:02 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/PlotsCache.py,v 1.5 2008/07/29 10:02:54 acasajus Exp $
+__RCSID__ = "$Id: PlotsCache.py,v 1.5 2008/07/29 10:02:54 acasajus Exp $"
 
 import os
 import os.path
@@ -83,18 +83,18 @@ class PlotsCache:
     graphName = "%s.png" % self.__generateName( ( viewName, startTime, endTime, argsDict, grouping ) )
     if graphName not in self.cachedGraphs:
       try:
-        retVal = funcToGenerate( startTime, endTime, argsDict, grouping, "%s/%s" % ( self.graphsLocation, graphName ) )
-        if not retVal[ 'OK' ]:
-          return retVal
+        plotRetVal = funcToGenerate( startTime, endTime, argsDict, grouping, "%s/%s" % ( self.graphsLocation, graphName ) )
+        if not plotRetVal[ 'OK' ]:
+          return plotRetVal
       except Exception, e:
         gLogger.exception( "Exception while generating %s view" % viewName )
         return S_ERROR( "Exception while generating %s view: %s" % ( viewName, str(e) ) )
       graceTime = self.__calculateGraceTime( startTime, endTime )
       gLogger.info( "Graph %s will be cached for %s seconds" % ( graphName, graceTime ) )
-      if 'thumbnail' in retVal:
+      if 'thumbnail' in plotRetVal:
         self.__addToCache( retVal[ 'thumbnail' ], graceTime )
       self.__addToCache( graphName, graceTime )
-    return S_OK( graphName )
+    return plotRetVal
 
   @gSynchro
   def __downloadedGraph( self, graphName ):
