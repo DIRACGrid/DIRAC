@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/PlotsCache.py,v 1.7 2008/07/29 10:07:11 acasajus Exp $
-__RCSID__ = "$Id: PlotsCache.py,v 1.7 2008/07/29 10:07:11 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/PlotsCache.py,v 1.8 2008/07/29 10:12:14 acasajus Exp $
+__RCSID__ = "$Id: PlotsCache.py,v 1.8 2008/07/29 10:12:14 acasajus Exp $"
 
 import os
 import os.path
@@ -81,20 +81,25 @@ class PlotsCache:
 
   def generatePlot( self, viewName, startTime, endTime, argsDict, grouping, funcToGenerate ):
     graphName = "%s.png" % self.__generateName( ( viewName, startTime, endTime, argsDict, grouping ) )
-    if graphName not in self.cachedGraphs:
-      try:
-        plotRetVal = funcToGenerate( startTime, endTime, argsDict, grouping, "%s/%s" % ( self.graphsLocation, graphName ) )
-        if not plotRetVal[ 'OK' ]:
-          return plotRetVal
-      except Exception, e:
-        gLogger.exception( "Exception while generating %s view" % viewName )
-        return S_ERROR( "Exception while generating %s view: %s" % ( viewName, str(e) ) )
-      graceTime = self.__calculateGraceTime( startTime, endTime )
-      gLogger.info( "Graph %s will be cached for %s seconds" % ( graphName, graceTime ) )
-      if 'thumbnail' in plotRetVal:
-        self.__addToCache( graphName.replace( ".png", ".thb.png" ), graceTime )
-      self.__addToCache( graphName, graceTime )
-    return S_OK( graphName )
+    if graphName in self.cachedGraphs:
+      return S_OK( graphName )
+    try:
+      plotRetVal = funcToGenerate( startTime, endTime, argsDict, grouping, "%s/%s" % ( self.graphsLocation, graphName ) )
+      if not plotRetVal[ 'OK' ]:
+        return plotRetVal
+    except Exception, e:
+      gLogger.exception( "Exception while generating %s view" % viewName )
+      return S_ERROR( "Exception while generating %s view: %s" % ( viewName, str(e) ) )
+    graceTime = self.__calculateGraceTime( startTime, endTime )
+    gLogger.info( "Graph %s will be cached for %s seconds" % ( graphName, graceTime ) )
+    self.__addToCache( graphName, graceTime )
+    finalResult = S_OK( graphname )
+    if not plotRetVal[ 'thumbnail' ]:
+      return finalResult
+    thbFilename = filename.replace( ".png", ".thb.png" )
+    self.__addToCache( thbFilename, graceTime )
+    finalResult[ 'thumbnail' ] = thbFilename
+    return finalResult
 
   @gSynchro
   def __downloadedGraph( self, graphName ):
