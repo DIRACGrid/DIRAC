@@ -31,6 +31,10 @@ class DBUtils:
         orderFields -> list of fields to order by
     """
     typeName = "%s_%s" % ( self._setup, typeName )
+    validCondDict = {}
+    for key in condDict:
+      if type( condDict[ key ] ) in ( types.ListType, types.TupleType ) and len( condDict[ key ]  ) > 0:
+        validCondDict[ key ] = condDict[ key ]
     retVal = self._acDB._getConnection()
     if not retVal[ 'OK' ]:
       return retVal
