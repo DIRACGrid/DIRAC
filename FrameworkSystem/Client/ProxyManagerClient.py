@@ -1,9 +1,9 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyManagerClient.py,v 1.23 2008/07/23 13:37:00 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyManagerClient.py,v 1.24 2008/07/29 14:01:04 acasajus Exp $
 ########################################################################
 """ ProxyManagementAPI has the functions to "talk" to the ProxyManagement service
 """
-__RCSID__ = "$Id: ProxyManagerClient.py,v 1.23 2008/07/23 13:37:00 acasajus Exp $"
+__RCSID__ = "$Id: ProxyManagerClient.py,v 1.24 2008/07/29 14:01:04 acasajus Exp $"
 
 import os
 import datetime
@@ -20,7 +20,6 @@ from DIRAC import S_OK, S_ERROR, gLogger, gConfig
 gUsersSync = ThreadSafe.Synchronizer()
 gProxiesSync = ThreadSafe.Synchronizer()
 gVOMSProxiesSync = ThreadSafe.Synchronizer()
-gPilotProxiesSync = ThreadSafe.Synchronizer()
 
 class ProxyManagerClient:
 
@@ -235,48 +234,6 @@ class ProxyManagerClient:
     retVal[ 'chain' ] = chain
     return retVal
 
-  def __createPilotProxyFromMyProxy( self, userDN, requestedGroup, vomsAttr, requiredTimeLeft = 43200, proxyToConnect = False ):
-    originChain = False
-
-    #Download initial proxy
-    retVal = CS.getGroupsForDN( userDN )
-    if not retVal[ 'OK' ]:
-      return retVal
-    userValidGroups = retVal[ 'Value' ]
-    for testGroup in userValidGroups:
-      retVal = self.userHasProxy( userDN, testGroup )
-      if retVal[ 'OK' ] and retVal[ 'Value' ]:
-        retVal = self.downloadProxy( userDN, testGroup, requiredTimeLeft = 600, proxyToConnect = proxyToConnect )
-        if retVal[ 'OK' ]:
-          originChain = retVal[ 'Value' ]
-          break
-    if not originChain:
-      return S_ERROR( "Cannot get a proxy for %s to use to get a pilot proxy" % userDN )
-
-    #Get pilot proxy from myproxy
-    myProxy = MyProxy( server = gConfig.getValue( "/DIRAC/VOPolicy/MyProxyServer", "myproxy.cern.ch" ) )
-    retVal = myProxy.getDelegatedProxy( originChain, requiredTimeLeft * 1.5, useDNAsUserName = True )
-    if not retVal[ 'OK' ]:
-      return retVal
-    mpChain = retVal[ 'Value' ]
-
-    #Check groups
-    retVal = mpChain.getDIRACGroup()
-    if not retVal[ 'OK' ]:
-      return S_ERROR( "Can't retrieve DIRAC Group from downloaded proxy: %s" % retVal[ 'Message' ] )
-    proxyGroup = retVal[ 'Value' ]
-    proxyProps = CS.getPropertiesForGroup( proxyGroup )
-    if Properties.GENERIC_PILOT not in proxyProps and Properties.PILOT not in proxyProps:
-      return S_ERROR( "Downloaded proxy from my proxy does not contain a pilot group, has %s" % proxyGroup )
-    requestedProps = CS.getPropertiesForGroup( requestedGroup )
-    if Properties.GENERIC_PILOT in requestedProps:
-      if Properties.GENERIC_PILOT not in proxyProps:
-        return S_ERROR( "Requested a generic group for the pilot (%s) and proxy stored in myproxy is private (%s)" % ( requestedGroup, proxyGroup ) )
-
-    vomsMgr = VOMS()
-    return vomsMgr.setVOMSAttributes( mpChain , vomsAttr )
-
-  @gPilotProxiesSync
   def getPilotProxyFromDIRACGroup( self, userDN, userGroup, requiredTimeLeft = 43200, proxyToConnect = False ):
     """
     Download a pilot proxy with VOMS extensions depending on the group
@@ -290,39 +247,56 @@ class ProxyManagerClient:
       return S_ERROR( "More than one voms attribute defined for group %s: %s" % ( userGroup, vomsGroups ) )
     vomsAttr = vomsGroups[0]
 
-    cacheKey = ( userDN, vomsAttr )
-    if self.__pilotProxiesCache.exists( cacheKey, requiredTimeLeft ):
-      return S_OK( self.__pilotProxiesCache.get( cacheKey ) )
-    retVal = self.__createPilotProxyFromMyProxy( userDN, userGroup, vomsAttr, requiredTimeLeft, proxyToConnect )
+    pilotGroup = False
+    retVal = CS.getGroupsForDN( userDN )
     if not retVal[ 'OK' ]:
-      return retVal
-    chain = retVal[ 'Value' ]
-    self.__pilotProxiesCache.add( cacheKey, chain.getRemainingSecs()['Value'], chain )
-    return S_OK( chain )
+      return "DN %s is not valid: %s" % ( userDN, retVal[ 'Message' ] )
+    for group in retVal[ 'Values' ]:
+      props = CS.getPropertiesForGroup( group )
+      if Properties.PRIVATE_PILOT in props:
+        pilotGroup = group
+      if Properties.GENERIC_PILOT in props:
+        pilotGroup = group
+        #If we find a generic, break
+        break
 
-  @gPilotProxiesSync
+    if not pilotGroup:
+      return S_ERROR( "DN %s has no pilot group defined" % userDN )
+
+    return self.downloadVOMSProxy( userDN,
+                                   pilotGroup,
+                                   limited = False,
+                                   requiredTimeLeft = requiredTimeLeft,
+                                   requiredVOMSAttribute = vomsAttr,
+                                   proxyToConnect = proxyToConnect )
+
   def getPilotProxyFromVOMSGroup( self, userDN, vomsAttr, requiredTimeLeft = 43200, proxyToConnect = False ):
     """
     Download a pilot proxy with VOMS extensions depending on the group
     """
     #Assign VOMS attribute
-
-    groups = CS.getGroupsWithVOMSAttribute( vomsAttr )
-    if not groups:
-      return S_ERROR( "No groups map to voms attribute %s" % vomsAttr )
-    if len( groups ) > 1:
-      return S_ERROR( "More than one group map to voms attr %s: %s" % ( vomsAttr, groups ) )
-    userGroup = groups[0]
-
-    cacheKey = ( userDN, vomsAttr )
-    if self.__pilotProxiesCache.exists( cacheKey, requiredTimeLeft ):
-      return S_OK( self.__pilotProxiesCache.get( cacheKey ) )
-    retVal = self.__createPilotProxyFromMyProxy( userDN, userGroup, vomsAttr, requiredTimeLeft, proxyToConnect )
+    pilotGroup = False
+    retVal = CS.getGroupsForDN( userDN )
     if not retVal[ 'OK' ]:
-      return retVal
-    chain = retVal[ 'Value' ]
-    self.__pilotProxiesCache.add( cacheKey, chain.getRemainingSecs()['Value'], chain )
-    return S_OK( chain )
+      return "DN %s is not valid: %s" % ( userDN, retVal[ 'Message' ] )
+    for group in retVal[ 'Values' ]:
+      props = CS.getPropertiesForGroup( group )
+      if Properties.PRIVATE_PILOT in props:
+        pilotGroup = group
+      if Properties.GENERIC_PILOT in props:
+        pilotGroup = group
+        #If we find a generic, break
+        break
+
+    if not pilotGroup:
+      return S_ERROR( "DN %s has no pilot group defined" % userDN )
+
+    return self.downloadVOMSProxy( userDN,
+                                   pilotGroup,
+                                   limited = False,
+                                   requiredTimeLeft = requiredTimeLeft,
+                                   requiredVOMSAttribute = vomsAttr,
+                                   proxyToConnect = proxyToConnect )
 
   def dumpProxyToFile( self, chain, destinationFile = False, requiredTimeLeft = 600 ):
     """
