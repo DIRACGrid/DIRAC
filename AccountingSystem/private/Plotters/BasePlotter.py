@@ -135,7 +135,7 @@ class BasePlotter(DBUtils):
       return finalResult
     thbMD = self.__checkThumbnailMetadata( metadata )
     if thbMD:
-      thbFilename = "thb-%s" % filename
+      thbFilename = filename.replace( ".png", ".thb.png" )
       result = funcToPlot( thbFilename, dataDict, thbMD )
       if not retVal[ 'OK' ]:
         return retVal
