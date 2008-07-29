@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/PlotsCache.py,v 1.10 2008/07/29 10:15:00 acasajus Exp $
-__RCSID__ = "$Id: PlotsCache.py,v 1.10 2008/07/29 10:15:00 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/PlotsCache.py,v 1.11 2008/07/29 10:15:50 acasajus Exp $
+__RCSID__ = "$Id: PlotsCache.py,v 1.11 2008/07/29 10:15:50 acasajus Exp $"
 
 import os
 import os.path
@@ -97,9 +97,9 @@ class PlotsCache:
     finalResult = S_OK( graphName )
     if not plotRet[ 'thumbnail' ]:
       return finalResult
-    thbFilename = filename.replace( ".png", ".thb.png" )
-    self.__addToCache( thbFilename, graceTime )
-    finalResult[ 'thumbnail' ] = thbFilename
+    thbGraphName = graphName.replace( ".png", ".thb.png" )
+    self.__addToCache( thbGraphName, graceTime )
+    finalResult[ 'thumbnail' ] = thbGraphName
     return finalResult
 
   @gSynchro
