@@ -1,23 +1,18 @@
 ########################################################################
-# $Id: Mapping.py,v 1.9 2008/07/25 13:06:46 asypniew Exp $
+# $Id: Mapping.py,v 1.10 2008/07/29 11:33:29 asypniew Exp $
 ########################################################################
 
 """ All of the data collection and handling procedures for the SiteMappingHandler
 """
 
 from DIRAC.Core.Utilities.KMLData import KMLData
-#from DIRAC.Core.Utilities.MappingTable import MappingTable
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
-#from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
 from DIRAC.Core.Utilities.TimeSeries import TimeSeries
 
 import datetime, os, time
-
 import pylab
-
-#jobDB = JobDB()
 
 tier0 = ['LCG.CERN.ch']
 tier1 = ['LCG.GRIDKA.de', 'LCG.CNAF.it', 'LCG.PIC.es', 'LCG.RAL.uk', 'LCG.IN2P3.fr', 'LCG.NIKHEF.nl']
@@ -28,10 +23,6 @@ class Mapping:
   def __init__(self):
     self.siteData = {}
     self.timeSeries = {}
-    self.updateTimeStamp = {}
-    self.dependencies = {}
-    #self.plotFigure = pylab.figure(figsize=(1,1), frameon=False)
-    #self.plotFigure.figurePatch.set_alpha(0.0)
     
   ###########################################################################
   def getDict(self):
@@ -45,15 +36,7 @@ class Mapping:
     wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator',useCertificates=True)
     jobMon = RPCClient('WorkloadManagement/JobMonitoring',useCertificates=True)
     storUse = RPCClient('DataManagement/StorageUsage',useCertificates=True)
-    
-    if section not in self.updateTimeStamp:
-      self.updateTimeStamp[section] = 0
-    else:
-      now = time.clock()
-      if now - self.updateTimeStamp[section] < dataDict['UpdateExpiration']:
-        gLogger.verbose('Update timestamp triggered. Data is new enough.')
-        return S_OK(self.siteData)
-    
+        
     ##############################
     if section == 'SiteData':
       siteListPath = 'Resources/Sites/LCG'
@@ -88,20 +71,16 @@ class Mapping:
     ##############################
     elif section == 'SiteMask':
       # Update site mask data
-      #mask = self.getSiteMask()
       mask = wmsAdmin.getSiteMask()
-#      gLogger.verbose('Mask: %s' % mask)
       if not mask['OK']:
         gLogger.verbose('Failed to retrieve site mask. Error: %s' % mask['Value'])
         return S_ERROR('Failed to retrieve site mask.')
-#      gLogger.verbose('Site mask: %s' % mask['Value'])
 
-      #Get the overall list of sites from the Monitoring
+      # Get the overall list of sites from the Monitoring
       distinctSites = jobMon.getSites()
       if not distinctSites['OK']:
         gLogger.verbose('Failed to retrieve site mask. Error: %s' % distinctSites['Value'])
         return S_ERROR('Failed to retrieve site listing.')
-#      gLogger.verbose('Site listing: %s' % distinctSites['Value'])
     
       # Generate a dictionary of valid sites
       for node in distinctSites['Value']:
@@ -114,7 +93,7 @@ class Mapping:
     
     ##############################      
     elif section == 'JobSummary':
-      #Update job summary data
+      # Update job summary data
       siteSummary = jobMon.getSiteSummary()
       if not siteSummary['OK']:
         gLogger.verbose('Failed to retrieve site summary data. Result: %s' % siteSummary)
@@ -139,12 +118,7 @@ class Mapping:
         self.timeSeries[node]['TotalJobs'].add(total)
           
     ##############################
-    elif section == 'PilotSummary':
-      # Begin by initializing every site (so we don't get dictionary key exceptions)
-      #for node in self.siteData:
-      #  self.siteData[node]['PilotSummary'] = {}
-      # MOVED: It is now located jsut before the key is accessed
-      
+    elif section == 'PilotSummary':      
       # Retrieve data on the pilots, and compare them to each sites' computing elements ('children')
       # so that we can categorize the data  
       pilotSummary = wmsAdmin.getPilotSummary()
@@ -200,23 +174,23 @@ class Mapping:
     ##############################    
     else:
       return S_ERROR('Invalid update section %s' % section)
-      
-#    gLogger.verbose('Update complete. Current site data: %s' % self.siteData)
-    self.updateTimeStamp[section] = time.clock()
-    
+          
     return S_OK(self.siteData)
   
   ###########################################################################
-  def generateKML(self, section, filePath, fileCache, dataDict):
+  def generateKML(self, section, filePath, dataDict):
   
     gLogger.verbose('KML generation request received. Section: %s' % section)
     
     # scaleData is for scaling done on a tier basis
     scaleData = {'T0' : 1.0, 'T1' : 0.9, 'T2' : 0.6}
+    
     # maxScale, minScale are for scaling done on a site data basis (e.g., number of jobs)
     maxScale = 1
     minScale = 0.2
     
+    # These are block-level tags for styling names/descriptions
+    # They references class in infostyles.css
     tagStyleNodeName = '<h6 class=\"nodeNameSM\">'
     tagStyleNodeDescription = '<h6 class=\"nodeDescriptionSM\">'
     tagStyleClose = '</h6>'
@@ -229,23 +203,16 @@ class Mapping:
       scaleData[x] += scaleAdjust
     maxScale += scaleAdjust
     minScale += scaleAdjust
-    
-    #fileName = ''
-    
+        
     sectionFile = dataDict['kml']
     sectionTag = dataDict['img']
     animatedRanges = dataDict['Animated']
     
     iconPath = dataDict['IconPath']
-    # This part was moved to the service initialization
-    #if iconPath:
-    #  iconPath = iconPath.rstrip('/')
-    #  iconPath += '/'
     
     ##############################
     if section == 'SiteMask':
       KML = KMLData()
-      #fileName = 'sitemask.kml'
       KML.addMultipleScaledStyles(iconPath, ('%s-green' % sectionTag[section], '%s-red' % sectionTag[section], '%s-gray' % sectionTag[section]), scaleData, '.png')	
       for node in self.siteData:
         if 'Mask' not in self.siteData[node]:
@@ -273,14 +240,11 @@ class Mapping:
         KML.addNode(tagStyleNodeName + node + tagStyleClose, tagStyleNodeName + node + tagStyleClose + tagStyleNodeDescription + description + tagStyleClose, icon, self.siteData[node]['Coord'])
         
       KML.writeFile('%s/%s' % (filePath, sectionFile[section][0]))
-      gLogger.verbose('KML data stored to: %s/%s' % (filePath, sectionFile[section][0]))
-      fileCache.addToCache('%s/%s' % (filePath, sectionFile[section][0]))
-      self.addDependency(section, sectionFile[section][0])
+      gLogger.verbose('%s KML created: %s/%s' % (section, filePath, sectionFile[section][0]))
       
     ##############################    
     elif section == 'JobSummary':
       KML = KMLData()
-      #fileName = 'jobsummary.kml'
       
       # This algorithm computes the relative sizes for each node
       # First, collect a data set
@@ -292,6 +256,7 @@ class Mapping:
         for state in self.siteData[node]['JobSummary']:
           num += self.siteData[node]['JobSummary'][state]
         numJobs.append(num)  
+        
       # Now sort the data into percentile categories
       numJobs.sort()
       dataSize = len(numJobs)
@@ -333,44 +298,28 @@ class Mapping:
         KML.addNode(tagStyleNodeName + node + tagStyleClose + name, tagStyleNodeName + node + tagStyleClose + tagStyleNodeDescription + description + tagStyleClose, '%s-%s' % (sectionTag[section],node), self.siteData[node]['Coord'])
 
       KML.writeFile('%s/%s' % (filePath, sectionFile[section][0]))
-      gLogger.verbose('KML data stored to: %s/%s' % (filePath, sectionFile[section][0]))
-      fileCache.addToCache('%s/%s' % (filePath, sectionFile[section][0]))
-      self.addDependency(section, sectionFile[section][0])
+      gLogger.verbose('%s KML created: %s/%s' % (section, filePath, sectionFile[section][0]))
       
     ##############################
     elif section == 'PilotSummary':
       KML = KMLData()
-      #fileName = 'pilotsummary.kml'
       for node in self.siteData:
         if 'PilotSummary' not in self.siteData[node]:
           continue
+          
         # Generate node style
         KML.addNodeStyle('%s-%s' % (sectionTag[section],node), '%s%s-%s.png' % (iconPath,sectionTag[section],node), scaleData[self.siteData[node]['Cat']])
-        # Generate description
-      
-#        table = MappingTable()
-#        table.setColumns(['CE Name', 'Done', 'Cleared', 'Aborted', 'Ready', 'Scheduled', 'Running', 'Submitted'])
-#        for child in self.siteData[node]['PilotSummary']:
-#          table.addRow([child, self.siteData[node]['PilotSummary'][child]['Done'],
-#                               self.siteData[node]['PilotSummary'][child]['Cleared'],
-#                               self.siteData[node]['PilotSummary'][child]['Aborted'],
-#                               self.siteData[node]['PilotSummary'][child]['Ready'],
-#                               self.siteData[node]['PilotSummary'][child]['Scheduled'],
-#                               self.siteData[node]['PilotSummary'][child]['Running'],
-#                               self.siteData[node]['PilotSummary'][child]['Submitted']])
         
-        # Write the node
-#        KML.addNode(tagStyleNodeName + node + tagStyleClose, tagStyleNodeName + node + tagStyleClose + tagStyleNodeDescription + table.tableToHTML() + tagStyleClose, '%s-%s' % (sectionTag[section],node), self.siteData[node]['Coord'])
+        # Generate description
         description = ''
         for child in self.siteData[node]['PilotSummary']:
           description += child + '</br>'
           
+        # Write the node
         KML.addNode(tagStyleNodeName + node + tagStyleClose, tagStyleNodeName + node + tagStyleClose + tagStyleNodeDescription + description + tagStyleClose, '%s-%s' % (sectionTag[section],node), self.siteData[node]['Coord'])
 
       KML.writeFile('%s/%s' % (filePath, sectionFile[section][0]))
-      gLogger.verbose('KML data stored to: %s/%s' % (filePath, sectionFile[section][0]))
-      fileCache.addToCache('%s/%s' % (filePath, sectionFile[section][0]))
-      self.addDependency(section, sectionFile[section][0])
+      gLogger.verbose('%s KML created: %s/%s' % (section, filePath, sectionFile[section][0]))
       
     ##############################
     elif section == 'DataStorage':
@@ -381,19 +330,14 @@ class Mapping:
           
         KML.addNodeStyle('%s-%s' % (sectionTag[section],node), '%s%s-%s.png' % (iconPath,sectionTag[section],node), 2.0)
         
-        # Yeah, I know this is a hack (since 'style' is deprecated), but for now it makes life easier...
-        #description = '<span style="float: left; margin-top: -20px; margin-left: -20px;" height=250><img src="%s%s-%s-large.png"/></span>' % (iconPath,sectionTag[section],node)
         description = '<img src="%s%s-%s-large.png"/><br/>' % (iconPath,sectionTag[section],node)
         for se in self.siteData[node]['DataStorage']:
-          description += '%s: %.3f GB (%s files)<br/>' % (se, float(self.siteData[node]['DataStorage'][se]['Size']) / 1024**3, self.siteData[node]['DataStorage'][se]['Files'])
-        #description += '<div style="clear: both"></div>'
+          description += '%s: %.3f TB (%s files)<br/>' % (se, float(self.siteData[node]['DataStorage'][se]['Size']) / 1024**4, self.siteData[node]['DataStorage'][se]['Files'])
         
         KML.addNode(tagStyleNodeName + node + tagStyleClose, tagStyleNodeName + node + tagStyleClose + tagStyleNodeDescription + description + tagStyleClose, '%s-%s' % (sectionTag[section],node), self.siteData[node]['Coord'])
         
       KML.writeFile('%s/%s' % (filePath, sectionFile[section][0]))
-      gLogger.verbose('KML data stored to: %s/%s' % (filePath, sectionFile[section][0]))
-      fileCache.addToCache('%s/%s' % (filePath, sectionFile[section][0]))
-      self.addDependency(section, sectionFile[section][0])
+      gLogger.verbose('%s KML created: %s/%s' % (section, filePath, sectionFile[section][0]))
         
     ##############################
     elif section == 'Animated':
@@ -463,9 +407,7 @@ class Mapping:
       # Write the KML file and reset it
       for color in KML:
         KML[color].writeFile('%s/%s' % (filePath, outFile[color]))
-        fileCache.addToCache('%s/%s' % (filePath, outFile[color]))
-        gLogger.verbose('Animated KML for color \'%s\' stored to: %s/%s' % (color, filePath, outFile[color]))
-        self.addDependency(section, outFile[color])
+        gLogger.verbose('%s KML created (color: %s): %s/%s' % (section, color, filePath, outFile[color]))
         
       # Obviously we need to generate links to, but that hasn't been implemented yet.
       
@@ -476,33 +418,17 @@ class Mapping:
     return S_OK()       
     
   #############################################################################
-  def generateIcons(self, section, filePath, fileCache, dataDict):
+  def generateIcons(self, section, filePath, dataDict):
    
     sectionFile = dataDict['kml']
     sectionTag = dataDict['img']
-    
-    self.resetDependency(section, sectionFile[section])
-  
+      
     gLogger.verbose('Icon generation request received. Section: %s' % section)
     
     ##############################
     if section == 'SiteMask':
       # We made these icons static
       gLogger.verbose('SiteMask icon generation -- nothing to do.')
-#      colorDict = {'green' : '#00ff00', 'red' : '#ff0000', 'gray' : '#666666'}
-#      for color in colorDict:
-        
-#        fileName = '%s/%s-%s.png' % (filePath, sectionTag[section], color)
-        
-#        data = (100,)
-        
-#        pylab.close()
-#        pylab.figure(figsize=(0.6,0.6))
-#        pylab.gcf().figurePatch.set_alpha(0)
-#        pylab.pie(data, colors=(colorDict[color],))
-#        pylab.savefig(fileName)
-        
-#        fileCache.addToCache(fileName)
     
     ##############################  
     elif section == 'JobSummary':
@@ -521,7 +447,6 @@ class Mapping:
           continue
         
         fileName = '%s/%s-%s.png' % (filePath,sectionTag[section],node)
-        self.addDependency(section, '%s-%s.png' % (sectionTag[section], node))
         
         data = (self.siteData[node]['JobSummary']['Done'], self.siteData[node]['JobSummary']['Running'],\
                 self.siteData[node]['JobSummary']['Stalled'], self.siteData[node]['JobSummary']['Waiting'],\
@@ -532,15 +457,15 @@ class Mapping:
         pylab.gcf().figurePatch.set_alpha(0)   
         pylab.pie(data, colors=colorList)
         pylab.savefig(fileName)
-        
-        fileCache.addToCache(fileName)
-        
+        gLogger.verbose('%s image created: %s' % (section, fileName))
+                
         # Generate widget plot things :)
         result = reportsClient.generatePlot('Job', 'NumberOfJobs', plotFrom, timeNow, {'Site' : [node]}, 'JobType')
         if result['OK']:
           reportsClient.getPlotToDirectory(result['Value'], filePath)
-          os.rename('%s/%s' % (filePath, result['Value']), '%s/%sw1-%s.png' % (filePath, sectionTag[section], node))
-          fileCache.addToCache('%s/%sw1-%s.png' % (filePath, sectionTag[section], node))
+          widgetPath = '%s/%sw1-%s.png' % (filePath, sectionTag[section], node)
+          os.rename('%s/%s' % (filePath, result['Value']), widgetPath)
+          gLogger.verbose('%s image created: %s' % (section, widgetPath))
     
     ##############################    
     elif section == 'PilotSummary':
@@ -559,14 +484,13 @@ class Mapping:
                    
         # Generate plot icon for node
         fileName = '%s/%s-%s.png' % (filePath,sectionTag[section],node)
-        self.addDependency(section, '%s-%s.png' % (sectionTag[section], node))
         data = (doneCleared, aborted)
         pylab.close()
         pylab.figure(figsize=(0.6,0.6))
         pylab.gcf().figurePatch.set_alpha(0)
         pylab.pie(data, colors=colorList)
         pylab.savefig(fileName)
-        fileCache.addToCache(fileName)
+        gLogger.verbose('%s image created: %s' % (section, fileName))
         
     ##############################    
     elif section == 'DataStorage':
@@ -586,17 +510,7 @@ class Mapping:
       for element in masterList:
         typeList.append(element[0])
         labelList.append(element[1])
-        
-      #colorDict = {'M-DST' : '#007f00', 'DST' : '#00ff00', 'RDST' : '#7fff7f', 'RAW' : '#0000ff', 'DISK' : '#ff0000', 'TAPE' : '#7f0000', 'FAILOVER' : '#ffff00'}
-      #seList = colorDict.keys()
-      #seList.sort()
-      
-      #seNickname = seList[:]
-      #for i in range(len(seNickname)):
-      #  if seNickname[i] == 'FAILOVER':
-      #    seNickname[i] = 'FAIL'
-      #    break
-      
+              
       # Produce a data dictionary of processed (percentage) data
       processedSize = self.processDataStorage(typeList)
       
@@ -613,8 +527,7 @@ class Mapping:
         if 'DataStorage' not in self.siteData[node]:
           continue
           
-        fileName = '%s/%s-%s.png' % (filePath,sectionTag[section],node) 
-        self.addDependency(section, '%s-%s.png' % (sectionTag[section], node))
+        fileName = '%s/%s-%s.png' % (filePath,sectionTag[section],node)
         
         # First generate the small plot  
         pylab.close()
@@ -629,11 +542,10 @@ class Mapping:
         pylab.yticks(zeroList1, zeroList2)
         
         pylab.savefig(fileName)
-        fileCache.addToCache(fileName)
+        gLogger.verbose('%s image created: %s' % (section, fileName))
         
         # Now generate the enlarged plot
-        fileName = '%s/%s-%s-large.png' % (filePath,sectionTag[section],node) 
-        self.addDependency(section, '%s-%s-large.png' % (sectionTag[section], node))
+        fileName = '%s/%s-%s-large.png' % (filePath,sectionTag[section],node)
           
         pylab.close()
         pylab.figure(figsize=(3,1.5))
@@ -647,7 +559,7 @@ class Mapping:
         pylab.yticks(largeTickY, largeLabelY, size='xx-small')
         
         pylab.savefig(fileName)
-        fileCache.addToCache(fileName)
+        gLogger.verbose('%s image created: %s' % (section, fileName))
 
     ##############################  
     elif section == 'Animated':
@@ -662,27 +574,6 @@ class Mapping:
             
     return S_OK('%s icons generated in %s.' % (section, filePath))
     
-  #############################################################################
-#  def getSiteMask(self):
-#    """ Return the site mask
-#    """
-#    return jobDB.getSiteMask('Active')
-
-  #############################################################################
-#  def multiSplit(self, strIn, tokens):
-#    """ Like split(), but recurses over a tuple of tokens)
-#    """
-#      
-#    final = [strIn]
-#        
-#    for token in tokens:
-#      temp = []
-#      for s in final:
-#        temp += s.split(token)
-#      final = temp
-#      
-#    return final
-
   #############################################################################
   def processDataStorage(self, typeList):
     """ Process data storage sizes in order to produce
@@ -722,24 +613,5 @@ class Mapping:
           data[node][se] = int(float(data[node][se] * 100) / maxSize)
                   
     return data
-    
-  #############################################################################
-  def resetDependency(self, section, addFileList=False):
-    """ Resets a section's dependencies and optionally adds addFile
-    """
-    if addFileList:
-      self.dependencies[section] = addFileList
-    else:
-      self.dependencies[section] = []
-    
-  #############################################################################
-  def addDependency(self, section, fileName):
-    """ Adds a dependency to a section
-    """
-    if section not in self.dependencies:
-      self.dependencies[section] = []
-      
-    if fileName not in self.dependencies[section]:
-      self.dependencies[section].append(fileName)
-    
+        
   #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
