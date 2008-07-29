@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.19 2008/07/25 14:51:18 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.20 2008/07/29 13:18:43 acasajus Exp $
 ########################################################################
 """ ProxyRepository class is a front-end to the proxy repository Database
 """
 
-__RCSID__ = "$Id: ProxyDB.py,v 1.19 2008/07/25 14:51:18 acasajus Exp $"
+__RCSID__ = "$Id: ProxyDB.py,v 1.20 2008/07/29 13:18:43 acasajus Exp $"
 
 import time
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
@@ -398,17 +398,14 @@ class ProxyDB(DB):
     return S_OK( chain )
 
   def __getVOMSAttribute( self, userGroup, requiredVOMSAttribute = False ):
+    if requiredVOMSAttribute:
+      return S_OK( requiredVOMSAttribute )
     csVOMSMappings = CS.getVOMSAttributeForGroup( userGroup )
     if not csVOMSMappings:
       return S_ERROR( "No mapping defined for group %s in the CS" % userGroup )
-    if requiredVOMSAttribute and requiredVOMSAttribute not in csVOMSMappings:
-      return S_ERROR( "Required attribute %s is not allowed for group %s" % ( requiredVOMSAttribute, userGroup ) )
-    if len( csVOMSMappings ) > 1 and not requiredVOMSAttribute:
-      return S_ERROR( "More than one VOMS attribute defined for group %s and none required" % userGroup )
-    vomsAttribute = requiredVOMSAttribute
-    if not vomsAttribute:
-      vomsAttribute = csVOMSMappings[0]
-    return S_OK( vomsAttribute )
+    if len( csVOMSMappings ) > 1:
+      return S_ERROR( "More than one VOMS attribute defined for group %s and one required" % userGroup )
+    return S_OK( csVOMSMappings[0] )
 
   def getVOMSProxy( self, userDN, userGroup, requiredLifeTime = False, requestedVOMSAttr = False ):
     """ Get proxy string from the Proxy Repository for use with userDN
