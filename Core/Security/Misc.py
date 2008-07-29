@@ -49,7 +49,7 @@ def getProxyInfo( proxy = False, disableVOMS = False ):
   infoDict = retVal[ 'Value' ]
   infoDict[ 'chain' ] = chain
   if proxyLocation:
-    infoDict[ 'path' ] = proxyLoc
+    infoDict[ 'path' ] = proxyLocation
 
   if not disableVOMS and chain.isVOMS()['Value']:
     retVal = VOMS().getVOMSAttributes( chain )
