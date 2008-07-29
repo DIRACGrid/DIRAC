@@ -104,7 +104,7 @@ class JobPlotter(BasePlotter):
                  'ylabel' : "days" }
     return self._generateTimedStackedBarPlot( filename, dataDict, metadata )
 
-  def _plotTotalNumberOfJobs( self, startTime, endTime, condDict, groupingFields, filename ):
+  def _plotCumulativeNumberOfJobs( self, startTime, endTime, condDict, groupingFields, filename ):
     selectFields = ( self._getSQLStringForGrouping( groupingFields) + ", %s, %s, SUM(%s)",
                      groupingFields + [ 'startTime', 'bucketLength',
                                     'entriesInBucket'
