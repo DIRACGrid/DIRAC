@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.20 2008/07/29 13:18:43 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.21 2008/07/29 18:47:22 acasajus Exp $
 ########################################################################
 """ ProxyRepository class is a front-end to the proxy repository Database
 """
 
-__RCSID__ = "$Id: ProxyDB.py,v 1.20 2008/07/29 13:18:43 acasajus Exp $"
+__RCSID__ = "$Id: ProxyDB.py,v 1.21 2008/07/29 18:47:22 acasajus Exp $"
 
 import time
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
@@ -49,7 +49,6 @@ class ProxyDB(DB):
     if 'ProxyDB_Requests' not in tablesInDB:
       tablesD[ 'ProxyDB_Requests' ] = { 'Fields' : { 'Id' : 'INTEGER AUTO_INCREMENT NOT NULL',
                                                      'UserDN' : 'VARCHAR(255) NOT NULL',
-                                                     'UserGroup' : 'VARCHAR(255) NOT NULL',
                                                      'Pem' : 'BLOB',
                                                      'ExpirationTime' : 'DATETIME'
                                                    },
@@ -75,7 +74,7 @@ class ProxyDB(DB):
                                   }
     return self._createTables( tablesD )
 
-  def generateDelegationRequest( self, proxyChain, userDN, userGroup ):
+  def generateDelegationRequest( self, proxyChain, userDN ):
     """
     Generate a request  and store it for a given proxy Chain
     """
@@ -95,9 +94,8 @@ class ProxyDB(DB):
     if not retVal[ 'OK' ]:
       return retVal
     allStr = reqStr + retVal[ 'Value' ]
-    cmd = "INSERT INTO `ProxyDB_Requests` ( Id, UserDN, UserGroup, Pem, ExpirationTime )"
-    cmd += " VALUES ( 0, '%s', '%s', '%s', TIMESTAMPADD( SECOND, %s, UTC_TIMESTAMP() ) )" % ( userDN,
-                                                                              userGroup,
+    cmd = "INSERT INTO `ProxyDB_Requests` ( Id, UserDN, Pem, ExpirationTime )"
+    cmd += " VALUES ( 0, '%s', '%s', TIMESTAMPADD( SECOND, %s, UTC_TIMESTAMP() ) )" % ( userDN,
                                                                               allStr,
                                                                               self.__defaultRequestLifetime )
     retVal = self._update( cmd, conn = connObj )
@@ -116,13 +114,12 @@ class ProxyDB(DB):
     #Here we go!
     return S_OK( { 'id' : data[0][0], 'request' : reqStr } )
 
-  def retrieveDelegationRequest( self, requestId, userDN, userGroup ):
+  def retrieveDelegationRequest( self, requestId, userDN ):
     """
     Retrieve a request from the DB
     """
-    cmd = "SELECT Pem FROM `ProxyDB_Requests` WHERE Id = %s AND UserDN = '%s' and UserGroup = '%s'" % ( requestId,
-                                                                                                userDN,
-                                                                                                userGroup )
+    cmd = "SELECT Pem FROM `ProxyDB_Requests` WHERE Id = %s AND UserDN = '%s'" % ( requestId,
+                                                                                   userDN )
     retVal = self._query( cmd)
     if not retVal[ 'OK' ]:
       return retVal
@@ -167,11 +164,11 @@ class ProxyDB(DB):
     msg += "Attributes are %s and allowed are %s for group %s" % ( attr, validVOMSAttrs, userGroup )
     return S_ERROR( msg )
 
-  def completeDelegation( self, requestId, userDN, userGroup, delegatedPem ):
+  def completeDelegation( self, requestId, userDN, delegatedPem ):
     """
     Complete a delegation and store it in the db
     """
-    retVal = self.retrieveDelegationRequest( requestId, userDN, userGroup )
+    retVal = self.retrieveDelegationRequest( requestId, userDN )
     if not retVal[ 'OK' ]:
       return retVal
     request = retVal[ 'Value' ]
@@ -191,7 +188,20 @@ class ProxyDB(DB):
     if not retVal[ 'Value' ]:
       return S_ERROR( "Received chain does not match request: %s" % retVal[ 'Message' ] )
 
-    retVal = self.__checkVOMSisAlignedWithGroup(userGroup, chain )
+    retVal = chain.getDIRACGroup()
+    if not retVal[ 'OK' ]:
+      return retVal
+    userGroup = retVal[ 'Value' ]
+    if not userGroup:
+      userGroup = CS.getDefaultUserGroup()
+
+    retVal = CS.getGroupsForDN( userDN )
+    if not retVal[ 'OK' ]:
+      return retVal
+    if not userGroup in retVal[ 'Value' ]:
+      return S_ERROR( "%s group is not valid for %s" % ( userGroup, userDN ) )
+
+    retVal = self.__checkVOMSisAlignedWithGroup( userGroup, chain )
     if not retVal[ 'OK' ]:
       return retVal
 

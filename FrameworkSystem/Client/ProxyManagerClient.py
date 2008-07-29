@@ -1,9 +1,9 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyManagerClient.py,v 1.26 2008/07/29 15:29:28 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyManagerClient.py,v 1.27 2008/07/29 18:47:23 acasajus Exp $
 ########################################################################
 """ ProxyManagementAPI has the functions to "talk" to the ProxyManagement service
 """
-__RCSID__ = "$Id: ProxyManagerClient.py,v 1.26 2008/07/29 15:29:28 acasajus Exp $"
+__RCSID__ = "$Id: ProxyManagerClient.py,v 1.27 2008/07/29 18:47:23 acasajus Exp $"
 
 import os
 import datetime
@@ -118,7 +118,7 @@ class ProxyManagerClient:
                              record )
     return retVal
 
-  def uploadProxy( self, proxy = False ):
+  def uploadProxy( self, proxy = False, diracGroup = False, chainToConnect = False, restrictLifeTime = 0 ):
     """
     Upload a proxy to the proxy management service using delgation
     """
@@ -137,13 +137,16 @@ class ProxyManagerClient:
       if not retVal[ 'OK' ]:
         return S_ERROR( "Can't load %s: %s " % ( proxyLocation, retVal[ 'Message' ] ) )
 
+    if not chainToConnect:
+      chainToConnect = chain
+
     #Make sure it's valid
     if chain.hasExpired()[ 'Value' ]:
       return S_ERROR( "Proxy %s has expired" % proxyLocation )
 
-    rpcClient = RPCClient( "Framework/ProxyManager", proxyChain = chain )
+    rpcClient = RPCClient( "Framework/ProxyManager", proxyChain = chainToConnect )
     #Get a delegation request
-    retVal = rpcClient.requestDelegation()
+    retVal = rpcClient.requestDelegationUpload( chain.getRemainingSecs()['Value'], diracGroup )
     if not retVal[ 'OK' ]:
       return retVal
     #Check if the delegation has been granted
@@ -151,11 +154,16 @@ class ProxyManagerClient:
       return S_OK()
     reqDict = retVal[ 'Value' ]
     #Generate delegated chain
-    retVal = chain.generateChainFromRequestString( reqDict[ 'request' ], lifetime = chain.getRemainingSecs()[ 'Value' ] - 60 )
+    chainLifeTime = chain.getRemainingSecs()[ 'Value' ] - 60
+    if restrictLifeTime and restrictLifeTime < chainLifeTime:
+       chainLifeTime = restrictLifeTime
+    retVal = chain.generateChainFromRequestString( reqDict[ 'request' ],
+                                                   lifetime = chainLifeTime,
+                                                   diracGroup = diracGroup )
     if not retVal[ 'OK' ]:
       return retVal
     #Upload!
-    return rpcClient.completeDelegation( reqDict[ 'id' ], retVal[ 'Value' ] )
+    return rpcClient.completeDelegationUpload( reqDict[ 'id' ], retVal[ 'Value' ] )
 
   @gProxiesSync
   def downloadProxy( self, userDN, userGroup, limited = False, requiredTimeLeft = 43200, proxyToConnect = False ):
@@ -253,7 +261,7 @@ class ProxyManagerClient:
       return "DN %s is not valid: %s" % ( userDN, retVal[ 'Message' ] )
     for group in retVal[ 'Value' ]:
       props = CS.getPropertiesForGroup( group )
-      if Properties.PRIVATE_PILOT in props:
+      if Properties.PILOT in props:
         pilotGroup = group
       if Properties.GENERIC_PILOT in props:
         pilotGroup = group
@@ -281,7 +289,7 @@ class ProxyManagerClient:
       return "DN %s is not valid: %s" % ( userDN, retVal[ 'Message' ] )
     for group in retVal[ 'Value' ]:
       props = CS.getPropertiesForGroup( group )
-      if Properties.PRIVATE_PILOT in props:
+      if Properties.PILOT in props:
         pilotGroup = group
       if Properties.GENERIC_PILOT in props:
         pilotGroup = group

@@ -1,9 +1,9 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/X509Chain.py,v 1.22 2008/07/22 13:55:50 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/X509Chain.py,v 1.23 2008/07/29 18:48:09 acasajus Exp $
 ########################################################################
 """ X509Chain is a class for managing X509 chains with their Pkeys
 """
-__RCSID__ = "$Id: X509Chain.py,v 1.22 2008/07/22 13:55:50 acasajus Exp $"
+__RCSID__ = "$Id: X509Chain.py,v 1.23 2008/07/29 18:48:09 acasajus Exp $"
 
 import types
 import os
@@ -413,7 +413,7 @@ class X509Chain:
     x509 = self.getCertInChain(0)[ 'Value' ]
     return x509.generateProxyRequest( bitStrength, limited )
 
-  def generateChainFromRequestString( self, pemData, lifetime = 86400, requireLimited = False ):
+  def generateChainFromRequestString( self, pemData, lifetime = 86400, requireLimited = False, diracGroup = False ):
     """
     Generate a x509 chain from a request
     return S_OK( string ) / S_ERROR
@@ -453,7 +453,7 @@ class X509Chain:
     childCert.set_serial_number( issuerCert.get_serial_number() )
     childCert.set_version( issuerCert.get_version() )
     childCert.set_pubkey( req.get_pubkey() )
-    childCert.add_extensions( req.get_extensions() )
+    childCert.add_extensions( self.__getProxyExtensionList( diracGroup ) )
     childCert.gmtime_adj_notBefore( 0 )
     childCert.gmtime_adj_notAfter( lifetime )
     childCert.sign( self.__keyObj, 'md5' )

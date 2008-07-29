@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/ProxyManagerHandler.py,v 1.10 2008/07/18 11:31:36 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/ProxyManagerHandler.py,v 1.11 2008/07/29 18:47:23 acasajus Exp $
 ########################################################################
 
 """ ProxyManager is the implementation of the ProxyManagement service
     in the DISET framework
 """
 
-__RCSID__ = "$Id: ProxyManagerHandler.py,v 1.10 2008/07/18 11:31:36 acasajus Exp $"
+__RCSID__ = "$Id: ProxyManagerHandler.py,v 1.11 2008/07/29 18:47:23 acasajus Exp $"
 
 import types
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -34,29 +34,33 @@ def initializeProxyManagerHandler( serviceInfo ):
 
 class ProxyManagerHandler( RequestHandler ):
 
-  types_requestDelegation = []
-  def export_requestDelegation( self ):
+  types_requestDelegationUpload = [ ( types.IntType, types.LongType ), ( types.StringType, types.BooleanType ) ]
+  def export_requestDelegationUpload( self, requestedUploadTime, userGroup ):
     """ Request a delegation. Send a delegation request to client
     """
     credDict = self.getRemoteCredentials()
     userDN = credDict[ 'DN' ]
-    userGroup = credDict[ 'group' ]
+    userName = credDict[ 'username' ]
+    if not userGroup:
+      userGroup = credDict[ 'group' ]
+    if userGroup not in CS.getGroupsForUser( credDict[ 'username' ] )[ 'Value' ]:
+      return S_ERROR( "%s is not a valid group for user %s" % ( userGroup, userName ) )
     retVal = gProxyDB.getRemainingTime( userDN, userGroup )
     if not retVal[ 'OK' ]:
       return retVal
     remainingSecs = retVal[ 'Value' ]
     csOption = "%s/SkipUploadLifeTime" % self.serviceInfoDict[ 'serviceSectionPath' ]
-    #If we have a proxy longer than 12h it's not needed
-    if remainingSecs > gConfig.getValue( csOption, 43200 ):
+    #If we have a proxy longer than the one uploading it's not needed
+    if remainingSecs > requestedUploadTime:
       return S_OK()
-    return gProxyDB.generateDelegationRequest( credDict[ 'x509Chain' ], userDN, userGroup )
+    return gProxyDB.generateDelegationRequest( credDict[ 'x509Chain' ], userDN )
 
-  types_completeDelegation = [ ( types.IntType, types.LongType ), types.StringType ]
-  def export_completeDelegation( self, requestId, pemChain ):
+  types_completeDelegationUpload = [ ( types.IntType, types.LongType ), types.StringType ]
+  def export_completeDelegationUpload( self, requestId, pemChain ):
     """ Upload result of delegation
     """
     credDict = self.getRemoteCredentials()
-    retVal = gProxyDB.completeDelegation( requestId, credDict[ 'DN' ], credDict[ 'group' ], pemChain )
+    retVal = gProxyDB.completeDelegation( requestId, credDict[ 'DN' ], pemChain )
     if not retVal[ 'OK' ]:
       return retVal
     return S_OK()
