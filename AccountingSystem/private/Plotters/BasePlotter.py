@@ -134,13 +134,14 @@ class BasePlotter(DBUtils):
     if not finalResult[ 'OK' ]:
       return finalResult
     thbMD = self.__checkThumbnailMetadata( metadata )
-    if thbMD:
-      thbFilename = filename.replace( ".png", ".thb.png" )
-      retVal = funcToPlot( thbFilename, dataDict, thbMD )
-      if not retVal[ 'OK' ]:
-        return retVal
-      finalResult[ 'thumbnail' ] = thbFilename
-    return finalResult
+    if not thbMD:
+      return S_OK( { 'thumbnail' : False } )
+    thbFilename = filename.replace( ".png", ".thb.png" )
+    retVal = funcToPlot( thbFilename, dataDict, thbMD )
+    if not retVal[ 'OK' ]:
+      return retVal
+    return S_OK( { 'thumbnail' : True } )
+
 
   def _generateTimedStackedBarPlot( self, filename, dataDict, metadata ):
     return self.__plotData( filename, dataDict, metadata, generateTimedStackedBarPlot )
