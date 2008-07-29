@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/AuthManager.py,v 1.26 2008/07/16 09:10:17 rgracian Exp $
-__RCSID__ = "$Id: AuthManager.py,v 1.26 2008/07/16 09:10:17 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/AuthManager.py,v 1.27 2008/07/29 17:43:01 acasajus Exp $
+__RCSID__ = "$Id: AuthManager.py,v 1.27 2008/07/29 17:43:01 acasajus Exp $"
 
 import types
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
@@ -69,6 +69,8 @@ class AuthManager:
     #END OF HACK
     #Get the username
     if self.KW_DN in credDict:
+      if not self.KW_GROUP in credDict:
+        credDict[ self.KW_GROUP ] = CS.getDefaultGroup()
       if credDict[ self.KW_GROUP ] == self.KW_HOSTS_GROUP:
       #For host
         if not self.getHostNickName( credDict ):
