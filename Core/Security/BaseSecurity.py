@@ -10,7 +10,6 @@ from DIRAC import gConfig, S_OK, S_ERROR
 class BaseSecurity:
 
   def __init__( self,
-                maxProxyLifeTime = False,
                 server = False,
                 serverCert = False,
                 serverKey = False,
@@ -20,10 +19,6 @@ class BaseSecurity:
       self._secCmdTimeout = timeout
     else:
       self._secCmdTimeout = 30
-    if not maxProxyLifeTime:
-      self.__maxProxyLifeTime = 604800 # 1week
-    else:
-      self.__maxProxyLifeTime = maxProxyLifeTime
     if not server:
       self._secServer = gConfig.getValue( "/DIRAC/VOPolicy/MyProxyServer", "myproxy.cern.ch" )
     else:
@@ -48,6 +43,7 @@ class BaseSecurity:
       else:
         self._secKeyLoc = "%s/etc/grid-security/serverkey.pem" % DIRAC.rootPath
     self._secRunningFromTrustedHost = gConfig.getValue( "/DIRAC/VOPolicy/MyProxyTrustedHost", "True" ).lower() in ( "y", "yes", "true" )
+    self._secMaxProxyHours = gConfig.getValue( "/DIRAC/VOPolicy/MyProxyMaxDelegationTime", 168 )
 
   def getMyProxyServer( self ):
     return self._secServer

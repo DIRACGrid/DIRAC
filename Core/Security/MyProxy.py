@@ -34,7 +34,7 @@ class MyProxy( BaseSecurity ):
     cmdArgs = [ '-n' ]
     cmdArgs.append( '-s "%s"' % self._secServer )
     cmdArgs.append( '-c "%s"' % ( timeLeft - 1 ) )
-    cmdArgs.append( '-t "36"' )
+    cmdArgs.append( '-t "%s"' % self._secMaxProxyHours )
     cmdArgs.append( '-C "%s"' % proxyLocation )
     cmdArgs.append( '-y "%s"' % proxyLocation )
     if useDNAsUserName:
