@@ -27,7 +27,7 @@ class PilotPlotter(BasePlotter):
     self.stripDataField( dataDict, 0 )
     dataDict = self._acumulate( granularity, startTime, endTime, dataDict )
     gLogger.info( "Generating plot", "%s with granularity of %s" % ( filename, granularity ) )
-    metadata = { 'title' : 'Total Jobs by %s' % " -> ".join( groupingFields ) ,
+    metadata = { 'title' : 'Cumulative Jobs by %s' % " -> ".join( groupingFields ) ,
                  'starttime' : startTime,
                  'endtime' : endTime,
                  'span' : granularity,
@@ -78,7 +78,7 @@ class PilotPlotter(BasePlotter):
     self.stripDataField( dataDict, 0 )
     dataDict = self._acumulate( granularity, startTime, endTime, dataDict )
     gLogger.info( "Generating plot", "%s with granularity of %s" % ( filename, granularity ) )
-    metadata = { 'title' : 'Total Pilots by %s' % " -> ".join( groupingFields ) ,
+    metadata = { 'title' : 'Cumulative Pilots by %s' % " -> ".join( groupingFields ) ,
                  'starttime' : startTime,
                  'endtime' : endTime,
                  'span' : granularity,
@@ -129,7 +129,7 @@ class PilotPlotter(BasePlotter):
     self.stripDataField( dataDict, 0 )
     dataDict = self._acumulate( granularity, startTime, endTime, dataDict )
     gLogger.info( "Generating plot", "%s with granularity of %s" % ( filename, granularity ) )
-    metadata = { 'title' : 'Total Jobs per pilot by %s' % " -> ".join( groupingFields ) ,
+    metadata = { 'title' : 'Cumulative Jobs per pilot by %s' % " -> ".join( groupingFields ) ,
                  'starttime' : startTime,
                  'endtime' : endTime,
                  'span' : granularity,
