@@ -111,32 +111,6 @@ class PilotPlotter(BasePlotter):
                  'ylabel' : "pilots"  }
     return self._generateTimedStackedBarPlot( filename, dataDict, metadata )
 
-  def _plotCumulativeJobsPerPilot( self, startTime, endTime, condDict, groupingFields, filename ):
-    selectFields = ( self._getSQLStringForGrouping( groupingFields) + ", %s, %s, SUM(%s)/SUM(%s)",
-                     groupingFields + [ 'startTime', 'bucketLength',
-                                    'Jobs', 'entriesInBucket'
-                                   ]
-                   )
-    retVal = self._getTypeData( startTime,
-                                endTime,
-                                selectFields,
-                                condDict,
-                                groupingFields,
-                                { 'convertToGranularity' : 'average' }  )
-    if not retVal[ 'OK' ]:
-      return retVal
-    dataDict, granularity = retVal[ 'Value' ]
-    self.stripDataField( dataDict, 0 )
-    dataDict = self._acumulate( granularity, startTime, endTime, dataDict )
-    gLogger.info( "Generating plot", "%s with granularity of %s" % ( filename, granularity ) )
-    metadata = { 'title' : 'Cumulative Jobs per pilot by %s' % " -> ".join( groupingFields ) ,
-                 'starttime' : startTime,
-                 'endtime' : endTime,
-                 'span' : granularity,
-                 'ylabel' : "jobs/pilot",
-                 'is_cumulative' : True }
-    return self._generateCumulativePlot( filename, dataDict, metadata )
-
   def _plotJobsPerPilot( self, startTime, endTime, condDict, groupingFields, filename ):
     selectFields = ( self._getSQLStringForGrouping( groupingFields) + ", %s, %s, SUM(%s)/SUM(%s)",
                      groupingFields + [ 'startTime', 'bucketLength',
