@@ -1,9 +1,9 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyManagerClient.py,v 1.24 2008/07/29 14:01:04 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyManagerClient.py,v 1.25 2008/07/29 14:43:54 acasajus Exp $
 ########################################################################
 """ ProxyManagementAPI has the functions to "talk" to the ProxyManagement service
 """
-__RCSID__ = "$Id: ProxyManagerClient.py,v 1.24 2008/07/29 14:01:04 acasajus Exp $"
+__RCSID__ = "$Id: ProxyManagerClient.py,v 1.25 2008/07/29 14:43:54 acasajus Exp $"
 
 import os
 import datetime
@@ -151,7 +151,7 @@ class ProxyManagerClient:
       return S_OK()
     reqDict = retVal[ 'Value' ]
     #Generate delegated chain
-    retVal = chain.generateChainFromRequestString( reqDict[ 'request' ] )
+    retVal = chain.generateChainFromRequestString( reqDict[ 'request' ], lifetime = chain.getRemainingSecs()[ 'Value' ] - 60 )
     if not retVal[ 'OK' ]:
       return retVal
     #Upload!
