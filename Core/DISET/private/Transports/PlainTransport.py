@@ -1,9 +1,10 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/PlainTransport.py,v 1.10 2008/07/07 16:37:19 acasajus Exp $
-__RCSID__ = "$Id: PlainTransport.py,v 1.10 2008/07/07 16:37:19 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/PlainTransport.py,v 1.11 2008/07/29 07:59:54 acasajus Exp $
+__RCSID__ = "$Id: PlainTransport.py,v 1.11 2008/07/29 07:59:54 acasajus Exp $"
 
 import socket
 from DIRAC.Core.DISET.private.Transports.BaseTransport import BaseTransport
 from DIRAC.LoggingSystem.Client.Logger import gLogger
+from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
 
 class PlainTransport( BaseTransport ):
 
