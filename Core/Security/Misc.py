@@ -21,6 +21,7 @@ def getProxyInfo( proxy = False, disableVOMS = False ):
   * values that can be there
    'path' : path to the file,
    'group' : DIRAC group
+   'groupProperties' : Properties that apply to the DIRAC Group
    'username' : DIRAC username
    'identity' : DN that generated the proxy
    'hostname' : DIRAC host nickname

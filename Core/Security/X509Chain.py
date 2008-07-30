@@ -1,9 +1,9 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/X509Chain.py,v 1.23 2008/07/29 18:48:09 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/X509Chain.py,v 1.24 2008/07/30 13:52:08 acasajus Exp $
 ########################################################################
 """ X509Chain is a class for managing X509 chains with their Pkeys
 """
-__RCSID__ = "$Id: X509Chain.py,v 1.23 2008/07/29 18:48:09 acasajus Exp $"
+__RCSID__ = "$Id: X509Chain.py,v 1.24 2008/07/30 13:52:08 acasajus Exp $"
 
 import types
 import os
@@ -572,6 +572,7 @@ class X509Chain:
         retVal = CS.getGroupsForUser( credDict[ 'username' ] )
         if retVal[ 'OK' ] and diracGroup in retVal[ 'Value']:
           credDict[ 'validGroup' ] = True
+          credDict[ 'groupProperties' ] = CS.getPropertiesForGroup( diracGroup )
     else:
       retVal = CS.getHostNameForDN( credDict['subject'] )
       retVal[ 'group' ] = 'hosts'
