@@ -1,9 +1,9 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyManagerClient.py,v 1.27 2008/07/29 18:47:23 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyManagerClient.py,v 1.28 2008/07/30 11:17:01 acasajus Exp $
 ########################################################################
 """ ProxyManagementAPI has the functions to "talk" to the ProxyManagement service
 """
-__RCSID__ = "$Id: ProxyManagerClient.py,v 1.27 2008/07/29 18:47:23 acasajus Exp $"
+__RCSID__ = "$Id: ProxyManagerClient.py,v 1.28 2008/07/30 11:17:01 acasajus Exp $"
 
 import os
 import datetime
@@ -246,7 +246,6 @@ class ProxyManagerClient:
     """
     Download a pilot proxy with VOMS extensions depending on the group
     """
-
     #Assign VOMS attribute
     vomsGroups = CS.getVOMSAttributeForGroup( userGroup )
     if not vomsGroups:
@@ -255,24 +254,8 @@ class ProxyManagerClient:
       return S_ERROR( "More than one voms attribute defined for group %s: %s" % ( userGroup, vomsGroups ) )
     vomsAttr = vomsGroups[0]
 
-    pilotGroup = False
-    retVal = CS.getGroupsForDN( userDN )
-    if not retVal[ 'OK' ]:
-      return "DN %s is not valid: %s" % ( userDN, retVal[ 'Message' ] )
-    for group in retVal[ 'Value' ]:
-      props = CS.getPropertiesForGroup( group )
-      if Properties.PILOT in props:
-        pilotGroup = group
-      if Properties.GENERIC_PILOT in props:
-        pilotGroup = group
-        #If we find a generic, break
-        break
-
-    if not pilotGroup:
-      return S_ERROR( "DN %s has no pilot group defined" % userDN )
-
     return self.downloadVOMSProxy( userDN,
-                                   pilotGroup,
+                                   userGroup,
                                    limited = False,
                                    requiredTimeLeft = requiredTimeLeft,
                                    requiredVOMSAttribute = vomsAttr,
@@ -282,25 +265,13 @@ class ProxyManagerClient:
     """
     Download a pilot proxy with VOMS extensions depending on the group
     """
-    #Assign VOMS attribute
-    pilotGroup = False
-    retVal = CS.getGroupsForDN( userDN )
-    if not retVal[ 'OK' ]:
-      return "DN %s is not valid: %s" % ( userDN, retVal[ 'Message' ] )
-    for group in retVal[ 'Value' ]:
-      props = CS.getPropertiesForGroup( group )
-      if Properties.PILOT in props:
-        pilotGroup = group
-      if Properties.GENERIC_PILOT in props:
-        pilotGroup = group
-        #If we find a generic, break
-        break
-
-    if not pilotGroup:
-      return S_ERROR( "DN %s has no pilot group defined" % userDN )
+    groups = CS.getGroupsWithVOMSAttribute( vomsAttr )
+    if not groups:
+      return S_ERROR( "No group found that has %s as voms attrs" % vomsAttr )
+    userGroup = groups[0]
 
     return self.downloadVOMSProxy( userDN,
-                                   pilotGroup,
+                                   userGroup,
                                    limited = False,
                                    requiredTimeLeft = requiredTimeLeft,
                                    requiredVOMSAttribute = vomsAttr,
