@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.23 2008/07/30 09:28:48 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.24 2008/07/30 09:43:35 acasajus Exp $
 ########################################################################
 """ ProxyRepository class is a front-end to the proxy repository Database
 """
 
-__RCSID__ = "$Id: ProxyDB.py,v 1.23 2008/07/30 09:28:48 acasajus Exp $"
+__RCSID__ = "$Id: ProxyDB.py,v 1.24 2008/07/30 09:43:35 acasajus Exp $"
 
 import time
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
@@ -458,7 +458,7 @@ class ProxyDB(DB):
 
     vomsMgr = VOMS()
 
-    retVal = vomsMgr.getAttributes( chain )
+    retVal = vomsMgr.getVOMSAttributes( chain )
     if retVal[ 'OK' ]:
       attrs = retVal[ 'Value' ]
       if len( attrs ) > 0:
