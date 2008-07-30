@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.27 2008/07/30 10:40:30 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.28 2008/07/30 10:41:49 acasajus Exp $
 ########################################################################
 """ ProxyRepository class is a front-end to the proxy repository Database
 """
 
-__RCSID__ = "$Id: ProxyDB.py,v 1.27 2008/07/30 10:40:30 acasajus Exp $"
+__RCSID__ = "$Id: ProxyDB.py,v 1.28 2008/07/30 10:41:49 acasajus Exp $"
 
 import time
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
@@ -489,9 +489,10 @@ class ProxyDB(DB):
     if not retVal[ 'OK' ]:
       return retVal
     try:
-      secsLeft = int( retVal[ 'Value' ].strip() )
+      vomsSecsLeft = int( retVal[ 'Value' ].strip() )
     except Exception, e:
       return S_ERROR( "Can't parse VOMS time left: %s" % str(e) )
+    secsLeft = min( vomsSecsLeft, chain.getRemainingSecs()[ 'Value' ] )
     pemData = chain.dumpAllToString()[ 'Value' ]
     cmd = "INSERT INTO `ProxyDB_VOMSProxies` ( UserDN, UserGroup, VOMSAttr, Pem, ExpirationTime ) VALUES "
     cmd += "( '%s', '%s', '%s', '%s', TIMESTAMPADD( SECOND, %s, UTC_TIMESTAMP() ) )" % ( userDN, userGroup,
