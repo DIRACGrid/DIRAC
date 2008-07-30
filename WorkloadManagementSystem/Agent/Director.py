@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.50 2008/07/30 14:09:42 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.51 2008/07/30 16:27:40 rgracian Exp $
 # File :   Director.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -48,7 +48,7 @@
 
 """
 
-__RCSID__ = "$Id: Director.py,v 1.50 2008/07/30 14:09:42 rgracian Exp $"
+__RCSID__ = "$Id: Director.py,v 1.51 2008/07/30 16:27:40 rgracian Exp $"
 
 import types, time
 
@@ -698,7 +698,7 @@ class PilotDirector:
             shutil.rmtree( workingDirectory )
           except:
             pass
-          updateJobStatus( self.log, AGENT_NAME, job, MAJOR_WAIT, MINOR_SUBMIT, logRecord=True )
+          updateJobStatus( self.log, AGENT_NAME, job, MAJOR_WAIT, MINOR_SUBMIT, applicationStatus='No Grid CE Available',logRecord=True )
           return S_ERROR( 'No queue available for job' )
   
       # Now we are ready for the actual submission, so
