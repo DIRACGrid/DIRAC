@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.22 2008/07/30 08:24:45 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.23 2008/07/30 09:28:48 acasajus Exp $
 ########################################################################
 """ ProxyRepository class is a front-end to the proxy repository Database
 """
 
-__RCSID__ = "$Id: ProxyDB.py,v 1.22 2008/07/30 08:24:45 acasajus Exp $"
+__RCSID__ = "$Id: ProxyDB.py,v 1.23 2008/07/30 09:28:48 acasajus Exp $"
 
 import time
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
@@ -62,6 +62,15 @@ class ProxyDB(DB):
                                                     'PersistentFlag' : 'ENUM ("True","False") NOT NULL DEFAULT "True"',
                                                   },
                                       'PrimaryKey' : [ 'UserDN', 'UserGroup' ]
+                                     }
+    if 'ProxyDB_VOMSProxies' not in tablesInDB:
+      tablesD[ 'ProxyDB_VOMSProxies' ] = { 'Fields' : { 'UserDN' : 'VARCHAR(255) NOT NULL',
+                                                        'UserGroup' : 'VARCHAR(255) NOT NULL',
+                                                        'VOMSAttr' : 'VARCHAR(255) NOT NULL',
+                                                        'Pem' : 'BLOB',
+                                                        'ExpirationTime' : 'DATETIME',
+                                                  },
+                                           'PrimaryKey' : [ 'UserDN', 'UserGroup', 'vomsAttr'  ]
                                      }
     if 'ProxyDB_Log' not in tablesInDB:
       tablesD[ 'ProxyDB_Log' ] = { 'Fields' : { 'IssuerDN' : 'VARCHAR(255) NOT NULL',
@@ -301,11 +310,17 @@ class ProxyDB(DB):
                                                                                    userGroup )
     return self._update(req)
 
-  def __getPemAndTimeLeft( self, userDN, userGroup = False ):
-    cmd = "SELECT Pem, TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime ) from `ProxyDB_Proxies`"
+  def __getPemAndTimeLeft( self, userDN, userGroup = False, vomsAttr = False ):
+    if not vomsAttr:
+      table = "`ProxyDB_Proxies`"
+    else:
+      table = "`ProxyDB_VOMSProxies`"
+    cmd = "SELECT Pem, TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime ) from %s" % table
     cmd += "WHERE UserDN='%s' AND TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime ) > 0" % ( userDN )
     if userGroup:
       cmd += " AND UserGroup='%s'" % userGroup
+    if vomsAttr:
+      cmd += " AND VOMSAttr='%s'" % vomsAttr
     retVal = self._query(cmd)
     if not retVal['OK']:
       return retVal
@@ -426,13 +441,55 @@ class ProxyDB(DB):
       return retVal
     vomsAttr = retVal[ 'Value' ]
 
+    #Look in the cache
+    retVal = self.__getPemAndTimeLeft( userDN, userGroup, vomsAttr )
+    if retVal[ 'OK' ]:
+      pemData = retVal[ 'Value' ][0]
+      chain = X509Chain()
+      retVal = chain.loadProxyFromString( pemData )
+      if retVal[ 'OK' ]:
+        if requiredLifeTime and requiredLifeTime >= chain.getRemainingSecs()[ 'Value' ]:
+          return S_OK( chain )
+
     retVal = self.getProxy( userDN, userGroup, requiredLifeTime )
     if not retVal[ 'OK' ]:
       return retVal
     chain = retVal[ 'Value' ]
 
     vomsMgr = VOMS()
-    return vomsMgr.setVOMSAttributes( chain , vomsAttr )
+
+    retVal = vomsMgr.getAttributes( chain )
+    if retVal[ 'OK' ]:
+      attrs = retVal[ 'Value' ]
+      if len( attrs ) > 0:
+        if attrs[0] != requestedVOMSAttr:
+          return S_ERROR( "Stored proxy has already a different VOMS attribute %s than requested %s" %( requestedVOMSAttr, attrs[0] ) )
+        else:
+          self.__storeVOMSProxy( userDN, userGroup, vomsAttr, chain )
+          return S_OK( chain )
+
+    retVal = vomsMgr.setVOMSAttributes( chain , vomsAttr )
+    if not retVal[ 'OK' ]:
+      return S_ERROR( "Cannot append voms extension: %s" % retVal[ 'Value' ] )
+    chain = retVal[ 'Value' ]
+    self.__storeVOMSProxy( userDN, userGroup, vomsAttr, chain )
+    return S_OK( chain )
+
+  def __storeVOMSProxy( self, userDN, userGroup, vomsAttr, chain ):
+    retVal = self._getConnection()
+    if not retVal[ 'OK' ]:
+      return retVal
+    connObj = retVal[ 'Value' ]
+    cmd = "DELETE FROM `ProxyDB_VOMSProxies` WHERE UserDN='%s' AND UserGroup='%s' AND VOMSAttr='%s'" % ( userDN, userGroup, vomsAttr )
+    retVal = self._update( cmd, conn = connObj )
+    if not retVal[ 'OK' ]:
+      return retVal
+    secsLeft = chain.getRemainingSecs()[ 'Value' ]
+    pemData = chain.dumpAllToString()[ 'Value' ]
+    cmd = "INSERT INTO `ProxyDB_VOMSProxies` ( UserDN, UserGroup, VOMSAttr, Pem, ExpirationTime ) VALUES "
+    cmd += "( '%s', '%s', '%s', '%s', TIMESTAMPADD( SECOND, %s, UTC_TIMESTAMP() ) )" % ( userDN, userGroup,
+                                                                                         vomsAttr, pemData, secsLeft )
+    return self._update( cmd, conn = connObj )
 
   def getRemainingTime( self, userDN, userGroup ):
     """
