@@ -1,9 +1,9 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/X509Chain.py,v 1.24 2008/07/30 13:52:08 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/X509Chain.py,v 1.25 2008/07/30 16:14:09 acasajus Exp $
 ########################################################################
 """ X509Chain is a class for managing X509 chains with their Pkeys
 """
-__RCSID__ = "$Id: X509Chain.py,v 1.24 2008/07/30 13:52:08 acasajus Exp $"
+__RCSID__ = "$Id: X509Chain.py,v 1.25 2008/07/30 16:14:09 acasajus Exp $"
 
 import types
 import os
@@ -564,7 +564,7 @@ class X509Chain:
       if not diracGroup:
         diracGroup = CS.getDefaultUserGroup()
       credDict[ 'group' ] = diracGroup
-      credDict[ 'identity'] = self.__certList[-1].get_subject().one_line()
+      credDict[ 'identity'] = self.__certList[ self.__firstProxyStep ].get_subject().one_line()
       retVal = CS.getUsernameForDN( credDict[ 'identity' ] )
       if retVal[ 'OK' ]:
         credDict[ 'username' ] = retVal[ 'Value' ]
