@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.26 2008/07/30 10:13:47 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.27 2008/07/30 10:40:30 acasajus Exp $
 ########################################################################
 """ ProxyRepository class is a front-end to the proxy repository Database
 """
 
-__RCSID__ = "$Id: ProxyDB.py,v 1.26 2008/07/30 10:13:47 acasajus Exp $"
+__RCSID__ = "$Id: ProxyDB.py,v 1.27 2008/07/30 10:40:30 acasajus Exp $"
 
 import time
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
@@ -463,8 +463,8 @@ class ProxyDB(DB):
     if retVal[ 'OK' ]:
       attrs = retVal[ 'Value' ]
       if len( attrs ) > 0:
-        if attrs[0] != requestedVOMSAttr:
-          return S_ERROR( "Stored proxy has already a different VOMS attribute %s than requested %s" %( requestedVOMSAttr, attrs[0] ) )
+        if attrs[0] != vomsAttr:
+          return S_ERROR( "Stored proxy has already a different VOMS attribute %s than requested %s" %( vomsAttr, attrs[0] ) )
         else:
           self.__storeVOMSProxy( userDN, userGroup, vomsAttr, chain )
           return S_OK( chain )
