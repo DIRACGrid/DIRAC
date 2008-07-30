@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.40 2008/07/08 13:56:23 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.41 2008/07/30 14:03:34 rgracian Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.40 2008/07/08 13:56:23 acasajus Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.41 2008/07/30 14:03:34 rgracian Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -21,7 +21,9 @@ from DIRAC.Resources.Computing.ComputingElementFactory   import ComputingElement
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC                                               import S_OK, S_ERROR, gConfig, platform
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
+from DIRAC.Core.Security.Misc                            import getProxyInfo
 from DIRAC.Core.Security                                 import Locations
+from DIRAC.Core.Security                                 import Properties
 
 import os, sys, re, string, time
 
@@ -61,7 +63,7 @@ class JobAgent(Agent):
     self.cpuFactor = gConfig.getValue('LocalSite/CPUScalingFactor','Unknown')
     self.jobWrapperTemplate = self.siteRoot+gConfig.getValue(self.section+'/JobWrapperTemplate','/DIRAC/WorkloadManagementSystem/JobWrapper/JobWrapperTemplate')
     self.jobSubmissionDelay = gConfig.getValue(self.section+'/SubmissionDelay',10)
-    self.defaultProxyLength = gConfig.getValue( '/Security/DefaultProxyLifeTime', 86400 )
+    self.defaultProxyLength = gConfig.getValue( '/Security/DefaultProxyLifeTime', 86400*5 )
     #Added default in case pilot role was stripped somehow during proxy delegation
     self.defaultProxyGroup = gConfig.getValue(self.section+'/DefaultProxyGroup','lhcb_pilot')
     self.defaultLogLevel = gConfig.getValue(self.section+'/DefaultLogLevel','debug')
@@ -180,12 +182,21 @@ class JobAgent(Agent):
       self.__report(jobID,'Matched','Job Received by Agent')
       self.__setJobSite(jobID,self.siteName)
       self.__reportPilotInfo(jobID)
-      proxyResult = self.__setupProxy(jobID,ownerDN,jobGroup,self.siteRoot)
-      if not proxyResult['OK']:
-        self.log.warn('Problem while setting up proxy for job %s' %(jobID))
-        self.__report(jobID,'Failed','Invalid Proxy')
+      ret = getProxyInfo( disableVOMS )
+      if not ret['OK']:
+        self.log.error( 'Invalid Proxy', ret['Message'] )
         return self.__finish('Invalid Proxy')
-      proxyChain = proxyResult['Value']
+      proxyChain = ret['Value']['chain']
+      if not 'groupProperties' in ret['Value']:
+        self.log.error( 'Invalid Proxy', 'Group has no properties defined')
+        return self.__finish('Invalid Proxy')
+      if Properties.GENERIC_PILOTS in ret['Value']['groupProperties']:
+        proxyResult = self.__setupProxy(jobID,ownerDN,jobGroup,self.siteRoot)
+        if not proxyResult['OK']:
+          self.log.warn('Problem while setting up proxy for job %s' %(jobID))
+          self.__report(jobID,'Failed','Invalid Proxy')
+          return self.__finish('Invalid Proxy')
+          proxyChain = proxyResult['Value']
 
       saveJDL = self.__saveJobJDLRequest(jobID,jobJDL)
       self.__report(jobID,'Matched','Job Prepared to Submit')
