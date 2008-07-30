@@ -59,7 +59,7 @@ class VOMS( BaseSecurity ):
 
     return S_OK(returnValue)
 
-  def getVOMSProxyFQAN( proxy ):
+  def getVOMSProxyFQAN( self, proxy ):
     """ Get the VOMS proxy fqan attributes
     """
     return self.getVOMSProxyInfo( proxy, "fqan" )
