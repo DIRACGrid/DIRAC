@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.36 2008/07/08 13:37:45 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.37 2008/07/30 14:08:44 acasajus Exp $
 # File  : Watchdog.py
 # Author: Stuart Paterson
 ########################################################################
@@ -18,7 +18,7 @@
           - CPU normalization for correct comparison with job limit
 """
 
-__RCSID__ = "$Id: Watchdog.py,v 1.36 2008/07/08 13:37:45 acasajus Exp $"
+__RCSID__ = "$Id: Watchdog.py,v 1.37 2008/07/30 14:08:44 acasajus Exp $"
 
 from DIRAC.Core.Base.Agent                              import Agent
 from DIRAC.Core.DISET.RPCClient                         import RPCClient
@@ -27,6 +27,8 @@ from DIRAC.Core.Utilities.Subprocess                    import shellCall
 from DIRAC.Core.Utilities.ProcessMonitor                import ProcessMonitor
 from DIRAC                                              import S_OK, S_ERROR
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient    import gProxyManager
+from DIRAC.Core.Security.Misc                           import getProxyInfo
+from DIRAC.Core.Security                                import Properties
 
 import os,thread,time,shutil
 
@@ -51,9 +53,17 @@ class Watchdog(Agent):
     self.peekRetry = 5
     self.processMonitor = ProcessMonitor()
     self.pilotProxyLocation = False
+    self.pilotInfo = False
 
   def setPilotProxyLocation( self, pilotProxyLocation ):
     self.pilotProxyLocation = pilotProxyLocation
+    retVal = getProxyInfo( pilotProxyLocation, disableVOMS = True )
+    if not retVal[ 'OK' ]:
+      self.log.error( "Cannot load pilot proxy %s: %s" % ( pilotProxyLocation, retVal[ 'Message' ] ) )
+    self.pilotInfo = retVal[ 'Value' ]
+    isGeneric = 'groupProperties' in self.pilotInfo and Properties.GENERIC_PILOT in self.pilotInfo[ 'groupProperties' ]
+    self.pilotInfo[ 'GENERIC_PILOT' ] = isGeneric
+
 
   #############################################################################
   def initialize(self,loops=0):
@@ -105,7 +115,7 @@ class Watchdog(Agent):
     #      but only perform checks with a certain frequency
     if (time.time() - self.initialValues['StartTime']) > self.checkingTime*self.checkCount:
       self.checkCount += 1
-      if self.pilotProxyLocation:
+      if self.pilotProxyLocation and self.pilotInfo and self.pilotInfo[ 'GENERIC_PILOT' ]:
         self.log.verbose( "Checking proxy...")
         gProxyManager.renewProxy( minLifeTime = gConfig.getValue( '/Security/MinProxyLifeTime', 10800 ),
                                   newProxyLifeTime = gConfig.getValue( '/Security/DefaultProxyLifeTime', 86400 ),
