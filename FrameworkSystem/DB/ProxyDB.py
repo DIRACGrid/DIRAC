@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.21 2008/07/29 18:47:22 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.22 2008/07/30 08:24:45 acasajus Exp $
 ########################################################################
 """ ProxyRepository class is a front-end to the proxy repository Database
 """
 
-__RCSID__ = "$Id: ProxyDB.py,v 1.21 2008/07/29 18:47:22 acasajus Exp $"
+__RCSID__ = "$Id: ProxyDB.py,v 1.22 2008/07/30 08:24:45 acasajus Exp $"
 
 import time
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
@@ -33,7 +33,7 @@ class ProxyDB(DB):
     return gConfig.getValue( "/DIRAC/VOPolicy/MyProxyServer" , "myproxy.cern.ch" )
 
   def getMyProxyMaxLifeTime(self):
-    return gConfig.getValue( "/DIRAC/VOPolicy/MyProxyMaxLifeTime", 86400 )
+    return gConfig.getValue( "/DIRAC/VOPolicy/MyProxyMaxDelegationTime", 168 ) * 3600
 
   def __initializeDB(self):
     """
