@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.48 2008/07/26 04:49:32 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.49 2008/07/30 10:35:39 rgracian Exp $
 # File :   Director.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -48,7 +48,7 @@
 
 """
 
-__RCSID__ = "$Id: Director.py,v 1.48 2008/07/26 04:49:32 rgracian Exp $"
+__RCSID__ = "$Id: Director.py,v 1.49 2008/07/30 10:35:39 rgracian Exp $"
 
 import types, time
 
@@ -1021,11 +1021,11 @@ MyProxyServer = "myproxy.cern.ch";
     if jobDict['OwnerGroup'] == 'lhcb_prod':
       wmsClientJDL += """
 JobType = "Parametric";
-Parameters= 20;
+Parameters= 10;
 ParameterStep =1;
 ParameterStart = 0;
 """
-      nPilots = 20
+      nPilots = 10
 
 
     (jobJDL , jobRequirements) = self._JobJDL( jobDict, pilotOptions, ceMask )
