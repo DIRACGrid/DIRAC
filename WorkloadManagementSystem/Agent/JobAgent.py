@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.42 2008/07/30 14:06:14 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.43 2008/07/30 14:08:26 rgracian Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.42 2008/07/30 14:06:14 rgracian Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.43 2008/07/30 14:08:26 rgracian Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -190,7 +190,7 @@ class JobAgent(Agent):
       if not 'groupProperties' in ret['Value']:
         self.log.error( 'Invalid Proxy', 'Group has no properties defined')
         return self.__finish('Invalid Proxy')
-      if Properties.GENERIC_PILOTS in ret['Value']['groupProperties']:
+      if Properties.GENERIC_PILOT in ret['Value']['groupProperties']:
         proxyResult = self.__setupProxy(jobID,ownerDN,jobGroup,self.siteRoot)
         if not proxyResult['OK']:
           self.log.warn('Problem while setting up proxy for job %s' %(jobID))
