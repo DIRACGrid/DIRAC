@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.51 2008/07/30 16:27:40 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.52 2008/07/30 16:30:40 rgracian Exp $
 # File :   Director.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -48,7 +48,7 @@
 
 """
 
-__RCSID__ = "$Id: Director.py,v 1.51 2008/07/30 16:27:40 rgracian Exp $"
+__RCSID__ = "$Id: Director.py,v 1.52 2008/07/30 16:30:40 rgracian Exp $"
 
 import types, time
 
@@ -461,7 +461,7 @@ def updateJobStatus( logger, name, jobID, majorStatus, minorStatus=None, applica
     ret = jobDB.getJobAttribute(jobID, 'Status')
     if not ret['OK'] or not ret['Value'] == majorStatus:
       return True
-  logger.verbose("jobDB.setJobStatus( %s, minor=%s, application=%s )" % ( jobID, minorStatus, applicationStatus ) )
+  logger.info("jobDB.setJobStatus( %s, minor=%s, application=%s )" % ( jobID, minorStatus, applicationStatus ) )
   result = jobDB.setJobStatus( jobID,minor=minorStatus, application=applicationStatus )
 
   if logRecord and result['OK']:
