@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.25 2008/07/30 09:53:04 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.26 2008/07/30 10:13:47 acasajus Exp $
 ########################################################################
 """ ProxyRepository class is a front-end to the proxy repository Database
 """
 
-__RCSID__ = "$Id: ProxyDB.py,v 1.25 2008/07/30 09:53:04 acasajus Exp $"
+__RCSID__ = "$Id: ProxyDB.py,v 1.26 2008/07/30 10:13:47 acasajus Exp $"
 
 import time
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
@@ -445,10 +445,11 @@ class ProxyDB(DB):
     retVal = self.__getPemAndTimeLeft( userDN, userGroup, vomsAttr )
     if retVal[ 'OK' ]:
       pemData = retVal[ 'Value' ][0]
+      vomsTime = retVal[ 'Value' ][1]
       chain = X509Chain()
       retVal = chain.loadProxyFromString( pemData )
       if retVal[ 'OK' ]:
-        if requiredLifeTime and requiredLifeTime >= chain.getRemainingSecs()[ 'Value' ]:
+        if requiredLifeTime and requiredLifeTime <= vomsTime:
           return S_OK( chain )
 
     retVal = self.getProxy( userDN, userGroup, requiredLifeTime )
