@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.41 2008/07/30 14:03:34 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.42 2008/07/30 14:06:14 rgracian Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.41 2008/07/30 14:03:34 rgracian Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.42 2008/07/30 14:06:14 rgracian Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -182,7 +182,7 @@ class JobAgent(Agent):
       self.__report(jobID,'Matched','Job Received by Agent')
       self.__setJobSite(jobID,self.siteName)
       self.__reportPilotInfo(jobID)
-      ret = getProxyInfo( disableVOMS )
+      ret = getProxyInfo( disableVOMS = True )
       if not ret['OK']:
         self.log.error( 'Invalid Proxy', ret['Message'] )
         return self.__finish('Invalid Proxy')
