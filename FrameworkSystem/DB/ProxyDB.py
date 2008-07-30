@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.28 2008/07/30 10:41:49 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.29 2008/07/30 15:21:34 acasajus Exp $
 ########################################################################
 """ ProxyRepository class is a front-end to the proxy repository Database
 """
 
-__RCSID__ = "$Id: ProxyDB.py,v 1.28 2008/07/30 10:41:49 acasajus Exp $"
+__RCSID__ = "$Id: ProxyDB.py,v 1.29 2008/07/30 15:21:34 acasajus Exp $"
 
 import time
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
@@ -166,6 +166,10 @@ class ProxyDB(DB):
     if not retVal[ 'OK' ]:
       return retVal
     attr = retVal[ 'Value' ]
+    #HACK: We deny proxies with VOMS extensions
+    if len( attr ) > 0:
+      return S_ERROR( "Proxies with VOMS extensions are not allowed to be uploaded" )
+    #END HACK
     validVOMSAttrs = CS.getVOMSAttributeForGroup( userGroup )
     if len( attr ) == 0 or attr[0] in validVOMSAttrs:
       return S_OK( 'OK' )
