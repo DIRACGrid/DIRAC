@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: MatcherHandler.py,v 1.18 2008/07/22 12:06:38 rgracian Exp $
+# $Id: MatcherHandler.py,v 1.19 2008/07/30 10:30:06 rgracian Exp $
 ########################################################################
 """
 Matcher class. It matches Agent Site capabilities to job requirements.
@@ -7,7 +7,7 @@ It also provides an XMLRPC interface to the Matcher
 
 """
 
-__RCSID__ = "$Id: MatcherHandler.py,v 1.18 2008/07/22 12:06:38 rgracian Exp $"
+__RCSID__ = "$Id: MatcherHandler.py,v 1.19 2008/07/30 10:30:06 rgracian Exp $"
 
 import re, os, sys, time
 import string
@@ -162,7 +162,7 @@ class MatcherHandler(RequestHandler):
     resultDict['JDL'] = result['Value']
 
     matchTime = time.time() - startTime
-    gLogger.verbose("Match time: [%s]" % str(matchTime))
+    gLogger.info("Match time: [%s]" % str(matchTime))
     gMonitor.addMark( "matchTime", matchTime )
 
     # Get some extra stuff into the response returned
