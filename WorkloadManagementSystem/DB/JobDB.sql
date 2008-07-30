@@ -1,4 +1,4 @@
--- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.sql,v 1.12 2008/07/11 17:23:55 rgracian Exp $
+-- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.sql,v 1.13 2008/07/30 10:43:15 rgracian Exp $
 
 --------------------------------------------------------------------------------
 --
@@ -34,23 +34,34 @@ DROP TABLE IF EXISTS Jobs;
 CREATE TABLE Jobs (
     JobID INTEGER NOT NULL AUTO_INCREMENT,
     JobType VARCHAR(32) NOT NULL DEFAULT 'user',
+    INDEX JobType,
     DIRACSetup VARCHAR(32) NOT NULL DEFAULT 'test',
+    INDEX DIRACSetup,
     JobGroup VARCHAR(32) NOT NULL DEFAULT '00000000',
+    INDEX JobGroup,
     JobSplitType ENUM ('Single','Master','Subjob','DAGNode') NOT NULL DEFAULT 'Single',
+    INDEX JobSplitType,
     MasterJobID INTEGER NOT NULL DEFAULT 0,
     Site VARCHAR(100) NOT NULL DEFAULT 'Unknown',
+    INDEX Site,
     JobName VARCHAR(128) NOT NULL DEFAULT 'noname',
     Owner VARCHAR(32) NOT NULL DEFAULT 'unknown',
+    INDEX Owner,
     OwnerDN VARCHAR(255) NOT NULL DEFAULT 'unknown',
+    INDEX OwnerDN,
     OwnerGroup varchar(128) NOT NULL DEFAULT '/lhcb',
+    INDEX OwnerGroup,
     SubmissionTime DATETIME,
     RescheduleTime DATETIME,
     LastUpdateTime DATETIME,
     StartExecTime DATETIME,
     HeartBeatTime DATETIME,
     Status VARCHAR(32) NOT NULL DEFAULT 'received',
+    INDEX Status,
     MinorStatus VARCHAR(128) NOT NULL DEFAULT 'unknown',
+    INDEX MinorStatus,
     ApplicationStatus VARCHAR(256) NOT NULL DEFAULT 'unknown',
+    INDEX ApplicationStatus,
     ApplicationNumStatus INTEGER NOT NULL DEFAULT 0,
     CPUTime FLOAT NOT NULL DEFAULT 0.0,
     UserPriority INTEGER NOT NULL DEFAULT 0,
