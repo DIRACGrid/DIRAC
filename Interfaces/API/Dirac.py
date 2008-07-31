@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.38 2008/07/23 11:26:13 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.39 2008/07/31 07:49:13 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.38 2008/07/23 11:26:13 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.39 2008/07/31 07:49:13 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -308,7 +308,9 @@ class Dirac:
     else:
       return self.__errorReport('Missing job arguments or executable')
 
-    return S_OK()
+    if status:
+      return S_ERROR('Execution completed with non-zero status %s' %(status))
+    return S_OK('Execution completed successfully')
 
   #############################################################################
   def __printOutput(self,fd,message):
