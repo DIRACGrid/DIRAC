@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Time.py,v 1.5 2008/07/10 07:47:54 rgracian Exp $
-__RCSID__ = "$Id: Time.py,v 1.5 2008/07/10 07:47:54 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Time.py,v 1.6 2008/07/31 10:45:17 rgracian Exp $
+__RCSID__ = "$Id: Time.py,v 1.6 2008/07/31 10:45:17 rgracian Exp $"
 """
 DIRAC Times module
 Support for basic Date and Time operations
@@ -32,13 +32,14 @@ from types import StringTypes
 """
 Some useful constants for time operations
 """
+microsecond = datetime.timedelta( microseconds = 1 )
 second = datetime.timedelta( seconds = 1 )
 minute = datetime.timedelta( minutes = 1 )
 hour = datetime.timedelta( hours = 1 )
 day  = datetime.timedelta( days = 1 )
 week = datetime.timedelta( days = 7 )
 
-dt = datetime.datetime(1,1,1)
+dt = datetime.datetime(2000,1,1)
 
 def dateTime( ):
   """
@@ -77,6 +78,23 @@ def fromEpoch( epoch ):
   Get datetime object from epoch
   """
   return dt.fromtimestamp( epoch )
+
+def to2K( dateTimeObject = None ):
+  """
+  Get seconds, with microsecond precission, since 2K
+  """
+  if dateTimeObject == None:
+    dateTimeObject = dateTime()
+  delta = dateTimeObject - dt
+  return delta.days*86400+delta.seconds+delta.microseconds/1000000.
+
+def from2K( seconds2K = None ):
+  """
+  Get date from seconds since 2K
+  """
+  if seconds2K == None:
+    seconds2K = to2K(dt)
+  return dt + int( seconds2K ) * second + int( seconds2K % 1 * 1000000)  * microsecond
 
 def toString( myDate = None ):
   """
