@@ -442,7 +442,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     elif type(replicaTuple) == types.ListType:
       replicas = replicaTuple
     else:
-      return S_ERROR('LFCClient.setReplicaStatus: Must supply a file tuple or list of file typles')
+      return S_ERROR('LFCClient.removeReplica: Must supply a file tuple or list of file typles')
     self.__openSession()
     failed = {}
     successful = {}
