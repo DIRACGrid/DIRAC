@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.1 2008/07/31 18:16:49 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.2 2008/07/31 18:20:24 acasajus Exp $
 ########################################################################
-""" ProxyRepository class is a front-end to the proxy repository Database
+""" TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.1 2008/07/31 18:16:49 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.2 2008/07/31 18:20:24 acasajus Exp $"
 
 import time
 import types
