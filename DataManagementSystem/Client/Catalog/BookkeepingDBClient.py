@@ -129,6 +129,19 @@ class BookkeepingDBClient(FileCatalogueBase):
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
+  def removeReplica(self,replicaTuple):
+    if type(replicaTuple) == types.TupleType:
+      replicas = [replicaTuple]
+    elif type(replicaTuple) == types.ListType:
+      replicas = replicaTuple
+    else:
+      return S_ERROR('BookkeepingDBClient.setReplicaStatus: Must supply a file tuple or list of file typles')
+    successful = {}
+    for lfn,pfn,se in replicas:
+      successful[lfn] = True
+    resDict = {'Failed':{},'Successful':successful}
+    return S_OK(resDict)
+
   def exists(self,path):
     if type(path) == types.StringType:
       lfns = [path]
