@@ -1,5 +1,4 @@
 import types
-import datetime
 from DIRAC.Core.Utilities import Time
 from DIRAC import S_OK, S_ERROR
 

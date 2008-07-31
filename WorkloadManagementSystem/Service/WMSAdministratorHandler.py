@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSAdministratorHandler.py,v 1.33 2008/07/24 06:17:50 rgracian Exp $
+# $Id: WMSAdministratorHandler.py,v 1.34 2008/07/31 10:47:40 rgracian Exp $
 ########################################################################
 """
 This is a DIRAC WMS administrator interface.
@@ -14,9 +14,9 @@ Access to the pilot data:
 
 """
 
-__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.33 2008/07/24 06:17:50 rgracian Exp $"
+__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.34 2008/07/31 10:47:40 rgracian Exp $"
 
-import os, sys, string, uu, shutil, datetime
+import os, sys, string, uu, shutil
 from types import *
 
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
