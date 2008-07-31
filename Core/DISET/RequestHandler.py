@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.36 2008/07/25 14:27:11 acasajus Exp $
-__RCSID__ = "$Id: RequestHandler.py,v 1.36 2008/07/25 14:27:11 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.37 2008/07/31 14:26:51 acasajus Exp $
+__RCSID__ = "$Id: RequestHandler.py,v 1.37 2008/07/31 14:26:51 acasajus Exp $"
 
 import os
 import types
@@ -8,6 +8,7 @@ from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.LoggingSystem.Client.Logger import gLogger
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.Core.Utilities import Time
+import DIRAC
 
 class RequestHandler:
 
@@ -287,6 +288,7 @@ class RequestHandler:
   types_ping = []
   def export_ping( self ):
     dInfo = {}
+    dInfo[ 'version' ] = DIRAC.version
     dInfo[ 'time' ] = Time.dateTime()
     #Uptime
     try:
