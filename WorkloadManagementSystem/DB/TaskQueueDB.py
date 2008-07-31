@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.2 2008/07/31 18:20:24 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.3 2008/07/31 18:42:11 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.2 2008/07/31 18:20:24 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.3 2008/07/31 18:42:11 acasajus Exp $"
 
 import time
 import types
@@ -88,15 +88,40 @@ class TaskQueueDB(DB):
     for field in self.__singleValueFields:
       if field not in tqDefDict:
         return S_ERROR( "Missing mandatory field '%s' in task queue definition" % field )
-      fieldValue = type( tqDefDict[ field ] )
-      if fieldValue not in ( types.StringType, types.IntType, types.LongType ):
-        return S_ERROR( "Mandatory field %s value type is not valid: %s" % ( field, fieldValue ) )
+      fieldValueType = type( tqDefDict[ field ] )
+      if field in [ "CPUTime" ]:
+        if fieldValueType not in ( types.IntType, types.LongType ):
+          return S_ERROR( "Mandatory field %s value type is not valid: %s" % ( field, fieldValue ) )
+      else:
+        if fieldValueType not in ( types.StringType, types.UnicodeType ):
+          return S_ERROR( "Mandatory field %s value type is not valid: %s" % ( field, fieldValue ) )
     for field in self.__multiValueFields:
       if field in tqDefDict:
-        fieldValue = type( tqDefDict[ field ] )
-      if fieldValue not in ( types.ListType, types.TupleType ):
+        fieldValueType = type( tqDefDict[ field ] )
+      if fieldValueType not in ( types.ListType, types.TupleType ):
         return S_ERROR( "Multi value field %s value type is not valid: %s" % ( field, fieldValue ) )
     return S_OK( tqDefDict )
+
+  def _checkMatchDefinition( tqMatchDict ):
+    """
+    Check a task queue match dict is valid
+    """
+    for field in self.__singleValueFields:
+      if field not in tqMatchDict:
+        return S_ERROR( "Missing mandatory field '%s' in task queue definition" % field )
+      fieldValueType = type( tqMatchDict[ field ] )
+      if field in [ "CPUTime" ]:
+        if fieldValueType not in ( types.IntType, types.LongType ):
+          return S_ERROR( "Mandatory field %s value type is not valid: %s" % ( field, fieldValue ) )
+      else:
+        if fieldValueType not in ( types.StringType, types.UnicodeType ):
+          return S_ERROR( "Mandatory field %s value type is not valid: %s" % ( field, fieldValue ) )
+    for field in self.__multiValueMatchFields:
+      if field in tqMatchDict:
+        fieldValueType = type( tqMatchDict[ field ] )
+      if fieldValueType not in ( types.StringType, types.UnicodeType ):
+        return S_ERROR( "Field %s value type is not valid: %s" % ( field, fieldValue ) )
+    return S_OK( tqMatchDict )
 
   def createTaskQueue( self, tqDefDict, priority = 1, skipDefinitionCheck = False, connObj = False ):
     """
