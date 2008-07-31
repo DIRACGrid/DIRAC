@@ -1,8 +1,8 @@
-# $Id: Workflow.py,v 1.35 2008/06/15 11:35:17 atsareg Exp $
+# $Id: Workflow.py,v 1.36 2008/07/31 08:49:25 paterson Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.35 $"
+__RCSID__ = "$Revision: 1.36 $"
 
 import os, re, types
 import xml.sax
@@ -106,12 +106,13 @@ class Workflow(AttributeCollection):
     # and we have to share this dictionary between all included steps
     # we also have to check versions of the modules and instances
     for type in step.module_definitions.keys():
-      if self.module_definitions.has_key(type):
+      #if self.module_definitions.has_key(type):
         # we have the same ModuleDefinition in 2 places
         # we need to find way to synchronise it
-        print "Workflow:addStep - we need to write ModuleDefinitions synchronisation code"
-      else:
+        #print "Workflow:addStep - we need to write ModuleDefinitions synchronisation code"
+      #else:
         # new module - just append it
+      if not self.module_definitions.has_key(type):
         self.module_definitions.append(step.module_definitions[type])
     self.step_definitions.append(step)
     del step.module_definitions # we need to clean up all unwanted definitions
