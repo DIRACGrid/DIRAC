@@ -1,4 +1,4 @@
-""" Client for PlacementDB file catalog tables
+""" Client for BookkeepingDB file catalog
 """
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -6,10 +6,10 @@ from DIRAC.DataManagementSystem.Client.Catalog.FileCatalogueBase import FileCata
 import types, os
 
 class BookkeepingDBClient(FileCatalogueBase):
-  """ File catalog client for placement DB
+  """ File catalog client for bookkeeping DB
   """
   def __init__(self, url=False):
-    """ Constructor of the PlacementDB catalogue client
+    """ Constructor of the Bookkeeping catalogue client
     """
     self.name = 'BookkeepingDB'
     self.valid = True
@@ -25,136 +25,126 @@ class BookkeepingDBClient(FileCatalogueBase):
   def isOK(self):
     return self.valid
 
-  def __addReplica(self,lfn,pfn,se):
-    """ Add replica info to the Bookkeeping database"
-    """
+  def __setHasReplicaFlag(self,lfns):
+    res = self.server.addFiles(lfns)
+    for lfn in lfns:
+      if res['Value'].has_key(lfn):
+        failed[lfn] = res['Value'][lfn]
+      else:
+        successful[lfn] = True
+    resDict = {'Successful':successful,'Failed':failed}
+    return S_OK(resDict)
 
-    repscript = """<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE Replicas SYSTEM "book.dtd">
-<Replicas>
-  <Replica File="%s"
-           Name="%s"
-           Location="%s"
-           SE="%s" />
-</Replicas>
-""" % (lfn,pfn,se,se)
-    fname = os.path.basename(lfn)+".A.xml"
-    #print "sending",fname
-    result = self.server.sendBookkeeping(fname,repscript)
+  def __unsetHasReplicaFlag(self,lfns):
+    res = self.server.removeFiles(lfns)
+    for lfn in lfns:
+      if res['Value'].has_key(lfn):
+        failed[lfn] = res['Value'][lfn]
+      else:
+        successful[lfn] = True
+    resDict = {'Successful':successful,'Failed':failed}
+    return S_OK(resDict)
 
-    return result
+  def __exists(self,lfns):
+    res = self.server.exists(lfns)
+    if not res['OK']:
+      for lfn in lfns:
+        failed[lfn] = res['Message']
+        resDict = {'Successful':{},'Failed':failed}
+      return S_OK(resDict)
+    else:
+      successful = {}
+      for lfn,exists in res['Value'].items():
+        successful[lfn] = exists
+      resDict = {'Successful':successful,'Failed':{}}
+      return S_OK(resDict)
+
+  def __getFileMetadata(lfns):
+    res = self.server.getFileMetadata(lfns)
+    successful = {}
+    failed = {}
+    for lfn,result in res['Value'].items():
+      if result in types.StringTypes:
+        failed[lfn] = result
+      else:
+        successful[lfn] = result
+    resDict = {'Successful':successful,'Failed':failed}
+    return S_OK(resDict)
 
   def addFile(self,fileTuple):
     """ A tuple should be supplied to this method which contains:
-        (lfn,pfn,size,se,guid)
+        (lfn,pfn,size,se,guid,checksum)
         A list of tuples may also be supplied.
     """
-
+    successful = {}
+    failed = {}
     if type(fileTuple) == types.TupleType:
       files = [fileTuple]
-    else:
+    elif type(fileTuple) == types.ListType:
       files = fileTuple
-    replicaTupleList = []
-    for fileTuple in files:
-      lfn,pfn,size,se,guid = fileTuple
-      replicaTupleList.append((lfn,pfn,se))
+    else:
+      return S_ERROR('BookkeepingDBClient.addFile: Must supply a file tuple of list of tuples')
+    fileList = []
+    for lfn,pfn,size,se,guid,checksum in files:
+      fileList.append(lfn)
+    return self.__setHasReplicaFlag(fileList)
 
-    return self.addReplica(replicaTupleList)
-
-  def addReplica(self, replicaTuple):
-    """ Add replica info
+  def addReplica(self,replicaTuple):
+    """ This adds a replica to the catalogue
+        The tuple to be supplied is of the following form:
+          (lfn,pfn,se,master)
+        where master = True or False
     """
-
-    result = S_OK()
-
     if type(replicaTuple) == types.TupleType:
       replicas = [replicaTuple]
-    else:
+    elif type(replicaTuple) == types.ListType:
       replicas = replicaTuple
-
-    failed_lfns = []
-
-    for replicaTuple in replicas:
-      lfn,pfn,se = replicaTuple
-      resRep = self.__addReplica(lfn,pfn,se)
-      if not resRep['OK']:
-        failed_lfns.append((lfn,se))
-
-    if failed_lfns:
-      result = S_ERROR('Failed to add all replicas')
-      result['FailedLFNs'] = failed_lfns
     else:
-      return S_OK()
+      return S_ERROR('BookkeepingDBClient.addReplica: Must supply a replica tuple of list of tuples')
+    fileList = []
+    for lfn,pfn,se,master in replicas:
+      fileList.append(lfn)
+    return self.__setHasReplicaFlag(fileList)
 
-  def removeFile(self,lfns):
-    """Remove the LFN record from the BK Catalog
-    """
-
-    if type(lfns) == types.StringType:
-      lfnList = [lfns]
+  def removeFile(self,path):
+    if type(path) == types.StringType:
+      lfns = [path]
+    elif type(path) == types.ListType:
+       lfns = path
     else:
-      lfnList = lfns
+      return S_ERROR('BookkeepingDBClient.removeFile: Must supply a path or list of paths')
+    res = self.__exists(lfns)
+    if not res['OK']:
+      return res
+    lfnsToRemove = []
+    successful = {}
+    for lfn,exists in res['Value']['Successful'].items():
+      if exists:
+        lfnsToRemove.append(lfn)
+      else:
+        successful[lfn] = True
+    res = self.__unsetHasReplicaFlag(lfnsToRemove)
+    failed = res['Value']['Failed']
+    successful.update(res['Value']['Successful'])
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
 
-    result = S_OK()
-    failed_lfns = []
-
-    for lfn in lfnList:
-
-      repscript = """<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE Replicas SYSTEM "book.dtd">
-<Replicas>
-  <Replica File="%s"
-           Name=""
-           Location="anywhere"
-           Action="Delete"  />
-</Replicas>
-""" % (lfn)
-      #print repscript
-      fname = os.path.basename(lfn)+".R.xml"
-      #print "sending",fname
-      resRem = self.server.sendBookkeeping(fname,repscript)
-      if not resRem['OK']:
-        failed_lfns.append(lfn)
-
-    if failed_lfns:
-      result = S_ERROR('Failed to remove all files')
-      result['FailedLFNs'] = failed_lfns
+  def exists(self,path):
+    if type(path) == types.StringType:
+      lfns = [path]
+    elif type(path) == types.ListType:
+       lfns = path
     else:
-      return S_OK()
+      return S_ERROR('BookkeepingDBClient.exists: Must supply a path or list of paths')
+    return self.__exists(lfns)
 
-
-  def removeReplica(self,replicas):
-    """ Remove replica info from bookkeeping
-    """
-
-    if type(replicas) == types.StringType:
-      replicaList = [replicas]
+  def getFileMetadata(self,path):
+    if type(path) == types.StringType:
+      lfns = [path]
+    elif type(path) == types.ListType:
+       lfns = path
     else:
-      replicaList = replicas
+      return S_ERROR('BookkeepingDBClient.exists: Must supply a path or list of paths')
+    return self.__getFileMetadata(lfns)
 
-    result = S_OK()
-    failed_lfns = []
 
-    for lfn,se in replicaList:
-      repscript = """<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE Replicas SYSTEM "book.dtd">
-<Replicas>
-  <Replica File="%s"
-           Name="%s"
-           Location="%s"
-           SE="%s"
-           Action="Delete"  />
-</Replicas>
-""" % (lfn,'ANY',se,se)
-      #print repscript
-      fname = os.path.basename(lfn)+".R.xml"
-      #print "sending",fname
-      resRem = self.server.sendBookkeeping(fname,repscript)
-      if not resRem['OK']:
-        failed_lfns.append((lfn,se))
-
-    if failed_lfns:
-      result = S_ERROR('Failed to remove all replicas')
-      result['FailedLFNs'] = failed_lfns
-    else:
-      return S_OK()
