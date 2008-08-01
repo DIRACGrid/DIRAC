@@ -32,3 +32,9 @@ CREATE TABLE Files(
    Status VARCHAR(255) DEFAULT 'Active',
    INDEX (Status)
 );
+
+
+DROP TABLE IF EXISTS LastMonitor;
+CREATE TABLE LastMonitor(
+   LastMonitorTime DATETIME NOT NULL
+);
