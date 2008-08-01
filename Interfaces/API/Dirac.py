@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.39 2008/07/31 07:49:13 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.40 2008/08/01 08:15:20 rgracian Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.39 2008/07/31 07:49:13 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.40 2008/08/01 08:15:20 rgracian Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -1427,7 +1427,7 @@ class Dirac:
           parameters[param]= value.replace('"','')
       return S_OK(parameters)
     except Exception, x:
-      self.log.exception(x)
+      self.log.exception(lException=x)
       return S_ERROR('Exception while extracting JDL parameters for job')
 
   #############################################################################

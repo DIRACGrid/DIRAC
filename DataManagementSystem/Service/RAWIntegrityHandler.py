@@ -24,5 +24,5 @@ class RAWIntegrityHandler(RequestHandler):
       return res
     except Exception,x:
       errStr = "RAWIntegrityHandler.addFile: Exception while adding file to database."
-      gLogger.exception(errStr,str(x))
+      gLogger.exception(errStr,lException=x)
       return S_ERROR(errStr)

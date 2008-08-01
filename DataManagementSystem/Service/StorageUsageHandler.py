@@ -37,7 +37,7 @@ class StorageUsageHandler(RequestHandler):
       return res
     except Exception, x:
       errStr = "StorageUsageHandler.insertDirectory: Exception while inserting directory."
-      gLogger.exception(errStr,str(x))
+      gLogger.exception(errStr,lException=x)
       return S_ERROR(errStr)
 
   types_publishDirectoryUsage = [StringType,StringType,LongType,IntType]
@@ -54,7 +54,7 @@ class StorageUsageHandler(RequestHandler):
       return res
     except Exception, x:
       errStr = "StorageUsageHandler.publishDirectoryUsage: Exception while inserting usage."
-      gLogger.exception(errStr,str(x))
+      gLogger.exception(errStr,lException=x)
       return S_ERROR(errStr)
 
   types_publishEmptyDirectory = [StringType]
@@ -71,7 +71,7 @@ class StorageUsageHandler(RequestHandler):
       return res
     except Exception, x:
       errStr = "StorageUsageHandler.publishEmptyDirectory: Exception removing directory."
-      gLogger.exception(errStr,str(x))
+      gLogger.exception(errStr,lException=x)
       return S_ERROR(errStr)
 
   types_getStorageSummary = []
@@ -88,6 +88,6 @@ class StorageUsageHandler(RequestHandler):
       return res
     except Exception, x:
       errStr = "StorageUsageHandler.getStorageSummary: Exception while obtaining usage."
-      gLogger.exception(errStr,str(x))
+      gLogger.exception(errStr,lException=x)
       return S_ERROR(errStr)
 

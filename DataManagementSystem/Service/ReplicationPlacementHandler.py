@@ -37,7 +37,7 @@ class ReplicationPlacementHandler(TransformationHandler):
       return res
     except Exception,x:
       errStr = "ReplicationPlacementHandler.publishTransformation: Exception while adding transformation."
-      gLogger.exception(errStr,str(x))
+      gLogger.exception(errStr,lException=x)
       return S_ERROR(errStr)
 
   types_addTransformationParameters = []

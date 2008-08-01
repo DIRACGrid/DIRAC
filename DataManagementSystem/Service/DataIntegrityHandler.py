@@ -31,7 +31,7 @@ class DataIntegrityHandler(RequestHandler):
       return res
     except Exception, x:
       errStr = "DataIntegrityHandler.getPrognosisProblematics: Exception while getting prognosis files."
-      gLogger.exception(errStr,str(x))
+      gLogger.exception(errStr,lException=x)
       return S_ERROR(errorStr)
 
   types_setProblematicStatus = [IntType,StringType]
@@ -48,7 +48,7 @@ class DataIntegrityHandler(RequestHandler):
       return res
     except Exception, x:
       errStr = "DataIntegrityHandler.setProblematicStatus: Exception while setting file status."
-      gLogger.exception(errStr,str(x))
+      gLogger.exception(errStr,lException=x)
       return S_ERROR(errorStr)
 
   types_getProblematicsSummary = []
@@ -68,7 +68,7 @@ class DataIntegrityHandler(RequestHandler):
       return res
     except Exception, x:
       errStr = "DataIntegrityHandler.getProblematicsSummary: Exception while getting summary."
-      gLogger.exception(errStr,str(x))
+      gLogger.exception(errStr,lException=x)
       return S_ERROR(errorStr)
 
   types_getDistinctPrognosis = []
@@ -86,7 +86,7 @@ class DataIntegrityHandler(RequestHandler):
       return res
     except Exception, x:
       errStr = "DataIntegrityHandler.getDistinctPrognosis: Exception while getting summary."
-      gLogger.exception(errStr,str(x))
+      gLogger.exception(errStr,lException=x)
       return S_ERROR(errorStr)
 
   types_incrementProblematicRetry = [IntType]
@@ -103,7 +103,7 @@ class DataIntegrityHandler(RequestHandler):
       return res
     except Exception, x:
       errStr = "DataIntegrityHandler.incrementProblematicRetry: Exception while incrementing retries."
-      gLogger.exception(errStr,str(x))
+      gLogger.exception(errStr,lException=x)
       return S_ERROR(errorStr)
 
   types_insertProblematic = [StringType,DictType]
@@ -120,5 +120,5 @@ class DataIntegrityHandler(RequestHandler):
       return res
     except Exception, x:
       errStr = "DataIntegrityHandler.insertProblematic: Exception while inserting problematic."
-      gLogger.exception(errStr,str(x))
+      gLogger.exception(errStr,lException=x)
       return S_ERROR(errorStr)

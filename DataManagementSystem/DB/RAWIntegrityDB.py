@@ -48,7 +48,7 @@ class RAWIntegrityDB(DB):
       return res
     except Exception,x:
       errStr = "RAWIntegrityDB.setFileStatus: Exception while updating file status."
-      gLogger.exception(errStr, str(x))
+      gLogger.exception(errStr, lException=x)
       return S_ERROR(errStr)
 
   def addFile(self,lfn,pfn,size,se,guid,checksum):
@@ -66,7 +66,7 @@ class RAWIntegrityDB(DB):
       return res
     except Exception,x:
       errStr = "RAWIntegrityDB.addFile: Exception while updating file status."
-      gLogger.exception(errStr, str(x))
+      gLogger.exception(errStr, lException=x)
       return S_ERROR(errStr)
 
   def setLastMonitorTime(self):
@@ -83,7 +83,7 @@ class RAWIntegrityDB(DB):
       return res
     except Exception,x:
       errStr = "RAWIntegrityDB.setLastMonitorTime: Exception while updating migration marker."
-      gLogger.exception(errStr, str(x))
+      gLogger.exception(errStr, lException=x)
       return S_ERROR(errStr)
 
   def getLastMonitorTimeDiff(self):
@@ -102,5 +102,5 @@ class RAWIntegrityDB(DB):
         return S_OK(timediff)
     except Exception,x:
       errStr = "RAWIntegrityDB.getLastMonitorTimeDiff: Exception while getting migration marker."
-      gLogger.exception(errStr, str(x))
+      gLogger.exception(errStr, lException=x)
       return S_ERROR(errStr)
