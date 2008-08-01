@@ -5,8 +5,8 @@ CREATE DATABASE RequestDB;
 -- Must set passwords for database user by replacing "must_be_set".
 --
 use mysql;
-GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON RequestDB.* TO 'Dirac'@'localhost' IDENTIFIED BY '';
-GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON RequestDB.* TO 'Dirac'@'%' IDENTIFIED BY '';
+GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON RequestDB.* TO 'Dirac'@'localhost' IDENTIFIED BY 'must_be_set';
+GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON RequestDB.* TO 'Dirac'@'%' IDENTIFIED BY 'must_be_set';
 
 use RequestDB;
 
@@ -67,3 +67,5 @@ CREATE TABLE Datasets(
    Status varchar(32) DEFAULT 'NEW',
    PRIMARY KEY (Dataset,Status)
 );
+
+SOURCE DIRAC/DataManagementSystem/DB/TransferDB.sql
