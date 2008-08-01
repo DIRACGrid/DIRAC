@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: StagerClient.py,v 1.10 2008/08/01 09:31:03 rgracian Exp $
+# $Id: StagerClient.py,v 1.11 2008/08/01 10:34:44 rgracian Exp $
 ########################################################################
 
 """Set of utilities and classes to handle Stager Database"""
@@ -13,7 +13,7 @@ class StagerClient:
   def __init__(self,useCerts=False):
     """ Constructor of the StagerDBClient class
     """
-    self.useCerts
+    self.useCerts = useCerts
 
   def stageFiles(self,jobid,site,replicas,source):
     try:
