@@ -9,6 +9,8 @@ CREATE TABLE Channels (
    SourceSite  varchar(32)  NOT NULL,
    DestinationSite varchar(32) NOT NULL,
    Status varchar(32) NOT NULL,
+   FTSServer varchar(128) NOT NULL,
+   Files int(8) default 50,
    ChannelName  varchar(32),
    PRIMARY KEY (ChannelID,SourceSite,DestinationSite)
 );
