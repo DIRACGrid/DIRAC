@@ -6,6 +6,7 @@ from DIRAC.Core.Base.Agent import Agent
 from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
 from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
 from DIRAC.ConfigurationSystem.Client import PathFinder
+from DIRAC.Core.DISET.RPCClient import executeRPCStub
 
 import time,os,re
 from types import *
@@ -64,7 +65,6 @@ class DISETForwardingAgent(Agent):
       return S_OK()
 
     gLogger.info("DISETForwardingAgent.execute: Found %s sub requests." % res['Value'])
-    res = oRequest.getRequestAttributes()
     ################################################
     # For all the sub-requests in the request
     for ind in range(res['Value']):
@@ -72,10 +72,15 @@ class DISETForwardingAgent(Agent):
       subRequestAttributes = oRequest.getSubRequestAttributes(ind,'diset')['Value']
       if subRequestAttributes['Status'] == 'Waiting':
         operation = subRequestAttributes['Operation']
-
-        gLogger.error('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-
-        oRequest.setSubRequestStatus(ind,'diset','Done')
+        gLogger.info("DISETForwardingAgent.execute: Attemping to forward %s type." % operation)
+        rpcStub = subRequestAttributes['Arguments']
+        res = executeRPCStub(rpcStub)
+        if res['OK']:
+          gLogger.info("DISETForwardingAgent.execute: Successfully forwarded.")
+          oRequest.setSubRequestStatus(ind,'diset','Done')
+          gMonitor.addMark("Successful",1)
+        else:
+          gLogger.error("DISETForwardingAgent.execute: Failed to forward request.",res['Message'])
       else:
         gLogger.info("DISETForwardingAgent.execute: Sub-request %s is status '%s' and  not to be executed." % (ind,subRequestAttributes['Status']))
 
@@ -84,7 +89,6 @@ class DISETForwardingAgent(Agent):
     requestString = oRequest.toXML()['Value']
     res = self.RequestDBClient.updateRequest(requestName,requestString,self.local)
     if res['OK']:
-      gMonitor.addMark("Successful",1)
       gLogger.info("DISETForwardingAgent.execute: Successfully updated request.")
     else:
       gLogger.error("DISETForwardingAgent.execute: Failed to update request to", self.central)
