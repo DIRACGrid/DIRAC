@@ -1,15 +1,16 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.4 2008/08/01 08:52:11 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.5 2008/08/01 09:08:45 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.4 2008/08/01 08:52:11 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.5 2008/08/01 09:08:45 acasajus Exp $"
 
 import time
 import types
 import random
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC.Core.Utilities import List
 from DIRAC.Core.Base.DB import DB
 
 class TaskQueueDB(DB):
@@ -164,8 +165,9 @@ class TaskQueueDB(DB):
                                ( 'GridCE', gridCEList ),
                                ( 'BannedSites', bannedSitesList ),
                                ( 'LHCbPlatform', LHCbPlatformsList ) ):
+      values = List.uniqueElements( [ value for value in values if value.strip() ] )
       cmd = "INSERT INTO tq_TQTo%s ( 'TQId', 'Value' ) VALUES "
-      cmd += ", ".join( [ "( %s, '%s' )" % ( tqId, value.strip() ) for value in values if value.strip() ] )
+      cmd += ", ".join( [ "( %s, '%s' )" % ( tqId, value ) for value in values ] )
       retVal = self._update( cmd, conn = connObj )
       if not retVal[ 'Value' ]:
         self.cleanOrphanedTaskQueues( connObj = connObj )
@@ -246,10 +248,10 @@ class TaskQueueDB(DB):
       firstQuery = "SELECT COUNT(%s.Value) FROM %s WHERE %s.TQId = `tq_TaskQueues`.TQId" % ( tableName, tableName, tableName )
       grouping = "GROUP BY `%s`.Value" % tableName
       if field in tqDefDict and tqDefDict[ field ]:
-        valuesList = tqDefDict[ field ]
+        valuesList = List.uniqueElements( [ value.strip() for value in tqDefDict[ field ] if value.strip() ] )
         numValues = len( valuesList )
         secondQuery = "%s WHERE %s.Value in (%s)" % ( firstQuery, tableName, tableName,
-                                                        ",".join( [ "'%s'" % value.strip() for value in valuesList if value.strip() ] ) )
+                                                        ",".join( [ "'%s'" % value for value in valuesList ] ) )
         sqlCondList.append( "%s = %s %s" % ( numValues, firstQuery, grouping ) )
         sqlCondList.append( "%s = %s %s" % ( numValues, secondQuery, grouping ) )
       else:
