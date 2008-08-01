@@ -52,18 +52,23 @@ class FTSRequest:
     res = self.isSubmissionReady()
     if not res['OK']:
       return res
+
     # Create the file containing the source and destination SURLs
     res = self.__createSURLPairFile()
     if not res['OK']:
       return res
-    # Make sure that we have the correct FTS server to submit to
-    res = self.__resolveFTSEndpoint()
-    if not res['OK']:
-      return res
+
+    if not self.ftsServer:
+      # Make sure that we have the correct FTS server to submit to
+      res = self.__resolveFTSEndpoint()
+      if not res['OK']:
+        return res
+
     # Submit the fts request through the CLI
     res = self.__submitFTSTransfer()
     if not res['OK']:
       return res
+
     resDict = {'ftsGUID':self.ftsGUID,'ftsServer':self.ftsServer}
     return S_OK(resDict)
 
