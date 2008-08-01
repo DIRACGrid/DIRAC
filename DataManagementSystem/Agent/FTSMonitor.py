@@ -26,7 +26,6 @@ class FTSMonitor(Agent):
   def initialize(self):
     result = Agent.initialize(self)
     self.TransferDB = TransferDB()
-    self.monitorsPerLoop = gConfig.getValue(self.section+'/MonitorsPerLoop',1)
     self.DataLog = DataLoggingClient()
 
     self.useProxies = gConfig.getValue(self.section+'/UseProxies','True').lower() in ( "y", "yes", "true" )
@@ -44,21 +43,8 @@ class FTSMonitor(Agent):
         self.log.error( "Can't get shifter's proxy: %s" % result[ 'Message' ] )
         return result
 
-    for i in range(self.monitorsPerLoop):
-      infoStr = "\n\n##################################################################################\n\n"
-      infoStr = "%sStarting monitoring loop %s of %s\n\n" % (infoStr,i+1, self.monitorsPerLoop)
-      gLogger.info(infoStr)
-      res = self.monitorTransfer()
-    return S_OK()
-
-  def monitorTransfer(self):
-    """ Monitors transfers it obtains from TransferDB
-    """
-    # Create the FTSRequest object for monitoring
-    ftsReq = FTSRequest()
-
     #########################################################################
-    #  Get details for FTS request monitored the most time ago.
+    #  Get the details for all active FTS requests
     res = self.TransferDB.getFTSReq()
     if not res['OK']:
       errStr = "FTSAgent.%s" % res['Message']
@@ -68,7 +54,24 @@ class FTSMonitor(Agent):
       infoStr = "FTSAgent. No FTS requests found to monitor."
       gLogger.info(infoStr)
       return S_OK()
-    ftsReqDict = res['Value']
+    ftsReqs = res['Value']
+
+    #######################################################################
+    # Check them all....
+    i = 1
+    for ftsReqDict in ftsReqs:
+      infoStr = "\n\n##################################################################################\n\n"
+      infoStr = "%sStarting monitoring loop %s of %s\n\n" % (infoStr,i, len(ftsReqs))
+      gLogger.info(infoStr)
+      res = self.monitorTransfer(ftsReqDict)
+      i += 1
+    return S_OK()
+
+  def monitorTransfer(self,ftsReqDict):
+    """ Monitors transfer  obtained from TransferDB
+    """
+    # Create the FTSRequest object for monitoring
+    ftsReq = FTSRequest()
     ftsReqID = ftsReqDict['FTSReqID']
     ftsGUID = ftsReqDict['FTSGuid']
     ftsServer = ftsReqDict['FTSServer']
@@ -103,6 +106,7 @@ class FTSMonitor(Agent):
         gLogger.error(errStr)
       return S_ERROR(errStr)
     infoStr = "Monitoring FTS Job:\n\n"
+    infoStr = "%sglite-transfer-status -s %s -l %s\n" % (infoStr,ftsServer,ftsGUID)
     infoStr = "%s%s%s\n" % (infoStr,'FTS GUID:'.ljust(20),ftsGUID)
     infoStr = "%s%s%s\n\n" % (infoStr,'FTS Server:'.ljust(20),ftsServer)
     infoStr = "%s%s%s\n\n" % (infoStr,'Request Summary:'.ljust(20),ftsReq.getStatusSummary())
@@ -281,7 +285,7 @@ class FTSMonitor(Agent):
     return oAccounting
 
   def corruptedTarget(self,failReason):
-    corruptionErrors = ['FILE_EXISTS','Device or resource busy']#,'TRANSFER error during TRANSFER phase']
+    corruptionErrors = ['FILE_EXISTS','Device or resource busy','Marking Space as Being Used failed']#,'TRANSFER error during TRANSFER phase']
     for error in corruptionErrors:
       if re.search(error,failReason):
         return 1
