@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.55 2008/07/01 12:24:45 paterson Exp $
+# $Id: TransformationDB.py,v 1.56 2008/08/01 07:55:51 rgracian Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -663,7 +663,7 @@ PRIMARY KEY (FileID)
       return S_OK()
     except Exception,x:
       errStr = "TransformationDB.__getLFCClient: Failed to create LcgFileCatalogClient"
-      gLogger.exception(errStr, str(x))
+      gLogger.exception(errStr, lException=x)
       return S_ERROR(errStr)
 
   def exists(self,lfns):

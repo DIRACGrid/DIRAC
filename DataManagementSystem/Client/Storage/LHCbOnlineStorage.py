@@ -99,7 +99,7 @@ class LHCbOnlineStorage(StorageBase):
           gLogger.error(errStr,pfn)
       except Exception,x:
         errStr = "LHCbOnline.requestRetransfer: Exception while requesting file from Online storage."
-        gLogger.exception(errStr,str(x))
+        gLogger.exception(errStr,lException=x)
         failed[pfn] = errStr
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
@@ -129,7 +129,7 @@ class LHCbOnlineStorage(StorageBase):
           gLogger.error(errStr,pfn)
       except Exception,x:
         errStr = "LHCbOnline.getFile: Exception while requesting file from Online storage."
-        gLogger.exception(errStr,str(x))
+        gLogger.exception(errStr,lException=x)
         failed[pfn] = errStr
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)

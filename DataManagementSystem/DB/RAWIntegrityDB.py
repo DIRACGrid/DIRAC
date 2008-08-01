@@ -31,7 +31,7 @@ class RAWIntegrityDB(DB):
         return S_OK(fileDict)
     except Exception,x:
       errStr = "RAWIntegrityDB.getActiveFiles: Exception while getting files from database."
-      gLogger.exception(errStr, str(x))
+      gLogger.exception(errStr, lException=x)
       return S_ERROR(errStr)
 
   def setFileStatus(self,lfn,status):

@@ -207,6 +207,6 @@ class FileCatalog:
         return S_ERROR(errStr)
     except Exception, x:
       errStr = "FileCatalog._generateCatalogObject: Failed to instatiate %s()" % (moduleName)
-      gLogger.exception(errStr,str(x))
+      gLogger.exception(errStr,lException=x)
       return S_ERROR(errStr)
     return S_OK(catalog)

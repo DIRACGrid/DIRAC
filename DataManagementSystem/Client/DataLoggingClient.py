@@ -18,7 +18,7 @@ class DataLoggingClient:
         self.url = url
     except Exception, x:
       errStr = "DataLoggingClient.__init__: Exception while obtaining service URL."
-      gLogger.exception(errStr,str(x))
+      gLogger.exception(errStr,lException=x)
 
   def addFileRecord(self,lfn,status,minor,date,source):
     try:
@@ -26,5 +26,5 @@ class DataLoggingClient:
       return client.addFileRecord(lfn,status,minor,date,source)
     except Exception, x:
       errStr = "DataLoggingClient.__init__: Exception while adding file record."
-      gLogger.exception(errStr,str(x))
+      gLogger.exception(errStr,lException=x)
       return S_ERROR(errStr)

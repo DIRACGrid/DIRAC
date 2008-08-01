@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Agent.py,v 1.26 2008/07/16 18:46:45 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Agent.py,v 1.27 2008/08/01 07:53:03 rgracian Exp $
 ########################################################################
 """ Base class for all the Agents.
 
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: Agent.py,v 1.26 2008/07/16 18:46:45 acasajus Exp $"
+__RCSID__ = "$Id: Agent.py,v 1.27 2008/08/01 07:53:03 rgracian Exp $"
 
 import os
 import threading
@@ -280,7 +280,7 @@ class Agent:
           else:
             gLogger.warn('Failed to get memory consumption')
     except Exception,x:
-      gLogger.exception(str(x))
+      gLogger.exception(lException=x)
       self.runFlag = False
       self.exit_status = 'Exception'
       return

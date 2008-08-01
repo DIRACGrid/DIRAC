@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalogue. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.33 2008/07/17 13:05:10 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.34 2008/08/01 08:04:25 rgracian Exp $"
 
 import re, time, commands, random,os
 import types
@@ -1262,7 +1262,7 @@ class ReplicaManager:
     try:
       res = storageElement.getAccessUrl(pfns)
     except Exception, x:
-      gLogger.exception(x)
+      gLogger.exception(lException=x)
       raise x
     if not res['OK']:
       errStr = "ReplicaManager.__getPhysicalFileAccessUrl: Failed to get access urls for replicas."

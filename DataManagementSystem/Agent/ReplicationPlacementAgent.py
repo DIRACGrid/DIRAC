@@ -187,6 +187,6 @@ class ReplicationPlacementAgent(Agent):
         return S_ERROR(errStr)
     except Exception, x:
       errStr = "ReplicationPlacementAgent._generatePluginObject: Failed to instatiate  %s()." % plugin
-      gLogger.exception(errStr,str(x))
+      gLogger.exception(errStr,lException=x)
       return S_ERROR(errStr)
     return S_OK(oPlugin)

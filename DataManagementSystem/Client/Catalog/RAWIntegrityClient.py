@@ -16,7 +16,7 @@ class RAWIntegrityClient(FileCatalogueBase):
       self.valid = True
     except Exception,x:
       errStr = "RAWIntegrityClient.__init__: Exception while generating server url."
-      gLogger.exception(errStr,str(x))
+      gLogger.exception(errStr,lException=x)
       self.valid = False
 
   def isOK(self):

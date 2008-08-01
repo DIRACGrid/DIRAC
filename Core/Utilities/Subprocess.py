@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Subprocess.py,v 1.24 2008/07/03 10:35:46 acasajus Exp $
-__RCSID__ = "$Id: Subprocess.py,v 1.24 2008/07/03 10:35:46 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Subprocess.py,v 1.25 2008/08/01 07:58:12 rgracian Exp $
+__RCSID__ = "$Id: Subprocess.py,v 1.25 2008/08/01 07:58:12 rgracian Exp $"
 """
    DIRAC Wrapper to execute python and system commands with a wrapper, that might
    set a timeout.
@@ -328,7 +328,7 @@ class Subprocess:
                         self.bufferList[ bufferIndex ][1] + nextLineIndex ] )
       except Exception, v:
         gLogger.exception( 'Exception while calling callback function',
-                           '%s: %s' % ( self.callback.__name__, str(v) ) )
+                           '%s' % self.callback.__name__, lException=v )
         gLogger.showStack()
 
       self.bufferList[ bufferIndex ][1] += nextLineIndex + 1

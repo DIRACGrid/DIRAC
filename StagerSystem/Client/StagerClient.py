@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: StagerClient.py,v 1.8 2008/07/16 17:16:18 rgracian Exp $
+# $Id: StagerClient.py,v 1.9 2008/08/01 07:49:33 rgracian Exp $
 ########################################################################
 
 """Set of utilities and classes to handle Stager Database"""
@@ -32,7 +32,7 @@ class StagerClient:
       return result
     except Exception,x:
       errorStr = "StagerDBClient.getJobFilesStatus failed"
-      gLogger.exception(errorStr,x)
+      gLogger.exception(errorStr,lException=x)
       return S_ERROR(errorStr+": "+str(x))
 
   def getJobsForSystemAndState(self,state,source,limit=0):
@@ -42,7 +42,7 @@ class StagerClient:
       return result
     except Exception,x:
       errorStr = "StagerDBClient.getJobsForSystemAndState failed"
-      gLogger.exception(errorStr,x)
+      gLogger.exception(errorStr,lException=x)
       return S_ERROR(errorStr+": "+str(x))
 
   def getFilesForState(self,site,state,limit=0):
@@ -52,7 +52,7 @@ class StagerClient:
       return result
     except Exception, x:
       errorStr = "StagerDBClient.getFilesForState failed"
-      gLogger.exception(errorStr,x)
+      gLogger.exception(errorStr,lException=x)
       return S_ERROR(errorStr+": "+str(x))
 
   def setFilesState(self,lfns,site,state):
@@ -62,7 +62,7 @@ class StagerClient:
       return result
     except Exception, x:
       errorStr = "StagerDBClient.setFilesState failed"
-      gLogger.exception(errorStr,x)
+      gLogger.exception(errorStr,lException=x)
       return S_ERROR(errorStr+": "+str(x))
 
   def getJobsForState(self,site,state,limit=0):
@@ -72,7 +72,7 @@ class StagerClient:
       return result
     except Exception, x:
       errorStr = "StagerDBClient.getJobsForState failed"
-      gLogger.exception(errorStr,x)
+      gLogger.exception(errorStr,lException=x)
       return S_ERROR(errorStr+": "+str(x))
 
   def getStageTimeForSystem(self,lfns,source):
@@ -82,7 +82,7 @@ class StagerClient:
       return result
     except Exception, x:
       errorStr = "StagerDBClient.getStageTimeForSystem failed"
-      gLogger.exception(errorStr,x)
+      gLogger.exception(errorStr,lException=x)
       return S_ERROR(errorStr+": "+str(x))
 
   def setJobsDone(self,jobIDs):
@@ -92,7 +92,7 @@ class StagerClient:
       return result
     except Exception, x:
       errorStr = "StagerDBClient.setJobsDone failed"
-      gLogger.exception(errorStr,x)
+      gLogger.exception(errorStr,lException=x)
       return S_ERROR(errorStr+": "+str(x))
 
   def resetStageRequest(self,site,timeout):
@@ -102,7 +102,7 @@ class StagerClient:
       return result
     except Exception, x:
       errorStr = "StagerDBClient.resetStageRequest failed"
-      gLogger.exception(errorStr,x)
+      gLogger.exception(errorStr,lException=x)
       return S_ERROR(errorStr+": "+str(x))
 
   def getLFNsForJob(self,jobid):
@@ -112,7 +112,7 @@ class StagerClient:
       return result
     except Exception, x:
       errorStr = "StagerDBClient.getLFNsForJob failed"
-      gLogger.exception(errorStr,x)
+      gLogger.exception(errorStr,lException=x)
       return S_ERROR(errorStr+": "+str(x))
 
   def getJobsForRetry(self,retry,site):
@@ -122,7 +122,7 @@ class StagerClient:
       return result
     except Exception, x:
       errorStr = "StagerDBClient.getJobsForRetry failed"
-      gLogger.exception(errorStr,x)
+      gLogger.exception(errorStr,lException=x)
       return S_ERROR(errorStr+": "+str(x))
 
   def getAllJobs(self,source):
@@ -132,7 +132,7 @@ class StagerClient:
       return result
     except Exception, x:
       errorStr = "StagerDBClient.getAllJobs failed"
-      gLogger.exception(errorStr,x)
+      gLogger.exception(errorStr,lException=x)
       return S_ERROR(errorStr+": "+str(x))
 
   def setTiming(self,site,cmd,time,files):
@@ -142,5 +142,5 @@ class StagerClient:
       return result
     except Exception, x:
       errorStr = "StagerDBClient.setTiming failed"
-      gLogger.exception(errorStr,x)
+      gLogger.exception(errorStr,lException=x)
       return S_ERROR(errorStr+": "+str(x))
