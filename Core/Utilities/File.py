@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/File.py,v 1.23 2008/06/20 17:38:39 acsmith Exp $
-__RCSID__ = "$Id: File.py,v 1.23 2008/06/20 17:38:39 acsmith Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/File.py,v 1.24 2008/08/01 16:22:16 acsmith Exp $
+__RCSID__ = "$Id: File.py,v 1.24 2008/08/01 16:22:16 acsmith Exp $"
 
 """
    Collection of DIRAC useful file related modules
@@ -11,6 +11,7 @@ import md5
 import random
 import glob
 import types
+from zlib import adler32
 
 def makeGuid( fileName=None ):
   """
