@@ -1,9 +1,9 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/X509Chain.py,v 1.27 2008/07/30 16:56:26 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/X509Chain.py,v 1.28 2008/08/01 13:42:10 acasajus Exp $
 ########################################################################
 """ X509Chain is a class for managing X509 chains with their Pkeys
 """
-__RCSID__ = "$Id: X509Chain.py,v 1.27 2008/07/30 16:56:26 acasajus Exp $"
+__RCSID__ = "$Id: X509Chain.py,v 1.28 2008/08/01 13:42:10 acasajus Exp $"
 
 import types
 import os
@@ -360,7 +360,7 @@ class X509Chain:
     cert = self.__certList[ certStep ]
     return cert.verify_pkey_is_issuer( issuerCert.get_pubkey() )
 
-  def getDIRACGroup(self):
+  def getDIRACGroup( self, ignoreDefault = False ):
     """
     Get the dirac group if present
     """
@@ -373,7 +373,7 @@ class X509Chain:
     #  retVal = self.getCertInChain( i )[ 'Value' ].getDIRACGroup()
     #  if retVal[ 'OK' ] and 'Value' in retVal and retVal[ 'Value' ]:
     #    return retVal
-    return self.getCertInChain( self.__firstProxyStep )[ 'Value' ].getDIRACGroup()
+    return self.getCertInChain( self.__firstProxyStep )[ 'Value' ].getDIRACGroup( ignoreDefault = ignoreDefault )
 
   def hasExpired( self ):
     """
