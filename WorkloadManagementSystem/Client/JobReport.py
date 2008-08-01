@@ -1,11 +1,11 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Client/JobReport.py,v 1.15 2008/07/25 09:07:35 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Client/JobReport.py,v 1.16 2008/08/01 17:06:52 acsmith Exp $
 
 """
   JobReport class encapsulates various
   methods of the job status reporting
 """
 
-__RCSID__ = "$Id: JobReport.py,v 1.15 2008/07/25 09:07:35 rgracian Exp $"
+__RCSID__ = "$Id: JobReport.py,v 1.16 2008/08/01 17:06:52 acsmith Exp $"
 
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC import S_OK, S_ERROR, Time
@@ -172,13 +172,13 @@ class JobReport:
     request = RequestContainer()
     result = self.sendStoredStatusInfo()
     if not result['OK'] and result.has_key('rpcStub'):
-      request.addSubRequest(DISETSubRequest(result['rpcStub']).getDictionary(),'jobstate')
+      request.addSubRequest(DISETSubRequest(result['rpcStub']).getDictionary(),'diset')
     else:
       return S_ERROR('Could not create job state sub-request')
 
     result = self.sendStoredJobParameters()
     if not result['OK'] and result.has_key('rpcStub'):
-      request.addSubRequest(DISETSubRequest(result['rpcStub']).getDictionary(),'jobparameters')
+      request.addSubRequest(DISETSubRequest(result['rpcStub']).getDictionary(),'diset')
     else:
       return S_ERROR('Could not create job parameters sub-request')
 
