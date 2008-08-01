@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.3 2008/07/31 18:42:11 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.4 2008/08/01 08:52:11 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.3 2008/07/31 18:42:11 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.4 2008/08/01 08:52:11 acasajus Exp $"
 
 import time
 import types
@@ -14,17 +14,26 @@ from DIRAC.Core.Base.DB import DB
 
 class TaskQueueDB(DB):
 
-  def __init__( self ):
+  def __init__( self, maxQueueSize = 10 ):
     random.seed()
     DB.__init__( self, 'TaskQueueDB', 'WorkloadManagement/TaskQueueDB', maxQueueSize )
-    self.__multiValueFields = ( 'Sites', 'GridCEs', 'BannedSites', 'LHCbPlatforms' )
-    self.__multiValueMatchFields = ( 'GridCE', 'Site', 'LHCbPlatform' )
+    self.__multiValueFields = ( 'Sites', 'GridCEs', 'GridMiddlewares', 'BannedSites', 'LHCbPlatforms' )
+    self.__multiValueMatchFields = ( 'GridCE', 'Site', 'GridMiddleware', 'LHCbPlatform' )
     self.__singleValueFields = ( 'OwnerDN', 'OwnerGroup', 'PilotType', 'Setup', 'CPUTime' )
     self.__minCPUSegments = ( 500, 6000, 100000 )
     self.__maxMatchRetry = 3
     retVal = self.__initializeDB()
     if not retVal[ 'OK' ]:
       raise Exception( "Can't create tables: %s" % retVal[ 'Message' ])
+
+  def getSingleValueTQDefFields( self ):
+    return self.__singleValueFields
+
+  def getMultiValueTQDefFields( self ):
+    return self.__multiValueFields
+
+  def getMultiValueMatchFields( self ):
+    return self.__multiValueMatchFields
 
   def __initializeDB(self):
     """
@@ -148,7 +157,7 @@ class TaskQueueDB(DB):
     else:
       retVal = self._query( "SELECT LAST_INSERT_ID()", conn = connObj )
       if not retVal[ 'OK' ]:
-        self._cleanEmptyTaskQueues( connObj = connObj )
+        self.cleanOrphanedTaskQueues( connObj = connObj )
         return S_ERROR( "Can't determine task queue id after insertion" )
       tqId = retVal[ 'Value' ][0][0]
     for fieldName, values in ( ( 'Sites', sitesList ),
@@ -159,11 +168,11 @@ class TaskQueueDB(DB):
       cmd += ", ".join( [ "( %s, '%s' )" % ( tqId, value.strip() ) for value in values if value.strip() ] )
       retVal = self._update( cmd, conn = connObj )
       if not retVal[ 'Value' ]:
-        self._cleanEmptyTaskQueues( connObj = connObj )
+        self.cleanOrphanedTaskQueues( connObj = connObj )
         return S_ERROR( "Can't insert values %s for field %s: %s" % ( str( values ), fieldName, retVal[ 'Message' ] ) )
     return S_OK( tqId )
 
-  def _cleanEmptyTaskQueues( self, connObj = False ):
+  def cleanOrphanedTaskQueues( self, connObj = False ):
     """
     Delete all empty task queues
     """
@@ -394,3 +403,45 @@ class TaskQueueDB(DB):
           return retVal
       return S_OK( True )
     return S_OK( False )
+
+  def retrieveTaskQueues( self ):
+    """
+    Get all the task queues
+    """
+    sqlSelectEntries = [ "`tq_TaskQueues`.TQId", "`tq_TaskQueues`.Priority", "COUNT( `tq_Jobs`.TQId )" ]
+    for field in self.__singleValueFields:
+      sqlSelectEntries.append( "`tq_TaskQueues`.%s" % field )
+    sqlCmd = "SELECT %s" % ", ".join( sqlSelectEntries )
+    sqlCmd = "%s FROM `tq_TaskQueues`, `tq_Jobs` WHERE tq_TaskQueues`.TQId = `tq_Jobs`.TQId GROUP BY `tq_TaskQueues`.TQId" % sqlCmd
+
+    retVal = sql._query( sqlCmd )
+    if not retVal[ 'OK' ]:
+      return S_ERROR( "Can't retrieve task queues info: %s" % retVal[ 'Message' ] )
+    tqData = {}
+    for record in retVal[ 'Value' ]:
+      tqId = record[0]
+      tq[ tqId ] = { 'Priority' : record[1], 'Jobs' : record[2] }
+      record = record[3:]
+      for iP in range( len( self.__singleValueFields ) ):
+        tq[ tqId ][ self.__singleValueFields[ iP ] ] = record[ iP ]
+
+    tqNeedCleaning = False
+    for field in self.__multiValueFields:
+      table = "`tq_TQTo%s`" % field
+      sqlCmd = "SELECT %s.TQId, %s.Value FROM %s" % ( table, table, table )
+      retVal = self._query( sqlCmd )
+      if not retVal[ 'OK' ]:
+        return S_ERROR( "Can't retrieve task queues field % info: %s" % ( field, retVal[ 'Message' ] ) )
+      for record in retVal[ 'Value' ]:
+        tqId = record[0]
+        value = record[1]
+        if not tqId in tqData:
+          gLogger.warn( "Task Queue %s is defined in field %s but does not exist, triggering a cleaning" % ( tqId, field ) )
+          tqNeedCleaning = True
+        else:
+          if field not in tqData[ tqId ]:
+            tqData[ tqId ][ field ] = []
+          tqData[ tqId ][ field ].append( value )
+    if tqNeedCleaning:
+      self.cleanOrphanedTaskQueues()
+    return S_OK( tqData )
