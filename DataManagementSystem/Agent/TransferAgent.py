@@ -118,7 +118,9 @@ class TransferAgent(Agent):
         if operation == 'putAndRegister':
           gLogger.info("TransferAgent.execute: Attempting to execute %s sub-request." % operation)
           diracSE = str(subRequestAttributes['TargetSE'])
-          catalog = subRequestAttributes['Catalogue']
+          catalog = ''
+          if  subRequestAttributes.has_key('Catalogue'):
+            catalog = subRequestAttributes['Catalogue']
           for subRequestFile in subRequestFiles:
             if subRequestFile['Status'] == 'Waiting':
               gMonitor.addMark("Put and register",1)
