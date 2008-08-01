@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.25 2008/08/01 09:52:07 acasajus Exp $
-__RCSID__ = "$Id: Logger.py,v 1.25 2008/08/01 09:52:07 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.26 2008/08/01 09:59:33 acasajus Exp $
+__RCSID__ = "$Id: Logger.py,v 1.26 2008/08/01 09:59:33 acasajus Exp $"
 """
    DIRAC Logger client
 """
@@ -208,19 +208,27 @@ class Logger:
       if len( args ) == 0:
         type = "Unknown exception type"
         value = "Unknown exception"
+        stack = ""
       elif len( args ) == 1:
         type = "Unknown exception type"
         value = args[0]
+        stack = ""
+      elif len(args) == 2:
+        type = args[0]
+        value = args[1]
+        stack = ""
       else:
         type = args[0]
         value = args[1]
+        stack = "\n".join( args[2] )
     else:
       lExcinfo = sys.exc_info()
       type, value = (lExcinfo[0],lExcinfo[1])
+      stack = "\n".join( traceback.format_tb( lExcinfo[2] ) )
     return "== EXCEPTION ==\n%s:%s\n%s===============" % (
                          type,
                          value,
-                         "\n".join( traceback.format_tb( lExcinfo[2] ) ) )
+                         stack )
 
 
   def __discoverCallingFrame( self ):
