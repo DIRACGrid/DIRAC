@@ -121,6 +121,49 @@ class TransferDB(DB):
   #################################################################################
   # These are the methods for managing the Channel table
 
+  def selectChannelsForSubmission(self,maxJobsPerChannel):
+    res = self.getChannelQueues(status='Waiting')
+    if not res['OK']:
+      return res
+    if not res['Value']:
+      return S_OK()
+    channels = res['Value']
+    candidateChannels = {}
+    for channelID in channels.keys():
+      if channels[channelID]['Status'] == 'Active':
+        if channels[channelID]['Files'] > 0:
+          candidateChannels[channelID] = channels[channelID]['Files']
+    if not len(candidateChannels.keys()) >0:
+      return S_OK()
+
+    strChannelIDs = intListToString(candidateChannels.keys())
+    req = "SELECT ChannelID,%s-SUM(Status='Submitted') FROM FTSReq WHERE ChannelID IN (%s) GROUP BY ChannelID;" % (maxJobsPerChannel,strChannelIDs) 
+    res = self._query(req)
+    if not res['OK']:
+      err = 'TransferDB._selectChannelsForSubmission: Failed to count FTSJobs on Channels %s.' % strChannelIDs
+      return S_ERROR(err)
+    
+    channelJobs = {}
+    for channelID,jobs in res['Value']:
+      channelJobs[channelID] = jobs
+    for channelID in candidateChannels.keys():
+      if not channelJobs.has_key(channelID):
+        channelJobs[channelID] = maxJobsPerChannel
+
+    req = "SELECT ChannelID,SourceSite,DestinationSite,FTSServer,Files FROM Channels WHERE ChannelID IN (%s);" % strChannelIDs
+    res = self._query(req)
+    channels = []
+    for channelID,source,destination,ftsServer,files in res['Value']: 
+      resDict = {}
+      resDict['ChannelID'] = channelID
+      resDict['Source'] = source
+      resDict['Destination'] = destination
+      resDict['FTSServer'] = ftsServer
+      resDict['NumFiles'] = files
+      for i in range(channelJobs[channelID]):
+        channels.append(resDict)
+    return S_OK(channels)      
+
   def selectChannelForSubmission(self,maxJobsPerChannel):
     res = self.getChannelQueues(status='Waiting')
     if not res['OK']:
@@ -133,15 +176,19 @@ class TransferDB(DB):
       if channels[channelID]['Status'] == 'Active':
         if channels[channelID]['Files'] > 0:
           candidateChannels[channelID] = channels[channelID]['Files']
-
     if not len(candidateChannels.keys()) >0:
       return S_OK()
+
+
     strChannelIDs = intListToString(candidateChannels.keys())
-    req = "SELECT ChannelID,SUM(Status='Submitted') FROM FTSReq WHERE ChannelID IN (%s) GROUP BY ChannelID;" % strChannelIDs
+    req = "SELECT ChannelID,%s-SUM(Status='Submitted') FROM FTSReq WHERE ChannelID IN (%s) GROUP BY ChannelID;" % (maxJobsPerChannel,strChannelIDs)
+    #req = "SELECT ChannelID,SUM(Status='Submitted') FROM FTSReq WHERE ChannelID IN (%s) GROUP BY ChannelID;" % strChannelIDs
     res = self._query(req)
     if not res['OK']:
       err = 'TransferDB._selectChannelForSubmission: Failed to count FTSJobs on Channels %s.' % strChannelIDs
       return S_ERROR('%s\n%s' % (err,res['Message']))
+
+
     withJobs = {}
     for channelID,numberOfJobs in res['Value']:
       withJobs[channelID] = numberOfJobs
@@ -377,7 +424,7 @@ class TransferDB(DB):
     return res
 
   def getFTSReq(self):
-    req = "SELECT f.FTSReqID,f.FTSGUID,f.FTSServer,f.ChannelID,f.SubmitTime,f.NumberOfFiles,f.TotalSize,c.SourceSite,c.DestinationSite FROM FTSReq as f,Channels as c WHERE f.Status = 'Submitted' and f.ChannelID=c.ChannelID ORDER BY f.LastMonitor LIMIT 1;"
+    req = "SELECT f.FTSReqID,f.FTSGUID,f.FTSServer,f.ChannelID,f.SubmitTime,f.NumberOfFiles,f.TotalSize,c.SourceSite,c.DestinationSite FROM FTSReq as f,Channels as c WHERE f.Status = 'Submitted' and f.ChannelID=c.ChannelID ORDER BY f.LastMonitor;"
 
     # SELECT FTSReqID,FTSGUID,FTSServer,ChannelID,SubmitTime,NumberOfFiles,TotalSize FROM FTSReq WHERE Status = 'Submitted' ORDER BY LastMonitor LIMIT 1;"
     res = self._query(req)
@@ -387,18 +434,21 @@ class TransferDB(DB):
     if not res['Value']:
       # It is not an error that there are not requests
       return S_OK()
-    resDict = {}
-    ftsReqID,ftsGUID,ftsServer,channelID,submitTime,numberOfFiles,totalSize,sourceSite,destSite = res['Value'][0]
-    resDict['FTSReqID'] = ftsReqID
-    resDict['FTSGuid'] = ftsGUID
-    resDict['FTSServer'] = ftsServer
-    resDict['ChannelID'] = channelID
-    resDict['SubmitTime'] = submitTime
-    resDict['NumberOfFiles'] = numberOfFiles
-    resDict['TotalSize'] = totalSize
-    resDict['Source'] = sourceSite
-    resDict['Target'] = destSite
-    return S_OK(resDict)
+    
+    ftsReqs = []
+    for ftsReqID,ftsGUID,ftsServer,channelID,submitTime,numberOfFiles,totalSize,sourceSite,destSite in res['Value']:
+      resDict = {}
+      resDict['FTSReqID'] = ftsReqID
+      resDict['FTSGuid'] = ftsGUID
+      resDict['FTSServer'] = ftsServer
+      resDict['ChannelID'] = channelID
+      resDict['SubmitTime'] = submitTime
+      resDict['NumberOfFiles'] = numberOfFiles
+      resDict['TotalSize'] = totalSize
+      resDict['Source'] = sourceSite
+      resDict['Target'] = destSite
+      ftsReqs.append(resDict)
+    return S_OK(ftsReqs)
 
   def setFTSReqAttribute(self,ftsReqID,attribute,attrValue):
     self.getIdLock.acquire()
@@ -507,7 +557,6 @@ class TransferDB(DB):
       return S_ERROR('%s\n%s' % (err,res['Message']))
     channelTimeDict = {}     
     for channelID,totalTime in res['Value']:
-      print channelID,totalTime
       channelTimeDict[channelID] = float(totalTime)
 
     #############################################
@@ -704,7 +753,6 @@ class TransferDB(DB):
     reqList = string.join(map(lambda x: str(x),reqIDList),',')
 
     req = 'SELECT FTSReq.FTSReqID,Channels.SourceSite,Channels.DestinationSite,%s FROM FTSReq,Channels WHERE FTSReqID in (%s) AND Channels.ChannelID=FTSReq.ChannelID' % ( attrNames, reqList )
-    print req
     res = self._query( req)
     if not res['OK']:
       return res
