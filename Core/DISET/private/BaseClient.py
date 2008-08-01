@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.48 2008/08/01 13:11:57 acasajus Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.48 2008/08/01 13:11:57 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.49 2008/08/01 19:30:43 acasajus Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.49 2008/08/01 19:30:43 acasajus Exp $"
 
 import sys
 import types
@@ -185,7 +185,7 @@ and this is thread %s
   def __checkTransportSanity( self ):
     retVal = gProtocolDict[ self.URLTuple[0] ][ 'sanity' ]( self.URLTuple[1:3], self.kwargs )
     if not retVal[ 'OK' ]:
-      return S_ERROR( "Insane environment for protocol: %s" % retVal[ 'Value' ] )
+      return S_ERROR( "Insane environment for protocol: %s" % retVal[ 'Message' ] )
     idDict = retVal[ 'Value' ]
     for key in idDict:
       self.__idDict[ key ] = idDict[ key ]
