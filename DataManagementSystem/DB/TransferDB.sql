@@ -1,5 +1,3 @@
-SOURCE DIRAC/RequestManagementSystem/DB/RequestDB.sql
-
 -- THESE ARE THE TABLES FOR THE TRANSFER DB
 -- Channels,Channel,FTSReq,FileToFTS,FTSReqLogging,FileToCat,ReplicationTree
 
