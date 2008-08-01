@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.52 2008/07/30 16:30:40 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.53 2008/08/01 08:27:31 rgracian Exp $
 # File :   Director.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -48,7 +48,7 @@
 
 """
 
-__RCSID__ = "$Id: Director.py,v 1.52 2008/07/30 16:30:40 rgracian Exp $"
+__RCSID__ = "$Id: Director.py,v 1.53 2008/08/01 08:27:31 rgracian Exp $"
 
 import types, time
 
@@ -366,7 +366,7 @@ class Director(Agent):
       self.log.info( 'Instantiating Director Object:', directorName )
       director = eval( '%s( )' %  ( directorName ) )
     except Exception,x:
-      self.log.exception(x)
+      self.log.exception(lException=x)
       return
 
     self.log.info( 'Director Object instantiated:', directorName )
@@ -727,7 +727,7 @@ class PilotDirector:
         self.log.warn( 'Job is no longer in %s Status:' % MAJOR_WAIT, job )
 
     except Exception,x:
-      self.log.exception( 'Error during pilot submission',str(x)  )
+      self.log.exception( 'Error during pilot submission', lException=x )
       try:
         updateJobStatus( self.log, AGENT_NAME, job, MAJOR_WAIT, MINOR_RESPONSE, logRecord=True )
       except:
@@ -964,7 +964,7 @@ class PilotDirector:
       f.write( '\n'.join( jdlList) )
       f.close()
     except Exception, x:
-      self.log.exception( x )
+      self.log.exception( lException=x )
       return ''
 
     return filename

@@ -53,7 +53,7 @@ class RequestDBFile:
       return S_OK(summaryDict)
     except Exception,x:
       errStr = "RequestDBFile._getDBSummary: Exception while getting DB summary."
-      gLogger.exception(errStr,str(x))
+      gLogger.exception(errStr,lException=x)
       return S_ERROR(errStr)
 
   def setRequest(self,requestName,requestString,desiredStatus=None):
@@ -83,7 +83,7 @@ class RequestDBFile:
       return S_OK()
     except Exception, x:
       errStr = "RequestDBFile._setRequest: Exception while setting request."
-      gLogger.exception(errStr,"%s %s" % (requestName,str(x)))
+      gLogger.exception(errStr,requestName,lException=x)
       self.deleteRequest(requestName)
       return S_ERROR(errStr)
 
@@ -103,7 +103,7 @@ class RequestDBFile:
       return S_OK()
     except Exception, x:
       errStr = "RequestDBFile._deleteRequest: Exception while deleting request."
-      gLogger.exception(errStr,"%s %s" % (requestName,str(x)))
+      gLogger.exception(errStr,requestName,lException=x)
       return S_ERROR(errStr)
 
   def getRequest(self,requestType):
@@ -163,7 +163,7 @@ class RequestDBFile:
       return S_OK(resDict)
     except Exception, x:
       errStr = "RequestDBFile._getRequest: Exception while getting request."
-      gLogger.exception(errStr,"%s %s" % (requestType,str(x)))
+      gLogger.exception(errStr,requestType,lException=x)
       return S_ERROR(errStr)
 
   def setRequestStatus(self,requestName,requestStatus):
@@ -195,7 +195,7 @@ class RequestDBFile:
       return S_OK()
     except Exception, x:
       errStr = "RequestDBFile._setRequestStatus: Exception while setting request status."
-      gLogger.exception(errStr,"%s %s" % (requestName,str(x)))
+      gLogger.exception(errStr,requestName,lException=x)
       return S_ERROR(errStr)
 
   def serveRequest(self,requestType):
@@ -237,7 +237,7 @@ class RequestDBFile:
       return S_OK(requestDict)
     except Exception, x:
       errStr = "RequestDBFile.serveRequest: Exception while serving request."
-      gLogger.exception(errStr,"%s %s" % (requestType,str(x)))
+      gLogger.exception(errStr,requestType,x)
       return S_ERROR(errStr)
 
   def updateRequest(self,requestName,requestString):
@@ -261,7 +261,7 @@ class RequestDBFile:
       return S_OK()
     except Exception, x:
       errStr = "RequestDBFile._updateRequest: Exception while updating request."
-      gLogger.exception(errStr,"%s %s" % (requestName,str(x)))
+      gLogger.exception(errStr,requestName,lException=x)
       return S_ERROR(errStr)
 
   #######################################################################################
@@ -293,7 +293,7 @@ class RequestDBFile:
       return S_OK(subRequests)
     except Exception, x:
       errStr = "RequestDBFile.__locateRequest: Exception while locating request."
-      gLogger.exception(errStr,"%s %s" % (requestName,str(x)))
+      gLogger.exception(errStr,requestName,lException=x)
       return S_ERROR(errStr)
 
   def __getRequestString(self,requestName):
@@ -319,7 +319,7 @@ class RequestDBFile:
       return S_OK(requestString)
     except Exception, x:
       errStr = "RequestDBFile.__getRequestString: Exception while obtaining request string."
-      gLogger.exception(errStr,"%s %s" % (requestName,str(x)))
+      gLogger.exception(errStr,requestName,lException=x)
       return S_ERROR(errStr)
 
   def __readSubRequestString(self,subRequestPath):
@@ -333,7 +333,7 @@ class RequestDBFile:
       return S_OK(str(requestString))
     except Exception, x:
       errStr = "RequestDBFile.__readSubRequestString: Exception while reading sub-request."
-      gLogger.exception(errStr,"%s %s" % (subRequestPath,str(x)))
+      gLogger.exception(errStr,subRequestPath,lException=x)
       return S_ERROR(errStr)
 
   def __selectRequestCursor(self,requestList,lastRequest,lastRequestIndex):
@@ -355,6 +355,6 @@ class RequestDBFile:
       return S_OK((nextRequestName,newIndex))
     except Exception, x:
       errStr = "RequestDBFile.__selectRequestCursor: Exception while selecting next valid request."
-      gLogger.exception(errStr,str(x))
+      gLogger.exception(errStr,lException=x)
       return S_ERROR(errStr)
 

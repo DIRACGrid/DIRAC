@@ -40,7 +40,7 @@ class RequestManagerHandler(RequestHandler):
       return res
     except Exception,x:
       errStr = "RequestManagerHandler.setRequest: Exception while setting request."
-      gLogger.exception(errStr,"%s %s" % (requestName,str(x)))
+      gLogger.exception(errStr,requestName,lException=x)
       return S_ERROR(errStr)
 
   types_setRequestStatus = [StringType,StringType]
@@ -53,7 +53,7 @@ class RequestManagerHandler(RequestHandler):
       return res
     except Exception,x:
       errStr = "RequestHandler.setRequestStatus: Exception while setting request status."
-      gLogger.exception(errStr,"%s %s" % (requestName,str(x)))
+      gLogger.exception(errStr,requestName,lException=x)
       return S_ERROR(errStr)
 
   types_updateRequest = [StringType,StringTypes]
@@ -66,7 +66,7 @@ class RequestManagerHandler(RequestHandler):
       return res
     except Exception,x:
       errStr = "RequestManagerHandler.updateRequest: Exception which updating request."
-      gLogger.exception(errStr,"%s %s" % (requestName,str(x)))
+      gLogger.exception(errStr,requestName,lException=x)
       return S_ERROR(errStr)
 
   types_deleteRequest = [StringType]
@@ -79,7 +79,7 @@ class RequestManagerHandler(RequestHandler):
       return res
     except Exception,x:
       errStr = "RequestManagerHandler.deleteRequest: Exception which deleting request."
-      gLogger.exception(errStr,"%s %s" % (requestName,str(x)))
+      gLogger.exception(errStr,requestName,lException=x)
       return S_ERROR(errStr)
 
   types_getDBSummary = []
@@ -92,7 +92,7 @@ class RequestManagerHandler(RequestHandler):
       return res
     except Exception,x:
       errStr = "RequestManagerHandler.getDBSummary: Exception while getting database summary."
-      gLogger.exception(errStr,str(x))
+      gLogger.exception(errStr,lException=x)
       return S_ERROR(errStr)
 
   types_getRequest = [StringType]
@@ -105,7 +105,7 @@ class RequestManagerHandler(RequestHandler):
       return res
     except Exception,x:
       errStr = "RequestManagerHandler.getRequest: Exception while getting request."
-      gLogger.exception(errStr,"%s %s" % (requestType,str(x)))
+      gLogger.exception(errStr,requestType,lException=x)
       return S_ERROR(errStr)
 
   types_serveRequest = []
@@ -118,5 +118,5 @@ class RequestManagerHandler(RequestHandler):
       return res
     except Exception,x:
       errStr = "RequestManagerHandler.serveRequest: Exception while serving request."
-      gLogger.exception(errStr,"%s %s" % (requestType,str(x)))
+      gLogger.exception(errStr,requestType,lException=x)
       return S_ERROR(errStr)
