@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.24 2008/02/25 19:34:13 mseco Exp $
-__RCSID__ = "$Id: Logger.py,v 1.24 2008/02/25 19:34:13 mseco Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.25 2008/08/01 09:52:07 acasajus Exp $
+__RCSID__ = "$Id: Logger.py,v 1.25 2008/08/01 09:52:07 acasajus Exp $"
 """
    DIRAC Logger client
 """
@@ -78,7 +78,7 @@ class Logger:
       self.backendsOptions[ 'Site' ] = site
 
       #Configure outputs
-      desiredBackends = gConfig.getValue( "%s/LogBackends" % cfgPath, 
+      desiredBackends = gConfig.getValue( "%s/LogBackends" % cfgPath,
                                           'stdout' )
       self.registerBackends( List.fromChar( desiredBackends ) )
       #Configure verbosity
@@ -204,10 +204,19 @@ class Logger:
 
   def __getExceptionString( self, lException = False ):
     if lException:
-      lExcinfo = lException
+      args = lException.args
+      if len( args ) == 0:
+        type = "Unknown exception type"
+        value = "Unknown exception"
+      elif len( args ) == 1:
+        type = "Unknown exception type"
+        value = args[0]
+      else:
+        type = args[0]
+        value = args[1]
     else:
       lExcinfo = sys.exc_info()
-    type, value = (lExcinfo[0],lExcinfo[1])
+      type, value = (lExcinfo[0],lExcinfo[1])
     return "== EXCEPTION ==\n%s:%s\n%s===============" % (
                          type,
                          value,
@@ -264,12 +273,12 @@ class Logger:
   def __getStackString( self ):
     stack_list = traceback.extract_stack()
     return ''.join( traceback.format_list( stack_list[3:0] ))
-    
+
   def flushAllMessages( self, exitCode ):
     for backend in self._backendsDict:
       self._backendsDict[ backend ].flush()
-    
-  
+
+
   def getSubLogger( self, subName ):
     from DIRAC.LoggingSystem.private.SubSystemLogger import SubSystemLogger
     if not subName in self._subLoggersDict.keys():
