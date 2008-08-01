@@ -1356,7 +1356,7 @@ class SRM2Storage(StorageBase):
   def __destroy_gfal_object(self,gfalObject):
     gLogger.verbose("SRM2Storage.__destroy_gfal_object: Performing gfal_internal_free.")
     errCode,gfalObject = gfal.gfal_internal_free(gfalObject)
-    if not errCode == 'None':
+    if errCode:
       errStr = "SRM2Storage.__destroy_gfal_object: Failed to perform gfal_internal_free:"
       gLogger.error(errStr,errCode)
       return S_ERROR()
