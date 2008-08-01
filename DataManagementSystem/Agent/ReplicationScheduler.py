@@ -14,7 +14,7 @@ from DIRAC.DataManagementSystem.Client.StorageElement import StorageElement
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClient
 
-import types,re
+import types,re,random
 
 
 AGENT_NAME = 'DataManagement/ReplicationScheduler'
@@ -45,8 +45,8 @@ class ReplicationScheduler(Agent):
 
     # This allows dynamic changing of the throughput timescale
     self.throughputTimescale = gConfig.getValue(self.section+'/ThroughputTimescale',3600)
-    self.throughputTimescale = 60*60*24
-
+    self.throughputTimescale = 60*60*1
+    print 'ThroughputTimescale:',self.throughputTimescale
     ######################################################################################
     #
     #  Obtain information on the current state of the channel queues
@@ -322,12 +322,12 @@ class StrategyHandler:
   def __init__(self,bandwidths,channels,configSection):
     """ Standard constructor
     """
-    self.supportedStrategies = ['Simple','DynamicThroughput','Swarm','MinimiseTotalWait']
-    self.sigma = gConfig.getValue(configSection+'/HopSigma',0)
+    self.supportedStrategies = ['MinimiseTotalWait_0','MinimiseTotalWait_10','MinimiseTotalWait_100','MinimiseTotalWait_1000','Simple','DynamicThroughput','Swarm','MinimiseTotalWait','DynamicThroughput_0','DynamicThroughput_10','DynamicThroughput_100','DynamicThroughput_1000']
+    self.sigma = gConfig.getValue(configSection+'/HopSigma',0.0)
     self.schedulingType = gConfig.getValue(configSection+'/SchedulingType','File')
     self.activeStrategies = gConfig.getValue(configSection+'/ActiveStrategies',['Simple','MinimiseTotalWait','DynamicThroughput'])
     self.numberOfStrategies = len(self.activeStrategies)
-    self.acceptableFailureRate = gConfig.getValue(configSection+'/AcceptableFailureRate',0)
+    self.acceptableFailureRate = gConfig.getValue(configSection+'/AcceptableFailureRate',75)
     self.bandwidths = bandwidths
     self.channels = channels
     self.chosenStrategy = 0
@@ -340,11 +340,14 @@ class StrategyHandler:
   def getSupportedStrategies(self):
     return self.supportedStrategies
 
-  def determineReplicationTree(self,sourceSE,targetSEs,replicas,size,strategy=None):
+  def determineReplicationTree(self,sourceSE,targetSEs,replicas,size,strategy=None,sigma=None):
     """
     """
     if not strategy:
       strategy = self.__selectStrategy()
+
+    if sigma:
+      self.sigma = sigma
 
     # For each strategy implemented an 'if' must be placed here
     if strategy == 'Simple':
@@ -353,13 +356,21 @@ class StrategyHandler:
       else:
         tree = self.__simple(sourceSE,targetSEs)
 
-    elif strategy == 'DynamicThroughput':
+    elif re.search('DynamicThroughput',strategy):
+      elements = strategy.split('_') 
+      if len(elements) > 1:
+        self.sigma = float(elements[-1])
+        print 'SET self.sigma TO BE %s' % self.sigma
       if sourceSE:
         tree = self.__dynamicThroughput([sourceSE],targetSEs)
       else:
         tree = self.__dynamicThroughput(replica.keys(),targetSEs)
   
-    elif strategy == 'MinimiseTotalWait':
+    elif re.search('MinimiseTotalWait',strategy):
+      elements = strategy.split('_') 
+      if len(elements) > 1:
+        self.sigma = float(elements[-1])
+        print 'SET self.sigma TO BE %s' % self.sigma
       if sourceSE:
         tree = self.__minimiseTotalWait([sourceSE],targetSEs)
       else:
@@ -450,6 +461,7 @@ class StrategyHandler:
     tree = {}                      # Maintains replication tree
     while len(destSEs) > 0:
       minTotalTimeToStart = float("inf")
+      candidateChannels = []
       for destSE in destSEs:
         destSite = destSE.split('-')[0].split('_')[0]
         for sourceSE in sourceSEs:
@@ -462,17 +474,27 @@ class StrategyHandler:
               totalTimeToStart = timeToSite[sourceSE]+channelTimeToStart+self.sigma
             else:
               totalTimeToStart = channelTimeToStart
-            selected = 'No'
-            if totalTimeToStart <= minTotalTimeToStart:
+            #print '%s-%s %s %s' % (sourceSE,destSE,channelTimeToStart,totalTimeToStart)
+            if totalTimeToStart < minTotalTimeToStart:
               minTotalTimeToStart = totalTimeToStart
               selectedPathTimeToStart = totalTimeToStart
-              selectedSourceSE = sourceSE
-              selectedDestSE = destSE
-              selectedChannelID = channelID
-              selected='Yes'
+              candidateChannels = [(sourceSE,destSE,channelID)]
+            elif totalTimeToStart == minTotalTimeToStart:
+              candidateChannels.append((sourceSE,destSE,channelID))
+
+              #minTotalTimeToStart = totalTimeToStart
+              #selectedPathTimeToStart = totalTimeToStart
+              #selectedSourceSE = sourceSE
+              #selectedDestSE = destSE
+              #selectedChannelID = channelID
           else:
             errStr = 'StrategyHandler.__dynamicThroughput: Channel not defined'
             gLogger.error(errStr,channelName)
+
+      print 'Selected %s \n' % selectedPathTimeToStart
+
+      random.shuffle(candidateChannels)
+      selectedSourceSE,selectedDestSE,selectedChannelID = candidateChannels[0] 
       timeToSite[selectedDestSE] = selectedPathTimeToStart
       siteAncestor[selectedDestSE] = selectedChannelID
 
@@ -498,9 +520,12 @@ class StrategyHandler:
       return {}
     channelInfo = res['Value']
 
+
     timeToSite = {}                # Maintains time to site including previous hops
     siteAncestor = {}              # Maintains the ancestor channel for a site
     tree = {}                      # Maintains replication tree
+    primarySources = sourceSEs
+
     while len(destSEs) > 0:
       minTotalTimeToStart = float("inf")
       for destSE in destSEs:
@@ -511,15 +536,28 @@ class StrategyHandler:
           if channelInfo.has_key(channelName):
             channelID = channelInfo[channelName]['ChannelID']
             channelTimeToStart = channelInfo[channelName]['TimeToStart']
-            if channelTimeToStart <= minTotalTimeToStart:
+            if not sourceSE in primarySources:
+              channelTimeToStart+=self.sigma
+
+            if channelTimeToStart < minTotalTimeToStart:
               minTotalTimeToStart = channelTimeToStart
               selectedPathTimeToStart = channelTimeToStart
-              selectedSourceSE = sourceSE
-              selectedDestSE = destSE
-              selectedChannelID = channelID
+              candidateChannels = [(sourceSE,destSE,channelID)]
+
+            elif channelTimeToStart == minTotalTimeToStart: 
+              candidateChannels.append((sourceSE,destSE,channelID))
+
+              #selectedSourceSE = sourceSE
+              #selectedDestSE = destSE
+              #selectedChannelID = channelID
+
           else:
             errStr = 'StrategyHandler.__minimiseTotalWait: Channel not defined'
             gLogger.error(errStr,channelName)
+
+
+      random.shuffle(candidateChannels)
+      selectedSourceSE,selectedDestSE,selectedChannelID = candidateChannels[0]
       timeToSite[selectedDestSE] = selectedPathTimeToStart
       siteAncestor[selectedDestSE] = selectedChannelID
 
@@ -562,7 +600,8 @@ class StrategyHandler:
         else:
           successRate = 100.0
         if successRate < self.acceptableFailureRate:
-          throughputTimeToStart = foat('inf') # Make the channel extremely unattractive but still available
+          print 'This channel is failing %s' % channelName
+          throughputTimeToStart = float('inf') # Make the channel extremely unattractive but still available
           fileTimeToStart = float('inf') # Make the channel extremely unattractive but still available
         else:
           if channelFileput > 0:
