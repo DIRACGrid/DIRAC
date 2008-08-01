@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.45 2008/07/30 16:10:26 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.46 2008/08/01 08:33:47 rgracian Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.45 2008/07/30 16:10:26 rgracian Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.46 2008/08/01 08:33:47 rgracian Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -229,7 +229,7 @@ class JobAgent(Agent):
 
       self.log.verbose('After %sCE submitJob()' %(self.ceName))
     except Exception, x:
-      self.log.exception(x)
+      self.log.exception(lException=x)
       result = jobManager.rescheduleJob(jobID)
       if not result['OK']:
         self.log.warn(result['Message'])
@@ -470,7 +470,7 @@ class JobAgent(Agent):
       result = matcher.requestJob(resourceJDL)
       return result
     except Exception, x:
-      self.log.exception(x)
+      self.log.exception(lException=x)
       return S_ERROR('Job request to matcher service failed with exception')
 
   #############################################################################
@@ -500,7 +500,7 @@ class JobAgent(Agent):
           parameters[param]= value.replace('"','')
       return S_OK(parameters)
     except Exception, x:
-      self.log.exception(x)
+      self.log.exception(lException=x)
       return S_ERROR('Exception while extracting JDL parameters for job')
 
   #############################################################################
