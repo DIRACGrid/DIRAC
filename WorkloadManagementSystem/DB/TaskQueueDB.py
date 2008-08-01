@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.6 2008/08/01 11:10:57 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.7 2008/08/01 14:51:10 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.6 2008/08/01 11:10:57 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.7 2008/08/01 14:51:10 acasajus Exp $"
 
 import time
 import types
@@ -112,7 +112,7 @@ class TaskQueueDB(DB):
         return S_ERROR( "Multi value field %s value type is not valid: %s" % ( field, fieldValueType ) )
     return S_OK( tqDefDict )
 
-  def _checkMatchDefinition( tqMatchDict ):
+  def _checkMatchDefinition( self, tqMatchDict ):
     """
     Check a task queue match dict is valid
     """
@@ -129,8 +129,8 @@ class TaskQueueDB(DB):
     for field in self.__multiValueMatchFields:
       if field in tqMatchDict:
         fieldValueType = type( tqMatchDict[ field ] )
-      if fieldValueType not in ( types.StringType, types.UnicodeType ):
-        return S_ERROR( "Field %s value type is not valid: %s" % ( field, fieldValueType ) )
+        if fieldValueType not in ( types.StringType, types.UnicodeType ):
+          return S_ERROR( "Field %s value type is not valid: %s" % ( field, fieldValueType ) )
     return S_OK( tqMatchDict )
 
   def createTaskQueue( self, tqDefDict, priority = 1, skipDefinitionCheck = False, connObj = False ):
@@ -275,45 +275,66 @@ class TaskQueueDB(DB):
       gLogger.warn( "Found two task queues for the same requirements", str( tqDefDict ) )
     return S_OK( { 'found' : True, 'tqId' : data[0][0] } )
 
-  def matchAndGetJob( self, tqMatchDict ):
+  def matchAndGetJob( self, tqMatchDict, numJobsPerTry = 10, numQueuesPerTry = 10 ):
     """
     Match a job
-    """
-    retVal = self._getConnection()
-    if not retVal[ 'OK' ]:
-      return S_ERROR( "Can't insert job: %s" % retVal[ 'Message' ] )
-    connObj = retVal[ 'Value' ]
-    retVal = self.__generateTQMatchSQL( tqMatchDict )
-    if not retVal[ 'OK' ]:
-      return retVal
-    matchSQL = retVal[ 'Value' ]
-    jobSQL = "SELECT `tq_Jobs`.JobId, `tq_Jobs`.TQId FROM `tq_Jobs` WHERE `tq_Jobs`.TQId in ( %s )" % ( matchSQL )
-    jobSQL = "%s ORDER BY FLOOR( RAND() * `tq_Jobs`.Priority ) DESC, `tq_Jobs`.JobId ASC LIMIT 10" % tqSqlCmd
-    for matchTry in range( self.__maxMatchRetry ):
-      retVal = self._query( jobSQL, conn = connObj )
-      if not retVal[ 'OK' ]:
-        return S_ERROR( "Can't begin transaction for matching job: %s" % retVal[ 'Message' ] )
-      jobTQList = retVal[ 'Value' ]
-      if len( jobTQList ) == 0:
-        connObj.close()
-        return S_OK( { 'matchFound' : False } )
-      while len( jobTQList ) > 0:
-        jobId, tqId = jobTQList.pop( random.randrange( len( jobTQList ) ) )
-        retVal = self.deleteJob( jobId, conn = connObj )
-        if not retVal[ 'OK' ]:
-          return S_ERROR( "Could not take job %s out from the queue: %s" % ( jobId, retVal[ 'Message' ] ) )
-        if retVal( True ):
-          self.deleteTaskQueueIfEmpty( tqId, conn = connObj )
-          return S_OK( { 'matchFound' : True, 'jobId' : jobId } )
-    return S_ERROR( "Could not find a match after %s retries" % self.__maxMatchRetry )
-
-  def __generateTQMatchSQL( self, tqMatchDict ):
-    """
-    Generate the SQL needed to match a task queue
     """
     retVal = self._checkMatchDefinition( tqMatchDict )
     if not retVal[ 'OK' ]:
       return retVal
+    retVal = self._getConnection()
+    if not retVal[ 'OK' ]:
+      return S_ERROR( "Can't insert job: %s" % retVal[ 'Message' ] )
+    connObj = retVal[ 'Value' ]
+    preJobSQL = "SELECT `tq_Jobs`.JobId, `tq_Jobs`.TQId FROM `tq_Jobs` WHERE `tq_Jobs`.TQId = %s"
+    postJobSQL = " ORDER BY FLOOR( RAND() * `tq_Jobs`.Priority ) DESC, `tq_Jobs`.JobId ASC LIMIT %s" % numJobsPerTry
+    for matchTry in range( self.__maxMatchRetry ):
+      retVal = self.matchAndGetQueue( tqMatchDict, numQueuesToGet = numQueuesPerTry, skipMatchDictDef = True, connObj = connObj )
+      if not retVal[ 'OK' ]:
+        return retVal
+      tqList = retVal[ 'Value' ]
+      if len( tqList ) == 0:
+        return S_OK( { 'matchFound' : False } )
+      for tqId in tqList:
+        retVal = self._query( "%s %s" % ( preJobSQL % tqId, postJobSQL ), conn = connObj )
+        if not retVal[ 'OK' ]:
+          return S_ERROR( "Can't begin transaction for matching job: %s" % retVal[ 'Message' ] )
+        jobTQList = [ ( row[0], row[1] ) for row in retVal[ 'Value' ] ]
+        if len( jobTQList ) == 0:
+          gLogger.warn( "Task queue %s seems to be empty, triggering a cleaning" % tqId )
+          self.deleteTaskQueueIfEmpty( tqId, connObj = connObj )
+          continue
+        while len( jobTQList ) > 0:
+          jobId, tqId = jobTQList.pop( random.randint( 0, len( jobTQList ) - 1 ) )
+          retVal = self.deleteJob( jobId, connObj = connObj )
+          if not retVal[ 'OK' ]:
+            return S_ERROR( "Could not take job %s out from the queue: %s" % ( jobId, retVal[ 'Message' ] ) )
+          if retVal[ 'Value' ] == True :
+            self.deleteTaskQueueIfEmpty( tqId, connObj = connObj )
+            return S_OK( { 'matchFound' : True, 'jobId' : jobId, 'taskQueueId' : tqId } )
+    return S_ERROR( "Could not find a match after %s match retries" % self.__maxMatchRetry )
+
+  def matchAndGetQueue( self, tqMatchDict, numQueuesToGet = 1, skipMatchDictDef = False, connObj = False ):
+    """
+    Get a queue that matches the requirements
+    """
+    if not skipMatchDictDef:
+      retVal = self._checkMatchDefinition( tqMatchDict )
+      if not retVal[ 'OK' ]:
+        return retVal
+    retVal = self.__generateTQMatchSQL( tqMatchDict, numQueuesToGet = numQueuesToGet )
+    if not retVal[ 'OK' ]:
+      return retVal
+    matchSQL = retVal[ 'Value' ]
+    retVal = self._query( matchSQL, conn = connObj )
+    if not retVal[ 'OK' ]:
+      return retVal
+    return S_OK( [ row[0] for row in retVal[ 'Value' ] ] )
+
+  def __generateTQMatchSQL( self, tqMatchDict, numQueuesToGet = 1 ):
+    """
+    Generate the SQL needed to match a task queue
+    """
     sqlCondList = []
     sqlTables = [ "`tq_TaskQueues`" ]
     #Type of pilot conditions
@@ -321,7 +342,7 @@ class TaskQueueDB(DB):
       for field in ( 'OwnerDN', 'OwnerGroup', 'PilotType' ):
         sqlCondList.append( "`tq_TaskQueues`.%s = '%s'" % ( field, tqMatchDict[ field ] ) )
     else:
-      for field in ( 'PilotType' ):
+      for field in ( 'PilotType', ):
         sqlCondList.append( "`tq_TaskQueues`.%s = '%s'" % ( field, tqMatchDict[ field ] ) )
     #Remaining single value fields
     for field in ( 'CPUTime', 'Setup' ):
@@ -330,15 +351,17 @@ class TaskQueueDB(DB):
       else:
         sqlCondList.append( "`tq_TaskQueues`.%s = '%s'" % ( field, tqMatchDict[ field ] ) )
     #Match multi value fields
-    for field in self.__multiValueFields:
+    for field in self.__multiValueMatchFields:
       if field in tqMatchDict:
         fieldValue = tqMatchDict[ field ].strip()
         if not fieldValue:
           continue
-        tableName = '`tq_TQTo%s`' % multiField
+        #It has to be %ss , with an 's' at the end because the columns names
+        # are plural and match options are singular
+        tableName = '`tq_TQTo%ss`' % field
         sqlTables.append( tableName )
-        sqlCondList.append( "%s.TQId = `tq_TaskQueues`.TQId" % table )
-        sqlCondList.append( "%s.Value = '%s'" % ( table, fieldValue ) )
+        sqlCondList.append( "%s.TQId = `tq_TaskQueues`.TQId" % tableName )
+        sqlCondList.append( "%s.Value = '%s'" % ( tableName, fieldValue ) )
         if field == 'Site':
           bannedTable = '`tq_TQToBannedSites`'
           sqlCondList.append( "'%s' not in ( SELECT %s.Value FROM %s WHERE %s.TQId = `tq_TaskQueues`.TQId )" % ( fieldValue,
@@ -346,7 +369,8 @@ class TaskQueueDB(DB):
                                                                                                                  bannedTable,
                                                                                                                  bannedTable ) )
     tqSqlCmd = "SELECT `tq_TaskQueues`.TQId FROM %s WHERE %s" % ( ", ".join( sqlTables ), " AND ".join( sqlCondList ) )
-    tqSqlCmd = "%s ORDER BY FLOOR( RAND() * `tq_TaskQueues`.Priority ) DESC, `tq_TaskQueues`.TQId ASC LIMIT 10" % tqSqlCmd
+    tqSqlCmd = "%s ORDER BY FLOOR( RAND() * `tq_TaskQueues`.Priority ) DESC, `tq_TaskQueues`.TQId ASC LIMIT %s" % ( tqSqlCmd,
+                                                                                                                    numQueuesToGet )
     return S_OK( tqSqlCmd )
 
   def deleteJob( self, jobId, connObj = False ):
@@ -362,11 +386,12 @@ class TaskQueueDB(DB):
     retVal = self._update( "DELETE FROM `tq_Jobs` WHERE `tq_Jobs`.JobId = %s" % jobId, conn = connObj )
     if not retVal[ 'OK' ]:
       return S_ERROR( "Could not delete job from task queue %s: %s" % ( jobId, retVal[ 'Message' ] ) )
-    if connObj.num_rows() == 1:
-      return S_OK( True )
-    return S_OK( False )
+    result = retVal[ 'Value' ]
+    if retVal[ 'Value' ] == 0:
+      return S_OK( False )
+    return S_OK( True )
 
-  def deleteTaskQueueIfEmpty( self, tqId, conn = False ):
+  def deleteTaskQueueIfEmpty( self, tqId, connObj = False ):
     """
     Try to delete a task queue if its empty
     """
