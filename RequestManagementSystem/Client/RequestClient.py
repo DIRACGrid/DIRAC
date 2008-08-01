@@ -1,10 +1,10 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/RequestClient.py,v 1.7 2008/08/01 08:18:20 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/RequestClient.py,v 1.8 2008/08/01 16:30:55 acsmith Exp $
 
 """
   This is the client implementation for the RequestDB using the DISET framework.
 """
 
-__RCSID__ = "$Id: RequestClient.py,v 1.7 2008/08/01 08:18:20 rgracian Exp $"
+__RCSID__ = "$Id: RequestClient.py,v 1.8 2008/08/01 16:30:55 acsmith Exp $"
 
 from types import *
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
@@ -85,10 +85,14 @@ class RequestClient:
     """ Set request. URL can be supplied if not a all VOBOXes will be tried in random order.
     """
     try:
-      if not url:
-        urls = self.voBoxUrls
-      else:
+      if url:
         urls = [url]
+      elif self.central:
+        urls = [self.central]
+        if self.voBoxUrls:
+          urls += self.voBoxUrls
+      else:
+        return S_ERROR("No urls defined")
       for url in urls:
         requestRPCClient = RPCClient(url)
         res = requestRPCClient.setRequest(requestName,requestString)
@@ -114,10 +118,14 @@ class RequestClient:
         First try the local repository then if none available or error try random repository
     """
     try:
-      if not url:
+      if url:
+        urls = [url]
+      elif self.local:
+        urls = [self.local]
+      elif self.voBoxUrls:
         urls = self.voBoxUrls
       else:
-        urls = [url]
+        return S_ERROR("No urls defined")
       for url in urls:
         gLogger.info("RequestDBClient.getRequest: Attempting to get request.", "%s %s" % (url,requestType))
         requestRPCClient = RPCClient(url)
@@ -143,10 +151,14 @@ class RequestClient:
     """ Get a request from RequestDB.
     """
     try:
-      if not url:
+      if url:
+        urls = [url]
+      elif self.local:
+        urls = [self.local]
+      elif self.voBoxUrls:
         urls = self.voBoxUrls
       else:
-        urls = [url]
+        return S_ERROR("No urls defined")
       for url in urls:
         gLogger.info("RequestDBClient.serveRequest: Attempting to obtain request.", "%s %s" % (url,requestType))
         requestRPCClient = RPCClient(url)
@@ -172,11 +184,14 @@ class RequestClient:
     """ Get the summary of requests in the RequestDBs. If a URL is not supplied will get status for all.
     """
     try:
-      if not url:
+      if url:
+        urls = [url]
+      elif self.local:
+        urls = [self.local]
+      elif self.voBoxUrls:
         urls = self.voBoxUrls
       else:
-        urls = [url]
-      urlDict = {}
+        return S_ERROR("No urls defined")
       for url in urls:
         requestRPCClient = RPCClient(url)
         urlDict[url] = {}
