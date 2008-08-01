@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSLTransport.py,v 1.23 2008/07/07 16:37:19 acasajus Exp $
-__RCSID__ = "$Id: SSLTransport.py,v 1.23 2008/07/07 16:37:19 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSLTransport.py,v 1.24 2008/08/01 13:04:41 acasajus Exp $
+__RCSID__ = "$Id: SSLTransport.py,v 1.24 2008/08/01 13:04:41 acasajus Exp $"
 
 import os
 import types
@@ -75,18 +75,18 @@ def checkSanity( urlTuple, kwargs ):
   useCerts = False
   if not Locations.getCAsLocation():
     gLogger.error( "No CAs found!" )
-    return False
+    return S_ERROR( "No CAs found!" )
   if "useCertificates" in kwargs and kwargs[ 'useCertificates' ]:
     certTuple = Locations.getHostCertificateAndKeyLocation()
     if not certTuple:
       gLogger.error( "No cert/key found! " )
-      return False
+      return S_ERROR( "No cert/key found! " )
     certFile = certTuple[0]
     useCerts = True
   elif "proxyString" in kwargs:
     if type( kwargs[ 'proxyString' ] ) != types.StringType:
       gLogger.error( "proxyString parameter is not a valid type" )
-      return False
+      return S_ERROR( "proxyString parameter is not a valid type" )
   else:
     if "proxyLocation" in kwargs:
       certFile = kwargs[ "proxyLocation" ]
@@ -94,17 +94,17 @@ def checkSanity( urlTuple, kwargs ):
       certFile = Locations.getProxyLocation()
     if not certFile:
       gLogger.error( "No proxy found" )
-      return False
+      return S_ERROR( "No proxy found" )
     elif not os.path.isfile( certFile ):
       gLogger.error( "%s proxy file does not exist" % certFile )
-      return False
+      return S_ERROR( "%s proxy file does not exist" % certFile )
 
   if "proxyString" in kwargs:
     certObj = X509Chain()
     retVal = certObj.loadChainFromString( kwargs[ 'proxyString' ] )
     if not retVal[ 'OK' ]:
       gLogger.error( "Can't load proxy string" )
-      return False
+      return S_ERROR( "Can't load proxy string" )
   else:
     if useCerts:
       certObj = X509Certificate()
@@ -116,7 +116,7 @@ def checkSanity( urlTuple, kwargs ):
   retVal = certObj.hasExpired()
   if not retVal[ 'OK' ]:
     gLogger.error( "Can't verify file %s:%s" % ( certFile, retVal[ 'Message' ] ) )
-    return False
+    return S_ERROR( "Can't verify file %s:%s" % ( certFile, retVal[ 'Message' ] ) )
   else:
     if retVal[ 'Value' ]:
       notAfter = certObj.getNotAfterDate()
@@ -125,9 +125,18 @@ def checkSanity( urlTuple, kwargs ):
       else:
         notAfter = "unknown"
       gLogger.error( "PEM file %s has expired, not valid after %s" % ( certFile, notAfter ) )
-      return False
+      return S_ERROR( "PEM file %s has expired, not valid after %s" % ( certFile, notAfter ) )
 
-  return True
+  idDict = {}
+  group = certObj.getDIRACGroup( ignoreDefault = True )[ 'Value' ]
+  if group != False:
+    idDict[ 'group' ] = group
+  if useCerts:
+    idDict[ 'DN' ] = certObj.getSubjectDN()[ 'Value' ]
+  else:
+    idDict[ 'DN' ] = certObj.getIssuerCert()[ 'Value' ].getSubjectDN()[ 'Value' ]
+
+  return S_OK( idDict )
 
 def delegate( delegationRequest, kwargs ):
   """

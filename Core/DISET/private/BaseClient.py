@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.46 2008/07/22 09:04:38 acasajus Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.46 2008/07/22 09:04:38 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.47 2008/08/01 13:04:41 acasajus Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.47 2008/08/01 13:04:41 acasajus Exp $"
 
 import sys
 import types
@@ -36,6 +36,7 @@ class BaseClient:
     #HACK: Should be False to allow group to travel in the proxy
     self.defaultUserGroup = CS.getDefaultUserGroup()
     #HACK END
+    self.__idDict = {}
     self.__discoverSetup()
     self.__initStatus = self.__discoverURL()
     if not self.__initStatus[ 'OK' ]:
@@ -46,7 +47,6 @@ class BaseClient:
     self.__initStatus = self.__checkTransportSanity()
     #HACK for thread-safety:
     self.__allowedThreadID = False
-
 
   def __discoverSetup(self):
     #Which setup to use?
@@ -183,10 +183,23 @@ and this is thread %s
     return transport.receiveData()
 
   def __checkTransportSanity( self ):
-    saneEnv = gProtocolDict[ self.URLTuple[0] ][ 'sanity' ]( self.URLTuple[1:3], self.kwargs )
-    if not saneEnv:
-      return S_ERROR( "Insane environment for protocol" )
+    retVal = gProtocolDict[ self.URLTuple[0] ][ 'sanity' ]( self.URLTuple[1:3], self.kwargs )
+    if not retVal[ 'OK' ]:
+      return S_ERROR( "Insane environment for protocol: %s" % retVal[ 'Value' ] )
+    idDict = retVal[ 'Value' ]
+    for key in idDict:
+      self.__idDict[ key ] = idDict[ key ]
     return S_OK()
+
+  def _getBaseStub( self ):
+    newKwargs = dict( self.kwargs )
+    if 'group' in self.__idDict and not self.KW_DELEGATED_GROUP in newKwargs:
+      newKwargs[ self.KW_DELEGATED_GROUP ] = self.__idDict[ 'group' ]
+    if 'DN' in self.__idDict and not self.KW_DELEGATED_DN in newKwargs:
+      newKwargs[ self.KW_DELEGATED_DN ] = self.__idDict[ 'DN' ]
+    if 'useCertificates' in newKwargs:
+      del( newKwargs[ 'useCertificates' ] )
+    return ( self.serviceName, newKwargs )
 
   def __nonzero__( self ):
     return True

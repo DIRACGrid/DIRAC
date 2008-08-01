@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RPCClient.py,v 1.6 2008/06/05 10:20:16 acasajus Exp $
-__RCSID__ = "$Id: RPCClient.py,v 1.6 2008/06/05 10:20:16 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RPCClient.py,v 1.7 2008/08/01 13:04:41 acasajus Exp $
+__RCSID__ = "$Id: RPCClient.py,v 1.7 2008/08/01 13:04:41 acasajus Exp $"
 
 from DIRAC.Core.DISET.private.InnerRPCClient import InnerRPCClient
 
@@ -46,8 +46,8 @@ def executeRPCStub( rpcStub ):
   Playback a stub
   """
   #Generate a RPCClient with the same parameters
-  rpcClient = RPCClient( rpcStub[0], **rpcStub[1] )
+  rpcClient = RPCClient( rpcStub[0][0], **rpcStub[0][1] )
   #Get a functor to execute the RPC call
-  rpcFunc = getattr( rpcClient, rpcStub[2] )
+  rpcFunc = getattr( rpcClient, rpcStub[1] )
   #Reproduce the call
-  return rpcFunc( *rpcStub[3] )
+  return rpcFunc( *rpcStub[2] )
