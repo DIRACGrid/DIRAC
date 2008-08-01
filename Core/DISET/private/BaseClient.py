@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.47 2008/08/01 13:04:41 acasajus Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.47 2008/08/01 13:04:41 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.48 2008/08/01 13:11:57 acasajus Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.48 2008/08/01 13:11:57 acasajus Exp $"
 
 import sys
 import types
@@ -72,8 +72,8 @@ class BaseClient:
     #HACK: For windows there is no timeout! (YingYing...)
     if sys.platform == "win32":
       self.timeout = False
-    # disable timeout
-    self.timeout = False
+    if self.timeout:
+      self.timeout = max( 900, self.timeout )
 
   def __discoverCredentialsToUse( self ):
     #Use certificates?
