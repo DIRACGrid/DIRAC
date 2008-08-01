@@ -24,9 +24,7 @@ class FTSSubmit(Agent):
   def initialize(self):
     result = Agent.initialize(self)
     self.TransferDB = TransferDB()
-    self.filesPerJob = gConfig.getValue(self.section+'/MaxFilesPerJob',50)
     self.maxJobsPerChannel = gConfig.getValue(self.section+'/MaxJobsPerChannel',2)
-    self.submissionsPerLoop = gConfig.getValue(self.section+'/SubmissionsPerLoop',1)
     self.DataLog = DataLoggingClient()
 
     self.useProxies = gConfig.getValue(self.section+'/UseProxies','True').lower() in ( "y", "yes", "true" )
@@ -42,54 +40,61 @@ class FTSSubmit(Agent):
       if not result[ 'OK' ]:
         self.log.error( "Can't get shifter's proxy: %s" % result[ 'Message' ] )
         return result
-       
-    for i in range(self.submissionsPerLoop):
-      infoStr = "\n\n##################################################################################\n\n"
-      infoStr = "%sStarting submission loop %s of %s\n\n" % (infoStr,i+1, self.submissionsPerLoop)
-      gLogger.info(infoStr)
-      res = self.submitTransfer()
-    return S_OK()
-
-  def submitTransfer(self):
-    """ This method creates and submits FTS jobs based on information it gets from the DB
-    """
-    # Create the FTSRequest object for preparing the submission
-    ftsRequest = FTSRequest()
 
     #########################################################################
-    #  Request the channel to submit to from the TransferDB.
-    res = self.TransferDB.selectChannelForSubmission(self.maxJobsPerChannel)
+    #  Obtain the eligible channels for submission.
+    res = self.TransferDB.selectChannelsForSubmission(self.maxJobsPerChannel)
     if not res['OK']:
-      errStr = 'FTSAgent.%s' % res['Message']
-      gLogger.error(errStr)
-      return S_ERROR(errStr)
-    if not res['Value']:
-      infoStr = "FTSAgent: No channels eligable for submission."
-      gLogger.info(infoStr)
+      gLogger.error("Failed to retrieve channels for submission.",res['Message'])
       return S_OK()
-    channelDict = res['Value']
+    elif not res['Value']:
+      gLogger.info("FTSAgent: No channels eligable for submission.")
+      return S_OK()
+    channelDicts = res['Value']    
+
+    #########################################################################
+    # Submit to all the eligible waiting channels.            
+    i = 1
+    for channelDict in channelDicts:
+      infoStr = "\n\n##################################################################################\n\n"
+      infoStr = "%sStarting submission loop %s of %s\n\n" % (infoStr,i,len(channelDicts))
+      gLogger.info(infoStr)
+      res = self.submitTransfer(channelDict)
+      i+=1
+    return S_OK()
+
+  def submitTransfer(self,channelDict):
+    """ This method creates and submits FTS jobs based on information it gets from the DB
+    """
+
+    # Create the FTSRequest object for preparing the submission
+    ftsRequest = FTSRequest()
     channelID = channelDict['ChannelID']
     sourceSE = channelDict['Source']
-    targetSE = channelDict['Destination']
     ftsRequest.setSourceSE(sourceSE)
+    targetSE = channelDict['Destination']
     ftsRequest.setTargetSE(targetSE)
+    ftsServer = channelDict['FTSServer']
+    ftsRequest.setFTSServer(ftsServer)
+    filesPerJob = channelDict['NumFiles']
 
     #########################################################################
     #  Obtain the first files in the selected channel.
-    res = self.TransferDB.getFilesForChannel(channelID,self.filesPerJob)
+    gLogger.info("FTSSubmit.submitTransfer: Attempting to obtain files for %s to %s channel." % (sourceSE,targetSE))
+    res = self.TransferDB.getFilesForChannel(channelID,2*filesPerJob)
     if not res['OK']:
       errStr = 'FTSAgent.%s' % res['Message']
       gLogger.error(errStr)
-      return S_ERROR(errStr)
-    if not res['Value']:
-      infoStr = "FTSAgent: No files to be submitted on Channel %s." % channelID
-      gLogger.info(infoStr)
       return S_OK()
-    channelDict = res['Value']
-    if channelDict.has_key('SpaceToken'):
-      spaceToken = channelDict['SpaceToken']
+    if not res['Value']:
+      gLogger.info("FTSSubmit.submitTransfer: No files to found for channel.")
+      return S_OK()
+
+    filesDict = res['Value']
+    if filesDict.has_key('SpaceToken'):
+      spaceToken = filesDict['SpaceToken']
       ftsRequest.setSpaceToken(spaceToken)
-    files = channelDict['Files']
+    files = filesDict['Files']
 
     #########################################################################
     #  Populate the FTS Request with the files.
