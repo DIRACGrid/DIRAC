@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSLTransport.py,v 1.25 2008/08/03 11:11:50 acasajus Exp $
-__RCSID__ = "$Id: SSLTransport.py,v 1.25 2008/08/03 11:11:50 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSLTransport.py,v 1.26 2008/08/03 11:25:20 acasajus Exp $
+__RCSID__ = "$Id: SSLTransport.py,v 1.26 2008/08/03 11:25:20 acasajus Exp $"
 
 import os
 import types
@@ -129,7 +129,7 @@ def checkSanity( urlTuple, kwargs ):
 
   idDict = {}
   retVal = certObj.getDIRACGroup( ignoreDefault = True )
-  if retVal 'OK' ] and retVal[ 'Value' ] != False:
+  if retVal[ 'OK' ] and retVal[ 'Value' ] != False:
     idDict[ 'group' ] = group
   if useCerts:
     idDict[ 'DN' ] = certObj.getSubjectDN()[ 'Value' ]
