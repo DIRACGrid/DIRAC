@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/ProxyManagerHandler.py,v 1.11 2008/07/29 18:47:23 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/ProxyManagerHandler.py,v 1.12 2008/08/03 10:27:11 acasajus Exp $
 ########################################################################
 
 """ ProxyManager is the implementation of the ProxyManagement service
     in the DISET framework
 """
 
-__RCSID__ = "$Id: ProxyManagerHandler.py,v 1.11 2008/07/29 18:47:23 acasajus Exp $"
+__RCSID__ = "$Id: ProxyManagerHandler.py,v 1.12 2008/08/03 10:27:11 acasajus Exp $"
 
 import types
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -43,7 +43,11 @@ class ProxyManagerHandler( RequestHandler ):
     userName = credDict[ 'username' ]
     if not userGroup:
       userGroup = credDict[ 'group' ]
-    if userGroup not in CS.getGroupsForUser( credDict[ 'username' ] )[ 'Value' ]:
+    retVal = CS.getGroupsForUser( credDict[ 'username' ] )
+    if not retVal[ 'OK' ]:
+      return retVal
+    groupsAvailable = retVal 'Value' ] 
+    if userGroup not in groupsAvailable:
       return S_ERROR( "%s is not a valid group for user %s" % ( userGroup, userName ) )
     retVal = gProxyDB.getRemainingTime( userDN, userGroup )
     if not retVal[ 'OK' ]:
