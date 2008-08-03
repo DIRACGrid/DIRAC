@@ -1,9 +1,9 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyManagerClient.py,v 1.28 2008/07/30 11:17:01 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyManagerClient.py,v 1.29 2008/08/03 11:40:34 acasajus Exp $
 ########################################################################
 """ ProxyManagementAPI has the functions to "talk" to the ProxyManagement service
 """
-__RCSID__ = "$Id: ProxyManagerClient.py,v 1.28 2008/07/30 11:17:01 acasajus Exp $"
+__RCSID__ = "$Id: ProxyManagerClient.py,v 1.29 2008/08/03 11:40:34 acasajus Exp $"
 
 import os
 import datetime
@@ -144,7 +144,8 @@ class ProxyManagerClient:
     if chain.hasExpired()[ 'Value' ]:
       return S_ERROR( "Proxy %s has expired" % proxyLocation )
 
-    rpcClient = RPCClient( "Framework/ProxyManager", proxyChain = chainToConnect )
+    #rpcClient = RPCClient( "Framework/ProxyManager", proxyChain = chainToConnect )
+    rpcClient = RPCClient( "Framework/ProxyManager" )
     #Get a delegation request
     retVal = rpcClient.requestDelegationUpload( chain.getRemainingSecs()['Value'], diracGroup )
     if not retVal[ 'OK' ]:
