@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSLTransport.py,v 1.24 2008/08/01 13:04:41 acasajus Exp $
-__RCSID__ = "$Id: SSLTransport.py,v 1.24 2008/08/01 13:04:41 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSLTransport.py,v 1.25 2008/08/03 11:11:50 acasajus Exp $
+__RCSID__ = "$Id: SSLTransport.py,v 1.25 2008/08/03 11:11:50 acasajus Exp $"
 
 import os
 import types
@@ -128,8 +128,8 @@ def checkSanity( urlTuple, kwargs ):
       return S_ERROR( "PEM file %s has expired, not valid after %s" % ( certFile, notAfter ) )
 
   idDict = {}
-  group = certObj.getDIRACGroup( ignoreDefault = True )[ 'Value' ]
-  if group != False:
+  retVal = certObj.getDIRACGroup( ignoreDefault = True )
+  if retVal 'OK' ] and retVal[ 'Value' ] != False:
     idDict[ 'group' ] = group
   if useCerts:
     idDict[ 'DN' ] = certObj.getSubjectDN()[ 'Value' ]
