@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.51 2008/07/25 16:28:25 rgracian Exp $
+# $Id: JobWrapper.py,v 1.52 2008/08/04 17:38:16 rgracian Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.51 2008/07/25 16:28:25 rgracian Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.52 2008/08/04 17:38:16 rgracian Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -204,6 +204,13 @@ class JobWrapper:
     jobArgs = arguments['Job']
     ceArgs = arguments ['CE']
 
+    outputFile = self.defaultOutputFile
+    errorFile  = self.defaultErrorFile
+    if jobArgs.has_key('StdError'):
+      errorFile = jobArgs['StdError']
+    if jobArgs.has_key('StdOutput'):
+      outputFile = jobArgs['StdOutput']
+
     if jobArgs.has_key('MaxCPUTime'):
       jobCPUTime = int(jobArgs['MaxCPUTime'])
     else:
@@ -235,7 +242,7 @@ class JobWrapper:
       command = '%s %s' % (executable,jobArguments)
       self.log.verbose('Execution command: %s' %(command))
       maxPeekLines = self.maxPeekLines
-      exeThread = ExecutionThread(spObject,command,maxPeekLines)
+      exeThread = ExecutionThread(spObject,command,maxPeekLines,outputFile,errorFile)
       exeThread.start()
     else:
       return S_ERROR('Path to executable %s not found' %(executable))
@@ -986,12 +993,14 @@ class JobWrapper:
 class ExecutionThread(threading.Thread):
 
   #############################################################################
-  def __init__(self,spObject,cmd,maxPeekLines):
+  def __init__(self,spObject,cmd,maxPeekLines,stdoutFile, stderrFile):
     threading.Thread.__init__(self)
     self.cmd = cmd
     self.spObject = spObject
     self.outputLines = []
     self.maxPeekLines = maxPeekLines
+    self.stdout = stdoutFile
+    self.stderr = stderrFile
 
   #############################################################################
   def run(self):
@@ -1015,6 +1024,14 @@ class ExecutionThread(threading.Thread):
 
   #############################################################################
   def sendOutput(self,stdid,line):
+    if stdid == 0 and self.stdout:
+      outputFile = open(self.stdout,'a+')
+      print >> outputFile, line
+      outputFile.close()
+    elif stdid == 1 and self.stderr:
+      errorFile = open(self.stderr,'a+')
+      print >> errorFile, line
+      errorFile.close()
     self.outputLines.append(line)
 
   #############################################################################
