@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotMonitor.py,v 1.13 2008/07/30 10:21:41 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotMonitor.py,v 1.14 2008/08/04 17:27:33 atsareg Exp $
 # File :   PilotMonitor.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,12 +9,13 @@
      of the AgentMonitor instance for all Grids.
 """
 
-__RCSID__ = "$Id: PilotMonitor.py,v 1.13 2008/07/30 10:21:41 rgracian Exp $"
+__RCSID__ = "$Id: PilotMonitor.py,v 1.14 2008/08/04 17:27:33 atsareg Exp $"
 
 from DIRAC.Core.Base.Agent    import Agent
 from DIRAC                    import S_OK, S_ERROR, gConfig, gLogger
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
+import DIRAC.Core.Utilities.Time as Time
 
 import os, time
 
@@ -52,8 +53,9 @@ class PilotMonitor(Agent):
     for minor in ['Pilot Agent Response', 'Director Submitting']:
     
       selection = {'Status':'Waiting','MinorStatus':minor}
-      delay  = time.localtime( time.time() - self.maxWaitingTime )
-      delay = time.strftime( "%Y-%m-%d %H:%M:%S", delay )
+      #delay  = time.localtime( time.time() - self.maxWaitingTime )
+      #delay = time.strftime( "%Y-%m-%d %H:%M:%S", delay )
+      delay = Time.toString(Time.dateTime() - self.maxWaitingTime*Time.second)
       result = self.jobDB.selectJobs(selection, older=delay, limit=self.selectJobLimit, orderAttribute='LastUpdateTime')
       if not result['OK']:
         return result
