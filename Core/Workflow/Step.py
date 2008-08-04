@@ -1,8 +1,8 @@
-# $Id: Step.py,v 1.27 2008/06/23 11:22:50 atsareg Exp $
+# $Id: Step.py,v 1.28 2008/08/04 17:22:54 atsareg Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.27 $"
+__RCSID__ = "$Revision: 1.28 $"
 
 import os, time, types, traceback, sys
 #try: # this part to inport as part of the DIRAC framework
@@ -226,7 +226,8 @@ class StepInstance(AttributeCollection):
 
     # Report the Application state if the coresponding tool is supplied
     if self.workflow_commons.has_key('JobReport'):
-      result = self.workflow_commons['JobReport'].setApplicationStatus('Executing '+self.getName())
+      if self.parent.workflowStatus['OK']:
+        result = self.workflow_commons['JobReport'].setApplicationStatus('Executing '+self.getName())
 
     # Prepare Step statistics evaluation
     self.step_commons['StartTime'] = time.time()
