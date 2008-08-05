@@ -1,4 +1,5 @@
 """ Class responsible for handling time-series data and calculating trends.
+
 """
 
 import datetime
