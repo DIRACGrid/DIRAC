@@ -1,6 +1,10 @@
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/TimeSeries.py,v 1.3 2008/08/05 14:50:40 atsareg Exp $
+
 """ Class responsible for handling time-series data and calculating trends.
 
 """
+
+__RCSID__ = "$Id: TimeSeries.py,v 1.3 2008/08/05 14:50:40 atsareg Exp $"
 
 import datetime
 
@@ -210,7 +214,7 @@ class TimeSeries:
       data = self.data[:]
     else:
       data = self.getTimes(maxAge)
-      
+
     # If we have no data to handle, just leave.
     # This will also avoid zero-division later on.
     n = len(data)
@@ -221,7 +225,7 @@ class TimeSeries:
     total = 0
     for i in data:
       total += i[0]
-      
+
     # Calculate the average
     if versusTime:
       span = self.getRange()
@@ -236,7 +240,7 @@ class TimeSeries:
       result = float(total) / span
     else:
       result = float(total) / n
-      
+
     return result
 
   ###########################################################################
