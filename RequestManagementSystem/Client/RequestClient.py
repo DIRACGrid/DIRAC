@@ -1,10 +1,10 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/RequestClient.py,v 1.8 2008/08/01 16:30:55 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/RequestClient.py,v 1.9 2008/08/06 12:44:38 atsareg Exp $
 
 """
   This is the client implementation for the RequestDB using the DISET framework.
 """
 
-__RCSID__ = "$Id: RequestClient.py,v 1.8 2008/08/01 16:30:55 acsmith Exp $"
+__RCSID__ = "$Id: RequestClient.py,v 1.9 2008/08/06 12:44:38 atsareg Exp $"
 
 from types import *
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
@@ -183,6 +183,8 @@ class RequestClient:
   def getDBSummary(self,url=''):
     """ Get the summary of requests in the RequestDBs. If a URL is not supplied will get status for all.
     """
+
+    urlDict = {}
     try:
       if url:
         urls = [url]
