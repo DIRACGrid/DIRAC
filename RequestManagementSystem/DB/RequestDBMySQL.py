@@ -83,7 +83,7 @@ class RequestDBMySQL(DB):
       summaryDict[rtype] = {} 
       for status in statusList:
         req = "SELECT COUNT(*) FROM SubRequests WHERE RequestType='%s' AND Status='%s'" % (rtype,status)
-        print rtype, status, result
+        result = self._query(req)
         if not result['OK']:
           summaryDict[rtype][status] = 0
         elif not result['Value']:
