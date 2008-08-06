@@ -1,11 +1,11 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Client/JobReport.py,v 1.16 2008/08/01 17:06:52 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Client/JobReport.py,v 1.17 2008/08/06 12:49:29 atsareg Exp $
 
 """
   JobReport class encapsulates various
   methods of the job status reporting
 """
 
-__RCSID__ = "$Id: JobReport.py,v 1.16 2008/08/01 17:06:52 acsmith Exp $"
+__RCSID__ = "$Id: JobReport.py,v 1.17 2008/08/06 12:49:29 atsareg Exp $"
 
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC import S_OK, S_ERROR, Time
@@ -19,7 +19,7 @@ class JobReport:
 
     self.jobStatusInfo = []
     self.appStatusInfo = []
-    self.jobParameters = []
+    self.jobParameters = {}
     self.jobID = int(jobid)
     self.source = source
     if not source:
@@ -69,7 +69,7 @@ class JobReport:
 
     timeStamp = Time.toString()
     # add job paramenter record
-    self.jobParameters.append((par_name,par_value,timeStamp))
+    self.jobParameters[par_name] = (par_value,timeStamp)
     if sendFlag:
       # and send
       return self.sendStoredJobParameters()
@@ -85,7 +85,7 @@ class JobReport:
     timeStamp = Time.toString()
     # add job paramenter record
     for pname,pvalue in parameters:
-      self.jobParameters.append((pname,pvalue,timeStamp))
+      self.jobParameters[pname] = (pvalue,timeStamp)
 
     if sendFlag:
       # and send
@@ -110,11 +110,8 @@ class JobReport:
     if statusDict:
       jobMonitor = RPCClient('WorkloadManagement/JobStateUpdate',timeout=60)
       result = jobMonitor.setJobStatusBulk(self.jobID,statusDict)
-#      result['OK'] =  False
-#      result['Message'] = ''
-#      print result
-      if not result:
-        return S_ERROR('Null result from JobState service')
+      if not result['OK']:
+        return result
 
       if result['OK']:
         # Empty the internal status containers
@@ -129,20 +126,21 @@ class JobReport:
   def sendStoredJobParameters(self):
     """ Send the job parameters stored in the internal cache
     """
-    # FIXME: What if the same paramenter is set twice?
+
     parameters = []
-    for pname,pvalue,timeStamp in self.jobParameters:
+    for pname,value in self.jobParameters.items():
+      pvalue,timeStamp = value
       parameters.append((pname,pvalue))
 
     if parameters:
       jobMonitor = RPCClient('WorkloadManagement/JobStateUpdate',timeout=60)
       result = jobMonitor.setJobParameters(self.jobID,parameters)
-      if not result:
-        return S_ERROR('Null result from JobState service')
+      if not result['OK']:
+        return result
 
       if result['OK']:
         # Empty the internal parameter container
-        self.jobParameters = []
+        self.jobParameters = {}
 
       return result
     else:
@@ -162,7 +160,8 @@ class JobReport:
       print status.ljust(20),timeStamp
 
     print "Job parameters:"
-    for pname,pvalue,timeStamp in self.jobParameters:
+    for pname,value in self.jobParameters.items():
+      pvalue,timeStamp = value
       print pname.ljust(20),pvalue.ljust(30),timeStamp
 
   def generateRequest(self):
