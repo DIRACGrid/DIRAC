@@ -27,6 +27,42 @@ class RequestDBMySQL(DB):
     res = self._setRequestAttribute(requestID,attrName,attrValue)
     return res
 
+  def _getSubRequests(self,requestID):
+    """ Get subrequest IDs for the given request
+    """
+    subRequestList = []
+    req = "SELECT SubRequestID FROM SubRequests WHERE RequestID=%d" % requestID
+    result = self._query(req)
+    if not result['OK']:
+      return result
+
+    if result['Value']:
+      subRequestList = [ int(x[0]) for x in result['Value']]
+
+    return S_OK(subRequestList) 
+
+  def setRequestStatus(self,requestName,requestStatus,subRequest_flag=True):
+    """ Set request status and optionally subrequest status
+    """
+
+    res = self._getRequestAttribute('RequestID',requestName=requestName)
+    if not res['OK']:
+      return res
+    requestID = res['Value']
+    res = self._setRequestAttribute(requestID,'Status',requestStatus)
+    if not res['OK']:
+      return res
+
+    if not subRequest_flag:
+      return S_OK()
+
+    result = self._getSubRequests(requestID)
+    if result['OK']:
+      for subRequestID in result['Value']:
+        res = self._setSubRequestAttribute(requestID,subRequestID,'Status',requestStatus)
+
+    return S_OK()
+
   def _serveRequest(self):
     self.getIdLock.acquire()
     req = "SELECT MAX(RequestID) FROM Requests;"
@@ -108,7 +144,7 @@ class RequestDBMySQL(DB):
     requestID = res['Value'][0][0]
     dmRequest.setRequestID(requestID)
     subRequestIDs = []
-    req = "SELECT SubRequestID,Operation,SourceSE,TargetSE,Catalogue,CreationTime,SubmissionTime,LastUpdate \
+    req = "SELECT SubRequestID,Operation,Arguments,SourceSE,TargetSE,Catalogue,CreationTime,SubmissionTime,LastUpdate \
     from SubRequests WHERE RequestID=%s AND RequestType='%s' AND Status='%s'" % (requestID,requestType,'Waiting')
     res = self._query(req)
     if not res['OK']:
@@ -120,7 +156,7 @@ class RequestDBMySQL(DB):
       self._setSubRequestAttribute(requestID,tuple[0],'Status','Assigned')
     self.getIdLock.release()
 
-    for subRequestID,operation,sourceSE,targetSE,catalogue,creationTime,submissionTime,lastUpdate in res['Value']:
+    for subRequestID,operation,arguments,sourceSE,targetSE,catalogue,creationTime,submissionTime,lastUpdate in res['Value']:
       subRequestIDs.append(subRequestID)
       res = dmRequest.initiateSubRequest(requestType)
       ind = res['Value']
@@ -128,6 +164,7 @@ class RequestDBMySQL(DB):
                         'Status'       : 'Waiting',      
                         'SubRequestID' : subRequestID,
                         'Operation'    : operation,
+                        'Arguments'    : arguments,
                         'SourceSE'     : sourceSE,
                         'TargetSE'     : targetSE,
                         'Catalogue'    : catalogue,
