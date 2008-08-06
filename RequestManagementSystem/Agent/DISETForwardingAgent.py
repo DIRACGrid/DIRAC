@@ -7,6 +7,7 @@ from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
 from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.DISET.RPCClient import executeRPCStub
+from DIRAC.Core.Utilities import DEncode
 
 import time,os,re
 from types import *
@@ -40,7 +41,7 @@ class DISETForwardingAgent(Agent):
     """ Takes the DISET requests and forwards to destination service
     """
     gMonitor.addMark("Iteration",1)
-    res = self.RequestDBClient.getRequest('DISET',url=self.local)
+    res = self.RequestDBClient.getRequest('diset',url=self.local)
     if not res['OK']:
       gLogger.error("DISETForwardingAgent.execute: Failed to get request from database.",self.local)
       return S_OK()
@@ -73,7 +74,8 @@ class DISETForwardingAgent(Agent):
       if subRequestAttributes['Status'] == 'Waiting':
         operation = subRequestAttributes['Operation']
         gLogger.info("DISETForwardingAgent.execute: Attemping to forward %s type." % operation)
-        rpcStub = subRequestAttributes['Arguments']
+        rpcStubString = subRequestAttributes['Arguments']
+        rpcStub = DEncode.decode(rpcStubString)[0]
         res = executeRPCStub(rpcStub)
         if res['OK']:
           gLogger.info("DISETForwardingAgent.execute: Successfully forwarded.")
