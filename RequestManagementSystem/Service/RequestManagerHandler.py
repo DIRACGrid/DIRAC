@@ -30,7 +30,7 @@ def initializeRequestManagerHandler(serviceInfo):
 
 class RequestManagerHandler(RequestHandler):
 
-  types_setRequest = [StringType,[StringType,UnicodeType]]
+  types_setRequest = [StringTypes,StringTypes]
   def export_setRequest(self,requestName,requestString):
     """ Set a new request
     """
@@ -43,7 +43,7 @@ class RequestManagerHandler(RequestHandler):
       gLogger.exception(errStr,requestName,lException=x)
       return S_ERROR(errStr)
 
-  types_setRequestStatus = [StringType,StringType]
+  types_setRequestStatus = [StringTypes,StringTypes]
   def export_setRequestStatus(self,requestName,requestStatus):
     """ Set status of a request
     """
@@ -56,7 +56,7 @@ class RequestManagerHandler(RequestHandler):
       gLogger.exception(errStr,requestName,lException=x)
       return S_ERROR(errStr)
 
-  types_updateRequest = [StringType,StringTypes]
+  types_updateRequest = [StringTypes,StringTypes]
   def export_updateRequest(self,requestName,requestString):
     """ Update the request with the supplied string
     """
@@ -69,7 +69,7 @@ class RequestManagerHandler(RequestHandler):
       gLogger.exception(errStr,requestName,lException=x)
       return S_ERROR(errStr)
 
-  types_deleteRequest = [StringType]
+  types_deleteRequest = [StringTypes]
   def export_deleteRequest(self,requestName):
     """ Delete the request with the supplied name
     """
@@ -95,7 +95,7 @@ class RequestManagerHandler(RequestHandler):
       gLogger.exception(errStr,lException=x)
       return S_ERROR(errStr)
 
-  types_getRequest = [StringType]
+  types_getRequest = [StringTypes]
   def export_getRequest(self,requestType):
     """ Get a request of given type from the database
     """
