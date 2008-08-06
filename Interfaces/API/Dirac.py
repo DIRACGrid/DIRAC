@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.41 2008/08/06 09:33:12 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.42 2008/08/06 09:44:00 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.41 2008/08/06 09:33:12 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.42 2008/08/06 09:44:00 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -459,12 +459,10 @@ class Dirac:
 
        @param lfn: Logical File Name (LFN)
        @type lfn: string
-       @param storageElement: DIRAC SE name e.g. CERN-USER
-       @type storageElement: string
+       @param diracSE: DIRAC SE name e.g. CERN-USER
+       @type diracSE: string
        @return: S_OK,S_ERROR
 
-       @param printOutput: Optional file GUID
-       @type printOutput: string
        @param printOutput: Optional flag to print result
        @type printOutput: boolean
     """
@@ -543,14 +541,14 @@ class Dirac:
 
        @param lfn: Logical File Name (LFN)
        @type lfn: string
-       @param storageElement: DIRAC SE name e.g. CERN-USER
-       @type storageElement: string
+       @param destinationSE: Destination DIRAC SE name e.g. CERN-USER
+       @type destinationSE: string
+       @param sourceSE: Optional source SE
+       @type sourceSE: string
        @return: S_OK,S_ERROR
 
-       @param printOutput: Optional source SE
-       @type printOutput: string
-       @param printOutput: Local cache
-       @type printOutput: string
+       @param localCache: Optional path to local cache
+       @type localCache: string
        @param printOutput: Optional flag to print result
        @type printOutput: boolean
     """
@@ -666,8 +664,8 @@ class Dirac:
        /lhcb/data/CCRC08/RAW/LHCb/CCRC/23341/023341_0000039571.raw','NIKHEF-RAW')
        {'OK': True, 'Value': {'Successful': {'srm://...': {'SRM2': 'rfio://...'}}, 'Failed': {}}}
 
-       @param lfn: Physical File Name (PFN)
-       @type lfn: string or list
+       @param pfn: Physical File Name (PFN)
+       @type pfn: string or list
        @param storageElement: DIRAC SE name e.g. CERN-RAW
        @type storageElement: string
        @return: S_OK,S_ERROR

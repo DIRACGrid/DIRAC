@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.40 2008/07/22 15:51:46 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.41 2008/08/06 09:45:44 paterson Exp $
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -30,7 +30,7 @@
    Note that several executables can be provided and wil be executed sequentially.
 """
 
-__RCSID__ = "$Id: Job.py,v 1.40 2008/07/22 15:51:46 paterson Exp $"
+__RCSID__ = "$Id: Job.py,v 1.41 2008/08/06 09:45:44 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -495,8 +495,8 @@ class Job:
        >>> job = Job()
        >>> job.setLogLevel('debug')
 
-       @param jobGroup: JobGroup name
-       @type jobGroup: string
+       @param logLevel: Logging level
+       @type logLevel: string
     """
     #TODO: put protection for allowed logging levels...
     if type(logLevel) == type("  "):
