@@ -36,6 +36,7 @@ CREATE TABLE SubRequests (
    Status varchar(32) DEFAULT 'Receiving',
    RequestType  varchar(32) NOT NULL,
    Operation varchar(32),
+   Arguments blob,
    SourceSE varchar(32),
    TargetSE varchar(255),
    Catalogue varchar(32),
