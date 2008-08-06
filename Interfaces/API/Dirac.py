@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.40 2008/08/01 08:15:20 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.41 2008/08/06 09:33:12 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.40 2008/08/01 08:15:20 rgracian Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.41 2008/08/06 09:33:12 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -498,8 +498,8 @@ class Dirac:
        Example Usage:
 
        >>> print dirac.getFile('/lhcb/user/p/paterson/myFile.tar.gz')
-      {'OK': True, 'Value':{'Failed': {},
-      'Successful': {'/lhcb/user/p/paterson/test/myFile.tar.gz': '/afs/cern.ch/user/p/paterson/w1/DIRAC3/myFile.tar.gz'}}}
+       {'OK': True, 'Value':{'Failed': {},
+        'Successful': {'/lhcb/user/p/paterson/test/myFile.tar.gz': '/afs/cern.ch/user/p/paterson/w1/DIRAC3/myFile.tar.gz'}}}
 
        @param lfn: Logical File Name (LFN)
        @type lfn: string
@@ -537,8 +537,8 @@ class Dirac:
        Example Usage:
 
        >>> print dirac.replicateFile('/lhcb/user/p/paterson/myFile.tar.gz','CNAF-USER')
-      {'OK': True, 'Value':{'Failed': {},
-      'Successful': {'/lhcb/user/p/paterson/test/myFile.tar.gz': {'register': 0.44766902923583984,
+       {'OK': True, 'Value':{'Failed': {},
+       'Successful': {'/lhcb/user/p/paterson/test/myFile.tar.gz': {'register': 0.44766902923583984,
                                                                   'replicate': 56.42345404624939}}}}
 
        @param lfn: Logical File Name (LFN)
@@ -586,7 +586,7 @@ class Dirac:
        Example Usage:
 
        >>> print dirac.getAccessURL('/lhcb/data/CCRC08/DST/00000151/0000/00000151_00004848_2.dst','CERN-RAW')
-      {'OK': True, 'Value': {'Successful': {'srm://...': {'SRM2': 'rfio://...'}}, 'Failed': {}}}
+       {'OK': True, 'Value': {'Successful': {'srm://...': {'SRM2': 'rfio://...'}}, 'Failed': {}}}
 
        @param lfn: Logical File Name (LFN)
        @type lfn: string or list
@@ -620,8 +620,8 @@ class Dirac:
        Example Usage:
 
        >>> print dirac.getPhysicalFileAccessURL('srm://srm-lhcb.cern.ch/castor/cern.ch/grid/lhcb/data/CCRC08/DST/00000151/0000/00000151_00004848_2.dst','CERN_M-DST')
-      {'OK': True, 'Value':{'Failed': {},
-      'Successful': {'srm://srm-lhcb.cern.ch/castor/cern.ch/grid/lhcb/data/CCRC08/DST/00000151/0000/00000151_00004848_2.dst': {'RFIO': 'castor://...'}}}}
+       {'OK': True, 'Value':{'Failed': {},
+       'Successful': {'srm://srm-lhcb.cern.ch/castor/cern.ch/grid/lhcb/data/CCRC08/DST/00000151/0000/00000151_00004848_2.dst': {'RFIO': 'castor://...'}}}}
 
        @param pfn: Physical File Name (PFN)
        @type pfn: string or list
@@ -664,7 +664,7 @@ class Dirac:
 
        >>> print dirac.getPhysicalFileMetadata('srm://srm.grid.sara.nl/pnfs/grid.sara.nl/data
        /lhcb/data/CCRC08/RAW/LHCb/CCRC/23341/023341_0000039571.raw','NIKHEF-RAW')
-      {'OK': True, 'Value': {'Successful': {'srm://...': {'SRM2': 'rfio://...'}}, 'Failed': {}}}
+       {'OK': True, 'Value': {'Successful': {'srm://...': {'SRM2': 'rfio://...'}}, 'Failed': {}}}
 
        @param lfn: Physical File Name (PFN)
        @type lfn: string or list
@@ -1233,6 +1233,9 @@ class Dirac:
        Example Usage:
 
        >>> print dirac.parameters(79241)
+       {'OK': True, 'Value': {'JobPath': 'JobPath,JobSanity,JobPolicy,InputData,JobScheduling,TaskQueue',
+       'JobSanityCheck': 'Job: 768 JDL: OK, InputData: 2 LFNs OK, ','LocalBatchID': 'dc768'}
+
 
        @param jobID: JobID
        @type jobID: int, string or list
