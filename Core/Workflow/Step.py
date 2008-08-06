@@ -1,8 +1,8 @@
-# $Id: Step.py,v 1.28 2008/08/04 17:22:54 atsareg Exp $
+# $Id: Step.py,v 1.29 2008/08/06 12:29:59 atsareg Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.28 $"
+__RCSID__ = "$Revision: 1.29 $"
 
 import os, time, types, traceback, sys
 #try: # this part to inport as part of the DIRAC framework
@@ -275,7 +275,8 @@ class StepInstance(AttributeCollection):
           if self.stepStatus['OK']:
             error_message = result['Message']
             if self.workflow_commons.has_key('JobReport'):
-              resultStatus = self.workflow_commons['JobReport'].setApplicationStatus(error_message)
+              if self.parent.workflowStatus['OK']:
+                resultStatus = self.workflow_commons['JobReport'].setApplicationStatus(error_message)
           self.stepStatus = S_ERROR(result['Message'])
         else:
           # Get output values to the step_commons dictionary
@@ -304,7 +305,8 @@ class StepInstance(AttributeCollection):
           # report it to the WMS
           error_message = 'Exception while %s module execution: %s' % (mod_inst_name,str(x))
           if self.workflow_commons.has_key('JobReport'):
-            result = self.workflow_commons['JobReport'].setApplicationStatus(error_message)
+            if self.parent.workflowStatus['OK']:
+              result = self.workflow_commons['JobReport'].setApplicationStatus('Exception in %s module' % mod_inst_name)
 
         self.stepStatus = S_ERROR(error_message)
 
