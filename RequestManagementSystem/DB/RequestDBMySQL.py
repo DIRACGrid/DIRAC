@@ -55,6 +55,44 @@ class RequestDBMySQL(DB):
     # STILL TO DO: remove the request completely from the db
     # STILL TO DO: return the request string
 
+  def getDBSummary(self):
+    """ Get the summary of the Request DB contents
+    """
+
+    summaryDict = {}
+    req = "SELECT DISTINCT(RequestType) FROM SubRequests"
+    result = self._query(req)
+    if not result['OK']:
+      return S_ERROR('RequestDBMySQL.getDBSummary: Failed to retrieve request info')
+    typeList = []
+    for row in result['Value']:
+      typeList.append(row[0])
+
+    req = "SELECT DISTINCT(Status) FROM SubRequests"
+    result = self._query(req)
+    if not result['OK']:
+      return S_ERROR('RequestDBMySQL.getDBSummary: Failed to retrieve request info')
+    statusList = []
+    for row in result['Value']:
+      statusList.append(row[0])
+
+    if not typeList:
+      return S_OK(summaryDict)
+
+    for rtype in typeList:
+      summaryDict[rtype] = {} 
+      for status in statusList:
+        req = "SELECT COUNT(*) FROM SubRequests WHERE RequestType='%s' AND Status='%s'" % (rtype,status)
+        print rtype, status, result
+        if not result['OK']:
+          summaryDict[rtype][status] = 0
+        elif not result['Value']:
+          summaryDict[rtype][status] = 0
+        else:
+          summaryDict[rtype][status] = int(result['Value'][0][0])
+
+    return S_OK(summaryDict)
+
   def getRequest(self,requestType):
     dmRequest = RequestContainer(init=False)
     self.getIdLock.acquire()
