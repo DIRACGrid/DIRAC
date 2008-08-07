@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.70 2008/07/23 09:50:24 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.71 2008/08/07 13:37:20 rgracian Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,14 +52,14 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.70 2008/07/23 09:50:24 rgracian Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.71 2008/08/07 13:37:20 rgracian Exp $"
 
 import re, os, sys, string, types
 import time
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from types                                     import *
-from DIRAC                                     import gLogger, S_OK, S_ERROR
+from DIRAC                                     import gLogger, S_OK, S_ERROR, Time
 from DIRAC.ConfigurationSystem.Client.Config   import gConfig
 from DIRAC.Core.Base.DB                        import DB
 
@@ -804,6 +804,34 @@ class JobDB(DB):
     return result
 
 #############################################################################
+  def __insertNewJDL( self, JDL ):
+    """Insert a new JDL in the system, this produces a new JobID
+    """
+    res = self._getConnection()
+    if not res['OK']:
+      return False
+    connection = res['Value']
+    res = self._insert( 'JobJDLs' , ['OriginalJDL'],[JDL], connection)
+    
+    cmd = 'SELECT LAST_INSERT_ID()'
+    res = self._query( cmd, connection )
+    if not res['OK']:
+      connection.close()
+      self.log.error( 'Can not retrieve LAST_INSERT_ID', res['Message'] )
+      return False
+
+    try:
+      connection.close()
+      jobID = int(res['Value'][0][0])
+      self.log.info( 'JobDB: New JobID served "%s"' % jobID )
+    except Exception, x:
+      self.log.exception( 'Exception retrieving LAST_INSERT_ID' )
+      return False
+
+    return jobID
+
+
+#############################################################################
   def getJobJDL(self,jobID,original=False,status=''):
     """ Get JDL for job specified by its jobID. By default the current job JDL
         is returned. If 'original' argument is True, original JDL is returned
@@ -837,6 +865,130 @@ class JobDB(DB):
       return result
 
     return self.setJobStatus(jobID,status='Received',minor='Initial insertion')
+
+#############################################################################
+  def insertNewJobIntoDB(self, JDL, owner, ownerDN, onwerGroup, diracSetup ):
+    """ Insert the initial JDL into the Job database,
+        Do initial JDL crosscheck,
+        Set Initial job Attributes and Status 
+    """
+
+    jobAttrNames  = []
+    jobAttrValues = []
+
+    # 1.- insert original JDL on DB and get new JobID
+    jobID = self.__insertNewJDL( JDL )
+    if not jobID:
+      return S_ERROR( 'Can not insert JDL in to DB' )
+    
+    jobAttrNames.append('JobID')
+    jobAttrValues.append(jobID)
+
+    jobAttrNames.append('LastUpdateTime')
+    jobAttrValues.append(Time.toString())
+
+    jobAttrNames.append('Owner')
+    jobAttrValues.append(owner)
+
+    jobAttrNames.append('OwnerDN')
+    jobAttrValues.append(ownerDN)
+
+    jobAttrNames.append('OwnerGroup')
+    jobAttrValues.append(ownerGroup)
+    
+    # 2.- Check JDL
+    classAddJob = ClassAd( '[%s]' % JDL )
+    classAddReq = ClassAd( '[]' )
+    error = ''
+    status = 'Received'
+    minorStatus = 'Job accepted'
+    if not classAddJob.isOK():
+      error = 'Error in JDL syntax'
+    else:
+      error = ''
+      classAddJob.insertAttributeInt( 'JobID', jobID )
+      jdlDiracSetup = stringFromClassAd( classAddJob, 'DIRACSetup' )
+      jdlOwner      = stringFromClassAd( classAddJob, 'Owner' )
+      jdlOwnerDN    = stringFromClassAd( classAddJob, 'OwnerDN' )
+      jdlOwnerGroup = stringFromClassAd( classAddJob, 'OwnerGroup' )
+      if jdlDiracSetup and jdlDiracSetup != diracSetup:
+        error = 'Wrong DIRAC Setup in JDL'
+      if jdlOwner and jdlOwner != owner:
+        error = 'Wrong Owner in JDL'
+      elif jdlOwnerDN and jdlOwnerDN != ownerDN:
+        error = 'Wrong Owner DN in JDL'
+      elif jdlOwnerGroup and jdlOwnerGroup != ownerGroup:
+        error = 'Wrong Owner Group in JDL'
+      classAddReq.insertAttributeString( 'Setup',      diracSetup )
+      classAddReq.insertAttributeString( 'OwnerDN',    ownerDN )
+      classAddReq.insertAttributeString( 'OwnerGroup', ownerGroup )
+
+      for jdlName in 'JobName', 'JobType', 'JobGroup', 'Site':
+        # Defaults are set by the DB.
+        jdlValue = stringFromClassAd( classAddJob, jdlName )
+        if jdlValue:
+          jobAttrNames.append( jdlName )
+          jobAttrValues.append( jdlValue )
+
+      if not classAddJob.lookupAttribute("Requirements"):
+        # No requirements given in the job
+        classAddJob.insertAttributeBool("Requirements", True)
+
+      priority = intFromClassAd( 'Priority' )
+      jobAttrNames.append( 'UserPriority' )
+      jobAttrValues.append( priority )
+      classAddReq.insertAttributeString( 'UserPriority', priority )
+      
+      inputData = []
+      if classadJob.lookupAttribute('InputData'):
+        inputData = classadJob.getListFromExpression('InputData')
+
+    if error:
+      status = 'Failed' 
+      minorStatus = error
+    else:
+      jobAttrNames.append('VerifiedFlag')
+      jobAttrValues.append('True')
+
+    jobAttrNames.append('Status')
+    jobAttrValues.append(status)
+
+    jobAttrNames.append('MinorStatus')
+    jobAttrValues.append(minorStatus)
+
+    reqJDL = classAddReq.toJDL()
+    classAddJob.insertAttributeInt( 'JobRequirements', reqJDL )
+
+    jobJDL = classAddJob.toJDL()
+
+    result = self.setJobJDL( jobID, jobJDL )
+    if not result['OK']:
+      return result
+
+    values = []
+    for lfn in inputData:
+      values.append( '(%s, \'%s\' )' % ( jobID, lfn ) )
+
+    if values:
+      cmd = 'INSERT INTO InputData (JobID,LFN) VALUES %s' % ', '.join( values )
+      result = self._update( cmd )
+      if not result['OK']:
+        return result
+
+    result = self.__setInitialJobParameters(classAddJob,jobID)
+    if not result['OK']:
+      return result
+
+    result = self._insert( 'Jobs', jobAttrNames, jobAttrValues )
+    if not result['OK']:
+      return result
+
+    result = S_OK(jobID)
+    result['JobID'] = jobID
+    result['Status'] = status
+    result['MinorStatus'] = minorStatus
+
+    return result
 
 #############################################################################
   def addJobToDB (self, jobID, JDL=None, ownerDN='Unknown', ownerGroup = "Unknown"):
@@ -1644,3 +1796,15 @@ class JobDB(DB):
     if not result[ 'OK' ]:
       return result
     return S_OK( ( ( defFields + valueFields ), result[ 'Value' ] ) )
+
+def stringFromClassAd( classAd, name ):
+  value = ''
+  if classAd.lookupAttribute( name ):
+    value = string.replace(classAd.get_expression( name ), '"', '')
+  return value
+
+def intFromClassAd( classAd, name ):
+  value = 0
+  if classAd.lookupAttribute( name ):
+    value = int(string.replace(classAd.get_expression( name ), '"', ''))
+  return value
