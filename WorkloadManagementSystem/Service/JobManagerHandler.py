@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobManagerHandler.py,v 1.20 2008/07/18 14:32:19 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobManagerHandler.py,v 1.21 2008/08/07 13:37:43 rgracian Exp $
 ########################################################################
 
 """ JobManagerHandler is the implementation of the JobManager service
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: JobManagerHandler.py,v 1.20 2008/07/18 14:32:19 acasajus Exp $"
+__RCSID__ = "$Id: JobManagerHandler.py,v 1.21 2008/08/07 13:37:43 rgracian Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -22,29 +22,33 @@ from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
+from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import JobPolicy, RIGHT_SUBMIT, RIGHT_RESCHEDULE, \
                                                                         RIGHT_DELETE, RIGHT_KILL, RIGHT_RESET
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 
 # This is a global instance of the JobDB class
 gJobDB = False
+gJobLoggingDB = False
 
 def initializeJobManagerHandler( serviceInfo ):
 
-  global gJobDB
+  global gJobDB, gJobLoggingDB
   gJobDB = JobDB()
+  gJobLoggingDB = JobLoggingDB()
   return S_OK()
 
 class JobManagerHandler( RequestHandler ):
 
   def initialize(self):
     credDict = self.getRemoteCredentials()
-    self.userDN = credDict['DN']
-    self.userGroup = credDict['group']
+    self.ownerDN = credDict['DN']
+    self.ownerGroup = credDict['group']
     self.userProperties = credDict[ 'properties' ]
-    self.userName = credDict[ 'username' ]
+    self.owner = credDict[ 'username' ]
     self.peerUsesLimitedProxy = credDict[ 'isLimitedProxy' ]
-    self.jobPolicy = JobPolicy( self.userDN, self.userGroup, self.userProperties )
+    self.diracSetup = self.serviceInfoDict['clientSetup']
+    self.jobPolicy = JobPolicy( self.ownerDN, self.ownerGroup, self.userProperties )
 
   ###########################################################################
   types_submitJob = [ StringType ]
@@ -63,54 +67,25 @@ class JobManagerHandler( RequestHandler ):
     if not policyDict[ RIGHT_SUBMIT ]:
       return S_ERROR('Job submission not authorized')
 
-    # Get the new jobID first
-    result_jobID  = gJobDB.getJobID()
-    if not result_jobID['OK']:
-      return S_ERROR('Failed to acquire a new JobID')
-
-    jobID = int( result_jobID['Value'] )
-    gLogger.verbose( "Served jobID %s" % jobID )
-    # Now add a new job
-    #gActivityClient.addMark( "submitJob" )
-
-    classAdJob = ClassAd( "[%s]" % JDL )
-    classAdJob.insertAttributeInt( 'JobID', jobID )
-    classAdJob.insertAttributeString( 'DIRACSetup', self.serviceInfoDict['clientSetup'] )
-
-    # Force the owner name to be the nickname defined in the CS
-    classAdJob.insertAttributeString( 'Owner', self.userName )
-    classAdJob.insertAttributeString( 'OwnerDN', self.userDN )
-    classAdJob.insertAttributeString( 'OwnerGroup', self.userGroup )
-
-    newJDL = classAdJob.asJDL()
-    result  = gJobDB.insertJobIntoDB( jobID, newJDL )
-    if not result['OK']:
-      return result
-    result  = gJobDB.addJobToDB( jobID,
-                                JDL = newJDL,
-                                ownerDN = self.userDN,
-                                ownerGroup = self.userGroup )
+    result = gJobDB.insertNewJobIntoDB( JDL, self.owner, self.ownerDN, self.onwerGroup, self.diracSetup )
     if not result['OK']:
       return result
 
-    result = gJobDB.setJobJDL( jobID, newJDL )
-    if not result['OK']:
-      return result
+    gLogger.info( 'Job %s added to the JobDB for %s/%s' % ( str(jobID), self.ownerDN, self.ownerGroup ) )
 
-    gLogger.info( 'Job %s added to the JobDB for %s/%s' % ( str(jobID), self.userDN, self.userGroup ) )
+    gJobLoggingDB.addLoggingRecord( result['JobID'], result['Status'], result['MinorStatus'], source = 'JobManager' )
 
     #Set persistency flag
-    retVal = gProxyManager.getUserPersistence( self.userDN, self.userGroup )
+    retVal = gProxyManager.getUserPersistence( self.ownerDN, self.ownerGroup )
     if 'Value' not in retVal or not retVal[ 'Value' ]:
-      gProxyManager.setPersistency( self.userDN, self.userGroup, True )
+      gProxyManager.setPersistency( self.ownerDN, self.ownerGroup, True )
 
-    result = S_OK( jobID )
     result[ 'requireProxyUpload' ] = self.__checkIfProxyUploadIsRequired()
     return result
 
 ###########################################################################
   def __checkIfProxyUploadIsRequired( self ):
-    result = gProxyManager.userHasProxy( self.userDN, self.userGroup, validSeconds = 18000 )
+    result = gProxyManager.userHasProxy( self.ownerDN, self.ownerGroup, validSeconds = 18000 )
     if not result[ 'OK' ]:
       gLogger.error( "Can't check if the user has proxy uploaded: %s" % result[ 'Message' ] )
       return True
@@ -150,7 +125,7 @@ class JobManagerHandler( RequestHandler ):
 
 ###########################################################################
   def __evaluate_rights( self, jobList, right):
-    """ Get access rights to jobID for the user userDN/userGroup
+    """ Get access rights to jobID for the user ownerDN/ownerGroup
     """
     self.jobPolicy.setJobDB( gJobDB )
     validJobList = []
