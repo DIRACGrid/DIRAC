@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.30 2008/08/07 18:28:03 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.31 2008/08/07 18:32:29 rgracian Exp $
 ########################################################################
 """ ProxyRepository class is a front-end to the proxy repository Database
 """
 
-__RCSID__ = "$Id: ProxyDB.py,v 1.30 2008/08/07 18:28:03 rgracian Exp $"
+__RCSID__ = "$Id: ProxyDB.py,v 1.31 2008/08/07 18:32:29 rgracian Exp $"
 
 import time
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
@@ -489,11 +489,16 @@ class ProxyDB(DB):
     retVal = self._update( cmd, conn = connObj )
     if not retVal[ 'OK' ]:
       return retVal
-    retVal = VOMS().getVOMSProxyInfo( chain, 'actimeleft' )
-    if not retVal[ 'OK' ]:
-      return retVal
+    retVal1 = VOMS().getVOMSProxyInfo( chain, 'actimeleft' )
+    retVal2 = VOMS().getVOMSProxyInfo( chain, 'timeleft' )
+    if not retVal1[ 'OK' ]:
+      return retVal1
+    if not retVal2[ 'OK' ]:
+      return retVal2
     try:
-      vomsSecsLeft = int( retVal[ 'Value' ].strip() )
+      vomsSecsLeft1 = int( retVal1[ 'Value' ].strip() )
+      vomsSecsLeft2 = int( retVal2[ 'Value' ].strip() )
+      vomsSecsLeft = min( vomsSecsLeft1, vomsSecsLeft2 )
     except Exception, e:
       return S_ERROR( "Can't parse VOMS time left: %s" % str(e) )
     secsLeft = min( vomsSecsLeft, chain.getRemainingSecs()[ 'Value' ] )
