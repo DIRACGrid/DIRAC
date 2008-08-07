@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobManagerHandler.py,v 1.22 2008/08/07 13:59:51 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobManagerHandler.py,v 1.23 2008/08/07 14:19:12 rgracian Exp $
 ########################################################################
 
 """ JobManagerHandler is the implementation of the JobManager service
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: JobManagerHandler.py,v 1.22 2008/08/07 13:59:51 rgracian Exp $"
+__RCSID__ = "$Id: JobManagerHandler.py,v 1.23 2008/08/07 14:19:12 rgracian Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -71,7 +71,7 @@ class JobManagerHandler( RequestHandler ):
     if not result['OK']:
       return result
 
-    gLogger.info( 'Job %s added to the JobDB for %s/%s' % ( str(jobID), self.ownerDN, self.ownerGroup ) )
+    gLogger.info( 'Job %s added to the JobDB for %s/%s' % ( result['JobID'], self.ownerDN, self.ownerGroup ) )
 
     gJobLoggingDB.addLoggingRecord( result['JobID'], result['Status'], result['MinorStatus'], source = 'JobManager' )
 
