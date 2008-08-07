@@ -39,7 +39,7 @@ class RequestDBMySQL(DB):
     if result['Value']:
       subRequestList = [ int(x[0]) for x in result['Value']]
 
-    return S_OK(subRequestList) 
+    return S_OK(subRequestList)
 
   def setRequestStatus(self,requestName,requestStatus,subRequest_flag=True):
     """ Set request status and optionally subrequest status
@@ -116,7 +116,7 @@ class RequestDBMySQL(DB):
       return S_OK(summaryDict)
 
     for rtype in typeList:
-      summaryDict[rtype] = {} 
+      summaryDict[rtype] = {}
       for status in statusList:
         req = "SELECT COUNT(*) FROM SubRequests WHERE RequestType='%s' AND Status='%s'" % (rtype,status)
         result = self._query(req)
@@ -160,8 +160,8 @@ class RequestDBMySQL(DB):
       subRequestIDs.append(subRequestID)
       res = dmRequest.initiateSubRequest(requestType)
       ind = res['Value']
-      subRequestDict = { 
-                        'Status'       : 'Waiting',      
+      subRequestDict = {
+                        'Status'       : 'Waiting',
                         'SubRequestID' : subRequestID,
                         'Operation'    : operation,
                         'Arguments'    : arguments,
@@ -170,7 +170,7 @@ class RequestDBMySQL(DB):
                         'Catalogue'    : catalogue,
                         'CreationTime' : creationTime,
                         'SubmissionTime':submissionTime,
-                        'LastUpdate'   : lastUpdate 
+                        'LastUpdate'   : lastUpdate
                        }
       res = dmRequest.setSubRequestAttributes(ind,requestType,subRequestDict)
       if not res['OK']:
@@ -224,7 +224,7 @@ class RequestDBMySQL(DB):
     dmRequest.setDIRACSetup(diracSetup)
     dmRequest.setSourceComponent(sourceComponent)
     dmRequest.setCreationTime(str(creationTime))
-    dmRequest.setLastUpdate(str(lastUpdate))   
+    dmRequest.setLastUpdate(str(lastUpdate))
     res = dmRequest.toXML()
     if not res['OK']:
       err = 'RequestDB._getRequest: Failed to create XML for RequestID %s' % (requestID)
@@ -506,7 +506,7 @@ class RequestDBMySQL(DB):
     req = "UPDATE SubRequests SET LastUpdate=UTC_TIMESTAMP() WHERE  RequestID=%s AND SubRequestID='%s';" % (requestID,subRequestID)
     res = self._update(req)
     if res['OK']:
-      return res  
+      return res
     else:
       return S_ERROR('RequestDB.setSubRequestLastUpdate: failed to set LastUpdate')
 
@@ -551,9 +551,11 @@ class RequestDBMySQL(DB):
     req = "SELECT RequestID from Requests WHERE RequestName='%s';" % requestName
     res = self._query(req)
     if not res['OK']:
+      self.getIdLock.release()
       err = 'RequestDB._getRequestID: Failed to get RequestID from RequestName'
       return S_ERROR( '%s\n%s' % (err, res['Message'] ) )
     if not len(res['Value']) == 0:
+      self.getIdLock.release()
       err = 'RequestDB._getRequestID: Duplicate entry for RequestName'
       return S_ERROR(err)
     req = 'INSERT INTO Requests (RequestName,SubmissionTime) VALUES ("%s",UTC_TIMESTAMP());' % requestName
