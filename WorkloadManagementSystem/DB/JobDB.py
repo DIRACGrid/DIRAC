@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.76 2008/08/07 14:17:58 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.77 2008/08/07 15:49:31 rgracian Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.76 2008/08/07 14:17:58 rgracian Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.77 2008/08/07 15:49:31 rgracian Exp $"
 
 import re, os, sys, string, types
 import time
@@ -922,6 +922,11 @@ class JobDB(DB):
         error = 'Wrong Owner DN in JDL'
       elif jdlOwnerGroup and jdlOwnerGroup != ownerGroup:
         error = 'Wrong Owner Group in JDL'
+
+      classAddJob.insertAttributeInt( 'Owner',      owner )
+      classAddJob.insertAttributeInt( 'OwnerDN',    ownerDN )
+      classAddJob.insertAttributeInt( 'OwnerGroup', ownerGroup )
+
       classAddReq.insertAttributeString( 'Setup',      diracSetup )
       classAddReq.insertAttributeString( 'OwnerDN',    ownerDN )
       classAddReq.insertAttributeString( 'OwnerGroup', ownerGroup )
