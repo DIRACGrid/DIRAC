@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobManagerHandler.py,v 1.21 2008/08/07 13:37:43 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobManagerHandler.py,v 1.22 2008/08/07 13:59:51 rgracian Exp $
 ########################################################################
 
 """ JobManagerHandler is the implementation of the JobManager service
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: JobManagerHandler.py,v 1.21 2008/08/07 13:37:43 rgracian Exp $"
+__RCSID__ = "$Id: JobManagerHandler.py,v 1.22 2008/08/07 13:59:51 rgracian Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -67,7 +67,7 @@ class JobManagerHandler( RequestHandler ):
     if not policyDict[ RIGHT_SUBMIT ]:
       return S_ERROR('Job submission not authorized')
 
-    result = gJobDB.insertNewJobIntoDB( JDL, self.owner, self.ownerDN, self.onwerGroup, self.diracSetup )
+    result = gJobDB.insertNewJobIntoDB( JDL, self.owner, self.ownerDN, self.ownerGroup, self.diracSetup )
     if not result['OK']:
       return result
 

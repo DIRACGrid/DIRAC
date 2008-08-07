@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.71 2008/08/07 13:37:20 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.72 2008/08/07 14:02:07 rgracian Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.71 2008/08/07 13:37:20 rgracian Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.72 2008/08/07 14:02:07 rgracian Exp $"
 
 import re, os, sys, string, types
 import time
@@ -867,7 +867,7 @@ class JobDB(DB):
     return self.setJobStatus(jobID,status='Received',minor='Initial insertion')
 
 #############################################################################
-  def insertNewJobIntoDB(self, JDL, owner, ownerDN, onwerGroup, diracSetup ):
+  def insertNewJobIntoDB(self, JDL, owner, ownerDN, ownerGroup, diracSetup ):
     """ Insert the initial JDL into the Job database,
         Do initial JDL crosscheck,
         Set Initial job Attributes and Status 
