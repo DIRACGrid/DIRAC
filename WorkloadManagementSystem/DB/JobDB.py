@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.73 2008/08/07 14:03:58 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.74 2008/08/07 14:11:54 rgracian Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.73 2008/08/07 14:03:58 rgracian Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.74 2008/08/07 14:11:54 rgracian Exp $"
 
 import re, os, sys, string, types
 import time
@@ -940,7 +940,7 @@ class JobDB(DB):
       classAddReq.insertAttributeString( 'UserPriority', priority )
       
       inputData = []
-      if classadJob.lookupAttribute('InputData'):
+      if classAddJob.lookupAttribute('InputData'):
         inputData = classadJob.getListFromExpression('InputData')
 
     if error:
