@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.53 2008/08/01 08:27:31 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.54 2008/08/07 06:02:11 rgracian Exp $
 # File :   Director.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -48,7 +48,7 @@
 
 """
 
-__RCSID__ = "$Id: Director.py,v 1.53 2008/08/01 08:27:31 rgracian Exp $"
+__RCSID__ = "$Id: Director.py,v 1.54 2008/08/07 06:02:11 rgracian Exp $"
 
 import types, time
 
@@ -160,7 +160,7 @@ class Director(Agent):
     if not result:
       # Job no longer in the Queues
       del self.jobDicts[job]
-      updateJobStatus( self.log, AGENT_NAME, job, MAJOR_WAIT, MINOR_NOTINQUEUE )
+      updateJobStatus( self.log, AGENT_NAME, job, MAJOR_WAIT, MINOR_NOTINQUEUE, logRecord=True )
       return
 
     jobdict = self.jobDicts[job]
@@ -1001,6 +1001,7 @@ class gLitePilotDirector(PilotDirector):
 
 RetryCount = 0;
 ShallowRetryCount = 0;
+MyProxyServer = "no-myproxy.cern.ch";
 
 Requirements = jobRequirements;
 WmsClient = [
@@ -1014,18 +1015,18 @@ RetryCount = 0;
 ShallowRetryCount = 0;
 WMProxyEndPoints = { %s };
 LBEndPoints = { %s };
-MyProxyServer = "myproxy.cern.ch";
+MyProxyServer = "no-myproxy.cern.ch";
 ];
 """ % ( self.workDir, self.workDir, self.workDir, ', '.join(RBs), ', '.join(LBs) )
 
     if jobDict['OwnerGroup'] == 'lhcb_prod':
       wmsClientJDL += """
 JobType = "Parametric";
-Parameters= 10;
+Parameters= 20;
 ParameterStep =1;
 ParameterStart = 0;
 """
-      nPilots = 10
+      nPilots = 20
 
 
     (jobJDL , jobRequirements) = self._JobJDL( jobDict, pilotOptions, ceMask )
@@ -1140,7 +1141,7 @@ DefaultLogInfoLevel = 0;
 DefaultStatusLevel = 0;
 NSAddresses = { %s };
 LBAddresses = { %s };
-MyProxyServer = "myproxy.cern.ch";
+MyProxyServer = "no-myproxy.cern.ch";
 """ % (self.workDir, self.workDir, self.workDir, LD, NS, LB)
 
     jobJDL,jobRequirements = self._JobJDL( jobDict, pilotOptions, ceMask )
@@ -1164,3 +1165,4 @@ MyProxyServer = "myproxy.cern.ch";
     """
     cmd = [ 'edg-job-submit', '-c', '%s' % jdl, '--config-vo', '%s' % jdl, '%s' % jdl ]
     return self.parseJobSubmitStdout( proxy, cmd, job )
+
