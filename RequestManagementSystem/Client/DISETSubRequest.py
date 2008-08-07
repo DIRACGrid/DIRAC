@@ -1,11 +1,11 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/DISETSubRequest.py,v 1.5 2008/08/04 15:29:21 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/DISETSubRequest.py,v 1.6 2008/08/07 13:22:03 atsareg Exp $
 """
    DISETSubRequest Class encapsulates a request definition to accomplish a DISET
    RPC call
 
 """
 
-__RCSID__ = "$Id: DISETSubRequest.py,v 1.5 2008/08/04 15:29:21 rgracian Exp $"
+__RCSID__ = "$Id: DISETSubRequest.py,v 1.6 2008/08/07 13:22:03 atsareg Exp $"
 
 import commands
 from DIRAC.Core.Utilities import DEncode
@@ -31,11 +31,12 @@ class DISETSubRequest:
 
     if rpcStub:
       self.subAttributes['Arguments'] = DEncode.encode(rpcStub)
+      self.subAttributes['Operation'] = rpcStub[1]
 
   def setRPCStub(self,rpcStub):
     """ Define the  RPC call details
     """
-    self.subAttributes['Operation'] = rpcStub[0]
+    self.subAttributes['Operation'] = rpcStub[1]
     self.subAttributes['Arguments'] = DEncode.encode(rpcStub)
 
   def getDictionary(self):
