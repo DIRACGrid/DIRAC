@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.54 2008/08/07 06:02:11 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.55 2008/08/07 07:25:15 rgracian Exp $
 # File :   Director.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -48,7 +48,7 @@
 
 """
 
-__RCSID__ = "$Id: Director.py,v 1.54 2008/08/07 06:02:11 rgracian Exp $"
+__RCSID__ = "$Id: Director.py,v 1.55 2008/08/07 07:25:15 rgracian Exp $"
 
 import types, time
 
@@ -648,13 +648,13 @@ class PilotDirector:
       ret = gProxyManager.getPilotProxyFromDIRACGroup( ownerDN, ownerGroup, requiredTimeLeft = 86400 * 5 )
       if not ret['OK']:
         self.log.error( ret['Message'] )
-        self.log.error( 'Could not get proxy:', 'User "%s", Group "%s"' % ( ownerDN, ownerGroup ) )
+        self.log.error( 'No proxy Available', 'User "%s", Group "%s"' % ( ownerDN, ownerGroup ) )
         try:
           shutil.rmtree( workingDirectory )
         except:
           pass
-        updateJobStatus( self.log, AGENT_NAME, job, MAJOR_WAIT, MINOR_SUBMIT, logRecord=True )
-        return S_ERROR( 'Could not get proxy' )
+        updateJobStatus( self.log, AGENT_NAME, job, MAJOR_WAIT, MINOR_SUBMIT, applicationStatus='No proxy Available', logRecord=True )
+        return S_ERROR( 'No proxy Available' )
       proxy = ret['Value']
       # Need to get VOMS extension for the later interctions with WMS
       ret = gProxyManager.getVOMSAttributes(proxy)
