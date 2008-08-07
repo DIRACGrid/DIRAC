@@ -1,4 +1,4 @@
--- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.sql,v 1.14 2008/07/31 18:24:27 rgracian Exp $
+-- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.sql,v 1.15 2008/08/07 13:38:34 rgracian Exp $
 
 --------------------------------------------------------------------------------
 --
@@ -33,34 +33,34 @@ USE JobDB;
 DROP TABLE IF EXISTS Jobs;
 CREATE TABLE Jobs (
     JobID INTEGER NOT NULL AUTO_INCREMENT,
-    JobType VARCHAR(32) NOT NULL DEFAULT 'user',
+    JobType VARCHAR(32) NOT NULL DEFAULT 'normal',
     INDEX (JobType),
-    DIRACSetup VARCHAR(32) NOT NULL DEFAULT 'test',
+    DIRACSetup VARCHAR(32) NOT NULL,
     INDEX (DIRACSetup),
-    JobGroup VARCHAR(32) NOT NULL DEFAULT '00000000',
+    JobGroup VARCHAR(32) NOT NULL DEFAULT 'NoGroup',
     INDEX (JobGroup),
     JobSplitType ENUM ('Single','Master','Subjob','DAGNode') NOT NULL DEFAULT 'Single',
     INDEX (JobSplitType),
     MasterJobID INTEGER NOT NULL DEFAULT 0,
-    Site VARCHAR(100) NOT NULL DEFAULT 'Unknown',
+    Site VARCHAR(100) NOT NULL DEFAULT 'ANY',
     INDEX (Site),
-    JobName VARCHAR(128) NOT NULL DEFAULT 'noname',
-    Owner VARCHAR(32) NOT NULL DEFAULT 'unknown',
+    JobName VARCHAR(128) NOT NULL DEFAULT 'Unknown',
+    Owner VARCHAR(32) NOT NULL DEFAULT 'Unknown',
     INDEX (Owner),
-    OwnerDN VARCHAR(255) NOT NULL DEFAULT 'unknown',
+    OwnerDN VARCHAR(255) NOT NULL DEFAULT 'Unknown',
     INDEX (OwnerDN),
-    OwnerGroup varchar(128) NOT NULL DEFAULT '/lhcb',
+    OwnerGroup varchar(128) NOT NULL DEFAULT 'lhcb_user',
     INDEX (OwnerGroup),
     SubmissionTime DATETIME,
     RescheduleTime DATETIME,
     LastUpdateTime DATETIME,
     StartExecTime DATETIME,
     HeartBeatTime DATETIME,
-    Status VARCHAR(32) NOT NULL DEFAULT 'received',
+    Status VARCHAR(32) NOT NULL DEFAULT 'Received',
     INDEX (Status),
-    MinorStatus VARCHAR(128) NOT NULL DEFAULT 'unknown',
+    MinorStatus VARCHAR(128) NOT NULL DEFAULT 'Initial insertion',
     INDEX (MinorStatus),
-    ApplicationStatus VARCHAR(256) NOT NULL DEFAULT 'unknown',
+    ApplicationStatus VARCHAR(256) NOT NULL DEFAULT 'Unknown',
     INDEX (ApplicationStatus),
     ApplicationNumStatus INTEGER NOT NULL DEFAULT 0,
     CPUTime FLOAT NOT NULL DEFAULT 0.0,
@@ -81,7 +81,7 @@ CREATE TABLE Jobs (
 --------------------------------------------------------------------------------
 DROP TABLE IF EXISTS JobJDLs;
 CREATE TABLE JobJDLs (
-    JobID INTEGER NOT NULL,
+    JobID INTEGER NOT NULL AUTO_INCREMENT,
     JDL BLOB NOT NULL DEFAULT '',
     JobRequirements BLOB NOT NULL DEFAULT '',
     OriginalJDL BLOB NOT NULL DEFAULT '',
