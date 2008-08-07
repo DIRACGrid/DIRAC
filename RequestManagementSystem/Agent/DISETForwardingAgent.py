@@ -75,7 +75,7 @@ class DISETForwardingAgent(Agent):
         operation = subRequestAttributes['Operation']
         gLogger.info("DISETForwardingAgent.execute: Attemping to forward %s type." % operation)
         rpcStubString = subRequestAttributes['Arguments']
-        rpcStub = DEncode.decode(rpcStubString)[0]
+        rpcStub,length = DEncode.decode(rpcStubString)
         res = executeRPCStub(rpcStub)
         if res['OK']:
           gLogger.info("DISETForwardingAgent.execute: Successfully forwarded.")
