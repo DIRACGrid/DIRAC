@@ -291,7 +291,7 @@ class RequestDBMySQL(DB):
 
   def updateRequest(self,requestName,requestString):
     request = RequestContainer(request=requestString)
-    requestTypes = ['transfer','register','removal','stage']
+    requestTypes = ['transfer','register','removal','stage','diset']
     requestID = request.getRequestID()['Value']
     updateRequestFailed = False
     for requestType in requestTypes:
