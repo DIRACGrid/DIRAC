@@ -1,9 +1,9 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/X509Chain.py,v 1.28 2008/08/01 13:42:10 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/X509Chain.py,v 1.29 2008/08/08 07:39:20 rgracian Exp $
 ########################################################################
 """ X509Chain is a class for managing X509 chains with their Pkeys
 """
-__RCSID__ = "$Id: X509Chain.py,v 1.28 2008/08/01 13:42:10 acasajus Exp $"
+__RCSID__ = "$Id: X509Chain.py,v 1.29 2008/08/08 07:39:20 rgracian Exp $"
 
 import types
 import os
@@ -520,6 +520,7 @@ class X509Chain:
     """
     if not self.__loadedChain:
       return S_ERROR( "No chain loaded" )
+    buffer = ''
     for i in range( len( self.__certList ) ):
       buffer += crypto.dump_certificate( crypto.FILETYPE_PEM, self.__certList[1] )
     return S_OK( buffer )
