@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.56 2008/08/01 07:55:51 rgracian Exp $
+# $Id: TransformationDB.py,v 1.57 2008/08/08 14:22:53 atsareg Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -612,7 +612,7 @@ PRIMARY KEY (FileID)
       return res
     else:
       gLogger.info("TransformationDB.addDirectory: Obtained %s replicas in %s seconds." % (path,end-start))
-      replicas = res['Value'][path]
+      replicas = res['Value']['Successful'][path]
       fileCount = 0
       filesAdded = 0
       replicaCount = 0
@@ -659,7 +659,7 @@ PRIMARY KEY (FileID)
     """
     try:
       self.catalog = LcgFileCatalogClient()
-      self.catalog.setAuthenticationID('/O=GRID-FR/C=FR/O=CNRS/OU=CPPM/CN=Andrei Tsaregorodtsev')
+      self.catalog.setAuthorizationId('/O=GRID-FR/C=FR/O=CNRS/OU=CPPM/CN=Andrei Tsaregorodtsev')
       return S_OK()
     except Exception,x:
       errStr = "TransformationDB.__getLFCClient: Failed to create LcgFileCatalogClient"
