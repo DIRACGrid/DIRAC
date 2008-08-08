@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.56 2008/08/08 07:46:12 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.57 2008/08/08 09:38:22 rgracian Exp $
 # File :   Director.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -48,7 +48,7 @@
 
 """
 
-__RCSID__ = "$Id: Director.py,v 1.56 2008/08/08 07:46:12 rgracian Exp $"
+__RCSID__ = "$Id: Director.py,v 1.57 2008/08/08 09:38:22 rgracian Exp $"
 
 import types, time
 
@@ -698,7 +698,6 @@ class PilotDirector:
             shutil.rmtree( workingDirectory )
           except:
             pass
-          updateJobStatus( self.log, AGENT_NAME, job, MAJOR_WAIT, MINOR_SUBMIT, applicationStatus='No Grid CE Available',logRecord=True )
           return S_ERROR( 'No queue available for job' )
   
       # Now we are ready for the actual submission, so
@@ -915,6 +914,9 @@ class PilotDirector:
       self.log.debug( 'List-Match returns:', str(ret['Value'][0]) + '\n'.join( ret['Value'][1:3] ) )
       self.log.info( 'List-Match found %s CEs for Job:' % len(availableCEs), job )
       self.log.verbose( ', '.join(availableCEs) )
+
+    if not availableCEs:
+      updateJobStatus( self.log, AGENT_NAME, job, MAJOR_WAIT, MINOR_SUBMIT, applicationStatus='No Grid CE Available',logRecord=True )
 
     return availableCEs
 
