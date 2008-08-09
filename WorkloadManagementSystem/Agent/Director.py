@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.58 2008/08/09 06:59:44 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.59 2008/08/09 07:18:26 rgracian Exp $
 # File :   Director.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -48,7 +48,7 @@
 
 """
 
-__RCSID__ = "$Id: Director.py,v 1.58 2008/08/09 06:59:44 rgracian Exp $"
+__RCSID__ = "$Id: Director.py,v 1.59 2008/08/09 07:18:26 rgracian Exp $"
 
 import types, time
 
@@ -786,7 +786,7 @@ class PilotDirector:
     gridEnv = dict(os.environ)
     if self.gridEnv:
       self.log.verbose( 'Sourcing GridEnv script:', self.gridEnv )
-      ret = Source( 10, self.gridEnv )
+      ret = Source( 10, [self.gridEnv] )
       if not ret['OK']:
         self.log.error( 'Failed sourcing GridEnv:', ret['Message'] )
         return S_ERROR( 'Failed sourcing GridEnv' )
