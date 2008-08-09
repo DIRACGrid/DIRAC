@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.57 2008/08/08 09:38:22 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.58 2008/08/09 06:59:44 rgracian Exp $
 # File :   Director.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -48,7 +48,7 @@
 
 """
 
-__RCSID__ = "$Id: Director.py,v 1.57 2008/08/08 09:38:22 rgracian Exp $"
+__RCSID__ = "$Id: Director.py,v 1.58 2008/08/09 06:59:44 rgracian Exp $"
 
 import types, time
 
@@ -568,7 +568,7 @@ class PilotDirector:
 
     self.enableListMatch    = gConfig.getValue( mySection+'/EnableListMatch'   , self.enableListMatch )
     self.listMatchDelay     = gConfig.getValue( mySection+'/ListMatchDelay'    , self.listMatchDelay )
-    self.gridEnv            = gConfig.getValue( mySection+'/GridEnv     '      , self.gridEnv )
+    self.gridEnv            = gConfig.getValue( mySection+'/GridEnv'           , self.gridEnv )
     self.resourceBrokers    = gConfig.getValue( mySection+'/ResourceBrokers'   , self.resourceBrokers )
     self.genericPilotDN     = gConfig.getValue( mySection+'/GenericPilotDN'    , self.genericPilotDN )
     self.genericPilotGroup  = gConfig.getValue( mySection+'/GenericPilotGroup' , self.genericPilotGroup )
