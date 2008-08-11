@@ -45,6 +45,13 @@ class ZuziaAgent(Agent):
     """
     gMonitor.addMark("Iteration",1)
 
+    central = PathFinder.getServiceURL("RequestManagement/centralURL")
+    if central:
+      self.central = central
+    local = PathFinder.getServiceURL("RequestManagement/localURL")
+    if local:
+      self.local = local
+
     res = self.RequestDBClient.serveRequest(url=self.local)
     if not res['OK']:
       gLogger.error("ZuziaAgent.execute: Failed to get request from database.",self.local)
