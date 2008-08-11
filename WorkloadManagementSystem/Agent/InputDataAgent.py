@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.27 2008/07/18 07:33:04 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.28 2008/08/11 10:13:01 rgracian Exp $
 # File :   InputDataAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
 
 """
 
-__RCSID__ = "$Id: InputDataAgent.py,v 1.27 2008/07/18 07:33:04 rgracian Exp $"
+__RCSID__ = "$Id: InputDataAgent.py,v 1.28 2008/08/11 10:13:01 rgracian Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.Core.DISET.RPCClient                            import RPCClient
@@ -65,7 +65,6 @@ class InputDataAgent(Optimizer):
   def checkJob(self,job):
     """This method controls the checking of the job.
     """
-    proxyDict = self.getExecutionInitData()
 
     result = self.jobDB.getInputData(job)
     if result['OK']:
