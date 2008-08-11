@@ -466,6 +466,9 @@ class RequestDBMySQL(DB):
     res = self._setRequestAttribute(requestID,'OwnerDN',request.getOwnerDN()['Value'])
     if not res['OK']:
       return res
+    res = self._setRequestAttribute(requestID,'OwnerGroup',request.getOwnerGroup()['Value'])
+    if not res['OK']:
+      return res
     res = self._setRequestAttribute(requestID,'DIRACSetup',request.getDIRACSetup()['Value'])
     return res
 
