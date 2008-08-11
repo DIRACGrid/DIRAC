@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSanityAgent.py,v 1.9 2008/05/27 14:12:24 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSanityAgent.py,v 1.10 2008/08/11 11:07:37 rgracian Exp $
 # File :   JobSanityAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,7 +13,7 @@
        - Input sandbox not correctly uploaded.
 """
 
-__RCSID__ = "$Id: JobSanityAgent.py,v 1.9 2008/05/27 14:12:24 paterson Exp $"
+__RCSID__ = "$Id: JobSanityAgent.py,v 1.10 2008/08/11 11:07:37 rgracian Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
@@ -82,7 +82,7 @@ class JobSanityAgent(Optimizer):
     return result
 
   #############################################################################
-  def checkJob(self,job):
+  def checkJob( self, job ):
     """ This method controls the order and presence of
         each sanity check for submitted jobs. This should
         be easily extended in the future to accommodate
@@ -96,15 +96,14 @@ class JobSanityAgent(Optimizer):
     if checkJDL['OK']:
       message+='JDL: OK, '
     else:
-      res = 'Job: '+str(job)+' Failed JDL check.'
+      message += 'Failed JDL check.'
       minorStatus = checkJDL['Value']
       self.updateJobStatus(job,self.failedJobStatus,minorStatus)
-      self.log.info(res)
+      self.log.info(message)
       return S_ERROR(message)
 
     jdl = checkJDL['JDL']
-    classadJob = ClassAd('['+jdl+']')
-    jobType = classadJob.get_expression('JobType').replace('"','')
+    jobType = self.jobDB.getJobAttribute(job,'JobType')
 
     #Input data check
     if self.inputDataCheck:
@@ -144,6 +143,7 @@ class JobSanityAgent(Optimizer):
             self.log.info(message)
             self.setJobParam(job,'JobSanityCheck',message)
             self.updateJobStatus(job,success,minorStatus)
+            # FIXME: this can not be a S_OK(), Job has to be aborted if OutPut data is present
             return S_OK('Found successful job')
           else:
             flag = outputData['Value']
@@ -174,7 +174,7 @@ class JobSanityAgent(Optimizer):
     if not result['OK']:
       self.log.warn(result['Message'])
 
-    return S_OK('Job checking finished')
+    return checkJDL
 
   #############################################################################
   def checkJDL(self,job):
@@ -198,6 +198,7 @@ class JobSanityAgent(Optimizer):
       result['Value'] = "Job JDL Not Found"
       return result
 
+    result = S_OK('JDL OK')
     classadJob = ClassAd('['+jdl+']')
     if not classadJob.isOK():
       self.log.debug("Warning: illegal JDL for job %s, will be marked problematic" % (job))
@@ -205,10 +206,8 @@ class JobSanityAgent(Optimizer):
       result['Value'] = "Illegal Job JDL"
       return result
     else:
-      param = classadJob
-
-      result = S_OK('JDL OK')
       result['JDL'] = jdl
+      result['ClassAdJob'] = classadJob
       return result
 
   #############################################################################
