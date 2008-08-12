@@ -602,3 +602,91 @@ class RequestDBMySQL(DB):
       return S_ERROR( '%s\n%s' % (err, str(x) ) )
     self.getIdLock.release()
     return S_OK(subRequestID)
+
+  def __buildCondition(self, condDict, older=None, newer=None ):
+    """ build SQL condition statement from provided condDict
+        and other extra conditions
+    """
+    condition = ''
+    conjunction = "WHERE"
+
+    if condDict != None:
+      for attrName, attrValue in condDict.items():
+        if type(attrValue) == types.ListType:
+          multiValue = ','.join(['"'+x.strip()+'"' for x in attrValue])
+          condition = ' %s %s %s in (%s)' % ( condition,
+                                             conjunction,
+                                             str(attrName),
+                                             multiValue  )
+        else:
+          condition = ' %s %s %s=\'%s\'' % ( condition,
+                                             conjunction,
+                                             str(attrName),
+                                             str(attrValue)  )
+        conjunction = "AND"
+
+    if older:
+      condition = ' %s %s LastUpdateTime < \'%s\'' % ( condition,
+                                                 conjunction,
+                                                 str(older) )
+      conjunction = "AND"
+
+    if newer:
+      condition = ' %s %s LastUpdateTime >= \'%s\'' % ( condition,
+                                                 conjunction,
+                                                 str(newer) )
+
+    return condition
+
+  def getRequestSummaryWeb(self,selectDict, sortList, startItem, maxItems):
+    """ Get summary of the requests in the database
+    """
+
+    resultDict = {}
+    rparameterList = ['RequestID','RequestName','JobID','OwnerDN','OwnerGroup']
+    sparameterList = ['RequestType','Status','Operation']
+    parameterList = rparameterList + sparameterList
+
+    req = "SELECT R.RequestID, R.RequestName, R.JobID, R.OwnerDN, R.OwnerGroup,"
+    req += "S.RequestType, S.Status, S.Operation FROM Requests as R, SubRequests as S "
+
+    new_selectDict = {}
+    for key,value in selectDict.items():
+      if key in rparameterList:
+        new_selectDict['R.'+key] = value
+      elif key in sparameterList:
+        new_selectDict['S.'+key] = value
+
+    if new_selectDict:
+      condition = self.__buildCondition(new_selectDict)
+      req += condition
+
+    if sortList:
+      req += "ORDER BY %s %s" % (sortList[0][0],sortList[0][1])
+
+    result = self._query(req)
+    if not result['OK']:
+      return result
+
+    if not result['Value']:
+      resultDict['ParameterNames'] = parameterList
+      resultDict['Records'] = []
+      return S_OK(resultDict)
+
+    if startItem <= len(result['Value']):
+      firstIndex = startItem
+    else:
+      return S_ERROR('Requested index out of range')
+
+    if (startItem + maxItems) <= len(result['Value']):
+      secondIndex = startItem + maxItems
+    else:
+      secondIndex = len(result['Value'])
+
+    records = []
+    for i in range(firstIndex,lastIndex):
+      records.append([ str(x) for x in result['Value'][i]])
+
+    resultDict['ParameterNames'] = parameterList
+    resultDict['Records'] = records
+    return S_OK(resultDict)
