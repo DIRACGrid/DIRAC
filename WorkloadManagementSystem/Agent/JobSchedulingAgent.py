@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.31 2008/08/12 17:29:51 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.32 2008/08/12 17:52:38 rgracian Exp $
 # File :   JobSchedulingAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@
       meaningfully.
 
 """
-__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.31 2008/08/12 17:29:51 rgracian Exp $"
+__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.32 2008/08/12 17:52:38 rgracian Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
@@ -43,7 +43,7 @@ class JobSchedulingAgent(Optimizer):
     return result
 
   #############################################################################
-  def checkJob( self, job, jdl = None, classadJob = None ):
+  def checkJob( self, job, jdl = None, classad = None ):
     """This method controls the checking of the job.
     """
     self.log.verbose('Job %s will be processed' % (job))
