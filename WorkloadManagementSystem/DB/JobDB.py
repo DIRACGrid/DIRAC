@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.79 2008/08/08 08:50:50 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.80 2008/08/12 17:36:40 rgracian Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.79 2008/08/08 08:50:50 rgracian Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.80 2008/08/12 17:36:40 rgracian Exp $"
 
 import re, os, sys, string, types
 import time
@@ -504,8 +504,7 @@ class JobDB(DB):
     except ValueError, x:
       return S_ERROR('The '+currentOptimizer+' not found in the chain')
 
-    result = self.setJobStatus(jobID,status="Checking",minor=nextOptimizer)
-    return result
+    return self.setJobStatus(jobID,status="Checking",minor=nextOptimizer)
 
 ############################################################################
   def countJobs(self, condDict, older=None, newer=None):
@@ -910,10 +909,10 @@ class JobDB(DB):
     else:
       error = ''
       classAddJob.insertAttributeInt( 'JobID', jobID )
-      jdlDiracSetup = stringFromClassAd( classAddJob, 'DIRACSetup' )
-      jdlOwner      = stringFromClassAd( classAddJob, 'Owner' )
-      jdlOwnerDN    = stringFromClassAd( classAddJob, 'OwnerDN' )
-      jdlOwnerGroup = stringFromClassAd( classAddJob, 'OwnerGroup' )
+      jdlDiracSetup = classAddJob.stringFromClassAd( 'DIRACSetup' )
+      jdlOwner      = classAddJob.stringFromClassAd( 'Owner' )
+      jdlOwnerDN    = classAddJob.stringFromClassAd( 'OwnerDN' )
+      jdlOwnerGroup = classAddJob.stringFromClassAd( 'OwnerGroup' )
       if jdlDiracSetup and jdlDiracSetup != diracSetup:
         error = 'Wrong DIRAC Setup in JDL'
       if jdlOwner and jdlOwner != owner:
@@ -931,9 +930,16 @@ class JobDB(DB):
       classAddReq.insertAttributeString( 'OwnerDN',    ownerDN )
       classAddReq.insertAttributeString( 'OwnerGroup', ownerGroup )
 
+      voPolicyDict = gConfig.getOptionsDict('/DIRAC/VOPolicy')
+      if voPolicyDict['OK']:
+        voPolicy = voPolicyDict['Value']
+        for param,val in voPolicy.items():
+          if not classAddJob.lookupAttribute(param):
+            classAddJob.insertAttributeString(param,val)
+
       for jdlName in 'JobName', 'JobType', 'JobGroup', 'Site':
         # Defaults are set by the DB.
-        jdlValue = stringFromClassAd( classAddJob, jdlName )
+        jdlValue = classAddJob.stringFromClassAd( jdlName )
         if jdlValue:
           jobAttrNames.append( jdlName )
           jobAttrValues.append( jdlValue )
@@ -942,11 +948,11 @@ class JobDB(DB):
         # No requirements given in the job
         classAddJob.insertAttributeBool("Requirements", True)
 
-      priority = intFromClassAd( classAddJob, 'Priority' )
+      priority = classAddJob.intFromClassAd( 'Priority' )
       jobAttrNames.append( 'UserPriority' )
       jobAttrValues.append( priority )
       classAddReq.insertAttributeInt( 'UserPriority', priority )
-      
+
       inputData = []
       if classAddJob.lookupAttribute('InputData'):
         inputData = classadJob.getListFromExpression('InputData')
@@ -1804,15 +1810,3 @@ class JobDB(DB):
     if not result[ 'OK' ]:
       return result
     return S_OK( ( ( defFields + valueFields ), result[ 'Value' ] ) )
-
-def stringFromClassAd( classAd, name ):
-  value = ''
-  if classAd.lookupAttribute( name ):
-    value = string.replace(classAd.get_expression( name ), '"', '')
-  return value
-
-def intFromClassAd( classAd, name ):
-  value = 0
-  if classAd.lookupAttribute( name ):
-    value = int(string.replace(classAd.get_expression( name ), '"', ''))
-  return value

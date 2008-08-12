@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.59 2008/08/09 07:18:26 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.60 2008/08/12 17:35:50 rgracian Exp $
 # File :   Director.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -48,7 +48,7 @@
 
 """
 
-__RCSID__ = "$Id: Director.py,v 1.59 2008/08/09 07:18:26 rgracian Exp $"
+__RCSID__ = "$Id: Director.py,v 1.60 2008/08/12 17:35:50 rgracian Exp $"
 
 import types, time
 
@@ -246,7 +246,7 @@ class Director(Agent):
     JobJDLIntAttributes = [ 'MaxCPUTime' ]
 
     for attr in JobJDLStringMandatoryAttributes:
-      jobDict[attr] = stringFromClassAd(classAdJob, attr)
+      jobDict[attr] = classAdJob.stringFromClassAd(attr)
       # FIXME: this should be checked by the JobManager and the Optimizers
       if not jobDict[attr]:
         self.log.error( ERROR_MISSPAR % attr, job )
@@ -254,10 +254,10 @@ class Director(Agent):
         return False
 
     for attr in JobJDLStringAttributes:
-      jobDict[attr] = stringFromClassAd(classAdJob, attr)
+      jobDict[attr] = classAdJob.stringFromClassAd(attr)
 
     for attr in JobJDLListAttributes:
-      jobDict[attr] = stringFromClassAd(classAdJob, attr)
+      jobDict[attr] = classAdJob.stringFromClassAd(attr)
       jobDict[attr] = string.replace( string.replace(
                                                jobDict[attr], '{', '' ), '}', '' )
       jobDict[attr] = List.fromChar( jobDict[attr] )
@@ -266,7 +266,7 @@ class Director(Agent):
       jobDict['Site'] = []
 
     for attr in JobJDLIntAttributes:
-      jobDict[attr] = intFromClassAd(classAdJob, attr)
+      jobDict[attr] = classAdJob.intFromClassAd(attr)
 
     # Check now Job Attributes
     ret = jobDB.getJobAttributes(job)
@@ -438,19 +438,6 @@ class Director(Agent):
       self.log.verbose( submitResult['Message'] )
     else:
       self.jobDicts[submitResult['Value']['JobID']] = submitResult['Value']
-
-
-def stringFromClassAd( classAd, name ):
-  value = ''
-  if classAd.lookupAttribute( name ):
-    value = string.replace(classAd.get_expression( name ), '"', '')
-  return value
-
-def intFromClassAd( classAd, name ):
-  value = 0
-  if classAd.lookupAttribute( name ):
-    value = int(string.replace(classAd.get_expression( name ), '"', ''))
-  return value
 
 
 def updateJobStatus( logger, name, jobID, majorStatus, minorStatus=None, applicationStatus=None, logRecord=False ):
