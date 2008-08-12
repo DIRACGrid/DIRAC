@@ -120,3 +120,11 @@ class RequestManagerHandler(RequestHandler):
       errStr = "RequestManagerHandler.serveRequest: Exception while serving request."
       gLogger.exception(errStr,requestType,lException=x)
       return S_ERROR(errStr)
+
+  types_getRequestSummaryWeb = [DictType, ListType, IntType, IntType]
+  def export_getRequestSummaryWeb(self,selectDict, sortList, startItem, maxItems):
+    """ Get summary of the request/subrequest info in the standard form for the web
+    """
+
+    result = requestDB.getRequestSummaryWeb(selectDict, sortList, startItem, maxItems)
+    return result
