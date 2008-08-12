@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.32 2008/08/12 17:52:38 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.33 2008/08/12 17:53:38 rgracian Exp $
 # File :   JobSchedulingAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,13 +14,13 @@
       meaningfully.
 
 """
-__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.32 2008/08/12 17:52:38 rgracian Exp $"
+__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.33 2008/08/12 17:53:38 rgracian Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
 from DIRAC.Core.Utilities.SiteSEMapping                    import getSEsForSite
 from DIRAC.ConfigurationSystem.Client.PathFinder           import getAgentSection
-from DIRAC                                                 import gConfig,S_OK,S_ERROR
+from DIRAC                                                 import gConfig,S_OK,S_ERROR,List
 
 import random,string,re, types
 
