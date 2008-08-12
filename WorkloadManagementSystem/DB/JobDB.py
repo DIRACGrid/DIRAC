@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.80 2008/08/12 17:36:40 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.81 2008/08/12 18:00:09 rgracian Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.80 2008/08/12 17:36:40 rgracian Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.81 2008/08/12 18:00:09 rgracian Exp $"
 
 import re, os, sys, string, types
 import time
@@ -786,17 +786,17 @@ class JobDB(DB):
     if JDL:
 
       if updateFlag:
-        cmd = "UPDATE JobJDLs Set JDL='%s' WHERE JobID=%d" % (JDL,jobID)
+        cmd = "UPDATE JobJDLs Set JDL='%s' WHERE JobID=%s" % (JDL,jobID)
       else:
-        cmd = "INSERT INTO JobJDLs (JobID,JDL) VALUES (%d,'%s')" % (jobID,JDL)
+        cmd = "INSERT INTO JobJDLs (JobID,JDL) VALUES (%s,'%s')" % (jobID,JDL)
       result = self._update(cmd)
       if not result['OK']:
         return result
     if originalJDL:
       if updateFlag:
-        cmd = "UPDATE JobJDLs Set OriginalJDL='%s' WHERE JobID=%d" % (originalJDL,jobID)
+        cmd = "UPDATE JobJDLs Set OriginalJDL='%s' WHERE JobID=%s" % (originalJDL,jobID)
       else:
-        cmd = "INSERT INTO JobJDLs (JobID,OriginalJDL) VALUES (%d,'%s')" % (jobID,originalJDL)
+        cmd = "INSERT INTO JobJDLs (JobID,OriginalJDL) VALUES (%s,'%s')" % (jobID,originalJDL)
 
       result = self._update(cmd)
 
