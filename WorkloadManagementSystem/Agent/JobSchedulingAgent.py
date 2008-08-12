@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.30 2008/07/22 16:00:58 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.31 2008/08/12 17:29:51 rgracian Exp $
 # File :   JobSchedulingAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@
       meaningfully.
 
 """
-__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.30 2008/07/22 16:00:58 acasajus Exp $"
+__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.31 2008/08/12 17:29:51 rgracian Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
@@ -43,18 +43,32 @@ class JobSchedulingAgent(Optimizer):
     return result
 
   #############################################################################
-  def checkJob(self,job):
+  def checkJob( self, job, jdl = None, classadJob = None ):
     """This method controls the checking of the job.
     """
     self.log.verbose('Job %s will be processed' % (job))
-    #First check whether the job has an input data requirement
+
+    # First, get Site and BannedSites from the Job
+    result = self.getJDLandClassad( job, jdl, classad )
+    if not result['OK']:
+      return result
+
+    JDL = result['JDL']
+    classadJob = result['Classad']
+
+    result = self.__getJobSiteRequirement( job, classadJob  )
+    bannedSites = result['BannedSites']
+    sites = result['Sites']
+    
+    #Now check whether the job has an input data requirement
     result = self.jobDB.getInputData(job)
     if not result['OK']:
       self.log.warn('Failed to get input data from JobDB for %s' % (job))
       self.log.error(result['Message'])
+      return S_ERROR( 'Failed to get input data from JobDB' )
 
     if not result['Value']:
-      result = self.__sendJobToTaskQueue(job)
+      result = self.__sendJobToTaskQueue(job,classadJob,sites,bannedSites)
       return result
 
     hasInputData=False
@@ -65,64 +79,57 @@ class JobSchedulingAgent(Optimizer):
     if not hasInputData:
       #With no input data requirement, job can proceed directly to task queue
       self.log.verbose('Job %s has no input data requirement' % (job))
-      result = self.__sendJobToTaskQueue(job)
+      result = self.__sendJobToTaskQueue(job,classadJob,sites,bannedSites)
       return result
 
     self.log.verbose('Job %s has an input data requirement ' % (job))
 
     #Check all optimizer information
-    optInfo = self.__checkOptimizerInfo(job)
-    if not optInfo['OK']:
-      msg = optInfo['Message']
-      self.log.info(msg)
-      self.updateJobStatus(job,self.failedStatus,msg)
-      return S_OK(msg)
+    result = self.__checkOptimizerInfo(job)
+    if not result['OK']:
+      return result
+    
+    optInfo = result['Value']
 
     #Compare site candidates with current mask
-    siteCandidates = optInfo['Value']['SiteCandidates'].keys()
+    siteCandidates = optInfo['SiteCandidates'].keys()
     self.log.info('Input Data Site Candidates: %s' % (siteCandidates))
-    maskSiteCandidates = self.__checkSitesInMask(job,siteCandidates)
-    if not maskSiteCandidates['OK']:
-      msg = 'Could not get sites in mask'
-      self.log.error(msg)
-      return S_OK(msg)
+    result = self.__checkSitesInMask(job,siteCandidates)
+    if not result['OK']:
+      self.log.error(result['Message'])
+      return result
+    siteCandidates = result['Value']
 
-    siteCandidates = maskSiteCandidates['Value']
-    if not siteCandidates:
-      msg = 'No Candidate Sites in Mask'
-      result = self.__getJobSiteRequirement(job)
-      if not result['OK']:
-        self.log.warn('Could not determine site candidates for job, will leave as ANY')
-      else:
-        chosenSite = result['ChosenSite']
-        if len(chosenSite)==1:
-          result = self.jobDB.setJobAttribute(job,'Site',chosenSite[0])
-          if not result['OK']:
-            self.log.warn('Problem setting job site parameter:\n%s' %result)
-      self.log.info(msg)
-      self.updateJobStatus(job,self.failedStatus,msg)
-      return S_OK(msg)
 
-    #Compare site candidates with site requirement / banned sites in JDL
-    jobReqtCandidates = self.__checkJobSiteRequirement(job,siteCandidates)
-    if not jobReqtCandidates['OK']:
-      msg=jobReqtCandidates['Message']
-      self.log.warn(msg)
-      self.updateJobStatus(job,self.failedStatus,msg)
-      return S_OK(msg)
+    #Compare site candidates with Site / BannedSites in JDL
+    if sites:
+      # Remove requested sites if data is not available there
+      for site in list(sites):
+        if site not in siteCandidates:
+          sites.remove( site )
+      if not sites:
+        return S_ERROR( 'Chosen site is not eligible' )
 
-    siteCandidates = jobReqtCandidates['Value']
-    if not siteCandidates:
-      msg = 'Conflict with job site requirement'
-      self.log.info(msg)
-      self.updateJobStatus(job,self.failedStatus,msg)
-      return S_OK(msg)
+      # Remove requested sites if they are in the provided mask
+      for site in list(sites):
+        if site in bannedSites:
+          sites.remove( site )
+      if not sites:
+        return S_ERROR( 'No eligible sites for job' )
+
+      siteCandidates = sites
+    else:
+      for site in bannedSites:
+        if site in siteCandidates:
+          siteCandidates.remove(site)
+    
+      if not siteCandidates:
+        return S_ERROR( 'No eligible sites for job' )
 
     #Set stager request as necessary, optimize for smallest #files on tape if
     #more than one site candidate left at this point
-    checkStaging = self.__resolveSitesForStaging(job,siteCandidates,optInfo['Value']['SiteCandidates'])
+    checkStaging = self.__resolveSitesForStaging(job,siteCandidates,optInfo['SiteCandidates'])
     if not checkStaging['OK']:
-      self.log.warn(result['Message'])
       return checkStaging
 
     destinationSites = checkStaging['SiteCandidates']
@@ -133,7 +140,8 @@ class JobSchedulingAgent(Optimizer):
     if stagingFlag:
       #Single site candidate chosen and staging required
       self.log.verbose('Job %s requires staging of input data' %(job))
-      stagerDict = self.__setStagingRequest(job,destinationSites[0],optInfo['Value'])
+      stagerDict = self.__setStagingRequest(job,destinationSites[0],optInfo)
+      # FIXME: need to understand what to do with jobs while waiting for files to be staged
       if not stagerDict['OK']:
         return stagerDict
       #Staging request is saved as job optimizer parameter
@@ -142,7 +150,7 @@ class JobSchedulingAgent(Optimizer):
       self.log.verbose('Job %s does not require staging of input data' %(job))
 
     #Finally send job to TaskQueueAgent
-    result = self.__sendJobToTaskQueue(job,destinationSites)
+    result = self.__sendJobToTaskQueue(job, classadJob, destinationSites, bannedSites)
     if not result['OK']:
       return result
 
@@ -153,25 +161,21 @@ class JobSchedulingAgent(Optimizer):
     """This method aggregates information from optimizers to return a list of
        site candidates and all information regarding input data.
     """
-    dataDict = {}
     #Check input data agent result and limit site candidates accordingly
     siteCandidates = {}
     dataResult = self.getOptimizerJobInfo(job,self.dataAgentName)
     if dataResult['OK'] and len(dataResult['Value']):
       self.log.verbose(dataResult)
-      dataResult = dataResult['Value']
-      if not dataResult.has_key('SiteCandidates'):
-        return S_ERROR('No possible site candidates')
-      siteCandidates = dataResult['SiteCandidates'].keys()
-    else:
-      self.log.warn('No information available for optimizer %s' %(self.dataAgentName))
+      if 'SiteCandidates' in dataResult['Value']:
+        return S_OK(dataResult['Value'])
 
-    if not siteCandidates:
-      msg = 'File Catalog Access Failure'
+      msg = 'No possible site candidates'
       self.log.info(msg)
       return S_ERROR(msg)
 
-    return S_OK(dataResult)
+    msg = 'File Catalog Access Failure'
+    self.log.info(msg)
+    return S_ERROR(msg)
 
   #############################################################################
   def __resolveSitesForStaging(self, job, siteCandidates, inputDataDict):
@@ -195,7 +199,7 @@ class JobSchedulingAgent(Optimizer):
     if not tapeCount:
       self.log.verbose('All replicas on disk, no staging required')
       finalSiteCandidates = siteCandidates
-      result = S_OK()
+      result = S_OK(stagingFlag)
       result['SiteCandidates']=finalSiteCandidates
       return result
 
@@ -230,11 +234,9 @@ class JobSchedulingAgent(Optimizer):
         finalSiteCandidates.append(minTapeSites[0])
         stagingFlag = 1
 
-    result = S_OK()
-    if stagingFlag:
-      result['Value'] = 1
+    result = S_OK(stagingFlag)
 
-    result['SiteCandidates']=finalSiteCandidates
+    result['SiteCandidates'] = finalSiteCandidates
 
     return result
 
@@ -281,78 +283,34 @@ class JobSchedulingAgent(Optimizer):
     self.log.verbose('Staging Request: %s' %stagingRequest)
     storeRequest = self.setOptimizerJobInfo(job,'StagingRequest',stagingRequest)
     if not storeRequest['OK']:
-      return S_ERROR('Storing StagingRequest')
+      return S_ERROR('Error Storing Staging Request')
 
     return S_OK('StagingRequest saved')
 
   #############################################################################
-  def __checkJobSiteRequirement(self,job,siteCandidates):
-    """Get Grid site list from the DIRAC CS, choose only those which are allowed
-       in the Matcher mask for the scheduling decision.
-    """
-    result = self.__getJobSiteRequirement(job)
-    if not result['OK']:
-      return result
-    bannedSites = result['BannedSites']
-    chosenSite = result['ChosenSite']
-
-    if chosenSite:
-      chosen = chosenSite[0]
-      if not chosen in siteCandidates:
-        self.log.info('%s is not a possible site candidate for %s' %(chosen,siteCandidates))
-        result = self.jobDB.setJobAttribute(job,'Site',chosen)
-        if not result['OK']:
-          self.log.warn('Problem setting job site parameter:\n%s' %result)
-        return S_ERROR('Chosen site is not eligible')
-      else:
-        siteCandidates = chosenSite
-
-    if bannedSites:
-      badSiteCandidates = []
-      for site in siteCandidates:
-        for banned in bannedSites:
-          if site == banned:
-            self.log.info('Candidate site %s is a banned site' %(banned))
-            badSiteCandidates.append(banned)
-
-      if badSiteCandidates:
-        for removeSite in badSiteCandidates:
-          siteCandidates.remove(removeSite)
-
-    if not siteCandidates:
-      result = S_ERROR('No eligible sites for job')
-
-    return S_OK(siteCandidates)
-
-  #############################################################################
-  def __getJobSiteRequirement(self,job):
+  def __getJobSiteRequirement(self,job,classadJob):
     """Returns any candidate sites specified by the job or sites that have been
        banned and could affect the scheduling decision.
     """
-    result = self.jobDB.getJobJDL(job)
-    if not result['OK']:
-      return result
-    if not result['Value']:
-      self.log.warn('No JDL found for job')
-      self.log.verbose(result)
-      return S_ERROR('No JDL found for job')
 
-    jdl = result['Value']
-    classadJob = ClassAd(jdl)
-    if not classadJob.isOK():
-      self.log.verbose("Warning: illegal JDL for job %s, will be marked problematic" % (job))
-      result = S_ERROR()
-      result['Value'] = "Illegal Job JDL"
-      return result
+    result = self.jobDB.getJobAttribute(job,'Site')
+    if not result['OK']:
+      site = []
+    else:
+      site = List.fromChar( result['Value'] )
 
     result = S_OK()
-    site = classadJob.get_expression('Site').replace('"','').replace('Unknown','')
-    bannedSites = classadJob.get_expression("BannedSites").replace('{','').replace('}','').replace('"','').replace(' ','').split(',')
-    if site and site!='ANY' and len(string.split(site,','))==1:
-      self.log.info('Job %s has single chosen site %s specified in JDL' %(job,site))
-      result['ChosenSite']=[site]
+
+    bannedSites = classadJob.stringFromClassAd('BannedSites')
+    bannedSites = string.replace( string.replace( bannedSites, '{', '' ), '}', '' )
+    bannedSites = List.fromChar( bannedSites )
+    
+    if not 'ANY' in site and not 'Unknown' in site:
+      if len(site)==1:
+        self.log.info('Job %s has single chosen site %s specified in JDL' %(job,site[0]))
+      result['Sites']=site
     else:
-      result['ChosenSite']=[]
+      result['Sites']= []
 
     if bannedSites:
       self.log.info('Job %s has JDL requirement to ban %s' %(job,bannedSites))
@@ -384,33 +342,24 @@ class JobSchedulingAgent(Optimizer):
     return S_OK(sites)
 
   #############################################################################
-  def __sendJobToTaskQueue(self,job,siteCandidates=[]):
+  def __sendJobToTaskQueue(self, job, classadJob, siteCandidates, bannedSites):
     """This method sends jobs to the task queue agent and if candidate sites
        are defined, updates job JDL accordingly.
     """
-    result = self.jobDB.getJobJDL(job)
-    #means that reqts field will not be changed by any other optimizer
-    if not result['OK']:
-      return result
-    if not result['Value']:
-      self.log.warn('No JDL found for job')
-      return S_ERROR('No JDL found for job')
 
-    jdl = result['Value']
-    classAdJob = ClassAd(jdl)
-    if not classAdJob.isOK():
-      self.log.verbose("Warning: illegal JDL for job %s, will be marked problematic" % (job))
-      result = S_ERROR()
-      result['Value'] = "Illegal Job JDL"
-      return result
-
-    requirements = classAdJob.get_expression('Requirements').replace('Unknown','')
+    requirements = classAdJob.get_expression('Requirements')
     self.log.verbose('Existing job requirements: %s' % (requirements))
+
+    reqJDL = classAdJob.get_expression( 'JobRequirements' )
+    classAddReq = ClassAd( reqJDL )
+    
+    if siteCandidates:
+      classAddReq.insertAttributeVectorString( 'Sites', siteCandidates )
+    if bannedSites:
+      classAddReq.insertAttributeVectorString( 'BannedSites', bannedSites )
+    
     reqsToAdd = {}
-    if not requirements:
-      newRequirements = self.__resolveJobJDLRequirement('True',siteCandidates)
-    else:
-      newRequirements = self.__resolveJobJDLRequirement(requirements,siteCandidates)
+    newRequirements = self.__resolveJobJDLRequirement(requirements,siteCandidates)
     #GridMiddleware requirements
     if not classAdJob.lookupAttribute( "SubmitPool" ):
       classAdJob.insertAttributeString( 'SubmitPool', 'ANY' )
@@ -421,10 +370,12 @@ class JobSchedulingAgent(Optimizer):
         gridMiddleware = gConfig.getValue( "%s/%s/GridMiddleware" % ( directorSection, submitPool ), '' )
         if gridMiddleware:
           reqsToAdd[ 'other.GridMiddleware' ] = gridMiddleware
+          classAddReq.insertAttributeString( 'GridMiddleware', gridMiddleware )
     #Required CE's requirements
     gridCEs = [ ce for ce in classAdJob.getListFromExpression( 'GridRequiredCEs' ) if ce ]
     if gridCEs:
       reqsToAdd[ 'other.GridCE' ] = gridCEs
+      classAddReq.insertAttributeVectorString( 'GridCEs', gridCEs )
     #Add reqs
     reqList = []
     for reqField in reqsToAdd:
@@ -442,41 +393,21 @@ class JobSchedulingAgent(Optimizer):
       if siteCandidates:
         sites = string.join(siteCandidates,',')
         classAdJob.insertAttributeString("Site",sites)
+
+      reqJDL = classAddReq.asJDL()
+      classAdJob.insertAttributeInt( 'JobRequirements', reqJDL )
+
       jdl = classAdJob.asJDL()
-      result = self.jobDB.setJobJDL(int(job),jdl)
+      result = self.jobDB.setJobJDL(job,jdl)
       if not result['OK']:
         return result
 
     if siteCandidates:
       if len(siteCandidates)==1:
         self.log.verbose('Individual site candidate for job %s is %s' %(job,siteCandidates[0]))
+        self.jobDB.setJobAttribute(job,'Site',siteCandidates[0])
 
-    #To assign site if single candidate
-    result = self.__setSiteCandidate(job,classAdJob)
-    if not result['OK']:
-      self.log.warn(result['Message'])
-
-    result = self.setNextOptimizer(job)
-    if not result['OK']:
-      self.log.warn(result['Message'])
-
-    return result
-
-  #############################################################################
-  def __setSiteCandidate(self,job,classAdJob):
-    """Sets the candidate site if a single site such that it appears in the monitoring
-       webpage.
-    """
-    result = S_OK()
-    siteRequirement = classAdJob.get_expression('Site').replace('Unknown','').replace(' ','').replace('"','')
-    self.log.verbose('Final site requirement is: %s' %(siteRequirement))
-    if not re.search(',',siteRequirement):
-      result = self.jobDB.setJobAttribute(job,'Site',siteRequirement)
-      if not result['OK']:
-        self.log.warn('Problem setting job site parameter')
-        self.log.warn(result)
-
-    return result
+    return self.setNextOptimizer(job)
 
   #############################################################################
   def __resolveJobJDLRequirement(self,requirements,siteCandidates):
