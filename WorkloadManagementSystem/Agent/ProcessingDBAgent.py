@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/ProcessingDBAgent.py,v 1.4 2007/11/20 09:43:54 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/ProcessingDBAgent.py,v 1.5 2008/08/12 17:28:19 rgracian Exp $
 # File :   ProcessingDBAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
 
 """
 
-__RCSID__ = "$Id: ProcessingDBAgent.py,v 1.4 2007/11/20 09:43:54 paterson Exp $"
+__RCSID__ = "$Id: ProcessingDBAgent.py,v 1.5 2008/08/12 17:28:19 rgracian Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
@@ -82,10 +82,7 @@ class ProcessingDBAgent(Optimizer):
             if not result['OK']:
               self.log.error(result['Message'])
               return result
-          result = self.setNextOptimizer(job)
-          if not result['OK']:
-            self.log.error(result['Message'])
-          return result
+          return self.setNextOptimizer(job)
         else:
           self.log.info('Job %s is of type %s and will be ignored' % (job,jobType))
           result = self.updateJobStatus(job,self.jobStatus,self.nextOptMinorStatus)
@@ -94,10 +91,7 @@ class ProcessingDBAgent(Optimizer):
           return result
       else:
         self.log.info('Job %s has no input data requirement' % (job) )
-        result = self.setNextOptimizer(job)
-        if not result['OK']:
-          self.log.error(result['Message'])
-        return result
+        return self.setNextOptimizer(job)
     else:
       self.log.error('Failed to get input data from JobdB for %s' % (job) )
       self.log.error(result['Message'])

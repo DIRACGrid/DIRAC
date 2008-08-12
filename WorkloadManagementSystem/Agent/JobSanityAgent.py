@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSanityAgent.py,v 1.10 2008/08/11 11:07:37 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSanityAgent.py,v 1.11 2008/08/12 17:30:48 rgracian Exp $
 # File :   JobSanityAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,7 +13,7 @@
        - Input sandbox not correctly uploaded.
 """
 
-__RCSID__ = "$Id: JobSanityAgent.py,v 1.10 2008/08/11 11:07:37 rgracian Exp $"
+__RCSID__ = "$Id: JobSanityAgent.py,v 1.11 2008/08/12 17:30:48 rgracian Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
@@ -170,9 +170,7 @@ class JobSanityAgent(Optimizer):
 
     self.log.info(message)
     self.setJobParam(job,'JobSanityCheck',message)
-    result = self.setNextOptimizer(job)
-    if not result['OK']:
-      self.log.warn(result['Message'])
+    self.setNextOptimizer(job)
 
     return checkJDL
 

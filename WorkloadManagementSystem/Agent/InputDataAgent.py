@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.28 2008/08/11 10:13:01 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.29 2008/08/12 17:34:57 rgracian Exp $
 # File :   InputDataAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
 
 """
 
-__RCSID__ = "$Id: InputDataAgent.py,v 1.28 2008/08/11 10:13:01 rgracian Exp $"
+__RCSID__ = "$Id: InputDataAgent.py,v 1.29 2008/08/12 17:34:57 rgracian Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.Core.DISET.RPCClient                            import RPCClient
@@ -80,16 +80,10 @@ class InputDataAgent(Optimizer):
         if not result['OK']:
           self.log.warn(result['Message'])
           return result
-        result = self.setNextOptimizer(job)
-        if not result['OK']:
-          self.log.warn(result['Message'])
-        return result
+        return self.setNextOptimizer(job)
       else:
         self.log.verbose('Job %s has no input data requirement' % (job) )
-        result = self.setNextOptimizer(job)
-        if not result['OK']:
-          self.log.warn(result['Message'])
-        return result
+        return self.setNextOptimizer(job)
     else:
       self.log.warn('Failed to get input data from JobdB for %s' % (job) )
       self.log.warn(result['Message'])
