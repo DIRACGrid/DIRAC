@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.33 2008/08/12 17:53:38 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.34 2008/08/12 17:55:10 rgracian Exp $
 # File :   JobSchedulingAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@
       meaningfully.
 
 """
-__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.33 2008/08/12 17:53:38 rgracian Exp $"
+__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.34 2008/08/12 17:55:10 rgracian Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
@@ -342,7 +342,7 @@ class JobSchedulingAgent(Optimizer):
     return S_OK(sites)
 
   #############################################################################
-  def __sendJobToTaskQueue(self, job, classadJob, siteCandidates, bannedSites):
+  def __sendJobToTaskQueue(self, job, classAdJob, siteCandidates, bannedSites):
     """This method sends jobs to the task queue agent and if candidate sites
        are defined, updates job JDL accordingly.
     """
