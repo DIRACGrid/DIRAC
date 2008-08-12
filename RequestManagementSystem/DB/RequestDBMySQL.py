@@ -684,7 +684,7 @@ class RequestDBMySQL(DB):
       secondIndex = len(result['Value'])
 
     records = []
-    for i in range(firstIndex,lastIndex):
+    for i in range(firstIndex,secondIndex):
       records.append([ str(x) for x in result['Value'][i]])
 
     resultDict['ParameterNames'] = parameterList
