@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobPathAgent.py,v 1.7 2008/08/12 17:34:20 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobPathAgent.py,v 1.8 2008/08/12 18:13:54 rgracian Exp $
 # File :   JobPathAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -12,7 +12,7 @@
       path through the optimizers.
 
 """
-__RCSID__ = "$Id: JobPathAgent.py,v 1.7 2008/08/12 17:34:20 rgracian Exp $"
+__RCSID__ = "$Id: JobPathAgent.py,v 1.8 2008/08/12 18:13:54 rgracian Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
@@ -86,7 +86,7 @@ class JobPathAgent(Optimizer):
       return S_OK('Job defines own path') #overrides all VO specific policies
 
     #If no path, construct based on JDL and VO path module if present
-    path = self.basePath
+    path = list(self.basePath)
     if self.voPlugin:
       argumentsDict = {'JobID':job,'ClassAd':classadJob,'ConfigPath':self.section}
       moduleFactory = ModuleFactory()
