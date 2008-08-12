@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Optimizer.py,v 1.16 2008/07/14 15:09:16 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Optimizer.py,v 1.17 2008/08/12 17:28:49 rgracian Exp $
 # File :   Optimizer.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
      optimizer instances and associated actions are performed there.
 """
 
-__RCSID__ = "$Id: Optimizer.py,v 1.16 2008/07/14 15:09:16 acasajus Exp $"
+__RCSID__ = "$Id: Optimizer.py,v 1.17 2008/08/12 17:28:49 rgracian Exp $"
 
 from DIRAC.WorkloadManagementSystem.DB.JobDB         import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB  import JobLoggingDB
@@ -203,6 +203,33 @@ class Optimizer(Agent):
       result = self.jobDB.setJobParameter(job,reportName,value)
     else:
       result = S_OK('DisabledMode')
+
+    return result
+
+  #############################################################################
+  def getJDLandClassad(self, job, jdl = None, classad = None ):
+    """
+      This method is to avoid loading the JDL each time for DB
+    """
+    result = S_OK()
+    if not jdl:
+      retVal = self.jobDB.getJobJDL(job)
+      if not retVal['OK']:
+        return S_ERROR('Job JDL not found in JobDB')
+    
+      jdl = retVal['Value']
+      if not jdl:
+        return S_ERROR('Null JDL returned from JobDB')
+    
+    result['JDL'] = jdl
+    
+    if not classad:
+      classad = ClassAd(jdl)
+      if not classad.isOK():
+        self.log.debug("Warning: illegal JDL for job %s, will be marked problematic" % (job))
+        return S_ERROR( 'Illegal Job JDL' )
+
+    result['Classad'] = classad
 
     return result
 
