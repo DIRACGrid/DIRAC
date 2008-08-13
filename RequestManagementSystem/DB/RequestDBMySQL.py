@@ -268,24 +268,31 @@ class RequestDBMySQL(DB):
                 res = self.__setSubRequestDatasets(ind,requestType,subRequestID,request)
                 if not res['OK']:
                   failed = True
+                  message = res['Message']
               else:
                 failed = True
+                message = res['Message']
             else:
               failed = True
+              message = res['Message']
           else:
             failed = True
+            message = res['Message']
     else:
       failed = True
+      message = res['Message']
     for subRequestID,status in subRequestIDs.items():
       res = self._setSubRequestAttribute(requestID,subRequestID,'Status',status)
       if not res['OK']:
         failed = True
+        message = res['Message']
     res = self._setRequestAttribute(requestID,'Status','Waiting')
     if not res['OK']:
       failed = True
+      message = res['Message']
     if failed:
       res = self._deleteRequest(requestName)
-      return S_ERROR('Failed to set request')
+      return S_ERROR('Failed to set request: '+message)
     else:
       return S_OK(requestID)
 
