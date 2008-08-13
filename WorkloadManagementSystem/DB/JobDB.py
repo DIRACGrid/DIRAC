@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.83 2008/08/13 06:46:12 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.84 2008/08/13 08:55:19 rgracian Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.83 2008/08/13 06:46:12 rgracian Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.84 2008/08/13 08:55:19 rgracian Exp $"
 
 import re, os, sys, string, types
 import time
@@ -459,7 +459,7 @@ class JobDB(DB):
       result = S_ERROR('JobDB.setInputData: operation failed.')
 
     for lfn in inputData:
-      cmd = 'INSERT INTO InputData (JobID,LFN) VALUES (\'%s\', \'%s\' )' % ( jobID, lfn )
+      cmd = 'INSERT INTO InputData (JobID,LFN) VALUES (\'%s\', \'%s\' )' % ( jobID, lfn.strip() )
       res = self._update( cmd )
       if not res['OK']:
         return res
@@ -981,7 +981,7 @@ class JobDB(DB):
 
     values = []
     for lfn in inputData:
-      values.append( '(%s, \'%s\' )' % ( jobID, lfn ) )
+      values.append( '(%s, \'%s\' )' % ( jobID, lfn.strip() ) )
 
     if values:
       cmd = 'INSERT INTO InputData (JobID,LFN) VALUES %s' % ', '.join( values )
