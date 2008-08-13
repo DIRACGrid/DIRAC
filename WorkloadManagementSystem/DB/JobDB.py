@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.84 2008/08/13 08:55:19 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.85 2008/08/13 15:51:41 rgracian Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.84 2008/08/13 08:55:19 rgracian Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.85 2008/08/13 15:51:41 rgracian Exp $"
 
 import re, os, sys, string, types
 import time
@@ -776,7 +776,7 @@ class JobDB(DB):
     """ Insert JDL's for job specified by jobID
     """
 
-    req = "SELECT OriginalJDL FROM JobJDLs WHERE JobID=%d" % int(jobID)
+    req = "SELECT OriginalJDL FROM JobJDLs WHERE JobID=%s" % jobID
     result = self._query(req)
     updateFlag = False
     if result['OK']:
