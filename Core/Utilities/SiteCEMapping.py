@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/SiteCEMapping.py,v 1.1 2008/07/21 10:14:26 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/SiteCEMapping.py,v 1.2 2008/08/13 07:55:43 paterson Exp $
 # File :   SiteCEMapping.py
 ########################################################################
 
@@ -10,7 +10,7 @@
      Assumes CS structure of: /Resources/Sites/<GRIDNAME>/<SITENAME>
 """
 
-__RCSID__ = "$Id: SiteCEMapping.py,v 1.1 2008/07/21 10:14:26 paterson Exp $"
+__RCSID__ = "$Id: SiteCEMapping.py,v 1.2 2008/08/13 07:55:43 paterson Exp $"
 
 import string,re
 
@@ -82,7 +82,7 @@ def getCESiteMapping(gridName=''):
             current.append(candidate)
             ceSiteMapping[ce]=current
           else:
-            ceSiteMapping[ce]=candidate
+            ceSiteMapping[ce]=[candidate]
 
   return S_OK(ceSiteMapping)
 
