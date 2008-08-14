@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.34 2008/08/12 17:55:10 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.35 2008/08/14 10:13:28 rgracian Exp $
 # File :   JobSchedulingAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@
       meaningfully.
 
 """
-__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.34 2008/08/12 17:55:10 rgracian Exp $"
+__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.35 2008/08/14 10:13:28 rgracian Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
@@ -40,6 +40,8 @@ class JobSchedulingAgent(Optimizer):
     result = Optimizer.initialize(self)
 
     self.dataAgentName        = gConfig.getValue(self.section+'/InputDataAgent','InputData')
+    self.stagingStatus        = gConfig.getValue(self.section+'/StagingStatus','Staging')
+    self.stagingMinorStatus   = gConfig.getValue(self.section+'/StagingMinorStatus','Request Sent')
     return result
 
   #############################################################################
@@ -141,14 +143,12 @@ class JobSchedulingAgent(Optimizer):
       #Single site candidate chosen and staging required
       self.log.verbose('Job %s requires staging of input data' %(job))
       stagerDict = self.__setStagingRequest(job,destinationSites[0],optInfo)
-      # FIXME: need to understand what to do with jobs while waiting for files to be staged
       if not stagerDict['OK']:
         return stagerDict
-      #Staging request is saved as job optimizer parameter
+      return S_OK()
     else:
       #No staging required, can proceed to task queue agent and then waiting status
       self.log.verbose('Job %s does not require staging of input data' %(job))
-
     #Finally send job to TaskQueueAgent
     result = self.__sendJobToTaskQueue(job, classadJob, destinationSites, bannedSites)
     if not result['OK']:
@@ -279,13 +279,20 @@ class JobSchedulingAgent(Optimizer):
               stageSURLs[lfn]={}
               stageSURLs[lfn].update({se:surl})
 
-    stagingRequest = {'Sites':destination,'Files':stageSURLs}
-    self.log.verbose('Staging Request: %s' %stagingRequest)
-    storeRequest = self.setOptimizerJobInfo(job,'StagingRequest',stagingRequest)
-    if not storeRequest['OK']:
-      return S_ERROR('Error Storing Staging Request')
+    request = self.stagerClient.stageFiles(str(job),destination,stageSURLs,'WorkloadManagement')
+    if not request['OK']:
+      self.log.error('Problem sending Staging request:')
+      self.log.error(request)
+      return S_ERROR('Error Sending Staging Request')
+    else:
+      self.log.info('Staging request successfully sent')
 
-    return S_OK('StagingRequest saved')
+    result = self.updateJobStatus(job,self.stagingStatus,self.stagingMinorStatus)
+    if not result['OK']:
+      return result
+
+
+    return S_OK('StagingRequest sent')
 
   #############################################################################
   def __getJobSiteRequirement(self,job,classadJob):

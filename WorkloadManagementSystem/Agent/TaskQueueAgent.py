@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueAgent.py,v 1.13 2008/07/18 16:52:21 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueAgent.py,v 1.14 2008/08/14 10:13:28 rgracian Exp $
 # File :   TaskQueueAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
      into a Task Queue.
 """
 
-__RCSID__ = "$Id: TaskQueueAgent.py,v 1.13 2008/07/18 16:52:21 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueAgent.py,v 1.14 2008/08/14 10:13:28 rgracian Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
@@ -33,9 +33,6 @@ class TaskQueueAgent(Optimizer):
     """Initialize specific parameters for TaskQueueAgent.
     """
     result = Optimizer.initialize(self)
-    self.stagingRequest     = gConfig.getValue(self.section+'/StagingRequest','StagingRequest')
-    self.stagingStatus      = gConfig.getValue(self.section+'/StagingStatus','Staging')
-    self.stagingMinorStatus = gConfig.getValue(self.section+'/StagingMinorStatus','Request Sent')
     self.waitingStatus      = gConfig.getValue(self.section+'/WaitingStatus','Waiting')
     self.waitingMinorStatus = gConfig.getValue(self.section+'/WaitingMinorStatus','Pilot Agent Submission')
     self.stagerClient = StagerClient(True)
@@ -45,36 +42,11 @@ class TaskQueueAgent(Optimizer):
   def checkJob(self,job):
     """This method controls the checking of the job.
     """
-    primaryStatus = None
-    minorStatus   = None
-    result = self.getOptimizerJobInfo(job,'StagingRequest')
-    if result['OK']:
-      self.log.info('Attempting to send staging request for job %s' %job)
-      primaryStatus  = self.stagingStatus
-      minorStatus    = self.stagingMinorStatus
-      site = result['Value']['Sites']
-      self.log.verbose('Site: %s' %site)
-      files = result['Value']['Files']
-      self.log.verbose('Files: %s' %files)
-      if self.enable:
-        request = self.stagerClient.stageFiles(str(job),str(site),files,'WorkloadManagement')
-        if not request['OK']:
-          self.log.warn('Problem sending Staging request:')
-          self.log.warn(request)
-          return S_ERROR('Sending Staging Request')
-        else:
-          self.log.info('Staging request successfully sent')
-      else:
-        self.log.info('TaskQueue agent disabled via enable flag')
-    else:
-      primaryStatus = self.waitingStatus
-      minorStatus   = self.waitingMinorStatus
-
     result = self.insertJobInQueue(job)
     if not result['OK']:
       self.log.warn(result['Message'])
 
-    result = self.updateJobStatus(job,primaryStatus,minorStatus)
+    result = self.updateJobStatus(job,self.waitingStatus,self.waitingMinorStatus)
     if not result['OK']:
       self.log.warn(result['Message'])
 
