@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.36 2008/08/14 10:40:18 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.37 2008/08/14 13:30:43 rgracian Exp $
 # File :   JobSchedulingAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@
       meaningfully.
 
 """
-__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.36 2008/08/14 10:40:18 rgracian Exp $"
+__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.37 2008/08/14 13:30:43 rgracian Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
@@ -144,6 +144,12 @@ class JobSchedulingAgent(Optimizer):
     if stagingFlag:
       #Single site candidate chosen and staging required
       self.log.verbose('Job %s requires staging of input data' %(job))
+
+      siteCandidates = {'SiteCandidates':[destinationSites[0]]}
+      result = self.setOptimizerJobInfo(job,self.dataAgentName,siteCandidates)
+      if not result['OK']:
+        return result
+      
       stagerDict = self.__setStagingRequest(job,destinationSites[0],optInfo)
       if not stagerDict['OK']:
         return stagerDict
