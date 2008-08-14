@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.38 2008/08/14 13:49:46 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.39 2008/08/14 14:01:07 rgracian Exp $
 # File :   JobSchedulingAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@
       meaningfully.
 
 """
-__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.38 2008/08/14 13:49:46 rgracian Exp $"
+__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.39 2008/08/14 14:01:07 rgracian Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
@@ -144,9 +144,14 @@ class JobSchedulingAgent(Optimizer):
     if stagingFlag:
       #Single site candidate chosen and staging required
       self.log.verbose('Job %s requires staging of input data' %(job))
-
-      siteCandidates = {'SiteCandidates':{destinationSites[0]:{}}}
-      result = self.setOptimizerJobInfo(job,self.dataAgentName,siteCandidates)
+      # set all LFN to disk for the selected site
+      site = destinationSites[0]
+      siteDict = optInfo['SiteCandidates'][site]
+      siteDict['disk'] = siteDict['disk'] + siteDict['tape']
+      siteDict['tape'] = 0
+      
+      optInfo['SiteCandidates'][site] = siteDict
+      result = self.setOptimizerJobInfo(job,self.dataAgentName,optInfo)
       if not result['OK']:
         return result
       
