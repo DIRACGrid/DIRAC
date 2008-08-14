@@ -141,7 +141,7 @@ class RAWIntegrityAgent(Agent):
             pfnMetadataDict['Checksum'] = 'Not available'
         castorChecksum = pfnMetadataDict['Checksum']
         onlineChecksum = activeFiles[lfn]['Checksum']
-        if castorChecksum.lower().lstrip('0') == onlineChecksum.lower().lstrip('0'):
+        if castorChecksum.lower().lstrip('0') == onlineChecksum.lower().lstrip('0').lstrip('x'):
           gLogger.info("RAWIntegrityAgent.execute: %s migrated checksum match." % lfn)
           self.DataLog.addFileRecord(lfn,'Checksum match',castorChecksum,'','RAWIntegrityAgent')
           filesToRemove.append(lfn)
@@ -149,7 +149,7 @@ class RAWIntegrityAgent(Agent):
         elif pfnMetadataDict['Checksum'] == 'Not available':
           gLogger.info("RAWIntegrityAgent.execute: Unable to determine checksum.", lfn)
         else:
-          gLogger.error("RAWIntegrityAgent.execute: Migrated checksum mis-match.","%s %s %s" % (lfn,castorChecksum.lstrip('0'),onlineChecksum.lstrip('0')))
+          gLogger.error("RAWIntegrityAgent.execute: Migrated checksum mis-match.","%s %s %s" % (lfn,castorChecksum.lstrip('0'),onlineChecksum.lstrip('0').lstrip('x')))
           self.DataLog.addFileRecord(lfn,'Checksum mismatch','%s %s' % (castorChecksum.lower().lstrip('0'),onlineChecksum.lower().lstrip('0')),'','RAWIntegrityAgent')
           filesToTransfer.append(lfn)
 
