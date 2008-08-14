@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.57 2008/08/08 14:22:53 atsareg Exp $
+# $Id: TransformationDB.py,v 1.58 2008/08/14 10:28:18 atsareg Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -345,7 +345,7 @@ class TransformationDB(DB):
         return S_OK([])
       return res
     if not res['Value']:
-      return res
+      return S_OK([])
     ids = [ str(x[0]) for x in res['Value'] ]
     if not ids:
       return S_OK([])
