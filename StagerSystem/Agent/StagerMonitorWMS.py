@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/Attic/StagerMonitorWMS.py,v 1.13 2008/08/14 10:15:07 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/Attic/StagerMonitorWMS.py,v 1.14 2008/08/14 10:48:28 rgracian Exp $
 # File :   StagerMonitorWMS.py
 # Author : Stuart Paterson
 ########################################################################
@@ -20,7 +20,7 @@
      Successful -> purged with status change
 """
 
-__RCSID__ = "$Id: StagerMonitorWMS.py,v 1.13 2008/08/14 10:15:07 rgracian Exp $"
+__RCSID__ = "$Id: StagerMonitorWMS.py,v 1.14 2008/08/14 10:48:28 rgracian Exp $"
 
 from DIRAC.Core.Base.Agent                                 import Agent
 from DIRAC.Core.DISET.RPCClient                            import RPCClient
@@ -254,7 +254,7 @@ class StagerMonitorWMS(Agent):
        to the job state service and job monitoring.
     """
     toPurge = []
-    statusList = [('Successful','Checking','JobScheduling'),('Failed','Failed','Exceeded Max Staging Retry')]
+    statusList = [('Successful','Checking','InputData'),('Failed','Failed','Exceeded Max Staging Retry')]
     for state,status,minorStatus in statusList:
       result = self.stagerClient.getJobsForSystemAndState(state,self.system,self.jobSelectLimit)
       if not result['OK']:
