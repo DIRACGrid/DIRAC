@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.35 2008/08/14 10:13:28 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.36 2008/08/14 10:40:18 rgracian Exp $
 # File :   JobSchedulingAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,12 +14,13 @@
       meaningfully.
 
 """
-__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.35 2008/08/14 10:13:28 rgracian Exp $"
+__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.36 2008/08/14 10:40:18 rgracian Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
 from DIRAC.Core.Utilities.SiteSEMapping                    import getSEsForSite
 from DIRAC.ConfigurationSystem.Client.PathFinder           import getAgentSection
+from DIRAC.StagerSystem.Client.StagerClient                import StagerClient
 from DIRAC                                                 import gConfig,S_OK,S_ERROR,List
 
 import random,string,re, types
@@ -42,6 +43,7 @@ class JobSchedulingAgent(Optimizer):
     self.dataAgentName        = gConfig.getValue(self.section+'/InputDataAgent','InputData')
     self.stagingStatus        = gConfig.getValue(self.section+'/StagingStatus','Staging')
     self.stagingMinorStatus   = gConfig.getValue(self.section+'/StagingMinorStatus','Request Sent')
+    self.stagerClient = StagerClient(True)
     return result
 
   #############################################################################
