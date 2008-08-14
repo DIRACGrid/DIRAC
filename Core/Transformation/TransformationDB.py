@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.59 2008/08/14 12:05:34 atsareg Exp $
+# $Id: TransformationDB.py,v 1.60 2008/08/14 15:00:39 atsareg Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -517,7 +517,18 @@ PRIMARY KEY (FileID)
     """ Get filters for all defined input streams in all the transformations.
         If transID argument is given, get filters only for this transformation.
     """
+
+    # Define the general filter first
+    setup = gConfig.getValue('/DIRAC/Setup','')
+    generalMask = gConfig.getValue('/Operations/InputDataFilter/%sFilter' % self.database_name,'')
+    value = gConfig.getValue('/Operations/InputDataFilter/%s/%sFilter' % (setup,self.database_name),'')
+    if value:
+      generalMask = value
     resultList = []
+    refilter = re.compile(generalMask)
+    resultList.append((0,refilter))
+
+    # Per transformation filters
     req = "SELECT TransformationID,FileMask FROM Transformations"
     result = self._query(req)
     if not result['OK']:
@@ -538,20 +549,21 @@ PRIMARY KEY (FileID)
     addedTransforms = []
     if resultFilter:
       for transID in resultFilter:
-        req = "SELECT * FROM T_%s WHERE FileID=%s;" % (transID,fileID)
-        res = self._query(req)
-        if not res['OK']:
-          return res
-        if not res['Value']:
-          req = "INSERT INTO T_%s (FileID) VALUES (%s);"  % (transID,fileID)
-          res = self._update(req)
+        if transID:
+          req = "SELECT * FROM T_%s WHERE FileID=%s;" % (transID,fileID)
+          res = self._query(req)
           if not res['OK']:
             return res
+          if not res['Value']:
+            req = "INSERT INTO T_%s (FileID) VALUES (%s);"  % (transID,fileID)
+            res = self._update(req)
+            if not res['OK']:
+              return res
+            else:
+              gLogger.info("TransformationDB.__addFileToTransformation: File %s added to transformation %s." % (fileID,transID))
+              addedTransforms.append(transID)
           else:
-            gLogger.info("TransformationDB.__addFileToTransformation: File %s added to transformation %s." % (fileID,transID))
-            addedTransforms.append(transID)
-        else:
-          gLogger.verbose("TransformationDB.__addFileToTransformation: File %s already present in transformation %s." % (fileID,transID))
+            gLogger.verbose("TransformationDB.__addFileToTransformation: File %s already present in transformation %s." % (fileID,transID))
     return S_OK(addedTransforms)
 
   def __getFileIDsForLfns(self,lfns):
