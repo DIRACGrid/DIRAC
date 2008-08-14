@@ -473,13 +473,14 @@ class TransformationDBCLI(cmd.Cmd):
           lfn = f['LFN']
           status = f['Status']
           jobid = f['JobID']
+          jobname = str(int(prod)).zfill(8)+'_'+str(jobid).zfill(8)
           usedse = f['TargetSE']
           if ofname:
             ofile.write(lfn.ljust(50)+' '+status.rjust(10)+' '+ \
-                        jobid.rjust(19)+' '+usedse.rjust(16)+'\n')
+                        jobname.rjust(19)+' '+usedse.rjust(16)+'\n')
           else:
             print lfn.ljust(50),status.rjust(10), \
-                jobid.rjust(19),usedse.rjust(16)
+                jobname.rjust(19),usedse.rjust(16)
 
     if ofname:
       print "Output is written to file",ofname
