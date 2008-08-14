@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueAgent.py,v 1.14 2008/08/14 10:13:28 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueAgent.py,v 1.15 2008/08/14 10:49:54 rgracian Exp $
 # File :   TaskQueueAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,13 +8,12 @@
      into a Task Queue.
 """
 
-__RCSID__ = "$Id: TaskQueueAgent.py,v 1.14 2008/08/14 10:13:28 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueAgent.py,v 1.15 2008/08/14 10:49:54 rgracian Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
 from DIRAC.Core.Security.CS                                import getPropertiesForGroup
-from DIRAC.StagerSystem.Client.StagerClient                import StagerClient
 from DIRAC                                                 import S_OK, S_ERROR
 import string,re
 
@@ -35,7 +34,6 @@ class TaskQueueAgent(Optimizer):
     result = Optimizer.initialize(self)
     self.waitingStatus      = gConfig.getValue(self.section+'/WaitingStatus','Waiting')
     self.waitingMinorStatus = gConfig.getValue(self.section+'/WaitingMinorStatus','Pilot Agent Submission')
-    self.stagerClient = StagerClient(True)
     return result
 
   #############################################################################
