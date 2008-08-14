@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.58 2008/08/14 10:28:18 atsareg Exp $
+# $Id: TransformationDB.py,v 1.59 2008/08/14 12:05:34 atsareg Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -739,6 +739,8 @@ PRIMARY KEY (FileID)
       passFilter = False
       forced = False
       retained = False
+      fileExists = False
+      replicaExists = False
       lFilters = self.__filterFile(lfn)
       if lFilters:
         passFilter = True
@@ -769,9 +771,15 @@ PRIMARY KEY (FileID)
                   if not ret['OK']:
                     gLogger.warn('Unable to add dataLogging record for Transformation %s FileID %s' % (transID, fileID))
 
-          successful[lfn] = {'PassFilter':passFilter,'Retained':retained,'Forced':forced,'AddedToCatalog':addedToCatalog,'AddedToTransformation':addedToTransformation,'FileExists':fileExists,'ReplicaExists':replicaExists}
+          successful[lfn] = {'PassFilter':passFilter,'Retained':retained,
+                             'Forced':forced,'AddedToCatalog':addedToCatalog,
+                             'AddedToTransformation':addedToTransformation,
+                             'FileExists':fileExists,'ReplicaExists':replicaExists}
       else:
-        successful[lfn] = {'PassFilter':passFilter,'Retained':retained,'Forced':forced,'AddedToCatalog':addedToCatalog,'AddedToTransformation':addedToTransformation}
+        successful[lfn] = {'PassFilter':passFilter,'Retained':retained,
+                           'Forced':forced,'AddedToCatalog':addedToCatalog,
+                           'AddedToTransformation':addedToTransformation,
+                           'FileExists':fileExists,'ReplicaExists':replicaExists}
     resDict = {'Successful':successful,'Failed':failed}
     return S_OK(resDict)
 
