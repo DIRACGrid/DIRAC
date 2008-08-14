@@ -272,27 +272,102 @@ class TransformationDBCLI(cmd.Cmd):
 #    if result['Status'] != "OK":
 #      print "Failed to remove file",lfn
 #
-#  def do_addDirectory(self,args):
-#    """Add files from the given catalog directory
-#
-#    usage: addDirectory <directory> [force]
-#    """
-#
-#    argss = string.split(args)
-#    directory = argss[0]
-#    force = 0
-#    if len(argss) == 2:
-#      if argss[1] == 'force':
-#        force = 1
-#
-#    # KGG checking if directory has / at the end, if yes we remove it
-#    directory=directory.rstrip('/')
-#
-#    result = self.procdb.addDirectory(directory)
-#    if result['Status'] != "OK":
-#      print result['Message']
-#    else:
-#      print result['Value']
+
+  def do_addDirectory(self,args):
+    """Add files from the given catalog directory
+
+    usage: addDirectory <directory> [force]
+    """
+
+    argss, length = self.check_params(args, 1)
+    if not argss:
+      return
+    directory = argss[0]
+    force = False
+    if length > 1:
+      if argss[1] == 'force':
+        force = True
+
+    # KGG checking if directory has / at the end, if yes we remove it
+    directory=directory.rstrip('/')
+
+    if not self.lfc:
+      try:
+        from DIRAC.DataManagementSystem.Client.Catalog.LcgFileCatalogCombinedClient import LcgFileCatalogCombinedClient
+        self.lfc = LcgFileCatalogCombinedClient()
+      except:
+        self.lfc = None
+
+    if self.lfc:
+      start = time.time()
+      result = self.lfc.getDirectoryReplicas(directory)
+      end = time.time()
+      print "getPfnsInDir",directory,"operation time",(end-start)
+
+      lfns = []
+      if result['OK']:
+        if 'Successful' in result['Value'] and directory in result['Value']['Successful']:
+          lfndict = result['Value']['Successful'][directory]
+
+          for lfn,repdict in lfndict.items():
+            for se,pfn in repdict.items():
+              lfns.append((lfn,pfn,0,se,'IGNORED-GUID','IGNORED-CHECKSUM'))
+
+          result = self.server.addFile(lfns, force)
+
+          if not result['OK']:
+            print "Failed to add files with local LFC interrogation"
+            print "Trying the addDirectory on the Server side"
+          else:
+            print "Operation successfull"
+            file_exists = 0
+            forced = 0
+            pass_filter = 0
+            retained = 0
+            replica_exists = 0
+            added_to_calalog = 0
+            added_to_transformation = 0
+            total = len(result['Value']['Successful'])
+            failed = len(result['Value']['Failed'])
+            for fn in result['Value']['Successful']:
+              f = result['Value']['Successful'][fn]
+              if f['FileExists']:
+                  file_exists = file_exists+1
+              if f['Forced']:
+                  forced = forced+1
+              if f['PassFilter']:
+                  pass_filter = pass_filter+1
+              if f['Retained']:
+                  retained = retained+1
+              if f['ReplicaExists']:
+                  replica_exists = replica_exists+1
+              if f['AddedToCatalog']:
+                  added_to_calalog = added_to_calalog+1
+              if f['AddedToTransformation']:
+                  added_to_transformation = added_to_transformation+1
+
+            print 'Failed:',  failed
+            print 'Successful:', total
+            print 'Pass filters', pass_filter
+            print 'Forced in:', forced
+            print 'Pass filters + forced = Retained:', retained
+            print 'Exists in Catalog', file_exists
+            print 'Added to Catalog', added_to_calalog-file_exists
+            print 'Added to Transformations', added_to_transformation
+            print 'Replica Exists', replica_exists
+            return
+        else:
+          print "No such directory in LFC"
+
+    else:
+      # Local file addition failed, try the remote one
+      result = self.server.addDirectory(directory)
+      print result
+      if not result['OK']:
+        print result['Message']
+      else:
+        print result['Value']
+
 #
 #  def do_setReplicaStatus(self,args):
 #    """Set replica status, usually used to mark a replica Problematic
@@ -338,26 +413,33 @@ class TransformationDBCLI(cmd.Cmd):
 #    except Exception, x:
 #      print "replicas failed: ", str(x)
 #
-#  def do_addFile(self,args):
-#    """Add new file
-#
-#    usage: addFile <lfn> <se> [force]
-#    """
-#    argss = string.split(args)
-#    lfn = argss[0]
-#    se = argss[1]
-#    force = 0
-#    if len(argss) == 3:
-#      if argss[2] == 'force':
-#        force = 1
-#
-#    fileTuples = [(lfn,'',0,se,'',force)]
-#    res = self.server.addFile(fileTuples)
-#    if not res['OK']:
-#      print "Failed to add %s" %lfn
-#    elif not res['Value']['Successful'].has_key(lfn):
-#      print "Failed to add %s" %lfn
-#
+
+  def do_addFile(self,args):
+    """ Add new file to the Production Database
+
+    usage: addFile <lfn> <se> [force]
+    """
+
+    argss = string.split(args)
+    lfn = argss[0]
+    se = argss[1]
+    force = False
+    if len(argss) == 3:
+      if argss[2] == 'force':
+        force = True
+
+    lfnTuple = (lfn,'',0,se,'IGNORED-GUID','IGNORED-CHECKSUM')
+
+    result = self.server.addFile([lfnTuple],force)
+    if not result['OK']:
+      print "Failed to add file",lfn
+
+    lfnDict = result['Value']['Successful']
+    if lfnDict[lfn]['Retained']:
+      print "File added"
+    else:
+      print "File not retained"
+
   def do_getFiles(self,args):
     """Get files for the given production
 
