@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.86 2008/08/14 17:19:30 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.87 2008/08/14 17:32:34 rgracian Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.86 2008/08/14 17:19:30 rgracian Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.87 2008/08/14 17:32:34 rgracian Exp $"
 
 import re, os, sys, string, types
 import time
@@ -913,8 +913,6 @@ class JobDB(DB):
       jdlOwner      = classAddJob.stringFromClassAd( 'Owner' )
       jdlOwnerDN    = classAddJob.stringFromClassAd( 'OwnerDN' )
       jdlOwnerGroup = classAddJob.stringFromClassAd( 'OwnerGroup' )
-      cpuTime       = classAddJob.intFromClassAd( 'MaxCPUTime' )
-      systemConfig  = classAddJob.stringFromClassAd( 'SystemConfig' )
 
       if jdlDiracSetup and jdlDiracSetup != diracSetup:
         error = 'Wrong DIRAC Setup in JDL'
@@ -932,21 +930,6 @@ class JobDB(DB):
       classAddReq.insertAttributeString( 'Setup',      diracSetup )
       classAddReq.insertAttributeString( 'OwnerDN',    ownerDN )
       classAddReq.insertAttributeString( 'OwnerGroup', ownerGroup )
-      classAddReq.insertAttributeInt(    'CPUTime',    cpuTime )
-
-      if systemConfig and systemConfig.lower() != 'any':
-        # Get the LHCb Platforms that are compatible with the requested systemConfig
-        result = gConfig.getOptionsDict('/Resources/Computing/OSCompatibility')
-        if result['OK'] and result['Value']:
-          platforms = result['Value']
-          lhcbPlatforms = []
-          for platform in platforms:
-            if systemConfig in platforms[platform]:
-              lhcbPlatforms.append( platform )
-          if lhcbPlatforms:
-            classAddReq.insertAttributeVectorString( 'LHCbPlatforms', lhcbPlatforms )
-          else:
-            error = 'No compatible Platform found for %s' % systemConfig
 
       voPolicyDict = gConfig.getOptionsDict('/DIRAC/VOPolicy')
       if voPolicyDict['OK']:
@@ -966,10 +949,33 @@ class JobDB(DB):
         # No requirements given in the job
         classAddJob.insertAttributeBool("Requirements", True)
 
-      priority = classAddJob.intFromClassAd( 'Priority' )
+      priority      = classAddJob.intFromClassAd( 'Priority' )
+      systemConfig  = classAddJob.stringFromClassAd( 'SystemConfig' )
+      pilotType     = classAddJob.stringFromClassAd( 'PilotType' )
+      cpuTime       = classAddJob.intFromClassAd( 'MaxCPUTime' )
+
       jobAttrNames.append( 'UserPriority' )
       jobAttrValues.append( priority )
       classAddReq.insertAttributeInt( 'UserPriority', priority )
+
+      classAddReq.insertAttributeInt(    'CPUTime',    cpuTime )
+
+      if systemConfig and systemConfig.lower() != 'any':
+        # Get the LHCb Platforms that are compatible with the requested systemConfig
+        result = gConfig.getOptionsDict('/Resources/Computing/OSCompatibility')
+        if result['OK'] and result['Value']:
+          platforms = result['Value']
+          lhcbPlatforms = []
+          for platform in platforms:
+            if systemConfig in platforms[platform]:
+              lhcbPlatforms.append( platform )
+          if lhcbPlatforms:
+            classAddReq.insertAttributeVectorString( 'LHCbPlatforms', lhcbPlatforms )
+          else:
+            error = 'No compatible Platform found for %s' % systemConfig
+
+      if pilotType:
+        classAddReq.insertAttributeString( 'PilotType', pilotType )
 
       inputData = []
       if classAddJob.lookupAttribute('InputData'):
