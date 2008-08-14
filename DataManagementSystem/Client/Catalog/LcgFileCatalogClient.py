@@ -32,8 +32,10 @@ class LcgFileCatalogClient(FileCatalogueBase):
       return
     setup = result['Value']
 
-    os.environ['LFC_HOST'] = host
-    os.environ['LCG_GFAL_INFOSYS'] = infosys
+    if host:
+      os.environ['LFC_HOST'] = host
+    if infosys:
+      os.environ['LCG_GFAL_INFOSYS'] = infosys
 
     result = gConfig.getOption('/LocalSite/Site')
     if not result['OK']:
