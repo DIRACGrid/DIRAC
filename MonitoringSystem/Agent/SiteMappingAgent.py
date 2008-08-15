@@ -3,9 +3,9 @@
 
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
-from DIRAC.Core.Utilities.Mapping2 import Mapping
+from DIRAC.Core.Utilities.Mapping import Mapping
 from DIRAC.ConfigurationSystem.Client import PathFinder
-import os, re
+import os, re, time, shutil
 
 AGENT_NAME = 'Monitoring/SiteMappingAgent'
 
@@ -67,15 +67,18 @@ class SiteMappingAgent(Agent):
         animatedRanges[r] = float(animatedRanges[r])
       else:
         animatedRanges[r] = int(animatedRanges[r])
+        
+    # Retrieve the CE green percentage
+    ceGreenPercent = int(gConfig.getValue(csSection+'/CEGreenPercent','50'))
     
     # Compile the data
-    dataDict = {'kml' : sectionFiles, 'img' : sectionTag, 'IconPath' : iconPath, 'Animated' : animatedRanges}
+    dataDict = {'kml' : sectionFiles, 'img' : sectionTag, 'IconPath' : iconPath, 'Animated' : animatedRanges, 'CEGreenPercent' : ceGreenPercent}
     gLogger.verbose('dataDict: %s' % dataDict)
   
     # Retrieve and create the directory for files
     cacheDir = gConfig.getValue(csSection+'/CacheDir','/opt/dirac/work')
     cacheDir = cacheDir.rstrip('/')
-    baseFilePath = cacheDir + '/SiteMappingAgent'
+    baseFilePath = cacheDir + '/SiteMapping'
     if not os.path.exists(baseFilePath):
       os.mkdir(baseFilePath)
     gLogger.verbose('baseFilePath: %s' % baseFilePath)
@@ -95,6 +98,22 @@ class SiteMappingAgent(Agent):
       gLogger.verbose('---- ERROR: File cache cannot access data in %s' % baseFilePath)
       return S_ERROR('Permissions conflict in cache directory.')
       
+    # Delete all of the stuff in the directory
+    oldFiles = os.listdir(baseFilePath)
+    for f in oldFiles:
+      os.unlink(baseFilePath + '/' + f)
+    gLogger.verbose('Number of files purged: %d' % len(oldFiles))
+      
+    # Find out where to copy static image files from
+    staticDir = gConfig.getValue(csSection+'/StaticImageDir', '/opt/dirac/work/SiteMappingImages')
+    staticDir.rstrip('/')
+    if not os.path.exists(staticDir):
+      return S_ERROR('Failed to retrieve static images. Directory does not exist.')
+    imageFiles = os.listdir(staticDir)
+    for f in imageFiles:
+      shutil.copyfile(staticDir + '/' + f, baseFilePath + '/' + f)
+    gLogger.verbose('Number of static images copied: %d' % len(imageFiles))
+      
     # Create the execution counter
     self.__counter = 0
         
@@ -105,17 +124,40 @@ class SiteMappingAgent(Agent):
     """ The main agent execution method
     """
     
-    cycle = self.__counter % 5
+    maxCycleLen = 20 # How often to repeat the overall cycle and purge the data cache
+    regenCycleLen = 5 # How often to regenerate the entire file cache (versus just time series data)
+    regenTimeSeries = 1 # How often to update the time series data only
     
-    gLogger.verbose('Execution counter: %d (cycle %d)' % (self.__counter, cycle))
+    if self.__counter == 0:
+      # Reset data and then force a data set regeneration
+      siteData.resetData()
+      self.__counter = -1
     
-    if cycle == 0:
+    # This allows us to generate all consecutive times by setting negative counter values
+    # In order to generate a complete data set quickly, we will repeatedly generate data until our counter is > 0
+    while self.__counter < 0:
+      gLogger.verbose('Internal regenerations remaining: %d' % -self.__counter)
+      self.generateAll('kml')
+      self.__counter += 1
+        
+    gLogger.verbose('Execution counter: %d' % self.__counter)
+    
+    start = time.time()
+    
+    if self.__counter % regenCycleLen == 0:
       self.generateAll()
-    else:
+    elif self.__counter % regenTimeSeries == 0:
       self.updateTimeSeries()
+      self.generateSection('SiteMask', None)
+      #self.generateSection('Animated', None)
+    else:
+      gLogger.verbose('Null cycle--nothing to do.')
+      
+    end = time.time()
+    gLogger.verbose('Execution time for cycle %d: %.2f seconds' % (self.__counter, end - start))
     
     self.__counter += 1
-    if self.__counter >= 100:
+    if self.__counter >= maxCycleLen:
       self.__counter = 0
 
     return S_OK()
@@ -125,9 +167,14 @@ class SiteMappingAgent(Agent):
     """ Simple wrapper for updating time series data
     """
     gLogger.verbose('Time series update requested received.')
+    
+    # JobSummary contains time-series data
     result = self.updateData('JobSummary', False)
     if not result['OK']:
       return result
+      
+    # If there are other time-series to add, put them here
+    
     gLogger.verbose('Time series update complete.')
     return S_OK('Time series data updated.')
 
@@ -189,8 +236,10 @@ class SiteMappingAgent(Agent):
     return S_OK()
     
   ########################################################################### 
-  def generateAll(self):
-    """ Generates new files for all sections
+  def generateAll(self, dataType=None):
+    """ Generates new files for all sections.
+        If dataType=None, then both KML/IMG are generated.
+          Otherwise, dataType should be 'kml' or 'img'
     """
     gLogger.verbose('Global generation cycle...')
     
@@ -207,7 +256,7 @@ class SiteMappingAgent(Agent):
         return S_ERROR('Failed to update data for section %s' % s)
         
       # Generate each section's files
-      result = self.generateSection(s, False)
+      result = self.generateSection(s, dataType)
       if not result['OK']:
         return S_ERROR('Failed to generate section files for section %s' % s)
         
