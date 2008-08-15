@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: Mapping.py,v 1.10 2008/07/29 11:33:29 asypniew Exp $
+# $Id: Mapping.py,v 1.11 2008/08/15 08:14:03 asypniew Exp $
 ########################################################################
 
 """ All of the data collection and handling procedures for the SiteMappingHandler
@@ -27,6 +27,12 @@ class Mapping:
   ###########################################################################
   def getDict(self):
     return S_OK(self.siteData)
+    
+  ###########################################################################
+  def resetData(self):
+    self.siteData = {}
+    #self.timeSeries = {}  # We don't want to reset this; otherwise, we may not generate a full data set
+    return S_OK()
 
   ###########################################################################
   def updateData(self, section, dataDict):
@@ -64,9 +70,17 @@ class Mapping:
               cat = 'T1'
             else:
               cat = 'T2'
-            self.siteData[site] = {'Coord' : (float(coord[0]), float(coord[1])), 'Cat' : cat}
+              
+            # Well, it's a hard call, but I suppose it would be better to continually add data
+            #   to the dictionary rather than overwrite it every time we do a site update.
+            # If we reset it, we are guaranteed to eliminate obsolete data.
+            # However, if we keep old data, then we will better be able to allow section to reference
+            #   each other (e.g., allow SiteMask to use JobSummary data to scale its icons).
+            # The worst that happens is that you end up with a site on the map that should have been removed.
+            #   In that case, just restart the agent.
             
-            self.siteData[site]['Mask'] = 'Unknown'
+            if site not in self.siteData:
+              self.siteData[site] = {'Coord' : (float(coord[0]), float(coord[1])), 'Cat' : cat, 'Mask' : 'Unknown'}
           
     ##############################
     elif section == 'SiteMask':
@@ -116,7 +130,7 @@ class Mapping:
         if 'TotalJobs' not in self.timeSeries[node]:
           self.timeSeries[node]['TotalJobs'] = TimeSeries(False, datetime.timedelta(seconds=dataDict['Animated']['MaxAge']), datetime.timedelta(seconds=dataDict['Animated']['MinAge']))
         self.timeSeries[node]['TotalJobs'].add(total)
-          
+                  
     ##############################
     elif section == 'PilotSummary':      
       # Retrieve data on the pilots, and compare them to each sites' computing elements ('children')
@@ -141,7 +155,8 @@ class Mapping:
           continue
                 
         # Yes, it is. Add it to the site database
-        self.siteData[parent]['PilotSummary'] = {}
+        if 'PilotSummary' not in self.siteData[parent]:
+          self.siteData[parent]['PilotSummary'] = {}
         self.siteData[parent]['PilotSummary'][child] = {'Done' : 0, 'Aborted' : 0, 'Submitted' : 0, 'Cleared' : 0, 'Ready' : 0, 'Scheduled' : 0, 'Running' : 0}
         for key in pilotSummary['Value'][child]:
           self.siteData[parent]['PilotSummary'][child][key] = int(pilotSummary['Value'][child][key])
@@ -151,7 +166,7 @@ class Mapping:
       storageSummary = storUse.getStorageSummary()
       if not storageSummary['OK']:
         return S_ERROR('Failed to retrieve data storage summary.')
-                      
+                              
       for element in storageSummary['Value']:
         # Sort each storage element into a list of the form [name, type]
         if element.find('_') != -1:
@@ -167,9 +182,12 @@ class Mapping:
             break
             
     ##############################    
-    elif section == 'Animated':
-      # Um, don't do anything.
-      gLogger.verbose('Animated section update -- nothing to do.')
+    
+    # Obsolete
+    
+    #elif section == 'Animated':
+    #  # Um, don't do anything.
+    #  gLogger.verbose('Animated section update -- nothing to do.')
     
     ##############################    
     else:
@@ -179,31 +197,34 @@ class Mapping:
   
   ###########################################################################
   def generateKML(self, section, filePath, dataDict):
-  
+    
     gLogger.verbose('KML generation request received. Section: %s' % section)
-    
-    # scaleData is for scaling done on a tier basis
-    scaleData = {'T0' : 1.0, 'T1' : 0.9, 'T2' : 0.6}
-    
-    # maxScale, minScale are for scaling done on a site data basis (e.g., number of jobs)
-    maxScale = 1
-    minScale = 0.2
+        
+    # At the moment, KMLData() is configured to only output scaling factors to one decimal place.
+    #   If you need more precision, make the appropriate changes in KMLData.py
+    scaleData = {'SiteMask' : {'max' : 0.5, 'min' : 0.2},\
+                 'JobSummary' : {'max' : 3.0, 'min' : 1.7},\
+                 'PilotSummary' : {'T0' : 4.0, 'T1' : 4.0, 'T2' : 4.0},\
+                 'DataStorage' : 2.0}
+    #             'Animated' : 0.8}
     
     # These are block-level tags for styling names/descriptions
     # They references class in infostyles.css
-    tagStyleNodeName = '<h6 class=\"nodeNameSM\">'
-    tagStyleNodeDescription = '<h6 class=\"nodeDescriptionSM\">'
-    tagStyleClose = '</h6>'
+    #tagStyleNodeName = '<h6 class=\"nodeNameSM\">'
+    #tagStyleNodeDescription = '<h6 class=\"nodeDescriptionSM\">'
+    #tagStyleNodeHeading = '<h6 class=\"nodeHeadingSM\">'
+    tagNodeName = lambda x:('<h6 class="nodeNameSM">%s</h6>' % x)
+    tagNodeDetails = lambda x:('<h6 class="nodeDescriptionSM">%s</h6>' % x)
+    tagNodeHeading = lambda x:('<h6 class="nodeHeadingSM">%s</h6>' % x)
+    tagLink = lambda x:('<h6 class="nodeLinkSM" onclick="siteControl(\'%s\')">More Information</h6>' % x)
+    tagColor = lambda x, c:('<div style="margin: 0px; padding: 0px; color: %s">%s</div>' % (c, x))
     
-    # I want these scaling variables to range from 0 to 1.
-    # So, if the browser or plot generation files generate files which are displaying
-    #   too small, adjust this scaleAdjust rather than fooling around with all the other values.
-    scaleAdjust = 0.3
-    for x in scaleData:
-      scaleData[x] += scaleAdjust
-    maxScale += scaleAdjust
-    minScale += scaleAdjust
-        
+    makeDescription = lambda name, heading, details:(tagNodeName(name) + tagNodeHeading(heading) + tagNodeDetails(details) + tagLink(name))
+    #tagColorGreen = '<div style=\"margin: 0px; padding: 0px; color: #00cf00\">'
+    #tagColorRed = '<div style=\"margin: 0px; padding: 0px; color: #cf0000\">'
+    #tagColorClose = '</div>'
+    #tagStyleClose = '</h6>'
+            
     sectionFile = dataDict['kml']
     sectionTag = dataDict['img']
     animatedRanges = dataDict['Animated']
@@ -211,19 +232,95 @@ class Mapping:
     iconPath = dataDict['IconPath']
     
     ##############################
-    if section == 'SiteMask':
+    if section == 'SiteMask':        
       KML = KMLData()
-      KML.addMultipleScaledStyles(iconPath, ('%s-green' % sectionTag[section], '%s-red' % sectionTag[section], '%s-gray' % sectionTag[section]), scaleData, '.png')	
+      
+      #KML.addMultipleScaledStyles(iconPath, ('%s-green' % sectionTag[section], '%s-red' % sectionTag[section], '%s-gray' % sectionTag[section]), scaleData[section], '.png')
+      
+      # This algorithm computes the relative sizes for each node
+      # First, collect a data set
+      numJobs = []
+      for node in self.siteData:
+        if 'JobSummary' not in self.siteData[node]:
+          continue
+        num = 0
+        for state in self.siteData[node]['JobSummary']:
+          num += self.siteData[node]['JobSummary'][state]
+        numJobs.append(num)  
+        
+      # Prepare the scalars
+      maxScale = scaleData[section]['max']
+      minScale = scaleData[section]['min']
+        
+      # Now sort the data into percentile categories
+      numJobs.sort()
+      dataSize = len(numJobs)
+      numCat = False # For continuous scaling, set to False
+      if numCat:
+        if not dataSize:  # Just to be safe
+          dataSize = 1
+        sectionSize = dataSize // numCat
+        if dataSize % numCat != 0:  # This avoids over-scaling later on (scaling greater than maxScale)
+          sectionSize += 1
+      scaleDict = {'0' : minScale} # This prevents key errors in the case that there is no JobSummary data
+      for i in range(dataSize):
+        if numCat:
+          scaleValue = (float(i) // sectionSize) + 1
+          scaleValue /= numCat
+        else:
+          scaleValue = float(i + 1) / dataSize
+        scaleDict[str(numJobs[i])] = (float(scaleValue) * (maxScale - minScale)) + minScale
+                        
+      # Now actually generate the KML  
       for node in self.siteData:
         if 'Mask' not in self.siteData[node]:
           continue
-        if self.siteData[node]['Mask'] == 'Allowed':
-          icon = '%s-green%s' % (sectionTag[section], self.siteData[node]['Cat'])
-        elif self.siteData[node]['Mask'] == 'Banned':
-          icon = '%s-red%s' % (sectionTag[section], self.siteData[node]['Cat'])
-        else:
-          icon = '%s-gray%s' % (sectionTag[section], self.siteData[node]['Cat'])
         
+        # Now calculate the total number of jobs (used for relative scaling) 
+        total = 0
+        if 'JobSummary' in self.siteData[node]:
+          for state in self.siteData[node]['JobSummary']:
+            total += self.siteData[node]['JobSummary'][state]
+            
+        # An example format for a file name, with all modifiers, would be:
+        #   SM-green_halo_pulse_white.gif
+
+        #print 'Node: %s' % node
+          
+        # Calculate the site mask part of things
+        if self.siteData[node]['Mask'] == 'Allowed':
+          icon = 'green'
+        elif self.siteData[node]['Mask'] == 'Banned':
+          icon = 'red'
+        else:
+          icon = 'gray'
+          
+        modifier = ''
+        imgType = 'png'
+         
+        # Add a halo modifier for T0/T1 nodes
+        if self.siteData[node]['Cat'] == 'T0':
+          modifier += '_halo'
+        elif self.siteData[node]['Cat'] == 'T1':
+          modifier += '_halo'
+          
+        # Calculate any changes in job trends--use an animation graphically
+        if node in self.timeSeries:
+          if 'TotalJobs' in self.timeSeries[node]:        
+            # Calculate the trend
+            trend = self.timeSeries[node]['TotalJobs'].trend()
+            #print 'Data: %s' % self.timeSeries[node]['TotalJobs']
+            #print 'Trend: %s' % trend
+            if trend > animatedRanges['up']:
+              modifier += '_pulse_white'
+              imgType = 'gif'
+            elif trend < animatedRanges['down']:
+              modifier += '_pulse_black'
+              imgType = 'gif'
+
+        #print 'File: %s-%s%s.%s' % (sectionTag[section], icon, modifier, imgType)
+        #print '\n'
+                                
         west_east = '%.4f&deg; ' % abs(self.siteData[node]['Coord'][0])
         if self.siteData[node]['Coord'][0] < 0:
           west_east += 'W'
@@ -235,9 +332,17 @@ class Mapping:
           north_south += 'S'
         else:
           north_south += 'N'
-        
-        description = 'Status: %s<br/>Location: %s, %s<br/>Category: %s' % (self.siteData[node]['Mask'], west_east, north_south, self.siteData[node]['Cat'])
-        KML.addNode(tagStyleNodeName + node + tagStyleClose, tagStyleNodeName + node + tagStyleClose + tagStyleNodeDescription + description + tagStyleClose, icon, self.siteData[node]['Coord'])
+          
+        # Generate node style
+        KML.addNodeStyle('%s-%s' % (sectionTag[section],node), '%s%s-%s%s.%s' % (iconPath,sectionTag[section],icon, modifier, imgType), scaleDict[str(total)])
+        #KML.addNodeStyle('%s-%s' % (sectionTag[section],node), '%s%s-%s.png' % (iconPath,sectionTag[section],node), scaleDict[str(total)], (0.04, 0.5), (120, 10))
+        # Generate description
+        details = 'Status: %s<br/>Location: %s, %s<br/>Category: %s' % (self.siteData[node]['Mask'], west_east, north_south, self.siteData[node]['Cat'])
+        description = makeDescription(node, 'Site Info', details)
+        # Add the node
+        KML.addNode(node, description, '%s-%s' % (sectionTag[section],node), self.siteData[node]['Coord'])
+        #KML.addNode(tagStyleNodeName + node + tagStyleClose, tagStyleNodeName + node + tagStyleClose + tagStyleNodeHeading + 'Site Info' + tagStyleClose + tagStyleNodeDescription + description + tagStyleClose, '%s-%s' % (sectionTag[section],node), self.siteData[node]['Coord'])
+        #KML.addNode(tagStyleNodeName + node + tagStyleClose, tagStyleNodeName + node + tagStyleClose + tagStyleNodeHeading + 'Site Info' + tagStyleClose + tagStyleNodeDescription + description + tagStyleClose, icon, self.siteData[node]['Coord'])
         
       KML.writeFile('%s/%s' % (filePath, sectionFile[section][0]))
       gLogger.verbose('%s KML created: %s/%s' % (section, filePath, sectionFile[section][0]))
@@ -257,6 +362,10 @@ class Mapping:
           num += self.siteData[node]['JobSummary'][state]
         numJobs.append(num)  
         
+      # Prepare the scalars
+      maxScale = scaleData[section]['max']
+      minScale = scaleData[section]['min']
+        
       # Now sort the data into percentile categories
       numJobs.sort()
       dataSize = len(numJobs)
@@ -267,7 +376,7 @@ class Mapping:
         sectionSize = dataSize // numCat
         if dataSize % numCat != 0:  # This avoids over-scaling later on (scaling greater than maxScale)
           sectionSize += 1
-      scaleDict = {}
+      scaleDict = {'0' : minScale} # This prevents key errors in the case that there is no JobSummary data
       for i in range(dataSize):
         if numCat:
           scaleValue = (float(i) // sectionSize) + 1
@@ -287,15 +396,17 @@ class Mapping:
           total += self.siteData[node]['JobSummary'][state]
           
         # Generate node style
-        KML.addNodeStyle('%s-%s' % (sectionTag[section],node), '%s%s-%s.png' % (iconPath,sectionTag[section],node), scaleDict[str(total)])#1)#scaleData[self.siteData[node]['Cat']])
+        KML.addNodeStyle('%s-%s' % (sectionTag[section],node), '%s%s-%s.png' % (iconPath,sectionTag[section],node), scaleDict[str(total)], (0.125, 0.5), (40, 10))
         # Generate name (widgets and stuff, too!)
-        name = '<img src="%s%sw1-%s.png" width=200/>' % (iconPath, sectionTag[section], node)
+        #name = '<h6 style="margin-left: -30px; margin-top: -10px; padding: 0px;"><img src="%s%sw1-%s.png"/></h6>' % (iconPath, sectionTag[section], node)
         # Generate description
-        description = 'Done: %d<br/>Running: %d<br/>Stalled: %d<br/>Waiting: %d<br/>Failed: %d' %\
+        details = 'Done: %d<br/>Running: %d<br/>Stalled: %d<br/>Waiting: %d<br/>Failed: %d' %\
                       (self.siteData[node]['JobSummary']['Done'], self.siteData[node]['JobSummary']['Running'], self.siteData[node]['JobSummary']['Stalled'],\
                       self.siteData[node]['JobSummary']['Waiting'], self.siteData[node]['JobSummary']['Failed'])
+        description = makeDescription(node, 'Number of Jobs', details)
         # Add the node
-        KML.addNode(tagStyleNodeName + node + tagStyleClose + name, tagStyleNodeName + node + tagStyleClose + tagStyleNodeDescription + description + tagStyleClose, '%s-%s' % (sectionTag[section],node), self.siteData[node]['Coord'])
+        #KML.addNode(tagStyleNodeName + node + tagStyleClose + name, tagStyleNodeName + node + tagStyleClose + tagStyleNodeHeading + 'Number of Jobs' + tagStyleClose + tagStyleNodeDescription + description + tagStyleClose, '%s-%s' % (sectionTag[section],node), self.siteData[node]['Coord'])
+        KML.addNode(node,  description, '%s-%s' % (sectionTag[section],node), self.siteData[node]['Coord'])
 
       KML.writeFile('%s/%s' % (filePath, sectionFile[section][0]))
       gLogger.verbose('%s KML created: %s/%s' % (section, filePath, sectionFile[section][0]))
@@ -308,15 +419,30 @@ class Mapping:
           continue
           
         # Generate node style
-        KML.addNodeStyle('%s-%s' % (sectionTag[section],node), '%s%s-%s.png' % (iconPath,sectionTag[section],node), scaleData[self.siteData[node]['Cat']])
+        KML.addNodeStyle('%s-%s' % (sectionTag[section],node), '%s%s-%s.png' % (iconPath,sectionTag[section],node), scaleData[section][self.siteData[node]['Cat']], (0.125, 0.5), (40, 10))
         
         # Generate description
-        description = ''
+        details = ''
         for child in self.siteData[node]['PilotSummary']:
-          description += child + '</br>'
+          doneCleared = self.siteData[node]['PilotSummary'][child]['Done'] + self.siteData[node]['PilotSummary'][child]['Cleared']
+          aborted = self.siteData[node]['PilotSummary'][child]['Aborted']
+          total = aborted + doneCleared
+          if not total:
+            percentGood = 0
+          else:
+            percentGood = (float(doneCleared) / total) * 100
+          if percentGood > dataDict['CEGreenPercent']:
+            color = '#00cf00'
+          else:
+            color = '#cf0000'
+          #description += colorTag + child + tagColorClose
+          details += tagColor(child, color)
+          
+        description = makeDescription(node, 'Computing Elements', details)
           
         # Write the node
-        KML.addNode(tagStyleNodeName + node + tagStyleClose, tagStyleNodeName + node + tagStyleClose + tagStyleNodeDescription + description + tagStyleClose, '%s-%s' % (sectionTag[section],node), self.siteData[node]['Coord'])
+        KML.addNode(node, description, '%s-%s' % (sectionTag[section],node), self.siteData[node]['Coord'])
+        #KML.addNode(tagStyleNodeName + node + tagStyleClose, tagStyleNodeName + node + tagStyleClose + tagStyleNodeHeading + 'Computing Elements' + tagStyleClose + tagStyleNodeDescription + description + tagStyleClose, '%s-%s' % (sectionTag[section],node), self.siteData[node]['Coord'])
 
       KML.writeFile('%s/%s' % (filePath, sectionFile[section][0]))
       gLogger.verbose('%s KML created: %s/%s' % (section, filePath, sectionFile[section][0]))
@@ -328,88 +454,107 @@ class Mapping:
         if 'DataStorage' not in self.siteData[node]:
           continue
           
-        KML.addNodeStyle('%s-%s' % (sectionTag[section],node), '%s%s-%s.png' % (iconPath,sectionTag[section],node), 2.0)
+        KML.addNodeStyle('%s-%s' % (sectionTag[section],node), '%s%s-%s.png' % (iconPath,sectionTag[section],node), scaleData[section])
         
-        description = '<img src="%s%s-%s-large.png"/><br/>' % (iconPath,sectionTag[section],node)
+        #details = '<img src="%s%s-%s-large.png"/><br/>' % (iconPath,sectionTag[section],node)
+        details = ''
         for se in self.siteData[node]['DataStorage']:
-          description += '%s: %.3f TB (%s files)<br/>' % (se, float(self.siteData[node]['DataStorage'][se]['Size']) / 1024**4, self.siteData[node]['DataStorage'][se]['Files'])
+          if self.siteData[node]['DataStorage'][se]['Files'] > 1:
+            plural = 's'
+          else:
+            plural = ''
+          details += '%s: %.3f TB (%s file%s)<br/>' % (se, float(self.siteData[node]['DataStorage'][se]['Size']) / 1024**4, self.siteData[node]['DataStorage'][se]['Files'], plural)
+          
+        description = makeDescription(node, 'Disk Usage', details)
         
-        KML.addNode(tagStyleNodeName + node + tagStyleClose, tagStyleNodeName + node + tagStyleClose + tagStyleNodeDescription + description + tagStyleClose, '%s-%s' % (sectionTag[section],node), self.siteData[node]['Coord'])
+        KML.addNode(node, description, '%s-%s' % (sectionTag[section],node), self.siteData[node]['Coord'])
+        #KML.addNode(tagStyleNodeName + node + tagStyleClose, tagStyleNodeName + node + tagStyleClose + tagStyleNodeHeading + 'Disk Usage' + tagStyleClose + tagStyleNodeDescription + description + tagStyleClose, '%s-%s' % (sectionTag[section],node), self.siteData[node]['Coord'])
         
       KML.writeFile('%s/%s' % (filePath, sectionFile[section][0]))
       gLogger.verbose('%s KML created: %s/%s' % (section, filePath, sectionFile[section][0]))
         
     ##############################
-    elif section == 'Animated':
-    
-      # We have multiple KML files to generate.
-      # The reason for this is so that the data can be loaded at intervals
-      # instead of all at once. This makes it look more 'animated.'
-      KML = {'green' : KMLData(), 'yellow' : KMLData(), 'gray' : KMLData()}
-      linkKML = KMLData()
-      
-      outFile = {}
-      
-      # Kill two birds with one stone--add node styles and generate file names
-      for color in KML:
-        if color != 'gray':
-          KML[color].addNodeStyle('%s-%sup' % (sectionTag[section], color), '%s%s-%sup.gif' % (iconPath, sectionTag[section], color), 1.0)
-          KML[color].addNodeStyle('%s-%sdown' % (sectionTag[section], color), '%s%s-%sdown.gif' % (iconPath, sectionTag[section], color), 1.0)
-        KML[color].addNodeStyle('%s-%s' % (sectionTag[section], color), '%s%s-%s.gif' % (iconPath, sectionTag[section], color), 1.0)
-        
-        for f in sectionFile[section]:
-          if f.find(color) != -1:
-            outFile[color] = f
-            break
-            
-      #DEBUG_COUNT = {'green' : 0, 'yellow' : 0, 'gray' : 0}
-      
-      for node in self.siteData:
-        # Double-check that the data is actually here
-        if node not in self.timeSeries:
-          continue
-        if 'TotalJobs' not in self.timeSeries[node]:
-          continue
-        
-        # Check which range it is in
-        #avg = self.timeSeries[node]['TotalJobs'].avg(False, 'Seconds')
-        avg = self.timeSeries[node]['TotalJobs'].avg(False, False)
-        if avg > animatedRanges['green']:
-          color = 'green'
-        elif avg > animatedRanges['yellow']:
-          color = 'yellow'
-        else:
-          color = 'gray'
-        
-        # Calculate the trend
-        if color == 'gray':
-          trend = 0
-        else:
-          trend = self.timeSeries[node]['TotalJobs'].trend()
-          
-        if trend > animatedRanges['up']:
-          state = 'up'
-        elif trend < animatedRanges['down']:
-          state = 'down'
-        else:
-          state = ''
-          
-        #DEBUG_COUNT[color] += 1
-          
-        #print '----------- DEBUG TAG: Animated'
-        #print 'Node: %s\nAvg: %s\nTrend: %s\nLen: %s\nData: %s\n\n' % (node, avg, trend, len(self.timeSeries[node]['TotalJobs']), self.timeSeries[node]['TotalJobs'])
-        
-        KML[color].addNode(node, '', '%s-%s%s' % (sectionTag[section], color, state), self.siteData[node]['Coord'])
-        
-      #print '----------- DEBUG TAG: Animated Summary'
-      #print 'Colors: %s' % DEBUG_COUNT
-        
-      # Write the KML file and reset it
-      for color in KML:
-        KML[color].writeFile('%s/%s' % (filePath, outFile[color]))
-        gLogger.verbose('%s KML created (color: %s): %s/%s' % (section, color, filePath, outFile[color]))
-        
-      # Obviously we need to generate links to, but that hasn't been implemented yet.
+#    elif section == 'Animated':
+#    
+#      # We have multiple KML files to generate.
+#      # The reason for this is so that the data can be loaded at intervals
+#      # instead of all at once. This makes it look more 'animated.'
+#      KML = {'green' : KMLData(), 'yellow' : KMLData(), 'gray' : KMLData()}
+#      linkKML = KMLData()
+#      
+#      outFile = {}
+#      
+#      variations = ['', '_banned']
+#      
+#      # Kill two birds with one stone--add node styles and generate file names
+#      for color in KML:
+#        if color != 'gray':
+#          # If it's not gray, generate all variations for up/down
+#          for v in variations:
+#            KML[color].addNodeStyle('%s-%sup%s' % (sectionTag[section], color, v), '%s%s-%sup%s.gif' % (iconPath, sectionTag[section], color, v), scaleData[section])
+#            KML[color].addNodeStyle('%s-%sdown%s' % (sectionTag[section], color, v), '%s%s-%sdown%s.gif' % (iconPath, sectionTag[section], color, v), scaleData[section])
+#        # Everyone needs the fundamental variations, though
+#        for v in variations:
+#          KML[color].addNodeStyle('%s-%s%s' % (sectionTag[section], color, v), '%s%s-%s%s.gif' % (iconPath, sectionTag[section], color, v), scaleData[section])
+#        
+#        for f in sectionFile[section]:
+#          if f.find(color) != -1:
+#            outFile[color] = f
+#            break
+#            
+#      #DEBUG_COUNT = {'green' : 0, 'yellow' : 0, 'gray' : 0}
+#            
+#      for node in self.siteData:
+#        # Double-check that the data is actually here
+#        if node not in self.timeSeries:
+#          continue
+#        if 'TotalJobs' not in self.timeSeries[node]:
+#          continue
+#        
+#        # Check which range it is in
+#        #avg = self.timeSeries[node]['TotalJobs'].avg(False, 'Seconds')
+#        avg = self.timeSeries[node]['TotalJobs'].avg(False, False)
+#        if avg > animatedRanges['green']:
+#          color = 'green'
+#        elif avg > animatedRanges['yellow']:
+#          color = 'yellow'
+#        else:
+#          color = 'gray'
+#        
+#        # Calculate the trend
+#        if color == 'gray':
+#          trend = 0
+#        else:
+#          trend = self.timeSeries[node]['TotalJobs'].trend()
+#          
+#        if trend > animatedRanges['up']:
+#          state = 'up'
+#        elif trend < animatedRanges['down']:
+#          state = 'down'
+#        else:
+#          state = ''
+#          
+#        if self.siteData[node]['Mask'] == 'Allowed':
+#          variation = ''
+#        else:
+#          variation = '_banned'
+#          
+#        #DEBUG_COUNT[color] += 1
+#          
+#        #print '----------- DEBUG TAG: Animated'
+#        #print 'Node: %s\nAvg: %s\nTrend: %s\nLen: %s\nData: %s\n\n' % (node, avg, trend, len(self.timeSeries[node]['TotalJobs']), self.timeSeries[node]['TotalJobs'])
+#        
+#        KML[color].addNode(node, '', '%s-%s%s%s' % (sectionTag[section], color, state, variation), self.siteData[node]['Coord'])
+#        
+#      #print '----------- DEBUG TAG: Animated Summary'
+#      #print 'Colors: %s' % DEBUG_COUNT
+#        
+#      # Write the KML file and reset it
+#      for color in KML:
+#        KML[color].writeFile('%s/%s' % (filePath, outFile[color]))
+#        gLogger.verbose('%s KML created (color: %s): %s/%s' % (section, color, filePath, outFile[color]))
+#        
+#      # Obviously we need to generate links to, but that hasn't been implemented yet.
       
     ##############################
     else:
@@ -429,6 +574,30 @@ class Mapping:
     if section == 'SiteMask':
       # We made these icons static
       gLogger.verbose('SiteMask icon generation -- nothing to do.')
+      #for node in self.siteData:
+      #  if 'Mask' not in self.siteData[node]:
+      #    continue
+          
+      #  if self.siteData[node]['Mask'] == 'Allowed':
+      #    icon = 'green'
+      #  elif self.siteData[node]['Mask'] == 'Banned':
+      #    icon = 'red'
+      #  else:
+      #    icon = 'gray'
+          
+      #  fileName = '%s/%s-%s.png' % (filePath, sectionTag[section], node)
+          
+      #  width = 6.0
+      #  height = 0.5
+      #  pie_size = 1.0
+      #  pylab.figure(figsize=(width,height))
+      #  pylab.gcf().figurePatch.set_alpha(0)
+      #  pylab.figtext(height/width, height/2, node, fontsize=36, color='#ffffff', weight='ultrabold')
+      #  pylab.axes([0, 0, height/width*pie_size, 1.0*pie_size])
+      #  pylab.imshow(pylab.imread('%s/%s-%s.png' % (filePath, sectionTag[section], icon)))
+      #  pylab.axis('off')
+      #  pylab.savefig(fileName)
+      #  gLogger.verbose('%s image created: %s' % (section, fileName))
     
     ##############################  
     elif section == 'JobSummary':
@@ -451,21 +620,31 @@ class Mapping:
         data = (self.siteData[node]['JobSummary']['Done'], self.siteData[node]['JobSummary']['Running'],\
                 self.siteData[node]['JobSummary']['Stalled'], self.siteData[node]['JobSummary']['Waiting'],\
                 self.siteData[node]['JobSummary']['Failed'])
+        if data == (0, 0, 0, 0, 0):
+          # If there is absolutely no data, let's just say it failed
+          data = (0, 0, 0, 0, 1)
         
         pylab.close()
-        pylab.figure(figsize=(0.6,0.6))
-        pylab.gcf().figurePatch.set_alpha(0)   
+        #pylab.figure(figsize=(0.6,0.6))
+        #pylab.gcf().figurePatch.set_alpha(0)
+        width = 2.0
+        height = 0.5
+        pie_size = 1.0
+        pylab.figure(figsize=(width,height))
+        pylab.gcf().figurePatch.set_alpha(0)
+        pylab.figtext(height/width, height/2, node, fontsize=12, color='#ffffff', weight='ultrabold')
+        pylab.axes([0, 0, height/width*pie_size, 1.0*pie_size])
         pylab.pie(data, colors=colorList)
         pylab.savefig(fileName)
         gLogger.verbose('%s image created: %s' % (section, fileName))
                 
         # Generate widget plot things :)
-        result = reportsClient.generatePlot('Job', 'NumberOfJobs', plotFrom, timeNow, {'Site' : [node]}, 'JobType')
-        if result['OK']:
-          reportsClient.getPlotToDirectory(result['Value'], filePath)
-          widgetPath = '%s/%sw1-%s.png' % (filePath, sectionTag[section], node)
-          os.rename('%s/%s' % (filePath, result['Value']), widgetPath)
-          gLogger.verbose('%s image created: %s' % (section, widgetPath))
+        #result = reportsClient.generatePlot('Job', 'NumberOfJobs', plotFrom, timeNow, {'Site' : [node]}, 'JobType', {'thumbnail' : True, 'width' : 250, 'height' : 250, 'thb_width' : 200, 'thb_height' : 200})
+        #if result['OK']:
+        #  reportsClient.getPlotToDirectory(result['Value'], filePath)
+        #  widgetPath = '%s/%sw1-%s.png' % (filePath, sectionTag[section], node)
+        #  os.rename('%s/%s' % (filePath, result['Value']), widgetPath)
+        #  gLogger.verbose('%s image created: %s' % (section, widgetPath))
     
     ##############################    
     elif section == 'PilotSummary':
@@ -476,19 +655,40 @@ class Mapping:
         if 'PilotSummary' not in self.siteData[node]:
           continue
           
-        doneCleared = 0
-        aborted = 0
+        totalDoneCleared = 0
+        totalAborted = 0
         for child in self.siteData[node]['PilotSummary']:
-          doneCleared += self.siteData[node]['PilotSummary'][child]['Done'] + self.siteData[node]['PilotSummary'][child]['Cleared']
-          aborted += self.siteData[node]['PilotSummary'][child]['Aborted']
+          doneCleared = self.siteData[node]['PilotSummary'][child]['Done'] + self.siteData[node]['PilotSummary'][child]['Cleared']
+          aborted = self.siteData[node]['PilotSummary'][child]['Aborted']
+          totalDoneCleared += doneCleared
+          totalAborted += aborted
+          
+          # This code creates small pie charts for each CE
+          #fileName = '%s/%s-%s-ce%s.png' % (filePath, sectionTag[section], node, child)
+          #data = (doneCleared, aborted)
+          #pylab.close()
+          #pylab.figure(figsize=(0.2,0.2))
+          #pylab.gcf().figurePatch.set_alpha(0)
+          #pylab.pie(data, colors=colorList)
+          #pylab.savefig(fileName)
+          #gLogger.verbose('%s image created: %s' % (section, fileName))
+          
+        width = 2.0
+        height = 0.5
                    
         # Generate plot icon for node
         fileName = '%s/%s-%s.png' % (filePath,sectionTag[section],node)
-        data = (doneCleared, aborted)
+        data = (totalDoneCleared, totalAborted)
+        if data == (0, 0):
+          # If there is absolutely no data, let's just say it failed
+          data = (0, 1)
         pylab.close()
-        pylab.figure(figsize=(0.6,0.6))
+        pylab.figure(figsize=(width,height))
         pylab.gcf().figurePatch.set_alpha(0)
+        pylab.figtext(height/width, height/2, node, fontsize=8, color='#ffffff', weight='bold')
+        pylab.axes([0, 0, height/width, 1.0])
         pylab.pie(data, colors=colorList)
+        
         pylab.savefig(fileName)
         gLogger.verbose('%s image created: %s' % (section, fileName))
         
@@ -562,9 +762,9 @@ class Mapping:
         gLogger.verbose('%s image created: %s' % (section, fileName))
 
     ##############################  
-    elif section == 'Animated':
-      # Um, don't do anything.
-      gLogger.verbose('Animated icon generation -- nothing to do.')
+#    elif section == 'Animated':
+#      # Um, don't do anything.
+#      gLogger.verbose('Animated icon generation -- nothing to do.')
       
     ##############################  
     else:
