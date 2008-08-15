@@ -1,11 +1,11 @@
 ########################################################################
-# $Id: SiteMappingHandler.py,v 1.9 2008/07/29 11:28:18 asypniew Exp $
+# $Id: SiteMappingHandler.py,v 1.10 2008/08/15 08:11:57 asypniew Exp $
 ########################################################################
 
 """ The SiteMappingHandler...
 """
 
-__RCSID__ = "$Id: SiteMappingHandler.py,v 1.9 2008/07/29 11:28:18 asypniew Exp $"
+__RCSID__ = "$Id: SiteMappingHandler.py,v 1.10 2008/08/15 08:11:57 asypniew Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -26,7 +26,7 @@ def initializeSiteMappingHandler( serviceInfo ):
   
   cacheDir = gConfig.getValue(csSection+'/CacheDir','/opt/dirac/work')
   cacheDir = cacheDir.rstrip('/')
-  baseFilePath = cacheDir + '/SiteMappingAgent'
+  baseFilePath = cacheDir + '/SiteMapping'
   if not os.path.exists(baseFilePath):
     os.mkdir(baseFilePath)
   gLogger.verbose('baseFilePath: %s' % baseFilePath)
