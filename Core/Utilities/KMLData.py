@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: KMLData.py,v 1.4 2008/07/23 11:36:47 asypniew Exp $
+# $Id: KMLData.py,v 1.5 2008/08/15 08:13:34 asypniew Exp $
 ########################################################################
 
 """ Handles KML generation
@@ -54,15 +54,17 @@ class KMLData:
     fout.close()
   
   #############################################################################	
-  def addNodeStyle(self, name, icon, scale):
+  def addNodeStyle(self, name, icon, scale, hotspot=(0.5, 0.5), size=None):
     self.data += '\t<Style id="%s">\n' % name
     self.data += '\t\t<IconStyle>\n'
     self.data += '\t\t\t<Icon>\n'
     #self.data += '\t\t\t\t<href>http://lhcbtest.pic.es/DIRAC/images/maps/%s</href>\n' % icon
     self.data += '\t\t\t\t<href>%s</href>\n' % icon
+    if size:
+      self.data += '\t\t\t\t<w>%d</w><h>%d</h>\n' % (size[0], size[1])
     self.data += '\t\t\t</Icon>\n'
     self.data += '\t\t\t<scale>%.1f</scale>\n' % scale
-    self.data += '\t\t\t<hotSpot x="0.5" y="0.5" xunits="fraction" yunits="fraction"/>\n'
+    self.data += '\t\t\t<hotSpot x="%.2f" y="%.2f" xunits="fraction" yunits="fraction"/>\n' % (hotspot[0], hotspot[1])
     self.data += '\t\t</IconStyle>\n'
     self.data += '\t</Style>\n'
     
