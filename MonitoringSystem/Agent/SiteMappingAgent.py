@@ -105,14 +105,19 @@ class SiteMappingAgent(Agent):
     gLogger.verbose('Number of files purged: %d' % len(oldFiles))
       
     # Find out where to copy static image files from
-    staticDir = gConfig.getValue(csSection+'/StaticImageDir', '/opt/dirac/work/SiteMappingImages')
-    staticDir.rstrip('/')
+    localRoot = gConfig.getValue('LocalSite/Root', '/opt/dirac/DIRAC3')
+    localRoot.rstrip('/')
+    staticDir = localRoot + '/DIRAC/MonitoringSystem/Agent/StaticImages'
+    gLogger.verbose('Using static image directory: %s' % staticDir)
     if not os.path.exists(staticDir):
-      return S_ERROR('Failed to retrieve static images. Directory does not exist.')
+      return S_ERROR('Failed to retrieve static images. Directory does not exist: %s' % staticDir)
     imageFiles = os.listdir(staticDir)
+    numCopied = 0
     for f in imageFiles:
-      shutil.copyfile(staticDir + '/' + f, baseFilePath + '/' + f)
-    gLogger.verbose('Number of static images copied: %d' % len(imageFiles))
+      if not os.path.isdir(staticDir + '/' + f):
+        shutil.copyfile(staticDir + '/' + f, baseFilePath + '/' + f)
+        numCopied += 1
+    gLogger.verbose('Number of static images copied: %d' % numCopied)
       
     # Create the execution counter
     self.__counter = 0
@@ -263,3 +268,4 @@ class SiteMappingAgent(Agent):
     gLogger.verbose('Global generation complete.')
 
   #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
+
