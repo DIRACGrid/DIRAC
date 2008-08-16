@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.60 2008/08/14 15:00:39 atsareg Exp $
+# $Id: TransformationDB.py,v 1.61 2008/08/16 18:08:47 atsareg Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -168,7 +168,22 @@ class TransformationDB(DB):
   def addTransformationParameter(self,transName,paramName,paramValue):
     """ Add a parameter for the supplied transformations
     """
+
     transID = self.getTransformationID(transName)
+    req = "SELECT TransformationID,ParameterName,ParameterValue FROM TransformationParameters"
+    req += " WHERE TransformationID=%d AND ParameterName='%s'" % (transID,paramName)
+    result = self._query(req)
+    if not result['OK']:
+      return result
+
+    # If parameter name exists, remove it
+    if result['VALUE']:
+      req = "DELETE FROM TransformationParameters"
+      req += " WHERE TransformationID=%d AND ParameterName='%s'" % (transID,paramName)
+      result = self._update(req)
+      if not result['OK']:
+        return result
+
     req = "INSERT INTO TransformationParameters (TransformationID,ParameterName,ParameterValue) VALUES (%s,'%s','%s');" % (transID,paramName,paramValue)
     res = self._update(req)
     return res
