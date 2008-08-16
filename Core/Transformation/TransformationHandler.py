@@ -84,6 +84,15 @@ class TransformationHandler(RequestHandler):
       res = self.database.updateTransformationLogging(newName,message,authorDN)
     return res
 
+  types_addTransformationParameter = [[LongType, IntType, StringType],StringType,StringType]
+  def export_addTransformationParameter(self,transformationName,paramname,paramvalue):
+    res = self.database.addTransformationParameter(transformationName,paramname,paramvalue)
+    authorDN = self._clientTransport.peerCredentials['DN']
+    if res['OK']:
+      message = "Transformation parameter %s set to %s" % (paramname,paramvalue)
+      res = self.database.updateTransformationLogging(newName,message,authorDN)
+    return res
+
   ############################################################################
 
   types_getTransformationStats = [[LongType, IntType, StringType]]
