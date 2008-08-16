@@ -1,9 +1,15 @@
+########################################################################
+# $Id: TransferDB.py,v 1.31 2008/08/16 20:55:02 atsareg Exp $
+########################################################################
+
 """ RequestDB is a front end to the Request Database.
 """
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities.List import randomize,stringListToString,intListToString
 import threading,types,string,time,datetime
+
+__RCSID__ = "$Id: TransferDB.py,v 1.31 2008/08/16 20:55:02 atsareg Exp $"
 
 MAGIC_EPOC_NUMBER = 1270000000
 
@@ -137,12 +143,12 @@ class TransferDB(DB):
       return S_OK()
 
     strChannelIDs = intListToString(candidateChannels.keys())
-    req = "SELECT ChannelID,%s-SUM(Status='Submitted') FROM FTSReq WHERE ChannelID IN (%s) GROUP BY ChannelID;" % (maxJobsPerChannel,strChannelIDs) 
+    req = "SELECT ChannelID,%s-SUM(Status='Submitted') FROM FTSReq WHERE ChannelID IN (%s) GROUP BY ChannelID;" % (maxJobsPerChannel,strChannelIDs)
     res = self._query(req)
     if not res['OK']:
       err = 'TransferDB._selectChannelsForSubmission: Failed to count FTSJobs on Channels %s.' % strChannelIDs
       return S_ERROR(err)
-    
+
     channelJobs = {}
     for channelID,jobs in res['Value']:
       channelJobs[channelID] = jobs
@@ -153,7 +159,7 @@ class TransferDB(DB):
     req = "SELECT ChannelID,SourceSite,DestinationSite,FTSServer,Files FROM Channels WHERE ChannelID IN (%s);" % strChannelIDs
     res = self._query(req)
     channels = []
-    for channelID,source,destination,ftsServer,files in res['Value']: 
+    for channelID,source,destination,ftsServer,files in res['Value']:
       resDict = {}
       resDict['ChannelID'] = channelID
       resDict['Source'] = source
@@ -162,7 +168,7 @@ class TransferDB(DB):
       resDict['NumFiles'] = files
       for i in range(channelJobs[channelID]):
         channels.append(resDict)
-    return S_OK(channels)      
+    return S_OK(channels)
 
   def selectChannelForSubmission(self,maxJobsPerChannel):
     res = self.getChannelQueues(status='Waiting')
@@ -434,7 +440,7 @@ class TransferDB(DB):
     if not res['Value']:
       # It is not an error that there are not requests
       return S_OK()
-    
+
     ftsReqs = []
     for ftsReqID,ftsGUID,ftsServer,channelID,submitTime,numberOfFiles,totalSize,sourceSite,destSite in res['Value']:
       resDict = {}
@@ -555,12 +561,12 @@ class TransferDB(DB):
     if not res['OK']:
       err = 'TransferDB._getFTSObservedThroughput: Failed to obtain total time transferring.'
       return S_ERROR('%s\n%s' % (err,res['Message']))
-    channelTimeDict = {}     
+    channelTimeDict = {}
     for channelID,totalTime in res['Value']:
       channelTimeDict[channelID] = float(totalTime)
 
     #############################################
-    # Now get the total size of the data transferred and the number of files that were successful 
+    # Now get the total size of the data transferred and the number of files that were successful
     req = "SELECT ChannelID,SUM(FileSize),COUNT(*) FROM FileToFTS WHERE Status = 'Completed' and SubmissionTime > (UTC_TIMESTAMP() - INTERVAL %s SECOND) GROUP BY ChannelID;" % interval
     res = self._query(req)
     if not res['OK']:
@@ -790,7 +796,7 @@ class TransferDB(DB):
     if limit:
       condition = condition + ' LIMIT ' + str(limit)
 
-    cmd = 'SELECT FTSReqID from FTSReq ' + condition
+    cmd = 'SELECT FTSReqID from FTSReq, Channels ' + condition
     res = self._query( cmd )
     if not res['OK']:
       return res
@@ -806,13 +812,22 @@ class TransferDB(DB):
     condition = ''
     conjunction = "WHERE"
 
-    if condDict != None:
+    if condDict:
       for attrName, attrValue in condDict.items():
-        condition = ' %s %s FTSReq.%s=\'%s\'' % ( condition,
+        if attrName in ['SourceSites','DestinationSites']:
+          condition = ' %s %s Channels.%s=\'%s\'' % ( condition,
+                                           conjunction,
+                                           str(attrName.rstrip('s')),
+                                           str(attrValue)  )
+        else:
+          condition = ' %s %s FTSReq.%s=\'%s\'' % ( condition,
                                            conjunction,
                                            str(attrName),
                                            str(attrValue)  )
         conjunction = "AND"
+      condition += " AND FTSReq.ChannelID = Channels.ChannelID "
+    else:
+      condition += " WHERE FTSReq.ChannelID = Channels.ChannelID "
 
     if older:
       condition = ' %s %s LastUpdateTime < \'%s\'' % ( condition,
