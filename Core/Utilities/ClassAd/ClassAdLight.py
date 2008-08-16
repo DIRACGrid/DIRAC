@@ -1,12 +1,12 @@
 ########################################################################
-# $Id: ClassAdLight.py,v 1.4 2008/08/12 06:44:23 rgracian Exp $
+# $Id: ClassAdLight.py,v 1.5 2008/08/16 18:43:39 atsareg Exp $
 ########################################################################
 
 """ ClassAd Class - a light purely Python representation of the
     Condor ClassAd library.
 """
 
-__RCSID__ = "$Id: ClassAdLight.py,v 1.4 2008/08/12 06:44:23 rgracian Exp $"
+__RCSID__ = "$Id: ClassAdLight.py,v 1.5 2008/08/16 18:43:39 atsareg Exp $"
 
 import string
 
@@ -227,7 +227,7 @@ class ClassAd:
     if self.lookupAttribute( name ):
       value = string.replace(self.get_expression( name ), '"', '')
     return value
-  
+
   def intFromClassAd( self, name ):
     value = 0
     if self.lookupAttribute( name ):
@@ -235,4 +235,49 @@ class ClassAd:
         value = int(string.replace(self.get_expression( name ), '"', ''))
       except:
         value = 0
+    return value
+
+  def getAttributeString( self, name ):
+    """ Get String type attribute value
+    """
+    value = ''
+    if self.lookupAttribute( name ):
+      value = string.replace(self.get_expression( name ), '"', '')
+    return value
+
+  def getAttributeInt( self, name ):
+    """ Get Integer type attribute value
+    """
+    value = 0
+    if self.lookupAttribute( name ):
+      try:
+        value = int(string.replace(self.get_expression( name ), '"', ''))
+      except:
+        value = 0
+    return value
+
+  def getAttributeBool( self, name ):
+    """ Get Boolean type attribute value
+    """
+    value = False
+    if self.lookupAttribute( name ):
+      value = string.replace(self.get_expression( name ), '"', '')
+    else:
+      return value
+    if value.lower() == "true":
+      return True
+    elif value.lower() == "false":
+      return False
+    else:
+      return False
+
+  def getAttributeFloat( self, name ):
+    """ Get Float type attribute value
+    """
+    value = 0.0
+    if self.lookupAttribute( name ):
+      try:
+        value = float(string.replace(self.get_expression( name ), '"', ''))
+      except:
+        value = 0.0
     return value
