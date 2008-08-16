@@ -90,7 +90,7 @@ class TransformationHandler(RequestHandler):
     authorDN = self._clientTransport.peerCredentials['DN']
     if res['OK']:
       message = "Transformation parameter %s set to %s" % (paramname,paramvalue)
-      res = self.database.updateTransformationLogging(newName,message,authorDN)
+      res = self.database.updateTransformationLogging(transformationName,message,authorDN)
     return res
 
   ############################################################################
@@ -130,7 +130,7 @@ class TransformationHandler(RequestHandler):
     res = self.database.setFileSEForTransformation(transformationName,storageElement,lfns)
     return res
 
-  types_setFileStatusForTransformation = [[LongType, IntType, StringType],StringType,ListType]
+  types_setFileStatusForTransformation = [[LongType, IntType, StringType],StringTypes,ListType]
   def export_setFileStatusForTransformation(self,transformationName,status,lfns):
     res = self.database.setFileStatusForTransformation(transformationName,status,lfns)
     return res
