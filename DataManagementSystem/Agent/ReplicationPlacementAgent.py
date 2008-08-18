@@ -4,7 +4,7 @@
 from DIRAC  import gLogger,gMonitor, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
-from DIRAC.RequestManagementSystem.Client.DataManagementRequest import DataManagementRequest
+from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 from DIRAC.DataManagementSystem.Client.FileCatalog import FileCatalog
 from DIRAC.DataManagementSystem.Client.Catalog.PlacementDBClient import PlacementDBClient
@@ -150,7 +150,7 @@ class ReplicationPlacementAgent(Agent):
     return S_OK()
 
   def submitRequest(self,seFiles,transName):
-    oRequest = DataManagementRequest(init=False)
+    oRequest = RequestContainer(init=False)
     for sourceSE,targetSEDict in seFiles.items():
       for targetSE,lfns in targetSEDict.items():
         subRequestIndex = oRequest.initiateSubRequest('transfer')['Value']
