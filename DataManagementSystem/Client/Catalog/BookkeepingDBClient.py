@@ -26,26 +26,47 @@ class BookkeepingDBClient(FileCatalogueBase):
     return self.valid
 
   def __setHasReplicaFlag(self,lfns):
+
+    failed = {}
+    successful = {}
     res = self.server.addFiles(lfns)
-    for lfn in lfns:
-      if res['Value'].has_key(lfn):
-        failed[lfn] = res['Value'][lfn]
-      else:
-        successful[lfn] = True
-    resDict = {'Successful':successful,'Failed':failed}
-    return S_OK(resDict)
+    if not res['OK']:
+      for lfn in lfns:
+        failed[lfn] = res['Message']
+        resDict = {'Successful':{},'Failed':failed}
+      return S_OK(resDict)
+    else:
+      for lfn in lfns:
+        if res['Value'].has_key(lfn):
+          failed[lfn] = res['Value'][lfn]
+        else:
+          successful[lfn] = True
+      resDict = {'Successful':successful,'Failed':failed}
+      return S_OK(resDict)
 
   def __unsetHasReplicaFlag(self,lfns):
+
+    failed = {}
+    successful = {}
     res = self.server.removeFiles(lfns)
-    for lfn in lfns:
-      if res['Value'].has_key(lfn):
-        failed[lfn] = res['Value'][lfn]
-      else:
-        successful[lfn] = True
-    resDict = {'Successful':successful,'Failed':failed}
-    return S_OK(resDict)
+    if not res['OK']:
+      for lfn in lfns:
+        failed[lfn] = res['Message']
+        resDict = {'Successful':{},'Failed':failed}
+      return S_OK(resDict)
+    else:
+      for lfn in lfns:
+        if res['Value'].has_key(lfn):
+          failed[lfn] = res['Value'][lfn]
+        else:
+          successful[lfn] = True
+      resDict = {'Successful':successful,'Failed':failed}
+      return S_OK(resDict)
 
   def __exists(self,lfns):
+
+    failed = {}
+    successful = {}
     res = self.server.exists(lfns)
     if not res['OK']:
       for lfn in lfns:
@@ -53,7 +74,6 @@ class BookkeepingDBClient(FileCatalogueBase):
         resDict = {'Successful':{},'Failed':failed}
       return S_OK(resDict)
     else:
-      successful = {}
       for lfn,exists in res['Value'].items():
         successful[lfn] = exists
       resDict = {'Successful':successful,'Failed':{}}
@@ -63,13 +83,19 @@ class BookkeepingDBClient(FileCatalogueBase):
     res = self.server.getFileMetadata(lfns)
     successful = {}
     failed = {}
-    for lfn,result in res['Value'].items():
-      if result in types.StringTypes:
-        failed[lfn] = result
-      else:
-        successful[lfn] = result
-    resDict = {'Successful':successful,'Failed':failed}
-    return S_OK(resDict)
+    if not res['OK']:
+      for lfn in lfns:
+        failed[lfn] = res['Message']
+        resDict = {'Successful':{},'Failed':failed}
+      return S_OK(resDict)
+    else:
+      for lfn,result in res['Value'].items():
+        if result in types.StringTypes:
+          failed[lfn] = result
+        else:
+          successful[lfn] = result
+      resDict = {'Successful':successful,'Failed':failed}
+      return S_OK(resDict)
 
   def addFile(self,fileTuple):
     """ A tuple should be supplied to this method which contains:
