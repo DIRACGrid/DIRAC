@@ -1,4 +1,4 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/RequestContainer.py,v 1.8 2008/07/25 16:18:26 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/RequestContainer.py,v 1.9 2008/08/18 21:58:55 atsareg Exp $
 
 """
 The Data Management Request contains all the necessary information for
@@ -9,8 +9,9 @@ from DIRAC.Core.Utilities.File import makeGuid
 from DIRAC import gConfig,gLogger, S_OK, S_ERROR, Time
 from DIRAC.Core.Security.Misc import getProxyInfo
 from DIRAC.Core.Utilities import DEncode
+from DIRAC.RequestManagementSystem.Client.DISETSubRequest import DISETSubRequest
 
-__RCSID__ = "$Id: RequestContainer.py,v 1.8 2008/07/25 16:18:26 rgracian Exp $"
+__RCSID__ = "$Id: RequestContainer.py,v 1.9 2008/08/18 21:58:55 atsareg Exp $"
 
 class RequestContainer:
 
@@ -530,6 +531,13 @@ class RequestContainer:
     """ Included for compatibility not sure if it is used
     """
     return self.isRequestEmpty()
+
+  def setDISETRequest(self,rpcStub):
+    """ Add DISET subrequest from the DISET rpcStub
+    """
+
+    result = self.addSubRequest(DISETSubRequest(rpcStub).getDictionary(),'diset')
+    return result
 
   ###########################################################
   #
