@@ -1,8 +1,8 @@
-# $Id: Step.py,v 1.29 2008/08/06 12:29:59 atsareg Exp $
+# $Id: Step.py,v 1.30 2008/08/18 21:33:12 atsareg Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.29 $"
+__RCSID__ = "$Revision: 1.30 $"
 
 import os, time, types, traceback, sys
 #try: # this part to inport as part of the DIRAC framework
@@ -300,6 +300,8 @@ class StepInstance(AttributeCollection):
                    value,
                    "\n".join(traceback.format_tb(exc[2])))
 
+        print "Step status: ",self.stepStatus
+        print "Workflow status: ",self.parent.workflowStatus
         if self.stepStatus['OK']:
           # This is the error that caused the workflow disruption
           # report it to the WMS
