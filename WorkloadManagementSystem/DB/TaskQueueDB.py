@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.7 2008/08/01 14:51:10 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.8 2008/08/19 05:49:34 rgracian Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.7 2008/08/01 14:51:10 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.8 2008/08/19 05:49:34 rgracian Exp $"
 
 import time
 import types
@@ -108,6 +108,8 @@ class TaskQueueDB(DB):
     for field in self.__multiValueFields:
       if field in tqDefDict:
         fieldValueType = type( tqDefDict[ field ] )
+      else:
+        continue
       if fieldValueType not in ( types.ListType, types.TupleType ):
         return S_ERROR( "Multi value field %s value type is not valid: %s" % ( field, fieldValueType ) )
     return S_OK( tqDefDict )
