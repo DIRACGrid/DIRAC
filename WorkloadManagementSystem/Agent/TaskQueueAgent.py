@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueAgent.py,v 1.15 2008/08/14 10:49:54 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueAgent.py,v 1.16 2008/08/19 06:06:21 rgracian Exp $
 # File :   TaskQueueAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,13 +8,14 @@
      into a Task Queue.
 """
 
-__RCSID__ = "$Id: TaskQueueAgent.py,v 1.15 2008/08/14 10:49:54 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueAgent.py,v 1.16 2008/08/19 06:06:21 rgracian Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
+from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB         import TaskQueueDB
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
 from DIRAC.Core.Security.CS                                import getPropertiesForGroup
-from DIRAC                                                 import S_OK, S_ERROR
+from DIRAC                                                 import S_OK, S_ERROR, Time
 import string,re
 
 OPTIMIZER_NAME = 'TaskQueue'
@@ -26,6 +27,7 @@ class TaskQueueAgent(Optimizer):
     """ Standard constructor
     """
     Optimizer.__init__(self,OPTIMIZER_NAME,enableFlag=True)
+    self.taskQueueDB        = TaskQueueDB()
 
   #############################################################################
   def initialize(self):
@@ -89,6 +91,7 @@ class TaskQueueAgent(Optimizer):
       requirements += ' && other.OwnerGroup == "%s"' % ownerGroup
     requirements += ' && other.PilotType == "%s"' % pilotType
 
+    start1 = Time.to2K()
     result = self.jobDB.selectQueue(requirements)
     if result['OK']:
       queueID = result['Value']
@@ -105,6 +108,28 @@ class TaskQueueAgent(Optimizer):
     else:
       self.log.info('TaskQueue agent disabled via enable flag')
 
+    timing1 = Time.to2K() - start1
+
+    start2 = Time.to2K()
+    jobReq = classadJob.get_expression("JobRequirements")
+    classadJobReq = ClassAd(jobReq)
+    jobReqDict = {}
+    for name in self.taskQueueDB.getSingleValueTQDefFields():
+      if classadJobReq.lookupAttribute(name):
+        if name == 'CPUTime':
+          jobReqDict[name] = classadJobReq.getAttributeInt(name)
+        else:
+          jobReqDict[name] = classadJobReq.getAttributeString(name)
+
+    for name in self.taskqueueDB.getMultiValueTQDefFields():
+      if classadJobReq.lookupAttribute(name):
+        jobReqDict[name] = classadJobReq.getListFromExpression(name)
+
+    self.taskqueueDB.insertJob(job,jobReqDict, 1,priority)
+
+    timing2 = Time.to2K() - start2
+    print "Timing:",timing1,timing2
+    
     return S_OK('Job Added to Task Queue')
 
   #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
