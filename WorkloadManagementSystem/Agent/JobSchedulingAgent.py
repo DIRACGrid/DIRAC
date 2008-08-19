@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.39 2008/08/14 14:01:07 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.40 2008/08/19 05:47:16 rgracian Exp $
 # File :   JobSchedulingAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@
       meaningfully.
 
 """
-__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.39 2008/08/14 14:01:07 rgracian Exp $"
+__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.40 2008/08/19 05:47:16 rgracian Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
@@ -321,7 +321,7 @@ class JobSchedulingAgent(Optimizer):
 
     result = S_OK()
 
-    bannedSites = classadJob.stringFromClassAd('BannedSites')
+    bannedSites = classadJob.getAttributeString('BannedSites')
     bannedSites = string.replace( string.replace( bannedSites, '{', '' ), '}', '' )
     bannedSites = List.fromChar( bannedSites )
     

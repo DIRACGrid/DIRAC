@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.87 2008/08/14 17:32:34 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.88 2008/08/19 05:47:31 rgracian Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.87 2008/08/14 17:32:34 rgracian Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.88 2008/08/19 05:47:31 rgracian Exp $"
 
 import re, os, sys, string, types
 import time
@@ -909,10 +909,10 @@ class JobDB(DB):
     else:
       error = ''
       classAddJob.insertAttributeInt( 'JobID', jobID )
-      jdlDiracSetup = classAddJob.stringFromClassAd( 'DIRACSetup' )
-      jdlOwner      = classAddJob.stringFromClassAd( 'Owner' )
-      jdlOwnerDN    = classAddJob.stringFromClassAd( 'OwnerDN' )
-      jdlOwnerGroup = classAddJob.stringFromClassAd( 'OwnerGroup' )
+      jdlDiracSetup = classAddJob.getAttributeString( 'DIRACSetup' )
+      jdlOwner      = classAddJob.getAttributeString( 'Owner' )
+      jdlOwnerDN    = classAddJob.getAttributeString( 'OwnerDN' )
+      jdlOwnerGroup = classAddJob.getAttributeString( 'OwnerGroup' )
 
       if jdlDiracSetup and jdlDiracSetup != diracSetup:
         error = 'Wrong DIRAC Setup in JDL'
@@ -940,7 +940,7 @@ class JobDB(DB):
 
       for jdlName in 'JobName', 'JobType', 'JobGroup', 'Site':
         # Defaults are set by the DB.
-        jdlValue = classAddJob.stringFromClassAd( jdlName )
+        jdlValue = classAddJob.getAttributeString( jdlName )
         if jdlValue:
           jobAttrNames.append( jdlName )
           jobAttrValues.append( jdlValue )
@@ -949,10 +949,10 @@ class JobDB(DB):
         # No requirements given in the job
         classAddJob.insertAttributeBool("Requirements", True)
 
-      priority      = classAddJob.intFromClassAd( 'Priority' )
-      systemConfig  = classAddJob.stringFromClassAd( 'SystemConfig' )
-      pilotType     = classAddJob.stringFromClassAd( 'PilotType' )
-      cpuTime       = classAddJob.intFromClassAd( 'MaxCPUTime' )
+      priority      = classAddJob.getAttributeInt( 'Priority' )
+      systemConfig  = classAddJob.getAttributeString( 'SystemConfig' )
+      pilotType     = classAddJob.getAttributeString( 'PilotType' )
+      cpuTime       = classAddJob.getAttributeInt( 'MaxCPUTime' )
 
       jobAttrNames.append( 'UserPriority' )
       jobAttrValues.append( priority )
