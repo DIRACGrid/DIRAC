@@ -115,6 +115,40 @@ class FileCatalog:
   # Below is the method for obtaining the objects instantiated for a provided catalogue configuration
   #
 
+  def addCatalog(self,catalogName,mode="Write",master=False):
+    """ Add a new catalog with catalogName to the pool of catalogs in mode:
+        "Read","Write" or "ReadWrite"
+    """
+
+    result = self._generateCatalogObject(catalogName)
+    if not result['OK']:
+      return result
+
+    oCatalog = result['Value']
+    if mode.lower().find("read") != -1:
+      self.readCatalogs.append((catalogName,oCatalog,master))
+    if mode.lower().find("write") != -1:
+      self.writeCatalogs.append((catalogName,oCatalog,master))
+
+    return S_OK()
+
+  def removeCatalog(self,catalogName):
+    """ Remove the specified catalog from the internal pool
+    """
+
+    for i in range(len(self.readCatalogs)):
+      catalog,object,master = self.readCatalogs[i]
+      if catalog == catalogName:
+        del self.readCatalogs[i]
+        break
+    for i in range(len(self.writeCatalogs)):
+      catalog,object,master = self.writeCatalogs[i]
+      if catalog == catalogName:
+        del self.writeCatalogs[i]
+        break
+
+    return S_OK()
+
   def _getSelectedCatalogs(self,desiredCatalogs):
     for catalogName in desiredCatalogs:
       res = self._generateCatalogObject(catalogName)
