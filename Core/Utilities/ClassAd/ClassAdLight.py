@@ -1,12 +1,12 @@
 ########################################################################
-# $Id: ClassAdLight.py,v 1.5 2008/08/16 18:43:39 atsareg Exp $
+# $Id: ClassAdLight.py,v 1.6 2008/08/19 05:46:22 rgracian Exp $
 ########################################################################
 
 """ ClassAd Class - a light purely Python representation of the
     Condor ClassAd library.
 """
 
-__RCSID__ = "$Id: ClassAdLight.py,v 1.5 2008/08/16 18:43:39 atsareg Exp $"
+__RCSID__ = "$Id: ClassAdLight.py,v 1.6 2008/08/19 05:46:22 rgracian Exp $"
 
 import string
 
@@ -221,21 +221,6 @@ class ClassAd:
         result = result + 4*' ' + name+' = '+ str(value) + ';\n'
 
     return "[ \n"+result[:-2]+"\n]"
-
-  def stringFromClassAd( self, name ):
-    value = ''
-    if self.lookupAttribute( name ):
-      value = string.replace(self.get_expression( name ), '"', '')
-    return value
-
-  def intFromClassAd( self, name ):
-    value = 0
-    if self.lookupAttribute( name ):
-      try:
-        value = int(string.replace(self.get_expression( name ), '"', ''))
-      except:
-        value = 0
-    return value
 
   def getAttributeString( self, name ):
     """ Get String type attribute value
