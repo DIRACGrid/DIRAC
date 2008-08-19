@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: MatcherHandler.py,v 1.19 2008/07/30 10:30:06 rgracian Exp $
+# $Id: MatcherHandler.py,v 1.20 2008/08/19 06:01:50 rgracian Exp $
 ########################################################################
 """
 Matcher class. It matches Agent Site capabilities to job requirements.
@@ -7,7 +7,7 @@ It also provides an XMLRPC interface to the Matcher
 
 """
 
-__RCSID__ = "$Id: MatcherHandler.py,v 1.19 2008/07/30 10:30:06 rgracian Exp $"
+__RCSID__ = "$Id: MatcherHandler.py,v 1.20 2008/08/19 06:01:50 rgracian Exp $"
 
 import re, os, sys, time
 import string
@@ -16,17 +16,19 @@ import getopt
 from   types import *
 import threading
 
-from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC.Core.Utilities.ClassAd.ClassAdCondor import ClassAd, matchClassAd
-from DIRAC import gConfig, gLogger, S_OK, S_ERROR
-from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
-from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
-from DIRAC import gMonitor
+from DIRAC.Core.DISET.RequestHandler                   import RequestHandler
+from DIRAC.Core.Utilities.ClassAd.ClassAdCondor        import ClassAd, matchClassAd
+from DIRAC                                             import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC.WorkloadManagementSystem.DB.JobDB           import JobDB
+from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB    import JobLoggingDB
+from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB     import TaskQueueDB
+from DIRAC                                             import gMonitor
 
 gMutex = threading.Semaphore()
 gTaskQueues = {}
 jobDB = False
 jobLoggingDB = False
+taskQueueDB = False
 
 def initializeMatcherHandler( serviceInfo ):
   """  Matcher Service initialization
@@ -35,8 +37,9 @@ def initializeMatcherHandler( serviceInfo ):
   global jobDB
   global jobLoggingDB
 
-  jobDB = JobDB()
+  jobDB        = JobDB()
   jobLoggingDB = JobLoggingDB()
+  taskQueueDB  = TaskQueueDB()
 
   gMonitor.registerActivity( 'matchTime', "Job matching time", 'Matching', "secs" ,gMonitor.OP_MEAN, 300 )
   gMonitor.registerActivity( 'matchTaskQueues', "Task queues checked per job", 'Matching', "task queues" ,gMonitor.OP_MEAN, 300 )
@@ -212,6 +215,7 @@ class MatcherHandler(RequestHandler):
       gLogger.warn("Agent requested job %d not found in the Task Queue" % agent_jobID)
 
     if jobID > 0:
+      taskQueueDB.deleteJob(jobID)
       result = jobDB.deleteJobFromQueue(jobID)
 
     gMutex.release()
@@ -279,11 +283,13 @@ class MatcherHandler(RequestHandler):
           else:
             gLogger.warn("Job %d in the Task Queue but the status is %s" % (job,status))
             if status != 'Staging':
+              taskQueueDB.deleteJob(jobID)
               result = jobDB.deleteJobFromQueue(job)
               if not result['OK']:
                 gLogger.warn("Failed to delete job %d from Task Queue" % job)
         else:
           gLogger.warn("Job %d ot found in the JobDB, will be deleted from the Task Queue" % job)
+          taskQueueDB.deleteJob(jobID)
           result = jobDB.deleteJobFromQueue(job)
           if not result['OK']:
             gLogger.warn("Failed to delete job %d from Task Queue" % job)
@@ -291,6 +297,7 @@ class MatcherHandler(RequestHandler):
         gLogger.warn("Error while getting the job attributes for %d" % job)
 
     if jobID > 0:
+      taskQueueDB.deleteJob(jobID)
       result = jobDB.deleteJobFromQueue(job)
       if not result['OK']:
         gLogger.warn("Failed to delete job %d from Task Queue" % job)
