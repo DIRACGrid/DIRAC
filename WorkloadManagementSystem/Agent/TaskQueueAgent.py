@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueAgent.py,v 1.16 2008/08/19 06:06:21 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueAgent.py,v 1.17 2008/08/19 06:13:18 rgracian Exp $
 # File :   TaskQueueAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
      into a Task Queue.
 """
 
-__RCSID__ = "$Id: TaskQueueAgent.py,v 1.16 2008/08/19 06:06:21 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueAgent.py,v 1.17 2008/08/19 06:13:18 rgracian Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB         import TaskQueueDB
@@ -121,11 +121,11 @@ class TaskQueueAgent(Optimizer):
         else:
           jobReqDict[name] = classadJobReq.getAttributeString(name)
 
-    for name in self.taskqueueDB.getMultiValueTQDefFields():
+    for name in self.taskQueueDB.getMultiValueTQDefFields():
       if classadJobReq.lookupAttribute(name):
         jobReqDict[name] = classadJobReq.getListFromExpression(name)
 
-    self.taskqueueDB.insertJob(job,jobReqDict, 1,priority)
+    self.taskQueueDB.insertJob(job,jobReqDict, 1,priority)
 
     timing2 = Time.to2K() - start2
     print "Timing:",timing1,timing2
