@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot,v 1.37 2008/08/12 14:38:10 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot,v 1.38 2008/08/20 06:13:26 rgracian Exp $
 # File :   dirac-pilot
 # Author : Ricardo Graciani
 ########################################################################
@@ -9,7 +9,7 @@
  Job Agent to execute pending workload on WMS.
  It requires dirac-install script to be sitting in the same directory.
 """
-__RCSID__ = "$Id: dirac-pilot,v 1.37 2008/08/12 14:38:10 rgracian Exp $"
+__RCSID__ = "$Id: dirac-pilot,v 1.38 2008/08/20 06:13:26 rgracian Exp $"
 try:
   import os
   import sys
@@ -387,6 +387,7 @@ inProcessOpts+= ' -o GridCE=%s' % LCG_SITE_CE
 inProcessOpts+= ' -o LocalAccountString=%s' % localUser
 inProcessOpts+= ' -o TotalCPUs=%s' % 1
 inProcessOpts+= ' -o MaxCPUTime=%s' % ( int(jobCPUReqt) )
+inProcessOpts+= ' -o CPUTime=%s' % ( int(jobCPUReqt) )
 inProcessOpts+= ' -o MaxRunningJobs=%s' % 1
 # To prevent a wayward agent picking up and failing many jobs.
 inProcessOpts+= ' -o MaxTotalJobs=%s' % 10
