@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.52 2008/08/04 17:38:16 rgracian Exp $
+# $Id: JobWrapper.py,v 1.53 2008/08/20 09:04:32 paterson Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.52 2008/08/04 17:38:16 rgracian Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.53 2008/08/20 09:04:32 paterson Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -61,9 +61,6 @@ class JobWrapper:
     # FIXME: this info is in DIRAC.rootPath
     self.root = os.getcwd()
     self.localSiteRoot = gConfig.getValue('/LocalSite/Root',self.root)
-
-    print "AT >>>>>>> self.localSiteRoot",self.localSiteRoot
-
     self.__loadLocalCFGFiles(self.localSiteRoot)
     # FIXME why not use DIRAC.version
     self.diracVersion = 'DIRAC version v%dr%d build %d' %(DIRAC.majorVersion,DIRAC.minorVersion,DIRAC.patchLevel)
@@ -107,7 +104,6 @@ class JobWrapper:
       ldpath = os.environ['LD_LIBRARY_PATH']
       self.log.verbose('LD_LIBRARY_PATH is: \n%s' %(string.join(string.split(ldpath,':'),'\n')))
       self.log.verbose('==========================================================================')
-
     if not self.cleanUpFlag:
       self.log.verbose('CleanUp Flag is disabled by configuration')
     self.log.verbose('Trying to import LFC File Catalog client')
@@ -805,7 +801,12 @@ class JobWrapper:
     """Perform any final actions to clean up after job execution.
     """
     self.log.info('Running JobWrapper finalization')
-    self.__report('Done','Execution Complete')
+    requests = self.__getRequestFiles()
+    if requests:
+      self.log.info('There are pending requests for this job.')
+      self.__report('Completed','Pending Requests')
+    else:
+      self.__report('Done','Execution Complete')
 
     self.sendFailoverRequest()
     self.__cleanUp()
@@ -884,7 +885,7 @@ class JobWrapper:
         request.addSubRequest(subrequest,'accounting')
 
     # Any other requests in the current directory
-    rfiles = glob.glob('*_request.xml')
+    rfiles = self.__getRequestFiles()
     for rfname in rfiles:
       rfile = open(rfname,'r')
       reqString = rfile.read()
@@ -900,6 +901,12 @@ class JobWrapper:
       return result
     else:
       return S_OK()
+
+  #############################################################################
+  def __getRequestFiles(self):
+    """Simple wrapper to return the list of request files.
+    """
+    return glob.glob('*_request.xml')
 
   #############################################################################
   def __cleanUp(self):
