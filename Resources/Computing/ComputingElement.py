@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Resources/Computing/ComputingElement.py,v 1.6 2008/07/16 09:08:23 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Resources/Computing/ComputingElement.py,v 1.7 2008/08/20 06:09:40 rgracian Exp $
 # File :   ComputingElement.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
      resource JDL for subsequent use during the matching process.
 """
 
-__RCSID__ = "$Id: ComputingElement.py,v 1.6 2008/07/16 09:08:23 rgracian Exp $"
+__RCSID__ = "$Id: ComputingElement.py,v 1.7 2008/08/20 06:09:40 rgracian Exp $"
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight      import *
 from DIRAC.ConfigurationSystem.Client.Config        import gConfig
@@ -120,6 +120,7 @@ class ComputingElement:
 
     for option,value in localSite.items():
       if option == 'Architecture':
+        self.classAd.insertAttributeString('LHCbPlatform',value)
         if value in platforms.keys():
           compatiblePlatforms = platforms[value]
           self.classAd.insertAttributeVectorString('CompatiblePlatforms', compatiblePlatforms.split(', '))
