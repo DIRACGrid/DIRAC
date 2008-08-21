@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobManagerHandler.py,v 1.25 2008/08/21 09:27:56 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobManagerHandler.py,v 1.26 2008/08/21 10:02:41 rgracian Exp $
 ########################################################################
 
 """ JobManagerHandler is the implementation of the JobManager service
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: JobManagerHandler.py,v 1.25 2008/08/21 09:27:56 rgracian Exp $"
+__RCSID__ = "$Id: JobManagerHandler.py,v 1.26 2008/08/21 10:02:41 rgracian Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -169,6 +169,8 @@ class JobManagerHandler( RequestHandler ):
       gLogger.debug( str( result ) )
       if not result['OK']:
           return result
+      gJobLoggingDB.addLoggingRecord( result['JobID'], result['Status'], result['MinorStatus'], source = 'JobManager' )
+
 
     if invalidJobList or nonauthJobList:
       result = S_ERROR('Some jobs failed deletion')
