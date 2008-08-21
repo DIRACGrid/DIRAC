@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.8 2008/08/19 05:49:34 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.9 2008/08/21 07:37:35 rgracian Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.8 2008/08/19 05:49:34 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.9 2008/08/21 07:37:35 rgracian Exp $"
 
 import time
 import types
@@ -361,9 +361,16 @@ class TaskQueueDB(DB):
         #It has to be %ss , with an 's' at the end because the columns names
         # are plural and match options are singular
         tableName = '`tq_TQTo%ss`' % field
-        sqlTables.append( tableName )
-        sqlCondList.append( "%s.TQId = `tq_TaskQueues`.TQId" % tableName )
-        sqlCondList.append( "%s.Value = '%s'" % ( tableName, fieldValue ) )
+        # sqlTables.append( tableName )
+        sqlMultiCondList = []
+        if field != 'GridCE':
+          # GridCE is is used to Direct Jobs to Banned Sites it is only used in the match if the Site
+          # is banned, thus it can not be ignored
+          sqlMultiCondList.append( "( SELECT COUNT(%s.Value) FROM %s WHERE %s.TQId = `tq_TaskQueues`.TQId ) = 0 " % (tableName,tableName,tableName ) )
+        sqlMultiCondList.append( "'%s' in ( SELECT %s.Value FROM %s, `tq_TaskQueues`  WHERE %s.TQId = `tq_TaskQueues`.TQId )" % ( fieldValue, tableName, tableName, tableName ) )
+        # sqlCondList.append( "%s.TQId = `tq_TaskQueues`.TQId" % tableName )
+        # sqlCondList.append( "%s.Value = '%s'" % ( tableName, fieldValue, tableName ) )
+        sqlCondList.append( "( %s )" % " OR ".join(sqlMultiCondList) )
         if field == 'Site':
           bannedTable = '`tq_TQToBannedSites`'
           sqlCondList.append( "'%s' not in ( SELECT %s.Value FROM %s WHERE %s.TQId = `tq_TaskQueues`.TQId )" % ( fieldValue,
@@ -403,16 +410,17 @@ class TaskQueueDB(DB):
         return S_ERROR( "Can't insert job: %s" % retVal[ 'Message' ] )
       connObj = retVal[ 'Value' ]
     sqlCmd = "DELETE FROM `tq_TaskQueues` WHERE `tq_TaskQueues`.TQId = %s" % tqId
-    sqlCmd = "%s AND `tq_TaskQueues`.TQId not in ( SELECT DISTINCT TQId from `tq_Jobs` )"
+    sqlCmd = "%s AND `tq_TaskQueues`.TQId not in ( SELECT DISTINCT TQId from `tq_Jobs` )" % sqlCmd
     retVal = self._update( sqlCmd, conn = connObj )
     if not retVal[ 'OK' ]:
       return S_ERROR( "Could not delete task queue %s: %s" % ( tqId, retVal[ 'Message' ] ) )
-    if connObj.num_rows() == 1:
-      for mvField in self.__multiValueFields:
-        retVal = self._update( "DELETE FROM `tq_TQTto%s` WHERE TQId = %s" % tqId, conn = connObj )
-        if not retVal[ 'OK' ]:
-          return retVal
-      return S_OK( True )
+    print retVal
+    # if connObj.num_rows() == 1:
+    for mvField in self.__multiValueFields:
+      retVal = self._update( "DELETE FROM `tq_TQTto%s` WHERE TQId = %s" % ( mvField, tqId ), conn = connObj )
+      if not retVal[ 'OK' ]:
+        return retVal
+    return S_OK( True )
     return S_OK( False )
 
   def deleteTaskQueue( self, tqId, conn = False ):
