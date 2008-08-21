@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: MatcherHandler.py,v 1.21 2008/08/21 07:36:23 rgracian Exp $
+# $Id: MatcherHandler.py,v 1.22 2008/08/21 09:20:15 rgracian Exp $
 ########################################################################
 """
 Matcher class. It matches Agent Site capabilities to job requirements.
@@ -7,7 +7,7 @@ It also provides an XMLRPC interface to the Matcher
 
 """
 
-__RCSID__ = "$Id: MatcherHandler.py,v 1.21 2008/08/21 07:36:23 rgracian Exp $"
+__RCSID__ = "$Id: MatcherHandler.py,v 1.22 2008/08/21 09:20:15 rgracian Exp $"
 
 import re, os, sys, time
 import string
@@ -182,7 +182,7 @@ class MatcherHandler(RequestHandler):
 
     return S_OK(resultDict)
 
-  def NewSelectJob(self, resourceJDL):
+  def newSelectJob(self, resourceJDL):
     """ Main job selection function to find the highest priority job
         matching the resource capacity
     """
@@ -403,7 +403,7 @@ class MatcherHandler(RequestHandler):
     #print "requestJob: ",resourceJDL
 
     # result = self.selectJob(resourceJDL)
-    result = self.NewSelectJob(resourceJDL)
+    result = self.newSelectJob(resourceJDL)
     return result
 
 ##############################################################################
