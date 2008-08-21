@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.93 2008/08/21 09:14:12 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.94 2008/08/21 09:30:43 rgracian Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.93 2008/08/21 09:14:12 rgracian Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.94 2008/08/21 09:30:43 rgracian Exp $"
 
 import re, os, sys, string, types
 import time
@@ -1249,7 +1249,7 @@ class JobDB(DB):
         defined parameters in the parameter Attic
     """
     # Check Verified Flag
-    result = self.getJobAttributes( ['Status','MinorStatus','VerifiedFlag','RescheduleCounter',
+    result = self.getJobAttributes( jobID, ['Status','MinorStatus','VerifiedFlag','RescheduleCounter',
                                      'Owner','OwnerDN','OwnerGroup','DIRACSetup'] )
     if result['OK']:
       resultDict = result['value']
