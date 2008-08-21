@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.92 2008/08/21 08:27:28 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.93 2008/08/21 09:14:12 rgracian Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.92 2008/08/21 08:27:28 rgracian Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.93 2008/08/21 09:14:12 rgracian Exp $"
 
 import re, os, sys, string, types
 import time
@@ -921,73 +921,68 @@ class JobDB(DB):
       retVal['MinorStatus'] = 'Error in JDL syntax'
       return retVal
 
-    else:
-      classAdJob.insertAttributeInt( 'JobID', jobID )
-      result = self.__checkAndPrepareJob( classAdJob, classAdReq, owner, ownerDN, ownerGroup, diracSetup )
-      if not result['OK']:
-        jobAttrNames.append('Status')
-        jobAttrValues.append('Failed')
-    
-        jobAttrNames.append('MinorStatus')
-        jobAttrValues.append(result['Message'])
-  
-        result = self._insert( 'Jobs', jobAttrNames, jobAttrValues )
-        if not result['OK']:
-          return result
-  
-        retVal['Status'] = 'Failed'
-        retVal['MinorStatus'] = result['Message']
-        return retVal
-
-      print classAdReq.asJDL()
-      # classAdJob = result['ClassAdJob']
-      # classAdReq = result['ClassAdReq']
-    
-      priority      = classAdJob.getAttributeInt( 'Priority' )
-      jobAttrNames.append( 'UserPriority' )
-      jobAttrValues.append( priority )
-
-      for jdlName in 'JobName', 'JobType', 'JobGroup', 'Site':
-        # Defaults are set by the DB.
-        jdlValue = classAdJob.getAttributeString( jdlName )
-        if jdlValue:
-          jobAttrNames.append( jdlName )
-          jobAttrValues.append( jdlValue )
-
-      jobAttrNames.append('VerifiedFlag')
-      jobAttrValues.append('True')
-
+    classAdJob.insertAttributeInt( 'JobID', jobID )
+    result = self.__checkAndPrepareJob( classAdJob, classAdReq, owner, ownerDN, ownerGroup, diracSetup )
+    if not result['OK']:
       jobAttrNames.append('Status')
-      jobAttrValues.append('Received')
+      jobAttrValues.append('Failed')
   
       jobAttrNames.append('MinorStatus')
-      jobAttrValues.append('Job accepted')
+      jobAttrValues.append(result['Message'])
 
-      reqJDL = classAdReq.asJDL()
-      classAdJob.insertAttributeInt( 'JobRequirements', reqJDL )
-  
-      jobJDL = classAdJob.asJDL()
-  
-      result = self.setJobJDL( jobID, jobJDL )
+      result = self._insert( 'Jobs', jobAttrNames, jobAttrValues )
       if not result['OK']:
         return result
-  
-      inputData = []
-      if classAdJob.lookupAttribute('InputData'):
-        inputData = classAdJob.getListFromExpression('InputData')
-      values = []
-      for lfn in inputData:
-        values.append( '(%s, \'%s\' )' % ( jobID, lfn.strip() ) )
-  
-      if values:
-        cmd = 'INSERT INTO InputData (JobID,LFN) VALUES %s' % ', '.join( values )
-        result = self._update( cmd )
-        if not result['OK']:
-          return result
-  
-      result = self.__setInitialJobParameters(classAdJob,jobID)
+
+      retVal['Status'] = 'Failed'
+      retVal['MinorStatus'] = result['Message']
+      return retVal
+
+    priority      = classAdJob.getAttributeInt( 'Priority' )
+    jobAttrNames.append( 'UserPriority' )
+    jobAttrValues.append( priority )
+
+    for jdlName in 'JobName', 'JobType', 'JobGroup', 'Site':
+      # Defaults are set by the DB.
+      jdlValue = classAdJob.getAttributeString( jdlName )
+      if jdlValue:
+        jobAttrNames.append( jdlName )
+        jobAttrValues.append( jdlValue )
+
+    jobAttrNames.append('VerifiedFlag')
+    jobAttrValues.append('True')
+
+    jobAttrNames.append('Status')
+    jobAttrValues.append('Received')
+
+    jobAttrNames.append('MinorStatus')
+    jobAttrValues.append('Job accepted')
+
+    reqJDL = classAdReq.asJDL()
+    classAdJob.insertAttributeInt( 'JobRequirements', reqJDL )
+
+    jobJDL = classAdJob.asJDL()
+
+    result = self.setJobJDL( jobID, jobJDL )
+    if not result['OK']:
+      return result
+
+    inputData = []
+    if classAdJob.lookupAttribute('InputData'):
+      inputData = classAdJob.getListFromExpression('InputData')
+    values = []
+    for lfn in inputData:
+      values.append( '(%s, \'%s\' )' % ( jobID, lfn.strip() ) )
+
+    if values:
+      cmd = 'INSERT INTO InputData (JobID,LFN) VALUES %s' % ', '.join( values )
+      result = self._update( cmd )
       if not result['OK']:
         return result
+
+    result = self.__setInitialJobParameters(classAdJob,jobID)
+    if not result['OK']:
+      return result
   
     result = self._insert( 'Jobs', jobAttrNames, jobAttrValues )
     if not result['OK']:
@@ -1253,37 +1248,47 @@ class JobDB(DB):
     """ Reschedule the given job to run again from scratch. Retain the already
         defined parameters in the parameter Attic
     """
+    # Check Verified Flag
+    result = self.getJobAttributes( ['Status','MinorStatus','VerifiedFlag','RescheduleCounter',
+                                     'Owner','OwnerDN','OwnerGroup','DIRACSetup'] )
+    if result['OK']:
+      resultDict = result['value']
+    else:
+     return S_ERROR('JobDB.getJobAttributes: can not retrieve job attributes')
+
+    if not 'VerifiedFlag' in resultDict:
+      return S_ERROR('Job '+str(jobID)+' not found in the system')
+
+    if not resultDict['VerifiedFlag']:
+      return S_ERROR('Job %s not Verified: Status = %s, MinorStatus = %s' % ( 
+                                                                             jobID,
+                                                                             resultDict['Status'],
+                                                                             resultDict['MinorStatus'] ) )
+
 
     # Check the Reschedule counter first
-    rescheduleCounter = 0
-    req = "SELECT RescheduleCounter from Jobs WHERE JobID=%s" % jobID
-    result = self._query(req)
-    if result['OK']:
-      if result['Value']:
-        rescheduleCounter = result['Value'][0][0]
-      else:
-        return S_ERROR('Job '+str(jobID)+' not found in the system')
+    rescheduleCounter = resultDict['RescheduleCounter'] + 1
 
     # Exit if the limit of the reschedulings is reached
-    if rescheduleCounter >= self.maxRescheduling:
+    if rescheduleCounter > self.maxRescheduling:
       self.log.error('Maximum number of reschedulings is reached for job %s' % jobID)
       res = self.setJobStatus(jobID, status='Failed', minor='Maximum of reschedulings reached')
       return S_ERROR('Maximum number of reschedulings is reached: %s' % self.maxRescheduling)
 
-    req = "UPDATE Jobs set RescheduleCounter=RescheduleCounter+1 WHERE JobID=%s" % jobID
-    res = self._update(req)
-    if not res['OK']:
-      return res
+    jobAttrNames  = []
+    jobAttrValues = []
+
+    jobAttrNames.append(  'RescheduleCounter' )
+    jobAttrValues.append( rescheduleCounter )
 
     # Save the job parameters for later debugging
     result = self.getJobParameters(jobID)
     if result['OK']:
       parDict = result['Value']
       for key,value in parDict.items():
-        result = self.setAtticJobParameter(jobID,key,value,rescheduleCounter)
+        result = self.setAtticJobParameter(jobID,key,value,rescheduleCounter-1)
         if not result['OK']:
           break
-
 
     cmd = 'DELETE FROM JobParameters WHERE JobID=\'%s\'' %jobID
     res = self._update( cmd )
@@ -1299,34 +1304,78 @@ class JobDB(DB):
     jdl = res['Value']
 
     # Restore initital job parameters
-    classadJob = ClassAd(jdl)
-    res = self.__setInitialJobParameters(classadJob,jobID)
-    if not res['OK']:
-      return res
+    classAdJob = ClassAd(jdl)
+    classAdReq = ClassAd('[]')
+    retVal = S_OK(jobID)
+    retVal['JobID'] = jobID
 
-    res = self.setJobStatus(jobID,
-                            status='Received',
-                            minor = 'Job Rescheduled',
-                            application='Unknown',
-                            appCounter=0)
-    if not res['OK']:
-      return res
+    classAdJob.insertAttributeInt( 'JobID', jobID )
+    result = self.__checkAndPrepareJob( classAdJob, classAdReq, resultDict['Owner'], 
+                                        resultDict['OwnerDN'], resultDict['OwnerGroup'], 
+                                        resultDict['DIRACSetup'] )
 
-    cmd = 'DELETE FROM TaskQueue WHERE JobID=\'%s\'' % jobID
-    res = self._update( cmd )
-    if not res['OK']:
-      return S_ERROR("Failed to delete job from the Task Queue")
+    if not result['OK']:
+      jobAttrNames.append('Status')
+      jobAttrValues.append('Failed')
+  
+      jobAttrNames.append('MinorStatus')
+      jobAttrValues.append(result['Message'])
 
-    # Reset site field to ANY after reschedule operation.
-    res = self.setJobAttribute(jobID,'Site','ANY')
-    if not res['OK']:
-      return res
+      result = self._insert( 'Jobs', jobAttrNames, jobAttrValues )
+      if not result['OK']:
+        return result
 
-    result = S_OK()
-    result['InputData']  = classadJob.lookupAttribute("InputData")
-    result['JobID']  = jobID
-    result['RescheduleCounter']  = rescheduleCounter+1
-    return result
+      retVal['Status'] = 'Failed'
+      retVal['MinorStatus'] = result['Message']
+      return retVal
+
+    priority      = classAdJob.getAttributeInt( 'Priority' )
+    jobAttrNames.append( 'UserPriority' )
+    jobAttrValues.append( priority )
+
+    for jdlName in 'Site':
+      # Defaults are set by the DB.
+      jdlValue = classAdJob.getAttributeString( jdlName )
+      if jdlValue:
+        jobAttrNames.append( jdlName )
+        jobAttrValues.append( jdlValue )
+
+    jobAttrNames.append('Status')
+    jobAttrValues.append('Received')
+
+    jobAttrNames.append('MinorStatus')
+    jobAttrValues.append('Job Rescheduled')
+    
+    jobAttrNames.append('ApplicationStatus')
+    jobAttrValues.append('Unknown')
+        
+    jobAttrNames.append('ApplicationCounter')
+    jobAttrValues.append(0)
+    
+    jobAttrNames.append('LastUpdateTime')
+    jobAttrValues.append(Time.toString())
+
+    reqJDL = classAdReq.asJDL()
+    classAdJob.insertAttributeInt( 'JobRequirements', reqJDL )
+
+    jobJDL = classAdJob.asJDL()
+
+    result = self.setJobJDL( jobID, jobJDL )
+    if not result['OK']:
+      return result
+  
+    result = self.__setInitialJobParameters(classAdJob,jobID)
+    if not result['OK']:
+      return result
+  
+    result = self._insert( 'Jobs', jobAttrNames, jobAttrValues )
+    if not result['OK']:
+      return result
+
+    retVal['InputData'] = classAdJob.lookupAttribute("InputData")
+    retVal['RescheduleCounter'] = rescheduleCounter
+
+    return retVal
 
 #############################################################################
   def getSiteMask(self,siteState='Active'):
