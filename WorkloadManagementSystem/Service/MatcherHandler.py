@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: MatcherHandler.py,v 1.20 2008/08/19 06:01:50 rgracian Exp $
+# $Id: MatcherHandler.py,v 1.21 2008/08/21 07:36:23 rgracian Exp $
 ########################################################################
 """
 Matcher class. It matches Agent Site capabilities to job requirements.
@@ -7,7 +7,7 @@ It also provides an XMLRPC interface to the Matcher
 
 """
 
-__RCSID__ = "$Id: MatcherHandler.py,v 1.20 2008/08/19 06:01:50 rgracian Exp $"
+__RCSID__ = "$Id: MatcherHandler.py,v 1.21 2008/08/21 07:36:23 rgracian Exp $"
 
 import re, os, sys, time
 import string
@@ -36,6 +36,7 @@ def initializeMatcherHandler( serviceInfo ):
 
   global jobDB
   global jobLoggingDB
+  global taskQueueDB
 
   jobDB        = JobDB()
   jobLoggingDB = JobLoggingDB()
@@ -181,6 +182,89 @@ class MatcherHandler(RequestHandler):
 
     return S_OK(resultDict)
 
+  def NewSelectJob(self, resourceJDL):
+    """ Main job selection function to find the highest priority job
+        matching the resource capacity
+    """
+
+    startTime = time.time()
+    classAdAgent = ClassAd(resourceJDL)
+    if not classAdAgent.isOK():
+      return S_ERROR('Illegal Resource JDL')
+    gLogger.verbose(classAdAgent.asJDL())
+
+    resourceDict = {}
+    for name in taskQueueDB.getSingleValueTQDefFields():
+      if classAdAgent.lookupAttribute(name):
+        if name == 'CPUTime':
+          resourceDict[name] = classAdAgent.getAttributeInt(name)
+        else:
+          resourceDict[name] = classAdAgent.getAttributeString(name)
+
+    for name in taskQueueDB.getMultiValueMatchFields():
+      if classAdAgent.lookupAttribute(name):
+        resourceDict[name] = classAdAgent.getAttributeString(name)
+
+    # Get common site mask and check the agent site
+    result = jobDB.getSiteMask(siteState='Active')
+    if result['OK']:
+      maskList = result['Value']
+    else:
+      return S_ERROR('Internal error: can not get site mask')
+
+    if not 'Site' in resourceDict:
+      return S_ERROR('Missing Site Name in Resource JDL')
+
+    if resourceDict['Site'] in maskList and 'GridCE' in resourceDict:
+      del resourceDict['GridCE']
+
+    resourceDict['Setup'] = self.serviceInfoDict['clientSetup']
+
+    print resourceDict
+
+    result = taskQueueDB.matchAndGetJob( resourceDict )
+
+    print result
+    
+    if not result['OK']:
+      return result
+    result = result['Value'] 
+    if not result['matchFound']:
+      return S_ERROR( 'No match found' )
+
+    jobID = result['jobId']
+    
+    result = jobDB.deleteJobFromQueue(jobID)
+    result = jobDB.setJobStatus(jobID,status='Matched',minor='Assigned')
+    result = jobLoggingDB.addLoggingRecord(jobID,
+                                           status='Matched',
+                                           minor='Assigned',
+                                           source='Matcher')
+
+    result = jobDB.getJobJDL(jobID)
+    if not result['OK']:
+      return S_ERROR('Failed to get the job JDL')
+
+    resultDict = {}
+    resultDict['JDL'] = result['Value']
+
+    matchTime = time.time() - startTime
+    gLogger.info("Match time: [%s]" % str(matchTime))
+    gMonitor.addMark( "matchTime", matchTime )
+
+    # Get some extra stuff into the response returned
+    resOpt = jobDB.getJobOptParameters(jobID)
+    if resOpt['OK']:
+      for key,value in resOpt['Value'].items():
+        resultDict[key] = value
+    resAtt = jobDB.getJobAttributes(jobID,['OwnerDN','OwnerGroup'])
+    if resAtt['OK']:
+      if resAtt['Value']:
+        resultDict['DN'] = resAtt['Value']['OwnerDN']
+        resultDict['Group'] = resAtt['Value']['OwnerGroup']
+
+    return S_OK(resultDict)
+
 ##############################################################################
   def matchJob(self,classAdAgent,agent_jobID):
     """ Verify that the jobID suggested by the agent actually
@@ -268,12 +352,14 @@ class MatcherHandler(RequestHandler):
             classAdJob = ClassAd(jobJDL)
             if not classAdJob.isOK():
               gLogger.warn('Illegal job JDL for job %d' % job)
+              print jobJDL
               continue
             result = matchClassAd(classAdJob,classAdAgent)
             if result['OK']:
               symmetricMatch, leftToRightMatch, rightToLeftMatch = result['Value']
               if symmetricMatch:
                 gLogger.verbose('Found a double match, JobID: %d' % job)
+                print classAdAgent.asJDL()
                 jobID = job
                 break
             else:
@@ -316,7 +402,8 @@ class MatcherHandler(RequestHandler):
 
     #print "requestJob: ",resourceJDL
 
-    result = self.selectJob(resourceJDL)
+    # result = self.selectJob(resourceJDL)
+    result = self.NewSelectJob(resourceJDL)
     return result
 
 ##############################################################################
