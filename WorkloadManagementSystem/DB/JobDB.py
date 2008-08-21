@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.90 2008/08/21 08:16:32 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.91 2008/08/21 08:22:50 rgracian Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.90 2008/08/21 08:16:32 rgracian Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.91 2008/08/21 08:22:50 rgracian Exp $"
 
 import re, os, sys, string, types
 import time
@@ -923,7 +923,7 @@ class JobDB(DB):
 
     else:
       classAdJob.insertAttributeInt( 'JobID', jobID )
-      result = self.__checkAndPrepareJob( jobID, classAdJob, classAdReq )
+      result = self.__checkAndPrepareJob( classAdJob, classAdReq, owner, ownerDN, ownerGroup, diracSetup )
       if not result['OK']:
         jobAttrNames.append('Status')
         jobAttrValues.append('Failed')
@@ -987,7 +987,7 @@ class JobDB(DB):
 
     return retVal
 
-  def __checkAndPrepareJob(self, classAdJob, classAdReq ):
+  def __checkAndPrepareJob(self, classAdJob, classAdReq, owner, ownerDN, ownerGroup, diracSetup ):
     """
       Check Consistence of Submitted JDL and set some defaults
       Prepare subJDL with Job Requirements
