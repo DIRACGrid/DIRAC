@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobManagerHandler.py,v 1.23 2008/08/07 14:19:12 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobManagerHandler.py,v 1.24 2008/08/21 09:21:48 rgracian Exp $
 ########################################################################
 
 """ JobManagerHandler is the implementation of the JobManager service
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: JobManagerHandler.py,v 1.23 2008/08/07 14:19:12 rgracian Exp $"
+__RCSID__ = "$Id: JobManagerHandler.py,v 1.24 2008/08/21 09:21:48 rgracian Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -160,6 +160,8 @@ class JobManagerHandler( RequestHandler ):
     validJobList,invalidJobList,nonauthJobList,ownerJobList = self.__evaluate_rights(jobList,
                                                                         RIGHT_RESCHEDULE )
     for jobID in validJobList:
+      taskQueueDB.deleteJob(jobID)
+      gJobDB.deleteJobFromQueue(jobID)
       result  = gJobDB.rescheduleJob( jobID )
       gLogger.debug( str( result ) )
       if not result['OK']:
@@ -275,6 +277,8 @@ class JobManagerHandler( RequestHandler ):
       if not result['OK']:
         bad_ids.append(jobID)
       else:
+        taskQueueDB.deleteJob(jobID)
+        gJobDB.deleteJobFromQueue(jobID)
         result  = gJobDB.rescheduleJob( jobID )
         if not result['OK']:
           bad_ids.append(jobID)
