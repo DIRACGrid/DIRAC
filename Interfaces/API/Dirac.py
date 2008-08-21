@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.42 2008/08/06 09:44:00 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.43 2008/08/21 17:13:47 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.42 2008/08/06 09:44:00 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.43 2008/08/21 17:13:47 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -1064,7 +1064,7 @@ class Dirac:
        >>> dirac.selectJobs(Status='Failed',Owner='paterson',Site='LCG.CERN.ch')
        {'OK': True, 'Value': ['25020', '25023', '25026', '25027', '25040']}
     """
-    options = {'Status':Status,'MinorStatus':MinorStatus,'ApplicationStatus':ApplicationStatus,
+    options = {'Status':Status,'MinorStatus':MinorStatus,'ApplicationStatus':ApplicationStatus,'Owner':Owner,
                'Site':Site,'JobGroup':JobGroup}
     conditions = {}
     for n,v in options.items():
