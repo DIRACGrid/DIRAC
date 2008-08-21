@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobManagerHandler.py,v 1.24 2008/08/21 09:21:48 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobManagerHandler.py,v 1.25 2008/08/21 09:27:56 rgracian Exp $
 ########################################################################
 
 """ JobManagerHandler is the implementation of the JobManager service
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: JobManagerHandler.py,v 1.24 2008/08/21 09:21:48 rgracian Exp $"
+__RCSID__ = "$Id: JobManagerHandler.py,v 1.25 2008/08/21 09:27:56 rgracian Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -23,6 +23,7 @@ from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
+from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB     import TaskQueueDB
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import JobPolicy, RIGHT_SUBMIT, RIGHT_RESCHEDULE, \
                                                                         RIGHT_DELETE, RIGHT_KILL, RIGHT_RESET
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
@@ -30,12 +31,14 @@ from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 # This is a global instance of the JobDB class
 gJobDB = False
 gJobLoggingDB = False
+gtaskQueueDB = False
 
 def initializeJobManagerHandler( serviceInfo ):
 
-  global gJobDB, gJobLoggingDB
+  global gJobDB, gJobLoggingDB, gtaskQueueDB
   gJobDB = JobDB()
   gJobLoggingDB = JobLoggingDB()
+  gtaskQueueDB  = TaskQueueDB()
   return S_OK()
 
 class JobManagerHandler( RequestHandler ):
@@ -160,7 +163,7 @@ class JobManagerHandler( RequestHandler ):
     validJobList,invalidJobList,nonauthJobList,ownerJobList = self.__evaluate_rights(jobList,
                                                                         RIGHT_RESCHEDULE )
     for jobID in validJobList:
-      taskQueueDB.deleteJob(jobID)
+      gtaskQueueDB.deleteJob(jobID)
       gJobDB.deleteJobFromQueue(jobID)
       result  = gJobDB.rescheduleJob( jobID )
       gLogger.debug( str( result ) )
@@ -277,7 +280,7 @@ class JobManagerHandler( RequestHandler ):
       if not result['OK']:
         bad_ids.append(jobID)
       else:
-        taskQueueDB.deleteJob(jobID)
+        gtaskQueueDB.deleteJob(jobID)
         gJobDB.deleteJobFromQueue(jobID)
         result  = gJobDB.rescheduleJob( jobID )
         if not result['OK']:
