@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.91 2008/08/21 08:22:50 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.92 2008/08/21 08:27:28 rgracian Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.91 2008/08/21 08:22:50 rgracian Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.92 2008/08/21 08:27:28 rgracian Exp $"
 
 import re, os, sys, string, types
 import time
@@ -943,6 +943,17 @@ class JobDB(DB):
       # classAdJob = result['ClassAdJob']
       # classAdReq = result['ClassAdReq']
     
+      priority      = classAdJob.getAttributeInt( 'Priority' )
+      jobAttrNames.append( 'UserPriority' )
+      jobAttrValues.append( priority )
+
+      for jdlName in 'JobName', 'JobType', 'JobGroup', 'Site':
+        # Defaults are set by the DB.
+        jdlValue = classAdJob.getAttributeString( jdlName )
+        if jdlValue:
+          jobAttrNames.append( jdlName )
+          jobAttrValues.append( jdlValue )
+
       jobAttrNames.append('VerifiedFlag')
       jobAttrValues.append('True')
 
@@ -1023,13 +1034,6 @@ class JobDB(DB):
         if not classAdJob.lookupAttribute(param):
           classAdJob.insertAttributeString(param,val)
 
-    for jdlName in 'JobName', 'JobType', 'JobGroup', 'Site':
-      # Defaults are set by the DB.
-      jdlValue = classAdJob.getAttributeString( jdlName )
-      if jdlValue:
-        jobAttrNames.append( jdlName )
-        jobAttrValues.append( jdlValue )
-
     if not classAdJob.lookupAttribute("Requirements"):
       # No requirements given in the job
       classAdJob.insertAttributeBool("Requirements", True)
@@ -1039,8 +1043,6 @@ class JobDB(DB):
     pilotType     = classAdJob.getAttributeString( 'PilotType' )
     cpuTime       = classAdJob.getAttributeInt( 'MaxCPUTime' )
 
-    jobAttrNames.append( 'UserPriority' )
-    jobAttrValues.append( priority )
     classAdReq.insertAttributeInt( 'UserPriority', priority )
 
     classAdReq.insertAttributeInt(    'CPUTime',    cpuTime )
