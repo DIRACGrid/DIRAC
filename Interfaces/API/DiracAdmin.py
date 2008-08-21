@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.21 2008/07/23 15:15:52 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.22 2008/08/21 21:54:54 paterson Exp $
 # File :   DiracAdmin.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@ site banning and unbanning, WMS proxy uploading etc.
 
 """
 
-__RCSID__ = "$Id: DiracAdmin.py,v 1.21 2008/07/23 15:15:52 paterson Exp $"
+__RCSID__ = "$Id: DiracAdmin.py,v 1.22 2008/08/21 21:54:54 paterson Exp $"
 
 import DIRAC
 from DIRAC.ConfigurationSystem.Client.CSAPI              import CSAPI
@@ -106,8 +106,41 @@ class DiracAdmin:
     wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
     result = wmsAdmin.getSiteMask()
     if result['OK']:
-      print self.pPrint.pformat(result['Value'])
+      sites = result['Value']
+      sites.sort()
+      for site in sites:
+        print site
+    #TODO, add printOutput flag
     return result
+
+  #############################################################################
+  def getBannedSites(self,gridType='LCG',printOutput=False):
+    """Retrieve current list of banned sites.
+
+       Example usage:
+
+       >>> print diracAdmin.getBannedSites()
+       {'OK': True, 'Value': []}
+
+       @return: S_OK,S_ERROR
+
+    """
+    wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
+    result = wmsAdmin.getSiteMask()
+    bannedSites = []
+    if not result['OK']:
+      self.log.warn(result['Message'])
+      return result
+
+    totalList = gConfig.getSections('/Resources/Sites/%s' %gridType)['Value']
+    sites = result['Value']
+    for site in totalList:
+      if not site in sites:
+        bannedSites.append(site)
+    bannedSites.sort()
+    if printOutput:
+      print string.join(bannedSites,'\n')
+    return S_OK(bannedSites)
 
   #############################################################################
   def getSiteSection(self,site,printOutput=False):
@@ -532,6 +565,83 @@ class DiracAdmin:
     return result
 
   #############################################################################
+  def selectRequests(self,JobID=None,RequestID=None,RequestName=None,RequestType=None,Status=None,Operation=None,OwnerDN=None,OwnerGroup=None,RequestStart=0,Limit=100,printOutput=False):
+    """ Select requests from the request management system. A few notes on the selection criteria:
+        - RequestID is assigned during submission of the request
+        - JobID is the WMS JobID for the request (if applicable)
+        - RequestName is the corresponding XML file name
+        - RequestType e.g. 'transfer'
+        - Status e.g. Done
+        - Operation e.g. replicateAndRegister
+        - RequestStart e.g. the first request to consider (start from 0 by default)
+        - Limit e.g. selection limit (default 100)
+
+       >>> dirac.selectRequests(JobID='4894')
+       {'OK': True, 'Value': [[<Requests>]]}
+    """
+    options = {'RequestID':RequestID,'RequestName':RequestName,'JobID':JobID,'OwnerDN':OwnerDN,
+               'OwnerGroup':OwnerGroup,'RequestType':RequestType,'Status':Status,'Operation':Operation}
+
+    conditions = {}
+    for n,v in options.items():
+      if v:
+        try:
+          conditions[n] = str(v)
+        except Exception,x:
+          return self.__errorReport(str(x),'Expected string for %s field' %n)
+
+    try:
+      RequestStart = int(RequestStart)
+      Limit = int(Limit)
+    except Exception,x:
+      return self.__errorReport(str(x),'Expected integer for %s field' %n)
+
+    self.log.verbose('Will select requests with the following conditions')
+    self.log.verbose(self.pPrint.pformat(conditions))
+    requestClient = RPCClient("RequestManagement/centralURL")
+    result = requestClient.getRequestSummaryWeb(conditions,[],RequestStart,Limit)
+    if not result['OK']:
+      self.log.warn(result['Message'])
+      return result
+
+    requestIDs = result['Value']
+    conds = []
+    for n,v in conditions.items():
+      if v:
+        conds.append('%s = %s' %(n,v))
+    self.log.verbose('%s request(s) selected with conditions %s and limit %s' %(len(requestIDs['Records']),string.join(conds,', '),Limit))
+    if printOutput:
+      requests = []
+      if len(requestIDs['Records'])>Limit:
+        requestList = requestIDs['Records']
+        requests = requestList[:Limit]
+      else:
+        requests = requestIDs['Records']
+      print '%s request(s) selected with conditions %s and limit %s' %(len(requestIDs['Records']),string.join(conds,', '),Limit)
+      print requestIDs['ParameterNames']
+      for request in requests:
+        print request
+    if not requestIDs:
+      return S_ERROR('No requests selected for conditions: %s' %conditions)
+    else:
+      return result
+
+  #############################################################################
+  def getRequestSummary(self,printOutput=False):
+    """ Get a summary of the requests in the request DB.
+    """
+    requestClient = RPCClient("RequestManagement/centralURL")
+    result = requestClient.getDBSummary()
+    if not result['OK']:
+      self.log.warn(result['Message'])
+      return result
+
+    if printOutput:
+      print self.pPrint.pformat(result['Value'])
+
+    return result
+
+  #############################################################################
   def __errorReport(self,error,message=None):
     """Internal function to return errors and exit with an S_ERROR()
     """
@@ -540,7 +650,6 @@ class DiracAdmin:
 
     self.log.warn(error)
     return S_ERROR(message)
-
 
   #############################################################################
   def csRegisterUser( self, username, properties ):
