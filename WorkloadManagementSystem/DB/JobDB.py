@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.89 2008/08/19 11:24:31 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.90 2008/08/21 08:16:32 rgracian Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.89 2008/08/19 11:24:31 rgracian Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.90 2008/08/21 08:16:32 rgracian Exp $"
 
 import re, os, sys, string, types
 import time
@@ -901,135 +901,172 @@ class JobDB(DB):
     jobAttrNames.append('DIRACSetup')
     jobAttrValues.append(diracSetup)
     
-    # 2.- Check JDL
-    classAddJob = ClassAd( '[%s]' % JDL )
-    classAddReq = ClassAd( '[]' )
-    error = ''
-    status = 'Received'
-    minorStatus = 'Job accepted'
-    if not classAddJob.isOK():
-      error = 'Error in JDL syntax'
-    else:
-      error = ''
-      classAddJob.insertAttributeInt( 'JobID', jobID )
-      jdlDiracSetup = classAddJob.getAttributeString( 'DIRACSetup' )
-      jdlOwner      = classAddJob.getAttributeString( 'Owner' )
-      jdlOwnerDN    = classAddJob.getAttributeString( 'OwnerDN' )
-      jdlOwnerGroup = classAddJob.getAttributeString( 'OwnerGroup' )
+    # 2.- Check JDL and Prepare DIRAC JDL
+    classAdJob = ClassAd( '[%s]' % JDL )
+    classAdReq = ClassAd( '[]' )
+    retVal = S_OK(jobID)
+    retVal['JobID'] = jobID
+    if not classAdJob.isOK():
+      jobAttrNames.append('Status')
+      jobAttrValues.append('Failed')
+  
+      jobAttrNames.append('MinorStatus')
+      jobAttrValues.append('Error in JDL syntax')
 
-      if jdlDiracSetup and jdlDiracSetup != diracSetup:
-        error = 'Wrong DIRAC Setup in JDL'
-      if jdlOwner and jdlOwner != owner:
-        error = 'Wrong Owner in JDL'
-      elif jdlOwnerDN and jdlOwnerDN != ownerDN:
-        error = 'Wrong Owner DN in JDL'
-      elif jdlOwnerGroup and jdlOwnerGroup != ownerGroup:
-        error = 'Wrong Owner Group in JDL'
-
-      classAddJob.insertAttributeString( 'Owner',      owner )
-      classAddJob.insertAttributeString( 'OwnerDN',    ownerDN )
-      classAddJob.insertAttributeString( 'OwnerGroup', ownerGroup )
-
-      classAddReq.insertAttributeString( 'Setup',      diracSetup )
-      classAddReq.insertAttributeString( 'OwnerDN',    ownerDN )
-      classAddReq.insertAttributeString( 'OwnerGroup', ownerGroup )
-
-      voPolicyDict = gConfig.getOptionsDict('/DIRAC/VOPolicy')
-      if voPolicyDict['OK']:
-        voPolicy = voPolicyDict['Value']
-        for param,val in voPolicy.items():
-          if not classAddJob.lookupAttribute(param):
-            classAddJob.insertAttributeString(param,val)
-
-      for jdlName in 'JobName', 'JobType', 'JobGroup', 'Site':
-        # Defaults are set by the DB.
-        jdlValue = classAddJob.getAttributeString( jdlName )
-        if jdlValue:
-          jobAttrNames.append( jdlName )
-          jobAttrValues.append( jdlValue )
-
-      if not classAddJob.lookupAttribute("Requirements"):
-        # No requirements given in the job
-        classAddJob.insertAttributeBool("Requirements", True)
-
-      priority      = classAddJob.getAttributeInt( 'Priority' )
-      systemConfig  = classAddJob.getAttributeString( 'SystemConfig' )
-      pilotType     = classAddJob.getAttributeString( 'PilotType' )
-      cpuTime       = classAddJob.getAttributeInt( 'MaxCPUTime' )
-
-      jobAttrNames.append( 'UserPriority' )
-      jobAttrValues.append( priority )
-      classAddReq.insertAttributeInt( 'UserPriority', priority )
-
-      classAddReq.insertAttributeInt(    'CPUTime',    cpuTime )
-
-      if systemConfig and systemConfig.lower() != 'any':
-        # Get the LHCb Platforms that are compatible with the requested systemConfig
-        result = gConfig.getOptionsDict('/Resources/Computing/OSCompatibility')
-        if result['OK'] and result['Value']:
-          platforms = result['Value']
-          lhcbPlatforms = []
-          for platform in platforms:
-            if systemConfig in platforms[platform]:
-              lhcbPlatforms.append( platform )
-          if lhcbPlatforms:
-            classAddReq.insertAttributeVectorString( 'LHCbPlatforms', lhcbPlatforms )
-          else:
-            error = 'No compatible Platform found for %s' % systemConfig
-
-      if pilotType:
-        classAddReq.insertAttributeString( 'PilotType', pilotType )
-
-      inputData = []
-      if classAddJob.lookupAttribute('InputData'):
-        inputData = classAddJob.getListFromExpression('InputData')
-
-    if error:
-      status = 'Failed' 
-      minorStatus = error
-    else:
-      jobAttrNames.append('VerifiedFlag')
-      jobAttrValues.append('True')
-
-    jobAttrNames.append('Status')
-    jobAttrValues.append(status)
-
-    jobAttrNames.append('MinorStatus')
-    jobAttrValues.append(minorStatus)
-
-    reqJDL = classAddReq.asJDL()
-    classAddJob.insertAttributeInt( 'JobRequirements', reqJDL )
-
-    jobJDL = classAddJob.asJDL()
-
-    result = self.setJobJDL( jobID, jobJDL )
-    if not result['OK']:
-      return result
-
-    values = []
-    for lfn in inputData:
-      values.append( '(%s, \'%s\' )' % ( jobID, lfn.strip() ) )
-
-    if values:
-      cmd = 'INSERT INTO InputData (JobID,LFN) VALUES %s' % ', '.join( values )
-      result = self._update( cmd )
+      result = self._insert( 'Jobs', jobAttrNames, jobAttrValues )
       if not result['OK']:
         return result
 
-    result = self.__setInitialJobParameters(classAddJob,jobID)
-    if not result['OK']:
-      return result
+      retVal['Status'] = 'Failed'
+      retVal['MinorStatus'] = 'Error in JDL syntax'
+      return retVal
 
+    else:
+      classAdJob.insertAttributeInt( 'JobID', jobID )
+      result = self.__checkAndPrepareJob( jobID, classAdJob, classAdReq )
+      if not result['OK']:
+        jobAttrNames.append('Status')
+        jobAttrValues.append('Failed')
+    
+        jobAttrNames.append('MinorStatus')
+        jobAttrValues.append(result['Message'])
+  
+        result = self._insert( 'Jobs', jobAttrNames, jobAttrValues )
+        if not result['OK']:
+          return result
+  
+        retVal['Status'] = 'Failed'
+        retVal['MinorStatus'] = result['Message']
+        return retVal
+
+      print classAdReq.asJDL()
+      # classAdJob = result['ClassAdJob']
+      # classAdReq = result['ClassAdReq']
+    
+      jobAttrNames.append('VerifiedFlag')
+      jobAttrValues.append('True')
+
+      jobAttrNames.append('Status')
+      jobAttrValues.append('Received')
+  
+      jobAttrNames.append('MinorStatus')
+      jobAttrValues.append('Job accepted')
+
+      reqJDL = classAdReq.asJDL()
+      classAdJob.insertAttributeInt( 'JobRequirements', reqJDL )
+  
+      jobJDL = classAdJob.asJDL()
+  
+      result = self.setJobJDL( jobID, jobJDL )
+      if not result['OK']:
+        return result
+  
+      inputData = []
+      if classAdJob.lookupAttribute('InputData'):
+        inputData = classAdJob.getListFromExpression('InputData')
+      values = []
+      for lfn in inputData:
+        values.append( '(%s, \'%s\' )' % ( jobID, lfn.strip() ) )
+  
+      if values:
+        cmd = 'INSERT INTO InputData (JobID,LFN) VALUES %s' % ', '.join( values )
+        result = self._update( cmd )
+        if not result['OK']:
+          return result
+  
+      result = self.__setInitialJobParameters(classAdJob,jobID)
+      if not result['OK']:
+        return result
+  
     result = self._insert( 'Jobs', jobAttrNames, jobAttrValues )
     if not result['OK']:
       return result
 
-    result = S_OK(jobID)
-    result['JobID'] = jobID
-    result['Status'] = status
-    result['MinorStatus'] = minorStatus
+    retVal['Status'] = 'Received'
+    retVal['MinorStatus'] = 'Job accepted'
 
-    return result
+    return retVal
+
+  def __checkAndPrepareJob(self, classAdJob, classAdReq ):
+    """
+      Check Consistence of Submitted JDL and set some defaults
+      Prepare subJDL with Job Requirements
+    """
+    error = ''
+
+    jdlDiracSetup = classAdJob.getAttributeString( 'DIRACSetup' )
+    jdlOwner      = classAdJob.getAttributeString( 'Owner' )
+    jdlOwnerDN    = classAdJob.getAttributeString( 'OwnerDN' )
+    jdlOwnerGroup = classAdJob.getAttributeString( 'OwnerGroup' )
+
+    if jdlDiracSetup and jdlDiracSetup != diracSetup:
+      error = 'Wrong DIRAC Setup in JDL'
+    if jdlOwner and jdlOwner != owner:
+      error = 'Wrong Owner in JDL'
+    elif jdlOwnerDN and jdlOwnerDN != ownerDN:
+      error = 'Wrong Owner DN in JDL'
+    elif jdlOwnerGroup and jdlOwnerGroup != ownerGroup:
+      error = 'Wrong Owner Group in JDL'
+
+    classAdJob.insertAttributeString( 'Owner',      owner )
+    classAdJob.insertAttributeString( 'OwnerDN',    ownerDN )
+    classAdJob.insertAttributeString( 'OwnerGroup', ownerGroup )
+
+    classAdReq.insertAttributeString( 'Setup',      diracSetup )
+    classAdReq.insertAttributeString( 'OwnerDN',    ownerDN )
+    classAdReq.insertAttributeString( 'OwnerGroup', ownerGroup )
+
+    voPolicyDict = gConfig.getOptionsDict('/DIRAC/VOPolicy')
+    if voPolicyDict['OK']:
+      voPolicy = voPolicyDict['Value']
+      for param,val in voPolicy.items():
+        if not classAdJob.lookupAttribute(param):
+          classAdJob.insertAttributeString(param,val)
+
+    for jdlName in 'JobName', 'JobType', 'JobGroup', 'Site':
+      # Defaults are set by the DB.
+      jdlValue = classAdJob.getAttributeString( jdlName )
+      if jdlValue:
+        jobAttrNames.append( jdlName )
+        jobAttrValues.append( jdlValue )
+
+    if not classAdJob.lookupAttribute("Requirements"):
+      # No requirements given in the job
+      classAdJob.insertAttributeBool("Requirements", True)
+
+    priority      = classAdJob.getAttributeInt( 'Priority' )
+    systemConfig  = classAdJob.getAttributeString( 'SystemConfig' )
+    pilotType     = classAdJob.getAttributeString( 'PilotType' )
+    cpuTime       = classAdJob.getAttributeInt( 'MaxCPUTime' )
+
+    jobAttrNames.append( 'UserPriority' )
+    jobAttrValues.append( priority )
+    classAdReq.insertAttributeInt( 'UserPriority', priority )
+
+    classAdReq.insertAttributeInt(    'CPUTime',    cpuTime )
+
+    if systemConfig and systemConfig.lower() != 'any':
+      # Get the LHCb Platforms that are compatible with the requested systemConfig
+      result = gConfig.getOptionsDict('/Resources/Computing/OSCompatibility')
+      if result['OK'] and result['Value']:
+        platforms = result['Value']
+        lhcbPlatforms = []
+        for platform in platforms:
+          if systemConfig in platforms[platform]:
+            lhcbPlatforms.append( platform )
+        if lhcbPlatforms:
+          classAdReq.insertAttributeVectorString( 'LHCbPlatforms', lhcbPlatforms )
+        else:
+          error = 'No compatible Platform found for %s' % systemConfig
+
+    if pilotType:
+      classAdReq.insertAttributeString( 'PilotType', pilotType )
+
+    if error:
+      return S_ERROR(error)
+
+    return S_OK()
+
 
 #############################################################################
   def addJobToDB (self, jobID, JDL=None, ownerDN='Unknown', ownerGroup = "Unknown"):
