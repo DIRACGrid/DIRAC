@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.94 2008/08/21 09:30:43 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.95 2008/08/21 10:02:28 rgracian Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.94 2008/08/21 09:30:43 rgracian Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.95 2008/08/21 10:02:28 rgracian Exp $"
 
 import re, os, sys, string, types
 import time
@@ -631,7 +631,7 @@ class JobDB(DB):
       attrNames.append('ApplicationStatus')
       attrValues.append(application)
     if appCounter:
-      attrNames.append('ApplicationCounter')
+      attrNames.append('ApplicationNumStatus')
       attrValues.append(appCounter)
 
     result = self.setJobAttributes(jobID,attrNames,attrValues,update=True)
@@ -1252,7 +1252,7 @@ class JobDB(DB):
     result = self.getJobAttributes( jobID, ['Status','MinorStatus','VerifiedFlag','RescheduleCounter',
                                      'Owner','OwnerDN','OwnerGroup','DIRACSetup'] )
     if result['OK']:
-      resultDict = result['value']
+      resultDict = result['Value']
     else:
      return S_ERROR('JobDB.getJobAttributes: can not retrieve job attributes')
 
@@ -1267,7 +1267,7 @@ class JobDB(DB):
 
 
     # Check the Reschedule counter first
-    rescheduleCounter = resultDict['RescheduleCounter'] + 1
+    rescheduleCounter = int(resultDict['RescheduleCounter']) + 1
 
     # Exit if the limit of the reschedulings is reached
     if rescheduleCounter > self.maxRescheduling:
@@ -1304,7 +1304,7 @@ class JobDB(DB):
     jdl = res['Value']
 
     # Restore initital job parameters
-    classAdJob = ClassAd(jdl)
+    classAdJob = ClassAd('[ %s ]' % jdl)
     classAdReq = ClassAd('[]')
     retVal = S_OK(jobID)
     retVal['JobID'] = jobID
@@ -1333,12 +1333,11 @@ class JobDB(DB):
     jobAttrNames.append( 'UserPriority' )
     jobAttrValues.append( priority )
 
-    for jdlName in 'Site':
-      # Defaults are set by the DB.
-      jdlValue = classAdJob.getAttributeString( jdlName )
-      if jdlValue:
-        jobAttrNames.append( jdlName )
-        jobAttrValues.append( jdlValue )
+    site = classAdJob.getAttributeString('Site')
+    if not site:
+      site = 'ANY'
+    jobAttrNames.append( 'Site' )
+    jobAttrValues.append( site )
 
     jobAttrNames.append('Status')
     jobAttrValues.append('Received')
@@ -1349,7 +1348,7 @@ class JobDB(DB):
     jobAttrNames.append('ApplicationStatus')
     jobAttrValues.append('Unknown')
         
-    jobAttrNames.append('ApplicationCounter')
+    jobAttrNames.append('ApplicationNumStatus')
     jobAttrValues.append(0)
     
     jobAttrNames.append('LastUpdateTime')
@@ -1368,12 +1367,14 @@ class JobDB(DB):
     if not result['OK']:
       return result
   
-    result = self._insert( 'Jobs', jobAttrNames, jobAttrValues )
+    result = self.setJobAttributes( jobID, jobAttrNames, jobAttrValues )
     if not result['OK']:
       return result
 
     retVal['InputData'] = classAdJob.lookupAttribute("InputData")
     retVal['RescheduleCounter'] = rescheduleCounter
+    retVal['Status'] = 'Received'
+    retVal['MinorStatus'] = 'Job Rescheduled'
 
     return retVal
 
