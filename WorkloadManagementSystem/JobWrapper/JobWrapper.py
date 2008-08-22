@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.53 2008/08/20 09:04:32 paterson Exp $
+# $Id: JobWrapper.py,v 1.54 2008/08/22 10:19:53 paterson Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.53 2008/08/20 09:04:32 paterson Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.54 2008/08/22 10:19:53 paterson Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -114,6 +114,8 @@ class JobWrapper:
       msg = 'Failed to create LcgFileCatalogClient with exception:'
       self.log.fatal(msg)
       self.log.fatal(str(x))
+    #Failure flag
+    self.failedFlag = False
     #Set defaults for some global parameters to be defined for the accounting report
     self.owner='unknown'
     self.jobGroup='unknown'
@@ -283,6 +285,13 @@ class JobWrapper:
       self.log.verbose('Sending final application standard output heartbeat')
       self.__sendFinalStdOut(stdout)
       self.log.verbose('Execution thread status = %s' %(status))
+
+      if not status:
+        self.__report('Completed','Application Finished Successfully')
+      else:
+        self.__report('Completed','Application Finished With Errors')
+        self.failedFlag = True
+
       if jobArgs.has_key('StdError'):
         errorFileName = jobArgs['StdError']
       if jobArgs.has_key('StdOutput'):
@@ -802,10 +811,18 @@ class JobWrapper:
     """
     self.log.info('Running JobWrapper finalization')
     requests = self.__getRequestFiles()
-    if requests:
-      self.log.info('There are pending requests for this job.')
+    if self.failedFlag and requests:
+      self.log.info('Application finished with errors and there are pending requests for this job.')
       self.__report('Completed','Pending Requests')
-    else:
+      self.__report('Failed','Application Finished With Errors')
+    elif not self.failedFlag and requests:
+      self.log.info('Application finished successfully with pending requests for this job.')
+      self.__report('Completed','Pending Requests')
+    elif self.failedFlag and not requests:
+      self.log.info('Application finished with errors wtih no pending requests.')
+      self.__report('Failed','Application Finished With Errors')
+    elif not self.failedFlag and not requests:
+      self.log.info('Application finished successfully with no pending requests for this job.')
       self.__report('Done','Execution Complete')
 
     self.sendFailoverRequest()
