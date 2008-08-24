@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.22 2008/08/21 21:54:54 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.23 2008/08/24 15:40:12 paterson Exp $
 # File :   DiracAdmin.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@ site banning and unbanning, WMS proxy uploading etc.
 
 """
 
-__RCSID__ = "$Id: DiracAdmin.py,v 1.22 2008/08/21 21:54:54 paterson Exp $"
+__RCSID__ = "$Id: DiracAdmin.py,v 1.23 2008/08/24 15:40:12 paterson Exp $"
 
 import DIRAC
 from DIRAC.ConfigurationSystem.Client.CSAPI              import CSAPI
@@ -89,7 +89,6 @@ class DiracAdmin:
        @return: S_OK,S_ERROR
     """
     return gProxyManager.userHasProxy( userDN, userGroup, requiredTime )
-
 
   #############################################################################
   def getSiteMask(self):
@@ -334,7 +333,6 @@ class DiracAdmin:
     """
 
     return gProxyManager.getPilotProxyFromDIRACGroup( userDN, userGroup, requiredTimeLeft = validity )
-
 
   #############################################################################
   def resetJob(self,jobID):
@@ -640,6 +638,46 @@ class DiracAdmin:
       print self.pPrint.pformat(result['Value'])
 
     return result
+
+  #############################################################################
+  def getExternalPackageVersions(self):
+    """ Simple function that attempts to obtain the external versions for
+        the local DIRAC installation (frequently needed for debugging purposes).
+    """
+    gLogger.info('DIRAC version v%dr%d build %d' %(DIRAC.majorVersion,DIRAC.minorVersion,DIRAC.patchLevel))
+    try:
+      import lcg_util
+      infoStr = 'Using lcg_util from: \n%s' % lcg_util.__file__
+      gLogger.info(infoStr)
+      infoStr = "The version of lcg_utils is %s" % lcg_util.lcg_util_version()
+      gLogger.info(infoStr)
+    except Exception,x:
+      errStr = "SRM2Storage.__init__: Failed to import lcg_util: %s" % (x)
+      gLogger.exception(errStr)
+
+    try:
+      import gfalthr as gfal
+      infoStr = "Using gfalthr from: \n%s" % gfal.__file__
+      gLogger.info(infoStr)
+      infoStr = "The version of gfalthr is %s" % gfal.gfal_version()
+      gLogger.info(infoStr)
+    except Exception,x:
+      errStr = "SRM2Storage.__init__: Failed to import gfalthr: %s." % (x)
+      gLogger.warn(errStr)
+      try:
+        import gfal
+        infoStr = "Using gfal from: %s" % gfal.__file__
+        gLogger.info(infoStr)
+        infoStr = "The version of gfal is %s" % gfal.gfal_version()
+        gLogger.info(infoStr)
+      except Exception,x:
+        errStr = "SRM2Storage.__init__: Failed to import gfal: %s" % (x)
+        gLogger.exception(errStr)
+
+
+    defaultProtocols = gConfig.getValue('/Resources/StorageElements/DefaultProtocols',[])
+    gLogger.info('Default list of protocols are: %s' %(string.join(defaultProtocols,', ')))
+    return S_OK()
 
   #############################################################################
   def __errorReport(self,error,message=None):
