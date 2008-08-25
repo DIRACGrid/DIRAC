@@ -1,9 +1,9 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/DB/RequestDBMySQL.py,v 1.26 2008/08/25 16:16:11 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/DB/RequestDBMySQL.py,v 1.27 2008/08/25 16:31:59 atsareg Exp $
 
 """ RequestDBMySQL is the MySQL plug in for the request DB
 """
 
-__RCSID__ = "$Id: RequestDBMySQL.py,v 1.26 2008/08/25 16:16:11 atsareg Exp $"
+__RCSID__ = "$Id: RequestDBMySQL.py,v 1.27 2008/08/25 16:31:59 atsareg Exp $"
 
 from DIRAC.Core.Base.DB import DB
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
@@ -727,9 +727,15 @@ class RequestDBMySQL(DB):
       elif key in sparameterList:
         new_selectDict['S.'+key] = value
 
+    condition = ''
     if new_selectDict:
       condition = self.__buildCondition(new_selectDict)
       req += condition
+
+    if condition:
+      req += " AND R.RequestID=S.RequestID"
+    else:
+      req += " WHERE R.RequestID=S.RequestID"
 
     if sortList:
       req += "ORDER BY %s %s" % (sortList[0][0],sortList[0][1])
