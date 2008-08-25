@@ -1,4 +1,4 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/RequestContainer.py,v 1.9 2008/08/18 21:58:55 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/RequestContainer.py,v 1.10 2008/08/25 08:37:49 atsareg Exp $
 
 """
 The Data Management Request contains all the necessary information for
@@ -11,7 +11,7 @@ from DIRAC.Core.Security.Misc import getProxyInfo
 from DIRAC.Core.Utilities import DEncode
 from DIRAC.RequestManagementSystem.Client.DISETSubRequest import DISETSubRequest
 
-__RCSID__ = "$Id: RequestContainer.py,v 1.9 2008/08/18 21:58:55 atsareg Exp $"
+__RCSID__ = "$Id: RequestContainer.py,v 1.10 2008/08/25 08:37:49 atsareg Exp $"
 
 class RequestContainer:
 
@@ -25,7 +25,7 @@ class RequestContainer:
 
     # Subrequests are represented as a dictionary. The subrequests of similar types are stored together in a list.
     # The dictionary named Attributes must be present and must have the following mandatory names
-    self.subAttributeNames = ['Status','SubRequestID','Operation','CreationTime','LastUpdate']
+    self.subAttributeNames = ['Status','SubRequestID','Operation','CreationTime','LastUpdate','ExecutionOrder']
     self.subRequests = {}
 
     if init:
@@ -216,7 +216,9 @@ class RequestContainer:
     # Initialise the sub-request
     index = self.initiateSubRequest(type)['Value']
     # Stuff the sub-request with the attributes
-    attributeDict = {'Status':'Waiting','SubRequestID':makeGuid(),'CreationTime': str(datetime.datetime.utcnow())}
+    attributeDict = {'Status':'Waiting','SubRequestID':makeGuid(),
+                     'CreationTime': str(datetime.datetime.utcnow()),
+                     'ExecutionOrder':0}
     for attr,value in requestDict['Attributes'].items():
       attributeDict[attr] = value
     self.setSubRequestAttributes(index,type,attributeDict)
@@ -248,7 +250,17 @@ class RequestContainer:
     elif len(self.subRequests[type]) < ind:
       return S_ERROR("Subrequest index is out of range.")
     else:
-      return S_OK(self.subRequests[type])
+      return S_OK(self.subRequests[type][ind])
+
+  def removeSubRequest(self,ind,type):
+    """ Remove sub-request as specified by its index
+    """
+    if not self.subRequests.has_key(type):
+      return S_ERROR("No requests of type specified found.")
+    elif len(self.subRequests[type]) < ind:
+      return S_ERROR("Subrequest index is out of range.")
+    else:
+      return S_OK(self.subRequests[type].pop(ind))
 
   def getNumSubRequests(self,type):
     """ Get the number of sub-requests for a given request type
@@ -532,11 +544,11 @@ class RequestContainer:
     """
     return self.isRequestEmpty()
 
-  def setDISETRequest(self,rpcStub):
+  def setDISETRequest(self,rpcStub,executionOrder=0):
     """ Add DISET subrequest from the DISET rpcStub
     """
 
-    result = self.addSubRequest(DISETSubRequest(rpcStub).getDictionary(),'diset')
+    result = self.addSubRequest(DISETSubRequest(rpcStub,executionOrder).getDictionary(),'diset')
     return result
 
   ###########################################################
@@ -722,3 +734,27 @@ class RequestContainer:
         out = out + child.data
     return str(out.strip())
 
+  def getDigest(self):
+    """ Get the request short description string
+    """
+
+    digest = ''
+    digestStrings = []
+    for stype in self.subRequests:
+      for ind in range(len(self.subRequests[stype])):
+        digestList = []
+        digestList.append(stype)
+        digestList.append(self.subRequests[stype][ind]['Attributes']['Operation'])
+        digestList.append(self.subRequests[stype][ind]['Attributes']['Status'])
+        digestList.append(str(self.subRequests[stype][ind]['Attributes']['ExecutionOrder']))
+        if stype == "transfer" or stype == "register":
+          digestList.append(self.subRequests[stype][ind]['Attributes']['TargetSE'])
+        if stype == "register":
+          digestList.append(self.subRequests[stype][ind]['Attributes']['Catalogue'])
+        if self.subRequests[stype][ind].has_key('Files'):
+          fname = os.path.basename(self.subRequests[stype][ind]['Files'][0]['LFN'])
+          digestList.append(fname)
+        digestStrings.append(":".join(digestList))
+
+    digest = '\n'.join(digestStrings)
+    return S_OK(digest)
