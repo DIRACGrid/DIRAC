@@ -144,7 +144,7 @@ class RequestDBMySQL(DB):
     requestID = res['Value'][0][0]
     dmRequest.setRequestID(requestID)
     subRequestIDs = []
-    req = "SELECT SubRequestID,Operation,Arguments,SourceSE,TargetSE,Catalogue,CreationTime,SubmissionTime,LastUpdate \
+    req = "SELECT SubRequestID,Operation,Arguments,ExecutionOrder,SourceSE,TargetSE,Catalogue,CreationTime,SubmissionTime,LastUpdate \
     from SubRequests WHERE RequestID=%s AND RequestType='%s' AND Status='%s'" % (requestID,requestType,'Waiting')
     res = self._query(req)
     if not res['OK']:
@@ -156,21 +156,22 @@ class RequestDBMySQL(DB):
       self._setSubRequestAttribute(requestID,tuple[0],'Status','Assigned')
     self.getIdLock.release()
 
-    for subRequestID,operation,arguments,sourceSE,targetSE,catalogue,creationTime,submissionTime,lastUpdate in res['Value']:
+    for subRequestID,operation,arguments,executionOrder,sourceSE,targetSE,catalogue,creationTime,submissionTime,lastUpdate in res['Value']:
       subRequestIDs.append(subRequestID)
       res = dmRequest.initiateSubRequest(requestType)
       ind = res['Value']
       subRequestDict = {
-                        'Status'       : 'Waiting',
-                        'SubRequestID' : subRequestID,
-                        'Operation'    : operation,
-                        'Arguments'    : arguments,
-                        'SourceSE'     : sourceSE,
-                        'TargetSE'     : targetSE,
-                        'Catalogue'    : catalogue,
-                        'CreationTime' : creationTime,
-                        'SubmissionTime':submissionTime,
-                        'LastUpdate'   : lastUpdate
+                        'Status'        : 'Waiting',
+                        'SubRequestID'  : subRequestID,
+                        'Operation'     : operation,
+                        'Arguments'     : arguments,
+                        'ExecutionOrder': int(executionOrder),
+                        'SourceSE'      : sourceSE,
+                        'TargetSE'      : targetSE,
+                        'Catalogue'     : catalogue,
+                        'CreationTime'  : creationTime,
+                        'SubmissionTime': submissionTime,
+                        'LastUpdate'    : lastUpdate
                        }
       res = dmRequest.setSubRequestAttributes(ind,requestType,subRequestDict)
       if not res['OK']:
@@ -610,6 +611,64 @@ class RequestDBMySQL(DB):
     self.getIdLock.release()
     return S_OK(subRequestID)
 
+  def getDigest(self,requestID):
+    """ Get digest of the given request specified by its requestID
+    """
+    digest = ''
+    digestStrings = []
+
+    req = "SELECT RequestType,Operation,Status,ExecutionOrder,TargetSE,Catalogue,SubRequestID from SubRequests \
+           WHERE RequestID=%d" % int(requestID)
+    result = self._query(req)
+    if not result['OK']:
+      return result
+
+    if not result['Value']:
+      return S_OK('')
+
+    for row in result['Value']:
+      digestList = []
+      digestList.append(row[0])
+      digestList.append(row[1])
+      digestList.append(row[2])
+      digestList.append(row[3])
+      if row[0] == "transfer" or row[0] == "register":
+        digestList.append(row[4])
+      if row[0] == "register":
+        digestList.append(row[5])
+      subRequestID = int(row[6])
+      req = "SELECT LFN from Files WHERE SubRequestID = %s ORDER BY FileID;" % subRequestID
+      resFile = self._query(req)
+      if resFile['OK']:
+        if resFile['Value']:
+          lfn = resFile['Value'][0][0]
+          digestList.append(os.path.basename(lfn))
+
+      digestStrings.append(":".join(digestList))
+
+    digest = '\n'.join(digestStrings)
+    return S_OK(digest)
+
+  def getCurrentExecutionOrder(self,requestID):
+    """ Get the current subrequest execution order for the given request
+    """
+
+    req = "SELECT Status,ExecutionOrder from SubRequests WHERE RequestID=%d" % int(requestID)
+    result = self._query(req)
+    if not result['OK']:
+      return result
+
+    if not result['Value']:
+      return S_ERROR('No SubRequests found')
+
+    current_order = 999
+    for row in result['Value']:
+      status,order = row
+      if status == "Waiting" and order < current_order:
+        current_order = order
+
+    return S_OK(current_order)
+
   def __buildCondition(self, condDict, older=None, newer=None ):
     """ build SQL condition statement from provided condDict
         and other extra conditions
@@ -680,6 +739,8 @@ class RequestDBMySQL(DB):
       resultDict['Records'] = []
       return S_OK(resultDict)
 
+    nRequests = len(result['Value'])
+
     if startItem <= len(result['Value']):
       firstIndex = startItem
     else:
@@ -696,4 +757,6 @@ class RequestDBMySQL(DB):
 
     resultDict['ParameterNames'] = parameterList
     resultDict['Records'] = records
+    resultDict['TotalRecords'] = nRequests
+
     return S_OK(resultDict)
