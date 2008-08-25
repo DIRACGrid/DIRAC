@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/List.py,v 1.13 2008/01/24 18:32:07 acasajus Exp $
-__RCSID__ = "$Id: List.py,v 1.13 2008/01/24 18:32:07 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/List.py,v 1.14 2008/08/25 09:29:44 atsareg Exp $
+__RCSID__ = "$Id: List.py,v 1.14 2008/08/25 09:29:44 atsareg Exp $"
 """
    Collection of DIRAC useful list related modules
    by default on Error they return None
@@ -63,6 +63,15 @@ def sortList(list,invert=False):
   else:
     list.sort(lambda x, y: cmp(y, x))
   return list
+
+def pop(list, popElement):
+  """ Pop the first element equal to popElement from the list
+  """
+
+  for i in range(len(list)):
+    if list[i] == popElement:
+      return list.pop(i)
+  return None
 
 def stringListToString(list):
   """
