@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.23 2008/08/24 15:40:12 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.24 2008/08/25 18:46:54 paterson Exp $
 # File :   DiracAdmin.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,13 +14,13 @@ site banning and unbanning, WMS proxy uploading etc.
 
 """
 
-__RCSID__ = "$Id: DiracAdmin.py,v 1.23 2008/08/24 15:40:12 paterson Exp $"
+__RCSID__ = "$Id: DiracAdmin.py,v 1.24 2008/08/25 18:46:54 paterson Exp $"
 
 import DIRAC
 from DIRAC.ConfigurationSystem.Client.CSAPI              import CSAPI
 from DIRAC.Core.DISET.RPCClient                          import RPCClient
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
-from DIRAC.Core.Utilities.SiteCEMapping                  import getCEsForSite
+from DIRAC.Core.Utilities.SiteCEMapping                  import getCEsForSite,getSiteCEMapping
 from DIRAC                                               import gConfig, gLogger, S_OK, S_ERROR
 
 import re, os, sys, string, time, shutil, types
@@ -188,6 +188,9 @@ class DiracAdmin:
        @return: S_OK,S_ERROR
 
     """
+    result = self.__checkSiteIsValid(site)
+    if not result['OK']:
+      return result
     self.log.info('Allowing %s in site mask' % site)
     wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
     result = wmsAdmin.allowSite(site)
@@ -205,10 +208,26 @@ class DiracAdmin:
        @return: S_OK,S_ERROR
 
     """
+    result = self.__checkSiteIsValid(site)
+    if not result['OK']:
+      return result
     self.log.info('Removing %s from site mask' % site)
     wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
     result = wmsAdmin.banSite(site)
     return result
+
+  #############################################################################
+  def __checkSiteIsValid(self,site):
+    """Internal function to check that a site name is valid.
+    """
+    sites = getSiteCEMapping()
+    if not sites['OK']:
+      return S_ERROR('Could not get site CE mapping')
+    siteList = sites['Value'].keys()
+    if not site in siteList:
+      return S_ERROR('Specified site %s is not in list of defined sites' %site)
+
+    return S_OK('%s is valid' %site)
 
   #############################################################################
   def clearMask(self):
@@ -690,6 +709,12 @@ class DiracAdmin:
     return S_ERROR(message)
 
   #############################################################################
+  def csModifyValue(self,optionPath,newValue):
+    """Function to modify an existing value in the CS.
+    """
+    return self.csAPI.modifyValue(optionPath,newValue)
+
+  #############################################################################
   def csRegisterUser( self, username, properties ):
     """Registers a user in the CS.
         - username: Username of the user (easy;)
@@ -758,9 +783,29 @@ class DiracAdmin:
     return self.csAPI.syncUsersWithCFG( usersCFG )
 
   #############################################################################
-  def csCommitChanges( self ):
+  def csCommitChanges(self,sortUsers=True):
     """Commit the changes in the CS
     """
-    return self.csAPI.commitChanges()
+    return self.csAPI.commitChanges(sortUsers=False)
+
+  #############################################################################
+  def _promptUser(self,message):
+    """Internal function to pretty print an object.
+    """
+    self.log.verbose('%s %s' %(message,'[yes/no] : '))
+    response = raw_input('%s %s' %(message,'[yes/no] : '))
+    responses = ['yes','y','n','no']
+    if not response.strip() or response=='\n':
+      self.log.info('Possible responses are: %s' %(string.join(responses,', ')))
+      response = raw_input('%s %s' %(message,'[yes/no] : '))
+
+    if not response.strip().lower() in responses:
+      self.log.info('Problem interpreting input "%s", assuming negative response.' %(response))
+      return S_ERROR(response)
+
+    if response.strip().lower()=='y' or response.strip().lower()=='yes':
+      return S_OK(response)
+    else:
+      return S_ERROR(response)
 
   #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
