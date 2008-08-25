@@ -1,24 +1,25 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/DISETSubRequest.py,v 1.6 2008/08/07 13:22:03 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/DISETSubRequest.py,v 1.7 2008/08/25 08:35:47 atsareg Exp $
 """
    DISETSubRequest Class encapsulates a request definition to accomplish a DISET
    RPC call
 
 """
 
-__RCSID__ = "$Id: DISETSubRequest.py,v 1.6 2008/08/07 13:22:03 atsareg Exp $"
+__RCSID__ = "$Id: DISETSubRequest.py,v 1.7 2008/08/25 08:35:47 atsareg Exp $"
 
 import commands
 from DIRAC.Core.Utilities import DEncode
 from DIRAC import Time
+from DIRAC.Core.Utilities.File import makeGuid
 
 class DISETSubRequest:
 
   #############################################################################
 
-  def __init__(self,rpcStub= None):
+  def __init__(self,rpcStub= None,executionOrder=0):
     """Instantiates the Workflow object and some default parameters.
     """
-    self.subAttributeNames = ['Status','SubRequestID','Operation','CreationTime','LastUpdate','Arguments']
+    self.subAttributeNames = ['Status','SubRequestID','Operation','ExecutionOrder','CreationTime','LastUpdate','Arguments']
     self.subAttributes = {}
 
     for attr in self.subAttributeNames:
@@ -26,8 +27,9 @@ class DISETSubRequest:
 
     # Some initial values
     self.subAttributes['Status'] = "Waiting"
-    status,self.subAttributes['SubRequestID'] = commands.getstatusoutput('uuidgen')
+    self.subAttributes['SubRequestID'] = makeGuid()
     self.subAttributes['CreationTime'] = Time.toString()
+    self.subAttributes['ExecutionOrder'] = executionOrder
 
     if rpcStub:
       self.subAttributes['Arguments'] = DEncode.encode(rpcStub)
