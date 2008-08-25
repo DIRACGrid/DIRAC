@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.54 2008/08/22 10:19:53 paterson Exp $
+# $Id: JobWrapper.py,v 1.55 2008/08/25 08:39:02 atsareg Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.54 2008/08/22 10:19:53 paterson Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.55 2008/08/25 08:39:02 atsareg Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -877,7 +877,7 @@ class JobWrapper:
 
   #############################################################################
   def sendFailoverRequest(self):
-    """ Create and send a combined job failover reauest if any
+    """ Create and send a combined job failover request if any
     """
     request = RequestContainer()
     requestName = 'job_%s_combined_request.xml' % self.jobID
@@ -898,8 +898,7 @@ class JobWrapper:
     else:
       result = self.sendWMSAccounting()
       if not result['OK']:
-        subrequest = DISETSubRequest(result['rpcStub']).getDictionary()
-        request.addSubRequest(subrequest,'accounting')
+        request.setDISETRequest(result['rpcStub'])
 
     # Any other requests in the current directory
     rfiles = self.__getRequestFiles()
@@ -915,6 +914,12 @@ class JobWrapper:
       requestClient = RequestClient()
       requestString = request.toXML()['Value']
       result = requestClient.setRequest(requestName, requestString)
+      if result['OK']:
+        resDigest = request.getDigest()
+        digest = resDigest['Value']
+        resultSet = self.jobReport.setJobParameter('PendingRequest',digest)
+      else:
+        self.log.error('Failed to set failover request',result['Message'])
       return result
     else:
       return S_OK()
