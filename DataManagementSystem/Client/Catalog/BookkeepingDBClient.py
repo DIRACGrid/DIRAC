@@ -44,6 +44,7 @@ class BookkeepingDBClient(FileCatalogueBase):
       resDict = {'Successful':successful,'Failed':failed}
       result = S_OK(resDict)
       result['rpcStub'] = res['rpcStub']
+      return result
 
   def __unsetHasReplicaFlag(self,lfns):
 
