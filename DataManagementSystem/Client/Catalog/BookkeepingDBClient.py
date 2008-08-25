@@ -30,8 +30,12 @@ class BookkeepingDBClient(FileCatalogueBase):
     failed = {}
     successful = {}
     res = self.server.addFiles(lfns)
+
+    print "AT >>>> __setHasReplicaFlag 1 ",res
+
     if not res['OK']:
       for lfn in lfns:
+        print "AT >>>> __setHasReplicaFlag 2 ",lfn, failed
         failed[lfn] = res['Message']
         resDict = {'Successful':{},'Failed':failed}
       return S_OK(resDict)
