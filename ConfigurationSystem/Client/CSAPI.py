@@ -306,3 +306,16 @@ class CSAPI:
         return retVal
       self.__csModified = False
     return S_OK()
+
+  def modifyValue(self,optionPath,newValue):
+    """Modify an existing value at the specified options path.
+    """
+    if not self.__initialized:
+      return S_ERROR( "CSAPI didn't initialize properly" )
+    prevVal = self.__csMod.getValue(optionPath)
+    if not prevVal:
+      return S_ERROR('Trying to set %s to %s but option does not exist' %(optionPath,newValue))
+    gLogger.verbose( "Changing %s from \n%s \nto \n%s" % (optionPath,prevVal,newValue))
+    self.__csMod.setOptionValue(optionPath,newValue)
+    self.__csModified = True
+    return S_OK('Modified %s' %optionPath)
