@@ -631,7 +631,7 @@ class RequestDBMySQL(DB):
       digestList.append(row[0])
       digestList.append(row[1])
       digestList.append(row[2])
-      digestList.append(row[3])
+      digestList.append(int(row[3]))
       if row[0] == "transfer" or row[0] == "register":
         digestList.append(row[4])
       if row[0] == "register":
