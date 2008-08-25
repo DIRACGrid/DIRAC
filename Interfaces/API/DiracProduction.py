@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.33 2008/07/14 15:58:07 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.34 2008/08/25 09:59:50 paterson Exp $
 # File :   DiracProduction.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are to be documented with example usage.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.33 2008/07/14 15:58:07 acasajus Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.34 2008/08/25 09:59:50 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 import pprint
@@ -703,6 +703,33 @@ class DiracProduction:
 
     submission = self.__createProductionJobs(productionID,result['Value'],numberOfJobs,userID['Value'],site)
     return submission
+
+  #############################################################################
+  def extendProduction(self,productionID,numberOfJobs,printOutput=False):
+    """ Extend Simulation type Production by number of jobs.
+        Usage: extendProduction <ProductionNameOrID> nJobs
+    """
+    if type(productionID)==type(2):
+      productionID=long(productionID)
+    if not type(productionID)==type(long(1)):
+      if not type(productionID) == type(" "):
+        return self.__errorReport('Expected string or long for production ID')
+
+    if type(numberOfJobs) == type(" "):
+      try:
+        numberOfJobs = int(numberOfJobs)
+      except Exception,x:
+        return self.__errorReport(str(x),'Expected integer or string for number of jobs to submit')
+
+    prodClient = RPCClient('ProductionManagement/ProductionManager')
+    result = prodClient.extendProduction(long(productionID),numberOfJobs)
+    if not result['OK']:
+      return self.__errorReport(result,'Could not extend production %s by %s jobs' %(productionID,numberOfJobs))
+
+    if printOutput:
+      print 'Extended production %s by %s jobs' %(productionID,numberOfJobs)
+
+    return result
 
   #############################################################################
   def __createProductionJobs(self,prodID,prodDict,number,userID,site=None):
