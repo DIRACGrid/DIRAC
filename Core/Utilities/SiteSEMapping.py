@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/SiteSEMapping.py,v 1.1 2008/07/07 21:28:59 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/SiteSEMapping.py,v 1.2 2008/08/25 08:49:44 atsareg Exp $
 # File :   SiteSEMapping.py
 ########################################################################
 
@@ -10,7 +10,7 @@
      Assumes CS structure of: /Resources/Sites/<GRIDNAME>/<SITENAME>
 """
 
-__RCSID__ = "$Id: SiteSEMapping.py,v 1.1 2008/07/07 21:28:59 paterson Exp $"
+__RCSID__ = "$Id: SiteSEMapping.py,v 1.2 2008/08/25 08:49:44 atsareg Exp $"
 
 import string,re
 
@@ -123,5 +123,30 @@ def getSEsForSite(siteName):
   siteSection = '/Resources/Sites/%s/%s/SE' %(gridName,siteName)
   ses = gConfig.getValue(siteSection,[])
   return S_OK(ses)
+
+#############################################################################
+def isSameSiteSE(se1,se2):
+  """ Check if the 2 SEs are from the same site
+  """
+
+  if se1 == se2:
+    return S_OK(True)
+
+  result = getSitesForSE(se1)
+  if not result['OK']:
+    return result
+  sites1 = result['Value']
+  result = getSitesForSE(se2)
+  if not result['OK']:
+    return result
+  sites2 = result['Value']
+  if sites1[0] == sites2[0]:
+    return S_OK(True)
+
+  for site in sites1:
+    if site in sites2:
+      return S_OK(True)
+
+  return S_OK(False)
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
