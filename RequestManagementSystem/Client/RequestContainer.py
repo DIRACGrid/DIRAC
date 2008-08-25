@@ -1,4 +1,4 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/RequestContainer.py,v 1.10 2008/08/25 08:37:49 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/RequestContainer.py,v 1.11 2008/08/25 20:06:45 atsareg Exp $
 
 """
 The Data Management Request contains all the necessary information for
@@ -11,7 +11,7 @@ from DIRAC.Core.Security.Misc import getProxyInfo
 from DIRAC.Core.Utilities import DEncode
 from DIRAC.RequestManagementSystem.Client.DISETSubRequest import DISETSubRequest
 
-__RCSID__ = "$Id: RequestContainer.py,v 1.10 2008/08/25 08:37:49 atsareg Exp $"
+__RCSID__ = "$Id: RequestContainer.py,v 1.11 2008/08/25 20:06:45 atsareg Exp $"
 
 class RequestContainer:
 
@@ -740,7 +740,7 @@ class RequestContainer:
 
     digest = ''
     digestStrings = []
-    for stype in self.subRequests:
+    for stype in self.subRequests.keys():
       for ind in range(len(self.subRequests[stype])):
         digestList = []
         digestList.append(stype)
@@ -752,8 +752,9 @@ class RequestContainer:
         if stype == "register":
           digestList.append(self.subRequests[stype][ind]['Attributes']['Catalogue'])
         if self.subRequests[stype][ind].has_key('Files'):
-          fname = os.path.basename(self.subRequests[stype][ind]['Files'][0]['LFN'])
-          digestList.append(fname)
+          if self.subRequests[stype][ind]['Files']:
+            fname = os.path.basename(self.subRequests[stype][ind]['Files'][0]['LFN'])
+            digestList.append(fname)
         digestStrings.append(":".join(digestList))
 
     digest = '\n'.join(digestStrings)
