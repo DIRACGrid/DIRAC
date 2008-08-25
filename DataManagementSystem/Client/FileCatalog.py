@@ -136,18 +136,25 @@ class FileCatalog:
     """ Remove the specified catalog from the internal pool
     """
 
+    catalog_removed = False
+
     for i in range(len(self.readCatalogs)):
       catalog,object,master = self.readCatalogs[i]
       if catalog == catalogName:
         del self.readCatalogs[i]
+        catalog_removed = True
         break
     for i in range(len(self.writeCatalogs)):
       catalog,object,master = self.writeCatalogs[i]
       if catalog == catalogName:
         del self.writeCatalogs[i]
+        catalog_removed = True
         break
 
-    return S_OK()
+    if catalog_removed:
+      return S_OK()
+    else:
+      return S_OK('Catalog does not exist')
 
   def _getSelectedCatalogs(self,desiredCatalogs):
     for catalogName in desiredCatalogs:
