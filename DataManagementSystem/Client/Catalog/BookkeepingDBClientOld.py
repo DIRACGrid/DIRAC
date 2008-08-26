@@ -1,9 +1,9 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Client/Catalog/Attic/BookkeepingDBClientOld.py,v 1.1 2008/08/26 16:23:49 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Client/Catalog/Attic/BookkeepingDBClientOld.py,v 1.2 2008/08/26 18:25:02 atsareg Exp $
 
 """ Client for the BookkeeppingDB file catalog old XML based service
 """
 
-__RCSID__ = "$Id: BookkeepingDBClientOld.py,v 1.1 2008/08/26 16:23:49 atsareg Exp $"
+__RCSID__ = "$Id: BookkeepingDBClientOld.py,v 1.2 2008/08/26 18:25:02 atsareg Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -61,7 +61,7 @@ class BookkeepingDBClientOld(FileCatalogueBase):
       files = fileTuple
     replicaTupleList = []
     for fileTuple in files:
-      lfn,pfn,size,se,guid = fileTuple
+      lfn,pfn,size,se,guid,checksum = fileTuple
       replicaTupleList.append((lfn,pfn,se))
 
     return self.addReplica(replicaTupleList)
@@ -78,18 +78,18 @@ class BookkeepingDBClientOld(FileCatalogueBase):
       replicas = replicaTuple
 
     failed_lfns = []
+    done_lfns = []
 
     for replicaTuple in replicas:
       lfn,pfn,se = replicaTuple
       resRep = self.__addReplica(lfn,pfn,se)
       if not resRep['OK']:
-        failed_lfns.append((lfn,se))
+        failed_lfns.append(lfn)
+      else:
+        done_lfns.append(lfn)
 
-    if failed_lfns:
-      result = S_ERROR('Failed to add all replicas')
-      result['FailedLFNs'] = failed_lfns
-    else:
-      return S_OK()
+    resDict = {'Successful':done_lfns,'Failed':failed_lfns}
+    return S_OK(resDict)
 
   def removeFile(self,lfns):
     """Remove the LFN record from the BK Catalog
@@ -102,6 +102,7 @@ class BookkeepingDBClientOld(FileCatalogueBase):
 
     result = S_OK()
     failed_lfns = []
+    done_lfns = []
 
     for lfn in lfnList:
 
@@ -120,12 +121,11 @@ class BookkeepingDBClientOld(FileCatalogueBase):
       resRem = self.server.sendBookkeeping(fname,repscript)
       if not resRem['OK']:
         failed_lfns.append(lfn)
+      else:
+        done_lfns.append(lfn)
 
-    if failed_lfns:
-      result = S_ERROR('Failed to remove all files')
-      result['FailedLFNs'] = failed_lfns
-    else:
-      return S_OK()
+    resDict = {'Successful':done_lfns,'Failed':failed_lfns}
+    return S_OK(resDict)
 
 
   def removeReplica(self,replicas):
@@ -139,6 +139,7 @@ class BookkeepingDBClientOld(FileCatalogueBase):
 
     result = S_OK()
     failed_lfns = []
+    done_lfns = []
 
     for lfn,se in replicaList:
       repscript = """<?xml version="1.0" encoding="UTF-8"?>
@@ -156,10 +157,9 @@ class BookkeepingDBClientOld(FileCatalogueBase):
       #print "sending",fname
       resRem = self.server.sendBookkeeping(fname,repscript)
       if not resRem['OK']:
-        failed_lfns.append((lfn,se))
+        failed_lfns.append(lfn)
+      else:
+        done_lfns.append(lfn)
 
-    if failed_lfns:
-      result = S_ERROR('Failed to remove all replicas')
-      result['FailedLFNs'] = failed_lfns
-    else:
-      return S_OK()
+    resDict = {'Successful':done_lfns,'Failed':failed_lfns}
+    return S_OK(resDict)

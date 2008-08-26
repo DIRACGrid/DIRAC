@@ -1,5 +1,10 @@
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Client/Catalog/BookkeepingDBClient.py,v 1.12 2008/08/26 18:25:02 atsareg Exp $
+
 """ Client for BookkeepingDB file catalog
 """
+
+__RCSID__ = "$Id: BookkeepingDBClient.py,v 1.12 2008/08/26 18:25:02 atsareg Exp $"
+
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.DataManagementSystem.Client.Catalog.FileCatalogueBase import FileCatalogueBase
