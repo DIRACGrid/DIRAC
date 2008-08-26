@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Mail.py,v 1.2 2008/06/09 17:52:55 paterson Exp $
-__RCSID__ = "$Id: Mail.py,v 1.2 2008/06/09 17:52:55 paterson Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Mail.py,v 1.3 2008/08/26 17:40:30 paterson Exp $
+__RCSID__ = "$Id: Mail.py,v 1.3 2008/08/26 17:40:30 paterson Exp $"
 """
     Extremely simple utility class to send mails
 """
@@ -53,7 +53,7 @@ class Mail( SMTP ):
       gLogger.error( "Sending mail failed", str( v ) )
       return S_ERROR("Sending mail failed %s" % str( v ) )
 
-    print self.quit()
+    self.quit()
     gLogger.info( "The mail was succesfully sent", "to %s" \
                   % ', '.join( addresses ) )
     return S_OK( "The mail was succesfully sent" )
