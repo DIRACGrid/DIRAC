@@ -1,9 +1,9 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Client/Catalog/Attic/BookkeepingDBClientOld.py,v 1.2 2008/08/26 18:25:02 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Client/Catalog/Attic/BookkeepingDBClientOld.py,v 1.3 2008/08/26 21:11:20 atsareg Exp $
 
 """ Client for the BookkeeppingDB file catalog old XML based service
 """
 
-__RCSID__ = "$Id: BookkeepingDBClientOld.py,v 1.2 2008/08/26 18:25:02 atsareg Exp $"
+__RCSID__ = "$Id: BookkeepingDBClientOld.py,v 1.3 2008/08/26 21:11:20 atsareg Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -77,16 +77,16 @@ class BookkeepingDBClientOld(FileCatalogueBase):
     else:
       replicas = replicaTuple
 
-    failed_lfns = []
-    done_lfns = []
+    failed_lfns = {}
+    done_lfns = {}
 
     for replicaTuple in replicas:
       lfn,pfn,se = replicaTuple
       resRep = self.__addReplica(lfn,pfn,se)
       if not resRep['OK']:
-        failed_lfns.append(lfn)
+        failed_lfns[lfn] = resRem['Message']
       else:
-        done_lfns.append(lfn)
+        done_lfns[lfn] = True
 
     resDict = {'Successful':done_lfns,'Failed':failed_lfns}
     return S_OK(resDict)
@@ -101,8 +101,8 @@ class BookkeepingDBClientOld(FileCatalogueBase):
       lfnList = lfns
 
     result = S_OK()
-    failed_lfns = []
-    done_lfns = []
+    failed_lfns = {}
+    done_lfns = {}
 
     for lfn in lfnList:
 
@@ -120,9 +120,9 @@ class BookkeepingDBClientOld(FileCatalogueBase):
       #print "sending",fname
       resRem = self.server.sendBookkeeping(fname,repscript)
       if not resRem['OK']:
-        failed_lfns.append(lfn)
+        failed_lfns[lfn] = resRem['Message']
       else:
-        done_lfns.append(lfn)
+        done_lfns[lfn] = True
 
     resDict = {'Successful':done_lfns,'Failed':failed_lfns}
     return S_OK(resDict)
@@ -138,8 +138,8 @@ class BookkeepingDBClientOld(FileCatalogueBase):
       replicaList = replicas
 
     result = S_OK()
-    failed_lfns = []
-    done_lfns = []
+    failed_lfns = {}
+    done_lfns = {}
 
     for lfn,se in replicaList:
       repscript = """<?xml version="1.0" encoding="UTF-8"?>
@@ -157,9 +157,9 @@ class BookkeepingDBClientOld(FileCatalogueBase):
       #print "sending",fname
       resRem = self.server.sendBookkeeping(fname,repscript)
       if not resRem['OK']:
-        failed_lfns.append(lfn)
+        failed_lfns[lfn] = resRem['Message']
       else:
-        done_lfns.append(lfn)
+        done_lfns[lfn] = True
 
     resDict = {'Successful':done_lfns,'Failed':failed_lfns}
     return S_OK(resDict)
