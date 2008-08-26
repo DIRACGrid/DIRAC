@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.24 2008/08/25 18:46:54 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.25 2008/08/26 17:41:31 paterson Exp $
 # File :   DiracAdmin.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,14 +14,17 @@ site banning and unbanning, WMS proxy uploading etc.
 
 """
 
-__RCSID__ = "$Id: DiracAdmin.py,v 1.24 2008/08/25 18:46:54 paterson Exp $"
+__RCSID__ = "$Id: DiracAdmin.py,v 1.25 2008/08/26 17:41:31 paterson Exp $"
 
 import DIRAC
-from DIRAC.ConfigurationSystem.Client.CSAPI              import CSAPI
-from DIRAC.Core.DISET.RPCClient                          import RPCClient
-from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
-from DIRAC.Core.Utilities.SiteCEMapping                  import getCEsForSite,getSiteCEMapping
-from DIRAC                                               import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC.ConfigurationSystem.Client.CSAPI                   import CSAPI
+from DIRAC.Core.DISET.RPCClient                               import RPCClient
+from DIRAC.FrameworkSystem.Client.ProxyManagerClient          import gProxyManager
+from DIRAC.Core.Utilities.SiteCEMapping                       import getCEsForSite,getSiteCEMapping
+from DIRAC.WorkloadManagementSystem.Client.NotificationClient import NotificationClient
+from DIRAC.Core.Security.X509Chain                            import X509Chain
+from DIRAC.Core.Security                                      import Locations, CS
+from DIRAC                                                    import gConfig, gLogger, S_OK, S_ERROR
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -91,7 +94,7 @@ class DiracAdmin:
     return gProxyManager.userHasProxy( userDN, userGroup, requiredTime )
 
   #############################################################################
-  def getSiteMask(self):
+  def getSiteMask(self,printOutput=False):
     """Retrieve current site mask from WMS Administrator service.
 
        Example usage:
@@ -106,10 +109,11 @@ class DiracAdmin:
     result = wmsAdmin.getSiteMask()
     if result['OK']:
       sites = result['Value']
-      sites.sort()
-      for site in sites:
-        print site
-    #TODO, add printOutput flag
+      if printOutput:
+        sites.sort()
+        for site in sites:
+          print site
+
     return result
 
   #############################################################################
@@ -177,7 +181,7 @@ class DiracAdmin:
     return result
 
   #############################################################################
-  def addSiteInMask(self,site):
+  def addSiteInMask(self,site,printOutput=False):
     """Adds the site to the site mask.
 
        Example usage:
@@ -191,13 +195,26 @@ class DiracAdmin:
     result = self.__checkSiteIsValid(site)
     if not result['OK']:
       return result
-    self.log.info('Allowing %s in site mask' % site)
+
+    mask = self.getSiteMask()
+    if not mask['OK']:
+      return mask
+    siteMask = mask['Value']
+    if site in siteMask:
+      return S_ERROR('Site %s already in mask of allowed sites' %site)
+
     wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
     result = wmsAdmin.allowSite(site)
+    if not result['OK']:
+      return result
+
+    if printOutput:
+      print 'Allowing %s in site mask' %site
+
     return result
 
   #############################################################################
-  def banSiteFromMask(self,site):
+  def banSiteFromMask(self,site,printOutput=False):
     """Removes the site from the site mask.
 
        Example usage:
@@ -211,9 +228,22 @@ class DiracAdmin:
     result = self.__checkSiteIsValid(site)
     if not result['OK']:
       return result
-    self.log.info('Removing %s from site mask' % site)
+
+    mask = self.getSiteMask()
+    if not mask['OK']:
+      return mask
+    siteMask = mask['Value']
+    if not site in siteMask:
+      return S_ERROR('Site %s is already banned' %site)
+
     wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
     result = wmsAdmin.banSite(site)
+    if not result['OK']:
+      return result
+
+    if printOutput:
+      print 'Removing %s from site mask' % site
+
     return result
 
   #############################################################################
@@ -787,6 +817,48 @@ class DiracAdmin:
     """Commit the changes in the CS
     """
     return self.csAPI.commitChanges(sortUsers=False)
+
+  #############################################################################
+  def sendMail(self,address,subject,body,fromAddress=None,localAttempt=True):
+    """ Send mail to specified address with body.
+    """
+    notification = NotificationClient()
+    return notification.sendMail(address,subject,body,fromAddress,localAttempt)
+
+  #############################################################################
+  def sendSMS(self,userName,body,fromAddress=None):
+    """ Send mail to specified address with body.
+    """
+    if len(body)>160:
+      return S_ERROR('Exceeded maximum SMS length of 160 characters')
+    notification = NotificationClient()
+    return notification.sendSMS(userName,body,fromAddress)
+
+  #############################################################################
+  def _getCurrentUser(self):
+    """Simple function to return current DIRAC username.
+    """
+    self.proxy = Locations.getProxyLocation()
+    if not self.proxy:
+      return S_ERROR('No proxy found in local environment')
+    else:
+      self.log.verbose('Current proxy is %s' %self.proxy)
+
+    chain = X509Chain()
+    result = chain.loadProxyFromFile( self.proxy )
+    if not result[ 'OK' ]:
+      return result
+
+    result = chain.getIssuerCert()
+    if not result[ 'OK' ]:
+      return result
+    issuerCert = result[ 'Value' ]
+    dn = issuerCert.getSubjectDN()[ 'Value' ]
+    result = CS.getUsernameForDN( dn )
+    if not result[ 'OK' ]:
+      return result
+
+    return result
 
   #############################################################################
   def _promptUser(self,message):
