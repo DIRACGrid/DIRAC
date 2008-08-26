@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: NotificationClient.py,v 1.4 2008/06/12 17:59:17 paterson Exp $
+# $Id: NotificationClient.py,v 1.5 2008/08/26 16:57:09 paterson Exp $
 ########################################################################
 
 """ DIRAC WMS Notification Client class encapsulates the methods exposed
@@ -41,7 +41,7 @@ class NotificationClient:
         self.log.warn('Sending mail failed with exception:\n%s' %(str(x)))
 
       if result['OK']:
-        self.log.info('Mail sent successfully from local host to %s with subject %s' %(address,subject))
+        self.log.verbose('Mail sent successfully from local host to %s with subject %s' %(address,subject))
         self.log.debug(result['Value'])
         return result
 
@@ -52,7 +52,7 @@ class NotificationClient:
     if not result['OK']:
       self.log.error('Could not send mail via central Notification service',result['Message'])
     else:
-      self.log.info(result['Value'])
+      self.log.verbose(result['Value'])
 
     return result
 
@@ -66,7 +66,7 @@ class NotificationClient:
     if not result['OK']:
       self.log.error('Could not send SMS via central Notification service',result['Message'])
     else:
-      self.log.info(result['Value'])
+      self.log.verbose(result['Value'])
 
     return result
 
