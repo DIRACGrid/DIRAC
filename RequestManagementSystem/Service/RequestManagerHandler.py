@@ -128,3 +128,51 @@ class RequestManagerHandler(RequestHandler):
 
     result = requestDB.getRequestSummaryWeb(selectDict, sortList, startItem, maxItems)
     return result
+
+  types_getDigest = [StringTypes,[IntType,LongType]]
+  def export_getDigest(self,requestName):
+    """ Get the digest of the request identified by its name
+    """
+
+    if type(requestName) in StringTypes:
+      result = requestDB._getRequestAttribute('RequestID',requestName=requestName)
+      if not result['OK']:
+        return result
+      requestID = result['Value']
+    else:
+      requestID = requestName
+
+    result = requestDB.getDigest(requestID)
+    return result
+
+  types_getCurrentExecutionOrder = [StringTypes,[IntType,LongType]]
+  def export_getCurrentExecutionOrder(self,requestName):
+    """ Get the current execution order of the given request
+    """
+
+    if type(requestName) in StringTypes:
+      result = requestDB._getRequestAttribute('RequestID',requestName=requestName)
+      if not result['OK']:
+        return result
+      requestID = result['Value']
+    else:
+      requestID = requestName
+
+    result = requestDB.getCurrentExecutionOrder(requestID)
+    return result
+
+  types_getRequestStatus = [StringTypes,[IntType,LongType]]
+  def export_getRequestStatus(self,requestName):
+    """ Get the current execution order of the given request
+    """
+
+    if type(requestName) in StringTypes:
+      result = requestDB._getRequestAttribute('RequestID',requestName=requestName)
+      if not result['OK']:
+        return result
+      requestID = result['Value']
+    else:
+      requestID = requestName
+
+    result = requestDB.getRequestStatus(requestID)
+    return result

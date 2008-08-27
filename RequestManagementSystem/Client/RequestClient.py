@@ -1,10 +1,10 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/RequestClient.py,v 1.9 2008/08/06 12:44:38 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/RequestClient.py,v 1.10 2008/08/27 11:18:10 atsareg Exp $
 
 """
   This is the client implementation for the RequestDB using the DISET framework.
 """
 
-__RCSID__ = "$Id: RequestClient.py,v 1.9 2008/08/06 12:44:38 atsareg Exp $"
+__RCSID__ = "$Id: RequestClient.py,v 1.10 2008/08/27 11:18:10 atsareg Exp $"
 
 from types import *
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
@@ -210,3 +210,48 @@ class RequestClient:
       errKey = "Failed getting request summary"
       gLogger.exception(errKey,lException=x)
       return S_ERROR(errKey)
+
+  def getDigest(self,requestName,url=''):
+    """ Get the reuest digest
+    """
+
+    lurl = url
+    if not lurl:
+      lurl = self.central
+
+    if not lurl:
+      return S_ERROR("URL not defined")
+
+    requestRPCClient = RPCClient(url)
+    result = requestRPCClient.getDigest(requestName)
+    return result
+
+  def getCurrentExecutionOrder(self,requestName,url=''):
+    """ Get the reuest digest
+    """
+
+    lurl = url
+    if not lurl:
+      lurl = self.central
+
+    if not lurl:
+      return S_ERROR("URL not defined")
+
+    requestRPCClient = RPCClient(url)
+    result = requestRPCClient.getCurrentExecutionOrder(requestName)
+    return result
+
+  def getRequestStatus(self,requestName,url=''):
+    """ Get the reuest digest
+    """
+
+    lurl = url
+    if not lurl:
+      lurl = self.central
+
+    if not lurl:
+      return S_ERROR("URL not defined")
+
+    requestRPCClient = RPCClient(url)
+    result = requestRPCClient.getRequestStatus(requestName)
+    return result
