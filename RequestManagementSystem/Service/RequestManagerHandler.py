@@ -129,7 +129,7 @@ class RequestManagerHandler(RequestHandler):
     result = requestDB.getRequestSummaryWeb(selectDict, sortList, startItem, maxItems)
     return result
 
-  types_getDigest = [StringTypes,[IntType,LongType]]
+  types_getDigest = [list(StringTypes)+[IntType,LongType]]
   def export_getDigest(self,requestName):
     """ Get the digest of the request identified by its name
     """
@@ -141,11 +141,10 @@ class RequestManagerHandler(RequestHandler):
       requestID = result['Value']
     else:
       requestID = requestName
-
     result = requestDB.getDigest(requestID)
     return result
 
-  types_getCurrentExecutionOrder = [StringTypes,[IntType,LongType]]
+  types_getCurrentExecutionOrder = [list(StringTypes)+[IntType,LongType]]
   def export_getCurrentExecutionOrder(self,requestName):
     """ Get the current execution order of the given request
     """
@@ -161,7 +160,7 @@ class RequestManagerHandler(RequestHandler):
     result = requestDB.getCurrentExecutionOrder(requestID)
     return result
 
-  types_getRequestStatus = [StringTypes,[IntType,LongType]]
+  types_getRequestStatus = [list(StringTypes)+[IntType,LongType]]
   def export_getRequestStatus(self,requestName):
     """ Get the current execution order of the given request
     """

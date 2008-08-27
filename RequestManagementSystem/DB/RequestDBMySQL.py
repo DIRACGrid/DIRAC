@@ -1,9 +1,9 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/DB/RequestDBMySQL.py,v 1.28 2008/08/27 11:18:44 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/DB/RequestDBMySQL.py,v 1.29 2008/08/27 15:51:06 atsareg Exp $
 
 """ RequestDBMySQL is the MySQL plug in for the request DB
 """
 
-__RCSID__ = "$Id: RequestDBMySQL.py,v 1.28 2008/08/27 11:18:44 atsareg Exp $"
+__RCSID__ = "$Id: RequestDBMySQL.py,v 1.29 2008/08/27 15:51:06 atsareg Exp $"
 
 from DIRAC.Core.Base.DB import DB
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
@@ -244,6 +244,7 @@ class RequestDBMySQL(DB):
     resultDict = {}
     resultDict['RequestName'] = requestName
     resultDict['RequestString'] = requestString
+    resultDict['JobID'] = jobID
     return S_OK(resultDict)
 
   def __releaseSubRequests(self,requestID,subRequestIDs):
@@ -639,7 +640,7 @@ class RequestDBMySQL(DB):
       digestList.append(row[0])
       digestList.append(row[1])
       digestList.append(row[2])
-      digestList.append(int(row[3]))
+      digestList.append(str(row[3]))
       if row[0] == "transfer" or row[0] == "register":
         digestList.append(row[4])
       if row[0] == "register":
@@ -665,7 +666,7 @@ class RequestDBMySQL(DB):
     result = self._query(req)
     if not result['OK']:
       return result
-    requestStatus = result['Value']
+    requestStatus = result['Value'][0][0]
     req = "SELECT Status from SubRequests WHERE RequestID=%d" % int(requestID)
     result = self._query(req)
     if not result['OK']:
