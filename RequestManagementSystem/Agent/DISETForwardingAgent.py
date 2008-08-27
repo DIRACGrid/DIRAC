@@ -52,7 +52,14 @@ class DISETForwardingAgent(Agent):
     gMonitor.addMark("Attempted",1)
     requestString = res['Value']['RequestString']
     requestName = res['Value']['RequestName']
+    jobID = res['Value']['JobID']
     gLogger.info("DISETForwardingAgent.execute: Obtained request %s" % requestName)
+
+    result = self.RequestDBClient.getCurrentExecutionOrder(requestName,url=self.local)
+    if result['OK']:
+      currentOrder = result['Value']
+    else:
+      return S_OK('Can not get the request execution order')
 
     oRequest = RequestContainer(request=requestString)
     requestAttributes = oRequest.getRequestAttributes()['Value']
@@ -68,12 +75,14 @@ class DISETForwardingAgent(Agent):
     gLogger.info("DISETForwardingAgent.execute: Found %s sub requests." % res['Value'])
     ################################################
     # For all the sub-requests in the request
+    modified = False
     for ind in range(res['Value']):
       gLogger.info("DISETForwardingAgent.execute: Processing sub-request %s." % ind)
       subRequestAttributes = oRequest.getSubRequestAttributes(ind,'diset')['Value']
-      if subRequestAttributes['Status'] == 'Waiting':
+      if subRequestAttributes['Status'] == 'Waiting' and \
+         subRequestAttributes['ExecutionOrder'] <= currentOrder:
         operation = subRequestAttributes['Operation']
-        gLogger.info("DISETForwardingAgent.execute: Attemping to forward %s type." % operation)
+        gLogger.info("DISETForwardingAgent.execute: Attempting to forward %s type." % operation)
         rpcStubString = subRequestAttributes['Arguments']
         rpcStub,length = DEncode.decode(rpcStubString)
         res = executeRPCStub(rpcStub)
@@ -81,6 +90,7 @@ class DISETForwardingAgent(Agent):
           gLogger.info("DISETForwardingAgent.execute: Successfully forwarded.")
           oRequest.setSubRequestStatus(ind,'diset','Done')
           gMonitor.addMark("Successful",1)
+          modified = True
         else:
           gLogger.error("DISETForwardingAgent.execute: Failed to forward request.",res['Message'])
       else:
@@ -94,4 +104,54 @@ class DISETForwardingAgent(Agent):
       gLogger.info("DISETForwardingAgent.execute: Successfully updated request.")
     else:
       gLogger.error("DISETForwardingAgent.execute: Failed to update request to", self.central)
+
+    if modified:
+      result = finalizeRequest(requestName)
+
+    return S_OK()
+
+  def finalizeRequest(self,requestName,jobID):
+    """ Check the request status and perform finalization if necessary
+    """
+
+    stateServer = RPCClient('WorkloadManagement/JobStateUpdate',useCertificates=True)
+
+    # Update the request status and the corresponding job parameter
+    result = self.RequestDBClient.getRequestStatus(requestName,self.local)
+    if result['OK']:
+      requestStatus = result['Value']['RequestStatus']
+      subrequestStatus = result['Value']['SubRequestStatus']
+      if subrequestStatus == "Done":
+        result = self.RequestDBClient.setRequestStatus(requestName,'Done',self.local)
+        if not result['OK']:
+          gLogger.error("DISETForwardingAgent.checkRequest: Failed to set request status", self.central)
+        # The request is completed, update the corresponding job status
+        if jobID:
+          monitorServer = RPCClient('WorkloadManagement/JobMonitoring',useCertificates=True)
+          result = monitorServer.getJobPrimarySummary(jobID)
+          if not result['OK']:
+            gLogger.error("DISETForwardingAgent.checkRequest: Failed to get job status")
+          else:
+            jobStatus = result['Value'][jobID]['Status']
+            jobMinorStatus = result['Value'][jobID]['MinorStatus']
+            if jobMinorStatus == "Pending Requests":
+              if jobStatus == "Completed":
+                result = stateServer.setJobStatus(jobID,'Done','Requests done')
+                if not result['OK']:
+                  gLogger.error("DISETForwardingAgent.checkRequest: Failed to set job status")
+              elif jobStatus == "Failed":
+                result = stateServer.setJobStatus(jobID,'','Requests done')
+                if not result['OK']:
+                  gLogger.error("DISETForwardingAgent.checkRequest: Failed to set job status")
+    else:
+      gLogger.error("DISETForwardingAgent.checkRequest: Failed to get request status at", self.central)
+
+    # Update the job pending request digest in any case since it is modified
+    result = self.RequestDBClient.getDigest(requestName,self.local)
+    if result['OK']:
+      digest = result['Value']
+      result = stateServer.setJobParameter(jobID,'PendingReques',digest)
+      if not result['OK']:
+        gLogger.error("DISETForwardingAgent.checkRequest: Failed to set job parameter")
+
     return S_OK()
