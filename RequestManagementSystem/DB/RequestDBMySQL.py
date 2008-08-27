@@ -1,9 +1,9 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/DB/RequestDBMySQL.py,v 1.27 2008/08/25 16:31:59 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/DB/RequestDBMySQL.py,v 1.28 2008/08/27 11:18:44 atsareg Exp $
 
 """ RequestDBMySQL is the MySQL plug in for the request DB
 """
 
-__RCSID__ = "$Id: RequestDBMySQL.py,v 1.27 2008/08/25 16:31:59 atsareg Exp $"
+__RCSID__ = "$Id: RequestDBMySQL.py,v 1.28 2008/08/27 11:18:44 atsareg Exp $"
 
 from DIRAC.Core.Base.DB import DB
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
@@ -133,7 +133,7 @@ class RequestDBMySQL(DB):
 
     return S_OK(summaryDict)
 
-  def getRequest(self,requestType):
+  def getRequest(self,requestType=''):
     dmRequest = RequestContainer(init=False)
     self.getIdLock.acquire()
     req = "SELECT RequestID,SubRequestID FROM SubRequests WHERE Status = 'Waiting' AND RequestType = '%s' ORDER BY LastUpdate ASC LIMIT 1;" % requestType
@@ -148,8 +148,12 @@ class RequestDBMySQL(DB):
     requestID = res['Value'][0][0]
     dmRequest.setRequestID(requestID)
     subRequestIDs = []
-    req = "SELECT SubRequestID,Operation,Arguments,ExecutionOrder,SourceSE,TargetSE,Catalogue,CreationTime,SubmissionTime,LastUpdate \
-    from SubRequests WHERE RequestID=%s AND RequestType='%s' AND Status='%s'" % (requestID,requestType,'Waiting')
+    if requestType:
+      req = "SELECT SubRequestID,Operation,Arguments,ExecutionOrder,SourceSE,TargetSE,Catalogue,CreationTime,SubmissionTime,LastUpdate \
+      from SubRequests WHERE RequestID=%s AND RequestType='%s' AND Status='%s'" % (requestID,requestType,'Waiting')
+    else:
+      req = "SELECT SubRequestID,Operation,Arguments,ExecutionOrder,SourceSE,TargetSE,Catalogue,CreationTime,SubmissionTime,LastUpdate \
+      from SubRequests WHERE RequestID=%s" % requestID
     res = self._query(req)
     if not res['OK']:
       err = 'RequestDB._getRequest: Failed to retrieve SubRequests for RequestID %s' % requestID
@@ -652,6 +656,35 @@ class RequestDBMySQL(DB):
 
     digest = '\n'.join(digestStrings)
     return S_OK(digest)
+
+  def getRequestStatus(self,requestID):
+    """ Get status of the request and its subrequests
+    """
+
+    req = "SELECT Status from Requests WHERE RequestID=%d" % int(requestID)
+    result = self._query(req)
+    if not result['OK']:
+      return result
+    requestStatus = result['Value']
+    req = "SELECT Status from SubRequests WHERE RequestID=%d" % int(requestID)
+    result = self._query(req)
+    if not result['OK']:
+      return result
+
+    if not result['Value']:
+      subrequestStatus = "Empty"
+    else:
+      subrequestStatus = "Done"
+      for row in result['Value']:
+        if row[0] == "Waiting":
+          subrequestStatus = "Waiting"
+        elif row[0] == "Failed" and subrequestStatus != "Waiting":
+          subrequestStatus = "Failed"
+
+    resDict = {}
+    resDict['RequestStatus'] = requestStatus
+    resDict['SubRequestStatus'] = subrequestStatus
+    return S_OK(resDict)
 
   def getCurrentExecutionOrder(self,requestID):
     """ Get the current subrequest execution order for the given request
