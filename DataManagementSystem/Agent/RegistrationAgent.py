@@ -99,7 +99,9 @@ class RegistrationAgent(Agent,RequestAgentMixIn):
     for ind in range(res['Value']):
       gLogger.info("RegistrationAgent.execute: Processing sub-request %s." % ind)
       subRequestAttributes = oRequest.getSubRequestAttributes(ind,'register')['Value']
-      if subRequestAttributes['Status'] == 'Waiting':
+      subExecutionOrder = int(subRequestAttributes['ExecutionOrder'])
+      subStatus = subRequestAttributes['Status']
+      if subStatus == 'Waiting' and subExecutionOrder <= currentOrder:
         subRequestFiles = oRequest.getSubRequestFiles(ind,'register')['Value']
         operation = subRequestAttributes['Operation']
 
