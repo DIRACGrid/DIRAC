@@ -12,13 +12,14 @@ from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContain
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClient
 from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.RequestManagementSystem.Agent.RequestAgentMixIn import RequestAgentMixIn
 
 import time,os
 from types import *
 
 AGENT_NAME = 'DataManagement/RegistrationAgent'
 
-class RegistrationAgent(Agent):
+class RegistrationAgent(Agent,RequestAgentMixIn):
 
   def __init__(self):
     """ Standard constructor
@@ -68,8 +69,19 @@ class RegistrationAgent(Agent):
       return S_OK()
     requestString = res['Value']['RequestString']
     requestName = res['Value']['RequestName']
-    sourceServer= res['Value']['Server']
+    sourceServer = res['Value']['Server']
+    try:
+      jobID = int(res['Value']['JobID'])
+    except:
+      jobID = 0
     gLogger.info("RegistrationAgent.execute: Obtained request %s" % requestName)
+
+    result = self.RequestDBClient.getCurrentExecutionOrder(requestName,sourceServer)
+    if result['OK']:
+      currentOrder = result['Value']
+    else:
+      return S_OK('Can not get the request execution order')
+
     oRequest = RequestContainer(request=requestString)
 
     ################################################
@@ -83,6 +95,7 @@ class RegistrationAgent(Agent):
 
     ################################################
     # For all the sub-requests in the request
+    modified = False
     for ind in range(res['Value']):
       gLogger.info("RegistrationAgent.execute: Processing sub-request %s." % ind)
       subRequestAttributes = oRequest.getSubRequestAttributes(ind,'register')['Value']
@@ -96,6 +109,7 @@ class RegistrationAgent(Agent):
           gLogger.info("RegistrationAgent.execute: Attempting to execute %s sub-request." % operation)
           diracSE = str(subRequestAttributes['TargetSE'])
           catalog = subRequestAttributes['Catalogue']
+          subrequest_done = True
           for subRequestFile in subRequestFiles:
             if subRequestFile['Status'] == 'Waiting':
               lfn = str(subRequestFile['LFN'])
@@ -110,15 +124,20 @@ class RegistrationAgent(Agent):
                 self.DataLog.addFileRecord(lfn,'RegisterFail',diracSE,'','RegistrationAgent')
                 errStr = "RegistrationAgent.execute: Completely failed to register file."
                 gLogger.error(errStr, res['Message'])
+                subrequest_done = False
               elif lfn in res['Value']['Failed'].keys():
                 self.DataLog.addFileRecord(lfn,'RegisterFail',diracSE,'','RegistrationAgent')
                 errStr = "RegistrationAgent.execute: Completely failed to register file."
                 gLogger.error(errStr, res['Value']['Failed'][lfn])
+                subrequest_done = False
               else:
                 self.DataLog.addFileRecord(lfn,'Register',diracSE,'','TransferAgent')
                 oRequest.setSubRequestFileAttributeValue(ind,'transfer',lfn,'Status','Done')
+                modified = True
             else:
               gLogger.info("RegistrationAgent.execute: File already completed.")
+          if subrequest_done:
+            oRequest.setSubRequestStatus(ind,'register','Done')
 
         ################################################
         #  If the sub-request is none of the above types
@@ -139,5 +158,8 @@ class RegistrationAgent(Agent):
     #  Generate the new request string after operation
     requestString = oRequest.toXML()['Value']
     res = self.RequestDBClient.updateRequest(requestName,requestString,sourceServer)
+
+    if modified and jobID:
+      result = self.finalizeRequest(requestName,jobID)
 
     return S_OK()
