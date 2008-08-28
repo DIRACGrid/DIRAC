@@ -49,7 +49,7 @@ class RegistrationAgent(Agent,RequestAgentMixIn):
       result = setupShifterProxyInEnv( "DataManager", self.proxyLocation )
       if not result[ 'OK' ]:
         self.log.error( "Can't get shifter's proxy: %s" % result[ 'Message' ] )
-      return result
+        return result
 
     for i in range(self.threadPoolDepth):
       requestExecutor = ThreadedJob(self.executeRequest)
@@ -108,17 +108,22 @@ class RegistrationAgent(Agent,RequestAgentMixIn):
         if operation == 'registerFile':
           gLogger.info("RegistrationAgent.execute: Attempting to execute %s sub-request." % operation)
           diracSE = str(subRequestAttributes['TargetSE'])
+          if diracSE == 'SE':
+            # We do not care about SE, put any there
+            diracSE = "CERN-FAILOVER" 
           catalog = subRequestAttributes['Catalogue']
+          if catalog == "None":
+            catalog = ''
           subrequest_done = True
           for subRequestFile in subRequestFiles:
             if subRequestFile['Status'] == 'Waiting':
               lfn = str(subRequestFile['LFN'])
               physicalFile = str(subRequestFile['PFN'])
-              fileSize = int(subRequestFiles['Size'])
+              fileSize = int(subRequestFile['Size'])
               fileGuid = str(subRequestFile['GUID'])
               checksum = str(subRequestFile['Addler'])
               fileTuple = (lfn,physicalFile,fileSize,diracSE,fileGuid,checksum)
-              res = self.ReplicaManager.registerFile(fileTuple)
+              res = self.ReplicaManager.registerFile(fileTuple,catalog)
               print res
               if not res['OK']:
                 self.DataLog.addFileRecord(lfn,'RegisterFail',diracSE,'','RegistrationAgent')
@@ -160,6 +165,6 @@ class RegistrationAgent(Agent,RequestAgentMixIn):
     res = self.RequestDBClient.updateRequest(requestName,requestString,sourceServer)
 
     if modified and jobID:
-      result = self.finalizeRequest(requestName,jobID)
+      result = self.finalizeRequest(requestName,jobID,sourceServer)
 
     return S_OK()
