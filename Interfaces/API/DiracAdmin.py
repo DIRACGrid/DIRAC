@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.25 2008/08/26 17:41:31 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.26 2008/08/28 20:10:49 roma Exp $
 # File :   DiracAdmin.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@ site banning and unbanning, WMS proxy uploading etc.
 
 """
 
-__RCSID__ = "$Id: DiracAdmin.py,v 1.25 2008/08/26 17:41:31 paterson Exp $"
+__RCSID__ = "$Id: DiracAdmin.py,v 1.26 2008/08/28 20:10:49 roma Exp $"
 
 import DIRAC
 from DIRAC.ConfigurationSystem.Client.CSAPI                   import CSAPI
@@ -25,6 +25,7 @@ from DIRAC.WorkloadManagementSystem.Client.NotificationClient import Notificatio
 from DIRAC.Core.Security.X509Chain                            import X509Chain
 from DIRAC.Core.Security                                      import Locations, CS
 from DIRAC                                                    import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC.Core.Utilities.ldapsearchBDII                      import ldapSite, ldapCE, ldapCEState, ldapCEVOView
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -880,4 +881,28 @@ class DiracAdmin:
     else:
       return S_ERROR(response)
 
+  #############################################################################
+  def getBDIISite(self,site,host=None):
+    """Get information about site from BDII at host
+    """
+    return ldapSite(site, host=host)
+    
+  #############################################################################
+  def getBDIICE(self,ce,host=None):
+    """Get information about ce from BDII at host
+    """
+    return ldapCE(ce, host=host)
+    
+  #############################################################################
+  def getBDIICEState(self,ce,vo='lhcb',host=None):
+    """Get information about ce state from BDII at host 
+    """
+    return ldapCEState(ce,vo,host=host)
+    
+  #############################################################################
+  def getBDIICEVOView(self,ce,vo='lhcb',host=None):
+    """Get information about ce voview from BDII at host
+    """
+    return ldapCEVOView(ce,vo,host=host)
+    
   #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
