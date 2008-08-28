@@ -1,9 +1,9 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Agent/DISETForwardingAgent.py,v 1.7 2008/08/28 06:41:27 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Agent/DISETForwardingAgent.py,v 1.8 2008/08/28 09:08:26 atsareg Exp $
 
 """  DISET Forwarding sends DISET requests to their intented destination
 """
 
-__RCSID__ = "$Id: DISETForwardingAgent.py,v 1.7 2008/08/28 06:41:27 atsareg Exp $"
+__RCSID__ = "$Id: DISETForwardingAgent.py,v 1.8 2008/08/28 09:08:26 atsareg Exp $"
 
 from DIRAC  import gLogger, gConfig, gMonitor, S_OK, S_ERROR
 from DIRAC.Core.Base.Agent import Agent
@@ -116,7 +116,7 @@ class DISETForwardingAgent(Agent,RequestAgentMixIn):
       gLogger.error("DISETForwardingAgent.execute: Failed to update request to", self.central)
 
     if modified and jobID:
-      result = self.finalizeRequest(requestName,jobID)
+      result = self.finalizeRequest(requestName,jobID,self.local)
 
     return S_OK()
 
