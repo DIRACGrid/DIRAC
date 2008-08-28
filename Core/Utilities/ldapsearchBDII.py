@@ -121,7 +121,7 @@ For example result['Value'][0]['GlueHostBenchmarkSI00']
   
   return {'OK':True,'Value':sites}
   
-def ldapCEState( ce, attr=None, host=None ):
+def ldapCEState( ce, vo='lhcb', attr=None, host=None ):
   '''
 CEState information from bdii. Only CE with CEAccessControlBaseRule=VO:lhcb are selected.
 Input parameter:
@@ -132,7 +132,7 @@ Each ceState is dictionary which contains attributes of ce.
 For example result['Value'][0]['GlueCEStateStatus']
 '''
 
-  filt = '(&(GlueCEUniqueID=%s*)(GlueCEAccessControlBaseRule=VO:lhcb))'%ce
+  filt = '(&(GlueCEUniqueID=%s*)(GlueCEAccessControlBaseRule=VO:%s))'%(ce,vo)
 
   result = ldapsearchBDII( filt, attr, host )
 
@@ -145,7 +145,7 @@ For example result['Value'][0]['GlueCEStateStatus']
   
   return {'OK':True,'Value':states}
   
-def ldapCEVOView( ce, attr=None, host=None ):
+def ldapCEVOView( ce, vo='lhcb', attr=None, host=None ):
   '''
 CEVOView information from bdii. Only CE with CEAccessControlBaseRule=VO:lhcb are selected.
 Input parameter:
@@ -157,7 +157,7 @@ For example result['Value'][0]['GlueCEStateRunningJobs']
 '''
 
   
-  filt = '(&(GlueCEUniqueID=%s*)(GlueCEAccessControlBaseRule=VO:lhcb))'%ce
+  filt = '(&(GlueCEUniqueID=%s*)(GlueCEAccessControlBaseRule=VO:%s))'%(ce,vo)
   result = ldapsearchBDII( filt, attr, host )
 
   if not result['OK']:
@@ -165,7 +165,7 @@ For example result['Value'][0]['GlueCEStateRunningJobs']
 
   ces = result['Value']
 
-  filt = '(&(objectClass=GlueVOView)(GlueCEAccessControlBaseRule=VO:lhcb))'
+  filt = '(&(objectClass=GlueVOView)(GlueCEAccessControlBaseRule=VO:%s))'%vo
   views = []
   
   for ce in ces:
