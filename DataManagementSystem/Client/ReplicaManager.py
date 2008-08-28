@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalogue. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.34 2008/08/01 08:04:25 rgracian Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.35 2008/08/28 07:50:24 atsareg Exp $"
 
 import re, time, commands, random,os
 import types
@@ -613,7 +613,7 @@ class ReplicaManager:
   # These are the file/replica registration methods
   #
 
-  def registerFile(self,fileTuple):
+  def registerFile(self,fileTuple,catalog=''):
     """ Register a file.
 
         'fileTuple' is the file tuple to be registered of the form (lfn,physicalFile,fileSize,storageElementName,fileGuid)
@@ -627,14 +627,14 @@ class ReplicaManager:
       gLogger.error(errStr)
       return S_ERROR(errStr)
     gLogger.info("ReplicaManager.registerFile: Attempting to register %s files." % len(fileTuples))
-    res = self.__registerFile(fileTuples)
+    res = self.__registerFile(fileTuples,catalog)
     if not res['OK']:
       errStr = "ReplicaManager.registerFile: Completely failed to register files."
       gLogger.error(errStr,res['Message'])
       return S_ERROR(errStr)
     return res
 
-  def __registerFile(self,fileTuples):
+  def __registerFile(self,fileTuples,catalog):
     seDict = {}
     for lfn,physicalFile,fileSize,storageElementName,fileGuid,checksum in fileTuples:
       if not seDict.has_key(storageElementName):
@@ -661,7 +661,11 @@ class ReplicaManager:
           tuple = (lfn,pfn,fileSize,storageElementName,fileGuid,checksum)
           fileTuples.append(tuple)
     gLogger.info("ReplicaManager.__registerFile: Resolved %s files for registration." % len(fileTuples))
-    res = self.fileCatalogue.addFile(fileTuples)
+    if catalog:
+      fileCatalog = FileCatalog(catalog)
+      res = fileCatalog.addFile(fileTuples)
+    else:
+      res = self.fileCatalogue.addFile(fileTuples)
     if not res['OK']:
       errStr = "ReplicaManager.__registerFile: Completely failed to register files."
       gLogger.error(errStr,res['Message'])
@@ -671,7 +675,7 @@ class ReplicaManager:
     resDict = {'Successful':successful,'Failed':failed}
     return S_OK(resDict)
 
-  def registerReplica(self,replicaTuple):
+  def registerReplica(self,replicaTuple,catalog=''):
     """ Register a replica supplied in the replicaTuples.
 
         'replicaTuple' is a tuple or list of tuples of the form (lfn,pfn,se)
@@ -685,13 +689,13 @@ class ReplicaManager:
       gLogger.error(errStr)
       return S_ERROR(errStr)
     gLogger.info("ReplicaManager.registerReplica: Attempting to register %s replicas." % len(replicaTuples))
-    res = self.__registerReplica(replicaTuples)
+    res = self.__registerReplica(replicaTuples,catalog)
     if not res['OK']:
       errStr = "ReplicaManager.registerReplica: Completely failed to register replicas."
       gLogger.error(errStr,res['Message'])
     return res
 
-  def __registerReplica(self,replicaTuples):
+  def __registerReplica(self,replicaTuples,catalog):
     seDict = {}
     for lfn,pfn,storageElementName in replicaTuples:
       if not seDict.has_key(storageElementName):
@@ -717,7 +721,11 @@ class ReplicaManager:
             replicaTuple = (lfn,res['Value'],storageElementName,False)
             replicaTuples.append(replicaTuple)
     gLogger.info("ReplicaManager.__registerReplica: Successfully resolved %s replicas for registration." % len(replicaTuples))
-    res = self.fileCatalogue.addReplica(replicaTuples)
+    if catalog:
+      fileCatalog = FileCatalog(catalog)
+      res = fileCatalog.addReplica(replicaTuples)
+    else:
+      res = self.fileCatalogue.addReplica(replicaTuples)
     if not res['OK']:
       errStr = "ReplicaManager.__registerReplica: Completely failed to register replicas."
       gLogger.error(errStr,res['Message'])
