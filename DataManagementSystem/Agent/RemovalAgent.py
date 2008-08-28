@@ -11,13 +11,13 @@ from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
 from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClient
-
+from DIRAC.RequestManagementSystem.Agent.RequestAgentMixIn import RequestAgentMixIn
 import time,os,re
 from types import *
 
 AGENT_NAME = 'DataManagement/RemovalAgent'
 
-class RemovalAgent(Agent):
+class RemovalAgent(Agent,RequestAgentMixIn):
 
   def __init__(self):
     """ Standard constructor
@@ -64,7 +64,7 @@ class RemovalAgent(Agent):
       if not result[ 'OK' ]:
         self.log.error( "Can't get shifter's proxy: %s" % result[ 'Message' ] )
         return result
- 
+
     for i in range(self.threadPoolDepth):
       requestExecutor = ThreadedJob(self.executeRequest)
       self.threadPool.queueJob(requestExecutor)
@@ -85,6 +85,10 @@ class RemovalAgent(Agent):
     requestString = res['Value']['RequestString']
     requestName = res['Value']['RequestName']
     sourceServer= res['Value']['Server']
+    try:
+      jobID = int(res['Value']['JobID'])
+    except:
+      jobID = 0
     gLogger.info("RemovalAgent.execute: Obtained request %s" % requestName)
     oRequest = RequestContainer(request=requestString)
 
@@ -99,11 +103,14 @@ class RemovalAgent(Agent):
 
     ################################################
     # For all the sub-requests in the request
+    modified = False
     for ind in range(res['Value']):
       gMonitor.addMark( "Execute", 1 )
       gLogger.info("RemovalAgent.execute: Processing sub-request %s." % ind)
       subRequestAttributes = oRequest.getSubRequestAttributes(ind,'removal')['Value']
-      if subRequestAttributes['Status'] == 'Waiting':
+      subExecutionOrder = int(subRequestAttributes['ExecutionOrder'])
+      subStatus = subRequestAttributes['Status']
+      if subStatus == 'Waiting' and subExecutionOrder <= currentOrder:
         subRequestFiles = oRequest.getSubRequestFiles(ind,'removal')['Value']
         operation = subRequestAttributes['Operation']
 
@@ -127,6 +134,7 @@ class RemovalAgent(Agent):
             for pfn in res['Value']['Successful'].keys():
               gLogger.info("RemovalAgent.execute: Successfully removed %s at %s in %s seconds." % (pfn,diracSE,res['Value']['Successful'][pfn]))
               oRequest.setSubRequestFileAttributeValue(ind,'removal',pfnToLfn[pfn],'Status','Done')
+              modified = True
             gMonitor.addMark('PhysicalRemovalFail',len(res['Value']['Failed'].keys()))
             for pfn in res['Value']['Failed'].keys():
               gLogger.info("RemovalAgent.execute: Failed to remove physical file." , "%s %s %s" % (pfn,diracSE,res['Value']['Failed'][pfn]))
@@ -151,6 +159,7 @@ class RemovalAgent(Agent):
             for lfn in res['Value']['Successful'].keys():
               gLogger.info("RemovalAgent.execute: Successfully removed %s." % lfn)
               oRequest.setSubRequestFileAttributeValue(ind,'removal',lfn,'Status','Done')
+              modified = True
             gMonitor.addMark('RemoveFileFail',len(res['Value']['Failed'].keys()))
             for lfn in res['Value']['Failed'].keys():
               if type(res['Value']['Failed'][lfn]) in StringTypes:
@@ -181,6 +190,7 @@ class RemovalAgent(Agent):
             for lfn in res['Value']['Successful'].keys():
               gLogger.info("RemovalAgent.execute: Successfully removed %s at %s in %s seconds." % (lfn,diracSE,res['Value']['Successful'][lfn]))
               oRequest.setSubRequestFileAttributeValue(ind,'removal',lfn,'Status','Done')
+              modified = True
             gMonitor.addMark('PhysicalRemovalFail',len(res['Value']['Failed'].keys()))
             for lfn in res['Value']['Failed'].keys():
               gLogger.info("RemovalAgent.execute: Failed to remove replica." , "%s %s %s" % (lfn,diracSE,res['Value']['Failed'][lfn]))
@@ -203,6 +213,7 @@ class RemovalAgent(Agent):
                 if res['Value']['Successful'].has_key(pfn):
                   gLogger.info("RemovalAgent.execute: Successfully requested retransfer of %s." % pfn)
                   oRequest.setSubRequestFileAttributeValue(ind,'removal',lfn,'Status','Done')
+                  modified = True
                 else:
                   errStr = "RemovalAgent.execute: Failed to request retransfer."
                   gLogger.error(errStr,"%s %s %s" % (pfn,diracSE,res['Value']['Failed'][pfn]))
@@ -232,5 +243,8 @@ class RemovalAgent(Agent):
     #  Generate the new request string after operation
     requestString = oRequest.toXML()['Value']
     res = self.RequestDBClient.updateRequest(requestName,requestString,sourceServer)
+
+    if modified and jobID:
+      result = self.finalizeRequest(requestName,jobID,sourceServer)
 
     return S_OK()
