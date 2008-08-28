@@ -1,29 +1,29 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Agent/RequestAgentMixIn.py,v 1.2 2008/08/28 06:41:27 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Agent/RequestAgentMixIn.py,v 1.3 2008/08/28 08:29:43 atsareg Exp $
 
 """ RequestAgentMixIn class is providing common functions to all the request
     execution agents
 """
 
-__RCSID__ = "$Id: RequestAgentMixIn.py,v 1.2 2008/08/28 06:41:27 atsareg Exp $"
+__RCSID__ = "$Id: RequestAgentMixIn.py,v 1.3 2008/08/28 08:29:43 atsareg Exp $"
 
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC import gLogger, S_OK, S_ERROR
 
 class RequestAgentMixIn:
 
-  def finalizeRequest(self,requestName,jobID):
+  def finalizeRequest(self,requestName,jobID,server=''):
     """ Check the request status and perform finalization if necessary
     """
 
     stateServer = RPCClient('WorkloadManagement/JobStateUpdate',useCertificates=True)
 
     # Update the request status and the corresponding job parameter
-    result = self.RequestDBClient.getRequestStatus(requestName,self.local)
+    result = self.RequestDBClient.getRequestStatus(requestName,server)
     if result['OK']:
       requestStatus = result['Value']['RequestStatus']
       subrequestStatus = result['Value']['SubRequestStatus']
       if subrequestStatus == "Done":
-        result = self.RequestDBClient.setRequestStatus(requestName,'Done',self.local)
+        result = self.RequestDBClient.setRequestStatus(requestName,'Done',server)
         if not result['OK']:
           gLogger.error(self.name+".checkRequest: Failed to set request status", self.central)
         # The request is completed, update the corresponding job status
@@ -51,7 +51,7 @@ class RequestAgentMixIn:
 
     # Update the job pending request digest in any case since it is modified
     gLogger.info(self.name+'.checkRequest: Updating request digest for job %d' % jobID)
-    result = self.RequestDBClient.getDigest(requestName,self.local)
+    result = self.RequestDBClient.getDigest(requestName,server)
     if result['OK']:
       digest = result['Value']
       gLogger.verbose(digest)
