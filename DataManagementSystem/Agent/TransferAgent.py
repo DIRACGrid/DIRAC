@@ -12,13 +12,14 @@ from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContain
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClient
 from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.RequestManagementSystem.Agent.RequestAgentMixIn import RequestAgentMixIn
 
 import time,os
 from types import *
 
 AGENT_NAME = 'DataManagement/TransferAgent'
 
-class TransferAgent(Agent):
+class TransferAgent(Agent,RequestAgentMixIn):
 
   def __init__(self):
     """ Standard constructor
@@ -91,6 +92,10 @@ class TransferAgent(Agent):
     requestString = res['Value']['RequestString']
     requestName = res['Value']['RequestName']
     sourceServer= res['Value']['Server']
+    try:
+      jobID = int(res['Value']['JobID'])
+    except:
+      jobID = 0
     gLogger.info("TransferAgent.execute: Obtained request %s" % requestName)
     oRequest = RequestContainer(request=requestString)
 
@@ -105,17 +110,20 @@ class TransferAgent(Agent):
 
     ################################################
     # For all the sub-requests in the request
+    modified = False
     for ind in range(res['Value']):
       gMonitor.addMark( "Execute", 1 )
       gLogger.info("TransferAgent.execute: Processing sub-request %s." % ind)
       subRequestAttributes = oRequest.getSubRequestAttributes(ind,'transfer')['Value']
-      if subRequestAttributes['Status'] == 'Waiting':
+      subExecutionOrder = int(subRequestAttributes['ExecutionOrder'])
+      subStatus = subRequestAttributes['Status']
+      if subStatus == 'Waiting' and subExecutionOrder <= currentOrder:
         subRequestFiles = oRequest.getSubRequestFiles(ind,'transfer')['Value']
         operation = subRequestAttributes['Operation']
 
         ################################################
         #  If the sub-request is a put and register operation
-        if operation == 'putAndRegister':
+        if operation == 'putAndRegister' or operation == 'putAndRegisterAndRemove':
           gLogger.info("TransferAgent.execute: Attempting to execute %s sub-request." % operation)
           diracSE = str(subRequestAttributes['TargetSE'])
           catalog = ''
@@ -147,6 +155,7 @@ class TransferAgent(Agent):
                     registerRequestDict = {'Attributes':{'TargetSE': fileDict['TargetSE'],'Operation':'registerFile'},'Files':[{'LFN': fileDict['LFN'],'PFN':fileDict['PFN'], 'Size':fileDict['Size'], 'Addler':fileDict['Addler'], 'GUID':fileDict['GUID']}]}
                     gLogger.info("TransferAgent.execute: Setting registration request for failed file.")
                     oRequest.addSubRequest(registerRequestDict,'register')
+                    modified = True
                   else:
                     gMonitor.addMark("Put successful",1)
                     gMonitor.addMark("File registration successful",1)
@@ -155,6 +164,7 @@ class TransferAgent(Agent):
                     gLogger.info("TransferAgent.execute: Successfully put %s to %s in %s seconds." % (lfn,diracSE,res['Value']['Successful'][lfn]['put']))
                     gLogger.info("TransferAgent.execute: Successfully registered %s to %s in %s seconds." % (lfn,diracSE,res['Value']['Successful'][lfn]['register']))
                     oRequest.setSubRequestFileAttributeValue(ind,'transfer',lfn,'Status','Done')
+                    modified = True
                 else:
                   gMonitor.addMark("Put failed",1)
                   self.DataLog.addFileRecord(lfn,'PutFail',diracSE,'','TransferAgent')
@@ -185,6 +195,7 @@ class TransferAgent(Agent):
                   self.DataLog.addFileRecord(lfn,'Put',diracSE,'','TransferAgent')
                   gLogger.info("TransferAgent.execute: Successfully put %s to %s in %s seconds." % (lfn,diracSE,res['Value']['Successful'][lfn]))
                   oRequest.setSubRequestFileAttributeValue(ind,'transfer',lfn,'Status','Done')
+                  modified = True
                 else:
                   gMonitor.addMark("Put failed",1)
                   self.DataLog.addFileRecord(lfn,'PutFail',diracSE,'','TransferAgent')
@@ -200,7 +211,7 @@ class TransferAgent(Agent):
 
         ################################################
         #  If the sub-request is a replicate and register operation
-        elif operation == 'replicateAndRegister':
+        elif operation == 'replicateAndRegister' or operation == 'replicateAndRegisterAndRemove':
           gLogger.info("TransferAgent.execute: Attempting to execute %s sub-request." % operation)
           targetSE = subRequestAttributes['TargetSE']
           sourceSE = subRequestAttributes['SourceSE']
@@ -224,12 +235,14 @@ class TransferAgent(Agent):
                     registerRequestDict = {'Attributes':{'TargetSE': fileDict['TargetSE'],'Operation':'registerReplica'},'Files':[{'LFN': fileDict['LFN'],'PFN':fileDict['PFN']}]}
                     gLogger.info("TransferAgent.execute: Setting registration request for failed replica.")
                     oRequest.addSubRequest(registerRequestDict,'register')
+                    modified = True
                   else:
                     gMonitor.addMark("Replication successful",1)
                     gMonitor.addMark("Replica registration successful",1)
                     gLogger.info("TransferAgent.execute: Successfully replicated %s to %s in %s seconds." % (lfn,targetSE,res['Value']['Successful'][lfn]['replicate']))
                     gLogger.info("TransferAgent.execute: Successfully registered %s to %s in %s seconds." % (lfn,targetSE,res['Value']['Successful'][lfn]['register']))
                     oRequest.setSubRequestFileAttributeValue(ind,'transfer',lfn,'Status','Done')
+                    modified = True
                 else:
                   gMonitor.addMark("Replication failed",1)
                   errStr = "TransferAgent.execute: Failed to replicate and register file."
@@ -257,6 +270,7 @@ class TransferAgent(Agent):
                   gMonitor.addMark("Replication successful",1)
                   gLogger.info("TransferAgent.execute: Successfully replicated %s to %s in %s seconds." % (lfn,diracSE,res['Value']['Successful'][lfn]))
                   oRequest.setSubRequestFileAttributeValue(ind,'transfer',lfn,'Status','Done')
+                  modified = True
                 else:
                   gMonitor.addMark("Replication failed",1)
                   errStr = "TransferAgent.execute: Failed to replicate file."
@@ -289,6 +303,7 @@ class TransferAgent(Agent):
               if got:
                 gLogger.info("TransferAgent.execute: Successfully got %s." % lfn)
                 oRequest.setSubRequestFileAttributeValue(ind,'transfer',lfn,'Status','Done')
+                modified = True
               else:
                 errStr = "TransferAgent.execute: Failed to get file."
                 gLogger.error(errStr,lfn)
@@ -316,4 +331,6 @@ class TransferAgent(Agent):
     requestString = oRequest.toXML()['Value']
     res = self.RequestDBClient.updateRequest(requestName,requestString,sourceServer)
 
+    if modified and jobID:
+      result = self.finalizeRequest(requestName,jobID,sourceServer)
     return S_OK()
