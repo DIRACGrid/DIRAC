@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.61 2008/08/16 18:08:47 atsareg Exp $
+# $Id: TransformationDB.py,v 1.62 2008/08/28 10:06:31 atsareg Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -177,7 +177,7 @@ class TransformationDB(DB):
       return result
 
     # If parameter name exists, remove it
-    if result['VALUE']:
+    if result['Value']:
       req = "DELETE FROM TransformationParameters"
       req += " WHERE TransformationID=%d AND ParameterName='%s'" % (transID,paramName)
       result = self._update(req)
