@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.64 2008/08/29 08:28:32 atsareg Exp $
+# $Id: TransformationDB.py,v 1.65 2008/08/29 08:32:16 atsareg Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -450,7 +450,7 @@ class TransformationDB(DB):
         resultDict[lfn][transID]['FileStatus'] = status
         resultDict[lfn][transID]['TargetSE'] = se
         resultDict[lfn][transID]['TransformationStatus'] = transStatus
-        resultDict[lfn][transID]['JobID'] = str(transID).zfill(8)+'_'+str(jobID).zfill(8)
+        resultDict[lfn][transID]['JobID'] = jobID
 
     return S_OK({'Successful':resultDict,'Failed':failedDict})
 
