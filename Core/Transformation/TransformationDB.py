@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.63 2008/08/29 07:42:54 atsareg Exp $
+# $Id: TransformationDB.py,v 1.64 2008/08/29 08:28:32 atsareg Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -45,6 +45,7 @@ class TransformationDB(DB):
         Returns transformation ID if exists otherwise 0
         WARNING!! returned value is long !!
     """
+
     if isinstance(name, str):
       cmd = "SELECT TransformationID from Transformations WHERE TransformationName='%s';" % name
       result = self._query(cmd)
@@ -406,10 +407,11 @@ class TransformationDB(DB):
   def getFileSummary(self,lfns,transName=''):
     """ Get file status summary in all the transformations
     """
-
     if transName:
-      transDict = self.getTransformation(transName)
-      transList = [transDict]
+      result = self.getTransformation(transName)
+      if not result['OK']:
+        return result
+      transList = [result['Value']]
     else:
       result = self.getAllTransformations()
       if not result['OK']:
