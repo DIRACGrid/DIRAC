@@ -473,7 +473,10 @@ class TransformationDBCLI(cmd.Cmd):
           lfn = f['LFN']
           status = f['Status']
           jobid = f['JobID']
-          jobname = str(int(prod)).zfill(8)+'_'+str(jobid).zfill(8)
+          if jobid.find('No JobID assigned') == -1:
+            jobname = str(int(prod)).zfill(8)+'_'+str(jobid).zfill(8)
+          else:
+            jobname = str(jobid)
           usedse = f['TargetSE']
           if ofname:
             ofile.write(lfn.ljust(50)+' '+status.rjust(10)+' '+ \
@@ -485,6 +488,42 @@ class TransformationDBCLI(cmd.Cmd):
     if ofname:
       print "Output is written to file",ofname
       ofile.close()
+
+  def do_getFile(self,args):
+    """Get files for the given production
+
+    usage: getFile <lfn> [<production>]
+
+    """
+
+    argss = string.split(args)
+    lfn = argss[0]
+    prod = ''
+    if len(argss) == 2:
+      prod = int(argss[1])
+
+    result = self.server.getFileSummary([lfn],prod)
+    if not result['OK']:
+      print "Command failed with message:",result['Message']
+      return
+
+    if result['Value']['Failed'] or not result['Value']['Successful'].has_key(lfn):
+      print "Failed: lfn not found"
+      return
+
+    resDict = result['Value']['Successful'][lfn]
+    print "\nStatus for %s:\n" % lfn
+    print "Transformation          FileStatus             Job"
+    for transID,lfnDict in resDict.items():
+      jobid = lfnDict['JobID']
+      if jobid.find('No JobID assigned') == -1:
+        jobname = str(int(transID)).zfill(8)+'_'+str(jobid).zfill(8)
+      else:
+        jobname = str(jobid)
+      fstatus = lfnDict['FileStatus']
+      tranString = str(transID)+'/'+lfnDict['TransformationStatus']
+      jobStatus = lfnDict['JobStatus']
+      print tranString.ljust(16), fstatus.rjust(16), jobname.rjust(22)+'/'+jobStatus
 
   def do_setFileStatus(self,args):
     """Set file status for the given production
