@@ -120,6 +120,11 @@ class TransformationHandler(RequestHandler):
     res = self.database.getFilesForTransformation(transformationName,orderByJobs)
     return res
 
+  types_getFileSummary = [ListType,[LongType, IntType, StringType]]
+  def export_getFileSummary(self,lfns,transformationName):
+    res = self.database.getFileSummary(lfns,transformationName)
+    return res
+
   types_getInputData = [[LongType, IntType, StringType],StringType]
   def export_getInputData(self,transformationName,status):
     res = self.database.getInputData(transformationName,status)
