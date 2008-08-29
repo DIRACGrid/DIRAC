@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.41 2008/08/06 09:45:44 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.42 2008/08/29 09:47:21 paterson Exp $
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -30,7 +30,7 @@
    Note that several executables can be provided and wil be executed sequentially.
 """
 
-__RCSID__ = "$Id: Job.py,v 1.41 2008/08/06 09:45:44 paterson Exp $"
+__RCSID__ = "$Id: Job.py,v 1.42 2008/08/29 09:47:21 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -206,11 +206,13 @@ class Job:
       fileList = string.join(resolvedFiles,";")
       description = 'Input sandbox file list'
       self._addParameter(self.workflow,'InputSandbox','JDL',fileList,description)
-      self.sandboxFiles=resolvedFiles
+      #self.sandboxFiles=resolvedFiles
     elif type(files) == type(" "):
+      resolvedFiles = self._resolveInputSandbox([files])
+      fileList = string.join(resolvedFiles,";")
       description = 'Input sandbox file'
-      self.sandboxFiles = [files]
-      self._addParameter(self.workflow,'InputSandbox','JDL',files,description)
+      #self.sandboxFiles = [files]
+      self._addParameter(self.workflow,'InputSandbox','JDL',fileList,description)
     else:
       raise TypeError,'Expected string or list for InputSandbox'
 
