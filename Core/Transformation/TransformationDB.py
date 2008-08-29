@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.62 2008/08/28 10:06:31 atsareg Exp $
+# $Id: TransformationDB.py,v 1.63 2008/08/29 07:42:54 atsareg Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -402,6 +402,55 @@ class TransformationDB(DB):
       fdict['TargetSE'] = usedse
       flist.append(fdict)
     return S_OK(flist)
+
+  def getFileSummary(self,lfns,transName=''):
+    """ Get file status summary in all the transformations
+    """
+
+    if transName:
+      transDict = self.getTransformation(transName)
+      transList = [transDict]
+    else:
+      result = self.getAllTransformations()
+      if not result['OK']:
+        return S_ERROR('Can not get transformations')
+      transList = result['Value']
+
+    resultDict = {}
+    fileIDs = self.__getFileIDsForLfns(lfns)
+    if not fileIDs:
+      return S_ERROR('Files not found in the Production Database')
+
+    failedDict = {}
+    for lfn in lfns:
+      if lfn not in fileIDs.values():
+        failedDict[lfn] = True
+
+    fileIDString = ','.join([ str(x) for x in fileIDs.keys() ])
+
+    for transDict in transList:
+      transID = transDict['TransID']
+      transStatus = transDict['Status']
+
+      req = "SELECT FileID,Status,TargetSE,JobID FROM T_%s WHERE FileID in ( %s )" % (transID,fileIDString)
+      result = self._query(req)
+      if not result['OK']:
+        continue
+      if not result['Value']:
+        continue
+
+      for fileID,status,se,jobID in result['Value']:
+        lfn = fileIDs[fileID]
+        if not resultDict.has_key(fileIDs[fileID]):
+          resultDict[lfn] = {}
+        if not resultDict[lfn].has_key(transID):
+          resultDict[lfn][transID] = {}
+        resultDict[lfn][transID]['FileStatus'] = status
+        resultDict[lfn][transID]['TargetSE'] = se
+        resultDict[lfn][transID]['TransformationStatus'] = transStatus
+        resultDict[lfn][transID]['JobID'] = str(transID).zfill(8)+'_'+str(jobID).zfill(8)
+
+    return S_OK({'Successful':resultDict,'Failed':failedDict})
 
   def setFileSEForTransformation(self,transName,se,lfns):
     """ Set file SE for the given transformation identified by transID
