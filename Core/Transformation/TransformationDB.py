@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.66 2008/08/29 08:48:57 atsareg Exp $
+# $Id: TransformationDB.py,v 1.67 2008/08/29 09:12:08 atsareg Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -434,7 +434,7 @@ class TransformationDB(DB):
       transID = transDict['TransID']
       transStatus = transDict['Status']
 
-      req = "SELECT T.FileID,T.Status,T.TargetSE,T.JobID,J.WmsStatus FROM T_%s as T, Jobs_%s as J \
+      req = "SELECT T.FileID,T.Status,T.TargetSE,T.UsedSE,T.JobID,J.WmsStatus FROM T_%s as T, Jobs_%s as J \
              WHERE T.FileID in ( %s ) AND T.JobID=J.JobID" % (transID,transID,fileIDString)
       result = self._query(req)
       if not result['OK']:
@@ -442,7 +442,7 @@ class TransformationDB(DB):
       if not result['Value']:
         continue
 
-      for fileID,status,se,jobID,jobStatus in result['Value']:
+      for fileID,status,se,usedSE,jobID,jobStatus in result['Value']:
         lfn = fileIDs[fileID]
         if not resultDict.has_key(fileIDs[fileID]):
           resultDict[lfn] = {}
@@ -450,6 +450,7 @@ class TransformationDB(DB):
           resultDict[lfn][transID] = {}
         resultDict[lfn][transID]['FileStatus'] = status
         resultDict[lfn][transID]['TargetSE'] = se
+        resultDict[lfn][transID]['UsedSE'] = usedSE
         resultDict[lfn][transID]['TransformationStatus'] = transStatus
         resultDict[lfn][transID]['JobID'] = jobID
         resultDict[lfn][transID]['JobStatus'] = jobStatus
