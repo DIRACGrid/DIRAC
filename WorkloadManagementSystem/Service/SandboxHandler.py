@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: SandboxHandler.py,v 1.9 2008/01/09 09:12:02 atsareg Exp $
+# $Id: SandboxHandler.py,v 1.10 2008/09/02 17:59:33 atsareg Exp $
 ########################################################################
 
 """ SandboxHandler is the implementation of the Sandbox service
@@ -12,7 +12,7 @@
 
 """
 
-__RCSID__ = "$Id: SandboxHandler.py,v 1.9 2008/01/09 09:12:02 atsareg Exp $"
+__RCSID__ = "$Id: SandboxHandler.py,v 1.10 2008/09/02 17:59:33 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -32,7 +32,7 @@ def initializeSandboxHandler(serviceInfo):
   global jobDB
   global sandbox_type
 
-  sandbox = serviceInfo["serviceName"].split('/')[1]  
+  sandbox = serviceInfo["serviceName"].split('/')[1]
   if sandbox == "InputSandbox" or sandbox == "OutputSandbox":
     sandbox_type = sandbox
   else:
@@ -112,6 +112,7 @@ class SandboxHandler(RequestHandler):
     if not result['OK']:
       if result['Message'].find('Duplicate entry') != -1:
         return S_ERROR('InputSandbox file %s for job %d already exists' % (fname,jobID))
+      return result
     return S_OK()
 
   def transfer_toClient( self, fileID, token, fileHelper ):
