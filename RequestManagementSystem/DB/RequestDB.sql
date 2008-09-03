@@ -41,6 +41,7 @@ CREATE TABLE SubRequests (
    SourceSE varchar(32),
    TargetSE varchar(255),
    Catalogue varchar(32),
+   Error varchar(255),
    CreationTime DATETIME,
    SubmissionTime DATETIME,
    LastUpdate DATETIME,
@@ -59,6 +60,7 @@ CREATE TABLE Files (
    Md5 varchar(32),
    Addler varchar(32),
    Attempt varchar(32),
+   Error varchar(255),
    PRIMARY KEY (FileID,Status)
 );
 
