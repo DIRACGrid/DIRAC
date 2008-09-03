@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.67 2008/08/29 09:12:08 atsareg Exp $
+# $Id: TransformationDB.py,v 1.68 2008/09/03 19:11:14 atsareg Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -454,6 +454,7 @@ class TransformationDB(DB):
         resultDict[lfn][transID]['TransformationStatus'] = transStatus
         resultDict[lfn][transID]['JobID'] = jobID
         resultDict[lfn][transID]['JobStatus'] = jobStatus
+        resultDict[lfn][transID]['FileID'] = fileID
 
     return S_OK({'Successful':resultDict,'Failed':failedDict})
 
@@ -486,12 +487,34 @@ class TransformationDB(DB):
         for the given stream for files in the list of lfns
     """
     transID = self.getTransformationID(transName)
-    fileIDs = self.__getFileIDsForLfns(lfns).keys()
-    if not fileIDs:
-      return S_ERROR('TransformationDB.setFileStatusForTransformation: No files found.')
-    else:
+    result = self.getFileSummary(lfns,transID)
+    if not result['OK']:
+      return S_ERROR('Failed to contact the database')
+    successful = {}
+    failed = {}
+    for lfn in result['Value']['Failed'].keys():
+      failed[lfn] = 'File not found in the Production Database'
+    lfnDict = result['Value']['Successful']
+    fileIDs = []
+    lfnList = []
+    for lfn in lfnDict.keys():
+      if lfnDict[lfn][transID]['FileStatus'] == "Processed" and status != "Processed":
+        failed[lfn] = 'Can not change Processed status'
+      else:
+        fileIDs.append(lfnDict[lfn][transID]['FileID'])
+        lfnList.append(lfn)
+
+    if fileIDs:
       req = "UPDATE T_%s SET Status='%s' WHERE FileID IN (%s);" % (transID,status,intListToString(fileIDs))
-      return self._update(req)
+      result = self._update(req)
+      if not result['OK']:
+        for lfn in lfnList:
+          failed[lfn] = result['Message']
+      else:
+        for lfn in lfnList:
+          successful[lfn] = True
+
+    return S_OK({"Successful":successful,"Failed":failed})
 
   def setFileJobID(self,transName,jobID,lfns):
     """ Set file job ID for the given transformation identified by transID
