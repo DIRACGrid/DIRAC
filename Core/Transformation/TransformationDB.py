@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.68 2008/09/03 19:11:14 atsareg Exp $
+# $Id: TransformationDB.py,v 1.69 2008/09/03 20:13:03 atsareg Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -21,6 +21,8 @@ from DIRAC.Core.Utilities.List import stringListToString, intListToString
 from DIRAC.Core.DISET.RPCClient import RPCClient
 
 import threading
+
+MAX_ERROR_COUNT = 3
 
 #############################################################################
 
@@ -434,7 +436,7 @@ class TransformationDB(DB):
       transID = transDict['TransID']
       transStatus = transDict['Status']
 
-      req = "SELECT T.FileID,T.Status,T.TargetSE,T.UsedSE,T.JobID,J.WmsStatus FROM T_%s as T, Jobs_%s as J \
+      req = "SELECT T.FileID,T.Status,T.TargetSE,T.UsedSE,T.JobID,T.ErrorCount,J.WmsStatus FROM T_%s as T, Jobs_%s as J \
              WHERE T.FileID in ( %s ) AND T.JobID=J.JobID" % (transID,transID,fileIDString)
       result = self._query(req)
       if not result['OK']:
@@ -442,7 +444,7 @@ class TransformationDB(DB):
       if not result['Value']:
         continue
 
-      for fileID,status,se,usedSE,jobID,jobStatus in result['Value']:
+      for fileID,status,se,usedSE,jobID,errorCount,jobStatus in result['Value']:
         lfn = fileIDs[fileID]
         if not resultDict.has_key(fileIDs[fileID]):
           resultDict[lfn] = {}
@@ -455,6 +457,7 @@ class TransformationDB(DB):
         resultDict[lfn][transID]['JobID'] = jobID
         resultDict[lfn][transID]['JobStatus'] = jobStatus
         resultDict[lfn][transID]['FileID'] = fileID
+        resultDict[lfn][transID]['ErrorCount'] = errorCount
 
     return S_OK({'Successful':resultDict,'Failed':failedDict})
 
@@ -496,23 +499,33 @@ class TransformationDB(DB):
       failed[lfn] = 'File not found in the Production Database'
     lfnDict = result['Value']['Successful']
     fileIDs = []
-    lfnList = []
     for lfn in lfnDict.keys():
       if lfnDict[lfn][transID]['FileStatus'] == "Processed" and status != "Processed":
         failed[lfn] = 'Can not change Processed status'
+      elif lfnDict[lfn][transID]['ErrorCount'] >= MAX_ERROR_COUNT and status.lower() == 'unused':
+        failed[lfn] = 'Max number of resets reached'
       else:
-        fileIDs.append(lfnDict[lfn][transID]['FileID'])
-        lfnList.append(lfn)
+        fileIDs.append((lfnDict[lfn][transID]['FileID'],lfn))
 
-    if fileIDs:
-      req = "UPDATE T_%s SET Status='%s' WHERE FileID IN (%s);" % (transID,status,intListToString(fileIDs))
-      result = self._update(req)
-      if not result['OK']:
-        for lfn in lfnList:
+    for fileID,lfn in fileIDs:
+      if status != lfnDict[lfn][transID]['FileStatus']:
+        if status == "Unused":
+          # Check that the status reset counter is not exceeding MAX_ERROR_COUNT
+          newErrorCount = int(lfnDict[lfn][transID]['ErrorCount'])+1
+          new_status = status
+          if newErrorCount == MAX_ERROR_COUNT:
+            new_status = "MaxReset"
+          req = "UPDATE T_%s SET Status='%s', LastUpdate=UTC_TIMESTAMP(), " % (transID,new_status)
+          req += "ErrorCount=%d WHERE FileID=%s;" % (newErrorCount,fileID)
+        else:
+          req = "UPDATE T_%s SET Status='%s', LastUpdate=UTC_TIMESTAMP() WHERE FileID=%s;" % (transID,status,fileID)
+        result = self._update(req)
+        if not result['OK']:
           failed[lfn] = result['Message']
+        else:
+          successful[lfn] = 'Status updated to %s' % status
       else:
-        for lfn in lfnList:
-          successful[lfn] = True
+        successful[lfn] = 'Status not changed'
 
     return S_OK({"Successful":successful,"Failed":failed})
 
@@ -523,7 +536,7 @@ class TransformationDB(DB):
     transID = self.getTransformationID(transName)
     fileIDs = self.__getFileIDsForLfns(lfns).keys()
     if not fileIDs:
-      return S_ERROR('TransformationDB.setFileStatusForTransformation: No files found.')
+      return S_ERROR('TransformationDB.setFileJobID: No files found.')
     else:
       req = "UPDATE T_%s SET JobID='%s' WHERE FileID IN (%s);" % (transID,jobID,intListToString(fileIDs))
       return self._update(req)
@@ -598,6 +611,7 @@ ErrorCount INT(4) NOT NULL DEFAULT 0,
 JobID VARCHAR(32),
 TargetSE VARCHAR(32) DEFAULT "Unknown",
 UsedSE VARCHAR(32) DEFAULT "Unknown",
+LastUpdate DATETIME,
 PRIMARY KEY (FileID)
 )""" % str(transID)
     res = self._update(req)
@@ -647,7 +661,7 @@ PRIMARY KEY (FileID)
           if not res['OK']:
             return res
           if not res['Value']:
-            req = "INSERT INTO T_%s (FileID) VALUES (%s);"  % (transID,fileID)
+            req = "INSERT INTO T_%s (FileID,LastUpdate) VALUES ( %s,UTC_TIMESTAMP() );"  % (transID,fileID)
             res = self._update(req)
             if not res['OK']:
               return res
@@ -796,7 +810,7 @@ PRIMARY KEY (FileID)
     if res['OK']:
       for transformation in res['Value']:
         transName = transformation['Name']
-        res = self.setFileStatusForTransformation(transName,'deleted',lfns)
+        res = self.setFileStatusForTransformation(transName,'Deleted',lfns)
     fileIDs = self.__getFileIDsForLfns(lfns)
     failed = {}
     successful = {}
