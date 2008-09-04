@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.69 2008/09/03 20:13:03 atsareg Exp $
+# $Id: TransformationDB.py,v 1.70 2008/09/04 07:54:27 atsareg Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -528,6 +528,18 @@ class TransformationDB(DB):
         successful[lfn] = 'Status not changed'
 
     return S_OK({"Successful":successful,"Failed":failed})
+
+  def resetFileStatusForTransformation(self,transName,lfns):
+    """ Reset file error counter for the given transformation identified by transID
+        and set status to Unused for files in the list of lfns
+    """
+    transID = self.getTransformationID(transName)
+    fileIDs = self.__getFileIDsForLfns(lfns).keys()
+    if not fileIDs:
+      return S_ERROR('TransformationDB.resetFileStatusForTransformation: No files found.')
+    else:
+      req = "UPDATE T_%s SET Status='Unused', ErrorCounter=0 WHERE FileID IN (%s);" % (transID,intListToString(fileIDs))
+      return self._update(req)
 
   def setFileJobID(self,transName,jobID,lfns):
     """ Set file job ID for the given transformation identified by transID

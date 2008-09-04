@@ -140,6 +140,11 @@ class TransformationHandler(RequestHandler):
     res = self.database.setFileStatusForTransformation(transformationName,status,lfns)
     return res
 
+  types_resetFileStatusForTransformation = [[LongType, IntType, StringType],ListType]
+  def export_resetFileStatusForTransformation(self,transformationName,lfns):
+    res = self.database.resetFileStatusForTransformation(transformationName,lfns)
+    return res
+
   types_setFileJobID = [[LongType, IntType, StringType],IntType,ListType]
   def export_setFileJobID(self,transformationName,jobID,lfns):
     res = self.database.setFileJobID(transformationName,jobID,lfns)
