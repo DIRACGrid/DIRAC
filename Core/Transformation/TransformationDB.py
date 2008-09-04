@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.70 2008/09/04 07:54:27 atsareg Exp $
+# $Id: TransformationDB.py,v 1.71 2008/09/04 08:54:28 atsareg Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -504,6 +504,8 @@ class TransformationDB(DB):
         failed[lfn] = 'Can not change Processed status'
       elif lfnDict[lfn][transID]['ErrorCount'] >= MAX_ERROR_COUNT and status.lower() == 'unused':
         failed[lfn] = 'Max number of resets reached'
+        req = "UPDATE T_%s SET Status='MaxReset', LastUpdate=UTC_TIMESTAMP() WHERE FileID=%s;" % (transID,lfnDict[lfn][transID]['FileID'])
+        result = self._update(req)
       else:
         fileIDs.append((lfnDict[lfn][transID]['FileID'],lfn))
 
@@ -512,10 +514,7 @@ class TransformationDB(DB):
         if status == "Unused":
           # Check that the status reset counter is not exceeding MAX_ERROR_COUNT
           newErrorCount = int(lfnDict[lfn][transID]['ErrorCount'])+1
-          new_status = status
-          if newErrorCount == MAX_ERROR_COUNT:
-            new_status = "MaxReset"
-          req = "UPDATE T_%s SET Status='%s', LastUpdate=UTC_TIMESTAMP(), " % (transID,new_status)
+          req = "UPDATE T_%s SET Status='%s', LastUpdate=UTC_TIMESTAMP(), " % (transID,status)
           req += "ErrorCount=%d WHERE FileID=%s;" % (newErrorCount,fileID)
         else:
           req = "UPDATE T_%s SET Status='%s', LastUpdate=UTC_TIMESTAMP() WHERE FileID=%s;" % (transID,status,fileID)
@@ -538,7 +537,7 @@ class TransformationDB(DB):
     if not fileIDs:
       return S_ERROR('TransformationDB.resetFileStatusForTransformation: No files found.')
     else:
-      req = "UPDATE T_%s SET Status='Unused', ErrorCounter=0 WHERE FileID IN (%s);" % (transID,intListToString(fileIDs))
+      req = "UPDATE T_%s SET Status='Unused', ErrorCount=0 WHERE FileID IN (%s);" % (transID,intListToString(fileIDs))
       return self._update(req)
 
   def setFileJobID(self,transName,jobID,lfns):
