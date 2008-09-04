@@ -1,5 +1,9 @@
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Agent/RemovalAgent.py,v 1.18 2008/09/04 14:21:48 atsareg Exp $
+
 """  RemovalAgent takes removal requests from the RequestDB and replicates them
 """
+
+__RCSID__ = "$Id: RemovalAgent.py,v 1.18 2008/09/04 14:21:48 atsareg Exp $"
 
 from DIRAC  import gLogger, gConfig, gMonitor, S_OK, S_ERROR
 from DIRAC.Core.Base.Agent import Agent
@@ -90,6 +94,13 @@ class RemovalAgent(Agent,RequestAgentMixIn):
     except:
       jobID = 0
     gLogger.info("RemovalAgent.execute: Obtained request %s" % requestName)
+
+    result = self.RequestDBClient.getCurrentExecutionOrder(requestName,sourceServer)
+    if result['OK']:
+      currentOrder = result['Value']
+    else:
+      return S_OK('Can not get the request execution order')
+
     oRequest = RequestContainer(request=requestString)
 
     ################################################

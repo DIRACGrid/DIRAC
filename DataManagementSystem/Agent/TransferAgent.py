@@ -1,5 +1,9 @@
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Agent/TransferAgent.py,v 1.26 2008/09/04 14:21:48 atsareg Exp $
+
 """  TransferAgent takes transfer requests from the RequestDB and replicates them
 """
+
+__RCSID__ = "$Id: TransferAgent.py,v 1.26 2008/09/04 14:21:48 atsareg Exp $"
 
 from DIRAC  import gLogger, gConfig, gMonitor, S_OK, S_ERROR, rootPath
 from DIRAC.Core.Base.Agent import Agent
@@ -70,7 +74,7 @@ class TransferAgent(Agent,RequestAgentMixIn):
       result = setupShifterProxyInEnv( "DataManager", self.proxyLocation )
       if not result[ 'OK' ]:
         self.log.error( "Can't get shifter's proxy: %s" % result[ 'Message' ] )
-      return result
+        return result
 
     for i in range(self.threadPoolDepth):
       requestExecutor = ThreadedJob(self.executeRequest)
@@ -97,6 +101,13 @@ class TransferAgent(Agent,RequestAgentMixIn):
     except:
       jobID = 0
     gLogger.info("TransferAgent.execute: Obtained request %s" % requestName)
+
+    result = self.RequestDBClient.getCurrentExecutionOrder(requestName,sourceServer)
+    if result['OK']:
+      currentOrder = result['Value']
+    else:
+      return S_OK('Can not get the request execution order')
+
     oRequest = RequestContainer(request=requestString)
 
     ################################################
@@ -215,6 +226,8 @@ class TransferAgent(Agent,RequestAgentMixIn):
           gLogger.info("TransferAgent.execute: Attempting to execute %s sub-request." % operation)
           targetSE = subRequestAttributes['TargetSE']
           sourceSE = subRequestAttributes['SourceSE']
+          if sourceSE == "None":
+            sourceSE = ''
           for subRequestFile in subRequestFiles:
             if subRequestFile['Status'] == 'Waiting':
               gMonitor.addMark("Replicate and register",1)
