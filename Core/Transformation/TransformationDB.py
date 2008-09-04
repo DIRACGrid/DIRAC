@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.71 2008/09/04 08:54:28 atsareg Exp $
+# $Id: TransformationDB.py,v 1.72 2008/09/04 09:04:53 atsareg Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -436,7 +436,7 @@ class TransformationDB(DB):
       transID = transDict['TransID']
       transStatus = transDict['Status']
 
-      req = "SELECT T.FileID,T.Status,T.TargetSE,T.UsedSE,T.JobID,T.ErrorCount,J.WmsStatus FROM T_%s as T, Jobs_%s as J \
+      req = "SELECT T.FileID,T.Status,T.TargetSE,T.UsedSE,T.JobID,T.ErrorCount,T.LastUpdate,J.WmsStatus FROM T_%s as T, Jobs_%s as J \
              WHERE T.FileID in ( %s ) AND T.JobID=J.JobID" % (transID,transID,fileIDString)
       result = self._query(req)
       if not result['OK']:
@@ -444,7 +444,7 @@ class TransformationDB(DB):
       if not result['Value']:
         continue
 
-      for fileID,status,se,usedSE,jobID,errorCount,jobStatus in result['Value']:
+      for fileID,status,se,usedSE,jobID,errorCount,lastUpdate,jobStatus in result['Value']:
         lfn = fileIDs[fileID]
         if not resultDict.has_key(fileIDs[fileID]):
           resultDict[lfn] = {}
@@ -458,6 +458,7 @@ class TransformationDB(DB):
         resultDict[lfn][transID]['JobStatus'] = jobStatus
         resultDict[lfn][transID]['FileID'] = fileID
         resultDict[lfn][transID]['ErrorCount'] = errorCount
+        resultDict[lfn][transID]['LastUpdate'] = str(lastUpdate)
 
     return S_OK({'Successful':resultDict,'Failed':failedDict})
 
