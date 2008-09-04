@@ -503,6 +503,7 @@ class TransformationDBCLI(cmd.Cmd):
       prod = int(argss[1])
 
     result = self.server.getFileSummary([lfn],prod)
+
     if not result['OK']:
       print "Command failed with message:",result['Message']
       return
@@ -513,7 +514,7 @@ class TransformationDBCLI(cmd.Cmd):
 
     resDict = result['Value']['Successful'][lfn]
     print "\nStatus for %s:\n" % lfn
-    print "Transformation          FileStatus               Job                     TargetSE       UsedSE"
+    print "Transformation      FileStatus               Job                   TargetSE       UsedSE       LastUpdate"
     for transID,lfnDict in resDict.items():
       jobid = lfnDict['JobID']
       if jobid.find('No JobID assigned') == -1:
@@ -526,7 +527,8 @@ class TransformationDBCLI(cmd.Cmd):
       jobString = jobname+'/'+jobStatus
       se = lfnDict['TargetSE']
       usedSE = lfnDict['UsedSE']
-      print tranString.ljust(16), fstatus.rjust(16),' '*4,jobString.ljust(27),se.rjust(13),usedSE.rjust(16)
+      lastUpdate = lfnDict['LastUpdate']
+      print tranString.ljust(14), fstatus.rjust(14),' '*4,jobString.ljust(27),se.rjust(11),usedSE.rjust(16),"  ",lastUpdate
 
   def do_setFileStatus(self,args):
     """Set file status for the given production
@@ -541,11 +543,35 @@ class TransformationDBCLI(cmd.Cmd):
 
     prod = argss[0]
     lfn = argss[1]
-    status = argss[2]
+    status = str(argss[2])
 
-    result = self.server.setFileStatus(int(prod),[(status)[lfn]])
-    if result['Status'] != "OK":
+    result = self.server.setFileStatusForTransformation(int(prod),[(status,[lfn])])
+
+    if not result['OK']:
       print "Failed to update status for file",lfn
+    for lfn,message in result['Value']['Successful'].items():
+      print "Successful:",lfn,":",message
+    for lfn,message in result['Value']['Failed'].items():
+      print "Failed:",lfn,":",message
+
+  def do_resetFile(self,args):
+    """Set file status for the given production
+
+    usage: setFileStatus <production> <lfn> <status>
+    """
+
+    argss = string.split(args)
+    if len(argss) != 2:
+      print "usage: resetFile <production> <lfn>"
+      return
+
+    prod = argss[0]
+    lfn = argss[1]
+
+    result = self.server.resetFileStatusForTransformation(int(prod),[lfn])
+
+    if not result['OK']:
+      print "Failed to reset status for file",lfn
 
 if __name__ == "__main__":
 
