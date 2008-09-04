@@ -1,4 +1,4 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/RequestContainer.py,v 1.12 2008/08/28 15:47:13 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/RequestContainer.py,v 1.13 2008/09/04 11:16:40 atsareg Exp $
 
 """
 The Data Management Request contains all the necessary information for
@@ -11,7 +11,7 @@ from DIRAC.Core.Security.Misc import getProxyInfo
 from DIRAC.Core.Utilities import DEncode
 from DIRAC.RequestManagementSystem.Client.DISETSubRequest import DISETSubRequest
 
-__RCSID__ = "$Id: RequestContainer.py,v 1.12 2008/08/28 15:47:13 atsareg Exp $"
+__RCSID__ = "$Id: RequestContainer.py,v 1.13 2008/09/04 11:16:40 atsareg Exp $"
 
 class RequestContainer:
 
@@ -25,7 +25,8 @@ class RequestContainer:
 
     # Subrequests are represented as a dictionary. The subrequests of similar types are stored together in a list.
     # The dictionary named Attributes must be present and must have the following mandatory names
-    self.subAttributeNames = ['Status','SubRequestID','Operation','CreationTime','LastUpdate','ExecutionOrder']
+    self.subAttributeNames = ['Status','SubRequestID','Operation','CreationTime',
+                              'LastUpdate','ExecutionOrder','Error']
     self.subRequests = {}
 
     if init:
@@ -367,9 +368,11 @@ class RequestContainer:
       return S_ERROR("Subrequest index is out of range.")
     else:
       if not self.subRequests[type][ind].has_key('Files'):
-        self.subRequests[type][ind]['Files'] = files
+        # Make deep copy
+        self.subRequests[type][ind]['Files'] = copy.deepcopy(files)
       else:
-        self.subRequests[type][ind]['Files'].extend(files)
+        for fDict in files:
+          self.subRequests[type][ind]['Files'].append(copy.deepcopy(fDict))
       return S_OK()
 
   def setSubRequestFileAttributeValue(self,ind,type,lfn,attribute,value):
@@ -754,6 +757,8 @@ class RequestContainer:
         if self.subRequests[stype][ind].has_key('Files'):
           if self.subRequests[stype][ind]['Files']:
             fname = os.path.basename(self.subRequests[stype][ind]['Files'][0]['LFN'])
+            if len(self.subRequests[stype][ind]['Files']) > 1:
+              fname += ',...<%d files>' % len(self.subRequests[stype][ind]['Files'])
             digestList.append(fname)
         digestStrings.append(":".join(digestList))
 
