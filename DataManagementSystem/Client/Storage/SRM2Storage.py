@@ -11,7 +11,7 @@ from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 from DIRAC.AccountingSystem.Client.DataStoreClient import DataStoreClient
 
 from stat import *
-import types, re,os,time,sys
+import types, re,os,time,sys,string
 
 ISOK = True
 
@@ -279,11 +279,10 @@ class SRM2Storage(StorageBase):
       return S_ERROR("SRM2Storage.getTransportURL: Supplied path must be string or list of strings")
 
     if not protocols:
-      infoStr = "SRM2Storage.getTransportURL: No protocols provided, using defaults."
-      gLogger.debug(infoStr)
-      listProtocols = gConfig.getValue('/Resources/StorageElements/DefaultProtocols',[])
-      if not listProtocols:
-        return S_ERROR("SRM2Storage.getTransportURL: No local protocols defined and no defaults found")
+      protocols = self.__getProtocols()
+      if not protocols['OK']:
+        return protocols
+      listProtocols = protocols['Value']
     elif type(protocols) == types.StringType:
       listProtocols = [protocols]
     elif type(protocols) == types.ListType:
@@ -313,6 +312,33 @@ class SRM2Storage(StorageBase):
           failed[pathSURL] = "%s %s" % (errStr,errMessage)
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
+
+  def __getProtocols(self):
+    """Returns list of protocols to use at given site.  Priority is given to a protocols list
+       defined in the CS.
+    """
+    sections = gConfig.getSections('/Resources/StorageElements/%s/' %(self.name))
+    if not sections['OK']:
+      return sections
+
+    protocolsList = []
+    for section in sections['Value']:
+      path = '/Resources/StorageElements/%s/%s/ProtocolName' %(self.name,section)
+      if gConfig.getValue(path,'')==self.protocolName:
+        protPath = '/Resources/StorageElements/%s/%s/ProtocolsList' %(self.name,section)
+        siteProtocols = gConfig.getValue(protPath,[])
+        if siteProtocols:
+          gLogger.verbose('Found SE protocols list to override defaults: %s' %(string.join(siteProtocols,', ')))
+          protocolsList = siteProtocols
+
+    if not protocolsList:
+      gLogger.debug("SRM2Storage.getTransportURL: No protocols provided, using defaults.")
+      protocolsList = gConfig.getValue('/Resources/StorageElements/DefaultProtocols',[])
+
+    if not protocolsList:
+      return S_ERROR("SRM2Storage.getTransportURL: No local protocols defined and no defaults found")
+
+    return S_OK(protocolsList)
 
   def prestageFile(self,path):
     """ Issue prestage request for file
