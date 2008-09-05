@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/DictCache.py,v 1.2 2008/07/11 10:16:04 acasajus Exp $
-__RCSID__ = "$Id: DictCache.py,v 1.2 2008/07/11 10:16:04 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/DictCache.py,v 1.3 2008/09/05 11:44:59 acasajus Exp $
+__RCSID__ = "$Id: DictCache.py,v 1.3 2008/09/05 11:44:59 acasajus Exp $"
 
 import threading
 import datetime
@@ -108,6 +108,9 @@ class DictCache:
       self.__lock.release()
 
   def getKeys( self, validSeconds = 0 ):
+    """
+    Get keys for all contents
+    """
     self.__lock.acquire()
     try:
       keys = []
@@ -116,5 +119,23 @@ class DictCache:
         if self.__cache[ cKey ][ 'expirationTime' ] > limitTime:
           keys.append( ckey )
       return keys
+    finally:
+      self.__lock.release()
+
+  def purgeExpired( self, expiredInSeconds = 0 ):
+    """
+    Purge all entries that are expired or will be expired in <expiredInSeconds>
+    """
+    self.__lock.acquire()
+    try:
+      keys = []
+      limitTime = datetime.datetime.now() + datetime.timedelta( seconds = expiredInSeconds )
+      for cKey in self.__cache:
+        if self.__cache[ cKey ][ 'expirationTime' ] < limitTime:
+          keys.append( ckey )
+      for cKey in keys:
+        if self.__deleteFunction:
+          self.__deleteFunction( self.__cache[ cKey ][ 'value' ] )
+        del( self.__cache[ cKey ] )
     finally:
       self.__lock.release()
