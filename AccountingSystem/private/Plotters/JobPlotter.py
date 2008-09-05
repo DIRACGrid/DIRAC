@@ -1,26 +1,26 @@
 
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.AccountingSystem.Client.Types.Job import Job
-from DIRAC.AccountingSystem.private.Plotters.BasePlotter import BasePlotter
+from DIRAC.AccountingSystem.private.Plotters.BaseReporter import BaseReporter
 from DIRAC.Core.Utilities import Time
 
-class JobPlotter(BasePlotter):
+class JobPlotter(BaseReporter):
 
   _typeName = "Job"
   _typeKeyFields = [ dF[0] for dF in Job().definitionKeyFields ]
 
-  def _plotCPUEfficiency( self, startTime, endTime, condDict, groupingFields, filename ):
-    selectFields = ( self._getSQLStringForGrouping( groupingFields) + ", %s, %s, SUM(%s)/SUM(%s)",
-                     groupingFields + [ 'startTime', 'bucketLength',
+  def _reportCPUEfficiency( self, reportRequest ):
+    selectFields = ( self._getSQLStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s)/SUM(%s)",
+                     reportRequest[ 'groupingFields' ] + [ 'startTime', 'bucketLength',
                                     'CPUTime', 'ExecTime'
                                    ]
                    )
 
-    retVal = self._getTypeData( startTime,
-                                endTime,
+    retVal = self._getTypeData( reportRequest[ 'startTime' ],
+                                reportRequest[ 'endTime' ],
                                 selectFields,
-                                condDict,
-                                groupingFields,
+                                reportRequest[ 'condDict' ],
+                                reportRequest[ 'groupingFields' ],
                                 { 'checkNone' : True, 'convertToGranularity' : 'average' } )
     if not retVal[ 'OK' ]:
       return retVal
@@ -34,11 +34,11 @@ class JobPlotter(BasePlotter):
                         ]
                      )
 
-      retVal = self._getTypeData( startTime,
-                                  endTime,
+      retVal = self._getTypeData( reportRequest[ 'startTime' ],
+                                  reportRequest[ 'endTime' ],
                                   selectFields,
-                                  condDict,
-                                  groupingFields,
+                                  reportRequest[ 'condDict' ],
+                                  reportRequest[ 'groupingFields' ],
                                   { 'checkNone' : True, 'convertToGranularity' : 'average' } )
       if not retVal[ 'OK' ]:
         return retVal
@@ -46,192 +46,213 @@ class JobPlotter(BasePlotter):
       self.stripDataField( totalDict, 0 )
       for key in totalDict:
         dataDict[ key ] = totalDict[ key ]
-    gLogger.info( "Generating plot", "%s with granularity of %s" % ( filename, granularity ) )
-    metadata = { 'title' : 'Job CPU efficiency by %s' % " -> ".join( groupingFields ) ,
-                 'starttime' : startTime,
-                 'endtime' : endTime,
-                 'span' : granularity }
-    return self._generateQualityPlot( filename, dataDict, metadata )
+    return S_OK( { 'data' : dataDict, 'granularity' : granularity } )
 
-  def _plotCPUUsed( self, startTime, endTime, condDict, groupingFields, filename ):
-    selectFields = ( self._getSQLStringForGrouping( groupingFields) + ", %s, %s, SUM(%s)/86400",
-                     groupingFields + [ 'startTime', 'bucketLength',
+  def _plotCPUEfficiency( self, reportRequest, plotInfo, filename ):
+    metadata = { 'title' : 'Job CPU efficiency by %s' % " -> ".join( reportRequest[ 'groupingFields' ] ) ,
+                 'starttime' : reportRequest[ 'startTime' ],
+                 'endtime' : reportRequest[ 'endTime' ],
+                 'span' : plotInfo[ 'granularity' ] }
+    return self._generateQualityPlot( filename, plotInfo[ 'data' ], metadata )
+
+  def _reportCPUUsed( self, reportRequest ):
+    selectFields = ( self._getSQLStringForGrouping( reportRequest[ 'groupingFields' ]) + ", %s, %s, SUM(%s)/86400",
+                     reportRequest[ 'groupingFields' ] + [ 'startTime', 'bucketLength',
                                     'CPUTime'
                                    ]
                    )
-    retVal = self._getTypeData( startTime,
-                                endTime,
+    retVal = self._getTypeData( reportRequest[ 'startTime' ],
+                                reportRequest[ 'endTime' ],
                                 selectFields,
-                                condDict,
-                                groupingFields,
+                                reportRequest[ 'condDict' ],
+                                reportRequest[ 'groupingFields' ],
                                 {} )
     if not retVal[ 'OK' ]:
       return retVal
     dataDict, granularity = retVal[ 'Value' ]
     self.stripDataField( dataDict, 0 )
-    dataDict = self._acumulate( granularity, startTime, endTime, dataDict )
-    gLogger.info( "Generating plot", "%s with granularity of %s" % ( filename, granularity ) )
-    metadata = { 'title' : 'CPU used by %s' % " -> ".join( groupingFields ) ,
-                 'starttime' : startTime,
-                 'endtime' : endTime,
-                 'span' : granularity,
+    dataDict = self._acumulate( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
+    return S_OK( { 'data' : dataDict, 'granularity' : granularity } )
+
+  def _plotCPUUsed( self, reportRequest, plotInfo, filename ):
+    metadata = { 'title' : 'CPU used by %s' % " -> ".join( reportRequest[ 'groupingFields' ] ) ,
+                 'starttime' : reportRequest[ 'startTime' ],
+                 'endtime' : reportRequest[ 'endTime' ],
+                 'span' : plotInfo[ 'granularity' ],
                  'ylabel' : "days",
                  'is_cumulative' : True }
-    return self._generateCumulativePlot( filename, dataDict, metadata )
+    return self._generateCumulativePlot( filename, plotInfo[ 'data'], metadata )
 
-  def _plotCPUUsage( self, startTime, endTime, condDict, groupingFields, filename ):
-    selectFields = ( self._getSQLStringForGrouping( groupingFields) + ", %s, %s, SUM(%s)/86400",
-                     groupingFields + [ 'startTime', 'bucketLength',
+  def _reportCPUUsage( self, reportRequest ):
+    selectFields = ( self._getSQLStringForGrouping( reportRequest[ 'groupingFields' ]) + ", %s, %s, SUM(%s)/86400",
+                     reportRequest[ 'groupingFields' ] + [ 'startTime', 'bucketLength',
                                     'CPUTime'
                                    ]
                    )
-    retVal = self._getTypeData( startTime,
-                                endTime,
+    retVal = self._getTypeData( reportRequest[ 'startTime' ],
+                                reportRequest[ 'endTime' ],
                                 selectFields,
-                                condDict,
-                                groupingFields,
+                                reportRequest[ 'condDict' ],
+                                reportRequest[ 'groupingFields' ],
                                 {} )
     if not retVal[ 'OK' ]:
       return retVal
     dataDict, granularity = retVal[ 'Value' ]
     self.stripDataField( dataDict, 0 )
-    dataDict = self._fillWithZero( granularity, startTime, endTime, dataDict )
-    gLogger.info( "Generating plot", "%s with granularity of %s" % ( filename, granularity ) )
-    metadata = { 'title' : 'CPU usage by %s' % " -> ".join( groupingFields ) ,
-                 'starttime' : startTime,
-                 'endtime' : endTime,
-                 'span' : granularity,
-                 'ylabel' : "days" }
-    return self._generateTimedStackedBarPlot( filename, dataDict, metadata )
+    dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
+    return S_OK( { 'data' : dataDict, 'granularity' : granularity } )
 
-  def _plotCumulativeNumberOfJobs( self, startTime, endTime, condDict, groupingFields, filename ):
-    selectFields = ( self._getSQLStringForGrouping( groupingFields) + ", %s, %s, SUM(%s)",
-                     groupingFields + [ 'startTime', 'bucketLength',
+  def _plotCPUUsage( self, reportRequest, plotInfo, filename ):
+    metadata = { 'title' : 'CPU usage by %s' % " -> ".join( reportRequest[ 'groupingFields' ] ) ,
+                 'starttime' : reportRequest[ 'startTime' ],
+                 'endtime' : reportRequest[ 'endTime' ],
+                 'span' : plotInfo[ 'granularity' ],
+                 'ylabel' : "days" }
+    return self._generateTimedStackedBarPlot( filename, plotInfo[ 'data'], metadata )
+
+  def _reportCumulativeNumberOfJobs( self, reportRequest ):
+    selectFields = ( self._getSQLStringForGrouping( reportRequest[ 'groupingFields' ]) + ", %s, %s, SUM(%s)",
+                     reportRequest[ 'groupingFields' ] + [ 'startTime', 'bucketLength',
                                     'entriesInBucket'
                                    ]
                    )
-    retVal = self._getTypeData( startTime,
-                                endTime,
+    retVal = self._getTypeData( reportRequest[ 'startTime' ],
+                                reportRequest[ 'endTime' ],
                                 selectFields,
-                                condDict,
-                                groupingFields,
+                                reportRequest[ 'condDict' ],
+                                reportRequest[ 'groupingFields' ],
                                 {} )
     if not retVal[ 'OK' ]:
       return retVal
     dataDict, granularity = retVal[ 'Value' ]
     self.stripDataField( dataDict, 0 )
-    dataDict = self._acumulate( granularity, startTime, endTime, dataDict )
-    gLogger.info( "Generating plot", "%s with granularity of %s" % ( filename, granularity ) )
-    metadata = { 'title' : 'Cumulative Jobs by %s' % " -> ".join( groupingFields ) ,
-                 'starttime' : startTime,
-                 'endtime' : endTime,
-                 'span' : granularity,
+    dataDict = self._acumulate( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
+    return S_OK( { 'data' : dataDict, 'granularity' : granularity } )
+
+  def _plotCumulativeNumberOfJobs( self, reportRequest, plotInfo, filename ):
+    metadata = { 'title' : 'Cumulative Jobs by %s' % " -> ".join( reportRequest[ 'groupingFields' ] ) ,
+                 'starttime' : reportRequest[ 'startTime' ],
+                 'endtime' : reportRequest[ 'endTime' ],
+                 'span' : plotInfo[ 'granularity' ],
                  'ylabel' : "jobs",
                  'is_cumulative' : True }
-    return self._generateCumulativePlot( filename, dataDict, metadata )
+    return self._generateCumulativePlot( filename, plotInfo[ 'data'], metadata )
 
-  def _plotNumberOfJobs( self, startTime, endTime, condDict, groupingFields, filename ):
-    selectFields = ( self._getSQLStringForGrouping( groupingFields) + ", %s, %s, SUM(%s)",
-                     groupingFields + [ 'startTime', 'bucketLength',
+  def _reportNumberOfJobs( self, reportRequest ):
+    selectFields = ( self._getSQLStringForGrouping( reportRequest[ 'groupingFields' ]) + ", %s, %s, SUM(%s)",
+                     reportRequest[ 'groupingFields' ] + [ 'startTime', 'bucketLength',
                                     'entriesInBucket'
                                    ]
                    )
-    retVal = self._getTypeData( startTime,
-                                endTime,
+    retVal = self._getTypeData( reportRequest[ 'startTime' ],
+                                reportRequest[ 'endTime' ],
                                 selectFields,
-                                condDict,
-                                groupingFields,
+                                reportRequest[ 'condDict' ],
+                                reportRequest[ 'groupingFields' ],
                                 {} )
     if not retVal[ 'OK' ]:
       return retVal
     dataDict, granularity = retVal[ 'Value' ]
     self.stripDataField( dataDict, 0 )
-    dataDict = self._fillWithZero( granularity, startTime, endTime, dataDict )
-    gLogger.info( "Generating plot", "%s with granularity of %s" % ( filename, granularity ) )
-    metadata = { 'title' : 'Jobs by %s' % " -> ".join( groupingFields ) ,
-                 'starttime' : startTime,
-                 'endtime' : endTime,
-                 'span' : granularity,
+    dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
+    return S_OK( { 'data' : dataDict, 'granularity' : granularity } )
+
+  def _plotNumberOfJobs( self, reportRequest, plotInfo, filename ):
+    metadata = { 'title' : 'Jobs by %s' % " -> ".join( reportRequest[ 'groupingFields' ] ) ,
+                 'starttime' : reportRequest[ 'startTime' ],
+                 'endtime' : reportRequest[ 'endTime' ],
+                 'span' : plotInfo[ 'granularity' ],
                  'ylabel' : "jobs"  }
-    return self._generateTimedStackedBarPlot( filename, dataDict, metadata )
+    return self._generateTimedStackedBarPlot( filename, plotInfo[ 'data'], metadata )
 
-  def _plotInputSandboxSize( self, startTime, endTime, condDict, groupingFields, filename ):
-    return self.__plotFieldSizeinMB( startTime, endTime,
-                                 condDict, groupingFields,
-                                 filename, ( "InputSandBoxSize", "Input sand box size" ) )
+  def _reportInputSandboxSize( self, reportRequest ):
+    return self.__reportFieldSizeinMB( reportRequest, ( "InputSandBoxSize", "Input sand box size" ) )
 
-  def _plotOutputSandboxSize( self, startTime, endTime, condDict, groupingFields, filename ):
-    return self.__plotFieldSizeinMB( startTime, endTime,
-                                 condDict, groupingFields,
-                                 filename, ( "OutputSandBoxSize", "Output sand box size" ) )
+  def _reportOutputSandboxSize( self, reportRequest ):
+    return self.__reportFieldSizeinMB( reportRequest, ( "OutputSandBoxSize", "Output sand box size" ) )
 
-  def _plotDiskSpaceSize( self, startTime, endTime, condDict, groupingFields, filename ):
-    return self.__plotFieldSizeinMB( startTime, endTime,
-                                 condDict, groupingFields,
-                                 filename, ( "DiskSpace", "Used disk space" ) )
+  def _reportDiskSpaceSize( self, reportRequest ):
+    return self.__reportFieldSizeinMB( reportRequest, ( "DiskSpace", "Used disk space" ) )
 
-  def _plotInputDataSize( self, startTime, endTime, condDict, groupingFields, filename ):
-    return self.__plotFieldSizeinMB( startTime, endTime,
-                                 condDict, groupingFields,
-                                 filename, ( "InputDataSize", "Input data" ) )
+  def _reportInputDataSize( self, reportRequest ):
+    return self.__reportFieldSizeinMB( reportRequest, ( "InputDataSize", "Input data" ) )
 
-  def _plotOutputDataSize( self, startTime, endTime, condDict, groupingFields, filename ):
-    return self.__plotFieldSizeinMB( startTime, endTime,
-                                 condDict, groupingFields,
-                                 filename, ( "OutputDataSize", "Output data" ) )
+  def _reportOutputDataSize( self, reportRequest ):
+    return self.__reportFieldSizeinMB( reportRequest, ( "OutputDataSize", "Output data" ) )
 
-  def __plotFieldSizeinMB( self, startTime, endTime, condDict, groupingFields, filename, fieldTuple ):
-    selectFields = ( self._getSQLStringForGrouping( groupingFields) + ", %s, %s, SUM(%s)/1000000",
-                     groupingFields + [ 'startTime', 'bucketLength', fieldTuple[0] ]
+  def __reportFieldSizeinMB( self, reportRequest, fieldTuple ):
+    selectFields = ( self._getSQLStringForGrouping( reportRequest[ 'groupingFields' ]) + ", %s, %s, SUM(%s)/1000000",
+                     reportRequest[ 'groupingFields' ] + [ 'startTime', 'bucketLength', fieldTuple[0] ]
                    )
-    retVal = self._getTypeData( startTime,
-                                endTime,
+    retVal = self._getTypeData( reportRequest[ 'startTime' ],
+                                reportRequest[ 'endTime' ],
                                 selectFields,
-                                condDict,
-                                groupingFields,
+                                reportRequest[ 'condDict' ],
+                                reportRequest[ 'groupingFields' ],
                                 {} )
     if not retVal[ 'OK' ]:
       return retVal
     dataDict, granularity = retVal[ 'Value' ]
     self.stripDataField( dataDict, 0 )
-    dataDict = self._fillWithZero( granularity, startTime, endTime, dataDict )
-    gLogger.info( "Generating plot", "%s with granularity of %s" % ( filename, granularity ) )
-    metadata = { 'title' : '%s by %s' % ( fieldTuple[1], " -> ".join( groupingFields ) ),
-                 'starttime' : startTime,
-                 'endtime' : endTime,
-                 'span' : granularity,
+    dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
+    return S_OK( { 'data' : dataDict, 'granularity' : granularity } )
+
+  def _plotInputSandboxSize( self, reportRequest, plotInfo, filename ):
+    return self.__plotFieldSizeinMB( reportRequest, plotInfo, filename, ( "InputSandBoxSize", "Input sand box size" ) )
+
+  def _plotOutputSandboxSize( self, reportRequest, plotInfo, filename ):
+    return self.__plotFieldSizeinMB( reportRequest, plotInfo, filename, ( "OutputSandBoxSize", "Output sand box size" ) )
+
+  def _plotDiskSpaceSize( self, reportRequest, plotInfo, filename ):
+    return self.__plotFieldSizeinMB( reportRequest, plotInfo, filename, ( "DiskSpace", "Used disk space" ) )
+
+  def _plotInputDataSize( self, reportRequest, plotInfo, filename ):
+    return self.__plotFieldSizeinMB( reportRequest, plotInfo, filename, ( "InputDataSize", "Input data" ) )
+
+  def _plotOutputDataSize( self, reportRequest, plotInfo, filename ):
+    return self.__plotFieldSizeinMB( reportRequest, plotInfo, filename, ( "OutputDataSize", "Output data" ) )
+
+  def __plotFieldSizeinMB( self, reportRequest, plotInfo, filename, fieldTuple ):
+    metadata = { 'title' : '%s by %s' % ( fieldTuple[1], " -> ".join( reportRequest[ 'groupingFields' ] ) ),
+                 'starttime' : reportRequest[ 'startTime' ],
+                 'endtime' : reportRequest[ 'endTime' ],
+                 'span' : plotInfo[ 'granularity' ],
                  'ylabel' : "MB" }
-    return self._generateTimedStackedBarPlot( filename, dataDict, metadata )
+    return self._generateTimedStackedBarPlot( filename, plotInfo[ 'data'], metadata )
 
-  def _plotInputDataFiles( self, startTime, endTime, condDict, groupingFields, filename ):
-    return self.__plotDataFiles( startTime, endTime,
-                                 condDict, groupingFields,
-                                 filename, ( "InputDataFiles", "Input files" ) )
+  def _reportInputDataFiles( self, reportRequest ):
+    return self.__reportDataFiles( reportRequest, ( "InputDataFiles", "Input files" ) )
 
-  def _plotOuputDataFiles( self, startTime, endTime, condDict, groupingFields, filename ):
-    return self.__plotDataFiles( startTime, endTime,
-                                 condDict, groupingFields,
-                                 filename, ( "OutputDataFiles", "Output files" ) )
+  def _reportOuputDataFiles( self, reportRequest ):
+    return self.__reportDataFiles( reportRequest, ( "OutputDataFiles", "Output files" ) )
 
-  def __plotDataFiles( self, startTime, endTime, condDict, groupingFields, filename, fieldTuple ):
-    selectFields = ( self._getSQLStringForGrouping( groupingFields) + ", %s, %s, SUM(%s)",
-                     groupingFields + [ 'startTime', 'bucketLength', fieldTuple[0] ]
+  def __reportDataFiles( self, reportRequest, fieldTuple ):
+    selectFields = ( self._getSQLStringForGrouping( reportRequest[ 'groupingFields' ]) + ", %s, %s, SUM(%s)",
+                     reportRequest[ 'groupingFields' ] + [ 'startTime', 'bucketLength', fieldTuple[0] ]
                    )
-    retVal = self._getTypeData( startTime,
-                                endTime,
+    retVal = self._getTypeData( reportRequest[ 'startTime' ],
+                                reportRequest[ 'endTime' ],
                                 selectFields,
-                                condDict,
-                                groupingFields,
+                                reportRequest[ 'condDict' ],
+                                reportRequest[ 'groupingFields' ],
                                 {} )
     if not retVal[ 'OK' ]:
       return retVal
     dataDict, granularity = retVal[ 'Value' ]
     self.stripDataField( dataDict, 0 )
-    dataDict = self._fillWithZero( granularity, startTime, endTime, dataDict )
-    gLogger.info( "Generating plot", "%s with granularity of %s" % ( filename, granularity ) )
-    metadata = { 'title' : '%s by %s' % ( fieldTuple[1], " -> ".join( groupingFields ) ),
-                 'starttime' : startTime,
-                 'endtime' : endTime,
-                 'span' : granularity,
+    dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
+    return S_OK( { 'data' : dataDict, 'granularity' : granularity } )
+
+  def _plotInputDataFiles( self, reportRequest, plotInfo, filename ):
+    return self.__plotDataFiles( reportRequest, plotInfo, filename, ( "InputDataFiles", "Input files" ) )
+
+  def _plotOuputDataFiles( self, reportRequest, plotInfo, filename ):
+    return self.__plotDataFiles( reportRequest, plotInfo, filename, ( "OutputDataFiles", "Output files" ) )
+
+  def __plotDataFiles( self, reportRequest, plotInfo, filename, fieldTuple ):
+    metadata = { 'title' : '%s by %s' % ( fieldTuple[1], " -> ".join( reportRequest[ 'groupingFields' ] ) ),
+                 'starttime' : reportRequest[ 'startTime' ],
+                 'endtime' : reportRequest[ 'endTime' ],
+                 'span' : plotInfo[ 'granularity' ],
                  'ylabel' : "files" }
-    return self._generateTimedStackedBarPlot( filename, dataDict, metadata )
+    return self._generateTimedStackedBarPlot( filename, plotInfo[ 'data'], metadata )

@@ -1,10 +1,10 @@
 
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
-from DIRAC.AccountingSystem.private.Plotters.BasePlotter import BasePlotter
+from DIRAC.AccountingSystem.private.Plotters.BaseReporter import BaseReporter
 from DIRAC.Core.Utilities import Time
 
-class DataOperationPlotter(BasePlotter):
+class DataOperationPlotter(BaseReporter):
 
   _typeName = "DataOperation"
   _typeKeyFields = [ dF[0] for dF in DataOperation().definitionKeyFields ]
@@ -15,23 +15,23 @@ class DataOperationPlotter(BasePlotter):
     else:
       return [ grouping ]
 
-  def _plotSuceededTransfers( self, startTime, endTime, condDict, groupingFields, filename ):
-    return self._realPlotSuceededFailedTransfers( startTime, endTime, condDict, groupingFields, filename, 'Suceeded', ( 'Failed', 0 ) )
+  def _reportSuceededTransfers( self, reportRequest ):
+    return self.__reportTransfers( reportRequest, 'Suceeded', ( 'Failed', 0 ) )
 
-  def _plotFailedTransfers( self, startTime, endTime, condDict, groupingFields, filename ):
-    return self._realPlotSuceededFailedTransfers( startTime, endTime, condDict, groupingFields, filename, 'Failed', ( 'Suceeded', 1 ) )
+  def _reportFailedTransfers( self, reportRequest ):
+    return self.__reportTransfers( reportRequest, 'Failed', ( 'Suceeded', 1 ) )
 
-  def _realPlotSuceededFailedTransfers( self, startTime, endTime, condDict, groupingFields, filename, titleType, togetherFieldsToPlot ):
-    selectFields = ( self._getSQLStringForGrouping( groupingFields) + ", %s, %s, SUM(%s), SUM(%s)-SUM(%s)",
-                     groupingFields + [ 'startTime', 'bucketLength',
+  def __reportTransfers( self, reportRequest, titleType, togetherFieldsToPlot ):
+    selectFields = ( self._getSQLStringForGrouping( reportRequest[ 'groupingFields' ]) + ", %s, %s, SUM(%s), SUM(%s)-SUM(%s)",
+                     reportRequest[ 'groupingFields' ] + [ 'startTime', 'bucketLength',
                        'TransferOK', 'TransferTotal', 'TransferOK',
                       ]
                    )
-    retVal = self._getTypeData( startTime,
-                                endTime,
+    retVal = self._getTypeData( reportRequest[ 'startTime' ],
+                                reportRequest[ 'endTime' ],
                                 selectFields,
-                                condDict,
-                                groupingFields,
+                                reportRequest[ 'condDict' ],
+                                reportRequest[ 'groupingFields' ],
                                 {} )
     if not retVal[ 'OK' ]:
       return retVal
@@ -39,26 +39,34 @@ class DataOperationPlotter(BasePlotter):
     strippedData = self.stripDataField( dataDict, togetherFieldsToPlot[1] )
     if strippedData:
       dataDict[ togetherFieldsToPlot[0] ] = strippedData[0]
-    dataDict = self._fillWithZero( granularity, startTime, endTime, dataDict )
-    gLogger.info( "Generating plot", "%s with granularity of %s" % ( filename, granularity ) )
-    metadata = { 'title' : '%s Transfers by %s' % ( titleType, " -> ".join( groupingFields ) ),
-                 'ylabel' : 'files',
-                 'starttime' : startTime,
-                 'endtime' : endTime,
-                 'span' : granularity }
-    return self._generateTimedStackedBarPlot( filename, dataDict, metadata )
+    dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
+    return S_OK( { 'data' : dataDict, 'granularity' : granularity } )
 
-  def _plotQuality( self, startTime, endTime, condDict, groupingFields, filename ):
-    selectFields = ( self._getSQLStringForGrouping( groupingFields) + ", %s, %s, SUM(%s)/SUM(%s)",
-                     groupingFields + [ 'startTime', 'bucketLength',
+  def _plotSuceededTransfers( self, reportRequest, plotInfo, filename ):
+    return self.__plotTransfers( reportRequest, plotInfo, filename, 'Suceeded', ( 'Failed', 0 ) )
+
+  def _plotFailedTransfers( self, reportRequest, plotInfo, filename ):
+    return self.__plotTransfers( reportRequest, plotInfo, filename, 'Failed', ( 'Suceeded', 1 ) )
+
+  def __plotTransfers( self, reportRequest, plotInfo, filename, titleType, togetherFieldsToPlot ):
+    metadata = { 'title' : '%s Transfers by %s' % ( titleType, " -> ".join( reportRequest[ 'groupingFields' ] ) ),
+                 'ylabel' : 'files',
+                 'starttime' : reportRequest[ 'startTime' ],
+                 'endtime' : reportRequest[ 'endTime' ],
+                 'span' : plotInfo[ 'granularity' ] }
+    return self._generateTimedStackedBarPlot( filename, plotInfo[ 'data' ], metadata )
+
+  def _reportQuality( self, reportRequest ):
+    selectFields = ( self._getSQLStringForGrouping( reportRequest[ 'groupingFields' ]) + ", %s, %s, SUM(%s)/SUM(%s)",
+                     reportRequest[ 'groupingFields' ] + [ 'startTime', 'bucketLength',
                                     'TransferOK', 'TransferTotal'
                                    ]
                    )
-    retVal = self._getTypeData( startTime,
-                                endTime,
+    retVal = self._getTypeData( reportRequest[ 'startTime' ],
+                                reportRequest[ 'endTime' ],
                                 selectFields,
-                                condDict,
-                                groupingFields,
+                                reportRequest[ 'condDict' ],
+                                reportRequest[ 'groupingFields' ],
                                 { 'checkNone' : True, 'convertToGranularity' : 'average' } )
     if not retVal[ 'OK' ]:
       return retVal
@@ -71,11 +79,11 @@ class DataOperationPlotter(BasePlotter):
                          'TransferOK', 'TransferTotal'
                        ]
                      )
-      retVal = self._getTypeData( startTime,
-                                  endTime,
+      retVal = self._getTypeData( reportRequest[ 'startTime' ],
+                                  reportRequest[ 'endTime' ],
                                   selectFields,
-                                  condDict,
-                                  groupingFields,
+                                  reportRequest[ 'condDict' ],
+                                  reportRequest[ 'groupingFields' ],
                                   { 'checkNone' : True, 'convertToGranularity' : 'average' } )
       if not retVal[ 'OK' ]:
         return retVal
@@ -83,60 +91,66 @@ class DataOperationPlotter(BasePlotter):
       self.stripDataField( totalDict, 0 )
       for key in totalDict:
         dataDict[ key ] = totalDict[ key ]
-    gLogger.info( "Generating plot", "%s with granularity of %s" % ( filename, granularity ) )
-    metadata = { 'title' : 'Transfer quality by %s' % " -> ".join( groupingFields ) ,
-                 'starttime' : startTime,
-                 'endtime' : endTime,
-                 'span' : granularity }
-    return self._generateQualityPlot( filename, dataDict, metadata )
+    return S_OK( { 'data' : dataDict, 'granularity' : granularity } )
 
-  def _plotTransferedData( self, startTime, endTime, condDict, groupingFields, filename ):
-    selectFields = ( self._getSQLStringForGrouping( groupingFields) + ", %s, %s, SUM(%s)/1000000000",
-                     groupingFields + [ 'startTime', 'bucketLength',
+  def _plotQuality( self, reportRequest, plotInfo, filename ):
+    metadata = { 'title' : 'Transfer quality by %s' % " -> ".join( reportRequest[ 'groupingFields' ] ) ,
+                 'starttime' : reportRequest[ 'startTime' ],
+                 'endtime' : reportRequest[ 'endTime' ],
+                 'span' : plotInfo[ 'granularity' ] }
+    return self._generateQualityPlot( filename, plotInfo[ 'data' ], metadata )
+
+  def _reportTransferedData( self, reportRequest ):
+    selectFields = ( self._getSQLStringForGrouping( reportRequest[ 'groupingFields' ]) + ", %s, %s, SUM(%s)/1000000000",
+                     reportRequest[ 'groupingFields' ] + [ 'startTime', 'bucketLength',
                                     'TransferSize'
                                    ]
                    )
-    retVal = self._getTypeData( startTime,
-                                endTime,
+    retVal = self._getTypeData( reportRequest[ 'startTime' ],
+                                reportRequest[ 'endTime' ],
                                 selectFields,
-                                condDict,
-                                groupingFields,
+                                reportRequest[ 'condDict' ],
+                                reportRequest[ 'groupingFields' ],
                                 {} )
     if not retVal[ 'OK' ]:
       return retVal
     dataDict, granularity = retVal[ 'Value' ]
     self.stripDataField( dataDict, 0 )
-    dataDict = self._acumulate( granularity, startTime, endTime, dataDict )
-    gLogger.info( "Generating plot", "%s with granularity of %s" % ( filename, granularity ) )
-    metadata = { 'title' : 'Transfered data by %s' % " -> ".join( groupingFields ) ,
-                 'starttime' : startTime,
-                 'endtime' : endTime,
-                 'span' : granularity,
+    dataDict = self._acumulate( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
+    return S_OK( { 'data' : dataDict, 'granularity' : granularity } )
+
+  def _plotTransferedData( self, reportRequest, plotInfo, filename ):
+    metadata = { 'title' : 'Transfered data by %s' % " -> ".join( reportRequest[ 'groupingFields' ] ) ,
+                 'starttime' : reportRequest[ 'startTime' ],
+                 'endtime' : reportRequest[ 'endTime' ],
+                 'span' : plotInfo[ 'granularity' ],
                  'ylabel' : "Gbyte",
                  'is_cumulative' : True }
-    return self._generateCumulativePlot( filename, dataDict, metadata )
+    return self._generateCumulativePlot( filename, plotInfo[ 'data' ], metadata )
 
-  def _plotThroughput( self, startTime, endTime, condDict, groupingFields, filename ):
-    selectFields = ( self._getSQLStringForGrouping( groupingFields) + ", %s, %s, (SUM(%s)/SUM(%s))/1000000",
-                     groupingFields + [ 'startTime', 'bucketLength',
+  def _reportThroughput( self, reportRequest ):
+    selectFields = ( self._getSQLStringForGrouping( reportRequest[ 'groupingFields' ]) + ", %s, %s, (SUM(%s)/SUM(%s))/1000000",
+                     reportRequest[ 'groupingFields' ] + [ 'startTime', 'bucketLength',
                        'TransferSize', 'bucketLength',
                       ]
                    )
-    retVal = self._getTypeData( startTime,
-                                endTime,
+    retVal = self._getTypeData( reportRequest[ 'startTime' ],
+                                reportRequest[ 'endTime' ],
                                 selectFields,
-                                condDict,
-                                groupingFields,
+                                reportRequest[ 'condDict' ],
+                                reportRequest[ 'groupingFields' ],
                                 { 'convertToGranularity' : 'average' } )
     if not retVal[ 'OK' ]:
       return retVal
     dataDict, granularity = retVal[ 'Value' ]
     self.stripDataField( dataDict, 0 )
-    dataDict = self._fillWithZero( granularity, startTime, endTime, dataDict )
-    gLogger.info( "Generating plot", "%s with granularity of %s" % ( filename, granularity ) )
-    metadata = { 'title' : 'Throughput by %s' % " -> ".join( groupingFields ) ,
+    dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
+    return S_OK( { 'data' : dataDict, 'granularity' : granularity } )
+
+  def _plotThroughput( self, reportRequest, plotInfo, filename ):
+    metadata = { 'title' : 'Throughput by %s' % " -> ".join( reportRequest[ 'groupingFields' ] ) ,
                  'ylabel' : 'Mbyte/s',
-                 'starttime' : startTime,
-                 'endtime' : endTime,
-                 'span' : granularity }
-    return self._generateTimedStackedBarPlot( filename, dataDict, metadata )
+                 'starttime' : reportRequest[ 'startTime' ],
+                 'endtime' : reportRequest[ 'endTime' ],
+                 'span' : plotInfo[ 'granularity' ] }
+    return self._generateTimedStackedBarPlot( filename, plotInfo[ 'data' ], metadata )

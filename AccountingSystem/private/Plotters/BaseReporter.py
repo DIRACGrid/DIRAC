@@ -1,13 +1,13 @@
 
+import md5
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.AccountingSystem.private.DBUtils import DBUtils
-from DIRAC.AccountingSystem.private.PlotsCache import gPlotsCache
+from DIRAC.AccountingSystem.private.DataCache import gDataCache
 from DIRAC.Core.Utilities import Time
 from DIRAC.AccountingSystem.private.Plots import *
 
-class BasePlotter(DBUtils):
+class BaseReporter(DBUtils):
 
-  requiredParams = ()
   _PARAM_CHECK_FOR_NONE = 'checkNone'
   _PARAM_CONVERT_TO_GRANULARITY = 'convertToGranularity'
   _VALID_PARAM_CONVERT_TO_GRANULARITY = ( 'sum', 'average' )
@@ -26,33 +26,57 @@ class BasePlotter(DBUtils):
   def _translateGrouping( self, grouping ):
     return [ grouping ]
 
-  def generate( self, plotName, startTime, endTime, argsDict, grouping ):
-    missing = []
-    for param in self.requiredParams:
-      if param not in argsDict:
-        missing.append( param )
-    if missing:
-      return S_ERROR( "Argument(s) %s missing" % ", ".join( missing ) )
-    funcName = "_plot%s" % plotName
-    try:
-      funcObj = getattr( self, funcName )
-    except Exception, e:
-      return S_ERROR( "Plot  %s is not defined" % plotName )
-    return gPlotsCache.generatePlot( plotName,
-                                     startTime,
-                                     endTime,
-                                     argsDict,
-                                     self._translateGrouping( grouping ),
-                                     funcObj )
+  def __calculateReportHash( reportRequest ):
+    m = md5.new()
+    m.update( repr( reportRequest ) )
+    return m.hexdigest()
+
+  def generate( self, reportRequest ):
+    reportRequest[ 'groupingFields' ] = self._translateGrouping( reportRequest[ 'grouping' ] )
+    reportHash = reportRequest[ 'hash' ]
+    gLogger.info( "Retrieving data for %s:%s" % ( reportRequest[ 'typeName' ], reportRequest[ 'reportName' ] ) )
+    retVal = self.__retrieveReportData( reportRequest, reportHash )
+    if not retVal[ 'OK' ]:
+      return retVal
+    if not reportRequest[ 'generatePlot' ]:
+      return retVal
+    reportData = retVal[ 'Value' ]
+    gLogger.info( "Plotting data for %s:%s" % ( reportRequest[ 'typeName' ], reportRequest[ 'reportName' ] ) )
+    retVal = self.__generatePlotForReport( reportRequest, reportHash, reportData )
+    if not retVal[ 'OK' ]:
+      return retVal
+    plotDict = retVal[ 'Value' ]
+    if 'retrieveReportData' in reportRequest[ 'extraArgs' ] and reportRequest[ 'extraArgs' ][ 'retrieveReportData' ]:
+      plotDict[ 'reportData' ] = reportData
+    return S_OK( plotDict )
 
   def plotsList( self ):
     viewList = []
     for attr in dir( self ):
-      if attr.find( "_plot" ) == 0:
-        viewList.append( attr.replace( "_plot", "" ) )
+      if attr.find( "_report" ) == 0:
+        viewList.append( attr.replace( "_report", "" ) )
     viewList.sort()
     return viewList
 
+  def __retrieveReportData( self, reportRequest, reportHash ):
+    funcName = "_report%s" % reportRequest[ 'reportName' ]
+    try:
+      funcObj = getattr( self, funcName )
+    except Exception, e:
+      return S_ERROR( "Report %s is not defined" % reportRequest[ 'reportName' ] )
+    return gDataCache.getReportData( reportRequest, reportHash, funcObj )
+
+  def __generatePlotForReport( self, reportRequest, reportHash, reportData ):
+    funcName = "_plot%s" % reportRequest[ 'reportName' ]
+    try:
+      funcObj = getattr( self, funcName )
+    except Exception, e:
+      return S_ERROR( "Plot function for report %s is not defined" % reportRequest[ 'reportName' ] )
+    return gDataCache.getReportPlot( reportRequest, reportHash, reportData, funcObj )
+
+###
+# Helper functions for reporters
+###
 
   def _getTypeData( self, startTime, endTime, selectFields, preCondDict, groupingFields, metadataDict ):
     condDict = {}
@@ -130,18 +154,18 @@ class BasePlotter(DBUtils):
 
   def __plotData( self, filename, dataDict, metadata, funcToPlot ):
     self.__checkPlotMetadata( metadata )
-    finalResult = funcToPlot( filename, dataDict, metadata )
+    plotFileName = "%s.png" % filename
+    finalResult = funcToPlot( plotFileName, dataDict, metadata )
     if not finalResult[ 'OK' ]:
       return finalResult
     thbMD = self.__checkThumbnailMetadata( metadata )
     if not thbMD:
-      return S_OK( { 'thumbnail' : False } )
-    thbFilename = filename.replace( ".png", ".thb.png" )
+      return S_OK( { 'plot' : True, 'thumbnail' : False } )
+    thbFilename = "%s.thb.png" % filename
     retVal = funcToPlot( thbFilename, dataDict, thbMD )
     if not retVal[ 'OK' ]:
       return retVal
-    return S_OK( { 'thumbnail' : True } )
-
+    return S_OK( { 'plot' : True, 'thumbnail' : True } )
 
   def _generateTimedStackedBarPlot( self, filename, dataDict, metadata ):
     return self.__plotData( filename, dataDict, metadata, generateTimedStackedBarPlot )

@@ -1,12 +1,13 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/ReportGeneratorHandler.py,v 1.16 2008/07/24 17:41:17 acasajus Exp $
-__RCSID__ = "$Id: ReportGeneratorHandler.py,v 1.16 2008/07/24 17:41:17 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/ReportGeneratorHandler.py,v 1.17 2008/09/05 11:44:45 acasajus Exp $
+__RCSID__ = "$Id: ReportGeneratorHandler.py,v 1.17 2008/09/05 11:44:45 acasajus Exp $"
 import types
 import os
+import md5
 from DIRAC import S_OK, S_ERROR, rootPath, gConfig, gLogger, gMonitor
 from DIRAC.AccountingSystem.private.AccountingDB import AccountingDB
 from DIRAC.AccountingSystem.private.Summaries import Summaries
-from DIRAC.AccountingSystem.private.PlotsCache import gPlotsCache
-from DIRAC.AccountingSystem.private.MainPlotter import MainPlotter
+from DIRAC.AccountingSystem.private.DataCache import gDataCache
+from DIRAC.AccountingSystem.private.MainReporter import MainReporter
 from DIRAC.AccountingSystem.private.DBUtils import DBUtils
 from DIRAC.AccountingSystem.private.Policies import gPoliciesList
 from DIRAC.ConfigurationSystem.Client import PathFinder
@@ -37,41 +38,47 @@ def initializeReportGeneratorHandler( serviceInfo ):
   except IOError:
     gLogger.fatal( "Can't write to %s" % dataPath )
     return S_ERROR( "Data location is not writable" )
-  gPlotsCache.setGraphsLocation( dataPath )
-  gMonitor.registerActivity( "drawnplots", "Drawn plot images", "Accounting reports", "plots", gMonitor.OP_SUM )
-  gMonitor.registerActivity( "generatedsummaries", "Generated summaries", "Accounting reports", "summaries", gMonitor.OP_SUM )
+  gDataCache.setGraphsLocation( dataPath )
+  gMonitor.registerActivity( "plotsDrawn", "Drawn plot images", "Accounting reports", "plots", gMonitor.OP_SUM )
+  gMonitor.registerActivity( "reportsRequested", "Generated reports", "Accounting reports", "reports", gMonitor.OP_SUM )
   return S_OK()
 
 class ReportGeneratorHandler( RequestHandler ):
 
-  types_generateSummary = [ types.StringType, Time._dateTimeType, Time._dateTimeType, types.DictType ]
-  def export_generateSummary( self, summaryName, startTime, endTime, argsDict ):
-    """
-    Generate summaries
-      Arguments:
-        - summaryName : Name of summary (easy!)
-        - startTime
-        - endTime
-        - argsDict : Arguments to the summary.
-    """
-    summariesGeneator = Summaries( gAccountingDB, self.serviceInfoDict[ 'clientSetup' ] )
-    startTime = int( Time.toEpoch( startTime ) )
-    endTime = int( Time.toEpoch( endTime ) )
-    gMonitor.addMark( "generatedsummaries" )
-    return summariesGeneator.generate( summaryName, startTime, endTime, argsDict )
+  __reportRequestDict = { 'typeName' : types.StringType,
+                        'reportName' : types.StringType,
+                        'startTime' : Time._allDateTypes,
+                        'endTime' : Time._allDateTypes,
+                        'condDict' : types.DictType,
+                        'grouping' : types.StringType,
+                        'extraArgs' : types.DictType
+                      }
 
-  types_listSummaries = []
-  def export_listSummaries( self ):
-    """
-    List all available summaries
-      Arguments:
-        none
-    """
-    summariesGeneator = Summaries( gAccountingDB, self.serviceInfoDict[ 'clientSetup' ] )
-    return S_OK( summariesGeneator.summariesList() )
+  def __checkPlotRequest( self, reportRequest ):
+    for key in self.__reportRequestDict:
+      if key == 'extraArgs':
+        reportRequest[ key ] = {}
+      if not key in reportRequest:
+        return S_ERROR( 'Missing mandatory field %s in plot reques' % key )
+      requestKeyType = type( reportRequest[ key ] )
+      if key in ( 'startTime', 'endTime' ):
+        if requestKeyType not in self.__reportRequestDict[ key ]:
+          return S_ERROR( "Type mismatch for field %s (%s), required one of %s" % ( key,
+                                                                                    str(requestKeyType),
+                                                                                    str( self.__reportRequestDict[ key ] ) ) )
+        reportRequest[ key ] = int( Time.toEpoch( reportRequest[ key ] ) )
+      else:
+        if requestKeyType != self.__reportRequestDict[ key ]:
+          return S_ERROR( "Type mismatch for field %s (%s), required %s" % ( key,
+                                                                             str(requestKeyType),
+                                                                             str( self.__reportRequestDict[ key ] ) ) )
+    m = md5.new()
+    m.update( repr( reportRequest ) )
+    reportRequest[ 'hash' ] =  m.hexdigest()
+    return S_OK( reportRequest )
 
-  types_generatePlot = [ types.StringType, types.StringType, Time._allDateTypes, Time._allDateTypes, types.DictType, types.StringType ]
-  def export_generatePlot( self, typeName, plotName, startTime, endTime, argsDict, grouping, extraArgs = {} ):
+  types_generatePlot = [ types.DictType ]
+  def export_generatePlot( self, reportRequest ):
     """
     Plot a accounting
       Arguments:
@@ -82,23 +89,43 @@ class ReportGeneratorHandler( RequestHandler ):
         - grouping
         - extraArgs
     """
-    if extraArgs and type( extraArgs ) != types.DictType:
-      return S_ERROR( "Type mismatch for extraArgs. It has to be a dictionary" )
-    plotter = MainPlotter( gAccountingDB, self.serviceInfoDict[ 'clientSetup' ] )
-    startTime = int( Time.toEpoch( startTime ) )
-    endTime = int( Time.toEpoch( endTime ) )
-    gMonitor.addMark( "drawnplots" )
-    return plotter.generate( typeName, plotName, self.getRemoteCredentials(), startTime, endTime, argsDict, grouping, extraArgs )
+    retVal = self.__checkPlotRequest( reportRequest )
+    if not retVal[ 'OK' ]:
+      return retVal
+    reporter = MainReporter( gAccountingDB, self.serviceInfoDict[ 'clientSetup' ] )
+    gMonitor.addMark( "plotsDrawn" )
+    reportRequest[ 'generatePlot' ] = True
+    return reporter.generate( reportRequest, self.getRemoteCredentials() )
 
-  types_listPlots = [ types.StringType ]
-  def export_listPlots( self, typeName ):
+  types_getReport = [ types.DictType ]
+  def export_getReport( self, reportRequest ):
+    """
+    Plot a accounting
+      Arguments:
+        - viewName : Name of view (easy!)
+        - startTime
+        - endTime
+        - argsDict : Arguments to the view.
+        - grouping
+        - extraArgs
+    """
+    retVal = self.__checkPlotRequest( reportRequest )
+    if not retVal[ 'OK' ]:
+      return retVal
+    reporter = MainReporter( gAccountingDB, self.serviceInfoDict[ 'clientSetup' ] )
+    gMonitor.addMark( "reportsRequested" )
+    reportRequest[ 'generatePlot' ] = False
+    return reporter.generate( reportRequest, self.getRemoteCredentials() )
+
+  types_listReports = [ types.StringType ]
+  def export_listReports( self, typeName ):
     """
     List all available plots
       Arguments:
         none
     """
-    plotter = MainPlotter( gAccountingDB, self.serviceInfoDict[ 'clientSetup' ] )
-    return plotter.plotsList( typeName )
+    reporter = MainReporter( gAccountingDB, self.serviceInfoDict[ 'clientSetup' ] )
+    return reporter.list( typeName )
 
   types_listUniqueKeyValues = [ types.StringType ]
   def export_listUniqueKeyValues( self, typeName ):
@@ -125,7 +152,7 @@ class ReportGeneratorHandler( RequestHandler ):
     """
     Get graphs data
     """
-    retVal = gPlotsCache.getGraphData( fileId )
+    retVal = gDataCache.getPlotData( fileId )
     if not retVal[ 'OK' ]:
       return retVal
     retVal = fileHelper.sendData( retVal[ 'Value' ] )

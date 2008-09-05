@@ -22,7 +22,7 @@ class JobPolicy:
 
     return condDict
 
-  def checkPlot( self, id, credDict, condDict, groupingList ):
+  def checkRequest( self, id, credDict, condDict, groupingList ):
     return self.__executor.applyFilters( id, credDict, condDict, groupingList )
 
   def __checkConditions( self, credDict, condDict, groupingField ):

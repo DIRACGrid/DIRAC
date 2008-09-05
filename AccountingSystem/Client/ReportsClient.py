@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/ReportsClient.py,v 1.3 2008/07/24 17:41:31 acasajus Exp $
-__RCSID__ = "$Id: ReportsClient.py,v 1.3 2008/07/24 17:41:31 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/ReportsClient.py,v 1.4 2008/09/05 11:44:44 acasajus Exp $
+__RCSID__ = "$Id: ReportsClient.py,v 1.4 2008/09/05 11:44:44 acasajus Exp $"
 
 import tempfile
 from DIRAC import S_OK, S_ERROR
@@ -30,21 +30,31 @@ class ReportsClient:
     rpcClient = self.__getRPCClient()
     return rpcClient.ping()
 
-  def listSummaries(self):
+  def listReports( self, typeName ):
     rpcClient = self.__getRPCClient()
-    return rpcClient.listSummaries()
+    return rpcClient.listReports( typeName )
 
-  def listPlots( self, typeName ):
+  def getReport( self, typeName, reportName, startTime, endTime, condDict, grouping, extraArgs = {} ):
     rpcClient = self.__getRPCClient()
-    return rpcClient.listPlots( typeName )
+    plotRequest = { 'typeName' : typeName,
+                    'reportName' : reportName,
+                    'startTime' : startTime,
+                    'endTime' : endTime,
+                    'argsDict' : argsDict,
+                    'grouping' : grouping,
+                    'condDict' : condDict }
+    return rpcClient.getReport( plotRequest )
 
-  def getSummary( self, summaryName, startTime, endTime, argsDict ):
+  def generatePlot( self, typeName, reportName, startTime, endTime, condDict, grouping, extraArgs = {} ):
     rpcClient = self.__getRPCClient()
-    return rpcClient.generateSummary( summaryName, startTime, endTime, argsDict )
-
-  def generatePlot( self, typeName, plotName, startTime, endTime, argsDict, grouping, extraArgs = {} ):
-    rpcClient = self.__getRPCClient()
-    return rpcClient.generatePlot( typeName, plotName, startTime, endTime, argsDict, grouping, extraArgs )
+    plotRequest = { 'typeName' : typeName,
+                    'reportName' : reportName,
+                    'startTime' : startTime,
+                    'endTime' : endTime,
+                    'condDict' : condDict,
+                    'grouping' : grouping,
+                    'extraArgs' : extraArgs }
+    return rpcClient.generatePlot( plotRequest )
 
   def getPlotToMem( self, plotName ):
     transferClient = self.__getTransferClient()
