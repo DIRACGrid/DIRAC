@@ -15,7 +15,7 @@ class PilotPlotter(BaseReporter):
                                     'Jobs'
                                    ]
                    )
-    retVal = self._getTypeData( reportRequest[ 'startTime' ],
+    retVal = self._getTimedData( reportRequest[ 'startTime' ],
                                 reportRequest[ 'endTime' ],
                                 selectFields,
                                 reportRequest[ 'condDict' ],
@@ -43,7 +43,7 @@ class PilotPlotter(BaseReporter):
                                     'Jobs'
                                    ]
                    )
-    retVal = self._getTypeData( reportRequest[ 'startTime' ],
+    retVal = self._getTimedData( reportRequest[ 'startTime' ],
                                 reportRequest[ 'endTime' ],
                                 selectFields,
                                 reportRequest[ 'condDict' ],
@@ -70,7 +70,7 @@ class PilotPlotter(BaseReporter):
                                     'entriesInBucket'
                                    ]
                    )
-    retVal = self._getTypeData( reportRequest[ 'startTime' ],
+    retVal = self._getTimedData( reportRequest[ 'startTime' ],
                                 reportRequest[ 'endTime' ],
                                 selectFields,
                                 reportRequest[ 'condDict' ],
@@ -98,7 +98,7 @@ class PilotPlotter(BaseReporter):
                                     'entriesInBucket'
                                    ]
                    )
-    retVal = self._getTypeData( reportRequest[ 'startTime' ],
+    retVal = self._getTimedData( reportRequest[ 'startTime' ],
                                 reportRequest[ 'endTime' ],
                                 selectFields,
                                 reportRequest[ 'condDict' ],
@@ -125,7 +125,7 @@ class PilotPlotter(BaseReporter):
                                     'Jobs', 'entriesInBucket'
                                    ]
                    )
-    retVal = self._getTypeData( reportRequest[ 'startTime' ],
+    retVal = self._getTimedData( reportRequest[ 'startTime' ],
                                 reportRequest[ 'endTime' ],
                                 selectFields,
                                 reportRequest[ 'condDict' ],

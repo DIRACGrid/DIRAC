@@ -16,7 +16,7 @@ class JobPlotter(BaseReporter):
                                    ]
                    )
 
-    retVal = self._getTypeData( reportRequest[ 'startTime' ],
+    retVal = self._getTimedData( reportRequest[ 'startTime' ],
                                 reportRequest[ 'endTime' ],
                                 selectFields,
                                 reportRequest[ 'condDict' ],
@@ -34,7 +34,7 @@ class JobPlotter(BaseReporter):
                         ]
                      )
 
-      retVal = self._getTypeData( reportRequest[ 'startTime' ],
+      retVal = self._getTimedData( reportRequest[ 'startTime' ],
                                   reportRequest[ 'endTime' ],
                                   selectFields,
                                   reportRequest[ 'condDict' ],
@@ -61,7 +61,7 @@ class JobPlotter(BaseReporter):
                                     'CPUTime'
                                    ]
                    )
-    retVal = self._getTypeData( reportRequest[ 'startTime' ],
+    retVal = self._getTimedData( reportRequest[ 'startTime' ],
                                 reportRequest[ 'endTime' ],
                                 selectFields,
                                 reportRequest[ 'condDict' ],
@@ -89,7 +89,7 @@ class JobPlotter(BaseReporter):
                                     'CPUTime'
                                    ]
                    )
-    retVal = self._getTypeData( reportRequest[ 'startTime' ],
+    retVal = self._getTimedData( reportRequest[ 'startTime' ],
                                 reportRequest[ 'endTime' ],
                                 selectFields,
                                 reportRequest[ 'condDict' ],
@@ -116,7 +116,7 @@ class JobPlotter(BaseReporter):
                                     'entriesInBucket'
                                    ]
                    )
-    retVal = self._getTypeData( reportRequest[ 'startTime' ],
+    retVal = self._getTimedData( reportRequest[ 'startTime' ],
                                 reportRequest[ 'endTime' ],
                                 selectFields,
                                 reportRequest[ 'condDict' ],
@@ -144,7 +144,7 @@ class JobPlotter(BaseReporter):
                                     'entriesInBucket'
                                    ]
                    )
-    retVal = self._getTypeData( reportRequest[ 'startTime' ],
+    retVal = self._getTimedData( reportRequest[ 'startTime' ],
                                 reportRequest[ 'endTime' ],
                                 selectFields,
                                 reportRequest[ 'condDict' ],
@@ -184,7 +184,7 @@ class JobPlotter(BaseReporter):
     selectFields = ( self._getSQLStringForGrouping( reportRequest[ 'groupingFields' ]) + ", %s, %s, SUM(%s)/1000000",
                      reportRequest[ 'groupingFields' ] + [ 'startTime', 'bucketLength', fieldTuple[0] ]
                    )
-    retVal = self._getTypeData( reportRequest[ 'startTime' ],
+    retVal = self._getTimedData( reportRequest[ 'startTime' ],
                                 reportRequest[ 'endTime' ],
                                 selectFields,
                                 reportRequest[ 'condDict' ],
@@ -230,7 +230,7 @@ class JobPlotter(BaseReporter):
     selectFields = ( self._getSQLStringForGrouping( reportRequest[ 'groupingFields' ]) + ", %s, %s, SUM(%s)",
                      reportRequest[ 'groupingFields' ] + [ 'startTime', 'bucketLength', fieldTuple[0] ]
                    )
-    retVal = self._getTypeData( reportRequest[ 'startTime' ],
+    retVal = self._getTimedData( reportRequest[ 'startTime' ],
                                 reportRequest[ 'endTime' ],
                                 selectFields,
                                 reportRequest[ 'condDict' ],
@@ -256,3 +256,26 @@ class JobPlotter(BaseReporter):
                  'span' : plotInfo[ 'granularity' ],
                  'ylabel' : "files" }
     return self._generateTimedStackedBarPlot( filename, plotInfo[ 'data'], metadata )
+
+  def _reportTotalCPUUsed( self, reportRequest ):
+    selectFields = ( self._getSQLStringForGrouping( reportRequest[ 'groupingFields' ]) + ", SUM(%s)/86400",
+                     reportRequest[ 'groupingFields' ] + [ 'CPUTime'
+                                   ]
+                   )
+    retVal = self._getSummaryData( reportRequest[ 'startTime' ],
+                                reportRequest[ 'endTime' ],
+                                selectFields,
+                                reportRequest[ 'condDict' ],
+                                reportRequest[ 'groupingFields' ],
+                                {} )
+    if not retVal[ 'OK' ]:
+      return retVal
+    dataDict = retVal[ 'Value' ]
+    return S_OK( { 'data' : dataDict  } )
+
+  def _plotTotalCPUUsed( self, reportRequest, plotInfo, filename ):
+    print plotInfo
+    metadata = { 'title' : 'CPU days used by %s' % " -> ".join( reportRequest[ 'groupingFields' ] ) ,
+                 'ylabel' : 'cpu days'
+                }
+    return self._generatePiePlot( filename, plotInfo[ 'data'], metadata )

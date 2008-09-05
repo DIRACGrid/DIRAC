@@ -78,7 +78,7 @@ class BaseReporter(DBUtils):
 # Helper functions for reporters
 ###
 
-  def _getTypeData( self, startTime, endTime, selectFields, preCondDict, groupingFields, metadataDict ):
+  def _getTimedData( self, startTime, endTime, selectFields, preCondDict, groupingFields, metadataDict ):
     condDict = {}
     #Check params
     if not self._PARAM_CHECK_FOR_NONE in metadataDict:
@@ -114,6 +114,30 @@ class BaseReporter(DBUtils):
         dataDict[ keyField ] = self._sumToGranularity( coarsestGranularity, dataDict[ keyField ] )
     return S_OK( ( dataDict, coarsestGranularity ) )
 
+  def _getSummaryData( self, startTime, endTime, selectFields, preCondDict, groupingFields, metadataDict, reduceFunc = False ):
+    condDict = {}
+    #Make safe selections
+    for keyword in self._typeKeyFields:
+      if keyword in preCondDict:
+        condDict[ keyword ] = preCondDict[ keyword ]
+    #Query!
+    retVal = self._retrieveBucketedData( self._typeName,
+                                          startTime,
+                                          endTime,
+                                          selectFields,
+                                          condDict,
+                                          groupingFields,
+                                          []
+                                          )
+    if not retVal[ 'OK' ]:
+      return retVal
+    dataDict = self._groupByField( 0, retVal[ 'Value' ] )
+    for key in dataDict:
+      if not reduceFunc:
+        dataDict[ key ] = dataDict[ key ][0][0]
+      else:
+        dataDict[ key ] = reduceFunc( dataDict[ key ] )
+    return S_OK( dataDict )
 
   def _getSQLStringForGrouping( self, groupingFields ):
     if len( groupingFields ) == 1:
@@ -175,3 +199,6 @@ class BaseReporter(DBUtils):
 
   def _generateCumulativePlot( self, filename, dataDict, metadata ):
     return self.__plotData( filename, dataDict, metadata, generateCumulativePlot )
+
+  def _generatePiePlot( self, filename, dataDict, metadata ):
+    return self.__plotData( filename, dataDict, metadata, generatePiePlot )

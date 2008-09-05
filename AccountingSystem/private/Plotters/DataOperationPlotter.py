@@ -27,7 +27,7 @@ class DataOperationPlotter(BaseReporter):
                        'TransferOK', 'TransferTotal', 'TransferOK',
                       ]
                    )
-    retVal = self._getTypeData( reportRequest[ 'startTime' ],
+    retVal = self._getTimedData( reportRequest[ 'startTime' ],
                                 reportRequest[ 'endTime' ],
                                 selectFields,
                                 reportRequest[ 'condDict' ],
@@ -62,7 +62,7 @@ class DataOperationPlotter(BaseReporter):
                                     'TransferOK', 'TransferTotal'
                                    ]
                    )
-    retVal = self._getTypeData( reportRequest[ 'startTime' ],
+    retVal = self._getTimedData( reportRequest[ 'startTime' ],
                                 reportRequest[ 'endTime' ],
                                 selectFields,
                                 reportRequest[ 'condDict' ],
@@ -79,7 +79,7 @@ class DataOperationPlotter(BaseReporter):
                          'TransferOK', 'TransferTotal'
                        ]
                      )
-      retVal = self._getTypeData( reportRequest[ 'startTime' ],
+      retVal = self._getTimedData( reportRequest[ 'startTime' ],
                                   reportRequest[ 'endTime' ],
                                   selectFields,
                                   reportRequest[ 'condDict' ],
@@ -106,7 +106,7 @@ class DataOperationPlotter(BaseReporter):
                                     'TransferSize'
                                    ]
                    )
-    retVal = self._getTypeData( reportRequest[ 'startTime' ],
+    retVal = self._getTimedData( reportRequest[ 'startTime' ],
                                 reportRequest[ 'endTime' ],
                                 selectFields,
                                 reportRequest[ 'condDict' ],
@@ -134,7 +134,7 @@ class DataOperationPlotter(BaseReporter):
                        'TransferSize', 'bucketLength',
                       ]
                    )
-    retVal = self._getTypeData( reportRequest[ 'startTime' ],
+    retVal = self._getTimedData( reportRequest[ 'startTime' ],
                                 reportRequest[ 'endTime' ],
                                 selectFields,
                                 reportRequest[ 'condDict' ],

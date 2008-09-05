@@ -15,7 +15,7 @@ class WMSHistoryPlotter(BaseReporter):
                                     'Jobs', 'entriesInBucket'
                                    ]
                    )
-    retVal = self._getTypeData( reportRequest[ 'startTime' ],
+    retVal = self._getTimedData( reportRequest[ 'startTime' ],
                                 reportRequest[ 'endTime' ],
                                 selectFields,
                                 reportRequest[ 'condDict' ],
@@ -43,7 +43,7 @@ class WMSHistoryPlotter(BaseReporter):
                                     'Reschedules', 'entriesInBucket'
                                    ]
                    )
-    retVal = self._getTypeData( reportRequest[ 'startTime' ],
+    retVal = self._getTimedData( reportRequest[ 'startTime' ],
                                 reportRequest[ 'endTime' ],
                                 selectFields,
                                 reportRequest[ 'condDict' ],
