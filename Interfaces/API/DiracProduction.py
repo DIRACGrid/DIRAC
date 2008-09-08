@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.37 2008/09/08 15:30:22 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.38 2008/09/08 15:52:26 paterson Exp $
 # File :   DiracProduction.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are to be documented with example usage.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.37 2008/09/08 15:30:22 paterson Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.38 2008/09/08 15:52:26 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 import pprint
@@ -699,6 +699,24 @@ class DiracProduction:
     if printOutput:
       self._prettyPrint(fileStatus['Value'])
     return fileStatus
+
+  #############################################################################
+  def getWMSProdJobID(self,jobID,printOutput=False):
+    """This method takes the DIRAC WMS JobID and returns the Production JobID information.
+    """
+    result = self.diracAPI.attributes(jobID)
+    if not result['OK']:
+      return result
+    if not result['Value'].has_key('JobName'):
+      return S_ERROR('Could not establish ProductionID / ProductionJobID, missing JobName')
+
+    wmsJobName = result['Value']['JobName']
+    prodID = wmsJobName.split('_')[0]
+    prodJobID = wmsJobName.split('_')[1]
+    info = {'JobName':wmsJobName,'ProductionID':prodID,'JobID':prodJobID}
+    if printOutput:
+      self._prettyPrint(info)
+    return S_OK(info)
 
   #############################################################################
   def getProdJobOutputSandbox(self,jobID):
