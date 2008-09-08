@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.42 2008/08/29 09:47:21 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.43 2008/09/08 17:31:33 paterson Exp $
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -30,7 +30,7 @@
    Note that several executables can be provided and wil be executed sequentially.
 """
 
-__RCSID__ = "$Id: Job.py,v 1.42 2008/08/29 09:47:21 paterson Exp $"
+__RCSID__ = "$Id: Job.py,v 1.43 2008/09/08 17:31:33 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -43,6 +43,7 @@ from DIRAC.Core.Utilities.ClassAd.ClassAdLight      import ClassAd
 from DIRAC.ConfigurationSystem.Client.Config        import gConfig
 from DIRAC.Core.Utilities.Subprocess                import shellCall
 from DIRAC.Core.Utilities.List                      import uniqueElements
+from DIRAC.Core.Utilities.SiteCEMapping             import getSiteCEMapping
 from DIRAC                                          import gLogger
 
 COMPONENT_NAME='/Interfaces/API/Job'
@@ -383,10 +384,27 @@ class Job:
     """
 
     if type(destination) == type("  "):
+      if not re.search('^DIRAC.',destination):
+        result = self.__checkSiteIsValid(destination)
+        if not result['OK']:
+          raise TypeError,'%s is not a valid destination site' %(destination)
       description = 'User specified destination site'
       self._addParameter(self.workflow,'Site','JDLReqt',destination,description)
     else:
       raise TypeError,'Expected string for destination site'
+
+  #############################################################################
+  def __checkSiteIsValid(self,site):
+    """Internal function to check that a site name is valid.
+    """
+    sites = getSiteCEMapping()
+    if not sites['OK']:
+      return S_ERROR('Could not get site CE mapping')
+    siteList = sites['Value'].keys()
+    if not site in siteList:
+      return S_ERROR('Specified site %s is not in list of defined sites' %site)
+
+    return S_OK('%s is valid' %site)
 
   #############################################################################
   def setBannedSites(self,sites):
