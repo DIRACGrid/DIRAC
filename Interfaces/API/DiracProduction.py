@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.35 2008/09/08 14:18:08 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.36 2008/09/08 14:59:25 paterson Exp $
 # File :   DiracProduction.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are to be documented with example usage.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.35 2008/09/08 14:18:08 paterson Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.36 2008/09/08 14:59:25 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 import pprint
@@ -732,6 +732,19 @@ class DiracProduction:
     """
     #Notification of the production management infrastructure to be added
     return self.diracAPI.delete(jobID)
+
+  #############################################################################
+  def getProdJobInfo(self,productionID,jobID,printOutput=False):
+    """Retrieve production job information from Production Manager service.
+    """
+    prodClient = RPCClient('ProductionManagement/ProductionManager')
+    jobInfo = prodClient.getJobInfo(productionID,jobID)
+    if not jobInfo['OK']:
+      return jobInfo
+
+    if printOutput:
+      self._prettyPrint(jobInfo['Value'])
+    return jobInfo
 
   #############################################################################
   def getProdJobSummary(self,jobID,outputFile=None,printOutput=False):
