@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.43 2008/08/21 17:13:47 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.44 2008/09/08 14:28:33 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.43 2008/08/21 17:13:47 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.44 2008/09/08 14:28:33 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -711,6 +711,11 @@ class Dirac:
        @return: S_OK,S_ERROR
 
     """
+    if type(lfn)==type(" "):
+      lfn = lfn.replace('LFN:','')
+    else:
+      return self.__errorReport('Expected single string for LFN')
+
     result =  self.rm.removeFile(lfn)
     if printOutput and result['OK']:
       print self.pPrint.pformat(result['Value'])
@@ -728,8 +733,15 @@ class Dirac:
 
        @param lfn: Logical File Name (LFN)
        @type lfn: string
+       @param storageElement: DIRAC SE Name
+       @type storageElement: string
        @return: S_OK,S_ERROR
     """
+    if type(lfn)==type(" "):
+      lfn = lfn.replace('LFN:','')
+    else:
+      return self.__errorReport('Expected single string for LFN')
+
     result = self.rm.removeReplica(storageElement,lfn)
     if printOutput and result['OK']:
       print self.pPrint.pformat(result['Value'])
@@ -1222,6 +1234,46 @@ class Dirac:
     return S_OK(summary)
 
   #############################################################################
+  def attributes(self,jobID,printOutput=False):
+    """Return DIRAC attributes associated with the given job.
+
+       Each job will have certain attributes that affect the journey through the
+       workload management system, see example below. Attributes are optionally
+       printed to the screen.
+
+       Example Usage:
+
+       >>> print dirac.attributes(79241)
+       {'AccountedFlag': 'False','ApplicationNumStatus': '0',
+       'ApplicationStatus': 'Job Finished Successfully',
+       'CPUTime': '0.0','DIRACSetup': 'LHCb-Production'}
+
+       @param jobID: JobID
+       @type jobID: int, string or list
+       @return: S_OK,S_ERROR
+    """
+    if type(jobID)==type(" "):
+      try:
+        jobID = [int(jobID)]
+      except Exception,x:
+        return self.__errorReport(str(x),'Expected integer or string for existing jobID')
+    elif type(jobID)==type([]):
+      try:
+        jobID = [int(job) for job in jobID]
+      except Exception,x:
+        return self.__errorReport(str(x),'Expected integer or string for existing jobID')
+
+    monitoring = RPCClient('WorkloadManagement/JobMonitoring')
+    result = monitoring.getJobAttributes(jobID)
+    if not result['OK']:
+      return result
+
+    if printOutput:
+      print self.pPrint.pformat(result['Value'])
+
+    return result
+
+  #############################################################################
   def parameters(self,jobID,printOutput=False):
     """Return DIRAC parameters associated with the given job.
 
@@ -1233,7 +1285,6 @@ class Dirac:
        >>> print dirac.parameters(79241)
        {'OK': True, 'Value': {'JobPath': 'JobPath,JobSanity,JobPolicy,InputData,JobScheduling,TaskQueue',
        'JobSanityCheck': 'Job: 768 JDL: OK, InputData: 2 LFNs OK, ','LocalBatchID': 'dc768'}
-
 
        @param jobID: JobID
        @type jobID: int, string or list
