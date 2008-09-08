@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.36 2008/09/08 14:59:25 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.37 2008/09/08 15:30:22 paterson Exp $
 # File :   DiracProduction.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are to be documented with example usage.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.36 2008/09/08 14:59:25 paterson Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.37 2008/09/08 15:30:22 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 import pprint
@@ -637,7 +637,7 @@ class DiracProduction:
         record = ''
         recordStatus = ''
         for n,v in lfnDict.items():
-          record += str(n).ljust(adj)+' '+str(v).ljust(adj)+' '
+          record += str(n)+' = '+str(v).ljust(adj)+' '
           if n=='Status':
             recordStatus=v
             if selectStatus==recordStatus:
