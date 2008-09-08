@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.34 2008/08/25 09:59:50 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.35 2008/09/08 14:18:08 paterson Exp $
 # File :   DiracProduction.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are to be documented with example usage.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.34 2008/08/25 09:59:50 paterson Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.35 2008/09/08 14:18:08 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 import pprint
@@ -615,6 +615,90 @@ class DiracProduction:
       return result
     self.log.verbose('Setting transformation agent type to %s successful' %(actions[1]))
     return S_OK('Production %s status updated' %productionID)
+
+  #############################################################################
+  def productionFileSummary(self,productionID,selectStatus=None,outputFile=None,orderOutput=True,printSummary=False,printOutput=False):
+    """ Allows to investigate the input files for a given production transformation
+        and provides summaries / selections based on the file status if desired.
+    """
+    adj = 12
+    prodClient = RPCClient('ProductionManagement/ProductionManager')
+    fileSummary = prodClient.getFilesForTransformation(int(productionID),orderOutput)
+    if not fileSummary['OK']:
+      return fileSummary
+
+    toWrite=''
+    totalRecords = 0
+    summary = {}
+    selected = 0
+    if fileSummary['OK']:
+      for lfnDict in fileSummary['Value']:
+        totalRecords+=1
+        record = ''
+        recordStatus = ''
+        for n,v in lfnDict.items():
+          record += str(n).ljust(adj)+' '+str(v).ljust(adj)+' '
+          if n=='Status':
+            recordStatus=v
+            if selectStatus==recordStatus:
+              selected+=1
+            if summary.has_key(v):
+              new = summary[v]+1
+              summary[v]=new
+            else:
+              summary[v]=1
+
+        if outputFile and selectStatus:
+          if selectStatus==recordStatus:
+            toWrite+=record+'\n'
+            if printOutput:
+              print record
+        elif outputFile:
+          toWrite+=record+'\n'
+          if printOutput:
+            print record
+        else:
+          if printOutput:
+            print record
+
+    if printSummary:
+      print '\nSummary for %s files in production %s\n' %(totalRecords,productionID)
+      print 'Status'.ljust(adj)+' '+'Total'.ljust(adj)+'Percentage'.ljust(adj)+'\n'
+      for n,v in summary.items():
+        percentage = int(100*int(v)/totalRecords)
+        print str(n).ljust(adj)+' '+str(v).ljust(adj)+' '+str(percentage).ljust(2)+' % '
+      print '\n'
+
+    if selectStatus and not selected:
+      return S_ERROR('No files were selected for production %s and status "%s"' %(productionID,selectStatus))
+    elif selectStatus and selected:
+      print '%s / %s files (%s percent) were found for production %s in status "%s"' %(selected,totalRecords,int(100*int(selected)/totalRecords),productionID,selectStatus)
+
+    if outputFile:
+      if os.path.exists(outputFile):
+        print 'Requested output file %s already exists, please remove this file to continue' %outputFile
+        return fileSummary
+
+      fopen = open(outputFile,'w')
+      fopen.write(toWrite)
+      fopen.close()
+      if not selectStatus:
+        print 'Wrote %s lines to file %s' %(totalRecords,outputFile)
+      else:
+        print 'Wrote %s lines to file %s for status "%s"'  %(selected,outputFile,selectStatus)
+
+    return fileSummary
+
+  #############################################################################
+  def checkFilesStatus(self,lfns,productionID='',printOutput=False):
+    """Checks the given LFN(s) status in the productionDB.  All productions
+       are considered by default but can restrict to productionID.
+    """
+    prodClient = RPCClient('ProductionManagement/ProductionManager')
+    fileStatus = prodClient.getFileSummary(lfns,productionID)
+    if printOutput:
+      self._prettyPrint(fileStatus['Value'])
+    return fileStatus
 
   #############################################################################
   def getProdJobOutputSandbox(self,jobID):
