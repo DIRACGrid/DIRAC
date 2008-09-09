@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.26 2008/08/28 20:10:49 roma Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.27 2008/09/09 15:54:44 paterson Exp $
 # File :   DiracAdmin.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@ site banning and unbanning, WMS proxy uploading etc.
 
 """
 
-__RCSID__ = "$Id: DiracAdmin.py,v 1.26 2008/08/28 20:10:49 roma Exp $"
+__RCSID__ = "$Id: DiracAdmin.py,v 1.27 2008/09/09 15:54:44 paterson Exp $"
 
 import DIRAC
 from DIRAC.ConfigurationSystem.Client.CSAPI                   import CSAPI
@@ -730,6 +730,83 @@ class DiracAdmin:
     return S_OK()
 
   #############################################################################
+  def getSiteProtocols(self,site,printOutput=False):
+    """Allows to check the defined protocols for each site SE.
+    """
+    result = self.__checkSiteIsValid(site)
+    if not result['OK']:
+      return result
+
+    siteSection = '/Resources/Sites/%s/%s/SE' %(site.split('.')[0],site)
+    siteSEs = gConfig.getValue(siteSection,[])
+    if not siteSEs:
+      return S_ERROR('No SEs found for site %s in section %s' %(site,siteSection))
+
+    defaultProtocols = gConfig.getValue('/Resources/StorageElements/DefaultProtocols',[])
+    self.log.verbose('Default list of protocols are %s' %(string.join(defaultProtocols,', ')))
+    seInfo={}
+    siteSEs.sort()
+    for se in siteSEs:
+      seProtocols = gConfig.getValue('/Resources/StorageElements/%s/ProtocolsList' %(se),[])
+      if not seProtocols:
+        seProtocols = defaultProtocols
+      seInfo[se]=seProtocols
+
+    if printOutput:
+      print '\nSummary of protocols for StorageElements at site %s' %site
+      print '\nStorageElement'.ljust(30)+'ProtocolsList'.ljust(30)+'\n'
+      for se,protocols in seInfo.items():
+        print se.ljust(30)+string.join(protocols,', ').ljust(30)
+
+    return S_OK(seInfo)
+
+  #############################################################################
+  def setSiteProtocols(self,site,protocolsList,printOutput=False):
+    """Allows to set the defined protocols for each SE for a given site.
+    """
+    result = self.__checkSiteIsValid(site)
+    if not result['OK']:
+      return result
+
+    siteSection = '/Resources/Sites/%s/%s/SE' %(site.split('.')[0],site)
+    siteSEs = gConfig.getValue(siteSection,[])
+    if not siteSEs:
+      return S_ERROR('No SEs found for site %s in section %s' %(site,siteSection))
+
+    defaultProtocols = gConfig.getValue('/Resources/StorageElements/DefaultProtocols',[])
+    self.log.verbose('Default list of protocols are %s' %(string.join(defaultProtocols,', ')))
+
+    for protocol in protocolsList:
+      if not protocol in defaultProtocols:
+        return S_ERROR('Requested to set protocol %s in list but %s is not in default list of protocols:\n%s' %(protocol,protocol,string.join(defaultProtocols,', ')))
+
+    modifiedCS = False
+    result = self._promptUser('Do you want to add the following default protocols: %s for SE(s):\n%s' %(string.join(protocolsList,', '),string.join(siteSEs,', ')))
+    if not result['OK']:
+      return result
+
+    for se in siteSEs:
+      path = '/Resources/StorageElements/%s/ProtocolsList' %se
+      self.log.verbose('Setting %s to %s' %(path,string.join(protocolsList,', ')))
+      result = self.csSetOption(path,string.join(protocolsList,', '))
+      if not result['OK']:
+        return result
+      modifiedCS = True
+
+    if modifiedCS:
+      result = self.csCommitChanges(False)
+      if not result[ 'OK' ]:
+        return S_ERROR('CS Commit failed with message = %s' %(result[ 'Message' ]))
+      else:
+        if printOutput:
+          print 'Successfully committed changes to CS'
+    else:
+      if printOutput:
+        print 'No modifications to CS required'
+
+    return S_OK()
+
+  #############################################################################
   def __errorReport(self,error,message=None):
     """Internal function to return errors and exit with an S_ERROR()
     """
@@ -738,6 +815,12 @@ class DiracAdmin:
 
     self.log.warn(error)
     return S_ERROR(message)
+
+  #############################################################################
+  def csSetOption(self,optionPath,optionValue):
+    """Function to modify an existing value in the CS.
+    """
+    return self.csAPI.setOption(optionPath,optionValue)
 
   #############################################################################
   def csModifyValue(self,optionPath,newValue):
@@ -886,23 +969,23 @@ class DiracAdmin:
     """Get information about site from BDII at host
     """
     return ldapSite(site, host=host)
-    
+
   #############################################################################
   def getBDIICE(self,ce,host=None):
     """Get information about ce from BDII at host
     """
     return ldapCE(ce, host=host)
-    
+
   #############################################################################
   def getBDIICEState(self,ce,vo='lhcb',host=None):
-    """Get information about ce state from BDII at host 
+    """Get information about ce state from BDII at host
     """
     return ldapCEState(ce,vo,host=host)
-    
+
   #############################################################################
   def getBDIICEVOView(self,ce,vo='lhcb',host=None):
     """Get information about ce voview from BDII at host
     """
     return ldapCEVOView(ce,vo,host=host)
-    
+
   #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
