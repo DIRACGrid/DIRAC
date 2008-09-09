@@ -319,3 +319,12 @@ class CSAPI:
     self.__csMod.setOptionValue(optionPath,newValue)
     self.__csModified = True
     return S_OK('Modified %s' %optionPath)
+
+  def setOption(self,optionPath,optionValue):
+    """Create an option at the specified path.
+    """
+    if not self.__initialized:
+      return S_ERROR( "CSAPI didn't initialize properly" )
+    self.__csMod.setOptionValue(optionPath,optionValue)
+    self.__csModified = True
+    return S_OK('Created new option %s = %s' %(optionPath,optionValue))
