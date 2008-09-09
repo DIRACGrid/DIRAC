@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.27 2008/09/09 15:54:44 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.28 2008/09/09 16:48:06 paterson Exp $
 # File :   DiracAdmin.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@ site banning and unbanning, WMS proxy uploading etc.
 
 """
 
-__RCSID__ = "$Id: DiracAdmin.py,v 1.27 2008/09/09 15:54:44 paterson Exp $"
+__RCSID__ = "$Id: DiracAdmin.py,v 1.28 2008/09/09 16:48:06 paterson Exp $"
 
 import DIRAC
 from DIRAC.ConfigurationSystem.Client.CSAPI                   import CSAPI
@@ -747,10 +747,16 @@ class DiracAdmin:
     seInfo={}
     siteSEs.sort()
     for se in siteSEs:
-      seProtocols = gConfig.getValue('/Resources/StorageElements/%s/ProtocolsList' %(se),[])
-      if not seProtocols:
-        seProtocols = defaultProtocols
-      seInfo[se]=seProtocols
+      sections = gConfig.getSections('/Resources/StorageElements/%s/' %(se))
+      if not sections['OK']:
+        return sections
+      for section in sections['Value']:
+        if gConfig.getValue('/Resources/StorageElements/%s/%s/ProtocolName' %(se,section),'')=='SRM2':
+          path = '/Resources/StorageElements/%s/%s/ProtocolsList' %(se,section)
+          seProtocols = gConfig.getValue(path,[])
+          if not seProtocols:
+            seProtocols = defaultProtocols
+          seInfo[se]=seProtocols
 
     if printOutput:
       print '\nSummary of protocols for StorageElements at site %s' %site
@@ -786,12 +792,17 @@ class DiracAdmin:
       return result
 
     for se in siteSEs:
-      path = '/Resources/StorageElements/%s/ProtocolsList' %se
-      self.log.verbose('Setting %s to %s' %(path,string.join(protocolsList,', ')))
-      result = self.csSetOption(path,string.join(protocolsList,', '))
-      if not result['OK']:
-        return result
-      modifiedCS = True
+      sections = gConfig.getSections('/Resources/StorageElements/%s/' %(se))
+      if not sections['OK']:
+        return sections
+      for section in sections['Value']:
+        if gConfig.getValue('/Resources/StorageElements/%s/%s/ProtocolName' %(se,section),'')=='SRM2':
+          path = '/Resources/StorageElements/%s/%s/ProtocolsList' %(se,section)
+          self.log.verbose('Setting %s to %s' %(path,string.join(protocolsList,', ')))
+          result = self.csSetOption(path,string.join(protocolsList,', '))
+          if not result['OK']:
+            return result
+          modifiedCS = True
 
     if modifiedCS:
       result = self.csCommitChanges(False)
