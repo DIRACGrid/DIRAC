@@ -64,7 +64,6 @@ class RAWIntegrityAgent(Agent):
       self.log.error( "Can't get shifter's proxy: %s" % result[ 'Message' ] )
       return result
 
-
     ############################################################
     #
     # Obtain the files which have not yet been migrated
