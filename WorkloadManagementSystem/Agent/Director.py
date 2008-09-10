@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.61 2008/08/19 05:47:10 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.62 2008/09/10 18:13:23 paterson Exp $
 # File :   Director.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -48,7 +48,7 @@
 
 """
 
-__RCSID__ = "$Id: Director.py,v 1.61 2008/08/19 05:47:10 rgracian Exp $"
+__RCSID__ = "$Id: Director.py,v 1.62 2008/09/10 18:13:23 paterson Exp $"
 
 import types, time
 
@@ -413,10 +413,10 @@ class Director(Agent):
       if submitPool not in self.directors:
         abort(-1)
       director = self.directors[submitPool]['director']
-      
+
       # Pass reference to our CS section so that defaults can be taken from there
       director.configure( self.section, submitPool )
-      
+
       # Enable director for pilot submission
       self.directors[submitPool]['isEnabled'] = True
 
@@ -575,20 +575,20 @@ class PilotDirector:
       if ret['OK'] and not ret['Value'] == MAJOR_WAIT:
         self.log.warn( 'Job is no longer in %s Status:' % MAJOR_WAIT, job )
         return S_ERROR( 'Job is no longer in %s Status:' % MAJOR_WAIT )
-  
+
       self.log.verbose( 'Submitting Pilot' )
       ceMask = self.__resolveCECandidates( jobDict )
       if not ceMask: return S_ERROR( 'No CE available for job' )
       self.workDir = director.workDir
       workingDirectory = os.path.join( self.workDir, job)
-  
+
       if os.path.isdir( workingDirectory ):
         shutil.rmtree( workingDirectory )
       elif os.path.lexists( workingDirectory ):
         os.remove( workingDirectory )
-  
+
       os.makedirs(workingDirectory)
-  
+
       inputSandbox = []
       pilotOptions = []
       if jobDict['PilotType'].lower()=='private':
@@ -610,14 +610,14 @@ class PilotDirector:
         ownerGroup = self.genericPilotGroup
         pilotOptions.append( '-o /AgentJobRequirements/PilotType=generic' )
         pilotOptions.append( '-o /Resources/Computing/InProcess/PilotType=generic' )
-  
+
       # Requested version of DIRAC
       pilotOptions.append( '-v %s' % self.diracVersion )
       # Requested CPU time
       pilotOptions.append( '-T %s' % jobDict['MaxCPUTime'] )
       # Default Setup. It may be overwriten by the Arguments in the Job JDL
       pilotOptions.append( '-o /DIRAC/Setup=%s' % self.diracSetup )
-  
+
       # Write JDL
       retDict = self._prepareJDL( jobDict, pilotOptions, ceMask )
       jdl = retDict['JDL']
@@ -630,7 +630,7 @@ class PilotDirector:
           pass
         updateJobStatus( self.log, AGENT_NAME, job, MAJOR_WAIT, MINOR_SUBMIT, ERROR_JDL, logRecord=True )
         return S_ERROR( ERROR_JDL, job )
-  
+
       # get a valid proxy
       ret = gProxyManager.getPilotProxyFromDIRACGroup( ownerDN, ownerGroup, requiredTimeLeft = 86400 * 5 )
       if not ret['OK']:
@@ -652,7 +652,7 @@ class PilotDirector:
         updateJobStatus( self.log, AGENT_NAME, job, MAJOR_WAIT, MINOR_SUBMIT, logRecord=True )
         return S_ERROR( 'getPilotProxyFromDIRACGroup returns a proxy without VOMS Extensions' )
       vomsGroup = ret['Value'][0]
-  
+
       # Check that there are available queues for the Job:
       if self.enableListMatch:
         availableCEs = []
@@ -675,7 +675,7 @@ class PilotDirector:
           else:
             self.log.verbose( 'LastListMatch', self.listMatch[jobRequirements]['LastListMatch'] )
             self.log.verbose( 'AvailableCEs ', availableCEs )
-  
+
         if type(availableCEs) == types.ListType :
           jobDB.setJobParameter( job, 'Available_CEs' , '%s CEs returned from list-match on %s' %
                                  ( len(availableCEs), Time.toString() ) )
@@ -686,9 +686,9 @@ class PilotDirector:
           except:
             pass
           return S_ERROR( 'No queue available for job' )
-  
+
       # Now we are ready for the actual submission, so
-  
+
       self.log.verbose('Submitting Pilot Agent for job:', job )
       submitRet = self._submitPilot( proxy, job, jdl )
       try:
@@ -699,7 +699,7 @@ class PilotDirector:
         updateJobStatus( self.log, AGENT_NAME, job, MAJOR_WAIT, MINOR_SUBMIT, logRecord=True )
         return S_ERROR( 'Pilot Submission Failed' )
       pilotReference, resourceBroker = submitRet
-  
+
       # Now, update the job Minor Status
       if pilots > 1 :
         pilotReference = self._getChildrenReferences( proxy, pilotReference, job )
@@ -718,7 +718,7 @@ class PilotDirector:
         updateJobStatus( self.log, AGENT_NAME, job, MAJOR_WAIT, MINOR_RESPONSE, logRecord=True )
       except:
         pass
-  
+
     return S_OK(jobDict)
 
   def _JobJDL(self, jobDict, pilotOptions, ceMask ):
@@ -1011,11 +1011,11 @@ MyProxyServer = "no-myproxy.cern.ch";
     if jobDict['OwnerGroup'] == 'lhcb_prod':
       wmsClientJDL += """
 JobType = "Parametric";
-Parameters= 20;
+Parameters= 1;
 ParameterStep =1;
 ParameterStart = 0;
 """
-      nPilots = 20
+      nPilots = 1
 
 
     (jobJDL , jobRequirements) = self._JobJDL( jobDict, pilotOptions, ceMask )
