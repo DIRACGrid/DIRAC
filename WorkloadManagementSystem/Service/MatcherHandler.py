@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: MatcherHandler.py,v 1.22 2008/08/21 09:20:15 rgracian Exp $
+# $Id: MatcherHandler.py,v 1.23 2008/09/10 18:06:26 paterson Exp $
 ########################################################################
 """
 Matcher class. It matches Agent Site capabilities to job requirements.
@@ -7,7 +7,7 @@ It also provides an XMLRPC interface to the Matcher
 
 """
 
-__RCSID__ = "$Id: MatcherHandler.py,v 1.22 2008/08/21 09:20:15 rgracian Exp $"
+__RCSID__ = "$Id: MatcherHandler.py,v 1.23 2008/09/10 18:06:26 paterson Exp $"
 
 import re, os, sys, time
 import string
@@ -175,11 +175,13 @@ class MatcherHandler(RequestHandler):
       for key,value in resOpt['Value'].items():
         resultDict[key] = value
     resAtt = jobDB.getJobAttributes(jobID,['OwnerDN','OwnerGroup'])
-    if resAtt['OK']:
-      if resAtt['Value']:
-        resultDict['DN'] = resAtt['Value']['OwnerDN']
-        resultDict['Group'] = resAtt['Value']['OwnerGroup']
+    if not resAtt['OK']:
+      return S_ERROR('Could not retrieve job attributes')
+    if not resAtt['Value']:
+      return S_ERROR('No attributes returned for job')
 
+    resultDict['DN'] = resAtt['Value']['OwnerDN']
+    resultDict['Group'] = resAtt['Value']['OwnerGroup']
     return S_OK(resultDict)
 
   def newSelectJob(self, resourceJDL):
@@ -225,15 +227,15 @@ class MatcherHandler(RequestHandler):
     result = taskQueueDB.matchAndGetJob( resourceDict )
 
     print result
-    
+
     if not result['OK']:
       return result
-    result = result['Value'] 
+    result = result['Value']
     if not result['matchFound']:
       return S_ERROR( 'No match found' )
 
     jobID = result['jobId']
-    
+
     result = jobDB.deleteJobFromQueue(jobID)
     result = jobDB.setJobStatus(jobID,status='Matched',minor='Assigned')
     result = jobLoggingDB.addLoggingRecord(jobID,
@@ -258,11 +260,13 @@ class MatcherHandler(RequestHandler):
       for key,value in resOpt['Value'].items():
         resultDict[key] = value
     resAtt = jobDB.getJobAttributes(jobID,['OwnerDN','OwnerGroup'])
-    if resAtt['OK']:
-      if resAtt['Value']:
-        resultDict['DN'] = resAtt['Value']['OwnerDN']
-        resultDict['Group'] = resAtt['Value']['OwnerGroup']
+    if not resAtt['OK']:
+      return S_ERROR('Could not retrieve job attributes')
+    if not resAtt['Value']:
+      return S_ERROR('No attributes returned for job')
 
+    resultDict['DN'] = resAtt['Value']['OwnerDN']
+    resultDict['Group'] = resAtt['Value']['OwnerGroup']
     return S_OK(resultDict)
 
 ##############################################################################
