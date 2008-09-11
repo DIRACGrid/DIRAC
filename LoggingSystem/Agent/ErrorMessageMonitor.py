@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Agent/ErrorMessageMonitor.py,v 1.1 2008/09/11 13:08:04 mseco Exp $
-__RCSID__ = "$Id: ErrorMessageMonitor.py,v 1.1 2008/09/11 13:08:04 mseco Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Agent/ErrorMessageMonitor.py,v 1.2 2008/09/11 23:44:47 atsareg Exp $
+__RCSID__ = "$Id: ErrorMessageMonitor.py,v 1.2 2008/09/11 23:44:47 atsareg Exp $"
 """  getErrorNames get new errors that have been injected into the
      SystemLoggingDB and sends them by mail to the person(s) in charge
      of checking that they conform with DIRAC style. ReviewersMail option
@@ -12,9 +12,9 @@ from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 from DIRAC.LoggingSystem.DB.SystemLoggingDB import SystemLoggingDB
 from DIRAC.Core.Utilities import List, Mail
 
-AGENT_NAME = 'Logging/getErrorMessages'
+AGENT_NAME = 'Logging/ErrorMessageMonitor'
 
-class getErrorMessages(Agent):
+class ErrorMessageMonitor(Agent):
 
   def __init__(self):
     """ Standard constructor
@@ -28,9 +28,9 @@ class getErrorMessages(Agent):
     if not result['OK']:
       self.log.error('Agent could not initialize')
       return result
-    
+
     self.SystemLoggingDB = SystemLoggingDB()
-    
+
     self.section=getAgentSection( AGENT_NAME )
 
     self.mail=Mail.Mail()
@@ -47,7 +47,7 @@ class getErrorMessages(Agent):
     """
     cmd = "SELECT count(*) FROM FixedTextMessages WHERE ReviewedMessage=0"
     result = self.SystemLoggingDB._query( cmd )
-    if not result['OK']: 
+    if not result['OK']:
       return result
     recordsToReview=result['Value'][0][0]
 
@@ -69,7 +69,7 @@ class getErrorMessages(Agent):
       if messageList == 'None' or messageList == ():
         self.log.error('The DB query returned an empty result')
         return S_OK()
-      
+
       mailBody ='These new messages have arrived to the Logging Service\n'
       for message in messageList:
         mailBody = mailBody + "String: '" + message[1] + "'\tSystem: '" \
