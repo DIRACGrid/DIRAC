@@ -1,9 +1,9 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/DB/RequestDBMySQL.py,v 1.29 2008/08/27 15:51:06 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/DB/RequestDBMySQL.py,v 1.30 2008/09/11 16:46:08 atsareg Exp $
 
 """ RequestDBMySQL is the MySQL plug in for the request DB
 """
 
-__RCSID__ = "$Id: RequestDBMySQL.py,v 1.29 2008/08/27 15:51:06 atsareg Exp $"
+__RCSID__ = "$Id: RequestDBMySQL.py,v 1.30 2008/09/11 16:46:08 atsareg Exp $"
 
 from DIRAC.Core.Base.DB import DB
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
@@ -772,7 +772,7 @@ class RequestDBMySQL(DB):
       req += " WHERE R.RequestID=S.RequestID"
 
     if sortList:
-      req += "ORDER BY %s %s" % (sortList[0][0],sortList[0][1])
+      req += " ORDER BY %s %s" % (sortList[0][0],sortList[0][1])
 
     result = self._query(req)
     if not result['OK']:
