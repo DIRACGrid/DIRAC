@@ -3,7 +3,7 @@
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
- 
+
 
 from DIRAC.RequestManagementSystem.DB.RequestDBMySQL import RequestDBMySQL
 from DIRAC.DataManagementSystem.DB.TransferDB import TransferDB
@@ -120,7 +120,7 @@ class ReplicationScheduler(Agent):
      if attributes['Status'] != 'Waiting':
        #  If the sub-request is already in terminal state
        gLogger.info("ReplicationScheduler._execute: Sub-request %s is status '%s' and  not to be executed." % (ind,attributes['Status']))
-     else:     
+     else:
       sourceSE = attributes['SourceSE']
       targetSE = attributes['TargetSE']
       """ This section should go in the transfer request class """
@@ -147,13 +147,13 @@ class ReplicationScheduler(Agent):
         gLogger.error(errStr)
         return S_ERROR(errStr)
       files = res['Value']
-      gLogger.info("ReplicationScheduler._execute: Sub-request %s found with %s files." % (ind,len(files)))  
+      gLogger.info("ReplicationScheduler._execute: Sub-request %s found with %s files." % (ind,len(files)))
       filesDict = {}
       for file in files:
         lfn = file['LFN']
         if file['Status'] != 'Waiting':
           gLogger.info("ReplicationScheduler._execute: %s will not be scheduled because it is %s." % (lfn,file['Status']))
-        else:   
+        else:
           fileID = file['FileID']
           filesDict[lfn] = fileID
 
@@ -169,7 +169,7 @@ class ReplicationScheduler(Agent):
         errStr = "ReplicationScheduler._execute: Failed to get replica infomation."
         gLogger.error(errStr,res['Message'])
         return S_ERROR(errStr)
-      for lfn,failure in res['Value']['Failed'].items(): 
+      for lfn,failure in res['Value']['Failed'].items():
         gLogger.error("ReplicationScheduler._execute: Failed to get replicas.",'%s: %s' % (lfn,failure))
       replicas = res['Value']['Successful']
       if not replicas.keys():
@@ -222,6 +222,8 @@ class ReplicationScheduler(Agent):
             errStr = "ReplicationScheduler.execute: Failed to determine replication tree."
             gLogger.error(errStr,res['Message'])
             #oRequest.setSubRequestFileAttributeValue(ind,'transfer',lfn,'Status','Failed')
+            # A.T. I think it was meant to break the file loop here
+            break
           tree = res['Value']
 
           ######################################################################################
@@ -269,9 +271,9 @@ class ReplicationScheduler(Agent):
               return S_ERROR(errStr)
             res = self.TransferDB.addFileRegistration(channelID,fileID,lfn,targetSURL,hopDestSE)
             if res['OK']:
-              oRequest.setSubRequestFileAttributeValue(ind,'transfer',lfn,'Status','Scheduled')               
+              oRequest.setSubRequestFileAttributeValue(ind,'transfer',lfn,'Status','Scheduled')
             else:
-              errStr = "ReplicationScheduler._execute: Failed to add registration entry."  
+              errStr = "ReplicationScheduler._execute: Failed to add registration entry."
               gLogger.error(errStr, "%s to %s." % (fileID,hopDestSE))
           res = self.TransferDB.addReplicationTree(fileID,tree)
 
@@ -333,9 +335,9 @@ class StrategyHandler:
     self.chosenStrategy = 0
 
     print 'Scheduling Type',self.schedulingType
-    print 'Sigma',self.sigma 
+    print 'Sigma',self.sigma
     print 'Acceptable failure rate',self.acceptableFailureRate
-   
+
 
   def getSupportedStrategies(self):
     return self.supportedStrategies
@@ -357,7 +359,7 @@ class StrategyHandler:
         tree = self.__simple(sourceSE,targetSEs)
 
     elif re.search('DynamicThroughput',strategy):
-      elements = strategy.split('_') 
+      elements = strategy.split('_')
       if len(elements) > 1:
         self.sigma = float(elements[-1])
         print 'SET self.sigma TO BE %s' % self.sigma
@@ -365,9 +367,9 @@ class StrategyHandler:
         tree = self.__dynamicThroughput([sourceSE],targetSEs)
       else:
         tree = self.__dynamicThroughput(replica.keys(),targetSEs)
-  
+
     elif re.search('MinimiseTotalWait',strategy):
-      elements = strategy.split('_') 
+      elements = strategy.split('_')
       if len(elements) > 1:
         self.sigma = float(elements[-1])
         print 'SET self.sigma TO BE %s' % self.sigma
@@ -384,7 +386,7 @@ class StrategyHandler:
       self.channels[channelID]['Files'] += 1
       self.channels[channelID]['Size'] += size
     return S_OK(tree)
- 
+
   def __incrementChosenStrategy(self):
     """ This will increment the counter of the chosen strategy
     """
@@ -494,7 +496,7 @@ class StrategyHandler:
       print 'Selected %s \n' % selectedPathTimeToStart
 
       random.shuffle(candidateChannels)
-      selectedSourceSE,selectedDestSE,selectedChannelID = candidateChannels[0] 
+      selectedSourceSE,selectedDestSE,selectedChannelID = candidateChannels[0]
       timeToSite[selectedDestSE] = selectedPathTimeToStart
       siteAncestor[selectedDestSE] = selectedChannelID
 
@@ -544,7 +546,7 @@ class StrategyHandler:
               selectedPathTimeToStart = channelTimeToStart
               candidateChannels = [(sourceSE,destSE,channelID)]
 
-            elif channelTimeToStart == minTotalTimeToStart: 
+            elif channelTimeToStart == minTotalTimeToStart:
               candidateChannels.append((sourceSE,destSE,channelID))
 
               #selectedSourceSE = sourceSE
@@ -585,7 +587,7 @@ class StrategyHandler:
       status = channelDict['Status']
       channelName = channelDict['ChannelName']
       channelInfo[channelName] = {'ChannelID': channelID}
-  
+
       if status != 'Active':
         throughputTimeToStart = float('inf') # Make the channel extremely unattractive but still available
         fileTimeToStart = float('inf') #Make the channel extremely unattractive but still available
