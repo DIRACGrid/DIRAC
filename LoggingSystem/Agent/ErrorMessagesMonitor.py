@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Agent/Attic/getErrorMessages.py,v 1.5 2008/04/09 17:54:56 mseco Exp $
-__RCSID__ = "$Id: getErrorMessages.py,v 1.5 2008/04/09 17:54:56 mseco Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Agent/Attic/ErrorMessagesMonitor.py,v 1.1 2008/09/11 12:39:14 mseco Exp $
+__RCSID__ = "$Id: ErrorMessagesMonitor.py,v 1.1 2008/09/11 12:39:14 mseco Exp $"
 """  getErrorNames get new errors that have been injected into the
      SystemLoggingDB and sends them by mail to the person(s) in charge
      of checking that they conform with DIRAC style. ReviewersMail option
@@ -85,7 +85,7 @@ class getErrorMessages(Agent):
       for message in messageList:
         cmd = "UPDATE LOW_PRIORITY FixedTextMessages SET ReviewedMessage=1"
         cond = " WHERE FixedTextID=%s" % message[0]
-        result =  self.SystemLoggingDB._query( cmd + cond )
+        result =  self.SystemLoggingDB._update( cmd + cond )
         self.log.verbose('Message Status updated',
                          '(%d, %s)' % (message[0], message[1]))
         if not result['OK']:
