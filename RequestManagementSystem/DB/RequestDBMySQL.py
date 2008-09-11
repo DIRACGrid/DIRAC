@@ -1,9 +1,9 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/DB/RequestDBMySQL.py,v 1.30 2008/09/11 16:46:08 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/DB/RequestDBMySQL.py,v 1.31 2008/09/11 18:44:43 atsareg Exp $
 
 """ RequestDBMySQL is the MySQL plug in for the request DB
 """
 
-__RCSID__ = "$Id: RequestDBMySQL.py,v 1.30 2008/09/11 16:46:08 atsareg Exp $"
+__RCSID__ = "$Id: RequestDBMySQL.py,v 1.31 2008/09/11 18:44:43 atsareg Exp $"
 
 from DIRAC.Core.Base.DB import DB
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
@@ -796,10 +796,16 @@ class RequestDBMySQL(DB):
       secondIndex = len(result['Value'])
 
     records = []
+    columnWidth = [ 0 for x in range(len(parameterList)) ]
     for i in range(firstIndex,secondIndex):
-      records.append([ str(x) for x in result['Value'][i]])
+      row = result['Value'][i]
+      records.append([ str(x) for x in row])
+      for ind in range(len(row)):
+        if len(str(row[ind])) > columnWidth[ind]:
+          columnWidth[ind] = len(str(row[ind]))
 
     resultDict['ParameterNames'] = parameterList
+    resultDict['ColumnWidths'] = columnWidth
     resultDict['Records'] = records
     resultDict['TotalRecords'] = nRequests
 
