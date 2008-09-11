@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Agent/Attic/ErrorMessagesMonitor.py,v 1.1 2008/09/11 12:39:14 mseco Exp $
-__RCSID__ = "$Id: ErrorMessagesMonitor.py,v 1.1 2008/09/11 12:39:14 mseco Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Agent/ErrorMessageMonitor.py,v 1.1 2008/09/11 13:08:04 mseco Exp $
+__RCSID__ = "$Id: ErrorMessageMonitor.py,v 1.1 2008/09/11 13:08:04 mseco Exp $"
 """  getErrorNames get new errors that have been injected into the
      SystemLoggingDB and sends them by mail to the person(s) in charge
      of checking that they conform with DIRAC style. ReviewersMail option
@@ -35,7 +35,7 @@ class getErrorMessages(Agent):
 
     self.mail=Mail.Mail()
     mailString = gConfig.getValue( self.section+"/ReviewersMail",
-                                   'secomig@usc.es' )
+                                   'Marcos.Seco@usc.es' )
     mailList = List.fromChar( mailString, ",")
 
     self.mail._mailAddress = mailList
