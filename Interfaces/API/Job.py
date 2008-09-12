@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.43 2008/09/08 17:31:33 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.44 2008/09/12 10:25:55 paterson Exp $
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -30,7 +30,7 @@
    Note that several executables can be provided and wil be executed sequentially.
 """
 
-__RCSID__ = "$Id: Job.py,v 1.43 2008/09/08 17:31:33 paterson Exp $"
+__RCSID__ = "$Id: Job.py,v 1.44 2008/09/12 10:25:55 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -599,15 +599,15 @@ class Job:
     """Set job default values.  For initial version still using local account string
     for a nickname.
     """
-    try:
-      self.owner = os.getlogin()
-    except Exception, x :
-      if os.environ.has_key('USER'):
-        self.owner = os.environ['USER']
-      else:
-        self.owner = "Unknown"
+#    try:
+#      self.owner = os.getlogin()
+#    except Exception, x :
+#      if os.environ.has_key('USER'):
+#        self.owner = os.environ['USER']
+#      else:
+#        self.owner = "Unknown"
 
-    self._addParameter(self.workflow,'Owner','JDL',self.owner,'Job Owner')
+#    self._addParameter(self.workflow,'Owner','JDL',self.owner,'Job Owner')
     self._addParameter(self.workflow,'JobType','JDL',self.type,'Job Type')
     self._addParameter(self.workflow,'Priority','JDL',self.priority,'User Job Priority')
     self._addParameter(self.workflow,'JobGroup','JDL',self.group,'Corresponding VOMS role')
