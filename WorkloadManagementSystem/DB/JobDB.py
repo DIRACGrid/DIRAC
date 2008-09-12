@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.95 2008/08/21 10:02:28 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.96 2008/09/12 10:35:45 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.95 2008/08/21 10:02:28 rgracian Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.96 2008/09/12 10:35:45 atsareg Exp $"
 
 import re, os, sys, string, types
 import time
@@ -597,7 +597,7 @@ class JobDB(DB):
       attr.append( "LastUpdateTime=UTC_TIMESTAMP()" )
     if len(attr) == 0:
       return S_ERROR( 'JobDB.setAttributes: Nothing to do' )
-    
+
     cmd = 'UPDATE Jobs SET %s WHERE JobID=\'%s\'' % ( ', '.join(attr), jobID )
 
     if datetime:
@@ -768,7 +768,7 @@ class JobDB(DB):
 
     if not res['OK']:
       return res
-    
+
     return S_OK()
 
 #############################################################################
@@ -811,7 +811,7 @@ class JobDB(DB):
       return False
     connection = res['Value']
     res = self._insert( 'JobJDLs' , ['OriginalJDL'],[JDL], connection)
-    
+
     cmd = 'SELECT LAST_INSERT_ID()'
     res = self._query( cmd, connection )
     if not res['OK']:
@@ -869,7 +869,7 @@ class JobDB(DB):
   def insertNewJobIntoDB(self, JDL, owner, ownerDN, ownerGroup, diracSetup ):
     """ Insert the initial JDL into the Job database,
         Do initial JDL crosscheck,
-        Set Initial job Attributes and Status 
+        Set Initial job Attributes and Status
     """
 
     jobAttrNames  = []
@@ -879,7 +879,7 @@ class JobDB(DB):
     jobID = self.__insertNewJDL( JDL )
     if not jobID:
       return S_ERROR( 'Can not insert JDL in to DB' )
-    
+
     jobAttrNames.append('JobID')
     jobAttrValues.append(jobID)
 
@@ -900,7 +900,7 @@ class JobDB(DB):
 
     jobAttrNames.append('DIRACSetup')
     jobAttrValues.append(diracSetup)
-    
+
     # 2.- Check JDL and Prepare DIRAC JDL
     classAdJob = ClassAd( '[%s]' % JDL )
     classAdReq = ClassAd( '[]' )
@@ -909,7 +909,7 @@ class JobDB(DB):
     if not classAdJob.isOK():
       jobAttrNames.append('Status')
       jobAttrValues.append('Failed')
-  
+
       jobAttrNames.append('MinorStatus')
       jobAttrValues.append('Error in JDL syntax')
 
@@ -926,13 +926,13 @@ class JobDB(DB):
     if not result['OK']:
       jobAttrNames.append('Status')
       jobAttrValues.append('Failed')
-  
+
       jobAttrNames.append('MinorStatus')
       jobAttrValues.append(result['Message'])
 
-      result = self._insert( 'Jobs', jobAttrNames, jobAttrValues )
-      if not result['OK']:
-        return result
+      resultInsert = self._insert( 'Jobs', jobAttrNames, jobAttrValues )
+      if not resultInsert['OK']:
+        return resultInsert
 
       retVal['Status'] = 'Failed'
       retVal['MinorStatus'] = result['Message']
@@ -983,7 +983,7 @@ class JobDB(DB):
     result = self.__setInitialJobParameters(classAdJob,jobID)
     if not result['OK']:
       return result
-  
+
     result = self._insert( 'Jobs', jobAttrNames, jobAttrValues )
     if not result['OK']:
       return result
@@ -1005,14 +1005,15 @@ class JobDB(DB):
     jdlOwnerDN    = classAdJob.getAttributeString( 'OwnerDN' )
     jdlOwnerGroup = classAdJob.getAttributeString( 'OwnerGroup' )
 
-    if jdlDiracSetup and jdlDiracSetup != diracSetup:
-      error = 'Wrong DIRAC Setup in JDL'
-    if jdlOwner and jdlOwner != owner:
-      error = 'Wrong Owner in JDL'
-    elif jdlOwnerDN and jdlOwnerDN != ownerDN:
-      error = 'Wrong Owner DN in JDL'
-    elif jdlOwnerGroup and jdlOwnerGroup != ownerGroup:
-      error = 'Wrong Owner Group in JDL'
+    # The below is commnted out since this is always overwritten by the submitter IDs
+    #if jdlDiracSetup and jdlDiracSetup != diracSetup:
+    #  error = 'Wrong DIRAC Setup in JDL'
+    #if jdlOwner and jdlOwner != owner:
+    #  error = 'Wrong Owner in JDL'
+    #elif jdlOwnerDN and jdlOwnerDN != ownerDN:
+    #  error = 'Wrong Owner DN in JDL'
+    #elif jdlOwnerGroup and jdlOwnerGroup != ownerGroup:
+    #  error = 'Wrong Owner Group in JDL'
 
     classAdJob.insertAttributeString( 'Owner',      owner )
     classAdJob.insertAttributeString( 'OwnerDN',    ownerDN )
@@ -1260,7 +1261,7 @@ class JobDB(DB):
       return S_ERROR('Job '+str(jobID)+' not found in the system')
 
     if not resultDict['VerifiedFlag']:
-      return S_ERROR('Job %s not Verified: Status = %s, MinorStatus = %s' % ( 
+      return S_ERROR('Job %s not Verified: Status = %s, MinorStatus = %s' % (
                                                                              jobID,
                                                                              resultDict['Status'],
                                                                              resultDict['MinorStatus'] ) )
@@ -1310,14 +1311,14 @@ class JobDB(DB):
     retVal['JobID'] = jobID
 
     classAdJob.insertAttributeInt( 'JobID', jobID )
-    result = self.__checkAndPrepareJob( classAdJob, classAdReq, resultDict['Owner'], 
-                                        resultDict['OwnerDN'], resultDict['OwnerGroup'], 
+    result = self.__checkAndPrepareJob( classAdJob, classAdReq, resultDict['Owner'],
+                                        resultDict['OwnerDN'], resultDict['OwnerGroup'],
                                         resultDict['DIRACSetup'] )
 
     if not result['OK']:
       jobAttrNames.append('Status')
       jobAttrValues.append('Failed')
-  
+
       jobAttrNames.append('MinorStatus')
       jobAttrValues.append(result['Message'])
 
@@ -1344,13 +1345,13 @@ class JobDB(DB):
 
     jobAttrNames.append('MinorStatus')
     jobAttrValues.append('Job Rescheduled')
-    
+
     jobAttrNames.append('ApplicationStatus')
     jobAttrValues.append('Unknown')
-        
+
     jobAttrNames.append('ApplicationNumStatus')
     jobAttrValues.append(0)
-    
+
     jobAttrNames.append('LastUpdateTime')
     jobAttrValues.append(Time.toString())
 
@@ -1362,11 +1363,11 @@ class JobDB(DB):
     result = self.setJobJDL( jobID, jobJDL )
     if not result['OK']:
       return result
-  
+
     result = self.__setInitialJobParameters(classAdJob,jobID)
     if not result['OK']:
       return result
-  
+
     result = self.setJobAttributes( jobID, jobAttrNames, jobAttrValues )
     if not result['OK']:
       return result
@@ -1821,7 +1822,7 @@ class JobDB(DB):
   def setHeartBeatData(self,jobID,staticDataDict, dynamicDataDict):
     """ Add the job's heart beat data to the database
     """
-    
+
     # Set the time stamp first
     req = "UPDATE Jobs SET HeartBeatTime=UTC_TIMESTAMP() WHERE JobID=%d" % jobID
     result = self._update(req)
