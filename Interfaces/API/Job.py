@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.44 2008/09/12 10:25:55 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.45 2008/09/12 13:40:29 paterson Exp $
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -30,7 +30,7 @@
    Note that several executables can be provided and wil be executed sequentially.
 """
 
-__RCSID__ = "$Id: Job.py,v 1.44 2008/09/12 10:25:55 paterson Exp $"
+__RCSID__ = "$Id: Job.py,v 1.45 2008/09/12 13:40:29 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -384,7 +384,7 @@ class Job:
     """
 
     if type(destination) == type("  "):
-      if not re.search('^DIRAC.',destination):
+      if not re.search('^DIRAC.',destination) or not destination.lower()=='any':
         result = self.__checkSiteIsValid(destination)
         if not result['OK']:
           raise TypeError,'%s is not a valid destination site' %(destination)
