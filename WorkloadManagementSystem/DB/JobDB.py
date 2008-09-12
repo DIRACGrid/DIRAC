@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.97 2008/09/12 15:22:24 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.98 2008/09/12 17:04:54 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.97 2008/09/12 15:22:24 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.98 2008/09/12 17:04:54 atsareg Exp $"
 
 import re, os, sys, string, types
 import time
@@ -1005,7 +1005,7 @@ class JobDB(DB):
     jdlOwnerDN    = classAdJob.getAttributeString( 'OwnerDN' )
     jdlOwnerGroup = classAdJob.getAttributeString( 'OwnerGroup' )
 
-    # The below is commnted out since this is always overwritten by the submitter IDs
+    # The below is commented out since this is always overwritten by the submitter IDs
     #if jdlDiracSetup and jdlDiracSetup != diracSetup:
     #  error = 'Wrong DIRAC Setup in JDL'
     #if jdlOwner and jdlOwner != owner:
@@ -1050,7 +1050,7 @@ class JobDB(DB):
         platforms = result['Value']
         lhcbPlatforms = []
         for platform in platforms:
-          if systemConfig in platforms[platform]:
+          if systemConfig in [ x.strip() for x in platforms[platform].split(',') ]:
             lhcbPlatforms.append( platform )
         if lhcbPlatforms:
           classAdReq.insertAttributeVectorString( 'LHCbPlatforms', lhcbPlatforms )
@@ -1305,7 +1305,7 @@ class JobDB(DB):
     jdl = res['Value']
 
     # Restore initital job parameters
-    classAdJob = ClassAd('[ %s ]' % jdl)
+    classAdJob = ClassAd(jdl)
     classAdReq = ClassAd('[]')
     retVal = S_OK(jobID)
     retVal['JobID'] = jobID
