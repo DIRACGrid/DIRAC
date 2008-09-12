@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: Mapping.py,v 1.12 2008/09/03 14:33:33 paterson Exp $
+# $Id: Mapping.py,v 1.13 2008/09/12 10:20:25 paterson Exp $
 ########################################################################
 
 """ All of the data collection and handling procedures for the SiteMappingHandler
@@ -139,22 +139,22 @@ class Mapping:
       pilotSummary = wmsAdmin.getPilotSummary()
       if not pilotSummary['OK']:
         return S_ERROR('Site pilot data could not be retrieved.')
-      children = getCESiteMapping()
-      if not children['OK']:
+      ceSiteMapping = getCESiteMapping()
+      if not ceSiteMapping['OK']:
         return S_ERROR('Could not get CE site mapping')
-      children = children['Value'].keys()
+      children = ceSiteMapping['Value'].keys()
 
       # Iterate through every pilot
       for child in pilotSummary['Value']:
 
         # If the pilot is not in the Resources/GridSites/LCG list, then
         # we won't be able to detect its parent, making it orphaned (we don't want that)
-        if child not in children['Value']:
+        if child not in children:
           continue
 
         # Ah, but it does have a parent!
         # Make sure it is one we recognize
-        parent = gConfig.getValue('Resources/Sites/LCG/' + child)
+        #parent = gConfig.getValue('Resources/Sites/LCG/' + child)
         parent = getSiteForCE(child)
         if not parent['OK']:
           continue
