@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/Attic/dirac-admin-ban-site,v 1.7 2008/08/26 17:46:42 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/Attic/dirac-admin-ban-site,v 1.8 2008/09/14 22:29:22 paterson Exp $
 # File :   dirac-admin-ban-site
 # Author : Stuart Paterson
 ########################################################################
-__RCSID__   = "$Id: dirac-admin-ban-site,v 1.7 2008/08/26 17:46:42 paterson Exp $"
-__VERSION__ = "$Revision: 1.7 $"
+__RCSID__   = "$Id: dirac-admin-ban-site,v 1.8 2008/09/14 22:29:22 paterson Exp $"
+__VERSION__ = "$Revision: 1.8 $"
 from DIRACEnvironment import DIRAC
 from DIRAC.Core.Base import Script
 
@@ -48,6 +48,9 @@ if not userName['OK']:
   DIRAC.exit(exitCode)
 userName = userName['Value']
 
+if not comment:
+  comment = 'No comment supplied.'
+
 for site in args:
   result = diracAdmin.banSiteFromMask(site,printOutput=True)
   if not result['OK']:
@@ -56,10 +59,7 @@ for site in args:
   else:
     subject = '%s is banned for %s setup' %(site,setup)
     body = 'Site %s is removed from site mask for %s setup by %s on %s.\n\n' %(site,setup,userName,time.asctime())
-    if comment:
-      body += 'Comment:\n%s' %comment
-    else:
-      body += 'No comment supplied.'
+    body += 'Comment:\n%s' %comment
     result = diracAdmin.sendMail(address,subject,body)
 
 for error in errorList:
