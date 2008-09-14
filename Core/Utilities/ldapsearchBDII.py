@@ -96,6 +96,31 @@ For example result['Value'][0]['GlueSiteLocation']
   
   return {'OK':True,'Value':sites}
 
+def ldapCluster( ce, attr=None, host=None ):
+  '''
+CE (really SubCluster in definition of bdii) information from bdii.
+It contains by the way host information for ce.
+Input parameter:
+  ce:		ce or part of it whith globbing
+		for example  "ce0?.tier2.hep.manchester*"             	
+Return standart DIRAC answer with Value equals to list of clusters.
+Each cluster is dictionary which contains attributes of ce.
+For example result['Value'][0]['GlueHostBenchmarkSI00']
+'''
+
+  filt = '(GlueClusterUniqueID=%s)'%ce
+
+  result = ldapsearchBDII( filt, attr, host )
+
+  if not result['OK']:
+    return result
+  
+  clusters = []
+  for value in result['Value']:
+    clusters.append(value['attr'])
+  
+  return {'OK':True,'Value':clusters}
+  
 def ldapCE( ce, attr=None, host=None ):
   '''
 CE (really SubCluster in definition of bdii) information from bdii.
@@ -115,11 +140,11 @@ For example result['Value'][0]['GlueHostBenchmarkSI00']
   if not result['OK']:
     return result
   
-  sites = []
+  ces = []
   for value in result['Value']:
-    sites.append(value['attr'])
+    ces.append(value['attr'])
   
-  return {'OK':True,'Value':sites}
+  return {'OK':True,'Value':ces}
   
 def ldapCEState( ce, vo='lhcb', attr=None, host=None ):
   '''
