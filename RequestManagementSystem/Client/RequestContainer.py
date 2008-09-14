@@ -1,4 +1,4 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/RequestContainer.py,v 1.13 2008/09/04 11:16:40 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/RequestContainer.py,v 1.14 2008/09/14 19:45:00 atsareg Exp $
 
 """
 The Data Management Request contains all the necessary information for
@@ -11,7 +11,7 @@ from DIRAC.Core.Security.Misc import getProxyInfo
 from DIRAC.Core.Utilities import DEncode
 from DIRAC.RequestManagementSystem.Client.DISETSubRequest import DISETSubRequest
 
-__RCSID__ = "$Id: RequestContainer.py,v 1.13 2008/09/04 11:16:40 atsareg Exp $"
+__RCSID__ = "$Id: RequestContainer.py,v 1.14 2008/09/14 19:45:00 atsareg Exp $"
 
 class RequestContainer:
 
@@ -750,10 +750,10 @@ class RequestContainer:
         digestList.append(self.subRequests[stype][ind]['Attributes']['Operation'])
         digestList.append(self.subRequests[stype][ind]['Attributes']['Status'])
         digestList.append(str(self.subRequests[stype][ind]['Attributes']['ExecutionOrder']))
-        if stype == "transfer" or stype == "register" or stype == "removal":
-          digestList.append(self.subRequests[stype][ind]['Attributes']['TargetSE'])
-        if stype == "register":
-          digestList.append(self.subRequests[stype][ind]['Attributes']['Catalogue'])
+        if self.subRequests[stype][ind]['Attributes'].has_key('TargetSE'):
+          digestList.append(str(self.subRequests[stype][ind]['Attributes']['TargetSE']))
+        if self.subRequests[stype][ind]['Attributes'].has_key('Catalogue'):
+          digestList.append(str(self.subRequests[stype][ind]['Attributes']['Catalogue']))
         if self.subRequests[stype][ind].has_key('Files'):
           if self.subRequests[stype][ind]['Files']:
             fname = os.path.basename(self.subRequests[stype][ind]['Files'][0]['LFN'])
