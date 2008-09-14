@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSAdministratorHandler.py,v 1.35 2008/09/14 21:28:11 atsareg Exp $
+# $Id: WMSAdministratorHandler.py,v 1.36 2008/09/14 21:52:51 atsareg Exp $
 ########################################################################
 """
 This is a DIRAC WMS administrator interface.
@@ -14,7 +14,7 @@ Access to the pilot data:
 
 """
 
-__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.35 2008/09/14 21:28:11 atsareg Exp $"
+__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.36 2008/09/14 21:52:51 atsareg Exp $"
 
 import os, sys, string, uu, shutil
 from types import *
@@ -110,7 +110,7 @@ class WMSAdministratorHandler(RequestHandler):
     return jobDB.removeSiteFromMask("All")
 
 ##############################################################################
-  types_getSiteMaskLogging = [list(StringTypes)+ListType]
+  types_getSiteMaskLogging = [ list(StringTypes)+[ListType] ]
   def export_getSiteMaskLogging(self,sites):
     """ Get the site mask logging history
     """
