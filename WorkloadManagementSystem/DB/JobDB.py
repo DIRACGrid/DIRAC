@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.98 2008/09/12 17:04:54 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.99 2008/09/14 16:44:35 paterson Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.98 2008/09/12 17:04:54 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.99 2008/09/14 16:44:35 paterson Exp $"
 
 import re, os, sys, string, types
 import time
@@ -1305,7 +1305,7 @@ class JobDB(DB):
     jdl = res['Value']
 
     # Restore initital job parameters
-    classAdJob = ClassAd(jdl)
+    classAdJob = ClassAd('['+jdl+']')
     classAdReq = ClassAd('[]')
     retVal = S_OK(jobID)
     retVal['JobID'] = jobID
