@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: StorageElementHandler.py,v 1.4 2008/02/26 12:12:22 acsmith Exp $
+# $Id: StorageElementHandler.py,v 1.5 2008/09/14 20:14:07 atsareg Exp $
 ########################################################################
 
 """
@@ -23,7 +23,7 @@
 
 """
 
-__RCSID__ = "$Id: StorageElementHandler.py,v 1.4 2008/02/26 12:12:22 acsmith Exp $"
+__RCSID__ = "$Id: StorageElementHandler.py,v 1.5 2008/09/14 20:14:07 atsareg Exp $"
 
 import os, shutil
 from stat import *
@@ -108,6 +108,16 @@ class StorageElementHandler(RequestHandler):
     resultDict['TimeStamps'] = (statTuple[ST_ATIME],statTuple[ST_MTIME],statTuple[ST_CTIME])
 
     return S_OK(resultDict)
+
+  types_exists = [StringTypes]
+  def export_exists(self,path):
+    """ Check existnce of the path
+    """
+    fpath = base_path+path
+    if os.path.exists(fpath):
+      return S_OK(True)
+    else:
+      return S_OK(False)
 
   types_createDirectory = [StringType]
   def export_createDirectory(self,dir_path):
