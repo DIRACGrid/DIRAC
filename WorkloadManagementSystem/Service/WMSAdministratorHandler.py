@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSAdministratorHandler.py,v 1.34 2008/07/31 10:47:40 rgracian Exp $
+# $Id: WMSAdministratorHandler.py,v 1.35 2008/09/14 21:28:11 atsareg Exp $
 ########################################################################
 """
 This is a DIRAC WMS administrator interface.
@@ -14,7 +14,7 @@ Access to the pilot data:
 
 """
 
-__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.34 2008/07/31 10:47:40 rgracian Exp $"
+__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.35 2008/09/14 21:28:11 atsareg Exp $"
 
 import os, sys, string, uu, shutil
 from types import *
@@ -49,7 +49,7 @@ class WMSAdministratorHandler(RequestHandler):
 
 ###########################################################################
   types_setMask = [StringType]
-  def export_setSiteMask(self, siteList):
+  def export_setSiteMask(self, siteList, comment='No comment'):
     """ Set the site mask for matching. The mask is given in a form of Classad
         string.
     """
@@ -57,7 +57,7 @@ class WMSAdministratorHandler(RequestHandler):
     dn = result['DN']
 
     maskList = [ (site,'Active') for site in siteList ]
-    result = jobDB.setSiteMask(maskList,dn)
+    result = jobDB.setSiteMask(maskList,dn,comment)
     return result
 
 ##############################################################################
@@ -108,6 +108,18 @@ class WMSAdministratorHandler(RequestHandler):
     """
 
     return jobDB.removeSiteFromMask("All")
+
+##############################################################################
+  types_getSiteMaskLogging = [list(StringTypes)+ListType]
+  def export_getSiteMaskLogging(self,sites):
+    """ Get the site mask logging history
+    """
+
+    if type(sites) in StringTypes:
+      msites = [sites]
+    else:
+      msites = sites
+    return jobDB.getSiteMaskLogging(msites)
 
 ##############################################################################
   types_getPilotOutput = [StringType]
