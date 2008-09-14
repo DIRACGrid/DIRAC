@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.28 2008/09/09 16:48:06 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.29 2008/09/14 08:51:34 roma Exp $
 # File :   DiracAdmin.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@ site banning and unbanning, WMS proxy uploading etc.
 
 """
 
-__RCSID__ = "$Id: DiracAdmin.py,v 1.28 2008/09/09 16:48:06 paterson Exp $"
+__RCSID__ = "$Id: DiracAdmin.py,v 1.29 2008/09/14 08:51:34 roma Exp $"
 
 import DIRAC
 from DIRAC.ConfigurationSystem.Client.CSAPI                   import CSAPI
@@ -25,7 +25,7 @@ from DIRAC.WorkloadManagementSystem.Client.NotificationClient import Notificatio
 from DIRAC.Core.Security.X509Chain                            import X509Chain
 from DIRAC.Core.Security                                      import Locations, CS
 from DIRAC                                                    import gConfig, gLogger, S_OK, S_ERROR
-from DIRAC.Core.Utilities.ldapsearchBDII                      import ldapSite, ldapCE, ldapCEState, ldapCEVOView
+from DIRAC.Core.Utilities.ldapsearchBDII                      import ldapSite, ldapCluster, ldapCE, ldapCEState, ldapCEVOView
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -980,6 +980,12 @@ class DiracAdmin:
     """Get information about site from BDII at host
     """
     return ldapSite(site, host=host)
+
+  #############################################################################
+  def getBDIICluster(self,ce,host=None):
+    """Get information about ce from BDII at host
+    """
+    return ldapCluster(ce, host=host)
 
   #############################################################################
   def getBDIICE(self,ce,host=None):
