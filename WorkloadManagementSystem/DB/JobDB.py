@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.100 2008/09/14 21:29:24 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.101 2008/09/14 21:52:10 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.100 2008/09/14 21:29:24 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.101 2008/09/14 21:52:10 atsareg Exp $"
 
 import re, os, sys, string, types
 import time
@@ -1471,8 +1471,11 @@ class JobDB(DB):
     """ Get the site mask logging history for the list if site names
     """
 
-    siteString = ','.join(siteList)
-    req = "SELECT Site,Status,UpdateTime,Author,Comment FROM SiteMaskLogging WHERE Site in (%s)" % siteString
+    if siteList:
+      siteString = ','.join([ "'"+x+"'" for x in siteList ])
+      req = "SELECT Site,Status,UpdateTime,Author,Comment FROM SiteMaskLogging WHERE Site in (%s)" % siteString
+    else:
+      req = "SELECT Site,Status,UpdateTime,Author,Comment FROM SiteMaskLogging"
     req += " ORDER BY UpateTime ASC"
     result = self._query(req)
     if not result['OK']:
