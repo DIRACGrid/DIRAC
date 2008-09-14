@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.99 2008/09/14 16:44:35 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.100 2008/09/14 21:29:24 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.99 2008/09/14 16:44:35 paterson Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.100 2008/09/14 21:29:24 atsareg Exp $"
 
 import re, os, sys, string, types
 import time
@@ -1397,12 +1397,12 @@ class JobDB(DB):
     return S_OK(siteList)
 
 #############################################################################
-  def setSiteMask(self,siteMaskList,authorDN='Unknown'):
+  def setSiteMask(self,siteMaskList,authorDN='Unknown',comment='No comment'):
     """ Set the Site Mask to the given mask in a form of a list of tuples (site,status)
     """
 
     for site,status in siteMaskList:
-      result = self.__setSiteStatusInMask(site,status,authorDN)
+      result = self.__setSiteStatusInMask(site,status,authorDN,comment)
       if not result['OK']:
         return result
 
@@ -1429,10 +1429,15 @@ class JobDB(DB):
       result = self._update(req)
       if not result['OK']:
         return S_ERROR('Failed to update the Site Mask')
-      else:
-        return S_OK()
+      # update the site mask logging record
+      req = "INSERT INTO SiteMaskLogging VALUES ('%s','%s',UTC_TIMESTAMP(),'%s','%s')" % (site,status,author,comment)
+      result = self._update(req)
+      if not result['OK']:
+        self.log.warn('Failed to update site mask logging for %s' % site)
     else:
       return S_ERROR('Failed to get the Site Status from the Mask')
+
+    return S_OK()
 
 #############################################################################
   def banSiteInMask(self,site,authorDN='Unknown',comment='No comment'):
@@ -1460,6 +1465,30 @@ class JobDB(DB):
     else:
       req = "DELETE FROM SiteMask WHERE Site='%s'" % site
     return self._update(req)
+
+#############################################################################
+  def getSiteMaskLogging(self,siteList):
+    """ Get the site mask logging history for the list if site names
+    """
+
+    siteString = ','.join(siteList)
+    req = "SELECT Site,Status,UpdateTime,Author,Comment FROM SiteMaskLogging WHERE Site in (%s)" % siteString
+    req += " ORDER BY UpateTime ASC"
+    result = self._query(req)
+    if not result['OK']:
+      return result
+
+    resultDict = {}
+    if not result['Value']:
+      return S_OK(resultDict)
+
+    for row in result['Value']:
+      site,status,utime,author,comment = row
+      if not resultDict.has_key(site):
+        resultDict[site] = []
+      resultDict[site].append((status,str(utime),author,comment))
+
+    return S_OK(resultDict)
 
 #############################################################################
   def __addQueue (self, requirements="[Requirements=true;]", priority=0):
