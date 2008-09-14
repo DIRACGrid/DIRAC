@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.29 2008/09/14 08:51:34 roma Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.30 2008/09/14 21:57:56 atsareg Exp $
 # File :   DiracAdmin.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@ site banning and unbanning, WMS proxy uploading etc.
 
 """
 
-__RCSID__ = "$Id: DiracAdmin.py,v 1.29 2008/09/14 08:51:34 roma Exp $"
+__RCSID__ = "$Id: DiracAdmin.py,v 1.30 2008/09/14 21:57:56 atsareg Exp $"
 
 import DIRAC
 from DIRAC.ConfigurationSystem.Client.CSAPI                   import CSAPI
@@ -182,7 +182,7 @@ class DiracAdmin:
     return result
 
   #############################################################################
-  def addSiteInMask(self,site,printOutput=False):
+  def addSiteInMask(self,site,printOutput=False,comment='No comment'):
     """Adds the site to the site mask.
 
        Example usage:
@@ -205,7 +205,7 @@ class DiracAdmin:
       return S_ERROR('Site %s already in mask of allowed sites' %site)
 
     wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
-    result = wmsAdmin.allowSite(site)
+    result = wmsAdmin.allowSite(site,comment)
     if not result['OK']:
       return result
 
@@ -215,7 +215,7 @@ class DiracAdmin:
     return result
 
   #############################################################################
-  def banSiteFromMask(self,site,printOutput=False):
+  def banSiteFromMask(self,site,printOutput=False,comment='No comment'):
     """Removes the site from the site mask.
 
        Example usage:
@@ -238,7 +238,7 @@ class DiracAdmin:
       return S_ERROR('Site %s is already banned' %site)
 
     wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
-    result = wmsAdmin.banSite(site)
+    result = wmsAdmin.banSite(site,comment)
     if not result['OK']:
       return result
 
