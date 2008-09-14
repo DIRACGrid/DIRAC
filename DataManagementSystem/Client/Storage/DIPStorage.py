@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: DIPStorage.py,v 1.6 2008/05/16 11:49:38 acsmith Exp $
+# $Id: DIPStorage.py,v 1.7 2008/09/14 20:13:35 atsareg Exp $
 ########################################################################
 
 """ DIPStorage class is the client of the DIRAC Storage Element.
@@ -15,7 +15,7 @@
 
 """
 
-__RCSID__ = "$Id: DIPStorage.py,v 1.6 2008/05/16 11:49:38 acsmith Exp $"
+__RCSID__ = "$Id: DIPStorage.py,v 1.7 2008/09/14 20:13:35 atsareg Exp $"
 
 from DIRAC.DataManagementSystem.Client.Storage.StorageBase import StorageBase
 from DIRAC.Core.Utilities.Pfn import pfnparse,pfnunparse
@@ -61,7 +61,7 @@ class DIPStorage(StorageBase):
       gLogger.debug("DIPStorage.exists: Determining existence of %s." % url)
       res = serviceClient.exists(url)
       if res['OK']:
-        successful[url] = True
+        successful[url] = res['Value']
       else:
         failed[url] = res['Message']
     resDict = {'Failed':failed,'Successful':successful}
