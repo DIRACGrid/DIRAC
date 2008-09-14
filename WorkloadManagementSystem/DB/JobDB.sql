@@ -1,4 +1,4 @@
--- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.sql,v 1.15 2008/08/07 13:38:34 rgracian Exp $
+-- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.sql,v 1.16 2008/09/14 21:51:11 atsareg Exp $
 
 --------------------------------------------------------------------------------
 --
@@ -167,6 +167,15 @@ CREATE TABLE SiteMask (
     Author VARCHAR(255) NOT NULL,
     Comment BLOB NOT NULL,
     PRIMARY KEY (Site)
+);
+
+DROP TABLE IF EXISTS SiteMaskLogging;
+CREATE TABLE SiteMaskLogging (
+    Site   VARCHAR(64) NOT NULL,
+    Status VARCHAR(64) NOT NULL,
+    UpdateTime DATETIME NOT NULL,
+    Author VARCHAR(255) NOT NULL,
+    Comment BLOB NOT NULL
 );
 
 --------------------------------------------------------------------------------
