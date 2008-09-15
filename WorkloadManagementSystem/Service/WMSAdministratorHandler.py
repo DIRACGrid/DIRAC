@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSAdministratorHandler.py,v 1.36 2008/09/14 21:52:51 atsareg Exp $
+# $Id: WMSAdministratorHandler.py,v 1.37 2008/09/15 11:24:28 atsareg Exp $
 ########################################################################
 """
 This is a DIRAC WMS administrator interface.
@@ -14,7 +14,7 @@ Access to the pilot data:
 
 """
 
-__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.36 2008/09/14 21:52:51 atsareg Exp $"
+__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.37 2008/09/15 11:24:28 atsareg Exp $"
 
 import os, sys, string, uu, shutil
 from types import *
@@ -26,6 +26,7 @@ from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import *
 import DIRAC.Core.Utilities.Time as Time
+from DIRAC.Core.Utilities.GridCredentials import getNicknameForDN
 
 import threading
 
@@ -87,7 +88,12 @@ class WMSAdministratorHandler(RequestHandler):
 
     result = self.getRemoteCredentials()
     dn = result['DN']
-    result = jobDB.banSiteInMask(site,dn,comment)
+    result = getNicknameForDN(dn)
+    if result['OK']:
+      author = result['Value']
+    else:
+      author = dn
+    result = jobDB.banSiteInMask(site,author,comment)
     return result
 
 ##############################################################################
@@ -98,7 +104,12 @@ class WMSAdministratorHandler(RequestHandler):
 
     result = self.getRemoteCredentials()
     dn = result['DN']
-    result = jobDB.allowSiteInMask(site,dn,comment)
+    result = getNicknameForDN(dn)
+    if result['OK']:
+      author = result['Value']
+    else:
+      author = dn
+    result = jobDB.allowSiteInMask(site,author,comment)
     return result
 
 ##############################################################################
