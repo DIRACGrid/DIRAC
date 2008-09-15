@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.40 2008/08/19 05:47:16 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.41 2008/09/15 18:33:43 paterson Exp $
 # File :   JobSchedulingAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,12 +14,13 @@
       meaningfully.
 
 """
-__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.40 2008/08/19 05:47:16 rgracian Exp $"
+__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.41 2008/09/15 18:33:43 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
 from DIRAC.Core.Utilities.SiteSEMapping                    import getSEsForSite
 from DIRAC.ConfigurationSystem.Client.PathFinder           import getAgentSection
+from DIRAC.Core.Utilities.List                             import uniqueElements
 from DIRAC.StagerSystem.Client.StagerClient                import StagerClient
 from DIRAC                                                 import gConfig,S_OK,S_ERROR,List
 
@@ -63,7 +64,7 @@ class JobSchedulingAgent(Optimizer):
     result = self.__getJobSiteRequirement( job, classadJob  )
     bannedSites = result['BannedSites']
     sites = result['Sites']
-    
+
     #Now check whether the job has an input data requirement
     result = self.jobDB.getInputData(job)
     if not result['OK']:
@@ -92,7 +93,7 @@ class JobSchedulingAgent(Optimizer):
     result = self.__checkOptimizerInfo(job)
     if not result['OK']:
       return result
-    
+
     optInfo = result['Value']
 
     #Compare site candidates with current mask
@@ -126,7 +127,7 @@ class JobSchedulingAgent(Optimizer):
       for site in bannedSites:
         if site in siteCandidates:
           siteCandidates.remove(site)
-    
+
       if not siteCandidates:
         return S_ERROR( 'No eligible sites for job' )
 
@@ -149,12 +150,12 @@ class JobSchedulingAgent(Optimizer):
       siteDict = optInfo['SiteCandidates'][site]
       siteDict['disk'] = siteDict['disk'] + siteDict['tape']
       siteDict['tape'] = 0
-      
+
       optInfo['SiteCandidates'][site] = siteDict
       result = self.setOptimizerJobInfo(job,self.dataAgentName,optInfo)
       if not result['OK']:
         return result
-      
+
       stagerDict = self.__setStagingRequest(job,destinationSites[0],optInfo)
       if not stagerDict['OK']:
         return stagerDict
@@ -324,7 +325,7 @@ class JobSchedulingAgent(Optimizer):
     bannedSites = classadJob.getAttributeString('BannedSites')
     bannedSites = string.replace( string.replace( bannedSites, '{', '' ), '}', '' )
     bannedSites = List.fromChar( bannedSites )
-    
+
     if not 'ANY' in site and not 'Unknown' in site:
       if len(site)==1:
         self.log.info('Job %s has single chosen site %s specified in JDL' %(job,site[0]))
@@ -372,12 +373,12 @@ class JobSchedulingAgent(Optimizer):
 
     reqJDL = classAdJob.get_expression( 'JobRequirements' )
     classAddReq = ClassAd( reqJDL )
-    
+
     if siteCandidates:
       classAddReq.insertAttributeVectorString( 'Sites', siteCandidates )
     if bannedSites:
       classAddReq.insertAttributeVectorString( 'BannedSites', bannedSites )
-    
+
     reqsToAdd = {}
     newRequirements = self.__resolveJobJDLRequirement(requirements,siteCandidates)
     #GridMiddleware requirements
@@ -406,6 +407,13 @@ class JobSchedulingAgent(Optimizer):
         reqList.append( '%s=="%s"' % ( reqField, reqValue ) )
     if reqList:
       newRequirements += " && %s" % " && ".join( reqList )
+
+    bannedSites = uniqueElements(bannedSites)
+    for site in bannedSites:
+      if not newRequirements:
+        newRequirements += ' other.Site!="%s"' %(site)
+      else:
+        newRequirements += ' && other.Site!="%s"' %(site)
 
     if newRequirements:
       self.log.verbose('Resolved requirements for job: %s' %(newRequirements))
