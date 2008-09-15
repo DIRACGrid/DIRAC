@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.30 2008/09/14 21:57:56 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.31 2008/09/15 11:36:50 paterson Exp $
 # File :   DiracAdmin.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@ site banning and unbanning, WMS proxy uploading etc.
 
 """
 
-__RCSID__ = "$Id: DiracAdmin.py,v 1.30 2008/09/14 21:57:56 atsareg Exp $"
+__RCSID__ = "$Id: DiracAdmin.py,v 1.31 2008/09/15 11:36:50 paterson Exp $"
 
 import DIRAC
 from DIRAC.ConfigurationSystem.Client.CSAPI                   import CSAPI
@@ -182,7 +182,7 @@ class DiracAdmin:
     return result
 
   #############################################################################
-  def addSiteInMask(self,site,printOutput=False,comment='No comment'):
+  def addSiteInMask(self,site,comment,printOutput=False):
     """Adds the site to the site mask.
 
        Example usage:
@@ -215,7 +215,46 @@ class DiracAdmin:
     return result
 
   #############################################################################
-  def banSiteFromMask(self,site,printOutput=False,comment='No comment'):
+  def getSiteMaskLogging(self,site=None,printOutput=False):
+    """Retrieves site mask logging information.
+
+       Example usage:
+
+       >>> print diracAdmin.getSiteMaskLogging('LCG.AUVER.fr')
+       {'OK': True, 'Value': }
+
+       @return: S_OK,S_ERROR
+    """
+    result = self.__checkSiteIsValid(site)
+    if not result['OK']:
+      return result
+
+    wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
+    result = wmsAdmin.getSiteMaskLogging(site)
+    if not result['OK']:
+      return result
+
+    if site:
+      if not result['Value'].has_key(site):
+        return S_ERROR('Site mask information not available for %s' %(site))
+
+    if printOutput:
+      if site:
+        print '\nSite Mask Logging Info for %s\n' %site
+      else:
+        print '\nAll Site Mask Logging Info\n'
+
+      siteDict = result['Value']
+      for site,tupleList in result['Value'].items():
+        if not site:
+          print '\n===> %s\n' %site
+        for tup in tupleList:
+          print str(tup[0]).ljust(8)+str(tup[1]).ljust(20)+'('+str(tup[2]).ljust(20)+')  "'+str(tup[3])+'"'
+        print ' '
+    return result
+
+  #############################################################################
+  def banSiteFromMask(self,site,comment,printOutput=False):
     """Removes the site from the site mask.
 
        Example usage:
