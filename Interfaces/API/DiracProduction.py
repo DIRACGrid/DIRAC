@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.39 2008/09/08 16:03:15 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.40 2008/09/15 22:29:43 paterson Exp $
 # File :   DiracProduction.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are to be documented with example usage.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.39 2008/09/08 16:03:15 paterson Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.40 2008/09/15 22:29:43 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 import pprint
@@ -33,6 +33,9 @@ from DIRAC.Core.Utilities.Time                      import toString
 from DIRAC.Core.Security.X509Chain                  import X509Chain
 from DIRAC.Core.Security                            import Locations, CS
 from DIRAC                                          import gConfig, gLogger, S_OK, S_ERROR
+
+#temporary solution to client side LFN construction
+from WorkflowLib.Utilities.Tools import *
 
 COMPONENT_NAME='DiracProduction'
 
@@ -788,7 +791,7 @@ class DiracProduction:
     """Wraps around DIRAC API selectJobs(). Arguments correspond to the web page
        selections. By default, the date is today.
     """
-    return self.diracAPI.selectJobs(Status,MinorStatus,ApplicationStatus,Site,Owner,ProductionID,Date)
+    return self.diracAPI.selectJobs(Status,MinorStatus,ApplicationStatus,Site,Owner,str(ProductionID).zfill(8),Date)
 
   #############################################################################
   def submitProduction(self,productionID,numberOfJobs,site=''):
@@ -867,6 +870,7 @@ class DiracProduction:
     prodJob = Job(jfilename)
     self.log.verbose(jobDict)
     jobs_available = len(jobDict)
+    inputData = None
     for jobNumber,paramsDict in jobDict.items():
       for paramName,paramValue in paramsDict.items():
         self.log.verbose('ProdID: %s, JobID: %s, ParamName: %s, ParamValue: %s' %(prodID,jobNumber,paramName,paramValue))
@@ -874,6 +878,7 @@ class DiracProduction:
           if paramValue:
             self.log.verbose('Setting input data to %s' %paramValue)
             prodJob.setInputData(paramValue)
+            inputData = paramValue
         if paramName=='Site':
           if site and not site==paramValue and paramValue.lower()!='any':
             return self.__errorReport('Specified destination site %s does not match allocated site %s' %(site,paramName))
@@ -882,6 +887,7 @@ class DiracProduction:
           else:
             destsite = paramValue
           self.log.verbose('Setting destination site to %s' %(destsite))
+          #fix me, if destination not correct must exit
           prodJob.setDestination(destsite)
         if paramName=='TargetSE':
           self.log.verbose('Job is targeted to SE: %s' %(paramValue))
@@ -897,9 +903,17 @@ class DiracProduction:
       prodJob._setParamValue('JOB_ID',str(jobNumber).zfill(8))
       ###self.log.debug(prodJob.createCode()) #never create the code, it resolves global vars ;)
       updatedJob = self.__createJobDescriptionFile(prodJob._toXML())
+      result = self.__getOutputLFNs(prodID,jobNumber,inputData,updatedJob) #prodJob._toXML()
+      if result['OK']:
+        newProdJob = Job(updatedJob)
+        newProdJob._addJDLParameter('ProductionOutputData',string.join(result['Value'],';'))
+        updatedJob = self.__createJobDescriptionFile(newProdJob._toXML())
+      else:
+        self.log.error('Could not create production LFN',result['Message'])
       newJob = Job(updatedJob)
       self.log.verbose('Final XML file is %s' %updatedJob)
       subResult = self.__submitJob(newJob)
+#      subResult = S_ERROR('blocking submission')
       self.log.verbose(subResult)
       prodClient = RPCClient('ProductionManagement/ProductionManager')
       if subResult['OK']:
@@ -912,7 +926,8 @@ class DiracProduction:
           self.log.warn(result)
       else:
         failed.append(jobNumber)
-        self.log.warn('Job submission failed for productionID %s and prodJobID %s setting prodJob status to %s' %(prodID,jobNumber,self.createdStatus))
+        self.log.error('Production Job Submission Failed',subResult['Message'])
+        self.log.info('Job submission failed for productionID %s and prodJobID %s setting prodJob status to %s' %(prodID,jobNumber,self.createdStatus))
         result = prodClient.setJobStatus(long(prodID),long(jobNumber),self.createdStatus)
         if not result['OK']:
           self.log.warn(result)
@@ -922,6 +937,66 @@ class DiracProduction:
     self.log.info('Job Submission Summary: ProdID=%s, Requested=%s, Available=%s, Submitted=%s, Failed=%s' %(prodID,number,jobs_available,len(submitted),len(failed)))
     result['Value'] = {'Successful':submitted,'Failed':failed}
     return result
+
+  #############################################################################
+  def __getOutputLFNs(self,productionID,jobID,inputData,jobDescription):
+    """ Temporary function that attempts to calculate the output LFN structure
+        based on workflow conventions.
+    """
+    job = Job(jobDescription)
+    wfMode = None
+    wfConfigVersion = None
+    wfMask = None
+    fileTupleList = []
+    for p in job.workflow.parameters:
+      if p.getName() == "dataType":
+        wfMode = p.getValue()
+      if p.getName() == "configVersion":
+        wfConfigVersion = p.getValue()
+      if p.getName() == "outputDataFileMask":
+        wfMask = p.getValue()
+
+    self.log.verbose('WFMode = %s, WFConfigVersion = %s, WFMask = %s' %(wfMode,wfConfigVersion,wfMask))
+    if not wfMode or not wfConfigVersion:
+      return S_ERROR('Insufficient parameters to construct LFN(s)')
+
+    #borrowed from the JobInfoFromXML utility
+    code = job.createCode()
+    listoutput = []
+    for line in code.split("\n"):
+      if line.count("listoutput"):
+        listoutput += eval(line.split("#")[0].split("=")[-1])
+
+    for info in listoutput:
+      fileTupleList.append((info['outputDataName'],info['outputDataType']))
+
+    lfnRoot = ''
+    if inputData:
+      lfnRoot = getLFNRoot(inputData)
+    else:
+      lfnRoot = getLFNRoot(inputData,wfConfigVersion)
+
+    if not lfnRoot or not fileTupleList:
+      return S_ERROR('Could not create LFN(s)')
+
+    outputData = []
+    for fileTuple in fileTupleList:
+      outputData.append(makeProductionLfn(str(jobID).zfill(8),lfnRoot,fileTuple,wfMode,str(productionID).zfill(8)))
+
+    if wfMask:
+      newOutputData = []
+      for od in outputData:
+        for type in wfMask:
+          if re.search('.%s$' %type,od):
+            newOutputData.append(od)
+      outputData = newOutputData
+
+    if not outputData:
+      return S_ERROR('No output LFN(s) constructed')
+
+    self.log.verbose('Created the following output data LFN(s):\n%s' %(string.join(outputData,'\n')))
+
+    return S_OK(outputData)
 
   #############################################################################
   def __getCurrentUser(self):
