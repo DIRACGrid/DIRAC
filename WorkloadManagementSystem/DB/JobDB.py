@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.101 2008/09/14 21:52:10 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.102 2008/09/15 15:07:12 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.101 2008/09/14 21:52:10 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.102 2008/09/15 15:07:12 atsareg Exp $"
 
 import re, os, sys, string, types
 import time
@@ -876,6 +876,9 @@ class JobDB(DB):
     jobAttrValues = []
 
     # 1.- insert original JDL on DB and get new JobID
+    # Fix the possible lack of the brackets in the JDL
+    if JDL.strip()[0].find('[') != 0 :
+      JDL = '['+JDL+']'
     jobID = self.__insertNewJDL( JDL )
     if not jobID:
       return S_ERROR( 'Can not insert JDL in to DB' )
@@ -902,7 +905,7 @@ class JobDB(DB):
     jobAttrValues.append(diracSetup)
 
     # 2.- Check JDL and Prepare DIRAC JDL
-    classAdJob = ClassAd( '[%s]' % JDL )
+    classAdJob = ClassAd( JDL )
     classAdReq = ClassAd( '[]' )
     retVal = S_OK(jobID)
     retVal['JobID'] = jobID
@@ -1078,6 +1081,9 @@ class JobDB(DB):
       if result['OK']:
         jdl = result['Value']
 
+    # Fix the possible lack of the brackets in the JDL
+    if jdl.strip()[0].find('[') != 0 :
+      jdl = '['+jdl+']'
     classadJob = ClassAd(jdl)
 
     if not classadJob.isOK():
@@ -1303,9 +1309,10 @@ class JobDB(DB):
       return res
 
     jdl = res['Value']
-
-    # Restore initital job parameters
-    classAdJob = ClassAd('['+jdl+']')
+    # Fix the possible lack of the brackets in the JDL
+    if jdl.strip()[0].find('[') != 0 :
+      jdl = '['+jdl+']'
+    classAdJob = ClassAd(jdl)
     classAdReq = ClassAd('[]')
     retVal = S_OK(jobID)
     retVal['JobID'] = jobID

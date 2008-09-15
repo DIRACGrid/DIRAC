@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobManagerHandler.py,v 1.26 2008/08/21 10:02:41 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobManagerHandler.py,v 1.27 2008/09/15 15:07:12 atsareg Exp $
 ########################################################################
 
 """ JobManagerHandler is the implementation of the JobManager service
@@ -14,13 +14,12 @@
 
 """
 
-__RCSID__ = "$Id: JobManagerHandler.py,v 1.26 2008/08/21 10:02:41 rgracian Exp $"
+__RCSID__ = "$Id: JobManagerHandler.py,v 1.27 2008/09/15 15:07:12 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
-from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB     import TaskQueueDB
