@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Service/SystemLoggingReportHandler.py,v 1.5 2008/09/15 18:13:49 mseco Exp $
-__RCSID__ = "$Id: SystemLoggingReportHandler.py,v 1.5 2008/09/15 18:13:49 mseco Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Service/SystemLoggingReportHandler.py,v 1.6 2008/09/15 18:26:35 mseco Exp $
+__RCSID__ = "$Id: SystemLoggingReportHandler.py,v 1.6 2008/09/15 18:26:35 mseco Exp $"
 """
 SystemLoggingReportHandler produce the number that match certain criteria
 
@@ -231,6 +231,6 @@ class SystemLoggingReportHandler( RequestHandler ):
     fieldList.append( 'Number of Errors' )
 
     retValue={ 'ParameterNames': fieldList, 'Records': records ,
-           'TotalRecords': len( records )}
+           'TotalRecords': len( records ), 'Extras': {}}
     
     return S_OK( retValue )
