@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.102 2008/09/15 15:07:12 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.103 2008/09/15 15:29:53 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.102 2008/09/15 15:07:12 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.103 2008/09/15 15:29:53 atsareg Exp $"
 
 import re, os, sys, string, types
 import time
@@ -1483,7 +1483,8 @@ class JobDB(DB):
       req = "SELECT Site,Status,UpdateTime,Author,Comment FROM SiteMaskLogging WHERE Site in (%s)" % siteString
     else:
       req = "SELECT Site,Status,UpdateTime,Author,Comment FROM SiteMaskLogging"
-    req += " ORDER BY UpateTime ASC"
+    req += " ORDER BY UpdateTime ASC"
+
     result = self._query(req)
     if not result['OK']:
       return result
