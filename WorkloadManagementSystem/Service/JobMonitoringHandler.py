@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobMonitoringHandler.py,v 1.19 2008/05/23 22:42:10 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobMonitoringHandler.py,v 1.20 2008/09/15 16:48:16 atsareg Exp $
 ########################################################################
 
 """ JobMonitoringHandler is the implementation of the JobMonitoring service
@@ -11,7 +11,7 @@
 
 """
 
-__RCSID__ = "$Id: JobMonitoringHandler.py,v 1.19 2008/05/23 22:42:10 atsareg Exp $"
+__RCSID__ = "$Id: JobMonitoringHandler.py,v 1.20 2008/09/15 16:48:16 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -69,14 +69,14 @@ class JobMonitoringHandler( RequestHandler ):
     Return Distict Values of ProductionId job Attribute in WMS
     """
     return jobDB.getDistinctJobAttributes( 'JobGroup' )
-    
+
 ##############################################################################
   types_getJobGroups = []
   def export_getJobGroups(self):
     """
     Return Distict Values of ProductionId job Attribute in WMS
     """
-    return jobDB.getDistinctJobAttributes( 'JobGroup' )    
+    return jobDB.getDistinctJobAttributes( 'JobGroup' )
 
 ##############################################################################
   types_getSites = []
@@ -199,7 +199,7 @@ class JobMonitoringHandler( RequestHandler ):
 ##############################################################################
   types_getJobsApplicationStatus = [ ListType ]
   def export_getJobsApplicationStatus (self, jobIDs):
-    
+
     return jobDB.getAttributesForJobList( jobIDs, ['ApplicationStatus'] )
 
 ##############################################################################
@@ -354,7 +354,7 @@ class JobMonitoringHandler( RequestHandler ):
     # prepare the standard structure now
     key = summaryDict.keys()[0]
     paramNames = summaryDict[key].keys()
-    
+
     records = []
     for jobID, jobDict in summaryDict.items():
       jParList = []
@@ -409,3 +409,10 @@ class JobMonitoringHandler( RequestHandler ):
   types_getJobHeartBeatData = [ IntType ]
   def export_getJobHeartBeatData( self, jobID ):
     return jobDB.getHeartBeatData( jobID )
+
+##############################################################################
+  types_getInputData = [ [IntType, LongType] ]
+  def export_getInputData( self, jobID ):
+    """ Get input data for the specified jobs
+    """
+    return  jobDB.getInputData(jobID)
