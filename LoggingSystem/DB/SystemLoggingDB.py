@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/DB/SystemLoggingDB.py,v 1.15 2008/07/02 17:33:24 mseco Exp $
-__RCSID__ = "$Id: SystemLoggingDB.py,v 1.15 2008/07/02 17:33:24 mseco Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/DB/SystemLoggingDB.py,v 1.16 2008/09/15 17:13:20 mseco Exp $
+__RCSID__ = "$Id: SystemLoggingDB.py,v 1.16 2008/09/15 17:13:20 mseco Exp $"
 """ SystemLoggingDB class is a front-end to the Message Logging Database.
     The following methods are provided
 
@@ -37,6 +37,7 @@ class SystemLoggingDB(DB):
     condition = ''
     conjonction = ''
 
+    print condDict
     if condDict:
       for attrName, attrValue in condDict.items():
         preCondition = ''
@@ -143,13 +144,14 @@ class SystemLoggingDB(DB):
     return tableString
   
   def __queryDB( self, showFieldList=None, condDict=None, older=None,
-                 newer=None, count=False, groupColumn=None ):
+                 newer=None, count=False, groupColumn=None, orderFields=None ):
     """ This function composes the SQL query from the conditions provided and
         the desired columns and queries the SystemLoggingDB.
         If no list is provided the default is to use all the meaninful
         variables of the DB
     """
     grouping=''
+    ordering=''
     result = self.__buildCondition( condDict, older, newer )
     if not result['OK']: return result
     condition = result['Value']
@@ -172,12 +174,21 @@ class SystemLoggingDB(DB):
     if count: 
       if groupColumn:
         grouping='GROUP BY %s' % groupColumn
-        showFieldList.append('count(*)')
+        showFieldList.append( 'count(*) as recordCount' )
       else:
-        showFieldList = [ 'count(*)' ]
-      
-    cmd = 'SELECT %s FROM %s %s %s' % (','.join(showFieldList),
-                                    tableList, condition, grouping)
+        showFieldList = [ 'count(*) as recordCount' ]
+
+    sortingFields = []
+    if orderFields:
+      for field in orderFields:
+        if type( field ) == ListType:
+          sortingFields.append( ' '.join(field) )
+        else:
+          sortingFields.append( field ) 
+    	ordering='ORDER BY %s' %  ', '.join( sortingFields )
+    	
+    cmd = 'SELECT %s FROM %s %s %s %s' % (','.join(showFieldList),
+                                    tableList, condition, grouping, ordering)
 
     return self._query(cmd)
 
@@ -377,7 +388,7 @@ class SystemLoggingDB(DB):
     return S_OK(returnValue['Value'][0][0])
       
   def getGroupedMessages( self, fieldList = [], conds = {}, groupField=None,
-                          initialDate = None, endDate = None ):
+                          orderList = None, initialDate = None, endDate = None ):
     """ Query the database for the number of messages that match 'conds' and
         were generated between initialDate and endDate. If no condition is
         provided it returns the total number of messages present in the
@@ -388,7 +399,8 @@ class SystemLoggingDB(DB):
 
     return self.__queryDB( showFieldList = fieldList, condDict = conds, 
                            older = endDate, newer = initialDate, 
-                           count = True, groupColumn = groupField )
+                           count = True, groupColumn = groupField,
+                           orderFields = orderList )
 
   def getSites( self ):
     return self.__queryDB( showFieldList = [ 'SiteName' ] )

@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Service/SystemLoggingReportHandler.py,v 1.3 2008/07/02 17:33:23 mseco Exp $
-__RCSID__ = "$Id: SystemLoggingReportHandler.py,v 1.3 2008/07/02 17:33:23 mseco Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Service/SystemLoggingReportHandler.py,v 1.4 2008/09/15 17:13:20 mseco Exp $
+__RCSID__ = "$Id: SystemLoggingReportHandler.py,v 1.4 2008/09/15 17:13:20 mseco Exp $"
 """
 SystemLoggingReportHandler produce the number that match certain criteria
 
@@ -181,3 +181,57 @@ class SystemLoggingReportHandler( RequestHandler ):
         the system and subsystem that generated them.
     """
     return self.__getTopErrorsReport( beginDate, endDate, records )
+
+  types_getTopErrorsForWebPage = []
+  
+  def export_getTopErrorsForWebPage(self, selectionDict = {}, sortList = [], 
+                                    startItem = 0, maxItems = 0):
+    """  This function reports the number of messages per fixed text
+         string, system and subsystem that generated them using the 
+         DIRAC convention for communications between services and 
+         web pages
+    """
+    condDict={}
+    fieldList = [ 'SystemName', 'SubSystemName', 'FixedTextString' ]
+    if selectionDict.has_key( 'SystemName' ) and selectionDict['SystemName']:
+      condDict['SystemName']=selectionDict['SystemName']
+    if selectionDict.has_key( 'FixedTextString' ) and selectionDict['FixedTextString']:
+      condDict['FixedTextString']=selectionDict['FixedTextString']
+    if selectionDict.has_key( 'SiteName' ) and selectionDict['SiteName']:
+      fieldList.append( 'SiteName' )
+      condDict['SiteName']=selectionDict['SiteName']
+
+    if selectionDict.has_key( 'beginDate' ):
+      beginDate=selectDict['beginDate']
+    else:
+      beginDate=None
+    if selectionDict.has_key( 'endDate' ):
+      endDate=selectDict['endDate']
+    else:
+      endDate=None
+      
+    result = LogDB.getGroupedMessages( fieldList, condDict, 'FixedTextString',
+                                       sortList, beginDate, endDate )
+
+    if not result['OK']: return result
+
+    if maxItems:
+      records = result['Value'][ startItem:maxItems + startItem ]
+    else:
+      records = result['Value'][ startItem: ]
+
+    if not sortList:
+      unOrderedFields = [ ( s[-1], s ) for s in records ]
+      unOrderedFields.sort()
+      records = [ t[1] for t in unOrderedFields ]
+      records.reverse()
+
+    if 'count(*) as recordCount' in fieldList:
+      fieldList.remove( 'count(*) as recordCount' )
+    fieldList.append( 'Number of Errors' )
+
+    retValue={'Value': { 'ParameterNames': fieldList,
+                      'Records': records },
+           'TotalRecords': len( records ), 'Extras': {}}
+    
+    return S_OK( retValue )
