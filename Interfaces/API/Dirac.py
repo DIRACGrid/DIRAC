@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.44 2008/09/08 14:28:33 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.45 2008/09/15 16:53:46 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.44 2008/09/08 14:28:33 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.45 2008/09/15 16:53:46 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -1063,6 +1063,40 @@ class Dirac:
         del result[job]['JobID']
 
     return S_OK(result)
+
+  #############################################################################
+  def getJobInputData(self,jobID):
+    """Retrieve the input data requirement of any job existing in the workload management
+       system.
+
+        >>> dirac.getJobInputData(1405)
+        {'OK': True, 'Value': {1405: ['LFN:/lhcb/production/DC06/phys-v2-lumi5/00001680/DST/0000/00001680_00000490_5.dst']}}
+
+    """
+    if type(jobID)==type(" "):
+      try:
+        jobID = [int(jobID)]
+      except Exception,x:
+        return self.__errorReport(str(x),'Expected integer or string for existing jobID')
+    elif type(jobID)==type([]):
+      try:
+        jobID = [int(job) for job in jobID]
+      except Exception,x:
+        return self.__errorReport(str(x),'Expected integer or string for existing jobID')
+    elif type(jobID)==type(1):
+      jobID = [jobID]
+
+    summary = {}
+    monitoring = RPCClient('WorkloadManagement/JobMonitoring')
+    for job in jobID:
+      result = monitoring.getInputData(job)
+      if result['OK']:
+        summary[job]=result['Value']
+      else:
+        self.log.warn('Getting input data for job %s failed with message:\n%s' %(job,result['Message']))
+        summary[job]=[]
+
+    return S_OK(summary)
 
   #############################################################################
   def selectJobs(self,Status=None,MinorStatus=None,ApplicationStatus=None,Site=None,Owner=None,JobGroup=None,Date=None):
