@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/Attic/dirac-admin-modify-user,v 1.2 2008/04/22 11:29:08 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/Attic/dirac-admin-modify-user,v 1.3 2008/09/15 10:26:04 paterson Exp $
 # File :   dirac-admin-modify-user
 # Author : Adrian Casajus
 ########################################################################
-__RCSID__   = "$Id: dirac-admin-modify-user,v 1.2 2008/04/22 11:29:08 acasajus Exp $"
-__VERSION__ = "$Revision: 1.2 $"
+__RCSID__   = "$Id: dirac-admin-modify-user,v 1.3 2008/09/15 10:26:04 paterson Exp $"
+__VERSION__ = "$Revision: 1.3 $"
 from DIRACEnvironment import DIRAC
 from DIRAC.Core.Base import Script
 
@@ -17,7 +17,7 @@ from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
 args = Script.getPositionalArgs()
 
 def usage():
-  print 'Usage: %s [<options>] <username> <DN> <groups>+' %(Script.scriptName)
+  print 'Usage: %s [<options>] <username> <DN> <group> [<group>]' %(Script.scriptName)
   DIRAC.exit(2)
 
 
@@ -46,7 +46,7 @@ for unprocSw in Script.getUnprocessedSwitches():
       userProps[ pName ] = pValue
 
 userProps[ 'DN' ] = args[1]
-userProps[ 'groups' ] = args[2:]
+userProps[ 'Groups' ] = args[2:]
 
 if not diracAdmin.csModifyUser( args[0], userProps, createIfNonExistant = forceCreation ):
   errorList.append( ( "modify user", "Cannot modify user %s" % args[0] ) )
