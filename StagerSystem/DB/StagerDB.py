@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/DB/StagerDB.py,v 1.12 2008/04/08 10:57:58 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/DB/StagerDB.py,v 1.13 2008/09/15 10:46:59 paterson Exp $
 ########################################################################
 
 """ StagerDB is a front end to the Stager Database.
@@ -8,7 +8,7 @@
     A.Smith (17/05/07)
 """
 
-__RCSID__ = "$Id: StagerDB.py,v 1.12 2008/04/08 10:57:58 paterson Exp $"
+__RCSID__ = "$Id: StagerDB.py,v 1.13 2008/09/15 10:46:59 paterson Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.Time import toString
@@ -78,8 +78,12 @@ class StagerDB(DB):
     else:
       stateJobIDs = []
       for jobID,stateNo,stateYes in result['Value']:
-        if stateNo == 0:
-          stateJobIDs.append(jobID)
+        if state=='Successful':
+          if stateNo == 0:
+            stateJobIDs.append(jobID)
+        else:
+          if stateYes != 0:
+            stateJobIDs.append(jobID)
       result = S_OK()
       result['JobIDs'] = stateJobIDs
       return result
@@ -258,7 +262,7 @@ class StagerDB(DB):
     if not site:
       req = "SELECT * from SiteFiles ORDER BY JobID LIMIT %d;" %(limit)
     else:
-      req = "SELECT * FROM SiteFiles WHERE Site ='"+site+"' ORDER BY JobID LIMIT "+limit+";"          
+      req = "SELECT * FROM SiteFiles WHERE Site ='"+site+"' ORDER BY JobID LIMIT "+limit+";"
     files = self._query(req)
     if not files['OK']:
       return files
@@ -270,6 +274,6 @@ class StagerDB(DB):
         newSubmit = toString(stageSubmit)
       if stageComplete:
         newComplete = toString(stageComplete)
-        
+
       result.append([lfn,site,surl,se,newSubmit,newComplete,status,jobID,str(retry),source])
     return S_OK(result)
