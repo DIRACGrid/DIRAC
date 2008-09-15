@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/DB/SystemLoggingDB.py,v 1.16 2008/09/15 17:13:20 mseco Exp $
-__RCSID__ = "$Id: SystemLoggingDB.py,v 1.16 2008/09/15 17:13:20 mseco Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/DB/SystemLoggingDB.py,v 1.17 2008/09/15 17:18:31 mseco Exp $
+__RCSID__ = "$Id: SystemLoggingDB.py,v 1.17 2008/09/15 17:18:31 mseco Exp $"
 """ SystemLoggingDB class is a front-end to the Message Logging Database.
     The following methods are provided
 
@@ -37,7 +37,6 @@ class SystemLoggingDB(DB):
     condition = ''
     conjonction = ''
 
-    print condDict
     if condDict:
       for attrName, attrValue in condDict.items():
         preCondition = ''
