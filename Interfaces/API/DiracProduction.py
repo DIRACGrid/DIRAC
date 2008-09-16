@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.40 2008/09/15 22:29:43 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.41 2008/09/16 17:28:37 paterson Exp $
 # File :   DiracProduction.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are to be documented with example usage.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.40 2008/09/15 22:29:43 paterson Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.41 2008/09/16 17:28:37 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 import pprint
@@ -94,16 +94,17 @@ class DiracProduction:
 
   #############################################################################
   def getProduction(self,productionID,printOutput=False):
-    """Returns the metadata associated with a given production ID.
+    """Returns the metadata associated with a given production ID. Protects against
+       LFN: being prepended and different types of production ID.
     """
     if type(productionID)==type(2):
-      productionID=long(productionID)
+      productionID=int(productionID)
     if not type(productionID)==type(long(1)):
       if not type(productionID) == type(" "):
         return self.__errorReport('Expected string, long or int for production ID')
 
     prodClient = RPCClient('ProductionManagement/ProductionManager')
-    result = prodClient.getProductionInfo(long(productionID))
+    result = prodClient.getProductionInfo(int(productionID))
     if not result['OK']:
       return result
 
@@ -697,8 +698,24 @@ class DiracProduction:
     """Checks the given LFN(s) status in the productionDB.  All productions
        are considered by default but can restrict to productionID.
     """
+    if type(productionID)==type(2):
+      productionID=long(productionID)
+    if not type(productionID)==type(long(1)):
+      if not type(productionID) == type(" "):
+        return self.__errorReport('Expected string, long or int for production ID')
+
+    if type(lfns)==type(" "):
+      lfns = lfns.replace('LFN:','')
+    elif type(lfns)==type([]):
+      try:
+        lfns = [str(lfnName.replace('LFN:','')) for lfnName in lfns]
+      except Exception,x:
+        return self.__errorReport(str(x),'Expected strings for LFN(s)')
+    else:
+      return self.__errorReport('Expected single string or list of strings for LFN(s)')
+
     prodClient = RPCClient('ProductionManagement/ProductionManager')
-    fileStatus = prodClient.getFileSummary(lfns,productionID)
+    fileStatus = prodClient.getFileSummary(lfns,long(productionID))
     if printOutput:
       self._prettyPrint(fileStatus['Value'])
     return fileStatus
