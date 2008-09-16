@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.31 2008/09/15 11:36:50 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.32 2008/09/16 10:18:41 paterson Exp $
 # File :   DiracAdmin.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@ site banning and unbanning, WMS proxy uploading etc.
 
 """
 
-__RCSID__ = "$Id: DiracAdmin.py,v 1.31 2008/09/15 11:36:50 paterson Exp $"
+__RCSID__ = "$Id: DiracAdmin.py,v 1.32 2008/09/16 10:18:41 paterson Exp $"
 
 import DIRAC
 from DIRAC.ConfigurationSystem.Client.CSAPI                   import CSAPI
@@ -249,7 +249,7 @@ class DiracAdmin:
         if not site:
           print '\n===> %s\n' %site
         for tup in tupleList:
-          print str(tup[0]).ljust(8)+str(tup[1]).ljust(20)+'('+str(tup[2]).ljust(20)+')  "'+str(tup[3])+'"'
+          print str(tup[0]).ljust(8)+str(tup[1]).ljust(20)+'( '+str(tup[2]).ljust(len(str(tup[2])))+' )  "'+str(tup[3])+'"'
         print ' '
     return result
 
