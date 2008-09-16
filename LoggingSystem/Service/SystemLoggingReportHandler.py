@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Service/SystemLoggingReportHandler.py,v 1.6 2008/09/15 18:26:35 mseco Exp $
-__RCSID__ = "$Id: SystemLoggingReportHandler.py,v 1.6 2008/09/15 18:26:35 mseco Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Service/SystemLoggingReportHandler.py,v 1.7 2008/09/16 11:24:23 mseco Exp $
+__RCSID__ = "$Id: SystemLoggingReportHandler.py,v 1.7 2008/09/16 11:24:23 mseco Exp $"
 """
 SystemLoggingReportHandler produce the number that match certain criteria
 
@@ -202,11 +202,11 @@ class SystemLoggingReportHandler( RequestHandler ):
       condDict['SiteName']=selectionDict['SiteName']
 
     if selectionDict.has_key( 'beginDate' ):
-      beginDate=selectDict['beginDate']
+      beginDate=selectionDict['beginDate']
     else:
       beginDate=None
     if selectionDict.has_key( 'endDate' ):
-      endDate=selectDict['endDate']
+      endDate=selectionDict['endDate']
     else:
       endDate=None
       
