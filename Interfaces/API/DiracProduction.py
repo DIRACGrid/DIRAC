@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.41 2008/09/16 17:28:37 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.42 2008/09/16 21:14:36 paterson Exp $
 # File :   DiracProduction.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are to be documented with example usage.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.41 2008/09/16 17:28:37 paterson Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.42 2008/09/16 21:14:36 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 import pprint
@@ -226,7 +226,7 @@ class DiracProduction:
       if not type(productionID) == type(" "):
         return self.__errorReport('Expected string, long or int for production ID')
 
-    statusDict = self.__getProdJobMetadata(productionID,status,minorStatus)
+    statusDict = self.getProdJobMetadata(productionID,status,minorStatus)
     if not statusDict['OK']:
       self.log.warn('Could not get production metadata information')
       return statusDict
@@ -348,7 +348,7 @@ class DiracProduction:
       if not type(productionID) == type(" "):
         return self.__errorReport('Expected string, long or int for production ID')
 
-    statusDict = self.__getProdJobMetadata(productionID,status,minorStatus)
+    statusDict = self.getProdJobMetadata(productionID,status,minorStatus)
     if not statusDict['OK']:
       self.log.warn('Could not get production metadata information')
       return statusDict
@@ -444,7 +444,7 @@ class DiracProduction:
       if not type(productionID) == type(" "):
         return self.__errorReport('Expected string, long or int for production ID')
 
-    statusDict = self.__getProdJobMetadata(productionID,None,None,site)
+    statusDict = self.getProdJobMetadata(productionID,None,None,site)
     if not statusDict['OK']:
       self.log.warn('Could not get production metadata information')
       return statusDict
@@ -1071,8 +1071,10 @@ class DiracProduction:
     return submitted
 
   #############################################################################
-  def __getProdJobMetadata(self,productionID,status=None,minorStatus=None,site=None):
-    """Internal function to get the job metadata for selected fields.
+  def getProdJobMetadata(self,productionID,status=None,minorStatus=None,site=None):
+    """Function to get the WMS job metadata for selected fields. Given a production ID will return
+       the current WMS status information for all jobs in that production starting from the creation
+       date.
     """
     result = self.getProduction(long(productionID))
     if not result['OK']:
@@ -1083,7 +1085,7 @@ class DiracProduction:
       self.log.warn('Could not establish creation date for production %s with metadata:\n%s' %(productionID,result))
       return result
     creationDate = toString(result['Value']['CreationDate']).split()[0]
-    result = self.selectProductionJobs(str(productionID).zfill(8),Status=status,MinorStatus=minorStatus,Site=site,Date=creationDate)
+    result = self.selectProductionJobs(productionID,Status=status,MinorStatus=minorStatus,Site=site,Date=creationDate)
     if not result['OK']:
       self.log.warn('Problem selecting production jobs for ID %s:\n%s' %(productionID,result))
       return result
