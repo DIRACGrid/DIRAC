@@ -1,9 +1,9 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Agent/DISETForwardingAgent.py,v 1.8 2008/08/28 09:08:26 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Agent/DISETForwardingAgent.py,v 1.9 2008/09/17 18:18:34 atsareg Exp $
 
 """  DISET Forwarding sends DISET requests to their intented destination
 """
 
-__RCSID__ = "$Id: DISETForwardingAgent.py,v 1.8 2008/08/28 09:08:26 atsareg Exp $"
+__RCSID__ = "$Id: DISETForwardingAgent.py,v 1.9 2008/09/17 18:18:34 atsareg Exp $"
 
 from DIRAC  import gLogger, gConfig, gMonitor, S_OK, S_ERROR
 from DIRAC.Core.Base.Agent import Agent
@@ -102,6 +102,7 @@ class DISETForwardingAgent(Agent,RequestAgentMixIn):
           gMonitor.addMark("Successful",1)
           modified = True
         else:
+          oRequest.setSubRequestError(ind,'diset',res['Message'])
           gLogger.error("DISETForwardingAgent.execute: Failed to forward request.",res['Message'])
       else:
         gLogger.info("DISETForwardingAgent.execute: Sub-request %s is status '%s' and  not to be executed." % (ind,subRequestAttributes['Status']))
