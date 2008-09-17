@@ -1,8 +1,9 @@
 from DIRAC.Core.DISET.TransferClient import TransferClient
 from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC.Core.Utilities.Subprocess import systemCall
+from DIRAC.Core.Utilities.Subprocess import shellCall
+from DIRAC.Core.Utilities.File import getSize, getGlobbedTotalSize
 from DIRAC import gLogger, S_OK, S_ERROR
-import re,os
+import re,os, string
 
 class SandboxClient:
 
@@ -15,7 +16,7 @@ class SandboxClient:
 ########################################################################
   # FIXME: all over the place jobID is considered either int or string
   # this module does no check
-  def sendFiles(self,jobID,fileList):
+  def sendFiles(self,jobID,fileList,sizeLimit=0):
     """ Send files in the fileList to a Sandbox service for the given jobID.
         This is the preferable method to upload sandboxes. fileList can contain
         both files and directories
@@ -31,10 +32,35 @@ class SandboxClient:
         if os.path.exists(file):
           files_to_send.append(file)
         else:
-          error_files(file)
+          error_files.append(file)
 
     if error_files:
       return S_ERROR('Failed to locate files: \n'+string.join(error_files,','))
+
+    if sizeLimit > 0:
+      # Evaluate the compressed size of the sandbox
+      tname = 'Sandbox_'+str(jobID)+'.tar.gz'
+      comm = "tar czf %s" % tname
+      fileListString = ''
+      for f in files_to_send:
+        fdir = os.path.dirname(f)
+        if fdir:
+          fileListString += ' -C %s %s' % (os.path.dirname(f),os.path.basename(f))
+        else:
+          fileListString += ' '+os.path.basename(f)
+      comm += fileListString
+      result = shellCall(0,comm)
+      if not result['OK']:
+        return S_ERROR('Failed to process all files: '+result['Message'])
+      fsize = getSize(tname)
+      if fsize > sizeLimit:
+        result = S_ERROR('Size over the limit')
+        result['SandboxFileName'] = tname
+        result['Size'] = fsize
+        return result
+
+      if os.path.exists(tname):
+        os.remove(tname)
 
     sendName = str(jobID)+"::Job__Sandbox__"
     sandbox = TransferClient('WorkloadManagement/%sSandbox' % self.sandbox_type)
@@ -55,7 +81,7 @@ class SandboxClient:
           comm = 'tar czf '+bzname+' -C '+dname+' '+bname
         else:
           comm = 'tar czf '+bzname+' '+bname
-        result = systemCall(0,comm)
+        result = shellCall(0,comm)
         if not result['OK']:
           return S_ERROR('Failed to send directory '+fname)
 
