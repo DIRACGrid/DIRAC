@@ -1,4 +1,4 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/RequestContainer.py,v 1.14 2008/09/14 19:45:00 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/RequestContainer.py,v 1.15 2008/09/17 18:20:22 atsareg Exp $
 
 """
 The Data Management Request contains all the necessary information for
@@ -11,7 +11,7 @@ from DIRAC.Core.Security.Misc import getProxyInfo
 from DIRAC.Core.Utilities import DEncode
 from DIRAC.RequestManagementSystem.Client.DISETSubRequest import DISETSubRequest
 
-__RCSID__ = "$Id: RequestContainer.py,v 1.14 2008/09/14 19:45:00 atsareg Exp $"
+__RCSID__ = "$Id: RequestContainer.py,v 1.15 2008/09/17 18:20:22 atsareg Exp $"
 
 class RequestContainer:
 
@@ -71,14 +71,14 @@ class RequestContainer:
     """ Generic method to access request attributes or parameters
     """
 
-    if name.find('getSubrequest') ==0:
+    if name.find('getSubRequest') ==0:
       item = name[13:]
       self.item_called = item
       if item in self.subAttributeNames:
         return self.__get_subattribute
       else:
         raise AttributeError, name
-    if name.find('setSubrequest') ==0:
+    if name.find('setSubRequest') ==0:
       item = name[13:]
       self.item_called = item
       if item in self.subAttributeNames:
