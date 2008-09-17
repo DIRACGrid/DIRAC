@@ -1,9 +1,9 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/DB/RequestDBMySQL.py,v 1.31 2008/09/11 18:44:43 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/DB/RequestDBMySQL.py,v 1.32 2008/09/17 18:06:07 atsareg Exp $
 
 """ RequestDBMySQL is the MySQL plug in for the request DB
 """
 
-__RCSID__ = "$Id: RequestDBMySQL.py,v 1.31 2008/09/11 18:44:43 atsareg Exp $"
+__RCSID__ = "$Id: RequestDBMySQL.py,v 1.32 2008/09/17 18:06:07 atsareg Exp $"
 
 from DIRAC.Core.Base.DB import DB
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
@@ -258,7 +258,28 @@ class RequestDBMySQL(DB):
     failed = False
     res = self._getRequestID(requestName)
     if not res['OK']:
-      return res
+      # we have a special case here: if request already exists, we override it if it
+      # comes from a DIRAC job. This is identified by having a meaningful JobID in
+      # the request
+      if res['Message'].find('Duplicate') != -1:
+        # Duplicate request
+        jobID = request.getJobID()['Value']
+        if jobID == "Unknown":
+          return res
+        try:
+          jobID = int(jobID)
+        except:
+          return res
+        if jobID > 0:
+          # Remove the existing request
+          result = self._deleteRequest(requestName)
+          if not result['OK']:
+            return S_ERROR('Failed to set request: '+message+' can not override')
+          res = self._getRequestID(requestName)
+          if not res['OK']:
+            return res
+      else:
+        return res
     requestID = res['Value']
     subRequestIDs = {}
     res = self.__setRequestAttributes(requestID,request)
