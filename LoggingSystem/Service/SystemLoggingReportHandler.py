@@ -1,16 +1,20 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Service/SystemLoggingReportHandler.py,v 1.7 2008/09/16 11:24:23 mseco Exp $
-__RCSID__ = "$Id: SystemLoggingReportHandler.py,v 1.7 2008/09/16 11:24:23 mseco Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Service/SystemLoggingReportHandler.py,v 1.8 2008/09/18 18:21:55 mseco Exp $
+__RCSID__ = "$Id: SystemLoggingReportHandler.py,v 1.8 2008/09/18 18:21:55 mseco Exp $"
 """
-SystemLoggingReportHandler produce the number that match certain criteria
+SystemLoggingReportHandler allows a remote system to access the contest
+of the SystemLoggingDB
 
     The following methods are available in the Service interface
 
-    getMessagesReport()
+    getTopErrors()
     getGroups()
     getSites()
     getSystems()
     getSubSystems()
     getFixedTextStrings()
+    getCountMessages()
+    getGroupedMessages()
+    getMessages()
 """
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
 from DIRAC.Core.Utilities import Time
@@ -26,192 +30,115 @@ def initializeSystemLoggingReportHandler( serviceInfo ):
 
 
 class SystemLoggingReportHandler( RequestHandler ):
-
-  def __getMessagesReport( self, beginDate=None, endDate=None ):
-    return LogDB.getCountMessages( beginDate, endDate )
-
-  def __getSitesReport( self, beginDate=None, endDate=None ):
-    retval = LogDB.getSites()
-    if not retval['OK']: return retval
-    sites = retval['Value']
-
-    siteList = []
-    for site in sites:
-      retval = LogDB.getCountMessages({'SiteName': site[0]},
-                                      beginDate, endDate )
-      if not retval['OK']: return retval
-
-      siteList.append( [ site[0], int( retval['Value'] ) ] )
-
-    return S_OK( siteList )
-
-  def __getGroupsReport( self, beginDate=None, endDate=None ):
-    retval = LogDB.getGroups()
-    if not retval['OK']: return retval
-    groups = retval['Value']
-
-    groupList = []
-    for group in groups:
-      retval = LogDB.getCountMessages( {'OwnerGroup': group[0]},
-                                       beginDate, endDate )
-      if not retval['OK']: return retval
-
-      groupList.append( [ group[0], int( retval['Value'] ) ] )
-
-    return S_OK( groupList )
-
-  def __getSystemsReport( self, beginDate=None, endDate=None ):
-    retval = LogDB.getSystems()
-    if not retval['OK']: return retval
-    systems=retval['Value']
-
-    systemList=[]
-    for system in systems:
-      retval = LogDB.getCountMessages( {'SystemName': system[0]},
-                                       beginDate, endDate )
-      if not retval['OK']: return retval
-
-      systemList.append( [ system[0], int( retval['Value'] ) ] )
-
-    return S_OK( systemList )
-
-  def __getSubSystemsReport( self, beginDate=None, endDate=None ):
-    retval = LogDB.getSubSystems()
-    if not retval['OK']: return retval
-    subSystems = retval['Value']
-
-    subSystemList = []
-    for subSystem in subSystems:
-      retval = LogDB.getCountMessages( {'SubSystemName': subSystem[0]},
-                                       beginDate, endDate )
-      if not retval['OK']: return retval
-
-      subSystemList.append( [ subSystem[0], int( retval['Value'] ) ] )
-
-    return S_OK( subSystemList )
-
-  def __getFixedTextStringsReport( self, beginDate=None, endDate=None ):
-    retval = LogDB.getFixedTextStrings()
-    if not retval['OK']: return retval
-    fixedTextStrings=retval['Value']
-
-    fixedTextStringList=[]
-    for fixedTextString in fixedTextStrings:
-      retval = LogDB.getCountMessages( {'FixedTextString': fixedTextString[0]},
-                                       beginDate, endDate )
-      if not retval['OK']: return retval
-
-      fixedTextStringList.append( [ fixedTextString[0],
-                                    int( retval['Value'] ) ] )
-
-    return S_OK( fixedTextStringList )
   
-  def __getTopErrorsReport( self, beginDate=None, endDate=None,
-                            records=None ):
-    fieldList = [ 'SystemName', 'SubSystemName', 'FixedTextString' ]
-    retval = LogDB.getGroupedMessages( fieldList, {}, 'FixedTextString',
-                                       beginDate, endDate )
-    if not retval['OK']: return retval
+  types_getMessages=[]
+  
+  def export_getMessages( self, selectionDict = {}, sortList = [], 
+                          startItem = 0, maxItems = 0 ):
+    """ Query the database for all the messages between two given dates.
+        If no date is provided then the records returned are those generated
+        during the last 24 hours.
+    """
+    from DIRAC.Core.Utilities import dateTime, day
 
-    tmpOrderedFields=[ ( s[3], s ) for s in retval['Value'] ]
-    tmpOrderedFields.sort()
-    orderedFields = [ t[1] for t in tmpOrderedFields ]
-    orderedFields.reverse()
-    
-    if records:
-      return S_OK( orderedFields[ :records ] )
+    if selectionDict.has_key( 'beginDate' ):
+      beginDate=selectionDict.pop( 'beginDate' )
     else:
-      return S_OK( orderedFields )
+      beginDate=None
+    if selectionDict.has_key( 'endDate' ):
+      endDate=selectionDict.pop( 'endDate' )
+    else:
+      endDate=None
+
+    if not ( beginDate or endDate ):
+      beginDate= dateTime() - 1 * day 
+      
+    result = LogDB._queryDB( newer = beginDate, older = endDate )
+
+    if not result['OK']: return result
     
-  #A normal exported function (begins with export_)
-
-  types_getMessagesReport = []
-
-  def export_getMessagesReport( self, beginDate=None, endDate=None ):
-    """ returns the total number of messages generated between
-        beginDate and endDate
-    """
-    return self.__getMessagesReport( beginDate, endDate )
+    retValue = { 'ParameterNames': [ 'MessageTime', 'LogLevel', 
+                                   'FixedTextString', 'VariableText', 
+                                   'SystemName', 'SubSystemName', 
+                                   'OwnerDN', 'OwnerGroup',
+                                   'ClientIPNumberString', 'SiteName' ], 
+               'Records':  result['Value'], 
+               'TotalRecords': len( result['Value'] ), 'Extras': {}}
     
-  types_getSitesReport = []
+    return S_OK( retValue )
 
-  def export_getSitesReport( self, beginDate=None, endDate=None ):
-    """ returns the number of messages generated by each site
-        between beginDate and endDate 
+  types_getCountMessages=[]
+
+  def export_getCountMessages( self, selectionDict = {}, sortList = [], 
+                           startItem = 0, maxItems = 0 ):
+    """ Query the database for the number of messages that match 'conds' and
+        were generated between initialDate and endDate. If no condition is
+        provided it returns the total number of messages present in the
+        database
     """
-    return self.__getSitesReport( beginDate, endDate )
+    if selectionDict.has_key( 'beginDate' ):
+      beginDate=selectionDict.pop( 'beginDate' )
+    else:
+      beginDate=None
+    if selectionDict.has_key( 'endDate' ):
+      endDate=selectionDict.pop( 'endDate' )
+    else:
+      endDate=None
 
-  types_getGroupsReport = []
+    if selectionDict:
+      fieldList = selectionDict.keys()
+      fieldList.append( 'MessageTime' )
+    else:
+      fieldList = [ 'MessageTime', 'LogLevel', 'FixedTextString',
+                    'VariableText', 'SystemName', 'SubSystemName',
+                    'OwnerDN', 'OwnerGroup', 'ClientIPNumberString',
+                    'SiteName' ]
 
-  def export_getGroupsReport( self, beginDate=None, endDate=None ):
-    """ reports the number of messages generated by each group
-        between beginDate and endDate 
-    """
-    return self.__getGroupsReport( beginDate, endDate )
+    result = LogDB._queryDB( showFieldList = fieldList, condDict = selectionDict, 
+                                  older = endDate, newer = initialDate, 
+                                  count = True )
 
-  types_getSystemsReport = []
+    if not result['OK']: return result
+    
+    retValue={ 'ParameterNames': ['Number of Messages'], 'Records':  result['Value'][0][0],
+               'TotalRecords': 1, 'Extras': {}}
+    
+    return S_OK( retValue )
 
-  def export_getSystemsReport( self, beginDate=None, endDate=None ):
-    """ reports the number of messages generated by each group
-        between beginDate and endDate 
-    """ 
-    return self.__getSystemsReport( beginDate, endDate )
-
-  types_getSubSystemsReport = []
-
-  def export_getSubSystemsReport( self, beginDate=None, endDate=None ):
-    """ reports the number of messages generated by each group
-        between beginDate and endDate 
-    """ 
-    return self.__getSubSystemsReport( beginDate, endDate )
-
-  types_getFixedTextStringsReport = []
-
-  def export_getFixedTextStringsReport( self, beginDate=None, endDate=None ):
-    """ reports the number of messages generated by each group
-        between beginDate and endDate 
-    """ 
-    return self.__getFixedTextStringsReport( beginDate, endDate )
-
-  types_getTopErrorsReport = []
-
-  def export_getTopErrorsReport( self, beginDate=None, endDate=None,
-                                 records=None ):
-    """ reports the number of messages per fixed text string and
-        the system and subsystem that generated them.
-    """
-    return self.__getTopErrorsReport( beginDate, endDate, records )
-
-  types_getTopErrorsForWebPage = []
+  types_getGroupedMessages = []
   
-  def export_getTopErrorsForWebPage(self, selectionDict = {}, sortList = [], 
-                                    startItem = 0, maxItems = 0):
+  def export_getGroupedMessages( self, selectionDict = {}, sortList = [], 
+                                 startItem = 0, maxItems = 0 ):
     """  This function reports the number of messages per fixed text
          string, system and subsystem that generated them using the 
          DIRAC convention for communications between services and 
          web pages
     """
-    condDict={}
-    fieldList = [ 'SystemName', 'SubSystemName', 'FixedTextString' ]
-    if selectionDict.has_key( 'SystemName' ) and selectionDict['SystemName']:
-      condDict['SystemName']=selectionDict['SystemName']
-    if selectionDict.has_key( 'FixedTextString' ) and selectionDict['FixedTextString']:
-      condDict['FixedTextString']=selectionDict['FixedTextString']
-    if selectionDict.has_key( 'SiteName' ) and selectionDict['SiteName']:
-      fieldList.append( 'SiteName' )
-      condDict['SiteName']=selectionDict['SiteName']
+    fieldList = [ 'MessageTime', 'LogLevel', 'SystemName', 'SubSystemName',
+                  'FixedTextString', 'VariableText',  'OwnerDN', 'OwnerGroup',
+                  'ClientIPNumberString', 'SiteName' ]
+
+    if not ( selectionDict.has_key( 'LogLevel' ) and selectionDict['LogLevel'] ):
+      selectionDict['LogLevel'] = [ 'ERROR', 'EXCEPT', 'FATAL' ]
 
     if selectionDict.has_key( 'beginDate' ):
-      beginDate=selectionDict['beginDate']
+      beginDate=selectionDict.pop( 'beginDate' )
     else:
       beginDate=None
     if selectionDict.has_key( 'endDate' ):
-      endDate=selectionDict['endDate']
+      endDate=selectionDict.pop( 'endDate' )
     else:
       endDate=None
+
+    if selectionDict.has_key('groupField'):
+      groupField=selectionDict.pop( 'groupField' )      
+    else:
+      groupField = 'FixedTextString'
       
-    result = LogDB.getGroupedMessages( fieldList, condDict, 'FixedTextString',
-                                       sortList, beginDate, endDate )
+    result = LogDB._queryDB( showFieldList = fieldList, condDict = selectionDict, 
+                             older = endDate, newer = beginDate, 
+                             count = True, groupColumn = groupField,
+                             orderFields = sortList )
 
     if not result['OK']: return result
 
@@ -232,5 +159,72 @@ class SystemLoggingReportHandler( RequestHandler ):
 
     retValue={ 'ParameterNames': fieldList, 'Records': records ,
            'TotalRecords': len( records ), 'Extras': {}}
+  
+    return S_OK( retValue )
+  
+  types_getSites = []
+
+  def export_getSites( self, selectionDict = {}, sortList = [], 
+                       startItem = 0, maxItems = 0 ):
+    result = LogDB._queryDB( showFieldList = [ 'SiteName' ] )
+    
+    if not result['OK']: return result
+    
+    retValue={ 'ParameterNames': [ 'SiteName' ], 'Records':  result['Value'],
+               'TotalRecords': len( result['Value'] ), 'Extras': {}}
+
+    return S_OK( retValue )
+
+  types_getSystems = []
+
+  def export_getSystems( self , selectionDict = {}, sortList = [], 
+                         startItem = 0, maxItems = 0 ):
+    result = LogDB._queryDB( showFieldList = [ 'SystemName' ] )
+    
+    if not result['OK']: return result
+    
+    retValue={ 'ParameterNames': [ 'SystemName' ], 'Records':  result['Value'],
+               'TotalRecords': len( result['Value'] ), 'Extras': {}}
+
+    return S_OK( retValue )
+
+  types_getSubSystems = []
+
+  def export_getSubSystems( self, selectionDict = {}, sortList = [], 
+                            startItem = 0, maxItems = 0 ):
+    result = LogDB._queryDB( showFieldList = [ 'SubSystemName' ] )
+    
+    if not result['OK']: return result
+    
+    retValue={ 'ParameterNames': [ 'SubSystemName' ], 'Records':  result['Value'],
+               'TotalRecords': len( result['Value'] ), 'Extras': {}}
+
+    return S_OK( retValue )
+
+  types_getGroups = []
+
+  def export_getGroups( self, selectionDict = {}, sortList = [], 
+                        startItem = 0, maxItems = 0 ):
+
+    result = LogDB._queryDB( showFieldList = [ 'OwnerGroup' ] )
+    
+    if not result['OK']: return result
+    
+    retValue={ 'ParameterNames': [ 'OwnerGroup' ], 'Records':  result['Value'],
+               'TotalRecords': len( result['Value'] ), 'Extras': {}}
+      
+    return S_OK( retValue )
+
+  types_getFixedTextStrings = []
+
+  def export_getFixedTextStrings( self, selectionDict = {}, sortList = [], 
+                                  startItem = 0, maxItems = 0 ):
+    result = LogDB._queryDB( showFieldList = [ 'FixedTextString' ] )
+    
+    if not result['OK']: return result
+    
+    retValue={ 'ParameterNames': [ 'FixedTextString' ], 'Records':  result['Value'],
+               'TotalRecords': len( result['Value'] ), 'Extras': {}}
     
     return S_OK( retValue )
+    
