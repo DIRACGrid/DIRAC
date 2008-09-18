@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.55 2008/08/25 08:39:02 atsareg Exp $
+# $Id: JobWrapper.py,v 1.56 2008/09/18 17:36:17 paterson Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.55 2008/08/25 08:39:02 atsareg Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.56 2008/09/18 17:36:17 paterson Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -621,21 +621,27 @@ class JobWrapper:
     if missingFiles:
       self.__setJobParam('OutputSandbox','MissingFiles: %s' %(string.join(missingFiles,', ')))
 
-    self.__report('Completed','Uploading Output Sandbox')
-    if fileList and self.jobID:
-      self.outputSandboxSize = getGlobbedTotalSize(fileList)
-      outputSandboxClient = SandboxClient('Output')
-      result = outputSandboxClient.sendFiles(self.jobID, fileList)
-      if not result['OK']:
-        self.log.warn('Output sandbox upload failed:')
-        self.log.warn(result['Message'])
-
     if jobArgs.has_key('Owner'):
       owner = jobArgs['Owner']
     else:
       msg = 'Job has no owner specified'
       self.log.warn(msg)
       return S_OK(msg)
+
+    self.__report('Completed','Uploading Output Sandbox')
+    if fileList and self.jobID:
+      self.outputSandboxSize = getGlobbedTotalSize(fileList)
+      outputSandboxClient = SandboxClient('Output')
+      result = outputSandboxClient.sendFiles(self.jobID, fileList, 1024*1024*10)
+      if not result['OK']:
+        self.log.warn('Output sandbox upload failed:')
+        self.log.warn(result['Message'])
+        if result.has_key('SandboxFileName'):
+          outputSandboxData = result['SandboxFileName']
+          self.log.info('Attempting to upload %s as output data' %(outputSandboxData))
+          outputData.append(outputSandboxData)
+          self.__setJobParam('OutputSandbox','Sandbox files > 10MB, uploaded to grid storage')
+          self.__setJobParam('OutputSandboxLFN',str(self.__getLFNfromOutputFile(owner,outputSandboxData)))
 
     if jobArgs.has_key('OutputSE'):
       outputSE = jobArgs['OutputSE']
@@ -712,6 +718,8 @@ class JobWrapper:
             missing.append(outputFile)
       else:
         self.log.warn('Output data file: %s is missing after execution' %(outputFile))
+
+    #TODO Notify the user of any output data / output sandboxes
 
     if missing:
       self.__setJobParam('OutputData','MissingFiles: %s' %(string.join(missing,', ')))
