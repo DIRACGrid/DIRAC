@@ -200,4 +200,36 @@ For example result['Value'][0]['GlueCEStateRunningJobs']
       views.append(result['Value'][0]['attr'])
   
   return {'OK':True,'Value':views}
+
+def ldapSA( site, vo='lhcb', attr=None, host=None ):
+  '''
+CEVOView information from bdii. Only CE with CEAccessControlBaseRule=VO:lhcb are selected.
+Input parameter:
+  ce:    ce or part of it whith globbing
+    for example  "ce0?.tier2.hep.manchester*"               
+Return standart DIRAC answer with Value equals to list of ceVOViews.
+Each ceVOView is dictionary which contains attributes of ce.
+For example result['Value'][0]['GlueCEStateRunningJobs']
+'''
+
   
+  filt = '(&(GlueSEUniqueID=*)(GlueForeignKey=GlueSiteUniqueID=%s))'%(site)
+  result = ldapsearchBDII( filt, attr, host )
+
+  if not result['OK']:
+    return result
+
+  ses = result['Value']
+
+  filt = 'GlueSALocalID=%s'%vo
+  sas = []
+  
+  for se in ses:
+    dn = se['dn']
+    result = ldapsearchBDII( filt, attr, host, base=dn )
+    if result['OK']:
+      if result['Value']:
+        sas.append(result['Value'][0]['attr'])
+  
+  return {'OK':True,'Value':sas}
+ 
