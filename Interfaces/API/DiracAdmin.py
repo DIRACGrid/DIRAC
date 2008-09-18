@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.32 2008/09/16 10:18:41 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.33 2008/09/18 11:39:12 roma Exp $
 # File :   DiracAdmin.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@ site banning and unbanning, WMS proxy uploading etc.
 
 """
 
-__RCSID__ = "$Id: DiracAdmin.py,v 1.32 2008/09/16 10:18:41 paterson Exp $"
+__RCSID__ = "$Id: DiracAdmin.py,v 1.33 2008/09/18 11:39:12 roma Exp $"
 
 import DIRAC
 from DIRAC.ConfigurationSystem.Client.CSAPI                   import CSAPI
@@ -25,7 +25,7 @@ from DIRAC.WorkloadManagementSystem.Client.NotificationClient import Notificatio
 from DIRAC.Core.Security.X509Chain                            import X509Chain
 from DIRAC.Core.Security                                      import Locations, CS
 from DIRAC                                                    import gConfig, gLogger, S_OK, S_ERROR
-from DIRAC.Core.Utilities.ldapsearchBDII                      import ldapSite, ldapCluster, ldapCE, ldapCEState, ldapCEVOView
+from DIRAC.Core.Utilities.ldapsearchBDII                      import ldapSite, ldapCluster, ldapCE, ldapCEState, ldapCEVOView, ldapSA
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -1043,5 +1043,11 @@ class DiracAdmin:
     """Get information about ce voview from BDII at host
     """
     return ldapCEVOView(ce,vo,host=host)
+
+  #############################################################################
+  def getBDIISA(self,site,vo='lhcb',host=None):
+    """Get information about SA  from BDII at host
+    """
+    return ldapSA(site,vo,host=host)
 
   #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
