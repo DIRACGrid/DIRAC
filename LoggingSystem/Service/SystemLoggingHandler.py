@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Service/SystemLoggingHandler.py,v 1.7 2008/07/02 17:33:23 mseco Exp $
-__RCSID__ = "$Id: SystemLoggingHandler.py,v 1.7 2008/07/02 17:33:23 mseco Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Service/SystemLoggingHandler.py,v 1.8 2008/09/18 18:23:24 mseco Exp $
+__RCSID__ = "$Id: SystemLoggingHandler.py,v 1.8 2008/09/18 18:23:24 mseco Exp $"
 """
 SystemLoggingHandler is the implementation of the Logging service
     in the DISET framework
@@ -28,12 +28,16 @@ class SystemLoggingHandler( RequestHandler ):
     """  This is the function that actually adds the Message to 
          the log Database
     """
-    Credentials=self.getRemoteCredentials()
+    Credentials = self.getRemoteCredentials()
     if Credentials.has_key('DN'):
-      userDN=Credentials['DN']
+      userDN = Credentials['DN']
     else:
-      userDN='unknown'
-    userGroup = Credentials['group']
+      userDN = 'unknown'
+    if Credentials.has_key('group'):
+      userGroup = Credentials['group']
+    else:
+      userGroup = 'unknown'
+      
     remoteAddress = self.getRemoteAddress()[0]
     return LogDB._insertMessageIntoSystemLoggingDB( messageObject, site,
                                                     nodeFQDN, userDN,
