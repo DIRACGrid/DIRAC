@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/Attic/dirac-admin-get-banned-sites,v 1.1 2008/08/21 21:55:17 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/Attic/dirac-admin-get-banned-sites,v 1.2 2008/09/19 16:55:02 gcowan Exp $
 # File :   dirac-admin-get-banned-sites
 # Author : Stuart Paterson
 ########################################################################
-__RCSID__   = "$Id: dirac-admin-get-banned-sites,v 1.1 2008/08/21 21:55:17 paterson Exp $"
-__VERSION__ = "$Revision: 1.1 $"
+__RCSID__   = "$Id: dirac-admin-get-banned-sites,v 1.2 2008/09/19 16:55:02 gcowan Exp $"
+__VERSION__ = "$Revision: 1.2 $"
 from DIRACEnvironment import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
@@ -15,10 +15,20 @@ args = Script.getPositionalArgs()
 
 diracAdmin = DiracAdmin()
 
-result = diracAdmin.getBannedSites(printOutput=True)
+result = diracAdmin.getBannedSites(printOutput=False)
 if result['OK']:
-  DIRAC.exit(0)
+  banned_sites = result['Value']
 else:
   print result['Message']
   DIRAC.exit(2)
+
+for site in banned_sites:
+  result = diracAdmin.getSiteMaskLogging( site)
+  if result['OK']:
+    sites = result['Value']
+    print '%-30s %s %s %s' % (site, sites[site][-1][1], sites[site][-1][2], sites[site][-1][3])
+  else:
+    print '%-30s %s' % (site, result['Message'])
+
+DIRAC.exit(0)
 
