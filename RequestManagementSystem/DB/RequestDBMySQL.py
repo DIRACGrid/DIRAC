@@ -1,9 +1,9 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/DB/RequestDBMySQL.py,v 1.32 2008/09/17 18:06:07 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/DB/RequestDBMySQL.py,v 1.33 2008/09/21 19:03:40 atsareg Exp $
 
 """ RequestDBMySQL is the MySQL plug in for the request DB
 """
 
-__RCSID__ = "$Id: RequestDBMySQL.py,v 1.32 2008/09/17 18:06:07 atsareg Exp $"
+__RCSID__ = "$Id: RequestDBMySQL.py,v 1.33 2008/09/21 19:03:40 atsareg Exp $"
 
 from DIRAC.Core.Base.DB import DB
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
@@ -329,7 +329,7 @@ class RequestDBMySQL(DB):
 
   def updateRequest(self,requestName,requestString):
     request = RequestContainer(request=requestString)
-    requestTypes = ['transfer','register','removal','stage','diset']
+    requestTypes = ['transfer','register','removal','stage','diset','logupload']
     requestID = request.getRequestID()['Value']
     updateRequestFailed = False
     for requestType in requestTypes:
