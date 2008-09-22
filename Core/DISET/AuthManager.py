@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/AuthManager.py,v 1.28 2008/07/29 18:13:05 acasajus Exp $
-__RCSID__ = "$Id: AuthManager.py,v 1.28 2008/07/29 18:13:05 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/AuthManager.py,v 1.29 2008/09/22 15:09:47 acasajus Exp $
+__RCSID__ = "$Id: AuthManager.py,v 1.29 2008/09/22 15:09:47 acasajus Exp $"
 
 import types
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
@@ -7,6 +7,7 @@ from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.LoggingSystem.Client.Logger import gLogger
 from DIRAC.Core.Security import CS
 from DIRAC.Core.Security import Properties
+from DIRAC.Core.Utilities import List
 
 class AuthManager:
 
@@ -28,7 +29,7 @@ class AuthManager:
     """
     self.authSection = authSection
 
-  def authQuery( self, methodQuery, credDict ):
+  def authQuery( self, methodQuery, credDict, defaultProperties = False ):
     """
     Check if the query is authorized for a credentials dictionary
 
@@ -84,6 +85,8 @@ class AuthManager:
           return False
     #Check everyone is authorized
     requiredProperties = self.getValidPropertiesForMethod( methodQuery )
+    if not requiredProperties and defaultProperties:
+      requiredProperties = List.fromChar( defaultProperties )
     if "any" in requiredProperties or "all" in requiredProperties:
       return True
     #Check user is authenticated
