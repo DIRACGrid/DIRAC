@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.62 2008/09/10 18:13:23 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.63 2008/09/22 08:20:03 rgracian Exp $
 # File :   Director.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -48,7 +48,7 @@
 
 """
 
-__RCSID__ = "$Id: Director.py,v 1.62 2008/09/10 18:13:23 paterson Exp $"
+__RCSID__ = "$Id: Director.py,v 1.63 2008/09/22 08:20:03 rgracian Exp $"
 
 import types, time
 
@@ -1090,6 +1090,7 @@ class LCGPilotDirector(PilotDirector):
      Here goes especific configuration for LCG PilotDirectors
     """
     PilotDirector.configure(self, csSection, submitPool )
+    self.resourceBrokers = List.randomize( self.resourceBrokers )
     self.log.info( '' )
     self.log.info( '===============================================' )
 
