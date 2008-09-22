@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Script.py,v 1.13 2008/09/22 15:35:37 acasajus Exp $
-__RCSID__ = "$Id: Script.py,v 1.13 2008/09/22 15:35:37 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Script.py,v 1.14 2008/09/22 15:42:24 acasajus Exp $
+__RCSID__ = "$Id: Script.py,v 1.14 2008/09/22 15:42:24 acasajus Exp $"
 
 import sys
 import os.path
@@ -11,7 +11,7 @@ localCfg = LocalConfiguration()
 
 scriptName = False
 
-def setName( script = False  ):
+def initAsScript( script = False  ):
   scriptName = script
   if not scriptName:
     scriptName = os.path.basename( sys.argv[0] )
