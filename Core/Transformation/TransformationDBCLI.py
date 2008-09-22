@@ -514,7 +514,7 @@ class TransformationDBCLI(cmd.Cmd):
 
     resDict = result['Value']['Successful'][lfn]
     print "\nStatus for %s:\n" % lfn
-    print "Transformation      FileStatus               Job                   TargetSE       UsedSE       LastUpdate"
+    print "Transformation           FileStatus                 Job                  TargetSE       UsedSE       LastUpdate"
     for transID,lfnDict in resDict.items():
       jobid = lfnDict['JobID']
       if jobid.find('No JobID assigned') == -1:
@@ -528,7 +528,7 @@ class TransformationDBCLI(cmd.Cmd):
       se = lfnDict['TargetSE']
       usedSE = lfnDict['UsedSE']
       lastUpdate = lfnDict['LastUpdate']
-      print tranString.ljust(14), fstatus.rjust(14),' '*4,jobString.ljust(27),se.rjust(11),usedSE.rjust(16),"  ",lastUpdate
+      print tranString.ljust(16), fstatus.rjust(18),' '*4,jobString.ljust(27),se.rjust(11),usedSE.rjust(16),"  ",lastUpdate
 
   def do_setFileStatus(self,args):
     """Set file status for the given production
