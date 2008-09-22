@@ -56,7 +56,7 @@ class UserStorageQuotaAgent(Agent):
 
     for userName in sortList(usageDict.keys()):
       usageMB = usageDict[userName]/byteToMB
-      res = gConfig.getOptionsDict('/Users/%s' % userName)
+      res = gConfig.getOptionsDict('/Security/Users/%s' % userName)
       if not res['OK']:
         gLogger.error("UserStorageQuotaAgent: Username not found in the CS.",userName)
         userQuota = 0
