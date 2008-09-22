@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.39 2008/08/21 07:39:08 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.40 2008/09/22 09:05:15 rgracian Exp $
 ########################################################################
 
 """  The Pilot Status Agent updates the status of the pilot jobs if the
      PilotAgents database.
 """
 
-__RCSID__ = "$Id: PilotStatusAgent.py,v 1.39 2008/08/21 07:39:08 rgracian Exp $"
+__RCSID__ = "$Id: PilotStatusAgent.py,v 1.40 2008/09/22 09:05:15 rgracian Exp $"
 
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, List
@@ -16,7 +16,7 @@ from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
 from DIRAC.AccountingSystem.Client.Types.Pilot import Pilot as PilotAccounting
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 from DIRAC.Core.Security import CS
-from DIRAC import gConfig
+from DIRAC import gConfig, Source
 
 import os, sys, re, string, time
 from types import *
@@ -42,6 +42,7 @@ class PilotStatusAgent(Agent):
     """
     result = Agent.initialize(self)
     self.pollingTime = gConfig.getValue(self.section+'/PollingTime',120)
+    self.gridEnv     = gConfig.getValue(self.section+'/GridEnv','')
     self.pilotDB = PilotAgentsDB()
     return result
 
@@ -183,6 +184,15 @@ class PilotStatusAgent(Agent):
     cmd.extend( pilotRefList )
 
     gridEnv = dict(os.environ)
+    if self.gridEnv:
+      self.log.verbose( 'Sourcing GridEnv script:', self.gridEnv )
+      ret = Source( 10, [self.gridEnv] )
+      if not ret['OK']:
+        self.log.error( 'Failed sourcing GridEnv:', ret['Message'] )
+        return S_ERROR( 'Failed sourcing GridEnv' )
+      if ret['stdout']: self.log.verbose( ret['stdout'] )
+      if ret['stderr']: self.log.warn( ret['stderr'] )
+      gridEnv = ret['outputEnv']
     ret = gProxyManager.dumpProxyToFile( proxy )
     if not ret['OK']:
       self.log.error( 'Failed to dump Proxy to file' )
