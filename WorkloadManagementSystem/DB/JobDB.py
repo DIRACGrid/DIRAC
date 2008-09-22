@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.103 2008/09/15 15:29:53 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.104 2008/09/22 11:02:04 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.103 2008/09/15 15:29:53 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.104 2008/09/22 11:02:04 atsareg Exp $"
 
 import re, os, sys, string, types
 import time
@@ -1416,9 +1416,14 @@ class JobDB(DB):
     return S_OK()
 
 #############################################################################
-  def __setSiteStatusInMask(self,site,status,author,comment):
+  def __setSiteStatusInMask(self,site,status,author,comment_raw):
     """  Set the given site status to 'status' or add a new active site
     """
+    comment = comment_raw
+    if comment_raw:
+      result = self._escapeString(comment_raw)
+      if result['OK']:
+        comment = result['Value'].lstrip('"').rstrip('"')
 
     req = "SELECT Status FROM SiteMask WHERE Site='%s'" % site
     result = self._query(req)
