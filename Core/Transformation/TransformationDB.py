@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.72 2008/09/04 09:04:53 atsareg Exp $
+# $Id: TransformationDB.py,v 1.73 2008/09/22 10:11:00 atsareg Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -32,7 +32,7 @@ class TransformationDB(DB):
     """ The standard constructor takes the database name (dbname) and the name of the
         configuration section (dbconfig)
     """
-
+    print 'TransDB:',dbname,dbconfig
     DB.__init__(self,dbname, dbconfig, maxQueueSize)
     self.lock = threading.Lock()
     self.dbname = dbname
@@ -436,15 +436,17 @@ class TransformationDB(DB):
       transID = transDict['TransID']
       transStatus = transDict['Status']
 
-      req = "SELECT T.FileID,T.Status,T.TargetSE,T.UsedSE,T.JobID,T.ErrorCount,T.LastUpdate,J.WmsStatus FROM T_%s as T, Jobs_%s as J \
-             WHERE T.FileID in ( %s ) AND T.JobID=J.JobID" % (transID,transID,fileIDString)
+      req = "SELECT FileID,Status,TargetSE,UsedSE,JobID,ErrorCount,LastUpdate FROM T_%s \
+             WHERE FileID in ( %s ) " % (transID,fileIDString)
       result = self._query(req)
       if not result['OK']:
         continue
       if not result['Value']:
         continue
 
-      for fileID,status,se,usedSE,jobID,errorCount,lastUpdate,jobStatus in result['Value']:
+      fileJobIDs = []
+
+      for fileID,status,se,usedSE,jobID,errorCount,lastUpdate in result['Value']:
         lfn = fileIDs[fileID]
         if not resultDict.has_key(fileIDs[fileID]):
           resultDict[lfn] = {}
@@ -454,11 +456,27 @@ class TransformationDB(DB):
         resultDict[lfn][transID]['TargetSE'] = se
         resultDict[lfn][transID]['UsedSE'] = usedSE
         resultDict[lfn][transID]['TransformationStatus'] = transStatus
-        resultDict[lfn][transID]['JobID'] = jobID
-        resultDict[lfn][transID]['JobStatus'] = jobStatus
+        if jobID:
+          resultDict[lfn][transID]['JobID'] = jobID
+          fileJobIDs.append(jobID)
+        else:
+          resultDict[lfn][transID]['JobID'] = 'No JobID assigned'
+        resultDict[lfn][transID]['JobStatus'] = 'Unknown'
         resultDict[lfn][transID]['FileID'] = fileID
         resultDict[lfn][transID]['ErrorCount'] = errorCount
         resultDict[lfn][transID]['LastUpdate'] = str(lastUpdate)
+
+      if fileJobIDs:
+        fileJobIDString = ','.join([ str(x) for x in fileJobIDs ])
+        req = "SELECT T.FileID,J.WmsStatus from Jobs_%s as J, T_%s as T WHERE J.JobID in ( %s ) AND J.JobID=T.JobID" % (transID,transID,fileJobIDString)
+        result = self._query(req)
+        if not result['OK']:
+          continue
+        if not result['Value']:
+          continue
+        for fileID,jobStatus in result['Value']:
+          lfn = fileIDs[fileID]
+          resultDict[lfn][transID]['JobStatus'] = jobStatus 
 
     return S_OK({'Successful':resultDict,'Failed':failedDict})
 
@@ -492,6 +510,7 @@ class TransformationDB(DB):
     """
     transID = self.getTransformationID(transName)
     result = self.getFileSummary(lfns,transID)
+
     if not result['OK']:
       return S_ERROR('Failed to contact the database')
     successful = {}
