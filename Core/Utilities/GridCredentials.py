@@ -1,4 +1,4 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.34 2008/07/14 18:06:27 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Attic/GridCredentials.py,v 1.35 2008/09/22 12:49:16 atsareg Exp $
 
 """ Grid Credentials module contains utilities to manage user and host
     certificates and proxies.
@@ -33,7 +33,7 @@
     getVOMSProxyInfo()
 """
 
-__RCSID__ = "$Id: GridCredentials.py,v 1.34 2008/07/14 18:06:27 acasajus Exp $"
+__RCSID__ = "$Id: GridCredentials.py,v 1.35 2008/09/22 12:49:16 atsareg Exp $"
 
 import os
 import os.path
@@ -252,12 +252,12 @@ def getNicknameForDN(DN):
   """
 
   # Get usernames
-  result = gConfig.getSections("/Users")
+  result = gConfig.getSections("/Security/Users")
   if result["OK"]:
     users = result["Value"]
     dndb = {}
     for j in users:
-      dndb[gConfig.getValue("/Users/%s/DN" % j)] = j
+      dndb[gConfig.getValue("/Security/Users/%s/DN" % j)] = j
   else:
     dndb = {}
 
