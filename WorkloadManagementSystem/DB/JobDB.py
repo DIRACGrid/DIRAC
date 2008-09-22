@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.104 2008/09/22 11:02:04 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.105 2008/09/22 11:19:04 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.104 2008/09/22 11:02:04 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.105 2008/09/22 11:19:04 atsareg Exp $"
 
 import re, os, sys, string, types
 import time
@@ -1494,9 +1494,19 @@ class JobDB(DB):
     if not result['OK']:
       return result
 
+    availableSiteList = []
+    for row in result['Value']:
+      site,status,utime,author,comment = row
+      availableSiteList.append(site)
+
     resultDict = {}
-    if not result['Value']:
-      return S_OK(resultDict)
+    for site in siteList:
+      if not result['Value'] or site not in availableSiteList:
+        req = "SELECT Status Site,Status,LastUpdateTime,Author,Comment FROM SiteMask WHERE Site='%s'" % site
+        resSite = self._query(req)
+        if resSite['OK']:
+          s,status,lastUpdate,author,comment = resSite['Value'][0]
+          resultDict[site] = [(status,str(lastUpdate),author,comment)]
 
     for row in result['Value']:
       site,status,utime,author,comment = row
