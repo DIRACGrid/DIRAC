@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Script.py,v 1.11 2008/06/10 12:37:07 acasajus Exp $
-__RCSID__ = "$Id: Script.py,v 1.11 2008/06/10 12:37:07 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Script.py,v 1.12 2008/09/22 15:34:55 acasajus Exp $
+__RCSID__ = "$Id: Script.py,v 1.12 2008/09/22 15:34:55 acasajus Exp $"
 
 import sys
 import os.path
@@ -11,13 +11,20 @@ localCfg = LocalConfiguration()
 
 scriptName = False
 
-def parseCommandLine( script = False, ignoreErrors = False, initializeMonitor = True ):
-  global localCfg, scriptName
-
+def initialize( script = False  ):
   scriptName = script
   if not scriptName:
     scriptName = os.path.basename( sys.argv[0] )
   scriptSection = localCfg.setConfigurationForScript( scriptName )
+
+def parseCommandLine( script = False, ignoreErrors = False, initializeMonitor = True ):
+  global localCfg, scriptName
+
+  if not scriptName:
+    scriptName = script
+    if not scriptName:
+      scriptName = os.path.basename( sys.argv[0] )
+    scriptSection = localCfg.setConfigurationForScript( scriptName )
   localCfg.addMandatoryEntry( "/DIRAC/Setup" )
   resultDict = localCfg.loadUserData()
   if not ignoreErrors and not resultDict[ 'OK' ]:
