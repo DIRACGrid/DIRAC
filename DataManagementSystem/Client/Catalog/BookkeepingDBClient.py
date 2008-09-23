@@ -1,14 +1,15 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Client/Catalog/BookkeepingDBClient.py,v 1.13 2008/08/28 08:36:55 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Client/Catalog/BookkeepingDBClient.py,v 1.14 2008/09/23 22:25:11 acsmith Exp $
 
 """ Client for BookkeepingDB file catalog
 """
 
-__RCSID__ = "$Id: BookkeepingDBClient.py,v 1.13 2008/08/28 08:36:55 atsareg Exp $"
+__RCSID__ = "$Id: BookkeepingDBClient.py,v 1.14 2008/09/23 22:25:11 acsmith Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.DataManagementSystem.Client.Catalog.FileCatalogueBase import FileCatalogueBase
 import types, os
+from DIRAC.ConfigurationSystem.Client import PathFinder
 
 class BookkeepingDBClient(FileCatalogueBase):
   """ File catalog client for bookkeeping DB
@@ -20,9 +21,9 @@ class BookkeepingDBClient(FileCatalogueBase):
     self.valid = True
     try:
       if not url:
-        self.server = RPCClient("Bookkeeping/BookkeepingManager")
+        self.url = PathFinder.getServiceURL('Bookkeeping/BookkeepingManager')
       else:
-        self.server = RPCClient(url)
+        self.url = url
     except Exception,x:
       print x
       self.valid = False
@@ -34,7 +35,8 @@ class BookkeepingDBClient(FileCatalogueBase):
 
     failed = {}
     successful = {}
-    res = self.server.addFiles(lfns)
+    server = RPCClient(self.url)
+    res = server.addFiles(lfns)
     if not res['OK']:
       for lfn in lfns:
         failed[lfn] = res['Message']
@@ -55,7 +57,8 @@ class BookkeepingDBClient(FileCatalogueBase):
 
     failed = {}
     successful = {}
-    res = self.server.removeFiles(lfns)
+    server = RPCClient(self.url)
+    res = server.removeFiles(lfns)
     if not res['OK']:
       for lfn in lfns:
         failed[lfn] = res['Message']
@@ -74,7 +77,8 @@ class BookkeepingDBClient(FileCatalogueBase):
 
     failed = {}
     successful = {}
-    res = self.server.exists(lfns)
+    server = RPCClient(self.url)
+    res = server.exists(lfns)
     if not res['OK']:
       for lfn in lfns:
         failed[lfn] = res['Message']
@@ -87,7 +91,8 @@ class BookkeepingDBClient(FileCatalogueBase):
       return S_OK(resDict)
 
   def __getFileMetadata(lfns):
-    res = self.server.getFileMetadata(lfns)
+    server = RPCClient(self.url)
+    res = server.getFileMetadata(lfns)
     successful = {}
     failed = {}
     if not res['OK']:
