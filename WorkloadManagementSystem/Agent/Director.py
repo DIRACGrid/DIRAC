@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.64 2008/09/23 10:26:50 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.65 2008/09/23 15:51:29 atsareg Exp $
 # File :   Director.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -48,7 +48,7 @@
 
 """
 
-__RCSID__ = "$Id: Director.py,v 1.64 2008/09/23 10:26:50 rgracian Exp $"
+__RCSID__ = "$Id: Director.py,v 1.65 2008/09/23 15:51:29 atsareg Exp $"
 
 import types, time
 
@@ -76,7 +76,7 @@ MINOR_NOTINQUEUE = 'Job Not in TaskQueue'
 ERROR_JDL        = 'Could not create GRID JDL'
 ERROR_NOJDL      = 'Job JDL not available'
 ERROR_ILEGALJDL  = 'Illegal Job JDL'
-ERROR_MISSPAR    = '"%s" not defined for Job'
+ERROR_MISSPAR    = '%s not defined for Job'
 
 import os, sys, re, string, time, shutil
 
