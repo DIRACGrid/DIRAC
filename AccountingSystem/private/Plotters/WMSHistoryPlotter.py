@@ -20,7 +20,7 @@ class WMSHistoryPlotter(BaseReporter):
                                 selectFields,
                                 reportRequest[ 'condDict' ],
                                 reportRequest[ 'groupingFields' ],
-                                {} )
+                                { 'convertToGranularity' : 'average', 'checkNone' : True } )
     if not retVal[ 'OK' ]:
       return retVal
     dataDict, granularity = retVal[ 'Value' ]
@@ -48,7 +48,7 @@ class WMSHistoryPlotter(BaseReporter):
                                 selectFields,
                                 reportRequest[ 'condDict' ],
                                 reportRequest[ 'groupingFields' ],
-                                {} )
+                                { 'convertToGranularity' : 'average', 'checkNone' : True } )
     if not retVal[ 'OK' ]:
       return retVal
     dataDict, granularity = retVal[ 'Value' ]
