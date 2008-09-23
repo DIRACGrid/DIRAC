@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/ReportGeneratorHandler.py,v 1.17 2008/09/05 11:44:45 acasajus Exp $
-__RCSID__ = "$Id: ReportGeneratorHandler.py,v 1.17 2008/09/05 11:44:45 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/ReportGeneratorHandler.py,v 1.18 2008/09/23 10:25:47 acasajus Exp $
+__RCSID__ = "$Id: ReportGeneratorHandler.py,v 1.18 2008/09/23 10:25:47 acasajus Exp $"
 import types
 import os
 import md5
@@ -56,7 +56,7 @@ class ReportGeneratorHandler( RequestHandler ):
 
   def __checkPlotRequest( self, reportRequest ):
     for key in self.__reportRequestDict:
-      if key == 'extraArgs':
+      if key == 'extraArgs' and key not in reportRequest:
         reportRequest[ key ] = {}
       if not key in reportRequest:
         return S_ERROR( 'Missing mandatory field %s in plot reques' % key )
