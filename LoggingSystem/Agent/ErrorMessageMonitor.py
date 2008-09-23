@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Agent/ErrorMessageMonitor.py,v 1.2 2008/09/11 23:44:47 atsareg Exp $
-__RCSID__ = "$Id: ErrorMessageMonitor.py,v 1.2 2008/09/11 23:44:47 atsareg Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Agent/ErrorMessageMonitor.py,v 1.3 2008/09/23 18:14:54 mseco Exp $
+__RCSID__ = "$Id: ErrorMessageMonitor.py,v 1.3 2008/09/23 18:14:54 mseco Exp $"
 """  getErrorNames get new errors that have been injected into the
      SystemLoggingDB and sends them by mail to the person(s) in charge
      of checking that they conform with DIRAC style. ReviewersMail option
@@ -58,8 +58,9 @@ class ErrorMessageMonitor(Agent):
       conds = { 'ReviewedMessage': '0' }
       returnFields = [ 'FixedTextID','FixedTextString', 'SystemName',
                        'SubSystemName' ]
-      result = self.SystemLoggingDB.getGroupedMessages( returnFields, conds,
-                                                        'FixedTextString' )
+      result = self.SystemLoggingDB._queryDB( showFieldList = returnFields,
+                                              groupColumn = 'FixedTextString', 
+                                              condDict = conds )
       if not result['OK']:
         self.log.error('Failed to obtain the non reviewed Strings',
                        result['Message'])
