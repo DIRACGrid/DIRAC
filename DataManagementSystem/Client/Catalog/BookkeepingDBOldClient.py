@@ -1,14 +1,15 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Client/Catalog/Attic/BookkeepingDBOldClient.py,v 1.2 2008/09/23 15:57:03 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Client/Catalog/Attic/BookkeepingDBOldClient.py,v 1.3 2008/09/23 22:18:17 acsmith Exp $
 
 """ Client for the BookkeeppingDB file catalog old XML based service
 """
 
-__RCSID__ = "$Id: BookkeepingDBOldClient.py,v 1.2 2008/09/23 15:57:03 acsmith Exp $"
+__RCSID__ = "$Id: BookkeepingDBOldClient.py,v 1.3 2008/09/23 22:18:17 acsmith Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.DataManagementSystem.Client.Catalog.FileCatalogueBase import FileCatalogueBase
 import types, os
+from DIRAC.ConfigurationSystem.Client import PathFinder
 
 class BookkeepingDBOldClient(FileCatalogueBase):
   """ File catalog client for placement DB
@@ -20,9 +21,9 @@ class BookkeepingDBOldClient(FileCatalogueBase):
     self.valid = True
     try:
       if not url:
-        self.server = RPCClient("Bookkeeping/BookkeepingManagerOld")
+        self.url = PathFinder.getServiceURL('Bookkeeping/BookkeepingManagerOld')
       else:
-        self.server = RPCClient(url)
+        self.url = url
     except Exception,x:
       print x
       self.valid = False
@@ -45,7 +46,8 @@ class BookkeepingDBOldClient(FileCatalogueBase):
 """ % (lfn,pfn,se,se)
     fname = os.path.basename(lfn)+".A.xml"
     #print "sending",fname
-    result = self.server.sendBookkeeping(fname,repscript)
+    server = RPCClient(self.url)
+    result = server.sendBookkeeping(fname,repscript)
 
     return result
 
@@ -118,7 +120,8 @@ class BookkeepingDBOldClient(FileCatalogueBase):
       #print repscript
       fname = os.path.basename(lfn)+".R.xml"
       #print "sending",fname
-      resRem = self.server.sendBookkeeping(fname,repscript)
+      server = RPCClient(self.url)
+      resRem = server.sendBookkeeping(fname,repscript)
       if not resRem['OK']:
         failed_lfns[lfn] = resRem['Message']
       else:
@@ -155,7 +158,8 @@ class BookkeepingDBOldClient(FileCatalogueBase):
       #print repscript
       fname = os.path.basename(lfn)+".R.xml"
       #print "sending",fname
-      resRem = self.server.sendBookkeeping(fname,repscript)
+      server = RPCClient(self.url)
+      resRem = server.sendBookkeeping(fname,repscript)
       if not resRem['OK']:
         failed_lfns[lfn] = resRem['Message']
       else:
