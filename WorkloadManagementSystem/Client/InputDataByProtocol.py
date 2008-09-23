@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: InputDataByProtocol.py,v 1.8 2008/07/04 08:28:50 rgracian Exp $
+# $Id: InputDataByProtocol.py,v 1.9 2008/09/23 09:51:41 rgracian Exp $
 # File :   InputDataByProtocol.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     defined in the CS for the VO.
 """
 
-__RCSID__ = "$Id: InputDataByProtocol.py,v 1.8 2008/07/04 08:28:50 rgracian Exp $"
+__RCSID__ = "$Id: InputDataByProtocol.py,v 1.9 2008/09/23 09:51:41 rgracian Exp $"
 
 from DIRAC.Core.DISET.RPCClient                                     import RPCClient
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
@@ -100,7 +100,7 @@ class InputDataByProtocol:
             pfn = replicas[lfn][se]
             newReplicasDict[lfn] = {se:pfn}
 
-        if not newReplicasDict.has_key(lfn):
+        if not newReplicasDict.has_key(lfn) and localTapeSE:
           pfn = replicas[lfn][localTapeSE]
           newReplicasDict[lfn] = {localTapeSE:pfn}
 
