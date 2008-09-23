@@ -2,6 +2,7 @@
 """
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.Agent import Agent
+from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 from DIRAC.DataManagementSystem.DB.TransferDB import TransferDB
 from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -92,16 +93,23 @@ class FTSRegister(Agent):
     for fileID,channelID,lfn,pfn,se in res['Value']:
       lfns[lfn] = (channelID,fileID,se)
       replicaTuples.append((lfn,pfn,se))
+
     if replicaTuples:
       gLogger.info("FTSRegister.execute: Found  %s waiting replica registrations." % len(replicaTuples))
-      res = self.ReplicaManager.registerReplica(replicaTuples)
-      if not res['OK']:
-        gLogger.error("FTSRegister.execute: Completely failed to regsiter replicas.",res['Message'])
-        return S_OK()
-      for lfn in res['Value']['Successful'].keys():
-        channelID,fileID,se = lfns[lfn]
-        self.TransferDB.setRegistrationDone(channelID,fileID)
-        self.DataLog.addFileRecord(lfn,'Register',se,'','FTSRegisterAgent')
+      replicaTupleChunks = breakListIntoChunks(replicaTuples,100)
+      gLogger.info("FTSRegister.execute: Attempting in %s chunks." % len(replicaTupleChunks))
+      chunk = 1
+      for replicaChunk in replicaTupleChunks:
+        gLogger.info("FTSRegister.execute: Attempting chunk %s." % chunk)
+        chunk += 1
+        res = self.ReplicaManager.registerReplica(replicaChunk)
+        if not res['OK']:
+          gLogger.error("FTSRegister.execute: Completely failed to regsiter replicas.",res['Message'])
+          return S_OK()
+        for lfn in res['Value']['Successful'].keys():
+          channelID,fileID,se = lfns[lfn]
+          self.TransferDB.setRegistrationDone(channelID,fileID)
+          self.DataLog.addFileRecord(lfn,'Register',se,'','FTSRegisterAgent')
     else:
       gLogger.info("FTSRegister.execute: No waiting registrations found.")
     return S_OK()
