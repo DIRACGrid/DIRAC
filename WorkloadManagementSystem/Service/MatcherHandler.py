@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: MatcherHandler.py,v 1.23 2008/09/10 18:06:26 paterson Exp $
+# $Id: MatcherHandler.py,v 1.24 2008/09/24 10:10:34 atsareg Exp $
 ########################################################################
 """
 Matcher class. It matches Agent Site capabilities to job requirements.
@@ -7,7 +7,7 @@ It also provides an XMLRPC interface to the Matcher
 
 """
 
-__RCSID__ = "$Id: MatcherHandler.py,v 1.23 2008/09/10 18:06:26 paterson Exp $"
+__RCSID__ = "$Id: MatcherHandler.py,v 1.24 2008/09/24 10:10:34 atsareg Exp $"
 
 import re, os, sys, time
 import string
@@ -406,8 +406,8 @@ class MatcherHandler(RequestHandler):
 
     #print "requestJob: ",resourceJDL
 
-    # result = self.selectJob(resourceJDL)
-    result = self.newSelectJob(resourceJDL)
+    result = self.selectJob(resourceJDL)
+    #  result = self.newSelectJob(resourceJDL)
     return result
 
 ##############################################################################
