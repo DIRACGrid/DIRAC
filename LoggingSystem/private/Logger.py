@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.27 2008/09/25 09:55:22 acasajus Exp $
-__RCSID__ = "$Id: Logger.py,v 1.27 2008/09/25 09:55:22 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.28 2008/09/25 10:02:17 acasajus Exp $
+__RCSID__ = "$Id: Logger.py,v 1.28 2008/09/25 10:02:17 acasajus Exp $"
 """
    DIRAC Logger client
 """
@@ -204,7 +204,10 @@ class Logger:
 
   def __getExceptionString( self, lException = False ):
     if lException:
-      args = lException.args
+      try:
+        args = lException.args
+      except:
+        return "Passed exception to the logger is not a valid Exception: %s" % str( lException )
       if len( args ) == 0:
         type = "Unknown exception type"
         value = "Unknown exception"
