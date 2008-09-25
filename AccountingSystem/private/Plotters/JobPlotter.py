@@ -30,7 +30,7 @@ class JobPlotter(BaseReporter):
     self.stripDataField( dataDict, 0 )
     if len( dataDict ) > 1:
       #Get the total for the plot
-      selectFields = ( "'Total', %s, %s, SUM(%s)/SUM(%s)",
+      selectFields = ( "'Total', %s, %s, SUM(%s),SUM(%s)",
                         [ 'startTime', 'bucketLength',
                           'CPUTime', 'ExecTime'
                         ]
