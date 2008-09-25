@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.26 2008/08/01 09:59:33 acasajus Exp $
-__RCSID__ = "$Id: Logger.py,v 1.26 2008/08/01 09:59:33 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.27 2008/09/25 09:55:22 acasajus Exp $
+__RCSID__ = "$Id: Logger.py,v 1.27 2008/09/25 09:55:22 acasajus Exp $"
 """
    DIRAC Logger client
 """
@@ -280,7 +280,7 @@ class Logger:
 
   def __getStackString( self ):
     stack_list = traceback.extract_stack()
-    return ''.join( traceback.format_list( stack_list[3:0] ))
+    return ''.join( traceback.format_list( stack_list[:-2] ))
 
   def flushAllMessages( self, exitCode ):
     for backend in self._backendsDict:
