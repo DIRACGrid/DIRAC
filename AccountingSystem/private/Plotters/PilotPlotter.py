@@ -120,7 +120,7 @@ class PilotPlotter(BaseReporter):
     return self._generateTimedStackedBarPlot( filename, plotInfo[ 'data' ], metadata )
 
   def _reportJobsPerPilot( self, reportRequest ):
-    selectFields = ( self._getSQLStringForGrouping( reportRequest[ 'groupingFields' ]) + ", %s, %s, SUM(%s)/SUM(%s)",
+    selectFields = ( self._getSQLStringForGrouping( reportRequest[ 'groupingFields' ]) + ", %s, %s, SUM(%s), SUM(%s)",
                      reportRequest[ 'groupingFields' ] + [ 'startTime', 'bucketLength',
                                     'Jobs', 'entriesInBucket'
                                    ]
@@ -130,7 +130,9 @@ class PilotPlotter(BaseReporter):
                                 selectFields,
                                 reportRequest[ 'condDict' ],
                                 reportRequest[ 'groupingFields' ],
-                                { 'convertToGranularity' : 'average' }  )
+                                { 'checkNone' : True,
+                                  'convertToGranularity' : 'sum',
+                                  'calculateProportionalGauges' : True }  )
     if not retVal[ 'OK' ]:
       return retVal
     dataDict, granularity = retVal[ 'Value' ]

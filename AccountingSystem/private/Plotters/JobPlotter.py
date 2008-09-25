@@ -10,7 +10,7 @@ class JobPlotter(BaseReporter):
   _typeKeyFields = [ dF[0] for dF in Job().definitionKeyFields ]
 
   def _reportCPUEfficiency( self, reportRequest ):
-    selectFields = ( self._getSQLStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s)/SUM(%s)",
+    selectFields = ( self._getSQLStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s), SUM(%s)",
                      reportRequest[ 'groupingFields' ] + [ 'startTime', 'bucketLength',
                                     'CPUTime', 'ExecTime'
                                    ]
@@ -21,7 +21,9 @@ class JobPlotter(BaseReporter):
                                 selectFields,
                                 reportRequest[ 'condDict' ],
                                 reportRequest[ 'groupingFields' ],
-                                { 'checkNone' : True, 'convertToGranularity' : 'average' } )
+                                { 'checkNone' : True,
+                                  'convertToGranularity' : 'sum',
+                                  'calculateProportionalGauges' : True } )
     if not retVal[ 'OK' ]:
       return retVal
     dataDict, granularity = retVal[ 'Value' ]
@@ -39,7 +41,9 @@ class JobPlotter(BaseReporter):
                                   selectFields,
                                   reportRequest[ 'condDict' ],
                                   reportRequest[ 'groupingFields' ],
-                                  { 'checkNone' : True, 'convertToGranularity' : 'average' } )
+                                  { 'checkNone' : True,
+                                  'convertToGranularity' : 'sum',
+                                  'calculateProportionalGauges' : True } )
       if not retVal[ 'OK' ]:
         return retVal
       totalDict = retVal[ 'Value' ][0]

@@ -57,7 +57,7 @@ class DataOperationPlotter(BaseReporter):
     return self._generateTimedStackedBarPlot( filename, plotInfo[ 'data' ], metadata )
 
   def _reportQuality( self, reportRequest ):
-    selectFields = ( self._getSQLStringForGrouping( reportRequest[ 'groupingFields' ]) + ", %s, %s, SUM(%s)/SUM(%s)",
+    selectFields = ( self._getSQLStringForGrouping( reportRequest[ 'groupingFields' ]) + ", %s, %s, SUM(%s), SUM(%s)",
                      reportRequest[ 'groupingFields' ] + [ 'startTime', 'bucketLength',
                                     'TransferOK', 'TransferTotal'
                                    ]
@@ -67,7 +67,9 @@ class DataOperationPlotter(BaseReporter):
                                 selectFields,
                                 reportRequest[ 'condDict' ],
                                 reportRequest[ 'groupingFields' ],
-                                { 'checkNone' : True, 'convertToGranularity' : 'average' } )
+                                { 'checkNone' : True,
+                                  'convertToGranularity' : 'sum',
+                                  'calculateProportionalGauges' : True } )
     if not retVal[ 'OK' ]:
       return retVal
     dataDict, granularity = retVal[ 'Value' ]
@@ -84,7 +86,9 @@ class DataOperationPlotter(BaseReporter):
                                   selectFields,
                                   reportRequest[ 'condDict' ],
                                   reportRequest[ 'groupingFields' ],
-                                  { 'checkNone' : True, 'convertToGranularity' : 'average' } )
+                                  { 'checkNone' : True,
+                                    'convertToGranularity' : 'sum',
+                                    'calculateProportionalGauges' : True } )
       if not retVal[ 'OK' ]:
         return retVal
       totalDict = retVal[ 'Value' ][0]
@@ -129,7 +133,7 @@ class DataOperationPlotter(BaseReporter):
     return self._generateCumulativePlot( filename, plotInfo[ 'data' ], metadata )
 
   def _reportThroughput( self, reportRequest ):
-    selectFields = ( self._getSQLStringForGrouping( reportRequest[ 'groupingFields' ]) + ", %s, %s, (SUM(%s)/SUM(%s))/1000000",
+    selectFields = ( self._getSQLStringForGrouping( reportRequest[ 'groupingFields' ]) + ", %s, %s, SUM(%s)/1000000, SUM(%s)",
                      reportRequest[ 'groupingFields' ] + [ 'startTime', 'bucketLength',
                        'TransferSize', 'bucketLength',
                       ]
@@ -139,7 +143,8 @@ class DataOperationPlotter(BaseReporter):
                                 selectFields,
                                 reportRequest[ 'condDict' ],
                                 reportRequest[ 'groupingFields' ],
-                                { 'convertToGranularity' : 'average' } )
+                                { 'convertToGranularity' : 'sum',
+                                 'calculateProportionalGauges' : True } )
     if not retVal[ 'OK' ]:
       return retVal
     dataDict, granularity = retVal[ 'Value' ]

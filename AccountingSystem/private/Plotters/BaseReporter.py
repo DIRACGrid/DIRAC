@@ -9,6 +9,7 @@ from DIRAC.AccountingSystem.private.Plots import *
 class BaseReporter(DBUtils):
 
   _PARAM_CHECK_FOR_NONE = 'checkNone'
+  _PARAM_CALCULATE_PROPORTIONAL_GAUGES = 'calculateProportionalGauges'
   _PARAM_CONVERT_TO_GRANULARITY = 'convertToGranularity'
   _VALID_PARAM_CONVERT_TO_GRANULARITY = ( 'sum', 'average' )
 
@@ -87,6 +88,8 @@ class BaseReporter(DBUtils):
       metadataDict[ self._PARAM_CONVERT_TO_GRANULARITY ] = "sum"
     elif metadataDict[ self._PARAM_CONVERT_TO_GRANULARITY ] not in self._VALID_PARAM_CONVERT_TO_GRANULARITY:
       return S_ERROR( "%s field metadata is invalid" % self._PARAM_CONVERT_TO_GRANULARITY )
+    if not self._PARAM_CALCULATE_PROPORTIONAL_GAUGES in metadataDict:
+      metadataDict[ self._PARAM_CALCULATE_PROPORTIONAL_GAUGES ] = False
     #Make safe selections
     for keyword in self._typeKeyFields:
       if keyword in preCondDict:
@@ -112,6 +115,8 @@ class BaseReporter(DBUtils):
         dataDict[ keyField ] = self._averageToGranularity( coarsestGranularity, dataDict[ keyField ] )
       if metadataDict[ self._PARAM_CONVERT_TO_GRANULARITY ] == "sum":
         dataDict[ keyField ] = self._sumToGranularity( coarsestGranularity, dataDict[ keyField ] )
+    if metadataDict[ self._PARAM_CALCULATE_PROPORTIONAL_GAUGES ]:
+      dataDict  = self._calculateProportionalGauges( dataDict )
     return S_OK( ( dataDict, coarsestGranularity ) )
 
   def _getSummaryData( self, startTime, endTime, selectFields, preCondDict, groupingFields, metadataDict, reduceFunc = False ):
