@@ -1,9 +1,9 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Client/Catalog/BookkeepingDBClient.py,v 1.14 2008/09/23 22:25:11 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Client/Catalog/BookkeepingDBClient.py,v 1.15 2008/09/25 16:53:19 acsmith Exp $
 
 """ Client for BookkeepingDB file catalog
 """
 
-__RCSID__ = "$Id: BookkeepingDBClient.py,v 1.14 2008/09/23 22:25:11 acsmith Exp $"
+__RCSID__ = "$Id: BookkeepingDBClient.py,v 1.15 2008/09/25 16:53:19 acsmith Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -90,7 +90,7 @@ class BookkeepingDBClient(FileCatalogueBase):
       resDict = {'Successful':successful,'Failed':{}}
       return S_OK(resDict)
 
-  def __getFileMetadata(lfns):
+  def __getFileMetadata(self,lfns):
     server = RPCClient(self.url)
     res = server.getFileMetadata(lfns)
     successful = {}
