@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationData.py,v 1.15 2008/06/02 18:04:13 acasajus Exp $
-__RCSID__ = "$Id: ConfigurationData.py,v 1.15 2008/06/02 18:04:13 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationData.py,v 1.16 2008/09/25 09:45:34 acasajus Exp $
+__RCSID__ = "$Id: ConfigurationData.py,v 1.16 2008/09/25 09:45:34 acasajus Exp $"
 
 import os.path
 import zlib
@@ -333,7 +333,7 @@ class ConfigurationData:
       fd = open( configurationFile, "w" )
       fd.write( str( self.remoteCFG ) )
       fd.close()
-    except:
+    except Exception, e:
       gLogger.fatal( "Cannot write new configuration to disk!",
                      "file %s" % configurationFile )
       return S_ERROR( "Can't write cs file %s!: %s" % ( configurationFile, str( e ) ) )
