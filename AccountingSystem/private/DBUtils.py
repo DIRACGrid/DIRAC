@@ -228,3 +228,34 @@ class DBUtils:
     connObj = retVal[ 'Value' ]
     typeName = "%s_%s" % ( self._setup, typeName )
     return self._acDB.getKeyValues( typeName, condDict, connObj )
+
+  def _calculateProportionalGauges( self, dataDict ):
+    """
+    Get a dict with more than one entry per bucket and list
+    """
+    bucketSums = {}
+    #Calculate total sums in buckets
+    for key in dataDict:
+      for timeKey in dataDict[ key ]:
+        timeData = dataDict[ key ][ timeKey ]
+        if len( timeData ) < 2:
+          raise Exception( "DataDict must be of the type { <key>:{ <timeKey> : [ field1, field2, ..] } }. With at least two fields" )
+        if timeKey not in bucketSums:
+          bucketSums[ timeKey ] = [ 0, 0, 0]
+        bucketSums[ timeKey ][0] += timeData[0]
+        bucketSums[ timeKey ][1] += timeData[1]
+        bucketSums[ timeKey ][2] += timeData[0] / timeData[1]
+    #Calculate proportionalFactor
+    for timeKey in bucketSums:
+      timeData  = bucketSums[ timeKey ]
+      if bucketSums[ timeKey ][0] == 0:
+        bucketSums[ timeKey  ] = 0
+      else:
+        bucketSums[ timeKey ] =  ( timeData[0] / timeData[1] )  / timeData[2]
+    #Calculate proportional Gauges
+    for key in dataDict:
+      for timeKey in dataDict[ key ]:
+        timeData = dataDict[ key ][ timeKey ]
+        dataDict[ key ][ timeKey ] = [ ( timeData[0] / timeData[1] ) * bucketSums[ timeKey ] ]
+
+    return dataDict
