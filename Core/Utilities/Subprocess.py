@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Subprocess.py,v 1.25 2008/08/01 07:58:12 rgracian Exp $
-__RCSID__ = "$Id: Subprocess.py,v 1.25 2008/08/01 07:58:12 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Subprocess.py,v 1.26 2008/09/25 12:48:28 rgracian Exp $
+__RCSID__ = "$Id: Subprocess.py,v 1.26 2008/09/25 12:48:28 rgracian Exp $"
 """
    DIRAC Wrapper to execute python and system commands with a wrapper, that might
    set a timeout.
@@ -142,7 +142,9 @@ class Subprocess:
     #HACK to avoid python bug
     # self.child.wait()
     exitStatus = self.__poll( self.childPID )
-    while exitStatus == None:
+    i = 0
+    while exitStatus == None and i < 1000:
+      i += 1
       time.sleep( 0.000001 )
       exitStatus = self.__poll( self.childPID )
     try:
