@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.11 2008/09/26 10:53:40 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.12 2008/09/26 11:07:49 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.11 2008/09/26 10:53:40 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.12 2008/09/26 11:07:49 acasajus Exp $"
 
 import time
 import types
@@ -79,7 +79,10 @@ class TaskQueueDB(DB):
                                  'Indexes': { 'TaskIndex': [ 'TQId' ], '%sIndex' % multiField: [ 'Value' ] },
                                }
 
-    return self._createTables( tablesD )
+    result = self._createTables( tablesD )
+    if not result[ 'OK' ]:
+      return result
+    return self.cleanOrphanedTaskQueues()
 
   def fitCPUTimeToSegments( self, cpuTime ):
     """
