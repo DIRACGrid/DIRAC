@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.42 2008/09/16 21:14:36 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.43 2008/09/26 12:50:35 atsareg Exp $
 # File :   DiracProduction.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are to be documented with example usage.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.42 2008/09/16 21:14:36 paterson Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.43 2008/09/26 12:50:35 atsareg Exp $"
 
 import string, re, os, time, shutil, types, copy
 import pprint
@@ -719,6 +719,37 @@ class DiracProduction:
     if printOutput:
       self._prettyPrint(fileStatus['Value'])
     return fileStatus
+
+  #############################################################################
+  def setFileStatus(self,lfns,productionID,status,printOutput=False):
+    """ Set status for the given files in the lfns list for production specified by its ID
+    """
+
+    if type(productionID)==type(2):
+      productionID=long(productionID)
+    if not type(productionID)==type(long(1)):
+      if not type(productionID) == type(" "):
+        return self.__errorReport('Expected string, long or int for production ID')
+
+    if type(lfns) in types.StringTypes:
+      lfnList = [lfns]
+    elif type(lfns) == types.ListType:
+      lfnList = lfns
+    else:
+      return self.__errorReport('Expected string or list for LFNs')
+
+    prodClient = RPCClient('ProductionManagement/ProductionManager')
+    result = prodClient.setFileStatusForTransformation(productionID,[(status,lfnList)])
+
+    if printOutput:
+      if not result['OK']:
+        print "Failed to update status for file",lfn
+      for lfn,message in result['Value']['Successful'].items():
+        print "Successful:",lfn,":",message
+      for lfn,message in result['Value']['Failed'].items():
+        print "Failed:",lfn,":",message
+
+    return result
 
   #############################################################################
   def getWMSProdJobID(self,jobID,printOutput=False):
