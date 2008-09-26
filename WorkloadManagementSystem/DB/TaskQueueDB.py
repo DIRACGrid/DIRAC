@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.12 2008/09/26 11:07:49 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.13 2008/09/26 13:08:40 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.12 2008/09/26 11:07:49 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.13 2008/09/26 13:08:40 acasajus Exp $"
 
 import time
 import types
@@ -79,10 +79,7 @@ class TaskQueueDB(DB):
                                  'Indexes': { 'TaskIndex': [ 'TQId' ], '%sIndex' % multiField: [ 'Value' ] },
                                }
 
-    result = self._createTables( tablesD )
-    if not result[ 'OK' ]:
-      return result
-    return self.cleanOrphanedTaskQueues()
+    return self._createTables( tablesD )
 
   def fitCPUTimeToSegments( self, cpuTime ):
     """
@@ -188,12 +185,20 @@ class TaskQueueDB(DB):
     """
     Delete all empty task queues
     """
-    retVal = self._update( "DELETE FROM `tq_TaskQueues` WHERE TQId not in ( SELECT DISTINCT TQId from `tq_Jobs` )", conn = connObj )
+    retVal = self._update( "LOCK TABLE `tq_TaskQueues`", conn = connObj )
     if not retVal[ 'OK' ]:
       return retVal
-    for mvField in self.__multiValueFields:
-      retVal = self._update( "DELETE FROM `tq_TQTo%s` WHERE TQId not in ( SELECT DISTINCT TQId from `tq_TaskQueues` )" % mvField,
-                             conn = connObj )
+    try:
+      retVal = self._update( "DELETE FROM `tq_TaskQueues` WHERE TQId not in ( SELECT DISTINCT TQId from `tq_Jobs` )", conn = connObj )
+      if not retVal[ 'OK' ]:
+        return retVal
+      for mvField in self.__multiValueFields:
+        retVal = self._update( "DELETE FROM `tq_TQTo%s` WHERE TQId not in ( SELECT DISTINCT TQId from `tq_TaskQueues` )" % mvField,
+                               conn = connObj )
+        if not retVal[ 'OK' ]:
+          return retVal
+    finally:
+      retVal = self._update( "UNLOCK TABLE `tq_TaskQueues`", conn = connObj )
       if not retVal[ 'OK' ]:
         return retVal
     return S_OK()
