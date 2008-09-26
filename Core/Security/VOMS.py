@@ -160,7 +160,9 @@ class VOMS( BaseSecurity ):
       vomsesDir = os.environ["DIRAC_VOMSES"]
       vomses = os.path.join(vomsesDir,"%s-voms.cern.ch"%vo)
       if os.path.exists(vomses):
-        cmdArgs.append( '-vomses %s' %vomsesDir)
+        cmdArgs.append( '-vomses "%s"' %vomsesDir)
+
+    cmd = 'voms-proxy-init %s' % " ".join( cmdArgs )
     result = shellCall( self._secCmdTimeout, cmd )
 
     File.deleteMultiProxy( proxyDict )
