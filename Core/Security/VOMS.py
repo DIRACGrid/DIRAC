@@ -156,11 +156,11 @@ class VOMS( BaseSecurity ):
     cmdArgs.append( '-out "%s"' % newProxyLocation )
     cmdArgs.append( '-voms "%s:%s"' % ( vo, attribute ) )
     cmdArgs.append( '-valid "%s:%s"' % ( hours, mins ) )
-    if os.environ.has_key('DIRAC_VOMSES'):
-      vomsesDir = os.environ["DIRAC_VOMSES"]
-      vomses = os.path.join(vomsesDir,"%s-voms.cern.ch"%vo)
-      if os.path.exists(vomses):
-        cmdArgs.append( '-vomses "%s"' %vomsesDir)
+    if 'DIRAC_VOMSES' in os.environ:
+      vomsesDir = os.environ[ 'DIRAC_VOMSES' ]
+      vomsesPath = os.path.join( vomsesDir, "%s-voms.cern.ch" % vo )
+      if os.path.exists( vomsesPath ):
+        cmdArgs.append( '-vomses "%s"' % vomsesPath )
 
     cmd = 'voms-proxy-init %s' % " ".join( cmdArgs )
     result = shellCall( self._secCmdTimeout, cmd )
