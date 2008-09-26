@@ -95,7 +95,7 @@ class ReplicationScheduler(Agent):
       return S_OK()
     requestString = res['Value']['RequestString']
     requestName = res['Value']['RequestName']
-    gLogger.info("ReplicationScheduler._execute: Obtained Request %s from RequestDB.' % (requestName)")
+    gLogger.info("ReplicationScheduler._execute: Obtained Request %s from RequestDB." % requestName)
 
     ######################################################################################
     #
@@ -226,7 +226,7 @@ class ReplicationScheduler(Agent):
           if not res['OK']:
             errStr = "ReplicationScheduler.execute: Failed to determine replication tree."
             gLogger.error(errStr,res['Message'])
-            #oRequest.setSubRequestFileAttributeValue(ind,'transfer',lfn,'Status','Failed')
+            oRequest.setSubRequestFileAttributeValue(ind,'transfer',lfn,'Status','Failed')
             # A.T. I think it was meant to break the file loop here
             break
           tree = res['Value']
@@ -531,6 +531,7 @@ class StrategyHandler:
     timeToSite = {}                # Maintains time to site including previous hops
     siteAncestor = {}              # Maintains the ancestor channel for a site
     tree = {}                      # Maintains replication tree
+    candidateChannels = []
     primarySources = sourceSEs
 
     while len(destSEs) > 0:
@@ -546,23 +547,25 @@ class StrategyHandler:
             if not sourceSE in primarySources:
               channelTimeToStart+=self.sigma
 
-            if channelTimeToStart < minTotalTimeToStart:
+            if minTotalTimeToStart==float("inf"):
               minTotalTimeToStart = channelTimeToStart
               selectedPathTimeToStart = channelTimeToStart
               candidateChannels = [(sourceSE,destSE,channelID)]
-
-            elif channelTimeToStart == minTotalTimeToStart:
+    
+            elif (channelTimeToStart < minTotalTimeToStart):
+              minTotalTimeToStart = channelTimeToStart
+              selectedPathTimeToStart = channelTimeToStart
+              candidateChannels = [(sourceSE,destSE,channelID)]
+            
+            elif (channelTimeToStart == minTotalTimeToStart):
               candidateChannels.append((sourceSE,destSE,channelID))
-
-              #selectedSourceSE = sourceSE
-              #selectedDestSE = destSE
-              #selectedChannelID = channelID
-
+      
           else:
             errStr = 'StrategyHandler.__minimiseTotalWait: Channel not defined'
             gLogger.error(errStr,channelName)
 
-
+      if not candidateChannels:
+        return {}
       random.shuffle(candidateChannels)
       selectedSourceSE,selectedDestSE,selectedChannelID = candidateChannels[0]
       timeToSite[selectedDestSE] = selectedPathTimeToStart
