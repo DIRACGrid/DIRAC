@@ -13,7 +13,7 @@ from DIRAC.DataManagementSystem.Client.Storage.StorageFactory import StorageFact
 from DIRAC.DataManagementSystem.Client.StorageElement import StorageElement
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClient
-
+from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
 import types,re,random
 
 
@@ -42,6 +42,11 @@ class ReplicationScheduler(Agent):
   def execute(self):
     """ The main agent execution method
     """
+
+    result = setupShifterProxyInEnv( "DataManager")
+    if not result[ 'OK' ]:
+      self.log.error( "Can't get shifter's proxy: %s" % result[ 'Message' ] )
+      return result
 
     # This allows dynamic changing of the throughput timescale
     self.throughputTimescale = gConfig.getValue(self.section+'/ThroughputTimescale',3600)
