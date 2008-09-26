@@ -5,6 +5,7 @@ import DIRAC.Core.Security.File as File
 from DIRAC.Core.Security.BaseSecurity import BaseSecurity
 from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.Core.Utilities.Subprocess import shellCall
+import os
 
 class VOMS( BaseSecurity ):
 
@@ -155,8 +156,11 @@ class VOMS( BaseSecurity ):
     cmdArgs.append( '-out "%s"' % newProxyLocation )
     cmdArgs.append( '-voms "%s:%s"' % ( vo, attribute ) )
     cmdArgs.append( '-valid "%s:%s"' % ( hours, mins ) )
-    cmd = 'voms-proxy-init %s' % " ".join( cmdArgs )
-
+    if os.environ.has_key('DIRAC_VOMSES'):
+      vomsesDir = os.environ["DIRAC_VOMSES"]
+      vomses = os.path.join(vomsesDir,"%s-voms.cern.ch"%vo)
+      if os.path.exists(vomses):
+        cmdArgs.append( '-vomses %s' %vomsesDir)
     result = shellCall( self._secCmdTimeout, cmd )
 
     File.deleteMultiProxy( proxyDict )
