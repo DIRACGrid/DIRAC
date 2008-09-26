@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransferDB.py,v 1.31 2008/08/16 20:55:02 atsareg Exp $
+# $Id: TransferDB.py,v 1.32 2008/09/26 13:39:09 acsmith Exp $
 ########################################################################
 
 """ RequestDB is a front end to the Request Database.
@@ -9,7 +9,7 @@ from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities.List import randomize,stringListToString,intListToString
 import threading,types,string,time,datetime
 
-__RCSID__ = "$Id: TransferDB.py,v 1.31 2008/08/16 20:55:02 atsareg Exp $"
+__RCSID__ = "$Id: TransferDB.py,v 1.32 2008/09/26 13:39:09 acsmith Exp $"
 
 MAGIC_EPOC_NUMBER = 1270000000
 
@@ -353,11 +353,14 @@ class TransferDB(DB):
     files = []
     for fileID,sourceSURL,targetSURL,size in res['Value']:
       req = "SELECT LFN from Files WHERE FileID = %s;" % fileID
-      res = self._query(req)
-      if not res['OK']:
+      lfnres = self._query(req)
+      if not lfnres['OK']:
         err = "TransferDB.getFilesForChannel: Failed to get LFN for File %s." % fileID
-        return S_ERROR('%s\n%s' % (err,res['Message']))
-      lfn = res['Value'][0][0]
+        return S_ERROR('%s\n%s' % (err,lfnres['Message']))
+      if not lfnres['Value']:
+        err = "TransferDB.getFilesForChannel: Failed to get LFN for File %s. Does not exist in the Files table." % fileID
+        return S_ERROR(err)
+      lfn = lfnres['Value'][0][0]
       files.append({'FileID':fileID,'SourceSURL':sourceSURL,'TargetSURL':targetSURL,'LFN':lfn,'Size':size})
     resDict['Files'] = files
     return S_OK(resDict)
