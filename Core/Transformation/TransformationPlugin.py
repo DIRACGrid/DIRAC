@@ -1,7 +1,7 @@
 """  TransformationPlugin is a class wrapping the supported transformation plugins
 """
-
 from DIRAC import gLogger, S_OK, S_ERROR
+import random
 
 class TransformationPlugin:
 
@@ -28,6 +28,36 @@ class TransformationPlugin:
     evalString = "self._%s()" % self.plugin
     return eval(evalString)
 
+  def _MCBroadcast(self):
+    """ This plug-in takes files found at the sourceSE and broadcasts to a given number of targetSEs
+    """
+    if not self.params:
+      return S_ERROR("TransformationPlugin._MCBroadcast: The 'MCBroadcast' plugin requires additional parameters.")
+
+    sourceSEs = self.params['SourceSE'].split(',')
+    targetSEs = self.params['TargetSE'].split(',')
+    destinations = self.params['Destinations']
+
+    seFiles = {}
+    for lfn,se in self.data:
+      random.shuffle(targetSEs)
+      selectedTargets = 0
+      if se in sourceSEs:
+        sourceSite = se.split('_')[0].split('-')[0]
+        targets = []
+        for targetSE in targetSEs:
+          if not targetSE.startswith(sourceSite):
+            if selectedTargets < destinations:
+              targets.append(targetSE)
+              selectedTargets+=1
+        strTargetSE = ','.join(targets)
+        if not seFiles.has_key(se):
+          seFiles[se] = {}
+        if not seFiles[se].has_key(strTargetSE):
+          seFiles[se][strTargetSE] = []
+        seFiles[se][strTargetSE].append(lfn)
+    return S_OK(seFiles)
+
   def _Broadcast(self):
     """ This plug-in takes files found at the sourceSE and broadcasts to all targetSEs.
     """
@@ -50,8 +80,8 @@ class TransformationPlugin:
           seFiles[se] = {}
         if not seFiles[se].has_key(strTargetSE):
           seFiles[se][strTargetSE] = []
-        seFiles[se][strTargetSE].append(lfn)        
-    return S_OK(seFiles) 
+        seFiles[se][strTargetSE].append(lfn)
+    return S_OK(seFiles)
 
   def _LoadBalance(self):
     """ This plug-in will load balances the input files across the selected target SEs.
@@ -71,7 +101,7 @@ class TransformationPlugin:
     if self.params.has_key('SourceSE'):
       sourceSE = self.params['SourceSE']
     seFiles = {}
-    
+
     selectedFiles = []
     for lfn,se in self.data:
       useFile = False
