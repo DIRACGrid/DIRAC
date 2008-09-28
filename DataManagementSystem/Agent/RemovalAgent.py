@@ -1,9 +1,7 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Agent/RemovalAgent.py,v 1.18 2008/09/04 14:21:48 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Agent/RemovalAgent.py,v 1.19 2008/09/28 19:03:28 acsmith Exp $
 
 """  RemovalAgent takes removal requests from the RequestDB and replicates them
 """
-
-__RCSID__ = "$Id: RemovalAgent.py,v 1.18 2008/09/04 14:21:48 atsareg Exp $"
 
 from DIRAC  import gLogger, gConfig, gMonitor, S_OK, S_ERROR
 from DIRAC.Core.Base.Agent import Agent
@@ -177,6 +175,7 @@ class RemovalAgent(Agent,RequestAgentMixIn):
                 if re.search('no such file or directory',res['Value']['Failed'][lfn].lower()):
                   gLogger.info("RemovalAgent.execute: File did not exist.",lfn)
                   oRequest.setSubRequestFileAttributeValue(ind,'removal',lfn,'Status','Done')
+                  modified = True
                 else:
                   gLogger.info("RemovalAgent.execute: Failed to remove file.", "%s %s" % (lfn,res['Value']['Failed'][lfn]))
           else:
@@ -204,7 +203,13 @@ class RemovalAgent(Agent,RequestAgentMixIn):
               modified = True
             gMonitor.addMark('PhysicalRemovalFail',len(res['Value']['Failed'].keys()))
             for lfn in res['Value']['Failed'].keys():
-              gLogger.info("RemovalAgent.execute: Failed to remove replica." , "%s %s %s" % (lfn,diracSE,res['Value']['Failed'][lfn]))
+              if type(res['Value']['Failed'][lfn]) in StringTypes:
+                if re.search('no such file or directory',res['Value']['Failed'][lfn].lower()):
+                  gLogger.info("RemovalAgent.execute: File did not exist.",lfn)
+                  oRequest.setSubRequestFileAttributeValue(ind,'removal',lfn,'Status','Done')
+                  modified = True
+                else:
+                  gLogger.info("RemovalAgent.execute: Failed to remove file.", "%s %s" % (lfn,res['Value']['Failed'][lfn]))
           else:
             gMonitor.addMark('ReplicaRemovalFail',len(lfns))
             errStr = "RemovalAgent.execute: Completely failed to remove replicas."
