@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/ldLibraryPath.py,v 1.2 2008/04/26 07:58:25 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/ldLibraryPath.py,v 1.3 2008/09/29 14:24:20 rgracian Exp $
 # File :   ldLibraryPath
 # Author : Ricardo Graciani
 ########################################################################
-__RCSID__   = "$Id: ldLibraryPath.py,v 1.2 2008/04/26 07:58:25 rgracian Exp $"
-__VERSION__ = "$Revision: 1.2 $"
+__RCSID__   = "$Id: ldLibraryPath.py,v 1.3 2008/09/29 14:24:20 rgracian Exp $"
+__VERSION__ = "$Revision: 1.3 $"
 """
   Utilities to handle issues with LD_LIBRARY_PATH
 """
@@ -16,11 +16,12 @@ def unify( path, newpath ):
   # For that we go a long pathList in reverse order and link all files
   # from a path, the latest appearence of a file will take precedence
   if not platformTuple[0] == 'Windows':
-    if os.path.exists( newpath ) and not os.path.isdir(newpath):
-      try:
-        os.remove( newpath )
-      except:
-        return path
+    if os.path.exists( newpath ):
+      if not os.path.isdir(newpath):
+        try:
+          os.remove( newpath )
+        except:
+          return path
     else:
       try:
         os.makedirs( newpath )
