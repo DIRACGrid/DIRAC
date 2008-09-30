@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.13 2008/09/26 13:08:40 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.14 2008/09/30 10:14:13 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.13 2008/09/26 13:08:40 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.14 2008/09/30 10:14:13 acasajus Exp $"
 
 import time
 import types
@@ -18,9 +18,10 @@ class TaskQueueDB(DB):
   def __init__( self, maxQueueSize = 10 ):
     random.seed()
     DB.__init__( self, 'TaskQueueDB', 'WorkloadManagement/TaskQueueDB', maxQueueSize )
-    self.__multiValueFields = ( 'Sites', 'GridCEs', 'GridMiddlewares', 'BannedSites', 'LHCbPlatforms' )
+    self.__multiValueDefFields = ( 'Sites', 'GridCEs', 'GridMiddlewares', 'BannedSites', 'LHCbPlatforms' )
     self.__multiValueMatchFields = ( 'GridCE', 'Site', 'GridMiddleware', 'LHCbPlatform' )
-    self.__singleValueFields = ( 'OwnerDN', 'OwnerGroup', 'PilotType', 'Setup', 'CPUTime' )
+    self.__singleValueDefFields = ( 'OwnerDN', 'OwnerGroup', 'PilotType', 'Setup', 'CPUTime' )
+    self.__mandatoryMatchFields = ( 'PilotType', 'Setup', 'CPUTime' )
     self.__minCPUSegments = ( 500, 6000, 100000 )
     self.__maxMatchRetry = 3
     retVal = self.__initializeDB()
@@ -28,10 +29,10 @@ class TaskQueueDB(DB):
       raise Exception( "Can't create tables: %s" % retVal[ 'Message' ])
 
   def getSingleValueTQDefFields( self ):
-    return self.__singleValueFields
+    return self.__singleValueDefFields
 
   def getMultiValueTQDefFields( self ):
-    return self.__multiValueFields
+    return self.__multiValueDefFields
 
   def getMultiValueMatchFields( self ):
     return self.__multiValueMatchFields
@@ -70,7 +71,7 @@ class TaskQueueDB(DB):
                                'Indexes': { 'TaskIndex': [ 'TQId' ] },
                              }
 
-    for multiField in self.__multiValueFields:
+    for multiField in self.__multiValueDefFields:
       tableName = 'tq_TQTo%s' % multiField
       if not tableName in tablesInDB:
         tablesD[ tableName ] = { 'Fields' : { 'TQId' : 'INTEGER NOT NULL',
@@ -95,7 +96,7 @@ class TaskQueueDB(DB):
     """
     Check a task queue definition dict is valid
     """
-    for field in self.__singleValueFields:
+    for field in self.__singleValueDefFields:
       if field not in tqDefDict:
         return S_ERROR( "Missing mandatory field '%s' in task queue definition" % field )
       fieldValueType = type( tqDefDict[ field ] )
@@ -105,7 +106,7 @@ class TaskQueueDB(DB):
       else:
         if fieldValueType not in ( types.StringType, types.UnicodeType ):
           return S_ERROR( "Mandatory field %s value type is not valid: %s" % ( field, fieldValueType ) )
-    for field in self.__multiValueFields:
+    for field in self.__multiValueDefFields:
       if field in tqDefDict:
         fieldValueType = type( tqDefDict[ field ] )
       else:
@@ -118,21 +119,21 @@ class TaskQueueDB(DB):
     """
     Check a task queue match dict is valid
     """
-    for field in self.__singleValueFields:
-      if field not in tqMatchDict:
-        return S_ERROR( "Missing mandatory field '%s' in task queue definition" % field )
+    for field in self.__singleValueDefFields:
+      if field in self.__mandatoryMatchFields and field not in tqMatchDict:
+        return S_ERROR( "Missing mandatory field '%s' in match request definition" % field )
       fieldValueType = type( tqMatchDict[ field ] )
       if field in [ "CPUTime" ]:
         if fieldValueType not in ( types.IntType, types.LongType ):
-          return S_ERROR( "Mandatory field %s value type is not valid: %s" % ( field, fieldValueType ) )
+          return S_ERROR( "Match definition field %s value type is not valid: %s" % ( field, fieldValueType ) )
       else:
         if fieldValueType not in ( types.StringType, types.UnicodeType ):
-          return S_ERROR( "Mandatory field %s value type is not valid: %s" % ( field, fieldValueType ) )
+          return S_ERROR( "Match definition field %s value type is not valid: %s" % ( field, fieldValueType ) )
     for field in self.__multiValueMatchFields:
       if field in tqMatchDict:
         fieldValueType = type( tqMatchDict[ field ] )
         if fieldValueType not in ( types.StringType, types.UnicodeType ):
-          return S_ERROR( "Field %s value type is not valid: %s" % ( field, fieldValueType ) )
+          return S_ERROR( "Match definition field %s value type is not valid: %s" % ( field, fieldValueType ) )
     return S_OK( tqMatchDict )
 
   def createTaskQueue( self, tqDefDict, priority = 1, skipDefinitionCheck = False, connObj = False ):
@@ -152,7 +153,7 @@ class TaskQueueDB(DB):
     tqDefDict[ 'CPUTime' ] = self.fitCPUTimeToSegments( tqDefDict[ 'CPUTime' ] )
     sqlSingleFields = [ 'TQId', 'Priority' ]
     sqlValues = [ "0", str( priority ) ]
-    for field in self.__singleValueFields:
+    for field in self.__singleValueDefFields:
       sqlSingleFields.append( field )
       sqlValues.append( "'%s'" % tqDefDict[ field ] )
     cmd = "INSERT INTO tq_TaskQueues ( %s ) VALUES ( %s)" % ( ", ".join( sqlSingleFields ), ", ".join( sqlValues ) )
@@ -167,7 +168,7 @@ class TaskQueueDB(DB):
         self.cleanOrphanedTaskQueues( connObj = connObj )
         return S_ERROR( "Can't determine task queue id after insertion" )
       tqId = retVal[ 'Value' ][0][0]
-    for field in self.__multiValueFields:
+    for field in self.__multiValueDefFields:
       if field not in tqDefDict:
         continue
       values = List.uniqueElements( [ value for value in tqDefDict[ field ] if value.strip() ] )
@@ -192,7 +193,7 @@ class TaskQueueDB(DB):
       retVal = self._update( "DELETE FROM `tq_TaskQueues` WHERE TQId not in ( SELECT DISTINCT TQId from `tq_Jobs` )", conn = connObj )
       if not retVal[ 'OK' ]:
         return retVal
-      for mvField in self.__multiValueFields:
+      for mvField in self.__multiValueDefFields:
         retVal = self._update( "DELETE FROM `tq_TQTo%s` WHERE TQId not in ( SELECT DISTINCT TQId from `tq_TaskQueues` )" % mvField,
                                conn = connObj )
         if not retVal[ 'OK' ]:
@@ -254,13 +255,13 @@ class TaskQueueDB(DB):
         return retVal
     sqlCmd = "SELECT `tq_TaskQueues`.TQId FROM `tq_TaskQueues` WHERE"
     sqlCondList = []
-    for field in self.__singleValueFields:
+    for field in self.__singleValueDefFields:
       if field in ( 'CPUTime' ):
         sqlCondList.append( "`tq_TaskQueues`.%s = %s" % ( field, tqDefDict[ field ] ) )
       else:
         sqlCondList.append( "`tq_TaskQueues`.%s = '%s'" % ( field, tqDefDict[ field ] ) )
     #MAGIC SUBQUERIES TO ENSURE STRICT MATCH
-    for field in self.__multiValueFields:
+    for field in self.__multiValueDefFields:
       tableName = '`tq_TQTo%s`' % field
       if field in tqDefDict and tqDefDict[ field ]:
         firstQuery = "SELECT COUNT(%s.Value) FROM %s WHERE %s.TQId = `tq_TaskQueues`.TQId" % ( tableName, tableName, tableName )
@@ -424,7 +425,7 @@ class TaskQueueDB(DB):
       return S_ERROR( "Could not delete task queue %s: %s" % ( tqId, retVal[ 'Message' ] ) )
     print retVal
     # if connObj.num_rows() == 1:
-    for mvField in self.__multiValueFields:
+    for mvField in self.__multiValueDefFields:
       retVal = self._update( "DELETE FROM `tq_TQTo%s` WHERE TQId = %s" % ( mvField, tqId ), conn = connObj )
       if not retVal[ 'OK' ]:
         return retVal
@@ -449,7 +450,7 @@ class TaskQueueDB(DB):
     if not retVal[ 'OK' ]:
       return S_ERROR( "Could not delete task queue %s: %s" % ( tqId, retVal[ 'Message' ] ) )
     if connObj.num_rows() == 1:
-      for mvField in self.__multiValueFields:
+      for mvField in self.__multiValueDefFields:
         retVal = self._update( "DELETE FROM `tq_TQTo%s` WHERE TQId = %s" % tqId, conn = connObj )
         if not retVal[ 'OK' ]:
           return retVal
@@ -462,7 +463,7 @@ class TaskQueueDB(DB):
     """
     sqlSelectEntries = [ "`tq_TaskQueues`.TQId", "`tq_TaskQueues`.Priority", "COUNT( `tq_Jobs`.TQId )" ]
     sqlGroupEntries = [ "`tq_TaskQueues`.TQId", "`tq_TaskQueues`.Priority" ]
-    for field in self.__singleValueFields:
+    for field in self.__singleValueDefFields:
       sqlSelectEntries.append( "`tq_TaskQueues`.%s" % field )
       sqlGroupEntries.append( "`tq_TaskQueues`.%s" % field )
     sqlCmd = "SELECT %s FROM `tq_TaskQueues`, `tq_Jobs`" % ", ".join( sqlSelectEntries )
@@ -476,11 +477,11 @@ class TaskQueueDB(DB):
       tqId = record[0]
       tqData[ tqId ] = { 'Priority' : record[1], 'Jobs' : record[2] }
       record = record[3:]
-      for iP in range( len( self.__singleValueFields ) ):
-        tqData[ tqId ][ self.__singleValueFields[ iP ] ] = record[ iP ]
+      for iP in range( len( self.__singleValueDefFields ) ):
+        tqData[ tqId ][ self.__singleValueDefFields[ iP ] ] = record[ iP ]
 
     tqNeedCleaning = False
-    for field in self.__multiValueFields:
+    for field in self.__multiValueDefFields:
       table = "`tq_TQTo%s`" % field
       sqlCmd = "SELECT %s.TQId, %s.Value FROM %s" % ( table, table, table )
       retVal = self._query( sqlCmd )
