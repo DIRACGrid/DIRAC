@@ -1,21 +1,20 @@
 
 from DIRAC import S_ERROR, S_OK, gLogger
-from DIRAC.Core.Utilities import ThreadSafe
+from DIRAC.Core.Utilities.ThreadSafe import Synchronizer
 import md5
 import threading
 import time
 
-gSchedulerLock = ThreadSafe.Synchronizer()
+gSchedulerLock = Synchronizer()
 
 class ThreadScheduler:
 
   def __init__(self):
     self.__thId = False
-    self.__minPeriod = 1
+    self.__minPeriod = 60
     self.__taskDict = {}
     self.__hood = []
     self.__event = threading.Event()
-    self.__log = gLogger.getSubLogger( "ThreadScheduler" )
 
   def addPeriodicTask( self, period, taskFunc, taskArgs = (), executions = 0, elapsedTime = 0 ):
     if not callable( taskFunc ):
@@ -34,7 +33,6 @@ class ThreadScheduler:
     if executions:
       task[ 'executions' ] = executions
     self.__taskDict[ taskId ] = task
-    self.__log.debug( "Added task %s\n%s" % ( taskId, str( task ) ) )
     executeInSecs = period
     if elapsedTime:
       executeInSecs -= elapsedTime
@@ -81,22 +79,17 @@ class ThreadScheduler:
     return S_OK()
 
   def __executorThread(self):
-    self.__log.debug( "Starting executor thread" )
     while len( self.__hood ) > 0:
       timeToWait = self.__timeToNextTask()
-      self.__log.debug( "Need to wait %s secs until next task" % timeToWait )
       while timeToWait and timeToWait > 0:
         self.__event.clear()
         self.__event.wait( timeToWait )
-        self.__log.debug( "Woke up after event" )
         timeToWait = self.__timeToNextTask()
-        self.__log.debug( "After wake up, need to wait for %s secs more" % timeToWait )
       if timeToWait == None:
         break
       taskId = self.__extractNextTask()
       self.__executeTask( taskId )
       self.__schedueIfNeeded( taskId )
-    self.__log.debug( "Exiting executor thread" )
     #If we are leaving
     self.__destroyExecutor()
 
@@ -104,14 +97,12 @@ class ThreadScheduler:
   def __createExecutorIfNeeded(self):
     if self.__thId:
       return
-    self.__log.debug( "Creating executor thread" )
     self.__thId = threading.Thread( target = self.__executorThread )
     self.__thId.setDaemon( True )
     self.__thId.start()
 
   @gSchedulerLock
   def __destroyExecutor(self):
-    self.__log.debug( "Destroying executor thread" )
     self.__thId = False
 
   @gSchedulerLock
