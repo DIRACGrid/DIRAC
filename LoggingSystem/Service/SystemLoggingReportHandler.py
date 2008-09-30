@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Service/SystemLoggingReportHandler.py,v 1.9 2008/09/22 16:34:00 mseco Exp $
-__RCSID__ = "$Id: SystemLoggingReportHandler.py,v 1.9 2008/09/22 16:34:00 mseco Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Service/SystemLoggingReportHandler.py,v 1.10 2008/09/30 15:24:30 mseco Exp $
+__RCSID__ = "$Id: SystemLoggingReportHandler.py,v 1.10 2008/09/30 15:24:30 mseco Exp $"
 """
 SystemLoggingReportHandler allows a remote system to access the contest
 of the SystemLoggingDB
@@ -114,7 +114,18 @@ class SystemLoggingReportHandler( RequestHandler ):
          DIRAC convention for communications between services and 
          web pages
     """
-    fieldList = [ 'MessageTime', 'LogLevel', 'SystemName', 'SubSystemName',
+    if selectionDict.has_key('convertdates'):
+      convertDatesToStrings = selectionDict['convertdates']
+      del selectionDict['convertdates']
+    else:
+      convertDatesToStrings = True
+
+    if convertDatesToStrings:
+      dateField = "DATE_FORMAT(MessageTime, '%Y-%m-%d %H:%i:%s')"
+    else:
+      dateField = 'MessageTime'
+      
+    fieldList = [ dateField, 'LogLevel', 'SystemName', 'SubSystemName',
                   'FixedTextString', 'VariableText',  'OwnerDN', 'OwnerGroup',
                   'ClientIPNumberString', 'SiteName' ]
 
@@ -122,11 +133,13 @@ class SystemLoggingReportHandler( RequestHandler ):
       selectionDict['LogLevel'] = [ 'ERROR', 'EXCEPT', 'FATAL' ]
 
     if selectionDict.has_key( 'beginDate' ):
-      beginDate = selectionDict.pop( 'beginDate' )
+      beginDate = selectionDict['beginDate']
+      del selectionDict['beginDate']
     else:
       beginDate = None
     if selectionDict.has_key( 'endDate' ):
-      endDate = selectionDict.pop( 'endDate' )
+      endDate = selectionDict['endDate']
+      del selectionDict['endDate']
     else:
       endDate = None
 
@@ -156,7 +169,11 @@ class SystemLoggingReportHandler( RequestHandler ):
     if 'count(*) as recordCount' in fieldList:
       fieldList.remove( 'count(*) as recordCount' )
     fieldList.append( 'Number of Errors' )
-
+    
+    if convertDatesToStrings:
+      fieldList.pop(0)
+      fieldList.insert(0,'MessageTime')
+      
     retValue={ 'ParameterNames': fieldList, 'Records': records ,
            'TotalRecords': len( records ), 'Extras': {}}
   
