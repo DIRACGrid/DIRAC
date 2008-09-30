@@ -1,12 +1,12 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.34 2008/06/06 14:04:07 acasajus Exp $
-__RCSID__ = "$Id: MonitoringClient.py,v 1.34 2008/06/06 14:04:07 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.35 2008/09/30 19:01:34 acasajus Exp $
+__RCSID__ = "$Id: MonitoringClient.py,v 1.35 2008/09/30 19:01:34 acasajus Exp $"
 
 import threading
 import time
 import types
 from DIRAC import gConfig, gLogger
 from DIRAC.ConfigurationSystem.Client import PathFinder
-from DIRAC.Core.Utilities import Time, ExitCallback, Network
+from DIRAC.Core.Utilities import Time, ExitCallback, Network, ThreadScheduler
 from DIRAC.MonitoringSystem.private.ServiceInterface import gServiceInterface
 from DIRAC.Core.DISET.RPCClient import RPCClient
 
@@ -76,9 +76,12 @@ class MonitoringClient:
     self.sendingMode = gConfig.getValue( "%s/SendMode" % self.cfgSection, "periodic" )
     if self.sendingMode == "periodic":
       self.sendingPeriod = max( 60, gConfig.getValue( "%s/SendPeriod" % self.cfgSection, 300 ) )
-      self.sendingThread = threading.Thread( target = self.__periodicFlush )
-      self.sendingThread.setDaemon( 1 )
-      self.sendingThread.start()
+      ThreadScheduler.gThreadScheduler.addPeriodicTask( self.sendingPeriod,
+                                                        self.__periodicFlush )
+      #self.sendingPeriod = max( 60, gConfig.getValue( "%s/SendPeriod" % self.cfgSection, 300 ) )
+      #self.sendingThread = threading.Thread( target = self.__periodicFlush )
+      #self.sendingThread.setDaemon( 1 )
+      #self.sendingThread.start()
       #HACK: Avoid exiting while the thread is starting
       time.sleep( 0.1 )
 
