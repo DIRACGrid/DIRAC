@@ -1,9 +1,9 @@
 
 from DIRAC import S_ERROR, S_OK, gLogger
-from DIRAC.Core.Utilities import Time, ThreadSafe
+from DIRAC.Core.Utilities import ThreadSafe
 import md5
-import datetime
 import threading
+import time
 
 gSchedulerLock = ThreadSafe.Synchronizer()
 
@@ -45,8 +45,7 @@ class ThreadScheduler:
     return S_OK( taskId )
 
   def addSingleTask( self, taskFunc, taskArgs = () ):
-    return self.addPeriodicTask( self,
-                                 self.__minPeriod,
+    return self.addPeriodicTask( self.__minPeriod,
                                  taskFunc,
                                  taskArgs,
                                  executions = 1,
@@ -57,18 +56,17 @@ class ThreadScheduler:
     if not executeInSecs:
       executeInSecs = self.__taskDict[ taskId ][ 'period' ]
 
-    now = Time.dateTime()
+    now = time.time()
     for i in range( len( self.__hood ) ):
       if taskId == self.__hood[i][0]:
         tD = self.__hood[i][1] - now
-        tD = tD.days + td.secs * 86400
         if abs( tD - executeInSecs ) < 30:
           return S_OK()
         else:
           del( self.__hood[ i ] )
           break
 
-    executionTime = now + datetime.timedelta( seconds = executeInSecs )
+    executionTime = now + executeInSecs
     inserted = False
     for i in range( len( self.__hood ) ):
       if executionTime < self.__hood[i][1]:
@@ -120,8 +118,7 @@ class ThreadScheduler:
   def __timeToNextTask( self ):
     if len( self.__hood ) == 0:
       return None
-    tD = self.__hood[0][1] - Time.dateTime()
-    return ( tD.days *86400 ) + tD.seconds
+    return self.__hood[0][1] - time.time()
 
   @gSchedulerLock
   def __extractNextTask( self ):
