@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.31 2008/08/07 18:32:29 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.32 2008/09/30 07:35:11 rgracian Exp $
 ########################################################################
 """ ProxyRepository class is a front-end to the proxy repository Database
 """
 
-__RCSID__ = "$Id: ProxyDB.py,v 1.31 2008/08/07 18:32:29 rgracian Exp $"
+__RCSID__ = "$Id: ProxyDB.py,v 1.32 2008/09/30 07:35:11 rgracian Exp $"
 
 import time
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
@@ -475,7 +475,7 @@ class ProxyDB(DB):
 
     retVal = vomsMgr.setVOMSAttributes( chain , vomsAttr )
     if not retVal[ 'OK' ]:
-      return S_ERROR( "Cannot append voms extension: %s" % retVal[ 'Value' ] )
+      return S_ERROR( "Cannot append voms extension: %s" % retVal[ 'Message' ] )
     chain = retVal[ 'Value' ]
     self.__storeVOMSProxy( userDN, userGroup, vomsAttr, chain )
     return S_OK( chain )
