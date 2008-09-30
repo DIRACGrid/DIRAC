@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Service/MonitoringHandler.py,v 1.7 2008/07/16 16:10:56 acasajus Exp $
-__RCSID__ = "$Id: MonitoringHandler.py,v 1.7 2008/07/16 16:10:56 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Service/MonitoringHandler.py,v 1.8 2008/09/30 19:01:25 acasajus Exp $
+__RCSID__ = "$Id: MonitoringHandler.py,v 1.8 2008/09/30 19:01:25 acasajus Exp $"
 import types
 import os
 from DIRAC import gLogger, gConfig, rootPath, S_OK, S_ERROR
@@ -14,10 +14,8 @@ def initializeMonitoringHandler( serviceInfo ):
   #Check that the path is writable
   monitoringSection = PathFinder.getServiceSection( "Monitoring/Server" )
   #Get data location
-  retDict = gConfig.getOption( "%s/DataLocation" % monitoringSection )
-  if not retDict[ 'OK' ]:
-    return retDict
-  dataPath = retDict[ 'Value' ].strip()
+  dataPath = gConfig.getValue( "%s/DataLocation" % monitoringSection, "data/monitoring" )
+  dataPath = dataPath.strip()
   if "/" != dataPath[0]:
     dataPath = os.path.realpath( "%s/%s" % ( rootPath, dataPath ) )
   gLogger.info( "Data will be written into %s" % dataPath )
