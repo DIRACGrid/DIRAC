@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.14 2008/09/30 10:14:13 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.15 2008/09/30 10:18:57 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.14 2008/09/30 10:14:13 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.15 2008/09/30 10:18:57 acasajus Exp $"
 
 import time
 import types
@@ -372,13 +372,8 @@ class TaskQueueDB(DB):
         tableName = '`tq_TQTo%ss`' % field
         # sqlTables.append( tableName )
         sqlMultiCondList = []
-        if field != 'GridCE':
-          # GridCE is is used to Direct Jobs to Banned Sites it is only used in the match if the Site
-          # is banned, thus it can not be ignored
-          sqlMultiCondList.append( "( SELECT COUNT(%s.Value) FROM %s WHERE %s.TQId = `tq_TaskQueues`.TQId ) = 0 " % (tableName,tableName,tableName ) )
+        sqlMultiCondList.append( "( SELECT COUNT(%s.Value) FROM %s WHERE %s.TQId = `tq_TaskQueues`.TQId ) = 0 " % (tableName,tableName,tableName ) )
         sqlMultiCondList.append( "'%s' in ( SELECT %s.Value FROM %s WHERE %s.TQId = `tq_TaskQueues`.TQId )" % ( fieldValue, tableName, tableName, tableName ) )
-        # sqlCondList.append( "%s.TQId = `tq_TaskQueues`.TQId" % tableName )
-        # sqlCondList.append( "%s.Value = '%s'" % ( tableName, fieldValue, tableName ) )
         sqlCondList.append( "( %s )" % " OR ".join(sqlMultiCondList) )
         if field == 'Site':
           bannedTable = '`tq_TQToBannedSites`'
