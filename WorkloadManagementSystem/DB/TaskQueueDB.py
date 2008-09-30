@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.15 2008/09/30 10:18:57 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.16 2008/09/30 10:29:14 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.15 2008/09/30 10:18:57 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.16 2008/09/30 10:29:14 acasajus Exp $"
 
 import time
 import types
@@ -120,8 +120,11 @@ class TaskQueueDB(DB):
     Check a task queue match dict is valid
     """
     for field in self.__singleValueDefFields:
-      if field in self.__mandatoryMatchFields and field not in tqMatchDict:
-        return S_ERROR( "Missing mandatory field '%s' in match request definition" % field )
+      if field not in tqMatchDict:
+        if field in self.__mandatoryMatchFields:
+          return S_ERROR( "Missing mandatory field '%s' in match request definition" % field )
+        else:
+          continue
       fieldValueType = type( tqMatchDict[ field ] )
       if field in [ "CPUTime" ]:
         if fieldValueType not in ( types.IntType, types.LongType ):
