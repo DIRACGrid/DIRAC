@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.16 2008/09/30 10:29:14 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.17 2008/09/30 10:39:10 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.16 2008/09/30 10:29:14 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.17 2008/09/30 10:39:10 acasajus Exp $"
 
 import time
 import types
@@ -352,18 +352,12 @@ class TaskQueueDB(DB):
     sqlCondList = []
     sqlTables = [ "`tq_TaskQueues`" ]
     #Type of pilot conditions
-    if tqMatchDict[ 'PilotType' ] == 'private':
-      for field in ( 'OwnerDN', 'OwnerGroup', 'PilotType' ):
-        sqlCondList.append( "`tq_TaskQueues`.%s = '%s'" % ( field, tqMatchDict[ field ] ) )
-    else:
-      for field in ( 'PilotType', ):
-        sqlCondList.append( "`tq_TaskQueues`.%s = '%s'" % ( field, tqMatchDict[ field ] ) )
-    #Remaining single value fields
-    for field in ( 'CPUTime', 'Setup' ):
-      if field in ( 'CPUTime' ):
-        sqlCondList.append( "`tq_TaskQueues`.%s <= %s" % ( field, tqMatchDict[ field ] ) )
-      else:
-        sqlCondList.append( "`tq_TaskQueues`.%s = '%s'" % ( field, tqMatchDict[ field ] ) )
+    for field in self.__singleValueDefFields:
+      if field in tqMatchDict:
+        if field in ( 'CPUTime' ):
+          sqlCondList.append( "`tq_TaskQueues`.%s <= %s" % ( field, tqMatchDict[ field ] ) )
+        else:
+          sqlCondList.append( "`tq_TaskQueues`.%s = '%s'" % ( field, tqMatchDict[ field ] ) )
     #Match multi value fields
     for field in self.__multiValueMatchFields:
       if field in tqMatchDict:
