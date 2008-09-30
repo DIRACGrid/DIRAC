@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Dispatcher.py,v 1.13 2008/07/23 14:21:42 acasajus Exp $
-__RCSID__ = "$Id: Dispatcher.py,v 1.13 2008/07/23 14:21:42 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Dispatcher.py,v 1.14 2008/09/30 19:02:10 acasajus Exp $
+__RCSID__ = "$Id: Dispatcher.py,v 1.14 2008/09/30 19:02:10 acasajus Exp $"
 
 import DIRAC
 from DIRAC.LoggingSystem.Client.Logger import gLogger
@@ -8,8 +8,11 @@ from DIRAC.Core.Utilities import List, Time
 from DIRAC.Core.DISET.AuthManager import AuthManager
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.MonitoringSystem.Client.MonitoringClient import MonitoringClient
+from DIRAC.FrameworkSystem.Client.SecurityLogClient import SecurityLogClient
 
 class Dispatcher:
+
+  __securityLog = SecurityLogClient()
 
   def __init__( self, serviceCfgList ):
     self.servicesDict = {}
@@ -181,7 +184,19 @@ class Dispatcher:
     finally:
       self._unlock( requestedService )
 
-  def _authorizeClientProposal( self, service, actionTuple, clientTransport ):
+  def _createIdentityStringFromCredDict( self, credDict ):
+    if 'username' in credDict:
+      if 'group' in credDict:
+        identity = "[%s:%s]" % ( credDict[ 'username' ], credDict[ 'group' ]  )
+      else:
+        identity = "[%s:unknown]" % credDict[ 'username' ]
+    else:
+      identity = 'unknown'
+    if 'DN' in credDict:
+      identity += "(%s)" % credDict[ 'DN' ]
+    return identity
+
+  def _authorizeClientProposal( self, serviceName, actionTuple, clientTransport ):
     """
     Authorize the action being proposed by the client
     """
@@ -191,11 +206,21 @@ class Dispatcher:
     else:
       action = "%s/%s" % actionTuple
     credDict = clientTransport.getConnectingCredentials()
-    retVal = self._authorizeAction( service, action, credDict )
+    authorized = True
+    retVal = self._authorizeAction( serviceName, action, credDict )
+    identity = self._createIdentityStringFromCredDict( credDict )
     if not retVal[ 'OK' ]:
+      gLogger.error( "Unauthorized query", "to %s:%s by %s" % ( serviceName, action, identity ) )
       clientTransport.sendData( retVal )
-      return False
-    return True
+      authorized = False
+    #Security log
+    sourceAddress = clientTransport.getRemoteAddress()
+    self.__securityLog.addMessage( authorized, sourceAddress[0], sourceAddress[1], identity,
+                                   self.servicesDict[ serviceName ]['cfg'].getHostname(),
+                                   self.servicesDict[ serviceName ]['cfg'].getPort(),
+                                   serviceName, "/".join( actionTuple ) )
+    #end security log
+    return authorized
 
   def _authorizeAction( self, serviceName, action, credDict ):
     """
@@ -205,15 +230,8 @@ class Dispatcher:
       return S_ERROR( "No handler registered for %s" % serviceName )
     gLogger.debug( "Trying credentials %s" % credDict )
     if not self.servicesDict[ serviceName ][ 'authManager' ].authQuery( action, credDict ):
-      identity = "unknown"
-      if 'username' in credDict:
-        if 'group' in credDict:
-          identity = "[%s:%s]" % ( credDict[ 'username' ], credDict[ 'group' ]  )
-        else:
-          identity = "[%s:unknown]" % credDict[ 'username' ]
-      if 'DN' in credDict:
-        identity += "(%s)" % credDict[ 'DN' ]
-      gLogger.error( "Unauthorized query", "to %s:%s by %s" % ( serviceName, action, identity ) )
+
+
       return S_ERROR( "Unauthorized query to %s:%s" % ( serviceName, action ) )
     return S_OK()
 
