@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobHistoryAgent.py,v 1.6 2008/07/16 16:46:13 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobHistoryAgent.py,v 1.7 2008/10/02 20:36:07 atsareg Exp $
 
 
 """  JobHistoryAgent sends periodically numbers of jobs in various states for various
@@ -81,6 +81,7 @@ class JobHistoryAgent(Agent):
       if site in MONITOR_SITES and status in MONITOR_STATUS:
         gLogger.verbose("Adding mark %s-%s: " % (status,site)+str(count))
         gMonitor.addMark("%s-%s" % (status,site),count)
+      if status in totalDict:
         totalDict[status] += count
 
     for status in MONITOR_STATUS:
