@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.40 2008/09/22 09:05:15 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.41 2008/10/02 09:10:26 rgracian Exp $
 ########################################################################
 
 """  The Pilot Status Agent updates the status of the pilot jobs if the
      PilotAgents database.
 """
 
-__RCSID__ = "$Id: PilotStatusAgent.py,v 1.40 2008/09/22 09:05:15 rgracian Exp $"
+__RCSID__ = "$Id: PilotStatusAgent.py,v 1.41 2008/10/02 09:10:26 rgracian Exp $"
 
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, List
@@ -206,7 +206,7 @@ class PilotStatusAgent(Agent):
       self.log.error( 'Failed to execute %s Job Status' % gridType, ret['Message'] )
       return S_ERROR()
     if ret['Value'][0] != 0:
-      self.log.error( 'Error executing %s Job Status:' % gridType, str(ret['Value'][0]) + '\n'.join( ret['Value'][1:3] ) )
+      self.log.warn( 'Error executing %s Job Status:' % gridType, str(ret['Value'][0]) + '\n'.join( ret['Value'][1:3] ) )
       stderr = ret['Value'][2]
       for job in List.fromChar(stderr,'\nUnable to retrieve the status for:')[1:]:
         pRef = List.fromChar(job,'\n' )[0].strip()
