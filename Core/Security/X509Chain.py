@@ -1,9 +1,9 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/X509Chain.py,v 1.29 2008/08/08 07:39:20 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/X509Chain.py,v 1.30 2008/10/02 16:22:47 acasajus Exp $
 ########################################################################
 """ X509Chain is a class for managing X509 chains with their Pkeys
 """
-__RCSID__ = "$Id: X509Chain.py,v 1.29 2008/08/08 07:39:20 rgracian Exp $"
+__RCSID__ = "$Id: X509Chain.py,v 1.30 2008/10/02 16:22:47 acasajus Exp $"
 
 import types
 import os
@@ -444,7 +444,7 @@ class X509Chain:
       newSubj.insert_entry( entryTuple[0], entryTuple[1] )
 
     if requireLimited and not isLimited:
-      return S_ERROR( "Limited proxy was required but request wasn't limited" )
+      return S_ERROR( "Only limited proxies are allowed to be delegated but request was for a full one" )
 
 
     childCert = crypto.X509()
