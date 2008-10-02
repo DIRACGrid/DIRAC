@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.32 2008/09/30 07:35:11 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.33 2008/10/02 13:38:41 acasajus Exp $
 ########################################################################
 """ ProxyRepository class is a front-end to the proxy repository Database
 """
 
-__RCSID__ = "$Id: ProxyDB.py,v 1.32 2008/09/30 07:35:11 rgracian Exp $"
+__RCSID__ = "$Id: ProxyDB.py,v 1.33 2008/10/02 13:38:41 acasajus Exp $"
 
 import time
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
@@ -556,7 +556,7 @@ class ProxyDB(DB):
 
   def getCredentialsAboutToExpire( self, requiredSecondsLeft, onlyPersistent = True ):
     cmd = "SELECT UserDN, UserGroup, ExpirationTime, PersistentFlag FROM `ProxyDB_Proxies`"
-    cmd += " WHERE TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime ) < %s" % requiredSecondsLeft
+    cmd += " WHERE TIMESTAMPDIFF( SECOND, ExpirationTime, UTC_TIMESTAMP() ) < %s and TIMESTAMPDIFF( SECOND, ExpirationTime, UTC_TIMESTAMP() ) > 0" % requiredSecondsLeft
     if onlyPersistent:
       cmd += " AND PersistentFlag = 'True'"
     return self._query( cmd )
