@@ -1,15 +1,17 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/BaseTransport.py,v 1.16 2008/07/07 16:37:16 acasajus Exp $
-__RCSID__ = "$Id: BaseTransport.py,v 1.16 2008/07/07 16:37:16 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/BaseTransport.py,v 1.17 2008/10/03 14:19:43 acasajus Exp $
+__RCSID__ = "$Id: BaseTransport.py,v 1.17 2008/10/03 14:19:43 acasajus Exp $"
 
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
 from DIRAC.Core.Utilities import DEncode
 from DIRAC.LoggingSystem.Client.Logger import gLogger
-import socket
+import select
+
 
 class BaseTransport:
 
   bAllowReuseAddress = True
   iListenQueueSize = 5
+  iReadTimeout = 600
 
   def __init__( self, stServerAddress, bServerMode = False, **kwargs ):
     self.bServerMode = bServerMode
@@ -46,11 +48,26 @@ class BaseTransport:
   def _write( self, sBuffer ):
     self.oSocket.send( sBuffer )
 
-  def _read( self, bufSize = 4096 ):
+  def _readReady( self ):
+    if not self.iReadTimeout:
+      return True
+    inList, dummy, dummy = select.select( [ self.oSocket ], [], [], self.iReadTimeout )
+    if self.oSocket in inList:
+      return True
+    return False
+
+  def _read( self, bufSize = 4096, skipReadyCheck = False ):
     try:
-      return self.oSocket.recv( bufSize )
+      if skipReadyCheck or self._readReady():
+        data = self.oSocket.recv( bufSize )
+        if not data:
+          return S_ERROR( "Connection closed by peer" )
+        else:
+          return S_OK( data )
+      else:
+        return S_ERROR( "Connection seems stalled. Closing..." )
     except Exception, e:
-      return ""
+      return S_ERROR( "Exception while reading from peer: %s" % str( e ) )
 
   def sendData( self, uData ):
     sCodedData = DEncode.encode( uData )
@@ -73,17 +90,20 @@ class BaseTransport:
     try:
       iSeparatorPosition = self.byteStream.find( ":" )
       while iSeparatorPosition == -1:
-        sReadData = self._read( 1024 )
-        if sReadData == "":
-          return S_ERROR( "Connection closed by peer" )
-        self.byteStream += sReadData
+        retVal = self._read( 1024 )
+        if not retVal[ 'OK' ]:
+          return retVal
+        self.byteStream += retVal[ 'Value' ]
         iSeparatorPosition = self.byteStream.find( ":" )
         if iMaxLength and len( self.byteStream ) > iMaxLength and iSeparatorPosition == -1 :
           raise RuntimeError( "Read limit exceeded (%s chars)" % iMaxLength )
       size = int( self.byteStream[ :iSeparatorPosition ] )
       self.byteStream = self.byteStream[ iSeparatorPosition+1: ]
       while len( self.byteStream ) < size:
-        self.byteStream += self._read( size - len( self.byteStream ) )
+        retVal = self._read( size - len( self.byteStream ), skipReadyCheck = True )
+        if not retVal[ 'OK' ]:
+          return retVal
+        self.byteStream += retVal[ 'Value' ]
         if iMaxLength and len( self.byteStream ) > iMaxLength:
           raise RuntimeError( "Read limit exceeded (%s chars)" % iMaxLength )
       data = self.byteStream[ :size ]
