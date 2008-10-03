@@ -10,6 +10,7 @@ class SecurityLogClient:
   def __init__(self):
     self.__messagesList = []
     self.__maxMessagesInBundle = 100
+    self.__maxMessagesWaiting = 10000
     self.__taskId = gThreadScheduler.addPeriodicTask( 10, self.__sendData )
 
   def addMessage( self, success, sourceIP, sourcePort, sourceIdentity,
@@ -19,6 +20,8 @@ class SecurityLogClient:
       timestamp = Time.dateTime()
     msg = ( timestamp, success, sourceIP, sourcePort, sourceIdentity,
             destinationIP, destinationPort, destinationService, action )
+    while len( self.__messagesList ) > self.__maxMessagesWaiting:
+      self.__messagesList.pop(0)
     if not self.__securityLogStore:
       self.__messagesList.append( msg )
     else:
