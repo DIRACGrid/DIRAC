@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.56 2008/09/18 17:36:17 paterson Exp $
+# $Id: JobWrapper.py,v 1.57 2008/10/06 16:28:16 paterson Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.56 2008/09/18 17:36:17 paterson Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.57 2008/10/06 16:28:16 paterson Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -70,6 +70,7 @@ class JobWrapper:
     self.defaultErrorFile = gConfig.getValue(self.section+'/DefaultErrorFile','std.err')
     self.diskSE            = gConfig.getValue(self.section+'/DiskSE',['-disk','-DST','-USER'])
     self.tapeSE            = gConfig.getValue(self.section+'/TapeSE',['-tape','-RDST','-RAW'])
+    self.sandboxSizeLimit  = gConfig.getValue(self.section+'/OutputSandboxLimit',1024*1024*10)
     self.cleanUpFlag  = gConfig.getValue(self.section+'/CleanUpFlag',False)
     self.localSite = gConfig.getValue('/LocalSite/Site','Unknown')
     self.pilotRef = gConfig.getValue('/LocalSite/PilotReference','Unknown')
@@ -632,16 +633,20 @@ class JobWrapper:
     if fileList and self.jobID:
       self.outputSandboxSize = getGlobbedTotalSize(fileList)
       outputSandboxClient = SandboxClient('Output')
-      result = outputSandboxClient.sendFiles(self.jobID, fileList, 1024*1024*10)
+      result = outputSandboxClient.sendFiles(self.jobID, fileList, self.sandboxSizeLimit) # 1024*1024*10
       if not result['OK']:
-        self.log.warn('Output sandbox upload failed:')
-        self.log.warn(result['Message'])
+        self.log.error('Output sandbox upload failed with message',result['Message'])
         if result.has_key('SandboxFileName'):
           outputSandboxData = result['SandboxFileName']
           self.log.info('Attempting to upload %s as output data' %(outputSandboxData))
           outputData.append(outputSandboxData)
           self.__setJobParam('OutputSandbox','Sandbox files > 10MB, uploaded to grid storage')
           self.__setJobParam('OutputSandboxLFN',str(self.__getLFNfromOutputFile(owner,outputSandboxData)))
+        else:
+          self.log.info('Could not get SandboxFileName to attempt upload to Grid storage')
+          return S_ERROR('Output sandbox upload failed and no file name supplied for failover to Grid storage')
+      else:
+        self.log.info('Sandbox uploaded successfully')
 
     if jobArgs.has_key('OutputSE'):
       outputSE = jobArgs['OutputSE']
