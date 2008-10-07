@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/ServiceConfiguration.py,v 1.6 2007/06/13 19:29:39 acasajus Exp $
-__RCSID__ = "$Id: ServiceConfiguration.py,v 1.6 2007/06/13 19:29:39 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/ServiceConfiguration.py,v 1.7 2008/10/07 15:58:29 acasajus Exp $
+__RCSID__ = "$Id: ServiceConfiguration.py,v 1.7 2008/10/07 15:58:29 acasajus Exp $"
 
 from DIRAC.Core.Utilities import Network
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
@@ -44,19 +44,19 @@ class ServiceConfiguration:
     try:
       return int( self.getOption( "MaxThreads" ) )
     except:
-      return 1000
+      return 15
 
   def getMaxWaitingPetitions( self ):
     try:
       return int( self.getOption( "MaxWaitingPetitions" ) )
     except:
-      return 100
+      return 500
 
   def getMaxThreadsPerFunction( self, funcName ):
     try:
       return int( self.getOption( "%sMaxThreads" % funcName ) )
     except:
-      return 1000
+      return 15
 
   def getPort( self ):
     try:
