@@ -9,7 +9,7 @@ class SecurityLogClient:
 
   def __init__(self):
     self.__messagesList = []
-    self.__maxMessagesInBundle = 100
+    self.__maxMessagesInBundle = 1000
     self.__maxMessagesWaiting = 10000
     self.__taskId = gThreadScheduler.addPeriodicTask( 300, self.__sendData )
 
