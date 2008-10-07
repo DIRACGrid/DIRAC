@@ -222,6 +222,11 @@ class ReplicationScheduler(Agent):
           gLogger.info("ReplicationScheduler.execute: %s present at all targets." % lfn)
           oRequest.setSubRequestFileAttributeValue(ind,'transfer',lfn,'Status','Done')
         else:
+          if not lfnReps:
+            errStr = "ReplicationScheduler.execute: The file has no replicas."
+            gLogger.error(errStr,lfn)
+            oRequest.setSubRequestFileAttributeValue(ind,'transfer',lfn,'Status','Failed')
+            break
           res = self.strategyHandler.determineReplicationTree(sourceSE,targets,lfnReps,fileSize,strategy=reqRepStrategy)
           if not res['OK']:
             errStr = "ReplicationScheduler.execute: Failed to determine replication tree."
@@ -423,6 +428,7 @@ class StrategyHandler:
   def __swarm(self,destSE,replicas):
     """ This strategy is to be used to the data the the target site as quickly as possible from any source
     """
+    selected = False
     res = self.__getTimeToStart()
     if not res['OK']:
       gLogger.error(res['Message'])
@@ -441,17 +447,19 @@ class StrategyHandler:
           selectedSourceSE = sourceSE
           selectedDestSE = destSE
           selectedChannelID = channelID
+          selected = True
       else:
         errStr = 'StrategyHandler.__swarm: Channel not defined'
         gLogger.error(errStr,channelName)
         waitingChannel = False
 
     tree = {}
-    tree[selectedChannelID] = {}
-    tree[selectedChannelID]['Ancestor'] = False
-    tree[selectedChannelID]['SourceSE'] = selectedSourceSE
-    tree[selectedChannelID]['DestSE'] = selectedDestSE
-    tree[selectedChannelID]['Strategy'] = 'Swarm'
+    if selected:
+      tree[selectedChannelID] = {}
+      tree[selectedChannelID]['Ancestor'] = False
+      tree[selectedChannelID]['SourceSE'] = selectedSourceSE
+      tree[selectedChannelID]['DestSE'] = selectedDestSE
+      tree[selectedChannelID]['Strategy'] = 'Swarm'
     return tree
 
   def __dynamicThroughput(self,sourceSEs,destSEs):
