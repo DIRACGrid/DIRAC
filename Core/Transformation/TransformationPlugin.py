@@ -36,7 +36,7 @@ class TransformationPlugin:
 
     sourceSEs = self.params['SourceSE'].split(',')
     targetSEs = self.params['TargetSE'].split(',')
-    destinations = self.params['Destinations']
+    destinations = int(self.params['Destinations'])
 
     seFiles = {}
     for lfn,se in self.data:
