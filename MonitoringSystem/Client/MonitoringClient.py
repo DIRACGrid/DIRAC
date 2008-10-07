@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.35 2008/09/30 19:01:34 acasajus Exp $
-__RCSID__ = "$Id: MonitoringClient.py,v 1.35 2008/09/30 19:01:34 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.36 2008/10/07 18:12:45 acasajus Exp $
+__RCSID__ = "$Id: MonitoringClient.py,v 1.36 2008/10/07 18:12:45 acasajus Exp $"
 
 import threading
 import time
@@ -77,22 +77,9 @@ class MonitoringClient:
     if self.sendingMode == "periodic":
       self.sendingPeriod = max( 60, gConfig.getValue( "%s/SendPeriod" % self.cfgSection, 300 ) )
       ThreadScheduler.gThreadScheduler.addPeriodicTask( self.sendingPeriod,
-                                                        self.__periodicFlush )
-      #self.sendingPeriod = max( 60, gConfig.getValue( "%s/SendPeriod" % self.cfgSection, 300 ) )
-      #self.sendingThread = threading.Thread( target = self.__periodicFlush )
-      #self.sendingThread.setDaemon( 1 )
-      #self.sendingThread.start()
+                                                        self.flush )
       #HACK: Avoid exiting while the thread is starting
       time.sleep( 0.1 )
-
-  def __periodicFlush( self ):
-    while self.sendingMode == "periodic":
-      self.logger.debug( "Waiting %s seconds to send data (%d threads running)" % ( self.sendingPeriod, threading.activeCount() ) )
-      time.sleep( self.sendingPeriod )
-      try:
-        self.flush()
-      except Exception, e:
-        gLogger.error( "Error in commiting data to monitoring", str( e ) )
 
   def setComponentLocation( self, componentLocation = False ):
     """
