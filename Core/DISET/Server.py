@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.31 2008/07/07 16:37:20 acasajus Exp $
-__RCSID__ = "$Id: Server.py,v 1.31 2008/07/07 16:37:20 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.32 2008/10/07 15:57:36 acasajus Exp $
+__RCSID__ = "$Id: Server.py,v 1.32 2008/10/07 15:57:36 acasajus Exp $"
 
 import socket
 import sys
@@ -14,6 +14,7 @@ from DIRAC.Core.Utilities.ThreadPool import ThreadPool
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.Utilities.Subprocess import shellCall
 from DIRAC.Core.Utilities import Network, Time
+from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.LoggingSystem.Client.Logger import gLogger
 from DIRAC.MonitoringSystem.Client.MonitoringClient import gMonitor
 from DIRAC.Core.Security import CS
@@ -63,8 +64,15 @@ class Server:
     gMonitor.setComponentLocation( serviceCfg.getURL() )
     gMonitor.initialize()
     gMonitor.registerActivity( "Queries", "Queries served", "Framework", "queries", gMonitor.OP_RATE )
-    gMonitor.registerActivity('CPU',"CPU Usage",'Framework',"CPU,%",gMonitor.OP_MEAN,600)
-    gMonitor.registerActivity('MEM',"Memory Usage",'Framework','Memory,MB',gMonitor.OP_MEAN,600)
+    gMonitor.registerActivity( 'CPU', "CPU Usage", 'Framework', "CPU,%", gMonitor.OP_MEAN, 600 )
+    gMonitor.registerActivity( 'MEM', "Memory Usage", 'Framework', 'Memory,MB', gMonitor.OP_MEAN, 600 )
+    gMonitor.registerActivity( 'PendingRequests', "Pending queries", 'Framework', 'queries', gMonitor.OP_MEAN )
+    gMonitor.registerActivity( 'ActiveThreads', "Active threads", 'Framework', 'threads', gMonitor.OP_MEAN )
+    gThreadScheduler.addPeriodicTask( 30, self.__reportThreadPoolContents )
+
+  def __reportThreadPoolContents( self ):
+    gMonitor.addMark( 'PendingRequests', self.threadPool.pendingJobs() )
+    gMonitor.addMark( 'ActiveThreads', self.threadPool.numWorkingThreads() )
 
   def __VmB(self, VmKey):
       '''Private.
