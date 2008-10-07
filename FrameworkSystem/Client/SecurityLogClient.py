@@ -1,4 +1,5 @@
 
+from DIRAC import gLogger
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
@@ -34,6 +35,7 @@ class SecurityLogClient:
     gThreadScheduler.addPeriodicTask( 10, self.__sendData, executions = 1 )
 
   def __sendData(self):
+    gLogger.info( "Sending records to security log service...")
     msgList = self.__messagesList
     self.__messagesList = []
     rpcClient = RPCClient( "Framework/SecurityLog" )
@@ -44,5 +46,6 @@ class SecurityLogClient:
         self.__messagesList.extend( msgList )
         break
       msgList = msgList[ self.__maxMessagesInBundle: ]
+    gLogger.info( "Data sent to security log service" )
 
 
