@@ -1,8 +1,9 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.37 2008/07/31 14:26:51 acasajus Exp $
-__RCSID__ = "$Id: RequestHandler.py,v 1.37 2008/07/31 14:26:51 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.38 2008/10/07 15:57:48 acasajus Exp $
+__RCSID__ = "$Id: RequestHandler.py,v 1.38 2008/10/07 15:57:48 acasajus Exp $"
 
 import os
 import types
+import time
 from DIRAC.Core.DISET.private.FileHelper import FileHelper
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.LoggingSystem.Client.Logger import gLogger
@@ -61,6 +62,7 @@ class RequestHandler:
                         of action to execute. The second position is the action itself.
     """
     gLogger.debug( "Executing %s:%s action" % actionTuple )
+    startTime = time.time()
     actionType = actionTuple[0]
     if actionType == "RPC":
       retVal = self.__doRPC( actionTuple[1] )
@@ -72,7 +74,7 @@ class RequestHandler:
       message = "Method %s for action %s does not have a return value!" % ( actionTuple[1], actionTuple[0] )
       gLogger.error( message )
       retVal = S_ERROR( message )
-    self.__logRemoteQueryResponse( retVal )
+    self.__logRemoteQueryResponse( retVal, time.time() - startTime )
     return self._clientTransport.sendData( retVal )
 
 #####
@@ -261,7 +263,7 @@ class RequestHandler:
                                                         method,
                                                         argsString ) )
 
-  def __logRemoteQueryResponse( self, retVal ):
+  def __logRemoteQueryResponse( self, retVal, elapsedTime ):
     """
     Log the result of a query
 
@@ -273,11 +275,13 @@ class RequestHandler:
       peerId = "[%s:%s]" % ( peerCreds[ 'group' ], peerCreds[ 'username' ] )
     else:
       peerId = ""
-    argsSring = str( retVal )[:100]
-    gLogger.info( "Returning response", "(%s:%s)%s %s" % ( self.serviceInfoDict[ 'clientAddress' ][0],
+    if retVal[ 'OK' ]:
+      argsString = "OK"
+    else:
+      argsString = "ERROR: %s" % retVal[ 'Message' ]
+    gLogger.info( "Returning response", "(%s:%s)%s (%.2f secs) %s" % ( self.serviceInfoDict[ 'clientAddress' ][0],
                                                            self.serviceInfoDict[ 'clientAddress' ][1],
-                                                           peerId,
-                                                           argsSring ) )
+                                                           peerId, elapsedTime, argsString ) )
 
 ####
 #
