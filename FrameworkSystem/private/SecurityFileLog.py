@@ -1,12 +1,15 @@
 
 import os
+import re
+import time
 import Queue
 import threading
 from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 
 class SecurityFileLog( threading.Thread ):
 
-  def __init__( self, basePath ):
+  def __init__( self, basePath, daysToLog = 100 ):
     self.__basePath = basePath
     self.__messagesQueue = Queue.Queue()
     self.__requiredFields = ( 'timestamp',
@@ -19,6 +22,10 @@ class SecurityFileLog( threading.Thread ):
                               'destinationService',
                               'action' )
     threading.Thread.__init__( self )
+    self.__secsToLog = daysToLog * 86400
+    gThreadScheduler.addPeriodicTask( 86400,
+                                      self.__launchCleaningOldLogFiles,
+                                      elapsedTime = ( time.time() % 86400 ) + 3600 )
     self.setDaemon( True )
     self.start()
 
@@ -40,6 +47,37 @@ class SecurityFileLog( threading.Thread ):
       fd.write( "%s\n" % ", ".join( [ str( item ) for item in secMsg ] ) )
       fd.close()
 
+  def __launchCleaningOldLogFiles(self):
+    nowEpoch = time.time()
+    self.__pruneOldLogs( self.__basePath, nowEpoch, re.compile( "^\d*\.security\.log\.csv$" ) )
+
+  def __pruneOldFiles( self, path, nowEpoch, reLog ):
+    initialEntries = os.listdir( path )
+    files = []
+    numEntries = 0
+    for entry in initialEntries:
+      entryPath = os.path.join( path, entry )
+      if os.path.isdir( entryPath ):
+        numEntries += 1
+        numEntriesSubDir = self.__pruneOldFiles( entryPath, nowEpoch, reLog )
+        if numEntriesSubDir == 0:
+          gLogger.info( "Removing dir %s"  % entryPath )
+          try:
+            os.rmdir( entryPath )
+            numEntries -= 1
+          except Exception, e:
+            gLogger.error( "Can't delete directory %s: %s" % ( entryPath, str(e) ) )
+      elif os.path.isfile( entryPath ):
+        numEntries += 1
+        if reLog.match( entry ):
+          if nowEpoch - os.stat( entryPath )[8]  > self.__secsToLog:
+            try:
+              gLogger.info( "Unlinking file %s" % entryPath )
+              os.unlink( entryPath )
+              numEntries -= 1
+            except Exception, e:
+              gLogger.error( "Can't unlink old log file %s: %s" % ( filePath, str(e) ) )
+    return numEntries
 
   def logAction( self, msg ):
     if len( msg ) != len( self.__requiredFields ):
