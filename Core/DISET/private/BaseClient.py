@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.49 2008/08/01 19:30:43 acasajus Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.49 2008/08/01 19:30:43 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.50 2008/10/08 09:15:06 rgracian Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.50 2008/10/08 09:15:06 rgracian Exp $"
 
 import sys
 import types
@@ -68,7 +68,7 @@ class BaseClient:
     if self.KW_TIMEOUT in self.kwargs:
       self.timeout = self.kwargs[ self.KW_TIMEOUT ]
     else:
-      self.timeout = False
+      self.timeout = 900
     #HACK: For windows there is no timeout! (YingYing...)
     if sys.platform == "win32":
       self.timeout = False
