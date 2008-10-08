@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/CSCLI.py,v 1.3 2008/07/10 13:31:27 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/CSCLI.py,v 1.4 2008/10/08 15:13:21 rgracian Exp $
 # File :   CSCLI.py
 # Author : Adria Casajus
 ########################################################################
-__RCSID__   = "$Id: CSCLI.py,v 1.3 2008/07/10 13:31:27 acasajus Exp $"
-__VERSION__ = "$Revision: 1.3 $"
+__RCSID__   = "$Id: CSCLI.py,v 1.4 2008/10/08 15:13:21 rgracian Exp $"
+__VERSION__ = "$Revision: 1.4 $"
 
 import cmd
 import sys
@@ -37,7 +37,7 @@ class CSCLI( cmd.Cmd ):
       if not retVal[ 'OK' ]:
         print "There was an error gathering your credentials"
         print retVal[ 'Message' ]
-        self.setStatus( False, False )
+        self.setStatus( False )
     try:
       self.cmdloop()
     except KeyboardInterrupt, v:
