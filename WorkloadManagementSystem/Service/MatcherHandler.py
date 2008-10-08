@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: MatcherHandler.py,v 1.24 2008/09/24 10:10:34 atsareg Exp $
+# $Id: MatcherHandler.py,v 1.25 2008/10/08 07:41:39 rgracian Exp $
 ########################################################################
 """
 Matcher class. It matches Agent Site capabilities to job requirements.
@@ -7,7 +7,7 @@ It also provides an XMLRPC interface to the Matcher
 
 """
 
-__RCSID__ = "$Id: MatcherHandler.py,v 1.24 2008/09/24 10:10:34 atsareg Exp $"
+__RCSID__ = "$Id: MatcherHandler.py,v 1.25 2008/10/08 07:41:39 rgracian Exp $"
 
 import re, os, sys, time
 import string
@@ -279,7 +279,14 @@ class MatcherHandler(RequestHandler):
     gMutex.acquire()
     jobID = jobDB.lookUpJobInQueue(agent_jobID)
     if jobID:
-      result = jobDB.getJobJDL(jobID,status='Waiting')
+      result = jobDB.getJobAttributes(jobID,['Status'])
+      if result['OK']:
+        if result['Value']['Status'] != "Waiting":
+          return S_ERROR('Job %s is not in Waiting state' % jobID)
+      else:
+        return result
+      result = jobDB.getJobJDL(jobID)
+
       if result['OK']:
         jobJDL = result['Value']
         classAdJob = ClassAd(jobJDL)
@@ -406,8 +413,8 @@ class MatcherHandler(RequestHandler):
 
     #print "requestJob: ",resourceJDL
 
-    result = self.selectJob(resourceJDL)
-    #  result = self.newSelectJob(resourceJDL)
+    #  result = self.selectJob(resourceJDL)
+    result = self.newSelectJob(resourceJDL)
     return result
 
 ##############################################################################
