@@ -1,12 +1,12 @@
 #! /usr/bin/env python
 import os, sys, popen2
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/Attic/dirac-wms-jobs-select-output-search,v 1.1 2008/09/21 11:42:05 roma Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/Attic/dirac-wms-jobs-select-output-search,v 1.2 2008/10/08 07:53:05 roma Exp $
 # File :   dirac-wms-jobs-select-output-search
 # Author : Vladimir Romanovsky
 ########################################################################
-__RCSID__   = "$Id: dirac-wms-jobs-select-output-search,v 1.1 2008/09/21 11:42:05 roma Exp $"
-__VERSION__ = "$Revision: 1.1 $"
+__RCSID__   = "$Id: dirac-wms-jobs-select-output-search,v 1.2 2008/10/08 07:53:05 roma Exp $"
+__VERSION__ = "$Revision: 1.2 $"
 from DIRACEnvironment import DIRAC
 from DIRAC.Core.Base import Script
 
@@ -17,6 +17,7 @@ Script.registerSwitch( "", "Site=", "Execution site" )
 Script.registerSwitch( "", "Owner=", "Owner (DIRAC nickname)" )
 Script.registerSwitch( "", "JobGroup=", "Select jobs for specified job group" )
 Script.registerSwitch( "", "Date=", "Date in YYYY-MM-DD format, if not specified default is today" )
+Script.registerSwitch( "", "File=", "File name,if not specified default is std.out " )
 Script.parseCommandLine( ignoreErrors = True )
 
 from DIRAC.Interfaces.API.Dirac                              import Dirac
@@ -33,6 +34,7 @@ site=None
 owner=None
 jobGroup=None
 date=None
+filename = 'std.out'
 
 def usage():
   print 'Usage: %s string to seearch '%(Script.scriptName)
@@ -58,20 +60,18 @@ for switch in Script.getUnprocessedSwitches():
     jobGroup=switch[1]
   elif switch[0].lower()=="date":
     date=switch[1]
+  elif switch[0].lower()=="file":
+    filename=switch[1]
 
 selDate = date
 if not date:
   selDate='Today'
-conditions = {'Status':status,'MinorStatus':minorStatus,'ApplicationStatus':appStatus,'Owner':owner,'JobGroup':jobGroup,'Date':selDate}
    
 dirac=Dirac()
 exitCode = 0
 errorList = []
-resultList = {}
+resultDict = {}
 
-as = None
-#result = dirac.selectJobs(Status="Failed",Site="LCG.Dortmund.de",Date='2008-09-19')
-#result = dirac.selectJobs(Status="Completed",Site="LCG.Dortmund.de",Date='2008-09-20')
 result = dirac.selectJobs(Status=status,MinorStatus=minorStatus,ApplicationStatus=appStatus,Site=site,Owner=owner,JobGroup=jobGroup,Date=date)
 if result['OK']:
   jobs = result['Value']
@@ -87,21 +87,19 @@ for job in jobs:
 
       lines = []
       try:
-        lines = open("%s/std.out"%(job)).readlines()
+        lines = open(os.path.join(job,filename)).readlines()
       except Exception,x:
         errorList.append( (job, x) )
       for line in lines:
 	if line.count(searchstring):
-	  resultList[job]= line
+	  resultDict[job]= line
     rmtree("%s" %(job))
   else:
     errorList.append( (job, result['Message']) )
     exitCode = 2
 
-for result in resultList.iteritems():
+for result in resultDict.iteritems():
   print result
 
-#for error in errorList:
-#  print "ERROR %s: %s" % error
 
 DIRAC.exit(exitCode)
