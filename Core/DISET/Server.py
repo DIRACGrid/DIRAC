@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.32 2008/10/07 15:57:36 acasajus Exp $
-__RCSID__ = "$Id: Server.py,v 1.32 2008/10/07 15:57:36 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.33 2008/10/08 10:35:55 acasajus Exp $
+__RCSID__ = "$Id: Server.py,v 1.33 2008/10/08 10:35:55 acasajus Exp $"
 
 import socket
 import sys
@@ -66,13 +66,13 @@ class Server:
     gMonitor.registerActivity( "Queries", "Queries served", "Framework", "queries", gMonitor.OP_RATE )
     gMonitor.registerActivity( 'CPU', "CPU Usage", 'Framework', "CPU,%", gMonitor.OP_MEAN, 600 )
     gMonitor.registerActivity( 'MEM', "Memory Usage", 'Framework', 'Memory,MB', gMonitor.OP_MEAN, 600 )
-    gMonitor.registerActivity( 'PendingRequests', "Pending queries", 'Framework', 'queries', gMonitor.OP_MEAN )
-    gMonitor.registerActivity( 'ActiveThreads', "Active threads", 'Framework', 'threads', gMonitor.OP_MEAN )
+    gMonitor.registerActivity( 'PendingQueries', "Pending queries", 'Framework', 'queries', gMonitor.OP_MEAN )
+    gMonitor.registerActivity( 'ActiveQueries', "Active queries", 'Framework', 'threads', gMonitor.OP_MEAN )
     gThreadScheduler.addPeriodicTask( 30, self.__reportThreadPoolContents )
 
   def __reportThreadPoolContents( self ):
-    gMonitor.addMark( 'PendingRequests', self.threadPool.pendingJobs() )
-    gMonitor.addMark( 'ActiveThreads', self.threadPool.numWorkingThreads() )
+    gMonitor.addMark( 'PendingQueries', self.threadPool.pendingJobs() )
+    gMonitor.addMark( 'ActiveQueries', self.threadPool.numWorkingThreads() )
 
   def __VmB(self, VmKey):
       '''Private.
