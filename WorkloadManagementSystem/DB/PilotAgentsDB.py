@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.35 2008/07/23 15:27:13 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.36 2008/10/08 13:58:58 rgracian Exp $
 ########################################################################
 """ PilotAgentsDB class is a front-end to the Pilot Agent Database.
     This database keeps track of all the submitted grid pilot jobs.
@@ -23,7 +23,7 @@
 
 """
 
-__RCSID__ = "$Id: PilotAgentsDB.py,v 1.35 2008/07/23 15:27:13 acasajus Exp $"
+__RCSID__ = "$Id: PilotAgentsDB.py,v 1.36 2008/10/08 13:58:58 rgracian Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
@@ -70,14 +70,18 @@ class PilotAgentsDB(DB):
 
       result = self._update(req,connection)
       if not result['OK']:
+        connection.close()
         return result
 
       if parentID < 1 :
         req = "SELECT LAST_INSERT_ID();"
         res = self._query(req,connection)
         if not res['OK']:
+          connection.close()
           return res
         parentID = int(res['Value'][0][0])
+
+    connection.close()
 
     req = "INSERT INTO PilotRequirements (PilotID,Requirements) VALUES (%d,'%s')" % (parentID,e_requirements)
     return self._update(req)
