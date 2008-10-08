@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: Mapping.py,v 1.13 2008/09/12 10:20:25 paterson Exp $
+# $Id: Mapping.py,v 1.14 2008/10/08 12:33:19 rgracian Exp $
 ########################################################################
 
 """ All of the data collection and handling procedures for the SiteMappingHandler
@@ -40,9 +40,9 @@ class Mapping:
 
     gLogger.verbose('Update request received. Section: %s' % section)
 
-    wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator',useCertificates=True)
-    jobMon = RPCClient('WorkloadManagement/JobMonitoring',useCertificates=True)
-    storUse = RPCClient('DataManagement/StorageUsage',useCertificates=True)
+    wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator',useCertificates=True,timeout=120)
+    jobMon = RPCClient('WorkloadManagement/JobMonitoring',useCertificates=True,timeout=120)
+    storUse = RPCClient('DataManagement/StorageUsage',useCertificates=True,timeout=120)
 
     ##############################
     if section == 'SiteData':

@@ -54,7 +54,7 @@ class RequestClient:
     #This allows VOBoxes to request work from others and here update their status.
     if not url:
       return S_ERROR('No URL Supplied')
-    requestRPCClient = RPCClient(url)
+    requestRPCClient = RPCClient(url,timeout=120)
     try:
       gLogger.info("Setting the status for %s to '%s' at %s" % (requestName,status,url))
       res = requestRPCClient.setRequestStatus(requestType,requestName,status)
@@ -83,7 +83,7 @@ class RequestClient:
       urls.append(self.voBoxUrls.pop())
 
       for url in urls:
-        requestRPCClient = RPCClient(url)
+        requestRPCClient = RPCClient(url,timeout=120)
         res = requestRPCClient.getRequest(requestType,status)
         if res['OK']:
           if res['Request']:
@@ -114,7 +114,7 @@ class RequestClient:
         urls = self.voBoxUrls
       res = S_OK()
       for url in urls:
-        requestRPCClient = RPCClient(url)
+        requestRPCClient = RPCClient(url,timeout=120)
         res['Value'][url] = {}
         result = requestRPCClient.getRequestSummary()
         if result['OK']:

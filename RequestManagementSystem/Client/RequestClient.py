@@ -1,10 +1,10 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/RequestClient.py,v 1.10 2008/08/27 11:18:10 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/RequestClient.py,v 1.11 2008/10/08 12:33:22 rgracian Exp $
 
 """
   This is the client implementation for the RequestDB using the DISET framework.
 """
 
-__RCSID__ = "$Id: RequestClient.py,v 1.10 2008/08/27 11:18:10 atsareg Exp $"
+__RCSID__ = "$Id: RequestClient.py,v 1.11 2008/10/08 12:33:22 rgracian Exp $"
 
 from types import *
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
@@ -42,7 +42,7 @@ class RequestClient:
     """
     try:
       gLogger.info("RequestDBClient.updateRequest: Attempting to update %s at %s." % (requestName,url))
-      requestRPCClient = RPCClient(url)
+      requestRPCClient = RPCClient(url,timeout=120)
       res = requestRPCClient.updateRequest(requestName,requestString)
       return res
     except Exception,x:
@@ -55,7 +55,7 @@ class RequestClient:
     """
     try:
       gLogger.info("RequestDBClient.deleteRequest: Attempting to delete %s at %s." % (requestName,url))
-      requestRPCClient = RPCClient(url)
+      requestRPCClient = RPCClient(url,timeout=120)
       res = requestRPCClient.deleteRequest(requestName)
       return res
     except Exception,x:
@@ -68,7 +68,7 @@ class RequestClient:
     """
     try:
       gLogger.info("RequestDBClient.setRequestStatus: Attempting to set %s to %s." % (requestName,requestStatus))
-      requestRPCClient = RPCClient(url)
+      requestRPCClient = RPCClient(url,timeout=120)
       res = requestRPCClient.setRequestStatus(requestName,requestStatus)
       return res
     except Exception,x:
@@ -94,7 +94,7 @@ class RequestClient:
       else:
         return S_ERROR("No urls defined")
       for url in urls:
-        requestRPCClient = RPCClient(url)
+        requestRPCClient = RPCClient(url,timeout=120)
         res = requestRPCClient.setRequest(requestName,requestString)
         if res['OK']:
           gLogger.info("Succeded setting request  %s at %s" % (requestName,url))
@@ -128,7 +128,7 @@ class RequestClient:
         return S_ERROR("No urls defined")
       for url in urls:
         gLogger.info("RequestDBClient.getRequest: Attempting to get request.", "%s %s" % (url,requestType))
-        requestRPCClient = RPCClient(url)
+        requestRPCClient = RPCClient(url,timeout=120)
         res = requestRPCClient.getRequest(requestType)
         if res['OK']:
           if res['Value']:
@@ -161,7 +161,7 @@ class RequestClient:
         return S_ERROR("No urls defined")
       for url in urls:
         gLogger.info("RequestDBClient.serveRequest: Attempting to obtain request.", "%s %s" % (url,requestType))
-        requestRPCClient = RPCClient(url)
+        requestRPCClient = RPCClient(url,timeout=120)
         res = requestRPCClient.serveRequest(requestType)
         if res['OK']:
           if res['Value']:
@@ -195,7 +195,7 @@ class RequestClient:
       else:
         return S_ERROR("No urls defined")
       for url in urls:
-        requestRPCClient = RPCClient(url)
+        requestRPCClient = RPCClient(url,timeout=120)
         urlDict[url] = {}
         result = requestRPCClient.getDBSummary()
         if result['OK']:
@@ -222,7 +222,7 @@ class RequestClient:
     if not lurl:
       return S_ERROR("URL not defined")
 
-    requestRPCClient = RPCClient(url)
+    requestRPCClient = RPCClient(url,timeout=120)
     result = requestRPCClient.getDigest(requestName)
     return result
 
@@ -237,7 +237,7 @@ class RequestClient:
     if not lurl:
       return S_ERROR("URL not defined")
 
-    requestRPCClient = RPCClient(url)
+    requestRPCClient = RPCClient(url,timeout=120)
     result = requestRPCClient.getCurrentExecutionOrder(requestName)
     return result
 
@@ -252,6 +252,6 @@ class RequestClient:
     if not lurl:
       return S_ERROR("URL not defined")
 
-    requestRPCClient = RPCClient(url)
+    requestRPCClient = RPCClient(url,timeout=120)
     result = requestRPCClient.getRequestStatus(requestName)
     return result

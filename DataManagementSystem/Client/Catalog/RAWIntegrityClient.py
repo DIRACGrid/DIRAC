@@ -51,7 +51,7 @@ class RAWIntegrityClient(FileCatalogueBase):
     failed = {}
     successful = {}
     for lfn,pfn,size,se,guid,checksum in files:
-      server = RPCClient(self.url)
+      server = RPCClient(self.url,timeout=120)
       res = server.addFile(str(lfn),str(pfn),int(size),str(se),str(guid),str(checksum))
       if not res['OK']:
         failed[lfn] = res['Message']

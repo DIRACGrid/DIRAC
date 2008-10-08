@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: InputDataByProtocol.py,v 1.9 2008/09/23 09:51:41 rgracian Exp $
+# $Id: InputDataByProtocol.py,v 1.10 2008/10/08 12:33:20 rgracian Exp $
 # File :   InputDataByProtocol.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     defined in the CS for the VO.
 """
 
-__RCSID__ = "$Id: InputDataByProtocol.py,v 1.9 2008/09/23 09:51:41 rgracian Exp $"
+__RCSID__ = "$Id: InputDataByProtocol.py,v 1.10 2008/10/08 12:33:20 rgracian Exp $"
 
 from DIRAC.Core.DISET.RPCClient                                     import RPCClient
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
@@ -229,7 +229,7 @@ class InputDataByProtocol:
     if not self.jobID:
       return S_ERROR('JobID not defined')
 
-    jobReport = RPCClient('WorkloadManagement/JobStateUpdate')
+    jobReport = RPCClient('WorkloadManagement/JobStateUpdate',timeout=120)
     jobParam = jobReport.setJobParameter(int(self.jobID),str(name),str(value))
     self.log.verbose('setJobParameter(%s,%s,%s)' %(self.jobID,name,value))
     if not jobParam['OK']:

@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.33 2008/09/18 11:39:12 roma Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.34 2008/10/08 12:33:20 rgracian Exp $
 # File :   DiracAdmin.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@ site banning and unbanning, WMS proxy uploading etc.
 
 """
 
-__RCSID__ = "$Id: DiracAdmin.py,v 1.33 2008/09/18 11:39:12 roma Exp $"
+__RCSID__ = "$Id: DiracAdmin.py,v 1.34 2008/10/08 12:33:20 rgracian Exp $"
 
 import DIRAC
 from DIRAC.ConfigurationSystem.Client.CSAPI                   import CSAPI
@@ -106,7 +106,7 @@ class DiracAdmin:
        @return: S_OK,S_ERROR
 
     """
-    wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
+    wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator',timeout=120)
     result = wmsAdmin.getSiteMask()
     if result['OK']:
       sites = result['Value']
@@ -129,7 +129,7 @@ class DiracAdmin:
        @return: S_OK,S_ERROR
 
     """
-    wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
+    wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator',timeout=120)
     result = wmsAdmin.getSiteMask()
     bannedSites = []
     if not result['OK']:
@@ -204,7 +204,7 @@ class DiracAdmin:
     if site in siteMask:
       return S_ERROR('Site %s already in mask of allowed sites' %site)
 
-    wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
+    wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator',timeout=120)
     result = wmsAdmin.allowSite(site,comment)
     if not result['OK']:
       return result
@@ -229,7 +229,7 @@ class DiracAdmin:
     if not result['OK']:
       return result
 
-    wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
+    wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator',timeout=120)
     result = wmsAdmin.getSiteMaskLogging(site)
     if not result['OK']:
       return result
@@ -276,7 +276,7 @@ class DiracAdmin:
     if not site in siteMask:
       return S_ERROR('Site %s is already banned' %site)
 
-    wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
+    wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator',timeout=120)
     result = wmsAdmin.banSite(site,comment)
     if not result['OK']:
       return result
@@ -311,7 +311,7 @@ class DiracAdmin:
        @return: S_OK,S_ERROR
 
     """
-    wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
+    wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator',timeout=120)
     result = wmsAdmin.clearMask()
     return result
 
@@ -447,7 +447,7 @@ class DiracAdmin:
       except Exception,x:
         return self.__errorReport(str(x),'Expected integer or convertible integer for existing jobIDs')
 
-    jobManager = RPCClient('WorkloadManagement/JobManager',useCertificates=False)
+    jobManager = RPCClient('WorkloadManagement/JobManager',useCertificates=False,timeout=120)
     result = jobManager.resetJob(jobID)
     return result
 
@@ -490,7 +490,7 @@ class DiracAdmin:
     if not os.path.exists(directory):
       self.__report('Directory %s does not exist' % directory)
 
-    wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
+    wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator',timeout=120)
     result = wmsAdmin.getJobPilotOutput(jobID)
     if not result['OK']:
       return result
@@ -546,7 +546,7 @@ class DiracAdmin:
     if not os.path.exists(directory):
       self.__report('Directory %s does not exist' % directory)
 
-    wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
+    wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator',timeout=120)
     result = wmsAdmin.getPilotOutput(gridReference)
     if not result['OK']:
       return result
@@ -605,7 +605,7 @@ class DiracAdmin:
       except Exception,x:
         return self.__errorReport(str(x),'Expected integer or string for existing jobID')
 
-    wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
+    wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator',timeout=120)
     result = wmsAdmin.getPilots(jobID)
     if result['OK']:
       print self.pPrint.pformat(result['Value'])
@@ -623,7 +623,7 @@ class DiracAdmin:
        @type job: integer or string
        @return: S_OK,S_ERROR
     """
-    wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
+    wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator',timeout=120)
     result = wmsAdmin.getPilotSummary(startDate,endDate)
     if not result['OK']:
       return result
@@ -685,7 +685,7 @@ class DiracAdmin:
 
     self.log.verbose('Will select requests with the following conditions')
     self.log.verbose(self.pPrint.pformat(conditions))
-    requestClient = RPCClient("RequestManagement/centralURL")
+    requestClient = RPCClient("RequestManagement/centralURL",timeout=120)
     result = requestClient.getRequestSummaryWeb(conditions,[],RequestStart,Limit)
     if not result['OK']:
       self.log.warn(result['Message'])
@@ -717,7 +717,7 @@ class DiracAdmin:
   def getRequestSummary(self,printOutput=False):
     """ Get a summary of the requests in the request DB.
     """
-    requestClient = RPCClient("RequestManagement/centralURL")
+    requestClient = RPCClient("RequestManagement/centralURL",timeout=120)
     result = requestClient.getDBSummary()
     if not result['OK']:
       self.log.warn(result['Message'])

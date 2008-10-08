@@ -1,9 +1,9 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Client/Catalog/BookkeepingDBClient.py,v 1.15 2008/09/25 16:53:19 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Client/Catalog/BookkeepingDBClient.py,v 1.16 2008/10/08 12:33:22 rgracian Exp $
 
 """ Client for BookkeepingDB file catalog
 """
 
-__RCSID__ = "$Id: BookkeepingDBClient.py,v 1.15 2008/09/25 16:53:19 acsmith Exp $"
+__RCSID__ = "$Id: BookkeepingDBClient.py,v 1.16 2008/10/08 12:33:22 rgracian Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -35,7 +35,7 @@ class BookkeepingDBClient(FileCatalogueBase):
 
     failed = {}
     successful = {}
-    server = RPCClient(self.url)
+    server = RPCClient(self.url,timeout=120)
     res = server.addFiles(lfns)
     if not res['OK']:
       for lfn in lfns:
@@ -57,7 +57,7 @@ class BookkeepingDBClient(FileCatalogueBase):
 
     failed = {}
     successful = {}
-    server = RPCClient(self.url)
+    server = RPCClient(self.url,timeout=120)
     res = server.removeFiles(lfns)
     if not res['OK']:
       for lfn in lfns:
@@ -77,7 +77,7 @@ class BookkeepingDBClient(FileCatalogueBase):
 
     failed = {}
     successful = {}
-    server = RPCClient(self.url)
+    server = RPCClient(self.url,timeout=120)
     res = server.exists(lfns)
     if not res['OK']:
       for lfn in lfns:
@@ -91,7 +91,7 @@ class BookkeepingDBClient(FileCatalogueBase):
       return S_OK(resDict)
 
   def __getFileMetadata(self,lfns):
-    server = RPCClient(self.url)
+    server = RPCClient(self.url,timeout=120)
     res = server.getFileMetadata(lfns)
     successful = {}
     failed = {}

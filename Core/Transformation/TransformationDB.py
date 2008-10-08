@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.73 2008/09/22 10:11:00 atsareg Exp $
+# $Id: TransformationDB.py,v 1.74 2008/10/08 12:33:22 rgracian Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -603,7 +603,7 @@ class TransformationDB(DB):
         transformation specified by the transID
     """
 
-    dataLog = RPCClient('DataManagement/DataLogging')
+    dataLog = RPCClient('DataManagement/DataLogging', timeout=120 )
     # Add already existing files to this transformation if any
     filters = self.__getFilters(transID)
 
@@ -882,7 +882,7 @@ PRIMARY KEY (FileID)
     gLogger.info("TransformationDB.addFile: Attempting to add %s files." % len(fileTuples))
     successful = {}
     failed = {}
-    dataLog = RPCClient('DataManagement/DataLogging')
+    dataLog = RPCClient('DataManagement/DataLogging',timeout=120)
     for lfn,pfn,size,se,guid,checksum in fileTuples:
 
       passFilter = False

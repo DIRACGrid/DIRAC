@@ -1,9 +1,9 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyManagerClient.py,v 1.29 2008/08/03 11:40:34 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyManagerClient.py,v 1.30 2008/10/08 12:33:19 rgracian Exp $
 ########################################################################
 """ ProxyManagementAPI has the functions to "talk" to the ProxyManagement service
 """
-__RCSID__ = "$Id: ProxyManagerClient.py,v 1.29 2008/08/03 11:40:34 acasajus Exp $"
+__RCSID__ = "$Id: ProxyManagerClient.py,v 1.30 2008/10/08 12:33:19 rgracian Exp $"
 
 import os
 import datetime
@@ -44,7 +44,7 @@ class ProxyManagerClient:
     return td.days * 86400 + td.seconds
 
   def __refreshUserCache( self, validSeconds = 0 ):
-    rpcClient = RPCClient( "Framework/ProxyManager" )
+    rpcClient = RPCClient( "Framework/ProxyManager",timeout=120 )
     retVal = rpcClient.getRegisteredUsers( validSeconds )
     if not retVal[ 'OK' ]:
       return retVal
@@ -104,7 +104,7 @@ class ProxyManagerClient:
     persistentFlag = True
     if not persistent:
       persistentFlag = False
-    rpcClient = RPCClient( "Framework/ProxyManager" )
+    rpcClient = RPCClient( "Framework/ProxyManager",timeout=120 )
     retVal = rpcClient.setPersistency( userDN, userGroup, persistentFlag )
     if not retVal[ 'OK' ]:
       return retVal
@@ -145,7 +145,7 @@ class ProxyManagerClient:
       return S_ERROR( "Proxy %s has expired" % proxyLocation )
 
     #rpcClient = RPCClient( "Framework/ProxyManager", proxyChain = chainToConnect )
-    rpcClient = RPCClient( "Framework/ProxyManager" )
+    rpcClient = RPCClient( "Framework/ProxyManager",timeout=120 )
     #Get a delegation request
     retVal = rpcClient.requestDelegationUpload( chain.getRemainingSecs()['Value'], diracGroup )
     if not retVal[ 'OK' ]:
@@ -177,9 +177,9 @@ class ProxyManagerClient:
     req = X509Request()
     req.generateProxyRequest( limited = limited )
     if proxyToConnect:
-      rpcClient = RPCClient( "Framework/ProxyManager", proxyChain = proxyToConnect )
+      rpcClient = RPCClient( "Framework/ProxyManager", proxyChain = proxyToConnect,timeout=120 )
     else:
-      rpcClient = RPCClient( "Framework/ProxyManager" )
+      rpcClient = RPCClient( "Framework/ProxyManager",timeout=120 )
     retVal = rpcClient.getProxy( userDN, userGroup, req.dumpRequest()['Value'], long( requiredTimeLeft * 1.5 ) )
     if not retVal[ 'OK' ]:
       return retVal
@@ -216,9 +216,9 @@ class ProxyManagerClient:
     req = X509Request()
     req.generateProxyRequest( limited = limited )
     if proxyToConnect:
-      rpcClient = RPCClient( "Framework/ProxyManager", proxyChain = proxyToConnect )
+      rpcClient = RPCClient( "Framework/ProxyManager", proxyChain = proxyToConnect,timeout=120 )
     else:
-      rpcClient = RPCClient( "Framework/ProxyManager" )
+      rpcClient = RPCClient( "Framework/ProxyManager",timeout=120 )
     retVal = rpcClient.getVOMSProxy( userDN, userGroup, req.dumpRequest()['Value'], long( requiredTimeLeft * 1.5 ), requiredVOMSAttribute )
     if not retVal[ 'OK' ]:
       return retVal
@@ -374,7 +374,7 @@ class ProxyManagerClient:
     """
     Get the contents of the db
     """
-    rpcClient = RPCClient( "Framework/ProxyManager" )
+    rpcClient = RPCClient( "Framework/ProxyManager",timeout=120 )
     return rpcClient.getContents( {}, [ [ 'UserDN', 'DESC' ] ], 0, 0 )
 
   def getVOMSAttributes( self, chain ):

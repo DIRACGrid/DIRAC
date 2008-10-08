@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalogue. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.35 2008/08/28 07:50:24 atsareg Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.36 2008/10/08 12:33:19 rgracian Exp $"
 
 import re, time, commands, random,os
 import types
@@ -758,7 +758,7 @@ class ReplicaManager:
     statusTuples = []
     successful = {}
     failed = {}
-    integrityDB = RPCClient('DataManagement/DataIntegrity')
+    integrityDB = RPCClient('DataManagement/DataIntegrity',timeout=120)
     for lfn,pfn,se,reason in replicaTuples:
       fileMetadata = {'Prognosis':reason,'LFN':lfn,'PFN':pfn,'StorageElement':se}
       res = integrityDB.insertProblematic(sourceComponent,fileMetadata)

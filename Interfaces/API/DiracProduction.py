@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.43 2008/09/26 12:50:35 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.44 2008/10/08 12:33:20 rgracian Exp $
 # File :   DiracProduction.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are to be documented with example usage.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.43 2008/09/26 12:50:35 atsareg Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.44 2008/10/08 12:33:20 rgracian Exp $"
 
 import string, re, os, time, shutil, types, copy
 import pprint
@@ -66,7 +66,7 @@ class DiracProduction:
     """Returns a dictionary of production IDs and metadata. If printOutput is
        specified, a high-level summary of the productions is printed.
     """
-    prodClient = RPCClient('ProductionManagement/ProductionManager')
+    prodClient = RPCClient('ProductionManagement/ProductionManager',timeout=120)
     result = prodClient.getProductionSummary()
     if not result['OK']:
       return result
@@ -103,7 +103,7 @@ class DiracProduction:
       if not type(productionID) == type(" "):
         return self.__errorReport('Expected string, long or int for production ID')
 
-    prodClient = RPCClient('ProductionManagement/ProductionManager')
+    prodClient = RPCClient('ProductionManagement/ProductionManager',timeout=120)
     result = prodClient.getProductionInfo(int(productionID))
     if not result['OK']:
       return result
@@ -127,7 +127,7 @@ class DiracProduction:
   def getActiveProductions(self,printOutput=False):
     """Returns a dictionary of active production IDs and their status, e.g. automatic, manual.
     """
-    prodClient = RPCClient('ProductionManagement/ProductionManager')
+    prodClient = RPCClient('ProductionManagement/ProductionManager',timeout=120)
     result = prodClient.getAllProductions()
     if not result['OK']:
       return result
@@ -159,7 +159,7 @@ class DiracProduction:
       if not type(productionID) == type(" "):
         return self.__errorReport('Expected string, long or int for production ID')
 
-    prodClient = RPCClient('ProductionManagement/ProductionManager')
+    prodClient = RPCClient('ProductionManagement/ProductionManager',timeout=120)
     result = prodClient.getTransformationLogging(long(productionID))
     if not result['OK']:
       self.log.warn('Could not get transformation logging information for productionID %s' %(productionID))
@@ -192,7 +192,7 @@ class DiracProduction:
         if not type(productionID) == type(" "):
           return self.__errorReport('Expected string or long for production ID')
 
-    prodClient = RPCClient('ProductionManagement/ProductionManager')
+    prodClient = RPCClient('ProductionManagement/ProductionManager',timeout=120)
     result = prodClient.getProductionSummary()
     if not result['OK']:
       return result
@@ -237,7 +237,7 @@ class DiracProduction:
 
     self.log.verbose('Considering %s jobs with selected conditions' %(len(jobIDs)))
     #now need to get the application status information
-    monClient = RPCClient('WorkloadManagement/JobMonitoring')
+    monClient = RPCClient('WorkloadManagement/JobMonitoring',timeout=120)
     result = monClient.getJobsApplicationStatus(jobIDs)
     if not result['OK']:
       self.log.warn('Could not get application status for jobs list')
@@ -551,7 +551,7 @@ class DiracProduction:
     self.log.verbose('Will check progress for production(s):\n%s' %(string.join(productionID,', ')))
     progress = {}
     for prod in productionID:
-      prodClient = RPCClient('ProductionManagement/ProductionManager')
+      prodClient = RPCClient('ProductionManagement/ProductionManager',timeout=120)
       #result = prodClient.getJobStats(int(prod))
       #self._prettyPrint(result)
       result = prodClient.getJobWmsStats(int(prod))
@@ -607,7 +607,7 @@ class DiracProduction:
 
     actions = commands[command]
     self.log.info('Setting production status to %s and submission mode to %s for productionID %s' %(actions[0],actions[1],productionID))
-    prodClient = RPCClient('ProductionManagement/ProductionManager')
+    prodClient = RPCClient('ProductionManagement/ProductionManager',timeout=120)
     result = prodClient.setTransformationStatus(long(productionID), actions[0])
     if not result['OK']:
       self.log.warn('Problem updating transformation status with result:\n%s' %result)
@@ -626,7 +626,7 @@ class DiracProduction:
         and provides summaries / selections based on the file status if desired.
     """
     adj = 12
-    prodClient = RPCClient('ProductionManagement/ProductionManager')
+    prodClient = RPCClient('ProductionManagement/ProductionManager',timeout=120)
     fileSummary = prodClient.getFilesForTransformation(int(productionID),orderOutput)
     if not fileSummary['OK']:
       return fileSummary
@@ -714,7 +714,7 @@ class DiracProduction:
     else:
       return self.__errorReport('Expected single string or list of strings for LFN(s)')
 
-    prodClient = RPCClient('ProductionManagement/ProductionManager')
+    prodClient = RPCClient('ProductionManagement/ProductionManager',timeout=120)
     fileStatus = prodClient.getFileSummary(lfns,long(productionID))
     if printOutput:
       self._prettyPrint(fileStatus['Value'])
@@ -738,7 +738,7 @@ class DiracProduction:
     else:
       return self.__errorReport('Expected string or list for LFNs')
 
-    prodClient = RPCClient('ProductionManagement/ProductionManager')
+    prodClient = RPCClient('ProductionManagement/ProductionManager',timeout=120)
     result = prodClient.setFileStatusForTransformation(productionID,[(status,lfnList)])
 
     if printOutput:
@@ -806,7 +806,7 @@ class DiracProduction:
   def getProdJobInfo(self,productionID,jobID,printOutput=False):
     """Retrieve production job information from Production Manager service.
     """
-    prodClient = RPCClient('ProductionManagement/ProductionManager')
+    prodClient = RPCClient('ProductionManagement/ProductionManager',timeout=120)
     jobInfo = prodClient.getJobInfo(productionID,jobID)
     if not jobInfo['OK']:
       return jobInfo
@@ -862,7 +862,7 @@ class DiracProduction:
     if not userID['OK']:
       return self.__errorReport(userID,'Could not establish user ID from proxy credential or configuration')
 
-    prodClient = RPCClient('ProductionManagement/ProductionManager')
+    prodClient = RPCClient('ProductionManagement/ProductionManager',timeout=120)
     result = prodClient.getJobsToSubmit(long(productionID),int(numberOfJobs),str(site))
     if not result['OK']:
       return self.__errorReport(result,'Problem while requesting data from ProductionManager')
@@ -887,7 +887,7 @@ class DiracProduction:
       except Exception,x:
         return self.__errorReport(str(x),'Expected integer or string for number of jobs to submit')
 
-    prodClient = RPCClient('ProductionManagement/ProductionManager')
+    prodClient = RPCClient('ProductionManagement/ProductionManager',timeout=120)
     result = prodClient.extendProduction(long(productionID),numberOfJobs)
     if not result['OK']:
       return self.__errorReport(result,'Could not extend production %s by %s jobs' %(productionID,numberOfJobs))
@@ -963,7 +963,7 @@ class DiracProduction:
       subResult = self.__submitJob(newJob)
 #      subResult = S_ERROR('blocking submission')
       self.log.verbose(subResult)
-      prodClient = RPCClient('ProductionManagement/ProductionManager')
+      prodClient = RPCClient('ProductionManagement/ProductionManager',timeout=120)
       if subResult['OK']:
         jobID = subResult['Value']
         submitted.append(jobID)

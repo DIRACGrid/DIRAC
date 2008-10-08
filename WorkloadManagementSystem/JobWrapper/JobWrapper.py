@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.57 2008/10/06 16:28:16 paterson Exp $
+# $Id: JobWrapper.py,v 1.58 2008/10/08 12:33:20 rgracian Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.57 2008/10/06 16:28:16 paterson Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.58 2008/10/08 12:33:20 rgracian Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -346,7 +346,7 @@ class JobWrapper:
     heartBeatDict = {}
     staticParamDict = {'StandardOutput':appStdOut}
     if self.jobID:
-      jobReport  = RPCClient('WorkloadManagement/JobStateUpdate')
+      jobReport  = RPCClient('WorkloadManagement/JobStateUpdate',timeout=120)
       result = jobReport.sendHeartBeat(int(self.jobID),heartBeatDict,staticParamDict)
       if not result['OK']:
         self.log.warn('Problem sending final heartbeat standard output from JobWrapper')

@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: StagerClient.py,v 1.11 2008/08/01 10:34:44 rgracian Exp $
+# $Id: StagerClient.py,v 1.12 2008/10/08 12:33:23 rgracian Exp $
 ########################################################################
 
 """Set of utilities and classes to handle Stager Database"""
@@ -17,7 +17,7 @@ class StagerClient:
 
   def stageFiles(self,jobid,site,replicas,source):
     try:
-      server = RPCClient('Stager/Stager',useCertificates=self.useCerts)
+      server = RPCClient('Stager/Stager',useCertificates=self.useCerts,timeout=120)
       result = server.stageFiles(jobid,site,replicas,source)
       return result
     except Exception, x:
@@ -27,7 +27,7 @@ class StagerClient:
 
   def getJobFilesStatus(self,jobID):
     try:
-      server = RPCClient('Stager/Stager',useCertificates=self.useCerts)
+      server = RPCClient('Stager/Stager',useCertificates=self.useCerts,timeout=120)
       result = server.getJobFilesStatus(jobID)
       return result
     except Exception,x:
@@ -37,7 +37,7 @@ class StagerClient:
 
   def getJobsForSystemAndState(self,state,source,limit=0):
     try:
-      server = RPCClient('Stager/Stager',useCertificates=self.useCerts)
+      server = RPCClient('Stager/Stager',useCertificates=self.useCerts,timeout=120)
       result = server.getJobsForSystemAndState(state,source,limit)
       return result
     except Exception,x:
@@ -47,7 +47,7 @@ class StagerClient:
 
   def getFilesForState(self,site,state,limit=0):
     try:
-      server = RPCClient('Stager/Stager',useCertificates=self.useCerts)
+      server = RPCClient('Stager/Stager',useCertificates=self.useCerts,timeout=120)
       result = server.getFilesForState(site,state,limit)
       return result
     except Exception, x:
@@ -57,7 +57,7 @@ class StagerClient:
 
   def setFilesState(self,lfns,site,state):
     try:
-      server = RPCClient('Stager/Stager',useCertificates=self.useCerts)
+      server = RPCClient('Stager/Stager',useCertificates=self.useCerts,timeout=120)
       result = server.setFilesState(lfns,site,state)
       return result
     except Exception, x:
@@ -67,7 +67,7 @@ class StagerClient:
 
   def getJobsForState(self,site,state,limit=0):
     try:
-      server = RPCClient('Stager/Stager',useCertificates=self.useCerts)
+      server = RPCClient('Stager/Stager',useCertificates=self.useCerts,timeout=120)
       result = server.getJobsForState(site,state,limit)
       return result
     except Exception, x:
@@ -77,7 +77,7 @@ class StagerClient:
 
   def getStageTimeForSystem(self,lfns,source):
     try:
-      server = RPCClient('Stager/Stager',useCertificates=self.useCerts)
+      server = RPCClient('Stager/Stager',useCertificates=self.useCerts,timeout=120)
       result = server.getStageTimeForSystem(lfns,source)
       return result
     except Exception, x:
@@ -87,7 +87,7 @@ class StagerClient:
 
   def setJobsDone(self,jobIDs):
     try:
-      server = RPCClient('Stager/Stager',useCertificates=self.useCerts)
+      server = RPCClient('Stager/Stager',useCertificates=self.useCerts,timeout=120)
       result = server.setJobsDone(jobIDs)
       return result
     except Exception, x:
@@ -97,7 +97,7 @@ class StagerClient:
 
   def resetStageRequest(self,site,timeout):
     try:
-      server = RPCClient('Stager/Stager',useCertificates=self.useCerts)
+      server = RPCClient('Stager/Stager',useCertificates=self.useCerts,timeout=120)
       result = server.resetStageRequest(site,timeout)
       return result
     except Exception, x:
@@ -107,7 +107,7 @@ class StagerClient:
 
   def getLFNsForJob(self,jobid):
     try:
-      server = RPCClient('Stager/Stager',useCertificates=self.useCerts)
+      server = RPCClient('Stager/Stager',useCertificates=self.useCerts,timeout=120)
       result = server.getLFNsForJob(jobid)
       return result
     except Exception, x:
@@ -117,7 +117,7 @@ class StagerClient:
 
   def getJobsForRetry(self,retry,site):
     try:
-      server = RPCClient('Stager/Stager',useCertificates=self.useCerts)
+      server = RPCClient('Stager/Stager',useCertificates=self.useCerts,timeout=120)
       result = server.getJobsForRetry(retry,site)
       return result
     except Exception, x:
@@ -127,7 +127,7 @@ class StagerClient:
 
   def getAllJobs(self,source):
     try:
-      server = RPCClient('Stager/Stager',useCertificates=self.useCerts)
+      server = RPCClient('Stager/Stager',useCertificates=self.useCerts,timeout=120)
       result = server.getAllJobs(source)
       return result
     except Exception, x:
@@ -137,7 +137,7 @@ class StagerClient:
 
   def setTiming(self,site,cmd,time,files):
     try:
-      server = RPCClient('Stager/Stager',useCertificates=self.useCerts)
+      server = RPCClient('Stager/Stager',useCertificates=self.useCerts,timeout=120)
       result = server.setTiming(site,cmd,time,files)
       return result
     except Exception, x:

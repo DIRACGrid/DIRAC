@@ -117,7 +117,7 @@ class SandboxClient:
     """
 
     # Get the list of files in the sandbox
-    sandbox_status = RPCClient('WorkloadManagement/%sSandbox' % self.sandbox_type)
+    sandbox_status = RPCClient('WorkloadManagement/%sSandbox' % self.sandbox_type,timeout=120)
     result = sandbox_status.getFileNames(jobID)
     if not result['OK']:
       return S_ERROR('Failed to get the list of file names')
@@ -160,5 +160,5 @@ class SandboxClient:
   def setSandboxReady(self,jobID):
     """ Set sandbox status to ready for the given job
     """
-    sandbox_status = RPCClient('WorkloadManagement/%sSandbox' % self.sandbox_type)
+    sandbox_status = RPCClient('WorkloadManagement/%sSandbox' % self.sandbox_type,timeout=120)
     return sandbox_status.setSandboxReady(jobID)

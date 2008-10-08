@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.37 2008/07/30 14:08:44 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.38 2008/10/08 12:33:20 rgracian Exp $
 # File  : Watchdog.py
 # Author: Stuart Paterson
 ########################################################################
@@ -18,7 +18,7 @@
           - CPU normalization for correct comparison with job limit
 """
 
-__RCSID__ = "$Id: Watchdog.py,v 1.37 2008/07/30 14:08:44 acasajus Exp $"
+__RCSID__ = "$Id: Watchdog.py,v 1.38 2008/10/08 12:33:20 rgracian Exp $"
 
 from DIRAC.Core.Base.Agent                              import Agent
 from DIRAC.Core.DISET.RPCClient                         import RPCClient
@@ -701,7 +701,7 @@ class Watchdog(Agent):
     """ Sends sign of life 'heartbeat' signal and triggers control signal
         interpretation.
     """
-    jobReport  = RPCClient('WorkloadManagement/JobStateUpdate')
+    jobReport  = RPCClient('WorkloadManagement/JobStateUpdate',timeout=120)
     result = jobReport.sendHeartBeat(jobID,heartBeatDict,staticParamDict)
     if not result['OK']:
       self.log.warn('Problem sending sign of life')
@@ -721,7 +721,7 @@ class Watchdog(Agent):
       self.log.info('Running without JOBID so parameters will not be reported')
       return S_OK()
     jobID = os.environ['JOBID']
-    jobReport  = RPCClient('WorkloadManagement/JobStateUpdate')
+    jobReport  = RPCClient('WorkloadManagement/JobStateUpdate',timeout=120)
     jobParam = jobReport.setJobParameters(int(jobID),value)
     self.log.verbose('setJobParameters(%s,%s)' %(jobID,value))
     if not jobParam['OK']:
