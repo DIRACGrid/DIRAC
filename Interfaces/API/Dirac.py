@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.45 2008/09/15 16:53:46 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.46 2008/10/08 10:45:55 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.45 2008/09/15 16:53:46 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.46 2008/10/08 10:45:55 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -42,6 +42,10 @@ from DIRAC.Core.Security.Misc                            import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.PathFinder         import getSystemSection
 from DIRAC.Core.Utilities.Time                           import toString
 from DIRAC.Core.Utilities.List                           import breakListIntoChunks, sortList
+from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
+from DIRAC.Core.Base.Agent                               import createAgent
+from DIRAC.Core.Security.X509Chain                       import X509Chain
+from DIRAC.Core.Security                                 import Locations, CS
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
 from DIRAC                                               import gConfig, gLogger, S_OK, S_ERROR
 
@@ -102,7 +106,7 @@ class Dirac:
        @type job: Job() or string
        @return: S_OK,S_ERROR
 
-       @param mode: Submit job locally
+       @param mode: Submit job locally with mode = 'local' or 'agent' to run full Job Wrapper
        @type mode: string
 
     """
@@ -146,8 +150,14 @@ class Dirac:
 
     if mode:
       if mode.lower()=='local':
-        self.log.verbose('Executing job locally')
+        self.log.info('Executing workflow locally without WMS submission')
         result = self.runLocal(jdl,jfilename)
+        self.log.verbose('Cleaning up %s...' %tmpdir)
+        shutil.rmtree(tmpdir)
+        return result
+      if mode.lower()=='agent':
+        self.log.info('Executing workflow locally with full WMS submission and DIRAC Job Agent')
+        result = self.runLocalAgent(job)
         self.log.verbose('Cleaning up %s...' %tmpdir)
         shutil.rmtree(tmpdir)
         return result
@@ -155,13 +165,211 @@ class Dirac:
     jobID = self._sendJob(jdl)
     shutil.rmtree(tmpdir)
     if not jobID['OK']:
-      self.log.warn(jobID['Message'])
+      self.log.error('Job submission failure',jobID['Message'])
 
     return jobID
 
   #############################################################################
+  def runLocalAgent(self,job):
+    """Internal function.  This method is equivalent to submit(job,mode='Agent').
+       All output files are written to a <jobID> directory where <jobID> is the
+       result of submission to the WMS.  Please note that the job must be eligible to the
+       site it is submitted from.
+    """
+    if not self.site or self.site == 'Unknown':
+      return self.__errorReport('LocalSite/Site configuration section is unknown, please set this correctly')
+
+    siteRoot = gConfig.getValue('/LocalSite/Root','')
+    if not siteRoot:
+      self.log.warn('LocalSite/Root configuration section is not defined, trying local directory')
+      siteRoot = os.getcwd()
+      if not os.path.exists('%s/DIRAC' %(siteRoot)):
+        return self.__errorReport('LocalSite/Root should be set to DIRACROOT')
+
+    #job must be updated to force destination to local site and disable pilot submissions
+    job.setDestination(self.site)
+    job.setPlatform('Local')
+    job._addJDLParameter('PilotType','private')
+    #creating a /tmp/guid/ directory for updated job submission files
+    guid = makeGuid()
+    tmpdir = self.scratchDir+'/'+guid
+    self.log.verbose('Created temporary directory for submission %s' % (tmpdir))
+    os.mkdir(tmpdir)
+
+    jfilename = tmpdir+'/jobDescription.xml'
+    jfile=open(jfilename,'w')
+    print >> jfile , job._toXML()
+    jfile.close()
+
+    jdlfilename = tmpdir+'/jobDescription.jdl'
+    jdlfile=open(jdlfilename,'w')
+
+    print >> jdlfile , job._toJDL(xmlFile=jfilename)
+    jdlfile.close()
+
+    jdl=jdlfilename
+
+    jobID = self._sendJob(jdl)
+    shutil.rmtree(tmpdir)
+    if not jobID['OK']:
+      self.log.error('Job submission failure',jobID['Message'])
+      return S_ERROR('Could not submit job to WMS')
+
+    jobID=int(jobID['Value'])
+    self.log.info('The job has been submitted to the WMS with jobID = %s, monitoring starts.' %jobID)
+    result = self.__monitorSubmittedJob(jobID)
+    if not result['OK']:
+      self.log.info(result['Message'])
+      return result
+
+    self.log.info('Job %s is now eligible to be picked up from the WMS by a local job agent' %jobID)
+
+    #now run job agent targetted to pick up this job
+    result = self.__runJobAgent(jobID)
+    return result
+
+  #############################################################################
+  def __runJobAgent(self,jobID):
+    """ This internal method runs a tailored job agent for the local execution
+        of a previously submitted WMS job.
+
+        Currently must unset CMTPROJECTPATH to get this to work.
+    """
+    agentName = 'WorkloadManagement/JobAgent'
+    localCfg = LocalConfiguration()
+    localCfg.addDefaultEntry('CEUniqueID','InProcess')
+    localCfg.addDefaultEntry('ControlDirectory',os.getcwd())
+    localCfg.addDefaultEntry('MaxCycles',1)
+    localCfg.addDefaultEntry('/LocalSite/WorkingDirectory',os.getcwd())
+    localCfg.addDefaultEntry('/LocalSite/TotalCPUs',1)
+    localCfg.addDefaultEntry('/LocalSite/MaxCPUTime',300000)
+    localCfg.addDefaultEntry('/LocalSite/CPUTime',300000)
+    localCfg.addDefaultEntry('/LocalSite/OwnerGroup',self.__getCurrentGroup())
+    localCfg.addDefaultEntry('/LocalSite/MaxRunningJobs',1)
+    localCfg.addDefaultEntry('/LocalSite/MaxTotalJobs',1)
+    if os.environ.has_key('VO_LHCB_SW_DIR'):
+      localCfg.addDefaultEntry('/LocalSite/SharedArea',os.environ['VO_LHCB_SW_DIR'])
+    localCfg.addDefaultEntry('/AgentJobRequirements/JobID',jobID)
+    localCfg.addDefaultEntry('/AgentJobRequirements/PilotType','private')
+    localCfg.addDefaultEntry('/AgentJobRequirements/OwnerDN',self.__getCurrentDN())
+    localCfg.addDefaultEntry('/AgentJobRequirements/OwnerGroup',self.__getCurrentGroup())
+    #SKP
+    localCfg.setConfigurationForAgent(agentName)
+    result = localCfg.loadUserData()
+    if not result[ 'OK' ]:
+      self.log.error('There were errors when loading configuration', result['Message'])
+      return S_ERROR('Could not start DIRAC Job Agent')
+
+    agent = createAgent(agentName)
+    result = agent.run_once()
+    if not result['OK']:
+      self.log.error('Job Agent execution completed with errors',result['Message'])
+
+    return result
+
+  #############################################################################
+  def __getCurrentGroup(self):
+    """Simple function to return current DIRAC group.
+    """
+    self.proxy = Locations.getProxyLocation()
+    if not self.proxy:
+      return S_ERROR('No proxy found in local environment')
+    else:
+      self.log.verbose('Current proxy is %s' %self.proxy)
+
+    chain = X509Chain()
+    result = chain.loadProxyFromFile( self.proxy )
+    if not result[ 'OK' ]:
+      return result
+
+    result = chain.getIssuerCert()
+    if not result[ 'OK' ]:
+      return result
+    issuerCert = result[ 'Value' ]
+    group = issuerCert.getDIRACGroup()['Value']
+    return group
+
+  #############################################################################
+  def __getCurrentDN(self):
+    """Simple function to return current DN.
+    """
+    self.proxy = Locations.getProxyLocation()
+    if not self.proxy:
+      return S_ERROR('No proxy found in local environment')
+    else:
+      self.log.verbose('Current proxy is %s' %self.proxy)
+
+    chain = X509Chain()
+    result = chain.loadProxyFromFile( self.proxy )
+    if not result[ 'OK' ]:
+      return result
+
+    result = chain.getIssuerCert()
+    if not result[ 'OK' ]:
+      return result
+    issuerCert = result[ 'Value' ]
+    dn = issuerCert.getSubjectDN()[ 'Value' ]
+    return dn
+
+  #############################################################################
+  def _runLocalJobAgent(self,jobID):
+    """Developer function.  In case something goes wrong with 'agent' submission, after
+       successful WMS submission, this takes the jobID and allows to retry the job agent
+       running.
+    """
+    if not self.site or self.site == 'Unknown':
+      return self.__errorReport('LocalSite/Site configuration section is unknown, please set this correctly')
+
+    siteRoot = gConfig.getValue('/LocalSite/Root','')
+    if not siteRoot:
+      self.log.warn('LocalSite/Root configuration section is not defined, trying local directory')
+      siteRoot = os.getcwd()
+      if not os.path.exists('%s/DIRAC' %(siteRoot)):
+        return self.__errorReport('LocalSite/Root should be set to DIRACROOT')
+
+    result = self.__monitorSubmittedJob(jobID)
+    if not result['OK']:
+      self.log.info(result['Message'])
+      return result
+
+    self.log.info('Job %s is now eligible to be picked up from the WMS by a local job agent'  %jobID)
+    #now run job agent targetted to pick up this job
+    result = self.__runJobAgent(jobID)
+    return result
+
+  #############################################################################
+  def __monitorSubmittedJob(self,jobID):
+    """Internal function.  Monitors a submitted job until it is eligible to be
+       retrieved or enters a failed state.
+    """
+    pollingTime=10 #seconds
+    maxWaitingTime=600 #seconds
+
+    start = time.time()
+    finalState = False
+    while not finalState:
+      jobStatus = self.status(jobID)
+      self.log.verbose(jobStatus)
+      if not jobStatus['OK']:
+        self.log.error('Could not monitor job status, will retry in %s seconds' %pollingTime,jobStatus['Message'])
+      else:
+        jobStatus = jobStatus['Value'][jobID]['Status']
+        if jobStatus.lower()=='waiting':
+          finalState=True
+          return S_OK('Job is eligible to be picked up')
+        if jobStatus.lower()=='failed':
+          finalState=True
+          return S_ERROR('Problem with job %s definition, WMS status is Failed' %jobID)
+        self.log.info('Current status for job %s is %s will retry in %s seconds' %(jobID,jobStatus,pollingTime))
+      current = time.time()
+      if current-start > maxWaitingTime:
+        finalState=True
+        return S_ERROR('Exceeded max waiting time of %s seconds for job %s to enter Waiting state, exiting.' %(maxWaitingTime,jobID))
+      time.sleep(pollingTime)
+
+  #############################################################################
   def runLocal(self,jobJDL,jobXML):
-    """Internal Function.  This method is equivalent to submit(job,mode='Local').
+    """Internal function.  This method is equivalent to submit(job,mode='Local').
        All output files are written to the local directory.
     """
     if not self.site or self.site == 'Unknown':
