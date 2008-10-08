@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Service/SystemLoggingReportHandler.py,v 1.10 2008/09/30 15:24:30 mseco Exp $
-__RCSID__ = "$Id: SystemLoggingReportHandler.py,v 1.10 2008/09/30 15:24:30 mseco Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Service/SystemLoggingReportHandler.py,v 1.11 2008/10/08 08:21:17 mseco Exp $
+__RCSID__ = "$Id: SystemLoggingReportHandler.py,v 1.11 2008/10/08 08:21:17 mseco Exp $"
 """
 SystemLoggingReportHandler allows a remote system to access the contest
 of the SystemLoggingDB
@@ -53,16 +53,22 @@ class SystemLoggingReportHandler( RequestHandler ):
     if not ( beginDate or endDate ):
       beginDate= dateTime() - 1 * day 
       
-    result = LogDB._queryDB( newer = beginDate, older = endDate )
+    result = LogDB._queryDB( condDict = selectionDict, newer = beginDate, 
+                             older = endDate, orderFields = sortList )
 
     if not result['OK']: return result
+
+    if maxItems:
+      records = result['Value'][ startItem:maxItems + startItem ]
+    else:
+      records = result['Value'][ startItem: ]
     
     retValue = { 'ParameterNames': [ 'MessageTime', 'LogLevel', 
                                    'FixedTextString', 'VariableText', 
                                    'SystemName', 'SubSystemName', 
                                    'OwnerDN', 'OwnerGroup',
                                    'ClientIPNumberString', 'SiteName' ], 
-               'Records':  result['Value'], 
+               'Records':  records, 
                'TotalRecords': len( result['Value'] ), 'Extras': {}}
     
     return S_OK( retValue )
@@ -175,19 +181,24 @@ class SystemLoggingReportHandler( RequestHandler ):
       fieldList.insert(0,'MessageTime')
       
     retValue={ 'ParameterNames': fieldList, 'Records': records ,
-           'TotalRecords': len( records ), 'Extras': {}}
+           'TotalRecords': len( result['Value'] ), 'Extras': {}}
   
     return S_OK( retValue )
   
   types_getSites = []
 
   def export_getSites( self, selectionDict = {}, sortList = [], 
-                       startItem = 0, maxItems = 0 ):
+                         startItem = 0, maxItems = 0 ):
     result = LogDB._queryDB( showFieldList = [ 'SiteName' ] )
     
     if not result['OK']: return result
     
-    retValue={ 'ParameterNames': [ 'SiteName' ], 'Records':  result['Value'],
+    if maxItems:
+      records = result['Value'][ startItem:maxItems + startItem ]
+    else:
+      records = result['Value'][ startItem: ]
+
+    retValue={ 'ParameterNames': [ 'SiteName' ], 'Records': records,
                'TotalRecords': len( result['Value'] ), 'Extras': {}}
 
     return S_OK( retValue )
@@ -200,7 +211,12 @@ class SystemLoggingReportHandler( RequestHandler ):
     
     if not result['OK']: return result
     
-    retValue={ 'ParameterNames': [ 'SystemName' ], 'Records':  result['Value'],
+    if maxItems:
+      records = result['Value'][ startItem:maxItems + startItem ]
+    else:
+      records = result['Value'][ startItem: ]
+
+    retValue={ 'ParameterNames': [ 'SystemName' ], 'Records': records,
                'TotalRecords': len( result['Value'] ), 'Extras': {}}
 
     return S_OK( retValue )
@@ -213,7 +229,12 @@ class SystemLoggingReportHandler( RequestHandler ):
     
     if not result['OK']: return result
     
-    retValue={ 'ParameterNames': [ 'SubSystemName' ], 'Records':  result['Value'],
+    if maxItems:
+      records = result['Value'][ startItem:maxItems + startItem ]
+    else:
+      records = result['Value'][ startItem: ]
+
+    retValue={ 'ParameterNames': [ 'SubSystemName' ], 'Records': records,
                'TotalRecords': len( result['Value'] ), 'Extras': {}}
 
     return S_OK( retValue )
@@ -227,7 +248,12 @@ class SystemLoggingReportHandler( RequestHandler ):
     
     if not result['OK']: return result
     
-    retValue={ 'ParameterNames': [ 'OwnerGroup' ], 'Records':  result['Value'],
+    if maxItems:
+      records = result['Value'][ startItem:maxItems + startItem ]
+    else:
+      records = result['Value'][ startItem: ]
+
+    retValue={ 'ParameterNames': [ 'OwnerGroup' ], 'Records': records,
                'TotalRecords': len( result['Value'] ), 'Extras': {}}
       
     return S_OK( retValue )
@@ -240,8 +266,13 @@ class SystemLoggingReportHandler( RequestHandler ):
     
     if not result['OK']: return result
     
-    retValue={ 'ParameterNames': [ 'FixedTextString' ], 'Records':  result['Value'],
+    if maxItems:
+      records = result['Value'][ startItem:maxItems + startItem ]
+    else:
+      records = result['Value'][ startItem: ]
+
+    retValue={ 'ParameterNames': [ 'FixedTextString' ], 'Records': records,
                'TotalRecords': len( result['Value'] ), 'Extras': {}}
     
     return S_OK( retValue )
-    
+	
