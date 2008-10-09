@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.47 2008/10/08 12:33:20 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.48 2008/10/09 08:40:13 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.47 2008/10/08 12:33:20 rgracian Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.48 2008/10/09 08:40:13 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -1689,6 +1689,38 @@ class Dirac:
        @return: S_OK,S_ERROR
     """
     return gProxyManager.uploadProxy( proxy )
+
+  #############################################################################
+  def getJobJDL(self,jobID,printOutput=False):
+    """Simple function to retrieve the current JDL of an existing job in the
+       workload management system.  The job JDL is converted to a dictionary
+       and returned in the result structure.
+
+       Example Usage:
+       >>> print dirac.getJobJDL(12345)
+       {'OK': True}
+
+       @param jobID: JobID
+       @type jobID: int or string
+       @return: S_OK,S_ERROR
+
+    """
+    if type(jobID)==type(" "):
+      try:
+        jobID = int(jobID)
+      except Exception,x:
+        return self.__errorReport(str(x),'Expected integer or string for existing jobID')
+
+    monitoring = RPCClient('WorkloadManagement/JobMonitoring',timeout=120)
+    result = monitoring.getJobJDL(jobID)
+    if not result['OK']:
+      return result
+
+    result = self.__getJDLParameters(result['Value'])
+    if printOutput:
+      print self.pPrint.pformat(result['Value'])
+
+    return result
 
   #############################################################################
   def __getJDLParameters(self,jdl):
