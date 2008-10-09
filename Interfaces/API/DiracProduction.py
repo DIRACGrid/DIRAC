@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.45 2008/10/09 09:59:44 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.46 2008/10/09 12:28:04 paterson Exp $
 # File :   DiracProduction.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are to be documented with example usage.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.45 2008/10/09 09:59:44 paterson Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.46 2008/10/09 12:28:04 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 import pprint
@@ -997,6 +997,7 @@ class DiracProduction:
     wfMode = None
     wfConfigVersion = None
     wfMask = None
+    wfType = None
     fileTupleList = []
     for p in job.workflow.parameters:
       if p.getName() == "dataType":
@@ -1005,9 +1006,11 @@ class DiracProduction:
         wfConfigVersion = p.getValue()
       if p.getName() == "outputDataFileMask":
         wfMask = p.getValue()
+      if p.getName() == 'JobType':
+        wfType = p.getValue()
 
-    self.log.verbose('WFMode = %s, WFConfigVersion = %s, WFMask = %s' %(wfMode,wfConfigVersion,wfMask))
-    if not wfMode or not wfConfigVersion:
+    self.log.verbose('WFMode = %s, WFConfigVersion = %s, WFMask = %s, WFType=%s' %(wfMode,wfConfigVersion,wfMask,wfType))
+    if not wfMode or not wfConfigVersion or not wfType:
       return S_ERROR('Insufficient parameters to construct LFN(s)')
 
     #borrowed from the JobInfoFromXML utility
@@ -1022,9 +1025,9 @@ class DiracProduction:
 
     lfnRoot = ''
     if inputData:
-      lfnRoot = getLFNRoot(inputData)
+      lfnRoot = getLFNRoot(inputData,wfType)
     else:
-      lfnRoot = getLFNRoot(inputData,wfConfigVersion)
+      lfnRoot = getLFNRoot(inputData,wfType,wfConfigVersion)
 
     if not lfnRoot or not fileTupleList:
       return S_ERROR('Could not create LFN(s)')
