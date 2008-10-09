@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.59 2008/10/09 09:11:49 paterson Exp $
+# $Id: JobWrapper.py,v 1.60 2008/10/09 11:08:37 paterson Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.59 2008/10/09 09:11:49 paterson Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.60 2008/10/09 11:08:37 paterson Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -705,6 +705,7 @@ class JobWrapper:
     self.__report('Completed','Uploading Output Data')
     self.log.verbose('Output data files %s to be uploaded to %s SE' %(string.join(outputData,', '),outputSE))
     missing = []
+    uploaded = []
     for outputFile in outputData:
       if os.path.exists(outputFile):
         self.outputDataSize+=getGlobbedTotalSize(outputFile)
@@ -722,8 +723,17 @@ class JobWrapper:
             self.log.warn('Could not putAndRegister file %s with LFN %s to %s' %(outputFile,lfn,outputSE))
             self.log.warn(failed)
             missing.append(outputFile)
+          else:
+            uploaded.append(lfn)
       else:
         self.log.warn('Output data file: %s is missing after execution' %(outputFile))
+
+    #For files correctly uploaded must report LFNs to job parameters
+    if uploaded:
+      report = string.join(uploaded,', ')
+      result = self.jobReport.setJobParameter('UploadedOutputData',report)
+      if not result['OK']:
+        self.log.error('Failed to report job parameter',result['Message'])
 
     #TODO Notify the user of any output data / output sandboxes
 
