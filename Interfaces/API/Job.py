@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.47 2008/10/09 08:16:16 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.48 2008/10/09 08:24:35 paterson Exp $
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -30,7 +30,7 @@
    Note that several executables can be provided and wil be executed sequentially.
 """
 
-__RCSID__ = "$Id: Job.py,v 1.47 2008/10/09 08:16:16 paterson Exp $"
+__RCSID__ = "$Id: Job.py,v 1.48 2008/10/09 08:24:35 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -392,7 +392,7 @@ class Job:
       self._addParameter(self.workflow,'Site','JDLReqt',destination,description)
     elif type(destination) == list:
       for site in destination:
-        if not re.search('^DIRAC.',site) and not destination.lower()=='any':
+        if not re.search('^DIRAC.',site) and not site.lower()=='any':
           result = self.__checkSiteIsValid(site)
           if not result['OK']:
             raise TypeError,'%s is not a valid destination site' %(destination)
