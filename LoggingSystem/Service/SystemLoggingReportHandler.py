@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Service/SystemLoggingReportHandler.py,v 1.13 2008/10/09 11:27:16 mseco Exp $
-__RCSID__ = "$Id: SystemLoggingReportHandler.py,v 1.13 2008/10/09 11:27:16 mseco Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Service/SystemLoggingReportHandler.py,v 1.14 2008/10/09 13:14:40 mseco Exp $
+__RCSID__ = "$Id: SystemLoggingReportHandler.py,v 1.14 2008/10/09 13:14:40 mseco Exp $"
 """
 SystemLoggingReportHandler allows a remote system to access the contest
 of the SystemLoggingDB
@@ -39,8 +39,6 @@ class SystemLoggingReportHandler( RequestHandler ):
         If no date is provided then the records returned are those generated
         during the last 24 hours.
     """
-    from DIRAC.Core.Utilities import dateTime, day
-
     if selectionDict.has_key( 'beginDate' ):
       beginDate = selectionDict.pop( 'beginDate' )
     else:
@@ -51,7 +49,7 @@ class SystemLoggingReportHandler( RequestHandler ):
       endDate = None
 
     if not ( beginDate or endDate ):
-      beginDate= Time.dateTime() - 1 * day 
+      beginDate= Time.dateTime() - 1 * Time.day 
       
     result = LogDB._queryDB( condDict = selectionDict, newer = beginDate, 
                              older = endDate, orderFields = sortList )
@@ -92,7 +90,7 @@ class SystemLoggingReportHandler( RequestHandler ):
       endDate = None
 
     if not ( beginDate or endDate ):
-      beginDate= Time.dateTime() - 1 * day 
+      beginDate= Time.dateTime() - 1 * Time.day 
 
     if selectionDict:
       fieldList = selectionDict.keys()
@@ -154,7 +152,7 @@ class SystemLoggingReportHandler( RequestHandler ):
       endDate = None
 
     if not ( beginDate or endDate ):
-      beginDate= Time.dateTime() - 1 * day 
+      beginDate= Time.dateTime() - 1 * Time.day 
 
     if selectionDict.has_key('groupField') and selectionDict['groupField']:
       groupField = selectionDict.pop( 'groupField' )
