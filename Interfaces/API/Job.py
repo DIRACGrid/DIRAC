@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.46 2008/09/12 14:58:28 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.47 2008/10/09 08:16:16 paterson Exp $
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -30,7 +30,7 @@
    Note that several executables can be provided and wil be executed sequentially.
 """
 
-__RCSID__ = "$Id: Job.py,v 1.46 2008/09/12 14:58:28 paterson Exp $"
+__RCSID__ = "$Id: Job.py,v 1.47 2008/10/09 08:16:16 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -370,7 +370,7 @@ class Job:
   def setDestination(self,destination):
     """Helper function.
 
-       Can specify a desired destination site for job.  This can be useful
+       Can specify a desired destination site or sites for job.  This can be useful
        for debugging purposes but often limits the possible candidate sites
        and overall system response time.
 
@@ -380,7 +380,7 @@ class Job:
        >>> job.setDestination('LCG.CERN.ch')
 
        @param destination: site string
-       @type destination: string
+       @type destination: string or list
     """
 
     if type(destination) == type("  "):
@@ -390,6 +390,15 @@ class Job:
           raise TypeError,'%s is not a valid destination site' %(destination)
       description = 'User specified destination site'
       self._addParameter(self.workflow,'Site','JDLReqt',destination,description)
+    elif type(destination) == list:
+      for site in destination:
+        if not re.search('^DIRAC.',site) and not destination.lower()=='any':
+          result = self.__checkSiteIsValid(site)
+          if not result['OK']:
+            raise TypeError,'%s is not a valid destination site' %(destination)
+      destSites = string.join(destination,';')
+      description = 'List of sites selected by user'
+      self._addParameter(self.workflow,'Site','JDLReqt',destSites,description)
     else:
       raise TypeError,'Expected string for destination site'
 
