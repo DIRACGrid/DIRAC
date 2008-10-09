@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Service/SystemLoggingReportHandler.py,v 1.11 2008/10/08 08:21:17 mseco Exp $
-__RCSID__ = "$Id: SystemLoggingReportHandler.py,v 1.11 2008/10/08 08:21:17 mseco Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Service/SystemLoggingReportHandler.py,v 1.12 2008/10/09 10:39:25 mseco Exp $
+__RCSID__ = "$Id: SystemLoggingReportHandler.py,v 1.12 2008/10/09 10:39:25 mseco Exp $"
 """
 SystemLoggingReportHandler allows a remote system to access the contest
 of the SystemLoggingDB
@@ -42,16 +42,16 @@ class SystemLoggingReportHandler( RequestHandler ):
     from DIRAC.Core.Utilities import dateTime, day
 
     if selectionDict.has_key( 'beginDate' ):
-      beginDate=selectionDict.pop( 'beginDate' )
+      beginDate = selectionDict.pop( 'beginDate' )
     else:
-      beginDate=None
+      beginDate = None
     if selectionDict.has_key( 'endDate' ):
-      endDate=selectionDict.pop( 'endDate' )
+      endDate = selectionDict.pop( 'endDate' )
     else:
-      endDate=None
+      endDate = None
 
     if not ( beginDate or endDate ):
-      beginDate= dateTime() - 1 * day 
+      beginDate= Time.dateTime() - 1 * day 
       
     result = LogDB._queryDB( condDict = selectionDict, newer = beginDate, 
                              older = endDate, orderFields = sortList )
@@ -68,8 +68,8 @@ class SystemLoggingReportHandler( RequestHandler ):
                                    'SystemName', 'SubSystemName', 
                                    'OwnerDN', 'OwnerGroup',
                                    'ClientIPNumberString', 'SiteName' ], 
-               'Records':  records, 
-               'TotalRecords': len( result['Value'] ), 'Extras': {}}
+                 'Records':  records, 
+                 'TotalRecords': len( result['Value'] ), 'Extras': {}}
     
     return S_OK( retValue )
 
@@ -83,13 +83,13 @@ class SystemLoggingReportHandler( RequestHandler ):
         database
     """
     if selectionDict.has_key( 'beginDate' ):
-      beginDate=selectionDict.pop( 'beginDate' )
+      beginDate = selectionDict.pop( 'beginDate' )
     else:
-      beginDate=None
+      beginDate = None
     if selectionDict.has_key( 'endDate' ):
-      endDate=selectionDict.pop( 'endDate' )
+      endDate = selectionDict.pop( 'endDate' )
     else:
-      endDate=None
+      endDate = None
 
     if selectionDict:
       fieldList = selectionDict.keys()
@@ -106,8 +106,9 @@ class SystemLoggingReportHandler( RequestHandler ):
 
     if not result['OK']: return result
     
-    retValue={ 'ParameterNames': ['Number of Messages'], 'Records':  result['Value'][0][0],
-               'TotalRecords': 1, 'Extras': {}}
+    retValue = { 'ParameterNames': ['Number of Messages'], 
+                 'Records':  result['Value'][0][0],
+                 'TotalRecords': 1, 'Extras': {}}
     
     return S_OK( retValue )
 
@@ -120,9 +121,9 @@ class SystemLoggingReportHandler( RequestHandler ):
          DIRAC convention for communications between services and 
          web pages
     """
-    if selectionDict.has_key('convertdates'):
-      convertDatesToStrings = selectionDict['convertdates']
-      del selectionDict['convertdates']
+    if selectionDict.has_key('convertDates'):
+      convertDatesToStrings = selectionDict['convertDates']
+      del selectionDict['convertDates']
     else:
       convertDatesToStrings = True
 
@@ -180,8 +181,8 @@ class SystemLoggingReportHandler( RequestHandler ):
       fieldList.pop(0)
       fieldList.insert(0,'MessageTime')
       
-    retValue={ 'ParameterNames': fieldList, 'Records': records ,
-           'TotalRecords': len( result['Value'] ), 'Extras': {}}
+    retValue = { 'ParameterNames': fieldList, 'Records': records ,
+                 'TotalRecords': len( result['Value'] ), 'Extras': {}}
   
     return S_OK( retValue )
   
@@ -198,8 +199,8 @@ class SystemLoggingReportHandler( RequestHandler ):
     else:
       records = result['Value'][ startItem: ]
 
-    retValue={ 'ParameterNames': [ 'SiteName' ], 'Records': records,
-               'TotalRecords': len( result['Value'] ), 'Extras': {}}
+    retValue = { 'ParameterNames': [ 'SiteName' ], 'Records': records,
+                 'TotalRecords': len( result['Value'] ), 'Extras': {}}
 
     return S_OK( retValue )
 
@@ -216,8 +217,8 @@ class SystemLoggingReportHandler( RequestHandler ):
     else:
       records = result['Value'][ startItem: ]
 
-    retValue={ 'ParameterNames': [ 'SystemName' ], 'Records': records,
-               'TotalRecords': len( result['Value'] ), 'Extras': {}}
+    retValue = { 'ParameterNames': [ 'SystemName' ], 'Records': records,
+                 'TotalRecords': len( result['Value'] ), 'Extras': {}}
 
     return S_OK( retValue )
 
@@ -253,8 +254,8 @@ class SystemLoggingReportHandler( RequestHandler ):
     else:
       records = result['Value'][ startItem: ]
 
-    retValue={ 'ParameterNames': [ 'OwnerGroup' ], 'Records': records,
-               'TotalRecords': len( result['Value'] ), 'Extras': {}}
+    retValue = { 'ParameterNames': [ 'OwnerGroup' ], 'Records': records,
+                 'TotalRecords': len( result['Value'] ), 'Extras': {}}
       
     return S_OK( retValue )
 
@@ -271,8 +272,8 @@ class SystemLoggingReportHandler( RequestHandler ):
     else:
       records = result['Value'][ startItem: ]
 
-    retValue={ 'ParameterNames': [ 'FixedTextString' ], 'Records': records,
-               'TotalRecords': len( result['Value'] ), 'Extras': {}}
+    retValue = { 'ParameterNames': [ 'FixedTextString' ], 'Records': records,
+                 'TotalRecords': len( result['Value'] ), 'Extras': {}}
     
     return S_OK( retValue )
 	

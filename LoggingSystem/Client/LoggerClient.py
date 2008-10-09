@@ -1,5 +1,5 @@
- # $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Client/LoggerClient.py,v 1.4 2008/10/08 08:21:16 mseco Exp $
-__RCSID__ = "$Id: LoggerClient.py,v 1.4 2008/10/08 08:21:16 mseco Exp $"
+ # $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Client/LoggerClient.py,v 1.5 2008/10/09 10:39:25 mseco Exp $
+__RCSID__ = "$Id: LoggerClient.py,v 1.5 2008/10/09 10:39:25 mseco Exp $"
 """ This file contains the methods for accessing the Messages Stored in the LoggingDB;
     getMessagesByDate()
     getMessagesBySite()
@@ -27,9 +27,6 @@ class LoggerClient:
         If no date is provided then the records returned are those generated
         during the last 24 hours.
     """
-    if not ( beginDate or endDate ):
-      beginDate= dateTime() - 1 * day 
-
     loggingQuery = RPCClient('Logging/SystemLoggingReport', timeout = 10)
     result = loggingQuery.getMessages( { 'beginDate': beginDate, 'endDate': endDate },
                                        [], startRecord, maxRecords )
