@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.28 2008/09/25 10:02:17 acasajus Exp $
-__RCSID__ = "$Id: Logger.py,v 1.28 2008/09/25 10:02:17 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.29 2008/10/09 15:05:16 mseco Exp $
+__RCSID__ = "$Id: Logger.py,v 1.29 2008/10/09 15:05:16 mseco Exp $"
 """
    DIRAC Logger client
 """
@@ -74,7 +74,7 @@ class Logger:
         else:
           self.backendsOptions[ 'Interactive' ] = True
 
-      site = gConfig.getValue( "/DIRAC/Site", 'Unknown' )
+      site = gConfig.getValue( "/LocalSite/Site", 'Unknown' )
       self.backendsOptions[ 'Site' ] = site
 
       #Configure outputs
@@ -282,6 +282,10 @@ class Logger:
     return sExtendedException
 
   def __getStackString( self ):
+    """ This function returns the stack as a string to be printed via
+     a debug message, the upper 3 levels are skipped since they correspond
+     to gLogger.showStack,  self.__getStackString, traceback.print_stack
+	"""
     stack_list = traceback.extract_stack()
     return ''.join( traceback.format_list( stack_list[:-2] ))
 
