@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Service/SystemLoggingReportHandler.py,v 1.12 2008/10/09 10:39:25 mseco Exp $
-__RCSID__ = "$Id: SystemLoggingReportHandler.py,v 1.12 2008/10/09 10:39:25 mseco Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Service/SystemLoggingReportHandler.py,v 1.13 2008/10/09 11:27:16 mseco Exp $
+__RCSID__ = "$Id: SystemLoggingReportHandler.py,v 1.13 2008/10/09 11:27:16 mseco Exp $"
 """
 SystemLoggingReportHandler allows a remote system to access the contest
 of the SystemLoggingDB
@@ -91,6 +91,9 @@ class SystemLoggingReportHandler( RequestHandler ):
     else:
       endDate = None
 
+    if not ( beginDate or endDate ):
+      beginDate= Time.dateTime() - 1 * day 
+
     if selectionDict:
       fieldList = selectionDict.keys()
       fieldList.append( 'MessageTime' )
@@ -149,6 +152,9 @@ class SystemLoggingReportHandler( RequestHandler ):
       del selectionDict['endDate']
     else:
       endDate = None
+
+    if not ( beginDate or endDate ):
+      beginDate= Time.dateTime() - 1 * day 
 
     if selectionDict.has_key('groupField') and selectionDict['groupField']:
       groupField = selectionDict.pop( 'groupField' )
