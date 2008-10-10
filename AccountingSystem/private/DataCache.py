@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/DataCache.py,v 1.2 2008/09/23 16:01:19 acasajus Exp $
-__RCSID__ = "$Id: DataCache.py,v 1.2 2008/09/23 16:01:19 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/DataCache.py,v 1.3 2008/10/10 16:40:04 acasajus Exp $
+__RCSID__ = "$Id: DataCache.py,v 1.3 2008/10/10 16:40:04 acasajus Exp $"
 
 import os
 import os.path
@@ -76,7 +76,7 @@ class DataCache:
         plotDict[ 'plot' ] = "%s.png" % reportHash
       if plotDict[ 'thumbnail' ]:
         plotDict[ 'thumbnail' ] = "%s.thb.png" % reportHash
-      self.__dataCache.add( reportHash, self.__graphLifeTime, plotDict )
+      self.__graphCache.add( reportHash, self.__graphLifeTime, plotDict )
     return S_OK( plotDict )
 
   def getPlotData( self, plotFileName ):
