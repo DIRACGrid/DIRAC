@@ -107,7 +107,7 @@ class MonitoringCatalog:
     self.__dbExecute( "%s;" % query, values = valuesList )
 
 
-  def __select( self, fields, table, dataDict, extraCond = "" ):
+  def __select( self, fields, table, dataDict, extraCond = "", queryEnd = "" ):
     """
     Execute a sql select
     """
@@ -134,11 +134,13 @@ class MonitoringCatalog:
         whereCond += " AND %s" % extraCond
       else:
         whereCond = "WHERE %s" % extraCond
-    query = "SELECT %s FROM %s %s;" % (
+    query = "SELECT %s FROM %s %s %s;" % (
                                            ",".join( fields ),
                                            table,
-                                           whereCond
+                                           whereCond,
+                                           queryEnd
                                            )
+    print query
     c = self.__dbExecute( query, values = valuesList )
     return c.fetchall()
 
@@ -257,6 +259,28 @@ class MonitoringCatalog:
       return False
     else:
       return retList[0]
+
+  def activitiesQuery( self, selDict, sortList, start, limit ):
+    fields = [ 'sources.id', 'sources.site', 'sources.componentType', 'sources.componentLocation',
+               'sources.componentName', 'activities.id', 'activities.name', 'activities.category',
+               'activities.unit', 'activities.type', 'activities.description',
+               'activities.bucketLength', 'activities.filename', 'activities.lastUpdate' ]
+
+    extraSQL = ""
+    if sortList:
+      for sorting in sortList:
+        if sorting[0] not in fields:
+          return S_ERROR( "Sorting field %s is invalid" % sorting[0] )
+      extraSQL = "ORDER BY %s" % ",".join( [ "%s %s" % sorting for sorting in sortList ] )
+    if limit:
+      if start:
+        extraSQL += " LIMIT %s OFFSET %s" % ( limit, start)
+      else:
+        extraSQL += " LIMIT %s" % limit
+
+    retList = self.__select( ", ".join(fields), 'sources, activities', selDict, 'sources.id = activities.sourceId',
+                             extraSQL )
+    return S_OK( ( retList, fields ) )
 
   def setLastUpdate( self, sourceId, acName, lastUpdateTime ):
     queryDict = { 'sourceId' : sourceId, "name" : acName }

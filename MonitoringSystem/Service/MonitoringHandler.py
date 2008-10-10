@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Service/MonitoringHandler.py,v 1.8 2008/09/30 19:01:25 acasajus Exp $
-__RCSID__ = "$Id: MonitoringHandler.py,v 1.8 2008/09/30 19:01:25 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Service/MonitoringHandler.py,v 1.9 2008/10/10 14:59:32 acasajus Exp $
+__RCSID__ = "$Id: MonitoringHandler.py,v 1.9 2008/10/10 14:59:32 acasajus Exp $"
 import types
 import os
 from DIRAC import gLogger, gConfig, rootPath, S_OK, S_ERROR
@@ -132,6 +132,17 @@ class MonitoringHandler( RequestHandler ):
     """
     return gServiceInterface.deleteView( viewId )
 
+  types_deleteViews = [ types.ListType ]
+  def export_deleteViews( self, viewList ):
+    """
+    Deletes a view
+    """
+    for viewId in viewList:
+      result = gServiceInterface.deleteView( viewId )
+      if not result[ 'OK' ]:
+        return result
+    return S_OK()
+
   types_getActivities = []
   def export_getActivities( self ):
     """
@@ -139,6 +150,22 @@ class MonitoringHandler( RequestHandler ):
     """
     dbCondition = {'sources.setup' : self.serviceInfoDict[ 'clientSetup' ] }
     return S_OK( gServiceInterface.getActivities( dbCondition ) )
+
+  types_getActivitiesContents = [ types.DictType, ( types.ListType, types.TupleType ),
+                       ( types.IntType, types.LongType ), ( types.IntType, types.LongType ) ]
+  def export_getActivitiesContents( self, selDict, sortList, start, limit ):
+    """
+    Retrieve the contents of the activity db
+    """
+    setupCond = {'sources.setup' : self.serviceInfoDict[ 'clientSetup' ] }
+    selDict.update( setupCond )
+    result = gServiceInterface.getActivitiesContents( selDict, sortList, start, limit )
+    if not result[ 'OK' ]:
+      return result
+    resultTuple = result[ 'Value' ]
+    result = { 'Records' : resultTuple[0], 'Fields' : resultTuple[1]}
+    result[ 'TotalRecords' ] = gServiceInterface.getNumberOfActivities( setupCond )
+    return S_OK( result )
 
   types_deleteActivity = [ types.IntType, types.IntType ]
   def export_deleteActivity( self, sourceId, activityId ):

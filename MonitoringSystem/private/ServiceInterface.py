@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/ServiceInterface.py,v 1.14 2008/05/26 13:26:36 rgracian Exp $
-__RCSID__ = "$Id: ServiceInterface.py,v 1.14 2008/05/26 13:26:36 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/ServiceInterface.py,v 1.15 2008/10/10 14:59:32 acasajus Exp $
+__RCSID__ = "$Id: ServiceInterface.py,v 1.15 2008/10/10 14:59:32 acasajus Exp $"
 import DIRAC
 from DIRAC import gLogger
 from DIRAC.MonitoringSystem.private.RRDManager import RRDManager
@@ -297,6 +297,24 @@ class ServiceInterface:
       activityCond = { 'sourceId' : sourceTuple[0] }
       acDict[ sourceTuple ] = catalog.getActivities( activityCond )
     return acDict
+
+  def getNumberOfActivities( self, dbCond = {} ):
+    """
+    Get a list of activities
+    """
+    acDict = {}
+    catalog = self.__createCatalog()
+    total = 0
+    for sourceTuple in catalog.getSources( dbCond ):
+      activityCond = { 'sourceId' : sourceTuple[0] }
+      total += len( catalog.getActivities( activityCond ) )
+    return total
+
+  def getActivitiesContents( self, selDict, sortList, start, limit ):
+    """
+    DB query
+    """
+    return self.__createCatalog().activitiesQuery( selDict, sortList, start, limit )
 
   def deleteActivity( self, sourceId, activityId ):
     """
