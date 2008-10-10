@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/CS.py,v 1.9 2008/07/14 18:23:03 acasajus Exp $
-__RCSID__ = "$Id: CS.py,v 1.9 2008/07/14 18:23:03 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/CS.py,v 1.10 2008/10/10 09:37:36 acasajus Exp $
+__RCSID__ = "$Id: CS.py,v 1.10 2008/10/10 09:37:36 acasajus Exp $"
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import List
@@ -72,15 +72,18 @@ def getPropertiesForHost( hostName, defaultValue = [] ):
 def getBannedIPs():
   return gConfig.getValue( "%s/BannedIPs" % g_BaseSecuritySection, [] )
 
+def getDefaultVOMSAttribute():
+  return Config.getValue( "%s/DefaultVOMSAttribute" % g_BaseSecuritySection, "/lhcb/Role=user" )
+
 def getVOMSAttributeForGroup( group ):
-  return gConfig.getValue( "%s/VOMSMapping/%s" % ( g_BaseSecuritySection, group ), [] )
+  return gConfig.getValue( "%s/Groups/%s/VOMSRole" % ( g_BaseSecuritySection, group ), getDefaultVOMSAttribute() )
 
 def getGroupsWithVOMSAttribute( vomsAttr ):
-  retVal = gConfig.getOptions( "%s/VOMSMapping" % ( g_BaseSecuritySection ) )
+  retVal = gConfig.getSections( "%s/Groups" % ( g_BaseSecuritySection ) )
   if not retVal[ 'OK' ]:
     return []
   groups = []
   for group in retVal[ 'Value' ]:
-    if vomsAttr in gConfig.getValue( "%s/VOMSMapping/%s" % ( g_BaseSecuritySection, group ), [] ):
+    if vomsAttr == gConfig.getValue( "%s/Groups/%s/VOMSRole" % ( g_BaseSecuritySection, group ), "" ):
       groups.append( group )
   return groups

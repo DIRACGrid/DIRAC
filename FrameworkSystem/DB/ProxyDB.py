@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.33 2008/10/02 13:38:41 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.34 2008/10/10 09:37:36 acasajus Exp $
 ########################################################################
 """ ProxyRepository class is a front-end to the proxy repository Database
 """
 
-__RCSID__ = "$Id: ProxyDB.py,v 1.33 2008/10/02 13:38:41 acasajus Exp $"
+__RCSID__ = "$Id: ProxyDB.py,v 1.34 2008/10/10 09:37:36 acasajus Exp $"
 
 import time
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
@@ -170,11 +170,11 @@ class ProxyDB(DB):
     if len( attr ) > 0:
       return S_ERROR( "Proxies with VOMS extensions are not allowed to be uploaded" )
     #END HACK
-    validVOMSAttrs = CS.getVOMSAttributeForGroup( userGroup )
-    if len( attr ) == 0 or attr[0] in validVOMSAttrs:
+    validVOMSAttr = CS.getVOMSAttributeForGroup( userGroup )
+    if len( attr ) == 0 or attr[0] == validVOMSAttr:
       return S_OK( 'OK' )
     msg = "VOMS attributes are not aligned with dirac group"
-    msg += "Attributes are %s and allowed are %s for group %s" % ( attr, validVOMSAttrs, userGroup )
+    msg += "Attributes are %s and allowed is %s for group %s" % ( attr, validVOMSAttrs, userGroup )
     return S_ERROR( msg )
 
   def completeDelegation( self, requestId, userDN, delegatedPem ):
@@ -429,12 +429,10 @@ class ProxyDB(DB):
   def __getVOMSAttribute( self, userGroup, requiredVOMSAttribute = False ):
     if requiredVOMSAttribute:
       return S_OK( requiredVOMSAttribute )
-    csVOMSMappings = CS.getVOMSAttributeForGroup( userGroup )
-    if not csVOMSMappings:
+    csVOMSMapping = CS.getVOMSAttributeForGroup( userGroup )
+    if not csVOMSMapping:
       return S_ERROR( "No mapping defined for group %s in the CS" % userGroup )
-    if len( csVOMSMappings ) > 1:
-      return S_ERROR( "More than one VOMS attribute defined for group %s and one required" % userGroup )
-    return S_OK( csVOMSMappings[0] )
+    return S_OK( csVOMSMapping )
 
   def getVOMSProxy( self, userDN, userGroup, requiredLifeTime = False, requestedVOMSAttr = False ):
     """ Get proxy string from the Proxy Repository for use with userDN
