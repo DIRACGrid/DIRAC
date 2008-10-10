@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: Mapping.py,v 1.14 2008/10/08 12:33:19 rgracian Exp $
+# $Id: Mapping.py,v 1.15 2008/10/10 13:39:03 atsareg Exp $
 ########################################################################
 
 """ All of the data collection and handling procedures for the SiteMappingHandler
@@ -182,12 +182,13 @@ class Mapping:
         else:
           se = element.split('-')
 
-        for node in self.siteData:
-          if node.find(se[0]) != -1:
-            if 'DataStorage' not in self.siteData[node]:
-              self.siteData[node]['DataStorage'] = {}
-            self.siteData[node]['DataStorage'][se[1].upper()] = storageSummary['Value'][element]
-            break
+        if se[0] != element:
+          for node in self.siteData:
+            if node.find(se[0]) != -1:
+              if 'DataStorage' not in self.siteData[node]:
+                self.siteData[node]['DataStorage'] = {}
+              self.siteData[node]['DataStorage'][se[1].upper()] = storageSummary['Value'][element]
+              break
 
     ##############################
 
