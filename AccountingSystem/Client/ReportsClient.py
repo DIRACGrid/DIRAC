@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/ReportsClient.py,v 1.4 2008/09/05 11:44:44 acasajus Exp $
-__RCSID__ = "$Id: ReportsClient.py,v 1.4 2008/09/05 11:44:44 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/ReportsClient.py,v 1.5 2008/10/10 17:29:49 acasajus Exp $
+__RCSID__ = "$Id: ReportsClient.py,v 1.5 2008/10/10 17:29:49 acasajus Exp $"
 
 import tempfile
 from DIRAC import S_OK, S_ERROR
@@ -40,9 +40,9 @@ class ReportsClient:
                     'reportName' : reportName,
                     'startTime' : startTime,
                     'endTime' : endTime,
-                    'argsDict' : argsDict,
+                    'condDict' : condDict,
                     'grouping' : grouping,
-                    'condDict' : condDict }
+                    'extraArgs' : extraArgs }
     return rpcClient.getReport( plotRequest )
 
   def generatePlot( self, typeName, reportName, startTime, endTime, condDict, grouping, extraArgs = {} ):
