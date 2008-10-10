@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.46 2008/10/09 12:28:04 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.47 2008/10/10 10:43:26 paterson Exp $
 # File :   DiracProduction.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are to be documented with example usage.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.46 2008/10/09 12:28:04 paterson Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.47 2008/10/10 10:43:26 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 import pprint
@@ -1006,6 +1006,10 @@ class DiracProduction:
         wfConfigVersion = p.getValue()
       if p.getName() == "outputDataFileMask":
         wfMask = p.getValue()
+        if re.search(';',wfMask):
+          wfMask = wfMask.split(';')
+        else:
+          wfMask = [wfMask]
       if p.getName() == 'JobType':
         wfType = p.getValue()
 
@@ -1027,7 +1031,7 @@ class DiracProduction:
     if inputData:
       lfnRoot = getLFNRoot(inputData,wfType)
     else:
-      lfnRoot = getLFNRoot(inputData,wfType,wfConfigVersion)
+      lfnRoot = getLFNRoot('',wfType,wfConfigVersion)
 
     if not lfnRoot or not fileTupleList:
       return S_ERROR('Could not create LFN(s)')
