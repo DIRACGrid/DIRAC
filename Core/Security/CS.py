@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/CS.py,v 1.10 2008/10/10 09:37:36 acasajus Exp $
-__RCSID__ = "$Id: CS.py,v 1.10 2008/10/10 09:37:36 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/CS.py,v 1.11 2008/10/10 11:32:10 acasajus Exp $
+__RCSID__ = "$Id: CS.py,v 1.11 2008/10/10 11:32:10 acasajus Exp $"
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import List
@@ -73,7 +73,7 @@ def getBannedIPs():
   return gConfig.getValue( "%s/BannedIPs" % g_BaseSecuritySection, [] )
 
 def getDefaultVOMSAttribute():
-  return Config.getValue( "%s/DefaultVOMSAttribute" % g_BaseSecuritySection, "/lhcb/Role=user" )
+  return gConfig.getValue( "%s/DefaultVOMSAttribute" % g_BaseSecuritySection, "/lhcb/Role=user" )
 
 def getVOMSAttributeForGroup( group ):
   return gConfig.getValue( "%s/Groups/%s/VOMSRole" % ( g_BaseSecuritySection, group ), getDefaultVOMSAttribute() )
