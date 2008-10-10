@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/DataCache.py,v 1.3 2008/10/10 16:40:04 acasajus Exp $
-__RCSID__ = "$Id: DataCache.py,v 1.3 2008/10/10 16:40:04 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/DataCache.py,v 1.4 2008/10/10 16:45:15 acasajus Exp $
+__RCSID__ = "$Id: DataCache.py,v 1.4 2008/10/10 16:45:15 acasajus Exp $"
 
 import os
 import os.path
@@ -23,7 +23,7 @@ class DataCache:
     self.__dataCache = DictCache()
     self.__graphCache = DictCache( deleteFunction = self.__deleteGraph )
     self.__dataLifeTime = 600
-    self.__graphLifeTime = 900
+    self.__graphLifeTime = 3600
 
   def setGraphsLocation( self, graphsDir ):
     self.graphsLocation = graphsDir
