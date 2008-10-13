@@ -294,10 +294,25 @@ class CSAPI:
       if users != sortedUsers:
         self.__csMod.setOptionValue( usersOptionPath, sortedUsers )
 
+  def checkForUnexistantUsersInGroups( self ):
+    allUsers = self.__csMod.getSections( "%s/Users" % self.__baseSecurity )
+    allGroups = self.__csMod.getSections( "%s/Groups" % self.__baseSecurity )
+    for group in allGroups:
+      usersInGroup = self.__csMod.getValue( "%s/Groups/%s/Users" % ( self.__baseSecurity, group ) )
+      if usersInGroup:
+        filteredUsers = []
+        usersInGroup = List.fromChar( usersInGroup )
+        for user in usersInGroup:
+          if user in allUsers:
+            filteredUsers.append( user )
+        self.__csMod.setOptionValue( "%s/Groups/%s/Users" % ( self.__baseSecurity, group ),
+                                     ",".join( filteredUsers ) )
+
   def commitChanges( self, sortUsers = True ):
     if not self.__initialized:
       return S_ERROR( "CSAPI didn't initialize properly" )
     if self.__csModified:
+      self.checkForUnexistantUsersInGroups()
       if sortUsers:
         self.sortUsersAndGroups()
       retVal = self.__csMod.commit()
