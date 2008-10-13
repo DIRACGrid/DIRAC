@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.48 2008/10/09 08:24:35 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.49 2008/10/13 09:02:09 paterson Exp $
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -30,7 +30,7 @@
    Note that several executables can be provided and wil be executed sequentially.
 """
 
-__RCSID__ = "$Id: Job.py,v 1.48 2008/10/09 08:24:35 paterson Exp $"
+__RCSID__ = "$Id: Job.py,v 1.49 2008/10/13 09:02:09 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -454,6 +454,17 @@ class Job:
       raise TypeError,'Expected string for Job owner'
 
   #############################################################################
+  def setOwnerGroup(self,ownerGroup):
+    """Developer function.
+
+       Allows to force expected owner group of proxy.
+    """
+    if type(ownerGroup)==type(" "):
+      self._addParameter(self.workflow,'OwnerGroup','JDL',ownerGroup,'User specified owner group.')
+    else:
+      raise TypeError,'Expected string for Job owner group'
+
+  #############################################################################
   def setType(self, jobType):
     """Developer function.
 
@@ -467,7 +478,7 @@ class Job:
       raise TypeError,'Expected string for Job type'
 
   #############################################################################
-  def setSoftwareTags(self, tags):
+  def _setSoftwareTags(self, tags):
     """Helper function.
 
        Choose any software tags if desired.  These are not compulsory but will ensure jobs only
