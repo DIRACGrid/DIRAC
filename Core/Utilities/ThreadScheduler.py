@@ -14,7 +14,8 @@ class ThreadScheduler:
     self.__minPeriod = 60
     self.__taskDict = {}
     self.__hood = []
-    self.__event = threading.Event()
+    self.__nowEpoch = time.time
+    self.__sleeper = time.sleep
 
   def addPeriodicTask( self, period, taskFunc, taskArgs = (), executions = 0, elapsedTime = 0 ):
     if not callable( taskFunc ):
@@ -74,16 +75,13 @@ class ThreadScheduler:
     if not inserted:
       self.__hood.append( ( taskId, executionTime ) )
 
-    self.__event.set()
-
     return S_OK()
 
   def __executorThread(self):
     while len( self.__hood ) > 0:
       timeToWait = self.__timeToNextTask()
       while timeToWait and timeToWait > 0:
-        self.__event.clear()
-        self.__event.wait( timeToWait )
+        self.__sleeper( 1 )
         timeToWait = self.__timeToNextTask()
       if timeToWait == None:
         break
@@ -107,9 +105,9 @@ class ThreadScheduler:
 
   @gSchedulerLock
   def __timeToNextTask( self ):
-    if len( self.__hood ) == 0:
+    if not self.__hood:
       return None
-    return self.__hood[0][1] - time.time()
+    return self.__hood[0][1] - self.__nowEpoch()
 
   @gSchedulerLock
   def __extractNextTask( self ):
