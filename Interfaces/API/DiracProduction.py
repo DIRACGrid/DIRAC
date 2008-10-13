@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.47 2008/10/10 10:43:26 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.48 2008/10/13 09:20:37 paterson Exp $
 # File :   DiracProduction.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are to be documented with example usage.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.47 2008/10/10 10:43:26 paterson Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.48 2008/10/13 09:20:37 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 import pprint
@@ -943,6 +943,7 @@ class DiracProduction:
           self.log.verbose('Job is targeted to SE: %s' %(paramValue))
       self.log.verbose('Setting job owner to %s' %(userID))
       prodJob.setOwner(userID)
+      prodJob.setOwnerGroup(self.defaultOwnerGroup)
       jobGroupName = str(prodID).zfill(8)
       self.log.verbose('Adding default job group of %s' %(jobGroupName))
       prodJob.setJobGroup(jobGroupName)
