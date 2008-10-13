@@ -474,7 +474,10 @@ class TransformationDBCLI(cmd.Cmd):
           status = f['Status']
           jobid = f['JobID']
           if jobid.find('No JobID assigned') == -1:
-            jobname = str(int(prod)).zfill(8)+'_'+str(jobid).zfill(8)
+            if jobid.find('_') == -1:
+              jobname = str(int(prod)).zfill(8)+'_'+str(jobid).zfill(8)
+            else:
+              jobname = str(jobid)
           else:
             jobname = str(jobid)
           usedse = f['TargetSE']
@@ -518,7 +521,10 @@ class TransformationDBCLI(cmd.Cmd):
     for transID,lfnDict in resDict.items():
       jobid = lfnDict['JobID']
       if jobid.find('No JobID assigned') == -1:
-        jobname = str(int(transID)).zfill(8)+'_'+str(jobid).zfill(8)
+        if jobid.find('_') == -1:
+          jobname = str(int(transID)).zfill(8)+'_'+str(jobid).zfill(8)
+        else:
+          jobname = str(jobid)
       else:
         jobname = str(jobid)
       fstatus = lfnDict['FileStatus']
