@@ -33,12 +33,12 @@ class SecurityFileLog( threading.Thread ):
     while True:
       secMsg = self.__messagesQueue.get()
       msgTime = secMsg[ 0 ]
-      path = "%s/%s/%s" % ( self.__basePath, msgTime.year, msgTime.month )
+      path = "%s/%s/%02d" % ( self.__basePath, msgTime.year, msgTime.month )
       try:
         os.makedirs( path )
       except:
         pass
-      logFile = "%s/%s%s%s.security.log.csv" % ( path, msgTime.year, msgTime.month, msgTime.day )
+      logFile = "%s/%s%02d%02d.security.log.csv" % ( path, msgTime.year, msgTime.month, msgTime.day )
       if not os.path.isfile( logFile ):
         fd = file( logFile, "w" )
         fd.write( "Time, Success, Source IP, Source Port, source Identity, destinationIP, destinationPort, destinationService, action\n" )
