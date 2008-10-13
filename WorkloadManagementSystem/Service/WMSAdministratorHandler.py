@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSAdministratorHandler.py,v 1.37 2008/09/15 11:24:28 atsareg Exp $
+# $Id: WMSAdministratorHandler.py,v 1.38 2008/10/13 10:25:07 acasajus Exp $
 ########################################################################
 """
 This is a DIRAC WMS administrator interface.
@@ -14,7 +14,7 @@ Access to the pilot data:
 
 """
 
-__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.37 2008/09/15 11:24:28 atsareg Exp $"
+__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.38 2008/10/13 10:25:07 acasajus Exp $"
 
 import os, sys, string, uu, shutil
 from types import *
@@ -26,7 +26,7 @@ from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import *
 import DIRAC.Core.Utilities.Time as Time
-from DIRAC.Core.Utilities.GridCredentials import getNicknameForDN
+from DIRAC.Core.Security.CS import getUsernameForDN
 
 import threading
 
@@ -88,7 +88,7 @@ class WMSAdministratorHandler(RequestHandler):
 
     result = self.getRemoteCredentials()
     dn = result['DN']
-    result = getNicknameForDN(dn)
+    result = getUsernameForDN(dn)
     if result['OK']:
       author = result['Value']
     else:
@@ -104,7 +104,7 @@ class WMSAdministratorHandler(RequestHandler):
 
     result = self.getRemoteCredentials()
     dn = result['DN']
-    result = getNicknameForDN(dn)
+    result = getUsernameForDN(dn)
     if result['OK']:
       author = result['Value']
     else:
