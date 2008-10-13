@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/DB/SystemLoggingDB.py,v 1.19 2008/09/30 15:24:30 mseco Exp $
-__RCSID__ = "$Id: SystemLoggingDB.py,v 1.19 2008/09/30 15:24:30 mseco Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/DB/SystemLoggingDB.py,v 1.20 2008/10/13 13:59:28 mseco Exp $
+__RCSID__ = "$Id: SystemLoggingDB.py,v 1.20 2008/10/13 13:59:28 mseco Exp $"
 """ SystemLoggingDB class is a front-end to the Message Logging Database.
     The following methods are provided
 
@@ -173,9 +173,11 @@ class SystemLoggingDB(DB):
        
     tableList = self.__buildTableList(showFieldList)
 
+    if groupColumn:
+      grouping='GROUP BY %s' % groupColumn
+
     if count: 
       if groupColumn:
-        grouping='GROUP BY %s' % groupColumn
         showFieldList.append( 'count(*) as recordCount' )
       else:
         showFieldList = [ 'count(*) as recordCount' ]
