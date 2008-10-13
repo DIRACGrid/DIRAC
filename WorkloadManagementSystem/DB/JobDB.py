@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.106 2008/09/25 14:55:43 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.107 2008/10/13 09:02:40 rgracian Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.106 2008/09/25 14:55:43 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.107 2008/10/13 09:02:40 rgracian Exp $"
 
 import re, os, sys, string, types
 import time
@@ -1009,14 +1009,15 @@ class JobDB(DB):
     jdlOwnerGroup = classAdJob.getAttributeString( 'OwnerGroup' )
 
     # The below is commented out since this is always overwritten by the submitter IDs
-    #if jdlDiracSetup and jdlDiracSetup != diracSetup:
-    #  error = 'Wrong DIRAC Setup in JDL'
-    #if jdlOwner and jdlOwner != owner:
-    #  error = 'Wrong Owner in JDL'
-    #elif jdlOwnerDN and jdlOwnerDN != ownerDN:
-    #  error = 'Wrong Owner DN in JDL'
-    #elif jdlOwnerGroup and jdlOwnerGroup != ownerGroup:
-    #  error = 'Wrong Owner Group in JDL'
+    # but the check allows to findout inconsistent client environments
+    if jdlDiracSetup and jdlDiracSetup != diracSetup:
+      error = 'Wrong DIRAC Setup in JDL'
+    if jdlOwner and jdlOwner != owner:
+      error = 'Wrong Owner in JDL'
+    elif jdlOwnerDN and jdlOwnerDN != ownerDN:
+      error = 'Wrong Owner DN in JDL'
+    elif jdlOwnerGroup and jdlOwnerGroup != ownerGroup:
+      error = 'Wrong Owner Group in JDL'
 
     classAdJob.insertAttributeString( 'Owner',      owner )
     classAdJob.insertAttributeString( 'OwnerDN',    ownerDN )
