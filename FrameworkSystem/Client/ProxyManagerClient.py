@@ -1,9 +1,9 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyManagerClient.py,v 1.30 2008/10/08 12:33:19 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyManagerClient.py,v 1.31 2008/10/13 16:15:30 acasajus Exp $
 ########################################################################
 """ ProxyManagementAPI has the functions to "talk" to the ProxyManagement service
 """
-__RCSID__ = "$Id: ProxyManagerClient.py,v 1.30 2008/10/08 12:33:19 rgracian Exp $"
+__RCSID__ = "$Id: ProxyManagerClient.py,v 1.31 2008/10/13 16:15:30 acasajus Exp $"
 
 import os
 import datetime
@@ -248,13 +248,9 @@ class ProxyManagerClient:
     Download a pilot proxy with VOMS extensions depending on the group
     """
     #Assign VOMS attribute
-    vomsGroups = CS.getVOMSAttributeForGroup( userGroup )
-    if not vomsGroups:
-      return S_ERROR( "No voms attributes assigned to group %s" % userGroup )
-    if len( vomsGroups ) > 1:
-      return S_ERROR( "More than one voms attribute defined for group %s: %s" % ( userGroup, vomsGroups ) )
-    vomsAttr = vomsGroups[0]
-
+    vomsAttr = CS.getVOMSAttributeForGroup( userGroup )
+    if not vomsAttr:
+      return S_ERROR( "No voms attribute assigned to group %s" % userGroup )
     return self.downloadVOMSProxy( userDN,
                                    userGroup,
                                    limited = False,
