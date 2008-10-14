@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.51 2008/10/08 12:33:23 rgracian Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.51 2008/10/08 12:33:23 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.52 2008/10/14 10:25:15 acasajus Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.52 2008/10/14 10:25:15 acasajus Exp $"
 
 import sys
 import types
@@ -47,6 +47,7 @@ class BaseClient:
     self.__initStatus = self.__checkTransportSanity()
     #HACK for thread-safety:
     self.__allowedThreadID = False
+    self.__errorOnInit = False
 
   def __discoverSetup(self):
     #Which setup to use?
@@ -87,7 +88,7 @@ class BaseClient:
          self.kwargs[ self.KW_PROXY_STRING ] = self.kwargs[ self.KW_PROXY_CHAIN ].dumpAllToString()[ 'Value' ]
          del( self.kwargs[ self.KW_PROXY_CHAIN ] )
       except:
-        raise Exception( "Invalid proxy chain" )
+        self.__errorOnInit = "Invalid proxy chain specified on instantiation"
 
   def __discoverExtraCredentials( self ):
     #Wich extra credentials to use?
@@ -122,7 +123,8 @@ class BaseClient:
 
     urls = getServiceURL( self.serviceName, setup = self.setup )
     if not urls:
-      raise Exception( "URL for service %s not found" % self.serviceName )
+      self.__errorOnInit = "URL for service %s not found" % self.serviceName
+      return ""
     sURL = List.randomize( List.fromChar( urls, "," ) )[0]
     gLogger.debug( "Discovering URL for service", "%s -> %s" % ( self.serviceName, sURL ) )
     return sURL
@@ -145,6 +147,8 @@ and this is thread %s
 
 
   def _connect( self ):
+    if self.__errorOnInit:
+      return S_ERROR( self.__errorOnInit )
     self.__checkThreadID()
     gLogger.debug( "Connecting to: %s" % self.serviceURL )
     if not self.__initStatus[ 'OK' ]:
