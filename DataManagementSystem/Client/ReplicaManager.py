@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalogue. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.36 2008/10/08 12:33:19 rgracian Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.37 2008/10/14 12:27:03 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -1140,7 +1140,7 @@ class ReplicaManager:
         gLogger.error(errStr, "%s %s" % (lfn,storageElementName))
         failed[lfn] = errStr
       else:
-        pfnDict = {res['Value']['Successful'][lfn][storageElementName]:lfn}
+        pfnDict[res['Value']['Successful'][lfn][storageElementName]] = lfn
     res = self.__getPhysicalFileMetadata(pfnDict.keys(),storageElementName)
     if not res['OK']:
       return res
