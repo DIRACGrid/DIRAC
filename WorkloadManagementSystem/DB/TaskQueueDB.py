@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.17 2008/09/30 10:39:10 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.18 2008/10/14 09:29:14 rgracian Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.17 2008/09/30 10:39:10 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.18 2008/10/14 09:29:14 rgracian Exp $"
 
 import time
 import types
@@ -369,7 +369,8 @@ class TaskQueueDB(DB):
         tableName = '`tq_TQTo%ss`' % field
         # sqlTables.append( tableName )
         sqlMultiCondList = []
-        sqlMultiCondList.append( "( SELECT COUNT(%s.Value) FROM %s WHERE %s.TQId = `tq_TaskQueues`.TQId ) = 0 " % (tableName,tableName,tableName ) )
+        if field != 'GridCE' or 'Site' in tqMatchDict:
+          sqlMultiCondList.append( "( SELECT COUNT(%s.Value) FROM %s WHERE %s.TQId = `tq_TaskQueues`.TQId ) = 0 " % (tableName,tableName,tableName ) )
         sqlMultiCondList.append( "'%s' in ( SELECT %s.Value FROM %s WHERE %s.TQId = `tq_TaskQueues`.TQId )" % ( fieldValue, tableName, tableName, tableName ) )
         sqlCondList.append( "( %s )" % " OR ".join(sqlMultiCondList) )
         if field == 'Site':

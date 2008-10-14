@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: MatcherHandler.py,v 1.26 2008/10/14 08:39:28 rgracian Exp $
+# $Id: MatcherHandler.py,v 1.27 2008/10/14 09:28:59 rgracian Exp $
 ########################################################################
 """
 Matcher class. It matches Agent Site capabilities to job requirements.
@@ -7,7 +7,7 @@ It also provides an XMLRPC interface to the Matcher
 
 """
 
-__RCSID__ = "$Id: MatcherHandler.py,v 1.26 2008/10/14 08:39:28 rgracian Exp $"
+__RCSID__ = "$Id: MatcherHandler.py,v 1.27 2008/10/14 09:28:59 rgracian Exp $"
 
 import re, os, sys, time
 import string
@@ -217,7 +217,7 @@ class MatcherHandler(RequestHandler):
     if not 'Site' in resourceDict:
       return S_ERROR('Missing Site Name in Resource JDL')
 
-    if resourceDict['Site'] in maskList and 'GridCE' in resourceDict:
+    if resourceDict['Site'] not in maskList and 'GridCE' in resourceDict:
       del resourceDict['Site']
 
     resourceDict['Setup'] = self.serviceInfoDict['clientSetup']
