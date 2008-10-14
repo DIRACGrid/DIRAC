@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.48 2008/10/09 08:40:13 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.49 2008/10/14 13:33:44 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.48 2008/10/09 08:40:13 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.49 2008/10/14 13:33:44 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -46,6 +46,7 @@ from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfigurati
 from DIRAC.Core.Base.Agent                               import createAgent
 from DIRAC.Core.Security.X509Chain                       import X509Chain
 from DIRAC.Core.Security                                 import Locations, CS
+from DIRAC.LoggingSystem.Client.LoggerClient             import LoggerClient
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
 from DIRAC                                               import gConfig, gLogger, S_OK, S_ERROR
 
@@ -106,7 +107,7 @@ class Dirac:
        @type job: Job() or string
        @return: S_OK,S_ERROR
 
-       @param mode: Submit job locally with mode = 'local' or 'agent' to run full Job Wrapper
+       @param mode: Submit job locally with mode = 'wms' (default), 'local' to run workflow or 'agent' to run full Job Wrapper locally
        @type mode: string
 
     """
@@ -161,6 +162,8 @@ class Dirac:
         self.log.verbose('Cleaning up %s...' %tmpdir)
         shutil.rmtree(tmpdir)
         return result
+      if mode.lower()=='wms':
+        self.log.info('Will submit job to WMS') #this will happen by default anyway
 
     jobID = self._sendJob(jdl)
     shutil.rmtree(tmpdir)
@@ -236,6 +239,8 @@ class Dirac:
         Currently must unset CMTPROJECTPATH to get this to work.
     """
     agentName = 'WorkloadManagement/JobAgent'
+    self.log.verbose('In case being booted from a DIRAC script, now resetting sys arguments to null from: \n%s' %(sys.argv))
+    sys.argv=[]
     localCfg = LocalConfiguration()
     localCfg.addDefaultEntry('CEUniqueID','InProcess')
     localCfg.addDefaultEntry('ControlDirectory',os.getcwd())
@@ -1698,7 +1703,16 @@ class Dirac:
 
        Example Usage:
        >>> print dirac.getJobJDL(12345)
-       {'OK': True}
+      {'Arguments': 'jobDescription.xml',
+       'BannedSites': ['LCG.CERN.ch',
+                       'LCG.CNAF.it',
+                       'LCG.RAL.uk',
+                       'LCG.PIC.es',
+                       'LCG.IN2P3.fr',
+                       'LCG.NIKHEF.nl',
+                       'LCG.GRIDKA.de'],
+       'DIRACSetup': 'LHCb-Production',
+       ...}
 
        @param jobID: JobID
        @type jobID: int or string
@@ -1720,6 +1734,31 @@ class Dirac:
     if printOutput:
       print self.pPrint.pformat(result['Value'])
 
+    return result
+
+  #############################################################################
+  def getLoggerMessages(self,logLevel=None,site=None,system=None,numberOfRecords=10,printOutput=False):
+    """Under Development, retrieve logging informations.
+    """
+    if not type(numberOfRecords)==type(1):
+      return self.__errorReport(str(x),'Expected integer for number of records')
+    logger = LoggerClient()
+    conditions = {}
+    result =  logger.getMessages(conds=conditions,beginDate=startDate,endDate=finalDate,maxRecords=numberOfRecords)
+    if printOutput:
+      print self.pPrint.pformat(result['Value'])
+    return result
+
+  #############################################################################
+  def getLoggerSummary(self,numberOfRecords=10,printOutput=False):
+    """Under Development, retrieve logging informations.
+    """
+    if not type(numberOfRecords)==type(1):
+      return self.__errorReport(str(x),'Expected integer for number of records')
+    logger = LoggerClient()
+    result =  logger.getGroupedMessages(groupField='FixedTextString',orderList=[['recordCount','DESC']],maxRecords=numberOfRecords)
+    if printOutput:
+      print self.pPrint.pformat(result)
     return result
 
   #############################################################################
