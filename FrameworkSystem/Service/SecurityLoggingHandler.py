@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/Attic/SecurityLogHandler.py,v 1.1 2008/09/30 19:01:01 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/SecurityLoggingHandler.py,v 1.1 2008/10/14 09:58:58 acasajus Exp $
 ########################################################################
 
 """ ProxyManager is the implementation of the ProxyManagement service
     in the DISET framework
 """
 
-__RCSID__ = "$Id: SecurityLogHandler.py,v 1.1 2008/09/30 19:01:01 acasajus Exp $"
+__RCSID__ = "$Id: SecurityLoggingHandler.py,v 1.1 2008/10/14 09:58:58 acasajus Exp $"
 
 import types
 import os
@@ -17,7 +17,7 @@ from DIRAC.FrameworkSystem.Client.SecurityLogClient import SecurityLogClient
 
 gSecurityFileLog = False
 
-def initializeSecurityLogHandler( serviceInfo ):
+def initializeSecurityLoggingHandler( serviceInfo ):
   global gSecurityFileLog
 
   serviceCS = serviceInfo [ 'serviceSectionPath' ]
@@ -43,7 +43,7 @@ def initializeSecurityLogHandler( serviceInfo ):
   SecurityLogClient().setLogStore( gSecurityFileLog )
   return S_OK()
 
-class SecurityLogHandler( RequestHandler ):
+class SecurityLoggingHandler( RequestHandler ):
 
   types_logAction = [ ( types.ListType, types.TupleType ) ]
   def export_logAction( self, secMsg ):

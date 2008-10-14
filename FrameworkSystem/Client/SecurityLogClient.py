@@ -12,7 +12,7 @@ class SecurityLogClient:
     self.__messagesList = []
     self.__maxMessagesInBundle = 1000
     self.__maxMessagesWaiting = 10000
-    self.__taskId = gThreadScheduler.addPeriodicTask( 300, self.__sendData )
+    self.__taskId = gThreadScheduler.addPeriodicTask( 30, self.__sendData )
 
   def addMessage( self, success, sourceIP, sourcePort, sourceIdentity,
                   destinationIP, destinationPort, destinationService,
@@ -38,7 +38,7 @@ class SecurityLogClient:
     gLogger.info( "Sending records to security log service...")
     msgList = self.__messagesList
     self.__messagesList = []
-    rpcClient = RPCClient( "Framework/SecurityLog" )
+    rpcClient = RPCClient( "Framework/SecurityLogging" )
     for i in range( 0, len( msgList ), self.__maxMessagesInBundle ):
       msgsToSend = msgList[ :self.__maxMessagesInBundle ]
       result = rpcClient.logActionBundle( msgsToSend )
