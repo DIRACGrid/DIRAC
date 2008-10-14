@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Plotting.py,v 1.5 2008/06/27 10:38:08 rgracian Exp $
-__RCSID__ = "$Id: Plotting.py,v 1.5 2008/06/27 10:38:08 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Plotting.py,v 1.6 2008/10/14 15:57:33 acsmith Exp $
+__RCSID__ = "$Id: Plotting.py,v 1.6 2008/10/14 15:57:33 acsmith Exp $"
 """
    A simple set of wrapper functions for creating plots (based on the examples
    from the graph tool).
@@ -9,7 +9,9 @@ from graphtool.graphs.common_graphs import PieGraph
 from graphtool.graphs.common_graphs import BarGraph
 from graphtool.graphs.common_graphs import CumulativeGraph
 from graphtool.tools.common import expand_string
+from graphtool.graphs.common import pretty_float, statistics
 from pylab import *
+import pylab
 
 import os,time
 
@@ -31,22 +33,22 @@ class HistogramGraph(BarGraph):
       try:
         retval += "Maximum: " + pretty_float( data_max ) + " " + units
       except Exception, e:
-        pass
+        print e
     if data_min != None:
       try:
         retval += ", Minimum: " + pretty_float( data_min ) + " " + units
       except Exception, e:
-        pass
+        print e
     if data_mean != None:
       try:
         retval += ", Mean: " + pretty_float( data_mean ) + " " + units
       except Exception, e:
-        pass
+        print e
     if data_std != None:
       try:
         retval += ", Standard deviation: " + pretty_float( data_std )
       except Exception, e:
-        pass
+        print e
     return retval
 
 #############################################################################
@@ -102,23 +104,14 @@ def histogram(path,data,metadata):
   """ Plot a histogram of the supplied data
   """
   try:
-    count, bins, patches = hist(data,100)
+    count, bins, patches = pylab.hist(data,100)
     try:
-      metadata['max_value'] = max(values)
-    except:
-      pass
-    try:
-      metadata['min_value'] = min(values)
-    except:
-      pass
-    try:
-      metadata['mean_value'] = mean(values)
-    except:
-      pass
-    try:
-      metadata['std_value'] = std(values)
-    except:
-      pass
+      metadata['max_value'] = max(data)
+      metadata['min_value'] = min(data)
+      metadata['mean_value'] = mean(data)
+      metadata['std_value'] = std(data)
+    except Exception,x:
+      return errorReport(str(x),'Could not determine metadata for sample')
 
     histData = {}
     for i in range(len(bins)):
