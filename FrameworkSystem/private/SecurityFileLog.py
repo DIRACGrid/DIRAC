@@ -2,6 +2,7 @@
 import os
 import re
 import time
+import gzip
 import Queue
 import threading
 from DIRAC import gLogger, S_OK, S_ERROR
@@ -38,20 +39,57 @@ class SecurityFileLog( threading.Thread ):
         os.makedirs( path )
       except:
         pass
-      logFile = "%s/%s%02d%02d.security.log.csv" % ( path, msgTime.year, msgTime.month, msgTime.day )
+      logFile = "%s/%s%02d%02d.security.log.csv.gz" % ( path, msgTime.year, msgTime.month, msgTime.day )
       if not os.path.isfile( logFile ):
-        fd = file( logFile, "w" )
+        fd = open( logFile, "w" )
         fd.write( "Time, Success, Source IP, Source Port, source Identity, destinationIP, destinationPort, destinationService, action\n" )
       else:
-        fd = file( logFile, "a" )
+        fd = open( logFile, "a" )
       fd.write( "%s\n" % ", ".join( [ str( item ) for item in secMsg ] ) )
       fd.close()
 
   def __launchCleaningOldLogFiles(self):
     nowEpoch = time.time()
-    self.__pruneOldLogs( self.__basePath, nowEpoch, re.compile( "^\d*\.security\.log\.csv$" ) )
+    self.__walkOldLogs( self.__basePath,
+                         nowEpoch,
+                         re.compile( "^\d*\.security\.log\.csv$" ),
+                         86400 * 3,
+                         self.__zipOldLog )
+    self.__walkOldLogs( self.__basePath,
+                         nowEpoch,
+                         re.compile( "^\d*\.security\.log\.csv\.gz$" ),
+                         self.__secsToLog,
+                         self.__unlinkOldLog )
 
-  def __pruneOldFiles( self, path, nowEpoch, reLog ):
+
+  def __unlinkOldLog( self, filePath ):
+    try:
+      gLogger.info( "Unlinking file %s" % filePath )
+      os.unlink( filePath )
+    except Exception, e:
+      gLogger.error( "Can't unlink old log file %s: %s" % ( filePath, str(e) ) )
+      return 1
+    return 0
+
+  def __zipOldLog( self, filePath ):
+    try:
+      gLogger.info( "Compressing file %s" % filePath )
+      fd = gzip.open( "%s.gz" % filePath, "w" )
+      fO = file( filePath )
+      bS = 1048576
+      buf = fO.read()
+      while buf:
+        fd.write( buf )
+        buf = fO.read()
+      fd.close()
+      fO.close()
+    except Exception, e:
+      gLogger.exception( "Can't compress old log file", filePath )
+      return 1
+    return self.__unlinkOldLog( filePath ) + 1
+
+
+  def __walkOldLogs( self, path, nowEpoch, reLog, executionInSecs, functor ):
     initialEntries = os.listdir( path )
     files = []
     numEntries = 0
@@ -59,7 +97,7 @@ class SecurityFileLog( threading.Thread ):
       entryPath = os.path.join( path, entry )
       if os.path.isdir( entryPath ):
         numEntries += 1
-        numEntriesSubDir = self.__pruneOldFiles( entryPath, nowEpoch, reLog )
+        numEntriesSubDir = self.__walkOldLogs( entryPath, nowEpoch, reLog, executionInSecs, functor )
         if numEntriesSubDir == 0:
           gLogger.info( "Removing dir %s"  % entryPath )
           try:
@@ -70,13 +108,8 @@ class SecurityFileLog( threading.Thread ):
       elif os.path.isfile( entryPath ):
         numEntries += 1
         if reLog.match( entry ):
-          if nowEpoch - os.stat( entryPath )[8]  > self.__secsToLog:
-            try:
-              gLogger.info( "Unlinking file %s" % entryPath )
-              os.unlink( entryPath )
-              numEntries -= 1
-            except Exception, e:
-              gLogger.error( "Can't unlink old log file %s: %s" % ( filePath, str(e) ) )
+          if nowEpoch - os.stat( entryPath )[8]  > executionInSecs:
+            numEntries += functor( entryPath ) - 1
     return numEntries
 
   def logAction( self, msg ):
