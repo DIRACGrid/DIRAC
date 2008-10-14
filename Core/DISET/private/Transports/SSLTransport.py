@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSLTransport.py,v 1.27 2008/08/03 11:35:24 acasajus Exp $
-__RCSID__ = "$Id: SSLTransport.py,v 1.27 2008/08/03 11:35:24 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSLTransport.py,v 1.28 2008/10/14 13:54:22 acasajus Exp $
+__RCSID__ = "$Id: SSLTransport.py,v 1.28 2008/10/14 13:54:22 acasajus Exp $"
 
 import os
 import types
@@ -21,6 +21,7 @@ class SSLTransport( BaseTransport ):
     self.oSocket = self.oSocketInfo.getSSLSocket()
     if not self.oSocket.session_reused():
       gLogger.debug( "New session connecting to server at %s" % str( self.stServerAddress ) )
+    self.remoteAddress = self.oSocket.getpeername()
     return S_OK()
 
   def initAsServer( self ):
@@ -56,6 +57,7 @@ class SSLTransport( BaseTransport ):
       raise RuntimeError( "Must be initialized as client mode" )
     self.oSocketInfo.setSSLSocket( oSocket )
     self.oSocket = oSocket
+    self.remoteAddress = self.oSocket.getpeername()
 
   def acceptConnection( self ):
     oClientTransport = SSLTransport( self.stServerAddress )
@@ -130,7 +132,7 @@ def checkSanity( urlTuple, kwargs ):
   idDict = {}
   retVal = certObj.getDIRACGroup( ignoreDefault = True )
   if retVal[ 'OK' ] and retVal[ 'Value' ] != False:
-    idDict[ 'group' ] = retVal[ 'Value' ] 
+    idDict[ 'group' ] = retVal[ 'Value' ]
   if useCerts:
     idDict[ 'DN' ] = certObj.getSubjectDN()[ 'Value' ]
   else:

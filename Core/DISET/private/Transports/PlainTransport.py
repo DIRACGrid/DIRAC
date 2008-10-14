@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/PlainTransport.py,v 1.12 2008/08/01 13:04:41 acasajus Exp $
-__RCSID__ = "$Id: PlainTransport.py,v 1.12 2008/08/01 13:04:41 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/PlainTransport.py,v 1.13 2008/10/14 13:54:22 acasajus Exp $
+__RCSID__ = "$Id: PlainTransport.py,v 1.13 2008/10/14 13:54:22 acasajus Exp $"
 
 import socket
 from DIRAC.Core.DISET.private.Transports.BaseTransport import BaseTransport
@@ -11,6 +11,7 @@ class PlainTransport( BaseTransport ):
   def initAsClient( self ):
     self.oSocket = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
     self.oSocket.connect( self.stServerAddress )
+    self.remoteAddress = self.oSocket.getpeername()
     return S_OK( self.oSocket )
 
   def initAsServer( self ):
@@ -35,6 +36,7 @@ class PlainTransport( BaseTransport ):
     if self.serverMode():
       raise RuntimeError( "Mustbe initialized as client mode" )
     self.oSocket = oSocket
+    self.remoteAddress = self.oSocket.getpeername()
 
   def acceptConnection( self ):
     #HACK: Was = PlainTransport( self )

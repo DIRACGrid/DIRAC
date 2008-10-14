@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Dispatcher.py,v 1.14 2008/09/30 19:02:10 acasajus Exp $
-__RCSID__ = "$Id: Dispatcher.py,v 1.14 2008/09/30 19:02:10 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Dispatcher.py,v 1.15 2008/10/14 13:54:22 acasajus Exp $
+__RCSID__ = "$Id: Dispatcher.py,v 1.15 2008/10/14 13:54:22 acasajus Exp $"
 
 import DIRAC
 from DIRAC.LoggingSystem.Client.Logger import gLogger
@@ -163,13 +163,25 @@ class Dispatcher:
     handlerInstance.initialize()
     return handlerInstance
 
+  def __formattedRemoteCredentials( self, clientTransport ):
+    peerCreds = clientTransport.getConnectingCredentials()
+    if peerCreds.has_key( 'username' ):
+      peerId = "[%s:%s]" % ( peerCreds[ 'group' ], peerCreds[ 'username' ] )
+    else:
+      peerId = ""
+    addr = clientTransport.getRemoteAddress()
+    if addr:
+      addr = "%s:%s" % ( addr[0], addr[1] )
+    return "(%s)%s" % ( addr, peerId )
+
   def processClient( self, clientTransport ):
     """
     Client's here! Do stuff!
     """
     retVal = clientTransport.receiveData( 1024 )
     if not retVal[ 'OK' ]:
-      gLogger.error( "Invalid action proposal", retVal[ 'Message' ] )
+      gLogger.error( "Invalid action proposal", "%s %s" % ( self.__formattedRemoteCredentials(clientTransport),
+                                                            retVal[ 'Message' ] ) )
       return
     proposalTuple = retVal[ 'Value' ]
     gLogger.debug( "Received action from client", str( proposalTuple ) )

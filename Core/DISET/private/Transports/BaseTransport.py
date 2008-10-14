@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/BaseTransport.py,v 1.17 2008/10/03 14:19:43 acasajus Exp $
-__RCSID__ = "$Id: BaseTransport.py,v 1.17 2008/10/03 14:19:43 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/BaseTransport.py,v 1.18 2008/10/14 13:54:22 acasajus Exp $
+__RCSID__ = "$Id: BaseTransport.py,v 1.18 2008/10/14 13:54:22 acasajus Exp $"
 
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
 from DIRAC.Core.Utilities import DEncode
@@ -20,6 +20,7 @@ class BaseTransport:
     self.packetSize = 1048576 #1MiB
     self.stServerAddress = stServerAddress
     self.peerCredentials = {}
+    self.remoteAddress = False
 
   def handshake(self):
     pass
@@ -37,7 +38,7 @@ class BaseTransport:
     return self.sTransportName
 
   def getRemoteAddress( self ):
-    return self.oSocket.getpeername()
+    return self.remoteAddress
 
   def getLocalAddress( self ):
     return self.oSocket.getsockname()

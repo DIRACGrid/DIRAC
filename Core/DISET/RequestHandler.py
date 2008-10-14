@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.38 2008/10/07 15:57:48 acasajus Exp $
-__RCSID__ = "$Id: RequestHandler.py,v 1.38 2008/10/07 15:57:48 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.39 2008/10/14 13:54:22 acasajus Exp $
+__RCSID__ = "$Id: RequestHandler.py,v 1.39 2008/10/14 13:54:22 acasajus Exp $"
 
 import os
 import types
@@ -93,7 +93,8 @@ class RequestHandler:
     """
     retVal = self._clientTransport.receiveData()
     if not retVal[ 'OK' ]:
-      gLogger.error( "Error while receiving file description", retVal[ 'Message' ] )
+      gLogger.error( "Error while receiving file description", "%s %s" % ( self.__formattedRemoteCredentials(),
+                                                             retVal[ 'Message' ] ) )
       return S_ERROR( "Error while receiving file description: %s" % retVal[ 'Message' ] )
     fileInfo = retVal[ 'Value' ]
     sDirection = "%s%s" % ( sDirection[0].lower(), sDirection[1:] )
@@ -153,7 +154,8 @@ class RequestHandler:
     """
     retVal = self._clientTransport.receiveData()
     if not retVal[ 'OK' ]:
-      gLogger.error( "Error while receiving function arguments", retVal[ 'Message' ] )
+      gLogger.error( "Error receiving arguments", "%s %s" % ( self.__formattedRemoteCredentials(),
+                                                             retVal[ 'Message' ] ) )
       return S_ERROR( "Error while receiving function arguments: %s" % retVal[ 'Message' ] )
     args = retVal[ 'Value' ]
     self.__logRemoteQuery( "RPC/%s" % method, args )
@@ -239,6 +241,16 @@ class RequestHandler:
     """
     return self.serviceInfoDict[ 'authManager' ].authQuery( method, self.getRemoteCredentials() )
 
+  def __formattedRemoteCredentials(self):
+    peerCreds = self.getRemoteCredentials()
+    if peerCreds.has_key( 'username' ):
+      peerId = "[%s:%s]" % ( peerCreds[ 'group' ], peerCreds[ 'username' ] )
+    else:
+      peerId = ""
+    return "(%s:%s)%s" % ( self.serviceInfoDict[ 'clientAddress' ][0],
+                           self.serviceInfoDict[ 'clientAddress' ][1],
+                           peerId )
+
   def __logRemoteQuery( self, method, args ):
     """
     Log the contents of a remote query
@@ -248,20 +260,13 @@ class RequestHandler:
     @type args: tuple
     @param args: Arguments of the method called
     """
-    peerCreds = self.getRemoteCredentials()
-    if peerCreds.has_key( 'username' ):
-      peerId = "[%s:%s]" % ( peerCreds[ 'group' ], peerCreds[ 'username' ] )
-    else:
-      peerId = ""
     if gConfig.getValue( "%s/MaskRequestParams" %self.serviceInfoDict[ 'serviceSectionPath' ], "y" ).lower() in ( "y", "yes", "true" ):
       argsString = "<masked>"
     else:
       argsString = "\n\t%s\n" % ",\n\t".join( [ str( arg )[:50] for arg in args ] )
-    gLogger.info( "Executing action", "(%s:%s)%s %s(%s)" % ( self.serviceInfoDict[ 'clientAddress' ][0],
-                                                        self.serviceInfoDict[ 'clientAddress' ][1],
-                                                        peerId,
-                                                        method,
-                                                        argsString ) )
+    gLogger.info( "Executing action", "%s %s(%s)" % ( self.__formattedRemoteCredentials(),
+                                                      method,
+                                                      argsString ) )
 
   def __logRemoteQueryResponse( self, retVal, elapsedTime ):
     """
@@ -270,18 +275,12 @@ class RequestHandler:
     @type retVal: dictionary
     @param retVal: Return value of the query
     """
-    peerCreds = self.getRemoteCredentials()
-    if peerCreds.has_key( 'username' ):
-      peerId = "[%s:%s]" % ( peerCreds[ 'group' ], peerCreds[ 'username' ] )
-    else:
-      peerId = ""
     if retVal[ 'OK' ]:
       argsString = "OK"
     else:
       argsString = "ERROR: %s" % retVal[ 'Message' ]
-    gLogger.info( "Returning response", "(%s:%s)%s (%.2f secs) %s" % ( self.serviceInfoDict[ 'clientAddress' ][0],
-                                                           self.serviceInfoDict[ 'clientAddress' ][1],
-                                                           peerId, elapsedTime, argsString ) )
+    gLogger.info( "Returning response", "%s (%.2f secs) %s" % ( self.__formattedRemoteCredentials(),
+                                                                elapsedTime, argsString ) )
 
 ####
 #
