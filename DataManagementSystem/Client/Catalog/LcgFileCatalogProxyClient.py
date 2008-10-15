@@ -12,20 +12,29 @@ class LcgFileCatalogProxyClient:
     """ Constructor of the LCGFileCatalogProxy client class
     """
     self.name = 'LFCProxy'
-    if not url:
-      result = gConfig.getOption('/DIRAC/Setup')
-      if not result['OK']:
-        gLogger.fatal('Failed to get the /DIRAC/Setup')
-        return
-      setup = result['Value']
-      configPath = '/DIRAC/Setups/%s/DataManagement' % setup
+    self.valid = False
+    try:
+      if not url:
+        result = gConfig.getOption('/DIRAC/Setup')
+        if not result['OK']:
+          gLogger.fatal('Failed to get the /DIRAC/Setup')
+          return
+        setup = result['Value']
+        configPath = '/DIRAC/Setups/%s/DataManagement' % setup
 
-      dmConfig = gConfig.getValue(configPath)
-      configPath = '/Systems/DataManagement/%s/URLs/LcgFileCatalogProxy' % dmConfig
-      self.url = gConfig.getValue(configPath)
-    else:
-      self.url = url
-    self.server = RPCClient(self.url,useCertificates,timeout = 120)
+        dmConfig = gConfig.getValue(configPath)
+        configPath = '/Systems/DataManagement/%s/URLs/LcgFileCatalogProxy' % dmConfig
+        self.url = gConfig.getValue(configPath)
+      else:
+        self.url = url
+      self.server = RPCClient(self.url,timeout=120,useCertificates=useCertificates)
+      self.valid = True
+    except Exception,x:
+      gLogger.exception('Exception while creating connection to LcgFileCatalog proxy server',x)
+      return
+
+  def isOK(self):
+    return self.valid
 
   def getName(self,DN=''):
     """ Get the file catalog type name
