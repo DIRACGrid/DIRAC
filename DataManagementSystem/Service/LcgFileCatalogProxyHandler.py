@@ -6,10 +6,10 @@ from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.DataManagementSystem.Client.FileCatalog import FileCatalog
 
-lfcCombinedClient = False
+fileCatalog = False
 
 def initializeLcgFileCatalogProxyHandler(serviceInfo):
-  global lfcCombinedClient
+  global fileCatalog
   fileCatalog = FileCatalog(['LcgFileCatalogCombined'])
   return S_OK()
 
