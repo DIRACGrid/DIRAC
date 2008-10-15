@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.49 2008/10/14 13:33:44 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.50 2008/10/15 13:55:56 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.49 2008/10/14 13:33:44 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.50 2008/10/15 13:55:56 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -39,7 +39,7 @@ from DIRAC.WorkloadManagementSystem.Client.SandboxClient import SandboxClient
 from DIRAC.DataManagementSystem.Client.ReplicaManager    import ReplicaManager
 from DIRAC.Core.DISET.RPCClient                          import RPCClient
 from DIRAC.Core.Security.Misc                            import getProxyInfo
-from DIRAC.ConfigurationSystem.Client.PathFinder         import getSystemSection
+from DIRAC.ConfigurationSystem.Client.PathFinder         import getSystemSection,getServiceURL
 from DIRAC.Core.Utilities.Time                           import toString
 from DIRAC.Core.Utilities.List                           import breakListIntoChunks, sortList
 from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
@@ -1672,8 +1672,12 @@ class Dirac:
       self.log.verbose('System section is: %s' %(systemSection))
       section = '%s/%s' % (systemSection,service)
       self.log.verbose('Requested service should have CS path: %s' %(section))
+      serviceURL = getServiceURL('%s/%s' %(system,service))
+      self.log.verbose('Service URL is: %s' %(serviceURL))
       client = RPCClient('%s/%s' %(system,service),timeout=120)
       result = client.ping()
+      if result['OK']:
+        result['Value']['service url'] = serviceURL
     except Exception,x:
       self.log.warn('ping for %s/%s failed with exception:\n%s' %(system,service,str(x)))
       result['Message'] = str(x)
