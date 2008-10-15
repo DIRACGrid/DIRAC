@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/AuthManager.py,v 1.30 2008/09/25 17:16:18 acasajus Exp $
-__RCSID__ = "$Id: AuthManager.py,v 1.30 2008/09/25 17:16:18 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/AuthManager.py,v 1.31 2008/10/15 16:09:57 acasajus Exp $
+__RCSID__ = "$Id: AuthManager.py,v 1.31 2008/10/15 16:09:57 acasajus Exp $"
 
 import types
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
@@ -90,7 +90,7 @@ class AuthManager:
     if "any" in requiredProperties or "all" in requiredProperties:
       return True
     #Check user is authenticated
-    if not self.KW_DN in credDict:
+    if not self.KW_DN in credDict or not credDict[ self.KW_DN ]:
       self.__authLogger.warn( "User has no DN" )
       return False
     #Check authorized groups
