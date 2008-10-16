@@ -17,6 +17,9 @@ class ThreadScheduler:
     self.__nowEpoch = time.time
     self.__sleeper = time.sleep
 
+  def setMinValidPeriod( self, period ):
+    self.__minPeriod = period
+
   def addPeriodicTask( self, period, taskFunc, taskArgs = (), executions = 0, elapsedTime = 0 ):
     if not callable( taskFunc ):
       return S_ERROR( "%s is not callable" % str( taskFunc ) )
