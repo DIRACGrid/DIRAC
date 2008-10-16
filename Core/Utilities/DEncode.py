@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/DEncode.py,v 1.2 2008/05/06 21:18:10 acasajus Exp $
-__RCSID__ = "$Id: DEncode.py,v 1.2 2008/05/06 21:18:10 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/DEncode.py,v 1.3 2008/10/16 14:49:53 acasajus Exp $
+__RCSID__ = "$Id: DEncode.py,v 1.3 2008/10/16 14:49:53 acasajus Exp $"
 
 # Encoding and decoding for dirac
 #
@@ -16,6 +16,7 @@ __RCSID__ = "$Id: DEncode.py,v 1.2 2008/05/06 21:18:10 acasajus Exp $"
 # d -> dictionary
 
 
+import sys
 import types
 import struct
 import datetime
@@ -62,7 +63,12 @@ def encodeFloat( iValue, eList ):
 def decodeFloat( buffer, i ):
   i += 1
   end  = buffer.index( 'e', i )
-  n = float( buffer[i:end] )
+  if end+1 < len( buffer ) and buffer[end+1] in ( '+', '-' ):
+    eI = end
+    end = buffer.index( 'e', end+1 )
+    n = float( buffer[i:eI] ) * 10 ** int( buffer[eI+1:end] )
+  else:
+    n = float( buffer[i:end] )
   return ( n, end + 1 )
 
 g_dEncodeFunctions[ types.FloatType ] = encodeFloat
@@ -241,7 +247,7 @@ def decode( buffer ):
 
 
 if __name__=="__main__":
-  uObject = {2:"3", True : (3,None) }
+  uObject = {2:"3", True : (3,None), 2.0*10**20 : 2.0*10**-10 }
   print "Initial: %s" % uObject
   sData = encode( uObject )
   print "Encoded: %s" % sData
