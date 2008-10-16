@@ -1,11 +1,12 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.33 2008/10/08 10:35:55 acasajus Exp $
-__RCSID__ = "$Id: Server.py,v 1.33 2008/10/08 10:35:55 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.34 2008/10/16 13:28:39 acasajus Exp $
+__RCSID__ = "$Id: Server.py,v 1.34 2008/10/16 13:28:39 acasajus Exp $"
 
 import socket
 import sys
 import os
 import time
 import select
+import threading
 from DIRAC.Core.DISET.private.Protocols import gProtocolDict
 from DIRAC.Core.DISET.private.Dispatcher import Dispatcher
 from DIRAC.Core.DISET.private.GatewayDispatcher import GatewayDispatcher
@@ -15,15 +16,19 @@ from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.Utilities.Subprocess import shellCall
 from DIRAC.Core.Utilities import Network, Time
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
+from DIRAC.Core.Utilities.ThreadSafe import Synchronizer
 from DIRAC.LoggingSystem.Client.Logger import gLogger
 from DIRAC.MonitoringSystem.Client.MonitoringClient import gMonitor
 from DIRAC.Core.Security import CS
+
+gTransportControlSync = Synchronizer()
 
 class Server:
 
   bAllowReuseAddress = True
   iListenQueueSize = 5
   __memScale = {'kB': 1024.0, 'mB': 1024.0*1024.0, 'KB': 1024.0, 'MB': 1024.0*1024.0}
+
 
   def __init__( self, serviceName ):
     """
@@ -37,6 +42,8 @@ class Server:
       serviceName = serviceName[1:]
     self.serviceName = serviceName
     self.startTime = Time.dateTime()
+    self.transportControl = {}
+    self.transportLifeTime = 3600
     serviceCfg = ServiceConfiguration( serviceName )
     self.__buildURL( serviceCfg )
     self.__initializeMonitor( serviceCfg )
@@ -57,6 +64,7 @@ class Server:
     self.threadPool = ThreadPool( 1, maxThreads )
     self.threadPool.daemonize()
     self.__monitorLastStatsUpdate = time.time()
+    gThreadScheduler.addPeriodicTask( self.transportLifeTime, self.__purgeStalledTransports )
 
   def __initializeMonitor( self, serviceCfg ):
     gMonitor.setComponentType( gMonitor.COMPONENT_SERVICE )
@@ -194,7 +202,10 @@ class Server:
     clientIP = clientTransport.getRemoteAddress()[0]
     if clientTransport.getRemoteAddress()[0] in CS.getBannedIPs():
       gLogger.warn( "Client connected from banned ip %s" % clientIP )
+      clientTransport.close()
     else:
+      tName = self.__registerTransport( clientTransport )
+      clientTransport.setAppData( tName )
       self.threadPool.generateJobAndQueueIt( self.processClient,
                                       args = ( clientTransport, ),
                                       oExceptionCallback = self.processClientException )
@@ -219,5 +230,34 @@ class Server:
       self.handlerManager.processClient( clientTransport )
     finally:
       clientTransport.close()
+      self.__unregisterTransport( clientTransport.getAppData() )
       if cpuStats:
         self.__endReportToMonitoring( *cpuStats )
+
+  @gTransportControlSync
+  def __registerTransport( self, tObj ):
+    now = time.time()
+    name = str( tObj ) + str( now )
+    self.transportControl[ name ] = ( now, tObj )
+    return name
+
+  @gTransportControlSync
+  def __unregisterTransport( self, tName ):
+    if tName in self.transportControl:
+      del( self.transportControl[ tName ] )
+
+  @gTransportControlSync
+  def __purgeStalledTransports( self ):
+    delList = []
+    now = time.time()
+    for tName in self.transportControl:
+      print tName
+      if self.transportControl[ tName ][0] + self.transportLifeTime < now:
+        delList.append( tName )
+    for tName in delList:
+      try:
+        gLogger.info( "Killing stalled transport" )
+        self.transportControl[ tName ][1].close()
+      except Exception, e:
+        gLogger.error( "Could not force close of stalled transport", str(e) )
+      del( self.transportControl[ tName ] )
