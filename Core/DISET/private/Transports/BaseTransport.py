@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/BaseTransport.py,v 1.19 2008/10/16 13:28:38 acasajus Exp $
-__RCSID__ = "$Id: BaseTransport.py,v 1.19 2008/10/16 13:28:38 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/BaseTransport.py,v 1.20 2008/10/16 13:29:09 acasajus Exp $
+__RCSID__ = "$Id: BaseTransport.py,v 1.20 2008/10/16 13:29:09 acasajus Exp $"
 
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
 from DIRAC.Core.Utilities import DEncode
@@ -64,8 +64,7 @@ class BaseTransport:
       return True
     return False
 
-  #ADRI: Removed the readyCheck. It's controlled centrally
-  def _read( self, bufSize = 4096, skipReadyCheck = True ):
+  def _read( self, bufSize = 4096, skipReadyCheck = False ):
     try:
       if skipReadyCheck or self._readReady():
         data = self.oSocket.recv( bufSize )
