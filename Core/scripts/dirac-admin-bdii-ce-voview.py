@@ -1,9 +1,10 @@
 #! /usr/bin/env python
 
-from DIRAC.Core.Base                                         import Script
 from DIRACEnvironment                                        import DIRAC
+from DIRAC.Core.Base                                         import Script
 
 Script.registerSwitch( "H:", "host=", "BDII host" )
+Script.registerSwitch( "V:", "vo=", "vo" )
 
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
@@ -20,21 +21,24 @@ if not len(args)==1:
 ce = args[0]
 
 host = None
-
+vo = 'lhcb'
 for unprocSw in Script.getUnprocessedSwitches():
-  if unprocSw[0] in ( "h", "host" ):
+  if unprocSw[0] in ( "H", "host" ):
         host = unprocSw[1]
+  if unprocSw[0] in ( "V", "vo" ):
+        vo = unprocSw[1]
 
 diracAdmin = DiracAdmin()
 
-result = diracAdmin.getBDIICE(ce, host=host)
+result = diracAdmin.getBDIICEVOView(ce, vo=vo, host=host)
 if not ['OK']:
   print test['Message']
-  DIRAC.exit(2)  
+  DIRAC.exit(2)
+  
 
 ces = result['Value']
 for ce in ces:
-  print "CE: %s {"%ce.get('GlueSubClusterName','Unknown')
+  print "CEVOView: %s {"%ce.get('GlueChunkKey','Unknown')
   for item in ce.iteritems():
     print "%s: %s"%item
   print "}"

@@ -1,9 +1,9 @@
 #! /usr/bin/env python
 
-from DIRAC.Core.Base                                         import Script
 from DIRACEnvironment                                        import DIRAC
+from DIRAC.Core.Base                                         import Script
 
-Script.registerSwitch( "h:", "host=", "BDII host" )
+Script.registerSwitch( "H:", "host=", "BDII host" )
 Script.registerSwitch( "V:", "vo=", "vo" )
 
 Script.parseCommandLine( ignoreErrors = True )
@@ -18,28 +18,28 @@ def usage():
 if not len(args)==1:
   usage()
 
-ce = args[0]
+site = args[0]
 
 host = None
 vo = 'lhcb'
 for unprocSw in Script.getUnprocessedSwitches():
-  if unprocSw[0] in ( "h", "host" ):
+  if unprocSw[0] in ( "H", "host" ):
         host = unprocSw[1]
   if unprocSw[0] in ( "V", "vo" ):
         vo = unprocSw[1]
 
 diracAdmin = DiracAdmin()
 
-result = diracAdmin.getBDIICEState(ce, vo=vo, host=host)
+result = diracAdmin.getBDIISA(site, vo=vo, host=host)
 if not ['OK']:
   print test['Message']
   DIRAC.exit(2)
   
 
-ces = result['Value']
-for ce in ces:
-  print "CE: %s {"%ce.get('GlueCEUniqueID','Unknown')
-  for item in ce.iteritems():
+sas = result['Value']
+for sa in sas:
+  print "SA: %s {"%sa.get('GlueChunkKey','Unknown')
+  for item in sa.iteritems():
     print "%s: %s"%item
   print "}"
 

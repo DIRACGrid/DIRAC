@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
-from DIRAC.Core.Base                                         import Script
 from DIRACEnvironment                                        import DIRAC
+from DIRAC.Core.Base                                         import Script
 
 Script.registerSwitch( "H:", "host=", "BDII host" )
 
@@ -11,13 +11,13 @@ args = Script.getPositionalArgs()
 from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
 
 def usage():
-  print 'Usage: %s ce' %(Script.scriptName)
+  print 'Usage: %s site' %(Script.scriptName)
   DIRAC.exit(2)
 
 if not len(args)==1:
   usage()
 
-ce = args[0]
+site = args[0]
 
 host = None
 
@@ -27,15 +27,16 @@ for unprocSw in Script.getUnprocessedSwitches():
 
 diracAdmin = DiracAdmin()
 
-result = diracAdmin.getBDIICluster(ce, host=host)
-if not ['OK']:
+result = diracAdmin.getBDIISite(site, host=host)
+if not result['OK']:
   print test['Message']
-  DIRAC.exit(2)  
+  DIRAC.exit(2)
+  
 
-ces = result['Value']
-for ce in ces:
-  print "Cluster: %s {"%ce.get('GlueClusterName','Unknown')
-  for item in ce.iteritems():
+sites = result['Value']
+for site in sites:
+  print "Site: %s {"%site.get('GlueSiteName','Unknown')
+  for item in site.iteritems():
     print "%s: %s"%item
   print "}"
 

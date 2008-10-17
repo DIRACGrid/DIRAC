@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/Attic/dirac-jobexec,v 1.13 2008/07/09 17:52:36 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/dirac-jobexec.py,v 1.1 2008/10/17 13:08:15 rgracian Exp $
 # File :   dirac-jobexec
 # Author : Stuart Paterson
 ########################################################################
-__RCSID__   = "$Id: dirac-jobexec,v 1.13 2008/07/09 17:52:36 paterson Exp $"
-__VERSION__ = "$Revision: 1.13 $"
+__RCSID__   = "$Id: dirac-jobexec.py,v 1.1 2008/10/17 13:08:15 rgracian Exp $"
+__VERSION__ = "$Revision: 1.1 $"
 
 """ The dirac-jobexec script is equipped to execute workflows that
     are specified via their XML description.  The main client of

@@ -1,37 +1,39 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/Attic/dirac-agent,v 1.8 2008/04/16 19:39:36 rgracian Exp $
-# File :   dirac-agent
-# Author : Adria Casajus, Andrei Tsaregorodtsev, Stuart Paterson
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/dirac-service.py,v 1.7 2008/10/17 13:08:16 rgracian Exp $
+# File :   dirac-service
+# Author : Adria Casajus
 ########################################################################
-__RCSID__   = "$Id: dirac-agent,v 1.8 2008/04/16 19:39:36 rgracian Exp $"
-__VERSION__ = "$Revision: 1.8 $"
-
-"""  This is a script to launch DIRAC agents
-"""
+__RCSID__   = "$Id: dirac-service.py,v 1.7 2008/10/17 13:08:16 rgracian Exp $"
+__VERSION__ = "$Revision: 1.7 $"
 
 import sys
 from DIRACEnvironment import DIRAC
 from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
-from DIRAC import gLogger, gConfig
-from DIRAC.Core.Base.Agent import createAgent
+from DIRAC.LoggingSystem.Client.Logger import gLogger
+from DIRAC.Core.DISET.Server import Server
 
 localCfg = LocalConfiguration()
 
 positionalArgs = localCfg.getPositionalArguments()
 if len( positionalArgs ) == 0:
   gLogger.initialize( "NOT SPECIFIED", "/" )
-  gLogger.fatal( "You must specify which agent to run!" )
+  gLogger.fatal( "You must specify which server to run!" )
   sys.exit(1)
 
-agentName = positionalArgs[0]
-localCfg.setConfigurationForAgent( agentName )
+serverName = positionalArgs[0]
+localCfg.setConfigurationForServer( serverName )
+localCfg.addMandatoryEntry( "Port" )
+localCfg.addMandatoryEntry( "HandlerPath" )
 localCfg.addMandatoryEntry( "/DIRAC/Setup" )
 localCfg.addDefaultEntry( "/DIRAC/Security/UseServerCertificate", "yes" )
 resultDict = localCfg.loadUserData()
 if not resultDict[ 'OK' ]:
+  gLogger.initialize( serverName, "/" )
   gLogger.error( "There were errors when loading configuration", resultDict[ 'Message' ] )
   sys.exit(1)
 
-agent = createAgent(agentName)
-agent.run()
+
+
+serverToLaunch = Server( serverName )
+serverToLaunch.serve()
