@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobHistoryAgent.py,v 1.8 2008/10/17 10:25:36 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobHistoryAgent.py,v 1.9 2008/10/17 10:38:55 acasajus Exp $
 
 
 """  JobHistoryAgent sends periodically numbers of jobs in various states for various
@@ -31,6 +31,7 @@ class JobHistoryAgent(Agent):
                                 'JobGroup',
                                 'JobSplitType',
                               ]
+  __summaryDefinedFields = [ 'ApplicationStatus' ]
   __summaryValueFieldsMapping = [ 'Jobs',
                                   'Reschedules',
                                 ]
@@ -106,13 +107,14 @@ class JobHistoryAgent(Agent):
         if recordSetup not in dsClients:
           dsClients[ recordSetup ] = DataStoreClient( setup = recordSetup )
         record = record[1:]
-        rD = { 'ApplicationStatus' : 'unset' }
+        for key in self.__summaryDefinedFields:
+          rD = { key : 'unset' }
         for iP in range( len( self.__summaryKeyFieldsMapping ) ):
           fieldName = self.__summaryKeyFieldsMapping[iP]
           rD[ fieldName ] = record[iP]
           if not rD[ fieldName ]:
             rD[ fieldName ] = 'unset'
-        record = record[len( self.__summaryKeyFieldsMapping ):]
+        record = record[ len( self.__summaryKeyFieldsMapping ) - len( self.__summaryDefinedFields): ]
         for iP in range( len( self.__summaryValueFieldsMapping ) ):
           rD[ self.__summaryValueFieldsMapping[iP] ] = int( record[iP] )
         acWMS = WMSHistory()
