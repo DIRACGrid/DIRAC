@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobHistoryAgent.py,v 1.7 2008/10/02 20:36:07 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobHistoryAgent.py,v 1.8 2008/10/17 10:25:36 acasajus Exp $
 
 
 """  JobHistoryAgent sends periodically numbers of jobs in various states for various
@@ -106,7 +106,7 @@ class JobHistoryAgent(Agent):
         if recordSetup not in dsClients:
           dsClients[ recordSetup ] = DataStoreClient( setup = recordSetup )
         record = record[1:]
-        rD = {}
+        rD = { 'ApplicationStatus' : 'unset' }
         for iP in range( len( self.__summaryKeyFieldsMapping ) ):
           fieldName = self.__summaryKeyFieldsMapping[iP]
           rD[ fieldName ] = record[iP]
