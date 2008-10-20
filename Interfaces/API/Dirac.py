@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.50 2008/10/15 13:55:56 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.51 2008/10/20 14:26:04 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.50 2008/10/15 13:55:56 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.51 2008/10/20 14:26:04 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -287,11 +287,11 @@ class Dirac:
     if not result[ 'OK' ]:
       return result
 
-    result = chain.getIssuerCert()
+    result = chain.getDIRACGroup()
     if not result[ 'OK' ]:
       return result
-    issuerCert = result[ 'Value' ]
-    group = issuerCert.getDIRACGroup()['Value']
+    group = result[ 'Value' ]
+    self.log.verbose('Current group is %s' %group)
     return group
 
   #############################################################################
