@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobCleaningAgent.py,v 1.2 2008/10/20 13:16:48 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobCleaningAgent.py,v 1.3 2008/10/20 13:35:05 atsareg Exp $
 # File :   JobCleaningAgent.py
 # Author : A.T.
 ########################################################################
@@ -7,7 +7,7 @@
 """  The Job Cleaning Agent controls removing jobs from the WMS in the end of their life cycle.
 """
 
-__RCSID__ = "$Id: JobCleaningAgent.py,v 1.2 2008/10/20 13:16:48 atsareg Exp $"
+__RCSID__ = "$Id: JobCleaningAgent.py,v 1.3 2008/10/20 13:35:05 atsareg Exp $"
 
 from DIRAC.Core.Base.Agent                   import Agent
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
@@ -45,7 +45,10 @@ class JobCleaningAgent(Agent):
 
     # Remove jobs with final status
     for status,delay in REMOVE_STATUS_DELAY.items():
-      delTime = Time.dateTime() - delay*Time.day
+      if delay > 0:
+        delTime = str(Time.dateTime() - delay*Time.day)
+      else:
+        delTime = ''
       result = self.removeJobsByStatus(status,delTime)
       if not result['OK']:
         gLogger.warn('Failed to remove jobs in status %s' % status)
@@ -54,6 +57,11 @@ class JobCleaningAgent(Agent):
   def removeJobsByStatus(self,status,delay):
     """ Remove deleted jobs
     """
+
+    if delay:
+      gLogger.verbose("Removing jobs with %s status and older than %s" % (status,delay) )
+    else:
+      gLogger.verbose("Removing jobs with %s status" % status )
 
     result = self.jobDB.selectJobs({'Status':status},older=delay)
     if not result['OK']:
