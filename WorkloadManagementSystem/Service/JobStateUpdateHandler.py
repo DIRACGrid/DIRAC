@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobStateUpdateHandler.py,v 1.25 2008/08/06 12:31:46 atsareg Exp $
+# $Id: JobStateUpdateHandler.py,v 1.26 2008/10/20 13:58:12 atsareg Exp $
 ########################################################################
 
 """ JobStateUpdateHandler is the implementation of the Job State updating
@@ -11,7 +11,7 @@
 
 """
 
-__RCSID__ = "$Id: JobStateUpdateHandler.py,v 1.25 2008/08/06 12:31:46 atsareg Exp $"
+__RCSID__ = "$Id: JobStateUpdateHandler.py,v 1.26 2008/10/20 13:58:12 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -87,9 +87,9 @@ class JobStateUpdateHandler( RequestHandler ):
     for date in dates:
       if statusDict[date]['Status']:
         status = statusDict[date]['Status']
-      if statusDict[date]['MinorStatus']:          
+      if statusDict[date]['MinorStatus']:
         minor = statusDict[date]['MinorStatus']
-      if statusDict[date]['ApplicationStatus']:  
+      if statusDict[date]['ApplicationStatus']:
         application = statusDict[date]['ApplicationStatus']
       if 'ApplicationCounter' in statusDict[date] and statusDict[date]['ApplicationCounter']:
         appCounter = statusDict[date]['ApplicationCounter']
@@ -114,7 +114,7 @@ class JobStateUpdateHandler( RequestHandler ):
 
     # Update the JobLoggingDB records
     for date, sDict in statusDict.items():
-    
+
       status = sDict['Status']
       if not status:
         status = 'idem'
@@ -123,7 +123,7 @@ class JobStateUpdateHandler( RequestHandler ):
         minor = 'idem'
       application = sDict['ApplicationStatus']
       if not application:
-        application = 'idem' 
+        application = 'idem'
       source = sDict['Source']
       result = logDB.addLoggingRecord(jobID,status,minor,application,date,source)
       if not result['OK']:
@@ -137,6 +137,22 @@ class JobStateUpdateHandler( RequestHandler ):
     """Allows the site attribute to be set for a job specified by its jobID.
     """
     result = jobDB.setJobAttribute(jobID,'Site',site)
+    return result
+
+  ###########################################################################
+  types_setJobFlag = [IntType,StringType]
+  def export_setJobFlag(self,jobID,flag):
+    """ Set job flag for job with jobID
+    """
+    result = jobDB.setJobAttribute(jobID,flag,'True')
+    return result
+
+  ###########################################################################
+  types_unsetJobFlag = [IntType,StringType]
+  def export_unsetJobFlag(self,jobID,flag):
+    """ Unset job flag for job with jobID
+    """
+    result = jobDB.setJobAttribute(jobID,flag,'False')
     return result
 
   ###########################################################################
@@ -204,9 +220,9 @@ class JobStateUpdateHandler( RequestHandler ):
     result = jobDB.getJobAttributes(jobID,['Status'])
     if not result['OK']:
       return result
-      
+
     if not result['Value']:
-      return S_ERROR('Job %d not found' % jobID)  
+      return S_ERROR('Job %d not found' % jobID)
 
     status = result['Value']['Status']
     if status == "Stalled":
