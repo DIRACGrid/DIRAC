@@ -1,9 +1,9 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/X509Certificate.py,v 1.10 2008/08/01 13:42:10 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/X509Certificate.py,v 1.11 2008/10/21 10:25:49 acasajus Exp $
 ########################################################################
 """ X509Certificate is a class for managing X509 certificates alone
 """
-__RCSID__ = "$Id: X509Certificate.py,v 1.10 2008/08/01 13:42:10 acasajus Exp $"
+__RCSID__ = "$Id: X509Certificate.py,v 1.11 2008/10/21 10:25:49 acasajus Exp $"
 
 import GSI
 from DIRAC import S_OK, S_ERROR
@@ -129,6 +129,15 @@ class X509Certificate:
     if not self.__valid:
       return S_ERROR( "No certificate loaded" )
     return S_OK( self.__certObj.get_pubkey() )
+
+  def getSerialNumber(self):
+    """
+    Get certificate serial number
+    Return: S_OK( serial )/S_ERROR
+    """
+    if not self.__valid:
+      return S_ERROR( "No certificate loaded" )
+    return S_OK( self.__certObj.get_serial_number() )
 
   def getDIRACGroup( self, ignoreDefault = False ):
     """

@@ -28,15 +28,15 @@ def getProxyInfo( proxy = False, disableVOMS = False ):
    'VOMS'
   """
   #Discover proxy location
+  proxyLocation = False
   if type( proxy ) == g_X509ChainType:
     chain = proxy
-    proxyLocation = False
   else:
     if not proxy:
       proxyLocation = Locations.getProxyLocation()
     elif type( proxy ) in ( types.StringType, types.UnicodeType ):
       proxyLocation = proxy
-    else:
+    if not proxyLocation:
       return S_ERROR( "Can't find a valid proxy" )
     chain = X509Chain()
     retVal = chain.loadProxyFromFile( proxyLocation )
@@ -64,6 +64,9 @@ def getProxyInfoAsString( proxyLoc = False, disableVOMS = False ):
   if not retVal[ 'OK' ]:
     return retVal
   infoDict = retVal[ 'Value' ]
+  return S_OK( formatProxyInfoAsString( infoDict ) )
+
+def formatProxyInfoAsString( infoDict ):
   leftAlign = 13
   contentList = []
   for field in ( 'subject', 'issuer', 'identity', ( 'secondsLeft', 'time left' ),
@@ -85,4 +88,4 @@ def getProxyInfoAsString( proxyLoc = False, disableVOMS = False ):
     else:
       value = infoDict[ field ]
     contentList.append( "%s: %s" % ( dispField.ljust( leftAlign ), value ) )
-  return S_OK( "\n".join( contentList ) )
+  return "\n".join( contentList )
