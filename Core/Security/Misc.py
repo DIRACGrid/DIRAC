@@ -1,4 +1,5 @@
 import os
+import base64
 import types
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Security.X509Chain import X509Chain, g_X509ChainType
@@ -89,3 +90,36 @@ def formatProxyInfoAsString( infoDict ):
       value = infoDict[ field ]
     contentList.append( "%s: %s" % ( dispField.ljust( leftAlign ), value ) )
   return "\n".join( contentList )
+
+
+def getProxyStepsInfo( chain ):
+  infoList = []
+  nC = chain.getNumCertsInChain()['Value']
+  for i in range( nC ):
+    cert = chain.getCertInChain( i )['Value']
+    stepInfo = {}
+    stepInfo[ 'subject' ] = cert.getSubjectDN()['Value']
+    stepInfo[ 'issuer' ] = cert.getIssuerDN()['Value']
+    stepInfo[ 'serial' ] = cert.getSerialNumber()['Value']
+    stepInfo[ 'not before' ] = cert.getNotBeforeDate()['Value']
+    stepInfo[ 'not after' ] = cert.getNotAfterDate()['Value']
+    dG = cert.getDIRACGroup( ignoreDefault = True )['Value']
+    if dG:
+      stepInfo[ 'group' ] = dG
+    if cert.hasVOMSExtensions()[ 'Value' ]:
+      stepInfo[ 'VOMS ext' ] = True
+    infoList.append( stepInfo )
+  return S_OK( infoList )
+
+def formatProxyStepsInfoAsString( infoList ):
+  contentsList = []
+  for i in range( len( infoList ) ):
+    contentsList.append( " + Step %s" % i )
+    stepInfo = infoList[i]
+    for key in ( 'subject', 'issuer', 'serial', 'not after', 'not before', 'group', 'VOMS ext' ):
+      if key in stepInfo:
+        value = stepInfo[ key ]
+        if key == 'serial':
+          value = base64.b16encode( value )
+        contentsList.append( "  %s : %s" % ( key.ljust(10).capitalize(), value ) )
+  return "\n".join( contentsList )
