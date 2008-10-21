@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.60 2008/10/09 11:08:37 paterson Exp $
+# $Id: JobWrapper.py,v 1.61 2008/10/21 14:28:08 paterson Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.60 2008/10/09 11:08:37 paterson Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.61 2008/10/21 14:28:08 paterson Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -711,8 +711,8 @@ class JobWrapper:
         self.outputDataSize+=getGlobbedTotalSize(outputFile)
         lfn = self.__getLFNfromOutputFile(owner,outputFile)
         outputFilePath = '%s/%s' %(os.getcwd(),outputFile)
-        self.log.verbose('Attempting putAndRegister("%s","%s","%s")' %(lfn,outputFilePath,outputSE))
-        upload = self.rm.putAndRegister(lfn,outputFilePath, outputSE)
+        self.log.verbose('Attempting putAndRegister("%s","%s","%s",catalog="LcgFileCatalogCombined")' %(lfn,outputFilePath,outputSE))
+        upload = self.rm.putAndRegister(lfn,outputFilePath,outputSE,catalog='LcgFileCatalogCombined')
         self.log.info(upload)
         if not upload['OK']:
           self.log.warn(upload['Message'])
