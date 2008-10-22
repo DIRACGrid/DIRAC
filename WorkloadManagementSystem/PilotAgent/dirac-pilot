@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot,v 1.38 2008/08/20 06:13:26 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot,v 1.39 2008/10/22 13:53:38 rgracian Exp $
 # File :   dirac-pilot
 # Author : Ricardo Graciani
 ########################################################################
@@ -9,7 +9,7 @@
  Job Agent to execute pending workload on WMS.
  It requires dirac-install script to be sitting in the same directory.
 """
-__RCSID__ = "$Id: dirac-pilot,v 1.38 2008/08/20 06:13:26 rgracian Exp $"
+__RCSID__ = "$Id: dirac-pilot,v 1.39 2008/10/22 13:53:38 rgracian Exp $"
 try:
   import os
   import sys
@@ -23,7 +23,7 @@ try:
       sys.path.remove(p)
   os.environ['PYTHONPATH'] = ''
 
-  import os, sys, socket, re, stat, popen2
+  import os, sys, socket, re, stat, popen2, time
   
   debugFlag = False
   localFlag = False
@@ -273,15 +273,116 @@ myFullName = os.path.join( myPath, myShortName )
 sys.path.insert( 0, myPath )
 os.environ['PATH'] = '%s:%s' % (myPath,os.getenv('PATH'))
 
-try:
-  from dirac_functions import functions
-except:
-  print
-  print 'ERROR could not properly load dirac_functions'
-  print
-  sys.exit(0)
+platformDict = { 'slc4_ia32_gcc34' : 'Linux_i686_glibc-2.3.4',
+                 'slc4_amd64_gcc34': 'Linux_x86_64_glibc-2.3.4' }
 
-dirac = functions( myFullName )
+class Dirac:
+  def __init__( self, fullName  ):
+    """
+     Initialize the functions class using the given script path to set the
+     rootPath of the DIRAC intallation.
+    """
+    self.setRoot( fullName )
+    self.lhcbPlatform()
+
+  def __log( self, level, msg ):
+    """
+     Print log entries similar to DIRAC Logger
+    """
+    logTime = time.strftime('%Y-%m-%d %H:%M:%S',time.gmtime()) + " UTC"
+    # logTime = str( datetime.datetime.utcnow( ) ).split('.')[0] + " UTC"
+    if level != 'DEBUG ' or self.debugFlag:
+      for line in msg.split( '\n' ):
+        print logTime, self.shortName, level, line
+        sys.stdout.flush()
+
+  def logEXCEP( self, msg ):
+    self.__log( 'EXCEPT', str(msg) )
+    sys.exit( -1 )
+
+  def logERROR( self, msg ):
+    self.__log( 'ERROR ', msg )
+
+  def logINFO( self, msg ):
+    self.__log( 'INFO  ', msg )
+
+  def logDEBUG( self, msg ):
+    self.__log( 'DEBUG ', msg )
+
+  def logHelp( self, help ):
+    print
+    print 'Usage: %s [options]' % self.shortName
+    print help
+    sys.exit(-1)
+
+  def setRoot( self, fullName ):
+    if fullName[0] != '/':
+      self.logERROR( 'Install path must be absolute.' )
+      sys.exit(-1)
+    self.shortName   = os.path.basename( fullName )
+    self.scriptsPath = os.path.dirname( fullName )
+    if os.path.basename( self.scriptsPath ) != 'scripts':
+      # We are doing a new installation, add scripts to PATH
+       self.scriptsPath = os.path.join( self.scriptsPath, 'scripts' )
+
+    self.__rootPath    = os.path.dirname( self.scriptsPath )
+    try:
+      os.chdir( self.__rootPath )
+    except Exception, x:
+      self.logERROR( 'Can not chdir to requested installation Root "%s"' % self.__rootPath )
+      self.logEXCEP( x )
+
+  def platform( self, platform=None ):
+    """
+     Use platform.py script to retrieve the local platform
+    """
+    # First check that we are in a valid directory and create platform.py in the scripts directory
+    self.nativePlatform = self.scriptOutput( 'platform.py' )
+    if not platform:
+      self.localPlatform = self.nativePlatform
+    else:
+      if platform in platformDict:
+        self.localPlatform = platformDict[platform]
+      else:
+        self.localPlatform = platform
+
+    if self.localPlatform == 'ERROR' or self.localPlatform == "":
+      self.logERROR( 'Can not determine local platform' )
+      sys.exit(-1)
+
+    self.installedPython = os.path.join( self.__rootPath,
+                           self.localPlatform,
+                           'bin', 'python' )
+
+  def lhcbPlatform(self):
+    """
+      determine local architecture as defined by LHCb
+    """
+    self.lhcb_platform = self.scriptOutput( 'dirac-architecture' )
+
+
+  def scriptOutput(self, scriptName, exitOnError=True, interpreter=None):
+    """
+     Execute a script from the scripts directory and return its output
+    """
+    diracScript = os.path.join( self.scriptsPath, scriptName )
+    if not os.path.exists( diracScript ):
+      if exitOnError:
+        self.logERROR( 'Missing file %s' % diracScript )
+        sys.exit(-1)
+      else:
+        return ''
+    if interpreter:
+      (child_stdout, child_stdin) = popen2.popen2( '%s %s' % ( interpreter, diracScript) )
+    else:
+      (child_stdout, child_stdin) = popen2.popen2( diracScript )
+    stdout = child_stdout.read().strip()
+    child_stdout.close()
+    return stdout
+
+
+
+dirac = Dirac( myFullName )
 dirac.platform(localPlatform)
 myLib = os.path.join( rootPath, dirac.localPlatform, 'lib' )
 myBin = os.path.join( rootPath, dirac.localPlatform, 'bin' )
@@ -294,8 +395,8 @@ os.environ['PATH'] = '%s:%s' % (myBin,os.getenv('PATH'))
 # Preamble
 dirac.logINFO( 'Starting %s' % __RCSID__ )
 ret = os.system('dirac-proxy-info')
-os.environ['CMTCONFIG'] = dirac.architecture
-dirac.logINFO( 'Setting CMTCONFIG=%s' % dirac.architecture )
+os.environ['CMTCONFIG'] = dirac.lhcb_platform
+dirac.logINFO( 'Setting CMTCONFIG=%s' % dirac.lhcb_platform )
 
 if localFlag:
   os.system('%s -o /LocalSite/Site=%s' % (installScript, defaultSite ) )
