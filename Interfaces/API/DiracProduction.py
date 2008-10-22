@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.48 2008/10/13 09:20:37 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.49 2008/10/22 11:21:14 paterson Exp $
 # File :   DiracProduction.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are to be documented with example usage.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.48 2008/10/13 09:20:37 paterson Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.49 2008/10/22 11:21:14 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 import pprint
@@ -957,7 +957,8 @@ class DiracProduction:
       result = self.__getOutputLFNs(prodID,jobNumber,inputData,updatedJob) #prodJob._toXML()
       if result['OK']:
         newProdJob = Job(updatedJob)
-        newProdJob._addJDLParameter('ProductionOutputData',string.join(result['Value'],';'))
+        for name,output in result['Value'].items():
+          newProdJob._addJDLParameter(name,string.join(output,';'))
         updatedJob = self.__createJobDescriptionFile(newProdJob._toXML())
       else:
         self.log.error('Could not create production LFN',result['Message'])
@@ -1037,10 +1038,22 @@ class DiracProduction:
     if not lfnRoot or not fileTupleList:
       return S_ERROR('Could not create LFN(s)')
 
+    #Get all LFN(s) to both output data and BK lists at this point (fine for BK)
     outputData = []
+    bkLFNs = []
     for fileTuple in fileTupleList:
-      outputData.append(makeProductionLfn(str(jobID).zfill(8),lfnRoot,fileTuple,wfMode,str(productionID).zfill(8)))
+      lfn = makeProductionLfn(str(jobID).zfill(8),lfnRoot,fileTuple,wfMode,str(productionID).zfill(8))
+      outputData.append(lfn)
+      bkLFNs.append(lfn)
 
+    #Get log file path - unique for all modules
+    logPath = makeProductionPath(str(jobID).zfill(8),lfnRoot,'LOG',wfMode,str(productionID).zfill(8),log=True)
+    logFilePath = ['%s/%s' %(logPath,str(jobID).zfill(8))]
+    logTargetPath = ['%s/%s_%s.tar' %(logPath,str(productionID).zfill(8),str(jobID).zfill(8))]
+    #[ aside, why does makeProductionPath not append the jobID itself ????
+    #  this is really only used in one place since the logTargetPath is just written to a text file (should be reviewed)... ]
+
+    #Strip output data according to file mask
     if wfMask:
       newOutputData = []
       for od in outputData:
@@ -1053,8 +1066,11 @@ class DiracProduction:
       return S_ERROR('No output LFN(s) constructed')
 
     self.log.verbose('Created the following output data LFN(s):\n%s' %(string.join(outputData,'\n')))
-
-    return S_OK(outputData)
+    self.log.verbose('Log file path is:\n%s' %logFilePath)
+    self.log.verbose('Log target path is:\n%s' %logTargetPath)
+    self.log.verbose('BookkeepingLFN(s) are:\n%s' %(string.join(bkLFNs,'\n')))
+    jobOutputs = {'ProductionOutputData':outputData,'LogFilePath':logFilePath,'LogTargetPath':logTargetPath,'BookkeeepingLFNs':bkLFNs}
+    return S_OK(jobOutputs)
 
   #############################################################################
   def __getCurrentUser(self):
