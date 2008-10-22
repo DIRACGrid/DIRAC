@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.51 2008/10/20 14:26:04 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.52 2008/10/22 11:01:10 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.51 2008/10/20 14:26:04 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.52 2008/10/22 11:01:10 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -1024,6 +1024,8 @@ class Dirac:
 
     """
     jobID = None
+    if gConfig.getValue('/LocalSite/DisableSubmission',''):
+      return S_ERROR('Submission disabled by /LocalSite/DisableSubmission flag for debugging purposes')
 
     try:
       jobID = self.client.submitJob(jdl)
