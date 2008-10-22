@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.68 2008/10/22 08:29:00 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.69 2008/10/22 08:29:21 rgracian Exp $
 # File :   Director.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -37,6 +37,7 @@
      necessary paramenters:
        gLite:
 
+
        LCG:
 
        The following paramenters will be taken from the Director section if not
@@ -47,7 +48,7 @@
 
 """
 
-__RCSID__ = "$Id: Director.py,v 1.68 2008/10/22 08:29:00 rgracian Exp $"
+__RCSID__ = "$Id: Director.py,v 1.69 2008/10/22 08:29:21 rgracian Exp $"
 
 import types, time
 
