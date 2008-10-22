@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.42 2008/10/02 09:17:13 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.43 2008/10/22 12:47:56 rgracian Exp $
 ########################################################################
 
 """  The Pilot Status Agent updates the status of the pilot jobs if the
      PilotAgents database.
 """
 
-__RCSID__ = "$Id: PilotStatusAgent.py,v 1.42 2008/10/02 09:17:13 rgracian Exp $"
+__RCSID__ = "$Id: PilotStatusAgent.py,v 1.43 2008/10/22 12:47:56 rgracian Exp $"
 
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, List
@@ -127,6 +127,10 @@ class PilotStatusAgent(Agent):
     return S_OK()
 
   def accountPilots( self, pilotsToAccount, parentsToUpdate, connection ):
+
+    if not pilotsToAccount and not parentsToUpdate:
+      self.log.info( 'No pilots to Account' )
+      return S_OK()
 
     retVal = self.pilotDB.getPilotInfo( pilotsToAccount.keys(), conn = connection )
     if not retVal['OK']:
