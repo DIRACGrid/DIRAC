@@ -306,8 +306,10 @@ class SRM2Storage(StorageBase):
           gLogger.error(errMessage,pathSURL)
           failed[pathSURL] = errMessage
         else:
-          errStr = "SRM2Storage.getTransportURL: Failed issue stage request."
+          errStr = "SRM2Storage.getTransportURL: Failed to obtain turls."
           errMessage = os.strerror(urlDict['status'])
+          if urlDict.has_key('explanation'):
+            errMessage = "%s %s" % (errMessage,urlDict['explanation'])
           gLogger.error(errStr,"%s: %s" % (errMessage,pathSURL))
           failed[pathSURL] = "%s %s" % (errStr,errMessage)
     resDict = {'Failed':failed,'Successful':successful}
