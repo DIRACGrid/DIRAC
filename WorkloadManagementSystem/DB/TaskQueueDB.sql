@@ -1,4 +1,4 @@
--- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.sql,v 1.1 2008/09/14 21:30:02 atsareg Exp $
+-- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.sql,v 1.2 2008/10/24 08:34:07 rgracian Exp $
 
 -- ------------------------------------------------------------------------------
 --
@@ -24,3 +24,5 @@ DELETE FROM user WHERE user='Dirac';
 GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON TaskQueueDB.* TO Dirac@localhost IDENTIFIED BY 'must_be_set';
 
 FLUSH PRIVILEGES;
+
+USE TaskQueueDB;
