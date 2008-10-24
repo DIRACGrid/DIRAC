@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.19 2008/10/14 10:42:35 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.20 2008/10/24 12:33:13 rgracian Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.19 2008/10/14 10:42:35 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.20 2008/10/24 12:33:13 rgracian Exp $"
 
 import time
 import types
@@ -420,13 +420,17 @@ class TaskQueueDB(DB):
     retVal = self._update( sqlCmd, conn = connObj )
     if not retVal[ 'OK' ]:
       return S_ERROR( "Could not delete task queue %s: %s" % ( tqId, retVal[ 'Message' ] ) )
-    print retVal
-    # if connObj.num_rows() == 1:
-    for mvField in self.__multiValueDefFields:
-      retVal = self._update( "DELETE FROM `tq_TQTo%s` WHERE TQId = %s" % ( mvField, tqId ), conn = connObj )
-      if not retVal[ 'OK' ]:
-        return retVal
-    return S_OK( True )
+    sqlCmd = "SELECT TQId FROM `tq_TaskQueues` WHERE `tq_TaskQueues`.TQId = %s" % tqId
+    retVal = self._update( sqlCmd, conn = connObj )
+    if not retVal[ 'OK' ]: 
+      return retVal
+    print retVal['Value']
+    if not retVal['Value']:
+      for mvField in self.__multiValueDefFields:
+        retVal = self._update( "DELETE FROM `tq_TQTo%s` WHERE TQId = %s" % ( mvField, tqId ), conn = connObj )
+        if not retVal[ 'OK' ]: 
+          return retVal
+      return S_OK( True )
     return S_OK( False )
 
   def deleteTaskQueue( self, tqId, conn = False ):
