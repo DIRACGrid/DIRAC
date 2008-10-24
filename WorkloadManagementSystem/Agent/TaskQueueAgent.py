@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueAgent.py,v 1.17 2008/08/19 06:13:18 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueAgent.py,v 1.18 2008/10/24 13:45:02 rgracian Exp $
 # File :   TaskQueueAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
      into a Task Queue.
 """
 
-__RCSID__ = "$Id: TaskQueueAgent.py,v 1.17 2008/08/19 06:13:18 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueAgent.py,v 1.18 2008/10/24 13:45:02 rgracian Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB         import TaskQueueDB
@@ -56,10 +56,10 @@ class TaskQueueAgent(Optimizer):
   def insertJobInQueue(self,job):
     """ Check individual job and add to the Task Queue eventually.
     """
-    retVal = self.jobDB.getJobParameters(job,['Priority'])
+    retVal = self.jobDB.getJobAttributes( job, ['UserPriority'] )
     if retVal['OK']:
       if retVal['Value']:
-        priority = retVal['Value']['Priority']
+        priority = retVal['Value']['UserPriority']
       else:
         self.log.warn('No priority specified for job %d' % int(job))
         priority = 0
