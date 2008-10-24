@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.52 2008/10/14 10:25:15 acasajus Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.52 2008/10/14 10:25:15 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.53 2008/10/24 09:50:29 rgracian Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.53 2008/10/24 09:50:29 rgracian Exp $"
 
 import sys
 import types
@@ -39,9 +39,9 @@ class BaseClient:
     self.__idDict = {}
     self.__discoverSetup()
     self.__initStatus = self.__discoverURL()
+    self.__discoverTimeout()
     if not self.__initStatus[ 'OK' ]:
       return
-    self.__discoverTimeout()
     self.__discoverCredentialsToUse()
     self.__discoverExtraCredentials()
     self.__initStatus = self.__checkTransportSanity()
