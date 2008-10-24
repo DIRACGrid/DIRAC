@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.20 2008/10/24 12:33:13 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.21 2008/10/24 12:35:01 rgracian Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.20 2008/10/24 12:33:13 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.21 2008/10/24 12:35:01 rgracian Exp $"
 
 import time
 import types
@@ -424,7 +424,6 @@ class TaskQueueDB(DB):
     retVal = self._update( sqlCmd, conn = connObj )
     if not retVal[ 'OK' ]: 
       return retVal
-    print retVal['Value']
     if not retVal['Value']:
       for mvField in self.__multiValueDefFields:
         retVal = self._update( "DELETE FROM `tq_TQTo%s` WHERE TQId = %s" % ( mvField, tqId ), conn = connObj )
