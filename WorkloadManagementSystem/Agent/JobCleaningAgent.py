@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobCleaningAgent.py,v 1.4 2008/10/27 13:25:54 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobCleaningAgent.py,v 1.5 2008/10/27 14:56:45 atsareg Exp $
 # File :   JobCleaningAgent.py
 # Author : A.T.
 ########################################################################
@@ -7,7 +7,7 @@
 """  The Job Cleaning Agent controls removing jobs from the WMS in the end of their life cycle.
 """
 
-__RCSID__ = "$Id: JobCleaningAgent.py,v 1.4 2008/10/27 13:25:54 atsareg Exp $"
+__RCSID__ = "$Id: JobCleaningAgent.py,v 1.5 2008/10/27 14:56:45 atsareg Exp $"
 
 from DIRAC.Core.Base.Agent                         import Agent
 from DIRAC.WorkloadManagementSystem.DB.JobDB       import JobDB
@@ -38,7 +38,8 @@ class JobCleaningAgent(Agent):
     self.pollingTime = gConfig.getValue(self.section+'/PollingTime',120)
     self.jobDB = JobDB()
     self.taskQueueDB  = TaskQueueDB()
-    self.sandboxDB = SandboxDB()
+    self.inputSandboxDB = SandboxDB('InputSandbox')
+    self.outputSandboxDB = SandboxDB('OutputSandbox')
 
     return result
 
@@ -77,15 +78,19 @@ class JobCleaningAgent(Agent):
     for jobID in jobList:
       resultJobDB = self.jobDB.removeJobFromDB(jobID)
       resultTQ = self.taskQueueDB.deleteJob(jobID)
-      resultSB = self.sandboxDB.removeJob(jobID)
+      resultISB = self.inputSandboxDB.removeJob(jobID,'InputSandbox')
+      resultOSB = self.outputSandboxDB.removeJob(jobID,'OutputSandbox')
       if not resultJobDB['OK']:
         gLogger.warn('Failed to remove job %d from JobDB' % jobID, result['Message'])
         error_count += 1
       elif not resultTQ['OK']:
         gLogger.warn('Failed to remove job %d from TaskQueueDB' % jobID, result['Message'])
         error_count += 1
-      elif not resultSB['OK']:
-        gLogger.warn('Failed to remove job %d from SandboxDB' % jobID, result['Message'])
+      elif not resultISB['OK']:
+        gLogger.warn('Failed to remove job %d from InputSandboxDB' % jobID, result['Message'])
+        error_count += 1
+      elif not resultOSB['OK']:
+        gLogger.warn('Failed to remove job %d from OutputSandboxDB' % jobID, result['Message'])
         error_count += 1
       else:
         count += 1
