@@ -39,7 +39,7 @@ class SecurityFileLog( threading.Thread ):
         os.makedirs( path )
       except:
         pass
-      logFile = "%s/%s%02d%02d.security.log.csv.gz" % ( path, msgTime.year, msgTime.month, msgTime.day )
+      logFile = "%s/%s%02d%02d.security.log.csv" % ( path, msgTime.year, msgTime.month, msgTime.day )
       if not os.path.isfile( logFile ):
         fd = open( logFile, "w" )
         fd.write( "Time, Success, Source IP, Source Port, source Identity, destinationIP, destinationPort, destinationService, action\n" )
