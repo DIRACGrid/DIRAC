@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/SandboxDB.py,v 1.9 2008/06/19 15:12:21 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/SandboxDB.py,v 1.10 2008/10/27 13:27:32 atsareg Exp $
 ########################################################################
 """ SandboxDB class is a simple storage using MySQL as a container for
     relatively small sandbox files. The file size is limited to 16MB.
@@ -10,7 +10,7 @@
     getWMSTimeStamps()
 """
 
-__RCSID__ = "$Id: SandboxDB.py,v 1.9 2008/06/19 15:12:21 rgracian Exp $"
+__RCSID__ = "$Id: SandboxDB.py,v 1.10 2008/10/27 13:27:32 atsareg Exp $"
 
 import re, os, sys
 import time, datetime
@@ -95,3 +95,17 @@ class SandboxDB(DB):
 
     fileList = [ x[0] for x in result['Value']]
     return S_OK(fileList)
+
+#############################################################################
+  def removeJob(self,jobID,sandbox):
+    """ Remove all the files belonging to the given job
+    """
+
+    req = "DELETE FROM %s WHERE JobID=%d" % (sandbox,int(jobID))
+    result = self._update(req)
+    if not result['OK']:
+      gLogger.warn('Failed to remove files for job %d' % jobID)
+      return result
+
+    gLogger.info('Removed %s files for job %d' % (sandbox,int(jobID)))
+    return S_OK()
