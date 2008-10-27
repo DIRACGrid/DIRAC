@@ -154,6 +154,9 @@ class SandboxClient:
       result['FailedFiles'] = error_files
     else:
       result = S_OK(fileList)
+      # Set job retrieved flag
+      jobState = RPCClient('WorkloadManagement/JobStateUpdate',timeout=120)
+      result = jobState.setJobFlag(jobID,'RetrievedFlag')
 
     return result
 
