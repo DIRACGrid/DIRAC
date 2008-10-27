@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.21 2008/10/24 12:35:01 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.22 2008/10/27 16:06:16 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.21 2008/10/24 12:35:01 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.22 2008/10/27 16:06:16 acasajus Exp $"
 
 import time
 import types
@@ -24,6 +24,8 @@ class TaskQueueDB(DB):
     self.__mandatoryMatchFields = ( 'PilotType', 'Setup', 'CPUTime' )
     self.__minCPUSegments = ( 500, 6000, 100000 )
     self.__maxMatchRetry = 3
+    self.__jobPriorityBoundaries = ( 1, 10 )
+    self.__tqPriorityBoundaries = ( 1, 10 )
     retVal = self.__initializeDB()
     if not retVal[ 'OK' ]:
       raise Exception( "Can't create tables: %s" % retVal[ 'Message' ])
@@ -231,6 +233,8 @@ class TaskQueueDB(DB):
       tqId = retVal[ 'Value' ]
     else:
       tqId = tqInfo[ 'tqId' ]
+    jobPriority = min( max( int( jobPriority ), self.__jobPriorityBoundaries[0] ), self.__jobPriorityBoundaries[1] )
+    tqPriority  = min( max( int( tqPriority  ), self.__tqPriorityBoundaries[0]  ), self.__tqPriorityBoundaries[1]  )
     return self.insertJobInTaskQueue( jobId, tqId, jobPriority, checkTQExists = False, connObj = connObj )
 
   def insertJobInTaskQueue( self, jobId, tqId, jobPriority, checkTQExists = True, connObj = False ):
