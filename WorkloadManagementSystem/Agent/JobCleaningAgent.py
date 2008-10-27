@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobCleaningAgent.py,v 1.3 2008/10/20 13:35:05 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobCleaningAgent.py,v 1.4 2008/10/27 13:25:54 atsareg Exp $
 # File :   JobCleaningAgent.py
 # Author : A.T.
 ########################################################################
@@ -7,11 +7,13 @@
 """  The Job Cleaning Agent controls removing jobs from the WMS in the end of their life cycle.
 """
 
-__RCSID__ = "$Id: JobCleaningAgent.py,v 1.3 2008/10/20 13:35:05 atsareg Exp $"
+__RCSID__ = "$Id: JobCleaningAgent.py,v 1.4 2008/10/27 13:25:54 atsareg Exp $"
 
-from DIRAC.Core.Base.Agent                   import Agent
-from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
-from DIRAC                                   import S_OK, S_ERROR, gConfig, gLogger
+from DIRAC.Core.Base.Agent                         import Agent
+from DIRAC.WorkloadManagementSystem.DB.JobDB       import JobDB
+from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
+from DIRAC.WorkloadManagementSystem.DB.SandboxDB   import SandboxDB
+from DIRAC                                         import S_OK, S_ERROR, gConfig, gLogger
 import DIRAC.Core.Utilities.Time as Time
 
 AGENT_NAME = 'WorkloadManagement/JobCleaningAgent'
@@ -35,6 +37,8 @@ class JobCleaningAgent(Agent):
     result = Agent.initialize(self)
     self.pollingTime = gConfig.getValue(self.section+'/PollingTime',120)
     self.jobDB = JobDB()
+    self.taskQueueDB  = TaskQueueDB()
+    self.sandboxDB = SandboxDB()
 
     return result
 
@@ -69,13 +73,23 @@ class JobCleaningAgent(Agent):
 
     jobList = result['Value']
     count = 0
+    error_count = 0
     for jobID in jobList:
-      result = self.jobDB.removeJobFromDB(jobID)
-      if not result['OK']:
+      resultJobDB = self.jobDB.removeJobFromDB(jobID)
+      resultTQ = self.taskQueueDB.deleteJob(jobID)
+      resultSB = self.sandboxDB.removeJob(jobID)
+      if not resultJobDB['OK']:
         gLogger.warn('Failed to remove job %d from JobDB' % jobID, result['Message'])
+        error_count += 1
+      elif not resultTQ['OK']:
+        gLogger.warn('Failed to remove job %d from TaskQueueDB' % jobID, result['Message'])
+        error_count += 1
+      elif not resultSB['OK']:
+        gLogger.warn('Failed to remove job %d from SandboxDB' % jobID, result['Message'])
+        error_count += 1
       else:
         count += 1
 
-    if count > 0:
-      gLogger.info('Deleted %d jobs from JobDB' % count)
+    if count > 0 or error_count > 0 :
+      gLogger.info('Deleted %d jobs from JobDB, %d errors' % (count,error_count) )
     return S_OK()
