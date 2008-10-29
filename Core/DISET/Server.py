@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.34 2008/10/16 13:28:39 acasajus Exp $
-__RCSID__ = "$Id: Server.py,v 1.34 2008/10/16 13:28:39 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.35 2008/10/29 17:31:32 acasajus Exp $
+__RCSID__ = "$Id: Server.py,v 1.35 2008/10/29 17:31:32 acasajus Exp $"
 
 import socket
 import sys
@@ -76,11 +76,13 @@ class Server:
     gMonitor.registerActivity( 'MEM', "Memory Usage", 'Framework', 'Memory,MB', gMonitor.OP_MEAN, 600 )
     gMonitor.registerActivity( 'PendingQueries', "Pending queries", 'Framework', 'queries', gMonitor.OP_MEAN )
     gMonitor.registerActivity( 'ActiveQueries', "Active queries", 'Framework', 'threads', gMonitor.OP_MEAN )
+    gMonitor.registerActivity( 'RunningThreads', "Running threads", 'Framework', 'threads', gMonitor.OP_MEAN )
     gThreadScheduler.addPeriodicTask( 30, self.__reportThreadPoolContents )
 
   def __reportThreadPoolContents( self ):
     gMonitor.addMark( 'PendingQueries', self.threadPool.pendingJobs() )
     gMonitor.addMark( 'ActiveQueries', self.threadPool.numWorkingThreads() )
+    gMonitor.addMark( 'RunningThreads', threading.activeCount() )
 
   def __VmB(self, VmKey):
       '''Private.
@@ -225,7 +227,8 @@ class Server:
     except:
       cpuStats = False
     try:
-      gLogger.verbose( "Incoming connection from %s" % clientTransport.getRemoteAddress()[0] )
+      gLogger.verbose( "Incoming connection from %s:%s" % ( clientTransport.getRemoteAddress()[0],
+                                                            clientTransport.getRemoteAddress()[1] ) )
       clientTransport.handshake()
       self.handlerManager.processClient( clientTransport )
     finally:
@@ -251,13 +254,13 @@ class Server:
     delList = []
     now = time.time()
     for tName in self.transportControl:
-      print tName
       if self.transportControl[ tName ][0] + self.transportLifeTime < now:
         delList.append( tName )
     for tName in delList:
       try:
-        gLogger.info( "Killing stalled transport" )
-        self.transportControl[ tName ][1].close()
+        tC = self.transportControl[ tName ][1]
+        gLogger.info( "Killing stalled connection from %s:%s" % ( tC.getRemoteAddress()[0], tC.getRemoteAddress()[1] ) )
+        tC.close()
       except Exception, e:
         gLogger.error( "Could not force close of stalled transport", str(e) )
       del( self.transportControl[ tName ] )
