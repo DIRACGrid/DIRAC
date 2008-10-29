@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.34 2008/10/29 14:19:08 acasajus Exp $
-__RCSID__ = "$Id: AccountingDB.py,v 1.34 2008/10/29 14:19:08 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.35 2008/10/29 14:29:37 acasajus Exp $
+__RCSID__ = "$Id: AccountingDB.py,v 1.35 2008/10/29 14:29:37 acasajus Exp $"
 
 import datetime, time
 import types
@@ -512,7 +512,7 @@ class AccountingDB(DB):
     for valPos in range( len( self.dbCatalog[ typeName ][ 'values' ] ) ):
       sqlFields.append( "`%s`" % self.dbCatalog[ typeName ][ 'values' ][ valPos ] )
       sqlValues.append( "(%s*%s)" % ( bucketValues[ valPos ], proportion ) )
-    cmd = "INSERT INTO `%s` ( %s ) " % ( typeName, ", ".join( sqlFields ) )
+    cmd = "INSERT INTO `%s` ( %s ) " % ( self.__getTableName( "bucket", typeName ), ", ".join( sqlFields ) )
     cmd += "VALUES ( %s )" % ", ".join( [ str( val ) for val in sqlValues ] )
     return self._update( cmd, conn = connObj )
 
