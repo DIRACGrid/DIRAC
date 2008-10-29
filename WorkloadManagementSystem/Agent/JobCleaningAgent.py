@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobCleaningAgent.py,v 1.5 2008/10/27 14:56:45 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobCleaningAgent.py,v 1.6 2008/10/29 17:55:17 atsareg Exp $
 # File :   JobCleaningAgent.py
 # Author : A.T.
 ########################################################################
@@ -7,7 +7,7 @@
 """  The Job Cleaning Agent controls removing jobs from the WMS in the end of their life cycle.
 """
 
-__RCSID__ = "$Id: JobCleaningAgent.py,v 1.5 2008/10/27 14:56:45 atsareg Exp $"
+__RCSID__ = "$Id: JobCleaningAgent.py,v 1.6 2008/10/29 17:55:17 atsareg Exp $"
 
 from DIRAC.Core.Base.Agent                         import Agent
 from DIRAC.WorkloadManagementSystem.DB.JobDB       import JobDB
@@ -38,8 +38,7 @@ class JobCleaningAgent(Agent):
     self.pollingTime = gConfig.getValue(self.section+'/PollingTime',120)
     self.jobDB = JobDB()
     self.taskQueueDB  = TaskQueueDB()
-    self.inputSandboxDB = SandboxDB('InputSandbox')
-    self.outputSandboxDB = SandboxDB('OutputSandbox')
+    self.sandboxDB = SandboxDB('SandboxDB')
 
     return result
 
@@ -78,8 +77,8 @@ class JobCleaningAgent(Agent):
     for jobID in jobList:
       resultJobDB = self.jobDB.removeJobFromDB(jobID)
       resultTQ = self.taskQueueDB.deleteJob(jobID)
-      resultISB = self.inputSandboxDB.removeJob(jobID,'InputSandbox')
-      resultOSB = self.outputSandboxDB.removeJob(jobID,'OutputSandbox')
+      resultISB = self.sandboxDB.removeJob(jobID,'InputSandbox')
+      resultOSB = self.sandboxDB.removeJob(jobID,'OutputSandbox')
       if not resultJobDB['OK']:
         gLogger.warn('Failed to remove job %d from JobDB' % jobID, result['Message'])
         error_count += 1
