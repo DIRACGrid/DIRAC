@@ -23,7 +23,8 @@ class JobPlotter(BaseReporter):
                                 reportRequest[ 'groupingFields' ],
                                 { 'checkNone' : True,
                                   'convertToGranularity' : 'sum',
-                                  'calculateProportionalGauges' : True } )
+                                  'calculateProportionalGauges' : False,
+                                  'consolidationFunction' : lambda x,y: x/y } )
     if not retVal[ 'OK' ]:
       return retVal
     dataDict, granularity = retVal[ 'Value' ]
