@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.22 2008/10/27 16:06:16 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.23 2008/10/29 17:57:36 atsareg Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.22 2008/10/27 16:06:16 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.23 2008/10/29 17:57:36 atsareg Exp $"
 
 import time
 import types
@@ -376,7 +376,7 @@ class TaskQueueDB(DB):
         if field != 'GridCE' or 'Site' in tqMatchDict:
           # Jobs for masked sites can be matched if they specified a GridCE
           # Site is removed from tqMatchDict if the Site is mask. In this case we want
-          # that the GridCE matches explicetly so the COUNT can not be 0 (that means 
+          # that the GridCE matches explicetly so the COUNT can not be 0 (that means
           # not specified for the corresponding jobs.
           sqlMultiCondList.append( "( SELECT COUNT(%s.Value) FROM %s WHERE %s.TQId = `tq_TaskQueues`.TQId ) = 0 " % (tableName,tableName,tableName ) )
         sqlMultiCondList.append( "'%s' in ( SELECT %s.Value FROM %s WHERE %s.TQId = `tq_TaskQueues`.TQId )" % ( fieldValue, tableName, tableName, tableName ) )
@@ -400,7 +400,7 @@ class TaskQueueDB(DB):
     if not connObj:
       retVal = self._getConnection()
       if not retVal[ 'OK' ]:
-        return S_ERROR( "Can't insert job: %s" % retVal[ 'Message' ] )
+        return S_ERROR( "Can't delete job: %s" % retVal[ 'Message' ] )
       connObj = retVal[ 'Value' ]
     retVal = self._update( "DELETE FROM `tq_Jobs` WHERE `tq_Jobs`.JobId = %s" % jobId, conn = connObj )
     if not retVal[ 'OK' ]:
