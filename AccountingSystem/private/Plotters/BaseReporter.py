@@ -12,6 +12,7 @@ class BaseReporter(DBUtils):
   _PARAM_CALCULATE_PROPORTIONAL_GAUGES = 'calculateProportionalGauges'
   _PARAM_CONVERT_TO_GRANULARITY = 'convertToGranularity'
   _VALID_PARAM_CONVERT_TO_GRANULARITY = ( 'sum', 'average' )
+  _PARAM_CONSOLIDATION_FUNCTION = "consolidationFunction"
 
   _EA_THUMBNAIL = 'thumbnail'
   _EA_WIDTH = 'width'
@@ -115,9 +116,16 @@ class BaseReporter(DBUtils):
         dataDict[ keyField ] = self._averageToGranularity( coarsestGranularity, dataDict[ keyField ] )
       if metadataDict[ self._PARAM_CONVERT_TO_GRANULARITY ] == "sum":
         dataDict[ keyField ] = self._sumToGranularity( coarsestGranularity, dataDict[ keyField ] )
+      if self._PARAM_CONSOLIDATION_FUNCTION in metadataDict:
+        dataDict[ keyField ] = self._executeConsolidation( metadataDict[ self._PARAM_CONSOLIDATION_FUNCTION ], dataDict[ keyField ] )
     if metadataDict[ self._PARAM_CALCULATE_PROPORTIONAL_GAUGES ]:
       dataDict  = self._calculateProportionalGauges( dataDict )
     return S_OK( ( dataDict, coarsestGranularity ) )
+
+  def _executeConsolidation( self, functor, dataDict ):
+    for timeKey in dataDict:
+      dataDict[ timeKey ] = [ functor( *dataDict[ timeKey ] ) ]
+    return dataDict
 
   def _getSummaryData( self, startTime, endTime, selectFields, preCondDict, groupingFields, metadataDict, reduceFunc = False ):
     condDict = {}

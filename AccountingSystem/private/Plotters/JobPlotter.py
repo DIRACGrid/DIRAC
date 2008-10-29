@@ -43,7 +43,8 @@ class JobPlotter(BaseReporter):
                                   reportRequest[ 'groupingFields' ],
                                   { 'checkNone' : True,
                                   'convertToGranularity' : 'sum',
-                                  'calculateProportionalGauges' : True } )
+                                  'calculateProportionalGauges' : False,
+                                  'consolidationFunction' : lambda x,y: x/y  } )
       if not retVal[ 'OK' ]:
         return retVal
       totalDict = retVal[ 'Value' ][0]
@@ -278,7 +279,6 @@ class JobPlotter(BaseReporter):
     return S_OK( { 'data' : dataDict  } )
 
   def _plotTotalCPUUsed( self, reportRequest, plotInfo, filename ):
-    print plotInfo
     metadata = { 'title' : 'CPU days used by %s' % " -> ".join( reportRequest[ 'groupingFields' ] ) ,
                  'ylabel' : 'cpu days'
                 }
