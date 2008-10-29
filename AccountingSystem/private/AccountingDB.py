@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.32 2008/07/07 16:56:13 acasajus Exp $
-__RCSID__ = "$Id: AccountingDB.py,v 1.32 2008/07/07 16:56:13 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.33 2008/10/29 14:14:48 acasajus Exp $
+__RCSID__ = "$Id: AccountingDB.py,v 1.33 2008/10/29 14:14:48 acasajus Exp $"
 
 import datetime, time
 import types
@@ -384,9 +384,6 @@ class AccountingDB(DB):
     if not retVal[ 'OK' ]:
       return retVal
     connObj = retVal[ 'Value' ]
-    retVal = self.__startTransaction( connObj )
-    if not retVal[ 'OK' ]:
-      return retVal
     retVal = self._insert( self.__getTableName( "type", typeName ),
                            self.dbCatalog[ typeName ][ 'typeFields' ],
                            insertList,
@@ -395,6 +392,9 @@ class AccountingDB(DB):
       return retVal
     #HACK: One more record to split in the buckets to be able to count total entries
     valuesList.append(1)
+    retVal = self.__startTransaction( connObj )
+    if not retVal[ 'OK' ]:
+      return retVal
     retVal =self.__splitInBuckets( typeName, startTime, endTime, valuesList, connObj = connObj )
     if not retVal[ 'OK' ]:
       self.__rollbackTransaction( connObj )
@@ -414,8 +414,8 @@ class AccountingDB(DB):
     gLogger.verbose( "Splitting entry", " in %s buckets" % len( buckets ) )
     for bucketInfo in buckets:
       bucketStartTime = bucketInfo[0]
-      bucketLength = bucketInfo[2]
       bucketProportion = bucketInfo[1]
+      bucketLength = bucketInfo[2]
       #INSERT!
       retVal = self.__insertBucket( typeName,
                                     bucketStartTime,
@@ -504,15 +504,17 @@ class AccountingDB(DB):
     """
     Insert a bucket when coming from the raw insert
     """
-    sqlFields = [ 'startTime', 'bucketLength', 'entriesInBucket' ]
-    sqlValues = [ startTime, bucketLength, "%s * %s" % ( bucketValues[-1], proportion )]
+    sqlFields = [ '`startTime`', '`bucketLength`', '`entriesInBucket`' ]
+    sqlValues = [ startTime, bucketLength, "(%s*%s)" % ( bucketValues[-1], proportion )]
     for keyPos in range( len( self.dbCatalog[ typeName ][ 'keys' ] ) ):
-      sqlFields.append( self.dbCatalog[ typeName ][ 'keys' ][ keyPos ] )
+      sqlFields.append( "`%s`" % self.dbCatalog[ typeName ][ 'keys' ][ keyPos ] )
       sqlValues.append( keyValues[ keyPos ] )
     for valPos in range( len( self.dbCatalog[ typeName ][ 'values' ] ) ):
-      sqlFields.append( self.dbCatalog[ typeName ][ 'values' ][ valPos ] )
-      sqlValues.append( "%s * %s" % ( bucketValues[ valPos ], proportion ) )
-    return self._insert( self.__getTableName( "bucket", typeName ), sqlFields, sqlValues, conn = connObj )
+      sqlFields.append( "`%s`" % self.dbCatalog[ typeName ][ 'values' ][ valPos ] )
+      sqlValues.append( "(%s*%s)" % ( bucketValues[ valPos ], proportion ) )
+    cmd = "INSERT INTO `%s` ( %s ) " % ", ".join( sqlFields )
+    cmd += "VALUES ( %s )" % ", ".join( [ str( val ) for val in sqlValues ] )
+    return self._update( cmd, conn = connObj )
 
   def __checkFieldsExistsInType( self, typeName, fields, tableType ):
     """
