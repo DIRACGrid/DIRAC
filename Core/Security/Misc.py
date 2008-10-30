@@ -54,6 +54,7 @@ def getProxyInfo( proxy = False, disableVOMS = False ):
     infoDict[ 'path' ] = proxyLocation
 
   if not disableVOMS and chain.isVOMS()['Value']:
+    infoDict[ 'hasVOMS' ] = True
     retVal = VOMS().getVOMSAttributes( chain )
     if retVal[ 'OK' ]:
       infoDict[ 'VOMS' ] = retVal[ 'Value' ]
@@ -71,7 +72,7 @@ def formatProxyInfoAsString( infoDict ):
   leftAlign = 13
   contentList = []
   for field in ( 'subject', 'issuer', 'identity', ( 'secondsLeft', 'time left' ),
-                 ( 'group', 'DIRAC group' ), 'path', 'username', ( 'VOMS', 'VOMS fqan' ) ):
+                 ( 'group', 'DIRAC group' ), 'path', 'username', ( 'hasVOMS', 'VOMS' ), ( 'VOMS', 'VOMS fqan' ) ):
     if type( field ) == types.StringType:
       dispField = field
     else:
@@ -103,6 +104,7 @@ def getProxyStepsInfo( chain ):
     stepInfo[ 'serial' ] = cert.getSerialNumber()['Value']
     stepInfo[ 'not before' ] = cert.getNotBeforeDate()['Value']
     stepInfo[ 'not after' ] = cert.getNotAfterDate()['Value']
+    stepInfo[ 'lifetime' ] = cert.getRemainingSecs()['Value']
     dG = cert.getDIRACGroup( ignoreDefault = True )['Value']
     if dG:
       stepInfo[ 'group' ] = dG
@@ -116,10 +118,17 @@ def formatProxyStepsInfoAsString( infoList ):
   for i in range( len( infoList ) ):
     contentsList.append( " + Step %s" % i )
     stepInfo = infoList[i]
-    for key in ( 'subject', 'issuer', 'serial', 'not after', 'not before', 'group', 'VOMS ext' ):
+    for key in ( 'subject', 'issuer', 'serial', 'not after', 'not before', 'group', 'VOMS ext', 'lifetime' ):
       if key in stepInfo:
         value = stepInfo[ key ]
         if key == 'serial':
           value = base64.b16encode( value )
+        if key == 'lifetime':
+          secs = value
+          hours = int( secs /  3600 )
+          secs -= hours * 3600
+          mins = int( secs / 60 )
+          secs -= mins * 60
+          value = "%02d:%02d:%02d" % ( hours, mins, secs )
         contentsList.append( "  %s : %s" % ( key.ljust(10).capitalize(), value ) )
   return "\n".join( contentsList )
