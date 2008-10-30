@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.34 2008/10/10 09:37:36 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.35 2008/10/30 14:37:52 acasajus Exp $
 ########################################################################
 """ ProxyRepository class is a front-end to the proxy repository Database
 """
 
-__RCSID__ = "$Id: ProxyDB.py,v 1.34 2008/10/10 09:37:36 acasajus Exp $"
+__RCSID__ = "$Id: ProxyDB.py,v 1.35 2008/10/30 14:37:52 acasajus Exp $"
 
 import time
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
@@ -120,6 +120,12 @@ class ProxyDB(DB):
     data = retVal[ 'Value' ]
     if len( data ) == 0:
       return S_ERROR( "Insertion of the request in the db didn't work as expected" )
+    retVal = proxyChain.getDIRACGroup()
+    if retVal[ 'OK' ] and retVal[ 'Value' ]:
+      userGroup = retVal[ 'Value' ]
+    else:
+      userGroup = "unset"
+    self.logAction( "request upload", userDN, userGroup, userDN, "any" )
     #Here we go!
     return S_OK( { 'id' : data[0][0], 'request' : reqStr } )
 
@@ -224,7 +230,6 @@ class ProxyDB(DB):
     retVal = self.deleteRequest( requestId )
     if not retVal[ 'OK' ]:
       return retVal
-    self.logAction( "upload proxy", userDN, userGroup, userDN, userGroup )
     return S_OK()
 
   def storeProxy(self, userDN, userGroup, chain ):
@@ -296,7 +301,7 @@ class ProxyDB(DB):
                                                                                                                                                 remainingSecs,
                                                                                                                                                 userDN,
                                                                                                                                                 userGroup)
-
+    self.logAction( "store proxy", userDN, userGroup, userDN, userGroup )
     return self._update( cmd )
 
   def purgeExpiredProxies( self ):
@@ -451,8 +456,11 @@ class ProxyDB(DB):
       chain = X509Chain()
       retVal = chain.loadProxyFromString( pemData )
       if retVal[ 'OK' ]:
-        if requiredLifeTime and requiredLifeTime <= vomsTime:
-          return S_OK( chain )
+        retVal = chain.getRemainingSecs()
+        if retVal[ 'OK' ]:
+          remainingSecs = retVal[ 'Value' ]
+          if requiredLifeTime and requiredLifeTime <= vomsTime and requiredLifeTime <= remainingSecs:
+            return S_OK( chain )
 
     retVal = self.getProxy( userDN, userGroup, requiredLifeTime )
     if not retVal[ 'OK' ]:
