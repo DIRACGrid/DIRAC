@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.35 2008/10/30 14:37:52 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.36 2008/10/30 14:59:09 acasajus Exp $
 ########################################################################
 """ ProxyRepository class is a front-end to the proxy repository Database
 """
 
-__RCSID__ = "$Id: ProxyDB.py,v 1.35 2008/10/30 14:37:52 acasajus Exp $"
+__RCSID__ = "$Id: ProxyDB.py,v 1.36 2008/10/30 14:59:09 acasajus Exp $"
 
 import time
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
@@ -162,6 +162,11 @@ class ProxyDB(DB):
     return self._update( cmd )
 
   def __checkVOMSisAlignedWithGroup( self, userGroup, chain ):
+    #HACK: We deny proxies with VOMS extensions
+    result = chain.isVOMS()
+    if result[ 'OK' ] and result[ 'Value' ]:
+      return S_ERROR( "Proxies with VOMS extensions are not allowed to be uploaded" )
+    #END HACK
     voms = VOMS()
     if not voms.vomsInfoAvailable():
       if self.__vomsRequired:
@@ -172,10 +177,6 @@ class ProxyDB(DB):
     if not retVal[ 'OK' ]:
       return retVal
     attr = retVal[ 'Value' ]
-    #HACK: We deny proxies with VOMS extensions
-    if len( attr ) > 0:
-      return S_ERROR( "Proxies with VOMS extensions are not allowed to be uploaded" )
-    #END HACK
     validVOMSAttr = CS.getVOMSAttributeForGroup( userGroup )
     if len( attr ) == 0 or attr[0] == validVOMSAttr:
       return S_OK( 'OK' )
