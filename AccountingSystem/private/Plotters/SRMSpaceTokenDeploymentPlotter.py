@@ -96,6 +96,5 @@ class SRMSpaceTokenDeploymentPlotter(BaseReporter):
                  'starttime' : reportRequest[ 'startTime' ],
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
-                 'skipEdgeColor' : True,
                  'ylabel' : "bytes"  }
     return self._generateTimedStackedBarPlot( filename, plotInfo[ 'data' ], metadata )
