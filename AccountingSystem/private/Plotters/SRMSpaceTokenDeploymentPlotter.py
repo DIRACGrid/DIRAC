@@ -37,7 +37,7 @@ class SRMSpaceTokenDeploymentPlotter(BaseReporter):
     return self._historicReport( reportRequest, "ReservedNearline" )
 
   def _historicReport( self, reportRequest, fieldToBeReported ):
-    selectFields = ( self._getSQLStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s/%s)",
+    selectFields = ( self._getSQLStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s/%s)/1073741824",
                      reportRequest[ 'groupingFields' ] + [ 'startTime', 'bucketLength',
                                     fieldToBeReported, 'entriesInBucket'
                                    ]
@@ -96,5 +96,5 @@ class SRMSpaceTokenDeploymentPlotter(BaseReporter):
                  'starttime' : reportRequest[ 'startTime' ],
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
-                 'ylabel' : "bytes"  }
+                 'ylabel' : "GiB"  }
     return self._generateTimedStackedBarPlot( filename, plotInfo[ 'data' ], metadata )
