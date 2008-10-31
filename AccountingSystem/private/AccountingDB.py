@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.35 2008/10/29 14:29:37 acasajus Exp $
-__RCSID__ = "$Id: AccountingDB.py,v 1.35 2008/10/29 14:29:37 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.36 2008/10/31 16:28:19 acasajus Exp $
+__RCSID__ = "$Id: AccountingDB.py,v 1.36 2008/10/31 16:28:19 acasajus Exp $"
 
 import datetime, time
 import types
@@ -848,7 +848,6 @@ class AccountingDB(DB):
     gLogger.info( "Retrieving data for rebuilding buckets for type %s..." % ( typeName ) )
     queryNum = 0
     for sqlQuery in sqlQueries:
-      print sqlQuery
       gLogger.info( "Executing query #%s..." % queryNum )
       queryNum += 1
       retVal = self._query( sqlQuery, conn = connObj )
