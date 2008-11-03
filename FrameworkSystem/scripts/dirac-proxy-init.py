@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/scripts/dirac-proxy-init.py,v 1.3 2008/07/22 18:36:43 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/scripts/dirac-proxy-init.py,v 1.4 2008/11/03 11:11:30 acasajus Exp $
 # File :   dirac-proxy-init.py
 # Author : Adrian Casajus
 ########################################################################
-__RCSID__   = "$Id: dirac-proxy-init.py,v 1.3 2008/07/22 18:36:43 acasajus Exp $"
-__VERSION__ = "$Revision: 1.3 $"
+__RCSID__   = "$Id: dirac-proxy-init.py,v 1.4 2008/11/03 11:11:30 acasajus Exp $"
+__VERSION__ = "$Revision: 1.4 $"
 
 import sys
 import getpass
@@ -18,6 +18,7 @@ class CLIParams:
   diracGroup = False
   proxyStrength = 1024
   limitedProxy = False
+  strict = False
   debug = False
   certLoc = False
   keyLoc = False
@@ -91,6 +92,10 @@ class CLIParams:
     self.stdinPasswd = True
     return DIRAC.S_OK()
 
+  def setStrict( self, arg ):
+    self.strict = True
+    return DIRAC.S_OK()
+
   def showVersion( self, arg ):
     print "Version:"
     print " ", __RCSID__
@@ -107,6 +112,7 @@ class CLIParams:
     Script.registerSwitch( "g:", "group=", "DIRAC Group to embed in the proxy", self.setDIRACGroup )
     Script.registerSwitch( "b:", "strength=", "Set the proxy strength in bytes", self.setProxyStrength )
     Script.registerSwitch( "l", "limited", "Generate a limited proxy", self.setProxyLimited )
+    Script.registerSwitch( "t", "strict", "Fail on each error. Treat warnings as errors.", self.setStrict )
     Script.registerSwitch( "d", "debug", "Enable debug output", self.setDebug )
     Script.registerSwitch( "c:", "cert=", "File to use as user certificate", self.setCertLocation )
     Script.registerSwitch( "k:", "key=", "File to use as user key", self.setKeyLocation )
