@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobHistoryAgent.py,v 1.9 2008/10/17 10:38:55 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobHistoryAgent.py,v 1.10 2008/11/03 14:49:49 acasajus Exp $
 
 
 """  JobHistoryAgent sends periodically numbers of jobs in various states for various
@@ -24,14 +24,13 @@ class JobHistoryAgent(Agent):
 
   __summaryKeyFieldsMapping = [ 'Status',
                                 'MinorStatus',
-                                'ApplicationStatus',
                                 'Site',
                                 'User',
                                 'UserGroup',
                                 'JobGroup',
                                 'JobSplitType',
                               ]
-  __summaryDefinedFields = [ 'ApplicationStatus' ]
+  __summaryDefinedFields = [ ( 'ApplicationStatus', 'unset' ) ]
   __summaryValueFieldsMapping = [ 'Jobs',
                                   'Reschedules',
                                 ]
@@ -43,6 +42,8 @@ class JobHistoryAgent(Agent):
 
   def initialize(self):
     result = Agent.initialize(self)
+    if not result[ 'OK' ]:
+      return result
     self.jobDB = JobDB()
 
     for status in MONITOR_STATUS:
@@ -60,7 +61,6 @@ class JobHistoryAgent(Agent):
   def execute(self):
     """ Main execution method
     """
-
     delta = time.time() - self.last_update
     if delta > self.reportPeriod:
       result = self.jobDB.getCounters(['Status','Site'],{},'')
@@ -107,14 +107,12 @@ class JobHistoryAgent(Agent):
         if recordSetup not in dsClients:
           dsClients[ recordSetup ] = DataStoreClient( setup = recordSetup )
         record = record[1:]
-        for key in self.__summaryDefinedFields:
-          rD = { key : 'unset' }
+        for FV in self.__summaryDefinedFields:
+          rD = { FV[0] : FV[1] }
         for iP in range( len( self.__summaryKeyFieldsMapping ) ):
           fieldName = self.__summaryKeyFieldsMapping[iP]
           rD[ fieldName ] = record[iP]
-          if not rD[ fieldName ]:
-            rD[ fieldName ] = 'unset'
-        record = record[ len( self.__summaryKeyFieldsMapping ) - len( self.__summaryDefinedFields): ]
+        record = record[ len( self.__summaryKeyFieldsMapping ): ]
         for iP in range( len( self.__summaryValueFieldsMapping ) ):
           rD[ self.__summaryValueFieldsMapping[iP] ] = int( record[iP] )
         acWMS = WMSHistory()
@@ -123,9 +121,9 @@ class JobHistoryAgent(Agent):
         acWMS.setValuesFromDict( rD )
         retVal =  acWMS.checkValues()
         if not retVal[ 'OK' ]:
-          print retVal[ 'Message' ]
-          print rD
-        dsClients[ recordSetup ].addRegister( acWMS )
+          gLogger.error( "Invalid accounting record ", "%s -> %s" % ( retVal[ 'Message' ], rD ) )
+        else:
+          dsClients[ recordSetup ].addRegister( acWMS )
       for setup in dsClients:
         result = dsClients[ setup ].commit()
         if not result[ 'OK' ]:
