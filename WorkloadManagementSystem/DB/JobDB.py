@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.108 2008/10/17 10:21:37 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.109 2008/11/03 18:24:50 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.108 2008/10/17 10:21:37 acasajus Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.109 2008/11/03 18:24:50 atsareg Exp $"
 
 import re, os, sys, string, types
 import time
@@ -1780,56 +1780,22 @@ class JobDB(DB):
     """ Count the number of jobs on each distinct combination of AttrList, selected
         with condition defined by condDict and cutDate
     """
+
     cond = self.__buildCondition( condDict, newer=cutDate )
     attrNames = string.join(map(lambda x: str(x),attrList ),',')
-    cmd = 'SELECT %s FROM Jobs %s' % ( attrNames, cond )
+    cmd = 'SELECT %s,COUNT(JobID) FROM Jobs GROUP BY %s %s ' % ( attrNames, attrNames, cond )
     result = self._query( cmd )
     if not result['OK']:
       return result
-    countTreeDict = {}
-    for value in result['Value']:
-      currentDict = countTreeDict
+
+    resultList = []
+    for raw in result['Value']:
+      attrDict = {}
       for i in range(len(attrList)):
-        if not currentDict.has_key(value[i]):
-          currentDict[value[i]]={}
-        currentDict = currentDict[value[i]]
-      if currentDict == {}:
-        currentDict['Counter'] = 0
-      currentDict['Counter'] += 1
-      currentDict = countTreeDict
-    counterList = []
-
-    distinctAttributesList = []
-    currentDict = countTreeDict
-    for index in range(len(attrList)):
-      if not distinctAttributesList:
-        # for the attribute in the List distinctAttributesList is empty
-        for attr in currentDict.keys():
-          distinctAttributesList.append([attr])
-      else:
-        newdistinctAttributesList = []
-        for attrs in distinctAttributesList:
-          currentDict = countTreeDict
-          for i in range(index):
-            currentDict = currentDict[attrs[i]]
-          for attr in currentDict.keys():
-            if index+1 == len(attrList):
-              # Now the List must become a Dictionary and the counter added
-              counter = currentDict[attr]['Counter']
-              newDict = {}
-              for i in range(len(attrList)):
-                # FIXME: JobDB default values None can not be marshall by XML-RPC
-                # we should fixed a better default; ie, "Unknown"
-                if ( attrs + [attr] )[i]:
-                  newDict[attrList[i]] = ( attrs + [attr] )[i]
-                else:
-                  newDict[attrList[i]] = 'Unknown'
-              newdistinctAttributesList.append( [newDict, counter] )
-            else:
-              newdistinctAttributesList.append( attrs + [attr] )
-          distinctAttributesList = list(newdistinctAttributesList)
-
-    return S_OK(distinctAttributesList)
+        attrDict[attrList[i]] = raw[i]
+      itemList = [attrDict,raw[len(attrList)]]
+      resultList.append(itemList)
+    return S_OK(resultList)
 
 #################################################################################
   def getSiteSummary(self):
