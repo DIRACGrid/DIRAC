@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobMonitoringHandler.py,v 1.20 2008/09/15 16:48:16 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobMonitoringHandler.py,v 1.21 2008/11/03 11:00:08 atsareg Exp $
 ########################################################################
 
 """ JobMonitoringHandler is the implementation of the JobMonitoring service
@@ -11,7 +11,7 @@
 
 """
 
-__RCSID__ = "$Id: JobMonitoringHandler.py,v 1.20 2008/09/15 16:48:16 atsareg Exp $"
+__RCSID__ = "$Id: JobMonitoringHandler.py,v 1.21 2008/11/03 11:00:08 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -273,7 +273,7 @@ class JobMonitoringHandler( RequestHandler ):
       else:
         lastTime = Time.fromString(jobDict['LastUpdateTime'])
         hbTime = Time.fromString(jobDict['HeartBeatTime'])
-        if (hbTime-lastTime) > (lastTime-lastTime):
+        if (hbTime-lastTime) > (lastTime-lastTime) or jobDict['Status'] == "Stalled":
           jobDict['LastSignOfLife'] = jobDict['HeartBeatTime']
         else:
           jobDict['LastSignOfLife'] = jobDict['LastUpdateTime']
@@ -346,7 +346,7 @@ class JobMonitoringHandler( RequestHandler ):
       else:
         lastTime = Time.fromString(jobDict['LastUpdateTime'])
         hbTime = Time.fromString(jobDict['HeartBeatTime'])
-        if (hbTime-lastTime) > (lastTime-lastTime):
+        if (hbTime-lastTime) > (lastTime-lastTime) or jobDict['Status'] == "Stalled":
           jobDict['LastSignOfLife'] = jobDict['HeartBeatTime']
         else:
           jobDict['LastSignOfLife'] = jobDict['LastUpdateTime']
