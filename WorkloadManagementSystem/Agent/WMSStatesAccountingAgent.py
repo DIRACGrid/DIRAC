@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/WMSAccountingAgent.py,v 1.1 2008/11/04 11:24:15 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/WMSStatesAccountingAgent.py,v 1.1 2008/11/04 11:25:22 acasajus Exp $
 
 
 """  JobHistoryAgent sends periodically numbers of jobs in various states for various
@@ -15,9 +15,9 @@ from DIRAC.Core.Utilities import Time
 
 import time,os
 
-AGENT_NAME = 'WorkloadManagement/WMSAccountingAgent'
+AGENT_NAME = 'WorkloadManagement/WMSStatesAccountingAgent'
 
-class WMSAccountingAgent(Agent):
+class WMSStatesAccountingAgent(Agent):
 
   __summaryKeyFieldsMapping = [ 'Status',
                                 'MinorStatus',
@@ -85,7 +85,6 @@ class WMSAccountingAgent(Agent):
         acWMS.setStartTime( now )
         acWMS.setEndTime( now )
         acWMS.setValuesFromDict( rD )
-        print rD
         retVal =  acWMS.checkValues()
         if not retVal[ 'OK' ]:
           gLogger.error( "Invalid accounting record ", "%s -> %s" % ( retVal[ 'Message' ], rD ) )
