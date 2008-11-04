@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: SandboxHandler.py,v 1.10 2008/09/02 17:59:33 atsareg Exp $
+# $Id: SandboxHandler.py,v 1.11 2008/11/04 11:25:50 atsareg Exp $
 ########################################################################
 
 """ SandboxHandler is the implementation of the Sandbox service
@@ -12,7 +12,7 @@
 
 """
 
-__RCSID__ = "$Id: SandboxHandler.py,v 1.10 2008/09/02 17:59:33 atsareg Exp $"
+__RCSID__ = "$Id: SandboxHandler.py,v 1.11 2008/11/04 11:25:50 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -125,18 +125,11 @@ class SandboxHandler(RequestHandler):
 
     jobID,fname = result['Value']
 
-    req = "SELECT FileBody from %s where JobID=%d and FileName='%s'" % \
-          (sandbox_type,jobID,fname)
-
-    result = sandboxDB._query(req)
+    result = sandboxDB.getSandboxFile(jobID,fname,sandbox_type)
     if not result['OK']:
       return result
-
-    if len(result['Value']) > 0:
-      fileString = result['Value'][0][0]
-    else:
-      fileString = ''
-
+    fileString = result['Value']      
+ 
     result = fileHelper.stringToNetwork(fileString)
 
     if not fileString:
