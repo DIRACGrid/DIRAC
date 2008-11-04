@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.69 2008/10/22 08:29:21 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.70 2008/11/04 15:57:20 rgracian Exp $
 # File :   Director.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -48,7 +48,7 @@
 
 """
 
-__RCSID__ = "$Id: Director.py,v 1.69 2008/10/22 08:29:21 rgracian Exp $"
+__RCSID__ = "$Id: Director.py,v 1.70 2008/11/04 15:57:20 rgracian Exp $"
 
 import types, time
 
@@ -57,6 +57,7 @@ from DIRAC.Core.Utilities                         import List
 from DIRAC.WorkloadManagementSystem.DB.JobDB      import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB        import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB       import PilotAgentsDB
+from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB         import TaskQueueDB
 
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
 
@@ -85,6 +86,7 @@ AGENT_NAME = 'WorkloadManagement/Director'
 jobDB             = JobDB()
 jobLoggingDB      = JobLoggingDB()
 pilotAgentsDB     = PilotAgentsDB()
+taskQueueDB       = TaskQueueDB()
 
 class Director(Agent):
 
@@ -292,6 +294,9 @@ class Director(Agent):
     if not currentMinorStatus == MINOR_SUBMIT:
       self.log.verbose('Job has changed minor status to %s and will be ignored:' % currentMinorStatus, job )
       return False
+
+    #Adjust MaxCPUTime to match those number used on the TQ:
+    jobDict['MaxCPUTime'] = taskQueueDB.fitCPUTimeToSegments( jobDict['MaxCPUTime'] )
 
     self.jobDicts[job] = jobDict
 
