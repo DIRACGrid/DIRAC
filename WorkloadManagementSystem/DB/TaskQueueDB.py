@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.23 2008/10/29 17:57:36 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.24 2008/11/04 15:50:07 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.23 2008/10/29 17:57:36 atsareg Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.24 2008/11/04 15:50:07 acasajus Exp $"
 
 import time
 import types
@@ -22,7 +22,7 @@ class TaskQueueDB(DB):
     self.__multiValueMatchFields = ( 'GridCE', 'Site', 'GridMiddleware', 'LHCbPlatform' )
     self.__singleValueDefFields = ( 'OwnerDN', 'OwnerGroup', 'PilotType', 'Setup', 'CPUTime' )
     self.__mandatoryMatchFields = ( 'PilotType', 'Setup', 'CPUTime' )
-    self.__minCPUSegments = ( 500, 6000, 100000 )
+    self.maxCPUSegments = ( 500, 5000, 50000, 300000 )
     self.__maxMatchRetry = 3
     self.__jobPriorityBoundaries = ( 1, 10 )
     self.__tqPriorityBoundaries = ( 1, 10 )
@@ -88,11 +88,11 @@ class TaskQueueDB(DB):
     """
     Fit the CPU time to the valid segments
     """
-    for iP in range( len( self.__minCPUSegments ) -1, -1, -1 ):
-      minCPUTime = self.__minCPUSegments[ iP ]
-      if cpuTime >= minCPUTime:
-        return minCPUTime
-    return self.__minCPUSegments[0]
+    for iP in range( len( self.maxCPUSegments ) ):
+      cpuSegment = self.maxCPUSegments[ iP ]
+      if cpuTime <= cpuSegment:
+        return cpuSegment
+    return self.maxCPUSegments[-1]
 
   def _checkTaskQueueDefinition( self, tqDefDict ):
     """
@@ -426,12 +426,12 @@ class TaskQueueDB(DB):
       return S_ERROR( "Could not delete task queue %s: %s" % ( tqId, retVal[ 'Message' ] ) )
     sqlCmd = "SELECT TQId FROM `tq_TaskQueues` WHERE `tq_TaskQueues`.TQId = %s" % tqId
     retVal = self._update( sqlCmd, conn = connObj )
-    if not retVal[ 'OK' ]: 
+    if not retVal[ 'OK' ]:
       return retVal
     if not retVal['Value']:
       for mvField in self.__multiValueDefFields:
         retVal = self._update( "DELETE FROM `tq_TQTo%s` WHERE TQId = %s" % ( mvField, tqId ), conn = connObj )
-        if not retVal[ 'OK' ]: 
+        if not retVal[ 'OK' ]:
           return retVal
       return S_OK( True )
     return S_OK( False )
