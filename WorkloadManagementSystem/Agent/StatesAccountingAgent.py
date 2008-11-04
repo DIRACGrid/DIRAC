@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/WMSStatesAccountingAgent.py,v 1.1 2008/11/04 11:25:22 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/StatesAccountingAgent.py,v 1.1 2008/11/04 11:32:37 acasajus Exp $
 
 
 """  JobHistoryAgent sends periodically numbers of jobs in various states for various
@@ -15,9 +15,9 @@ from DIRAC.Core.Utilities import Time
 
 import time,os
 
-AGENT_NAME = 'WorkloadManagement/WMSStatesAccountingAgent'
+AGENT_NAME = 'WorkloadManagement/StatesAccountingAgent'
 
-class WMSStatesAccountingAgent(Agent):
+class StatesAccountingAgent(Agent):
 
   __summaryKeyFieldsMapping = [ 'Status',
                                 'MinorStatus',
