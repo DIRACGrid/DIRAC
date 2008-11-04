@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobHistoryAgent.py,v 1.10 2008/11/03 14:49:49 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobHistoryAgent.py,v 1.11 2008/11/04 11:24:16 acasajus Exp $
 
 
 """  JobHistoryAgent sends periodically numbers of jobs in various states for various
@@ -21,19 +21,6 @@ MONITOR_SITES = ['LCG.CERN.ch','LCG.IN2P3.fr','LCG.RAL.uk','LCG.CNAF.it',
 MONITOR_STATUS = ['Running','Stalled','Done','Failed']
 
 class JobHistoryAgent(Agent):
-
-  __summaryKeyFieldsMapping = [ 'Status',
-                                'MinorStatus',
-                                'Site',
-                                'User',
-                                'UserGroup',
-                                'JobGroup',
-                                'JobSplitType',
-                              ]
-  __summaryDefinedFields = [ ( 'ApplicationStatus', 'unset' ) ]
-  __summaryValueFieldsMapping = [ 'Jobs',
-                                  'Reschedules',
-                                ]
 
   def __init__(self):
     """ Standard constructor
@@ -67,7 +54,6 @@ class JobHistoryAgent(Agent):
       if not result['OK']:
         return S_ERROR('Failed to get data from the Job Database')
       self.resultDB = result['Value']
-      self.sendAccountingRecords()
       self.last_update = time.time()
 
     totalDict = {}
@@ -90,47 +76,3 @@ class JobHistoryAgent(Agent):
       gMonitor.addMark("%s-All sites" % status,totalDict[status])
 
     return S_OK()
-
-
-  def sendAccountingRecords(self):
-    #Get the WMS Snapshot!
-    result = self.jobDB.getSummarySnapshot()
-    dsClients = {}
-    now = Time.dateTime()
-    if not result[ 'OK' ]:
-      gLogger.error( "Can't the the jobdb summary", result[ 'Message' ] )
-    else:
-      fields = list( result[ 'Value' ][0] )
-      values = result[ 'Value' ][1]
-      for record in values:
-        recordSetup = record[0]
-        if recordSetup not in dsClients:
-          dsClients[ recordSetup ] = DataStoreClient( setup = recordSetup )
-        record = record[1:]
-        for FV in self.__summaryDefinedFields:
-          rD = { FV[0] : FV[1] }
-        for iP in range( len( self.__summaryKeyFieldsMapping ) ):
-          fieldName = self.__summaryKeyFieldsMapping[iP]
-          rD[ fieldName ] = record[iP]
-        record = record[ len( self.__summaryKeyFieldsMapping ): ]
-        for iP in range( len( self.__summaryValueFieldsMapping ) ):
-          rD[ self.__summaryValueFieldsMapping[iP] ] = int( record[iP] )
-        acWMS = WMSHistory()
-        acWMS.setStartTime( now )
-        acWMS.setEndTime( now )
-        acWMS.setValuesFromDict( rD )
-        retVal =  acWMS.checkValues()
-        if not retVal[ 'OK' ]:
-          gLogger.error( "Invalid accounting record ", "%s -> %s" % ( retVal[ 'Message' ], rD ) )
-        else:
-          dsClients[ recordSetup ].addRegister( acWMS )
-      for setup in dsClients:
-        result = dsClients[ setup ].commit()
-        if not result[ 'OK' ]:
-          gLogger.error( "Couldn't commit wms history for setup %s"  % setup, result[ 'Message' ] )
-
-
-
-
-
-
