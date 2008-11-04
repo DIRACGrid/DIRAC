@@ -1,17 +1,17 @@
--- $Header $
+-- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/SandboxDB.sql,v 1.4 2008/11/04 11:36:06 atsareg Exp $
 
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 --
 --  Schema definition for the SandboxDB database - containing the job status
 --  history ( logging ) information
 ---
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 
 DROP DATABASE IF EXISTS SandboxDB;
 
 CREATE DATABASE SandboxDB;
 
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 -- Database owner definition
 
 USE mysql;
@@ -26,23 +26,51 @@ GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON SandboxDB.* T
 
 FLUSH PRIVILEGES;
 
-------------------------------------------------------------------------------- 
+-- -----------------------------------------------------------------------------
 USE SandboxDB;
 
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS InputSandbox;
 CREATE TABLE InputSandbox (
     JobID INTEGER NOT NULL,
     FileName VARCHAR(255) NOT NULL,
     FileBody LONGBLOB NOT NULL,
+    FileLink VARCHAR(255),
+    UploadDate DATETIME,
+    RetrieveDate DATETIME,
     PRIMARY KEY (JobID,FileName)
 ) TYPE=MyISAM MAX_ROWS=150000 AVG_ROW_LENGTH=150000;
 
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS OutputSandbox;
 CREATE TABLE OutputSandbox (
     JobID INTEGER NOT NULL,
     FileName VARCHAR(255) NOT NULL,
     FileBody LONGBLOB NOT NULL,
+    FileLink VARCHAR(255),
+    UploadDate DATETIME,
+    RetrieveDate DATETIME,
     PRIMARY KEY (JobID,FileName)
 ) TYPE=MyISAM MAX_ROWS=150000 AVG_ROW_LENGTH=150000;
+
+-- ------------------------------------------------------------------------------
+DROP TABLE IF EXISTS OutputSandboxPartitions;
+CREATE TABLE OutputSandboxPartitions (
+    PartID INTEGER NOT NULL AUTO_INCREMENT,
+    CreationDate DATETIME,
+    LastUpdate DATETIME,
+    DataSize INTEGER NOT NULL DEFAULT 0,
+    TableSize INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (PartID)
+);
+
+-- ------------------------------------------------------------------------------
+DROP TABLE IF EXISTS InputSandboxPartitions;
+CREATE TABLE InputSandboxPartitions (
+    PartID INTEGER NOT NULL AUTO_INCREMENT,
+    CreationDate DATETIME,
+    LastUpdate DATETIME,
+    DataSize INTEGER NOT NULL DEFAULT 0,
+    TableSize INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (PartID)
+);
