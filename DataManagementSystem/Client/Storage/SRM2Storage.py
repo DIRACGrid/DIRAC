@@ -65,7 +65,7 @@ class SRM2Storage(StorageBase):
     self.timeout = 100
     self.long_timeout = 1200
     self.fileTimeout =  gConfig.getValue('/Resources/StorageElements/FileTimeout',30)
-    self.filesPerCall = 20
+    self.filesPerCall = gConfig.getValue('/Resources/StorageElements/FilesPerCall',20)
 
     # setting some variables for use with lcg_utils
     self.nobdii = 1
