@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobManagerHandler.py,v 1.27 2008/09/15 15:07:12 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobManagerHandler.py,v 1.28 2008/11/07 15:22:01 atsareg Exp $
 ########################################################################
 
 """ JobManagerHandler is the implementation of the JobManager service
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: JobManagerHandler.py,v 1.27 2008/09/15 15:07:12 atsareg Exp $"
+__RCSID__ = "$Id: JobManagerHandler.py,v 1.28 2008/11/07 15:22:01 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -205,6 +205,12 @@ class JobManagerHandler( RequestHandler ):
         bad_ids.append(jobID)
       else:
         good_ids.append(jobID)
+      result = gJobDB.deleteJobFromQueue(jobID)
+      if not result['OK']:
+        gLogger.warn('Failed to delete job from the TaskQueue (old)')
+      result = gtaskQueueDB.deleteJob(jobID)
+      if not result['OK']:
+        gLogger.warn('Failed to delete job from the TaskQueue')
 
     if invalidJobList or nonauthJobList:
       result = S_ERROR('Some jobs failed deletion')
@@ -246,6 +252,12 @@ class JobManagerHandler( RequestHandler ):
         result = gJobDB.setJobStatus(jobID,'Killed','Marked for termination')
         if not result['OK']:
           gLogger.warn('Failed to set job status')
+        result = gJobDB.deleteJobFromQueue(jobID)
+        if not result['OK']:
+          gLogger.warn('Failed to delete job from the TaskQueue (old)')
+        result = gtaskQueueDB.deleteJob(jobID)
+        if not result['OK']:
+          gLogger.warn('Failed to delete job from the TaskQueue')
 
     if invalidJobList or nonauthJobList or bad_ids:
       result = S_ERROR('Some jobs failed deletion')
