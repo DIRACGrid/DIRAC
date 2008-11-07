@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.49 2008/10/22 11:21:14 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.50 2008/11/07 15:58:32 paterson Exp $
 # File :   DiracProduction.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are to be documented with example usage.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.49 2008/10/22 11:21:14 paterson Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.50 2008/11/07 15:58:32 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 import pprint
@@ -1035,8 +1035,8 @@ class DiracProduction:
     else:
       lfnRoot = getLFNRoot('',wfType,wfConfigVersion)
 
-    if not lfnRoot or not fileTupleList:
-      return S_ERROR('Could not create LFN(s)')
+    if not lfnRoot:
+      return S_ERROR('LFN root could not be constructed')
 
     #Get all LFN(s) to both output data and BK lists at this point (fine for BK)
     outputData = []
@@ -1056,19 +1056,26 @@ class DiracProduction:
     #Strip output data according to file mask
     if wfMask:
       newOutputData = []
+      newBKLFNs = []
       for od in outputData:
         for type in wfMask:
           if re.search('.%s$' %type,od):
             newOutputData.append(od)
+      for bk in bkLFNs:
+        for type in wfMask:
+          if re.search('.%s$' %type,bk):
+            newBKLFNs.append()
       outputData = newOutputData
+      bkLFNs = newBKLFNs
 
     if not outputData:
-      return S_ERROR('No output LFN(s) constructed')
-
-    self.log.verbose('Created the following output data LFN(s):\n%s' %(string.join(outputData,'\n')))
+      self.log.info('No output data LFN(s) constructed')
+    else:
+      self.log.verbose('Created the following output data LFN(s):\n%s' %(string.join(outputData,'\n')))
     self.log.verbose('Log file path is:\n%s' %logFilePath)
     self.log.verbose('Log target path is:\n%s' %logTargetPath)
-    self.log.verbose('BookkeepingLFN(s) are:\n%s' %(string.join(bkLFNs,'\n')))
+    if bkLFNs:
+      self.log.verbose('BookkeepingLFN(s) are:\n%s' %(string.join(bkLFNs,'\n')))
     jobOutputs = {'ProductionOutputData':outputData,'LogFilePath':logFilePath,'LogTargetPath':logTargetPath,'BookkeeepingLFNs':bkLFNs}
     return S_OK(jobOutputs)
 
