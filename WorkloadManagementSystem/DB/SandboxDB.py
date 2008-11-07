@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/SandboxDB.py,v 1.12 2008/11/04 11:26:37 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/SandboxDB.py,v 1.13 2008/11/07 11:10:07 atsareg Exp $
 ########################################################################
 """ SandboxDB class is a simple storage using MySQL as a container for
     relatively small sandbox files. The file size is limited to 16MB.
@@ -10,7 +10,7 @@
     getWMSTimeStamps()
 """
 
-__RCSID__ = "$Id: SandboxDB.py,v 1.12 2008/11/04 11:26:37 atsareg Exp $"
+__RCSID__ = "$Id: SandboxDB.py,v 1.13 2008/11/07 11:10:07 atsareg Exp $"
 
 import re, os, sys, threading
 import time, datetime
@@ -30,7 +30,7 @@ class SandboxDB(DB):
     DB.__init__(self,sandbox_type,'WorkloadManagement/SandboxDB',maxQueueSize)
 
     self.maxSize = gConfig.getValue( self.cs_path+'/MaxSandboxSize', 16 )
-    self.maxPartitionSize = gConfig.getValue( self.cs_path+'/MaxPartitionSize', 5 )
+    self.maxPartitionSize = gConfig.getValue( self.cs_path+'/MaxPartitionSize', 2 )
     self.maxPartitionSize *= 1024*1024*1024 # in GBs
 
     self.maxPartitionSize = 15000000
@@ -54,17 +54,17 @@ class SandboxDB(DB):
                      (fileSize/1024./1024.,filename))
 
     # Check that the file does not exist already
-    req = "SELECT FileName,FileLink FROM %s WHERE JobID=%d AND FileName='%s'" % \
+    req = "SELECT FileName,FileLink,Partition FROM %s WHERE JobID=%d AND FileName='%s'" % \
           (sandbox,int(jobID),filename)
     result = self._query(req)
     if not result['OK']:
       return result
     if len(result['Value']) > 0:
-      partTable = None
-      partition = result['Value'][0][1]
-      if partition.find('part') == 0:
-        partTable = partition[5:].split('/')[1]
-        fJobID = partition[5:].split('/')[2] 
+      fileLink = result['Value'][0][1]
+      partTable = result['Value'][0][2]
+      fJobID = 0
+      if fileLink and fileLink.find('part') == 0:
+        fJobID = fileLink[5:].split('/')[2] 
       # Remove the already existing file - overwrite
       gLogger.warn('Overwriting file %s for job %d' % (filename,int(jobID)))
       req = "DELETE FROM %s WHERE JobID=%d AND FileName='%s'" % \
@@ -81,8 +81,8 @@ class SandboxDB(DB):
 
     #inFields = ['JobID','FileName','FileBody','FileLink','UploadDate']
     #inValues = [jobID,filename,'','part:/%s/%d/%s' % (pTable,jobID,filename),Time.dateTime()]
-    req = "INSERT INTO %s (JobID,FileName,FileLink,UploadDate) VALUES (%d,'%s','%s',UTC_TIMESTAMP())" % \
-          (sandbox,jobID,filename,'part:/%s/%d/%s' % (pTable,jobID,filename))
+    req = "INSERT INTO %s (JobID,FileName,FileSize,Partition,UploadDate) VALUES (%d,'%s',%d,'%s',UTC_TIMESTAMP())" % \
+          (sandbox,jobID,filename,fileSize,pTable)
     #result = self._insert(sandbox,inFields,inValues)
     result = self._update(req)
     if not result['OK']:
@@ -155,11 +155,12 @@ class SandboxDB(DB):
       return result
 
     partID = 0
+    dataSize = 0
+    tableSize = 0
     if result['Value']:
       partID = int(result['Value'][0][0])
       dataSize = int(result['Value'][0][1])
       tableSize = int(result['Value'][0][2])
-
     result = S_OK(partID)
     result['DataSize'] = dataSize
     result['TableSize'] = tableSize
@@ -238,7 +239,7 @@ class SandboxDB(DB):
         is given with its string body
     """
 
-    req = "SELECT FileBody,FileLink FROM %s WHERE JobID=%d AND FileName='%s'" % \
+    req = "SELECT FileBody,FileLink,Partition FROM %s WHERE JobID=%d AND FileName='%s'" % \
           (sandbox, int(jobID), filename)
 
     result = self._query(req)
@@ -248,8 +249,10 @@ class SandboxDB(DB):
       return S_ERROR('Sandbox file not found')
 
     body = result['Value'][0][0]
-    partition = None
+    partition = result['Value'][0][2]
     fileLink = result['Value'][0][1]
+    fJobID = jobID
+    fname = filename
     if fileLink:
       if fileLink.find('part') == 0:
         dummy,partition,fJobID,fname = fileLink[5:].split('/') 
@@ -291,11 +294,51 @@ class SandboxDB(DB):
     return S_OK(fileList)
 
 #############################################################################
+  def getSandboxStats(self,sandbox):
+    """ Get sandbox statistics
+    """
+
+    req = "SELECT SUM(DataSize),SUM(TableSize) FROM %sPartitions" % sandbox
+    result = self._query(req)
+    if not result['OK']:
+      return result
+    dataSize = int(result['Value'][0][0])
+    tableSize = int(result['Value'][0][1])
+
+    req = "SELECT COUNT(PartID) FROM %sPartitions" % sandbox
+    result = self._query(req)
+    if not result['OK']:
+      return result
+    nParts = result['Value'][0][0]
+
+    req = "SELECT COUNT(JobID) FROM %s WHERE FileSize > 0" % sandbox
+    result = self._query(req)
+    if not result['OK']:
+      return result
+    nFiles = result['Value'][0][0]
+    req = "SELECT COUNT(JobID) FROM %s" % sandbox
+    result = self._query(req)
+    if not result['OK']:
+      return result
+    nEntries = result['Value'][0][0]
+    resultDict = {}
+    resultDict['DataSize'] = dataSize
+    resultDict['OnDiskSize'] = tableSize
+    resultDict['NumberOfFiles'] = nFiles
+    resultDict['NumberOfLinks'] = nEntries - nFiles
+    resultDict['NumberOfPartitions'] = nParts
+    resultDict['MaxPartitionSize'] = self.maxPartitionSize
+
+    print resultDict
+
+    return S_OK(resultDict)
+
+#############################################################################
   def removeJob(self,jobID,sandbox):
     """ Remove all the files belonging to the given job
     """
 
-    req = "SELECT FileName,FileLink FROM %s WHERE JobID=%d" % (sandbox,int(jobID))
+    req = "SELECT FileName,FileLink,Partition FROM %s WHERE JobID=%d" % (sandbox,int(jobID))
     result = self._query(req)
     if not result['OK']:
       return result
@@ -303,14 +346,21 @@ class SandboxDB(DB):
     if not result['Value']:
       return S_OK()
 
-    for fname,flink in result['Value']:
-      if flink.find('part') == 0:
-        dummy,pTable,jID,fname = flink[5:].split('/')
+    for fname,flink,partition in result['Value']:
+      if partition:
         req = "DELETE FROM %s WHERE JobID=%d" % (partition,int(jobID))
         result = self._update(req)
         if not result['OK']:
           gLogger.warn('Failed to remove files for job %d' % jobID)
-          return result
+          return result 
+      if flink and link.find('part') == 0:
+        dummy,pTable,jID,fname = flink[5:].split('/')
+        if jID == jobID:
+          req = "DELETE FROM %s WHERE JobID=%d" % (partition,int(jobID))
+          result = self._update(req)
+          if not result['OK']:
+            gLogger.warn('Failed to remove files for job %d' % jobID)
+            return result
 
     req = "DELETE FROM %s WHERE JobID=%d" % (sandbox,int(jobID))
     result = self._update(req)

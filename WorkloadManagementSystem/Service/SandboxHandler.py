@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: SandboxHandler.py,v 1.11 2008/11/04 11:25:50 atsareg Exp $
+# $Id: SandboxHandler.py,v 1.12 2008/11/07 11:10:07 atsareg Exp $
 ########################################################################
 
 """ SandboxHandler is the implementation of the Sandbox service
@@ -12,7 +12,7 @@
 
 """
 
-__RCSID__ = "$Id: SandboxHandler.py,v 1.11 2008/11/04 11:25:50 atsareg Exp $"
+__RCSID__ = "$Id: SandboxHandler.py,v 1.12 2008/11/07 11:10:07 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -163,5 +163,10 @@ class SandboxHandler(RequestHandler):
 
     return sandboxDB.removeSandbox(jobID,fname,sandbox_type)
 
-
+  types_getSandboxStats = []
+  def export_getSandboxStats(self):
+    """ Get sandbox statistics
+    """
+    result = sandboxDB.getSandboxStats(sandbox_type)
+    return result
 
