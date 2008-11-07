@@ -1,4 +1,4 @@
--- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.sql,v 1.12 2008/07/17 16:55:50 rgracian Exp $
+-- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.sql,v 1.13 2008/11/07 15:55:48 acasajus Exp $
 
 --------------------------------------------------------------------------------
 --
@@ -49,14 +49,14 @@ CREATE TABLE PilotAgents (
     ParentID INTEGER NOT NULL DEFAULT 0,
     PRIMARY KEY (PilotID),
     INDEX (PilotJobReference)
-);
+) ENGINE = InnoDB;
 
 DROP TABLE IF EXISTS JobToPilotMapping;
 CREATE TABLE JobToPilotMapping (
     PilotID INTEGER NOT NULL,
     JobID INTEGER NOT NULL,
     StartTime DATETIME NOT NULL
-);
+) ENGINE = InnoDB;
 
 DROP TABLE IF EXISTS PilotOutput;
 CREATE TABLE PilotOutput (
