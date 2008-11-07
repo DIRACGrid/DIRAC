@@ -1,4 +1,4 @@
--- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.sql,v 1.16 2008/09/14 21:51:11 atsareg Exp $
+-- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.sql,v 1.17 2008/11/07 11:32:34 rgracian Exp $
 
 --------------------------------------------------------------------------------
 --
@@ -76,7 +76,7 @@ CREATE TABLE Jobs (
     RetrievedFlag ENUM ('True','False') NOT NULL DEFAULT 'False',
     AccountedFlag ENUM ('True','False','Failed') NOT NULL DEFAULT 'False',
     PRIMARY KEY (JobID)
-);
+) ENGINE = InnoDB;
 
 --------------------------------------------------------------------------------
 DROP TABLE IF EXISTS JobJDLs;
@@ -118,7 +118,7 @@ CREATE TABLE JobParameters (
     Name VARCHAR(100) NOT NULL,
     Value BLOB NOT NULL,
     PRIMARY KEY(JobID, Name)
-);
+) ENGINE = InnoDB;
 
 --------------------------------------------------------------------------------
 DROP TABLE IF EXISTS OptimizerParameters;
