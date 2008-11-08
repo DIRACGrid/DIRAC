@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransferDB.py,v 1.32 2008/09/26 13:39:09 acsmith Exp $
+# $Id: TransferDB.py,v 1.33 2008/11/08 19:00:34 acsmith Exp $
 ########################################################################
 
 """ RequestDB is a front end to the Request Database.
@@ -9,7 +9,7 @@ from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities.List import randomize,stringListToString,intListToString
 import threading,types,string,time,datetime
 
-__RCSID__ = "$Id: TransferDB.py,v 1.32 2008/09/26 13:39:09 acsmith Exp $"
+__RCSID__ = "$Id: TransferDB.py,v 1.33 2008/11/08 19:00:34 acsmith Exp $"
 
 MAGIC_EPOC_NUMBER = 1270000000
 
@@ -291,21 +291,21 @@ class TransferDB(DB):
       return S_ERROR('%s\n%s' % (err,res['Message']))
     return res
 
-  def updateCompletedChannelStatus(self,channelID,fileID):
+  def updateCompletedChannelStatus(self,channelID,fileIDs):
     time_order = self.__getFineTime()
-    req = "UPDATE Channel SET Status = 'Done',LastUpdate=UTC_TIMESTAMP(),LastUpdateTimeOrder = %s, CompletionTime=UTC_TIMESTAMP() WHERE FileID=%s AND ChannelID=%s;" % (time_order,fileID,channelID)
+    req = "UPDATE Channel SET Status = 'Done',LastUpdate=UTC_TIMESTAMP(),LastUpdateTimeOrder = %s, CompletionTime=UTC_TIMESTAMP() WHERE FileID IN (%s) AND ChannelID = %s;" % (time_order,intListToString(fileIDs),channelID)
     res = self._update(req)
     if not res['OK']:
-      err = 'TransferDB._updateCompletedChannelStatus: Failed to update File %s from Channel %s.' % (fileID,channelID)
+      err = 'TransferDB._updateCompletedChannelStatus: Failed to update %s files from Channel %s.' % (len(fileIDs),channelID)
       return S_ERROR('%s\n%s' % (err,res['Message']))
     return res
 
-  def resetFileChannelStatus(self,channelID,fileID):
+  def resetFileChannelStatus(self,channelID,fileIDs):
     time_order = self.__getFineTime()
-    req = "UPDATE Channel SET Status = 'Waiting',LastUpdate=UTC_TIMESTAMP(),LastUpdateTimeOrder = %s,Retries=Retries+1 WHERE FileID=%s AND ChannelID=%s;" % (time_order,fileID,channelID)
+    req = "UPDATE Channel SET Status = 'Waiting',LastUpdate=UTC_TIMESTAMP(),LastUpdateTimeOrder = %s, Retries=Retries+1 WHERE FileID IN (%s) AND ChannelID = %s;" % (time_order,intListToString(fileIDs),channelID)
     res = self._update(req)
     if not res['OK']:
-      err = 'TransferDB._resetFileChannelStatus: Failed to reset File %s from Channel %s.' % (fileID,channelID)
+      err = 'TransferDB._resetFileChannelStatus: Failed to reset %s files from Channel %s.' % (len(fileIDs),channelID)
       return S_ERROR('%s\n%s' % (err,res['Message']))
     return res
 
@@ -326,10 +326,15 @@ class TransferDB(DB):
     return res
 
   def setFileChannelAttribute(self,channelID,fileID,attribute,attrValue):
-    req = "UPDATE Channel SET %s = '%s' WHERE ChannelID = %s and FileID = %s;" % (attribute,attrValue,channelID,fileID)
+    if type(fileID) == types.ListType:
+      fileIDs = fileID
+    else:
+      fileIDs = [fileID]
+    time_order = self.__getFineTime()
+    req = "UPDATE Channel SET %s = '%s',LastUpdate=UTC_TIMESTAMP(),LastUpdateTimeOrder = %s WHERE ChannelID = %s and FileID IN (%s);" % (attribute,attrValue,time_order,channelID,intListToString(fileIDs))
     res = self._update(req)
     if not res['OK']:
-      err = 'TransferDB._setFileChannelAttribute: Failed to set %s to %s for File %s on Channel %s.' % (attribute,attrValue,fileID,channelID)
+      err = 'TransferDB._setFileChannelAttribute: Failed to set %s to %s for %s files on Channel %s.' % (attribute,attrValue,len(fileIDs),channelID)
       return S_ERROR('%s\n%s' % (err,res['Message']))
     return res
 
@@ -342,7 +347,7 @@ class TransferDB(DB):
     if not res['Value']:
       return S_OK()
     spaceToken = res['Value'][0][0]
-    req = "SELECT FileID,SourceSURL,TargetSURL,FileSize FROM Channel WHERE ChannelID = %s AND Status = 'Waiting' AND SpaceToken = '%s' ORDER BY LastUpdateTimeOrder LIMIT %s;" % (channelID,spaceToken,numberOfFiles)
+    req = "SELECT c.FileID,c.SourceSURL,c.TargetSURL,c.FileSize,f.LFN FROM Files as f, Channel as c WHERE c.ChannelID = %s AND c.FileID=f.FileID AND c.Status = 'Waiting' AND c.SpaceToken = '%s' ORDER BY c.LastUpdateTimeOrder LIMIT %s;" % (channelID,spaceToken,numberOfFiles)
     res = self._query(req)
     if not res['OK']:
       err = "TransferDB.getFilesForChannel: Failed to get files for Channel %s." % channelID
@@ -351,16 +356,7 @@ class TransferDB(DB):
       return S_OK()
     resDict = {'SpaceToken':spaceToken}
     files = []
-    for fileID,sourceSURL,targetSURL,size in res['Value']:
-      req = "SELECT LFN from Files WHERE FileID = %s;" % fileID
-      lfnres = self._query(req)
-      if not lfnres['OK']:
-        err = "TransferDB.getFilesForChannel: Failed to get LFN for File %s." % fileID
-        return S_ERROR('%s\n%s' % (err,lfnres['Message']))
-      if not lfnres['Value']:
-        err = "TransferDB.getFilesForChannel: Failed to get LFN for File %s. Does not exist in the Files table." % fileID
-        return S_ERROR(err)
-      lfn = lfnres['Value'][0][0]
+    for fileID,sourceSURL,targetSURL,size,lfn in res['Value']:
       files.append({'FileID':fileID,'SourceSURL':sourceSURL,'TargetSURL':targetSURL,'LFN':lfn,'Size':size})
     resDict['Files'] = files
     return S_OK(resDict)
@@ -482,7 +478,7 @@ class TransferDB(DB):
   # These are the methods for managing the FileToFTS table
 
   def getFTSReqLFNs(self,ftsReqID):
-    req = "SELECT FileID,LFN FROM Files WHERE FileID IN (SELECT FileID from FileToFTS WHERE FTSReqID = %s);" % ftsReqID
+    req = "SELECT ftf.FileID,f.LFN from FileToFTS as ftf, Files as f WHERE ftf.FTSReqID = %s AND ftf.FileID=f.FileID;" % ftsReqID
     res = self._query(req)
     if not res['OK']:
       err = "TransferDB._getFTSReqLFNs: Failed to get LFNs for FTSReq %s." % ftsReqID
@@ -495,9 +491,9 @@ class TransferDB(DB):
       files[lfn] = fileID
     return S_OK(files)
 
-  def setFTSReqFiles(self,ftsReqID,fileIDs,channelID):
-    for fileID in fileIDs:
-      req = "INSERT INTO FileToFTS (FTSReqID,FileID,ChannelID,SubmissionTime) VALUES (%s,%s,%s,UTC_TIMESTAMP());" % (ftsReqID,fileID,channelID)
+  def setFTSReqFiles(self,ftsReqID,channelID,fileAttributes):
+    for fileID,fileSize in fileAttributes:
+      req = "INSERT INTO FileToFTS (FTSReqID,FileID,ChannelID,SubmissionTime,FileSize) VALUES (%s,%s,%s,UTC_TIMESTAMP(),%s);" % (ftsReqID,fileID,channelID,fileSize)
       res = self._update(req)
       if not res['OK']:
         err = "TransferDB._setFTSReqFiles: Failed to set File %s for FTSReq %s." % (fileID,ftsReqID)
@@ -532,6 +528,15 @@ class TransferDB(DB):
     if not res['OK']:
       err = "TransferDB._removeFilesFromFTSReq: Failed to remove files for FTSReq %s." % ftsReqID
       return S_ERROR('%s\n%s' % (err,res['Message']))
+    return res
+
+  def setFileToFTSFileAttributes(self,ftsReqID,channelID,fileAttributeTuples):
+    for fileID,status,reason,retries,transferTime in fileAttributeTuples:
+      req = "UPDATE FileToFTS SET Status = '%s', Duration = %s, Reason = '%s', Retries = %s, TerminalTime = UTC_TIMESTAMP() WHERE FileID = %s AND FTSReqID = %s AND ChannelID = %s;" % (status,transferTime,reason,retries,fileID,ftsReqID,channelID)
+      res = self._update(req)
+      if not res['OK']:
+        err = "TransferDB._setFileToFTSFileAttributes: Failed to set file attributes for FTSReq %s." % ftsReqID
+        return S_ERROR('%s\n%s' % (err,res['Message']))
     return res
 
   def setFileToFTSFileAttribute(self,ftsReqID,fileID,attribute,attrValue):
@@ -679,11 +684,11 @@ class TransferDB(DB):
       tuples.append(tuple)
     return S_OK(tuples)
 
-  def setRegistrationWaiting(self,channelID,fileID):
-    req = "UPDATE FileToCat SET Status='Waiting' WHERE FileID=%s AND ChannelID=%s AND Status='Executing';" % (fileID,channelID)
+  def setRegistrationWaiting(self,channelID,fileIDs):
+    req = "UPDATE FileToCat SET Status='Waiting' WHERE FileID IN (%s) AND ChannelID=%s AND Status='Executing';" % (intListToString(fileIDs),channelID)
     res = self._update(req)
     if not res['OK']:
-      err = "TransferDB._setRegistrationWaiting: Failed to update %s status." % fileID
+      err = "TransferDB._setRegistrationWaiting: Failed to update %s files status." % len(fileIDs)
       return S_ERROR(err)
     return S_OK()
 
@@ -1017,5 +1022,3 @@ class TransferDB(DB):
       return result
     attr_list = [ x[0] for x in result['Value'] ]
     return S_OK(attr_list)
-
-
