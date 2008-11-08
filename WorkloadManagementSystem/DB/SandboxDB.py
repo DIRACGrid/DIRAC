@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/SandboxDB.py,v 1.13 2008/11/07 11:10:07 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/SandboxDB.py,v 1.14 2008/11/08 13:56:55 atsareg Exp $
 ########################################################################
 """ SandboxDB class is a simple storage using MySQL as a container for
     relatively small sandbox files. The file size is limited to 16MB.
@@ -10,7 +10,7 @@
     getWMSTimeStamps()
 """
 
-__RCSID__ = "$Id: SandboxDB.py,v 1.13 2008/11/07 11:10:07 atsareg Exp $"
+__RCSID__ = "$Id: SandboxDB.py,v 1.14 2008/11/08 13:56:55 atsareg Exp $"
 
 import re, os, sys, threading
 import time, datetime
@@ -32,8 +32,6 @@ class SandboxDB(DB):
     self.maxSize = gConfig.getValue( self.cs_path+'/MaxSandboxSize', 16 )
     self.maxPartitionSize = gConfig.getValue( self.cs_path+'/MaxPartitionSize', 2 )
     self.maxPartitionSize *= 1024*1024*1024 # in GBs
-
-    self.maxPartitionSize = 15000000
 
     self.lock = threading.Lock()
 
@@ -64,7 +62,7 @@ class SandboxDB(DB):
       partTable = result['Value'][0][2]
       fJobID = 0
       if fileLink and fileLink.find('part') == 0:
-        fJobID = fileLink[5:].split('/')[2] 
+        fJobID = fileLink[5:].split('/')[2]
       # Remove the already existing file - overwrite
       gLogger.warn('Overwriting file %s for job %d' % (filename,int(jobID)))
       req = "DELETE FROM %s WHERE JobID=%d AND FileName='%s'" % \
@@ -79,11 +77,8 @@ class SandboxDB(DB):
         if not result['OK']:
           return result
 
-    #inFields = ['JobID','FileName','FileBody','FileLink','UploadDate']
-    #inValues = [jobID,filename,'','part:/%s/%d/%s' % (pTable,jobID,filename),Time.dateTime()]
     req = "INSERT INTO %s (JobID,FileName,FileSize,Partition,UploadDate) VALUES (%d,'%s',%d,'%s',UTC_TIMESTAMP())" % \
           (sandbox,jobID,filename,fileSize,pTable)
-    #result = self._insert(sandbox,inFields,inValues)
     result = self._update(req)
     if not result['OK']:
       return result
@@ -116,7 +111,7 @@ class SandboxDB(DB):
     partID = partition.split('_')[1]
     req = "UPDATE %sPartitions SET DataSize=%d, TableSize=%d, LastUpdate=UTC_TIMESTAMP() WHERE PartID=%d" % (sandbox,int(dataSize),int(tableSize),int(partID))
     result = self._update(req)
-    return result 
+    return result
 
   def __getTableSize(self,table):
     """ Get the table size in bytes
@@ -255,7 +250,7 @@ class SandboxDB(DB):
     fname = filename
     if fileLink:
       if fileLink.find('part') == 0:
-        dummy,partition,fJobID,fname = fileLink[5:].split('/') 
+        dummy,partition,fJobID,fname = fileLink[5:].split('/')
     if body and not partition:
       req = "UPDATE %s SET RetrieveDate=UTC_TIMESTAMP() WHERE JobID=%d AND FileName='%s'" % \
             (sandbox, int(jobID), filename)
@@ -352,7 +347,7 @@ class SandboxDB(DB):
         result = self._update(req)
         if not result['OK']:
           gLogger.warn('Failed to remove files for job %d' % jobID)
-          return result 
+          return result
       if flink and link.find('part') == 0:
         dummy,pTable,jID,fname = flink[5:].split('/')
         if jID == jobID:
