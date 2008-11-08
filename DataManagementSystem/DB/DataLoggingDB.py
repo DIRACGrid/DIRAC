@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/DB/DataLoggingDB.py,v 1.5 2008/07/08 11:18:40 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/DB/DataLoggingDB.py,v 1.6 2008/11/08 14:16:56 acsmith Exp $
 ########################################################################
 """ DataLoggingDB class is a front-end to the Data Logging Database.
     The following methods are provided
@@ -8,7 +8,7 @@
     getFileLoggingInfo()
 """
 
-__RCSID__ = "$Id: DataLoggingDB.py,v 1.5 2008/07/08 11:18:40 acsmith Exp $"
+__RCSID__ = "$Id: DataLoggingDB.py,v 1.6 2008/11/08 14:16:56 acsmith Exp $"
 
 import re, os, sys
 import time, datetime
@@ -16,7 +16,7 @@ from types import *
 
 from DIRAC              import gLogger,S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
-from DIRAC.Core.Base.DB import DB  
+from DIRAC.Core.Base.DB import DB
 MAGIC_EPOC_NUMBER = 1270000000
 
 #############################################################################
@@ -36,9 +36,7 @@ class DataLoggingDB(DB):
         as datetime.datetime object. If the time stamp is not provided the current
         UTC time is used.
     """
-
-    self.gLogger.info("Adding record for file "+lfn+": '"+status+"/"+minor+"' from "+source+" source")
-
+    self.gLogger.info('Entering records for %s lfns: %s/%s from source %s' % (len(lfns),status,minor,source))
     if not date:
       # Make the UTC datetime string and float
       _date = datetime.datetime.utcnow()
@@ -66,8 +64,10 @@ class DataLoggingDB(DB):
         epoc = time.mktime(_date.timetuple()) - MAGIC_EPOC_NUMBER
         time_order = round(epoc,3)
 
-    cmd = "INSERT INTO DataLoggingInfo (LFN, Status, MinorStatus, StatusTime, StatusTimeOrder, Source) " + \
-          "VALUES ('%s','%s','%s','%s',%f,'%s')" %  (lfn,status,minor,str(_date),time_order,source)
+    cmd = "INSERT INTO DataLoggingInfo (LFN, Status, MinorStatus, StatusTime, StatusTimeOrder, Source) VALUES"
+    for lfn in lfns:
+       cmd = "%s ('%s','%s','%s','%s',%f,'%s')" % (cmd,lfn,status,minor,str(_date),time_order,source)
+    cmd = "%s;" % cmd
     return self._update( cmd )
 
 #############################################################################
@@ -85,15 +85,15 @@ class DataLoggingDB(DB):
       return result
     if result['OK'] and not result['Value']:
       return S_ERROR('No Logging information for job %d' % int(jobID))
-      
+
     return_value = []
     for row in result['Value']:
       return_value.append((row[0],str(row[1]),row[2],row[3]))
-    return S_OK(return_value)    
+    return S_OK(return_value)
 
   def getUniqueStates(self):
     """ Returns the distinct staus from the data logging DB
-    """ 
+    """
     req = "SELECT DISTINCT Status FROM DataLoggingInfo;"
     res = self._query(req)
     if not res['OK']:
@@ -102,9 +102,9 @@ class DataLoggingDB(DB):
     for status in res['Value']:
       uniqueStatus.append(status[0])
     return S_OK(uniqueStatus)
-    
+
   def getStateDiff(self,state1,state2,fromTime='',endTime=''):
-    """ Get all the event time stamps for the supplied arguments 
+    """ Get all the event time stamps for the supplied arguments
     """
     req = "SELECT TIME_TO_SEC(TIMEDIFF(t2.StatusTime,t1.StatusTime)) FROM DataLoggingInfo AS t1, DataLoggingInfo AS t2 WHERE t2.LFN=t1.LFN AND t1.Status='%s' and t2.Status='%s'" % (state1,state2)
     cond = ''
@@ -117,7 +117,7 @@ class DataLoggingDB(DB):
 
     res = self._query(req)
     if not res['OK']:
-      return res   
+      return res
     timeDiffs = []
     for timeDiff in res['Value']:
       timeDiffs.append(timeDiff[0])

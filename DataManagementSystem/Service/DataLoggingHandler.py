@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: DataLoggingHandler.py,v 1.3 2008/02/23 17:33:07 acsmith Exp $
+# $Id: DataLoggingHandler.py,v 1.4 2008/11/08 14:18:34 acsmith Exp $
 ########################################################################
 
 """ DataLoggingHandler is the implementation of the Data Logging
@@ -12,7 +12,7 @@
 
 """
 
-__RCSID__ = "$Id: DataLoggingHandler.py,v 1.3 2008/02/23 17:33:07 acsmith Exp $"
+__RCSID__ = "$Id: DataLoggingHandler.py,v 1.4 2008/11/08 14:18:34 acsmith Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -57,11 +57,15 @@ def initializeDataLoggingHandler( serviceInfo ):
 class DataLoggingHandler( RequestHandler ):
 
   ###########################################################################
-  types_addFileRecord = [StringType,StringType,StringType,StringType,StringType]
+  types_addFileRecord = [[StringType,ListType],StringType,StringType,StringType,StringType]
   def export_addFileRecord(self,lfn,status,minor,date,source):
     """ Add a logging record for the given file
     """
-    result = logDB.addFileRecord(lfn,status,minor,date,source)
+    if type(lfn) == StringType:
+      lfns = [lfn]
+    else:
+      lfns = lfn
+    result = logDB.addFileRecord(lfns,status,minor,date,source)
     return result
 
   ###########################################################################
@@ -82,8 +86,8 @@ class DataLoggingHandler( RequestHandler ):
   types_plotView = [DictType]
   def export_plotView(self,paramsDict):
     """  Plot the view for the supplied parameters
-    """ 
-    
+    """
+
     startState = paramsDict['StartState']
     endState = paramsDict['EndState']
     startTime = ''
