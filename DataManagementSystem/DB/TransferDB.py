@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransferDB.py,v 1.33 2008/11/08 19:00:34 acsmith Exp $
+# $Id: TransferDB.py,v 1.34 2008/11/08 19:06:08 acsmith Exp $
 ########################################################################
 
 """ RequestDB is a front end to the Request Database.
@@ -9,7 +9,7 @@ from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities.List import randomize,stringListToString,intListToString
 import threading,types,string,time,datetime
 
-__RCSID__ = "$Id: TransferDB.py,v 1.33 2008/11/08 19:00:34 acsmith Exp $"
+__RCSID__ = "$Id: TransferDB.py,v 1.34 2008/11/08 19:06:08 acsmith Exp $"
 
 MAGIC_EPOC_NUMBER = 1270000000
 
@@ -685,7 +685,7 @@ class TransferDB(DB):
     return S_OK(tuples)
 
   def setRegistrationWaiting(self,channelID,fileIDs):
-    req = "UPDATE FileToCat SET Status='Waiting' WHERE FileID IN (%s) AND ChannelID=%s AND Status='Executing';" % (intListToString(fileIDs),channelID)
+    req = "UPDATE FileToCat SET Status='Waiting' WHERE ChannelID = %s AND Status = 'Executing' AND FileID IN (%s);" % (channelID,intListToString(fileIDs))
     res = self._update(req)
     if not res['OK']:
       err = "TransferDB._setRegistrationWaiting: Failed to update %s files status." % len(fileIDs)
