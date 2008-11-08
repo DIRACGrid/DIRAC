@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/DB/DataLoggingDB.py,v 1.7 2008/11/08 14:17:45 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/DB/DataLoggingDB.py,v 1.8 2008/11/08 14:29:16 acsmith Exp $
 ########################################################################
 """ DataLoggingDB class is a front-end to the Data Logging Database.
     The following methods are provided
@@ -8,7 +8,7 @@
     getFileLoggingInfo()
 """
 
-__RCSID__ = "$Id: DataLoggingDB.py,v 1.7 2008/11/08 14:17:45 acsmith Exp $"
+__RCSID__ = "$Id: DataLoggingDB.py,v 1.8 2008/11/08 14:29:16 acsmith Exp $"
 
 import re, os, sys
 import time, datetime
@@ -66,9 +66,10 @@ class DataLoggingDB(DB):
 
     cmd = "INSERT INTO DataLoggingInfo (LFN, Status, MinorStatus, StatusTime, StatusTimeOrder, Source) VALUES"
     for lfn in lfns:
-       cmd = "%s ('%s','%s','%s','%s',%f,'%s')" % (cmd,lfn,status,minor,str(_date),time_order,source)
+       cmd = "%s ('%s','%s','%s','%s',%f,'%s')," % (cmd,lfn,status,minor,str(_date),time_order,source)
+    cmd = cmd.rstrip(',')
     cmd = "%s;" % cmd
-    return self._update( cmd )
+    return self._update(cmd)
 
 #############################################################################
 
