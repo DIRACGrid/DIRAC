@@ -43,6 +43,7 @@ class FTSSubmit(Agent):
 
     #########################################################################
     #  Obtain the eligible channels for submission.
+    gLogger.info('Obtaining channels eligible for submission.')
     res = self.TransferDB.selectChannelsForSubmission(self.maxJobsPerChannel)
     if not res['OK']:
       gLogger.error("Failed to retrieve channels for submission.",res['Message'])
@@ -50,10 +51,11 @@ class FTSSubmit(Agent):
     elif not res['Value']:
       gLogger.info("FTSAgent: No channels eligable for submission.")
       return S_OK()
-    channelDicts = res['Value']    
+    channelDicts = res['Value']
+    gLogger.info('Found %s eligible channels.' % len(channelDicts))
 
     #########################################################################
-    # Submit to all the eligible waiting channels.            
+    # Submit to all the eligible waiting channels.
     i = 1
     for channelDict in channelDicts:
       infoStr = "\n\n##################################################################################\n\n"
@@ -89,8 +91,9 @@ class FTSSubmit(Agent):
     if not res['Value']:
       gLogger.info("FTSSubmit.submitTransfer: No files to found for channel.")
       return S_OK()
-
     filesDict = res['Value']
+    gLogger.info('Obtained %s files for channel' % len(filesDict['Files']))
+
     if filesDict.has_key('SpaceToken'):
       spaceToken = filesDict['SpaceToken']
       ftsRequest.setSpaceToken(spaceToken)
@@ -98,6 +101,7 @@ class FTSSubmit(Agent):
 
     #########################################################################
     #  Populate the FTS Request with the files.
+    gLogger.info('Populating the FTS request with file information')
     fileIDs = []
     totalSize = 0
     fileIDSizes = {}
@@ -113,6 +117,7 @@ class FTSSubmit(Agent):
 
     #########################################################################
     #  Submit the FTS request and retrieve the FTS GUID/Server
+    gLogger.info('Submitting the FTS request')
     res = ftsRequest.submit()
     if not res['OK']:
       errStr = "FTSAgent.%s" % res['Message']
@@ -137,6 +142,7 @@ class FTSSubmit(Agent):
       gLogger.error(errStr)
       return S_ERROR(errStr)
     ftsReqID = res['Value']
+    gLogger.info('Obtained FTS RequestID %s' % ftsReqID)
     res = self.TransferDB.setFTSReqAttribute(ftsReqID,'NumberOfFiles',len(fileIDs))
     if not res['OK']:
       errStr = "FTSAgent.%s" % res['Message']
@@ -156,21 +162,23 @@ class FTSSubmit(Agent):
 
     #########################################################################
     #  Insert the FileToFTS details and remove the files from the channel
-    res = self.TransferDB.setFTSReqFiles(ftsReqID,fileIDs,channelID)
+    gLogger.info('Setting the files as Executing in the Channel table')
+    res = self.TransferDB.setChannelFilesExecuting(channelID,fileIDs)
     if not res['OK']:
-      errStr = "FTSAgent.%s" % res['Message']
-      gLogger.error(errStr)
-      return S_ERROR(errStr)
+      gLogger.error('Failed to update the Channel tables for files.',res['Message'])
+
+    lfns = []
+    fileToFTSFileAttributes = []
     for file in files:
       lfn = file['LFN']
       fileID = file['FileID']
-      self.DataLog.addFileRecord(lfn,'FTSSubmit',str(ftsReqID),'','FTSSubmitAgent')
-      res = self.TransferDB.setFileToFTSFileAttribute(ftsReqID,fileID,'FileSize',fileIDSizes[fileID])
-      if not res['OK']:
-        errStr = "FTSAgent.%s" % res['Message']
-        gLogger.error(errStr)
-    res = self.TransferDB.setChannelFilesExecuting(channelID,fileIDs)
+      lfns.append(lfn)
+      fileToFTSFileAttributes.append((fileID,fileIDSizes[fileID]))
+
+    gLogger.info('Populating the FileToFTS table with file information')
+    res = self.TransferDB.setFTSReqFiles(ftsReqID,channelID,fileToFTSFileAttributes)
     if not res['OK']:
-      errStr = "FTSAgent.%s" % res['Message']
-      gLogger.error(errStr)
-      return S_ERROR(errStr)
+      gLogger.error('Failed to populate the FileToFTS table with files.')
+
+    gLogger.info('Updating the data logging information for files')
+    self.DataLog.addFileRecord(lfns,'FTSSubmit',str(ftsReqID),'','FTSSubmitAgent')
