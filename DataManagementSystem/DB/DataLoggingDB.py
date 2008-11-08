@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/DB/DataLoggingDB.py,v 1.6 2008/11/08 14:16:56 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/DB/DataLoggingDB.py,v 1.7 2008/11/08 14:17:45 acsmith Exp $
 ########################################################################
 """ DataLoggingDB class is a front-end to the Data Logging Database.
     The following methods are provided
@@ -8,7 +8,7 @@
     getFileLoggingInfo()
 """
 
-__RCSID__ = "$Id: DataLoggingDB.py,v 1.6 2008/11/08 14:16:56 acsmith Exp $"
+__RCSID__ = "$Id: DataLoggingDB.py,v 1.7 2008/11/08 14:17:45 acsmith Exp $"
 
 import re, os, sys
 import time, datetime
@@ -30,7 +30,7 @@ class DataLoggingDB(DB):
     self.gLogger = gLogger
 
 #############################################################################
-  def addFileRecord(self,lfn,status,minor='Unknown',date='',source='Unknown'):
+  def addFileRecord(self,lfns,status,minor='Unknown',date='',source='Unknown'):
     """ Add a new entry to the DataLoggingDB table. Optionaly the time stamp of the status can
         be provided in a form of a string in a format '%Y-%m-%d %H:%M:%S' or
         as datetime.datetime object. If the time stamp is not provided the current
