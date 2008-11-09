@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransferDB.py,v 1.34 2008/11/08 19:06:08 acsmith Exp $
+# $Id: TransferDB.py,v 1.35 2008/11/09 10:02:20 acsmith Exp $
 ########################################################################
 
 """ RequestDB is a front end to the Request Database.
@@ -9,7 +9,7 @@ from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities.List import randomize,stringListToString,intListToString
 import threading,types,string,time,datetime
 
-__RCSID__ = "$Id: TransferDB.py,v 1.34 2008/11/08 19:06:08 acsmith Exp $"
+__RCSID__ = "$Id: TransferDB.py,v 1.35 2008/11/09 10:02:20 acsmith Exp $"
 
 MAGIC_EPOC_NUMBER = 1270000000
 
@@ -478,7 +478,7 @@ class TransferDB(DB):
   # These are the methods for managing the FileToFTS table
 
   def getFTSReqLFNs(self,ftsReqID):
-    req = "SELECT ftf.FileID,f.LFN from FileToFTS as ftf, Files as f WHERE ftf.FTSReqID = %s AND ftf.FileID=f.FileID;" % ftsReqID
+    req = "SELECT ftf.FileID,f.LFN from FileToFTS as ftf LEFT JOIN Files as f ON (ftf.FileID=f.FileID) WHERE ftf.FTSReqID = %s;" % ftsReqID
     res = self._query(req)
     if not res['OK']:
       err = "TransferDB._getFTSReqLFNs: Failed to get LFNs for FTSReq %s." % ftsReqID
