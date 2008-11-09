@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.74 2008/10/08 12:33:22 rgracian Exp $
+# $Id: TransformationDB.py,v 1.75 2008/11/09 14:30:06 atsareg Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -32,7 +32,6 @@ class TransformationDB(DB):
     """ The standard constructor takes the database name (dbname) and the name of the
         configuration section (dbconfig)
     """
-    print 'TransDB:',dbname,dbconfig
     DB.__init__(self,dbname, dbconfig, maxQueueSize)
     self.lock = threading.Lock()
     self.dbname = dbname
@@ -352,7 +351,7 @@ class TransformationDB(DB):
         with a given status which is defined for the file replicas.
     """
 
-    print 'TransformationDB 1:',transName,status
+    #print 'TransformationDB 1:',transName,status
 
     transID = self.getTransformationID(transName)
     req = "SELECT FileID from T_%s WHERE Status='Unused';" % (transID)
@@ -396,7 +395,6 @@ class TransformationDB(DB):
       return res
     flist = []
     for lfn,status,jobid,usedse in res['Value']:
-      print lfn,status,jobid,usedse
       fdict = {}
       fdict['LFN'] = lfn
       fdict['Status'] = status
@@ -476,7 +474,7 @@ class TransformationDB(DB):
           continue
         for fileID,jobStatus in result['Value']:
           lfn = fileIDs[fileID]
-          resultDict[lfn][transID]['JobStatus'] = jobStatus 
+          resultDict[lfn][transID]['JobStatus'] = jobStatus
 
     return S_OK({'Successful':resultDict,'Failed':failedDict})
 
@@ -850,12 +848,10 @@ PRIMARY KEY (FileID)
         successful[lfn] = True
     if len(fileIDs.keys()) > 0:
       req = "DELETE Replicas FROM Replicas WHERE FileID IN (%s);" % intListToString(fileIDs.keys())
-      print req
       res = self._update(req)
       if not res['OK']:
         return S_ERROR("TransformationDB.removeFile: Failed to remove file replicas.")
       req = "DELETE FROM DataFiles WHERE FileID IN (%s);" % intListToString(fileIDs.keys())
-      print req
       res = self._update(req)
       if not res['OK']:
         return S_ERROR("TransformationDB.removeFile: Failed to remove files.")
@@ -871,7 +867,7 @@ PRIMARY KEY (FileID)
     fileTuples = []
     for lfn,pfn,se,master in replicaTuples:
       fileTuples.append((lfn,pfn,0,se,'IGNORED-GUID','IGNORED-CHECKSUM'))
-    print fileTuples
+    #print fileTuples
     res = self.addFile(fileTuples,force)
     return res
 
