@@ -16,8 +16,10 @@ CREATE TABLE Channels (
 DROP TABLE IF EXISTS Channel;
 CREATE TABLE Channel (
   ChannelID INTEGER NOT NULL,
+  INDEX(ChannelID),
   FileID INTEGER NOT NULL,
   Status VARCHAR(32) NOT NULL,
+  INDEX(Status),
   SourceSURL varchar(256)  NOT NULL,
   TargetSURL varchar(256)  NOT NULL,
   SpaceToken varchar(32)  NOT NULL,
@@ -35,7 +37,9 @@ DROP TABLE IF EXISTS FTSReq;
 CREATE TABLE FTSReq (
   FTSReqID INTEGER NOT NULL AUTO_INCREMENT,
   ChannelID INTEGER NOT NULL,
+  INDEX(ChannelID),
   Status varchar(32) DEFAULT 'Submitted',
+  INDEX(Status),
   FTSGUID varchar(64) NOT NULL,
   FTSServer varchar(255) NOT NULL,
   NumberOfFiles INTEGER DEFAULT 0,
@@ -51,7 +55,9 @@ CREATE TABLE FileToFTS (
   FileID INTEGER NOT NULL,
   FTSReqID varchar(64) NOT NULL,
   ChannelID INTEGER NOT NULL,
+  INDEX(ChannelID),
   Status varchar(32) DEFAULT 'Submitted',
+  INDEX(Status),
   Duration int(8) DEFAULT 0,
   Reason varchar(511),
   Retries int(8) DEFAULT 0,
@@ -72,10 +78,12 @@ DROP TABLE IF EXISTS FileToCat;
 CREATE TABLE FileToCat (
   FileID INTEGER NOT NULL,
   ChannelID INTEGER NOT NULL,
+  INDEX(ChannelID),
   LFN varchar(255) NOT NULL,
   PFN varchar(255) NOT NULL,
   SE  varchar(255) NOT NULL,
   Status varchar(255) NOT NULL DEFAULT 'Executing',
+  INDEX(Status),
   SubmitTime  datetime NOT NULL,
   CompleteTime datetime,
   PRIMARY KEY (FileID,ChannelID,Status)
