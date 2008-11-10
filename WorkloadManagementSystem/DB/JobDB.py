@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.111 2008/11/10 18:25:30 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.112 2008/11/10 22:27:44 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.111 2008/11/10 18:25:30 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.112 2008/11/10 22:27:44 atsareg Exp $"
 
 import re, os, sys, string, types
 import time, datetime
@@ -667,13 +667,19 @@ class JobDB(DB):
     if not result['OK']:
       return result
 
-    if status in JOB_FINAL_STATES:
-      req = "UPDATE Jobs SET EndExecTime=UTC_TIMESTAMP() WHERE JobID=%d AND EndExecTime IS NULL" % jobID
-      result = self._update(req)
-      if not result['OK']:
-        return result
-
     return S_OK()
+
+#############################################################################
+  def setEndExecTime(self,jobID,endDate=None):
+    """ Set EndExecTime time stamp
+    """
+
+    if endDate:
+      req = "UPDATE Jobs SET EndExecTime='%s' WHERE JobID=%d AND EndExecTime IS NULL" % (endDate,jobID)
+    else:
+      req = "UPDATE Jobs SET EndExecTime=UTC_TIMESTAMP() WHERE JobID=%d AND EndExecTime IS NULL" % jobID
+    result = self._update(req)
+    return result
 
 #############################################################################
   def setJobParameter(self,jobID,key,value):
