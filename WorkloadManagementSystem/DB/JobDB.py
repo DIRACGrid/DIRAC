@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.110 2008/11/10 14:13:59 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.111 2008/11/10 18:25:30 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.110 2008/11/10 14:13:59 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.111 2008/11/10 18:25:30 atsareg Exp $"
 
 import re, os, sys, string, types
 import time, datetime
@@ -64,6 +64,7 @@ from DIRAC.ConfigurationSystem.Client.Config   import gConfig
 from DIRAC.Core.Base.DB                        import DB
 
 DEBUG = 0
+JOB_FINAL_STATES = ['Done','Completed','Failed']
 
 #############################################################################
 class JobDB(DB):
@@ -443,7 +444,7 @@ class JobDB(DB):
 #############################################################################
   def getTimings(self,site,period=3600):
     """ Get CPU and wall clock times
-    """ 
+    """
 
     date = str(Time.dateTime() - datetime.timedelta(seconds=period))
     req = "SELECT SUM(Value) from JobParameters WHERE Name='TotalCPUTime(s)' and JobID in "
@@ -455,7 +456,7 @@ class JobDB(DB):
     if not cpu:
       cpu = 0.0
 
-    req = "SELECT SUM(Value) from JobParameters WHERE Name='WallClockTime(s)' and JobID in "    
+    req = "SELECT SUM(Value) from JobParameters WHERE Name='WallClockTime(s)' and JobID in "
     req += "( SELECT JobID from Jobs WHERE Site='%s' and EndExecTime > '%s' )" % (site,date)
     result = self._query(req)
     if not result['OK']:
@@ -665,6 +666,12 @@ class JobDB(DB):
     result = self.setJobAttributes(jobID,attrNames,attrValues,update=True)
     if not result['OK']:
       return result
+
+    if status in JOB_FINAL_STATES:
+      req = "UPDATE Jobs SET EndExecTime=UTC_TIMESTAMP() WHERE JobID=%d AND EndExecTime IS NULL" % jobID
+      result = self._update(req)
+      if not result['OK']:
+        return result
 
     return S_OK()
 
