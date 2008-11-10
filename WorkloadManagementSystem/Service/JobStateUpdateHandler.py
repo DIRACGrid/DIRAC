@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobStateUpdateHandler.py,v 1.27 2008/11/10 18:23:09 atsareg Exp $
+# $Id: JobStateUpdateHandler.py,v 1.28 2008/11/10 22:29:02 atsareg Exp $
 ########################################################################
 
 """ JobStateUpdateHandler is the implementation of the Job State updating
@@ -11,7 +11,7 @@
 
 """
 
-__RCSID__ = "$Id: JobStateUpdateHandler.py,v 1.27 2008/11/10 18:23:09 atsareg Exp $"
+__RCSID__ = "$Id: JobStateUpdateHandler.py,v 1.28 2008/11/10 22:29:02 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -22,6 +22,8 @@ from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 # This is a global instance of the JobDB class
 jobDB = False
 logDB = False
+
+JOB_FINAL_STATES = ['Done','Completed','Failed']
 
 def initializeJobStateUpdateHandler( serviceInfo ):
 
@@ -44,6 +46,9 @@ class JobStateUpdateHandler( RequestHandler ):
     result = jobDB.setJobStatus(jobID,status,minorStatus)
     if not result['OK']:
       return result
+
+    if status in JOB_FINAL_STATES:
+      result = self.setEndExecTime(jobID)
 
     result = jobDB.getJobAttributes(jobID, ['Status','MinorStatus'] )
     if not result['OK']:
@@ -73,11 +78,14 @@ class JobStateUpdateHandler( RequestHandler ):
     minor = ""
     application = ""
     appCounter  = ""
+    endDate = ''
 
     # Get the last status values
     for date in dates:
       if statusDict[date]['Status']:
         status = statusDict[date]['Status']
+        if status in JOB_FINAL_STATES:
+          endDate = date
       if statusDict[date]['MinorStatus']:
         minor = statusDict[date]['MinorStatus']
       if statusDict[date]['ApplicationStatus']:
@@ -102,6 +110,8 @@ class JobStateUpdateHandler( RequestHandler ):
     if not result['OK']:
       return result
 
+    if endDate:
+      result = self.setEndExecTime(jobID,endDate)
 
     # Update the JobLoggingDB records
     for date, sDict in statusDict.items():
