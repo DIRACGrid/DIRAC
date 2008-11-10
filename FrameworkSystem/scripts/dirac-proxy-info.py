@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/scripts/dirac-proxy-info.py,v 1.5 2008/11/10 14:56:27 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/scripts/dirac-proxy-info.py,v 1.6 2008/11/10 14:58:39 acasajus Exp $
 # File :   dirac-proxy-init.py
 # Author : Adrian Casajus
 ########################################################################
-__RCSID__   = "$Id: dirac-proxy-info.py,v 1.5 2008/11/10 14:56:27 acasajus Exp $"
-__VERSION__ = "$Revision: 1.5 $"
+__RCSID__   = "$Id: dirac-proxy-info.py,v 1.6 2008/11/10 14:58:39 acasajus Exp $"
+__VERSION__ = "$Revision: 1.6 $"
 
 import sys
 import os.path
@@ -58,7 +58,7 @@ params = Params()
 Script.registerSwitch( "f:", "file=", "File to use as user key", params.setProxyLocation )
 Script.registerSwitch( "i", "version", "Print version", params.showVersion )
 Script.registerSwitch( "n", "novoms", "Disable VOMS", params.disableVOMS )
-Script.registerSwitch( "v", "validcheck", "Return error if the proxy is invalid", params.validityCheck )
+Script.registerSwitch( "v", "checkvalid", "Return error if the proxy is invalid", params.validityCheck )
 Script.registerSwitch( "x", "nocs", "Disable CS", params.disableCS )
 Script.registerSwitch( "e", "steps", "Show steps info", params.showSteps )
 
