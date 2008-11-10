@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.50 2008/11/07 15:58:32 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.51 2008/11/10 12:40:54 paterson Exp $
 # File :   DiracProduction.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are to be documented with example usage.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.50 2008/11/07 15:58:32 paterson Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.51 2008/11/10 12:40:54 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 import pprint
@@ -1064,7 +1064,7 @@ class DiracProduction:
       for bk in bkLFNs:
         for type in wfMask:
           if re.search('.%s$' %type,bk):
-            newBKLFNs.append()
+            newBKLFNs.append(bk)
       outputData = newOutputData
       bkLFNs = newBKLFNs
 
