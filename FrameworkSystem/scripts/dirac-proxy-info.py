@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/scripts/dirac-proxy-info.py,v 1.4 2008/10/21 10:43:12 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/scripts/dirac-proxy-info.py,v 1.5 2008/11/10 14:56:27 acasajus Exp $
 # File :   dirac-proxy-init.py
 # Author : Adrian Casajus
 ########################################################################
-__RCSID__   = "$Id: dirac-proxy-info.py,v 1.4 2008/10/21 10:43:12 acasajus Exp $"
-__VERSION__ = "$Revision: 1.4 $"
+__RCSID__   = "$Id: dirac-proxy-info.py,v 1.5 2008/11/10 14:56:27 acasajus Exp $"
+__VERSION__ = "$Revision: 1.5 $"
 
 import sys
 import os.path
@@ -20,6 +20,7 @@ class Params:
   vomsEnabled = True
   csEnabled = True
   steps = False
+  checkValid = False
 
   def showVersion( self, arg ):
     print "Version:"
@@ -48,11 +49,16 @@ class Params:
     self.steps = True
     return DIRAC.S_OK()
 
+  def validityCheck( self, arg ):
+    self.checkValid = True
+    return DIRAC.S_OK()
+
 params = Params()
 
 Script.registerSwitch( "f:", "file=", "File to use as user key", params.setProxyLocation )
 Script.registerSwitch( "i", "version", "Print version", params.showVersion )
 Script.registerSwitch( "n", "novoms", "Disable VOMS", params.disableVOMS )
+Script.registerSwitch( "v", "validcheck", "Return error if the proxy is invalid", params.validityCheck )
 Script.registerSwitch( "x", "nocs", "Disable CS", params.disableCS )
 Script.registerSwitch( "e", "steps", "Show steps info", params.showSteps )
 
@@ -65,6 +71,7 @@ if params.csEnabled:
     print "Cannot contact CS to get user list"
 
 from DIRAC.Core.Security.Misc import *
+from DIRAC.Core.Security import CS, VOMS
 
 result = getProxyInfo( params.proxyLoc, not params.vomsEnabled )
 if not result[ 'OK' ]:
@@ -77,5 +84,31 @@ if params.steps:
   chain = infoDict[ 'chain' ]
   stepInfo = getProxyStepsInfo( chain )[ 'Value' ]
   print formatProxyStepsInfoAsString( stepInfo )
+
+def invalidProxy( msg ):
+  print "[INVALID] %s" % msg
+  sys.exit(1)
+
+
+if params.checkValid:
+  if infoDict[ 'secondsLeft' ] == 0:
+    invalidProxy( "Proxy is expired" )
+  if not infoDict[ 'validGroup' ]:
+    invalidProxy( "Group %s is not valid" % infoDict[ 'group' ] )
+  if infoDict[ 'hasVOMS' ]:
+    requiredVOMS = CS.getVOMSAttributeForGroup( infoDict[ 'group' ] )
+    if not infoDict[ 'VOMS' ]:
+      pinvalidProxy( "Unable to retrieve VOMS extension" )
+    if len( infoDict[ 'VOMS' ] ) > 1:
+      invalidProxy( "More than one voms attribute found" )
+    if requiredVOMS not in infoDict[ 'VOMS' ]:
+      invalidProxy( "Unexpected VOMS extension %s. Extension expected for DIRAC group is %s" % (
+                                                                                 infoDict[ 'VOMS' ][0],
+                                                                                 requiredVOMS ) )
+    result = VOMS.VOMS().getVOMSProxyInfo( infoDict[ 'chain' ], 'actime' )
+    if not result[ 'OK' ]:
+      invalidProxy( "Cannot determine life time of VOMS attributes: %s" % result[ 'Message' ] )
+    if int( result[ 'Value' ].strip() ) == 0:
+      invalidProxy( "VOMS attributes are expired" )
 
 sys.exit(0)
