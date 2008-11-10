@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: SandboxHandler.py,v 1.12 2008/11/07 11:10:07 atsareg Exp $
+# $Id: SandboxHandler.py,v 1.13 2008/11/10 23:33:14 atsareg Exp $
 ########################################################################
 
 """ SandboxHandler is the implementation of the Sandbox service
@@ -12,7 +12,7 @@
 
 """
 
-__RCSID__ = "$Id: SandboxHandler.py,v 1.12 2008/11/07 11:10:07 atsareg Exp $"
+__RCSID__ = "$Id: SandboxHandler.py,v 1.13 2008/11/10 23:33:14 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -79,15 +79,9 @@ class SandboxHandler(RequestHandler):
     else:
       return result
 
-
-    inFields = ['JobID','FileName','FileBody']
-    inValues = [jobID,fname,fileString]
-
-    result = sandboxDB._insert(sandbox_type,inFields,inValues)
-    if not result['OK']:
-      if result['Message'].find('Duplicate entry') != -1:
-        return S_ERROR('InputSandbox file %s for job %d already exists' % (fname,jobID))
+    result = sandboxDB.storeFile(jobID,fname,fileString,sandbox_type)
     return result
+
 
   def transfer_bulkFromClient( self, fileID, token, fsize, fileHelper ):
     """ Receive files packed into a tar archive by the fileHelper logic.
@@ -109,10 +103,6 @@ class SandboxHandler(RequestHandler):
       return result
 
     result = sandboxDB.storeFile(jobID,fname,fileString,sandbox_type)
-    if not result['OK']:
-      if result['Message'].find('Duplicate entry') != -1:
-        return S_ERROR('InputSandbox file %s for job %d already exists' % (fname,jobID))
-      return result
     return S_OK()
 
   def transfer_toClient( self, fileID, token, fileHelper ):
@@ -128,8 +118,8 @@ class SandboxHandler(RequestHandler):
     result = sandboxDB.getSandboxFile(jobID,fname,sandbox_type)
     if not result['OK']:
       return result
-    fileString = result['Value']      
- 
+    fileString = result['Value']
+
     result = fileHelper.stringToNetwork(fileString)
 
     if not fileString:
@@ -169,4 +159,5 @@ class SandboxHandler(RequestHandler):
     """
     result = sandboxDB.getSandboxStats(sandbox_type)
     return result
+
 
