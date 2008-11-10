@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/SandboxDB.py,v 1.14 2008/11/08 13:56:55 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/SandboxDB.py,v 1.15 2008/11/10 10:40:00 atsareg Exp $
 ########################################################################
 """ SandboxDB class is a simple storage using MySQL as a container for
     relatively small sandbox files. The file size is limited to 16MB.
@@ -10,7 +10,7 @@
     getWMSTimeStamps()
 """
 
-__RCSID__ = "$Id: SandboxDB.py,v 1.14 2008/11/08 13:56:55 atsareg Exp $"
+__RCSID__ = "$Id: SandboxDB.py,v 1.15 2008/11/10 10:40:00 atsareg Exp $"
 
 import re, os, sys, threading
 import time, datetime
@@ -218,6 +218,7 @@ class SandboxDB(DB):
     FileName VARCHAR(255) NOT NULL,
     FileBody LONGBLOB NOT NULL,
     FileSize INTEGER NOT NULL DEFAULT 0,
+    INDEX (FileSize),
     PRIMARY KEY (JobID,FileName)
 ) ENGINE=MyISAM MAX_ROWS=150000 AVG_ROW_LENGTH=150000;
 """ % (sprefix,partID)
