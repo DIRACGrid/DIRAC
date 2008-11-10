@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/SandboxDB.py,v 1.15 2008/11/10 10:40:00 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/SandboxDB.py,v 1.16 2008/11/10 14:15:59 rgracian Exp $
 ########################################################################
 """ SandboxDB class is a simple storage using MySQL as a container for
     relatively small sandbox files. The file size is limited to 16MB.
@@ -10,7 +10,7 @@
     getWMSTimeStamps()
 """
 
-__RCSID__ = "$Id: SandboxDB.py,v 1.15 2008/11/10 10:40:00 atsareg Exp $"
+__RCSID__ = "$Id: SandboxDB.py,v 1.16 2008/11/10 14:15:59 rgracian Exp $"
 
 import re, os, sys, threading
 import time, datetime
@@ -364,5 +364,5 @@ class SandboxDB(DB):
       gLogger.warn('Failed to remove files for job %d' % jobID)
       return result
 
-    gLogger.info('Removed files for job %d' % jobID)
+    gLogger.info('Removed files for job %s' % jobID)
     return S_OK()
