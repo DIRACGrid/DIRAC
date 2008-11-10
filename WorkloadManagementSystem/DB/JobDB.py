@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.109 2008/11/03 18:24:50 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.110 2008/11/10 14:13:59 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,10 +52,10 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.109 2008/11/03 18:24:50 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.110 2008/11/10 14:13:59 atsareg Exp $"
 
 import re, os, sys, string, types
-import time
+import time, datetime
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from types                                     import *
@@ -125,7 +125,7 @@ class JobDB(DB):
 
     return S_OK( )
 
-  def __buildCondition(self, condDict, older=None, newer=None ):
+  def __buildCondition(self, condDict, older=None, newer=None, timeStamp='LastUpdateTime' ):
     """ build SQL condition statement from provided condDict
         and other extra conditions
     """
@@ -148,14 +148,16 @@ class JobDB(DB):
         conjunction = "AND"
 
     if older:
-      condition = ' %s %s LastUpdateTime < \'%s\'' % ( condition,
+      condition = ' %s %s %s < \'%s\'' % ( condition,
                                                  conjunction,
+                                                 timeStamp,
                                                  str(older) )
       conjunction = "AND"
 
     if newer:
-      condition = ' %s %s LastUpdateTime >= \'%s\'' % ( condition,
+      condition = ' %s %s %s >= \'%s\'' % ( condition,
                                                  conjunction,
+                                                 timeStamp,
                                                  str(newer) )
 
     return condition
@@ -232,12 +234,12 @@ class JobDB(DB):
 
 
 #############################################################################
-  def getDistinctJobAttributes(self,attribute, condDict = {}, older = None, newer=None):
+  def getDistinctJobAttributes(self,attribute, condDict = {}, older = None, newer=None, timeStamp='LastUpdateTime'):
     """ Get distinct values of the job attribute under specified conditions
     """
     cmd = 'SELECT  DISTINCT(%s) FROM Jobs ORDER BY %s' % (attribute,attribute)
 
-    cond = self.__buildCondition( condDict, older=older, newer=newer )
+    cond = self.__buildCondition( condDict, older=older, newer=newer, timeStamp=timeStamp )
 
     result = self._query( cmd + cond )
     if not result['OK']:
@@ -439,6 +441,32 @@ class JobDB(DB):
       return S_ERROR('JobDB.getJobOptParameters: failed to retrieve parameters')
 
 #############################################################################
+  def getTimings(self,site,period=3600):
+    """ Get CPU and wall clock times
+    """ 
+
+    date = str(Time.dateTime() - datetime.timedelta(seconds=period))
+    req = "SELECT SUM(Value) from JobParameters WHERE Name='TotalCPUTime(s)' and JobID in "
+    req += "( SELECT JobID from Jobs WHERE Site='%s' and EndExecTime > '%s' )" % (site,date)
+    result = self._query(req)
+    if not result['OK']:
+      return result
+    cpu = result['Value'][0][0]
+    if not cpu:
+      cpu = 0.0
+
+    req = "SELECT SUM(Value) from JobParameters WHERE Name='WallClockTime(s)' and JobID in "    
+    req += "( SELECT JobID from Jobs WHERE Site='%s' and EndExecTime > '%s' )" % (site,date)
+    result = self._query(req)
+    if not result['OK']:
+      return result
+    wctime = result['Value'][0][0]
+    if not wctime:
+      wctime = 0.0
+
+    return S_OK({"CPUTime":cpu,"WallClockTime":wctime})
+
+#############################################################################
   def getInputData (self, jobID):
     """Get input data for the given job
     """
@@ -507,11 +535,11 @@ class JobDB(DB):
     return self.setJobStatus(jobID,status="Checking",minor=nextOptimizer)
 
 ############################################################################
-  def countJobs(self, condDict, older=None, newer=None):
+  def countJobs(self, condDict, older=None, newer=None, timeStamp='LastUpdateTime'):
     """ Get the number of jobs matching conditions specified by condDict and time limits
     """
     self.log.debug ( 'JobDB.countJobs: counting Jobs' )
-    cond = self.__buildCondition(condDict, older, newer)
+    cond = self.__buildCondition(condDict, older, newer, timeStamp)
     cmd = ' SELECT count(JobID) from Jobs '
     ret = self._query( cmd + cond )
     if ret['OK']:
@@ -519,7 +547,7 @@ class JobDB(DB):
     return ret
 
 #############################################################################
-  def selectJobs(self, condDict, older=None, newer=None, orderAttribute=None, limit=None ):
+  def selectJobs(self, condDict, older=None, newer=None, timeStamp='LastUpdateTime', orderAttribute=None, limit=None ):
     """ Select jobs matching the following conditions:
         - condDict dictionary of required Key = Value pairs;
         - with the last update date older and/or newer than given dates;
@@ -530,7 +558,7 @@ class JobDB(DB):
 
     self.log.debug( 'JobDB.selectJobs: retrieving jobs.' )
 
-    condition = self.__buildCondition(condDict, older, newer)
+    condition = self.__buildCondition(condDict, older, newer, timeStamp)
 
     if orderAttribute:
       orderType = None
@@ -1776,14 +1804,14 @@ class JobDB(DB):
 #      return S_ERROR('Cannot connect to the mysql')
 
 ##########################################################################################
-  def getCounters(self, attrList, condDict, cutDate):
+  def getCounters(self, attrList, condDict, cutDate, timeStamp='LastUpdateTime'):
     """ Count the number of jobs on each distinct combination of AttrList, selected
         with condition defined by condDict and cutDate
     """
 
-    cond = self.__buildCondition( condDict, newer=cutDate )
+    cond = self.__buildCondition( condDict, newer=cutDate, timeStamp=timeStamp )
     attrNames = string.join(map(lambda x: str(x),attrList ),',')
-    cmd = 'SELECT %s,COUNT(JobID) FROM Jobs GROUP BY %s %s ' % ( attrNames, attrNames, cond )
+    cmd = 'SELECT %s,COUNT(JobID) FROM Jobs %s GROUP BY %s ' % ( attrNames, cond, attrNames )
     result = self._query( cmd )
     if not result['OK']:
       return result
@@ -1793,8 +1821,8 @@ class JobDB(DB):
       attrDict = {}
       for i in range(len(attrList)):
         attrDict[attrList[i]] = raw[i]
-      itemList = [attrDict,raw[len(attrList)]]
-      resultList.append(itemList)
+      item = (attrDict,raw[len(attrList)])
+      resultList.append(item)
     return S_OK(resultList)
 
 #################################################################################
