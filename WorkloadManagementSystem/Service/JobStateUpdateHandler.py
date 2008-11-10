@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobStateUpdateHandler.py,v 1.28 2008/11/10 22:29:02 atsareg Exp $
+# $Id: JobStateUpdateHandler.py,v 1.29 2008/11/10 23:32:05 atsareg Exp $
 ########################################################################
 
 """ JobStateUpdateHandler is the implementation of the Job State updating
@@ -11,7 +11,7 @@
 
 """
 
-__RCSID__ = "$Id: JobStateUpdateHandler.py,v 1.28 2008/11/10 22:29:02 atsareg Exp $"
+__RCSID__ = "$Id: JobStateUpdateHandler.py,v 1.29 2008/11/10 23:32:05 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -48,7 +48,7 @@ class JobStateUpdateHandler( RequestHandler ):
       return result
 
     if status in JOB_FINAL_STATES:
-      result = self.setEndExecTime(jobID)
+      result = jobDB.setEndExecTime(jobID)
 
     result = jobDB.getJobAttributes(jobID, ['Status','MinorStatus'] )
     if not result['OK']:
@@ -111,7 +111,7 @@ class JobStateUpdateHandler( RequestHandler ):
       return result
 
     if endDate:
-      result = self.setEndExecTime(jobID,endDate)
+      result = jobDB.setEndExecTime(jobID,endDate)
 
     # Update the JobLoggingDB records
     for date, sDict in statusDict.items():
