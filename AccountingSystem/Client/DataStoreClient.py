@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/DataStoreClient.py,v 1.5 2008/07/18 09:20:08 acasajus Exp $
-__RCSID__ = "$Id: DataStoreClient.py,v 1.5 2008/07/18 09:20:08 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/DataStoreClient.py,v 1.6 2008/11/10 15:23:13 acasajus Exp $
+__RCSID__ = "$Id: DataStoreClient.py,v 1.6 2008/11/10 15:23:13 acasajus Exp $"
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -12,6 +12,7 @@ class DataStoreClient:
 
   def __init__( self, setup = False ):
     self.__setup = setup
+    self.__maxRecordsInABundle = 100
     self.__registersList = []
 
   def __checkBaseType( self, obj ):
@@ -49,11 +50,12 @@ class DataStoreClient:
       rpcClient = RPCClient( "Accounting/DataStore" )
     sent = 0
     while len( self.__registersList ) > 0:
-      sent += len( self.__registersList[ :50 ] )
-      retVal = rpcClient.commitRegisters( self.__registersList[ :50 ] )
+      registersToSend = self.__registersList[ :self.__maxRecordsInABundle ]
+      retVal = rpcClient.commitRegisters( registersToSend )
       if not retVal[ 'OK' ]:
         return retVal
-      del( self.__registersList[ :50 ] )
+      sent += len( registersToSend )
+      del( self.__registersList[ :self.__maxRecordsInABundle ] )
     return S_OK( sent )
 
 gDataStoreClient = DataStoreClient()
