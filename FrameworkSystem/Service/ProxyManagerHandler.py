@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/ProxyManagerHandler.py,v 1.13 2008/08/05 10:43:56 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/ProxyManagerHandler.py,v 1.14 2008/11/11 09:41:04 acasajus Exp $
 ########################################################################
 
 """ ProxyManager is the implementation of the ProxyManagement service
     in the DISET framework
 """
 
-__RCSID__ = "$Id: ProxyManagerHandler.py,v 1.13 2008/08/05 10:43:56 rgracian Exp $"
+__RCSID__ = "$Id: ProxyManagerHandler.py,v 1.14 2008/11/11 09:41:04 acasajus Exp $"
 
 import types
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -159,6 +159,7 @@ class ProxyManagerHandler( RequestHandler ):
     retVal = gProxyDB.setPersistencyFlag( userDN, userGroup, persistentFlag )
     if not retVal[ 'OK' ]:
       return retVal
+    credDict = self.getRemoteCredentials()
     gProxyDB.logAction( "set persistency to %s" % bool( persistentFlag ),
                                                   credDict[ 'DN' ],
                                                   credDict[ 'group' ],
