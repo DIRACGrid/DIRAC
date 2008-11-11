@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/SiteStager.py,v 1.6 2008/07/07 22:06:16 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/SiteStager.py,v 1.7 2008/11/11 11:29:23 rgracian Exp $
 # File :   SiteStager.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
      resetting of stage requests as necessary.
 """
 
-__RCSID__ = "$Id: SiteStager.py,v 1.6 2008/07/07 22:06:16 paterson Exp $"
+__RCSID__ = "$Id: SiteStager.py,v 1.7 2008/11/11 11:29:23 rgracian Exp $"
 
 from DIRAC.StagerSystem.Client.StagerClient                import StagerClient
 from DIRAC.DataManagementSystem.Client.StorageElement      import StorageElement
@@ -35,6 +35,7 @@ class SiteStager(Thread):
     self.stageRepeatTime = gConfig.getValue(self.configSection+'/StageRepeatTime',6) #Hours
     self.stagerClient = StagerClient()
     Thread.__init__(self)
+    self.setDaemon( True )
 
   #############################################################################
   def run(self):

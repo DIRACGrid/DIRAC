@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/SiteMonitor.py,v 1.9 2008/07/07 22:06:54 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/SiteMonitor.py,v 1.10 2008/11/11 11:26:43 rgracian Exp $
 # File :   SiteMonitor.py
 # Author : Stuart Paterson
 ########################################################################
@@ -7,7 +7,7 @@
 """  The SiteMonitor base-class monitors staging requests for a given site.
 """
 
-__RCSID__ = "$Id: SiteMonitor.py,v 1.9 2008/07/07 22:06:54 paterson Exp $"
+__RCSID__ = "$Id: SiteMonitor.py,v 1.10 2008/11/11 11:26:43 rgracian Exp $"
 
 from DIRAC.StagerSystem.Client.StagerClient                import StagerClient
 from DIRAC.DataManagementSystem.Client.StorageElement      import StorageElement
@@ -34,6 +34,7 @@ class SiteMonitor(Thread):
     self.taskSelectLimit = gConfig.getValue(self.configSection+'/TaskSelectLimit',100) # e.g. after 24hrs
     self.stagerClient = StagerClient()
     Thread.__init__(self)
+    self.setDaemon( True )
 
   #############################################################################
   def run(self):
