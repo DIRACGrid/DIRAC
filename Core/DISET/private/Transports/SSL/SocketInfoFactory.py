@@ -1,7 +1,9 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfoFactory.py,v 1.11 2008/07/07 16:37:19 acasajus Exp $
-__RCSID__ = "$Id: SocketInfoFactory.py,v 1.11 2008/07/07 16:37:19 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfoFactory.py,v 1.12 2008/11/11 17:36:42 acasajus Exp $
+__RCSID__ = "$Id: SocketInfoFactory.py,v 1.12 2008/11/11 17:36:42 acasajus Exp $"
 
 import socket
+import select
+import os
 import GSI
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
 from DIRAC.Core.DISET.private.Transports.SSL.SocketInfo import SocketInfo
@@ -12,7 +14,7 @@ from DIRAC.Core.DISET.private.Transports.SSL.ThreadSafeSSLObject import ThreadSa
 class SocketInfoFactory:
 
   def generateClientInfo( self, destinationHostname, kwargs ):
-    infoDict = { 'clientMode' : True, 'hostname' : destinationHostname }
+    infoDict = { 'clientMode' : True, 'hostname' : destinationHostname, 'timeout' : 600 }
     for key in kwargs.keys():
       infoDict[ key ] = kwargs[ key ]
     try:
@@ -21,7 +23,7 @@ class SocketInfoFactory:
       return S_ERROR( str( e ) )
 
   def generateServerInfo( self, kwargs ):
-    infoDict = { 'clientMode' : False }
+    infoDict = { 'clientMode' : False, 'timeout' : 60 }
     for key in kwargs.keys():
       infoDict[ key ] = kwargs[ key ]
     try:
@@ -43,7 +45,22 @@ class SocketInfoFactory:
     socketInfo.setSSLSocket( sslSocket )
     if gSessionManager.isValid( sessionId ):
       sslSocket.set_session( gSessionManager.get( sessionId ) )
-    sslSocket.connect( hostAddress )
+    #sslSocket.setblocking( 0 )
+    if socketInfo.infoDict[ 'timeout' ]:
+      sslSocket.settimeout( socketInfo.infoDict[ 'timeout' ] )
+    try:
+      sslSocket.connect( hostAddress )
+    except socket.error ,e:
+      if e.args[0] != 115:
+        return S_ERROR( "Can't connect: %s" % str( e ) )
+      #Connect in progress
+      oL = select.select( [], [ sslSocket ], [], socketInfo.infoDict[ 'timeout' ] )[1]
+      if len( oL ) == 0:
+        sslSocket.close()
+        return S_ERROR( "Connection timeout" )
+      errno = sslSocket.getsockopt( socket.SOL_SOCKET, socket.SO_ERROR )
+      if errno != 0:
+        return S_ERROR( "Can't connect: %s" % str( ( errno, os.strerror( errno ) ) ) )
     retVal = socketInfo.doClientHandshake()
     if not retVal[ 'OK' ]:
       return retVal

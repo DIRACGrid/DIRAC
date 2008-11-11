@@ -1,11 +1,10 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/BaseTransport.py,v 1.20 2008/10/16 13:29:09 acasajus Exp $
-__RCSID__ = "$Id: BaseTransport.py,v 1.20 2008/10/16 13:29:09 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/BaseTransport.py,v 1.21 2008/11/11 17:36:42 acasajus Exp $
+__RCSID__ = "$Id: BaseTransport.py,v 1.21 2008/11/11 17:36:42 acasajus Exp $"
 
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
 from DIRAC.Core.Utilities import DEncode
 from DIRAC.LoggingSystem.Client.Logger import gLogger
 import select
-
 
 class BaseTransport:
 

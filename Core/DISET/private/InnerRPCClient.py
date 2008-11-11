@@ -1,8 +1,7 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/InnerRPCClient.py,v 1.8 2008/08/01 13:04:41 acasajus Exp $
-__RCSID__ = "$Id: InnerRPCClient.py,v 1.8 2008/08/01 13:04:41 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/InnerRPCClient.py,v 1.9 2008/11/11 17:36:42 acasajus Exp $
+__RCSID__ = "$Id: InnerRPCClient.py,v 1.9 2008/11/11 17:36:42 acasajus Exp $"
 
 import types
-from DIRAC.Core.Utilities import Subprocess
 from DIRAC.Core.DISET.private.BaseClient import BaseClient
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 
@@ -10,13 +9,7 @@ from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 class InnerRPCClient( BaseClient ):
 
   def executeRPC( self, functionName, args ):
-    if self.timeout:
-      retVal = Subprocess.pythonCall( self.timeout, self.__serverRPC, functionName, args )
-      if retVal[ 'OK' ]:
-        return retVal[ 'Value' ]
-      return retVal
-    else:
-      return self.__serverRPC( functionName, args )
+    return self.__serverRPC( functionName, args )
 
   def __serverRPC( self, functionName, args ):
     stub = ( self._getBaseStub(), functionName, args )

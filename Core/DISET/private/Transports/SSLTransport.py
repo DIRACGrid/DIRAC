@@ -1,8 +1,10 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSLTransport.py,v 1.28 2008/10/14 13:54:22 acasajus Exp $
-__RCSID__ = "$Id: SSLTransport.py,v 1.28 2008/10/14 13:54:22 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSLTransport.py,v 1.29 2008/11/11 17:36:42 acasajus Exp $
+__RCSID__ = "$Id: SSLTransport.py,v 1.29 2008/11/11 17:36:42 acasajus Exp $"
 
 import os
 import types
+import time
+import GSI
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
 from DIRAC.Core.DISET.private.Transports.BaseTransport import BaseTransport
 from DIRAC.LoggingSystem.Client.Logger import gLogger
@@ -58,6 +60,7 @@ class SSLTransport( BaseTransport ):
     self.oSocketInfo.setSSLSocket( oSocket )
     self.oSocket = oSocket
     self.remoteAddress = self.oSocket.getpeername()
+    self.oSocket.settimeout( self.oSocketInfo.infoDict[ 'timeout' ] )
 
   def acceptConnection( self ):
     oClientTransport = SSLTransport( self.stServerAddress )
@@ -69,6 +72,20 @@ class SSLTransport( BaseTransport ):
     oClientTransport.setClientSocket( oClientSocket )
     return S_OK( oClientTransport )
 
+
+  def _read( self, bufSize = 4096, skipReadyCheck = False ):
+    start = time.time()
+    timeout = self.oSocketInfo.infoDict[ 'timeout' ]
+    while True:
+      if timeout:
+        if time.time() - start > timeout:
+          return S_ERROR( "Socket read timeout exceeded" )
+      try:
+        return S_OK( self.oSocket.recv( bufSize ) )
+      except GSI.SSL.WantReadError:
+        time.sleep(0.1)
+      except Exception, e:
+        return S_ERROR( "Exception while reading from peer: %s" % str( e ) )
 
 def checkSanity( urlTuple, kwargs ):
   """

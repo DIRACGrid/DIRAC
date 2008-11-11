@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.53 2008/10/24 09:50:29 rgracian Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.53 2008/10/24 09:50:29 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.54 2008/11/11 17:36:42 acasajus Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.54 2008/11/11 17:36:42 acasajus Exp $"
 
 import sys
 import types
@@ -11,7 +11,6 @@ from DIRAC.Core.Utilities import List, Network
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.ConfigurationSystem.Client.PathFinder import *
-from DIRAC.Core.Security import CS
 
 class BaseClient:
 
@@ -33,21 +32,18 @@ class BaseClient:
       raise TypeError( "Service name expected to be a string. Received %s type %s" % ( str(serviceName), type(serviceName) ) )
     self.serviceName = serviceName
     self.kwargs = kwargs
-    #HACK: Should be False to allow group to travel in the proxy
-    self.defaultUserGroup = CS.getDefaultUserGroup()
-    #HACK END
+    self.__initStatus = S_OK()
     self.__idDict = {}
-    self.__discoverSetup()
-    self.__initStatus = self.__discoverURL()
-    self.__discoverTimeout()
-    if not self.__initStatus[ 'OK' ]:
-      return
-    self.__discoverCredentialsToUse()
-    self.__discoverExtraCredentials()
-    self.__initStatus = self.__checkTransportSanity()
+    for initFunc in ( self.__discoverSetup, self.__discoverTimeout, self.__discoverURL,
+                      self.__discoverCredentialsToUse, self.__discoverExtraCredentials,
+                      self.__checkTransportSanity ):
+      result = initFunc()
+      if not result[ 'OK' ]:
+        self.__initStatus = result
+        return
     #HACK for thread-safety:
     self.__allowedThreadID = False
-    self.__errorOnInit = False
+
 
   def __discoverSetup(self):
     #Which setup to use?
@@ -55,6 +51,7 @@ class BaseClient:
       self.setup = str( self.kwargs[ self.KW_SETUP ] )
     else:
       self.setup = gConfig.getValue( "/DIRAC/Setup", "LHCb-Development" )
+    return S_OK()
 
   def __discoverURL(self):
     #Calculate final URL
@@ -70,11 +67,10 @@ class BaseClient:
       self.timeout = self.kwargs[ self.KW_TIMEOUT ]
     else:
       self.timeout = False
-    #HACK: For windows there is no timeout! (YingYing...)
-    if sys.platform == "win32":
-      self.timeout = False
     if self.timeout:
-      self.timeout = max( 900, self.timeout )
+      self.timeout = max( 600, self.timeout )
+    self.kwargs[ self.KW_TIMEOUT ] = self.timeout
+    return S_OK()
 
   def __discoverCredentialsToUse( self ):
     #Use certificates?
@@ -88,7 +84,8 @@ class BaseClient:
          self.kwargs[ self.KW_PROXY_STRING ] = self.kwargs[ self.KW_PROXY_CHAIN ].dumpAllToString()[ 'Value' ]
          del( self.kwargs[ self.KW_PROXY_CHAIN ] )
       except:
-        self.__errorOnInit = "Invalid proxy chain specified on instantiation"
+        return S_ERROR( "Invalid proxy chain specified on instantiation" )
+    return S_OK()
 
   def __discoverExtraCredentials( self ):
     #Wich extra credentials to use?
@@ -103,6 +100,7 @@ class BaseClient:
       if self.KW_DELEGATED_GROUP in self.kwargs:
         self.__extraCredentials = self.kwargs[ self.KW_DELEGATED_GROUP ]
       self.__extraCredentials = ( self.kwargs[ self.KW_DELEGATED_DN ], self.__extraCredentials )
+    return S_OK()
 
   def __findServiceURL( self ):
     for protocol in gProtocolDict.keys():
@@ -147,12 +145,10 @@ and this is thread %s
 
 
   def _connect( self ):
-    if self.__errorOnInit:
-      return S_ERROR( self.__errorOnInit )
-    self.__checkThreadID()
-    gLogger.debug( "Connecting to: %s" % self.serviceURL )
     if not self.__initStatus[ 'OK' ]:
       return self.__initStatus
+    self.__checkThreadID()
+    gLogger.debug( "Connecting to: %s" % self.serviceURL )
     try:
       transport = gProtocolDict[ self.URLTuple[0] ][ 'transport' ]( self.URLTuple[1:3], **self.kwargs )
       retVal = transport.initAsClient()

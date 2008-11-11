@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfo.py,v 1.27 2008/07/07 17:28:28 acasajus Exp $
-__RCSID__ = "$Id: SocketInfo.py,v 1.27 2008/07/07 17:28:28 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfo.py,v 1.28 2008/11/11 17:36:42 acasajus Exp $
+__RCSID__ = "$Id: SocketInfo.py,v 1.28 2008/11/11 17:36:42 acasajus Exp $"
 
 import time
 import copy
@@ -185,13 +185,23 @@ class SocketInfo:
 
   #@gSynchro
   def __sslHandshake( self ):
-    try:
-      self.sslSocket.do_handshake()
-    except GSI.SSL.Error, v:
-      #FIXME: S_ERROR?
-      #gLogger.warn( "Error while handshaking", "\n".join( [ stError[2] for stError in v.args[0] ] ) )
-      gLogger.warn( "Error while handshaking", v )
-      return S_ERROR( "Error while handshaking" )
+    start = time.time()
+    timeout = self.infoDict[ 'timeout' ]
+    while True:
+      if timeout:
+        if time.time() - start > timeout:
+          return S_ERROR( "Handshake timeout exceeded" )
+      try:
+        self.sslSocket.do_handshake()
+        break
+      except GSI.SSL.WantReadError:
+        time.sleep( 0.1 )
+      except GSI.SSL.WantWriteError:
+        time.sleep( 0.1 )
+      except GSI.SSL.Error, v:
+        #gLogger.warn( "Error while handshaking", "\n".join( [ stError[2] for stError in v.args[0] ] ) )
+        gLogger.warn( "Error while handshaking", v )
+        return S_ERROR( "Error while handshaking" )
     credentialsDict = self.gatherPeerCredentials()
     if self.infoDict[ 'clientMode' ]:
       hostnameCN = credentialsDict[ 'CN' ]
