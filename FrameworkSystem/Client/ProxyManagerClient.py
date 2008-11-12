@@ -1,9 +1,9 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyManagerClient.py,v 1.31 2008/10/13 16:15:30 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyManagerClient.py,v 1.32 2008/11/12 10:57:04 acasajus Exp $
 ########################################################################
 """ ProxyManagementAPI has the functions to "talk" to the ProxyManagement service
 """
-__RCSID__ = "$Id: ProxyManagerClient.py,v 1.31 2008/10/13 16:15:30 acasajus Exp $"
+__RCSID__ = "$Id: ProxyManagerClient.py,v 1.32 2008/11/12 10:57:04 acasajus Exp $"
 
 import os
 import datetime
@@ -125,6 +125,7 @@ class ProxyManagerClient:
     #Discover proxy location
     if type( proxy ) == g_X509ChainType:
       chain = proxy
+      proxyLocation = ""
     else:
       if not proxy:
         proxyLocation = Locations.getProxyLocation()
