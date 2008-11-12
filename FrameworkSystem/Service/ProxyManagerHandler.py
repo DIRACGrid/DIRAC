@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/ProxyManagerHandler.py,v 1.14 2008/11/11 09:41:04 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/ProxyManagerHandler.py,v 1.15 2008/11/12 11:00:38 acasajus Exp $
 ########################################################################
 
 """ ProxyManager is the implementation of the ProxyManagement service
     in the DISET framework
 """
 
-__RCSID__ = "$Id: ProxyManagerHandler.py,v 1.14 2008/11/11 09:41:04 acasajus Exp $"
+__RCSID__ = "$Id: ProxyManagerHandler.py,v 1.15 2008/11/12 11:00:38 acasajus Exp $"
 
 import types
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -46,7 +46,7 @@ class ProxyManagerHandler( RequestHandler ):
     retVal = CS.getGroupsForUser( credDict[ 'username' ] )
     if not retVal[ 'OK' ]:
       return retVal
-    groupsAvailable = retVal[ 'Value' ] 
+    groupsAvailable = retVal[ 'Value' ]
     if userGroup not in groupsAvailable:
       return S_ERROR( "%s is not a valid group for user %s" % ( userGroup, userName ) )
     retVal = gProxyDB.getRemainingTime( userDN, userGroup )
@@ -56,17 +56,26 @@ class ProxyManagerHandler( RequestHandler ):
     csOption = "%s/SkipUploadLifeTime" % self.serviceInfoDict[ 'serviceSectionPath' ]
     #If we have a proxy longer than the one uploading it's not needed
     if remainingSecs > requestedUploadTime:
+      gLogger.info( "Upload request not necessary by %s:%s" % ( userName, userGroup ) )
       return S_OK()
-    return gProxyDB.generateDelegationRequest( credDict[ 'x509Chain' ], userDN )
+    result = gProxyDB.generateDelegationRequest( credDict[ 'x509Chain' ], userDN )
+    if result[ 'OK' ]:
+      gLogger.info( "Upload request by %s:%s given id %s" % ( userName, userGroup, result['Value']['id'] ) )
+    else:
+      gLogger.error( "Upload request by %s:%s failed: %s" % ( userName, userGroup, result['Message'] ) )
+    return result
 
   types_completeDelegationUpload = [ ( types.IntType, types.LongType ), types.StringType ]
   def export_completeDelegationUpload( self, requestId, pemChain ):
     """ Upload result of delegation
     """
     credDict = self.getRemoteCredentials()
+    userId = "%s:%s" % ( credDict[ 'username' ], credDict[ 'group' ]  )
     retVal = gProxyDB.completeDelegation( requestId, credDict[ 'DN' ], pemChain )
     if not retVal[ 'OK' ]:
+      gLogger.error( "Upload %s by %s failed: %s" %( requestId, userId, retVal[ 'Message' ] ) )
       return retVal
+    gLogger.info( "Upload %s by %s completed" % ( requestId, userId ) )
     return S_OK()
 
   types_getRegisteredUsers = []
