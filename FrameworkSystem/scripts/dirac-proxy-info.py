@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/scripts/dirac-proxy-info.py,v 1.6 2008/11/10 14:58:39 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/scripts/dirac-proxy-info.py,v 1.7 2008/11/12 17:53:05 acasajus Exp $
 # File :   dirac-proxy-init.py
 # Author : Adrian Casajus
 ########################################################################
-__RCSID__   = "$Id: dirac-proxy-info.py,v 1.6 2008/11/10 14:58:39 acasajus Exp $"
-__VERSION__ = "$Revision: 1.6 $"
+__RCSID__   = "$Id: dirac-proxy-info.py,v 1.7 2008/11/12 17:53:05 acasajus Exp $"
+__VERSION__ = "$Revision: 1.7 $"
 
 import sys
 import os.path
@@ -76,6 +76,7 @@ from DIRAC.Core.Security import CS, VOMS
 result = getProxyInfo( params.proxyLoc, not params.vomsEnabled )
 if not result[ 'OK' ]:
   print "Error: %s" % result[ 'Message' ]
+  sys.exit(1)
 infoDict = result[ 'Value' ]
 print formatProxyInfoAsString( infoDict )
 
