@@ -1,4 +1,4 @@
--- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/SandboxDB.sql,v 1.4 2008/11/04 11:36:06 atsareg Exp $
+-- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/SandboxDB.sql,v 1.5 2008/11/13 17:11:47 atsareg Exp $
 
 -- ------------------------------------------------------------------------------
 --
@@ -59,8 +59,8 @@ CREATE TABLE OutputSandboxPartitions (
     PartID INTEGER NOT NULL AUTO_INCREMENT,
     CreationDate DATETIME,
     LastUpdate DATETIME,
-    DataSize INTEGER NOT NULL DEFAULT 0,
-    TableSize INTEGER NOT NULL DEFAULT 0,
+    DataSize BIGINT NOT NULL DEFAULT 0,
+    TableSize BIGINT NOT NULL DEFAULT 0,
     PRIMARY KEY (PartID)
 );
 
@@ -70,7 +70,7 @@ CREATE TABLE InputSandboxPartitions (
     PartID INTEGER NOT NULL AUTO_INCREMENT,
     CreationDate DATETIME,
     LastUpdate DATETIME,
-    DataSize INTEGER NOT NULL DEFAULT 0,
-    TableSize INTEGER NOT NULL DEFAULT 0,
+    DataSize BIGINT NOT NULL DEFAULT 0,
+    TableSize BIGINT NOT NULL DEFAULT 0,
     PRIMARY KEY (PartID)
 );
