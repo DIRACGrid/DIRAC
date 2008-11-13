@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationData.py,v 1.17 2008/11/05 12:12:14 acasajus Exp $
-__RCSID__ = "$Id: ConfigurationData.py,v 1.17 2008/11/05 12:12:14 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationData.py,v 1.18 2008/11/13 17:37:27 acasajus Exp $
+__RCSID__ = "$Id: ConfigurationData.py,v 1.18 2008/11/13 17:37:27 acasajus Exp $"
 
 import os.path
 import zlib
@@ -205,7 +205,7 @@ class ConfigurationData:
       return int( self.extractOptionFromCFG( "%s/RefreshTime" % self.configurationPath,
                                         self.mergedCFG ) )
     except:
-      return 1800
+      return 300
 
   def getPropagationTime( self ):
     try:
