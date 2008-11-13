@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationClient.py,v 1.16 2008/07/09 10:08:01 rgracian Exp $
-__RCSID__ = "$Id: ConfigurationClient.py,v 1.16 2008/07/09 10:08:01 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationClient.py,v 1.17 2008/11/13 12:12:24 acasajus Exp $
+__RCSID__ = "$Id: ConfigurationClient.py,v 1.17 2008/11/13 12:12:24 acasajus Exp $"
 
 import types
 from DIRAC.Core.Utilities import List
@@ -23,6 +23,18 @@ class ConfigurationClient:
 
   def dumpRemoteCFGToFile( self, fileName ):
     return gConfigurationData.dumpRemoteCFGToFile( fileName )
+
+  def dumpCFGAsLocalCache( self, fileName ):
+    cfg = gConfigurationData.mergedCFG.clone()
+    try:
+      cfg[ 'DIRAC' ][ 'Configuration' ].deleteKey( 'Servers' )
+      cfg[ 'DIRAC' ][ 'Configuration' ].deleteKey( 'MasterServer' )
+      fd = open( fileName, "w" )
+      fd.write( str( cfg ) )
+      fd.close()
+    except Exception, e:
+      return S_ERROR( "Can't write to file %s: %s" % ( fileName, str(e) ) )
+    return S_OK()
 
   def getServersList( self ):
     return gConfigurationData.getServers()
