@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.112 2008/11/10 22:27:44 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.113 2008/11/13 17:10:02 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.112 2008/11/10 22:27:44 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.113 2008/11/13 17:10:02 atsareg Exp $"
 
 import re, os, sys, string, types
 import time, datetime
@@ -443,12 +443,17 @@ class JobDB(DB):
 
 #############################################################################
   def getTimings(self,site,period=3600):
-    """ Get CPU and wall clock times
+    """ Get CPU and wall clock times for the jobs finished in the last hour
     """
 
     date = str(Time.dateTime() - datetime.timedelta(seconds=period))
-    req = "SELECT SUM(Value) from JobParameters WHERE Name='TotalCPUTime(s)' and JobID in "
-    req += "( SELECT JobID from Jobs WHERE Site='%s' and EndExecTime > '%s' )" % (site,date)
+
+    req = "SELECT JobID from Jobs WHERE Site='%s' and EndExecTime > '%s' " % (site,date)
+    result = self._query(req)
+    jobList = [ str(x[0]) for x in result['Value'] ]
+    jobString = ','.join(jobList)
+
+    req = "SELECT SUM(Value) from JobParameters WHERE Name='TotalCPUTime(s)' and JobID in (%s)" % jobString
     result = self._query(req)
     if not result['OK']:
       return result
@@ -456,8 +461,8 @@ class JobDB(DB):
     if not cpu:
       cpu = 0.0
 
-    req = "SELECT SUM(Value) from JobParameters WHERE Name='WallClockTime(s)' and JobID in "
-    req += "( SELECT JobID from Jobs WHERE Site='%s' and EndExecTime > '%s' )" % (site,date)
+    wctime = 0.0
+    req = "SELECT SUM(Value) from JobParameters WHERE Name='WallClockTime(s)' and JobID in (%s)" % jobString
     result = self._query(req)
     if not result['OK']:
       return result
@@ -465,7 +470,7 @@ class JobDB(DB):
     if not wctime:
       wctime = 0.0
 
-    return S_OK({"CPUTime":cpu,"WallClockTime":wctime})
+    return S_OK({"CPUTime":int(cpu),"WallClockTime":int(wctime)})
 
 #############################################################################
   def getInputData (self, jobID):
