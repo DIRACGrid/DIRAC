@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot,v 1.39 2008/10/22 13:53:38 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot,v 1.40 2008/11/13 17:32:42 acasajus Exp $
 # File :   dirac-pilot
 # Author : Ricardo Graciani
 ########################################################################
@@ -9,11 +9,11 @@
  Job Agent to execute pending workload on WMS.
  It requires dirac-install script to be sitting in the same directory.
 """
-__RCSID__ = "$Id: dirac-pilot,v 1.39 2008/10/22 13:53:38 rgracian Exp $"
+__RCSID__ = "$Id: dirac-pilot,v 1.40 2008/11/13 17:32:42 acasajus Exp $"
 try:
   import os
   import sys
-  
+
   pythonpath = os.getenv('PYTHONPATH','').split(':')
   newpythonpath = []
   for p in pythonpath:
@@ -24,7 +24,7 @@ try:
   os.environ['PYTHONPATH'] = ''
 
   import os, sys, socket, re, stat, popen2, time
-  
+
   debugFlag = False
   localFlag = False
   testFlag  = False
@@ -34,12 +34,13 @@ try:
   jobCPUReqt    = 900  # s
   diracGroup    = None
   ownerDN       = None
-  
+
   JOB_AGENT_CE = 'InProcess'
   MAX_CYCLES   = 2
-  
+
   installScript = 'dirac-install'
-  
+  csCache = 'dirac-configuration-dump-local-cache'
+
   try:
     myFullName  = os.path.realpath( __file__ )
     # in old python versions __file__ is not defined
@@ -55,11 +56,11 @@ except Exception, x:
   print os.uname()
   print x
   raise x
-  
+
 installScript = os.path.join( myPath, installScript )
 
 if not os.path.exists( installScript ):
-  print '"%s" requires "%s" in the same directory' 
+  print '"%s" requires "%s" in the same directory'
   sys.exit(0)
 os.chmod( installScript, stat.S_IRWXU )
 
@@ -70,7 +71,7 @@ def parse_options():
   import getopt
   global debugFlag, rootPath, localPlatform, minDiskSpace, testFlag, jobCPUReqt, diracGroup, ownerDN
   help = """
-   -b --build                  Force local compilation  
+   -b --build                  Force local compilation
    -d --debug                  Set debug flag
    -e --external=<version>     DIRAC-external <version> to install (overwrites -v)
    -h --help                   Print this
@@ -99,8 +100,8 @@ def parse_options():
 
   """
   shortOptions = 'bde:hi:n:p:r:tu:v:o:s:CN:D:P:ST:G:O:U'
-  longOptions  = ['build', 'debug', 'external=', 'help', 'python=', 'name=', 
-                  'platform=', 'repository', 'test', 'url=', 'version=', 
+  longOptions  = ['build', 'debug', 'external=', 'help', 'python=', 'name=',
+                  'platform=', 'repository', 'test', 'url=', 'version=',
                   'cvs', 'Name=', 'disk=', 'path=', 'server', 'CPUTime=', 'Group=',
                   'OwnerDN=','Upload',
                   'option=', 'section=', 'cert=']
@@ -111,13 +112,13 @@ def parse_options():
     optionVals = [ ('-h','') ]
 
   if ('-h','') in optionVals or ('--help','') in optionVals:
-    print 
+    print
     print 'Usage: %s [options]' % myShortName
     print help
     sys.exit(0)
 
   installOpts = []
-    
+
   for o,v in optionVals:
     if o == '-b' or o == '--build':
       installOpts.append('-b')
@@ -199,7 +200,7 @@ pilotRef = 'Unknown'
 if os.environ.has_key('EDG_WL_JOBID'):
   myFlavour = 'LCG'
   pilotRef=os.environ['EDG_WL_JOBID']
-  
+
 if os.environ.has_key('GLITE_WMS_JOBID'):
   myFlavour = 'gLite'
   pilotRef = os.environ['GLITE_WMS_JOBID']
@@ -260,7 +261,7 @@ if ret != 0:
       print
       print 'ERROR could not make a proper DIRAC installation'
       print
-      sys.exit(0)      
+      sys.exit(0)
   else:
     print
     print 'ERROR could not make a proper DIRAC installation'
@@ -272,6 +273,7 @@ myPath     = os.path.join( rootPath, 'scripts' )
 myFullName = os.path.join( myPath, myShortName )
 sys.path.insert( 0, myPath )
 os.environ['PATH'] = '%s:%s' % (myPath,os.getenv('PATH'))
+cfgFile = os.path.join( rootPath, "etc", "dirac.cfg" )
 
 platformDict = { 'slc4_ia32_gcc34' : 'Linux_i686_glibc-2.3.4',
                  'slc4_amd64_gcc34': 'Linux_x86_64_glibc-2.3.4' }
@@ -380,7 +382,7 @@ class Dirac:
     child_stdout.close()
     return stdout
 
-
+os.system( "%s -f %s" % ( csCache, cfgFile ) )
 
 dirac = Dirac( myFullName )
 dirac.platform(localPlatform)
@@ -473,7 +475,7 @@ diskSpace = fs[4] * fs[0] / 1024 / 1024
 dirac.logINFO( 'DiskSpace (MB) = %s' % diskSpace )
 
 if diskSpace < minDiskSpace:
-  dirac.logERROR( '%s MB < %s MB, not enough local disk space available, exiting' 
+  dirac.logERROR( '%s MB < %s MB, not enough local disk space available, exiting'
                   % (diskSpace, minDiskSpace) )
   sys.exit(0)
 
@@ -528,7 +530,7 @@ dirac.logINFO( 'Starting JobAgent' )
 
 os.environ['PYTHONUNBUFFERED'] = 'yes'
 
-jobAgent = 'dirac-agent WorkloadManagement/JobAgent %s %s %s' % ( 
+jobAgent = 'dirac-agent WorkloadManagement/JobAgent %s %s %s' % (
             jobAgentOpts, inProcessOpts,  extraCFG )
 dirac.logINFO( jobAgent )
 
