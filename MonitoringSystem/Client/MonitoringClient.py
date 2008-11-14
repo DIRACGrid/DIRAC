@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.36 2008/10/07 18:12:45 acasajus Exp $
-__RCSID__ = "$Id: MonitoringClient.py,v 1.36 2008/10/07 18:12:45 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.37 2008/11/14 16:20:11 acasajus Exp $
+__RCSID__ = "$Id: MonitoringClient.py,v 1.37 2008/11/14 16:20:11 acasajus Exp $"
 
 import threading
 import time
@@ -40,6 +40,13 @@ class MonitoringClient:
     self.flushingLock = threading.Lock()
     self.timeStep = 60
     self.__initialized = False
+    self.__enabled = True
+
+  def disable(self):
+    self.__enabled = False
+
+  def enable(self):
+    self.__enabled = True
 
   def initialize( self ):
     self.logger = gLogger.getSubLogger( "Monitoring" )
@@ -164,6 +171,8 @@ class MonitoringClient:
     """
     if not self.__initialized:
       return
+    if not self.__enabled:
+      return
     if name not in self.activitiesDefinitions:
       raise Exception( "You must register activity %s before adding marks to it" % name)
     if type( value ) not in self.__validMonitoringValues:
@@ -212,6 +221,8 @@ class MonitoringClient:
     return consolidatedMarks
 
   def flush( self, allData = False ):
+    if not self.__enabled:
+      return
     self.flushingLock.acquire()
     self.logger.debug( "Sending information to server" )
     try:
