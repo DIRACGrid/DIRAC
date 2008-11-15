@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/SiteMonitor.py,v 1.10 2008/11/11 11:26:43 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/SiteMonitor.py,v 1.11 2008/11/15 22:47:29 acsmith Exp $
 # File :   SiteMonitor.py
 # Author : Stuart Paterson
 ########################################################################
@@ -7,16 +7,18 @@
 """  The SiteMonitor base-class monitors staging requests for a given site.
 """
 
-__RCSID__ = "$Id: SiteMonitor.py,v 1.10 2008/11/11 11:26:43 rgracian Exp $"
+__RCSID__ = "$Id: SiteMonitor.py,v 1.11 2008/11/15 22:47:29 acsmith Exp $"
 
 from DIRAC.StagerSystem.Client.StagerClient                import StagerClient
 from DIRAC.DataManagementSystem.Client.StorageElement      import StorageElement
+from DIRAC.DataManagementSystem.Client.FileCatalog import FileCatalog
 from DIRAC.Core.Utilities.SiteSEMapping                    import getSEsForSite
 from DIRAC                                                 import S_OK, S_ERROR, gConfig, gLogger
-
 import os, sys, re, string, time
 from threading import Thread
-
+from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
+from DIRAC.AccountingSystem.Client.DataStoreClient import DataStoreClient
+from DIRAC.Core.Utilities import Time
 class SiteMonitor(Thread):
 
   #############################################################################
@@ -33,6 +35,7 @@ class SiteMonitor(Thread):
     self.stageRetryMax = gConfig.getValue(self.configSection+'/StageRetryMax',4) # e.g. after 4 * 6 hrs
     self.taskSelectLimit = gConfig.getValue(self.configSection+'/TaskSelectLimit',100) # e.g. after 24hrs
     self.stagerClient = StagerClient()
+    self.fc = FileCatalog()
     Thread.__init__(self)
     self.setDaemon( True )
 
@@ -158,9 +161,43 @@ class SiteMonitor(Thread):
             self.log.warn(metadata)
 
     if staged:
-      result = self.stagerClient.setFilesState(staged,self.site,'ToUpdate')
-      if not result['OK']:
-        self.log.warn(result)
+      ##########################################
+      # First get the start time information for the files that have prestage requests issued
+      res = self.stagerClient.getStageSubmissionTiming(staged,self.site)
+      if not res['OK']:
+        self.log.warn('Accounting information will not be sent for %s files' % len(staged))
+      else:
+        submissionTiming = res['Value']
+        ######################################
+        # Update the file statuses so they are not monitored again by this agent
+        result = self.stagerClient.setFilesState(staged,self.site,'ToUpdate')
+        if not result['OK']:
+          self.log.warn(result)
+        else:
+          #########################################
+          # If they were successfully updated then send the accounting information
+          oAccounting = DataStoreClient()
+          res = self.fc.getFileSize(submissionTiming.keys())
+          if not res['OK']:
+            self.log.warn('Failed to get file sizes. Will assume file is of size 1 byte for all files.')
+            fileSizes = {}
+          else:
+            fileSizes = res['Value']['Successful']
+
+          for lfn,submitTime in submissionTiming.items():
+            oDataOperation = self.__initialiseAccountingObject(submitTime)
+            if fileSizes.has_key(lfn):
+              fileSize = fileSizes[lfn]
+              oDataOperation.setValueByKey('TransferSize',fileSize)
+            startTime = submitTime.utcnow()
+            endTime = Time.dateTime()
+            c = endTime-startTime
+            stageTime = c.days * 86400 + c.seconds
+            oDataOperation.setValueByKey('TransferTime',stageTime)
+            oAccounting.addRegister(oDataOperation)
+          self.log.info('Attempting to send accounting message...')
+          oAccounting.commit()
+          self.log.info('...sent.')
 
     self.log.info('Metadata query found: Staged=%s, UnStaged=%s, Failed=%s, out of Total=%s files' %(len(staged),len(unstaged),len(failed),totalFiles))
     return S_OK(staged)
@@ -207,4 +244,24 @@ class SiteMonitor(Thread):
 
     return S_OK('Failed tasks updated')
 
-  #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
+  #############################################################################
+  def __initialiseAccountingObject(self,submitTime):
+    accountingDict = {}
+    accountingDict['OperationType'] = 'Prestage'
+    accountingDict['User'] = 'acsmith'
+    accountingDict['Protocol'] = 'SRM'
+    accountingDict['RegistrationTime'] = 0.0
+    accountingDict['RegistrationOK'] = 0
+    accountingDict['RegistrationTotal'] = 0
+    accountingDict['TransferTotal'] = 1
+    accountingDict['TransferSize'] = 1
+    accountingDict['TransferOK'] = 1
+    accountingDict['TransferTime'] = 0.0
+    accountingDict['FinalStatus'] = 'Successful'
+    accountingDict['Source'] = gConfig.getValue('/LocalSite/Site','Unknown')
+    accountingDict['Destination'] = self.site
+    oDataOperation = DataOperation()
+    oDataOperation.setEndTime()
+    oDataOperation.setStartTime(submitTime)
+    oDataOperation.setValuesFromDict(accountingDict)
+    return oDataOperation
