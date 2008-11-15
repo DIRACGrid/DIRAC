@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: StagerClient.py,v 1.12 2008/10/08 12:33:23 rgracian Exp $
+# $Id: StagerClient.py,v 1.13 2008/11/15 22:49:19 acsmith Exp $
 ########################################################################
 
 """Set of utilities and classes to handle Stager Database"""
@@ -142,5 +142,15 @@ class StagerClient:
       return result
     except Exception, x:
       errorStr = "StagerDBClient.setTiming failed"
+      gLogger.exception(errorStr,lException=x)
+      return S_ERROR(errorStr+": "+str(x))
+
+  def getStageSubmissionTiming(self,lfns,site):
+    try:
+      server = RPCClient('Stager/Stager',useCertificates=self.useCerts,timeout=120)
+      result = server.getStageSubmissionTiming(lfns,site)
+      return result
+    except Exception, x:
+      errorStr = "StagerDBClient.getStageSubmissionTiming failed"
       gLogger.exception(errorStr,lException=x)
       return S_ERROR(errorStr+": "+str(x))

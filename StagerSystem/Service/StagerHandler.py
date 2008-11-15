@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Service/StagerHandler.py,v 1.7 2008/04/07 15:12:03 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Service/StagerHandler.py,v 1.8 2008/11/15 22:50:53 acsmith Exp $
 ########################################################################
 
 """ StagerHandler is the implementation of the StagerDB in the DISET framework
     A.Smith (17/05/07)
 """
 
-__RCSID__ = "$Id: StagerHandler.py,v 1.7 2008/04/07 15:12:03 paterson Exp $"
+__RCSID__ = "$Id: StagerHandler.py,v 1.8 2008/11/15 22:50:53 acsmith Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -201,7 +201,7 @@ class StagerHandler(RequestHandler):
       errorStr = "StagerDBHandler.stageFiles failed "+str(x)
       print errorStr
       return S_ERROR(errorStr)
-      
+
   types_getPageSummary = [IntType, IntType, StringType]
   def export_getPageSummary(self, pageNumber, numberPerPage, site):
     """ Get the summary of the DB information for a given
@@ -213,4 +213,16 @@ class StagerHandler(RequestHandler):
     except Exception,x:
       errorStr = "StagerDBHandler.getPageSummary failed "+str(x)
       print errorStr
-      return S_ERROR(errorStr)  
+      return S_ERROR(errorStr)
+
+  types_getStageSubmissionTiming = [ListType, StringType]
+  def export_getStageSubmissionTiming(self, lfns, site):
+    """ Get the start times for the lfns at the given site
+    """
+    try:
+      result = stagerDB.getStageSubmissionTiming(lfns,site)
+      return result
+    except Exception,x:
+      errorStr = "StagerDBHandler.getStageSubmissionTiming failed "+str(x)
+      print errorStr
+      return S_ERROR(errorStr)

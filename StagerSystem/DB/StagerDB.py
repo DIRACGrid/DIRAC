@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/DB/StagerDB.py,v 1.13 2008/09/15 10:46:59 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/DB/StagerDB.py,v 1.14 2008/11/15 22:52:17 acsmith Exp $
 ########################################################################
 
 """ StagerDB is a front end to the Stager Database.
@@ -8,7 +8,7 @@
     A.Smith (17/05/07)
 """
 
-__RCSID__ = "$Id: StagerDB.py,v 1.13 2008/09/15 10:46:59 paterson Exp $"
+__RCSID__ = "$Id: StagerDB.py,v 1.14 2008/11/15 22:52:17 acsmith Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.Time import toString
@@ -190,6 +190,23 @@ class StagerDB(DB):
       result = S_OK()
       result['JobIDs'] = stateJobIDs
       return result
+
+  def getStageSubmissionTiming(self,lfns,site):
+    """ Obtains the submit time of the stage request for the requested files at the given site
+    """
+    str_lfns = []
+    for lfn in lfns:
+      str_lfns.append("'"+lfn+"'")
+    str_lfn = string.join(str_lfns,",")
+    req = "SELECT LFN,StageSubmit from SiteFiles where Site = '%s' AND Status = 'Submitted' and StageSubmit != '0000-00-00 00:00:00';" % site
+    result = self._query(req)
+    if not result['OK']:
+      return result
+    else:
+      fileSubmitTimes = {}
+      for lfn,submitTime in result['Value']:
+        fileSubmitTimes[lfn] = submitTime
+      return S_OK(fileSubmitTimes)
 
   def setFilesState(self,lfns,site,state):
     """
