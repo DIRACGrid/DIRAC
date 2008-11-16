@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/SandboxDB.py,v 1.16 2008/11/10 14:15:59 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/SandboxDB.py,v 1.17 2008/11/16 23:13:15 atsareg Exp $
 ########################################################################
 """ SandboxDB class is a simple storage using MySQL as a container for
     relatively small sandbox files. The file size is limited to 16MB.
@@ -10,7 +10,7 @@
     getWMSTimeStamps()
 """
 
-__RCSID__ = "$Id: SandboxDB.py,v 1.16 2008/11/10 14:15:59 rgracian Exp $"
+__RCSID__ = "$Id: SandboxDB.py,v 1.17 2008/11/16 23:13:15 atsareg Exp $"
 
 import re, os, sys, threading
 import time, datetime
@@ -19,6 +19,7 @@ from types import *
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
 import DIRAC.Core.Utilities.Time as Time
+import DIRAC.Core.Utilities.List as List
 
 #############################################################################
 class SandboxDB(DB):
@@ -342,8 +343,11 @@ class SandboxDB(DB):
     if not result['Value']:
       return S_OK()
 
+    partitions_touched = []
+
     for fname,flink,partition in result['Value']:
       if partition:
+        partitions_touched.append(partition)
         req = "DELETE FROM %s WHERE JobID=%d" % (partition,int(jobID))
         result = self._update(req)
         if not result['OK']:
@@ -352,11 +356,16 @@ class SandboxDB(DB):
       if flink and link.find('part') == 0:
         dummy,pTable,jID,fname = flink[5:].split('/')
         if jID == jobID:
+          partitions_touched.append(partition)
           req = "DELETE FROM %s WHERE JobID=%d" % (partition,int(jobID))
           result = self._update(req)
           if not result['OK']:
             gLogger.warn('Failed to remove files for job %d' % jobID)
             return result
+
+    partitions = List.uniqueElements(partitions_touched)
+    for partition in partitions:
+      result = self.__updatePartitionSize(sandbox,partition)
 
     req = "DELETE FROM %s WHERE JobID=%d" % (sandbox,int(jobID))
     result = self._update(req)
