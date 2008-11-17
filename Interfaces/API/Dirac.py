@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.52 2008/10/22 11:01:10 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.53 2008/11/17 17:12:14 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.52 2008/10/22 11:01:10 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.53 2008/11/17 17:12:14 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -62,7 +62,7 @@ class Dirac:
     self.log = gLogger.getSubLogger(COMPONENT_NAME)
     self.site       = gConfig.getValue('/LocalSite/Site','Unknown')
     self.setup      = gConfig.getValue('/DIRAC/Setup','Unknown')
-    self.section    = 'Interfaces/API/Dirac'
+    self.section    = '/LocalSite/'
     self.cvsVersion = 'CVS version '+__RCSID__
     self.diracInfo  = 'DIRAC version v%dr%d build %d' \
                        %(DIRAC.majorVersion,DIRAC.minorVersion,DIRAC.patchLevel)
@@ -258,7 +258,8 @@ class Dirac:
     localCfg.addDefaultEntry('/AgentJobRequirements/PilotType','private')
     localCfg.addDefaultEntry('/AgentJobRequirements/OwnerDN',self.__getCurrentDN())
     localCfg.addDefaultEntry('/AgentJobRequirements/OwnerGroup',self.__getCurrentGroup())
-    #SKP
+    localCfg.addDefaultEntry('/Resources/Computing/InProcess/PilotType','private')
+    #SKP can add compatible platforms here
     localCfg.setConfigurationForAgent(agentName)
     result = localCfg.loadUserData()
     if not result[ 'OK' ]:
@@ -452,6 +453,15 @@ class Dirac:
       if not result['OK']:
         self.log.warn('Input data resolution failed')
         return result
+
+    localArch = None #If running locally assume the user chose correct platform (could check in principle)
+    if parameters['Value'].has_key('SystemConfig'):
+      if parameters['Value']['SystemConfig']:
+        localArch = parameters['Value']['SystemConfig']
+
+    if localArch:
+      jobParamsDict['CE'] = {}
+      jobParamsDict['CE']['CompatiblePlatforms']=localArch
 
     softwarePolicy = gConfig.getValue('DIRAC/VOPolicy/SoftwareDistModule','')
     if not softwarePolicy:
@@ -1284,9 +1294,14 @@ class Dirac:
     """Retrieve the input data requirement of any job existing in the workload management
        system.
 
-        >>> dirac.getJobInputData(1405)
-        {'OK': True, 'Value': {1405: ['LFN:/lhcb/production/DC06/phys-v2-lumi5/00001680/DST/0000/00001680_00000490_5.dst']}}
+       Example Usage:
 
+       >>> dirac.getJobInputData(1405)
+      {'OK': True, 'Value': {1405: ['LFN:/lhcb/production/DC06/phys-v2-lumi5/00001680/DST/0000/00001680_00000490_5.dst']}}
+
+       @param jobID: JobID
+       @type jobID: int, string or list
+       @return: S_OK,S_ERROR
     """
     if type(jobID)==type(" "):
       try:
@@ -1312,6 +1327,46 @@ class Dirac:
         summary[job]=[]
 
     return S_OK(summary)
+
+  #############################################################################
+  def getJobOutputData(self,jobID):
+    """ Retrieve the output data files of a given job locally.
+
+       Example Usage:
+
+       >>> dirac.getJobOutputData(1405)
+       {'OK':True,'Value':[<LFN>]}
+
+       @param jobID: JobID
+       @type jobID: int or string
+       @return: S_OK,S_ERROR
+    """
+    if type(jobID)==type(" "):
+      try:
+        jobID = int(jobID)
+      except Exception,x:
+        return self.__errorReport(str(x),'Expected integer or string for existing jobID')
+
+    result = self.parameters(int(jobID))
+    if not result['OK']:
+      return result
+    if not result['Value'].has_key('UploadedOutputData'):
+      self.log.info('Parameters for job %s do not contain uploaded output data:\n%s' %(jobID,result))
+      return S_ERROR('No output data found for job %s' %jobID)
+
+    outputData = result['Value']['UploadedOutputData']
+    outputData = outputData.replace(' ','').split(',')
+    if not outputData:
+      return S_ERROR('No output data files found to download')
+
+    for outputFile in outputData:
+      self.log.info('Attempting to retrieve %s' %outputFile)
+      result = self.getFile(outputFile)
+      if not result['OK']:
+        self.log.error('Failed to download %s' %outputFile)
+        return result
+
+    return S_OK(outputData)
 
   #############################################################################
   def selectJobs(self,Status=None,MinorStatus=None,ApplicationStatus=None,Site=None,Owner=None,JobGroup=None,Date=None):
