@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/LocalConfiguration.py,v 1.28 2008/07/10 13:56:38 acasajus Exp $
-__RCSID__ = "$Id: LocalConfiguration.py,v 1.28 2008/07/10 13:56:38 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/LocalConfiguration.py,v 1.29 2008/11/17 11:30:59 acasajus Exp $
+__RCSID__ = "$Id: LocalConfiguration.py,v 1.29 2008/11/17 11:30:59 acasajus Exp $"
 
 import sys
 import os
@@ -182,6 +182,8 @@ class LocalConfiguration:
     Load cfg files with come from the command line
     """
     errorsList = []
+    if 'DIRACSYSCONFIG' in os.environ:
+      gConfigurationData.loadFile( os.environ[ 'DIRACSYSCONFIG' ] )
     gConfigurationData.loadFile( os.path.expanduser( "~/.dirac.cfg" ) )
     for fileName in self.additionalCFGFiles:
       gLogger.debug( "Loading file %s" % fileName )
