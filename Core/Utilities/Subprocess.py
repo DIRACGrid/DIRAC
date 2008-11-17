@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Subprocess.py,v 1.27 2008/11/17 13:22:33 acasajus Exp $
-__RCSID__ = "$Id: Subprocess.py,v 1.27 2008/11/17 13:22:33 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Subprocess.py,v 1.28 2008/11/17 13:50:47 acasajus Exp $
+__RCSID__ = "$Id: Subprocess.py,v 1.28 2008/11/17 13:50:47 acasajus Exp $"
 """
    DIRAC Wrapper to execute python and system commands with a wrapper, that might
    set a timeout.
@@ -47,7 +47,7 @@ gLogger = gLogger.getSubLogger( 'Subprocess' )
 
 class Subprocess:
 
-  def __init__( self, timeout = False, bufferLimit = 5242880 ):
+  def __init__( self, timeout = False, bufferLimit = 15728640 ):
     try:
       self.changeTimeout( timeout )
       self.bufferLimit = int( bufferLimit) # 5MB limit for data
@@ -337,7 +337,7 @@ class Subprocess:
       return True
     return False
 
-def systemCall( timeout, cmdSeq, callbackFunction = None, env = None, bufferLimit = 5242880 ):
+def systemCall( timeout, cmdSeq, callbackFunction = None, env = None, bufferLimit = 15728640 ):
   """
      Use SubprocessExecutor class to execute cmdSeq (it can be a string or a sequence)
      with a timeout wrapper, it is executed directly without calling a shell
@@ -348,7 +348,7 @@ def systemCall( timeout, cmdSeq, callbackFunction = None, env = None, bufferLimi
                               env = env,
                               shell = False )
 
-def shellCall( timeout, cmdSeq, callbackFunction = None, env = None, bufferLimit = 5242880 ):
+def shellCall( timeout, cmdSeq, callbackFunction = None, env = None, bufferLimit = 15728640 ):
   """
      Use SubprocessExecutor class to execute cmdSeq (it can be a string or a sequence)
      with a timeout wrapper, cmdSeq it is invoque by /bin/sh
