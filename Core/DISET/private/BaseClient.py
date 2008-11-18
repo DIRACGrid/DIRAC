@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.54 2008/11/11 17:36:42 acasajus Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.54 2008/11/11 17:36:42 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.55 2008/11/18 08:59:07 acasajus Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.55 2008/11/18 08:59:07 acasajus Exp $"
 
 import sys
 import types
@@ -55,7 +55,10 @@ class BaseClient:
 
   def __discoverURL(self):
     #Calculate final URL
-    self.serviceURL = self.__findServiceURL()
+    result = self.__findServiceURL()
+    if not result[ 'OK' ]:
+      return result
+    self.serviceURL = result[ 'Value' ]
     retVal = Network.splitURL( self.serviceURL )
     if not retVal[ 'OK' ]:
       return S_ERROR( "URL is malformed: %s" % retVal[ 'Message' ] )
@@ -106,7 +109,7 @@ class BaseClient:
     for protocol in gProtocolDict.keys():
       if self.serviceName.find( "%s://" % protocol ) == 0:
         gLogger.debug( "Already given a valid url", self.serviceName )
-        return self.serviceName
+        return S_OK( self.serviceName )
 
     if self.KW_IGNORE_GATEWAYS not in self.kwargs or not self.kwargs[ self.KW_IGNORE_GATEWAYS ]:
       dRetVal = gConfig.getOption( "/LocalSite/Site" )
@@ -117,15 +120,14 @@ class BaseClient:
           rawGatewayURL = List.randomize( List.fromChar( dRetVal[ 'Value'], "," ) )[0]
           gatewayURL = "/".join( rawGatewayURL.split( "/" )[:3] )
           gLogger.debug( "Using gateway", gatewayURL )
-          return "%s/%s" % (  gatewayURL, self.serviceName )
+          return S_OK( "%s/%s" % (  gatewayURL, self.serviceName ) )
 
     urls = getServiceURL( self.serviceName, setup = self.setup )
     if not urls:
-      self.__errorOnInit = "URL for service %s not found" % self.serviceName
-      return ""
+      return S_ERROR( "URL for service %s not found" % self.serviceName )
     sURL = List.randomize( List.fromChar( urls, "," ) )[0]
     gLogger.debug( "Discovering URL for service", "%s -> %s" % ( self.serviceName, sURL ) )
-    return sURL
+    return S_OK( sURL )
 
   def __checkThreadID( self ):
     cThID = thread.get_ident()
