@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/BaseTransport.py,v 1.21 2008/11/11 17:36:42 acasajus Exp $
-__RCSID__ = "$Id: BaseTransport.py,v 1.21 2008/11/11 17:36:42 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/BaseTransport.py,v 1.22 2008/11/18 09:54:46 acasajus Exp $
+__RCSID__ = "$Id: BaseTransport.py,v 1.22 2008/11/18 09:54:46 acasajus Exp $"
 
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
 from DIRAC.Core.Utilities import DEncode
@@ -76,6 +76,9 @@ class BaseTransport:
     except Exception, e:
       return S_ERROR( "Exception while reading from peer: %s" % str( e ) )
 
+  def _write( self, buffer ):
+    return S_OK( self.oSocket.send( buffer ) )
+
   def sendData( self, uData ):
     sCodedData = DEncode.encode( uData )
     dataToSend = "%s:%s" % ( len( sCodedData ), sCodedData )
@@ -84,7 +87,10 @@ class BaseTransport:
       packSentBytes = 0
       while packSentBytes < bytesToSend:
         try:
-          sentBytes = self.oSocket.send( dataToSend[ index + packSentBytes : index + bytesToSend ] )
+          result = self._write( dataToSend[ index + packSentBytes : index + bytesToSend ] )
+          if not result[ 'OK' ]:
+            return result
+          sentBytes = result[ 'Value' ]
         except Exception, e:
           return S_ERROR( "Exception while sending data: %s" % e)
         if sentBytes == 0:

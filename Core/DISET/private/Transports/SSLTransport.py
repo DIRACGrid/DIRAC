@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSLTransport.py,v 1.29 2008/11/11 17:36:42 acasajus Exp $
-__RCSID__ = "$Id: SSLTransport.py,v 1.29 2008/11/11 17:36:42 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSLTransport.py,v 1.30 2008/11/18 09:54:46 acasajus Exp $
+__RCSID__ = "$Id: SSLTransport.py,v 1.30 2008/11/18 09:54:46 acasajus Exp $"
 
 import os
 import types
@@ -86,6 +86,33 @@ class SSLTransport( BaseTransport ):
         time.sleep(0.1)
       except Exception, e:
         return S_ERROR( "Exception while reading from peer: %s" % str( e ) )
+
+  def _write( self, buffer ):
+    sentBytes = 0
+    timeout = self.oSocketInfo.infoDict[ 'timeout' ]
+    if timeout:
+      start = time.time()
+    while sentBytes < len( buffer ):
+      try:
+        if timeout:
+          if time.time() - start > timeout:
+            return S_ERROR( "Socket write timeout exceeded" )
+        sent = self.oSocket.write( buffer[ sentBytes: ] )
+        if sent == 0:
+          return S_ERROR( "Connection closed by peer" )
+        if sent > 0:
+          sentBytes += sent
+      except GSI.SSL.WantWriteError:
+        time.sleep( 0.1 )
+        continue
+      except GSI.SSL.WantReadError:
+        time.sleep( 0.1 )
+        continue
+      except Exception, e:
+        print "Exception while sending", e
+        return S_ERROR( "Error while sending: %s" % str( e ) )
+    return S_OK( sentBytes )
+
 
 def checkSanity( urlTuple, kwargs ):
   """
