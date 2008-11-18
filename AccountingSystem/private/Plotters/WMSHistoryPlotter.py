@@ -25,7 +25,6 @@ class WMSHistoryPlotter(BaseReporter):
       return retVal
     dataDict, granularity = retVal[ 'Value' ]
     self.stripDataField( dataDict, 0 )
-    dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
     return S_OK( { 'data' : dataDict, 'granularity' : granularity } )
 
   def _plotNumberOfJobs( self, reportRequest, plotInfo, filename ):
@@ -33,9 +32,10 @@ class WMSHistoryPlotter(BaseReporter):
                  'starttime' : reportRequest[ 'startTime' ],
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
-                 'skipEdgeColor' : True,
-                 'ylabel' : "jobs"  }
-    return self._generateTimedStackedBarPlot( filename, plotInfo[ 'data' ], metadata )
+                 'ylabel' : "jobs",
+                 'is_cumulative' : True  }
+    return self._generateCumulativePlot( filename, plotInfo[ 'data' ], metadata )
+
 
   def _reportNumberOfReschedules( self, reportRequest ):
     selectFields = ( self._getSQLStringForGrouping( reportRequest[ 'groupingFields' ]) + ", %s, %s, SUM(%s/%s)",
@@ -53,7 +53,6 @@ class WMSHistoryPlotter(BaseReporter):
       return retVal
     dataDict, granularity = retVal[ 'Value' ]
     self.stripDataField( dataDict, 0 )
-    dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
     return S_OK( { 'data' : dataDict, 'granularity' : granularity } )
 
   def _plotNumberOfReschedules( self, reportRequest, plotInfo, filename ):
@@ -61,6 +60,6 @@ class WMSHistoryPlotter(BaseReporter):
                  'starttime' : reportRequest[ 'startTime' ],
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
-                 'skipEdgeColor' : True,
+                 'is_cumulative' : True,
                  'ylabel' : "reschedules"  }
-    return self._generateTimedStackedBarPlot( filename, plotInfo[ 'data' ], metadata )
+    return self._generateCumulativePlot( filename, plotInfo[ 'data' ], metadata )
