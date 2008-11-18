@@ -135,9 +135,9 @@ class DataOperationPlotter(BaseReporter):
     return self._generateCumulativePlot( filename, plotInfo[ 'data' ], metadata )
 
   def _reportThroughput( self, reportRequest ):
-    selectFields = ( self._getSQLStringForGrouping( reportRequest[ 'groupingFields' ]) + ", %s, %s, SUM(%s)/1000000, SUM(%s)",
+    selectFields = ( self._getSQLStringForGrouping( reportRequest[ 'groupingFields' ]) + ", %s, %s, SUM(%s)/1000000",
                      reportRequest[ 'groupingFields' ] + [ 'startTime', 'bucketLength',
-                       'TransferSize', 'bucketLength',
+                       'TransferSize'
                       ]
                    )
     retVal = self._getTimedData( reportRequest[ 'startTime' ],
@@ -145,14 +145,13 @@ class DataOperationPlotter(BaseReporter):
                                 selectFields,
                                 reportRequest[ 'condDict' ],
                                 reportRequest[ 'groupingFields' ],
-                                { 'convertToGranularity' : 'sum',
-                                  'calculateProportionalGauges' : False,
-                                  'consolidationFunction' : lambda x,y : x/y } )
+                                {} )
     if not retVal[ 'OK' ]:
       return retVal
     dataDict, granularity = retVal[ 'Value' ]
     self.stripDataField( dataDict, 0 )
     dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
+    dataDict = self._transformToRate( granularity, dataDict )
     return S_OK( { 'data' : dataDict, 'granularity' : granularity } )
 
   def _plotThroughput( self, reportRequest, plotInfo, filename ):
