@@ -32,9 +32,9 @@ class WMSHistoryPlotter(BaseReporter):
                  'starttime' : reportRequest[ 'startTime' ],
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
-                 'ylabel' : "jobs",
-                 'is_cumulative' : True  }
-    return self._generateCumulativePlot( filename, plotInfo[ 'data' ], metadata )
+                 'skipEdgeColor' : True,
+                 'ylabel' : "jobs"  }
+    return self._generateTimedStackedBarPlot( filename, plotInfo[ 'data' ], metadata )
 
 
   def _reportNumberOfReschedules( self, reportRequest ):
@@ -60,6 +60,6 @@ class WMSHistoryPlotter(BaseReporter):
                  'starttime' : reportRequest[ 'startTime' ],
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
-                 'is_cumulative' : True,
+                 'skipEdgeColor' : True,
                  'ylabel' : "reschedules"  }
-    return self._generateCumulativePlot( filename, plotInfo[ 'data' ], metadata )
+    return self._generateTimedStackedBarPlot( filename, plotInfo[ 'data' ], metadata )
