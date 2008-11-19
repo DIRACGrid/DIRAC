@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/UserProfileDB.py,v 1.1 2008/11/18 15:58:19 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/UserProfileDB.py,v 1.2 2008/11/19 10:19:53 acasajus Exp $
 ########################################################################
 """ ProxyRepository class is a front-end to the proxy repository Database
 """
 
-__RCSID__ = "$Id: UserProfileDB.py,v 1.1 2008/11/18 15:58:19 acasajus Exp $"
+__RCSID__ = "$Id: UserProfileDB.py,v 1.2 2008/11/19 10:19:53 acasajus Exp $"
 
 import time
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
@@ -108,6 +108,13 @@ class UserProfileDB(DB):
       return S_OK( data[0][0] )
     return S_ERROR( "No data for combo profile %s action %s dataKey %s" % ( profileId, action, dataKey) )
 
+  def deleteWebDataByProfileId( self, profileId, action, dataKey, connObj = False ):
+    """
+    Remove a data entry for a profile
+    """
+    selectSQL = "DELETE FROM `up_WebProfilesData` WHERE %s" % self.__webProfileDataCond( profileId, action, dataKey )
+    return self._update( selectSQL, conn = connObj )
+
   def storeWebDataByProfileId( self, profileId, action, dataKey, data, connObj = False ):
     """
     Set a data entry for a profile
@@ -164,5 +171,22 @@ class UserProfileDB(DB):
         return result
       profileId = result[ 'Value' ]
       return self.storeWebDataByProfileId( profileId, action, dataKey, data, connObj = connObj  )
+    finally:
+      connObj.close()
+
+  def deleteWebData( self, userName, userGroup, action, dataKey ):
+    """
+    Helper for deleteting data
+    """
+    result = self._getConnection()
+    if not result[ 'OK' ]:
+      return result
+    connObj = result[ 'Value' ]
+    try:
+      result = self.getProfileId( userName, userGroup, connObj = connObj )
+      if not result[ 'OK' ]:
+        return result
+      profileId = result[ 'Value' ]
+      return self.deleteWebDataByProfileId( profileId, action, dataKey, connObj = connObj  )
     finally:
       connObj.close()
