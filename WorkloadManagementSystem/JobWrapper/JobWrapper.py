@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.61 2008/10/21 14:28:08 paterson Exp $
+# $Id: JobWrapper.py,v 1.62 2008/11/19 17:33:13 paterson Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.61 2008/10/21 14:28:08 paterson Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.62 2008/11/19 17:33:13 paterson Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -753,7 +753,9 @@ class JobWrapper:
     lfn = outputFile
     if not re.search('^LFN:',outputFile):
       initial = owner[:1]
-      lfn = '/'+self.vo+'/user/'+initial+'/'+owner+'/'+str(self.jobID)+'/'+localfile
+      timeTuple = time.gmtime()
+      yearMonth = '%s_%s' %(timeTuple[0],timeTuple[1])
+      lfn = '/'+self.vo+'/user/'+initial+'/'+owner+'/'+yearMonth+'/'+str(self.jobID)+'/'+localfile
     else:
       lfn = string.replace(outputFile,"LFN:","")
 
