@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.53 2008/11/17 17:12:14 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.54 2008/11/20 12:13:40 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.53 2008/11/17 17:12:14 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.54 2008/11/20 12:13:40 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -1495,6 +1495,86 @@ class Dirac:
       print self.pPrint.pformat(summary)
 
     return S_OK(summary)
+
+  #############################################################################
+  def getJobDebugOutput(self,jobID):
+    """Developer function. Try to retrieve all possible outputs including
+       logging information, job parameters, sandbox outputs, pilot outputs,
+       last heartbeat standard output, JDL and CPU profile.
+    """
+    if type(jobID)==type(" "):
+      try:
+        jobID = int(jobID)
+      except Exception,x:
+        return self.__errorReport(str(x),'Expected integer or string for existing jobID')
+
+    debugDir = '%s/DEBUG_%s' %(os.getcwd(),jobID)
+    try:
+      os.mkdir(debugDir)
+    except Exception,x:
+      return self.__errorReport(str(x),'Could not create directory in %s' %(debugDir))
+
+    result = self.getOutputSandbox(jobID,'%s' %(debugDir))
+    msg = []
+    if not result['OK']:
+      msg.append('Output Sandbox: Not Retrieved')
+    else:
+      msg.append('Output Sandbobox: Retrieved')
+
+    result = self.getInputSandbox(jobID,'%s' %(debugDir))
+    if not result['OK']:
+      msg.append('Input Sandbox: Not Retrieved')
+    else:
+      msg.append('Input Sandbobox: Retrieved')
+
+    result = self.parameters(jobID)
+    if not result['OK']:
+      msg.append('Job Parameters: Not Retrieved')
+    else:
+      self.__writeFile(result['Value'],'%s/JobParameters' %(debugDir))
+      msg.append('Job Parameters: Retrieved')
+
+    result = self.peek(jobID)
+    if not result['OK']:
+      msg.append('Last Heartbeat StdOut: Not Retrieved')
+    else:
+      self.__writeFile(result['Value'],'%s/LastHeartBeat' %(debugDir))
+      msg.append('Last Heartbeat StdOut: Retrieved')
+
+    result = self.loggingInfo(jobID)
+    if not result['OK']:
+      msg.append('Logging Info: Not Retrieved')
+    else:
+      self.__writeFile(result['Value'],'%s/LoggingInfo' %(debugDir))
+      msg.append('Logging Info: Retrieved')
+
+    result = self.getJobJDL(jobID)
+    if not result['OK']:
+      msg.append('Job JDL: Not Retrieved')
+    else:
+      self.__writeFile(result['Value'],'%s/Job%s.jdl' %(debugDir,jobID))
+      msg.append('Job JDL: Retrieved')
+
+    result = self.getJobCPUTime(jobID)
+    if not result['OK']:
+      msg.append('CPU Profile: Not Retrieved')
+    else:
+      self.__writeFile(result['Value'],'%s/JobCPUProfile' %(debugDir))
+      msg.append('CPU Profile: Retrieved')
+
+    self.log.info('Summary of debugging outputs for job %s retrieved in directory:\n%s\n%s' %(jobID,debugDir,string.join(msg,'\n')))
+    return S_OK(debugDir)
+
+  #############################################################################
+  def __writeFile(self,object,fileName):
+    """Internal function.  Writes a python object to a specified file path.
+    """
+    fopen = open(fileName,'w')
+    if not type(object) == type(" "):
+      fopen.write('%s\n' %self.pPrint.pformat(object))
+    else:
+      fopen.write(object)
+    fopen.close()
 
   #############################################################################
   def getJobCPUTime(self,jobID,printOutput=False):
