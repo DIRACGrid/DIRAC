@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.37 2008/11/14 16:20:11 acasajus Exp $
-__RCSID__ = "$Id: MonitoringClient.py,v 1.37 2008/11/14 16:20:11 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.38 2008/11/20 12:08:56 acasajus Exp $
+__RCSID__ = "$Id: MonitoringClient.py,v 1.38 2008/11/20 12:08:56 acasajus Exp $"
 
 import threading
 import time
@@ -9,6 +9,26 @@ from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Utilities import Time, ExitCallback, Network, ThreadScheduler
 from DIRAC.MonitoringSystem.private.ServiceInterface import gServiceInterface
 from DIRAC.Core.DISET.RPCClient import RPCClient
+
+class MonitoringFlusher:
+  """
+  This class flushes all monitoring clients registered
+  """
+  def __init__( self ):
+    self.__mcList = []
+    ThreadScheduler.gThreadScheduler.addPeriodicTask( 300, self.flush )
+    #HACK: Avoid exiting while the thread is starting
+    time.sleep( 0.1 )
+
+  def flush( self, allData = False):
+    for mc in self.__mcList:
+      mc.flush( allData )
+
+  def registerMonitoringClient( self, mc ):
+    if mc not in self.__mcList:
+      self.__mcList.append( mc )
+
+gMonitoringFlusher = MonitoringFlusher()
 
 class MonitoringClient:
 
@@ -66,27 +86,9 @@ class MonitoringClient:
       self.cfgSection = "/Script"
     else:
       raise Exception( "Component type has not been defined" )
-    self.__initializeSendMode()
+    gMonitoringFlusher.registerMonitoringClient( self )
     #ExitCallback.registerExitCallback( self.forceFlush )
     self.__initialized = True
-
-  def __initializeSendMode( self ):
-    """
-    Initialize sending mode
-    Reads configuration options:
-      SendMode:
-        - periodic : Data will be sent periodically
-        - manual : flush() method has to be called manually
-      SendPeriod:
-        - <number> : Seconds between periodic updates. Minimum value is 300
-    """
-    self.sendingMode = gConfig.getValue( "%s/SendMode" % self.cfgSection, "periodic" )
-    if self.sendingMode == "periodic":
-      self.sendingPeriod = max( 60, gConfig.getValue( "%s/SendPeriod" % self.cfgSection, 300 ) )
-      ThreadScheduler.gThreadScheduler.addPeriodicTask( self.sendingPeriod,
-                                                        self.flush )
-      #HACK: Avoid exiting while the thread is starting
-      time.sleep( 0.1 )
 
   def setComponentLocation( self, componentLocation = False ):
     """
@@ -221,7 +223,7 @@ class MonitoringClient:
     return consolidatedMarks
 
   def flush( self, allData = False ):
-    if not self.__enabled:
+    if not self.__enabled or not self.__initialized:
       return
     self.flushingLock.acquire()
     self.logger.debug( "Sending information to server" )
