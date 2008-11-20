@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.24 2008/11/04 15:50:07 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.25 2008/11/20 11:40:56 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.24 2008/11/04 15:50:07 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.25 2008/11/20 11:40:56 acasajus Exp $"
 
 import time
 import types
@@ -388,8 +388,7 @@ class TaskQueueDB(DB):
                                                                                                                  bannedTable,
                                                                                                                  bannedTable ) )
     tqSqlCmd = "SELECT `tq_TaskQueues`.TQId FROM %s WHERE %s" % ( ", ".join( sqlTables ), " AND ".join( sqlCondList ) )
-    tqSqlCmd = "%s ORDER BY FLOOR( RAND() * `tq_TaskQueues`.Priority ) DESC, `tq_TaskQueues`.TQId ASC LIMIT %s" % ( tqSqlCmd,
-                                                                                                                    numQueuesToGet )
+    tqSqlCmd = "%s ORDER BY RAND() / `tq_TaskQueues`.Priority ASC LIMIT %s" % ( tqSqlCmd, numQueuesToGet )
     return S_OK( tqSqlCmd )
 
   def deleteJob( self, jobId, connObj = False ):
