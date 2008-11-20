@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.25 2008/11/20 11:40:56 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.26 2008/11/20 11:45:37 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.25 2008/11/20 11:40:56 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.26 2008/11/20 11:45:37 acasajus Exp $"
 
 import time
 import types
@@ -25,7 +25,7 @@ class TaskQueueDB(DB):
     self.maxCPUSegments = ( 500, 5000, 50000, 300000 )
     self.__maxMatchRetry = 3
     self.__jobPriorityBoundaries = ( 1, 10 )
-    self.__tqPriorityBoundaries = ( 1, 10 )
+    self.__tqPriorityBoundaries = ( 1, 10000 )
     retVal = self.__initializeDB()
     if not retVal[ 'OK' ]:
       raise Exception( "Can't create tables: %s" % retVal[ 'Message' ])
