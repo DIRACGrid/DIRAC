@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/SiteMonitor.py,v 1.11 2008/11/15 22:47:29 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/SiteMonitor.py,v 1.12 2008/11/21 11:13:39 acsmith Exp $
 # File :   SiteMonitor.py
 # Author : Stuart Paterson
 ########################################################################
@@ -7,7 +7,7 @@
 """  The SiteMonitor base-class monitors staging requests for a given site.
 """
 
-__RCSID__ = "$Id: SiteMonitor.py,v 1.11 2008/11/15 22:47:29 acsmith Exp $"
+__RCSID__ = "$Id: SiteMonitor.py,v 1.12 2008/11/21 11:13:39 acsmith Exp $"
 
 from DIRAC.StagerSystem.Client.StagerClient                import StagerClient
 from DIRAC.DataManagementSystem.Client.StorageElement      import StorageElement
@@ -184,7 +184,8 @@ class SiteMonitor(Thread):
           else:
             fileSizes = res['Value']['Successful']
 
-          for lfn,submitTime in submissionTiming.items():
+          for lfn in staged:
+            submitTime = submissionTiming[lfn]
             oDataOperation = self.__initialiseAccountingObject(submitTime)
             if fileSizes.has_key(lfn):
               fileSize = fileSizes[lfn]
