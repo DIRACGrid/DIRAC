@@ -1485,6 +1485,12 @@ class SRM2Storage(StorageBase):
         statDict['Migrated'] = 1
       else:
         statDict['Migrated'] = 0
+      statDict['Lost'] = 0
+      if re.search('LOST',urlLocality):
+        statDict['Lost'] = 1
+      statDict['Unavailable'] = 0
+      if re.search('UNAVAILABLE',urlLocality):
+        statDict['Unavailable'] = 1
     return statDict
 
   def __initialiseAccountingObject(self,operation,se,files):
