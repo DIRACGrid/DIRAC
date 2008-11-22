@@ -1,14 +1,14 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/DB.py,v 1.4 2008/04/08 10:25:00 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/DB.py,v 1.5 2008/11/22 20:39:50 atsareg Exp $
 ########################################################################
 
 """ BaseDB is the base class for multiple DIRAC databases. It uniforms the
     way how the database objects are constructed
 """
 
-__RCSID__ = "$Id: DB.py,v 1.4 2008/04/08 10:25:00 atsareg Exp $"
+__RCSID__ = "$Id: DB.py,v 1.5 2008/11/22 20:39:50 atsareg Exp $"
 
-import sys
+import sys, types
 from DIRAC                           import gLogger, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.Core.Utilities.MySQL      import MySQL
@@ -72,3 +72,70 @@ class DB(MySQL):
     self.log.info("DBName:         "+self.dbName)
     self.log.info("MaxQueue:       "+`self.maxQueueSize`)
     self.log.info("==================================================")
+
+########################################################################################
+#
+#  Utility functions
+#
+########################################################################################
+  def buildCondition(self, condDict, older=None, newer=None, timeStamp=None):
+    """ Build SQL condition statement from provided condDict and other extra check on
+        a specified time stamp.
+        The conditions dictionary specifies for each attribute one or a List of possible
+        values
+    """
+    condition = ''
+    conjunction = "WHERE"
+
+    if condDict != None:
+      for attrName, attrValue in condDict.items():
+        if type(attrValue) == types.ListType:
+          multiValue = ','.join(['"'+x.strip()+'"' for x in attrValue])
+          condition = ' %s %s %s in (%s)' % ( condition,
+                                              conjunction,
+                                              str(attrName),
+                                              multiValue  )
+        else:
+          condition = ' %s %s %s=\'%s\'' % ( condition,
+                                             conjunction,
+                                             str(attrName),
+                                             str(attrValue)  )
+        conjunction = "AND"
+
+    if timeStamp:
+      if older:
+        condition = ' %s %s %s < \'%s\'' % ( condition,
+                                             conjunction,
+                                             timeStamp,
+                                             str(older) )
+        conjunction = "AND"
+
+      if newer:
+        condition = ' %s %s %s >= \'%s\'' %  ( condition,
+                                               conjunction,
+                                               timeStamp,
+                                               str(newer) )
+
+    return condition
+
+#########################################################################################
+  def getCounters(self, table, attrList, condDict, older=None, newer=None, timeStamp=None):
+    """ Count the number of records on each distinct combination of AttrList, selected
+        with condition defined by condDict and time stamps
+    """
+
+    cond = self.buildCondition( condDict, older, newer, timeStamp)
+    attrNames = ','.join(map(lambda x: str(x),attrList ))
+    cmd = 'SELECT %s,COUNT(*) FROM %s %s GROUP BY %s ' % (attrNames,table,cond,attrNames)
+    result = self._query( cmd )
+    if not result['OK']:
+      return result
+
+    resultList = []
+    for raw in result['Value']:
+      attrDict = {}
+      for i in range(len(attrList)):
+        attrDict[attrList[i]] = raw[i]
+      item = (attrDict,raw[len(attrList)])
+      resultList.append(item)
+    return S_OK(resultList)
