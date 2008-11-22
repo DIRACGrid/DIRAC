@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/SiteStager.py,v 1.7 2008/11/11 11:29:23 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/SiteStager.py,v 1.8 2008/11/22 14:39:28 acsmith Exp $
 # File :   SiteStager.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
      resetting of stage requests as necessary.
 """
 
-__RCSID__ = "$Id: SiteStager.py,v 1.7 2008/11/11 11:29:23 rgracian Exp $"
+__RCSID__ = "$Id: SiteStager.py,v 1.8 2008/11/22 14:39:28 acsmith Exp $"
 
 from DIRAC.StagerSystem.Client.StagerClient                import StagerClient
 from DIRAC.DataManagementSystem.Client.StorageElement      import StorageElement
@@ -146,7 +146,7 @@ class SiteStager(Thread):
       if stagingRequest.has_key('Failed'):
         for pfn,cause in stagingRequest['Failed'].items():
           self.log.warn('PFN %s failed to stage with message: %s' %(pfn,cause))
-          submitted.append(pfnLfnDict[pfn])
+          #submitted.append(pfnLfnDict[pfn])
 
       if stagingRequest.has_key('Successful'):
         for pfn,protPFN in stagingRequest['Successful'].items():
