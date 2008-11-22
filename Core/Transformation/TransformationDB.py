@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.75 2008/11/09 14:30:06 atsareg Exp $
+# $Id: TransformationDB.py,v 1.76 2008/11/22 20:38:51 atsareg Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -21,6 +21,7 @@ from DIRAC.Core.Utilities.List import stringListToString, intListToString
 from DIRAC.Core.DISET.RPCClient import RPCClient
 
 import threading
+from types import *
 
 MAX_ERROR_COUNT = 3
 
@@ -293,6 +294,40 @@ class TransformationDB(DB):
       return S_OK(transdict)
     return S_ERROR('Transformation with id =%d not found'%transID)
 
+  def getTransformations(self,transList):
+    """ Get Transformation attributes for Transformations identified by production ID
+        in the given list
+    """
+
+    transString = ','.join([str(x) for x in transList])
+    paramList = ['TransformationID','TransformationName','Description','LongDescription',
+                 'CreationDate','AuthorDN','AuthorGroup','Type','Plugin','AgentType','Status',
+                 'FileMask']
+    paramString = ','.join(paramList)
+
+    req = "SELECT %s FROM Transformations WHERE TransformationID in (%s);" % (paramString,transString)
+    res = self._query(req)
+    if not res['OK']:
+      return res
+    if not res['Value']:
+      return S_ERROR('No Transformation found')
+
+    resultDict = {}
+    resultDict['ParameterNames'] = paramList
+    resultList = []
+    for raw in res['Value']:
+      rList = []
+      for item in raw:
+        if type(item) not in [IntType,LongType]:
+          rList.append(str(item))
+        else:
+          rList.append(item)   
+      resultList.append(rList)
+
+    resultDict['Records'] = resultList
+
+    return S_OK(resultDict)
+
   def getAllTransformations(self):
     """ Get parameters of all the Transformations
     """
@@ -403,6 +438,40 @@ class TransformationDB(DB):
       fdict['TargetSE'] = usedse
       flist.append(fdict)
     return S_OK(flist)
+
+  def selectTransformations(self, condDict, older=None, newer=None, timeStamp='CreationDate',
+                        orderAttribute=None, limit=None ):
+    """ Select jobs matching the following conditions:
+        - condDict dictionary of required Key = Value pairs;
+        - with the last update date older and/or newer than given dates;
+
+        The result is ordered by JobID if requested, the result is limited to a given
+        number of jobs if requested.
+    """
+
+    condition = self.buildCondition(condDict, older, newer, timeStamp)
+
+    if orderAttribute:
+      orderType = None
+      orderField = orderAttribute
+      if orderAttribute.find(':') != -1:
+        orderType = orderAttribute.split(':')[1].upper()
+        orderField = orderAttribute.split(':')[0]
+      condition = condition + ' ORDER BY ' + orderField
+      if orderType:
+        condition = condition + ' ' + orderType
+
+    if limit:
+      condition = condition + ' LIMIT ' + str(limit)
+
+    cmd = 'SELECT TransformationID from Transformations ' + condition
+    res = self._query( cmd )
+    if not res['OK']:
+      return res
+
+    if not len(res['Value']):
+      return S_OK([])
+    return S_OK( map( self._to_value, res['Value'] ) )
 
   def getFileSummary(self,lfns,transName=''):
     """ Get file status summary in all the transformations
