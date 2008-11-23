@@ -109,6 +109,23 @@ class TransformationHandler(RequestHandler):
   def export_getAllTransformations(self):
     res = self.database.getAllTransformations()
     return res
+    
+  types_getDistinctAttributeValues = [StringTypes, DictType]
+  def export_getDistinctAttributeValues(self,attribute,selectDict):
+    """ Get distinct values of the given Transformation attribute
+    """
+    
+    resultDict = {}
+    last_update = None
+    if selectDict.has_key('CreationDate'):
+      last_update = selectDict['CreationDate']
+      del selectDict['CreationDate']
+    
+    result = self.database.getDistinctAttributeValues("Transformations",attribute,
+                                                      selectDict,
+                                                      newer=last_update,
+                                                      timeStamp='CreationDate')
+    return result  
 
   types_getTransformationLogging = [[LongType, IntType, StringType]]
   def export_getTransformationLogging(self,transID):
@@ -155,7 +172,7 @@ class TransformationHandler(RequestHandler):
     result = self.database.updateTransformation(id_)
     if not result['OK']:
       gLogger.error(result['Message'])
-    return result
+    return result  
 
   ####################################################################
   #
