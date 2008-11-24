@@ -21,7 +21,7 @@ class SandboxClient:
         This is the preferable method to upload sandboxes. fileList can contain
         both files and directories
     """
-
+    print "sendFiles: sizeLimit =", sizeLimit
     error_files = []
     files_to_send = []
     for file in fileList:
@@ -53,6 +53,7 @@ class SandboxClient:
       if not result['OK']:
         return S_ERROR('Failed to process all files: '+result['Message'])
       fsize = getSize(tname)
+      print "sendFiles: tar size =", fsize
       if fsize > sizeLimit:
         result = S_ERROR('Size over the limit')
         result['SandboxFileName'] = tname
