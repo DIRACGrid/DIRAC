@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.55 2008/11/24 14:52:56 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.56 2008/11/24 21:26:07 rgracian Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.55 2008/11/24 14:52:56 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.56 2008/11/24 21:26:07 rgracian Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -1143,6 +1143,7 @@ class Dirac:
       self.log.warn(result['Message'])
     else:
       self.log.info('Files retrieved and extracted in %s' %(dirPath))
+      return result
 
     if not oversized:
       return result
@@ -1166,6 +1167,19 @@ class Dirac:
     if not getFile['OK']:
       self.log.warn('Failed to download %s with error:%s' %(oversizedSandbox,getFile['Message']))
       return getFile
+
+    fileName = os.path.basename( oversizedSandbox )
+    try:
+      result = S_OK()
+      import tarfile
+      if tarfile.is_tarfile( fileName ):
+        tarFile = tarfile.open( fileName, 'r' )
+        for member in tarFile.getmembers():
+          tarFile.extract( member, dirPath )
+    except Exception,x :
+      result = S_ERROR( str(x) )
+
+    os.unlink( fileName )
 
     return result
 
@@ -1978,4 +1992,4 @@ class Dirac:
     self.log.verbose(self.cvsVersion)
     self.log.verbose('DIRAC is running at %s in setup %s' % (self.site,self.setup))
 
-  #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
