@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSAdministratorHandler.py,v 1.38 2008/10/13 10:25:07 acasajus Exp $
+# $Id: WMSAdministratorHandler.py,v 1.39 2008/11/24 21:58:22 atsareg Exp $
 ########################################################################
 """
 This is a DIRAC WMS administrator interface.
@@ -14,7 +14,7 @@ Access to the pilot data:
 
 """
 
-__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.38 2008/10/13 10:25:07 acasajus Exp $"
+__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.39 2008/11/24 21:58:22 atsareg Exp $"
 
 import os, sys, string, uu, shutil
 from types import *
@@ -224,6 +224,26 @@ class WMSAdministratorHandler(RequestHandler):
 
     result = pilotDB.getPilotSummary(startdate,enddate)
     return result
+  
+  ##############################################################################  
+  types_getPilotMonitorWeb = [DictType, ListType, IntType, IntType]  
+  def export_getPilotMonitorWeb(self, selectDict, sortList, startItem, maxItems):
+    """ Get the summary of the pilot information for a given page in the
+        pilot monitor in a generic format
+    """
+    
+    result = pilotDB.getPilotMonitorWeb(selectDict, sortList, startItem, maxItems)
+    return result
+    
+  ##############################################################################  
+  types_getPilotSummaryWeb = [DictType, ListType, IntType, IntType]  
+  def export_getPilotSummaryWeb(self, selectDict, sortList, startItem, maxItems):
+    """ Get the summary of the pilot information for a given page in the
+        pilot monitor in a generic format
+    """
+    
+    result = pilotDB.getPilotSummaryWeb(selectDict, sortList, startItem, maxItems)
+    return result  
 
   ##############################################################################
   types_getPilots = [IntType]
