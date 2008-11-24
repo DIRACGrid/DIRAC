@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.63 2008/11/24 16:53:50 rgracian Exp $
+# $Id: JobWrapper.py,v 1.64 2008/11/24 18:35:06 rgracian Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.63 2008/11/24 16:53:50 rgracian Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.64 2008/11/24 18:35:06 rgracian Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -39,7 +39,7 @@ class JobWrapper:
   def __init__( self, jobID=None, jobReport=None, pilotProxyLocation = None ):
     """ Standard constructor
     """
-    self.section = getSystemSection('WorkloadManagement/JobWrapper')
+    self.section = os.path.join(getSystemSection('WorkloadManagement/JobWrapper'),'JobWrapper')
     self.log = gLogger
     self.pilotProxyLocation = pilotProxyLocation
     #Create the acctounting report
