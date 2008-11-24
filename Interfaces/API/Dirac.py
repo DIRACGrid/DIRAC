@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.54 2008/11/20 12:13:40 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.55 2008/11/24 14:52:56 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.54 2008/11/20 12:13:40 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.55 2008/11/24 14:52:56 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -1097,7 +1097,7 @@ class Dirac:
     return result
 
   #############################################################################
-  def getOutputSandbox(self,jobID,outputDir=None):
+  def getOutputSandbox(self,jobID,outputDir=None,oversized=True):
     """Retrieve output sandbox for existing JobID.
 
        This method allows the retrieval of an existing job output sandbox.
@@ -1143,6 +1143,30 @@ class Dirac:
       self.log.warn(result['Message'])
     else:
       self.log.info('Files retrieved and extracted in %s' %(dirPath))
+
+    if not oversized:
+      return result
+
+    params = self.parameters(int(jobID))
+    if not params['OK']:
+      self.log.verbose('Could not retrieve job parameters to check for oversized sandbox')
+      return params
+
+    if not params['Value'].has_key('OutputSandboxLFN'):
+      self.log.verbose('No oversized output sandbox for job %s:\n%s' %(jobID,params))
+      return result
+
+    oversizedSandbox = params['Value']['OutputSandboxLFN']
+    if not oversizedSandbox:
+      self.log.verbose('Null OutputSandboxLFN for job %s' %jobID)
+      return result
+
+    self.log.info('Attempting to retrieve %s' %oversizedSandbox)
+    getFile = self.getFile(oversizedSandbox)
+    if not getFile['OK']:
+      self.log.warn('Failed to download %s with error:%s' %(oversizedSandbox,getFile['Message']))
+      return getFile
+
     return result
 
   #############################################################################
