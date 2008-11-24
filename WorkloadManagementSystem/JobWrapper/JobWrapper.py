@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.62 2008/11/19 17:33:13 paterson Exp $
+# $Id: JobWrapper.py,v 1.63 2008/11/24 16:53:50 rgracian Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.62 2008/11/19 17:33:13 paterson Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.63 2008/11/24 16:53:50 rgracian Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -633,6 +633,7 @@ class JobWrapper:
     if fileList and self.jobID:
       self.outputSandboxSize = getGlobbedTotalSize(fileList)
       outputSandboxClient = SandboxClient('Output')
+      self.log.info('Attempting to upload Sandbox with limit:', self.sandboxSizeLimit )
       result = outputSandboxClient.sendFiles(self.jobID, fileList, self.sandboxSizeLimit) # 1024*1024*10
       if not result['OK']:
         self.log.error('Output sandbox upload failed with message',result['Message'])
