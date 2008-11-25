@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/BaseTransport.py,v 1.22 2008/11/18 09:54:46 acasajus Exp $
-__RCSID__ = "$Id: BaseTransport.py,v 1.22 2008/11/18 09:54:46 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/BaseTransport.py,v 1.23 2008/11/25 20:15:30 acasajus Exp $
+__RCSID__ = "$Id: BaseTransport.py,v 1.23 2008/11/25 20:15:30 acasajus Exp $"
 
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
 from DIRAC.Core.Utilities import DEncode
@@ -99,7 +99,9 @@ class BaseTransport:
     return S_OK()
 
 
-  def receiveData( self, iMaxLength = 0 ):
+  def receiveData( self, maxBufferSize = 0 ):
+    if maxBufferSize < 0:
+      maxBufferSize = 0
     try:
       iSeparatorPosition = self.byteStream.find( ":" )
       while iSeparatorPosition == -1:
@@ -108,8 +110,8 @@ class BaseTransport:
           return retVal
         self.byteStream += retVal[ 'Value' ]
         iSeparatorPosition = self.byteStream.find( ":" )
-        if iMaxLength and len( self.byteStream ) > iMaxLength and iSeparatorPosition == -1 :
-          raise RuntimeError( "Read limit exceeded (%s chars)" % iMaxLength )
+        if maxBufferSize and len( self.byteStream ) > maxBufferSize and iSeparatorPosition == -1 :
+          return S_ERROR( "Read limit exceeded (%s chars)" % maxBufferSize )
       size = int( self.byteStream[ :iSeparatorPosition ] )
       self.byteStream = self.byteStream[ iSeparatorPosition+1: ]
       while len( self.byteStream ) < size:
@@ -117,8 +119,8 @@ class BaseTransport:
         if not retVal[ 'OK' ]:
           return retVal
         self.byteStream += retVal[ 'Value' ]
-        if iMaxLength and len( self.byteStream ) > iMaxLength:
-          raise RuntimeError( "Read limit exceeded (%s chars)" % iMaxLength )
+        if maxBufferSize and len( self.byteStream ) > maxBufferSize:
+          return S_ERROR( "Read limit exceeded (%s chars)" % maxBufferSize )
       data = self.byteStream[ :size ]
       self.byteStream = self.byteStream[ size + 1: ]
       return DEncode.decode( data )[0]
