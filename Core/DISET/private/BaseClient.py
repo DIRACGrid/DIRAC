@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.55 2008/11/18 08:59:07 acasajus Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.55 2008/11/18 08:59:07 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.56 2008/11/25 18:48:46 acasajus Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.56 2008/11/25 18:48:46 acasajus Exp $"
 
 import sys
 import types
@@ -11,6 +11,7 @@ from DIRAC.Core.Utilities import List, Network
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.ConfigurationSystem.Client.PathFinder import *
+from DIRAC.Core.Security import CS
 
 class BaseClient:
 
@@ -26,6 +27,7 @@ class BaseClient:
   KW_PROXY_LOCATION = "proxyLocation"
   KW_PROXY_STRING = "proxyString"
   KW_PROXY_CHAIN = "proxyChain"
+  KW_SKIP_CA_CHECK = "skipCACheck"
 
   def __init__( self, serviceName, **kwargs ):
     if type( serviceName ) != types.StringType:
@@ -82,6 +84,10 @@ class BaseClient:
     else:
       self.useCertificates = gConfig._useServerCertificate()
       self.kwargs[ self.KW_USE_CERTIFICATES ] = self.useCertificates
+    if self.useCertificates:
+      self.kwargs[ self.KW_SKIP_CA_CHECK ] = False
+    else:
+      self.kwargs[ self.KW_SKIP_CA_CHECK ] = CS.skipCACheck()
     if self.KW_PROXY_CHAIN in self.kwargs:
       try:
          self.kwargs[ self.KW_PROXY_STRING ] = self.kwargs[ self.KW_PROXY_CHAIN ].dumpAllToString()[ 'Value' ]

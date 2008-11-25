@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfo.py,v 1.28 2008/11/11 17:36:42 acasajus Exp $
-__RCSID__ = "$Id: SocketInfo.py,v 1.28 2008/11/11 17:36:42 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfo.py,v 1.29 2008/11/25 18:48:46 acasajus Exp $
+__RCSID__ = "$Id: SocketInfo.py,v 1.29 2008/11/25 18:48:46 acasajus Exp $"
 
 import time
 import copy
@@ -95,19 +95,22 @@ class SocketInfo:
   def _serverCallback( self, conn, cert, errnum, depth, ok):
     return ok
 
-  def __createContext( self, serverContext = False ):
+  def __createContext( self, serverContext = False, skipCACheck = False ):
     # Initialize context
     if serverContext:
       self.sslContext = GSI.SSL.Context( GSI.SSL.TLSv1_SERVER_METHOD )
     else:
       self.sslContext = GSI.SSL.Context( GSI.SSL.TLSv1_CLIENT_METHOD )
-    #self.sslContext.set_verify( SSL.VERIFY_PEER|SSL.VERIFY_FAIL_IF_NO_PEER_CERT, self.verifyCallback ) # Demand a certificate
-    self.sslContext.set_verify( GSI.SSL.VERIFY_PEER|GSI.SSL.VERIFY_FAIL_IF_NO_PEER_CERT, None, serverContext ) # Demand a certificate
-    casPath = Locations.getCAsLocation()
-    if not casPath:
-      return S_ERROR( "No valid CAs location found" )
-    gLogger.debug( "CAs location is %s" % casPath )
-    self.sslContext.load_verify_locations_path( casPath )
+    if not skipCACheck:
+      #self.sslContext.set_verify( SSL.VERIFY_PEER|SSL.VERIFY_FAIL_IF_NO_PEER_CERT, self.verifyCallback ) # Demand a certificate
+      self.sslContext.set_verify( GSI.SSL.VERIFY_PEER|GSI.SSL.VERIFY_FAIL_IF_NO_PEER_CERT, None, serverContext ) # Demand a certificate
+      casPath = Locations.getCAsLocation()
+      if not casPath:
+        return S_ERROR( "No valid CAs location found" )
+      gLogger.debug( "CAs location is %s" % casPath )
+      self.sslContext.load_verify_locations_path( casPath )
+    else:
+      self.sslContext.set_verify( GSI.SSL.VERIFY_NONE, None, serverContext ) # Demand a certificate
     return S_OK()
 
   def __generateContextWithCerts( self, serverContext = False ):
@@ -120,7 +123,7 @@ class SocketInfo:
     if not retVal[ 'OK' ]:
       return retVal
     #Verify depth to 20 to ensure accepting proxies of proxies of proxies....
-    self.sslContext.set_verify_depth( 20 )
+    self.sslContext.set_verify_depth( 50 )
     self.sslContext.use_certificate_chain_file( certKeyTuple[0] )
     self.sslContext.use_privatekey_file(  certKeyTuple[1] )
     return S_OK()
@@ -136,7 +139,10 @@ class SocketInfo:
         return S_ERROR( "No valid proxy found" )
     self.setLocalCredentialsLocation( ( proxyPath, proxyPath ) )
     gLogger.debug( "Using proxy %s" % proxyPath )
-    retVal = self.__createContext()
+    if 'skipCACheck' in self.infoDict and self.infoDict[ 'skipCACheck' ]:
+      retVal = self.__createContext( skipCACheck = True )
+    else:
+      retVal = self.__createContext()
     if not retVal[ 'OK' ]:
       return retVal
     self.sslContext.use_certificate_chain_file( proxyPath )
@@ -156,7 +162,10 @@ class SocketInfo:
     subj = cert.getSubjectDN()['Value']
     self.setLocalCredentialsLocation( ( subj, subj ) )
     gLogger.debug( "Using string proxy with id %s" % subj )
-    retVal = self.__createContext()
+    if 'skipCACheck' in self.infoDict and self.infoDict[ 'skipCACheck' ]:
+      retVal = self.__createContext( skipCACheck = True )
+    else:
+      retVal = self.__createContext()
     if not retVal[ 'OK' ]:
       return retVal
     self.sslContext.use_certificate_chain( chain.getCertList()['Value'] )

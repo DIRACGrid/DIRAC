@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSLTransport.py,v 1.30 2008/11/18 09:54:46 acasajus Exp $
-__RCSID__ = "$Id: SSLTransport.py,v 1.30 2008/11/18 09:54:46 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSLTransport.py,v 1.31 2008/11/25 18:48:46 acasajus Exp $
+__RCSID__ = "$Id: SSLTransport.py,v 1.31 2008/11/25 18:48:46 acasajus Exp $"
 
 import os
 import types
@@ -119,9 +119,6 @@ def checkSanity( urlTuple, kwargs ):
   Check that all ssl environment is ok
   """
   useCerts = False
-  if not Locations.getCAsLocation():
-    gLogger.error( "No CAs found!" )
-    return S_ERROR( "No CAs found!" )
   if "useCertificates" in kwargs and kwargs[ 'useCertificates' ]:
     certTuple = Locations.getHostCertificateAndKeyLocation()
     if not certTuple:
@@ -144,6 +141,12 @@ def checkSanity( urlTuple, kwargs ):
     elif not os.path.isfile( certFile ):
       gLogger.error( "%s proxy file does not exist" % certFile )
       return S_ERROR( "%s proxy file does not exist" % certFile )
+
+  #For certs always check CA's. For clients skipServerIdentityCheck
+  if not kwargs[ 'skipCACheck' ]:
+    if not Locations.getCAsLocation():
+      gLogger.error( "No CAs found!" )
+      return S_ERROR( "No CAs found!" )
 
   if "proxyString" in kwargs:
     certObj = X509Chain()
