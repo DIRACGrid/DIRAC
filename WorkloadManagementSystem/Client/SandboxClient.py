@@ -86,7 +86,7 @@ class SandboxClient:
         os.remove(bzname)
       else:  # This is a file
         bname = os.path.basename(fname)
-        sendName = `jobID`+":"+bname
+        sendName = `jobID`+"::"+bname
         sandbox = TransferClient('WorkloadManagement/%sSandbox' % self.sandbox_type)
         result = sandbox.sendFile(bname, sendName)
         print "0000",result
