@@ -36,32 +36,21 @@ class SandboxClient:
 
     if error_files:
       return S_ERROR('Failed to locate files: \n'+string.join(error_files,','))
-
+    
     if sizeLimit > 0:
       # Evaluate the compressed size of the sandbox
-      tname = 'Sandbox_'+str(jobID)+'.tar.gz'
-      comm = "tar czf %s" % tname
-      fileListString = ''
-      for f in files_to_send:
-        fdir = os.path.dirname(f)
-        if fdir:
-          fileListString += ' -C %s %s' % (os.path.dirname(f),os.path.basename(f))
-        else:
-          fileListString += ' '+os.path.basename(f)
-      comm += fileListString
-      result = shellCall(0,comm)
-      if not result['OK']:
-        return S_ERROR('Failed to process all files: '+result['Message'])
-      fsize = getSize(tname)
-      print "sendFiles: tar size =", fsize
-      if fsize > sizeLimit:
+      if getGlobbedTotalSize( files_to_send ) > sizeLimit:
+
+        tname = 'Sandbox_'+str(jobID)+'.tar.gz'
+        import tarfile
+        tarFile = tarfile.open( tname, 'w:gz' )
+        for file in files_to_send:
+          tarFile.add( file )
+        tarFile.close()
+
         result = S_ERROR('Size over the limit')
         result['SandboxFileName'] = tname
-        result['Size'] = fsize
         return result
-
-      if os.path.exists(tname):
-        os.remove(tname)
 
     sendName = str(jobID)+"::Job__Sandbox__"
     sandbox = TransferClient('WorkloadManagement/%sSandbox' % self.sandbox_type)
