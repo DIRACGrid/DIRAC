@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/FileHelper.py,v 1.14 2008/07/07 16:37:20 acasajus Exp $
-__RCSID__ = "$Id: FileHelper.py,v 1.14 2008/07/07 16:37:20 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/FileHelper.py,v 1.15 2008/11/25 20:14:14 acasajus Exp $
+__RCSID__ = "$Id: FileHelper.py,v 1.15 2008/11/25 20:14:14 acasajus Exp $"
 
 import os
 import md5
@@ -39,10 +39,17 @@ class FileHelper:
     self.markAsTransferred()
     return S_OK()
 
-  def receiveData( self ):
-    retVal = self.oTransport.receiveData()
+  def sendError( self, errorMsg ):
+    retVal = self.oTransport.sendData( S_ERROR( errorMsg ) )
     if not retVal[ 'OK' ]:
-      raise RuntimeError( retVal[ 'Message' ] )
+      return retVal
+    self.markAsTransferred()
+    return S_OK()
+
+  def receiveData( self, maxBufferSize = 0 ):
+    retVal = self.oTransport.receiveData( maxBufferSize = maxBufferSize )
+    if not retVal[ 'OK' ]:
+      return retVal
     stBuffer = retVal[ 'Value' ]
     if stBuffer[0]:
       self.oMD5.update( stBuffer[1] )
@@ -52,7 +59,8 @@ class FileHelper:
       if not self.oMD5.hexdigest() == stBuffer[1]:
         self.bErrorInMD5 = True
       self.markAsTransferred()
-    return stBuffer[1]
+      return S_OK( "" )
+    return S_OK( stBuffer[1] )
 
   def receivedEOF( self ):
     return self.bReceivedEOF
@@ -66,41 +74,48 @@ class FileHelper:
   def errorInTransmission( self ):
     return self.bErrorInMD5
 
-  def networkToString( self ):
+  def networkToString( self, maxFileSize = 0 ):
     """ Receive the input from a DISET client and return it as a string
     """
 
     stringIO = cStringIO.StringIO()
+    result = self.networkToDataSink( stringIO, maxFileSize = maxFileSize )
+    if not result[ 'OK' ]:
+      return result
+    return S_OK( stringIO.getvalue() )
 
+  def networkToFD( self, iFD, maxFileSize = 0 ):
+    dataSink = os.fdopen( iFD, "w" )
+    try:
+      return networkToDataSink( dataSink, maxFileSize = maxFileSize )
+    finally:
+      dataSink.close()
+
+  def networkToDataSink( self, dataSink, maxFileSize = 0 ):
+    if "write" not in dir( dataSink ):
+      return S_ERROR( "%s data sink object does not have a write method" % str( dataSink ) )
     self.oMD5 = md5.new()
     self.bReceivedEOF = False
     self.bErrorInMD5 = False
-
+    receivedBytes = 0
     try:
-      strBuffer = self.receiveData()
-      if self.receivedEOF():
-        stringIO.write( strBuffer )
-      else:
-        while not self.receivedEOF():
-          stringIO.write( strBuffer )
-          strBuffer = self.receiveData()
-    except Exception, e:
-      return S_ERROR( "Error while receiving file, %s" % str( e ) )
-    if self.errorInTransmission():
-      return S_ERROR( "Error in the file CRC" )
-
-    strValue = stringIO.getvalue()
-    return S_OK( strValue  )
-
-  def networkToFD( self, iFD ):
-    self.oMD5 = md5.new()
-    self.bReceivedEOF = False
-    self.bErrorInMD5 = False
-    try:
-      strBuffer = self.receiveData()
+      result = self.receiveData( maxBufferSize = maxFileSize )
+      if not result[ 'OK' ]:
+        return result
+      strBuffer = result[ 'Value' ]
+      receivedBytes += len( strBuffer )
       while not self.receivedEOF():
-        os.write( iFD, strBuffer )
-        strBuffer = self.receiveData()
+        if maxFileSize > 0 and receivedBytes > maxFileSize:
+          self.sendError( "Exceeded maximum file size" )
+          return S_ERROR( "Received file exceeded maximum size of %s bytes" % ( maxFileSize ) )
+        dataSink.write( strBuffer )
+        result = self.receiveData( maxBufferSize = ( maxFileSize - len( strBuffer ) ) )
+        if not result[ 'OK' ]:
+          return result
+        strBuffer = result[ 'Value' ]
+        receivedBytes += len( strBuffer )
+      if strBuffer:
+        dataSink.write( strBuffer )
     except Exception, e:
       return S_ERROR( "Error while receiving file, %s" % str( e ) )
     if self.errorInTransmission():
@@ -184,7 +199,7 @@ class FileHelper:
 
   def __extractTar( self, destDir, rPipe, compress ):
     filePipe = os.fdopen( rPipe, "r" )
-    tarMode = "r|"
+    tarMode = "r|*"
     if compress:
       tarMode = "r|bz2"
     tar = tarfile.open( mode = tarMode, fileobj = filePipe )
@@ -193,14 +208,14 @@ class FileHelper:
     tar.close()
     filePipe.close()
 
-  def __receiveToPipe( self, wPipe, retList ):
-    retList.append( self.networkToFD( wPipe ) )
+  def __receiveToPipe( self, wPipe, retList, maxFileSize ):
+    retList.append( self.networkToFD( wPipe, maxFileSize = maxFileSize ) )
     os.close( wPipe )
 
-  def networkToBulk( self, destDir, compress = True ):
+  def networkToBulk( self, destDir, compress = True, maxFileSize = 0 ):
     retList = []
     rPipe, wPipe = os.pipe()
-    thrd = threading.Thread( target = self.__receiveToPipe, args = ( wPipe, retList) )
+    thrd = threading.Thread( target = self.__receiveToPipe, args = ( wPipe, retList, maxFileSize ) )
     thrd.start()
     try:
       self.__extractTar( destDir, rPipe, compress )
