@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.58 2008/11/26 20:53:23 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.59 2008/11/26 21:10:33 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.58 2008/11/26 20:53:23 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.59 2008/11/26 21:10:33 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -583,7 +583,17 @@ class Dirac:
       args[0] = jobXML #in order to retain the full path to the /tmp directory for the XML file
       command = '%s %s' % (executable,string.join(args,' '))
       self.log.info('Executing: %s' %command)
-      result = shellCall(0,command,callbackFunction=self.__printOutput)
+      executionEnv = dict(os.environ)
+      if parameters['Value'].has_key('ExecutionEnvironment'):
+        self.log.verbose('Adding variables to execution environment')
+        variableList = parameters['Value']['ExecutionEnvironment']
+        for var in variableList:
+          nameEnv = var.split('=')[0]
+          valEnv = var.split('=')[1]
+          executionEnv[nameEnv] = valEnv
+          self.log.verbose('%s = %s' %(nameEnv,valEnv))
+
+      result = shellCall(0,command,env=executionEnv,callbackFunction=self.__printOutput)
       if not result['OK']:
         return result
 
