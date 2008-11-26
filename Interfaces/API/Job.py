@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.49 2008/10/13 09:02:09 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.50 2008/11/26 21:10:14 paterson Exp $
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -30,7 +30,7 @@
    Note that several executables can be provided and wil be executed sequentially.
 """
 
-__RCSID__ = "$Id: Job.py,v 1.49 2008/10/13 09:02:09 paterson Exp $"
+__RCSID__ = "$Id: Job.py,v 1.50 2008/11/26 21:10:14 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -359,12 +359,14 @@ class Job:
        @param timeInSecs: CPU time
        @type timeInSecs: Int
     """
-    if type(timeInSecs) == int:
-      if timeInSecs:
-        description = 'CPU time in secs'
-        self._addParameter(self.workflow,'MaxCPUTime','JDLReqt',timeInSecs,description)
-    else:
-      raise TypeError,'Expected Integer for CPU time'
+    if not type(timeInSecs)==int:
+      try:
+        timeInSecs=int(timeInSecs)
+      except Exception,x:
+        raise TypeError,'Expected Integer for CPU time'
+
+    description = 'CPU time in secs'
+    self._addParameter(self.workflow,'MaxCPUTime','JDLReqt',timeInSecs,description)
 
   #############################################################################
   def setDestination(self,destination):
@@ -565,6 +567,38 @@ class Job:
       self._addParameter(self.workflow,'DIRACSetup','JDL',setup,description)
     else:
       raise TypeError,'Expected string for DIRAC setup'
+
+  #############################################################################
+  def setExecutionEnv(self,environmentDict):
+    """Helper function.
+
+       Optionally specify a dictionary of key, value pairs to be set before
+       the job executes e.g. {'MYVAR':3}
+
+       The standard application environment variables are always set so this
+       is intended for user variables only.
+
+       Example usage:
+
+       >>> job = Job()
+       >>> job.setExecutionEnviroment({'<MYVARIABLE>':'<VALUE>'})
+
+       @param environmentDict: Environment variables
+       @type environmentDict: dictionary
+    """
+    if not type(environmentDict)==type({}):
+      raise TypeError,'Expected dictionary of environment variables'
+
+    environment = []
+    for var,val in environmentDict.items():
+      try:
+        environment.append(string.join([str(var),str(val)],'='))
+      except Exception,x:
+        raise TypeError,'Expected string for environment variable key value pairs'
+
+    envStr = string.join(environment,';')
+    description = 'Env vars specified by user'
+    self._addParameter(self.workflow,'ExecutionEnvironment','JDL',envStr,description)
 
   #############################################################################
   def sendMail(self):
