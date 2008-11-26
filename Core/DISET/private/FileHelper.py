@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/FileHelper.py,v 1.15 2008/11/25 20:14:14 acasajus Exp $
-__RCSID__ = "$Id: FileHelper.py,v 1.15 2008/11/25 20:14:14 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/FileHelper.py,v 1.16 2008/11/26 17:10:45 rgracian Exp $
+__RCSID__ = "$Id: FileHelper.py,v 1.16 2008/11/26 17:10:45 rgracian Exp $"
 
 import os
 import md5
@@ -87,7 +87,7 @@ class FileHelper:
   def networkToFD( self, iFD, maxFileSize = 0 ):
     dataSink = os.fdopen( iFD, "w" )
     try:
-      return networkToDataSink( dataSink, maxFileSize = maxFileSize )
+      return self.networkToDataSink( dataSink, maxFileSize = maxFileSize )
     finally:
       dataSink.close()
 
