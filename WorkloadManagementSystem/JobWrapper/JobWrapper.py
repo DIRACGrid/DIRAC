@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.64 2008/11/24 18:35:06 rgracian Exp $
+# $Id: JobWrapper.py,v 1.65 2008/11/26 21:21:15 paterson Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.64 2008/11/24 18:35:06 rgracian Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.65 2008/11/26 21:21:15 paterson Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -235,13 +235,23 @@ class JobWrapper:
       executable = executable.replace('$DIRACROOT',self.localSiteRoot)
       self.log.verbose('Replaced $DIRACROOT for executable as %s' %(self.localSiteRoot))
 
+    exeEnv = dict(os.environ)
+    if jobArgs.has_key('ExecutionEnvironment'):
+      self.log.verbose('Adding variables to execution environment')
+      variableList = jobArgs['ExecutionEnvironment']
+      for var in variableList:
+        nameEnv = var.split('=')[0]
+        valEnv = var.split('=')[1]
+        exeEnv[nameEnv] = valEnv
+        self.log.verbose('%s = %s' %(nameEnv,valEnv))
+
     if os.path.exists(executable):
       self.__report('Running','Application')
       spObject = Subprocess(timeout=False,bufferLimit=int(self.bufferLimit))
       command = '%s %s' % (executable,jobArguments)
       self.log.verbose('Execution command: %s' %(command))
       maxPeekLines = self.maxPeekLines
-      exeThread = ExecutionThread(spObject,command,maxPeekLines,outputFile,errorFile)
+      exeThread = ExecutionThread(spObject,command,maxPeekLines,outputFile,errorFile,exeEnv)
       exeThread.start()
     else:
       return S_ERROR('Path to executable %s not found' %(executable))
@@ -1049,7 +1059,7 @@ class JobWrapper:
 class ExecutionThread(threading.Thread):
 
   #############################################################################
-  def __init__(self,spObject,cmd,maxPeekLines,stdoutFile, stderrFile):
+  def __init__(self,spObject,cmd,maxPeekLines,stdoutFile, stderrFile,exeEnv):
     threading.Thread.__init__(self)
     self.cmd = cmd
     self.spObject = spObject
@@ -1057,6 +1067,7 @@ class ExecutionThread(threading.Thread):
     self.maxPeekLines = maxPeekLines
     self.stdout = stdoutFile
     self.stderr = stderrFile
+    self.exeEnv = exeEnv
 
   #############################################################################
   def run(self):
@@ -1065,7 +1076,7 @@ class ExecutionThread(threading.Thread):
     spObject = self.spObject
     start = time.time()
     initialStat = os.times()
-    output = spObject.systemCall( cmd, callbackFunction = self.sendOutput, shell = True )
+    output = spObject.systemCall( cmd, env= self.exeEnv, callbackFunction = self.sendOutput, shell = True )
     EXECUTION_RESULT['Thread'] = output
     timing = time.time() - start
     EXECUTION_RESULT['Timing']=timing
