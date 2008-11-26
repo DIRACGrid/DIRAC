@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.56 2008/11/24 21:26:07 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.57 2008/11/26 11:20:18 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.56 2008/11/24 21:26:07 rgracian Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.57 2008/11/26 11:20:18 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -42,6 +42,7 @@ from DIRAC.Core.Security.Misc                            import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.PathFinder         import getSystemSection,getServiceURL
 from DIRAC.Core.Utilities.Time                           import toString
 from DIRAC.Core.Utilities.List                           import breakListIntoChunks, sortList
+from DIRAC.Core.Utilities.SiteSEMapping                  import getSEsForSite
 from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
 from DIRAC.Core.Base.Agent                               import createAgent
 from DIRAC.Core.Security.X509Chain                       import X509Chain
@@ -372,6 +373,86 @@ class Dirac:
         finalState=True
         return S_ERROR('Exceeded max waiting time of %s seconds for job %s to enter Waiting state, exiting.' %(maxWaitingTime,jobID))
       time.sleep(pollingTime)
+
+  #############################################################################
+  def getInputDataCatalog(self,lfns,siteName='',fileName='pool_xml_catalog.xml'):
+    """This utility will create a pool xml catalogue slice for the specified LFNs using
+       the full input data resolution policy plugins for the VO.
+
+       If not specified the site is assumed to be the /LocalSite/Site in the local
+       configuration.  The fileName can be a full path.
+
+       Example usage:
+
+       >>> print print d.getInputDataCatalog('/lhcb/production/DC06/phys-v2-lumi5/00001680/DST/0000/00001680_00000490_5.dst',None,'myCat.xml')
+       {'Successful': {'<LFN>': {'pfntype': 'ROOT_All', 'protocol': 'SRM2',
+        'pfn': '<PFN', 'turl': '<TURL>', 'guid': '3E3E097D-0AC0-DB11-9C0A-00188B770645',
+        'se': 'CERN-disk'}}, 'Failed': [], 'OK': True, 'Value': ''}
+
+       @param lfns: Logical File Name(s) to query
+       @type lfns: LFN string or list []
+       @param siteName: DIRAC site name
+       @type siteName: string
+       @param fileName: Catalogue name (can include path)
+       @type fileName: string
+       @return: S_OK,S_ERROR
+
+    """
+    if type(lfns)==type(" "):
+      lfns = [lfns.replace('LFN:','')]
+    elif type(lfns)==type([]):
+      try:
+        lfns = [str(lfn.replace('LFN:','')) for lfn in lfns]
+      except Exception,x:
+        return self.__errorReport(str(x),'Expected strings for LFNs')
+    else:
+      return self.__errorReport('Expected single string or list of strings for LFN(s)')
+
+    if not siteName:
+      if not self.site or self.site == 'Unknown':
+        return self.__errorReport('LocalSite/Site configuration section is unknown, please set this correctly')
+      siteName = self.site
+
+    localSEList = getSEsForSite(siteName)
+    if not localSEList['OK']:
+      return result
+
+    self.log.verbose(localSEList)
+    inputDataPolicy = gConfig.getValue('DIRAC/VOPolicy/InputDataModule','')
+    if not inputDataPolicy:
+      return self.__errorReport('Could not retrieve DIRAC/VOPolicy/InputDataModule for VO')
+
+    self.log.info('Attempting to resolve data for %s' %siteName)
+    self.log.verbose('%s' %(string.join(lfns,'\n')))
+    replicaDict = self.getReplicas(lfns)
+    if not replicaDict['OK']:
+      return replicaDict
+    guidDict = self.getMetadata(lfns)
+    if not guidDict['OK']:
+      return guidDict
+    for lfn,reps in replicaDict['Value']['Successful'].items():
+      guidDict['Value']['Successful'][lfn].update(reps)
+    resolvedData = guidDict
+    diskSE = gConfig.getValue(self.section+'/DiskSE',['-disk','-DST','-USER'])
+    tapeSE = gConfig.getValue(self.section+'/TapeSE',['-tape','-RDST','-RAW'])
+    #Add catalog path / name here as well as site name to override the standard policy of resolving automatically
+    configDict = {'JobID':None,'LocalSEList':localSEList['Value'],'DiskSEList':diskSE,'TapeSEList':tapeSE,'SiteName':siteName,'CatalogName':fileName}
+    self.log.verbose(configDict)
+    argumentsDict = {'FileCatalog':resolvedData,'Configuration':configDict,'InputData':lfns}
+    self.log.verbose(argumentsDict)
+    moduleFactory = ModuleFactory()
+    self.log.verbose('Input Data Policy Module: %s' %inputDataPolicy)
+    moduleInstance = moduleFactory.getModule(inputDataPolicy,argumentsDict)
+    if not moduleInstance['OK']:
+      self.log.warn('Could not create InputDataModule')
+      return moduleInstance
+
+    module = moduleInstance['Value']
+    result = module.execute()
+    if not result['OK']:
+      self.log.warn('Input data resolution failed')
+
+    return result
 
   #############################################################################
   def runLocal(self,jobJDL,jobXML):
