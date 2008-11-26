@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.57 2008/11/26 11:20:18 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.58 2008/11/26 20:53:23 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.57 2008/11/26 11:20:18 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.58 2008/11/26 20:53:23 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -253,13 +253,22 @@ class Dirac:
     localCfg.addDefaultEntry('/LocalSite/OwnerGroup',self.__getCurrentGroup())
     localCfg.addDefaultEntry('/LocalSite/MaxRunningJobs',1)
     localCfg.addDefaultEntry('/LocalSite/MaxTotalJobs',1)
-    if os.environ.has_key('VO_LHCB_SW_DIR'):
-      localCfg.addDefaultEntry('/LocalSite/SharedArea',os.environ['VO_LHCB_SW_DIR'])
+#    if os.environ.has_key('VO_LHCB_SW_DIR'):
+#      localCfg.addDefaultEntry('/LocalSite/SharedArea',os.environ['VO_LHCB_SW_DIR'])
     localCfg.addDefaultEntry('/AgentJobRequirements/JobID',jobID)
     localCfg.addDefaultEntry('/AgentJobRequirements/PilotType','private')
-    localCfg.addDefaultEntry('/AgentJobRequirements/OwnerDN',self.__getCurrentDN())
-    localCfg.addDefaultEntry('/AgentJobRequirements/OwnerGroup',self.__getCurrentGroup())
+    ownerDN = self.__getCurrentDN()
+    ownerGroup = self.__getCurrentGroup()
+#    localCfg.addDefaultEntry('OwnerDN',ownerDN)
+#    localCfg.addDefaultEntry('OwnerGroup',ownerGroup)
+#    localCfg.addDefaultEntry('JobID',jobID)
+    localCfg.addDefaultEntry('/AgentJobRequirements/OwnerDN',ownerDN)
+    localCfg.addDefaultEntry('/AgentJobRequirements/OwnerGroup',ownerGroup)
     localCfg.addDefaultEntry('/Resources/Computing/InProcess/PilotType','private')
+    localCfg.addDefaultEntry('/Resources/Computing/InProcess/OwnerDN',ownerDN)
+    localCfg.addDefaultEntry('/Resources/Computing/InProcess/OwnerGroup',ownerGroup)
+    localCfg.addDefaultEntry('/Resources/Computing/InProcess/JobID',jobID)
+
     #SKP can add compatible platforms here
     localCfg.setConfigurationForAgent(agentName)
     result = localCfg.loadUserData()
