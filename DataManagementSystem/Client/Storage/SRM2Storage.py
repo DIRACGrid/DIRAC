@@ -810,7 +810,7 @@ class SRM2Storage(StorageBase):
   def __makeDir(self,path):
     # First create a local file that will be used as a directory place holder in storage name space
     dfile = open("dirac_directory",'w')
-    dfile.write("This is a DIRAC system directory")
+    dfile.write("")
     dfile.close()
     srcFile = '%s/%s' % (os.getcwd(),'dirac_directory')
     size = getSize(srcFile)
