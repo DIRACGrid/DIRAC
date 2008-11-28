@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.27 2008/11/28 07:24:37 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.28 2008/11/28 09:02:21 rgracian Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.27 2008/11/28 07:24:37 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.28 2008/11/28 09:02:21 rgracian Exp $"
 
 import time
 import types
@@ -310,7 +310,7 @@ class TaskQueueDB(DB):
       if 'JobID' in tqMatchDict:
         # A certain JobID is required by the resource, so all TQ are to be considered
         retVal = self.matchAndGetQueue( tqMatchDict, numQueuesToGet = 0, skipMatchDictDef = True, connObj = connObj )
-        preJobSQL = "%s AND tq_Jobs`.JobId = %s " % ( preJobSQL, tqMatchDict['JobID'] ) 
+        preJobSQL = "%s AND `tq_Jobs`.JobId = %s " % ( preJobSQL, tqMatchDict['JobID'] ) 
       else:
         retVal = self.matchAndGetQueue( tqMatchDict, numQueuesToGet = numQueuesPerTry, skipMatchDictDef = True, connObj = connObj )
       if not retVal[ 'OK' ]:
