@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Service/StagerHandler.py,v 1.12 2008/11/28 18:28:03 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Service/StagerHandler.py,v 1.13 2008/11/28 18:42:56 rgracian Exp $
 ########################################################################
 
 """ StagerHandler is the implementation of the StagerDB in the DISET framework
     A.Smith (17/05/07)
 """
 
-__RCSID__ = "$Id: StagerHandler.py,v 1.12 2008/11/28 18:28:03 rgracian Exp $"
+__RCSID__ = "$Id: StagerHandler.py,v 1.13 2008/11/28 18:42:56 rgracian Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -126,7 +126,6 @@ class StagerHandler(RequestHandler):
         result = stagerDB.getLFNsForJob(jobID)
         if result['OK']:
           results[jobID] = result['LFNs']
-      result = stagerDB.getLFNsForJob(jobid)
       return results
     except Exception,x:
       errorStr = "StagerDBHandler.getLFNsForJobs failed "+str(x)
