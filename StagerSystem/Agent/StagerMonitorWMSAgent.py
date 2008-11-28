@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/StagerMonitorWMSAgent.py,v 1.2 2008/11/28 10:22:02 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/StagerMonitorWMSAgent.py,v 1.3 2008/11/28 14:16:53 rgracian Exp $
 # File :   StagerMonitorWMS.py
 # Author : Stuart Paterson
 ########################################################################
@@ -20,7 +20,7 @@
      Successful -> purged with status change
 """
 
-__RCSID__ = "$Id: StagerMonitorWMSAgent.py,v 1.2 2008/11/28 10:22:02 rgracian Exp $"
+__RCSID__ = "$Id: StagerMonitorWMSAgent.py,v 1.3 2008/11/28 14:16:53 rgracian Exp $"
 
 from DIRAC.Core.Base.Agent                                 import Agent
 from DIRAC.Core.DISET.RPCClient                            import RPCClient
@@ -184,16 +184,18 @@ class StagerMonitorWMSAgent(Agent):
   
     for jobID in filesForJobs:
       site = filesForJobs[jobID]['Site']
+      retries = filesForJobs[jobID]['Retries']
+      se = filesForJobs[jobID]['SE']
       if site not in lfnsPerSite:
         lfnsPerSite[site] = []
       stagedCount = 0
       monitoringReport = [('SURL','Retries','Status','TimingInfo','SE')] #these become headers in the report
-      for lfn,reps in filesForJobs[jobID]['Files']:
+      for lfn,reps in filesForJobs[jobID]['Files'].items():
         for surl,status in reps.items():
           lfnTime = lfnTimingDict[jobID][lfn].split('.')[0]
           if re.search('-',lfnTime):
             lfnTime = '00:00:00'
-          monitoringReport.append((surl,retries[lfn],self.monStatusDict[status],lfnTime,seDict[lfn])) #we don't need microsecond accuracy ;)
+          monitoringReport.append((surl,retries[lfn],self.monStatusDict[status],lfnTime,se[lfn])) #we don't need microsecond accuracy ;)
           if status==self.updateStatus or status=='Staged':
             stagedCount+=1
           if status==self.updateStatus:
