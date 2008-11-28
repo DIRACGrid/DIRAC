@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Service/StagerHandler.py,v 1.9 2008/11/28 09:42:46 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Service/StagerHandler.py,v 1.10 2008/11/28 10:55:38 rgracian Exp $
 ########################################################################
 
 """ StagerHandler is the implementation of the StagerDB in the DISET framework
     A.Smith (17/05/07)
 """
 
-__RCSID__ = "$Id: StagerHandler.py,v 1.9 2008/11/28 09:42:46 rgracian Exp $"
+__RCSID__ = "$Id: StagerHandler.py,v 1.10 2008/11/28 10:55:38 rgracian Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -82,7 +82,7 @@ class StagerHandler(RequestHandler):
       for jobID in jobIDs:
         result = stagerDB.getJobFilesStatus(jobID)
         if result['OK']:
-          results[jobID] = result['OK']['Value']
+          results[jobID] = result['Value']
       return S_OK(results)
     except Exception,x:
       errorStr = "StagerDBHandler.getJobFilesStatus failed"+str(x)
