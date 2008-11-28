@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Service/StagerHandler.py,v 1.8 2008/11/15 22:50:53 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Service/StagerHandler.py,v 1.9 2008/11/28 09:42:46 rgracian Exp $
 ########################################################################
 
 """ StagerHandler is the implementation of the StagerDB in the DISET framework
     A.Smith (17/05/07)
 """
 
-__RCSID__ = "$Id: StagerHandler.py,v 1.8 2008/11/15 22:50:53 acsmith Exp $"
+__RCSID__ = "$Id: StagerHandler.py,v 1.9 2008/11/28 09:42:46 rgracian Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -68,6 +68,22 @@ class StagerHandler(RequestHandler):
     try:
       result = stagerDB.getJobFilesStatus(jobID)
       return result
+    except Exception,x:
+      errorStr = "StagerDBHandler.getJobFilesStatus failed"+str(x)
+      print errorStr
+      return S_ERROR(errorStr)
+
+  types_getJobsFilesStatus = [ListType]
+  def export_getJobsFilesStatus(self,jobIDs):
+    """Allows to retrieve the job file status.
+    """
+    try:
+      results = {}
+      for jobID in jobIDs:
+        result = stagerDB.getJobFilesStatus(jobID)
+        if result['OK']:
+          results[jobID] = result['OK']['Value']
+      return S_OK(results)
     except Exception,x:
       errorStr = "StagerDBHandler.getJobFilesStatus failed"+str(x)
       print errorStr
