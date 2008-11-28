@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/StagerMonitorWMSAgent.py,v 1.3 2008/11/28 14:16:53 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/StagerMonitorWMSAgent.py,v 1.4 2008/11/28 15:19:40 rgracian Exp $
 # File :   StagerMonitorWMS.py
 # Author : Stuart Paterson
 ########################################################################
@@ -20,7 +20,7 @@
      Successful -> purged with status change
 """
 
-__RCSID__ = "$Id: StagerMonitorWMSAgent.py,v 1.3 2008/11/28 14:16:53 rgracian Exp $"
+__RCSID__ = "$Id: StagerMonitorWMSAgent.py,v 1.4 2008/11/28 15:19:40 rgracian Exp $"
 
 from DIRAC.Core.Base.Agent                                 import Agent
 from DIRAC.Core.DISET.RPCClient                            import RPCClient
@@ -213,9 +213,10 @@ class StagerMonitorWMSAgent(Agent):
     if lfnsPerSite:
       # need to sort them by site
       for site in lfnsPerSite:
-        result = self.stagerClient.setFilesState(lfnsPerSite[site],site,'Staged')
-        if not result['OK']:
-          return result
+        if lfnsPerSite[site]:
+          result = self.stagerClient.setFilesState(lfnsPerSite[site],site,'Staged')
+          if not result['OK']:
+            return result
 
     return S_OK(filesForJobs)
 
@@ -329,11 +330,15 @@ class StagerMonitorWMSAgent(Agent):
         return result
       if result['JobIDs']:
         self.log.verbose('%s %s jobs available to update' %(len(result['JobIDs']),state))
-        for jobID in result['JobIDs']:
-          result = self.__updateJobProgress(jobID,status,minorStatus)
-          if not result['OK']:
-            return result
-          toPurge.append(jobID)
+        result = self.__updateJobsProgress(result['JobIDs'],status,minorStatus)
+        if not result['OK']:
+          return result
+        toPurge.extend(result['Value'])
+#        for jobID in result['JobIDs']:
+#          result = self.__updateJobProgress(jobID,status,minorStatus)
+#          if not result['OK']:
+#            return result
+#          toPurge.append(jobID)
       else:
         self.log.verbose('No %s jobs available to update' %state)
 
