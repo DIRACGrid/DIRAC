@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/StagerMonitorWMSAgent.py,v 1.1 2008/09/11 20:38:27 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/StagerMonitorWMSAgent.py,v 1.2 2008/11/28 10:22:02 rgracian Exp $
 # File :   StagerMonitorWMS.py
 # Author : Stuart Paterson
 ########################################################################
@@ -20,7 +20,7 @@
      Successful -> purged with status change
 """
 
-__RCSID__ = "$Id: StagerMonitorWMSAgent.py,v 1.1 2008/09/11 20:38:27 atsareg Exp $"
+__RCSID__ = "$Id: StagerMonitorWMSAgent.py,v 1.2 2008/11/28 10:22:02 rgracian Exp $"
 
 from DIRAC.Core.Base.Agent                                 import Agent
 from DIRAC.Core.DISET.RPCClient                            import RPCClient
@@ -142,6 +142,13 @@ class StagerMonitorWMSAgent(Agent):
     totalJobs = len(result['JobIDs'])
     updatedJobs=[]
     self.log.info('%s %s job(s) found to update' %(totalJobs,self.system))
+    update = self.__updateJobsProgress(result['JobIDs'],self.stagingStatus)
+    if not update['OK']:
+      self.log.warn('Failed to update %s monitoring with error:\n%s' %(self.system,update))
+      return S_OK()
+    updatedJobs = update['Value']
+    self.log.info('%s jobs successfully updated, %s failed to be updated' %(len(updatedJobs),(totalJobs-len(updatedJobs))))
+    return S_OK('Updated jobs with staged files')
     for jobID in result['JobIDs']:
       update = self.__updateJobProgress(jobID,self.stagingStatus)
       if not update['OK']:
@@ -153,6 +160,64 @@ class StagerMonitorWMSAgent(Agent):
     return S_OK('Updated jobs with staged files')
 
   #############################################################################
+  def __updateJobsProgress(self, jobIDs, primaryStatus, secondaryStatus=None):
+    """Updates the WMS monitoring for which some files are newly staged.
+    """
+    #First get the job input data, site and status
+    result = self.stagerClient.getJobsFilesStatus(jobIDs)
+    if not result['OK']:
+      return result
+        
+    filesForJobs = result['Value']
+    
+    lfnsList = []
+    updateLFNs = []
+    lfnsPerSite = {}
+    for jobID in filesForJobs:
+      lfnsList.extend( filesForJobs[jobID]['Files'].keys() )
+
+    #Get timing information for ToUpdate / Staged files
+    result = self.stagerClient.getStageTimeForSystem(lfnsList,self.system)
+    if not result['OK']:
+      return result
+    lfnTimingDict = result['TimingDict']
+  
+    for jobID in filesForJobs:
+      site = filesForJobs[jobID]['Site']
+      if site not in lfnsPerSite:
+        lfnsPerSite[site] = []
+      stagedCount = 0
+      monitoringReport = [('SURL','Retries','Status','TimingInfo','SE')] #these become headers in the report
+      for lfn,reps in filesForJobs[jobID]['Files']:
+        for surl,status in reps.items():
+          lfnTime = lfnTimingDict[jobID][lfn].split('.')[0]
+          if re.search('-',lfnTime):
+            lfnTime = '00:00:00'
+          monitoringReport.append((surl,retries[lfn],self.monStatusDict[status],lfnTime,seDict[lfn])) #we don't need microsecond accuracy ;)
+          if status==self.updateStatus or status=='Staged':
+            stagedCount+=1
+          if status==self.updateStatus:
+            updateLFNs.append(lfn)
+            lfnsPerSite[site].append(lfn)
+      #Send detailed report to the monitoring service
+      minorStatus = '%s / %s' %(stagedCount,len(filesForJobs[jobID]['Files']))
+      if secondaryStatus:
+        minorStatus = secondaryStatus
+
+      header = 'Report from DIRAC StagerSystem for %s on %s [UTC]:' %(site,time.asctime(time.gmtime()))
+      result = self.__sendMonitoringReport(jobID,header,monitoringReport,primaryStatus,minorStatus)
+  
+    #Finally update the ToUpdate file status to Staged in the StagerDB
+    if lfnsPerSite:
+      # need to sort them by site
+      for site in lfnsPerSite:
+        result = self.stagerClient.setFilesState(lfnsPerSite[site],site,'Staged')
+        if not result['OK']:
+          return result
+
+    return S_OK(filesForJobs)
+
+  
   def __updateJobProgress(self,jobID,primaryStatus,secondaryStatus=None):
     """Updates the WMS monitoring for a given jobID for which some files are newly staged.
     """
