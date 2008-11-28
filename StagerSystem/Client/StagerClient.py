@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: StagerClient.py,v 1.14 2008/11/28 09:44:13 rgracian Exp $
+# $Id: StagerClient.py,v 1.15 2008/11/28 10:42:22 rgracian Exp $
 ########################################################################
 
 """Set of utilities and classes to handle Stager Database"""
@@ -38,7 +38,7 @@ class StagerClient:
   def getJobsFilesStatus(self,jobIDs):
     try:
       server = RPCClient('Stager/Stager',useCertificates=self.useCerts,timeout=120)
-      result = server.getJobFilesStatus(jobIDs)
+      result = server.getJobsFilesStatus(jobIDs)
       return result
     except Exception,x:
       errorStr = "StagerDBClient.getJobFilesStatus failed"
