@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Service/StagerHandler.py,v 1.11 2008/11/28 11:07:01 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Service/StagerHandler.py,v 1.12 2008/11/28 18:28:03 rgracian Exp $
 ########################################################################
 
 """ StagerHandler is the implementation of the StagerDB in the DISET framework
     A.Smith (17/05/07)
 """
 
-__RCSID__ = "$Id: StagerHandler.py,v 1.11 2008/11/28 11:07:01 rgracian Exp $"
+__RCSID__ = "$Id: StagerHandler.py,v 1.12 2008/11/28 18:28:03 rgracian Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -112,6 +112,24 @@ class StagerHandler(RequestHandler):
       return result
     except Exception,x:
       errorStr = "StagerDBHandler.getLFNsForJob failed "+str(x)
+      print errorStr
+      return S_ERROR(errorStr)
+
+  types_getLFNsForJobs = [ListType]
+  def export_getLFNsForJobs(self,jobIDs):
+    """
+       This method selects the files associated to list of jobIDs
+    """
+    try:
+      results = S_OK()
+      for jobID in jobIDs:
+        result = stagerDB.getLFNsForJob(jobID)
+        if result['OK']:
+          results[jobID] = result['LFNs']
+      result = stagerDB.getLFNsForJob(jobid)
+      return results
+    except Exception,x:
+      errorStr = "StagerDBHandler.getLFNsForJobs failed "+str(x)
       print errorStr
       return S_ERROR(errorStr)
 
