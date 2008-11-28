@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.70 2008/11/04 15:57:20 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/Director.py,v 1.71 2008/11/28 08:06:57 rgracian Exp $
 # File :   Director.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -48,7 +48,7 @@
 
 """
 
-__RCSID__ = "$Id: Director.py,v 1.70 2008/11/04 15:57:20 rgracian Exp $"
+__RCSID__ = "$Id: Director.py,v 1.71 2008/11/28 08:06:57 rgracian Exp $"
 
 import types, time
 
@@ -716,6 +716,9 @@ class PilotDirector:
         updateJobStatus( self.log, AGENT_NAME, job, MAJOR_WAIT, MINOR_RESPONSE, logRecord=True )
       else:
         self.log.warn( 'Job is no longer in %s Status:' % MAJOR_WAIT, job )
+
+      # add some sleep here
+      time.sleep(1*pilots)
 
     except Exception,x:
       self.log.exception( 'Error during pilot submission' )
