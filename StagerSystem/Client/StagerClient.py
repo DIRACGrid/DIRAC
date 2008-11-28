@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: StagerClient.py,v 1.15 2008/11/28 10:42:22 rgracian Exp $
+# $Id: StagerClient.py,v 1.16 2008/11/28 18:35:54 rgracian Exp $
 ########################################################################
 
 """Set of utilities and classes to handle Stager Database"""
@@ -122,6 +122,16 @@ class StagerClient:
       return result
     except Exception, x:
       errorStr = "StagerDBClient.getLFNsForJob failed"
+      gLogger.exception(errorStr,lException=x)
+      return S_ERROR(errorStr+": "+str(x))
+
+  def getLFNsForJobs(self,jobIDs):
+    try:
+      server = RPCClient('Stager/Stager',useCertificates=self.useCerts,timeout=120)
+      result = server.getLFNsForJobs(jobIDs)
+      return result
+    except Exception, x:
+      errorStr = "StagerDBClient.getLFNsForJobs failed"
       gLogger.exception(errorStr,lException=x)
       return S_ERROR(errorStr+": "+str(x))
 
