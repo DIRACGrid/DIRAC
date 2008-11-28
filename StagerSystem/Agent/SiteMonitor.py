@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/SiteMonitor.py,v 1.14 2008/11/28 18:50:24 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/SiteMonitor.py,v 1.15 2008/11/28 18:58:29 rgracian Exp $
 # File :   SiteMonitor.py
 # Author : Stuart Paterson
 ########################################################################
@@ -7,7 +7,7 @@
 """  The SiteMonitor base-class monitors staging requests for a given site.
 """
 
-__RCSID__ = "$Id: SiteMonitor.py,v 1.14 2008/11/28 18:50:24 rgracian Exp $"
+__RCSID__ = "$Id: SiteMonitor.py,v 1.15 2008/11/28 18:58:29 rgracian Exp $"
 
 from DIRAC.StagerSystem.Client.StagerClient                import StagerClient
 from DIRAC.DataManagementSystem.Client.StorageElement      import StorageElement
@@ -212,11 +212,12 @@ class SiteMonitor(Thread):
       return result
 
     lfns = []
-    result = self.stagerClient.getLFNsForJobs(result['JobIDs'])
+    jobIDs = result['JobIDs']
+    result = self.stagerClient.getLFNsForJobs(jobIDs)
     if not result['OK']:
       self.log.warn('Problem getting LFNs with error:\n%s' % result['Message'])
     else:
-      for jobID in result['JobIDs']:
+      for jobID in jobIDs:
         for lfn in result[jobID]['LFNs']:
           lfns.append(lfn)
 
