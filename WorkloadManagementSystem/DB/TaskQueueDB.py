@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.26 2008/11/20 11:45:37 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.27 2008/11/28 07:24:37 rgracian Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.26 2008/11/20 11:45:37 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.27 2008/11/28 07:24:37 rgracian Exp $"
 
 import time
 import types
@@ -302,12 +302,17 @@ class TaskQueueDB(DB):
       return retVal
     retVal = self._getConnection()
     if not retVal[ 'OK' ]:
-      return S_ERROR( "Can't insert job: %s" % retVal[ 'Message' ] )
+      return S_ERROR( "Can't connect to DB: %s" % retVal[ 'Message' ] )
     connObj = retVal[ 'Value' ]
     preJobSQL = "SELECT `tq_Jobs`.JobId, `tq_Jobs`.TQId FROM `tq_Jobs` WHERE `tq_Jobs`.TQId = %s"
     postJobSQL = " ORDER BY FLOOR( RAND() * `tq_Jobs`.Priority ) DESC, `tq_Jobs`.JobId ASC LIMIT %s" % numJobsPerTry
     for matchTry in range( self.__maxMatchRetry ):
-      retVal = self.matchAndGetQueue( tqMatchDict, numQueuesToGet = numQueuesPerTry, skipMatchDictDef = True, connObj = connObj )
+      if 'JobID' in tqMatchDict:
+        # A certain JobID is required by the resource, so all TQ are to be considered
+        retVal = self.matchAndGetQueue( tqMatchDict, numQueuesToGet = 0, skipMatchDictDef = True, connObj = connObj )
+        preJobSQL = "%s AND tq_Jobs`.JobId = %s " % ( preJobSQL, tqMatchDict['JobID'] ) 
+      else:
+        retVal = self.matchAndGetQueue( tqMatchDict, numQueuesToGet = numQueuesPerTry, skipMatchDictDef = True, connObj = connObj )
       if not retVal[ 'OK' ]:
         return retVal
       tqList = retVal[ 'Value' ]
@@ -388,7 +393,9 @@ class TaskQueueDB(DB):
                                                                                                                  bannedTable,
                                                                                                                  bannedTable ) )
     tqSqlCmd = "SELECT `tq_TaskQueues`.TQId FROM %s WHERE %s" % ( ", ".join( sqlTables ), " AND ".join( sqlCondList ) )
-    tqSqlCmd = "%s ORDER BY RAND() / `tq_TaskQueues`.Priority ASC LIMIT %s" % ( tqSqlCmd, numQueuesToGet )
+    tqSqlCmd = "%s ORDER BY RAND() / `tq_TaskQueues`.Priority ASC" % tqSqlCmd
+    if numQueuesToGet:
+      tqSqlCmd = "%s LIMIT %s" % ( tqSqlCmd, numQueuesToGet )
     return S_OK( tqSqlCmd )
 
   def deleteJob( self, jobId, connObj = False ):

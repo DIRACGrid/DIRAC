@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: MatcherHandler.py,v 1.28 2008/10/14 10:42:35 rgracian Exp $
+# $Id: MatcherHandler.py,v 1.29 2008/11/28 07:24:36 rgracian Exp $
 ########################################################################
 """
 Matcher class. It matches Agent Site capabilities to job requirements.
@@ -7,7 +7,7 @@ It also provides an XMLRPC interface to the Matcher
 
 """
 
-__RCSID__ = "$Id: MatcherHandler.py,v 1.28 2008/10/14 10:42:35 rgracian Exp $"
+__RCSID__ = "$Id: MatcherHandler.py,v 1.29 2008/11/28 07:24:36 rgracian Exp $"
 
 import re, os, sys, time
 import string
@@ -206,6 +206,10 @@ class MatcherHandler(RequestHandler):
     for name in taskQueueDB.getMultiValueMatchFields():
       if classAdAgent.lookupAttribute(name):
         resourceDict[name] = classAdAgent.getAttributeString(name)
+        
+    # Check if a JobID is requested
+    if classAdAgent.lookupAttribute('JobID'):
+      resourceDict['JobID'] = classAdAgent.getAttributeInt('JobID')
 
     # Get common site mask and check the agent site
     result = jobDB.getSiteMask(siteState='Active')
