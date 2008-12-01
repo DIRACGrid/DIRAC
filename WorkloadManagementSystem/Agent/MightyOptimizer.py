@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/MightyOptimizer.py,v 1.3 2008/12/01 17:17:43 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/MightyOptimizer.py,v 1.4 2008/12/01 17:36:11 rgracian Exp $
 
 
 """  SuperOptimizer
@@ -106,10 +106,6 @@ class MightyOptimizer(AgentModule):
       nextOptimizer = "JobPath"
     else:
       nextOptimizer = jobAttrs[ 'MinorStatus' ]
-    #HACK TO STOP EXECUTION
-    if nextOptimizer not in ( "JobPath", "JobSanity", 'JobScheduling', 'TaskQueue' ):
-      print "SOOOOO CABALLOOOO", nextOptimizer
-      return S_OK()
     gLogger.info( "Next optimizer for job %s is %s" % ( jobAttrs['JobID'], nextOptimizer ) )
     if nextOptimizer in self._optimizers:
       return S_OK( self._optimizers[ nextOptimizer ] )

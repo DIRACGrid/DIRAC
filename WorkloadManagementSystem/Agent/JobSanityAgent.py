@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSanityAgent.py,v 1.12 2008/12/01 16:02:33 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSanityAgent.py,v 1.13 2008/12/01 17:34:55 rgracian Exp $
 # File :   JobSanityAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,7 +13,7 @@
        - Input sandbox not correctly uploaded.
 """
 
-__RCSID__ = "$Id: JobSanityAgent.py,v 1.12 2008/12/01 16:02:33 acasajus Exp $"
+__RCSID__ = "$Id: JobSanityAgent.py,v 1.13 2008/12/01 17:34:55 rgracian Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
@@ -35,7 +35,7 @@ class JobSanityAgent(OptimizerModule):
     self.inputSandboxCheck = gConfig.getValue(self.section+'/InputSandboxCheck',0)
     self.platformCheck     = gConfig.getValue(self.section+'/PlatformCheck',0)
     #Other parameters
-    self.setup                = gConfig.getValue(self.section+'/VO','lhcb')
+    self.voName                = gConfig.getValue(self.section+'/VO','lhcb')
     self.successStatus        = gConfig.getValue(self.section+'/SuccessfulJobStatus','OutputReady')
     self.maxDataPerJob        = gConfig.getValue(self.section+'/MaxInputDataPerJob',200)
 
@@ -146,7 +146,7 @@ class JobSanityAgent(OptimizerModule):
        datasets for the job and whether the LFN conventions
        are correct.
     """
-    setup = self.setup
+    voName = self.voName
     maxData = int(self.maxDataPerJob)
     totalData = 0
     slashFlag = 0
@@ -191,7 +191,7 @@ class JobSanityAgent(OptimizerModule):
     if totalData:
       for i in data:
         j = i.replace('LFN:','')
-        if not re.search('^/'+setup+'/',j):
+        if not re.search('^/'+voName+'/',j):
           incorrectDataFlag += 1
         if re.search('//',j):
           slashFlag +=1
