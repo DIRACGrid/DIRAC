@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobPathAgent.py,v 1.8 2008/08/12 18:13:54 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobPathAgent.py,v 1.9 2008/12/01 16:02:33 acasajus Exp $
 # File :   JobPathAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -12,9 +12,9 @@
       path through the optimizers.
 
 """
-__RCSID__ = "$Id: JobPathAgent.py,v 1.8 2008/08/12 18:13:54 rgracian Exp $"
+__RCSID__ = "$Id: JobPathAgent.py,v 1.9 2008/12/01 16:02:33 acasajus Exp $"
 
-from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
+from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
 from DIRAC.Core.Utilities.ModuleFactory                    import ModuleFactory
@@ -23,25 +23,23 @@ import string,re
 
 OPTIMIZER_NAME = 'JobPath'
 
-class JobPathAgent(Optimizer):
+class JobPathAgent(OptimizerModule):
 
   #############################################################################
-  def __init__(self):
-    """ Constructor, takes system flag as argument.
-    """
-    Optimizer.__init__(self,OPTIMIZER_NAME,'Received',enableFlag=True)
-
-  #############################################################################
-  def initialize(self):
+  def initializeOptimizer(self):
     """Initialize specific parameters for JobPathAgent.
     """
-    result = Optimizer.initialize(self)
     # self.basePath     = gConfig.getValue(self.section+'/BasePath',['JobPath','JobSanity','JobPolicy'])
-    self.basePath     = gConfig.getValue(self.section+'/BasePath',['JobPath','JobSanity'])
-    self.inputData    = gConfig.getValue(self.section+'/InputData',['InputData'])
-    self.endPath      = gConfig.getValue(self.section+'/EndPath',['JobScheduling','TaskQueue'])
-    self.voPlugin     = gConfig.getValue(self.section+'/VOPlugin','WorkflowLib.Utilities.JobPathResolution')
-    return result
+    self.basePath     = gConfig.getValue(self.section+'/BasePath',  ['JobPath','JobSanity'])
+    self.inputData    = gConfig.getValue(self.section+'/InputData', ['InputData'])
+    self.endPath      = gConfig.getValue(self.section+'/EndPath',   ['JobScheduling','TaskQueue'])
+    self.voPlugin     = gConfig.getValue(self.section+'/VOPlugin',  'WorkflowLib.Utilities.JobPathResolution')
+
+    self.startingMajorStatus = "Received"
+    self.startingMinorStatus = False
+    self.requiredJobInfo = 'jdlOriginal'
+
+    return S_OK()
 
   def initExecution(self):
 
@@ -53,37 +51,23 @@ class JobPathAgent(Optimizer):
     return S_OK()
 
   #############################################################################
-  def checkJob(self,job):
+  def checkJob( self, job, classad ):
     """This method controls the checking of the job.
     """
-
     self.log.info('Job %s will be processed by %sAgent' % (job,self.optimizerName))
-    jdl = self.jobDB.getJobJDL(job,original=True)
-    if jdl['OK'] and len(jdl['Value']):
-      jdl = jdl['Value']
-      result = self.setJobPath(job,jdl)
-    else:
-      self.log.warn('Could not obtain original JDL for job %s' %(job))
-      return S_ERROR('JDL not found in JobDB')
-
-    return result
+    return self.setJobPath( job, classad )
 
   #############################################################################
-  def setJobPath(self,job,jdl):
+  def setJobPath( self, job, classadJob ):
     """This method controls the checking of the job.
     """
-    classadJob = ClassAd('['+jdl+']')
-    if not classadJob.isOK():
-      self.log.error('Illegal JDL, job will be marked problematic', job )
-      return S_ERROR('Illegal JDL')
 
     #Check if job defines a path itself
     # FIXME: only some group might be able to overwrite the jobPath
     jobPath = classadJob.get_expression('JobPath').replace('"','').replace('Unknown','')
     if jobPath:
       self.log.info('Job %s defines its own optimizer chain %s' %(job,jobPath))
-      result = self.processJob(job,List.fromChar(jobPath))
-      return S_OK('Job defines own path') #overrides all VO specific policies
+      return self.processJob(job,List.fromChar(jobPath))
 
     #If no path, construct based on JDL and VO path module if present
     path = list(self.basePath)
@@ -111,7 +95,7 @@ class JobPathAgent(Optimizer):
     if not result['OK']:
       self.log.error('Failed to get input data from JobDB', job  )
       self.log.warn(result['Message'])
-      return S_OK()
+      return result
 
     # FIXME: this can be simplify: if result['OK'] and result['Value']: # (it is not an empty tuple)
     ok = False
@@ -128,8 +112,7 @@ class JobPathAgent(Optimizer):
 
     path.extend( self.endPath )
     self.log.info('Constructed path for job %s is: %s' %(job,path))
-    result = self.processJob(job,path)
-    return S_OK('Job path constructed')
+    return self.processJob( job, path )
 
   #############################################################################
   def processJob(self,job,chain):
@@ -141,6 +124,6 @@ class JobPathAgent(Optimizer):
     result = self.setJobParam(job,'JobPath',string.join(chain,','))
     if not result['OK']:
       self.log.warn(result['Message'])
-    return self.setNextOptimizer(job)
+    return self.setNextOptimizer( job )
 
   #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

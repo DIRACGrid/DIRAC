@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSanityAgent.py,v 1.11 2008/08/12 17:30:48 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSanityAgent.py,v 1.12 2008/12/01 16:02:33 acasajus Exp $
 # File :   JobSanityAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,31 +13,22 @@
        - Input sandbox not correctly uploaded.
 """
 
-__RCSID__ = "$Id: JobSanityAgent.py,v 1.11 2008/08/12 17:30:48 rgracian Exp $"
+__RCSID__ = "$Id: JobSanityAgent.py,v 1.12 2008/12/01 16:02:33 acasajus Exp $"
 
-from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
+from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
 from DIRAC.Core.Utilities.Subprocess                       import shellCall
 from DIRAC                                                 import S_OK, S_ERROR
 import os, re, time, string
 
-OPTIMIZER_NAME = 'JobSanity'
+class JobSanityAgent(OptimizerModule):
 
-class JobSanityAgent(Optimizer):
-
-  #############################################################################
-  def __init__(self):
-    """ Constructor, takes system flag as argument.
-    """
-    Optimizer.__init__(self,OPTIMIZER_NAME,enableFlag=True)
 
   #############################################################################
-  def initialize(self):
+  def initializeOptimizer(self):
     """Initialize specific parameters for JobSanityAgent.
     """
-    result = Optimizer.initialize(self)
-
     #Test control flags N.B. JDL check is mandatory
     self.inputDataCheck    = gConfig.getValue(self.section+'/InputDataCheck',1)
     self.outputDataCheck   = gConfig.getValue(self.section+'/OutputDataCheck',0)
@@ -66,23 +57,10 @@ class JobSanityAgent(Optimizer):
     else:
       self.log.debug( 'Platform Check     ==>  Disabled'                   )
 
-#needed eventually for the output data check
-#    host    = gConfig.getValue(self.section+'/LFC_HOST','lhcb-lfc.cern.ch')
-#    infosys = gConfig.getValue(self.section+'/LCG_GFAL_INFOSYS','lcg-bdii.cern.ch:2170')
-#    try:
-#      from DIRAC.DataManagement.Client.LcgFileCatalogCombinedClient import LcgFileCatalogCombinedClient
-#      self.FileCatalog = LcgFileCatalogCombinedClient()
-#      self.log.debug("Instantiating LFC File Catalog in mode %s %s %s" % (mode,host,infosys) )
-#    except Exception,x:
-#      msg = "Failed to create LcgFileCatalogClient"
-#      self.log.fatal(msg)
-#      self.log.fatal(str(x))
-#      result = S_ERROR(msg)
-
-    return result
+    return S_OK()
 
   #############################################################################
-  def checkJob( self, job ):
+  def checkJob( self, job, classAdJob ):
     """ This method controls the order and presence of
         each sanity check for submitted jobs. This should
         be easily extended in the future to accommodate
@@ -90,20 +68,10 @@ class JobSanityAgent(Optimizer):
     """
     self.log.info('Job %s will be processed by %sAgent' % (job,self.optimizerName))
     #Job JDL check
-    message = 'Job: '+str(job)+' '
-    self.log.debug('Checking Loop Starts for job: '+str(job))
-    checkJDL = self.checkJDL(job)
-    if checkJDL['OK']:
-      message+='JDL: OK, '
-    else:
-      message += 'Failed JDL check.'
-      minorStatus = checkJDL['Value']
-      self.updateJobStatus(job,self.failedJobStatus,minorStatus)
-      self.log.info(message)
-      return S_ERROR(message)
+    message = "Job: %s JDL: OK," % job
+    self.log.debug( "Checking Loop Starts for job %s" % job )
 
-    jdl = checkJDL['JDL']
-    jobType = self.jobDB.getJobAttribute(job,'JobType')
+    jobType = self.jobDB.getJobAttribute( job, 'JobType' )
 
     #Input data check
     if self.inputDataCheck:
@@ -119,7 +87,7 @@ class JobSanityAgent(Optimizer):
 
     #Platform check # disabled
     if self.platformCheck:
-      platform = self.checkPlatformSupported(job,jdl)
+      platform = self.checkPlatformSupported( job, classAdJob )
       if platform['OK']:
         arch = platform['Value']
         message += 'Platform: '+arch+' OK, '
@@ -133,7 +101,7 @@ class JobSanityAgent(Optimizer):
     #Output data exists check
     if self.outputDataCheck: # disabled
       if jobType != 'user':
-        outputData = self.checkOutputDataExists(job,jdl)
+        outputData = self.checkOutputDataExists( job, classAdJob )
         if outputData['OK']:
           if outputData.has_key('SUCCESS'):
             success = self.successStatus
@@ -157,7 +125,7 @@ class JobSanityAgent(Optimizer):
 
     #Input Sandbox uploaded check
     if self.inputSandboxCheck: # disabled
-      inputSandbox = self.checkInputSandbox(job,jdl)
+      inputSandbox = self.checkInputSandbox( job, classAdJob )
       if inputSandbox['OK']:
         filesUploaded = inputSandbox['Value']
         message+= ' Input Sandbox Files: '+filesUploaded+', OK.'
@@ -170,43 +138,7 @@ class JobSanityAgent(Optimizer):
 
     self.log.info(message)
     self.setJobParam(job,'JobSanityCheck',message)
-    self.setNextOptimizer(job)
-
-    return checkJDL
-
-  #############################################################################
-  def checkJDL(self,job):
-    """Checks JDL is OK for Job.
-    """
-    self.log.debug("Checking JDL for job: %s" %(job))
-    retVal = self.jobDB.getJobJDL(job,original=True)
-    if not retVal['OK']:
-      self.log.warn(retVal['Message'])
-
-    if not retVal['OK']:
-      result = S_ERROR()
-      result['Value'] = "Job JDL not found in JobDB"
-      return result
-
-    jdl = retVal['Value']
-
-    if not jdl:
-      self.log.debug("Warning: JDL not found for job %s, will be marked problematic" % (job))
-      result = S_ERROR()
-      result['Value'] = "Job JDL Not Found"
-      return result
-
-    result = S_OK('JDL OK')
-    classadJob = ClassAd('['+jdl+']')
-    if not classadJob.isOK():
-      self.log.debug("Warning: illegal JDL for job %s, will be marked problematic" % (job))
-      result = S_ERROR()
-      result['Value'] = "Illegal Job JDL"
-      return result
-    else:
-      result['JDL'] = jdl
-      result['ClassAdJob'] = classadJob
-      return result
+    return self.setNextOptimizer(job)
 
   #############################################################################
   def checkInputData(self,job):
@@ -280,7 +212,7 @@ class JobSanityAgent(Optimizer):
     return result
 
   #############################################################################
-  def  checkOutputDataExists(self, job, jdl):
+  def  checkOutputDataExists( self, job, classAdJob ):
     """If the job output data is already in the LFC, this
        method will fail the job for the attention of the
        data manager. To be tidied for DIRAC3...
@@ -289,7 +221,7 @@ class JobSanityAgent(Optimizer):
     return S_OK()
 
   #############################################################################
-  def checkPlatformSupported(self,job,jdl):
+  def checkPlatformSupported( self, job, classAdJob ):
     """This method queries the CS for available platforms
        supported by DIRAC and will check these against what
        the job requests.
@@ -298,7 +230,7 @@ class JobSanityAgent(Optimizer):
     return S_OK()
 
   #############################################################################
-  def checkInputSandbox(self,job,jdl):
+  def checkInputSandbox( self, job, classAdJob ):
     """The number of input sandbox files, as specified in the job
        JDL are checked in the JobDB.
     """

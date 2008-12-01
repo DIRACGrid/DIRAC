@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueAgent.py,v 1.18 2008/10/24 13:45:02 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueAgent.py,v 1.19 2008/12/01 16:02:33 acasajus Exp $
 # File :   TaskQueueAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,9 +8,9 @@
      into a Task Queue.
 """
 
-__RCSID__ = "$Id: TaskQueueAgent.py,v 1.18 2008/10/24 13:45:02 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueAgent.py,v 1.19 2008/12/01 16:02:33 acasajus Exp $"
 
-from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
+from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB         import TaskQueueDB
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
@@ -18,42 +18,37 @@ from DIRAC.Core.Security.CS                                import getPropertiesF
 from DIRAC                                                 import S_OK, S_ERROR, Time
 import string,re
 
-OPTIMIZER_NAME = 'TaskQueue'
-
-class TaskQueueAgent(Optimizer):
+class TaskQueueAgent(OptimizerModule):
 
   #############################################################################
-  def __init__(self):
-    """ Standard constructor
-    """
-    Optimizer.__init__(self,OPTIMIZER_NAME,enableFlag=True)
-    self.taskQueueDB        = TaskQueueDB()
-
-  #############################################################################
-  def initialize(self):
+  def initializeOptimizer(self):
     """Initialize specific parameters for TaskQueueAgent.
     """
-    result = Optimizer.initialize(self)
     self.waitingStatus      = gConfig.getValue(self.section+'/WaitingStatus','Waiting')
     self.waitingMinorStatus = gConfig.getValue(self.section+'/WaitingMinorStatus','Pilot Agent Submission')
-    return result
+    try:
+      self.taskQueueDB        = TaskQueueDB()
+    except Exception, e:
+      return S_ERROR( "Cannot initialize taskqueueDB: %s" % str(e) )
+    return S_OK()
 
   #############################################################################
-  def checkJob(self,job):
+  def checkJob( self, job, classAdJob ):
     """This method controls the checking of the job.
     """
-    result = self.insertJobInQueue(job)
+    result = self.insertJobInQueue( job, classAdJob )
+    if not result['OK']:
+      self.log.warn(result['Message'])
+      return S_ERROR( result[ 'Message' ] )
+
+    result = self.updateJobStatus( job, self.waitingStatus, self.waitingMinorStatus )
     if not result['OK']:
       self.log.warn(result['Message'])
 
-    result = self.updateJobStatus(job,self.waitingStatus,self.waitingMinorStatus)
-    if not result['OK']:
-      self.log.warn(result['Message'])
-
-    return result
+    return S_OK()
 
   #############################################################################
-  def insertJobInQueue(self,job):
+  def insertJobInQueue( self, job, classAdJob ):
     """ Check individual job and add to the Task Queue eventually.
     """
     retVal = self.jobDB.getJobAttributes( job, ['UserPriority'] )
@@ -66,32 +61,19 @@ class TaskQueueAgent(Optimizer):
     else:
       priority=0
 
-    result = self.jobDB.getJobJDL(job)
-    if result['OK']:
-      jdl = result['Value']
-    else:
-      return S_ERROR('Could not obtain JDL for job')
-
-    classadJob = ClassAd(jdl)
-    if not classadJob.isOK():
-      self.log.warn("Illegal JDL for job %d " % int(job))
-      self.log.warn("The job will be marked problematic")
-      return S_ERROR('Illegal JDL')
-
-    requirements = classadJob.get_expression("Requirements")
-    jobType = classadJob.get_expression("JobType").replace('"','')
-    pilotType = classadJob.get_expression( "PilotType" ).replace('"','')
+    requirements = classAdJob.get_expression("Requirements")
+    jobType = classAdJob.get_expression("JobType").replace('"','')
+    pilotType = classAdJob.get_expression( "PilotType" ).replace('"','')
 
     if pilotType == 'private':
-      ownerDN = classadJob.get_expression( "OwnerDN" ).replace('"','')
-      ownerGroup = classadJob.get_expression( "OwnerGroup" ).replace('"','')
+      ownerDN = classAdJob.get_expression( "OwnerDN" ).replace('"','')
+      ownerGroup = classAdJob.get_expression( "OwnerGroup" ).replace('"','')
       ownerGroupProperties = getPropertiesForGroup( ownerGroup )
       if not 'JobSharing' in ownerGroupProperties:
         requirements += ' && other.OwnerDN == "%s"' % ownerDN
       requirements += ' && other.OwnerGroup == "%s"' % ownerGroup
     requirements += ' && other.PilotType == "%s"' % pilotType
 
-    start1 = Time.to2K()
     result = self.jobDB.selectQueue(requirements)
     if result['OK']:
       queueID = result['Value']
@@ -101,35 +83,31 @@ class TaskQueueAgent(Optimizer):
       return S_ERROR("Failed to obtain a task queue")
 
     rank = priority
-    if self.enable:
+    if self.am_getParam( "enabled" ):
       result = self.jobDB.addJobToQueue(job,queueID,rank)
       if not result['OK']:
         return result
     else:
       self.log.info('TaskQueue agent disabled via enable flag')
 
-    timing1 = Time.to2K() - start1
-
-    start2 = Time.to2K()
-    jobReq = classadJob.get_expression("JobRequirements")
-    classadJobReq = ClassAd(jobReq)
+    jobReq = classAdJob.get_expression("JobRequirements")
+    classAdJobReq = ClassAd(jobReq)
     jobReqDict = {}
     for name in self.taskQueueDB.getSingleValueTQDefFields():
-      if classadJobReq.lookupAttribute(name):
+      if classAdJobReq.lookupAttribute(name):
         if name == 'CPUTime':
-          jobReqDict[name] = classadJobReq.getAttributeInt(name)
+          jobReqDict[name] = classAdJobReq.getAttributeInt(name)
         else:
-          jobReqDict[name] = classadJobReq.getAttributeString(name)
+          jobReqDict[name] = classAdJobReq.getAttributeString(name)
 
     for name in self.taskQueueDB.getMultiValueTQDefFields():
-      if classadJobReq.lookupAttribute(name):
-        jobReqDict[name] = classadJobReq.getListFromExpression(name)
+      if classAdJobReq.lookupAttribute(name):
+        jobReqDict[name] = classAdJobReq.getListFromExpression(name)
 
-    self.taskQueueDB.insertJob(job,jobReqDict, 1,priority)
-
-    timing2 = Time.to2K() - start2
-    print "Timing:",timing1,timing2
-    
-    return S_OK('Job Added to Task Queue')
+    result = self.taskQueueDB.insertJob( job, jobReqDict, 1,priority )
+    if not result[ 'OK' ]:
+      self.log.error( "Cannot insert job %s in task queue: %s" % ( job, result[ 'Message' ] ) )
+      return S_ERROR( "Cannot insert in task queue" )
+    return S_OK()
 
   #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

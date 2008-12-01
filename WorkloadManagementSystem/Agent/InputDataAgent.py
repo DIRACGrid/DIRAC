@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.29 2008/08/12 17:34:57 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.30 2008/12/01 16:02:33 acasajus Exp $
 # File :   InputDataAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,84 +10,67 @@
 
 """
 
-__RCSID__ = "$Id: InputDataAgent.py,v 1.29 2008/08/12 17:34:57 rgracian Exp $"
+__RCSID__ = "$Id: InputDataAgent.py,v 1.30 2008/12/01 16:02:33 acasajus Exp $"
 
-from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
+from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
 from DIRAC.Core.DISET.RPCClient                            import RPCClient
 from DIRAC.Core.Utilities.SiteSEMapping                    import getSitesForSE
 from DIRAC.Core.Utilities.Shifter                          import setupShifterProxyInEnv
 from DIRAC                                                 import gConfig, S_OK, S_ERROR
 
-
 import os, re, time, string
-
-OPTIMIZER_NAME = 'InputData'
 
 class InputDataAgent(Optimizer):
 
   #############################################################################
-  def __init__(self):
-    """ Constructor, takes system flag as argument.
-    """
-    Optimizer.__init__(self,OPTIMIZER_NAME,enableFlag=True)
-
-  #############################################################################
-  def initialize(self):
+  def initializeOptimizer(self):
     """Initialize specific parameters for JobSanityAgent.
     """
-    result = Optimizer.initialize(self)
     self.failedMinorStatus = gConfig.getValue( self.section+'/FailedJobStatus', 'Input Data Not Available' )
     #this will ignore failover SE files
     self.diskSE            = gConfig.getValue(self.section+'/DiskSE',['-disk','-DST','-USER'])
     self.tapeSE            = gConfig.getValue(self.section+'/TapeSE',['-tape','-RDST','-RAW'])
+
+    #Define the shifter proxy needed
+    self.am_setParam( "shifterProxy", "ProductionManager" )
 
     try:
       from DIRAC.DataManagementSystem.Client.Catalog.LcgFileCatalogCombinedClient import LcgFileCatalogCombinedClient
       self.fileCatalog = LcgFileCatalogCombinedClient()
     except Exception,x:
       msg = 'Failed to create LcgFileCatalogClient with exception:'
-      self.log.fatal(msg)
-      self.log.fatal(str(x))
-      result = S_ERROR(msg)
+      self.log.fatal(msg,str(x))
+      return S_ERROR(msg+str(x))
 
-    return result
-
-  #############################################################################
-  def initExecution(self):
-    """ Try to get the sifter's proxy
-    """
-    result = setupShifterProxyInEnv( "ProductionManager" )
-    if not result[ 'OK' ]:
-      self.log.error( "Can't get shifter's proxy: %s" % result[ 'Message' ] )
-    return result
+    return S_OK()
 
   #############################################################################
-  def checkJob(self,job):
+  def checkJob(self,job,classAdJob):
     """This method controls the checking of the job.
     """
 
     result = self.jobDB.getInputData(job)
-    if result['OK']:
-      if result['Value']:
-        self.log.verbose('Job %s has an input data requirement and will be processed' % (job))
-        inputData = result['Value']
-        result = self.__resolveInputData(job,inputData)
-        if not result['OK']:
-          self.log.warn(result['Message'])
-          return result
-        resolvedData = result['Value']
-        result = self.setOptimizerJobInfo(job,self.optimizerName,resolvedData)
-        if not result['OK']:
-          self.log.warn(result['Message'])
-          return result
-        return self.setNextOptimizer(job)
-      else:
-        self.log.verbose('Job %s has no input data requirement' % (job) )
-        return self.setNextOptimizer(job)
-    else:
+    if not result['OK']:
       self.log.warn('Failed to get input data from JobdB for %s' % (job) )
       self.log.warn(result['Message'])
       return result
+    if not result['Value']:
+      self.log.verbose('Job %s has no input data requirement' % (job) )
+      return self.setNextOptimizer(job)
+
+    self.log.verbose('Job %s has an input data requirement and will be processed' % (job))
+    inputData = result['Value']
+    result = self.__resolveInputData(job,inputData)
+    if not result['OK']:
+      self.log.warn( result['Message'] )
+      return result
+    resolvedData = result['Value']
+    result = self.setOptimizerJobInfo(job,self.optimizerName,resolvedData)
+    if not result['OK']:
+      self.log.warn( result['Message'] )
+      return result
+    return self.setNextOptimizer(job)
+
 
   #############################################################################
   def __resolveInputData( self, job, inputData ):

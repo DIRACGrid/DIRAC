@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/ProcessingDBAgent.py,v 1.5 2008/08/12 17:28:19 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/ProcessingDBAgent.py,v 1.6 2008/12/01 16:02:33 acasajus Exp $
 # File :   ProcessingDBAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,29 +10,20 @@
 
 """
 
-__RCSID__ = "$Id: ProcessingDBAgent.py,v 1.5 2008/08/12 17:28:19 rgracian Exp $"
+__RCSID__ = "$Id: ProcessingDBAgent.py,v 1.6 2008/12/01 16:02:33 acasajus Exp $"
 
-from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
+from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
 from DIRAC                                                 import S_OK, S_ERROR
 
 import os, re, time, string
 
-OPTIMIZER_NAME = 'ProcessingDB'
-
-class ProcessingDBAgent(Optimizer):
+class ProcessingDBAgent(OptimizerModule):
 
   #############################################################################
-  def __init__(self):
-    """ Standard constructor
-    """
-    Optimizer.__init__(self,OPTIMIZER_NAME,enableFlag=True)
-
-  #############################################################################
-  def initialize(self):
+  def initializeOptimizer(self):
     """ Initialization of the Agent.
     """
-    result = Optimizer.initialize(self)
     self.jobTypeToCheck       = 'processing'
 
     #disabled until available
@@ -48,53 +39,48 @@ class ProcessingDBAgent(Optimizer):
         self.log.debug("Instantiating ProcessingDB Catalog in mode %s %s %s" % (mode,dbURL) )
       except Exception,x:
         msg = "Failed to create ProcDBFileCatalogClient"
-        self.log.fatal(msg)
-        self.log.fatal(str(x))
-        result = S_ERROR(msg)
+        self.log.fatal( msg, str(x) )
+        return S_ERROR( msg )
 
-    return result
+    return S_OK()
 
   #############################################################################
-  def checkJob(self,job):
+  def checkJob( self, job,classAdJob ):
     """This method controls the checking of the job.
     """
 
     result = self.jobDB.getInputData(job)
-    if result['OK']:
-      if result['Value']:
-        self.log.debug('Job %s has an input data requirement ' % (job))
-        inputData = result['Value']
-        #check job is of correct type
-        result = self.getJobType(job)
-        if not result['OK']:
-          self.log.error(result['Message'])
-          return result
+    if not result['OK']:
+      self.log.error('Failed to get input data from JobdB ', "For job %s: %s" % (job, result['Message'] ) )
+      return S_ERROR( "Failed to get input data" )
+    if not result['Value']:
+      self.log.info('Job %s has no input data requirement' % (job) )
+      return self.setNextOptimizer(job)
 
-        jobType = result['Value']
-        if jobType == self.jobTypeToCheck:
-          self.log.info('Job %s is of type %s and will be processed' % (job,jobType))
-          if not self.disableProcDBCheck:
-            procDBResult = self.checkProcDB(job,inputData)
-            if not procDBResult['OK']:
-              self.log.error(procDBResult['Message'])
-              return procDBResult
-            result = self.setOptimizerJobInfo(job,self.optimizerName,procDBResult)
-            if not result['OK']:
-              self.log.error(result['Message'])
-              return result
-          return self.setNextOptimizer(job)
-        else:
-          self.log.info('Job %s is of type %s and will be ignored' % (job,jobType))
-          result = self.updateJobStatus(job,self.jobStatus,self.nextOptMinorStatus)
-          if not result['OK']:
-            self.log.error(result['Message'])
-          return result
-      else:
-        self.log.info('Job %s has no input data requirement' % (job) )
-        return self.setNextOptimizer(job)
-    else:
-      self.log.error('Failed to get input data from JobdB for %s' % (job) )
+    self.log.debug('Job %s has an input data requirement ' % (job))
+    inputData = result['Value']
+    #check job is of correct type
+    result = self.getJobType(job)
+    if not result['OK']:
       self.log.error(result['Message'])
+      return result
+
+    jobType = result['Value']
+    if jobType != self.jobTypeToCheck:
+      self.log.info('Job %s is of type %s and will be ignored' % (job,jobType))
+      return self.setNextOptimizer( job )
+
+    self.log.info('Job %s is of type %s and will be processed' % (job,jobType))
+    if not self.disableProcDBCheck:
+      procDBResult = self.checkProcDB(job,inputData)
+      if not procDBResult['OK']:
+        self.log.error(procDBResult['Message'])
+        return procDBResult
+      result = self.setOptimizerJobInfo(job,self.optimizerName,procDBResult)
+      if not result['OK']:
+        self.log.error(result['Message'])
+        return result
+    return self.setNextOptimizer(job)
 
   #############################################################################
   def getJobType(self,job):

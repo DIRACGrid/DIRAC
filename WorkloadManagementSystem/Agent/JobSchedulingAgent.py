@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.41 2008/09/15 18:33:43 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.42 2008/12/01 16:02:33 acasajus Exp $
 # File :   JobSchedulingAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,9 +14,9 @@
       meaningfully.
 
 """
-__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.41 2008/09/15 18:33:43 paterson Exp $"
+__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.42 2008/12/01 16:02:33 acasajus Exp $"
 
-from DIRAC.WorkloadManagementSystem.Agent.Optimizer        import Optimizer
+from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
 from DIRAC.Core.Utilities.SiteSEMapping                    import getSEsForSite
 from DIRAC.ConfigurationSystem.Client.PathFinder           import getAgentSection
@@ -26,42 +26,30 @@ from DIRAC                                                 import gConfig,S_OK,S
 
 import random,string,re, types
 
-OPTIMIZER_NAME = 'JobScheduling'
-
-class JobSchedulingAgent(Optimizer):
+class JobSchedulingAgent(OptimizerModule):
   #############################################################################
-  def __init__(self):
-    """ Standard constructor
-    """
-    Optimizer.__init__(self,OPTIMIZER_NAME,enableFlag=True)
 
   #############################################################################
-  def initialize(self):
+  def initializeOptimizer(self):
     """ Initialization of the Agent.
     """
-    result = Optimizer.initialize(self)
 
     self.dataAgentName        = gConfig.getValue(self.section+'/InputDataAgent','InputData')
     self.stagingStatus        = gConfig.getValue(self.section+'/StagingStatus','Staging')
     self.stagingMinorStatus   = gConfig.getValue(self.section+'/StagingMinorStatus','Request Sent')
     self.stagerClient = StagerClient(True)
-    return result
+
+    return S_OK()
 
   #############################################################################
-  def checkJob( self, job, jdl = None, classad = None ):
+  def checkJob( self, job, classAdJob ):
     """This method controls the checking of the job.
     """
     self.log.verbose('Job %s will be processed' % (job))
 
     # First, get Site and BannedSites from the Job
-    result = self.getJDLandClassad( job, jdl, classad )
-    if not result['OK']:
-      return result
 
-    JDL = result['JDL']
-    classadJob = result['Classad']
-
-    result = self.__getJobSiteRequirement( job, classadJob  )
+    result = self.__getJobSiteRequirement( job, classAdJob  )
     bannedSites = result['BannedSites']
     sites = result['Sites']
 
@@ -73,8 +61,7 @@ class JobSchedulingAgent(Optimizer):
       return S_ERROR( 'Failed to get input data from JobDB' )
 
     if not result['Value']:
-      result = self.__sendJobToTaskQueue(job,classadJob,sites,bannedSites)
-      return result
+      return self.__sendJobToTaskQueue( job, classAdJob, sites, bannedSites )
 
     hasInputData=False
     for i in result['Value']:
@@ -84,8 +71,7 @@ class JobSchedulingAgent(Optimizer):
     if not hasInputData:
       #With no input data requirement, job can proceed directly to task queue
       self.log.verbose('Job %s has no input data requirement' % (job))
-      result = self.__sendJobToTaskQueue(job,classadJob,sites,bannedSites)
-      return result
+      return self.__sendJobToTaskQueue( job, classAdJob, sites, bannedSites )
 
     self.log.verbose('Job %s has an input data requirement ' % (job))
 
@@ -164,11 +150,8 @@ class JobSchedulingAgent(Optimizer):
       #No staging required, can proceed to task queue agent and then waiting status
       self.log.verbose('Job %s does not require staging of input data' %(job))
     #Finally send job to TaskQueueAgent
-    result = self.__sendJobToTaskQueue(job, classadJob, destinationSites, bannedSites)
-    if not result['OK']:
-      return result
+    return self.__sendJobToTaskQueue( job, classAdJob, sites, bannedSites )
 
-    return S_OK('Job successfully scheduled')
 
   #############################################################################
   def __checkOptimizerInfo(self,job):
@@ -304,12 +287,10 @@ class JobSchedulingAgent(Optimizer):
     result = self.updateJobStatus(job,self.stagingStatus,self.stagingMinorStatus)
     if not result['OK']:
       return result
-
-
-    return S_OK('StagingRequest sent')
+    return S_OK()
 
   #############################################################################
-  def __getJobSiteRequirement(self,job,classadJob):
+  def __getJobSiteRequirement(self,job,classAdJob):
     """Returns any candidate sites specified by the job or sites that have been
        banned and could affect the scheduling decision.
     """
@@ -322,7 +303,7 @@ class JobSchedulingAgent(Optimizer):
 
     result = S_OK()
 
-    bannedSites = classadJob.getAttributeString('BannedSites')
+    bannedSites = classAdJob.getAttributeString('BannedSites')
     bannedSites = string.replace( string.replace( bannedSites, '{', '' ), '}', '' )
     bannedSites = List.fromChar( bannedSites )
 
@@ -435,7 +416,7 @@ class JobSchedulingAgent(Optimizer):
         self.log.verbose('Individual site candidate for job %s is %s' %(job,siteCandidates[0]))
         self.jobDB.setJobAttribute(job,'Site',siteCandidates[0])
 
-    return self.setNextOptimizer(job)
+    return self.setNextOptimizer( job )
 
   #############################################################################
   def __resolveJobJDLRequirement(self,requirements,siteCandidates):
