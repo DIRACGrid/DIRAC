@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/StagerMonitorWMSAgent.py,v 1.5 2008/12/01 14:25:44 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/StagerMonitorWMSAgent.py,v 1.6 2008/12/01 15:27:25 rgracian Exp $
 # File :   StagerMonitorWMS.py
 # Author : Stuart Paterson
 ########################################################################
@@ -20,7 +20,7 @@
      Successful -> purged with status change
 """
 
-__RCSID__ = "$Id: StagerMonitorWMSAgent.py,v 1.5 2008/12/01 14:25:44 rgracian Exp $"
+__RCSID__ = "$Id: StagerMonitorWMSAgent.py,v 1.6 2008/12/01 15:27:25 rgracian Exp $"
 
 from DIRAC.Core.Base.Agent                                 import Agent
 from DIRAC.Core.DISET.RPCClient                            import RPCClient
@@ -174,6 +174,7 @@ class StagerMonitorWMSAgent(Agent):
     lfnTimingDict = result['TimingDict']
   
     jobStatesToReport = {}
+    jobsParameterDict = {}
   
     for jobID in filesForJobs:
       site = filesForJobs[jobID]['Site']
@@ -205,9 +206,13 @@ class StagerMonitorWMSAgent(Agent):
         jobStatesToReport[jobState] = []
       jobStatesToReport[jobState].append(jobID)
       result = self.__sendMonitoringReport(jobID,header,monitoringReport,primaryStatus,minorStatus)
+      if result['OK']:
+        jobsParameterDict.update( result['Value'] )
 
     for jobState in jobStatesToReport:
       self.__setJobsStatus(jobStatesToReport[jobState],jobState[0],jobState[1])
+    if jobsParameterDict:
+      self.__setJobsParam( jobsParameterDict )
   
   
     #Finally update the ToUpdate file status to Staged in the StagerDB
@@ -256,6 +261,7 @@ class StagerMonitorWMSAgent(Agent):
 
     #Update job status and send staging report
     stagerReport = '%s\n%s' %(header,body)
+    return ({jobID:( 'StagerReport', stagerReport)})
     result = self.__setJobParam(jobID,'StagerReport',stagerReport)
     if not result['OK']:
       return result
@@ -308,12 +314,12 @@ class StagerMonitorWMSAgent(Agent):
     return result
 
   #############################################################################
-  def __setJobParam(self,jobID,name,value):
-    """Wraps around setJobParameter of state update client
+  def __setJobsParam(self,jobsParameterDict):
+    """Wraps around setJobsParameter of state update client
     """
     jobReport  = RPCClient('WorkloadManagement/JobStateUpdate')
-    jobParam = jobReport.setJobParameter(int(jobID),str(name),str(value))
-    self.log.verbose('setJobParameter(%s,%s,%s)' %(jobID,name,value))
+    jobParam = jobReport.setJobsParameter(jobsParameterDict)
+    self.log.verbose('setJobsParameter(%s)' % jobsParameterDict.keys() )
     if not jobParam['OK']:
       self.log.warn(jobParam['Message'])
 
