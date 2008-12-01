@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobStateUpdateHandler.py,v 1.29 2008/11/10 23:32:05 atsareg Exp $
+# $Id: JobStateUpdateHandler.py,v 1.30 2008/12/01 10:33:18 rgracian Exp $
 ########################################################################
 
 """ JobStateUpdateHandler is the implementation of the Job State updating
@@ -11,7 +11,7 @@
 
 """
 
-__RCSID__ = "$Id: JobStateUpdateHandler.py,v 1.29 2008/11/10 23:32:05 atsareg Exp $"
+__RCSID__ = "$Id: JobStateUpdateHandler.py,v 1.30 2008/12/01 10:33:18 rgracian Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -62,6 +62,36 @@ class JobStateUpdateHandler( RequestHandler ):
       result = logDB.addLoggingRecord(jobID,status,minorStatus,source=source)
 
     return result
+
+  ###########################################################################
+  types_setJobsStatus = [ListType,StringType,StringType,StringType]
+  def export_setJobsStatus(self,jobIDs,status,minorStatus,source='Unknown',datetime=None):
+    """ Set the major and minor status for job specified by its JobId.
+        Set optionally the status date and source component which sends the
+        status information.
+    """
+
+    for jobID in JobIDs:
+
+      result = jobDB.setJobStatus(jobID,status,minorStatus)
+      if not result['OK']:
+        continue
+  
+      if status in JOB_FINAL_STATES:
+        result = jobDB.setEndExecTime(jobID)
+  
+      result = jobDB.getJobAttributes(jobID, ['Status','MinorStatus'] )
+      if not result['OK']:
+        continue
+  
+      status = result['Value']['Status']
+      minorStatus = result['Value']['MinorStatus']
+      if datetime:
+        result = logDB.addLoggingRecord(jobID,status,minorStatus,datetime,source)
+      else:
+        result = logDB.addLoggingRecord(jobID,status,minorStatus,source=source)
+  
+    return S_OK()
 
   ###########################################################################
   types_setJobStatusBulk = [IntType,DictType]
