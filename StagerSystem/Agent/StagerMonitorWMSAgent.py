@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/StagerMonitorWMSAgent.py,v 1.6 2008/12/01 15:27:25 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/StagerMonitorWMSAgent.py,v 1.7 2008/12/01 15:36:13 rgracian Exp $
 # File :   StagerMonitorWMS.py
 # Author : Stuart Paterson
 ########################################################################
@@ -20,7 +20,7 @@
      Successful -> purged with status change
 """
 
-__RCSID__ = "$Id: StagerMonitorWMSAgent.py,v 1.6 2008/12/01 15:27:25 rgracian Exp $"
+__RCSID__ = "$Id: StagerMonitorWMSAgent.py,v 1.7 2008/12/01 15:36:13 rgracian Exp $"
 
 from DIRAC.Core.Base.Agent                                 import Agent
 from DIRAC.Core.DISET.RPCClient                            import RPCClient
@@ -261,12 +261,7 @@ class StagerMonitorWMSAgent(Agent):
 
     #Update job status and send staging report
     stagerReport = '%s\n%s' %(header,body)
-    return ({jobID:( 'StagerReport', stagerReport)})
-    result = self.__setJobParam(jobID,'StagerReport',stagerReport)
-    if not result['OK']:
-      return result
-
-    return result
+    return S_OK({jobID:( 'StagerReport', stagerReport)})
 
   #############################################################################
   def __purgeCompletedJobs(self):
