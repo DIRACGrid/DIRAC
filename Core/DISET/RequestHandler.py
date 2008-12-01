@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.39 2008/10/14 13:54:22 acasajus Exp $
-__RCSID__ = "$Id: RequestHandler.py,v 1.39 2008/10/14 13:54:22 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.40 2008/12/01 11:47:50 acasajus Exp $
+__RCSID__ = "$Id: RequestHandler.py,v 1.40 2008/12/01 11:47:50 acasajus Exp $"
 
 import os
 import types
@@ -52,6 +52,15 @@ class RequestHandler:
     @return : Credentials dictionary of remote peer.
     """
     return self._clientTransport.getConnectingCredentials()
+
+  def getCSOption( self, optionName, defaultValue = False ):
+    """
+    Get an option from the CS section of the services
+
+    @return : Value for serviceSection/optionName in the CS being defaultValue the default
+    """
+    return gConfig.getValue( "%s/%s" % ( self.serviceInfoDict[ 'serviceSectionPath' ], optionName ),
+                             defaultValue )
 
   def executeAction( self, actionTuple ):
     """
