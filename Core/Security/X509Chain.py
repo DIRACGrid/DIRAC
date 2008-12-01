@@ -1,9 +1,9 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/X509Chain.py,v 1.30 2008/10/02 16:22:47 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/X509Chain.py,v 1.31 2008/12/01 17:43:41 rgracian Exp $
 ########################################################################
 """ X509Chain is a class for managing X509 chains with their Pkeys
 """
-__RCSID__ = "$Id: X509Chain.py,v 1.30 2008/10/02 16:22:47 acasajus Exp $"
+__RCSID__ = "$Id: X509Chain.py,v 1.31 2008/12/01 17:43:41 rgracian Exp $"
 
 import types
 import os
@@ -507,7 +507,7 @@ class X509Chain:
         fd.write( pemData )
         fd.close()
     except Exception, e:
-      return S_ERROR( "Cannot write to file %s :%s" % ( filePath, str(e) ) )
+      return S_ERROR( "Cannot write to file %s :%s" % ( filename, str(e) ) )
     try:
       os.chmod( filename, stat.S_IRUSR | stat.S_IWUSR )
     except Exception, e:

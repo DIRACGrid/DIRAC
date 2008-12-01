@@ -1,9 +1,9 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyManagerClient.py,v 1.32 2008/11/12 10:57:04 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyManagerClient.py,v 1.33 2008/12/01 17:45:06 rgracian Exp $
 ########################################################################
 """ ProxyManagementAPI has the functions to "talk" to the ProxyManagement service
 """
-__RCSID__ = "$Id: ProxyManagerClient.py,v 1.32 2008/11/12 10:57:04 acasajus Exp $"
+__RCSID__ = "$Id: ProxyManagerClient.py,v 1.33 2008/12/01 17:45:06 rgracian Exp $"
 
 import os
 import datetime
@@ -285,7 +285,7 @@ class ProxyManagerClient:
         return S_OK( filepath )
       self.__filesCache.delete( filepath )
     retVal = chain.dumpAllToFile( destinationFile )
-    if not retVal[ 'Value' ]:
+    if not retVal[ 'OK' ]:
       return retVal
     filename = retVal[ 'Value' ]
     self.__filesCache.add( chain, chain.getRemainingSecs()['Value'], filename )
