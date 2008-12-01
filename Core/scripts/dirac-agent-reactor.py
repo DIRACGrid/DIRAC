@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/dirac-agent-reactor.py,v 1.1 2008/11/14 16:20:50 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/dirac-agent-reactor.py,v 1.2 2008/12/01 16:00:34 acasajus Exp $
 # File :   dirac-agent
 # Author : Adria Casajus, Andrei Tsaregorodtsev, Stuart Paterson
 ########################################################################
-__RCSID__   = "$Id: dirac-agent-reactor.py,v 1.1 2008/11/14 16:20:50 acasajus Exp $"
-__VERSION__ = "$Revision: 1.1 $"
+__RCSID__   = "$Id: dirac-agent-reactor.py,v 1.2 2008/12/01 16:00:34 acasajus Exp $"
+__VERSION__ = "$Revision: 1.2 $"
 
 """  This is a script to launch DIRAC agents
 """
@@ -24,7 +24,13 @@ if len( positionalArgs ) == 0:
   gLogger.fatal( "You must specify which agent to run!" )
   sys.exit(1)
 
-agentName = positionalArgs[0]
+if len( positionalArgs ) == 1:
+  agentName = positionalArgs[0]
+  multiAgent = False
+else:
+  agentName = "Framework/MultiAgent"
+  multiAgent = True
+
 localCfg.setConfigurationForAgent( agentName )
 localCfg.addMandatoryEntry( "/DIRAC/Setup" )
 localCfg.addDefaultEntry( "/DIRAC/Security/UseServerCertificate", "yes" )
@@ -33,9 +39,10 @@ if not resultDict[ 'OK' ]:
   gLogger.error( "There were errors when loading configuration", resultDict[ 'Message' ] )
   sys.exit(1)
 
-ar = AgentReactor()
+ar = AgentReactor( agentName )
 result = ar.loadAgentModules( positionalArgs )
 if not result[ 'OK' ]:
   gLogger.error( "Error while loading agent module: %s" % result[ 'Message' ] )
   sys.exit(1)
+ar.go()
 
