@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobPathAgent.py,v 1.9 2008/12/01 16:02:33 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobPathAgent.py,v 1.10 2008/12/01 17:12:58 rgracian Exp $
 # File :   JobPathAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -12,7 +12,7 @@
       path through the optimizers.
 
 """
-__RCSID__ = "$Id: JobPathAgent.py,v 1.9 2008/12/01 16:02:33 acasajus Exp $"
+__RCSID__ = "$Id: JobPathAgent.py,v 1.10 2008/12/01 17:12:58 rgracian Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
@@ -37,7 +37,6 @@ class JobPathAgent(OptimizerModule):
 
     self.startingMajorStatus = "Received"
     self.startingMinorStatus = False
-    self.requiredJobInfo = 'jdlOriginal'
 
     return S_OK()
 
