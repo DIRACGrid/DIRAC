@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: SandboxHandler.py,v 1.14 2008/12/01 11:36:03 acasajus Exp $
+# $Id: SandboxHandler.py,v 1.15 2008/12/01 17:54:11 rgracian Exp $
 ########################################################################
 
 """ SandboxHandler is the implementation of the Sandbox service
@@ -12,7 +12,7 @@
 
 """
 
-__RCSID__ = "$Id: SandboxHandler.py,v 1.14 2008/12/01 11:36:03 acasajus Exp $"
+__RCSID__ = "$Id: SandboxHandler.py,v 1.15 2008/12/01 17:54:11 rgracian Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -88,7 +88,7 @@ class SandboxHandler(RequestHandler):
     return result
 
 
-  def transfer_bulkFromClient( self, fileID, token, fsize, fileHelper ):
+  def transfer_bulkFromClient( self, fileID, token, fileSize, fileHelper ):
     """ Receive files packed into a tar archive by the fileHelper logic.
         token is used for access rights confirmation.
     """

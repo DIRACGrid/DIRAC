@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/AgentModule.py,v 1.2 2008/12/01 15:59:39 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/AgentModule.py,v 1.3 2008/12/01 17:50:15 rgracian Exp $
 ########################################################################
 """ Base class for all agent modules
 
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: AgentModule.py,v 1.2 2008/12/01 15:59:39 acasajus Exp $"
+__RCSID__ = "$Id: AgentModule.py,v 1.3 2008/12/01 17:50:15 rgracian Exp $"
 
 import os
 import threading
@@ -53,7 +53,6 @@ class AgentModule:
 
     for key in options:
       self.__moduleParams[ key ] = self.options[ key ]
-    self.__checkAgentDir( 'controDirectory' )
     self.__moduleParams[ 'executors' ] = [ ( self.execute, () ) ]
     self.__moduleParams[ 'shifterProxy' ] = False
     self.__moduleParams[ 'shifterProxyLocation' ] = os.path.join( self.__moduleParams[ 'workDirectory' ],
@@ -72,6 +71,8 @@ class AgentModule:
       return S_ERROR( "Error while initializing %s module: initialize must return S_OK/S_ERROR" % agentName )
     if not result[ 'OK' ]:
       return S_ERROR( "Error while initializing %s: %s"  % ( agentName, result[ 'Message' ] ) )
+    self.__checkAgentDir( 'controlDirectory' )
+    self.__checkAgentDir( 'workDirectory' )
     if self.__moduleParams[ 'monitoringEnabled' ]:
       self.monitor.enable()
     if len( self.__moduleParams[ 'executors' ] ) < 1:
