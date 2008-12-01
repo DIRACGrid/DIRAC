@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSLTransport.py,v 1.31 2008/11/25 18:48:46 acasajus Exp $
-__RCSID__ = "$Id: SSLTransport.py,v 1.31 2008/11/25 18:48:46 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSLTransport.py,v 1.32 2008/12/01 18:44:53 acasajus Exp $
+__RCSID__ = "$Id: SSLTransport.py,v 1.32 2008/12/01 18:44:53 acasajus Exp $"
 
 import os
 import types
@@ -143,7 +143,7 @@ def checkSanity( urlTuple, kwargs ):
       return S_ERROR( "%s proxy file does not exist" % certFile )
 
   #For certs always check CA's. For clients skipServerIdentityCheck
-  if not kwargs[ 'skipCACheck' ]:
+  if 'skipCACheck' not in kwargs or not kwargs[ 'skipCACheck' ]:
     if not Locations.getCAsLocation():
       gLogger.error( "No CAs found!" )
       return S_ERROR( "No CAs found!" )
