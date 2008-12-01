@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/MightyOptimizer.py,v 1.2 2008/12/01 16:02:43 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/MightyOptimizer.py,v 1.3 2008/12/01 17:17:43 rgracian Exp $
 
 
 """  SuperOptimizer
@@ -36,6 +36,7 @@ class MightyOptimizer(AgentModule):
       return result
     jobsList = result[ 'Value' ]
     self.log.info( "Got %s jobs for this iteration" % len( jobsList ) )
+    if not jobsList: return S_OK()
     result = self.jobDB.getAttributesForJobList( jobsList )
     if not result[ 'OK' ]:
       return result
