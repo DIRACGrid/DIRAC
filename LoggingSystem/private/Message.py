@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Message.py,v 1.10 2008/07/10 07:47:36 rgracian Exp $
-__RCSID__ = "$Id: Message.py,v 1.10 2008/07/10 07:47:36 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Message.py,v 1.11 2008/12/01 11:47:08 acasajus Exp $
+__RCSID__ = "$Id: Message.py,v 1.11 2008/12/01 11:47:08 acasajus Exp $"
 
 from DIRAC.Core.Utilities import Time
 
@@ -25,6 +25,12 @@ class Message:
     return self.systemName
 
   def setName( self, systemName ):
+    self.systemName = systemName
+
+  def getSystemName( self ):
+    return self.systemName
+
+  def setSystemName( self, systemName ):
     self.systemName = systemName
 
   def getSubSystemName( self ):

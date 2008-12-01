@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.29 2008/10/09 15:05:16 mseco Exp $
-__RCSID__ = "$Id: Logger.py,v 1.29 2008/10/09 15:05:16 mseco Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.30 2008/12/01 11:47:08 acasajus Exp $
+__RCSID__ = "$Id: Logger.py,v 1.30 2008/12/01 11:47:08 acasajus Exp $"
 """
    DIRAC Logger client
 """
@@ -293,10 +293,9 @@ class Logger:
     for backend in self._backendsDict:
       self._backendsDict[ backend ].flush()
 
-
-  def getSubLogger( self, subName ):
+  def getSubLogger( self, subName, child = True ):
     from DIRAC.LoggingSystem.private.SubSystemLogger import SubSystemLogger
     if not subName in self._subLoggersDict.keys():
-      self._subLoggersDict[ subName ] = SubSystemLogger( subName, self )
+      self._subLoggersDict[ subName ] = SubSystemLogger( subName, self, child )
     return self._subLoggersDict[ subName ]
 
