@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.114 2008/12/01 16:02:01 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.115 2008/12/01 16:09:55 rgracian Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.114 2008/12/01 16:02:01 acasajus Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.115 2008/12/01 16:09:55 rgracian Exp $"
 
 import re, os, sys, string, types
 import time, datetime
@@ -685,7 +685,7 @@ class JobDB(DB):
     if endDate:
       req = "UPDATE Jobs SET EndExecTime='%s' WHERE JobID=%d AND EndExecTime IS NULL" % (endDate,jobID)
     else:
-      req = "UPDATE Jobs SET EndExecTime=UTC_TIMESTAMP() WHERE JobID=%d AND EndExecTime IS NULL" % jobID
+      req = "UPDATE Jobs SET EndExecTime=UTC_TIMESTAMP() WHERE JobID=%s AND EndExecTime IS NULL" % jobID
     result = self._update(req)
     return result
 
