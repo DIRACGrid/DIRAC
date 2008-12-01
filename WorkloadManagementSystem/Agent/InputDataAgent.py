@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.30 2008/12/01 16:02:33 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.31 2008/12/01 17:37:16 rgracian Exp $
 # File :   InputDataAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
 
 """
 
-__RCSID__ = "$Id: InputDataAgent.py,v 1.30 2008/12/01 16:02:33 acasajus Exp $"
+__RCSID__ = "$Id: InputDataAgent.py,v 1.31 2008/12/01 17:37:16 rgracian Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
 from DIRAC.Core.DISET.RPCClient                            import RPCClient
@@ -20,7 +20,7 @@ from DIRAC                                                 import gConfig, S_OK,
 
 import os, re, time, string
 
-class InputDataAgent(Optimizer):
+class InputDataAgent(OptimizerModule):
 
   #############################################################################
   def initializeOptimizer(self):

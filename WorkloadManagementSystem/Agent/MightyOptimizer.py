@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/MightyOptimizer.py,v 1.4 2008/12/01 17:36:11 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/MightyOptimizer.py,v 1.5 2008/12/01 17:39:40 rgracian Exp $
 
 
 """  SuperOptimizer
@@ -80,8 +80,8 @@ class MightyOptimizer(AgentModule):
       shifterEnv = False
       if optimizer.am_getParam( 'shifterProxy' ):
         shifterEnv = True
-        result = setupShifterProxyInEnv( self.__moduleParams[ 'shifterProxy' ],
-                                         self.__moduleParams[ 'shifterProxyLocation' ] )
+        result = setupShifterProxyInEnv( self.am_getParam( 'shifterProxy' ),
+                                         self.am_getParam( 'shifterProxyLocation' ) )
         if not result[ 'OK' ]:
           return result
       result = optimizer.checkJob( jobId, jobDef[ 'classad' ] )
