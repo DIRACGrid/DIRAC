@@ -9,22 +9,26 @@ gSchedulerLock = Synchronizer()
 
 class ThreadScheduler:
 
-  def __init__(self):
+  def __init__( self, enableReactorThread = True ):
     self.__thId = False
     self.__minPeriod = 60
     self.__taskDict = {}
     self.__hood = []
+    self.__createReactorThread = enableReactorThread
     self.__nowEpoch = time.time
     self.__sleeper = time.sleep
 
   def setMinValidPeriod( self, period ):
     self.__minPeriod = period
 
+  def disableCreateReactorThread(self):
+    self.__createReactorThread = False
+
   def addPeriodicTask( self, period, taskFunc, taskArgs = (), executions = 0, elapsedTime = 0 ):
     if not callable( taskFunc ):
       return S_ERROR( "%s is not callable" % str( taskFunc ) )
     period = max( period, self.__minPeriod )
-    elapsedTime = min( elapsedTime, period )
+    elapsedTime = min( elapsedTime, period - 1 )
     md = md5.new()
     task = { 'period' : period,
              'func' : taskFunc,
@@ -46,6 +50,17 @@ class ThreadScheduler:
     self.__createExecutorIfNeeded()
     return S_OK( taskId )
 
+  @gSchedulerLock
+  def removeTask( self, taskId  ):
+    if taskId not in self.__taskDict:
+      return S_ERROR( "Task %s does not exist" % taskId )
+    del( self.__taskDict[ taskId ] )
+    for i in range( len( self.__hood ) ):
+      if self.__hood[i][0] == taskId:
+        del( self.__hood[i] )
+        break
+    return S_OK()
+
   def addSingleTask( self, taskFunc, taskArgs = () ):
     return self.addPeriodicTask( self.__minPeriod,
                                  taskFunc,
@@ -54,7 +69,7 @@ class ThreadScheduler:
                                  elapsedTime = self.__minPeriod )
 
   @gSchedulerLock
-  def __scheduleTask( self, taskId, executeInSecs = 0 ):
+  def __scheduleTask( self, taskId, executeInSecs = False ):
     if not executeInSecs:
       executeInSecs = self.__taskDict[ taskId ][ 'period' ]
 
@@ -82,20 +97,29 @@ class ThreadScheduler:
 
   def __executorThread(self):
     while len( self.__hood ) > 0:
-      timeToWait = self.__timeToNextTask()
-      while timeToWait and timeToWait > 0:
-        self.__sleeper( 1 )
-        timeToWait = self.__timeToNextTask()
-      if timeToWait == None:
+      timeToNext = self.executeNextTask()
+      if timeToNext == None:
         break
-      taskId = self.__extractNextTask()
-      self.__executeTask( taskId )
-      self.__schedueIfNeeded( taskId )
+      if timeToNext and timeToNext > 0.1:
+        time.sleep( min( timeToNext, 1 ) )
     #If we are leaving
     self.__destroyExecutor()
 
+  def executeNextTask(self):
+    if len( self.__hood ) == 0:
+      return False
+    timeToWait = self.__timeToNextTask()
+    if timeToWait and timeToWait > 0:
+      return timeToWait
+    taskId = self.__popNextTaskId()
+    self.__executeTask( taskId )
+    self.__schedueIfNeeded( taskId )
+    return self.__timeToNextTask()
+
   @gSchedulerLock
   def __createExecutorIfNeeded(self):
+    if not self.__createReactorThread:
+      return
     if self.__thId:
       return
     self.__thId = threading.Thread( target = self.__executorThread )
@@ -113,10 +137,16 @@ class ThreadScheduler:
     return self.__hood[0][1] - self.__nowEpoch()
 
   @gSchedulerLock
-  def __extractNextTask( self ):
+  def __popNextTaskId( self ):
     if len( self.__hood ) == 0:
       return None
     return self.__hood.pop( 0 )[0]
+
+  @gSchedulerLock
+  def getNextTaskId( self ):
+    if len( self.__hood ) == 0:
+      return None
+    return self.__hood[0][0]
 
   def __executeTask( self, taskId ):
     if taskId not in self.__taskDict:
