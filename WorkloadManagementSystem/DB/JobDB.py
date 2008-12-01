@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.113 2008/11/13 17:10:02 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.114 2008/12/01 16:02:01 acasajus Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.113 2008/11/13 17:10:02 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.114 2008/12/01 16:02:01 acasajus Exp $"
 
 import re, os, sys, string, types
 import time, datetime
@@ -538,7 +538,10 @@ class JobDB(DB):
     except ValueError, x:
       return S_ERROR('The '+currentOptimizer+' not found in the chain')
 
-    return self.setJobStatus(jobID,status="Checking",minor=nextOptimizer)
+    result = self.setJobStatus(jobID,status="Checking",minor=nextOptimizer)
+    if not result[ 'OK' ]:
+      return result
+    return S_OK( nextOptimizer )
 
 ############################################################################
   def countJobs(self, condDict, older=None, newer=None, timeStamp='LastUpdateTime'):
