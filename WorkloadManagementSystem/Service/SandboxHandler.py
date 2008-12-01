@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: SandboxHandler.py,v 1.13 2008/11/10 23:33:14 atsareg Exp $
+# $Id: SandboxHandler.py,v 1.14 2008/12/01 11:36:03 acasajus Exp $
 ########################################################################
 
 """ SandboxHandler is the implementation of the Sandbox service
@@ -12,7 +12,7 @@
 
 """
 
-__RCSID__ = "$Id: SandboxHandler.py,v 1.13 2008/11/10 23:33:14 atsareg Exp $"
+__RCSID__ = "$Id: SandboxHandler.py,v 1.14 2008/12/01 11:36:03 acasajus Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -44,6 +44,8 @@ def initializeSandboxHandler(serviceInfo):
 
 class SandboxHandler(RequestHandler):
 
+  __defaultFromClientLimit = 16 * (1024**2) #16MiB
+
   def __parsefileID(self, fileID):
     """ Parse the file ID string to extract job metadata, e.g. jobID
     """
@@ -64,6 +66,9 @@ class SandboxHandler(RequestHandler):
     """ Method to receive bytes from clients.
         fileSize can be Xbytes or -1 if unknown.
     """
+    fromClientLimit = self.getCSOption( "fromClientLimit", self.__defaultFromClientLimit )
+    if fileSize > 0 and fileSize > fromClientLimit:
+      return S_ERROR( "File is too big. Exceeds %s bytes" % fromClientLimit )
 
     result = self.__parsefileID(fileID)
     if not result['OK']:
@@ -71,7 +76,7 @@ class SandboxHandler(RequestHandler):
 
     jobID,fname = result['Value']
 
-    result = fileHelper.networkToString()
+    result = fileHelper.networkToString( maxFileSize = fromClientLimit )
     if result['OK']:
       fileString = result['Value']
       gLogger.info('Received file %s of size %d for job %d' %
@@ -87,6 +92,9 @@ class SandboxHandler(RequestHandler):
     """ Receive files packed into a tar archive by the fileHelper logic.
         token is used for access rights confirmation.
     """
+    fromClientLimit = self.getCSOption( "bulkFromClientLimit", self.__defaultFromClientLimit )
+    if fileSize > 0 and fileSize > fromClientLimit:
+      return S_ERROR( "Bulk is too big. Exceeds %s bytes" % fromClientLimit )
 
     result = self.__parsefileID(fileID)
     if not result['OK']:
@@ -94,7 +102,7 @@ class SandboxHandler(RequestHandler):
 
     jobID,fname = result['Value']
 
-    result = fileHelper.networkToString()
+    result = fileHelper.networkToString( maxFileSize = fromClientLimit )
     if result['OK']:
       fileString = result['Value']
       gLogger.info('Received file %s of size %d for job %d' %
