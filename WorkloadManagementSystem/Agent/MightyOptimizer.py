@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/MightyOptimizer.py,v 1.6 2008/12/01 17:41:12 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/MightyOptimizer.py,v 1.7 2008/12/01 18:11:45 acasajus Exp $
 
 
 """  SuperOptimizer
@@ -84,7 +84,7 @@ class MightyOptimizer(AgentModule):
                                          optimizer.am_getParam( 'shifterProxyLocation' ) )
         if not result[ 'OK' ]:
           return result
-      result = optimizer.checkJob( jobId, jobDef[ 'classad' ] )
+      result = optimizer.optimizeJob( jobId, jobDef[ 'classad' ] )
       if not result[ 'OK' ]:
         return result
       if shifterEnv:

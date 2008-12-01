@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfo.py,v 1.29 2008/11/25 18:48:46 acasajus Exp $
-__RCSID__ = "$Id: SocketInfo.py,v 1.29 2008/11/25 18:48:46 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfo.py,v 1.30 2008/12/01 18:11:45 acasajus Exp $
+__RCSID__ = "$Id: SocketInfo.py,v 1.30 2008/12/01 18:11:45 acasajus Exp $"
 
 import time
 import copy
@@ -18,7 +18,7 @@ class SocketInfo:
       self.sslContext = sslContext
     else:
       if self.infoDict[ 'clientMode' ]:
-        if self.infoDict.has_key( 'useCertificates' ) and self.infoDict[ 'useCertificates' ]:
+        if 'useCertificates' in self.infoDict and self.infoDict[ 'useCertificates' ]:
           retVal = self.__generateContextWithCerts()
         elif 'proxyString' in self.infoDict:
           retVal = self.__generateContextWithProxyString()
@@ -28,6 +28,11 @@ class SocketInfo:
         retVal = self.__generateServerContext()
       if not retVal[ 'OK' ]:
         raise Exception( retVal[ 'Message' ] )
+
+  def __getValue( self, optName, default ):
+    if optName not in self.infoDict:
+      return default
+    return self.infoDict[ optName ]
 
   def setLocalCredentialsLocation( self, credTuple ):
     self.infoDict[ 'localCredentialsLocation' ] = credTuple
@@ -95,31 +100,48 @@ class SocketInfo:
   def _serverCallback( self, conn, cert, errnum, depth, ok):
     return ok
 
-  def __createContext( self, serverContext = False, skipCACheck = False ):
+  def __createContext( self ):
+    serverContext = self.__getValue( 'clientMode', False )
     # Initialize context
     if serverContext:
-      self.sslContext = GSI.SSL.Context( GSI.SSL.TLSv1_SERVER_METHOD )
+      methodSuffix = "SERVER_METHOD"
+      #self.sslContext = GSI.SSL.Context( GSI.SSL.TLSv1_SERVER_METHOD )
     else:
-      self.sslContext = GSI.SSL.Context( GSI.SSL.TLSv1_CLIENT_METHOD )
-    if not skipCACheck:
+      methodSuffix = "CLIENT_METHOD"
+      #self.sslContext = GSI.SSL.Context( GSI.SSL.TLSv1_CLIENT_METHOD )
+    if 'sslMethod' in self.infoDict:
+      try:
+        method = getattr( GSI.SSL, "%s_%s" % ( self.infoDict[ 'sslMethod' ], methodSuffix ) )
+      except:
+        return S_ERROR( "SSL method %s is not valid" % self.infoDict[ 'sslMethod' ] )
+    else:
+      method = getattr( GSI.SSL, "TLSv1_%s" % ( methodSuffix ) )
+    print "GOTMETHOD", method
+    self.sslContext = GSI.SSL.Context( method )
+    #Enable GSI?
+    gsiEnable = False
+    if not self.__getValue( 'clientMode', False ) or self.__getValue( 'gsiEnable', False ):
+      gsiEnable = True
+    #DO CA Checks?
+    if not self.__getValue( 'skipCACheck', False ):
       #self.sslContext.set_verify( SSL.VERIFY_PEER|SSL.VERIFY_FAIL_IF_NO_PEER_CERT, self.verifyCallback ) # Demand a certificate
-      self.sslContext.set_verify( GSI.SSL.VERIFY_PEER|GSI.SSL.VERIFY_FAIL_IF_NO_PEER_CERT, None, serverContext ) # Demand a certificate
+      self.sslContext.set_verify( GSI.SSL.VERIFY_PEER|GSI.SSL.VERIFY_FAIL_IF_NO_PEER_CERT, None, gsiEnable ) # Demand a certificate
       casPath = Locations.getCAsLocation()
       if not casPath:
         return S_ERROR( "No valid CAs location found" )
       gLogger.debug( "CAs location is %s" % casPath )
       self.sslContext.load_verify_locations_path( casPath )
     else:
-      self.sslContext.set_verify( GSI.SSL.VERIFY_NONE, None, serverContext ) # Demand a certificate
+      self.sslContext.set_verify( GSI.SSL.VERIFY_NONE, None, gsiEnable ) # Demand a certificate
     return S_OK()
 
-  def __generateContextWithCerts( self, serverContext = False ):
+  def __generateContextWithCerts( self ):
     certKeyTuple = Locations.getHostCertificateAndKeyLocation()
     if not certKeyTuple:
       return S_ERROR( "No valid certificate or key found" )
     self.setLocalCredentialsLocation( certKeyTuple )
     gLogger.debug("Using certificate %s\nUsing key %s" % certKeyTuple )
-    retVal = self.__createContext( serverContext )
+    retVal = self.__createContext()
     if not retVal[ 'OK' ]:
       return retVal
     #Verify depth to 20 to ensure accepting proxies of proxies of proxies....
@@ -139,10 +161,7 @@ class SocketInfo:
         return S_ERROR( "No valid proxy found" )
     self.setLocalCredentialsLocation( ( proxyPath, proxyPath ) )
     gLogger.debug( "Using proxy %s" % proxyPath )
-    if 'skipCACheck' in self.infoDict and self.infoDict[ 'skipCACheck' ]:
-      retVal = self.__createContext( skipCACheck = True )
-    else:
-      retVal = self.__createContext()
+    retVal = self.__createContext()
     if not retVal[ 'OK' ]:
       return retVal
     self.sslContext.use_certificate_chain_file( proxyPath )
@@ -162,10 +181,7 @@ class SocketInfo:
     subj = cert.getSubjectDN()['Value']
     self.setLocalCredentialsLocation( ( subj, subj ) )
     gLogger.debug( "Using string proxy with id %s" % subj )
-    if 'skipCACheck' in self.infoDict and self.infoDict[ 'skipCACheck' ]:
-      retVal = self.__createContext( skipCACheck = True )
-    else:
-      retVal = self.__createContext()
+    retVal = self.__createContext()
     if not retVal[ 'OK' ]:
       return retVal
     self.sslContext.use_certificate_chain( chain.getCertList()['Value'] )
@@ -173,7 +189,7 @@ class SocketInfo:
     return S_OK()
 
   def __generateServerContext( self ):
-    retVal = self.__generateContextWithCerts( serverContext = True )
+    retVal = self.__generateContextWithCerts()
     if not retVal[ 'OK' ]:
       return retVal
     self.sslContext.set_session_id( "DISETConnection%s" % str( time.time() ) )
@@ -196,19 +212,31 @@ class SocketInfo:
   def __sslHandshake( self ):
     start = time.time()
     timeout = self.infoDict[ 'timeout' ]
+    print "ABOUT", timeout
     while True:
       if timeout:
         if time.time() - start > timeout:
           return S_ERROR( "Handshake timeout exceeded" )
+      print "ITERS"
       try:
         self.sslSocket.do_handshake()
+        print "HANDSHAKEDONE"
         break
       except GSI.SSL.WantReadError:
+        print "WANTREAD"
         time.sleep( 0.1 )
       except GSI.SSL.WantWriteError:
+        print "WANTWRITE"
         time.sleep( 0.1 )
       except GSI.SSL.Error, v:
         #gLogger.warn( "Error while handshaking", "\n".join( [ stError[2] for stError in v.args[0] ] ) )
+        print "EXCEPTION"
+        print v
+        gLogger.warn( "Error while handshaking", v )
+        return S_ERROR( "Error while handshaking" )
+      except Exception, e:
+        print "NORMAL EXCEPTION"
+        print v
         gLogger.warn( "Error while handshaking", v )
         return S_ERROR( "Error while handshaking" )
     credentialsDict = self.gatherPeerCredentials()
@@ -218,4 +246,5 @@ class SocketInfo:
         gLogger.warn( "Server is not who it's supposed to be",
                       "Connecting to %s and it's %s" % ( self.infoDict[ 'hostname' ], hostnameCN ) )
     gLogger.debug( "", "Authenticated peer (%s)" % credentialsDict[ 'DN' ] )
+    print "credentialsDICT!"
     return S_OK( credentialsDict )
