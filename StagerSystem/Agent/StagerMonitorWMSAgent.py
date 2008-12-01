@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/StagerMonitorWMSAgent.py,v 1.4 2008/11/28 15:19:40 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/StagerMonitorWMSAgent.py,v 1.5 2008/12/01 14:25:44 rgracian Exp $
 # File :   StagerMonitorWMS.py
 # Author : Stuart Paterson
 ########################################################################
@@ -20,7 +20,7 @@
      Successful -> purged with status change
 """
 
-__RCSID__ = "$Id: StagerMonitorWMSAgent.py,v 1.4 2008/11/28 15:19:40 rgracian Exp $"
+__RCSID__ = "$Id: StagerMonitorWMSAgent.py,v 1.5 2008/12/01 14:25:44 rgracian Exp $"
 
 from DIRAC.Core.Base.Agent                                 import Agent
 from DIRAC.Core.DISET.RPCClient                            import RPCClient
@@ -149,15 +149,6 @@ class StagerMonitorWMSAgent(Agent):
     updatedJobs = update['Value']
     self.log.info('%s jobs successfully updated, %s failed to be updated' %(len(updatedJobs),(totalJobs-len(updatedJobs))))
     return S_OK('Updated jobs with staged files')
-    for jobID in result['JobIDs']:
-      update = self.__updateJobProgress(jobID,self.stagingStatus)
-      if not update['OK']:
-        self.log.warn('Failed to update %s monitoring for job %s with error:\n%s' %(self.system,jobID,update))
-      else:
-        updatedJobs.append(jobID)
-
-    self.log.info('%s jobs successfully updated, %s failed to be updated' %(len(updatedJobs),(totalJobs-len(updatedJobs))))
-    return S_OK('Updated jobs with staged files')
 
   #############################################################################
   def __updateJobsProgress(self, jobIDs, primaryStatus, secondaryStatus=None):
@@ -181,6 +172,8 @@ class StagerMonitorWMSAgent(Agent):
     if not result['OK']:
       return result
     lfnTimingDict = result['TimingDict']
+  
+    jobStatesToReport = {}
   
     for jobID in filesForJobs:
       site = filesForJobs[jobID]['Site']
@@ -207,7 +200,15 @@ class StagerMonitorWMSAgent(Agent):
         minorStatus = secondaryStatus
 
       header = 'Report from DIRAC StagerSystem for %s on %s [UTC]:' %(site,time.asctime(time.gmtime()))
+      jobState = ( primaryStatus, minorStatus )
+      if not jobState in jobStatesToReport:
+        jobStatesToReport[jobState] = []
+      jobStatesToReport[jobState].append(jobID)
       result = self.__sendMonitoringReport(jobID,header,monitoringReport,primaryStatus,minorStatus)
+
+    for jobState in jobStatesToReport:
+      self.__setJobsStatus(jobStatesToReport[jobState],jobState[0],jobState[1])
+  
   
     #Finally update the ToUpdate file status to Staged in the StagerDB
     if lfnsPerSite:
@@ -219,61 +220,7 @@ class StagerMonitorWMSAgent(Agent):
             return result
 
     return S_OK(filesForJobs)
-
   
-  def __updateJobProgress(self,jobID,primaryStatus,secondaryStatus=None):
-    """Updates the WMS monitoring for a given jobID for which some files are newly staged.
-    """
-    #First get the job input data, site and status
-    result = self.stagerClient.getJobFilesStatus(jobID)
-    if not result['OK']:
-      return result
-
-    lfnsList = result['Files'].keys()
-    totalFiles = len(lfnsList)
-    lfnPfnStatusDict = result['Files']
-    site = result['Site']
-    retries = result['Retries']
-    seDict = result['SE']
-
-    #Get timing information for ToUpdate / Staged files
-    result = self.stagerClient.getStageTimeForSystem(lfnsList,self.system)
-    if not result['OK']:
-      return result
-
-    lfnTimingDict = result['TimingDict'][jobID] #{LFN:time}
-    stagedCount = 0
-    updateLFNs = []
-    monitoringReport = [('SURL','Retries','Status','TimingInfo','SE')] #these become headers in the report
-    for lfn,reps in lfnPfnStatusDict.items():
-      for surl,status in reps.items():
-        lfnTime = lfnTimingDict[lfn].split('.')[0]
-        if re.search('-',lfnTime):
-          lfnTime = '00:00:00'
-        monitoringReport.append((surl,retries[lfn],self.monStatusDict[status],lfnTime,seDict[lfn])) #we don't need microsecond accuracy ;)
-        if status==self.updateStatus or status=='Staged':
-          stagedCount+=1
-        if status==self.updateStatus:
-          updateLFNs.append(lfn)
-
-    #Send detailed report to the monitoring service
-    minorStatus = '%s / %s' %(stagedCount,totalFiles)
-    if secondaryStatus:
-      minorStatus = secondaryStatus
-    header = 'Report from DIRAC StagerSystem for %s on %s [UTC]:' %(site,time.asctime(time.gmtime()))
-    result = self.__sendMonitoringReport(jobID,header,monitoringReport,primaryStatus,minorStatus)
-    if not result['OK']:
-      self.log.warn('Problem sending monitoring report for job %s:\n%s' %(jobID,result))
-      return result
-
-    #Finally update the ToUpdate file status to Staged in the StagerDB
-    if updateLFNs:
-      result = self.stagerClient.setFilesState(updateLFNs,site,'Staged')
-      if not result['OK']:
-        return result
-
-    return S_OK('Job updated')
-
   #############################################################################
   def __sendMonitoringReport(self,jobID,header,monitoringReport,primaryStatus,secondaryStatus):
     """Constructs and sends a formatted report suitable for entering in the
@@ -313,7 +260,6 @@ class StagerMonitorWMSAgent(Agent):
     if not result['OK']:
       return result
 
-    result = self.__setJobStatus(jobID,primaryStatus,secondaryStatus)
     return result
 
   #############################################################################
@@ -374,12 +320,12 @@ class StagerMonitorWMSAgent(Agent):
     return jobParam
 
   #############################################################################
-  def __setJobStatus(self,jobID,status,minorStatus):
+  def __setJobsStatus(self,jobIDs,status,minorStatus):
     """Wraps around setJobStatus of state update client
     """
     jobReport  = RPCClient('WorkloadManagement/JobStateUpdate')
-    jobStatus = jobReport.setJobStatus(int(jobID),status,minorStatus,'StagerSystem')
-    self.log.verbose('setJobStatus(%s,%s,%s,%s)' %(jobID,status,minorStatus,'StagerSystem'))
+    jobStatus = jobReport.setJobsStatus(jobIDs,status,minorStatus,'StagerSystem')
+    self.log.verbose('setJobsStatus(%s,%s,%s,%s)' %(jobIDs,status,minorStatus,'StagerSystem'))
     if not jobStatus['OK']:
       self.log.warn(jobStatus['Message'])
 
