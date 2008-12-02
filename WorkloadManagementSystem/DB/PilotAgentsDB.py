@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.37 2008/11/24 21:58:22 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.38 2008/12/02 13:58:19 atsareg Exp $
 ########################################################################
 """ PilotAgentsDB class is a front-end to the Pilot Agent Database.
     This database keeps track of all the submitted grid pilot jobs.
@@ -23,7 +23,7 @@
 
 """
 
-__RCSID__ = "$Id: PilotAgentsDB.py,v 1.37 2008/11/24 21:58:22 atsareg Exp $"
+__RCSID__ = "$Id: PilotAgentsDB.py,v 1.38 2008/12/02 13:58:19 atsareg Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
@@ -67,7 +67,7 @@ class PilotAgentsDB(DB):
 
       req = "INSERT INTO PilotAgents( PilotJobReference, InitialJobID, TaskQueueID, OwnerDN, " + \
             "OwnerGroup, Broker, GridType, SubmissionTime, LastUpdateTime, Status, ParentID ) " + \
-            "VALUES ('%s',%d,'%s','%s','%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),'Submitted', %s)" % \
+            "VALUES ('%s',%d,%d,'%s','%s','%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),'Submitted', %s)" % \
             (ref,int(jobID),int(taskQueueID),ownerDN,ownerGroup,broker,gridType, parentID)
 
       result = self._update(req,connection)
@@ -126,9 +126,9 @@ class PilotAgentsDB(DB):
 
     if limit:
       condition = condition + ' LIMIT ' + str(limit)
-      
+
     req = "SELECT PilotJobReference from PilotAgents"
-    if condition:  
+    if condition:
       req += " %s " % condition
     result = self._query(req)
     if not result['OK']:
@@ -198,7 +198,7 @@ class PilotAgentsDB(DB):
                   'Status','DestinationSite','BenchMark','ParentID',
                   'SubmissionTime', 'PilotID', 'LastUpdateTime' ]
     if paramNames:
-      parameters = paramNames              
+      parameters = paramNames
 
     cmd = "SELECT %s FROM PilotAgents" % ", ".join( parameters )
     condSQL = []
@@ -254,11 +254,11 @@ class PilotAgentsDB(DB):
     """ Set the pilot agent destination site
     """
 
-    gridSite = 'Unknown'  
+    gridSite = 'Unknown'
     result = getSiteForCE(destination)
     if result['OK']:
-      gridSite = result['Value']  
-      
+      gridSite = result['Value']
+
     req = "UPDATE PilotAgents SET DestinationSite='%s', GridSite='%s' WHERE PilotJobReference='%s'" % (destination,gridSite,pilotRef)
     result = self._update(req)
     return result
@@ -509,11 +509,11 @@ class PilotAgentsDB(DB):
               summary_dict[site][key] = int(count)
 
     return S_OK(summary_dict)
-    
+
 ##########################################################################################
   def getPilotSummaryWeb(self,selectDict,sortList,startItem,maxItems):
     """ Get summary of the pilot jobs status by CE/site in a standard structure
-    """    
+    """
 
     stateNames = ['Submitted','Ready','Scheduled','Waiting','Running','Done','Aborted']
     allStateNames = stateNames + ['Done_Empty','Aborted_Hour']
@@ -524,91 +524,91 @@ class PilotAgentsDB(DB):
     if selectDict.has_key('LastUpdateTime'):
       last_update = selectDict['LastUpdateTime']
       del selectDict['LastUpdateTime']
-    
+
     start = time.time()
     # Get all the data from the database with various selections
     result = self.getCounters('PilotAgents',
                               ['GridSite','DestinationSite','Status'],
                               selectDict,newer=last_update,timeStamp='LastUpdateTime')
     if not result['OK']:
-      return result                          
-                              
-    last_update = Time.dateTime() - Time.hour   
-    selectDict['Status'] = 'Aborted'                     
+      return result
+
+    last_update = Time.dateTime() - Time.hour
+    selectDict['Status'] = 'Aborted'
     resultHour = self.getCounters('PilotAgents',
                                  ['GridSite','DestinationSite','Status'],
-                                 selectDict,newer=last_update,timeStamp='LastUpdateTime') 
+                                 selectDict,newer=last_update,timeStamp='LastUpdateTime')
     if not resultHour['OK']:
-      return resultHour                               
-                                  
-    last_update = Time.dateTime() - Time.day   
-    selectDict['Status'] = ['Aborted','Done']                            
+      return resultHour
+
+    last_update = Time.dateTime() - Time.day
+    selectDict['Status'] = ['Aborted','Done']
     resultDay = self.getCounters('PilotAgents',
                                  ['GridSite','DestinationSite','Status'],
-                                 selectDict,newer=last_update,timeStamp='LastUpdateTime') 
+                                 selectDict,newer=last_update,timeStamp='LastUpdateTime')
     if not resultDay['OK']:
-      return resultDay                                                                                     
-    selectDict['CurrentJobID'] = 0           
-    selectDict['Status'] = 'Done'             
+      return resultDay
+    selectDict['CurrentJobID'] = 0
+    selectDict['Status'] = 'Done'
     resultDayEmpty = self.getCounters('PilotAgents',
                                  ['GridSite','DestinationSite','Status'],
-                                 selectDict,newer=last_update,timeStamp='LastUpdateTime')   
+                                 selectDict,newer=last_update,timeStamp='LastUpdateTime')
     if not resultDayEmpty['OK']:
       return resultDayEmpty
-           
+
     ceMap = {}
     resMap = getCESiteMapping()
     if resMap['OK']:
       ceMap = resMap['Value']
-       
-    # Sort out different counters   
-    resultDict = {} 
-    resultDict['Unknown']={}  
+
+    # Sort out different counters
+    resultDict = {}
+    resultDict['Unknown']={}
     for attDict,count in result['Value']:
       site = attDict['GridSite']
       ce = attDict['DestinationSite']
       state = attDict['Status']
       if site == 'Unknown' and ce != "Unknown" and ce != "Multiple":
-        site = ceMap[ce]        
+        site = ceMap[ce]
       if not resultDict.has_key(site):
         resultDict[site] = {}
       if not resultDict[site].has_key(ce):
         resultDict[site][ce] = {}
         for p in allStateNames:
           resultDict[site][ce][p] = 0
-        
+
       resultDict[site][ce][state] = count
-          
+
     for attDict,count in resultDay['Value']:
       site = attDict['GridSite']
       ce = attDict['DestinationSite']
       state = attDict['Status']
       if site == 'Unknown' and ce != "Unknown":
-        site = ceMap[ce]     
+        site = ceMap[ce]
       if state == "Done":
         resultDict[site][ce]["Done"] = count
       if state == "Aborted":
-        resultDict[site][ce]["Aborted"] = count 
-        
+        resultDict[site][ce]["Aborted"] = count
+
     for attDict,count in resultDayEmpty['Value']:
       site = attDict['GridSite']
       ce = attDict['DestinationSite']
       state = attDict['Status']
       if site == 'Unknown' and ce != "Unknown":
-        site = ceMap[ce] 
+        site = ceMap[ce]
       if state == "Done":
-        resultDict[site][ce]["Done_Empty"] = count     
-        
+        resultDict[site][ce]["Done_Empty"] = count
+
     for attDict,count in resultHour['Value']:
       site = attDict['GridSite']
       ce = attDict['DestinationSite']
       state = attDict['Status']
       if site == 'Unknown' and ce != "Unknown":
-        site = ceMap[ce] 
+        site = ceMap[ce]
       if state == "Aborted":
-        resultDict[site][ce]["Aborted_Hour"] = count 
-        
-    records = []    
+        resultDict[site][ce]["Aborted_Hour"] = count
+
+    records = []
     siteSumDict = {}
     for site in resultDict:
       sumDict = {}
@@ -620,21 +620,21 @@ class PilotAgentsDB(DB):
           if not sumDict.has_key(state):
             sumDict[state] = 0
           itemList.append(resultDict[site][ce][state])
-          sumDict[state] += resultDict[site][ce][state]  
+          sumDict[state] += resultDict[site][ce][state]
           if state == "Done":
-            done = resultDict[site][ce][state] 
+            done = resultDict[site][ce][state]
           if state == "Done_Empty":
-            empty = resultDict[site][ce][state] 
+            empty = resultDict[site][ce][state]
           if state == "Aborted":
             aborted = resultDict[site][ce][state]
           if state == "Aborted_Hour":
             aborted_hour = resultDict[site][ce][state]
-          if state != "Aborted_Hour" and state != "Done_Empty":  
+          if state != "Aborted_Hour" and state != "Done_Empty":
             total += resultDict[site][ce][state]
-        
-        sumDict['Total'] += total  
-        # Add the total number of pilots seen in the last day   
-        itemList.append(total)              
+
+        sumDict['Total'] += total
+        # Add the total number of pilots seen in the last day
+        itemList.append(total)
         # Add pilot submission efficiency evaluation
         if done > 0:
           eff = float(done-empty)/float(done)*100.
@@ -645,9 +645,9 @@ class PilotAgentsDB(DB):
         if total > 0:
           eff = float(total-aborted)/float(total)*100.
         else:
-          eff = 100.                
-        itemList.append('%.2f' % eff)  
-        
+          eff = 100.
+        itemList.append('%.2f' % eff)
+
         # Evaluate the quality status of the CE
         if total > 10:
           if eff < 25.:
@@ -657,20 +657,20 @@ class PilotAgentsDB(DB):
           elif eff < 85.:
             itemList.append('Fair')
           else:
-            itemList.append('Good')  
+            itemList.append('Good')
         else:
-          itemList.append('Idle')          
-        records.append(itemList)     
-        
+          itemList.append('Idle')
+        records.append(itemList)
+
       itemList = [site,'All']
       for state in allStateNames+['Total']:
-        itemList.append(sumDict[state]) 
+        itemList.append(sumDict[state])
       done = sumDict["Done"]
       empty = sumDict["Done_Empty"]
       aborted = sumDict["Aborted"]
       aborted_hour = sumDict["Aborted_Hour"]
-      total = sumDict["Total"]  
-                        
+      total = sumDict["Total"]
+
       # Add pilot submission efficiency evaluation
       if done > 0:
         eff = float(done-empty)/float(done)*100.
@@ -681,9 +681,9 @@ class PilotAgentsDB(DB):
       if total > 0:
         eff = float(total-aborted)/float(total)*100.
       else:
-        eff = 100.                
-      itemList.append('%.2f' % eff) 
-      
+        eff = 100.
+      itemList.append('%.2f' % eff)
+
       # Evaluate the quality status of the Site
       if total > 10:
         if eff < 25.:
@@ -695,31 +695,31 @@ class PilotAgentsDB(DB):
         else:
           itemList.append('Good')
       else:
-        itemList.append('Idle')      
-      records.append(itemList)    
+        itemList.append('Idle')
+      records.append(itemList)
       for state in allStateNames+['Total']:
         if not siteSumDict.has_key(state):
           siteSumDict[state] = sumDict[state]
-        else:  
+        else:
           siteSumDict[state] += sumDict[state]
-    
+
     finalDict = {}
     finalDict['TotalRecords'] = len(records)
     finalDict['ParameterNames'] = paramNames+ \
                                  ['Total','SubmissionEff','PilotJobEff','Status']
-    
+
     # Return all the records if maxItems == 0 or the specified number otherwise
     if maxItems:
       finalDict['Records'] = records[startItem:startItem+maxItems]
     else:
       finalDict['Records'] = records
-      
+
     done = siteSumDict["Done"]
     empty = siteSumDict["Done_Empty"]
     aborted = siteSumDict["Aborted"]
     aborted_hour = siteSumDict["Aborted_Hour"]
-    total = siteSumDict["Total"]  
-                        
+    total = siteSumDict["Total"]
+
     # Add pilot submission efficiency evaluation
     if done > 0:
       eff = float(done-empty)/float(done)*100.
@@ -730,47 +730,47 @@ class PilotAgentsDB(DB):
     if total > 0:
       eff = float(total-aborted)/float(total)*100.
     else:
-      eff = 100.                
+      eff = 100.
     siteSumDict['PilotJobEff'] = '%.2f' % eff
-    
-    # Evaluate the overall quality status 
+
+    # Evaluate the overall quality status
     if total > 100:
       if eff < 25.:
-        siteSumDict['Status'] = 'Bad'  
+        siteSumDict['Status'] = 'Bad'
       elif eff < 60.:
-        siteSumDict['Status'] = 'Poor'  
+        siteSumDict['Status'] = 'Poor'
       elif eff < 85.:
         siteSumDict['Status'] = 'Fair'
       else:
         siteSumDict['Status'] = 'Good'
     else:
-      siteSumDict['Status'] = 'Idle'    
-    finalDict['Extras'] = siteSumDict  
-    
+      siteSumDict['Status'] = 'Idle'
+    finalDict['Extras'] = siteSumDict
+
     return S_OK(finalDict)
 
 ##########################################################################################
   def getPilotMonitorWeb(self,selectDict,sortList,startItem,maxItems):
     """ Get summary of the pilot job information in a standard structure
     """
-    
+
     resultDict = {}
     last_update = None
     if selectDict.has_key('LastUpdateTime'):
       last_update = selectDict['LastUpdateTime']
       del selectDict['LastUpdateTime']
-    
+
     # Sorting instructions. Only one for the moment.
     if sortList:
       orderAttribute = sortList[0][0]+":"+sortList[0][1]
     else:
       orderAttribute = None
-      
+
     # Select pilots for the summary
     result = self.selectPilots(selectDict, orderAttribute=orderAttribute, newer=last_update)
     if not result['OK']:
-      return S_ERROR('Failed to select pilots: '+result['Message'])  
-      
+      return S_ERROR('Failed to select pilots: '+result['Message'])
+
     pList = result['Value']
     nPilots = len(pList)
     resultDict['TotalRecords'] = nPilots
@@ -783,40 +783,40 @@ class PilotAgentsDB(DB):
       return S_ERROR('Item number out of range')
     if last > nPilots:
       last = nPilots
-    pilotList = pList[ini:last]  
-    
+    pilotList = pList[ini:last]
+
     paramNames = ['PilotJobReference','OwnerDN','OwnerGroup','GridType','Broker',
                   'Status','DestinationSite','BenchMark','ParentID',
                   'SubmissionTime', 'PilotID', 'LastUpdateTime','CurrentJobID','TaskQueueID',
                   'GridSite']
-    
+
     result = self.getPilotInfo(pilotList,paramNames=paramNames)
     if not result['OK']:
-      return S_ERROR('Failed to get pilot info: '+result['Message'])  
-      
+      return S_ERROR('Failed to get pilot info: '+result['Message'])
+
     pilotDict = result['Value']
     records = []
-    for pilot in pilotList:  
+    for pilot in pilotList:
       parList = []
       for parameter in paramNames:
         if type(pilotDict[pilot][parameter]) not in [IntType,LongType]:
           parList.append(str(pilotDict[pilot][parameter]))
         else:
-          parList.append(pilotDict[pilot][parameter]) 
+          parList.append(pilotDict[pilot][parameter])
         if parameter=='GridSite':
           gridSite = pilotDict[pilot][parameter]
-                
-      # If the Grid Site is unknown try to recover it in the last moment         
-      if gridSite == "Unknown":       
+
+      # If the Grid Site is unknown try to recover it in the last moment
+      if gridSite == "Unknown":
         ce = pilotDict[pilot]['DestinationSite']
-        result = getSiteForCE(ce)        
+        result = getSiteForCE(ce)
         if result['OK']:
-          gridSite = result['Value']  
-          del parList[-1]  
+          gridSite = result['Value']
+          del parList[-1]
           parList.append(gridSite)
       records.append(parList)
-      
+
     resultDict['ParameterNames'] = paramNames
     resultDict['Records'] = records
-    
-    return S_OK(resultDict)    
+
+    return S_OK(resultDict)
