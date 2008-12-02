@@ -1,4 +1,4 @@
--- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.sql,v 1.13 2008/11/07 15:55:48 acasajus Exp $
+-- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.sql,v 1.14 2008/12/02 14:06:32 atsareg Exp $
 
 --------------------------------------------------------------------------------
 --
@@ -35,6 +35,7 @@ CREATE TABLE PilotAgents (
     PilotID INTEGER NOT NULL AUTO_INCREMENT,
     InitialJobID INTEGER NOT NULL DEFAULT 0,
     CurrentJobID INTEGER NOT NULL DEFAULT 0,
+    TaskQueueID INTEGER NOT NULL DEFAULT '0',
     PilotJobReference VARCHAR(255) NOT NULL DEFAULT 'Unknown',
     DestinationSite VARCHAR(128) NOT NULL DEFAULT 'Multiple',
     Broker VARCHAR(128) NOT NULL DEFAULT 'Unknown',
