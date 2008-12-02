@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSanityAgent.py,v 1.13 2008/12/01 17:34:55 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSanityAgent.py,v 1.14 2008/12/02 10:07:29 acasajus Exp $
 # File :   JobSanityAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,7 +13,7 @@
        - Input sandbox not correctly uploaded.
 """
 
-__RCSID__ = "$Id: JobSanityAgent.py,v 1.13 2008/12/01 17:34:55 rgracian Exp $"
+__RCSID__ = "$Id: JobSanityAgent.py,v 1.14 2008/12/02 10:07:29 acasajus Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
@@ -30,14 +30,14 @@ class JobSanityAgent(OptimizerModule):
     """Initialize specific parameters for JobSanityAgent.
     """
     #Test control flags N.B. JDL check is mandatory
-    self.inputDataCheck    = gConfig.getValue(self.section+'/InputDataCheck',1)
-    self.outputDataCheck   = gConfig.getValue(self.section+'/OutputDataCheck',0)
-    self.inputSandboxCheck = gConfig.getValue(self.section+'/InputSandboxCheck',0)
-    self.platformCheck     = gConfig.getValue(self.section+'/PlatformCheck',0)
+    self.inputDataCheck    = self.am_getCSOption( 'InputDataCheck', 1 )
+    self.outputDataCheck   = self.am_getCSOption( 'OutputDataCheck', 0 )
+    self.inputSandboxCheck = self.am_getCSOption( 'InputSandboxCheck', 0 )
+    self.platformCheck     = self.am_getCSOption( 'PlatformCheck', 0 )
     #Other parameters
-    self.voName                = gConfig.getValue(self.section+'/VO','lhcb')
-    self.successStatus        = gConfig.getValue(self.section+'/SuccessfulJobStatus','OutputReady')
-    self.maxDataPerJob        = gConfig.getValue(self.section+'/MaxInputDataPerJob',200)
+    self.voName               = self.am_getCSOption( 'VO', 'lhcb' )
+    self.successStatus        = self.am_getCSOption( 'SuccessfulJobStatus', 'OutputReady' )
+    self.maxDataPerJob        = self.am_getCSOption( 'MaxInputDataPerJob', 200 )
 
     self.log.debug(   'JDL Check          ==>  Enabled'                    )
     if self.inputDataCheck:

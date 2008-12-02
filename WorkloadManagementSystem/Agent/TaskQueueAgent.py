@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueAgent.py,v 1.19 2008/12/01 16:02:33 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueAgent.py,v 1.20 2008/12/02 10:07:29 acasajus Exp $
 # File :   TaskQueueAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
      into a Task Queue.
 """
 
-__RCSID__ = "$Id: TaskQueueAgent.py,v 1.19 2008/12/01 16:02:33 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueAgent.py,v 1.20 2008/12/02 10:07:29 acasajus Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB         import TaskQueueDB
@@ -24,8 +24,8 @@ class TaskQueueAgent(OptimizerModule):
   def initializeOptimizer(self):
     """Initialize specific parameters for TaskQueueAgent.
     """
-    self.waitingStatus      = gConfig.getValue(self.section+'/WaitingStatus','Waiting')
-    self.waitingMinorStatus = gConfig.getValue(self.section+'/WaitingMinorStatus','Pilot Agent Submission')
+    self.waitingStatus      = self.am_getCSOption( 'WaitingStatus', 'Waiting' )
+    self.waitingMinorStatus = self.am_getCSOption( 'WaitingMinorStatus', 'Pilot Agent Submission' )
     try:
       self.taskQueueDB        = TaskQueueDB()
     except Exception, e:

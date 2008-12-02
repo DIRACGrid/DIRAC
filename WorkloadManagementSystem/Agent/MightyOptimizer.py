@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/MightyOptimizer.py,v 1.7 2008/12/01 18:11:45 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/MightyOptimizer.py,v 1.8 2008/12/02 10:07:29 acasajus Exp $
 
 
 """  SuperOptimizer
@@ -66,40 +66,49 @@ class MightyOptimizer(AgentModule):
 
 
   def optimizeJob( self, jobId, jobAttrs, jobDef ):
-      result = self._getNextOptimizer( jobAttrs )
+    #Get the next optimizer
+    result = self._getNextOptimizer( jobAttrs )
+    if not result[ 'OK' ]:
+      return result
+    optimizer = result[ 'Value' ]
+    if not optimizer:
+      return S_OK( { 'done' : True } )
+    #If there's no job def then get it
+    if not jobDef:
+      result = optimizer.getJobDefinition( jobId, jobDef )
       if not result[ 'OK' ]:
         return result
-      optimizer = result[ 'Value' ]
-      if not optimizer:
-        return S_OK( { 'done' : True } )
-      if not jobDef:
-        result = optimizer.getJobDefinition( jobId, jobDef )
-        if not result[ 'OK' ]:
-          return result
-        jobDef = result[ 'Value' ]
-      shifterEnv = False
-      if optimizer.am_getParam( 'shifterProxy' ):
-        shifterEnv = True
-        result = setupShifterProxyInEnv( optimizer.am_getParam( 'shifterProxy' ),
-                                         optimizer.am_getParam( 'shifterProxyLocation' ) )
-        if not result[ 'OK' ]:
-          return result
-      result = optimizer.optimizeJob( jobId, jobDef[ 'classad' ] )
+      jobDef = result[ 'Value' ]
+    #Does the optimizer require a proxy?
+    shifterEnv = False
+    if optimizer.am_getParam( 'shifterProxy' ):
+      shifterEnv = True
+      result = setupShifterProxyInEnv( optimizer.am_getParam( 'shifterProxy' ),
+                                       optimizer.am_getParam( 'shifterProxyLocation' ) )
       if not result[ 'OK' ]:
         return result
-      if shifterEnv:
-        del( os.environ[ 'X509_USER_PROXY' ] )
-      nextOptimizer = result[ 'Value' ]
-      #Check if the JDL has changed
-      newJDL = jobDef[ 'classad' ].asJDL()
-      if newJDL != jobDef[ 'jdl' ]:
-        jobDef[ 'jdl' ] = newJDL
-      #If there's a new optimizer set it!
-      if nextOptimizer:
-        jobAttrs[ 'Status' ] = 'Checking'
-        jobAttrs[ 'MinorStatus' ] = nextOptimizer
-        return S_OK( { 'done' : False, 'jobDef' : jobDef } )
-      return S_OK( { 'done' : True, 'jobDef' : jobDef } )
+    #Call the initCycle function
+    result = self.am_secureCall( optimizer.beginExecution, name = "beginExecution" )
+    if not result[ 'OK' ]:
+      return result
+    #Do the work
+    result = optimizer.optimizeJob( jobId, jobDef[ 'classad' ] )
+    if not result[ 'OK' ]:
+      return result
+    nextOptimizer = result[ 'Value' ]
+    #If there was a shifter proxy, unset it
+    if shifterEnv:
+      del( os.environ[ 'X509_USER_PROXY' ] )
+    #Check if the JDL has changed
+    newJDL = jobDef[ 'classad' ].asJDL()
+    if newJDL != jobDef[ 'jdl' ]:
+      jobDef[ 'jdl' ] = newJDL
+    #If there's a new optimizer set it!
+    if nextOptimizer:
+      jobAttrs[ 'Status' ] = 'Checking'
+      jobAttrs[ 'MinorStatus' ] = nextOptimizer
+      return S_OK( { 'done' : False, 'jobDef' : jobDef } )
+    return S_OK( { 'done' : True, 'jobDef' : jobDef } )
 
   def _getNextOptimizer( self, jobAttrs ):
     if jobAttrs[ 'Status' ] == 'Received':
@@ -107,9 +116,12 @@ class MightyOptimizer(AgentModule):
     else:
       nextOptimizer = jobAttrs[ 'MinorStatus' ]
     gLogger.info( "Next optimizer for job %s is %s" % ( jobAttrs['JobID'], nextOptimizer ) )
-    if nextOptimizer in self._optimizers:
-      return S_OK( self._optimizers[ nextOptimizer ] )
-    return self.__loadOptimizer( nextOptimizer )
+    if nextOptimizer not in self._optimizers:
+      result = self.__loadOptimizer( nextOptimizer )
+      if not result[ 'OK' ]:
+        return result
+      self._optimizers[ nextOptimizer ] = result[ 'Value' ]
+    return S_OK( self._optimizers[ nextOptimizer ] )
 
   @gOptimizerLoadSync
   def __loadOptimizer( self, optimizerName ):
@@ -128,7 +140,6 @@ class MightyOptimizer(AgentModule):
     except Exception, e:
       gLogger.exception( "LOADERROR" )
       return S_ERROR( "Can't load optimizer %s: %s" % ( optimizerName, str(e) ) )
-    self._optimizers[ optimizerName ] = optimizer
     return S_OK( optimizer )
 
 

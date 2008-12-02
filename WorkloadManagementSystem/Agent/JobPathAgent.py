@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobPathAgent.py,v 1.10 2008/12/01 17:12:58 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobPathAgent.py,v 1.11 2008/12/02 10:07:29 acasajus Exp $
 # File :   JobPathAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -12,7 +12,7 @@
       path through the optimizers.
 
 """
-__RCSID__ = "$Id: JobPathAgent.py,v 1.10 2008/12/01 17:12:58 rgracian Exp $"
+__RCSID__ = "$Id: JobPathAgent.py,v 1.11 2008/12/02 10:07:29 acasajus Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
@@ -29,23 +29,17 @@ class JobPathAgent(OptimizerModule):
   def initializeOptimizer(self):
     """Initialize specific parameters for JobPathAgent.
     """
-    # self.basePath     = gConfig.getValue(self.section+'/BasePath',['JobPath','JobSanity','JobPolicy'])
-    self.basePath     = gConfig.getValue(self.section+'/BasePath',  ['JobPath','JobSanity'])
-    self.inputData    = gConfig.getValue(self.section+'/InputData', ['InputData'])
-    self.endPath      = gConfig.getValue(self.section+'/EndPath',   ['JobScheduling','TaskQueue'])
-    self.voPlugin     = gConfig.getValue(self.section+'/VOPlugin',  'WorkflowLib.Utilities.JobPathResolution')
-
     self.startingMajorStatus = "Received"
     self.startingMinorStatus = False
 
     return S_OK()
 
-  def initExecution(self):
+  def beginExecution(self):
 
-    self.basePath     = gConfig.getValue(self.section+'/BasePath',    self.basePath )
-    self.inputData    = gConfig.getValue(self.section+'/InputData',   self.inputData )
-    self.endPath      = gConfig.getValue(self.section+'/EndPath',     self.endPath )
-    self.voPlugin     = gConfig.getValue(self.section+'/VOPlugin',    self.voPlugin )
+    self.basePath     = self.am_getCSOption( 'BasePath',  ['JobPath','JobSanity'] )
+    self.inputData    = self.am_getCSOption( 'InputData', ['InputData'] )
+    self.endPath      = self.am_getCSOption( 'EndPath',   ['JobScheduling','TaskQueue'] )
+    self.voPlugin     = self.am_getCSOption( 'VOPlugin',  'WorkflowLib.Utilities.JobPathResolution' )
 
     return S_OK()
 
@@ -71,7 +65,7 @@ class JobPathAgent(OptimizerModule):
     #If no path, construct based on JDL and VO path module if present
     path = list(self.basePath)
     if self.voPlugin:
-      argumentsDict = {'JobID':job,'ClassAd':classadJob,'ConfigPath':self.section}
+      argumentsDict = {'JobID':job,'ClassAd':classadJob,'ConfigPath':self.am_getParam( "section" )}
       moduleFactory = ModuleFactory()
       moduleInstance = moduleFactory.getModule(self.voPlugin,argumentsDict)
       if not moduleInstance['OK']:

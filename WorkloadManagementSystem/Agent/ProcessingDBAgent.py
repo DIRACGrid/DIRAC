@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/ProcessingDBAgent.py,v 1.6 2008/12/01 16:02:33 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/ProcessingDBAgent.py,v 1.7 2008/12/02 10:07:29 acasajus Exp $
 # File :   ProcessingDBAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
 
 """
 
-__RCSID__ = "$Id: ProcessingDBAgent.py,v 1.6 2008/12/01 16:02:33 acasajus Exp $"
+__RCSID__ = "$Id: ProcessingDBAgent.py,v 1.7 2008/12/02 10:07:29 acasajus Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
@@ -27,12 +27,12 @@ class ProcessingDBAgent(OptimizerModule):
     self.jobTypeToCheck       = 'processing'
 
     #disabled until available
-    self.disableProcDBCheck   = gConfig.getValue(self.section+'/ProcDBFlag',True)
-    self.failedMinorStatus    = gConfig.getValue(self.section+'/FailedJobStatus','ProcessingDB Error')
+    self.disableProcDBCheck   = self.am_getCSOption( 'ProcDBFlag', True )
+    self.failedMinorStatus    = self.am_getCSOption( 'FailedJobStatus', 'ProcessingDB Error' )
 
     self.PDBFileCatalog = None
     if not self.disableProcDBCheck:
-      dbURL = gConfig.getValue(self.section+'/ProcDBURL','processingdb.cern.ch')
+      dbURL = self.am_getCSOption( 'ProcDBURL', 'processingdb.cern.ch' )
       try:
         from DIRAC.DataManagement.Client.ProcDBCatalogClient import ProcDBCatalogClient
         self.PDBFileCatalog = ProcDBCatalogClient(dbURL)
