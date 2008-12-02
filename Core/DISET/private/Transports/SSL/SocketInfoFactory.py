@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfoFactory.py,v 1.12 2008/11/11 17:36:42 acasajus Exp $
-__RCSID__ = "$Id: SocketInfoFactory.py,v 1.12 2008/11/11 17:36:42 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfoFactory.py,v 1.13 2008/12/02 15:22:00 acasajus Exp $
+__RCSID__ = "$Id: SocketInfoFactory.py,v 1.13 2008/12/02 15:22:00 acasajus Exp $"
 
 import socket
 import select
@@ -14,13 +14,16 @@ from DIRAC.Core.DISET.private.Transports.SSL.ThreadSafeSSLObject import ThreadSa
 class SocketInfoFactory:
 
   def generateClientInfo( self, destinationHostname, kwargs ):
-    infoDict = { 'clientMode' : True, 'hostname' : destinationHostname, 'timeout' : 600 }
+    infoDict = { 'clientMode' : True,
+                 'hostname' : destinationHostname,
+                 'timeout' : 600,
+                 'enableSessions' : True }
     for key in kwargs.keys():
       infoDict[ key ] = kwargs[ key ]
     try:
       return S_OK( SocketInfo( infoDict ) )
     except Exception, e:
-      return S_ERROR( str( e ) )
+      return S_ERROR( "Error while creating SSL context: %s" % str( e ) )
 
   def generateServerInfo( self, kwargs ):
     infoDict = { 'clientMode' : False, 'timeout' : 60 }
@@ -38,8 +41,6 @@ class SocketInfoFactory:
       return retVal
     socketInfo = retVal[ 'Value' ]
     sslSocket = GSI.SSL.Connection( socketInfo.getSSLContext(), osSocket )
-    #sslSocket = ThreadSafeSSLObject( sslSocket )
-    #sslSocket = FakeSocket( sslSocket )
     sessionId = str( hash( str( hostAddress ) + ":".join( socketInfo.getLocalCredentialsLocation() )  ) )
     socketInfo.sslContext.set_session_id( str( hash( sessionId ) ) )
     socketInfo.setSSLSocket( sslSocket )
@@ -64,7 +65,8 @@ class SocketInfoFactory:
     retVal = socketInfo.doClientHandshake()
     if not retVal[ 'OK' ]:
       return retVal
-    gSessionManager.set( sessionId, sslSocket.get_session() )
+    if 'enableSessions' in kwargs and kwargs[ 'enableSessions' ]:
+      gSessionManager.set( sessionId, sslSocket.get_session() )
     return S_OK( socketInfo )
 
   def getListeningSocket( self, hostAddress, listeningQueueSize = 5, reuseAddress = True, **kwargs ):

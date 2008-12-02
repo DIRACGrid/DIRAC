@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfo.py,v 1.30 2008/12/01 18:11:45 acasajus Exp $
-__RCSID__ = "$Id: SocketInfo.py,v 1.30 2008/12/01 18:11:45 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfo.py,v 1.31 2008/12/02 15:22:00 acasajus Exp $
+__RCSID__ = "$Id: SocketInfo.py,v 1.31 2008/12/02 15:22:00 acasajus Exp $"
 
 import time
 import copy
@@ -101,26 +101,24 @@ class SocketInfo:
     return ok
 
   def __createContext( self ):
-    serverContext = self.__getValue( 'clientMode', False )
+    clientContext = self.__getValue( 'clientMode', False )
     # Initialize context
-    if serverContext:
-      methodSuffix = "SERVER_METHOD"
-      #self.sslContext = GSI.SSL.Context( GSI.SSL.TLSv1_SERVER_METHOD )
-    else:
+    if clientContext:
       methodSuffix = "CLIENT_METHOD"
-      #self.sslContext = GSI.SSL.Context( GSI.SSL.TLSv1_CLIENT_METHOD )
-    if 'sslMethod' in self.infoDict:
-      try:
-        method = getattr( GSI.SSL, "%s_%s" % ( self.infoDict[ 'sslMethod' ], methodSuffix ) )
-      except:
-        return S_ERROR( "SSL method %s is not valid" % self.infoDict[ 'sslMethod' ] )
     else:
-      method = getattr( GSI.SSL, "TLSv1_%s" % ( methodSuffix ) )
-    print "GOTMETHOD", method
+      methodSuffix = "SERVER_METHOD"
+    if 'sslMethod' in self.infoDict:
+      methodName = "%s_%s" % ( self.infoDict[ 'sslMethod' ], methodSuffix )
+    else:
+      methodName = "TLSv1_%s" % ( methodSuffix )
+    try:
+      method = getattr( GSI.SSL, methodName )
+    except:
+      return S_ERROR( "SSL method %s is not valid" % self.infoDict[ 'sslMethod' ] )
     self.sslContext = GSI.SSL.Context( method )
     #Enable GSI?
     gsiEnable = False
-    if not self.__getValue( 'clientMode', False ) or self.__getValue( 'gsiEnable', False ):
+    if not clientContext or self.__getValue( 'gsiEnable', False ):
       gsiEnable = True
     #DO CA Checks?
     if not self.__getValue( 'skipCACheck', False ):
@@ -212,31 +210,22 @@ class SocketInfo:
   def __sslHandshake( self ):
     start = time.time()
     timeout = self.infoDict[ 'timeout' ]
-    print "ABOUT", timeout
     while True:
       if timeout:
         if time.time() - start > timeout:
           return S_ERROR( "Handshake timeout exceeded" )
-      print "ITERS"
       try:
         self.sslSocket.do_handshake()
-        print "HANDSHAKEDONE"
         break
       except GSI.SSL.WantReadError:
-        print "WANTREAD"
         time.sleep( 0.1 )
       except GSI.SSL.WantWriteError:
-        print "WANTWRITE"
         time.sleep( 0.1 )
       except GSI.SSL.Error, v:
         #gLogger.warn( "Error while handshaking", "\n".join( [ stError[2] for stError in v.args[0] ] ) )
-        print "EXCEPTION"
-        print v
         gLogger.warn( "Error while handshaking", v )
         return S_ERROR( "Error while handshaking" )
       except Exception, e:
-        print "NORMAL EXCEPTION"
-        print v
         gLogger.warn( "Error while handshaking", v )
         return S_ERROR( "Error while handshaking" )
     credentialsDict = self.gatherPeerCredentials()
@@ -246,5 +235,4 @@ class SocketInfo:
         gLogger.warn( "Server is not who it's supposed to be",
                       "Connecting to %s and it's %s" % ( self.infoDict[ 'hostname' ], hostnameCN ) )
     gLogger.debug( "", "Authenticated peer (%s)" % credentialsDict[ 'DN' ] )
-    print "credentialsDICT!"
     return S_OK( credentialsDict )
