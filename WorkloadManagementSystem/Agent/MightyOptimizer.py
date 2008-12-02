@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/MightyOptimizer.py,v 1.8 2008/12/02 10:07:29 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/MightyOptimizer.py,v 1.9 2008/12/02 16:48:35 acasajus Exp $
 
 
 """  SuperOptimizer
@@ -28,6 +28,7 @@ class MightyOptimizer(AgentModule):
     self.jobDB = JobDB()
     self.jobLoggingDB = JobLoggingDB()
     self._optimizers = {}
+    self.am_setParam( "pollingTime", 30 )
     return S_OK()
 
   def execute( self ):
