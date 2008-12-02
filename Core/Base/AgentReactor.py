@@ -13,14 +13,22 @@ class AgentReactor:
     self.__scheduler = ThreadScheduler.ThreadScheduler( enableReactorThread = False )
     self.__alive = True
 
-  def loadAgentModules( self, modulesList ):
+  def loadAgentModules( self, modulesList, hideExceptions = False ):
     for module in modulesList:
-      result = self.loadAgentModule( module )
+      result = self.loadAgentModule( module, hideExceptions = hideExceptions )
       if not result[ 'OK' ]:
         return result
     return S_OK()
 
-  def loadAgentModule( self, fullName ):
+  def __checkHandler( self, oClass ):
+    for oParent in oClass.__bases__:
+      if self.__checkHandler( oParent ):
+        return True
+    if oClass.__name__ == "AgentModule":
+      return True
+    return False
+
+  def loadAgentModule( self, fullName, hideExceptions = False ):
     modList = fullName.split( "/" )
     if len( modList ) != 2:
       return S_ERROR( "Can't load %s: Invalid agent name" % ( fullName ) )
@@ -31,12 +39,15 @@ class AgentReactor:
                               globals(),
                               locals(), agentName )
       agentClass = getattr( agentModule, agentName )
+      if not self.__checkHandler( agentClass ):
+        return S_ERROR( "%s is not a valid agent module. It has to inherit from AgentModule" % fullName )
       agent = agentClass( fullName, self.__baseAgentName )
       result = agent.am_initialize()
       if not result[ 'OK' ]:
         return S_ERROR( "Error while calling initialize method of %s: %s" %( fullName, result[ 'Message' ] ) )
     except Exception, e:
-      gLogger.exception( "Can't load agent %s" % fullName )
+      if not hideExceptions:
+        gLogger.exception( "Can't load agent %s" % fullName )
       return S_ERROR( "Can't load agent %s: %s" % ( fullName, str(e) ) )
     self.__agentModules[ fullName ] = { 'instance' : agent,
                                         'class' : agentClass,
