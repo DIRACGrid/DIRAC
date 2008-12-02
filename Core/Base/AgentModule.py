@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/AgentModule.py,v 1.3 2008/12/01 17:50:15 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/AgentModule.py,v 1.4 2008/12/02 10:07:01 acasajus Exp $
 ########################################################################
 """ Base class for all agent modules
 
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: AgentModule.py,v 1.3 2008/12/01 17:50:15 rgracian Exp $"
+__RCSID__ = "$Id: AgentModule.py,v 1.4 2008/12/02 10:07:01 acasajus Exp $"
 
 import os
 import threading
@@ -141,7 +141,7 @@ class AgentModule:
     self.monitor.registerActivity('MEM',"Memory Usage",'Framework','Memory,MB',self.monitor.OP_MEAN,600)
     self.monitor.disable()
 
-  def __secureCall( self, functor, args = (), name = False ):
+  def am_secureCall( self, functor, args = (), name = False ):
     if not name:
       name = str( functor )
     try:
@@ -186,13 +186,13 @@ class AgentModule:
 
   def __executeModuleCycle(self):
     #Execute the beginExecution function
-    result = self.__secureCall( self.beginExecution, name = "beginExecution" )
+    result = self.am_secureCall( self.beginExecution, name = "beginExecution" )
     if not result[ 'OK' ]:
       return result
     #Launch executor functions
     executors = self.__moduleParams[ 'executors' ]
     if len( executors ) == 1:
-      result = self.__secureCall( executors[0][0], executors[0][1] )
+      result = self.am_secureCall( executors[0][0], executors[0][1] )
       if not result[ 'OK' ]:
         return result
     else:
@@ -203,7 +203,7 @@ class AgentModule:
       for thread in exeThreads:
         thread.join()
     #Execute the endExecution function
-    return  self.__secureCall( self.endExecution, name = "endExecution" )
+    return  self.am_secureCall( self.endExecution, name = "endExecution" )
 
   def initialize(self):
     return S_OK()
