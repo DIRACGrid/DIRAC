@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/OptimizerModule.py,v 1.3 2008/12/02 09:48:17 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/OptimizerModule.py,v 1.4 2008/12/02 10:07:53 acasajus Exp $
 # File :   Optimizer.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
      optimizer instances and associated actions are performed there.
 """
 
-__RCSID__ = "$Id: OptimizerModule.py,v 1.3 2008/12/02 09:48:17 acasajus Exp $"
+__RCSID__ = "$Id: OptimizerModule.py,v 1.4 2008/12/02 10:07:53 acasajus Exp $"
 
 from DIRAC.WorkloadManagementSystem.DB.JobDB         import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB  import JobLoggingDB
@@ -221,11 +221,5 @@ class OptimizerModule(AgentModule):
     """
     self.log.warn('Optimizer: checkJob method should be implemented in a subclass')
     return S_ERROR('Optimizer: checkJob method should be implemented in a subclass')
-
-  #############################################################################
-  def initExecution(self):
-    """This method serves as an iteration inicialization, can be overriden in a subclass
-    """
-    return S_OK()
 
   #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
