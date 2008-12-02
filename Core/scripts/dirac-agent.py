@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/dirac-agent.py,v 1.1 2008/10/17 13:08:16 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/dirac-agent.py,v 1.2 2008/12/02 10:17:47 acasajus Exp $
 # File :   dirac-agent
 # Author : Adria Casajus, Andrei Tsaregorodtsev, Stuart Paterson
 ########################################################################
-__RCSID__   = "$Id: dirac-agent.py,v 1.1 2008/10/17 13:08:16 rgracian Exp $"
-__VERSION__ = "$Revision: 1.1 $"
+__RCSID__   = "$Id: dirac-agent.py,v 1.2 2008/12/02 10:17:47 acasajus Exp $"
+__VERSION__ = "$Revision: 1.2 $"
 
 """  This is a script to launch DIRAC agents
 """
@@ -15,6 +15,7 @@ from DIRACEnvironment import DIRAC
 from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
 from DIRAC import gLogger, gConfig
 from DIRAC.Core.Base.Agent import createAgent
+from DIRAC.Core.Base.AgentReactor import AgentReactor
 
 localCfg = LocalConfiguration()
 
@@ -33,5 +34,18 @@ if not resultDict[ 'OK' ]:
   gLogger.error( "There were errors when loading configuration", resultDict[ 'Message' ] )
   sys.exit(1)
 
-agent = createAgent(agentName)
-agent.run()
+if len( positionalArgs ) == 1:
+  mainName = positionalArgs[0]
+else:
+  mainName = "Framework/MultiAgent"
+
+agentReactor = AgentReactor( mainName )
+#result = agentReactor.loadAgentModules( positionalArgs )
+result = agentReactor.loadAgentModules( positionalArgs )
+if result[ 'OK' ]:
+  agentReactor.go()
+else:
+  gLogger.error( "Error while loading agent module", result[ 'Message' ] )
+  gLogger.info( "Let's try the old agent framework" )
+  agent = createAgent(agentName)
+  agent.run()
