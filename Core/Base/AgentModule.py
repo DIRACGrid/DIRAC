@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/AgentModule.py,v 1.4 2008/12/02 10:07:01 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/AgentModule.py,v 1.5 2008/12/02 16:47:15 acasajus Exp $
 ########################################################################
 """ Base class for all agent modules
 
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: AgentModule.py,v 1.4 2008/12/02 10:07:01 acasajus Exp $"
+__RCSID__ = "$Id: AgentModule.py,v 1.5 2008/12/02 16:47:15 acasajus Exp $"
 
 import os
 import threading
@@ -40,8 +40,8 @@ class AgentModule:
                     'standalone' : standaloneModule }
     self.__moduleParams[ 'system' ], self.__moduleParams[ 'agentName' ] = agentName.split("/")
     self.__moduleParams[ 'enabled' ] = self.am_getCSOption( "Status", "Active" ).lower() in ( 'active' )
-    self.__moduleParams[ 'pollingTime' ] = 120
-    self.__moduleParams[ 'maxCycles' ] = 0
+    self.__moduleParams[ 'pollingTime' ] = self.am_getCSOption( "PollingTime", 120 )
+    self.__moduleParams[ 'maxCycles' ] = self.am_getCSOption( "MaxCycles", 0 )
     self.__moduleParams[ 'cyclesDone' ] = 0
     self.__moduleParams[ 'setup' ] = gConfig.getValue( "/DIRAC/Setup", "Unknown" )
     self.__moduleParams[ 'controlDirectory' ] = os.path.join( DIRAC.rootPath,
@@ -115,10 +115,10 @@ class AgentModule:
     return gConfig.getValue( "%s/%s" % ( self.__moduleParams[ 'section' ], optionName ), defaultValue )
 
   def am_getPollingTime( self ):
-    return self.am_getCSOption( "PollingTime", self.__moduleParams[ 'pollingTime' ] )
+    return self.__moduleParams[ 'pollingTime' ]
 
   def am_getMaxCycles( self ):
-    return self.am_getCSOption( "MaxCycles", self.__moduleParams[ 'maxCycles' ] )
+    return self.__moduleParams[ 'maxCycles' ]
 
   def am_getParam( self, optionName ):
     return self.__moduleParams[ optionName ]
