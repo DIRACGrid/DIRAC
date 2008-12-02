@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.43 2008/10/22 12:47:56 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.44 2008/12/02 15:18:35 atsareg Exp $
 ########################################################################
 
 """  The Pilot Status Agent updates the status of the pilot jobs if the
      PilotAgents database.
 """
 
-__RCSID__ = "$Id: PilotStatusAgent.py,v 1.43 2008/10/22 12:47:56 rgracian Exp $"
+__RCSID__ = "$Id: PilotStatusAgent.py,v 1.44 2008/12/02 15:18:35 atsareg Exp $"
 
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, List
@@ -50,7 +50,7 @@ class PilotStatusAgent(Agent):
   def execute(self):
     """The PilotAgent execution method.
     """
-    parentIDList = [ 0 , -1 ]
+    parentIDList = [ '0' , '-1' ]
 
     result = self.pilotDB._getConnection()
     if result['OK']:
@@ -58,7 +58,9 @@ class PilotStatusAgent(Agent):
     else:
       return result
 
-    result = self.pilotDB.getPilotGroups( self.identityFieldsList, {'Status': self.queryStateList, 'ParentID': parentIDList } )
+    result = self.pilotDB.getPilotGroups( self.identityFieldsList, 
+                                         {'Status': self.queryStateList, 
+                                          'ParentID': parentIDList } )
     if not result['OK']:
       self.log.error('Fail to get identities Groups', result['Message'])
       return result
@@ -70,7 +72,14 @@ class PilotStatusAgent(Agent):
 
     for ownerDN, ownerGroup, gridType in result['Value']:
       self.log.verbose( 'Getting pilots for %s:%s @ %s' % ( ownerDN, ownerGroup, gridType ) )
-      result = self.pilotDB.selectPilots( self.queryStateList, owner=ownerDN, ownerGroup=ownerGroup, gridType=gridType, parentID=parentIDList)
+      
+      condDict = {'Status':self.queryStateList,
+                  'OwnerDN':ownerDN,
+                  'OwnerGroup':ownerGroup,
+                  'GridType':gridType,
+                  'ParentID':parentIDList}
+      
+      result = self.pilotDB.selectPilots(condDict)
       if not result['OK']:
         self.log.warn('Failed to get the Pilot Agents')
         return result
@@ -105,7 +114,7 @@ class PilotStatusAgent(Agent):
               #HACK to Avoid parents in real final status to fo through
               if not ( pDict[ 'isParent' ] and pDict[ 'Status' ] in self.finalStateList ):
                 #Update
-                self.pilotDB.setPilotStatus( pRef,
+                result = self.pilotDB.setPilotStatus( pRef,
                                              pDict['Status'],
                                              pDict['DestinationSite'],
                                              pDict['StatusDate'],
@@ -224,11 +233,12 @@ class PilotStatusAgent(Agent):
 
     stdout = ret['Value'][1]
     stderr = ret['Value'][2]
-
     resultDict = {}
     for job in List.fromChar(stdout,'\nStatus info for the Job :')[1:]:
       pRef = List.fromChar(job,'\n' )[0].strip()
       resultDict[pRef] = self.__parseJobStatus( job, gridType )
+      chDone = True
+     
       for subjob in List.fromChar(job, 'Status info for the Job :')[1:]:
         resultDict[pRef]['isParent'] = True
         chRef = List.fromChar(subjob,'\n' )[0].strip()
@@ -237,7 +247,14 @@ class PilotStatusAgent(Agent):
         resultDict[chRef]['ParentRef'] = pRef
         if not resultDict[chRef][ 'FinalStatus' ]:
           resultDict[pRef][ 'FinalStatus' ] = False
+          chDone = False
         resultDict[ pRef ][ 'ChildRefs' ].append( chRef )
+        
+      if chDone:
+        # All the children are done
+        resultDict[pRef][ 'FinalStatus' ] = True
+        resultDict[pRef][ 'Status' ] = 'Done'  
+        
       if not resultDict[pRef][ 'FinalStatus' ]:
         for chRef in resultDict[ pRef ][ 'ChildRefs' ]:
           resultDict[chRef][ 'FinalStatus' ] = False
@@ -262,6 +279,7 @@ class PilotStatusAgent(Agent):
         statusDate = time.strftime('%Y-%m-%d %H:%M:%S',time.strptime(statusDate,'%b %d %H:%M:%S %Y'))
     except Exception, x:
       self.log.error( 'Error parsing %s Job Status output:\n' % gridType, job )
+      
     return { 'Status': status,
              'DestinationSite': destination,
              'StatusDate': statusDate,
