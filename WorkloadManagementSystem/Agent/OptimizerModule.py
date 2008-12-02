@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/OptimizerModule.py,v 1.2 2008/12/01 18:11:45 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/OptimizerModule.py,v 1.3 2008/12/02 09:48:17 acasajus Exp $
 # File :   Optimizer.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
      optimizer instances and associated actions are performed there.
 """
 
-__RCSID__ = "$Id: OptimizerModule.py,v 1.2 2008/12/01 18:11:45 acasajus Exp $"
+__RCSID__ = "$Id: OptimizerModule.py,v 1.3 2008/12/02 09:48:17 acasajus Exp $"
 
 from DIRAC.WorkloadManagementSystem.DB.JobDB         import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB  import JobLoggingDB
@@ -43,6 +43,7 @@ class OptimizerModule(AgentModule):
 
     self.startingMinorStatus = self.am_getParam( 'optimizerName' )
     self.startingMajorStatus = "Checking"
+    self.failedStatus        = self.am_getCSOption( "FailedJobStatus" , 'Failed' )
     self.requiredJobInfo = 'jdl'
 
     return self.initializeOptimizer()
@@ -85,7 +86,7 @@ class OptimizerModule(AgentModule):
 
   #############################################################################
   def optimizeJob( self, job, classAdJob ):
-    result = self.checkJob( job, jobDef[ 'classad' ] )
+    result = self.checkJob( job, classAdJob )
     if not result['OK']:
       self.setFailedJob( job, result['Message'] )
     return result
