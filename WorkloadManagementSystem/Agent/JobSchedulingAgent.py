@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.43 2008/12/02 10:07:29 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.44 2008/12/02 17:16:38 acasajus Exp $
 # File :   JobSchedulingAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@
       meaningfully.
 
 """
-__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.43 2008/12/02 10:07:29 acasajus Exp $"
+__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.44 2008/12/02 17:16:38 acasajus Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
@@ -150,7 +150,7 @@ class JobSchedulingAgent(OptimizerModule):
       #No staging required, can proceed to task queue agent and then waiting status
       self.log.verbose('Job %s does not require staging of input data' %(job))
     #Finally send job to TaskQueueAgent
-    return self.__sendJobToTaskQueue( job, classAdJob, sites, bannedSites )
+    return self.__sendJobToTaskQueue( job, classAdJob, destinationSites, bannedSites )
 
 
   #############################################################################
