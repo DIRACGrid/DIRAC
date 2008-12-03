@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueAgent.py,v 1.20 2008/12/02 10:07:29 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueAgent.py,v 1.21 2008/12/03 19:51:23 acasajus Exp $
 # File :   TaskQueueAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
      into a Task Queue.
 """
 
-__RCSID__ = "$Id: TaskQueueAgent.py,v 1.20 2008/12/02 10:07:29 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueAgent.py,v 1.21 2008/12/03 19:51:23 acasajus Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB         import TaskQueueDB
@@ -54,12 +54,12 @@ class TaskQueueAgent(OptimizerModule):
     retVal = self.jobDB.getJobAttributes( job, ['UserPriority'] )
     if retVal['OK']:
       if retVal['Value']:
-        priority = retVal['Value']['UserPriority']
+        jobPriority = retVal['Value']['UserPriority']
       else:
         self.log.warn('No priority specified for job %d' % int(job))
-        priority = 0
+        jobPriority = 0
     else:
-      priority=0
+      jobPriority=0
 
     requirements = classAdJob.get_expression("Requirements")
     jobType = classAdJob.get_expression("JobType").replace('"','')
@@ -82,9 +82,8 @@ class TaskQueueAgent(OptimizerModule):
       self.log.warn(requirements)
       return S_ERROR("Failed to obtain a task queue")
 
-    rank = priority
     if self.am_getParam( "enabled" ):
-      result = self.jobDB.addJobToQueue(job,queueID,rank)
+      result = self.jobDB.addJobToQueue(job,queueID,jobPriority)
       if not result['OK']:
         return result
     else:
@@ -104,7 +103,7 @@ class TaskQueueAgent(OptimizerModule):
       if classAdJobReq.lookupAttribute(name):
         jobReqDict[name] = classAdJobReq.getListFromExpression(name)
 
-    result = self.taskQueueDB.insertJob( job, jobReqDict, 1,priority )
+    result = self.taskQueueDB.insertJob( job, jobReqDict, jobPriority )
     if not result[ 'OK' ]:
       self.log.error( "Cannot insert job %s in task queue: %s" % ( job, result[ 'Message' ] ) )
       return S_ERROR( "Cannot insert in task queue" )
