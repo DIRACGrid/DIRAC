@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.65 2008/11/26 21:21:15 paterson Exp $
+# $Id: JobWrapper.py,v 1.66 2008/12/03 16:55:13 atsareg Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.65 2008/11/26 21:21:15 paterson Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.66 2008/12/03 16:55:13 atsareg Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -756,17 +756,39 @@ class JobWrapper:
     return S_OK('OutputData uploaded successfully')
 
   #############################################################################
+#  def __getLFNfromOutputFile(self, owner, outputFile):
+#    """Provides a generic convention for VO output data
+#       files if no path is specified.
+#    """
+#    localfile = os.path.basename(string.replace(outputFile,"LFN:",""))
+#    lfn = outputFile
+#    if not re.search('^LFN:',outputFile):
+#      initial = owner[:1]
+#      timeTuple = time.gmtime()
+#      yearMonth = '%s_%s' %(timeTuple[0],timeTuple[1])
+#      lfn = '/'+self.vo+'/user/'+initial+'/'+owner+'/'+yearMonth+'/'+str(self.jobID)+'/'+localfile
+#    else:
+#      lfn = string.replace(outputFile,"LFN:","")
+#
+#    return lfn
+
+  #############################################################################
   def __getLFNfromOutputFile(self, owner, outputFile):
     """Provides a generic convention for VO output data
        files if no path is specified.
     """
+
+    # A.T. Version using jobid with the last 3 digits stripped off for the
+    # extra subdirectory name in the LFN to avoid confuion with a poorly
+    # defined date
+
     localfile = os.path.basename(string.replace(outputFile,"LFN:",""))
     lfn = outputFile
     if not re.search('^LFN:',outputFile):
       initial = owner[:1]
       timeTuple = time.gmtime()
-      yearMonth = '%s_%s' %(timeTuple[0],timeTuple[1])
-      lfn = '/'+self.vo+'/user/'+initial+'/'+owner+'/'+yearMonth+'/'+str(self.jobID)+'/'+localfile
+      subdir = str(int(self.jobID)/1000)
+      lfn = '/'+self.vo+'/user/'+initial+'/'+owner+'/'+subdir+'/'+str(self.jobID)+'/'+localfile
     else:
       lfn = string.replace(outputFile,"LFN:","")
 
