@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.28 2008/11/28 09:02:21 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.29 2008/12/03 19:51:10 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.28 2008/11/28 09:02:21 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.29 2008/12/03 19:51:10 acasajus Exp $"
 
 import time
 import types
@@ -12,8 +12,11 @@ import random
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities import List
 from DIRAC.Core.Base.DB import DB
+from DIRAC.Core.Security import Properties, CS
 
 class TaskQueueDB(DB):
+
+  defaultGroupShare = 100
 
   def __init__( self, maxQueueSize = 10 ):
     random.seed()
@@ -209,7 +212,7 @@ class TaskQueueDB(DB):
         return retVal
     return S_OK()
 
-  def insertJob( self, jobId, tqDefDict, tqPriority, jobPriority ):
+  def insertJob( self, jobId, tqDefDict, jobPriority ):
     """
     Insert a job in a task queue
       Returns S_OK( tqId ) / S_ERROR
@@ -226,16 +229,22 @@ class TaskQueueDB(DB):
     if not retVal[ 'OK' ]:
       return retVal
     tqInfo = retVal[ 'Value' ]
+    newTq = False
     if not tqInfo[ 'found' ]:
-      retVal = self.createTaskQueue( tqDefDict, tqPriority, connObj = connObj )
+      retVal = self.createTaskQueue( tqDefDict, 0, connObj = connObj )
       if not retVal[ 'OK' ]:
         return retVal
       tqId = retVal[ 'Value' ]
+      newTq = True
     else:
       tqId = tqInfo[ 'tqId' ]
     jobPriority = min( max( int( jobPriority ), self.__jobPriorityBoundaries[0] ), self.__jobPriorityBoundaries[1] )
-    tqPriority  = min( max( int( tqPriority  ), self.__tqPriorityBoundaries[0]  ), self.__tqPriorityBoundaries[1]  )
-    return self.insertJobInTaskQueue( jobId, tqId, jobPriority, checkTQExists = False, connObj = connObj )
+    result = self.insertJobInTaskQueue( jobId, tqId, jobPriority, checkTQExists = False, connObj = connObj )
+    if not result[ 'OK' ]:
+      return result
+    #if not newTq:
+    #  return result
+    return self.recalculateShares( tqDefDict[ 'OwnerDN' ], tqDefDict[ 'OwnerGroup' ], connObj = connObj )
 
   def insertJobInTaskQueue( self, jobId, tqId, jobPriority, checkTQExists = True, connObj = False ):
     """
@@ -306,11 +315,12 @@ class TaskQueueDB(DB):
     connObj = retVal[ 'Value' ]
     preJobSQL = "SELECT `tq_Jobs`.JobId, `tq_Jobs`.TQId FROM `tq_Jobs` WHERE `tq_Jobs`.TQId = %s"
     postJobSQL = " ORDER BY FLOOR( RAND() * `tq_Jobs`.Priority ) DESC, `tq_Jobs`.JobId ASC LIMIT %s" % numJobsPerTry
+    deletedTQ = False
     for matchTry in range( self.__maxMatchRetry ):
       if 'JobID' in tqMatchDict:
         # A certain JobID is required by the resource, so all TQ are to be considered
         retVal = self.matchAndGetQueue( tqMatchDict, numQueuesToGet = 0, skipMatchDictDef = True, connObj = connObj )
-        preJobSQL = "%s AND `tq_Jobs`.JobId = %s " % ( preJobSQL, tqMatchDict['JobID'] ) 
+        preJobSQL = "%s AND `tq_Jobs`.JobId = %s " % ( preJobSQL, tqMatchDict['JobID'] )
       else:
         retVal = self.matchAndGetQueue( tqMatchDict, numQueuesToGet = numQueuesPerTry, skipMatchDictDef = True, connObj = connObj )
       if not retVal[ 'OK' ]:
@@ -318,14 +328,16 @@ class TaskQueueDB(DB):
       tqList = retVal[ 'Value' ]
       if len( tqList ) == 0:
         return S_OK( { 'matchFound' : False } )
-      for tqId in tqList:
+      for tqId, tqOwnerDN, tqOwnerGroup in tqList:
         retVal = self._query( "%s %s" % ( preJobSQL % tqId, postJobSQL ), conn = connObj )
         if not retVal[ 'OK' ]:
           return S_ERROR( "Can't begin transaction for matching job: %s" % retVal[ 'Message' ] )
         jobTQList = [ ( row[0], row[1] ) for row in retVal[ 'Value' ] ]
         if len( jobTQList ) == 0:
           gLogger.warn( "Task queue %s seems to be empty, triggering a cleaning" % tqId )
-          self.deleteTaskQueueIfEmpty( tqId, connObj = connObj )
+          result = self.deleteTaskQueueIfEmpty( tqId, connObj = connObj )
+          if result[ 'OK' ]:
+            deletedTQ = result[ 'Value' ]
           continue
         while len( jobTQList ) > 0:
           jobId, tqId = jobTQList.pop( random.randint( 0, len( jobTQList ) - 1 ) )
@@ -333,8 +345,14 @@ class TaskQueueDB(DB):
           if not retVal[ 'OK' ]:
             return S_ERROR( "Could not take job %s out from the queue: %s" % ( jobId, retVal[ 'Message' ] ) )
           if retVal[ 'Value' ] == True :
-            self.deleteTaskQueueIfEmpty( tqId, connObj = connObj )
+            result = self.deleteTaskQueueIfEmpty( tqId, connObj = connObj )
+            if result[ 'OK' ]:
+              deletedTQ = result[ 'Value' ]
+            if deletedTQ:
+              self.recalculateShares( tqOwnerDN, tqOwnerGroup, connObj = connObj )
             return S_OK( { 'matchFound' : True, 'jobId' : jobId, 'taskQueueId' : tqId } )
+    if deletedTQ:
+      self.recalculateShares( tqOwnerDN, tqOwnerGroup, connObj = connObj )
     return S_ERROR( "Could not find a match after %s match retries" % self.__maxMatchRetry )
 
   def matchAndGetQueue( self, tqMatchDict, numQueuesToGet = 1, skipMatchDictDef = False, connObj = False ):
@@ -352,7 +370,7 @@ class TaskQueueDB(DB):
     retVal = self._query( matchSQL, conn = connObj )
     if not retVal[ 'OK' ]:
       return retVal
-    return S_OK( [ row[0] for row in retVal[ 'Value' ] ] )
+    return S_OK( [ (row[0],row[1],row[2]) for row in retVal[ 'Value' ] ] )
 
   def __generateTQMatchSQL( self, tqMatchDict, numQueuesToGet = 1 ):
     """
@@ -392,7 +410,8 @@ class TaskQueueDB(DB):
                                                                                                                  bannedTable,
                                                                                                                  bannedTable,
                                                                                                                  bannedTable ) )
-    tqSqlCmd = "SELECT `tq_TaskQueues`.TQId FROM %s WHERE %s" % ( ", ".join( sqlTables ), " AND ".join( sqlCondList ) )
+    tqSqlCmd = "SELECT `tq_TaskQueues`.TQId, `tq_TaskQueues`.OwnerDN, `tq_TaskQueues`.OwnerGroup, FROM %s WHERE %s" % ( ", ".join( sqlTables ),
+                                                                                                                      " AND ".join( sqlCondList ) )
     tqSqlCmd = "%s ORDER BY RAND() / `tq_TaskQueues`.Priority ASC" % tqSqlCmd
     if numQueuesToGet:
       tqSqlCmd = "%s LIMIT %s" % ( tqSqlCmd, numQueuesToGet )
@@ -510,3 +529,50 @@ class TaskQueueDB(DB):
     if tqNeedCleaning:
       self.cleanOrphanedTaskQueues()
     return S_OK( tqData )
+
+  def recalculateShares( self, userDN, userGroup, connObj = False ):
+    """
+    Recalculate the shares for a userDN/userGroup combo
+    """
+    share = gConfig.getValue( "/Security/Groups/%s/JobsShare" % userGroup, self.defaultGroupShare )
+    if Properties.JOB_SHARING in CS.getPropertiesForGroup( userGroup ):
+      #If group has JobSharing just set prio for that entry, userDN is irrelevant
+      return self.setPrioritiesForEntity( userDN, userGroup, share, connObj = connObj )
+
+    selSQL = "SELECT OwnerDN, COUNT(OwnerDN) FROM `tq_TaskQueues` WHERE OwnerGroup='%s' GROUP BY OwnerDN" % ( userGroup )
+    result = self._query( selSQL, conn = connObj )
+    if not result[ 'OK' ]:
+      return result
+    #Get owners in this group and the amount of times they appear
+    data = [ ( r[0], r[1] ) for r in result[ 'Value' ] if r ]
+    numOwners = len( data )
+    #If there are no owners do now
+    if numOwners == 0:
+      return S_OK()
+    #Split the share amongst the number of owners
+    share /= numOwners
+    owners = dict( data )
+    #IF the user is already known and has more than 1 tq, the rest of the users don't need to be modified
+    #(The number of owners didn't change)
+    if userDN in owners and owners[ userDN ] > 1:
+      return self.setPrioritiesForEntity( userDN, userGroup, share, connObj = connObj )
+    #Oops the number of owners may have changed so we recalculate the prio for all owners in the group
+    for userDN in owners:
+      self.setPrioritiesForEntity( userDN, userGroup, share, connObj = connObj )
+    return S_OK()
+
+
+  def setPrioritiesForEntity( self, userDN, userGroup, share, connObj = False ):
+    """
+    Set the priority for a userDN/userGroup combo given a splitted share
+    """
+    condSQL = "OwnerGroup='%s'" % userGroup
+    if Properties.JOB_SHARING not in CS.getPropertiesForGroup( userGroup ):
+      condSQL += " AND OwnerDN='%s'" % userDN
+    result = self._query( "SELECT %s/(SELECT COUNT(TQId) FROM `tq_TaskQueues` WHERE %s)" % ( share, condSQL ), conn = connObj )
+    if not result[ 'OK' ]:
+      return result
+    prio = result[ 'Value' ][0][0]
+    tqPriority  = min( max( int( prio ), self.__tqPriorityBoundaries[0]  ), self.__tqPriorityBoundaries[1]  )
+    updateSQL = "UPDATE `tq_TaskQueues` SET Priority=%s WHERE %s" % ( tqPriority, condSQL )
+    return self._update( updateSQL, conn = connObj )
