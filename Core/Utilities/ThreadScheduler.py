@@ -9,9 +9,9 @@ gSchedulerLock = Synchronizer()
 
 class ThreadScheduler:
 
-  def __init__( self, enableReactorThread = True ):
+  def __init__( self, enableReactorThread = True, minPeriod = 60 ):
     self.__thId = False
-    self.__minPeriod = 60
+    self.__minPeriod = minPeriod
     self.__taskDict = {}
     self.__hood = []
     self.__createReactorThread = enableReactorThread

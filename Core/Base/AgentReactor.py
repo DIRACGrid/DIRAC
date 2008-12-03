@@ -10,7 +10,8 @@ class AgentReactor:
     self.__agentModules = {}
     self.__tasks = {}
     self.__baseAgentName = baseAgentName
-    self.__scheduler = ThreadScheduler.ThreadScheduler( enableReactorThread = False )
+    self.__scheduler = ThreadScheduler.ThreadScheduler( enableReactorThread = False,
+                                                        minPeriod = 30 )
     self.__alive = True
 
   def loadAgentModules( self, modulesList, hideExceptions = False ):
