@@ -96,7 +96,7 @@ class ThreadScheduler:
     return S_OK()
 
   def __executorThread(self):
-    while len( self.__hood ) > 0:
+    while self.__hood and len( self.__hood ) > 0:
       timeToNext = self.executeNextTask()
       if timeToNext == None:
         break
