@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.44 2008/12/02 17:16:38 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.45 2008/12/04 14:10:41 acasajus Exp $
 # File :   JobSchedulingAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@
       meaningfully.
 
 """
-__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.44 2008/12/02 17:16:38 acasajus Exp $"
+__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.45 2008/12/04 14:10:41 acasajus Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
@@ -34,9 +34,9 @@ class JobSchedulingAgent(OptimizerModule):
     """ Initialization of the Agent.
     """
 
-    self.dataAgentName        = self.am_getCSOption('InputDataAgent','InputData')
-    self.stagingStatus        = self.am_getCSOption('StagingStatus','Staging')
-    self.stagingMinorStatus   = self.am_getCSOption('StagingMinorStatus','Request Sent')
+    self.dataAgentName        = self.am_getOption('InputDataAgent','InputData')
+    self.stagingStatus        = self.am_getOption('StagingStatus','Staging')
+    self.stagingMinorStatus   = self.am_getOption('StagingMinorStatus','Request Sent')
     self.stagerClient = StagerClient(True)
 
     return S_OK()
@@ -251,7 +251,7 @@ class JobSchedulingAgent(OptimizerModule):
     destinationSEs = destinationSEs['Value']
 
     #Ensure only tape SE files are staged
-    tapeSEs = self.am_getCSOption( 'TapeSE','-tape,-RDST,-RAW')
+    tapeSEs = self.am_getOption( 'TapeSE','-tape,-RDST,-RAW')
     if type(tapeSEs) == type(' '):
       tapeSEs = [x.strip() for x in string.split(tapeSEs,',')]
 

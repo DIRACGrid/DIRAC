@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/MightyOptimizer.py,v 1.9 2008/12/02 16:48:35 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/MightyOptimizer.py,v 1.10 2008/12/04 14:10:41 acasajus Exp $
 
 
 """  SuperOptimizer
@@ -28,7 +28,7 @@ class MightyOptimizer(AgentModule):
     self.jobDB = JobDB()
     self.jobLoggingDB = JobLoggingDB()
     self._optimizers = {}
-    self.am_setParam( "pollingTime", 30 )
+    self.am_setOption( "PollingTime", 30 )
     return S_OK()
 
   def execute( self ):
@@ -82,10 +82,10 @@ class MightyOptimizer(AgentModule):
       jobDef = result[ 'Value' ]
     #Does the optimizer require a proxy?
     shifterEnv = False
-    if optimizer.am_getParam( 'shifterProxy' ):
+    if optimizer.am_getModuleParam( 'shifterProxy' ):
       shifterEnv = True
-      result = setupShifterProxyInEnv( optimizer.am_getParam( 'shifterProxy' ),
-                                       optimizer.am_getParam( 'shifterProxyLocation' ) )
+      result = setupShifterProxyInEnv( optimizer.am_getModuleParam( 'shifterProxy' ),
+                                       optimizer.am_getModuleParam( 'shifterProxyLocation' ) )
       if not result[ 'OK' ]:
         return result
     #Call the initCycle function
@@ -134,7 +134,7 @@ class MightyOptimizer(AgentModule):
                               globals(),
                               locals(), agentName )
       optimizerClass = getattr( optimizerModule, agentName )
-      optimizer = optimizerClass( "WorkloadManagement/%s" % agentName, self.am_getParam( 'fullName' ) )
+      optimizer = optimizerClass( "WorkloadManagement/%s" % agentName, self.am_getModuleParam( 'fullName' ) )
       result = optimizer.am_initialize( self.jobDB, self.jobLoggingDB )
       if not result[ 'OK' ]:
         return S_ERROR( errorMsg = "Can't initialize optimizer %s: %s" % ( optimizerName, result[ 'Message' ] ) )

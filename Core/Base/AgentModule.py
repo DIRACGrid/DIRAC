@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/AgentModule.py,v 1.6 2008/12/04 11:57:07 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/AgentModule.py,v 1.7 2008/12/04 14:10:42 acasajus Exp $
 ########################################################################
 """ Base class for all agent modules
 
@@ -14,10 +14,11 @@
 
 """
 
-__RCSID__ = "$Id: AgentModule.py,v 1.6 2008/12/04 11:57:07 acasajus Exp $"
+__RCSID__ = "$Id: AgentModule.py,v 1.7 2008/12/04 14:10:42 acasajus Exp $"
 
 import os
 import threading
+import types
 import time
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, gMonitor
@@ -27,43 +28,39 @@ from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
 
 class AgentModule:
 
-  def __init__( self, agentName, baseAgentName, options = {} ):
+  def __init__( self, agentName, baseAgentName, properties = {} ):
     if agentName == baseAgentName:
       self.log = gLogger
       standaloneModule = True
     else:
       self.log = gLogger.getSubLogger( agentName, child = False )
       standaloneModule = False
-    self.__moduleParams = { 'monitoringEnabled' : True,
-                    'fullName' : agentName,
-                    'section' : PathFinder.getAgentSection( agentName ),
-                    'standalone' : standaloneModule }
-    self.__moduleParams[ 'system' ], self.__moduleParams[ 'agentName' ] = agentName.split("/")
-    self.__moduleParams[ 'enabled' ] = self.am_getCSOption( "Status", "Active" ).lower() in ( 'active' )
-    self.__moduleParams[ 'pollingTime' ] = self.am_getCSOption( "PollingTime", 120 )
-    self.__moduleParams[ 'maxCycles' ] = self.am_getCSOption( "MaxCycles", 0 )
-    self.__moduleParams[ 'cyclesDone' ] = 0
-    self.__moduleParams[ 'setup' ] = gConfig.getValue( "/DIRAC/Setup", "Unknown" )
-    self.__moduleParams[ 'controlDirectory' ] = os.path.join( DIRAC.rootPath,
-                                                            'control',
-                                                            os.path.join( *self.__moduleParams[ 'fullName' ].split("/") ) )
-    self.__moduleParams[ 'workDirectory' ] = os.path.join( DIRAC.rootPath,
-                                                            'work',
-                                                            os.path.join( *self.__moduleParams[ 'fullName' ].split("/") ) )
 
-    for key in options:
-      self.__moduleParams[ key ] = self.options[ key ]
-    self.__moduleParams[ 'executors' ] = [ ( self.execute, () ) ]
-    self.__moduleParams[ 'shifterProxy' ] = False
-    self.__moduleParams[ 'shifterProxyLocation' ] = os.path.join( self.__moduleParams[ 'workDirectory' ],
-                                                                '.shifterCred' )
+    self.__moduleProperties = { 'fullName' : agentName,
+                                'section' : PathFinder.getAgentSection( agentName ),
+                                'standalone' : standaloneModule,
+                                'cyclesDone' : 0,
+                                'setup' : gConfig.getValue( "/DIRAC/Setup", "Unknown" ) }
+    self.__moduleProperties[ 'system' ], self.__moduleProperties[ 'agentName' ] = agentName.split("/")
+    self.__configDefaults = {}
+    self.__configDefaults[ 'MonitoringEnabled'] = True
+    self.__configDefaults[ 'Enabled'] = self.am_getOption( "Status", "Active" ).lower() in ( 'active' )
+    self.__configDefaults[ 'PollingTime'] = self.am_getOption( "PollingTime", 120 )
+    self.__configDefaults[ 'MaxCycles'] = self.am_getOption( "MaxCycles", 0 )
+    self.__configDefaults[ 'ControlDirectory' ] = os.path.join( DIRAC.rootPath,
+                                                            'control',
+                                                            os.path.join( *self.__moduleProperties[ 'fullName' ].split("/") ) )
+    self.__configDefaults[ 'WorkDirectory' ] = os.path.join( DIRAC.rootPath,
+                                                            'work',
+                                                            os.path.join( *self.__moduleProperties[ 'fullName' ].split("/") ) )
+
+    for key in properties:
+      self.__moduleProperties[ key ] = self.properties[ key ]
+    self.__moduleProperties[ 'executors' ] = [ ( self.execute, () ) ]
+    self.__moduleProperties[ 'shifterProxy' ] = False
+    self.__moduleProperties[ 'shifterProxyLocation' ] = False
     self.__initializeMonitor()
     self.__initialized = False
-    self.__translateAgentParamsToAttrs()
-
-  def __translateAgentParamsToAttrs(self):
-    for key in self.__moduleParams:
-      setattr( self, key, self.__moduleParams[ key ] )
 
   def am_initialize( self, *initArgs ):
     result = self.initialize( *initArgs )
@@ -71,71 +68,87 @@ class AgentModule:
       return S_ERROR( "Error while initializing %s module: initialize must return S_OK/S_ERROR" % agentName )
     if not result[ 'OK' ]:
       return S_ERROR( "Error while initializing %s: %s"  % ( agentName, result[ 'Message' ] ) )
-    self.__checkAgentDir( 'controlDirectory' )
-    self.__checkAgentDir( 'workDirectory' )
-    if self.__moduleParams[ 'monitoringEnabled' ]:
+    self.__checkAgentDir( 'ControlDirectory' )
+    self.__checkAgentDir( 'WorkDirectory' )
+    if not self.__moduleProperties[ 'shifterProxyLocation' ]:
+      self.__moduleProperties[ 'shifterProxyLocation' ] = os.path.join( self.am_getOption( 'WorkDirectory' ),
+                                                                        '.shifterCred' )
+    if self.am_MonitoringEnabled():
       self.monitor.enable()
-    if len( self.__moduleParams[ 'executors' ] ) < 1:
+    if len( self.__moduleProperties[ 'executors' ] ) < 1:
       return S_ERROR( "At least one executor method has to be defined" )
-    if not self.__moduleParams[ 'enabled' ]:
+    if not self.am_Enabled():
       return S_ERROR( "Agent is disabled via the configuration")
     self.log.info( "="*40 )
-    self.log.info( "Loaded agent module %s" % self.__moduleParams[ 'fullName' ] )
+    self.log.info( "Loaded agent module %s" % self.__moduleProperties[ 'fullName' ] )
     self.log.info( " Site: %s" % gConfig.getValue( '/LocalSite/Site', 'Unknown' ) )
     self.log.info( " Setup: %s" % gConfig.getValue( "/DIRAC/Setup" ) )
     self.log.info( " Version: %s " % __RCSID__)
     self.log.info( " DIRAC version: %s" % DIRAC.version )
     self.log.info( " DIRAC platform: %s" % DIRAC.platform )
-    self.log.info( " Polling time: %s" % self.am_getPollingTime() )
-    self.log.info( " Control dir: %s" % self.__moduleParams[ 'controlDirectory' ] )
-    self.log.info( " Work dir: %s" % self.__moduleParams[ 'workDirectory' ] )
-    if self.am_getMaxCycles() > 0:
+    self.log.info( " Polling time: %s" % self.am_getOption( 'PollingTime' ) )
+    self.log.info( " Control dir: %s" % self.am_getOption( 'ControlDirectory' ) )
+    self.log.info( " Work dir: %s" % self.am_getOption( 'WorkDirectory' ) )
+    if self.am_getOption( 'MaxCycles' ) > 0:
       self.log.info( " Cycles: %s" % self.am_getMaxCycles() )
     else:
       self.log.info( " Cycles: unlimited" )
     self.log.info( "="*40 )
-    self.__translateAgentParamsToAttrs()
     self.__initialized = True
     return S_OK()
 
   def __checkAgentDir( self, name ):
-    if name in self.__moduleParams:
-      defaultPath = self.__moduleParams[ name ]
-    else:
-      defaultPath = os.path.join( DIRAC.rootPath, name, os.path.join( *self.__moduleParams[ 'fullName' ].split("/") ) )
-    self.__moduleParams[ name ] = self.am_getCSOption( name.capitalize(), defaultPath )
+    path = self.am_getOption( name )
     try:
-      os.makedirs( self.__moduleParams[ name ] )
+      os.makedirs( path )
     except:
       pass
-    if not os.path.isdir( self.__moduleParams[ name ] ):
-      raise Exception('Can not create %s at %s' % ( name, self.__moduleParams[ name ] ) )
+    if not os.path.isdir( path ):
+      raise Exception('Can not create %s at %s' % ( name, path ) )
 
-  def am_getCSOption( self, optionName, defaultValue = False ):
-    return gConfig.getValue( "%s/%s" % ( self.__moduleParams[ 'section' ], optionName ), defaultValue )
+  def am_getOption( self, optionName, defaultValue = False ):
+    if not defaultValue:
+      if optionName in self.__configDefaults:
+        defaultValue = self.__configDefaults[ optionName ]
+    return gConfig.getValue( "%s/%s" % ( self.__moduleProperties[ 'section' ], optionName ), defaultValue )
 
-  def am_getPollingTime( self ):
-    return self.__moduleParams[ 'pollingTime' ]
+  def am_setOption( self, optionName, value ):
+    self.__configDefaults[ optionName ] = value
 
-  def am_getMaxCycles( self ):
-    return self.__moduleParams[ 'maxCycles' ]
+  def am_getModuleParam( self, optionName ):
+    return self.__moduleProperties[ optionName ]
 
-  def am_getParam( self, optionName ):
-    return self.__moduleParams[ optionName ]
+  def am_setModuleParam( self, optionName, value ):
+    self.__moduleProperties[ optionName ] = value
 
-  def am_setParam( self, optionName, value ):
-    self.__moduleParams[ optionName ] = value
+  def am_getPollingTime(self):
+    return self.am_getOption( "PollingTime" )
+
+  def am_getMaxCycles(self):
+    return self.am_getOption( "MaxCycles" )
+
+  def am_Enabled(self):
+    enabled = self.am_getOption( "Enabled" )
+    if type( enabled ) == types.BooleanType:
+      return enabled
+    return str( enabled ).lower() in ( "y", "yes", "true" )
+
+  def am_MonitoringEnabled(self):
+    enabled = self.am_getOption( "MonitoringEnabled" )
+    if type( enabled ) == types.BooleanType:
+      return enabled
+    return str( enabled ).lower() in ( "y", "yes", "true" )
 
   def __initializeMonitor( self ):
     """
     Initialize the system monitor client
     """
-    if self.am_getParam( 'standalone' ):
+    if self.__moduleProperties[ 'standalone' ]:
       self.monitor = gMonitor
     else:
       self.monitor = MonitoringClient()
     self.monitor.setComponentType( self.monitor.COMPONENT_AGENT )
-    self.monitor.setComponentName( self.am_getParam( 'fullName' ) )
+    self.monitor.setComponentName( self.__moduleProperties[ 'fullName' ] )
     self.monitor.initialize()
     self.monitor.registerActivity('CPU',"CPU Usage",'Framework',"CPU,%",self.monitor.OP_MEAN,600)
     self.monitor.registerActivity('MEM',"Memory Usage",'Framework','Memory,MB',self.monitor.OP_MEAN,600)
@@ -148,7 +161,7 @@ class AgentModule:
     try:
       result = functor( *args )
       if result == None:
-        return S_ERROR( "%s method for %s module has to return S_OK/S_ERROR" % ( name, self.__moduleParams[ 'fullName' ] ) )
+        return S_ERROR( "%s method for %s module has to return S_OK/S_ERROR" % ( name, self.__moduleProperties[ 'fullName' ] ) )
       return result
     except Exception, e:
       self.log.exception( "Exception while calling %s method" % name )
@@ -156,16 +169,16 @@ class AgentModule:
 
   def am_go( self ):
     #Set the shifter proxy if required
-    if self.__moduleParams[ 'shifterProxy' ]:
-      result = setupShifterProxyInEnv( self.__moduleParams[ 'shifterProxy' ],
-                                       self.__moduleParams[ 'shifterProxyLocation' ] )
+    if self.__moduleProperties[ 'shifterProxy' ]:
+      result = setupShifterProxyInEnv( self.__moduleProperties[ 'shifterProxy' ],
+                                       self.__moduleProperties[ 'shifterProxyLocation' ] )
       if not result[ 'OK' ]:
         return result
     self.log.info( "-"*40 )
-    self.log.info( "Starting cycle for module %s" % self.__moduleParams[ 'fullName' ] )
+    self.log.info( "Starting cycle for module %s" % self.__moduleProperties[ 'fullName' ] )
     mD = self.am_getMaxCycles()
     if mD > 0:
-      cD = self.self.__moduleParams[ 'cyclesDone' ]
+      cD = self.self.__moduleProperties[ 'cyclesDone' ]
       self.log.info( "Remaining %s of % cycles" % ( mD - cD, mD ) )
     self.log.info( "-"*40 )
     elapsedTime = time.time()
@@ -174,12 +187,12 @@ class AgentModule:
     if cpuStats:
         self.__endReportToMonitoring( *cpuStats )
     #Incrmenent counters
-    self.__moduleParams[ 'cyclesDone' ] += 1
+    self.__moduleProperties[ 'cyclesDone' ] += 1
     #Show status
     elapsedTime = time.time() - elapsedTime
     self.log.info( "-"*40 )
-    self.log.info( "Agent module %s run summary" % self.__moduleParams[ 'fullName' ] )
-    self.log.info( " Executed %s times previously" % self.__moduleParams[ 'cyclesDone' ] )
+    self.log.info( "Agent module %s run summary" % self.__moduleProperties[ 'fullName' ] )
+    self.log.info( " Executed %s times previously" % self.__moduleProperties[ 'cyclesDone' ] )
     self.log.info( " Cycle took %.2f seconds" % elapsedTime )
     if cycleResult[ 'OK' ]:
       self.log.info( " Cycle was successful" )
@@ -241,7 +254,7 @@ class AgentModule:
     if not result[ 'OK' ]:
       return result
     #Launch executor functions
-    executors = self.__moduleParams[ 'executors' ]
+    executors = self.__moduleProperties[ 'executors' ]
     if len( executors ) == 1:
       result = self.am_secureCall( executors[0][0], executors[0][1] )
       if not result[ 'OK' ]:

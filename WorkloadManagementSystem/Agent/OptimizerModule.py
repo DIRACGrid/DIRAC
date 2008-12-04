@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/OptimizerModule.py,v 1.5 2008/12/02 16:48:35 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/OptimizerModule.py,v 1.6 2008/12/04 14:10:41 acasajus Exp $
 # File :   Optimizer.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
      optimizer instances and associated actions are performed there.
 """
 
-__RCSID__ = "$Id: OptimizerModule.py,v 1.5 2008/12/02 16:48:35 acasajus Exp $"
+__RCSID__ = "$Id: OptimizerModule.py,v 1.6 2008/12/04 14:10:41 acasajus Exp $"
 
 from DIRAC.WorkloadManagementSystem.DB.JobDB         import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB  import JobLoggingDB
@@ -36,16 +36,16 @@ class OptimizerModule(AgentModule):
       self.logDB = logDB
 
     trailing = "Agent"
-    optimizerName = self.am_getParam( 'agentName' )
+    optimizerName = self.am_getModuleParam( 'agentName' )
     if optimizerName[ -len( trailing ):].find( trailing ) == 0:
       optimizerName = optimizerName[ :-len( trailing ) ]
-    self.am_setParam( 'optimizerName', optimizerName )
+    self.am_setModuleParam( 'optimizerName', optimizerName )
 
-    self.startingMinorStatus = self.am_getParam( 'optimizerName' )
+    self.startingMinorStatus = self.am_getModuleParam( 'optimizerName' )
     self.startingMajorStatus = "Checking"
-    self.failedStatus        = self.am_getCSOption( "FailedJobStatus" , 'Failed' )
+    self.failedStatus        = self.am_getOption( "FailedJobStatus" , 'Failed' )
     self.requiredJobInfo = 'jdl'
-    self.am_setParam( "pollingTime", 30 )
+    self.am_setOption( "PollingTime", 30 )
 
     return self.initializeOptimizer()
 
@@ -87,6 +87,7 @@ class OptimizerModule(AgentModule):
 
   #############################################################################
   def optimizeJob( self, job, classAdJob ):
+    self.log.info('Job %s will be processed by %sAgent' % ( job, self.am_getModuleParam( 'optimizerName' ) ) )
     result = self.checkJob( job, classAdJob )
     if not result['OK']:
       self.setFailedJob( job, result['Message'] )
@@ -142,7 +143,7 @@ class OptimizerModule(AgentModule):
        be used for job scheduling and TURL queries on the WN.
     """
     self.log.verbose("self.jobDB.setJobOptParameter(%s,'%s','%s')" %(job,reportName,value))
-    if not self.am_getParam( "enabled" ):
+    if not self.am_Enabled():
       return S_OK()
     return self.jobDB.setJobOptParameter(job,reportName,str(value))
 
@@ -152,7 +153,7 @@ class OptimizerModule(AgentModule):
        one of the optimizers.
     """
     self.log.verbose("self.jobDB.setOptimizerChain(%s,%s)" %(job,value))
-    if not self.am_getParam( "enabled" ):
+    if not self.am_Enabled():
       return S_OK()
     return self.jobDB.setOptimizerChain(job,value)
 
@@ -165,12 +166,12 @@ class OptimizerModule(AgentModule):
 
     result = self.logDB.addLoggingRecord( job, status=self.startingMajorStatus,
                                                minor=self.startingMinorStatus,
-                                               source=self.am_getParam( "optimizerName" ) )
+                                               source=self.am_getModuleParam( "optimizerName" ) )
     if not result['OK']:
       self.log.warn( result['Message'] )
 
-    self.log.verbose("self.jobDB.setNextOptimizer(%s,'%s')" %( job, self.am_getParam( "optimizerName" ) ) )
-    return self.jobDB.setNextOptimizer( job, self.am_getParam( "optimizerName" ) )
+    self.log.verbose("self.jobDB.setNextOptimizer(%s,'%s')" %( job, self.am_getModuleParam( "optimizerName" ) ) )
+    return self.jobDB.setNextOptimizer( job, self.am_getModuleParam( "optimizerName" ) )
 
 
   #############################################################################
@@ -179,7 +180,7 @@ class OptimizerModule(AgentModule):
        used to fail jobs due to the optimizer chain.
     """
     self.log.verbose("self.jobDB.setJobAttribute(%s,'Status','%s',update=True)" %(job,status))
-    if not self.am_getParam( "enabled" ):
+    if not self.am_Enabled():
       return S_OK()
 
     result = self.jobDB.setJobAttribute( job, 'Status', status, update=True )
@@ -192,7 +193,7 @@ class OptimizerModule(AgentModule):
       if not result[ 'OK' ]:
         return result
 
-    result = self.logDB.addLoggingRecord( job, status = status, minor = minorStatus, source = self.am_getParam( 'optimizerName' ) )
+    result = self.logDB.addLoggingRecord( job, status = status, minor = minorStatus, source = self.am_getModuleParam( 'optimizerName' ) )
     if not result['OK']:
       self.log.warn (result['Message'] )
 
@@ -203,7 +204,7 @@ class OptimizerModule(AgentModule):
     """This method updates a job parameter in the JobDB.
     """
     self.log.verbose("self.jobDB.setJobParameter(%s,'%s','%s')" %(job,reportName,value))
-    if not self.am_getParam( "enabled" ):
+    if not self.am_Enabled():
       return S_OK()
     return self.jobDB.setJobParameter(job,reportName,value)
 
@@ -212,7 +213,7 @@ class OptimizerModule(AgentModule):
     """This method moves the job to the failed status
     """
     self.log.verbose("self.updateJobStatus(%s,'%s','%s')" % ( job, self.failedStatus, msg ) )
-    if not self.am_getParam( "enabled" ):
+    if not self.am_Enabled():
       return S_OK()
     self.updateJobStatus( job, self.failedStatus, msg )
 

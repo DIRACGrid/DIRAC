@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.32 2008/12/02 10:07:29 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.33 2008/12/04 14:10:42 acasajus Exp $
 # File :   InputDataAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
 
 """
 
-__RCSID__ = "$Id: InputDataAgent.py,v 1.32 2008/12/02 10:07:29 acasajus Exp $"
+__RCSID__ = "$Id: InputDataAgent.py,v 1.33 2008/12/04 14:10:42 acasajus Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
 from DIRAC.Core.DISET.RPCClient                            import RPCClient
@@ -26,13 +26,13 @@ class InputDataAgent(OptimizerModule):
   def initializeOptimizer(self):
     """Initialize specific parameters for JobSanityAgent.
     """
-    self.failedMinorStatus = self.am_getCSOption( '/FailedJobStatus', 'Input Data Not Available' )
+    self.failedMinorStatus = self.am_getOption( '/FailedJobStatus', 'Input Data Not Available' )
     #this will ignore failover SE files
-    self.diskSE            = self.am_getCSOption( '/DiskSE',['-disk','-DST','-USER'] )
-    self.tapeSE            = self.am_getCSOption( '/TapeSE',['-tape','-RDST','-RAW'] )
+    self.diskSE            = self.am_getOption( '/DiskSE',['-disk','-DST','-USER'] )
+    self.tapeSE            = self.am_getOption( '/TapeSE',['-tape','-RDST','-RAW'] )
 
     #Define the shifter proxy needed
-    self.am_setParam( "shifterProxy", "ProductionManager" )
+    self.am_setModuleParam( "shifterProxy", "ProductionManager" )
 
     try:
       from DIRAC.DataManagementSystem.Client.Catalog.LcgFileCatalogCombinedClient import LcgFileCatalogCombinedClient

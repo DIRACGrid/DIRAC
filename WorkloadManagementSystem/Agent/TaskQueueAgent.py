@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueAgent.py,v 1.21 2008/12/03 19:51:23 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueAgent.py,v 1.22 2008/12/04 14:10:41 acasajus Exp $
 # File :   TaskQueueAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
      into a Task Queue.
 """
 
-__RCSID__ = "$Id: TaskQueueAgent.py,v 1.21 2008/12/03 19:51:23 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueAgent.py,v 1.22 2008/12/04 14:10:41 acasajus Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB         import TaskQueueDB
@@ -24,8 +24,8 @@ class TaskQueueAgent(OptimizerModule):
   def initializeOptimizer(self):
     """Initialize specific parameters for TaskQueueAgent.
     """
-    self.waitingStatus      = self.am_getCSOption( 'WaitingStatus', 'Waiting' )
-    self.waitingMinorStatus = self.am_getCSOption( 'WaitingMinorStatus', 'Pilot Agent Submission' )
+    self.waitingStatus      = self.am_getOption( 'WaitingStatus', 'Waiting' )
+    self.waitingMinorStatus = self.am_getOption( 'WaitingMinorStatus', 'Pilot Agent Submission' )
     try:
       self.taskQueueDB        = TaskQueueDB()
     except Exception, e:
@@ -82,7 +82,7 @@ class TaskQueueAgent(OptimizerModule):
       self.log.warn(requirements)
       return S_ERROR("Failed to obtain a task queue")
 
-    if self.am_getParam( "enabled" ):
+    if self.am_Enabled():
       result = self.jobDB.addJobToQueue(job,queueID,jobPriority)
       if not result['OK']:
         return result

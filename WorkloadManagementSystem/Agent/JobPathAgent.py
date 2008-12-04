@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobPathAgent.py,v 1.11 2008/12/02 10:07:29 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobPathAgent.py,v 1.12 2008/12/04 14:10:41 acasajus Exp $
 # File :   JobPathAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -12,7 +12,7 @@
       path through the optimizers.
 
 """
-__RCSID__ = "$Id: JobPathAgent.py,v 1.11 2008/12/02 10:07:29 acasajus Exp $"
+__RCSID__ = "$Id: JobPathAgent.py,v 1.12 2008/12/04 14:10:41 acasajus Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
@@ -36,28 +36,20 @@ class JobPathAgent(OptimizerModule):
 
   def beginExecution(self):
 
-    self.basePath     = self.am_getCSOption( 'BasePath',  ['JobPath','JobSanity'] )
-    self.inputData    = self.am_getCSOption( 'InputData', ['InputData'] )
-    self.endPath      = self.am_getCSOption( 'EndPath',   ['JobScheduling','TaskQueue'] )
-    self.voPlugin     = self.am_getCSOption( 'VOPlugin',  'WorkflowLib.Utilities.JobPathResolution' )
+    self.basePath     = self.am_getOption( 'BasePath',  ['JobPath','JobSanity'] )
+    self.inputData    = self.am_getOption( 'InputData', ['InputData'] )
+    self.endPath      = self.am_getOption( 'EndPath',   ['JobScheduling','TaskQueue'] )
+    self.voPlugin     = self.am_getOption( 'VOPlugin',  'WorkflowLib.Utilities.JobPathResolution' )
 
     return S_OK()
 
   #############################################################################
-  def checkJob( self, job, classad ):
+  def checkJob( self, job, classAdJob ):
     """This method controls the checking of the job.
     """
-    self.log.info('Job %s will be processed by %sAgent' % (job,self.optimizerName))
-    return self.setJobPath( job, classad )
-
-  #############################################################################
-  def setJobPath( self, job, classadJob ):
-    """This method controls the checking of the job.
-    """
-
     #Check if job defines a path itself
     # FIXME: only some group might be able to overwrite the jobPath
-    jobPath = classadJob.get_expression('JobPath').replace('"','').replace('Unknown','')
+    jobPath = classAdJob.get_expression('JobPath').replace('"','').replace('Unknown','')
     if jobPath:
       self.log.info('Job %s defines its own optimizer chain %s' %(job,jobPath))
       return self.processJob(job,List.fromChar(jobPath))
@@ -65,7 +57,7 @@ class JobPathAgent(OptimizerModule):
     #If no path, construct based on JDL and VO path module if present
     path = list(self.basePath)
     if self.voPlugin:
-      argumentsDict = {'JobID':job,'ClassAd':classadJob,'ConfigPath':self.am_getParam( "section" )}
+      argumentsDict = {'JobID':job,'ClassAd':classAdJob,'ConfigPath':self.am_getModuleParam( "section" )}
       moduleFactory = ModuleFactory()
       moduleInstance = moduleFactory.getModule(self.voPlugin,argumentsDict)
       if not moduleInstance['OK']:

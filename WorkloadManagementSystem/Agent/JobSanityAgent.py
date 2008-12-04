@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSanityAgent.py,v 1.14 2008/12/02 10:07:29 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSanityAgent.py,v 1.15 2008/12/04 14:10:41 acasajus Exp $
 # File :   JobSanityAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,7 +13,7 @@
        - Input sandbox not correctly uploaded.
 """
 
-__RCSID__ = "$Id: JobSanityAgent.py,v 1.14 2008/12/02 10:07:29 acasajus Exp $"
+__RCSID__ = "$Id: JobSanityAgent.py,v 1.15 2008/12/04 14:10:41 acasajus Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
@@ -30,14 +30,14 @@ class JobSanityAgent(OptimizerModule):
     """Initialize specific parameters for JobSanityAgent.
     """
     #Test control flags N.B. JDL check is mandatory
-    self.inputDataCheck    = self.am_getCSOption( 'InputDataCheck', 1 )
-    self.outputDataCheck   = self.am_getCSOption( 'OutputDataCheck', 0 )
-    self.inputSandboxCheck = self.am_getCSOption( 'InputSandboxCheck', 0 )
-    self.platformCheck     = self.am_getCSOption( 'PlatformCheck', 0 )
+    self.inputDataCheck    = self.am_getOption( 'InputDataCheck', 1 )
+    self.outputDataCheck   = self.am_getOption( 'OutputDataCheck', 0 )
+    self.inputSandboxCheck = self.am_getOption( 'InputSandboxCheck', 0 )
+    self.platformCheck     = self.am_getOption( 'PlatformCheck', 0 )
     #Other parameters
-    self.voName               = self.am_getCSOption( 'VO', 'lhcb' )
-    self.successStatus        = self.am_getCSOption( 'SuccessfulJobStatus', 'OutputReady' )
-    self.maxDataPerJob        = self.am_getCSOption( 'MaxInputDataPerJob', 200 )
+    self.voName               = self.am_getOption( 'VO', 'lhcb' )
+    self.successStatus        = self.am_getOption( 'SuccessfulJobStatus', 'OutputReady' )
+    self.maxDataPerJob        = self.am_getOption( 'MaxInputDataPerJob', 200 )
 
     self.log.debug(   'JDL Check          ==>  Enabled'                    )
     if self.inputDataCheck:
@@ -66,7 +66,6 @@ class JobSanityAgent(OptimizerModule):
         be easily extended in the future to accommodate
         any other potential checks.
     """
-    self.log.info('Job %s will be processed by %sAgent' % (job,self.optimizerName))
     #Job JDL check
     message = "Job: %s JDL: OK," % job
     self.log.debug( "Checking Loop Starts for job %s" % job )

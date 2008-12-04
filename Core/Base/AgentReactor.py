@@ -77,7 +77,7 @@ class AgentReactor:
   def __checkControlDir( self ):
     for agentName in self.__agentModules:
       agent = self.__agentModules[ agentName ][ 'instance' ]
-      stopAgentFile = os.path.join( agent.am_getParam( 'controlDirectory' ), 'stop_agent' )
+      stopAgentFile = os.path.join( agent.am_getOption( 'ControlDirectory' ), 'stop_agent' )
       if os.path.exists( stopAgentFile ):
         gLogger.info( "Stopping agent module %s because of control file %s" % ( agentName, stopAgentFile ) )
         self.__scheduler.removeTask( self.__agentModules[ agentName ][ 'taskId ' ] )
