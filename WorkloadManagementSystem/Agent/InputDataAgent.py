@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.33 2008/12/04 14:10:42 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.34 2008/12/04 15:26:57 acasajus Exp $
 # File :   InputDataAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
 
 """
 
-__RCSID__ = "$Id: InputDataAgent.py,v 1.33 2008/12/04 14:10:42 acasajus Exp $"
+__RCSID__ = "$Id: InputDataAgent.py,v 1.34 2008/12/04 15:26:57 acasajus Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
 from DIRAC.Core.DISET.RPCClient                            import RPCClient
@@ -65,7 +65,7 @@ class InputDataAgent(OptimizerModule):
       self.log.warn( result['Message'] )
       return result
     resolvedData = result['Value']
-    result = self.setOptimizerJobInfo(job,self.optimizerName,resolvedData)
+    result = self.setOptimizerJobInfo(job,self.am_getModuleParam( 'optimizerName' ),resolvedData)
     if not result['OK']:
       self.log.warn( result['Message'] )
       return result
@@ -104,7 +104,7 @@ class InputDataAgent(OptimizerModule):
       self.log.info('Found %s problematic LFN(s) for job %s' % (badLFNCount,job) )
       param = string.join(badLFNs,'\n')
       self.log.info(param)
-      result = self.setJobParam(job,self.optimizerName,param)
+      result = self.setJobParam(job,self.am_getModuleParam( 'optimizerName' ),param)
       if not result['OK']:
         self.log.warn(result['Message'])
       return S_ERROR('Input Data Not Available')
