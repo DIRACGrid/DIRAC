@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: MatcherHandler.py,v 1.30 2008/12/04 15:05:02 acasajus Exp $
+# $Id: MatcherHandler.py,v 1.31 2008/12/04 15:25:20 acasajus Exp $
 ########################################################################
 """
 Matcher class. It matches Agent Site capabilities to job requirements.
@@ -7,7 +7,7 @@ It also provides an XMLRPC interface to the Matcher
 
 """
 
-__RCSID__ = "$Id: MatcherHandler.py,v 1.30 2008/12/04 15:05:02 acasajus Exp $"
+__RCSID__ = "$Id: MatcherHandler.py,v 1.31 2008/12/04 15:25:20 acasajus Exp $"
 
 import re, os, sys, time
 import string
@@ -17,7 +17,7 @@ from   types import *
 import threading
 
 from DIRAC.Core.DISET.RequestHandler                   import RequestHandler
-#from DIRAC.Core.Utilities.ClassAd.ClassAdCondor        import ClassAd, matchClassAd
+from DIRAC.Core.Utilities.ClassAd.ClassAdCondor        import ClassAd, matchClassAd
 from DIRAC                                             import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.DB.JobDB           import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB    import JobLoggingDB
