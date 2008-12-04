@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.30 2008/12/04 14:05:54 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.31 2008/12/04 15:04:40 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.30 2008/12/04 14:05:54 atsareg Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.31 2008/12/04 15:04:40 acasajus Exp $"
 
 import time
 import types
@@ -29,6 +29,7 @@ class TaskQueueDB(DB):
     self.__maxMatchRetry = 3
     self.__jobPriorityBoundaries = ( 1, 10 )
     self.__tqPriorityBoundaries = ( 1, 10000 )
+    self.__groupShares = {}
     retVal = self.__initializeDB()
     if not retVal[ 'OK' ]:
       raise Exception( "Can't create tables: %s" % retVal[ 'Message' ])
@@ -244,7 +245,7 @@ class TaskQueueDB(DB):
       return result
     #if not newTq:
     #  return result
-    return self.recalculateShares( tqDefDict[ 'OwnerDN' ], tqDefDict[ 'OwnerGroup' ], connObj = connObj )
+    return self.recalculateSharesForEntity( tqDefDict[ 'OwnerDN' ], tqDefDict[ 'OwnerGroup' ], connObj = connObj )
 
   def insertJobInTaskQueue( self, jobId, tqId, jobPriority, checkTQExists = True, connObj = False ):
     """
@@ -349,10 +350,10 @@ class TaskQueueDB(DB):
             if result[ 'OK' ]:
               deletedTQ = result[ 'Value' ]
             if deletedTQ:
-              self.recalculateShares( tqOwnerDN, tqOwnerGroup, connObj = connObj )
+              self.recalculateSharesForEntity( tqOwnerDN, tqOwnerGroup, connObj = connObj )
             return S_OK( { 'matchFound' : True, 'jobId' : jobId, 'taskQueueId' : tqId } )
     if deletedTQ:
-      self.recalculateShares( tqOwnerDN, tqOwnerGroup, connObj = connObj )
+      self.recalculateSharesForEntity( tqOwnerDN, tqOwnerGroup, connObj = connObj )
     return S_ERROR( "Could not find a match after %s match retries" % self.__maxMatchRetry )
 
   def matchAndGetQueue( self, tqMatchDict, numQueuesToGet = 1, skipMatchDictDef = False, connObj = False ):
@@ -530,7 +531,22 @@ class TaskQueueDB(DB):
       self.cleanOrphanedTaskQueues()
     return S_OK( tqData )
 
-  def recalculateShares( self, userDN, userGroup, connObj = False ):
+  def recalculateSharesForAll(self):
+    """
+    Recalculate all priorities for TQ's
+    """
+    retVal = self._getConnection()
+    if not retVal[ 'OK' ]:
+      return S_ERROR( "Can't insert job: %s" % retVal[ 'Message' ] )
+    connObj = retVal[ 'Value' ]
+    result = self._query( "SELECT DISTINCT( OwnerGroup ) FROM `tq_TaskQueues`" )
+    if not result[ 'OK' ]:
+      return result
+    for group in [ r[0] for r in result[ 'Value' ] ]:
+      self.recalculateSharesForEntity( "nobody", group )
+    return S_OK()
+
+  def recalculateSharesForEntity( self, userDN, userGroup, connObj = False ):
     """
     Recalculate the shares for a userDN/userGroup combo
     """
@@ -561,7 +577,6 @@ class TaskQueueDB(DB):
       self.setPrioritiesForEntity( userDN, userGroup, share, connObj = connObj )
     return S_OK()
 
-
   def setPrioritiesForEntity( self, userDN, userGroup, share, connObj = False ):
     """
     Set the priority for a userDN/userGroup combo given a splitted share
@@ -576,3 +591,27 @@ class TaskQueueDB(DB):
     tqPriority  = min( max( int( prio ), self.__tqPriorityBoundaries[0]  ), self.__tqPriorityBoundaries[1]  )
     updateSQL = "UPDATE `tq_TaskQueues` SET Priority=%s WHERE %s" % ( tqPriority, condSQL )
     return self._update( updateSQL, conn = connObj )
+
+  def getGroupShares(self):
+    """
+    Get all the shares as a DICT
+    """
+    result = gConfig.getSections( "/Security/Groups" )
+    if result[ 'OK' ]:
+      groups = result[ 'Value' ]
+    else:
+      groups = []
+    shares = {}
+    for group in groups:
+      shares[ group ] = gConfig.getValue( "/Security/Groups/%s/JobsShare" % group, self.defaultGroupShare )
+    return shares
+
+  def propagateSharesIfChanged(self):
+    """
+    If the shares have changed in the CS, recalculate priorities
+    """
+    shares = self.getGroupShares()
+    if shares == self.__groupShares:
+      return S_OK()
+    self.__groupShares = shares
+    return self.recalculateSharesForAll()
