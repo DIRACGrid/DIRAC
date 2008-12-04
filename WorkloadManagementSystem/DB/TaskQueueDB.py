@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.31 2008/12/04 15:04:40 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.32 2008/12/04 15:23:41 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.31 2008/12/04 15:04:40 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.32 2008/12/04 15:23:41 acasajus Exp $"
 
 import time
 import types
@@ -16,7 +16,7 @@ from DIRAC.Core.Security import Properties, CS
 
 class TaskQueueDB(DB):
 
-  defaultGroupShare = 100
+  defaultGroupShare = 1000
 
   def __init__( self, maxQueueSize = 10 ):
     random.seed()
