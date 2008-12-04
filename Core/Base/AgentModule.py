@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/AgentModule.py,v 1.7 2008/12/04 14:10:42 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/AgentModule.py,v 1.8 2008/12/04 18:24:15 acasajus Exp $
 ########################################################################
 """ Base class for all agent modules
 
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: AgentModule.py,v 1.7 2008/12/04 14:10:42 acasajus Exp $"
+__RCSID__ = "$Id: AgentModule.py,v 1.8 2008/12/04 18:24:15 acasajus Exp $"
 
 import os
 import threading
@@ -107,6 +107,8 @@ class AgentModule:
       raise Exception('Can not create %s at %s' % ( name, path ) )
 
   def am_getOption( self, optionName, defaultValue = False ):
+    if optionName and optionName[0] == "/":
+      return gConfig.getValue( optionName, defaultValue )
     if not defaultValue:
       if optionName in self.__configDefaults:
         defaultValue = self.__configDefaults[ optionName ]
@@ -129,15 +131,10 @@ class AgentModule:
 
   def am_Enabled(self):
     enabled = self.am_getOption( "Enabled" )
-    if type( enabled ) == types.BooleanType:
-      return enabled
-    return str( enabled ).lower() in ( "y", "yes", "true" )
+    return self.am_getOption( "Enabled" )
 
   def am_MonitoringEnabled(self):
-    enabled = self.am_getOption( "MonitoringEnabled" )
-    if type( enabled ) == types.BooleanType:
-      return enabled
-    return str( enabled ).lower() in ( "y", "yes", "true" )
+    return self.am_getOption( "MonitoringEnabled" )
 
   def __initializeMonitor( self ):
     """
