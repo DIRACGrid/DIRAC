@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.38 2008/12/02 13:58:19 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.39 2008/12/04 20:02:52 rgracian Exp $
 ########################################################################
 """ PilotAgentsDB class is a front-end to the Pilot Agent Database.
     This database keeps track of all the submitted grid pilot jobs.
@@ -23,7 +23,7 @@
 
 """
 
-__RCSID__ = "$Id: PilotAgentsDB.py,v 1.38 2008/12/02 13:58:19 atsareg Exp $"
+__RCSID__ = "$Id: PilotAgentsDB.py,v 1.39 2008/12/04 20:02:52 rgracian Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
@@ -139,6 +139,24 @@ class PilotAgentsDB(DB):
       pilotList = [ x[0] for x in result['Value']]
 
     return S_OK(pilotList)
+
+
+##########################################################################################
+  def countPilots(self,condDict, older=None, newer=None, timeStamp='CreationDate' ):
+    """ Select pilot references according to the provided criteria. "newer" and "older"
+        specify the time interval in minutes
+    """
+
+    condition = self.buildCondition(condDict, older, newer, timeStamp)
+
+    req = "SELECT COUNT(PilotID) from PilotAgents"
+    if condition:
+      req += " %s " % condition
+    result = self._query(req)
+    if not result['OK']:
+      return result
+
+    return S_OK(result['Value'][0][0])
 
 
 ##########################################################################################
