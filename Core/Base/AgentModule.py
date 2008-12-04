@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/AgentModule.py,v 1.5 2008/12/02 16:47:15 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/AgentModule.py,v 1.6 2008/12/04 11:57:07 acasajus Exp $
 ########################################################################
 """ Base class for all agent modules
 
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: AgentModule.py,v 1.5 2008/12/02 16:47:15 acasajus Exp $"
+__RCSID__ = "$Id: AgentModule.py,v 1.6 2008/12/04 11:57:07 acasajus Exp $"
 
 import os
 import threading
@@ -140,6 +140,7 @@ class AgentModule:
     self.monitor.registerActivity('CPU',"CPU Usage",'Framework',"CPU,%",self.monitor.OP_MEAN,600)
     self.monitor.registerActivity('MEM',"Memory Usage",'Framework','Memory,MB',self.monitor.OP_MEAN,600)
     self.monitor.disable()
+    self.__monitorLastStatsUpdate = time.time()
 
   def am_secureCall( self, functor, args = (), name = False ):
     if not name:
@@ -168,7 +169,10 @@ class AgentModule:
       self.log.info( "Remaining %s of % cycles" % ( mD - cD, mD ) )
     self.log.info( "-"*40 )
     elapsedTime = time.time()
+    cpuStats = self.__startReportToMonitoring()
     cycleResult = self.__executeModuleCycle()
+    if cpuStats:
+        self.__endReportToMonitoring( *cpuStats )
     #Incrmenent counters
     self.__moduleParams[ 'cyclesDone' ] += 1
     #Show status
@@ -183,6 +187,53 @@ class AgentModule:
       self.log.error( " Cycle had an error:", cycleResult[ 'Message' ] )
     self.log.info( "-"*40 )
     return cycleResult
+
+  def __startReportToMonitoring(self):
+    try:
+      now = time.time()
+      stats = os.times()
+      cpuTime = stats[0] + stats[2]
+      if now - self.__monitorLastStatsUpdate < 10:
+        return ( now, cpuTime )
+      # Send CPU consumption mark
+      wallClock = now - self.__monitorLastStatsUpdate
+      self.__monitorLastStatsUpdate = now
+      # Send Memory consumption mark
+      membytes = self.__VmB('VmRSS:')
+      if membytes:
+        mem = membytes / ( 1024. * 1024. )
+        gMonitor.addMark('MEM', mem )
+      return( now, cpuTime )
+    except:
+      return False
+
+  def __endReportToMonitoring( self, initialWallTime, initialCPUTime ):
+    wallTime = time.time() - initialWallTime
+    stats = os.times()
+    cpuTime = stats[0] + stats[2] - initialCPUTime
+    percentage = cpuTime / wallTime * 100.
+    if percentage > 0:
+      gMonitor.addMark( 'CPU', percentage )
+
+  def __VmB(self, VmKey):
+      '''Private.
+      '''
+      __memScale = {'kB': 1024.0, 'mB': 1024.0*1024.0, 'KB': 1024.0, 'MB': 1024.0*1024.0}
+      procFile = '/proc/%d/status' % os.getpid()
+       # get pseudo file  /proc/<pid>/status
+      try:
+          t = open( procFile )
+          v = t.read()
+          t.close()
+      except:
+          return 0.0  # non-Linux?
+       # get VmKey line e.g. 'VmRSS:  9999  kB\n ...'
+      i = v.index( VmKey )
+      v = v[i:].split(None, 3)  # whitespace
+      if len(v) < 3:
+          return 0.0  # invalid format?
+       # convert Vm value to bytes
+      return float(v[1]) * __memScale[v[2]]
 
   def __executeModuleCycle(self):
     #Execute the beginExecution function
