@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: MatcherHandler.py,v 1.29 2008/11/28 07:24:36 rgracian Exp $
+# $Id: MatcherHandler.py,v 1.30 2008/12/04 15:05:02 acasajus Exp $
 ########################################################################
 """
 Matcher class. It matches Agent Site capabilities to job requirements.
@@ -7,7 +7,7 @@ It also provides an XMLRPC interface to the Matcher
 
 """
 
-__RCSID__ = "$Id: MatcherHandler.py,v 1.29 2008/11/28 07:24:36 rgracian Exp $"
+__RCSID__ = "$Id: MatcherHandler.py,v 1.30 2008/12/04 15:05:02 acasajus Exp $"
 
 import re, os, sys, time
 import string
@@ -17,12 +17,13 @@ from   types import *
 import threading
 
 from DIRAC.Core.DISET.RequestHandler                   import RequestHandler
-from DIRAC.Core.Utilities.ClassAd.ClassAdCondor        import ClassAd, matchClassAd
+#from DIRAC.Core.Utilities.ClassAd.ClassAdCondor        import ClassAd, matchClassAd
 from DIRAC                                             import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.DB.JobDB           import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB    import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB     import TaskQueueDB
 from DIRAC                                             import gMonitor
+from DIRAC.Core.Utilities.ThreadScheduler              import gThreadScheduler
 
 gMutex = threading.Semaphore()
 gTaskQueues = {}
@@ -41,6 +42,8 @@ def initializeMatcherHandler( serviceInfo ):
   jobDB        = JobDB()
   jobLoggingDB = JobLoggingDB()
   taskQueueDB  = TaskQueueDB()
+  taskQueueDB.propagateSharesIfChanged()
+  gThreadScheduler.addPeriodicTask( 300, taskQueueDB.propagateSharesIfChanged )
 
   gMonitor.registerActivity( 'matchTime', "Job matching time", 'Matching', "secs" ,gMonitor.OP_MEAN, 300 )
   gMonitor.registerActivity( 'matchTaskQueues', "Task queues checked per job", 'Matching', "task queues" ,gMonitor.OP_MEAN, 300 )
@@ -206,7 +209,7 @@ class MatcherHandler(RequestHandler):
     for name in taskQueueDB.getMultiValueMatchFields():
       if classAdAgent.lookupAttribute(name):
         resourceDict[name] = classAdAgent.getAttributeString(name)
-        
+
     # Check if a JobID is requested
     if classAdAgent.lookupAttribute('JobID'):
       resourceDict['JobID'] = classAdAgent.getAttributeInt('JobID')
