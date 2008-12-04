@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationClient.py,v 1.18 2008/11/13 17:13:47 acasajus Exp $
-__RCSID__ = "$Id: ConfigurationClient.py,v 1.18 2008/11/13 17:13:47 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationClient.py,v 1.19 2008/12/04 18:23:56 acasajus Exp $
+__RCSID__ = "$Id: ConfigurationClient.py,v 1.19 2008/12/04 18:23:56 acasajus Exp $"
 
 import types
 from DIRAC.Core.Utilities import List
@@ -76,6 +76,11 @@ class ConfigurationClient:
     if defaultType == types.ListType:
       try:
         return S_OK( List.fromChar( optionValue, ',' ) )
+      except Exception, v:
+        return S_ERROR( "Can't convert value (%s) to comma separated list" % str( optionValue ) )
+    elif defaultType == types.BooleanType:
+      try:
+        return S_OK( optionValue.lower() in ( "y", "yes", "true", "1" ) )
       except Exception, v:
         return S_ERROR( "Can't convert value (%s) to comma separated list" % str( optionValue ) )
     else:
