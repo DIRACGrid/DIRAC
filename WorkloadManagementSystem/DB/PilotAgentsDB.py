@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.39 2008/12/04 20:02:52 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.40 2008/12/05 07:02:14 rgracian Exp $
 ########################################################################
 """ PilotAgentsDB class is a front-end to the Pilot Agent Database.
     This database keeps track of all the submitted grid pilot jobs.
@@ -23,7 +23,7 @@
 
 """
 
-__RCSID__ = "$Id: PilotAgentsDB.py,v 1.39 2008/12/04 20:02:52 rgracian Exp $"
+__RCSID__ = "$Id: PilotAgentsDB.py,v 1.40 2008/12/05 07:02:14 rgracian Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
@@ -87,6 +87,52 @@ class PilotAgentsDB(DB):
 
     req = "INSERT INTO PilotRequirements (PilotID,Requirements) VALUES (%d,'%s')" % (parentID,e_requirements)
     return self._update(req)
+
+##########################################################################################
+  def addPilotTQReference(self,pilotRef,taskQueueID,ownerDN,ownerGroup,broker='Unknown',
+                        gridType='DIRAC',requirements='Unknown'):
+    """ Add a new pilot job reference """
+
+    result = self._getConnection()
+    if result['OK']:
+      connection = result['Value']
+    else:
+      return S_ERROR('Failed to get connection to MySQL: '+result['Message'])
+
+    result = self._escapeString(requirements)
+    if not result['OK']:
+      gLogger.warn('Failed to escape requirements string')
+      e_requirements = "Failed to escape requirements string"
+    e_requirements = result['Value']
+
+    for ref in pilotRef:
+
+      req = "INSERT INTO PilotAgents( PilotJobReference, TaskQueueID, OwnerDN, " + \
+            "OwnerGroup, Broker, GridType, SubmissionTime, LastUpdateTime, Status ) " + \
+            "VALUES ('%s',%d,'%s','%s','%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),'Submitted', %s)" % \
+            (ref,int(taskQueueID),ownerDN,ownerGroup,broker,gridType)
+
+      result = self._update(req,connection)
+      if not result['OK']:
+        connection.close()
+        return result
+
+      req = "SELECT LAST_INSERT_ID();"
+      res = self._query(req,connection)
+      if not res['OK']:
+        connection.close()
+        return res
+      pilotID = int(res['Value'][0][0])
+
+      req = "INSERT INTO PilotRequirements (PilotID,Requirements) VALUES (%d,'%s')" % (pilotID,e_requirements)
+      res = self._update(req,connection)
+      if not res['OK']:
+        connection.close()
+        return res
+
+    connection.close()
+
+    return S_OK()
 
 ##########################################################################################
   def setPilotStatus( self, pilotRef, status, destination=None, updateTime=None, conn = False ):
