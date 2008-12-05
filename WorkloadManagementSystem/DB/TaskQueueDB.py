@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.41 2008/12/05 16:57:17 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.42 2008/12/05 17:05:11 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.41 2008/12/05 16:57:17 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.42 2008/12/05 17:05:11 acasajus Exp $"
 
 import time
 import types
@@ -92,10 +92,11 @@ class TaskQueueDB(DB):
     lines = []
     for key in sorted( dDict ):
       lines.append( " %s" % key )
-      if key in self.__singleValueDefFields:
-        lines.append( "  %s" % dDict[ key ] )
+      value = dDict[ key ]
+      if type( value ) in ( types.ListType, types.TupleType ):
+        lines.extend( [ "   %s" % v for v in value ] )
       else:
-        lines.extend( [ "  %s" % value for value in sorted( dDict[ key ] ) ] )
+        lines.append( "   %s" % str(value) )
     return "{\n%s\n}" % "\n".join( lines )
 
   def fitCPUTimeToSegments( self, cpuTime ):
