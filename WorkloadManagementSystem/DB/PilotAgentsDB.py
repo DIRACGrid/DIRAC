@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.41 2008/12/05 07:11:41 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.42 2008/12/05 18:40:12 rgracian Exp $
 ########################################################################
 """ PilotAgentsDB class is a front-end to the Pilot Agent Database.
     This database keeps track of all the submitted grid pilot jobs.
@@ -23,7 +23,7 @@
 
 """
 
-__RCSID__ = "$Id: PilotAgentsDB.py,v 1.41 2008/12/05 07:11:41 rgracian Exp $"
+__RCSID__ = "$Id: PilotAgentsDB.py,v 1.42 2008/12/05 18:40:12 rgracian Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
@@ -254,7 +254,7 @@ class PilotAgentsDB(DB):
     return S_OK()
 
 ##########################################################################################
-  def getPilotInfo( self, pilotRef = False, parentId = False, conn = False, paramNames = [] ):
+  def getPilotInfo( self, pilotRef = False, parentId = False, conn = False, paramNames = [], pilotID = False ):
     """ Get all the information for the pilot job reference or reference list
     """
 
@@ -271,6 +271,11 @@ class PilotAgentsDB(DB):
         condSQL.append( "PilotJobReference IN (%s)" % ",".join( [ '"%s"' % x for x in pilotRef ] ) )
       else:
         condSQL.append( "PilotJobReference = '%s'" % pilotRef )
+    if pilotID:
+      if type( pilotID ) == ListType:
+        condSQL.append( "PilotID IN (%s)" % ",".join( [ '%s' % x for x in pilotID ] ) )
+      else:
+        condSQL.append( "PilotID = '%s'" % pilotID )
     if parentId:
       if type( parentId ) == ListType:
         condSQL.append( "ParentID IN (%s)" % ",".join( [ '%s' % x for x in parentId ] ) )
@@ -477,7 +482,7 @@ class PilotAgentsDB(DB):
     if gridType:
       req = "SELECT PilotJobReference FROM PilotAgents WHERE InitialJobID=%s AND GridType='%s' " % (jobID,gridType)
     else:
-      req = "SELECT PilotJobReference FROM PilotAgents WHERE InitialJobID=%d " % jobID
+      req = "SELECT PilotJobReference FROM PilotAgents WHERE InitialJobID=%s " % jobID
 
     result = self._query(req)
     if not result['OK']:
@@ -487,7 +492,50 @@ class PilotAgentsDB(DB):
         pilotList = [ x[0] for x in result['Value'] ]
         return S_OK(pilotList)
       else:
-        return S_ERROR('PilotJobReferences for job %d not found' % jobID)
+        return S_ERROR('PilotJobReferences for job %s not found' % jobID)
+
+##########################################################################################
+  def getPilotsForTaskQueue(self,taskQueueID,gridType=None,limit=None):
+    """ Get IDs of Pilot Agents that were submitted for the given taskQueue, 
+        specify optionally the grid type, results are sorted by Submission time
+        an Optional limit can be set.
+    """
+
+    if gridType:
+      req = "SELECT PilotID FROM PilotAgents WHERE TaskQueueID=%s AND GridType='%s' " % (taskQueueID,gridType)
+    else:
+      req = "SELECT PilotID FROM PilotAgents WHERE TaskQueueID=%s " % taskQueueID
+
+    req += 'ORDER BY SubmissionTime '
+
+    if limit:
+      req += 'LIMIT %s' % limit
+
+    result = self._query(req)
+    if not result['OK']:
+      return result
+    else:
+      if result['Value']:
+        pilotList = [ x[0] for x in result['Value'] ]
+        return S_OK(pilotList)
+      else:
+        return S_ERROR('PilotJobReferences for TaskQueueID %s not found' % taskQueueID)
+
+##########################################################################################
+  def getPilotsForJobID(self,jobID):
+    """ Get ID of Pilot Agent that is running a given JobID
+    """
+
+    result = self._query( 'SELECT PilotID FROM JobToPilotMapping WHERE JobID=%s' % jobID )
+
+    if not result['OK']:
+      return result
+
+    if result['Value']:
+      pilotList = [ x[0] for x in result['Value'] ]
+      return S_OK(pilotList)
+    else:
+      return S_ERROR('PilotID for job %d not found' % jobID)
 
 ##########################################################################################
   def getPilotCurrentJob(self,pilotRef):
