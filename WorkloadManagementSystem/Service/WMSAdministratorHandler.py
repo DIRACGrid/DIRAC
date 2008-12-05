@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSAdministratorHandler.py,v 1.39 2008/11/24 21:58:22 atsareg Exp $
+# $Id: WMSAdministratorHandler.py,v 1.40 2008/12/05 18:42:44 rgracian Exp $
 ########################################################################
 """
 This is a DIRAC WMS administrator interface.
@@ -14,7 +14,7 @@ Access to the pilot data:
 
 """
 
-__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.39 2008/11/24 21:58:22 atsareg Exp $"
+__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.40 2008/12/05 18:42:44 rgracian Exp $"
 
 import os, sys, string, uu, shutil
 from types import *
@@ -24,6 +24,7 @@ from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
+from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import *
 import DIRAC.Core.Utilities.Time as Time
 from DIRAC.Core.Security.CS import getUsernameForDN
@@ -33,6 +34,7 @@ import threading
 # This is a global instance of the database classes
 jobDB = False
 pilotDB = False
+taskQueueDB = False
 
 
 def initializeWMSAdministratorHandler( serviceInfo ):
@@ -41,9 +43,11 @@ def initializeWMSAdministratorHandler( serviceInfo ):
 
   global jobDB
   global pilotDB
+  global taskQueueDB
 
   jobDB = JobDB()
   pilotDB = PilotAgentsDB()
+  taskQueueDB = TaskQueueDB()
   return S_OK()
 
 class WMSAdministratorHandler(RequestHandler):
@@ -248,16 +252,24 @@ class WMSAdministratorHandler(RequestHandler):
   ##############################################################################
   types_getPilots = [IntType]
   def export_getPilots(self,jobID):
-    """ Get pilot references and their statuses for those submitted for the given job
+    """ Get pilot references and their states for :
+      - those pilots submitted for the TQ where job is sitting
+      - (or) the pilots executing/having executed the Job
     """
 
-    result = pilotDB.getPilotsForJob(jobID)
-    if not result['OK']:
-      return S_ERROR('Failed to get pilots: '+result['Message'])
+    result = taskQueueDB.getTaskQueueForJob( jobID )
+    if not result['OK'] or not result['Value']:
+      # if we can not get the info form the TaskQueueDB the job might no longer waiting
+      # More that one can be returned if we do not assure a JobID can only be executed once.
+      result = pilotDB.getPilotsForJobID(jobID)
+      if not result['OK']:
+        return S_ERROR('Failed to get pilot: '+result['Message'])
+    else:
+      result = pilotDB.getPilotsForTaskQueue( result['Value'], limit=10 )
+      if not result['OK']:
+        return S_ERROR('Failed to get pilot: '+result['Message'])
 
-    pilots = result['Value']
-    result = pilotDB.getPilotInfo(pilots)
-    return result
+    return pilotDB.getPilotInfo(pilotID=result['Value'])
 
   ##############################################################################
   types_setJobForPilot = [IntType, StringType]
