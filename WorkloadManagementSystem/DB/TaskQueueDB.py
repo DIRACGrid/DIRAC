@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.35 2008/12/05 16:32:24 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.36 2008/12/05 16:33:53 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.35 2008/12/05 16:32:24 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.36 2008/12/05 16:33:53 acasajus Exp $"
 
 import time
 import types
@@ -342,7 +342,7 @@ class TaskQueueDB(DB):
       if len( tqList ) == 0:
         return S_OK( { 'matchFound' : False } )
       for tqId, tqOwnerDN, tqOwnerGroup in tqList:
-        self.log.info( "Trying to extract jobs from TQ %s" % tqID )
+        self.log.info( "Trying to extract jobs from TQ %s" % tqId )
         retVal = self._query( "%s %s" % ( preJobSQL % tqId, postJobSQL ), conn = connObj )
         if not retVal[ 'OK' ]:
           return S_ERROR( "Can't begin transaction for matching job: %s" % retVal[ 'Message' ] )
