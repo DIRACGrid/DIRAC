@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.40 2008/12/05 16:50:07 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.41 2008/12/05 16:57:17 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.40 2008/12/05 16:50:07 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.41 2008/12/05 16:57:17 acasajus Exp $"
 
 import time
 import types
@@ -620,7 +620,10 @@ class TaskQueueDB(DB):
     result = self._query( "SELECT COUNT(TQId) FROM `tq_TaskQueues` WHERE %s" % condSQL, conn = connObj )
     if not result[ 'OK' ]:
       return result
-    prio = share / result[ 'Value' ][0][0]
+    numTQs = result[ 'Value' ][0][0]
+    if numTQs == 0:
+      return S_OK()
+    prio = share / numTQs
     tqPriority  = min( max( int( prio ), self.__tqPriorityBoundaries[0]  ), self.__tqPriorityBoundaries[1]  )
     updateSQL = "UPDATE `tq_TaskQueues` SET Priority=%s WHERE %s" % ( tqPriority, condSQL )
     return self._update( updateSQL, conn = connObj )
