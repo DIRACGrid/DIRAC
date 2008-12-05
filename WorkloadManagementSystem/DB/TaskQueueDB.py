@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.34 2008/12/05 16:31:11 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.35 2008/12/05 16:32:24 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.34 2008/12/05 16:31:11 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.35 2008/12/05 16:32:24 acasajus Exp $"
 
 import time
 import types
@@ -563,7 +563,7 @@ class TaskQueueDB(DB):
     if not result[ 'OK' ]:
       return result
     for group in [ r[0] for r in result[ 'Value' ] ]:
-      self.recalculateSharesForEntity( "nobody", group )
+      self.recalculateSharesForEntity( "all", group )
     return S_OK()
 
   def recalculateSharesForEntity( self, userDN, userGroup, connObj = False ):
