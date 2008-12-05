@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.38 2008/12/05 16:45:00 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.39 2008/12/05 16:48:55 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.38 2008/12/05 16:45:00 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.39 2008/12/05 16:48:55 acasajus Exp $"
 
 import time
 import types
@@ -617,10 +617,10 @@ class TaskQueueDB(DB):
     condSQL = "OwnerGroup='%s'" % userGroup
     if Properties.JOB_SHARING not in CS.getPropertiesForGroup( userGroup ):
       condSQL += " AND OwnerDN='%s'" % userDN
-    result = self._query( "SELECT %s/(SELECT COUNT(TQId) FROM `tq_TaskQueues` WHERE %s)" % ( share, condSQL ), conn = connObj )
+    result = self._query( "SELECT COUNT(TQId) FROM `tq_TaskQueues` WHERE %s" % condSQL, conn = connObj )
     if not result[ 'OK' ]:
       return result
-    prio = result[ 'Value' ][0][0]
+    prio = share / result[ 'Value' ][0][0]
     tqPriority  = min( max( int( prio ), self.__tqPriorityBoundaries[0]  ), self.__tqPriorityBoundaries[1]  )
     updateSQL = "UPDATE `tq_TaskQueues` SET Priority=%s WHERE %s" % ( tqPriority, condSQL )
     return self._update( updateSQL, conn = connObj )
