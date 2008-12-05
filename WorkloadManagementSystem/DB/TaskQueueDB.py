@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.36 2008/12/05 16:33:53 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.37 2008/12/05 16:36:35 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.36 2008/12/05 16:33:53 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.37 2008/12/05 16:36:35 acasajus Exp $"
 
 import time
 import types
@@ -340,6 +340,7 @@ class TaskQueueDB(DB):
         return retVal
       tqList = retVal[ 'Value' ]
       if len( tqList ) == 0:
+        self.log.info( "No TQ matches requirements" )
         return S_OK( { 'matchFound' : False } )
       for tqId, tqOwnerDN, tqOwnerGroup in tqList:
         self.log.info( "Trying to extract jobs from TQ %s" % tqId )
