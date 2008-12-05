@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.42 2008/12/05 17:05:11 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.43 2008/12/05 18:35:07 rgracian Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.42 2008/12/05 17:05:11 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.43 2008/12/05 18:35:07 rgracian Exp $"
 
 import time
 import types
@@ -463,6 +463,24 @@ class TaskQueueDB(DB):
     if retVal[ 'Value' ] == 0:
       return S_OK( False )
     return S_OK( True )
+
+  def getTaskQueueForJob( self, jobId, connObj = False ):
+    """
+    Return TaskQueue for a given Job
+    Return S_OK( [TaskQueueID] ) / S_ERROR
+    """
+    if not connObj:
+      retVal = self._getConnection()
+      if not retVal[ 'OK' ]:
+        return S_ERROR( "Can't delete job: %s" % retVal[ 'Message' ] )
+      connObj = retVal[ 'Value' ]
+
+    retVal = self._query( 'SELECT TQId FROM `tq_Jobs` WHERE JobId = %s" ' % jobId, conn = connObj )
+
+    if not retVal[ 'OK' ]:
+      return retVal
+
+    return S_OK( retVal['Value'][0] )
 
   def deleteTaskQueueIfEmpty( self, tqId, connObj = False ):
     """
