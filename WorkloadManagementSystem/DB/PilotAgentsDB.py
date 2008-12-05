@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.40 2008/12/05 07:02:14 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.41 2008/12/05 07:11:41 rgracian Exp $
 ########################################################################
 """ PilotAgentsDB class is a front-end to the Pilot Agent Database.
     This database keeps track of all the submitted grid pilot jobs.
@@ -23,7 +23,7 @@
 
 """
 
-__RCSID__ = "$Id: PilotAgentsDB.py,v 1.40 2008/12/05 07:02:14 rgracian Exp $"
+__RCSID__ = "$Id: PilotAgentsDB.py,v 1.41 2008/12/05 07:11:41 rgracian Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
@@ -109,7 +109,7 @@ class PilotAgentsDB(DB):
 
       req = "INSERT INTO PilotAgents( PilotJobReference, TaskQueueID, OwnerDN, " + \
             "OwnerGroup, Broker, GridType, SubmissionTime, LastUpdateTime, Status ) " + \
-            "VALUES ('%s',%d,'%s','%s','%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),'Submitted', %s)" % \
+            "VALUES ('%s',%d,'%s','%s','%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),'Submitted')" % \
             (ref,int(taskQueueID),ownerDN,ownerGroup,broker,gridType)
 
       result = self._update(req,connection)
