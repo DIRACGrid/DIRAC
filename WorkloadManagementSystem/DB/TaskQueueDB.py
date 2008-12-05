@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.37 2008/12/05 16:36:35 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.38 2008/12/05 16:45:00 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.37 2008/12/05 16:36:35 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.38 2008/12/05 16:45:00 acasajus Exp $"
 
 import time
 import types
@@ -88,6 +88,16 @@ class TaskQueueDB(DB):
 
     return self._createTables( tablesD )
 
+  def __strDict( self, dDict ):
+    lines = []
+    for key in sorted( dD ):
+      lines.append( " %s" % key )
+      if key in self.__singleValueDefFields:
+        lines.append( "  %s" % dD[ key ] )
+      else:
+        lines.extend( [ "  %s" % value for value in sorted( dD[ key ] ) ] )
+    return "{\n%s\n}" % "\n".join( lines )
+
   def fitCPUTimeToSegments( self, cpuTime ):
     """
     Fit the CPU time to the valid segments
@@ -150,7 +160,7 @@ class TaskQueueDB(DB):
     Create a task queue
       Returns S_OK( tqId ) / S_ERROR
     """
-    self.log.info( "Creating TQ with requirements", str( tqDefDict ) )
+    self.log.info( "Creating TQ with requirements", self.__strDict( tqDefDict ) )
     if not skipDefinitionCheck:
       retVal = self._checkTaskQueueDefinition( tqDefDict )
       if not retVal[ 'OK' ]:
@@ -310,14 +320,14 @@ class TaskQueueDB(DB):
     if len( data ) == 0:
       return S_OK( { 'found' : False } )
     if len( data ) > 1:
-      gLogger.warn( "Found two task queues for the same requirements", str( tqDefDict ) )
+      gLogger.warn( "Found two task queues for the same requirements", self.__strDict( tqDefDict ) )
     return S_OK( { 'found' : True, 'tqId' : data[0][0] } )
 
   def matchAndGetJob( self, tqMatchDict, numJobsPerTry = 10, numQueuesPerTry = 10 ):
     """
     Match a job
     """
-    self.log.info( "Starting match for requirements %s" % str( tqMatchDict ) )
+    self.log.info( "Starting match for requirements", self.__strDict( tqMatchDict ) )
     retVal = self._checkMatchDefinition( tqMatchDict )
     if not retVal[ 'OK' ]:
       self.log.error( "TQ match request check failed", retVal[ 'Value' ] )
