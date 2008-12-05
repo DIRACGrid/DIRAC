@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.32 2008/12/04 15:23:41 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.33 2008/12/05 16:26:18 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.32 2008/12/04 15:23:41 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.33 2008/12/05 16:26:18 acasajus Exp $"
 
 import time
 import types
@@ -150,9 +150,11 @@ class TaskQueueDB(DB):
     Create a task queue
       Returns S_OK( tqId ) / S_ERROR
     """
+    self.log.info( "Creating TQ with requirements", str( tqDefDict ) )
     if not skipDefinitionCheck:
       retVal = self._checkTaskQueueDefinition( tqDefDict )
       if not retVal[ 'OK' ]:
+        self.log.error( "TQ definition check failed", retVal[ 'Value' ] )
         return retVal
     if not connObj:
       retVal = self._getConnection()
@@ -168,6 +170,7 @@ class TaskQueueDB(DB):
     cmd = "INSERT INTO tq_TaskQueues ( %s ) VALUES ( %s)" % ( ", ".join( sqlSingleFields ), ", ".join( sqlValues ) )
     retVal = self._update( cmd, conn = connObj )
     if not retVal[ 'OK' ]:
+      self.log.error( "Can't insert TQ in DB", retVal[ 'Value' ] )
       return retVal
     if 'lastRowId' in retVal:
       tqId = retVal['lastRowId']
@@ -187,14 +190,17 @@ class TaskQueueDB(DB):
       cmd += ", ".join( [ "( %s, '%s' )" % ( tqId, str( value ) ) for value in values ] )
       retVal = self._update( cmd, conn = connObj )
       if not retVal[ 'OK' ]:
+        self.log.error( "Failed to insert %s condition" % field, retVal[ 'Message' ] )
         self.cleanOrphanedTaskQueues( connObj = connObj )
         return S_ERROR( "Can't insert values %s for field %s: %s" % ( str( values ), field, retVal[ 'Message' ] ) )
+    self.log.info( "Created TQ %s" % tqId )
     return S_OK( tqId )
 
   def cleanOrphanedTaskQueues( self, connObj = False ):
     """
     Delete all empty task queues
     """
+    self.log.info( "Cleaning orphaned TQs" )
     retVal = self._update( "LOCK TABLE `tq_TaskQueues`", conn = connObj )
     if not retVal[ 'OK' ]:
       return retVal
@@ -218,12 +224,14 @@ class TaskQueueDB(DB):
     Insert a job in a task queue
       Returns S_OK( tqId ) / S_ERROR
     """
+    self.log.info( "Inserting job %s" % jobId )
     retVal = self._getConnection()
     if not retVal[ 'OK' ]:
       return S_ERROR( "Can't insert job: %s" % retVal[ 'Message' ] )
     connObj = retVal[ 'Value' ]
     retVal = self._checkTaskQueueDefinition( tqDefDict )
     if not retVal[ 'OK' ]:
+      self.log.error( "TQ definition check failed", retVal[ 'Value' ] )
       return retVal
     tqDefDict[ 'CPUTime' ] = self.fitCPUTimeToSegments( tqDefDict[ 'CPUTime' ] )
     retVal = self.findTaskQueue( tqDefDict, skipDefinitionCheck = True, connObj = connObj )
@@ -232,6 +240,7 @@ class TaskQueueDB(DB):
     tqInfo = retVal[ 'Value' ]
     newTq = False
     if not tqInfo[ 'found' ]:
+      self.log.info( "Createing a TQ for job %s requirements" % jobId )
       retVal = self.createTaskQueue( tqDefDict, 0, connObj = connObj )
       if not retVal[ 'OK' ]:
         return retVal
@@ -243,14 +252,15 @@ class TaskQueueDB(DB):
     result = self.insertJobInTaskQueue( jobId, tqId, jobPriority, checkTQExists = False, connObj = connObj )
     if not result[ 'OK' ]:
       return result
-    #if not newTq:
-    #  return result
+    if not newTq:
+      return result
     return self.recalculateSharesForEntity( tqDefDict[ 'OwnerDN' ], tqDefDict[ 'OwnerGroup' ], connObj = connObj )
 
   def insertJobInTaskQueue( self, jobId, tqId, jobPriority, checkTQExists = True, connObj = False ):
     """
     Insert a job in a given task queue
     """
+    self.log.info( "Inserting job %s in TQ %s with priority %s" % ( jobId, tqId, jobPriority ) )
     if not connObj:
       retVal = self._getConnection()
       if not retVal[ 'OK' ]:
@@ -307,8 +317,10 @@ class TaskQueueDB(DB):
     """
     Match a job
     """
+    self.log.info( "Starting match for requirements %s" % str( tqMatchDict ) )
     retVal = self._checkMatchDefinition( tqMatchDict )
     if not retVal[ 'OK' ]:
+      self.log.error( "TQ match request check failed", retVal[ 'Value' ] )
       return retVal
     retVal = self._getConnection()
     if not retVal[ 'OK' ]:
@@ -330,12 +342,13 @@ class TaskQueueDB(DB):
       if len( tqList ) == 0:
         return S_OK( { 'matchFound' : False } )
       for tqId, tqOwnerDN, tqOwnerGroup in tqList:
+        self.log.info( "Trying to extract jobs from TQ %s" % tqID )
         retVal = self._query( "%s %s" % ( preJobSQL % tqId, postJobSQL ), conn = connObj )
         if not retVal[ 'OK' ]:
           return S_ERROR( "Can't begin transaction for matching job: %s" % retVal[ 'Message' ] )
         jobTQList = [ ( row[0], row[1] ) for row in retVal[ 'Value' ] ]
         if len( jobTQList ) == 0:
-          gLogger.warn( "Task queue %s seems to be empty, triggering a cleaning" % tqId )
+          gLogger.info( "Task queue %s seems to be empty, triggering a cleaning" % tqId )
           result = self.deleteTaskQueueIfEmpty( tqId, connObj = connObj )
           if result[ 'OK' ]:
             deletedTQ = result[ 'Value' ]
@@ -346,6 +359,7 @@ class TaskQueueDB(DB):
           if not retVal[ 'OK' ]:
             return S_ERROR( "Could not take job %s out from the queue: %s" % ( jobId, retVal[ 'Message' ] ) )
           if retVal[ 'Value' ] == True :
+            self.log.info( "Match found with job %s (TQ %s)" % ( jobId, tqId ) )
             result = self.deleteTaskQueueIfEmpty( tqId, connObj = connObj )
             if result[ 'OK' ]:
               deletedTQ = result[ 'Value' ]
@@ -354,6 +368,7 @@ class TaskQueueDB(DB):
             return S_OK( { 'matchFound' : True, 'jobId' : jobId, 'taskQueueId' : tqId } )
     if deletedTQ:
       self.recalculateSharesForEntity( tqOwnerDN, tqOwnerGroup, connObj = connObj )
+    self.log.info( "Could not find a match after %s match retries" % self.__maxMatchRetry )
     return S_ERROR( "Could not find a match after %s match retries" % self.__maxMatchRetry )
 
   def matchAndGetQueue( self, tqMatchDict, numQueuesToGet = 1, skipMatchDictDef = False, connObj = False ):
@@ -423,6 +438,7 @@ class TaskQueueDB(DB):
     Delete a job from the task queues
     Return S_OK( True/False ) / S_ERROR
     """
+    self.log.info( "Deleting job %s" % jobId )
     if not connObj:
       retVal = self._getConnection()
       if not retVal[ 'OK' ]:
@@ -440,6 +456,7 @@ class TaskQueueDB(DB):
     """
     Try to delete a task queue if its empty
     """
+    self.log.info( "Deleting TQ %s if empty" % tqId )
     if not connObj:
       retVal = self._getConnection()
       if not retVal[ 'OK' ]:
@@ -453,6 +470,7 @@ class TaskQueueDB(DB):
     sqlCmd = "SELECT TQId FROM `tq_TaskQueues` WHERE `tq_TaskQueues`.TQId = %s" % tqId
     retVal = self._update( sqlCmd, conn = connObj )
     if not retVal[ 'OK' ]:
+      self.log.info( "Could not delete TQ %s" % tqId, retVal[ 'Message' ] )
       return retVal
     if not retVal['Value']:
       for mvField in self.__multiValueDefFields:
@@ -466,6 +484,7 @@ class TaskQueueDB(DB):
     """
     Try to delete a task queue even if it has jobs
     """
+    self.log.info( "Deleting TQ %s" % tqId )
     if not connObj:
       retVal = self._getConnection()
       if not retVal[ 'OK' ]:
@@ -535,6 +554,7 @@ class TaskQueueDB(DB):
     """
     Recalculate all priorities for TQ's
     """
+    self.log.info( "Recalculating shares for all TQs" )
     retVal = self._getConnection()
     if not retVal[ 'OK' ]:
       return S_ERROR( "Can't insert job: %s" % retVal[ 'Message' ] )
@@ -550,6 +570,7 @@ class TaskQueueDB(DB):
     """
     Recalculate the shares for a userDN/userGroup combo
     """
+    self.log.info( "Recalculating shares for %s@%s TQs" % ( userDN, userGroup ) )
     share = gConfig.getValue( "/Security/Groups/%s/JobsShare" % userGroup, self.defaultGroupShare )
     if Properties.JOB_SHARING in CS.getPropertiesForGroup( userGroup ):
       #If group has JobSharing just set prio for that entry, userDN is irrelevant
@@ -581,6 +602,7 @@ class TaskQueueDB(DB):
     """
     Set the priority for a userDN/userGroup combo given a splitted share
     """
+    self.log.info( "Retting priorities to %s@%s TQs" % ( userDN, userGroup ) )
     condSQL = "OwnerGroup='%s'" % userGroup
     if Properties.JOB_SHARING not in CS.getPropertiesForGroup( userGroup ):
       condSQL += " AND OwnerDN='%s'" % userDN
