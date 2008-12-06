@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.115 2008/12/01 16:09:55 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.116 2008/12/06 23:25:21 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.115 2008/12/01 16:09:55 rgracian Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.116 2008/12/06 23:25:21 atsareg Exp $"
 
 import re, os, sys, string, types
 import time, datetime
@@ -64,6 +64,8 @@ from DIRAC.ConfigurationSystem.Client.Config   import gConfig
 from DIRAC.Core.Base.DB                        import DB
 
 DEBUG = 0
+JOB_STATES = ['Received','Checking','Staging','Waiting','Matched',
+              'Running','Done','Completed','Failed']
 JOB_FINAL_STATES = ['Done','Completed','Failed']
 
 #############################################################################
@@ -1801,51 +1803,6 @@ class JobDB(DB):
     result = self._update(cmd)
     return result
 
-
-##########################################################################################
-#  def updateRankInTaskQueue(self,jobID,newRank):
-#    """ Update the rank of a job specified by its jobID to newRank
-#    """
-#
-#    cmd = "UPDATE TaskQueue SET Rank=%d, WHERE JobID=%d;' % (newRank,jobID)
-#    return self._update( cmd )
-
-##########################################################################################
-#  def getJobsFromTaskQueue(self):
-#    """  Get all the jobs from the Task Queue
-#    """
-#
-#    cmd = 'SELECT * FROM TaskQueue'
-#    try:
-#      result = self._query( cmd )
-#      if result['OK']:
-#        return result['Value']
-#      else: return S_ERROR('Cannot get jobs from the TaskQueue table')
-#    except:
-#      return S_ERROR('Cannot connect to the mysql')
-
-##########################################################################################
-  def getCounters(self, attrList, condDict, cutDate, timeStamp='LastUpdateTime'):
-    """ Count the number of jobs on each distinct combination of AttrList, selected
-        with condition defined by condDict and cutDate
-    """
-
-    cond = self.__buildCondition( condDict, newer=cutDate, timeStamp=timeStamp )
-    attrNames = string.join(map(lambda x: str(x),attrList ),',')
-    cmd = 'SELECT %s,COUNT(JobID) FROM Jobs %s GROUP BY %s ' % ( attrNames, cond, attrNames )
-    result = self._query( cmd )
-    if not result['OK']:
-      return result
-
-    resultList = []
-    for raw in result['Value']:
-      attrDict = {}
-      for i in range(len(attrList)):
-        attrDict[attrList[i]] = raw[i]
-      item = (attrDict,raw[len(attrList)])
-      resultList.append(item)
-    return S_OK(resultList)
-
 #################################################################################
   def getSiteSummary(self):
     """ Get the summary of jobs in a given status on all the sites
@@ -1888,6 +1845,90 @@ class JobDB(DB):
 
     siteDict['Total'] = totalDict
     return S_OK(siteDict)
+
+#################################################################################
+  def getUserSummaryWeb(self,selectDict, sortList, startItem, maxItems):
+    """ Get the summary of user jobs in a standard form
+    """
+
+    paramNames = ['Owner','Group']
+    paramNames += JOB_STATES
+    paramNames += ['TotalJobs']
+    # Sort out records as requested
+    sortItem = -1
+    if sortList:
+      item = sortList[0]  # only one item for the moment
+      sortItem = paramnames.index(item)
+
+    last_update = None
+    if selectDict.has_key('LastUpdateTime'):
+      last_update = selectDict['LastUpdateTime']
+      del selectDict['LastUpdateTime']
+
+    result = self.getCounters('Jobs',['OwnerDN','OwnerGroup','Status'],
+                              selectDict,newer=last_update,
+                              timeStamp='LastUpdateTime')
+    last_day = Time.dateTime() - Time.day
+    resultDay = self.getCounters('Jobs',['OwnerDN','OwnerGroup','Status'],
+                                 selectDict,newer=last_day,
+                                 timeStamp='EndExecTime')
+
+    # Sort out different counters
+    resultDict = []
+    for attDict,count in result['Value']:
+      owner = attDict['OwnerDN']
+      group = attDict['OwnerGroup']
+      status = attDict['Status']
+
+      if not resultDict.has_key(owner):
+        resultDict[owner] = {}
+      if not resultDict[owner].has_key(group):
+        resultDict[owner][group] = {}
+        for p in JOB_STATES:
+          resultDict[site][ce][p] = 0
+
+      resultDict[owner][group][status] = count
+    for attDict,count in resultDay['Value']:
+      owner = attDict['OwnerDN']
+      group = attDict['OwnerGroup']
+      status = attDict['Status']
+      if status in JOB_FINAL_STATES:
+        resultDict[owner][group][status] = count
+
+    # Collect records now
+    records = []
+    totalUser = {}
+    for owner in resultDict:
+      totalUser[owner] = 0
+      for group in resultDict[owner]:
+        rList = [owner,group]
+        count = 0
+        for s in JOB_STATES:
+          s_count = resultDict[owner][group][s]
+          rList.append(s_count)
+          count += s_count
+        rList.append(count)
+        records.append(rList)
+        totalUser[owner] += count
+
+    # Sort out records
+    if sortItem != -1 :
+      records.sort(lambda x,y: x[sortItem]-y[sortItem])
+
+    # Collect the final result
+    finalDict['ParameterNames'] = paramnames
+    # Return all the records if maxItems == 0 or the specified number otherwise
+    if maxItems:
+      if startItem+maxItems > len(records):
+        finalDict['Records'] = records[startItem:]
+      else:
+        finalDict['Records'] = records[startItem:startItem+maxItems]
+    else:
+      finalDict['Records'] = records
+
+    finalDict['TotalRecords'] = len(records)
+    return S_OK(finalDict)
+
 
 #####################################################################################
   def setHeartBeatData(self,jobID,staticDataDict, dynamicDataDict):
