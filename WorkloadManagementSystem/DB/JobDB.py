@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.116 2008/12/06 23:25:21 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.117 2008/12/07 00:13:05 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,10 +52,10 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.116 2008/12/06 23:25:21 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.117 2008/12/07 00:13:05 atsareg Exp $"
 
 import re, os, sys, string, types
-import time, datetime
+import time, datetime, operator
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from types                                     import *
@@ -1848,17 +1848,20 @@ class JobDB(DB):
 
 #################################################################################
   def getUserSummaryWeb(self,selectDict, sortList, startItem, maxItems):
-    """ Get the summary of user jobs in a standard form
+    """ Get the summary of user jobs in a standard form for the Web portal.
+        Pagination and global sorting is supported.
     """
 
-    paramNames = ['Owner','Group']
+    paramNames = ['OwnerDN','OwnerGroup']
     paramNames += JOB_STATES
     paramNames += ['TotalJobs']
     # Sort out records as requested
     sortItem = -1
+    sortOrder = "ASC"
     if sortList:
-      item = sortList[0]  # only one item for the moment
-      sortItem = paramnames.index(item)
+      item = sortList[0][0]  # only one item for the moment
+      sortItem = paramNames.index(item)
+      sortOrder = sortList[0][1]
 
     last_update = None
     if selectDict.has_key('LastUpdateTime'):
@@ -1874,7 +1877,7 @@ class JobDB(DB):
                                  timeStamp='EndExecTime')
 
     # Sort out different counters
-    resultDict = []
+    resultDict = {}
     for attDict,count in result['Value']:
       owner = attDict['OwnerDN']
       group = attDict['OwnerGroup']
@@ -1885,7 +1888,7 @@ class JobDB(DB):
       if not resultDict[owner].has_key(group):
         resultDict[owner][group] = {}
         for p in JOB_STATES:
-          resultDict[site][ce][p] = 0
+          resultDict[owner][group][p] = 0
 
       resultDict[owner][group][status] = count
     for attDict,count in resultDay['Value']:
@@ -1913,10 +1916,14 @@ class JobDB(DB):
 
     # Sort out records
     if sortItem != -1 :
-      records.sort(lambda x,y: x[sortItem]-y[sortItem])
-
+      if sortOrder.lower() == "asc":
+        records.sort(key=operator.itemgetter(sortItem))
+      else:
+        records.sort(key=operator.itemgetter(sortItem),reverse=True)
+        
     # Collect the final result
-    finalDict['ParameterNames'] = paramnames
+    finalDict = {}
+    finalDict['ParameterNames'] = paramNames
     # Return all the records if maxItems == 0 or the specified number otherwise
     if maxItems:
       if startItem+maxItems > len(records):
