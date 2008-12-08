@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.117 2008/12/07 00:13:05 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.118 2008/12/08 07:19:15 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.117 2008/12/07 00:13:05 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.118 2008/12/08 07:19:15 atsareg Exp $"
 
 import re, os, sys, string, types
 import time, datetime, operator
@@ -62,6 +62,7 @@ from types                                     import *
 from DIRAC                                     import gLogger, S_OK, S_ERROR, Time
 from DIRAC.ConfigurationSystem.Client.Config   import gConfig
 from DIRAC.Core.Base.DB                        import DB
+from DIRAC.Core.Security.CS                    import getUsernameForDN, getDNForUsername  
 
 DEBUG = 0
 JOB_STATES = ['Received','Checking','Staging','Waiting','Matched',
@@ -1852,7 +1853,7 @@ class JobDB(DB):
         Pagination and global sorting is supported.
     """
 
-    paramNames = ['OwnerDN','OwnerGroup']
+    paramNames = ['Owner','OwnerDN','OwnerGroup']
     paramNames += JOB_STATES
     paramNames += ['TotalJobs']
     # Sort out records as requested
@@ -1867,6 +1868,14 @@ class JobDB(DB):
     if selectDict.has_key('LastUpdateTime'):
       last_update = selectDict['LastUpdateTime']
       del selectDict['LastUpdateTime']
+    if selectDict.has_key('Owner'):
+      username = selectDict['Owner']
+      del selectDict['Owner']
+      result = getDNForUsername(username)
+      if result['OK']:
+        selectDict['OwnerDN'] = result['Value']
+      else:
+        return S_ERROR('Unknown user %s' % username)    
 
     result = self.getCounters('Jobs',['OwnerDN','OwnerGroup','Status'],
                               selectDict,newer=last_update,
@@ -1904,7 +1913,12 @@ class JobDB(DB):
     for owner in resultDict:
       totalUser[owner] = 0
       for group in resultDict[owner]:
-        rList = [owner,group]
+        result = getUsernameForDN(owner)
+        if result['OK']:
+          username = result['Value']
+        else:
+          username = 'Unknown'  
+        rList = [username,owner,group]
         count = 0
         for s in JOB_STATES:
           s_count = resultDict[owner][group][s]
