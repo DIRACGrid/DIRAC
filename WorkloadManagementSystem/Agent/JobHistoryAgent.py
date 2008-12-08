@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobHistoryAgent.py,v 1.11 2008/11/04 11:24:16 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobHistoryAgent.py,v 1.12 2008/12/08 10:42:22 atsareg Exp $
 
 
 """  JobHistoryAgent sends periodically numbers of jobs in various states for various
@@ -42,7 +42,7 @@ class JobHistoryAgent(Agent):
 
     self.last_update = 0
     self.resultDB = None
-    self.reportPeriod = 300
+    self.reportPeriod = 60
     return S_OK()
 
   def execute(self):
@@ -50,7 +50,7 @@ class JobHistoryAgent(Agent):
     """
     delta = time.time() - self.last_update
     if delta > self.reportPeriod:
-      result = self.jobDB.getCounters(['Status','Site'],{},'')
+      result = self.jobDB.getCounters('Jobs',['Status','Site'],{},'')
       if not result['OK']:
         return S_ERROR('Failed to get data from the Job Database')
       self.resultDB = result['Value']
