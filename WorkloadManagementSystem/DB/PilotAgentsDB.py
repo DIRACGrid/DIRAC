@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.42 2008/12/05 18:40:12 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.43 2008/12/08 15:52:59 atsareg Exp $
 ########################################################################
 """ PilotAgentsDB class is a front-end to the Pilot Agent Database.
     This database keeps track of all the submitted grid pilot jobs.
@@ -23,7 +23,7 @@
 
 """
 
-__RCSID__ = "$Id: PilotAgentsDB.py,v 1.42 2008/12/05 18:40:12 rgracian Exp $"
+__RCSID__ = "$Id: PilotAgentsDB.py,v 1.43 2008/12/08 15:52:59 atsareg Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
@@ -496,7 +496,7 @@ class PilotAgentsDB(DB):
 
 ##########################################################################################
   def getPilotsForTaskQueue(self,taskQueueID,gridType=None,limit=None):
-    """ Get IDs of Pilot Agents that were submitted for the given taskQueue, 
+    """ Get IDs of Pilot Agents that were submitted for the given taskQueue,
         specify optionally the grid type, results are sorted by Submission time
         an Optional limit can be set.
     """
@@ -680,7 +680,7 @@ class PilotAgentsDB(DB):
       site = attDict['GridSite']
       ce = attDict['DestinationSite']
       state = attDict['Status']
-      if site == 'Unknown' and ce != "Unknown" and ce != "Multiple":
+      if site == 'Unknown' and ce != "Unknown" and ce != "Multiple" and ceMap.has_key(ce):
         site = ceMap[ce]
       if not resultDict.has_key(site):
         resultDict[site] = {}
@@ -695,7 +695,7 @@ class PilotAgentsDB(DB):
       site = attDict['GridSite']
       ce = attDict['DestinationSite']
       state = attDict['Status']
-      if site == 'Unknown' and ce != "Unknown":
+      if site == 'Unknown' and ce != "Unknown" and ceMap.has_key(ce):
         site = ceMap[ce]
       if state == "Done":
         resultDict[site][ce]["Done"] = count
@@ -706,7 +706,7 @@ class PilotAgentsDB(DB):
       site = attDict['GridSite']
       ce = attDict['DestinationSite']
       state = attDict['Status']
-      if site == 'Unknown' and ce != "Unknown":
+      if site == 'Unknown' and ce != "Unknown" and ceMap.has_key(ce):
         site = ceMap[ce]
       if state == "Done":
         resultDict[site][ce]["Done_Empty"] = count
@@ -715,7 +715,7 @@ class PilotAgentsDB(DB):
       site = attDict['GridSite']
       ce = attDict['DestinationSite']
       state = attDict['Status']
-      if site == 'Unknown' and ce != "Unknown":
+      if site == 'Unknown' and ce != "Unknown" and ceMap.has_key(ce):
         site = ceMap[ce]
       if state == "Aborted":
         resultDict[site][ce]["Aborted_Hour"] = count
