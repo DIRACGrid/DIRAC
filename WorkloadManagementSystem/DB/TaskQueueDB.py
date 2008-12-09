@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.44 2008/12/09 13:45:33 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.45 2008/12/09 14:03:17 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.44 2008/12/09 13:45:33 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.45 2008/12/09 14:03:17 acasajus Exp $"
 
 import time
 import types
@@ -596,7 +596,7 @@ class TaskQueueDB(DB):
     Recalculate the shares for a userDN/userGroup combo
     """
     self.log.info( "Recalculating shares for %s@%s TQs" % ( userDN, userGroup ) )
-    share = gConfig.getValue( "/Security/Groups/%s/JobsShare" % userGroup, self.defaultGroupShare )
+    share = gConfig.getValue( "/Security/Groups/%s/JobShare" % userGroup, self.defaultGroupShare )
     if Properties.JOB_SHARING in CS.getPropertiesForGroup( userGroup ):
       #If group has JobSharing just set prio for that entry, userDN is irrelevant
       return self.setPrioritiesForEntity( userDN, userGroup, share, connObj = connObj )
@@ -653,7 +653,7 @@ class TaskQueueDB(DB):
       groups = []
     shares = {}
     for group in groups:
-      shares[ group ] = gConfig.getValue( "/Security/Groups/%s/JobsShare" % group, self.defaultGroupShare )
+      shares[ group ] = gConfig.getValue( "/Security/Groups/%s/JobShare" % group, self.defaultGroupShare )
     return shares
 
   def propagateSharesIfChanged(self):
