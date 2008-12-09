@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.118 2008/12/08 07:19:15 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.119 2008/12/09 17:13:51 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -52,7 +52,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.118 2008/12/08 07:19:15 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.119 2008/12/09 17:13:51 atsareg Exp $"
 
 import re, os, sys, string, types
 import time, datetime, operator
@@ -62,7 +62,7 @@ from types                                     import *
 from DIRAC                                     import gLogger, S_OK, S_ERROR, Time
 from DIRAC.ConfigurationSystem.Client.Config   import gConfig
 from DIRAC.Core.Base.DB                        import DB
-from DIRAC.Core.Security.CS                    import getUsernameForDN, getDNForUsername  
+from DIRAC.Core.Security.CS                    import getUsernameForDN, getDNForUsername
 
 DEBUG = 0
 JOB_STATES = ['Received','Checking','Staging','Waiting','Matched',
@@ -1848,6 +1848,121 @@ class JobDB(DB):
     return S_OK(siteDict)
 
 #################################################################################
+  def getSiteSummaryWeb(self,selectDict, sortList, startItem, maxItems):
+    """ Get the summary of jobs in a given status on all the sites in the standard Web form
+    """
+
+    paramNames = ['Site','Grid','Country','MaskStatus']
+    paramNames += JOB_STATES
+    paramNames += ['Efficiency','Status']
+
+    # Sort out records as requested
+    sortItem = -1
+    sortOrder = "ASC"
+    if sortList:
+      item = sortList[0][0]  # only one item for the moment
+      sortItem = paramNames.index(item)
+      sortOrder = sortList[0][1]
+
+    last_update = None
+    if selectDict.has_key('LastUpdateTime'):
+      last_update = selectDict['LastUpdateTime']
+      del selectDict['LastUpdateTime']
+
+    result = self.getCounters('Jobs',['Site','Status'],
+                              selectDict,newer=last_update,
+                              timeStamp='LastUpdateTime')
+    last_day = Time.dateTime() - Time.day
+    resultDay = self.getCounters('Jobs',['Site','Status'],
+                                 selectDict,newer=last_day,
+                                 timeStamp='EndExecTime')
+
+    siteMask = {}
+    resultMask = self.getSiteMask()
+    if resultMask['OK']:
+      siteMask = resultMask['Value']
+
+    # Sort out different counters
+    resultDict = {}
+    for attDict,count in result['Value']:
+      siteFullName = attDict['Site']
+      status = attDict['Status']
+      if not resultDict.has_key(siteFullName):
+        resultDict[siteFullName] = {}
+        for state in JOB_STATES:
+          resultDict[siteFullName][state] = 0
+      resultDict[siteFullName][status] = count
+    for attDict,count in result['Value']:
+      siteFullName = attDict['Site']
+      status = attDict['Status']
+      if status in JOB_FINAL_STATES:
+        resultDict[siteFullName][status] = count
+
+    # Collect records now
+    records = []
+    countryCounts = {}
+    for siteFullName in resultDict:
+      siteDict = resultDict[siteFullName]
+      if siteFullName.find('.') != -1:
+        grid,site,country = siteFullName.split('.')
+      else:
+        grid,site,country = 'Unknown','Unknown','Unknown'
+      if not countryCounts.has_key(country):
+        countryCounts[country] = {}
+        for state in JOB_STATES:
+           countryCounts[country][state] = 0
+      rList = [grid,siteFullName,country]
+      if siteMask.has_key(siteFullName):
+        rList.append(siteMask[siteFullName])
+      else:
+        rList.append('NoMask')
+      for status in siteDict:
+        rList.append(siteDict[status])
+        countryCounts[country][status] += siteDict[status]
+      efficiency = 0
+      total_finished = 0
+      for state in JOB_FINAL_STATES:
+        total_finished += resultDict[siteFullName][state]
+      if total_finished > 0:
+        efficiency = float(siteDict['Done']+siteDict['Completed'])/float(total_finished)
+      rList.append('%f.2' % efficiency*100.)
+      # Estimate the site verbose status
+      if efficiency > 0.95:
+        rList.append('Good')
+      elif efficiency > 0.80:
+        rList.append('Fair')
+      elif efficiency > 0.60:
+        rList.append('Poor')
+      elif total_finished == 0:
+        rList.append('Idle')
+      else:
+        rList.append('Bad')
+
+    # Sort records as requested
+    if sortItem != -1 :
+      if sortOrder.lower() == "asc":
+        records.sort(key=operator.itemgetter(sortItem))
+      else:
+        records.sort(key=operator.itemgetter(sortItem),reverse=True)
+
+    # Collect the final result
+    finalDict = {}
+    finalDict['ParameterNames'] = paramNames
+    # Return all the records if maxItems == 0 or the specified number otherwise
+    if maxItems:
+      if startItem+maxItems > len(records):
+        finalDict['Records'] = records[startItem:]
+      else:
+        finalDict['Records'] = records[startItem:startItem+maxItems]
+    else:
+      finalDict['Records'] = records
+
+    finalDict['TotalRecords'] = len(records)
+    finalDict['Extras'] = countryCounts
+    return S_OK(finalDict)
+
+
+#################################################################################
   def getUserSummaryWeb(self,selectDict, sortList, startItem, maxItems):
     """ Get the summary of user jobs in a standard form for the Web portal.
         Pagination and global sorting is supported.
@@ -1856,6 +1971,7 @@ class JobDB(DB):
     paramNames = ['Owner','OwnerDN','OwnerGroup']
     paramNames += JOB_STATES
     paramNames += ['TotalJobs']
+
     # Sort out records as requested
     sortItem = -1
     sortOrder = "ASC"
@@ -1875,7 +1991,7 @@ class JobDB(DB):
       if result['OK']:
         selectDict['OwnerDN'] = result['Value']
       else:
-        return S_ERROR('Unknown user %s' % username)    
+        return S_ERROR('Unknown user %s' % username)
 
     result = self.getCounters('Jobs',['OwnerDN','OwnerGroup','Status'],
                               selectDict,newer=last_update,
@@ -1917,7 +2033,7 @@ class JobDB(DB):
         if result['OK']:
           username = result['Value']
         else:
-          username = 'Unknown'  
+          username = 'Unknown'
         rList = [username,owner,group]
         count = 0
         for s in JOB_STATES:
@@ -1934,7 +2050,7 @@ class JobDB(DB):
         records.sort(key=operator.itemgetter(sortItem))
       else:
         records.sort(key=operator.itemgetter(sortItem),reverse=True)
-        
+
     # Collect the final result
     finalDict = {}
     finalDict['ParameterNames'] = paramNames
