@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.1 2008/12/05 18:33:38 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.2 2008/12/09 09:38:23 rgracian Exp $
 # File :   TaskQueueDirector.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -51,7 +51,7 @@
         SoftwareTag
 
 """
-__RCSID__ = "$Id: TaskQueueDirector.py,v 1.1 2008/12/05 18:33:38 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueDirector.py,v 1.2 2008/12/09 09:38:23 rgracian Exp $"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 
@@ -178,6 +178,7 @@ class TaskQueueDirector(AgentModule):
     # limit the number of pilots according to the number of waiting job in the TaskQueue 
     # and the number of already submitted pilots for that TaskQueue
     pilotsToSubmit = min( pilotsToSubmit, int( ( 1 + extraPilotFraction ) * taskQueueJobs ) + extraPilots - waitingPilots )
+    if pilotsToSubmit <= 0: return S_OK( 0 ) 
     self.log.verbose( 'Submitting %s pilots for TaskQueue' % pilotsToSubmit )
 
     return self.__submitPilots( taskQueueDict, pilotsToSubmit )
