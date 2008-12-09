@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.46 2008/12/09 14:58:13 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.47 2008/12/09 15:03:43 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.46 2008/12/09 14:58:13 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.47 2008/12/09 15:03:43 acasajus Exp $"
 
 import time
 import types
@@ -212,20 +212,12 @@ class TaskQueueDB(DB):
     Delete all empty task queues
     """
     self.log.info( "Cleaning orphaned TQs" )
-    retVal = self._update( "LOCK TABLE `tq_TaskQueues` WRITE", conn = connObj )
+    retVal = self._update( "DELETE FROM `tq_TaskQueues` WHERE TQId not in ( SELECT DISTINCT TQId from `tq_Jobs` )", conn = connObj )
     if not retVal[ 'OK' ]:
       return retVal
-    try:
-      retVal = self._update( "DELETE FROM `tq_TaskQueues` WHERE TQId not in ( SELECT DISTINCT TQId from `tq_Jobs` )", conn = connObj )
-      if not retVal[ 'OK' ]:
-        return retVal
-      for mvField in self.__multiValueDefFields:
-        retVal = self._update( "DELETE FROM `tq_TQTo%s` WHERE TQId not in ( SELECT DISTINCT TQId from `tq_TaskQueues` )" % mvField,
-                               conn = connObj )
-        if not retVal[ 'OK' ]:
-          return retVal
-    finally:
-      retVal = self._update( "UNLOCK TABLES", conn = connObj )
+    for mvField in self.__multiValueDefFields:
+      retVal = self._update( "DELETE FROM `tq_TQTo%s` WHERE TQId not in ( SELECT DISTINCT TQId from `tq_TaskQueues` )" % mvField,
+                             conn = connObj )
       if not retVal[ 'OK' ]:
         return retVal
     return S_OK()
