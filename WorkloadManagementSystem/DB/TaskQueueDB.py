@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.45 2008/12/09 14:03:17 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.46 2008/12/09 14:58:13 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.45 2008/12/09 14:03:17 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.46 2008/12/09 14:58:13 acasajus Exp $"
 
 import time
 import types
@@ -212,7 +212,7 @@ class TaskQueueDB(DB):
     Delete all empty task queues
     """
     self.log.info( "Cleaning orphaned TQs" )
-    retVal = self._update( "LOCK TABLE `tq_TaskQueues`", conn = connObj )
+    retVal = self._update( "LOCK TABLE `tq_TaskQueues` WRITE", conn = connObj )
     if not retVal[ 'OK' ]:
       return retVal
     try:
@@ -225,7 +225,7 @@ class TaskQueueDB(DB):
         if not retVal[ 'OK' ]:
           return retVal
     finally:
-      retVal = self._update( "UNLOCK TABLE `tq_TaskQueues`", conn = connObj )
+      retVal = self._update( "UNLOCK TABLES", conn = connObj )
       if not retVal[ 'OK' ]:
         return retVal
     return S_OK()
