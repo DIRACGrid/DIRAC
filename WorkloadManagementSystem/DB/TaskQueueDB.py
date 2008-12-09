@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.43 2008/12/05 18:35:07 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.44 2008/12/09 13:45:33 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.43 2008/12/05 18:35:07 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.44 2008/12/09 13:45:33 acasajus Exp $"
 
 import time
 import types
@@ -440,7 +440,7 @@ class TaskQueueDB(DB):
                                                                                                                  bannedTable ) )
     tqSqlCmd = "SELECT `tq_TaskQueues`.TQId, `tq_TaskQueues`.OwnerDN, `tq_TaskQueues`.OwnerGroup FROM %s WHERE %s" % ( ", ".join( sqlTables ),
                                                                                                                       " AND ".join( sqlCondList ) )
-    tqSqlCmd = "%s ORDER BY RAND() / `tq_TaskQueues`.Priority ASC" % tqSqlCmd
+    tqSqlCmd = "%s ORDER BY `tq_TaskQueues`.CPUTime DESC, RAND() / `tq_TaskQueues`.Priority ASC" % tqSqlCmd
     if numQueuesToGet:
       tqSqlCmd = "%s LIMIT %s" % ( tqSqlCmd, numQueuesToGet )
     return S_OK( tqSqlCmd )
@@ -497,12 +497,8 @@ class TaskQueueDB(DB):
     retVal = self._update( sqlCmd, conn = connObj )
     if not retVal[ 'OK' ]:
       return S_ERROR( "Could not delete task queue %s: %s" % ( tqId, retVal[ 'Message' ] ) )
-    sqlCmd = "SELECT TQId FROM `tq_TaskQueues` WHERE `tq_TaskQueues`.TQId = %s" % tqId
-    retVal = self._update( sqlCmd, conn = connObj )
-    if not retVal[ 'OK' ]:
-      self.log.info( "Could not delete TQ %s" % tqId, retVal[ 'Message' ] )
-      return retVal
-    if not retVal['Value']:
+    delTQ = retVal[ 'Value' ]
+    if delTQ > 0:
       for mvField in self.__multiValueDefFields:
         retVal = self._update( "DELETE FROM `tq_TQTo%s` WHERE TQId = %s" % ( mvField, tqId ), conn = connObj )
         if not retVal[ 'OK' ]:
@@ -510,7 +506,7 @@ class TaskQueueDB(DB):
       return S_OK( True )
     return S_OK( False )
 
-  def deleteTaskQueue( self, tqId, conn = False ):
+  def deleteTaskQueue( self, tqId, connObj = False ):
     """
     Try to delete a task queue even if it has jobs
     """
@@ -524,17 +520,16 @@ class TaskQueueDB(DB):
     retVal = self._update( sqlCmd, conn = connObj )
     if not retVal[ 'OK' ]:
       return S_ERROR( "Could not delete task queue %s: %s" % ( tqId, retVal[ 'Message' ] ) )
+    delTQ = retVal[ 'Value' ]
     sqlCmd = "DELETE FROM `tq_Jobs` WHERE `tq_Jobs`.TQId = %s" % tqId
     retVal = self._update( sqlCmd, conn = connObj )
     if not retVal[ 'OK' ]:
       return S_ERROR( "Could not delete task queue %s: %s" % ( tqId, retVal[ 'Message' ] ) )
-    if connObj.num_rows() == 1:
-      for mvField in self.__multiValueDefFields:
-        retVal = self._update( "DELETE FROM `tq_TQTo%s` WHERE TQId = %s" % tqId, conn = connObj )
-        if not retVal[ 'OK' ]:
-          return retVal
-      return S_OK( True )
-    return S_OK( False )
+    for mvField in self.__multiValueDefFields:
+      retVal = self._update( "DELETE FROM `tq_TQTo%s` WHERE TQId = %s" % tqId, conn = connObj )
+      if not retVal[ 'OK' ]:
+        return retVal
+    return S_OK( delTQ > 0 )
 
   def retrieveTaskQueues( self ):
     """
