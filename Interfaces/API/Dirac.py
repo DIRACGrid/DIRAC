@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.60 2008/12/09 10:46:35 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.61 2008/12/09 13:32:29 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.60 2008/12/09 10:46:35 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.61 2008/12/09 13:32:29 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -106,11 +106,9 @@ class Dirac:
 
        @param job: Instance of Job class or JDL string
        @type job: Job() or string
-       @return: S_OK,S_ERROR
-
        @param mode: Submit job locally with mode = 'wms' (default), 'local' to run workflow or 'agent' to run full Job Wrapper locally
        @type mode: string
-
+       @return: S_OK,S_ERROR
     """
     self.__printInfo()
 
@@ -655,6 +653,8 @@ class Dirac:
 
        @param lfns: Logical File Name(s) to query
        @type lfns: LFN string or list []
+       @param printOutput: Optional flag to print result
+       @type printOutput: boolean
        @return: S_OK,S_ERROR
     """
     if not self.fileCatalog:
@@ -688,15 +688,40 @@ class Dirac:
 
   #############################################################################
   def splitInputData(self,lfns,maxFilesPerJob=20,printOutput=False):
-    """Split the supplied lfn list by the replicas present.
+    """Split the supplied lfn list by the replicas present at the possible
+       destination sites.  An S_OK object will be returned containing a list of
+       lists in order to create the jobs.
 
        Example usage:
 
+       >>> d.splitInputData(lfns,10)
+       {'OK': True, 'Value': [['<LFN>'], ['<LFN>']]}
+
 
        @param lfns: Logical File Name(s) to split
-       @type lfns: LFN list []
+       @type lfns: list
+       @param maxFilesPerJob: Number of files per bunch
+       @type maxFilesPerJob: integer
+       @param printOutput: Optional flag to print result
+       @type printOutput: boolean
        @return: S_OK,S_ERROR
     """
+    if type(lfns)==type(" "):
+      lfns = lfns.replace('LFN:','')
+    elif type(lfns)==type([]):
+      try:
+        lfns = [str(lfn.replace('LFN:','')) for lfn in lfns]
+      except Exception,x:
+        return self.__errorReport(str(x),'Expected strings for LFNs')
+    else:
+      return self.__errorReport('Expected single string or list of strings for LFN(s)')
+
+    if not type(maxFilesPerJob)==type(2):
+      try:
+        maxFilesPerJob = int(maxFilesPerJob)
+      except Exception,x:
+        return self.__errorReport(str(x),'Expected integer for maxFilesPerJob')
+
     replicaDict = self.getReplicas(lfns)
     if not replicaDict['OK']:
       return replicaDict
@@ -734,6 +759,8 @@ class Dirac:
 
        @param lfns: Logical File Name(s) to query
        @type lfns: LFN string or list []
+       @param printOutput: Optional flag to print result
+       @type printOutput: boolean
        @return: S_OK,S_ERROR
     """
     if not self.fileCatalog:
@@ -783,11 +810,10 @@ class Dirac:
        @param lfn: Logical File Name (LFN)
        @type lfn: string
        @param diracSE: DIRAC SE name e.g. CERN-USER
-       @type diracSE: string
-       @return: S_OK,S_ERROR
-
+       @type diracSE: strin
        @param printOutput: Optional flag to print result
        @type printOutput: boolean
+       @return: S_OK,S_ERROR
     """
     if type(lfn)==type(" "):
       lfn= lfn.replace('LFN:','')
@@ -824,10 +850,9 @@ class Dirac:
 
        @param lfn: Logical File Name (LFN)
        @type lfn: string
-       @return: S_OK,S_ERROR
-
        @param printOutput: Optional flag to print result
        @type printOutput: boolean
+       @return: S_OK,S_ERROR
     """
     if type(lfn)==type(" "):
       lfn= lfn.replace('LFN:','')
@@ -868,12 +893,11 @@ class Dirac:
        @type destinationSE: string
        @param sourceSE: Optional source SE
        @type sourceSE: string
-       @return: S_OK,S_ERROR
-
        @param localCache: Optional path to local cache
        @type localCache: string
        @param printOutput: Optional flag to print result
        @type printOutput: boolean
+       @return: S_OK,S_ERROR
     """
     if type(lfn)==type(" "):
       lfn= lfn.replace('LFN:','')
@@ -913,11 +937,9 @@ class Dirac:
        @type lfn: string or list
        @param storageElement: DIRAC SE name e.g. CERN-RAW
        @type storageElement: string
-       @return: S_OK,S_ERROR
-
        @param printOutput: Optional flag to print result
        @type printOutput: boolean
-
+       @return: S_OK,S_ERROR
     """
     if type(lfn)==type(" "):
       lfn = lfn.replace('LFN:','')
@@ -948,11 +970,9 @@ class Dirac:
        @type pfn: string or list
        @param storageElement: DIRAC SE name e.g. CERN-RAW
        @type storageElement: string
-       @return: S_OK,S_ERROR
-
        @param printOutput: Optional flag to print result
        @type printOutput: boolean
-
+       @return: S_OK,S_ERROR
     """
     if type(pfn)==type(" "):
       if re.search('LFN:',pfn):
@@ -991,11 +1011,9 @@ class Dirac:
        @type pfn: string or list
        @param storageElement: DIRAC SE name e.g. CERN-RAW
        @type storageElement: string
-       @return: S_OK,S_ERROR
-
        @param printOutput: Optional flag to print result
        @type printOutput: boolean
-
+       @return: S_OK,S_ERROR
     """
     if type(pfn)==type(" "):
       if re.search('LFN:',pfn):
@@ -1031,6 +1049,8 @@ class Dirac:
 
        @param lfn: Logical File Name (LFN)
        @type lfn: string
+       @param printOutput: Flag to print to stdOut
+       @type printOutput: Boolean
        @return: S_OK,S_ERROR
 
     """
@@ -1081,11 +1101,9 @@ class Dirac:
 
        @param lfn: Logical File Name (LFN)
        @type lfn: string
-       @return: S_OK,S_ERROR
-
        @param printOutput: Optional flag to print result
        @type printOutput: boolean
-
+       @return: S_OK,S_ERROR
     """
     if type(lfn)==type(" "):
       lfn = lfn.replace('LFN:','')
@@ -1163,10 +1181,9 @@ class Dirac:
 
        @param jobID: JobID
        @type jobID: integer or string
-       @return: S_OK,S_ERROR
-
        @param outputDir: Optional directory for files
        @type outputDir: string
+       @return: S_OK,S_ERROR
     """
     if type(jobID)==type(" "):
       try:
@@ -1212,10 +1229,11 @@ class Dirac:
 
        @param jobID: JobID
        @type jobID: integer or string
-       @return: S_OK,S_ERROR
-
        @param outputDir: Optional directory path
        @type outputDir: string
+       @param oversized: Optionally disable oversized sandbox download
+       @type oversized: boolean
+       @return: S_OK,S_ERROR
     """
     if type(jobID)==type(" "):
       try:
@@ -1435,7 +1453,8 @@ class Dirac:
        Example Usage:
 
        >>> dirac.getJobInputData(1405)
-      {'OK': True, 'Value': {1405: ['LFN:/lhcb/production/DC06/phys-v2-lumi5/00001680/DST/0000/00001680_00000490_5.dst']}}
+       {'OK': True, 'Value': {1405:
+        ['LFN:/lhcb/production/DC06/phys-v2-lumi5/00001680/DST/0000/00001680_00000490_5.dst']}}
 
        @param jobID: JobID
        @type jobID: int, string or list
@@ -1541,8 +1560,26 @@ class Dirac:
         - Site is the DIRAC site name, e.g. LCG.CERN.ch
         - Owner is the immutable nickname, e.g. paterson
 
+       Example Usage:
+
        >>> dirac.selectJobs(Status='Failed',Owner='paterson',Site='LCG.CERN.ch')
        {'OK': True, 'Value': ['25020', '25023', '25026', '25027', '25040']}
+
+       @param Status: Job status
+       @type Status: string
+       @param MinorStatus: Job minor status
+       @type MinorStatus: string
+       @param ApplicationStatus: Job application status
+       @type ApplicationStatus: string
+       @param Site: Job execution site
+       @type Site: string
+       @param Owner: Job owner
+       @type Owner: string
+       @param JobGroup: Job group
+       @type JobGroup: string
+       @param Date: Selection date
+       @type Date: string
+       @return: S_OK,S_ERROR
     """
     options = {'Status':Status,'MinorStatus':MinorStatus,'ApplicationStatus':ApplicationStatus,'Owner':Owner,
                'Site':Site,'JobGroup':JobGroup}
@@ -1583,10 +1620,25 @@ class Dirac:
 
   #############################################################################
   def getJobSummary(self,jobID,outputFile=None,printOutput=False):
-    """Under Development.  Output similar to the web page can be printed to the screen
+    """Output similar to the web page can be printed to the screen
        or stored as a file or just returned as a dictionary for further usage.
 
        Jobs can be specified individually or as a list.
+
+       Example Usage:
+
+       >>> dirac.getJobSummary(959209)
+       {'OK': True, 'Value': {959209: {'Status': 'Staging', 'LastUpdateTime': '2008-12-08 16:43:18',
+       'MinorStatus': '28 / 30', 'Site': 'Unknown', 'HeartBeatTime': 'None', 'ApplicationStatus': 'unknown',
+       'JobGroup': '00003403', 'Owner': 'joel', 'SubmissionTime': '2008-12-08 16:41:38'}}}
+
+       @param jobID: JobID
+       @type jobID: int or string
+       @param outputFile: Optional output file
+       @type outputFile: string
+       @param printOutput: Flag to print to stdOut
+       @type printOutput: Boolean
+       @return: S_OK,S_ERROR
     """
     if type(jobID)==type(" "):
       try:
@@ -1665,6 +1717,15 @@ class Dirac:
     """Developer function. Try to retrieve all possible outputs including
        logging information, job parameters, sandbox outputs, pilot outputs,
        last heartbeat standard output, JDL and CPU profile.
+
+       Example Usage:
+
+       >>> dirac.getJobDebugOutput(959209)
+       {'OK': True, 'Value': '/afs/cern.ch/user/p/paterson/DEBUG_959209'}
+
+       @param jobID: JobID
+       @type jobID: int or string
+       @return: S_OK,S_ERROR
     """
     if type(jobID)==type(" "):
       try:
@@ -1672,59 +1733,87 @@ class Dirac:
       except Exception,x:
         return self.__errorReport(str(x),'Expected integer or string for existing jobID')
 
+    result = self.status(jobID)
+    if not result['OK']:
+      self.log.info('Could not obtain status information for jobID %s, please check this is valid.' %jobID)
+      return S_ERROR('JobID %s not found in WMS' %jobID)
+    else:
+      self.log.info('Job %s' %result['Value'])
+
     debugDir = '%s/DEBUG_%s' %(os.getcwd(),jobID)
     try:
       os.mkdir(debugDir)
     except Exception,x:
       return self.__errorReport(str(x),'Could not create directory in %s' %(debugDir))
 
-    result = self.getOutputSandbox(jobID,'%s' %(debugDir))
-    msg = []
-    if not result['OK']:
-      msg.append('Output Sandbox: Not Retrieved')
-    else:
-      msg.append('Output Sandbobox: Retrieved')
+    try:
+      result = self.getOutputSandbox(jobID,'%s' %(debugDir))
+      msg = []
+      if not result['OK']:
+        msg.append('Output Sandbox: Retrieval Failed')
+      else:
+        msg.append('Output Sandbox: Retrieved')
+    except Exception,x:
+      msg.append('Output Sandbox: Not Available')
 
-    result = self.getInputSandbox(jobID,'%s' %(debugDir))
-    if not result['OK']:
-      msg.append('Input Sandbox: Not Retrieved')
-    else:
-      msg.append('Input Sandbobox: Retrieved')
+    try:
+      result = self.getInputSandbox(jobID,'%s' %(debugDir))
+      if not result['OK']:
+        msg.append('Input Sandbox: Retrieval Failed')
+      else:
+        msg.append('Input Sandbox: Retrieved')
+    except Exception,x:
+      msg.append('Input Sandbox: Not Available')
 
-    result = self.parameters(jobID)
-    if not result['OK']:
-      msg.append('Job Parameters: Not Retrieved')
-    else:
-      self.__writeFile(result['Value'],'%s/JobParameters' %(debugDir))
-      msg.append('Job Parameters: Retrieved')
+    try:
+      result = self.parameters(jobID)
+      if not result['OK']:
+        msg.append('Job Parameters: Retrieval Failed')
+      else:
+        self.__writeFile(result['Value'],'%s/JobParameters' %(debugDir))
+        msg.append('Job Parameters: Retrieved')
+    except Exception,x:
+      msg.append('Job Parameters: Not Available')
 
-    result = self.peek(jobID)
-    if not result['OK']:
-      msg.append('Last Heartbeat StdOut: Not Retrieved')
-    else:
-      self.__writeFile(result['Value'],'%s/LastHeartBeat' %(debugDir))
-      msg.append('Last Heartbeat StdOut: Retrieved')
+    try:
+      result = self.peek(jobID)
+      if not result['OK']:
+        msg.append('Last Heartbeat StdOut: Retrieval Failed')
+      else:
+        self.__writeFile(result['Value'],'%s/LastHeartBeat' %(debugDir))
+        msg.append('Last Heartbeat StdOut: Retrieved')
+    except Exception,x:
+      msg.append('Last Heartbeat StdOut: Not Available')
 
-    result = self.loggingInfo(jobID)
-    if not result['OK']:
-      msg.append('Logging Info: Not Retrieved')
-    else:
-      self.__writeFile(result['Value'],'%s/LoggingInfo' %(debugDir))
-      msg.append('Logging Info: Retrieved')
+    try:
+      result = self.loggingInfo(jobID)
+      if not result['OK']:
+        msg.append('Logging Info: Retrieval Failed')
+      else:
+        self.__writeFile(result['Value'],'%s/LoggingInfo' %(debugDir))
+        msg.append('Logging Info: Retrieved')
+    except Exception,x:
+      msg.append('Logging Info: Not Available')
 
-    result = self.getJobJDL(jobID)
-    if not result['OK']:
-      msg.append('Job JDL: Not Retrieved')
-    else:
-      self.__writeFile(result['Value'],'%s/Job%s.jdl' %(debugDir,jobID))
-      msg.append('Job JDL: Retrieved')
+    try:
+      result = self.getJobJDL(jobID)
+      if not result['OK']:
+        msg.append('Job JDL: Retrieval Failed')
+      else:
+        self.__writeFile(result['Value'],'%s/Job%s.jdl' %(debugDir,jobID))
+        msg.append('Job JDL: Retrieved')
+    except Exception,x:
+      msg.append('Job JDL: Not Available')
 
-    result = self.getJobCPUTime(jobID)
-    if not result['OK']:
-      msg.append('CPU Profile: Not Retrieved')
-    else:
-      self.__writeFile(result['Value'],'%s/JobCPUProfile' %(debugDir))
-      msg.append('CPU Profile: Retrieved')
+    try:
+      result = self.getJobCPUTime(jobID)
+      if not result['OK']:
+        msg.append('CPU Profile: Retrieval Failed')
+      else:
+        self.__writeFile(result['Value'],'%s/JobCPUProfile' %(debugDir))
+        msg.append('CPU Profile: Retrieved')
+    except Exception,x:
+      msg.append('CPU Profile: Not Available')
 
     self.log.info('Summary of debugging outputs for job %s retrieved in directory:\n%s\n%s' %(jobID,debugDir,string.join(msg,'\n')))
     return S_OK(debugDir)
@@ -1742,10 +1831,21 @@ class Dirac:
 
   #############################################################################
   def getJobCPUTime(self,jobID,printOutput=False):
-    """Under development.  Retrieve job CPU consumed heartbeat data from job monitoring
+    """Retrieve job CPU consumed heartbeat data from job monitoring
        service.  Jobs can be specified individually or as a list.
 
-       The time stamps and raw CPU consumed (s) are returned.
+       The time stamps and raw CPU consumed (s) are returned (if available).
+
+       Example Usage:
+
+       >>> d.getJobCPUTime(959209)
+       {'OK': True, 'Value': {959209: {}}}
+
+       @param jobID: JobID
+       @type jobID: int or string
+       @param printOutput: Flag to print to stdOut
+       @type printOutput: Boolean
+       @return: S_OK,S_ERROR
     """
     if type(jobID)==type(" "):
       try:
@@ -1798,6 +1898,8 @@ class Dirac:
 
        @param jobID: JobID
        @type jobID: int, string or list
+       @param printOutput: Flag to print to stdOut
+       @type printOutput: Boolean
        @return: S_OK,S_ERROR
     """
     if type(jobID)==type(" "):
@@ -1836,6 +1938,8 @@ class Dirac:
 
        @param jobID: JobID
        @type jobID: int, string or list
+       @param printOutput: Flag to print to stdOut
+       @type printOutput: Boolean
        @return: S_OK,S_ERROR
     """
     if type(jobID)==type(" "):
@@ -1876,6 +1980,8 @@ class Dirac:
 
        @param jobID: JobID
        @type jobID: int or string
+       @param printOutput: Flag to print to stdOut
+       @type printOutput: Boolean
        @return: S_OK,S_ERROR
      """
     if type(jobID)==type(" "):
@@ -1963,6 +2069,8 @@ class Dirac:
        @type system: string
        @param service: service name
        @type service: string
+       @param printOutput: Flag to print to stdOut
+       @type printOutput: Boolean
        @return: S_OK,S_ERROR
     """
     if not type(system)==type(" ") and type(service)==type(" "):
@@ -1991,11 +2099,15 @@ class Dirac:
   def uploadProxy(self,proxy=False):
     """The uploadProxy will try to upload a proxy to the proxy manager service.
 
+       If not explicitly specified, the current proxy is taken.
+
        Example Usage:
 
        >>> print dirac.uploadProxy()
        {'OK': True}
 
+       @param proxy: optional proxy
+       @type proxy: string
        @return: S_OK,S_ERROR
     """
     return gProxyManager.uploadProxy( proxy )
@@ -2007,17 +2119,9 @@ class Dirac:
        and returned in the result structure.
 
        Example Usage:
+
        >>> print dirac.getJobJDL(12345)
-      {'Arguments': 'jobDescription.xml',
-       'BannedSites': ['LCG.CERN.ch',
-                       'LCG.CNAF.it',
-                       'LCG.RAL.uk',
-                       'LCG.PIC.es',
-                       'LCG.IN2P3.fr',
-                       'LCG.NIKHEF.nl',
-                       'LCG.GRIDKA.de'],
-       'DIRACSetup': 'LHCb-Production',
-       ...}
+       {'Arguments': 'jobDescription.xml',...}
 
        @param jobID: JobID
        @type jobID: int or string
