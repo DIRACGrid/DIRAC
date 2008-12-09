@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSAdministratorHandler.py,v 1.41 2008/12/06 23:27:18 atsareg Exp $
+# $Id: WMSAdministratorHandler.py,v 1.42 2008/12/09 17:35:52 atsareg Exp $
 ########################################################################
 """
 This is a DIRAC WMS administrator interface.
@@ -14,7 +14,7 @@ Access to the pilot data:
 
 """
 
-__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.41 2008/12/06 23:27:18 atsareg Exp $"
+__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.42 2008/12/09 17:35:52 atsareg Exp $"
 
 import os, sys, string, uu, shutil
 from types import *
@@ -257,6 +257,15 @@ class WMSAdministratorHandler(RequestHandler):
     """
 
     result = jobDB.getUserSummaryWeb(selectDict, sortList, startItem, maxItems)
+    return result
+
+  ##############################################################################
+  types_getSiteSummaryWeb = [DictType, ListType, IntType, IntType]
+  def export_getSiteSummaryWeb(self, selectDict, sortList, startItem, maxItems):
+    """ Get the summary of the jobs running on sites in a generic format
+    """
+
+    result = jobDB.getSiteSummaryWeb(selectDict, sortList, startItem, maxItems)
     return result
 
   ##############################################################################
