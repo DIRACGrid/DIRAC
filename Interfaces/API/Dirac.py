@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.59 2008/11/26 21:10:33 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.60 2008/12/09 10:46:35 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.59 2008/11/26 21:10:33 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.60 2008/12/09 10:46:35 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -1467,8 +1467,12 @@ class Dirac:
     return S_OK(summary)
 
   #############################################################################
-  def getJobOutputData(self,jobID):
+  def getJobOutputData(self,jobID,outputFiles=''):
     """ Retrieve the output data files of a given job locally.
+
+       Optionally restrict the download of output data to a given file name or
+       list of files using the outputFiles option, by default all job outputs
+       will be downloaded.
 
        Example Usage:
 
@@ -1477,6 +1481,8 @@ class Dirac:
 
        @param jobID: JobID
        @type jobID: int or string
+       @param outputFiles: Optional files to download
+       @type outputFiles: string or list
        @return: S_OK,S_ERROR
     """
     if type(jobID)==type(" "):
@@ -1496,6 +1502,26 @@ class Dirac:
     outputData = outputData.replace(' ','').split(',')
     if not outputData:
       return S_ERROR('No output data files found to download')
+
+    if outputFiles:
+      if type(outputFiles)==type(" "):
+        outputFiles = [os.path.basename(outputFiles)]
+      elif type(outputFiles)==type([]):
+        try:
+          outputFiles = [os.path.basename(fname) for fname in outputFiles]
+        except Exception,x:
+          return self.__errorReport(str(x),'Expected strings for output file names')
+      else:
+        return self.__errorReport('Expected strings for output file names')
+      self.log.info('Found specific outputFiles to download: %s' %(string.join(outputFiles,', ')))
+      newOutputData = []
+      for outputFile in outputData:
+        if os.path.basename(outputFile) in outputFiles:
+          newOutputData.append(outputFile)
+          self.log.verbose('%s will be downloaded' %outputFile)
+        else:
+          self.log.verbose('%s will be ignored' %outputFile)
+      outputData = newOutputData
 
     for outputFile in outputData:
       self.log.info('Attempting to retrieve %s' %outputFile)
