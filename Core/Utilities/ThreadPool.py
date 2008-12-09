@@ -1,8 +1,8 @@
 #################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/ThreadPool.py,v 1.10 2008/02/12 14:37:45 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/ThreadPool.py,v 1.11 2008/12/09 17:39:28 acasajus Exp $
 #################################################################
 
-__RCSID__ = "$Id: ThreadPool.py,v 1.10 2008/02/12 14:37:45 acasajus Exp $"
+__RCSID__ = "$Id: ThreadPool.py,v 1.11 2008/12/09 17:39:28 acasajus Exp $"
 
 import time
 import sys
@@ -168,6 +168,9 @@ class ThreadPool( threading.Thread ):
 
   def isFull( self ):
     return self.__pendingQueue.full()
+
+  def isWorking( self ):
+    return not self.__pendingQueue.empty() or self.__countWorkingThreads()
 
   def processResults( self ):
     iProcessed = 0
