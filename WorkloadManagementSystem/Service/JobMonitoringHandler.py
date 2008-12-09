@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobMonitoringHandler.py,v 1.23 2008/12/08 10:41:31 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobMonitoringHandler.py,v 1.24 2008/12/09 13:44:02 atsareg Exp $
 ########################################################################
 
 """ JobMonitoringHandler is the implementation of the JobMonitoring service
@@ -11,7 +11,7 @@
 
 """
 
-__RCSID__ = "$Id: JobMonitoringHandler.py,v 1.23 2008/12/08 10:41:31 atsareg Exp $"
+__RCSID__ = "$Id: JobMonitoringHandler.py,v 1.24 2008/12/09 13:44:02 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -366,7 +366,9 @@ class JobMonitoringHandler( RequestHandler ):
     resultDict['Records'] = records
 
     statusDict = {}
-    result = jobDB.getCounters('Jobs',['Status'],selectDict,last_update)
+    result = jobDB.getCounters('Jobs',['Status'],selectDict,
+                               newer=last_update,
+                               timeStamp='LastUpdateTime')
     if result['OK']:
       for stDict,count in result['Value']:
          statusDict[stDict['Status']] = count
