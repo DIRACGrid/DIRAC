@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.45 2008/12/04 14:10:41 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.46 2008/12/10 16:50:46 atsareg Exp $
 # File :   JobSchedulingAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@
       meaningfully.
 
 """
-__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.45 2008/12/04 14:10:41 acasajus Exp $"
+__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.46 2008/12/10 16:50:46 atsareg Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
@@ -132,17 +132,21 @@ class JobSchedulingAgent(OptimizerModule):
       #Single site candidate chosen and staging required
       self.log.verbose('Job %s requires staging of input data' %(job))
       # set all LFN to disk for the selected site
-      site = destinationSites[0]
-      siteDict = optInfo['SiteCandidates'][site]
+      stagingSite = destinationSites[0]
+      siteDict = optInfo['SiteCandidates'][stagingSite]
       siteDict['disk'] = siteDict['disk'] + siteDict['tape']
       siteDict['tape'] = 0
 
-      optInfo['SiteCandidates'][site] = siteDict
+      optInfo['SiteCandidates'][stagingSite] = siteDict
       result = self.setOptimizerJobInfo(job,self.dataAgentName,optInfo)
       if not result['OK']:
         return result
 
-      stagerDict = self.__setStagingRequest(job,destinationSites[0],optInfo)
+      # Site is selected for staging, report it
+      self.log.verbose('Staging site candidate for job %s is %s' %(job,stagingSite))
+      self.jobDB.setJobAttribute(job,'Site',stagingSite)
+
+      stagerDict = self.__setStagingRequest(job,stagingSite,optInfo)
       if not stagerDict['OK']:
         return stagerDict
       return S_OK()
@@ -415,6 +419,24 @@ class JobSchedulingAgent(OptimizerModule):
       if len(siteCandidates)==1:
         self.log.verbose('Individual site candidate for job %s is %s' %(job,siteCandidates[0]))
         self.jobDB.setJobAttribute(job,'Site',siteCandidates[0])
+      elif bannedSites:
+        remainingSites = []
+        for s in siteCandidates:
+          if not s in bannedSites:
+            remainingSites.append(s)
+        if remainingSites:
+          if len(remainingSites) == 1:
+            self.log.verbose('Individual site candidate for job %s is %s' %(job,remainingSites[0]))
+            self.jobDB.setJobAttribute(job,'Site',remainingSites[0])
+          else:
+            self.log.verbose('Site candidates for job %s are %s' % (job,str(remainingSites)))
+            self.jobDB.setJobAttribute(job,'Site','Multiple')
+      else:
+        self.log.verbose('Site candidates for job %s are %s' %(job,str(siteCandidates)))
+        self.jobDB.setJobAttribute(job,'Site','Multiple')
+    else:
+      self.log.verbose('All sites are eligible for job %s' % job)
+      self.jobDB.setJobAttribute(job,'Site','ANY')
 
     return self.setNextOptimizer( job )
 
