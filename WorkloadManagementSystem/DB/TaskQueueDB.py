@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.47 2008/12/09 15:03:43 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.48 2008/12/10 11:32:49 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.47 2008/12/09 15:03:43 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.48 2008/12/10 11:32:49 acasajus Exp $"
 
 import time
 import types
@@ -344,7 +344,7 @@ class TaskQueueDB(DB):
       tqList = retVal[ 'Value' ]
       if len( tqList ) == 0:
         self.log.info( "No TQ matches requirements" )
-        return S_OK( { 'matchFound' : False } )
+        return S_OK( { 'matchFound' : False, 'tqMatch' : tqMatchDict } )
       for tqId, tqOwnerDN, tqOwnerGroup in tqList:
         self.log.info( "Trying to extract jobs from TQ %s" % tqId )
         retVal = self._query( "%s %s" % ( preJobSQL % tqId, postJobSQL ), conn = connObj )
@@ -369,7 +369,7 @@ class TaskQueueDB(DB):
               deletedTQ = result[ 'Value' ]
             if deletedTQ:
               self.recalculateSharesForEntity( tqOwnerDN, tqOwnerGroup, connObj = connObj )
-            return S_OK( { 'matchFound' : True, 'jobId' : jobId, 'taskQueueId' : tqId } )
+            return S_OK( { 'matchFound' : True, 'jobId' : jobId, 'taskQueueId' : tqId, 'tqMatch' : tqMatchDict } )
     if deletedTQ:
       self.recalculateSharesForEntity( tqOwnerDN, tqOwnerGroup, connObj = connObj )
     self.log.info( "Could not find a match after %s match retries" % self.__maxMatchRetry )
@@ -557,7 +557,7 @@ class TaskQueueDB(DB):
         tqId = record[0]
         value = record[1]
         if not tqId in tqData:
-          gLogger.warn( "Task Queue %s is defined in field %s but does not exist, triggering a cleaning" % ( tqId, field ) )
+          self.log.warn( "Task Queue %s is defined in field %s but does not exist, triggering a cleaning" % ( tqId, field ) )
           tqNeedCleaning = True
         else:
           if field not in tqData[ tqId ]:
