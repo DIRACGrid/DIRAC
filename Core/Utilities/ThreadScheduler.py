@@ -9,7 +9,7 @@ gSchedulerLock = Synchronizer()
 
 class ThreadScheduler:
 
-  def __init__( self, enableReactorThread = True, minPeriod = 60 ):
+  def __init__( self, enableReactorThread = True, minPeriod = 1 ):
     self.__thId = False
     self.__minPeriod = minPeriod
     self.__taskDict = {}
@@ -41,10 +41,7 @@ class ThreadScheduler:
     if executions:
       task[ 'executions' ] = executions
     self.__taskDict[ taskId ] = task
-    executeInSecs = period
-    if elapsedTime:
-      executeInSecs -= elapsedTime
-    retVal = self.__scheduleTask( taskId, executeInSecs )
+    retVal = self.__scheduleTask( taskId, elapsedTime )
     if not retVal[ 'OK' ]:
       return retVal
     self.__createExecutorIfNeeded()
@@ -69,9 +66,11 @@ class ThreadScheduler:
                                  elapsedTime = self.__minPeriod )
 
   @gSchedulerLock
-  def __scheduleTask( self, taskId, executeInSecs = False ):
-    if not executeInSecs:
-      executeInSecs = self.__taskDict[ taskId ][ 'period' ]
+  def __scheduleTask( self, taskId, elapsedTime = 0 ):
+    executeInSecs = self.__taskDict[ taskId ][ 'period' ]
+    elapsedTime = min( elapsedTime, executeInSecs - 1 )
+    if elapsedTime:
+      executeInSecs -= elapsedTime
 
     now = time.time()
     for i in range( len( self.__hood ) ):
@@ -112,8 +111,10 @@ class ThreadScheduler:
     if timeToWait and timeToWait > 0:
       return timeToWait
     taskId = self.__popNextTaskId()
+    startTime = time.time()
     self.__executeTask( taskId )
-    self.__schedueIfNeeded( taskId )
+    elapsedTime = time.time() - startTime
+    self.__schedueIfNeeded( taskId, elapsedTime )
     return self.__timeToNextTask()
 
   @gSchedulerLock
@@ -162,12 +163,12 @@ class ThreadScheduler:
       return False
     return True
 
-  def __schedueIfNeeded( self, taskId ):
+  def __schedueIfNeeded( self, taskId, elapsedTime = 0 ):
     if 'executions' in self.__taskDict[ taskId ]:
       if self.__taskDict[ taskId ][ 'executions' ] == 0:
         del( self.__taskDict[ taskId ] )
         return True
-    return self.__scheduleTask( taskId )
+    return self.__scheduleTask( taskId, elapsedTime )
 
 
 gThreadScheduler = ThreadScheduler()
