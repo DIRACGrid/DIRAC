@@ -9,7 +9,7 @@ gSchedulerLock = Synchronizer()
 
 class ThreadScheduler:
 
-  def __init__( self, enableReactorThread = True, minPeriod = 1 ):
+  def __init__( self, enableReactorThread = True, minPeriod = 60 ):
     self.__thId = False
     self.__minPeriod = minPeriod
     self.__taskDict = {}
@@ -17,6 +17,7 @@ class ThreadScheduler:
     self.__createReactorThread = enableReactorThread
     self.__nowEpoch = time.time
     self.__sleeper = time.sleep
+    self.__min = min
 
   def setMinValidPeriod( self, period ):
     self.__minPeriod = period
@@ -95,17 +96,17 @@ class ThreadScheduler:
     return S_OK()
 
   def __executorThread(self):
-    while self.__hood and len( self.__hood ) > 0:
+    while self.__hood:
       timeToNext = self.executeNextTask()
       if timeToNext == None:
         break
       if timeToNext and timeToNext > 0.1:
-        time.sleep( min( timeToNext, 1 ) )
+        self.__sleeper( self.__min( timeToNext, 1 ) )
     #If we are leaving
     self.__destroyExecutor()
 
   def executeNextTask(self):
-    if len( self.__hood ) == 0:
+    if not self.__hood:
       return False
     timeToWait = self.__timeToNextTask()
     if timeToWait and timeToWait > 0:
