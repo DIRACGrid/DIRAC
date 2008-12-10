@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/MySQL.py,v 1.17 2008/11/07 09:47:26 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/MySQL.py,v 1.18 2008/12/10 11:52:31 acsmith Exp $
 ########################################################################
 """ DIRAC Basic MySQL Class
     It provides access to the basic MySQL methods in a multithread-safe mode
@@ -75,7 +75,7 @@
 
 """
 
-__RCSID__ = "$Id: MySQL.py,v 1.17 2008/11/07 09:47:26 acasajus Exp $"
+__RCSID__ = "$Id: MySQL.py,v 1.18 2008/12/10 11:52:31 acsmith Exp $"
 
 
 from DIRAC                                  import gLogger
@@ -239,7 +239,7 @@ class MySQL:
     """
     Escapes all strings in the list of values provided
     """
-    self.logger.debug( '_escapeValues:', '%s' % inValues )
+    self.logger.debug( '_escapeValues:', inValues )
 
     retDict = self.__getConnection()
     if not retDict['OK'] : return retDict
