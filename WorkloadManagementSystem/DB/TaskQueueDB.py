@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.49 2008/12/10 15:16:31 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.50 2008/12/11 11:42:02 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.49 2008/12/10 15:16:31 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.50 2008/12/11 11:42:02 acasajus Exp $"
 
 import time
 import types
@@ -157,7 +157,7 @@ class TaskQueueDB(DB):
           return S_ERROR( "Match definition field %s value type is not valid: %s" % ( field, fieldValueType ) )
     return S_OK( tqMatchDict )
 
-  def createTaskQueue( self, tqDefDict, priority = 1, skipDefinitionCheck = False, enabled = False, connObj = False ):
+  def __createTaskQueue( self, tqDefDict, priority = 1, skipDefinitionCheck = False, enabled = False, connObj = False ):
     """
     Create a task queue
       Returns S_OK( tqId ) / S_ERROR
@@ -253,7 +253,7 @@ class TaskQueueDB(DB):
     newTQ = False
     if not tqInfo[ 'found' ]:
       self.log.info( "Creating a TQ for job %s requirements: %s" % ( jobId, self.__strDict( tqDefDict ) ) )
-      retVal = self.createTaskQueue( tqDefDict, 0, connObj = connObj )
+      retVal = self.__createTaskQueue( tqDefDict, 0, connObj = connObj )
       if not retVal[ 'OK' ]:
         return retVal
       tqId = retVal[ 'Value' ]
@@ -261,14 +261,14 @@ class TaskQueueDB(DB):
     else:
       tqId = tqInfo[ 'tqId' ]
     jobPriority = min( max( int( jobPriority ), self.__jobPriorityBoundaries[0] ), self.__jobPriorityBoundaries[1] )
-    result = self.insertJobInTaskQueue( jobId, tqId, jobPriority, checkTQExists = False, connObj = connObj )
+    result = self.__insertJobInTaskQueue( jobId, tqId, jobPriority, checkTQExists = False, connObj = connObj )
     if not result[ 'OK' ]:
       return result
     if not newTQ:
       return result
     return self.setTaskQueueState( tqId, True )
 
-  def insertJobInTaskQueue( self, jobId, tqId, jobPriority, checkTQExists = True, connObj = False ):
+  def __insertJobInTaskQueue( self, jobId, tqId, jobPriority, checkTQExists = True, connObj = False ):
     """
     Insert a job in a given task queue
     """
@@ -361,7 +361,7 @@ class TaskQueueDB(DB):
         jobTQList = [ ( row[0], row[1] ) for row in retVal[ 'Value' ] ]
         if len( jobTQList ) == 0:
           gLogger.info( "Task queue %s seems to be empty, triggering a cleaning" % tqId )
-          result = self.deleteTaskQueueIfEmpty( tqId, tqOwnerDN, tqOwnerGroup, connObj = False )
+          result = self.deleteTaskQueueIfEmpty( tqId, tqOwnerDN, tqOwnerGroup, connObj = connObj )
           if not result[ 'OK' ]:
             return result
         while len( jobTQList ) > 0:
@@ -631,7 +631,7 @@ class TaskQueueDB(DB):
     share = gConfig.getValue( "/Security/Groups/%s/JobShare" % userGroup, float( self.defaultGroupShare ) )
     if Properties.JOB_SHARING in CS.getPropertiesForGroup( userGroup ):
       #If group has JobSharing just set prio for that entry, userDN is irrelevant
-      return self.setPrioritiesForEntity( userDN, userGroup, share, connObj = connObj )
+      return self.__setPrioritiesForEntity( userDN, userGroup, share, connObj = connObj )
 
     selSQL = "SELECT OwnerDN, COUNT(OwnerDN) FROM `tq_TaskQueues` WHERE OwnerGroup='%s' GROUP BY OwnerDN" % ( userGroup )
     result = self._query( selSQL, conn = connObj )
@@ -649,13 +649,13 @@ class TaskQueueDB(DB):
     #IF the user is already known and has more than 1 tq, the rest of the users don't need to be modified
     #(The number of owners didn't change)
     if userDN in owners and owners[ userDN ] > 1:
-      return self.setPrioritiesForEntity( userDN, userGroup, share, connObj = connObj )
+      return self.__setPrioritiesForEntity( userDN, userGroup, share, connObj = connObj )
     #Oops the number of owners may have changed so we recalculate the prio for all owners in the group
     for userDN in owners:
-      self.setPrioritiesForEntity( userDN, userGroup, share, connObj = connObj )
+      self.__setPrioritiesForEntity( userDN, userGroup, share, connObj = connObj )
     return S_OK()
 
-  def setPrioritiesForEntity( self, userDN, userGroup, share, connObj = False ):
+  def __setPrioritiesForEntity( self, userDN, userGroup, share, connObj = False ):
     """
     Set the priority for a userDN/userGroup combo given a splitted share
     """
