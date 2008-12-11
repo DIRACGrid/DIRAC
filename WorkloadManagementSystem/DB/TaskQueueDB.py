@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.50 2008/12/11 11:42:02 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.51 2008/12/11 14:39:43 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.50 2008/12/11 11:42:02 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.51 2008/12/11 14:39:43 acasajus Exp $"
 
 import time
 import types
@@ -162,7 +162,6 @@ class TaskQueueDB(DB):
     Create a task queue
       Returns S_OK( tqId ) / S_ERROR
     """
-    self.log.info( "Creating TQ with requirements", self.__strDict( tqDefDict ) )
     if not skipDefinitionCheck:
       retVal = self._checkTaskQueueDefinition( tqDefDict )
       if not retVal[ 'OK' ]:
@@ -229,42 +228,60 @@ class TaskQueueDB(DB):
 
   def setTaskQueueState( self, tqId, enabled = True, connObj = False ):
     upSQL = "UPDATE `tq_TaskQueues` SET Enabled=%d WHERE TQId=%d" % ( int( enabled ), tqId )
-    return self._update( upSQL, conn = connObj )
+    result = self._update( upSQL, conn = connObj )
+    if not result[ 'OK' ]:
+      self.log.error( "Error setting TQ state", "TQ %s State %s: %s" % ( tqId, enabled, result[ 'Message' ] ) )
+      return result
+    updated = result['Value'] > 0
+    if updated:
+      self.log.info( "Set enabled = %s for TQ %s" % ( enabled, tqId ) )
+    return S_OK( updated )
 
-  def insertJob( self, jobId, tqDefDict, jobPriority ):
+  def insertJob( self, jobId, tqDefDict, jobPriority, skipTQDefCheck = False, numRetries = 10 ):
     """
     Insert a job in a task queue
       Returns S_OK( tqId ) / S_ERROR
     """
-    self.log.info( "Inserting job %s" % jobId )
     retVal = self._getConnection()
     if not retVal[ 'OK' ]:
       return S_ERROR( "Can't insert job: %s" % retVal[ 'Message' ] )
     connObj = retVal[ 'Value' ]
-    retVal = self._checkTaskQueueDefinition( tqDefDict )
-    if not retVal[ 'OK' ]:
-      self.log.error( "TQ definition check failed", retVal[ 'Value' ] )
-      return retVal
+    if not skipTQDefCheck:
+      retVal = self._checkTaskQueueDefinition( tqDefDict )
+      if not retVal[ 'OK' ]:
+        self.log.error( "TQ definition check failed", retVal[ 'Value' ] )
+        return retVal
     tqDefDict[ 'CPUTime' ] = self.fitCPUTimeToSegments( tqDefDict[ 'CPUTime' ] )
+    self.log.info( "Inserting job %s with requirements: %s" % ( jobId, self.__strDict( tqDefDict ) ) )
     retVal = self.findTaskQueue( tqDefDict, skipDefinitionCheck = True, connObj = connObj )
     if not retVal[ 'OK' ]:
       return retVal
     tqInfo = retVal[ 'Value' ]
     newTQ = False
     if not tqInfo[ 'found' ]:
-      self.log.info( "Creating a TQ for job %s requirements: %s" % ( jobId, self.__strDict( tqDefDict ) ) )
-      retVal = self.__createTaskQueue( tqDefDict, 0, connObj = connObj )
+      self.log.info( "Creating a TQ for job %s" % jobId)
+      retVal = self.__createTaskQueue( tqDefDict, 1, connObj = connObj )
       if not retVal[ 'OK' ]:
         return retVal
       tqId = retVal[ 'Value' ]
       newTQ = True
     else:
       tqId = tqInfo[ 'tqId' ]
+      self.log.info( "Found TQ %s for job %s requirements" % ( tqId, jobId ) )
+      result = self.setTaskQueueState( tqId, False )
+      if not retVal[ 'OK' ]:
+        return retVal
+      if not retVal[ 'Value' ]:
+        time.sleep(0.1)
+        if numRetries <= 0:
+          self.log.info( "Couldn't manage to disable TQ %s for job %s insertion, max retries reached. Aborting" % ( tqId, jobId ) )
+          return S_ERROR( "Max reties reached for inserting job %s" % jobId )
+        self.log.info( "Couldn't manage to disable TQ %s for job %s insertion, retrying" % ( tqId, jobId ) )
+        return self.insertJob( jobId, tqDefDict, jobPriority, skipTQDefCheck = True, numRetries = numRetries - 1 )
     jobPriority = min( max( int( jobPriority ), self.__jobPriorityBoundaries[0] ), self.__jobPriorityBoundaries[1] )
     result = self.__insertJobInTaskQueue( jobId, tqId, jobPriority, checkTQExists = False, connObj = connObj )
     if not result[ 'OK' ]:
-      return result
-    if not newTQ:
+      self.log.error( "Error inserting job in TQ", "Job %s TQ %s: %s" % ( jobId, tqId, result[ 'Message' ] ) )
       return result
     return self.setTaskQueueState( tqId, True )
 
@@ -429,7 +446,6 @@ class TaskQueueDB(DB):
                                                                                                                  bannedTable,
                                                                                                                  bannedTable,
                                                                                                                  bannedTable ) )
-    sqlCondList.append( "Enabled" )
     tqSqlCmd = "SELECT `tq_TaskQueues`.TQId, `tq_TaskQueues`.OwnerDN, `tq_TaskQueues`.OwnerGroup FROM %s WHERE %s" % ( ", ".join( sqlTables ),
                                                                                                                       " AND ".join( sqlCondList ) )
     tqSqlCmd = "%s ORDER BY `tq_TaskQueues`.CPUTime DESC, RAND() / `tq_TaskQueues`.Priority ASC" % tqSqlCmd
@@ -498,7 +514,6 @@ class TaskQueueDB(DB):
     """
     Try to delete a task queue if its empty
     """
-    self.log.info( "Deleting TQ %s if empty" % tqId )
     if not connObj:
       retVal = self._getConnection()
       if not retVal[ 'OK' ]:
@@ -512,7 +527,7 @@ class TaskQueueDB(DB):
       if not data:
         return S_OK( False )
       tqOwnerDN, tqOwnerGroup = data
-    sqlCmd = "DELETE FROM `tq_TaskQueues` WHERE `tq_TaskQueues`.TQId = %s" % tqId
+    sqlCmd = "DELETE FROM `tq_TaskQueues` WHERE Enabled AND `tq_TaskQueues`.TQId = %s" % tqId
     sqlCmd = "%s AND `tq_TaskQueues`.TQId not in ( SELECT DISTINCT TQId from `tq_Jobs` )" % sqlCmd
     retVal = self._update( sqlCmd, conn = connObj )
     if not retVal[ 'OK' ]:
@@ -524,6 +539,7 @@ class TaskQueueDB(DB):
         if not retVal[ 'OK' ]:
           return retVal
       self.recalculateSharesForEntity( tqOwnerDN, tqOwnerGroup, connObj = connObj )
+      self.log.info( "Deleted empty and enabled TQ %s" % tqId )
       return S_OK( True )
     return S_OK( False )
 
