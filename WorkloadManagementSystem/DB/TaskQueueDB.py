@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.52 2008/12/11 15:00:21 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.53 2008/12/11 15:38:40 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.52 2008/12/11 15:00:21 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.53 2008/12/11 15:38:40 acasajus Exp $"
 
 import time
 import types
@@ -383,11 +383,16 @@ class TaskQueueDB(DB):
             return result
         while len( jobTQList ) > 0:
           jobId, tqId = jobTQList.pop( random.randint( 0, len( jobTQList ) - 1 ) )
+          self.log.info( "Trying to extract job %s from TQ %s" % ( jobId, tqId ) )
           retVal = self.deleteJob( jobId, connObj = connObj )
           if not retVal[ 'OK' ]:
-            return S_ERROR( "Could not take job %s out from the queue: %s" % ( jobId, retVal[ 'Message' ] ) )
+            msg = "Could not take job %s out from the TQ %s: %s" % ( jobId, tqId, retVal[ 'Message' ] )
+            self.log.error( msg )
+            return S_ERROR( msg )
           if retVal[ 'Value' ] == True :
+            self.log.info( "Extracted job %s from TQ %s" % ( jobId, tqId ) )
             return S_OK( { 'matchFound' : True, 'jobId' : jobId, 'taskQueueId' : tqId, 'tqMatch' : tqMatchDict } )
+        self.log.info( "No jobs could be extracted from TQ %s" % tqId )
     self.log.info( "Could not find a match after %s match retries" % self.__maxMatchRetry )
     return S_ERROR( "Could not find a match after %s match retries" % self.__maxMatchRetry )
 
@@ -446,6 +451,7 @@ class TaskQueueDB(DB):
                                                                                                                  bannedTable,
                                                                                                                  bannedTable,
                                                                                                                  bannedTable ) )
+    sqlCondList.append( "Enabled" )
     tqSqlCmd = "SELECT `tq_TaskQueues`.TQId, `tq_TaskQueues`.OwnerDN, `tq_TaskQueues`.OwnerGroup FROM %s WHERE %s" % ( ", ".join( sqlTables ),
                                                                                                                       " AND ".join( sqlCondList ) )
     tqSqlCmd = "%s ORDER BY `tq_TaskQueues`.CPUTime DESC, RAND() / `tq_TaskQueues`.Priority ASC" % tqSqlCmd
