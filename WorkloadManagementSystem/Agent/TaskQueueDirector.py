@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.3 2008/12/10 13:31:39 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.4 2008/12/11 08:35:07 rgracian Exp $
 # File :   TaskQueueDirector.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -85,7 +85,7 @@
         SubmitPool (may want to recover it for SAM jobs)
 
 """
-__RCSID__ = "$Id: TaskQueueDirector.py,v 1.3 2008/12/10 13:31:39 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueDirector.py,v 1.4 2008/12/11 08:35:07 rgracian Exp $"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 
@@ -112,6 +112,8 @@ class TaskQueueDirector(AgentModule):
   def initialize(self):
     """ Standard constructor
     """
+    import threading
+    
     self.am_setOption( "PollingTime", 60.0 )
 
     self.am_setOption( "pilotsPerIteration", 20.0 )
@@ -131,6 +133,8 @@ class TaskQueueDirector(AgentModule):
     self.directors = {}
     self.pools = {}
     self.__checkSubmitPools()
+
+    self.callBackLock = threading.Lock()
 
     return S_OK()
 
@@ -169,7 +173,9 @@ class TaskQueueDirector(AgentModule):
 
     pilotsPerPriority  = self.am_getOption('pilotsPerIteration') / prioritySum
 
+    self.callBackLock.acquire()
     self.submittedPilots = 0
+    self.callBackLock.release()
     self.toSubmitPilots = 0
     waitingStatusList = ['Submitted','Ready','Scheduled','Waiting']
 
@@ -187,10 +193,10 @@ class TaskQueueDirector(AgentModule):
       result = self.submitPilotsForTaskQueue( taskQueueDict[taskQueueID], waitingPilots, pilotsPerPriority )
 
       if result['OK']:
-        toSubmitPilots += result['Value']
+        self.toSubmitPilots += result['Value']
 
     self.log.info( 'Number of pilots to be Submitted %s' % self.toSubmitPilots )
-    # Now wait until all Jobs in the threadpools are proccessed
+    # Now wait until all Jobs in the Default ThreadPool are proccessed
     if 'Default' in self.pools:
       # only for those in "Default' thread Pool
       # for pool in self.pools:
@@ -378,7 +384,9 @@ class TaskQueueDirector(AgentModule):
     pool = ThreadPool( self.am_getOption('minThreadsInPool'),
                        self.am_getOption('maxThreadsInPool'),
                        self.am_getOption('totalThreadsInPool') )
-    pool.daemonize()
+    # Daemonize except "Default" pool
+    if poolName != 'Default':
+      pool.daemonize()
     self.pools[poolName] = pool
     return poolName
 
@@ -387,9 +395,9 @@ class TaskQueueDirector(AgentModule):
       self.log.error( submitResult['Message'] )
     else:
       submittedPilots = submitResult['Value']
-      # add some sleep here
-      time.sleep(1.0*submittedPilots)
+      self.callBackLock.acquire()
       self.submittedPilots += submittedPilots
+      self.callBackLock.release()
 
 
 import os, time, tempfile, shutil, re
@@ -630,6 +638,9 @@ class PilotDirector:
           pilotAgentsDB.addPilotTQReference(pilotReference, taskQueueID, ownerDN, 
                         vomsGroup, broker=resourceBroker, gridType=self.gridMiddleware, 
                         requirements=pilotRequirements )
+
+      # add some sleep here
+      time.sleep(1.0*submittedPilots)
 
       return S_OK( submittedPilots )
 
