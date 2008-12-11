@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/DataCache.py,v 1.4 2008/10/10 16:45:15 acasajus Exp $
-__RCSID__ = "$Id: DataCache.py,v 1.4 2008/10/10 16:45:15 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/DataCache.py,v 1.5 2008/12/11 11:54:54 acasajus Exp $
+__RCSID__ = "$Id: DataCache.py,v 1.5 2008/12/11 11:54:54 acasajus Exp $"
 
 import os
 import os.path
@@ -42,7 +42,7 @@ class DataCache:
   def __deleteGraph( self, plotDict ):
     try:
       for key in plotDict:
-        value = plotDict[ 'key' ]
+        value = plotDict[ key ]
         if value and os.path.isfile( value ):
           os.unlink( value )
     except:
