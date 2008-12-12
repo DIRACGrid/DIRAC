@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.53 2008/12/11 15:38:40 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.54 2008/12/12 11:44:20 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.53 2008/12/11 15:38:40 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.54 2008/12/12 11:44:20 acasajus Exp $"
 
 import time
 import types
@@ -484,9 +484,18 @@ class TaskQueueDB(DB):
     if retVal[ 'Value' ] == 0:
       #No job deleted
       return S_OK( False )
-    result = self.deleteTaskQueueIfEmpty( tqId, tqOwnerDN, tqOwnerGroup, connObj = connObj )
-    if not result[ 'OK' ]:
-      return result
+    retries = 10
+    #Always return S_OK() because job has already been taken out from the TQ
+    while retries:
+      result = self.deleteTaskQueueIfEmpty( tqId, tqOwnerDN, tqOwnerGroup, connObj = connObj )
+      if result[ 'OK' ]:
+        return S_OK( True )
+      if not result[ 'OK' ]:
+        if result[ 'Message' ].find( "try restarting transaction" ) == -1:
+          self.log.error( "Error on TQ deletion triggered by job deletion", "Job %s TQ %s : %s" % ( tqId, jobId, result[ 'Message' ] ) )
+          return S_OK( True )
+      retries -= 1
+    self.log.error( "Max retries when trying to delete TQ %s triggered by deletion of job %s" % ( tqId, jobId ) )
     return S_OK( True )
 
   def getTaskQueueForJob( self, jobId, connObj = False ):
