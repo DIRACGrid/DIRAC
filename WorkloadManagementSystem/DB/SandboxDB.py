@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/SandboxDB.py,v 1.19 2008/12/14 20:12:20 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/SandboxDB.py,v 1.20 2008/12/14 21:15:59 atsareg Exp $
 ########################################################################
 """ SandboxDB class is a simple storage using MySQL as a container for
     relatively small sandbox files. The file size is limited to 16MB.
@@ -10,7 +10,7 @@
     getWMSTimeStamps()
 """
 
-__RCSID__ = "$Id: SandboxDB.py,v 1.19 2008/12/14 20:12:20 atsareg Exp $"
+__RCSID__ = "$Id: SandboxDB.py,v 1.20 2008/12/14 21:15:59 atsareg Exp $"
 
 import re, os, sys, threading
 import time, datetime
@@ -35,7 +35,6 @@ class SandboxDB(DB):
     self.maxPartitionSize *= 1024*1024*1024 # in GBs
     self.maxSizeToRecover = gConfig.getValue( self.cs_path+'/MaxPartitionSize', 200 )
     self.maxSizeToRecover *= 1024*1024 # in MBs
-    self.maxSizeToRecover = 1024
 
     self.lock = threading.Lock()
 
