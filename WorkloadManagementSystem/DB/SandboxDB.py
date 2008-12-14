@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/SandboxDB.py,v 1.18 2008/12/04 07:23:46 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/SandboxDB.py,v 1.19 2008/12/14 20:12:20 atsareg Exp $
 ########################################################################
 """ SandboxDB class is a simple storage using MySQL as a container for
     relatively small sandbox files. The file size is limited to 16MB.
@@ -10,7 +10,7 @@
     getWMSTimeStamps()
 """
 
-__RCSID__ = "$Id: SandboxDB.py,v 1.18 2008/12/04 07:23:46 atsareg Exp $"
+__RCSID__ = "$Id: SandboxDB.py,v 1.19 2008/12/14 20:12:20 atsareg Exp $"
 
 import re, os, sys, threading
 import time, datetime
@@ -33,6 +33,9 @@ class SandboxDB(DB):
     self.maxSize = gConfig.getValue( self.cs_path+'/MaxSandboxSize', 16 )
     self.maxPartitionSize = gConfig.getValue( self.cs_path+'/MaxPartitionSize', 2 )
     self.maxPartitionSize *= 1024*1024*1024 # in GBs
+    self.maxSizeToRecover = gConfig.getValue( self.cs_path+'/MaxPartitionSize', 200 )
+    self.maxSizeToRecover *= 1024*1024 # in MBs
+    self.maxSizeToRecover = 1024
 
     self.lock = threading.Lock()
 
@@ -140,6 +143,67 @@ class SandboxDB(DB):
 
     size = int(result['Value'][0][0])
     return S_OK(size)
+
+  def __getPartitions(self,sandbox):
+    """ get available partitions and their sizes
+    """
+
+    req = "SELECT PartID,DataSize,TableSize FROM %sPartitions" % sandbox
+    result = self._query(req)
+    if not result['OK']:
+      return result
+
+    resultDict = {}
+    for raw in result['Value']:
+      partID,dataSize,tableSize = raw
+      resultDict[partID] = (dataSize,tableSize)
+
+    return S_OK(resultDict)
+
+  def __repairPartition(self,partID,sandbox):
+    """ Repair the specified partition
+    """
+
+    sprefix = "IS"
+    if sandbox == "OutputSandbox":
+      sprefix = "OS"
+
+    start = time.time()
+    cmd = "REPAIR TABLE %s_%d" % (sprefix,int(partID))
+    result = self._query(cmd)
+    if not result['OK']:
+      return result
+    length = time.time() - start
+
+    result = self.__updatePartitionSize(sandbox,('%s_%d') % (sprefix,partID))
+    if not result['OK']:
+      return result
+    return S_OK(length)
+
+  def cleanSandbox(self,sandbox):
+    """ Clean all the partitions in the sandox
+    """
+
+    result = self.__getPartitions(sandbox)
+    if not result['OK']:
+      return result
+
+    partDict = result['Value']
+    for partID,sizes in partDict.items():
+      dataSize,tableSize = sizes
+      # Decide if the partitions is to be cleaned
+      
+      print "AT >>>>",dataSize,tableSize,tableSize-dataSize,partID 
+      
+      if (tableSize-dataSize) > self.maxSizeToRecover:
+        result = self.__repairPartition(partID,sandbox)
+        if result['OK']:
+          gLogger.info('Compressed %s partition %d, %.2f MB recovered, %.2f sec compression time' \
+                        % (sandbox,partID,float(tableSize-dataSize)/(1024.*1024.),result['Value']))
+        else:
+          gLogger.warn('Failed to repair %s partition %d: %s' % (sandbox,partID,result['Message']))
+
+    return S_OK()
 
   def __getCurrentPartition(self,sandbox):
     """ Get the current sandbox partition number
