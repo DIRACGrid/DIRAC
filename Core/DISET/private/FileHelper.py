@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/FileHelper.py,v 1.16 2008/11/26 17:10:45 rgracian Exp $
-__RCSID__ = "$Id: FileHelper.py,v 1.16 2008/11/26 17:10:45 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/FileHelper.py,v 1.17 2008/12/15 15:21:52 acasajus Exp $
+__RCSID__ = "$Id: FileHelper.py,v 1.17 2008/12/15 15:21:52 acasajus Exp $"
 
 import os
 import md5
@@ -89,7 +89,10 @@ class FileHelper:
     try:
       return self.networkToDataSink( dataSink, maxFileSize = maxFileSize )
     finally:
-      dataSink.close()
+      try:
+        dataSink.close()
+      except Exception, e:
+        pass
 
   def networkToDataSink( self, dataSink, maxFileSize = 0 ):
     if "write" not in dir( dataSink ):
@@ -163,6 +166,7 @@ class FileHelper:
     return S_OK()
 
   def getFileDescriptor( self, uFile, sFileMode ):
+    closeAfter = True
     if type( uFile ) == types.StringType:
       try:
         self.oFile = file( uFile, sFileMode )
@@ -173,9 +177,31 @@ class FileHelper:
       iFD = uFile.fileno()
     elif type( uFile ) == types.IntType:
       iFD = uFile
+      closeAfter = False
     else:
       return S_ERROR( "%s is not a valid file." % uFile )
-    return S_OK( iFD )
+    result = S_OK( iFD )
+    result[ 'closeAfterUse' ] = closeAfter
+    return result
+
+  def getDataSink( self, uFile ):
+    closeAfter = True
+    if type( uFile ) == types.StringType:
+      try:
+        oFile = file( uFile, "wb" )
+      except IOError:
+        return S_ERROR( "%s can't be opened" % uFile )
+    elif type( uFile ) == types.FileType:
+      oFile = uFile
+      closeAfter = False
+    elif type( uFile ) == types.IntType:
+      oFile = os.fdopen( uFile, "wb" )
+      closeAfter = True
+    else:
+      return S_ERROR( "%s is not a valid file." % uFile )
+    result = S_OK( oFile )
+    result[ 'closeAfterUse' ] = closeAfter
+    return result
 
   def __createTar( self, fileList, wPipe, compress ):
     filePipe = os.fdopen( wPipe, "w" )
