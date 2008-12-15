@@ -1,9 +1,9 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyManagerClient.py,v 1.33 2008/12/01 17:45:06 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyManagerClient.py,v 1.34 2008/12/15 17:07:51 acasajus Exp $
 ########################################################################
 """ ProxyManagementAPI has the functions to "talk" to the ProxyManagement service
 """
-__RCSID__ = "$Id: ProxyManagerClient.py,v 1.33 2008/12/01 17:45:06 rgracian Exp $"
+__RCSID__ = "$Id: ProxyManagerClient.py,v 1.34 2008/12/15 17:07:51 acasajus Exp $"
 
 import os
 import datetime
@@ -35,6 +35,12 @@ class ProxyManagerClient:
       os.unlink( filename )
     except:
       pass
+
+  def clearCaches(self):
+    self.__usersCache.purgeAll()
+    self.__proxiesCache.purgeAll()
+    self.__vomsProxiesCache.purgeAll()
+    self.__pilotProxiesCache.purgeAll()
 
   def __getSecondsLeftToExpiration( self, expiration, utc = True ):
     if utc:
@@ -168,7 +174,7 @@ class ProxyManagerClient:
     return rpcClient.completeDelegationUpload( reqDict[ 'id' ], retVal[ 'Value' ] )
 
   @gProxiesSync
-  def downloadProxy( self, userDN, userGroup, limited = False, requiredTimeLeft = 43200, proxyToConnect = False ):
+  def downloadProxy( self, userDN, userGroup, limited = False, requiredTimeLeft = 43200, proxyToConnect = False, token = False ):
     """
     Get a proxy Chain from the proxy management
     """
@@ -181,7 +187,12 @@ class ProxyManagerClient:
       rpcClient = RPCClient( "Framework/ProxyManager", proxyChain = proxyToConnect,timeout=120 )
     else:
       rpcClient = RPCClient( "Framework/ProxyManager",timeout=120 )
-    retVal = rpcClient.getProxy( userDN, userGroup, req.dumpRequest()['Value'], long( requiredTimeLeft * 1.5 ) )
+    if token:
+      retVal = rpcClient.getProxy( userDN, userGroup, req.dumpRequest()['Value'],
+                                   long( requiredTimeLeft * 1.5 ), token )
+    else:
+      retVal = rpcClient.getProxy( userDN, userGroup, req.dumpRequest()['Value'],
+                                   long( requiredTimeLeft * 1.5 ) )
     if not retVal[ 'OK' ]:
       return retVal
     chain = X509Chain( keyObj = req.getPKey() )
@@ -191,11 +202,11 @@ class ProxyManagerClient:
     self.__proxiesCache.add( cacheKey, chain.getRemainingSecs()['Value'], chain )
     return S_OK( chain )
 
-  def downloadProxyToFile( self, userDN, userGroup, limited = False, requiredTimeLeft = 43200, filePath = False, proxyToConnect = False ):
+  def downloadProxyToFile( self, userDN, userGroup, limited = False, requiredTimeLeft = 43200, filePath = False, proxyToConnect = False, token = False ):
     """
     Get a proxy Chain from the proxy management and write it to file
     """
-    retVal = self.downloadProxy( userDN, userGroup, limited, requiredTimeLeft, proxyToConnect )
+    retVal = self.downloadProxy( userDN, userGroup, limited, requiredTimeLeft, proxyToConnect, token )
     if not retVal[ 'OK' ]:
       return retVal
     chain = retVal[ 'Value' ]
@@ -206,21 +217,28 @@ class ProxyManagerClient:
     return retVal
 
   @gVOMSProxiesSync
-  def downloadVOMSProxy( self, userDN, userGroup, limited = False, requiredTimeLeft = 43200, requiredVOMSAttribute = False, proxyToConnect = False ):
+  def downloadVOMSProxy( self, userDN, userGroup, limited = False, requiredTimeLeft = 43200,
+                         requiredVOMSAttribute = False, proxyToConnect = False, token = False ):
     """
     Download a proxy if needed and transform it into a VOMS one
     """
 
-    cacheKey = ( userDN, userGroup, requiredVOMSAttribute )
+    cacheKey = ( userDN, userGroup, requiredVOMSAttribute, limited )
     if self.__vomsProxiesCache.exists( cacheKey, requiredTimeLeft ):
       return S_OK( self.__vomsProxiesCache.get( cacheKey ) )
     req = X509Request()
     req.generateProxyRequest( limited = limited )
     if proxyToConnect:
-      rpcClient = RPCClient( "Framework/ProxyManager", proxyChain = proxyToConnect,timeout=120 )
+      rpcClient = RPCClient( "Framework/ProxyManager", proxyChain = proxyToConnect, timeout=120 )
     else:
-      rpcClient = RPCClient( "Framework/ProxyManager",timeout=120 )
-    retVal = rpcClient.getVOMSProxy( userDN, userGroup, req.dumpRequest()['Value'], long( requiredTimeLeft * 1.5 ), requiredVOMSAttribute )
+      rpcClient = RPCClient( "Framework/ProxyManager", timeout=120 )
+    if token:
+      retVal = rpcClient.getVOMSProxyWithToken( userDN, userGroup, req.dumpRequest()['Value'],
+                                                long( requiredTimeLeft * 1.5 ), token, requiredVOMSAttribute )
+
+    else:
+      retVal = rpcClient.getVOMSProxy( userDN, userGroup, req.dumpRequest()['Value'],
+                                       long( requiredTimeLeft * 1.5 ), requiredVOMSAttribute )
     if not retVal[ 'OK' ]:
       return retVal
     chain = X509Chain( keyObj = req.getPKey() )
@@ -230,11 +248,12 @@ class ProxyManagerClient:
     self.__vomsProxiesCache.add( cacheKey, chain.getRemainingSecs()['Value'], chain )
     return S_OK( chain )
 
-  def downloadVOMSProxyToFile( self, userDN, userGroup, limited = False, requiredTimeLeft = 43200, requiredVOMSAttribute = False, filePath = False, proxyToConnect = False ):
+  def downloadVOMSProxyToFile( self, userDN, userGroup, limited = False, requiredTimeLeft = 43200,
+                               requiredVOMSAttribute = False, filePath = False, proxyToConnect = False, token = False ):
     """
     Download a proxy if needed, transform it into a VOMS one and write it to file
     """
-    retVal = self.downloadVOMSProxy( userDN, userGroup, limited, requiredTimeLeft, requiredVOMSAttribute, proxyToConnect )
+    retVal = self.downloadVOMSProxy( userDN, userGroup, limited, requiredTimeLeft, requiredVOMSAttribute, proxyToConnect, token )
     if not retVal[ 'OK' ]:
       return retVal
     chain = retVal[ 'Value' ]
@@ -275,6 +294,40 @@ class ProxyManagerClient:
                                    requiredVOMSAttribute = vomsAttr,
                                    proxyToConnect = proxyToConnect )
 
+  def getPayloadProxyFromDIRACGroup( self, userDN, userGroup, token, requiredTimeLeft, proxyToConnect = False ):
+    """
+    Download a payload proxy with VOMS extensions depending on the group
+    """
+    #Assign VOMS attribute
+    vomsAttr = CS.getVOMSAttributeForGroup( userGroup )
+    if not vomsAttr:
+      return S_ERROR( "No voms attribute assigned to group %s" % userGroup )
+    return self.downloadVOMSProxy( userDN,
+                                   userGroup,
+                                   limited = True,
+                                   requiredTimeLeft = requiredTimeLeft,
+                                   requiredVOMSAttribute = vomsAttr,
+                                   proxyToConnect = proxyToConnect,
+                                   token = token )
+
+  def getPayloadProxyFromVOMSGroup( self, userDN, vomsAttr, token, requiredTimeLeft, proxyToConnect = False ):
+    """
+    Download a payload proxy with VOMS extensions depending on the VOMS attr
+    """
+    groups = CS.getGroupsWithVOMSAttribute( vomsAttr )
+    if not groups:
+      return S_ERROR( "No group found that has %s as voms attrs" % vomsAttr )
+    userGroup = groups[0]
+
+    return self.downloadVOMSProxy( userDN,
+                                   userGroup,
+                                   limited = True,
+                                   requiredTimeLeft = requiredTimeLeft,
+                                   requiredVOMSAttribute = vomsAttr,
+                                   proxyToConnect = proxyToConnect,
+                                   token = token )
+
+
   def dumpProxyToFile( self, chain, destinationFile = False, requiredTimeLeft = 600 ):
     """
     Dump a proxy to a file. It's cached so multiple calls won't generate extra files
@@ -297,6 +350,14 @@ class ProxyManagerClient:
     """
     self.__filesCache.delete( chain )
     return S_OK()
+
+  def requestTokens( self, usesList ):
+    """
+    Request a number of tokens. usesList must be a list of integers and each integer is the number of uses a token
+    must have
+    """
+    rpcClient = RPCClient( "Framework/ProxyManager", timeout=120 )
+    return rpcClient.generateTokens( usesList )
 
   def renewProxy( self, proxyToBeRenewed = False, minLifeTime = 3600, newProxyLifeTime = 43200, proxyToConnect = False ):
     """

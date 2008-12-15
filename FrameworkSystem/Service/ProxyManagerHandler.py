@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/ProxyManagerHandler.py,v 1.15 2008/11/12 11:00:38 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/ProxyManagerHandler.py,v 1.16 2008/12/15 17:07:51 acasajus Exp $
 ########################################################################
 
 """ ProxyManager is the implementation of the ProxyManagement service
     in the DISET framework
 """
 
-__RCSID__ = "$Id: ProxyManagerHandler.py,v 1.15 2008/11/12 11:00:38 acasajus Exp $"
+__RCSID__ = "$Id: ProxyManagerHandler.py,v 1.16 2008/12/15 17:07:51 acasajus Exp $"
 
 import types
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -14,6 +14,7 @@ from DIRAC import gLogger, S_OK, S_ERROR, gConfig
 from DIRAC.FrameworkSystem.DB.ProxyDB import ProxyDB
 from DIRAC.Core.Security import Properties, CS
 from DIRAC.Core.Security.VOMS import VOMS
+from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 
 gProxyDB = False
 
@@ -29,6 +30,8 @@ def initializeProxyManagerHandler( serviceInfo ):
                         useMyProxy = useMyProxy )
   except:
     return S_ERROR( "Can't initialize ProxyDB" )
+  gThreadScheduler.addPeriodicTask( 900, gProxyDB.purgeExpiredTokens, elapsedTime = 900 )
+  gThreadScheduler.addPeriodicTask( 900, gProxyDB.purgeExpiredRequests, elapsedTime = 900 )
   gLogger.info( "VOMS: %s\nMyProxy: %s\n MyProxy Server: %s" % ( requireVoms, useMyProxy, gProxyDB.getMyProxyServer() ) )
   return S_OK()
 
@@ -111,6 +114,13 @@ class ProxyManagerHandler( RequestHandler ):
         if credDict[ 'DN' ] != userDN:
           return S_ERROR( "You are not allowed to download any proxy" )
 
+    gProxyDB.logAction( "download proxy", credDict[ 'DN' ], credDict[ 'group' ], userDN, userGroup )
+    return self.__getProxy( userDN, userGroup, requestPem, requiredLifetime, forceLimited )
+
+  def __getProxy( self, userDN, userGroup, requestPem, requiredLifetime, forceLimited ):
+    """
+    Internal to get a proxy
+    """
     retVal = gProxyDB.getProxy( userDN, userGroup, requiredLifeTime = requiredLifetime )
     if not retVal[ 'OK' ]:
       return retVal
@@ -120,7 +130,6 @@ class ProxyManagerHandler( RequestHandler ):
                                                    requireLimited = forceLimited )
     if not retVal[ 'OK' ]:
       return retVal
-    gProxyDB.logAction( "download proxy", credDict[ 'DN' ], credDict[ 'group' ], userDN, userGroup )
     return S_OK( retVal[ 'Value' ] )
 
   types_getVOMSProxy = [ types.StringType, types.StringType, types.StringType, ( types.IntType, types.LongType ) ]
@@ -144,7 +153,10 @@ class ProxyManagerHandler( RequestHandler ):
       if Properties.PRIVATE_LIMITED_DELEGATION in credDict[ 'properties' ]:
         if credDict[ 'DN' ] != userDN:
           return S_ERROR( "You are not allowed to download any proxy" )
+    gProxyDB.logAction( "download voms proxy", credDict[ 'DN' ], credDict[ 'group' ], userDN, userGroup )
+    return self.__getVOMSProxy( userDN, userGroup, requestPem, requiredLifetime, vomsAttribute, forceLimited )
 
+  def __getVOMSProxy( self, userDN, userGroup, requestPem, requiredLifetime, vomsAttribute, forceLimited ):
     retVal = gProxyDB.getVOMSProxy( userDN,
                                     userGroup,
                                     requiredLifeTime = requiredLifetime,
@@ -157,7 +169,7 @@ class ProxyManagerHandler( RequestHandler ):
                                                    requireLimited = forceLimited )
     if not retVal[ 'OK' ]:
       return retVal
-    gProxyDB.logAction( "download voms proxy", credDict[ 'DN' ], credDict[ 'group' ], userDN, userGroup )
+    credDict = self.getRemoteCredentials()
     return S_OK( retVal[ 'Value' ] )
 
   types_setPersistency = [ types.StringType, types.StringType, types.BooleanType ]
@@ -232,3 +244,78 @@ class ProxyManagerHandler( RequestHandler ):
     Retrieve the contents of the DB
     """
     return gProxyDB.getLogsContent( selDict, sortDict, start, limit )
+
+
+  types_generateTokens = [ ( types.ListType, types.TupleType ) ]
+  def export_generateTokens( self, requestList ):
+    """
+    Generate tokens for proxy retrieval
+    """
+    credDict = self.getRemoteCredentials()
+    for numUses in requestList:
+      if type( numUses ) not in ( types.IntType, types.LongType ):
+        return S_ERROR( "The request must be a list of numbers" )
+    tokens = {}
+    for numUses in requestList:
+      result = gProxyDB.generateToken( numUses = numUses )
+      if not result[ 'OK' ]:
+        return result
+      tokens[ result[ 'Value' ] ] = numUses
+    gProxyDB.logAction( "generate tokens", credDict[ 'DN' ], credDict[ 'group' ], "unknown", "unknown" )
+    return S_OK( tokens )
+
+  types_getProxyWithToken = [ types.StringType, types.StringType,
+                              types.StringType, ( types.IntType, types.LongType ),
+                              types.StringType ]
+  def export_getProxyWithToken( self, userDN, userGroup, requestPem, requiredLifetime, token ):
+    """
+    Get a proxy for a userDN/userGroup
+      - requestPem : PEM encoded request object for delegation
+      - requiredLifetime: Argument for length of proxy
+      - token : Valid token to get a proxy
+      * Properties :
+        FullDelegation <- permits full delegation of proxies
+        LimitedDelegation <- permits downloading only limited proxies
+        PrivateLimitedDelegation <- permits downloading only limited proxies for one self
+    """
+    credDict = self.getRemoteCredentials()
+    result = gProxyDB.useToken( token )
+    if not result[ 'OK' ]:
+      return result
+    if not result[ 'Value' ]:
+      return S_ERROR( "Proxy token is invalid"  )
+
+    gProxyDB.logAction( "used token", credDict[ 'DN' ], credDict[ 'group' ], userDN, userGroup )
+    if Properties.PRIVATE_LIMITED_DELEGATION in credDict[ 'properties' ]:
+        if credDict[ 'DN' ] != userDN:
+          return S_ERROR( "You are not allowed to download proxy" )
+    gProxyDB.logAction( "download proxy with token", credDict[ 'DN' ], credDict[ 'group' ], userDN, userGroup )
+    return self.__getProxy( userDN, userGroup, requestPem, requiredLifetime, True )
+
+  types_getVOMSProxyWithToken = [ types.StringType, types.StringType,
+                                  types.StringType, ( types.IntType, types.LongType ),
+                                  types.StringType ]
+  def export_getVOMSProxyWithToken( self, userDN, userGroup, requestPem, requiredLifetime, token, vomsAttribute = False ):
+    """
+    Get a proxy for a userDN/userGroup
+      - requestPem : PEM encoded request object for delegation
+      - requiredLifetime: Argument for length of proxy
+      - vomsAttribute : VOMS attr to add to the proxy
+      * Properties :
+        FullDelegation <- permits full delegation of proxies
+        LimitedDelegation <- permits downloading only limited proxies
+        PrivateLimitedDelegation <- permits downloading only limited proxies for one self
+    """
+    credDict = self.getRemoteCredentials()
+    result = gProxyDB.useToken( token )
+    if not result[ 'OK' ]:
+      return result
+    if not result[ 'Value' ]:
+      return S_ERROR( "Proxy token is invalid" )
+
+    gProxyDB.logAction( "used token", credDict[ 'DN' ], credDict[ 'group' ], userDN, userGroup )
+    if Properties.PRIVATE_LIMITED_DELEGATION in credDict[ 'properties' ]:
+      if credDict[ 'DN' ] != userDN:
+        return S_ERROR( "You are not allowed to download any proxy" )
+    gProxyDB.logAction( "download voms proxy with token", credDict[ 'DN' ], credDict[ 'group' ], userDN, userGroup )
+    return self.__getVOMSProxy( userDN, userGroup, requestPem, requiredLifetime, vomsAttribute, True )
