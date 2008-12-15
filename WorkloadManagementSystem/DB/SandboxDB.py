@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/SandboxDB.py,v 1.20 2008/12/14 21:15:59 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/SandboxDB.py,v 1.21 2008/12/15 09:57:56 atsareg Exp $
 ########################################################################
 """ SandboxDB class is a simple storage using MySQL as a container for
     relatively small sandbox files. The file size is limited to 16MB.
@@ -10,7 +10,7 @@
     getWMSTimeStamps()
 """
 
-__RCSID__ = "$Id: SandboxDB.py,v 1.20 2008/12/14 21:15:59 atsareg Exp $"
+__RCSID__ = "$Id: SandboxDB.py,v 1.21 2008/12/15 09:57:56 atsareg Exp $"
 
 import re, os, sys, threading
 import time, datetime
@@ -139,8 +139,10 @@ class SandboxDB(DB):
     result = self._query(req)
     if not result['OK']:
       return result
-
-    size = int(result['Value'][0][0])
+    if result['Value'][0][0]:
+      size = int(result['Value'][0][0])
+    else:
+      size = 0
     return S_OK(size)
 
   def __getPartitions(self,sandbox):
@@ -191,9 +193,6 @@ class SandboxDB(DB):
     for partID,sizes in partDict.items():
       dataSize,tableSize = sizes
       # Decide if the partitions is to be cleaned
-      
-      print "AT >>>>",dataSize,tableSize,tableSize-dataSize,partID 
-      
       if (tableSize-dataSize) > self.maxSizeToRecover:
         result = self.__repairPartition(partID,sandbox)
         if result['OK']:
