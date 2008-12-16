@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.5 2008/12/16 11:05:58 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.6 2008/12/16 14:21:37 acasajus Exp $
 # File :   TaskQueueDirector.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -7,7 +7,7 @@
 """  The Director Agent controls the submission of pilots via the
      PilotDirectors and Grid-specific PilotDirector sub-classes.
      This is a simple wrapper that performs the instantiation and monitoring
-     of the PilotDirector instances and adds workload to them via ThreadPool
+     of the PilotDirector instances and add workload to them via ThreadPool
      mechanism.
 
      From the base Agent class it uses the following configuration Parameters
@@ -16,14 +16,16 @@
        - ControlDirectory:
        - MaxCycles:
 
-     The following parameters are searched for in WorkloadManagement/TaskQueueDirector:
+     The following parameters are searched for in WorkloadManagement/Director:
        - ThreadStartDelay:
-       - SubmitPools: All the Submit pools that are to be initialized
-       - DefaultSubmitPools: If no specific pool is requested, use these         
+       - JobSelectLimit:
+
+     It looks in the WorkloadManagement/Director section for the
+     list of Directors to be instantiated (one for each defined GridMiddleware)
+       - GridMiddlewares
 
      It will use those Directors to submit pilots for each of the Supported SubmitPools
-       - SubmitPools (see above)
-
+       - SubmitPools
      For every SubmitPool there must be a corresponding Section with the
      necessary paramenters:
 
@@ -38,54 +40,18 @@
 
        LCG:
 
-       The following paramenters will be taken from the TaskQueueDirector section if not
-       present in the corresponding SubmitPool section
+       The following paramenters will be taken from the Director section if not
+       present in the corresponding section
        - GenericPilotDN:
        - GenericPilotGroup:
+       - DefaultPilotGridMiddleware:
 
-
-      The pilot submission logic is as follows:
-
-        - Determine prioritySum: sum of the Priorities for all TaskQueues in the system.
-
-        - Determine pilotsPerPriority: result of dividing the  number of pilots to submit 
-          per itteration by the prioritySum.
-
-        - For each TaskQueue determine a target number of pilots to submit:
-
-          - Multiply the priority by pilotsPerPriority.
-          - Apply a correction factor for proportional to maxCPU divided by CPU of the 
-            TaskQueue ( double number of pilots will be submitted for a TaskQueue with 
-            half CPU required ). To apply this correction the minimum CPU considered is 
-            lowestCPUBoost.
-          - Apply poisson statistics to determine the target number of pilots to submit 
-            (even a TQ with a very small priorities will get a chance of getting 
-            pilots submitted).
-          - Determine a maximum number of "Waiting" pilots in the system: 
-            ( 1 + extraPilotFraction ) * [No. of Jobs in TaskQueue] + extraPilots
-          - Attempt to submit as many pilots a the minimum between both number.
-          - Pilot submission request is inserted into a ThreadPool.
-
-        - Report the sum of the Target number of pilots to be submitted.
-
-        - Wait until the ThreadPool is empty.
-
-        - Report the actual number of pilots submitted.
-
-        In summary:
-
-        All TaskQueues are considered on every itteration, pilots are submitted 
-        statistically proportional to the priority of the TaskQueue, boosted for
-        the TaskQueues with lower CPU requirements and limited by the difference 
-        between the number of waiting jobs and the number of waiting pilots.
-        
       Obsolete Job JDL Option:
         GridExecutable
         SoftwareTag
-        SubmitPool (may want to recover it for SAM jobs)
 
 """
-__RCSID__ = "$Id: TaskQueueDirector.py,v 1.5 2008/12/16 11:05:58 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueDirector.py,v 1.6 2008/12/16 14:21:37 acasajus Exp $"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 
@@ -112,19 +78,16 @@ class TaskQueueDirector(AgentModule):
   def initialize(self):
     """ Standard constructor
     """
-    import threading
-    
-    self.am_setOption( "PollingTime", 60.0 )
-
+    self.am_setOption( "pollingTime", 60.0 )
     self.am_setOption( "pilotsPerIteration", 20.0 )
     self.am_setOption( "lowestCPUBoost", 7200.0 )
     self.am_setOption( "extraPilotFraction", 0.2 )
     self.am_setOption( "extraPilots", 4 )
-    
+
     self.am_setOption('ThreadStartDelay', 1 )
     self.am_setOption('SubmitPools', [] )
     self.am_setOption('DefaultSubmitPools', [] )
-    
+
 
     self.am_setOption('minThreadsInPool', 0 )
     self.am_setOption('maxThreadsInPool', 2 )
@@ -133,8 +96,6 @@ class TaskQueueDirector(AgentModule):
     self.directors = {}
     self.pools = {}
     self.__checkSubmitPools()
-
-    self.callBackLock = threading.Lock()
 
     return S_OK()
 
@@ -173,36 +134,26 @@ class TaskQueueDirector(AgentModule):
 
     pilotsPerPriority  = self.am_getOption('pilotsPerIteration') / prioritySum
 
-    self.callBackLock.acquire()
-    self.submittedPilots = 0
-    self.callBackLock.release()
-    self.toSubmitPilots = 0
+    submittedPilots = 0
     waitingStatusList = ['Submitted','Ready','Scheduled','Waiting']
 
     for taskQueueID in taskQueueDict:
-      self.log.verbose( 'Processing TaskQueue', taskQueueID )
-      
+      self.log.verbose( 'Processing TaskQueueID:', taskQueueID )
+
       result = pilotAgentsDB.countPilots( {'TaskQueueID': taskQueueID, 'Status': waitingStatusList} )
       if not result['OK']:
         self.log.error('Fail to get Number of Waiting pilots',result['Message'])
         waitingPilots = 0
       else:
         waitingPilots = result['Value']
-        self.log.verbose( 'Waiting Pilots for TaskQueue %s:' % taskQueueID, waitingPilots )
-      
+        self.log.verbose( 'Waiting Pilots for TaskQueue:', waitingPilots )
+
       result = self.submitPilotsForTaskQueue( taskQueueDict[taskQueueID], waitingPilots, pilotsPerPriority )
 
       if result['OK']:
-        self.toSubmitPilots += result['Value']
+        submittedPilots += result['Value']
 
-    self.log.info( 'Number of pilots to be Submitted %s' % self.toSubmitPilots )
-    # Now wait until all Jobs in the Default ThreadPool are proccessed
-    if 'Default' in self.pools:
-      # only for those in "Default' thread Pool
-      # for pool in self.pools:
-      self.pools['Default'].processAllResults()
-
-    self.log.info( 'Number of pilots Submitted %s' % self.submittedPilots )
+    self.log.info( 'Number of pilots Submitted %s' % submittedPilots )
 
     return S_OK()
 
@@ -210,25 +161,25 @@ class TaskQueueDirector(AgentModule):
 
     from numpy.random import poisson
 
-    taskQueueID = taskQueueDict['TaskQueueID']
     maxCPU = taskQueueDB.maxCPUSegments[-1]
+    lowestCPUBoost = self.am_getOption('lowestCPUBoost')
     extraPilotFraction = self.am_getOption('extraPilotFraction')
     extraPilots = self.am_getOption('extraPilots')
 
     taskQueuePriority = taskQueueDict['Priority']
-    self.log.verbose( 'Priority for TaskQueue %s:' % taskQueueID, taskQueuePriority )
-    taskQueueCPU      = max( taskQueueDict['CPUTime'], self.am_getOption('lowestCPUBoost') )
-    self.log.verbose( 'CPUTime  for TaskQueue %s:' % taskQueueID, taskQueueCPU )
+    self.log.verbose( 'Priority for TaskQueue: %s' % taskQueuePriority )
+    taskQueueCPU      = taskQueueDict['CPUTime']
+    self.log.verbose( 'CPUTime  for TaskQueue: %s' % taskQueueCPU )
     taskQueueJobs     = taskQueueDict['Jobs']
-    self.log.verbose( 'Jobs in TaskQueue %s:' % taskQueueID, taskQueueJobs )
+    self.log.verbose( 'Jobs in TaskQueue: %s' % taskQueueJobs )
 
     # Determine number of pilots to submit, boosting TaskQueues with low CPU requirements
-    pilotsToSubmit = poisson( pilotsPerPriority * taskQueuePriority * maxCPU / taskQueueCPU )
-    # limit the number of pilots according to the number of waiting job in the TaskQueue 
+    pilotsToSubmit = poisson( pilotsPerPriority * taskQueuePriority * maxCPU / max( taskQueueCPU, lowestCPUBoost ) )
+    # limit the number of pilots according to the number of waiting job in the TaskQueue
     # and the number of already submitted pilots for that TaskQueue
     pilotsToSubmit = min( pilotsToSubmit, int( ( 1 + extraPilotFraction ) * taskQueueJobs ) + extraPilots - waitingPilots )
-    if pilotsToSubmit <= 0: return S_OK( 0 ) 
-    self.log.verbose( 'Submitting %s pilots for TaskQueue %s' % ( pilotsToSubmit,  taskQueueID ) )
+    if pilotsToSubmit <= 0: return S_OK( 0 )
+    self.log.verbose( 'Submitting %s pilots for TaskQueue' % pilotsToSubmit )
 
     return self.__submitPilots( taskQueueDict, pilotsToSubmit )
 
@@ -331,7 +282,7 @@ class TaskQueueDirector(AgentModule):
 
     self.log.info( 'Director Object instantiated:', directorName )
 
-    # 2. check the requested ThreadPool (if not defined use the default one)
+    # 2. check the requested ThreadPool (it not defined use the default one)
     directorPool = self.am_getOption( submitPool + '/Pool', 'Default' )
     if not directorPool in self.pools:
       self.log.info( 'Adding Thread Pool:', directorPool)
@@ -352,12 +303,12 @@ class TaskQueueDirector(AgentModule):
 
   def __configureDirector( self, submitPool=None ):
     # Update Configuration from CS
-    # if submitPool == None then, 
+    # if submitPool == None then,
     #     disable all Directors
-    # else 
+    # else
     #    Update Configuration for the PilotDirector of that SubmitPool
     if not submitPool:
-      self.workDir     = self.am_getOption( 'WorkDirectory' )      
+      self.workDir     = self.am_getOption( 'WorkDirectory' )
       # By default disable all directors
       for director in self.directors:
         self.directors[director]['isEnabled'] = False
@@ -384,20 +335,13 @@ class TaskQueueDirector(AgentModule):
     pool = ThreadPool( self.am_getOption('minThreadsInPool'),
                        self.am_getOption('maxThreadsInPool'),
                        self.am_getOption('totalThreadsInPool') )
-    # Daemonize except "Default" pool
-    if poolName != 'Default':
-      pool.daemonize()
+    pool.daemonize()
     self.pools[poolName] = pool
     return poolName
 
   def callBack(self, threadedJob, submitResult):
     if not submitResult['OK']:
       self.log.error( submitResult['Message'] )
-    else:
-      submittedPilots = submitResult['Value']
-      self.callBackLock.acquire()
-      self.submittedPilots += submittedPilots
-      self.callBackLock.release()
 
 
 import os, time, tempfile, shutil, re
@@ -423,6 +367,7 @@ ERROR_JDL        = 'Could not create GRID JDL'
 ERROR_PROXY      = 'No proxy Available'
 ERROR_VOMS       = 'Proxy without VOMS Extensions'
 ERROR_CE         = 'No queue available for pilot'
+ERROR_TOKEN      = 'Invalid proxy token request'
 
 LOGGING_SERVER   = 'lb101.cern.ch'
 
@@ -488,7 +433,7 @@ class PilotDirector:
 
 
   def configureFromSection( self, mySection ):
-    
+
     self.pilot              = gConfig.getValue( mySection+'/PilotScript'       , self.pilot )
     self.diracVersion       = gConfig.getValue( mySection+'/DIRACVersion'      , self.diracVersion )
     self.install            = gConfig.getValue( mySection+'/InstallScript'     , self.install )
@@ -523,7 +468,7 @@ class PilotDirector:
       inputSandbox = []
       pilotOptions = []
       if taskQueueDict['PilotType'].lower()=='private':
-        self.log.verbose('Submitting private pilots for TaskQueue %s' % taskQueueID)
+        self.log.verbose('Private pilots will be submitted for TaskQueueID %s' % taskQueueID)
         ownerDN    = taskQueueDict['OwnerDN']
         ownerGroup = taskQueueDict['OwnerGroup']
         # User Group requirement
@@ -536,7 +481,7 @@ class PilotDirector:
         # pilotOptions.append( '-o /AgentJobRequirements/PilotType=private' )
         pilotOptions.append( '-o /Resources/Computing/InProcess/PilotType=private' )
       else:
-        self.log.verbose('Submitting generic pilots for TaskQueue %s' % taskQueueID)
+        self.log.verbose('Generic pilot used for TaskQueueID %s' % taskQueueID)
         ownerDN    = self.genericPilotDN
         ownerGroup = self.genericPilotGroup
         # pilotOptions.append( '-o /AgentJobRequirements/PilotType=generic' )
@@ -546,8 +491,15 @@ class PilotDirector:
       pilotOptions.append( '-v %s' % self.diracVersion )
       # Requested CPU time
       pilotOptions.append( '-T %s' % taskQueueDict['CPUTime'] )
-      # Setup. 
+      # Setup.
       pilotOptions.append( '-o /DIRAC/Setup=%s' % taskQueueDict['Setup'] )
+
+      result = gProxyManager.requestToken( ownerDN, ownerGroup, pilotsToSubmit )
+      if not result[ 'OK' ]:
+        return S_ERROR( ERROR_TOKEN )
+      token = result[ 'Value' ]
+
+      pilotOptions.append( '-o /Security/ProxyToken=%s' % token )
 
       # Write JDL
       retDict = self._prepareJDL( taskQueueDict, workingDirectory, pilotOptions, pilotsToSubmit, ceMask )
@@ -610,8 +562,7 @@ class PilotDirector:
           return S_ERROR( ERROR_CE )
 
       # Now we are ready for the actual submission, so
-
-      self.log.verbose('Submitting Pilots for TaskQueue', taskQueueID )
+      self.log.verbose('Submitting Pilots for TaskQueueID:', taskQueueID )
       submitRet = self._submitPilot( proxy, pilotsToSubmit, jdl, taskQueueID )
       try:
         shutil.rmtree( workingDirectory )
@@ -621,33 +572,27 @@ class PilotDirector:
         return S_ERROR( 'Pilot Submission Failed' )
       # pilotReference, resourceBroker = submitRet
 
-      submittedPilots = 0
-
       if pilotsToSubmit != 1 and len( submitRet ) != pilotsToSubmit:
         # Parametric jobs are used
         for pilotReference, resourceBroker in submitRet:
           pilotReference = self._getChildrenReferences( proxy, pilotReference, taskQueueID )
-          submittedPilots += len(pilotReference)
-          pilotAgentsDB.addPilotTQReference(pilotReference, taskQueueID, ownerDN, 
-                        vomsGroup, broker=resourceBroker, gridType=self.gridMiddleware, 
+          pilotAgentsDB.addPilotTQReference(pilotReference, taskQueueID, ownerDN,
+                        vomsGroup, broker=resourceBroker, gridType=self.gridMiddleware,
                         requirements=pilotRequirements )
       else:
         for pilotReference, resourceBroker in submitRet:
           pilotReference = [pilotReference]
-          submittedPilots += len(pilotReference)
-          pilotAgentsDB.addPilotTQReference(pilotReference, taskQueueID, ownerDN, 
-                        vomsGroup, broker=resourceBroker, gridType=self.gridMiddleware, 
+          pilotAgentsDB.addPilotTQReference(pilotReference, taskQueueID, ownerDN,
+                        vomsGroup, broker=resourceBroker, gridType=self.gridMiddleware,
                         requirements=pilotRequirements )
 
       # add some sleep here
-      time.sleep(1.0*submittedPilots)
-
-      return S_OK( submittedPilots )
+      time.sleep(1*pilotsToSubmit)
 
     except Exception,x:
       self.log.exception( 'Error during pilot submission' )
 
-    return S_OK(0)
+    return S_OK()
 
   def _JobJDL(self, taskQueueDict, pilotOptions, ceMask ):
     """
@@ -725,7 +670,7 @@ class PilotDirector:
     """
     # assume user knows what they're doing and avoid site mask e.g. sam jobs
     if 'GridCEs' in taskQueueDict and taskQueueDict['GridCEs']:
-      self.log.info( 'CEs requested by TaskQueue %s:' % taskQueueDict['TaskQueueID'], ', '.join( taskQueueDict['GridCEs'] ) )
+      self.log.info( 'CEs requested by TaskQueueID %s:' % taskQueueDict['TaskQueueID'], ', '.join( taskQueueDict['GridCEs'] ) )
       return taskQueueDict['GridCEs']
 
     # Get the mask
@@ -753,10 +698,10 @@ class PilotDirector:
 
     if not siteMask:
       # pilot can not be submitted
-      self.log.info( 'No Valid Site Candidate in Mask for TaskQueue %s' % taskQueueDict['TaskQueueID'] )
+      self.log.info( 'No Valid Site Candidate in Mask for TaskQueueID %s' % taskQueueDict['TaskQueueID'] )
       return []
 
-    self.log.info( 'Site Candidates for TaskQueue %s:' % taskQueueDict['TaskQueueID'], ', '.join(siteMask) )
+    self.log.info( 'Site Candidates for TaskQueueID %s:' % taskQueueDict['TaskQueueID'], ', '.join(siteMask) )
 
     # Get CE's associates to the given site Names
     ceMask = []
@@ -784,7 +729,7 @@ class PilotDirector:
     if not ceMask:
       self.log.info( 'No CE Candidate found for TaskQueue %s:' % taskQueueDict['TaskQueueID'], ', '.join(siteMask) )
 
-    self.log.verbose( 'CE Candidates for TaskQueue %s:' % taskQueueDict['TaskQueueID'], ', '.join(ceMask) )
+    self.log.verbose( 'CE Candidates for TaskQueueID %s:' % taskQueueDict['TaskQueueID'], ', '.join(ceMask) )
 
     return ceMask
 
@@ -792,7 +737,7 @@ class PilotDirector:
     """
       Parse List Match stdout to return list of matched CE's
     """
-    self.log.verbose( 'Executing List Match for TaskQueue', taskQueueID )
+    self.log.verbose( 'Executing List Match for TaskQueueID:', taskQueueID )
 
     start = time.time()
     ret = self._gridCommand( proxy, cmd )
@@ -815,12 +760,12 @@ class PilotDirector:
         availableCEs.append(line)
 
     if not availableCEs:
-      self.log.info( 'List-Match failed to find CEs for TaskQueue', taskQueueID )
+      self.log.info( 'List-Match failed to find CEs for TaskQueueID:', taskQueueID )
       self.log.info( stdout )
       self.log.info( stderr )
     else:
       self.log.debug( 'List-Match returns:', str(ret['Value'][0]) + '\n'.join( ret['Value'][1:3] ) )
-      self.log.info( 'List-Match found %s CEs for TaskQueue' % len(availableCEs), taskQueueID )
+      self.log.info( 'List-Match found %s CEs for TaskQueueID:' % len(availableCEs), taskQueueID )
       self.log.verbose( ', '.join(availableCEs) )
 
 
@@ -831,7 +776,7 @@ class PilotDirector:
       Parse Job Submit stdout to return pilot reference
     """
     start = time.time()
-    self.log.verbose( 'Executing Job Submit for TaskQueue', taskQueueID )
+    self.log.verbose( 'Executing Job Submit for TaskQueueID:', taskQueueID )
 
     ret = self._gridCommand( proxy, cmd )
 
@@ -863,7 +808,7 @@ class PilotDirector:
       self.log.error( 'Job Submit returns no Reference:', str(ret['Value'][0]) + '\n'.join( ret['Value'][1:3] ) )
       return False
 
-    self.log.info( 'Reference %s for TaskQueue %s' % ( glite_id, taskQueueID ) )
+    self.log.info( 'Reference %s for TaskQueueID %s' % ( glite_id, taskQueueID ) )
 
     return glite_id,rb
 
@@ -957,13 +902,8 @@ ParameterStart = 0;
     """
      Submit pilot and get back the reference
     """
-    result = []
     cmd = [ 'glite-wms-job-submit', '-a', '-c', '%s' % jdl, '%s' % jdl ]
-    ret = self.parseJobSubmitStdout( proxy, cmd, taskQueueID )
-    if ret:
-      result.append(ret)
-
-    return result
+    return  [self.parseJobSubmitStdout( proxy, cmd, taskQueueID )]
 
   def _getChildrenReferences(self, proxy, parentReference, taskQueueID ):
     """
@@ -972,7 +912,7 @@ ParameterStart = 0;
     cmd = [ 'glite-wms-job-status', parentReference ]
 
     start = time.time()
-    self.log.verbose( 'Executing Job Status for TaskQueue', taskQueueID )
+    self.log.verbose( 'Executing Job Status for TaskQueueID:', taskQueueID )
 
     ret = self._gridCommand( proxy, cmd )
 
