@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.46 2008/08/01 08:33:47 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.47 2008/12/16 14:55:04 acasajus Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.46 2008/08/01 08:33:47 rgracian Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.47 2008/12/16 14:55:04 acasajus Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -262,15 +262,24 @@ class JobAgent(Agent):
     return S_OK()
 
   #############################################################################
-  def __setupProxy(self,job,ownerDN,jobGroup,workingDir):
+  def __setupProxy(self,job,ownerDN,ownerGroup,workingDir):
     """Retrieves user proxy with correct role for job and sets up environment to
        run job locally.
     """
-    self.log.info( "Requesting proxy for %s@%s" % ( ownerDN, jobGroup ) )
-    retVal = gProxyManager.downloadVOMSProxy( ownerDN,
-                                          jobGroup,
-                                          limited = True,
-                                          requiredTimeLeft = self.defaultProxyLength )
+    self.log.info( "Requesting proxy for %s@%s" % ( ownerDN, ownerGroup ) )
+    token = gConfig.getValue( "/Security/ProxyToken", "" )
+    if token:
+      retVal = gProxyManager.getPayloadProxyFromDIRACGroup( ownerDN,
+                                                            ownerGroup,
+                                                            token,
+                                                            self.defaultProxyLength
+                                                          )
+    else:
+      self.log.info( "No token defined. Trying to download proxy without token" )
+      retVal = gProxyManager.downloadVOMSProxy( ownerDN,
+                                                ownerGroup,
+                                                limited = True,
+                                                requiredTimeLeft = self.defaultProxyLength )
     if not retVal[ 'OK' ]:
       self.log.error('Could not retrieve proxy')
       self.log.verbose(retVal)
