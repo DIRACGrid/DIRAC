@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.37 2008/12/15 17:07:50 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.38 2008/12/16 14:15:38 acasajus Exp $
 ########################################################################
 """ ProxyRepository class is a front-end to the proxy repository Database
 """
 
-__RCSID__ = "$Id: ProxyDB.py,v 1.37 2008/12/15 17:07:50 acasajus Exp $"
+__RCSID__ = "$Id: ProxyDB.py,v 1.38 2008/12/16 14:15:38 acasajus Exp $"
 
 import time
 import random
@@ -88,6 +88,8 @@ class ProxyDB(DB):
                                   }
     if 'ProxyDB_Tokens' not in tablesInDB:
       tablesD[ 'ProxyDB_Tokens' ] = { 'Fields' : { 'Token' : 'VARCHAR(64) NOT NULL',
+                                                   'RequesterDN' : 'VARCHAR(255) NOT NULL',
+                                                   'RequesterGroup' : 'VARCHAR(255) NOT NULL',
                                                    'ExpirationTime' : 'DATETIME NOT NULL',
                                                    'UsesLeft' : 'SMALLINT UNSIGNED DEFAULT 1',
                                                  },
@@ -705,7 +707,7 @@ class ProxyDB(DB):
       totalRecords = retVal[ 'Value' ][0][0]
     return S_OK( { 'ParameterNames' : fields, 'Records' : data, 'TotalRecords' : totalRecords } )
 
-  def generateToken( self, numUses = 1, lifeTime = 0, retries = 10 ):
+  def generateToken( self, requesterDN, requesterGroup, numUses = 1, lifeTime = 0, retries = 10 ):
     if not lifeTime:
       lifeTime = gConfig.getValue( "/DIRAC/VOPolicy/TokenLifeTime", self.__defaultTokenLifetime )
     maxUses = gConfig.getValue( "/DIRAC/VOPolicy/TokenMaxUses", self.__defaultTokenMaxUses )
@@ -714,10 +716,14 @@ class ProxyDB(DB):
     rndData = "%s.%s.%s.%s" % ( time.time(), random.random(), numUses, lifeTime )
     m.update( rndData )
     token = m.hexdigest()
-    insertSQL = "INSERT INTO `ProxyDB_Tokens` ( Token, ExpirationTime, UsesLeft ) VALUES ( %s, %s, %s )" % (
-                                                                        "'%s'" % token,
-                                                                        "TIMESTAMPADD( SECOND, %s, UTC_TIMESTAMP() )" % lifeTime,
-                                                                        str( numUses ) )
+    fieldsSQL = ", ".join( ( "Token", "RequesterDN", "RequesterGroup", "ExpirationTime", "UsesLeft" ) )
+    valuesSQL = ", ".join(  ( self._escapeString( token )['Value'],
+                              self._escapeString( requesterDN )['Value'],
+                              self._escapeString( requesterGroup )['Value'],
+                            "TIMESTAMPADD( SECOND, %s, UTC_TIMESTAMP() )" % lifeTime,
+                            str( numUses ) ) )
+
+    insertSQL = "INSERT INTO `ProxyDB_Tokens` ( %s ) VALUES ( %s )" % ( fieldsSQL, valuesSQL )
     result = self._update( insertSQL )
     if result[ 'OK' ]:
       return S_OK( token )
@@ -727,12 +733,17 @@ class ProxyDB(DB):
       return S_ERROR( "Max retries reached for token generation. Aborting" )
     return result
 
-  def purgeExpiredTokens(self):
+  def purgeExpiredTokens( self ):
     delSQL = "DELETE FROM `ProxyDB_Tokens` WHERE ExpirationTime < UTC_TIMESTAMP() OR UsesLeft < 1"
     return self._update( delSQL )
 
-  def useToken( self, token ):
-    updateSQL = "UPDATE `ProxyDB_Tokens` SET UsesLeft = UsesLeft - 1 WHERE Token='%s' AND UsesLeft > 0 AND ExpirationTime >= UTC_TIMESTAMP()" % token
+  def useToken( self, token, requesterDN, requesterGroup ):
+    sqlCond = " AND ".join( ( "UsesLeft > 0",
+                              "Token=%s" % self._escapeString( token )['Value'],
+                              "RequesterDN=%s" % self._escapeString( requesterDN )['Value'],
+                              "RequesterGroup=%s" % self._escapeString( requesterGroup )['Value'],
+                              "ExpirationTime >= UTC_TIMESTAMP()" ) )
+    updateSQL = "UPDATE `ProxyDB_Tokens` SET UsesLeft = UsesLeft - 1 WHERE %s" % sqlCond
     result = self._update( updateSQL )
     if not result[ 'OK' ]:
       return result

@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/ProxyManagerHandler.py,v 1.16 2008/12/15 17:07:51 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/ProxyManagerHandler.py,v 1.17 2008/12/16 14:15:39 acasajus Exp $
 ########################################################################
 
 """ ProxyManager is the implementation of the ProxyManagement service
     in the DISET framework
 """
 
-__RCSID__ = "$Id: ProxyManagerHandler.py,v 1.16 2008/12/15 17:07:51 acasajus Exp $"
+__RCSID__ = "$Id: ProxyManagerHandler.py,v 1.17 2008/12/16 14:15:39 acasajus Exp $"
 
 import types
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -246,23 +246,14 @@ class ProxyManagerHandler( RequestHandler ):
     return gProxyDB.getLogsContent( selDict, sortDict, start, limit )
 
 
-  types_generateTokens = [ ( types.ListType, types.TupleType ) ]
-  def export_generateTokens( self, requestList ):
+  types_generateToken = [ types.StringType, types.StringType, ( types.IntType, types.LongType ) ]
+  def export_generateToken( self, requesterDN, requesterGroup, tokenUses ):
     """
     Generate tokens for proxy retrieval
     """
     credDict = self.getRemoteCredentials()
-    for numUses in requestList:
-      if type( numUses ) not in ( types.IntType, types.LongType ):
-        return S_ERROR( "The request must be a list of numbers" )
-    tokens = {}
-    for numUses in requestList:
-      result = gProxyDB.generateToken( numUses = numUses )
-      if not result[ 'OK' ]:
-        return result
-      tokens[ result[ 'Value' ] ] = numUses
-    gProxyDB.logAction( "generate tokens", credDict[ 'DN' ], credDict[ 'group' ], "unknown", "unknown" )
-    return S_OK( tokens )
+    gProxyDB.logAction( "generate tokens", credDict[ 'DN' ], credDict[ 'group' ], requesterDN, requesterGroup )
+    return gProxyDB.generateToken( requesterDN, requesterGroup, numUses = tokenUses )
 
   types_getProxyWithToken = [ types.StringType, types.StringType,
                               types.StringType, ( types.IntType, types.LongType ),
@@ -279,7 +270,7 @@ class ProxyManagerHandler( RequestHandler ):
         PrivateLimitedDelegation <- permits downloading only limited proxies for one self
     """
     credDict = self.getRemoteCredentials()
-    result = gProxyDB.useToken( token )
+    result = gProxyDB.useToken( token, credDict[ 'DN' ], credDict[ 'group' ] )
     if not result[ 'OK' ]:
       return result
     if not result[ 'Value' ]:
@@ -307,7 +298,7 @@ class ProxyManagerHandler( RequestHandler ):
         PrivateLimitedDelegation <- permits downloading only limited proxies for one self
     """
     credDict = self.getRemoteCredentials()
-    result = gProxyDB.useToken( token )
+    result = gProxyDB.useToken( token, credDict[ 'DN' ], credDict[ 'group' ] )
     if not result[ 'OK' ]:
       return result
     if not result[ 'Value' ]:
