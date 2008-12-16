@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/TransferClient.py,v 1.14 2008/07/07 16:37:20 acasajus Exp $
-__RCSID__ = "$Id: TransferClient.py,v 1.14 2008/07/07 16:37:20 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/TransferClient.py,v 1.15 2008/12/16 14:28:44 acasajus Exp $
+__RCSID__ = "$Id: TransferClient.py,v 1.15 2008/12/16 14:28:44 acasajus Exp $"
 
 import tarfile
 import threading
@@ -79,20 +79,23 @@ class TransferClient( BaseClient ):
     @return : S_OK/S_ERROR
     """
     fileHelper = FileHelper()
-    retVal = fileHelper.getFileDescriptor( filename, "w" )
+    retVal = fileHelper.getDataSink( filename )
     if not retVal[ 'OK' ]:
       return retVal
-    fd = retVal[ 'Value' ]
+    dS = retVal[ 'Value' ]
+    closeAfterUse = retVal[ 'closeAfterUse' ]
     retVal = self.__sendTransferHeader( "ToClient", ( fileId, token ) )
     if not retVal[ 'OK' ]:
       return retVal
     transport = retVal[ 'Value' ]
     fileHelper.setTransport( transport )
-    retVal = fileHelper.networkToFD( fd )
+    retVal = fileHelper.networkToDataSink( dS )
     if not retVal[ 'OK' ]:
       return retVal
     retVal = transport.receiveData()
     transport.close()
+    if closeAfterUse:
+      dS.close()
     return retVal
 
   def __checkFileList( self, fileList ):
