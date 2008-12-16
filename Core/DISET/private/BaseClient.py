@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.56 2008/11/25 18:48:46 acasajus Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.56 2008/11/25 18:48:46 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.57 2008/12/16 13:37:40 acasajus Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.57 2008/12/16 13:37:40 acasajus Exp $"
 
 import sys
 import types
@@ -57,7 +57,10 @@ class BaseClient:
 
   def __discoverURL(self):
     #Calculate final URL
-    result = self.__findServiceURL()
+    try:
+      result = self.__findServiceURL()
+    except Exception, e:
+      return S_ERROR( str(e) )
     if not result[ 'OK' ]:
       return result
     self.serviceURL = result[ 'Value' ]
