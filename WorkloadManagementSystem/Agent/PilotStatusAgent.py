@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.46 2008/12/17 17:15:04 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.47 2008/12/17 17:18:52 acasajus Exp $
 ########################################################################
 
 """  The Pilot Status Agent updates the status of the pilot jobs if the
      PilotAgents database.
 """
 
-__RCSID__ = "$Id: PilotStatusAgent.py,v 1.46 2008/12/17 17:15:04 acasajus Exp $"
+__RCSID__ = "$Id: PilotStatusAgent.py,v 1.47 2008/12/17 17:18:52 acasajus Exp $"
 
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, List
@@ -111,6 +111,12 @@ class PilotStatusAgent(Agent):
           if pDict:
             if pDict[ 'FinalStatus' ]:
               pilotsToAccount[ pRef ] = pDict
+            else:
+              result = self.pilotDB.setPilotStatus( pRef,
+                                                    pDict['Status'],
+                                                    pDict['DestinationSite'],
+                                                    pDict['StatusDate'],
+                                                    conn = connection )
 
         if len( pilotsToAccount ) > 100:
           self.accountPilots( pilotsToAccount, connection )
