@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.44 2008/12/02 15:18:35 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.45 2008/12/17 17:12:45 acasajus Exp $
 ########################################################################
 
 """  The Pilot Status Agent updates the status of the pilot jobs if the
      PilotAgents database.
 """
 
-__RCSID__ = "$Id: PilotStatusAgent.py,v 1.44 2008/12/02 15:18:35 atsareg Exp $"
+__RCSID__ = "$Id: PilotStatusAgent.py,v 1.45 2008/12/17 17:12:45 acasajus Exp $"
 
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, List
@@ -58,8 +58,8 @@ class PilotStatusAgent(Agent):
     else:
       return result
 
-    result = self.pilotDB.getPilotGroups( self.identityFieldsList, 
-                                         {'Status': self.queryStateList, 
+    result = self.pilotDB.getPilotGroups( self.identityFieldsList,
+                                         {'Status': self.queryStateList,
                                           'ParentID': parentIDList } )
     if not result['OK']:
       self.log.error('Fail to get identities Groups', result['Message'])
@@ -72,13 +72,13 @@ class PilotStatusAgent(Agent):
 
     for ownerDN, ownerGroup, gridType in result['Value']:
       self.log.verbose( 'Getting pilots for %s:%s @ %s' % ( ownerDN, ownerGroup, gridType ) )
-      
+
       condDict = {'Status':self.queryStateList,
                   'OwnerDN':ownerDN,
                   'OwnerGroup':ownerGroup,
                   'GridType':gridType,
                   'ParentID':parentIDList}
-      
+
       result = self.pilotDB.selectPilots(condDict)
       if not result['OK']:
         self.log.warn('Failed to get the Pilot Agents')
@@ -237,27 +237,6 @@ class PilotStatusAgent(Agent):
     for job in List.fromChar(stdout,'\nStatus info for the Job :')[1:]:
       pRef = List.fromChar(job,'\n' )[0].strip()
       resultDict[pRef] = self.__parseJobStatus( job, gridType )
-      chDone = True
-     
-      for subjob in List.fromChar(job, 'Status info for the Job :')[1:]:
-        resultDict[pRef]['isParent'] = True
-        chRef = List.fromChar(subjob,'\n' )[0].strip()
-        resultDict[chRef] = self.__parseJobStatus( subjob, gridType )
-        resultDict[chRef]['isChild'] = True
-        resultDict[chRef]['ParentRef'] = pRef
-        if not resultDict[chRef][ 'FinalStatus' ]:
-          resultDict[pRef][ 'FinalStatus' ] = False
-          chDone = False
-        resultDict[ pRef ][ 'ChildRefs' ].append( chRef )
-        
-      if chDone:
-        # All the children are done
-        resultDict[pRef][ 'FinalStatus' ] = True
-        resultDict[pRef][ 'Status' ] = 'Done'  
-        
-      if not resultDict[pRef][ 'FinalStatus' ]:
-        for chRef in resultDict[ pRef ][ 'ChildRefs' ]:
-          resultDict[chRef][ 'FinalStatus' ] = False
 
     return S_OK(resultDict)
 
@@ -279,7 +258,7 @@ class PilotStatusAgent(Agent):
         statusDate = time.strftime('%Y-%m-%d %H:%M:%S',time.strptime(statusDate,'%b %d %H:%M:%S %Y'))
     except Exception, x:
       self.log.error( 'Error parsing %s Job Status output:\n' % gridType, job )
-      
+
     return { 'Status': status,
              'DestinationSite': destination,
              'StatusDate': statusDate,
