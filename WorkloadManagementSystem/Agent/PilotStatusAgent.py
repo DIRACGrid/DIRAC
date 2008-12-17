@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.45 2008/12/17 17:12:45 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.46 2008/12/17 17:15:04 acasajus Exp $
 ########################################################################
 
 """  The Pilot Status Agent updates the status of the pilot jobs if the
      PilotAgents database.
 """
 
-__RCSID__ = "$Id: PilotStatusAgent.py,v 1.45 2008/12/17 17:12:45 acasajus Exp $"
+__RCSID__ = "$Id: PilotStatusAgent.py,v 1.46 2008/12/17 17:15:04 acasajus Exp $"
 
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, List
@@ -68,7 +68,6 @@ class PilotStatusAgent(Agent):
       return S_OK()
 
     pilotsToAccount = {}
-    parentsToUpdate = {}
 
     for ownerDN, ownerGroup, gridType in result['Value']:
       self.log.verbose( 'Getting pilots for %s:%s @ %s' % ( ownerDN, ownerGroup, gridType ) )
@@ -110,34 +109,21 @@ class PilotStatusAgent(Agent):
         for pRef in statusDict:
           pDict = statusDict[ pRef ]
           if pDict:
-            if not pDict[ 'FinalStatus' ]:
-              #HACK to Avoid parents in real final status to fo through
-              if not ( pDict[ 'isParent' ] and pDict[ 'Status' ] in self.finalStateList ):
-                #Update
-                result = self.pilotDB.setPilotStatus( pRef,
-                                             pDict['Status'],
-                                             pDict['DestinationSite'],
-                                             pDict['StatusDate'],
-                                             conn = connection )
-            else:
-              if pDict[ 'isParent' ]:
-                parentsToUpdate[ pRef ] = pDict
-              else:
-                pilotsToAccount[ pRef ] = pDict
+            if pDict[ 'FinalStatus' ]:
+              pilotsToAccount[ pRef ] = pDict
 
         if len( pilotsToAccount ) > 100:
-          self.accountPilots( pilotsToAccount, parentsToUpdate, connection )
+          self.accountPilots( pilotsToAccount, connection )
           pilotsToAccount = {}
-          parentsToUpdate = {}
 
-    self.accountPilots( pilotsToAccount, parentsToUpdate, connection )
+    self.accountPilots( pilotsToAccount, connection )
 
     connection.close()
     return S_OK()
 
-  def accountPilots( self, pilotsToAccount, parentsToUpdate, connection ):
+  def accountPilots( self, pilotsToAccount, connection ):
 
-    if not pilotsToAccount and not parentsToUpdate:
+    if not pilotsToAccount:
       self.log.info( 'No pilots to Account' )
       return S_OK()
 
@@ -152,9 +138,6 @@ class PilotStatusAgent(Agent):
           dbData[pref][ 'Status' ] = pilotsToAccount[pref][ 'Status' ]
           dbData[pref][ 'DestinationSite' ] = pilotsToAccount[pref][ 'DestinationSite' ]
           dbData[pref][ 'LastUpdateTime' ] = Time.fromString( pilotsToAccount[pref][ 'StatusDate' ] )
-          pilotsToAccount[pref][ 'updateDB' ] = True
-        else:
-          pilotsToAccount[pref][ 'updateDB' ] = False
 
     retVal = self.__addPilotsAccountingReport( dbData )
     if not retVal['OK']:
@@ -167,12 +150,8 @@ class PilotStatusAgent(Agent):
       self.log.error( "Can't send accounting repots", retVal[ 'Message' ] )
     else:
       self.log.info( "Accounting sent for %s pilots" % len(pilotsToAccount) )
-      for pref in pilotsToAccount:
-        if 'updateDB' in pilotsToAccount[pref] and pilotsToAccount[pref][ 'updateDB' ]:
-          parentsToUpdate[ pref ] = pilotsToAccount[ pref ]
-
-      for pRef in parentsToUpdate:
-        pDict = parentsToUpdate[pRef]
+      for pRef in pilotsToAccount:
+        pDict = pilotsToAccount[pRef]
         self.pilotDB.setPilotStatus( pRef,
                                      pDict['Status'],
                                      pDict['DestinationSite'],
