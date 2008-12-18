@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/scripts/dirac-admin-submit-pilot-for-job.py,v 1.1 2008/12/18 09:26:12 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/scripts/dirac-admin-submit-pilot-for-job.py,v 1.2 2008/12/18 18:23:40 rgracian Exp $
 # File :   dirac-admin-submit-pilot-for-job
 # Author : Ricardo Graciani
 ########################################################################
-__RCSID__   = "$Id: dirac-admin-submit-pilot-for-job.py,v 1.1 2008/12/18 09:26:12 rgracian Exp $"
-__VERSION__ = "$Revision: 1.1 $"
+__RCSID__   = "$Id: dirac-admin-submit-pilot-for-job.py,v 1.2 2008/12/18 18:23:40 rgracian Exp $"
+__VERSION__ = "$Revision: 1.2 $"
 from DIRACEnvironment import DIRAC
 from DIRAC.Core.Base import Script
 
@@ -45,6 +45,8 @@ for jobID in args:
   taskQueueDict[tqID]['TaskQueueID'] = tqID
   if not director:
     director = gLitePilotDirector()
+    director.configure('/','gLite')
+    
   result = director.submitPilots( taskQueueDict[tqID], 1 )
 
   if not result['OK']:
