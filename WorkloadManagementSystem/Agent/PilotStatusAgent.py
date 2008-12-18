@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.47 2008/12/17 17:18:52 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.48 2008/12/18 18:36:13 rgracian Exp $
 ########################################################################
 
 """  The Pilot Status Agent updates the status of the pilot jobs if the
      PilotAgents database.
 """
 
-__RCSID__ = "$Id: PilotStatusAgent.py,v 1.47 2008/12/17 17:18:52 acasajus Exp $"
+__RCSID__ = "$Id: PilotStatusAgent.py,v 1.48 2008/12/18 18:36:13 rgracian Exp $"
 
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, List
@@ -199,6 +199,7 @@ class PilotStatusAgent(Agent):
     self.log.verbose( 'Executing', ' '.join(cmd) )
     start = time.time()
     ret =  systemCall( 120, cmd, env = gridEnv )
+    self.log.info( '%s Job Status Execution Time:' % gridType, time.time()-start )
 
     if not ret['OK']:
       self.log.error( 'Failed to execute %s Job Status' % gridType, ret['Message'] )
@@ -214,7 +215,6 @@ class PilotStatusAgent(Agent):
         self.log.error( 'Error executing %s Job Status:' % gridType, str(ret['Value'][0]) + '\n'.join( ret['Value'][1:3] ) )
         return S_ERROR()
 
-    self.log.info( '%s Job Status Execution Time:' % gridType, time.time()-start )
 
     stdout = ret['Value'][1]
     stderr = ret['Value'][2]
