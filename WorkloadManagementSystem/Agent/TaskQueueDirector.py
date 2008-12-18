@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.7 2008/12/18 17:34:10 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.8 2008/12/18 17:58:24 rgracian Exp $
 # File :   TaskQueueDirector.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -85,7 +85,7 @@
         SubmitPool (may want to recover it for SAM jobs)
 
 """
-__RCSID__ = "$Id: TaskQueueDirector.py,v 1.7 2008/12/18 17:34:10 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueDirector.py,v 1.8 2008/12/18 17:58:24 rgracian Exp $"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 
@@ -779,7 +779,7 @@ class PilotDirector:
           ceMask.extend( ret )
 
     if not ceMask:
-      self.log.info( 'No CE Candidate found for TaskQueue %s:' % taskQueueDict['TaskQueue'], ', '.join(siteMask) )
+      self.log.info( 'No CE Candidate found for TaskQueue %s:' % taskQueueDict['TaskQueueID'], ', '.join(siteMask) )
 
     self.log.verbose( 'CE Candidates for TaskQueue %s:' % taskQueueDict['TaskQueueID'], ', '.join(ceMask) )
 
