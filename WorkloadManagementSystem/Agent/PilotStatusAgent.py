@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.52 2008/12/20 17:26:12 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.53 2008/12/20 17:27:31 rgracian Exp $
 ########################################################################
 
 """  The Pilot Status Agent updates the status of the pilot jobs if the
      PilotAgents database.
 """
 
-__RCSID__ = "$Id: PilotStatusAgent.py,v 1.52 2008/12/20 17:26:12 rgracian Exp $"
+__RCSID__ = "$Id: PilotStatusAgent.py,v 1.53 2008/12/20 17:27:31 rgracian Exp $"
 
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, List
@@ -231,7 +231,6 @@ class PilotStatusAgent(Agent):
       # EDG returns a similar error for Deleted jobs to std.out
       for job in List.fromChar(stdout,'\nUnable to retrieve the status for:')[1:]:
         pRef = List.fromChar(job,'\n' )[0].strip()
-        print pRef
         if re.search( "No such file or directory: no matching jobs found", job ):
           resultDict[pRef] = deletedJobDict
           self.pilotDB.setPilotStatus( pRef, "Deleted" )
