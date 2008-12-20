@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.119 2008/12/09 17:13:51 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.120 2008/12/20 16:21:30 rgracian Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -44,15 +44,10 @@
     allowSiteInMask()
     banSiteInMask()
 
-    addQueue()
-    selectQueue()
-    addJobToQueue()
-    deleteJobFromQueue()
-
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.119 2008/12/09 17:13:51 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.120 2008/12/20 16:21:30 rgracian Exp $"
 
 import re, os, sys, string, types
 import time, datetime, operator
@@ -779,35 +774,6 @@ class JobDB(DB):
     return result
 
 #############################################################################
-  def __setInitialSite( self, classadJob, jobID):
-    """ Set initial site assignement for the job
-    """
-
-    #
-    #  Site should be extracted from the corresponding parameter
-    #
-    site='ANY'
-    requirements = ''
-    if classadJob.lookupAttribute("Requirements"):
-       requirements  = classadJob.get_expression("Requirements")
-    if requirements:
-      if string.find( string.upper(requirements),string.upper("Other.Site"))>=0:
-        requirements = string.split(requirements," ")
-        i = 0
-        for requirement in requirements:
-          if string.upper(requirement) == string.upper('Other.Site'):
-            if len(requirements) >= i+3:
-              site = string.replace(requirements[i+2],'"','')
-            else:
-              site='ANY'
-          i += 1
-    result = self.setJobAttribute( jobID, 'Site', site )
-    if not result['OK']:
-      return result
-
-    return S_OK()
-
-#############################################################################
   def __setInitialJobParameters( self, classadJob, jobID):
     """ Set initial job parameters as was defined in the Classad
     """
@@ -1086,10 +1052,6 @@ class JobDB(DB):
         if not classAdJob.lookupAttribute(param):
           classAdJob.insertAttributeString(param,val)
 
-    if not classAdJob.lookupAttribute("Requirements"):
-      # No requirements given in the job
-      classAdJob.insertAttributeBool("Requirements", True)
-
     priority      = classAdJob.getAttributeInt( 'Priority' )
     systemConfig  = classAdJob.getAttributeString( 'SystemConfig' )
     pilotType     = classAdJob.getAttributeString( 'PilotType' )
@@ -1123,108 +1085,6 @@ class JobDB(DB):
 
 
 #############################################################################
-  def addJobToDB (self, jobID, JDL=None, ownerDN='Unknown', ownerGroup = "Unknown"):
-    """Insert new job to Job DB and extract job characteristics for specific
-       lookups.
-    """
-
-    jdl = JDL
-    if not jdl:
-      result = self.getJobJDL(jobID,original=True)
-      if result['OK']:
-        jdl = result['Value']
-
-    # Fix the possible lack of the brackets in the JDL
-    if jdl.strip()[0].find('[') != 0 :
-      jdl = '['+jdl+']'
-    classadJob = ClassAd(jdl)
-
-    if not classadJob.isOK():
-      self.log.error( "JobDB.addJobToDB: Error in JDL syntax" )
-      result = self.setJobStatus(jobID,minor='Verification Failed')
-      result = self.setJobParameter(jobID,'VerificationError','Error in JDL syntax')
-      return S_ERROR( "JobDB.addJobToDB: Error in JDL syntax" )
-
-    if classadJob.lookupAttribute("InputData"):
-      inputData = classadJob.getListFromExpression("InputData")
-    else:
-      inputData = []
-
-    if classadJob.lookupAttribute("Owner"):
-      owner = classadJob.get_expression("Owner").replace('"','')
-    else:
-      owner = "Unknown"
-
-    if classadJob.lookupAttribute("JobGroup"):
-      jobGroup = classadJob.get_expression("JobGroup").replace('"','')
-    else:
-      jobGroup = "NoGroup"
-
-    if classadJob.lookupAttribute("JobName"):
-      jobName = classadJob.get_expression("JobName").replace('"','')
-    else:
-      jobName = "Unknown"
-
-    if classadJob.lookupAttribute("DIRACSetup"):
-      diracSetup = classadJob.get_expression("DIRACSetup").replace('"','')
-    else:
-      result = gConfig.getOption('/LocalSite/DIRACSetup')
-      if result['OK']:
-        diracSetup = result['Value']
-      else:
-        diracSetup = "Unknown"
-
-    if not classadJob.lookupAttribute("Requirements"):
-      # No requirements given in the job
-      classadJob.insertAttributeBool("Requirements", True)
-
-    if classadJob.lookupAttribute("JobType"):
-      jobType = classadJob.get_expression("JobType").replace('"','')
-    else:
-      jobType = "normal"
-
-    if classadJob.lookupAttribute("Priority"):
-      priority = classadJob.get_expression("Priority")
-    else:
-      priority = 0
-
-    cmd = 'UPDATE Jobs SET JobName=\'%s\', JobType=\'%s\', DIRACSetup=\'%s\',' \
-          'Owner=\'%s\', OwnerDN=\'%s\', OwnerGroup=\'%s\', ' \
-          'JobGroup=\'%s\', UserPriority=\'%s\' WHERE JobID=\'%s\' ' \
-          % ( jobName, jobType, diracSetup,
-              owner, ownerDN, ownerGroup, jobGroup, priority, jobID )
-
-    res = self._update( cmd )
-    if not res['OK']:
-      return res
-
-    for lfn in inputData:
-      cmd = 'INSERT INTO InputData (JobID,LFN) VALUES (\'%s\', \'%s\' )' % ( jobID, lfn.strip() )
-      res = self._update( cmd )
-      if not res['OK']:
-        return res
-
-    result = self.__setInitialJobParameters(classadJob,jobID)
-    if not result['OK']:
-      return result
-
-    result = self.__setInitialSite(classadJob,jobID)
-    if not result['OK']:
-      return result
-
-    result = self.setJobStatus(jobID,status='Received',minor='Job accepted')
-    result = self.setJobAttribute(jobID,'VerifiedFlag','True')
-
-    result = S_OK()
-    result['InputData']    = classadJob.lookupAttribute("InputData")
-    result['CEUniqueId']   = classadJob.lookupAttribute("CEUniqueId")
-    result['Site']         = classadJob.lookupAttribute("Site")
-    result['Requirements'] = classadJob.get_expression("Requirements")
-    result['JobID']        = jobID
-
-    return result
-
-#############################################################################
   def removeJobFromDB(self, jobID):
     """Remove job from DB
 
@@ -1252,8 +1112,8 @@ class JobDB(DB):
                    'JobJDLs',
                    'InputData',
                    'JobParameters',
-                   'AtticJobParameters',
-                   'TaskQueue'):
+                   'AtticJobParameters'
+                   ):
 
       cmd = 'DELETE FROM %s WHERE JobID=\'%s\'' % ( table, jobID )
       result = self._update( cmd )
@@ -1568,225 +1428,6 @@ class JobDB(DB):
       resultDict[site].append((status,str(utime),author,comment))
 
     return S_OK(resultDict)
-
-#############################################################################
-  def __addQueue (self, requirements="[Requirements=true;]", priority=0):
-    """ Add unconditionally a new Queue to the list of Task Queues with the given
-        requirements and priority. The requirements are provided as a JDL snippet
-    """
-
-    self.log.info( 'JobDB.__addQueue: Adding new Task Queue with requirements' )
-    self.log.info( 'JobDB.__addQueue: %s' % requirements )
-
-    classAdQueue = ClassAd(requirements)
-    if classAdQueue.isOK():
-      reqJDL = classAdQueue.asJDL()
-      res = self._getConnection()
-      if not res['OK']:
-        return res
-      connection = res['Value']
-
-      cmd = 'INSERT INTO TaskQueues (Requirements, Priority) '\
-            ' VALUES (\'%s\', \'%s\' )' \
-            % ( reqJDL, priority )
-      result = self._update( cmd, connection )
-      if not result['OK']:
-        connection.close()
-        return result
-      result = self._query( 'SELECT LAST_INSERT_ID()', connection )
-      connection.close()
-      if not result['OK']:
-        return result
-
-      queueID = int(result['Value'][0][0])
-      return S_OK(queueID)
-    else:
-      return S_ERROR('JobDB.__addQueue: Invalid requirements JDL')
-
-#############################################################################
-  def deleteQueue(self,queueID):
-    """ Delete a Task Queue with queueID
-    """
-    req = "DELETE FROM TaskQueues WHERE TaskQueueId=%d" % queueID
-    result = self._update(req)
-    return result
-
-#############################################################################
-  def selectQueue(self, requirements):
-    """  Select a queue with the given requirements or add a new one if it
-         is not yet available. Requirements are provided as a value of the
-         JDL Requirements attribute
-    """
-
-    res = self._getFields('TaskQueues',['Requirements','TaskQueueId'],[],[])
-    if not res['OK']:
-      return res
-    classAdJob = ClassAd( '[ Requirements = %s ]' % requirements )
-    jobRequirement = classAdJob.get_expression("Requirements").upper()
-    for row in res['Value']:
-      classAdQueue = ClassAd(row[0])
-      queueID = row[1]
-      if not classAdQueue.isOK():
-        cmd = 'DELETE from TaskQueues WHERE TaskQueueId=\'%s\'' % queueID
-        self._update( cmd )
-      else:
-        queueRequirement = classAdQueue.get_expression("Requirements")
-        if queueRequirement.upper() == jobRequirement:
-          return S_OK( queueID )
-
-    self.log.info( 'JobDB.selectQueue: creating a new Queue' )
-    return self.__addQueue( '[ Requirements = %s ]' % requirements )
-
-#############################################################################
-  def getTaskQueues(self):
-    """ Get all the Task Queue requirements ordered descendingly by their
-        priorities
-    """
-
-    req = "select TaskQueueId,Requirements,Priority from TaskQueues order by Priority DESC"
-    result = self._query(req)
-    if not result['OK']:
-      return result
-
-    return S_OK(result['Value'])
-
-#############################################################################
-  def addJobToQueue(self,jobID,queueID,rank):
-    """Add the job specified by <jobID> to the Task Queue specified by
-       <queueID> with the job rank <rank>
-    """
-
-    self.log.verbose('JobDB.addJobToQueue: Adding job %s to queue %s' \
-                  ' with rank %s' % ( jobID, queueID, rank ) )
-
-    cmd = 'INSERT INTO TaskQueue(TaskQueueId, JobID, Rank) ' \
-          'VALUES ( %d, %d, %d )' % ( int(queueID), int(jobID), int(rank) )
-
-    result = self._update( cmd )
-    if not result['OK']:
-      self.log.error("Failed to add job "+str(jobID)+" to the Task Queue")
-      return result
-
-    cmd = "UPDATE TaskQueues SET NumberOfJobs = NumberOfJobs + 1 WHERE TaskQueueId=%d" % queueID
-    result = self._update( cmd )
-    if not result['OK']:
-      self.log.error("Failed to increment the job counter for the Task Queue %d" % queueID)
-      return result
-
-    # Check the Task Queue priority and adjust if necessary
-    cmd = "SELECT Priority FROM TaskQueues WHERE TaskQueueId=%s" % queueID
-    result = self._query(cmd)
-    if not result['OK']:
-      self.log.error("Failed to get priority of the TaskQueue "+str(queueID))
-      return result
-
-    old_priority = int(result['Value'][0][0])
-    if rank > old_priority:
-      cmd = "UPDATE TaskQueues SET Priority=%s WHERE TaskQueueId=%s" % (rank,queueID)
-      result = self._update(cmd)
-      if not result['OK']:
-        self.log.error("Failed to update priority of the TaskQueue "+str(queueID))
-        return result
-
-    return S_OK()
-
- #############################################################################
-  def lookUpJobInQueue(self,jobID):
-    """ Check if the job with jobID is in the Task Queue
-    """
-
-    req = "SELECT * FROM TaskQueue WHERE JobId=" + str(jobID)
-    result = self._query(req)
-    if result['OK']:
-      if result['Value']:
-        return jobID
-
-    return 0
-
- #############################################################################
-  def getJobsInQueue(self,queueID):
-    """ Get job IDs from the Task Queue with queueID ordered by their
-        priorities
-    """
-    req = "SELECT JobID FROM TaskQueue WHERE TaskQueueId="+ str(queueID)+ \
-          " ORDER BY Rank DESC, JobId"
-    result = self._query(req)
-    if result['OK']:
-      if result['Value']:
-        jobList = [x[0] for x in result['Value']]
-        return S_OK(jobList)
-      else:
-        return S_OK([])
-    else:
-      return result
-
-#############################################################################
-  def getTaskQueueReport(self,queueList):
-    """ Get the report of the Task Queue state:
-        number of jobs per queue and queue priorities
-    """
-    if not queueList:
-      req =  "SELECT TaskQueueId,NumberOfJobs,Priority FROM TaskQueues"
-    else:
-      idstring = string.join([str(x) for x in queueList],',')
-      req = "SELECT TaskQueueId,NumberOfJobs,Priority FROM TaskQueues WHERE TaskQueueId in ( "+idstring+" )"
-
-    result = self._queue(req)
-    if result['OK']:
-      return S_OK(result['Value'])
-    else:
-      return S_ERROR('Can not access the Task Queue tables')
-
-
-#############################################################################
-  def deleteJobFromQueue(self,jobID):
-    """Delete the job specified by jobID from the Task Queue
-    """
-
-    self.log.info('JobDB: Deleting job %d from the Task Queue' % int(jobID) )
-
-    req = "SELECT TaskQueueID FROM TaskQueue WHERE JobID=%d" % int(jobID)
-    result = self._query(req)
-    if not result['OK']:
-      return result
-    if len(result['Value']) > 0:
-      queueID = int(result['Value'][0][0])
-    else:
-      return S_OK()
-
-    cmd = "DELETE FROM TaskQueue WHERE JobID=%d" % int(jobID)
-    result = self._update(cmd)
-    if not result['OK']:
-      return result
-
-    cmd = "UPDATE TaskQueues SET NumberOfJobs = NumberOfJobs - 1 WHERE TaskQueueId=%d" % queueID
-    result = self._update( cmd )
-    if not result['OK']:
-      self.log.error("Failed to decrement the job counter for the Task Queue %d" % queueID)
-      return result
-
-    # Check that the queue is empty and remove it eventually
-    req = "SELECT TaskQueueID FROM TaskQueue WHERE TaskQueueID=%d" % int(queueID)
-    result = self._query(req)
-    if result['OK']:
-      if len(result['Value']) == 0:
-        req = "SELECT Requirements FROM TaskQueues WHERE TaskQueueID=%d" % int(queueID)
-        result = self._query(req)
-        if result['OK']:
-          if len(result['Value']) > 0:
-            requirements = result['Value'][0][0]
-            self.log.info('JobDB: Removing Task Queue with requirements:' )
-            self.log.info(requirements)
-            req = "DELETE FROM TaskQueues WHERE TaskQueueID=%d" % int(queueID)
-            result = self._update(req)
-            return result
-          else:
-            self.log.warn('JobDB: Error while removing empty Task Queue' )
-        else:
-          self.log.warn('JobDB: Error while removing empty Task Queue' )
-
-    return S_OK()
-
 
 #############################################################################
   def setSandboxReady(self,jobID,stype='InputSandbox'):
