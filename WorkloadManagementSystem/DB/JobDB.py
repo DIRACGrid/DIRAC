@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.120 2008/12/20 16:21:30 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.121 2008/12/20 16:24:50 rgracian Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -47,7 +47,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.120 2008/12/20 16:21:30 rgracian Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.121 2008/12/20 16:24:50 rgracian Exp $"
 
 import re, os, sys, string, types
 import time, datetime, operator
@@ -58,10 +58,13 @@ from DIRAC                                     import gLogger, S_OK, S_ERROR, Ti
 from DIRAC.ConfigurationSystem.Client.Config   import gConfig
 from DIRAC.Core.Base.DB                        import DB
 from DIRAC.Core.Security.CS                    import getUsernameForDN, getDNForUsername
+from DIRAC.Core.Utilities.Plotting             import *
+from graphtool.graphs.common_graphs import PieGraph
+import tempfile
 
 DEBUG = 0
 JOB_STATES = ['Received','Checking','Staging','Waiting','Matched',
-              'Running','Done','Completed','Failed']
+              'Running','Stalled','Done','Completed','Failed']
 JOB_FINAL_STATES = ['Done','Completed','Failed']
 
 #############################################################################
@@ -1518,10 +1521,20 @@ class JobDB(DB):
                                  selectDict,newer=last_day,
                                  timeStamp='EndExecTime')
 
+    # Get the site mask status
     siteMask = {}
-    resultMask = self.getSiteMask()
+    resultMask = self.getSiteMask('All')
     if resultMask['OK']:
-      siteMask = resultMask['Value']
+      for site in resultMask['Value']:
+        siteMask[site] = 'NoMask'
+    resultMask = self.getSiteMask('Active')
+    if resultMask['OK']:
+      for site in resultMask['Value']:
+        siteMask[site] = 'Active'
+    resultMask = self.getSiteMask('Banned')
+    if resultMask['OK']:
+      for site in resultMask['Value']:
+        siteMask[site] = 'Banned'        
 
     # Sort out different counters
     resultDict = {}
@@ -1566,7 +1579,7 @@ class JobDB(DB):
         total_finished += resultDict[siteFullName][state]
       if total_finished > 0:
         efficiency = float(siteDict['Done']+siteDict['Completed'])/float(total_finished)
-      rList.append('%f.2' % efficiency*100.)
+      rList.append('%f.2' % (efficiency*100.))
       # Estimate the site verbose status
       if efficiency > 0.95:
         rList.append('Good')
@@ -1578,6 +1591,7 @@ class JobDB(DB):
         rList.append('Idle')
       else:
         rList.append('Bad')
+      records.append(rList)  
 
     # Sort records as requested
     if sortItem != -1 :
@@ -1600,8 +1614,28 @@ class JobDB(DB):
 
     finalDict['TotalRecords'] = len(records)
     finalDict['Extras'] = countryCounts
+    
+    start = time.time()
+    data = {}
+    for country,dict in countryCounts.items():
+      data[country] = dict['Done']
+    metadata = {'title':'Running jobs by country'}  
+    finalDict['Plots'] = self.__getPlotString(data,metadata)
+    
+    print "AT >>>> pie timing",time.time() - start
+    
     return S_OK(finalDict)
 
+  def __getPlotString(self,data,metadata):
+  
+    pieString = '' 
+    tmpfile = tempfile.TemporaryFile()
+    pie = PieGraph()
+    coords = pie.run( data, tmpfile, metadata )
+    tmpfile.seek(0)
+    pieString = tmpfile.read()
+    tmpfile.close()
+    return pieString  
 
 #################################################################################
   def getUserSummaryWeb(self,selectDict, sortList, startItem, maxItems):
