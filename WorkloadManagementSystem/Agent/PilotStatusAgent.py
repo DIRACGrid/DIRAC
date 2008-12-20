@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.51 2008/12/20 16:31:12 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.52 2008/12/20 17:26:12 rgracian Exp $
 ########################################################################
 
 """  The Pilot Status Agent updates the status of the pilot jobs if the
      PilotAgents database.
 """
 
-__RCSID__ = "$Id: PilotStatusAgent.py,v 1.51 2008/12/20 16:31:12 rgracian Exp $"
+__RCSID__ = "$Id: PilotStatusAgent.py,v 1.52 2008/12/20 17:26:12 rgracian Exp $"
 
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, List
@@ -100,6 +100,9 @@ class PilotStatusAgent(Agent):
         self.log.verbose( 'Querying %d pilots of %s starting at %d' % ( len( refsToQuery ), len( refList ), start_index ) )
         result = self.getPilotStatus( proxy, gridType, refsToQuery )
         if not result['OK']:
+          if result['Message'] == 'Broker not Available': 
+            self.log.error( 'Broker %s not Available' % broker )
+            break
           self.log.warn('Failed to get pilot status:')
           self.log.warn('%s:%s @ %s' % ( ownerDN, ownerGroup, gridType ))
           continue
@@ -205,6 +208,7 @@ class PilotStatusAgent(Agent):
       return S_ERROR()
     if ret['Value'][0] != 0:
       stderr = ret['Value'][2]
+      stdout = ret['Value'][1]
       deleted = 0
       resultDict = {}
       status = 'Deleted'
@@ -218,11 +222,23 @@ class PilotStatusAgent(Agent):
              'ParentRef': False,
              'FinalStatus' : status in self.finalStateList,
              'ChildRefs' : [] }
+      # Glite returns this error for Deleted jobs to std.err
       for job in List.fromChar(stderr,'\nUnable to retrieve the status for:')[1:]:
         pRef = List.fromChar(job,'\n' )[0].strip()
         resultDict[pRef] = deletedJobDict
         self.pilotDB.setPilotStatus( pRef, "Deleted" )
         deleted += 1
+      # EDG returns a similar error for Deleted jobs to std.out
+      for job in List.fromChar(stdout,'\nUnable to retrieve the status for:')[1:]:
+        pRef = List.fromChar(job,'\n' )[0].strip()
+        print pRef
+        if re.search( "No such file or directory: no matching jobs found", job ):
+          resultDict[pRef] = deletedJobDict
+          self.pilotDB.setPilotStatus( pRef, "Deleted" )
+          deleted += 1
+        if re.search( "edg_wll_JobStatus: Connection refused: edg_wll_ssl_connect()", job ):
+          # the Broker is not accesible
+          return S_ERROR( 'Broker not Available' )
       if not deleted:
         self.log.error( 'Error executing %s Job Status:' % gridType, str(ret['Value'][0]) + '\n'.join( ret['Value'][1:3] ) )
         return S_ERROR()
