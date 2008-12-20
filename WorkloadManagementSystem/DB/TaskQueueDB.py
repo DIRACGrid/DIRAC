@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.54 2008/12/12 11:44:20 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.55 2008/12/20 16:18:15 rgracian Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.54 2008/12/12 11:44:20 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.55 2008/12/20 16:18:15 rgracian Exp $"
 
 import time
 import types
@@ -509,12 +509,15 @@ class TaskQueueDB(DB):
         return S_ERROR( "Can't delete job: %s" % retVal[ 'Message' ] )
       connObj = retVal[ 'Value' ]
 
-    retVal = self._query( 'SELECT TQId FROM `tq_Jobs` WHERE JobId = %s" ' % jobId, conn = connObj )
+    retVal = self._query( 'SELECT TQId FROM `tq_Jobs` WHERE JobId = %s ' % jobId, conn = connObj )
 
     if not retVal[ 'OK' ]:
       return retVal
+    
+    if not retVal['Value']:
+      return S_ERROR('Not in TaskQueues')
 
-    return S_OK( retVal['Value'][0] )
+    return S_OK( retVal['Value'][0][0] )
 
   def __getOwnerForTaskQueue( self, tqId, connObj = False ):
     retVal = self._query( "SELECT OwnerDN, OwnerGroup from `tq_TaskQueues` WHERE TQId=%s" % tqId, conn = connObj )
