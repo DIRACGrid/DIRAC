@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.46 2008/12/10 16:50:46 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.47 2008/12/20 17:49:58 rgracian Exp $
 # File :   JobSchedulingAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@
       meaningfully.
 
 """
-__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.46 2008/12/10 16:50:46 atsareg Exp $"
+__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.47 2008/12/20 17:49:58 rgracian Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
@@ -353,9 +353,6 @@ class JobSchedulingAgent(OptimizerModule):
        are defined, updates job JDL accordingly.
     """
 
-    requirements = classAdJob.get_expression('Requirements')
-    self.log.verbose('Existing job requirements: %s' % (requirements))
-
     reqJDL = classAdJob.get_expression( 'JobRequirements' )
     classAddReq = ClassAd( reqJDL )
 
@@ -364,56 +361,31 @@ class JobSchedulingAgent(OptimizerModule):
     if bannedSites:
       classAddReq.insertAttributeVectorString( 'BannedSites', bannedSites )
 
-    reqsToAdd = {}
-    newRequirements = self.__resolveJobJDLRequirement(requirements,siteCandidates)
-    #GridMiddleware requirements
     if not classAdJob.lookupAttribute( "SubmitPool" ):
       classAdJob.insertAttributeString( 'SubmitPool', 'ANY' )
     else:
       submitPool = classAdJob.getListFromExpression('SubmitPool')[0]
       if submitPool != "ANY":
-        directorSection = getAgentSection( "WorkloadManagement/Director" )
+        directorSection = getAgentSection( "WorkloadManagement/TaskQueueDirector" )
         gridMiddleware = gConfig.getValue( "%s/%s/GridMiddleware" % ( directorSection, submitPool ), '' )
         if gridMiddleware:
-          reqsToAdd[ 'other.GridMiddleware' ] = gridMiddleware
           classAddReq.insertAttributeString( 'GridMiddleware', gridMiddleware )
     #Required CE's requirements
     gridCEs = [ ce for ce in classAdJob.getListFromExpression( 'GridRequiredCEs' ) if ce ]
     if gridCEs:
-      reqsToAdd[ 'other.GridCE' ] = gridCEs
       classAddReq.insertAttributeVectorString( 'GridCEs', gridCEs )
-    #Add reqs
-    reqList = []
-    for reqField in reqsToAdd:
-      reqValue = reqsToAdd[ reqField ]
-      if type( reqValue ) in ( types.ListType, types.TupleType ):
-        reqList.append( "(%s)" % " || ".join( [ '%s=="%s"' %( reqField, val ) for val in reqValue ] ) )
-      else:
-        reqList.append( '%s=="%s"' % ( reqField, reqValue ) )
-    if reqList:
-      newRequirements += " && %s" % " && ".join( reqList )
 
-    bannedSites = uniqueElements(bannedSites)
-    for site in bannedSites:
-      if not newRequirements:
-        newRequirements += ' other.Site!="%s"' %(site)
-      else:
-        newRequirements += ' && other.Site!="%s"' %(site)
+    if siteCandidates:
+      sites = string.join(siteCandidates,',')
+      classAdJob.insertAttributeString("Site",sites)
 
-    if newRequirements:
-      self.log.verbose('Resolved requirements for job: %s' %(newRequirements))
-      classAdJob.set_expression ("Requirements", newRequirements)
-      if siteCandidates:
-        sites = string.join(siteCandidates,',')
-        classAdJob.insertAttributeString("Site",sites)
+    reqJDL = classAddReq.asJDL()
+    classAdJob.insertAttributeInt( 'JobRequirements', reqJDL )
 
-      reqJDL = classAddReq.asJDL()
-      classAdJob.insertAttributeInt( 'JobRequirements', reqJDL )
-
-      jdl = classAdJob.asJDL()
-      result = self.jobDB.setJobJDL(job,jdl)
-      if not result['OK']:
-        return result
+    jdl = classAdJob.asJDL()
+    result = self.jobDB.setJobJDL(job,jdl)
+    if not result['OK']:
+      return result
 
     if siteCandidates:
       if len(siteCandidates)==1:
