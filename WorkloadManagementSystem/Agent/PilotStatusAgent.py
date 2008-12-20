@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.49 2008/12/18 18:46:20 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.50 2008/12/20 16:28:57 rgracian Exp $
 ########################################################################
 
 """  The Pilot Status Agent updates the status of the pilot jobs if the
      PilotAgents database.
 """
 
-__RCSID__ = "$Id: PilotStatusAgent.py,v 1.49 2008/12/18 18:46:20 rgracian Exp $"
+__RCSID__ = "$Id: PilotStatusAgent.py,v 1.50 2008/12/20 16:28:57 rgracian Exp $"
 
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, List
@@ -207,13 +207,27 @@ class PilotStatusAgent(Agent):
     if ret['Value'][0] != 0:
       stderr = ret['Value'][2]
       deleted = 0
+      resultDict = {}
+      status = 'Deleted'
+      destination = 'Unknown'
+      statusDate = time.strftime('%Y-%m-%d %H:%M:%S',time.gmtime())
+      deletedJobDict = { 'Status': status,
+             'DestinationSite': destination,
+             'StatusDate': statusDate,
+             'isChild': False,
+             'isParent': False,
+             'ParentRef': False,
+             'FinalStatus' : status in self.finalStateList,
+             'ChildRefs' : [] }
       for job in List.fromChar(stderr,'\nUnable to retrieve the status for:')[1:]:
         pRef = List.fromChar(job,'\n' )[0].strip()
+        resultDict[pRef] = deletedJobDict
         self.pilotDB.setPilotStatus( pRef, "Deleted" )
         deleted += 1
-      if deleted:
+      if not deleted:
         self.log.error( 'Error executing %s Job Status:' % gridType, str(ret['Value'][0]) + '\n'.join( ret['Value'][1:3] ) )
         return S_ERROR()
+      return S_OK( resultDict )
 
 
     stdout = ret['Value'][1]
