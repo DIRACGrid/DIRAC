@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobStateUpdateHandler.py,v 1.32 2008/12/01 15:27:14 rgracian Exp $
+# $Id: JobStateUpdateHandler.py,v 1.33 2008/12/20 17:47:53 rgracian Exp $
 ########################################################################
 
 """ JobStateUpdateHandler is the implementation of the Job State updating
@@ -11,7 +11,7 @@
 
 """
 
-__RCSID__ = "$Id: JobStateUpdateHandler.py,v 1.32 2008/12/01 15:27:14 rgracian Exp $"
+__RCSID__ = "$Id: JobStateUpdateHandler.py,v 1.33 2008/12/20 17:47:53 rgracian Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -231,7 +231,7 @@ class JobStateUpdateHandler( RequestHandler ):
         for job specified by its JobId
     """
     for jobID in jobsParameterDict:
-      jobDB.setJobParameter(jobID,str(jobsParameterDict[jobID][0]),str(jobsParameterDict[jobID][0]))
+      jobDB.setJobParameter(jobID,str(jobsParameterDict[jobID][0]),str(jobsParameterDict[jobID][1]))
     return S_OK()
 
   ###########################################################################
