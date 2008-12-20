@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueAgent.py,v 1.22 2008/12/04 14:10:41 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueAgent.py,v 1.23 2008/12/20 18:02:23 rgracian Exp $
 # File :   TaskQueueAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
      into a Task Queue.
 """
 
-__RCSID__ = "$Id: TaskQueueAgent.py,v 1.22 2008/12/04 14:10:41 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueAgent.py,v 1.23 2008/12/20 18:02:23 rgracian Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB         import TaskQueueDB
@@ -73,21 +73,6 @@ class TaskQueueAgent(OptimizerModule):
         requirements += ' && other.OwnerDN == "%s"' % ownerDN
       requirements += ' && other.OwnerGroup == "%s"' % ownerGroup
     requirements += ' && other.PilotType == "%s"' % pilotType
-
-    result = self.jobDB.selectQueue(requirements)
-    if result['OK']:
-      queueID = result['Value']
-    else:
-      self.log.warn("Failed to obtain a task queue with the following requirements")
-      self.log.warn(requirements)
-      return S_ERROR("Failed to obtain a task queue")
-
-    if self.am_Enabled():
-      result = self.jobDB.addJobToQueue(job,queueID,jobPriority)
-      if not result['OK']:
-        return result
-    else:
-      self.log.info('TaskQueue agent disabled via enable flag')
 
     jobReq = classAdJob.get_expression("JobRequirements")
     classAdJobReq = ClassAd(jobReq)
