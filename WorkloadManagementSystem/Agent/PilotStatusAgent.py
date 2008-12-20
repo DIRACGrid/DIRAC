@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.50 2008/12/20 16:28:57 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.51 2008/12/20 16:31:12 rgracian Exp $
 ########################################################################
 
 """  The Pilot Status Agent updates the status of the pilot jobs if the
      PilotAgents database.
 """
 
-__RCSID__ = "$Id: PilotStatusAgent.py,v 1.50 2008/12/20 16:28:57 rgracian Exp $"
+__RCSID__ = "$Id: PilotStatusAgent.py,v 1.51 2008/12/20 16:31:12 rgracian Exp $"
 
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, List
@@ -28,7 +28,7 @@ class PilotStatusAgent(Agent):
 
   queryStateList = ['Ready','Submitted','Running','Waiting','Scheduled']
   finalStateList = [ 'Done', 'Aborted', 'Cleared', 'Deleted' ]
-  identityFieldsList = [ 'OwnerDN', 'OwnerGroup', 'GridType' ]
+  identityFieldsList = [ 'OwnerDN', 'OwnerGroup', 'GridType', 'Broker' ]
 
   #############################################################################
   def __init__(self):
@@ -59,8 +59,7 @@ class PilotStatusAgent(Agent):
       return result
 
     result = self.pilotDB.getPilotGroups( self.identityFieldsList,
-                                         {'Status': self.queryStateList,
-                                          'ParentID': parentIDList } )
+                                         {'Status': self.queryStateList } )
     if not result['OK']:
       self.log.error('Fail to get identities Groups', result['Message'])
       return result
@@ -69,14 +68,14 @@ class PilotStatusAgent(Agent):
 
     pilotsToAccount = {}
 
-    for ownerDN, ownerGroup, gridType in result['Value']:
-      self.log.verbose( 'Getting pilots for %s:%s @ %s' % ( ownerDN, ownerGroup, gridType ) )
+    for ownerDN, ownerGroup, gridType, broker in result['Value']:
+      self.log.verbose( 'Getting pilots for %s:%s @ %s %s' % ( ownerDN, ownerGroup, gridType, broker ) )
 
       condDict = {'Status':self.queryStateList,
                   'OwnerDN':ownerDN,
                   'OwnerGroup':ownerGroup,
                   'GridType':gridType,
-                  'ParentID':parentIDList}
+                  'Broker':broker}
 
       result = self.pilotDB.selectPilots(condDict)
       if not result['OK']:
