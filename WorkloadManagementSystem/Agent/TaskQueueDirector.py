@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.8 2008/12/18 17:58:24 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.9 2008/12/22 10:38:09 rgracian Exp $
 # File :   TaskQueueDirector.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -85,7 +85,7 @@
         SubmitPool (may want to recover it for SAM jobs)
 
 """
-__RCSID__ = "$Id: TaskQueueDirector.py,v 1.8 2008/12/18 17:58:24 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueDirector.py,v 1.9 2008/12/22 10:38:09 rgracian Exp $"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 
@@ -120,6 +120,7 @@ class TaskQueueDirector(AgentModule):
     self.am_setOption( "lowestCPUBoost", 7200.0 )
     self.am_setOption( "extraPilotFraction", 0.2 )
     self.am_setOption( "extraPilots", 4 )
+    self.am_setOption( "maxPilotWaitingHours", 6. )
     
     self.am_setOption('ThreadStartDelay', 1 )
     self.am_setOption('SubmitPools', [] )
@@ -178,11 +179,11 @@ class TaskQueueDirector(AgentModule):
     self.callBackLock.release()
     self.toSubmitPilots = 0
     waitingStatusList = ['Submitted','Ready','Scheduled','Waiting']
-
+    timeLimitToConsider = Time.toString( Time.dataTime() - Time.hour * self.am_getOption( "maxPilotWaitingHours") )
     for taskQueueID in taskQueueDict:
       self.log.verbose( 'Processing TaskQueue', taskQueueID )
       
-      result = pilotAgentsDB.countPilots( {'TaskQueueID': taskQueueID, 'Status': waitingStatusList} )
+      result = pilotAgentsDB.countPilots( {'TaskQueueID': taskQueueID, 'Status': waitingStatusList}, newer = timeLimitToConsider )
       if not result['OK']:
         self.log.error('Fail to get Number of Waiting pilots',result['Message'])
         waitingPilots = 0
