@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.10 2008/12/22 10:40:19 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.11 2008/12/22 10:42:04 rgracian Exp $
 # File :   TaskQueueDirector.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -85,7 +85,7 @@
         SubmitPool (may want to recover it for SAM jobs)
 
 """
-__RCSID__ = "$Id: TaskQueueDirector.py,v 1.10 2008/12/22 10:40:19 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueDirector.py,v 1.11 2008/12/22 10:42:04 rgracian Exp $"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 
@@ -120,7 +120,7 @@ class TaskQueueDirector(AgentModule):
     self.am_setOption( "lowestCPUBoost", 7200.0 )
     self.am_setOption( "extraPilotFraction", 0.2 )
     self.am_setOption( "extraPilots", 4 )
-    self.am_setOption( "maxPilotWaitingHours", 6. )
+    self.am_setOption( "maxPilotWaitingHours", 6 )
     
     self.am_setOption('ThreadStartDelay', 1 )
     self.am_setOption('SubmitPools', [] )
