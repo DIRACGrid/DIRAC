@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.9 2008/12/22 10:38:09 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.10 2008/12/22 10:40:19 rgracian Exp $
 # File :   TaskQueueDirector.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -85,7 +85,7 @@
         SubmitPool (may want to recover it for SAM jobs)
 
 """
-__RCSID__ = "$Id: TaskQueueDirector.py,v 1.9 2008/12/22 10:38:09 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueDirector.py,v 1.10 2008/12/22 10:40:19 rgracian Exp $"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 
@@ -179,7 +179,7 @@ class TaskQueueDirector(AgentModule):
     self.callBackLock.release()
     self.toSubmitPilots = 0
     waitingStatusList = ['Submitted','Ready','Scheduled','Waiting']
-    timeLimitToConsider = Time.toString( Time.dataTime() - Time.hour * self.am_getOption( "maxPilotWaitingHours") )
+    timeLimitToConsider = Time.toString( Time.dateTime() - Time.hour * self.am_getOption( "maxPilotWaitingHours") )
     for taskQueueID in taskQueueDict:
       self.log.verbose( 'Processing TaskQueue', taskQueueID )
       
