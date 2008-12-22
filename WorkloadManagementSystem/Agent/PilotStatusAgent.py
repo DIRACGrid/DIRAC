@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.53 2008/12/20 17:27:31 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.54 2008/12/22 16:33:45 rgracian Exp $
 ########################################################################
 
 """  The Pilot Status Agent updates the status of the pilot jobs if the
      PilotAgents database.
 """
 
-__RCSID__ = "$Id: PilotStatusAgent.py,v 1.53 2008/12/20 17:27:31 rgracian Exp $"
+__RCSID__ = "$Id: PilotStatusAgent.py,v 1.54 2008/12/22 16:33:45 rgracian Exp $"
 
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, List
@@ -43,6 +43,7 @@ class PilotStatusAgent(Agent):
     result = Agent.initialize(self)
     self.pollingTime = gConfig.getValue(self.section+'/PollingTime',120)
     self.gridEnv     = gConfig.getValue(self.section+'/GridEnv','')
+    self.pilotStalledDays =  gConfig.getValue(self.section+'/PilotStalledDays',3)
     self.pilotDB = PilotAgentsDB()
     return result
 
@@ -52,6 +53,7 @@ class PilotStatusAgent(Agent):
     """
     parentIDList = [ '0' , '-1' ]
 
+    self.pilotStalledDays = gConfig.getValue( self.section+'/PilotStalledDays', self.pilotStalledDays )
     result = self.pilotDB._getConnection()
     if result['OK']:
       connection = result['Value']
@@ -125,10 +127,48 @@ class PilotStatusAgent(Agent):
           pilotsToAccount = {}
 
     self.accountPilots( pilotsToAccount, connection )
+    # Now handle pilots not updated in the last N days (most likely the Broker is no 
+    # longer available) and declare them Deleted.
+    result = self.handleOldPilots( connection )
 
     connection.close()
+
     return S_OK()
 
+  def handleOldPilots( self, connection ):
+    # select all pilots that have not been updated in the last N days and declared them 
+    # Deleted, accounting for them.
+    pilotsToAccount = {}
+    timeLimitToConsider = Time.toString( Time.dateTime() - Time.day * self.pilotStalledDays )
+    result = self.pilotDB.selectPilots( {'Status':self.queryStateList} , older=None, timeStamp='LastUpdateTime' )
+    if not result['OK']:
+      self.log.error('Failed to get the Pilot Agents')
+      return result
+    if not result['Value']:
+      return S_OK()
+
+    refList = result['Value']
+    result = self.pilotDB.getPilotInfo( refList )
+    if not result['OK']:
+      self.log.error('Failed to get Info for Pilot Agents')
+      return result
+
+    pilotsDict = result['Value']
+
+    for pRef in pilotsDict:
+      statusDate = time.strftime('%Y-%m-%d %H:%M:%S',time.gmtime())
+      deletedJobDict = pilotsDict[pRef]
+      deletedJobDict['Status'] = 'Deleted'
+      deletedJobDict['StatusDate'] = statusDate
+      pilotsToAccount[ pRef ] = deletedJobDict
+      if len( pilotsToAccount ) > 100:
+        self.accountPilots( pilotsToAccount, connection )
+        pilotsToAccount = {}
+
+    self.accountPilots( pilotsToAccount, connection )
+
+    return S_OK()
+    
   def accountPilots( self, pilotsToAccount, connection ):
 
     if not pilotsToAccount:
@@ -324,3 +364,4 @@ class PilotStatusAgent(Agent):
       if not retVal[ 'OK' ]:
         return retVal
     return S_OK()
+
