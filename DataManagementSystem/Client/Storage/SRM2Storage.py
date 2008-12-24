@@ -362,7 +362,7 @@ class SRM2Storage(StorageBase):
         pathSURL = urlDict['surl']
         if urlDict['status'] == 0:
           gLogger.debug("SRM2Storage.prestageFile: Issued stage request for file %s." % pathSURL)
-          successful[pathSURL] = True
+          successful[pathSURL] = urlDict['SRMReqID']
         elif urlDict['status'] == 2:
           errMessage = "SRM2Storage.prestageFile: File does not exist."
           gLogger.error(errMessage,pathSURL)
@@ -1057,11 +1057,41 @@ class SRM2Storage(StorageBase):
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
+  def __parse_stat(self,stat):
+    statDict = {'File':False,'Directory':False}
+    if S_ISREG(stat[ST_MODE]):
+      statDict['File'] = True
+      statDict['Size'] = stat[ST_SIZE]
+    if S_ISDIR(stat[ST_MODE]):
+      statDict['Directory'] = True
+    statDict['Permissions'] = S_IMODE(stat[ST_MODE])
+    return statDict
 
-  ################################################################################
-  #
-  # The methods below are for manipulating the client
-  #
+  def __parse_file_metadata(self,urlDict):
+    statDict = self.__parse_stat(urlDict['stat'])
+    if statDict['File']:
+      urlLocality = urlDict['locality']
+      if re.search('ONLINE',urlLocality):
+        statDict['Cached'] = 1
+      else:
+        statDict['Cached'] = 0
+      if re.search('NEARLINE',urlLocality):
+        statDict['Migrated'] = 1
+      else:
+        statDict['Migrated'] = 0
+      statDict['Lost'] = 0
+      if re.search('LOST',urlLocality):
+        statDict['Lost'] = 1
+      statDict['Unavailable'] = 0
+      if re.search('UNAVAILABLE',urlLocality):
+        statDict['Unavailable'] = 1
+    return statDict
+
+################################################################################
+#
+# The methods below are for manipulating the client
+#
+################################################################################
 
   def resetWorkingDirectory(self):
     """ Reset the working directory to the base dir
@@ -1113,10 +1143,11 @@ class SRM2Storage(StorageBase):
     res = pfnunparse(pfnDict)
     return res
 
-  ################################################################################
-  #
-  # The methods below are URL manipulation methods
-  #
+################################################################################
+#
+# The methods below are URL manipulation methods
+#
+################################################################################
 
   def getPFNBase(self,withPort=False):
     """ This will get the pfn base. This is then appended with the LFN in LHCb convention.
@@ -1156,10 +1187,41 @@ class SRM2Storage(StorageBase):
     parameterDict['WSUrl'] = self.wspath
     return S_OK(parameterDict)
 
-  ################################################################################
-  #
-  # This is code to wrap the gfal binding
-  #
+#######################################################################
+#
+# These methods wrap the gfal functionality with the accounting. All these are based on __gfal_operation_wrapper()
+#
+#######################################################################
+
+  def __gfalls_wrapper(self,urls,depth):
+    """ This is a function that can be reused everywhere to perform the gfal_ls
+    """
+    gfalDict = {}
+    gfalDict['defaultsetype'] = 'srmv2'
+    gfalDict['no_bdii_check'] = 1
+    gfalDict['srmv2_lslevels'] = depth
+    oAccounting = DataStoreClient()
+
+    allResults = []
+    failed = {}
+    listOfLists = breakListIntoChunks(urls,self.filesPerCall)
+    for urls in listOfLists:
+      gfalDict['surls'] = urls
+      gfalDict['nbfiles'] =  len(urls)
+      gfalDict['timeout'] = self.fileTimeout*len(urls)
+      res = self.__gfal_operation_wrapper('gfal_ls',gfalDict)
+      oAccounting.addRegister(res['AccountingOperation'])
+      if not res['OK']:
+        for url in urls:
+          failed[url] = res['Message']
+      else:
+        allResults.extend(res['Value']) 
+
+    oAccounting.commit()
+    resDict = {}
+    resDict['AllResults'] = allResults
+    resDict['Failed'] = failed
+    return S_OK(resDict)
 
   def __gfalprestage_wrapper(self,urls):
     """ This is a function that can be reused everywhere to perform the gfal_prestage
@@ -1170,100 +1232,55 @@ class SRM2Storage(StorageBase):
     gfalDict['srmv2_spacetokendesc'] = self.spaceToken
     gfalDict['srmv2_desiredpintime'] = 60*60*24
     gfalDict['protocols'] = self.defaultLocalProtocols
-
     oAccounting = DataStoreClient()
     allResults = []
     failed = {}
+
     listOfLists = breakListIntoChunks(urls,self.filesPerCall)
-    for urls in listOfLists:
+    for urls in listOfLists:  
       gfalDict['surls'] = urls
       gfalDict['nbfiles'] =  len(urls)
       gfalDict['timeout'] = self.fileTimeout*len(urls)
-      # Create a single DataOperation record for each
-      oDataOperation = self.__initialiseAccountingObject('gfal_prestage',self.name,len(urls))
-      failedLoop = False
-      res = self.__create_gfal_object(gfalDict)
+      res = self.__gfal_operation_wrapper('gfal_prestage',gfalDict)
+      oAccounting.addRegister(res['AccountingOperation'])
       if not res['OK']:
-        failedLoop = True
-      else:
-        gfalObject = res['Value']
-        oDataOperation.setStartTime()
-        start = time.time()
-        res = self.__gfal_prestage(gfalObject)
-        end = time.time()
-        oDataOperation.setEndTime()
-        oDataOperation.setValueByKey('TransferTime',end-start)
-        if not res['OK']:
-          failedLoop = True
-        else:
-          gfalObject = res['Value']
-          res = self.__get_results(gfalObject)
-          if not res['OK']:
-            failedLoop = True
-          else:
-            allResults.extend(res['Value'])
-        self.__destroy_gfal_object(gfalObject)
-      if failedLoop:
-        oDataOperation.setValueByKey('TransferOK',0)
-        oDataOperation.setValueByKey('FinalStatus','Failed')
         for url in urls:
           failed[url] = res['Message']
-
-      oAccounting.addRegister(oDataOperation)
+      else:
+        allResults.extend(res['Value'])
+    
     oAccounting.commit()
     resDict = {}
     resDict['AllResults'] = allResults
     resDict['Failed'] = failed
     return S_OK(resDict)
 
+
   def __gfalturlsfromsurls_wrapper(self,urls,listProtocols):
     """ This is a function that can be reused everywhere to perform the gfal_turlsfromsurls
     """
     gfalDict = {}
     gfalDict['defaultsetype'] = 'srmv2'
-    gfalDict['no_bdii_check'] = 1
+    gfalDict['no_bdii_check'] = 1  
     gfalDict['protocols'] = listProtocols
     gfalDict['srmv2_spacetokendesc'] = self.spaceToken
-
     oAccounting = DataStoreClient()
     allResults = []
     failed = {}
+
     listOfLists = breakListIntoChunks(urls,self.filesPerCall)
-    for urls in listOfLists:
+    for urls in listOfLists: 
       gfalDict['surls'] = urls
       gfalDict['nbfiles'] =  len(urls)
       gfalDict['timeout'] = self.fileTimeout*len(urls)
-      # Create a single DataOperation record for each
-      oDataOperation = self.__initialiseAccountingObject('gfal_turlsfromsurls',self.name,len(urls))
-      failedLoop = False
-      res = self.__create_gfal_object(gfalDict)
+      res = self.__gfal_operation_wrapper('gfal_turlsfromsurls',gfalDict)
+      oAccounting.addRegister(res['AccountingOperation'])
       if not res['OK']:
-        failedLoop = True
-      else:
-        gfalObject = res['Value']
-        oDataOperation.setStartTime()
-        start = time.time()
-        res = self.__gfal_turlsfromsurls(gfalObject)
-        end = time.time()
-        oDataOperation.setEndTime()
-        oDataOperation.setValueByKey('TransferTime',end-start)
-        if not res['OK']:
-          failedLoop = True
-        else:
-          gfalObject = res['Value']
-          res = self.__get_results(gfalObject)
-          if not res['OK']:
-            failedLoop = True
-          else:
-            allResults.extend(res['Value'])
-        self.__destroy_gfal_object(gfalObject)
-      if failedLoop:
-        oDataOperation.setValueByKey('TransferOK',0)
-        oDataOperation.setValueByKey('FinalStatus','Failed')
         for url in urls:
           failed[url] = res['Message']
+      else:
+        allResults.extend(res['Value'])
 
-      oAccounting.addRegister(oDataOperation)
     oAccounting.commit()
     resDict = {}
     resDict['AllResults'] = allResults
@@ -1276,222 +1293,98 @@ class SRM2Storage(StorageBase):
     gfalDict = {}
     gfalDict['defaultsetype'] = 'srmv2'
     gfalDict['no_bdii_check'] = 1
-
     oAccounting = DataStoreClient()
-
     allResults = []
     failed = {}
+
     listOfLists = breakListIntoChunks(urls,self.filesPerCall)
     for urls in listOfLists:
       gfalDict['surls'] = urls
       gfalDict['nbfiles'] =  len(urls)
       gfalDict['timeout'] = self.fileTimeout*len(urls)
-
-      # Create a single DataOperation record for each
-      oDataOperation = self.__initialiseAccountingObject('gfal_deletesurls',self.name,len(urls))
-
-      failedLoop = False
-      res = self.__create_gfal_object(gfalDict)
+      res = self.__gfal_operation_wrapper('gfal_deletesurls',gfalDict)
+      oAccounting.addRegister(res['AccountingOperation'])
       if not res['OK']:
-        failedLoop = True
-      else:
-        gfalObject = res['Value']
-        oDataOperation.setStartTime()
-        start = time.time()
-        res = self.__gfal_deletesurls(gfalObject)
-        end = time.time()
-        oDataOperation.setEndTime()
-        oDataOperation.setValueByKey('TransferTime',end-start)
-        if not res['OK']:
-          failedLoop = True
-        else:
-          gfalObject = res['Value']
-          res = self.__get_results(gfalObject)
-          if not res['OK']:
-            failedLoop = True
-          else:
-            allResults.extend(res['Value'])
-        self.__destroy_gfal_object(gfalObject)
-      if failedLoop:
-        oDataOperation.setValueByKey('TransferOK',0)
-        oDataOperation.setValueByKey('FinalStatus','Failed')
         for url in urls:
           failed[url] = res['Message']
-
-      oAccounting.addRegister(oDataOperation)
+      else:
+        allResults.extend(res['Value'])
+      
     oAccounting.commit()
     resDict = {}
     resDict['AllResults'] = allResults
     resDict['Failed'] = failed
     return S_OK(resDict)
 
-  def __gfalls_wrapper(self,urls,depth):
-    """ This is a function that can be reused everywhere to perform the gfal_ls
-    """
-    gfalDict = {}
-    gfalDict['defaultsetype'] = 'srmv2'
-    gfalDict['no_bdii_check'] = 1
-    gfalDict['srmv2_lslevels'] = depth
+  def __gfal_pin_wrapper(self,urls):
+    pass
+ 
+  def __gfal_prestagestatus_wrapper(self,urls):
+    pass
 
-    oAccounting = DataStoreClient()
+  def __gfal_release_wrapper(self,urls):
+    pass
 
-    allResults = []
-    failed = {}
-    listOfLists = breakListIntoChunks(urls,self.filesPerCall)
-    for urls in listOfLists:
-      gfalDict['surls'] = urls
-      gfalDict['nbfiles'] =  len(urls)
-      gfalDict['timeout'] = self.fileTimeout*len(urls)
+  def __gfal_operation_wrapper(self,operation,gfalDict,srmRequestID=None):
+    # Create an accounting DataOperation record for each operation 
+    oDataOperation = self.__initialiseAccountingObject(operation,self.name,gfalDict['nbfiles'])
 
-      # Create a single DataOperation record for each
-      oDataOperation = self.__initialiseAccountingObject('gfal_ls',self.name,len(urls))
-
-      failedLoop = False
-      res = self.__create_gfal_object(gfalDict)
+    res = self.__create_gfal_object(gfalDict)
+    if not res['OK']:
+      oDataOperation.setValueByKey('TransferOK',0)
+      oDataOperation.setValueByKey('FinalStatus','Failed')
+      result = S_ERROR(res['Message'])
+      result['AccountingOperation'] = oDataOperation
+      return result 
+    
+    gfalObject = res['Value']
+    if srmRequestID:
+      res = self.__gfal_set_ids(gfalObject,srmRequestID)
       if not res['OK']:
-        failedLoop = True
-      else:
-        gfalObject = res['Value']
-        oDataOperation.setStartTime()
-        start = time.time()
-        res = self.__gfal_ls(gfalObject)
-        end = time.time()
-        oDataOperation.setEndTime()
-        oDataOperation.setValueByKey('TransferTime',end-start)
-        if not res['OK']:
-          failedLoop = True
-        else:
-          gfalObject = res['Value']
-          res = self.__get_results(gfalObject)
-          if not res['OK']:
-            failedLoop = True
-          else:
-            allResults.extend(res['Value'])
-        self.__destroy_gfal_object(gfalObject)
-      if failedLoop:
         oDataOperation.setValueByKey('TransferOK',0)
         oDataOperation.setValueByKey('FinalStatus','Failed')
-        for url in urls:
-          failed[url] = res['Message']
+        result = S_ERROR(res['Message'])
+        result['AccountingOperation'] = oDataOperation
+        return result
 
-      oAccounting.addRegister(oDataOperation)
-    oAccounting.commit()
-    resDict = {}
-    resDict['AllResults'] = allResults
-    resDict['Failed'] = failed
-    return S_OK(resDict)
+    oDataOperation.setStartTime()
+    start = time.time()
+    res = self.__gfal_exec(gfalObject,operation)
+    end = time.time()
+    oDataOperation.setEndTime()
+    oDataOperation.setValueByKey('TransferTime',end-start)
+    if not res['OK']:
+      oDataOperation.setValueByKey('TransferOK',0)
+      oDataOperation.setValueByKey('FinalStatus','Failed')
+      result = S_ERROR(res['Message'])
+      result['AccountingOperation'] = oDataOperation
+      return result
 
-  def __destroy_gfal_object(self,gfalObject):
-    gLogger.verbose("SRM2Storage.__destroy_gfal_object: Performing gfal_internal_free.")
-    errCode,gfalObject = gfal.gfal_internal_free(gfalObject)
-    if errCode:
-      errStr = "SRM2Storage.__destroy_gfal_object: Failed to perform gfal_internal_free:"
-      gLogger.error(errStr,errCode)
-      return S_ERROR()
+    gfalObject = res['Value']
+    res = self.__gfal_get_ids(gfalObject)
+    if not res['OK']:
+      newSRMRequestID = srmRequestID
     else:
-      gLogger.verbose("SRM2Storage.__destroy_gfal_object: Successfully performed gfal_internal_free.")
-      return S_OK()
+      newSRMRequestID = res['Value']
 
-  def __create_gfal_object(self,gfalDict):
-    gLogger.verbose("SRM2Storage.__create_gfal_object: Performing gfal_init.")
-    errCode,gfalObject,errMessage = gfal.gfal_init(gfalDict)
-    if not errCode == 0:
-      errStr = "SRM2Storage.__create_gfal_object: Failed to perform gfal_init:"
-      gLogger.error(errStr,"%s %s" % (errMessage,os.strerror(errCode)))
-      return S_ERROR()
-    else:
-      gLogger.verbose("SRM2Storage.__create_gfal_object: Successfully performed gfal_init.")
-      gLogger.verbose("SRM2Storage.__create_gfal_object:",str(errCode))
-      gLogger.verbose("SRM2Storage.__create_gfal_object:",str(gfalObject))
-      gLogger.verbose("SRM2Storage.__create_gfal_object:",str(errMessage))
-      return S_OK(gfalObject)
+    res = self.__get_results(gfalObject)
+    if not res['OK']:
+      oDataOperation.setValueByKey('TransferOK',0)
+      oDataOperation.setValueByKey('FinalStatus','Failed')
+      result = S_ERROR(res['Message'])
+      result['AccountingOperation'] = oDataOperation
+      return result
 
-  def __gfal_deletesurls(self,gfalObject):
-    gLogger.debug("SRM2Storage.__gfal_deletesurls: Performing gfal_deletesurls")
-    errCode,gfalObject,errMessage = gfal.gfal_deletesurls(gfalObject)
-    if not errCode == 0:
-      errStr = "SRM2Storage.__gfal_deletesurls: Failed to perform gfal_deletesurls:"
-      gLogger.error(errStr,"%s %s" % (errMessage,os.strerror(errCode)))
-      return S_ERROR("%s%s" % (errStr,errMessage))
-    else:
-      gLogger.debug("SRM2Storage.__gfal_deletesurls: Successfully performed gfal_deletesurls.")
-      return S_OK(gfalObject)
+    resultList = []
+    pfnRes = res['Value']
+    for dict in pfnRes:
+      dict['SRMReqID'] = newSRMRequestID
+      resultList.append(dict)
 
-  def __gfal_ls(self,gfalObject):
-    gLogger.debug("SRM2Storage.__gfal_ls: Performing gfal_ls")
-    errCode,gfalObject,errMessage = gfal.gfal_ls(gfalObject)
-    if not errCode == 0:
-      errStr = "SRM2Storage.__gfal_ls: Failed to perform gfal_ls:"
-      gLogger.error(errStr,"%s %s" % (errMessage,os.strerror(errCode)))
-      return S_ERROR("%s%s" % (errStr,errMessage))
-    else:
-      gLogger.debug("SRM2Storage.__gfal_ls: Successfully performed gfal_ls.")
-      return S_OK(gfalObject)
-
-  def __gfal_prestage(self,gfalObject):
-    gLogger.debug("SRM2Storage.__gfal_prestage: Performing gfal_prestage")
-    gLogger.info("SRM2Storage.__gfal_prestage: WE ARE DOING gfal_get() INSTEAD TEMPORARILY.")
-    errCode,gfalObject,errMessage = gfal.gfal_prestage(gfalObject)
-    #errCode,gfalObject,errMessage = gfal.gfal_get(gfalObject)
-    if not errCode == 0:
-      errStr = "SRM2Storage.__gfal_prestage: Failed to perform gfal_prestage:"
-      gLogger.error(errStr,"%s %s" % (errMessage,os.strerror(errCode)))
-      return S_ERROR("%s%s" % (errStr,errMessage))
-    else:
-      gLogger.debug("SRM2Storage.__gfal_prestage: Successfully performed gfal_prestage.")
-      return S_OK(gfalObject)
-
-  def __gfal_turlsfromsurls(self,gfalObject):
-    gLogger.debug("SRM2Storage.__gfal_turlsfromsurls: Performing gfal_turlsfromsurls")
-    errCode,gfalObject,errMessage = gfal.gfal_turlsfromsurls(gfalObject)
-    if not errCode == 0:
-      errStr = "SRM2Storage.__gfal_turlsfromsurls: Failed to perform gfal_turlsfromsurls:"
-      gLogger.error(errStr,"%s %s" % (errMessage,os.strerror(errCode)))
-      return S_ERROR("%s%s" % (errStr,errMessage))
-    else:
-      gLogger.debug("SRM2Storage.__gfal_turlsfromsurls: Successfully performed gfal_turlsfromsurls.")
-      return S_OK(gfalObject)
-
-  def __get_results(self,gfalObject):
-    gLogger.debug("SRM2Storage.__get_results: Performing gfal_get_results")
-    numberOfResults,gfalObject,listOfResults = gfal.gfal_get_results(gfalObject)
-    if numberOfResults <= 0:
-      errStr = "SRM2Storage.__get_results: Did not obtain results with gfal_get_results."
-      gLogger.error(errStr)
-      return S_ERROR(errStr)
-    else:
-      gLogger.debug("SRM2Storage.__get_results: Retrieved %s results from gfal_get_results." % numberOfResults)
-      return S_OK(listOfResults)
-
-  def __parse_stat(self,stat):
-    statDict = {'File':False,'Directory':False}
-    if S_ISREG(stat[ST_MODE]):
-      statDict['File'] = True
-      statDict['Size'] = stat[ST_SIZE]
-    if S_ISDIR(stat[ST_MODE]):
-      statDict['Directory'] = True
-    statDict['Permissions'] = S_IMODE(stat[ST_MODE])
-    return statDict
-
-  def __parse_file_metadata(self,urlDict):
-    statDict = self.__parse_stat(urlDict['stat'])
-    if statDict['File']:
-      urlLocality = urlDict['locality']
-      if re.search('ONLINE',urlLocality):
-        statDict['Cached'] = 1
-      else:
-        statDict['Cached'] = 0
-      if re.search('NEARLINE',urlLocality):
-        statDict['Migrated'] = 1
-      else:
-        statDict['Migrated'] = 0
-      statDict['Lost'] = 0
-      if re.search('LOST',urlLocality):
-        statDict['Lost'] = 1
-      statDict['Unavailable'] = 0
-      if re.search('UNAVAILABLE',urlLocality):
-        statDict['Unavailable'] = 1
-    return statDict
+    self.__destroy_gfal_object(gfalObject)
+    result = S_OK(resultList)
+    result['AccountingOperation'] = oDataOperation
+    return result
 
   def __initialiseAccountingObject(self,operation,se,files):
     accountingDict = {}
@@ -1511,3 +1404,96 @@ class SRM2Storage(StorageBase):
     oDataOperation = DataOperation()
     oDataOperation.setValuesFromDict(accountingDict)
     return oDataOperation
+
+#######################################################################
+#
+# The following methods provide the interaction with gfal functionality
+#
+#######################################################################
+
+  # These methods are for the creation of the gfal object
+
+  def __create_gfal_object(self,gfalDict):
+    gLogger.debug("SRM2Storage.__create_gfal_object: Performing gfal_init.")
+    errCode,gfalObject,errMessage = gfal.gfal_init(gfalDict)
+    if not errCode == 0:
+      errStr = "SRM2Storage.__create_gfal_object: Failed to perform gfal_init."
+      if not errMessage:
+        errMessage = os.strerror(errCode)  
+      gLogger.error(errStr,errMessage)
+      return S_ERROR("%s%s" % (errStr,errMessage))
+    else:
+      gLogger.debug("SRM2Storage.__create_gfal_object: Successfully performed gfal_init.")
+      return S_OK(gfalObject)
+
+  def __gfal_set_ids(self,gfalObject,srmRequestID):
+    gLogger.debug("SRM2Storage.__gfal_set_ids: Performing gfal_set_ids.")
+    errCode,gfalObject,errMessage = gfal.gfal_set_ids(gfalObjectPin,None,0,srmID) 
+    if not errCode == 0:
+      errStr = "SRM2Storage.__gfal_set_ids: Failed to perform gfal_set_ids."
+      if not errMessage:
+        errMessage = os.strerror(errCode)
+      gLogger.error(errStr,errMessage)
+      return S_ERROR("%s%s" % (errStr,errMessage))
+    else:
+      gLogger.debug("SRM2Storage.__gfal_set_ids: Successfully performed gfal_set_ids.")
+      return S_OK(gfalObject)
+         
+  # These methods are for the execution of the functionality
+
+  def __gfal_exec(self,gfalObject,method):
+    gLogger.debug("SRM2Storage.__gfal_exec: Performing %s." % method)
+    execString = "errCode,gfalObject,errMessage = gfal.%s(gfalObject)" % method
+    try:
+      exec(execString)
+      if not errCode == 0:
+        errStr = "SRM2Storage.__gfal_exec: Failed to perform %s." % method
+        if not errMessage:
+          errMessage = os.strerror(errCode)   
+        gLogger.error(errStr,errMessage)  
+        return S_ERROR("%s%s" % (errStr,errMessage))
+      else:
+        gLogger.debug("SRM2Storage.__gfal_exec: Successfully performed %s." % method)
+        return S_OK(gfalObject) 
+    except AttributeError,errMessage:
+      exceptStr = "SRM2Storage.__gfal_exec: Exception while perfoming %s." % method
+      gLogger.exception(exceptStr,errMessage)
+      return S_ERROR("%s%s" % (exceptStr,errMessage))
+
+  # These methods are for retrieving output information
+
+  def __get_results(self,gfalObject):
+    gLogger.debug("SRM2Storage.__get_results: Performing gfal_get_results")
+    numberOfResults,gfalObject,listOfResults = gfal.gfal_get_results(gfalObject)
+    if numberOfResults <= 0:
+      errStr = "SRM2Storage.__get_results: Did not obtain results with gfal_get_results."
+      gLogger.error(errStr)
+      return S_ERROR(errStr)
+    else:
+      gLogger.debug("SRM2Storage.__get_results: Retrieved %s results from gfal_get_results." % numberOfResults)
+      return S_OK(listOfResults)
+
+  def __gfal_get_ids(self,gfalObject):
+    gLogger.debug("SRM2Storage.__gfal_get_ids: Performing gfal_get_ids.")
+    numberOfResults,gfalObject,srm1RequestID,srm1FileIDs,srmRequestToken = gfal.gfal_get_ids(gfalObject)
+    if numberOfResults <= 0:
+      errStr = "SRM2Storage.__gfal_get_ids: Did not obtain SRM request ID."
+      gLogger.error(errStr)
+      return S_ERROR(errStr)
+    else:  
+      gLogger.debug("SRM2Storage.__get_gfal_ids: Retrieved SRM request ID %s." % srmRequestToken)
+      return S_OK(srmRequestToken)
+
+  # Destroy the gfal object after use
+
+  def __destroy_gfal_object(self,gfalObject):
+    gLogger.verbose("SRM2Storage.__destroy_gfal_object: Performing gfal_internal_free.")
+    errCode,gfalObject = gfal.gfal_internal_free(gfalObject)
+    if errCode:
+      errStr = "SRM2Storage.__destroy_gfal_object: Failed to perform gfal_internal_free:"
+      gLogger.error(errStr,errCode)
+      return S_ERROR()
+    else:
+      gLogger.verbose("SRM2Storage.__destroy_gfal_object: Successfully performed gfal_internal_free.")
+      return S_OK()
+
