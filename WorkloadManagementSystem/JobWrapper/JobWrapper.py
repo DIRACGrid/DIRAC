@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.66 2008/12/03 16:55:13 atsareg Exp $
+# $Id: JobWrapper.py,v 1.67 2009/01/07 15:38:30 paterson Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.66 2008/12/03 16:55:13 atsareg Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.67 2009/01/07 15:38:30 paterson Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -849,15 +849,22 @@ class JobWrapper:
         self.log.warn(failed)
         return S_ERROR(str(failed))
       for lfn in lfns:
-        if os.path.exists('%s/%s' %(self.root,os.path.basename(lfn))):
-          checkFileSize.append(os.path.basename(lfn))
+        if os.path.exists('%s/%s' %(self.root,os.path.basename(download['Value']['Successful'][lfn]))):
+          checkFileSize.append(os.path.basename(download['Value']['Successful'][lfn]))
+          sandboxFiles.append(download['Value']['Successful'][lfn])
 
-    # FIXME: should make use os tarfile module to make the code more portable
     for sandboxFile in sandboxFiles:
       if re.search('.tar.gz$',sandboxFile) or re.search('.tgz$',sandboxFile):
         if os.path.exists(sandboxFile):
           self.log.verbose('Unpacking input sandbox file %s' %(sandboxFile))
-          os.system('tar -zxf %s' %sandboxFile)
+          sandboxFile = os.path.basename( sys.argv[1] )
+          try:
+            if tarfile.is_tarfile( sandboxFile ):
+              tarFile = tarfile.open( sandboxFile, 'r' )
+              for member in tarFile.getmembers():
+                tarFile.extract( member, os.getcwd() )
+          except Exception,x :
+            return S_ERROR( 'Could not untar %s with exception %s' %(sandboxFile,str(x)) )
 
     if checkFileSize:
       self.inputSandboxSize = getGlobbedTotalSize(checkFileSize)
