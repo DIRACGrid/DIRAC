@@ -786,10 +786,10 @@ class SRM2Storage(StorageBase):
     for urlDict in allResults:
       if urlDict.has_key('surl'):
         pathSURL = urlDict['surl']
-        if result['status'] == 1:
+        if urlDict['status'] == 1:
           gLogger.debug("SRM2Storage.prestageFileStatus: File found to be staged %s." % pathSURL)
           successful[pathSURL] = True
-        elif result['status'] == 0:
+        elif urlDict['status'] == 0:
           gLogger.debug("SRM2Storage.prestageFileStatus: File not staged %s." % pathSURL)
           successful[pathSURL] = False
         elif urlDict['status'] == 2:
