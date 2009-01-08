@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.47 2008/12/16 14:55:04 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.48 2009/01/08 15:46:19 paterson Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.47 2008/12/16 14:55:04 acasajus Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.48 2009/01/08 15:46:19 paterson Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -363,10 +363,15 @@ class JobAgent(Agent):
       return result
     proxyString = result[ 'Value' ]
 
-    if not os.path.exists(self.siteRoot+'/job/Wrapper'):
-      os.makedirs(self.siteRoot+'/job/Wrapper')
+    workingDir = gConfig.getValue('/LocalSite/WorkingDirectory',self.siteRoot)
+    if not os.path.exists('%s/job/Wrapper' %(workingDir)):
+      try:
+        os.makedirs('%s/job/Wrapper' %(workingDir))
+      except Exception,x:
+        self.log.error('Could not create directory %s/job/Wrapper for job wrapper script' %(workingDir),str(x))
+        return S_ERROR('Could not create directory %s/job/Wrapper for job wrapper script' %(workingDir))
 
-    jobWrapperFile = self.siteRoot+'/job/Wrapper/Wrapper_%s' %(jobID)
+    jobWrapperFile = '%s/job/Wrapper/Wrapper_%s' %(workingDir,jobID)
     if os.path.exists(jobWrapperFile):
       self.log.verbose('Removing existing Job Wrapper for %s' %(jobID))
       os.remove(jobWrapperFile)
