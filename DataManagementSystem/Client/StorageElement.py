@@ -770,7 +770,10 @@ class StorageElement:
               if not res['Value']['Successful'].has_key(protocolPfn):
                 if not failed.has_key(pfn):
                   failed[pfn] = ''
-                failed[pfn] = "%s %s" % (failed[pfn],res['Value']['Failed'][protocolPfn])
+                if res['Value']['Failed'].has_key(protocolPfn):
+                  failed[pfn] = "%s %s" % (failed[pfn],res['Value']['Failed'][protocolPfn])
+                else:
+                  failed[pfn] = "%s %s" % (failed[pfn],'No error returned from plug-in') 
               else:
                 successful[pfn] = res['Value']['Successful'][protocolPfn]
                 if failed.has_key(pfn):
