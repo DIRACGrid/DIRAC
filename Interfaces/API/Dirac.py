@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.61 2008/12/09 13:32:29 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.62 2009/01/08 13:20:24 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.61 2008/12/09 13:32:29 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.62 2009/01/08 13:20:24 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -233,7 +233,8 @@ class Dirac:
   #############################################################################
   def __runJobAgent(self,jobID):
     """ This internal method runs a tailored job agent for the local execution
-        of a previously submitted WMS job.
+        of a previously submitted WMS job. The type of CEUniqueID can be overidden
+        via the configuration.
 
         Currently must unset CMTPROJECTPATH to get this to work.
     """
@@ -241,7 +242,8 @@ class Dirac:
     self.log.verbose('In case being booted from a DIRAC script, now resetting sys arguments to null from: \n%s' %(sys.argv))
     sys.argv=[]
     localCfg = LocalConfiguration()
-    localCfg.addDefaultEntry('CEUniqueID','InProcess')
+    ceType = gConfig.getValue('/LocalSite/LocalCE','InProcess')
+    localCfg.addDefaultEntry('CEUniqueID',ceType)
     localCfg.addDefaultEntry('ControlDirectory',os.getcwd())
     localCfg.addDefaultEntry('MaxCycles',1)
     localCfg.addDefaultEntry('/LocalSite/WorkingDirectory',os.getcwd())
@@ -262,10 +264,10 @@ class Dirac:
 #    localCfg.addDefaultEntry('JobID',jobID)
     localCfg.addDefaultEntry('/AgentJobRequirements/OwnerDN',ownerDN)
     localCfg.addDefaultEntry('/AgentJobRequirements/OwnerGroup',ownerGroup)
-    localCfg.addDefaultEntry('/Resources/Computing/InProcess/PilotType','private')
-    localCfg.addDefaultEntry('/Resources/Computing/InProcess/OwnerDN',ownerDN)
-    localCfg.addDefaultEntry('/Resources/Computing/InProcess/OwnerGroup',ownerGroup)
-    localCfg.addDefaultEntry('/Resources/Computing/InProcess/JobID',jobID)
+    localCfg.addDefaultEntry('/Resources/Computing/%s/PilotType' %ceType,'private')
+    localCfg.addDefaultEntry('/Resources/Computing/%s/OwnerDN' %ceType,ownerDN)
+    localCfg.addDefaultEntry('/Resources/Computing/%s/OwnerGroup' %ceType,ownerGroup)
+    localCfg.addDefaultEntry('/Resources/Computing/%s/JobID' %ceType,jobID)
 
     #SKP can add compatible platforms here
     localCfg.setConfigurationForAgent(agentName)
@@ -393,7 +395,7 @@ class Dirac:
 
        >>> print print d.getInputDataCatalog('/lhcb/production/DC06/phys-v2-lumi5/00001680/DST/0000/00001680_00000490_5.dst',None,'myCat.xml')
        {'Successful': {'<LFN>': {'pfntype': 'ROOT_All', 'protocol': 'SRM2',
-        'pfn': '<PFN', 'turl': '<TURL>', 'guid': '3E3E097D-0AC0-DB11-9C0A-00188B770645',
+        'pfn': '<PFN>', 'turl': '<TURL>', 'guid': '3E3E097D-0AC0-DB11-9C0A-00188B770645',
         'se': 'CERN-disk'}}, 'Failed': [], 'OK': True, 'Value': ''}
 
        @param lfns: Logical File Name(s) to query
