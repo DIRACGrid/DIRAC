@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/scripts/dirac-proxy-info.py,v 1.8 2008/11/18 17:19:52 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/scripts/dirac-proxy-info.py,v 1.9 2009/01/09 10:05:43 acasajus Exp $
 # File :   dirac-proxy-init.py
 # Author : Adrian Casajus
 ########################################################################
-__RCSID__   = "$Id: dirac-proxy-info.py,v 1.8 2008/11/18 17:19:52 acasajus Exp $"
-__VERSION__ = "$Revision: 1.8 $"
+__RCSID__   = "$Id: dirac-proxy-info.py,v 1.9 2009/01/09 10:05:43 acasajus Exp $"
+__VERSION__ = "$Revision: 1.9 $"
 
 import sys
 import os.path
@@ -98,7 +98,7 @@ if params.checkValid:
     invalidProxy( "Group %s is not valid" % infoDict[ 'group' ] )
   if 'hasVOMS' in infoDict and infoDict[ 'hasVOMS' ]:
     requiredVOMS = CS.getVOMSAttributeForGroup( infoDict[ 'group' ] )
-    if not infoDict[ 'VOMS' ]:
+    if 'VOMS' not in infoDict or not infoDict[ 'VOMS' ]:
       pinvalidProxy( "Unable to retrieve VOMS extension" )
     if len( infoDict[ 'VOMS' ] ) > 1:
       invalidProxy( "More than one voms attribute found" )
