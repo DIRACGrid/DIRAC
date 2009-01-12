@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationData.py,v 1.18 2008/11/13 17:37:27 acasajus Exp $
-__RCSID__ = "$Id: ConfigurationData.py,v 1.18 2008/11/13 17:37:27 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationData.py,v 1.19 2009/01/12 11:32:07 acasajus Exp $
+__RCSID__ = "$Id: ConfigurationData.py,v 1.19 2009/01/12 11:32:07 acasajus Exp $"
 
 import os.path
 import zlib
@@ -21,12 +21,12 @@ class ConfigurationData:
     self.runningThreadsNumber = 0
     self.compressedConfigurationData= ""
     self.configurationPath = "/DIRAC/Configuration"
-    self.backupsDir = "%s/etc/csbackup" % DIRAC.rootPath
+    self.backupsDir = os.path.join( DIRAC.rootPath, "etc", "csbackup" )
     self.isService = False
     self.localCFG = CFG()
     self.remoteCFG = CFG()
     if loadDefaultCFG:
-      defaultCFGFile = "%s/etc/dirac.cfg" % DIRAC.rootPath
+      defaultCFGFile = os.path.join( DIRAC.rootPath, "etc", "dirac.cfg" )
       gLogger.debug( "dirac.cfg should be at", "%s" % defaultCFGFile )
       retVal = self.loadFile( defaultCFGFile )
       if not retVal[ 'OK' ]:
@@ -80,7 +80,7 @@ class ConfigurationData:
     name = self.getName()
     self.lock()
     try:
-      self.remoteCFG.loadFromFile( "%s/etc/%s.cfg" % ( DIRAC.rootPath, name ) )
+      self.remoteCFG.loadFromFile( os.path.join( DIRAC.rootPath, "etc", "%s.cfg" % name ) )
     except:
       pass
     self.unlock()
@@ -306,14 +306,14 @@ class ConfigurationData:
     if not backupName:
       backupName = self.getVersion()
     configurationFilename = "%s.cfg" % self.getName()
-    configurationFile = "%s/etc/%s" % ( DIRAC.rootPath, configurationFilename )
+    configurationFile = os.path.join( DIRAC.rootPath, "etc", configurationFilename )
     today = Time.date()
-    backupPath = "%s/%s/%s" % ( self.getBackupDir(), today.year, today.month )
+    backupPath = os.path.join( self.getBackupDir(), str( today.year ), str( today.month ) )
     try:
       os.makedirs( backupPath )
     except:
       pass
-    backupFile = "%s/%s" % ( backupPath, configurationFilename.replace( ".cfg", ".%s.zip" % backupName ) )
+    backupFile = os.path.join( backupPath, configurationFilename.replace( ".cfg", ".%s.zip" % backupName ) )
     if os.path.isfile( configurationFile ):
       gLogger.info( "Making a backup of configuration in %s" % backupFile )
       try:
@@ -328,7 +328,7 @@ class ConfigurationData:
       gLogger.warn( "CS data file does not exist", configurationFile )
 
   def writeRemoteConfigurationToDisk( self, backupName = False ):
-    configurationFile = "%s/etc/%s.cfg" % ( DIRAC.rootPath, self.getName() )
+    configurationFile = os.path.join( DIRAC.rootPath, "etc", "%s.cfg" % self.getName() )
     try:
       fd = open( configurationFile, "w" )
       fd.write( str( self.remoteCFG ) )

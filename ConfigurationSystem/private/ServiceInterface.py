@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ServiceInterface.py,v 1.10 2008/03/05 16:32:00 acasajus Exp $
-__RCSID__ = "$Id: ServiceInterface.py,v 1.10 2008/03/05 16:32:00 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ServiceInterface.py,v 1.11 2009/01/12 11:32:07 acasajus Exp $
+__RCSID__ = "$Id: ServiceInterface.py,v 1.11 2009/01/12 11:32:07 acasajus Exp $"
 
 import sys
 import os
@@ -42,7 +42,7 @@ class ServiceInterface( threading.Thread ):
 
   def __loadConfigurationData( self ):
     try:
-      os.makedirs( "%s/etc/csbackup" % DIRAC.rootPath )
+      os.makedirs( os.path.join( DIRAC.rootPath, "etc", "csbackup" ) )
     except:
       pass
     gConfigurationData.loadConfigurationData()
