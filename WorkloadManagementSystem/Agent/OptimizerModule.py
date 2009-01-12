@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/OptimizerModule.py,v 1.6 2008/12/04 14:10:41 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/OptimizerModule.py,v 1.7 2009/01/12 17:08:34 paterson Exp $
 # File :   Optimizer.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
      optimizer instances and associated actions are performed there.
 """
 
-__RCSID__ = "$Id: OptimizerModule.py,v 1.6 2008/12/04 14:10:41 acasajus Exp $"
+__RCSID__ = "$Id: OptimizerModule.py,v 1.7 2009/01/12 17:08:34 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.DB.JobDB         import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB  import JobLoggingDB
@@ -133,7 +133,10 @@ class OptimizerModule(AgentModule):
         self.log.warn('JobDB returned null value for %s %s' %(job,reportName))
         return S_ERROR('No optimizer info returned')
       else:
-        return S_OK( eval(value) )
+        try:
+          return S_OK( eval(value) )
+        except Exception,x:
+          return S_ERROR('Could not evaluate optimizer parameters')
 
     return result
 
