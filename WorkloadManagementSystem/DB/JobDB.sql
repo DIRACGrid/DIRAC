@@ -1,4 +1,4 @@
--- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.sql,v 1.18 2008/11/10 18:24:17 atsareg Exp $
+-- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.sql,v 1.19 2009/01/12 20:50:05 atsareg Exp $
 
 --------------------------------------------------------------------------------
 --
@@ -126,7 +126,7 @@ DROP TABLE IF EXISTS OptimizerParameters;
 CREATE TABLE OptimizerParameters (
     JobID INTEGER NOT NULL,
     Name VARCHAR(100) NOT NULL,
-    Value BLOB NOT NULL,
+    Value MEDIUMBLOB NOT NULL,
     PRIMARY KEY(JobID, Name)
 );
 
