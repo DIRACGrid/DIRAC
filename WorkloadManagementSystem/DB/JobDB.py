@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.121 2008/12/20 16:24:50 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.122 2009/01/13 13:37:03 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -47,7 +47,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.121 2008/12/20 16:24:50 rgracian Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.122 2009/01/13 13:37:03 atsareg Exp $"
 
 import re, os, sys, string, types
 import time, datetime, operator
@@ -58,9 +58,6 @@ from DIRAC                                     import gLogger, S_OK, S_ERROR, Ti
 from DIRAC.ConfigurationSystem.Client.Config   import gConfig
 from DIRAC.Core.Base.DB                        import DB
 from DIRAC.Core.Security.CS                    import getUsernameForDN, getDNForUsername
-from DIRAC.Core.Utilities.Plotting             import *
-from graphtool.graphs.common_graphs import PieGraph
-import tempfile
 
 DEBUG = 0
 JOB_STATES = ['Received','Checking','Staging','Waiting','Matched',
@@ -1615,27 +1612,7 @@ class JobDB(DB):
     finalDict['TotalRecords'] = len(records)
     finalDict['Extras'] = countryCounts
     
-    start = time.time()
-    data = {}
-    for country,dict in countryCounts.items():
-      data[country] = dict['Done']
-    metadata = {'title':'Running jobs by country'}  
-    finalDict['Plots'] = self.__getPlotString(data,metadata)
-    
-    print "AT >>>> pie timing",time.time() - start
-    
     return S_OK(finalDict)
-
-  def __getPlotString(self,data,metadata):
-  
-    pieString = '' 
-    tmpfile = tempfile.TemporaryFile()
-    pie = PieGraph()
-    coords = pie.run( data, tmpfile, metadata )
-    tmpfile.seek(0)
-    pieString = tmpfile.read()
-    tmpfile.close()
-    return pieString  
 
 #################################################################################
   def getUserSummaryWeb(self,selectDict, sortList, startItem, maxItems):
