@@ -96,11 +96,11 @@ def dumpCFGAsJDL( cfg, level = 1, tab = "  " ):
   for key in cfg:
     if key in sections:
       contents.append( "%s%s =" % ( indent, key ) )
-      contents.append( dumpCFGAsJDL( cfg[ key ], level + 1, tab ) )
+      contents.append( "%s;" % dumpCFGAsJDL( cfg[ key ], level + 1, tab ) )
     else:
       val = List.fromChar( cfg[ key ] )
-      if len( val ) == 1:
-        v = val[0]
+      if len( val ) < 2:
+        v = cfg[ key ]
         try:
           d = float( v )
           contents.append( '%s%s = %s;' % ( tab*level, key, v ) )
@@ -116,5 +116,5 @@ def dumpCFGAsJDL( cfg, level = 1, tab = "  " ):
             val[ iPos ] = '"%s"' % val[ iPos ]
         contents.append( ",\n".join( [ '%s%s' % ( tab * (level +1 ), v ) for v in val ] ) )
         contents.append( "%s};" % indent )
-  contents.append( "%s];" % ( tab * ( level - 1 ) ) )
+  contents.append( "%s]" % ( tab * ( level - 1 ) ) )
   return "\n".join( contents )
