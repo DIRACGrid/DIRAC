@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSanityAgent.py,v 1.15 2008/12/04 14:10:41 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSanityAgent.py,v 1.16 2009/01/13 14:52:18 paterson Exp $
 # File :   JobSanityAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,7 +13,7 @@
        - Input sandbox not correctly uploaded.
 """
 
-__RCSID__ = "$Id: JobSanityAgent.py,v 1.15 2008/12/04 14:10:41 acasajus Exp $"
+__RCSID__ = "$Id: JobSanityAgent.py,v 1.16 2009/01/13 14:52:18 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
@@ -37,7 +37,7 @@ class JobSanityAgent(OptimizerModule):
     #Other parameters
     self.voName               = self.am_getOption( 'VO', 'lhcb' )
     self.successStatus        = self.am_getOption( 'SuccessfulJobStatus', 'OutputReady' )
-    self.maxDataPerJob        = self.am_getOption( 'MaxInputDataPerJob', 200 )
+    self.maxDataPerJob        = self.am_getOption( 'MaxInputDataPerJob', 100 )
 
     self.log.debug(   'JDL Check          ==>  Enabled'                    )
     if self.inputDataCheck:
@@ -74,7 +74,7 @@ class JobSanityAgent(OptimizerModule):
 
     #Input data check
     if self.inputDataCheck:
-      inputData = self.checkInputData(job)
+      inputData = self.checkInputData(job,jobType)
       if inputData['OK']:
         number = inputData['Value']
         message += 'InputData: '+number+', '
@@ -140,7 +140,7 @@ class JobSanityAgent(OptimizerModule):
     return self.setNextOptimizer(job)
 
   #############################################################################
-  def checkInputData(self,job):
+  def checkInputData(self,job,jobType):
     """This method checks both the amount of input
        datasets for the job and whether the LFN conventions
        are correct.
@@ -178,14 +178,7 @@ class JobSanityAgent(OptimizerModule):
     for i in data: repData+=i+'\n'
     self.log.debug('Data is: %s' %(repData))
 
-
     totalData = len(data)
-    if totalData > maxData:
-      message = '%s datasets selected. Max limit is %s.'  % (totalData,maxData)
-      self.setJobParam(job,'DatasetCheck',message)
-      result = S_ERROR()
-      result['Value'] = "Exceeded maximum dataset limit"
-      return result
 
     if totalData:
       for i in data:
@@ -203,6 +196,14 @@ class JobSanityAgent(OptimizerModule):
     if slashFlag:
       result = S_ERROR()
       result['Value'] = "Input data contains //"
+      return result
+
+    #only check limit for user jobs
+    if jobType.lower()=='user' and totalData > maxData:
+      message = '%s datasets selected. Max limit is %s.'  % (totalData,maxData)
+      self.setJobParam(job,'DatasetCheck',message)
+      result = S_ERROR()
+      result['Value'] = "Exceeded Maximum Dataset Limit (%s)" %(maxData)
       return result
 
     number = str(totalData)
