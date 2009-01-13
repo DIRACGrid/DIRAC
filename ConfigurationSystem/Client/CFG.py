@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/Attic/CFG.py,v 1.7 2008/07/14 17:54:54 acasajus Exp $
-__RCSID__ = "$Id: CFG.py,v 1.7 2008/07/14 17:54:54 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/Attic/CFG.py,v 1.8 2009/01/13 16:26:40 acasajus Exp $
+__RCSID__ = "$Id: CFG.py,v 1.8 2009/01/13 16:26:40 acasajus Exp $"
 
 import types
 import copy
@@ -49,6 +49,7 @@ class CFG:
         self.__dataDict[ sectionName ] = contents
     else:
       raise Exception( "%s key already exists"  % sectionName )
+    return self.__dataDict[ sectionName ]
 
   def __overrideAndCloneSection( self, sectionName, oCFGToClone ):
     """
@@ -328,17 +329,20 @@ class CFG:
     @param key: Name of the section/option to retrieve
     @return: String/CFG with the contents
     """
-    return self.__getattr__( key )
-
-  def __getattr__( self, key ):
-    """
-    Get the contents of a section/option
-
-    @type key: string
-    @param key: Name of the section/option to retrieve
-    @return: String/CFG with the contents
-    """
     return self.__dataDict[ key ]
+
+  def __iter__( self ):
+    """
+    Iterate though the contents in order
+    """
+    for key in self.__orderedList:
+      yield key
+
+  def __contains__( self, key ):
+    """
+    Check if a key is defined
+    """
+    return key in self.__orderedList
 
   def __str__( self ):
     """
