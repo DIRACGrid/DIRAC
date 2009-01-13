@@ -23,7 +23,7 @@ try:
   gLogger.debug(infoStr)
 except Exception,x:
   errStr = "SRM2Storage.__init__: Failed to import lcg_util: %s" % (x)
-  gLogger.exception(errStr)
+  gLogger.exception(errStr,'',x)
   ISOK = False
 
 try:
@@ -43,7 +43,7 @@ except Exception,x:
     gLogger.debug(infoStr)
   except Exception,x:
     errStr = "SRM2Storage.__init__: Failed to import gfal: %s" % (x)
-    gLogger.exception(errStr)
+    gLogger.exception(errStr,'',x)
     ISOK = False
 
 class SRM2Storage(StorageBase):
@@ -580,83 +580,7 @@ class SRM2Storage(StorageBase):
                 res = self.__makeDirs(dir)
                 res = self.__makeDir(path)
     return res
-
-  def removeDirectory(self,path):
-    """Remove the recursively the files and sub directories
-    """
-    if type(path) in types.StringTypes:
-      urls = [path]
-    elif type(path) == types.ListType:
-      urls = path
-    else:
-      return S_ERROR("SRM2Storage.removeDirectory: Supplied path must be string or list of strings")
-    successful = {}
-    failed = {}
-    gLogger.debug("SRM2Storage.removeDirectory: Attempting to remove %s directories" % len(urls))
-    for url in urls:
-      gLogger.debug("SRM2Storage.removeDirectory: Attempting to remove %s" % url)
-      res = self.__removeDir(url)
-      if res['OK']:
-        if res['Value']['AllRemoved']:
-          gLogger.debug("SRM2Storage.removeDirectory: Successfully removed all files. Removing 'dirac_directory' file.")
-          successful[url] = {'Files':res['Value']['Files'],'Size':res['Value']['Size']}
-          # If all we successful then remove the dirac_directory file
-          diracDirectoryFile = "%s/%s" % (url,'dirac_directory')
-          res = self.removeFile(diracDirectoryFile)
-        else:
-          gLogger.error("SRM2Storage.removeDirectory: Failed to remove all files in directory.", url)
-          failed[url] = {'Files':res['Value']['Files'],'Size':res['Value']['Size']}
-      else:
-        gLogger.error("SRM2Storage.removeDirectory: Failed to remove any files in directory.", url)
-        failed[url] = {'Files':0,'Size':0}
-    resDict = {'Failed':failed,'Successful':successful}
-    return S_OK(resDict)
-
-  def __removeDir(self,directory):
-    """ Black magic to recursively remove the directory and sub dirs. Repeatedly calls itself to delete recursively.
-    """
-    filesRemoved = 0
-    sizeRemoved = 0
-    res = self.listDirectory(directory)
-    if not res['OK']:
-      return S_ERROR("Failed to list directory")
-    if not res['Value']['Successful'].has_key(directory):
-      return S_ERROR("Failed to list directory")
-    allFilesRemoved = False
-    surlsDict = res['Value']['Successful'][directory]['Files']
-    subDirsDict = res['Value']['Successful'][directory]['SubDirs']
-    filesToRemove = []
-    for url in surlsDict.keys():
-      filesToRemove.append(url)
-    if len(filesToRemove) > 0:
-      res = self.removeFile(filesToRemove)
-      if res['OK']:
-        for removedSurl in res['Value']['Successful'].keys():
-          filesRemoved += 1
-          sizeRemoved += surlsDict[removedSurl]['Size']
-          if len(res['Value']['Failed'].keys()) == 0:
-            allFilesRemoved = True
-    else:
-      allFilesRemoved = True
-
-    # Remove the sub directories found
-    subDirsRemoved = True
-    for subDir in subDirsDict.keys():
-      res = self.__removeDir(subDir)
-      if not res['OK']:
-        subDirsRemoved = False
-      if not res['Value']['AllRemoved']:
-        subDirsRemoved = False
-      filesRemoved += res['Value']['Files']
-      sizeRemoved += res['Value']['Size']
-    if subDirsRemoved and allFilesRemoved:
-      allRemoved = True
-    else:
-      allRemoved = False
-    resDict = {'AllRemoved':allRemoved,'Files':filesRemoved,'Size':sizeRemoved}
-    return S_OK(resDict)
-
-
+	
 ################################################################################
 #
 # The methods below use the new generic methods for executing operations
@@ -924,6 +848,7 @@ class SRM2Storage(StorageBase):
         pathSURL = urlDict['surl']
         if urlDict['status'] == 0:
           gLogger.debug("SRM2Storage.releaseFile: Issued release request for file %s." % pathSURL)
+          successful[pathSURL] = urlDict['SRMReqID']
         elif urlDict['status'] == 2:
           errMessage = "SRM2Storage.releaseFile: File does not exist."
           gLogger.error(errMessage,pathSURL)
@@ -1132,9 +1057,9 @@ class SRM2Storage(StorageBase):
         if urlDict['status'] == 0:
           successful[pathSURL] = {}
           gLogger.debug("SRM2Storage.listDirectory: Successfully listed directory %s" % pathSURL)
+          subPathDirs = {}
+          subPathFiles = {}
           if urlDict.has_key('subpaths'):
-            subPathDirs = {}
-            subPathFiles = {}
             subPaths = urlDict['subpaths']
             # Parse the subpaths for the directory
             for subPathDict in subPaths:
@@ -1144,9 +1069,9 @@ class SRM2Storage(StorageBase):
                 subPathFiles[subPathSURL] = statDict
               elif statDict['Directory']:
                 subPathDirs[subPathSURL] = statDict
-            # Keep the infomation about this path's subpaths
-            successful[pathSURL]['SubDirs'] = subPathDirs
-            successful[pathSURL]['Files'] = subPathFiles
+          # Keep the infomation about this path's subpaths
+          successful[pathSURL]['SubDirs'] = subPathDirs
+          successful[pathSURL]['Files'] = subPathFiles
         else: 
           errStr = "SRM2Storage.listDirectory: Failed to list directory."
           errMessage = urlDict['ErrorMessage']  
@@ -1155,6 +1080,142 @@ class SRM2Storage(StorageBase):
 
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
+
+  def removeDirectory(self,path,recursive=False):
+    """ Remove a directory
+    """
+    if recursive:
+      return self.__removeDirectoryRecursive(path)
+    else:
+      return self.__removeDirectory(path)
+
+  def __removeDirectory(self,directory):
+    """ This function removes the directory on the storage
+    """
+    res = self.checkArgumentFormat(directory)
+    if not res['OK']:
+      return res
+    urls = res['Value']
+
+    gLogger.debug("SRM2Storage.__removeDirectory: Attempting to remove %s directories." % len(urls))
+    resDict = self.__gfalremovedir_wrapper(urls)['Value']
+    failed = resDict['Failed']
+    allResults = resDict['AllResults']
+    successful = {}
+    for urlDict in allResults:
+      if urlDict.has_key('surl'):
+        pathSURL = urlDict['surl']
+        if urlDict['status'] == 0:
+          infoStr = 'SRM2Storage.__removeDirectory: Successfully removed directory: %s' % pathSURL
+          gLogger.debug(infoStr)
+          successful[pathSURL] = True
+        elif urlDict['status'] == 2:
+          # This is the case where the file doesn't exist.
+          infoStr = 'SRM2Storage.__removeDirectory: Directory did not exist, sucessfully removed: %s' % pathSURL
+          gLogger.debug(infoStr)
+          successful[pathSURL] = True
+        else:
+          errStr = "SRM2Storage.removeDirectory: Failed to remove directory."
+          errMessage = urlDict['ErrorMessage']
+          gLogger.error(errStr,"%s: %s" % (pathSURL,errMessage))
+          failed[pathSURL] = "%s %s" % (errStr,errMessage)
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+  def __removeDirectoryRecursive(self,directory):
+    """ Recursively removes the directory and sub dirs. Repeatedly calls itself to delete recursively.
+    """
+    res = self.checkArgumentFormat(directory) 
+    if not res['OK']:
+      return res
+    urls = res['Value']
+
+    successful = {}
+    failed = {}
+    gLogger.debug("SRM2Storage.__removeDirectory: Attempting to recursively remove %s directories." % len(urls))
+    for directory in urls.keys():
+      gLogger.debug("SRM2Storage.removeDirectory: Attempting to remove %s" % directory)
+      res = self.__getDirectoryContents(directory)
+      resDict = {'FilesRemoved':0,'SizeRemoved':0}
+      if not res['OK']:
+        failed[directory] = resDict
+      else:
+        filesToRemove = res['Value']['Files']
+        subDirs = res['Value']['SubDirs']
+        # Remove all the files in the directory
+        res = self.__removeDirectoryFiles(filesToRemove)
+        resDict['FilesRemoved'] += res['FilesRemoved']
+        resDict['SizeRemoved'] += res['SizeRemoved']
+        allFilesRemoved = res['AllRemoved']
+        # Remove all the sub-directories
+        res = self.__removeSubDirectories(subDirs)
+        resDict['FilesRemoved'] += res['FilesRemoved']
+        resDict['SizeRemoved'] += res['SizeRemoved']
+        allSubDirsRemoved = res['AllRemoved']
+        # If all the files and sub-directories are removed then remove the directory
+        allRemoved = False
+        if allFilesRemoved and allSubDirsRemoved:
+          gLogger.debug("SRM2Storage.removeDirectory: Successfully removed all files and sub-directories.") 
+          res = self.__removeDirectory(directory)
+          if res['OK']:
+            if res['Value']['Successful'].has_key(directory):
+              gLogger.debug("SRM2Storage.removeDirectory: Successfully removed the directory %s." % directory)
+              allRemoved = True
+        # Report the result
+        if allRemoved:
+          successful[directory] = resDict
+        else:
+          failed[directory] = resDict
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+  def __getDirectoryContents(self,directory):
+    res = self.listDirectory(directory)
+    errMessage = "SRM2Storage.__getDirectoryContents: Failed to list directory."
+    print res
+    if not res['OK']:
+      gLogger.error(errMessage,res['Message'])
+      return S_ERROR(errMessage)
+    if not res['Value']['Successful'].has_key(directory):
+      gLogger.error(errMessage,res['Value']['Failed'][directory])
+      return S_ERROR(errMessage)
+    surlsDict = res['Value']['Successful'][directory]['Files']
+    subDirsDict = res['Value']['Successful'][directory]['SubDirs']
+    filesToRemove = {}
+    for url in surlsDict.keys():
+      filesToRemove[url] = surlsDict[url]['Size']
+    resDict = {'Files':filesToRemove,'SubDirs':subDirsDict.keys()}
+    return S_OK(resDict)
+
+  def __removeDirectoryFiles(self,filesToRemove):
+    resDict = {'FilesRemoved':0,'SizeRemoved':0,'AllRemoved':True}
+    if len(filesToRemove) > 0:
+      res = self.removeFile(filesToRemove.keys())
+      if res['OK']:
+        for removedSurl in res['Value']['Successful'].keys():
+          resDict['FilesRemoved'] += 1
+          resDict['SizeRemoved'] += filesToRemove[removedSurl]
+        if len(res['Value']['Failed'].keys()) != 0:
+          resDict['AllRemoved'] = False
+    gLogger.debug("SRM2Storage.__removeDirectoryFiles: Removed %s files of size %s bytes." % (resDict['FilesRemoved'],resDict['SizeRemoved'])) 
+    return resDict
+
+  def __removeSubDirectories(self,subDirectories):
+    resDict = {'FilesRemoved':0,'SizeRemoved':0,'AllRemoved':True}
+    if len(subDirectories) > 0:
+      res = self.__removeDirectoryRecursive(subDirectories)
+      if res['OK']:
+        for removedSubDir,removedDict in res['Value']['Successful'].items():
+          resDict['FilesRemoved'] += removedDict['FilesRemoved']
+          resDict['SizeRemoved'] += removedDict['SizeRemoved']
+          gLogger.debug("SRM2Storage.__removeSubDirectories: Removed %s files of size %s bytes from %s." % (removedDict['FilesRemoved'],removedDict['SizeRemoved'],removedSubDir)) 
+        for removedSubDir,removedDict in res['Value']['Failed'].items():
+          resDict['FilesRemoved'] += removedDict['FilesRemoved']
+          resDict['SizeRemoved'] += removedDict['SizeRemoved']
+          gLogger.debug("SRM2Storage.__removeSubDirectories: Removed %s files of size %s bytes from %s." % (removedDict['FilesRemoved'],removedDict['SizeRemoved'],removedSubDir))
+        if len(res['Value']['Failed'].keys()) != 0:
+          resDict['AllRemoved'] = False
+    return resDict
 
   def checkArgumentFormat(self,path):
     if type(path) in types.StringTypes:
@@ -1349,6 +1410,36 @@ class SRM2Storage(StorageBase):
       else:
         allResults.extend(res['Value'])
       
+    oAccounting.commit()
+    resDict = {}
+    resDict['AllResults'] = allResults
+    resDict['Failed'] = failed
+    return S_OK(resDict)
+
+  def __gfalremovedir_wrapper(self,urls):
+    """ This is a function that can be reused everywhere to perform the gfal_removedir
+    """
+    gfalDict = {}
+    gfalDict['defaultsetype'] = 'srmv2'
+    gfalDict['no_bdii_check'] = 1
+    gfalDict['srmv2_spacetokendesc'] = self.spaceToken
+    oAccounting = DataStoreClient()
+    allResults = []
+    failed = {}
+        
+    listOfLists = breakListIntoChunks(urls.keys(),self.filesPerCall)
+    for urls in listOfLists:
+      gfalDict['surls'] = urls
+      gfalDict['nbfiles'] =  len(urls)
+      gfalDict['timeout'] = self.fileTimeout*len(urls)
+      res = self.__gfal_operation_wrapper('gfal_removedir',gfalDict)
+      oAccounting.addRegister(res['AccountingOperation'])
+      if not res['OK']:
+        for url in urls:
+          failed[url] = res['Message']
+      else:
+        allResults.extend(res['Value'])
+       
     oAccounting.commit()
     resDict = {}
     resDict['AllResults'] = allResults
@@ -1596,7 +1687,7 @@ class SRM2Storage(StorageBase):
         return S_OK(gfalObject) 
     except AttributeError,errMessage:
       exceptStr = "SRM2Storage.__gfal_exec: Exception while perfoming %s." % method
-      gLogger.exception(exceptStr,errMessage)
+      gLogger.exception(exceptStr,'',errMessage)
       return S_ERROR("%s%s" % (exceptStr,errMessage))
 
   # These methods are for retrieving output information
