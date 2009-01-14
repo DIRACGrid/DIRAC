@@ -77,6 +77,9 @@ class SRM2Storage(StorageBase):
     self.insecure = 0
     self.defaultLocalProtocols = gConfig.getValue('/Resources/StorageElements/DefaultProtocols',[])
 
+    self.MAX_SINGLE_STREAM_SIZE = 1024*1024*10 # 10 MB
+    self.MIN_BANDWIDTH = 5 * (1024*1024) # 5 MB/s
+
   def isOK(self):
     return self.isok
 
@@ -179,146 +182,6 @@ class SRM2Storage(StorageBase):
     parameterDict['SpaceToken'] = self.spaceToken
     parameterDict['WSUrl'] = self.wspath
     return S_OK(parameterDict)
-
-  #############################################################
-  #
-  # These are the methods for file transfer
-  #
-
-  def getFile(self,fileTuple):
-    """Get a local copy in the current directory of a physical file specified by its path
-    """
-    if type(fileTuple) == types.TupleType:
-      urls = [fileTuple]
-    elif type(fileTuple) == types.ListType:
-      urls = fileTuple
-    else:
-      return S_ERROR("SRM2Storage.getFile: Supplied file information must be tuple of list of tuples")
-
-    MAX_SINGLE_STREAM_SIZE = 1024*1024*10 # 10 MB
-    MIN_BANDWIDTH = 5 * (1024*1024) # 5 MB/s
-
-    srctype = self.defaulttype
-    src_spacetokendesc = self.spaceToken
-    dsttype = 0
-    dest_spacetokendesc = ''
-    failed = {}
-    successful = {}
-    for src_url,dest_file,size in urls:
-      timeout = size/MIN_BANDWIDTH + 300
-      if size > MAX_SINGLE_STREAM_SIZE:
-        nbstreams = 4
-      else:
-        nbstreams = 1
-      dest_url = 'file:%s' % dest_file
-      gLogger.debug("SRM2Storage.getFile: Executing transfer of %s to %s" % (src_url, dest_url))
-      errCode,errStr = lcg_util.lcg_cp3(src_url, dest_url, self.defaulttype, srctype, dsttype, self.nobdii, self.vo, nbstreams, self.conf_file, self.insecure, self.verbose, timeout,src_spacetokendesc,dest_spacetokendesc)
-      if errCode == 0:
-        gLogger.debug('SRM2Storage.getFile: Got file from storage, performing post transfer check.')
-        localSize = getSize(dest_file)
-        if localSize == size:
-          gLogger.debug("SRM2Storage.getFile: Post transfer check successful.")
-          successful[src_url] = True
-        else:
-          errStr = "SRM2Storage.getFile: Source and destination file sizes do not match."
-          gLogger.error(errStr,src_url)
-          if os.path.exists(dest_file):
-            gLogger.debug("SRM2Storage.getFile: Removing local file.")
-            os.remove(dest_file)
-          failed[src_url] = errStr
-      else:
-        errorMessage = "SRM2Storage.getFile: Failed to get local copy of file."
-        gLogger.error(errorMessage,"%s: %s" % (dest_file,errStr))
-        failed[src_url] = errStr
-    resDict = {'Failed':failed,'Successful':successful}
-    return S_OK(resDict)
-
-  def putFile(self,fileTuple):
-    """Put a file to the physical storage
-    """
-    if type(fileTuple) == types.TupleType:
-      urls = [fileTuple]
-    elif type(fileTuple) == types.ListType:
-      urls = fileTuple
-    else:
-      return S_ERROR("SRM2Storage.putFile: Supplied file info must be tuple of list of tuples.")
-
-    MAX_SINGLE_STREAM_SIZE = 1024*1024*10 # 10 MB
-    MIN_BANDWIDTH = 1024*100 # 100 KB/s
-
-    dsttype = self.defaulttype
-    src_spacetokendesc = ''
-    dest_spacetokendesc = self.spaceToken
-    failed = {}
-    successful = {}
-    for src_file,dest_url,size in urls:
-      timeout = size/MIN_BANDWIDTH + 300
-      if size > MAX_SINGLE_STREAM_SIZE:
-        nbstreams = 4
-      else:
-        nbstreams = 1
-      if re.search('srm:',src_file) or re.search('gsiftp:',src_file):
-        src_url = src_file
-        srctype = 2
-      else:
-        src_url = 'file:%s' % src_file
-        srctype = 0
-      gLogger.debug("SRM2Storage.putFile: Executing transfer of %s to %s" % (src_url, dest_url))
-      errCode,errStr = lcg_util.lcg_cp3(src_url, dest_url, self.defaulttype, srctype, dsttype, self.nobdii, self.vo, nbstreams, self.conf_file, self.insecure, self.verbose, timeout,src_spacetokendesc,dest_spacetokendesc)
-      removeFile = True
-      if errCode == 0:
-        gLogger.debug("SRM2Storage.putFile: Put file to storage, performing post transfer check.")
-        res = self.getFileSize(dest_url)
-        if res['OK']:
-          if res['Value']['Successful'].has_key(dest_url):
-            remoteSize = res['Value']['Successful'][dest_url]
-            #######################################################################
-            # This is a dirty hack because gfal is rubbish
-            if size > 1024*1024*1024*2-1:
-              gLogger.debug("SRM2Storage.putFile: The file put was larger than 2GB.")
-              gLogger.debug("SRM2Storage.putFile: Checking whether (remoteSize-size)%(2**32) == 0.")
-              gLogger.debug("SRM2Storage.putFile: gfal returned size = %s and the file size is %s" % (remoteSize,size))
-              gLogger.debug("SRM2Storage.putFile: Checking whether (remoteSize-size)%(2**32) == 0.")
-              if (remoteSize-size)%(2**32) != 0:
-                gLogger.debug("SRM2Storage.putFile: != 0")
-                errMessage = "SRM2Storage.putFile: Source and destination file sizes do not match."
-                gLogger.error(errMessage,dest_url)
-                failed[dest_url] = errMessage
-              else:
-                gLogger.debug("SRM2Storage.putFile: = 0")
-                successful[dest_url] = True
-                removeFile = False
-            #######################################################################
-            elif remoteSize == size:
-              gLogger.debug("SRM2Storage.putFile: Post transfer check successful.")
-              successful[dest_url] = True
-              removeFile = False
-            else:
-              errMessage = "SRM2Storage.putFile: Source and destination file sizes do not match."
-              gLogger.error(errMessage,dest_url)
-              failed[dest_url] = errMessage
-          else:
-            errMessage = "SRM2Storage.putFile: Failed to determine remote file size."
-            gLogger.error(errMessage,dest_url)
-            failed[dest_url] = errMessage
-            gLogger.info("SRM2Storage.putFile: Even though we failed to get the file size I am not removing the file.")
-            gLogger.info("SRM2Storage.putFile: Please remove the next line of code.")
-            removeFile = False # HACK REMOVE
-        else:
-          errMessage = "SRM2Storage.putFile: Completely failed to determine remote file size."
-          gLogger.error(errMessage,dest_url)
-          failed[dest_url] = errMessage
-      else:
-        errMessage = "SRM2Storage.putFile: Failed to put file to remote storage."
-        gLogger.error(errMessage,errStr)
-        failed[dest_url] = errStr
-      if removeFile:
-        # This is because some part of the transfer failed.
-        infoStr = "SRM2Storage.putFile: Removing destination url."
-        gLogger.debug(infoStr)
-        res = self.removeFile(dest_url)
-    resDict = {'Failed':failed,'Successful':successful}
-    return S_OK(resDict)
 
   #############################################################
   #
@@ -508,20 +371,23 @@ class SRM2Storage(StorageBase):
     resDict = {'AllPut':allSuccessful,'Files':filesPut,'Size':sizePut}
     return S_OK(resDict)
 
+  ######################################################################
+  #
+  # This has to be updated once the new gfal_makedir() becomes available
+  # 
+
   def createDirectory(self,path):
     """ Make recursively new directory(ies) on the physical storage
     """
-    if type(path) in types.StringTypes:
-      urls = [path]
-    elif type(path) == types.ListType:
-      urls = path
-    else:
-      return S_ERROR("SRM2Storage.createDirectory: Supplied path must be string or list of strings")
+    res = self.checkArgumentFormat(path)
+    if not res['OK']:
+      return res
+    urls = res['Value']
+
     successful = {}
     failed = {}
-
     gLogger.debug("SRM2Storage.createDirectory: Attempting to create %s directories." % len(urls))
-    for url in urls:
+    for url in urls.keys():
       strippedUrl = url.rstrip('/')
       res = self.__makeDirs(strippedUrl)
       if res['OK']:
@@ -580,7 +446,7 @@ class SRM2Storage(StorageBase):
                 res = self.__makeDirs(dir)
                 res = self.__makeDir(path)
     return res
-	
+
 ################################################################################
 #
 # The methods below use the new generic methods for executing operations
@@ -926,6 +792,189 @@ class SRM2Storage(StorageBase):
           failed[pathSURL] = "%s %s" % (errStr,errMessage)
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
+
+  """
+  def putFile(self,fileTuple):
+    if type(fileTuple) == types.TupleType:
+      urls = [fileTuple]
+    elif type(fileTuple) == types.ListType:
+      urls = fileTuple
+    else:
+      return S_ERROR("SRM2Storage.putFile: Supplied file info must be tuple of list of tuples.")
+
+    failed = {}
+    successful = {}
+
+    for src_file,dest_url in urls.keys():
+      res = self.__putFile(src_file,dest_url)
+      removeDestFile = False
+      if not res['OK']:
+        failed[src_url] = res['Message']
+        removeDestFile = True
+      else:
+        remoteSize = res['Value']
+
+          localSize = getSize(dest_file) 
+          if localSize != remoteSize:
+            errStr = "SRM2Storage.getFile: Source and destination file sizes do not match."
+            gLogger.error(errStr,src_url)
+            failed[src_url] = errStr
+            removeLocalFile = True
+          else:
+            gLogger.debug("SRM2Storage.getFile: Post transfer check successful.")
+            successful[src_url] = remoteSize
+        if removeLocalFile:
+          if os.path.exists(dest_file):
+            gLogger.debug("SRM2Storage.getFile: Removing local file %s." % dest_file)
+            os.remove(dest_file)
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+
+
+
+      removeFile = True
+      if errCode == 0:
+        gLogger.debug("SRM2Storage.putFile: Put file to storage, performing post transfer check.")
+        res = self.getFileSize(dest_url)
+        if res['OK']:
+          if res['Value']['Successful'].has_key(dest_url):
+            remoteSize = res['Value']['Successful'][dest_url]
+            elif remoteSize == size:
+              gLogger.debug("SRM2Storage.putFile: Post transfer check successful.")
+              successful[dest_url] = True
+              removeFile = False
+            else:
+              errMessage = "SRM2Storage.putFile: Source and destination file sizes do not match."
+              gLogger.error(errMessage,dest_url)
+              failed[dest_url] = errMessage
+          else:
+            errMessage = "SRM2Storage.putFile: Failed to determine remote file size."
+            gLogger.error(errMessage,dest_url)
+            failed[dest_url] = errMessage
+        else:
+          errMessage = "SRM2Storage.putFile: Completely failed to determine remote file size."
+          gLogger.error(errMessage,dest_url)
+          failed[dest_url] = errMessage
+      else:
+        errMessage = "SRM2Storage.putFile: Failed to put file to remote storage."
+        gLogger.error(errMessage,errStr)
+        failed[dest_url] = errStr
+      if removeFile:
+        # This is because some part of the transfer failed.
+        infoStr = "SRM2Storage.putFile: Removing destination url."
+        gLogger.debug(infoStr)
+        res = self.removeFile(dest_url)
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+  def __putFile(self,src_file,dest_url,size):
+    dsttype = self.defaulttype
+    src_spacetokendesc = ''
+    dest_spacetokendesc = self.spaceToken
+    if re.search('srm:',src_file):
+      src_url = src_file
+      srctype = 2
+      res = self.__getRemoteFileSize(src_url)
+      if not res['OK']:
+        return S_ERROR(res['Message']) 
+      sourceSize = res['Value']
+    else:
+      sourceSize = getSize(src_file) 
+      src_url = 'file:%s' % src_file
+      srctype = 0
+    timeout = sourceSize/self.MIN_BANDWIDTH + 300
+    if sourceSize > self.MAX_SINGLE_STREAM_SIZE:
+      nbstreams = 4
+    else:
+      nbstreams = 1
+    gLogger.debug("SRM2Storage.__putFile: Executing transfer of %s to %s" % (src_url, dest_url))
+    errCode,errStr = lcg_util.lcg_cp3(src_url, dest_url, self.defaulttype, srctype, dsttype, self.nobdii, self.vo, nbstreams, self.conf_file, self.insecure, self.verbose, timeout,src_spacetokendesc,dest_spacetokendesc)
+    if errCode == 0:
+      gLogger.debug('SRM2Storage.__putFile: Successfully put file to storage.')
+      return S_OK(sourceSize)
+    errorMessage = "SRM2Storage.__putFile: Failed to put file to storage."
+    if errCode > 0:
+      errorMessage = "%s %s" % (errorMessage,os.strerror(errCode))
+    errorMessage = "%s %s" % (errorMessage,errStr)
+    return S_ERROR(errorMessage)
+  """
+
+  def getFile(self,path,localPath=False):
+    """ Get a local copy in the current directory of a physical file specified by its path
+    """
+    res = self.checkArgumentFormat(path)
+    if not res['OK']:
+      return res
+    urls = res['Value']
+
+    failed = {}
+    successful = {}
+    for src_url in urls.keys():
+      fileName = os.path.basename(src_url)
+      if localPath:
+        dest_file = "%s/%s" % (localPath,fileName)
+      else:
+        dest_file = "%s/%s" % (os.getcwd(),fileName)
+      res = self.__getFile(src_url,dest_file)
+      if res['OK']:
+        successful[src_url] = res['Value']
+      else:
+        failed[src_url] = res['Message']
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+  def __getFile(self,src_url,dest_file):
+    if os.path.exists(dest_file):
+      gLogger.debug("SRM2Storage.getFile: Local file already exists %s. Removing..." % dest_file)
+      os.remove(dest_file)     
+    srctype = self.defaulttype
+    src_spacetokendesc = self.spaceToken
+    dsttype = 0
+    dest_spacetokendesc = ''
+    dest_url = 'file:%s' % dest_file
+    res = self.__getRemoteFileSize(src_url)
+    if not res['OK']:
+      return S_ERROR(res['Message'])
+    remoteSize = res['Value']
+    timeout = remoteSize/self.MIN_BANDWIDTH + 300
+    if remoteSize > self.MAX_SINGLE_STREAM_SIZE:
+      nbstreams = 4
+    else:
+      nbstreams = 1
+    gLogger.debug("SRM2Storage.__getFile: Executing transfer of %s to %s" % (src_url, dest_url))
+    errCode,errStr = lcg_util.lcg_cp3(src_url, dest_url, self.defaulttype, srctype, dsttype, self.nobdii, self.vo, nbstreams, self.conf_file, self.insecure, self.verbose, timeout,src_spacetokendesc,dest_spacetokendesc)
+    if errCode == 0:
+      gLogger.debug('SRM2Storage.__getFile: Got a file from storage.')
+      localSize = getSize(dest_file)
+      if localSize == remoteSize:
+        gLogger.debug("SRM2Storage.getFile: Post transfer check successful.")
+        return S_OK(localSize)
+      errStr = "SRM2Storage.__getFile: Source and destination file sizes do not match."
+      gLogger.error(errStr,src_url)
+    else:
+      errorMessage = "SRM2Storage.getFile: Failed to get local copy of file."
+      if errCode > 0:
+        errorMessage = "%s %s" % (errorMessage,os.strerror(errCode))
+      errorMessage = "%s %s" % (errorMessage,errStr)
+    if os.path.exists(dest_file):
+      gLogger.debug("SRM2Storage.getFile: Removing local file %s." % dest_file)
+      os.remove(dest_file)
+    return S_ERROR(errorMessage)
+
+  def __getRemoteFileSize(self,src_url):
+    res = self.getFileSize(src_url)
+    if not res['OK']:
+      return S_ERROR(res['Message'])
+    elif not res['Value']['Successful'].has_key(src_url):
+      return S_ERROR(res['Value']['Failed'][src_url])
+    else:
+      return S_OK(res['Value']['Successful'][src_url])
+
+  ############################################################################################
+  #
+  # Directory based methods
+  # 
 
   def isDirectory(self,path):
     """Check if the given path exists and it is a directory
