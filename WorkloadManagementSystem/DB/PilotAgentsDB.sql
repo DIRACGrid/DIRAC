@@ -1,4 +1,4 @@
--- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.sql,v 1.15 2008/12/02 15:52:20 atsareg Exp $
+-- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.sql,v 1.16 2009/01/14 18:39:02 atsareg Exp $
 
 --------------------------------------------------------------------------------
 --
@@ -48,6 +48,7 @@ CREATE TABLE PilotAgents (
     SubmissionTime DATETIME,
     LastUpdateTime DATETIME,
     Status VARCHAR(32) NOT NULL DEFAULT 'Unknown',
+    StatusReason VARCHAR(255) NOT NULL DEFAULT 'Unknown',
     ParentID INTEGER NOT NULL DEFAULT 0,
     PRIMARY KEY (PilotID),
     INDEX (PilotJobReference)
