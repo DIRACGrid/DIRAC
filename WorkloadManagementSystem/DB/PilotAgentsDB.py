@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.45 2008/12/22 10:45:50 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.46 2009/01/14 11:19:26 atsareg Exp $
 ########################################################################
 """ PilotAgentsDB class is a front-end to the Pilot Agent Database.
     This database keeps track of all the submitted grid pilot jobs.
@@ -23,7 +23,7 @@
 
 """
 
-__RCSID__ = "$Id: PilotAgentsDB.py,v 1.45 2008/12/22 10:45:50 rgracian Exp $"
+__RCSID__ = "$Id: PilotAgentsDB.py,v 1.46 2009/01/14 11:19:26 atsareg Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
@@ -140,8 +140,6 @@ class PilotAgentsDB(DB):
 
     setList = []
     setList.append("Status='%s'" % status)
-    if destination:
-      setList.append("DestinationSite='%s'" % destination)
     if updateTime:
       setList.append("LastUpdateTime='%s'" % updateTime)
     else:
@@ -150,7 +148,15 @@ class PilotAgentsDB(DB):
     set_string = ','.join(setList)
     req = "UPDATE PilotAgents SET "+set_string+" WHERE PilotJobReference='%s'" % pilotRef
 
-    return self._update( req, conn = conn )
+    result = self._update( req, conn = conn )
+    if not result['OK']:
+      return result
+      
+    if destination:
+      result = self.setPilotDestinationSite(pilotRef,destination)
+      if not result['OK']:
+        return result
+    return S_OK()    
 
 ##########################################################################################
   def selectPilots(self,condDict, older=None, newer=None, timeStamp='SubmissionTime',
@@ -327,6 +333,9 @@ class PilotAgentsDB(DB):
     result = getSiteForCE(destination)
     if result['OK']:
       gridSite = result['Value']
+
+    if not gridSite:
+      gridSite = 'Unknown'
 
     req = "UPDATE PilotAgents SET DestinationSite='%s', GridSite='%s' WHERE PilotJobReference='%s'" % (destination,gridSite,pilotRef)
     result = self._update(req)
@@ -636,6 +645,23 @@ class PilotAgentsDB(DB):
     if selectDict.has_key('LastUpdateTime'):
       last_update = selectDict['LastUpdateTime']
       del selectDict['LastUpdateTime']
+    site_select = []  
+    if selectDict.has_key('GridSite'):  
+      site_select = selectDict['GridSite']
+      if type(site_select) != type([]):
+        site_select = [site_select]
+      del selectDict['GridSite']    
+    status_select = []    
+    if selectDict.has_key('Status'):  
+      status_select = selectDict['Status']
+      if type(status_select) != type([]):
+        status_select = [status_select]  
+      del selectDict['Status']  
+      
+    expand_site = ''  
+    if selectDict.has_key('ExpandSite'):  
+      expand_site = selectDict['ExpandSite']  
+      site_select = [expand_site]
 
     start = time.time()
     # Get all the data from the database with various selections
@@ -724,13 +750,14 @@ class PilotAgentsDB(DB):
     siteSumDict = {}
     for site in resultDict:
       sumDict = {}
+      for state in allStateNames:
+        if not sumDict.has_key(state):
+          sumDict[state] = 0
       sumDict['Total'] = 0
       for ce in resultDict[site]:
         itemList = [site,ce]
         total = 0
         for state in allStateNames:
-          if not sumDict.has_key(state):
-            sumDict[state] = 0
           itemList.append(resultDict[site][ce][state])
           sumDict[state] += resultDict[site][ce][state]
           if state == "Done":
@@ -772,48 +799,71 @@ class PilotAgentsDB(DB):
             itemList.append('Good')
         else:
           itemList.append('Idle')
-        records.append(itemList)
+          
+        if len(resultDict[site]) == 1 or expand_site:  
+          records.append(itemList)
 
-      itemList = [site,'All']
-      for state in allStateNames+['Total']:
-        itemList.append(sumDict[state])
-      done = sumDict["Done"]
-      empty = sumDict["Done_Empty"]
-      aborted = sumDict["Aborted"]
-      aborted_hour = sumDict["Aborted_Hour"]
-      total = sumDict["Total"]
+      if len(resultDict[site]) > 1 and not expand_site:  
+        itemList = [site,'Multiple']
+        for state in allStateNames+['Total']:
+          if sumDict.has_key(state):
+            itemList.append(sumDict[state])
+          else:
+            itemList.append(0)  
+        done = sumDict["Done"]
+        empty = sumDict["Done_Empty"]
+        aborted = sumDict["Aborted"]
+        aborted_hour = sumDict["Aborted_Hour"]
+        total = sumDict["Total"]
 
-      # Add pilot submission efficiency evaluation
-      if done > 0:
-        eff = float(done-empty)/float(done)*100.
-      else:
-        eff = 100.
-      itemList.append('%.2f' % eff)
-      # Add pilot job efficiency evaluation
-      if total > 0:
-        eff = float(total-aborted)/float(total)*100.
-      else:
-        eff = 100.
-      itemList.append('%.2f' % eff)
-
-      # Evaluate the quality status of the Site
-      if total > 10:
-        if eff < 25.:
-          itemList.append('Bad')
-        elif eff < 60.:
-          itemList.append('Poor')
-        elif eff < 85.:
-          itemList.append('Fair')
+        # Add pilot submission efficiency evaluation
+        if done > 0:
+          eff = float(done-empty)/float(done)*100.
         else:
-          itemList.append('Good')
-      else:
-        itemList.append('Idle')
-      records.append(itemList)
+          eff = 100.
+        itemList.append('%.2f' % eff)
+        # Add pilot job efficiency evaluation
+        if total > 0:
+          eff = float(total-aborted)/float(total)*100.
+        else:
+          eff = 100.
+        itemList.append('%.2f' % eff)
+
+        # Evaluate the quality status of the Site
+        if total > 10:
+          if eff < 25.:
+            itemList.append('Bad')
+          elif eff < 60.:
+            itemList.append('Poor')
+          elif eff < 85.:
+            itemList.append('Fair')
+          else:
+            itemList.append('Good')
+        else:
+          itemList.append('Idle')
+        records.append(itemList)
+        
       for state in allStateNames+['Total']:
         if not siteSumDict.has_key(state):
           siteSumDict[state] = sumDict[state]
         else:
           siteSumDict[state] += sumDict[state]
+          
+    # Perform site selection 
+    if site_select:
+      new_records = []
+      for r in records:
+        if r[0] in site_select:
+          new_records.append(r)
+      records = new_records  
+      
+    # Perform status selection
+    if status_select:
+      new_records = []
+      for r in records:
+        if r[14] in status_select:
+          new_records.append(r)
+      records = new_records     
 
     finalDict = {}
     finalDict['TotalRecords'] = len(records)
@@ -932,3 +982,4 @@ class PilotAgentsDB(DB):
     resultDict['Records'] = records
 
     return S_OK(resultDict)
+
