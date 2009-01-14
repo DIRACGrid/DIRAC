@@ -13,8 +13,8 @@ from DIRAC.DataManagementSystem.Client.Storage.StorageFactory import StorageFact
 from DIRAC.Core.Utilities.Pfn import pfnparse,pfnunparse
 from DIRAC.Core.Utilities.List import sortList
 from DIRAC.Core.Utilities.File import getSize
-import re, time,os,types
 from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
+import re, time,os,types
 
 class StorageElement:
 
@@ -53,40 +53,37 @@ class StorageElement:
       i = i + 1
     gLogger.info(outStr)
 
-  def isValid(self):
-    gLogger.info("StorageElement.isValid: Determining whether the StorageElement %s is valid for use." % self.name)
-    return S_OK(self.valid)
-
-  def getStorageElementName(self):
-    return S_OK(self.name)
   #################################################################################################
   #
-  # These are the basic get functions to get information about the supported protocols
+  # These are the basic get functions for storage configuration
   #
+
+  def getStorageElementName(self):
+    gLogger.debug("StorageElement.getStorageElementName: The Storage Element name is %s." % self.name)
+    return S_OK(self.name)
+
+  def isValid(self):
+    gLogger.debug("StorageElement.isValid: Determining whether the StorageElement %s is valid for use." % self.name)
+    return S_OK(self.valid)
 
   def getProtocols(self):
     """ Get the list of all the protocols defined for this Storage Element
     """
-    gLogger.info("StorageElement.getProtocols: Obtaining all protocols for %s." % self.name)
+    gLogger.debug("StorageElement.getProtocols: Obtaining all protocols for %s." % self.name)
     allProtocols = self.localProtocols+self.remoteProtocols
     return S_OK(allProtocols)
 
   def getRemoteProtocols(self):
     """ Get the list of all the remote access protocols defined for this Storage Element
     """
-    gLogger.info("StorageElement.getRemoteProtocols: Obtaining remote protocols for %s." % self.name)
+    gLogger.debug("StorageElement.getRemoteProtocols: Obtaining remote protocols for %s." % self.name)
     return S_OK(self.remoteProtocols)
 
   def getLocalProtocols(self):
     """ Get the list of all the local access protocols defined for this Storage Element
     """
-    gLogger.info("StorageElement.getLocalProtocols: Obtaining local protocols for %s." % self.name)
+    gLogger.debug("StorageElement.getLocalProtocols: Obtaining local protocols for %s." % self.name)
     return S_OK(self.localProtocols)
-
-  #################################################################################################
-  #
-  # These are the basic get functions for storage configuration
-  #
 
   def getStorageElementOption(self,option):
     """ Get the value for the option supplied from self.options
@@ -219,100 +216,10 @@ class StorageElement:
 
   #################################################################################################
   #
-  # These are the directory manipulation methods
+  # These are the file transfer methods
   #
 
-  def putDirectory(self,localDirectory,directoryPath):
-    """ This will recursively put the directory on the storage
-
-        'localDirectory' is the local directory
-        'directoryPath' is a string containing the destination directory
-    """
-    successful = {}
-    failed = {}
-    localSE = self.isLocalSE()['Value']
-    # Try all of the storages one by one
-    for storage in self.storages:
-      pfnDict = {}
-      res = storage.getParameters()
-      protocolName = res['Value']['ProtocolName']
-      # If the SE is not local then we can't use local protocols
-      if protocolName in self.remoteProtocols:
-        useProtocol = True
-      elif localSE:
-        useProtocol = True
-      else:
-        useProtocol = False
-        gLogger.info("StorageElement.putDirectory: Protocol not appropriate for use: %s." % protocolName)
-      if useProtocol:
-        gLogger.info("StorageElement.putDirectory: Generating protocol PFNs for %s." % protocolName)
-        res =  storage.getCurrentURL(directoryPath)
-        if res['OK']:
-          storageDirectory = res['Value']
-          res  = pfnparse(storageDirectory)
-          if not res['OK']:
-            errStr = "StorageElement.putDirectory: Failed to parse supplied PFN."
-            gLogger.error(errStr,"%s: %s" % (storageDirectory,res['Message']))
-          else:
-            res = storage.getProtocolPfn(res['Value'],True)
-            if not res['OK']:
-              infoStr = "StorageElement.putDirectory%s." % res['Message']
-              gLogger.error(infoStr,'%s for protocol %s' % (storageDirectory,protocolName))
-            else:
-              remoteDirectory = res['Value']
-              res = storage.putDirectory((localDirectory,remoteDirectory))
-              if not res['OK']:
-                infoStr = "StorageElement.putDirectory: Completely failed to put directory."
-                gLogger.error(infoStr,'%s for protocol %s: %s' % (self.name,protocolName,res['Message']))
-              else:
-                if res['Value']['Successful'].has_key(remoteDirectory):
-                  return S_OK(res['Value']['Successful'][remoteDirectory])
-    # If we get here we tried all the protocols and failed with all of them
-    errStr = "StorageElement.putDirectory: Failed to put directory with all protocols."
-    gLogger.error(errStr,localDirectory)
-    return S_ERROR(errStr)
-
-  #################################################################################################
-  #
-  # These are the file manipulation methods
-  #
-
-  def getFile(self,pfn,catalogueFileSize,localPath = ''):
-    """ This method will obtain a local copy of a file from the SE
-
-        'pfn' is the physical file name (as registered in the LFC)
-        'catalogueFileSize' is the size from the catalogue
-    """
-    localSE = self.isLocalSE()['Value']
-
-    res  = pfnparse(pfn)
-    if not res['OK']:
-      errStr = "StorageElement.getFile: Failed to parse supplied PFN."
-      gLogger.error(errStr,"%s: %s" % (pfn,res['Message']))
-      return S_ERROR(errStr)
-    pfnDict = res['Value']
-    fileName = os.path.basename(pfn)
-
-    # Try all of the storages one by one until success
-    for storage in self.storages:
-      res = storage.getParameters()
-      protocolName = res['Value']['ProtocolName']
-      # If the SE is not local then we can't use local protocols
-      if protocolName in self.remoteProtocols:
-        useProtocol = True
-      elif localSE:
-        useProtocol = True
-      else:
-        useProtocol = False
-        gLogger.info("StorageElement.makeDirectory: Protocol not appropriate for use: %s." % protocolName)
-      if useProtocol:
-        res = storage.getProtocolPfn(pfnDict,True)
-        if not res['OK']:
-          infoStr = "StorageElement.getFile%s." % res['Message']
-          gLogger.error(infoStr,'%s for protocol %s' % (pfn,protocolName))
-        else:
-          protocolPfn = res['Value']
-          protocolSize = None
+  def __ToMoveToReplicaManagerForGetFile():
           ###############################################################################################
           # Pre-transfer check. Check if file exists, get the size and check against the catalogue
           res = storage.exists(protocolPfn)
@@ -361,38 +268,6 @@ class StorageElement:
           else:
             infoStr = "StorageElement.getFile: Failed to determine whether file exists."
             gLogger.error(infoStr,'%s for protocol %s' % (protocolPfn,protocolName))
-
-          ###########################################################################################
-          # If the check was successful (i.e. we obtained correctly the file size) perform the transfer
-          if protocolSize:
-            if not localPath:
-              localPath = '%s/%s' % (os.getcwd(),fileName)
-            fileTuple = (protocolPfn,localPath,protocolSize)
-            res = storage.getFile(fileTuple)
-            if res['OK']:
-              if res['Value']['Successful'].has_key(protocolPfn):
-                infoStr ="StorageElement.getFile: Got local copy of file. Checking size..."
-                gLogger.info(infoStr)
-                ##############################################################
-                # Post-transfer check. Check the local file size and remove it if not correct
-                localSize = getSize(localPath)
-                if localSize == protocolSize:
-                  infoStr ="StorageElement.getFile: Local file size correct."
-                  gLogger.info(infoStr,'%s with protocol %s' % (localPath,protocolName))
-                  # woohoo, good work!!!
-                  return S_OK(localPath)
-              ##############################################################
-              # If the transfer failed or the sizes don't match clean up the mess
-              if os.path.exists(localPath):
-                os.remove(localPath)
-            else:
-              infoStr = "StorageElement.getFile%s" % res['Message']
-              gLogger.error(infoStr)
-
-    # If we get here we tried all the protocols and failed with all of them
-    errStr = "StorageElement.getFile: Failed to get file for all protocols."
-    gLogger.error(errStr,pfn)
-    return S_ERROR(errStr)
 
   def putFile(self,file,directoryPath,alternativeFileName=None):
     """ This method will upload a local file to the SE
@@ -456,35 +331,7 @@ class StorageElement:
             gLogger.error(infoStr,' With protocol %s' % protocolName)
           else:
             destUrl = res['Value']
-            ##############################################################
-            # Pre-transfer check. Check if file already exists and remove it
-            res = storage.exists(destUrl)
-            if res['OK']:
-              if res['Value']['Successful'].has_key(destUrl):
-                fileExists = res['Value']['Successful'][destUrl]
-                if not fileExists:
-                  infoStr = "StorageElement.putFile: pre-transfer check completed successfully"
-                  gLogger.info(infoStr)
-                else:
-                  infoStr = "StorageElement.putFile: pre-transfer check failed. File already exists. Removing..."
-                  gLogger.info(infoStr)
-                  res = storage.removeFile(destUrl)
-                  if res['OK']:
-                    if res['Value']['Successful'].has_key(destUrl):
-                      infoStr ="StorageElement.putFile: Removed pre-existing file from storage."
-                      gLogger.info(infoStr,'%s with protocol %s' % (destUrl,protocolName))
-                    else:
-                      infoStr ="StorageElement.putFile: Failed to remove pre-existing file from storage."
-                      gLogger.error(infoStr,'%s with protocol %s' % (destUrl,protocolName))
-                  else:
-                    infoStr ="StorageElement.putFile: Failed to remove pre-existing file from storage."
-                    gLogger.error(infoStr,'%s with protocol %s' % (destUrl,protocolName))
-              else:
-                infoStr ="StorageElement.putFile: Failed to find pre-existance of file."
-                gLogger.error(infoStr,'%s with protocol %s' % (destUrl,protocolName))
-            else:
-              infoStr ="StorageElement.putFile: Failed to find pre-existance of file."
-              gLogger.error(infoStr,'%s with protocol %s' % (destUrl,protocolName))
+
             ##############################################################
             # Perform the transfer here....
             fileTuple = (file,destUrl,size)
@@ -502,6 +349,8 @@ class StorageElement:
             else:
               errStr = "StorageElement.putFile: Completely failed to put file: %s" % res['Message']
               gLogger.error(errStr,"%s with protocol %s" % (destUrl,protocolName))
+
+
     # If we get here we tried all the protocols and failed with all of them
     errStr = "StorageElement.putFile: Failed to put file for all protocols."
     gLogger.error(errStr,file)
@@ -566,17 +415,17 @@ class StorageElement:
     gLogger.error(errStr,sourcePfn)
     return S_ERROR(errStr)
 
-  def createDirectory(self,directoryUrl):
-    """ This will recursively create the directories on the storage until the desired path
+  #################################################################################################
+  #
+  # These are the directory manipulation methods
+  #
 
-        'directoryUrl' is a string containing the directory to be created
+  def putDirectory(self,localDirectory,directoryPath):
+    """ This will recursively put the directory on the storage
+
+        'localDirectory' is the local directory
+        'directoryPath' is a string containing the destination directory
     """
-    if type(directoryUrl) == types.StringType:
-      directoryUrls = [directoryUrl]
-    elif type(directoryUrl) == types.ListType:
-      directoryUrls = directoryUrl
-    else:
-      return S_ERROR("StorageElement.createDirectory: Supplied directory must be string or list of strings")
     successful = {}
     failed = {}
     localSE = self.isLocalSE()['Value']
@@ -592,49 +441,34 @@ class StorageElement:
         useProtocol = True
       else:
         useProtocol = False
-        gLogger.info("StorageElement.createDirectory: Protocol not appropriate for use: %s." % protocolName)
+        gLogger.info("StorageElement.putDirectory: Protocol not appropriate for use: %s." % protocolName)
       if useProtocol:
-        gLogger.info("StorageElement.createDirectory: Generating protocol PFNs for %s." % protocolName)
-        for directoryUrl in directoryUrls:
-          # If we have not already obtained metadata for the supplied pfn
-          if not successful.has_key(directoryUrl):
-            res =  storage.getCurrentURL(directoryUrl)
-            if res['OK']:
-              storageDirectory = res['Value']
-              res  = pfnparse(storageDirectory)
-              if not res['OK']:
-                errStr = "StorageElement.createDirectory: Failed to parse supplied PFN."
-                gLogger.error(errStr,"%s: %s" % (storageDirectory,res['Message']))
-                if not failed.has_key(directoryUrl):
-                  failed[directoryUrl] = ''
-                failed[directoryUrl] = "%s %s" % (failed[directoryUrl],errStr)
-              else:
-                res = storage.getProtocolPfn(res['Value'],True)
-                if not res['OK']:
-                  infoStr = "StorageElement.createDirectory%s." % res['Message']
-                  gLogger.error(infoStr,'%s for protocol %s' % (directoryUrl,protocolName))
-                else:
-                  pfnDict[res['Value']] = directoryUrl
-        if not len(pfnDict.keys()) > 0:
-          gLogger.info("StorageElement.createDirectory: No pfns generated for protocol %s." % protocolName)
-        else:
-          gLogger.info("StorageElement.createDirectory: Attempting to create %s directories." % len(pfnDict.keys()))
-          res = storage.createDirectory(pfnDict.keys())
+        gLogger.info("StorageElement.putDirectory: Generating protocol PFNs for %s." % protocolName)
+        res =  storage.getCurrentURL(directoryPath)
+        if res['OK']:
+          storageDirectory = res['Value']
+          res  = pfnparse(storageDirectory)
           if not res['OK']:
-            infoStr = "StorageElement.createDirectory: Completely failed to create directories."
-            gLogger.error(infoStr,'%s for protocol %s: %s' % (self.name,protocolName,res['Message']))
+            errStr = "StorageElement.putDirectory: Failed to parse supplied PFN."
+            gLogger.error(errStr,"%s: %s" % (storageDirectory,res['Message']))
           else:
-            for protocolPfn,directoryUrl in pfnDict.items():
-              if not res['Value']['Successful'].has_key(protocolPfn):
-                if not failed.has_key(directoryUrl):
-                  failed[directoryUrl] = ''
-                failed[directoryUrl] = "%s %s" % (failed[directoryUrl],res['Value']['Failed'][protocolPfn])
+            res = storage.getProtocolPfn(res['Value'],True)
+            if not res['OK']:
+              infoStr = "StorageElement.putDirectory%s." % res['Message']
+              gLogger.error(infoStr,'%s for protocol %s' % (storageDirectory,protocolName))
+            else:
+              remoteDirectory = res['Value']
+              res = storage.putDirectory((localDirectory,remoteDirectory))
+              if not res['OK']:
+                infoStr = "StorageElement.putDirectory: Completely failed to put directory."
+                gLogger.error(infoStr,'%s for protocol %s: %s' % (self.name,protocolName,res['Message']))
               else:
-                successful[directoryUrl] = protocolPfn
-                if failed.has_key(directoryUrl):
-                  failed.pop(directoryUrl)
-    resDict = {'Failed':failed,'Successful':successful}
-    return S_OK(resDict)
+                if res['Value']['Successful'].has_key(remoteDirectory):
+                  return S_OK(res['Value']['Successful'][remoteDirectory])
+    # If we get here we tried all the protocols and failed with all of them
+    errStr = "StorageElement.putDirectory: Failed to put directory with all protocols."
+    gLogger.error(errStr,localDirectory)
+    return S_ERROR(errStr)
 
   ###########################################################################################
   #
@@ -649,6 +483,9 @@ class StorageElement:
 
   def isFile(self,pfn):
     return self.__executeFunction(pfn,'isFile')
+
+  def getFile(self,pfn,localPath=False):
+    return self.__executeFunction(pfn,'getFile',{'localPath':localPath})
 
   def getFileMetadata(self,pfn):
     return self.__executeFunction(pfn,'getFileMetadata')
@@ -691,6 +528,9 @@ class StorageElement:
 
   def removeDirectory(self,pfn,recursive=False):
     return self.__executeFunction(pfn,'removeDirectory',{'recursive':recursive})
+
+  def createDirectory(self,pfn):
+    return self.__executeFunction(pfn,'createDirectory')
 
   def __executeFunction(self,pfn,method,argsDict={}):
     """
@@ -747,7 +587,10 @@ class StorageElement:
           if argsDict:
             execString = "res = storage.%s(pfnsToUse" % method
             for argument,value in argsDict.items():
-              execString = "%s, %s=%s" % (execString,argument,value)
+              if type(value) == types.StringType:
+                execString = "%s, %s='%s'" % (execString,argument,value) 
+              else:
+                execString = "%s, %s=%s" % (execString,argument,value)
             execString = "%s)" % execString
           else:
             execString = "res = storage.%s(pfnsToUse)" % method
