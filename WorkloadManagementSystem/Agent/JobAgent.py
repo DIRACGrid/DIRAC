@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.48 2009/01/08 15:46:19 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.49 2009/01/14 14:46:04 paterson Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.48 2009/01/08 15:46:19 paterson Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.49 2009/01/14 14:46:04 paterson Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -451,7 +451,7 @@ class JobAgent(Agent):
     wrapper.write( wrapperTemplate )
     wrapper.close ()
     os.chmod(jobWrapperFile,0700)
-    jobExeFile = '%s/job/Wrapper/Job%s' %(self.siteRoot,jobID)
+    jobExeFile = '%s/job/Wrapper/Job%s' %(workingDir,jobID)
     #jobFileContents = '#!/bin/sh\nexport LD_LIBRARY_PATH=%s:%s:%s:$LD_LIBRARY_PATH\n%s %s -o LogLevel=debug' %(libDir,lib64Dir,usrlibDir,dPython,jobWrapperFile)
     #jobFileContents = '#!/bin/sh\nexport LD_LIBRARY_PATH=%s\n%s %s -o LogLevel=%s' %(libDir,dPython,jobWrapperFile,logLevel)
     jobFileContents = '#!/bin/sh\n%s %s -o LogLevel=%s' %(dPython,jobWrapperFile,logLevel)
