@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.46 2009/01/14 11:19:26 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.47 2009/01/14 18:53:49 atsareg Exp $
 ########################################################################
 """ PilotAgentsDB class is a front-end to the Pilot Agent Database.
     This database keeps track of all the submitted grid pilot jobs.
@@ -23,7 +23,7 @@
 
 """
 
-__RCSID__ = "$Id: PilotAgentsDB.py,v 1.46 2009/01/14 11:19:26 atsareg Exp $"
+__RCSID__ = "$Id: PilotAgentsDB.py,v 1.47 2009/01/14 18:53:49 atsareg Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
@@ -135,7 +135,8 @@ class PilotAgentsDB(DB):
     return S_OK()
 
 ##########################################################################################
-  def setPilotStatus( self, pilotRef, status, destination=None, updateTime=None, conn = False ):
+  def setPilotStatus( self, pilotRef, status, statusReason=None,
+                      destination=None, updateTime=None, conn = False ):
     """ Set pilot job LCG status """
 
     setList = []
@@ -144,6 +145,8 @@ class PilotAgentsDB(DB):
       setList.append("LastUpdateTime='%s'" % updateTime)
     else:
       setList.append("LastUpdateTime=UTC_TIMESTAMP()")
+    if statusReason:
+      setList.append("StatusReason='%s'" % statusReason) 
 
     set_string = ','.join(setList)
     req = "UPDATE PilotAgents SET "+set_string+" WHERE PilotJobReference='%s'" % pilotRef
@@ -432,6 +435,10 @@ class PilotAgentsDB(DB):
 
     pilotID = self.__getPilotID(pilotRef)
     if pilotID:
+      reason = "Report from job %d" % int(jobID)
+      result = self.setPilotStatus(pilotRef,status='Running',statusReason=reason)
+      if not result['OK']:
+        return result
       req = "INSERT INTO JobToPilotMapping VALUES (%d,%d,UTC_TIMESTAMP())" % (pilotID,jobID)
       result = self._update(req)
       return result
@@ -650,7 +657,8 @@ class PilotAgentsDB(DB):
       site_select = selectDict['GridSite']
       if type(site_select) != type([]):
         site_select = [site_select]
-      del selectDict['GridSite']    
+      del selectDict['GridSite'] 
+         
     status_select = []    
     if selectDict.has_key('Status'):  
       status_select = selectDict['Status']
@@ -662,6 +670,7 @@ class PilotAgentsDB(DB):
     if selectDict.has_key('ExpandSite'):  
       expand_site = selectDict['ExpandSite']  
       site_select = [expand_site]
+      del selectDict['ExpandSite']  
 
     start = time.time()
     # Get all the data from the database with various selections
