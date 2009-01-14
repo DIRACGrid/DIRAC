@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobManagerHandler.py,v 1.28 2008/11/07 15:22:01 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobManagerHandler.py,v 1.29 2009/01/14 11:11:58 acasajus Exp $
 ########################################################################
 
 """ JobManagerHandler is the implementation of the JobManager service
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: JobManagerHandler.py,v 1.28 2008/11/07 15:22:01 atsareg Exp $"
+__RCSID__ = "$Id: JobManagerHandler.py,v 1.29 2009/01/14 11:11:58 acasajus Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -54,7 +54,7 @@ class JobManagerHandler( RequestHandler ):
 
   ###########################################################################
   types_submitJob = [ StringType ]
-  def export_submitJob( self, JDL ):
+  def export_submitJob( self, jobDesc ):
     """ Submit a single job to DIRAC WMS
     """
 
@@ -69,7 +69,14 @@ class JobManagerHandler( RequestHandler ):
     if not policyDict[ RIGHT_SUBMIT ]:
       return S_ERROR('Job submission not authorized')
 
-    result = gJobDB.insertNewJobIntoDB( JDL, self.owner, self.ownerDN, self.ownerGroup, self.diracSetup )
+    #jobDesc is JDL for now
+    jobDesc = jobDesc.strip()
+    if jobDesc[0] != "[":
+      jobDesc = "[%s" % jobDesc
+    if jobDesc[-1] != "]":
+      jobDesc = "%s]" % jobDesc
+
+    result = gJobDB.insertNewJobIntoDB( jobDesc, self.owner, self.ownerDN, self.ownerGroup, self.diracSetup )
     if not result['OK']:
       return result
 
