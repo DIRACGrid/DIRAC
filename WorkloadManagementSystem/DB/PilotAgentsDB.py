@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.47 2009/01/14 18:53:49 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.48 2009/01/15 09:19:32 atsareg Exp $
 ########################################################################
 """ PilotAgentsDB class is a front-end to the Pilot Agent Database.
     This database keeps track of all the submitted grid pilot jobs.
@@ -23,12 +23,13 @@
 
 """
 
-__RCSID__ = "$Id: PilotAgentsDB.py,v 1.47 2009/01/14 18:53:49 atsareg Exp $"
+__RCSID__ = "$Id: PilotAgentsDB.py,v 1.48 2009/01/15 09:19:32 atsareg Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE, getCESiteMapping
 import DIRAC.Core.Utilities.Time as Time
+from DIRAC.Core.DISET.RPCClient import RPCClient
 from types import *
 import threading, datetime, time
 
@@ -435,7 +436,7 @@ class PilotAgentsDB(DB):
 
     pilotID = self.__getPilotID(pilotRef)
     if pilotID:
-      reason = "Report from job %d" % int(jobID)
+      reason = 'Report from job %d' % int(jobID)
       result = self.setPilotStatus(pilotRef,status='Running',statusReason=reason)
       if not result['OK']:
         return result
@@ -872,12 +873,26 @@ class PilotAgentsDB(DB):
       for r in records:
         if r[14] in status_select:
           new_records.append(r)
-      records = new_records     
+      records = new_records   
+      
+    # Get the Site Mask data
+    client = RPCClient('WorkloadManagement/WMSAdministrator')
+    result = client.getSiteMask()
+    if result['OK']:
+      siteMask = result['Value']
+      for r in records:
+        if r[0] in siteMask:
+          r.append('Yes')
+        else:
+          r.append('No')   
+    else:
+      for r in records:
+        r.append('Unknown')            
 
     finalDict = {}
     finalDict['TotalRecords'] = len(records)
     finalDict['ParameterNames'] = paramNames+ \
-                                 ['Total','SubmissionEff','PilotJobEff','Status']
+                                 ['Total','SubmissionEff','PilotJobEff','Status','InMask']
 
     # Return all the records if maxItems == 0 or the specified number otherwise
     if maxItems:
