@@ -269,156 +269,15 @@ class StorageElement:
             infoStr = "StorageElement.getFile: Failed to determine whether file exists."
             gLogger.error(infoStr,'%s for protocol %s' % (protocolPfn,protocolName))
 
-  def putFile(self,file,directoryPath,alternativeFileName=None):
-    """ This method will upload a local file to the SE
-
-        'file' is the full local path to the file e.g. /opt/dirac/file/for/upload.file
-        'directoryPath' is the path on the storage the file will be put
-        'alternativeFileName' is the target file name
-    """
-    if alternativeFileName:
-      gLogger.info("StorageElement.putFile: Attempting to put %s to %s with file name %s." % (file,directoryPath,alternativeFileName))
-    else:
-      gLogger.info("StorageElement.putFile: Attempting to put %s to %s." % (file,directoryPath))
-
-    size = getSize(file)
-    fileName = os.path.basename(file)
-    if size == -1:
-      infoStr = "StorageElement.putFile: Failed to get file size"
-      gLogger.error(infoStr,file)
-      return S_ERROR(infoStr)
-    elif size == 0:
-      infoStr ="StorageElement.putFile: File is zero size"
-      gLogger.error(infoStr,file)
-      return S_ERROR(infoStr)
-
-    localSE = self.isLocalSE()['Value']
-
-    gLogger.info("StorageElement.putFile: Determined file size of %s to be %s." % (file,size))
-    localSE = self.isLocalSE()['Value']
-    # The method will try all storages
-    for storage in self.storages:
-      # Get the parameters for the current storage
-      res = storage.getParameters()
-      protocolName = res['Value']['ProtocolName']
-      gLogger.info("StorageElement.putFile: Attempting to put file with %s." % protocolName)
-      # If the SE is not local then we can't use local protocols
-      if protocolName in self.remoteProtocols:
-        useProtocol = True
-      elif localSE:
-        useProtocol = True
-      else:
-        useProtocol = False
-        gLogger.info("StorageElement.putFile: %s not appropriate for use." % protocolName)
-      if useProtocol:
-        res =  storage.getCurrentURL(directoryPath)
-        if res['OK']:
-          destinationDirectory = res['Value']
-          res = storage.createDirectory(destinationDirectory)
-          if not res['OK']:
-            infoStr ="StorageElement.putFile: Failed to create directory."
-            gLogger.error(infoStr,'%s with protocol %s' % (directoryPath,protocolName))
-          else:
-            storage.changeDirectory(directoryPath)
-        if res['OK']:
-          # Obtain the full URL for the file from the file name and the cwd on the storage
-          if alternativeFileName:
-            res = storage.getCurrentURL(alternativeFileName)
-          else:
-            res = storage.getCurrentURL(fileName)
-          if not res['OK']:
-            infoStr ="StorageElement.putFile: Failed to get the file URL."
-            gLogger.error(infoStr,' With protocol %s' % protocolName)
-          else:
-            destUrl = res['Value']
-
-            ##############################################################
-            # Perform the transfer here....
-            fileTuple = (file,destUrl,size)
-            res = storage.putFile(fileTuple)
-            if res['OK']:
-              if res['Value']['Successful'].has_key(destUrl):
-                infoStr = "StorageElement.putFile: Successfully put %s with protocol %s." % (destUrl,protocolName)
-                gLogger.info(infoStr)
-                return S_OK(destUrl)
-              else:
-                errStr ="StorageElement.putFile: Failed to put file."
-                errMessage = res['Value']['Failed'][destUrl]
-                gLogger.error(errStr,'%s with protocol %s: %s' % (destUrl,protocolName,errMessage))
-            # If the transfer completely failed
-            else:
-              errStr = "StorageElement.putFile: Completely failed to put file: %s" % res['Message']
-              gLogger.error(errStr,"%s with protocol %s" % (destUrl,protocolName))
-
-
-    # If we get here we tried all the protocols and failed with all of them
-    errStr = "StorageElement.putFile: Failed to put file for all protocols."
-    gLogger.error(errStr,file)
-    return S_ERROR(errStr)
-
-  def replicateFile(self,sourcePfn,sourceFileSize,directoryPath,alternativeFileName=None):
-    """ This method will replicate a file to the Storage Element
-
-       'sourcePfn' is the source pfn supporting remote protocols
-       'sourceFileSize' is the size of the source file
-       'directoryPath' is the path of the directory to place the file
-       'alternativeFileName' is the target file name
-    """
-    fileName = os.path.basename(sourcePfn)
-    if alternativeFileName:
-      gLogger.info("StorageElement.replicateFile: Attempting to replicate %s to %s with file name %s." % (sourcePfn,directoryPath,alternativeFileName))
-      fileName = alternativeFileName
-    else:
-      gLogger.info("StorageElement.replicateFile: Attempting to replicate %s to %s." % (sourcePfn,directoryPath))
-    # Try all remote storages
-    for storage in self.storages:
-      # Get the parameters for the current storage
-      res = storage.getParameters()
-      protocolName = res['Value']['ProtocolName']
-      # If the SE is not local then we can't use local protocols
-      if protocolName in self.remoteProtocols:
-        gLogger.info("StorageElement.replicateFile: Attempting to replicate file with %s." % protocolName)
-        res =  storage.getCurrentURL(directoryPath)
-        if res['OK']:
-          destinationDirectory = res['Value']
-          res = storage.createDirectory(destinationDirectory)
-          if not res['OK']:
-            infoStr ="StorageElement.replicateFile: Failed to create directory."
-            gLogger.error(infoStr,'%s with protocol %s' % (directoryPath,protocolName))
-          else:
-            storage.changeDirectory(directoryPath)
-        if res['OK']:
-          # Obtain the full URL for the file from the file name and the cwd on the storage
-          res = storage.getCurrentURL(fileName)
-          if not res['OK']:
-            infoStr ="StorageElement.replicateFile: Failed to get the file URL."
-            gLogger.error(infoStr,'With protocol %s' % protocolName)
-          else:
-            destPfn = res['Value']
-            fileTuple = (sourcePfn,destPfn,sourceFileSize)
-            res = storage.putFile(fileTuple)
-            if res['OK']:
-              if res['Value']['Successful'].has_key(destPfn):
-                infoStr = "StorageElement.replicateFile: Successfully replicated %s with protocol %s." % (destPfn,protocolName)
-                gLogger.info(infoStr)
-                return S_OK(destPfn)
-              else:
-                errStr ="StorageElement.replicateFile: Failed to replicate file."
-                errMessage = res['Value']['Failed'][destPfn]
-                gLogger.error(errStr,'%s with protocol %s: %s' % (destPfn,protocolName,errMessage))
-            # If the transfer completely failed
-            else:
-              errStr = "StorageElement.replicateFile: Completely failed to replicate file: %s" % res['Message']
-              gLogger.error(errStr,"%s with protocol %s" % (destPfn,protocolName))
-    # If we get here we tried all the protocols and failed with all of them
-    errStr = "StorageElement.putFile: Failed to replicate file for all protocols."
-    gLogger.error(errStr,sourcePfn)
-    return S_ERROR(errStr)
-
   #################################################################################################
   #
   # These are the directory manipulation methods
   #
+
+  def getDirectory():
+    """ Missing
+    """
+    pass
 
   def putDirectory(self,localDirectory,directoryPath):
     """ This will recursively put the directory on the storage
@@ -486,6 +345,12 @@ class StorageElement:
 
   def getFile(self,pfn,localPath=False):
     return self.__executeFunction(pfn,'getFile',{'localPath':localPath})
+  
+  def putFile(self,pfn):
+    return self.__executeFunction(pfn,'putFile')
+
+  def replicateFile(self,pfn,sourceSize):
+    return self.__executeFunction(pfn,'putFile',{'sourceSize':sourceSize}) 
 
   def getFileMetadata(self,pfn):
     return self.__executeFunction(pfn,'getFileMetadata')
