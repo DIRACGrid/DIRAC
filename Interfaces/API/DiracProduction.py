@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.51 2008/11/10 12:40:54 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.52 2009/01/15 09:49:07 paterson Exp $
 # File :   DiracProduction.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are to be documented with example usage.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.51 2008/11/10 12:40:54 paterson Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.52 2009/01/15 09:49:07 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 import pprint
@@ -621,6 +621,25 @@ class DiracProduction:
     return S_OK('Production %s status updated' %productionID)
 
   #############################################################################
+  def deleteProduction(self,productionID,printOutput=False):
+    """ Deletes a production from the production management system ONLY. To be
+        used with extreme care after BK replica flags / LFC entries / Logs are
+        cleaned up.
+    """
+    if type(productionID)==type(2):
+      productionID=long(productionID)
+    if not type(productionID)==type(long(1)):
+      if not type(productionID) == type(" "):
+        return self.__errorReport('Expected string, long or int for production ID')
+
+    prodClient = RPCClient('ProductionManagement/ProductionManager',timeout=120)
+    result = prodClient.deleteProduction(productionID)
+    if result['OK'] and printOutput:
+      print 'Production %s is deleted from the production management system' %productionID
+
+    return result
+
+  #############################################################################
   def productionFileSummary(self,productionID,selectStatus=None,outputFile=None,orderOutput=True,printSummary=False,printOutput=False):
     """ Allows to investigate the input files for a given production transformation
         and provides summaries / selections based on the file status if desired.
@@ -1076,7 +1095,7 @@ class DiracProduction:
     self.log.verbose('Log target path is:\n%s' %logTargetPath)
     if bkLFNs:
       self.log.verbose('BookkeepingLFN(s) are:\n%s' %(string.join(bkLFNs,'\n')))
-    jobOutputs = {'ProductionOutputData':outputData,'LogFilePath':logFilePath,'LogTargetPath':logTargetPath,'BookkeeepingLFNs':bkLFNs}
+    jobOutputs = {'ProductionOutputData':outputData,'LogFilePath':logFilePath,'LogTargetPath':logTargetPath,'BookkeepingLFNs':bkLFNs}
     return S_OK(jobOutputs)
 
   #############################################################################
