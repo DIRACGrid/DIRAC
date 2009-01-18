@@ -214,121 +214,6 @@ class StorageElement:
     gLogger.error(errStr)
     return S_ERROR(errStr)
 
-  #################################################################################################
-  #
-  # These are the file transfer methods
-  #
-
-  def __ToMoveToReplicaManagerForGetFile():
-          ###############################################################################################
-          # Pre-transfer check. Check if file exists, get the size and check against the catalogue
-          res = storage.exists(protocolPfn)
-          if res['OK']:
-            if res['Value']['Successful'].has_key(protocolPfn):
-              fileExists = res['Value']['Successful'][protocolPfn]
-              if not fileExists:
-                errStr = "StorageElement.getFile: Source file does not exist."
-                gLogger.error(errStr,'%s for protocol %s' % (protocolPfn,protocolName))
-                return S_ERROR(errStr)
-              else:
-                infoStr = "StorageElement.getFile: File exists, checking size."
-                gLogger.info(infoStr,'%s for protocol %s' % (protocolPfn,protocolName))
-                res = storage.getFileSize(protocolPfn)
-                if res['OK']:
-                  if res['Value']['Successful'].has_key(protocolPfn):
-                    protocolSize = res['Value']['Successful'][protocolPfn]
-                    if not catalogueFileSize == protocolSize:
-                      infoStr ="StorageElement.getFile: Physical file size and catalogue file size mismatch."
-                      gLogger.error(infoStr,'%s : Physical %s, Catalogue %s' % (protocolPfn,protocolSize,catalogueFileSize))
-                      return S_ERROR('StorageElement.getFile: Physical file zero size')
-                    if protocolSize == 0:
-                      infoStr ="StorageElement.getFile: Physical file found with zero size."
-                      gLogger.error(infoStr,'%s at %s' % (protocolPfn,self.name))
-                      res = storage.removeFile(protocolPfn)
-                      if res['OK']:
-                        if res['Value']['Successful'].has_key(protocolPfn):
-                          infoStr ="StorageElement.getFile: Removed zero size file from storage."
-                          gLogger.info(infoStr,'%s with protocol %s' % (protocolPfn,protocolName))
-                        else:
-                          infoStr ="StorageElement.getFile: Failed to removed zero size file from storage."
-                          gLogger.error(infoStr,'%s with protocol %s' % (protocolPfn,protocolName))
-                      else:
-                        infoStr ="StorageElement.getFile: Failed to removed zero size file from storage."
-                        gLogger.error(infoStr,'%s with protocol %s' % (protocolPfn,protocolName))
-                      return S_ERROR('StorageElement.getFile: Physical file zero size')
-                    else:
-                      infoStr ="StorageElement.getFile: %s file size: %s." %  (protocolPfn,protocolSize)
-                      gLogger.info(infoStr)
-                else:
-                  infoStr = "StorageElement.getFile: Failed to get remote file size."
-                  gLogger.error(infoStr,'%s for protocol %s' % (protocolPfn,protocolName))
-            else:
-              infoStr = "StorageElement.getFile: Failed to determine whether file exists."
-              gLogger.error(infoStr,'%s for protocol %s' % (protocolPfn,protocolName))
-          else:
-            infoStr = "StorageElement.getFile: Failed to determine whether file exists."
-            gLogger.error(infoStr,'%s for protocol %s' % (protocolPfn,protocolName))
-
-  #################################################################################################
-  #
-  # These are the directory manipulation methods
-  #
-
-  def getDirectory():
-    """ Missing
-    """
-    pass
-
-  def putDirectory(self,localDirectory,directoryPath):
-    """ This will recursively put the directory on the storage
-
-        'localDirectory' is the local directory
-        'directoryPath' is a string containing the destination directory
-    """
-    successful = {}
-    failed = {}
-    localSE = self.isLocalSE()['Value']
-    # Try all of the storages one by one
-    for storage in self.storages:
-      pfnDict = {}
-      res = storage.getParameters()
-      protocolName = res['Value']['ProtocolName']
-      # If the SE is not local then we can't use local protocols
-      if protocolName in self.remoteProtocols:
-        useProtocol = True
-      elif localSE:
-        useProtocol = True
-      else:
-        useProtocol = False
-        gLogger.info("StorageElement.putDirectory: Protocol not appropriate for use: %s." % protocolName)
-      if useProtocol:
-        gLogger.info("StorageElement.putDirectory: Generating protocol PFNs for %s." % protocolName)
-        res =  storage.getCurrentURL(directoryPath)
-        if res['OK']:
-          storageDirectory = res['Value']
-          res  = pfnparse(storageDirectory)
-          if not res['OK']:
-            errStr = "StorageElement.putDirectory: Failed to parse supplied PFN."
-            gLogger.error(errStr,"%s: %s" % (storageDirectory,res['Message']))
-          else:
-            res = storage.getProtocolPfn(res['Value'],True)
-            if not res['OK']:
-              infoStr = "StorageElement.putDirectory%s." % res['Message']
-              gLogger.error(infoStr,'%s for protocol %s' % (storageDirectory,protocolName))
-            else:
-              remoteDirectory = res['Value']
-              res = storage.putDirectory((localDirectory,remoteDirectory))
-              if not res['OK']:
-                infoStr = "StorageElement.putDirectory: Completely failed to put directory."
-                gLogger.error(infoStr,'%s for protocol %s: %s' % (self.name,protocolName,res['Message']))
-              else:
-                if res['Value']['Successful'].has_key(remoteDirectory):
-                  return S_OK(res['Value']['Successful'][remoteDirectory])
-    # If we get here we tried all the protocols and failed with all of them
-    errStr = "StorageElement.putDirectory: Failed to put directory with all protocols."
-    gLogger.error(errStr,localDirectory)
-    return S_ERROR(errStr)
-
   ###########################################################################################
   #
   # This is the generic wrapper for simple operations
@@ -396,6 +281,12 @@ class StorageElement:
 
   def createDirectory(self,pfn):
     return self.__executeFunction(pfn,'createDirectory')
+
+  def putDirectory(self,pfn):
+    return self.__executeFunction(pfn,'putDirectory')
+
+  def getDirectory(self,pfn):
+    return self.__executeFunction(pfn,'getDirectory')
 
   def __executeFunction(self,pfn,method,argsDict={}):
     """
