@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.54 2008/12/22 16:33:45 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.55 2009/01/19 17:59:43 atsareg Exp $
 ########################################################################
 
 """  The Pilot Status Agent updates the status of the pilot jobs if the
      PilotAgents database.
 """
 
-__RCSID__ = "$Id: PilotStatusAgent.py,v 1.54 2008/12/22 16:33:45 rgracian Exp $"
+__RCSID__ = "$Id: PilotStatusAgent.py,v 1.55 2009/01/19 17:59:43 atsareg Exp $"
 
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, List
@@ -113,9 +113,18 @@ class PilotStatusAgent(Agent):
         for pRef in statusDict:
           pDict = statusDict[ pRef ]
           if pDict:
+            if pDict['isParent']:
+              self.log.verbose('Clear parametric parent %s' % pRef)
+              result = self.clearParentJob(pRef,pDict,connection)
+              if not result['OK']:
+                self.log.warn(result['Message'])
+              else:
+                self.log.info('Parameteric parent removed: %s' % pRef)  
             if pDict[ 'FinalStatus' ]:
+              self.log.verbose('Marking Status for %s to %s' % (pRef,pDict['Status']) )
               pilotsToAccount[ pRef ] = pDict
             else:
+              self.log.verbose('Setting Status for %s to %s' % (pRef,pDict['Status']) )
               result = self.pilotDB.setPilotStatus( pRef,
                                                     pDict['Status'],
                                                     pDict['DestinationSite'],
@@ -134,13 +143,57 @@ class PilotStatusAgent(Agent):
     connection.close()
 
     return S_OK()
+    
+  def clearParentJob(self,pRef,pDict,connection):
+    """ Clear the parameteric parent job from the PilotAgentsDB
+    """  
+    
+    childList = pDict['ChildRefs']
+    
+    # Check that at least one child is in the database
+    children_ok = False
+    for child in childList:
+      result = self.pilotDB.getPilotInfo(child, conn=connection)
+      if result['OK']:
+        if result['Value']:
+          children_ok = True
+         
+    if children_ok:   
+      return self.pilotDB.deletePilot(pRef, conn=connection)
+    else:
+      self.log.verbose('Adding children for parent %s' % pRef) 
+      result = self.pilotDB.getPilotInfo(pRef)
+      parentInfo = result['Value'][pRef]
+      tqID = parentInfo['TaskQueueID']
+      ownerDN = parentInfo['OwnerDN']
+      ownerGroup = parentInfo['OwnerGroup']
+      broker = parentInfo['Broker']
+      gridType = parentInfo['GridType']
+      result = self.pilotDB.addPilotTQReference(childList,tqID,ownerDN,ownerGroup,
+                                                broker=broker,gridType=gridType)
+      if not result['OK']:
+        return result
+      children_added = True  
+      for chRef,chDict in pDict['ChildDicts'].items():
+        result = self.pilotDB.setPilotStatus(chRef,chDict['Status'],
+                                             destination=chDict['DestinationSite'],
+                                             conn = connection)  
+        if not result['OK']:
+          children_added = False                                            
+      if children_added :
+        result = self.pilotDB.deletePilot(pRef, conn=connection) 
+      else:
+        return S_ERROR('Failed to add children')     
+    return S_OK()                    
 
   def handleOldPilots( self, connection ):
     # select all pilots that have not been updated in the last N days and declared them 
     # Deleted, accounting for them.
     pilotsToAccount = {}
     timeLimitToConsider = Time.toString( Time.dateTime() - Time.day * self.pilotStalledDays )
-    result = self.pilotDB.selectPilots( {'Status':self.queryStateList} , older=None, timeStamp='LastUpdateTime' )
+    # A.T. Below looks to be a bug 
+    #result = self.pilotDB.selectPilots( {'Status':self.queryStateList} , older=None, timeStamp='LastUpdateTime' )
+    result = self.pilotDB.selectPilots( {'Status':self.queryStateList} , older=timeLimitToConsider, timeStamp='LastUpdateTime' )
     if not result['OK']:
       self.log.error('Failed to get the Pilot Agents')
       return result
@@ -200,6 +253,7 @@ class PilotStatusAgent(Agent):
       self.log.info( "Accounting sent for %s pilots" % len(pilotsToAccount) )
       for pRef in pilotsToAccount:
         pDict = pilotsToAccount[pRef]
+        self.log.verbose('Setting Status for %s to %s' % (pRef,pDict['Status']) )
         self.pilotDB.setPilotStatus( pRef,
                                      pDict['Status'],
                                      pDict['DestinationSite'],
@@ -241,7 +295,7 @@ class PilotStatusAgent(Agent):
     self.log.verbose( 'Executing', ' '.join(cmd) )
     start = time.time()
     ret =  systemCall( 120, cmd, env = gridEnv )
-    self.log.info( '%s Job Status Execution Time:' % gridType, time.time()-start )
+    self.log.info( '%s Job Status Execution Time for %d jobs:' % (gridType,len(pilotRefList)), time.time()-start )
 
     if not ret['OK']:
       self.log.error( 'Failed to execute %s Job Status' % gridType, ret['Message'] )
@@ -283,13 +337,12 @@ class PilotStatusAgent(Agent):
         return S_ERROR()
       return S_OK( resultDict )
 
-
     stdout = ret['Value'][1]
-    stderr = ret['Value'][2]
+    stderr = ret['Value'][2]   
     resultDict = {}
     for job in List.fromChar(stdout,'\nStatus info for the Job :')[1:]:
       pRef = List.fromChar(job,'\n' )[0].strip()
-      resultDict[pRef] = self.__parseJobStatus( job, gridType )
+      resultDict[pRef] = self.__parseJobStatus( job, gridType )      
 
     return S_OK(resultDict)
 
@@ -311,15 +364,32 @@ class PilotStatusAgent(Agent):
         statusDate = time.strftime('%Y-%m-%d %H:%M:%S',time.strptime(statusDate,'%b %d %H:%M:%S %Y'))
     except Exception, x:
       self.log.error( 'Error parsing %s Job Status output:\n' % gridType, job )
+      
+    isParent = False    
+    if re.search('Nodes information',job):
+      isParent = True
+    isChild = False    
+    if re.search('Parent Job',job):
+      isChild = True   
+    
+    childRefs = []
+    childDicts = {}
+    if isParent:
+      for subjob in List.fromChar(job,' Status info for the Job :')[1:]:
+        chRef = List.fromChar(subjob,'\n' )[0].strip()
+        childDict = self.__parseJobStatus( subjob, gridType )  
+        childRefs.append(chRef)
+        childDicts[chRef] = childDict
 
     return { 'Status': status,
              'DestinationSite': destination,
              'StatusDate': statusDate,
-             'isChild': False,
-             'isParent': False,
+             'isChild': isChild,
+             'isParent': isParent,
              'ParentRef': False,
              'FinalStatus' : status in self.finalStateList,
-             'ChildRefs' : [] }
+             'ChildRefs' : childRefs,
+             'ChildDicts' : childDicts }
 
   def __getSiteFromCE( self, ce ):
     siteSections = gConfig.getSections('/Resources/Sites/LCG/')
@@ -364,4 +434,5 @@ class PilotStatusAgent(Agent):
       if not retVal[ 'OK' ]:
         return retVal
     return S_OK()
+
 
