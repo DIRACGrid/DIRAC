@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobMonitoringHandler.py,v 1.25 2009/01/15 08:44:57 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobMonitoringHandler.py,v 1.26 2009/01/19 18:17:20 atsareg Exp $
 ########################################################################
 
 """ JobMonitoringHandler is the implementation of the JobMonitoring service
@@ -11,7 +11,7 @@
 
 """
 
-__RCSID__ = "$Id: JobMonitoringHandler.py,v 1.25 2009/01/15 08:44:57 atsareg Exp $"
+__RCSID__ = "$Id: JobMonitoringHandler.py,v 1.26 2009/01/19 18:17:20 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -154,32 +154,32 @@ class JobMonitoringHandler( RequestHandler ):
     return jobDB.getCounters( 'Jobs',attrList, attrDict, newer=cutDate, timeStamp='LastUpdateTime')
 
 ##############################################################################
-  types_getJobStatus = [ [IntType,LongType] ]
+  types_getJobStatus = [ IntType ]
   def export_getJobStatus (self, jobID ):
 
     return jobDB.getJobAttribute(jobID, 'Status')
 
 ##############################################################################
-  types_getJobOwner = [ [IntType,LongType] ]
+  types_getJobOwner = [ IntType ]
   def export_getJobOwner (self, jobID ):
 
     return jobDB.getJobAttribute(jobID,'Owner')
 
 ##############################################################################
-  types_getJobSite = [ [IntType,LongType] ]
+  types_getJobSite = [ IntType ]
   def export_getJobSite (self, jobID ):
 
     return jobDB.getJobAttribute(jobID, 'Site')
 
 ##############################################################################
-  types_getJobJDL = [ [IntType,LongType] ]
+  types_getJobJDL = [ IntType ]
   def export_getJobJDL (self, jobID ):
 
     result = jobDB.getJobJDL(jobID)
     return result
 
 ##############################################################################
-  types_getJobLoggingInfo = [ [IntType,LongType] ]
+  types_getJobLoggingInfo = [ IntType ]
   def export_getJobLoggingInfo(self, jobID):
 
     return jobLoggingDB.getJobLoggingInfo(jobID)
@@ -209,12 +209,12 @@ class JobMonitoringHandler( RequestHandler ):
     return jobDB.getAttributesForJobList( jobIDs, ['Site'] )
 
 ##############################################################################
-  types_getJobSummary = [ [IntType,LongType] ]
+  types_getJobSummary = [ IntType ]
   def export_getJobSummary(self, jobID):
     return jobDB.getJobAttributes(jobID, SUMMARY)
 
 ##############################################################################
-  types_getJobPrimarySummary = [ [IntType,LongType] ]
+  types_getJobPrimarySummary = [ IntType ]
   def export_getJobPrimarySummary(self, jobID ):
     return jobDB.getJobAttributes(jobID, PRIMARY_SUMMARY)
 
@@ -393,7 +393,7 @@ class JobMonitoringHandler( RequestHandler ):
     return jobDB.getJobParameters( jobID )
 
 ##############################################################################
-  types_getJobAttributes = [ [IntType,LongType] ]
+  types_getJobAttributes = [ IntType ]
   def export_getJobAttributes( self, jobID ):
     return jobDB.getJobAttributes( jobID )
 
@@ -403,7 +403,7 @@ class JobMonitoringHandler( RequestHandler ):
     return jobDB.getSiteSummary()
 
 ##############################################################################
-  types_getJobHeartBeatData = [ [IntType,LongType] ]
+  types_getJobHeartBeatData = [ IntType ]
   def export_getJobHeartBeatData( self, jobID ):
     return jobDB.getHeartBeatData( jobID )
 
