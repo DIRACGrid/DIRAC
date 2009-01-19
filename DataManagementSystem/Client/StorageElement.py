@@ -285,8 +285,8 @@ class StorageElement:
   def putDirectory(self,pfn):
     return self.__executeFunction(pfn,'putDirectory')
 
-  def getDirectory(self,pfn):
-    return self.__executeFunction(pfn,'getDirectory')
+  def getDirectory(self,pfn,localPath=False):
+    return self.__executeFunction(pfn,'getDirectory',{'localPath':localPath})
 
   def __executeFunction(self,pfn,method,argsDict={}):
     """
