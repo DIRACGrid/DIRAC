@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.11 2008/12/22 10:42:04 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.12 2009/01/19 12:06:44 atsareg Exp $
 # File :   TaskQueueDirector.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -85,7 +85,7 @@
         SubmitPool (may want to recover it for SAM jobs)
 
 """
-__RCSID__ = "$Id: TaskQueueDirector.py,v 1.11 2008/12/22 10:42:04 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueDirector.py,v 1.12 2009/01/19 12:06:44 atsareg Exp $"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 
@@ -116,7 +116,7 @@ class TaskQueueDirector(AgentModule):
     
     self.am_setOption( "PollingTime", 60.0 )
 
-    self.am_setOption( "pilotsPerIteration", 20.0 )
+    self.am_setOption( "pilotsPerIteration", 40.0 )
     self.am_setOption( "lowestCPUBoost", 7200.0 )
     self.am_setOption( "extraPilotFraction", 0.2 )
     self.am_setOption( "extraPilots", 4 )
@@ -992,7 +992,7 @@ ParameterStart = 0;
       m = re.search("Status info for the Job : (https:\S+)",line)
       if (m):
         glite_id = m.group(1)
-        if glite_id not in references:
+        if glite_id not in references and glite_id != parentReference:
           references.append( glite_id )
         failed = 0
     if failed:
@@ -1084,4 +1084,5 @@ MyProxyServer = "no-myproxy.cern.ch";
         result.append(ret)
 
     return result
+
 
