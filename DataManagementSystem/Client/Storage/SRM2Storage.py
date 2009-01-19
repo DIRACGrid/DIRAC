@@ -1662,7 +1662,7 @@ class SRM2Storage(StorageBase):
 
   def __gfal_set_ids(self,gfalObject,srmRequestID):
     gLogger.debug("SRM2Storage.__gfal_set_ids: Performing gfal_set_ids.")
-    errCode,gfalObject,errMessage = gfal.gfal_set_ids(gfalObject,None,0,srmRequestID) 
+    errCode,gfalObject,errMessage = gfal.gfal_set_ids(gfalObject,None,0,str(srmRequestID))
     if not errCode == 0:
       errStr = "SRM2Storage.__gfal_set_ids: Failed to perform gfal_set_ids."
       if not errMessage:
