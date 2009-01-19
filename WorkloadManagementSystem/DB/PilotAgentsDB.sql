@@ -1,4 +1,4 @@
--- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.sql,v 1.16 2009/01/14 18:39:02 atsareg Exp $
+-- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.sql,v 1.17 2009/01/19 18:07:40 atsareg Exp $
 
 --------------------------------------------------------------------------------
 --
@@ -37,7 +37,7 @@ CREATE TABLE PilotAgents (
     CurrentJobID INTEGER NOT NULL DEFAULT 0,
     TaskQueueID INTEGER NOT NULL DEFAULT '0',
     PilotJobReference VARCHAR(255) NOT NULL DEFAULT 'Unknown',
-    DestinationSite VARCHAR(128) NOT NULL DEFAULT 'Multiple',
+    DestinationSite VARCHAR(128) NOT NULL DEFAULT 'NotAssigned',
     GridSite VARCHAR(128) NOT NULL DEFAULT 'Unknown',
     Broker VARCHAR(128) NOT NULL DEFAULT 'Unknown',
     OwnerDN VARCHAR(255) NOT NULL,
@@ -58,18 +58,22 @@ DROP TABLE IF EXISTS JobToPilotMapping;
 CREATE TABLE JobToPilotMapping (
     PilotID INTEGER NOT NULL,
     JobID INTEGER NOT NULL,
-    StartTime DATETIME NOT NULL
+    StartTime DATETIME NOT NULL,
+    PRIMARY KEY (PilotID),
+    INDEX (JobID)
 ) ENGINE = InnoDB;
 
 DROP TABLE IF EXISTS PilotOutput;
 CREATE TABLE PilotOutput (
     PilotID INTEGER NOT NULL,
     StdOutput MEDIUMBLOB,
-    StdError MEDIUMBLOB
+    StdError MEDIUMBLOB,
+    PRIMARY KEY (PilotID)
 );
 
 DROP TABLE IF EXISTS PilotRequirements;
 CREATE TABLE PilotRequirements (
     PilotID INTEGER NOT NULL,
-    Requirements BLOB
+    Requirements BLOB,
+    PRIMARY KEY (PilotID)
 );
