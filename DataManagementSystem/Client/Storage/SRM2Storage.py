@@ -188,189 +188,6 @@ class SRM2Storage(StorageBase):
   # These are the methods for directory manipulation
   #
 
-  def getDirectory(self,directoryTuple):
-    """ Get locally a directory from the physical storage together with all its files and subdirectories.
-    """
-    if type(directoryTuple) == types.TupleType:
-      urls = [directoryTuple]
-    elif type(directoryTuple) == types.ListType:
-      urls = directoryTuple
-    else:
-      return S_ERROR("SRM2Storage.getDirectory: Supplied directory info must be tuple of list of tuples.")
-    successful = {}
-    failed = {}
-    gLogger.debug("SRM2Storage.getDirectory: Attempting to get local copies of %s directories." % len(urls))
-
-    for src_directory,destination_directory in urls:
-      res = self.__getDir(src_directory,destination_directory)
-      if res['OK']:
-        if res['Value']['AllGot']:
-          gLogger.debug("SRM2Storage.getDirectory: Successfully got local copy of %s" % src_directory)
-          successful[src_directory] = {'Files':res['Value']['Files'],'Size':res['Value']['Size']}
-        else:
-          gLogger.error("SRM2Storage.getDirectory: Failed to get entire directory.", src_directory)
-          failed[src_directory] = {'Files':res['Value']['Files'],'Size':res['Value']['Size']}
-      else:
-        gLogger.error("SRM2Storage.getDirectory: Completely failed to get local copy of directory.", src_directory)
-        failed[src_directory] = {'Files':0,'Size':0}
-    resDict = {'Failed':failed,'Successful':successful}
-    return S_OK(resDict)
-
-  def __getDir(self,srcDirectory,destDirectory):
-    """ Black magic contained within...
-    """
-    filesGot = 0
-    sizeGot = 0
-
-    # Check the remote directory exists
-    res = self.isDirectory(srcDirectory)
-    if not res['OK']:
-      errStr = "SRM2Storage.__getDir: Failed to find the supplied source directory."
-      gLogger.error(errStr,srcDirectory)
-      return S_ERROR(errStr)
-    if not res['Value']['Successful'].has_key(srcDirectory):
-      errStr = "SRM2Storage.__getDir: Failed to find the supplied source directory."
-      gLogger.error(errStr,srcDirectory)
-      return S_ERROR(errStr)
-    if not res['Value']['Successful'][srcDirectory]:
-      errStr = "SRM2Storage.__getDir: The supplied source directory does not exist."
-      gLogger.error(errStr,srcDirectory)
-      return S_ERROR(errStr)
-
-    # Check the local directory exists and create it if not
-    if not os.path.exists(destDirectory):
-      os.makedirs(destDirectory)
-
-    # Get the remote directory contents
-    res = self.listDirectory(srcDirectory)
-    if not res['OK']:
-      errStr = "SRM2Storage.__getDir: Failed to list the source directory."
-      gLogger.error(errStr,srcDirectory)
-    if not res['Value']['Successful'].has_key(srcDirectory):
-      errStr = "SRM2Storage.__getDir: Failed to list the source directory."
-      gLogger.error(errStr,srcDirectory)
-
-    surlsDict = res['Value']['Successful'][srcDirectory]['Files']
-    subDirsDict = res['Value']['Successful'][srcDirectory]['SubDirs']
-
-    # First get all the files in the directory
-    gotFiles = True
-    for surl in surlsDict.keys():
-      surlGot = False
-      fileSize = surlsDict[surl]['Size']
-      fileName = os.path.basename(surl)
-      localPath = '%s/%s' % (destDirectory,fileName)
-      fileTuple = (surl,localPath,fileSize)
-      res = self.getFile(fileTuple)
-      if res['OK']:
-        if res['Value']['Successful'].has_key(surl):
-          filesGot += 1
-          sizeGot += fileSize
-          surlGot = True
-      if not surlGot:
-        gotFiles = False
-
-    # Then recursively get the sub directories
-    subDirsGot = True
-    for subDir in subDirsDict.keys():
-      subDirName = os.path.basename(subDir)
-      localPath = '%s/%s' % (destDirectory,subDirName)
-      dirSuccessful = False
-      res = self.__getDir(subDir,localPath)
-      if res['OK']:
-        if res['Value']['AllGot']:
-          dirSuccessful = True
-        filesGot += res['Value']['Files']
-        sizeGot += res['Value']['Size']
-      if not dirSuccessful:
-        subDirsGot = False
-
-    # Check whether all the operations were successful
-    if subDirsGot and gotFiles:
-      allGot = True
-    else:
-      allGot = False
-    resDict = {'AllGot':allGot,'Files':filesGot,'Size':sizeGot}
-    return S_OK(resDict)
-
-  def putDirectory(self, directoryTuple):
-    """ Put a local directory to the physical storage together with all its files and subdirectories.
-    """
-    if type(directoryTuple) == types.TupleType:
-      urls = [directoryTuple]
-    elif type(directoryTuple) == types.ListType:
-      urls = directoryTuple
-    else:
-      return S_ERROR("SRM2Storage.putDirectory: Supplied directory info must be tuple of list of tuples.")
-    successful = {}
-    failed = {}
-
-    gLogger.debug("SRM2Storage.putDirectory: Attemping to put %s directories to remote storage." % len(urls))
-    for sourceDir,destDir in urls:
-      res = self.__putDir(sourceDir,destDir)
-      if res['OK']:
-        if res['Value']['AllPut']:
-          gLogger.debug("SRM2Storage.putDirectory: Successfully put directory to remote storage: %s" % destDir)
-          successful[destDir] = {'Files':res['Value']['Files'],'Size':res['Value']['Size']}
-        else:
-          gLogger.error("SRM2Storage.putDirectory: Failed to put entire directory to remote storage.", destDir)
-          failed[destDir] = {'Files':res['Value']['Files'],'Size':res['Value']['Size']}
-      else:
-        gLogger.error("SRM2Storage.putDirectory: Completely failed to put directory to remote storage.", destDir)
-        failed[destDir] = {'Files':0,'Size':0}
-    resDict = {'Failed':failed,'Successful':successful}
-    return S_OK(resDict)
-
-  def __putDir(self,src_directory,dest_directory):
-    """ Black magic contained within...
-    """
-    filesPut = 0
-    sizePut = 0
-
-    remote_cwd = dest_directory
-    # Check the local directory exists
-    if not os.path.isdir(src_directory):
-      errStr = "SRM2Storage.__putDir: The supplied directory does not exist."
-      gLogger.error(errStr,src_directory)
-      return S_ERROR(errStr)
-
-    # Create the remote directory
-    res = self.createDirectory(dest_directory)
-    if not res['OK']:
-      errStr = "SRM2Storage.__putDir: Failed to create destination directory."
-      gLogger.error(errStr,dest_directory)
-      return S_ERROR(errStr)
-
-    # Get the local directory contents
-    contents = os.listdir(src_directory)
-    allSuccessful = True
-    for file in contents:
-      pathSuccessful = False
-      localPath = '%s/%s' % (src_directory,file)
-      remotePath = '%s/%s' % (dest_directory,file)
-      if os.path.isdir(localPath):
-        res = self.__putDir(localPath,remotePath)
-        if res['OK']:
-          if res['Value']['AllPut']:
-            pathSuccessful = True
-          filesPut += res['Value']['Files']
-          sizePut += res['Value']['Size']
-        else:
-          return S_ERROR('Failed to put directory')
-      else:
-        localFileSize = getSize(localPath)
-        fileTuple = (localPath,remotePath,localFileSize)
-        res = self.putFile(fileTuple)
-        if res['OK']:
-          if res['Value']['Successful'].has_key(remotePath):
-            filesPut += 1
-            sizePut += localFileSize
-            pathSuccessful = True
-      if not pathSuccessful:
-        allSuccessful = False
-    resDict = {'AllPut':allSuccessful,'Files':filesPut,'Size':sizePut}
-    return S_OK(resDict)
-
   ######################################################################
   #
   # This has to be updated once the new gfal_makedir() becomes available
@@ -1112,6 +929,161 @@ class SRM2Storage(StorageBase):
           failed[pathSURL] = "%s %s" % (errStr,errMessage)
 
     resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+  def putDirectory(self,path):
+    """ Put a local directory to the physical storage together with all its files and subdirectories.
+    """
+    res = self.checkArgumentFormat(path)
+    if not res['OK']:
+      return res
+    urls = res['Value']
+
+    successful = {}
+    failed = {}
+    gLogger.debug("SRM2Storage.putDirectory: Attemping to put %s directories to remote storage." % len(urls))
+    for destDir,sourceDir in urls.items():
+      res = self.__putDir(sourceDir,destDir)
+      if res['OK']:
+        if res['Value']['AllPut']:
+          gLogger.debug("SRM2Storage.putDirectory: Successfully put directory to remote storage: %s" % destDir)
+          successful[destDir] = {'Files':res['Value']['Files'],'Size':res['Value']['Size']}
+        else:
+          gLogger.error("SRM2Storage.putDirectory: Failed to put entire directory to remote storage.", destDir)
+          failed[destDir] = {'Files':res['Value']['Files'],'Size':res['Value']['Size']}
+      else:
+        gLogger.error("SRM2Storage.putDirectory: Completely failed to put directory to remote storage.", destDir)
+        failed[destDir] = {'Files':0,'Size':0}
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+  def __putDir(self,src_directory,dest_directory):
+    """ Black magic contained within...
+    """
+    filesPut = 0
+    sizePut = 0
+    # Check the local directory exists
+    if not os.path.isdir(src_directory):
+      errStr = "SRM2Storage.__putDir: The supplied directory does not exist."
+      gLogger.error(errStr,src_directory)
+      return S_ERROR(errStr)
+
+    # Get the local directory contents
+    contents = os.listdir(src_directory)
+    allSuccessful = True
+    directoryFiles = {}
+    for file in contents:
+      localPath = '%s/%s' % (src_directory,file)
+      remotePath = '%s/%s' % (dest_directory,file)
+      if not os.path.isdir(localPath):
+        directoryFiles[remotePath] = localPath
+      else:
+        res = self.__putDir(localPath,remotePath)
+        if not res['OK']:
+          errStr = "SRM2Storage.__putDir: Failed to put directory to storage."
+          gLogger.error(errStr,res['Message'])
+        else:
+          if not res['Value']['AllPut']:
+            pathSuccessful = False
+          filesPut += res['Value']['Files']
+          sizePut += res['Value']['Size']
+   
+    if directoryFiles:
+      res = self.putFile(directoryFiles)
+      if not res['OK']:
+        gLogger.error("SRM2Storage.__putDir: Failed to put files to storage.",res['Message'])
+        allSuccessful = False
+      else:
+        for pfn,fileSize in res['Value']['Successful'].items():
+          filesPut += 1
+          sizePut += fileSize
+        if res['Value']['Failed']:
+          allSuccessful = False
+    resDict = {'AllPut':allSuccessful,'Files':filesPut,'Size':sizePut}
+    return S_OK(resDict)
+
+  def getDirectory(self,path,localPath=False):
+    """ Get a local copy in the current directory of a physical file specified by its path
+    """
+    res = self.checkArgumentFormat(path)
+    if not res['OK']:
+      return res
+    urls = res['Value']
+        
+    failed = {}
+    successful = {}
+    gLogger.debug("SRM2Storage.getDirectory: Attempting to get local copies of %s directories." % len(urls))
+    for src_dir in urls.keys():
+      dirName = os.path.basename(src_dir)
+      if localPath:
+        dest_dir = "%s/%s" % (localPath,dirName)
+      else:
+        dest_dir = "%s/%s" % (os.getcwd(),dirName)
+      res = self.__getDir(src_dir,dest_dir)
+      if res['OK']:
+        if res['Value']['AllGot']:
+          gLogger.debug("SRM2Storage.getDirectory: Successfully got local copy of %s" % src_dir)
+          successful[src_dir] = {'Files':res['Value']['Files'],'Size':res['Value']['Size']}
+        else:
+          gLogger.error("SRM2Storage.getDirectory: Failed to get entire directory.", src_dir)
+          failed[src_dir] = {'Files':res['Value']['Files'],'Size':res['Value']['Size']}
+      else:
+        gLogger.error("SRM2Storage.getDirectory: Completely failed to get local copy of directory.", src_dir)
+        failed[src_dir] = {'Files':0,'Size':0}
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+  def __getDir(self,srcDirectory,destDirectory):
+    """ Black magic contained within...
+    """
+    filesGot = 0
+    sizeGot = 0
+
+    # Check the remote directory exists
+    res = self.__executeOperation(srcDirectory,'isDirectory')
+    if not res['OK']:
+      gLogger.error("SRM2Storage.__getDir: Failed to find the supplied source directory.",srcDirectory)
+      return res
+    if not res['Value']:
+      errStr = "SRM2Storage.__getDir: The supplied source path is not a directory."
+      gLogger.error(errStr,srcDirectory)
+      return S_ERROR(errStr)
+
+    # Check the local directory exists and create it if not
+    if not os.path.exists(destDirectory):
+      os.makedirs(destDirectory)
+
+    # Get the remote directory contents
+    res = self.__getDirectoryContents(srcDirectory)
+    if not res['OK']:
+      errStr = "SRM2Storage.__getDir: Failed to list the source directory."
+      gLogger.error(errStr,srcDirectory)
+    filesToGet = res['Value']['Files']
+    subDirs = res['Value']['SubDirs']
+
+    allSuccessful = True
+    res = self.getFile(filesToGet.keys(),destDirectory)
+    if not res['OK']:
+      gLogger.error("SRM2Storage.__getDir: Failed to get files from storage.",res['Message'])
+      allSuccessful = False
+    else:
+      for pfn,fileSize in res['Value']['Successful'].items():
+        filesGot += 1
+        sizeGot += fileSize
+      if res['Value']['Failed']:
+        allSuccessful = False
+
+    for subDir in subDirs:
+      subDirName = os.path.basename(subDir)
+      localPath = '%s/%s' % (destDirectory,subDirName)
+      res = self.__getDir(subDir,localPath)
+      if res['OK']:
+        if not res['Value']['AllGot']:
+          allSuccessful = True
+        filesGot += res['Value']['Files']
+        sizeGot += res['Value']['Size']
+
+    resDict = {'AllGot':allSuccessful,'Files':filesGot,'Size':sizeGot}
     return S_OK(resDict)
 
   def removeDirectory(self,path,recursive=False):
