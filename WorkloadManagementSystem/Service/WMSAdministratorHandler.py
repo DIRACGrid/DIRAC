@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSAdministratorHandler.py,v 1.42 2008/12/09 17:35:52 atsareg Exp $
+# $Id: WMSAdministratorHandler.py,v 1.43 2009/01/19 14:51:31 atsareg Exp $
 ########################################################################
 """
 This is a DIRAC WMS administrator interface.
@@ -14,7 +14,7 @@ Access to the pilot data:
 
 """
 
-__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.42 2008/12/09 17:35:52 atsareg Exp $"
+__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.43 2009/01/19 14:51:31 atsareg Exp $"
 
 import os, sys, string, uu, shutil
 from types import *
@@ -310,3 +310,18 @@ class WMSAdministratorHandler(RequestHandler):
     result = pilotDB.setPilotBenchmark(pilotRef,mark)
     return result
 
+  ##########################################################################################
+  types_setPilotGridCE = [StringType, StringType]
+  def export_setPilotGridCE(self,pilotRef,gridCE):
+    """ Set the pilot agent grid CE
+    """
+    result = pilotDB.setPilotDestinationSite(pilotRef,gridCE)
+    return result
+
+  ##########################################################################################
+  types_setPilotStatus = [StringType, StringType]
+  def export_setPilotStatus(self,pilotRef,status):
+    """ Set the pilot agent status
+    """
+    result = pilotDB.setPilotStatus(pilotRef,status)
+    return result
