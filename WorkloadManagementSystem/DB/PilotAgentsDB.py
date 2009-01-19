@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.48 2009/01/15 09:19:32 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.49 2009/01/19 18:06:27 atsareg Exp $
 ########################################################################
 """ PilotAgentsDB class is a front-end to the Pilot Agent Database.
     This database keeps track of all the submitted grid pilot jobs.
@@ -23,7 +23,7 @@
 
 """
 
-__RCSID__ = "$Id: PilotAgentsDB.py,v 1.48 2009/01/15 09:19:32 atsareg Exp $"
+__RCSID__ = "$Id: PilotAgentsDB.py,v 1.49 2009/01/19 18:06:27 atsareg Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
@@ -136,8 +136,8 @@ class PilotAgentsDB(DB):
     return S_OK()
 
 ##########################################################################################
-  def setPilotStatus( self, pilotRef, status, statusReason=None,
-                      destination=None, updateTime=None, conn = False ):
+  def setPilotStatus( self, pilotRef, status, destination=None, 
+                      updateTime=None, statusReason=None, gridSite=None, conn = False ):
     """ Set pilot job LCG status """
 
     setList = []
@@ -148,6 +148,8 @@ class PilotAgentsDB(DB):
       setList.append("LastUpdateTime=UTC_TIMESTAMP()")
     if statusReason:
       setList.append("StatusReason='%s'" % statusReason) 
+    if gridSite:
+      setList.append("GridSite='%s'" % gridSite)     
 
     set_string = ','.join(setList)
     req = "UPDATE PilotAgents SET "+set_string+" WHERE PilotJobReference='%s'" % pilotRef
@@ -157,7 +159,7 @@ class PilotAgentsDB(DB):
       return result
       
     if destination:
-      result = self.setPilotDestinationSite(pilotRef,destination)
+      result = self.setPilotDestinationSite(pilotRef,destination, conn = conn)
       if not result['OK']:
         return result
     return S_OK()    
@@ -234,32 +236,54 @@ class PilotAgentsDB(DB):
 
     return self._query(cmd)
 
+##########################################################################################
+  def deletePilots(self,pilotIDs, conn=False):
+    """ Delete Pilots with IDs in the given list from the PilotAgentsDB """
+
+    if type(pilotIDs) != type([]):
+      return S_ERROR('Input argument is not a List')
+      
+    failed = False  
+    for table in ['PilotAgents','PilotOutput','PilotRequirements','JobToPilotMapping']:
+      idString = ','.join([ str(id) for id in pilotIDs ])
+      req = "DELETE FROM %s WHERE PilotID in ( %s )" % (table,idString)
+      result = self._update(req, conn = conn)
+      if not result['OK']:
+        failed = table
+        
+    if failed:
+      return S_ERROR('Failed to remove pilot from %s table' % table)
+    else:
+      return S_OK()      
 
 ##########################################################################################
-  def deletePilot(self,pilotRef):
-    """ Delete Pilot reference from the LCGPilots table """
+  def deletePilot(self,pilotRef, conn=False):
+    """ Delete Pilot with the given reference from the PilotAgentsDB """
 
-
-
-    req = "DELETE FROM PilotAgents WHERE PilotJobReference='%s'" % pilotRef
-    result = self._update(req)
-    if not result['OK']:
-      return result
-
+    if type(pilotRef) == type(' '):
+      pilotID = self.__getPilotID(pilotRef)
+    else:
+      pilotID = pilotRef
+      
+    return self.deletePilots([pilotID],conn=conn)    
 
 ##########################################################################################
   def clearPilots(self,interval=30,aborted_interval=7):
     """ Delete all the pilot references submitted before <interval> days """
 
-    req = "DELETE FROM PilotAgents WHERE SubmissionTime < DATE_SUB(CURDATE(),INTERVAL %d DAY)" % interval
-    result = self._update(req)
-    if not result['OK']:
-      gLogger.warn('Error while clearing up pilots')
-    req = "DELETE FROM PilotAgents WHERE Status='Aborted' AND"
-    req += " SubmissionTime < DATE_SUB(CURDATE(),INTERVAL %d DAY)" % aborted_interval
-    result = self._update(req)
-    if not result['OK']:
-      gLogger.warn('Error while clearing up aborted pilots')
+    reqList = []
+    reqList.append("SELECT PilotID FROM PilotAgents WHERE SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" % interval )
+    reqList.append("SELECT PilotID FROM PilotAgents WHERE Status='Aborted' AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" % aborted_interval)
+
+    for req in reqList:
+      result = self._query(req)
+      if not result['OK']:
+        gLogger.warn('Error while clearing up pilots')
+      if result['Value']:
+        idList = [ x[0] for x in result['Value'] ]
+        result = self.deletePilots(idList)
+        if not result['OK']:
+          gLogger.warn('Error while deleting pilots')  
 
     return S_OK()
 
@@ -270,7 +294,7 @@ class PilotAgentsDB(DB):
 
     parameters = ['PilotJobReference','OwnerDN','OwnerGroup','GridType','Broker',
                   'Status','DestinationSite','BenchMark','ParentID',
-                  'SubmissionTime', 'PilotID', 'LastUpdateTime' ]
+                  'SubmissionTime', 'PilotID', 'LastUpdateTime', 'TaskQueueID', 'GridSite' ]
     if paramNames:
       parameters = paramNames
 
@@ -329,7 +353,7 @@ class PilotAgentsDB(DB):
     return S_OK( resDict )
 
 ##########################################################################################
-  def setPilotDestinationSite(self,pilotRef,destination):
+  def setPilotDestinationSite(self,pilotRef,destination,conn=False):
     """ Set the pilot agent destination site
     """
 
@@ -342,7 +366,7 @@ class PilotAgentsDB(DB):
       gridSite = 'Unknown'
 
     req = "UPDATE PilotAgents SET DestinationSite='%s', GridSite='%s' WHERE PilotJobReference='%s'" % (destination,gridSite,pilotRef)
-    result = self._update(req)
+    result = self._update(req, conn = conn)
     return result
 
  ##########################################################################################
@@ -416,28 +440,40 @@ class PilotAgentsDB(DB):
 
 ##########################################################################################
   def __getPilotID(self,pilotRef):
-    """ Get Pilot ID for the given pilot reference
+    """ Get Pilot ID for the given pilot reference or a list of references
     """
 
-    req = "SELECT PilotID from PilotAgents WHERE PilotJobReference='%s'" % pilotRef
-    result = self._query(req)
-    if not result['OK']:
-      return 0
-    else:
-      if result['Value']:
-        return int(result['Value'][0][0])
-      else:
+    if type(pilotRef) == type(' '):
+      req = "SELECT PilotID from PilotAgents WHERE PilotJobReference='%s'" % pilotRef
+      result = self._query(req)
+      if not result['OK']:
         return 0
+      else:
+        if result['Value']:
+          return int(result['Value'][0][0])
+        else:
+          return 0
+    else:
+      refString = ','.join(["'"+ref+"'" for ref in pilotRef])
+      req = "SELECT PilotID from PilotAgents WHERE PilotJobReference in ( %s )" % refString
+      result = self._query(req)      
+      if not result['OK']:
+        return []
+      elif result['Value']:
+        return [ x[0] for x in result['Value'] ] 
+      else:
+        return []   
 
 ##########################################################################################
-  def setJobForPilot(self,jobID,pilotRef):
+  def setJobForPilot(self,jobID,pilotRef,site=None):
     """ Store the jobID of the job executed by the pilot with reference pilotRef
     """
 
     pilotID = self.__getPilotID(pilotRef)
     if pilotID:
       reason = 'Report from job %d' % int(jobID)
-      result = self.setPilotStatus(pilotRef,status='Running',statusReason=reason)
+      result = self.setPilotStatus(pilotRef,status='Running',statusReason=reason,
+                                   gridSite=site )
       if not result['OK']:
         return result
       req = "INSERT INTO JobToPilotMapping VALUES (%d,%d,UTC_TIMESTAMP())" % (pilotID,jobID)
