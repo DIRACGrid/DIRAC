@@ -1,6 +1,6 @@
 """ This is the Data Integrity Client which allows the simple reporting of problematic file and replicas to the IntegrityDB and their status correctly updated in the FileCatalog.""" 
 
-__RCSID__ = "$Id: DataIntegrityClient.py,v 1.1 2009/01/20 17:33:08 acsmith Exp $"
+__RCSID__ = "$Id: DataIntegrityClient.py,v 1.2 2009/01/20 17:41:02 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -16,7 +16,7 @@ class DataIntegrityClient:
     """
     pass
 
-  def setFileProblematic(self,fileTuple,sourceComponent=''):
+  def setFileProblematic(self,lfn,reason,sourceComponent=''):
     """ This method updates the status of the file in the FileCatalog and the IntegrityDB
         The supplied fileTuple should be of the form (lfn,prognosis)
         
@@ -25,22 +25,22 @@ class DataIntegrityClient:
         
         sourceComponent is the component issuing the request.
     """  
-    if type(fileTuple) == types.ListType:
-      fileTuples = fileTuple
-    elif type(fileTuple) == types.TupleType:
-      fileTuples = [fileTuple]
+    if type(lfn) == types.ListType:
+      lfns = lfn
+    elif type(lfn) == types.StringType:
+      lfns = [lfn]
     else:
-      errStr = "DataIntegrityClient.setReplicaProblematic: Supplied file info must be tuple of list of tuples."
+      errStr = "DataIntegrityClient.setFileProblematic: Supplied file info must be list or a single LFN."
       gLogger.error(errStr) 
       return S_ERROR(errStr)
 
-    gLogger.info("DataIntegrityClient.setReplicaProblematic: Attempting to update %s files." % len(fileTuples))
+    gLogger.info("DataIntegrityClient.setFileProblematic: Attempting to update %s files." % len(lfns))
     statusTuples = []
     successful = {}
     failed = {}
     integrityDB = RPCClient('DataManagement/DataIntegrity',timeout=120)
     fileCatalog = FileCatalog()
-    for lfn,reason in replicaTuples:
+    for lfn in lfns:
       fileMetadata = {'Prognosis':reason,'LFN':lfn,'PFN':'','StorageElement':''}
       res = integrityDB.insertProblematic(sourceComponent,fileMetadata)
       if res['OK']:
@@ -49,7 +49,7 @@ class DataIntegrityClient:
         failed[lfn] = res['Message']
     res = fileCatalog.setFileStatus(statusTuples)
     if not res['OK']:
-      errStr = "DataIntegrityClient.setReplicaProblematic: Completely failed to update files."
+      errStr = "DataIntegrityClient.setFileProblematic: Completely failed to update files."
       gLogger.error(errStr,res['Message'])
     failed.update(res['Value']['Failed'])
     successful = res['Value']['Successful']
