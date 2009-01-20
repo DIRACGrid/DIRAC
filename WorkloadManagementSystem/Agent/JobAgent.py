@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.49 2009/01/14 14:46:04 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.50 2009/01/20 18:03:11 atsareg Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.49 2009/01/14 14:46:04 paterson Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.50 2009/01/20 18:03:11 atsareg Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -534,8 +534,15 @@ class JobAgent(Agent):
     """Sends back useful information for the pilotAgentsDB via the WMSAdministrator
        service.
     """
+    
+    gridCE = gConfig.getValue('LocalSite/GridCE','Unknown')
+    
     wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
-    result = wmsAdmin.setJobForPilot(int(jobID),str(self.pilotReference))
+    if gridCE != 'Unknown':
+      result = wmsAdmin.setJobForPilot(int(jobID),str(self.pilotReference),gridCE)
+    else:
+      result = wmsAdmin.setJobForPilot(int(jobID),str(self.pilotReference))
+        
     if not result['OK']:
       self.log.warn(result['Message'])
 
@@ -578,5 +585,19 @@ class JobAgent(Agent):
     fd.write('JobAgent Stopped at %s [UTC]' % (time.asctime(time.gmtime())))
     fd.close()
     return S_OK(message)
+  
+  #############################################################################
+  def finalize(self):
+    """Force the JobAgent to complete gracefully.
+    """
+    
+    gridCE = gConfig.getValue('LocalSite/GridCE','Unknown')
+    
+    wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
+    result = wmsAdmin.setPilotStatus(str(self.pilotReference),'Done')
+    if not result['OK']:
+      self.log.warn(result['Message'])
+    
+    Agent.finalize(self)
 
   #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
