@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.51 2009/01/21 08:09:56 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.52 2009/01/21 08:29:01 atsareg Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.51 2009/01/21 08:09:56 atsareg Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.52 2009/01/21 08:29:01 atsareg Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -594,7 +594,7 @@ class JobAgent(Agent):
     gridCE = gConfig.getValue('LocalSite/GridCE','Unknown')
     
     wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
-    result = wmsAdmin.setPilotStatus(str(self.pilotReference),'Done','Report from JobAgent')
+    result = wmsAdmin.setPilotStatus(str(self.pilotReference),'Done',gridCE,'Report from JobAgent')
     if not result['OK']:
       self.log.warn(result['Message'])
     
