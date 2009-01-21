@@ -1,8 +1,8 @@
 ########################################################################
-# $Id: NotificationClient.py,v 1.6 2008/10/08 12:33:20 rgracian Exp $
+# $Id: NotificationClient.py,v 1.1 2009/01/21 11:28:00 rgracian Exp $
 ########################################################################
 
-""" DIRAC WMS Notification Client class encapsulates the methods exposed
+""" DIRAC Notification Client class encapsulates the methods exposed
     by the Notification service.
 """
 
@@ -47,7 +47,7 @@ class NotificationClient:
 
       self.log.warn('Could not send mail with the following message:\n%s\n will attempt to send via NotificationService' %result['Message'])
 
-    notify = RPCClient('WorkloadManagement/Notification',useCertificates=False,timeout=120)
+    notify = RPCClient('Framework/Notification',useCertificates=False,timeout=120)
     result = notify.sendMail(address,subject,body,str(fromAddress))
     if not result['OK']:
       self.log.error('Could not send mail via central Notification service',result['Message'])
@@ -61,7 +61,7 @@ class NotificationClient:
     """ Send an SMS with body to the specified DIRAC user name.
     """
     self.log.verbose('Received signal to send the following SMS to %s:\n%s' %(userName,body))
-    notify = RPCClient('WorkloadManagement/Notification',useCertificates=False,timeout=120)
+    notify = RPCClient('Framework/Notification',useCertificates=False,timeout=120)
     result = notify.sendSMS(userName,body,str(fromAddress))
     if not result['OK']:
       self.log.error('Could not send SMS via central Notification service',result['Message'])

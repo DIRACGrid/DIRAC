@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.34 2008/10/08 12:33:20 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.35 2009/01/21 11:28:01 rgracian Exp $
 # File :   DiracAdmin.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,14 +14,14 @@ site banning and unbanning, WMS proxy uploading etc.
 
 """
 
-__RCSID__ = "$Id: DiracAdmin.py,v 1.34 2008/10/08 12:33:20 rgracian Exp $"
+__RCSID__ = "$Id: DiracAdmin.py,v 1.35 2009/01/21 11:28:01 rgracian Exp $"
 
 import DIRAC
 from DIRAC.ConfigurationSystem.Client.CSAPI                   import CSAPI
 from DIRAC.Core.DISET.RPCClient                               import RPCClient
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient          import gProxyManager
 from DIRAC.Core.Utilities.SiteCEMapping                       import getCEsForSite,getSiteCEMapping
-from DIRAC.WorkloadManagementSystem.Client.NotificationClient import NotificationClient
+from DIRAC.FrameworkSystem.Client.NotificationClient          import NotificationClient
 from DIRAC.Core.Security.X509Chain                            import X509Chain
 from DIRAC.Core.Security                                      import Locations, CS
 from DIRAC                                                    import gConfig, gLogger, S_OK, S_ERROR

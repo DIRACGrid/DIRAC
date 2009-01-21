@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: NotificationHandler.py,v 1.7 2008/07/08 10:35:27 paterson Exp $
+# $Id: NotificationHandler.py,v 1.1 2009/01/21 11:27:59 rgracian Exp $
 ########################################################################
 
 """ The Notification service provides a toolkit to contact people via email
@@ -14,7 +14,7 @@
     Grid, an email could be sent by default with the metadata of the file.
 """
 
-__RCSID__ = "$Id: NotificationHandler.py,v 1.7 2008/07/08 10:35:27 paterson Exp $"
+__RCSID__ = "$Id: NotificationHandler.py,v 1.1 2009/01/21 11:27:59 rgracian Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -59,7 +59,7 @@ class NotificationHandler( RequestHandler ):
     if not mobile:
       return S_ERROR('No registered mobile number for %s' %userName)
 
-    csSection = PathFinder.getServiceSection( 'WorkloadManagement/Notification' )
+    csSection = PathFinder.getServiceSection( 'Framework/Notification' )
     smsSwitch = gConfig.getValue('%s/SMSSwitch' %csSection,'')
     if not smsSwitch:
       return S_ERROR('No SMS switch is defined in CS path %s/SMSSwitch' %csSection)
