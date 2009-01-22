@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/MightyOptimizer.py,v 1.10 2008/12/04 14:10:41 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/MightyOptimizer.py,v 1.11 2009/01/22 15:35:49 acasajus Exp $
 
 
 """  SuperOptimizer
@@ -137,7 +137,7 @@ class MightyOptimizer(AgentModule):
       optimizer = optimizerClass( "WorkloadManagement/%s" % agentName, self.am_getModuleParam( 'fullName' ) )
       result = optimizer.am_initialize( self.jobDB, self.jobLoggingDB )
       if not result[ 'OK' ]:
-        return S_ERROR( errorMsg = "Can't initialize optimizer %s: %s" % ( optimizerName, result[ 'Message' ] ) )
+        return S_ERROR( "Can't initialize optimizer %s: %s" % ( optimizerName, result[ 'Message' ] ) )
     except Exception, e:
       gLogger.exception( "LOADERROR" )
       return S_ERROR( "Can't load optimizer %s: %s" % ( optimizerName, str(e) ) )

@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/AgentModule.py,v 1.8 2008/12/04 18:24:15 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/AgentModule.py,v 1.9 2009/01/22 15:35:19 acasajus Exp $
 ########################################################################
 """ Base class for all agent modules
 
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: AgentModule.py,v 1.8 2008/12/04 18:24:15 acasajus Exp $"
+__RCSID__ = "$Id: AgentModule.py,v 1.9 2009/01/22 15:35:19 acasajus Exp $"
 
 import os
 import threading
@@ -63,6 +63,7 @@ class AgentModule:
     self.__initialized = False
 
   def am_initialize( self, *initArgs ):
+    agentName = self.am_getModuleParam( 'fullName' )
     result = self.initialize( *initArgs )
     if result == None:
       return S_ERROR( "Error while initializing %s module: initialize must return S_OK/S_ERROR" % agentName )
