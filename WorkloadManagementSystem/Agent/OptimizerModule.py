@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/OptimizerModule.py,v 1.7 2009/01/12 17:08:34 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/OptimizerModule.py,v 1.8 2009/01/22 15:46:14 acasajus Exp $
 # File :   Optimizer.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
      optimizer instances and associated actions are performed there.
 """
 
-__RCSID__ = "$Id: OptimizerModule.py,v 1.7 2009/01/12 17:08:34 paterson Exp $"
+__RCSID__ = "$Id: OptimizerModule.py,v 1.8 2009/01/22 15:46:14 acasajus Exp $"
 
 from DIRAC.WorkloadManagementSystem.DB.JobDB         import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB  import JobLoggingDB
@@ -113,7 +113,11 @@ class OptimizerModule(AgentModule):
         jobDef[ 'jdl' ] = result[ 'Value' ]
     #Load the classad if needed
     if 'jdl' in jobDef and not 'classad' in jobDef:
-      classad = ClassAd( jobDef[ 'jdl' ] )
+      try:
+        classad = ClassAd( jobDef[ 'jdl' ] )
+      except:
+        self.log.debug( "Cannot load JDL" )
+        return S_ERROR( 'Illegal Job JDL' )
       if not classad.isOK():
         self.log.debug("Warning: illegal JDL for job %s, will be marked problematic" % (job))
         return S_ERROR( 'Illegal Job JDL' )
