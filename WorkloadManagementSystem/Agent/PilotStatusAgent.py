@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.55 2009/01/19 17:59:43 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.56 2009/01/23 18:16:46 atsareg Exp $
 ########################################################################
 
 """  The Pilot Status Agent updates the status of the pilot jobs if the
      PilotAgents database.
 """
 
-__RCSID__ = "$Id: PilotStatusAgent.py,v 1.55 2009/01/19 17:59:43 atsareg Exp $"
+__RCSID__ = "$Id: PilotStatusAgent.py,v 1.56 2009/01/23 18:16:46 atsareg Exp $"
 
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, List
@@ -23,6 +23,7 @@ from types import *
 
 AGENT_NAME = 'WorkloadManagement/PilotStatusAgent'
 MAX_JOBS_QUERY = 10
+MAX_WAITING_STATE_LENGTH = 6
 
 class PilotStatusAgent(Agent):
 
@@ -78,6 +79,10 @@ class PilotStatusAgent(Agent):
                   'OwnerGroup':ownerGroup,
                   'GridType':gridType,
                   'Broker':broker}
+           
+      result = self.clearWaitingPilots(condDict)
+      if not result['OK']:
+        self.log.warn('Failed to clear Waiting Pilot Jobs')     
 
       result = self.pilotDB.selectPilots(condDict)
       if not result['OK']:
@@ -143,6 +148,31 @@ class PilotStatusAgent(Agent):
     connection.close()
 
     return S_OK()
+    
+  def clearWaitingPilots(self,condDict):
+    """ Clear pilots in the faulty Waiting state
+    """   
+    
+    last_update = Time.dateTime() - MAX_WAITING_STATE_LENGTH*Time.hour
+    clearDict = {}
+    clearDict = {'Status':'Waiting',
+                  'OwnerDN':condDict['OwnerDN'],
+                  'OwnerGroup':condDict['OwnerGroup'],
+                  'GridType':condDict['GridType'],
+                  'Broker':condDict['Broker']}
+    result = self.pilotDB.selectPilots(clearDict,older=last_update)
+    if not result['OK']:
+      self.log.warn('Failed to get the Pilot Agents fpr Waiting state')
+      return result
+    if not result['Value']:
+      return S_OK()
+    refList = result['Value']  
+    
+    for pilotRef in refList:
+      self.log.info('Setting Waiting pilot to Aborted: %s' % pilotRef)
+      result = self.pilotDB.setPilotStatus(pilotRef,'Aborted',statusReason='Exceeded max waiting time')
+      
+    return S_OK()              
     
   def clearParentJob(self,pRef,pDict,connection):
     """ Clear the parameteric parent job from the PilotAgentsDB
@@ -429,10 +459,8 @@ class PilotStatusAgent(Agent):
         pA.setValueByKey( 'Jobs', 0 )
       else:
         pA.setValueByKey( 'Jobs', len( pData['Jobs'] ) )
-      self.log.info( "Added accounting record for pilot %s" % pData[ 'PilotID' ] )
+      self.log.verbose( "Added accounting record for pilot %s" % pData[ 'PilotID' ] )
       retVal = gDataStoreClient.addRegister( pA )
       if not retVal[ 'OK' ]:
         return retVal
     return S_OK()
-
-
