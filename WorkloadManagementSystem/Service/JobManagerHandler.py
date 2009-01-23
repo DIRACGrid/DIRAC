@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobManagerHandler.py,v 1.29 2009/01/14 11:11:58 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobManagerHandler.py,v 1.30 2009/01/23 13:59:10 atsareg Exp $
 ########################################################################
 
 """ JobManagerHandler is the implementation of the JobManager service
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: JobManagerHandler.py,v 1.29 2009/01/14 11:11:58 acasajus Exp $"
+__RCSID__ = "$Id: JobManagerHandler.py,v 1.30 2009/01/23 13:59:10 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -170,7 +170,7 @@ class JobManagerHandler( RequestHandler ):
                                                                         RIGHT_RESCHEDULE )
     for jobID in validJobList:
       gtaskQueueDB.deleteJob(jobID)
-      gJobDB.deleteJobFromQueue(jobID)
+      #gJobDB.deleteJobFromQueue(jobID)
       result  = gJobDB.rescheduleJob( jobID )
       gLogger.debug( str( result ) )
       if not result['OK']:
@@ -212,9 +212,9 @@ class JobManagerHandler( RequestHandler ):
         bad_ids.append(jobID)
       else:
         good_ids.append(jobID)
-      result = gJobDB.deleteJobFromQueue(jobID)
-      if not result['OK']:
-        gLogger.warn('Failed to delete job from the TaskQueue (old)')
+      #result = gJobDB.deleteJobFromQueue(jobID)
+      #if not result['OK']:
+      #  gLogger.warn('Failed to delete job from the TaskQueue (old)')
       result = gtaskQueueDB.deleteJob(jobID)
       if not result['OK']:
         gLogger.warn('Failed to delete job from the TaskQueue')
@@ -259,9 +259,9 @@ class JobManagerHandler( RequestHandler ):
         result = gJobDB.setJobStatus(jobID,'Killed','Marked for termination')
         if not result['OK']:
           gLogger.warn('Failed to set job status')
-        result = gJobDB.deleteJobFromQueue(jobID)
-        if not result['OK']:
-          gLogger.warn('Failed to delete job from the TaskQueue (old)')
+        #result = gJobDB.deleteJobFromQueue(jobID)
+        #if not result['OK']:
+        #  gLogger.warn('Failed to delete job from the TaskQueue (old)')
         result = gtaskQueueDB.deleteJob(jobID)
         if not result['OK']:
           gLogger.warn('Failed to delete job from the TaskQueue')
@@ -301,7 +301,7 @@ class JobManagerHandler( RequestHandler ):
         bad_ids.append(jobID)
       else:
         gtaskQueueDB.deleteJob(jobID)
-        gJobDB.deleteJobFromQueue(jobID)
+        #gJobDB.deleteJobFromQueue(jobID)
         result  = gJobDB.rescheduleJob( jobID )
         if not result['OK']:
           bad_ids.append(jobID)
