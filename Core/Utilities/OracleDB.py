@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/OracleDB.py,v 1.7 2008/07/09 12:21:34 zmathe Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/OracleDB.py,v 1.8 2009/01/23 12:04:05 zmathe Exp $
 ########################################################################
 """ DIRAC Basic Oracle Class
     It provides access to the basic MySQL methods in a multithread-safe mode
@@ -50,7 +50,7 @@
 
 """
 
-__RCSID__ = "$Id: OracleDB.py,v 1.7 2008/07/09 12:21:34 zmathe Exp $"
+__RCSID__ = "$Id: OracleDB.py,v 1.8 2009/01/23 12:04:05 zmathe Exp $"
 
 
 from DIRAC                                  import gLogger
@@ -210,6 +210,7 @@ class OracleDB:
       retDict = self._except( '_query', x, 'Excution failed.' )
 
     try:
+      connection.commit()
       cursor.close()
     except Exception, v:
       pass
