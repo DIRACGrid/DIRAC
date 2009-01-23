@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.50 2009/01/21 08:11:49 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.51 2009/01/23 13:58:02 atsareg Exp $
 ########################################################################
 """ PilotAgentsDB class is a front-end to the Pilot Agent Database.
     This database keeps track of all the submitted grid pilot jobs.
@@ -23,7 +23,7 @@
 
 """
 
-__RCSID__ = "$Id: PilotAgentsDB.py,v 1.50 2009/01/21 08:11:49 atsareg Exp $"
+__RCSID__ = "$Id: PilotAgentsDB.py,v 1.51 2009/01/23 13:58:02 atsareg Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
@@ -822,10 +822,14 @@ class PilotAgentsDB(DB):
         # Add the total number of pilots seen in the last day
         itemList.append(total)
         # Add pilot submission efficiency evaluation
-        if done > 0:
-          eff = float(done-empty)/float(done)*100.
+        if (done-empty) > 0:  
+          eff = float(done)/float(done-empty)
+        elif done == 0:
+          eff = 0.  
+        elif empty == done:
+          eff = 99.   
         else:
-          eff = 100.
+          eff = 0.  
         itemList.append('%.2f' % eff)
         # Add pilot job efficiency evaluation
         if total > 0:
@@ -864,10 +868,14 @@ class PilotAgentsDB(DB):
         total = sumDict["Total"]
 
         # Add pilot submission efficiency evaluation
-        if done > 0:
-          eff = float(done-empty)/float(done)*100.
+        if (done-empty) > 0:      
+          eff = float(done)/float(done-empty)
+        elif done == 0:
+          eff = 0.  
+        elif empty == done:
+          eff = 99.   
         else:
-          eff = 100.
+          eff = 0.
         itemList.append('%.2f' % eff)
         # Add pilot job efficiency evaluation
         if total > 0:
@@ -929,7 +937,7 @@ class PilotAgentsDB(DB):
     finalDict = {}
     finalDict['TotalRecords'] = len(records)
     finalDict['ParameterNames'] = paramNames+ \
-                                 ['Total','SubmissionEff','PilotJobEff','Status','InMask']
+                                 ['Total','PilotsPerJob','PilotJobEff','Status','InMask']
 
     # Return all the records if maxItems == 0 or the specified number otherwise
     if maxItems:
@@ -944,11 +952,15 @@ class PilotAgentsDB(DB):
     total = siteSumDict["Total"]
 
     # Add pilot submission efficiency evaluation
-    if done > 0:
-      eff = float(done-empty)/float(done)*100.
+    if (done-empty) > 0:
+      eff = float(done)/float(done-empty)
+    elif done == 0:
+      eff = 0.  
+    elif empty == done:
+      eff = 99.   
     else:
-      eff = 100.
-    siteSumDict['SubmissionEff'] = '%.2f' % eff
+      eff = 0.
+    siteSumDict['PilotsPerJob'] = '%.2f' % eff
     # Add pilot job efficiency evaluation
     if total > 0:
       eff = float(total-aborted)/float(total)*100.
