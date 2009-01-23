@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.12 2009/01/19 12:06:44 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.13 2009/01/23 07:40:12 rgracian Exp $
 # File :   TaskQueueDirector.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -85,7 +85,7 @@
         SubmitPool (may want to recover it for SAM jobs)
 
 """
-__RCSID__ = "$Id: TaskQueueDirector.py,v 1.12 2009/01/19 12:06:44 atsareg Exp $"
+__RCSID__ = "$Id: TaskQueueDirector.py,v 1.13 2009/01/23 07:40:12 rgracian Exp $"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 
@@ -661,6 +661,12 @@ class PilotDirector:
     pilotJDL += 'TimePolicy    = ( %s );\n' % self.timePolicy
 
     requirements = list(self.requirements)
+    if 'GridCEs' in taskQueueDict and taskQueueDict['GridCEs']:
+      # if there an explicit Grig CE requested by the TQ, remove the Ranking requirement
+      for req in self.requirements:
+        if req.strip().lower()[:6] == 'rank >':
+          requirements.remove(req)
+          
     requirements.append( 'other.GlueCEPolicyMaxCPUTime > TimePolicy' )
 
     siteRequirements = '\n || '.join( [ 'other.GlueCEInfoHostName == "%s"' % s for s in ceMask ] )
