@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSanityAgent.py,v 1.16 2009/01/13 14:52:18 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSanityAgent.py,v 1.17 2009/01/23 14:07:14 paterson Exp $
 # File :   JobSanityAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,7 +13,7 @@
        - Input sandbox not correctly uploaded.
 """
 
-__RCSID__ = "$Id: JobSanityAgent.py,v 1.16 2009/01/13 14:52:18 paterson Exp $"
+__RCSID__ = "$Id: JobSanityAgent.py,v 1.17 2009/01/23 14:07:14 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
@@ -71,6 +71,9 @@ class JobSanityAgent(OptimizerModule):
     self.log.debug( "Checking Loop Starts for job %s" % job )
 
     jobType = self.jobDB.getJobAttribute( job, 'JobType' )
+    if not jobType['OK']:
+      return S_ERROR('Could not determine job type')
+    jobType = jobType['Value']
 
     #Input data check
     if self.inputDataCheck:
