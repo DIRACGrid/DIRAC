@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/DB/DataLoggingDB.py,v 1.9 2009/01/27 09:09:33 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/DB/DataLoggingDB.py,v 1.10 2009/01/27 17:50:56 acsmith Exp $
 ########################################################################
 """ DataLoggingDB class is a front-end to the Data Logging Database.
     The following methods are provided
@@ -8,7 +8,7 @@
     getFileLoggingInfo()
 """
 
-__RCSID__ = "$Id: DataLoggingDB.py,v 1.9 2009/01/27 09:09:33 acsmith Exp $"
+__RCSID__ = "$Id: DataLoggingDB.py,v 1.10 2009/01/27 17:50:56 acsmith Exp $"
 
 import re, os, sys
 import time, datetime
@@ -89,7 +89,7 @@ class DataLoggingDB(DB):
 
     return_value = []
     for row in result['Value']:
-      return_value.append((row[0],str(row[1]),row[2],row[3]))
+      return_value.append((str(row[0]),str(row[1]),str(row[2]),str(row[3])))
     return S_OK(return_value)
 
   def getUniqueStates(self):
