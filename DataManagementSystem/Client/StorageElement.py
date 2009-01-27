@@ -357,6 +357,10 @@ class StorageElement:
 
   def __executeSingleFile(self,pfn,operation,arguments={}):
     res = self.__executeFunction(pfn,operation,arguments)
+    if type(pfn) == types.ListType:
+      pfn = pfn[0]
+    elif type(pfn) == types.DictType:
+      pfn = pfn.keys()[0]
     if not res['OK']:
       return res
     elif res['Value']['Failed'].has_key(pfn):
