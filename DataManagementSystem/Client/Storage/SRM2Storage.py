@@ -718,6 +718,8 @@ class SRM2Storage(StorageBase):
     return S_OK(resDict)
 
   def __getFile(self,src_url,dest_file):
+    if not os.path.exists(os.path.dirname(dest_file)):
+      os.makedirs(os.path.dirname(dest_file))
     if os.path.exists(dest_file):
       gLogger.debug("SRM2Storage.getFile: Local file already exists %s. Removing..." % dest_file)
       os.remove(dest_file)     
