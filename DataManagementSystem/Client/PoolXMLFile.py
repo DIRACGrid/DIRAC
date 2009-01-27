@@ -1,11 +1,11 @@
 ########################################################################
-# $Id: PoolXMLFile.py,v 1.1 2009/01/27 14:23:24 paterson Exp $
+# $Id: PoolXMLFile.py,v 1.2 2009/01/27 14:55:02 paterson Exp $
 ########################################################################
 """ The POOL XML File module provides a means to extract the GUID of a file or list
     of files by searching for an appropriate POOL XML Catalog in the specified directory.
 """
 
-__RCSID__ = "$Id: PoolXMLFile.py,v 1.1 2009/01/27 14:23:24 paterson Exp $"
+__RCSID__ = "$Id: PoolXMLFile.py,v 1.2 2009/01/27 14:55:02 paterson Exp $"
 
 import os,glob,re,tarfile,string
 
@@ -31,7 +31,7 @@ def getGUID(fileNames,directory=''):
 
   gLogger.verbose('Will look for POOL XML Catalog GUIDs in %s for %s' %(directory,string.join(fileNames,', ')))
   patterns = ['*.xml','*.xml*gz']
-  omissions = ['BAK','temp']
+  omissions = ['BAK'] # to be ignored for production files
 
   #First obtain valid list of unpacked catalog files in directory
   poolCatalogList = []
@@ -39,7 +39,9 @@ def getGUID(fileNames,directory=''):
   for pattern in patterns:
     fileList = glob.glob(os.path.join(directory,pattern))
     for fname in fileList:
-      if tarfile.is_tarfile(fname):
+      if re.search('BAK',fname):
+        gLogger.verbose('Ignoring BAK file: %s' %fname)
+      elif tarfile.is_tarfile(fname):
         try:
           gLogger.debug('Unpacking catalog XML file %s' %(os.path.join(directory,fname)))
           tarFile = tarfile.open(os.path.join(directory,fname),'r')
