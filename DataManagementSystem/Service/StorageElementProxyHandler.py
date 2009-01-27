@@ -30,6 +30,111 @@ def initializeStorageElementProxyHandler(serviceInfo):
 
 class StorageElementProxyHandler(RequestHandler):
 
+  types_callProxyMethod = [StringType,StringType,ListType,DictType]
+  def export_callProxyMethod(self, se, name, args, kargs):
+    """ A generic method to call methods of the Storage Element.
+    """
+    res = pythonCall(0,self.__proxyWrapper,se,name,args,kargs)
+    if res['OK']:
+      return res['Value']   
+    else:
+      return res
+
+  def __proxyWrapper(self,se,name,args,kargs):
+    """ The wrapper will obtain the client proxy and set it up in the environment.
+
+        The required functionality is then executed and returned to the client.
+    """
+    res = self.__prepareSecurityDetails()
+    if not res['OK']:
+      return res
+    try:
+      storageElement = StorageElement(se)
+      method = getattr(storageElement,name)
+    except AttributeError, x:
+      exStr = "Exception: no such method."
+      gLogger.exception(exStr,name,x)
+      return S_ERROR(error)
+    result = method(*args,**kargs)
+    return result
+
+  types_uploadFile = [StringType,StringType]
+  def export_uploadFile(self,se,pfn):
+    """ This method uploads a file present in the local cache to the specified storage element
+    """
+    res = pythonCall(0,self.__uploadFile,se,pfn)
+    if res['OK']:
+      return res['Value']
+    else:
+      return res
+
+  def __uploadFile(self, se, pfn):
+    res = self.__prepareSecurityDetails()
+    if not res['OK']:
+      return res
+
+    # Put file to the SE
+    try:
+      storageElement = StorageElement(se)
+    except AttributeError, x:
+      errStr = "__uploadFile: Exception while instantiating the Storage Element."
+      gLogger.exception(errStr,se,str(x))
+      return S_ERROR(errStr)
+    putFileDir = "%s/putFile" % base_path
+    localFileName = "%s/%s" % (putFileDir,os.path.basename(pfn))
+    res = storageElement.putFile({pfn:localFileName},True)
+    if not res['OK']:
+      gLogger.error("prepareFile: Failed to put local file to storage.",res['Message'])
+    # Clear the local cache
+    try:
+      shutil.rmtree(putFileDir)
+      gLogger.debug("Cleared existing putFile cache")
+    except Exception, x:
+      gLogger.exception("Failed to remove source dir.",getFileDir,x)
+    return res
+
+  types_prepareFile = [StringType,StringType]
+  def export_prepareFile(self, se, pfn):
+    """ This method simply gets the file to the local storage area
+    """
+    res = pythonCall(0,self.__prepareFile,se,pfn)
+    if res['OK']:
+      return res['Value']
+    else:
+      return res
+
+  def __prepareFile(self,se,pfn):
+    res = self.__prepareSecurityDetails()
+    if not res['OK']:
+      return res
+  
+    # Clear the local cache
+    getFileDir = "%s/getFile" % base_path
+    if os.path.exists(getFileDir):
+      try:
+        shutil.rmtree(getFileDir)
+        gLogger.debug("Cleared existing getFile cache")
+      except Exception, x:
+        gLogger.exception("Failed to remove destination directory.",getFileDir,x)
+   
+    # Get the file to the cache 
+    try:
+      storageElement = StorageElement(se)
+    except AttributeError, x:
+      errStr = "prepareFile: Exception while instantiating the Storage Element."
+      gLogger.exception(errStr,se,str(x))
+      return S_ERROR(errStr)
+    res = storageElement.getFile(pfn,"%s/getFile" % base_path,True)
+    if not res['OK']:
+      gLogger.error("prepareFile: Failed to get local copy of file.",res['Message'])
+      return res
+    return S_OK()
+
+  ############################################################
+  #
+  # This is the method to setup the proxy and configure the environment with the client credential
+  #
+
   def __prepareSecurityDetails(self):
     """ Obtains the connection details for the client
     """
@@ -57,78 +162,6 @@ class StorageElementProxyHandler(RequestHandler):
       exStr = "__getConnectionDetails: Failed to get client connection details."
       gLogger.exception(exStr,'',x)
       return S_ERROR(exStr)
-
-  types_uploadFile = [StringType,StringType]
-  def export_uploadFile(self, pfn, se):
-    """ This method uploads a file present in the local cache to the specified storage element
-    """
-    res = pythonCall(0,self.__uploadFile,pfn,se)
-    if res['OK']:
-      return res['Value']
-    else:
-      return res
-
-  def __uploadFile(self,pfn,se):
-    res = self.__prepareSecurityDetails()
-    if not res['OK']:
-      return res
-
-    # Put file to the SE
-    try:
-      storageElement = StorageElement(se)
-    except AttributeError, x:
-      errStr = "__uploadFile: Exception while instantiating the Storage Element."
-      gLogger.exception(errStr,se,str(x))
-      return S_ERROR(errStr)
-    putFileDir = "%s/putFile" % base_path
-    localFileName = "%s/%s" % (putFileDir,os.path.basename(pfn))
-    res = storageElement.putFile({pfn:localFileName},True)
-    if not res['OK']:
-      gLogger.error("prepareFile: Failed to put local file to storage.",res['Message'])
-    # Clear the local cache
-    try:
-      shutil.rmtree(putFileDir)
-      gLogger.debug("Cleared existing putFile cache")
-    except Exception, x:
-      gLogger.exception("Failed to remove source dir.",getFileDir,x)
-    return res
-
-  types_prepareFile = [StringType,StringType]
-  def export_prepareFile(self, pfn, se):
-    """ This method simply gets the file to the local storage area
-    """
-    res = pythonCall(0,self.__prepareFile,pfn,se)
-    if res['OK']:
-      return res['Value']
-    else:
-      return res
-
-  def __prepareFile(self,pfn,se):
-    res = self.__prepareSecurityDetails()
-    if not res['OK']:
-      return res
-  
-    # Clear the local cache
-    getFileDir = "%s/getFile" % base_path
-    if os.path.exists(getFileDir):
-      try:
-        shutil.rmtree(getFileDir)
-        gLogger.debug("Cleared existing getFile cache")
-      except Exception, x:
-        gLogger.exception("Failed to remove destination directory.",getFileDir,x)
-   
-    # Get the file to the cache 
-    try:
-      storageElement = StorageElement(se)
-    except AttributeError, x:
-      errStr = "prepareFile: Exception while instantiating the Storage Element."
-      gLogger.exception(errStr,se,str(x))
-      return S_ERROR(errStr)
-    res = storageElement.getFile(pfn,"%s/getFile" % base_path,True)
-    if not res['OK']:
-      gLogger.error("prepareFile: Failed to get local copy of file.",res['Message'])
-      return res
-    return S_OK()
 
   ############################################################
   #
