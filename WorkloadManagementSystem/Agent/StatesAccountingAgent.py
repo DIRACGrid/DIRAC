@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/StatesAccountingAgent.py,v 1.1 2008/11/04 11:32:37 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/StatesAccountingAgent.py,v 1.2 2009/01/27 11:39:25 acasajus Exp $
 
 
 """  JobHistoryAgent sends periodically numbers of jobs in various states for various
@@ -36,6 +36,7 @@ class StatesAccountingAgent(Agent):
     """ Standard constructor
     """
     Agent.__init__( self, AGENT_NAME, initializeMonitor = True )
+    self.dsClients = {}
 
   def initialize(self):
     result = Agent.initialize(self)
@@ -61,7 +62,6 @@ class StatesAccountingAgent(Agent):
   def sendAccountingRecords(self):
     #Get the WMS Snapshot!
     result = self.jobDB.getSummarySnapshot()
-    dsClients = {}
     now = Time.dateTime()
     if not result[ 'OK' ]:
       gLogger.error( "Can't the the jobdb summary", result[ 'Message' ] )
@@ -70,8 +70,8 @@ class StatesAccountingAgent(Agent):
       values = result[ 'Value' ][1]
       for record in values:
         recordSetup = record[0]
-        if recordSetup not in dsClients:
-          dsClients[ recordSetup ] = DataStoreClient( setup = recordSetup )
+        if recordSetup not in self.dsClients:
+          self.dsClients[ recordSetup ] = DataStoreClient( setup = recordSetup )
         record = record[1:]
         for FV in self.__summaryDefinedFields:
           rD = { FV[0] : FV[1] }
@@ -89,9 +89,9 @@ class StatesAccountingAgent(Agent):
         if not retVal[ 'OK' ]:
           gLogger.error( "Invalid accounting record ", "%s -> %s" % ( retVal[ 'Message' ], rD ) )
         else:
-          dsClients[ recordSetup ].addRegister( acWMS )
-      for setup in dsClients:
-        result = dsClients[ setup ].commit()
+          self.dsClients[ recordSetup ].addRegister( acWMS )
+      for setup in self.dsClients:
+        result = self.dsClients[ setup ].commit()
         if not result[ 'OK' ]:
           gLogger.error( "Couldn't commit wms history for setup %s"  % setup, result[ 'Message' ] )
 
