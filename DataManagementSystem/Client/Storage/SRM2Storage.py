@@ -635,9 +635,9 @@ class SRM2Storage(StorageBase):
     if res['Value']:
       res = self.__executeOperation(dest_url,'removeFile') 
       if not res['OK']:
-        gLogger.debug("SRM2Storage.__putFile: Failed to remove remote file %s." % dest_file)
+        gLogger.debug("SRM2Storage.__putFile: Failed to remove remote file %s." % dest_url)
       else:
-        gLogger.debug("SRM2Storage.__putFile: Removed remote file %s." % dest_file)
+        gLogger.debug("SRM2Storage.__putFile: Removed remote file %s." % dest_url)
     dsttype = self.defaulttype
     src_spacetokendesc = ''
     dest_spacetokendesc = self.spaceToken
