@@ -32,6 +32,10 @@ class LcgFileCatalogProxyHandler(RequestHandler):
       return S_ERROR(error)
 
     try:
+      clientDN = self._clientTransport.peerCredentials['DN']
+      clientUsername = self._clientTransport.peerCredentials['username']
+      clientGroup = self._clientTransport.peerCredentials['group']
+      kargs['DN'] = clientDN
       result = method(*args,**kargs)
       return result
     except Exception,x:
