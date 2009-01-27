@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.68 2009/01/08 10:28:37 paterson Exp $
+# $Id: JobWrapper.py,v 1.69 2009/01/27 14:41:24 paterson Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,10 +9,11 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.68 2009/01/08 10:28:37 paterson Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.69 2009/01/27 14:41:24 paterson Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
+from DIRAC.DataManagementSystem.Client.PoolXMLFile                  import getGUID
 from DIRAC.RequestManagementSystem.Client.RequestContainer          import RequestContainer
 from DIRAC.RequestManagementSystem.Client.RequestClient             import RequestClient
 from DIRAC.RequestManagementSystem.Client.DISETSubRequest           import DISETSubRequest
@@ -717,13 +718,25 @@ class JobWrapper:
     self.log.verbose('Output data files %s to be uploaded to %s SE' %(string.join(outputData,', '),outputSE))
     missing = []
     uploaded = []
+
+    pfnGUID = {}
+    result = getGUID(files)
+    if not result['OK']:
+      self.log.warn('Failed to determine POOL GUID(s) for output file list (OK if not POOL files)',result['Message'])
+    else:
+      pfnGUID = result['Value']
+
     for outputFile in outputData:
       if os.path.exists(outputFile):
         self.outputDataSize+=getGlobbedTotalSize(outputFile)
         lfn = self.__getLFNfromOutputFile(owner,outputFile)
         outputFilePath = '%s/%s' %(os.getcwd(),outputFile)
-        self.log.verbose('Attempting putAndRegister("%s","%s","%s",catalog="LcgFileCatalogCombined")' %(lfn,outputFilePath,outputSE))
-        upload = self.rm.putAndRegister(lfn,outputFilePath,outputSE,catalog='LcgFileCatalogCombined')
+        fileGUID=None
+        if pfnGUID.has_key(outputFile):
+          fileGUID=pfnGUID[outputFile]
+          self.log.verbose('Found GUID for file from POOL XML catalogue %s' %outputFile)
+        self.log.info('Attempting putAndRegister("%s","%s","%s",guid=%s,catalog="LcgFileCatalogCombined")' %(lfn,outputFilePath,outputSE,fileGUID))
+        upload = self.rm.putAndRegister(lfn,outputFilePath,outputSE,guid=fileGUID,catalog='LcgFileCatalogCombined')
         self.log.info(upload)
         if not upload['OK']:
           self.log.warn(upload['Message'])
@@ -731,13 +744,13 @@ class JobWrapper:
         else:
           failed = upload['Value']['Failed']
           if failed:
-            self.log.warn('Could not putAndRegister file %s with LFN %s to %s' %(outputFile,lfn,outputSE))
-            self.log.warn(failed)
+            self.log.error('Could not putAndRegister file %s with LFN %s to %s with GUID %s' %(outputFile,lfn,outputSE,fileGUID))
+            self.log.error(failed)
             missing.append(outputFile)
           else:
             uploaded.append(lfn)
       else:
-        self.log.warn('Output data file: %s is missing after execution' %(outputFile))
+        self.log.error('Specified output data file: %s is missing after execution' %(outputFile))
 
     #For files correctly uploaded must report LFNs to job parameters
     if uploaded:
