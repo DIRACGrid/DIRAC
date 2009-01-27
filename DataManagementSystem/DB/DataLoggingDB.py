@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/DB/DataLoggingDB.py,v 1.8 2008/11/08 14:29:16 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/DB/DataLoggingDB.py,v 1.9 2009/01/27 09:09:33 acsmith Exp $
 ########################################################################
 """ DataLoggingDB class is a front-end to the Data Logging Database.
     The following methods are provided
@@ -8,7 +8,7 @@
     getFileLoggingInfo()
 """
 
-__RCSID__ = "$Id: DataLoggingDB.py,v 1.8 2008/11/08 14:29:16 acsmith Exp $"
+__RCSID__ = "$Id: DataLoggingDB.py,v 1.9 2009/01/27 09:09:33 acsmith Exp $"
 
 import re, os, sys
 import time, datetime
@@ -85,7 +85,7 @@ class DataLoggingDB(DB):
     if not result['OK']:
       return result
     if result['OK'] and not result['Value']:
-      return S_ERROR('No Logging information for job %d' % int(jobID))
+      return S_ERROR('No Logging information for LFN')
 
     return_value = []
     for row in result['Value']:
