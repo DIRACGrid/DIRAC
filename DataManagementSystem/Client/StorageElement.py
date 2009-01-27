@@ -216,77 +216,154 @@ class StorageElement:
 
   ###########################################################################################
   #
-  # This is the generic wrapper for simple operations
+  # This is the generic wrapper for file operations
   #
 
-  def retransferOnlineFile(self,pfn):
-    return self.__executeFunction(pfn,'retransferOnlineFile')
-
-  def exists(self,pfn):
-    return self.__executeFunction(pfn,'exists')
-
-  def isFile(self,pfn):
-    return self.__executeFunction(pfn,'isFile')
-
-  def getFile(self,pfn,localPath=False):
-    return self.__executeFunction(pfn,'getFile',{'localPath':localPath})
-  
-  def putFile(self,pfn):
-    return self.__executeFunction(pfn,'putFile')
-
-  def replicateFile(self,pfn,sourceSize):
-    return self.__executeFunction(pfn,'putFile',{'sourceSize':sourceSize}) 
-
-  def getFileMetadata(self,pfn):
-    return self.__executeFunction(pfn,'getFileMetadata')
-
-  def getFileSize(self,pfn):
-    return self.__executeFunction(pfn,'getFileSize')
-
-  def getAccessUrl(self,pfn,protocol=False):
-    if not protocol:
-      return self.__executeFunction(pfn,'getTransportURL',{'protocols':self.turlProtocols})
+  def retransferOnlineFile(self,pfn,singleFile=False):
+    if singleFile:
+      return self.__executeSingleFile(pfn,'retransferOnlineFile') 
     else:
-      return self.__executeFunction(pfn,'getTransportURL',{'protocols':[protocol]})
+      return self.__executeFunction(pfn,'retransferOnlineFile')
 
-  def removeFile(self,pfn):
-    return self.__executeFunction(pfn,'removeFile')
+  def exists(self,pfn,singleFile=False):
+    if singleFile:
+      return self.__executeSingleFile(pfn,'exists')
+    else:
+      return self.__executeFunction(pfn,'exists')
 
-  def prestageFile(self,pfn):
-    return self.__executeFunction(pfn,'prestageFile')
+  def isFile(self,pfn,singleFile=False):
+    if singleFile:
+      return self.__executeSingleFile(pfn,'isFile')
+    else:
+      return self.__executeFunction(pfn,'isFile')
+
+  def getFile(self,pfn,localPath=False,singleFile=False):
+    if singleFile:
+      return self.__executeSingleFile(pfn,'getFile',{'localPath':localPath})
+    else:
+      return self.__executeFunction(pfn,'getFile',{'localPath':localPath})
+  
+  def putFile(self,pfn,singleFile=False):
+    if singleFile:
+      return self.__executeSingleFile(pfn,'putFile')
+    else:
+      return self.__executeFunction(pfn,'putFile')
+
+  def replicateFile(self,pfn,sourceSize,singleFile=False):
+    if singleFile:
+      return self.__executeSingleFile(pfn,'putFile',{'sourceSize':sourceSize})
+    else:
+      return self.__executeFunction(pfn,'putFile',{'sourceSize':sourceSize}) 
+
+  def getFileMetadata(self,pfn,singleFile=False):
+    if singleFile:
+      return self.__executeSingleFile(pfn,'getFileMetadata')
+    else:
+      return self.__executeFunction(pfn,'getFileMetadata')
+
+  def getFileSize(self,pfn,singleFile=False):
+    if singleFile:
+      return self.__executeSingleFile(pfn,'getFileSize')
+    else:
+      return self.__executeFunction(pfn,'getFileSize')
+
+  def getAccessUrl(self,pfn,protocol=False,singleFile=False):
+    if not protocol:
+      protocols = self.turlProtocols
+    else:
+      protocols = [protocol]
+    if singleFile: 
+      return self.__executeSingleFile(pfn,'getTransportURL',{'protocols':protocols})
+    else:     
+      return self.__executeFunction(pfn,'getTransportURL',{'protocols':protocols})
+
+  def removeFile(self,pfn,singleFile=False):
+    if singleFile:
+      return self.__executeSingleFile(pfn,'removeFile')
+    else:
+      return self.__executeFunction(pfn,'removeFile')
+
+  def prestageFile(self,pfn,singleFile=False):
+    if singleFile:
+      return self.__executeSingleFile(pfn,'prestageFile')
+    else:
+      return self.__executeFunction(pfn,'prestageFile')
    
-  def prestageFileStatus(self,pfn):
-    return self.__executeFunction(pfn,'prestageFileStatus')
+  def prestageFileStatus(self,pfn,singleFile=False):
+    if singleFile:
+      return self.__executeSingleFile(pfn,'prestageFileStatus')
+    else:
+      return self.__executeFunction(pfn,'prestageFileStatus')
 
-  def pinFile(self,pfn,lifetime=60*60*24):
-    return self.__executeFunction(pfn,'pinFile',{'lifetime':lifetime})
+  def pinFile(self,pfn,lifetime=60*60*24,singleFile=False):
+    if singleFile:
+      return self.__executeSingleFile(pfn,'pinFile',{'lifetime':lifetime})
+    else:
+      return self.__executeFunction(pfn,'pinFile',{'lifetime':lifetime})
 
-  def releaseFile(self,pfn):
-    return self.__executeFunction(pfn,'releaseFile')
+  def releaseFile(self,pfn,singleFile=False):
+    if singleFile:
+      return self.__executeSingleFile(pfn,'releaseFile')
+    else:
+      return self.__executeFunction(pfn,'releaseFile')
 
-  def isDirectory(self,pfn):
-    return self.__executeFunction(pfn,'isDirectory')
+  def isDirectory(self,pfn,singleDirectory=False):
+    if singleDirectory:
+      return self.__executeSingleFile(pfn,'isDirectory')
+    else:
+      return self.__executeFunction(pfn,'isDirectory')
 
-  def getDirectoryMetadata(self,pfn):
-    return self.__executeFunction(pfn,'getDirectoryMetadata')
+  def getDirectoryMetadata(self,pfn,singleDirectory=False):
+    if singleDirectory:
+      return self.__executeSingleFile(pfn,'getDirectoryMetadata')
+    else:
+      return self.__executeFunction(pfn,'getDirectoryMetadata')
 
-  def getDirectorySize(self,pfn):
-    return self.__executeFunction(pfn,'getDirectorySize')
+  def getDirectorySize(self,pfn,singleDirectory=False):
+    if singleDirectory:
+      return self.__executeSingleFile(pfn,'getDirectorySize')
+    else:
+      return self.__executeFunction(pfn,'getDirectorySize')
 
-  def listDirectory(self,pfn):
-    return self.__executeFunction(pfn,'listDirectory')
+  def listDirectory(self,pfn,singleDirectory=False):
+    if singleDirectory:
+      return self.__executeSingleFile(pfn,'listDirectory')
+    else:
+      return self.__executeFunction(pfn,'listDirectory')
 
-  def removeDirectory(self,pfn,recursive=False):
-    return self.__executeFunction(pfn,'removeDirectory',{'recursive':recursive})
+  def removeDirectory(self,pfn,recursive=False,singleDirectory=False):
+    if singleDirectory:
+      return self.__executeSingleFile(pfn,'removeDirectory',{'recursive':recursive})
+    else:
+      return self.__executeFunction(pfn,'removeDirectory',{'recursive':recursive})
 
-  def createDirectory(self,pfn):
-    return self.__executeFunction(pfn,'createDirectory')
+  def createDirectory(self,pfn,singleDirectory=False):
+    if singleDirectory:
+      return self.__executeSingleFile(pfn,'createDirectory')
+    else:
+      return self.__executeFunction(pfn,'createDirectory')
 
-  def putDirectory(self,pfn):
-    return self.__executeFunction(pfn,'putDirectory')
+  def putDirectory(self,pfn,singleDirectory=False):
+    if singleDirectory:
+      return self.__executeSingleFile(pfn,'putDirectory')
+    else:
+      return self.__executeFunction(pfn,'putDirectory')
 
-  def getDirectory(self,pfn,localPath=False):
-    return self.__executeFunction(pfn,'getDirectory',{'localPath':localPath})
+  def getDirectory(self,pfn,localPath=False,singleDirectory=False):
+    if singleDirectory:
+      return self.__executeSingleFile(pfn,'getDirectory',{'localPath':localPath})
+    else:
+      return self.__executeFunction(pfn,'getDirectory',{'localPath':localPath})
+
+  def __executeSingleFile(self,pfn,operation,arguments={}):
+    res = self.__executeFunction(pfn,operation,arguments)
+    if not res['OK']:
+      return res
+    elif res['Value']['Failed'].has_key(pfn):
+      errorMessage = res['Value']['Failed'][pfn]
+      return S_ERROR(errorMessage)
+    else:
+      return S_OK(res['Value']['Successful'][pfn])
 
   def __executeFunction(self,pfn,method,argsDict={}):
     """
