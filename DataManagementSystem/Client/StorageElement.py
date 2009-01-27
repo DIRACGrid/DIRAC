@@ -381,7 +381,7 @@ class StorageElement:
       for url in pfn:
         pfns[url] = False
     elif type(pfn) == types.DictType:
-      pfns = pfn
+      pfns = pfn.copy()
     else:
       errStr = "StorageElement.__executeFunction: Supplied pfns must be string or list of strings or a dictionary."
       gLogger.error(errStr)
