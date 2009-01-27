@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.69 2009/01/27 14:41:24 paterson Exp $
+# $Id: JobWrapper.py,v 1.70 2009/01/27 17:07:42 paterson Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.69 2009/01/27 14:41:24 paterson Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.70 2009/01/27 17:07:42 paterson Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -720,7 +720,7 @@ class JobWrapper:
     uploaded = []
 
     pfnGUID = {}
-    result = getGUID(files)
+    result = getGUID(outputData)
     if not result['OK']:
       self.log.warn('Failed to determine POOL GUID(s) for output file list (OK if not POOL files)',result['Message'])
     else:
