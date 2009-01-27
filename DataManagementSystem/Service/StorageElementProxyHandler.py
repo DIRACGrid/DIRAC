@@ -4,12 +4,13 @@ This is a service which represents a DISET proxy to the Storage Element componen
 This is used to get and put files from a remote storage.
 """
 from types import *
-import os
+import os,shutil
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.DataManagementSystem.Client.StorageElement import StorageElement
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
-from DIRAC.DataManagementSystem.Service.StorageElementHandler import StorageElementHandler
+from DIRAC.Core.Utilities.Subprocess import pythonCall
+from DIRAC.Core.Utilities.Os import getDiskSpace, getDirectorySize
 base_path = ''
 
 def initializeStorageElementProxyHandler(serviceInfo):
@@ -27,7 +28,7 @@ def initializeStorageElementProxyHandler(serviceInfo):
     return S_ERROR('Failed to get the base path')
   return S_OK()
 
-class StorageElementProxyHandler(StorageElementHandler):
+class StorageElementProxyHandler(RequestHandler):
 
   def __prepareSecurityDetails(self):
     """ Obtains the connection details for the client
@@ -56,28 +57,132 @@ class StorageElementProxyHandler(StorageElementHandler):
       exStr = "__getConnectionDetails: Failed to get client connection details."
       gLogger.exception(exStr,'',x)
       return S_ERROR(exStr)
- 
+
+  types_uploadFile = [StringType,StringType]
+  def export_uploadFile(self, pfn, se):
+    """ This method uploads a file present in the local cache to the specified storage element
+    """
+    res = pythonCall(0,self.__uploadFile,pfn,se)
+    if res['OK']:
+      return res['Value']
+    else:
+      return res
+
+  def __uploadFile(self,pfn,se):
+    res = self.__prepareSecurityDetails()
+    if not res['OK']:
+      return res
+
+    # Put file to the SE
+    try:
+      storageElement = StorageElement(se)
+    except AttributeError, x:
+      errStr = "__uploadFile: Exception while instantiating the Storage Element."
+      gLogger.exception(errStr,se,str(x))
+      return S_ERROR(errStr)
+    putFileDir = "%s/putFile" % base_path
+    localFileName = "%s/%s" % (putFileDir,os.path.basename(pfn))
+    res = storageElement.putFile({pfn:localFileName},True)
+    if not res['OK']:
+      gLogger.error("prepareFile: Failed to put local file to storage.",res['Message'])
+    # Clear the local cache
+    try:
+      shutil.rmtree(putFileDir)
+      gLogger.debug("Cleared existing putFile cache")
+    except Exception, x:
+      gLogger.exception("Failed to remove source dir.",getFileDir,x)
+    return res
+
+  types_prepareFile = [StringType,StringType]
+  def export_prepareFile(self, pfn, se):
+    """ This method simply gets the file to the local storage area
+    """
+    res = pythonCall(0,self.__prepareFile,pfn,se)
+    if res['OK']:
+      return res['Value']
+    else:
+      return res
+
   def __prepareFile(self,pfn,se):
     res = self.__prepareSecurityDetails()
     if not res['OK']:
       return res
+  
+    # Clear the local cache
+    getFileDir = "%s/getFile" % base_path
+    if os.path.exists(getFileDir):
+      try:
+        shutil.rmtree(getFileDir)
+        gLogger.debug("Cleared existing getFile cache")
+      except Exception, x:
+        gLogger.exception("Failed to remove destination directory.",getFileDir,x)
+   
+    # Get the file to the cache 
     try:
       storageElement = StorageElement(se)
     except AttributeError, x:
       errStr = "prepareFile: Exception while instantiating the Storage Element."
       gLogger.exception(errStr,se,str(x))
       return S_ERROR(errStr)
-
     res = storageElement.getFile(pfn,"%s/getFile" % base_path,True)
-    print res
     if not res['OK']:
       gLogger.error("prepareFile: Failed to get local copy of file.",res['Message'])
       return res
     return S_OK()
 
-  types_prepareFile = [StringType,StringType]
-  def export_prepareFile(self, pfn, se):
-    """ This method simply gets the file to the local storage area
+  ############################################################
+  #
+  # These are the methods that are for actual file transfer
+  #
+
+  def transfer_toClient( self, fileID, token, fileHelper ):
+    """ Method to send files to clients.
+        fileID is the local file name in the SE.
+        token is used for access rights confirmation.
     """
-    res = self.__prepareFile(pfn,se)
-    return res
+    file_path = "%s/%s" % (base_path,fileID)
+    result = fileHelper.getFileDescriptor(file_path,'r')
+    if not result['OK']:
+      result = fileHelper.sendEOF()
+      # check if the file does not really exist
+      if not os.path.exists(file_path):
+        return S_ERROR('File %s does not exist' % os.path.basename(file_path))
+      else:
+        return S_ERROR('Failed to get file descriptor')
+
+    fileDescriptor = result['Value']
+    result = fileHelper.FDToNetwork(fileDescriptor)
+    if not result['OK']:
+      return S_ERROR('Failed to get file '+fileID)
+    else:
+      return result
+
+  def transfer_fromClient( self, fileID, token, fileSize, fileHelper ):
+    """ Method to receive file from clients.
+        fileID is the local file name in the SE.
+        fileSize can be Xbytes or -1 if unknown.
+        token is used for access rights confirmation.
+    """
+    if not self.__checkForDiskSpace(base_path,fileSize):
+      return S_ERROR('Not enough disk space')
+
+    file_path = "%s/%s" % (base_path,fileID)
+    if not os.path.exists(os.path.dirname(file_path)):
+      os.makedirs(os.path.dirname(file_path))
+    result = fileHelper.getFileDescriptor(file_path,'w')
+    if not result['OK']:
+      return S_ERROR('Failed to get file descriptor')
+
+    fileDescriptor = result['Value']
+    result = fileHelper.networkToFD(fileDescriptor)
+    if not result['OK']:
+      return S_ERROR('Failed to put file '+fileID)
+    else:
+      return result
+
+  def __checkForDiskSpace(self,dpath,size):
+    """ Check if the directory dpath can accomodate 'size' volume of data
+    """
+    dsize = (getDiskSpace(dpath)-1)*1024*1024
+    maxStorageSizeBytes = 1024*1024*1024
+    return ( min(dsize,maxStorageSizeBytes) > size )
