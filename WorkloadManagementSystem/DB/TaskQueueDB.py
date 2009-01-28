@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.56 2009/01/28 12:03:01 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.57 2009/01/28 14:11:45 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.56 2009/01/28 12:03:01 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.57 2009/01/28 14:11:45 acasajus Exp $"
 
 import time
 import types
@@ -263,9 +263,9 @@ class TaskQueueDB(DB):
   def __hackJobPriority( self, jobPriority ):
     jobPriority = min( max( int( jobPriority ), self.__jobPriorityBoundaries[0] ), self.__jobPriorityBoundaries[1] )
     if jobPriority == self.__jobPriorityBoundaries[0]:
-      return 10^(-5)
+      return 10**(-5)
     if jobPriority == self.__jobPriorityBoundaries[1]:
-      return 10^6
+      return 10**6
     return jobPriority
 
   def insertJob( self, jobId, tqDefDict, jobPriority, skipTQDefCheck = False, numRetries = 10 ):
