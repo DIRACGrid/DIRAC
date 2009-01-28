@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/SiteMonitor.py,v 1.16 2008/11/28 19:05:58 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/SiteMonitor.py,v 1.17 2009/01/28 11:00:07 acasajus Exp $
 # File :   SiteMonitor.py
 # Author : Stuart Paterson
 ########################################################################
@@ -7,7 +7,7 @@
 """  The SiteMonitor base-class monitors staging requests for a given site.
 """
 
-__RCSID__ = "$Id: SiteMonitor.py,v 1.16 2008/11/28 19:05:58 rgracian Exp $"
+__RCSID__ = "$Id: SiteMonitor.py,v 1.17 2009/01/28 11:00:07 acasajus Exp $"
 
 from DIRAC.StagerSystem.Client.StagerClient                import StagerClient
 from DIRAC.DataManagementSystem.Client.StorageElement      import StorageElement
@@ -17,7 +17,7 @@ from DIRAC                                                 import S_OK, S_ERROR,
 import os, sys, re, string, time
 from threading import Thread
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
-from DIRAC.AccountingSystem.Client.DataStoreClient import DataStoreClient
+from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 from DIRAC.Core.Utilities import Time
 class SiteMonitor(Thread):
 
@@ -176,7 +176,6 @@ class SiteMonitor(Thread):
         else:
           #########################################
           # If they were successfully updated then send the accounting information
-          oAccounting = DataStoreClient()
           res = self.fc.getFileSize(submissionTiming.keys())
           if not res['OK']:
             self.log.warn('Failed to get file sizes. Will assume file is of size 1 byte for all files.')
@@ -195,9 +194,9 @@ class SiteMonitor(Thread):
             c = endTime-startTime
             stageTime = c.days * 86400 + c.seconds
             oDataOperation.setValueByKey('TransferTime',stageTime)
-            oAccounting.addRegister(oDataOperation)
+            gDataStoreClient.addRegister(oDataOperation)
           self.log.info('Attempting to send accounting message...')
-          oAccounting.commit()
+          gDataStoreClient.commit()
           self.log.info('...sent.')
 
     self.log.info('Metadata query found: Staged=%s, UnStaged=%s, Failed=%s, out of Total=%s files' %(len(staged),len(unstaged),len(failed),totalFiles))
