@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.15 2009/01/28 14:43:22 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.16 2009/01/28 15:50:52 acasajus Exp $
 # File :   TaskQueueDirector.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -85,7 +85,7 @@
         SubmitPool (may want to recover it for SAM jobs)
 
 """
-__RCSID__ = "$Id: TaskQueueDirector.py,v 1.15 2009/01/28 14:43:22 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDirector.py,v 1.16 2009/01/28 15:50:52 acasajus Exp $"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 
@@ -107,6 +107,8 @@ jobLoggingDB      = JobLoggingDB()
 pilotAgentsDB     = PilotAgentsDB()
 taskQueueDB       = TaskQueueDB()
 jobDB             = JobDB()
+
+random.seed()
 
 class TaskQueueDirector(AgentModule):
 
@@ -911,10 +913,12 @@ class gLitePilotDirector(PilotDirector):
     RBs = []
     for RB in self.resourceBrokers:
       RBs.append( '"https://%s:7443/glite_wms_wmproxy_server"' % RB )
+    RBs = List.randomize( RBs )
 
     LBs = []
     for LB in self.loggingServers:
       LBs.append('"https://%s:9000"' % LB)
+    LBs = List.randomize( LBs )
 
     nPilots = 1
 
