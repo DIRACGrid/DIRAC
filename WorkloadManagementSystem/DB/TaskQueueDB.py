@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.57 2009/01/28 14:11:45 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.58 2009/01/28 14:14:31 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.57 2009/01/28 14:11:45 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.58 2009/01/28 14:14:31 acasajus Exp $"
 
 import time
 import types
@@ -775,8 +775,6 @@ class TaskQueueDB(DB):
     totalPrio = 0
     for k in tqDict:
       totalPrio += tqDict[ k ]
-    if totalPrio < 1:
-      totalPrio = 1
     #Group by priorities
     prioDict = {}
     for tqId in tqDict:
