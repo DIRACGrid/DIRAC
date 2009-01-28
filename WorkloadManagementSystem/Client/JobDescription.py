@@ -1,15 +1,28 @@
 
 import types
-from DIRAC import S_OK, S_ERROR, gConfig
+from DIRAC import S_OK, S_ERROR, gConfig, PathFinder
 from DIRAC.ConfigurationSystem.Client.CFG import CFG
 from DIRAC.Core.Utilities import List
 from DIRAC.Core.Utilities.JDL import loadJDLAsCFG, dumpCFGAsJDL
 
 class JobDescription:
 
-  def __init__( self, jobID = 0 ):
-    self.__jobID = jobID
+  def __init__( self ):
     self.__description = CFG()
+    self.__dirty = False
+
+  def isDirty(self):
+    return self.__dirty
+
+  def loadDescription( self, dataString ):
+    """
+    Auto discover format type based on [ .. ] of JDL
+    """
+    dataString = dataString.strip()
+    if dataString[0] == "[" and dataString[-1] == "]":
+      return self.loadDescriptionFromJDL( dataString )
+    else:
+      return self.loadDescriptionFromCFG( dataString )
 
   def loadDescriptionFromJDL( self, jdlString ):
     """
@@ -42,81 +55,92 @@ class JobDescription:
     """
     Check a numerical var
     """
+    initialVal = False
     if varName not in self.__description:
-      varValue = gConfig.getValue( "/TBD/Default%s" % varName , defaultVal )
+      varValue = gConfig.getValue( "/JobDescription/Default%s" % varName , defaultVal )
     else:
       varValue = self.__description[ varName ]
+      initialVal = varValue
     try:
       varValue = long( varValue )
     except:
       return S_ERROR( "%s must be a number" % varName )
-    minVal = gConfig.getValue( "/TBD/Min%s" % varName, minVal )
-    maxVal = gConfig.getValue( "/TBD/Max%s" % varName, maxVal )
+    minVal = gConfig.getValue( "/JobDescription/Min%s" % varName, minVal )
+    maxVal = gConfig.getValue( "/JobDescription/Max%s" % varName, maxVal )
     varValue = max( minVal, min( varValue, maxVal ) )
-    self.__description.setOption( varName, varValue )
+    if initialVal != varValue:
+      self.__description.setOption( varName, varValue )
     return S_OK( varValue )
 
   def __checkChoiceVarInDescription( self, varName, defaultVal, choices ):
     """
     Check a choice var
     """
+    initialVal = False
     if varName not in self.__description:
-      varValue = gConfig.getValue( "/TBD/Default%s" % varName , defaultVal )
+      varValue = gConfig.getValue( "/JobDescription/Default%s" % varName , defaultVal )
     else:
       varValue = self.__description[ varName ]
-    if varValue not in gConfig.getValue( "/TBD/Choices%s" % varName , choices ):
+      initialVal = varValue
+    if varValue not in gConfig.getValue( "/JobDescription/Choices%s" % varName , choices ):
       return S_ERROR( "%s is not a valid value for %s" % ( varValue, varName ) )
-    self.__description.setOption( varName, varValue )
+    if initialVal != varValue:
+      self.__description.setOption( varName, varValue )
     return S_OK( varValue )
 
-  def __checkMultiChoiceInDescription( self, varName, defaultValue, choices ):
+  def __checkMultiChoiceInDescription( self, varName, choices ):
     """
-    Check a multi choice vair
+    Check a multi choice var
     """
+    initialVal = False
     if varName not in self.__description:
-      defaultValue = gConfig.getValue( "/TBD/Default%s" % varName , defaultValue )
-      if not defaultValue:
-        return S_OK()
-      varValue = defaultValue
+      return S_OK()
     else:
       varValue = self.__description[ varName ]
-    choices = gConfig.getValue( "/TBD/Choices%s" % varName , choices )
+      initialVal = varValue
+    choices = gConfig.getValue( "/JobDescription/Choices%s" % varName , choices )
     for v in List.fromChar( varValue ):
       if v not in choices:
         return S_ERROR( "%s is not a valid value for %s" % ( v, varName ) )
-    self.__description.setOption( varName, varValue )
+    if initialVal != varValue:
+      self.__description.setOption( varName, varValue )
     return S_OK( varValue )
 
-  def setDescriptionVarsFromDict( self, varDict ):
+  def setVarsFromDict( self, varDict ):
     for k in sorted( varDict ):
-      self.setDescriptionVar( k, varDict[ k ] )
+      self.setVar( k, varDict[ k ] )
 
   def checkDescription( self ):
     """
     Check that the description is OK
     """
-    for k in [ 'OwnerName', 'OwnerDN', 'OwnerGroup', 'Setup' ]:
+    for k in [ 'OwnerName', 'OwnerDN', 'OwnerGroup', 'DIRACSetup' ]:
       if k not in self.__description:
         return S_ERROR( "Missing var %s in description" % k )
     #Check CPUTime
     result = self.__checkNumericalVarInDescription( "CPUTime", 86400, 0, 500000 )
     if not result[ 'OK' ]:
       return result
-    result = self.__checkNumericalVarInDescription( "Priority", 5, 1, 10 )
+    result = self.__checkNumericalVarInDescription( "Priority", 1, 0, 10 )
     if not result[ 'OK' ]:
       return result
-    result = self.__checkChoiceVarInDescription( "SubmissionPool", "default", [ 'default', 'sam' ] )
+    allowedSubmitPools = []
+    for option in [ "DefaultSubmitPools", "SubmitPools", "AllowedSubmitPools" ]:
+      allowedSubmitPools = gConfig.getValue( "%s/%s" % ( PathFinder.getAgentSection( "WorkloadManagement/TaskQueueDirector" ), option ),
+                                             allowedSubmitPools )
+    result = self.__checkMultiChoiceInDescription( "SubmitPools", allowedSubmitPools )
     if not result[ 'OK' ]:
       return result
-    result = self.__checkMultiChoiceInDescription( "PilotTypes", "", [ 'generic', 'private' ] )
+    result = self.__checkMultiChoiceInDescription( "PilotTypes", [ 'private' ] )
     if not result[ 'OK' ]:
       return result
     return S_OK()
 
-  def setDescriptionVar( self, varName, varValue ):
+  def setVar( self, varName, varValue ):
     """
     Set a var in job description
     """
+    self.__dirty = True
     levels = List.fromChar( varName, "/" )
     cfg = self.__description
     for l in levels[:-1]:
@@ -124,3 +148,18 @@ class JobDescription:
         cfg.createNewSection( l )
       cfg = cfg[ l ]
     cfg.setOption( levels[-1], varValue )
+
+  def getVar( self, varName, defaultValue = None ):
+    return cfg.getOption( varName, defaultValue )
+
+  def getOptionList( self, section = "" ):
+    cfg = self.__description.getRecursive( section )
+    if not cfg:
+      return []
+    return cfg.listOptions()
+
+  def getSectionList( self, section = "" ):
+    cfg = self.__description.getRecursive( section )
+    if not cfg:
+      return []
+    return cfg.listSections()
