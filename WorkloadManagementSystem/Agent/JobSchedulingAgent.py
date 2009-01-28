@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.49 2009/01/28 14:33:35 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.50 2009/01/28 14:49:02 acasajus Exp $
 # File :   JobSchedulingAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@
       meaningfully.
 
 """
-__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.49 2009/01/28 14:33:35 acasajus Exp $"
+__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.50 2009/01/28 14:49:02 acasajus Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
@@ -362,18 +362,18 @@ class JobSchedulingAgent(OptimizerModule):
       classAddReq.insertAttributeVectorString( 'BannedSites', bannedSites )
 
     if classAdJob.lookupAttribute( "SubmitPools" ):
-      classAddReq.insertAttributeString( 'SubmitPools', classAdJob.get_expression( 'SubmitPools' ) )
+      classAddReq.set_expression( 'SubmitPools', classAdJob.get_expression( 'SubmitPools' ) )
 
     if classAdJob.lookupAttribute( "GridMiddleware" ):
-      classAddReq.insertAttributeString( 'GridMiddleware', classAdJob.get_expression( 'GridMiddleware' ) )
+      classAddReq.set_expression( 'GridMiddleware', classAdJob.get_expression( 'GridMiddleware' ) )
 
     if classAdJob.lookupAttribute( "PilotTypes" ):
-      classAddReq.insertAttributeString( 'PilotTypes', classAdJob.get_expression( 'PilotTypes' ) )
+      classAddReq.set_expression( 'PilotTypes', classAdJob.get_expression( 'PilotTypes' ) )
     #HAck to migrate old jobs to new ones.
     #DELETE ON 08/09
     else:
       if classAdJob.lookupAttribute( "PilotType" ):
-        classAddReq.insertAttributeString( 'PilotTypes', classAdJob.get_expression( 'PilotType' ) )
+        classAddReq.set_expression( 'PilotTypes', classAdJob.get_expression( 'PilotType' ) )
 
 
     #Required CE's requirements
