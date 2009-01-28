@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.52 2009/01/21 08:29:01 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.53 2009/01/28 17:40:06 acasajus Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.52 2009/01/21 08:29:01 atsareg Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.53 2009/01/28 17:40:06 acasajus Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -198,7 +198,7 @@ class JobAgent(Agent):
           self.log.warn('Problem while setting up proxy for job %s' %(jobID))
           self.__report(jobID,'Failed','Invalid Proxy')
           return self.__finish('Invalid Proxy')
-          proxyChain = proxyResult['Value']
+        proxyChain = proxyResult['Value']
 
       saveJDL = self.__saveJobJDLRequest(jobID,jobJDL)
       self.__report(jobID,'Matched','Job Prepared to Submit')
