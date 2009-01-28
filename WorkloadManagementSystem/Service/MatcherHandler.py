@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: MatcherHandler.py,v 1.32 2008/12/20 17:38:33 rgracian Exp $
+# $Id: MatcherHandler.py,v 1.33 2009/01/28 12:03:59 acasajus Exp $
 ########################################################################
 """
 Matcher class. It matches Agent Site capabilities to job requirements.
@@ -7,7 +7,7 @@ It also provides an XMLRPC interface to the Matcher
 
 """
 
-__RCSID__ = "$Id: MatcherHandler.py,v 1.32 2008/12/20 17:38:33 rgracian Exp $"
+__RCSID__ = "$Id: MatcherHandler.py,v 1.33 2009/01/28 12:03:59 acasajus Exp $"
 
 import re, os, sys, time
 import string
@@ -42,8 +42,8 @@ def initializeMatcherHandler( serviceInfo ):
   jobDB        = JobDB()
   jobLoggingDB = JobLoggingDB()
   taskQueueDB  = TaskQueueDB()
-  taskQueueDB.propagateSharesIfChanged()
-  gThreadScheduler.addPeriodicTask( 300, taskQueueDB.propagateSharesIfChanged )
+  taskQueueDB.recalculateTQSharesForAll()
+  gThreadScheduler.addPeriodicTask( 120, taskQueueDB.recalculateTQSharesForAll )
 
   gMonitor.registerActivity( 'matchTime', "Job matching time", 'Matching', "secs" ,gMonitor.OP_MEAN, 300 )
   gMonitor.registerActivity( 'matchTaskQueues', "Task queues checked per job", 'Matching', "task queues" ,gMonitor.OP_MEAN, 300 )
