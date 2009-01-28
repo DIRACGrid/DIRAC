@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/StatesAccountingAgent.py,v 1.2 2009/01/27 11:39:25 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/StatesAccountingAgent.py,v 1.3 2009/01/28 10:58:14 acasajus Exp $
 
 
 """  JobHistoryAgent sends periodically numbers of jobs in various states for various
@@ -71,7 +71,7 @@ class StatesAccountingAgent(Agent):
       for record in values:
         recordSetup = record[0]
         if recordSetup not in self.dsClients:
-          self.dsClients[ recordSetup ] = DataStoreClient( setup = recordSetup )
+          self.dsClients[ recordSetup ] = DataStoreClient( setup = recordSetup, retryGraceTime = 900 )
         record = record[1:]
         for FV in self.__summaryDefinedFields:
           rD = { FV[0] : FV[1] }
