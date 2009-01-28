@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.16 2009/01/28 15:50:52 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.17 2009/01/28 16:03:12 acasajus Exp $
 # File :   TaskQueueDirector.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -85,7 +85,7 @@
         SubmitPool (may want to recover it for SAM jobs)
 
 """
-__RCSID__ = "$Id: TaskQueueDirector.py,v 1.16 2009/01/28 15:50:52 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDirector.py,v 1.17 2009/01/28 16:03:12 acasajus Exp $"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 
@@ -936,10 +936,10 @@ RetryCount = 0;
 ShallowRetryCount = 0;
 MyProxyServer = "no-myproxy.cern.ch";
 
-Requirements = pilotRequirements;
-WmsClient = [
 AllowsGenericPilot = Member( "VO-lhcb-pilot" , other.GlueHostApplicationSoftwareRunTimeEnvironment );
-Requirements = other.GlueCEStateStatus == "Production" && %s;
+Requirements = pilotRequirements && %s;
+WmsClient = [
+Requirements = other.GlueCEStateStatus == "Production";
 ErrorStorage = "%s/pilotError";
 OutputStorage = "%s/pilotOutput";
 # ListenerPort = 44000;
