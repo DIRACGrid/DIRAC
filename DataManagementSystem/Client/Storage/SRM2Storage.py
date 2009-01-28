@@ -8,7 +8,8 @@ from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Core.Utilities.File import getSize
 
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
-from DIRAC.AccountingSystem.Client.DataStoreClient import DataStoreClient
+from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
+
 
 from stat import *
 import types, re,os,time,sys,string
@@ -191,7 +192,7 @@ class SRM2Storage(StorageBase):
   ######################################################################
   #
   # This has to be updated once the new gfal_makedir() becomes available
-  # 
+  #
 
   def createDirectory(self,path):
     """ Make recursively new directory(ies) on the physical storage
@@ -267,7 +268,7 @@ class SRM2Storage(StorageBase):
 ################################################################################
 #
 # The methods below use the new generic methods for executing operations
-# 
+#
 ################################################################################
 
   def removeFile(self,path):
@@ -384,8 +385,8 @@ class SRM2Storage(StorageBase):
     if not res['OK']:
       return res
     urls = res['Value']
-  
-    gLogger.debug("SRM2Storage.prestageFileStatus: Attempting to get status of stage requests for %s file(s)." % len(urls)) 
+
+    gLogger.debug("SRM2Storage.prestageFileStatus: Attempting to get status of stage requests for %s file(s)." % len(urls))
     resDict = self.__gfal_prestagestatus_wrapper(urls)['Value']
     failed = resDict['Failed']
     allResults = resDict['AllResults']
@@ -514,7 +515,7 @@ class SRM2Storage(StorageBase):
     return S_OK(resDict)
 
   def releaseFile(self,path):
-    """ Release a file 
+    """ Release a file
     """
     res = self.checkArgumentFormat(path)
     if not res['OK']:
@@ -545,7 +546,7 @@ class SRM2Storage(StorageBase):
     return S_OK(resDict)
 
   def exists(self,path):
-    """ Check if the given path exists. 
+    """ Check if the given path exists.
     """
     res = self.checkArgumentFormat(path)
     if not res['OK']:
@@ -611,7 +612,7 @@ class SRM2Storage(StorageBase):
     return S_OK(resDict)
 
   def putFile(self,path,sourceSize=0):
-    res = self.checkArgumentFormat(path) 
+    res = self.checkArgumentFormat(path)
     if not res['OK']:
       return res
     urls = res['Value']
@@ -633,7 +634,7 @@ class SRM2Storage(StorageBase):
       gLogger.debug("SRM2Storage.__putFile: Failed to find pre-existance of destination file.")
       return res
     if res['Value']:
-      res = self.__executeOperation(dest_url,'removeFile') 
+      res = self.__executeOperation(dest_url,'removeFile')
       if not res['OK']:
         gLogger.debug("SRM2Storage.__putFile: Failed to remove remote file %s." % dest_url)
       else:
@@ -645,13 +646,13 @@ class SRM2Storage(StorageBase):
       src_url = src_file
       srctype = 2
       if not sourceSize:
-        return S_ERROR("SRM2Storage.__putFile: For file replication the source file size must be provided.") 
+        return S_ERROR("SRM2Storage.__putFile: For file replication the source file size must be provided.")
     else:
       if not os.path.exists(src_file):
         errStr = "SRM2Storage.__putFile: The source local file does not exist."
         gLogger.error(errStr,src_file)
         return S_ERROR(errStr)
-      sourceSize = getSize(src_file) 
+      sourceSize = getSize(src_file)
       if sourceSize == -1:
         errStr = "SRM2Storage.__putFile: Failed to get file size."
         gLogger.error(errStr,src_file)
@@ -722,7 +723,7 @@ class SRM2Storage(StorageBase):
       os.makedirs(os.path.dirname(dest_file))
     if os.path.exists(dest_file):
       gLogger.debug("SRM2Storage.getFile: Local file already exists %s. Removing..." % dest_file)
-      os.remove(dest_file)     
+      os.remove(dest_file)
     srctype = self.defaulttype
     src_spacetokendesc = self.spaceToken
     dsttype = 0
@@ -773,11 +774,11 @@ class SRM2Storage(StorageBase):
       exceptStr = "SRM2Storage.__executeOperation: Exception while perfoming %s." % method
       gLogger.exception(exceptStr,'',errMessage)
       return S_ERROR("%s%s" % (exceptStr,errMessage))
-    
+
   ############################################################################################
   #
   # Directory based methods
-  # 
+  #
 
   def isDirectory(self,path):
     """Check if the given path exists and it is a directory
@@ -843,7 +844,7 @@ class SRM2Storage(StorageBase):
           failed[pathSURL] = errMessage
         else:
           errStr = "SRM2Storage.getDirectoryMetadata: Failed to get directory metadata."
-          errMessage = urlDict['ErrorMessage']  
+          errMessage = urlDict['ErrorMessage']
           gLogger.error(errStr,"%s: %s" % (pathSURL,errMessage))
           failed[pathSURL] = "%s %s" % (errStr,errMessage)
     resDict = {'Failed':failed,'Successful':successful}
@@ -856,7 +857,7 @@ class SRM2Storage(StorageBase):
     if not res['OK']:
       return res
     urls = res['Value']
-          
+
     gLogger.debug("SRM2Storage.getDirectorySize: Attempting to get size of %s directories." % len(urls))
     res = self.listDirectory(urls)
     if not res['OK']:
@@ -882,7 +883,7 @@ class SRM2Storage(StorageBase):
     res = self.checkArgumentFormat(path)
     if not res['OK']:
       return res
-    urls = res['Value']  
+    urls = res['Value']
 
     gLogger.debug("SRM2Storage.listDirectory: Attempting to list %s directories." % len(urls))
 
@@ -924,9 +925,9 @@ class SRM2Storage(StorageBase):
           # Keep the infomation about this path's subpaths
           successful[pathSURL]['SubDirs'] = subPathDirs
           successful[pathSURL]['Files'] = subPathFiles
-        else: 
+        else:
           errStr = "SRM2Storage.listDirectory: Failed to list directory."
-          errMessage = urlDict['ErrorMessage']  
+          errMessage = urlDict['ErrorMessage']
           gLogger.error(errStr,"%s: %s" % (pathSURL,errMessage))
           failed[pathSURL] = "%s %s" % (errStr,errMessage)
 
@@ -989,7 +990,7 @@ class SRM2Storage(StorageBase):
             pathSuccessful = False
           filesPut += res['Value']['Files']
           sizePut += res['Value']['Size']
-   
+
     if directoryFiles:
       res = self.putFile(directoryFiles)
       if not res['OK']:
@@ -1011,7 +1012,7 @@ class SRM2Storage(StorageBase):
     if not res['OK']:
       return res
     urls = res['Value']
-        
+
     failed = {}
     successful = {}
     gLogger.debug("SRM2Storage.getDirectory: Attempting to get local copies of %s directories." % len(urls))
@@ -1132,7 +1133,7 @@ class SRM2Storage(StorageBase):
   def __removeDirectoryRecursive(self,directory):
     """ Recursively removes the directory and sub dirs. Repeatedly calls itself to delete recursively.
     """
-    res = self.checkArgumentFormat(directory) 
+    res = self.checkArgumentFormat(directory)
     if not res['OK']:
       return res
     urls = res['Value']
@@ -1162,7 +1163,7 @@ class SRM2Storage(StorageBase):
         # If all the files and sub-directories are removed then remove the directory
         allRemoved = False
         if allFilesRemoved and allSubDirsRemoved:
-          gLogger.debug("SRM2Storage.removeDirectory: Successfully removed all files and sub-directories.") 
+          gLogger.debug("SRM2Storage.removeDirectory: Successfully removed all files and sub-directories.")
           res = self.__removeDirectory(directory)
           if res['OK']:
             if res['Value']['Successful'].has_key(directory):
@@ -1203,7 +1204,7 @@ class SRM2Storage(StorageBase):
           resDict['SizeRemoved'] += filesToRemove[removedSurl]
         if len(res['Value']['Failed'].keys()) != 0:
           resDict['AllRemoved'] = False
-    gLogger.debug("SRM2Storage.__removeDirectoryFiles: Removed %s files of size %s bytes." % (resDict['FilesRemoved'],resDict['SizeRemoved'])) 
+    gLogger.debug("SRM2Storage.__removeDirectoryFiles: Removed %s files of size %s bytes." % (resDict['FilesRemoved'],resDict['SizeRemoved']))
     return resDict
 
   def __removeSubDirectories(self,subDirectories):
@@ -1214,7 +1215,7 @@ class SRM2Storage(StorageBase):
         for removedSubDir,removedDict in res['Value']['Successful'].items():
           resDict['FilesRemoved'] += removedDict['FilesRemoved']
           resDict['SizeRemoved'] += removedDict['SizeRemoved']
-          gLogger.debug("SRM2Storage.__removeSubDirectories: Removed %s files of size %s bytes from %s." % (removedDict['FilesRemoved'],removedDict['SizeRemoved'],removedSubDir)) 
+          gLogger.debug("SRM2Storage.__removeSubDirectories: Removed %s files of size %s bytes from %s." % (removedDict['FilesRemoved'],removedDict['SizeRemoved'],removedSubDir))
         for removedSubDir,removedDict in res['Value']['Failed'].items():
           resDict['FilesRemoved'] += removedDict['FilesRemoved']
           resDict['SizeRemoved'] += removedDict['SizeRemoved']
@@ -1234,7 +1235,7 @@ class SRM2Storage(StorageBase):
      urls = path
     else:
       return S_ERROR("SRM2Storage.checkArgumentFormat: Supplied path is not of the correct format.")
-    return S_OK(urls) 
+    return S_OK(urls)
 
   def __parse_stat(self,stat):
     statDict = {'File':False,'Directory':False}
@@ -1307,7 +1308,6 @@ class SRM2Storage(StorageBase):
     gfalDict['defaultsetype'] = 'srmv2'
     gfalDict['no_bdii_check'] = 1
     gfalDict['srmv2_lslevels'] = depth
-    oAccounting = DataStoreClient()
 
     allResults = []
     failed = {}
@@ -1317,14 +1317,14 @@ class SRM2Storage(StorageBase):
       gfalDict['nbfiles'] =  len(urls)
       gfalDict['timeout'] = self.fileTimeout*len(urls)
       res = self.__gfal_operation_wrapper('gfal_ls',gfalDict)
-      oAccounting.addRegister(res['AccountingOperation'])
+      gDataStoreClient.addRegister(res['AccountingOperation'])
       if not res['OK']:
         for url in urls:
           failed[url] = res['Message']
       else:
-        allResults.extend(res['Value']) 
+        allResults.extend(res['Value'])
 
-    oAccounting.commit()
+    gDataStoreClient.commit()
     resDict = {}
     resDict['AllResults'] = allResults
     resDict['Failed'] = failed
@@ -1339,24 +1339,23 @@ class SRM2Storage(StorageBase):
     gfalDict['srmv2_spacetokendesc'] = self.spaceToken
     gfalDict['srmv2_desiredpintime'] = 60*60*24
     gfalDict['protocols'] = self.defaultLocalProtocols
-    oAccounting = DataStoreClient()
     allResults = []
     failed = {}
 
     listOfLists = breakListIntoChunks(urls.keys(),self.filesPerCall)
-    for urls in listOfLists:  
+    for urls in listOfLists:
       gfalDict['surls'] = urls
       gfalDict['nbfiles'] =  len(urls)
       gfalDict['timeout'] = self.fileTimeout*len(urls)
       res = self.__gfal_operation_wrapper('gfal_prestage',gfalDict)
-      oAccounting.addRegister(res['AccountingOperation'])
+      gDataStoreClient.addRegister(res['AccountingOperation'])
       if not res['OK']:
         for url in urls:
           failed[url] = res['Message']
       else:
         allResults.extend(res['Value'])
-    
-    oAccounting.commit()
+
+    gDataStoreClient.commit()
     resDict = {}
     resDict['AllResults'] = allResults
     resDict['Failed'] = failed
@@ -1367,27 +1366,26 @@ class SRM2Storage(StorageBase):
     """
     gfalDict = {}
     gfalDict['defaultsetype'] = 'srmv2'
-    gfalDict['no_bdii_check'] = 1  
+    gfalDict['no_bdii_check'] = 1
     gfalDict['protocols'] = listProtocols
     gfalDict['srmv2_spacetokendesc'] = self.spaceToken
-    oAccounting = DataStoreClient()
     allResults = []
     failed = {}
 
     listOfLists = breakListIntoChunks(urls.keys(),self.filesPerCall)
-    for urls in listOfLists: 
+    for urls in listOfLists:
       gfalDict['surls'] = urls
       gfalDict['nbfiles'] =  len(urls)
       gfalDict['timeout'] = self.fileTimeout*len(urls)
       res = self.__gfal_operation_wrapper('gfal_turlsfromsurls',gfalDict)
-      oAccounting.addRegister(res['AccountingOperation'])
+      gDataStoreClient.addRegister(res['AccountingOperation'])
       if not res['OK']:
         for url in urls:
           failed[url] = res['Message']
       else:
         allResults.extend(res['Value'])
 
-    oAccounting.commit()
+    gDataStoreClient.commit()
     resDict = {}
     resDict['AllResults'] = allResults
     resDict['Failed'] = failed
@@ -1399,7 +1397,6 @@ class SRM2Storage(StorageBase):
     gfalDict = {}
     gfalDict['defaultsetype'] = 'srmv2'
     gfalDict['no_bdii_check'] = 1
-    oAccounting = DataStoreClient()
     allResults = []
     failed = {}
 
@@ -1409,14 +1406,14 @@ class SRM2Storage(StorageBase):
       gfalDict['nbfiles'] =  len(urls)
       gfalDict['timeout'] = self.fileTimeout*len(urls)
       res = self.__gfal_operation_wrapper('gfal_deletesurls',gfalDict)
-      oAccounting.addRegister(res['AccountingOperation'])
+      gDataStoreClient.addRegister(res['AccountingOperation'])
       if not res['OK']:
         for url in urls:
           failed[url] = res['Message']
       else:
         allResults.extend(res['Value'])
-      
-    oAccounting.commit()
+
+    gDataStoreClient.commit()
     resDict = {}
     resDict['AllResults'] = allResults
     resDict['Failed'] = failed
@@ -1429,24 +1426,23 @@ class SRM2Storage(StorageBase):
     gfalDict['defaultsetype'] = 'srmv2'
     gfalDict['no_bdii_check'] = 1
     gfalDict['srmv2_spacetokendesc'] = self.spaceToken
-    oAccounting = DataStoreClient()
     allResults = []
     failed = {}
-        
+
     listOfLists = breakListIntoChunks(urls.keys(),self.filesPerCall)
     for urls in listOfLists:
       gfalDict['surls'] = urls
       gfalDict['nbfiles'] =  len(urls)
       gfalDict['timeout'] = self.fileTimeout*len(urls)
       res = self.__gfal_operation_wrapper('gfal_removedir',gfalDict)
-      oAccounting.addRegister(res['AccountingOperation'])
+      gDataStoreClient.addRegister(res['AccountingOperation'])
       if not res['OK']:
         for url in urls:
           failed[url] = res['Message']
       else:
         allResults.extend(res['Value'])
-       
-    oAccounting.commit()
+
+    gDataStoreClient.commit()
     resDict = {}
     resDict['AllResults'] = allResults
     resDict['Failed'] = failed
@@ -1459,10 +1455,9 @@ class SRM2Storage(StorageBase):
     gfalDict['srmv2_spacetokendesc'] = self.spaceToken
     gfalDict['srmv2_desiredpintime'] = lifetime
 
-    oAccounting = DataStoreClient()
     allResults = []
     failed = {}
-    
+
     srmRequestFiles = {}
     for url,srmRequestID in urls.items():
       if not srmRequestFiles.has_key(srmRequestID):
@@ -1476,35 +1471,34 @@ class SRM2Storage(StorageBase):
         gfalDict['nbfiles'] =  len(urls)
         gfalDict['timeout'] = self.fileTimeout*len(urls)
         res = self.__gfal_operation_wrapper('gfal_pin',gfalDict,srmRequestID=srmRequestID)
-        oAccounting.addRegister(res['AccountingOperation'])
-        if not res['OK']: 
+        gDataStoreClient.addRegister(res['AccountingOperation'])
+        if not res['OK']:
           for url in urls:
             failed[url] = res['Message']
         else:
           allResults.extend(res['Value'])
-    
-    oAccounting.commit()
+
+    gDataStoreClient.commit()
     resDict = {}
     resDict['AllResults'] = allResults
     resDict['Failed'] = failed
     return S_OK(resDict)
 
   def __gfal_prestagestatus_wrapper(self,urls):
-    gfalDict = {}  
+    gfalDict = {}
     gfalDict['defaultsetype'] = 'srmv2'
     gfalDict['no_bdii_check'] = 0
     gfalDict['srmv2_spacetokendesc'] = self.spaceToken
-      
-    oAccounting = DataStoreClient()   
+
     allResults = []
     failed = {}
-    
+
     srmRequestFiles = {}
     for url,srmRequestID in urls.items():
       if not srmRequestFiles.has_key(srmRequestID):
         srmRequestFiles[srmRequestID] = []
       srmRequestFiles[srmRequestID].append(url)
-    
+
     for srmRequestID,urls in srmRequestFiles.items():
       listOfLists = breakListIntoChunks(urls,self.filesPerCall)
       for urls in listOfLists:
@@ -1512,34 +1506,33 @@ class SRM2Storage(StorageBase):
         gfalDict['nbfiles'] =  len(urls)
         gfalDict['timeout'] = self.fileTimeout*len(urls)
         res = self.__gfal_operation_wrapper('gfal_prestagestatus',gfalDict,srmRequestID=srmRequestID)
-        oAccounting.addRegister(res['AccountingOperation'])
+        gDataStoreClient.addRegister(res['AccountingOperation'])
         if not res['OK']:
           for url in urls:
             failed[url] = res['Message']
         else:
           allResults.extend(res['Value'])
-    
-    oAccounting.commit()
+
+    gDataStoreClient.commit()
     resDict = {}
     resDict['AllResults'] = allResults
     resDict['Failed'] = failed
     return S_OK(resDict)
 
   def __gfal_release_wrapper(self,urls):
-    gfalDict = {}  
+    gfalDict = {}
     gfalDict['defaultsetype'] = 'srmv2'
     gfalDict['no_bdii_check'] = 0
-      
-    oAccounting = DataStoreClient()   
+
     allResults = []
     failed = {}
-    
+
     srmRequestFiles = {}
     for url,srmRequestID in urls.items():
       if not srmRequestFiles.has_key(srmRequestID):
         srmRequestFiles[srmRequestID] = []
       srmRequestFiles[srmRequestID].append(url)
-    
+
     for srmRequestID,urls in srmRequestFiles.items():
       listOfLists = breakListIntoChunks(urls,self.filesPerCall)
       for urls in listOfLists:
@@ -1547,14 +1540,14 @@ class SRM2Storage(StorageBase):
         gfalDict['nbfiles'] =  len(urls)
         gfalDict['timeout'] = self.fileTimeout*len(urls)
         res = self.__gfal_operation_wrapper('gfal_release',gfalDict,srmRequestID=srmRequestID)
-        oAccounting.addRegister(res['AccountingOperation'])
+        gDataStoreClient.addRegister(res['AccountingOperation'])
         if not res['OK']:
           for url in urls:
             failed[url] = res['Message']
         else:
           allResults.extend(res['Value'])
-    
-    oAccounting.commit()
+
+    gDataStoreClient.commit()
     resDict = {}
     resDict['AllResults'] = allResults
     resDict['Failed'] = failed
@@ -1571,8 +1564,8 @@ class SRM2Storage(StorageBase):
       oDataOperation.setValueByKey('FinalStatus','Failed')
       result = S_ERROR(res['Message'])
       result['AccountingOperation'] = oDataOperation
-      return result 
-    
+      return result
+
     gfalObject = res['Value']
     if srmRequestID:
       res = self.__gfal_set_ids(gfalObject,srmRequestID)
@@ -1655,7 +1648,7 @@ class SRM2Storage(StorageBase):
     if not errCode == 0:
       errStr = "SRM2Storage.__create_gfal_object: Failed to perform gfal_init."
       if not errMessage:
-        errMessage = os.strerror(errCode)  
+        errMessage = os.strerror(errCode)
       gLogger.error(errStr,errMessage)
       return S_ERROR("%s%s" % (errStr,errMessage))
     else:
@@ -1674,7 +1667,7 @@ class SRM2Storage(StorageBase):
     else:
       gLogger.debug("SRM2Storage.__gfal_set_ids: Successfully performed gfal_set_ids.")
       return S_OK(gfalObject)
-         
+
   # These methods are for the execution of the functionality
 
   def __gfal_exec(self,gfalObject,method):
@@ -1685,12 +1678,12 @@ class SRM2Storage(StorageBase):
       if not errCode == 0:
         errStr = "SRM2Storage.__gfal_exec: Failed to perform %s." % method
         if not errMessage:
-          errMessage = os.strerror(errCode)   
-        gLogger.error(errStr,errMessage)  
+          errMessage = os.strerror(errCode)
+        gLogger.error(errStr,errMessage)
         return S_ERROR("%s%s" % (errStr,errMessage))
       else:
         gLogger.debug("SRM2Storage.__gfal_exec: Successfully performed %s." % method)
-        return S_OK(gfalObject) 
+        return S_OK(gfalObject)
     except AttributeError,errMessage:
       exceptStr = "SRM2Storage.__gfal_exec: Exception while perfoming %s." % method
       gLogger.exception(exceptStr,'',errMessage)
@@ -1710,7 +1703,7 @@ class SRM2Storage(StorageBase):
       for result in listOfResults:
         if result['status'] != 0:
           if result['explanation']:
-            errMessage = result['explanation'] 
+            errMessage = result['explanation']
           elif result['status'] > 0:
             errMessage = os.strerror(result['status'])
           result['ErrorMessage'] = errMessage
@@ -1723,7 +1716,7 @@ class SRM2Storage(StorageBase):
       errStr = "SRM2Storage.__gfal_get_ids: Did not obtain SRM request ID."
       gLogger.error(errStr)
       return S_ERROR(errStr)
-    else:  
+    else:
       gLogger.debug("SRM2Storage.__get_gfal_ids: Retrieved SRM request ID %s." % srmRequestToken)
       return S_OK(srmRequestToken)
 
