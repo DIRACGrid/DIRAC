@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueAgent.py,v 1.23 2008/12/20 18:02:23 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueAgent.py,v 1.24 2009/01/28 12:03:02 acasajus Exp $
 # File :   TaskQueueAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
      into a Task Queue.
 """
 
-__RCSID__ = "$Id: TaskQueueAgent.py,v 1.23 2008/12/20 18:02:23 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueAgent.py,v 1.24 2009/01/28 12:03:02 acasajus Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB         import TaskQueueDB
@@ -51,28 +51,12 @@ class TaskQueueAgent(OptimizerModule):
   def insertJobInQueue( self, job, classAdJob ):
     """ Check individual job and add to the Task Queue eventually.
     """
-    retVal = self.jobDB.getJobAttributes( job, ['UserPriority'] )
-    if retVal['OK']:
-      if retVal['Value']:
-        jobPriority = retVal['Value']['UserPriority']
-      else:
-        self.log.warn('No priority specified for job %d' % int(job))
-        jobPriority = 0
-    else:
-      jobPriority=0
-
+    #
     requirements = classAdJob.get_expression("Requirements")
     jobType = classAdJob.get_expression("JobType").replace('"','')
-    pilotType = classAdJob.get_expression( "PilotType" ).replace('"','')
-
-    if pilotType == 'private':
-      ownerDN = classAdJob.get_expression( "OwnerDN" ).replace('"','')
-      ownerGroup = classAdJob.get_expression( "OwnerGroup" ).replace('"','')
-      ownerGroupProperties = getPropertiesForGroup( ownerGroup )
-      if not 'JobSharing' in ownerGroupProperties:
-        requirements += ' && other.OwnerDN == "%s"' % ownerDN
-      requirements += ' && other.OwnerGroup == "%s"' % ownerGroup
-    requirements += ' && other.PilotType == "%s"' % pilotType
+    submitPool = classAdJob.get_expression( "SubmitPool" ).replace('"','')
+    ownerDN = classAdJob.get_expression( "OwnerDN" ).replace('"','')
+    ownerGroup = classAdJob.get_expression( "OwnerGroup" ).replace('"','')
 
     jobReq = classAdJob.get_expression("JobRequirements")
     classAdJobReq = ClassAd(jobReq)
@@ -87,6 +71,8 @@ class TaskQueueAgent(OptimizerModule):
     for name in self.taskQueueDB.getMultiValueTQDefFields():
       if classAdJobReq.lookupAttribute(name):
         jobReqDict[name] = classAdJobReq.getListFromExpression(name)
+
+    jobPriority = classAdJobReq.getAttributeInt( 'UserPriority' )
 
     result = self.taskQueueDB.insertJob( job, jobReqDict, jobPriority )
     if not result[ 'OK' ]:

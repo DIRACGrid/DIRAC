@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.47 2008/12/20 17:49:58 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.48 2009/01/28 12:03:02 acasajus Exp $
 # File :   JobSchedulingAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@
       meaningfully.
 
 """
-__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.47 2008/12/20 17:49:58 rgracian Exp $"
+__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.48 2009/01/28 12:03:02 acasajus Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
@@ -362,14 +362,16 @@ class JobSchedulingAgent(OptimizerModule):
       classAddReq.insertAttributeVectorString( 'BannedSites', bannedSites )
 
     if not classAdJob.lookupAttribute( "SubmitPool" ):
-      classAdJob.insertAttributeString( 'SubmitPool', 'ANY' )
+      classAddReq.insertAttributeString( 'SubmitPool', 'Default' )
     else:
-      submitPool = classAdJob.getListFromExpression('SubmitPool')[0]
-      if submitPool != "ANY":
-        directorSection = getAgentSection( "WorkloadManagement/TaskQueueDirector" )
-        gridMiddleware = gConfig.getValue( "%s/%s/GridMiddleware" % ( directorSection, submitPool ), '' )
-        if gridMiddleware:
-          classAddReq.insertAttributeString( 'GridMiddleware', gridMiddleware )
+      classAddReq.insertAttributeString( 'SubmitPool', classAdJob.getListFromExpression( 'SubmitPool' )[0] )
+
+    if classAdJob.lookupAttribute( "GridMiddleware" ):
+      classAddReq.insertAttributeString( 'GridMiddleware', classAdJob.get_expression( 'GridMiddleware' ) )
+
+    if classAdJob.lookupAttribute( "PilotTypes" ):
+      classAddReq.insertAttributeString( 'PilotTypes', classAdJob.get_expression( 'PilotTypes' ) )
+
     #Required CE's requirements
     gridCEs = [ ce for ce in classAdJob.getListFromExpression( 'GridRequiredCEs' ) if ce ]
     if gridCEs:

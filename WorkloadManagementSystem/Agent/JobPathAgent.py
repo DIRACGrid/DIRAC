@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobPathAgent.py,v 1.12 2008/12/04 14:10:41 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobPathAgent.py,v 1.13 2009/01/28 12:03:02 acasajus Exp $
 # File :   JobPathAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -12,12 +12,13 @@
       path through the optimizers.
 
 """
-__RCSID__ = "$Id: JobPathAgent.py,v 1.12 2008/12/04 14:10:41 acasajus Exp $"
+__RCSID__ = "$Id: JobPathAgent.py,v 1.13 2009/01/28 12:03:02 acasajus Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
 from DIRAC.Core.Utilities.ModuleFactory                    import ModuleFactory
+from DIRAC.WorkloadManagementSystem.Client.JobDescription  import JobDescription
 from DIRAC                                                 import S_OK, S_ERROR, List
 import string,re
 
@@ -31,7 +32,7 @@ class JobPathAgent(OptimizerModule):
     """
     self.startingMajorStatus = "Received"
     self.startingMinorStatus = False
-
+    #self.requiredJobInfo = "jdlOriginal"
     return S_OK()
 
   def beginExecution(self):
@@ -43,16 +44,31 @@ class JobPathAgent(OptimizerModule):
 
     return S_OK()
 
+  def __syncJobDesc( self, jobId, jobDesc, classAd ):
+    if not jobDesc.isDirty():
+      return
+    for op in jobDesc.getOptions():
+      classAdJob.insertAttributeString( op, jobDesc.getVar( op ) )
+    self.jobDB.setJobJDL( jobId, jobDesc.dumpDescriptionAsJDL() )
+
   #############################################################################
   def checkJob( self, job, classAdJob ):
     """This method controls the checking of the job.
     """
+    jobDesc = JobDescription()
+    result = jobDesc.loadDescription( classAdJob.asJDL() )
+    if not result[ 'OK' ]:
+      #TODO: Set error
+      return result
+    self.__syncJobDesc( job, jobDesc, classAdJob )
+
     #Check if job defines a path itself
     # FIXME: only some group might be able to overwrite the jobPath
     jobPath = classAdJob.get_expression('JobPath').replace('"','').replace('Unknown','')
+    #jobPath = jobDesc.getVarWithDefault( 'JobPath' ).replace( 'Unknown', '' )
     if jobPath:
-      self.log.info('Job %s defines its own optimizer chain %s' %(job,jobPath))
-      return self.processJob(job,List.fromChar(jobPath))
+      self.log.info('Job %s defines its own optimizer chain %s' % ( job, jobPath ) )
+      return self.processJob( job, List.fromChar( jobPath ) )
 
     #If no path, construct based on JDL and VO path module if present
     path = list(self.basePath)

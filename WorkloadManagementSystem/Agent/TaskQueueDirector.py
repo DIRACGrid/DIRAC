@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.13 2009/01/23 07:40:12 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.14 2009/01/28 12:03:02 acasajus Exp $
 # File :   TaskQueueDirector.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -19,7 +19,7 @@
      The following parameters are searched for in WorkloadManagement/TaskQueueDirector:
        - ThreadStartDelay:
        - SubmitPools: All the Submit pools that are to be initialized
-       - DefaultSubmitPools: If no specific pool is requested, use these         
+       - DefaultSubmitPools: If no specific pool is requested, use these
 
      It will use those Directors to submit pilots for each of the Supported SubmitPools
        - SubmitPools (see above)
@@ -48,20 +48,20 @@
 
         - Determine prioritySum: sum of the Priorities for all TaskQueues in the system.
 
-        - Determine pilotsPerPriority: result of dividing the  number of pilots to submit 
+        - Determine pilotsPerPriority: result of dividing the  number of pilots to submit
           per itteration by the prioritySum.
 
         - For each TaskQueue determine a target number of pilots to submit:
 
           - Multiply the priority by pilotsPerPriority.
-          - Apply a correction factor for proportional to maxCPU divided by CPU of the 
-            TaskQueue ( double number of pilots will be submitted for a TaskQueue with 
-            half CPU required ). To apply this correction the minimum CPU considered is 
+          - Apply a correction factor for proportional to maxCPU divided by CPU of the
+            TaskQueue ( double number of pilots will be submitted for a TaskQueue with
+            half CPU required ). To apply this correction the minimum CPU considered is
             lowestCPUBoost.
-          - Apply poisson statistics to determine the target number of pilots to submit 
-            (even a TQ with a very small priorities will get a chance of getting 
+          - Apply poisson statistics to determine the target number of pilots to submit
+            (even a TQ with a very small priorities will get a chance of getting
             pilots submitted).
-          - Determine a maximum number of "Waiting" pilots in the system: 
+          - Determine a maximum number of "Waiting" pilots in the system:
             ( 1 + extraPilotFraction ) * [No. of Jobs in TaskQueue] + extraPilots
           - Attempt to submit as many pilots a the minimum between both number.
           - Pilot submission request is inserted into a ThreadPool.
@@ -74,18 +74,18 @@
 
         In summary:
 
-        All TaskQueues are considered on every itteration, pilots are submitted 
+        All TaskQueues are considered on every itteration, pilots are submitted
         statistically proportional to the priority of the TaskQueue, boosted for
-        the TaskQueues with lower CPU requirements and limited by the difference 
+        the TaskQueues with lower CPU requirements and limited by the difference
         between the number of waiting jobs and the number of waiting pilots.
-        
+
       Obsolete Job JDL Option:
         GridExecutable
         SoftwareTag
         SubmitPool (may want to recover it for SAM jobs)
 
 """
-__RCSID__ = "$Id: TaskQueueDirector.py,v 1.13 2009/01/23 07:40:12 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueDirector.py,v 1.14 2009/01/28 12:03:02 acasajus Exp $"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 
@@ -113,7 +113,7 @@ class TaskQueueDirector(AgentModule):
     """ Standard constructor
     """
     import threading
-    
+
     self.am_setOption( "PollingTime", 60.0 )
 
     self.am_setOption( "pilotsPerIteration", 40.0 )
@@ -121,11 +121,11 @@ class TaskQueueDirector(AgentModule):
     self.am_setOption( "extraPilotFraction", 0.2 )
     self.am_setOption( "extraPilots", 4 )
     self.am_setOption( "maxPilotWaitingHours", 6 )
-    
+
     self.am_setOption('ThreadStartDelay', 1 )
     self.am_setOption('SubmitPools', [] )
     self.am_setOption('DefaultSubmitPools', [] )
-    
+
 
     self.am_setOption('minThreadsInPool', 0 )
     self.am_setOption('maxThreadsInPool', 2 )
@@ -182,7 +182,7 @@ class TaskQueueDirector(AgentModule):
     timeLimitToConsider = Time.toString( Time.dateTime() - Time.hour * self.am_getOption( "maxPilotWaitingHours") )
     for taskQueueID in taskQueueDict:
       self.log.verbose( 'Processing TaskQueue', taskQueueID )
-      
+
       result = pilotAgentsDB.countPilots( {'TaskQueueID': taskQueueID, 'Status': waitingStatusList}, newer = timeLimitToConsider )
       if not result['OK']:
         self.log.error('Fail to get Number of Waiting pilots',result['Message'])
@@ -190,7 +190,7 @@ class TaskQueueDirector(AgentModule):
       else:
         waitingPilots = result['Value']
         self.log.verbose( 'Waiting Pilots for TaskQueue %s:' % taskQueueID, waitingPilots )
-      
+
       result = self.submitPilotsForTaskQueue( taskQueueDict[taskQueueID], waitingPilots, pilotsPerPriority )
 
       if result['OK']:
@@ -225,10 +225,10 @@ class TaskQueueDirector(AgentModule):
 
     # Determine number of pilots to submit, boosting TaskQueues with low CPU requirements
     pilotsToSubmit = poisson( pilotsPerPriority * taskQueuePriority * maxCPU / taskQueueCPU )
-    # limit the number of pilots according to the number of waiting job in the TaskQueue 
+    # limit the number of pilots according to the number of waiting job in the TaskQueue
     # and the number of already submitted pilots for that TaskQueue
     pilotsToSubmit = min( pilotsToSubmit, int( ( 1 + extraPilotFraction ) * taskQueueJobs ) + extraPilots - waitingPilots )
-    if pilotsToSubmit <= 0: return S_OK( 0 ) 
+    if pilotsToSubmit <= 0: return S_OK( 0 )
     self.log.verbose( 'Submitting %s pilots for TaskQueue %s' % ( pilotsToSubmit,  taskQueueID ) )
 
     return self.__submitPilots( taskQueueDict, pilotsToSubmit )
@@ -239,10 +239,11 @@ class TaskQueueDirector(AgentModule):
       until next itration once it becomes full
     """
     # Check if an specific MiddleWare is required
-    if 'GridMiddlewares' in taskQueueDict:
-      submitPools = taskQueueDict['GridMiddlewares']
+    if 'SubmitPools' in taskQueueDict:
+      submitPools = taskQueueDict[ 'SubmitPools' ]
     else:
-      submitPools = List.randomize( self.am_getOption('DefaultSubmitPools') )
+      submitPools = self.am_getOption('DefaultSubmitPools')
+    submitPools = List.randomize( submitPools )
 
     for submitPool in submitPools:
       self.log.verbose( 'Trying SubmitPool:',submitPool )
@@ -353,12 +354,12 @@ class TaskQueueDirector(AgentModule):
 
   def __configureDirector( self, submitPool=None ):
     # Update Configuration from CS
-    # if submitPool == None then, 
+    # if submitPool == None then,
     #     disable all Directors
-    # else 
+    # else
     #    Update Configuration for the PilotDirector of that SubmitPool
     if not submitPool:
-      self.workDir     = self.am_getOption( 'WorkDirectory' )      
+      self.workDir     = self.am_getOption( 'WorkDirectory' )
       # By default disable all directors
       for director in self.directors:
         self.directors[director]['isEnabled'] = False
@@ -409,16 +410,17 @@ DIRAC_INSTALL = os.path.join( DIRAC.rootPath, 'scripts', 'dirac-install' )
 DIRAC_VERSION = 'Production'
 DIRAC_VERSION = 'HEAD'
 
-ENABLE_LISTMATCH = 1
-LISTMATCH_DELAY  = 5
-GRIDENV          = ''
-PILOT_DN         = '/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=paterson/CN=607602/CN=Stuart Paterson'
-PILOT_DN         = '/DC=es/DC=irisgrid/O=ecm-ub/CN=Ricardo-Graciani-Diaz'
-PILOT_GROUP      = 'lhcb_pilot'
-TIME_POLICY      = 'TimeRef * 500 / other.GlueHostBenchmarkSI00 / 60'
-REQUIREMENTS     = ['Rank > -2']
-RANK             = '( other.GlueCEStateWaitingJobs == 0 ? other.GlueCEStateFreeCPUs * 10 / other.GlueCEInfoTotalCPUs : -other.GlueCEStateWaitingJobs * 4 / (other.GlueCEStateRunningJobs + 1 ) - 1 )'
-FUZZY_RANK       = 'true'
+ENABLE_LISTMATCH       = 1
+LISTMATCH_DELAY        = 5
+GRIDENV                = ''
+PILOT_DN               = '/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=paterson/CN=607602/CN=Stuart Paterson'
+PILOT_DN               = '/DC=es/DC=irisgrid/O=ecm-ub/CN=Ricardo-Graciani-Diaz'
+PILOT_GROUP            = 'lhcb_pilot'
+TIME_POLICY            = 'TimeRef * 500 / other.GlueHostBenchmarkSI00 / 60'
+REQUIREMENTS           = ['Rank > -2']
+RANK                   = '( other.GlueCEStateWaitingJobs == 0 ? other.GlueCEStateFreeCPUs * 10 / other.GlueCEInfoTotalCPUs : -other.GlueCEStateWaitingJobs * 4 / (other.GlueCEStateRunningJobs + 1 ) - 1 )'
+FUZZY_RANK             = 'true'
+PRIVATE_PILOT_FRACTION = 0.5
 
 ERROR_JDL        = 'Could not create GRID JDL'
 ERROR_PROXY      = 'No proxy Available'
@@ -447,16 +449,17 @@ class PilotDirector:
     self.diracVersion       = DIRAC_VERSION
     self.install            = DIRAC_INSTALL
 
-    self.enableListMatch    = ENABLE_LISTMATCH
-    self.listMatchDelay     = LISTMATCH_DELAY
-    self.gridEnv            = GRIDENV
-    self.loggingServers     = [ LOGGING_SERVER ]
-    self.genericPilotDN     = PILOT_DN
-    self.genericPilotGroup  = PILOT_GROUP
-    self.timePolicy         = TIME_POLICY
-    self.requirements       = REQUIREMENTS
-    self.rank               = RANK
-    self.fuzzyRank          = FUZZY_RANK
+    self.enableListMatch      = ENABLE_LISTMATCH
+    self.listMatchDelay       = LISTMATCH_DELAY
+    self.gridEnv              = GRIDENV
+    self.loggingServers       = [ LOGGING_SERVER ]
+    self.genericPilotDN       = PILOT_DN
+    self.genericPilotGroup    = PILOT_GROUP
+    self.timePolicy           = TIME_POLICY
+    self.requirements         = REQUIREMENTS
+    self.rank                 = RANK
+    self.fuzzyRank            = FUZZY_RANK
+    self.privatePilotFraction = PRIVATE_PILOT_FRACTION
 
     self.configureFromSection( csSection )
     """
@@ -486,25 +489,24 @@ class PilotDirector:
     if self.loggingServers:
       self.log.info( ' LoggingServers:', ', '.join(self.loggingServers) )
 
-
-
   def configureFromSection( self, mySection ):
-    
-    self.pilot              = gConfig.getValue( mySection+'/PilotScript'       , self.pilot )
-    self.diracVersion       = gConfig.getValue( mySection+'/DIRACVersion'      , self.diracVersion )
-    self.install            = gConfig.getValue( mySection+'/InstallScript'     , self.install )
 
-    self.enableListMatch    = gConfig.getValue( mySection+'/EnableListMatch'   , self.enableListMatch )
-    self.listMatchDelay     = gConfig.getValue( mySection+'/ListMatchDelay'    , self.listMatchDelay )
-    self.gridEnv            = gConfig.getValue( mySection+'/GridEnv'           , self.gridEnv )
-    self.resourceBrokers    = gConfig.getValue( mySection+'/ResourceBrokers'   , self.resourceBrokers )
-    self.genericPilotDN     = gConfig.getValue( mySection+'/GenericPilotDN'    , self.genericPilotDN )
-    self.genericPilotGroup  = gConfig.getValue( mySection+'/GenericPilotGroup' , self.genericPilotGroup )
-    self.timePolicy         = gConfig.getValue( mySection+'/TimePolicy'        , self.timePolicy )
-    self.requirements       = gConfig.getValue( mySection+'/Requirements'      , self.requirements )
-    self.rank               = gConfig.getValue( mySection+'/Rank'              , self.rank )
-    self.fuzzyRank          = gConfig.getValue( mySection+'/FuzzyRank'         , self.fuzzyRank )
-    self.loggingServers     = gConfig.getValue( mySection+'/LoggingServers'    , self.loggingServers )
+    self.pilot                = gConfig.getValue( mySection+'/PilotScript'          , self.pilot )
+    self.diracVersion         = gConfig.getValue( mySection+'/DIRACVersion'         , self.diracVersion )
+    self.install              = gConfig.getValue( mySection+'/InstallScript'        , self.install )
+
+    self.enableListMatch      = gConfig.getValue( mySection+'/EnableListMatch'      , self.enableListMatch )
+    self.listMatchDelay       = gConfig.getValue( mySection+'/ListMatchDelay'       , self.listMatchDelay )
+    self.gridEnv              = gConfig.getValue( mySection+'/GridEnv'              , self.gridEnv )
+    self.resourceBrokers      = gConfig.getValue( mySection+'/ResourceBrokers'      , self.resourceBrokers )
+    self.genericPilotDN       = gConfig.getValue( mySection+'/GenericPilotDN'       , self.genericPilotDN )
+    self.genericPilotGroup    = gConfig.getValue( mySection+'/GenericPilotGroup'    , self.genericPilotGroup )
+    self.timePolicy           = gConfig.getValue( mySection+'/TimePolicy'           , self.timePolicy )
+    self.requirements         = gConfig.getValue( mySection+'/Requirements'         , self.requirements )
+    self.rank                 = gConfig.getValue( mySection+'/Rank'                 , self.rank )
+    self.fuzzyRank            = gConfig.getValue( mySection+'/FuzzyRank'            , self.fuzzyRank )
+    self.loggingServers       = gConfig.getValue( mySection+'/LoggingServers'       , self.loggingServers )
+    self.privatePilotFraction = gConfig.getValue( mySection+'/PrivatePilotFraction' , self.privatePilotFraction )
 
   def submitPilots(self, taskQueueDict, pilotsToSubmit, workDir=None ):
     """
@@ -522,7 +524,10 @@ class PilotDirector:
 
       inputSandbox = []
       pilotOptions = []
-      if taskQueueDict['PilotType'].lower()=='private':
+      privateIfGenericTQ = self.privatePilotFraction < random.random()
+      privateTQ = ( 'PilotTypes' in taskQueueDict and 'private' in [ t.lower() for t in taskQueueDict['PilotTypes'] ] )
+      submitPrivatePilot = privateIfGenericTQ or privateTQ
+      if submitPrivatePilot:
         self.log.verbose('Submitting private pilots for TaskQueue %s' % taskQueueID)
         ownerDN    = taskQueueDict['OwnerDN']
         ownerGroup = taskQueueDict['OwnerGroup']
@@ -533,22 +538,24 @@ class PilotDirector:
         if not 'JobSharing' in ownerGroupProperties:
           # Add Owner requirement to pilot
           pilotOptions.append( "-O '%s'" % ownerDN )
-        pilotOptions.append( '-o /Resources/Computing/InProcess/PilotType=private' )
+        if privateTQ:
+          pilotOptions.append( '-o /Resources/Computing/InProcess/PilotType=private' )
       else:
+        #For generic jobs we'll submit mixture of generic and private pilots
         self.log.verbose('Submitting generic pilots for TaskQueue %s' % taskQueueID)
         ownerDN    = self.genericPilotDN
         ownerGroup = self.genericPilotGroup
-        pilotOptions.append( '-o /Resources/Computing/InProcess/PilotType=generic' )
 
       # Requested version of DIRAC
       pilotOptions.append( '-v %s' % self.diracVersion )
       # Requested CPU time
       pilotOptions.append( '-T %s' % taskQueueDict['CPUTime'] )
-      # Setup. 
+      # Setup.
       pilotOptions.append( '-o /DIRAC/Setup=%s' % taskQueueDict['Setup'] )
 
       # Write JDL
-      retDict = self._prepareJDL( taskQueueDict, workingDirectory, pilotOptions, pilotsToSubmit, ceMask )
+      retDict = self._prepareJDL( taskQueueDict, workingDirectory, pilotOptions, pilotsToSubmit,
+                                  ceMask, submitPrivatePilot, privateTQ )
       jdl = retDict['JDL']
       pilotRequirements = retDict['Requirements']
       if not jdl:
@@ -626,15 +633,15 @@ class PilotDirector:
         for pilotReference, resourceBroker in submitRet:
           pilotReference = self._getChildrenReferences( proxy, pilotReference, taskQueueID )
           submittedPilots += len(pilotReference)
-          pilotAgentsDB.addPilotTQReference(pilotReference, taskQueueID, ownerDN, 
-                        vomsGroup, broker=resourceBroker, gridType=self.gridMiddleware, 
+          pilotAgentsDB.addPilotTQReference(pilotReference, taskQueueID, ownerDN,
+                        vomsGroup, broker=resourceBroker, gridType=self.gridMiddleware,
                         requirements=pilotRequirements )
       else:
         for pilotReference, resourceBroker in submitRet:
           pilotReference = [pilotReference]
           submittedPilots += len(pilotReference)
-          pilotAgentsDB.addPilotTQReference(pilotReference, taskQueueID, ownerDN, 
-                        vomsGroup, broker=resourceBroker, gridType=self.gridMiddleware, 
+          pilotAgentsDB.addPilotTQReference(pilotReference, taskQueueID, ownerDN,
+                        vomsGroup, broker=resourceBroker, gridType=self.gridMiddleware,
                         requirements=pilotRequirements )
 
       # add some sleep here
@@ -716,7 +723,7 @@ class PilotDirector:
   def exceptionCallBack(self, threadedJob, exceptionInfo ):
     self.log.exception( 'Exception in Pilot Submission' )
 
-  def _prepareJDL(self, taskQueueDict, workingDirectory, pilotOptions, pilotsToSubmit, ceMask ):
+  def _prepareJDL(self, taskQueueDict, workingDirectory, pilotOptions, pilotsToSubmit, ceMask, submitPrivatePilot, privateTQ ):
     """
       This method should be overridden in a subclass
     """
@@ -874,7 +881,7 @@ class PilotDirector:
   def _writeJDL(self, filename, jdlList):
     try:
       f = open(filename,'w')
-      f.write( '\n'.join( jdlList) )
+      f.write( '\n'.join( jdlList ) )
       f.close()
     except Exception, x:
       self.log.exception( )
@@ -896,7 +903,7 @@ class gLitePilotDirector(PilotDirector):
     self.log.info( '' )
     self.log.info( '===============================================' )
 
-  def _prepareJDL(self, taskQueueDict, workingDirectory, pilotOptions, pilotsToSubmit, ceMask ):
+  def _prepareJDL(self, taskQueueDict, workingDirectory, pilotOptions, pilotsToSubmit, ceMask, submitPrivatePilot, privateTQ ):
     """
       Write JDL for Pilot Submission
     """
@@ -910,6 +917,14 @@ class gLitePilotDirector(PilotDirector):
 
     nPilots = 1
 
+    if privateTQ:
+      extraReq = "True"
+    else:
+      if submitPrivatePilot:
+        extraReq = "! AllowsGenericPilot"
+      else:
+        extraReq = "AllowsGenericPilot"
+
     wmsClientJDL = """
 
 RetryCount = 0;
@@ -918,7 +933,8 @@ MyProxyServer = "no-myproxy.cern.ch";
 
 Requirements = pilotRequirements;
 WmsClient = [
-Requirements = other.GlueCEStateStatus == "Production";
+AllowsGenericPilot = Member( "VO-lhcb-pilot" , other.GlueHostApplicationSoftwareRunTimeEnvironment );
+Requirements = other.GlueCEStateStatus == "Production" && %s;
 ErrorStorage = "%s/pilotError";
 OutputStorage = "%s/pilotOutput";
 # ListenerPort = 44000;
@@ -930,7 +946,7 @@ WMProxyEndPoints = { %s };
 LBEndPoints = { %s };
 MyProxyServer = "no-myproxy.cern.ch";
 ];
-""" % ( workingDirectory, workingDirectory, workingDirectory, ', '.join(RBs), ', '.join(LBs) )
+""" % ( extraReq, workingDirectory, workingDirectory, workingDirectory, ', '.join(RBs), ', '.join(LBs) )
 
     if pilotsToSubmit >= 1:
       wmsClientJDL += """
@@ -1023,7 +1039,7 @@ class LCGPilotDirector(PilotDirector):
     self.log.info( '' )
     self.log.info( '===============================================' )
 
-  def _prepareJDL(self, taskQueueDict, workingDirectory, pilotOptions, pilotsToSubmit, ceMask ):
+  def _prepareJDL(self, taskQueueDict, workingDirectory, pilotOptions, pilotsToSubmit, ceMask, submitPrivatePilot, privateTQ ):
     """
       Write JDL for Pilot Submission
     """
@@ -1042,8 +1058,17 @@ class LCGPilotDirector(PilotDirector):
     NS = ', '.join(NSs)
     LB = ', '.join(LBs)
 
+    if privateTQ:
+      extraReq = "True"
+    else:
+      if submitPrivatePilot:
+        extraReq = "! AllowsGenericPilot"
+      else:
+        extraReq = "AllowsGenericPilot"
+
     rbJDL = """
-Requirements = pilotRequirements && other.GlueCEStateStatus == "Production";
+AllowsGenericPilot = Member( "VO-lhcb-pilot" , other.GlueHostApplicationSoftwareRunTimeEnvironment );
+Requirements = pilotRequirements && other.GlueCEStateStatus == "Production" && %s;
 RetryCount = 0;
 ErrorStorage = "%s/pilotError";
 OutputStorage = "%s/pilotOutput";
@@ -1061,7 +1086,7 @@ DefaultStatusLevel = 0;
 NSAddresses = { %s };
 LBAddresses = { %s };
 MyProxyServer = "no-myproxy.cern.ch";
-""" % (workingDirectory, workingDirectory, workingDirectory, LD, NS, LB)
+""" % ( extraReq, workingDirectory, workingDirectory, workingDirectory, LD, NS, LB)
 
     pilotJDL,pilotRequirements = self._JobJDL( taskQueueDict, pilotOptions, ceMask )
 
