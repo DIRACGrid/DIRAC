@@ -1,6 +1,7 @@
 
 import types
-from DIRAC import S_OK, S_ERROR, gConfig, PathFinder
+from DIRAC import S_OK, S_ERROR, gConfig
+from DIRAC.ConfigurationSystem.Client.PathFinder import getAgentSection
 from DIRAC.ConfigurationSystem.Client.CFG import CFG
 from DIRAC.Core.Utilities import List
 from DIRAC.Core.Utilities.JDL import loadJDLAsCFG, dumpCFGAsJDL
@@ -126,7 +127,7 @@ class JobDescription:
       return result
     allowedSubmitPools = []
     for option in [ "DefaultSubmitPools", "SubmitPools", "AllowedSubmitPools" ]:
-      allowedSubmitPools = gConfig.getValue( "%s/%s" % ( PathFinder.getAgentSection( "WorkloadManagement/TaskQueueDirector" ), option ),
+      allowedSubmitPools = gConfig.getValue( "%s/%s" % ( getAgentSection( "WorkloadManagement/TaskQueueDirector" ), option ),
                                              allowedSubmitPools )
     result = self.__checkMultiChoiceInDescription( "SubmitPools", allowedSubmitPools )
     if not result[ 'OK' ]:
