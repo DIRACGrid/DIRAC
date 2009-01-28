@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.122 2009/01/13 13:37:03 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.123 2009/01/28 12:03:38 acasajus Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -47,7 +47,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.122 2009/01/13 13:37:03 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.123 2009/01/28 12:03:38 acasajus Exp $"
 
 import re, os, sys, string, types
 import time, datetime, operator
@@ -58,11 +58,25 @@ from DIRAC                                     import gLogger, S_OK, S_ERROR, Ti
 from DIRAC.ConfigurationSystem.Client.Config   import gConfig
 from DIRAC.Core.Base.DB                        import DB
 from DIRAC.Core.Security.CS                    import getUsernameForDN, getDNForUsername
+from DIRAC.WorkloadManagementSystem.Client.JobDescription     import JobDescription
 
 DEBUG = 0
 JOB_STATES = ['Received','Checking','Staging','Waiting','Matched',
               'Running','Stalled','Done','Completed','Failed']
 JOB_FINAL_STATES = ['Done','Completed','Failed']
+
+JOB_DEPRECATED_ATTRIBUTES = [ 'UserPriority', 'SystemPriority' ]
+
+JOB_STATIC_ATTRIBUTES = [ 'JobID', 'JobType', 'DIRACSetup', 'JobGroup', 'JobSplitType', 'MasterJobID',
+                          'JobName', 'Owner', 'OwnerDN', 'OwnerGroup', 'SubmissionTime', 'VerifiedFlag' ]
+
+JOB_VARIABLE_ATTRIBUTES = [ 'Site', 'RescheduleTime', 'StartExecTime', 'EndExecTime', 'RescheduleCounter',
+                           'DeletedFlag', 'KilledFlag', 'FailedFlag',
+                           'ISandboxReadyFlag', 'OSandboxReadyFlag', 'RetrievedFlag', 'AccountedFlag' ]
+
+JOB_DYNAMIC_ATTRIBUTES = [ 'LastUpdateTime', 'HeartBeatTime',
+                           'Status', 'MinorStatus', 'ApplicationStatus', 'ApplicationNumStatus', 'CPUTime'
+                          ]
 
 #############################################################################
 class JobDB(DB):
@@ -890,8 +904,21 @@ class JobDB(DB):
         Set Initial job Attributes and Status
     """
 
+    jDesc = JobDescription()
+    result = jDesc.loadDescription( JDL )
+    if not result['OK']:
+      return result
+    jDesc.setVarsFromDict( { 'OwnerName' : owner,
+                             'OwnerDN' : ownerDN,
+                             'OwnerGroup' : ownerGroup,
+                             'DIRACSetup' : diracSetup } )
+    result = jDesc.checkDescription()
+    if not result['OK']:
+      return result
+
     jobAttrNames  = []
     jobAttrValues = []
+    descVars = {}
 
     # 1.- insert original JDL on DB and get new JobID
     # Fix the possible lack of the brackets in the JDL
@@ -900,6 +927,8 @@ class JobDB(DB):
     jobID = self.__insertNewJDL( JDL )
     if not jobID:
       return S_ERROR( 'Can not insert JDL in to DB' )
+
+    jDesc.setVar( 'JobID', jobID )
 
     jobAttrNames.append('JobID')
     jobAttrValues.append(jobID)
@@ -923,7 +952,7 @@ class JobDB(DB):
     jobAttrValues.append(diracSetup)
 
     # 2.- Check JDL and Prepare DIRAC JDL
-    classAdJob = ClassAd( JDL )
+    classAdJob = ClassAd( jDesc.dumpDescriptionAsJDL() )
     classAdReq = ClassAd( '[]' )
     retVal = S_OK(jobID)
     retVal['JobID'] = jobID
@@ -1531,7 +1560,7 @@ class JobDB(DB):
     resultMask = self.getSiteMask('Banned')
     if resultMask['OK']:
       for site in resultMask['Value']:
-        siteMask[site] = 'Banned'        
+        siteMask[site] = 'Banned'
 
     # Sort out different counters
     resultDict = {}
@@ -1588,7 +1617,7 @@ class JobDB(DB):
         rList.append('Idle')
       else:
         rList.append('Bad')
-      records.append(rList)  
+      records.append(rList)
 
     # Sort records as requested
     if sortItem != -1 :
@@ -1611,7 +1640,7 @@ class JobDB(DB):
 
     finalDict['TotalRecords'] = len(records)
     finalDict['Extras'] = countryCounts
-    
+
     return S_OK(finalDict)
 
 #################################################################################
