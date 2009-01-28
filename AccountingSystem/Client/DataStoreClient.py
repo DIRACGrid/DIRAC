@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/DataStoreClient.py,v 1.7 2009/01/27 18:43:37 acasajus Exp $
-__RCSID__ = "$Id: DataStoreClient.py,v 1.7 2009/01/27 18:43:37 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/DataStoreClient.py,v 1.8 2009/01/28 10:54:53 acasajus Exp $
+__RCSID__ = "$Id: DataStoreClient.py,v 1.8 2009/01/28 10:54:53 acasajus Exp $"
 
 import time
 from DIRAC import S_OK, S_ERROR, gLogger
@@ -19,6 +19,9 @@ class DataStoreClient:
     self.__registersList = []
     self.__maxTimeRetrying = retryGraceTime
     self.__lastSuccessfulCommit = time.time()
+
+  def setRetryGraceTime( self, retryGraceTime ):
+    self.__maxTimeRetrying = retryGraceTime
 
   def __checkBaseType( self, obj ):
     """
