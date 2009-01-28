@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.58 2009/01/28 14:14:31 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.59 2009/01/28 18:56:31 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.58 2009/01/28 14:14:31 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.59 2009/01/28 18:56:31 acasajus Exp $"
 
 import time
 import types
@@ -388,8 +388,9 @@ class TaskQueueDB(DB):
     if not retVal[ 'OK' ]:
       return S_ERROR( "Can't connect to DB: %s" % retVal[ 'Message' ] )
     connObj = retVal[ 'Value' ]
-    preJobSQL = "SELECT `tq_Jobs`.JobId, `tq_Jobs`.TQId FROM `tq_Jobs` WHERE `tq_Jobs`.TQId = %s"
-    postJobSQL = " ORDER BY RAND() / `tq_Jobs`.Priority ASC, `tq_Jobs`.JobId ASC LIMIT %s" % numJobsPerTry
+    preJobSQL = "SELECT `tq_Jobs`.JobId, `tq_Jobs`.TQId FROM `tq_Jobs` WHERE `tq_Jobs`.TQId = %s AND `tq_Jobs`.Priority = "
+    prioSQL = "(SELECT `tq_Jobs`.Priority FROM `tq_Jobs` WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.Priority ASC LIMIT 1)"
+    postJobSQL = " ORDER BY `tq_Jobs`.JobId ASC LIMIT %s" % numJobsPerTry
     for matchTry in range( self.__maxMatchRetry ):
       if 'JobID' in tqMatchDict:
         # A certain JobID is required by the resource, so all TQ are to be considered
@@ -405,7 +406,7 @@ class TaskQueueDB(DB):
         return S_OK( { 'matchFound' : False, 'tqMatch' : tqMatchDict } )
       for tqId, tqOwnerDN, tqOwnerGroup in tqList:
         self.log.info( "Trying to extract jobs from TQ %s" % tqId )
-        retVal = self._query( "%s %s" % ( preJobSQL % tqId, postJobSQL ), conn = connObj )
+        retVal = self._query( "%s %s %s" % ( preJobSQL % tqId, prioSQL % tqId, postJobSQL ), conn = connObj )
         if not retVal[ 'OK' ]:
           return S_ERROR( "Can't begin transaction for matching job: %s" % retVal[ 'Message' ] )
         jobTQList = [ ( row[0], row[1] ) for row in retVal[ 'Value' ] ]
@@ -734,24 +735,6 @@ class TaskQueueDB(DB):
     for userDN in owners:
       self.__setPrioritiesForEntity( userDN, userGroup, share, connObj = connObj )
     return S_OK()
-
-  def __old__setPrioritiesForEntity( self, userDN, userGroup, share, connObj = False ):
-    """
-    Set the priority for a userDN/userGroup combo given a splitted share
-    """
-    self.log.info( "Setting priorities to %s@%s TQs" % ( userDN, userGroup ) )
-    condSQL = "OwnerGroup='%s'" % userGroup
-    if Properties.JOB_SHARING not in CS.getPropertiesForGroup( userGroup ):
-      condSQL += " AND OwnerDN='%s'" % userDN
-    result = self._query( "SELECT COUNT(TQId) FROM `tq_TaskQueues` WHERE %s" % condSQL, conn = connObj )
-    if not result[ 'OK' ]:
-      return result
-    numTQs = result[ 'Value' ][0][0]
-    if numTQs == 0:
-      return S_OK()
-    prio = share / numTQs
-    updateSQL = "UPDATE `tq_TaskQueues` SET Priority=%.3f WHERE %s" % ( prio, condSQL )
-    return self._update( updateSQL, conn = connObj )
 
   def __setPrioritiesForEntity( self, userDN, userGroup, share, connObj = False ):
     """
