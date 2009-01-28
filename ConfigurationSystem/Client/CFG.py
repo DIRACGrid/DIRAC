@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/Attic/CFG.py,v 1.8 2009/01/13 16:26:40 acasajus Exp $
-__RCSID__ = "$Id: CFG.py,v 1.8 2009/01/13 16:26:40 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/Attic/CFG.py,v 1.9 2009/01/28 12:00:46 acasajus Exp $
+__RCSID__ = "$Id: CFG.py,v 1.9 2009/01/28 12:00:46 acasajus Exp $"
 
 import types
 import copy
@@ -256,6 +256,52 @@ class CFG:
     if levelsAbove > 0:
       pathList = pathList[:-levelsAbove]
     return self.__recurse( pathList )
+
+  def getOption( self, opName, defaultValue = None ):
+    levels = List.fromChar( opName, "/" )
+    dataD = self.__dataDict
+    while len( levels ) > 1:
+      try:
+        dataD = dataD[ levels[0] ]
+      except keyError:
+        return None
+    try:
+      optionValue = self.__dataDict[ opName ]
+      if type( optionValue ) != types.StringType:
+        optionValue = defaultValue
+    except KeyError:
+      optionValue = defaultValue
+
+    #Return value if existing, defaultValue if not
+    if optionValue == defaultValue:
+      if defaultValue == None or type( defaultValue ) == types.TypeType:
+        return None
+      return optionValue
+
+    #Value has been returned from the configuration
+    if defaultValue == None:
+      return optionValue
+
+    #Casting to defaultValue's type
+    defaultType = defaultValue
+    if not type( defaultValue ) == types.TypeType:
+      defaultType = type( defaultValue )
+
+    if defaultType == types.ListType:
+      try:
+        return List.fromChar( optionValue, ',' )
+      except Exception, v:
+        return None
+    elif defaultType == types.BooleanType:
+      try:
+        return optionValue.lower() in ( "y", "yes", "true", "1" )
+      except Exception, v:
+        return None
+    else:
+      try:
+        return defaultType( optionValue )
+      except:
+        return None
 
   @gCFGSynchro
   def appendToOption( self, optionName, value ):
