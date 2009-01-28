@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.123 2009/01/28 12:03:38 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.124 2009/01/28 15:12:13 acasajus Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -47,7 +47,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.123 2009/01/28 12:03:38 acasajus Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.124 2009/01/28 15:12:13 acasajus Exp $"
 
 import re, os, sys, string, types
 import time, datetime, operator
@@ -1083,7 +1083,6 @@ class JobDB(DB):
 
     priority      = classAdJob.getAttributeInt( 'Priority' )
     systemConfig  = classAdJob.getAttributeString( 'SystemConfig' )
-    pilotType     = classAdJob.getAttributeString( 'PilotType' )
     cpuTime       = classAdJob.getAttributeInt( 'MaxCPUTime' )
 
     classAdReq.insertAttributeInt( 'UserPriority', priority )
@@ -1103,9 +1102,6 @@ class JobDB(DB):
           classAdReq.insertAttributeVectorString( 'LHCbPlatforms', lhcbPlatforms )
         else:
           error = 'No compatible Platform found for %s' % systemConfig
-
-    if pilotType:
-      classAdReq.insertAttributeString( 'PilotType', pilotType )
 
     if error:
       return S_ERROR(error)
