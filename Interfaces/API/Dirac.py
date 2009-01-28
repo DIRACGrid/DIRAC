@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.62 2009/01/08 13:20:24 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.63 2009/01/28 14:33:34 acasajus Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.62 2009/01/08 13:20:24 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.63 2009/01/28 14:33:34 acasajus Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -191,7 +191,7 @@ class Dirac:
     #job must be updated to force destination to local site and disable pilot submissions
     job.setDestination(self.site)
     job.setPlatform('Local')
-    job._addJDLParameter('PilotType','private')
+    job._addJDLParameter('PilotTypes','private')
     #creating a /tmp/guid/ directory for updated job submission files
     guid = makeGuid()
     tmpdir = self.scratchDir+'/'+guid

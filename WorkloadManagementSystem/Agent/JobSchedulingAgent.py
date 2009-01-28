@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.48 2009/01/28 12:03:02 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.49 2009/01/28 14:33:35 acasajus Exp $
 # File :   JobSchedulingAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@
       meaningfully.
 
 """
-__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.48 2009/01/28 12:03:02 acasajus Exp $"
+__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.49 2009/01/28 14:33:35 acasajus Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
@@ -361,16 +361,20 @@ class JobSchedulingAgent(OptimizerModule):
     if bannedSites:
       classAddReq.insertAttributeVectorString( 'BannedSites', bannedSites )
 
-    if not classAdJob.lookupAttribute( "SubmitPool" ):
-      classAddReq.insertAttributeString( 'SubmitPool', 'Default' )
-    else:
-      classAddReq.insertAttributeString( 'SubmitPool', classAdJob.getListFromExpression( 'SubmitPool' )[0] )
+    if classAdJob.lookupAttribute( "SubmitPools" ):
+      classAddReq.insertAttributeString( 'SubmitPools', classAdJob.get_expression( 'SubmitPools' ) )
 
     if classAdJob.lookupAttribute( "GridMiddleware" ):
       classAddReq.insertAttributeString( 'GridMiddleware', classAdJob.get_expression( 'GridMiddleware' ) )
 
     if classAdJob.lookupAttribute( "PilotTypes" ):
       classAddReq.insertAttributeString( 'PilotTypes', classAdJob.get_expression( 'PilotTypes' ) )
+    #HAck to migrate old jobs to new ones.
+    #DELETE ON 08/09
+    else:
+      if classAdJob.lookupAttribute( "PilotType" ):
+        classAddReq.insertAttributeString( 'PilotTypes', classAdJob.get_expression( 'PilotType' ) )
+
 
     #Required CE's requirements
     gridCEs = [ ce for ce in classAdJob.getListFromExpression( 'GridRequiredCEs' ) if ce ]
