@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.59 2009/01/28 18:56:31 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.60 2009/01/28 19:30:28 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.59 2009/01/28 18:56:31 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.60 2009/01/28 19:30:28 acasajus Exp $"
 
 import time
 import types
@@ -388,8 +388,8 @@ class TaskQueueDB(DB):
     if not retVal[ 'OK' ]:
       return S_ERROR( "Can't connect to DB: %s" % retVal[ 'Message' ] )
     connObj = retVal[ 'Value' ]
-    preJobSQL = "SELECT `tq_Jobs`.JobId, `tq_Jobs`.TQId FROM `tq_Jobs` WHERE `tq_Jobs`.TQId = %s AND `tq_Jobs`.Priority = "
-    prioSQL = "(SELECT `tq_Jobs`.Priority FROM `tq_Jobs` WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.Priority ASC LIMIT 1)"
+    preJobSQL = "SELECT `tq_Jobs`.JobId, `tq_Jobs`.TQId FROM `tq_Jobs` WHERE `tq_Jobs`.TQId = %s AND `tq_Jobs`.Priority = %s"
+    prioSQL = "SELECT `tq_Jobs`.Priority FROM `tq_Jobs` WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.Priority ASC LIMIT 1"
     postJobSQL = " ORDER BY `tq_Jobs`.JobId ASC LIMIT %s" % numJobsPerTry
     for matchTry in range( self.__maxMatchRetry ):
       if 'JobID' in tqMatchDict:
@@ -406,7 +406,11 @@ class TaskQueueDB(DB):
         return S_OK( { 'matchFound' : False, 'tqMatch' : tqMatchDict } )
       for tqId, tqOwnerDN, tqOwnerGroup in tqList:
         self.log.info( "Trying to extract jobs from TQ %s" % tqId )
-        retVal = self._query( "%s %s %s" % ( preJobSQL % tqId, prioSQL % tqId, postJobSQL ), conn = connObj )
+        retVal = self._query( prioSQL % tqId, conn = connObj )
+        if not retVal[ 'OK' ]:
+          return S_ERROR( "Can't retrieve winning priority for matching job: %s" % retVal[ 'Message' ] )
+        prio = retVal[ 'Value' ][0][0]
+        retVal = self._query( "%s %s" % ( preJobSQL % ( tqId, prio ), postJobSQL ), conn = connObj )
         if not retVal[ 'OK' ]:
           return S_ERROR( "Can't begin transaction for matching job: %s" % retVal[ 'Message' ] )
         jobTQList = [ ( row[0], row[1] ) for row in retVal[ 'Value' ] ]
