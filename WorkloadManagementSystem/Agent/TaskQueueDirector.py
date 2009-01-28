@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.14 2009/01/28 12:03:02 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.15 2009/01/28 14:43:22 acasajus Exp $
 # File :   TaskQueueDirector.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -85,7 +85,7 @@
         SubmitPool (may want to recover it for SAM jobs)
 
 """
-__RCSID__ = "$Id: TaskQueueDirector.py,v 1.14 2009/01/28 12:03:02 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDirector.py,v 1.15 2009/01/28 14:43:22 acasajus Exp $"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 
@@ -100,6 +100,7 @@ from DIRAC.Core.Security.CS                                import getPropertiesF
 from DIRAC.Core.Utilities.ThreadPool                       import ThreadPool
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig, List, Time, Source, systemCall
 
+import random
 import DIRAC
 
 jobLoggingDB      = JobLoggingDB()
@@ -673,7 +674,7 @@ class PilotDirector:
       for req in self.requirements:
         if req.strip().lower()[:6] == 'rank >':
           requirements.remove(req)
-          
+
     requirements.append( 'other.GlueCEPolicyMaxCPUTime > TimePolicy' )
 
     siteRequirements = '\n || '.join( [ 'other.GlueCEInfoHostName == "%s"' % s for s in ceMask ] )
