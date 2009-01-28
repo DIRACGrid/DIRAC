@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.17 2009/01/28 16:03:12 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.18 2009/01/28 17:16:40 acasajus Exp $
 # File :   TaskQueueDirector.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -85,7 +85,7 @@
         SubmitPool (may want to recover it for SAM jobs)
 
 """
-__RCSID__ = "$Id: TaskQueueDirector.py,v 1.17 2009/01/28 16:03:12 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDirector.py,v 1.18 2009/01/28 17:16:40 acasajus Exp $"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 
@@ -429,6 +429,7 @@ ERROR_JDL        = 'Could not create GRID JDL'
 ERROR_PROXY      = 'No proxy Available'
 ERROR_VOMS       = 'Proxy without VOMS Extensions'
 ERROR_CE         = 'No queue available for pilot'
+ERROR_TOKEN      = 'Invalid proxy token request'
 
 LOGGING_SERVER   = 'lb101.cern.ch'
 
@@ -548,6 +549,12 @@ class PilotDirector:
         self.log.verbose('Submitting generic pilots for TaskQueue %s' % taskQueueID)
         ownerDN    = self.genericPilotDN
         ownerGroup = self.genericPilotGroup
+        result = gProxyManager.requestToken( ownerDN, ownerGroup, pilotsToSubmit )
+        if not result[ 'OK' ]:
+          return S_ERROR( ERROR_TOKEN )
+        token = result[ 'Value' ]
+  
+        pilotOptions.append( '-o /Security/ProxyToken=%s' % token )
 
       # Requested version of DIRAC
       pilotOptions.append( '-v %s' % self.diracVersion )
