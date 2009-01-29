@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.60 2009/01/28 19:30:28 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.61 2009/01/29 14:23:52 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.60 2009/01/28 19:30:28 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.61 2009/01/29 14:23:52 acasajus Exp $"
 
 import time
 import types
@@ -65,11 +65,11 @@ class TaskQueueDB(DB):
     tablesToCreate = {}
     self.__tablesDesc = {}
 
-    self.__tablesDesc[ 'tq_TaskQueues' ] = { 'Fields' : { 'TQId' : 'INTEGER AUTO_INCREMENT NOT NULL',
+    self.__tablesDesc[ 'tq_TaskQueues' ] = { 'Fields' : { 'TQId' : 'INTEGER UNSIGNED AUTO_INCREMENT NOT NULL',
                                                           'OwnerDN' : 'VARCHAR(255) NOT NULL',
                                                           'OwnerGroup' : 'VARCHAR(32) NOT NULL',
                                                           'Setup' : 'VARCHAR(32) NOT NULL',
-                                                          'CPUTime' : 'BIGINT NOT NULL',
+                                                          'CPUTime' : 'BIGINT UNSIGNED NOT NULL',
                                                           'Priority' : 'FLOAT NOT NULL',
                                                           'Enabled' : 'TINYINT(1) NOT NULL DEFAULT 0'
                                                            },
@@ -79,9 +79,10 @@ class TaskQueueDB(DB):
                                                         }
                                             }
 
-    self.__tablesDesc[ 'tq_Jobs' ] = { 'Fields' : { 'TQId' : 'INTEGER NOT NULL',
-                                                    'JobId' : 'INTEGER NOT NULL',
-                                                    'Priority' : 'FLOAT NOT NULL'
+    self.__tablesDesc[ 'tq_Jobs' ] = { 'Fields' : { 'TQId' : 'INTEGER UNSIGNED NOT NULL',
+                                                    'JobId' : 'INTEGER UNSIGNED NOT NULL',
+                                                    'Priority' : 'INTEGER UNSIGNED NOT NULL',
+                                                    'RealPriority' : 'FLOAT NOT NULL'
                                                   },
                                        'PrimaryKey' : 'JobId',
                                        'Indexes': { 'TaskIndex': [ 'TQId' ] },
@@ -89,7 +90,7 @@ class TaskQueueDB(DB):
 
     for multiField in self.__multiValueDefFields:
       tableName = 'tq_TQTo%s' % multiField
-      self.__tablesDesc[ tableName ] = { 'Fields' : { 'TQId' : 'INTEGER NOT NULL',
+      self.__tablesDesc[ tableName ] = { 'Fields' : { 'TQId' : 'INTEGER UNSIGNED NOT NULL',
                                                       'Value' : 'VARCHAR(64) NOT NULL',
                                                   },
                                          'Indexes': { 'TaskIndex': [ 'TQId' ], '%sIndex' % multiField: [ 'Value' ] },
@@ -309,8 +310,7 @@ class TaskQueueDB(DB):
           return S_ERROR( "Max reties reached for inserting job %s" % jobId )
         self.log.info( "Couldn't manage to disable TQ %s for job %s insertion, retrying" % ( tqId, jobId ) )
         return self.insertJob( jobId, tqDefDict, jobPriority, skipTQDefCheck = True, numRetries = numRetries - 1 )
-    jobPriority = self.__hackJobPriority( jobPriority )
-    result = self.__insertJobInTaskQueue( jobId, tqId, jobPriority, checkTQExists = False, connObj = connObj )
+    result = self.__insertJobInTaskQueue( jobId, tqId, int( jobPriority ), checkTQExists = False, connObj = connObj )
     if not result[ 'OK' ]:
       self.log.error( "Error inserting job in TQ", "Job %s TQ %s: %s" % ( jobId, tqId, result[ 'Message' ] ) )
       return result
@@ -332,7 +332,8 @@ class TaskQueueDB(DB):
       result = self._query( "SELECT tqId FROM `tq_TaskQueues` WHERE TQId = %s" % tqId, conn = connObj )
       if not result[ 'OK' ] or len ( result[ 'Value' ] ) == 0:
         return S_OK( "Can't find task queue with id %s: %s" % ( tqId, result[ 'Message' ] ) )
-    return self._update( "INSERT INTO tq_Jobs ( TQId, JobId, Priority ) VALUES ( %s, %s, %s )" % ( tqId, jobId, jobPriority ), conn = connObj )
+    hackedPriority = self.__hackJobPriority( jobPriority )
+    return self._update( "INSERT INTO tq_Jobs ( TQId, JobId, Priority, RealPriority ) VALUES ( %s, %s, %s, %f )" % ( tqId, jobId, jobPriority, hackedPriority ), conn = connObj )
 
   def findTaskQueue( self, tqDefDict, skipDefinitionCheck= False, connObj = False ):
     """
@@ -389,7 +390,7 @@ class TaskQueueDB(DB):
       return S_ERROR( "Can't connect to DB: %s" % retVal[ 'Message' ] )
     connObj = retVal[ 'Value' ]
     preJobSQL = "SELECT `tq_Jobs`.JobId, `tq_Jobs`.TQId FROM `tq_Jobs` WHERE `tq_Jobs`.TQId = %s AND `tq_Jobs`.Priority = %s"
-    prioSQL = "SELECT `tq_Jobs`.Priority FROM `tq_Jobs` WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.Priority ASC LIMIT 1"
+    prioSQL = "SELECT `tq_Jobs`.Priority FROM `tq_Jobs` WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
     postJobSQL = " ORDER BY `tq_Jobs`.JobId ASC LIMIT %s" % numJobsPerTry
     for matchTry in range( self.__maxMatchRetry ):
       if 'JobID' in tqMatchDict:
@@ -749,7 +750,7 @@ class TaskQueueDB(DB):
     if Properties.JOB_SHARING not in CS.getPropertiesForGroup( userGroup ):
       tqCond.append( "t.OwnerDN='%s'" % userDN )
     tqCond.append( "t.TQId = j.TQId" )
-    selectSQL = "SELECT j.TQId, SUM( j.Priority ) FROM `tq_TaskQueues` t, `tq_Jobs` j WHERE "
+    selectSQL = "SELECT j.TQId, SUM( j.RealPriority ) FROM `tq_TaskQueues` t, `tq_Jobs` j WHERE "
     selectSQL += " AND ".join( tqCond )
     selectSQL += " GROUP BY t.TQId"
     result = self._query( selectSQL, conn = connObj )
@@ -805,7 +806,7 @@ class TaskQueueDB(DB):
     Modify the priority for some jobs
     """
     for jId in jobPrioDict:
-      jobPrioDict[jId] = self.__hackJobPriority( jobPrioDict[jId] )
+      jobPrioDict[jId] = int( jobPrioDict[jId] )
     maxJobsInQuery = 1000
     jobsList = sorted( jobPrioDict )
     prioDict = {}
@@ -819,7 +820,7 @@ class TaskQueueDB(DB):
       jobsList = prioDict[ prio ]
       for i in range( maxJobsInQuery, 0, len( jobsList ) ):
         jobs = ",".join( jobsList[ i : i + maxJobsInQuery ] )
-        updateSQL = "UPDATE `tq_Jobs` SET `Priority`=%f WHERE `JobId` in ( %s )" % ( prio, jobs )
+        updateSQL = "UPDATE `tq_Jobs` SET `Priority`=%s, `RealPriority`=%f WHERE `JobId` in ( %s )" % ( prio, self.__hackJobPriority( prio ), jobs )
         result = self._update( updateSQL )
         if not result[ 'OK' ]:
           return result
