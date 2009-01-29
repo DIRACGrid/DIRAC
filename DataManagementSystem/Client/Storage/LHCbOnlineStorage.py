@@ -89,12 +89,12 @@ class LHCbOnlineStorage(StorageBase):
     failed = {}
     for pfn in urls:
       try:
-        res = self.server.errorMigratingFile(pfn)
-        if res:
+        success,error = self.server.errorMigratingFile(pfn)
+        if success:
           successful[pfn] = True
           gLogger.info("LHCbOnline.requestRetransfer: Successfully requested file from Online storage.")
         else:
-          errStr = "LHCbOnline.requestRetransfer: Failed to request file from Online storage."
+          errStr = "LHCbOnline.requestRetransfer: Failed to request file from Online storage: %s" % error
           failed[pfn] = errStr
           gLogger.error(errStr,pfn)
       except Exception,x:
@@ -119,12 +119,12 @@ class LHCbOnlineStorage(StorageBase):
     failed = {}
     for pfn in urls:
       try:
-        res = self.server.endMigratingFile(pfn)
-        if res:
+        success,error = self.server.endMigratingFile(pfn)
+        if success:
           successful[pfn] = True
           gLogger.info("LHCbOnline.getFile: Successfully requested file from Online storage.")
         else:
-          errStr = "LHCbOnline.getFile: Failed to request file from Online storage."
+          errStr = "LHCbOnline.getFile: Failed to request file from Online storage: %s" % error
           failed[pfn] = errStr
           gLogger.error(errStr,pfn)
       except Exception,x:
@@ -133,3 +133,4 @@ class LHCbOnlineStorage(StorageBase):
         failed[pfn] = errStr
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
+
