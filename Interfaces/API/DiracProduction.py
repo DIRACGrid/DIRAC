@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.52 2009/01/15 09:49:07 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.53 2009/01/30 13:45:39 paterson Exp $
 # File :   DiracProduction.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are to be documented with example usage.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.52 2009/01/15 09:49:07 paterson Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.53 2009/01/30 13:45:39 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 import pprint
@@ -973,7 +973,7 @@ class DiracProduction:
       prodJob._setParamValue('JOB_ID',str(jobNumber).zfill(8))
       ###self.log.debug(prodJob.createCode()) #never create the code, it resolves global vars ;)
       updatedJob = self.__createJobDescriptionFile(prodJob._toXML())
-      result = self.__getOutputLFNs(prodID,jobNumber,inputData,updatedJob) #prodJob._toXML()
+      result = self._getOutputLFNs(prodID,jobNumber,inputData,updatedJob) #prodJob._toXML()
       if result['OK']:
         newProdJob = Job(updatedJob)
         for name,output in result['Value'].items():
@@ -1010,7 +1010,7 @@ class DiracProduction:
     return result
 
   #############################################################################
-  def __getOutputLFNs(self,productionID,jobID,inputData,jobDescription):
+  def _getOutputLFNs(self,productionID,jobID,inputData,jobDescription):
     """ Temporary function that attempts to calculate the output LFN structure
         based on workflow conventions.
     """
