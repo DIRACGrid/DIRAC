@@ -19,6 +19,8 @@ def loadJDLAsCFG( jdl ):
     if len( key ) == 0:
       return S_ERROR( "Invalid key name" )
     value = value.strip()
+    if not value:
+      return S_ERROR( "No value for key %s" % key)
     if value[0] == "{":
       if value[-1 ] != "}":
         return S_ERROR( "Value '%s' seems a list but does not end in '}'" % ( value ) )
