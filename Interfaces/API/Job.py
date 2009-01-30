@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.51 2009/01/26 17:23:19 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.52 2009/01/30 08:59:57 rgracian Exp $
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -30,7 +30,7 @@
    Note that several executables can be provided and wil be executed sequentially.
 """
 
-__RCSID__ = "$Id: Job.py,v 1.51 2009/01/26 17:23:19 acasajus Exp $"
+__RCSID__ = "$Id: Job.py,v 1.52 2009/01/30 08:59:57 rgracian Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -318,7 +318,7 @@ class Job:
     if type(backend) == type(" "):
       description = 'Platform type'
       if not backend.lower()=='any':
-        self._addParameter(self.workflow,'SubmitPool','JDL',backend,description)
+        self._addParameter(self.workflow,'SubmitPools','JDL',backend,description)
     else:
       raise TypeError,'Expected string for platform'
 

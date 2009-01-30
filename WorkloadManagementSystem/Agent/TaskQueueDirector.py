@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.18 2009/01/28 17:16:40 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.19 2009/01/30 09:03:46 rgracian Exp $
 # File :   TaskQueueDirector.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -82,10 +82,9 @@
       Obsolete Job JDL Option:
         GridExecutable
         SoftwareTag
-        SubmitPool (may want to recover it for SAM jobs)
 
 """
-__RCSID__ = "$Id: TaskQueueDirector.py,v 1.18 2009/01/28 17:16:40 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDirector.py,v 1.19 2009/01/30 09:03:46 rgracian Exp $"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 
