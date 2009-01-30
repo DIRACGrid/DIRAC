@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.61 2009/01/29 14:23:52 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.62 2009/01/30 10:13:20 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.61 2009/01/29 14:23:52 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.62 2009/01/30 10:13:20 acasajus Exp $"
 
 import time
 import types
@@ -429,7 +429,7 @@ class TaskQueueDB(DB):
             self.log.error( msg )
             return S_ERROR( msg )
           if retVal[ 'Value' ] == True :
-            self.log.info( "Extracted job %s from TQ %s" % ( jobId, tqId ) )
+            self.log.info( "Extracted job %s with prio %s from TQ %s" % ( jobId, prio, tqId ) )
             return S_OK( { 'matchFound' : True, 'jobId' : jobId, 'taskQueueId' : tqId, 'tqMatch' : tqMatchDict } )
         self.log.info( "No jobs could be extracted from TQ %s" % tqId )
     self.log.info( "Could not find a match after %s match retries" % self.__maxMatchRetry )
