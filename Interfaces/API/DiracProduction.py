@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.53 2009/01/30 13:45:39 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.54 2009/01/30 19:43:07 paterson Exp $
 # File :   DiracProduction.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are to be documented with example usage.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.53 2009/01/30 13:45:39 paterson Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.54 2009/01/30 19:43:07 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 import pprint
@@ -914,6 +914,40 @@ class DiracProduction:
     if printOutput:
       print 'Extended production %s by %s jobs' %(productionID,numberOfJobs)
 
+    return result
+
+  #############################################################################
+  def createProduction(self,fileName,fileMask='',groupSize=0,printOutput=False):
+    """ Under Development. Create a production, will eventually include
+        BK processing pass / sim cond / data taking cond etc.
+
+        Usage: createProduction <filename> <filemask> <groupsize>
+    """
+    if type(groupSize) == type(" "):
+      try:
+        groupSize = int(groupSize)
+      except Exception,x:
+        return self.__errorReport(str(x),'Expected integer or string for group size')
+
+    if not os.path.exists(fileName):
+      return self.__errorReport('%s does not exist' %fileName)
+
+    if not type(fileMask)==type(" "):
+      return self.__errorReport('File mask must be a string')
+
+    fopen = open(fileName,'r')
+    xmlString = fopen.read()
+    fopen.close()
+
+    prodClient = RPCClient('ProductionManagement/ProductionManager',timeout=120)
+    result = prodClient.publishProduction(xmlString,fileMask,groupSize,False)
+    if not result['OK']:
+      return self.__errorReport(result,'Could not create production from %s' %(fileName))
+
+    if printOutput:
+      print 'Production %s created successfully from %s' %(result['Value'],fileName)
+
+    self.log.debug(result)
     return result
 
   #############################################################################
