@@ -146,6 +146,11 @@ class TransformationHandler(RequestHandler):
   def export_getInputData(self,transformationName,status):
     res = self.database.getInputData(transformationName,status)
     return res
+    
+  types_addLFNsToTransformation = [ListType,[LongType, IntType, StringType]]
+  def export_addLFNsToTransformation(self,lfns,transformationName):
+    res = self.database.addLFNsToTransformation(lfns,transformationName)
+    return res  
 
   types_setFileSEForTransformation = [[LongType, IntType, StringType],StringType,ListType]
   def export_setFileSEForTransformation(self,transformationName,storageElement,lfns):
@@ -173,6 +178,20 @@ class TransformationHandler(RequestHandler):
     if not result['OK']:
       gLogger.error(result['Message'])
     return result  
+
+  types_getBookkeepingQueryForTransformation = [ [LongType, IntType, StringType]]
+  def export_getBookkeepingQueryForTransformation( self, id_ ):
+    result = self.database.getBookkeepingQueryForTransformation(id_)
+    if not result['OK']:
+      gLogger.error(result['Message'])
+    return result 
+    
+  types_getBookkeepingQuery = [ [LongType, IntType]]
+  def export_getBookkeepingQuery( self, id_ ):
+    result = self.database.getBookkeepingQuery(id_)
+    if not result['OK']:
+      gLogger.error(result['Message'])
+    return result   
 
   ####################################################################
   #
