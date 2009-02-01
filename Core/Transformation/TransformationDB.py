@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.77 2009/02/01 13:51:42 atsareg Exp $
+# $Id: TransformationDB.py,v 1.78 2009/02/01 22:26:37 atsareg Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -217,6 +217,14 @@ class TransformationDB(DB):
     req = "UPDATE Transformations SET AgentType='%s' WHERE TransformationID=%s;" % (status,transID)
     res = self._update(req)
     return res
+    
+  def setTransformationQuery(self,transName,queryID):
+    """ Set the bookkeeping query ID of the transformation specified by transID
+    """
+    transID = self.getTransformationID(transName)
+    req = "UPDATE Transformations SET FileMask='', BkQueryID=%d WHERE TransformationID=%s;" % (int(queryID),transID)
+    res = self._update(req)
+    return res  
 
   def setTransformationPlugin(self,transName,status):
     """ Set the Plugin the transformation specified by transID

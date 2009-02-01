@@ -32,6 +32,15 @@ class TransformationHandler(RequestHandler):
       message = "Status changed to %s" % status
       result = self.database.updateTransformationLogging(transNameOrID,message,authorDN)
     return result
+    
+  types_setTransformationQuery = [[LongType, IntType, StringType],[LongType, IntType]]
+  def export_setTransformationQuery(self,transNameOrID,queryID):
+    result = self.database.setTransformationQuery(transNameOrID,queryID)
+    if result['OK']:
+      authorDN = self._clientTransport.peerCredentials['DN']
+      message = "Bookkeeping Query changed to %d" % queryID
+      result = self.database.updateTransformationLogging(transNameOrID,message,authorDN)
+    return result  
 
   types_setTransformationAgentType = [ [LongType, IntType, StringType], StringType ]
   def export_setTransformationAgentType( self, transNameOrID, status ):
@@ -175,6 +184,13 @@ class TransformationHandler(RequestHandler):
   types_updateTransformation = [ [LongType, IntType, StringType]]
   def export_updateTransformation( self, id_ ):
     result = self.database.updateTransformation(id_)
+    if not result['OK']:
+      gLogger.error(result['Message'])
+    return result  
+
+  types_addBookkeepingQuery = [ DictType ]
+  def export_addBookkeepingQuery( self, queryDict ):
+    result = self.database.addBookkeepingQuery(queryDict)
     if not result['OK']:
       gLogger.error(result['Message'])
     return result  
