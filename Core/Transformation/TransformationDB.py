@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.76 2008/11/22 20:38:51 atsareg Exp $
+# $Id: TransformationDB.py,v 1.77 2009/02/01 13:51:42 atsareg Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -83,13 +83,30 @@ class TransformationDB(DB):
     """
     return self.dbname
 
-  def addTransformation(self, name, description, longDescription, authorDN, authorGroup, type_, plugin, agentType,fileMask):
+  def addTransformation(self, name, description, longDescription, authorDN, 
+                        authorGroup, type_, plugin, agentType,fileMask,bkQuery={},
+                        transformationGroup=''):
     """ Add new transformation definition including its input streams
     """
+    
+    # Add the Bookkeeping query if given
+    bkQueryID = 0
+    if bkQuery:
+      result = self.addBookkeepingQuery(bkQuery)
+      if not result['OK']:
+        return result
+      bkQueryID = result['Value'] 
+      
+    tGroup = 'General'  
+    if transformationGroup:
+      tGroup =  transformationGroup 
+    
     self.lock.acquire()
-    req = "INSERT INTO Transformations (TransformationName,Description,LongDescription,\
-    CreationDate,AuthorDN,AuthorGroup,Type,Plugin,AgentType,FileMask,Status) VALUES\
-    ('%s','%s','%s',UTC_TIMESTAMP(),'%s','%s','%s','%s','%s','%s','New');" % (name, description, longDescription,authorDN, authorGroup, type_, plugin, agentType,fileMask)
+    req = "INSERT INTO Transformations (TransformationName,Description,LongDescription,"
+    req += "CreationDate,AuthorDN,AuthorGroup,Type,Plugin,AgentType,FileMask,Status,BkQueryID,TransformationGroup) "
+    req += "VALUES ('%s','%s','%s',UTC_TIMESTAMP(),'%s','%s','%s','%s','%s','%s','New',%d,'%s');" % \
+                             (name, description, longDescription,authorDN, authorGroup, type_, 
+                              plugin, agentType,fileMask,bkQueryID,tGroup)
     result = self._getConnection()
     if result['OK']:
       connection = result['Value']
@@ -107,11 +124,13 @@ class TransformationDB(DB):
     transID = int(res['Value'][0][0])
 
     # For the PROCESSING type transformation add data processing table
-    if fileMask:
-      self.filters.append((transID,re.compile(fileMask)))
+    if fileMask or bkQuery:
+      if fileMask:
+        self.filters.append((transID,re.compile(fileMask)))
+        # Add already existing files to this transformation if any
+        result = self.__addExistingFiles(transID)
       result = self.__addTransformationTable(transID)
-      # Add already existing files to this transformation if any
-      result = self.__addExistingFiles(transID)
+
     return S_OK(transID)
 
   def modifyTransformation(self, transID, name, description, longDescription, authorDN, authorGroup, type_, plugin, agentType,fileMask):
@@ -264,7 +283,7 @@ class TransformationDB(DB):
     transID = self.getTransformationID(transName)
     if transID > 0:
       req = "SELECT TransformationID,TransformationName,Description,LongDescription,CreationDate,\
-             AuthorDN,AuthorGroup,Type,Plugin,AgentType,Status,FileMask FROM Transformations WHERE TransformationID=%d;"%transID
+             AuthorDN,AuthorGroup,Type,Plugin,AgentType,Status,FileMask,BkQueryID,TransformationGroup FROM Transformations WHERE TransformationID=%d;"%transID
       res = self._query(req)
       if not res['OK']:
         return res
@@ -284,6 +303,8 @@ class TransformationDB(DB):
       transdict['AgentType'] = tr[9]
       transdict['Status'] = tr[10]
       transdict['FileMask'] = tr[11]
+      transdict['BkQueryID'] = tr[12]
+      transdict['TransformationGroup'] = tr[13]
       req = "SELECT ParameterName,ParameterValue FROM TransformationParameters WHERE TransformationID = %s;" % transID
       res = self._query(req)
       if res['OK']:
@@ -333,24 +354,28 @@ class TransformationDB(DB):
     """
     translist = []
     req = "SELECT TransformationID,TransformationName,Description,LongDescription,CreationDate,\
-    AuthorDN,AuthorGroup,Type,Plugin,AgentType,Status,FileMask FROM Transformations;"
+    AuthorDN,AuthorGroup,Type,Plugin,AgentType,Status,FileMask,BkQueryID,TransformationGroup \
+    FROM Transformations;"
     res = self._query(req)
     if not res['OK']:
       return res
-    for transID,transName,description,longDesc,createDate,authorDN,authorGroup,type,plugin,agentType,status,mask in res['Value']:
+    for row in res['Value']:
       transdict = {}
-      transdict['TransID'] = transID
-      transdict['Name'] = transName
-      transdict['Description'] = description
-      transdict['LongDescription'] = longDesc
-      transdict['CreationDate'] = createDate
-      transdict['AuthorDN'] = authorDN
-      transdict['AuthorGroup'] = authorGroup
-      transdict['Type'] = type
-      transdict['Plugin'] = plugin
-      transdict['AgentType'] = agentType
-      transdict['Status'] = status
-      transdict['FileMask'] = mask
+      transdict['TransID'] = row[0]
+      transID = row[0]
+      transdict['Name'] = row[1]
+      transdict['Description'] = row[2]
+      transdict['LongDescription'] = row[3]
+      transdict['CreationDate'] = row[4]
+      transdict['AuthorDN'] = row[5]
+      transdict['AuthorGroup'] = row[6]
+      transdict['Type'] = row[7]
+      transdict['Plugin'] = row[8]
+      transdict['AgentType'] = row[9]
+      transdict['Status'] = row[10]
+      transdict['FileMask'] = row[11]
+      transdict['BkQueryID'] = row[12]
+      transdict['TransformationGroup'] = row[13]
       req = "SELECT ParameterName,ParameterValue FROM TransformationParameters WHERE TransformationID = %s;" % transID
       res = self._query(req)
       if res['OK']:
@@ -743,6 +768,37 @@ PRIMARY KEY (FileID)
 
     return resultList
 
+  def addLFNsToTransformation(self,lfnList,transName):
+    """ Add a list of LFNs to the transformation specified by transname without filtering
+    """
+    
+    if not lfnList:
+      return S_ERROR('Zero length LFN list')
+      
+    transID = self.getTransformationID(transName)
+    
+    # get file IDs
+    lfnString = ','.join(["'"+x+"'" for x in lfnList])
+    req = "SELECT FileID,LFN FROM DataFiles WHERE LFN IN ( %s )" % lfnString    
+    result = self._query(req)
+    if not result['OK']:
+      return result
+      
+    fileIDs = [ (x[0],x[1]) for x in result['Value'] ]    
+    successful = {}
+    failed = {}
+    for fileID,lfn in fileIDs:
+      result = self.__addFileToTransformation(fileID,[transID])
+      if result['OK']:
+        if result['Value']:
+          successful[lfn] = "Added"
+        else:
+          successful[lfn] = "Present"
+      else:
+        failed[lfn] = result['Message']      
+        
+    resDict = {'Successful':successful,'Failed':failed}
+    return S_OK(resDict)    
 
   def __addFileToTransformation(self,fileID,resultFilter):
     """Add file to transformations
@@ -945,11 +1001,14 @@ PRIMARY KEY (FileID)
     """  Add a new file to the TransformationDB together with its first replica.
     """
     gLogger.info("TransformationDB.addFile: Attempting to add %s files." % len(fileTuples))
+    
+    if not fileTuples:
+      return S_ERROR('Zero file list')
+    
     successful = {}
     failed = {}
     dataLog = RPCClient('DataManagement/DataLogging',timeout=120)
     for lfn,pfn,size,se,guid,checksum in fileTuples:
-
       passFilter = False
       forced = False
       retained = False
@@ -988,12 +1047,14 @@ PRIMARY KEY (FileID)
           successful[lfn] = {'PassFilter':passFilter,'Retained':retained,
                              'Forced':forced,'AddedToCatalog':addedToCatalog,
                              'AddedToTransformation':addedToTransformation,
-                             'FileExists':fileExists,'ReplicaExists':replicaExists}
+                             'FileExists':fileExists,'ReplicaExists':replicaExists,
+                             'FileID':fileID}
       else:
         successful[lfn] = {'PassFilter':passFilter,'Retained':retained,
                            'Forced':forced,'AddedToCatalog':addedToCatalog,
                            'AddedToTransformation':addedToTransformation,
-                           'FileExists':fileExists,'ReplicaExists':replicaExists}
+                           'FileExists':fileExists,'ReplicaExists':replicaExists,
+                           'FileID':0}
     resDict = {'Successful':successful,'Failed':failed}
     return S_OK(resDict)
 
@@ -1194,3 +1255,101 @@ PRIMARY KEY (FileID)
           successful[lfn] = True
     resDict = {'Successful':successful,'Failed':failed}
     return S_OK(resDict)
+    
+  def addBookkeepingQuery(self,queryDict):
+    """ Add a new Bookkeeping query specification
+    """
+    
+    queryFields = ['SimulationConditions','DataTakingConditions','ProcessingPass','FileType','EventType',
+                   'ConfigName','ConfigVersion','ProductionID']
+
+    parameters = []   
+    values = []
+    qvalues = []
+    for field in queryFields:
+      if field in queryDict.keys(): 
+        parameters.append(field)
+        if field == 'ProductionID' or field == 'EventType':
+          values.append(str(queryDict[field]))
+          qvalues.append(str(queryDict[field]))
+        else:
+          values.append("'"+queryDict[field]+"'") 
+          qvalues.append(queryDict[field]) 
+      else:
+        if field == 'ProductionID' or field == 'EventType':
+          qvalues.append(0)
+        else:
+          qvalues.append('All')     
+           
+    # Check for the already existing queries first
+    selections = []
+    for i in range(len(queryFields)):
+      selections.append(queryFields[i]+"='"+str(qvalues[i])+"'")
+    selectionString = ' AND '.join(selections)
+    req = "SELECT BkQueryID FROM BkQueries WHERE %s" % selectionString      
+    result = self._query(req)
+    if not result['OK']:
+      return result
+    if result['Value']:
+      bkQueryID = result['Value'][0][0]
+      return S_OK(bkQueryID)          
+          
+    req = "INSERT INTO BkQueries (%s) VALUES (%s)" % (','.join(parameters),','.join(values))   
+    
+    self.lock.acquire()
+    result = self._getConnection()
+    if result['OK']:
+      connection = result['Value']
+    else:
+      return S_ERROR('Failed to get connection to MySQL: '+result['Message'])
+    res = self._update(req,connection)
+    if not res['OK']:
+      self.lock.release()
+      return res
+    req = "SELECT LAST_INSERT_ID();"
+    res = self._query(req,connection)
+    self.lock.release()
+    if not res['OK']:
+      return res
+    queryID = int(res['Value'][0][0])   
+    
+    return S_OK(queryID)
+        
+  def getBookkeepingQueryForTransformation(self,transName):
+    """
+    """
+    
+    transID = self.getTransformationID(transName)
+    req = "SELECT BkQueryID FROM Transformations WHERE TransformationID=%s" % (transID)
+    result = self._query(req)
+    if not result['OK']:
+      return result
+      
+    if not result['Value']:
+      return S_ERROR('Transformation %s not found' % transID)  
+
+    bkQueryID = result['Value'][0][0]
+    return self.getBookkeepingQuery(bkQueryID)
+    
+  def getBookkeepingQuery(self,bkQueryID):
+    """ Get the bookkeeping query parameters
+    """    
+ 
+    queryFields = ['SimulationConditions','DataTakingConditions','ProcessingPass',
+                   'FileType','EventType','ConfigName','ConfigVersion','ProductionID']
+    
+    fieldsString = ','.join(queryFields)
+    
+    req = "SELECT %s FROM BkQueries WHERE BkQueryID=%d" % (fieldsString,int(bkQueryID)) 
+    result = self._query(req)
+    if not result['OK']:
+      return result
+      
+    if not result['Value']:
+      return S_ERROR('BkQuery %d not found' % int(bkQueryID))  
+      
+    bkDict = {}  
+    for parameter,value in zip(queryFields,result['Value'][0]):
+      bkDict[parameter] = value 
+      
+    return S_OK(bkDict)    
