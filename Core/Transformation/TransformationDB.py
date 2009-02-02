@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.78 2009/02/01 22:26:37 atsareg Exp $
+# $Id: TransformationDB.py,v 1.79 2009/02/02 15:35:30 atsareg Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -331,7 +331,7 @@ class TransformationDB(DB):
     transString = ','.join([str(x) for x in transList])
     paramList = ['TransformationID','TransformationName','Description','LongDescription',
                  'CreationDate','AuthorDN','AuthorGroup','Type','Plugin','AgentType','Status',
-                 'FileMask']
+                 'FileMask','BkQueryID','TransformationGroup']
     paramString = ','.join(paramList)
 
     req = "SELECT %s FROM Transformations WHERE TransformationID in (%s);" % (paramString,transString)
