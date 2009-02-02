@@ -1,5 +1,5 @@
--- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Transformation/TransformationDB.sql,v 1.11 2008/06/18 19:46:59 atsareg Exp $
---------------------------------------------------------------------------------
+-- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Transformation/TransformationDB.sql,v 1.12 2009/02/02 11:39:58 atsareg Exp $
+-- ------------------------------------------------------------------------------
 --
 --  Schema definition for the TransformationDB database -
 --  a generic engine to define input data streams and support dynamic
@@ -8,11 +8,11 @@
 --  This schema is supposed to be included b specific data processing databases,
 --  ProductionDB or AutoTransferDB
 --
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 
 DROP TABLE IF EXISTS Transformations;
 
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 -- This table store Transformation definitions
 -- TransformationID - Transformation internal incremental ID
 -- Name - name of the Transformation
@@ -42,7 +42,7 @@ DROP TABLE IF EXISTS Transformations;
 --   Error - Production with error, equivalent to STOPPED
 --   Terminated - stopped, extension impossible
 -- FileMask - filter mask
-------- Explanation about status field ------
+-- ----- Explanation about status field ------
 -- We have execute three types of action for each transformation
 -- 1 - Publish files in the Transformation table
 -- 2 - Create jobs
@@ -54,7 +54,7 @@ DROP TABLE IF EXISTS Transformations;
 -- Flush           2 3
 -- Error         x
 -- Terminated    x
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 
 CREATE TABLE Transformations (
     TransformationID INTEGER NOT NULL AUTO_INCREMENT,
@@ -69,11 +69,13 @@ CREATE TABLE Transformations (
     AgentType CHAR(16) DEFAULT 'Manual',
     Status  CHAR(16) DEFAULT 'New',
     FileMask VARCHAR(255),
+    BkQueryID INT NOT NULL default '0',
+    TransformationGroup varchar(64) NOT NULL default 'General',
     PRIMARY KEY(TransformationID),
     INDEX(TransformationName)
 ) ENGINE=InnoDB;
 
-----------------------------------------------------------------------------------
+-- --------------------------------------------------------------------------------
 -- Once a transformation in entered in the the database a table is created to contain its associated files
 --
 -- CREATE TABLE T_$TransformationID(
@@ -84,16 +86,16 @@ CREATE TABLE Transformations (
 --   UsedSE VARCHAR(32) DEFAULT "Unknown",
 --   PRIMARY KEY (FileID,Status)
 --
--------------------------------------------------------------------------------------
+-- -----------------------------------------------------------------------------------
 
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS TransformationParameters;
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 --
 --  TransformationParameters table is a container for arbitrary parameters needed by specific
 --  transformations
 --
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 
 CREATE TABLE TransformationParameters (
     TransformationID INTEGER NOT NULL,
@@ -102,14 +104,14 @@ CREATE TABLE TransformationParameters (
     PRIMARY KEY(TransformationID,ParameterName)
 );
 
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS TransformationLog;
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 --
 --  TransformationLog table keeps looging messages about status changes of the
 --  transformations
 --
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 
 CREATE TABLE TransformationLog (
     TransformationID INTEGER NOT NULL,
@@ -119,9 +121,9 @@ CREATE TABLE TransformationLog (
     INDEX (TransformationID)
 );
 
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS DataFiles;
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 CREATE TABLE DataFiles (
    FileID INTEGER NOT NULL AUTO_INCREMENT,
    LFN VARCHAR(255) UNIQUE,
@@ -129,9 +131,9 @@ CREATE TABLE DataFiles (
    PRIMARY KEY (FileID, LFN)
 );
 
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS Replicas;
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 CREATE TABLE Replicas (
   FileID INTEGER NOT NULL,
   PFN VARCHAR(255),
@@ -140,9 +142,9 @@ CREATE TABLE Replicas (
   PRIMARY KEY (FileID, SE)
 );
 
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS FileTransformations;
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 CREATE TABLE FileTransformations(
    FileID INTEGER NOT NULL,
    TransformationID INTEGER NOT NULL,
@@ -150,4 +152,18 @@ CREATE TABLE FileTransformations(
    PRIMARY KEY (FileID, TransformationID)
 );
 
-
+-- ------------------------------------------------------------------------------
+DROP TABLE IF EXISTS BkQueries;
+-- ------------------------------------------------------------------------------
+CREATE TABLE BkQueries (
+  BkQueryID int(11) NOT NULL auto_increment,
+  SimulationConditions varchar(128) NOT NULL default 'All',
+  DataTakingConditions varchar(128) NOT NULL default 'All',
+  ProcessingPass varchar(128) NOT NULL default 'All',
+  FileType varchar(32) NOT NULL default 'All',
+  EventType int(11) NOT NULL default '0',
+  ConfigName varchar(64) NOT NULL default 'All',
+  ConfigVersion varchar(64) NOT NULL default 'All',
+  ProductionID int(11) NOT NULL default '0',
+  PRIMARY KEY  (`BkQueryID`)
+) ENGINE=MyISAM
