@@ -59,7 +59,7 @@ class LHCbOnlineStorage(StorageBase):
   def getFileSize(self,path):
     """ Get a fake file size
     """
-    res = self.checkArgumentFormat(path)
+    res = self.__checkArgumentFormat(path)
     if not res['OK']:
       return res
     urls = res['Value']
@@ -75,7 +75,7 @@ class LHCbOnlineStorage(StorageBase):
   def requestRetransfer(self,path):
     """ Tell the Online system that the migration failed and we want to get the request again
     """
-    res = self.checkArgumentFormat(path)
+    res = self.__checkArgumentFormat(path)
     if not res['OK']:
       return res
     urls = res['Value']
@@ -103,7 +103,7 @@ class LHCbOnlineStorage(StorageBase):
   def removeFile(self,path):
     """Remove physically the file specified by its path
     """
-    res = self.checkArgumentFormat(path)
+    res = self.__checkArgumentFormat(path)
     if not res['OK']:
       return res
     urls = res['Value']
@@ -128,7 +128,7 @@ class LHCbOnlineStorage(StorageBase):
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
-  def checkArgumentFormat(self,path):
+  def __checkArgumentFormat(self,path):
     if type(path) in types.StringTypes:
       urls = [path]
     elif type(path) == types.ListType:
@@ -136,5 +136,5 @@ class LHCbOnlineStorage(StorageBase):
     elif type(path) == types.DictType:
       urls = path.keys()
     else:
-      return S_ERROR("SRM2Storage.checkArgumentFormat: Supplied path is not of the correct format.")
+      return S_ERROR("LHCbOnline.__checkArgumentFormat: Supplied path is not of the correct format.")
     return S_OK(urls)   
