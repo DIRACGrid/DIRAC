@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.35 2008/10/29 17:31:32 acasajus Exp $
-__RCSID__ = "$Id: Server.py,v 1.35 2008/10/29 17:31:32 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.36 2009/02/02 16:21:42 acasajus Exp $
+__RCSID__ = "$Id: Server.py,v 1.36 2009/02/02 16:21:42 acasajus Exp $"
 
 import socket
 import sys
@@ -216,7 +216,7 @@ class Server:
     """
     Process an exception generated in a petition
     """
-    gLogger.exception( "Exception in thread", lException = exceptionInfo )
+    gLogger.exception( "Exception in thread", lExcInfo = exceptionInfo )
 
   def processClient( self, clientTransport ):
     """
