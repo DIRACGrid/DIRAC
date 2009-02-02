@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalogue. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.38 2009/01/28 11:06:52 acasajus Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.39 2009/02/02 21:59:56 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -119,7 +119,6 @@ class ReplicaManager:
       gLogger.info("ReplicaManager.put: Put directory to storage in %s seconds." % putTime)
     return res
 
-
   def putAndRegister(self,lfn,file,diracSE,guid=None,path=None,checksum=None,catalog=None):
     """ Put a local file to a Storage Element and register in the File Catalogues
 
@@ -232,7 +231,8 @@ class ReplicaManager:
       gLogger.error(errStr)
       return S_ERROR(errStr)
     gLogger.info("ReplicaManager.getReplicas: Attempting to get replicas for %s files." % len(lfns))
-    res = self.fileCatalogue.getReplicas(lfns)
+    fileCatalog = FileCatalog()
+    res = fileCatalog.getReplicas(lfns)
     if not res['OK']:
       errStr = "ReplicaManager.__getReplicas: Completely failed to get replicas for %s lfns." % len(lfns)
       gLogger.error(errStr,res['Message'])

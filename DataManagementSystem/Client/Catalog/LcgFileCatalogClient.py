@@ -102,7 +102,6 @@ class LcgFileCatalogClient(FileCatalogueBase):
     """ Set authorization id for the proxy-less LFC communication """
     lfc.lfc_client_setAuthorizationId(0,0,'GSI',dn)
 
-
   ####################################################################
   #
   # These are the methods for determining whether paths exist
@@ -155,117 +154,6 @@ class LcgFileCatalogClient(FileCatalogueBase):
        else:
           res = S_ERROR(lfc.sstrerror(errno))
     return res
-
-  ####################################################################
-  #
-  # These are the methods for link manipulation
-  #
-
-  def isLink(self, link):
-    if type(link) == types.StringType:
-      links = [link]
-    elif type(link) == types.ListType:
-      links = link
-    else:
-      return S_ERROR('LFCClient.isLink: Must supply a link list of link')
-    failed = {}
-    successful = {}
-    # If we have less than three lfns to query a session doesn't make sense
-    self.__openSession()
-    for link in links:
-      fullLink = '%s%s' % (self.prefix,link)
-      fstat = lfc.lfc_filestat()
-      value = lfc.lfc_lstat(fullLink,fstat)
-      if value == 0:
-        if S_ISLNK(fstat.filemode):
-          successful[link] = True
-        else:
-          successful[link] = False
-      else:
-        errno = lfc.cvar.serrno
-        failed[link] = lfc.sstrerror(errno)
-    self.__closeSession()
-    resDict = {'Failed':failed,'Successful':successful}
-    return S_OK(resDict)
-
-  def createLink(self,linkTuple):
-    if type(linkTuple) == types.TupleType:
-      links = [linkTuple]
-    elif type(linkTuple) == types.ListType:
-      links = linkTuple
-    else:
-      return S_ERROR('LFCClient.createLink: Must supply a link tuple of list of tuples')
-    # If we have less than three lfns to query a session doesn't make sense
-    self.__openSession()
-    failed = {}
-    successful = {}
-    for link,lfn in links:
-      fullLink = '%s%s' % (self.prefix,link)
-      fullLfn = '%s%s' % (self.prefix,lfn)
-      value = lfc.lfc_symlink(fullLfn,fullLink)
-      if value == 0:
-        successful[lfn] = True
-      else:
-        errno = lfc.cvar.serrno
-        failed[lfn] = lfc.sstrerror(errno)
-    self.__closeSession()
-    resDict = {'Failed':failed,'Successful':successful}
-    return S_OK(resDict)
-
-  def removeLink(self,link):
-    if type(link) == types.StringType:
-      links = [link]
-    elif type(link) == types.ListType:
-      links = link
-    else:
-      return S_ERROR('LFCClient.removeLink: Must supply a link list of link')
-    # If we have less than three lfns to query a session doesn't make sense
-    if len(links) > 2:
-      self.__openSession()
-    failed = {}
-    successful = {}
-    for link in links:
-      fullLink = '%s%s' % (self.prefix,link)
-      value = lfc.lfc_unlink(fullLink)
-      if value == 0:
-        successful[link] = True
-      else:
-        errno = lfc.cvar.serrno
-        failed[link] = lfc.sstrerror(errno)
-    if self.session:
-      self.__closeSession()
-    resDict = {'Failed':failed,'Successful':successful}
-    return S_OK(resDict)
-
-  def readLink(self,link):
-    if type(link) == types.StringType:
-      links = [link]
-    elif type(link) == types.ListType:
-      links = link
-    else:
-      return S_ERROR('LFCClient.removeLink: Must supply a link list of link')
-    # If we have less than three lfns to query a session doesn't make sense
-    if len(links) > 2:
-      self.__openSession()
-    failed = {}
-    successful = {}
-    for link in links:
-      fullLink = '%s%s' % (self.prefix,link)
-      """  The next six lines of code should be hung, drawn and quartered
-      """
-      strBuff = ''
-      for i in range(256):
-        strBuff+=' '
-      value = lfc.lfc_readlink(fullLink,strBuff,256)
-      if re.search('/',strBuff):
-        successful[link] = strBuff.replace('\x00','').strip().replace(self.prefix,'')
-      else:
-        errno = lfc.cvar.serrno
-        failed[link] = lfc.sstrerror(errno)
-    if self.session:
-      self.__closeSession()
-    resDict = {'Failed':failed,'Successful':successful}
-    return S_OK(resDict)
 
   ####################################################################
   #
@@ -1059,6 +947,117 @@ class LcgFileCatalogClient(FileCatalogueBase):
               res = self.__makeDirs(dir)
               res = self.__makeDir(path)
     return res
+
+  ####################################################################
+  #
+  # These are the methods for link manipulation
+  #
+
+  def isLink(self, link):
+    if type(link) == types.StringType:
+      links = [link]
+    elif type(link) == types.ListType:
+      links = link
+    else:
+      return S_ERROR('LFCClient.isLink: Must supply a link list of link')
+    failed = {}
+    successful = {}
+    # If we have less than three lfns to query a session doesn't make sense
+    self.__openSession()
+    for link in links:
+      fullLink = '%s%s' % (self.prefix,link)
+      fstat = lfc.lfc_filestat()
+      value = lfc.lfc_lstat(fullLink,fstat)
+      if value == 0:
+        if S_ISLNK(fstat.filemode):
+          successful[link] = True
+        else:
+          successful[link] = False
+      else:
+        errno = lfc.cvar.serrno
+        failed[link] = lfc.sstrerror(errno)
+    self.__closeSession()
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+  def createLink(self,linkTuple):
+    if type(linkTuple) == types.TupleType:
+      links = [linkTuple]
+    elif type(linkTuple) == types.ListType:
+      links = linkTuple
+    else:
+      return S_ERROR('LFCClient.createLink: Must supply a link tuple of list of tuples')
+    # If we have less than three lfns to query a session doesn't make sense
+    self.__openSession()
+    failed = {}
+    successful = {}
+    for link,lfn in links:
+      fullLink = '%s%s' % (self.prefix,link)
+      fullLfn = '%s%s' % (self.prefix,lfn)
+      value = lfc.lfc_symlink(fullLfn,fullLink)
+      if value == 0:
+        successful[lfn] = True
+      else:
+        errno = lfc.cvar.serrno
+        failed[lfn] = lfc.sstrerror(errno)
+    self.__closeSession()
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+  def removeLink(self,link):
+    if type(link) == types.StringType:
+      links = [link]
+    elif type(link) == types.ListType:
+      links = link
+    else:
+      return S_ERROR('LFCClient.removeLink: Must supply a link list of link')
+    # If we have less than three lfns to query a session doesn't make sense
+    if len(links) > 2:
+      self.__openSession()
+    failed = {}
+    successful = {}
+    for link in links:
+      fullLink = '%s%s' % (self.prefix,link)
+      value = lfc.lfc_unlink(fullLink)
+      if value == 0:
+        successful[link] = True
+      else:
+        errno = lfc.cvar.serrno
+        failed[link] = lfc.sstrerror(errno)
+    if self.session:
+      self.__closeSession()
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+  def readLink(self,link):
+    if type(link) == types.StringType:
+      links = [link]
+    elif type(link) == types.ListType:
+      links = link
+    else:
+      return S_ERROR('LFCClient.removeLink: Must supply a link list of link')
+    # If we have less than three lfns to query a session doesn't make sense
+    if len(links) > 2:
+      self.__openSession()
+    failed = {}
+    successful = {}
+    for link in links:
+      fullLink = '%s%s' % (self.prefix,link)
+      """  The next six lines of code should be hung, drawn and quartered
+      """
+      strBuff = ''
+      for i in range(256):
+        strBuff+=' '
+      value = lfc.lfc_readlink(fullLink,strBuff,256)
+      if re.search('/',strBuff):
+        successful[link] = strBuff.replace('\x00','').strip().replace(self.prefix,'')
+      else:
+        errno = lfc.cvar.serrno
+        failed[link] = lfc.sstrerror(errno)
+    if self.session:
+      self.__closeSession()
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
 
   ####################################################################
   #
