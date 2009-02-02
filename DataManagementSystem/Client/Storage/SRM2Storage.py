@@ -678,8 +678,8 @@ class SRM2Storage(StorageBase):
         if sourceSize == destinationSize :
           gLogger.debug("SRM2Storage.__putFile: Post transfer check successful.")
           return S_OK(destinationSize)
-      errStr = "SRM2Storage.__getFile: Source and destination file sizes do not match."
-      gLogger.error(errStr,src_url)
+      errorMessage = "SRM2Storage.__getFile: Source and destination file sizes do not match."
+      gLogger.error(errorMessage,src_url)
     else:
       errorStr = "SRM2Storage.__putFile: Failed to put file to storage."
       errorMessage = ''
