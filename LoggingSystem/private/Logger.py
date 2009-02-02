@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.30 2008/12/01 11:47:08 acasajus Exp $
-__RCSID__ = "$Id: Logger.py,v 1.30 2008/12/01 11:47:08 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.31 2009/02/02 15:28:21 acasajus Exp $
+__RCSID__ = "$Id: Logger.py,v 1.31 2009/02/02 15:28:21 acasajus Exp $"
 """
    DIRAC Logger client
 """
@@ -156,11 +156,11 @@ class Logger:
                              self.__discoverCallingFrame() )
     return self.processMessage( messageObject )
 
-  def exception( self, sMsg = "", sVarMsg = '', lException = False ):
+  def exception( self, sMsg = "", sVarMsg = '', lException = False, lExcInfo = False ):
     if sVarMsg:
-      sVarMsg += "\n%s" % self.__getExceptionString( lException )
+      sVarMsg += "\n%s" % self.__getExceptionString( lException, lExcInfo )
     else:
-      sVarMsg = "\n%s" % self.__getExceptionString( lException )
+      sVarMsg = "\n%s" % self.__getExceptionString( lException, lExcInfo )
     messageObject = Message( self._systemName,
                              self._logLevels.exception,
                              Time.dateTime(),
@@ -202,7 +202,7 @@ class Logger:
     for backend in self._backendsDict:
       self._backendsDict[ backend ].doMessage( messageObject )
 
-  def __getExceptionString( self, lException = False ):
+  def __getExceptionString( self, lException = False, lExcInfo = False ):
     if lException:
       try:
         args = lException.args
@@ -225,9 +225,10 @@ class Logger:
         value = args[1]
         stack = "\n".join( args[2] )
     else:
-      lExcinfo = sys.exc_info()
-      type, value = (lExcinfo[0],lExcinfo[1])
-      stack = "\n".join( traceback.format_tb( lExcinfo[2] ) )
+      if not lExcInfo:
+        lExcInfo = sys.exc_info()
+      type, value = (lExcInfo[0],lExcInfo[1])
+      stack = "\n".join( traceback.format_tb( lExcInfo[2] ) )
     return "== EXCEPTION ==\n%s:%s\n%s===============" % (
                          type,
                          value,
