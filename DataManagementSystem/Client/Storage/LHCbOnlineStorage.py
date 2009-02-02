@@ -59,14 +59,12 @@ class LHCbOnlineStorage(StorageBase):
   def getFileSize(self,path):
     """ Get a fake file size
     """
-    if type(path) == types.StringType:
-      urls = [path]
-    elif type(path) == types.ListType:
-      urls = path
-    else:
-      return S_ERROR("LHCbOnline.removeFile: Supplied path must be string or list of strings")
+    res = self.checkArgumentFormat(path)
+    if not res['OK']:
+      return res
+    urls = res['Value']
     if not len(path) > 0:
-      return S_ERROR("LHCbOnline.removeFile: No surls supplied.")
+      return S_ERROR("LHCbOnline.getFileSize: No surls supplied.")
     successful = {}
     failed = {}
     for pfn in urls:
@@ -77,13 +75,11 @@ class LHCbOnlineStorage(StorageBase):
   def requestRetransfer(self,path):
     """ Tell the Online system that the migration failed and we want to get the request again
     """
-    if type(path) == types.StringType:
-      urls = [path]
-    elif type(path) == types.ListType:
-      urls = path
-    else:
-      return S_ERROR("LHCbOnline.requestRetransfer: Supplied path must be string or list of strings")
-    if not len(path) > 0:
+    res = self.checkArgumentFormat(path)
+    if not res['OK']:
+      return res
+    urls = res['Value']
+    if not len(urls) > 0:
       return S_ERROR("LHCbOnline.requestRetransfer: No surls supplied.")
     successful = {}
     failed = {}
@@ -92,13 +88,13 @@ class LHCbOnlineStorage(StorageBase):
         success,error = self.server.errorMigratingFile(pfn)
         if success:
           successful[pfn] = True
-          gLogger.info("LHCbOnline.requestRetransfer: Successfully requested file from Online storage.")
+          gLogger.info("LHCbOnline.requestRetransfer: Successfully requested file from RunDB.")
         else:
-          errStr = "LHCbOnline.requestRetransfer: Failed to request file from Online storage: %s" % error
+          errStr = "LHCbOnline.requestRetransfer: Failed to request file from RunDB: %s" % error
           failed[pfn] = errStr
           gLogger.error(errStr,pfn)
       except Exception,x:
-        errStr = "LHCbOnline.requestRetransfer: Exception while requesting file from Online storage."
+        errStr = "LHCbOnline.requestRetransfer: Exception while requesting file from RunDB."
         gLogger.exception(errStr,lException=x)
         failed[pfn] = errStr
     resDict = {'Failed':failed,'Successful':successful}
@@ -107,13 +103,11 @@ class LHCbOnlineStorage(StorageBase):
   def removeFile(self,path):
     """Remove physically the file specified by its path
     """
-    if type(path) == types.StringType:
-      urls = [path]
-    elif type(path) == types.ListType:
-      urls = path
-    else:
-      return S_ERROR("LHCbOnline.removeFile: Supplied path must be string or list of strings")
-    if not len(path) > 0:
+    res = self.checkArgumentFormat(path)
+    if not res['OK']:
+      return res
+    urls = res['Value']
+    if not len(urls) > 0:
       return S_ERROR("LHCbOnline.removeFile: No surls supplied.")
     successful = {}
     failed = {}
@@ -122,15 +116,25 @@ class LHCbOnlineStorage(StorageBase):
         success,error = self.server.endMigratingFile(pfn)
         if success:
           successful[pfn] = True
-          gLogger.info("LHCbOnline.getFile: Successfully requested file from Online storage.")
+          gLogger.info("LHCbOnline.getFile: Successfully issued removal to RunDB.")
         else:
-          errStr = "LHCbOnline.getFile: Failed to request file from Online storage: %s" % error
+          errStr = "LHCbOnline.getFile: Failed to issue removal to RunDB: %s" % error
           failed[pfn] = errStr
           gLogger.error(errStr,pfn)
       except Exception,x:
-        errStr = "LHCbOnline.getFile: Exception while requesting file from Online storage."
+        errStr = "LHCbOnline.getFile: Exception while issuing removal to RunDB."
         gLogger.exception(errStr,lException=x)
         failed[pfn] = errStr
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
+  def checkArgumentFormat(self,path):
+    if type(path) in types.StringTypes:
+      urls = [path]
+    elif type(path) == types.ListType:
+      urls = path
+    elif type(path) == types.DictType:
+      urls = path.keys()
+    else:
+      return S_ERROR("SRM2Storage.checkArgumentFormat: Supplied path is not of the correct format.")
+    return S_OK(urls)   
