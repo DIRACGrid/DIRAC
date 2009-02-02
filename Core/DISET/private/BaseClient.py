@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.57 2008/12/16 13:37:40 acasajus Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.57 2008/12/16 13:37:40 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.58 2009/02/02 14:38:43 acasajus Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.58 2009/02/02 14:38:43 acasajus Exp $"
 
 import sys
 import types
@@ -15,7 +15,8 @@ from DIRAC.Core.Security import CS
 
 class BaseClient:
 
-  __defaultHostExtraCredentials = "hosts"
+  VAL_EXTRA_CREDENTIALS_HOST = "hosts"
+  VAL_EXTRA_CREDENTIALS_PROXY_HOST = "proxyHosts"
 
   KW_USE_CERTIFICATES = "useCertificates"
   KW_EXTRA_CREDENTIALS = "extraCredentials"
@@ -101,12 +102,12 @@ class BaseClient:
 
   def __discoverExtraCredentials( self ):
     #Wich extra credentials to use?
-    if self.KW_EXTRA_CREDENTIALS in self.kwargs:
-      self.__extraCredentials = self.kwargs[ self.KW_EXTRA_CREDENTIALS ]
-    elif self.useCertificates:
-        self.__extraCredentials = self.__defaultHostExtraCredentials
+    if self.useCertificates:
+        self.__extraCredentials = self.VAL_EXTRA_CREDENTIALS_HOST
     else:
       self.__extraCredentials = ""
+    if self.KW_EXTRA_CREDENTIALS in self.kwargs:
+      self.__extraCredentials = self.kwargs[ self.KW_EXTRA_CREDENTIALS ]
     #Are we delegating something?
     if self.KW_DELEGATED_DN in self.kwargs:
       if self.KW_DELEGATED_GROUP in self.kwargs:
