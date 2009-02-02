@@ -33,17 +33,93 @@ class RFIOStorage(StorageBase):
   def isOK(self):
     return self.isok
 
+  #############################################################
+  #
+  # These are the methods for manipulting the client
+  #
+
+  def changeDirectory(self,directory):
+    """ Change the current directory
+    """
+    if directory[0] == '/':
+      directory = directory.lstrip('/')
+    self.cwd = '%s/%s' % (self.cwd,directory)
+
+  def resetWorkingDirectory(self):
+    """ Reset the working directory to the base dir
+    """
+    self.cwd = self.path
+
+  def getCurrentDirectory(self):
+    """ Get the current directory
+    """
+    return S_OK(self.cwd)
+
+  def getName(self):
+    """ The name with which the storage was instantiated
+    """
+    return S_OK(self.name)
+
+  def getParameters(self):
+    """ This gets all the storage specific parameters pass when instantiating the storage
+    """
+    parameterDict = {}
+    parameterDict['StorageName'] = self.name
+    parameterDict['ProtocolName'] = self.protocolName
+    parameterDict['Protocol'] = self.protocol
+    parameterDict['Host'] = self.host
+    parameterDict['Path'] = self.path
+    parameterDict['Port'] = self.port
+    parameterDict['SpaceToken'] = self.spaceToken
+    parameterDict['WSUrl'] = self.wspath
+    return S_OK(parameterDict)
+
+  def getProtocolPfn(self,pfnDict,withPort):
+    """ From the pfn dict construct the pfn to be used
+    """
+    pfnDict['Protocol'] = ''
+    pfnDict['Host'] = ''
+    pfnDict['Port'] = ''
+    pfnDict['WSUrl'] = ''
+    res = pfnunparse(pfnDict)
+    return res
+
+  def getCurrentURL(self,fileName):
+    """ Obtain the current file URL from the current working directory and the filename
+    """
+    if fileName:
+      if fileName[0] == '/':
+        fileName = fileName.lstrip('/')
+    try:
+      fullUrl = '%s/%s' % (self.cwd,fileName)
+      return S_OK(fullUrl)
+    except Exception,x:
+      errStr = "RFIOStorage.getCurrentURL: Failed to create URL %s" % x
+      return S_ERROR(errStr)
+
+  def isPfnForProtocol(self,pfn):
+    res = pfnparse(pfn)
+    if not res['OK']:
+      return res
+    pfnDict = res['Value']
+    if pfnDict['Protocol'] == self.protocol:
+      return S_OK(True)
+    else:
+      return S_OK(False)
+
+  #############################################################
+  #
+  # These are the methods for file manipulation
+  #
+
   def exists(self,path):
     """ Check if the given path exists. The 'path' variable can be a string or a list of strings.
     """
-    if type(path) in types.StringTypes:
-      urls = [path]
-    elif type(path) == types.ListType:
-      urls = path
-    else:
-      return S_ERROR("RFIOStorage.exists: Supplied path must be string or list of strings")
-
-    gLogger.info("RFIOStorage.exists: Determining the existance of %s files." % len(urls))
+    res = self.__checkArgumentFormat(path)
+    if not res['OK']:
+      return res
+    urls = res['Value']
+    gLogger.debug("RFIOStorage.exists: Determining the existance of %s files." % len(urls))
     comm = "nsls"
     for url in urls:
       comm = " %s %s" % (comm,url)
@@ -71,22 +147,14 @@ class RFIOStorage(StorageBase):
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
-  #############################################################
-  #
-  # These are the methods for file manipulation
-  #
-
   def isFile(self,path):
     """Check if the given path exists and it is a file
     """
-    if type(path) in types.StringTypes:
-      urls = [path]
-    elif type(path) == types.ListType:
-      urls = path
-    else:
-      return S_ERROR("RFIOStorage.isFile: Supplied path must be string or list of strings")
-
-    gLogger.info("RFIOStorage.isFile: Determining whether %s paths are files." % len(urls))
+    res = self.__checkArgumentFormat(path)
+    if not res['OK']:
+      return res
+    urls = res['Value']
+    gLogger.debug("RFIOStorage.isFile: Determining whether %s paths are files." % len(urls))
     res = self.__getPathMetadata(urls)
     if not res['OK']:
       return res
@@ -102,7 +170,7 @@ class RFIOStorage(StorageBase):
     return S_OK(resDict)
 
   def __getPathMetadata(self,urls):
-    gLogger.info("RFIOStorage.__getPathMetadata: Attempting to get metadata for %s paths." % (len(urls)))
+    gLogger.debug("RFIOStorage.__getPathMetadata: Attempting to get metadata for %s paths." % (len(urls)))
     comm = "nsls -ld"
     for url in urls:
       comm = " %s %s" % (comm,url)
@@ -171,126 +239,159 @@ class RFIOStorage(StorageBase):
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
-  def getFile(self,fileTuple):
-    """Get a local copy in the current directory of a physical file specified by its path
+  def getFile(self,path,localPath=False):
+    """ Get a local copy in the current directory of a physical file specified by its path
     """
-    if type(fileTuple) == types.TupleType:
-      urls = [fileTuple]
-    elif type(fileTuple) == types.ListType:
-      urls = fileTuple
-    else:
-      return S_ERROR("RFIOStorage.getFile: Supplied file information must be tuple of list of tuples")
-    MIN_BANDWIDTH = 1024*100 # 100 KB/s
+    res = self.__checkArgumentFormatDict(path)
+    if not res['OK']:
+      return res
+    urls = res['Value']
+
     failed = {}
     successful = {}
-    for srcUrl,destFile,size in urls:
-      timeout = size/MIN_BANDWIDTH + 300
-      gLogger.info("RFIOStorage.getFile: Executing transfer of %s to %s" % (srcUrl, destFile))
-      comm = "rfcp %s %s" % (srcUrl,destFile)
-      res = shellCall(timeout,comm)
-      removeFile = True
-      if res['OK']:
-        returncode,stdout,stderr = res['Value']
-        if returncode == 0:
-          gLogger.info('RFIOStorage.getFile: Got file from storage, performing post transfer check.')
-          localSize = getSize(destFile)
-          if localSize == size:
-            gLogger.info("RFIOStorage.getFile: Post transfer check successful.")
-            successful[srcUrl] = True
-          else:
-            errStr = "RFIOStorage.getFile: Source and destination file sizes do not match."
-            gLogger.error(errStr,srcUrl)
-            if os.path.exists(destFile):
-              gLogger.info("RFIOStorage.getFile: Removing local file.")
-              os.remove(destFile)
-            failed[srcUrl] = errStr
-        else:
-          errStr = "RFIOStorage.getFile: Failed to get local copy of file."
-          gLogger.error(errStr,stderr)
-          failed[srcUrl] = errStr
+    for src_url in urls.keys():
+      fileName = os.path.basename(src_url)
+      if localPath:  
+        dest_file = "%s/%s" % (localPath,fileName)
       else:
-        errorMessage = "RFIOStorage.getFile: Failed to get local copy of file."
-        gLogger.error(errorMessage,"%s: %s" % (destFile,res['Message']))
-        failed[srcUrl] = errorMessage
+        dest_file = "%s/%s" % (os.getcwd(),fileName)
+      res = self.__getFile(src_url,dest_file)   
+      if res['OK']:
+        successful[src_url] = res['Value']
+      else:
+        failed[src_url] = res['Message']
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
-  def putFile(self,fileTuple):
-    """Put a copy of the local file to the current directory on the physical storage
+  def __getFile(self,src_url,dest_file):
+    """Get a local copy in the current directory of a physical file specified by its path
     """
-    if type(fileTuple) == types.TupleType:
-      urls = [fileTuple]
-    elif type(fileTuple) == types.ListType:
-      urls = fileTuple
-    else:
-      return S_ERROR("RFIOStorage.putFile: Supplied file info must be tuple of list of tuples.")
+    if not os.path.exists(os.path.dirname(dest_file)):
+      os.makedirs(os.path.dirname(dest_file))
+    if os.path.exists(dest_file):
+      gLogger.debug("RFIOStorage.getFile: Local file already exists %s. Removing..." % dest_file)
+      os.remove(dest_file)
+    res = self.__executeOperation(src_url,'getFileSize')
+    if not res['OK']:
+      return S_ERROR(res['Message'])
+    remoteSize = res['Value']
     MIN_BANDWIDTH = 1024*100 # 100 KB/s
+    timeout = remoteSize/MIN_BANDWIDTH + 300
+    gLogger.debug("RFIOStorage.getFile: Executing transfer of %s to %s" % (srcUrl, destFile))
+    comm = "rfcp %s %s" % (src_url,dest_file)
+    res = shellCall(timeout,comm)
+    if res['OK']:
+      returncode,stdout,stderr = res['Value']
+      if returncode == 0:
+        gLogger.debug('RFIOStorage.__getFile: Got file from storage, performing post transfer check.')
+        localSize = getSize(dest_file)
+        if localSize == remoteSize:
+          gLogger.debug("RFIOStorage.getFile: Post transfer check successful.")
+          return S_OK(localSize)
+        errorMessage = "RFIOStorage.__getFile: Source and destination file sizes do not match."
+        gLogger.error(errorMessage,src_url)
+      else:
+        errStr = "RFIOStorage.__getFile: Failed to get local copy of file."
+        gLogger.error(errStr,stderr)
+        errorMessage = "%s %s" (errStr,stderr)
+    else:
+      errStr = "RFIOStorage.__getFile: Failed to get local copy of file."
+      gLogger.error(errStr, res['Message'])
+      errorMessage = "%s %s" (errStr,res['Message']) 
+    if os.path.exists(dest_file):
+      gLogger.debug("RFIOStorage.getFile: Removing local file %s." % dest_file)
+      os.remove(dest_file)   
+    return S_ERROR(errorMessage)
+
+  def putFile(self,path,sourceSize=0):  
+    res = self.__checkArgumentFormatDict(path)
+    if not res['OK']:
+      return res
+    urls = res['Value']
     failed = {}
     successful = {}
-    for srcFile,destUrl,size in urls:
-      timeout = size/MIN_BANDWIDTH + 300
-      res = self.getTransportURL(destUrl)
+    for dest_url,src_file in urls.items():
+      res = self.__putFile(src_file,dest_url,sourceSize)
       if res['OK']:
-        if res['Value']['Successful'].has_key(destUrl):
-          turl = res['Value']['Successful'][destUrl]
-          gLogger.info("RFIOStorage.putFile: Executing transfer of %s to %s" % (srcFile, destUrl))
-          comm = "rfcp %s '%s'" % (srcFile,turl)
-          res = shellCall(timeout,comm)
-      removeFile = True
-      if res['OK']:
-        returncode,stdout,stderr = res['Value']
-        if returncode == 0:
-          gLogger.info('RFIOStorage.putFile: Put file to storage, performing post transfer check.')
-          res = self.getFileSize(destUrl)
-          if res['OK']:
-            if res['Value']['Successful'].has_key(destUrl):
-              if int(res['Value']['Successful'][destUrl]) == int(size):
-                gLogger.info("RFIOStorage.putFile: Post transfer check successful.")
-                successful[destUrl] = True
-                removeFile = False
-              else:
-                errMessage = "RFIOStorage.putFile: Source and destination file sizes do not match."
-                gLogger.error(errMessage,destUrl)
-                failed[destUrl] = errMessage
-            else:
-              errMessage = "RFIOStorage.putFile: Failed to determine remote file size."
-              gLogger.error(errMessage,destUrl)
-              failed[destUrl] = errMessage
-          else:
-            errMessage = "RFIOStorage.putFile: Failed to determine remote file size."
-            gLogger.error(errMessage,destUrl)
-            failed[destUrl] = errMessage
-        else:
-          errStr = "RFIOStorage.putFile: Failed to put file to remote storage."
-          gLogger.error(errStr,stderr)
-          failed[destUrl] = errStr
+        successful[dest_url] = res['Value']
       else:
-        errStr = "RFIOStorage.putFile: Failed to put file to remote storage."
-        gLogger.error(errStr,res['Message'])
-        failed[destUrl] = errStr
-      if removeFile:
-        # This is because some part of the transfer failed.
-        infoStr = "RFIOStorage.putFile: Removing destination url."
-        gLogger.info(infoStr)
-        res = self.removeFile(destUrl)
+        failed[dest_url] = res['Message']
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
+
+  def __putFile(self,src_file,dest_url,sourceSize):
+    """Put a copy of the local file to the current directory on the physical storage
+    """
+    # Pre-transfer check
+    res = self.__executeOperation(dest_url,'exists')
+    if not res['OK']:
+      gLogger.debug("RFIOStorage.__putFile: Failed to find pre-existance of destination file.")
+      return res
+    if res['Value']:
+      res = self.__executeOperation(dest_url,'removeFile')
+      if not res['OK']:
+        gLogger.debug("RFIOStorage.__putFile: Failed to remove remote file %s." % dest_url)
+      else:
+        gLogger.debug("RFIOStorage.__putFile: Removed remote file %s." % dest_url)
+    if not os.path.exists(src_file):
+      errStr = "RFIOStorage.__putFile: The source local file does not exist."
+      gLogger.error(errStr,src_file)
+      return S_ERROR(errStr)
+    sourceSize = getSize(src_file)
+    if sourceSize == -1:
+      errStr = "RFIOStorage.__putFile: Failed to get file size."
+      gLogger.error(errStr,src_file)
+      return S_ERROR(errStr)
+    res = self.__executeOperation(dest_url,'getTransportURL')
+    if not res['OK']:
+      gLogger.debug("RFIOStorage.__putFile: Failed to get transport URL for file.")
+      return res
+     turl = res['Value']
+    
+    MIN_BANDWIDTH = 1024*100 # 100 KB/s
+    timeout = sourceSize/MIN_BANDWIDTH + 300
+    gLogger.debug("RFIOStorage.putFile: Executing transfer of %s to %s" % (srcFile, destUrl))
+    comm = "rfcp %s '%s'" % (src_file,turl)
+    res = shellCall(timeout,comm)
+    if res['OK']:
+      returncode,stdout,stderr = res['Value']
+      if returncode == 0:
+        gLogger.debug('RFIOStorage.putFile: Put file to storage, performing post transfer check.')
+        res = self.__executeOperation(dest_url,'getFileSize')
+        if res['OK']:
+          destinationSize = res['Value']
+          if sourceSize == destinationSize :
+            gLogger.debug("RFIOStorage.__putFile: Post transfer check successful.")
+            return S_OK(destinationSize)
+        errorMessage = "RFIOStorage.__putFile: Source and destination file sizes do not match."
+        gLogger.error(errStr,src_url) 
+      else:
+        errStr = "RFIOStorage.__putFile: Failed to put file to remote storage."
+        gLogger.error(errStr,stderr)
+        errorMessage = "%s %s" % (errStr,stderr)
+    else:
+      errStr = "RFIOStorage.__putFile: Failed to put file to remote storage."
+      gLogger.error(errStr,res['Message'])
+      errorMessage = "%s %s" % (errStr,res['Message'])
+    res = self.__executeOperation(dest_url,'removeFile')
+    if res['OK']:  
+      gLogger.debug("RFIOStorage.__putFile: Removed remote file remnant %s." % dest_url)
+    else:
+      gLogger.debug("RFIOStorage.__putFile: Unable to remove remote file remnant %s." % dest_url)
+    return S_ERROR(errorMessage)
 
   def removeFile(self,path):
     """Remove physically the file specified by its path
     """
-    if type(path) in types.StringTypes:
-      urls = [path]
-    elif type(path) == types.ListType:
-      urls = path
-    else:
-      return S_ERROR("RFIOStorage.removeFile: Supplied path must be string or list of strings")
-
+    res = self.__checkArgumentFormat(path)
+    if not res['OK']:
+      return res
+    urls = res['Value']
     successful = {}
     failed = {}
     listOfLists = breakListIntoChunks(urls,100)
     for urls in listOfLists:
-      gLogger.info("RFIOStorage.removeFile: Attempting to remove %s files." % len(urls))
+      gLogger.debug("RFIOStorage.removeFile: Attempting to remove %s files." % len(urls))
       comm = 'stager_rm -S %s' % self.spaceToken
       for url in urls:
         comm = "%s -M %s" % (comm,url)
@@ -333,13 +434,11 @@ class RFIOStorage(StorageBase):
   def getFileMetadata(self,path):
     """  Get metadata associated to the file
     """
-    if type(path) in types.StringTypes:
-      urls = [path]
-    elif type(path) == types.ListType:
-      urls = path
-    else:
-      return S_ERROR("RFIOStorage.getFileMetadata: Supplied path must be string or list of strings")
-    gLogger.info("RFIOStorage.getFileMetadata: Obtaining metadata for %s files." % len(urls))
+    res = self.__checkArgumentFormat(path)
+    if not res['OK']:
+      return res
+    urls = res['Value']
+    gLogger.debug("RFIOStorage.getFileMetadata: Obtaining metadata for %s files." % len(urls))
     res = self.__getPathMetadata(urls)
     if not res['OK']:
       return res
@@ -354,13 +453,11 @@ class RFIOStorage(StorageBase):
   def getFileSize(self,path):
     """Get the physical size of the given file
     """
-    if type(path) in types.StringTypes:
-      urls = [path]
-    elif type(path) == types.ListType:
-      urls = path
-    else:
-      return S_ERROR("RFIOStorage.getFileSize: Supplied path must be string or list of strings")
-    gLogger.info("RFIOStorage.getFileSize: Determining the sizes for  %s files." % len(urls))
+    res = self.__checkArgumentFormat(path)
+    if not res['OK']:
+      return res
+    urls = res['Value']
+    gLogger.debug("RFIOStorage.getFileSize: Determining the sizes for  %s files." % len(urls))
     res = self.__getPathMetadata(urls)
     if not res['OK']:
       return res
@@ -377,12 +474,10 @@ class RFIOStorage(StorageBase):
   def prestageFile(self,path):
     """ Issue prestage request for file
     """
-    if type(path) in types.StringTypes:
-      urls = [path]
-    elif type(path) == types.ListType:
-      urls = path
-    else:
-      return S_ERROR("RFIOStorage.prestageFile: Supplied path must be string or list of strings")
+    res = self.__checkArgumentFormat(path)
+    if not res['OK']:
+      return res
+    urls = res['Value']
     comm = "stager_get -S %s" % self.spaceToken
     for url in urls:
       comm = "%s -M %s" % (comm,url)
@@ -417,12 +512,10 @@ class RFIOStorage(StorageBase):
   def getTransportURL(self,path,protocols=False):
     """ Obtain the TURLs for the supplied path and protocols
     """
-    if type(path) in types.StringTypes:
-      urls = [path]
-    elif type(path) == types.ListType:
-      urls = path
-    else:
-      return S_ERROR("RFIOStorage.getTransportURL: Supplied path must be string or list of strings")
+    res = self.__checkArgumentFormat(path)
+    if not res['OK']:
+      return res
+    urls = res['Value']
     successful = {}
     failed = {}
     for path in urls:
@@ -447,13 +540,11 @@ class RFIOStorage(StorageBase):
   def isDirectory(self,path):
     """Check if the given path exists and it is a directory
     """
-    if type(path) in types.StringTypes:
-      urls = [path]
-    elif type(path) == types.ListType:
-      urls = path
-    else:
-      return S_ERROR("RFIOStorage.isDirectory: Supplied path must be string or list of strings")
-    gLogger.info("RFIOStorage.isDirectory: Determining whether %s paths are directories." % len(urls))
+    res = self.__checkArgumentFormat(path)
+    if not res['OK']:
+      return res
+    urls = res['Value']
+    gLogger.debug("RFIOStorage.isDirectory: Determining whether %s paths are directories." % len(urls))
     files = {}
     for url in urls:
       destFile = '%s/dirac_directory' % url
@@ -474,24 +565,22 @@ class RFIOStorage(StorageBase):
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
-  def getDirectory(self,directoryTuple):
+  def getDirectory(self,path):
     """ Get locally a directory from the physical storage together with all its files and subdirectories.
     """
-    if type(directoryTuple) == types.TupleType:
-      urls = [directoryTuple]
-    elif type(directoryTuple) == types.ListType:
-      urls = directoryTuple
-    else:
-      return S_ERROR("RFIOStorage.getDirectory: Supplied directory info must be tuple of list of tuples.")
+    res = self.__checkArgumentFormatDict(path)
+    if not res['OK']:
+      return res
+    urls = res['Value']
+
     successful = {}
     failed = {}
-    gLogger.info("RFIOStorage.getDirectory: Attempting to get local copies of %s directories." % len(urls))
-
+    gLogger.debug("RFIOStorage.getDirectory: Attempting to get local copies of %s directories." % len(urls))
     for src_directory,destination_directory in urls:
       res = self.__getDir(src_directory,destination_directory)
       if res['OK']:
         if res['Value']['AllGot']:
-          gLogger.info("RFIOStorage.getDirectory: Successfully got local copy of %s" % src_directory)
+          gLogger.debug("RFIOStorage.getDirectory: Successfully got local copy of %s" % src_directory)
           successful[src_directory] = {'Files':res['Value']['Files'],'Size':res['Value']['Size']}
         else:
           gLogger.error("RFIOStorage.getDirectory: Failed to get entire directory.", src_directory)
@@ -579,23 +668,22 @@ class RFIOStorage(StorageBase):
     resDict = {'AllGot':allGot,'Files':filesGot,'Size':sizeGot}
     return S_OK(resDict)
 
-  def putDirectory(self, directoryTuple):
+  def putDirectory(self, path):
     """ Put a local directory to the physical storage together with all its files and subdirectories.
     """
-    if type(directoryTuple) == types.TupleType:
-      urls = [directoryTuple]
-    elif type(directoryTuple) == types.ListType:
-      urls = directoryTuple
-    else:
-      return S_ERROR("RFIOStorage.putDirectory: Supplied directory info must be tuple of list of tuples.")
+    res = self.__checkArgumentFormatDict(path)
+    if not res['OK']:
+      return res
+    urls = res['Value']
+
     successful = {}
     failed = {}
-    gLogger.info("RFIOStorage.putDirectory: Attemping to put %s directories to remote storage." % len(urls))
-    for sourceDir,destDir in urls:
+    gLogger.debug("RFIOStorage.putDirectory: Attemping to put %s directories to remote storage." % len(urls))
+    for sourceDir,destDir in urls.items():
       res = self.__putDir(sourceDir,destDir)
       if res['OK']:
         if res['Value']['AllPut']:
-          gLogger.info("RFIOStorage.putDirectory: Successfully put directory to remote storage: %s" % destDir)
+          gLogger.debug("RFIOStorage.putDirectory: Successfully put directory to remote storage: %s" % destDir)
           successful[destDir] = {'Files':res['Value']['Files'],'Size':res['Value']['Size']}
         else:
           gLogger.error("RFIOStorage.putDirectory: Failed to put entire directory to remote storage.", destDir)
@@ -657,20 +745,18 @@ class RFIOStorage(StorageBase):
     return S_OK(resDict)
 
   def createDirectory(self,path):
-    if type(path) in types.StringTypes:
-      urls = [path]
-    elif type(path) == types.ListType:
-      urls = path
-    else:
-      return S_ERROR("RFIOStorage.createDirectory: Supplied path must be string or list of strings")
+    res = self.__checkArgumentFormat(path)
+    if not res['OK']:
+      return res
+    urls = res['Value']
     successful = {}
     failed = {}
-    gLogger.info("RFIOStorage.createDirectory: Attempting to create %s directories." % len(urls))
+    gLogger.debug("RFIOStorage.createDirectory: Attempting to create %s directories." % len(urls))
     for url in urls:
       strippedUrl = url.rstrip('/')
       res = self.__makeDirs(strippedUrl)
       if res['OK']:
-        gLogger.info("RFIOStorage.createDirectory: Successfully created directory on storage: %s" % url)
+        gLogger.debug("RFIOStorage.createDirectory: Successfully created directory on storage: %s" % url)
         successful[url] = True
       else:
         gLogger.error("RFIOStorage.createDirectory: Failed to create directory on storage.", url)
@@ -735,13 +821,11 @@ class RFIOStorage(StorageBase):
     """Remove a directory on the physical storage together with all its files and
        subdirectories.
     """
-    if type(path) in types.StringTypes:
-      urls = [path]
-    elif type(path) == types.ListType:
-      urls = path
-    else:
-      return S_ERROR("RFIOStorage.removeDirectory: Supplied path must be string or list of strings")
-    gLogger.info("RFIOStorage.removeDirectory: Attempting to remove %s directories." % len(urls))
+    res = self.__checkArgumentFormat(path)
+    if not res['OK']:
+      return res
+    urls = res['Value']
+    gLogger.debug("RFIOStorage.removeDirectory: Attempting to remove %s directories." % len(urls))
     successful = {}
     failed = {}
     for url in urls:
@@ -765,13 +849,11 @@ class RFIOStorage(StorageBase):
   def listDirectory(self,path):
     """ List the supplied path. First checks whether the path is a directory then gets the contents.
     """
-    if type(path) in types.StringTypes:
-      urls = [path]
-    elif type(path) == types.ListType:
-      urls = path
-    else:
-      return S_ERROR("RFIOStorage.listDirectory: Supplied path must be string or list of strings")
-    gLogger.info("RFIOStorage.listDirectory: Attempting to list %s directories." % len(urls))
+    res = self.__checkArgumentFormat(path)
+    if not res['OK']:
+      return res
+    urls = res['Value']
+    gLogger.debug("RFIOStorage.listDirectory: Attempting to list %s directories." % len(urls))
     res = self.isDirectory(urls)
     if not res['OK']:
       return res
@@ -824,13 +906,11 @@ class RFIOStorage(StorageBase):
   def getDirectoryMetadata(self,path):
     """ Get the metadata for the directory
     """
-    if type(path) in types.StringTypes:
-      urls = [path]
-    elif type(path) == types.ListType:
-      urls = path
-    else:
-      return S_ERROR("RFIOStorage.getDirectoryMetadata: Supplied path must be string or list of strings")
-    gLogger.info("RFIOStorage.getDirectoryMetadata: Attempting to get metadata for %s directories." % len(urls))
+    res = self.__checkArgumentFormat(path)
+    if not res['OK']:
+      return res
+    urls = res['Value']
+    gLogger.debug("RFIOStorage.getDirectoryMetadata: Attempting to get metadata for %s directories." % len(urls))
     res = self.isDirectory(urls)
     if not res['OK']:
       return res
@@ -856,13 +936,11 @@ class RFIOStorage(StorageBase):
   def getDirectorySize(self,path):
     """ Get the size of the directory on the storage
     """
-    if type(path) in types.StringTypes:
-      urls = [path]
-    elif type(path) == types.ListType:
-      urls = path
-    else:
-      return S_ERROR("RFIOStorage.getDirectorySize: Supplied path must be string or list of strings")
-    gLogger.info("RFIOStorage.getDirectorySize: Attempting to get size of %s directories." % len(urls))
+    res = self.__checkArgumentFormat(path)
+    if not res['OK']:
+      return res
+    urls = res['Value']
+    gLogger.debug("RFIOStorage.getDirectorySize: Attempting to get size of %s directories." % len(urls))
     res = self.listDirectory(urls)
     if not res['OK']:
       return res
@@ -875,81 +953,48 @@ class RFIOStorage(StorageBase):
       for fileURL,fileDict in filesDict.items():
         directorySize += fileDict['Size']
         directoryFiles += 1
-      gLogger.info("RFIOStorage.getDirectorySize: Successfully obtained size of %s." % directory)
+      gLogger.debug("RFIOStorage.getDirectorySize: Successfully obtained size of %s." % directory)
       successful[directory] = {'Files':directoryFiles,'Size':directorySize}
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
-  #############################################################
-  #
-  # These are the methods for manipulting the client
-  #
-
-  def changeDirectory(self,directory):
-    """ Change the current directory
-    """
-    if directory[0] == '/':
-      directory = directory.lstrip('/')
-    self.cwd = '%s/%s' % (self.cwd,directory)
-
-  def resetWorkingDirectory(self):
-    """ Reset the working directory to the base dir
-    """
-    self.cwd = self.path
-
-  def getCurrentDirectory(self):
-    """ Get the current directory
-    """
-    return S_OK(self.cwd)
-
-  def getName(self):
-    """ The name with which the storage was instantiated
-    """
-    return S_OK(self.name)
-
-  def getParameters(self):
-    """ This gets all the storage specific parameters pass when instantiating the storage
-    """
-    parameterDict = {}
-    parameterDict['StorageName'] = self.name
-    parameterDict['ProtocolName'] = self.protocolName
-    parameterDict['Protocol'] = self.protocol
-    parameterDict['Host'] = self.host
-    parameterDict['Path'] = self.path
-    parameterDict['Port'] = self.port
-    parameterDict['SpaceToken'] = self.spaceToken
-    parameterDict['WSUrl'] = self.wspath
-    return S_OK(parameterDict)
-
-  def getProtocolPfn(self,pfnDict,withPort):
-    """ From the pfn dict construct the pfn to be used
-    """
-    pfnDict['Protocol'] = ''
-    pfnDict['Host'] = ''
-    pfnDict['Port'] = ''
-    pfnDict['WSUrl'] = ''
-    res = pfnunparse(pfnDict)
-    return res
-
-  def getCurrentURL(self,fileName):
-    """ Obtain the current file URL from the current working directory and the filename
-    """
-    if fileName:
-      if fileName[0] == '/':
-        fileName = fileName.lstrip('/')
-    try:
-      fullUrl = '%s/%s' % (self.cwd,fileName)
-      return S_OK(fullUrl)
-    except Exception,x:
-      errStr = "RFIOStorage.getCurrentURL: Failed to create URL %s" % x
-      return S_ERROR(errStr)
-
-  def isPfnForProtocol(self,pfn):
-    res = pfnparse(pfn)
-    if not res['OK']:
-      return res
-    pfnDict = res['Value']
-    if pfnDict['Protocol'] == self.protocol:
-      return S_OK(True)
+  def __checkArgumentFormat(self,path):
+    if type(path) in types.StringTypes:
+      urls = [path]
+    elif type(path) == types.ListType:
+      urls = path
+    elif type(path) == types.DictType:
+      urls = path.keys()
     else:
-      return S_OK(False)
+      return S_ERROR("RFIOStorage.__checkArgumentFormat: Supplied path is not of the correct format.")
+    return S_OK(urls)
+
+  def __checkArgumentFormatDict(self,path):   
+    if type(path) in types.StringTypes:
+      urls = {path:False}
+    elif type(path) == types.ListType:
+      urls = {}
+      for url in path:
+        urls[url] = False
+    elif type(path) == types.DictType:
+     urls = path
+    else:
+      return S_ERROR("RFIOStorage.checkArgumentFormat: Supplied path is not of the correct format.")
+    return S_OK(urls)
+
+  def __executeOperation(self,url,method):
+    """ Executes the requested functionality with the supplied url
+    """
+    execString = "res = self.%s(url)" % method
+    try:
+      exec(execString)
+      if not res['OK']:
+        return S_ERROR(res['Message'])
+      elif not res['Value']['Successful'].has_key(url):
+        return S_ERROR(res['Value']['Failed'][url])
+      else:
+        return S_OK(res['Value']['Successful'][url])
+    except AttributeError,errMessage:
+      exceptStr = "RFIOStorage.__executeOperation: Exception while perfoming %s." % method
+      gLogger.exception(exceptStr,'',errMessage)
+      return S_ERROR("%s%s" % (exceptStr,errMessage))   
