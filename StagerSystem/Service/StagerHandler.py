@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Service/StagerHandler.py,v 1.14 2008/12/11 16:08:21 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Service/StagerHandler.py,v 1.15 2009/02/02 17:34:06 acsmith Exp $
 ########################################################################
 
 """
     StagerHandler is the implementation of the StagerDB in the DISET framework
 """
 
-__RCSID__ = "$Id: StagerHandler.py,v 1.14 2008/12/11 16:08:21 acsmith Exp $"
+__RCSID__ = "$Id: StagerHandler.py,v 1.15 2009/02/02 17:34:06 acsmith Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -54,6 +54,23 @@ class StagerHandler(RequestHandler):
       return res
     except Exception,x:
       errMsg = 'StagerHandler.getFilesWithStatus: Exception when getting files with %s status' % status
+      gLogger.exception(errMsg,'',x)
+      return S_ERROR(errMsg)
+
+  types_getFileSRMReqInfo = [StringType]
+  def export_getFileSRMReqInfo(self,status):
+    """
+        This method retrieves files and srm request IDs with the supplied status
+    """
+    try:
+      res = stagerDB.getFileSRMReqInfo(status)
+      if res['OK']:
+        gLogger.info('StagerHandler.getFileSRMReqInfo: Successfully got file information for %s status.' % status)
+      else:
+        gLogger.error('StagerHandler.getFileSRMReqInfo: Failed to get file information for %s status files.' % status, res['Message'])
+      return res
+    except Exception,x:
+      errMsg = 'StagerHandler.getFileSRMReqInfo: Exception when getting file information of %s status files.' % status
       gLogger.exception(errMsg,'',x)
       return S_ERROR(errMsg)
 
