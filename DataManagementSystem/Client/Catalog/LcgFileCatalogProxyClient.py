@@ -3,6 +3,7 @@
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.ConfigurationSystem.Client import PathFinder
 
 class LcgFileCatalogProxyClient:
   """ File catalog client for LCG File Catalog proxy service
@@ -14,23 +15,20 @@ class LcgFileCatalogProxyClient:
     self.name = 'LFCProxy'
     self.valid = False
     try:
-      if not url:
-        result = gConfig.getOption('/DIRAC/Setup')
-        if not result['OK']:
-          gLogger.fatal('Failed to get the /DIRAC/Setup')
-          return
-        setup = result['Value']
-        configPath = '/DIRAC/Setups/%s/DataManagement' % setup
-
-        dmConfig = gConfig.getValue(configPath)
-        configPath = '/Systems/DataManagement/%s/URLs/LcgFileCatalogProxy' % dmConfig
-        self.url = gConfig.getValue(configPath)
-      else:
+      if url:
         self.url = url
-      self.server = RPCClient(self.url,timeout=120,useCertificates=useCertificates)
-      self.valid = True
+      else:
+        url = PathFinder.getServiceURL('DataManagement/LcgFileCatalogProxy')
+        if not url:
+          return
+        self.url = url
+      self.server  = RPCClient(self.url,timeout=120,useCertificates=useCertificates)
+      if not self.server: 
+        return
+      else:
+        self.valid = True
     except Exception,x:
-      gLogger.exception('Exception while creating connection to LcgFileCatalog proxy server',x)
+      gLogger.exception('Exception while creating connection to LcgFileCatalog proxy server','',x)
       return
 
   def isOK(self):
