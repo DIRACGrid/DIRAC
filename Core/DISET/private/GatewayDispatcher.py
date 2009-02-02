@@ -1,10 +1,10 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/GatewayDispatcher.py,v 1.4 2008/07/23 14:21:42 acasajus Exp $
-__RCSID__ = "$Id: GatewayDispatcher.py,v 1.4 2008/07/23 14:21:42 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/GatewayDispatcher.py,v 1.5 2009/02/02 16:21:59 acasajus Exp $
+__RCSID__ = "$Id: GatewayDispatcher.py,v 1.5 2009/02/02 16:21:59 acasajus Exp $"
 
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection
-from DIRAC.Core import Security
+from DIRAC.Core.Security.X509Chain import X509Chain
 
 from DIRAC.Core.DISET.AuthManager import AuthManager
 from DIRAC.Core.DISET.private.Dispatcher import Dispatcher
@@ -45,7 +45,7 @@ class GatewayDispatcher( Dispatcher ):
     else:
       action = "%s/%s" % actionTuple
     credDict = clientTransport.getConnectingCredentials()
-    retVal = self._authorizeAction( service, action, credDict )
+    retVal = self._authorizeAction( service, action, dict( credDict ) )
     if not retVal[ 'OK' ]:
       clientTransport.sendData( retVal )
       return False
@@ -75,6 +75,7 @@ class GatewayDispatcher( Dispatcher ):
     Execute an action
     """
     credDict = clientTransport.getConnectingCredentials()
+    print "CREDDICT", credDict
     retVal = self.__checkDelegation( clientTransport )
     if not retVal[ 'OK' ]:
       return retVal
@@ -88,6 +89,8 @@ class GatewayDispatcher( Dispatcher ):
                         BaseClient.KW_USE_CERTIFICATES : False,
                         BaseClient.KW_PROXY_STRING : delegatedChain
                         }
+    if BaseClient.KW_EXTRA_CREDENTIALS in credDict:
+      clientInitArgs[ BaseClient.KW_EXTRA_CREDENTIALS ] = credDict[ BaseClient.KW_EXTRA_CREDENTIALS ]
     #OOkay! Lets do the magic!
     retVal = clientTransport.receiveData()
     if not retVal[ 'OK' ]:
@@ -131,7 +134,7 @@ class GatewayDispatcher( Dispatcher ):
     gLogger.info( "Sending delegation request for %s" % delegationRequest.getSubjectDN()[ 'Value' ] )
     clientTransport.sendData( S_OK( { 'delegate' : retVal[ 'Value' ] } ) )
     delegatedCertChain = clientTransport.receiveData()
-    delegatedChain = Security.X509Chain( keyObj = delegationRequest.getPKey() )
+    delegatedChain = X509Chain( keyObj = delegationRequest.getPKey() )
     retVal = delegatedChain.loadChainFromString( delegatedCertChain )
     if not retVal[ 'OK' ]:
       retVal = S_ERROR( "Error in receiving delegated proxy: %s" % retVal[ 'Message' ] )
@@ -142,9 +145,14 @@ class GatewayDispatcher( Dispatcher ):
 
   def __getUserDescription( self, credDict ):
     if 'DN' not in credDict:
-      return "anonymous@noGroup"
+      DN = "anonymous"
     else:
-      return "%s@%s" % ( credDict[ 'DN' ], credDict[ 'group' ] )
+      DN = credDict[ 'DN' ]
+    if 'group' not in credDict:
+      group = "unknownGroup"
+    else:
+      group = credDict[ 'group' ]
+    return "%s@%s" % ( DN, group )
 
   def __forwardRPCCall( self, targetService, clientInitArgs, method, params ):
     rpcClient = RPCClient( targetService, **clientInitArgs )

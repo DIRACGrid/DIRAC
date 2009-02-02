@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.58 2009/02/02 14:38:43 acasajus Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.58 2009/02/02 14:38:43 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.59 2009/02/02 16:23:44 acasajus Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.59 2009/02/02 16:23:44 acasajus Exp $"
 
 import sys
 import types
@@ -16,7 +16,6 @@ from DIRAC.Core.Security import CS
 class BaseClient:
 
   VAL_EXTRA_CREDENTIALS_HOST = "hosts"
-  VAL_EXTRA_CREDENTIALS_PROXY_HOST = "proxyHosts"
 
   KW_USE_CERTIFICATES = "useCertificates"
   KW_EXTRA_CREDENTIALS = "extraCredentials"
