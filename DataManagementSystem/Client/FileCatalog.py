@@ -30,9 +30,12 @@ class FileCatalog:
       catalogs = [catalogs]
     if catalogs:
       res = self._getSelectedCatalogs(catalogs)
+      
     else:
       res = self._getCatalogs()
     if not res['OK']:
+      self.valid = False
+    elif (len(self.readCatalogs) == 0) and (len(self.writeCatalogs) == 0):
       self.valid = False
 
   def isOK(self):
@@ -107,6 +110,8 @@ class FileCatalog:
         if len(failed) == 0:
           resDict = {'Failed':failed,'Successful':successful}
           return S_OK(resDict)
+    if (len(successful) == 0) and (len(failed) == 0):
+      return S_ERROR('Failed to perform %s from any catalog' % self.call)
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
@@ -246,8 +251,8 @@ class FileCatalog:
         errStr = "FileCatalog._generateCatalogObject: Failed to instatiate catalog plug in."
         gLogger.error(errStr,moduleName)
         return S_ERROR(errStr)
+      return S_OK(catalog)
     except Exception, x:
       errStr = "FileCatalog._generateCatalogObject: Failed to instatiate %s()" % (moduleName)
       gLogger.exception(errStr,lException=x)
       return S_ERROR(errStr)
-    return S_OK(catalog)
