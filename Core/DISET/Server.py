@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.36 2009/02/02 16:21:42 acasajus Exp $
-__RCSID__ = "$Id: Server.py,v 1.36 2009/02/02 16:21:42 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.37 2009/02/03 16:39:24 acasajus Exp $
+__RCSID__ = "$Id: Server.py,v 1.37 2009/02/03 16:39:24 acasajus Exp $"
 
 import socket
 import sys
@@ -65,6 +65,7 @@ class Server:
     self.threadPool.daemonize()
     self.__monitorLastStatsUpdate = time.time()
     gThreadScheduler.addPeriodicTask( self.transportLifeTime, self.__purgeStalledTransports )
+    gThreadScheduler.addPeriodicTask( 30, self.__reportThreadPoolContents )
 
   def __initializeMonitor( self, serviceCfg ):
     gMonitor.setComponentType( gMonitor.COMPONENT_SERVICE )
@@ -77,7 +78,6 @@ class Server:
     gMonitor.registerActivity( 'PendingQueries', "Pending queries", 'Framework', 'queries', gMonitor.OP_MEAN )
     gMonitor.registerActivity( 'ActiveQueries', "Active queries", 'Framework', 'threads', gMonitor.OP_MEAN )
     gMonitor.registerActivity( 'RunningThreads', "Running threads", 'Framework', 'threads', gMonitor.OP_MEAN )
-    gThreadScheduler.addPeriodicTask( 30, self.__reportThreadPoolContents )
 
   def __reportThreadPoolContents( self ):
     gMonitor.addMark( 'PendingQueries', self.threadPool.pendingJobs() )
