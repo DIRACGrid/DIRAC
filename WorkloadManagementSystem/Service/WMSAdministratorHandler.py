@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSAdministratorHandler.py,v 1.43 2009/01/19 14:51:31 atsareg Exp $
+# $Id: WMSAdministratorHandler.py,v 1.44 2009/02/03 14:38:18 atsareg Exp $
 ########################################################################
 """
 This is a DIRAC WMS administrator interface.
@@ -14,7 +14,7 @@ Access to the pilot data:
 
 """
 
-__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.43 2009/01/19 14:51:31 atsareg Exp $"
+__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.44 2009/02/03 14:38:18 atsareg Exp $"
 
 import os, sys, string, uu, shutil
 from types import *
@@ -291,8 +291,8 @@ class WMSAdministratorHandler(RequestHandler):
     return pilotDB.getPilotInfo(pilotID=result['Value'])
 
   ##############################################################################
-  types_setJobForPilot = [IntType, StringType]
-  def export_setJobForPilot(self,jobID,pilotRef):
+  types_setJobForPilot = [ [IntType,LongType], StringType]
+  def export_setJobForPilot(self,jobID,pilotRef,destination=None):
     """ Report the DIRAC job ID which is executed by the given pilot job
     """
 
@@ -300,6 +300,11 @@ class WMSAdministratorHandler(RequestHandler):
     if not result['OK']:
       return result
     result = pilotDB.setCurrentJobID(pilotRef,jobID)
+    if not result['OK']:
+      return result
+    if destination:
+      result = pilotDB.setPilotDestinationSite(pilotRef,destination)
+        
     return result
 
   ##########################################################################################
@@ -311,17 +316,11 @@ class WMSAdministratorHandler(RequestHandler):
     return result
 
   ##########################################################################################
-  types_setPilotGridCE = [StringType, StringType]
-  def export_setPilotGridCE(self,pilotRef,gridCE):
-    """ Set the pilot agent grid CE
-    """
-    result = pilotDB.setPilotDestinationSite(pilotRef,gridCE)
-    return result
-
-  ##########################################################################################
   types_setPilotStatus = [StringType, StringType]
-  def export_setPilotStatus(self,pilotRef,status):
+  def export_setPilotStatus(self,pilotRef,status,destination=None,reason=None):
     """ Set the pilot agent status
     """
-    result = pilotDB.setPilotStatus(pilotRef,status)
+    
+    result = pilotDB.setPilotStatus(pilotRef,status,destination=destination,
+                                    statusReason=reason)
     return result
