@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/GatewayDispatcher.py,v 1.5 2009/02/02 16:21:59 acasajus Exp $
-__RCSID__ = "$Id: GatewayDispatcher.py,v 1.5 2009/02/02 16:21:59 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/GatewayDispatcher.py,v 1.6 2009/02/03 17:02:46 acasajus Exp $
+__RCSID__ = "$Id: GatewayDispatcher.py,v 1.6 2009/02/03 17:02:46 acasajus Exp $"
 
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
@@ -75,7 +75,6 @@ class GatewayDispatcher( Dispatcher ):
     Execute an action
     """
     credDict = clientTransport.getConnectingCredentials()
-    print "CREDDICT", credDict
     retVal = self.__checkDelegation( clientTransport )
     if not retVal[ 'OK' ]:
       return retVal
