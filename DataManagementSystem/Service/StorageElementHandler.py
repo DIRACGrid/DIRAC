@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: StorageElementHandler.py,v 1.5 2008/09/14 20:14:07 atsareg Exp $
+# $Id: StorageElementHandler.py,v 1.6 2009/02/03 21:46:07 acsmith Exp $
 ########################################################################
 
 """
@@ -23,7 +23,7 @@
 
 """
 
-__RCSID__ = "$Id: StorageElementHandler.py,v 1.5 2008/09/14 20:14:07 atsareg Exp $"
+__RCSID__ = "$Id: StorageElementHandler.py,v 1.6 2009/02/03 21:46:07 acsmith Exp $"
 
 import os, shutil
 from stat import *
@@ -32,6 +32,7 @@ from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.Core.Utilities.Os import getDiskSpace, getDirectorySize
+from DIRAC.Core.Utilities.Subprocess import shellCall
 
 base_path = ''
 max_storage_size = 0
@@ -188,7 +189,6 @@ class StorageElementHandler(RequestHandler):
           result = S_OK(resultDict)
 
         return result
-
     else:
       return S_OK(dirList)
 
@@ -295,11 +295,25 @@ class StorageElementHandler(RequestHandler):
     else:
       return S_ERROR('File removal %s not authorized' % fileID)
 
+  types_getDirectorySize = [StringType]
+  def export_getDirectorySize(self,fileID):
+    """ Get the size occupied by the given directory
+    """
+    dir_path = base_path+fileID
+    if os.path.exists(dir_path):
+      try:
+        space = self.__getDirectorySize(dir_path)
+        return S_OK(space)
+      except Exception, x:
+        gLogger.exception("Exception while getting size of directory",dir_path,x)
+        return S_ERROR("Exception while getting size of directory")
+    else:
+      result = S_ERROR("Directory does not exists")
+  
   types_removeDirectory = [StringType,StringType]
   def export_removeDirectory(self,fileID,token):
     """ Remove the given directory from the storage
     """
-
     dir_path = base_path+fileID
     if self.__confirmToken(token,fileID,'x'):
       if os.path.exists(dir_path):
@@ -357,3 +371,16 @@ class StorageElementHandler(RequestHandler):
     storageDict['AvailableSpace'] = actual_space
     storageDict['UsedSpace'] = used_space
     return S_OK(storageDict)
+
+
+  def __getDirectorySize(self,path):
+    """ Get the total size of the given directory in bytes
+    """
+    comm = "du -s %s" % path
+    result = shellCall(0,comm)
+    if not result['OK']:
+      return 0
+    else:
+      output = result['Value'][1] 
+      size = int(output.split()[0])
+      return size
