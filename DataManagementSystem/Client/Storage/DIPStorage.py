@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: DIPStorage.py,v 1.8 2009/02/02 21:46:56 acsmith Exp $
+# $Id: DIPStorage.py,v 1.9 2009/02/03 21:37:25 acsmith Exp $
 ########################################################################
 
 """ DIPStorage class is the client of the DIRAC Storage Element.
@@ -15,7 +15,7 @@
 
 """
 
-__RCSID__ = "$Id: DIPStorage.py,v 1.8 2009/02/02 21:46:56 acsmith Exp $"
+__RCSID__ = "$Id: DIPStorage.py,v 1.9 2009/02/03 21:37:25 acsmith Exp $"
 
 from DIRAC.DataManagementSystem.Client.Storage.StorageBase import StorageBase
 from DIRAC.Core.Utilities.Pfn import pfnparse,pfnunparse
@@ -53,6 +53,17 @@ class DIPStorage(StorageBase):
 
   def isOK(self):
     return self.isok
+
+  def isPfnForProtocol(self,path):
+    """ Check that this is a path
+    """
+    if path.startswith('/'):
+      return S_OK(True)
+    else:
+      return S_OK(False)
+
+  def getPFNBase(self):
+    return S_OK('')
 
   def resetWorkingDirectory(self):
     """ Reset the working directory to the base dir
@@ -137,8 +148,7 @@ class DIPStorage(StorageBase):
     urls = res['Value']
     successful = {}
     failed = {}
-    transferClient = TransferClient(self.url)
-    for dest_url,src_file in urls.items()
+    for dest_url,src_file in urls.items():
       gLogger.debug("DIPStorage.putFile: Executing transfer of %s to %s" % (src_file, dest_url))
       res = self.__putFile(src_file,dest_url)
       if res['OK']:
@@ -158,23 +168,28 @@ class DIPStorage(StorageBase):
       errStr = "DIPStorage.__putFile: Failed to get file size."
       gLogger.error(errStr,src_file)
       return S_ERROR(errStr)
+    transferClient = TransferClient(self.url)
     res = transferClient.sendFile(src_file,dest_url)
     if res['OK']:
       return S_OK(sourceSize)
     else:
       return res
 
-  def getFile(self,fileTuple):
+  def getFile(self,path,localPath=False):
     """Get a local copy in the current directory of a physical file specified by its path
     """
-    res = self.__checkArgumentFormatDict(path)
+    res = self.__checkArgumentFormat(path)
     if not res['OK']:
       return res
     urls = res['Value']
     successful = {}
     failed = {}
-    transferClient = TransferClient(self.url)
-    for src_url,dest_file in urls.items():
+    for src_url in urls:
+      fileName = os.path.basename(src_url)
+      if localPath:  
+        dest_file = "%s/%s" % (localPath,fileName)
+      else:
+        dest_file = "%s/%s" % (os.getcwd(),fileName)
       gLogger.debug("DIPStorage.putFile: Executing transfer of %s to %s" % (src_url, dest_file))
       res = self.__getFile(src_url,dest_file)
       if res['OK']:
@@ -184,15 +199,16 @@ class DIPStorage(StorageBase):
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
-  def __getFile(self,src_url,dest_file)
-    res = transferClient.receiveFile(src_url,dest_file)
+  def __getFile(self,src_url,dest_file):
+    transferClient = TransferClient(self.url)
+    res = transferClient.receiveFile(dest_file,src_url)
     if not res['OK']:
       return res
     if not os.path.exists(dest_file):
       errStr = "DIPStorage.__getFile: The destination local file does not exist."
       gLogger.error(errStr,dest_file)  
       return S_ERROR(errStr)
-    destSize = getSize(src_file)
+    destSize = getSize(dest_file)
     if destSize == -1:
       errStr = "DIPStorage.__getFile: Failed to get the local file size."
       gLogger.error(errStr,dest_file)
@@ -221,6 +237,57 @@ class DIPStorage(StorageBase):
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
+  def isFile(self,path):
+    """ Determine whether the path is a directory
+    """
+    res = self.__checkArgumentFormat(path)
+    if not res['OK']:  
+      return res   
+    urls = res['Value']
+    successful = {}
+    failed = {}
+    gLogger.debug("DIPStorage.isFile: Attempting to determine whether %s paths are files." % len(urls))
+    serviceClient = RPCClient(self.url)
+    for url in urls:
+      res = serviceClient.getMetadata(url)
+      if res['OK']:
+        if res['Value']['Exists']:
+          if res['Value']['Type'] == 'File':
+            gLogger.debug("DIPStorage.isFile: Successfully obtained metadata for %s." % url)
+            successful[url] = True
+          else:
+            successful[url] = False
+        else:
+          failed[url] = 'File does not exist'
+      else:
+        gLogger.error("DIPStorage.isFile: Failed to get metdata for %s." % url,res['Message'])
+        failed[url] = res['Message']
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+  def getFileSize(self,path):
+    """ Get size of supplied files
+    """
+    res = self.__checkArgumentFormat(path)
+    if not res['OK']:
+      return res
+    urls = res['Value']
+    successful = {}
+    failed = {}
+    gLogger.debug("DIPStorage.getFileSize: Attempting to obtain size for %s files." % len(urls))
+    res = self.getFileMetadata(urls)
+    if not res['OK']:
+      return res
+    for url,urlDict in res['Value']['Successful'].items():
+      if urlDict['Exists']:
+        successful[url] = urlDict['Size']
+      else:
+        failed[url] = 'File does not exist'
+    for url,error in res['Value']['Failed'].items():
+      failed[url] = error
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
   def getFileMetadata(self,path):
     """  Get metadata associated to the file
     """
@@ -235,8 +302,14 @@ class DIPStorage(StorageBase):
     for url in urls:
       res = serviceClient.getMetadata(url)
       if res['OK']:
-        gLogger.debug("DIPStorage.getFileMetadata: Successfully obtained metadata for %s." % url)
-        successful[url] = res['Value']
+        if res['Value']['Exists']:
+          if res['Value']['Type'] == 'File':
+            gLogger.debug("DIPStorage.getFileMetadata: Successfully obtained metadata for %s." % url)
+            successful[url] = res['Value']
+          else:
+            failed[url] = 'Supplied path is not a file'
+        else:
+          failed[url] = 'File does not exist'
       else:
         gLogger.error("DIPStorage.getFileMetadata: Failed to get metdata for %s." % url,res['Message'])
         failed[url] = res['Message']
@@ -247,6 +320,111 @@ class DIPStorage(StorageBase):
   #
   # These are the methods for directory manipulation
   #
+
+  def listDirectory(self,path):
+    """ List the contents of the directory
+    """
+    res = self.__checkArgumentFormat(path)
+    if not res['OK']:
+      return res
+    urls = res['Value']
+    successful = {}
+    failed = {}
+    gLogger.debug("DIPStorage.listDirectory: Attempting to list %s directories." % len(urls))
+    serviceClient = RPCClient(self.url)
+    for url in urls:
+       res = serviceClient.listDirectory(url,'l')
+       if not res['OK']:
+         failed[url] = res['Message']
+       else:
+         files = {}
+         subDirs = {}
+         for subPath,pathDict in res['Value'].items():
+           if pathDict['Type'] == 'File':
+             files[subPath] = pathDict
+           elif pathDict['Type'] == 'Directory':
+             subDirs[subPath] = pathDict
+         successful[url] = {}
+         successful[url]['SubDirs'] = subDirs
+         successful[url]['Files'] = files
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+  def isDirectory(self,path):
+    """ Determine whether the path is a directory
+    """
+    res = self.__checkArgumentFormat(path)
+    if not res['OK']:
+      return res
+    urls = res['Value']
+    successful = {}
+    failed = {} 
+    gLogger.debug("DIPStorage.isDirectory: Attempting to determine whether %s paths are directories." % len(urls))
+    serviceClient = RPCClient(self.url)
+    for url in urls:
+      res = serviceClient.getMetadata(url)
+      if res['OK']:
+        if res['Value']['Exists']:
+          if res['Value']['Type'] == 'Directory':
+            gLogger.debug("DIPStorage.isDirectory: Successfully obtained metadata for %s." % url)
+            successful[url] = True        
+          else:
+            successful[url] = False
+        else:
+          failed[url] = 'Directory does not exist'
+      else:
+        gLogger.error("DIPStorage.isDirectory: Failed to get metdata for %s." % url,res['Message'])
+        failed[url] = res['Message']
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+  def getDirectorySize(self,path):
+    """ Get the size of the contents of the directory
+    """
+    res = self.__checkArgumentFormat(path)
+    if not res['OK']:
+      return res
+    urls = res['Value']
+    successful = {}
+    failed = {}
+    gLogger.debug("DIPStorage.isDirectory: Attempting to determine whether %s paths are directories." % len(urls))
+    serviceClient = RPCClient(self.url)
+    for url in urls:
+      res = serviceClient.getDirectorySize(url)
+      if not res['OK']:
+        failed[url] = res['Message']
+      else:
+        successful[url] = {'Files':0,'Size':res['Value'],'SubDirs':0}
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+  def getDirectoryMetadata(self,path):
+    """  Get metadata associated to the directory
+    """
+    res = self.__checkArgumentFormat(path)
+    if not res['OK']:
+      return res
+    urls = res['Value']
+    successful = {}
+    failed = {}
+    gLogger.debug("DIPStorage.getFileMetadata: Attempting to obtain metadata for %s directories." % len(urls))
+    serviceClient = RPCClient(self.url)
+    for url in urls:
+      res = serviceClient.getMetadata(url)
+      if res['OK']:
+        if res['Value']['Exists']:
+          if res['Value']['Type'] == 'Directory':
+            gLogger.debug("DIPStorage.getFileMetadata: Successfully obtained metadata for %s." % url)
+            successful[url] = res['Value']
+          else:
+            failed[url] = 'Supplied path is not a directory'
+        else:
+          failed[url] = 'Directory does not exist'
+      else:
+        gLogger.error("DIPStorage.getFileMetadata: Failed to get metdata for %s." % url,res['Message'])
+        failed[url] = res['Message']
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
 
   def createDirectory(self,path):
     """ Create the remote directory
@@ -271,7 +449,7 @@ class DIPStorage(StorageBase):
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
-  def putDirectory(self, directoryTuple):
+  def putDirectory(self, path):
     """ Put a local directory to the physical storage together with all its files and subdirectories.
     """
     res = self.__checkArgumentFormatDict(path)
@@ -291,10 +469,58 @@ class DIPStorage(StorageBase):
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
-  def getDir(self,dname):
-    """ Get file directory dname from the storage
+  def removeDirectory(self,path,recursive=False):
+    """ Remove a directory from the storage together with all its files and subdirectories.
     """
-    return S_OK()
+    res = self.__checkArgumentFormat(path)
+    if not res['OK']:
+      return res
+    urls = res['Value']
+    successful = {}
+    failed = {}
+    gLogger.debug("DIPStorage.removeDirectory: Attemping to remove %s directories." % len(urls))
+    serviceClient = RPCClient(self.url)   
+    for url in urls:
+      res = serviceClient.removeDirectory(url,'')
+      if res['OK']:
+        gLogger.debug("DIPStorage.createDirectory: Successfully removed directory on storage: %s" % url)
+        successful[url] = True
+      else:
+        gLogger.error("DIPStorage.createDirectory: Failed to remove directory from storage.", "%s: %s" % (url,res['Message']))
+        failed[url] = res['Message']
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+  def getDirectory(self,path,localPath=False):
+    """ Get a local copy in the current directory of a physical file specified by its path
+    """
+    res = self.__checkArgumentFormat(path)
+    if not res['OK']:
+      return res
+    urls = res['Value']
+          
+    failed = {}
+    successful = {}   
+    gLogger.debug("DIPStorage.getDirectory: Attempting to get local copies of %s directories." % len(urls))
+    transferClient = TransferClient(self.url)
+    for src_dir in urls:
+      dirName = os.path.basename(src_dir)
+      if localPath:
+        dest_dir = localPath
+        #dest_dir = "%s/%s" % (localPath,dirName)
+      else:
+        dest_dir = os.getcwd()
+        #dest_dir = "%s/%s" % (os.getcwd(),dirName)
+      res = transferClient.receiveBulk(dest_dir,src_dir)
+      print res
+      if res['OK']:
+        gLogger.debug("DIPStorage.getDirectory: Successfully got local copy of %s" % src_dir)
+        successful[src_dir] = True
+      else:
+        gLogger.error("DIPStorage.getDirectory: Failed to get entire directory.", src_dir)
+        failed[src_dir] = res['Message']
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
 
   def __checkArgumentFormat(self,path):
     if type(path) in types.StringTypes:
@@ -304,7 +530,7 @@ class DIPStorage(StorageBase):
     elif type(path) == types.DictType:
       urls = path.keys()
     else:
-      return S_ERROR("RFIOStorage.__checkArgumentFormat: Supplied path is not of the correct format.")
+      return S_ERROR("DIPStorage.__checkArgumentFormat: Supplied path is not of the correct format.")
     return S_OK(urls)
 
   def __checkArgumentFormatDict(self,path):   
@@ -317,7 +543,7 @@ class DIPStorage(StorageBase):
     elif type(path) == types.DictType:
      urls = path
     else:
-      return S_ERROR("RFIOStorage.checkArgumentFormat: Supplied path is not of the correct format.")
+      return S_ERROR("DIPStorage.checkArgumentFormat: Supplied path is not of the correct format.")
     return S_OK(urls)
 
   def __executeOperation(self,url,method):
@@ -333,7 +559,6 @@ class DIPStorage(StorageBase):
       else:
         return S_OK(res['Value']['Successful'][url])
     except AttributeError,errMessage:
-      exceptStr = "RFIOStorage.__executeOperation: Exception while perfoming %s." % method
+      exceptStr = "DIPStorage.__executeOperation: Exception while perfoming %s." % method
       gLogger.exception(exceptStr,'',errMessage)
       return S_ERROR("%s%s" % (exceptStr,errMessage))   
-
