@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.38 2008/10/08 12:33:20 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.39 2009/02/04 18:25:27 paterson Exp $
 # File  : Watchdog.py
 # Author: Stuart Paterson
 ########################################################################
@@ -18,7 +18,7 @@
           - CPU normalization for correct comparison with job limit
 """
 
-__RCSID__ = "$Id: Watchdog.py,v 1.38 2008/10/08 12:33:20 rgracian Exp $"
+__RCSID__ = "$Id: Watchdog.py,v 1.39 2009/02/04 18:25:27 paterson Exp $"
 
 from DIRAC.Core.Base.Agent                              import Agent
 from DIRAC.Core.DISET.RPCClient                         import RPCClient
@@ -144,7 +144,7 @@ class Watchdog(Agent):
     heartBeatDict['LoadAverage'] = result['Value']
     self.parameters['LoadAverage'].append(result['Value'])
     result = self.getMemoryUsed()
-    msg += 'MemUsed: %.1f bytes ' % (result['Value'])
+    msg += 'MemUsed: %.1f kb ' % (result['Value'])
     heartBeatDict['MemoryUsed'] = result['Value']
     self.parameters['MemoryUsed'].append(result['Value'])
     result = self.getDiskSpace()
@@ -627,9 +627,9 @@ class Watchdog(Agent):
     if self.parameters.has_key('MemoryUsed'):
       memory = self.parameters['MemoryUsed']
       if memory:
-        summary['MemoryUsed(bytes)'] = abs(float(memory[-1]) - float(self.initialValues['MemoryUsed']))
+        summary['MemoryUsed(kb)'] = abs(float(memory[-1]) - float(self.initialValues['MemoryUsed']))
       else:
-        summary['MemoryUsed(bytes)'] = 'Could not be estimated'
+        summary['MemoryUsed(kb)'] = 'Could not be estimated'
     #LoadAverage
     if self.parameters.has_key('LoadAverage'):
       laList = self.parameters['LoadAverage']
