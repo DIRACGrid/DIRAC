@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.62 2009/01/30 10:13:20 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.63 2009/02/04 15:45:16 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.62 2009/01/30 10:13:20 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.63 2009/02/04 15:45:16 acasajus Exp $"
 
 import time
 import types
@@ -461,8 +461,10 @@ class TaskQueueDB(DB):
     if 'PilotType' in tqMatchDict:
       pilotType = tqMatchDict[ 'PilotType' ]
       if pilotType in self.getPrivatePilots():
-        for field in ( 'OwnerDN', 'OwnerGroup' ):
-          sqlCondList.append( "`tq_TaskQueues`.%s = '%s'" % ( field, tqMatchDict[ field ] ) )
+        group = tqMatchDict[ 'OwnerGroup' ]
+        sqlCondList.append( "`tq_TaskQueues`.%s = '%s'" % ( 'OwnerGroup', group ) )
+        if Properties.JOB_SHARING not in CS.getPropertiesForGroup( group ):
+          sqlCondList.append( "`tq_TaskQueues`.%s = '%s'" % ( 'OwnerDN', tqMatchDict[ 'OwnerDN' ] ) )
     #Type of pilot conditions
     for field in ( 'CPUTime', 'Setup' ):
       if field in tqMatchDict:
