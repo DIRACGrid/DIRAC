@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.54 2009/01/30 19:43:07 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.55 2009/02/04 19:39:20 paterson Exp $
 # File :   DiracProduction.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are to be documented with example usage.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.54 2009/01/30 19:43:07 paterson Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.55 2009/02/04 19:39:20 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 import pprint
@@ -987,10 +987,10 @@ class DiracProduction:
             destsite = site
             self.log.verbose('Setting destination site to %s' %(destsite))
             prodJob.setDestination(destsite)
-#          else:
-#            destsite = paramValue
-#            self.log.verbose('Setting destination site to %s' %(destsite))
-#            prodJob.setDestination(destsite)
+          else:
+            destsite = paramValue
+            self.log.verbose('Setting destination site to %s' %(destsite))
+            prodJob.setDestination(destsite)
 
         if paramName=='TargetSE':
           self.log.verbose('Job is targeted to SE: %s' %(paramValue))
