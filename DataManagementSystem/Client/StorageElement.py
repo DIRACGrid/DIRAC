@@ -18,9 +18,9 @@ import re, time,os,types
 
 class StorageElement:
 
-  def __init__(self,name):
+  def __init__(self,name,protocols=[]):
     self.valid = True
-    res = StorageFactory().getStorages(name)
+    res = StorageFactory().getStorages(name,protocolList=protocols)
     if not res['OK']:
       self.valid = False
       self.name = name
