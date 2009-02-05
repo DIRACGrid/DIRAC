@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/FileHelper.py,v 1.18 2009/02/05 11:36:27 acasajus Exp $
-__RCSID__ = "$Id: FileHelper.py,v 1.18 2009/02/05 11:36:27 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/FileHelper.py,v 1.19 2009/02/05 19:10:17 acasajus Exp $
+__RCSID__ = "$Id: FileHelper.py,v 1.19 2009/02/05 19:10:17 acasajus Exp $"
 
 import os
 import md5
@@ -250,6 +250,7 @@ class FileHelper:
       self.__extractTar( destDir, rPipe, compress )
     except Exception, e:
       return S_ERROR( "Error while extracting bulk: %s" % e)
+    thrd.join()
     return retList[0]
 
   def bulkListToNetwork( self, iFD, compress = True ):
