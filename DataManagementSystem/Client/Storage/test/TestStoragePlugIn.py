@@ -37,7 +37,7 @@ class StoragePlugInTestCase(unittest.TestCase):
     ignore = self.storage.removeDirectory(remoteDir,True)     
 
 class DirectoryTestCase(StoragePlugInTestCase):
-  
+
   def test_isDirectory(self):
     print '\n\n#########################################################################\n\n\t\t\tIs Directory test\n'
     # Test that we can determine what is a directory
@@ -441,13 +441,13 @@ class FileTestCase(StoragePlugInTestCase):
     # Check the get metadata for non existant file
     self.assert_(failedMetadataRes['OK'])
     self.assert_(failedMetadataRes['Value']['Failed'].has_key(remoteFile))
-    expectedError = "SRM2Storage.getFileMetadata: File does not exist."
-    self.assertEqual(failedMetadataRes['Value']['Failed'][remoteFile],expectedError)
+    expectedError = "File does not exist"
+    self.assert_(expectedError in failedMetadataRes['Value']['Failed'][remoteFile])
     # Check that metadata operation with a directory
     self.assert_(directoryMetadataRes['OK'])
     self.assert_(directoryMetadataRes['Value']['Failed'].has_key(remoteDir))
-    expectedError = "SRM2Storage.getFileMetadata: Supplied path is not a file."
-    self.assertEqual(directoryMetadataRes['Value']['Failed'][remoteDir],expectedError)
+    expectedError = "Supplied path is not a file"
+    self.assert_(expectedError in directoryMetadataRes['Value']['Failed'][remoteDir])
 
   def test_putGetFileSize(self):
     print '\n\n#########################################################################\n\n\t\t\tGet file size test\n'
@@ -483,13 +483,13 @@ class FileTestCase(StoragePlugInTestCase):
     # Check the get size with non existant file works properly
     self.assert_(failedSizeRes['OK'])
     self.assert_(failedSizeRes['Value']['Failed'].has_key(remoteFile))
-    expectedError = "SRM2Storage.getFileMetadata: File does not exist."
-    self.assertEqual(failedSizeRes['Value']['Failed'][remoteFile],expectedError)
+    expectedError = "File does not exist"
+    self.assert_(expectedError in failedSizeRes['Value']['Failed'][remoteFile])
     # Check that the passing a directory is handled correctly
     self.assert_(directorySizeRes['OK'])
     self.assert_(directorySizeRes['Value']['Failed'].has_key(remoteDir))
-    expectedError = "SRM2Storage.getFileSize: Supplied path is not a file."
-    self.assertEqual(directorySizeRes['Value']['Failed'][remoteDir],expectedError)
+    expectedError = "Supplied path is not a file"
+    self.assert_(expectedError in directorySizeRes['Value']['Failed'][remoteDir])
 
   def test_putPrestageFile(self):
     print '\n\n#########################################################################\n\n\t\t\tFile prestage test\n'
@@ -640,5 +640,6 @@ class FileTestCase(StoragePlugInTestCase):
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(FileTestCase)
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(DirectoryTestCase))
+  #suite = unittest.defaultTestLoader.loadTestsFromTestCase(DirectoryTestCase)
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)
 
