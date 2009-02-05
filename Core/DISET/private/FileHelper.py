@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/FileHelper.py,v 1.17 2008/12/15 15:21:52 acasajus Exp $
-__RCSID__ = "$Id: FileHelper.py,v 1.17 2008/12/15 15:21:52 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/FileHelper.py,v 1.18 2009/02/05 11:36:27 acasajus Exp $
+__RCSID__ = "$Id: FileHelper.py,v 1.18 2009/02/05 11:36:27 acasajus Exp $"
 
 import os
 import md5
@@ -236,7 +236,10 @@ class FileHelper:
 
   def __receiveToPipe( self, wPipe, retList, maxFileSize ):
     retList.append( self.networkToFD( wPipe, maxFileSize = maxFileSize ) )
-    os.close( wPipe )
+    try:
+      os.close( wPipe )
+    except:
+      pass
 
   def networkToBulk( self, destDir, compress = True, maxFileSize = 0 ):
     retList = []
