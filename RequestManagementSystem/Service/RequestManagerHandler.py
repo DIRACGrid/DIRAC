@@ -69,19 +69,6 @@ class RequestManagerHandler(RequestHandler):
       gLogger.exception(errStr,requestName,lException=x)
       return S_ERROR(errStr)
 
-  types_deleteRequest = [StringTypes]
-  def export_deleteRequest(self,requestName):
-    """ Delete the request with the supplied name
-    """
-    gLogger.info("RequestManagerHandler.deleteRequest: Attempting to delete %s." % requestName)
-    try:
-      res = requestDB.deleteRequest(requestName)
-      return res
-    except Exception,x:
-      errStr = "RequestManagerHandler.deleteRequest: Exception which deleting request."
-      gLogger.exception(errStr,requestName,lException=x)
-      return S_ERROR(errStr)
-
   types_getDBSummary = []
   def export_getDBSummary(self):
     """ Get the summary of requests in the Request DB
@@ -175,3 +162,29 @@ class RequestManagerHandler(RequestHandler):
 
     result = requestDB.getRequestStatus(requestID)
     return result
+
+  types_deleteRequest = [StringTypes]
+  def export_deleteRequest(self,requestName):
+    """ Delete the request with the supplied name
+    """
+    gLogger.info("RequestManagerHandler.deleteRequest: Attempting to delete %s." % requestName)
+    try:
+      res = requestDB.deleteRequest(requestName)
+      return res
+    except Exception,x:
+      errStr = "RequestManagerHandler.deleteRequest: Exception which deleting request."
+      gLogger.exception(errStr,requestName,lException=x)
+      return S_ERROR(errStr)
+
+  types_getRequestForJobs = [ListType]
+  def export_getRequestForJobs(self,jobIDs):
+    """ Select the request names for supplied jobIDs
+    """
+    gLogger.info("RequestManagerHandler.getRequestForJobs: Attempting to get request names for %s jobs." % len(jobIDs))
+    try:
+      res = requestDB.getRequestForJobs(jobIDs)
+      return res
+    except Exception,x:
+      errStr = "RequestManagerHandler.getRequestForJobs: Exception which getting request names."
+      gLogger.exception(errStr,'',lException=x)
+      return S_ERROR(errStr)
