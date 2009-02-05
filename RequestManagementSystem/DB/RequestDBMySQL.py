@@ -1,9 +1,9 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/DB/RequestDBMySQL.py,v 1.33 2008/09/21 19:03:40 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/DB/RequestDBMySQL.py,v 1.34 2009/02/05 10:55:19 acsmith Exp $
 
 """ RequestDBMySQL is the MySQL plug in for the request DB
 """
 
-__RCSID__ = "$Id: RequestDBMySQL.py,v 1.33 2008/09/21 19:03:40 atsareg Exp $"
+__RCSID__ = "$Id: RequestDBMySQL.py,v 1.34 2009/02/05 10:55:19 acsmith Exp $"
 
 from DIRAC.Core.Base.DB import DB
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
@@ -87,7 +87,6 @@ class RequestDBMySQL(DB):
     subRequestIDs = []
     for subRequestID in res['Value']:
       subRequestIDs.append(subRequestID[0])
-    print subRequestIDs
     req = "SELECT * from SubRequests WHERE RequestID IN =%s" % requestID
     self.getIdLock.release()
     #THIS IS WHERE I AM IN THIS METHOD
@@ -253,7 +252,6 @@ class RequestDBMySQL(DB):
 
   def setRequest(self,requestName,requestString):
     request = RequestContainer(init=True,request=requestString)
-    print request.toXML()['Value']
     requestTypes = request.getSubRequestTypes()['Value']
     failed = False
     res = self._getRequestID(requestName)
@@ -348,19 +346,14 @@ class RequestDBMySQL(DB):
                 else:
                   res = self._setSubRequestAttribute(requestID,subRequestID,'Status','Waiting')
                 if not res['OK']:
-                  print 1
                   updateRequestFailed = True
               else:
-                print 2
                 updateRequestFailed = True
             else:
-              print 3
               updateRequestFailed = True
           else:
-            print 4
             updateRequestFailed = True
       else:
-        print 5
         updateRequestFailed = True
     if updateRequestFailed:
       errStr = 'Failed to update request %s.' % requestID
@@ -372,6 +365,9 @@ class RequestDBMySQL(DB):
           errStr = 'Failed to update request status of %s to Done.' % requestID
           return S_ERROR(errStr)
       return S_OK()
+
+  def deleteRequest(self,requestName):
+    return self._deleteRequest(requestName)
 
   def _deleteRequest(self,requestName):
     #This method needs extended to truely remove everything that is being removed i.e.fts job entries etc.
@@ -640,6 +636,18 @@ class RequestDBMySQL(DB):
       return S_ERROR( '%s\n%s' % (err, str(x) ) )
     self.getIdLock.release()
     return S_OK(subRequestID)
+
+  def getRequestForJobs(self,jobIDs):
+    """ Get the request names associated to the jobsIDs
+    """
+    req = "SELECT JobID,RequestName from Requests where JobID IN (%s);" % intListToString(jobIDs)
+    res = self._query(req)
+    if not res:
+      return res
+    jobIDs = {}
+    for jobID,requestName in res['Value']:
+      jobIDs[jobID] = requestName
+    return S_OK(jobIDs)
 
   def getDigest(self,requestID):
     """ Get digest of the given request specified by its requestID
