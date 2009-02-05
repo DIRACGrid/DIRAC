@@ -219,19 +219,13 @@ class SRM2Storage(StorageBase):
 
   def __makeDir(self,path):
     # First create a local file that will be used as a directory place holder in storage name space
-    dfile = open("dirac_directory",'w')
-    dfile.write("")
-    dfile.close()
     srcFile = '%s/%s' % (os.getcwd(),'dirac_directory')
-    size = getSize(srcFile)
-    if size == -1:
-      infoStr = "SRM2Storage.createDirectory: Failed to get file size."
-      gLogger.error(infoStr,srcFile)
-      return S_ERROR(infoStr)
-
+    dfile = open(srcFile,'w')
+    dfile.write(" ")
+    dfile.close()
     destFile = '%s/%s' % (path,'dirac_directory')
-    directoryTuple = (srcFile,destFile,size)
-    res = self.putFile(directoryTuple)
+    directoryDict = {destFile:srcFile}
+    res = self.putFile(directoryDict)
     if os.path.exists(srcFile):
       os.remove(srcFile)
     if not res['OK']:
