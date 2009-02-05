@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: StorageElementHandler.py,v 1.6 2009/02/03 21:46:07 acsmith Exp $
+# $Id: StorageElementHandler.py,v 1.7 2009/02/05 19:06:23 acsmith Exp $
 ########################################################################
 
 """
@@ -23,7 +23,7 @@
 
 """
 
-__RCSID__ = "$Id: StorageElementHandler.py,v 1.6 2009/02/03 21:46:07 acsmith Exp $"
+__RCSID__ = "$Id: StorageElementHandler.py,v 1.7 2009/02/05 19:06:23 acsmith Exp $"
 
 import os, shutil
 from stat import *
@@ -107,6 +107,8 @@ class StorageElementHandler(RequestHandler):
       resultDict['Type'] = "Directory"
     resultDict['Size'] = statTuple[ST_SIZE]
     resultDict['TimeStamps'] = (statTuple[ST_ATIME],statTuple[ST_MTIME],statTuple[ST_CTIME])
+    resultDict['Cached'] = 1
+    resultDict['Migrated'] = 0
 
     return S_OK(resultDict)
 
