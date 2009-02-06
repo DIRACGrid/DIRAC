@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.64 2009/02/06 15:15:10 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.65 2009/02/06 16:03:43 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.64 2009/02/06 15:15:10 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.65 2009/02/06 16:03:43 acasajus Exp $"
 
 import time
 import types
@@ -497,6 +497,10 @@ class TaskQueueDB(DB):
                                                                                                                  bannedTable,
                                                                                                                  bannedTable,
                                                                                                                  bannedTable ) )
+
+    #If not pilot type was not specified, none must be in the task queue
+    if 'PilotType' not in tqMatchDict:
+      sqlCondList.append( "( SELECT COUNT(`tq_TQToPilotTypes`.Value) FROM `tq_TQToPilotTypes` WHERE `tq_TQToPilotTypes`.TQId = `tq_TaskQueues`.TQId ) = 0 " )
     sqlCondList.append( "Enabled" )
     tqSqlCmd = "SELECT `tq_TaskQueues`.TQId, `tq_TaskQueues`.OwnerDN, `tq_TaskQueues`.OwnerGroup FROM %s WHERE %s" % ( ", ".join( sqlTables ),
                                                                                                                       " AND ".join( sqlCondList ) )
