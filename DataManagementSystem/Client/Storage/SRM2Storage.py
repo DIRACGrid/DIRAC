@@ -798,8 +798,8 @@ class SRM2Storage(StorageBase):
             gLogger.debug("SRM2Storage.isDirectory: Path is not a directory: %s" % dirSURL)
             successful[dirSURL] = False
         elif urlDict['status'] == 2:
-          gLogger.debug("SRM2Storage.isDirectory: Supplied path is not a DIRAC directory: %s" % dirSURL)
-          successful[dirSURL] = False
+          gLogger.debug("SRM2Storage.isDirectory: Supplied path does not exist: %s" % dirSURL)
+          failed[dirSURL] = 'Directory does not exist'
         else:
           errStr = "SRM2Storage.isDirectory: Failed to get file metadata."
           errMessage = urlDict['ErrorMessage']
