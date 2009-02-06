@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.63 2009/02/04 15:45:16 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.64 2009/02/06 15:15:10 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.63 2009/02/04 15:45:16 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.64 2009/02/06 15:15:10 acasajus Exp $"
 
 import time
 import types
@@ -221,7 +221,7 @@ class TaskQueueDB(DB):
       tqId = result[ 'Value' ][0][0]
     for field in self.__multiValueDefFields:
       if field not in tqDefDict:
-        continue
+        continue1461580
       values = List.uniqueElements( [ value for value in tqDefDict[ field ] if value.strip() ] )
       if not values:
         continue
@@ -752,7 +752,7 @@ class TaskQueueDB(DB):
     if Properties.JOB_SHARING not in CS.getPropertiesForGroup( userGroup ):
       tqCond.append( "t.OwnerDN='%s'" % userDN )
     tqCond.append( "t.TQId = j.TQId" )
-    selectSQL = "SELECT j.TQId, SUM( j.RealPriority ) FROM `tq_TaskQueues` t, `tq_Jobs` j WHERE "
+    selectSQL = "SELECT j.TQId, MAX( j.RealPriority ) FROM `tq_TaskQueues` t, `tq_Jobs` j WHERE "
     selectSQL += " AND ".join( tqCond )
     selectSQL += " GROUP BY t.TQId"
     result = self._query( selectSQL, conn = connObj )
