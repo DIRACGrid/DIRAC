@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: StorageElementHandler.py,v 1.7 2009/02/05 19:06:23 acsmith Exp $
+# $Id: StorageElementHandler.py,v 1.8 2009/02/06 13:42:27 acsmith Exp $
 ########################################################################
 
 """
@@ -23,9 +23,9 @@
 
 """
 
-__RCSID__ = "$Id: StorageElementHandler.py,v 1.7 2009/02/05 19:06:23 acsmith Exp $"
+__RCSID__ = "$Id: StorageElementHandler.py,v 1.8 2009/02/06 13:42:27 acsmith Exp $"
 
-import os, shutil
+import os, shutil,re
 from stat import *
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -109,7 +109,7 @@ class StorageElementHandler(RequestHandler):
     resultDict['TimeStamps'] = (statTuple[ST_ATIME],statTuple[ST_MTIME],statTuple[ST_CTIME])
     resultDict['Cached'] = 1
     resultDict['Migrated'] = 0
-
+    resultDict['Permissions'] = S_IMODE(mode) 
     return S_OK(resultDict)
 
   types_exists = [StringTypes]
@@ -172,9 +172,7 @@ class StorageElementHandler(RequestHandler):
         failed_list = []
         one_OK = False
         for fname in dirList:
-          print path+'/'+fname
           result = self.__getFileStat(path+'/'+fname)
-          print result
           if result['OK']:
             resultDict[fname] = result['Value']
             one_OK = True
@@ -244,32 +242,33 @@ class StorageElementHandler(RequestHandler):
     """ Receive files packed into a tar archive by the fileHelper logic.
         token is used for access rights confirmation.
     """
-
-    print fileID, token
     dirName = fileID.replace('.bz2','').replace('.tar','')
     dir_path = base_path+dirName
-    result = fileHelper.networkToBulk(dir_path)
-    print result
+    res = fileHelper.networkToBulk(dir_path)
+    if not res['OK']: 
+      gLogger.error('Failed to receive network to bulk.',res['Message']) 
+    return res
 
-    return S_OK()
-
-  def transfer_bulkToClient( self, fileID, token, fileHelper ):
+  def transfer_bulkToClient( self, fileId, token, fileHelper ):
     """ Send directories and files specified in the fileID.
         The fileID string can be a single directory name or a list of
         colon (:) separated file/directory names.
         token is used for access rights confirmation.
     """
-
-    if fileID.find('--FileList--') == 0:
-      tmpList = fileID.replace('--FileList--','').split(":")
-      fileList = [ base_path+x for x in tmpList ]
-    else:
-      dir_path = base_path+fileID
-      fileList = [dir_path]
-    result = fileHelper.bulkToNetwork(fileList)
-    print result
-
-    return S_OK()
+    tmpList = fileId.split(':')
+    tmpList = [ base_path+x for x in tmpList ]
+    strippedFiles = []
+    compress=False
+    for fileID in tmpList:
+      if re.search('.bz2',fileID):
+        fileID = fileID.replace('.bz2','')
+        compress = True
+      fileID = fileID.replace('.tar','')
+      strippedFiles.append(fileID)   
+    res = fileHelper.bulkToNetwork(strippedFiles,compress=compress)
+    if not res['OK']:
+      gLogger.error('Failed to send bulk to network',res['Message'])
+    return res
 
   types_remove = [StringType,StringType]
   def export_remove(self,fileID,token):
@@ -317,8 +316,12 @@ class StorageElementHandler(RequestHandler):
     """ Remove the given directory from the storage
     """
     dir_path = base_path+fileID
-    if self.__confirmToken(token,fileID,'x'):
-      if os.path.exists(dir_path):
+    if not self.__confirmToken(token,fileID,'x'):
+      return S_ERROR('Directory removal %s not authorized' % fileID)
+    else:
+      if not os.path.exists(dir_path):
+        return S_OK()
+      else:    
         try:
           shutil.rmtree(dir_path)
           return S_OK()
@@ -326,11 +329,6 @@ class StorageElementHandler(RequestHandler):
           gLogger.error("Failed to remove directory %s" % dir_path)
           gLogger.error(str(x))
           return S_ERROR("Failed to remove directory %s" % dir_path)
-      else:
-        result = S_OK()
-        result['Message'] = "Directory does not exists"
-    else:
-      return S_ERROR('Directory removal %s not authorized' % fileID)
 
   types_removeFileList = [ListType,StringType]
   def export_removeFileList(self,fileList,token):
@@ -378,11 +376,12 @@ class StorageElementHandler(RequestHandler):
   def __getDirectorySize(self,path):
     """ Get the total size of the given directory in bytes
     """
-    comm = "du -s %s" % path
+    comm = "du -sb %s" % path
     result = shellCall(0,comm)
     if not result['OK']:
       return 0
     else:
       output = result['Value'][1] 
+      print output
       size = int(output.split()[0])
       return size
