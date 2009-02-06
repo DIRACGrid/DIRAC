@@ -24,7 +24,6 @@ class StoragePlugInTestCase(unittest.TestCase):
     storageDetails = res['Value']
     self.storage = storageDetails['StorageObjects'][0]
     self.storage.changeDirectory('lhcb/test/unit-test')
-    print '\n\n#########################################################################\n\n\t\t\tCreate Directory test\n'
     destDir = self.storage.getCurrentURL('')['Value']
     res = self.storage.createDirectory(destDir)
     self.assert_(res['OK'])
@@ -53,8 +52,9 @@ class DirectoryTestCase(StoragePlugInTestCase):
     self.assert_(isDirRes['Value']['Successful'][destDir])
     # Check the non existant directory operation
     self.assert_(nonExistantDirRes['OK'])
-    self.assert_(nonExistantDirRes['Value']['Successful'].has_key(dummyDir))
-    self.assertFalse(nonExistantDirRes['Value']['Successful'][dummyDir])
+    self.assert_(nonExistantDirRes['Value']['Failed'].has_key(dummyDir))
+    expectedError = 'Directory does not exist'
+    self.assert_(expectedError in nonExistantDirRes['Value']['Failed'][dummyDir])
 
   def test_putRemoveDirectory(self):
     print '\n\n#########################################################################\n\n\t\t\tPut Directory test\n'
@@ -66,7 +66,6 @@ class DirectoryTestCase(StoragePlugInTestCase):
     localDir = '/tmp/unit-test'
     srcFile = '/etc/group'
     sizeOfLocalFile = getSize(srcFile)
-    print 'Creating local directory: %s' % localDir
     if not os.path.exists(localDir):
       os.mkdir(localDir)
     for i in range(self.numberOfFiles):
@@ -79,19 +78,24 @@ class DirectoryTestCase(StoragePlugInTestCase):
     # Now remove the remove directory
     removeDirRes = self.storage.removeDirectory(remoteDir,True)
     #Clean up the locally created directory
-    print 'Removing local directory: %s' % localDir
     shutil.rmtree(localDir)
 
     # Perform the checks for the put dir operation
     self.assert_(putDirRes['OK'])
     self.assert_(putDirRes['Value']['Successful'].has_key(remoteDir))
-    self.assertEqual(putDirRes['Value']['Successful'][remoteDir]['Files'],self.numberOfFiles)
-    self.assertEqual(putDirRes['Value']['Successful'][remoteDir]['Size'],self.numberOfFiles*sizeOfLocalFile)
+    if putDirRes['Value']['Successful'][remoteDir]['Files']:
+      self.assertEqual(putDirRes['Value']['Successful'][remoteDir]['Files'],self.numberOfFiles)
+      self.assertEqual(putDirRes['Value']['Successful'][remoteDir]['Size'],self.numberOfFiles*sizeOfLocalFile)
+    self.assert_(type(putDirRes['Value']['Successful'][remoteDir]['Files']) == IntType)
+    self.assert_(type(putDirRes['Value']['Successful'][remoteDir]['Size']) == IntType)
     # Perform the checks for the remove dir operation
     self.assert_(removeDirRes['OK'])
     self.assert_(removeDirRes['Value']['Successful'].has_key(remoteDir))
-    self.assertEqual(removeDirRes['Value']['Successful'][remoteDir]['FilesRemoved'],self.numberOfFiles)
-    self.assertEqual(removeDirRes['Value']['Successful'][remoteDir]['SizeRemoved'],self.numberOfFiles*sizeOfLocalFile)
+    if removeDirRes['Value']['Successful'][remoteDir]['FilesRemoved']:
+      self.assertEqual(removeDirRes['Value']['Successful'][remoteDir]['FilesRemoved'],self.numberOfFiles)
+      self.assertEqual(removeDirRes['Value']['Successful'][remoteDir]['SizeRemoved'],self.numberOfFiles*sizeOfLocalFile)
+    self.assert_(type(removeDirRes['Value']['Successful'][remoteDir]['FilesRemoved']) == IntType)
+    self.assert_(type(removeDirRes['Value']['Successful'][remoteDir]['SizeRemoved']) == IntType)
 
   def test_putGetDirectoryMetadata(self):
     print '\n\n#########################################################################\n\n\t\t\tGet Directory Metadata test\n'
@@ -103,7 +107,6 @@ class DirectoryTestCase(StoragePlugInTestCase):
     localDir = '/tmp/unit-test'
     srcFile = '/etc/group'
     sizeOfLocalFile = getSize(srcFile)
-    print 'Creating local directory: %s' % localDir
     if not os.path.exists(localDir):
       os.mkdir(localDir)
     for i in range(self.numberOfFiles):
@@ -119,15 +122,16 @@ class DirectoryTestCase(StoragePlugInTestCase):
     # Now remove the remove directory
     removeDirRes = self.storage.removeDirectory(remoteDir,True)
     #Clean up the locally created directory
-    print 'Removing local directory: %s' % localDir
     shutil.rmtree(localDir)
 
     # Perform the checks for the put dir operation
     self.assert_(putDirRes['OK'])
     self.assert_(putDirRes['Value']['Successful'].has_key(remoteDir))
-    resDict = putDirRes['Value']['Successful'][remoteDir]
-    self.assertEqual(resDict['Files'],self.numberOfFiles)
-    self.assertEqual(resDict['Size'],self.numberOfFiles*sizeOfLocalFile)
+    if putDirRes['Value']['Successful'][remoteDir]['Files']:
+      self.assertEqual(putDirRes['Value']['Successful'][remoteDir]['Files'],self.numberOfFiles)
+      self.assertEqual(putDirRes['Value']['Successful'][remoteDir]['Size'],self.numberOfFiles*sizeOfLocalFile)
+    self.assert_(type(putDirRes['Value']['Successful'][remoteDir]['Files']) == IntType)
+    self.assert_(type(putDirRes['Value']['Successful'][remoteDir]['Size']) == IntType)
     # Perform the checks for the get metadata operation
     self.assert_(getMetadataRes['OK'])
     self.assert_(getMetadataRes['Value']['Successful'].has_key(remoteDir))
@@ -135,11 +139,11 @@ class DirectoryTestCase(StoragePlugInTestCase):
     self.assert_(resDict.has_key('Permissions'))
     self.assert_(type(resDict['Permissions']) == IntType)
     # Perform the checks for the remove directory operation
-    self.assert_(removeDirRes['OK'])
-    self.assert_(removeDirRes['Value']['Successful'].has_key(remoteDir))
-    resDict = removeDirRes['Value']['Successful'][remoteDir]
-    self.assertEqual(resDict['FilesRemoved'],self.numberOfFiles)
-    self.assertEqual(resDict['SizeRemoved'],self.numberOfFiles*sizeOfLocalFile)
+    if removeDirRes['Value']['Successful'][remoteDir]['FilesRemoved']:
+      self.assertEqual(removeDirRes['Value']['Successful'][remoteDir]['FilesRemoved'],self.numberOfFiles)
+      self.assertEqual(removeDirRes['Value']['Successful'][remoteDir]['SizeRemoved'],self.numberOfFiles*sizeOfLocalFile)
+    self.assert_(type(removeDirRes['Value']['Successful'][remoteDir]['FilesRemoved']) == IntType)
+    self.assert_(type(removeDirRes['Value']['Successful'][remoteDir]['SizeRemoved']) == IntType)
 
   def test_putGetDirectorySize(self):
     print '\n\n#########################################################################\n\n\t\t\tGet Directory Size test\n'
@@ -151,7 +155,6 @@ class DirectoryTestCase(StoragePlugInTestCase):
     localDir = '/tmp/unit-test'
     srcFile = '/etc/group'
     sizeOfLocalFile = getSize(srcFile)
-    print 'Creating local directory: %s' % localDir
     if not os.path.exists(localDir):
       os.mkdir(localDir)
     for i in range(self.numberOfFiles):
@@ -165,27 +168,30 @@ class DirectoryTestCase(StoragePlugInTestCase):
     # Now remove the remove directory
     removeDirRes = self.storage.removeDirectory(remoteDir,True)
     #Clean up the locally created directory
-    print 'Removing local directory: %s' % localDir
     shutil.rmtree(localDir)
 
     # Perform the checks for the put dir operation
     self.assert_(putDirRes['OK'])
     self.assert_(putDirRes['Value']['Successful'].has_key(remoteDir))
-    resDict = putDirRes['Value']['Successful'][remoteDir]
-    self.assertEqual(resDict['Files'],self.numberOfFiles)
-    self.assertEqual(resDict['Size'],self.numberOfFiles*sizeOfLocalFile)
+    if putDirRes['Value']['Successful'][remoteDir]['Files']:
+      self.assertEqual(putDirRes['Value']['Successful'][remoteDir]['Files'],self.numberOfFiles)
+      self.assertEqual(putDirRes['Value']['Successful'][remoteDir]['Size'],self.numberOfFiles*sizeOfLocalFile)
+    self.assert_(type(putDirRes['Value']['Successful'][remoteDir]['Files']) == IntType)
+    self.assert_(type(putDirRes['Value']['Successful'][remoteDir]['Size']) == IntType)
     #Now perform the checks for the get directory size operation
     self.assert_(getDirSizeRes['OK'])
     self.assert_(getDirSizeRes['Value']['Successful'].has_key(remoteDir))
     resDict = getDirSizeRes['Value']['Successful'][remoteDir]
-    self.assertEqual(resDict['Size'],self.numberOfFiles*sizeOfLocalFile)
-    self.assertEqual(resDict['Files'],self.numberOfFiles)
+    self.assert_(type(resDict['Size']) == IntType)
+    self.assert_(type(resDict['Files']) == IntType)
     # Perform the checks for the remove directory operation
     self.assert_(removeDirRes['OK'])
     self.assert_(removeDirRes['Value']['Successful'].has_key(remoteDir))
-    resDict = removeDirRes['Value']['Successful'][remoteDir]
-    self.assertEqual(resDict['FilesRemoved'],self.numberOfFiles)
-    self.assertEqual(resDict['SizeRemoved'],self.numberOfFiles*sizeOfLocalFile)
+    if removeDirRes['Value']['Successful'][remoteDir]['FilesRemoved']:
+      self.assertEqual(removeDirRes['Value']['Successful'][remoteDir]['FilesRemoved'],self.numberOfFiles)
+      self.assertEqual(removeDirRes['Value']['Successful'][remoteDir]['SizeRemoved'],self.numberOfFiles*sizeOfLocalFile)
+    self.assert_(type(removeDirRes['Value']['Successful'][remoteDir]['FilesRemoved']) == IntType)
+    self.assert_(type(removeDirRes['Value']['Successful'][remoteDir]['SizeRemoved']) == IntType)
 
   def test_putListDirectory(self):
     print '\n\n#########################################################################\n\n\t\t\tList Directory test\n'
@@ -197,7 +203,6 @@ class DirectoryTestCase(StoragePlugInTestCase):
     localDir = '/tmp/unit-test'
     srcFile = '/etc/group'
     sizeOfLocalFile = getSize(srcFile)
-    print 'Creating local directory: %s' % localDir
     if not os.path.exists(localDir):
       os.mkdir(localDir)
     for i in range(self.numberOfFiles):
@@ -211,15 +216,16 @@ class DirectoryTestCase(StoragePlugInTestCase):
     # Now remove the remove directory
     removeDirRes = self.storage.removeDirectory(remoteDir,True)
     #Clean up the locally created directory
-    print 'Removing local directory: %s' % localDir
     shutil.rmtree(localDir)
 
     # Perform the checks for the put dir operation
     self.assert_(putDirRes['OK'])
     self.assert_(putDirRes['Value']['Successful'].has_key(remoteDir))
-    resDict = putDirRes['Value']['Successful'][remoteDir]
-    self.assertEqual(resDict['Files'],self.numberOfFiles)
-    self.assertEqual(resDict['Size'],self.numberOfFiles*sizeOfLocalFile)
+    if putDirRes['Value']['Successful'][remoteDir]['Files']:
+      self.assertEqual(putDirRes['Value']['Successful'][remoteDir]['Files'],self.numberOfFiles)
+      self.assertEqual(putDirRes['Value']['Successful'][remoteDir]['Size'],self.numberOfFiles*sizeOfLocalFile)
+    self.assert_(type(putDirRes['Value']['Successful'][remoteDir]['Files']) == IntType)
+    self.assert_(type(putDirRes['Value']['Successful'][remoteDir]['Size']) == IntType)
     # Perform the checks for the list dir operation
     self.assert_(listDirRes['OK'])
     self.assert_(listDirRes['Value']['Successful'].has_key(remoteDir))
@@ -230,9 +236,11 @@ class DirectoryTestCase(StoragePlugInTestCase):
     # Perform the checks for the remove directory operation
     self.assert_(removeDirRes['OK'])
     self.assert_(removeDirRes['Value']['Successful'].has_key(remoteDir))
-    resDict = removeDirRes['Value']['Successful'][remoteDir]
-    self.assertEqual(resDict['FilesRemoved'],self.numberOfFiles)
-    self.assertEqual(resDict['SizeRemoved'],self.numberOfFiles*sizeOfLocalFile)
+    if removeDirRes['Value']['Successful'][remoteDir]['FilesRemoved']:
+      self.assertEqual(removeDirRes['Value']['Successful'][remoteDir]['FilesRemoved'],self.numberOfFiles)
+      self.assertEqual(removeDirRes['Value']['Successful'][remoteDir]['SizeRemoved'],self.numberOfFiles*sizeOfLocalFile)
+    self.assert_(type(removeDirRes['Value']['Successful'][remoteDir]['FilesRemoved']) == IntType)
+    self.assert_(type(removeDirRes['Value']['Successful'][remoteDir]['SizeRemoved']) == IntType)
 
   def test_putGetDirectory(self):
     print '\n\n#########################################################################\n\n\t\t\tGet Directory test\n'
@@ -244,7 +252,6 @@ class DirectoryTestCase(StoragePlugInTestCase):
     localDir = '/tmp/unit-test'
     srcFile = '/etc/group'
     sizeOfLocalFile = getSize(srcFile)
-    print 'Creating local directory: %s' % localDir
     if not os.path.exists(localDir):
       os.mkdir(localDir)
     for i in range(self.numberOfFiles):
@@ -254,34 +261,39 @@ class DirectoryTestCase(StoragePlugInTestCase):
     dirDict = {remoteDir:localDir}
     putDirRes = self.storage.putDirectory(dirDict)
     #Clean up the locally created directory
-    print 'Removing local directory: %s' % localDir
     shutil.rmtree(localDir)
     # Check that we can get directories from the storage element
     getDirRes = self.storage.getDirectory(remoteDir,localPath=localDir)
     # Now remove the remove directory
     removeDirRes = self.storage.removeDirectory(remoteDir,True)
     #Clean up the locally created directory
-    print 'Removing local directory: %s' % localDir
     shutil.rmtree(localDir)    
 
     # Perform the checks for the put dir operation
     self.assert_(putDirRes['OK'])
     self.assert_(putDirRes['Value']['Successful'].has_key(remoteDir))
-    resDict = putDirRes['Value']['Successful'][remoteDir]
-    self.assertEqual(resDict['Files'],self.numberOfFiles)
-    self.assertEqual(resDict['Size'],self.numberOfFiles*sizeOfLocalFile)
+    if putDirRes['Value']['Successful'][remoteDir]['Files']:
+      self.assertEqual(putDirRes['Value']['Successful'][remoteDir]['Files'],self.numberOfFiles)
+      self.assertEqual(putDirRes['Value']['Successful'][remoteDir]['Size'],self.numberOfFiles*sizeOfLocalFile)
+    self.assert_(type(putDirRes['Value']['Successful'][remoteDir]['Files']) == IntType)
+    self.assert_(type(putDirRes['Value']['Successful'][remoteDir]['Size']) == IntType)
     # Perform the checks for the get dir operation
     self.assert_(getDirRes['OK'])
     self.assert_(getDirRes['Value']['Successful'].has_key(remoteDir))
     resDict = getDirRes['Value']['Successful'][remoteDir]
-    self.assertEqual(resDict['Files'],self.numberOfFiles)
-    self.assertEqual(resDict['Size'],self.numberOfFiles*sizeOfLocalFile)
+    if resDict['Files']:
+      self.assertEqual(resDict['Files'],self.numberOfFiles)
+      self.assertEqual(resDict['Size'],self.numberOfFiles*sizeOfLocalFile)
+    self.assert_(type(resDict['Files']) == IntType)
+    self.assert_(type(resDict['Size']) == IntType)
     # Perform the checks for the remove directory operation
     self.assert_(removeDirRes['OK'])
     self.assert_(removeDirRes['Value']['Successful'].has_key(remoteDir))
-    resDict = removeDirRes['Value']['Successful'][remoteDir]
-    self.assertEqual(resDict['FilesRemoved'],self.numberOfFiles)
-    self.assertEqual(resDict['SizeRemoved'],self.numberOfFiles*sizeOfLocalFile)
+    if removeDirRes['Value']['Successful'][remoteDir]['FilesRemoved']:
+      self.assertEqual(removeDirRes['Value']['Successful'][remoteDir]['FilesRemoved'],self.numberOfFiles)
+      self.assertEqual(removeDirRes['Value']['Successful'][remoteDir]['SizeRemoved'],self.numberOfFiles*sizeOfLocalFile)
+    self.assert_(type(removeDirRes['Value']['Successful'][remoteDir]['FilesRemoved']) == IntType)
+    self.assert_(type(removeDirRes['Value']['Successful'][remoteDir]['SizeRemoved']) == IntType)
 
 class FileTestCase(StoragePlugInTestCase):
 
@@ -640,6 +652,5 @@ class FileTestCase(StoragePlugInTestCase):
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(FileTestCase)
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(DirectoryTestCase))
-  #suite = unittest.defaultTestLoader.loadTestsFromTestCase(DirectoryTestCase)
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)
 
