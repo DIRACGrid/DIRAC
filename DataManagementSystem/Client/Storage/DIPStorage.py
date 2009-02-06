@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: DIPStorage.py,v 1.9 2009/02/03 21:37:25 acsmith Exp $
+# $Id: DIPStorage.py,v 1.10 2009/02/06 13:39:11 acsmith Exp $
 ########################################################################
 
 """ DIPStorage class is the client of the DIRAC Storage Element.
@@ -15,7 +15,7 @@
 
 """
 
-__RCSID__ = "$Id: DIPStorage.py,v 1.9 2009/02/03 21:37:25 acsmith Exp $"
+__RCSID__ = "$Id: DIPStorage.py,v 1.10 2009/02/06 13:39:11 acsmith Exp $"
 
 from DIRAC.DataManagementSystem.Client.Storage.StorageBase import StorageBase
 from DIRAC.Core.Utilities.Pfn import pfnparse,pfnunparse
@@ -461,9 +461,11 @@ class DIPStorage(StorageBase):
     gLogger.debug("DIPStorage.putDirectory: Attemping to put %s directories to remote storage." % len(urls))
     transferClient = TransferClient(self.url)
     for destDir,sourceDir in urls.items():
-      res = transferClient.sendBulk([sourceDir],destDir)
+      tmpList = os.listdir(sourceDir)
+      sourceFiles = [ "%s/%s" % (sourceDir,x) for x in tmpList ]
+      res = transferClient.sendBulk(sourceFiles,destDir)
       if res['OK']:
-        successful[destDir] = True
+        successful[destDir] = {'Files':0,'Size':0}
       else:
          failed[destDir] = res['Message']
     resDict = {'Failed':failed,'Successful':successful}
@@ -483,10 +485,10 @@ class DIPStorage(StorageBase):
     for url in urls:
       res = serviceClient.removeDirectory(url,'')
       if res['OK']:
-        gLogger.debug("DIPStorage.createDirectory: Successfully removed directory on storage: %s" % url)
-        successful[url] = True
+        gLogger.debug("DIPStorage.removeDirectory: Successfully removed directory on storage: %s" % url)
+        successful[url] = {'FilesRemoved':0,'SizeRemoved':0}
       else:
-        gLogger.error("DIPStorage.createDirectory: Failed to remove directory from storage.", "%s: %s" % (url,res['Message']))
+        gLogger.error("DIPStorage.removeDirectory: Failed to remove directory from storage.", "%s: %s" % (url,res['Message']))
         failed[url] = res['Message']
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
@@ -507,15 +509,14 @@ class DIPStorage(StorageBase):
       dirName = os.path.basename(src_dir)
       if localPath:
         dest_dir = localPath
-        #dest_dir = "%s/%s" % (localPath,dirName)
       else:
         dest_dir = os.getcwd()
-        #dest_dir = "%s/%s" % (os.getcwd(),dirName)
+      if not os.path.exists(dest_dir):
+        os.mkdir(dest_dir)
       res = transferClient.receiveBulk(dest_dir,src_dir)
-      print res
       if res['OK']:
         gLogger.debug("DIPStorage.getDirectory: Successfully got local copy of %s" % src_dir)
-        successful[src_dir] = True
+        successful[src_dir] = {'Files':0,'Size':0}
       else:
         gLogger.error("DIPStorage.getDirectory: Failed to get entire directory.", src_dir)
         failed[src_dir] = res['Message']
