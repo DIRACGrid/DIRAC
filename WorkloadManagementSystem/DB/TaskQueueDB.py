@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.68 2009/02/09 17:14:36 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.69 2009/02/09 17:22:34 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.68 2009/02/09 17:14:36 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.69 2009/02/09 17:22:34 acasajus Exp $"
 
 import time
 import types
@@ -460,7 +460,7 @@ class TaskQueueDB(DB):
     sqlTables = [ "`tq_TaskQueues`" ]
     if 'OwnerDN' in tqMatchDict:
       if 'OwnerGroup' in tqMatchDict:
-        if Properties.JOB_SHARING not in CS.getPropertiesForGroup( group ):
+        if Properties.JOB_SHARING not in CS.getPropertiesForGroup( tqMatchDict[ 'OwnerGroup' ] ):
           sqlCondList.append( "`tq_TaskQueues`.OwnerDN = '%s'" % tqMatchDict[ 'OwnerDN' ] )
       else:
         sqlCondList.append( "`tq_TaskQueues`.OwnerDN = '%s'" % tqMatchDict[ 'OwnerDN' ] )
