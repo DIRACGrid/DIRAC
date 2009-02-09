@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.67 2009/02/09 16:00:52 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.68 2009/02/09 17:14:36 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.67 2009/02/09 16:00:52 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.68 2009/02/09 17:14:36 acasajus Exp $"
 
 import time
 import types
@@ -460,12 +460,12 @@ class TaskQueueDB(DB):
     sqlTables = [ "`tq_TaskQueues`" ]
     if 'OwnerDN' in tqMatchDict:
       if 'OwnerGroup' in tqMatchDict:
-        group = tqMatchDict[ 'OwnerGroup' ]
         if Properties.JOB_SHARING not in CS.getPropertiesForGroup( group ):
           sqlCondList.append( "`tq_TaskQueues`.OwnerDN = '%s'" % tqMatchDict[ 'OwnerDN' ] )
-        sqlCondList.append( "`tq_TaskQueues`.OwnerGroup = '%s'" % group )
       else:
         sqlCondList.append( "`tq_TaskQueues`.OwnerDN = '%s'" % tqMatchDict[ 'OwnerDN' ] )
+    if 'OwnerGroup' in tqMatchDict:
+      sqlCondList.append( "`tq_TaskQueues`.OwnerGroup = '%s'" % tqMatchDict[ 'OwnerGroup' ] )
     #Type of pilot conditions
     for field in ( 'CPUTime', 'Setup' ):
       if field in tqMatchDict:
