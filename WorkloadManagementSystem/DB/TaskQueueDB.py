@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.66 2009/02/09 13:28:20 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.67 2009/02/09 16:00:52 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.66 2009/02/09 13:28:20 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.67 2009/02/09 16:00:52 acasajus Exp $"
 
 import time
 import types
@@ -221,7 +221,7 @@ class TaskQueueDB(DB):
       tqId = result[ 'Value' ][0][0]
     for field in self.__multiValueDefFields:
       if field not in tqDefDict:
-        continue1461580
+        continue
       values = List.uniqueElements( [ value for value in tqDefDict[ field ] if value.strip() ] )
       if not values:
         continue
