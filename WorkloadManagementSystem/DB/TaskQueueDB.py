@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.65 2009/02/06 16:03:43 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.66 2009/02/09 13:28:20 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.65 2009/02/06 16:03:43 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.66 2009/02/09 13:28:20 acasajus Exp $"
 
 import time
 import types
@@ -458,13 +458,14 @@ class TaskQueueDB(DB):
     """
     sqlCondList = []
     sqlTables = [ "`tq_TaskQueues`" ]
-    if 'PilotType' in tqMatchDict:
-      pilotType = tqMatchDict[ 'PilotType' ]
-      if pilotType in self.getPrivatePilots():
+    if 'OwnerDN' in tqMatchDict:
+      if 'OwnerGroup' in tqMatchDict:
         group = tqMatchDict[ 'OwnerGroup' ]
-        sqlCondList.append( "`tq_TaskQueues`.%s = '%s'" % ( 'OwnerGroup', group ) )
         if Properties.JOB_SHARING not in CS.getPropertiesForGroup( group ):
-          sqlCondList.append( "`tq_TaskQueues`.%s = '%s'" % ( 'OwnerDN', tqMatchDict[ 'OwnerDN' ] ) )
+          sqlCondList.append( "`tq_TaskQueues`.OwnerDN = '%s'" % tqMatchDict[ 'OwnerDN' ] )
+        sqlCondList.append( "`tq_TaskQueues`.OwnerGroup = '%s'" % group )
+      else:
+        sqlCondList.append( "`tq_TaskQueues`.OwnerDN = '%s'" % tqMatchDict[ 'OwnerDN' ] )
     #Type of pilot conditions
     for field in ( 'CPUTime', 'Setup' ):
       if field in tqMatchDict:
@@ -756,7 +757,7 @@ class TaskQueueDB(DB):
     if Properties.JOB_SHARING not in CS.getPropertiesForGroup( userGroup ):
       tqCond.append( "t.OwnerDN='%s'" % userDN )
     tqCond.append( "t.TQId = j.TQId" )
-    selectSQL = "SELECT j.TQId, MAX( j.RealPriority ) FROM `tq_TaskQueues` t, `tq_Jobs` j WHERE "
+    selectSQL = "SELECT j.TQId, SUM( j.RealPriority ) FROM `tq_TaskQueues` t, `tq_Jobs` j WHERE "
     selectSQL += " AND ".join( tqCond )
     selectSQL += " GROUP BY t.TQId"
     result = self._query( selectSQL, conn = connObj )
