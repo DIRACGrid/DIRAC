@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.19 2009/01/30 09:03:46 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.20 2009/02/09 09:47:31 rgracian Exp $
 # File :   TaskQueueDirector.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -84,7 +84,7 @@
         SoftwareTag
 
 """
-__RCSID__ = "$Id: TaskQueueDirector.py,v 1.19 2009/01/30 09:03:46 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueDirector.py,v 1.20 2009/02/09 09:47:31 rgracian Exp $"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 
@@ -156,8 +156,6 @@ class TaskQueueDirector(AgentModule):
       return result
     taskQueueDict = result['Value']
 
-    print taskQueueDict
-
     self.log.info( 'Found %s TaskQueues' % len(taskQueueDict) )
 
     if not taskQueueDict:
@@ -182,8 +180,13 @@ class TaskQueueDirector(AgentModule):
     self.toSubmitPilots = 0
     waitingStatusList = ['Submitted','Ready','Scheduled','Waiting']
     timeLimitToConsider = Time.toString( Time.dateTime() - Time.hour * self.am_getOption( "maxPilotWaitingHours") )
+    waitingJobs = 0
     for taskQueueID in taskQueueDict:
       self.log.verbose( 'Processing TaskQueue', taskQueueID )
+      
+      privateTQ = ( 'PilotTypes' in taskQueueDict and 'private' in [ t.lower() for t in taskQueueDict['PilotTypes'] ] )
+      if not privateTQ:
+        waitingJobs += taskQueueDict[taskQueueID]['Jobs']
 
       result = pilotAgentsDB.countPilots( {'TaskQueueID': taskQueueID, 'Status': waitingStatusList}, newer = timeLimitToConsider )
       if not result['OK']:
@@ -199,6 +202,16 @@ class TaskQueueDirector(AgentModule):
         self.toSubmitPilots += result['Value']
 
     self.log.info( 'Number of pilots to be Submitted %s' % self.toSubmitPilots )
+
+    genericTaskQueue = {'TaskQueueID': 0,
+                        'CPUTime'    : taskQueueDB.maxCPUSegments[-1],
+                        'Setup'      : gConfig.getValue('/DIRAC/Setup','Development') ,
+                        'ForceGeneric': True}
+    
+    if waitingJobs:
+      self.__submitPilots( genericTaskQueue, self.am_getOption('pilotsPerIteration') )
+      self.log.info( 'Number of additional generic pilots to be Submitted %s' % self.am_getOption('pilotsPerIteration') )
+
     # Now wait until all Jobs in the Default ThreadPool are proccessed
     if 'Default' in self.pools:
       # only for those in "Default' thread Pool
@@ -529,7 +542,8 @@ class PilotDirector:
       pilotOptions = []
       privateIfGenericTQ = self.privatePilotFraction < random.random()
       privateTQ = ( 'PilotTypes' in taskQueueDict and 'private' in [ t.lower() for t in taskQueueDict['PilotTypes'] ] )
-      submitPrivatePilot = privateIfGenericTQ or privateTQ
+      forceGeneric = 'ForceGeneric' in taskQueueDict
+      submitPrivatePilot = ( privateIfGenericTQ or privateTQ ) and not forceGeneric
       if submitPrivatePilot:
         self.log.verbose('Submitting private pilots for TaskQueue %s' % taskQueueID)
         ownerDN    = taskQueueDict['OwnerDN']
