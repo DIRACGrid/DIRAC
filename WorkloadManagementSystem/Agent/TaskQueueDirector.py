@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.20 2009/02/09 09:47:31 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.21 2009/02/09 10:09:20 rgracian Exp $
 # File :   TaskQueueDirector.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -84,7 +84,7 @@
         SoftwareTag
 
 """
-__RCSID__ = "$Id: TaskQueueDirector.py,v 1.20 2009/02/09 09:47:31 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueDirector.py,v 1.21 2009/02/09 10:09:20 rgracian Exp $"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 
@@ -295,11 +295,11 @@ class TaskQueueDirector(AgentModule):
     # and check its configuration:
     for submitPool in self.am_getOption( 'SubmitPools' ):
       # check if the Director is initialized, then reconfigure
-      if submitPool in self.directors:
-        self.__configureDirector(submitPool)
-      else:
+      if submitPool not in self.directors:
         # instantiate a new Director
         self.__createDirector(submitPool)
+
+      self.__configureDirector(submitPool)
 
       # Now enable the director for this iteration, if some RB/WMS is defined
       if submitPool in self.directors and self.directors[submitPool]['director'].resourceBrokers:
