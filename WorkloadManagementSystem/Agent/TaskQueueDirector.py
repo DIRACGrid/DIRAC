@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.21 2009/02/09 10:09:20 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.22 2009/02/09 16:53:17 rgracian Exp $
 # File :   TaskQueueDirector.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -84,7 +84,7 @@
         SoftwareTag
 
 """
-__RCSID__ = "$Id: TaskQueueDirector.py,v 1.21 2009/02/09 10:09:20 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueDirector.py,v 1.22 2009/02/09 16:53:17 rgracian Exp $"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 
@@ -496,6 +496,7 @@ class PilotDirector:
     self.log.info( ' Pilot script:   ', self.pilot )
     self.log.info( ' DIRAC Version:  ', self.diracVersion )
     self.log.info( ' ListMatch:      ', self.enableListMatch )
+    self.log.info( ' Private %:      ', self.privatePilotFraction * 100 )
     if self.enableListMatch:
       self.log.info( ' ListMatch Delay:', self.listMatchDelay )
     if self.gridEnv:
