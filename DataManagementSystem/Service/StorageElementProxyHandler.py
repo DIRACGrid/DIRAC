@@ -54,7 +54,7 @@ class StorageElementProxyHandler(RequestHandler):
     except AttributeError, x:
       exStr = "Exception: no such method."
       gLogger.exception(exStr,name,x)
-      return S_ERROR(error)
+      return S_ERROR(exStr)
     result = method(*args,**kargs)
     return result
 
