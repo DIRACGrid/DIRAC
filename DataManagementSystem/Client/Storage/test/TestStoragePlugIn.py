@@ -33,7 +33,7 @@ class StoragePlugInTestCase(unittest.TestCase):
 
   def tearDown(self):
     remoteDir = self.storage.getCurrentURL('')['Value']
-    ignore = self.storage.removeDirectory(remoteDir,True)     
+    ignore = self.storage.removeDirectory(remoteDir,True)
 
 class DirectoryTestCase(StoragePlugInTestCase):
 
@@ -534,8 +534,8 @@ class FileTestCase(StoragePlugInTestCase):
     # Check that pre-staging non-existant file fails
     self.assert_(deletedPrestageRes['OK'])
     self.assert_(deletedPrestageRes['Value']['Failed'].has_key(remoteFile))
-    expectedError = "SRM2Storage.prestageFile: Failed issue stage request. [SE][BringOnline] No such file or directory"
-    self.assertEqual(deletedPrestageRes['Value']['Failed'][remoteFile],expectedError)
+    expectedError = "No such file or directory"
+    self.assert_(expectedError in deletedPrestageRes['Value']['Failed'][remoteFile])
  
   def test_putFilegetTransportURL(self):
     print '\n\n#########################################################################\n\n\t\t\tGet tURL test\n'
@@ -567,8 +567,8 @@ class FileTestCase(StoragePlugInTestCase):
     #Check the get turl with non existant file operation
     self.assert_(failedGetTurlRes['OK'])
     self.assert_(failedGetTurlRes['Value']['Failed'].has_key(remoteFile))
-    expectedError = "SRM2Storage.getTransportURL: File does not exist."
-    self.assertEqual(failedGetTurlRes['Value']['Failed'][remoteFile],expectedError)
+    expectedError = "File does not exist"
+    self.assert_(expectedError in failedGetTurlRes['Value']['Failed'][remoteFile])
 
   def test_putPinRelease(self):
     print '\n\n#########################################################################\n\n\t\t\tPin and Release test\n'
@@ -605,7 +605,6 @@ class FileTestCase(StoragePlugInTestCase):
     # check the remove file operation
     self.assert_(removeFileRes['OK'])   
     self.assert_(removeFileRes['Value']['Successful'].has_key(remoteFile))
-
 
   def test_putPrestageStatus(self):
     print '\n\n#########################################################################\n\n\t\t\tPrestage status test\n'
@@ -648,6 +647,7 @@ class FileTestCase(StoragePlugInTestCase):
     # Check the remove file operation   
     self.assert_(removeFileRes['OK'])
     self.assert_(removeFileRes['Value']['Successful'].has_key(remoteFile))
+
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(FileTestCase)
