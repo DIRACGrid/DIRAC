@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalogue. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.39 2009/02/02 21:59:56 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.40 2009/02/11 12:22:57 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -181,7 +181,6 @@ class ReplicaManager:
       return S_ERROR(errStr)
     destinationSE = storageElement.getStorageElementName()['Value']
 
-
     successful = {}
     failed = {}
     ##########################################################
@@ -208,7 +207,7 @@ class ReplicaManager:
       errStr = "ReplicaManager.putAndRegister: Completely failed to register file."
       gLogger.error(errStr,res['Message'])
       failed[lfn] = {'register':registerDict}
-    elif not res['Value']['Successful'].has_key(lfn):
+    elif res['Value']['Failed'].has_key(lfn):
       errStr = "ReplicaManager.putAndRegister: Failed to register file."
       gLogger.error(errStr,"%s %s" % (lfn,res['Value']['Failed'][lfn]))
       failed[lfn] = {'register':registerDict}
