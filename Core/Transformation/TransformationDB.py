@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.79 2009/02/02 15:35:30 atsareg Exp $
+# $Id: TransformationDB.py,v 1.80 2009/02/11 23:06:20 atsareg Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -85,7 +85,7 @@ class TransformationDB(DB):
 
   def addTransformation(self, name, description, longDescription, authorDN, 
                         authorGroup, type_, plugin, agentType,fileMask,bkQuery={},
-                        transformationGroup=''):
+                        transformationGroup='',addFiles=True):
     """ Add new transformation definition including its input streams
     """
     
@@ -128,7 +128,8 @@ class TransformationDB(DB):
       if fileMask:
         self.filters.append((transID,re.compile(fileMask)))
         # Add already existing files to this transformation if any
-        result = self.__addExistingFiles(transID)
+        if addFiles:
+          result = self.__addExistingFiles(transID)
       result = self.__addTransformationTable(transID)
 
     return S_OK(transID)
@@ -241,25 +242,6 @@ class TransformationDB(DB):
     req = "UPDATE Transformations SET Type='%s' WHERE TransformationID=%s;" % (status,transID)
     res = self._update(req)
     return res
-
-# Unefficient version commented
-#  def getTransformationStats(self,transName):
-#    """ Get the statistics of Transformation by supplied transformation name.
-#    """
-#    transID = self.getTransformationID(transName)
-#    req = "SELECT FileID,Status from T_%s;" % transID
-#    res = self._query(req)
-#    if not res['OK']:
-#      return res
-#    total = 0
-#    resDict = {}
-#    for fileID,status in res['Value']:
-#      total += 1
-#      if not resDict.has_key(status):
-#        resDict[status] = 0
-#      resDict[status] += 1
-#    resDict['total'] = total
-#    return S_OK(resDict)
 
   def getTransformationStats(self,transName):
     """ Get number of files in Transformation Table for each status
@@ -771,8 +753,9 @@ PRIMARY KEY (FileID)
     if not result['OK']:
       return result
     for transID,mask in result['Value']:
-      refilter = re.compile(mask)
-      resultList.append((transID,refilter))
+      if mask:
+        refilter = re.compile(mask)
+        resultList.append((transID,refilter))
 
     return resultList
 
