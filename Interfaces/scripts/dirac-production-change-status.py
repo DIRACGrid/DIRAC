@@ -1,11 +1,14 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/dirac-production-change-status.py,v 1.1 2008/10/16 09:28:33 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/dirac-production-change-status.py,v 1.2 2009/02/11 10:56:06 paterson Exp $
 # File :   dirac-production-change-status
 # Author : Stuart Paterson
 ########################################################################
-__RCSID__   = "$Id: dirac-production-change-status.py,v 1.1 2008/10/16 09:28:33 paterson Exp $"
-__VERSION__ = "$Revision: 1.1 $"
+__RCSID__   = "$Id: dirac-production-change-status.py,v 1.2 2009/02/11 10:56:06 paterson Exp $"
+__VERSION__ = "$Revision: 1.2 $"
+
+import string
+
 from DIRACEnvironment import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.Interfaces.API.DiracProduction                    import DiracProduction
@@ -13,15 +16,23 @@ from DIRAC.Interfaces.API.DiracProduction                    import DiracProduct
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
 
+diracProd = DiracProduction()
+
 def usage():
   print 'Usage: %s <Command> <Production ID> |<Production ID>' %(Script.scriptName)
-  print "Commands include: 'start', 'stop', 'manual', 'automatic'"
+  commands = diracProd.getProductionCommands()['Value']
+  print "\nCommands include: %s" %(string.join(commands.keys(),', '))
+  print '\nDescription:\n'
+  for n,v in commands.items():
+    print '%s:' %n
+    for i,j in v.items():
+      print '     %s = %s' %(i,j)
+
   DIRAC.exit(2)
 
 if len(args) < 2:
   usage()
 
-diracProd = DiracProduction()
 exitCode = 0
 errorList = []
 command = args[0]
