@@ -390,25 +390,28 @@ class StorageElement:
     if not pfns:
       gLogger.debug("StorageElement.__executeFunction: No pfns supplied.")
       return S_OK({'Failed':{}, 'Successful':{}})
-    gLogger.debug("StorageElement.__executeFunction: Attempinting to perform '%s' operation with %s pfns." % (method,len(pfns)))
+    gLogger.debug("StorageElement.__executeFunction: Attempting to perform '%s' operation with %s pfns." % (method,len(pfns)))
  
     successful = {}
     failed = {}
     localSE = self.isLocalSE()['Value']
     # Try all of the storages one by one
     for storage in self.storages:
-
       # Determine whether to use this storage object
-      protocolName = storage.getParameters()['Value']['ProtocolName']
+      res = storage.getParameters()
       useProtocol = True
-      if not pfns:
+      if not res['OK']:
+        gLogger.error("StorageElement.__executeFunction: Failed to get storage parameters.","%s %s" % (self.name,res['Message']))
         useProtocol = False
-        gLogger.debug("StorageElement.__executeFunction: No pfns to be attempted for %s protocol." % protocolName)
-      elif not (protocolName in self.remoteProtocols) and not localSE:
-        # If the SE is not local then we can't use local protocols
-        useProtocol = False
-        gLogger.debug("StorageElement.__executeFunction: Protocol not appropriate for use: %s." % protocolName)
-
+      else:
+        protocolName = res['Value']['ProtocolName']
+        if not pfns:
+          useProtocol = False
+          gLogger.debug("StorageElement.__executeFunction: No pfns to be attempted for %s protocol." % protocolName)
+        elif not (protocolName in self.remoteProtocols) and not localSE:
+          # If the SE is not local then we can't use local protocols
+          useProtocol = False
+          gLogger.debug("StorageElement.__executeFunction: Protocol not appropriate for use: %s." % protocolName)
       if useProtocol:
         gLogger.debug("StorageElement.__executeFunction: Generating %s protocol PFNs for %s." % (len(pfns),protocolName))
         res = self.__generatePfnDict(pfns.keys(),storage,failed)
