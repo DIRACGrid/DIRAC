@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalogue. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.40 2009/02/11 12:22:57 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.41 2009/02/11 15:46:00 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -793,7 +793,19 @@ class ReplicaManager:
       return S_ERROR(errStr)
     gLogger.info("ReplicaManager.removeFile: Attempting to remove %s files from Storage and Catalogue." % len(lfns))
     gLogger.info("ReplicaManager.removeFile: Attempting to obtain replicas for %s lfns." % len(lfns))
-    res = self.fileCatalogue.getReplicas(lfns)
+    res = self.fileCatalogue.exists(lfns)
+    if not res['OK']:
+      errStr = "ReplicaManager.removeFile: Completely failed to determine existance of lfns."
+      gLogger.error(errStr,res['Message'])
+      return res
+    successful = {}
+    existingFiles = []
+    for lfn,exists in res['Value']['Successful'].items():
+      if not exists:
+        successful[lfn] = True
+      else:
+        existingFiles.append(lfn)
+    res = self.fileCatalogue.getReplicas(existingFiles)
     if not res['OK']:
       errStr = "ReplicaManager.removeFile: Completely failed to get replicas for lfns."
       gLogger.error(errStr,res['Message'])
@@ -806,7 +818,7 @@ class ReplicaManager:
       gLogger.error(errStr,res['Message'])
       return res
     failed.update(res['Value']['Failed'])
-    successful = res['Value']['Successful']
+    successful.update(res['Value']['Successful'])
     resDict = {'Successful':successful,'Failed':failed}
     gDataStoreClient.commit()
     return S_OK(resDict)
