@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.55 2009/02/04 19:39:20 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.56 2009/02/11 10:55:19 paterson Exp $
 # File :   DiracProduction.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are to be documented with example usage.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.55 2009/02/04 19:39:20 paterson Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.56 2009/02/11 10:55:19 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 import pprint
@@ -60,6 +60,7 @@ class DiracProduction:
                         'TransformationName':'Name','Type':'Type'}
     self.prodAdj = 22
     self.proxy = None
+    self.commands = {'start':['Active','Manual'],'stop':['Stopped','Manual'],'automatic':['Active','Automatic'],'manual':['Active','Manual'],'completed':['Completed','Manual'],'cleaning':['Cleaning','Manual'],'deleted':['Deleted','Manual'],'archived':['Archived','Manual']}
 
   #############################################################################
   def getAllProductions(self,printOutput=False):
@@ -579,6 +580,15 @@ class DiracProduction:
 #    return S_OK()
 
   #############################################################################
+  def getProductionCommands(self):
+    """ Returns the list of possible commands and their meaning.
+    """
+    prodCommands = {}
+    for keyword,statusSubMode in self.commands.items():
+      prodCommands[keyword]={'Status':statusSubMode[0],'SubmissionMode':statusSubMode[1]}
+    return S_OK(prodCommands)
+
+  #############################################################################
   def production(self,productionID,command,printOutput=False,disableCheck=True):
     """Allows basic production management by supporting the following commands:
        - start : set production status to Active, job submission possible
@@ -586,7 +596,7 @@ class DiracProduction:
        - automatic: set production submission mode to Automatic, e.g. submission via Agent
        - manual: set produciton submission mode to manual, e.g. dirac-production-submit
     """
-    commands = {'start':['Active','Manual'],'stop':['Stopped','Manual'],'automatic':['Active','Automatic'],'manual':['Active','Manual']}
+    commands = self.commands
     if type(productionID)==type(2):
       productionID=long(productionID)
     if not type(productionID)==type(long(1)):
