@@ -28,11 +28,6 @@ class BaseReporter(DBUtils):
   def _translateGrouping( self, grouping ):
     return [ grouping ]
 
-  def __calculateReportHash( reportRequest ):
-    m = md5.new()
-    m.update( repr( reportRequest ) )
-    return m.hexdigest()
-
   def generate( self, reportRequest ):
     reportRequest[ 'groupingFields' ] = self._translateGrouping( reportRequest[ 'grouping' ] )
     reportHash = reportRequest[ 'hash' ]
