@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/AgentModule.py,v 1.9 2009/01/22 15:35:19 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/AgentModule.py,v 1.10 2009/02/12 17:05:45 acasajus Exp $
 ########################################################################
 """ Base class for all agent modules
 
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: AgentModule.py,v 1.9 2009/01/22 15:35:19 acasajus Exp $"
+__RCSID__ = "$Id: AgentModule.py,v 1.10 2009/02/12 17:05:45 acasajus Exp $"
 
 import os
 import threading
@@ -62,6 +62,19 @@ class AgentModule:
     self.__initializeMonitor()
     self.__initialized = False
 
+  def __getModuleVersion( self ):
+    versionVar = "__RCSID__"
+    try:
+      module =  __import__( self.__class__.__module__,
+                            globals(),
+                            locals(),
+                            versionVar )
+      return getattr( module, versionVar )
+    except Exception, e:
+      print e
+      self.log.error( "Missing __RCSID__" )
+    return "Unknown"
+
   def am_initialize( self, *initArgs ):
     agentName = self.am_getModuleParam( 'fullName' )
     result = self.initialize( *initArgs )
@@ -84,7 +97,8 @@ class AgentModule:
     self.log.info( "Loaded agent module %s" % self.__moduleProperties[ 'fullName' ] )
     self.log.info( " Site: %s" % gConfig.getValue( '/LocalSite/Site', 'Unknown' ) )
     self.log.info( " Setup: %s" % gConfig.getValue( "/DIRAC/Setup" ) )
-    self.log.info( " Version: %s " % __RCSID__)
+    self.log.info( " Base Module version: %s " % __RCSID__)
+    self.log.info( " Agent version: %s" % self.__getModuleVersion() )
     self.log.info( " DIRAC version: %s" % DIRAC.version )
     self.log.info( " DIRAC platform: %s" % DIRAC.platform )
     self.log.info( " Polling time: %s" % self.am_getOption( 'PollingTime' ) )
