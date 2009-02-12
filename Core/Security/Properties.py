@@ -10,8 +10,6 @@ JOB_SHARING = "JobSharing"
 SERVICE_ADMINISTRATOR = "ServiceAdministrator"
 # Job Administrator
 JOB_ADMINISTRATOR = "JobAdministrator"
-# Job Pilot
-JOB_PILOT = "JobPilot"
 # Private pilot
 PILOT = "Pilot"
 # Generic pilot
