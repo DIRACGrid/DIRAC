@@ -1,17 +1,31 @@
-import unittest,types,time,os
+#! /usr/bin/env python
+from DIRAC.Core.Base.Script import parseCommandLine
+parseCommandLine()
 from DIRAC.DataManagementSystem.Client.StorageElement import StorageElement
 from DIRAC.Core.Utilities.File import getSize
+import unittest,time,os,shutil,sys,types
+
+if len(sys.argv) < 2:
+  print 'Usage: TestStoragePlugIn.py StorageElement'
+  sys.exit()
+else:
+  storageElementToTest = sys.argv[1]
 
 class StorageElementTestCase(unittest.TestCase):
   """ Base class for the StorageElement test cases
   """
   def setUp(self):
-    self.storageElement = StorageElement('IN2P3-RAW')
+    self.storageElement = StorageElement(storageElementToTest)
     self.localSourceFile = "/etc/group"
     self.localFileSize = getSize(self.localSourceFile)
-    self.destDirectory = "/lhcb/test/unit-test/StorageElement"
+    self.destDirectory = "/lhcb/test/unit-test/TestStorageElement"
     self.alternativeDestFileName = "testFile.%s" % time.time()
     self.alternativeLocal = "/tmp/storageElementTestFile.%s" % time.time()
+
+  def tearDown(self):
+    destinationDir = self.storageElement.getPfnForLfn(self.destDirectory)['Value']
+    res = self.storageElement.removeDirectory(destinationDir,recursive=True,singleDirectory=True)
+    self.assert_(res['OK'])
 
 class GetInfoTestCase(StorageElementTestCase):
 
@@ -71,21 +85,24 @@ class FileTestCases(StorageElementTestCase):
 
   def test_putFile(self):
     print '\n\n#########################################################################\n\n\t\t\tPut file test\n'
-    putFileRes = self.storageElement.putFile(self.localSourceFile,self.destDirectory,alternativeFileName=self.alternativeDestFileName)
-    destFile = putFileRes['Value']
-    removeFileRes = self.storageElement.removeFile(destFile)
-    if os.path.exists(self.alternativeLocal): 
-      os.remove(self.alternativeLocal)
-  
+
+    destinationFilePath = '%s/testFile.%s' % (self.destDirectory,time.time())
+    pfnForLfnRes = self.storageElement.getPfnForLfn(destinationFilePath)
+    destinationPfn = pfnForLfnRes['Value']
+    fileDict = {destinationPfn:self.localSourceFile}
+    putFileRes = self.storageElement.putFile(fileDict,singleFile=True)
+    # Now remove the destination file
+    removeFileRes = self.storageElement.removeFile(destinationPfn,singleFile=True)
+
     # Check that the put was done correctly
     self.assert_(putFileRes['OK'])
     self.assert_(putFileRes['Value'])
+    self.assertEqual(putFileRes['Value'],self.localFileSize)
     # Check that the removal was done correctly
     self.assert_(removeFileRes['OK'])
     self.assert_(removeFileRes['Value'])
-    self.assert_(removeFileRes['Value'].has_key('Successful'))
-    self.assert_(removeFileRes['Value']['Successful'].has_key(destFile))
-    self.assert_(removeFileRes['Value']['Successful'][destFile])
+
+  """
 
   def test_getFile(self):
     print '\n\n#########################################################################\n\n\t\t\tGet file test\n'
@@ -204,6 +221,8 @@ class FileTestCases(StorageElementTestCase):
     self.assert_(removeFileRes['Value'].has_key('Successful'))
     self.assert_(removeFileRes['Value']['Successful'].has_key(destFile))
     self.assert_(removeFileRes['Value']['Successful'][destFile])
+
+  """
 
 class DirectoryTestCases(StorageElementTestCase):
 
@@ -325,8 +344,9 @@ class DirectoryTestCases(StorageElementTestCase):
     self.assert_(removeDirRes['Value']['Successful'].has_key(destDir))
 
 if __name__ == '__main__':
-  suite = unittest.defaultTestLoader.loadTestsFromTestCase(DirectoryTestCases)
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GetInfoTestCase))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(FileTestCases))
+  #suite = unittest.defaultTestLoader.loadTestsFromTestCase(GetInfoTestCase)
+  #suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(DirectoryTestCases))
+  #suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(FileTestCases))
+  suite = unittest.defaultTestLoader.loadTestsFromTestCase(FileTestCases)
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)
 
