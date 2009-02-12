@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/ReportGeneratorHandler.py,v 1.18 2008/09/23 10:25:47 acasajus Exp $
-__RCSID__ = "$Id: ReportGeneratorHandler.py,v 1.18 2008/09/23 10:25:47 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/ReportGeneratorHandler.py,v 1.19 2009/02/12 11:26:09 acasajus Exp $
+__RCSID__ = "$Id: ReportGeneratorHandler.py,v 1.19 2009/02/12 11:26:09 acasajus Exp $"
 import types
 import os
 import md5
@@ -54,6 +54,16 @@ class ReportGeneratorHandler( RequestHandler ):
                         'extraArgs' : types.DictType
                       }
 
+  def __calculateReportHash( self, reportRequest ):
+    requestToHash = dict( reportRequest )
+    granularity = self.getCSOption( "CacheTimeGranularity", 300 )
+    for key in ( 'startTime', 'endTime' ):
+      epoch = requestToHash[ key ]
+      requestToHash[ key ] = epoch - epoch % granularity
+    m = md5.new()
+    m.update( repr( requestToHash ) )
+    return m.hexdigest()
+
   def __checkPlotRequest( self, reportRequest ):
     for key in self.__reportRequestDict:
       if key == 'extraArgs' and key not in reportRequest:
@@ -72,9 +82,8 @@ class ReportGeneratorHandler( RequestHandler ):
           return S_ERROR( "Type mismatch for field %s (%s), required %s" % ( key,
                                                                              str(requestKeyType),
                                                                              str( self.__reportRequestDict[ key ] ) ) )
-    m = md5.new()
-    m.update( repr( reportRequest ) )
-    reportRequest[ 'hash' ] =  m.hexdigest()
+
+    reportRequest[ 'hash' ] =  self.__calculateReportHash( reportRequest )
     return S_OK( reportRequest )
 
   types_generatePlot = [ types.DictType ]
