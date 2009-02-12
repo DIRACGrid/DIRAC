@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/OptimizerModule.py,v 1.8 2009/01/22 15:46:14 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/OptimizerModule.py,v 1.9 2009/02/12 17:04:00 acasajus Exp $
 # File :   Optimizer.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
      optimizer instances and associated actions are performed there.
 """
 
-__RCSID__ = "$Id: OptimizerModule.py,v 1.8 2009/01/22 15:46:14 acasajus Exp $"
+__RCSID__ = "$Id: OptimizerModule.py,v 1.9 2009/02/12 17:04:00 acasajus Exp $"
 
 from DIRAC.WorkloadManagementSystem.DB.JobDB         import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB  import JobLoggingDB
@@ -57,7 +57,7 @@ class OptimizerModule(AgentModule):
     """ The main agent execution method
     """
 
-    result = self.initExecution()
+    result = self.initializeOptimizer()
     if not result[ 'OK' ]:
       return result
     self._initResult = result[ 'Value' ]
