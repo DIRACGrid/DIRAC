@@ -225,38 +225,28 @@ class SRM2Storage(StorageBase):
     dfile.close()
     destFile = '%s/%s' % (path,'dirac_directory')
     directoryDict = {destFile:srcFile}
-    res = self.putFile(directoryDict)
+    res = self.__putFile(srcFile,destFile,0)
     if os.path.exists(srcFile):
       os.remove(srcFile)
-    if not res['OK']:
-      return res
-    if res['Value']['Successful'].has_key(destFile):
-      return S_OK()
-    else:
-      return S_ERROR(res['Value']['Failed'][destFile])
+    return res
 
   def __makeDirs(self,path):
     """  Black magic contained within....
     """
     dir = os.path.dirname(path)
-    res = self.isDirectory(path)
+    res = self.__executeOperation(path,'exists')
     if not res['OK']:
       return res
-    if res['OK']:
-      if res['Value']['Successful'].has_key(path):
-        if res['Value']['Successful'][path]:
-          return S_OK()
-        else:
-          res = self.isDirectory(dir)
-          if res['OK']:
-            if res['Value']['Successful'].has_key(dir):
-              if res['Value']['Successful'][dir]:
-                res = self.__makeDir(path)
-              elif path.endswith(self.path):
-                res = self.__makeDir(path)
-              else:
-                res = self.__makeDirs(dir)
-                res = self.__makeDir(path)
+    if res['Value']:
+      return S_OK()
+    res = self.__executeOperation(dir,'exists')
+    if not res['OK']:
+      return res
+    if res['Value']:
+      res = self.__makeDir(path)
+    else:
+      res = self.__makeDirs(dir)
+      res = self.__makeDir(path)
     return res
 
 ################################################################################
@@ -613,11 +603,16 @@ class SRM2Storage(StorageBase):
     failed = {}
     successful = {}
     for dest_url,src_file in urls.items():
-      res = self.__putFile(src_file,dest_url,sourceSize)
-      if res['OK']:
-        successful[dest_url] = res['Value']
-      else:
+    # Create destination directory
+      res = self.__executeOperation(os.path.dirname(dest_url),'createDirectory')
+      if not res['OK']:
         failed[dest_url] = res['Message']
+      else:
+        res = self.__putFile(src_file,dest_url,sourceSize)
+        if res['OK']:
+          successful[dest_url] = res['Value']
+        else:
+          failed[dest_url] = res['Message']
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
