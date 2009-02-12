@@ -19,11 +19,11 @@ class StoragePlugInTestCase(unittest.TestCase):
   def setUp(self):
 
     factory = StorageFactory()
-    res = factory.getStorages(storageElementToTest, [protocol])    
+    res = factory.getStorages(storageElementToTest, [protocol])
     self.assert_(res['OK'])
     storageDetails = res['Value']
     self.storage = storageDetails['StorageObjects'][0]
-    self.storage.changeDirectory('lhcb/test/unit-test')
+    self.storage.changeDirectory('lhcb/test/unit-test/TestStoragePlugIn')
     destDir = self.storage.getCurrentURL('')['Value']
     res = self.storage.createDirectory(destDir)
     self.assert_(res['OK'])
@@ -647,7 +647,6 @@ class FileTestCase(StoragePlugInTestCase):
     # Check the remove file operation   
     self.assert_(removeFileRes['OK'])
     self.assert_(removeFileRes['Value']['Successful'].has_key(remoteFile))
-
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(FileTestCase)
