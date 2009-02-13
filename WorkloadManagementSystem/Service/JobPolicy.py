@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobPolicy.py,v 1.9 2008/07/17 13:25:25 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobPolicy.py,v 1.10 2009/02/13 10:23:47 atsareg Exp $
 ########################################################################
 
 """ JobPolicy encapsulates authorization rules for different groups
@@ -7,7 +7,7 @@
 
 """
 
-__RCSID__ = "$Id: JobPolicy.py,v 1.9 2008/07/17 13:25:25 acasajus Exp $"
+__RCSID__ = "$Id: JobPolicy.py,v 1.10 2009/02/13 10:23:47 atsareg Exp $"
 
 from DIRAC import gConfig, S_OK, S_ERROR
 from DIRAC.Core.Security import Properties
@@ -37,7 +37,7 @@ GROUP_RIGHTS = OWNER_RIGHTS
 PROPERTY_RIGHTS = {}
 PROPERTY_RIGHTS[ Properties.JOB_ADMINISTRATOR ] = ALL_RIGHTS
 PROPERTY_RIGHTS[ Properties.NORMAL_USER ] = [ RIGHT_SUBMIT, RIGHT_GET_INFO ]
-
+PROPERTY_RIGHTS[ Properties.GENERIC_PILOT ] = [ RIGHT_RESCHEDULE ]
 
 class JobPolicy:
 
@@ -91,15 +91,20 @@ class JobPolicy:
     # Anybody can get info about the jobs
     permDict[ RIGHT_GET_INFO ] = True
 
-    #Give JobAdmin permission if needed
+    # Give JobAdmin permission if needed
     if Properties.JOB_ADMINISTRATOR in self.userProperties:
       for r in PROPERTY_RIGHTS[ Properties.JOB_ADMINISTRATOR ]:
         permDict[ r ] = True
 
-    #Give JobAdmin permission if needed
+    # Give JobAdmin permission if needed
     if Properties.NORMAL_USER in self.userProperties:
       for r in PROPERTY_RIGHTS[ Properties.NORMAL_USER ]:
         permDict[ r ] = True
+        
+    # Give permissions of the generic pilot
+    if Properties.GENERIC_PILOT in self.userProperties:
+      for r in PROPERTY_RIGHTS[ Properties.GENERIC_PILOT ]:
+        permDict[ r ] = True    
 
     # Job Owner can do everything with his jobs
     if jobOwnerDN == self.userDN:
