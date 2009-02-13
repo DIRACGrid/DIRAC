@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.40 2008/12/01 11:47:50 acasajus Exp $
-__RCSID__ = "$Id: RequestHandler.py,v 1.40 2008/12/01 11:47:50 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.41 2009/02/13 15:14:40 acasajus Exp $
+__RCSID__ = "$Id: RequestHandler.py,v 1.41 2009/02/13 15:14:40 acasajus Exp $"
 
 import os
 import types
@@ -224,7 +224,7 @@ class RequestHandler:
           mismatch = True
         #Has there been a mismatch?
         if mismatch:
-          sError = "Type mismatch in parameter %d" % iIndex
+          sError = "Type mismatch in parameter %d (starting with param 0)" % iIndex
           return S_ERROR( sError )
       if len( args ) < len( oTypesList ):
         return S_ERROR( "Function %s expects at least %s arguments" % ( method, len( oTypesList ) ) )
