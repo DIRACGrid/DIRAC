@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Modificator.py,v 1.12 2008/07/14 17:54:54 acasajus Exp $
-__RCSID__ = "$Id: Modificator.py,v 1.12 2008/07/14 17:54:54 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Modificator.py,v 1.13 2009/02/13 12:01:35 acasajus Exp $
+__RCSID__ = "$Id: Modificator.py,v 1.13 2009/02/13 12:01:35 acasajus Exp $"
 
 import zlib
 import difflib
@@ -222,3 +222,6 @@ class Modificator:
 
   def rollbackToVersion( self, version ):
     return self.rpcClient.rollbackToVersion( version )
+
+  def updateGConfigurationData(self):
+    gConfigurationData.setRemoteCFG( self.cfgData )

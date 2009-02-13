@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationData.py,v 1.19 2009/01/12 11:32:07 acasajus Exp $
-__RCSID__ = "$Id: ConfigurationData.py,v 1.19 2009/01/12 11:32:07 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationData.py,v 1.20 2009/02/13 12:01:35 acasajus Exp $
+__RCSID__ = "$Id: ConfigurationData.py,v 1.20 2009/02/13 12:01:35 acasajus Exp $"
 
 import os.path
 import zlib
@@ -339,6 +339,10 @@ class ConfigurationData:
       return S_ERROR( "Can't write cs file %s!: %s" % ( configurationFile, str( e ) ) )
     self.__backupCurrentConfiguration( backupName )
     return S_OK()
+
+  def setRemoteCFG( self, cfg ):
+    self.remoteCFG = cfg.clone()
+    self.sync()
 
   def lock(self):
     """

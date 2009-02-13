@@ -46,7 +46,11 @@ class CSAPI:
     return True
 
   def downloadCSData( self ):
-    return self.__csMod.loadFromRemote()
+    result = self.__csMod.loadFromRemote()
+    if not result[ 'OK' ]:
+      return result
+    self.__csMod.updateGConfigurationData()
+    return S_OK()
 
   def listUsers(self , group = False ):
     if not self.__initialized:
