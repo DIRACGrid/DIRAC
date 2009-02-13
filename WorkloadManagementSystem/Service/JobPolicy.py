@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobPolicy.py,v 1.10 2009/02/13 10:23:47 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobPolicy.py,v 1.11 2009/02/13 10:49:00 atsareg Exp $
 ########################################################################
 
 """ JobPolicy encapsulates authorization rules for different groups
@@ -7,10 +7,11 @@
 
 """
 
-__RCSID__ = "$Id: JobPolicy.py,v 1.10 2009/02/13 10:23:47 atsareg Exp $"
+__RCSID__ = "$Id: JobPolicy.py,v 1.11 2009/02/13 10:49:00 atsareg Exp $"
 
 from DIRAC import gConfig, S_OK, S_ERROR
 from DIRAC.Core.Security import Properties
+from DIRAC.Core.Security.CS import getUsernameForDN
 
 RIGHT_GET_JOB = 'GetJob'
 RIGHT_GET_INFO = 'GetInfo'
@@ -44,6 +45,10 @@ class JobPolicy:
   def __init__( self, userDN, userGroup, userProperties ):
 
     self.userDN = userDN
+    self.userName = ''
+    result = getUsernameForDN(userDN)
+    if result['OK']:
+      self.userName = result['Value']
     self.userGroup = userGroup
     self.userProperties = userProperties
     self.jobDB = None
@@ -68,7 +73,13 @@ class JobPolicy:
       owner = result['Value']['OwnerDN']
       group = result['Value']['OwnerGroup']
       result = self.getJobPolicy( owner, group )
-      if self.userDN == owner and self.userGroup == group:
+      
+      result = getUsernameForDN(owner)
+      ownerName = ''
+      if result['OK']:
+        ownerName = result['Value']
+      
+      if self.userName and self.userName == ownerName and self.userGroup == group:
         result[ 'UserIsOwner' ] = True
       else:
         result[ 'UserIsOwner' ] = False
@@ -107,9 +118,13 @@ class JobPolicy:
         permDict[ r ] = True    
 
     # Job Owner can do everything with his jobs
-    if jobOwnerDN == self.userDN:
-      for r in OWNER_RIGHTS:
-        permDict[r] = True
+    result = getUsernameForDN(jobOwnerDN)
+    jobOwnerName = ''
+    if result['OK']:
+      jobOwnerName = result['Value']
+    if jobOwnerName and self.userName and jobOwnerName == self.userName:
+        for r in OWNER_RIGHTS:
+          permDict[r] = True
 
     # Members of the same group sharing their jobs can do everything
     if jobOwnerGroup == self.userGroup:
