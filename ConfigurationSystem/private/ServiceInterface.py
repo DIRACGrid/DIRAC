@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ServiceInterface.py,v 1.11 2009/01/12 11:32:07 acasajus Exp $
-__RCSID__ = "$Id: ServiceInterface.py,v 1.11 2009/01/12 11:32:07 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ServiceInterface.py,v 1.12 2009/02/13 11:27:45 acasajus Exp $
+__RCSID__ = "$Id: ServiceInterface.py,v 1.12 2009/02/13 11:27:45 acasajus Exp $"
 
 import sys
 import os
@@ -120,7 +120,7 @@ class ServiceInterface( threading.Thread ):
     #Test that remote and new versions are the same
     sRemoteVersion = oRemoteConfData.getVersion()
     sLocalVersion = gConfigurationData.getVersion()
-    print sRemoteVersion, sLocalVersion
+    gLogger.info( "Checking versions\nremote: %s\nlocal:  %s" % (  sRemoteVersion, sLocalVersion ) )
     if sRemoteVersion != sLocalVersion:
       return S_ERROR( "Versions differ: Server %s is and remote is %s" % ( sLocalVersion, sRemoteVersion ) )
     #Test that configuration names are the same
