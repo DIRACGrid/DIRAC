@@ -320,6 +320,7 @@ class CSAPI:
         gLogger.error( "Can't commit new data: %s" % retVal[ 'Message' ] )
         return retVal
       self.__csModified = False
+      return self.downloadCSData()
     return S_OK()
 
   def modifyValue(self,optionPath,newValue):
