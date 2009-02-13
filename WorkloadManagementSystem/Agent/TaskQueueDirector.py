@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.22 2009/02/09 16:53:17 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.23 2009/02/13 15:19:56 acasajus Exp $
 # File :   TaskQueueDirector.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -84,7 +84,7 @@
         SoftwareTag
 
 """
-__RCSID__ = "$Id: TaskQueueDirector.py,v 1.22 2009/02/09 16:53:17 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueDirector.py,v 1.23 2009/02/13 15:19:56 acasajus Exp $"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 
@@ -183,7 +183,7 @@ class TaskQueueDirector(AgentModule):
     waitingJobs = 0
     for taskQueueID in taskQueueDict:
       self.log.verbose( 'Processing TaskQueue', taskQueueID )
-      
+
       privateTQ = ( 'PilotTypes' in taskQueueDict and 'private' in [ t.lower() for t in taskQueueDict['PilotTypes'] ] )
       if not privateTQ:
         waitingJobs += taskQueueDict[taskQueueID]['Jobs']
@@ -207,9 +207,9 @@ class TaskQueueDirector(AgentModule):
                         'CPUTime'    : taskQueueDB.maxCPUSegments[-1],
                         'Setup'      : gConfig.getValue('/DIRAC/Setup','Development') ,
                         'ForceGeneric': True}
-    
+
     if waitingJobs:
-      self.__submitPilots( genericTaskQueue, self.am_getOption('pilotsPerIteration') )
+      self.__submitPilots( genericTaskQueue, int( self.am_getOption('pilotsPerIteration') ) )
       self.log.info( 'Number of additional generic pilots to be Submitted %s' % self.am_getOption('pilotsPerIteration') )
 
     # Now wait until all Jobs in the Default ThreadPool are proccessed
@@ -567,7 +567,7 @@ class PilotDirector:
         if not result[ 'OK' ]:
           return S_ERROR( ERROR_TOKEN )
         token = result[ 'Value' ]
-  
+
         pilotOptions.append( '-o /Security/ProxyToken=%s' % token )
 
       # Requested version of DIRAC
