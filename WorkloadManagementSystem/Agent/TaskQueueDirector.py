@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.24 2009/02/16 16:44:37 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.25 2009/02/16 18:04:02 rgracian Exp $
 # File :   TaskQueueDirector.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -84,7 +84,7 @@
         SoftwareTag
 
 """
-__RCSID__ = "$Id: TaskQueueDirector.py,v 1.24 2009/02/16 16:44:37 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueDirector.py,v 1.25 2009/02/16 18:04:02 rgracian Exp $"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 
@@ -228,7 +228,7 @@ class TaskQueueDirector(AgentModule):
 
     return S_OK()
 
-  def submitPilotsForTaskQueue(self, taskQueueDict, waitingPilots, pilotsPerPriority, PilotsPerJob ):
+  def submitPilotsForTaskQueue(self, taskQueueDict, waitingPilots, pilotsPerPriority, pilotsPerJob ):
 
     from numpy.random import poisson
 
