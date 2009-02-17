@@ -1,6 +1,7 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/StatesAccountingAgent.py,v 1.4 2009/02/17 16:21:16 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/StatesAccountingAgent.py,v 1.5 2009/02/17 16:25:26 acasajus Exp $
 
+__RCSID__ = "$Id: StatesAccountingAgent.py,v 1.5 2009/02/17 16:25:26 acasajus Exp $"
 
 """  JobHistoryAgent sends periodically numbers of jobs in various states for various
      sites to the Monitoring system to create historical plots.

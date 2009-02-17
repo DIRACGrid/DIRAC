@@ -1,10 +1,13 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/MightyOptimizer.py,v 1.11 2009/01/22 15:35:49 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/MightyOptimizer.py,v 1.12 2009/02/17 16:25:10 acasajus Exp $
 
 
 """  SuperOptimizer
  One optimizer to rule them all, one optimizer to find them, one optimizer to bring them all, and in the darkness bind them.
 """
+
+__RCSID__ = "$Id: MightyOptimizer.py,v 1.12 2009/02/17 16:25:10 acasajus Exp $"
+
 import time
 import os
 import threading
