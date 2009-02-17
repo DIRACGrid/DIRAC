@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.63 2009/01/28 14:33:34 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.64 2009/02/17 11:08:53 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.63 2009/01/28 14:33:34 acasajus Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.64 2009/02/17 11:08:53 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -869,6 +869,13 @@ class Dirac:
     result = self.rm.getFile(lfn)
     if not result['OK']:
       return self.__errorReport('Problem during getFile call',result['Message'])
+
+    if result['Value']['Failed']:
+      self.log.error('Failures occurred during rm.getFile')
+      if printOutput:
+        print self.pPrint.pformat(result['Value'])
+      return S_ERROR(result['Value'])
+
     if not printOutput:
       return result
 
