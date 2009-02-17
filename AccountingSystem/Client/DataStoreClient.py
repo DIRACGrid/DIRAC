@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/DataStoreClient.py,v 1.8 2009/01/28 10:54:53 acasajus Exp $
-__RCSID__ = "$Id: DataStoreClient.py,v 1.8 2009/01/28 10:54:53 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/DataStoreClient.py,v 1.9 2009/02/17 11:41:42 acasajus Exp $
+__RCSID__ = "$Id: DataStoreClient.py,v 1.9 2009/02/17 11:41:42 acasajus Exp $"
 
 import time
 from DIRAC import S_OK, S_ERROR, gLogger
@@ -90,7 +90,7 @@ class DataStoreClient:
                                            requestStub )
         if not result[ 'OK' ]:
           return result
-        del( self.__registersList[ :self.__maxRecordsInABundle ] )
+      del( self.__registersList[ :self.__maxRecordsInABundle ] )
     return S_OK()
 
 gDataStoreClient = DataStoreClient()
