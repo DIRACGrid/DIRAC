@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/ProxyManagerHandler.py,v 1.20 2009/02/17 18:42:39 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/ProxyManagerHandler.py,v 1.21 2009/02/17 19:04:09 acasajus Exp $
 ########################################################################
 
 """ ProxyManager is the implementation of the ProxyManagement service
     in the DISET framework
 """
 
-__RCSID__ = "$Id: ProxyManagerHandler.py,v 1.20 2009/02/17 18:42:39 acasajus Exp $"
+__RCSID__ = "$Id: ProxyManagerHandler.py,v 1.21 2009/02/17 19:04:09 acasajus Exp $"
 
 import types
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -105,7 +105,7 @@ class ProxyManagerHandler( RequestHandler ):
     if Properties.PRIVATE_LIMITED_DELEGATION in credDict[ 'properties' ]:
       if credDict[ 'DN' ] != requestedUserDN:
         return S_ERROR( "You are not allowed to download any proxy" )
-      if Properties.PRIVATE_LIMITED_DELEGATION in CS.getPropertiedForGroup( requestedUserGroup ):
+      if Properties.PRIVATE_LIMITED_DELEGATION in CS.getPropertiesForGroup( requestedUserGroup ):
         return S_ERROR( "You can't download proxies for that group" )
       return S_OK( True )
     #Not authorized!
