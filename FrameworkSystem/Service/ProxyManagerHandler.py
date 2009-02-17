@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/ProxyManagerHandler.py,v 1.17 2008/12/16 14:15:39 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/ProxyManagerHandler.py,v 1.18 2009/02/17 18:24:51 acasajus Exp $
 ########################################################################
 
 """ ProxyManager is the implementation of the ProxyManagement service
     in the DISET framework
 """
 
-__RCSID__ = "$Id: ProxyManagerHandler.py,v 1.17 2008/12/16 14:15:39 acasajus Exp $"
+__RCSID__ = "$Id: ProxyManagerHandler.py,v 1.18 2009/02/17 18:24:51 acasajus Exp $"
 
 import types
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -65,7 +65,7 @@ class ProxyManagerHandler( RequestHandler ):
     if result[ 'OK' ]:
       gLogger.info( "Upload request by %s:%s given id %s" % ( userName, userGroup, result['Value']['id'] ) )
     else:
-      gLogger.error( "Upload request by %s:%s failed: %s" % ( userName, userGroup, result['Message'] ) )
+      gLogger.error( "Upload request failed", "by %s:%s : %s" % ( userName, userGroup, result['Message'] ) )
     return result
 
   types_completeDelegationUpload = [ ( types.IntType, types.LongType ), types.StringType ]
@@ -76,7 +76,7 @@ class ProxyManagerHandler( RequestHandler ):
     userId = "%s:%s" % ( credDict[ 'username' ], credDict[ 'group' ]  )
     retVal = gProxyDB.completeDelegation( requestId, credDict[ 'DN' ], pemChain )
     if not retVal[ 'OK' ]:
-      gLogger.error( "Upload %s by %s failed: %s" %( requestId, userId, retVal[ 'Message' ] ) )
+      gLogger.error( "Upload proxy failed", "id: %s user: %s message: %s" %( requestId, userId, retVal[ 'Message' ] ) )
       return retVal
     gLogger.info( "Upload %s by %s completed" % ( requestId, userId ) )
     return S_OK()
