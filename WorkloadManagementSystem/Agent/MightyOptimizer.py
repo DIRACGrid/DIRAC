@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/MightyOptimizer.py,v 1.13 2009/02/17 18:08:02 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/MightyOptimizer.py,v 1.14 2009/02/17 18:14:43 acasajus Exp $
 
 
 """  SuperOptimizer
  One optimizer to rule them all, one optimizer to find them, one optimizer to bring them all, and in the darkness bind them.
 """
 
-__RCSID__ = "$Id: MightyOptimizer.py,v 1.13 2009/02/17 18:08:02 acasajus Exp $"
+__RCSID__ = "$Id: MightyOptimizer.py,v 1.14 2009/02/17 18:14:43 acasajus Exp $"
 
 import time
 import os
@@ -79,7 +79,7 @@ class MightyOptimizer(AgentModule):
       result = optimizer.getJobDefinition( jobId, jobDef )
       if not result['OK']:
         optimizer.setFailedJob( jobId, result[ 'Message' ] )
-        continue
+        return result
       jobDef = result[ 'Value' ]
     #Does the optimizer require a proxy?
     shifterEnv = False
