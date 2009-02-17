@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/ProxyManagerHandler.py,v 1.18 2009/02/17 18:24:51 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/ProxyManagerHandler.py,v 1.19 2009/02/17 18:36:10 acasajus Exp $
 ########################################################################
 
 """ ProxyManager is the implementation of the ProxyManagement service
     in the DISET framework
 """
 
-__RCSID__ = "$Id: ProxyManagerHandler.py,v 1.18 2009/02/17 18:24:51 acasajus Exp $"
+__RCSID__ = "$Id: ProxyManagerHandler.py,v 1.19 2009/02/17 18:36:10 acasajus Exp $"
 
 import types
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -93,6 +93,18 @@ class ProxyManagerHandler( RequestHandler ):
       gProxyDB.getUsers( validSecondsRequired, dnMask = [ credDict[ 'DN' ] ] )
     return gProxyDB.getUsers( validSecondsRequired )
 
+  def __checkProperties( self, requestedUserDN, requestedUserGroup ):
+    if Properties.FULL_DELEGATION in credDict[ 'properties' ]:
+      forceLimited = False
+    else:
+      forceLimited = True
+      if Properties.PRIVATE_LIMITED_DELEGATION in credDict[ 'properties' ]:
+        if credDict[ 'DN' ] != requestedUserDN:
+          return S_ERROR( "You are not allowed to download any proxy" )
+        if Properties.PRIVATE_LIMITED_DELEGATION in CS.getPropertiedForGroup( requestedUserGroup ):
+          return S_ERROR( "You can't download proxies for that group" )
+    return S_OK( forceLimited )
+
   types_getProxy = [ types.StringType, types.StringType, types.StringType, ( types.IntType, types.LongType ) ]
   def export_getProxy( self, userDN, userGroup, requestPem, requiredLifetime ):
     """
@@ -106,13 +118,10 @@ class ProxyManagerHandler( RequestHandler ):
     """
     credDict = self.getRemoteCredentials()
 
-    if Properties.FULL_DELEGATION in credDict[ 'properties' ]:
-      forceLimited = False
-    else:
-      forceLimited = True
-      if Properties.PRIVATE_LIMITED_DELEGATION in credDict[ 'properties' ]:
-        if credDict[ 'DN' ] != userDN:
-          return S_ERROR( "You are not allowed to download any proxy" )
+    result = self.__checkProperties( userDN, userGroup )
+    if not result[ 'OK' ]:
+      return result
+    forceLimited = result[ 'Value' ]
 
     gProxyDB.logAction( "download proxy", credDict[ 'DN' ], credDict[ 'group' ], userDN, userGroup )
     return self.__getProxy( userDN, userGroup, requestPem, requiredLifetime, forceLimited )
@@ -146,13 +155,11 @@ class ProxyManagerHandler( RequestHandler ):
     """
     credDict = self.getRemoteCredentials()
 
-    if Properties.FULL_DELEGATION in credDict[ 'properties' ]:
-      forceLimited = False
-    else:
-      forceLimited = True
-      if Properties.PRIVATE_LIMITED_DELEGATION in credDict[ 'properties' ]:
-        if credDict[ 'DN' ] != userDN:
-          return S_ERROR( "You are not allowed to download any proxy" )
+    result = self.__checkProperties( userDN, userGroup )
+    if not result[ 'OK' ]:
+      return result
+    forceLimited = result[ 'Value' ]
+
     gProxyDB.logAction( "download voms proxy", credDict[ 'DN' ], credDict[ 'group' ], userDN, userGroup )
     return self.__getVOMSProxy( userDN, userGroup, requestPem, requiredLifetime, vomsAttribute, forceLimited )
 
@@ -275,11 +282,11 @@ class ProxyManagerHandler( RequestHandler ):
       return result
     if not result[ 'Value' ]:
       return S_ERROR( "Proxy token is invalid"  )
-
     gProxyDB.logAction( "used token", credDict[ 'DN' ], credDict[ 'group' ], userDN, userGroup )
-    if Properties.PRIVATE_LIMITED_DELEGATION in credDict[ 'properties' ]:
-        if credDict[ 'DN' ] != userDN:
-          return S_ERROR( "You are not allowed to download proxy" )
+
+    result = self.__checkProperties( userDN, userGroup )
+    if not result[ 'OK' ]:
+      return result
     gProxyDB.logAction( "download proxy with token", credDict[ 'DN' ], credDict[ 'group' ], userDN, userGroup )
     return self.__getProxy( userDN, userGroup, requestPem, requiredLifetime, True )
 
@@ -303,10 +310,10 @@ class ProxyManagerHandler( RequestHandler ):
       return result
     if not result[ 'Value' ]:
       return S_ERROR( "Proxy token is invalid" )
-
     gProxyDB.logAction( "used token", credDict[ 'DN' ], credDict[ 'group' ], userDN, userGroup )
-    if Properties.PRIVATE_LIMITED_DELEGATION in credDict[ 'properties' ]:
-      if credDict[ 'DN' ] != userDN:
-        return S_ERROR( "You are not allowed to download any proxy" )
+
+    result = self.__checkProperties( userDN, userGroup )
+    if not result[ 'OK' ]:
+      return result
     gProxyDB.logAction( "download voms proxy with token", credDict[ 'DN' ], credDict[ 'group' ], userDN, userGroup )
     return self.__getVOMSProxy( userDN, userGroup, requestPem, requiredLifetime, vomsAttribute, True )
