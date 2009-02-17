@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/AgentModule.py,v 1.11 2009/02/17 17:37:06 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/AgentModule.py,v 1.12 2009/02/17 17:45:39 acasajus Exp $
 ########################################################################
 """ Base class for all agent modules
 
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: AgentModule.py,v 1.11 2009/02/17 17:37:06 acasajus Exp $"
+__RCSID__ = "$Id: AgentModule.py,v 1.12 2009/02/17 17:45:39 acasajus Exp $"
 
 import os
 import threading
@@ -207,7 +207,11 @@ class AgentModule:
     self.log.info( "Agent module %s run summary" % self.__moduleProperties[ 'fullName' ] )
     self.log.info( " Executed %s times previously" % self.__moduleProperties[ 'cyclesDone' ] )
     self.log.info( " Cycle took %.2f seconds" % elapsedTime )
-    self.log.info( " Average execution time: %.2f seconds" % ( self.__moduleProperties[ 'totalElapsedTime' ] / self.__moduleProperties[ 'cyclesDone' ] ) )
+    averageElapsedTime = self.__moduleProperties[ 'totalElapsedTime' ] / self.__moduleProperties[ 'cyclesDone' ]
+    self.log.info( " Average execution time: %.2f seconds" % ( averageElapsedTime ) )
+    elapsedPollingRate = averageElapsedTime * 100 / self.am_getOption( 'PollingTime' )
+    self.log.info( " Polling time: %s seconds" % self.am_getOption( 'PollingTime' )  )
+    self.log.info( " Average execution/polling time: %.2f%%" % ( averageElapsedTime / self.am_getOption( 'PollingTime' ) ) )
     if cycleResult[ 'OK' ]:
       self.log.info( " Cycle was successful" )
     else:
