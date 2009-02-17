@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.25 2009/02/16 18:04:02 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.26 2009/02/17 11:20:22 rgracian Exp $
 # File :   TaskQueueDirector.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -84,7 +84,7 @@
         SoftwareTag
 
 """
-__RCSID__ = "$Id: TaskQueueDirector.py,v 1.25 2009/02/16 18:04:02 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueDirector.py,v 1.26 2009/02/17 11:20:22 rgracian Exp $"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 
@@ -177,8 +177,8 @@ class TaskQueueDirector(AgentModule):
     if prioritySum <= 0:
       return S_ERROR('Wrong TaskQueue Priorities')
 
-    pilotsPerPriority  = self.am_getOption('pilotsPerIteration') / prioritySum
-    pilotsPerJob       = self.am_getOption('pilotsPerIteration') / waitingJobs
+    self.pilotsPerPriority  = self.am_getOption('pilotsPerIteration') / prioritySum
+    self.pilotsPerJob       = self.am_getOption('pilotsPerIteration') / waitingJobs
 
     self.callBackLock.acquire()
     self.submittedPilots = 0
@@ -190,10 +190,6 @@ class TaskQueueDirector(AgentModule):
     for taskQueueID in taskQueueDict:
       self.log.verbose( 'Processing TaskQueue', taskQueueID )
 
-      privateTQ = ( 'PilotTypes' in taskQueueDict and 'private' in [ t.lower() for t in taskQueueDict['PilotTypes'] ] )
-      if not privateTQ:
-        waitingJobs += taskQueueDict[taskQueueID]['Jobs']
-
       result = pilotAgentsDB.countPilots( {'TaskQueueID': taskQueueID, 'Status': waitingStatusList}, newer = timeLimitToConsider )
       if not result['OK']:
         self.log.error('Fail to get Number of Waiting pilots',result['Message'])
@@ -202,21 +198,12 @@ class TaskQueueDirector(AgentModule):
         waitingPilots = result['Value']
         self.log.verbose( 'Waiting Pilots for TaskQueue %s:' % taskQueueID, waitingPilots )
 
-      result = self.submitPilotsForTaskQueue( taskQueueDict[taskQueueID], waitingPilots, pilotsPerPriority, pilotsPerJob )
+      result = self.submitPilotsForTaskQueue( taskQueueDict[taskQueueID], waitingPilots )
 
       if result['OK']:
         self.toSubmitPilots += result['Value']
 
     self.log.info( 'Number of pilots to be Submitted %s' % self.toSubmitPilots )
-
-    genericTaskQueue = {'TaskQueueID': 0,
-                        'CPUTime'    : taskQueueDB.maxCPUSegments[-1],
-                        'Setup'      : gConfig.getValue('/DIRAC/Setup','Development') ,
-                        'ForceGeneric': True}
-
-    # if waitingJobs:
-    #   self.__submitPilots( genericTaskQueue, int( self.am_getOption('pilotsPerIteration') ) )
-    #   self.log.info( 'Number of additional generic pilots to be Submitted %s' % self.am_getOption('pilotsPerIteration') )
 
     # Now wait until all Jobs in the Default ThreadPool are proccessed
     if 'Default' in self.pools:
@@ -228,7 +215,7 @@ class TaskQueueDirector(AgentModule):
 
     return S_OK()
 
-  def submitPilotsForTaskQueue(self, taskQueueDict, waitingPilots, pilotsPerPriority, pilotsPerJob ):
+  def submitPilotsForTaskQueue(self, taskQueueDict, waitingPilots ):
 
     from numpy.random import poisson
 
@@ -245,8 +232,8 @@ class TaskQueueDirector(AgentModule):
     self.log.verbose( 'Jobs in TaskQueue %s:' % taskQueueID, taskQueueJobs )
 
     # Determine number of pilots to submit, boosting TaskQueues with low CPU requirements
-    pilotsToSubmit = poisson( ( pilotsPerPriority * taskQueuePriority + 
-                                pilotsPerJob * taskQueueJobs ) * maxCPU / taskQueueCPU )
+    pilotsToSubmit = poisson( ( self.pilotsPerPriority * taskQueuePriority + 
+                                self.pilotsPerJob * taskQueueJobs ) * maxCPU / taskQueueCPU )
     # limit the number of pilots according to the number of waiting job in the TaskQueue
     # and the number of already submitted pilots for that TaskQueue
     pilotsToSubmit = min( pilotsToSubmit, int( ( 1 + extraPilotFraction ) * taskQueueJobs ) + extraPilots - waitingPilots )
