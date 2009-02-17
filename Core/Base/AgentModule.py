@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/AgentModule.py,v 1.10 2009/02/12 17:05:45 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/AgentModule.py,v 1.11 2009/02/17 17:37:06 acasajus Exp $
 ########################################################################
 """ Base class for all agent modules
 
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: AgentModule.py,v 1.10 2009/02/12 17:05:45 acasajus Exp $"
+__RCSID__ = "$Id: AgentModule.py,v 1.11 2009/02/17 17:37:06 acasajus Exp $"
 
 import os
 import threading
@@ -40,6 +40,7 @@ class AgentModule:
                                 'section' : PathFinder.getAgentSection( agentName ),
                                 'standalone' : standaloneModule,
                                 'cyclesDone' : 0,
+                                'totalElapsedTime' : 0,
                                 'setup' : gConfig.getValue( "/DIRAC/Setup", "Unknown" ) }
     self.__moduleProperties[ 'system' ], self.__moduleProperties[ 'agentName' ] = agentName.split("/")
     self.__configDefaults = {}
@@ -71,7 +72,6 @@ class AgentModule:
                             versionVar )
       return getattr( module, versionVar )
     except Exception, e:
-      print e
       self.log.error( "Missing __RCSID__" )
     return "Unknown"
 
@@ -202,10 +202,12 @@ class AgentModule:
     self.__moduleProperties[ 'cyclesDone' ] += 1
     #Show status
     elapsedTime = time.time() - elapsedTime
+    self.__moduleProperties[ 'totalElapsedTime' ] += elapsedTime
     self.log.info( "-"*40 )
     self.log.info( "Agent module %s run summary" % self.__moduleProperties[ 'fullName' ] )
     self.log.info( " Executed %s times previously" % self.__moduleProperties[ 'cyclesDone' ] )
     self.log.info( " Cycle took %.2f seconds" % elapsedTime )
+    self.log.info( " Average execution time: %.2f seconds" % ( self.__moduleProperties[ 'totalElapsedTime' ] / self.__moduleProperties[ 'cyclesDone' ] ) )
     if cycleResult[ 'OK' ]:
       self.log.info( " Cycle was successful" )
     else:
