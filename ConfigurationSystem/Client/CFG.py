@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/Attic/CFG.py,v 1.9 2009/01/28 12:00:46 acasajus Exp $
-__RCSID__ = "$Id: CFG.py,v 1.9 2009/01/28 12:00:46 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/Attic/CFG.py,v 1.10 2009/02/17 11:38:48 acasajus Exp $
+__RCSID__ = "$Id: CFG.py,v 1.10 2009/02/17 11:38:48 acasajus Exp $"
 
 import types
 import copy
@@ -263,7 +263,7 @@ class CFG:
     while len( levels ) > 1:
       try:
         dataD = dataD[ levels[0] ]
-      except keyError:
+      except KeyError:
         return None
     try:
       optionValue = self.__dataDict[ opName ]
