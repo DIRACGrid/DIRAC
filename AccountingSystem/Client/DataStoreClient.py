@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/DataStoreClient.py,v 1.10 2009/02/17 11:46:39 acasajus Exp $
-__RCSID__ = "$Id: DataStoreClient.py,v 1.10 2009/02/17 11:46:39 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/DataStoreClient.py,v 1.11 2009/02/17 11:56:19 acasajus Exp $
+__RCSID__ = "$Id: DataStoreClient.py,v 1.11 2009/02/17 11:56:19 acasajus Exp $"
 
 import time
 from DIRAC import S_OK, S_ERROR, gLogger
@@ -60,35 +60,27 @@ class DataStoreClient:
     while len( self.__registersList ) > 0:
       registersToSend = self.__registersList[ :self.__maxRecordsInABundle ]
       retVal = rpcClient.commitRegisters( registersToSend )
-      if not retVal[ 'OK' ]:
+      if retVal[ 'OK' ]:
+        self.__lastSuccessfulCommit = time.time()
+      else:
         if time.time() - self.__lastSuccessfulCommit > self.__maxTimeRetrying:
           gLogger.verbose( "Sending accounting records to failover" )
-          return self.__sendToFailover( self.__setup )
-        return S_ERROR( "Cannot commit data to DataStore service" )
+          result =  self.__sendToFailover( retVal[ 'rpcStub' ] )
+          if not result[ 'OK' ]:
+            return result
+        else:
+          return S_ERROR( "Cannot commit data to DataStore service" )
       sent += len( registersToSend )
       del( self.__registersList[ :self.__maxRecordsInABundle ] )
-      self.__lastSuccessfulCommit = time.time()
     return S_OK( sent )
 
-  def __sendToFailover( self, setup = False ):
-    if self.__setup:
-      rpcClient = RPCClient( "Accounting/DataStore", setup = self.__setup )
-    else:
-      rpcClient = RPCClient( "Accounting/DataStore" )
+  def __sendToFailover( self, rpcStub ):
     requestClient = RequestClient()
-    while len( self.__registersList ) > 0:
-      registersToSend = self.__registersList[ :self.__maxRecordsInABundle ]
-      retVal = rpcClient.commitRegisters( registersToSend )
-      if not retVal[ 'OK' ]:
-        request = RequestContainer()
-        request.setDISETRequest( retVal[ 'rpcStub' ] )
+    request = RequestContainer()
+    request.setDISETRequest( rpcStub )
 
-        requestStub = request.toXML()['Value']
-        result = requestClient.setRequest( "Accounting.DataStore.%s" % time.time(),
-                                           requestStub )
-        if not result[ 'OK' ]:
-          return result
-      del( self.__registersList[ :self.__maxRecordsInABundle ] )
-    return S_OK()
+    requestStub = request.toXML()['Value']
+    return requestClient.setRequest( "Accounting.DataStore.%s" % time.time(),
+                                     requestStub )
 
 gDataStoreClient = DataStoreClient()
