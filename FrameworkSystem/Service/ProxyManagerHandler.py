@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/ProxyManagerHandler.py,v 1.19 2009/02/17 18:36:10 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/ProxyManagerHandler.py,v 1.20 2009/02/17 18:42:39 acasajus Exp $
 ########################################################################
 
 """ ProxyManager is the implementation of the ProxyManagement service
     in the DISET framework
 """
 
-__RCSID__ = "$Id: ProxyManagerHandler.py,v 1.19 2009/02/17 18:36:10 acasajus Exp $"
+__RCSID__ = "$Id: ProxyManagerHandler.py,v 1.20 2009/02/17 18:42:39 acasajus Exp $"
 
 import types
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -94,16 +94,22 @@ class ProxyManagerHandler( RequestHandler ):
     return gProxyDB.getUsers( validSecondsRequired )
 
   def __checkProperties( self, requestedUserDN, requestedUserGroup ):
+    """
+    Check the properties and return if they can only download limited proxies if authorized
+    """
+    credDict = self.getRemoteCredentials()
     if Properties.FULL_DELEGATION in credDict[ 'properties' ]:
-      forceLimited = False
-    else:
-      forceLimited = True
-      if Properties.PRIVATE_LIMITED_DELEGATION in credDict[ 'properties' ]:
-        if credDict[ 'DN' ] != requestedUserDN:
-          return S_ERROR( "You are not allowed to download any proxy" )
-        if Properties.PRIVATE_LIMITED_DELEGATION in CS.getPropertiedForGroup( requestedUserGroup ):
-          return S_ERROR( "You can't download proxies for that group" )
-    return S_OK( forceLimited )
+      return S_OK( False )
+    if Properties.LIMITED_DELEGATION in credDict[ 'properties' ]:
+      return S_OK( True )
+    if Properties.PRIVATE_LIMITED_DELEGATION in credDict[ 'properties' ]:
+      if credDict[ 'DN' ] != requestedUserDN:
+        return S_ERROR( "You are not allowed to download any proxy" )
+      if Properties.PRIVATE_LIMITED_DELEGATION in CS.getPropertiedForGroup( requestedUserGroup ):
+        return S_ERROR( "You can't download proxies for that group" )
+      return S_OK( True )
+    #Not authorized!
+    return S_ERROR( "You can't get proxies! Bad boy!" )
 
   types_getProxy = [ types.StringType, types.StringType, types.StringType, ( types.IntType, types.LongType ) ]
   def export_getProxy( self, userDN, userGroup, requestPem, requiredLifetime ):
