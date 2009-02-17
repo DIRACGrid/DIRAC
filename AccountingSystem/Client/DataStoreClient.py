@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/DataStoreClient.py,v 1.9 2009/02/17 11:41:42 acasajus Exp $
-__RCSID__ = "$Id: DataStoreClient.py,v 1.9 2009/02/17 11:41:42 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/DataStoreClient.py,v 1.10 2009/02/17 11:46:39 acasajus Exp $
+__RCSID__ = "$Id: DataStoreClient.py,v 1.10 2009/02/17 11:46:39 acasajus Exp $"
 
 import time
 from DIRAC import S_OK, S_ERROR, gLogger
@@ -63,9 +63,7 @@ class DataStoreClient:
       if not retVal[ 'OK' ]:
         if time.time() - self.__lastSuccessfulCommit > self.__maxTimeRetrying:
           gLogger.verbose( "Sending accounting records to failover" )
-          result = self.__sendToFailover( self.__setup )
-          if not result[ 'OK' ]:
-            return result
+          return self.__sendToFailover( self.__setup )
         return S_ERROR( "Cannot commit data to DataStore service" )
       sent += len( registersToSend )
       del( self.__registersList[ :self.__maxRecordsInABundle ] )
