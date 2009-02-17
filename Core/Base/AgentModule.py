@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/AgentModule.py,v 1.12 2009/02/17 17:45:39 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/AgentModule.py,v 1.13 2009/02/17 18:02:57 acasajus Exp $
 ########################################################################
 """ Base class for all agent modules
 
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: AgentModule.py,v 1.12 2009/02/17 17:45:39 acasajus Exp $"
+__RCSID__ = "$Id: AgentModule.py,v 1.13 2009/02/17 18:02:57 acasajus Exp $"
 
 import os
 import threading
@@ -211,7 +211,7 @@ class AgentModule:
     self.log.info( " Average execution time: %.2f seconds" % ( averageElapsedTime ) )
     elapsedPollingRate = averageElapsedTime * 100 / self.am_getOption( 'PollingTime' )
     self.log.info( " Polling time: %s seconds" % self.am_getOption( 'PollingTime' )  )
-    self.log.info( " Average execution/polling time: %.2f%%" % ( averageElapsedTime / self.am_getOption( 'PollingTime' ) ) )
+    self.log.info( " Average execution/polling time: %.2f%%" % elapsedPollingRate )
     if cycleResult[ 'OK' ]:
       self.log.info( " Cycle was successful" )
     else:
