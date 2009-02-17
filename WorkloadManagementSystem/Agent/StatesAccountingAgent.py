@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/StatesAccountingAgent.py,v 1.3 2009/01/28 10:58:14 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/StatesAccountingAgent.py,v 1.4 2009/02/17 16:21:16 acasajus Exp $
 
 
 """  JobHistoryAgent sends periodically numbers of jobs in various states for various
@@ -7,7 +7,7 @@
 """
 
 from DIRAC  import gLogger, gConfig, gMonitor,S_OK, S_ERROR
-from DIRAC.Core.Base.Agent import Agent
+from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.AccountingSystem.Client.Types.WMSHistory import WMSHistory
 from DIRAC.AccountingSystem.Client.DataStoreClient import DataStoreClient
@@ -17,7 +17,7 @@ import time,os
 
 AGENT_NAME = 'WorkloadManagement/StatesAccountingAgent'
 
-class StatesAccountingAgent(Agent):
+class StatesAccountingAgent(AgentModule):
 
   __summaryKeyFieldsMapping = [ 'Status',
                                 'MinorStatus',
@@ -32,34 +32,20 @@ class StatesAccountingAgent(Agent):
                                   'Reschedules',
                                 ]
 
-  def __init__(self):
-    """ Standard constructor
-    """
-    Agent.__init__( self, AGENT_NAME, initializeMonitor = True )
-    self.dsClients = {}
 
   def initialize(self):
-    result = Agent.initialize(self)
-    if not result[ 'OK' ]:
-      return result
+    """ Standard constructor
+    """
+    self.dsClients = {}
     self.jobDB = JobDB()
 
-    self.last_update = 0
     self.reportPeriod = 300
+    self.am_setOption( "PollingTime", self.reportPeriod )
     return S_OK()
 
   def execute(self):
     """ Main execution method
     """
-    delta = time.time() - self.last_update
-    if delta > self.reportPeriod:
-      self.sendAccountingRecords()
-      self.last_update = time.time()
-
-    return S_OK()
-
-
-  def sendAccountingRecords(self):
     #Get the WMS Snapshot!
     result = self.jobDB.getSummarySnapshot()
     now = Time.dateTime()
@@ -71,6 +57,7 @@ class StatesAccountingAgent(Agent):
       for record in values:
         recordSetup = record[0]
         if recordSetup not in self.dsClients:
+          gLogger.info( "Creating DataStore client for %s" % recordSetup )
           self.dsClients[ recordSetup ] = DataStoreClient( setup = recordSetup, retryGraceTime = 900 )
         record = record[1:]
         for FV in self.__summaryDefinedFields:
@@ -91,7 +78,11 @@ class StatesAccountingAgent(Agent):
         else:
           self.dsClients[ recordSetup ].addRegister( acWMS )
       for setup in self.dsClients:
+        gLogger.info( "Sending records for setup %s" % setup )
         result = self.dsClients[ setup ].commit()
         if not result[ 'OK' ]:
           gLogger.error( "Couldn't commit wms history for setup %s"  % setup, result[ 'Message' ] )
+        else:
+          gLogger.info( "Sent %s records for setup %s" % ( result[ 'Value' ], setup ) )
+    return S_OK()
 
