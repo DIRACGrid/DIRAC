@@ -19,8 +19,9 @@ class StorageElementTestCase(unittest.TestCase):
     self.localSourceFile = "/etc/group"
     self.localFileSize = getSize(self.localSourceFile)
     self.destDirectory = "/lhcb/test/unit-test/TestStorageElement"
-    self.alternativeDestFileName = "testFile.%s" % time.time()
-    self.alternativeLocal = "/tmp/storageElementTestFile.%s" % time.time()
+    destinationDir = self.storageElement.getPfnForLfn(self.destDirectory)['Value']
+    res = self.storageElement.createDirectory(destinationDir,singleDirectory=True)
+    self.assert_(res['OK'])
 
   def tearDown(self):
     destinationDir = self.storageElement.getPfnForLfn(self.destDirectory)['Value']
@@ -83,9 +84,77 @@ class GetInfoTestCase(StorageElementTestCase):
 
 class FileTestCases(StorageElementTestCase):
 
+  def test_exists(self):
+    print '\n\n#########################################################################\n\n\t\t\tExists test\n'
+    destinationFilePath = '%s/testFile.%s' % (self.destDirectory,time.time())
+    pfnForLfnRes = self.storageElement.getPfnForLfn(destinationFilePath)
+    destinationPfn = pfnForLfnRes['Value']
+    fileDict = {destinationPfn:self.localSourceFile}
+    putFileRes = self.storageElement.putFile(fileDict,singleFile=True)
+    # File exists
+    existsRes = self.storageElement.exists(destinationPfn,singleFile=True)
+    # Now remove the destination file
+    removeFileRes = self.storageElement.removeFile(destinationPfn,singleFile=True)
+    # Check removed file
+    missingExistsRes = self.storageElement.exists(destinationPfn,singleFile=True)
+    # Check directories are handled properly
+    destinationDir = os.path.dirname(destinationPfn)
+    directoryExistsRes = self.storageElement.exists(destinationDir,singleFile=True)
+
+    # Check that the put was done correctly
+    self.assert_(putFileRes['OK'])
+    self.assert_(putFileRes['Value'])
+    self.assertEqual(putFileRes['Value'],self.localFileSize)
+    # Check that we checked the file correctly
+    self.assert_(existsRes['OK'])
+    self.assert_(existsRes['Value'])
+    # Check that the removal was done correctly
+    self.assert_(removeFileRes['OK'])
+    self.assert_(removeFileRes['Value'])
+    # Check the exists for non existant file
+    self.assert_(missingExistsRes['OK'])
+    self.assertFalse(missingExistsRes['Value'])
+    # Check that directories exist
+    self.assert_(directoryExistsRes['OK'])
+    self.assert_(directoryExistsRes['Value'])
+
+  def test_isFile(self):
+    print '\n\n#########################################################################\n\n\t\t\tIs file size test\n'
+    destinationFilePath = '%s/testFile.%s' % (self.destDirectory,time.time())
+    pfnForLfnRes = self.storageElement.getPfnForLfn(destinationFilePath)
+    destinationPfn = pfnForLfnRes['Value']
+    fileDict = {destinationPfn:self.localSourceFile}
+    putFileRes = self.storageElement.putFile(fileDict,singleFile=True)
+    # Is a file
+    isFileRes = self.storageElement.isFile(destinationPfn,singleFile=True)
+    # Now remove the destination file
+    removeFileRes = self.storageElement.removeFile(destinationPfn,singleFile=True)
+    # Get metadata for a removed file
+    missingIsFileRes = self.storageElement.isFile(destinationPfn,singleFile=True)
+    # Check directories are handled properly
+    destinationDir = os.path.dirname(destinationPfn)
+    directoryIsFileRes = self.storageElement.isFile(destinationDir,singleFile=True)
+
+    # Check that the put was done correctly
+    self.assert_(putFileRes['OK'])
+    self.assert_(putFileRes['Value'])
+    self.assertEqual(putFileRes['Value'],self.localFileSize)
+    # Check that we checked the file correctly
+    self.assert_(isFileRes['OK'])
+    self.assert_(isFileRes['Value'])
+    # Check that the removal was done correctly
+    self.assert_(removeFileRes['OK'])
+    self.assert_(removeFileRes['Value'])
+    # Check the is file for non existant file
+    self.assertFalse(missingIsFileRes['OK'])
+    expectedError = "File does not exist"  
+    self.assert_(expectedError in missingIsFileRes['Message'])
+    # Check that is file operation with a directory
+    self.assert_(directoryIsFileRes['OK'])
+    self.assertFalse(directoryIsFileRes['Value'])  
+
   def test_putFile(self):
     print '\n\n#########################################################################\n\n\t\t\tPut file test\n'
-
     destinationFilePath = '%s/testFile.%s' % (self.destDirectory,time.time())
     pfnForLfnRes = self.storageElement.getPfnForLfn(destinationFilePath)
     destinationPfn = pfnForLfnRes['Value']
@@ -102,127 +171,230 @@ class FileTestCases(StorageElementTestCase):
     self.assert_(removeFileRes['OK'])
     self.assert_(removeFileRes['Value'])
 
-  """
-
   def test_getFile(self):
     print '\n\n#########################################################################\n\n\t\t\tGet file test\n'
-    putFileRes = self.storageElement.putFile(self.localSourceFile,self.destDirectory,alternativeFileName=self.alternativeDestFileName)
-    destFile = putFileRes['Value']
-    getFileRes = self.storageElement.getFile(destFile,self.localFileSize,localPath=self.alternativeLocal)
-    removeFileRes = self.storageElement.removeFile(destFile)
-    if os.path.exists(self.alternativeLocal):
-      os.remove(self.alternativeLocal)
-
+    destinationFilePath = '%s/testFile.%s' % (self.destDirectory,time.time())
+    pfnForLfnRes = self.storageElement.getPfnForLfn(destinationFilePath)
+    destinationPfn = pfnForLfnRes['Value']
+    fileDict = {destinationPfn:self.localSourceFile}
+    putFileRes = self.storageElement.putFile(fileDict,singleFile=True)
+    # Now get a local copy of the file
+    getFileRes = self.storageElement.getFile(destinationPfn,singleFile=True)
+    # Now remove the destination file
+    removeFileRes = self.storageElement.removeFile(destinationPfn,singleFile=True)
+    # Clean up the local mess
+    os.remove(os.path.basename(destinationPfn))
+    
     # Check that the put was done correctly
     self.assert_(putFileRes['OK'])
     self.assert_(putFileRes['Value'])
-    # Check that the get was done correctly
-    self.assert_(getFileRes['OK'])   
-    self.assert_(getFileRes['Value'])
-    self.assertEqual(getFileRes['Value'],self.alternativeLocal)    
+    self.assertEqual(putFileRes['Value'],self.localFileSize)
+    # Check that we got the file correctly
+    self.assert_(getFileRes['OK'])
+    self.assertEqual(getFileRes['Value'],self.localFileSize)
     # Check that the removal was done correctly
-    self.assert_(removeFileRes['OK'])   
-    self.assert_(removeFileRes['Value'])    
-    self.assert_(removeFileRes['Value'].has_key('Successful'))
-    self.assert_(removeFileRes['Value']['Successful'].has_key(destFile))
-    self.assert_(removeFileRes['Value']['Successful'][destFile])
+    self.assert_(removeFileRes['OK'])
+    self.assert_(removeFileRes['Value'])
 
   def test_getFileMetadata(self):
     print '\n\n#########################################################################\n\n\t\t\tGet file metadata test\n'
-    putFileRes = self.storageElement.putFile(self.localSourceFile,self.destDirectory,alternativeFileName=self.alternativeDestFileName)
-    destFile = putFileRes['Value']
-    getFileMetadataRes = self.storageElement.getFileMetadata(destFile)
-    removeFileRes = self.storageElement.removeFile(destFile)
+    destinationFilePath = '%s/testFile.%s' % (self.destDirectory,time.time())
+    pfnForLfnRes = self.storageElement.getPfnForLfn(destinationFilePath)
+    destinationPfn = pfnForLfnRes['Value']
+    fileDict = {destinationPfn:self.localSourceFile}
+    putFileRes = self.storageElement.putFile(fileDict,singleFile=True)
+    # Get the file metadata
+    getFileMetadataRes = self.storageElement.getFileMetadata(destinationPfn,singleFile=True)
+    # Now remove the destination file
+    removeFileRes = self.storageElement.removeFile(destinationPfn,singleFile=True)
+    # Get metadata for a removed file
+    getMissingFileMetadataRes = self.storageElement.getFileMetadata(destinationPfn,singleFile=True)
+    # Check directories are handled properly
+    destinationDir = os.path.dirname(destinationPfn)
+    directoryMetadataRes = self.storageElement.getFileMetadata(destinationDir,singleFile=True)
 
     # Check that the put was done correctly
     self.assert_(putFileRes['OK'])
     self.assert_(putFileRes['Value'])
+    self.assertEqual(putFileRes['Value'],self.localFileSize)
     # Check that the metadata was done correctly
     self.assert_(getFileMetadataRes['OK'])
-    self.assert_(getFileMetadataRes['Value'])
-    self.assert_(getFileMetadataRes['Value'].has_key('Successful'))
-    self.assert_(getFileMetadataRes['Value']['Successful'].has_key(destFile))    
-    metadataDict = getFileMetadataRes['Value']['Successful'][destFile]
+    metadataDict = getFileMetadataRes['Value']
     self.assert_(metadataDict['Cached'])
     self.assertFalse(metadataDict['Migrated'])
     self.assertEqual(metadataDict['Size'],self.localFileSize) 
     # Check that the removal was done correctly
     self.assert_(removeFileRes['OK'])
     self.assert_(removeFileRes['Value'])
-    self.assert_(removeFileRes['Value'].has_key('Successful'))
-    self.assert_(removeFileRes['Value']['Successful'].has_key(destFile))
-    self.assert_(removeFileRes['Value']['Successful'][destFile])
-
+    # Check the get metadata for non existant file
+    self.assertFalse(getMissingFileMetadataRes['OK'])
+    expectedError = "File does not exist"
+    self.assert_(expectedError in getMissingFileMetadataRes['Message'])
+    # Check that metadata operation with a directory
+    self.assertFalse(directoryMetadataRes['OK'])
+    expectedError = "Supplied path is not a file"
+    self.assert_(expectedError in directoryMetadataRes['Message'])
+ 
   def test_getFileSize(self):
     print '\n\n#########################################################################\n\n\t\t\tGet file size test\n'
-    putFileRes = self.storageElement.putFile(self.localSourceFile,self.destDirectory,alternativeFileName=self.alternativeDestFileName)
-    destFile = putFileRes['Value']
-    getFileSizeRes = self.storageElement.getFileSize(destFile)
-    removeFileRes = self.storageElement.removeFile(destFile)
-    
+    destinationFilePath = '%s/testFile.%s' % (self.destDirectory,time.time())
+    pfnForLfnRes = self.storageElement.getPfnForLfn(destinationFilePath)
+    destinationPfn = pfnForLfnRes['Value']
+    fileDict = {destinationPfn:self.localSourceFile}
+    putFileRes = self.storageElement.putFile(fileDict,singleFile=True)
+    # Get the file metadata
+    getFileSizeRes = self.storageElement.getFileSize(destinationPfn,singleFile=True)
+    # Now remove the destination file
+    removeFileRes = self.storageElement.removeFile(destinationPfn,singleFile=True)
+    # Get metadata for a removed file
+    getMissingFileSizeRes = self.storageElement.getFileSize(destinationPfn,singleFile=True)
+    # Check directories are handled properly
+    destinationDir = os.path.dirname(destinationPfn)
+    directorySizeRes = self.storageElement.getFileSize(destinationDir,singleFile=True)
+
     # Check that the put was done correctly
     self.assert_(putFileRes['OK'])
     self.assert_(putFileRes['Value'])
+    self.assertEqual(putFileRes['Value'],self.localFileSize)
     # Check that the metadata was done correctly
     self.assert_(getFileSizeRes['OK'])
-    self.assert_(getFileSizeRes['Value'])
-    self.assert_(getFileSizeRes['Value'].has_key('Successful'))
-    self.assert_(getFileSizeRes['Value']['Successful'].has_key(destFile))
-    self.assertEqual(getFileSizeRes['Value']['Successful'][destFile],self.localFileSize)
+    self.assertEqual(getFileSizeRes['Value'],self.localFileSize)
     # Check that the removal was done correctly
     self.assert_(removeFileRes['OK'])
     self.assert_(removeFileRes['Value'])
-    self.assert_(removeFileRes['Value'].has_key('Successful'))
-    self.assert_(removeFileRes['Value']['Successful'].has_key(destFile))
-    self.assert_(removeFileRes['Value']['Successful'][destFile])
+    # Check the get metadata for non existant file
+    self.assertFalse(getMissingFileSizeRes['OK'])
+    expectedError = "File does not exist"
+    self.assert_(expectedError in getMissingFileSizeRes['Message'])
+    # Check that metadata operation with a directory
+    self.assertFalse(directorySizeRes['OK'])
+    expectedError = "Supplied path is not a file"
+    self.assert_(expectedError in directorySizeRes['Message'])
 
   def test_prestageFile(self):
     print '\n\n#########################################################################\n\n\t\t\tPrestage file test\n'
-    putFileRes = self.storageElement.putFile(self.localSourceFile,self.destDirectory,alternativeFileName=self.alternativeDestFileName)
-    destFile = putFileRes['Value']
-    prestageFileRes = self.storageElement.prestageFile(destFile)
-    removeFileRes = self.storageElement.removeFile(destFile)
-    
-    # Check that the put was done correctly
-    self.assert_(putFileRes['OK'])   
-    self.assert_(putFileRes['Value'])
-    # Check that prestage was issued correctly
-    self.assert_(prestageFileRes['OK'])   
-    self.assert_(prestageFileRes['Value'])
-    self.assert_(prestageFileRes['Value'].has_key('Successful'))
-    self.assert_(prestageFileRes['Value']['Successful'].has_key(destFile))
-    self.assert_(prestageFileRes['Value']['Successful'][destFile])
-    # Check that the removal was done correctly
-    self.assert_(removeFileRes['OK'])   
-    self.assert_(removeFileRes['Value'])
-    self.assert_(removeFileRes['Value'].has_key('Successful'))
-    self.assert_(removeFileRes['Value']['Successful'].has_key(destFile))
-    self.assert_(removeFileRes['Value']['Successful'][destFile])
-
-  def test_getAccessUrl(self):
-    print '\n\n#########################################################################\n\n\t\t\tGet access url test\n'
-    putFileRes = self.storageElement.putFile(self.localSourceFile,self.destDirectory,alternativeFileName=self.alternativeDestFileName)
-    destFile = putFileRes['Value']
-    getAccessRes = self.storageElement.getAccessUrl(destFile)
-    removeFileRes = self.storageElement.removeFile(destFile)
+    destinationFilePath = '%s/testFile.%s' % (self.destDirectory,time.time())
+    pfnForLfnRes = self.storageElement.getPfnForLfn(destinationFilePath)
+    destinationPfn = pfnForLfnRes['Value']
+    fileDict = {destinationPfn:self.localSourceFile}
+    putFileRes = self.storageElement.putFile(fileDict,singleFile=True)
+    # Get the file metadata
+    prestageFileRes = self.storageElement.prestageFile(destinationPfn,singleFile=True)
+    # Now remove the destination file
+    removeFileRes = self.storageElement.removeFile(destinationPfn,singleFile=True)
+    # Get metadata for a removed file
+    missingPrestageFileRes = self.storageElement.prestageFile(destinationPfn,singleFile=True)
 
     # Check that the put was done correctly
     self.assert_(putFileRes['OK'])
     self.assert_(putFileRes['Value'])
-    # Check that prestage was issued correctly
-    self.assert_(getAccessRes['OK'])
-    self.assert_(getAccessRes['Value'])
-    self.assert_(getAccessRes['Value'].has_key('Successful'))
-    self.assert_(getAccessRes['Value']['Successful'].has_key(destFile))
-    self.assert_(getAccessRes['Value']['Successful'][destFile])
+    self.assertEqual(putFileRes['Value'],self.localFileSize)
+    # Check that the prestage was done correctly
+    self.assert_(prestageFileRes['OK'])
+    self.assertEqual(type(prestageFileRes['Value']),types.StringType)
     # Check that the removal was done correctly
     self.assert_(removeFileRes['OK'])
     self.assert_(removeFileRes['Value'])
-    self.assert_(removeFileRes['Value'].has_key('Successful'))
-    self.assert_(removeFileRes['Value']['Successful'].has_key(destFile))
-    self.assert_(removeFileRes['Value']['Successful'][destFile])
+    # Check the prestage for non existant file  
+    self.assertFalse(missingPrestageFileRes['OK'])
+    expectedError = "No such file or directory"
+    self.assert_(expectedError in missingPrestageFileRes['Message'])
 
-  """
+  def test_prestageStatus(self):
+    print '\n\n#########################################################################\n\n\t\tPrestage status test\n'
+    destinationFilePath = '%s/testFile.%s' % (self.destDirectory,time.time())
+    pfnForLfnRes = self.storageElement.getPfnForLfn(destinationFilePath)
+    destinationPfn = pfnForLfnRes['Value'] 
+    fileDict = {destinationPfn:self.localSourceFile}
+    putFileRes = self.storageElement.putFile(fileDict,singleFile=True)
+    # Get the file metadata
+    prestageFileRes = self.storageElement.prestageFile(destinationPfn,singleFile=True)
+    srmID = ''
+    if prestageFileRes['OK']:
+      srmID = prestageFileRes['Value']
+    # Take a quick break to allow the SRM to realise the file is available
+    sleepTime = 10
+    print 'Sleeping for %s seconds' % sleepTime
+    time.sleep(sleepTime)
+    # Check that we can monitor the stage request
+    prestageStatusRes = self.storageElement.prestageFileStatus({destinationPfn:srmID},singleFile=True)
+    # Now remove the destination file 
+    removeFileRes = self.storageElement.removeFile(destinationPfn,singleFile=True)
+
+    # Check that the put was done correctly
+    self.assert_(putFileRes['OK'])
+    self.assert_(putFileRes['Value'])
+    self.assertEqual(putFileRes['Value'],self.localFileSize)  
+    # Check that the prestage was done correctly
+    self.assert_(prestageFileRes['OK'])
+    self.assertEqual(type(prestageFileRes['Value']),types.StringType)
+    # Check the file was found to be staged
+    self.assert_(prestageStatusRes['OK'])
+    self.assert_(prestageStatusRes['Value'])
+    # Check that the removal was done correctly
+    self.assert_(removeFileRes['OK'])
+    self.assert_(removeFileRes['Value'])
+
+  def test_pinRelease(self):
+    print '\n\n#########################################################################\n\n\t\tPin release test\n'
+    destinationFilePath = '%s/testFile.%s' % (self.destDirectory,time.time())
+    pfnForLfnRes = self.storageElement.getPfnForLfn(destinationFilePath)
+    destinationPfn = pfnForLfnRes['Value'] 
+    fileDict = {destinationPfn:self.localSourceFile}
+    putFileRes = self.storageElement.putFile(fileDict,singleFile=True)
+    # Get the file metadata
+    pinFileRes = self.storageElement.pinFile(destinationPfn,singleFile=True)
+    srmID = ''
+    if pinFileRes['OK']:
+      srmID = pinFileRes['Value']
+    # Check that we can release the file
+    releaseFileRes = self.storageElement.releaseFile({destinationPfn:srmID},singleFile=True)
+    # Now remove the destination file
+    removeFileRes = self.storageElement.removeFile(destinationPfn,singleFile=True)
+
+    # Check that the put was done correctly
+    self.assert_(putFileRes['OK'])
+    self.assert_(putFileRes['Value'])
+    self.assertEqual(putFileRes['Value'],self.localFileSize)
+    # Check that the file pin was done correctly
+    self.assert_(pinFileRes['OK'])  
+    self.assertEqual(type(pinFileRes['Value']),types.StringType)
+    # Check the file was found to be staged
+    self.assert_(releaseFileRes['OK'])
+    self.assert_(releaseFileRes['Value'])
+    # Check that the removal was done correctly
+    self.assert_(removeFileRes['OK'])
+    self.assert_(removeFileRes['Value'])
+
+  def test_getAccessUrl(self):
+    print '\n\n#########################################################################\n\n\t\tPin release test\n'
+    destinationFilePath = '%s/testFile.%s' % (self.destDirectory,time.time())
+    pfnForLfnRes = self.storageElement.getPfnForLfn(destinationFilePath)
+    destinationPfn = pfnForLfnRes['Value']
+    fileDict = {destinationPfn:self.localSourceFile}
+    putFileRes = self.storageElement.putFile(fileDict,singleFile=True)
+    # Get a transfer url for the file
+    getTurlRes = self.storageElement.getAccessUrl(destinationPfn,singleFile=True)
+    # Remove the destination file
+    removeFileRes = self.storageElement.removeFile(destinationPfn,singleFile=True)
+    # Get missing turl res
+    getMissingTurlRes = self.storageElement.getAccessUrl(destinationPfn,singleFile=True)
+
+    # Check that the put was done correctly
+    self.assert_(putFileRes['OK'])
+    self.assert_(putFileRes['Value'])
+    self.assertEqual(putFileRes['Value'],self.localFileSize)
+    # Check that we can get the tURL properly
+    self.assert_(getTurlRes['OK'])
+    self.assert_(getTurlRes['Value'])
+    self.assert_(type(getTurlRes['Value']) in types.StringTypes)
+    # Check that the removal was done correctly
+    self.assert_(removeFileRes['OK'])
+    self.assert_(removeFileRes['Value'])
+    # Check that non-existant files are handled correctly
+    self.assertFalse(getMissingTurlRes['OK'])
+    expectedError = "File does not exist"
+    self.assert_(expectedError in getMissingTurlRes['Message'])
 
 class DirectoryTestCases(StorageElementTestCase):
 
