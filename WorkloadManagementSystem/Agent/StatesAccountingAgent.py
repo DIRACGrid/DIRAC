@@ -1,7 +1,7 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/StatesAccountingAgent.py,v 1.5 2009/02/17 16:25:26 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/StatesAccountingAgent.py,v 1.6 2009/02/18 15:26:53 acasajus Exp $
 
-__RCSID__ = "$Id: StatesAccountingAgent.py,v 1.5 2009/02/17 16:25:26 acasajus Exp $"
+__RCSID__ = "$Id: StatesAccountingAgent.py,v 1.6 2009/02/18 15:26:53 acasajus Exp $"
 
 """  JobHistoryAgent sends periodically numbers of jobs in various states for various
      sites to the Monitoring system to create historical plots.
@@ -21,14 +21,13 @@ AGENT_NAME = 'WorkloadManagement/StatesAccountingAgent'
 class StatesAccountingAgent(AgentModule):
 
   __summaryKeyFieldsMapping = [ 'Status',
-                                'MinorStatus',
                                 'Site',
                                 'User',
                                 'UserGroup',
                                 'JobGroup',
                                 'JobSplitType',
                               ]
-  __summaryDefinedFields = [ ( 'ApplicationStatus', 'unset' ) ]
+  __summaryDefinedFields = [ ( 'ApplicationStatus', 'unset' ), ( 'MinorStatus', 'unset' ) ]
   __summaryValueFieldsMapping = [ 'Jobs',
                                   'Reschedules',
                                 ]
@@ -42,13 +41,20 @@ class StatesAccountingAgent(AgentModule):
 
     self.reportPeriod = 300
     self.am_setOption( "PollingTime", self.reportPeriod )
+    self.__jobDBFields = []
+    for field in self.__summaryKeyFieldsMapping:
+      if field == 'User':
+        field = 'Owner'
+      elif field == 'UserGroup':
+        field = 'OwnerGroup'
+      self.__jobDBFields.append( field )
     return S_OK()
 
   def execute(self):
     """ Main execution method
     """
     #Get the WMS Snapshot!
-    result = self.jobDB.getSummarySnapshot()
+    result = self.jobDB.getSummarySnapshot( self.__jobDBFields )
     now = Time.dateTime()
     if not result[ 'OK' ]:
       gLogger.error( "Can't the the jobdb summary", result[ 'Message' ] )
@@ -61,8 +67,9 @@ class StatesAccountingAgent(AgentModule):
           gLogger.info( "Creating DataStore client for %s" % recordSetup )
           self.dsClients[ recordSetup ] = DataStoreClient( setup = recordSetup, retryGraceTime = 900 )
         record = record[1:]
+        rD = {}
         for FV in self.__summaryDefinedFields:
-          rD = { FV[0] : FV[1] }
+          rD[ FV[0] ] = FV[1]
         for iP in range( len( self.__summaryKeyFieldsMapping ) ):
           fieldName = self.__summaryKeyFieldsMapping[iP]
           rD[ fieldName ] = record[iP]
