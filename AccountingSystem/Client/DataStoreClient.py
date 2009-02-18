@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/DataStoreClient.py,v 1.11 2009/02/17 11:56:19 acasajus Exp $
-__RCSID__ = "$Id: DataStoreClient.py,v 1.11 2009/02/17 11:56:19 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/DataStoreClient.py,v 1.12 2009/02/18 14:36:28 acasajus Exp $
+__RCSID__ = "$Id: DataStoreClient.py,v 1.12 2009/02/18 14:36:28 acasajus Exp $"
 
 import time
 from DIRAC import S_OK, S_ERROR, gLogger
@@ -19,6 +19,7 @@ class DataStoreClient:
     self.__registersList = []
     self.__maxTimeRetrying = retryGraceTime
     self.__lastSuccessfulCommit = time.time()
+    self.__failoverEnabled = True
 
   def setRetryGraceTime( self, retryGraceTime ):
     self.__maxTimeRetrying = retryGraceTime
@@ -47,6 +48,9 @@ class DataStoreClient:
     self.__registersList.append( register.getValues() )
     return S_OK()
 
+  def disableFailover( self ):
+    self.__failoverEnabled = False
+
   @gAccountingSynchro
   def commit( self ):
     """
@@ -63,7 +67,7 @@ class DataStoreClient:
       if retVal[ 'OK' ]:
         self.__lastSuccessfulCommit = time.time()
       else:
-        if time.time() - self.__lastSuccessfulCommit > self.__maxTimeRetrying:
+        if self.__failoverEnabled and time.time() - self.__lastSuccessfulCommit > self.__maxTimeRetrying:
           gLogger.verbose( "Sending accounting records to failover" )
           result =  self.__sendToFailover( retVal[ 'rpcStub' ] )
           if not result[ 'OK' ]:
