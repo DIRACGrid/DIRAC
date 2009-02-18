@@ -1,13 +1,17 @@
 #################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/ThreadPool.py,v 1.11 2008/12/09 17:39:28 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/ThreadPool.py,v 1.12 2009/02/18 14:20:24 acasajus Exp $
 #################################################################
 
-__RCSID__ = "$Id: ThreadPool.py,v 1.11 2008/12/09 17:39:28 acasajus Exp $"
+__RCSID__ = "$Id: ThreadPool.py,v 1.12 2009/02/18 14:20:24 acasajus Exp $"
 
 import time
 import sys
 import Queue
 import threading
+try:
+  from DIRAC.LoggingSystem.Client.Logger import gLogger
+except:
+  gLogger = False
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 
 class WorkingThread( threading.Thread ):
@@ -54,9 +58,13 @@ class ThreadedJob:
     self.__jobKwArgs = kwargs or {}
     self.__tjID = sTJId
     self.__resultCallback = oCallback
-    self.__exceptionCallback = oExceptionCallback
+    self.__exceptionCallback = oExceptionCallback or self.__showException
     self.__done = False
     self.__exceptionRaised = False
+
+  def __showException( self, threadedJob, exceptionInfo ):
+    if gLogger:
+      gLogger.exception( "Exception in thread", lExcInfo = exceptionInfo )
 
   def jobId( self ):
     return self.__tjID
