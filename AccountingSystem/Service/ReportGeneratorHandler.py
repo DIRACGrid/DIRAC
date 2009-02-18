@@ -1,10 +1,10 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/ReportGeneratorHandler.py,v 1.19 2009/02/12 11:26:09 acasajus Exp $
-__RCSID__ = "$Id: ReportGeneratorHandler.py,v 1.19 2009/02/12 11:26:09 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/ReportGeneratorHandler.py,v 1.20 2009/02/18 14:36:53 acasajus Exp $
+__RCSID__ = "$Id: ReportGeneratorHandler.py,v 1.20 2009/02/18 14:36:53 acasajus Exp $"
 import types
 import os
 import md5
 from DIRAC import S_OK, S_ERROR, rootPath, gConfig, gLogger, gMonitor
-from DIRAC.AccountingSystem.private.AccountingDB import AccountingDB
+from DIRAC.AccountingSystem.DB.AccountingDB import AccountingDB
 from DIRAC.AccountingSystem.private.Summaries import Summaries
 from DIRAC.AccountingSystem.private.DataCache import gDataCache
 from DIRAC.AccountingSystem.private.MainReporter import MainReporter
