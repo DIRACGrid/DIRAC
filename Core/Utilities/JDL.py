@@ -9,10 +9,30 @@ def loadJDLAsCFG( jdl ):
   def cleanValue( value ):
     value = value.strip()
     if value[0] == '"':
-      if value[-1] == '"':
-        return value[1:-1]
+      entries = []
+      iPos = 1
+      current = ""
+      state = "in"
+      while iPos < len( value ):
+        if value[ iPos ] == '"':
+          if state == "in":
+            entries.append( current )
+            current = ""
+            state = "out"
+          elif state == "out":
+            current = current.strip()
+            if current not in ( ",", ):
+              return S_ERROR( "value seems a list but is not separated in commas" )
+            current = ""
+            state = "in"
+        else:
+          current += value[ iPos ]
+        iPos += 1
+      if state == "in":
+        return S_ERROR( 'value is opened with " but is not closed' )
+      return S_OK( ", ".join ( entries ) )
     else:
-      return value
+      return S_OK( value )
 
   def assignValue( key, value, cfg ):
     key = key.strip()
@@ -26,12 +46,18 @@ def loadJDLAsCFG( jdl ):
         return S_ERROR( "Value '%s' seems a list but does not end in '}'" % ( value ) )
       valList = List.fromChar( value[1:-1] )
       for i in range( len( valList ) ):
-        valList[i] = cleanValue( valList[i] )
+        result = cleanValue( valList[i] )
+        if not result[ 'OK' ]:
+          return result
+        valList[i] = result[ 'Value' ]
         if valList[ i ] == None:
           return S_ERROR( "List value '%s' seems invalid for item %s" % ( value, i ) )
       value = ", ".join( valList )
     else:
-      nV = cleanValue( value )
+      result = cleanValue( value )
+      if not result[ 'OK' ]:
+        return result
+      nV = result[ 'Value' ]
       if nV == None:
         return S_ERROR( "Value '%s seems invalid" % ( value ) )
       value = nV
