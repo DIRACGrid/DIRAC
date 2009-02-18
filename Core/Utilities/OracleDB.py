@@ -1,8 +1,8 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/OracleDB.py,v 1.8 2009/01/23 12:04:05 zmathe Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/OracleDB.py,v 1.9 2009/02/18 12:09:57 zmathe Exp $
 ########################################################################
 """ DIRAC Basic Oracle Class
-    It provides access to the basic MySQL methods in a multithread-safe mode
+    It provides access to the basic Oracle methods in a multithread-safe mode
     keeping used connections in a python Queue for further reuse.
 
     These are the coded methods:
@@ -21,7 +21,7 @@
 
     Helper method for exceptions: the "methodName" and the "errorMessage"
     are printed with ERROR level, then the "exception" is printed (with
-    full description if it is a MySQL Exception) and S_ERROR is returned
+    full description if it is a Oracle Exception) and S_ERROR is returned
     with the errorMessage and the exception.
 
 
@@ -50,7 +50,7 @@
 
 """
 
-__RCSID__ = "$Id: OracleDB.py,v 1.8 2009/01/23 12:04:05 zmathe Exp $"
+__RCSID__ = "$Id: OracleDB.py,v 1.9 2009/02/18 12:09:57 zmathe Exp $"
 
 
 from DIRAC                                  import gLogger
@@ -74,7 +74,7 @@ class OracleDB:
   Basic multithreaded DIRAC Oracle Client Class
   """
 
-  def __init__( self, userName, password = '', tnsEntry='', maxQueueSize=10 ):
+  def __init__( self, userName, password = '', tnsEntry='', maxQueueSize=20 ):
     """
     set Oracle connection parameters and try to connect
     """
