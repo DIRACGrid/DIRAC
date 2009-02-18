@@ -15,6 +15,7 @@ class StorageElementTestCase(unittest.TestCase):
   """ Base class for the StorageElement test cases
   """
   def setUp(self):
+    self.numberOfFiles = 1
     self.storageElement = StorageElement(storageElementToTest)
     self.localSourceFile = "/etc/group"
     self.localFileSize = getSize(self.localSourceFile)
@@ -401,58 +402,89 @@ class DirectoryTestCases(StorageElementTestCase):
   def test_createDirectory(self):
     print '\n\n#########################################################################\n\n\t\t\tCreate directory test\n'
     directory = "%s/%s" % (self.destDirectory,'createDirectoryTest')
-    createDirRes =  self.storageElement.createDirectory(directory)
+    pfnForLfnRes = self.storageElement.getPfnForLfn(directory)
+    directoryPfn = pfnForLfnRes['Value']
+    createDirRes =  self.storageElement.createDirectory(directoryPfn,singleDirectory=True)
+    # Remove the target dir
+    removeDirRes = self.storageElement.removeDirectory(directoryPfn,recursive=True,singleDirectory=True)
     
     # Check that the creation was done correctly
     self.assert_(createDirRes['OK'])
     self.assert_(createDirRes['Value'])
-    self.assert_(createDirRes['Value'].has_key('Successful')) 
-    self.assert_(createDirRes['Value']['Successful'].has_key(directory))
-    self.assert_(createDirRes['Value']['Successful'][directory])
-    destDir = createDirRes['Value']['Successful'][directory]
     # Remove the directory
-    removeDirRes = self.storageElement.removeDirectory(destDir)
     self.assert_(removeDirRes['OK'])
     self.assert_(removeDirRes['Value'])
-    self.assert_(removeDirRes['Value'].has_key('Successful'))
-    self.assert_(removeDirRes['Value']['Successful'].has_key(destDir))
+
+  def test_isDirectory(self):
+    print '\n\n#########################################################################\n\n\t\t\tIs directory test\n'
+    destDirectory = self.storageElement.getPfnForLfn(self.destDirectory)['Value']
+    # Test that it is a directory
+    isDirectoryRes = self.storageElement.isDirectory(destDirectory,singleDirectory=True)
+    # Test that no existant dirs are handled correctly
+    nonExistantDir = "%s/%s" % (destDirectory,'NonExistant')
+    nonExistantDirRes = self.storageElement.isDirectory(nonExistantDir,singleDirectory=True)
+
+    # Check that it works with the existing dir
+    self.assert_(isDirectoryRes['OK'])
+    self.assert_(isDirectoryRes['Value'])
+    # Check that we handle non existant correctly
+    self.assertFalse(nonExistantDirRes['OK'])
+    expectedError = 'Directory does not exist'
+    self.assert_(expectedError in nonExistantDirRes['Message'])
+
+  """
 
   def test_listDirectory(self):
     print '\n\n#########################################################################\n\n\t\t\tList directory test\n'
     directory = "%s/%s" % (self.destDirectory,'listDirectoryTest')
-    createDirRes =  self.storageElement.createDirectory(directory)
-    putFileRes = self.storageElement.putFile(self.localSourceFile,directory,alternativeFileName=self.alternativeDestFileName)
+    destDirectory = self.storageElement.getPfnForLfn(directory)['Value']
+    # Create a local directory to upload
+    localDir = '/tmp/unit-test'
+    srcFile = '/etc/group'
+    sizeOfLocalFile = getSize(srcFile)
+    if not os.path.exists(localDir):
+      os.mkdir(localDir)
+    for i in range(self.numberOfFiles):
+      shutil.copy(srcFile,'%s/testFile.%s' % (localDir,time.time()))
+      time.sleep(1)
+    # Check that we can successfully upload the directory to the storage element
+    dirDict = {destDirectory:localDir}
+    putDirRes = self.storageElement.putDirectory(dirDict,singleDirectory=True)
+    print putDirRes
+    # List the remote directory
+    listDirRes = self.storageElement.listDirectory(destDirectory,singleDirectory=True)
+    # Now remove the remove directory
+    removeDirRes = self.storageElement.removeDirectory(destDirectory,recursive=True,singleDirectory=True)
+    print removeDirRes
+    #Clean up the locally created directory
+    shutil.rmtree(localDir)
 
-    # Check that the creation was done correctly
-    self.assert_(createDirRes['OK'])
-    self.assert_(createDirRes['Value'])
-    self.assert_(createDirRes['Value'].has_key('Successful'))
-    self.assert_(createDirRes['Value']['Successful'].has_key(directory))
-    self.assert_(createDirRes['Value']['Successful'][directory])
-    destDir = createDirRes['Value']['Successful'][directory]
-    # Check that the put was done correctly
-    self.assert_(putFileRes['OK'])
-    self.assert_(putFileRes['Value'])
-    destFile = putFileRes['Value']
-    # Check that we can list the directory
-    listDirRes = self.storageElement.listDirectory(destDir)
+    # Perform the checks for the put dir operation
+    self.assert_(putDirRes['OK'])
+    self.assert_(putDirRes['Value'])
+    if putDirRes['Value']['Files']:
+      self.assertEqual(putDirRes['Value']['Files'],self.numberOfFiles)
+      self.assertEqual(putDirRes['Value']['Size'],self.numberOfFiles*sizeOfLocalFile)
+    self.assert_(type(putDirRes['Value']['Files']) in [types.IntType,types.LongType])
+    self.assert_(type(putDirRes['Value']['Size']) in  [types.IntType,types.LongType])
+    # Perform the checks for the list dir operation
     self.assert_(listDirRes['OK'])
     self.assert_(listDirRes['Value'])
-    self.assert_(listDirRes['Value'].has_key('Successful'))
-    self.assert_(listDirRes['Value']['Successful'].has_key(destDir))
-    self.assert_(listDirRes['Value']['Successful'][destDir].has_key('Files'))
-    self.assert_(listDirRes['Value']['Successful'][destDir]['Files'].has_key(destFile))
-    fileMetadata = listDirRes['Value']['Successful'][destDir]['Files'][destFile]
-    self.assert_(fileMetadata['Cached'])
-    self.assertFalse(fileMetadata['Migrated'])
-    self.assertEqual(fileMetadata['Size'],self.localFileSize)
-
-    # Remove the directory
-    removeDirRes = self.storageElement.removeDirectory(destDir)   
+    self.assert_(listDirRes.has_key('SubDirs'))
+    self.assert_(listDirRes.has_key('Files'))
+    self.assertEqual(len(listDirRes['Files'].keys()), self.numberOfFiles)
+    # Perform the checks for the remove directory operation
     self.assert_(removeDirRes['OK'])
-    self.assert_(removeDirRes['Value']) 
-    self.assert_(removeDirRes['Value'].has_key('Successful'))
-    self.assert_(removeDirRes['Value']['Successful'].has_key(destDir))
+    self.assert_(removeDirRes['Value'])
+    if removeDirRes['Value']['FilesRemoved']:
+      self.assertEqual(removeDirRes['Value']['FilesRemoved'],self.numberOfFiles)
+      self.assertEqual(removeDirRes['Value']['SizeRemoved'],self.numberOfFiles*sizeOfLocalFile)
+    self.assert_(type(removeDirRes['Value']['FilesRemoved']) in [types.IntType,types.LongType])
+    self.assert_(type(removeDirRes['Value']['SizeRemoved']) in [types.IntType,types.LongType])
+
+  #def test_removeDirectory(self):pass
+
+  #def test_getDirectory(self):pass
 
   def test_getDirectoryMetadata(self):
     print '\n\n#########################################################################\n\n\t\t\tDirectory metadata test\n'
@@ -515,10 +547,13 @@ class DirectoryTestCases(StorageElementTestCase):
     self.assert_(removeDirRes['Value'].has_key('Successful'))
     self.assert_(removeDirRes['Value']['Successful'].has_key(destDir))
 
+  """
+
 if __name__ == '__main__':
   #suite = unittest.defaultTestLoader.loadTestsFromTestCase(GetInfoTestCase)
   #suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(DirectoryTestCases))
   #suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(FileTestCases))
-  suite = unittest.defaultTestLoader.loadTestsFromTestCase(FileTestCases)
+  #suite = unittest.defaultTestLoader.loadTestsFromTestCase(FileTestCases)
+  suite = unittest.defaultTestLoader.loadTestsFromTestCase(DirectoryTestCases)
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)
 
