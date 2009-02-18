@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/Attic/AccountingDB.py,v 1.36 2008/10/31 16:28:19 acasajus Exp $
-__RCSID__ = "$Id: AccountingDB.py,v 1.36 2008/10/31 16:28:19 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/DB/AccountingDB.py,v 1.1 2009/02/18 14:37:31 acasajus Exp $
+__RCSID__ = "$Id: AccountingDB.py,v 1.1 2009/02/18 14:37:31 acasajus Exp $"
 
 import datetime, time
 import types
@@ -10,6 +10,7 @@ import DIRAC
 from DIRAC.Core.Base.DB import DB
 from DIRAC import S_OK, S_ERROR, gLogger, gMonitor, gConfig
 from DIRAC.Core.Utilities import List, ThreadSafe, Time, DEncode
+from DIRAC.Core.Utilities.ThreadPool import ThreadPool
 
 gSynchro = ThreadSafe.Synchronizer()
 
@@ -21,6 +22,8 @@ class AccountingDB(DB):
     self.autoCompact = False
     self.dbCatalog = {}
     self.dbBucketsLength = {}
+    self.__threadPool = ThreadPool( max( 1, int( maxQueueSize / 2 ) ) )
+    self.__threadPool.daemonize()
     self.catalogTableName = self.__getTableName( "catalog", "Types" )
     self._createTables( { self.catalogTableName : { 'Fields' : { 'name' : "VARCHAR(64) UNIQUE NOT NULL",
                                                           'keyFields' : "VARCHAR(256) NOT NULL",
@@ -38,6 +41,13 @@ class AccountingDB(DB):
                                "entries",
                                gMonitor.OP_ACUM )
     self.__registerTypes()
+    self.__loadPendingRecords()
+
+  def __loadTablesCreated( self ):
+    result = self._query( "show tables" )
+    if not result[ 'OK' ]:
+      return result
+    return S_OK( [ f[0] for f in result[ 'Value' ] ] )
 
   def autoCompactDB( self ):
     self.autoCompact = True
@@ -54,7 +64,7 @@ class AccountingDB(DB):
       nct = nct.replace( hour = compactTime.hour,
                          minute = compactTime.minute,
                          second = compactTime.second )
-      gLogger.info( "Next db compaction will be at %s" % nct )
+      self.log.info( "Next db compaction will be at %s" % nct )
       sleepTime = Time.toEpoch( nct ) - Time.toEpoch()
       time.sleep( sleepTime )
       self.compactBuckets()
@@ -73,21 +83,38 @@ class AccountingDB(DB):
         for setup in setupsList:
           pythonName = typeFile.replace( ".py", "" )
           typeName = "%s_%s" % ( setup, pythonName )
-          if typeName not in self.dbCatalog and pythonName != "BaseAccountingType":
-            gLogger.info( "Trying to register %s type for setup %s" % ( typeName, setup ) )
+          if pythonName != "BaseAccountingType":
+            self.log.info( "Trying to register %s type for setup %s" % ( typeName, setup ) )
             try:
               typeModule = __import__( "DIRAC.AccountingSystem.Client.Types.%s" % pythonName,
                                        globals(),
                                        locals(), pythonName )
               typeClass  = getattr( typeModule, pythonName )
             except Exception, e:
-              gLogger.error( "Can't load type %s: %s" % ( typeName, str(e) ) )
+              self.log.error( "Can't load type %s: %s" % ( typeName, str(e) ) )
               continue
             typeDef = typeClass().getDefinition()
-            dbTypeName = "%s_%s" % ( setup, typeName )
-            retVal = self.registerType( typeName, *typeDef[1:] )
+            #dbTypeName = "%s_%s" % ( setup, typeName )
+            definitionKeyFields, definitionAccountingFields, bucketsLength = typeDef[1:]
+            #If already defined check the similarities
+            if typeName in self.dbCatalog:
+              bucketsLength.sort()
+              if bucketsLength != self.dbBucketsLength[ typeName ]:
+                bucketsLength = self.dbBucketsLength[ typeName ]
+                self.log.error( "Bucket length has changed for type %s" % typeName )
+              keyFields = [ f[0] for f in definitionKeyFields ]
+              if keyFields != self.dbCatalog[ typeName ][ 'keys' ]:
+                keyFields = self.dbCatalog[ typeName ][ 'keys' ]
+                self.log.error( "Definition fields have changed for type %s" % typeName )
+              valueFields = [ f[0] for f in definitionAccountingFields ]
+              if valueFields != self.dbCatalog[ typeName ][ 'values' ]:
+                valueFields = self.dbCatalog[ typeName ][ 'values' ]
+                self.log.error( "Accountable fields have changed for type %s" % typeName )
+            #Try to re register to check all the tables are there
+            retVal = self.registerType( typeName, definitionKeyFields,
+                                        definitionAccountingFields, bucketsLength )
             if not retVal[ 'OK' ]:
-              gLogger.error( "Can't register type %s:%s" % ( typeName, retVal[ 'Message' ] ) )
+              self.log.error( "Can't register type %s:%s" % ( typeName, retVal[ 'Message' ] ) )
     return S_OK()
 
   def __loadCatalogFromDB(self):
@@ -100,6 +127,32 @@ class AccountingDB(DB):
       valueFields = List.fromChar( typesEntry[2], "," )
       bucketsLength = DEncode.decode( typesEntry[3] )[0]
       self.__addToCatalog( typeName, keyFields, valueFields, bucketsLength )
+
+  def __loadPendingRecords(self):
+    """
+      Load all records pending to insertion and generate threaded jobs
+    """
+    self.log.info( "Loading pending records for insertion" )
+    pending = 0
+    for typeName in self.dbCatalog:
+      self.log.info( "Checking %s" % typeName )
+      sqlFields = [ 'id' ] + self.dbCatalog[ typeName ][ 'typeFields' ]
+      result = self._query( "SELECT %s FROM `%s` ORDER BY id" % ( ", ".join( [ "`%s`" % f for f in sqlFields ] ),
+                                                                  self.__getTableName( "in", typeName ) ) )
+      if not result[ 'OK' ]:
+        self.log.error( "Error when trying to get pending records", "for %s : %s" % ( typeName, result[ 'Message' ] ) )
+        return result
+      self.log.info( "Got %s pending requests for type %s" % ( len( result[ 'Value' ] ), typeName ) )
+      for record in result[ 'Value' ]:
+        id =         record[ 0 ]
+        startTime =  record[ -2 ]
+        endTime =    record[ -1 ]
+        valuesList = list( record[ 1:-2 ] )
+        self.__threadPool.generateJobAndQueueIt( self.__insertFromINTable ,
+                                             args = ( id, typeName, startTime, endTime, valuesList ) )
+        pending += 1
+    self.log.info( "Got %s pending requests for all types" % pending )
+    return S_OK()
 
   def __getTableName( self, tableType, typeName, keyName = None ):
     """
@@ -116,7 +169,7 @@ class AccountingDB(DB):
     """
     Add type to catalog
     """
-    gLogger.verbose( "Adding to catalog type %s" % typeName, "with length %s" % str( bucketsLength ) )
+    self.log.verbose( "Adding to catalog type %s" % typeName, "with length %s" % str( bucketsLength ) )
     self.dbCatalog[ typeName ] = { 'keys' : keyFields , 'values' : valueFields, 'typeFields' : [], 'bucketFields' : [] }
     self.dbCatalog[ typeName ][ 'typeFields' ].extend( keyFields )
     self.dbCatalog[ typeName ][ 'typeFields' ].extend( valueFields )
@@ -146,6 +199,10 @@ class AccountingDB(DB):
     """
     Register a new type
     """
+    result = self.__loadTablesCreated()
+    if not result[ 'OK' ]:
+      return result
+    tablesInThere = result[ 'Value' ]
     keyFieldsList = []
     valueFieldsList = []
     for t in definitionKeyFields:
@@ -163,21 +220,24 @@ class AccountingDB(DB):
         return S_ERROR( "Length of buckets should be a list of tuples" )
       if len( bucket ) != 2:
         return S_ERROR( "Length of buckets should have 2d tuples" )
+    updateDBCatalog = True
     if name in self.dbCatalog:
-      gLogger.error( "Type %s is already registered" % name )
-      return S_ERROR( "Type %s already exists in db" % name )
+      updateDBCatalog = False
     tables = {}
     for key in definitionKeyFields:
-      gLogger.info( "Table for key %s has to be created" % key[0] )
-      tables[ self.__getTableName( "key", name, key[0] )  ] = { 'Fields' : { 'id' : 'INTEGER NOT NULL AUTO_INCREMENT',
-                                                  'value' : '%s UNIQUE NOT NULL' % key[1]
-                                                },
-                                     'UniqueIndexes' : { 'valueindex' : [ 'value' ] },
-                                     'PrimaryKey' : 'id'
-                                   }
+      keyTableName = self.__getTableName( "key", name, key[0] )
+      if keyTableName not in tablesInThere:
+        self.log.info( "Table for key %s has to be created" % key[0] )
+        tables[ keyTableName  ] = { 'Fields' : { 'id' : 'INTEGER NOT NULL AUTO_INCREMENT',
+                                                 'value' : '%s UNIQUE NOT NULL' % key[1]
+                                               },
+                                    'UniqueIndexes' : { 'valueindex' : [ 'value' ] },
+                                    'PrimaryKey' : 'id'
+                                  }
     #Registering type
     fieldsDict = {}
     bucketFieldsDict = {}
+    inbufferDict = { 'id' : 'INTEGER NOT NULL AUTO_INCREMENT' }
     indexesDict = {}
     uniqueIndexFields = []
     for field in definitionKeyFields:
@@ -185,35 +245,50 @@ class AccountingDB(DB):
       uniqueIndexFields.append( field[ 0 ] )
       fieldsDict[ field[0] ] = "INTEGER NOT NULL"
       bucketFieldsDict[ field[0] ] = "INTEGER NOT NULL"
+      inbufferDict[ field[0] ] = field[1] + " NOT NULL"
     for field in definitionAccountingFields:
       fieldsDict[ field[0] ] = field[1] + " NOT NULL"
       bucketFieldsDict[ field[0] ] = "DECIMAL(30,10) NOT NULL"
+      inbufferDict[ field[0] ] = field[1] + " NOT NULL"
     fieldsDict[ 'startTime' ] = "INT UNSIGNED NOT NULL"
     fieldsDict[ 'endTime' ] = "INT UNSIGNED NOT NULL"
     bucketFieldsDict[ 'entriesInBucket' ] = "DECIMAL(30,10) NOT NULL"
     bucketFieldsDict[ 'startTime' ] = "INT UNSIGNED NOT NULL"
+    inbufferDict[ 'startTime' ] = "INT UNSIGNED NOT NULL"
+    inbufferDict[ 'endTime' ] = "INT UNSIGNED NOT NULL"
     uniqueIndexFields.append( 'startTime' )
     bucketFieldsDict[ 'bucketLength' ] = "MEDIUMINT UNSIGNED NOT NULL"
     uniqueIndexFields.append( 'bucketLength' )
-    tables[ self.__getTableName( "bucket", name ) ] = { 'Fields' : bucketFieldsDict,
+    bucketTableName = self.__getTableName( "bucket", name )
+    if bucketTableName not in tablesInThere:
+      tables[ bucketTableName ] = { 'Fields' : bucketFieldsDict,
+                                      'Indexes' : indexesDict,
+                                      'UniqueIndexes' : { 'UniqueConstraint' : uniqueIndexFields }
+                                    }
+    typeTableName = self.__getTableName( "type", name )
+    if typeTableName not in tablesInThere:
+      tables[ typeTableName ] = { 'Fields' : fieldsDict,
                                     'Indexes' : indexesDict,
-                                    'UniqueIndexes' : { 'UniqueConstraint' : uniqueIndexFields }
                                   }
-    tables[ self.__getTableName( "type", name ) ] = { 'Fields' : fieldsDict,
-                                  'Indexes' : indexesDict,
-                                }
-    retVal = self._createTables( tables )
-
-    if not retVal[ 'OK' ]:
-      gLogger.error( "Can't create type %s: %s" % ( name, retVal[ 'Message' ] ) )
-      return S_ERROR( "Can't create type %s: %s" % ( name, retVal[ 'Message' ] ) )
-    bucketsLength.sort()
-    bucketsEncoding = DEncode.encode( bucketsLength )
-    self._insert( self.catalogTableName,
-                  [ 'name', 'keyFields', 'valueFields', 'bucketsLength' ],
-                  [ name, ",".join( keyFieldsList ), ",".join( valueFieldsList ), bucketsEncoding ] )
-    self.__addToCatalog( name, keyFieldsList, valueFieldsList, bucketsLength )
-    gLogger.info( "Registered type %s" % name )
+    inTableName = self.__getTableName( "in", name )
+    if typeTableName not in tablesInThere:
+      tables[ inTableName ] = { 'Fields' : inbufferDict,
+                                    'Indexes' : { 'idIndex' : [ 'id' ] },
+                                    'PrimaryKey' : 'id'
+                                  }
+    if tables:
+      retVal = self._createTables( tables )
+      if not retVal[ 'OK' ]:
+        self.log.error( "Can't create type %s: %s" % ( name, retVal[ 'Message' ] ) )
+        return S_ERROR( "Can't create type %s: %s" % ( name, retVal[ 'Message' ] ) )
+    if updateDBCatalog:
+      bucketsLength.sort()
+      bucketsEncoding = DEncode.encode( bucketsLength )
+      self._insert( self.catalogTableName,
+                    [ 'name', 'keyFields', 'valueFields', 'bucketsLength' ],
+                    [ name, ",".join( keyFieldsList ), ",".join( valueFieldsList ), bucketsEncoding ] )
+      self.__addToCatalog( name, keyFieldsList, valueFieldsList, bucketsLength )
+    self.log.info( "Registered type %s" % name )
     return S_OK()
 
   def getRegisteredTypes( self ):
@@ -277,7 +352,7 @@ class AccountingDB(DB):
     """
     if typeName not in self.dbCatalog:
       return S_ERROR( "Type %s does not exist" % typeName )
-    gLogger.info( "Deleting type", typeName )
+    self.log.info( "Deleting type", typeName )
     tablesToDelete = []
     for keyField in self.dbCatalog[ typeName ][ 'keys' ]:
       tablesToDelete.append( "`%s`" % self.__getTableName( "key", typeName, keyField ) )
@@ -317,7 +392,7 @@ class AccountingDB(DB):
       if not retVal[ 'OK' ]:
         return retVal
       connection = retVal[ 'Value' ]
-      gLogger.info( "Value %s for key %s didn't exist, inserting" % ( keyValue, keyName ) )
+      self.log.info( "Value %s for key %s didn't exist, inserting" % ( keyValue, keyName ) )
       retVal = self._insert( keyTable, [ 'id', 'value' ], [ 0, keyValue ], connection )
       if not retVal[ 'OK' ] and retVal[ 'Message' ].find( "Duplicate key" ) == -1:
         return retVal
@@ -360,12 +435,44 @@ class AccountingDB(DB):
       bucketTimeLength = self.calculateBucketLengthForTime( typeName, nowEpoch, currentBucketStart )
     return buckets
 
-  def addEntry( self, typeName, startTime, endTime, valuesList ):
+  def insertRecordThroughQueue( self, typeName, startTime, endTime, valuesList ):
+    """
+    Insert a record in the intable to be really insterted afterwards
+    """
+    self.log.verbose( "Adding RAW record", "for type %s [%s -> %s]" % ( typeName, Time.fromEpoch( startTime ), Time.fromEpoch( endTime ) ) )
+    if not typeName in self.dbCatalog:
+      return S_ERROR( "Type %s has not been defined in the db" % typeName )
+    sqlFields = [ 'id' ] + self.dbCatalog[ typeName ][ 'typeFields' ]
+    sqlValues = [ '0' ] + valuesList + [ startTime, endTime ]
+    retVal = self._insert( self.__getTableName( "in", typeName ),
+                           sqlFields,
+                           sqlValues)
+    if not retVal[ 'OK' ]:
+      return retVal
+    id = retVal[ 'lastRowId' ]
+    self.__threadPool.generateJobAndQueueIt( self.__insertFromINTable ,
+                                             args = ( id, typeName, startTime, endTime, valuesList ) )
+    return retVal
+
+  def __insertFromINTable( self, id, typeName, startTime, endTime, valuesList ):
+    """
+    Do the real insert and delete from the in buffer table
+    """
+    result = self.insertRecordDirectly( typeName, startTime, endTime, valuesList )
+    if not result[ 'OK' ]:
+      self.log.error( "Can't insert row", result[ 'Message' ] )
+      return result
+    result = self._update( "DELETE FROM `%s` WHERE id=%s" % ( self.__getTableName( "in", typeName ), id ) )
+    if not result[ 'OK' ]:
+      self.log.error( "Can't delete row from the IN table", result[ 'Message' ] )
+    return result
+
+  def insertRecordDirectly( self, typeName, startTime, endTime, valuesList ):
     """
     Add an entry to the type contents
     """
     gMonitor.addMark( "registeradded", 1 )
-    gLogger.info( "Adding record", "for type %s [%s -> %s]" % ( typeName, Time.fromEpoch( startTime ), Time.fromEpoch( endTime ) ) )
+    self.log.info( "Adding record", "for type %s [%s -> %s]" % ( typeName, Time.fromEpoch( startTime ), Time.fromEpoch( endTime ) ) )
     if not typeName in self.dbCatalog:
       return S_ERROR( "Type %s has not been defined in the db" % typeName )
     #Discover key indexes
@@ -375,7 +482,7 @@ class AccountingDB(DB):
       retVal = self.__addKeyValue( typeName, keyName, keyValue )
       if not retVal[ 'OK' ]:
         return retVal
-      gLogger.verbose( "Value %s for key %s has id %s" % ( keyValue, keyName, retVal[ 'Value' ] ) )
+      self.log.verbose( "Value %s for key %s has id %s" % ( keyValue, keyName, retVal[ 'Value' ] ) )
       valuesList[ keyPos ] = retVal[ 'Value' ]
     insertList = list( valuesList )
     insertList.append( startTime )
@@ -411,7 +518,7 @@ class AccountingDB(DB):
     numKeys = len( self.dbCatalog[ typeName ][ 'keys' ] )
     keyValues = valuesList[ :numKeys ]
     valuesList = valuesList[ numKeys: ]
-    gLogger.verbose( "Splitting entry", " in %s buckets" % len( buckets ) )
+    self.log.verbose( "Splitting entry", " in %s buckets" % len( buckets ) )
     for bucketInfo in buckets:
       bucketStartTime = bucketInfo[0]
       bucketProportion = bucketInfo[1]
@@ -675,7 +782,7 @@ class AccountingDB(DB):
     Compact buckets for all defined types
     """
     for typeName in self.dbCatalog:
-      gLogger.info( "Compacting %s" % typeName )
+      self.log.info( "Compacting %s" % typeName )
       self.__compactBucketsForType( typeName )
     return S_OK()
 
@@ -732,7 +839,7 @@ class AccountingDB(DB):
       bucketLength = self.dbBucketsLength[ typeName ][ bPos ][1]
       timeLimit = ( nowEpoch - nowEpoch % bucketLength ) - secondsLimit
       nextBucketLength = self.dbBucketsLength[ typeName ][ bPos + 1 ][1]
-      gLogger.verbose( "Compacting data newer that %s with bucket size %s" % ( Time.fromEpoch( timeLimit ), bucketLength ) )
+      self.log.verbose( "Compacting data newer that %s with bucket size %s" % ( Time.fromEpoch( timeLimit ), bucketLength ) )
       #Retrieve the data
       retVal = self.__selectForCompactBuckets( typeName, timeLimit, bucketLength, nextBucketLength, connObj )
       if not retVal[ 'OK' ]:
@@ -745,7 +852,7 @@ class AccountingDB(DB):
       if not retVal[ 'OK' ]:
         self.__rollbackTransaction( connObj )
         return retVal
-      gLogger.info( "Compacting %s records %s seconds size for %s" % ( len( bucketsData ), bucketLength, typeName ) )
+      self.log.info( "Compacting %s records %s seconds size for %s" % ( len( bucketsData ), bucketLength, typeName ) )
       #Add data
       for record in bucketsData:
         startTime = record[-2]
@@ -754,7 +861,7 @@ class AccountingDB(DB):
         retVal = self.__splitInBuckets( typeName, startTime, endTime, valuesList, connObj )
         if not retVal[ 'OK' ]:
           self.__rollbackTransaction( connObj )
-          gLogger.error( "Error while compacting data for record in %s: %s" % ( typeName, retVal[ 'Value' ] ) )
+          self.log.error( "Error while compacting data for record in %s: %s" % ( typeName, retVal[ 'Value' ] ) )
     return self.__commitTransaction( connObj )
 
   def regenerateBuckets( self, typeName ):
@@ -766,7 +873,7 @@ class AccountingDB(DB):
     retVal = self.__startTransaction( connObj )
     if not retVal[ 'OK' ]:
       return retVal
-    gLogger.info( "Deleting buckets for %s" % typeName )
+    self.log.info( "Deleting buckets for %s" % typeName )
     retVal = self._update( "DELETE FROM `%s`" % self.__getTableName( "bucket", typeName ),
                            conn = connObj )
     if not retVal[ 'OK' ]:
@@ -845,18 +952,18 @@ class AccountingDB(DB):
                                                        rawTableName,
                                                        " AND NOT ".join( dateInclusiveConditions ) )
     sqlQueries.append( sqlQuery )
-    gLogger.info( "Retrieving data for rebuilding buckets for type %s..." % ( typeName ) )
+    self.log.info( "Retrieving data for rebuilding buckets for type %s..." % ( typeName ) )
     queryNum = 0
     for sqlQuery in sqlQueries:
-      gLogger.info( "Executing query #%s..." % queryNum )
+      self.log.info( "Executing query #%s..." % queryNum )
       queryNum += 1
       retVal = self._query( sqlQuery, conn = connObj )
       if not retVal[ 'OK' ]:
-        gLogger.error( "Can't retrieve data for rebucketing", retVal[ 'Message' ] )
+        self.log.error( "Can't retrieve data for rebucketing", retVal[ 'Message' ] )
         self.__rollbackTransaction( connObj )
         return retVal
       rawData = retVal[ 'Value' ]
-      gLogger.info( "Retrieved %s records" % len( rawData ) )
+      self.log.info( "Retrieved %s records" % len( rawData ) )
       for entry in rawData:
         startT = entry[0]
         endT = entry[1]

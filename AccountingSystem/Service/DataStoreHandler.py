@@ -1,8 +1,8 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/DataStoreHandler.py,v 1.6 2008/05/13 17:37:23 acasajus Exp $
-__RCSID__ = "$Id: DataStoreHandler.py,v 1.6 2008/05/13 17:37:23 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/DataStoreHandler.py,v 1.7 2009/02/18 14:37:30 acasajus Exp $
+__RCSID__ = "$Id: DataStoreHandler.py,v 1.7 2009/02/18 14:37:30 acasajus Exp $"
 import types
 from DIRAC import S_OK, S_ERROR, gConfig
-from DIRAC.AccountingSystem.private.AccountingDB import AccountingDB
+from DIRAC.AccountingSystem.DB.AccountingDB import AccountingDB
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities import Time
 
@@ -109,7 +109,7 @@ class DataStoreHandler( RequestHandler ):
     typeName = "%s_%s" % ( setup, typeName )
     startTime = int( Time.toEpoch( startTime ) )
     endTime = int( Time.toEpoch( endTime ) )
-    return gAccountingDB.addEntry( typeName, startTime, endTime, valuesList )
+    return gAccountingDB.insertRecordThroughQueue( typeName, startTime, endTime, valuesList )
 
   types_commitRegisters = [ types.ListType ]
   def export_commitRegisters( self, entriesList ):
@@ -128,7 +128,7 @@ class DataStoreHandler( RequestHandler ):
       typeName = "%s_%s" % ( setup, entry[0] )
       startTime = int( Time.toEpoch( entry[1] ) )
       endTime = int( Time.toEpoch( entry[2] ) )
-      retVal = gAccountingDB.addEntry( typeName, startTime, endTime, entry[3] )
+      retVal = gAccountingDB.insertRecordThroughQueue( typeName, startTime, endTime, entry[3] )
       if not retVal[ 'OK' ]:
         return retVal
     return S_OK()
