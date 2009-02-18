@@ -48,7 +48,7 @@ def loadJDLAsCFG( jdl ):
       for i in range( len( valList ) ):
         result = cleanValue( valList[i] )
         if not result[ 'OK' ]:
-          return result
+          return S_ERROR( "Var %s : %s" % ( key, result[ 'Message' ] ) )
         valList[i] = result[ 'Value' ]
         if valList[ i ] == None:
           return S_ERROR( "List value '%s' seems invalid for item %s" % ( value, i ) )
@@ -56,7 +56,7 @@ def loadJDLAsCFG( jdl ):
     else:
       result = cleanValue( value )
       if not result[ 'OK' ]:
-        return result
+        return S_ERROR( "Var %s : %s" % ( key, result[ 'Message' ] ) )
       nV = result[ 'Value' ]
       if nV == None:
         return S_ERROR( "Value '%s seems invalid" % ( value ) )
