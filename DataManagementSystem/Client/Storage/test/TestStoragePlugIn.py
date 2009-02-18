@@ -344,7 +344,7 @@ class FileTestCase(StoragePlugInTestCase):
     # Check the get operation
     self.assert_(getFileRes['OK'])
     self.assert_(getFileRes['Value']['Successful'].has_key(remoteFile))
-    self.assertEqual(putFileRes['Value']['Successful'][remoteFile],srcFileSize)
+    self.assertEqual(getFileRes['Value']['Successful'][remoteFile],srcFileSize)
     # Check the remove operation
     self.assert_(removeFileRes['OK'])
     self.assert_(removeFileRes['Value']['Successful'].has_key(remoteFile))
