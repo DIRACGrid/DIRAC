@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/DB/AccountingDB.py,v 1.1 2009/02/18 14:37:31 acasajus Exp $
-__RCSID__ = "$Id: AccountingDB.py,v 1.1 2009/02/18 14:37:31 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/DB/AccountingDB.py,v 1.2 2009/02/19 15:45:44 acasajus Exp $
+__RCSID__ = "$Id: AccountingDB.py,v 1.2 2009/02/19 15:45:44 acasajus Exp $"
 
 import datetime, time
 import types
@@ -22,7 +22,8 @@ class AccountingDB(DB):
     self.autoCompact = False
     self.dbCatalog = {}
     self.dbBucketsLength = {}
-    self.__threadPool = ThreadPool( max( 1, int( maxQueueSize / 2 ) ) )
+    maxParallelInsertions = self.getCSOption( "ParallelRecordInsertions", maxQueueSize )
+    self.__threadPool = ThreadPool( 2, maxParallelInsertions )
     self.__threadPool.daemonize()
     self.catalogTableName = self.__getTableName( "catalog", "Types" )
     self._createTables( { self.catalogTableName : { 'Fields' : { 'name' : "VARCHAR(64) UNIQUE NOT NULL",
@@ -41,7 +42,6 @@ class AccountingDB(DB):
                                "entries",
                                gMonitor.OP_ACUM )
     self.__registerTypes()
-    self.__loadPendingRecords()
 
   def __loadTablesCreated( self ):
     result = self._query( "show tables" )
@@ -128,7 +128,13 @@ class AccountingDB(DB):
       bucketsLength = DEncode.decode( typesEntry[3] )[0]
       self.__addToCatalog( typeName, keyFields, valueFields, bucketsLength )
 
-  def __loadPendingRecords(self):
+  def getWaitingRecordsLifeTime( self ):
+    """
+    Get the time records can live in the IN tables without no retry
+    """
+    return self.getCSOption( "RecordMaxWaitingTime", 3600 )
+
+  def loadPendingRecords(self):
     """
       Load all records pending to insertion and generate threaded jobs
     """
@@ -136,14 +142,27 @@ class AccountingDB(DB):
     pending = 0
     for typeName in self.dbCatalog:
       self.log.info( "Checking %s" % typeName )
+      sqlTableName = self.__getTableName( "in", typeName )
       sqlFields = [ 'id' ] + self.dbCatalog[ typeName ][ 'typeFields' ]
-      result = self._query( "SELECT %s FROM `%s` ORDER BY id" % ( ", ".join( [ "`%s`" % f for f in sqlFields ] ),
-                                                                  self.__getTableName( "in", typeName ) ) )
+      sqlCond = "taken = False or TIMESTAMPDIFF( SECOND, takenSince, UTC_TIMESTAMP() ) > %s" % self.getWaitingRecordsLifeTime()
+      result = self._query( "SELECT %s FROM `%s`  WHERE %s ORDER BY id ASC LIMIT 1000" % ( ", ".join( [ "`%s`" % f for f in sqlFields ] ),
+                                                                                     sqlTableName,
+                                                                                     sqlCond ) )
       if not result[ 'OK' ]:
         self.log.error( "Error when trying to get pending records", "for %s : %s" % ( typeName, result[ 'Message' ] ) )
         return result
       self.log.info( "Got %s pending requests for type %s" % ( len( result[ 'Value' ] ), typeName ) )
-      for record in result[ 'Value' ]:
+      dbData = result[ 'Value' ]
+      idList = [ str( r[0] ) for r in dbData ]
+      #If nothing to do, continue
+      if not idList:
+        continue
+      result = self._update( "UPDATE `%s` SET taken=True, takenSince=UTC_TIMESTAMP() WHERE id in (%s)" % ( sqlTableName,
+                                                                                                           ", ".join( idList ) ) )
+      if not result[ 'OK' ]:
+        self.log.error( "Error when trying set state to waiting records", "for %s : %s" % ( typeName, result[ 'Message' ] ) )
+        return result
+      for record in dbData:
         id =         record[ 0 ]
         startTime =  record[ -2 ]
         endTime =    record[ -1 ]
@@ -256,6 +275,8 @@ class AccountingDB(DB):
     bucketFieldsDict[ 'startTime' ] = "INT UNSIGNED NOT NULL"
     inbufferDict[ 'startTime' ] = "INT UNSIGNED NOT NULL"
     inbufferDict[ 'endTime' ] = "INT UNSIGNED NOT NULL"
+    inbufferDict[ 'taken' ] = "BOOLEAN DEFAULT True NOT NULL"
+    inbufferDict[ 'takenSince' ] = "DATETIME NOT NULL"
     uniqueIndexFields.append( 'startTime' )
     bucketFieldsDict[ 'bucketLength' ] = "MEDIUMINT UNSIGNED NOT NULL"
     uniqueIndexFields.append( 'bucketLength' )
@@ -442,8 +463,8 @@ class AccountingDB(DB):
     self.log.verbose( "Adding RAW record", "for type %s [%s -> %s]" % ( typeName, Time.fromEpoch( startTime ), Time.fromEpoch( endTime ) ) )
     if not typeName in self.dbCatalog:
       return S_ERROR( "Type %s has not been defined in the db" % typeName )
-    sqlFields = [ 'id' ] + self.dbCatalog[ typeName ][ 'typeFields' ]
-    sqlValues = [ '0' ] + valuesList + [ startTime, endTime ]
+    sqlFields = [ 'id', 'taken', 'takenSince' ] + self.dbCatalog[ typeName ][ 'typeFields' ]
+    sqlValues = [ '0', 'True', 'UTC_TIMESTAMP()' ] + valuesList + [ startTime, endTime ]
     retVal = self._insert( self.__getTableName( "in", typeName ),
                            sqlFields,
                            sqlValues)
@@ -460,6 +481,7 @@ class AccountingDB(DB):
     """
     result = self.insertRecordDirectly( typeName, startTime, endTime, valuesList )
     if not result[ 'OK' ]:
+      self._update( "UPDATE `%s` SET taken=False WHERE id=%s" % ( self.__getTableName( "in", typeName ), id ) )
       self.log.error( "Can't insert row", result[ 'Message' ] )
       return result
     result = self._update( "DELETE FROM `%s` WHERE id=%s" % ( self.__getTableName( "in", typeName ), id ) )
