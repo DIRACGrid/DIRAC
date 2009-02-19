@@ -27,7 +27,6 @@ def getNTPUTCTime( servers = [], retries = 2 ):
     if not worked:
       continue
     if data:
-      print 'Response received from:', address
       t = struct.unpack( '!12I', data )[10]
       t -= TIME1970
       return S_OK( datetime.datetime( *time.gmtime(t)[:6] ) )
