@@ -71,10 +71,11 @@ def loadJDLAsCFG( jdl ):
   key = ""
   value = ""
   action = "key"
+  insideLiteral = False
   cfg = CFG()
   while iPos < len( jdl ):
     c = jdl[ iPos ]
-    if c == ";":
+    if c == ";" and not insideLiteral:
       if key.strip():
         result = assignValue( key, value, cfg )
         if not result[ 'OK' ]:
@@ -82,7 +83,7 @@ def loadJDLAsCFG( jdl ):
       key = ""
       value = ""
       action = "key"
-    elif c == "[":
+    elif c == "[" and not insideLiteral:
       key = key.strip()
       if not key:
         return S_ERROR( "Invalid key" )
@@ -94,13 +95,15 @@ def loadJDLAsCFG( jdl ):
       key = ""
       value = ""
       action = "key"
+      insideLiteral = False
       iPos += subPos
-    elif c == "=":
+    elif c == "=" and not insideLiteral:
       if action == "key":
         action = "value"
+        insideLiteral = False
       else:
         value += c
-    elif c == "]":
+    elif c == "]" and not insideLiteral:
       key = key.strip()
       if len( key ) > 0:
         result = assignValue( key, value, cfg )
@@ -112,6 +115,8 @@ def loadJDLAsCFG( jdl ):
         key += c
       else:
         value += c
+        if c == '"':
+          insideLiteral = not insideLiteral
     iPos += 1
 
   return S_OK( ( cfg, iPos ) )
