@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/DB.py,v 1.6 2008/11/23 16:11:24 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/DB.py,v 1.7 2009/02/19 09:55:00 acasajus Exp $
 ########################################################################
 
 """ BaseDB is the base class for multiple DIRAC databases. It uniforms the
     way how the database objects are constructed
 """
 
-__RCSID__ = "$Id: DB.py,v 1.6 2008/11/23 16:11:24 atsareg Exp $"
+__RCSID__ = "$Id: DB.py,v 1.7 2009/02/19 09:55:00 acasajus Exp $"
 
 import sys, types
 from DIRAC                           import gLogger, S_OK, S_ERROR
@@ -139,12 +139,12 @@ class DB(MySQL):
       item = (attrDict,raw[len(attrList)])
       resultList.append(item)
     return S_OK(resultList)
-    
+
 #############################################################################
   def getDistinctAttributeValues(self,table,attribute,condDict = {}, older = None, newer=None, timeStamp=None):
     """ Get distinct values of a table attribute under specified conditions
     """
-    
+
     cmd = 'SELECT  DISTINCT(%s) FROM %s ORDER BY %s' % (attribute,table,attribute)
     cond = self.buildCondition( condDict, older=older, newer=newer, timeStamp=timeStamp )
     result = self._query( cmd + cond )
@@ -153,3 +153,7 @@ class DB(MySQL):
 
     attr_list = [ x[0] for x in result['Value'] ]
     return S_OK(attr_list)
+
+#############################################################################
+  def getCSOption( self, optionName, defaultValue = None ):
+    return gConfig.getValue( "/%s/%s" % ( self.cs_path, optionName ), defaultValue )
