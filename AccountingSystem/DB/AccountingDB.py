@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/DB/AccountingDB.py,v 1.2 2009/02/19 15:45:44 acasajus Exp $
-__RCSID__ = "$Id: AccountingDB.py,v 1.2 2009/02/19 15:45:44 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/DB/AccountingDB.py,v 1.3 2009/02/19 20:17:25 acasajus Exp $
+__RCSID__ = "$Id: AccountingDB.py,v 1.3 2009/02/19 20:17:25 acasajus Exp $"
 
 import datetime, time
 import types
@@ -41,6 +41,11 @@ class AccountingDB(DB):
                                "Accounting",
                                "entries",
                                gMonitor.OP_ACUM )
+    gMonitor.registerActivity( "insertiontime",
+                               "Record insertion time",
+                               "Accounting",
+                               "seconds",
+                               gMonitor.OP_MEAN )
     self.__registerTypes()
 
   def __loadTablesCreated( self ):
@@ -132,7 +137,7 @@ class AccountingDB(DB):
     """
     Get the time records can live in the IN tables without no retry
     """
-    return self.getCSOption( "RecordMaxWaitingTime", 3600 )
+    return self.getCSOption( "RecordMaxWaitingTime", 86400 )
 
   def loadPendingRecords(self):
     """
@@ -168,7 +173,7 @@ class AccountingDB(DB):
         endTime =    record[ -1 ]
         valuesList = list( record[ 1:-2 ] )
         self.__threadPool.generateJobAndQueueIt( self.__insertFromINTable ,
-                                             args = ( id, typeName, startTime, endTime, valuesList ) )
+                                             args = ( id, typeName, startTime, endTime, valuesList, Time.toEpoch() ) )
         pending += 1
     self.log.info( "Got %s pending requests for all types" % pending )
     return S_OK()
@@ -472,10 +477,10 @@ class AccountingDB(DB):
       return retVal
     id = retVal[ 'lastRowId' ]
     self.__threadPool.generateJobAndQueueIt( self.__insertFromINTable ,
-                                             args = ( id, typeName, startTime, endTime, valuesList ) )
+                                             args = ( id, typeName, startTime, endTime, valuesList, Time.toEpoch() ) )
     return retVal
 
-  def __insertFromINTable( self, id, typeName, startTime, endTime, valuesList ):
+  def __insertFromINTable( self, id, typeName, startTime, endTime, valuesList, insertionEpoch ):
     """
     Do the real insert and delete from the in buffer table
     """
@@ -487,6 +492,8 @@ class AccountingDB(DB):
     result = self._update( "DELETE FROM `%s` WHERE id=%s" % ( self.__getTableName( "in", typeName ), id ) )
     if not result[ 'OK' ]:
       self.log.error( "Can't delete row from the IN table", result[ 'Message' ] )
+    #TODO HERE
+    gMonitor.addMark( "insertiontime", Time.toEpoch() - insertionEpoch )
     return result
 
   def insertRecordDirectly( self, typeName, startTime, endTime, valuesList ):
