@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/DB/AccountingDB.py,v 1.3 2009/02/19 20:17:25 acasajus Exp $
-__RCSID__ = "$Id: AccountingDB.py,v 1.3 2009/02/19 20:17:25 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/DB/AccountingDB.py,v 1.4 2009/02/19 20:29:38 acasajus Exp $
+__RCSID__ = "$Id: AccountingDB.py,v 1.4 2009/02/19 20:29:38 acasajus Exp $"
 
 import datetime, time
 import types
@@ -297,7 +297,7 @@ class AccountingDB(DB):
                                     'Indexes' : indexesDict,
                                   }
     inTableName = self.__getTableName( "in", name )
-    if typeTableName not in tablesInThere:
+    if inTableName not in tablesInThere:
       tables[ inTableName ] = { 'Fields' : inbufferDict,
                                     'Indexes' : { 'idIndex' : [ 'id' ] },
                                     'PrimaryKey' : 'id'
