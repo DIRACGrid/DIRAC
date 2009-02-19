@@ -38,4 +38,4 @@ def getClockDeviation( servers = [] ):
   if not result[ 'OK' ]:
     return result
   td = datetime.datetime.utcnow() - result[ 'Value' ]
-  return S_OK( td.days*86400 + td.seconds )
+  return S_OK( abs( td.days*86400 + td.seconds ) )
