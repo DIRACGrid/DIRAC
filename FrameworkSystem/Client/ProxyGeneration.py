@@ -1,15 +1,17 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyGeneration.py,v 1.1 2009/01/12 15:44:14 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyGeneration.py,v 1.2 2009/02/19 19:18:55 acasajus Exp $
 # File :   dirac-proxy-init.py
 # Author : Adrian Casajus
 ########################################################################
-__RCSID__   = "$Id: ProxyGeneration.py,v 1.1 2009/01/12 15:44:14 acasajus Exp $"
-__VERSION__ = "$Revision: 1.1 $"
+__RCSID__   = "$Id: ProxyGeneration.py,v 1.2 2009/02/19 19:18:55 acasajus Exp $"
+__VERSION__ = "$Revision: 1.2 $"
 
 import sys
 import getpass
 from DIRACEnvironment import DIRAC
 from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.NTP import getClockDeviation
+
 
 class CLIParams:
 
@@ -25,6 +27,7 @@ class CLIParams:
   checkWithCS = True
   stdinPasswd = False
   userPasswd = ""
+  checkClock = True
 
   def setProxyLifeTime( self, arg ):
     try:
@@ -102,6 +105,10 @@ class CLIParams:
     sys.exit(0)
     return DIRAC.S_OK()
 
+  def disableClockCheck( self, arg ):
+    self.checkClock = False
+    return DIRAC.S_OK()
+
   def debugMsg( self, msg ):
     if self.debug:
       print msg
@@ -119,13 +126,33 @@ class CLIParams:
     Script.registerSwitch( "x", "nocs", "Disable CS check", self.setDisableCSCheck )
     Script.registerSwitch( "p", "pwstdin", "Get passwd from stdin", self.setStdinPasswd )
     Script.registerSwitch( "i", "version", "Print version", self.showVersion )
+    Script.registerSwitch( "j", "noclockcheck", "Disable checking if time is ok", self.disableClockCheck )
     Script.addDefaultOptionValue( "LogLevel", "always" )
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.Core.Security import Locations, CS
 
+
 def generateProxy( params ):
+
+  if params.checkClock:
+    result = getClockDeviation()
+    if not result[ 'OK' ]:
+      print "Error: %s" % result[ 'Message' ]
+    else:
+      deviation = result[ 'Value' ]
+      if deviation > 600:
+        print "Error: Your host clock seems to be off by more than TEN MINUTES! Thats really bad."
+        print "We're cowardly refusing to generate a proxy. Please fix your system time"
+        DIRAC.exit(1)
+      elif deviation > 180:
+        print "Error: Your host clock seems to be off by more than THREE minutes! Thats bad."
+        print "Warn : We'll generate the proxy but please fix your system time"
+      elif deviation > 60:
+        print "Error: Your host clock seems to be off by more than a minute! Thats not good."
+        print "Warn : We'll generate the proxy but please fix your system time"
+
   certLoc = params.certLoc
   keyLoc = params.keyLoc
   if not certLoc or not keyLoc:

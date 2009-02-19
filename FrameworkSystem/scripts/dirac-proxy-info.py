@@ -1,16 +1,17 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/scripts/dirac-proxy-info.py,v 1.9 2009/01/09 10:05:43 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/scripts/dirac-proxy-info.py,v 1.10 2009/02/19 19:19:15 acasajus Exp $
 # File :   dirac-proxy-init.py
 # Author : Adrian Casajus
 ########################################################################
-__RCSID__   = "$Id: dirac-proxy-info.py,v 1.9 2009/01/09 10:05:43 acasajus Exp $"
-__VERSION__ = "$Revision: 1.9 $"
+__RCSID__   = "$Id: dirac-proxy-info.py,v 1.10 2009/02/19 19:19:15 acasajus Exp $"
+__VERSION__ = "$Revision: 1.10 $"
 
 import sys
 import os.path
 from DIRACEnvironment import DIRAC
 from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.NTP import getClockDeviation
 
 
 class Params:
@@ -21,6 +22,7 @@ class Params:
   csEnabled = True
   steps = False
   checkValid = False
+  checkClock = True
 
   def showVersion( self, arg ):
     print "Version:"
@@ -53,6 +55,10 @@ class Params:
     self.checkValid = True
     return DIRAC.S_OK()
 
+  def disableClockCheck( self, arg ):
+    self.checkClock = False
+    return DIRAC.S_OK()
+
 params = Params()
 
 Script.registerSwitch( "f:", "file=", "File to use as user key", params.setProxyLocation )
@@ -61,6 +67,7 @@ Script.registerSwitch( "n", "novoms", "Disable VOMS", params.disableVOMS )
 Script.registerSwitch( "v", "checkvalid", "Return error if the proxy is invalid", params.validityCheck )
 Script.registerSwitch( "x", "nocs", "Disable CS", params.disableCS )
 Script.registerSwitch( "e", "steps", "Show steps info", params.showSteps )
+Script.registerSwitch( "j", "noclockcheck", "Disable checking if time is ok", params.disableClockCheck )
 
 Script.disableCS()
 Script.parseCommandLine()
@@ -72,6 +79,20 @@ if params.csEnabled:
 
 from DIRAC.Core.Security.Misc import *
 from DIRAC.Core.Security import CS, VOMS
+
+if params.checkClock:
+  result = getClockDeviation()
+  if not result[ 'OK' ]:
+    print "Error: %s" % result[ 'Message' ]
+  else:
+    deviation = result[ 'Value' ]
+    if deviation > 600:
+      print "Error: Your host clock seems to be off by more than TEN MINUTES! Thats really bad."
+    elif deviation > 180:
+      print "Error: Your host clock seems to be off by more than THREE minutes! Thats bad."
+    elif deviation > 60:
+      print "Error: Your host clock seems to be off by more than a minute! Thats not good."
+
 
 result = getProxyInfo( params.proxyLoc, not params.vomsEnabled )
 if not result[ 'OK' ]:
