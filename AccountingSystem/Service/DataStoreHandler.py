@@ -1,10 +1,11 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/DataStoreHandler.py,v 1.7 2009/02/18 14:37:30 acasajus Exp $
-__RCSID__ = "$Id: DataStoreHandler.py,v 1.7 2009/02/18 14:37:30 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/DataStoreHandler.py,v 1.8 2009/02/19 15:45:08 acasajus Exp $
+__RCSID__ = "$Id: DataStoreHandler.py,v 1.8 2009/02/19 15:45:08 acasajus Exp $"
 import types
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.AccountingSystem.DB.AccountingDB import AccountingDB
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities import Time
+from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 
 gAccountingDB = False
 
@@ -12,6 +13,8 @@ def initializeDataStoreHandler( serviceInfo ):
   global gAccountingDB
   gAccountingDB = AccountingDB()
   gAccountingDB.autoCompactDB()
+  wRLT = gAccountingDB.getWaitingRecordsLifeTime()
+  gThreadScheduler.addPeriodicTask( wRLT, gAccountingDB.loadPendingRecords, elapsedTime = wRLT )
   return S_OK()
 
 class DataStoreHandler( RequestHandler ):
