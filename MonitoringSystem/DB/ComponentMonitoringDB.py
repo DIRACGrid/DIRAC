@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/DB/ComponentMonitoringDB.py,v 1.2 2009/02/20 12:15:49 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/DB/ComponentMonitoringDB.py,v 1.3 2009/02/20 12:16:47 acasajus Exp $
 ########################################################################
 """ ComponentMonitoring class is a front-end to the Component monitoring Database
 """
 
-__RCSID__ = "$Id: ComponentMonitoringDB.py,v 1.2 2009/02/20 12:15:49 acasajus Exp $"
+__RCSID__ = "$Id: ComponentMonitoringDB.py,v 1.3 2009/02/20 12:16:47 acasajus Exp $"
 
 import time
 import random
@@ -183,6 +183,8 @@ class ComponentMonitoringDB(DB):
     if 'cycles' in compDict:
       cycles = compDict[ 'cycles' ]
     sqlUpdateFields.append( "Cycles=%s" % cycles )
+    if 'startTime' in compDict:
+      sqlUpdateFields.append( "StartTime=%s" % compDict[ 'startTime' ] )
     return self._update( "UPDATE `%s` SET %s WHERE Id=%s" % ( self.__getTableName( "Components" ),
                                                                        ", ".join( sqlUpdateFields ),
                                                                        compDict[ 'compId' ] ) )
