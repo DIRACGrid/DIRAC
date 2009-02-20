@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.38 2008/12/16 14:15:38 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.39 2009/02/20 09:22:54 acasajus Exp $
 ########################################################################
 """ ProxyRepository class is a front-end to the proxy repository Database
 """
 
-__RCSID__ = "$Id: ProxyDB.py,v 1.38 2008/12/16 14:15:38 acasajus Exp $"
+__RCSID__ = "$Id: ProxyDB.py,v 1.39 2009/02/20 09:22:54 acasajus Exp $"
 
 import time
 import random
@@ -185,7 +185,7 @@ class ProxyDB(DB):
     if not voms.vomsInfoAvailable():
       if self.__vomsRequired:
         return S_ERROR( "VOMS is required, but it's not available" )
-      gLogger.warn( "voms-proxy-info is not available" )
+      self.log.warn( "voms-proxy-info is not available" )
       return S_OK()
     retVal = voms.getVOMSAttributes( chain )
     if not retVal[ 'OK' ]:
@@ -267,7 +267,7 @@ class ProxyDB(DB):
     if not userDN == proxyIdentityDN:
       msg = "Mismatch in the user DN"
       vMsg = "Proxy says %s and credentials are %s" % ( proxyIdentityDN, userDN )
-      gLogger.error( msg, vMsg )
+      self.log.error( msg, vMsg )
       return S_ERROR(  "%s. %s" % ( msg, vMsg ) )
     #Check the groups
     retVal = chain.getDIRACGroup()
@@ -279,12 +279,12 @@ class ProxyDB(DB):
     if not userGroup == proxyGroup:
       msg = "Mismatch in the user group"
       vMsg = "Proxy says %s and credentials are %s" % ( proxyGroup, userGroup )
-      gLogger.error( msg, vMsg )
+      self.log.error( msg, vMsg )
       return S_ERROR(  "%s. %s" % ( msg, vMsg ) )
     #Check if its limited
     if chain.isLimitedProxy()['Value']:
       return S_ERROR( "Limited proxies are not allowed to be stored" )
-    gLogger.info( "Storing proxy for credentials %s (%s secs)" %( proxyIdentityDN,remainingSecs ) )
+    self.log.info( "Storing proxy for credentials %s (%s secs)" %( proxyIdentityDN,remainingSecs ) )
 
     # Check what we have already got in the repository
     cmd = "SELECT TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime ), Pem FROM `ProxyDB_Proxies` WHERE UserDN='%s' AND UserGroup='%s'" % ( userDN,
@@ -301,7 +301,7 @@ class ProxyDB(DB):
       if pem:
         remainingSecsInDB = data[0][0]
         if remainingSecs <= remainingSecsInDB:
-          gLogger.info( "Proxy stored is longer than uploaded, omitting.", "%s in uploaded, %s in db" % (remainingSecs, remainingSecsInDB ) )
+          self.log.info( "Proxy stored is longer than uploaded, omitting.", "%s in uploaded, %s in db" % (remainingSecs, remainingSecsInDB ) )
           return S_OK()
 
     pemChain = chain.dumpAllToString()['Value']
@@ -378,7 +378,7 @@ class ProxyDB(DB):
     maxMyProxyLifeTime = self.getMyProxyMaxLifeTime()
     #If we have a chain that's 0.8 of max mplifetime don't ask to mp
     if originChainLifeTime > maxMyProxyLifeTime * 0.8:
-      gLogger.error( "Skipping myproxy download",
+      self.log.error( "Skipping myproxy download",
                      "user %s %s  chain has %s secs and requested %s secs" % ( userDN,
                                                                                userGroup,
                                                                                originChainLifeTime,
@@ -388,7 +388,7 @@ class ProxyDB(DB):
     lifeTime *= 1.3
     if lifeTime > maxMyProxyLifeTime:
       lifeTime = maxMyProxyLifeTime
-    gLogger.error( "Renewing proxy from myproxy", "user %s %s for %s secs" % ( userDN, userGroup, lifeTime ) )
+    self.log.error( "Renewing proxy from myproxy", "user %s %s for %s secs" % ( userDN, userGroup, lifeTime ) )
 
     myProxy = MyProxy( server = self.getMyProxyServer() )
     retVal = myProxy.getDelegatedProxy( chain, lifeTime )
@@ -400,7 +400,7 @@ class ProxyDB(DB):
       return S_ERROR( "Can't retrieve remaining secs from renewed proxy: %s" % retVal[ 'Message' ] )
     mpChainSecsLeft = retVal['Value']
     if mpChainSecsLeft < originChainLifeTime:
-      gLogger.info( "Chain downloaded from myproxy has less lifetime than the one stored in the db",
+      self.log.info( "Chain downloaded from myproxy has less lifetime than the one stored in the db",
                     "\n Downloaded from myproxy: %s secs\n Stored in DB: %s secs" % ( mpChainSecsLeft, originChainLifeTime ) )
       return S_OK( chain )
     retVal = mpChain.getDIRACGroup()
@@ -411,7 +411,7 @@ class ProxyDB(DB):
       return S_ERROR( "Mismatch between renewed proxy group and expected: %s vs %s" % ( userGroup, chainGroup ) )
     retVal = self.storeProxy( userDN, userGroup, mpChain )
     if not retVal[ 'OK' ]:
-      gLogger.error( "Cannot store proxy after renewal", retVal[ 'Message' ] )
+      self.log.error( "Cannot store proxy after renewal", retVal[ 'Message' ] )
     retVal = myProxy.getServiceDN()
     if not retVal[ 'OK' ]:
       hostDN = userDN
@@ -661,7 +661,7 @@ class ProxyDB(DB):
                                                                    targetGroup )
     retVal = self._update( cmd )
     if not retVal[ 'OK' ]:
-      gLogger.error( "Can't add a log: %s" % retVal[ 'Message' ] )
+      self.log.error( "Can't add a proxy action log: ", retVal[ 'Message' ] )
 
   def purgeLogs( self ):
     """
