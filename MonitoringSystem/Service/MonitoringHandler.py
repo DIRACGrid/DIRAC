@@ -1,16 +1,19 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Service/MonitoringHandler.py,v 1.9 2008/10/10 14:59:32 acasajus Exp $
-__RCSID__ = "$Id: MonitoringHandler.py,v 1.9 2008/10/10 14:59:32 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Service/MonitoringHandler.py,v 1.10 2009/02/20 12:13:39 acasajus Exp $
+__RCSID__ = "$Id: MonitoringHandler.py,v 1.10 2009/02/20 12:13:39 acasajus Exp $"
 import types
 import os
 from DIRAC import gLogger, gConfig, rootPath, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities import DEncode, Time
 from DIRAC.MonitoringSystem.Client.MonitoringClient import gMonitor
+from DIRAC.MonitoringSystem.DB.ComponentMonitoringDB import ComponentMonitoringDB
 from DIRAC.ConfigurationSystem.Client import PathFinder
-
 from DIRAC.MonitoringSystem.private.ServiceInterface import gServiceInterface
 
+gCompDB = False
+
 def initializeMonitoringHandler( serviceInfo ):
+  global gCompDB
   #Check that the path is writable
   monitoringSection = PathFinder.getServiceSection( "Monitoring/Server" )
   #Get data location
@@ -37,19 +40,43 @@ def initializeMonitoringHandler( serviceInfo ):
     return S_ERROR( "Can't start db engine" )
   gMonitor.registerActivity( "cachedplots", "Cached plot images", "Monitoring plots", "plots", gMonitor.OP_SUM )
   gMonitor.registerActivity( "drawnplots", "Drawn plot images", "Monitoring plots", "plots", gMonitor.OP_SUM )
+  try:
+    gCompDB = ComponentMonitoringDB()
+  except Exception, e:
+    gLogger.exception( "Cannot initialize component monitoring db" )
+    return S_ERROR( "Cannot initialize component monitoring db: %s" % str(e) )
   return S_OK()
 
 class MonitoringHandler( RequestHandler ):
+
+  __sourceToComponentIdMapping = {}
 
   types_registerActivities = [ types.DictType, types.DictType ]
   def export_registerActivities( self, sourceDict, activitiesDict ):
     """
     Registers new activities
     """
-    return gServiceInterface.registerActivities( sourceDict, activitiesDict )
+    result = gServiceInterface.registerActivities( sourceDict, activitiesDict )
+    if not result[ 'OK' ]:
+      return result
+    if sourceDict[ 'componentType' ] not in ( 'service', 'agent' ):
+      return result
+    sourceId = result[ 'Value' ]
+    compDict = { 'componentName' : sourceDict[ 'componentName' ],
+                 'setup'         : sourceDict[ 'setup' ],
+                 'type'          : sourceDict[ 'componentType' ],
+                 'location'      : sourceDict[ 'componentLocation' ]
+                }
+    MonitoringHandler.__sourceToComponentIdMapping[ sourceId ] = compDict
+    result = gCompDB.registerComponent( compDict, shallow = True )
+    if not result[ 'OK' ]:
+      gLogger.error( "Cannot shallow register component in ComponentMonitoringDB", result[ 'Message' ] )
+    else:
+      compDict[ 'compId' ] = result[ 'Value' ]
+    return S_OK( sourceId )
 
   types_commitMarks = [ types.IntType, types.DictType ]
-  def export_commitMarks( self, sourceId, activitiesDict ):
+  def export_commitMarks( self, sourceId, activitiesDict, cycles = 0 ):
     """
     Adds marks for activities
     """
@@ -66,6 +93,16 @@ class MonitoringHandler( RequestHandler ):
     for acName in invalidActivities:
       gLogger.info( "Not commiting activity %s" % acName )
       del( activitiesDict[ acName ] )
+    #Component heartbeat
+    if sourceId not in MonitoringHandler.__sourceToComponentIdMapping:
+      #TODO
+      pass
+    compDict = MonitoringHandler.__sourceToComponentIdMapping[ sourceId ]
+    compDict[ 'cycles' ] = cycles
+    #Fill cycles
+    result = gCompDB.heartbeat( compDict )
+    if not result[ 'OK' ]:
+      gLogger.error( "Cannot heatbeat component in ComponentMonitoringDB", result[ 'Message' ] )
     return gServiceInterface.commitMarks( sourceId, activitiesDict )
 
   types_queryField = [ types.StringType, types.DictType ]
