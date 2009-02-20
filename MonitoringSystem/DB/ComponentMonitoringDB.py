@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/DB/ComponentMonitoringDB.py,v 1.1 2009/02/20 12:13:55 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/DB/ComponentMonitoringDB.py,v 1.2 2009/02/20 12:15:49 acasajus Exp $
 ########################################################################
 """ ComponentMonitoring class is a front-end to the Component monitoring Database
 """
 
-__RCSID__ = "$Id: ComponentMonitoringDB.py,v 1.1 2009/02/20 12:13:55 acasajus Exp $"
+__RCSID__ = "$Id: ComponentMonitoringDB.py,v 1.2 2009/02/20 12:15:49 acasajus Exp $"
 
 import time
 import random
@@ -96,7 +96,10 @@ class ComponentMonitoringDB(DB):
     sqlInsertFields.append( "LastHeartbeat" )
     sqlInsertValues.append( "UTC_TIMESTAMP()" )
     sqlInsertFields.append( "StartTime" )
-    sqlInsertValues.append( "UTC_TIMESTAMP()" )
+    if 'startTime' in compDict:
+      sqlInsertValues.append( compDict[ 'startTime' ] )
+    else:
+      sqlInsertValues.append( "UTC_TIMESTAMP()" )
     if 'cycles' not in compDict:
       compDict[ 'cycles' ] = 0
     for field in ( 'cycles', ):

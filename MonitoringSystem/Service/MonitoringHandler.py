@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Service/MonitoringHandler.py,v 1.10 2009/02/20 12:13:39 acasajus Exp $
-__RCSID__ = "$Id: MonitoringHandler.py,v 1.10 2009/02/20 12:13:39 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Service/MonitoringHandler.py,v 1.11 2009/02/20 12:17:21 acasajus Exp $
+__RCSID__ = "$Id: MonitoringHandler.py,v 1.11 2009/02/20 12:17:21 acasajus Exp $"
 import types
 import os
 from DIRAC import gLogger, gConfig, rootPath, S_OK, S_ERROR
@@ -52,7 +52,7 @@ class MonitoringHandler( RequestHandler ):
   __sourceToComponentIdMapping = {}
 
   types_registerActivities = [ types.DictType, types.DictType ]
-  def export_registerActivities( self, sourceDict, activitiesDict ):
+  def export_registerActivities( self, sourceDict, activitiesDict, startTime = None ):
     """
     Registers new activities
     """
@@ -67,6 +67,8 @@ class MonitoringHandler( RequestHandler ):
                  'type'          : sourceDict[ 'componentType' ],
                  'location'      : sourceDict[ 'componentLocation' ]
                 }
+    if startTime:
+      compDict[ 'startTime' ] = startTime
     MonitoringHandler.__sourceToComponentIdMapping[ sourceId ] = compDict
     result = gCompDB.registerComponent( compDict, shallow = True )
     if not result[ 'OK' ]:
