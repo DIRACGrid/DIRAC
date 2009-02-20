@@ -140,7 +140,6 @@ class MonitoringCatalog:
                                            whereCond,
                                            queryEnd
                                            )
-    print query
     c = self.__dbExecute( query, values = valuesList )
     return c.fetchall()
 
@@ -340,7 +339,6 @@ class MonitoringCatalog:
     """
     Get a view for a given id
     """
-    print "VID", type( viewId )
     if type( viewId ) in ( types.StringType, types.UnicodeType ):
       return self.__select( "definition, variableFields", "views", { "name" : viewId } )
     else:
