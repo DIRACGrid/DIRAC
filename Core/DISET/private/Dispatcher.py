@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Dispatcher.py,v 1.15 2008/10/14 13:54:22 acasajus Exp $
-__RCSID__ = "$Id: Dispatcher.py,v 1.15 2008/10/14 13:54:22 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Dispatcher.py,v 1.16 2009/02/23 20:03:36 acasajus Exp $
+__RCSID__ = "$Id: Dispatcher.py,v 1.16 2009/02/23 20:03:36 acasajus Exp $"
 
 import DIRAC
 from DIRAC.LoggingSystem.Client.Logger import gLogger
@@ -9,6 +9,7 @@ from DIRAC.Core.DISET.AuthManager import AuthManager
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.MonitoringSystem.Client.MonitoringClient import MonitoringClient
 from DIRAC.FrameworkSystem.Client.SecurityLogClient import SecurityLogClient
+from DIRAC.MonitoringSystem.Client.MonitoringClient import gMonitor
 
 class Dispatcher:
 
@@ -101,6 +102,17 @@ class Dispatcher:
     handlerDict[ "handlerInitialization" ] = handlerInitMethod
 
     self.servicesDict[ serviceName ][ 'handlerInfo' ] = handlerDict
+    #Init extra bits of monitoring
+    gMonitor.setComponentExtraParam( 'DIRACVersion', DIRAC.version )
+    gMonitor.setComponentExtraParam( 'platform', DIRAC.platform )
+    gMonitor.setComponentExtraParam( 'startTime', Time.dateTime() )
+    for prop in ( ( "__RCSID__", "version" ), ( "__doc__", "description" ) ):
+      try:
+        value = getattr( handlerModule, prop[0] )
+      except Exception, e:
+        gLogger.error( "Missing %s" % prop[0] )
+        value = 'unset'
+      gMonitor.setComponentExtraParam( prop[1], value )
     return S_OK()
 
   def _getHandlerInfo( self, serviceName ):

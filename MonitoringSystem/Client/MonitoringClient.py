@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.38 2008/11/20 12:08:56 acasajus Exp $
-__RCSID__ = "$Id: MonitoringClient.py,v 1.38 2008/11/20 12:08:56 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.39 2009/02/23 20:03:19 acasajus Exp $
+__RCSID__ = "$Id: MonitoringClient.py,v 1.39 2009/02/23 20:03:19 acasajus Exp $"
 
 import threading
 import time
@@ -56,6 +56,8 @@ class MonitoringClient:
     self.activitiesMarks = {}
     self.definitionsToSend = {}
     self.marksToSend = {}
+    self.__compRegistrationExtraDict = {}
+    self.__compCommitExtraDict = {}
     self.activitiesLock = threading.Lock()
     self.flushingLock = threading.Lock()
     self.timeStep = 60
@@ -67,6 +69,14 @@ class MonitoringClient:
 
   def enable(self):
     self.__enabled = True
+
+  def setComponentExtraParam( self, name, value ):
+    if name in ( 'version', 'DIRACVersion', 'description', 'startTime', 'platform' ):
+      self.__compRegistrationExtraDict[ name ] = str( value )
+    elif name in ( 'cycles', 'queries' ):
+      self.__compCommitExtraDict[ name ] = str( value )
+    else:
+      raise Exception( "Unknown parameter %s" % name )
 
   def initialize( self ):
     self.logger = gLogger.getSubLogger( "Monitoring" )
@@ -289,7 +299,9 @@ class MonitoringClient:
     if not len( self.definitionsToSend ):
       return True
     self.logger.debug( "Registering activities" )
-    retDict = rpcClient.registerActivities( self.sourceDict, self.definitionsToSend )
+    retDict = rpcClient.registerActivities( self.sourceDict,
+                                            self.definitionsToSend,
+                                            self.__compRegistrationExtraDict )
     if not retDict[ 'OK' ]:
       self.logger.error( "Can't register activities", retDict[ 'Message' ] )
       return False
@@ -303,7 +315,9 @@ class MonitoringClient:
     """
     assert self.sourceId
     self.logger.debug( "Sending marks" )
-    retDict = rpcClient.commitMarks( self.sourceId, self.marksToSend )
+    retDict = rpcClient.commitMarks( self.sourceId,
+                                     self.marksToSend,
+                                     self.__compCommitExtraDict )
     if not retDict[ 'OK' ]:
       self.logger.error( "Can't send activities marks", retDict[ 'Message' ] )
       return False

@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/AgentModule.py,v 1.13 2009/02/17 18:02:57 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/AgentModule.py,v 1.14 2009/02/23 20:03:36 acasajus Exp $
 ########################################################################
 """ Base class for all agent modules
 
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: AgentModule.py,v 1.13 2009/02/17 18:02:57 acasajus Exp $"
+__RCSID__ = "$Id: AgentModule.py,v 1.14 2009/02/23 20:03:36 acasajus Exp $"
 
 import os
 import threading
@@ -25,6 +25,7 @@ from DIRAC import S_OK, S_ERROR, gConfig, gLogger, gMonitor
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.MonitoringSystem.Client.MonitoringClient import MonitoringClient
 from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
+from DIRAC.Core.Utilities import Time
 
 class AgentModule:
 
@@ -35,6 +36,8 @@ class AgentModule:
     else:
       self.log = gLogger.getSubLogger( agentName, child = False )
       standaloneModule = False
+
+    self.__getCodeInfo()
 
     self.__moduleProperties = { 'fullName' : agentName,
                                 'section' : PathFinder.getAgentSection( agentName ),
@@ -60,20 +63,28 @@ class AgentModule:
     self.__moduleProperties[ 'executors' ] = [ ( self.execute, () ) ]
     self.__moduleProperties[ 'shifterProxy' ] = False
     self.__moduleProperties[ 'shifterProxyLocation' ] = False
+
     self.__initializeMonitor()
     self.__initialized = False
 
-  def __getModuleVersion( self ):
+  def __getCodeInfo( self ):
     versionVar = "__RCSID__"
     try:
-      module =  __import__( self.__class__.__module__,
-                            globals(),
-                            locals(),
-                            versionVar )
-      return getattr( module, versionVar )
+      self.__agentModule =  __import__( self.__class__.__module__,
+                                       globals(),
+                                       locals(),
+                                       versionVar )
     except Exception, e:
-      self.log.error( "Missing __RCSID__" )
-    return "Unknown"
+      self.log.exception( "Cannot load agent module" )
+    self.__codeProperties = {}
+    for prop in ( ( "__RCSID__", "version" ), ( "__doc__", "description" ) ):
+      try:
+        self.__codeProperties[ prop[1] ] = getattr( self.__agentModule, prop[0] )
+      except Exception, e:
+        self.log.error( "Missing %s" % prop[0] )
+        self.__codeProperties[ prop[1] ] = 'unset'
+    self.__codeProperties[ 'DIRACVersion' ] = DIRAC.version
+    self.__codeProperties[ 'platform' ] = DIRAC.platform
 
   def am_initialize( self, *initArgs ):
     agentName = self.am_getModuleParam( 'fullName' )
@@ -97,8 +108,8 @@ class AgentModule:
     self.log.info( "Loaded agent module %s" % self.__moduleProperties[ 'fullName' ] )
     self.log.info( " Site: %s" % gConfig.getValue( '/LocalSite/Site', 'Unknown' ) )
     self.log.info( " Setup: %s" % gConfig.getValue( "/DIRAC/Setup" ) )
-    self.log.info( " Base Module version: %s " % __RCSID__)
-    self.log.info( " Agent version: %s" % self.__getModuleVersion() )
+    self.log.info( " Base Module version: %s " % __RCSID__ )
+    self.log.info( " Agent version: %s" % self.__codeProperties[ 'version' ] )
     self.log.info( " DIRAC version: %s" % DIRAC.version )
     self.log.info( " DIRAC platform: %s" % DIRAC.platform )
     self.log.info( " Polling time: %s" % self.am_getOption( 'PollingTime' ) )
@@ -164,6 +175,11 @@ class AgentModule:
     self.monitor.initialize()
     self.monitor.registerActivity('CPU',"CPU Usage",'Framework',"CPU,%",self.monitor.OP_MEAN,600)
     self.monitor.registerActivity('MEM',"Memory Usage",'Framework','Memory,MB',self.monitor.OP_MEAN,600)
+    #Component monitor
+    for field in ( 'version', 'DIRACVersion', 'description', 'platform' ):
+      self.monitor.setComponentExtraParam( field, self.__codeProperties[ field ] )
+    self.monitor.setComponentExtraParam( 'startTime', Time.dateTime() )
+    self.monitor.setComponentExtraParam( 'cycles', 0 )
     self.monitor.disable()
     self.__monitorLastStatsUpdate = time.time()
 
@@ -217,6 +233,8 @@ class AgentModule:
     else:
       self.log.error( " Cycle had an error:", cycleResult[ 'Message' ] )
     self.log.info( "-"*40 )
+    #Update number of cycles
+    self.monitor.setComponentExtraParam( 'cycles', self.__moduleProperties[ 'cyclesDone' ] )
     return cycleResult
 
   def __startReportToMonitoring(self):

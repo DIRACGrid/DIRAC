@@ -20,6 +20,7 @@ class MonitoringCatalog:
     """
     self.dbConn = False
     self.dataPath = dataPath
+    self.log = gLogger.getSubLogger( "ActivityCatalog" )
     self.createSchema()
 
   def __connect( self ):
@@ -35,7 +36,7 @@ class MonitoringCatalog:
     Execute a sql statement
     """
     cursor = self.dbConn.cursor()
-    gLogger.debug( "Executing %s" % query )
+    self.log.debug( "Executing %s" % query )
     executed = False
     while not executed:
       try:
@@ -52,7 +53,7 @@ class MonitoringCatalog:
     """
     Create tables if not already created
     """
-    gLogger.info( "Creating tables in db" )
+    self.log.info( "Creating tables in db" )
     try:
       filePath = "%s/monitoringSchema.sql" % os.path.dirname( __file__ )
       fd = open( filePath )
@@ -81,7 +82,7 @@ class MonitoringCatalog:
       if len( tablesList ) < 2:
         self.__createTables()
     except Exception, e:
-      gLogger.fatal( "Failed to startup db engine", str( e ) )
+      self.log.fatal( "Failed to startup db engine", str( e ) )
       return False
     return True
 
@@ -208,7 +209,7 @@ class MonitoringCatalog:
     if len( retList ) > 0:
       return retList[0][0]
     else:
-      gLogger.info( "Registering source", str( sourceDict ) )
+      self.log.info( "Registering source", str( sourceDict ) )
       if self.__insert( "sources", { 'id' : 'NULL' }, sourceDict ) == 0:
         return -1
       return self.__select( "id", "sources", sourceDict )[0][0]
@@ -228,7 +229,7 @@ class MonitoringCatalog:
       acDict[ 'lastUpdate' ] = int( Time.toEpoch() - 86000 )
       filePath = m.hexdigest()
       filePath = "%s/%s.rrd" % ( filePath[:2], filePath )
-      gLogger.info( "Registering activity", str( acDict ) )
+      self.log.info( "Registering activity", str( acDict ) )
       if self.__insert( "activities", {
                                'id' : 'NULL',
                                'filename' : "'%s'" % filePath,
@@ -351,10 +352,14 @@ class MonitoringCatalog:
     self.__delete( "views", { 'id' : viewId } )
 
 
-  def getSources( self, dbCond ):
-    return self.__select( "id, site, componentType, componentLocation, componentName",
-                           "sources",
-                           dbCond)
+  def getSources( self, dbCond, fields = [] ):
+    if not fields:
+      fields = "id, site, componentType, componentLocation, componentName"
+    else:
+      fields = ", ".join( fields )
+    return self.__select( fields,
+                          "sources",
+                          dbCond)
 
   def getActivities( self, dbCond ):
     return self.__select( "id, name, category, unit, type, description, bucketLength",

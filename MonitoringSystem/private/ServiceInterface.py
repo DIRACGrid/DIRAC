@@ -1,18 +1,31 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/ServiceInterface.py,v 1.15 2008/10/10 14:59:32 acasajus Exp $
-__RCSID__ = "$Id: ServiceInterface.py,v 1.15 2008/10/10 14:59:32 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/ServiceInterface.py,v 1.16 2009/02/23 20:03:20 acasajus Exp $
+__RCSID__ = "$Id: ServiceInterface.py,v 1.16 2009/02/23 20:03:20 acasajus Exp $"
 import DIRAC
 from DIRAC import gLogger
 from DIRAC.MonitoringSystem.private.RRDManager import RRDManager
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DEncode, List
 
+from DIRAC.MonitoringSystem.DB.ComponentMonitoringDB import ComponentMonitoringDB
+
+gCompDB = False
+
 class ServiceInterface:
 
+  __sourceToComponentIdMapping = {}
+
   def __init__( self ):
+    global gCompDB
     self.dataPath = "%s/data/monitoring" % DIRAC.rootPath
     self.plotsPath = "%s/plots" % self.dataPath
     self.rrdPath = "%s/rrd" % self.dataPath
     self.srvUp = False
+    if not gCompDB:
+      try:
+        gCompDB = ComponentMonitoringDB()
+      except Exception, e:
+        gLogger.exception( "Cannot initialize component monitoring db" )
+        return S_ERROR( "Cannot initialize component monitoring db: %s" % str(e) )
 
   def __createRRDManager(self):
     """
@@ -79,7 +92,7 @@ class ServiceInterface:
         return False
     return True
 
-  def registerActivities( self, sourceDict, activitiesDict ):
+  def registerActivities( self, sourceDict, activitiesDict, componentExtraInfo ):
     """
     Register new activities in the database
     """
@@ -105,9 +118,10 @@ class ServiceInterface:
       retVal = rrdManager.create( activitiesDict[ name ][ 'type' ], rrdFile, activitiesDict[ name ][ 'bucketLength' ] )
       if not retVal[ 'OK' ]:
         return retVal
+    self.__cmdb_registerComponent( sourceId, sourceDict, componentExtraInfo )
     return S_OK( sourceId )
 
-  def commitMarks( self, sourceId, activitiesDict ):
+  def commitMarks( self, sourceId, activitiesDict, componentExtraInfo ):
     """
     Adds marks to activities
     """
@@ -140,6 +154,7 @@ class ServiceInterface:
           gLogger.error( "There was an error updating", "%s:%s activity [%s]" % ( sourceId, acName, rrdFile ) )
         else:
           acCatalog.setLastUpdate( sourceId, acName, retDict[ 'Value' ] )
+    self.__cmdb_heartbeatComponent( sourceId, componentExtraInfo )
     return S_OK( unregisteredActivities )
 
   def fieldValue( self, field, definedFields ):
@@ -287,6 +302,13 @@ class ServiceInterface:
     self.__createCatalog().deleteView( viewId )
     return S_OK()
 
+  def getSources( self, dbCond = {}, fields = [] ):
+    """
+    Get a list of activities
+    """
+    catalog = self.__createCatalog()
+    return catalog.getSources( dbCond, fields )
+
   def getActivities( self, dbCond = {} ):
     """
     Get a list of activities
@@ -325,5 +347,82 @@ class ServiceInterface:
       return retVal
     self.__createRRDManager().deleteRRD( retVal[ 'Value' ] )
     return S_OK()
+
+  #ComponentMonitoringDB functions
+
+  def __cmdb__writeComponent( self, sourceId ):
+    if sourceId not in ServiceInterface.__sourceToComponentIdMapping:
+      self.__cmdb__loadComponentFromActivityDB( sourceId )
+    compDict = ServiceInterface.__sourceToComponentIdMapping[ sourceId ]
+    result = gCompDB.registerComponent( compDict )
+    if not result[ 'OK' ]:
+      gLogger.error( "Cannot register component in ComponentMonitoringDB", result[ 'Message' ] )
+      return
+    compDict[ 'compId' ] = result[ 'Value' ]
+    self.__cmdb__writeHeartbeat( sourceId )
+    gLogger.info( "Registered component in component monitoring db" )
+
+  def __cmdb__merge( self, sourceId, extraDict ):
+    """
+    Merge the cached dict
+    """
+    compDict = ServiceInterface.__sourceToComponentIdMapping[ sourceId ]
+    for field in gCompDB.getOptionalFields():
+      if field in extraDict:
+        compDict[ field ] = extraDict[ field ]
+
+  def __cmdb__loadComponentFromActivityDB( self, sourceId ):
+    """
+    Load the component dict from the activities it registered
+    """
+    sources = gServiceInterface.getSources( { 'id' : sourceId },
+                                            [ 'componentType', 'componentName', 'componentLocation', 'setup' ] )
+    source = [ ts for ts in sources if len( ts ) > 0 ][0]
+    compDict = { 'type'          : source[0],
+                 'componentName' : source[1],
+                 'host'          : source[2],
+                 'setup'         : source[3],
+                }
+    if compDict[ 'type' ] == 'service':
+      loc = compDict[ 'host' ]
+      loc = loc[ loc.find( "://" )+3 : ]
+      loc = loc[ : loc.find( "/" ) ]
+      compDict[ 'host' ] = loc[ :loc.find( ":" ) ]
+      compDict[ 'port' ] = loc[ loc.find( ":" ) +1: ]
+    ServiceInterface.__sourceToComponentIdMapping[ sourceId ] = compDict
+
+  def __cmdb__writeHeartbeat( self, sourceId ):
+    compDict = ServiceInterface.__sourceToComponentIdMapping[ sourceId ]
+    result = gCompDB.heartbeat( compDict )
+    if not result[ 'OK' ]:
+      gLogger.error( "Cannot heartbeat component in ComponentMonitoringDB", result[ 'Message' ] )
+
+  def __cmdb_registerComponent( self, sourceId, sourceDict, componentExtraInfo ):
+    if sourceDict[ 'componentType' ] not in ( 'service', 'agent' ):
+      return
+    compDict = { 'componentName' : sourceDict[ 'componentName' ],
+                 'setup'         : sourceDict[ 'setup' ],
+                 'type'          : sourceDict[ 'componentType' ],
+                 'host'      : sourceDict[ 'componentLocation' ]
+                }
+    if compDict[ 'type' ] == 'service':
+      loc = compDict[ 'host' ]
+      loc = loc[ loc.find( "://" )+3 : ]
+      loc = loc[ : loc.find( "/" ) ]
+      compDict[ 'host' ] = loc[ :loc.find( ":" ) ]
+      compDict[ 'port' ] = loc[ loc.find( ":" ) +1: ]
+    ServiceInterface.__sourceToComponentIdMapping[ sourceId ] = compDict
+    self.__cmdb__merge( sourceId, componentExtraInfo )
+    self.__cmdb__writeComponent( sourceId )
+
+  def __cmdb_heartbeatComponent( self, sourceId, componentExtraInfo ):
+    #Component heartbeat
+    if sourceId not in ServiceInterface.__sourceToComponentIdMapping:
+      self.__cmdb__loadComponentFromActivityDB( sourceId )
+    if ServiceInterface.__sourceToComponentIdMapping[ sourceId ][ 'type' ] not in ( 'service', 'agent' ):
+      return
+    self.__cmdb__merge( sourceId, componentExtraInfo )
+    self.__cmdb__writeHeartbeat( sourceId )
+
 
 gServiceInterface = ServiceInterface()

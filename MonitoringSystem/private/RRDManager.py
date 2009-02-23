@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/RRDManager.py,v 1.35 2008/06/05 11:21:36 acasajus Exp $
-__RCSID__ = "$Id: RRDManager.py,v 1.35 2008/06/05 11:21:36 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/RRDManager.py,v 1.36 2009/02/23 20:03:20 acasajus Exp $
+__RCSID__ = "$Id: RRDManager.py,v 1.36 2009/02/23 20:03:20 acasajus Exp $"
 import os
 import os.path
 import md5
@@ -19,6 +19,7 @@ class RRDManager:
     """
     self.rrdLocation = rrdLocation
     self.graphLocation = graphLocation
+    self.log = gLogger.getSubLogger( "RRDManager" )
     self.rrdExec = gConfig.getValue( "%s/RRDExec" % getServiceSection( "Monitoring/Server" ), "rrdtool" )
     for path in ( self.rrdLocation, self.graphLocation ):
       try:
@@ -40,7 +41,7 @@ class RRDManager:
     """
     Execute a system command
     """
-    gLogger.debug( "RRD command: %s" % cmd)
+    self.log.debug( "RRD command: %s" % cmd)
     retVal = Subprocess.shellCall( 0, cmd )
     if self.__logRRDCommands and rrdFile:
       try:
@@ -52,7 +53,7 @@ class RRDManager:
           fd.write( "OK    %s\n" % cmd )
         fd.close()
       except Exception, e:
-        gLogger.warn( "Cannot write log %s: %s" % ( logFile, str(e) ) )
+        self.log.warn( "Cannot write log %s: %s" % ( logFile, str(e) ) )
     if not retVal[ 'OK' ]:
       return retVal
     retTuple = retVal[ 'Value' ]
@@ -84,7 +85,7 @@ class RRDManager:
       os.makedirs( os.path.dirname( rrdFilePath ) )
     except:
       pass
-    gLogger.info( "Creating rrd file %s" % rrdFile )
+    self.log.info( "Creating rrd file %s" % rrdFile )
     cmd = "%s create '%s'" % ( self.rrdExec, rrdFilePath )
     #Start GMT(now) - 1h
     cmd += " --start %s" % ( self.getCurrentBucketTime( bucketLength ) - 86400 )
@@ -131,12 +132,12 @@ class RRDManager:
     Add marks to an rrd
     """
     rrdFilePath = "%s/%s" % ( self.rrdLocation, rrdFile )
-    gLogger.info( "Updating rrd file", rrdFilePath )
+    self.log.info( "Updating rrd file", rrdFilePath )
     if lastUpdate == 0:
       retVal = self.__getLastUpdateTime( rrdFilePath )
       if retVal[ 'OK' ]:
         lastUpdateTime = retVal[ 'Value' ]
-        gLogger.verbose( "Last update time is %s" % lastUpdateTime )
+        self.log.verbose( "Last update time is %s" % lastUpdateTime )
     else:
       lastUpdateTime = lastUpdate
     cmd = "%s update %s" % ( self.rrdExec, rrdFilePath )
@@ -150,7 +151,7 @@ class RRDManager:
       finalCmd = "%s %s" % ( cmd, " ".join( rrdUpdates[ i: i + maxRRDArgs ] ) )
       retVal = self.__exec( finalCmd, rrdFilePath )
       if not retVal[ 'OK' ]:
-        gLogger.warn( "Error updating rrd file", "%s rrd: %s" % ( rrdFile, retVal[ 'Message' ] ) )
+        self.log.warn( "Error updating rrd file", "%s rrd: %s" % ( rrdFile, retVal[ 'Message' ] ) )
     return S_OK( valuesList[-1][0] )
 
   def __generateName( self, *args, **kwargs ):
@@ -261,4 +262,4 @@ class RRDManager:
     try:
       os.unlink( "%s/%s" % ( self.rrdLocation, rrdFile ) )
     except Exception, e:
-      gLogger.error( "Could not delete rrd file %s: %s" % ( rrdFile, str(e) ) )
+      self.log.error( "Could not delete rrd file %s: %s" % ( rrdFile, str(e) ) )

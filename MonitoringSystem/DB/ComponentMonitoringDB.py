@@ -1,16 +1,17 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/DB/ComponentMonitoringDB.py,v 1.3 2009/02/20 12:16:47 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/DB/ComponentMonitoringDB.py,v 1.4 2009/02/23 20:03:19 acasajus Exp $
 ########################################################################
 """ ComponentMonitoring class is a front-end to the Component monitoring Database
 """
 
-__RCSID__ = "$Id: ComponentMonitoringDB.py,v 1.3 2009/02/20 12:16:47 acasajus Exp $"
+__RCSID__ = "$Id: ComponentMonitoringDB.py,v 1.4 2009/02/23 20:03:19 acasajus Exp $"
 
 import time
 import random
 import md5
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
+from DIRAC.Core.Utilities import Time
 
 class ComponentMonitoringDB(DB):
 
@@ -22,6 +23,11 @@ class ComponentMonitoringDB(DB):
     retVal = self.__initializeDB()
     if not retVal[ 'OK' ]:
       raise Exception( "Can't create tables: %s" % retVal[ 'Message' ])
+    self.__optionalFields = ( 'startTime', 'cycles', 'version', 'queries',
+                              'DIRACVersion', 'description', 'platform' )
+
+  def getOptionalFields(self):
+    return self.__optionalFields
 
   def __getTableName( self, name ):
     return "compmon_%s" % name
@@ -43,13 +49,15 @@ class ComponentMonitoringDB(DB):
                                      'ComponentName' : 'VARCHAR(255) NOT NULL',
                                      'Setup' : 'VARCHAR(255) NOT NULL',
                                      'Type' : 'ENUM ( "service", "agent" ) NOT NULL',
-                                     'Location' : 'VARCHAR(255) NOT NULL',
+                                     'Host' : 'VARCHAR(255) NOT NULL',
+                                     'Port' : 'INTEGER DEFAULT 0',
                                      'LastHeartbeat' : 'DATETIME NOT NULL',
                                      'StartTime' : 'DATETIME NOT NULL',
-                                     'Cycles' : 'INTEGER'
+                                     'Cycles' : 'INTEGER',
+                                     'Queries' : 'INTEGER'
                                    },
                                    'PrimaryKey' : 'Id',
-                                   'Indexes' : { 'ComponentIndex' : [ 'ComponentName', 'Setup', 'Location' ],
+                                   'Indexes' : { 'ComponentIndex' : [ 'ComponentName', 'Setup', 'Host', 'Port' ],
                                                  'TypeIndex' : [ 'Type' ],
                                                }
                       }
@@ -60,12 +68,16 @@ class ComponentMonitoringDB(DB):
                                      'Timestamp' : 'DATETIME NOT NULL',
                                      'Version' : 'VARCHAR(255)',
                                      'DIRACVersion' : 'VARCHAR(255) NOT NULL',
+                                     'Platform' : 'VARCHAR(255) NOT NULL',
                                      'Description' : 'BLOB',
                                    },
                                   'Indexes' : { 'Component' : [ 'CompId' ] }
                       }
 
     return self._createTables( tablesD )
+
+  def __datetime2str( self, dt ):
+    return "%s-%s-%s %s:%s:%s" ( dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second )
 
   def __registerIfNotThere( self, compDict ):
     """
@@ -75,8 +87,10 @@ class ComponentMonitoringDB(DB):
     sqlInsertFields = []
     sqlInsertValues = []
     tableName = self.__getTableName( "Components" )
-    for field in ( 'componentName', 'setup', 'type', 'location' ):
+    for field in ( 'componentName', 'setup', 'type', 'host', 'port' ):
       if field not in compDict:
+        if field == 'port':
+          continue
         return S_ERROR( "Missing %s field in the component dict" % field )
       value = compDict[ field ]
       field = field.capitalize()
@@ -87,6 +101,7 @@ class ComponentMonitoringDB(DB):
     self.log.info( "Trying to register %s" % compLogName )
     result = self._query( "SELECT id FROM `%s` WHERE %s" % ( tableName, " AND ".join( sqlCond ) ) )
     if not result[ 'OK' ]:
+      self.log.error( "Cannot register %s: %s" % ( compLogName, result[ 'Message' ] ) )
       return result
     if len( result[ 'Value' ] ):
       compId = result[ 'Value' ][0][0]
@@ -95,14 +110,15 @@ class ComponentMonitoringDB(DB):
     #It's not there, we just need to insert it
     sqlInsertFields.append( "LastHeartbeat" )
     sqlInsertValues.append( "UTC_TIMESTAMP()" )
-    sqlInsertFields.append( "StartTime" )
     if 'startTime' in compDict:
-      sqlInsertValues.append( compDict[ 'startTime' ] )
-    else:
-      sqlInsertValues.append( "UTC_TIMESTAMP()" )
-    if 'cycles' not in compDict:
-      compDict[ 'cycles' ] = 0
-    for field in ( 'cycles', ):
+      sqlInsertFields.append( "StartTime" )
+      val = compDict[ 'startTime' ]
+      if type( val ) in Time._allDateTypes:
+        val = self.__datetime2str( val )
+      sqlInsertValues.append( "'%s'" % val )
+    for field in ( 'cycles', 'queries' ):
+      if field not in compDict:
+        compDict[ field ] = 0
       value = compDict[ field ]
       field = field.capitalize()
       sqlInsertFields.append( field )
@@ -121,11 +137,11 @@ class ComponentMonitoringDB(DB):
     """
     Register the component if it's not there
     """
-    sqlCond = [ "ComponentId=%s" % compId ]
+    sqlCond = [ "CompId=%s" % compId ]
     sqlInsertFields = []
     sqlInsertValues = []
     tableName = self.__getTableName( "VersionHistory" )
-    for field in ( 'version', 'DIRACVersion' ):
+    for field in ( 'version', 'DIRACVersion', 'platform' ):
       if field not in compDict:
         return S_ERROR( "Missing %s field in the component dict" % field )
       value = compDict[ field ]
@@ -133,12 +149,14 @@ class ComponentMonitoringDB(DB):
       sqlInsertFields.append( field )
       sqlInsertValues.append( "'%s'" % value )
       sqlCond.append( "%s = '%s'" % ( field, value ) )
-    result = self._query( "SELECT ComponentId FROM `%s` WHERE %s" % ( tableName, " AND ".join( sqlCond ) ) )
+    result = self._query( "SELECT CompId FROM `%s` WHERE %s" % ( tableName, " AND ".join( sqlCond ) ) )
     if not result[ 'OK' ]:
       return result
     if len( result[ 'Value' ] ):
-      return S_OK()
+      return S_OK( compId )
     #It's not there, we just need to insert it
+    sqlInsertFields.append( 'CompId' )
+    sqlInsertValues.append( str( compId ) )
     sqlInsertFields.append( 'Timestamp' )
     sqlInsertValues.append( 'UTC_TIMESTAMP()' )
     if 'description' in compDict:
@@ -152,13 +170,12 @@ class ComponentMonitoringDB(DB):
                                                                        ", ".join( sqlInsertValues ) ) )
     if not result[ 'OK' ]:
       return result
-    return S_OK()
+    return S_OK( compId )
 
   def registerComponent( self, compDict, shallow = False ):
     """
     Register a new component in the DB. If it's already registered return id
     """
-    print "Comp"
     result = self.__registerIfNotThere( compDict )
     if not result[ 'OK' ]:
       return result
@@ -166,7 +183,10 @@ class ComponentMonitoringDB(DB):
     if shallow:
       return S_OK( compId )
     #Check if something has changed in the version history
-    return self.__updateVersionHistoryIfNeeded( compId, compDict )
+    result = self.__updateVersionHistoryIfNeeded( compId, compDict )
+    if not result[ 'OK' ]:
+      return result
+    return S_OK( compId )
 
   def heartbeat( self, compDict ):
     """
@@ -176,15 +196,16 @@ class ComponentMonitoringDB(DB):
       result = self.__registerIfNotThere( compDict )
       if not result[ 'OK' ]:
         return result
-      compId = result[ 'Value' ][0][0]
+      compId = result[ 'Value' ]
       compDict[ 'compId' ] = compId
     sqlUpdateFields = [ 'LastHeartbeat=UTC_TIMESTAMP()' ]
-    cycles = 0
-    if 'cycles' in compDict:
-      cycles = compDict[ 'cycles' ]
-    sqlUpdateFields.append( "Cycles=%s" % cycles )
+    for field in ( 'cycles', 'queries' ):
+      value = 0
+      if field in compDict:
+        value = compDict[ field ]
+      sqlUpdateFields.append( "%s=%s" % ( field.capitalize(), value ) )
     if 'startTime' in compDict:
-      sqlUpdateFields.append( "StartTime=%s" % compDict[ 'startTime' ] )
+      sqlUpdateFields.append( "StartTime='%s'" % compDict[ 'startTime' ] )
     return self._update( "UPDATE `%s` SET %s WHERE Id=%s" % ( self.__getTableName( "Components" ),
                                                                        ", ".join( sqlUpdateFields ),
                                                                        compDict[ 'compId' ] ) )

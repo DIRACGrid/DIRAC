@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.37 2009/02/03 16:39:24 acasajus Exp $
-__RCSID__ = "$Id: Server.py,v 1.37 2009/02/03 16:39:24 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.38 2009/02/23 20:03:36 acasajus Exp $
+__RCSID__ = "$Id: Server.py,v 1.38 2009/02/23 20:03:36 acasajus Exp $"
 
 import socket
 import sys
@@ -44,6 +44,7 @@ class Server:
     self.startTime = Time.dateTime()
     self.transportControl = {}
     self.transportLifeTime = 3600
+    self.queriesServed = 0
     serviceCfg = ServiceConfiguration( serviceName )
     self.__buildURL( serviceCfg )
     self.__initializeMonitor( serviceCfg )
@@ -206,6 +207,8 @@ class Server:
       gLogger.warn( "Client connected from banned ip %s" % clientIP )
       clientTransport.close()
     else:
+      self.queriesServed += 1
+      gMonitor.setComponentExtraParam( 'queries', self.queriesServed )
       tName = self.__registerTransport( clientTransport )
       clientTransport.setAppData( tName )
       self.threadPool.generateJobAndQueueIt( self.processClient,
