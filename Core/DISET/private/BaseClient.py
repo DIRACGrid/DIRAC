@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.59 2009/02/02 16:23:44 acasajus Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.59 2009/02/02 16:23:44 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.60 2009/02/23 15:52:53 acasajus Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.60 2009/02/23 15:52:53 acasajus Exp $"
 
 import sys
 import types
@@ -131,7 +131,10 @@ class BaseClient:
           gLogger.debug( "Using gateway", gatewayURL )
           return S_OK( "%s/%s" % (  gatewayURL, self.serviceName ) )
 
-    urls = getServiceURL( self.serviceName, setup = self.setup )
+    try:
+      urls = getServiceURL( self.serviceName, setup = self.setup )
+    except Exception, e:
+      return S_ERROR( "Cannot get URL for %s in setup %s: %s" % ( self.serviceName, self.setup, str(e) ) )
     if not urls:
       return S_ERROR( "URL for service %s not found" % self.serviceName )
     sURL = List.randomize( List.fromChar( urls, "," ) )[0]
