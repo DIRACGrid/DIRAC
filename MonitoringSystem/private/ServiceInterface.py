@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/ServiceInterface.py,v 1.16 2009/02/23 20:03:20 acasajus Exp $
-__RCSID__ = "$Id: ServiceInterface.py,v 1.16 2009/02/23 20:03:20 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/ServiceInterface.py,v 1.17 2009/02/23 20:12:07 acasajus Exp $
+__RCSID__ = "$Id: ServiceInterface.py,v 1.17 2009/02/23 20:12:07 acasajus Exp $"
 import DIRAC
 from DIRAC import gLogger
 from DIRAC.MonitoringSystem.private.RRDManager import RRDManager
@@ -20,12 +20,6 @@ class ServiceInterface:
     self.plotsPath = "%s/plots" % self.dataPath
     self.rrdPath = "%s/rrd" % self.dataPath
     self.srvUp = False
-    if not gCompDB:
-      try:
-        gCompDB = ComponentMonitoringDB()
-      except Exception, e:
-        gLogger.exception( "Cannot initialize component monitoring db" )
-        return S_ERROR( "Cannot initialize component monitoring db: %s" % str(e) )
 
   def __createRRDManager(self):
     """
@@ -54,6 +48,12 @@ class ServiceInterface:
     self.dataPath = dataPath
     self.plotCache = PlotCache( RRDManager( self.rrdPath, self.plotsPath ) )
     self.srvUp = True
+    if not gCompDB:
+      try:
+        gCompDB = ComponentMonitoringDB()
+      except Exception, e:
+        gLogger.exception( "Cannot initialize component monitoring db" )
+        return S_ERROR( "Cannot initialize component monitoring db: %s" % str(e) )
 
   def initializeDB( self ):
     """
