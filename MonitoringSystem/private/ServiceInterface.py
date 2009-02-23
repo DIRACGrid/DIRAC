@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/ServiceInterface.py,v 1.20 2009/02/23 20:20:26 acasajus Exp $
-__RCSID__ = "$Id: ServiceInterface.py,v 1.20 2009/02/23 20:20:26 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/ServiceInterface.py,v 1.21 2009/02/23 20:21:54 acasajus Exp $
+__RCSID__ = "$Id: ServiceInterface.py,v 1.21 2009/02/23 20:21:54 acasajus Exp $"
 import DIRAC
 from DIRAC import gLogger
 from DIRAC.MonitoringSystem.private.RRDManager import RRDManager
@@ -366,6 +366,7 @@ class ServiceInterface:
     for field in self.compmonDB.getOptionalFields():
       if field in extraDict:
         compDict[ field ] = extraDict[ field ]
+    ServiceInterface.__sourceToComponentIdMapping[ sourceId ] = compDict
 
   def __cmdb__loadComponentFromActivityDB( self, sourceId ):
     """
