@@ -1,7 +1,7 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/StatesAccountingAgent.py,v 1.9 2009/02/23 17:56:17 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/StatesAccountingAgent.py,v 1.10 2009/02/23 18:40:48 acasajus Exp $
 
-__RCSID__ = "$Id: StatesAccountingAgent.py,v 1.9 2009/02/23 17:56:17 acasajus Exp $"
+__RCSID__ = "$Id: StatesAccountingAgent.py,v 1.10 2009/02/23 18:40:48 acasajus Exp $"
 
 """  StatesAccountingAgent sends periodically numbers of jobs in various states for various
      sites to the Monitoring system to create historical plots.
@@ -15,8 +15,6 @@ from DIRAC.AccountingSystem.Client.DataStoreClient import DataStoreClient
 from DIRAC.Core.Utilities import Time
 
 import time,os
-
-AGENT_NAME = 'WorkloadManagement/StatesAccountingAgent'
 
 class StatesAccountingAgent(AgentModule):
 
