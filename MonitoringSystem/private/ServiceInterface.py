@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/ServiceInterface.py,v 1.17 2009/02/23 20:12:07 acasajus Exp $
-__RCSID__ = "$Id: ServiceInterface.py,v 1.17 2009/02/23 20:12:07 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/ServiceInterface.py,v 1.18 2009/02/23 20:13:00 acasajus Exp $
+__RCSID__ = "$Id: ServiceInterface.py,v 1.18 2009/02/23 20:13:00 acasajus Exp $"
 import DIRAC
 from DIRAC import gLogger
 from DIRAC.MonitoringSystem.private.RRDManager import RRDManager
@@ -15,7 +15,6 @@ class ServiceInterface:
   __sourceToComponentIdMapping = {}
 
   def __init__( self ):
-    global gCompDB
     self.dataPath = "%s/data/monitoring" % DIRAC.rootPath
     self.plotsPath = "%s/plots" % self.dataPath
     self.rrdPath = "%s/rrd" % self.dataPath
@@ -44,6 +43,7 @@ class ServiceInterface:
     """
     Initialize monitoring server
     """
+    global gCompDB
     from DIRAC.MonitoringSystem.private.PlotCache import PlotCache
     self.dataPath = dataPath
     self.plotCache = PlotCache( RRDManager( self.rrdPath, self.plotsPath ) )
