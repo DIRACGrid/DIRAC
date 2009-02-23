@@ -1,7 +1,7 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/StatesAccountingAgent.py,v 1.6 2009/02/18 15:26:53 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/StatesAccountingAgent.py,v 1.7 2009/02/23 16:00:09 acasajus Exp $
 
-__RCSID__ = "$Id: StatesAccountingAgent.py,v 1.6 2009/02/18 15:26:53 acasajus Exp $"
+__RCSID__ = "$Id: StatesAccountingAgent.py,v 1.7 2009/02/23 16:00:09 acasajus Exp $"
 
 """  JobHistoryAgent sends periodically numbers of jobs in various states for various
      sites to the Monitoring system to create historical plots.
@@ -53,6 +53,11 @@ class StatesAccountingAgent(AgentModule):
   def execute(self):
     """ Main execution method
     """
+    result = gConfig.getSections( "/DIRAC/Setups" )
+    if not result[ 'OK' ]:
+      return result
+    validSetups = result[ 'Value' ]
+    gLogger.info( "Valid setups for this cycle are %s" % ", ".join( validSetups ) )
     #Get the WMS Snapshot!
     result = self.jobDB.getSummarySnapshot( self.__jobDBFields )
     now = Time.dateTime()
@@ -63,6 +68,9 @@ class StatesAccountingAgent(AgentModule):
       values = result[ 'Value' ][1]
       for record in values:
         recordSetup = record[0]
+        if recordSetup not in validSetups:
+          gLogger.error( "Setup %s in not valid" % recordSetup )
+          continue
         if recordSetup not in self.dsClients:
           gLogger.info( "Creating DataStore client for %s" % recordSetup )
           self.dsClients[ recordSetup ] = DataStoreClient( setup = recordSetup, retryGraceTime = 900 )
