@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/ServiceInterface.py,v 1.19 2009/02/23 20:14:24 acasajus Exp $
-__RCSID__ = "$Id: ServiceInterface.py,v 1.19 2009/02/23 20:14:24 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/ServiceInterface.py,v 1.20 2009/02/23 20:20:26 acasajus Exp $
+__RCSID__ = "$Id: ServiceInterface.py,v 1.20 2009/02/23 20:20:26 acasajus Exp $"
 import DIRAC
 from DIRAC import gLogger
 from DIRAC.MonitoringSystem.private.RRDManager import RRDManager
@@ -17,7 +17,7 @@ class ServiceInterface:
     self.plotsPath = "%s/plots" % self.dataPath
     self.rrdPath = "%s/rrd" % self.dataPath
     self.srvUp = False
-    self.compDB = False
+    self.compmonDB = False
 
   def __createRRDManager(self):
     """
@@ -47,7 +47,7 @@ class ServiceInterface:
     self.plotCache = PlotCache( RRDManager( self.rrdPath, self.plotsPath ) )
     self.srvUp = True
     try:
-      self.compDB = ComponentMonitoringDB()
+      self.compmonDB = ComponentMonitoringDB()
     except Exception, e:
       gLogger.exception( "Cannot initialize component monitoring db" )
 
@@ -350,7 +350,7 @@ class ServiceInterface:
     if sourceId not in ServiceInterface.__sourceToComponentIdMapping:
       self.__cmdb__loadComponentFromActivityDB( sourceId )
     compDict = ServiceInterface.__sourceToComponentIdMapping[ sourceId ]
-    result = self.compDB.registerComponent( compDict )
+    result = self.compmonDB.registerComponent( compDict )
     if not result[ 'OK' ]:
       gLogger.error( "Cannot register component in ComponentMonitoringDB", result[ 'Message' ] )
       return
@@ -363,7 +363,7 @@ class ServiceInterface:
     Merge the cached dict
     """
     compDict = ServiceInterface.__sourceToComponentIdMapping[ sourceId ]
-    for field in self.compDB.getOptionalFields():
+    for field in self.compmonDB.getOptionalFields():
       if field in extraDict:
         compDict[ field ] = extraDict[ field ]
 
@@ -389,7 +389,7 @@ class ServiceInterface:
 
   def __cmdb__writeHeartbeat( self, sourceId ):
     compDict = ServiceInterface.__sourceToComponentIdMapping[ sourceId ]
-    result = self.compDB.heartbeat( compDict )
+    result = self.compmonDB.heartbeat( compDict )
     if not result[ 'OK' ]:
       gLogger.error( "Cannot heartbeat component in ComponentMonitoringDB", result[ 'Message' ] )
 

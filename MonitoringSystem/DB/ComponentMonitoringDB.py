@@ -1,14 +1,15 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/DB/ComponentMonitoringDB.py,v 1.4 2009/02/23 20:03:19 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/DB/ComponentMonitoringDB.py,v 1.5 2009/02/23 20:20:41 acasajus Exp $
 ########################################################################
 """ ComponentMonitoring class is a front-end to the Component monitoring Database
 """
 
-__RCSID__ = "$Id: ComponentMonitoringDB.py,v 1.4 2009/02/23 20:03:19 acasajus Exp $"
+__RCSID__ = "$Id: ComponentMonitoringDB.py,v 1.5 2009/02/23 20:20:41 acasajus Exp $"
 
 import time
 import random
 import md5
+import types
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities import Time
@@ -77,7 +78,9 @@ class ComponentMonitoringDB(DB):
     return self._createTables( tablesD )
 
   def __datetime2str( self, dt ):
-    return "%s-%s-%s %s:%s:%s" ( dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second )
+    if type( dt ) == types.StringType:
+      return dt
+    return "%s-%s-%s %s:%s:%s" % ( dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second )
 
   def __registerIfNotThere( self, compDict ):
     """
