@@ -1,12 +1,10 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/ServiceInterface.py,v 1.21 2009/02/23 20:21:54 acasajus Exp $
-__RCSID__ = "$Id: ServiceInterface.py,v 1.21 2009/02/23 20:21:54 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/ServiceInterface.py,v 1.22 2009/02/24 08:14:44 rgracian Exp $
+__RCSID__ = "$Id: ServiceInterface.py,v 1.22 2009/02/24 08:14:44 rgracian Exp $"
 import DIRAC
 from DIRAC import gLogger
 from DIRAC.MonitoringSystem.private.RRDManager import RRDManager
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DEncode, List
-
-from DIRAC.MonitoringSystem.DB.ComponentMonitoringDB import ComponentMonitoringDB
 
 class ServiceInterface:
 
@@ -43,6 +41,8 @@ class ServiceInterface:
     Initialize monitoring server
     """
     from DIRAC.MonitoringSystem.private.PlotCache import PlotCache
+    from DIRAC.MonitoringSystem.DB.ComponentMonitoringDB import ComponentMonitoringDB
+
     self.dataPath = dataPath
     self.plotCache = PlotCache( RRDManager( self.rrdPath, self.plotsPath ) )
     self.srvUp = True
