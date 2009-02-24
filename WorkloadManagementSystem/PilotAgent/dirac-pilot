@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot,v 1.41 2009/02/24 07:28:35 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot,v 1.42 2009/02/24 08:43:21 rgracian Exp $
 # File :   dirac-pilot
 # Author : Ricardo Graciani
 ########################################################################
@@ -9,7 +9,7 @@
  Job Agent to execute pending workload on WMS.
  It requires dirac-install script to be sitting in the same directory.
 """
-__RCSID__ = "$Id: dirac-pilot,v 1.41 2009/02/24 07:28:35 rgracian Exp $"
+__RCSID__ = "$Id: dirac-pilot,v 1.42 2009/02/24 08:43:21 rgracian Exp $"
 try:
   import os
   import sys
@@ -483,11 +483,14 @@ if pilotRef != 'Unknown':
   dirac.logINFO( 'CE = %s' % CE )
   dirac.logINFO( 'LCG_SITE_CE = %s' % LCG_SITE_CE )
 
-  (child_stdout, child_stdin, child_stderr) = popen2.popen3( 'dirac-wms-get-normalized-queue-length.py %s' % CE )
+  (child_stdout, child_stdin, child_stderr) = popen2.popen3( 'dirac-wms-get-normalized-queue-length %s' % CE )
 
   queueLength = child_stdout.read().strip().split(' ')
   if len(queueLength) == 2:
     jobCPUReqt = queueLength[1]
+    dirac.logINFO( 'Normalized Queue Length = %s' % jobCPUReqt )
+  else:
+    dirac.logERROR( child_stdout.read() )
   child_stdout.close()
   child_stderr.close()
 
