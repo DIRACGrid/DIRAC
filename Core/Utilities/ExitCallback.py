@@ -1,5 +1,6 @@
 import signal
 import os
+import sys
 
 gCallbackList = []
 
@@ -18,6 +19,8 @@ def execute( exitCode, frame ):
   Executes the callback list
   """
   #TODO: <Adri> Disable ExitCallback until I can debug it
+  sys.stdout.flush()
+  sys.stderr.flush()
   os._exit( exitCode )
   for callback in gCallbackList:
     try:
