@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot,v 1.42 2009/02/24 08:43:21 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot,v 1.43 2009/02/24 13:38:01 rgracian Exp $
 # File :   dirac-pilot
 # Author : Ricardo Graciani
 ########################################################################
@@ -9,7 +9,7 @@
  Job Agent to execute pending workload on WMS.
  It requires dirac-install script to be sitting in the same directory.
 """
-__RCSID__ = "$Id: dirac-pilot,v 1.42 2009/02/24 08:43:21 rgracian Exp $"
+__RCSID__ = "$Id: dirac-pilot,v 1.43 2009/02/24 13:38:01 rgracian Exp $"
 try:
   import os
   import sys
@@ -487,10 +487,10 @@ if pilotRef != 'Unknown':
 
   queueLength = child_stdout.read().strip().split(' ')
   if len(queueLength) == 2:
-    jobCPUReqt = queueLength[1]
+    jobCPUReqt = float(queueLength[1])
     dirac.logINFO( 'Normalized Queue Length = %s' % jobCPUReqt )
   else:
-    dirac.logERROR( child_stdout.read() )
+    dirac.logERROR( child_stderr.read() )
   child_stdout.close()
   child_stderr.close()
 
