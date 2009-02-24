@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/DB/ComponentMonitoringDB.py,v 1.5 2009/02/23 20:20:41 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/DB/ComponentMonitoringDB.py,v 1.6 2009/02/24 16:50:27 acasajus Exp $
 ########################################################################
 """ ComponentMonitoring class is a front-end to the Component monitoring Database
 """
 
-__RCSID__ = "$Id: ComponentMonitoringDB.py,v 1.5 2009/02/23 20:20:41 acasajus Exp $"
+__RCSID__ = "$Id: ComponentMonitoringDB.py,v 1.6 2009/02/24 16:50:27 acasajus Exp $"
 
 import time
 import random
@@ -54,6 +54,7 @@ class ComponentMonitoringDB(DB):
                                      'Port' : 'INTEGER DEFAULT 0',
                                      'LastHeartbeat' : 'DATETIME NOT NULL',
                                      'StartTime' : 'DATETIME NOT NULL',
+                                     'LoggingState' : 'VARCHAR(64) DEFAULT "unknown"',
                                      'Cycles' : 'INTEGER',
                                      'Queries' : 'INTEGER'
                                    },
@@ -212,3 +213,149 @@ class ComponentMonitoringDB(DB):
     return self._update( "UPDATE `%s` SET %s WHERE Id=%s" % ( self.__getTableName( "Components" ),
                                                                        ", ".join( sqlUpdateFields ),
                                                                        compDict[ 'compId' ] ) )
+
+  def __getComponents( self, condDict ):
+    compTable = self.__getTableName( "Components" )
+    fields = ( "Setup", "Type", "ComponentName", "Host", "Port", "StartTime", "LastHeartbeat", 'cycles', 'queries' )
+    sqlWhere = []
+    for field in condDict:
+      val = condDict[ field ]
+      if type( val ) == types.StringType:
+        sqlWhere.append( "%s='%s'" % ( field, val ) )
+      elif type( val ) in ( types.IntType, types.LongType, types.FloatType ):
+        sqlWhere.append( "%s='%s'" % ( field, val ) )
+      else:
+        sqlWhere.append( "( %s )" % " OR ".join( [ "%s='%s'" % ( field, v ) for v in val ] ) )
+    result = self._query( "SELECT %s FROM `%s` WHERE %s" % ( ", ".join( fields, ), compTable, " AND ".join( sqlWhere ) ) )
+    if not result[ 'OK' ]:
+      return result
+    records = []
+    for record in result[ 'Value' ]:
+      rD = {}
+      for i in range( len( fields ) ):
+        rD[ fields[i] ] = record[i]
+      records.append( rD )
+    return S_OK( StatusSet( records ) )
+
+  def getComponentsStatus( self, setup ):
+    result = self.__getComponents( { 'Setup' : setup } )
+    if not result[ 'OK' ]:
+      return result
+    statusSet = result[ 'Value' ]
+    for type in ( 'agent' , 'service' ):
+      #Iterate through systems
+      result = gConfig.getOptionsDict( "/DIRAC/Setups/%s" % setup )
+      if not result[ 'OK' ]:
+        return result
+      systems = result[ 'Value' ]
+      for system in systems:
+        instance = systems[ system ]
+        #Get entries for the instance of a system
+        result = gConfig.getSections( "/Systems/%s/%s/%s" % ( system, instance, "%ss" % type.capitalize() ) )
+        if not result[ 'OK' ]:
+          self.log.warn( "Opps, sytem seems to be defined wrong\n", "System %s at %s: %s" % ( system, instance, result[ 'Message' ] ) )
+          continue
+        components = result[ 'Value' ]
+        for component in components:
+          componentName = "%s/%s" % ( system, component )
+          compDict = { 'ComponentName' : componentName,
+                       'Type' : type,
+                       'Setup' : setup
+                      }
+          if type == 'service':
+            result = gConfig.getOption( "/Systems/%s/%s/%s/%s/Port" % ( system, instance,
+                                                                        "%ss" % type.capitalize(), component ) )
+            if not result[ 'OK' ]:
+              self.log.error( "Component is not well defined", result[ 'Message' ] )
+              continue
+            try:
+              compDict[ 'Port' ] = int( result[ 'Value' ] )
+            except:
+              self.log.error( "Port for component doesn't seem to be a number", "%s for setup %s" % ( componentName, setup ) )
+          result = statusSet.setComponentAsRequired( compDict )
+          if not result[ 'OK' ]:
+            self.log.error( "Error while setting component as required", result[ 'Message' ] )
+    return S_OK( statusSet )
+
+class StatusSet:
+
+  def __init__( self, dbRecordsList = [] ):
+    self.__requiredSet = {}
+    self.__requiredFields = ( 'Setup', 'Type', 'ComponentName' )
+    self.__maxSecsSinceHeartbeat = 600
+    self.setDBRecords( dbRecordsList )
+
+  def setDBRecords( self, recordsList ):
+    self.__dbSet = {}
+    for record in recordsList:
+      cD = self.__dbSet
+      for field in self.__requiredFields:
+        fVal = record[ field ]
+        if fVal not in cD:
+          if field == self.__requiredFields[-1]:
+            cD[ fVal ] = []
+          else:
+            cD[ fVal ] = {}
+        cD = cD[ fVal ]
+      cD.append( record )
+    return S_OK()
+
+  def setComponentAsRequired( self, compDict ):
+    for field in self.__requiredFields:
+      if field not in compDict:
+        return S_ERROR( "Missing %s field in component description" % field )
+    cD = self.__requiredSet
+    for field in self.__requiredFields:
+      val = compDict[ field ]
+      if val not in cD:
+        if field == self.__requiredFields[-1]:
+          cD[ val ] = []
+        else:
+          cD[ val ] = {}
+      cD = cD[ val ]
+
+    dbD = self.__dbSet
+    for field in self.__requiredFields:
+      val = compDict[ field ]
+      if val not in dbD:
+        self.__addMissingRequiredComponent( compDict )
+        return S_OK()
+      dbD = dbD[ val ]
+    self.__addFoundRequiredComponent( compDict )
+    return S_OK()
+
+  def __addMissingRequiredComponent( self, compDict ):
+    cD = self.__requiredSet
+    for field in self.__requiredFields:
+      val = compDict[ field ]
+      cD = cD[ val ]
+    compDict[ 'Status' ] = 'Error'
+    compDict[ 'Message' ] = "Component is not up or hasn't connected to register yet"
+    cD.append( compDict )
+
+  def __addFoundRequiredComponent( self, compDict ):
+    cD = self.__requiredSet
+    dbD = self.__dbSet
+    now = Time.dateTime()
+    for field in self.__requiredFields:
+      val = compDict[ field ]
+      cD = cD[ val ]
+      dbD = dbD[ val ]
+    for component in dbD:
+      component[ 'Status' ] = 'OK'
+      if compDict[ 'Type' ] == "service":
+        if 'Port' not in component:
+          component[ 'Status' ] = "Error"
+          component[ 'Message' ] = "Port is not defined"
+        elif str(component[ 'Port' ]) != str(compDict[ 'Port' ]):
+          component[ 'Status' ] = "Error"
+          component[ 'Message' ] = "Port (%s) is different that specified in the CS (%s)" % ( component[ 'Port' ], compDict[ 'Port' ] )
+      elapsed = now - component[ 'LastHeartbeat' ]
+      elapsed = elapsed.days * 86400 + elapsed.seconds
+      if elapsed > self.__maxSecsSinceHeartbeat:
+        component[ 'Status' ] = "Error"
+        component[ 'Message' ] = "Last heartbeat was received at %s (%s secs ago)" % ( component[ 'LastHeartbeat' ], elapsed)
+      cD.append( component )
+
+  def getRequiredComponents( self ):
+    return self.__requiredSet
