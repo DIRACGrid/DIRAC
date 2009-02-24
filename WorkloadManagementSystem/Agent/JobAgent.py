@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.53 2009/01/28 17:40:06 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.54 2009/02/24 13:33:51 rgracian Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.53 2009/01/28 17:40:06 acasajus Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.54 2009/02/24 13:33:51 rgracian Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -197,8 +197,15 @@ class JobAgent(Agent):
         if not proxyResult['OK']:
           self.log.warn('Problem while setting up proxy for job %s' %(jobID))
           self.__report(jobID,'Failed','Invalid Proxy')
-          return self.__finish('Invalid Proxy')
-        proxyChain = proxyResult['Value']
+          result = jobManager.rescheduleJob(jobID)
+          if not result['OK']:
+            self.log.warn(result['Message'])
+            return self.__finish('Problem Rescheduling Job')
+          else:
+            self.log.info('Rescheduled job after Invalid Proxy %s' %(jobID))
+            return self.__finish('Job Rescheduled')
+        else:
+          proxyChain = proxyResult['Value']
 
       saveJDL = self.__saveJobJDLRequest(jobID,jobJDL)
       self.__report(jobID,'Matched','Job Prepared to Submit')
