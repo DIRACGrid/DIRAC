@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/dirac-wms-get-normalized-queue-length.py,v 1.1 2009/02/24 07:27:30 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/dirac-wms-get-normalized-queue-length.py,v 1.2 2009/02/24 08:24:44 rgracian Exp $
 # File :   dirac-wms-get-normalized-queue-length.py
 # Author : Ricardo Graciani
 ########################################################################
-__RCSID__   = "$Id: dirac-wms-get-normalized-queue-length.py,v 1.1 2009/02/24 07:27:30 rgracian Exp $"
-__VERSION__ = "$Revision: 1.1 $"
+__RCSID__   = "$Id: dirac-wms-get-normalized-queue-length.py,v 1.2 2009/02/24 08:24:44 rgracian Exp $"
+__VERSION__ = "$Revision: 1.2 $"
 
 from DIRACEnvironment import DIRAC
 from DIRAC.Core.Base import Script
@@ -50,7 +50,7 @@ for ceUniqueID in args:
   
   siteCSSEction = '/Resources/Sites/%s/%s/CEs/%s' %( 'LCG', diracSiteName, subClusterUniqueID )
 
-  benchmarkSI00Option = '%s/%s' % ( siteCSSEction, 'SI100' )
+  benchmarkSI00Option = '%s/%s' % ( siteCSSEction, 'SI00' )
   benchmarkSI00       = gConfig.getValue( benchmarkSI00Option, 0.0 )
 
   maxCPUTimeOption = '%s/Queues/%s/maxCPUTime' % ( siteCSSEction, queueID )
