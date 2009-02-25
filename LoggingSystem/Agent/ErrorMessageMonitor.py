@@ -1,16 +1,17 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Agent/ErrorMessageMonitor.py,v 1.3 2008/09/23 18:14:54 mseco Exp $
-__RCSID__ = "$Id: ErrorMessageMonitor.py,v 1.3 2008/09/23 18:14:54 mseco Exp $"
-"""  getErrorNames get new errors that have been injected into the
-     SystemLoggingDB and sends them by mail to the person(s) in charge
-     of checking that they conform with DIRAC style. ReviewersMail option
-     contains the list of mails where the information must be sent.
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Agent/ErrorMessageMonitor.py,v 1.4 2009/02/25 16:05:56 mseco Exp $
+__RCSID__ = "$Id: ErrorMessageMonitor.py,v 1.4 2009/02/25 16:05:56 mseco Exp $"
+"""  ErrorMessageMonitor gets new errors that have been injected into the
+     SystemLoggingDB and reports them by mail to the person(s) in charge
+     of checking that they conform with DIRAC style. Reviewer option
+     contains the list of users to be notified.
 """
 
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC  import S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 from DIRAC.LoggingSystem.DB.SystemLoggingDB import SystemLoggingDB
-from DIRAC.Core.Utilities import List, Mail
+from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
+from DIRAC.Core.Utilities import List
 
 AGENT_NAME = 'Logging/ErrorMessageMonitor'
 
@@ -33,13 +34,31 @@ class ErrorMessageMonitor(Agent):
 
     self.section=getAgentSection( AGENT_NAME )
 
-    self.mail=Mail.Mail()
-    mailString = gConfig.getValue( self.section+"/ReviewersMail",
-                                   'Marcos.Seco@usc.es' )
-    mailList = List.fromChar( mailString, ",")
+    self.notification=NotificationClient()
+    
+    userString = gConfig.getValue( self.section+"/Reviewer", 'mseco' )
+    self.log.debug("Users to be notified",": "+userString)
+   
+    userList = List.fromChar( userString, ",")
+    
+    mailList = []
+    for user in userList:
+      retval=gConfig.getOption("/Security/Users/"+user+"/email")
+      if not retval['OK']:
+        self.log.warn("Could not get user's mail",retval['Message'])
+      else:
+        mailList.append(retval['Value'])
 
-    self.mail._mailAddress = mailList
-    self.mail._subject = 'New error messages were entered in the SystemLoggingDB'
+    self.log.info("List of mails to be notified", ','.join(mailList))
+   
+    if not len(mailList):
+      errString="There are no valid users in the list"
+      varString="["+','.join(userList)+"]"
+      self.log.error(errString,varString)
+      return S_ERROR(errString+varString)
+    
+    self._mailAddress = mailList
+    self._subject = 'New error messages were entered in the SystemLoggingDB'
     return S_OK()
 
   def execute(self):
@@ -76,9 +95,7 @@ class ErrorMessageMonitor(Agent):
         mailBody = mailBody + "String: '" + message[1] + "'\tSystem: '" \
                    + message[2] + "'\tSubsystem: '" + message[3] + "'\n"
 
-      self.mail._message = mailBody
-
-      result = self.mail._send()
+      result = self.notification.sendMail( self._mailAddress, self._subject, mailBody )
       if not result[ 'OK' ]:
          self.log.warn( "The mail could not be sent" )
          return S_OK()

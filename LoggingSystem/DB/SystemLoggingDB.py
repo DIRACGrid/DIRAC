@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/DB/SystemLoggingDB.py,v 1.20 2008/10/13 13:59:28 mseco Exp $
-__RCSID__ = "$Id: SystemLoggingDB.py,v 1.20 2008/10/13 13:59:28 mseco Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/DB/SystemLoggingDB.py,v 1.21 2009/02/25 16:05:56 mseco Exp $
+__RCSID__ = "$Id: SystemLoggingDB.py,v 1.21 2009/02/25 16:05:56 mseco Exp $"
 """ SystemLoggingDB class is a front-end to the Message Logging Database.
     The following methods are provided
 
@@ -24,7 +24,7 @@ from DIRAC.LoggingSystem.private.LogLevels import LogLevels
 ###########################################################
 class SystemLoggingDB(DB):
 
-  def __init__(self, maxQueueSize=10):
+  def __init__( self, maxQueueSize=10 ):
     """ Standard Constructor
     """
     DB.__init__( self, 'SystemLoggingDB', 'Logging/SystemLoggingDB',
@@ -136,7 +136,7 @@ class SystemLoggingDB(DB):
         tableString = 'MessageRepository'
 
         tableString = '%s%s%s' % ( tableString, conjunction,
-                                   conjunction.join( tableList ))
+                                   conjunction.join( tableList ) )
 
     else:
       tableString = conjunction.join( self.__uniq( tableDict.values() ) )
@@ -149,7 +149,7 @@ class SystemLoggingDB(DB):
                  newer=None, count=False, groupColumn=None, orderFields=None ):
     """ This function composes the SQL query from the conditions provided and
         the desired columns and queries the SystemLoggingDB.
-        If no list is provided the default is to use all the meaninful
+        If no list is provided the default is to use all the meaningful
         variables of the DB
     """
     grouping=''
@@ -171,7 +171,7 @@ class SystemLoggingDB(DB):
       gLogger.warn( errorString, errorDesc )
       return S_ERROR( '%s: %s' % ( errorString, errorDesc ) )
        
-    tableList = self.__buildTableList(showFieldList)
+    tableList = self.__buildTableList( showFieldList )
 
     if groupColumn:
       grouping='GROUP BY %s' % groupColumn
@@ -191,8 +191,8 @@ class SystemLoggingDB(DB):
           sortingFields.append( field ) 
     	ordering='ORDER BY %s' %  ', '.join( sortingFields )
     	
-    cmd = 'SELECT %s FROM %s %s %s %s' % (','.join(showFieldList),
-                                    tableList, condition, grouping, ordering)
+    cmd = 'SELECT %s FROM %s %s %s %s' % ( ','.join(showFieldList ),
+                                    tableList, condition, grouping, ordering )
 
     return self._query(cmd)
 
@@ -230,19 +230,19 @@ class SystemLoggingDB(DB):
     inValues = [ userDN, userGroup ]
     inFields = [ 'OwnerDN', 'OwnerGroup' ]
     outFields = [ 'UserDNID' ]
-    result = self.__DBCommit( 'UserDNs', outFields, inFields, inValues)
+    result = self.__DBCommit( 'UserDNs', outFields, inFields, inValues )
     if not result['OK']:
       return result
-    messageList.append(result['Value'])
+    messageList.append( result['Value'] )
     fieldsList.extend( outFields )
       
     inValues = [ remoteAddress, nodeFQDN ]
     inFields = [ 'ClientIPNumberString', 'ClientFQDN' ]
     outFields = [ 'ClientIPNumberID' ]
-    result = self.__DBCommit( 'ClientIPs', outFields, inFields, inValues)
+    result = self.__DBCommit( 'ClientIPs', outFields, inFields, inValues )
     if not result['OK']:
       return result
-    messageList.append(result['Value'])
+    messageList.append( result['Value'] )
     fieldsList.extend( outFields )
 
     if not site:
@@ -250,13 +250,13 @@ class SystemLoggingDB(DB):
     inFields = [ 'SiteName' ]
     inValues = [ site ]
     outFields = [ 'SiteID' ]
-    result = self.__DBCommit( 'Sites', outFields, inFields, inValues)
+    result = self.__DBCommit( 'Sites', outFields, inFields, inValues )
     if not result['OK']:
       return result
     messageList.append(result['Value'])
     fieldsList.extend( outFields )
 
-    messageList.append(message.getLevel())
+    messageList.append( message.getLevel() )
     fieldsList.append( 'LogLevel' )
     
     inFields = [ 'FixedTextString' ]

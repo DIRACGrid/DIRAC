@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/DB/SystemLoggingDB.sql,v 1.9 2008/06/17 22:28:27 atsareg Exp $
-__RCSID__ = "$Id: SystemLoggingDB.sql,v 1.9 2008/06/17 22:28:27 atsareg Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/DB/SystemLoggingDB.sql,v 1.10 2009/02/25 16:05:56 mseco Exp $
+__RCSID__ = "$Id: SystemLoggingDB.sql,v 1.10 2009/02/25 16:05:56 mseco Exp $"
 
 --------------------------------------------------------------------------------
 --
@@ -49,7 +49,13 @@ CREATE TABLE MessageRepository (
     FOREIGN KEY ( SystemID ) REFERENCES System( SystemID ),
     FOREIGN KEY ( SubSystemID ) REFERENCES SubSystem( SubSystemID ),
     FOREIGN KEY ( SiteID ) REFERENCES Site( SiteID ),
-    PRIMARY KEY ( MessageID, MessageTime, UserDNID, ClientIPNumberID, LogLevel, FixedTextID, SystemID, SubSystemID)
+    PRIMARY KEY ( MessageID ),
+    INDEX (SystemID),
+    INDEX (SubSystemID),
+    INDEX (FixedTextID),
+    INDEX (UserDNID),
+    INDEX (ClientIPNumberID),
+    INDEX (SiteID)
 );
 
 --------------------------------------------------------------------------------
