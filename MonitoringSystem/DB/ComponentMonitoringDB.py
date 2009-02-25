@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/DB/ComponentMonitoringDB.py,v 1.6 2009/02/24 16:50:27 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/DB/ComponentMonitoringDB.py,v 1.7 2009/02/25 19:10:50 acasajus Exp $
 ########################################################################
 """ ComponentMonitoring class is a front-end to the Component monitoring Database
 """
 
-__RCSID__ = "$Id: ComponentMonitoringDB.py,v 1.6 2009/02/24 16:50:27 acasajus Exp $"
+__RCSID__ = "$Id: ComponentMonitoringDB.py,v 1.7 2009/02/25 19:10:50 acasajus Exp $"
 
 import time
 import random
@@ -215,8 +215,12 @@ class ComponentMonitoringDB(DB):
                                                                        compDict[ 'compId' ] ) )
 
   def __getComponents( self, condDict ):
+    """
+    Load the components in the DB
+    """
     compTable = self.__getTableName( "Components" )
-    fields = ( "Setup", "Type", "ComponentName", "Host", "Port", "StartTime", "LastHeartbeat", 'cycles', 'queries' )
+    fields = ( "Setup", "Type", "ComponentName", "Host", "Port",
+               "StartTime", "LastHeartbeat", "cycles", "queries", "LoggingState" )
     sqlWhere = []
     for field in condDict:
       val = condDict[ field ]
@@ -238,18 +242,44 @@ class ComponentMonitoringDB(DB):
     return S_OK( StatusSet( records ) )
 
   def getComponentsStatus( self, setup ):
+    """
+    Get the status of the defined components in the CS compared to the ones that are known in the DB
+    """
     result = self.__getComponents( { 'Setup' : setup } )
     if not result[ 'OK' ]:
       return result
     statusSet = result[ 'Value' ]
-    for type in ( 'agent' , 'service' ):
-      #Iterate through systems
-      result = gConfig.getOptionsDict( "/DIRAC/Setups/%s" % setup )
+    requiredComponents = {}
+    #Iterate through systems
+    result = gConfig.getOptionsDict( "/DIRAC/Setups/%s" % setup )
+    if not result[ 'OK' ]:
+      return result
+    systems = result[ 'Value' ]
+    for system in systems:
+      instance = systems[ system ]
+      #Walk the URLs
+      result = gConfig.getOptionsDict( "/Systems/%s/%s/URLs" % ( system, instance ) )
       if not result[ 'OK' ]:
-        return result
-      systems = result[ 'Value' ]
-      for system in systems:
-        instance = systems[ system ]
+        self.log.warn ( "There doesn't to be defined the URLs section for %s in %s instance" % ( system, instance ) )
+      else:
+        urls = result[ 'Value' ]
+        for service in urls:
+          url = urls[ service ]
+          componentName = "%s/%s" % ( system, service )
+          loc = url[ url.find( "://" ) + 3: ]
+          loc = loc[ : loc.find( "/" ) ]
+          hostname, port = loc.split( ":" )
+          compDict = { 'ComponentName' : componentName,
+                       'Type' : 'service',
+                       'Setup' : setup,
+                       'Host' : hostname,
+                       'Port' : int(port)
+                      }
+          rC = statusSet.walkSet( requiredComponents, compDict )
+          if compDict not in rC:
+            rC.append( compDict )
+      #Check defined agents and serviecs
+      for type in ( 'agent' , 'service' ):
         #Get entries for the instance of a system
         result = gConfig.getSections( "/Systems/%s/%s/%s" % ( system, instance, "%ss" % type.capitalize() ) )
         if not result[ 'OK' ]:
@@ -272,9 +302,11 @@ class ComponentMonitoringDB(DB):
               compDict[ 'Port' ] = int( result[ 'Value' ] )
             except:
               self.log.error( "Port for component doesn't seem to be a number", "%s for setup %s" % ( componentName, setup ) )
-          result = statusSet.setComponentAsRequired( compDict )
-          if not result[ 'OK' ]:
-            self.log.error( "Error while setting component as required", result[ 'Message' ] )
+          rC = statusSet.walkSet( requiredComponents, compDict )
+          if compDict not in rC:
+            rC.append( compDict )
+    #WALK THE DICT
+    statusSet.setComponentsAsRequired( requiredComponents )
     return S_OK( statusSet )
 
 class StatusSet:
@@ -288,66 +320,80 @@ class StatusSet:
   def setDBRecords( self, recordsList ):
     self.__dbSet = {}
     for record in recordsList:
-      cD = self.__dbSet
-      for field in self.__requiredFields:
-        fVal = record[ field ]
-        if fVal not in cD:
-          if field == self.__requiredFields[-1]:
-            cD[ fVal ] = []
-          else:
-            cD[ fVal ] = {}
-        cD = cD[ fVal ]
+      cD = self.walkSet( self.__dbSet, record )
       cD.append( record )
     return S_OK()
 
-  def setComponentAsRequired( self, compDict ):
-    for field in self.__requiredFields:
-      if field not in compDict:
-        return S_ERROR( "Missing %s field in component description" % field )
-    cD = self.__requiredSet
+  def walkSet( self, setDict, compDict, createMissing = True ):
+    sD = setDict
     for field in self.__requiredFields:
       val = compDict[ field ]
-      if val not in cD:
+      if val not in sD:
+        if not createMissing:
+          return None
         if field == self.__requiredFields[-1]:
-          cD[ val ] = []
+          sD[ val ] = []
         else:
-          cD[ val ] = {}
-      cD = cD[ val ]
+          sD[ val ] = {}
+      sD = sD[ val ]
+    return sD
 
-    dbD = self.__dbSet
-    for field in self.__requiredFields:
-      val = compDict[ field ]
-      if val not in dbD:
-        self.__addMissingRequiredComponent( compDict )
-        return S_OK()
-      dbD = dbD[ val ]
-    self.__addFoundRequiredComponent( compDict )
+  def setComponentsAsRequired( self, requiredSet ):
+    for setup in requiredSet:
+      for type in requiredSet[ setup ]:
+        for name in requiredSet[ setup ][ type ]:
+          #Need to narrow down required
+          cDL = requiredSet[ setup ][ type ][ name ]
+          filtered = []
+          for i in range( len( cDL ) ):
+            alreadyContained = False
+            cD = cDL[i]
+            for j in range( len( cDL ) ):
+              if i==j:
+                continue
+              pc = cDL[j]
+              match = True
+              for key in cD:
+                if key not in pc:
+                  match = False
+                  break
+                if cD[key] != pc[key]:
+                  match = False
+                  break
+              if match:
+                alreadyContained = True
+            if not alreadyContained:
+              filtered.append( cD )
+          self.__setComponentListAsRequired( filtered )
+
+
+  def __setComponentListAsRequired( self, compDictList ):
+    dbD = self.walkSet( self.__dbSet, compDictList[0], createMissing = False )
+    if not dbD:
+      self.__addMissingDefinedComponents( compDictList )
+      return S_OK()
+    self.__addFoundDefinedComponent( compDictList )
     return S_OK()
 
-  def __addMissingRequiredComponent( self, compDict ):
-    cD = self.__requiredSet
-    for field in self.__requiredFields:
-      val = compDict[ field ]
-      cD = cD[ val ]
-    compDict[ 'Status' ] = 'Error'
-    compDict[ 'Message' ] = "Component is not up or hasn't connected to register yet"
-    cD.append( compDict )
+  def __addMissingDefinedComponents( self, compDictList ):
+    cD = self.walkSet( self.__requiredSet, compDictList[0] )
+    for compDict in compDictList:
+      compDict[ 'Status' ] = 'Error'
+      compDict[ 'Message' ] = "Component is not up or hasn't connected to register yet"
+      cD.append( compDict )
 
-  def __addFoundRequiredComponent( self, compDict ):
-    cD = self.__requiredSet
-    dbD = self.__dbSet
+  def __addFoundDefinedComponent( self, compDictList ):
+    cD = self.walkSet( self.__requiredSet, compDictList[0] )
+    dbD = self.walkSet( self.__dbSet, compDictList[0]  )
     now = Time.dateTime()
-    for field in self.__requiredFields:
-      val = compDict[ field ]
-      cD = cD[ val ]
-      dbD = dbD[ val ]
+    unmatched = compDictList
     for component in dbD:
       component[ 'Status' ] = 'OK'
-      if compDict[ 'Type' ] == "service":
+      if component[ 'Type' ] == "service":
         if 'Port' not in component:
           component[ 'Status' ] = "Error"
           component[ 'Message' ] = "Port is not defined"
-        elif str(component[ 'Port' ]) != str(compDict[ 'Port' ]):
+        elif component[ 'Port' ] not in [ compDict[ 'Port' ] for compDict in compDictList ]:
           component[ 'Status' ] = "Error"
           component[ 'Message' ] = "Port (%s) is different that specified in the CS (%s)" % ( component[ 'Port' ], compDict[ 'Port' ] )
       elapsed = now - component[ 'LastHeartbeat' ]
@@ -356,6 +402,23 @@ class StatusSet:
         component[ 'Status' ] = "Error"
         component[ 'Message' ] = "Last heartbeat was received at %s (%s secs ago)" % ( component[ 'LastHeartbeat' ], elapsed)
       cD.append( component )
+      #See if we have a perfect match
+      newUnmatched = []
+      for compDict in unmatched:
+        perfectMatch = True
+        for field in compDict:
+          if field not in component:
+            perfectMatch = False
+          if compDict[ field ] != component[ field ]:
+            perfectMatch = False
+        if not perfectMatch:
+          newUnmatched.append( compDict )
+      unmatched = newUnmatched
+    for compDict in unmatched:
+      compDict[ 'Status' ] = "Error"
+      compDict[ 'Message' ] = "There is no component up with this properties"
+      cD.append( compDict )
+
 
   def getRequiredComponents( self ):
     return self.__requiredSet
