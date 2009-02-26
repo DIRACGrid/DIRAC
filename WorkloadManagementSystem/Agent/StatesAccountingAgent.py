@@ -1,7 +1,7 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/StatesAccountingAgent.py,v 1.10 2009/02/23 18:40:48 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/StatesAccountingAgent.py,v 1.11 2009/02/26 15:48:26 acasajus Exp $
 
-__RCSID__ = "$Id: StatesAccountingAgent.py,v 1.10 2009/02/23 18:40:48 acasajus Exp $"
+__RCSID__ = "$Id: StatesAccountingAgent.py,v 1.11 2009/02/26 15:48:26 acasajus Exp $"
 
 """  StatesAccountingAgent sends periodically numbers of jobs in various states for various
      sites to the Monitoring system to create historical plots.
@@ -37,7 +37,7 @@ class StatesAccountingAgent(AgentModule):
     self.dsClients = {}
     self.jobDB = JobDB()
 
-    self.reportPeriod = 300
+    self.reportPeriod = 850
     self.am_setOption( "PollingTime", self.reportPeriod )
     self.__jobDBFields = []
     for field in self.__summaryKeyFieldsMapping:
