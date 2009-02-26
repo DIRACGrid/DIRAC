@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.70 2009/01/27 17:07:42 paterson Exp $
+# $Id: JobWrapper.py,v 1.71 2009/02/26 13:21:04 paterson Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.70 2009/01/27 17:07:42 paterson Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.71 2009/02/26 13:21:04 paterson Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -137,7 +137,7 @@ class JobWrapper:
   def initialize(self, arguments):
     """ Initializes parameters and environment for job.
     """
-    self.__report('Running','Job Initialization')
+    #self.__report('Running','Job Initialization')
     self.log.info('Starting Job Wrapper Initialization for Job %s' %(self.jobID))
     jobArgs = arguments['Job']
     self.log.verbose(jobArgs)
@@ -606,7 +606,7 @@ class JobWrapper:
   def processJobOutputs(self,arguments):
     """Outputs for a job may be treated here.
     """
-    self.__report('Completed','Uploading Job Outputs')
+    #self.__report('Completed','Uploading Job Outputs')
     jobArgs = arguments['Job']
 
     #first iteration of this, no checking of wildcards or oversize sandbox files etc.
@@ -640,7 +640,7 @@ class JobWrapper:
       self.log.warn(msg)
       return S_OK(msg)
 
-    self.__report('Completed','Uploading Output Sandbox')
+    #self.__report('Completed','Uploading Output Sandbox')
     if fileList and self.jobID:
       self.outputSandboxSize = getGlobbedTotalSize(fileList)
       outputSandboxClient = SandboxClient('Output')
@@ -714,7 +714,7 @@ class JobWrapper:
     """Performs the upload and registration in the LFC
     """
     self.log.verbose('Uploading output data files')
-    self.__report('Completed','Uploading Output Data')
+    #self.__report('Completed','Uploading Output Data')
     self.log.verbose('Output data files %s to be uploaded to %s SE' %(string.join(outputData,', '),outputSE))
     missing = []
     uploaded = []
@@ -849,7 +849,7 @@ class JobWrapper:
         lfns.append(i)
 
     if lfns:
-      self.__report('Running','Downloading InputSandbox LFN(s)')
+      #self.__report('Running','Downloading InputSandbox LFN(s)')
       lfns = [fname.replace('LFN:','').replace('lfn:','') for fname in lfns]
       download = self.rm.getFile(lfns)
       if not download['OK']:
