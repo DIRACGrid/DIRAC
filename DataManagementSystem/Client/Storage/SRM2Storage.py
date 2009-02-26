@@ -72,7 +72,7 @@ class SRM2Storage(StorageBase):
     self.nobdii = 1
     self.defaulttype = 2
     self.vo = 'lhcb'
-    self.nbstreams = 4
+    self.nbstreams = 1
     self.verbose = 0
     self.conf_file = 'ignored'
     self.insecure = 0
@@ -653,12 +653,8 @@ class SRM2Storage(StorageBase):
       gLogger.error(errStr,src_file)
       return S_ERROR(errStr)
     timeout = sourceSize/self.MIN_BANDWIDTH + 300
-    if sourceSize > self.MAX_SINGLE_STREAM_SIZE:
-      nbstreams = 4
-    else:
-      nbstreams = 1
     gLogger.debug("SRM2Storage.__putFile: Executing transfer of %s to %s" % (src_url, dest_url))
-    errCode,errStr = lcg_util.lcg_cp3(src_url, dest_url, self.defaulttype, srctype, dsttype, self.nobdii, self.vo, nbstreams, self.conf_file, self.insecure, self.verbose, timeout,src_spacetokendesc,dest_spacetokendesc)
+    errCode,errStr = lcg_util.lcg_cp3(src_url, dest_url, self.defaulttype, srctype, dsttype, self.nobdii, self.vo, self.nbstreams, self.conf_file, self.insecure, self.verbose, timeout,src_spacetokendesc,dest_spacetokendesc)
     if errCode == 0:
       gLogger.debug('SRM2Storage.__putFile: Successfully put file to storage.')
       res = self.__executeOperation(dest_url,'getFileSize')
@@ -723,12 +719,8 @@ class SRM2Storage(StorageBase):
       return S_ERROR(res['Message'])
     remoteSize = res['Value']
     timeout = remoteSize/self.MIN_BANDWIDTH + 300
-    if remoteSize > self.MAX_SINGLE_STREAM_SIZE:
-      nbstreams = 4
-    else:
-      nbstreams = 1
     gLogger.debug("SRM2Storage.__getFile: Executing transfer of %s to %s" % (src_url, dest_url))
-    errCode,errStr = lcg_util.lcg_cp3(src_url, dest_url, self.defaulttype, srctype, dsttype, self.nobdii, self.vo, nbstreams, self.conf_file, self.insecure, self.verbose, timeout,src_spacetokendesc,dest_spacetokendesc)
+    errCode,errStr = lcg_util.lcg_cp3(src_url, dest_url, self.defaulttype, srctype, dsttype, self.nobdii, self.vo, self.nbstreams, self.conf_file, self.insecure, self.verbose, timeout,src_spacetokendesc,dest_spacetokendesc)
     if errCode == 0:
       gLogger.debug('SRM2Storage.__getFile: Got a file from storage.')
       localSize = getSize(dest_file)
