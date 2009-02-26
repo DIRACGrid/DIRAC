@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/DB/AccountingDB.py,v 1.4 2009/02/19 20:29:38 acasajus Exp $
-__RCSID__ = "$Id: AccountingDB.py,v 1.4 2009/02/19 20:29:38 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/DB/AccountingDB.py,v 1.5 2009/02/26 16:15:02 acasajus Exp $
+__RCSID__ = "$Id: AccountingDB.py,v 1.5 2009/02/26 16:15:02 acasajus Exp $"
 
 import datetime, time
 import types
@@ -149,7 +149,7 @@ class AccountingDB(DB):
       self.log.info( "Checking %s" % typeName )
       sqlTableName = self.__getTableName( "in", typeName )
       sqlFields = [ 'id' ] + self.dbCatalog[ typeName ][ 'typeFields' ]
-      sqlCond = "taken = False or TIMESTAMPDIFF( SECOND, takenSince, UTC_TIMESTAMP() ) > %s" % self.getWaitingRecordsLifeTime()
+      sqlCond = "taken = 0 or TIMESTAMPDIFF( SECOND, takenSince, UTC_TIMESTAMP() ) > %s" % self.getWaitingRecordsLifeTime()
       result = self._query( "SELECT %s FROM `%s`  WHERE %s ORDER BY id ASC LIMIT 1000" % ( ", ".join( [ "`%s`" % f for f in sqlFields ] ),
                                                                                      sqlTableName,
                                                                                      sqlCond ) )
@@ -162,7 +162,7 @@ class AccountingDB(DB):
       #If nothing to do, continue
       if not idList:
         continue
-      result = self._update( "UPDATE `%s` SET taken=True, takenSince=UTC_TIMESTAMP() WHERE id in (%s)" % ( sqlTableName,
+      result = self._update( "UPDATE `%s` SET taken=1, takenSince=UTC_TIMESTAMP() WHERE id in (%s)" % ( sqlTableName,
                                                                                                            ", ".join( idList ) ) )
       if not result[ 'OK' ]:
         self.log.error( "Error when trying set state to waiting records", "for %s : %s" % ( typeName, result[ 'Message' ] ) )
@@ -280,7 +280,7 @@ class AccountingDB(DB):
     bucketFieldsDict[ 'startTime' ] = "INT UNSIGNED NOT NULL"
     inbufferDict[ 'startTime' ] = "INT UNSIGNED NOT NULL"
     inbufferDict[ 'endTime' ] = "INT UNSIGNED NOT NULL"
-    inbufferDict[ 'taken' ] = "BOOLEAN DEFAULT True NOT NULL"
+    inbufferDict[ 'taken' ] = "TINYINT(1) DEFAULT 1 NOT NULL"
     inbufferDict[ 'takenSince' ] = "DATETIME NOT NULL"
     uniqueIndexFields.append( 'startTime' )
     bucketFieldsDict[ 'bucketLength' ] = "MEDIUMINT UNSIGNED NOT NULL"
@@ -469,7 +469,7 @@ class AccountingDB(DB):
     if not typeName in self.dbCatalog:
       return S_ERROR( "Type %s has not been defined in the db" % typeName )
     sqlFields = [ 'id', 'taken', 'takenSince' ] + self.dbCatalog[ typeName ][ 'typeFields' ]
-    sqlValues = [ '0', 'True', 'UTC_TIMESTAMP()' ] + valuesList + [ startTime, endTime ]
+    sqlValues = [ '0', '1', 'UTC_TIMESTAMP()' ] + valuesList + [ startTime, endTime ]
     retVal = self._insert( self.__getTableName( "in", typeName ),
                            sqlFields,
                            sqlValues)
@@ -486,7 +486,7 @@ class AccountingDB(DB):
     """
     result = self.insertRecordDirectly( typeName, startTime, endTime, valuesList )
     if not result[ 'OK' ]:
-      self._update( "UPDATE `%s` SET taken=False WHERE id=%s" % ( self.__getTableName( "in", typeName ), id ) )
+      self._update( "UPDATE `%s` SET taken=0 WHERE id=%s" % ( self.__getTableName( "in", typeName ), id ) )
       self.log.error( "Can't insert row", result[ 'Message' ] )
       return result
     result = self._update( "DELETE FROM `%s` WHERE id=%s" % ( self.__getTableName( "in", typeName ), id ) )
