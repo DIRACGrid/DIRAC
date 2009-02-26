@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.69 2009/02/09 17:22:34 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.70 2009/02/26 13:40:24 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.69 2009/02/09 17:22:34 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.70 2009/02/26 13:40:24 acasajus Exp $"
 
 import time
 import types
@@ -410,6 +410,8 @@ class TaskQueueDB(DB):
         retVal = self._query( prioSQL % tqId, conn = connObj )
         if not retVal[ 'OK' ]:
           return S_ERROR( "Can't retrieve winning priority for matching job: %s" % retVal[ 'Message' ] )
+        if len( retVal[ 'Value' ] ) == 0:
+          continue
         prio = retVal[ 'Value' ][0][0]
         retVal = self._query( "%s %s" % ( preJobSQL % ( tqId, prio ), postJobSQL ), conn = connObj )
         if not retVal[ 'OK' ]:
