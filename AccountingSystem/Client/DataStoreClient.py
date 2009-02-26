@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/DataStoreClient.py,v 1.12 2009/02/18 14:36:28 acasajus Exp $
-__RCSID__ = "$Id: DataStoreClient.py,v 1.12 2009/02/18 14:36:28 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/DataStoreClient.py,v 1.13 2009/02/26 15:13:14 acasajus Exp $
+__RCSID__ = "$Id: DataStoreClient.py,v 1.13 2009/02/26 15:13:14 acasajus Exp $"
 
 import time
 from DIRAC import S_OK, S_ERROR, gLogger
@@ -57,9 +57,9 @@ class DataStoreClient:
     Send the registers in a bundle mode
     """
     if self.__setup:
-      rpcClient = RPCClient( "Accounting/DataStore", setup = self.__setup )
+      rpcClient = RPCClient( "Accounting/DataStore", setup = self.__setup, timeout = 3600 )
     else:
-      rpcClient = RPCClient( "Accounting/DataStore" )
+      rpcClient = RPCClient( "Accounting/DataStore", timeout = 3600 )
     sent = 0
     while len( self.__registersList ) > 0:
       registersToSend = self.__registersList[ :self.__maxRecordsInABundle ]
