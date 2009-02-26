@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Service/MonitoringHandler.py,v 1.12 2009/02/23 20:03:19 acasajus Exp $
-__RCSID__ = "$Id: MonitoringHandler.py,v 1.12 2009/02/23 20:03:19 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Service/MonitoringHandler.py,v 1.13 2009/02/26 12:02:57 acasajus Exp $
+__RCSID__ = "$Id: MonitoringHandler.py,v 1.13 2009/02/26 12:02:57 acasajus Exp $"
 import types
 import os
 from DIRAC import gLogger, gConfig, rootPath, S_OK, S_ERROR
@@ -186,6 +186,15 @@ class MonitoringHandler( RequestHandler ):
     if failed:
       return S_ERROR( "\n".join( failed ) )
     return S_OK()
+
+  #Component monitoring functions
+  types_getComponentsStatus = [ types.DictType ]
+  def export_getComponentsStatus( self, condDict ):
+    if 'Setup' not in condDict:
+      condDict[ 'Setup' ] = self.serviceInfoDict[ 'clientSetup' ]
+    return gServiceInterface.getComponentsStatus( condDict )
+
+  #Transfer files
 
   def transfer_toClient( self, fileId, token, fileHelper ):
     retVal = gServiceInterface.getGraphData( fileId )

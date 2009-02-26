@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/DB/ComponentMonitoringDB.py,v 1.7 2009/02/25 19:10:50 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/DB/ComponentMonitoringDB.py,v 1.8 2009/02/26 12:02:57 acasajus Exp $
 ########################################################################
 """ ComponentMonitoring class is a front-end to the Component monitoring Database
 """
 
-__RCSID__ = "$Id: ComponentMonitoringDB.py,v 1.7 2009/02/25 19:10:50 acasajus Exp $"
+__RCSID__ = "$Id: ComponentMonitoringDB.py,v 1.8 2009/02/26 12:02:57 acasajus Exp $"
 
 import time
 import random
@@ -12,7 +12,7 @@ import md5
 import types
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
-from DIRAC.Core.Utilities import Time
+from DIRAC.Core.Utilities import Time, List
 
 class ComponentMonitoringDB(DB):
 
@@ -26,6 +26,9 @@ class ComponentMonitoringDB(DB):
       raise Exception( "Can't create tables: %s" % retVal[ 'Message' ])
     self.__optionalFields = ( 'startTime', 'cycles', 'version', 'queries',
                               'DIRACVersion', 'description', 'platform' )
+    self.__mainFields = ( "Id", "Setup", "Type", "ComponentName", "Host", "Port",
+                          "StartTime", "LastHeartbeat", "cycles", "queries", "LoggingState" )
+    self.__versionFields = ( 'VersionTimestamp', 'Version', 'DIRACVersion', 'Platform', 'Description' )
 
   def getOptionalFields(self):
     return self.__optionalFields
@@ -67,7 +70,7 @@ class ComponentMonitoringDB(DB):
     tN = self.__getTableName( "VersionHistory" )
     if tN not in tablesInDB:
       tablesD[ tN ] = { 'Fields' : { 'CompId' : 'INTEGER NOT NULL',
-                                     'Timestamp' : 'DATETIME NOT NULL',
+                                     'VersionTimestamp' : 'DATETIME NOT NULL',
                                      'Version' : 'VARCHAR(255)',
                                      'DIRACVersion' : 'VARCHAR(255) NOT NULL',
                                      'Platform' : 'VARCHAR(255) NOT NULL',
@@ -161,7 +164,7 @@ class ComponentMonitoringDB(DB):
     #It's not there, we just need to insert it
     sqlInsertFields.append( 'CompId' )
     sqlInsertValues.append( str( compId ) )
-    sqlInsertFields.append( 'Timestamp' )
+    sqlInsertFields.append( 'VersionTimestamp' )
     sqlInsertValues.append( 'UTC_TIMESTAMP()' )
     if 'description' in compDict:
       sqlInsertFields.append( "Description" )
@@ -219,8 +222,9 @@ class ComponentMonitoringDB(DB):
     Load the components in the DB
     """
     compTable = self.__getTableName( "Components" )
-    fields = ( "Setup", "Type", "ComponentName", "Host", "Port",
-               "StartTime", "LastHeartbeat", "cycles", "queries", "LoggingState" )
+    mainFields = ", ".join( self.__mainFields )
+    versionTable = self.__getTableName( "VersionHistory" )
+    versionFields = ", ".join( self.__versionFields )
     sqlWhere = []
     for field in condDict:
       val = condDict[ field ]
@@ -230,84 +234,130 @@ class ComponentMonitoringDB(DB):
         sqlWhere.append( "%s='%s'" % ( field, val ) )
       else:
         sqlWhere.append( "( %s )" % " OR ".join( [ "%s='%s'" % ( field, v ) for v in val ] ) )
-    result = self._query( "SELECT %s FROM `%s` WHERE %s" % ( ", ".join( fields, ), compTable, " AND ".join( sqlWhere ) ) )
+    if sqlWhere:
+      sqlWhere = "WHERE %s" % " AND ".join( sqlWhere )
+    else:
+      sqlWhere = ""
+    result = self._query( "SELECT %s FROM `%s` %s" % ( mainFields, compTable, sqlWhere ) )
     if not result[ 'OK' ]:
       return result
     records = []
-    for record in result[ 'Value' ]:
+    dbData = result[ 'Value' ]
+    for record in dbData:
       rD = {}
-      for i in range( len( fields ) ):
-        rD[ fields[i] ] = record[i]
+      for i in range( len( self.__mainFields ) ):
+        rD[ self.__mainFields[i] ] = record[i]
+      result = self._query( "SELECT %s FROM `%s` WHERE CompId=%s ORDER BY VersionTimestamp DESC LIMIT 1" % ( versionFields,
+                                                                                                             versionTable,
+                                                                                                             rD[ 'Id' ] ) )
+      if not result[ 'OK' ]:
+        return result
+      if len( result[ 'Value' ] ) > 0:
+        versionRec = result[ 'Value' ][0]
+        for i in range( len( self.__versionFields ) ):
+          rD[ self.__versionFields[i] ] = versionRec[i]
+      del( rD[ 'Id' ] )
       records.append( rD )
     return S_OK( StatusSet( records ) )
 
-  def getComponentsStatus( self, setup ):
+  def __checkCondition( self, condDict, field, value ):
+    if field not in condDict:
+      return True
+    condVal = condDict[ field ]
+    if type( condVal ) in ( types.ListType, types.TupleType ):
+      return value in condVal
+    return value == condVal
+
+  def getComponentsStatus( self, conditionDict = {} ):
     """
     Get the status of the defined components in the CS compared to the ones that are known in the DB
     """
-    result = self.__getComponents( { 'Setup' : setup } )
+    result = self.__getComponents( conditionDict )
     if not result[ 'OK' ]:
       return result
     statusSet = result[ 'Value' ]
     requiredComponents = {}
-    #Iterate through systems
-    result = gConfig.getOptionsDict( "/DIRAC/Setups/%s" % setup )
+    result = gConfig.getSections( "/DIRAC/Setups" )
     if not result[ 'OK' ]:
       return result
-    systems = result[ 'Value' ]
-    for system in systems:
-      instance = systems[ system ]
-      #Walk the URLs
-      result = gConfig.getOptionsDict( "/Systems/%s/%s/URLs" % ( system, instance ) )
+    for setup in result[ 'Value' ]:
+      if not self.__checkCondition( conditionDict, "Setup", setup ):
+        continue
+      #Iterate through systems
+      result = gConfig.getOptionsDict( "/DIRAC/Setups/%s" % setup )
       if not result[ 'OK' ]:
-        self.log.warn ( "There doesn't to be defined the URLs section for %s in %s instance" % ( system, instance ) )
-      else:
-        urls = result[ 'Value' ]
-        for service in urls:
-          url = urls[ service ]
-          componentName = "%s/%s" % ( system, service )
-          loc = url[ url.find( "://" ) + 3: ]
-          loc = loc[ : loc.find( "/" ) ]
-          hostname, port = loc.split( ":" )
-          compDict = { 'ComponentName' : componentName,
-                       'Type' : 'service',
-                       'Setup' : setup,
-                       'Host' : hostname,
-                       'Port' : int(port)
-                      }
-          rC = statusSet.walkSet( requiredComponents, compDict )
-          if compDict not in rC:
-            rC.append( compDict )
-      #Check defined agents and serviecs
-      for type in ( 'agent' , 'service' ):
-        #Get entries for the instance of a system
-        result = gConfig.getSections( "/Systems/%s/%s/%s" % ( system, instance, "%ss" % type.capitalize() ) )
+        return result
+      systems = result[ 'Value' ]
+      for system in systems:
+        instance = systems[ system ]
+        #Walk the URLs
+        result = gConfig.getOptionsDict( "/Systems/%s/%s/URLs" % ( system, instance ) )
         if not result[ 'OK' ]:
-          self.log.warn( "Opps, sytem seems to be defined wrong\n", "System %s at %s: %s" % ( system, instance, result[ 'Message' ] ) )
-          continue
-        components = result[ 'Value' ]
-        for component in components:
-          componentName = "%s/%s" % ( system, component )
-          compDict = { 'ComponentName' : componentName,
-                       'Type' : type,
-                       'Setup' : setup
-                      }
-          if type == 'service':
-            result = gConfig.getOption( "/Systems/%s/%s/%s/%s/Port" % ( system, instance,
-                                                                        "%ss" % type.capitalize(), component ) )
-            if not result[ 'OK' ]:
-              self.log.error( "Component is not well defined", result[ 'Message' ] )
-              continue
-            try:
-              compDict[ 'Port' ] = int( result[ 'Value' ] )
-            except:
-              self.log.error( "Port for component doesn't seem to be a number", "%s for setup %s" % ( componentName, setup ) )
-          rC = statusSet.walkSet( requiredComponents, compDict )
-          if compDict not in rC:
-            rC.append( compDict )
+          self.log.warn ( "There doesn't to be defined the URLs section for %s in %s instance" % ( system, instance ) )
+        else:
+          serviceURLs = result[ 'Value' ]
+          for service in serviceURLs:
+            for url in List.fromChar( serviceURLs[ service ] ):
+              loc = url[ url.find( "://" ) + 3: ]
+              iS = loc.find( "/" )
+              componentName = loc[ iS+1: ]
+              loc = loc[ :iS ]
+              hostname, port = loc.split( ":" )
+              compDict = { 'ComponentName' : componentName,
+                           'Type' : 'service',
+                           'Setup' : setup,
+                           'Host' : hostname,
+                           'Port' : int(port)
+                          }
+              allowed = True
+              for key in compDict:
+                if not self.__checkCondition( conditionDict, key, compDict[key] ):
+                  allowed = False
+                  break
+              if not allowed:
+                break
+
+              rC = statusSet.walkSet( requiredComponents, compDict )
+              if compDict not in rC:
+                rC.append( compDict )
+        #Check defined agents and serviecs
+        for type in ( 'agent' , 'service' ):
+          #Get entries for the instance of a system
+          result = gConfig.getSections( "/Systems/%s/%s/%s" % ( system, instance, "%ss" % type.capitalize() ) )
+          if not result[ 'OK' ]:
+            self.log.warn( "Opps, sytem seems to be defined wrong\n", "System %s at %s: %s" % ( system, instance, result[ 'Message' ] ) )
+            continue
+          components = result[ 'Value' ]
+          for component in components:
+            componentName = "%s/%s" % ( system, component )
+            compDict = { 'ComponentName' : componentName,
+                         'Type' : type,
+                         'Setup' : setup
+                        }
+            if type == 'service':
+              result = gConfig.getOption( "/Systems/%s/%s/%s/%s/Port" % ( system, instance,
+                                                                          "%ss" % type.capitalize(), component ) )
+              if not result[ 'OK' ]:
+                self.log.error( "Component is not well defined", result[ 'Message' ] )
+                continue
+              try:
+                compDict[ 'Port' ] = int( result[ 'Value' ] )
+              except:
+                self.log.error( "Port for component doesn't seem to be a number", "%s for setup %s" % ( componentName, setup ) )
+            allowed = True
+            for key in compDict:
+              if not self.__checkCondition( conditionDict, key, compDict[key] ):
+                allowed = False
+                break
+            if not allowed:
+              break
+            rC = statusSet.walkSet( requiredComponents, compDict )
+            if compDict not in rC:
+              rC.append( compDict )
     #WALK THE DICT
     statusSet.setComponentsAsRequired( requiredComponents )
-    return S_OK( statusSet )
+    return S_OK( ( statusSet.getRequiredComponents(),
+                   self.__mainFields[1:] + self.__versionFields + ( 'Status', 'Message' ) ) )
 
 class StatusSet:
 

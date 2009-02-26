@@ -1,10 +1,10 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.39 2009/02/23 20:03:19 acasajus Exp $
-__RCSID__ = "$Id: MonitoringClient.py,v 1.39 2009/02/23 20:03:19 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.40 2009/02/26 12:02:57 acasajus Exp $
+__RCSID__ = "$Id: MonitoringClient.py,v 1.40 2009/02/26 12:02:57 acasajus Exp $"
 
 import threading
 import time
 import types
-from DIRAC import gConfig, gLogger
+from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Utilities import Time, ExitCallback, Network, ThreadScheduler
 from DIRAC.MonitoringSystem.private.ServiceInterface import gServiceInterface
@@ -337,5 +337,75 @@ class MonitoringClient:
   def forceFlush( self, exitCode ):
     self.sendingMode = "none"
     self.flush( allData = True )
+
+  def getComponentsStatus( self, condDict ):
+    rpcClient = RPCClient( "Monitoring/Server", timeout = 100 )
+    return rpcClient.getComponentsStatus( condDict )
+
+  def __filterComponent( self, component, condDict ):
+    for key in condDict:
+      if key not in component:
+        return False
+      condVal = condDict[ key ]
+      componentVal = component[ key ]
+      if type( condVal ) in ( types.ListType, types.TupleType ):
+        if componentVal not in condVal:
+          return False
+      else:
+        if componentVal != condVal:
+          return False
+    return True
+
+  def getComponentsStatusWebFormatted( self, condDict = {}, sortingList = [], startItem = 0, maxItems = 0 ):
+    result = self.getComponentsStatus( condDict )
+    if not result[ 'OK' ]:
+      return result
+    compDict, fields = result[ 'Value' ]
+    tabledData = []
+    for setup in compDict:
+      for type in compDict[ setup ]:
+        for name in compDict[ setup ][ type ]:
+          for component in compDict[ setup ][ type ][ name ]:
+            #How here we are. Now we need to filter the components
+            if not self.__filterComponent( component, condDict ):
+              continue
+            #Add to tabledData!
+            row = []
+            for field in fields:
+              if field not in component:
+                row.append( "" )
+              else:
+                row.append( component[ field ] )
+            tabledData.append( row )
+    #We've got the data in table form
+    #Now it's time to sort it
+    if sortingList:
+      sortingData = []
+      sortField = sortingList[0][0]
+      if sortField not in fields:
+        return S_ERROR( "Sorting field %s does not exist" % sortField )
+      sortDirection = sortingList[0][1]
+      fieldIndex = 0
+      for i in range( len( fields ) ):
+        if fields[i] == sortField:
+          fieldIndex = i
+          break
+      for row in tabledData:
+        sortingData.append( ( row[ fieldIndex ], row ) )
+      sortingData.sort()
+      if sortDirection == "DESC":
+        sortingData.reverse()
+      tabledData = [ row[1] for row in sortingData ]
+    #Now need to limit
+    numRows = len( tabledData )
+    tabledData = tabledData[ startItem: ]
+    if maxItems:
+      tabledData = tabledData[ :maxItems ]
+    returnData = { 'ParameterNames' : fields,
+                   'Records' : tabledData,
+                   'TotalRecords' : numRows,
+                   }
+    return S_OK( returnData )
+
 
 gMonitor = MonitoringClient()

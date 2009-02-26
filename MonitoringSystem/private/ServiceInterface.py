@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/ServiceInterface.py,v 1.22 2009/02/24 08:14:44 rgracian Exp $
-__RCSID__ = "$Id: ServiceInterface.py,v 1.22 2009/02/24 08:14:44 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/ServiceInterface.py,v 1.23 2009/02/26 12:02:57 acasajus Exp $
+__RCSID__ = "$Id: ServiceInterface.py,v 1.23 2009/02/26 12:02:57 acasajus Exp $"
 import DIRAC
 from DIRAC import gLogger
 from DIRAC.MonitoringSystem.private.RRDManager import RRDManager
@@ -421,5 +421,9 @@ class ServiceInterface:
     self.__cmdb__merge( sourceId, componentExtraInfo )
     self.__cmdb__writeHeartbeat( sourceId )
 
+  def getComponentsStatus( self, condDict = False ):
+    if not condDict:
+      condDict = {}
+    return self.compmonDB.getComponentsStatus( condDict )
 
 gServiceInterface = ServiceInterface()
