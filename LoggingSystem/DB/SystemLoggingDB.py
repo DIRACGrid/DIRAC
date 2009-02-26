@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/DB/SystemLoggingDB.py,v 1.21 2009/02/25 16:05:56 mseco Exp $
-__RCSID__ = "$Id: SystemLoggingDB.py,v 1.21 2009/02/25 16:05:56 mseco Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/DB/SystemLoggingDB.py,v 1.22 2009/02/26 08:32:50 rgracian Exp $
+__RCSID__ = "$Id: SystemLoggingDB.py,v 1.22 2009/02/26 08:32:50 rgracian Exp $"
 """ SystemLoggingDB class is a front-end to the Message Logging Database.
     The following methods are provided
 
@@ -212,6 +212,10 @@ class SystemLoggingDB(DB):
       result = self._getFields( tableName, outFields, inFields, inValues )
       if not result['OK']:
         return S_ERROR( 'Unable to query the database' )
+      if result['Value']==():
+        # The inserted value is larger than the field size and can not be matched back
+        gLogger.error( 'Could not insert the data into %s table' % tableName, inFields )
+        return S_ERROR( 'Could not insert the data into %s table' % tableName )
 
     return S_OK( int( result['Value'][0][0] ) )
       
