@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.126 2009/02/18 15:26:25 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.127 2009/02/26 10:22:22 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -47,7 +47,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.126 2009/02/18 15:26:25 acasajus Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.127 2009/02/26 10:22:22 atsareg Exp $"
 
 import re, os, sys, string, types
 import time, datetime, operator
@@ -1746,8 +1746,7 @@ class JobDB(DB):
 
     finalDict['TotalRecords'] = len(records)
     return S_OK(finalDict)
-
-
+      
 #####################################################################################
   def setHeartBeatData(self,jobID,staticDataDict, dynamicDataDict):
     """ Add the job's heart beat data to the database
@@ -1768,23 +1767,30 @@ class JobDB(DB):
       self.log.warn(result['Message'])
 
     # Add dynamic data to the job heart beat log
+    start = time.time()
+    valueList = []
     for key,value in dynamicDataDict.items():
       result = self._escapeString(value)
       if not result['OK']:
         self.log.warn('Failed to escape string '+value)
         continue
       e_value = result['Value']
-      req = "INSERT INTO HeartBeatLoggingInfo (JobID,Name,Value,HeartBeatTime) "
-      req += "VALUES (%d,'%s','%s',UTC_TIMESTAMP())" % (jobID,key,e_value)
-      result = self._update(req)
-      if not result['OK']:
-        ok = False
-        self.log.warn(result['Message'])
+      valueList.append("( %d, '%s','%s',UTC_TIMESTAMP())" % (jobID,key,e_value))
+      
+    valueString = ','.join(valueList)  
+    req = "INSERT INTO HeartBeatLoggingInfo (JobID,Name,Value,HeartBeatTime) VALUES "
+    req += valueString
+    result = self._update(req)
+    if not result['OK']:
+      ok = False
+      self.log.warn(result['Message'])
+
+    #print "AT >>>> insertion time ",time.time()-start
 
     if ok:
       return S_OK()
     else:
-      return S_ERROR('Failed to store some or all the parameters')
+      return S_ERROR('Failed to store some or all the parameters')      
 
 #####################################################################################
   def getHeartBeatData(self,jobID):
