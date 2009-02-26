@@ -1,4 +1,4 @@
--- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.sql,v 1.19 2009/01/12 20:50:05 atsareg Exp $
+-- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.sql,v 1.20 2009/02/26 08:33:11 rgracian Exp $
 
 --------------------------------------------------------------------------------
 --
@@ -59,6 +59,7 @@ CREATE TABLE Jobs (
     EndExecTime DATETIME,
     Status VARCHAR(32) NOT NULL DEFAULT 'Received',
     INDEX (Status),
+    INDEX (Status,Site),
     MinorStatus VARCHAR(128) NOT NULL DEFAULT 'Initial insertion',
     INDEX (MinorStatus),
     ApplicationStatus VARCHAR(256) NOT NULL DEFAULT 'Unknown',

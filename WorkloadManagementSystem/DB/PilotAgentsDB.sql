@@ -1,4 +1,4 @@
--- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.sql,v 1.17 2009/01/19 18:07:40 atsareg Exp $
+-- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.sql,v 1.18 2009/02/26 08:33:42 rgracian Exp $
 
 --------------------------------------------------------------------------------
 --
@@ -51,7 +51,8 @@ CREATE TABLE PilotAgents (
     StatusReason VARCHAR(255) NOT NULL DEFAULT 'Unknown',
     ParentID INTEGER NOT NULL DEFAULT 0,
     PRIMARY KEY (PilotID),
-    INDEX (PilotJobReference)
+    INDEX (PilotJobReference),
+    INDEX (Status)
 ) ENGINE = InnoDB;
 
 DROP TABLE IF EXISTS JobToPilotMapping;
