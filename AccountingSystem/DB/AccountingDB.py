@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/DB/AccountingDB.py,v 1.5 2009/02/26 16:15:02 acasajus Exp $
-__RCSID__ = "$Id: AccountingDB.py,v 1.5 2009/02/26 16:15:02 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/DB/AccountingDB.py,v 1.6 2009/02/27 11:53:54 acasajus Exp $
+__RCSID__ = "$Id: AccountingDB.py,v 1.6 2009/02/27 11:53:54 acasajus Exp $"
 
 import datetime, time
 import types
@@ -23,8 +23,7 @@ class AccountingDB(DB):
     self.dbCatalog = {}
     self.dbBucketsLength = {}
     maxParallelInsertions = self.getCSOption( "ParallelRecordInsertions", maxQueueSize )
-    self.__threadPool = ThreadPool( 2, maxParallelInsertions )
-    self.__threadPool.daemonize()
+    self.__threadPools = {}
     self.catalogTableName = self.__getTableName( "catalog", "Types" )
     self._createTables( { self.catalogTableName : { 'Fields' : { 'name' : "VARCHAR(64) UNIQUE NOT NULL",
                                                           'keyFields' : "VARCHAR(256) NOT NULL",
@@ -172,8 +171,8 @@ class AccountingDB(DB):
         startTime =  record[ -2 ]
         endTime =    record[ -1 ]
         valuesList = list( record[ 1:-2 ] )
-        self.__threadPool.generateJobAndQueueIt( self.__insertFromINTable ,
-                                             args = ( id, typeName, startTime, endTime, valuesList, Time.toEpoch() ) )
+        self.__threadPools[ typeName ].generateJobAndQueueIt( self.__insertFromINTable ,
+                                                              args = ( id, typeName, startTime, endTime, valuesList, Time.toEpoch() ) )
         pending += 1
     self.log.info( "Got %s pending requests for all types" % pending )
     return S_OK()
@@ -223,6 +222,8 @@ class AccountingDB(DB):
     """
     Register a new type
     """
+    self.__threadPools[ name ] = ThreadPool( 1, 1 )
+    self.__threadPools[ name ].daemonize()
     result = self.__loadTablesCreated()
     if not result[ 'OK' ]:
       return result
@@ -476,7 +477,7 @@ class AccountingDB(DB):
     if not retVal[ 'OK' ]:
       return retVal
     id = retVal[ 'lastRowId' ]
-    self.__threadPool.generateJobAndQueueIt( self.__insertFromINTable ,
+    self.__threadPools[ typeName ].generateJobAndQueueIt( self.__insertFromINTable ,
                                              args = ( id, typeName, startTime, endTime, valuesList, Time.toEpoch() ) )
     return retVal
 
