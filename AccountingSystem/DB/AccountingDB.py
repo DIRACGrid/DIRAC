@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/DB/AccountingDB.py,v 1.8 2009/02/27 14:48:53 acasajus Exp $
-__RCSID__ = "$Id: AccountingDB.py,v 1.8 2009/02/27 14:48:53 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/DB/AccountingDB.py,v 1.9 2009/02/27 15:45:12 acasajus Exp $
+__RCSID__ = "$Id: AccountingDB.py,v 1.9 2009/02/27 15:45:12 acasajus Exp $"
 
 import datetime, time
 import types
@@ -145,9 +145,10 @@ class AccountingDB(DB):
     """
     self.log.info( "Loading pending records for insertion" )
     pending = 0
+    now = Time.toEpoch()
     for typeName in self.dbCatalog:
       pendingInQueue = self.__threadPools[ typeName ].pendingJobs()
-      emptySlots = 2000 - pendingInQueue
+      emptySlots = max( 0, ( 200 - pendingInQueue ) * 10 )
       if emptySlots == 0:
         continue
       self.log.info( "Checking %s" % typeName )
@@ -175,14 +176,22 @@ class AccountingDB(DB):
       if not result[ 'OK' ]:
         self.log.error( "Error when trying set state to waiting records", "for %s : %s" % ( typeName, result[ 'Message' ] ) )
         return result
+      #Group them in groups of 10
+      recordsToProcess = []
       for record in dbData:
+        pending += 1
         id =         record[ 0 ]
         startTime =  record[ -2 ]
         endTime =    record[ -1 ]
         valuesList = list( record[ 1:-2 ] )
+        recordsToProcess.append( ( id, typeName, startTime, endTime, valuesList, now ) )
+        if len( recordsToProcess ) % 10 == 0:
+          self.__threadPools[ typeName ].generateJobAndQueueIt( self.__insertFromINTable ,
+                                                                args = ( recordsToProcess, ) )
+          recordsToProcess = []
+      if recordsToProcess:
         self.__threadPools[ typeName ].generateJobAndQueueIt( self.__insertFromINTable ,
-                                                              args = ( id, typeName, startTime, endTime, valuesList, Time.toEpoch() ) )
-        pending += 1
+                                                                args = ( recordsToProcess, ) )
     self.log.info( "Got %s pending requests for all types" % pending )
     return S_OK()
 
@@ -471,13 +480,7 @@ class AccountingDB(DB):
       bucketTimeLength = self.calculateBucketLengthForTime( typeName, nowEpoch, currentBucketStart )
     return buckets
 
-  def insertRecordThroughQueue( self, typeName, startTime, endTime, valuesList ):
-    """
-    Insert a record in the intable to be really insterted afterwards
-    """
-    self.log.info( "Adding record to queue", "for type %s\n [%s -> %s]" % ( typeName, Time.fromEpoch( startTime ), Time.fromEpoch( endTime ) ) )
-    if not typeName in self.dbCatalog:
-      return S_ERROR( "Type %s has not been defined in the db" % typeName )
+  def __insertInQueueTable( self, typeName, startTime, endTime, valuesList ):
     sqlFields = [ 'id', 'taken', 'takenSince' ] + self.dbCatalog[ typeName ][ 'typeFields' ]
     sqlValues = [ '0', '1', 'UTC_TIMESTAMP()' ] + valuesList + [ startTime, endTime ]
     retVal = self._insert( self.__getTableName( "in", typeName ),
@@ -485,26 +488,64 @@ class AccountingDB(DB):
                            sqlValues)
     if not retVal[ 'OK' ]:
       return retVal
-    id = retVal[ 'lastRowId' ]
-    self.__threadPools[ typeName ].generateJobAndQueueIt( self.__insertFromINTable ,
-                                             args = ( id, typeName, startTime, endTime, valuesList, Time.toEpoch() ) )
-    return retVal
+    return S_OK( retVal[ 'lastRowId' ] )
 
-  def __insertFromINTable( self, id, typeName, startTime, endTime, valuesList, insertionEpoch ):
+  def insertRecordBundleThroughQueue( self, recordsToQueue ) :
+    recordsToProcess = []
+    now = Time.toEpoch()
+    for record in recordsToQueue:
+      typeName, startTime, endTime, valuesList = record
+      result = self.__insertInQueueTable( typeName, startTime, endTime, valuesList )
+      if not result[ '0K' ]:
+        return result
+      id = result[ 'Value' ]
+      recordsToProcess.append( ( id, typeName, startTime, endTime, valuesList, now ) )
+    self.__threadPools[ typeName ].generateJobAndQueueIt( self.__insertFromINTable ,
+                                                          args = ( recordsToProcess, ) )
+    return S_OK()
+
+
+  def insertRecordThroughQueue( self, typeName, startTime, endTime, valuesList ):
+    """
+    Insert a record in the intable to be really insterted afterwards
+    """
+    self.log.info( "Adding record to queue", "for type %s\n [%s -> %s]" % ( typeName, Time.fromEpoch( startTime ), Time.fromEpoch( endTime ) ) )
+    if not typeName in self.dbCatalog:
+      return S_ERROR( "Type %s has not been defined in the db" % typeName )
+    #sqlFields = [ 'id', 'taken', 'takenSince' ] + self.dbCatalog[ typeName ][ 'typeFields' ]
+    #sqlValues = [ '0', '1', 'UTC_TIMESTAMP()' ] + valuesList + [ startTime, endTime ]
+    #retVal = self._insert( self.__getTableName( "in", typeName ),
+    #                       sqlFields,
+    #                       sqlValues)
+    #if not retVal[ 'OK' ]:
+    #  return retVal
+    #id = retVal[ 'lastRowId' ]
+    result = self.__insertInQueueTable( typeName, startTime, endTime, valuesList )
+    if not result[ '0K' ]:
+      return result
+    id = result[ 'Value' ]
+    recordsToProcess = [ ( id, typeName, startTime, endTime, valuesList, Time.toEpoch() ) ]
+    self.__threadPools[ typeName ].generateJobAndQueueIt( self.__insertFromINTable ,
+                                             args = ( recordsToProcess, ) )
+    return S_OK()
+
+  def __insertFromINTable( self, recordTuples ):
     """
     Do the real insert and delete from the in buffer table
     """
-    result = self.insertRecordDirectly( typeName, startTime, endTime, valuesList )
-    if not result[ 'OK' ]:
-      self._update( "UPDATE `%s` SET taken=0 WHERE id=%s" % ( self.__getTableName( "in", typeName ), id ) )
-      self.log.error( "Can't insert row", result[ 'Message' ] )
-      return result
-    result = self._update( "DELETE FROM `%s` WHERE id=%s" % ( self.__getTableName( "in", typeName ), id ) )
-    if not result[ 'OK' ]:
-      self.log.error( "Can't delete row from the IN table", result[ 'Message' ] )
-    #TODO HERE
-    gMonitor.addMark( "insertiontime", Time.toEpoch() - insertionEpoch )
-    return result
+    self.log.verbose( "Received bundle to process", "of %s elements" % len( recordTuples ) )
+    for record in recordTuples:
+      id, typeName, startTime, endTime, valuesList, insertionEpoch = record
+      result = self.insertRecordDirectly( typeName, startTime, endTime, valuesList )
+      if not result[ 'OK' ]:
+        self._update( "UPDATE `%s` SET taken=0 WHERE id=%s" % ( self.__getTableName( "in", typeName ), id ) )
+        self.log.error( "Can't insert row", result[ 'Message' ] )
+        continue
+      result = self._update( "DELETE FROM `%s` WHERE id=%s" % ( self.__getTableName( "in", typeName ), id ) )
+      if not result[ 'OK' ]:
+        self.log.error( "Can't delete row from the IN table", result[ 'Message' ] )
+      gMonitor.addMark( "insertiontime", Time.toEpoch() - insertionEpoch )
+
 
   def insertRecordDirectly( self, typeName, startTime, endTime, valuesList ):
     """

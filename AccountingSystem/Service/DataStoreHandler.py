@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/DataStoreHandler.py,v 1.11 2009/02/27 14:48:52 acasajus Exp $
-__RCSID__ = "$Id: DataStoreHandler.py,v 1.11 2009/02/27 14:48:52 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/DataStoreHandler.py,v 1.12 2009/02/27 15:45:07 acasajus Exp $
+__RCSID__ = "$Id: DataStoreHandler.py,v 1.12 2009/02/27 15:45:07 acasajus Exp $"
 import types
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.AccountingSystem.DB.AccountingDB import AccountingDB
@@ -127,14 +127,14 @@ class DataStoreHandler( RequestHandler ):
       for i in range( len( entry ) ):
         if type( entry[i] ) != expectedTypes[i]:
           return S_ERROR( "%s field in the records should be %s" % ( i, expectedType[i] ) )
+    records = []
     for entry in entriesList:
       typeName = "%s_%s" % ( setup, entry[0] )
       startTime = int( Time.toEpoch( entry[1] ) )
       endTime = int( Time.toEpoch( entry[2] ) )
-      retVal = gAccountingDB.insertRecordThroughQueue( typeName, startTime, endTime, entry[3] )
-      if not retVal[ 'OK' ]:
-        return retVal
-    return S_OK()
+      records.append( ( typeName, startTime, endTime, entry[3] ) )
+    return gAccountingDB.insertRecordBundleThroughQueue( typeName, startTime, endTime, entry[3] )
+
 
   types_compactDB = []
   def export_compactDB( self ):
