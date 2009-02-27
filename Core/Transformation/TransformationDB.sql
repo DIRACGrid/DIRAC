@@ -1,4 +1,4 @@
--- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Transformation/TransformationDB.sql,v 1.12 2009/02/02 11:39:58 atsareg Exp $
+-- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Transformation/TransformationDB.sql,v 1.13 2009/02/27 16:28:20 acsmith Exp $
 -- ------------------------------------------------------------------------------
 --
 --  Schema definition for the TransformationDB database -
@@ -165,5 +165,6 @@ CREATE TABLE BkQueries (
   ConfigName varchar(64) NOT NULL default 'All',
   ConfigVersion varchar(64) NOT NULL default 'All',
   ProductionID int(11) NOT NULL default '0',
+  DataQualityFlag varchar(32) NOT NULL default 'OK',
   PRIMARY KEY  (`BkQueryID`)
 ) ENGINE=MyISAM

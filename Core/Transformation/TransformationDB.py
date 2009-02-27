@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.80 2009/02/11 23:06:20 atsareg Exp $
+# $Id: TransformationDB.py,v 1.81 2009/02/27 16:29:24 acsmith Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -1252,7 +1252,7 @@ PRIMARY KEY (FileID)
     """
     
     queryFields = ['SimulationConditions','DataTakingConditions','ProcessingPass','FileType','EventType',
-                   'ConfigName','ConfigVersion','ProductionID']
+                   'ConfigName','ConfigVersion','ProductionID','DataQualityFlag']
 
     parameters = []   
     values = []
@@ -1327,7 +1327,7 @@ PRIMARY KEY (FileID)
     """    
  
     queryFields = ['SimulationConditions','DataTakingConditions','ProcessingPass',
-                   'FileType','EventType','ConfigName','ConfigVersion','ProductionID']
+                   'FileType','EventType','ConfigName','ConfigVersion','ProductionID','DataQualityFlag']
     
     fieldsString = ','.join(queryFields)
     
