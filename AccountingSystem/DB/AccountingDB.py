@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/DB/AccountingDB.py,v 1.9 2009/02/27 15:45:12 acasajus Exp $
-__RCSID__ = "$Id: AccountingDB.py,v 1.9 2009/02/27 15:45:12 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/DB/AccountingDB.py,v 1.10 2009/02/27 15:47:08 acasajus Exp $
+__RCSID__ = "$Id: AccountingDB.py,v 1.10 2009/02/27 15:47:08 acasajus Exp $"
 
 import datetime, time
 import types
@@ -496,7 +496,7 @@ class AccountingDB(DB):
     for record in recordsToQueue:
       typeName, startTime, endTime, valuesList = record
       result = self.__insertInQueueTable( typeName, startTime, endTime, valuesList )
-      if not result[ '0K' ]:
+      if not result[ 'OK' ]:
         return result
       id = result[ 'Value' ]
       recordsToProcess.append( ( id, typeName, startTime, endTime, valuesList, now ) )
