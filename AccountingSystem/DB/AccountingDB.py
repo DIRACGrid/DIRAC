@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/DB/AccountingDB.py,v 1.7 2009/02/27 14:36:28 acasajus Exp $
-__RCSID__ = "$Id: AccountingDB.py,v 1.7 2009/02/27 14:36:28 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/DB/AccountingDB.py,v 1.8 2009/02/27 14:48:53 acasajus Exp $
+__RCSID__ = "$Id: AccountingDB.py,v 1.8 2009/02/27 14:48:53 acasajus Exp $"
 
 import datetime, time
 import types
@@ -20,6 +20,7 @@ class AccountingDB(DB):
     DB.__init__( self, 'AccountingDB','Accounting/AccountingDB', maxQueueSize )
     self.maxBucketTime = 604800 #1 w
     self.autoCompact = False
+    self.__deadLockRetries = 2
     self.dbCatalog = {}
     self.dbBucketsLength = {}
     maxParallelInsertions = self.getCSOption( "ParallelRecordInsertions", maxQueueSize )
@@ -138,7 +139,7 @@ class AccountingDB(DB):
     """
     return self.getCSOption( "RecordMaxWaitingTime", 86400 )
 
-  def loadPendingRecords(self):
+  def loadPendingRecords( self, loadAll = False ):
     """
       Load all records pending to insertion and generate threaded jobs
     """
@@ -152,11 +153,14 @@ class AccountingDB(DB):
       self.log.info( "Checking %s" % typeName )
       sqlTableName = self.__getTableName( "in", typeName )
       sqlFields = [ 'id' ] + self.dbCatalog[ typeName ][ 'typeFields' ]
-      sqlCond = "taken = 0 or TIMESTAMPDIFF( SECOND, takenSince, UTC_TIMESTAMP() ) > %s" % self.getWaitingRecordsLifeTime()
-      result = self._query( "SELECT %s FROM `%s`  WHERE %s ORDER BY id ASC LIMIT %d" % ( ", ".join( [ "`%s`" % f for f in sqlFields ] ),
-                                                                                     sqlTableName,
-                                                                                     sqlCond,
-                                                                                     emptySlots ) )
+      if loadAll:
+        sqlCond = ""
+      else:
+        sqlCond = "WHERE taken = 0 or TIMESTAMPDIFF( SECOND, takenSince, UTC_TIMESTAMP() ) > %s" % self.getWaitingRecordsLifeTime()
+      result = self._query( "SELECT %s FROM `%s` %s ORDER BY id ASC LIMIT %d" % ( ", ".join( [ "`%s`" % f for f in sqlFields ] ),
+                                                                                  sqlTableName,
+                                                                                  sqlCond,
+                                                                                  emptySlots ) )
       if not result[ 'OK' ]:
         self.log.error( "Error when trying to get pending records", "for %s : %s" % ( typeName, result[ 'Message' ] ) )
         return result
@@ -471,8 +475,7 @@ class AccountingDB(DB):
     """
     Insert a record in the intable to be really insterted afterwards
     """
-    print "TOQUEUE %s" % typeName
-    self.log.verbose( "Adding RAW record", "for type %s [%s -> %s]" % ( typeName, Time.fromEpoch( startTime ), Time.fromEpoch( endTime ) ) )
+    self.log.info( "Adding record to queue", "for type %s\n [%s -> %s]" % ( typeName, Time.fromEpoch( startTime ), Time.fromEpoch( endTime ) ) )
     if not typeName in self.dbCatalog:
       return S_ERROR( "Type %s has not been defined in the db" % typeName )
     sqlFields = [ 'id', 'taken', 'takenSince' ] + self.dbCatalog[ typeName ][ 'typeFields' ]
@@ -507,9 +510,8 @@ class AccountingDB(DB):
     """
     Add an entry to the type contents
     """
-    print "DIRECT %s" % typeName
     gMonitor.addMark( "registeradded", 1 )
-    self.log.info( "Adding record", "for type %s [%s -> %s]" % ( typeName, Time.fromEpoch( startTime ), Time.fromEpoch( endTime ) ) )
+    self.log.info( "Adding record", "for type %s\n [%s -> %s]" % ( typeName, Time.fromEpoch( startTime ), Time.fromEpoch( endTime ) ) )
     if not typeName in self.dbCatalog:
       return S_ERROR( "Type %s has not been defined in the db" % typeName )
     #Discover key indexes
@@ -574,13 +576,20 @@ class AccountingDB(DB):
         return retVal
       #Duplicate keys!!. If that's the case..
       #Update!
-      retVal = self.__updateBucket( typeName,
-                                    bucketStartTime,
-                                    bucketLength,
-                                    keyValues,
-                                    valuesList, bucketProportion, connObj = connObj )
-      if not retVal[ 'OK' ]:
-        return retVal
+      for i in range( max( 1, self.__deadLockRetries ) ):
+        retVal = self.__updateBucket( typeName,
+                                      bucketStartTime,
+                                      bucketLength,
+                                      keyValues,
+                                      valuesList, bucketProportion, connObj = connObj )
+        if not retVal[ 'OK' ]:
+          #If failed because of dead lock try restarting
+          if retVal[ 'Message' ].find( "try restarting transaction"):
+            continue
+          return retVal
+        #If OK, break loop
+        if retVal[ 'OK' ]:
+          break
     return S_OK()
 
   def getBucketsDef( self, typeName ):
