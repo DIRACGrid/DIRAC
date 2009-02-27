@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/DataStoreHandler.py,v 1.12 2009/02/27 15:45:07 acasajus Exp $
-__RCSID__ = "$Id: DataStoreHandler.py,v 1.12 2009/02/27 15:45:07 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/DataStoreHandler.py,v 1.13 2009/02/27 15:47:51 acasajus Exp $
+__RCSID__ = "$Id: DataStoreHandler.py,v 1.13 2009/02/27 15:47:51 acasajus Exp $"
 import types
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.AccountingSystem.DB.AccountingDB import AccountingDB
@@ -133,7 +133,7 @@ class DataStoreHandler( RequestHandler ):
       startTime = int( Time.toEpoch( entry[1] ) )
       endTime = int( Time.toEpoch( entry[2] ) )
       records.append( ( typeName, startTime, endTime, entry[3] ) )
-    return gAccountingDB.insertRecordBundleThroughQueue( typeName, startTime, endTime, entry[3] )
+    return gAccountingDB.insertRecordBundleThroughQueue( records )
 
 
   types_compactDB = []
