@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/DB/AccountingDB.py,v 1.6 2009/02/27 11:53:54 acasajus Exp $
-__RCSID__ = "$Id: AccountingDB.py,v 1.6 2009/02/27 11:53:54 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/DB/AccountingDB.py,v 1.7 2009/02/27 14:36:28 acasajus Exp $
+__RCSID__ = "$Id: AccountingDB.py,v 1.7 2009/02/27 14:36:28 acasajus Exp $"
 
 import datetime, time
 import types
@@ -145,13 +145,18 @@ class AccountingDB(DB):
     self.log.info( "Loading pending records for insertion" )
     pending = 0
     for typeName in self.dbCatalog:
+      pendingInQueue = self.__threadPools[ typeName ].pendingJobs()
+      emptySlots = 2000 - pendingInQueue
+      if emptySlots == 0:
+        continue
       self.log.info( "Checking %s" % typeName )
       sqlTableName = self.__getTableName( "in", typeName )
       sqlFields = [ 'id' ] + self.dbCatalog[ typeName ][ 'typeFields' ]
       sqlCond = "taken = 0 or TIMESTAMPDIFF( SECOND, takenSince, UTC_TIMESTAMP() ) > %s" % self.getWaitingRecordsLifeTime()
-      result = self._query( "SELECT %s FROM `%s`  WHERE %s ORDER BY id ASC LIMIT 1000" % ( ", ".join( [ "`%s`" % f for f in sqlFields ] ),
+      result = self._query( "SELECT %s FROM `%s`  WHERE %s ORDER BY id ASC LIMIT %d" % ( ", ".join( [ "`%s`" % f for f in sqlFields ] ),
                                                                                      sqlTableName,
-                                                                                     sqlCond ) )
+                                                                                     sqlCond,
+                                                                                     emptySlots ) )
       if not result[ 'OK' ]:
         self.log.error( "Error when trying to get pending records", "for %s : %s" % ( typeName, result[ 'Message' ] ) )
         return result
@@ -222,7 +227,7 @@ class AccountingDB(DB):
     """
     Register a new type
     """
-    self.__threadPools[ name ] = ThreadPool( 1, 1 )
+    self.__threadPools[ name ] = ThreadPool( 1, 3 )
     self.__threadPools[ name ].daemonize()
     result = self.__loadTablesCreated()
     if not result[ 'OK' ]:
@@ -466,6 +471,7 @@ class AccountingDB(DB):
     """
     Insert a record in the intable to be really insterted afterwards
     """
+    print "TOQUEUE %s" % typeName
     self.log.verbose( "Adding RAW record", "for type %s [%s -> %s]" % ( typeName, Time.fromEpoch( startTime ), Time.fromEpoch( endTime ) ) )
     if not typeName in self.dbCatalog:
       return S_ERROR( "Type %s has not been defined in the db" % typeName )
@@ -501,6 +507,7 @@ class AccountingDB(DB):
     """
     Add an entry to the type contents
     """
+    print "DIRECT %s" % typeName
     gMonitor.addMark( "registeradded", 1 )
     self.log.info( "Adding record", "for type %s [%s -> %s]" % ( typeName, Time.fromEpoch( startTime ), Time.fromEpoch( endTime ) ) )
     if not typeName in self.dbCatalog:
