@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalogue. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.41 2009/02/11 15:46:00 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.42 2009/02/28 08:02:50 rgracian Exp $"
 
 import re, time, commands, random,os
 import types
@@ -347,10 +347,14 @@ class ReplicaManager:
       for diracSE,pfn in replicas:
         if not gotFile:
           storageElement = StorageElement(diracSE)
-          res = storageElement.getFile(pfn,fileSizes[lfn])
+          # res = storageElement.getFile(pfn,fileSizes[lfn])
+          # FIXME: the new StorageElement does not have the fileSize as Argument 
+          res = storageElement.getFile(pfn)
           if res['OK']:
             gotFile = True
-            successful[lfn] = res['Value']
+            # successful[lfn] = res['Value']
+            # FIXME: the new StorageElement returns a dictionary
+            successful[lfn] = os.path.basename(lfn)
       if not gotFile:
         # If we get here then we failed to get any replicas
         errStr = "ReplicaManager.getFile: Failed to get local copy from any replicas."
