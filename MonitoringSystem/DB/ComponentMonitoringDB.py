@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/DB/ComponentMonitoringDB.py,v 1.9 2009/02/26 13:55:34 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/DB/ComponentMonitoringDB.py,v 1.10 2009/03/02 17:02:12 acasajus Exp $
 ########################################################################
 """ ComponentMonitoring class is a front-end to the Component monitoring Database
 """
 
-__RCSID__ = "$Id: ComponentMonitoringDB.py,v 1.9 2009/02/26 13:55:34 acasajus Exp $"
+__RCSID__ = "$Id: ComponentMonitoringDB.py,v 1.10 2009/03/02 17:02:12 acasajus Exp $"
 
 import time
 import random
@@ -12,7 +12,7 @@ import md5
 import types
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
-from DIRAC.Core.Utilities import Time, List
+from DIRAC.Core.Utilities import Time, List, Network
 
 class ComponentMonitoringDB(DB):
 
@@ -407,9 +407,17 @@ class StatusSet:
                 if key not in pc:
                   match = False
                   break
-                if cD[key] != pc[key]:
-                  match = False
-                  break
+                if key == 'Host':
+                  result = Network.checkHostsMatch( cD[key], pc[key] )
+                  print "NETWORK CHECK! %s vs %s" % ( cD[key], pc[key] )
+                  print result
+                  if not result[ 'OK' ] or not result[ 'Value' ]:
+                    match = False
+                    break
+                else:
+                  if cD[key] != pc[key]:
+                    match = False
+                    break
               if match:
                 alreadyContained = True
             if not alreadyContained:
@@ -459,8 +467,15 @@ class StatusSet:
         for field in compDict:
           if field not in component:
             perfectMatch = False
-          if compDict[ field ] != component[ field ]:
-            perfectMatch = False
+          if field == 'Host':
+            result = Network.checkHostsMatch( compDict[ field ], component[ field ] )
+            print "NETWORK CHECK! %s vs %s" % ( compDict[ field ], component[ field ] )
+            print result
+            if not result[ 'OK' ] or not result[ 'Value' ]:
+              perfectMatch = False
+          else:
+            if compDict[ field ] != component[ field ]:
+              perfectMatch = False
         if not perfectMatch:
           newUnmatched.append( compDict )
       unmatched = newUnmatched
