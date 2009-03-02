@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/DB/AccountingDB.py,v 1.10 2009/02/27 15:47:08 acasajus Exp $
-__RCSID__ = "$Id: AccountingDB.py,v 1.10 2009/02/27 15:47:08 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/DB/AccountingDB.py,v 1.11 2009/03/02 11:41:30 acasajus Exp $
+__RCSID__ = "$Id: AccountingDB.py,v 1.11 2009/03/02 11:41:30 acasajus Exp $"
 
 import datetime, time
 import types
@@ -24,7 +24,8 @@ class AccountingDB(DB):
     self.dbCatalog = {}
     self.dbBucketsLength = {}
     maxParallelInsertions = self.getCSOption( "ParallelRecordInsertions", maxQueueSize )
-    self.__threadPools = {}
+    self.__threadPool = ThreadPool( 1, 5 )
+    self.__threadPool.daemonize()
     self.catalogTableName = self.__getTableName( "catalog", "Types" )
     self._createTables( { self.catalogTableName : { 'Fields' : { 'name' : "VARCHAR(64) UNIQUE NOT NULL",
                                                           'keyFields' : "VARCHAR(256) NOT NULL",
@@ -139,7 +140,20 @@ class AccountingDB(DB):
     """
     return self.getCSOption( "RecordMaxWaitingTime", 86400 )
 
-  def loadPendingRecords( self, loadAll = False ):
+  def markAllPendingRecordsAsNotTaken( self ):
+    """
+    Mark all records to be processed as not taken
+    NOTE: ONLY EXECUTE THIS AT THE BEGINNING OF THE DATASTORE SERVICE!
+    """
+    self.log.always( "Marking all records to be processed as not taken" )
+    for typeName in self.dbCatalog:
+      sqlTableName = self.__getTableName( "in", typeName )
+      result = self._update( "UPDATE `%s` SET taken=0" % sqlTableName )
+      if not result[ 'OK' ]:
+        return result
+    return S_OK()
+
+  def loadPendingRecords( self ):
     """
       Load all records pending to insertion and generate threaded jobs
     """
@@ -147,17 +161,15 @@ class AccountingDB(DB):
     pending = 0
     now = Time.toEpoch()
     for typeName in self.dbCatalog:
-      pendingInQueue = self.__threadPools[ typeName ].pendingJobs()
-      emptySlots = max( 0, ( 200 - pendingInQueue ) * 10 )
-      if emptySlots == 0:
-        continue
       self.log.info( "Checking %s" % typeName )
+      pendingInQueue = self.__threadPool.pendingJobs()
+      self.log.info( "%s pending slots in queue" % pendingInQueue )
+      emptySlots = max( 0, ( 200 - pendingInQueue ) * 10 )
+      if emptySlots < 1:
+        continue
       sqlTableName = self.__getTableName( "in", typeName )
       sqlFields = [ 'id' ] + self.dbCatalog[ typeName ][ 'typeFields' ]
-      if loadAll:
-        sqlCond = ""
-      else:
-        sqlCond = "WHERE taken = 0 or TIMESTAMPDIFF( SECOND, takenSince, UTC_TIMESTAMP() ) > %s" % self.getWaitingRecordsLifeTime()
+      sqlCond = "WHERE taken = 0 or TIMESTAMPDIFF( SECOND, takenSince, UTC_TIMESTAMP() ) > %s" % self.getWaitingRecordsLifeTime()
       result = self._query( "SELECT %s FROM `%s` %s ORDER BY id ASC LIMIT %d" % ( ", ".join( [ "`%s`" % f for f in sqlFields ] ),
                                                                                   sqlTableName,
                                                                                   sqlCond,
@@ -186,12 +198,12 @@ class AccountingDB(DB):
         valuesList = list( record[ 1:-2 ] )
         recordsToProcess.append( ( id, typeName, startTime, endTime, valuesList, now ) )
         if len( recordsToProcess ) % 10 == 0:
-          self.__threadPools[ typeName ].generateJobAndQueueIt( self.__insertFromINTable ,
-                                                                args = ( recordsToProcess, ) )
+          self.__threadPool.generateJobAndQueueIt( self.__insertFromINTable ,
+                                                   args = ( recordsToProcess, ) )
           recordsToProcess = []
       if recordsToProcess:
-        self.__threadPools[ typeName ].generateJobAndQueueIt( self.__insertFromINTable ,
-                                                                args = ( recordsToProcess, ) )
+        self.__threadPool.generateJobAndQueueIt( self.__insertFromINTable ,
+                                                 args = ( recordsToProcess, ) )
     self.log.info( "Got %s pending requests for all types" % pending )
     return S_OK()
 
@@ -240,8 +252,6 @@ class AccountingDB(DB):
     """
     Register a new type
     """
-    self.__threadPools[ name ] = ThreadPool( 1, 3 )
-    self.__threadPools[ name ].daemonize()
     result = self.__loadTablesCreated()
     if not result[ 'OK' ]:
       return result
@@ -500,8 +510,8 @@ class AccountingDB(DB):
         return result
       id = result[ 'Value' ]
       recordsToProcess.append( ( id, typeName, startTime, endTime, valuesList, now ) )
-    self.__threadPools[ typeName ].generateJobAndQueueIt( self.__insertFromINTable ,
-                                                          args = ( recordsToProcess, ) )
+    self.__threadPool.generateJobAndQueueIt( self.__insertFromINTable ,
+                                             args = ( recordsToProcess, ) )
     return S_OK()
 
 
@@ -525,7 +535,7 @@ class AccountingDB(DB):
       return result
     id = result[ 'Value' ]
     recordsToProcess = [ ( id, typeName, startTime, endTime, valuesList, Time.toEpoch() ) ]
-    self.__threadPools[ typeName ].generateJobAndQueueIt( self.__insertFromINTable ,
+    self.__threadPool.generateJobAndQueueIt( self.__insertFromINTable ,
                                              args = ( recordsToProcess, ) )
     return S_OK()
 
