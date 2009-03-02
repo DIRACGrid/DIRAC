@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Subprocess.py,v 1.30 2009/03/02 13:44:38 acasajus Exp $
-__RCSID__ = "$Id: Subprocess.py,v 1.30 2009/03/02 13:44:38 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Subprocess.py,v 1.31 2009/03/02 15:30:02 rgracian Exp $
+__RCSID__ = "$Id: Subprocess.py,v 1.31 2009/03/02 15:30:02 rgracian Exp $"
 """
    DIRAC Wrapper to execute python and system commands with a wrapper, that might
    set a timeout.
@@ -211,6 +211,7 @@ class Subprocess:
         dataString += nB
     except Exception, v:
       self.log.exception( "SUPROCESS: readFromFile exception" )
+      return S_ERROR( 'Can not read from output: %s' % str(v) )
     if len( dataString ) + baseLength > self.bufferLimit:
       self.log.error( 'Maximum output buffer length reached' )
       retDict = S_ERROR( 'Reached maximum allowed length (%d bytes) for called '
@@ -235,8 +236,7 @@ class Subprocess:
 
       return self.__generateSystemCommandError(
                   exitStatus,
-                  "Exceeded maximum buffer size ( %d bytes ) for '%s' call" %
-                  ( self.bufferLimit, self.cmdSeq ) )
+                  "%s for '%s' call" % ( retDict['Message'], self.cmdSeq ) )
 
   def systemCall( self, cmdSeq, callbackFunction = None, shell = False, env = None ):
     self.cmdSeq = cmdSeq
