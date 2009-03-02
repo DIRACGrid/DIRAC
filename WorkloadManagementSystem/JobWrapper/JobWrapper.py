@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.71 2009/02/26 13:21:04 paterson Exp $
+# $Id: JobWrapper.py,v 1.72 2009/03/02 16:31:19 rgracian Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.71 2009/02/26 13:21:04 paterson Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.72 2009/03/02 16:31:19 rgracian Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -254,6 +254,9 @@ class JobWrapper:
       maxPeekLines = self.maxPeekLines
       exeThread = ExecutionThread(spObject,command,maxPeekLines,outputFile,errorFile,exeEnv)
       exeThread.start()
+      time.sleep(5)
+      if not spObject.getChildPID():
+        return S_ERROR( 'Payload process could not start after 5 seconds' )
     else:
       return S_ERROR('Path to executable %s not found' %(executable))
 
