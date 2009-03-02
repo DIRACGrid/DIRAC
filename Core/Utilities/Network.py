@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Network.py,v 1.4 2007/05/21 15:19:07 acasajus Exp $
-__RCSID__ = "$Id: Network.py,v 1.4 2007/05/21 15:19:07 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Network.py,v 1.5 2009/03/02 17:01:45 acasajus Exp $
+__RCSID__ = "$Id: Network.py,v 1.5 2009/03/02 17:01:45 acasajus Exp $"
 """
    Collection of DIRAC useful network related modules
    by default on Error they return None
@@ -72,3 +72,33 @@ def splitURL( URL ):
   else:
     port = 0
   return S_OK( ( protocol, host, port, path ) )
+
+def getIPsForHostName( hostName ):
+  try:
+    ips = [ t[4][0] for t in socket.getaddrinfo( hostName, 0 ) ]
+  except Exception, e:
+    return S_ERROR( "Can't get info for host %s: %s" % ( host, str( e ) ) )
+  uniqueIPs = []
+  for ip in ips:
+    if ip not in uniqueIPs:
+      uniqueIPs.append( ip )
+  return S_OK( uniqueIPs )
+
+def checkHostsMatch( host1, host2 ):
+  ipLists = []
+  for host in ( host1, host2 ):
+    result = getIPsForHostName( host )
+    if not result[ 'OK' ]:
+      return result
+    ipLists.append( result[ 'Value' ] )
+  #Check
+  for i in range( len( ipLists ) - 1 ):
+    for ip in ipLists[i]:
+      for ipl in ipLists[i+1]:
+        if ip in ipl:
+          return S_OK( True )
+  return S_OK( False )
+
+
+
+
