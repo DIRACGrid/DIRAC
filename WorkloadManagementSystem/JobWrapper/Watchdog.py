@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.40 2009/03/02 13:46:42 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.41 2009/03/02 16:22:15 rgracian Exp $
 # File  : Watchdog.py
 # Author: Stuart Paterson
 ########################################################################
@@ -18,7 +18,7 @@
           - CPU normalization for correct comparison with job limit
 """
 
-__RCSID__ = "$Id: Watchdog.py,v 1.40 2009/03/02 13:46:42 acasajus Exp $"
+__RCSID__ = "$Id: Watchdog.py,v 1.41 2009/03/02 16:22:15 rgracian Exp $"
 
 from DIRAC.Core.Base.Agent                              import Agent
 from DIRAC.Core.DISET.RPCClient                         import RPCClient
@@ -79,7 +79,7 @@ class Watchdog(Agent):
     self.testWallClock   = gConfig.getValue(self.section+'/CheckWallClockFlag',1)
     self.testDiskSpace   = gConfig.getValue(self.section+'/CheckDiskSpaceFlag',1)
     self.testLoadAvg     = gConfig.getValue(self.section+'/CheckLoadAvgFlag',1)
-    self.testCPUConsumed = gConfig.getValue(self.section+'/CheckCPUConsumedFlag',0)
+    self.testCPUConsumed = gConfig.getValue(self.section+'/CheckCPUConsumedFlag',1)
     self.testCPULimit    = gConfig.getValue(self.section+'/CheckCPULimitFlag',0)
     #Other parameters
     self.pollingTime      = gConfig.getValue(self.section+'/PollingTime',10) # 10 seconds
@@ -115,11 +115,6 @@ class Watchdog(Agent):
     #      but only perform checks with a certain frequency
     if (time.time() - self.initialValues['StartTime']) > self.checkingTime*self.checkCount:
       self.checkCount += 1
-      if self.pilotProxyLocation and self.pilotInfo and self.pilotInfo[ 'GENERIC_PILOT' ]:
-        self.log.verbose( "Checking proxy...")
-        gProxyManager.renewProxy( minLifeTime = gConfig.getValue( '/Security/MinProxyLifeTime', 10800 ),
-                                  newProxyLifeTime = gConfig.getValue( '/Security/DefaultProxyLifeTime', 86400 ),
-                                  proxyToConnect = self.pilotProxyLocation )
       result = self.__performChecks()
       if not result['OK']:
         self.log.warn('Problem during recent checks')
@@ -328,6 +323,32 @@ class Watchdog(Agent):
     """ Checks whether the CPU consumed by application process is reasonable. This
         method will report stalled jobs to be killed.
     """
+    
+    if 'WallClockTime' not in self.parameters:
+      return S_ERROR( 'Missing WallClockTime info' )
+    if 'CPUConsumed' not in self.parameters:
+      return S_ERROR( 'Missing CPUConsumed info' )
+    
+    wallClockTime = self.parameters['WallClockTime'][-1]
+    if wallClockTime < self.sampleCPUTime:
+      return S_OK()
+    
+    intervals = max( 1, int( self.sampleCPUTime / self.checkingTime ) )
+    if len( self.parameters['CPUConsumed'] ) < intervals + 1:
+      return S_OK()
+    
+    wallClockTime = self.parameters['WallClockTime'][-1] - self.parameters['WallClockTime'][-1 - intervals ]
+    cpuTime = self.parameters['CPUConsumed'][-1] - self.parameters['CPUConsumed'][-1 - intervals ]
+
+    ratio = ( cpuTime / wallClockTime ) * 100.
+    
+    if ratio < self.minCPUWallClockRatio:
+      return S_ERROR( 'Watchdog identified this job as stalled' )
+    
+    return S_OK()
+    
+    
+    
     #TODO: test that ok jobs don't die :)
     if self.nullCPUCount > self.nullCPULimit:
       stalledTime = self.nullCPULimit*self.sampleCPUTime
@@ -365,7 +386,7 @@ class Watchdog(Agent):
     totalCPUConsumed = cpuSample[-1]
     self.log.info('Cumulative CPU consumed by application process is: %s' % (totalCPUConsumed))
     if len(cpuSample)>1:
-      cpuConsumedInterval = cpuSample[-1]-cpuSample[0]  #during last interval
+      cpuConsumedInterval = cpuSample[-1]-cpuSample[-2]  #during last interval
       if not cpuConsumedInterval:
         self.nullCPUCount += 1
         self.log.info('No CPU change detected, counter is at %s' %(self.nullCPUCount))
