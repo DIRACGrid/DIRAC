@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.39 2009/02/04 18:25:27 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.40 2009/03/02 13:46:42 acasajus Exp $
 # File  : Watchdog.py
 # Author: Stuart Paterson
 ########################################################################
@@ -18,7 +18,7 @@
           - CPU normalization for correct comparison with job limit
 """
 
-__RCSID__ = "$Id: Watchdog.py,v 1.39 2009/02/04 18:25:27 paterson Exp $"
+__RCSID__ = "$Id: Watchdog.py,v 1.40 2009/03/02 13:46:42 acasajus Exp $"
 
 from DIRAC.Core.Base.Agent                              import Agent
 from DIRAC.Core.DISET.RPCClient                         import RPCClient
@@ -179,7 +179,7 @@ class Watchdog(Agent):
 
           self.log.info('=================END=================')
 
-      self.__killRunningThread(self.spObject)
+      self.__killRunningThread()
       self.__getUsageSummary()
       self.__finish()
       return S_OK()
@@ -256,7 +256,7 @@ class Watchdog(Agent):
     if type(signalDict) == type({}):
       if signalDict.has_key('Kill'):
         self.log.info('Received Kill signal, stopping job via control signal')
-        self.__killRunningThread(self.spObject)
+        self.__killRunningThread()
         self.__getUsageSummary()
         self.__finish()
       else:
@@ -689,10 +689,10 @@ class Watchdog(Agent):
     return result
 
   #############################################################################
-  def __killRunningThread(self,spObject):
+  def __killRunningThread( self ):
     """ Will kill the running thread process and any child processes."""
-    self.log.info('Sending kill signal to application PID %s' %(spObject.child.pid))
-    result = spObject.killChild()
+    self.log.info('Sending kill signal to application PID %s' %(self.spObject.getChildPID()))
+    result = self.spObject.killChild()
     self.log.info('Subprocess.killChild() returned:%s ' %(result))
     return S_OK('Thread killed')
 
