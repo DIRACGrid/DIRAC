@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/DataStoreHandler.py,v 1.13 2009/02/27 15:47:51 acasajus Exp $
-__RCSID__ = "$Id: DataStoreHandler.py,v 1.13 2009/02/27 15:47:51 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/DataStoreHandler.py,v 1.14 2009/03/02 11:41:58 acasajus Exp $
+__RCSID__ = "$Id: DataStoreHandler.py,v 1.14 2009/03/02 11:41:58 acasajus Exp $"
 import types
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.AccountingSystem.DB.AccountingDB import AccountingDB
@@ -13,7 +13,12 @@ def initializeDataStoreHandler( serviceInfo ):
   global gAccountingDB
   gAccountingDB = AccountingDB()
   gAccountingDB.autoCompactDB()
-  gAccountingDB.loadPendingRecords( loadAll = True )
+  result = gAccountingDB.markAllPendingRecordsAsNotTaken()
+  if not result[ 'OK' ]:
+    return result
+  result = gAccountingDB.loadPendingRecords()
+  if not result[ 'OK' ]:
+    return result
   gThreadScheduler.addPeriodicTask( 60, gAccountingDB.loadPendingRecords )
   return S_OK()
 
