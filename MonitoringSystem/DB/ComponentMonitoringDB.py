@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/DB/ComponentMonitoringDB.py,v 1.11 2009/03/02 17:06:44 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/DB/ComponentMonitoringDB.py,v 1.12 2009/03/02 17:10:47 acasajus Exp $
 ########################################################################
 """ ComponentMonitoring class is a front-end to the Component monitoring Database
 """
 
-__RCSID__ = "$Id: ComponentMonitoringDB.py,v 1.11 2009/03/02 17:06:44 acasajus Exp $"
+__RCSID__ = "$Id: ComponentMonitoringDB.py,v 1.12 2009/03/02 17:10:47 acasajus Exp $"
 
 import time
 import random
@@ -409,8 +409,6 @@ class StatusSet:
                   break
                 if key == 'Host':
                   result = Network.checkHostsMatch( cD[key], pc[key] )
-                  if result[ 'OK' ] and result[ 'Value' ]:
-                    print "NETWORK CHECK VALID! %s vs %s" % ( cD[key], pc[key] )
                   if not result[ 'OK' ] or not result[ 'Value' ]:
                     match = False
                     break
@@ -469,8 +467,6 @@ class StatusSet:
             perfectMatch = False
           if field == 'Host':
             result = Network.checkHostsMatch( compDict[ field ], component[ field ] )
-            if result[ 'OK' ] and result[ 'Value' ]:
-              print "NETWORK CHECK VALID! %s vs %s" % ( compDict[ field ], component[ field ] )
             if not result[ 'OK' ] or not result[ 'Value' ]:
               perfectMatch = False
           else:
