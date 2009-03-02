@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Subprocess.py,v 1.29 2008/11/17 13:52:05 acasajus Exp $
-__RCSID__ = "$Id: Subprocess.py,v 1.29 2008/11/17 13:52:05 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Subprocess.py,v 1.30 2009/03/02 13:44:38 acasajus Exp $
+__RCSID__ = "$Id: Subprocess.py,v 1.30 2009/03/02 13:44:38 acasajus Exp $"
 """
    DIRAC Wrapper to execute python and system commands with a wrapper, that might
    set a timeout.
@@ -43,16 +43,15 @@ import sys
 import subprocess
 import signal
 
-gLogger = gLogger.getSubLogger( 'Subprocess' )
-
 class Subprocess:
 
   def __init__( self, timeout = False, bufferLimit = 52428800 ):
+    self.log = gLogger.getSubLogger( 'Subprocess' )
     try:
       self.changeTimeout( timeout )
       self.bufferLimit = int( bufferLimit) # 5MB limit for data
     except Exception, v:
-      gLogger.exception( 'Failed initialisation of Subprocess object' )
+      self.log.exception( 'Failed initialisation of Subprocess object' )
       raise v
     self.childPID = 0
 
@@ -60,7 +59,7 @@ class Subprocess:
     self.timeout = int( timeout )
     if self.timeout == 0:
       self.timeout = False
-    gLogger.debug( 'Timeout set to', timeout )
+    self.log.debug( 'Timeout set to', timeout )
 
   def __readFromFD( self, fd, baseLength = 0 ):
     dataString = ''
@@ -71,7 +70,7 @@ class Subprocess:
       lastSliceLength = len( redBuf )
       dataString += redBuf
       if len( dataString ) + baseLength > self.bufferLimit:
-        gLogger.error( 'Maximum output buffer length reached' )
+        self.log.error( 'Maximum output buffer length reached' )
         retDict = S_ERROR( 'Reached maximum allowed length (%d bytes) '
                            'for called function return value' % self.bufferLimit )
         retDict[ 'Value' ] = dataString
@@ -87,7 +86,7 @@ class Subprocess:
         # the parent has died
         pass
     except Exception, v:
-      gLogger.exception( 'Exception while executing', function.__name__ )
+      self.log.exception( 'Exception while executing', function.__name__ )
       os.write( writePipe, DEncode.encode( S_ERROR( str( v ) ) ) )
       #HACK: Allow some time to flush logs
       time.sleep(1)
@@ -118,7 +117,7 @@ class Subprocess:
       os.kill( pid, signal )
     except Exception, v:
       if not str(v) == '[Errno 3] No such process':
-        gLogger.exeption( 'Exception while killing timed out process' )
+        self.log.exeption( 'Exception while killing timed out process' )
         raise v
 
   def __poll( self, pid ):
@@ -129,6 +128,9 @@ class Subprocess:
     return sts
 
   def killChild( self, recursive = True ):
+    if self.childPID < 1:
+      self.log.error( "Could not kill child. Child PID is %s" % self.childPID )
+      return -1
     os.kill( self.childPID, signal.SIGSTOP )
     if recursive:
       for gcpid in getChildrenPIDs( self.childPID, lambda cpid: os.kill( cpid, signal.SIGSTOP ) ):
@@ -169,7 +171,7 @@ class Subprocess:
         return S_ERROR( "Can't read from call %s" % ( function.__name__ ) )
       try:
         if len( readSeq ) == 0:
-          gLogger.debug( 'Timeout limit reached for pythonCall', function.__name__)
+          self.log.debug( 'Timeout limit reached for pythonCall', function.__name__)
           self.__killPid( pid )
 
           #HACK to avoid python bug
@@ -208,9 +210,9 @@ class Subprocess:
           break
         dataString += nB
     except Exception, v:
-      gLogger.exception( "SUPROCESS: readFromFile exception" )
+      self.log.exception( "SUPROCESS: readFromFile exception" )
     if len( dataString ) + baseLength > self.bufferLimit:
-      gLogger.error( 'Maximum output buffer length reached' )
+      self.log.error( 'Maximum output buffer length reached' )
       retDict = S_ERROR( 'Reached maximum allowed length (%d bytes) for called '
                          'function return value' % self.bufferLimit )
       retDict[ 'Value' ] = dataString
@@ -307,7 +309,7 @@ class Subprocess:
         if not i.closed:
           fdList.append( i.fileno() )
       except Exception, e:
-        gLogger.exception( "SUBPROCESS: readFromCommand exception" )
+        self.log.exception( "SUBPROCESS: readFromCommand exception" )
     readSeq = self.__selectFD( fdList, True )
     if readSeq == False:
       return S_OK()
@@ -329,9 +331,9 @@ class Subprocess:
                         self.bufferList[ bufferIndex ][1]:
                         self.bufferList[ bufferIndex ][1] + nextLineIndex ] )
       except Exception, v:
-        gLogger.exception( 'Exception while calling callback function',
+        self.log.exception( 'Exception while calling callback function',
                            '%s' % self.callback.__name__, lException=v )
-        gLogger.showStack()
+        self.log.showStack()
 
       self.bufferList[ bufferIndex ][1] += nextLineIndex + 1
       return True
