@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.70 2009/02/26 13:40:24 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.71 2009/03/03 22:37:50 rgracian Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.70 2009/02/26 13:40:24 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.71 2009/03/03 22:37:50 rgracian Exp $"
 
 import time
 import types
@@ -34,6 +34,9 @@ class TaskQueueDB(DB):
     result = self.__initializeDB()
     if not result[ 'OK' ]:
       raise Exception( "Can't create tables: %s" % result[ 'Message' ])
+    result = self.__enableAllTaskQueues()
+    if not result[ 'OK' ]:
+      raise Exception( "Can't enable TaskQueues: %s" % result[ 'Message' ])
 
   def getSingleValueTQDefFields( self ):
     return self.__singleValueDefFields
@@ -101,6 +104,23 @@ class TaskQueueDB(DB):
         tablesToCreate[ tableName ] = self.__tablesDesc[ tableName ]
 
     return self._createTables( tablesToCreate )
+
+  def __enableAllTaskQueues( self ):
+
+    result = self._getConnection()
+    if not result[ 'OK' ]:
+      return result
+    connObj = result[ 'Value' ]
+  
+    result = self._query( 'SELECT TQId from `tq_TaskQueues`', conn = connObj )
+    if not result['OK']:
+      return result
+    for tqId in result['Value']:
+      self.setTaskQueueState( tqId, enabled = True, connObj = connObj )
+      if not result['OK']:
+        return result
+
+    return S_OK()
 
   def forceRecreationOfTables( self ):
     dropSQL = "DROP TABLE IF EXISTS %s" % ", ".join( self.__tablesDesc )
