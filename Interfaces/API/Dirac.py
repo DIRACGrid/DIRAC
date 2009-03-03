@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.64 2009/02/17 11:08:53 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.65 2009/03/03 13:48:50 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.64 2009/02/17 11:08:53 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.65 2009/03/03 13:48:50 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -738,6 +738,7 @@ class Dirac:
       if not siteLfns.has_key(sitesStr):
         siteLfns[sitesStr] = []
       siteLfns[sitesStr].append(lfn)
+      replicaDict['Value']['Successful'].pop(lfn)
 
     lfnGroups = []
     for sites,files in siteLfns.items():
