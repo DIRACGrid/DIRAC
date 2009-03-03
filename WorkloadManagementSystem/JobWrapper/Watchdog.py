@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.41 2009/03/02 16:22:15 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.42 2009/03/03 11:15:10 rgracian Exp $
 # File  : Watchdog.py
 # Author: Stuart Paterson
 ########################################################################
@@ -18,7 +18,7 @@
           - CPU normalization for correct comparison with job limit
 """
 
-__RCSID__ = "$Id: Watchdog.py,v 1.41 2009/03/02 16:22:15 rgracian Exp $"
+__RCSID__ = "$Id: Watchdog.py,v 1.42 2009/03/03 11:15:10 rgracian Exp $"
 
 from DIRAC.Core.Base.Agent                              import Agent
 from DIRAC.Core.DISET.RPCClient                         import RPCClient
@@ -338,12 +338,15 @@ class Watchdog(Agent):
       return S_OK()
     
     wallClockTime = self.parameters['WallClockTime'][-1] - self.parameters['WallClockTime'][-1 - intervals ]
-    cpuTime = self.parameters['CPUConsumed'][-1] - self.parameters['CPUConsumed'][-1 - intervals ]
+    try:
+      cpuTime = self.__convertCPUTime(self.parameters['CPUConsumed'][-1])['Value'] - self.__convertCPUTime(self.parameters['CPUConsumed'][-1 - intervals ])['Value']
 
-    ratio = ( cpuTime / wallClockTime ) * 100.
-    
-    if ratio < self.minCPUWallClockRatio:
-      return S_ERROR( 'Watchdog identified this job as stalled' )
+      ratio = ( cpuTime / wallClockTime ) * 100.
+      
+      if ratio < self.minCPUWallClockRatio:
+        return S_ERROR( 'Watchdog identified this job as stalled' )
+    except:
+      pass
     
     return S_OK()
     
