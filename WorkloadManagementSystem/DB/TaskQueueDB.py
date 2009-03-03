@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.71 2009/03/03 22:37:50 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.72 2009/03/03 22:52:44 rgracian Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.71 2009/03/03 22:37:50 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.72 2009/03/03 22:52:44 rgracian Exp $"
 
 import time
 import types
@@ -116,7 +116,12 @@ class TaskQueueDB(DB):
     if not result['OK']:
       return result
     for tqId in result['Value']:
-      self.setTaskQueueState( tqId, enabled = True, connObj = connObj )
+      result = self.deleteTaskQueueIfEmpty( tqId, connObj = connObj )
+      if not result['OK']:
+        return result
+      if result['Value']:
+        continue
+      result = self.setTaskQueueState( tqId, enabled = True, connObj = connObj )
       if not result['OK']:
         return result
 
