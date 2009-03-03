@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.42 2009/03/03 11:15:10 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.43 2009/03/03 14:35:42 acasajus Exp $
 # File  : Watchdog.py
 # Author: Stuart Paterson
 ########################################################################
@@ -18,7 +18,7 @@
           - CPU normalization for correct comparison with job limit
 """
 
-__RCSID__ = "$Id: Watchdog.py,v 1.42 2009/03/03 11:15:10 rgracian Exp $"
+__RCSID__ = "$Id: Watchdog.py,v 1.43 2009/03/03 14:35:42 acasajus Exp $"
 
 from DIRAC.Core.Base.Agent                              import Agent
 from DIRAC.Core.DISET.RPCClient                         import RPCClient
@@ -323,35 +323,43 @@ class Watchdog(Agent):
     """ Checks whether the CPU consumed by application process is reasonable. This
         method will report stalled jobs to be killed.
     """
-    
+    self.log.info( "Checking CPU Consumed" )
+
     if 'WallClockTime' not in self.parameters:
       return S_ERROR( 'Missing WallClockTime info' )
     if 'CPUConsumed' not in self.parameters:
       return S_ERROR( 'Missing CPUConsumed info' )
-    
+
     wallClockTime = self.parameters['WallClockTime'][-1]
     if wallClockTime < self.sampleCPUTime:
+      self.log.info( "Stopping check, wallclock time (%s) is still smalled than sample time (%s)" % ( wallClockTime,
+                                                                                            self.sampleCPUTime ) )
       return S_OK()
-    
+
     intervals = max( 1, int( self.sampleCPUTime / self.checkingTime ) )
     if len( self.parameters['CPUConsumed'] ) < intervals + 1:
+      self.log.info( "Not enough snapshots to calculate, there are %s and we need %s" % ( len( self.parameters['CPUConsumed'] ),
+                                                                                          intervals + 1 ) )
       return S_OK()
-    
+
     wallClockTime = self.parameters['WallClockTime'][-1] - self.parameters['WallClockTime'][-1 - intervals ]
     try:
       cpuTime = self.__convertCPUTime(self.parameters['CPUConsumed'][-1])['Value'] - self.__convertCPUTime(self.parameters['CPUConsumed'][-1 - intervals ])['Value']
 
       ratio = ( cpuTime / wallClockTime ) * 100.
-      
+
+      self.log.info( "CPU/Wallclock ratio is %.2f%%" % ratio )
       if ratio < self.minCPUWallClockRatio:
+        self.log.info( "Job is stalled!" )
         return S_ERROR( 'Watchdog identified this job as stalled' )
-    except:
-      pass
-    
+    except Exception, e:
+      self.log.error( "Cannot convert CPU consumed from string to int: %s" % str(e) )
+
+
     return S_OK()
-    
-    
-    
+
+
+
     #TODO: test that ok jobs don't die :)
     if self.nullCPUCount > self.nullCPULimit:
       stalledTime = self.nullCPULimit*self.sampleCPUTime
