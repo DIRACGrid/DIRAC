@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.43 2009/03/03 14:35:42 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.44 2009/03/03 20:19:37 rgracian Exp $
 # File  : Watchdog.py
 # Author: Stuart Paterson
 ########################################################################
@@ -18,7 +18,7 @@
           - CPU normalization for correct comparison with job limit
 """
 
-__RCSID__ = "$Id: Watchdog.py,v 1.43 2009/03/03 14:35:42 acasajus Exp $"
+__RCSID__ = "$Id: Watchdog.py,v 1.44 2009/03/03 20:19:37 rgracian Exp $"
 
 from DIRAC.Core.Base.Agent                              import Agent
 from DIRAC.Core.DISET.RPCClient                         import RPCClient
@@ -29,6 +29,7 @@ from DIRAC                                              import S_OK, S_ERROR
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient    import gProxyManager
 from DIRAC.Core.Security.Misc                           import getProxyInfo
 from DIRAC.Core.Security                                import Properties
+from DIRAC.WorkloadManagementSystem.Client.JobReport    import JobReport
 
 import os,thread,time,shutil
 
@@ -161,7 +162,13 @@ class Watchdog(Agent):
 
     result = self.__checkProgress()
     if not result['OK']:
-      self.log.warn(result['Message'])
+      minorStatus = result['Message']
+      self.log.warn(minorStatus)
+
+      if 'JOBID' in os.environ:
+        jobReport = JobReport(os.environ['JOBID'],'Watchdog')
+        jobReport.setJobStatus(minor=minorStatus)
+
       if self.jobPeekFlag:
         result = self.__peek()
         if result['OK']:
