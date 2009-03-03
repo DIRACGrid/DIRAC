@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.44 2009/03/03 20:19:37 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.45 2009/03/03 20:31:24 rgracian Exp $
 # File  : Watchdog.py
 # Author: Stuart Paterson
 ########################################################################
@@ -18,7 +18,7 @@
           - CPU normalization for correct comparison with job limit
 """
 
-__RCSID__ = "$Id: Watchdog.py,v 1.44 2009/03/03 20:19:37 rgracian Exp $"
+__RCSID__ = "$Id: Watchdog.py,v 1.45 2009/03/03 20:31:24 rgracian Exp $"
 
 from DIRAC.Core.Base.Agent                              import Agent
 from DIRAC.Core.DISET.RPCClient                         import RPCClient
@@ -29,7 +29,6 @@ from DIRAC                                              import S_OK, S_ERROR
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient    import gProxyManager
 from DIRAC.Core.Security.Misc                           import getProxyInfo
 from DIRAC.Core.Security                                import Properties
-from DIRAC.WorkloadManagementSystem.Client.JobReport    import JobReport
 
 import os,thread,time,shutil
 
@@ -55,6 +54,7 @@ class Watchdog(Agent):
     self.processMonitor = ProcessMonitor()
     self.pilotProxyLocation = False
     self.pilotInfo = False
+    self.checkError = ''
 
   def setPilotProxyLocation( self, pilotProxyLocation ):
     self.pilotProxyLocation = pilotProxyLocation
@@ -162,12 +162,8 @@ class Watchdog(Agent):
 
     result = self.__checkProgress()
     if not result['OK']:
-      minorStatus = result['Message']
-      self.log.warn(minorStatus)
-
-      if 'JOBID' in os.environ:
-        jobReport = JobReport(os.environ['JOBID'],'Watchdog')
-        jobReport.setJobStatus(minor=minorStatus)
+      self.checkError = result['Message']
+      self.log.warn(self.checkError)
 
       if self.jobPeekFlag:
         result = self.__peek()
