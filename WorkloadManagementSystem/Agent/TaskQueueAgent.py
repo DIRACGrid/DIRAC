@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueAgent.py,v 1.24 2009/01/28 12:03:02 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueAgent.py,v 1.25 2009/03/03 23:03:39 rgracian Exp $
 # File :   TaskQueueAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
      into a Task Queue.
 """
 
-__RCSID__ = "$Id: TaskQueueAgent.py,v 1.24 2009/01/28 12:03:02 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueAgent.py,v 1.25 2009/03/03 23:03:39 rgracian Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB         import TaskQueueDB
@@ -28,6 +28,10 @@ class TaskQueueAgent(OptimizerModule):
     self.waitingMinorStatus = self.am_getOption( 'WaitingMinorStatus', 'Pilot Agent Submission' )
     try:
       self.taskQueueDB        = TaskQueueDB()
+      result = self.taskQueue.enableAllTaskQueues()
+      if not result[ 'OK' ]:
+        raise Exception( "Can't enable TaskQueues: %s" % result[ 'Message' ])
+      
     except Exception, e:
       return S_ERROR( "Cannot initialize taskqueueDB: %s" % str(e) )
     return S_OK()

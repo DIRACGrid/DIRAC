@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.72 2009/03/03 22:52:44 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.73 2009/03/03 23:03:39 rgracian Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.72 2009/03/03 22:52:44 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.73 2009/03/03 23:03:39 rgracian Exp $"
 
 import time
 import types
@@ -34,9 +34,6 @@ class TaskQueueDB(DB):
     result = self.__initializeDB()
     if not result[ 'OK' ]:
       raise Exception( "Can't create tables: %s" % result[ 'Message' ])
-    result = self.__enableAllTaskQueues()
-    if not result[ 'OK' ]:
-      raise Exception( "Can't enable TaskQueues: %s" % result[ 'Message' ])
 
   def getSingleValueTQDefFields( self ):
     return self.__singleValueDefFields
@@ -105,7 +102,7 @@ class TaskQueueDB(DB):
 
     return self._createTables( tablesToCreate )
 
-  def __enableAllTaskQueues( self ):
+  def enableAllTaskQueues( self ):
 
     result = self._getConnection()
     if not result[ 'OK' ]:
