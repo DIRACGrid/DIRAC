@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalogue. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.44 2009/03/03 20:10:53 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.45 2009/03/03 20:18:16 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -1445,9 +1445,9 @@ class ReplicaManager:
         'storageElementName' is the target StorageElement
     """
     if singleFile:
-      return self.__executeSingleStorageElementFunction(storageElementName,physicalFile,'replicateFile',argsDict={sourceSize=size})
+      return self.__executeSingleStorageElementFunction(storageElementName,physicalFile,'replicateFile',argsDict={sourceSize:size})
     else:
-      return self.__executeStorageElementFunction(storageElementName,physicalFile,'replicateFile',argsDict={sourceSize=size})
+      return self.__executeStorageElementFunction(storageElementName,physicalFile,'replicateFile',argsDict={sourceSize:size})
 
   def __executeSingleStorageElementFunction(self,storageElementName,pfn,method,argsDict={}):
     res = self.__executeStorageElementFunction(storageElementName,pfn,method,argsDict)
