@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueAgent.py,v 1.26 2009/03/03 23:07:12 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueAgent.py,v 1.27 2009/03/03 23:13:39 rgracian Exp $
 # File :   TaskQueueAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
      into a Task Queue.
 """
 
-__RCSID__ = "$Id: TaskQueueAgent.py,v 1.26 2009/03/03 23:07:12 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueAgent.py,v 1.27 2009/03/03 23:13:39 rgracian Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB         import TaskQueueDB
@@ -33,6 +33,7 @@ class TaskQueueAgent(OptimizerModule):
         raise Exception( "Can't enable TaskQueues: %s" % result[ 'Message' ])
       
     except Exception, e:
+      self.log.exception()
       return S_ERROR( "Cannot initialize taskqueueDB: %s" % str(e) )
     return S_OK()
 
