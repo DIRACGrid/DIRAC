@@ -249,7 +249,7 @@ class StorageElement:
     else:
       return self.__executeFunction(pfn,'putFile')
 
-  def replicateFile(self,pfn,sourceSize,singleFile=False):
+  def replicateFile(self,pfn,sourceSize=0,singleFile=False):
     if singleFile:
       return self.__executeSingleFile(pfn,'putFile',{'sourceSize':sourceSize})
     else:
