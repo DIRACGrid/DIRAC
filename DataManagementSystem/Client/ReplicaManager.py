@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalogue. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.43 2009/03/03 19:45:13 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.44 2009/03/03 20:10:53 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -1428,10 +1428,26 @@ class ReplicaManager:
       return self.__executeStorageElementFunction(storageElementName,physicalFile,'getFile',argsDict={'localPath':localPath})
 
   def putPhysicalFile(self,physicalFile,storageElementName,singleFile=False):
-    pass
+    """ Put a local file to the storage element
 
-  def replicateFile(self,physicalFile,size,storageElementName,singleFile=False):
-    pass
+        'physicalFile' is the pfn(s) dict to put
+        'storageElementName' is the StorageElement
+    """
+    if singleFile:
+      return self.__executeSingleStorageElementFunction(storageElementName,physicalFile,'putFile')
+    else:
+      return self.__executeStorageElementFunction(storageElementName,physicalFile,'putFile')
+
+  def replicatePhysicalFile(self,physicalFile,size,storageElementName,singleFile=False):
+    """ Replicate a physical file to a storage element
+
+        'physicalFile' is the pfn(s) dict to replicate
+        'storageElementName' is the target StorageElement
+    """
+    if singleFile:
+      return self.__executeSingleStorageElementFunction(storageElementName,physicalFile,'replicateFile',argsDict={sourceSize=size})
+    else:
+      return self.__executeStorageElementFunction(storageElementName,physicalFile,'replicateFile',argsDict={sourceSize=size})
 
   def __executeSingleStorageElementFunction(self,storageElementName,pfn,method,argsDict={}):
     res = self.__executeStorageElementFunction(storageElementName,pfn,method,argsDict)
