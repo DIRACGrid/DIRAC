@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.51 2009/01/23 13:58:02 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.52 2009/03/03 11:04:54 rgracian Exp $
 ########################################################################
 """ PilotAgentsDB class is a front-end to the Pilot Agent Database.
     This database keeps track of all the submitted grid pilot jobs.
@@ -23,7 +23,7 @@
 
 """
 
-__RCSID__ = "$Id: PilotAgentsDB.py,v 1.51 2009/01/23 13:58:02 atsareg Exp $"
+__RCSID__ = "$Id: PilotAgentsDB.py,v 1.52 2009/03/03 11:04:54 rgracian Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
@@ -560,7 +560,7 @@ class PilotAgentsDB(DB):
     else:
       req = "SELECT PilotID FROM PilotAgents WHERE TaskQueueID=%s " % taskQueueID
 
-    req += 'ORDER BY SubmissionTime '
+    req += 'ORDER BY SubmissionTime DESC '
 
     if limit:
       req += 'LIMIT %s' % limit
