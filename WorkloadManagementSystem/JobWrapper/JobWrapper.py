@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.73 2009/03/03 20:31:24 rgracian Exp $
+# $Id: JobWrapper.py,v 1.74 2009/03/04 12:10:16 rgracian Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.73 2009/03/03 20:31:24 rgracian Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.74 2009/03/04 12:10:16 rgracian Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -897,14 +897,13 @@ class JobWrapper:
     requests = self.__getRequestFiles()
     if self.failedFlag and requests:
       self.log.info('Application finished with errors and there are pending requests for this job.')
-      self.__report('Completed','Pending Requests')
-      self.__report('Failed','Application Finished With Errors')
+      self.__report('Failed','Pending Requests')
     elif not self.failedFlag and requests:
       self.log.info('Application finished successfully with pending requests for this job.')
       self.__report('Completed','Pending Requests')
     elif self.failedFlag and not requests:
-      self.log.info('Application finished with errors wtih no pending requests.')
-      self.__report('Failed','Application Finished With Errors')
+      self.log.info('Application finished with errors with no pending requests.')
+      self.__report('Failed')
     elif not self.failedFlag and not requests:
       self.log.info('Application finished successfully with no pending requests for this job.')
       self.__report('Done','Execution Complete')
@@ -1051,11 +1050,13 @@ class JobWrapper:
     return result
 
   #############################################################################
-  def __report(self,status,minorStatus):
+  def __report(self,status='',minorStatus=''):
     """Wraps around setJobStatus of state update client
     """
-    self.wmsMajorStatus = status
-    self.wmsMinorStatus = minorStatus
+    if status:
+      self.wmsMajorStatus = status
+    if minorStatus:
+      self.wmsMinorStatus = minorStatus
     jobStatus = S_OK()
     if self.jobID:
       #jobReport  = RPCClient('WorkloadManagement/JobStateUpdate')
