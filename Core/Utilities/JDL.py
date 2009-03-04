@@ -32,7 +32,7 @@ def loadJDLAsCFG( jdl ):
         return S_ERROR( 'value is opened with " but is not closed' )
       return S_OK( ", ".join ( entries ) )
     else:
-      return S_OK( value )
+      return S_OK( value.replace( '"', "'" ) )
 
   def assignValue( key, value, cfg ):
     key = key.strip()
