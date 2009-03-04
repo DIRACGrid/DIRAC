@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/DB/ComponentMonitoringDB.py,v 1.12 2009/03/02 17:10:47 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/DB/ComponentMonitoringDB.py,v 1.13 2009/03/04 19:42:45 acasajus Exp $
 ########################################################################
 """ ComponentMonitoring class is a front-end to the Component monitoring Database
 """
 
-__RCSID__ = "$Id: ComponentMonitoringDB.py,v 1.12 2009/03/02 17:10:47 acasajus Exp $"
+__RCSID__ = "$Id: ComponentMonitoringDB.py,v 1.13 2009/03/04 19:42:45 acasajus Exp $"
 
 import time
 import random
@@ -268,6 +268,37 @@ class ComponentMonitoringDB(DB):
       return value in condVal
     return value == condVal
 
+  def __getComponentDefinitionFromCS( self, system, setup, instance, type, component ):
+      componentName = "%s/%s" % ( system, component )
+      compDict = { 'ComponentName' : componentName,
+                   'Type' : type,
+                   'Setup' : setup
+                  }
+      componentSection = "/Systems/%s/%s/%s/%s" % ( system, instance,
+                                                    "%ss" % type.capitalize(), component )
+      compStatus = gConfig.getValue( "%s/Status" % componentSection, 'Active' )
+      if compStatus.lower() in ( "inactive", ):
+        compDict[ 'Status' ] = compStatus.lower().capitalize()
+      if type == 'service':
+        result = gConfig.getOption( "%s/Port" % componentSection )
+        if not result[ 'OK' ]:
+          compDict[ 'Status' ] = 'Error'
+          compDict[ 'Message' ] = "Component seems to be defined wrong in CS: %s" % result[ 'Message' ]
+          return compDict
+        try:
+          compDict[ 'Port' ] = int( result[ 'Value' ] )
+        except:
+          compDict[ 'Status' ] = 'Error'
+          compDict[ 'Message' ] = "Port for component doesn't seem to be a number"
+          return compDict
+      return compDict
+
+  def __componentMatchesCondition( self, compDict, requiredComponents, conditionDict = {} ):
+    for key in compDict:
+      if not self.__checkCondition( conditionDict, key, compDict[key] ):
+        return False
+    return True
+
   def getComponentsStatus( self, conditionDict = {} ):
     """
     Get the status of the defined components in the CS compared to the ones that are known in the DB
@@ -290,6 +321,19 @@ class ComponentMonitoringDB(DB):
       systems = result[ 'Value' ]
       for system in systems:
         instance = systems[ system ]
+        #Check defined agents and serviecs
+        for type in ( 'agent' , 'service' ):
+          #Get entries for the instance of a system
+          result = gConfig.getSections( "/Systems/%s/%s/%s" % ( system, instance, "%ss" % type.capitalize() ) )
+          if not result[ 'OK' ]:
+            self.log.warn( "Opps, sytem seems to be defined wrong\n", "System %s at %s: %s" % ( system, instance, result[ 'Message' ] ) )
+            continue
+          components = result[ 'Value' ]
+          for component in components:
+            componentName = "%s/%s" % ( system, component )
+            compDict = self.__getComponentDefinitionFromCS( system, setup, instance, type, component )
+            if self.__componentMatchesCondition( compDict, requiredComponents, conditionDict ):
+              statusSet.addUniqueToSet( requiredComponents, compDict )
         #Walk the URLs
         result = gConfig.getOptionsDict( "/Systems/%s/%s/URLs" % ( system, instance ) )
         if not result[ 'OK' ]:
@@ -309,51 +353,8 @@ class ComponentMonitoringDB(DB):
                            'Host' : hostname,
                            'Port' : int(port)
                           }
-              allowed = True
-              for key in compDict:
-                if not self.__checkCondition( conditionDict, key, compDict[key] ):
-                  allowed = False
-                  break
-              if not allowed:
-                break
-
-              rC = statusSet.walkSet( requiredComponents, compDict )
-              if compDict not in rC:
-                rC.append( compDict )
-        #Check defined agents and serviecs
-        for type in ( 'agent' , 'service' ):
-          #Get entries for the instance of a system
-          result = gConfig.getSections( "/Systems/%s/%s/%s" % ( system, instance, "%ss" % type.capitalize() ) )
-          if not result[ 'OK' ]:
-            self.log.warn( "Opps, sytem seems to be defined wrong\n", "System %s at %s: %s" % ( system, instance, result[ 'Message' ] ) )
-            continue
-          components = result[ 'Value' ]
-          for component in components:
-            componentName = "%s/%s" % ( system, component )
-            compDict = { 'ComponentName' : componentName,
-                         'Type' : type,
-                         'Setup' : setup
-                        }
-            if type == 'service':
-              result = gConfig.getOption( "/Systems/%s/%s/%s/%s/Port" % ( system, instance,
-                                                                          "%ss" % type.capitalize(), component ) )
-              if not result[ 'OK' ]:
-                self.log.error( "Component is not well defined", result[ 'Message' ] )
-                continue
-              try:
-                compDict[ 'Port' ] = int( result[ 'Value' ] )
-              except:
-                self.log.error( "Port for component doesn't seem to be a number", "%s for setup %s" % ( componentName, setup ) )
-            allowed = True
-            for key in compDict:
-              if not self.__checkCondition( conditionDict, key, compDict[key] ):
-                allowed = False
-                break
-            if not allowed:
-              break
-            rC = statusSet.walkSet( requiredComponents, compDict )
-            if compDict not in rC:
-              rC.append( compDict )
+              if self.__componentMatchesCondition( compDict, requiredComponents, conditionDict ):
+                statusSet.addUniqueToSet( requiredComponents, compDict )
     #WALK THE DICT
     statusSet.setComponentsAsRequired( requiredComponents )
     return S_OK( ( statusSet.getRequiredComponents(),
@@ -374,6 +375,19 @@ class StatusSet:
       cD.append( record )
     return S_OK()
 
+  def addUniqueToSet( self, setDict, compDict ):
+    rC = self.walkSet( setDict, compDict )
+    if compDict not in rC:
+      rC.append( compDict )
+      inactive = False
+      for cD in rC:
+        if 'Status' in cD and cD[ 'Status' ] == 'Inactive':
+          inactive = True
+          break
+      if inactive:
+        for cD in rC:
+          cD[ 'Status' ] = 'Inactive'
+
   def walkSet( self, setDict, compDict, createMissing = True ):
     sD = setDict
     for field in self.__requiredFields:
@@ -388,40 +402,44 @@ class StatusSet:
       sD = sD[ val ]
     return sD
 
+  def __reduceComponentList( self, componentList ):
+    """
+    Only keep the most restrictive components
+    """
+    for i in range( len( componentList ) ):
+      component = componentList[i]
+      for j in range( len( componentList ) ):
+        if i==j or componentList[j] == False :
+          continue
+        potentiallyMoreRestrictiveComponent = componentList[j]
+        match = True
+        for key in component:
+          if key not in potentiallyMoreRestrictiveComponent:
+            match = False
+            break
+          if key == 'Host':
+            result = Network.checkHostsMatch( component[key],
+                                              potentiallyMoreRestrictiveComponent[key] )
+            if not result[ 'OK' ] or not result[ 'Value' ]:
+              match = False
+              break
+          else:
+            if component[key] != potentiallyMoreRestrictiveComponent[key]:
+              match = False
+              break
+        if match:
+          componentList[i] = False
+          break
+    return [ comp for comp in componentList if comp != False ]
+
   def setComponentsAsRequired( self, requiredSet ):
     for setup in requiredSet:
       for type in requiredSet[ setup ]:
         for name in requiredSet[ setup ][ type ]:
           #Need to narrow down required
           cDL = requiredSet[ setup ][ type ][ name ]
-          filtered = []
-          for i in range( len( cDL ) ):
-            alreadyContained = False
-            cD = cDL[i]
-            for j in range( len( cDL ) ):
-              if i==j:
-                continue
-              pc = cDL[j]
-              match = True
-              for key in cD:
-                if key not in pc:
-                  match = False
-                  break
-                if key == 'Host':
-                  result = Network.checkHostsMatch( cD[key], pc[key] )
-                  if not result[ 'OK' ] or not result[ 'Value' ]:
-                    match = False
-                    break
-                else:
-                  if cD[key] != pc[key]:
-                    match = False
-                    break
-              if match:
-                alreadyContained = True
-            if not alreadyContained:
-              filtered.append( cD )
-          self.__setComponentListAsRequired( filtered )
-
+          cDL = self.__reduceComponentList( cDL )
+          self.__setComponentListAsRequired( cDL )
 
   def __setComponentListAsRequired( self, compDictList ):
     dbD = self.walkSet( self.__dbSet, compDictList[0], createMissing = False )
@@ -434,52 +452,61 @@ class StatusSet:
   def __addMissingDefinedComponents( self, compDictList ):
     cD = self.walkSet( self.__requiredSet, compDictList[0] )
     for compDict in compDictList:
-      compDict[ 'Status' ] = 'Error'
-      compDict[ 'Message' ] = "Component is not up or hasn't connected to register yet"
+      compDict = self.__setStatus( compDict, 'Error', "Component is not up or hasn't connected to register yet" )
       cD.append( compDict )
+
+  def __setStatus( self, compDict, status, message = False ):
+    if 'Status' in compDict:
+      return compDict
+    compDict[ 'Status' ] = status
+    if message:
+      compDict[ 'Message' ] = message
+    return compDict
 
   def __addFoundDefinedComponent( self, compDictList ):
     cD = self.walkSet( self.__requiredSet, compDictList[0] )
     dbD = self.walkSet( self.__dbSet, compDictList[0]  )
     now = Time.dateTime()
     unmatched = compDictList
-    for component in dbD:
-      component[ 'Status' ] = 'OK'
-      if component[ 'Type' ] == "service":
-        if 'Port' not in component:
-          component[ 'Status' ] = "Error"
-          component[ 'Message' ] = "Port is not defined"
-        elif component[ 'Port' ] not in [ compDict[ 'Port' ] for compDict in compDictList ]:
-          component[ 'Status' ] = "Error"
-          component[ 'Message' ] = "Port (%s) is different that specified in the CS (%s)" % ( component[ 'Port' ], compDict[ 'Port' ] )
-      elapsed = now - component[ 'LastHeartbeat' ]
-      elapsed = elapsed.days * 86400 + elapsed.seconds
-      if elapsed > self.__maxSecsSinceHeartbeat:
-        component[ 'Status' ] = "Error"
-        component[ 'Message' ] = "Last heartbeat was received at %s (%s secs ago)" % ( component[ 'LastHeartbeat' ], elapsed)
-      cD.append( component )
+    for dbComp in dbD:
+      if 'Status' not in dbComp:
+        self.__setStatus( dbComp, 'OK' )
+        if dbComp[ 'Type' ] == "service":
+          if 'Port' not in dbComp:
+            self.__setStatus( dbComp, 'Error', "Port is not defined" )
+          elif dbComp[ 'Port' ] not in [ compDict[ 'Port' ] for compDict in compDictList if 'Port' in compDict ]:
+            self.__setStatus( component, 'Error',
+                              "Port (%s) is different that specified in the CS" % dbComp[ 'Port' ] )
+        elapsed = now - dbComp[ 'LastHeartbeat' ]
+        elapsed = elapsed.days * 86400 + elapsed.seconds
+        if elapsed > self.__maxSecsSinceHeartbeat:
+          self.__setStatus( dbComp, "Error",
+                            "Last heartbeat was received at %s (%s secs ago)" % ( dbComp[ 'LastHeartbeat' ],
+                                                                                  elapsed ) )
+      cD.append( dbComp )
       #See if we have a perfect match
       newUnmatched = []
-      for compDict in unmatched:
+      for unmatchedComp in unmatched:
         perfectMatch = True
-        for field in compDict:
-          if field not in component:
+        for field in unmatchedComp:
+          if field in ( 'Status', 'Message' ):
+            continue
+          if field not in dbComp:
             perfectMatch = False
+            continue
           if field == 'Host':
-            result = Network.checkHostsMatch( compDict[ field ], component[ field ] )
+            result = Network.checkHostsMatch( unmatchedComp[ field ], dbComp[ field ] )
             if not result[ 'OK' ] or not result[ 'Value' ]:
               perfectMatch = False
           else:
-            if compDict[ field ] != component[ field ]:
+            if unmatchedComp[ field ] != dbComp[ field ]:
               perfectMatch = False
         if not perfectMatch:
-          newUnmatched.append( compDict )
+          newUnmatched.append( unmatchedComp )
       unmatched = newUnmatched
-    for compDict in unmatched:
-      compDict[ 'Status' ] = "Error"
-      compDict[ 'Message' ] = "There is no component up with this properties"
-      cD.append( compDict )
-
+    for unmatchedComp in unmatched:
+      self.__setStatus( unmatchedComp, "Error", "There is no component up with this properties" )
+      cD.append( unmatchedComp )
 
   def getRequiredComponents( self ):
     return self.__requiredSet
