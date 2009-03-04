@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.74 2009/03/03 23:13:37 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.75 2009/03/04 18:29:08 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.74 2009/03/03 23:13:37 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.75 2009/03/04 18:29:08 acasajus Exp $"
 
 import time
 import types
@@ -31,6 +31,7 @@ class TaskQueueDB(DB):
     self.__jobPriorityBoundaries = ( 0.001, 10 )
     self.__groupShares = {}
     self.__csSection = getDatabaseSection( "WorkloadManagement/TaskQueueDB" )
+    self.__ensureInsertionIsSingle = False
     result = self.__initializeDB()
     if not result[ 'OK' ]:
       raise Exception( "Can't create tables: %s" % result[ 'Message' ])
@@ -108,7 +109,7 @@ class TaskQueueDB(DB):
     if not result[ 'OK' ]:
       return result
     connObj = result[ 'Value' ]
-  
+
     result = self._query( 'SELECT TQId from `tq_TaskQueues`', conn = connObj )
     if not result['OK']:
       return result
@@ -325,7 +326,7 @@ class TaskQueueDB(DB):
       result = self.setTaskQueueState( tqId, False )
       if not result[ 'OK' ]:
         return result
-      if not result[ 'Value' ]:
+      if self.__ensureInsertionIsSingle and not result[ 'Value' ]:
         time.sleep(0.1)
         if numRetries <= 0:
           self.log.info( "Couldn't manage to disable TQ %s for job %s insertion, max retries reached. Aborting" % ( tqId, jobId ) )
