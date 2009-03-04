@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobPolicy.py,v 1.11 2009/02/13 10:49:00 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobPolicy.py,v 1.12 2009/03/04 11:58:49 acasajus Exp $
 ########################################################################
 
 """ JobPolicy encapsulates authorization rules for different groups
@@ -7,7 +7,7 @@
 
 """
 
-__RCSID__ = "$Id: JobPolicy.py,v 1.11 2009/02/13 10:49:00 atsareg Exp $"
+__RCSID__ = "$Id: JobPolicy.py,v 1.12 2009/03/04 11:58:49 acasajus Exp $"
 
 from DIRAC import gConfig, S_OK, S_ERROR
 from DIRAC.Core.Security import Properties
@@ -72,12 +72,12 @@ class JobPolicy:
     elif result['Value']:
       owner = result['Value']['OwnerDN']
       group = result['Value']['OwnerGroup']
-      result = self.getJobPolicy( owner, group )
-      
       result = getUsernameForDN(owner)
       ownerName = ''
       if result['OK']:
         ownerName = result['Value']
+        
+      result = self.getJobPolicy( owner, group )
       
       if self.userName and self.userName == ownerName and self.userGroup == group:
         result[ 'UserIsOwner' ] = True
