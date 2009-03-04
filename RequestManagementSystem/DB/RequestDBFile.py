@@ -41,14 +41,16 @@ class RequestDBFile:
     try:
       summaryDict = {}
       for requestType in requestTypes:
-        summaryDict[requestType] = {}
         reqTypeDir = '%s/%s' % (self.root,requestType)
         if os.path.isdir(reqTypeDir):
           statusList = os.listdir(reqTypeDir)
           for status in statusList:
             reqTypeStatusDir = '%s/%s' % (reqTypeDir,status)
             requests = os.listdir(reqTypeStatusDir)
-            summaryDict[requestType][status] = len(requests)
+            if len(requests):
+              if not summaryDict.has_key(requestType):
+                summaryDict[requestType] = {}
+              summaryDict[requestType][status] = len(requests)
       gLogger.info("RequestDBFile._getDBSummary: Successfully obtained database summary.")
       return S_OK(summaryDict)
     except Exception,x:
