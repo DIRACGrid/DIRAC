@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/scripts/dirac-monitoring-get-components-status.py,v 1.1 2009/02/26 14:25:02 acasajus Exp $
-# File :   dirac-admin-submit-pilot-for-job
-# Author : Ricardo Graciani
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/scripts/dirac-monitoring-get-components-status.py,v 1.2 2009/03/04 19:20:38 acasajus Exp $
 ########################################################################
-__RCSID__   = "$Id: dirac-monitoring-get-components-status.py,v 1.1 2009/02/26 14:25:02 acasajus Exp $"
-__VERSION__ = "$Revision: 1.1 $"
+__RCSID__   = "$Id: dirac-monitoring-get-components-status.py,v 1.2 2009/03/04 19:20:38 acasajus Exp $"
+__VERSION__ = "$Revision: 1.2 $"
+import sys
 from DIRACEnvironment import DIRAC
 from DIRAC.Core.Base import Script
 
