@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.74 2009/03/04 12:10:16 rgracian Exp $
+# $Id: JobWrapper.py,v 1.75 2009/03/05 21:55:44 paterson Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.74 2009/03/04 12:10:16 rgracian Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.75 2009/03/05 21:55:44 paterson Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -672,6 +672,9 @@ class JobWrapper:
     else:
       outputSE = self.defaultOutputSE
 
+    if not type(outputSE)==type([]):
+      outputSE=[outputSE]
+
     if outputData:
       result = self.__transferOutputDataFiles(owner,outputData,outputSE)
       if not result['OK']:
@@ -742,9 +745,13 @@ class JobWrapper:
         if pfnGUID.has_key(outputFile):
           fileGUID=pfnGUID[outputFile]
           self.log.verbose('Found GUID for file from POOL XML catalogue %s' %outputFile)
-        self.log.info('Attempting putAndRegister("%s","%s","%s",guid=%s,catalog="LcgFileCatalogCombined")' %(lfn,outputFilePath,outputSE,fileGUID))
-        upload = self.rm.putAndRegister(lfn,outputFilePath,outputSE,guid=fileGUID,catalog='LcgFileCatalogCombined')
-        self.log.info(upload)
+        for se in outputSE:
+          self.log.info('Attempting putAndRegister("%s","%s","%s",guid=%s,catalog="LcgFileCatalogCombined")' %(lfn,outputFilePath,se,fileGUID))
+          upload = self.rm.putAndRegister(lfn,outputFilePath,se,guid=fileGUID,catalog='LcgFileCatalogCombined')
+          self.log.info(upload)
+          if upload['OK']:
+            break
+
         if not upload['OK']:
           self.log.warn(upload['Message'])
           missing.append(outputFile)
