@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.81 2009/02/27 16:29:24 acsmith Exp $
+# $Id: TransformationDB.py,v 1.82 2009/03/05 15:05:01 atsareg Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -1322,8 +1322,8 @@ PRIMARY KEY (FileID)
     bkQueryID = result['Value'][0][0]
     return self.getBookkeepingQuery(bkQueryID)
     
-  def getBookkeepingQuery(self,bkQueryID):
-    """ Get the bookkeeping query parameters
+  def getBookkeepingQuery(self,bkQueryID=0):
+    """ Get the bookkeeping query parameters, if bkQueyID is 0 then get all the queries 
     """    
  
     queryFields = ['SimulationConditions','DataTakingConditions','ProcessingPass',
@@ -1331,7 +1331,10 @@ PRIMARY KEY (FileID)
     
     fieldsString = ','.join(queryFields)
     
-    req = "SELECT %s FROM BkQueries WHERE BkQueryID=%d" % (fieldsString,int(bkQueryID)) 
+    if bkQueryID:
+      req = "SELECT BkQueryID,%s FROM BkQueries WHERE BkQueryID=%d" % (fieldsString,int(bkQueryID)) 
+    else:
+      req = "SELECT BkQueryID,%s FROM BkQueries" % (fieldsString,)   
     result = self._query(req)
     if not result['OK']:
       return result
@@ -1339,8 +1342,23 @@ PRIMARY KEY (FileID)
     if not result['Value']:
       return S_ERROR('BkQuery %d not found' % int(bkQueryID))  
       
-    bkDict = {}  
-    for parameter,value in zip(queryFields,result['Value'][0]):
-      bkDict[parameter] = value 
+    resultDict = {}  
+    for row in result['Value']:  
+      bkDict = {}  
+      for parameter,value in zip(['BkQueryID']+queryFields,row):
+        bkDict[parameter] = value 
+      resultDict[bkDict['BkQueryID']] = bkDict
       
-    return S_OK(bkDict)    
+    if bkQueryID:   
+      return S_OK(bkDict) 
+    else:
+      return S_OK(resultDict)    
+  
+  def deleteBookkeepingQuery(self,bkQueryID):
+    """ Delete the specified query from the database
+    """
+    
+    req = 'DELETE FROM BkQueries WHERE BkQueryID=%d' % int(bkQueryID)
+    result = self._update(req)
+    return result
+    
