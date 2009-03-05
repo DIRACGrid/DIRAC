@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TorqueComputingElement.py,v 1.1 2009/03/03 15:33:31 szczypka Exp $
+# $Id: TorqueComputingElement.py,v 1.2 2009/03/05 12:06:26 paterson Exp $
 # File :   TorqueComputingElement.py
 # Author : Stuart Paterson
 ########################################################################
@@ -7,11 +7,11 @@
 """ The simplest Computing Element instance that submits jobs locally.
 """
 
-__RCSID__ = "$Id: TorqueComputingElement.py,v 1.1 2009/03/03 15:33:31 szczypka Exp $"
+__RCSID__ = "$Id: TorqueComputingElement.py,v 1.2 2009/03/05 12:06:26 paterson Exp $"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Core.Utilities.Subprocess                     import shellCall
-from DIRAC                                               import S_OK, S_ERROR
+from DIRAC                                               import S_OK,S_ERROR
 from DIRAC.Core.Security.Misc                            import getProxyInfo
 
 import os,sys
@@ -36,7 +36,7 @@ class TorqueComputingElement(ComputingElement):
     ret = getProxyInfo( disableVOMS = True )
     if not ret['OK']:
       return S_ERROR("Could not get Proxy info")
-    
+
     proxyLocation = ret['Value']['path']
 
     print "First path: %s" %executableFile
@@ -57,7 +57,7 @@ class TorqueComputingElement(ComputingElement):
     fopen.close()
 
     # create and write the executable file run###.py
-    executableFileBaseName=os.path.basename(executableFile)    
+    executableFileBaseName=os.path.basename(executableFile)
     fopen = open('run%s.py' %executableFileBaseName,'w')
     fopen.write('#!/usr/bin/env python\n')
     fopen.write('import os\n')
@@ -70,9 +70,19 @@ class TorqueComputingElement(ComputingElement):
     fopen.write('fopen.close()\n')
     fopen.write('os.chmod("%s",0600)\n' %proxyLocation)
     fopen.write('os.environ["X509_USER_PROXY"]="%s"\n' %proxyLocation)
-    fopen.write('print "submitting wrapper"\n')     
+    fopen.write('print "submitting wrapper"\n')
     fopen.write('os.system("./%s")\n' %executableFileBaseName)
     fopen.close()
+
+    #Perform any other actions from the site admin
+    if self.ceParameters.has_key('AdminCommands'):
+      commands = self.ceParameters['AdminCommands'].split(';')
+      for command in commands:
+        self.log.verbose('Executing site admin command: %s' %command)
+        result = shelCall(0,cmd,callbackFunction=self.sendOutput)
+        if not result['OK']:
+          self.log.error('Error during "%s":' %command,result)
+          return S_ERROR('Error executing %s CE AdminCommands' %CE_NAME)
 
     # change the permissions of run###.py to 0755
     os.chmod('run%s.py' %executableFileBaseName,0755)
