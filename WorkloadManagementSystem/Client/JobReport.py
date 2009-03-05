@@ -1,17 +1,18 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Client/JobReport.py,v 1.18 2008/08/06 12:58:42 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Client/JobReport.py,v 1.19 2009/03/05 11:37:31 paterson Exp $
 
 """
   JobReport class encapsulates various
   methods of the job status reporting
 """
 
-__RCSID__ = "$Id: JobReport.py,v 1.18 2008/08/06 12:58:42 atsareg Exp $"
+__RCSID__ = "$Id: JobReport.py,v 1.19 2009/03/05 11:37:31 paterson Exp $"
 
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC import S_OK, S_ERROR, Time
 from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
 from DIRAC.RequestManagementSystem.Client.DISETSubRequest import DISETSubRequest
 
+import string
 
 class JobReport:
 
@@ -39,7 +40,7 @@ class JobReport:
 
     timeStamp = Time.toString()
     # add job status record
-    self.jobStatusInfo.append((status,minor,timeStamp))
+    self.jobStatusInfo.append((status.replace("'",''),minor.replace("'",''),timeStamp))
     if sendFlag:
       # and send
       return self.sendStoredStatusInfo()
@@ -54,7 +55,7 @@ class JobReport:
 
     timeStamp = Time.toString()
     # add Application status record
-    self.appStatusInfo.append((appStatus,timeStamp))
+    self.appStatusInfo.append((appStatus.replace("'",''),timeStamp))
     if sendFlag:
       # and send
       return self.sendStoredStatusInfo()
