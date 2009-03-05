@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.52 2009/01/30 08:59:57 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.53 2009/03/05 12:23:40 paterson Exp $
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -30,7 +30,7 @@
    Note that several executables can be provided and wil be executed sequentially.
 """
 
-__RCSID__ = "$Id: Job.py,v 1.52 2009/01/30 08:59:57 rgracian Exp $"
+__RCSID__ = "$Id: Job.py,v 1.53 2009/03/05 12:23:40 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -921,7 +921,7 @@ class Job:
       if not exprn:
         exprn = 'true'
       self.log.verbose('Requirements: %s' %(exprn))
-      classadJob.set_expression('Requirements', exprn)
+      #classadJob.set_expression('Requirements', exprn)
 
     self.addToInputSandbox.remove(scriptname)
     self.addToOutputSandbox.remove(self.stdout)
