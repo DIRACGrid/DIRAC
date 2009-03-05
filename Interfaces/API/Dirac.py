@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.66 2009/03/05 09:14:30 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.67 2009/03/05 21:25:05 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.66 2009/03/05 09:14:30 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.67 2009/03/05 21:25:05 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -73,6 +73,7 @@ class Dirac:
     self.inputSandboxClient = SandboxClient('Input')
     self.client = WMSClient()
     self.pPrint = pprint.PrettyPrinter()
+    self.defaultFileCatalog = gConfig.getValue(self.section+'/FileCatalog','LcgFileCatalogCombined')
     try:
 #      from DIRAC.DataManagementSystem.Client.Catalog.LcgFileCatalogCombinedClient import LcgFileCatalogCombinedClient
 #      self.fileCatalog = LcgFileCatalogCombinedClient()
@@ -829,7 +830,7 @@ class Dirac:
     if not os.path.isfile(fullPath):
       return self.__errorReport('Expected path to file not %s' %(fullPath))
 
-    result = self.rm.putAndRegister(lfn,fullPath,diracSE,guid=fileGuid)
+    result = self.rm.putAndRegister(lfn,fullPath,diracSE,guid=fileGuid,catalog=self.defaultFileCatalog)
     if not result['OK']:
       return self.__errorReport('Problem during putAndRegister call',result['Message'])
     if not printOutput:
