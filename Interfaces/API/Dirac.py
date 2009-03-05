@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.65 2009/03/03 13:48:50 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.66 2009/03/05 09:14:30 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.65 2009/03/03 13:48:50 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.66 2009/03/05 09:14:30 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -1291,6 +1291,8 @@ class Dirac:
       return result
 
     self.log.info('Attempting to retrieve %s' %oversizedSandbox)
+    start = os.getcwd()
+    os.chdir(dirPath)
     getFile = self.getFile(oversizedSandbox)
     if not getFile['OK']:
       self.log.warn('Failed to download %s with error:%s' %(oversizedSandbox,getFile['Message']))
@@ -1307,8 +1309,10 @@ class Dirac:
     except Exception,x :
       result = S_ERROR( str(x) )
 
-    os.unlink( fileName )
+    if os.path.exists(fileName):
+      os.unlink( fileName )
 
+    os.chdir(start)
     return result
 
   #############################################################################
