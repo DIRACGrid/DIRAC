@@ -2,9 +2,9 @@
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/scripts/dirac-dms-remove-replicas.py,v 1.1 2009/02/11 20:05:32 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/scripts/dirac-dms-remove-replicas.py,v 1.2 2009/03/05 09:30:02 acsmith Exp $
 ########################################################################
-__RCSID__   = "$Id: dirac-dms-remove-replicas.py,v 1.1 2009/02/11 20:05:32 acsmith Exp $"
+__RCSID__   = "$Id: dirac-dms-remove-replicas.py,v 1.2 2009/03/05 09:30:02 acsmith Exp $"
 __VERSION__ = "$ $"
 
 from DIRAC.Core.Utilities.List import sortList
@@ -35,4 +35,4 @@ for lfn in sortList(res['Value']['Successful'].keys()):
   print 'Successfully removed %s replica of %s' % (storageElementName,lfn)
 for lfn in sortList(res['Value']['Failed'].keys()):
   message = res['Value']['Failed'][lfn]
-  print 'Failed to remove %s replica of %s: %s' (storageElementName,lfn,message)
+  print 'Failed to remove %s replica of %s: %s' % (storageElementName,lfn,message)
