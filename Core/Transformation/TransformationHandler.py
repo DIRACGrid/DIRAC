@@ -208,6 +208,13 @@ class TransformationHandler(RequestHandler):
     if not result['OK']:
       gLogger.error(result['Message'])
     return result   
+  
+  types_deleteBookkeepingQuery = [ [LongType, IntType]]
+  def export_deleteBookkeepingQuery( self, id_ ):
+    result = self.database.deleteBookkeepingQuery(id_)
+    if not result['OK']:
+      gLogger.error(result['Message'])
+    return result   
 
   ####################################################################
   #
