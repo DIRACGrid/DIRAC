@@ -11,6 +11,21 @@ import signal
 import string
 import time
 
+def printDict(dictionary):
+  """ Dictionary pretty printing
+  """
+
+  key_max = 0
+  value_max = 0
+  for key,value in dictionary.items():
+    if len(key) > key_max:
+      key_max = len(key)
+    if len(str(value)) > value_max:
+      value_max = len(str(value))
+  for key,value in dictionary.items():
+    print key.rjust(key_max),' : ',str(value).ljust(value_max)
+
+
 class TransformationDBCLI(cmd.Cmd):
 
   def __init__( self ):
@@ -578,6 +593,162 @@ class TransformationDBCLI(cmd.Cmd):
 
     if not result['OK']:
       print "Failed to reset status for file",lfn
+      
+  def do_createBkQuery(self,args):
+    """ Create a new Bookkeeping Query to be used in production definitions.
+
+        Usage: createBkQuery [queryID]
+
+        - queryID - ID of a Bookkeeping Query to get initial parameters from
+    """
+
+    fields = ['SimulationConditions',
+              'DataTakingConditions',
+              'ProcessingPass',
+              'FileType',
+              'EventType',
+              'ConfigName',
+              'ConfigVersion',
+              'ProductionID',
+              'DataQualityFlag']
+
+    resultQuery = {'SimulationConditions':'All',
+                'DataTakingConditions':'All',
+                'ProcessingPass':'No default!',
+                'FileType':'DST',
+                'EventType':90000000,
+                'ConfigName':'All',
+                'ConfigVersion':'All',
+                'ProductionID':0,
+                'DataQualityFlag':'OK'}
+
+    argss, length = self.check_params(args, 0)
+    if length:
+      queryID = int(argss[0])
+      result = self.server.getBookkeepingQuery(queryID)
+      if not result['OK']:
+        print "Failed to get initial query:",result['Message']
+        return
+
+      resultQuery = result['Value']
+      if resultQuery.has_key('BkQueryID'):
+        del resultQuery['BkQueryID']
+
+    done = False
+    while not done:
+      OK = True
+      for field in fields:
+        value = raw_input('%s [%s]: ' % (field,resultQuery[field]) )
+        if value:
+          resultQuery[field] = value
+
+      print "\nResulting query:"
+      printDict(resultQuery)
+      print
+
+      # Do some basic verification of the values
+      if resultQuery['SimulationConditions'] != "All" and resultQuery['DataTakingConditions'] != "All":
+        print "SimulationConditions and DataTakingConditions can not be defined simultaneously !"
+        OK = False
+#      if resultQuery['SimulationConditions'] == "All" and resultQuery['DataTakingConditions'] == "All":
+#        print "Either SimulationConditions or DataTakingConditions must be defined !"
+#        OK = False
+      if resultQuery['ProcessingPass'] == "No default!":
+        print "ProcessingPass must be defined !"
+        OK = False
+      for par in ['EventType','ProductionID']:
+        try:
+          dummy = int(resultQuery[par])
+          resultQuery[par] = dummy
+        except:
+          print "%s must be integer" % par
+          OK = False
+
+      if OK:
+        value = raw_input("OK,[A]bort,[R]etry:  [OK]:")
+      else:
+        value = raw_input("[A]bort,[R]etry:  [R]:")
+        if not value:
+          value = 'r'
+
+      if not value and OK:
+        result = self.server.addBookkeepingQuery(resultQuery)
+        if not result['OK']:
+          print "Query definition failed: ",result['Message']
+        else:
+          print "Query ID: ",result['Value']
+        done = True
+      elif value.lower() == 'a':
+        done = True
+      elif value.lower() == 'r':
+        pass
+      else:
+        done = True  
+        
+  def do_deleteBkQuery(self,args):
+    """ Delete an existing Bookkeeping Query 
+
+        Usage: deleteBkQuery queryID
+
+        - queryID - ID of a Bookkeeping Query to be deleted
+    """    
+    
+    argss, length = self.check_params(args, 1)
+    queryID = int(argss[0]) 
+    
+    result = self.server.deleteBookkeepingQuery(queryID)
+    if not result['OK']:
+      print "Failed to delete Bookkeeping Query:",result['Message']
+        
+  def do_listBkQueries(self,args):
+    """ Show existing Bookkeeping queries in the system
+
+        Usage: listBkQueries
+    """        
+    
+    fields = ['BkQueryID',
+              'SimulationConditions',
+              'DataTakingConditions',
+              'ProcessingPass',
+              'FileType',
+              'EventType',
+              'ConfigName',
+              'ConfigVersion',
+              'ProductionID',
+              'DataQualityFlag']
+    
+    widths = {'BkQueryID':9,
+              'SimulationConditions':30,
+              'DataTakingConditions':20,
+              'ProcessingPass':20,
+              'FileType':8,
+              'EventType':10,
+              'ConfigName':15,
+              'ConfigVersion':15,
+              'ProductionID':12,
+              'DataQualityFlag':15}
+    
+    result = self.server.getBookkeepingQuery(0)
+    if not result['OK']:
+      print "Failed to get response from the service:",result['Message']
+      return
+    
+    keys = [ string.ljust(string.rjust(x,widths[x]-(widths[x]-len(x))/2),widths[x]) for x in fields ]
+    print 164*'-'
+    print '|'.join(keys)+"|"
+    print 164*'-'
+    
+    bkDict = result['Value']
+    queryIDList = bkDict.keys()
+    queryIDList.sort()
+    for queryID in queryIDList:
+      values = ''
+      for field in fields:
+        width = widths[field]
+        value = str(bkDict[queryID][field]) 
+        values += string.ljust(string.rjust(value,width-(width-len(value))/2),width) + '|'
+      print values
+    print 164*'-'  
 
 if __name__ == "__main__":
 
