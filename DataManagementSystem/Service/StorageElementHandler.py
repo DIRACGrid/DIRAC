@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: StorageElementHandler.py,v 1.8 2009/02/06 13:42:27 acsmith Exp $
+# $Id: StorageElementHandler.py,v 1.9 2009/03/05 10:34:30 acsmith Exp $
 ########################################################################
 
 """
@@ -23,7 +23,7 @@
 
 """
 
-__RCSID__ = "$Id: StorageElementHandler.py,v 1.8 2009/02/06 13:42:27 acsmith Exp $"
+__RCSID__ = "$Id: StorageElementHandler.py,v 1.9 2009/03/05 10:34:30 acsmith Exp $"
 
 import os, shutil,re
 from stat import *
@@ -247,6 +247,10 @@ class StorageElementHandler(RequestHandler):
     res = fileHelper.networkToBulk(dir_path)
     if not res['OK']: 
       gLogger.error('Failed to receive network to bulk.',res['Message']) 
+    try:
+      os.chmod(dir_path,0755)
+    except Exception,x:
+      gLogger.error('Could not set permissions of destination directory.' % dir_path)
     return res
 
   def transfer_bulkToClient( self, fileId, token, fileHelper ):
