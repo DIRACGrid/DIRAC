@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.75 2009/03/04 18:29:08 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.76 2009/03/06 16:13:02 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.75 2009/03/04 18:29:08 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.76 2009/03/06 16:13:02 acasajus Exp $"
 
 import time
 import types
@@ -181,7 +181,7 @@ class TaskQueueDB(DB):
           return S_ERROR( "PilotType %s is invalid" % pilotType )
     return S_OK( tqDefDict )
 
-  def _checkMatchDefinition( self, tqMatchDict ):
+  def _checkMatchDefinition( self, tqMatchDict, checkTypes = True ):
     """
     Check a task queue match dict is valid
     """
@@ -192,12 +192,15 @@ class TaskQueueDB(DB):
         else:
           continue
       fieldValueType = type( tqMatchDict[ field ] )
-      if field in [ "CPUTime" ]:
-        if fieldValueType not in ( types.IntType, types.LongType ):
-          return S_ERROR( "Match definition field %s value type is not valid: %s" % ( field, fieldValueType ) )
-      else:
-        if fieldValueType not in ( types.StringType, types.UnicodeType ):
-          return S_ERROR( "Match definition field %s value type is not valid: %s" % ( field, fieldValueType ) )
+      if checkTypes:
+        if field in [ "CPUTime" ]:
+          if fieldValueType not in ( types.IntType, types.LongType ):
+            return S_ERROR( "Match definition field %s value type is not valid: %s" % ( field, fieldValueType ) )
+        else:
+          if fieldValueType not in ( types.StringType, types.UnicodeType ):
+            return S_ERROR( "Match definition field %s value type is not valid: %s" % ( field, fieldValueType ) )
+    if not checkTypes:
+      return S_OK( tqMatchDict )
     for field in self.__multiValueMatchFields:
       if field in tqMatchDict:
         fieldValueType = type( tqMatchDict[ field ] )
@@ -418,10 +421,10 @@ class TaskQueueDB(DB):
     for matchTry in range( self.__maxMatchRetry ):
       if 'JobID' in tqMatchDict:
         # A certain JobID is required by the resource, so all TQ are to be considered
-        retVal = self.matchAndGetQueue( tqMatchDict, numQueuesToGet = 0, skipMatchDictDef = True, connObj = connObj )
+        retVal = self.matchAndGetTaskQueue( tqMatchDict, numQueuesToGet = 0, skipMatchDictDef = True, connObj = connObj )
         preJobSQL = "%s AND `tq_Jobs`.JobId = %s " % ( preJobSQL, tqMatchDict['JobID'] )
       else:
-        retVal = self.matchAndGetQueue( tqMatchDict, numQueuesToGet = numQueuesPerTry, skipMatchDictDef = True, connObj = connObj )
+        retVal = self.matchAndGetTaskQueue( tqMatchDict, numQueuesToGet = numQueuesPerTry, skipMatchDictDef = True, connObj = connObj )
       if not retVal[ 'OK' ]:
         return retVal
       tqList = retVal[ 'Value' ]
@@ -460,7 +463,7 @@ class TaskQueueDB(DB):
     self.log.info( "Could not find a match after %s match retries" % self.__maxMatchRetry )
     return S_ERROR( "Could not find a match after %s match retries" % self.__maxMatchRetry )
 
-  def matchAndGetQueue( self, tqMatchDict, numQueuesToGet = 1, skipMatchDictDef = False, connObj = False ):
+  def matchAndGetTaskQueue( self, tqMatchDict, numQueuesToGet = 1, skipMatchDictDef = False, connObj = False ):
     """
     Get a queue that matches the requirements
     """
@@ -476,6 +479,50 @@ class TaskQueueDB(DB):
     if not retVal[ 'OK' ]:
       return retVal
     return S_OK( [ (row[0],row[1],row[2]) for row in retVal[ 'Value' ] ] )
+
+  def __generateSQLORCond( self, sqlString, value ):
+    if type( value ) not in ( types.ListType, types.TupleType ):
+      return sqlString % str( value ).strip()
+    sqlORList = []
+    for v in value:
+      sqlORList.append( sqlString % str( v ).strip() )
+    return "( %s )" % " OR ".join( sqlORList )
+
+  def getTaskQueuesThatCanMatch( self, tqListDict ):
+    """
+    Generate the SQL needed to list all TQs that can match the requirements
+    """
+    retVal = self._checkMatchDefinition( tqListDict, checkTypes = False )
+    if not retVal[ 'OK' ]:
+      return retVal
+    sqlCondList = [ 'Enabled' ]
+    sqlTables = [ "`tq_TaskQueues`" ]
+    for field in self.__singleValueDefFields:
+      if field in tqListDict:
+        if field == 'CPUTime':
+          sqlCondList.append( self.__generateSQLORCond( "`tq_TaskQueues`.%s <= %%s" % field, tqListDict[ field ] ) )
+        else:
+          sqlCondList.append( self.__generateSQLORCond( "`tq_TaskQueues`.%s = '%%s'" % field, tqListDict[ field ] ) )
+    for field in self.__multiValueMatchFields:
+      if field in tqListDict:
+        tableName = '`tq_TQTo%ss`' % field
+        sqlMultiCondList = []
+        sqlMultiCondList.append( "( SELECT COUNT(%s.Value) FROM %s WHERE %s.TQId = `tq_TaskQueues`.TQId ) = 0 " % (tableName,tableName,tableName) )
+        orSQL = self.__generateSQLORCond( "'%%s' in ( SELECT %s.Value FROM %s WHERE %s.TQId = `tq_TaskQueues`.TQId )" % ( tableName, tableName, tableName ),
+                                          tqListDict[ field ] )
+        sqlMultiCondList.append( orSQL )
+        sqlCondList.append( "( %s )" % " OR ".join( sqlMultiCondList ) )
+        if field == 'Site':
+          bannedTable = '`tq_TQToBannedSites`'
+          bSQL = self.__generateSQLORCond( "'%s' not in ( SELECT %s.Value FROM %s WHERE %s.TQId = `tq_TaskQueues`.TQId )" % ( bannedTable, bannedTable, bannedTable ),
+                                           tqListDict[ field ] )
+          sqlCondList.append( bSQL )
+    tqSqlCmd = "SELECT `tq_TaskQueues`.TQId FROM %s WHERE %s" % ( ", ".join( sqlTables ),
+                                                                  " AND ".join( sqlCondList ) )
+    result = self._query( tqSqlCmd )
+    if not result[ 'OK' ]:
+      return result
+    return S_OK( [ t[0] for t in result['Value' ] ] )
 
   def __generateTQMatchSQL( self, tqMatchDict, numQueuesToGet = 1 ):
     """
@@ -673,7 +720,17 @@ class TaskQueueDB(DB):
       return S_OK( True )
     return S_OK( False )
 
-  def retrieveTaskQueues( self ):
+  def retrieveTaskQueuesThatCanMatch( self, tqMatchDict ):
+    """
+    Get the info of the task queues that match a resource
+    """
+    result = self.getTaskQueuesThatCanMatch( tqMatchDict )
+    if not result[ 'OK' ]:
+      return result
+    print result
+    return self.retrieveTaskQueues( result[ 'Value' ] )
+
+  def retrieveTaskQueues( self, tqIdList = False ):
     """
     Get all the task queues
     """
@@ -683,7 +740,13 @@ class TaskQueueDB(DB):
       sqlSelectEntries.append( "`tq_TaskQueues`.%s" % field )
       sqlGroupEntries.append( "`tq_TaskQueues`.%s" % field )
     sqlCmd = "SELECT %s FROM `tq_TaskQueues`, `tq_Jobs`" % ", ".join( sqlSelectEntries )
-    sqlCmd = "%s WHERE `tq_TaskQueues`.TQId = `tq_Jobs`.TQId GROUP BY %s" % ( sqlCmd, ", ".join( sqlGroupEntries ) )
+    sqlTQCond = "AND Enabled"
+    if tqIdList != False:
+      if len( tqIdList ) > 0:
+        sqlTQCond += " AND `tq_TaskQueues`.TQId in ( %s )" % ", ".join( [ str( id ) for id in tqIdList ] )
+    sqlCmd = "%s WHERE `tq_TaskQueues`.TQId = `tq_Jobs`.TQId %s GROUP BY %s" % ( sqlCmd,
+                                                                                 sqlTQCond,
+                                                                                 ", ".join( sqlGroupEntries ) )
 
     retVal = self._query( sqlCmd )
     if not retVal[ 'OK' ]:
@@ -707,8 +770,9 @@ class TaskQueueDB(DB):
         tqId = record[0]
         value = record[1]
         if not tqId in tqData:
-          self.log.warn( "Task Queue %s is defined in field %s but does not exist, triggering a cleaning" % ( tqId, field ) )
-          tqNeedCleaning = True
+          if tqIdList == False or tqId in tqIdList:
+            self.log.warn( "Task Queue %s is defined in field %s but does not exist, triggering a cleaning" % ( tqId, field ) )
+            tqNeedCleaning = True
         else:
           if field not in tqData[ tqId ]:
             tqData[ tqId ][ field ] = []
