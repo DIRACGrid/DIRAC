@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.39 2009/02/20 09:22:54 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.40 2009/03/06 14:48:36 acasajus Exp $
 ########################################################################
 """ ProxyRepository class is a front-end to the proxy repository Database
 """
 
-__RCSID__ = "$Id: ProxyDB.py,v 1.39 2009/02/20 09:22:54 acasajus Exp $"
+__RCSID__ = "$Id: ProxyDB.py,v 1.40 2009/03/06 14:48:36 acasajus Exp $"
 
 import time
 import random
@@ -708,6 +708,9 @@ class ProxyDB(DB):
     return S_OK( { 'ParameterNames' : fields, 'Records' : data, 'TotalRecords' : totalRecords } )
 
   def generateToken( self, requesterDN, requesterGroup, numUses = 1, lifeTime = 0, retries = 10 ):
+    """
+    Generate and return a token and the number of uses for the token
+    """
     if not lifeTime:
       lifeTime = gConfig.getValue( "/DIRAC/VOPolicy/TokenLifeTime", self.__defaultTokenLifetime )
     maxUses = gConfig.getValue( "/DIRAC/VOPolicy/TokenMaxUses", self.__defaultTokenMaxUses )
@@ -726,7 +729,7 @@ class ProxyDB(DB):
     insertSQL = "INSERT INTO `ProxyDB_Tokens` ( %s ) VALUES ( %s )" % ( fieldsSQL, valuesSQL )
     result = self._update( insertSQL )
     if result[ 'OK' ]:
-      return S_OK( token )
+      return S_OK( ( token, numUses ) )
     if result[ 'Message' ].find( "uplicate entry" ) > -1:
       if retries:
         return self.generateToken( numUses, lifeTime, retries - 1)
