@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.53 2009/03/05 12:23:40 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.54 2009/03/06 12:58:40 paterson Exp $
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -30,7 +30,7 @@
    Note that several executables can be provided and wil be executed sequentially.
 """
 
-__RCSID__ = "$Id: Job.py,v 1.53 2009/03/05 12:23:40 paterson Exp $"
+__RCSID__ = "$Id: Job.py,v 1.54 2009/03/06 12:58:40 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -276,8 +276,9 @@ class Job:
   def setOutputData(self,lfns,OutputSE=None):
     """Helper function.
 
-       For specifying output data to be registered in Grid storage
-       (Tier-1 storage by default).
+       For specifying output data to be registered in Grid storage.  If a list
+       of OutputSEs are specified the job wrapper will try each in turn until
+       successful.
 
        Example usage:
 
@@ -288,7 +289,7 @@ class Job:
        @type lfns: Single string or list of strings ['','']
        @param OutputSE: Optional parameter to specify the Storage
        Element to store data or files, e.g. CERN-tape
-       @type OutputSE: string
+       @type OutputSE: string or list
     """
     if type(lfns)==list and len(lfns):
       outputDataStr = string.join(lfns,';')
@@ -302,6 +303,9 @@ class Job:
 
     if OutputSE:
       description = 'User specified Output SE'
+      if type(OutputSE)==type([]):
+        OutputSE = string.join(OutputSE,';')
+
       self._addParameter(self.workflow,'OutputSE','JDL',OutputSE,description)
     else:
       description = 'Default Output SE'
