@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.67 2009/03/05 21:25:05 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.68 2009/03/06 08:42:20 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.67 2009/03/05 21:25:05 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.68 2009/03/06 08:42:20 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -1499,6 +1499,43 @@ class Dirac:
         summary[job]=[]
 
     return S_OK(summary)
+
+  #############################################################################
+  def getJobOutputLFNs(self,jobID):
+    """ Retrieve the output data LFNs of a given job locally.
+
+       This does not download the output files but simply returns the LFN list
+       that a given job has produced.
+
+       Example Usage:
+
+       >>> dirac.getJobOutputData(1405)
+       {'OK':True,'Value':[<LFN>]}
+
+       @param jobID: JobID
+       @type jobID: int or string
+       @return: S_OK,S_ERROR
+    """
+    if type(jobID)==type(" "):
+      try:
+        jobID = int(jobID)
+      except Exception,x:
+        return self.__errorReport(str(x),'Expected integer or string for existing jobID')
+
+    result = self.parameters(int(jobID))
+    if not result['OK']:
+      return result
+    if not result['Value'].has_key('UploadedOutputData'):
+      self.log.info('Parameters for job %s do not contain uploaded output data:\n%s' %(jobID,result))
+      return S_ERROR('No output data found for job %s' %jobID)
+
+    outputData = result['Value']['UploadedOutputData']
+    outputData = outputData.replace(' ','').split(',')
+    if not outputData:
+      return S_ERROR('No output data files found')
+
+    self.log.verbose('Found the following output data LFNs:\n%s' %(string.join(outputData,'\n')))
+    return S_OK(outputData)
 
   #############################################################################
   def getJobOutputData(self,jobID,outputFiles=''):
