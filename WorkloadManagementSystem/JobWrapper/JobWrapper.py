@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.75 2009/03/05 21:55:44 paterson Exp $
+# $Id: JobWrapper.py,v 1.76 2009/03/06 08:27:11 paterson Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.75 2009/03/05 21:55:44 paterson Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.76 2009/03/06 08:27:11 paterson Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -745,6 +745,7 @@ class JobWrapper:
         if pfnGUID.has_key(outputFile):
           fileGUID=pfnGUID[outputFile]
           self.log.verbose('Found GUID for file from POOL XML catalogue %s' %outputFile)
+        upload=S_ERROR('No result')
         for se in outputSE:
           self.log.info('Attempting putAndRegister("%s","%s","%s",guid=%s,catalog="LcgFileCatalogCombined")' %(lfn,outputFilePath,se,fileGUID))
           upload = self.rm.putAndRegister(lfn,outputFilePath,se,guid=fileGUID,catalog='LcgFileCatalogCombined')
