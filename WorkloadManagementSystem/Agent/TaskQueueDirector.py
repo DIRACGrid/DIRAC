@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.27 2009/02/25 17:22:04 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.28 2009/03/06 15:09:28 rgracian Exp $
 # File :   TaskQueueDirector.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -84,7 +84,7 @@
         SoftwareTag
 
 """
-__RCSID__ = "$Id: TaskQueueDirector.py,v 1.27 2009/02/25 17:22:04 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueDirector.py,v 1.28 2009/03/06 15:09:28 rgracian Exp $"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 
@@ -561,7 +561,8 @@ class PilotDirector:
         result = gProxyManager.requestToken( ownerDN, ownerGroup, pilotsToSubmit )
         if not result[ 'OK' ]:
           return S_ERROR( ERROR_TOKEN )
-        token = result[ 'Value' ]
+        (token, numberOfUses) = result[ 'Value' ]
+        pilotsToSubmit = min( numberOfUses, pilotsToSubmit )
 
         pilotOptions.append( '-o /Security/ProxyToken=%s' % token )
 
