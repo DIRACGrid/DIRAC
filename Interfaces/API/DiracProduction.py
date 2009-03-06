@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.56 2009/02/11 10:55:19 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.57 2009/03/06 11:10:40 paterson Exp $
 # File :   DiracProduction.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are to be documented with example usage.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.56 2009/02/11 10:55:19 paterson Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.57 2009/03/06 11:10:40 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 import pprint
@@ -772,13 +772,20 @@ class DiracProduction:
 
     if printOutput:
       if not result['OK']:
-        print "Failed to update status for file",lfn
+        print result
+        print "Failed to update status for files:\n%s" %(string.join(lfns,'\n'))
       for lfn,message in result['Value']['Successful'].items():
         print "Successful:",lfn,":",message
       for lfn,message in result['Value']['Failed'].items():
         print "Failed:",lfn,":",message
 
     return result
+
+  #############################################################################
+  def getProdJobInputData(self,jobID):
+    """ For a single jobID / list of jobIDs retrieve the output data LFN list.
+    """
+    return self.diracAPI.getJobInputData(jobID)
 
   #############################################################################
   def getWMSProdJobID(self,jobID,printOutput=False):
@@ -866,8 +873,22 @@ class DiracProduction:
   #############################################################################
   def selectProductionJobs(self,ProductionID,Status=None,MinorStatus=None,ApplicationStatus=None,Site=None,Owner=None,Date=None):
     """Wraps around DIRAC API selectJobs(). Arguments correspond to the web page
-       selections. By default, the date is today.
+       selections. By default, the date is the creation date of the production.
     """
+    if not Date:
+      self.log.verbose('No Date supplied, attempting to find creation date of production %s' %ProductionID)
+      result = self.getProduction(long(ProductionID))
+      if not result['OK']:
+        self.log.warn('Could not obtain production metadata for ID %s:\n%s' %(productionID,result))
+        return result
+
+      if not result['Value'].has_key('CreationDate'):
+        self.log.warn('Could not establish creation date for production %s with metadata:\n%s' %(productionID,result))
+        return result
+
+      Date = result['Value']['CreationDate']
+      self.log.verbose('Production %s was created on %s' %(ProductionID,Date))
+
     return self.diracAPI.selectJobs(Status,MinorStatus,ApplicationStatus,Site,Owner,str(ProductionID).zfill(8),Date)
 
   #############################################################################
