@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.127 2009/02/26 10:22:22 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.128 2009/03/07 19:01:22 rgracian Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -47,7 +47,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.127 2009/02/26 10:22:22 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.128 2009/03/07 19:01:22 rgracian Exp $"
 
 import re, os, sys, string, types
 import time, datetime, operator
@@ -78,6 +78,8 @@ JOB_DYNAMIC_ATTRIBUTES = [ 'LastUpdateTime', 'HeartBeatTime',
                            'Status', 'MinorStatus', 'ApplicationStatus', 'ApplicationNumStatus', 'CPUTime'
                           ]
 
+debugFile = open( "JobDB.debug.log", "w" )
+
 #############################################################################
 class JobDB(DB):
 
@@ -104,6 +106,18 @@ class JobDB(DB):
 
     if DEBUG:
       result = self.dumpParameters()
+
+  def _query( self, cmd, conn ):
+    if DEBUG:
+      print >> debugFile, cmd
+      debugFile.flush()
+    return DB._query( self, cmd, conn )
+
+  def _update( self, cmd, conn ):
+    if DEBUG:
+      print >> debugFile, cmd
+      debugFile.flush()
+    return DB._update( self, cmd, conn )
 
   def dumpParameters(self):
     """  Dump the JobDB connection parameters to the stdout
