@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.132 2009/03/07 20:10:54 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.133 2009/03/07 20:12:15 rgracian Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -47,7 +47,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.132 2009/03/07 20:10:54 rgracian Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.133 2009/03/07 20:12:15 rgracian Exp $"
 
 import re, os, sys, string, types
 import time, datetime, operator
@@ -1795,7 +1795,7 @@ class JobDB(DB):
       e_value = result['Value']
       valueList.append("( %d, '%s','%s',UTC_TIMESTAMP())" % (jobID,key,e_value))
       
-    if valueString:
+    if valueList:
       
       valueString = ','.join(valueList)  
       req = "INSERT INTO HeartBeatLoggingInfo (JobID,Name,Value,HeartBeatTime) VALUES "
