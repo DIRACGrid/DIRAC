@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.130 2009/03/07 19:17:49 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.131 2009/03/07 19:34:02 rgracian Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -47,7 +47,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.130 2009/03/07 19:17:49 rgracian Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.131 2009/03/07 19:34:02 rgracian Exp $"
 
 import re, os, sys, string, types
 import time, datetime, operator
@@ -108,16 +108,20 @@ class JobDB(DB):
       result = self.dumpParameters()
 
   def _query( self, cmd, conn ):
+    start = time.time()
+    ret = DB._query( self, cmd, conn )
     if DEBUG:
-      print >> debugFile, cmd.replace('\n','')
+      print >> debugFile, time.time() - start, cmd.replace('\n','')
       debugFile.flush()
-    return DB._query( self, cmd, conn )
+    return ret
 
   def _update( self, cmd, conn ):
+    start = time.time()
+    ret = DB._update( self, cmd, conn )
     if DEBUG:
-      print >> debugFile, cmd.replace('\n','')
+      print >> debugFile, time.time() - start, cmd.replace('\n','')
       debugFile.flush()
-    return DB._update( self, cmd, conn )
+    return ret
 
   def dumpParameters(self):
     """  Dump the JobDB connection parameters to the stdout
