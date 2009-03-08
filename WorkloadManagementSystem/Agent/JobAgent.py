@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.56 2009/03/08 22:05:37 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.57 2009/03/08 22:26:55 paterson Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.56 2009/03/08 22:05:37 paterson Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.57 2009/03/08 22:26:55 paterson Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -340,7 +340,8 @@ class JobAgent(Agent):
     #Pass proxy to the CE
     proxy =  proxyChain.dumpAllToString()
     if not proxy['OK']:
-      self.__report(jobID,'Failed','Proxy Not Found')
+      self.log.error(proxy)
+      return S_ERROR('Payload Proxy Not Found')
 
     payloadProxy=proxy['Value']
     batchID = 'dc%s' %(jobID)
