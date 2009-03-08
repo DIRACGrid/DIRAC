@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.76 2009/03/06 08:27:11 paterson Exp $
+# $Id: JobWrapper.py,v 1.77 2009/03/08 22:06:45 paterson Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.76 2009/03/06 08:27:11 paterson Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.77 2009/03/08 22:06:45 paterson Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -37,12 +37,11 @@ EXECUTION_RESULT = {}
 class JobWrapper:
 
   #############################################################################
-  def __init__( self, jobID=None, jobReport=None, pilotProxyLocation = None ):
+  def __init__( self, jobID=None, jobReport=None ):
     """ Standard constructor
     """
     self.section = os.path.join(getSystemSection('WorkloadManagement/JobWrapper'),'JobWrapper')
     self.log = gLogger
-    self.pilotProxyLocation = pilotProxyLocation
     #Create the acctounting report
     self.accountingReport = AccountingJob()
     # Initialize for accounting
@@ -268,7 +267,7 @@ class JobWrapper:
 
     self.log.verbose('WatchdogInstance %s' %(watchdogInstance))
     watchdog = watchdogInstance['Value']
-    watchdog.setPilotProxyLocation( self.pilotProxyLocation )
+
     self.log.verbose('Calibrating Watchdog instance')
     watchdog.calibrate()
     if exeThread.isAlive():
