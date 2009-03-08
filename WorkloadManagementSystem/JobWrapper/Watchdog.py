@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.45 2009/03/03 20:31:24 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.46 2009/03/08 22:09:56 paterson Exp $
 # File  : Watchdog.py
 # Author: Stuart Paterson
 ########################################################################
@@ -18,7 +18,7 @@
           - CPU normalization for correct comparison with job limit
 """
 
-__RCSID__ = "$Id: Watchdog.py,v 1.45 2009/03/03 20:31:24 rgracian Exp $"
+__RCSID__ = "$Id: Watchdog.py,v 1.46 2009/03/08 22:09:56 paterson Exp $"
 
 from DIRAC.Core.Base.Agent                              import Agent
 from DIRAC.Core.DISET.RPCClient                         import RPCClient
@@ -26,8 +26,6 @@ from DIRAC.ConfigurationSystem.Client.Config            import gConfig
 from DIRAC.Core.Utilities.Subprocess                    import shellCall
 from DIRAC.Core.Utilities.ProcessMonitor                import ProcessMonitor
 from DIRAC                                              import S_OK, S_ERROR
-from DIRAC.FrameworkSystem.Client.ProxyManagerClient    import gProxyManager
-from DIRAC.Core.Security.Misc                           import getProxyInfo
 from DIRAC.Core.Security                                import Properties
 
 import os,thread,time,shutil
@@ -36,6 +34,7 @@ AGENT_NAME = 'WorkloadManagement/Watchdog'
 
 class Watchdog(Agent):
 
+  #############################################################################
   def __init__(self, pid, exeThread, spObject, jobCPUtime, systemFlag='linux2.4'):
     """ Constructor, takes system flag as argument.
     """
@@ -52,19 +51,7 @@ class Watchdog(Agent):
     self.peekFailCount = 0
     self.peekRetry = 5
     self.processMonitor = ProcessMonitor()
-    self.pilotProxyLocation = False
-    self.pilotInfo = False
     self.checkError = ''
-
-  def setPilotProxyLocation( self, pilotProxyLocation ):
-    self.pilotProxyLocation = pilotProxyLocation
-    retVal = getProxyInfo( pilotProxyLocation, disableVOMS = True )
-    if not retVal[ 'OK' ]:
-      self.log.error( "Cannot load pilot proxy %s: %s" % ( pilotProxyLocation, retVal[ 'Message' ] ) )
-    self.pilotInfo = retVal[ 'Value' ]
-    isGeneric = 'groupProperties' in self.pilotInfo and Properties.GENERIC_PILOT in self.pilotInfo[ 'groupProperties' ]
-    self.pilotInfo[ 'GENERIC_PILOT' ] = isGeneric
-
 
   #############################################################################
   def initialize(self,loops=0):
