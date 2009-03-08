@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Resources/Computing/ComputingElement.py,v 1.7 2008/08/20 06:09:40 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Resources/Computing/ComputingElement.py,v 1.8 2009/03/08 22:08:25 paterson Exp $
 # File :   ComputingElement.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,10 +8,12 @@
      resource JDL for subsequent use during the matching process.
 """
 
-__RCSID__ = "$Id: ComputingElement.py,v 1.7 2008/08/20 06:09:40 rgracian Exp $"
+__RCSID__ = "$Id: ComputingElement.py,v 1.8 2009/03/08 22:08:25 paterson Exp $"
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight      import *
 from DIRAC.ConfigurationSystem.Client.Config        import gConfig
+from DIRAC.Core.Security                            import File
+from DIRAC.Core.Security.Misc                       import getProxyInfoAsString
 from DIRAC                                          import S_OK, S_ERROR, gLogger
 
 import os, re, string
@@ -244,6 +246,26 @@ class ComputingElement:
     else:
       message = 'There are %s waiting jobs, %.2f ratio and total jobs %s < %s max total jobs' % (waitingJobs,pendingJobRatio,totalJobs,maxTotalJobs)
       return S_ERROR(message)
+
+  #############################################################################
+  def writeProxyToFile(self,proxy):
+    """CE helper function to write a CE proxy string to a file.
+    """
+    result = File.writeToProxyFile( proxy )
+    if not result[ 'OK' ]:
+      self.log.error('Could not write proxy to file',result[ 'Message' ])
+      return result
+
+    proxyLocation = result[ 'Value' ]
+    result = getProxyInfoAsString( proxyLocation )
+    if not result['OK']:
+      self.log.error('Could not get proxy info',result)
+      return result
+    else:
+      self.log.info('Payload proxy information:')
+      print result['Value']
+
+    return S_OK(proxyLocation)
 
   #############################################################################
   def getJDL(self):
