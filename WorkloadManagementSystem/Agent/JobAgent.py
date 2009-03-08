@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.55 2009/02/26 11:44:04 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.56 2009/03/08 22:05:37 paterson Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.55 2009/02/26 11:44:04 paterson Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.56 2009/03/08 22:05:37 paterson Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -61,11 +61,9 @@ class JobAgent(Agent):
     self.siteName = gConfig.getValue('LocalSite/Site','Unknown')
     self.pilotReference = gConfig.getValue('LocalSite/PilotReference','Unknown')
     self.cpuFactor = gConfig.getValue('LocalSite/CPUScalingFactor','Unknown')
-    self.jobWrapperTemplate = self.siteRoot+gConfig.getValue(self.section+'/JobWrapperTemplate','/DIRAC/WorkloadManagementSystem/JobWrapper/JobWrapperTemplate')
+    self.jobWrapperTemplate = self.siteRoot+gConfig.getValue(self.section+'/JobWrapperTemplate','/DIRAC/WorkloadManagementSystem/JobWrapper/JobWrapperTemplate.py')
     self.jobSubmissionDelay = gConfig.getValue(self.section+'/SubmissionDelay',10)
     self.defaultProxyLength = gConfig.getValue( '/Security/DefaultProxyLifeTime', 86400*5 )
-    #Added default in case pilot role was stripped somehow during proxy delegation
-    self.defaultProxyGroup = gConfig.getValue(self.section+'/DefaultProxyGroup','lhcb_pilot')
     self.defaultLogLevel = gConfig.getValue(self.section+'/DefaultLogLevel','debug')
     self.fillingMode = gConfig.getValue(self.section+'/FillingModeFlag',1)
     self.jobCount=0
@@ -328,7 +326,7 @@ class JobAgent(Agent):
     """Submit job to the Computing Element instance after creating a custom
        Job Wrapper with the available job parameters.
     """
-    result = self.__createJobWrapper(jobID,jobParams,resourceParams,optimizerParams,proxyChain)
+    result = self.__createJobWrapper(jobID,jobParams,resourceParams,optimizerParams)
 
     if not result['OK']:
       return result
@@ -339,8 +337,14 @@ class JobAgent(Agent):
     wrapperName = os.path.basename(wrapperFile)
     self.log.info('Submitting %s to %sCE' %(wrapperName,self.ceName))
 
+    #Pass proxy to the CE
+    proxy =  proxyChain.dumpAllToString()
+    if not proxy['OK']:
+      self.__report(jobID,'Failed','Proxy Not Found')
+
+    payloadProxy=proxy['Value']
     batchID = 'dc%s' %(jobID)
-    submission = self.computingElement.submitJob(wrapperFile,jobJDL,batchID)
+    submission = self.computingElement.submitJob(wrapperFile,jobJDL,payloadProxy,batchID)
 
     if submission['OK']:
       batchID = submission['Value']
@@ -356,7 +360,7 @@ class JobAgent(Agent):
     return S_OK('Job submitted')
 
   #############################################################################
-  def __createJobWrapper(self,jobID,jobParams,resourceParams,optimizerParams,proxyChain):
+  def __createJobWrapper(self,jobID,jobParams,resourceParams,optimizerParams):
     """This method creates a job wrapper filled with the CE and Job parameters
        to executed the job.
     """
@@ -364,11 +368,6 @@ class JobAgent(Agent):
                  'CE':resourceParams,
                  'Optimizer':optimizerParams}
     self.log.verbose('Job arguments are: \n %s' %(arguments))
-
-    result = proxyChain.dumpAllToString()
-    if not result[ 'OK' ]:
-      return result
-    proxyString = result[ 'Value' ]
 
     workingDir = gConfig.getValue('/LocalSite/WorkingDirectory',self.siteRoot)
     if not os.path.exists('%s/job/Wrapper' %(workingDir)):
@@ -424,7 +423,6 @@ class JobAgent(Agent):
       self.log.info('Applying default LogLevel JDL parameter with value: %s' %(logLevel))
 
     realPythonPath = os.path.realpath(dPython)
-#    if dPython != realPythonPath:
     self.log.debug('Real python path after resolving links is:')
     self.log.debug(realPythonPath)
     dPython = realPythonPath
@@ -432,28 +430,11 @@ class JobAgent(Agent):
     siteRootPython = 'sys.path.insert(0,"%s")' %(self.siteRoot)
     self.log.debug('DIRACPython is:\n%s' %dPython)
     self.log.debug('SiteRootPythonDir is:\n%s' %siteRootPython)
-    #print >> wrapper, wrapperTemplate % ( siteRootPython, signature, jobID, date_time )
     libDir = '%s/%s/lib' %(self.siteRoot,platform)
     scriptsDir = '%s/scripts' %(self.siteRoot)
-    #contribDir = '%s/contrib' %(self.siteRoot)
-    #archLibDir = '%s/%s/lib/python' %(self.siteRoot,systemConfig)
-    #archLib64Dir = '%s/%s/lib64/python' %(self.siteRoot,systemConfig)
-    #lib64Dir = '%s/%s/lib64' %(self.siteRoot,systemConfig)
-    #usrlibDir = '%s/%s/usr/lib' %(self.siteRoot,systemConfig)
-    #wrapper.write('sys.path.insert(0,"%s")\n' %(libDir))
-    #wrapper.write('sys.path.insert(0,"%s")\n' %(libDir))
-    #wrapper.write('sys.path.insert(0,"%s")\n' %(scriptsDir))
-    #wrapper.write('sys.path.insert(0,"%s")\n' %(archLibDir))
-    #wrapper.write('sys.path.insert(0,"%s")\n' %(archLib64Dir))
-    #wrapper.write("os.environ['PYTHONPATH'] = '%s:%s:%s:%s:'+os.environ['PYTHONPATH']\n" %(contribDir,scriptsDir,libDir,self.siteRoot))
-    #wrapper.write("os.environ['PYTHONPATH'] = '%s:%s:%s:%s:%s:'+os.environ['PYTHONPATH']\n" %(archLibDir,archLib64Dir,scriptsDir,libDir,self.siteRoot))
-    #wrapper.write("os.environ['LD_LIBRARY_PATH'] = '%s:%s:%s'+os.environ['LD_LIBRARY_PATH']\n" %(libDir,lib64Dir,usrlibDir))
-    #wrapper.write("os.environ['LD_LIBRARY_PATH'] = '%s'\n" %(libDir))
-    #Substitute vars
-    wrapperTemplate = wrapperTemplate.replace( "@PILOTPROXYLOCATION@", Locations.getProxyLocation() )
-    wrapperTemplate = wrapperTemplate.replace( "@JOBPROXYDATA@", proxyString )
-    wrapperTemplate = wrapperTemplate % ( siteRootPython, signature, jobID, date_time )
+    wrapperTemplate = wrapperTemplate % (signature, jobID, date_time )
     wrapperTemplate = wrapperTemplate.replace( "@JOBARGS@", str(arguments) )
+    wrapperTemplate = wrapperTemplate.replace("@SITEPYTHON@",str(siteRootPython) )
     wrapper = open (jobWrapperFile,"w")
     wrapper.write( wrapperTemplate )
     wrapper.close ()
