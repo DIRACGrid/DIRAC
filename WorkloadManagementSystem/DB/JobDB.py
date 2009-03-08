@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.133 2009/03/07 20:12:15 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.134 2009/03/08 11:41:39 paterson Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -47,7 +47,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.133 2009/03/07 20:12:15 rgracian Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.134 2009/03/08 11:41:39 paterson Exp $"
 
 import re, os, sys, string, types
 import time, datetime, operator
@@ -107,7 +107,7 @@ class JobDB(DB):
     if DEBUG:
       result = self.dumpParameters()
 
-  def _query( self, cmd, conn ):
+  def _query( self, cmd, conn=False ):
     start = time.time()
     ret = DB._query( self, cmd, conn )
     if DEBUG:
@@ -115,7 +115,7 @@ class JobDB(DB):
       debugFile.flush()
     return ret
 
-  def _update( self, cmd, conn ):
+  def _update( self, cmd, conn=False ):
     start = time.time()
     ret = DB._update( self, cmd, conn )
     if DEBUG:
@@ -1764,7 +1764,7 @@ class JobDB(DB):
 
     finalDict['TotalRecords'] = len(records)
     return S_OK(finalDict)
-      
+
 #####################################################################################
   def setHeartBeatData(self,jobID,staticDataDict, dynamicDataDict):
     """ Add the job's heart beat data to the database
@@ -1794,10 +1794,10 @@ class JobDB(DB):
         continue
       e_value = result['Value']
       valueList.append("( %d, '%s','%s',UTC_TIMESTAMP())" % (jobID,key,e_value))
-      
+
     if valueList:
-      
-      valueString = ','.join(valueList)  
+
+      valueString = ','.join(valueList)
       req = "INSERT INTO HeartBeatLoggingInfo (JobID,Name,Value,HeartBeatTime) VALUES "
       req += valueString
       result = self._update(req)
@@ -1810,7 +1810,7 @@ class JobDB(DB):
     if ok:
       return S_OK()
     else:
-      return S_ERROR('Failed to store some or all the parameters')      
+      return S_ERROR('Failed to store some or all the parameters')
 
 #####################################################################################
   def getHeartBeatData(self,jobID):
