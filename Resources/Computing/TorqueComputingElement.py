@@ -1,13 +1,13 @@
 ########################################################################
-# $Id: TorqueComputingElement.py,v 1.2 2009/03/05 12:06:26 paterson Exp $
+# $Id: TorqueComputingElement.py,v 1.3 2009/03/08 22:17:46 paterson Exp $
 # File :   TorqueComputingElement.py
-# Author : Stuart Paterson
+# Author : Stuart Paterson, Paul Szczypka
 ########################################################################
 
 """ The simplest Computing Element instance that submits jobs locally.
 """
 
-__RCSID__ = "$Id: TorqueComputingElement.py,v 1.2 2009/03/05 12:06:26 paterson Exp $"
+__RCSID__ = "$Id: TorqueComputingElement.py,v 1.3 2009/03/08 22:17:46 paterson Exp $"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Core.Utilities.Subprocess                     import shellCall
@@ -29,18 +29,16 @@ class TorqueComputingElement(ComputingElement):
     self.submittedJobs = 0
 
   #############################################################################
-  def submitJob(self,executableFile,jdl,localID):
+  def submitJob(self,executableFile,jdl,proxy,localID):
     """ Method to submit job, should be overridden in sub-class.
     """
+    self.log.verbose('Setting up proxy for payload')
+    result = self.writeProxyToFile(proxy)
+    if not result['OK']:
+      return result
 
-    ret = getProxyInfo( disableVOMS = True )
-    if not ret['OK']:
-      return S_ERROR("Could not get Proxy info")
-
-    proxyLocation = ret['Value']['path']
-
-    print "First path: %s" %executableFile
-
+    proxyLocation = result['Value']
+    self.log.info("Executable file path: %s" %executableFile)
     if not os.access(executableFile, 5):
       os.chmod(executableFile,0755)
 
@@ -53,7 +51,7 @@ class TorqueComputingElement(ComputingElement):
 
     # Get the proxy of the user who submitted the job:
     fopen = open(proxyLocation,'r')
-    proxy = fopen.read()
+    proxyString = fopen.read()
     fopen.close()
 
     # create and write the executable file run###.py
@@ -66,7 +64,7 @@ class TorqueComputingElement(ComputingElement):
     fopen.write("fopen.close()\n")
     fopen.write('os.chmod("%s",0755)\n'%executableFileBaseName)
     fopen.write('fopen = open("%s","w")\n' %proxyLocation)
-    fopen.write('fopen.write("%s")\n' %proxy)
+    fopen.write('fopen.write("%s")\n' %proxyString)
     fopen.write('fopen.close()\n')
     fopen.write('os.chmod("%s",0600)\n' %proxyLocation)
     fopen.write('os.environ["X509_USER_PROXY"]="%s"\n' %proxyLocation)
