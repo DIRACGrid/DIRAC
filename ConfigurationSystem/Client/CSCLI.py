@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/CSCLI.py,v 1.4 2008/10/08 15:13:21 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/CSCLI.py,v 1.5 2009/03/09 21:22:45 atsareg Exp $
 # File :   CSCLI.py
 # Author : Adria Casajus
 ########################################################################
-__RCSID__   = "$Id: CSCLI.py,v 1.4 2008/10/08 15:13:21 rgracian Exp $"
-__VERSION__ = "$Revision: 1.4 $"
+__RCSID__   = "$Id: CSCLI.py,v 1.5 2009/03/09 21:22:45 atsareg Exp $"
+__VERSION__ = "$Revision: 1.5 $"
 
 import cmd
 import sys
@@ -62,7 +62,7 @@ class CSCLI( cmd.Cmd ):
     traceback.print_tb( sys.exc_info()[2] )
     print "________________________\n"
 
-  def connected( self, connected, writeEnabled ):
+  def setConnected( self, connected, writeEnabled ):
     self.connected = connected
     self.modifiedData = False
     self.writeEnabled = writeEnabled
@@ -134,17 +134,17 @@ class CSCLI( cmd.Cmd ):
 
   def setStatus( self, connected = True ):
     if not connected:
-      self.connected( False, False )
+      self.setConnected( False, False )
     else:
       retVal = self.rpcClient.writeEnabled()
       if retVal[ 'OK' ]:
         if retVal[ 'Value' ] == True:
-          self.connected( True, True )
+          self.setConnected( True, True )
         else:
-          self.connected( True, False )
+          self.setConnected( True, False )
       else:
         print "Server returned an error: %s" % retVal[ 'Message' ]
-        self.connected( True, False )
+        self.setConnected( True, False )
 
   def tryConnection( self ):
     print "Trying connection to %s" % self.masterURL
@@ -173,7 +173,7 @@ class CSCLI( cmd.Cmd ):
       self.tryConnection()
     except Exception, v:
       gLogger.error( "Couldn't connect to %s (%s)" % ( self.masterURL, str(v) ) )
-      self.connected( False, False )
+      self.setConnected( False, False )
 
   def do_sections( self, args ):
     """
