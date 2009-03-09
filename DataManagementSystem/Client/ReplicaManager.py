@@ -1,6 +1,6 @@
-""" This is the Replica Manager which links the functionalities of StorageElement and FileCatalogue. """
+""" This is the Replica Manager which links the functionalities of StorageElement and FileCatalog. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.45 2009/03/03 20:18:16 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.46 2009/03/09 18:02:46 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -174,7 +174,7 @@ class ReplicaManager:
     lfnFileName = os.path.basename(lfn)
     localFileName = os.path.basename(file)
     if not lfnFileName == localFileName:
-      alternativeFile = lfnFileName
+v      alternativeFile = lfnFileName
 
     ##########################################################
     #  Instantiate the destination storage element here.
@@ -1164,7 +1164,7 @@ class ReplicaManager:
         failed[lfn] = errStr
       else:
         pfnDict[res['Value']['Successful'][lfn][storageElementName]] = lfn
-    res = self.__getPhysicalFileMetadata(pfnDict.keys(),storageElementName)
+    res = self.getPhysicalFileMetadata(pfnDict.keys(),storageElementName)
     if not res['OK']:
       return res
     else:
@@ -1175,41 +1175,6 @@ class ReplicaManager:
         failed[pfnDict[pfn]] = errorMessage
       resDict = {'Successful':successful,'Failed':failed}
       return S_OK(resDict)
-
-  def  getPhysicalFileMetadata(self,physicalFile,storageElementName):
-    """ Obtain the metadata for physical files
-
-        'physicalFile' is the pfn(s) to be checked
-        'storageElementName' is the Storage Element to check
-    """
-    if type(physicalFile) == types.ListType:
-      pfns = physicalFile
-    elif type(physicalFile) == types.StringType:
-      pfns = [physicalFile]
-    else:
-      errStr = "ReplicaManager.getPhysicalFileMetadata: Supplied physical file must be string or list of strings."
-      gLogger.error(errStr)
-      return S_ERROR(errStr)
-    res = self.__getPhysicalFileMetadata(pfns,storageElementName)
-    return res
-
-  def __getPhysicalFileMetadata(self,pfns,storageElementName):
-    if not len(pfns) > 0:
-      errStr = "ReplicaManager.__getPhysicalFileMetadata: There were no replicas supplied."
-      gLogger.error(errStr)
-      return S_ERROR(errStr)
-    gLogger.info("ReplicaManager.__getPhysicalFileMetadata: Attempting to get metadata for %s files." % len(pfns))
-    storageElement = StorageElement(storageElementName)
-    if not storageElement.isValid()['Value']:
-      errStr = "ReplicaManager.__getPhysicalFileMetadata: Failed to instantiate Storage Element for obtaining metadata."
-      gLogger.error(errStr,storageElementName)
-      return S_ERROR(errStr)
-    res = storageElement.getFileMetadata(pfns)
-    if not res['OK']:
-      errStr = "ReplicaManager.__getPhysicalFileMetadata: Failed to get metadata for replicas."
-      gLogger.error(errStr,res['Message'])
-      return S_ERROR(errStr)
-    return res
 
   ###################################################################
   #
@@ -1249,7 +1214,7 @@ class ReplicaManager:
         failed[lfn] = errStr
       else:
         pfnDict = {res['Value']['Successful'][lfn][storageElementName]:lfn}
-    res = self.__getPhysicalFileAccessUrl(pfnDict.keys(),storageElementName)
+    res = self.getPhysicalFileAccessUrl(pfnDict.keys(),storageElementName)
     if not res['OK']:
       return res
     else:
@@ -1261,45 +1226,6 @@ class ReplicaManager:
         failed[pfnDict[pfn]] = errorMessage
       resDict = {'Successful':successful,'Failed':failed}
       return S_OK(resDict)
-
-  def getPhysicalFileAccessUrl(self,physicalFile,storageElementName):
-    """ Obtain the access url for physical files
-
-        'physicalFile' is the pfn(s) to be checked
-        'storageElementName' is the Storage Element to check
-    """
-    if type(physicalFile) == types.ListType:
-      pfns = physicalFile
-    elif type(physicalFile) == types.StringType:
-      pfns = [physicalFile]
-    else:
-      errStr = "ReplicaManager.getPhysicalFileAccessUrl: Supplied physical file must be string or list of strings."
-      gLogger.error(errStr)
-      return S_ERROR(errStr)
-    res = self.__getPhysicalFileAccessUrl(pfns,storageElementName)
-    return res
-
-  def __getPhysicalFileAccessUrl(self,pfns,storageElementName):
-    if not len(pfns) > 0:
-      errStr = "ReplicaManager.__getPhysicalFileAccessUrl: There were no replicas supplied."
-      gLogger.error(errStr)
-      return S_ERROR(errStr)
-    gLogger.info("ReplicaManager.__getPhysicalFileAccessUrl: Attempting to get access urls for %s files." % len(pfns))
-    storageElement = StorageElement(storageElementName)
-    if not storageElement.isValid()['Value']:
-      errStr = "ReplicaManager.__getPhysicalFileAccessUrl: Failed to instantiate Storage Element for obtaining metadata."
-      gLogger.error(errStr,storageElementName)
-      return S_ERROR(errStr)
-    try:
-      res = storageElement.getAccessUrl(pfns)
-    except Exception, x:
-      gLogger.exception(lException=x)
-      raise x
-    if not res['OK']:
-      errStr = "ReplicaManager.__getPhysicalFileAccessUrl: Failed to get access urls for replicas."
-      gLogger.error(errStr,res['Message'])
-      return S_ERROR(errStr)
-    return res
 
   ##########################################################################
   #
@@ -1333,7 +1259,7 @@ class ReplicaManager:
    
         'physicalFile' is the pfn(s) size to be obtained
         'storageElementName' is the Storage Element
-    """ 
+    """
     if singleFile:
       return self.__executeSingleStorageElementFunction(storageElementName,physicalFile,'getFileSize')
     else:
