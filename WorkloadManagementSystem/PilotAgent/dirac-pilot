@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot,v 1.46 2009/02/27 14:55:08 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot,v 1.47 2009/03/09 15:59:08 rgracian Exp $
 # File :   dirac-pilot
 # Author : Ricardo Graciani
 ########################################################################
@@ -9,7 +9,7 @@
  Job Agent to execute pending workload on WMS.
  It requires dirac-install script to be sitting in the same directory.
 """
-__RCSID__ = "$Id: dirac-pilot,v 1.46 2009/02/27 14:55:08 rgracian Exp $"
+__RCSID__ = "$Id: dirac-pilot,v 1.47 2009/03/09 15:59:08 rgracian Exp $"
 try:
   import os
   import sys
@@ -33,7 +33,7 @@ try:
   diracGroup    = None
   ownerDN       = None
 
-  JOB_AGENT_CE = 'InProcess'
+  # JOB_AGENT_CE = 'InProcess'
   MAX_CYCLES   = 2
 
   installScript = 'dirac-install'
@@ -493,7 +493,7 @@ if pilotRef != 'Unknown':
   child_stderr.close()
 
 # further local configuration
-inProcessOpts = ' -s /Resources/Computing/InProcess'
+inProcessOpts = ' -s /Resources/Computing/CEDefaults'
 inProcessOpts+= ' -o WorkingDirectory=%s' % rootPath
 inProcessOpts+= ' -o GridCE=%s' % LCG_SITE_CE
 inProcessOpts+= ' -o LocalAccountString=%s' % localUser
@@ -510,8 +510,8 @@ createDir( jobAgentControl )
 watchdogControl = os.path.join( rootPath, 'agentFlags', 'Watchdog' )
 createDir( watchdogControl )
 
-jobAgentOpts = ' -o CEUniqueID=%s' % JOB_AGENT_CE
-jobAgentOpts+= ' -o ControlDirectory=%s' % jobAgentControl
+# jobAgentOpts = ' -o CEUniqueID=%s' % JOB_AGENT_CE
+jobAgentOpts = ' -o ControlDirectory=%s' % jobAgentControl
 jobAgentOpts+= ' -o MaxCycles=%s' % MAX_CYCLES
 if debugFlag:
   jobAgentOpts+= ' -o LogLevel=DEBUG'

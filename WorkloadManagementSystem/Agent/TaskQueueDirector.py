@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.28 2009/03/06 15:09:28 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.29 2009/03/09 15:59:57 rgracian Exp $
 # File :   TaskQueueDirector.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -84,7 +84,7 @@
         SoftwareTag
 
 """
-__RCSID__ = "$Id: TaskQueueDirector.py,v 1.28 2009/03/06 15:09:28 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueDirector.py,v 1.29 2009/03/09 15:59:57 rgracian Exp $"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 
@@ -552,7 +552,7 @@ class PilotDirector:
           # Add Owner requirement to pilot
           pilotOptions.append( "-O '%s'" % ownerDN )
         if privateTQ:
-          pilotOptions.append( '-o /Resources/Computing/InProcess/PilotType=private' )
+          pilotOptions.append( '-o /Resources/Computing/CEDefaults/PilotType=private' )
       else:
         #For generic jobs we'll submit mixture of generic and private pilots
         self.log.verbose('Submitting generic pilots for TaskQueue %s' % taskQueueID)
