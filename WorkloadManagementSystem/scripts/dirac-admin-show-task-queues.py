@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/scripts/dirac-admin-show-task-queues.py,v 1.1 2009/01/29 11:10:24 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/scripts/dirac-admin-show-task-queues.py,v 1.2 2009/03/09 13:49:49 acasajus Exp $
 # File :   dirac-admin-submit-pilot-for-job
 # Author : Ricardo Graciani
 ########################################################################
-__RCSID__   = "$Id: dirac-admin-show-task-queues.py,v 1.1 2009/01/29 11:10:24 acasajus Exp $"
-__VERSION__ = "$Revision: 1.1 $"
+__RCSID__   = "$Id: dirac-admin-show-task-queues.py,v 1.2 2009/03/09 13:49:49 acasajus Exp $"
+__VERSION__ = "$Revision: 1.2 $"
 import sys
 from DIRACEnvironment import DIRAC
 
@@ -16,21 +16,14 @@ import types
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Base.Script import parseCommandLine
-from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
+from DIRAC.Core.DISET.RPCClient import RPCClient
 
 
 parseCommandLine( initializeMonitor = False )
-tqDB = TaskQueueDB()
-cleanOrphaned = False
-
-if cleanOrphaned:
-  result = tqDB.cleanOrphanedTaskQueues()
-  if not result[ 'OK' ]:
-    print 'ERROR: %s' % result['Message']
-    sys.exit(1)
+rpcClient = RPCClient( "WorkloadManagement/Matcher" )
 
 print "Getting TQs.."
-result = tqDB.retrieveTaskQueues()
+result = rpcClient.getActiveTaskQueues()
 if not result[ 'OK' ]:
   print 'ERROR: %s' % result['Message']
   sys.exit(1)
