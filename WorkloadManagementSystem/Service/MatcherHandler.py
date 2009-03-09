@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: MatcherHandler.py,v 1.33 2009/01/28 12:03:59 acasajus Exp $
+# $Id: MatcherHandler.py,v 1.34 2009/03/09 13:49:31 acasajus Exp $
 ########################################################################
 """
 Matcher class. It matches Agent Site capabilities to job requirements.
@@ -7,7 +7,7 @@ It also provides an XMLRPC interface to the Matcher
 
 """
 
-__RCSID__ = "$Id: MatcherHandler.py,v 1.33 2009/01/28 12:03:59 acasajus Exp $"
+__RCSID__ = "$Id: MatcherHandler.py,v 1.34 2009/03/09 13:49:31 acasajus Exp $"
 
 import re, os, sys, time
 import string
@@ -188,3 +188,10 @@ class MatcherHandler(RequestHandler):
         return S_ERROR('Failed to extract the Task Queue report')
     else:
       return S_OK([])
+
+##############################################################################
+  types_getActiveTaskQueues = []
+  def export_getActiveTaskQueues( self ):
+    """ Return all task queues
+    """
+    return taskQueueDB.retrieveTaskQueues()
