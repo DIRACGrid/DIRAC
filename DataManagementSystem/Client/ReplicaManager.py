@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalog. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.46 2009/03/09 18:02:46 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.47 2009/03/09 18:22:28 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -174,7 +174,7 @@ class ReplicaManager:
     lfnFileName = os.path.basename(lfn)
     localFileName = os.path.basename(file)
     if not lfnFileName == localFileName:
-v      alternativeFile = lfnFileName
+      alternativeFile = lfnFileName
 
     ##########################################################
     #  Instantiate the destination storage element here.
@@ -218,39 +218,6 @@ v      alternativeFile = lfnFileName
     else:
       successful[lfn]['register'] = registerTime
     resDict = {'Successful': successful,'Failed':failed}
-    return S_OK(resDict)
-
-  def getPfn(self,pfn,diracSE):
-    """ Get a local copy of the PFN from the given Storage Element.
-
-        'pfn' is the pfn
-        'storageElement' is the DIRAC storage element
-    """
-    if type(pfn) == types.ListType:
-      pfns = pfn
-    elif type(pfn) == types.StringType:
-      pfns = [pfn]
-    else:
-      errStr = "ReplicaManager.getPfn: Supplied pfn must be string or list of strings."
-      gLogger.error(errStr)
-      return S_ERROR(errStr)
-    ###########################################################
-    # Get a local copy depending on replica preference
-    storageElement = StorageElement(diracSE)
-    res = storageElement.getFileSize(pfns)
-    if not res['OK']:
-      errStr = "ReplicaManager.getPfn: Failed to get file sizes for pfns."
-      gLogger.error(errStr,res['Message'])
-      return res
-    successful = {}
-    failed = res['Value']['Failed']
-    for pfn,size in res['Value']['Successful'].items():
-      res = storageElement.getFile(pfn,size)
-      if res['OK']:
-        successful[pfn] = True
-      else:
-        failed[pfn] = res['Message']
-    resDict = {'Successful':successful,'Failed':failed}
     return S_OK(resDict)
 
   def getFile(self,lfn):
@@ -1459,3 +1426,17 @@ v      alternativeFile = lfnFileName
     oDataOperation = DataOperation()
     oDataOperation.setValuesFromDict(accountingDict)
     return oDataOperation
+
+  ##########################################
+  #
+  # Defunct methods only there before checking backward compatability
+  # 
+  def getPfn(self,physicalFile,diracSE):
+    """ Get a local copy of the PFN from the given Storage Element.
+
+        'pfn' is the pfn
+        'storageElement' is the DIRAC storage element
+    """
+    return self.getPhysicalFile(physicalFile,storageElementName)
+
+
