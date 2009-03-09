@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Resources/Computing/ComputingElement.py,v 1.8 2009/03/08 22:08:25 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Resources/Computing/ComputingElement.py,v 1.9 2009/03/09 15:17:51 rgracian Exp $
 # File :   ComputingElement.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
      resource JDL for subsequent use during the matching process.
 """
 
-__RCSID__ = "$Id: ComputingElement.py,v 1.8 2009/03/08 22:08:25 paterson Exp $"
+__RCSID__ = "$Id: ComputingElement.py,v 1.9 2009/03/09 15:17:51 rgracian Exp $"
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight      import *
 from DIRAC.ConfigurationSystem.Client.Config        import gConfig
@@ -30,6 +30,7 @@ class ComputingElement:
     self.classAd = ClassAd('[]')
     self.ceParameters = {}
     self.percentageRatio = 0.3
+    result = self.__getCEParameters('CEDefaults')
     result = self.__getCEParameters(ceName)
     if not result['OK']:
       self.log.warn(result['Message'])
