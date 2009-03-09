@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: glexecComputingElement.py,v 1.1 2009/03/08 23:06:26 paterson Exp $
+# $Id: glexecComputingElement.py,v 1.2 2009/03/09 08:16:04 paterson Exp $
 # File :   glexecComputingElement.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
     defaults to the standard InProcess Computing Element behaviour.
 """
 
-__RCSID__ = "$Id: glexecComputingElement.py,v 1.1 2009/03/08 23:06:26 paterson Exp $"
+__RCSID__ = "$Id: glexecComputingElement.py,v 1.2 2009/03/09 08:16:04 paterson Exp $"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
@@ -16,6 +16,8 @@ from DIRAC.Core.Utilities.ThreadScheduler                import gThreadScheduler
 from DIRAC.Core.Utilities.Subprocess                     import shellCall
 from DIRAC.Core.Security.Misc                            import getProxyInfoAsString
 from DIRAC                                               import gConfig,S_OK,S_ERROR
+
+import DIRAC
 
 import os,sys,string
 
@@ -143,7 +145,7 @@ class glexecComputingElement(ComputingElement):
     cmds.append('id')
     cmds.append('hostname')
     cmds.append('date')
-    cmds.append('dirac-proxy-info')
+    cmds.append('%s/scripts/dirac-proxy-info' %DIRAC.rootPath)
     fopen = open(testFile,'w')
     fopen.write(string.join(cmds,'\n'))
     fopen.close()
