@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalog. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.50 2009/03/10 17:58:27 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.51 2009/03/10 19:39:44 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -11,6 +11,7 @@ from DIRAC.DataManagementSystem.Client.FileCatalog import FileCatalog
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.File import makeGuid,fileAdler
 from DIRAC.Core.Utilities.File import getSize
+from DIRAC.Core.Security.Misc import getProxyInfo,formatProxyInfoAsString
 
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
@@ -29,6 +30,21 @@ class ReplicaManager:
     """ Set Accounting Client instance
     """
     self.accountingClient = client
+
+  def __getClientCertGroup(self):
+    res = getProxyInfo(False,False)
+    if not res['OK']:
+      gLogger.error("ReplicaManager.__getClientCertGroup: Failed to get client proxy information.",res['Message'])  
+      return res
+    gLogger.debug(formatProxyInfoAsString(infoDict))
+    proxyInfo = res['Value']
+    if not proxyInfo.has_key('group'):
+      errStr = "ReplicaManager.__getClientCertGroup: Proxy information does not contain the group."
+      gLogger.error(errStr)
+      return S_ERROR(errStr)
+    group = proxyInfo['group']
+    username = proxyInfo['username']
+    return S_OK(proxyInfo['group'])
 
   ##########################################################################
   #
