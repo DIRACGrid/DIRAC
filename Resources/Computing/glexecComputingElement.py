@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: glexecComputingElement.py,v 1.5 2009/03/10 16:39:29 paterson Exp $
+# $Id: glexecComputingElement.py,v 1.6 2009/03/10 17:52:39 paterson Exp $
 # File :   glexecComputingElement.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
     defaults to the standard InProcess Computing Element behaviour.
 """
 
-__RCSID__ = "$Id: glexecComputingElement.py,v 1.5 2009/03/10 16:39:29 paterson Exp $"
+__RCSID__ = "$Id: glexecComputingElement.py,v 1.6 2009/03/10 17:52:39 paterson Exp $"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
@@ -91,7 +91,7 @@ class glexecComputingElement(ComputingElement):
     return S_OK(localID)
 
   #############################################################################
-  def analyseExitCode(self,glexecLocation,resultTuple):
+  def analyseExitCode(self,resultTuple):
     """ Analyses the exit codes in case of glexec failures.  The convention for
         glexec exit codes is listed below:
 
@@ -105,9 +105,6 @@ class glexecComputingElement(ComputingElement):
           202 - internal error
           203 - authz error
     """
-    if not glexecLocation:
-      return S_OK('Nothing to do')
-
     codes = {}
     codes[127]='Shell exited, command not found'
     codes[129]='Shell interrupt signal 1 (SIGHUP)'
