@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: glexecComputingElement.py,v 1.4 2009/03/10 16:17:17 paterson Exp $
+# $Id: glexecComputingElement.py,v 1.5 2009/03/10 16:39:29 paterson Exp $
 # File :   glexecComputingElement.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
     defaults to the standard InProcess Computing Element behaviour.
 """
 
-__RCSID__ = "$Id: glexecComputingElement.py,v 1.4 2009/03/10 16:17:17 paterson Exp $"
+__RCSID__ = "$Id: glexecComputingElement.py,v 1.5 2009/03/10 16:39:29 paterson Exp $"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
@@ -174,7 +174,7 @@ class glexecComputingElement(ComputingElement):
       result['Value']=(0,'','')
       return result
 
-    resultTuple = self.result['Value']
+    resultTuple = result['Value']
     status = resultTuple[0]
     stdOutput = resultTuple[1]
     stdError = resultTuple[2]
