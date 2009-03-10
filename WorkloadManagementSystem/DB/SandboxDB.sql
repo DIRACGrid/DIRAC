@@ -1,4 +1,4 @@
--- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/SandboxDB.sql,v 1.5 2008/11/13 17:11:47 atsareg Exp $
+-- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/SandboxDB.sql,v 1.6 2009/03/10 22:39:28 atsareg Exp $
 
 -- ------------------------------------------------------------------------------
 --
@@ -36,6 +36,8 @@ CREATE TABLE InputSandbox (
     FileName VARCHAR(255) NOT NULL,
     FileBody LONGBLOB NOT NULL,
     FileLink VARCHAR(255),
+    FileSize int(11) NOT NULL default '0',
+    Partition varchar(32),
     UploadDate DATETIME,
     RetrieveDate DATETIME,
     PRIMARY KEY (JobID,FileName)
@@ -48,6 +50,8 @@ CREATE TABLE OutputSandbox (
     FileName VARCHAR(255) NOT NULL,
     FileBody LONGBLOB NOT NULL,
     FileLink VARCHAR(255),
+    FileSize int(11) NOT NULL default '0',
+    Partition varchar(32),
     UploadDate DATETIME,
     RetrieveDate DATETIME,
     PRIMARY KEY (JobID,FileName)
