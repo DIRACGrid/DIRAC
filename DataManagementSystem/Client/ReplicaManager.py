@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalog. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.49 2009/03/10 14:48:51 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.50 2009/03/10 17:58:27 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -35,61 +35,6 @@ class ReplicaManager:
   # These are the data transfer methods
   #
 
-  def put(self,lfn,file,diracSE,path=None):
-    """ Put a local file to a Storage Element
-
-        'lfn' is the file LFN
-        'file' is the full path to the local file
-        'diracSE' is the Storage Element to which to put the file
-        'path' is the path on the storage where the file will be put (if not provided the LFN will be used)
-    """
-    # Check that the local file exists
-    if not os.path.exists(file):
-      errStr = "ReplicaManager.put: Supplied file does not exist."
-      gLogger.error(errStr, file)
-      return S_ERROR(errStr)
-    # If the path is not provided then use the LFN path
-    if not path:
-      path = os.path.dirname(lfn)
-    # Obtain the size of the local file
-    size = getSize(file)
-    if size == 0:
-      errStr = "ReplicaManager.put: Supplied file is zero size."
-      gLogger.error(errStr,file)
-      return S_ERROR(errStr)
-    # If the local file name is not the same as the LFN filename then use the LFN file name
-    alternativeFile = None
-    lfnFileName = os.path.basename(lfn)
-    localFileName = os.path.basename(file)
-    if not lfnFileName == localFileName:
-      alternativeFile = lfnFileName
-
-    ##########################################################
-    #  Instantiate the destination storage element here.
-    storageElement = StorageElement(diracSE)
-    if not storageElement.isValid()['Value']:
-      errStr = "ReplicaManager.put: Failed to instantiate destination StorageElement."
-      gLogger.error(errStr,diracSE)
-      return S_ERROR(errStr)
-    destinationSE = storageElement.getStorageElementName()['Value']
-
-    successful = {}
-    failed = {}
-    ##########################################################
-    #  Perform the put here.
-    startTime = time.time()
-    res = storageElement.putFile(file,path,alternativeFileName=alternativeFile)
-    putTime = time.time() - startTime
-    if not res['OK']:
-      errStr = "ReplicaManager.put: Failed to put file to Storage Element."
-      failed[lfn] = res['Message']
-      gLogger.error(errStr,"%s: %s" % (file,res['Message']))
-    else:
-      gLogger.info("ReplicaManager.put: Put file to storage in %s seconds." % putTime)
-      successful[lfn] = putTime
-    resDict = {'Successful': successful,'Failed':failed}
-    return S_OK(resDict)
-
   def putDirectory(self,storagePath,localDirectory,diracSE):
     """ Put a local file to a Storage Element
 
@@ -122,123 +67,6 @@ class ReplicaManager:
     else:
       gLogger.info("ReplicaManager.put: Put directory to storage in %s seconds." % putTime)
     return res
-
-  def putAndRegister(self,lfn,file,diracSE,guid=None,path=None,checksum=None,catalog=None):
-    """ Put a local file to a Storage Element and register in the File Catalogues
-
-        'lfn' is the file LFN
-        'file' is the full path to the local file
-        'diracSE' is the Storage Element to which to put the file
-        'guid' is the guid with which the file is to be registered (if not provided will be generated)
-        'path' is the path on the storage where the file will be put (if not provided the LFN will be used)
-    """
-    # Instantiate the desired file catalog
-    if catalog:
-      self.fileCatalogue = FileCatalog(catalog)
-    else:
-      self.fileCatalogue = FileCatalog()
-    # Check that the local file exists
-    if not os.path.exists(file):
-      errStr = "ReplicaManager.putAndRegister: Supplied file does not exist."
-      gLogger.error(errStr, file)
-      return S_ERROR(errStr)
-    # If the path is not provided then use the LFN path
-    if not path:
-      path = os.path.dirname(lfn)
-    # Obtain the size of the local file
-    size = getSize(file)
-    if size == 0:
-      errStr = "ReplicaManager.putAndRegister: Supplied file is zero size."
-      gLogger.error(errStr,file)
-      return S_ERROR(errStr)
-    # If the GUID is not given, generate it here
-    if not guid:
-      guid = makeGuid(file)
-    if not checksum:
-      checksum = fileAdler(file)
-    res = self.fileCatalogue.exists(lfn) #checkFileExistence(lfn,guid)
-    if not res['OK']:
-      errStr = "ReplicaManager.putAndRegister: Completey failed to determine existence of destination LFN."
-      gLogger.error(errStr,lfn)
-      return res
-    if not res['Value']['Successful'].has_key(lfn):
-      errStr = "ReplicaManager.putAndRegister: Failed to determine existence of destination LFN."
-      gLogger.error(errStr,lfn)
-      return S_ERROR(errStr)
-    if res['Value']['Successful'][lfn]:
-      errStr = "ReplicaManager.putAndRegister: The supplied LFN already exists in the File Catalog."
-      gLogger.error(errStr,lfn)
-      return S_ERROR(errStr)
-    # If the local file name is not the same as the LFN filename then use the LFN file name
-    alternativeFile = None
-    lfnFileName = os.path.basename(lfn)
-    localFileName = os.path.basename(file)
-    if not lfnFileName == localFileName:
-      alternativeFile = lfnFileName
-
-    ##########################################################
-    #  Instantiate the destination storage element here.
-    storageElement = StorageElement(diracSE)
-    if not storageElement.isValid()['Value']:
-      errStr = "ReplicaManager.putAndRegister: Failed to instantiate destination StorageElement."
-      gLogger.error(errStr,diracSE)
-      return S_ERROR(errStr)
-    destinationSE = storageElement.getStorageElementName()['Value']
-    res = storageElement.getPfnForLfn(lfn)
-    if not res['OK']:
-      errStr = "ReplicaManager.putAndRegister: Failed to generate destination PFN."
-      gLogger.error(errStr,res['Message'])
-      return S_ERROR(errStr)
-    destPfn = res['Value']
-    fileDict = {destPfn:file}
-
-    successful = {}
-    failed = {}
-    ##########################################################
-    #  Perform the put here.
-    oDataOperation = self.__initialiseAccountingObject('putAndRegister',diracSE,1)
-    oDataOperation.setStartTime()
-    oDataOperation.setValueByKey('TransferSize',size)
-    startTime = time.time()
-    res = storageElement.putFile(fileDict,True)
-    putTime = time.time() - startTime
-    oDataOperation.setValueByKey('TransferTime',putTime)
-    if not res['OK']:
-      errStr = "ReplicaManager.putAndRegister: Failed to put file to Storage Element."
-      oDataOperation.setValueByKey('TransferOK',0)
-      oDataOperation.setValueByKey('FinalStatus','Failed')
-      oDataOperation.setEndTime()
-      gDataStoreClient.addRegister(oDataOperation)
-      gLogger.error(errStr,"%s: %s" % (file,res['Message']))
-      return S_ERROR("%s %s" % (errStr,res['Message']))
-    successful[lfn] = {'put': putTime}
-
-    ###########################################################
-    # Perform the registration here
-    oDataOperation.setValueByKey('RegistrationTotal',1)
-    fileTuple = (lfn,destPfn,size,destinationSE,guid,checksum)
-    registerDict = {'LFN':lfn,'PFN':destPfn,'Size':size,'TargetSE':destinationSE,'GUID':guid,'Addler':checksum}
-    startTime = time.time()
-    res = self.registerFile(fileTuple)
-    registerTime = time.time() - startTime
-    oDataOperation.setValueByKey('RegistrationTime',registerTime)
-    if not res['OK']:
-      errStr = "ReplicaManager.putAndRegister: Completely failed to register file."
-      gLogger.error(errStr,res['Message'])
-      failed[lfn] = {'register':registerDict}
-      oDataOperation.setValueByKey('FinalStatus','Failed')
-    elif res['Value']['Failed'].has_key(lfn):
-      errStr = "ReplicaManager.putAndRegister: Failed to register file."
-      gLogger.error(errStr,"%s %s" % (lfn,res['Value']['Failed'][lfn]))
-      oDataOperation.setValueByKey('FinalStatus','Failed')
-      failed[lfn] = {'register':registerDict}
-    else:
-      successful[lfn]['register'] = registerTime
-      oDataOperation.setValueByKey('RegistrationOK',1)
-    oDataOperation.setEndTime()
-    gDataStoreClient.addRegister(oDataOperation)
-    resDict = {'Successful': successful,'Failed':failed}
-    return S_OK(resDict)
 
   def getFile(self,lfn):
     """ Get a local copy of a LFN from Storage Elements.
@@ -1039,6 +867,194 @@ class ReplicaManager:
   #def removeReplica(self,lfn,storageElementName,singleFile=False):
   #def putReplica(self,lfn,storageElementName,singleFile=False):
   #def replicateReplica(self,lfn,size,storageElementName,singleFile=False):
+
+  #########################################################################
+  #
+  # File transfer methods
+  #
+
+  def put(self,lfn,file,diracSE,path=None):
+    """ Put a local file to a Storage Element
+
+        'lfn' is the file LFN
+        'file' is the full path to the local file
+        'diracSE' is the Storage Element to which to put the file
+        'path' is the path on the storage where the file will be put (if not provided the LFN will be used)
+    """
+    # Check that the local file exists
+    if not os.path.exists(file):
+      errStr = "ReplicaManager.put: Supplied file does not exist."
+      gLogger.error(errStr, file)
+      return S_ERROR(errStr)
+    # If the path is not provided then use the LFN path
+    if not path:
+      path = os.path.dirname(lfn)
+    # Obtain the size of the local file
+    size = getSize(file)
+    if size == 0:
+      errStr = "ReplicaManager.put: Supplied file is zero size."
+      gLogger.error(errStr,file)
+      return S_ERROR(errStr)
+    # If the local file name is not the same as the LFN filename then use the LFN file name
+    alternativeFile = None
+    lfnFileName = os.path.basename(lfn)
+    localFileName = os.path.basename(file)
+    if not lfnFileName == localFileName:
+      alternativeFile = lfnFileName
+
+    ##########################################################
+    #  Instantiate the destination storage element here.
+    storageElement = StorageElement(diracSE)
+    if not storageElement.isValid()['Value']:
+      errStr = "ReplicaManager.put: Failed to instantiate destination StorageElement."
+      gLogger.error(errStr,diracSE)
+      return S_ERROR(errStr)
+    destinationSE = storageElement.getStorageElementName()['Value']
+    res = storageElement.getPfnForLfn(lfn)
+    if not res['OK']:
+      errStr = "ReplicaManager.put: Failed to generate destination PFN."
+      gLogger.error(errStr,res['Message'])
+      return S_ERROR(errStr)
+    destPfn = res['Value']
+    fileDict = {destPfn:file}    
+
+    successful = {}
+    failed = {}
+    ##########################################################
+    #  Perform the put here.
+    startTime = time.time()
+    res = storageElement.putFile(fileDict,singleFile=True)
+    putTime = time.time() - startTime
+    if not res['OK']:
+      errStr = "ReplicaManager.put: Failed to put file to Storage Element."
+      failed[lfn] = res['Message']
+      gLogger.error(errStr,"%s: %s" % (file,res['Message']))
+    else:
+      gLogger.info("ReplicaManager.put: Put file to storage in %s seconds." % putTime)
+      successful[lfn] = putTime
+    resDict = {'Successful': successful,'Failed':failed}
+    return S_OK(resDict)
+
+  def putAndRegister(self,lfn,file,diracSE,guid=None,path=None,checksum=None,catalog=None):
+    """ Put a local file to a Storage Element and register in the File Catalogues
+
+        'lfn' is the file LFN
+        'file' is the full path to the local file
+        'diracSE' is the Storage Element to which to put the file
+        'guid' is the guid with which the file is to be registered (if not provided will be generated)
+        'path' is the path on the storage where the file will be put (if not provided the LFN will be used)
+    """
+    # Instantiate the desired file catalog
+    if catalog:
+      self.fileCatalogue = FileCatalog(catalog)
+    else:
+      self.fileCatalogue = FileCatalog()
+    # Check that the local file exists
+    if not os.path.exists(file):
+      errStr = "ReplicaManager.putAndRegister: Supplied file does not exist."
+      gLogger.error(errStr, file)
+      return S_ERROR(errStr)
+    # If the path is not provided then use the LFN path
+    if not path:
+      path = os.path.dirname(lfn)
+    # Obtain the size of the local file
+    size = getSize(file)
+    if size == 0:
+      errStr = "ReplicaManager.putAndRegister: Supplied file is zero size."
+      gLogger.error(errStr,file)
+      return S_ERROR(errStr)
+    # If the GUID is not given, generate it here
+    if not guid:
+      guid = makeGuid(file)
+    if not checksum:
+      checksum = fileAdler(file)
+    res = self.fileCatalogue.exists({lfn:guid})
+    if not res['OK']:
+      errStr = "ReplicaManager.putAndRegister: Completey failed to determine existence of destination LFN."
+      gLogger.error(errStr,lfn)
+      return res
+    if not res['Value']['Successful'].has_key(lfn):
+      errStr = "ReplicaManager.putAndRegister: Failed to determine existence of destination LFN."
+      gLogger.error(errStr,lfn)
+      return S_ERROR(errStr)
+    if res['Value']['Successful'][lfn]:
+      if res['Value']['Successful'][lfn] == lfn:
+        errStr = "ReplicaManager.putAndRegister: The supplied LFN already exists in the File Catalog."
+        gLogger.error(errStr,lfn)
+      else:
+        errStr = "ReplicaManager.putAndRegister: This file GUID already exists for another file. Please remove it and try again."
+        gLogger.error(errStr,res['Value']['Successful'][lfn])
+      return S_ERROR("%s %s" % (errStr,res['Value']['Successful'][lfn]))
+    # If the local file name is not the same as the LFN filename then use the LFN file name
+    alternativeFile = None
+    lfnFileName = os.path.basename(lfn)
+    localFileName = os.path.basename(file)
+    if not lfnFileName == localFileName:
+      alternativeFile = lfnFileName
+
+    ##########################################################
+    #  Instantiate the destination storage element here.
+    storageElement = StorageElement(diracSE)
+    if not storageElement.isValid()['Value']:
+      errStr = "ReplicaManager.putAndRegister: Failed to instantiate destination StorageElement."
+      gLogger.error(errStr,diracSE)
+      return S_ERROR(errStr)
+    destinationSE = storageElement.getStorageElementName()['Value']
+    res = storageElement.getPfnForLfn(lfn)
+    if not res['OK']:
+      errStr = "ReplicaManager.putAndRegister: Failed to generate destination PFN."
+      gLogger.error(errStr,res['Message'])
+      return S_ERROR(errStr)
+    destPfn = res['Value']
+    fileDict = {destPfn:file}
+
+    successful = {}
+    failed = {}
+    ##########################################################
+    #  Perform the put here.
+    oDataOperation = self.__initialiseAccountingObject('putAndRegister',diracSE,1)
+    oDataOperation.setStartTime()
+    oDataOperation.setValueByKey('TransferSize',size)
+    startTime = time.time()
+    res = storageElement.putFile(fileDict,True)
+    putTime = time.time() - startTime
+    oDataOperation.setValueByKey('TransferTime',putTime)
+    if not res['OK']:
+      errStr = "ReplicaManager.putAndRegister: Failed to put file to Storage Element."
+      oDataOperation.setValueByKey('TransferOK',0)
+      oDataOperation.setValueByKey('FinalStatus','Failed')
+      oDataOperation.setEndTime()
+      gDataStoreClient.addRegister(oDataOperation)
+      gLogger.error(errStr,"%s: %s" % (file,res['Message']))
+      return S_ERROR("%s %s" % (errStr,res['Message']))
+    successful[lfn] = {'put': putTime}
+
+    ###########################################################
+    # Perform the registration here
+    oDataOperation.setValueByKey('RegistrationTotal',1)
+    fileTuple = (lfn,destPfn,size,destinationSE,guid,checksum)
+    registerDict = {'LFN':lfn,'PFN':destPfn,'Size':size,'TargetSE':destinationSE,'GUID':guid,'Addler':checksum}
+    startTime = time.time()
+    res = self.registerFile(fileTuple)
+    registerTime = time.time() - startTime
+    oDataOperation.setValueByKey('RegistrationTime',registerTime)
+    if not res['OK']:
+      errStr = "ReplicaManager.putAndRegister: Completely failed to register file."
+      gLogger.error(errStr,res['Message'])
+      failed[lfn] = {'register':registerDict}
+      oDataOperation.setValueByKey('FinalStatus','Failed')
+    elif res['Value']['Failed'].has_key(lfn):
+      errStr = "ReplicaManager.putAndRegister: Failed to register file."
+      gLogger.error(errStr,"%s %s" % (lfn,res['Value']['Failed'][lfn]))
+      oDataOperation.setValueByKey('FinalStatus','Failed')
+      failed[lfn] = {'register':registerDict}
+    else:
+      successful[lfn]['register'] = registerTime
+      oDataOperation.setValueByKey('RegistrationOK',1)
+    oDataOperation.setEndTime()
+    gDataStoreClient.addRegister(oDataOperation)
+    resDict = {'Successful': successful,'Failed':failed}
+    return S_OK(resDict)
 
   ##########################################################################
   #
