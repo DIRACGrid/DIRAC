@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.57 2009/03/06 11:10:40 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.58 2009/03/10 21:18:33 paterson Exp $
 # File :   DiracProduction.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are to be documented with example usage.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.57 2009/03/06 11:10:40 paterson Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.58 2009/03/10 21:18:33 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 import pprint
@@ -34,8 +34,10 @@ from DIRAC.Core.Security.X509Chain                  import X509Chain
 from DIRAC.Core.Security                            import Locations, CS
 from DIRAC                                          import gConfig, gLogger, S_OK, S_ERROR
 
-#temporary solution to client side LFN construction
-from WorkflowLib.Utilities.Tools import *
+try:
+  from LHCbSystem.Utilities.ProductionData  import constructProductionLFNs
+except Exception,x:
+  from DIRAC.LHCbSystem.Utilities.ProductionData  import constructProductionLFNs
 
 COMPONENT_NAME='DiracProduction'
 
@@ -1038,7 +1040,7 @@ class DiracProduction:
       prodJob._setParamValue('JOB_ID',str(jobNumber).zfill(8))
       ###self.log.debug(prodJob.createCode()) #never create the code, it resolves global vars ;)
       updatedJob = self.__createJobDescriptionFile(prodJob._toXML())
-      result = self._getOutputLFNs(prodID,jobNumber,inputData,updatedJob) #prodJob._toXML()
+      result = self._getOutputLFNs(updatedJob,prodID,jobNumber,inputData) #prodJob._toXML()
       if result['OK']:
         newProdJob = Job(updatedJob)
         for name,output in result['Value'].items():
@@ -1075,93 +1077,30 @@ class DiracProduction:
     return result
 
   #############################################################################
-  def _getOutputLFNs(self,productionID,jobID,inputData,jobDescription):
+  def _getOutputLFNs(self,jobDescription,productionID='1',jobID='2',inputData=None):
     """ Temporary function that attempts to calculate the output LFN structure
         based on workflow conventions.
     """
     job = Job(jobDescription)
-    wfMode = None
-    wfConfigVersion = None
-    wfMask = None
-    wfType = None
-    fileTupleList = []
-    for p in job.workflow.parameters:
-      if p.getName() == "dataType":
-        wfMode = p.getValue()
-      if p.getName() == "configVersion":
-        wfConfigVersion = p.getValue()
-      if p.getName() == "outputDataFileMask":
-        wfMask = p.getValue()
-        if re.search(';',wfMask):
-          wfMask = wfMask.split(';')
-        else:
-          wfMask = [wfMask]
-      if p.getName() == 'JobType':
-        wfType = p.getValue()
 
-    self.log.verbose('WFMode = %s, WFConfigVersion = %s, WFMask = %s, WFType=%s' %(wfMode,wfConfigVersion,wfMask,wfType))
-    if not wfMode or not wfConfigVersion or not wfType:
-      return S_ERROR('Insufficient parameters to construct LFN(s)')
-
-    #borrowed from the JobInfoFromXML utility
+    commons = job._getParameters()
     code = job.createCode()
-    listoutput = []
+    outputList = []
     for line in code.split("\n"):
       if line.count("listoutput"):
-        listoutput += eval(line.split("#")[0].split("=")[-1])
+        outputList += eval(line.split("#")[0].split("=")[-1])
 
-    for info in listoutput:
-      fileTupleList.append((info['outputDataName'],info['outputDataType']))
-
-    lfnRoot = ''
+    commons['outputList']=outputList
+    commons['PRODUCTION_ID']=productionID
+    commons['JOB_ID']=jobID
     if inputData:
-      lfnRoot = getLFNRoot(inputData,wfType)
-    else:
-      lfnRoot = getLFNRoot('',wfType,wfConfigVersion)
+      commons['InputData']=inputData
 
-    if not lfnRoot:
-      return S_ERROR('LFN root could not be constructed')
-
-    #Get all LFN(s) to both output data and BK lists at this point (fine for BK)
-    outputData = []
-    bkLFNs = []
-    for fileTuple in fileTupleList:
-      lfn = makeProductionLfn(str(jobID).zfill(8),lfnRoot,fileTuple,wfMode,str(productionID).zfill(8))
-      outputData.append(lfn)
-      bkLFNs.append(lfn)
-
-    #Get log file path - unique for all modules
-    logPath = makeProductionPath(str(jobID).zfill(8),lfnRoot,'LOG',wfMode,str(productionID).zfill(8),log=True)
-    logFilePath = ['%s/%s' %(logPath,str(jobID).zfill(8))]
-    logTargetPath = ['%s/%s_%s.tar' %(logPath,str(productionID).zfill(8),str(jobID).zfill(8))]
-    #[ aside, why does makeProductionPath not append the jobID itself ????
-    #  this is really only used in one place since the logTargetPath is just written to a text file (should be reviewed)... ]
-
-    #Strip output data according to file mask
-    if wfMask:
-      newOutputData = []
-      newBKLFNs = []
-      for od in outputData:
-        for type in wfMask:
-          if re.search('.%s$' %type,od):
-            newOutputData.append(od)
-      for bk in bkLFNs:
-        for type in wfMask:
-          if re.search('.%s$' %type,bk):
-            newBKLFNs.append(bk)
-      outputData = newOutputData
-      bkLFNs = newBKLFNs
-
-    if not outputData:
-      self.log.info('No output data LFN(s) constructed')
-    else:
-      self.log.verbose('Created the following output data LFN(s):\n%s' %(string.join(outputData,'\n')))
-    self.log.verbose('Log file path is:\n%s' %logFilePath)
-    self.log.verbose('Log target path is:\n%s' %logTargetPath)
-    if bkLFNs:
-      self.log.verbose('BookkeepingLFN(s) are:\n%s' %(string.join(bkLFNs,'\n')))
-    jobOutputs = {'ProductionOutputData':outputData,'LogFilePath':logFilePath,'LogTargetPath':logTargetPath,'BookkeepingLFNs':bkLFNs}
-    return S_OK(jobOutputs)
+    self.log.debug(commons)
+    result = constructProductionLFNs(commons)
+    if not result['OK']:
+      self.log.error(result['Message'])
+    return result
 
   #############################################################################
   def __getCurrentUser(self):
