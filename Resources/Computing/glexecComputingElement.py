@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: glexecComputingElement.py,v 1.3 2009/03/10 16:14:20 paterson Exp $
+# $Id: glexecComputingElement.py,v 1.4 2009/03/10 16:17:17 paterson Exp $
 # File :   glexecComputingElement.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
     defaults to the standard InProcess Computing Element behaviour.
 """
 
-__RCSID__ = "$Id: glexecComputingElement.py,v 1.3 2009/03/10 16:14:20 paterson Exp $"
+__RCSID__ = "$Id: glexecComputingElement.py,v 1.4 2009/03/10 16:17:17 paterson Exp $"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
@@ -181,7 +181,7 @@ class glexecComputingElement(ComputingElement):
     self.log.info( "Status after the glexec execution is %s" % str( status ) )
     if status:
       error = S_ERROR(status)
-      error['Value'] = (status,stdout,stderr)
+      error['Value'] = (status,stdOutput,stdError)
       return error
 
     return result
