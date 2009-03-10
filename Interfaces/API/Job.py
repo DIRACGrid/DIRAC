@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.54 2009/03/06 12:58:40 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.55 2009/03/10 21:18:00 paterson Exp $
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -30,7 +30,7 @@
    Note that several executables can be provided and wil be executed sequentially.
 """
 
-__RCSID__ = "$Id: Job.py,v 1.54 2009/03/06 12:58:40 paterson Exp $"
+__RCSID__ = "$Id: Job.py,v 1.55 2009/03/10 21:18:00 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -626,7 +626,17 @@ class Job:
     self.workflow.execute()
 
   #############################################################################
+  def _getParameters(self):
+    """Developer function.
+       Method to return the workflow parameters.
+    """
+    wfParams = {}
+    params = self.workflow.parameters
+    for p in params:
+      wfParams[p.getName()]=p.getValue()
+    return wfParams
 
+  #############################################################################
   def _dumpParameters(self,showType=None):
     """Developer function.
        Method to print the workflow parameters.
