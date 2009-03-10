@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalog. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.48 2009/03/10 11:29:27 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.49 2009/03/10 14:48:51 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -558,54 +558,6 @@ class ReplicaManager:
     else:
       return S_OK(replicaPreference)
 
-  ##########################################################################
-  #
-  # These are the file catalog read methods
-  #
-      
-  def getReplicas(self,lfn):
-    """ Get the replicas registered in the catalog for supplied file.
-
-        'lfn' is the files to check (can be a single lfn or list of lfns)
-    """
-    if type(lfn) == types.ListType:
-      lfns = lfn
-    elif type(lfn) == types.StringType:
-      lfns = [lfn]
-    else:
-      errStr = "ReplicaManager.getReplicas: Supplied lfn must be string or list of strings."
-      gLogger.error(errStr)
-      return S_ERROR(errStr)
-    gLogger.info("ReplicaManager.getReplicas: Attempting to get replicas for %s files." % len(lfns))
-    fileCatalog = FileCatalog()
-    res = fileCatalog.getReplicas(lfns)
-    if not res['OK']:
-      errStr = "ReplicaManager.__getReplicas: Completely failed to get replicas for %s lfns." % len(lfns)
-      gLogger.error(errStr,res['Message'])
-      return S_ERROR(errStr)
-    return res
-
-  def getFileSize(self,lfn):
-    """ Get the size registered in the catalog for supplied file.
-
-        'lfn' is the files to check (can be a single lfn or list of lfns)
-    """
-    if type(lfn) == types.ListType:
-      lfns = lfn
-    elif type(lfn) == types.StringType:
-      lfns = [lfn]
-    else:
-      errStr = "ReplicaManager.getFileSize: Supplied lfn must be string or list of strings."
-      gLogger.error(errStr)
-      return S_ERROR(errStr)
-    gLogger.info("ReplicaManager.getFileSize: Attempting to get sizes for %s files." % len(lfns))
-    res = self.fileCatalogue.getFileSize(lfns)
-    if not res['OK']:
-      errStr = "ReplicaManager.getFile: Completely failed to get file size for %s lfns." % len(lfns)
-      gLogger.error(errStr,res['Message'])
-      return S_ERROR(errStr)
-    return res
-
   ###################################################################
   #
   # These are the file catalog write methods
@@ -1084,109 +1036,245 @@ class ReplicaManager:
       gLogger.info(infoStr)
       return res
 
-  ###################################################################
+  #def removeReplica(self,lfn,storageElementName,singleFile=False):
+  #def putReplica(self,lfn,storageElementName,singleFile=False):
+  #def replicateReplica(self,lfn,size,storageElementName,singleFile=False):
+
+  ##########################################################################
   #
-  # These are the methods for obtaining file metadata (these are bulk methods)
+  # These are the wrapper functions for doing simple replica->SE operations
+  # (Operations requiring write access to a catalog are not performed this way)
   #
 
-  def getReplicaMetadata(self,lfn,storageElementName):
-    """ Obtain the metadata for physical files
+  def getReplicaIsFile(self,lfn,storageElementName,singleFile=False):
+    """ Determine whether the supplied lfns are files at the supplied StorageElement
 
-        'lfn' is the file(s) to be checked
-        'storageElementName' is the Storage Element to check
+        'lfn' is the file(s) to check
+        'storageElementName' is the target Storage Element
     """
-    if type(lfn) == types.ListType:
-      lfns = lfn
-    elif type(lfn) == types.StringType:
-      lfns = [lfn]
+    if singleFile:
+      return self.__executeSingleReplicaStorageElementOperation(storageElementName,lfn,'isFile')
     else:
-      errStr = "ReplicaManager.getReplicaMetadata: Supplied lfn must be string or list of strings."
-      gLogger.error(errStr)
-      return S_ERROR(errStr)
-    gLogger.info("ReplicaManager.getReplicaMetadata: Attempting to get metadata for %s replicas."  % len(lfns))
-    gLogger.info("ReplicaManager.getReplicaMetadata: Resolving replicas for supplied LFNs.")
-    res = self.fileCatalogue.getReplicas(lfn)
+      return self.__executeReplicaStorageElementOperation(storageElementName,lfn,'isFile')
+
+  def getReplicaSize(self,lfn,storageElementName,singleFile=False):
+    """ Obtain the file size for the lfns at the supplied StorageElement
+  
+        'lfn' is the file(s) for which to get the size
+        'storageElementName' is the target Storage Element
+    """
+    if singleFile:
+      return self.__executeSingleReplicaStorageElementOperation(storageElementName,lfn,'getFileSize')
+    else:
+      return self.__executeReplicaStorageElementOperation(storageElementName,lfn,'getFileSize')
+
+  def getReplicaAccessUrl(self,lfn,storageElementName,singleFile=False):
+    """ Obtain the access url for lfns at the supplied StorageElement
+        
+        'lfn' is the file(s) for which to obtain access URLs
+        'storageElementName' is the target Storage Element
+    """
+    if singleFile:
+      return self.__executeSingleReplicaStorageElementOperation(storageElementName,lfn,'getAccessUrl')
+    else:
+      return self.__executeReplicaStorageElementOperation(storageElementName,lfn,'getAccessUrl')
+
+  def getReplicaMetadata(self,lfn,storageElementName,singleFile=False):
+    """ Obtain the file metadata for lfns at the supplied StorageElement
+
+        'lfn' is the file(s) for which to get metadata
+        'storageElementName' is the target Storage Element
+    """
+    if singleFile:
+      return self.__executeSingleReplicaStorageElementOperation(storageElementName,lfn,'getFileMetadata')
+    else:
+      return self.__executeReplicaStorageElementOperation(storageElementName,lfn,'getFileMetadata')
+
+  def prestageReplica(self,lfn,storageElementName,singleFile=False):
+    """ Issue prestage requests for the lfns at the supplied StorageElement
+
+        'lfn' is the file(s) for which to issue prestage requests
+        'storageElementName' is the target Storage Element
+    """
+    if singleFile:
+      return self.__executeSingleReplicaStorageElementOperation(storageElementName,lfn,'prestageFile')
+    else:
+      return self.__executeReplicaStorageElementOperation(storageElementName,lfn,'prestageFile')
+
+  def getPrestageReplicaStatus(self,lfn,storageElementName,singleFile=False):
+    """ This functionality is not supported.
+    """
+    return S_ERROR("This functionality is not supported. Please use getReplicaMetadata and check the 'Cached' element.")
+
+  def pinReplica(self,lfn,storageElementName,lifetime=60*60*24,singleFile=False):
+    """ Issue a pin for the lfns at the supplied StorageElement
+        
+        'lfn' is the file(s) for which to issue pins
+        'storageElementName' is the target Storage Element
+        'lifetime' is the pin lifetime (default 1 day)
+    """
+    if singleFile:
+      return self.__executeSingleReplicaStorageElementOperation(storageElementName,lfn,'pinFile',{'lifetime':lifetime})
+    else:
+      return self.__executeReplicaStorageElementOperation(storageElementName,lfn,'pinFile',{'lifetime':lifetime})
+
+  def releaseReplica(self,lfn,storageElementName,singleFile=False):
+    """ Release pins for the lfns at the supplied StorageElement
+    
+        'lfn' is the file(s) for which to release pins
+        'storageElementName' is the target Storage Element
+    """
+    if singleFile:
+      return self.__executeSingleReplicaStorageElementOperation(storageElementName,lfn,'releaseFile')
+    else:
+      return self.__executeReplicaStorageElementOperation(storageElementName,lfn,'releaseFile')
+  
+  def getReplica(self,lfn,storageElementName,localPath=False,singleFile=False):
+    """ Get the lfns to the local disk from the supplied StorageElement
+
+        'lfn' is the file(s) for which to release pins
+        'storageElementName' is the target Storage Element
+        'localPath' is the local target path (default '.')
+    """
+    if singleFile:
+      return self.__executeSingleReplicaStorageElementOperation(storageElementName,lfn,'getFile',{'localPath':localPath})
+    else:
+      return self.__executeReplicaStorageElementOperation(storageElementName,lfn,'getFile',{'localPath':localPath})
+
+  def __executeSingleReplicaStorageElementOperation(self,storageElementName,lfn,method,argsDict={}):
+    res = self.__executeReplicaStorageElementOperation(storageElementName,lfn,method,argsDict)
+    if type(lfn) == types.ListType:
+      lfn = lfn[0]
+    elif type(lfn) == types.DictType:
+      lfn = lfn.keys()[0]   
     if not res['OK']:
-      errStr = "ReplicaManager.getReplicaMetadata: Completely failed to get replicas for LFNs."
-      gLogger.error(errStr,res['Message'])
       return res
-    pfnDict = {}
+    elif res['Value']['Failed'].has_key(lfn):
+      errorMessage = res['Value']['Failed'][lfn]
+      return S_ERROR(errorMessage)
+    else:
+      return S_OK(res['Value']['Successful'][lfn])
+
+  def __executeReplicaStorageElementOperation(self,storageElementName,lfn,method,argsDict={}):
+    """ A simple wrapper that allows replica querying then perform the StorageElement operation
+    """
+    res = self.__executeFileCatalogFunction(lfns,'getReplicas')
+    if not res['OK']:
+      errStr = "ReplicaManager.__executeReplicaStorageElementOperation: Completely failed to get replicas for LFNs."
+      gLogger.error(errStr,res['Message']) 
+      return res
     failed = res['Value']['Failed']
-    for lfn in lfns:
-      if not res['Value']['Successful'].has_key(lfn):
-        errStr = "ReplicaManager.getReplicaMetadata: Failed to get replicas for LFN."
-        gLogger.error(errStr,"%s %s" % (lfn,res['Value']['Failed'][lfn]))
-      elif not res['Value']['Successful'][lfn].has_key(storageElementName):
-        errStr = "ReplicaManager.getReplicaMetadata: File does not have replica at supplied Storage Element."
+    for lfn,reason in res['Value']['Failed'].items():
+      gLogger.error("ReplicaManager.__executeReplicaStorageElementOperation: Failed to get replicas for file.", "%s %s" % (lfn,reason))
+    lfnReplicas = res['Value']['Successful']
+    pfnDict = {}
+    for lfn,replicas in lfnReplicas.items():
+      if replicas.has_key(storageElementName):
+        pfnDict = {replicas[storageElementName]:lfn}
+      else:
+        errStr = "ReplicaManager.__executeReplicaStorageElementOperation: File does not have replica at supplied Storage Element."
         gLogger.error(errStr, "%s %s" % (lfn,storageElementName))
         failed[lfn] = errStr
-      else:
-        pfnDict[res['Value']['Successful'][lfn][storageElementName]] = lfn
-    res = self.__executeStorageElementFunction(storageElementName,pfnDict.keys(),'getFileMetadata')
+    res = self.__executeStorageElementFunction(storageElementName,pfnDict.keys(),method,argsDict)
     if not res['OK']:
+      gLogger.error("ReplicaManager.__executeReplicaStorageElementOperation: Failed to execute %s StorageElement operation." % method,res['Message'])
       return res
     else:
       successful = {}
-      for pfn,metadataDict in res['Value']['Successful'].items():
-        successful[pfnDict[pfn]] = metadataDict
+      for pfn,pfnRes in res['Value']['Successful'].items():
+        successful[pfnDict[pfn]] = pfnRes
       for pfn, errorMessage in res['Value']['Failed'].items():
         failed[pfnDict[pfn]] = errorMessage
       resDict = {'Successful':successful,'Failed':failed}
       return S_OK(resDict)
 
-  ###################################################################
+  ##########################################################################
   #
-  # These are the methods for obtaining access urls (these are bulk methods)
+  # These are the file catalog wrapper functions (read only)
   #
 
-  def getReplicaAccessUrl(self,lfn,storageElementName):
-    """ Obtain the metadata for physical files
+  def getCatalogReplicas(self,lfn,singleFile=False):
+    """ Get the replicas registered for files in the FileCatalog
 
-        'lfn' is the file(s) to be checked
-        'storageElementName' is the Storage Element to check
+        'lfn' is the files to check (can be a single lfn or list of lfns)
     """
-    if type(lfn) == types.ListType:
-      lfns = lfn
-    elif type(lfn) == types.StringType:
-      lfns = [lfn]
+    if singleFile:
+      return self.__executeSingleFileCatalogFunction(lfn,'getReplicas')
     else:
-      errStr = "ReplicaManager.getReplicaAccessUrl: Supplied lfn must be string or list of strings."
+      return self.__executeFileCatalogFunction(lfn,'getReplicas')
+  
+  def getCatalogFileSize(self,lfn,singleFile=False):
+    """ Get the size registered for files in the FileCatalog
+
+        'lfn' is the files to check (can be a single lfn or list of lfns)
+    """
+    if singleFile:
+      return self.__executeSingleFileCatalogFunction(lfn,'getFileSize')     
+    else:
+      return self.__executeFileCatalogFunction(lfn,'getFileSize')
+
+  def __executeSingleFileCatalogFunction(self,lfn,method,argsDict={}):
+    res = self.__executeFileCatalogFunction(lfn,method,argsDict)
+    if type(lfn) == types.ListType:
+      lfn = lfn[0]
+    elif type(lfn) == types.DictType:   
+      lfn = lfn.keys()[0]
+    if not res['OK']:
+      return res
+    elif res['Value']['Failed'].has_key(lfn):
+      errorMessage = res['Value']['Failed'][lfn]
+      return S_ERROR(errorMessage)
+    else:
+      return S_OK(res['Value']['Successful'][lfn])
+  
+  def __executeFileCatalogFunction(self,lfn,method,argsDict={}):
+    """ A simple wrapper around the file catalog functionality
+    """
+    # First check the supplied lfn(s) are the correct format.
+    if type(lfn) in types.StringTypes:
+      lfns = {lfn:False}
+    elif type(lfn) == types.ListType:
+      lfns = {}
+      for lfn in lfn:
+        lfns[lfn] = False
+    elif type(lfn) == types.DictType:
+      lfns = lfn.copy()
+    else:
+      errStr = "ReplicaManager.__executeFileCatalogFunction: Supplied lfns must be string or list of strings or a dictionary." 
       gLogger.error(errStr)
       return S_ERROR(errStr)
-    gLogger.info("ReplicaManager.getReplicaAccessUrl: Attempting to get access urls for %s replicas."  % len(lfns))
-    gLogger.info("ReplicaManager.getReplicaAccessUrl: Resolving replicas for supplied LFNs.")
-    res = self.fileCatalogue.getReplicas(lfn)
-    if not res['OK']:
-      errStr = "ReplicaManager.getReplicaAccessUrl: Completely failed to get replicas for LFNs."
-      gLogger.error(errStr,res['Message'])
-      return res
-    pfnDict = {}
-    failed = res['Value']['Failed']
-    for lfn in lfns:
-      if not res['Value']['Successful'].has_key(lfn):
-        errStr = "ReplicaManager.getReplicaAccessUrl: Failed to get replicas for LFN."
-        gLogger.error(errStr,"%s %s" % (lfn,res['Value']['Failed'][lfn]))
-      elif not res['Value']['Successful'][lfn].has_key(storageElementName):
-        errStr = "ReplicaManager.getReplicaAccessUrl: File does not have replica at supplied Storage Element."
-        gLogger.error(errStr, "%s %s" % (lfn,storageElementName))
-        failed[lfn] = errStr
-      else:
-        pfnDict = {res['Value']['Successful'][lfn][storageElementName]:lfn}
-    res = self.__executeStorageElementFunction(storageElementName,pfnDict.keys(),'getAccessUrl')
-
-    if not res['OK']:
-      return res
+    # Check we have some lfns
+    if not lfns:
+      errMessage = "ReplicaManager.__executeFileCatalogFunction: No lfns supplied."
+      gLogger.error(errMessage)
+      return S_ERROR(errMessage)
+    gLogger.debug("ReplicaManager.__executeFileCatalogFunction: Attempting to perform '%s' operation with %s lfns." % (method,len(lfns)))
+    # Check we can instantiate the file catalog correctly
+    fileCatalog = FileCatalog()
+    # Generate the execution string 
+    lfns = lfns.keys()
+    if argsDict:
+      execString = "res = fileCatalog.%s(lfns" % method
+      for argument,value in argsDict.items():
+        if type(value) == types.StringType:  
+          execString = "%s, %s='%s'" % (execString,argument,value)
+        else:
+          execString = "%s, %s=%s" % (execString,argument,value)
+      execString = "%s)" % execString
     else:
-      successful = {}
-      failed = {}
-      for pfn,turl in res['Value']['Successful'].items():
-        successful[pfnDict[pfn]] = turl
-      for pfn, errorMessage in res['Value']['Failed'].items():
-        failed[pfnDict[pfn]] = errorMessage
-      resDict = {'Successful':successful,'Failed':failed}
-      return S_OK(resDict)
-
-
+      execString = "res = fileCatalog.%s(lfns)" % method
+    # Execute the execute string
+    try:
+      exec(execString)
+    except AttributeError,errMessage:
+      exceptStr = "ReplicaManager.__executeFileCatalogFunction: Exception while perfoming %s." % method
+      gLogger.exception(exceptStr,str(errMessage))
+      return S_ERROR(exceptStr)
+    # Return the output
+    if not res['OK']:
+      errStr = "ReplicaManager.__executeFileCatalogFunction: Completely failed to perform %s." % method
+      gLogger.error(errStr,res['Message'])
+    return res
 
   ##########################################################################
   #
@@ -1425,6 +1513,7 @@ class ReplicaManager:
   #
   # Defunct methods only there before checking backward compatability
   # 
+
   def getPfn(self,physicalFile,diracSE):
     """ Get a local copy of the PFN from the given Storage Element.
 
@@ -1440,4 +1529,11 @@ class ReplicaManager:
         'physicalFile' is the physical files
     """
     return self.__executeStorageElementFunction(storageElementName,physicalFile,'retransferOnlineFile')
+
+  def getReplicas(self,lfn):
+    return self.getCatalogReplicas(lfn)
+
+  def getFileSize(self,lfn):
+    return self.getCatalogFileSize(lfn)
+    
 
