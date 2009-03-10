@@ -111,33 +111,59 @@ class LcgFileCatalogClient(FileCatalogueBase):
     """ Check if the path exists
     """
     if type(path) in types.StringTypes:
-      lfns = [path]
+      lfns = {path:False}
     elif type(path) == types.ListType:
+      lfns = {}
+      for lfn in path:
+        lfns[lfn] = False
+    elif type(path) == types.DictType:
       lfns = path
     else:
-      return S_ERROR('LFCClient.exists: Must supply a path or list of paths')
+      return S_ERROR('LFCClient.exists: Supplied path must be a string, list or dictionary.')
     resdict = {}
     # If we have less than three lfns to query a session doesn't make sense
     if len(lfns) > 2:
       self.__openSession()
     failed = {}
     successful = {}
-    for lfn in lfns:
+    for lfn,guid in lfns.items():
       fullLfn = '%s%s' % (self.prefix,lfn)
       value = lfc.lfc_access(fullLfn,0)
       if value == 0:
-        successful[lfn] = True
+        successful[lfn] = lfn
       else:
        errno = lfc.cvar.serrno
        errStr = lfc.sstrerror(errno).lower()
        if (errStr.find("no such file or directory") >= 0 ):
-          successful[lfn] = False
+         if not guid:
+           successful[lfn] = False
+         else:
+           if not self.__existsGuid(guid)['Value']:
+             successful[lfn] = False
+           else:
+             successful[lfn] = self.__getLfnForGUID(guid)['Value']
        else:
          failed[lfn] = lfc.sstrerror(errno)
     if self.session:
       self.__closeSession()
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
+
+  def __getLfnForGUID(self,guid):
+    """ Resolve the LFN for a supplied GUID
+    """
+    list = lfc.lfc_list()
+    lfnlist = []
+    listlinks = lfc.lfc_listlinks('',guid,lfc.CNS_LIST_BEGIN,list)
+    while listlinks:
+       ll = listlinks.path
+       if re.search ('^'+self.prefix,ll):
+          ll = listlinks.path.replace(self.prefix,"",1)
+       lfnlist.append(ll)
+       listlinks = lfc.lfc_listlinks('',guid,lfc.CNS_LIST_CONTINUE,list)
+    else:
+       lfc.lfc_listlinks('',guid,lfc.CNS_LIST_END,list)
+    return S_OK(lfnlist[0])
 
   def __existsGuid(self,guid):
     """ Check if the guid exists
