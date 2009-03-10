@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.77 2009/03/08 22:06:45 paterson Exp $
+# $Id: JobWrapper.py,v 1.78 2009/03/10 15:36:42 rgracian Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.77 2009/03/08 22:06:45 paterson Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.78 2009/03/10 15:36:42 rgracian Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -30,7 +30,7 @@ from DIRAC.Core.Utilities.File                                      import getGl
 from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger
 import DIRAC
 
-import os, re, sys, string, time, shutil, threading, tarfile, glob
+import os, re, sys, string, time, shutil, threading, tarfile, glob, types
 
 EXECUTION_RESULT = {}
 
@@ -176,6 +176,10 @@ class JobWrapper:
       os.chdir(str(self.jobID))
     else:
       self.log.info('JobID is not defined, running in current directory')
+      
+    infoFile = open( 'job.info', 'w' )
+    infoFile.write( self.__dictAsInfoString( jobArgs, '/Job' ) )
+    infoFile.close()
 
   #############################################################################
   def __loadLocalCFGFiles(self,localRoot):
@@ -187,6 +191,23 @@ class JobWrapper:
       if re.search('.cfg$',i):
         gConfig.loadFile('%s/%s' %(localRoot,i))
         self.log.debug('Found local .cfg file %s' %i)
+
+  #############################################################################
+  def __dictAsInfoString( self, dData, infoString='', currentBase = "" ):
+    for key in dData:
+      value = dData[ key ]
+      if type( value ) == types.DictType:
+        infoString = self.__dictAsInfoString( value, infoString, "%s/%s" % ( currentBase, key ) )
+      elif type( value ) in ( types.ListType, types.TupleType ):
+        if len(value) and value[0] == '[':
+          infoString += "%s/%s = %s\n" % ( currentBase, key, " ".join( value ) )
+        else:
+          infoString += "%s/%s = %s\n" % ( currentBase, key, ", ".join( value ) )
+      else:
+        infoString += "%s/%s = %s\n" % ( currentBase, key, str( value ) )
+  
+    return infoString
+
 
   #############################################################################
   def execute(self, arguments):
