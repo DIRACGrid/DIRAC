@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: glexecComputingElement.py,v 1.2 2009/03/09 08:16:04 paterson Exp $
+# $Id: glexecComputingElement.py,v 1.3 2009/03/10 16:14:20 paterson Exp $
 # File :   glexecComputingElement.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
     defaults to the standard InProcess Computing Element behaviour.
 """
 
-__RCSID__ = "$Id: glexecComputingElement.py,v 1.2 2009/03/09 08:16:04 paterson Exp $"
+__RCSID__ = "$Id: glexecComputingElement.py,v 1.3 2009/03/10 16:14:20 paterson Exp $"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
@@ -45,10 +45,15 @@ class glexecComputingElement(ComputingElement):
       return result
 
     payloadProxy = result['Value']
+    if not os.environ.has_key('X509_USER_PROXY'):
+      self.log.error('X509_USER_PROXY variable for pilot proxy not found in local environment')
+      return S_ERROR('X509_USER_PROXY not found')
+
     pilotProxy = os.environ['X509_USER_PROXY']
-    self.log.verbose('Setting GLEXEC_CLIENT_CERT and GLEXEC_SOURCE_PROXY to payload proxy')
+    self.log.info('Pilot proxy X509_USER_PROXY=%s' %pilotProxy)
     os.environ[ 'GLEXEC_CLIENT_CERT' ] = payloadProxy
     os.environ[ 'GLEXEC_SOURCE_PROXY' ] = payloadProxy
+    self.log.info('Set payload proxy variables:\nGLEXEC_CLIENT_CERT=%s\nGLEXEC_SOURCE_PROXY=%s' %(payloadProxy,payloadProxy))
 
     #Determine glexec location (default to standard InProcess behaviour if not found)
     glexecLocation = None
@@ -79,9 +84,9 @@ class glexecComputingElement(ComputingElement):
     if not result['OK']:
       self.analyseExitCode(result['Value']) #take no action as we currently default to InProcess
       self.log.error(result)
-    else:
-      self.log.debug('glexec CE result OK')
+      return result
 
+    self.log.debug('glexec CE result OK')
     self.submittedJobs += 1
     return S_OK(localID)
 
@@ -164,7 +169,22 @@ class glexecComputingElement(ComputingElement):
       cmd = '%s' %(glexecLocation)
 
     self.log.info('CE submission command is: %s' %cmd)
-    return shellCall(0,cmd,callbackFunction = self.sendOutput)
+    result = shellCall(0,cmd,callbackFunction = self.sendOutput)
+    if not result['OK']:
+      result['Value']=(0,'','')
+      return result
+
+    resultTuple = self.result['Value']
+    status = resultTuple[0]
+    stdOutput = resultTuple[1]
+    stdError = resultTuple[2]
+    self.log.info( "Status after the glexec execution is %s" % str( status ) )
+    if status:
+      error = S_ERROR(status)
+      error['Value'] = (status,stdout,stderr)
+      return error
+
+    return result
 
   #############################################################################
   def glexecLocate(self):
@@ -205,7 +225,7 @@ class glexecComputingElement(ComputingElement):
       self.log.error('Could not get payload proxy info',result)
       return result
 
-    self.log.verbose('Payload proxy information seen from pilot:\n%s' %result['Value'])
+    self.log.info('Payload proxy information seen from pilot:\n%s' %result['Value'])
     gProxyManager.renewProxy(minLifeTime=self.minProxyTime,
                              newProxyLifeTime=self.defaultProxyTime,
                              proxyToConnect=pilotProxy)
