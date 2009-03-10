@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.134 2009/03/08 11:41:39 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.135 2009/03/10 11:14:37 rgracian Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -47,7 +47,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.134 2009/03/08 11:41:39 paterson Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.135 2009/03/10 11:14:37 rgracian Exp $"
 
 import re, os, sys, string, types
 import time, datetime, operator
@@ -1096,10 +1096,6 @@ class JobDB(DB):
     if voPolicyDict['OK']:
       voPolicy = voPolicyDict['Value']
       for param,val in voPolicy.items():
-        #HACK TO allow migration
-        #DELETEME ON 03/09 and delete /DIRAC/VOPolicy/PilotType from CS
-        if param == "PilotType":
-          continue
         if not classAdJob.lookupAttribute(param):
           classAdJob.insertAttributeString(param,val)
 
