@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalog. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.47 2009/03/09 18:22:28 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.48 2009/03/10 11:29:27 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -184,39 +184,59 @@ class ReplicaManager:
       gLogger.error(errStr,diracSE)
       return S_ERROR(errStr)
     destinationSE = storageElement.getStorageElementName()['Value']
+    res = storageElement.getPfnForLfn(lfn)
+    if not res['OK']:
+      errStr = "ReplicaManager.putAndRegister: Failed to generate destination PFN."
+      gLogger.error(errStr,res['Message'])
+      return S_ERROR(errStr)
+    destPfn = res['Value']
+    fileDict = {destPfn:file}
 
     successful = {}
     failed = {}
     ##########################################################
     #  Perform the put here.
+    oDataOperation = self.__initialiseAccountingObject('putAndRegister',diracSE,1)
+    oDataOperation.setStartTime()
+    oDataOperation.setValueByKey('TransferSize',size)
     startTime = time.time()
-    res = storageElement.putFile(file,path,alternativeFileName=alternativeFile)
+    res = storageElement.putFile(fileDict,True)
     putTime = time.time() - startTime
+    oDataOperation.setValueByKey('TransferTime',putTime)
     if not res['OK']:
       errStr = "ReplicaManager.putAndRegister: Failed to put file to Storage Element."
+      oDataOperation.setValueByKey('TransferOK',0)
+      oDataOperation.setValueByKey('FinalStatus','Failed')
+      oDataOperation.setEndTime()
+      gDataStoreClient.addRegister(oDataOperation)
       gLogger.error(errStr,"%s: %s" % (file,res['Message']))
       return S_ERROR("%s %s" % (errStr,res['Message']))
-    destPfn = res['Value']
     successful[lfn] = {'put': putTime}
 
     ###########################################################
     # Perform the registration here
+    oDataOperation.setValueByKey('RegistrationTotal',1)
     fileTuple = (lfn,destPfn,size,destinationSE,guid,checksum)
     registerDict = {'LFN':lfn,'PFN':destPfn,'Size':size,'TargetSE':destinationSE,'GUID':guid,'Addler':checksum}
     startTime = time.time()
     res = self.registerFile(fileTuple)
     registerTime = time.time() - startTime
-
+    oDataOperation.setValueByKey('RegistrationTime',registerTime)
     if not res['OK']:
       errStr = "ReplicaManager.putAndRegister: Completely failed to register file."
       gLogger.error(errStr,res['Message'])
       failed[lfn] = {'register':registerDict}
+      oDataOperation.setValueByKey('FinalStatus','Failed')
     elif res['Value']['Failed'].has_key(lfn):
       errStr = "ReplicaManager.putAndRegister: Failed to register file."
       gLogger.error(errStr,"%s %s" % (lfn,res['Value']['Failed'][lfn]))
+      oDataOperation.setValueByKey('FinalStatus','Failed')
       failed[lfn] = {'register':registerDict}
     else:
       successful[lfn]['register'] = registerTime
+      oDataOperation.setValueByKey('RegistrationOK',1)
+    oDataOperation.setEndTime()
+    gDataStoreClient.addRegister(oDataOperation)
     resDict = {'Successful': successful,'Failed':failed}
     return S_OK(resDict)
 
@@ -1064,35 +1084,6 @@ class ReplicaManager:
       gLogger.info(infoStr)
       return res
 
-  def  onlineRetransfer(self,diracSE,pfnToRemove):
-    """ Requests the online system to re-transfer files
-
-        'diracSE' is the storage element where the file should be removed from
-        'pfnsToRemove' is the physical files
-    """
-    if type(pfnToRemove) == types.ListType:
-      pfns = pfnToRemove
-    elif type(pfnToRemove) == types.StringType:
-      pfns = [pfnToRemove]
-    else:
-      errStr = "ReplicaManager.onlineRetransfer: Supplied pfns must be string or list of strings."
-      gLogger.error(errStr)
-      return S_ERROR(errStr)
-    storageElement = StorageElement(diracSE)
-    if not storageElement.isValid()['Value']:
-      errStr = "ReplicaManager.onlineRetransfer: Failed to instantiate Storage Element for retransfer."
-      gLogger.error(errStr,diracSE)
-      return S_ERROR(errStr)
-    res = storageElement.retransferOnlineFile(pfns)
-    if not res['OK']:
-      errStr = "ReplicaManager.onlineRetransfer: Failed to request retransfers."
-      gLogger.error(errStr,res['Message'])
-      return S_ERROR(errStr)
-    else:
-      infoStr = "ReplicaManager.onlineRetransfer: Successfully issued retransfer request."
-      gLogger.info(infoStr)
-      return res
-
   ###################################################################
   #
   # These are the methods for obtaining file metadata (these are bulk methods)
@@ -1131,7 +1122,7 @@ class ReplicaManager:
         failed[lfn] = errStr
       else:
         pfnDict[res['Value']['Successful'][lfn][storageElementName]] = lfn
-    res = self.getPhysicalFileMetadata(pfnDict.keys(),storageElementName)
+    res = self.__executeStorageElementFunction(storageElementName,pfnDict.keys(),'getFileMetadata')
     if not res['OK']:
       return res
     else:
@@ -1181,7 +1172,8 @@ class ReplicaManager:
         failed[lfn] = errStr
       else:
         pfnDict = {res['Value']['Successful'][lfn][storageElementName]:lfn}
-    res = self.getPhysicalFileAccessUrl(pfnDict.keys(),storageElementName)
+    res = self.__executeStorageElementFunction(storageElementName,pfnDict.keys(),'getAccessUrl')
+
     if not res['OK']:
       return res
     else:
@@ -1193,6 +1185,8 @@ class ReplicaManager:
         failed[pfnDict[pfn]] = errorMessage
       resDict = {'Successful':successful,'Failed':failed}
       return S_OK(resDict)
+
+
 
   ##########################################################################
   #
@@ -1378,7 +1372,7 @@ class ReplicaManager:
       gLogger.error(errMessage)
       return S_ERROR(errMessage)
     gLogger.debug("ReplicaManager.__executeStorageElementFunction: Attempting to perform '%s' operation with %s pfns." % (method,len(pfns)))
-    # Check we can instanciate the storage element correctly
+    # Check we can instantiate the storage element correctly
     storageElement = StorageElement(storageElementName)
     if not storageElement.isValid()['Value']:   
       errStr = "ReplicaManager.__executeStorageElementFunction: Failed to instantiate Storage Element"
@@ -1439,4 +1433,11 @@ class ReplicaManager:
     """
     return self.getPhysicalFile(physicalFile,storageElementName)
 
+  def  onlineRetransfer(self,storageElementName,physicalFile):
+    """ Requests the online system to re-transfer files
+
+        'storageElementName' is the storage element where the file should be removed from
+        'physicalFile' is the physical files
+    """
+    return self.__executeStorageElementFunction(storageElementName,physicalFile,'retransferOnlineFile')
 
