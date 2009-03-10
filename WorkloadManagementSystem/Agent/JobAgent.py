@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.57 2009/03/08 22:26:55 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.58 2009/03/10 15:52:30 paterson Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.57 2009/03/08 22:26:55 paterson Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.58 2009/03/10 15:52:30 paterson Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -230,7 +230,7 @@ class JobAgent(Agent):
       if not submission['OK']:
         self.log.warn('Job submission failed during creation of the Job Wrapper')
         self.__report(jobID,'Failed','Job Wrapper Creation')
-        return self.__finish('Problem Creating Job Wrapper')
+        return self.__finish('Error During CE Submission')
 
       self.log.verbose('After %sCE submitJob()' %(self.ceName))
     except Exception, x:
@@ -332,7 +332,7 @@ class JobAgent(Agent):
       return result
 
     wrapperFile = result['Value']
-    #self.__report(jobID,'Matched','Queued')
+    self.__report(jobID,'Matched','Submitted To CE')
 
     wrapperName = os.path.basename(wrapperFile)
     self.log.info('Submitting %s to %sCE' %(wrapperName,self.ceName))
