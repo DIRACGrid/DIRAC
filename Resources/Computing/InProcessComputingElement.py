@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: InProcessComputingElement.py,v 1.5 2009/03/08 22:09:18 paterson Exp $
+# $Id: InProcessComputingElement.py,v 1.6 2009/03/10 18:54:10 paterson Exp $
 # File :   InProcessComputingElement.py
 # Author : Stuart Paterson
 ########################################################################
@@ -7,7 +7,7 @@
 """ The simplest Computing Element instance that submits jobs locally.
 """
 
-__RCSID__ = "$Id: InProcessComputingElement.py,v 1.5 2009/03/08 22:09:18 paterson Exp $"
+__RCSID__ = "$Id: InProcessComputingElement.py,v 1.6 2009/03/10 18:54:10 paterson Exp $"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
@@ -29,7 +29,7 @@ class InProcessComputingElement(ComputingElement):
     ComputingElement.__init__(self,CE_NAME)
     self.minProxyTime = gConfig.getValue( '/Security/MinProxyLifeTime', 10800 ) #secs
     self.defaultProxyTime = gConfig.getValue( '/Security/DefaultProxyLifeTime', 86400 ) #secs
-    self.proxyCheckPeriod = gConfig.getValue('/Security/ProxyCheckingPeriod',60) #mins
+    self.proxyCheckPeriod = gConfig.getValue('/Security/ProxyCheckingPeriod',3600) #secs
     self.submittedJobs = 0
 
   #############################################################################
