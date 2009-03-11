@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: InputDataByProtocol.py,v 1.10 2008/10/08 12:33:20 rgracian Exp $
+# $Id: InputDataByProtocol.py,v 1.11 2009/03/11 19:56:27 acsmith Exp $
 # File :   InputDataByProtocol.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     defined in the CS for the VO.
 """
 
-__RCSID__ = "$Id: InputDataByProtocol.py,v 1.10 2008/10/08 12:33:20 rgracian Exp $"
+__RCSID__ = "$Id: InputDataByProtocol.py,v 1.11 2009/03/11 19:56:27 acsmith Exp $"
 
 from DIRAC.Core.DISET.RPCClient                                     import RPCClient
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
@@ -187,20 +187,11 @@ class InputDataByProtocol:
               if rep == pfn:
                 turl = pfnTurlDict[pfn].values()[0]
                 resolvedData[lfn]['turl'] = turl
-                protocol = pfnTurlDict[pfn].keys()[0]
-                resolvedData[lfn]['protocol'] = protocol
-                self.log.info('Resolved input data\n>>>> SE: %s\n>>>>LFN: %s\n>>>>PFN: %s\n>>>>TURL: %s\n>>>>PROTOCOL %s' %(se,lfn,pfn,turl,protocol))
+                self.log.info('Resolved input data\n>>>> SE: %s\n>>>>LFN: %s\n>>>>PFN: %s\n>>>>TURL: %s' %(se,lfn,pfn,turl))
 
     self.log.verbose(resolvedData)
-    count = {}
     for lfn,mdata in resolvedData.items():
-      if mdata.has_key('protocol'):
-        if count.has_key(mdata['protocol']):
-          tmp = count[mdata['protocol']]
-          count[mdata['protocol']] = tmp+1
-        else:
-          count[mdata['protocol']] = 1
-      else:
+      if not mdata.has_key('turl'):
         self.log.verbose('%s: No TURL resolved for %s' %(COMPONENT_NAME,lfn))
 
     #Remove any failed replicas from the resolvedData dictionary
@@ -209,13 +200,6 @@ class InputDataByProtocol:
       for lfn in failedReplicas:
         if resolvedData.has_key(lfn):
           del resolvedData[lfn]
-
-    if count:
-      report = ''
-      for prot,num in count.items():
-        report += '%s TURLs returned for %s protocol\n' %(num,prot)
-      if report:
-        self.__setJobParam(COMPONENT_NAME,report)
 
     result = S_OK()
     result['Successful'] = resolvedData
