@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalog. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.52 2009/03/11 10:11:50 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.53 2009/03/11 19:34:40 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -75,10 +75,18 @@ class ReplicaManager:
       return S_ERROR(errStr)
     destinationSE = storageElement.getStorageElementName()['Value']
 
+    res = storageElement.getPfnForLfn(storagePath)
+    if not res['OK']:
+      errStr = "ReplicaManager.putDirectory: Failed to generate destination PFN."
+      gLogger.error(errStr,res['Message'])
+      return S_ERROR(errStr)
+    destPfn = res['Value']
+    dirDict = {destPfn:localDirectory}
+
     ##########################################################
     #  Perform the put here.
     startTime = time.time()
-    res = storageElement.putDirectory(localDirectory,storagePath)
+    putDirRes = storageElement.putDirectory(dirDict,singleDirectory=True)
     putTime = time.time() - startTime
     if not res['OK']:
       errStr = "ReplicaManager.put: Failed to put file to Storage Element."
@@ -261,14 +269,23 @@ class ReplicaManager:
     replicaPreference = res['Value']
     ###########################################################
     # Now perform the replication for the file
-    if not destPath:
-      destPath = os.path.dirname(lfn)
+    if destPath:
+      destPath = '%s/%s' % (destPath,os.path.basename(lfn))
+    else:
+      destPath = lfn
+    res = destStorageElement.getPfnForLfn(destPath)
+    if not res['OK']:
+      errStr = "ReplicaManager.__replicate: Failed to generate destination PFN."
+      gLogger.error(errStr,res['Message'])   
+      return S_ERROR(errStr)
+    destPfn = res['Value']
     for sourceSE,sourcePfn in replicaPreference:
       gLogger.verbose("ReplicaManager.__replicate: Attempting replication from %s to %s." % (sourceSE,destSE))
-      res = destStorageElement.replicateFile(sourcePfn,catalogueSize,destPath)
+      fileDict = {destPfn:sourcePfn}
+      res = destStorageElement.replicateFile(fileDict,catalogueSize,singleFile=True)
       if res['OK']:
         gLogger.info("ReplicaManager.__replicate: Replication successful.")
-        resDict = {'DestSE':destSE,'DestPfn':res['Value']}
+        resDict = {'DestSE':destSE,'DestPfn':destPfn}
         return S_OK(resDict)
       else:
         errStr = "ReplicaManager.__replicate: Replication failed."
@@ -1194,7 +1211,7 @@ class ReplicaManager:
   def __executeReplicaStorageElementOperation(self,storageElementName,lfn,method,argsDict={}):
     """ A simple wrapper that allows replica querying then perform the StorageElement operation
     """
-    res = self.__executeFileCatalogFunction(lfns,'getReplicas')
+    res = self.__executeFileCatalogFunction(lfn,'getReplicas')
     if not res['OK']:
       errStr = "ReplicaManager.__executeReplicaStorageElementOperation: Completely failed to get replicas for LFNs."
       gLogger.error(errStr,res['Message']) 
