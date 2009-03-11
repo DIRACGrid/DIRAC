@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.58 2009/03/10 15:52:30 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.59 2009/03/11 12:15:52 rgracian Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.58 2009/03/10 15:52:30 paterson Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.59 2009/03/11 12:15:52 rgracian Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -234,7 +234,7 @@ class JobAgent(Agent):
 
       self.log.verbose('After %sCE submitJob()' %(self.ceName))
     except Exception, x:
-      self.log.exception(lException=x)
+      self.log.exception()
       result = jobManager.rescheduleJob(jobID)
       if not result['OK']:
         self.log.warn(result['Message'])
