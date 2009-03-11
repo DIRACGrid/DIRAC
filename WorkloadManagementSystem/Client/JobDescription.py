@@ -135,6 +135,11 @@ class JobDescription:
     result = self.__checkMultiChoiceInDescription( "PilotTypes", [ 'private' ] )
     if not result[ 'OK' ]:
       return result
+    result = self.__checkMultiChoiceInDescription( "JobType",
+                                                   gConfig.getValue( "/Operations/JobDescription/AllowedJobTypes",
+                                                                     [] ) )
+    if not result[ 'OK' ]:
+      return result
     return S_OK()
 
   def setVar( self, varName, varValue ):
