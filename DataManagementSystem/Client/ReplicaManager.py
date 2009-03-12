@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalog. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.54 2009/03/11 20:06:01 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.55 2009/03/12 08:58:37 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -1562,14 +1562,6 @@ class ReplicaManager:
   #
   # Defunct methods only there before checking backward compatability
   # 
-
-  def getPfn(self,physicalFile,diracSE):
-    """ Get a local copy of the PFN from the given Storage Element.
-
-        'pfn' is the pfn
-        'storageElement' is the DIRAC storage element
-    """
-    return self.getPhysicalFile(physicalFile,storageElementName)
 
   def  onlineRetransfer(self,storageElementName,physicalFile):
     """ Requests the online system to re-transfer files
