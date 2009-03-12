@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.32 2009/03/12 14:37:40 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.33 2009/03/12 16:22:02 atsareg Exp $
 # File :   TaskQueueDirector.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -84,7 +84,7 @@
         SoftwareTag
 
 """
-__RCSID__ = "$Id: TaskQueueDirector.py,v 1.32 2009/03/12 14:37:40 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueDirector.py,v 1.33 2009/03/12 16:22:02 atsareg Exp $"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 
