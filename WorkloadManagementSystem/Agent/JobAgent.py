@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.59 2009/03/11 12:15:52 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.60 2009/03/12 10:30:28 paterson Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.59 2009/03/11 12:15:52 rgracian Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.60 2009/03/12 10:30:28 paterson Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -428,7 +428,7 @@ class JobAgent(Agent):
     self.log.debug(realPythonPath)
     dPython = realPythonPath
 
-    siteRootPython = 'sys.path.insert(0,"%s")' %(self.siteRoot)
+    siteRootPython = self.siteRoot
     self.log.debug('DIRACPython is:\n%s' %dPython)
     self.log.debug('SiteRootPythonDir is:\n%s' %siteRootPython)
     libDir = '%s/%s/lib' %(self.siteRoot,platform)
