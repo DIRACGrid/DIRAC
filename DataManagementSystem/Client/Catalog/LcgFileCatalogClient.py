@@ -797,6 +797,35 @@ class LcgFileCatalogClient(FileCatalogueBase):
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
+  def getPathPermissions(self,path):
+    fullLfn = '%s%s' % (self.prefix,path)
+    results,objects = lfc.lfc_getacl(fullLfn,256)#lfc.CNS_ACL_GROUP_OBJ)
+    if results == -1:
+      errStr = "LcgFileCatalogClient.getPathPermissions: Failed to obtain all path permissions."
+      gLogger.error(errStr,"%s %s" % (path,lfc.sstrerror(lfc.cvar.serrno)))
+      return S_ERROR(errStr)
+    permissionsDict = {}
+    for object in objects:
+      if object.a_type == lfc.CNS_ACL_USER_OBJ:
+        res = self.__getDNFromUID(object.a_id)
+        if not res['OK']:
+          return res
+        permissionsDict['DN'] = res['Value']
+        permissionsDict['user'] = object.a_perm
+      elif object.a_type == lfc.CNS_ACL_GROUP_OBJ:
+        res = self.__getRoleFromGID(object.a_id)
+        if not res['OK']:
+          return res
+        permissionsDict['Role'] = res['Value']
+        permissionsDict['group'] = object.a_perm
+      elif object.a_type == lfc.CNS_ACL_OTHER:
+        permissionsDict['world'] = object.a_perm
+      else:
+        errStr = "LcgFileCatalogClient.getPathPermissions: ACL type not considered."
+        gLogger.debug(errStr,object.a_type)
+    gLogger.verbose("LcgFileCatalogClient.getPathPermissions: %s owned by %s:%s." % (path,permissionsDict['DN'],permissionsDict['Role'])) 
+    return S_OK(permissionsDict)
+
   def __getDNFromUID(self,userID):
     buffer = ""
     for i in range(0,lfc.CA_MAXNAMELEN+1):
@@ -804,8 +833,25 @@ class LcgFileCatalogClient(FileCatalogueBase):
     res = lfc.lfc_getusrbyuid(userID,buffer)
     if res == 0:
       dn = buffer[:buffer.find('\x00')]
+      gLogger.debug("LcgFileCatalogClient.__getDNFromUID: UID %s maps to %s." % (userID,dn))
       return S_OK(dn)
     else:
+      errStr = "LcgFileCatalogClient.__getDNFromUID: Failed to get DN from UID"
+      gLogger.error(errStr,"%s %s" % (userID,lfc.sstrerror(lfc.cvar.serrno)))
+      return S_ERROR(errStr)
+
+  def __getRoleFromGID(self,groupID):
+    buffer = ""
+    for i in range(0,lfc.CA_MAXNAMELEN+1):
+      buffer = buffer+" "
+    res = lfc.lfc_getgrpbygid(groupID,buffer)
+    if res == 0:
+      role = buffer[:buffer.find('\x00')]
+      gLogger.debug("LcgFileCatalogClient.__getRoleFromGID: GID %s maps to %s." % (groupID,role))
+      return S_OK(role)
+    else:
+      errStr = "LcgFileCatalogClient:__getRoleFromGID: Failed to get role from GID"
+      gLogger.error(errStr,"%s %s" % (groupID,lfc.sstrerror(lfc.cvar.serrno)))
       return S_ERROR()
 
   def getDirectorySize(self, path):
