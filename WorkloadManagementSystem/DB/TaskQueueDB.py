@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.77 2009/03/10 17:05:40 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.78 2009/03/12 18:16:18 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.77 2009/03/10 17:05:40 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.78 2009/03/12 18:16:18 acasajus Exp $"
 
 import time
 import types
@@ -422,7 +422,7 @@ class TaskQueueDB(DB):
     self.log.info( "Starting match for requirements", self.__strDict( tqMatchDict ) )
     retVal = self._checkMatchDefinition( tqMatchDict )
     if not retVal[ 'OK' ]:
-      self.log.error( "TQ match request check failed", retVal[ 'Value' ] )
+      self.log.error( "TQ match request check failed", retVal[ 'Message' ] )
       return retVal
     retVal = self._getConnection()
     if not retVal[ 'OK' ]:
