@@ -1,9 +1,9 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/X509Chain.py,v 1.33 2009/02/19 17:09:16 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/X509Chain.py,v 1.34 2009/03/12 11:27:40 acasajus Exp $
 ########################################################################
 """ X509Chain is a class for managing X509 chains with their Pkeys
 """
-__RCSID__ = "$Id: X509Chain.py,v 1.33 2009/02/19 17:09:16 acasajus Exp $"
+__RCSID__ = "$Id: X509Chain.py,v 1.34 2009/03/12 11:27:40 acasajus Exp $"
 
 import types
 import os
@@ -42,8 +42,8 @@ class X509Chain:
       fd = file( chainLocation )
       pemData = fd.read()
       fd.close()
-    except IOError:
-      return S_ERROR( "Can't open %s file" % chainLocation )
+    except Exception, e:
+      return S_ERROR( "Can't open %s file: %s" % ( chainLocation, str(e) ) )
     return self.loadChainFromString( pemData )
 
   def loadChainFromString( self, pemData ):
@@ -79,8 +79,8 @@ class X509Chain:
       fd = file( chainLocation )
       pemData = fd.read()
       fd.close()
-    except IOError:
-      return S_ERROR( "Can't open %s file" % chainLocation )
+    except Exception, e:
+      return S_ERROR( "Can't open %s file: %s" % ( chainLocation, str(e) ) )
     return self.loadKeyFromString( pemData, password )
 
   def loadKeyFromString( self, pemData, password = False ):
@@ -114,8 +114,8 @@ class X509Chain:
       fd = file( chainLocation )
       pemData = fd.read()
       fd.close()
-    except IOError:
-      return S_ERROR( "Can't open %s file" % chainLocation )
+    except Exception, e:
+      return S_ERROR( "Can't open %s file: %s" % ( chainLocation, str(e) ) )
     return self.loadProxyFromString( pemData )
 
   def loadProxyFromString( self, pemData ):
