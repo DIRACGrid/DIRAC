@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.55 2009/03/10 21:18:00 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.56 2009/03/12 10:39:59 paterson Exp $
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -30,7 +30,7 @@
    Note that several executables can be provided and wil be executed sequentially.
 """
 
-__RCSID__ = "$Id: Job.py,v 1.55 2009/03/10 21:18:00 paterson Exp $"
+__RCSID__ = "$Id: Job.py,v 1.56 2009/03/12 10:39:59 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -66,7 +66,7 @@ class Job:
     self.stepCount = 0
     self.owner = 'NotSpecified'
     self.name = 'Name'
-    self.type = 'user'
+    self.type = 'User'
     self.priority = 1
     self.group = 'lhcb'
     self.site = 'ANY' #ANY
