@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.60 2009/03/12 10:30:28 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.61 2009/03/12 15:00:41 paterson Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.60 2009/03/12 10:30:28 paterson Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.61 2009/03/12 15:00:41 paterson Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -433,7 +433,9 @@ class JobAgent(Agent):
     self.log.debug('SiteRootPythonDir is:\n%s' %siteRootPython)
     libDir = '%s/%s/lib' %(self.siteRoot,platform)
     scriptsDir = '%s/scripts' %(self.siteRoot)
-    wrapperTemplate = wrapperTemplate % (signature, jobID, date_time )
+    wrapperTemplate = wrapperTemplate.replace( "@SIGNATURE@", str(signature) )
+    wrapperTemplate = wrapperTemplate.replace( "@JOBID@", str(jobID) )
+    wrapperTemplate = wrapperTemplate.replace( "@DATESTRING@", str(date_time) )
     wrapperTemplate = wrapperTemplate.replace( "@JOBARGS@", str(arguments) )
     wrapperTemplate = wrapperTemplate.replace("@SITEPYTHON@",str(siteRootPython) )
     wrapper = open (jobWrapperFile,"w")
