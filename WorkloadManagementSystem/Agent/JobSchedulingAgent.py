@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.50 2009/01/28 14:49:02 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSchedulingAgent.py,v 1.51 2009/03/12 13:53:59 acasajus Exp $
 # File :   JobSchedulingAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@
       meaningfully.
 
 """
-__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.50 2009/01/28 14:49:02 acasajus Exp $"
+__RCSID__ = "$Id: JobSchedulingAgent.py,v 1.51 2009/03/12 13:53:59 acasajus Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
@@ -375,6 +375,9 @@ class JobSchedulingAgent(OptimizerModule):
       if classAdJob.lookupAttribute( "PilotType" ):
         classAddReq.set_expression( 'PilotTypes', classAdJob.get_expression( 'PilotType' ) )
 
+    if classAdJob.lookupAttribute( "JobType" ):
+      jobTypes = [ jt for jt in classAdJob.getListFromExpression( 'JobType' ) if jt ]
+      classAddReq.insertAttributeVectorString( 'JobTypes', jobTypes )
 
     #Required CE's requirements
     gridCEs = [ ce for ce in classAdJob.getListFromExpression( 'GridRequiredCEs' ) if ce ]
