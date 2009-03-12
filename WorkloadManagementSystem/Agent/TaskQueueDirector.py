@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.29 2009/03/09 15:59:57 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.30 2009/03/12 11:09:36 atsareg Exp $
 # File :   TaskQueueDirector.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -84,7 +84,7 @@
         SoftwareTag
 
 """
-__RCSID__ = "$Id: TaskQueueDirector.py,v 1.29 2009/03/09 15:59:57 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueDirector.py,v 1.30 2009/03/12 11:09:36 atsareg Exp $"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 
@@ -530,7 +530,7 @@ class PilotDirector:
 
       self.log.verbose( 'Submitting Pilot' )
       ceMask = self.__resolveCECandidates( taskQueueDict )
-      if not ceMask: return S_ERROR( 'No CE available for TaskQueue' )
+      if not ceMask: return S_ERROR( 'No CE available for TaskQueue %d' % int(taskQueueID) )
       workingDirectory = tempfile.mkdtemp( prefix= 'TQ_%s_' % taskQueueID, dir = workDir )
       self.log.verbose( 'Using working Directory:', workingDirectory )
 
