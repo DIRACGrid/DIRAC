@@ -139,7 +139,12 @@ class JobDescription:
                                                    gConfig.getValue( "/Operations/JobDescription/AllowedJobTypes",
                                                                      [] ) )
     if not result[ 'OK' ]:
-      return result
+      #HACK to maintain backwards compatibility
+      #If invalid set to "User"
+      #HACKEXPIRATION 05/2009
+      self.setVar( "JobType", "User" )
+      #Uncomment after deletion of hack
+      #return result
     return S_OK()
 
   def setVar( self, varName, varValue ):
