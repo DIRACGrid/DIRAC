@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: InputDataByProtocol.py,v 1.11 2009/03/11 19:56:27 acsmith Exp $
+# $Id: InputDataByProtocol.py,v 1.12 2009/03/12 08:50:10 paterson Exp $
 # File :   InputDataByProtocol.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     defined in the CS for the VO.
 """
 
-__RCSID__ = "$Id: InputDataByProtocol.py,v 1.11 2009/03/11 19:56:27 acsmith Exp $"
+__RCSID__ = "$Id: InputDataByProtocol.py,v 1.12 2009/03/12 08:50:10 paterson Exp $"
 
 from DIRAC.Core.DISET.RPCClient                                     import RPCClient
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
@@ -185,7 +185,7 @@ class InputDataByProtocol:
           for se,rep in reps.items():
             for pfn in pfnTurlDict.keys():
               if rep == pfn:
-                turl = pfnTurlDict[pfn].values()[0]
+                turl = pfnTurlDict[pfn]
                 resolvedData[lfn]['turl'] = turl
                 self.log.info('Resolved input data\n>>>> SE: %s\n>>>>LFN: %s\n>>>>PFN: %s\n>>>>TURL: %s' %(se,lfn,pfn,turl))
 
