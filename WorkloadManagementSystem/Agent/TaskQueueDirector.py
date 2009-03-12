@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.30 2009/03/12 11:09:36 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.31 2009/03/12 13:25:56 atsareg Exp $
 # File :   TaskQueueDirector.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -84,7 +84,7 @@
         SoftwareTag
 
 """
-__RCSID__ = "$Id: TaskQueueDirector.py,v 1.30 2009/03/12 11:09:36 atsareg Exp $"
+__RCSID__ = "$Id: TaskQueueDirector.py,v 1.31 2009/03/12 13:25:56 atsareg Exp $"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 
@@ -632,7 +632,7 @@ class PilotDirector:
             shutil.rmtree( workingDirectory )
           except:
             pass
-          return S_ERROR( ERROR_CE )
+          return S_ERROR( ERROR_CE + ' TQ: %d' % taskQueueID )
 
       # Now we are ready for the actual submission, so
 
@@ -643,7 +643,7 @@ class PilotDirector:
       except:
         pass
       if not submitRet:
-        return S_ERROR( 'Pilot Submission Failed' )
+        return S_ERROR( 'Pilot Submission Failed for TQ %d ' % taskQueueID )
       # pilotReference, resourceBroker = submitRet
 
       submittedPilots = 0
@@ -834,7 +834,7 @@ class PilotDirector:
     if ret['Value'][0] != 0:
       self.log.error( 'Error executing List Match:', str(ret['Value'][0]) + '\n'.join( ret['Value'][1:3] ) )
       return False
-    self.log.info( 'List Match Execution Time:', time.time()-start )
+    self.log.info( 'List Match Execution Time: %.2f for TaskQueue %d' % ((time.time()-start),taskQueueID) )
 
     stdout = ret['Value'][1]
     stderr = ret['Value'][2]
@@ -872,7 +872,7 @@ class PilotDirector:
     if ret['Value'][0] != 0:
       self.log.error( 'Error executing Job Submit:', str(ret['Value'][0]) + '\n'.join( ret['Value'][1:3] ) )
       return False
-    self.log.info( 'Job Submit Execution Time:', time.time()-start )
+    self.log.info( 'Job Submit Execution Time: %.2f for TaskQueue %d' % ((time.time()-start),taskQueueID) )
 
     stdout = ret['Value'][1]
     stderr = ret['Value'][2]
@@ -1024,7 +1024,7 @@ ParameterStart = 0;
     if ret['Value'][0] != 0:
       self.log.error( 'Error executing Job Status:', str(ret['Value'][0]) + '\n'.join( ret['Value'][1:3] ) )
       return False
-    self.log.info( 'Job Status Execution Time:', time.time()-start )
+    self.log.info( 'Job Status Execution Time: %.2f' % (time.time()-start) )
 
     stdout = ret['Value'][1]
     stderr = ret['Value'][2]
@@ -1137,5 +1137,4 @@ MyProxyServer = "no-myproxy.cern.ch";
         result.append(ret)
 
     return result
-
 
