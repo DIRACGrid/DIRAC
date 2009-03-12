@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.31 2009/03/12 13:25:56 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.32 2009/03/12 14:37:40 rgracian Exp $
 # File :   TaskQueueDirector.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -84,7 +84,7 @@
         SoftwareTag
 
 """
-__RCSID__ = "$Id: TaskQueueDirector.py,v 1.31 2009/03/12 13:25:56 atsareg Exp $"
+__RCSID__ = "$Id: TaskQueueDirector.py,v 1.32 2009/03/12 14:37:40 rgracian Exp $"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 
@@ -970,7 +970,7 @@ MyProxyServer = "no-myproxy.cern.ch";
 ];
 """ % ( extraReq, workingDirectory, workingDirectory, workingDirectory, ', '.join(RBs), ', '.join(LBs) )
 
-    if pilotsToSubmit >= 1:
+    if pilotsToSubmit > 1:
       wmsClientJDL += """
 JobType = "Parametric";
 Parameters= %s;
