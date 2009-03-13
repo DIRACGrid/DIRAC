@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.78 2009/03/12 18:16:18 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.79 2009/03/13 23:12:09 atsareg Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.78 2009/03/12 18:16:18 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.79 2009/03/13 23:12:09 atsareg Exp $"
 
 import time
 import types
@@ -631,7 +631,7 @@ class TaskQueueDB(DB):
     if not connObj:
       retVal = self._getConnection()
       if not retVal[ 'OK' ]:
-        return S_ERROR( "Can't delete job: %s" % retVal[ 'Message' ] )
+        return S_ERROR( "Can't get TQ for job: %s" % retVal[ 'Message' ] )
       connObj = retVal[ 'Value' ]
 
     retVal = self._query( 'SELECT TQId FROM `tq_Jobs` WHERE JobId = %s ' % jobId, conn = connObj )
@@ -643,6 +643,31 @@ class TaskQueueDB(DB):
       return S_ERROR('Not in TaskQueues')
 
     return S_OK( retVal['Value'][0][0] )
+  
+  def getTaskQueueForJobs( self, jobIDs, connObj = False ):
+    """
+    Return TaskQueues for a given list of Jobs
+    """
+    if not connObj:
+      retVal = self._getConnection()
+      if not retVal[ 'OK' ]:
+        return S_ERROR( "Can't get TQs for a job list: %s" % retVal[ 'Message' ] )
+      connObj = retVal[ 'Value' ]
+
+    jobString = ','.join([ str(x) for x in jobIDs ])
+    retVal = self._query( 'SELECT JobId,TQId FROM `tq_Jobs` WHERE JobId in (%s) ' % jobString, conn = connObj )
+
+    if not retVal[ 'OK' ]:
+      return retVal
+
+    if not retVal['Value']:
+      return S_ERROR('Not in TaskQueues')
+
+    resultDict = {}
+    for jobID,TQID in retVal['Value']:
+      resultDict[int(jobID)] = int(TQID)
+
+    return S_OK( resultDict )
 
   def __getOwnerForTaskQueue( self, tqId, connObj = False ):
     retVal = self._query( "SELECT OwnerDN, OwnerGroup from `tq_TaskQueues` WHERE TQId=%s" % tqId, conn = connObj )
