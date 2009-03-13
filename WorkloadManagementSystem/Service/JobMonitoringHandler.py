@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobMonitoringHandler.py,v 1.26 2009/01/19 18:17:20 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobMonitoringHandler.py,v 1.27 2009/03/13 23:22:05 atsareg Exp $
 ########################################################################
 
 """ JobMonitoringHandler is the implementation of the JobMonitoring service
@@ -11,12 +11,13 @@
 
 """
 
-__RCSID__ = "$Id: JobMonitoringHandler.py,v 1.26 2009/01/19 18:17:20 atsareg Exp $"
+__RCSID__ = "$Id: JobMonitoringHandler.py,v 1.27 2009/03/13 23:22:05 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
+from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 import DIRAC.Core.Utilities.Time as Time
 
@@ -24,6 +25,7 @@ import DIRAC.Core.Utilities.Time as Time
 jobDB = False
 jobLoggingDB = False
 proxyRepository = False
+taskQueueDB = False
 
 SUMMARY = ['JobType','Site','JobName','Owner','SubmissionTime',
            'LastUpdateTime','Status','MinorStatus','ApplicationStatus']
@@ -32,9 +34,10 @@ PRIMARY_SUMMARY = []
 
 def initializeJobMonitoringHandler( serviceInfo ):
 
-  global jobDB, jobLoggingDB
+  global jobDB, jobLoggingDB, taskQueueDB
   jobDB = JobDB()
   jobLoggingDB = JobLoggingDB()
+  taskQueueDB = TaskQueueDB()
   return S_OK()
 
 class JobMonitoringHandler( RequestHandler ):
@@ -350,7 +353,12 @@ class JobMonitoringHandler( RequestHandler ):
           jobDict['LastSignOfLife'] = jobDict['HeartBeatTime']
         else:
           jobDict['LastSignOfLife'] = jobDict['LastUpdateTime']
-
+    
+    tqDict = {}      
+    result = taskQueueDB.getTaskQueueForJobs(summaryJobList)
+    if result['OK']:
+      tqDict = result['Value']      
+      
     # prepare the standard structure now
     key = summaryDict.keys()[0]
     paramNames = summaryDict[key].keys()
@@ -360,11 +368,15 @@ class JobMonitoringHandler( RequestHandler ):
       jParList = []
       for pname in paramNames:
         jParList.append(jobDict[pname])
+      if tqDict and tqDict.has_key(jobID):
+        jParList.append(tqDict[jobID])
+      else:
+        jParList.append(0)    
       records.append(jParList)
 
-    resultDict['ParameterNames'] = paramNames
+    resultDict['ParameterNames'] = paramNames + ['TaskQueueID']   
     resultDict['Records'] = records
-
+    
     statusDict = {}
     result = jobDB.getCounters('Jobs',['Status'],selectDict,
                                newer=last_update,
