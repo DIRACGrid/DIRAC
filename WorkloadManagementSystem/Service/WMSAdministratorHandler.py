@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSAdministratorHandler.py,v 1.44 2009/02/03 14:38:18 atsareg Exp $
+# $Id: WMSAdministratorHandler.py,v 1.45 2009/03/13 13:05:51 atsareg Exp $
 ########################################################################
 """
 This is a DIRAC WMS administrator interface.
@@ -14,7 +14,7 @@ Access to the pilot data:
 
 """
 
-__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.44 2009/02/03 14:38:18 atsareg Exp $"
+__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.45 2009/03/13 13:05:51 atsareg Exp $"
 
 import os, sys, string, uu, shutil
 from types import *
@@ -267,6 +267,44 @@ class WMSAdministratorHandler(RequestHandler):
 
     result = jobDB.getSiteSummaryWeb(selectDict, sortList, startItem, maxItems)
     return result
+  
+  ##############################################################################
+  types_getSiteSummarySelectors = []
+  def export_getSiteSummarySelectors(self):
+    """ Get all the distinct selector values for the site summary web portal page
+    """
+
+    resultDict = {}
+    statusList = ['Good','Fair','Poor','Bad','Idle']
+    resultDict['Status'] = statusList
+    maskStatus = ['Active','Banned','NoMask','Reduced']
+    resultDict['MaskStatus'] = maskStatus
+    
+    gridTypes = []
+    result = gConfig.getSections('Resources/Sites/',[])
+    if result['OK']:
+      gridTypes = result['Value']
+    
+    resultDict['GridType'] = gridTypes
+    siteList = []
+    for grid in gridTypes:
+      result = gConfig.getSections('Resources/Sites/%s' % grid,[])
+      if result['OK']:
+        siteList += result['Value']
+      
+    countryList = []  
+    for site in siteList:
+      if site.find('.') != -1:
+        grid,sname,country = site.split('.')
+        country = country.lower()
+        if country not in countryList:
+          countryList.append(country)
+    countryList.sort()
+    resultDict['Country'] = countryList
+    siteList.sort()
+    resultDict['Site'] = siteList        
+       
+    return S_OK(resultDict)  
 
   ##############################################################################
   types_getPilots = [IntType]
