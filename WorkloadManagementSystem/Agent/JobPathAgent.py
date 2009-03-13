@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobPathAgent.py,v 1.13 2009/01/28 12:03:02 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobPathAgent.py,v 1.14 2009/03/13 17:18:03 acsmith Exp $
 # File :   JobPathAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -12,7 +12,7 @@
       path through the optimizers.
 
 """
-__RCSID__ = "$Id: JobPathAgent.py,v 1.13 2009/01/28 12:03:02 acasajus Exp $"
+__RCSID__ = "$Id: JobPathAgent.py,v 1.14 2009/03/13 17:18:03 acsmith Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
@@ -38,7 +38,7 @@ class JobPathAgent(OptimizerModule):
   def beginExecution(self):
 
     self.basePath     = self.am_getOption( 'BasePath',  ['JobPath','JobSanity'] )
-    self.inputData    = self.am_getOption( 'InputData', ['InputData'] )
+    self.inputData    = self.am_getOption( 'InputData', ['InputData','BKInputData'] )
     self.endPath      = self.am_getOption( 'EndPath',   ['JobScheduling','TaskQueue'] )
     self.voPlugin     = self.am_getOption( 'VOPlugin',  'WorkflowLib.Utilities.JobPathResolution' )
 
@@ -67,6 +67,8 @@ class JobPathAgent(OptimizerModule):
     jobPath = classAdJob.get_expression('JobPath').replace('"','').replace('Unknown','')
     #jobPath = jobDesc.getVarWithDefault( 'JobPath' ).replace( 'Unknown', '' )
     if jobPath:
+      # HACK: Remove the { and } to ensure we have a simple string
+      jobPath= jobPath.replace("{","").replace("}","")
       self.log.info('Job %s defines its own optimizer chain %s' % ( job, jobPath ) )
       return self.processJob( job, List.fromChar( jobPath ) )
 
