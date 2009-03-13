@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Subprocess.py,v 1.32 2009/03/03 15:43:58 acasajus Exp $
-__RCSID__ = "$Id: Subprocess.py,v 1.32 2009/03/03 15:43:58 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Subprocess.py,v 1.33 2009/03/13 15:57:41 rgracian Exp $
+__RCSID__ = "$Id: Subprocess.py,v 1.33 2009/03/13 15:57:41 rgracian Exp $"
 """
    DIRAC Wrapper to execute python and system commands with a wrapper, that might
    set a timeout.
@@ -40,6 +40,7 @@ import time
 import select
 import os
 import sys
+import types
 import subprocess
 import signal
 
@@ -204,8 +205,13 @@ class Subprocess:
   def __readFromFile( self, file, baseLength, doAll = True ):
     try:
       dataString = ""
+      fn = file.fileno()
+      rawRead = type( fn ) == types.IntType
       while file in select.select( [ file ], [], [], 1 )[0]:
-        nB = file.readline( self.bufferLimit )
+        if rawRead:
+          nB = os.read( fn, self.bufferLimit )
+        else:
+          nB = file.read( 1 )
         if nB == "":
           break
         dataString += nB
