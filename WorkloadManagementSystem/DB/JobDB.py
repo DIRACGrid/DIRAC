@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.135 2009/03/10 11:14:37 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.136 2009/03/13 11:27:51 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -47,7 +47,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.135 2009/03/10 11:14:37 rgracian Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.136 2009/03/13 11:27:51 atsareg Exp $"
 
 import re, os, sys, string, types
 import time, datetime, operator
@@ -1536,9 +1536,10 @@ class JobDB(DB):
     """ Get the summary of jobs in a given status on all the sites in the standard Web form
     """
 
-    paramNames = ['Site','Grid','Country','MaskStatus']
+    paramNames = ['Site','Grid','Country','Tier','MaskStatus']
     paramNames += JOB_STATES
     paramNames += ['Efficiency','Status']
+    siteT1List = ['CERN','IN2P3','NIKHEF','PIC','CNAF','RAL','GRIDKA']
 
     # Sort out records as requested
     sortItem = -1
@@ -1554,13 +1555,13 @@ class JobDB(DB):
       del selectDict['LastUpdateTime']
 
     result = self.getCounters('Jobs',['Site','Status'],
-                              selectDict,newer=last_update,
+                              {},newer=last_update,
                               timeStamp='LastUpdateTime')
     last_day = Time.dateTime() - Time.day
     resultDay = self.getCounters('Jobs',['Site','Status'],
-                                 selectDict,newer=last_day,
+                                 {},newer=last_day,
                                  timeStamp='EndExecTime')
-
+                                 
     # Get the site mask status
     siteMask = {}
     resultMask = self.getSiteMask('All')
@@ -1585,8 +1586,9 @@ class JobDB(DB):
         resultDict[siteFullName] = {}
         for state in JOB_STATES:
           resultDict[siteFullName][state] = 0
-      resultDict[siteFullName][status] = count
-    for attDict,count in result['Value']:
+      if status not in JOB_FINAL_STATES:    
+        resultDict[siteFullName][status] = count
+    for attDict,count in resultDay['Value']:
       siteFullName = attDict['Site']
       status = attDict['Status']
       if status in JOB_FINAL_STATES:
@@ -1601,16 +1603,21 @@ class JobDB(DB):
         grid,site,country = siteFullName.split('.')
       else:
         grid,site,country = 'Unknown','Unknown','Unknown'
+      
+      tier = 'Tier-2'
+      if site in siteT1List:
+        tier = 'Tier-1'
+        
       if not countryCounts.has_key(country):
         countryCounts[country] = {}
         for state in JOB_STATES:
            countryCounts[country][state] = 0
-      rList = [grid,siteFullName,country]
+      rList = [grid,siteFullName,country,tier]
       if siteMask.has_key(siteFullName):
         rList.append(siteMask[siteFullName])
       else:
-        rList.append('NoMask')
-      for status in siteDict:
+        rList.append('NoMask')        
+      for status in JOB_STATES:
         rList.append(siteDict[status])
         countryCounts[country][status] += siteDict[status]
       efficiency = 0
@@ -1619,7 +1626,7 @@ class JobDB(DB):
         total_finished += resultDict[siteFullName][state]
       if total_finished > 0:
         efficiency = float(siteDict['Done']+siteDict['Completed'])/float(total_finished)
-      rList.append('%f.2' % (efficiency*100.))
+      rList.append('%.1f' % (efficiency*100.))
       # Estimate the site verbose status
       if efficiency > 0.95:
         rList.append('Good')
@@ -1632,6 +1639,19 @@ class JobDB(DB):
       else:
         rList.append('Bad')
       records.append(rList)
+
+    # Select records as requested
+    if selectDict:
+      for item in selectDict:
+        selectItem = paramNames.index(item)
+        values = selectDict[item]
+        if type(values) != type([]):
+          values = [values]
+        indices = range(len(records))
+        indices.reverse()  
+        for ind in indices:
+          if records[ind][selectItem] not in values:
+            del records[ind]
 
     # Sort records as requested
     if sortItem != -1 :
@@ -1655,7 +1675,7 @@ class JobDB(DB):
     finalDict['TotalRecords'] = len(records)
     finalDict['Extras'] = countryCounts
 
-    return S_OK(finalDict)
+    return S_OK(finalDict) 
 
 #################################################################################
   def getUserSummaryWeb(self,selectDict, sortList, startItem, maxItems):
