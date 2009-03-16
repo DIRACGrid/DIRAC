@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalog. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.56 2009/03/16 19:06:41 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.57 2009/03/16 19:09:58 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -271,6 +271,16 @@ class ReplicaManager:
         'sourceSE' is the source for the file replication (where not specified all replicas will be attempted)
         'destPath' is the path on the destination storage element, if to be different from LHCb convention
     """
+    ###########################################################
+    # Check that we have write permissions to this directory.
+    res = self.__verifyOperationPermission(lfn)
+    if not res['OK']:
+      return res
+    if not res['Value']:
+      errStr = "ReplicaManager.__replicate: Write access not permitted for this credential."
+      gLogger.error(errStr,lfn)
+      return S_ERROR(errStr)
+
     gLogger.verbose("ReplicaManager.__replicate: Performing replication initialization.")
     res = self.__initializeReplication(lfn,sourceSE,destSE)
     if not res['OK']:
@@ -1006,13 +1016,13 @@ class ReplicaManager:
         'guid' is the guid with which the file is to be registered (if not provided will be generated)
         'path' is the path on the storage where the file will be put (if not provided the LFN will be used)
     """
-    res = self.__verifyOperationPermission(lfn)
-    if not res['OK']:
-      return res
-    if not res['Value']:
-      errStr = "ReplicaManager.putAndRegister: Write access not permitted for this credential."
-      gLogger.error(errStr,lfn) 
-      return S_ERROR(errStr)
+    #res = self.__verifyOperationPermission(lfn)
+    #if not res['OK']:
+    #  return res
+    #if not res['Value']:
+    #  errStr = "ReplicaManager.putAndRegister: Write access not permitted for this credential."
+    #  gLogger.error(errStr,lfn) 
+    #  return S_ERROR(errStr)
     # Instantiate the desired file catalog
     if catalog:
       self.fileCatalogue = FileCatalog(catalog)
