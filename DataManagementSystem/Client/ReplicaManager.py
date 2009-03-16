@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalog. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.55 2009/03/12 08:58:37 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.56 2009/03/16 19:06:41 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -31,7 +31,7 @@ class ReplicaManager:
     """
     self.accountingClient = client
 
-  def __getClientCertGroup(self):
+  def __getClientCertInfo(self):
     res = getProxyInfo(False,False)
     if not res['OK']:
       gLogger.error("ReplicaManager.__getClientCertGroup: Failed to get client proxy information.",res['Message'])  
@@ -42,12 +42,42 @@ class ReplicaManager:
       errStr = "ReplicaManager.__getClientCertGroup: Proxy information does not contain the group."
       gLogger.error(errStr)
       return S_ERROR(errStr)
-    group = proxyInfo['group']
-    username = proxyInfo['username']
-    return S_OK(proxyInfo['group'])
+    resDict = {'DN':proxyInfo['identity'],'Role':proxyInfo['VOMS']}
+    return S_OK(resDict)
 
-  def __verifyClientPermissions(self,group,path):
-    pass
+  def __verifyOperationPermission(self,path):
+    res = self.__getClientCertInfo()
+    if not res['OK']:
+      return res
+    clientInfo = res['Value']
+
+    # TODO: DO THIS IN A CLEANER WAY
+    from DIRAC.DataManagementSystem.Client.Catalog.LcgFileCatalogClient import LcgFileCatalogClient
+    lfc = LcgFileCatalogClient()
+    res = lfc.getPathPermissions(path)
+    if not res['OK']:
+      return res
+    lfcPerm = res['Value']    
+
+    groupMatch = False
+    for vomsRole in clientInfo['Role']:
+      if vomsRole.endswith(lfcPerm['Role']):
+        groupMatch = True
+    if (lfcPerm['DN'] == clientInfo['DN']):
+      if groupMatch:  
+        perms = lfcPerm['user']
+      else:
+        perms = lfcPerm['world']
+    else:
+      if groupMatch:
+        perms = lfcPerm['group']
+      else:
+        perms = lfcPerm['world']
+
+    if perms in [2,3,6,7]:
+      return S_OK(True)
+    else:
+      return S_OK(False)
 
   ##########################################################################
   #
@@ -976,7 +1006,13 @@ class ReplicaManager:
         'guid' is the guid with which the file is to be registered (if not provided will be generated)
         'path' is the path on the storage where the file will be put (if not provided the LFN will be used)
     """
-    res = self.__getClientCertGroup()
+    res = self.__verifyOperationPermission(lfn)
+    if not res['OK']:
+      return res
+    if not res['Value']:
+      errStr = "ReplicaManager.putAndRegister: Write access not permitted for this credential."
+      gLogger.error(errStr,lfn) 
+      return S_ERROR(errStr)
     # Instantiate the desired file catalog
     if catalog:
       self.fileCatalogue = FileCatalog(catalog)
