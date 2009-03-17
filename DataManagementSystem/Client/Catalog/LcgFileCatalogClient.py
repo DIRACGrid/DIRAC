@@ -22,6 +22,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
 
     if importCorrectly:
       self.valid = True
+      lfc.lfc_umask(0000)
     else:
       self.valid = False
 
@@ -110,81 +111,181 @@ class LcgFileCatalogClient(FileCatalogueBase):
   def exists(self,path):
     """ Check if the path exists
     """
-    if type(path) in types.StringTypes:
-      lfns = {path:False}
-    elif type(path) == types.ListType:
-      lfns = {}
-      for lfn in path:
-        lfns[lfn] = False
-    elif type(path) == types.DictType:
-      lfns = path
-    else:
-      return S_ERROR('LFCClient.exists: Supplied path must be a string, list or dictionary.')
-    resdict = {}
-    # If we have less than three lfns to query a session doesn't make sense
-    if len(lfns) > 2:
-      self.__openSession()
+    res = self.__checkArgumentFormat(path)
+    if not res['OK']:
+      return res
+    lfns = res['Value']
+    self.__openSession()
     failed = {}
     successful = {}
     for lfn,guid in lfns.items():
-      fullLfn = '%s%s' % (self.prefix,lfn)
-      value = lfc.lfc_access(fullLfn,0)
-      if value == 0:
+      res = self.__existsLfn(lfn)
+      if not res['OK']:
+        failed[lfn] = res['Message']
+      elif res['Value']:
         successful[lfn] = lfn
+      elif not guid:
+        successful[lfn] = False
       else:
-       errno = lfc.cvar.serrno
-       errStr = lfc.sstrerror(errno).lower()
-       if (errStr.find("no such file or directory") >= 0 ):
-         if not guid:
-           successful[lfn] = False
-         else:
-           if not self.__existsGuid(guid)['Value']:
-             successful[lfn] = False
-           else:
-             successful[lfn] = self.__getLfnForGUID(guid)['Value']
-       else:
-         failed[lfn] = lfc.sstrerror(errno)
-    if self.session:
-      self.__closeSession()
+        res = self.__existsGuid(guid)
+        if not res['OK']:
+          failed[lfn] = res['Message']
+        elif not res['Value']:
+          successful[lfn] = False
+        else:
+          successful[lfn] = self.__getLfnForGUID(guid)['Value']
+    self.__closeSession()
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
-
-  def __getLfnForGUID(self,guid):
-    """ Resolve the LFN for a supplied GUID
-    """
-    list = lfc.lfc_list()
-    lfnlist = []
-    listlinks = lfc.lfc_listlinks('',guid,lfc.CNS_LIST_BEGIN,list)
-    while listlinks:
-       ll = listlinks.path
-       if re.search ('^'+self.prefix,ll):
-          ll = listlinks.path.replace(self.prefix,"",1)
-       lfnlist.append(ll)
-       listlinks = lfc.lfc_listlinks('',guid,lfc.CNS_LIST_CONTINUE,list)
-    else:
-       lfc.lfc_listlinks('',guid,lfc.CNS_LIST_END,list)
-    return S_OK(lfnlist[0])
-
-  def __existsGuid(self,guid):
-    """ Check if the guid exists
-    """
-    fstat = lfc.lfc_filestatg()
-    value = lfc.lfc_statg('',guid,fstat)
-    if value == 0:
-       res = S_OK(1)
-    else:
-       errno = lfc.cvar.serrno
-       errStr = lfc.sstrerror(errno).lower()
-       if (errStr.find("no such file or directory") >= 0):
-          res = S_OK(0)
-       else:
-          res = S_ERROR(lfc.sstrerror(errno))
-    return res
 
   ####################################################################
   #
   # These are the methods for file manipulation
   #
+
+  def isFile(self, lfn):
+    res = self.__checkArgumentFormat(lfn)
+    if not res['OK']:
+      return res
+    lfns = res['Value']
+    # If we have less than three lfns to query a session doesn't make sense
+    if len(lfns) > 2:
+      self.__openSession()
+    failed = {}
+    successful = {}
+    for lfn in lfns.keys():
+      res = self.__getPathStat(lfn)
+      if not res['OK']:
+        failed[lfn] = res['Message']
+      elif S_ISREG(res['Value'].filemode):
+        successful[lfn] = True
+      else:
+        successful[lfn] = False
+    if self.session:
+      self.__closeSession()
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+  def getFileMetadata(self,lfn):
+    """ Returns the file metadata associated to a supplied LFN
+    """
+    res = self.__checkArgumentFormat(lfn)
+    if not res['OK']:
+      return res    
+    lfns = res['Value']
+    # If we have less than three lfns to query a session doesn't make sense
+    if len(lfns) > 2:
+      self.__openSession()
+    failed = {}
+    successful = {}
+    for lfn in lfns.keys():
+      res = self.__getPathStat(lfn)
+      if not res['OK']:
+        failed[lfn] = res['Message']
+      else:
+        fstat = res['Value']
+        successful[lfn] = {}
+        successful[lfn]['Size'] = fstat.filesize
+        successful[lfn]['CheckSumType'] = fstat.csumtype
+        successful[lfn]['CheckSumValue'] = fstat.csumvalue
+        successful[lfn]['GUID'] = fstat.guid
+        successful[lfn]['Status'] = fstat.status
+    if self.session:
+      self.__closeSession()
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+  def getFileSize(self, lfn):
+    """ Get the size of a supplied file
+    """
+    res = self.__checkArgumentFormat(lfn)
+    if not res['OK']:
+      return res
+    lfns = res['Value']
+    # If we have less than three lfns to query a session doesn't make sense
+    if len(lfns) > 2:
+      self.__openSession()
+    failed = {}
+    successful = {}
+    for lfn in lfns.keys():
+      res = self.__getPathStat(lfn)
+      if not res['OK']:   
+        failed[lfn] = res['Message']
+      else:
+        successful[lfn] = res['Value'].filesize
+    if self.session:
+      self.__closeSession()
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+  def getReplicas(self,lfn,allStatus=False):
+    """ Returns replicas for an LFN or list of LFNs
+    """
+    res = self.__checkArgumentFormat(lfn)
+    if not res['OK']:
+      return res
+    lfns = res['Value']
+    # If we have less than three lfns to query a session doesn't make sense
+    if len(lfns) > 2:
+      self.__openSession()
+    failed = {}
+    successful = {}
+    for lfn in lfns.keys():
+      res = self.__getFileReplicas(lfn,allStatus)
+      if not res['OK']:
+        failed[lfn] = res['Message']
+      else:
+        successful[lfn] = res['Value']
+    if self.session:
+      self.__closeSession()
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+  def getReplicaStatus(self,lfn):
+    res = self.__checkArgumentFormat(lfn)
+    if not res['OK']:
+      return res
+    lfns = res['Value']
+    # If we have less than three lfns to query a session doesn't make sense
+    if len(lfns) > 2:
+      self.__openSession()
+    failed = {}
+    successful = {}
+    for lfn,se in lfns.items():
+      res = self.__getFileReplicaStatus(lfn,se)
+      if not res['OK']:
+        failed[lfn] = res['Message']
+      else:
+        successful[lfn] = res['Value']
+    if self.session:
+      self.__closeSession()
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+  def isDirectory(self,lfn):
+    """ Determine whether the path is a directory
+    """
+    res = self.__checkArgumentFormat(lfn)
+    if not res['OK']:
+      return res
+    lfns = res['Value']
+    # If we have less than three lfns to query a session doesn't make sense
+    if len(lfns) > 2:
+      self.__openSession()
+    failed = {}
+    successful = {}
+    for lfn in lfns.keys():
+      res = self.__getPathStat(lfn)
+      if not res['OK']:
+        failed[lfn] = res['Message']
+      elif S_ISDIR(res['Value'].filemode):
+        successful[lfn] = True
+      else:
+        successful[lfn] = False
+    if self.session:
+      self.__closeSession()
+    resDict = {'Failed':failed,'Successful':successful}   
+    return S_OK(resDict)
 
   def addFile(self, fileTuple):
     """ A tuple should be supplied to this method which contains:
@@ -427,127 +528,6 @@ class LcgFileCatalogClient(FileCatalogueBase):
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
-  def isFile(self, lfn):
-    if type(lfn) == types.StringType:
-      lfns = [lfn]
-    elif type(lfn) == types.ListType:
-       lfns = lfn
-    else:
-      return S_ERROR('LFCClient.isFile: Must supply a path or list of paths')
-    # If we have less than three lfns to query a session doesn't make sense
-    if len(lfns) > 2:
-      self.__openSession()
-    failed = {}
-    successful = {}
-    for lfn in lfns:
-      fullLfn = '%s%s' % (self.prefix,lfn)
-      fstat = lfc.lfc_filestatg()
-      value = lfc.lfc_statg(fullLfn,'',fstat)
-      if value == 0:
-        if S_ISREG(fstat.filemode):
-          successful[lfn] = True
-        else:
-          successful[lfn] = False
-      else:
-        errno = lfc.cvar.serrno
-        failed[lfn] = lfc.sstrerror(errno)
-    if self.session:
-      self.__closeSession()
-    resDict = {'Failed':failed,'Successful':successful}
-    return S_OK(resDict)
-
-  def getFileMetadata(self, path):
-    """ Returns replicas for an LFN or list of LFNs
-    """
-    if type(path) == types.StringType:
-      lfns = [path]
-    elif type(path) == types.ListType:
-      lfns = path
-    else:
-      return S_ERROR('LFCClient.getFileMetadata: Must supply a path or list of paths')
-    # If we have less than three lfns to query a session doesn't make sense
-    if len(lfns) > 2:
-      self.__openSession()
-    failed = {}
-    successful = {}
-    for lfn in lfns:
-      fullLfn = '%s%s' % (self.prefix,lfn)
-      fstat = lfc.lfc_filestatg()
-      value = lfc.lfc_statg(fullLfn,'',fstat)
-      if value == 0:
-        successful[lfn] = {}
-        successful[lfn]['Size'] = fstat.filesize
-        successful[lfn]['CheckSumType'] = fstat.csumtype
-        successful[lfn]['CheckSumValue'] = fstat.csumvalue
-        successful[lfn]['GUID'] = fstat.guid
-        successful[lfn]['Status'] = fstat.status
-      else:
-        errno = lfc.cvar.serrno
-        failed[lfn] = lfc.sstrerror(errno)
-    if self.session:
-      self.__closeSession()
-    resDict = {'Failed':failed,'Successful':successful}
-    return S_OK(resDict)
-
-  def getReplicas(self,path,allStatus=False):
-    """ Returns replicas for an LFN or list of LFNs
-    """
-    if type(path) in types.StringTypes:
-      lfns = [path]
-    elif type(path) == types.ListType:
-      lfns = path
-    else:
-      return S_ERROR('LFCClient.getReplicas: Must supply a path or list of paths')
-    # If we have less than three lfns to query a session doesn't make sense
-    if len(lfns) > 2:
-      self.__openSession()
-    failed = {}
-    successful = {}
-    for lfn in lfns:
-      fullLfn = '%s%s' % (self.prefix,lfn)
-      value,replicaObjects = lfc.lfc_getreplica(fullLfn,'','')
-      if not (value == 0):
-        errno = lfc.cvar.serrno
-        failed[lfn] = lfc.sstrerror(errno)
-      else:
-        successful[lfn] = {}
-        for replica in replicaObjects:
-          status = replica.status
-          if not (status == 'P') or allStatus:
-            se = replica.host
-            pfn = replica.sfn.strip()
-            successful[lfn][se] = pfn
-    if self.session:
-      self.__closeSession()
-    resDict = {'Failed':failed,'Successful':successful}
-    return S_OK(resDict)
-
-  def getReplicaStatus(self,replicaTuple):
-    if type(replicaTuple) == types.TupleType:
-      replicas = [replicaTuple]
-    elif type(replicaTuple) == types.ListType:
-      replicas = replicaTuple
-    else:
-      return S_ERROR('LFCClient.getReplicaStatus: Must supply a file tuple or list of file typles')
-    failed = {}
-    successful = {}
-    if len(replicas) > 2:
-      self.__openSession()
-    for lfn,pfn,se in replicas:
-      fullLfn = '%s%s' % (self.prefix,lfn)
-      value,replicaObjects = lfc.lfc_getreplica(fullLfn,'','')
-      if value == 0:
-        for replicaObject in replicaObjects:
-          if (replicaObject.sfn == pfn) and (replicaObject.host == se):
-            successful[lfn] = replicaObject.status
-      else:
-        errno = lfc.cvar.serrno
-        failed[lfn] = lfc.sstrerror(errno)
-    if self.session:
-      self.__closeSession()
-    resDict = {'Failed':failed,'Successful':successful}
-    return S_OK(resDict)
-
   def setReplicaStatus(self,replicaTuple):
     if type(replicaTuple) == types.TupleType:
       replicas = [replicaTuple]
@@ -601,32 +581,6 @@ class LcgFileCatalogClient(FileCatalogueBase):
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
-  def getFileSize(self, path):
-    if type(path) in types.StringTypes:
-      paths = [path]
-    elif type(path) == types.ListType:
-      paths = path
-    else:
-      return S_ERROR('LFCClient.getFileSize: Must supply a path or list of paths')
-    # If we have less than three lfns to query a session doesn't make sense
-    if len(paths) > 2:
-      self.__openSession()
-    successful = {}
-    failed = {}
-    for path in paths:
-      fullLfn = '%s%s' % (self.prefix,path)
-      fstat = lfc.lfc_filestatg()
-      value = lfc.lfc_statg(fullLfn,'',fstat)
-      if value == 0:
-        successful[path] = fstat.filesize
-      else:
-        errno = lfc.cvar.serrno
-        failed[path] = lfc.sstrerror(errno)
-    if self.session:
-      self.__closeSession()
-    resDict = {'Failed':failed,'Successful':successful}
-    return S_OK(resDict)
-
   ####################################################################
   #
   # These are the methods for directory manipulation
@@ -649,35 +603,6 @@ class LcgFileCatalogClient(FileCatalogueBase):
       else:
         failed[path] = res['Message']
     self.__closeSession()
-    resDict = {'Failed':failed,'Successful':successful}
-    return S_OK(resDict)
-
-  def isDirectory(self, path):
-    if type(path) == types.StringType:
-      paths = [path]
-    elif type(path) == types.ListType:
-      paths = path
-    else:
-      return S_ERROR('LFCClient.isDirectory: Must supply a path or list of paths')
-    # If we have less than three lfns to query a session doesn't make sense
-    if len(paths) > 2:
-      self.__openSession()
-    failed = {}
-    successful = {}
-    for path in paths:
-      fullLfn = '%s%s' % (self.prefix,path)
-      fstat = lfc.lfc_filestatg()
-      value = lfc.lfc_statg(fullLfn,'',fstat)
-      if value == 0:
-        if S_ISDIR(fstat.filemode):
-          successful[path] = True
-        else:
-          successful[path] = False
-      else:
-        errno = lfc.cvar.serrno
-        failed[path] = lfc.sstrerror(errno)
-    if self.session:
-      self.__closeSession()
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
@@ -1033,8 +958,10 @@ class LcgFileCatalogClient(FileCatalogueBase):
 
   ####################################################################
   #
-  # These are the methods for link manipulation
+  # These are the methods for dataset manipulation
   #
+
+  # These are the methods for link manipulation
 
   def isLink(self, link):
     if type(link) == types.StringType:
@@ -1142,11 +1069,6 @@ class LcgFileCatalogClient(FileCatalogueBase):
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
-  ####################################################################
-  #
-  # These are the methods for dataset manipulation
-  #
-
   def deleteDataset(self,datasetDirectory):
     res = self.__getDirectoryContents(datasetDirectory)
     if not res['OK']:
@@ -1243,3 +1165,99 @@ class LcgFileCatalogClient(FileCatalogueBase):
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
+  ####################################################################
+  #
+  # These are the internal methods to be used by all methods
+  #
+  
+  def __checkArgumentFormat(self,path):   
+    if type(path) in types.StringTypes:
+      urls = {path:False}
+    elif type(path) == types.ListType:
+      urls = {}
+      for url in path:
+        urls[url] = False
+    elif type(path) == types.DictType:
+     urls = path
+    else:
+      return S_ERROR("LcgFileCatalogClient.__checkArgumentFormat: Supplied path is not of the correct format.")
+    return S_OK(urls)
+
+  def __existsLfn(self,lfn):
+    """ Check whether the supplied LFN exists
+    """
+    fullLfn = '%s%s' % (self.prefix,lfn)
+    value = lfc.lfc_access(fullLfn,0)
+    if value == 0:
+      return S_OK(True)
+    else:
+      errno = lfc.cvar.serrno
+      if errno == 2:
+        return S_OK(False)
+      else:
+        return S_ERROR(lfc.sstrerror(errno))
+
+  def __existsGuid(self,guid):
+    """ Check if the guid exists
+    """
+    fstat = lfc.lfc_filestatg()
+    value = lfc.lfc_statg('',guid,fstat)
+    if value == 0:
+      return S_OK(True)
+    else:
+      errno = lfc.cvar.serrno
+      if errno == 2:
+        return S_OK(False)
+      else:
+        return S_ERROR(lfc.sstrerror(errno))
+
+  def __getLfnForGUID(self,guid):
+    """ Resolve the LFN for a supplied GUID
+    """
+    list = lfc.lfc_list()
+    lfnlist = []
+    listlinks = lfc.lfc_listlinks('',guid,lfc.CNS_LIST_BEGIN,list)
+    while listlinks:
+       ll = listlinks.path
+       if re.search ('^'+self.prefix,ll):
+          ll = listlinks.path.replace(self.prefix,"",1)
+       lfnlist.append(ll)
+       listlinks = lfc.lfc_listlinks('',guid,lfc.CNS_LIST_CONTINUE,list)
+    else:
+       lfc.lfc_listlinks('',guid,lfc.CNS_LIST_END,list)
+    return S_OK(lfnlist[0])
+
+  def __getPathStat(self,path):
+    fullLfn = '%s%s' % (self.prefix,path)
+    fstat = lfc.lfc_filestatg()
+    value = lfc.lfc_statg(fullLfn,'',fstat)
+    if value == 0:
+      return S_OK(fstat)
+    else:
+      return S_ERROR(lfc.sstrerror(lfc.cvar.serrno))  
+
+  def __getFileReplicas(self,lfn,allStatus):
+    fullLfn = '%s%s' % (self.prefix,lfn)
+    value,replicaObjects = lfc.lfc_getreplica(fullLfn,'','')
+    if value != 0:
+      return S_ERROR(lfc.sstrerror(lfc.cvar.serrno))
+    replicas = {}
+    for replica in replicaObjects:
+      status = replica.status
+      if (status != 'P') or allStatus:
+        se = replica.host
+        pfn = replica.sfn.strip()  
+        replicas[se] = pfn
+    return S_OK(replicas)
+
+  def __getFileReplicaStatus(self,lfn,se):
+    fullLfn = '%s%s' % (self.prefix,lfn)
+    value,replicaObjects = lfc.lfc_getreplica(fullLfn,'','')
+    if value != 0:
+      return S_ERROR(lfc.sstrerror(lfc.cvar.serrno))
+    replicas = {}
+    for replica in replicaObjects:
+      if se == replica.host:
+        return S_OK(replica.status)
+    return S_ERROR("No replica at supplied site")
+    
