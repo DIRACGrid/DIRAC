@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: glexecComputingElement.py,v 1.10 2009/03/17 11:56:31 paterson Exp $
+# $Id: glexecComputingElement.py,v 1.11 2009/03/17 13:37:23 paterson Exp $
 # File :   glexecComputingElement.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
     defaults to the standard InProcess Computing Element behaviour.
 """
 
-__RCSID__ = "$Id: glexecComputingElement.py,v 1.10 2009/03/17 11:56:31 paterson Exp $"
+__RCSID__ = "$Id: glexecComputingElement.py,v 1.11 2009/03/17 13:37:23 paterson Exp $"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
@@ -62,6 +62,10 @@ class glexecComputingElement(ComputingElement):
       glexecLocation = result['Value']
       self.log.info('glexec found for local site at %s' %glexecLocation)
 
+    result = self.recursivelyChangePermissions()
+    if not result['OK']:
+      self.log.error('Permissions change failed, continuing regardless...')
+
     #Test glexec with payload proxy prior to submitting the job
     result = self.glexecTest(glexecLocation)
     if not result['OK']:
@@ -100,6 +104,36 @@ class glexecComputingElement(ComputingElement):
     self.log.debug('glexec CE result OK')
     self.submittedJobs += 1
     return S_OK(localID)
+
+  #############################################################################
+  def recursivelyChangePermissions(self):
+    """ Ensure that the current directory and all those beneath have the correct
+        permissions.
+    """
+    userID = None
+    res = shellCall(0,'id -nu')
+    if res['OK']:
+      userID = res['Value'][1]
+      self.log.info('Current user ID is: %s' %(userID))
+    else:
+      self.log.error('Failed to obtain current user ID',str(res['Value'][2]))
+      return res
+
+    currentDir = os.getcwd()
+    self.log.verbose('Changing permissions to 0755 in current directory %s' %currentDir)
+    try:
+      for dirName, subDirs, files in os.walk(currentDir):
+        self.log.debug('Changing file permissions in directory %s' %dirName)
+        if os.stat('%s' %(dirName))[4] == userID and not os.path.islink('%s' %(dirName)):
+          os.chmod('%s' %(dirName),0755)
+        for toChange in files:
+          if os.stat('%s/%s' %(dirName,toChange))[4] == userID and not os.path.islink('%s/%s' %(dirName,toChange)):
+            os.chmod('%s/%s' %(dirName,toChange),0755)
+    except Exception,x:
+      self.log.warn('Problem changing current directory permissions',str(x))
+
+    self.log.info('Permissions in current directory %s updated successfully' %(currentDir))
+    return S_OK()
 
   #############################################################################
   def analyseExitCode(self,resultTuple):
