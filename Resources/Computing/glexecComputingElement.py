@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: glexecComputingElement.py,v 1.13 2009/03/17 16:14:05 paterson Exp $
+# $Id: glexecComputingElement.py,v 1.14 2009/03/17 16:31:26 paterson Exp $
 # File :   glexecComputingElement.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
     defaults to the standard InProcess Computing Element behaviour.
 """
 
-__RCSID__ = "$Id: glexecComputingElement.py,v 1.13 2009/03/17 16:14:05 paterson Exp $"
+__RCSID__ = "$Id: glexecComputingElement.py,v 1.14 2009/03/17 16:31:26 paterson Exp $"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
@@ -130,7 +130,6 @@ class glexecComputingElement(ComputingElement):
 
     try:
       self.log.info('Trying to explicitly change permissions for parent directory %s' %currentDir)
-      os.chown(currentDir,userID)
       os.chmod(currentDir,0755)
     except Exception,x:
       self.log.error('Problem changing directory permissions in parent directory',str(x))
