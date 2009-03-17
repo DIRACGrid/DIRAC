@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: glexecComputingElement.py,v 1.7 2009/03/10 18:53:59 paterson Exp $
+# $Id: glexecComputingElement.py,v 1.8 2009/03/17 09:40:15 paterson Exp $
 # File :   glexecComputingElement.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
     defaults to the standard InProcess Computing Element behaviour.
 """
 
-__RCSID__ = "$Id: glexecComputingElement.py,v 1.7 2009/03/10 18:53:59 paterson Exp $"
+__RCSID__ = "$Id: glexecComputingElement.py,v 1.8 2009/03/17 09:40:15 paterson Exp $"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
@@ -78,8 +78,13 @@ class glexecComputingElement(ComputingElement):
     gThreadScheduler.addPeriodicTask(self.proxyCheckPeriod,self.monitorProxy,taskArgs=(glexecLocation,pilotProxy,payloadProxy),executions=0,elapsedTime=0)
 
     #Submit job
-    if not os.access(executableFile, 5):
-      os.chmod(executableFile,0755)
+    perms = 0755
+    self.log.info('Changing permissions of executable to %s' %perms)
+    try:
+      os.chmod(executableFile,perms)
+    except Exception,x:
+      self.log.error('Failed to change permissions of executable to %s with exception:\n%s' %(perms,x))
+
     result = self.glexecExecute(os.path.abspath(executableFile),glexecLocation)
     if not result['OK']:
       self.analyseExitCode(result['Value']) #take no action as we currently default to InProcess
@@ -105,6 +110,9 @@ class glexecComputingElement(ComputingElement):
           202 - internal error
           203 - authz error
     """
+    if not resultTuple:
+      return S_OK()
+
     codes = {}
     codes[127]='Shell exited, command not found'
     codes[129]='Shell interrupt signal 1 (SIGHUP)'
@@ -151,8 +159,14 @@ class glexecComputingElement(ComputingElement):
     fopen = open(testFile,'w')
     fopen.write(string.join(cmds,'\n'))
     fopen.close()
-    if not os.access(testFile, 5):
-      os.chmod(testFile,0755)
+    perms = 0755
+    self.log.info('Changing permissions of test script to %s' %perms)
+    try:
+      os.chmod(testFile,perms)
+    except Exception,x:
+      self.log.error('Failed to change permissions of test script to %s with exception:\n%s' %(perms,x))
+      return S_ERROR('Could not change permissions of test script')
+
     return self.glexecExecute(os.path.abspath(testFile),glexecLocation)
 
   #############################################################################
