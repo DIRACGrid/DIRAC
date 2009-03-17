@@ -798,6 +798,17 @@ class LcgFileCatalogClient(FileCatalogueBase):
     return S_OK(resDict)
 
   def getPathPermissions(self,path):
+    exists = False
+    while not exists:
+      res = self.exists(path)
+      if not res['OK']:
+        return res
+      elif res['Value']['Failed'].has_key(path):
+        return S_ERROR(res['Value']['Failed'][path])
+      else:
+        exists = res['Value']['Successful'][path]
+        if not exists:
+          path = os.path.dirname(path)
     fullLfn = '%s%s' % (self.prefix,path)
     results,objects = lfc.lfc_getacl(fullLfn,256)#lfc.CNS_ACL_GROUP_OBJ)
     if results == -1:
