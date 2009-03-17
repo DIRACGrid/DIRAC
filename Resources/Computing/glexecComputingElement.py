@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: glexecComputingElement.py,v 1.8 2009/03/17 09:40:15 paterson Exp $
+# $Id: glexecComputingElement.py,v 1.9 2009/03/17 11:42:15 paterson Exp $
 # File :   glexecComputingElement.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
     defaults to the standard InProcess Computing Element behaviour.
 """
 
-__RCSID__ = "$Id: glexecComputingElement.py,v 1.8 2009/03/17 09:40:15 paterson Exp $"
+__RCSID__ = "$Id: glexecComputingElement.py,v 1.9 2009/03/17 11:42:15 paterson Exp $"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
@@ -78,12 +78,11 @@ class glexecComputingElement(ComputingElement):
     gThreadScheduler.addPeriodicTask(self.proxyCheckPeriod,self.monitorProxy,taskArgs=(glexecLocation,pilotProxy,payloadProxy),executions=0,elapsedTime=0)
 
     #Submit job
-    perms = 0755
-    self.log.info('Changing permissions of executable to %s' %perms)
+    self.log.info('Changing permissions of executable to 0755')
     try:
-      os.chmod(executableFile,perms)
+      os.chmod(os.path.abspath(executableFile),0755)
     except Exception,x:
-      self.log.error('Failed to change permissions of executable to %s with exception:\n%s' %(perms,x))
+      self.log.error('Failed to change permissions of executable to 0755 with exception:\n%s' %(x))
 
     result = self.glexecExecute(os.path.abspath(executableFile),glexecLocation)
     if not result['OK']:
@@ -159,12 +158,11 @@ class glexecComputingElement(ComputingElement):
     fopen = open(testFile,'w')
     fopen.write(string.join(cmds,'\n'))
     fopen.close()
-    perms = 0755
-    self.log.info('Changing permissions of test script to %s' %perms)
+    self.log.info('Changing permissions of test script to 0755')
     try:
-      os.chmod(testFile,perms)
+      os.chmod(os.path.abspath(testFile),0755)
     except Exception,x:
-      self.log.error('Failed to change permissions of test script to %s with exception:\n%s' %(perms,x))
+      self.log.error('Failed to change permissions of test script to 0755 with exception:\n%s' %(x))
       return S_ERROR('Could not change permissions of test script')
 
     return self.glexecExecute(os.path.abspath(testFile),glexecLocation)
