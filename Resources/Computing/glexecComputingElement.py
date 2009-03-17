@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: glexecComputingElement.py,v 1.11 2009/03/17 13:37:23 paterson Exp $
+# $Id: glexecComputingElement.py,v 1.12 2009/03/17 14:48:40 paterson Exp $
 # File :   glexecComputingElement.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
     defaults to the standard InProcess Computing Element behaviour.
 """
 
-__RCSID__ = "$Id: glexecComputingElement.py,v 1.11 2009/03/17 13:37:23 paterson Exp $"
+__RCSID__ = "$Id: glexecComputingElement.py,v 1.12 2009/03/17 14:48:40 paterson Exp $"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
@@ -88,13 +88,6 @@ class glexecComputingElement(ComputingElement):
     except Exception,x:
       self.log.error('Failed to change permissions of executable to 0755 with exception:\n%s' %(x))
 
-    res = shellCall(0,'ls -al')
-    if res['OK']:
-      self.log.info('Contents of the working directory:')
-      self.log.info(str(res['Value'][1]))
-    else:
-      self.log.error('Failed to list the log directory contents',str(res['Value'][2]))
-
     result = self.glexecExecute(os.path.abspath(executableFile),glexecLocation)
     if not result['OK']:
       self.analyseExitCode(result['Value']) #take no action as we currently default to InProcess
@@ -111,6 +104,14 @@ class glexecComputingElement(ComputingElement):
         permissions.
     """
     userID = None
+
+    res = shellCall(0,'ls -al')
+    if res['OK']:
+      self.log.info('Contents of the working directory before permissions change:')
+      self.log.info(str(res['Value'][1]))
+    else:
+      self.log.error('Failed to list the log directory contents',str(res['Value'][2]))
+
     res = shellCall(0,'id -nu')
     if res['OK']:
       userID = res['Value'][1]
@@ -120,19 +121,32 @@ class glexecComputingElement(ComputingElement):
       return res
 
     currentDir = os.getcwd()
-    self.log.verbose('Changing permissions to 0755 in current directory %s' %currentDir)
     try:
-      for dirName, subDirs, files in os.walk(currentDir):
-        self.log.debug('Changing file permissions in directory %s' %dirName)
+      self.log.info('Trying to explicitly change permissions for parent directory %s' %currentDir)
+      os.chmod(currentDir,0755)
+    except Exception,x:
+      self.log.error('Problem changing directory permissions in parent directory',str(x))
+
+    self.log.verbose('Changing permissions to 0755 in current directory %s' %currentDir)
+    for dirName, subDirs, files in os.walk(currentDir):
+      try:
+        self.log.info('Changing file and directory permissions to 0755 for %s' %dirName)
         if os.stat('%s' %(dirName))[4] == userID and not os.path.islink('%s' %(dirName)):
           os.chmod('%s' %(dirName),0755)
         for toChange in files:
           if os.stat('%s/%s' %(dirName,toChange))[4] == userID and not os.path.islink('%s/%s' %(dirName,toChange)):
             os.chmod('%s/%s' %(dirName,toChange),0755)
-    except Exception,x:
-      self.log.warn('Problem changing current directory permissions',str(x))
+      except Exception,x:
+        self.log.error('Problem changing directory permissions',str(x))
 
     self.log.info('Permissions in current directory %s updated successfully' %(currentDir))
+    res = shellCall(0,'ls -al')
+    if res['OK']:
+      self.log.info('Contents of the working directory after changing permissions:')
+      self.log.info(str(res['Value'][1]))
+    else:
+      self.log.error('Failed to list the log directory contents',str(res['Value'][2]))
+
     return S_OK()
 
   #############################################################################
