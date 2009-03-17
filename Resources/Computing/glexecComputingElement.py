@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: glexecComputingElement.py,v 1.12 2009/03/17 14:48:40 paterson Exp $
+# $Id: glexecComputingElement.py,v 1.13 2009/03/17 16:14:05 paterson Exp $
 # File :   glexecComputingElement.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
     defaults to the standard InProcess Computing Element behaviour.
 """
 
-__RCSID__ = "$Id: glexecComputingElement.py,v 1.12 2009/03/17 14:48:40 paterson Exp $"
+__RCSID__ = "$Id: glexecComputingElement.py,v 1.13 2009/03/17 16:14:05 paterson Exp $"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
@@ -121,8 +121,16 @@ class glexecComputingElement(ComputingElement):
       return res
 
     currentDir = os.getcwd()
+    res = shellCall(0,'ls -al %s/../' %currentDir)
+    if res['OK']:
+      self.log.info('Contents of the parent directory before permissions change:')
+      self.log.info(str(res['Value'][1]))
+    else:
+      self.log.error('Failed to list the parent directory contents',str(res['Value'][2]))
+
     try:
       self.log.info('Trying to explicitly change permissions for parent directory %s' %currentDir)
+      os.chown(currentDir,userID)
       os.chmod(currentDir,0755)
     except Exception,x:
       self.log.error('Problem changing directory permissions in parent directory',str(x))
@@ -146,6 +154,13 @@ class glexecComputingElement(ComputingElement):
       self.log.info(str(res['Value'][1]))
     else:
       self.log.error('Failed to list the log directory contents',str(res['Value'][2]))
+
+    res = shellCall(0,'ls -al %s/../' %currentDir)
+    if res['OK']:
+      self.log.info('Contents of the parent directory after permissions change:')
+      self.log.info(str(res['Value'][1]))
+    else:
+      self.log.error('Failed to list the parent directory contents',str(res['Value'][2]))
 
     return S_OK()
 
