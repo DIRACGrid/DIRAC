@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: glexecComputingElement.py,v 1.9 2009/03/17 11:42:15 paterson Exp $
+# $Id: glexecComputingElement.py,v 1.10 2009/03/17 11:56:31 paterson Exp $
 # File :   glexecComputingElement.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
     defaults to the standard InProcess Computing Element behaviour.
 """
 
-__RCSID__ = "$Id: glexecComputingElement.py,v 1.9 2009/03/17 11:42:15 paterson Exp $"
+__RCSID__ = "$Id: glexecComputingElement.py,v 1.10 2009/03/17 11:56:31 paterson Exp $"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
@@ -83,6 +83,13 @@ class glexecComputingElement(ComputingElement):
       os.chmod(os.path.abspath(executableFile),0755)
     except Exception,x:
       self.log.error('Failed to change permissions of executable to 0755 with exception:\n%s' %(x))
+
+    res = shellCall(0,'ls -al')
+    if res['OK']:
+      self.log.info('Contents of the working directory:')
+      self.log.info(str(res['Value'][1]))
+    else:
+      self.log.error('Failed to list the log directory contents',str(res['Value'][2]))
 
     result = self.glexecExecute(os.path.abspath(executableFile),glexecLocation)
     if not result['OK']:
