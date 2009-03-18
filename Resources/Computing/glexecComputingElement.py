@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: glexecComputingElement.py,v 1.17 2009/03/18 10:39:07 paterson Exp $
+# $Id: glexecComputingElement.py,v 1.18 2009/03/18 21:38:58 rgracian Exp $
 # File :   glexecComputingElement.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
     defaults to the standard InProcess Computing Element behaviour.
 """
 
-__RCSID__ = "$Id: glexecComputingElement.py,v 1.17 2009/03/18 10:39:07 paterson Exp $"
+__RCSID__ = "$Id: glexecComputingElement.py,v 1.18 2009/03/18 21:38:58 rgracian Exp $"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
@@ -106,6 +106,15 @@ class glexecComputingElement(ComputingElement):
     """ Ensure that the current directory and all those beneath have the correct
         permissions.
     """
+    currentDir = os.getcwd()
+    try:
+      self.log.info('Trying to explicitly change permissions for parent directory %s' %currentDir)
+      os.chmod(currentDir,0755)
+    except Exception,x:
+      self.log.error('Problem changing directory permissions in parent directory',str(x))
+
+    return S_OK()
+
     userID = None
 
     res = shellCall(0,'ls -al')
@@ -115,7 +124,7 @@ class glexecComputingElement(ComputingElement):
     else:
       self.log.error('Failed to list the log directory contents',str(res['Value'][2]))
 
-    res = shellCall(0,'id -nu')
+    res = shellCall(0,'id -u')
     if res['OK']:
       userID = res['Value'][1]
       self.log.info('Current user ID is: %s' %(userID))
@@ -123,20 +132,12 @@ class glexecComputingElement(ComputingElement):
       self.log.error('Failed to obtain current user ID',str(res['Value'][2]))
       return res
 
-    currentDir = os.getcwd()
     res = shellCall(0,'ls -al %s/../' %currentDir)
     if res['OK']:
       self.log.info('Contents of the parent directory before permissions change:')
       self.log.info(str(res['Value'][1]))
     else:
       self.log.error('Failed to list the parent directory contents',str(res['Value'][2]))
-
-    try:
-      self.log.info('Trying to explicitly change permissions for parent directory %s' %currentDir)
-      os.chmod(currentDir,0755)
-      res = shellCall(0,'id -nu')
-    except Exception,x:
-      self.log.error('Problem changing directory permissions in parent directory',str(x))
 
     self.log.verbose('Changing permissions to 0755 in current directory %s' %currentDir)
     for dirName, subDirs, files in os.walk(currentDir):
