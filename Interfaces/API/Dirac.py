@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.68 2009/03/06 08:42:20 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.69 2009/03/18 14:23:54 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.68 2009/03/06 08:42:20 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.69 2009/03/18 14:23:54 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -80,11 +80,10 @@ class Dirac:
       from DIRAC.DataManagementSystem.Client.FileCatalog import FileCatalog
       self.fileCatalog=FileCatalog()
     except Exception,x:
-      msg = 'Failed to create LcgFileCatalogClient with exception:'
+      msg = 'Failed to create FileCatalog with exception:'
       self.log.verbose(msg)
       self.log.debug(str(x))
       self.fileCatalog=False
-    self.rm = ReplicaManager()
 
   #############################################################################
   def submit(self,job,mode=None):
@@ -385,7 +384,7 @@ class Dirac:
       time.sleep(pollingTime)
 
   #############################################################################
-  def getInputDataCatalog(self,lfns,siteName='',fileName='pool_xml_catalog.xml'):
+  def getInputDataCatalog(self,lfns,siteName='',fileName='pool_xml_catalog.xml',ignoreMissing=False):
     """This utility will create a pool xml catalogue slice for the specified LFNs using
        the full input data resolution policy plugins for the VO.
 
@@ -423,6 +422,9 @@ class Dirac:
         return self.__errorReport('LocalSite/Site configuration section is unknown, please set this correctly')
       siteName = self.site
 
+    if ignoreMissing:
+      self.log.verbose('Ignore missing flag is enabled')
+
     localSEList = getSEsForSite(siteName)
     if not localSEList['OK']:
       return result
@@ -447,8 +449,11 @@ class Dirac:
     tapeSE = gConfig.getValue(self.section+'/TapeSE',['-tape','-RDST','-RAW'])
     #Add catalog path / name here as well as site name to override the standard policy of resolving automatically
     configDict = {'JobID':None,'LocalSEList':localSEList['Value'],'DiskSEList':diskSE,'TapeSEList':tapeSE,'SiteName':siteName,'CatalogName':fileName}
+
     self.log.verbose(configDict)
     argumentsDict = {'FileCatalog':resolvedData,'Configuration':configDict,'InputData':lfns}
+    if ignoreMissing:
+      argumentsDict['IgnoreMissing']=True
     self.log.verbose(argumentsDict)
     moduleFactory = ModuleFactory()
     self.log.verbose('Input Data Policy Module: %s' %inputDataPolicy)
@@ -459,8 +464,10 @@ class Dirac:
 
     module = moduleInstance['Value']
     result = module.execute()
+    self.log.debug(result)
     if not result['OK']:
-      self.log.warn('Input data resolution failed')
+      if result.has_key('Failed'):
+        self.log.error('Input data resolution failed for the following files:\n%s' %(string.join(result['Failed'],'\n')))
 
     return result
 
@@ -830,7 +837,8 @@ class Dirac:
     if not os.path.isfile(fullPath):
       return self.__errorReport('Expected path to file not %s' %(fullPath))
 
-    result = self.rm.putAndRegister(lfn,fullPath,diracSE,guid=fileGuid,catalog=self.defaultFileCatalog)
+    rm = ReplicaManager()
+    result = rm.putAndRegister(lfn,fullPath,diracSE,guid=fileGuid,catalog=self.defaultFileCatalog)
     if not result['OK']:
       return self.__errorReport('Problem during putAndRegister call',result['Message'])
     if not printOutput:
@@ -868,7 +876,8 @@ class Dirac:
     else:
       return self.__errorReport('Expected single string or list of strings for LFN(s)')
 
-    result = self.rm.getFile(lfn)
+    rm = ReplicaManager()
+    result = rm.getFile(lfn)
     if not result['OK']:
       return self.__errorReport('Problem during getFile call',result['Message'])
 
@@ -924,7 +933,8 @@ class Dirac:
     if not type(localCache)==type(" "):
       return self.__errorReport('Expected string for path to local cache')
 
-    result = self.rm.replicateAndRegister(lfn,destinationSE,sourceSE,'',localCache)
+    rm = ReplicaManager()
+    result = rm.replicateAndRegister(lfn,destinationSE,sourceSE,'',localCache)
     if not result['OK']:
       return self.__errorReport('Problem during replicateFile call',result['Message'])
     if not printOutput:
@@ -957,7 +967,8 @@ class Dirac:
     else:
       return self.__errorReport('Expected single string for LFN')
 
-    result = self.rm.getReplicaAccessUrl([lfn],storageElement)
+    rm = ReplicaManager()
+    result = rm.getReplicaAccessUrl([lfn],storageElement)
     if not result['OK']:
       return self.__errorReport('Problem during getAccessURL call',result['Message'])
     if not printOutput:
@@ -997,7 +1008,8 @@ class Dirac:
     else:
       return self.__errorReport('Expected single string for PFN')
 
-    result = self.rm.getPhysicalFileAccessUrl([pfn],storageElement)
+    rm = ReplicaManager()
+    result = rm.getPhysicalFileAccessUrl([pfn],storageElement)
     if not result['OK']:
       return self.__errorReport('Problem during getAccessURL call',result['Message'])
     if not printOutput:
@@ -1039,7 +1051,8 @@ class Dirac:
     else:
       return self.__errorReport('Expected single string or list of strings for PFN(s)')
 
-    result = self.rm.getPhysicalFileMetadata(pfn,storageElement)
+    rm = ReplicaManager()
+    result = rm.getPhysicalFileMetadata(pfn,storageElement)
     if not result['OK']:
       return self.__errorReport('Problem during getPhysicalFileMetadata call',result['Message'])
     if not printOutput:
@@ -1070,7 +1083,8 @@ class Dirac:
     else:
       return self.__errorReport('Expected single string for LFN')
 
-    result =  self.rm.removeFile(lfn)
+    rm = ReplicaManager()
+    result = rm.removeFile(lfn)
     if printOutput and result['OK']:
       print self.pPrint.pformat(result['Value'])
     return result
@@ -1096,7 +1110,8 @@ class Dirac:
     else:
       return self.__errorReport('Expected single string for LFN')
 
-    result = self.rm.removeReplica(storageElement,lfn)
+    rm = ReplicaManager()
+    result = rm.removeReplica(storageElement,lfn)
     if printOutput and result['OK']:
       print self.pPrint.pformat(result['Value'])
     return result
