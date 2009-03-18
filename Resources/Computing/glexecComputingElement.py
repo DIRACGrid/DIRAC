@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: glexecComputingElement.py,v 1.16 2009/03/18 09:30:35 paterson Exp $
+# $Id: glexecComputingElement.py,v 1.17 2009/03/18 10:39:07 paterson Exp $
 # File :   glexecComputingElement.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
     defaults to the standard InProcess Computing Element behaviour.
 """
 
-__RCSID__ = "$Id: glexecComputingElement.py,v 1.16 2009/03/18 09:30:35 paterson Exp $"
+__RCSID__ = "$Id: glexecComputingElement.py,v 1.17 2009/03/18 10:39:07 paterson Exp $"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
@@ -62,9 +62,12 @@ class glexecComputingElement(ComputingElement):
       glexecLocation = result['Value']
       self.log.info('glexec found for local site at %s' %glexecLocation)
 
-    result = self.recursivelyChangePermissions()
-    if not result['OK']:
-      self.log.error('Permissions change failed, continuing regardless...')
+    if glexecLocation:
+      result = self.recursivelyChangePermissions()
+      if not result['OK']:
+        self.log.error('Permissions change failed, continuing regardless...')
+    else:
+      self.log.info('glexec not found, no permissions to change')
 
     #Test glexec with payload proxy prior to submitting the job
     result = self.glexecTest(glexecLocation)
@@ -128,12 +131,6 @@ class glexecComputingElement(ComputingElement):
     else:
       self.log.error('Failed to list the parent directory contents',str(res['Value'][2]))
 
-    res = shellCall(0,'umask 0022')
-    if res['OK']:
-      self.log.info('Set umask to leading directory as 0022')
-    else:
-      self.log.error('Failed to set umask',str(res['Value'][2]))
-
     try:
       self.log.info('Trying to explicitly change permissions for parent directory %s' %currentDir)
       os.chmod(currentDir,0755)
@@ -152,19 +149,6 @@ class glexecComputingElement(ComputingElement):
             os.chmod('%s/%s' %(dirName,toChange),0755)
       except Exception,x:
         self.log.error('Problem changing directory permissions',str(x))
-
-    softwareArea = '%s/%s' %(currentDir,'LocalArea')
-    if os.path.exists(softwareArea):
-      for dirName, subDirs, files in os.walk(softwareArea):
-        try:
-          self.log.info('Changing file and directory permissions to 0775 for software directory %s' %dirName)
-          if os.stat('%s' %(dirName))[4] == userID and not os.path.islink('%s' %(dirName)):
-            os.chmod('%s' %(dirName),0775)
-          for toChange in files:
-            if os.stat('%s/%s' %(dirName,toChange))[4] == userID and not os.path.islink('%s/%s' %(dirName,toChange)):
-              os.chmod('%s/%s' %(dirName,toChange),0775)
-        except Exception,x:
-          self.log.error('Problem changing software directory permissions',str(x))
 
     self.log.info('Permissions in current directory %s updated successfully' %(currentDir))
     res = shellCall(0,'ls -al')
