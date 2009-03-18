@@ -107,6 +107,19 @@ class JobDescription:
       self.__description.setOption( varName, varValue )
     return S_OK( varValue )
 
+  def __checkMaxInputData( self, maxNumber ):
+    """
+    Check Maximum Number of Input Data files allowed
+    """
+    initialVal = False
+    varName = "InputData"
+    if varName not in self.__description:
+      return S_OK()
+    varValue = self.__description[ varName ]
+    if len( List.fromChar( varValue ) ) > maxNumber:
+      return S_ERROR( 'Number of Input Data Files (%s) greater than current limit: %s' % ( len( List.fromChar( varValue ) ) , maxNumber ) )
+    return S_OK()
+
   def setVarsFromDict( self, varDict ):
     for k in sorted( varDict ):
       self.setVar( k, varDict[ k ] )
@@ -133,6 +146,9 @@ class JobDescription:
     if not result[ 'OK' ]:
       return result
     result = self.__checkMultiChoiceInDescription( "PilotTypes", [ 'private' ] )
+    if not result[ 'OK' ]:
+      return result
+    result = self.__checkMaxInputData( 100 )
     if not result[ 'OK' ]:
       return result
     result = self.__checkMultiChoiceInDescription( "JobType",
