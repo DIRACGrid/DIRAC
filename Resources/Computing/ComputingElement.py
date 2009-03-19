@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Resources/Computing/ComputingElement.py,v 1.9 2009/03/09 15:17:51 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Resources/Computing/ComputingElement.py,v 1.10 2009/03/19 17:00:41 paterson Exp $
 # File :   ComputingElement.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
      resource JDL for subsequent use during the matching process.
 """
 
-__RCSID__ = "$Id: ComputingElement.py,v 1.9 2009/03/09 15:17:51 rgracian Exp $"
+__RCSID__ = "$Id: ComputingElement.py,v 1.10 2009/03/19 17:00:41 paterson Exp $"
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight      import *
 from DIRAC.ConfigurationSystem.Client.Config        import gConfig
@@ -30,7 +30,7 @@ class ComputingElement:
     self.classAd = ClassAd('[]')
     self.ceParameters = {}
     self.percentageRatio = 0.3
-    result = self.__getCEParameters('CEDefaults')
+    self.__getCEParameters('CEDefaults') #can be overwritten by other sections
     result = self.__getCEParameters(ceName)
     if not result['OK']:
       self.log.warn(result['Message'])
@@ -61,10 +61,16 @@ class ComputingElement:
         jdlInt = self.__getInt(value)
         if type(jdlInt) == type(1):
           requirements += ' other.'+option+' == %d &&' %(jdlInt)
+          self.log.debug('Found JDL reqt integer attribute: %s = %s' %(option,jdlInt))
+          self.classAd.insertAttributeInt(option, jdlInt)
         else:
           requirements += ' other.'+option+' == "%s" &&' %(value)
+          self.log.debug('Found string reqt attribute: %s = %s' %(option,value))
+          self.classAd.insertAttributeString(option, value)
       elif type(value) == type(1):
         requirements += ' other.'+option+' == %d &&' %(value)
+        self.log.debug('Found integer reqt attribute: %s = %s' %(option,value))
+        self.classAd.insertAttributeInt(option, value)
       else:
         self.log.warn('Could not determine type of:  %s = %s' %(option,value))
 
