@@ -171,6 +171,28 @@ class JobPlotter(BaseReporter):
                  'ylabel' : "jobs"  }
     return self._generateTimedStackedBarPlot( filename, plotInfo[ 'data'], metadata )
 
+  def _reportTotalNumberOfJobs( self, reportRequest ):
+    selectFields = ( self._getSQLStringForGrouping( reportRequest[ 'groupingFields' ]) + ", SUM(%s)",
+                     reportRequest[ 'groupingFields' ] + [ 'entriesInBucket'
+                                   ]
+                   )
+    retVal = self._getSummaryData( reportRequest[ 'startTime' ],
+                                reportRequest[ 'endTime' ],
+                                selectFields,
+                                reportRequest[ 'condDict' ],
+                                reportRequest[ 'groupingFields' ],
+                                {} )
+    if not retVal[ 'OK' ]:
+      return retVal
+    dataDict = retVal[ 'Value' ]
+    return S_OK( { 'data' : dataDict  } )
+
+  def _plotTotalNumberOfJobs( self, reportRequest, plotInfo, filename ):
+    metadata = { 'title' : 'Total Number of Jobs by %s' % " -> ".join( reportRequest[ 'groupingFields' ] ) ,
+                 'ylabel' : 'Jobs'
+                }
+    return self._generatePiePlot( filename, plotInfo[ 'data'], metadata )
+
   def _reportInputSandboxSize( self, reportRequest ):
     return self.__reportFieldSizeinMB( reportRequest, ( "InputSandBoxSize", "Input sand box size" ) )
 
