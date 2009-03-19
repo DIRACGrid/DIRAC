@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobStateUpdateHandler.py,v 1.33 2008/12/20 17:47:53 rgracian Exp $
+# $Id: JobStateUpdateHandler.py,v 1.34 2009/03/19 06:00:03 rgracian Exp $
 ########################################################################
 
 """ JobStateUpdateHandler is the implementation of the Job State updating
@@ -11,13 +11,14 @@
 
 """
 
-__RCSID__ = "$Id: JobStateUpdateHandler.py,v 1.33 2008/12/20 17:47:53 rgracian Exp $"
+__RCSID__ = "$Id: JobStateUpdateHandler.py,v 1.34 2009/03/19 06:00:03 rgracian Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
+import time
 
 # This is a global instance of the JobDB class
 jobDB = False
@@ -39,7 +40,7 @@ class JobStateUpdateHandler( RequestHandler ):
   types_setJobStatus = [IntType,StringType,StringType,StringType]
   def export_setJobStatus(self,jobID,status,minorStatus,source='Unknown',datetime=None):
     """ Set the major and minor status for job specified by its JobId.
-        Set optionally the status date and source component which sends the
+        Set optionally the status date and source component which HeHs the
         status information.
     """
 
@@ -253,10 +254,15 @@ class JobStateUpdateHandler( RequestHandler ):
     """ Send a heart beat sign of life for a job jobID
     """
 
+    start0 = time.time()
+    start = time.time()
     result = jobDB.setHeartBeatData(jobID,staticData, dynamicData)
     if not result['OK']:
       gLogger.warn('Failed to set the heart beat data for job %d ' % jobID)
 
+    print "AT >>>> setHeartBeatData time", time.time()-start
+
+    start = time.time()
     # Restore the Running status if necessary
     result = jobDB.getJobAttributes(jobID,['Status'])
     if not result['OK']:
@@ -270,7 +276,10 @@ class JobStateUpdateHandler( RequestHandler ):
       result = jobDB.setJobAttribute(jobID,'Status','Running',True)
       if not result['OK']:
         gLogger.warn('Failed to restore the job status to Running')
+        
+    print "AT >>>> updating to Running time", time.time()-start    
 
+    start = time.time()
     jobMessageDict = {}
     result = jobDB.getJobCommand(jobID)
     if result['OK']:
@@ -279,6 +288,9 @@ class JobStateUpdateHandler( RequestHandler ):
     if jobMessageDict:
       for key,value in jobMessageDict.items():
         result = jobDB.setJobCommandStatus(jobID,key,'Sent')
+
+    print "AT >>>> getting command time", time.time()-start  
+    print "AT >>>> total time", time.time()-start0   
 
     return S_OK(jobMessageDict)
 
