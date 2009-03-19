@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalog. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.58 2009/03/17 10:55:22 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.59 2009/03/19 17:37:45 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -1265,7 +1265,7 @@ class ReplicaManager:
     pfnDict = {}
     for lfn,replicas in lfnReplicas.items():
       if replicas.has_key(storageElementName):
-        pfnDict = {replicas[storageElementName]:lfn}
+        pfnDict[replicas[storageElementName]] = lfn
       else:
         errStr = "ReplicaManager.__executeReplicaStorageElementOperation: File does not have replica at supplied Storage Element."
         gLogger.error(errStr, "%s %s" % (lfn,storageElementName))
