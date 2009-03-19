@@ -1,11 +1,11 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/WMSUtilities.py,v 1.14 2009/03/19 06:00:03 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/WMSUtilities.py,v 1.15 2009/03/19 07:30:48 rgracian Exp $
 ########################################################################
 
 """ A set of utilities used in the WMS services
 """
 
-__RCSID__ = "$Id: WMSUtilities.py,v 1.14 2009/03/19 06:00:03 rgracian Exp $"
+__RCSID__ = "$Id: WMSUtilities.py,v 1.15 2009/03/19 07:30:48 rgracian Exp $"
 
 from tempfile import mkdtemp
 import shutil, os
@@ -36,9 +36,6 @@ def getPilotOutput( proxy, grid, pilotRef ):
     return ret
 
   status,output,error = ret['Value']
-  print status
-  print output
-  print error
   if error.find('already retrieved') != -1:
     shutil.rmtree(tmp_dir)
     return S_ERROR('Pilot job output already retrieved')    
