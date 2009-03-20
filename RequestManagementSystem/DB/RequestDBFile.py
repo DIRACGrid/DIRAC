@@ -41,16 +41,14 @@ class RequestDBFile:
     try:
       summaryDict = {}
       for requestType in requestTypes:
+        summaryDict[requestType] = {}
         reqTypeDir = '%s/%s' % (self.root,requestType)
         if os.path.isdir(reqTypeDir):
           statusList = os.listdir(reqTypeDir)
           for status in statusList:
             reqTypeStatusDir = '%s/%s' % (reqTypeDir,status)
             requests = os.listdir(reqTypeStatusDir)
-            if len(requests):
-              if not summaryDict.has_key(requestType):
-                summaryDict[requestType] = {}
-              summaryDict[requestType][status] = len(requests)
+            summaryDict[requestType][status] = len(requests)
       gLogger.info("RequestDBFile._getDBSummary: Successfully obtained database summary.")
       return S_OK(summaryDict)
     except Exception,x:
@@ -212,12 +210,15 @@ class RequestDBFile:
           errStr = "RequestDBFile.serveRequest: Failed to get DB summary."
           gLogger.error(errStr,res['Message'])
           return S_ERROR(errStr)
-        requestTypes = res['Value'].keys()
-        if not requestTypes:
+        candidates = []
+        for requestType,count in res['Value'].keys():
+          if count:
+            candidates.append(requestType)
+        if not candidates:
           # There are absolutely no requests in the db
           return S_OK()
-        random.shuffle(requestTypes)
-        requestType = requestTypes[0]
+        random.shuffle(candidates)
+        requestType = candidates[0]
 
       # First get a request
       res = self.getRequest(requestType)
