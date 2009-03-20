@@ -11,7 +11,7 @@ class FileCatalog:
   ro_methods = ['exists','isLink','readLink','isFile','getFileMetadata','getReplicas',
                 'getReplicaStatus','getFileSize','isDirectory','getDirectoryReplicas',
                 'listDirectory','getDirectoryMetadata','getDirectorySize','getDirectoryContents',
-                'resolveDataset']
+                'resolveDataset','getPathPermissions']
 
   write_methods = ['createLink','removeLink','addFile','addReplica','removeReplica',
                    'removeFile','setReplicaStatus','setReplicaHost','createDirectory',
