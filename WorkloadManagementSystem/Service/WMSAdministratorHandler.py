@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSAdministratorHandler.py,v 1.46 2009/03/20 22:28:09 atsareg Exp $
+# $Id: WMSAdministratorHandler.py,v 1.47 2009/03/20 22:48:07 atsareg Exp $
 ########################################################################
 """
 This is a DIRAC WMS administrator interface.
@@ -14,7 +14,7 @@ Access to the pilot data:
 
 """
 
-__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.46 2009/03/20 22:28:09 atsareg Exp $"
+__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.47 2009/03/20 22:48:07 atsareg Exp $"
 
 import os, sys, string, uu, shutil
 from types import *
@@ -152,12 +152,23 @@ class WMSAdministratorHandler(RequestHandler):
         job reference
     """
 
-    # Get the pilot grid reference first
+    pilotReference = ''
+    # Get the pilot grid reference first from the job parameters
     result = jobDB.getJobParameter(jobID,'Pilot_Reference')
-    if not result['OK']:
-      return result
+    if result['OK']:
+      pilotReference = result['Value']
+    
+    if not pilotReference:
+      # Failed to get the pilot reference, try to look in the attic parameters
+      result = jobDB.getAtticJobParameters(jobID,['Pilot_Reference'])  
+      if result['OK']:
+        c = -1
+        # Get the pilot reference for the last reschedling cycle
+        for cycle in result['Value']:
+          if cycle > c:
+            pilotReference = result['Value'][cycle]['Pilot_Reference']
+            c = cycle    
 
-    pilotReference = result['Value']
     if pilotReference:
       return self.__getGridJobOutput(pilotReference)
     else:
