@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalog. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.59 2009/03/19 17:37:45 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.60 2009/03/20 15:22:31 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -48,16 +48,18 @@ class ReplicaManager:
   def __verifyOperationPermission(self,path):
     res = self.__getClientCertInfo()
     if not res['OK']:
-      return res
+      if res['Message'] == "Can't find a valid proxy":
+        return S_OK(True)
+      return res        
     clientInfo = res['Value']
 
-    # TODO: DO THIS IN A CLEANER WAY
-    from DIRAC.DataManagementSystem.Client.Catalog.LcgFileCatalogClient import LcgFileCatalogClient
-    lfc = LcgFileCatalogClient()
-    res = lfc.getPathPermissions(path)
+    fc = FileCatalog()
+    res = fc.getPathPermissions(path)
     if not res['OK']:
       return res
-    lfcPerm = res['Value']    
+    if not res['Value']['Successful'].has_key(path):
+      return S_ERROR(res['Value']['Failed'][path])
+    lfcPerm = res['Value']['Successful'][path]
 
     groupMatch = False
     for vomsRole in clientInfo['Role']:
