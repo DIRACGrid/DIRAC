@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.137 2009/03/20 21:23:06 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.138 2009/03/20 21:41:57 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -47,7 +47,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.137 2009/03/20 21:23:06 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.138 2009/03/20 21:41:57 atsareg Exp $"
 
 import re, os, sys, string, types
 import time, datetime, operator
@@ -338,10 +338,7 @@ class JobDB(DB):
       rCounter = ' AND RescheduleCycle=%d' % int(rescheduleCounter)
     cmd = "SELECT Name, Value, RescheduleCycle from AtticJobParameters"
     cmd +=" WHERE JobID=%d %s %s" % (int(jobID),paramCondition,rCounter)
-    result = self._query(cmd)
-    
-    print 'AT >>>>', result
-    
+    result = self._query(cmd)    
     if result['OK']:
       if result['Value']:
         for name,value,counter in result['Value']:
