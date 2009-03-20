@@ -1,4 +1,4 @@
--- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.sql,v 1.20 2009/02/26 08:33:11 rgracian Exp $
+-- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.sql,v 1.21 2009/03/20 20:01:54 atsareg Exp $
 
 --------------------------------------------------------------------------------
 --
@@ -138,7 +138,7 @@ CREATE TABLE AtticJobParameters (
     RescheduleCycle INTEGER NOT NULL,
     Name VARCHAR(100) NOT NULL,
     Value BLOB NOT NULL,
-    PRIMARY KEY(JobID, Name)
+    PRIMARY KEY(JobID, Name, RescheduleCycle)
 );
 
 --------------------------------------------------------------------------------
