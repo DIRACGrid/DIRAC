@@ -724,6 +724,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
 
   def getPathPermissions(self,path):
     exists = False
+    originalPath = path
     while not exists:
       res = self.exists(path)
       if not res['OK']:
@@ -752,7 +753,10 @@ class LcgFileCatalogClient(FileCatalogueBase):
         res = self.__getRoleFromGID(object.a_id)
         if not res['OK']:
           return res
-        permissionsDict['Role'] = res['Value']
+        role = res['Value']
+        if role == 'lhcb':
+          role = 'lhcb/Role=user'
+        permissionsDict['Role'] = role
         permissionsDict['group'] = object.a_perm
       elif object.a_type == lfc.CNS_ACL_OTHER:
         permissionsDict['world'] = object.a_perm
@@ -760,7 +764,8 @@ class LcgFileCatalogClient(FileCatalogueBase):
         errStr = "LcgFileCatalogClient.getPathPermissions: ACL type not considered."
         gLogger.debug(errStr,object.a_type)
     gLogger.verbose("LcgFileCatalogClient.getPathPermissions: %s owned by %s:%s." % (path,permissionsDict['DN'],permissionsDict['Role'])) 
-    return S_OK(permissionsDict)
+    resDict = {'Failed':{},'Successful':{originalPath:permissionsDict}}
+    return S_OK(resDict)
 
   def __getDNFromUID(self,userID):
     buffer = ""
