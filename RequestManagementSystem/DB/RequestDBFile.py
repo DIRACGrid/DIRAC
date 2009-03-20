@@ -211,9 +211,11 @@ class RequestDBFile:
           gLogger.error(errStr,res['Message'])
           return S_ERROR(errStr)
         candidates = []
-        for requestType,count in res['Value'].keys():
-          if count:
-            candidates.append(requestType)
+        for requestType,requestsCount in res['Value'].items():
+          if requestsCount.has_key('ToDo'):
+            count = requestsCount['ToDo']
+            if count:
+              candidates.append(requestType)
         if not candidates:
           # There are absolutely no requests in the db
           return S_OK()
