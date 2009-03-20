@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobMonitoringHandler.py,v 1.27 2009/03/13 23:22:05 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobMonitoringHandler.py,v 1.28 2009/03/20 21:24:55 atsareg Exp $
 ########################################################################
 
 """ JobMonitoringHandler is the implementation of the JobMonitoring service
@@ -11,7 +11,7 @@
 
 """
 
-__RCSID__ = "$Id: JobMonitoringHandler.py,v 1.27 2009/03/13 23:22:05 atsareg Exp $"
+__RCSID__ = "$Id: JobMonitoringHandler.py,v 1.28 2009/03/20 21:24:55 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -234,71 +234,6 @@ class JobMonitoringHandler( RequestHandler ):
     return S_OK(restring)
 
 ##############################################################################
-  types_getJobPageSummary = [DictType, StringType, IntType, IntType]
-  def export_getJobPageSummary(self, attrDict, orderAttribute, pageNumber, numberPerPage):
-    """ Get the summary of the job information for a given page in the
-        job monitor
-    """
-
-    last_update = None
-    if attrDict.has_key('LastUpdate'):
-      last_update = attrDict['LastUpdate']
-      del attrDict['LastUpdate']
-    result = jobDB.selectJobs(attrDict, orderAttribute=orderAttribute, newer=last_update)
-    if not result['OK']:
-      return S_ERROR('Failed to select jobs: '+result['Message'])
-
-    jobList = result['Value']
-    nJobs = len(jobList)
-    if nJobs == 0:
-      resultDict = {'TotalJobs':nJobs}
-      return S_OK(resultDict)
-
-    iniJob = pageNumber*numberPerPage
-    lastJob = iniJob+numberPerPage
-    if iniJob >= nJobs:
-      return S_ERROR('Page number out of range')
-
-    if lastJob > nJobs:
-      lastJob = nJobs
-
-    summaryJobList = jobList[iniJob:lastJob]
-    result = jobDB.getAttributesForJobList(summaryJobList,SUMMARY)
-    if not result['OK']:
-      return S_ERROR('Failed to get job summary: '+result['Message'])
-
-    summaryDict = result['Value']
-
-    # Evaluate last sign of life time
-    for jobID, jobDict in summaryDict.items():
-      if jobDict['HeartBeatTime'] == 'None':
-        jobDict['LastSignOfLife'] = jobDict['LastUpdateTime']
-      else:
-        lastTime = Time.fromString(jobDict['LastUpdateTime'])
-        hbTime = Time.fromString(jobDict['HeartBeatTime'])
-        if (hbTime-lastTime) > (lastTime-lastTime) or jobDict['Status'] == "Stalled":
-          jobDict['LastSignOfLife'] = jobDict['HeartBeatTime']
-        else:
-          jobDict['LastSignOfLife'] = jobDict['LastUpdateTime']
-
-    statusDict = {}
-    statusAttrDict = attrDict
-    for status in ['Running','Waiting','Outputready']:
-      statusAttrDict['Status'] = status
-      result = jobDB.countJobs(statusAttrDict)
-      if result['OK']:
-        statusDict[status] = result['Value']
-      else:
-        break
-
-    resultDict = {}
-    resultDict['SummaryDict'] = summaryDict
-    resultDict['TotalJobs'] = nJobs
-    resultDict['SummaryStatus'] = statusDict
-
-    return S_OK(resultDict)
-
-##############################################################################
   types_getJobPageSummaryWeb = [DictType, ListType, IntType, IntType]
   def export_getJobPageSummaryWeb(self, selectDict, sortList, startItem, maxItems):
     """ Get the summary of the job information for a given page in the
@@ -403,6 +338,11 @@ class JobMonitoringHandler( RequestHandler ):
   types_getJobParameters = [ [IntType,LongType] ]
   def export_getJobParameters( self, jobID ):
     return jobDB.getJobParameters( jobID )
+  
+##############################################################################
+  types_getAtticJobParameters = [ [IntType,LongType] ]
+  def export_getAtticJobParameters( self,jobID,parameters=[],rescheduleCycle=-1 ):
+    return jobDB.getAtticJobParameters( jobID,parameters,rescheduleCycle )      
 
 ##############################################################################
   types_getJobAttributes = [ IntType ]
