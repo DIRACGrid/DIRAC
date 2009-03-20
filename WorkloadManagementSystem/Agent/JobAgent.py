@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.63 2009/03/19 17:34:07 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.64 2009/03/20 08:37:20 paterson Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.63 2009/03/19 17:34:07 paterson Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.64 2009/03/20 08:37:20 paterson Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -50,9 +50,10 @@ class JobAgent(Agent):
       self.log.warn(ceUniqueID['Message'])
       return ceUniqueID
     localCE = gConfig.getOption('/LocalSite/LocalCE','')
-    if localCE:
-      self.log.info('Defining CE from local configuration = %s' %localCE)
-      ceUniqueID=localCE
+    if localCE['OK']:
+      if localCE['Value']:
+        self.log.info('Defining CE from local configuration = %s' %localCE['Value'])
+        ceUniqueID=localCE
 
     ceFactory = ComputingElementFactory(ceUniqueID['Value'])
     self.ceName = ceUniqueID['Value']
