@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.136 2009/03/13 11:27:51 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.137 2009/03/20 21:23:06 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -47,7 +47,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.136 2009/03/13 11:27:51 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.137 2009/03/20 21:23:06 atsareg Exp $"
 
 import re, os, sys, string, types
 import time, datetime, operator
@@ -317,6 +317,44 @@ class JobDB(DB):
             resultDict[name] = value
 
         return S_OK(resultDict)
+      
+#############################################################################
+  def getAtticJobParameters(self, jobID, paramList=[], rescheduleCounter = -1 ):
+    """ Get Attic Job Parameters defined for a job with jobID.
+        Returns a dictionary with the Attic Job Parameters per each rescheduling cycle.
+        If parameterList is empty - all the parameters are returned.
+        If recheduleCounter = -1, all cycles are returned.
+    """
+
+    self.log.debug( 'JobDB.getAtticJobParameters: Getting Attic Parameters for job %d' % int(jobID) )
+
+    resultDict = {}
+    paramCondition = ''
+    if paramList:
+      paramNames = string.join(map(lambda x: '"'+str(x)+'"',paramList ),',')
+      paramCondition = " AND Name in (%s)" % paramNames
+    rCounter = ''
+    if rescheduleCounter != -1:
+      rCounter = ' AND RescheduleCycle=%d' % int(rescheduleCounter)
+    cmd = "SELECT Name, Value, RescheduleCycle from AtticJobParameters"
+    cmd +=" WHERE JobID=%d %s %s" % (int(jobID),paramCondition,rCounter)
+    result = self._query(cmd)
+    
+    print 'AT >>>>', result
+    
+    if result['OK']:
+      if result['Value']:
+        for name,value,counter in result['Value']:
+          if not resultDict.has_key(counter):
+            resultDict[counter] = {} 
+          try:
+            resultDict[counter][name] = value.tostring()
+          except:
+            resultDict[counter][name] = value
+
+      return S_OK(resultDict)
+    else:
+      return S_ERROR('JobDB.getAtticJobParameters: failed to retrieve parameters')        
 
 #############################################################################
   def getJobAttributes(self,jobID,attrList=[]):
