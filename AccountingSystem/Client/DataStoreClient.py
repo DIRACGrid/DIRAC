@@ -1,7 +1,8 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/DataStoreClient.py,v 1.13 2009/02/26 15:13:14 acasajus Exp $
-__RCSID__ = "$Id: DataStoreClient.py,v 1.13 2009/02/26 15:13:14 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/DataStoreClient.py,v 1.14 2009/03/21 09:50:17 acasajus Exp $
+__RCSID__ = "$Id: DataStoreClient.py,v 1.14 2009/03/21 09:50:17 acasajus Exp $"
 
 import time
+import random
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.ThreadSafe import Synchronizer
@@ -9,6 +10,7 @@ from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContain
 from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
 
 gAccountingSynchro = Synchronizer()
+random.seed()
 
 class DataStoreClient:
 
@@ -84,7 +86,7 @@ class DataStoreClient:
     request.setDISETRequest( rpcStub )
 
     requestStub = request.toXML()['Value']
-    return requestClient.setRequest( "Accounting.DataStore.%s" % time.time(),
+    return requestClient.setRequest( "Accounting.DataStore.%s.%s" % ( time.time(), random.random() ),
                                      requestStub )
 
 gDataStoreClient = DataStoreClient()
