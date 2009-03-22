@@ -1,9 +1,9 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/X509Chain.py,v 1.34 2009/03/12 11:27:40 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/X509Chain.py,v 1.35 2009/03/22 08:37:48 acasajus Exp $
 ########################################################################
 """ X509Chain is a class for managing X509 chains with their Pkeys
 """
-__RCSID__ = "$Id: X509Chain.py,v 1.34 2009/03/12 11:27:40 acasajus Exp $"
+__RCSID__ = "$Id: X509Chain.py,v 1.35 2009/03/22 08:37:48 acasajus Exp $"
 
 import types
 import os
@@ -92,7 +92,7 @@ class X509Chain:
     try:
       self.__keyObj = crypto.load_privatekey( crypto.FILETYPE_PEM, pemData, password )
     except Exception, e:
-      return S_ERROR( "Can't load key file: %s" % str(e) )
+      return S_ERROR( "Can't load key file: %s (Probably bad pass phrase?)" % str(e) )
     self.__loadedPKey = True
     return S_OK()
 
