@@ -79,7 +79,7 @@ class SRM2Storage(StorageBase):
     self.defaultLocalProtocols = gConfig.getValue('/Resources/StorageElements/DefaultProtocols',[])
 
     self.MAX_SINGLE_STREAM_SIZE = 1024*1024*10 # 10 MB
-    self.MIN_BANDWIDTH = 5 * (1024*1024) # 5 MB/s
+    self.MIN_BANDWIDTH = 0.5 * (1024*1024) # 0.5 MB/s
 
   def isOK(self):
     return self.isok
@@ -654,7 +654,7 @@ class SRM2Storage(StorageBase):
       return S_ERROR(errStr)
     timeout = sourceSize/self.MIN_BANDWIDTH + 300
     gLogger.debug("SRM2Storage.__putFile: Executing transfer of %s to %s" % (src_url, dest_url))
-    errCode,errStr = lcg_util.lcg_cp3(src_url, dest_url, self.defaulttype, srctype, dsttype, self.nobdii, self.vo, self.nbstreams, self.conf_file, self.insecure, self.verbose, timeout,src_spacetokendesc,dest_spacetokendesc)
+    errCode,errStr = lcg_util.lcg_cp3(src_url, dest_url, self.defaulttype, srctype, dsttype, self.nobdii, self.vo, 4, self.conf_file, self.insecure, self.verbose, timeout,src_spacetokendesc,dest_spacetokendesc)
     if errCode == 0:
       gLogger.debug('SRM2Storage.__putFile: Successfully put file to storage.')
       res = self.__executeOperation(dest_url,'getFileSize')
