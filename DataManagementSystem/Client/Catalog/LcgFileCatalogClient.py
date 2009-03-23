@@ -67,14 +67,19 @@ class LcgFileCatalogClient(FileCatalogueBase):
 
   def __openSession(self):
     """Open the LFC client/server session"""
-    sessionName = 'DIRAC_%s.%s at %s' % (DIRAC.majorVersion,DIRAC.minorVersion,self.site)
-    lfc.lfc_startsess(self.host,sessionName)
-    self.session = True
+    if self.session:
+      return False
+    else:
+      sessionName = 'DIRAC_%s.%s at %s' % (DIRAC.majorVersion,DIRAC.minorVersion,self.site)
+      lfc.lfc_startsess(self.host,sessionName)
+      self.session = True
+      return True
 
   def __closeSession(self):
     """Close the LFC client/server session"""
-    lfc.lfc_endsess()
-    self.session = False
+    if self.session:
+      lfc.lfc_endsess()
+      self.session = False
 
   def __startTransaction(self):
     """ Begin transaction for one time commit """
@@ -108,7 +113,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     if not res['OK']:
       return res
     lfns = res['Value']
-    self.__openSession()
+    created = self.__openSession()
     failed = {}
     successful = {}
     for lfn,guid in lfns.items():
@@ -127,7 +132,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
           successful[lfn] = False
         else:
           successful[lfn] = self.__getLfnForGUID(guid)['Value']
-    self.__closeSession()
+    if created: self.__closeSession()
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
@@ -138,7 +143,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     if not res['OK']:   
       return res
     lfns = res['Value']
-    self.__openSession()
+    created = self.__openSession()
     failed = {}
     successful = {}
     for path in lfns.keys():
@@ -152,6 +157,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
           failed[path] = res['Message']
         else:
           successful[path] = res['Message']
+    if created: self.__closeSession()
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
@@ -166,8 +172,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
       return res
     lfns = res['Value']
     # If we have less than three lfns to query a session doesn't make sense
-    if len(lfns) > 2:
-      self.__openSession()
+    created = self.__openSession()
     failed = {}
     successful = {}
     for lfn in lfns.keys():
@@ -178,8 +183,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
         successful[lfn] = True
       else:
         successful[lfn] = False
-    if self.session:
-      self.__closeSession()
+    if created: self.__closeSession()
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
@@ -191,7 +195,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
       return res    
     lfns = res['Value']
     # If we have less than three lfns to query a session doesn't make sense
-    self.__openSession()
+    created = self.__openSession()
     failed = {}
     successful = {}
     for lfn in lfns.keys():
@@ -220,7 +224,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
         else:
           successful[lfn]['OwnerRole'] = None
         successful[lfn]['Permissions'] = S_IMODE(fstat.filemode)
-    self.__closeSession()
+    if created: self.__closeSession()
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
@@ -233,7 +237,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     lfns = res['Value']
     # If we have less than three lfns to query a session doesn't make sense
     if len(lfns) > 2:
-      self.__openSession()
+      created = self.__openSession()
     failed = {}
     successful = {}
     for lfn in lfns.keys():
@@ -242,8 +246,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
         failed[lfn] = res['Message']
       else:
         successful[lfn] = res['Value'].filesize
-    if self.session:
-      self.__closeSession()
+    if created: self.__closeSession()
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
@@ -256,7 +259,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     lfns = res['Value']
     # If we have less than three lfns to query a session doesn't make sense
     if len(lfns) > 2:
-      self.__openSession()
+      created = self.__openSession()
     failed = {}
     successful = {}
     for lfn in lfns.keys():
@@ -265,8 +268,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
         failed[lfn] = res['Message']
       else:
         successful[lfn] = res['Value']
-    if self.session:
-      self.__closeSession()
+    if created: self.__closeSession()
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
@@ -277,7 +279,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     lfns = res['Value']
     # If we have less than three lfns to query a session doesn't make sense
     if len(lfns) > 2:
-      self.__openSession()
+      created = self.__openSession()
     failed = {}
     successful = {}
     for lfn,se in lfns.items():
@@ -286,8 +288,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
         failed[lfn] = res['Message']
       else:
         successful[lfn] = res['Value']
-    if self.session:
-      self.__closeSession()
+    if created: self.__closeSession()
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
@@ -303,7 +304,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     if not res['OK']:
       return res  
     lfns = res['Value']
-    self.__openSession()
+    created = self.__openSession()
     res = self.exists(lfns)
     if not res['OK']:
       return res
@@ -318,7 +319,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
           successful[lfn] = True
         else:
           failed[lfn] = res['Message']
-    self.__closeSession()
+    if created: self.__closeSession()
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
@@ -336,7 +337,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     lfns = res['Value']
     # If we have less than three lfns to query a session doesn't make sense
     if len(lfns) > 2:
-      self.__openSession()
+      created = self.__openSession()
     failed = {}
     successful = {}
     for lfn in lfns.keys():
@@ -347,8 +348,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
         successful[lfn] = True
       else:
         successful[lfn] = False
-    if self.session:
-      self.__closeSession()
+    if created: self.__closeSession()
     resDict = {'Failed':failed,'Successful':successful}   
     return S_OK(resDict)
 
@@ -358,7 +358,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
       return res
     lfns = res['Value']
     # If we have less than three lfns to query a session doesn't make sense
-    self.__openSession()
+    created = self.__openSession()
     failed = {}
     successful = {}
     for lfn in lfns.keys():
@@ -387,7 +387,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
         else:
           successful[lfn]['OwnerRole'] = None
         successful[lfn]['Permissions'] = S_IMODE(fstat.filemode)
-    self.__closeSession()
+    if created: self.__closeSession()
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
@@ -398,7 +398,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     if not res['OK']:
       return res
     lfns = res['Value']
-    self.__openSession()
+    created = self.__openSession()
     failed = {}
     successful = {}
     for path in lfns.keys():
@@ -416,7 +416,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
             if (status != 'P') or allStatus:
               pathReplicas[lfn][se] = pfn
         successful[path] = pathReplicas
-    self.__closeSession()
+    if created: self.__closeSession()
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
@@ -427,7 +427,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     if not res['OK']:
       return res
     lfns = res['Value']
-    self.__openSession()
+    created = self.__openSession()
     failed = {}
     successful = {}
     for path in lfns.keys():
@@ -436,7 +436,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
         successful[path] = res['Value']
       else:
         failed[path] = res['Message']
-    self.__closeSession()
+    if created: self.__closeSession()
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
@@ -445,7 +445,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     if not res['OK']:
       return res
     lfns = res['Value']   
-    self.__openSession()
+    created = self.__openSession()
     failed = {}
     successful = {}   
     for path in lfns.keys():
@@ -454,7 +454,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
         successful[path] = res['Value']
       else:
         failed[path] = res['Message']
-    self.__closeSession()
+    if created: self.__closeSession()
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
@@ -468,7 +468,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     if not res['OK']:
       return res
     lfns = res['Value'] 
-    self.__openSession()
+    created = self.__openSession()
     res = self.exists(lfns)
     if not res['OK']:
       return res
@@ -483,7 +483,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
           successful[lfn] = True
         else:
           failed[lfn] = res['Message']
-    self.__closeSession()
+    if created: self.__closeSession()
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
@@ -492,7 +492,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     if not res['OK']:
       return res
     lfns = res['Value']
-    self.__openSession()
+    created = self.__openSession()
     failed = {}
     successful = {}
     for path in lfns.keys():
@@ -501,7 +501,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
         successful[path] = True
       else:
         failed[path] = res['Message']
-    self.__closeSession()
+    if created: self.__closeSession()
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
@@ -518,7 +518,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     links = res['Value']    
     # If we have less than three lfns to query a session doesn't make sense
     if len(links) > 2:
-      self.__openSession()
+      created = self.__openSession()
     failed = {}
     successful = {}
     self.__openSession()
@@ -530,8 +530,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
         successful[link] = True
       else:
         successful[link] = False
-    if self.session:
-      self.__closeSession()
+    if created: self.__closeSession()
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
@@ -542,7 +541,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     links = res['Value']
     # If we have less than three lfns to query a session doesn't make sense
     if len(links) > 2:
-      self.__openSession()
+      created = self.__openSession()
     failed = {}
     successful = {}
     for link in links.keys():
@@ -551,8 +550,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
         successful[link] = res['Value']
       else:
         failed[link] = res['Message']
-    if self.session:
-      self.__closeSession()
+    if created: self.__closeSession()
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
@@ -567,7 +565,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
       return res
     links = res['Value'] 
     # If we have less than three lfns to query a session doesn't make sense
-    self.__openSession()
+    created = self.__openSession()
     failed = {}
     successful = {}
     for link,target in links.items():
@@ -580,7 +578,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
           failed[link] = res['Message']
         else:
           successful[link] = target
-    self.__closeSession()
+    if created: self.__closeSession()
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
@@ -591,7 +589,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     links = res['Value']
     # If we have less than three lfns to query a session doesn't make sense
     if len(links) > 2:
-      self.__openSession()
+      created = self.__openSession()
     failed = {}
     successful = {}
     for link in links.keys():
@@ -600,8 +598,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
         failed[link] = res['Message']
       else:
         successful[link] = True
-    if self.session:
-      self.__closeSession()
+    if created: self.__closeSession()
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
@@ -615,7 +612,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     if not res['OK']:
       return res
     datasets = res['Value']
-    self.__openSession()
+    created = self.__openSession()
     successful = {}
     failed = {}
     for datasetName in datasets.keys():
@@ -631,7 +628,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
           target = link
           datasetFiles[target] = fileMetadata['Replicas']
         successful[datasetName] = datasetFiles
-    self.__closeSession()
+    if created: self.__closeSession()
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
@@ -645,7 +642,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     if not res['OK']:
       return res
     datasets = res['Value']
-    self.__openSession()
+    created = self.__openSession()
     successful = {}
     failed = {}
     for datasetName,lfns in datasets.items():
@@ -660,7 +657,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
       else:
         self.__executeOperation(datasetName,'removeDataset')
         failed[datasetName] = res['Message']
-    self.__closeSession()
+    if created: self.__closeSession()
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
@@ -669,7 +666,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     if not res['OK']:
       return res
     datasets = res['Value']
-    self.__openSession()
+    created = self.__openSession()
     successful = {}
     failed = {}
     for datasetName in datasets.keys():
@@ -678,7 +675,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
         failed[datasetName] = res['Message']
       else:
         successful[datasetName] = True
-    self.__closeSession()
+    if created: self.__closeSession()
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
@@ -687,7 +684,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     if not res['OK']:
       return res
     datasets = res['Value']
-    self.__openSession()
+    created = self.__openSession()
     successful = {}
     failed = {}
     for datasetName,lfns in datasets.items():
@@ -696,7 +693,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
         failed[datasetName] = res['Message']
       else:
         successful[datasetName] = True
-    self.__closeSession()
+    if created: self.__closeSession()
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
