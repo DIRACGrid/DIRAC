@@ -72,7 +72,6 @@ class SRM2Storage(StorageBase):
     self.nobdii = 1
     self.defaulttype = 2
     self.vo = 'lhcb'
-    self.nbstreams = 1
     self.verbose = 0
     self.conf_file = 'ignored'
     self.insecure = 0
@@ -652,9 +651,13 @@ class SRM2Storage(StorageBase):
       errStr = "SRM2Storage.__putFile: Source file is zero size."
       gLogger.error(errStr,src_file)
       return S_ERROR(errStr)
-    timeout = sourceSize/self.MIN_BANDWIDTH + 300
+    timeout = int(sourceSize/self.MIN_BANDWIDTH + 300)
+    if sourceSize > self.MAX_SINGLE_STREAM_SIZE:
+      nbstreams = 4
+    else:
+      nbstreams = 1
     gLogger.debug("SRM2Storage.__putFile: Executing transfer of %s to %s" % (src_url, dest_url))
-    errCode,errStr = lcg_util.lcg_cp3(src_url, dest_url, self.defaulttype, srctype, dsttype, self.nobdii, self.vo, 4, self.conf_file, self.insecure, self.verbose, timeout,src_spacetokendesc,dest_spacetokendesc)
+    errCode,errStr = lcg_util.lcg_cp3(src_url, dest_url, self.defaulttype, srctype, dsttype, self.nobdii, self.vo, nbstreams, self.conf_file, self.insecure, self.verbose, timeout,src_spacetokendesc,dest_spacetokendesc)
     if errCode == 0:
       gLogger.debug('SRM2Storage.__putFile: Successfully put file to storage.')
       res = self.__executeOperation(dest_url,'getFileSize')
@@ -663,15 +666,13 @@ class SRM2Storage(StorageBase):
         if sourceSize == destinationSize :
           gLogger.debug("SRM2Storage.__putFile: Post transfer check successful.")
           return S_OK(destinationSize)
-      errorMessage = "SRM2Storage.__getFile: Source and destination file sizes do not match."
+      errorMessage = "SRM2Storage.__putFile: Source and destination file sizes do not match."
       gLogger.error(errorMessage,src_url)
     else:
-      errorStr = "SRM2Storage.__putFile: Failed to put file to storage."
-      errorMessage = ''
+      errorMessage = "SRM2Storage.__putFile: Failed to put file to storage."
       if errCode > 0:
-        errorMessage = "%s %s" % (errorMessage,os.strerror(errCode))
-      errorMessage = "%s %s" % (errorMessage,errStr)
-      gLogger.error(errorStr,errorMessage)
+        errStr = "%s %s" % (errStr,os.strerror(errCode))
+      gLogger.error(errorMessage,errStr)
     res = self.__executeOperation(dest_url,'removeFile')
     if res['OK']:
       gLogger.debug("SRM2Storage.__putFile: Removed remote file remnant %s." % dest_url)
@@ -707,7 +708,7 @@ class SRM2Storage(StorageBase):
     if not os.path.exists(os.path.dirname(dest_file)):
       os.makedirs(os.path.dirname(dest_file))
     if os.path.exists(dest_file):
-      gLogger.debug("SRM2Storage.getFile: Local file already exists %s. Removing..." % dest_file)
+      gLogger.debug("SRM2Storage.__getFile: Local file already exists %s. Removing..." % dest_file)
       os.remove(dest_file)
     srctype = self.defaulttype
     src_spacetokendesc = self.spaceToken
@@ -718,22 +719,23 @@ class SRM2Storage(StorageBase):
     if not res['OK']:
       return S_ERROR(res['Message'])
     remoteSize = res['Value']
-    timeout = remoteSize/self.MIN_BANDWIDTH + 300
+    timeout = int(remoteSize/self.MIN_BANDWIDTH + 300)
+    nbstreams = 1
     gLogger.debug("SRM2Storage.__getFile: Executing transfer of %s to %s" % (src_url, dest_url))
-    errCode,errStr = lcg_util.lcg_cp3(src_url, dest_url, self.defaulttype, srctype, dsttype, self.nobdii, self.vo, self.nbstreams, self.conf_file, self.insecure, self.verbose, timeout,src_spacetokendesc,dest_spacetokendesc)
+    errCode,errStr = lcg_util.lcg_cp3(src_url, dest_url, self.defaulttype, srctype, dsttype, self.nobdii, self.vo, nbstreams, self.conf_file, self.insecure, self.verbose,timeout,src_spacetokendesc,dest_spacetokendesc)
     if errCode == 0:
       gLogger.debug('SRM2Storage.__getFile: Got a file from storage.')
       localSize = getSize(dest_file)
       if localSize == remoteSize:
-        gLogger.debug("SRM2Storage.getFile: Post transfer check successful.")
+        gLogger.debug("SRM2Storage.__getFile: Post transfer check successful.")
         return S_OK(localSize)
-      errStr = "SRM2Storage.__getFile: Source and destination file sizes do not match."
-      gLogger.error(errStr,src_url)
+      errorMessage = "SRM2Storage.__getFile: Source and destination file sizes do not match."
+      gLogger.error(errorMessage,src_url)
     else:
-      errorMessage = "SRM2Storage.getFile: Failed to get local copy of file."
+      errorMessage = "SRM2Storage.__getFile: Failed to get file from storage."
       if errCode > 0:
-        errorMessage = "%s %s" % (errorMessage,os.strerror(errCode))
-      errorMessage = "%s %s" % (errorMessage,errStr)
+        errStr = "%s %s" % (errStr,os.strerror(errCode))
+      gLogger.error(errorMessage,errStr)      
     if os.path.exists(dest_file):
       gLogger.debug("SRM2Storage.getFile: Removing local file %s." % dest_file)
       os.remove(dest_file)
