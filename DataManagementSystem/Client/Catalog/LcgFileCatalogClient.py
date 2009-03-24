@@ -45,7 +45,6 @@ class LcgFileCatalogClient(FileCatalogueBase):
       self.site = result['Value']
 
     self.prefix = '/grid'
-    self.timeout = 30
     self.session = False
     self.name = "LFC"
 
@@ -236,6 +235,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
       return res
     lfns = res['Value']
     # If we have less than three lfns to query a session doesn't make sense
+    created = False
     if len(lfns) > 2:
       created = self.__openSession()
     failed = {}
@@ -258,6 +258,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
       return res
     lfns = res['Value']
     # If we have less than three lfns to query a session doesn't make sense
+    created = False
     if len(lfns) > 2:
       created = self.__openSession()
     failed = {}
@@ -278,6 +279,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
       return res
     lfns = res['Value']
     # If we have less than three lfns to query a session doesn't make sense
+    created = False
     if len(lfns) > 2:
       created = self.__openSession()
     failed = {}
@@ -336,6 +338,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
       return res
     lfns = res['Value']
     # If we have less than three lfns to query a session doesn't make sense
+    created = False
     if len(lfns) > 2:
       created = self.__openSession()
     failed = {}
@@ -517,6 +520,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
       return res
     links = res['Value']    
     # If we have less than three lfns to query a session doesn't make sense
+    created = False
     if len(links) > 2:
       created = self.__openSession()
     failed = {}
@@ -540,6 +544,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
       return res
     links = res['Value']
     # If we have less than three lfns to query a session doesn't make sense
+    created = False
     if len(links) > 2:
       created = self.__openSession()
     failed = {}
@@ -588,6 +593,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
       return res
     links = res['Value']
     # If we have less than three lfns to query a session doesn't make sense
+    created = False
     if len(links) > 2:
       created = self.__openSession()
     failed = {}
@@ -607,7 +613,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
   # The following are read methods for datasets
   #
     
-  def resolveDataset(self,dataset):
+  def resolveDataset(self,dataset,allStatus=False):
     res = self.__checkArgumentFormat(dataset)
     if not res['OK']:
       return res
@@ -1377,6 +1383,6 @@ class LcgFileCatalogClient(FileCatalogueBase):
     totalError = ""
     for link,error in res['Value']['Failed'].items():
       gLogger.error("LcgFileCatalogClient.__removeFilesFromDataset: Failed to remove link %s." % link, error)
-      totalError = "%s\n %s : %s" % (totalError,link,error)
+      totalError = "%s %s : %s" % (totalError,link,error)
     return S_ERROR(totalError)
 
